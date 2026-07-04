@@ -456,13 +456,13 @@ The name of the item is: {{ item.name }}
 `pipe`区块允许我们使用区块中的内容来调用管道。不同于使用`|>`语法，它会将区块渲染出的内容传递给管道。
 
 ```jinja
-{% pipe title %}
+{% filter title %}
 may the force be with you
-{% endpipe %}
+{% endfilter %}
 
-{% pipe replace("force", "forth") %}
+{% filter replace("force", "forth") %}
 may the force be with you
-{% endpipe %}
+{% endfilter %}
 ```
 
 切记：你不能在这些区块中进行任何异步操作。

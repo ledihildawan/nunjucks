@@ -585,13 +585,13 @@ bloc. Au lieu de passer une valeur avec la syntaxe `|>`, le contenu
 du bloc sera passé.
 
 ```jinja
-{% pipe title %}
+{% filter title %}
 que la force soit avec toi
-{% endpipe %}
+{% endfilter %}
 
-{% pipe replace("force", "forth") %}
+{% filter title %}
 que la force soit avec toi
-{% endpipe %}
+{% endfilter %}
 ```
 
 REMARQUE : Vous ne pouvez pas faire quelque chose d'asynchrone à l'intérieur de ces blocs.

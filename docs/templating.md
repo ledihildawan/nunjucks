@@ -616,13 +616,13 @@ block. Instead passing a value with the `|>` syntax, the render
 contents from the block will be passed.
 
 ```jinja
-{% pipe title %}
+{% filter title %}
 may the force be with you
-{% endpipe %}
+{% endfilter %}
 
-{% pipe replace("force", "forth") %}
+{% filter replace("force", "forth") %}
 may the force be with you
-{% endpipe %}
+{% endfilter %}
 ```
 
 NOTE: You cannot do anything asynchronous inside these blocks.
