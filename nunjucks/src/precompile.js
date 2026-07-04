@@ -106,7 +106,7 @@ function precompile(input, opts) {
 function _precompile(str, name, env) {
   env = env || new Environment([]);
 
-  const asyncFilters = env.asyncFilters;
+  const asyncPipes = env.asyncPipes;
   const extensions = env.extensionsList;
   let template;
 
@@ -114,7 +114,7 @@ function _precompile(str, name, env) {
 
   try {
     template = compiler.compile(str,
-      asyncFilters,
+      asyncPipes,
       extensions,
       name,
       env.opts);

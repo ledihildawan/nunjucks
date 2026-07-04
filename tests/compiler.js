@@ -277,7 +277,7 @@
     });
 
     it('should compile none as null, not undefined', function(done) {
-      equal('{{ none|default("d", false) }}', '');
+      equal('{{ none|>default("d", false) }}', '');
       finish(done);
     });
 
@@ -695,7 +695,7 @@
         this.skip();
       } else {
         opts = {
-          asyncFilters: {
+          asyncPipes: {
             getContents: function(tmpl, cb) {
               fs.readFile(tmpl, cb);
             },
@@ -708,7 +708,7 @@
           }
         };
 
-        render('{{ tmpl | getContents }}',
+        render('{{ tmpl |> getContents }}',
           {
             tmpl: 'tests/templates/for-async-content.njk'
           },
@@ -717,7 +717,7 @@
             expect(res).to.be('somecontenthere');
           });
 
-        render('{% if tmpl %}{{ tmpl | getContents }}{% endif %}',
+        render('{% if tmpl %}{{ tmpl |> getContents }}{% endif %}',
           {
             tmpl: 'tests/templates/for-async-content.njk'
           },
@@ -726,7 +726,7 @@
             expect(res).to.be('somecontenthere');
           });
 
-        render('{% if tmpl | getContents %}yes{% endif %}',
+        render('{% if tmpl |> getContents %}yes{% endif %}',
           {
             tmpl: 'tests/templates/for-async-content.njk'
           },
@@ -735,7 +735,7 @@
             expect(res).to.be('yes');
           });
 
-        render('{% for t in [tmpl, tmpl] %}{{ t | getContents }}*{% endfor %}',
+        render('{% for t in [tmpl, tmpl] %}{{ t |> getContents }}*{% endfor %}',
           {
             tmpl: 'tests/templates/for-async-content.njk'
           },
@@ -744,7 +744,7 @@
             expect(res).to.be('somecontenthere*somecontenthere*');
           });
 
-        render('{% for t in [tmpl, tmpl] | getContentsArr %}{{ t }}{% endfor %}',
+        render('{% for t in [tmpl, tmpl] |> getContentsArr %}{{ t }}{% endfor %}',
           {
             tmpl: 'tests/templates/for-async-content.njk'
           },
@@ -753,7 +753,7 @@
             expect(res).to.be('somecontenthere');
           });
 
-        render('{% if test %}{{ tmpl | getContents }}{% endif %}oof',
+        render('{% if test %}{{ tmpl |> getContents }}{% endif %}oof',
           {
             tmpl: 'tests/templates/for-async-content.njk'
           },
@@ -764,7 +764,7 @@
 
         render(
           '{% if tmpl %}' +
-          '{% for i in [0, 1] %}{{ tmpl | getContents }}*{% endfor %}' +
+          '{% for i in [0, 1] %}{{ tmpl |> getContents }}*{% endfor %}' +
           '{% endif %}',
           {
             tmpl: 'tests/templates/for-async-content.njk'
@@ -774,7 +774,7 @@
             expect(res).to.be('somecontenthere*somecontenthere*');
           });
 
-        render('{% block content %}{{ tmpl | getContents }}{% endblock %}',
+        render('{% block content %}{{ tmpl |> getContents }}{% endblock %}',
           {
             tmpl: 'tests/templates/for-async-content.njk'
           },
@@ -783,7 +783,7 @@
             expect(res).to.be('somecontenthere');
           });
 
-        render('{% block content %}hello{% endblock %} {{ tmpl | getContents }}',
+        render('{% block content %}hello{% endblock %} {{ tmpl |> getContents }}',
           {
             tmpl: 'tests/templates/for-async-content.njk'
           },
@@ -792,7 +792,7 @@
             expect(res).to.be('hello somecontenthere');
           });
 
-        render('{% block content %}{% set foo = tmpl | getContents %}{{ foo }}{% endblock %}',
+        render('{% block content %}{% set foo = tmpl |> getContents %}{{ foo }}{% endblock %}',
           {
             tmpl: 'tests/templates/for-async-content.njk'
           },
@@ -958,7 +958,7 @@
       it('should include error line in raised TemplateError', function(done) {
         var tmplStr = [
           '{% set items = ["a", "b",, "c"] %}',
-          '{{ items | join(",") }}',
+          '{{ items |> join(",") }}',
         ].join('\n');
 
         var loader = new Loader('tests/templates');
@@ -1043,7 +1043,7 @@
 
     it('should compile macros with args that can be passed to filters', function(done) {
       equal(
-        '{% macro foo(x) %}{{ x|title }}{% endmacro %}' +
+        '{% macro foo(x) %}{{ x|>title }}{% endmacro %}' +
         '{{ foo("foo") }}',
         'Foo');
       finish(done);
@@ -1797,7 +1797,7 @@
         'inner {{i}}: "{{ inner_block_content }}" ' +
         '{% endfor %}' +
         '{% endset %}' +
-        '{{ block_content | safe }}',
+        '{{ block_content |> safe }}',
         'inner 1: "item 1 item 2 item 3 " ' +
         'inner 2: "item 1 item 2 item 3 " ' +
         'inner 3: "item 1 item 2 item 3 " '
@@ -2019,13 +2019,13 @@
         { autoescape: true },
         '&quot;&#39;&lt;&gt;&amp;');
 
-      equal('{{ foo|reverse }}',
+      equal('{{ foo|>reverse }}',
         { foo: '"\'<>&' },
         { autoescape: true },
         '&amp;&gt;&lt;&#39;&quot;');
 
       equal(
-        '{{ foo|reverse|safe }}',
+        '{{ foo|>reverse|>safe }}',
         { foo: '"\'<>&' },
         { autoescape: true },
         '&><\'"');
@@ -2048,25 +2048,25 @@
         { autoescape: true },
         '&lt;p&gt;foo&lt;/p&gt;');
 
-      equal('{{ foo | safe }}',
+      equal('{{ foo |> safe }}',
         { foo: null },
         { autoescape: true },
         '');
 
       equal(
-        '{{ foo | safe }}',
+        '{{ foo |> safe }}',
         { foo: '<p>foo</p>' },
         { autoescape: true },
         '<p>foo</p>');
 
       equal(
-        '{{ foo | safe }}',
+        '{{ foo |> safe }}',
         { foo: ['<p>foo</p>'] },
         { autoescape: true },
         '<p>foo</p>');
 
       equal(
-        '{{ foo | safe }}',
+        '{{ foo |> safe }}',
         { foo: { toString: function() { return '<p>foo</p>'; } } },
         { autoescape: true },
         '<p>foo</p>');
@@ -2076,7 +2076,7 @@
 
     it('should not autoescape safe strings', function(done) {
       equal(
-        '{{ foo|safe }}',
+        '{{ foo|>safe }}',
         { foo: '"\'<>&' },
         { autoescape: true },
         '"\'<>&');
@@ -2098,7 +2098,7 @@
       );
 
       render(
-        '{% macro foo(x, y) %}{{ x|safe }} and {{ y }}{% endmacro %}' +
+        '{% macro foo(x, y) %}{{ x|>safe }} and {{ y }}{% endmacro %}' +
         '{{ foo("<>&", "<>") }}',
         null,
         {
@@ -2173,12 +2173,12 @@
       finish(done);
     });
 
-    it('should pass context as this to filters', function(done) {
+    it('should pass context as this to pipes', function(done) {
       render(
-        '{{ foo | hallo }}',
+        '{{ foo |> hallo }}',
         { foo: 1, bar: 2 },
         {
-          filters: {
+          pipes: {
             hallo: function(foo) {
               return foo + this.lookup('bar');
             }
@@ -2447,21 +2447,21 @@
     }
   });
 
-  describe('the filter tag', function() {
-    it('should apply the title filter to the body', function(done) {
-      equal('{% filter title %}may the force be with you{% endfilter %}',
+  describe('the pipe tag', function() {
+    it('should apply the title pipe to the body', function(done) {
+      equal('{% pipe title %}may the force be with you{% endpipe %}',
         'May The Force Be With You');
       finish(done);
     });
 
-    it('should apply the replace filter to the body', function(done) {
-      equal('{% filter replace("force", "forth") %}may the force be with you{% endfilter %}',
+    it('should apply the replace pipe to the body', function(done) {
+      equal('{% pipe replace("force", "forth") %}may the force be with you{% endpipe %}',
         'may the forth be with you');
       finish(done);
     });
 
     it('should work with variables in the body', function(done) {
-      equal('{% set foo = "force" %}{% filter replace("force", "forth") %}may the {{ foo }} be with you{% endfilter %}',
+      equal('{% set foo = "force" %}{% pipe replace("force", "forth") %}may the {{ foo }} be with you{% endpipe %}',
         'may the forth be with you');
       finish(done);
     });
