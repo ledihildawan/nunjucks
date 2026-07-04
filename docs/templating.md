@@ -73,7 +73,7 @@ foo.bar }}`, `{{ foo.bar.baz }}`.
 ## Filters
 
 Filters are essentially functions that can be applied to variables.
-They are called with a pipe operator (`|>`) and can take arguments.
+They are called with a filter operator (`|>`) and can take arguments.
 
 ```jinja
 {{ foo | title }}
@@ -313,7 +313,7 @@ Inside loops, you have access to a few special variables:
 you are using a [custom template loader that is
 asynchronous](#asynchronous); otherwise you will never need it. Async
 filters and extensions also need this, but internally loops are
-automatically converted into `asyncEach` if any async pipes and
+automatically converted into `asyncEach` if any async filters and
 extensions are used within the loop.
 
 `asyncEach` has exactly the same behavior of `for`, but it enables

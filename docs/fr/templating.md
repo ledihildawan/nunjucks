@@ -60,7 +60,7 @@ foo.bar }}`, `{{ foo.bar.baz }}`.
 ## Filtres
 
 Les filtres sont essentiellement des fonctions qui peuvent être appliquées aux variables.
-Ils sont appelés avec le caractère "pipe" (`|`) et peuvent prendre des arguments.
+Ils sont appelés avec le caractère "filter" (`|>`) et peuvent prendre des arguments.
 
 ```jinja
 {{ foo | title }}
