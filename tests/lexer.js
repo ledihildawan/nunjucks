@@ -288,7 +288,7 @@
       hasTokens(lexer.lex('{{ foo|>bar }}'),
         lexer.TOKEN_VARIABLE_START,
         [lexer.TOKEN_SYMBOL, 'foo'],
-        lexer.TOKEN_PIPE,
+        lexer.TOKEN_PIPEFORWARD,
         [lexer.TOKEN_SYMBOL, 'bar'],
         lexer.TOKEN_VARIABLE_END);
     });
