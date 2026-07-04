@@ -91,6 +91,7 @@ class NodeResolveLoader extends Loader {
     opts = opts || {};
     this.pathsToNames = {};
     this.noCache = !!opts.noCache;
+    this.paths = opts.paths || [];
 
     if (opts.watch) {
       try {
@@ -114,7 +115,6 @@ class NodeResolveLoader extends Loader {
   }
 
   getSource(name) {
-    // Don't allow file-system traversal
     if ((/^\.?\.?(\/|\\)/).test(name)) {
       return null;
     }
@@ -127,7 +127,10 @@ class NodeResolveLoader extends Loader {
     try {
       fullpath = require.resolve(name);
     } catch (e) {
-      return null;
+      fullpath = this.resolveFromPaths(name);
+      if (!fullpath) {
+        return null;
+      }
     }
 
     this.pathsToNames[fullpath] = name;
@@ -140,6 +143,16 @@ class NodeResolveLoader extends Loader {
 
     this.emit('load', name, source);
     return source;
+  }
+
+  resolveFromPaths(name) {
+    for (const basePath of this.paths) {
+      const fullPath = path.resolve(basePath, name);
+      if (fs.existsSync(fullPath)) {
+        return fullPath;
+      }
+    }
+    return null;
   }
 }
 

@@ -2,7 +2,7 @@
   'use strict';
 
   var path = require('path');
-  var execFile = require('child_process').execFile;
+  var spawn = require('child_process').spawn;
   var expect = require('expect.js');
 
   var rootDir = path.resolve(path.join(__dirname, '..'));
@@ -13,15 +13,23 @@
   }
 
   function execPrecompile(args, cb) {
-    execFile(precompileBin, args, {cwd: rootDir}, cb);
+    var child = spawn(precompileBin, args, {cwd: rootDir, shell: true});
+    var stdout = '';
+    var stderr = '';
+    child.stdout.on('data', function(data) { stdout += data; });
+    child.stderr.on('data', function(data) { stderr += data; });
+    child.on('close', function(code) {
+      if (code !== 0) {
+        cb(new Error('exit code ' + code), stdout, stderr);
+      } else {
+        cb(null, stdout, stderr);
+      }
+    });
+    child.on('error', cb);
   }
 
   describe('precompile cli', function() {
     it('should echo a compiled template to stdout', function(done) {
-      if (process.platform === 'win32') {
-        this.skip();
-        return;
-      }
       execPrecompile(['tests/templates/item.njk'], function(err, stdout, stderr) {
         if (err) {
           done(err);
@@ -34,10 +42,6 @@
     });
 
     it('should support --name', function(done) {
-      if (process.platform === 'win32') {
-        this.skip();
-        return;
-      }
       var args = [
         '--name', 'item.njk',
         'tests/templates/item.njk',

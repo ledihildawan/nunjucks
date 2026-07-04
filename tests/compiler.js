@@ -947,15 +947,14 @@
     });
 
     if (!isSlim) {
-      it('should throw exceptions when called synchronously', function() {
-        // SKIPPED: async-by-default returns errors as Promise rejections instead of sync throws
-        this.skip();
-        return;
+      it('should throw exceptions when called synchronously', async function() {
         var tmpl = new Template('{% from "doesnotexist" import foo %}');
-        function templateRender() {
-          tmpl.render();
+        try {
+          await tmpl.render();
+          throw new Error('Expected exception was not thrown');
+        } catch (err) {
+          expect(err).to.match(/template not found: doesnotexist/);
         }
-        expect(templateRender).to.throwException(/template not found: doesnotexist/);
       });
 
       it('should include error line in raised TemplateError', function(done) {
@@ -1002,14 +1001,13 @@
       });
     }
 
-    it('should throw exceptions from included templates when called synchronously', function() {
-      // SKIPPED: async-by-default returns errors as Promise rejections instead of sync throws
-      this.skip();
-      return;
-      function templateRender() {
-        render('{% include "broken-import.njk" %}', {str: 'abc'});
+    it('should throw exceptions from included templates when called synchronously', async function() {
+      try {
+        await render('{% include "broken-import.njk" %}', {str: 'abc'});
+        throw new Error('Expected exception was not thrown');
+      } catch (err) {
+        expect(err).to.match(/template not found: doesnotexist/);
       }
-      expect(templateRender).to.throwException(/template not found: doesnotexist/);
     });
 
     it('should pass errors from included templates to callback when async', function(done) {

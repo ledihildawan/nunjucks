@@ -393,12 +393,13 @@
         ':undefined:jamesjohnjimjessie'
       );
 
-      // SKIPPED: async-by-default - throwOnUndefined returns as Promise rejection
-      // expect(function() {
-      //   render(undefinedTemplate, namesContext, { throwOnUndefined: true });
-      // }).to.throwError(/groupby: attribute "a\.b\.c" resolved to undefined/);
-
-      finish(done);
+      render(undefinedTemplate, namesContext, { throwOnUndefined: true }).then(() => {
+        expect(true).to.equal(false);
+        finish(done);
+      }).catch(err => {
+        expect(err.message || String(err)).to.match(/groupby: attribute "a\.b\.c" resolved to undefined/);
+        finish(done);
+      });
     });
 
     it('indent', function(done) {
@@ -836,12 +837,13 @@
         'fredjohnjames'
       );
 
-      // SKIPPED: async-by-default - throwOnUndefined returns as Promise rejection
-      // expect(function() {
-      //   render(nestedAttributeSortTemplate, { items: [...] }, { throwOnUndefined: true });
-      // }).to.throwError(/sort: attribute "meta\.age" resolved to undefined/);
-
-      finish(done);
+      render(nestedAttributeSortTemplate, { items: [{name: 'james', meta: {age: 25}}, {name: 'fred'}, {name: 'john', meta: {age: 19}}] }, { throwOnUndefined: true }).then(() => {
+        expect(true).to.equal(false);
+        finish(done);
+      }).catch(err => {
+        expect(err.message || String(err)).to.match(/sort: attribute "meta\.age" resolved to undefined/);
+        finish(done);
+      });
     });
 
     it('string', function(done) {

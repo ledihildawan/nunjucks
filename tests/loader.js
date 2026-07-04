@@ -2,6 +2,7 @@
   'use strict';
 
   var expect,
+    path,
     Environment,
     WebLoader,
     FileSystemLoader,
@@ -10,6 +11,7 @@
 
   if (typeof require !== 'undefined') {
     expect = require('expect.js');
+    path = require('path');
     Environment = require('../nunjucks/src/environment').Environment;
     WebLoader = require('../nunjucks/src/web-loaders').WebLoader;
     FileSystemLoader = require('../nunjucks/src/node-loaders').FileSystemLoader;
@@ -124,12 +126,7 @@
         });
 
         it('should emit a "load" event', function(done) {
-          // SKIPPED: dummy-pkg not installed as npm package
-          if (true) {
-            this.skip();
-            return;
-          }
-          var loader = new NodeResolveLoader();
+          var loader = new NodeResolveLoader({paths: [path.join(__dirname, 'test-node-pkgs')]});
           loader.on('load', function(name, source) {
             expect(name).to.equal('dummy-pkg/simple-template.html');
             done();
@@ -139,24 +136,14 @@
         });
 
         it('should render templates', async function() {
-          // SKIPPED: dummy-pkg not installed as npm package
-          if (true) {
-            this.skip();
-            return;
-          }
-          var env = new Environment(new NodeResolveLoader());
+          var env = new Environment(new NodeResolveLoader({paths: [path.join(__dirname, 'test-node-pkgs')]}));
           var tmpl = await env.getTemplate('dummy-pkg/simple-template.html');
           expect(await tmpl.render({foo: 'foo'})).to.be('foo');
         });
 
         it('should not allow directory traversal', function() {
-          // SKIPPED: dummy-pkg not installed as npm package
-          if (true) {
-            this.skip();
-            return;
-          }
-          var loader = new NodeResolveLoader();
-          var dummyPkgPath = require.resolve('dummy-pkg/simple-template.html');
+          var loader = new NodeResolveLoader({paths: [path.join(__dirname, 'test-node-pkgs')]});
+          var dummyPkgPath = path.join(__dirname, 'test-node-pkgs', 'dummy-pkg', 'simple-template.html');
           expect(loader.getSource(dummyPkgPath)).to.be(null);
         });
 

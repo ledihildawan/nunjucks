@@ -167,9 +167,17 @@
       finish(done);
     });
 
-    it('should return errors from globals', function(done) {
-      // SKIPPED: async-by-default - errors returned as Promise rejections
-      finish(done);
+    it('should return errors from globals', async function() {
+      var env = new Environment();
+      env.addGlobal('err', function() {
+        throw new Error('test error');
+      });
+      try {
+        await render('{{ err() }}', null, {}, env);
+        expect().to.be(false);
+      } catch (e) {
+        expect(e).to.be.a(Error);
+      }
     });
   });
 }());
