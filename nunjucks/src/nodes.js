@@ -80,6 +80,7 @@ const ArrayNode = NodeList.extend('Array');
 const Pair = Node.extend('Pair', { fields: ['key', 'value'] });
 const Dict = NodeList.extend('Dict');
 const LookupVal = Node.extend('LookupVal', { fields: ['target', 'val'] });
+const OptionalChain = Node.extend('OptionalChain', { fields: ['target', 'val'] });
 const If = Node.extend('If', { fields: ['cond', 'body', 'else_'] });
 const IfAsync = If.extend('IfAsync');
 const InlineIf = Node.extend('InlineIf', { fields: ['cond', 'body', 'else_'] });
@@ -120,6 +121,7 @@ const In = BinOp.extend('In');
 const Is = BinOp.extend('Is');
 const Or = BinOp.extend('Or');
 const And = BinOp.extend('And');
+const NullishCoalesce = BinOp.extend('NullishCoalesce');
 const Not = UnaryOp.extend('Not');
 const Add = BinOp.extend('Add');
 const Concat = BinOp.extend('Concat');
@@ -244,11 +246,13 @@ module.exports = {
   Switch: Switch,
   Case: Case,
   LookupVal: LookupVal,
+  OptionalChain: OptionalChain,
   BinOp: BinOp,
   In: In,
   Is: Is,
   Or: Or,
   And: And,
+  NullishCoalesce: NullishCoalesce,
   Not: Not,
   Add: Add,
   Concat: Concat,

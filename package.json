@@ -22,7 +22,6 @@
     "core-js": "^2.5.3",
     "cross-env": "^5.1.3",
     "eslint": "^9.29.0",
-    "eslint-config-airbnb-extended": "^2.1.0",
     "eslint-plugin-import": "^2.31.0",
     "expect.js": "*",
     "express": "4.x",
@@ -71,14 +70,14 @@
   "scripts": {
     "build:transpile": "babel nunjucks --out-dir .",
     "build:bundle": "node scripts/bundle.js",
-    "build": "npm run build:transpile && npm run build:bundle",
+    "build": "bun run build:transpile && bun run build:bundle",
     "codecov": "codecov",
     "mocha": "mocha -R spec tests",
-    "lint": "eslint --flag unstable_config_lookup_from_file nunjucks scripts tests",
-    "prepare": "npm run build",
+    "lint": "eslint nunjucks scripts",
+    "prepare": "bun run build",
     "test:instrument": "cross-env NODE_ENV=test scripts/bundle.js",
     "test:runner": "cross-env NODE_ENV=test NODE_PATH=tests/test-node-pkgs scripts/testrunner.js",
-    "test": "npm run lint && npm run test:instrument && npm run test:runner"
+    "test": "bun run lint && bun run test:instrument && bun run test:runner"
   },
   "bin": {
     "nunjucks-precompile": "./bin/precompile"

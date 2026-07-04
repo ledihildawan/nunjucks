@@ -104,6 +104,158 @@
       finish(done);
     });
 
+    it('should compile optional chaining', function(done) {
+      equal('{{ foo?.bar }}',
+        {
+          foo: {
+            bar: 'baz'
+          }
+        },
+        'baz');
+
+      equal('{{ foo?.bar }}',
+        {
+          foo: null
+        },
+        '');
+
+      equal('{{ foo?.bar }}',
+        {
+          foo: undefined
+        },
+        '');
+
+      equal('{{ foo?.bar?.baz }}',
+        {
+          foo: {
+            bar: {
+              baz: 'qux'
+            }
+          }
+        },
+        'qux');
+
+      equal('{{ foo?.bar?.baz }}',
+        {
+          foo: {
+            bar: null
+          }
+        },
+        '');
+
+      equal('{{ foo?.bar?.baz }}',
+        {
+          foo: null
+        },
+        '');
+
+      equal('{{ foo?.bar }}',
+        {
+          foo: {
+            bar: 'hello'
+          }
+        },
+        'hello');
+
+      finish(done);
+    });
+
+    it('should compile nullish coalescing', function(done) {
+      equal('{{ foo ?? "default" }}',
+        {
+          foo: null
+        },
+        'default');
+
+      equal('{{ foo ?? "default" }}',
+        {
+          foo: undefined
+        },
+        'default');
+
+      equal('{{ foo ?? "default" }}',
+        {
+          foo: 'value'
+        },
+        'value');
+
+      equal('{{ foo ?? bar ?? "default" }}',
+        {
+          foo: null,
+          bar: null
+        },
+        'default');
+
+      equal('{{ foo ?? bar ?? "default" }}',
+        {
+          foo: null,
+          bar: 'middle'
+        },
+        'middle');
+
+      equal('{{ foo ?? "default" }}',
+        {
+          foo: false
+        },
+        'false');
+
+      equal('{{ foo ?? "default" }}',
+        {
+          foo: 0
+        },
+        '0');
+
+      equal('{{ foo ?? "default" }}',
+        {
+          foo: ''
+        },
+        '');
+
+      finish(done);
+    });
+
+    it('should compile combined optional chaining and nullish coalescing', function(done) {
+      equal('{{ foo?.bar ?? "default" }}',
+        {
+          foo: null
+        },
+        'default');
+
+      equal('{{ foo?.bar ?? "default" }}',
+        {
+          foo: {
+            bar: 'baz'
+          }
+        },
+        'baz');
+
+      equal('{{ foo?.bar ?? "default" }}',
+        {
+          foo: {
+            bar: null
+          }
+        },
+        'default');
+
+      equal('{{ foo?.bar?.baz ?? "default" }}',
+        {
+          foo: null
+        },
+        'default');
+
+      equal('{{ foo?.bar?.baz ?? "default" }}',
+        {
+          foo: {
+            bar: {
+              baz: 'qux'
+            }
+          }
+        },
+        'qux');
+
+      finish(done);
+    });
+
     it('should not treat falsy values the same as undefined', function(done) {
       equal('{{ foo }}', {
         foo: 0

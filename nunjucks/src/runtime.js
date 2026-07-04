@@ -239,6 +239,22 @@ function memberLookup(obj, val) {
   return obj[val];
 }
 
+function optionalMemberLookup(obj, val) {
+  if (obj === undefined || obj === null) {
+    return undefined;
+  }
+
+  if (typeof obj[val] === 'function') {
+    return (...args) => obj[val].apply(obj, args);
+  }
+
+  return obj[val];
+}
+
+function nullishCoalesce(left, right) {
+  return (left !== undefined && left !== null) ? left : right;
+}
+
 function callWrap(obj, name, context, args) {
   if (!obj) {
     throw new Error('Unable to call `' + name + '`, which is undefined or falsey');
@@ -365,6 +381,8 @@ module.exports = {
   suppressValue: suppressValue,
   ensureDefined: ensureDefined,
   memberLookup: memberLookup,
+  optionalMemberLookup: optionalMemberLookup,
+  nullishCoalesce: nullishCoalesce,
   contextOrFrameLookup: contextOrFrameLookup,
   callWrap: callWrap,
   handleError: handleError,
