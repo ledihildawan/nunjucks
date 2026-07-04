@@ -84,7 +84,7 @@ exports['default'] = default_; // eslint-disable-line dot-notation
 
 function dictsort(val, caseSensitive, by) {
   if (!lib.isObject(val)) {
-    throw new lib.TemplateError('dictsort filter: val must be an object');
+    throw new lib.TemplateError('dictsort pipe: val must be an object');
   }
 
   let array = [];
@@ -100,7 +100,7 @@ function dictsort(val, caseSensitive, by) {
     si = 1;
   } else {
     throw new lib.TemplateError(
-      'dictsort filter: You can only sort by either key or value');
+      'dictsort pipe: You can only sort by either key or value');
   }
 
   array.sort((t1, t2) => {
@@ -208,7 +208,7 @@ function last(arr) {
 
 exports.last = last;
 
-function lengthFilter(val) {
+function lengthPipe(val) {
   var value = normalize(val, '');
 
   if (value !== undefined) {
@@ -228,7 +228,7 @@ function lengthFilter(val) {
   return 0;
 }
 
-exports.length = lengthFilter;
+exports.length = lengthPipe;
 
 function list(val) {
   if (lib.isString(val)) {
@@ -238,7 +238,7 @@ function list(val) {
   } else if (lib.isArray(val)) {
     return val;
   } else {
-    throw new lib.TemplateError('list filter: type not iterable');
+    throw new lib.TemplateError('list pipe: type not iterable');
   }
 }
 
@@ -267,13 +267,13 @@ function random(arr) {
 exports.random = random;
 
 /**
- * Construct select or reject filter
+ * Construct select or reject pipe
  *
  * @param {boolean} expectedTestResult
  * @returns {function(array, string, *): array}
  */
 function getSelectOrReject(expectedTestResult) {
-  function filter(arr, testName = 'truthy', secondArg) {
+  function pipe(arr, testName = 'truthy', secondArg) {
     const context = this;
     const test = context.env.getTest(testName);
 
@@ -282,7 +282,7 @@ function getSelectOrReject(expectedTestResult) {
     });
   }
 
-  return filter;
+  return pipe;
 }
 
 exports.reject = getSelectOrReject(false);
@@ -447,7 +447,7 @@ exports.sum = sum;
 
 exports.sort = r.makeMacro(
   ['value', 'reverse', 'case_sensitive', 'attribute'], [],
-  function sortFilter(arr, reversed, caseSens, attr) {
+  function sortPipe(arr, reversed, caseSens, attr) {
     // Copy it
     let array = lib.map(arr, v => v);
     let getAttribute = lib.getAttrGetter(attr);
@@ -632,7 +632,7 @@ function float(val, def) {
 
 exports.float = float;
 
-const intFilter = r.makeMacro(
+const intPipe = r.makeMacro(
   ['value', 'default', 'base'],
   [],
   function doInt(value, defaultValue, base = 10) {
@@ -641,7 +641,7 @@ const intFilter = r.makeMacro(
   }
 );
 
-exports.int = intFilter;
+exports.int = intPipe;
 
 // Aliases
 exports.d = exports.default;

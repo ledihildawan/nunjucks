@@ -33,7 +33,7 @@ function precompile(input, opts) {
   // * isString: input is a string, not a file path
   // * asFunction: generate a callable function
   // * force: keep compiling on error
-  // * env: the Environment to use (gets extensions and async filters from it)
+  // * env: the Environment to use (gets extensions and async pipes from it)
   // * include: which file/folders to include (folders are auto-included, files are auto-excluded)
   // * exclude: which file/folders to exclude (folders are auto-included, files are auto-excluded)
   // * wrapper: function(templates, opts) {...}

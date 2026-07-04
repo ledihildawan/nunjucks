@@ -4,7 +4,7 @@ const asap = require('asap');
 const waterfall = require('a-sync-waterfall');
 const lib = require('./lib');
 const compiler = require('./compiler');
-const filters = require('./filters');
+const pipes = require('./filters');
 const {FileSystemLoader, WebLoader, PrecompiledLoader} = require('./loaders');
 const tests = require('./tests');
 const globals = require('./globals');
@@ -54,7 +54,7 @@ class Environment extends EmitterObj {
 
     // The autoescape flag sets global autoescaping. If true,
     // every string variable will be escaped by default.
-    // If false, strings can be manually escaped using the `escape` filter.
+    // If false, strings can be manually escaped using the `escape` pipe.
     // defaults to true
     this.opts.autoescape = opts.autoescape != null ? opts.autoescape : true;
 
@@ -95,7 +95,7 @@ class Environment extends EmitterObj {
     this.extensions = {};
     this.extensionsList = [];
 
-    lib._entries(filters).forEach(([name, filter]) => this.addPipe(name, filter));
+    lib._entries(pipes).forEach(([name, pipe]) => this.addPipe(name, pipe));
     lib._entries(tests).forEach(([name, test]) => this.addTest(name, test));
   }
 

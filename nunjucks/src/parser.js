@@ -1042,7 +1042,7 @@ class Parser extends Obj {
     return node;
   }
 
-  parseUnary(noFilters) {
+  parseUnary(noPipes) {
     const tok = this.peekToken();
     let node;
 
@@ -1058,7 +1058,7 @@ class Parser extends Obj {
       node = this.parsePrimary();
     }
 
-    if (!noFilters) {
+    if (!noPipes) {
       node = this.parsePipe(node);
     }
 
@@ -1401,9 +1401,9 @@ class Parser extends Obj {
 //     console.log(util.inspect(t));
 // }
 
-// var p = new Parser(lexer.lex('hello {% filter title %}' +
+// var p = new Parser(lexer.lex('hello {% pipe title %}' +
 //                              'Hello madam how are you' +
-//                              '{% endfilter %}'));
+//                              '{% endpipe %}'));
 // var n = p.parseAsRoot();
 // nodes.printNodes(n);
 
