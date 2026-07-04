@@ -1138,7 +1138,7 @@ class Parser extends Obj {
   }
 
   parseFilter(node) {
-    while (this.skip(lexer.TOKEN_PIPE)) {
+    while (this.skip(lexer.TOKEN_PIPEFORWARD)) {
       const name = this.parseFilterName();
 
       node = new nodes.Filter(

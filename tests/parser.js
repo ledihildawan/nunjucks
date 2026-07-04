@@ -335,10 +335,10 @@
       var n = parser.parse('{% include "test.njk" %}');
       expect(n.children[0].typename).to.be('Include');
 
-      n = parser.parse('{% include "test.html"|replace("html","j2") %}');
+      n = parser.parse('{% include "test.html"|>replace("html","j2") %}');
       expect(n.children[0].typename).to.be('Include');
 
-      n = parser.parse('{% include ""|default("test.njk") %}');
+      n = parser.parse('{% include ""|>default("test.njk") %}');
       expect(n.children[0].typename).to.be('Include');
     });
 
@@ -370,7 +370,7 @@
     });
 
     it('should parse filters', function() {
-      isAST(parser.parse('{{ foo | bar }}'),
+      isAST(parser.parse('{{ foo |> bar }}'),
         [nodes.Root,
           [nodes.Output,
             [nodes.Filter,
@@ -378,7 +378,7 @@
               [nodes.NodeList,
                 [nodes.Symbol, 'foo']]]]]);
 
-      isAST(parser.parse('{{ foo | bar | baz }}'),
+      isAST(parser.parse('{{ foo |> bar |> baz }}'),
         [nodes.Root,
           [nodes.Output,
             [nodes.Filter,
@@ -389,7 +389,7 @@
                   [nodes.NodeList,
                     [nodes.Symbol, 'foo']]]]]]]);
 
-      isAST(parser.parse('{{ foo | bar(3) }}'),
+      isAST(parser.parse('{{ foo |> bar(3) }}'),
         [nodes.Root,
           [nodes.Output,
             [nodes.Filter,
@@ -645,7 +645,7 @@
                 [nodes.Symbol, 'foobar'],
                 [nodes.Symbol, 'foobarbaz']]]]]);
 
-      isAST(parser.parse('{% import "foo/bar.html"|replace("html", "j2") as baz %}'),
+      isAST(parser.parse('{% import "foo/bar.html"|>replace("html", "j2") as baz %}'),
         [nodes.Root,
           [nodes.Import,
             [nodes.Filter,
@@ -658,7 +658,7 @@
             ],
             [nodes.Symbol, 'baz']]]);
 
-      isAST(parser.parse('{% from ""|default("foo/bar.njk") import baz, foobar as foobarbaz %}'),
+      isAST(parser.parse('{% from ""|>default("foo/bar.njk") import baz, foobar as foobarbaz %}'),
         [nodes.Root,
           [nodes.FromImport,
             [nodes.Filter,
