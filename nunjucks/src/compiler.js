@@ -181,6 +181,8 @@ class Compiler extends Obj {
       nodes.Neg,
       nodes.Pos,
       nodes.Compare,
+      nodes.OptionalChain,
+      nodes.NullishCoalesce,
       nodes.NodeList
     );
     this.compile(node, frame);
@@ -384,6 +386,14 @@ class Compiler extends Obj {
     return this._binOpEmitter(node, frame, ' && ');
   }
 
+  compileNullishCoalesce(node, frame) {
+    this._emit('runtime.nullishCoalesce(');
+    this.compile(node.left, frame);
+    this._emit(',');
+    this.compile(node.right, frame);
+    this._emit(')');
+  }
+
   compileAdd(node, frame) {
     return this._binOpEmitter(node, frame, ' + ');
   }
@@ -456,6 +466,14 @@ class Compiler extends Obj {
     this._emit(')');
   }
 
+  compileOptionalChain(node, frame) {
+    this._emit('runtime.optionalMemberLookup((');
+    this._compileExpression(node.target, frame);
+    this._emit('),');
+    this._compileExpression(node.val, frame);
+    this._emit(')');
+  }
+
   _getNodeName(node) {
     switch (node.typename) {
       case 'Symbol':
@@ -464,6 +482,9 @@ class Compiler extends Obj {
         return 'the return value of (' + this._getNodeName(node.name) + ')';
       case 'LookupVal':
         return this._getNodeName(node.target) + '["' +
+          this._getNodeName(node.val) + '"]';
+      case 'OptionalChain':
+        return this._getNodeName(node.target) + '?.["' +
           this._getNodeName(node.val) + '"]';
       case 'Literal':
         return node.value.toString();

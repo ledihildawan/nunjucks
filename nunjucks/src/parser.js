@@ -740,6 +740,25 @@ class Parser extends Obj {
           tok.colno,
           node,
           lookup);
+      } else if (tok.type === lexer.TOKEN_OPERATOR && tok.value === '?.') {
+        // Optional chaining: foo?.bar
+        this.nextToken();
+        const val = this.nextToken();
+
+        if (val.type !== lexer.TOKEN_SYMBOL) {
+          this.fail('expected name as lookup value, got ' + val.value,
+            val.lineno,
+            val.colno);
+        }
+
+        lookup = new nodes.Literal(val.lineno,
+          val.colno,
+          val.value);
+
+        node = new nodes.OptionalChain(tok.lineno,
+          tok.colno,
+          node,
+          lookup);
       } else {
         break;
       }
@@ -774,10 +793,22 @@ class Parser extends Obj {
   }
 
   parseOr() {
-    let node = this.parseAnd();
+    let node = this.parseNullishCoalesce();
     while (this.skipSymbol('or')) {
-      const node2 = this.parseAnd();
+      const node2 = this.parseNullishCoalesce();
       node = new nodes.Or(node.lineno,
+        node.colno,
+        node,
+        node2);
+    }
+    return node;
+  }
+
+  parseNullishCoalesce() {
+    let node = this.parseAnd();
+    while (this.skipValue(lexer.TOKEN_OPERATOR, '??')) {
+      const node2 = this.parseAnd();
+      node = new nodes.NullishCoalesce(node.lineno,
         node.colno,
         node,
         node2);
