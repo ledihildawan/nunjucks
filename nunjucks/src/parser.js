@@ -503,21 +503,41 @@ class Parser extends Obj {
     }
 
     if (!this.skipValue(lexer.TOKEN_OPERATOR, '=')) {
-      if (!this.skip(lexer.TOKEN_BLOCK_END)) {
-        this.fail('parseSet: expected = or block end in set tag',
-          tag.lineno,
-          tag.colno);
+      const assignOps = ['||=', '&&=', '??='];
+      let foundOp = null;
+
+      for (const op of assignOps) {
+        const tok = this.peekToken();
+        if (tok && tok.type === lexer.TOKEN_OPERATOR && tok.value === op) {
+          this.nextToken();
+          foundOp = op;
+          break;
+        }
+      }
+
+      if (!foundOp) {
+        if (!this.skip(lexer.TOKEN_BLOCK_END)) {
+          this.fail('parseSet: expected =, ||= , &&=, ??= or block end in set tag',
+            tag.lineno,
+            tag.colno);
+        } else {
+          node.body = new nodes.Capture(
+            tag.lineno,
+            tag.colno,
+            this.parseUntilBlocks('endset')
+          );
+          node.value = null;
+          node.operator = null;
+          this.advanceAfterBlockEnd();
+        }
       } else {
-        node.body = new nodes.Capture(
-          tag.lineno,
-          tag.colno,
-          this.parseUntilBlocks('endset')
-        );
-        node.value = null;
-        this.advanceAfterBlockEnd();
+        node.operator = foundOp;
+        node.value = this.parseExpression();
+        this.advanceAfterBlockEnd(tag.value);
       }
     } else {
       node.value = this.parseExpression();
+      node.operator = null;
       this.advanceAfterBlockEnd(tag.value);
     }
 

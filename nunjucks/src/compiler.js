@@ -564,7 +564,8 @@ class Compiler extends Obj {
     });
 
     if (node.value) {
-      this._emit(ids.join(' = ') + ' = ');
+      const op = node.operator || '=';
+      this._emit(ids.join(' = ') + ' ' + op + ' ');
       this._compileExpression(node.value, frame);
       this._emitLine(';');
     } else {
