@@ -54,7 +54,7 @@ class Environment extends EmitterObj {
 
     // The autoescape flag sets global autoescaping. If true,
     // every string variable will be escaped by default.
-    // If false, strings can be manually escaped using the `escape` pipe.
+    // If false, strings can be manually escaped using the `escape` filter.
     // defaults to true
     this.opts.autoescape = opts.autoescape != null ? opts.autoescape : true;
 

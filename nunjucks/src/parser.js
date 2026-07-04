@@ -1130,7 +1130,7 @@ class Parser extends Obj {
   parseFilterArgs(node) {
     if (this.peekToken().type === lexer.TOKEN_LEFT_PAREN) {
       // Get a FunCall node and add the parameters to the
-      // pipe
+      // filter
       const call = this.parsePostfix(node);
       return call.args.children;
     }
@@ -1159,7 +1159,7 @@ class Parser extends Obj {
   parseFilterStatement() {
     var pipeTok = this.peekToken();
     if (!this.skipSymbol('filter')) {
-      this.fail('parseFilterStatement: expected pipe');
+      this.fail('parseFilterStatement: expected filter');
     }
 
     const name = this.parseFilterName();
@@ -1401,9 +1401,9 @@ class Parser extends Obj {
 //     console.log(util.inspect(t));
 // }
 
-// var p = new Parser(lexer.lex('hello {% pipe title %}' +
+// var p = new Parser(lexer.lex('hello {% filter title %}' +
 //                              'Hello madam how are you' +
-//                              '{% endpipe %}'));
+//                              '{% endfilter %}'));
 // var n = p.parseAsRoot();
 // nodes.printNodes(n);
 
