@@ -103,8 +103,6 @@ class FromImport extends Node {
 const FunCall = Node.extend('FunCall', { fields: ['name', 'args'] });
 const Pipe = FunCall.extend('Pipe');
 const PipeAsync = Pipe.extend('PipeAsync', { fields: ['name', 'args', 'symbol'] });
-const Filter = Pipe;
-const FilterAsync = PipeAsync;
 const KeywordArgs = Dict.extend('KeywordArgs');
 const Block = Node.extend('Block', { fields: ['name', 'body'] });
 const Super = Node.extend('Super', { fields: ['blockName', 'symbol'] });
@@ -239,8 +237,8 @@ module.exports = {
   FunCall: FunCall,
   Pipe: Pipe,
   PipeAsync: PipeAsync,
-  Filter: Filter,
-  FilterAsync: FilterAsync,
+  Filter: Pipe,
+  FilterAsync: PipeAsync,
   KeywordArgs: KeywordArgs,
   Block: Block,
   Super: Super,
