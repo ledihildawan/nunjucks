@@ -695,7 +695,7 @@
         this.skip();
       } else {
         opts = {
-          asyncFilters: {
+          asyncPipes: {
             getContents: function(tmpl, cb) {
               fs.readFile(tmpl, cb);
             },
@@ -2173,12 +2173,12 @@
       finish(done);
     });
 
-    it('should pass context as this to filters', function(done) {
+    it('should pass context as this to pipes', function(done) {
       render(
         '{{ foo |> hallo }}',
         { foo: 1, bar: 2 },
         {
-          filters: {
+          pipes: {
             hallo: function(foo) {
               return foo + this.lookup('bar');
             }
@@ -2447,21 +2447,21 @@
     }
   });
 
-  describe('the filter tag', function() {
-    it('should apply the title filter to the body', function(done) {
-      equal('{% filter title %}may the force be with you{% endfilter %}',
+  describe('the pipe tag', function() {
+    it('should apply the title pipe to the body', function(done) {
+      equal('{% pipe title %}may the force be with you{% endpipe %}',
         'May The Force Be With You');
       finish(done);
     });
 
-    it('should apply the replace filter to the body', function(done) {
-      equal('{% filter replace("force", "forth") %}may the force be with you{% endfilter %}',
+    it('should apply the replace pipe to the body', function(done) {
+      equal('{% pipe replace("force", "forth") %}may the force be with you{% endpipe %}',
         'may the forth be with you');
       finish(done);
     });
 
     it('should work with variables in the body', function(done) {
-      equal('{% set foo = "force" %}{% filter replace("force", "forth") %}may the {{ foo }} be with you{% endfilter %}',
+      equal('{% set foo = "force" %}{% pipe replace("force", "forth") %}may the {{ foo }} be with you{% endpipe %}',
         'may the forth be with you');
       finish(done);
     });

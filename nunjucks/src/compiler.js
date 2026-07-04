@@ -517,7 +517,7 @@ class Compiler extends Obj {
   compileFilter(node, frame) {
     var name = node.name;
     this.assertType(name, nodes.Symbol);
-    this._emit('env.getFilter("' + name.value + '").call(context, ');
+    this._emit('env.getPipe("' + name.value + '").call(context, ');
     this._compileAggregate(node.args, frame);
     this._emit(')');
   }
@@ -530,7 +530,7 @@ class Compiler extends Obj {
 
     frame.set(symbol, symbol);
 
-    this._emit('env.getFilter("' + name.value + '").call(context, ');
+    this._emit('env.getPipe("' + name.value + '").call(context, ');
     this._compileAggregate(node.args, frame);
     this._emitLine(', ' + this._makeCallback(symbol));
 
@@ -1202,7 +1202,7 @@ class Compiler extends Obj {
 }
 
 module.exports = {
-  compile: function compile(src, asyncFilters, extensions, name, opts = {}) {
+  compile: function compile(src, asyncPipes, extensions, name, opts = {}) {
     const c = new Compiler(name, opts.throwOnUndefined);
 
     // Run the extension preprocessors against the source.
@@ -1212,7 +1212,7 @@ module.exports = {
 
     c.compile(transformer.transform(
       parser.parse(processedSrc, extensions, opts),
-      asyncFilters,
+      asyncPipes,
       name
     ));
     return c.getCode();

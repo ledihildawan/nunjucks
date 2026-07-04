@@ -71,7 +71,7 @@ function depthWalk(ast, func) {
   return walk(ast, func, true);
 }
 
-function _liftFilters(node, asyncFilters, prop) {
+function _liftPipes(node, asyncPipes, prop) {
   var children = [];
 
   var walked = depthWalk(prop ? node[prop] : node, (descNode) => {
@@ -79,7 +79,7 @@ function _liftFilters(node, asyncFilters, prop) {
     if (descNode instanceof nodes.Block) {
       return descNode;
     } else if ((descNode instanceof nodes.Filter &&
-      lib.indexOf(asyncFilters, descNode.name.value) !== -1) ||
+      lib.indexOf(asyncPipes, descNode.name.value) !== -1) ||
       descNode instanceof nodes.CallExtensionAsync) {
       symbol = new nodes.Symbol(descNode.lineno,
         descNode.colno,
@@ -113,18 +113,18 @@ function _liftFilters(node, asyncFilters, prop) {
   }
 }
 
-function liftFilters(ast, asyncFilters) {
+function liftPipes(ast, asyncPipes) {
   return depthWalk(ast, (node) => {
     if (node instanceof nodes.Output) {
-      return _liftFilters(node, asyncFilters);
+      return _liftPipes(node, asyncPipes);
     } else if (node instanceof nodes.Set) {
-      return _liftFilters(node, asyncFilters, 'value');
+      return _liftPipes(node, asyncPipes, 'value');
     } else if (node instanceof nodes.For) {
-      return _liftFilters(node, asyncFilters, 'arr');
+      return _liftPipes(node, asyncPipes, 'arr');
     } else if (node instanceof nodes.If) {
-      return _liftFilters(node, asyncFilters, 'cond');
+      return _liftPipes(node, asyncPipes, 'cond');
     } else if (node instanceof nodes.CallExtension) {
-      return _liftFilters(node, asyncFilters, 'args');
+      return _liftPipes(node, asyncPipes, 'args');
     } else {
       return undefined;
     }
@@ -199,12 +199,12 @@ function convertStatements(ast) {
   });
 }
 
-function cps(ast, asyncFilters) {
-  return convertStatements(liftSuper(liftFilters(ast, asyncFilters)));
+function cps(ast, asyncPipes) {
+  return convertStatements(liftSuper(liftPipes(ast, asyncPipes)));
 }
 
-function transform(ast, asyncFilters) {
-  return cps(ast, asyncFilters || []);
+function transform(ast, asyncPipes) {
+  return cps(ast, asyncPipes || []);
 }
 
 // var parser = require('./parser');

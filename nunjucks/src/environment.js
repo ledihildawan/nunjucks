@@ -85,13 +85,13 @@ class Environment extends EmitterObj {
     this._initLoaders();
 
     this.globals = globals();
-    this.filters = {};
+    this.pipes = {};
     this.tests = {};
-    this.asyncFilters = [];
+    this.asyncPipes = [];
     this.extensions = {};
     this.extensionsList = [];
 
-    lib._entries(filters).forEach(([name, filter]) => this.addFilter(name, filter));
+    lib._entries(filters).forEach(([name, filter]) => this.addPipe(name, filter));
     lib._entries(tests).forEach(([name, test]) => this.addTest(name, test));
   }
 
@@ -154,21 +154,21 @@ class Environment extends EmitterObj {
     return this.globals[name];
   }
 
-  addFilter(name, func, async) {
+  addPipe(name, func, async) {
     var wrapped = func;
 
     if (async) {
-      this.asyncFilters.push(name);
+      this.asyncPipes.push(name);
     }
-    this.filters[name] = wrapped;
+    this.pipes[name] = wrapped;
     return this;
   }
 
-  getFilter(name) {
-    if (!this.filters[name]) {
-      throw new Error('filter not found: ' + name);
+  getPipe(name) {
+    if (!this.pipes[name]) {
+      throw new Error('pipe not found: ' + name);
     }
-    return this.filters[name];
+    return this.pipes[name];
   }
 
   addTest(name, func) {
@@ -557,7 +557,7 @@ class Template extends Obj {
       props = this.tmplProps;
     } else {
       const source = compiler.compile(this.tmplStr,
-        this.env.asyncFilters,
+        this.env.asyncPipes,
         this.env.extensionsList,
         this.path,
         this.env.opts);
