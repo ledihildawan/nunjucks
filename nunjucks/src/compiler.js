@@ -517,7 +517,7 @@ class Compiler extends Obj {
   compilePipe(node, frame) {
     var name = node.name;
     this.assertType(name, nodes.Symbol);
-    this._emit('await runtime.awaitValue(env.getPipe("' + name.value + '").call(context, ');
+    this._emit('await runtime.awaitValue(env.getFilter("' + name.value + '").call(context, ');
     this._compileAggregate(node.args, frame);
     this._emit('))');
   }
@@ -530,7 +530,7 @@ class Compiler extends Obj {
 
     frame.set(symbol, symbol);
 
-    this._emit(symbol + ' = await runtime.awaitValue(env.getPipe("' + name.value + '").call(context, ');
+    this._emit(symbol + ' = await runtime.awaitValue(env.getFilter("' + name.value + '").call(context, ');
     this._compileAggregate(node.args, frame);
     this._emitLine('));');
   }

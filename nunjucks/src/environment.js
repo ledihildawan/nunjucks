@@ -4,7 +4,7 @@ const asap = require('asap');
 const waterfall = require('a-sync-waterfall');
 const lib = require('./lib');
 const compiler = require('./compiler');
-const pipes = require('./pipes');
+const filters = require('./filters');
 const {FileSystemLoader, WebLoader, PrecompiledLoader} = require('./loaders');
 const tests = require('./tests');
 const globals = require('./globals');
@@ -89,13 +89,13 @@ class Environment extends EmitterObj {
     this._initLoaders();
 
     this.globals = globals();
-    this.pipes = {};
+    this.filters = {};
     this.tests = {};
-    this.asyncPipes = [];
+    this.asyncFilters = [];
     this.extensions = {};
     this.extensionsList = [];
 
-    lib._entries(pipes).forEach(([name, pipe]) => this.addPipe(name, pipe));
+    lib._entries(filters).forEach(([name, filter]) => this.addFilter(name, filter));
     lib._entries(tests).forEach(([name, test]) => this.addTest(name, test));
   }
 
@@ -158,22 +158,22 @@ class Environment extends EmitterObj {
     return this.globals[name];
   }
 
-  addPipe(name, func, async) {
+  addFilter(name, func, async) {
     var wrapped = func;
 
     if (async) {
-      this.asyncPipes.push(name);
+      this.asyncFilters.push(name);
     }
-    this.pipes[name] = wrapped;
+    this.filters[name] = wrapped;
     return this;
   }
 
-  getPipe(name) {
-    if (!this.pipes[name]) {
-      throw new Error('pipe not found: ' + name);
+  getFilter(name) {
+    if (!this.filters[name]) {
+      throw new Error('filter not found: ' + name);
     }
-    const pipe = this.pipes[name];
-    const isAsync = this.asyncPipes.includes(name);
+    const filter = this.filters[name];
+    const isAsync = this.asyncFilters.includes(name);
 
     if (isAsync) {
       return function(...args) {
@@ -182,7 +182,7 @@ class Environment extends EmitterObj {
             if (err) reject(err);
             else resolve(result);
           };
-          pipe.apply(this, [...args, cb]);
+          filter.apply(this, [...args, cb]);
         });
       };
     }
@@ -194,7 +194,7 @@ class Environment extends EmitterObj {
         }
         return arg;
       }));
-      return pipe.apply(this, resolvedArgs);
+      return filter.apply(this, resolvedArgs);
     };
   }
 
@@ -630,7 +630,7 @@ class Template extends Obj {
       props = this.tmplProps;
     } else {
       const source = compiler.compile(this.tmplStr,
-        this.env.asyncPipes,
+        this.env.asyncFilters,
         this.env.extensionsList,
         this.path,
         this.env.opts);

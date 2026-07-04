@@ -695,7 +695,7 @@
         this.skip();
       } else {
         opts = {
-          asyncPipes: {
+          asyncFilters: {
             getContents: function(tmpl, cb) {
               fs.readFile(tmpl, cb);
             },
@@ -2182,7 +2182,7 @@
         '{{ foo |> hallo }}',
         { foo: 1, bar: 2 },
         {
-          pipes: {
+          filters: {
             hallo: function(foo) {
               return foo + this.lookup('bar');
             }
