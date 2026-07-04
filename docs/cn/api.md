@@ -598,17 +598,17 @@ env.addFilter('shorten', function(str, count) {
 
 ```jinja
 {# Show the first 5 characters #}
-A message for you: {{ message|shorten }}
+A message for you: {{ message |> shorten }}
 
 {# Show the first 20 characters #}
-A message for you: {{ message|shorten(20) }}
+A message for you: {{ message |> shorten(20) }}
 ```
 
 ### Keyword/Default Arguments
 
-在[模板](templating#Keyword-Arguments)中说道，nunjucks 支持关键字参数，你可以在 filter 中使用他。
+在[模板](templating#Keyword-Arguments)中说道，nunjucks 支持关键字参数，你可以在 pipe 中使用他。
 
-所有的关键字参数会以最后一个参数传入，以下为使用了关键字参数的 `foo` 过滤器：
+所有的关键字参数会以最后一个参数传入，以下为使用了关键字参数的 `foo` 管道：
 
 ```js
 env.addFilter('foo', function(num, x, y, kwargs) {
@@ -636,7 +636,7 @@ env.addFilter('lookup', function(name, callback) {
     db.getItem(name, callback);
 }, true);
 
-env.render('{{ item|lookup }}', function(err, res) {
+env.render('{{ item |> lookup }}', function(err, res) {
     // do something with res
 });
 ```

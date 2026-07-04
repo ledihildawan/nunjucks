@@ -451,18 +451,18 @@ The name of the item is: {{ item.name }}
 
 如果你想输出一些 Nunjucks 特殊的标签 (如 `{{`)，可以使用 `{% raw %}` 将所有的内容输出为纯文本。
 
-### filter
+### pipe
 
-`filter`区块允许我们使用区块中的内容来调用过滤器。不同于使用`|`语法，它会将区块渲染出的内容传递给过滤器。
+`pipe`区块允许我们使用区块中的内容来调用管道。不同于使用`|>`语法，它会将区块渲染出的内容传递给管道。
 
 ```jinja
-{% filter title %}
+{% pipe title %}
 may the force be with you
-{% endfilter %}
+{% endpipe %}
 
-{% filter replace("force", "forth") %}
+{% pipe replace("force", "forth") %}
 may the force be with you
-{% endfilter %}
+{% endpipe %}
 ```
 
 切记：你不能在这些区块中进行任何异步操作。

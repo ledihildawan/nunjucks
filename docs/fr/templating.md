@@ -578,20 +578,20 @@ un bloc `{% raw %}` et tout ce qui sera à l'intérieur de celui-ci sera affich�
 `{% verbatim %}` a le même comportement que [`{% raw %}`](#raw). Il a été ajouté pour
 être compatible avec la [balise `verbatim` de Twig](http://twig.sensiolabs.org/doc/tags/verbatim.html).
 
-### filter
+### pipe
 
-Un bloc `filter` vous permet d'appeler un filtre avec le contenu de ce
-bloc. Au lieu de passer une valeur avec la syntaxe `|`, le contenu
+Un bloc `pipe` vous permet d'appeler un pipe avec le contenu de ce
+bloc. Au lieu de passer une valeur avec la syntaxe `|>`, le contenu
 du bloc sera passé.
 
 ```jinja
-{% filter title %}
+{% pipe title %}
 que la force soit avec toi
-{% endfilter %}
+{% endpipe %}
 
-{% filter replace("force", "forth") %}
+{% pipe replace("force", "forth") %}
 que la force soit avec toi
-{% endfilter %}
+{% endpipe %}
 ```
 
 REMARQUE : Vous ne pouvez pas faire quelque chose d'asynchrone à l'intérieur de ces blocs.
@@ -897,7 +897,7 @@ Retourne la valeur absolue de l'argument :
 **Entrée**
 
 ```jinja
-{{ -3|abs }}
+{{ -3 |> abs }}
 ```
 
 **Sortie**

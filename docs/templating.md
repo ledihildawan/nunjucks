@@ -313,7 +313,7 @@ Inside loops, you have access to a few special variables:
 you are using a [custom template loader that is
 asynchronous](#asynchronous); otherwise you will never need it. Async
 filters and extensions also need this, but internally loops are
-automatically converted into `asyncEach` if any async filters and
+automatically converted into `asyncEach` if any async pipes and
 extensions are used within the loop.
 
 `asyncEach` has exactly the same behavior of `for`, but it enables
@@ -350,7 +350,7 @@ in parallel, preserving the order of the items. This is only helpful
 if you are using asynchronous filters, extensions, or loaders.
 Otherwise you should never use this.
 
-Let's say you created a filter named `lookup` that fetches some text
+Let's say you created a pipe named `lookup` that fetches some text
 from a database. You could then render multiple items in parallel with
 `asyncAll`:
 
@@ -363,7 +363,7 @@ from a database. You could then render multiple items in parallel with
 </ul>
 ```
 
-If `lookup` is an asynchronous filter, it's probably doing something
+If `lookup` is an asynchronous pipe, it's probably doing something
 slow like fetching something from disk. `asyncAll` allows you reduce
 the time it would take to execute the loop sequentially by doing all
 the async work in parallel, and the template rendering resumes once
@@ -609,20 +609,20 @@ a `{% raw %}` block and anything inside of it will be output as plain text.
 `{% verbatim %}` has identical behavior as [`{% raw %}`](#raw). It is added for
 compatibility with the [Twig `verbatim` tag](http://twig.sensiolabs.org/doc/tags/verbatim.html).
 
-### filter
+### pipe
 
-A `filter` block allows you to call a filter with the contents of the
-block. Instead passing a value with the `|` syntax, the render
+A `pipe` block allows you to call a pipe with the contents of the
+block. Instead passing a value with the `|>` syntax, the render
 contents from the block will be passed.
 
 ```jinja
-{% filter title %}
+{% pipe title %}
 may the force be with you
-{% endfilter %}
+{% endpipe %}
 
-{% filter replace("force", "forth") %}
+{% pipe replace("force", "forth") %}
 may the force be with you
-{% endfilter %}
+{% endpipe %}
 ```
 
 NOTE: You cannot do anything asynchronous inside these blocks.
@@ -852,15 +852,15 @@ for more information.
 
 If autoescaping is turned on in the environment, all output will automatically
 be escaped for safe output. To manually mark output as safe, use the `safe`
-filter. Nunjucks will not escape this output.
+pipe. Nunjucks will not escape this output.
 
 ```jinja
 {{ foo }}           // &lt;span%gt;
-{{ foo | safe }}    // <span>
+{{ foo |> safe }}    // <span>
 ```
 
 If autoescaping is turned off, all output will be rendered as it is. You can
-manually escape variables with the `escape` filter.
+manually escape variables with the `escape` pipe.
 
 ```jinja
 {{ foo }}           // <span>
@@ -928,7 +928,7 @@ Return the absolute value of the argument:
 **Input**
 
 ```jinja
-{{ -3|abs }}
+{{ -3 |> abs }}
 ```
 
 **Output**
@@ -1000,8 +1000,8 @@ If `value` is strictly `undefined`, return `default`, otherwise `value`. If
 `boolean` is true, any JavaScript falsy value will return `default` (false, "",
 etc)
 
-**In version 2.0, this filter changed the default behavior of this
-  filter. Previously, it acted as if `boolean` was true by default, and any
+**In version 2.0, this pipe changed the default behavior of this
+  pipe. Previously, it acted as if `boolean` was true by default, and any
   falsy value would return `default`. In 2.0 the default is only an `undefined`
   value returns `default`. You can get the old behavior by passing `true` to
   `boolean`, or just use `value or default`.**
@@ -1487,7 +1487,7 @@ If no test is specified, each object will be evaluated as a boolean.
 Filter a sequence of objects by applying a test to the specified attribute
 of each object, and rejecting the objects with the test succeeding.
 
-This is the opposite of ```selectattr``` filter.
+This is the opposite of ```selectattr``` pipe.
 
 If no test is specified, the attribute’s value will be evaluated as a boolean.
 
@@ -1842,7 +1842,7 @@ foo
 ### truncate
 
 Return a truncated copy of the string. The length is specified with the first
-parameter which defaults to 255. If the second parameter is true the filter
+parameter which defaults to 255. If the second parameter is true the pipe
 will cut the text at length. Otherwise it will discard the last word. If the
 text was in fact truncated it will append an ellipsis sign ("...").
 A different ellipsis sign than "(...)"  can be specified using the third parameter.

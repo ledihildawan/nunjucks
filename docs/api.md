@@ -252,8 +252,8 @@ var res = nunjucks.renderString('Hello {{ username }}', { username: 'James' });
 addFilter
 env.addFilter(name, func, [async])
 
-Add a custom filter named **name** which calls **func** whenever
-invoked. If the filter needs to be async, **async** must be `true`
+Add a custom pipe named **name** which calls **func** whenever
+invoked. If the pipe needs to be async, **async** must be `true`
 (see [asynchronous support](#asynchronous-support)). Returns `env` for further method chaining. See
 [Custom Filters](#custom-filters).
 
@@ -262,7 +262,7 @@ invoked. If the filter needs to be async, **async** must be `true`
 {% api %}
 getFilter
 env.getFilter(name)
-Get the filter, which is just a function, named **name**.
+Get the pipe, which is just a function, named **name**.
 {% endapi %}
 
 {% api %}
@@ -808,11 +808,11 @@ Using this environment, templates will look like this:
 </ul>
 ```
 
-## Custom Filters
+## Custom Pipes
 
-To install a custom filter, use the `Environment` method `addFilter`.
-A filter is simply a function that takes the target object as the
-first argument and any arguments passed to the filter as the other
+To install a custom pipe, use the `Environment` method `addFilter`.
+A pipe is simply a function that takes the target object as the
+first argument and any arguments passed to the pipe as the other
 arguments, in order.
 
 ```js
@@ -824,27 +824,27 @@ env.addFilter('shorten', function(str, count) {
 });
 ```
 
-This adds a filter `shorten` which returns the first `count`
+This adds a pipe `shorten` which returns the first `count`
 characters in a string, with `count` defaulting to 5. Here is how it
 is used:
 
 ```jinja
 {# Show the first 5 characters #}
-A message for you: {{ message|shorten }}
+A message for you: {{ message |> shorten }}
 
 {# Show the first 20 characters #}
-A message for you: {{ message|shorten(20) }}
+A message for you: {{ message |> shorten(20) }}
 ```
 
 ### Keyword/Default Arguments
 
 As described in the
 [templating section](templating#keyword-arguments), nunjucks supports
-keyword/default arguments. You can write a normal javascript filter
+keyword/default arguments. You can write a normal javascript pipe
 that leverages them.
 
 All keyword arguments are passed in as a hash as the last argument.
-This is a filter `foo` that uses keyword arguments:
+This is a pipe `foo` that uses keyword arguments:
 
 ```js
 env.addFilter('foo', function(num, x, y, kwargs) {
@@ -876,7 +876,7 @@ env.addFilter('lookup', function(name, callback) {
     db.getItem(name, callback);
 }, true);
 
-env.renderString('{{ item|lookup }}', function(err, res) {
+env.renderString('{{ item |> lookup }}', function(err, res) {
     // do something with res
 });
 ```
