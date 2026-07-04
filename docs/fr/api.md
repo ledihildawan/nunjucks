@@ -846,8 +846,8 @@ env.addFilter('foo', function(num, x, y, kwargs) {
 Le template peut l'utiliser ainsi :
 
 ```jinja
-{{ 5 | foo(1, 2) }}          -> 15
-{{ 5 | foo(1, 2, bar=3) }}   -> 8
+{{ 5 |> foo(1, 2) }}          -> 15
+{{ 5 |> foo(1, 2, bar=3) }}   -> 8
 ```
 
 Vous *devez* passer tous les arguments de position avant les arguments avec mots

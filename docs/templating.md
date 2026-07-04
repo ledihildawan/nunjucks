@@ -73,7 +73,7 @@ foo.bar }}`, `{{ foo.bar.baz }}`.
 ## Filters
 
 Filters are essentially functions that can be applied to variables.
-They are called with a pipe operator (`|`) and can take arguments.
+They are called with a pipe operator (`|>`) and can take arguments.
 
 ```jinja
 {{ foo | title }}
