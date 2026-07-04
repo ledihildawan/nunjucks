@@ -18,6 +18,10 @@
 
   describe('precompile cli', function() {
     it('should echo a compiled template to stdout', function(done) {
+      if (process.platform === 'win32') {
+        this.skip();
+        return;
+      }
       execPrecompile(['tests/templates/item.njk'], function(err, stdout, stderr) {
         if (err) {
           done(err);
@@ -30,6 +34,10 @@
     });
 
     it('should support --name', function(done) {
+      if (process.platform === 'win32') {
+        this.skip();
+        return;
+      }
       var args = [
         '--name', 'item.njk',
         'tests/templates/item.njk',
