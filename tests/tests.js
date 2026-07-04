@@ -91,7 +91,7 @@
     });
 
     it('escaped should test whether or not something is escaped', function() {
-      var escaped = render('{{ (foo | safe) is escaped }}', {
+      var escaped = render('{{ (foo |> safe) is escaped }}', {
         foo: 'foobarbaz'
       });
       var notEscaped = render('{{ foo is escaped }}', {

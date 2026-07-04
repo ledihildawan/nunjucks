@@ -32,6 +32,7 @@ let TOKEN_COMMA = 'comma';
 let TOKEN_COLON = 'colon';
 let TOKEN_TILDE = 'tilde';
 let TOKEN_PIPE = 'pipe';
+let TOKEN_PIPEFORWARD = 'pipe-forward';
 let TOKEN_INT = 'int';
 let TOKEN_FLOAT = 'float';
 let TOKEN_BOOLEAN = 'boolean';
@@ -162,7 +163,7 @@ class Tokenizer {
       } else if (delimChars.indexOf(cur) !== -1) {
         // We've hit a delimiter (a special char like a bracket)
         this.forward();
-        let complexOps = ['==', '===', '!=', '!==', '<=', '>=', '//', '**', '?.', '??', '.?', '||', '&&', '||=', '&&=', '??='];
+        let complexOps = ['==', '===', '!=', '!==', '<=', '>=', '//', '**', '?.', '??', '.?', '||', '&&', '||=', '&&=', '??=', '|>'];
         let curComplex = cur + this.current();
         let type;
 
@@ -207,6 +208,9 @@ class Tokenizer {
             break;
           case '|':
             type = TOKEN_PIPE;
+            break;
+          case '|>':
+            type = TOKEN_PIPEFORWARD;
             break;
           default:
             type = TOKEN_OPERATOR;
@@ -529,6 +533,7 @@ module.exports = {
   TOKEN_COLON: TOKEN_COLON,
   TOKEN_TILDE: TOKEN_TILDE,
   TOKEN_PIPE: TOKEN_PIPE,
+  TOKEN_PIPEFORWARD: TOKEN_PIPEFORWARD,
   TOKEN_INT: TOKEN_INT,
   TOKEN_FLOAT: TOKEN_FLOAT,
   TOKEN_BOOLEAN: TOKEN_BOOLEAN,
