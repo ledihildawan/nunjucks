@@ -1103,7 +1103,7 @@ class Compiler extends Obj {
     this._emit(`var ${tmplVar} = await env.getTemplate(`);
     this._compileExpression(node.template, frame);
     const ignoreMissing = node.ignoreMissing ? 'true' : 'false';
-    this._emitLine(`, false, null, ${ignoreMissing});`);
+    this._emitLine(`, false, ${this._templateName()}, ${ignoreMissing});`);
 
     this._emit(`var ${resultVar} = await ${tmplVar}.render(context.getVariables(), frame);`);
     this._emitLine(`${this.buffer} += ${resultVar};`);
