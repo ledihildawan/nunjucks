@@ -1116,7 +1116,7 @@ class Parser extends Obj {
     }
   }
 
-  parseFilterName() {
+  parsePipeName() {
     const tok = this.expect(lexer.TOKEN_SYMBOL);
     let name = tok.value;
 
@@ -1127,10 +1127,10 @@ class Parser extends Obj {
     return new nodes.Symbol(tok.lineno, tok.colno, name);
   }
 
-  parseFilterArgs(node) {
+  parsePipeArgs(node) {
     if (this.peekToken().type === lexer.TOKEN_LEFT_PAREN) {
       // Get a FunCall node and add the parameters to the
-      // filter
+      // pipe
       const call = this.parsePostfix(node);
       return call.args.children;
     }
@@ -1139,16 +1139,16 @@ class Parser extends Obj {
 
   parsePipe(node) {
     while (this.skip(lexer.TOKEN_PIPEFORWARD)) {
-      const name = this.parseFilterName();
+      const name = this.parsePipeName();
 
-      node = new nodes.Filter(
+      node = new nodes.Pipe(
         name.lineno,
         name.colno,
         name,
         new nodes.NodeList(
           name.lineno,
           name.colno,
-          [node].concat(this.parseFilterArgs(node))
+          [node].concat(this.parsePipeArgs(node))
         )
       );
     }
@@ -1162,8 +1162,8 @@ class Parser extends Obj {
       this.fail('parsePipeStatement: expected pipe');
     }
 
-    const name = this.parseFilterName();
-    const args = this.parseFilterArgs(name);
+    const name = this.parsePipeName();
+    const args = this.parsePipeArgs(name);
 
     this.advanceAfterBlockEnd(pipeTok.value);
     const body = new nodes.Capture(
@@ -1173,7 +1173,7 @@ class Parser extends Obj {
     );
     this.advanceAfterBlockEnd();
 
-    const node = new nodes.Filter(
+    const node = new nodes.Pipe(
       name.lineno,
       name.colno,
       name,

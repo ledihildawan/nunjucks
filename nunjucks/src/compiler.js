@@ -161,7 +161,7 @@ class Compiler extends Obj {
       nodes.Dict,
       nodes.FunCall,
       nodes.Caller,
-      nodes.Filter,
+      nodes.Pipe,
       nodes.LookupVal,
       nodes.Compare,
       nodes.InlineIf,
@@ -514,7 +514,7 @@ class Compiler extends Obj {
     this._emit(')');
   }
 
-  compileFilter(node, frame) {
+  compilePipe(node, frame) {
     var name = node.name;
     this.assertType(name, nodes.Symbol);
     this._emit('await runtime.awaitValue(env.getPipe("' + name.value + '").call(context, ');
@@ -522,7 +522,7 @@ class Compiler extends Obj {
     this._emit('))');
   }
 
-  compileFilterAsync(node, frame) {
+  compilePipeAsync(node, frame) {
     var name = node.name;
     var symbol = node.symbol.value;
 
