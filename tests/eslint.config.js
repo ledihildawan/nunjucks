@@ -1,7 +1,7 @@
-const { defineConfig, globalIgnores } = require("eslint/config");
+const { defineConfig, globalIgnores } = require('eslint/config');
 
-const globals = require("globals");
-const js = require("@eslint/js");
+const globals = require('globals');
+const js = require('@eslint/js');
 
 module.exports = defineConfig([
   js.configs.recommended,
@@ -16,35 +16,35 @@ module.exports = defineConfig([
     },
 
     rules: {
-      "func-names": "off",
-      "global-require": "off",
+      'func-names': 'off',
+      'global-require': 'off',
 
-      "spaced-comment": [
-        "error",
-        "always",
+      'spaced-comment': [
+        'error',
+        'always',
         {
-          exceptions: ["*", ","],
+          exceptions: ['*', ','],
         },
       ],
 
-      "one-var": "off",
-      "one-var-declaration-per-line": "off",
-      "no-restricted-syntax": "off",
-      "no-redeclare": ["error", { builtinGlobals: false }],
-      "no-shadow": "error",
-      "no-unused-vars": [
-        "error",
+      'one-var': 'off',
+      'one-var-declaration-per-line': 'off',
+      'no-restricted-syntax': 'off',
+      'no-redeclare': ['error', { builtinGlobals: false }],
+      'no-shadow': 'error',
+      'no-unused-vars': [
+        'error',
         {
-          args: "none",
-          caughtErrors: "none",
+          args: 'none',
+          caughtErrors: 'none',
         },
       ],
-      "no-eval": "error",
-      "vars-on-top": "error",
-      "no-array-constructor": "error",
-      "no-new-wrappers": "error",
-      "consistent-return": "error",
+      'no-eval': 'error',
+      'vars-on-top': 'error',
+      'no-array-constructor': 'error',
+      'no-new-wrappers': 'error',
+      'consistent-return': 'error',
     },
   },
-  globalIgnores(["**/express-sample/*", "**/express/*", "**/browser/*"]),
+  globalIgnores(['**/express-sample/*', '**/express/*', '**/browser/*']),
 ]);
