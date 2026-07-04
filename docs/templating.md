@@ -76,9 +76,9 @@ Filters are essentially functions that can be applied to variables.
 They are called with a filter operator (`|>`) and can take arguments.
 
 ```jinja
-{{ foo | title }}
-{{ foo | join(",") }}
-{{ foo | replace("foo", "bar") | capitalize }}
+{{ foo |> title }}
+{{ foo |> join(",") }}
+{{ foo |> replace("foo", "bar") |> capitalize }}
 ```
 
 The third example shows how you can chain filters. It would display
@@ -358,7 +358,7 @@ from a database. You could then render multiple items in parallel with
 <h1>Posts</h1>
 <ul>
 {% asyncAll item in items %}
-  <li>{{ item.id | lookup }}</li>
+  <li>{{ item.id |&gt; lookup }}</li>
 {% endall %}
 </ul>
 ```
@@ -378,7 +378,7 @@ function in a programming language. Here's an example:
 {% macro field(name, value='', type='text') %}
 <div class="field">
   <input type="{{ type }}" name="{{ name }}"
-         value="{{ value | escape }}" />
+         value="{{ value |&gt; escape }}" />
 </div>
 {% endmacro %}
 ```
@@ -433,7 +433,7 @@ This can be useful in some situations as an alternative for macros:
     {% include 'standardModalData.html' %}
 {% endset %}
 
-<div class="js-modal" data-modal="{{standardModal | e}}">
+<div class="js-modal" data-modal="{{standardModal |&gt; e}}">
 ```
 
 ### extends
@@ -553,7 +553,7 @@ Let's start with a template called `forms.html` that has the following in it:
 {% macro field(name, value='', type='text') %}
 <div class="field">
   <input type="{{ type }}" name="{{ name }}"
-         value="{{ value | escape }}" />
+         value="{{ value |&gt; escape }}" />
 </div>
 {% endmacro %}
 
@@ -864,7 +864,7 @@ manually escape variables with the `escape` filter.
 
 ```jinja
 {{ foo }}           // <span>
-{{ foo | escape }}  // &lt;span&gt;
+{{ foo |&gt; escape }}  // &lt;span&gt;
 ```
 
 ## Global Functions
@@ -946,7 +946,7 @@ Return a list of lists with the given number of items:
 ```jinja
 {% set items = [1,2,3,4,5,6] %}
 {% set dash = joiner("-") %}
-{% for item in items | batch(2) %}
+{% for item in items |&gt; batch(2) %}
     {{ dash() }} {% for items in item %}
        {{ items }}
     {% endfor %}
@@ -966,7 +966,7 @@ Make the first letter uppercase, the rest lower case:
 **Input**
 
 ```jinja
-{{ "This Is A Test" | capitalize }}
+{{ "This Is A Test" |&gt; capitalize }}
 ```
 
 **Output**
@@ -983,7 +983,7 @@ Center the value in a field of a given width:
 **Input**
 
 ```jinja
-{{ "fooo" | center }}
+{{ "fooo" |&gt; center }}
 ```
 
 **Output**
@@ -1019,7 +1019,7 @@ Sort a dict and yield (key, value) pairs:
     'f': 5,
     'b': 6
 } %}
-{% for item in items | dictsort %}
+{% for item in items |&gt; dictsort %}
     {{ item[0] }}
 {% endfor %}
 ```
@@ -1032,13 +1032,13 @@ a b c d e f
 ### dump
 
 Call [`JSON.stringify`](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify) on an object and dump the result into the
-template. Useful for debugging: `{{ items | dump }}`.
+template. Useful for debugging: `{{ items |&gt; dump }}`.
 
 **Input**
 
 ```jinja
 {% set items = ["a", 1, { b : true}] %}
-{{ items | dump }}
+{{ items |&gt; dump }}
 ```
 
 **Output**
@@ -1055,7 +1055,7 @@ values. This makes the results more readable.
 
 ```jinja
 {% set items = ["a", 1, { b : true}] %}
-{{ items | dump(2) }}
+{{ items |&gt; dump(2) }}
 ```
 
 **Output**
@@ -1073,7 +1073,7 @@ values. This makes the results more readable.
 
 ```jinja
 {% set items = ["a", 1, { b : true}] %}
-{{ items | dump('\t') }}
+{{ items |&gt; dump('\t') }}
 ```
 
 **Output**
@@ -1097,7 +1097,7 @@ Marks return value as markup string
 **Input**
 
 ```jinja
-{{ "<html>" | escape }}
+{{ "<html>" |&gt; escape }}
 ```
 
 **Output**
@@ -1114,10 +1114,10 @@ Get the first item in an array or the first letter if it's a string:
 
 ```jinja
 {% set items = [1,2,3] %}
-{{ items | first }}
+{{ items |&gt; first }}
 
 {% set word = 'abc' %}
-{{ word | first }}
+{{ word |&gt; first }}
 ```
 
 **Output**
@@ -1136,7 +1136,7 @@ This default can be overridden by using the first parameter.
 **Input**
 
 ```jinja
-{{ "3.5" | float }}
+{{ "3.5" |&gt; float }}
 ```
 
 **Output**
@@ -1164,7 +1164,7 @@ Group a sequence of objects by a common attribute:
     ]
 %}
 
-{% for type, items in items | groupby("type") %}
+{% for type, items in items |&gt; groupby("type") %}
     <b>{{ type }}</b> :
     {% for item in items %}
         {{ item.name }}
@@ -1206,7 +1206,7 @@ Attribute can use dot notation to use nested attribute, like `date.year`.
     ]
 %}
 
-{% for year, posts in posts | groupby("date.year") %}
+{% for year, posts in posts |&gt; groupby("date.year") %}
     :{{ year }}:
     {% for post in posts %}
         {{ post.title }}
@@ -1233,7 +1233,7 @@ Default indentation is 4 spaces.
 **Input**
 
 ```jinja
-{{ "one\ntwo\nthree" | indent }}
+{{ "one\ntwo\nthree" |&gt; indent }}
 ```
 
 **Output**
@@ -1249,7 +1249,7 @@ Change default indentation to 6 spaces:
 **Input**
 
 ```jinja
-{{ "one\ntwo\nthree" | indent(6) }}
+{{ "one\ntwo\nthree" |&gt; indent(6) }}
 ```
 
 **Output**
@@ -1265,7 +1265,7 @@ Change default indentation to 6 spaces and indent the first line:
 **Input**
 
 ```jinja
-{{ "one\ntwo\nthree" | indent(6, true) }}
+{{ "one\ntwo\nthree" |&gt; indent(6, true) }}
 ```
 
 **Output**
@@ -1286,7 +1286,7 @@ parameter.
 **Input**
 
 ```jinja
-{{ "3.5" | int }}
+{{ "3.5" |&gt; int }}
 ```
 
 **Output**
@@ -1303,7 +1303,7 @@ Return a string which is the concatenation of the strings in a sequence:
 
 ```jinja
 {% set items =  [1, 2, 3] %}
-{{ items | join }}
+{{ items |&gt; join }}
 ```
 
 **Output**
@@ -1319,7 +1319,7 @@ be defined with an optional parameter:
 
 ```jinja
 {% set items = ['foo', 'bar', 'bear'] %}
-{{ items | join(",") }}
+{{ items |&gt; join(",") }}
 ```
 
 **Output**
@@ -1339,7 +1339,7 @@ This  behaviour is applicable to arrays:
     { name: 'bear' }]
 %}
 
-{{ items | join(",", "name") }}
+{{ items |&gt; join(",", "name") }}
 ```
 
 **Output**
@@ -1356,10 +1356,10 @@ Get the last item in an array or the last letter if it's a string:
 
 ```jinja
 {% set items = [1,2,3] %}
-{{ items | last }}
+{{ items |&gt; last }}
 
 {% set word = 'abc' %}
-{{ word | last }}
+{{ word |&gt; last }}
 ```
 
 **Output**
@@ -1377,9 +1377,9 @@ Return the length of an array or string, or the number of keys in an object:
 **Input**
 
 ```jinja
-{{ [1,2,3] | length }}
-{{ "test" | length }}
-{{ {key: value} | length }}
+{{ [1,2,3] |&gt; length }}
+{{ "test" |&gt; length }}
+{{ {key: value} |&gt; length }}
 ```
 
 **Output**
@@ -1399,7 +1399,7 @@ If it was a string the returned list will be a list of characters.
 **Input**
 
 ```jinja
-{% for i in "foobar" | list %}{{ i }},{% endfor %}
+{% for i in "foobar" |&gt; list %}{{ i }},{% endfor %}
 ```
 
 **Output**
@@ -1415,7 +1415,7 @@ Convert string to all lower case:
 **Input**
 
 ```jinja
-{{ "fOObAr" | lower }}
+{{ "fOObAr" |&gt; lower }}
 ```
 
 **Output**
@@ -1431,7 +1431,7 @@ Replace new lines with `<br />` HTML elements:
 **Input**
 
 ```jinja
-{{ "foo\nbar" | striptags(true) | escape | nl2br }}
+{{ "foo\nbar" |&gt; striptags(true) |&gt; escape |&gt; nl2br }}
 ```
 
 **Output**
@@ -1448,7 +1448,7 @@ Select a random value from an array.
 **Input**
 
 ```jinja
-{{ [1,2,3,4,5,6,7,8,9] | random }}
+{{ [1,2,3,4,5,6,7,8,9] |&gt; random }}
 ```
 
 **Output**
@@ -1467,10 +1467,10 @@ If no test is specified, each object will be evaluated as a boolean.
 ```jinja
 {% set numbers=[0, 1, 2, 3, 4, 5] %}
 
-{{ numbers | reject("odd") | join }}
-{{ numbers | reject("even") | join }}
-{{ numbers | reject("divisibleby", 3) | join }}
-{{ numbers | reject() | join }}
+{{ numbers |&gt; reject("odd") |&gt; join }}
+{{ numbers |&gt; reject("even") |&gt; join }}
+{{ numbers |&gt; reject("divisibleby", 3) |&gt; join }}
+{{ numbers |&gt; reject() |&gt; join }}
 ```
 
 **Output**
@@ -1495,7 +1495,7 @@ If no test is specified, the attribute’s value will be evaluated as a boolean.
 
 ```jinja
 {% set foods = [{tasty: true}, {tasty: false}, {tasty: true}]%}
-{{ foods | rejectattr("tasty") | length }}
+{{ foods |&gt; rejectattr("tasty") |&gt; length }}
 ```
 
 **Output**
@@ -1513,7 +1513,7 @@ replaced, the second item is the replaced value.
 
 ```jinja
 {% set numbers = 123456 %}
-{{ numbers | replace("4", ".") }}
+{{ numbers |&gt; replace("4", ".") }}
 ```
 
 **Output**
@@ -1529,7 +1529,7 @@ and replacing them surrounding an item:
 
 ```jinja
 {% set letters = aaabbbccc%}
-{{ letters | replace("", ".") }}
+{{ letters |&gt; replace("", ".") }}
 ```
 
 **Output**
@@ -1546,7 +1546,7 @@ item replacement, number to be replaced):
 
 ```jinja
 {% set letters = "aaabbbccc" %}
-{{ letters | replace("a", "x", 2) }}
+{{ letters |&gt; replace("a", "x", 2) }}
 ```
 Note in this instance the required quote marks surrounding the list.
 
@@ -1562,7 +1562,7 @@ It is possible to search for patterns in a list to replace:
 
 ```jinja
 {% set letters = "aaabbbccc" %}
-{{ letters | replace("ab", "x", 2) }}
+{{ letters |&gt; replace("ab", "x", 2) }}
 ```
 
 **Output**
@@ -1578,7 +1578,7 @@ Reverse a string:
 **Input**
 
 ```jinja
-{{ "abcdef" | reverse }}
+{{ "abcdef" |&gt; reverse }}
 ```
 
 **Output**
@@ -1592,7 +1592,7 @@ Reverse an array:
 **Input**
 
 ```jinja
-{% for i in [1, 2, 3, 4] | reverse %}
+{% for i in [1, 2, 3, 4] |&gt; reverse %}
     {{ i }}
 {% endfor %}
 ```
@@ -1610,7 +1610,7 @@ Round a number:
 **Input**
 
 ```jinja
-{{ 4.5 | round }}
+{{ 4.5 |&gt; round }}
 ```
 
 **Output**
@@ -1624,7 +1624,7 @@ Round to the nearest whole number (which rounds down):
 **Input**
 
 ```jinja
-{{ 4 | round(0, "floor") }}
+{{ 4 |&gt; round(0, "floor") }}
 ```
 
 **Output**
@@ -1638,7 +1638,7 @@ Specify the number of  digits to round:
 **Input**
 
 ```jinja
-{{ 4.12346 | round(4) }}
+{{ 4.12346 |&gt; round(4) }}
 ```
 
 **Output**
@@ -1655,7 +1655,7 @@ escaping enabled this variable will not be escaped.
 **Input**
 
 ```jinja
-{{ "foo http://www.example.com/ bar" | urlize | safe }}
+{{ "foo http://www.example.com/ bar" |&gt; urlize |&gt; safe }}
 ```
 
 **Output**
@@ -1676,10 +1676,10 @@ If no test is specified, each object will be evaluated as a boolean.
 ```jinja
 {% set numbers=[0, 1, 2, 3, 4, 5] %}
 
-{{ numbers | select("odd") | join }}
-{{ numbers | select("even") | join }}
-{{ numbers | select("divisibleby", 3) | join }}
-{{ numbers | select() | join }}
+{{ numbers |&gt; select("odd") |&gt; join }}
+{{ numbers |&gt; select("even") |&gt; join }}
+{{ numbers |&gt; select("divisibleby", 3) |&gt; join }}
+{{ numbers |&gt; select() |&gt; join }}
 ```
 
 **Output**
@@ -1704,7 +1704,7 @@ If no test is specified, the attribute’s value will be evaluated as a boolean.
 
 ```jinja
 {% set foods = [{tasty: true}, {tasty: false}, {tasty: true}]%}
-{{ foods | selectattr("tasty") | length }}
+{{ foods |&gt; selectattr("tasty") |&gt; length }}
 ```
 
 **Output**
@@ -1723,7 +1723,7 @@ Slice an iterator and return a list of lists containing those items:
 {% set arr = [1,2,3,4,5,6,7,8,9] %}
 
 <div class="columwrapper">
-  {%- for items in arr | slice(3) %}
+  {%- for items in arr |&gt; slice(3) %}
     <ul class="column-{{ loop.index }}">
     {%- for item in items %}
       <li>{{ item }}</li>
@@ -1769,7 +1769,7 @@ Convert an object to a string:
 
 ```jinja
 {% set item = 1234 %}
-{% for i in item | string | list %}
+{% for i in item |&gt; string |&gt; list %}
     {{ i }},
 {% endfor %}
 ```
@@ -1787,7 +1787,7 @@ Analog of jinja's
 `preserve_linebreaks` is false (default), strips SGML/XML tags and replaces
 adjacent whitespace with one space.  If `preserve_linebreaks` is true,
 normalizes whitespace, trying to preserve original linebreaks. Use second
-behavior if you want to filter `{{ text | striptags(true) | escape | nl2br }}`.
+behavior if you want to filter `{{ text |&gt; striptags(true) |&gt; escape |&gt; nl2br }}`.
 Use default one otherwise.
 
 ### sum
@@ -1798,7 +1798,7 @@ Output the sum of items in the array:
 
 ```jinja
 {% set items = [1,2,3] %}
-{{ items | sum }}
+{{ items |&gt; sum }}
 ```
 
 **Output**
@@ -1814,7 +1814,7 @@ Make the first letter of the string uppercase:
 **Input**
 
 ```jinja
-{{ "foo bar baz" | title }}
+{{ "foo bar baz" |&gt; title }}
 ```
 
 **Output**
@@ -1830,7 +1830,7 @@ Strip leading and trailing whitespace:
 **Input**
 
 ```jinja
-{{ "  foo " | trim }}
+{{ "  foo " |&gt; trim }}
 ```
 
 **Output**
@@ -1842,7 +1842,7 @@ foo
 ### truncate
 
 Return a truncated copy of the string. The length is specified with the first
-parameter which defaults to 255. If the second parameter is true the pipe
+parameter which defaults to 255. If the second parameter is true the filter
 will cut the text at length. Otherwise it will discard the last word. If the
 text was in fact truncated it will append an ellipsis sign ("...").
 A different ellipsis sign than "(...)"  can be specified using the third parameter.
@@ -1852,7 +1852,7 @@ Truncate to 3 characters:
 **Input**
 
 ```jinja
-{{ "foo bar" | truncate(3) }}
+{{ "foo bar" |&gt; truncate(3) }}
 ```
 
 **Output**
@@ -1866,7 +1866,7 @@ Truncate to 6 characters and replace "..." with a  "?":
 **Input**
 
 ```jinja
-{{ "foo bar baz" | truncate(6, true, "?") }}
+{{ "foo bar baz" |&gt; truncate(6, true, "?") }}
 ```
 
 **Output**
@@ -1882,7 +1882,7 @@ Convert the string to upper case:
 **Input**
 
 ```jinja
-{{ "foo" | upper }}
+{{ "foo" |&gt; upper }}
 ```
 
 **Output**
@@ -1899,7 +1899,7 @@ Accepts both dictionaries and regular strings as well as pairwise iterables.
 **Input**
 
 ```jinja
-{{ "&" | urlencode }}
+{{ "&" |&gt; urlencode }}
 ```
 
 **Output**
@@ -1915,7 +1915,7 @@ Convert URLs in plain text into clickable links:
 **Input**
 
 ```jinja
-{{ "foo http://www.example.com/ bar" | urlize | safe }}
+{{ "foo http://www.example.com/ bar" |&gt; urlize |&gt; safe }}
 ```
 
 **Output**
@@ -1929,7 +1929,7 @@ Truncate URL text by a given number:
 **Input**
 
 ```jinja
-{{ "http://mozilla.github.io/" | urlize(10, true) | safe }}
+{{ "http://mozilla.github.io/" |&gt; urlize(10, true) |&gt; safe }}
 ```
 
 **Output**
@@ -1947,7 +1947,7 @@ Count and output the number of words in a string:
 
 ```
 {% set foo = "Hello World"%}
-{{ foo | wordcount }}
+{{ foo |&gt; wordcount }}
 ```
 
 **Output**

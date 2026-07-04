@@ -608,7 +608,7 @@ A message for you: {{ message |> shorten(20) }}
 
 在[模板](templating#Keyword-Arguments)中说道，nunjucks 支持关键字参数，你可以在 filter 中使用他。
 
-所有的关键字参数会以最后一个参数传入，以下为使用了关键字参数的 `foo` 管道：
+所有的关键字参数会以最后一个参数传入，以下为使用了关键字参数的 `foo` 过滤器：
 
 ```js
 env.addFilter('foo', function(num, x, y, kwargs) {
