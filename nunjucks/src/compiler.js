@@ -70,7 +70,7 @@ class Compiler extends Obj {
   _emitFuncBegin(node, name) {
     this.buffer = 'output';
     this._scopeClosers = '';
-    this._emitLine(`function ${name}(env, context, frame, runtime, cb) {`);
+    this._emitLine(`async function ${name}(env, context, frame, runtime) {`);
     this._emitLine(`var lineno = ${node.lineno};`);
     this._emitLine(`var colno = ${node.colno};`);
     this._emitLine(`var ${this.buffer} = "";`);
@@ -79,12 +79,12 @@ class Compiler extends Obj {
 
   _emitFuncEnd(noReturn) {
     if (!noReturn) {
-      this._emitLine('cb(null, ' + this.buffer + ');');
+      this._emitLine(`return ${this.buffer};`);
     }
 
     this._closeScopeLevels();
     this._emitLine('} catch (e) {');
-    this._emitLine('  cb(runtime.handleError(e, lineno, colno));');
+    this._emitLine('  throw runtime.handleError(e, lineno, colno);');
     this._emitLine('}');
     this._emitLine('}');
     this.buffer = null;
@@ -517,9 +517,9 @@ class Compiler extends Obj {
   compileFilter(node, frame) {
     var name = node.name;
     this.assertType(name, nodes.Symbol);
-    this._emit('env.getPipe("' + name.value + '").call(context, ');
+    this._emit('await runtime.awaitValue(env.getPipe("' + name.value + '").call(context, ');
     this._compileAggregate(node.args, frame);
-    this._emit(')');
+    this._emit('))');
   }
 
   compileFilterAsync(node, frame) {
@@ -530,11 +530,9 @@ class Compiler extends Obj {
 
     frame.set(symbol, symbol);
 
-    this._emit('env.getPipe("' + name.value + '").call(context, ');
+    this._emit(symbol + ' = await runtime.awaitValue(env.getPipe("' + name.value + '").call(context, ');
     this._compileAggregate(node.args, frame);
-    this._emitLine(', ' + this._makeCallback(symbol));
-
-    this._addScopeLevel();
+    this._emitLine('));');
   }
 
   compileKeywordArgs(node, frame) {
@@ -569,7 +567,7 @@ class Compiler extends Obj {
       this._compileExpression(node.value, frame);
       this._emitLine(';');
     } else {
-      this._emit(ids.join(' = ') + ' = ');
+      this._emit(ids.join(' = ') + ' = await ');
       this.compile(node.body, frame);
       this._emitLine(';');
     }
@@ -622,10 +620,6 @@ class Compiler extends Obj {
 
     this._withScopedSyntax(() => {
       this.compile(node.body, frame);
-
-      if (async) {
-        this._emit('cb()');
-      }
     });
 
     if (node.else_) {
@@ -633,24 +627,16 @@ class Compiler extends Obj {
 
       this._withScopedSyntax(() => {
         this.compile(node.else_, frame);
-
-        if (async) {
-          this._emit('cb()');
-        }
       });
-    } else if (async) {
-      this._emitLine('}\nelse {');
-      this._emit('cb()');
     }
 
     this._emitLine('}');
   }
 
   compileIfAsync(node, frame) {
-    this._emit('(function(cb) {');
+    this._emit('await (async function() {');
     this.compileIf(node, frame, true);
-    this._emit('})(' + this._makeCallback());
-    this._addScopeLevel();
+    this._emit('})();');
   }
 
   _emitLoopBindings(node, arr, i, len) {
@@ -767,14 +753,9 @@ class Compiler extends Obj {
   }
 
   _compileAsyncLoop(node, frame, parallel) {
-    // This shares some code with the For tag, but not enough to
-    // worry about. This iterates across an object asynchronously,
-    // but not in parallel.
-
     var i = this._tmpid();
     var len = this._tmpid();
     var arr = this._tmpid();
-    var asyncMethod = parallel ? 'asyncAll' : 'asyncEach';
     frame = frame.push();
 
     this._emitLine('frame = frame.push();');
@@ -783,50 +764,10 @@ class Compiler extends Obj {
     this._compileExpression(node.arr, frame);
     this._emitLine(');');
 
-    if (node.name instanceof nodes.Array) {
-      const arrayLen = node.name.children.length;
-      this._emit(`runtime.${asyncMethod}(${arr}, ${arrayLen}, function(`);
-
-      node.name.children.forEach((name) => {
-        this._emit(`${name.value},`);
-      });
-
-      this._emit(i + ',' + len + ',next) {');
-
-      node.name.children.forEach((name) => {
-        const id = name.value;
-        frame.set(id, id);
-        this._emitLine(`frame.set("${id}", ${id});`);
-      });
-    } else {
-      const id = node.name.value;
-      this._emitLine(`runtime.${asyncMethod}(${arr}, 1, function(${id}, ${i}, ${len},next) {`);
-      this._emitLine('frame.set("' + id + '", ' + id + ');');
-      frame.set(id, id);
-    }
-
-    this._emitLoopBindings(node, arr, i, len);
-
-    this._withScopedSyntax(() => {
-      let buf;
-      if (parallel) {
-        buf = this._pushBuffer();
-      }
-
-      this.compile(node.body, frame);
-      this._emitLine('next(' + i + (buf ? ',' + buf : '') + ');');
-
-      if (parallel) {
-        this._popBuffer();
-      }
-    });
-
-    const output = this._tmpid();
-    this._emitLine('}, ' + this._makeCallback(output));
-    this._addScopeLevel();
-
     if (parallel) {
-      this._emitLine(this.buffer + ' += ' + output + ';');
+      this._compileAsyncAllLoop(node, frame, arr, i, len);
+    } else {
+      this._compileAsyncEachLoop(node, frame, arr, i, len);
     }
 
     if (node.else_) {
@@ -836,6 +777,107 @@ class Compiler extends Obj {
     }
 
     this._emitLine('frame = frame.pop();');
+  }
+
+  _compileAsyncEachLoop(node, frame, arr, i, len) {
+    const loopId = this._tmpid();
+    const bodyResult = this._tmpid();
+
+    if (node.name instanceof nodes.Array) {
+      const isObj = this._tmpid();
+      const arrLen = this._tmpid();
+      this._emitLine(`var ${isObj} = !runtime.isArray(${arr});`);
+      this._emitLine(`var ${arrLen} = ${isObj} ? (${arr} ? runtime.keys(${arr}).length : 0) : (${arr} ? ${arr}.length : 0);`);
+      this._emitLine(`var ${len} = ${arrLen};`);
+      this._emitLine(`for (var ${i}=0; ${i}<${len}; ${i}++) {`);
+      this._emitLine(`var ${loopId} = ${isObj} ? runtime.keys(${arr})[${i}] : ${i};`);
+
+      node.name.children.forEach((name, idx) => {
+        const id = name.value;
+        if (idx === 0) {
+          this._emitLine(`var ${id} = ${isObj} ? ${loopId} : ${arr}[${loopId}][${idx}];`);
+        } else if (idx === 1) {
+          this._emitLine(`var ${id} = ${isObj} ? ${arr}[${loopId}] : ${arr}[${loopId}][${idx}];`);
+        } else {
+          this._emitLine(`var ${id} = ${arr}[${loopId}][${idx}];`);
+        }
+        this._emitLine(`frame.set("${id}", ${id});`);
+        frame.set(id, id);
+      });
+    } else {
+      const id = node.name.value;
+      this._emitLine(`var ${len} = ${arr} ? ${arr}.length : 0;`);
+      this._emitLine(`for (var ${i}=0; ${i}<${len}; ${i}++) {`);
+      this._emitLine(`var ${id} = ${arr}[${i}];`);
+      this._emitLine('frame.set("' + id + '", ' + id + ');');
+      frame.set(id, id);
+    }
+
+    this._emitLoopBindings(node, arr, i, len);
+
+    this._withScopedSyntax(() => {
+      this.compile(node.body, frame);
+    });
+
+    this._emitLine('}');
+  }
+
+  _compileAsyncAllLoop(node, frame, arr, i, len) {
+    const loopId = this._tmpid();
+    const bufId = this._pushBuffer();
+    const resultsVar = this._tmpid();
+    const keysId = this._tmpid();
+
+    this._emitLine(`var ${resultsVar} = [];`);
+
+    if (node.name instanceof nodes.Array) {
+      const isObj = this._tmpid();
+      const arrLen = this._tmpid();
+      this._emitLine(`var ${isObj} = !runtime.isArray(${arr});`);
+      this._emitLine(`var ${arrLen} = ${isObj} ? (${arr} ? runtime.keys(${arr}).length : 0) : (${arr} ? ${arr}.length : 0);`);
+      this._emitLine(`var ${len} = ${arrLen};`);
+      this._emitLine(`for (var ${i}=0; ${i}<${len}; ${i}++) {`);
+      this._emitLine(`var ${loopId} = ${isObj} ? runtime.keys(${arr})[${i}] : ${i};`);
+
+      node.name.children.forEach((name, idx) => {
+        const id = name.value;
+        if (idx === 0) {
+          this._emitLine(`var ${id} = ${isObj} ? ${loopId} : ${arr}[${loopId}][${idx}];`);
+        } else if (idx === 1) {
+          this._emitLine(`var ${id} = ${isObj} ? ${arr}[${loopId}] : ${arr}[${loopId}][${idx}];`);
+        } else {
+          this._emitLine(`var ${id} = ${arr}[${loopId}][${idx}];`);
+        }
+        this._emitLine(`frame.set("${id}", ${id});`);
+        frame.set(id, id);
+      });
+    } else {
+      const id = node.name.value;
+      this._emitLine(`var ${len} = ${arr} ? ${arr}.length : 0;`);
+      this._emitLine(`for (var ${i}=0; ${i}<${len}; ${i}++) {`);
+      this._emitLine(`var ${id} = ${arr}[${i}];`);
+      this._emitLine('frame.set("' + id + '", ' + id + ');');
+      frame.set(id, id);
+    }
+
+    this._emitLoopBindings(node, arr, i, len);
+
+    this._withScopedSyntax(() => {
+      const itemBuf = this._tmpid();
+      this._emitLine(`var ${itemBuf} = "";`);
+      const savedBuffer = this.buffer;
+      this.buffer = itemBuf;
+      this.compile(node.body, frame);
+      this.buffer = savedBuffer;
+      this._emitLine(`${resultsVar}.push(${itemBuf});`);
+    });
+
+    this._emitLine('}');
+    this._popBuffer();
+
+    this._emitLine(`for (var ${i}=0; ${i}<${resultsVar}.length; ${i}++) {`);
+    this._emitLine(`${this.buffer} += ${resultsVar}[${i}];`);
+    this._emitLine('}');
   }
 
   compileAsyncEach(node, frame) {
@@ -882,7 +924,7 @@ class Compiler extends Obj {
       `var ${funcId} = runtime.makeMacro(`,
       `[${argNames.join(', ')}], `,
       `[${kwargNames.join(', ')}], `,
-      `function (${realNames.join(', ')}) {`,
+      `async function (${realNames.join(', ')}) {`,
       'var callerFrame = frame;',
       'frame = ' + ((keepFrame) ? 'frame.push(true);' : 'new runtime.Frame();'),
       'kwargs = kwargs || {};',
@@ -950,42 +992,35 @@ class Compiler extends Obj {
   _compileGetTemplate(node, frame, eagerCompile, ignoreMissing) {
     const parentTemplateId = this._tmpid();
     const parentName = this._templateName();
-    const cb = this._makeCallback(parentTemplateId);
     const eagerCompileArg = (eagerCompile) ? 'true' : 'false';
     const ignoreMissingArg = (ignoreMissing) ? 'true' : 'false';
-    this._emit('env.getTemplate(');
+    this._emit(`var ${parentTemplateId} = await env.getTemplate(`);
     this._compileExpression(node.template, frame);
-    this._emitLine(`, ${eagerCompileArg}, ${parentName}, ${ignoreMissingArg}, ${cb}`);
+    this._emitLine(`, ${eagerCompileArg}, ${parentName}, ${ignoreMissingArg});`);
     return parentTemplateId;
   }
 
   compileImport(node, frame) {
     const target = node.target.value;
     const id = this._compileGetTemplate(node, frame, false, false);
-    this._addScopeLevel();
 
-    this._emitLine(id + '.getExported(' +
-      (node.withContext ? 'context.getVariables(), frame, ' : '') +
-      this._makeCallback(id));
-    this._addScopeLevel();
-
-    frame.set(target, id);
+    this._emitLine(`var ${id}_exported = await ${id}.getExported(` +
+      (node.withContext ? 'context.getVariables(), frame' : '') +
+      ');');
 
     if (frame.parent) {
-      this._emitLine(`frame.set("${target}", ${id});`);
+      this._emitLine(`frame.set("${target}", ${id}_exported);`);
     } else {
-      this._emitLine(`context.setVariable("${target}", ${id});`);
+      this._emitLine(`context.setVariable("${target}", ${id}_exported);`);
     }
   }
 
   compileFromImport(node, frame) {
     const importedId = this._compileGetTemplate(node, frame, false, false);
-    this._addScopeLevel();
 
-    this._emitLine(importedId + '.getExported(' +
-      (node.withContext ? 'context.getVariables(), frame, ' : '') +
-      this._makeCallback(importedId));
-    this._addScopeLevel();
+    this._emitLine(`var ${importedId}_exported = await ${importedId}.getExported(` +
+      (node.withContext ? 'context.getVariables(), frame' : '') +
+      ');');
 
     node.names.children.forEach((nameNode) => {
       var name;
@@ -1000,10 +1035,10 @@ class Compiler extends Obj {
         alias = name;
       }
 
-      this._emitLine(`if(Object.prototype.hasOwnProperty.call(${importedId}, "${name}")) {`);
-      this._emitLine(`var ${id} = ${importedId}.${name};`);
+      this._emitLine(`if(Object.prototype.hasOwnProperty.call(${importedId}_exported, "${name}")) {`);
+      this._emitLine(`var ${id} = ${importedId}_exported["${name}"];`);
       this._emitLine('} else {');
-      this._emitLine(`cb(new Error("cannot import '${name}'")); return;`);
+      this._emitLine(`throw new Error("cannot import '${name}'");`);
       this._emitLine('}');
 
       frame.set(alias, id);
@@ -1030,25 +1065,19 @@ class Compiler extends Obj {
     // waste of performance to always execute huge top-level
     // blocks twice
     if (!this.inBlock) {
-      this._emit('(parentTemplate ? function(e, c, f, r, cb) { cb(""); } : ');
+      this._emitLine(`var ${id} = parentTemplate ? "" : await (await context.getBlock("${node.name.value}"))(env, context, frame, runtime);`);
+    } else {
+      this._emitLine(`var ${id} = await (await context.getBlock("${node.name.value}"))(env, context, frame, runtime);`);
     }
-    this._emit(`context.getBlock("${node.name.value}")`);
-    if (!this.inBlock) {
-      this._emit(')');
-    }
-    this._emitLine('(env, context, frame, runtime, ' + this._makeCallback(id));
     this._emitLine(`${this.buffer} += ${id};`);
-    this._addScopeLevel();
   }
 
   compileSuper(node, frame) {
     var name = node.blockName.value;
     var id = node.symbol.value;
 
-    const cb = this._makeCallback(id);
-    this._emitLine(`context.getSuper(env, "${name}", b_${name}, frame, runtime, ${cb}`);
+    this._emitLine(`${id} = await context.getSuper(env, "${name}", b_${name}, frame, runtime);`);
     this._emitLine(`${id} = runtime.markSafe(${id});`);
-    this._addScopeLevel();
     frame.set(id, id);
   }
 
@@ -1065,32 +1094,19 @@ class Compiler extends Obj {
     this._emitLine(`for(var ${k} in parentTemplate.blocks) {`);
     this._emitLine(`context.addBlock(${k}, parentTemplate.blocks[${k}]);`);
     this._emitLine('}');
-
-    this._addScopeLevel();
   }
 
   compileInclude(node, frame) {
-    this._emitLine('var tasks = [];');
-    this._emitLine('tasks.push(');
-    this._emitLine('function(callback) {');
-    const id = this._compileGetTemplate(node, frame, false, node.ignoreMissing);
-    this._emitLine(`callback(null,${id});});`);
-    this._emitLine('});');
+    const tmplVar = this._tmpid();
+    const resultVar = this._tmpid();
 
-    const id2 = this._tmpid();
-    this._emitLine('tasks.push(');
-    this._emitLine('function(template, callback){');
-    this._emitLine('template.render(context.getVariables(), frame, ' + this._makeCallback(id2));
-    this._emitLine('callback(null,' + id2 + ');});');
-    this._emitLine('});');
+    this._emit(`var ${tmplVar} = await env.getTemplate(`);
+    this._compileExpression(node.template, frame);
+    const ignoreMissing = node.ignoreMissing ? 'true' : 'false';
+    this._emitLine(`, false, null, ${ignoreMissing});`);
 
-    this._emitLine('tasks.push(');
-    this._emitLine('function(result, callback){');
-    this._emitLine(`${this.buffer} += result;`);
-    this._emitLine('callback(null);');
-    this._emitLine('});');
-    this._emitLine('env.waterfall(tasks, function(){');
-    this._addScopeLevel();
+    this._emit(`var ${resultVar} = await ${tmplVar}.render(context.getVariables(), frame);`);
+    this._emitLine(`${this.buffer} += ${resultVar};`);
   }
 
   compileTemplateData(node, frame) {
@@ -1098,18 +1114,15 @@ class Compiler extends Obj {
   }
 
   compileCapture(node, frame) {
-    // we need to temporarily override the current buffer id as 'output'
-    // so the set block writes to the capture output instead of the buffer
     var buffer = this.buffer;
     this.buffer = 'output';
-    this._emitLine('(function() {');
+    this._emitLine('(async function() {');
     this._emitLine('var output = "";');
     this._withScopedSyntax(() => {
       this.compile(node.body, frame);
     });
     this._emitLine('return output;');
     this._emitLine('})()');
-    // and of course, revert back to the old buffer id
     this.buffer = buffer;
   }
 
@@ -1125,7 +1138,7 @@ class Compiler extends Obj {
           this._emitLine(';');
         }
       } else {
-        this._emit(`${this.buffer} += runtime.suppressValue(`);
+        this._emit(`${this.buffer} += runtime.suppressValue(await runtime.awaitValue(`);
         if (this.throwOnUndefined) {
           this._emit('runtime.ensureDefined(');
         }
@@ -1133,7 +1146,7 @@ class Compiler extends Obj {
         if (this.throwOnUndefined) {
           this._emit(`,${node.lineno},${node.colno})`);
         }
-        this._emit(', env.opts.autoescape);\n');
+        this._emit('), env.opts.autoescape);\n');
       }
     });
   }
@@ -1147,12 +1160,16 @@ class Compiler extends Obj {
 
     this._emitFuncBegin(node, 'root');
     this._emitLine('var parentTemplate = null;');
+    const childBuffer = 'childOutput';
+    this._emitLine(`var ${childBuffer} = "";`);
+    const savedBuffer = this.buffer;
+    this.buffer = childBuffer;
     this._compileChildren(node, frame);
+    this.buffer = savedBuffer;
     this._emitLine('if(parentTemplate) {');
-    this._emitLine('parentTemplate.rootRenderFunc(env, context, frame, runtime, cb);');
-    this._emitLine('} else {');
-    this._emitLine(`cb(null, ${this.buffer});`);
+    this._emitLine(`return await parentTemplate.rootRenderFunc(env, context, frame, runtime);`);
     this._emitLine('}');
+    this._emitLine(`return ${childBuffer};`);
     this._emitFuncEnd(true);
 
     this.inBlock = true;

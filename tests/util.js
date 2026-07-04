@@ -58,6 +58,11 @@
     }
     opts = opts || {};
     var res = render(str, ctx, opts, env);
+    if (res && typeof res.then === 'function') {
+      return res.then((resolved) => {
+        expect(resolved).to.be(str2);
+      });
+    }
     expect(res).to.be(str2);
   }
 

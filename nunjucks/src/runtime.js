@@ -216,6 +216,13 @@ function suppressValue(val, autoescape) {
   return val;
 }
 
+function awaitValue(val) {
+  if (val && typeof val.then === 'function') {
+    return val.then(v => v);
+  }
+  return val;
+}
+
 function ensureDefined(val, lineno, colno) {
   if (val === null || val === undefined) {
     throw new lib.TemplateError(
@@ -394,5 +401,6 @@ module.exports = {
   asyncEach: asyncEach,
   asyncAll: asyncAll,
   inOperator: lib.inOperator,
-  fromIterator: fromIterator
+  fromIterator: fromIterator,
+  awaitValue: awaitValue
 };
