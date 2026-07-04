@@ -72,7 +72,7 @@
       equal(
         '{% set pipe = joiner("|") %}' +
         'foo{{ pipe() }}bar{{ pipe() }}baz{{ pipe() }}',
-        'foobar|>baz|');
+        'foobar|baz|');
 
       finish(done);
     });
