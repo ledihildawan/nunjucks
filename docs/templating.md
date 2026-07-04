@@ -350,7 +350,7 @@ in parallel, preserving the order of the items. This is only helpful
 if you are using asynchronous filters, extensions, or loaders.
 Otherwise you should never use this.
 
-Let's say you created a pipe named `lookup` that fetches some text
+Let's say you created a filter named `lookup` that fetches some text
 from a database. You could then render multiple items in parallel with
 `asyncAll`:
 
@@ -363,7 +363,7 @@ from a database. You could then render multiple items in parallel with
 </ul>
 ```
 
-If `lookup` is an asynchronous pipe, it's probably doing something
+If `lookup` is an asynchronous filter, it's probably doing something
 slow like fetching something from disk. `asyncAll` allows you reduce
 the time it would take to execute the loop sequentially by doing all
 the async work in parallel, and the template rendering resumes once
@@ -609,9 +609,9 @@ a `{% raw %}` block and anything inside of it will be output as plain text.
 `{% verbatim %}` has identical behavior as [`{% raw %}`](#raw). It is added for
 compatibility with the [Twig `verbatim` tag](http://twig.sensiolabs.org/doc/tags/verbatim.html).
 
-### pipe
+### filter
 
-A `pipe` block allows you to call a pipe with the contents of the
+A `filter` block allows you to call a filter with the contents of the
 block. Instead passing a value with the `|>` syntax, the render
 contents from the block will be passed.
 

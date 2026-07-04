@@ -606,7 +606,7 @@ A message for you: {{ message |> shorten(20) }}
 
 ### Keyword/Default Arguments
 
-在[模板](templating#Keyword-Arguments)中说道，nunjucks 支持关键字参数，你可以在 pipe 中使用他。
+在[模板](templating#Keyword-Arguments)中说道，nunjucks 支持关键字参数，你可以在 filter 中使用他。
 
 所有的关键字参数会以最后一个参数传入，以下为使用了关键字参数的 `foo` 管道：
 

@@ -811,8 +811,8 @@ Using this environment, templates will look like this:
 ## Custom Filters
 
 To install a custom filter, use the `Environment` method `addFilter`.
-A pipe is simply a function that takes the target object as the
-first argument and any arguments passed to the pipe as the other
+A filter is simply a function that takes the target object as the
+first argument and any arguments passed to the filter as the other
 arguments, in order.
 
 ```js

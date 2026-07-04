@@ -578,9 +578,9 @@ un bloc `{% raw %}` et tout ce qui sera à l'intérieur de celui-ci sera affich�
 `{% verbatim %}` a le même comportement que [`{% raw %}`](#raw). Il a été ajouté pour
 être compatible avec la [balise `verbatim` de Twig](http://twig.sensiolabs.org/doc/tags/verbatim.html).
 
-### pipe
+### filter
 
-Un bloc `pipe` vous permet d'appeler un pipe avec le contenu de ce
+Un bloc `filter` vous permet d'appeler un filter avec le contenu de ce
 bloc. Au lieu de passer une valeur avec la syntaxe `|>`, le contenu
 du bloc sera passé.
 

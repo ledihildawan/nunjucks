@@ -70,8 +70,8 @@
         'foobar,baz,');
 
       equal(
-        '{% set pipe = joiner("|") %}' +
-        'foo{{ pipe() }}bar{{ pipe() }}baz{{ pipe() }}',
+        '{% set pipeChar = joiner("|") %}' +
+        'foo{{ pipeChar() }}bar{{ pipeChar() }}baz{{ pipeChar() }}',
         'foobar|baz|');
 
       finish(done);

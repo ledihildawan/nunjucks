@@ -653,8 +653,8 @@ class Parser extends Obj {
         return this.parseImport();
       case 'from':
         return this.parseFrom();
-      case 'pipe':
-        return this.parsePipeStatement();
+      case 'filter':
+        return this.parseFilterStatement();
       case 'switch':
         return this.parseSwitch();
       default:
@@ -1156,10 +1156,10 @@ class Parser extends Obj {
     return node;
   }
 
-  parsePipeStatement() {
+  parseFilterStatement() {
     var pipeTok = this.peekToken();
-    if (!this.skipSymbol('pipe')) {
-      this.fail('parsePipeStatement: expected pipe');
+    if (!this.skipSymbol('filter')) {
+      this.fail('parseFilterStatement: expected pipe');
     }
 
     const name = this.parseFilterName();
@@ -1169,7 +1169,7 @@ class Parser extends Obj {
     const body = new nodes.Capture(
       name.lineno,
       name.colno,
-      this.parseUntilBlocks('endpipe')
+      this.parseUntilBlocks('endfilter')
     );
     this.advanceAfterBlockEnd();
 

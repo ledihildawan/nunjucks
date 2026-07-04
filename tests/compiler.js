@@ -2451,21 +2451,21 @@
     }
   });
 
-  describe('the pipe tag', function() {
-    it('should apply the title pipe to the body', function(done) {
-      equal('{% pipe title %}may the force be with you{% endpipe %}',
+  describe('the filter tag', function() {
+    it('should apply the title filter to the body', function(done) {
+      equal('{% filter title %}may the force be with you{% endfilter %}',
         'May The Force Be With You');
       finish(done);
     });
 
-    it('should apply the replace pipe to the body', function(done) {
-      equal('{% pipe replace("force", "forth") %}may the force be with you{% endpipe %}',
+    it('should apply the replace filter to the body', function(done) {
+      equal('{% filter replace("force", "forth") %}may the force be with you{% endfilter %}',
         'may the forth be with you');
       finish(done);
     });
 
     it('should work with variables in the body', function(done) {
-      equal('{% set foo = "force" %}{% pipe replace("force", "forth") %}may the {{ foo }} be with you{% endpipe %}',
+      equal('{% set foo = "force" %}{% filter replace("force", "forth") %}may the {{ foo }} be with you{% endfilter %}',
         'may the forth be with you');
       finish(done);
     });

@@ -831,11 +831,11 @@ Un message pour vous : {{ message |> shorten(20) }}
 
 Comme décrit dans la section
 [templating](templating.html#arguments-avec-mots-clefs), nunjucks supporte
-les arguments avec Mots clefs/Par défaut. Vous pouvez écrire un pipe javascript
+les arguments avec Mots clefs/Par défaut. Vous pouvez écrire un filter javascript
 qui les exploite.
 
 Tous les arguments avec mots clefs sont transmis en tant que hash comme dernier argument.
-Voici le pipe `foo` qui utilise des arguments avec mots clefs :
+Voici le filter `foo` qui utilise des arguments avec mots clefs :
 
 ```js
 env.addFilter('foo', function(num, x, y, kwargs) {
