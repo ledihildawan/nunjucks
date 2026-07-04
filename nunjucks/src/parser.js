@@ -1157,7 +1157,7 @@ class Parser extends Obj {
   }
 
   parseFilterStatement() {
-    var pipeTok = this.peekToken();
+    var filterTok = this.peekToken();
     if (!this.skipSymbol('filter')) {
       this.fail('parseFilterStatement: expected filter');
     }
@@ -1165,7 +1165,7 @@ class Parser extends Obj {
     const name = this.parseFilterName();
     const args = this.parseFilterArgs(name);
 
-    this.advanceAfterBlockEnd(pipeTok.value);
+    this.advanceAfterBlockEnd(filterTok.value);
     const body = new nodes.Capture(
       name.lineno,
       name.colno,
@@ -1173,7 +1173,7 @@ class Parser extends Obj {
     );
     this.advanceAfterBlockEnd();
 
-    const node = new nodes.Pipe(
+    const node = new nodes.Filter(
       name.lineno,
       name.colno,
       name,

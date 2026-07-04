@@ -852,7 +852,7 @@ for more information.
 
 If autoescaping is turned on in the environment, all output will automatically
 be escaped for safe output. To manually mark output as safe, use the `safe`
-pipe. Nunjucks will not escape this output.
+filter. Nunjucks will not escape this output.
 
 ```jinja
 {{ foo }}           // &lt;span%gt;
@@ -860,7 +860,7 @@ pipe. Nunjucks will not escape this output.
 ```
 
 If autoescaping is turned off, all output will be rendered as it is. You can
-manually escape variables with the `escape` pipe.
+manually escape variables with the `escape` filter.
 
 ```jinja
 {{ foo }}           // <span>
@@ -1000,8 +1000,8 @@ If `value` is strictly `undefined`, return `default`, otherwise `value`. If
 `boolean` is true, any JavaScript falsy value will return `default` (false, "",
 etc)
 
-**In version 2.0, this pipe changed the default behavior of this
-  pipe. Previously, it acted as if `boolean` was true by default, and any
+**In version 2.0, this filter changed the default behavior of this
+  filter. Previously, it acted as if `boolean` was true by default, and any
   falsy value would return `default`. In 2.0 the default is only an `undefined`
   value returns `default`. You can get the old behavior by passing `true` to
   `boolean`, or just use `value or default`.**
@@ -1487,7 +1487,7 @@ If no test is specified, each object will be evaluated as a boolean.
 Filter a sequence of objects by applying a test to the specified attribute
 of each object, and rejecting the objects with the test succeeding.
 
-This is the opposite of ```selectattr``` pipe.
+This is the opposite of ```selectattr``` filter.
 
 If no test is specified, the attribute’s value will be evaluated as a boolean.
 
@@ -1787,7 +1787,7 @@ Analog of jinja's
 `preserve_linebreaks` is false (default), strips SGML/XML tags and replaces
 adjacent whitespace with one space.  If `preserve_linebreaks` is true,
 normalizes whitespace, trying to preserve original linebreaks. Use second
-behavior if you want to pipe `{{ text | striptags(true) | escape | nl2br }}`.
+behavior if you want to filter `{{ text | striptags(true) | escape | nl2br }}`.
 Use default one otherwise.
 
 ### sum

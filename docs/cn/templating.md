@@ -453,7 +453,7 @@ The name of the item is: {{ item.name }}
 
 ### filter
 
-`filter`区块允许我们使用区块中的内容来调用管道。不同于使用`|>`语法，它会将区块渲染出的内容传递给管道。
+`filter`区块允许我们使用区块中的内容来调用过滤器。不同于使用`|>`语法，它会将区块渲染出的内容传递给管道。
 
 ```jinja
 {% filter title %}

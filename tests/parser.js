@@ -369,7 +369,7 @@
                 [nodes.TemplateData, 'empty']]]]]);
     });
 
-    it('should parse filters', function() {
+    it('should parse pipes', function() {
       isAST(parser.parse('{{ foo |> bar }}'),
         [nodes.Root,
           [nodes.Output,
