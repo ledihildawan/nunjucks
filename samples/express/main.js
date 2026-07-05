@@ -18,14 +18,14 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/', (req, res) => {
-  res.render('index.html', {
+app.get('/', async (req, res) => {
+  await res.render('index.html', {
     username: 'James Long <strong>copyright</strong>'
   });
 });
 
-app.get('/about', (req, res) => {
-  res.render('about.html');
+app.get('/about', async (req, res) => {
+  await res.render('about.html');
 });
 
 app.listen(4000, () => {
