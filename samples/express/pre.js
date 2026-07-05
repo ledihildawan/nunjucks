@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-'use strict';
+import { precompileString } from '../..';
+import fs from 'fs';
+import path from 'path';
 
-const precompileString = require('../..').precompileString;
-const fs = require('fs');
-const path = require('path');
+const __dirname = import.meta.dirname;
 
 const baseTmpl = precompileString(
   fs.readFileSync(path.join(__dirname, 'views/base.html'), 'utf-8'), {

@@ -3,10 +3,8 @@ import getPort from 'get-port';
 import serveStatic from 'serve-static';
 import http from 'http';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = import.meta.dirname;
 
 function getStaticServer(port) {
   const staticRoot = path.join(__dirname, '../..');

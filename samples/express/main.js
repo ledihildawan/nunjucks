@@ -1,8 +1,8 @@
-'use strict';
+import path from 'path';
+import nunjucks from '../..';
+import express from 'express';
 
-const path = require('path');
-const nunjucks = require('../..');
-const express = require('express');
+const __dirname = import.meta.dirname;
 
 const app = express();
 
