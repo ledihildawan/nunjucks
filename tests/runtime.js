@@ -1,51 +1,42 @@
 import expect from 'expect.js';
 import * as util from './util.js';
 
-var finish = util.finish;
 var render = util.render;
 
 describe('runtime', function() {
-  it('should report the failed function calls to symbols', function(done) {
+  it('should report the failed function calls to symbols', async function() {
     render('{{ foo("cvan") }}', {}, {
       noThrow: true
     }, function(err) {
       expect(err).to.match(/Unable to call `foo`, which is undefined/);
     });
-
-    finish(done);
   });
 
-  it('should report the failed function calls to lookups', function(done) {
+  it('should report the failed function calls to lookups', async function() {
     render('{{ foo["bar"]("cvan") }}', {}, {
       noThrow: true
     }, function(err) {
       expect(err).to.match(/foo\["bar"\]/);
     });
-
-    finish(done);
   });
 
-  it('should report the failed function calls to calls', function(done) {
+  it('should report the failed function calls to calls', async function() {
     render('{{ foo.bar("second call") }}', {}, {
       noThrow: true
     }, function(err) {
       expect(err).to.match(/foo\["bar"\]/);
     });
-
-    finish(done);
   });
 
-  it('should report full function name in error', function(done) {
+  it('should report full function name in error', async function() {
     render('{{ foo.barThatIsLongerThanTen() }}', {}, {
       noThrow: true
     }, function(err) {
       expect(err).to.match(/foo\["barThatIsLongerThanTen"\]/);
     });
-
-    finish(done);
   });
 
-  it('should report the failed function calls w/multiple args', function(done) {
+  it('should report the failed function calls w/multiple args', async function() {
     render('{{ foo.bar("multiple", "args") }}', {}, {
       noThrow: true
     }, function(err) {
@@ -60,11 +51,9 @@ describe('runtime', function() {
       function(err) {
         expect(err).to.match(/foo\["bar"\]\["zip"\]/);
       });
-
-    finish(done);
   });
 
-  it('should allow for undefined macro arguments in the last position', function(done) {
+  it('should allow for undefined macro arguments in the last position', async function() {
     render('{% macro foo(bar, baz) %}' +
       '{{ bar }} {{ baz }}{% endmacro %}' +
       '{{ foo("hello", nosuchvar) }}',
@@ -76,11 +65,9 @@ describe('runtime', function() {
       expect(err).to.equal(null);
       expect(typeof res).to.be('string');
     });
-
-    finish(done);
   });
 
-  it('should allow for objects without a prototype macro arguments in the last position', function(done) {
+  it('should allow for objects without a prototype macro arguments in the last position', async function() {
     var noProto = Object.create(null);
     noProto.qux = 'world';
 
@@ -97,11 +84,9 @@ describe('runtime', function() {
       expect(err).to.equal(null);
       expect(res).to.equal('hello world');
     });
-
-    finish(done);
   });
 
-  it('should not read variables property from Object.prototype', function(done) {
+  it('should not read variables property from Object.prototype', async function() {
     var payload = 'function(){ return 1+2; }()';
     var data = {};
     Object.getPrototypeOf(data).payload = payload;
@@ -113,7 +98,5 @@ describe('runtime', function() {
       expect(res).to.equal(payload);
     });
     delete Object.getPrototypeOf(data).payload;
-
-    finish(done);
   });
 });
