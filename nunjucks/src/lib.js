@@ -12,15 +12,15 @@ const escapeMap = {
 
 const escapeRegex = /[&"'<>\\]/g;
 
-function hasOwnProp(obj, k) {
+export function hasOwnProp(obj, k) {
   return ObjProto.hasOwnProperty.call(obj, k);
 }
 
-function lookupEscape(ch) {
+export function lookupEscape(ch) {
   return escapeMap[ch];
 }
 
-function _prettifyError(path, withInternals, err) {
+export function _prettifyError(path, withInternals, err) {
   if (!err.Update) {
     err = new TemplateError(err);
   }
@@ -35,7 +35,7 @@ function _prettifyError(path, withInternals, err) {
   return err;
 }
 
-class TemplateError extends Error {
+export class TemplateError extends Error {
   constructor(message, lineno, colno) {
     super(message);
     if (Error.captureStackTrace) {
@@ -66,27 +66,27 @@ class TemplateError extends Error {
   }
 }
 
-function escape(val) {
+export function escape(val) {
   return val.replace(escapeRegex, lookupEscape);
 }
 
-function isFunction(obj) {
+export function isFunction(obj) {
   return ObjProto.toString.call(obj) === '[object Function]';
 }
 
-function isArray(obj) {
+export function isArray(obj) {
   return ObjProto.toString.call(obj) === '[object Array]';
 }
 
-function isString(obj) {
+export function isString(obj) {
   return ObjProto.toString.call(obj) === '[object String]';
 }
 
-function isObject(obj) {
+export function isObject(obj) {
   return ObjProto.toString.call(obj) === '[object Object]';
 }
 
-function _prepareAttributeParts(attr) {
+export function _prepareAttributeParts(attr) {
   if (!attr) {
     return [];
   }
@@ -96,7 +96,7 @@ function _prepareAttributeParts(attr) {
   return [attr];
 }
 
-function getAttrGetter(attribute) {
+export function getAttrGetter(attribute) {
   const parts = _prepareAttributeParts(attribute);
   return function attrGetter(item) {
     let _item = item;
@@ -112,7 +112,7 @@ function getAttrGetter(attribute) {
   };
 }
 
-function groupBy(obj, val, throwOnUndefined) {
+export function groupBy(obj, val, throwOnUndefined) {
   const result = {};
   const iterator = isFunction(val) ? val : getAttrGetter(val);
   for (let i = 0; i < obj.length; i++) {
@@ -126,11 +126,11 @@ function groupBy(obj, val, throwOnUndefined) {
   return result;
 }
 
-function toArray(obj) {
+export function toArray(obj) {
   return Array.prototype.slice.call(obj);
 }
 
-function without(array) {
+export function without(array) {
   const result = [];
   if (!array) {
     return result;
@@ -147,7 +147,7 @@ function without(array) {
   return result;
 }
 
-function repeat(char_, n) {
+export function repeat(char_, n) {
   let str = '';
   for (let i = 0; i < n; i++) {
     str += char_;
@@ -155,7 +155,7 @@ function repeat(char_, n) {
   return str;
 }
 
-function each(obj, func, context) {
+export function each(obj, func, context) {
   if (obj == null) {
     return;
   }
@@ -169,7 +169,7 @@ function each(obj, func, context) {
   }
 }
 
-function map(obj, func) {
+export function map(obj, func) {
   const results = [];
   if (obj == null) {
     return results;
@@ -190,13 +190,13 @@ function map(obj, func) {
   return results;
 }
 
-async function asyncIter(arr, iter) {
+export async function asyncIter(arr, iter) {
   for (let i = 0; i < arr.length; i++) {
     await iter(arr[i], i);
   }
 }
 
-async function asyncFor(obj, iter) {
+export async function asyncFor(obj, iter) {
   const keys = keys_(obj || {});
   const len = keys.length;
   for (let i = 0; i < len; i++) {
@@ -205,11 +205,11 @@ async function asyncFor(obj, iter) {
   }
 }
 
-function indexOf(arr, searchElement, fromIndex) {
+export function indexOf(arr, searchElement, fromIndex) {
   return Array.prototype.indexOf.call(arr || [], searchElement, fromIndex);
 }
 
-function keys_(obj) {
+export function keys_(obj) {
   const arr = [];
   for (let k in obj) {
     if (hasOwnProp(obj, k)) {
@@ -219,15 +219,17 @@ function keys_(obj) {
   return arr;
 }
 
-function _entries(obj) {
+export const keys = keys_;
+
+export function _entries(obj) {
   return keys_(obj).map((k) => [k, obj[k]]);
 }
 
-function _values(obj) {
+export function _values(obj) {
   return keys_(obj).map((k) => obj[k]);
 }
 
-function extend(obj1, obj2) {
+export function extend(obj1, obj2) {
   obj1 = obj1 || {};
   keys_(obj2).forEach(k => {
     obj1[k] = obj2[k];
@@ -235,7 +237,7 @@ function extend(obj1, obj2) {
   return obj1;
 }
 
-function inOperator(key, val) {
+export function inOperator(key, val) {
   if (isArray(val) || isString(val)) {
     return val.indexOf(key) !== -1;
   } else if (isObject(val)) {
@@ -244,34 +246,6 @@ function inOperator(key, val) {
   throw new Error('Cannot use "in" operator to search for "'
     + key + '" in unexpected types.');
 }
-
-export {
-  hasOwnProp,
-  lookupEscape,
-  _prettifyError,
-  TemplateError,
-  escape,
-  isFunction,
-  isArray,
-  isString,
-  isObject,
-  _prepareAttributeParts,
-  getAttrGetter,
-  groupBy,
-  toArray,
-  without,
-  repeat,
-  each,
-  map,
-  asyncIter,
-  asyncFor,
-  indexOf,
-  keys_ as keys,
-  _entries,
-  _values,
-  extend,
-  inOperator
-};
 
 export default {
   hasOwnProp,
