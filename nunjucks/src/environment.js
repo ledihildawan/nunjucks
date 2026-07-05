@@ -134,14 +134,20 @@ export class Environment extends EmitterObj {
     }
     const filter = this.filters[name];
 
-    return async function(...args) {
-      const resolvedArgs = await Promise.all(args.map(async arg => {
-        if (arg && typeof arg.then === 'function') {
-          return arg.then(v => v);
-        }
-        return arg;
-      }));
-      return filter.apply(this, resolvedArgs);
+    if (this.asyncFilters.includes(name)) {
+      return async function(...args) {
+        const resolvedArgs = await Promise.all(args.map(async arg => {
+          if (arg && typeof arg.then === 'function') {
+            return arg.then(v => v);
+          }
+          return arg;
+        }));
+        return filter.apply(this, resolvedArgs);
+      };
+    }
+
+    return function(...args) {
+      return Promise.all(args).then(resolved => filter.apply(this, resolved));
     };
   }
 

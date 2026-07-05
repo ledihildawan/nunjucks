@@ -1116,7 +1116,11 @@ export class Compiler extends Obj {
           this._emit(';');
         }
       } else {
-        this._emit(`${this.buffer} += runtime.suppressValue(await runtime.awaitValue(`);
+        const isPipe = child instanceof nodes.Pipe || child instanceof nodes.PipeAsync;
+        this._emit(`${this.buffer} += runtime.suppressValue(`);
+        if (!isPipe) {
+          this._emit('await runtime.awaitValue(');
+        }
         if (this.throwOnUndefined) {
           this._emit('runtime.ensureDefined(');
         }
@@ -1124,7 +1128,10 @@ export class Compiler extends Obj {
         if (this.throwOnUndefined) {
           this._emit(`,${node.lineno},${node.colno})`);
         }
-        this._emit('), env.opts.autoescape);');
+        if (!isPipe) {
+          this._emit(')');
+        }
+        this._emit(', env.opts.autoescape);');
       }
     });
     this._emit('\n');
