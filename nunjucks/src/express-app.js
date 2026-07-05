@@ -14,14 +14,8 @@ export default function express(env, app) {
     }
   }
 
-  NunjucksView.prototype.render = function render(opts, callback) {
-    if (typeof opts === 'function') {
-      callback = opts;
-      opts = {};
-    }
-    env.render(this.name, opts)
-      .then(html => callback(null, html))
-      .catch(callback);
+  NunjucksView.prototype.render = async function render(opts) {
+    return await env.render(this.name, opts);
   };
 
   app.set('view', NunjucksView);

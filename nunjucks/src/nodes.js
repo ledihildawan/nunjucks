@@ -74,6 +74,7 @@ const Pair = Node.extend('Pair', { fields: ['key', 'value'] });
 const Dict = NodeList.extend('Dict');
 const LookupVal = Node.extend('LookupVal', { fields: ['target', 'val'] });
 const OptionalChain = Node.extend('OptionalChain', { fields: ['target', 'val'] });
+const Slice = Node.extend('Slice', { fields: ['start', 'stop', 'step'] });
 const If = Node.extend('If', { fields: ['cond', 'body', 'else_'] });
 const IfAsync = If.extend('IfAsync');
 const InlineIf = Node.extend('InlineIf', { fields: ['cond', 'body', 'else_'] });
@@ -179,6 +180,7 @@ export {
   Case,
   LookupVal,
   OptionalChain,
+  Slice,
   BinOp,
   In,
   Is,
@@ -241,6 +243,7 @@ export default {
   Case,
   LookupVal,
   OptionalChain,
+  Slice,
   BinOp,
   In,
   Is,

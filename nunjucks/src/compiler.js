@@ -91,7 +91,9 @@ class Compiler extends Obj {
   }
 
   _closeScopeLevels() {
-    this._emitLine(this._scopeClosers + ';');
+    if (this._scopeClosers) {
+      this._emitLine(this._scopeClosers + ';');
+    }
     this._scopeClosers = '';
   }
 
@@ -177,7 +179,8 @@ class Compiler extends Obj {
       nodes.Compare,
       nodes.OptionalChain,
       nodes.NullishCoalesce,
-      nodes.NodeList
+      nodes.NodeList,
+      nodes.Slice
     );
     this.compile(node, frame);
   }
@@ -188,16 +191,27 @@ class Compiler extends Obj {
     }
   }
 
-  compileCallExtension(node, frame, async) {
+  compileCallExtension(node, frame, useAsync) {
     var args = node.args;
     var contentArgs = node.contentArgs;
     var autoescape = typeof node.autoescape === 'boolean' ? node.autoescape : true;
 
-    if (!async) {
+    if (contentArgs.length > 0) {
+      useAsync = true;
+    }
+
+    const res = useAsync ? this._tmpid() : null;
+
+    if (!useAsync) {
       this._emit(`${this.buffer} += runtime.suppressValue(`);
     }
 
-    this._emit(`env.getExtension("${node.extName}")["${node.prop}"](`);
+    if (useAsync) {
+      this._emit(`var ${res} = await env.getExtension("${node.extName}")["${node.prop}"](`);
+    } else {
+      this._emit(`env.getExtension("${node.extName}")["${node.prop}"](`);
+    }
+
     this._emit('context');
 
     if (args || contentArgs) {
@@ -226,17 +240,13 @@ class Compiler extends Obj {
         }
 
         if (arg) {
-          this._emitLine('function(cb) {');
-          this._emitLine('if(!cb) { cb = function(err) { if(err) { throw err; }}}');
+          this._emitLine('async function() {');
           const id = this._pushBuffer();
 
-          this._withScopedSyntax(() => {
-            this.compile(arg, frame);
-            this._emitLine(`cb(null, ${id});`);
-          });
+          this.compile(arg, frame);
 
           this._popBuffer();
-          this._emitLine(`return ${id};`);
+          this._emitLine('return ' + id + ';');
           this._emitLine('}');
         } else {
           this._emit('null');
@@ -244,12 +254,10 @@ class Compiler extends Obj {
       });
     }
 
-    if (async) {
-      const res = this._tmpid();
-      this._emitLine(', ' + this._makeCallback(res));
+    if (useAsync) {
+      this._emit(')');
       this._emitLine(
-        `${this.buffer} += runtime.suppressValue(${res}, ${autoescape} && env.opts.autoescape});`);
-      this._addScopeLevel();
+        `\n${this.buffer} += runtime.suppressValue(await ${res}, ${autoescape} && env.opts.autoescape);`);
     } else {
       this._emit(')');
       this._emit(`, ${autoescape} && env.opts.autoescape);\n`);
@@ -444,11 +452,36 @@ class Compiler extends Obj {
   }
 
   compileLookupVal(node, frame) {
-    this._emit('runtime.memberLookup((');
-    this._compileExpression(node.target, frame);
-    this._emit('),');
-    this._compileExpression(node.val, frame);
-    this._emit(')');
+    if (node.val instanceof nodes.Slice) {
+      // Slice: emit runtime.slice(arr, start, stop, step)
+      this._emit('runtime.slice((');
+      this._compileExpression(node.target, frame);
+      this._emit('), ');
+      if (node.val.start) {
+        this._compileExpression(node.val.start, frame);
+      } else {
+        this._emit('null');
+      }
+      this._emit(', ');
+      if (node.val.stop) {
+        this._compileExpression(node.val.stop, frame);
+      } else {
+        this._emit('null');
+      }
+      this._emit(', ');
+      if (node.val.step) {
+        this._compileExpression(node.val.step, frame);
+      } else {
+        this._emit('null');
+      }
+      this._emit(')');
+    } else {
+      this._emit('runtime.memberLookup((');
+      this._compileExpression(node.target, frame);
+      this._emit('),');
+      this._compileExpression(node.val, frame);
+      this._emit(')');
+    }
   }
 
   compileOptionalChain(node, frame) {
@@ -457,6 +490,28 @@ class Compiler extends Obj {
     this._emit('),');
     this._compileExpression(node.val, frame);
     this._emit(')');
+  }
+
+  compileSlice(node, frame) {
+    this._emit('runtime.slice((');
+    if (node.start) {
+      this._compileExpression(node.start, frame);
+    } else {
+      this._emit('null');
+    }
+    this._emit('), (');
+    if (node.stop) {
+      this._compileExpression(node.stop, frame);
+    } else {
+      this._emit('null');
+    }
+    this._emit('), (');
+    if (node.step) {
+      this._compileExpression(node.step, frame);
+    } else {
+      this._emit('null');
+    }
+    this._emit('))');
   }
 
   _getNodeName(node) {
@@ -1065,7 +1120,7 @@ class Compiler extends Obj {
         if (child.value) {
           this._emit(`${this.buffer} += `);
           this.compileLiteral(child, frame);
-          this._emitLine(';');
+          this._emit(';');
         }
       } else {
         this._emit(`${this.buffer} += runtime.suppressValue(await runtime.awaitValue(`);
@@ -1076,9 +1131,10 @@ class Compiler extends Obj {
         if (this.throwOnUndefined) {
           this._emit(`,${node.lineno},${node.colno})`);
         }
-        this._emit('), env.opts.autoescape);\n');
+        this._emit('), env.opts.autoescape);');
       }
     });
+    this._emit('\n');
   }
 
   compileRoot(node, frame) {

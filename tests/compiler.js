@@ -983,14 +983,15 @@ describe('compiler', function() {
       var env = new Environment(loader);
       var tmpl = new Template(tmplStr, env, 'parse-error.njk');
 
-      const res = await new Promise((resolve, reject) => {
-        tmpl.render({}, function(err, res) {
-          if (err) resolve({err, res});
-          else resolve({err, res});
-        });
-      });
-      expect(res.res).to.be(undefined);
-      expect(res.err.toString()).to.be([
+      let res;
+      let err;
+      try {
+        res = await tmpl.render({});
+      } catch (e) {
+        err = e;
+      }
+      expect(res).to.be(undefined);
+      expect(err.toString()).to.be([
         'Template render error: (parse-error.njk) [Line 1, Column 26]',
         '  unexpected token: ,',
       ].join('\n'));
@@ -1009,14 +1010,15 @@ describe('compiler', function() {
         throw new Error('ERROR');
       }
 
-      const res = await new Promise((resolve, reject) => {
-        tmpl.render({foo: foo}, function(err, res) {
-          if (err) resolve({err, res});
-          else resolve({err, res});
-        });
-      });
-      expect(res.res).to.be(undefined);
-      expect(res.err.toString()).to.be([
+      let res;
+      let err;
+      try {
+        res = await tmpl.render({foo: foo});
+      } catch (e) {
+        err = e;
+      }
+      expect(res).to.be(undefined);
+      expect(err.toString()).to.be([
         'Template render error: (user-error.njk) [Line 1, Column 11]',
         '  Error: ERROR',
       ].join('\n'));
@@ -1829,8 +1831,9 @@ describe('compiler', function() {
         return tag;
       };
 
-      this.run = function(context, content) {
-        return content().split('').reverse().join('');
+      this.run = async function(context, contentFn) {
+        const content = await contentFn();
+        return content.split('').reverse().join('');
       };
     }
 
@@ -1889,10 +1892,10 @@ describe('compiler', function() {
         return new nodes.CallExtension(this, 'run', null, [body, intermediate]);
       };
 
-      this.run = function(context, body, intermediate) {
-        var output = body().split('').join(',');
+      this.run = async function(context, body, intermediate) {
+        var output = (await body()).split('').join(',');
         if (intermediate) {
-          output += intermediate().split('').reverse().join('');
+          output += (await intermediate()).split('').reverse().join('');
         }
         return output;
       };
@@ -1932,7 +1935,7 @@ describe('compiler', function() {
         return new nodes.CallExtension(this, 'run', args, [body]);
       };
 
-      this.run = function(context, prefix, kwargs, body) {
+      this.run = async function(context, prefix, kwargs, body) {
         var output;
         if (typeof prefix === 'function') {
           body = prefix;
@@ -1943,7 +1946,7 @@ describe('compiler', function() {
           kwargs = {};
         }
 
-        output = prefix + body().split('').reverse().join('');
+        output = prefix + (await body()).split('').reverse().join('');
         if (kwargs.cutoff) {
           output = output.slice(0, kwargs.cutoff);
         }

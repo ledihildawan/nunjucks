@@ -357,39 +357,23 @@ class Template extends Obj {
     }
   }
 
-  render(ctx, parentFrame, cb) {
-    if (typeof ctx === 'function') {
-      cb = ctx;
-      ctx = {};
-    } else if (typeof parentFrame === 'function') {
-      cb = parentFrame;
-      parentFrame = null;
+  async render(ctx, parentFrame) {
+    try {
+      this.compile();
+    } catch (e) {
+      throw lib._prettifyError(this.path, this.env.opts.dev, e);
     }
 
-    const renderPromise = (async () => {
-      try {
-        this.compile();
-      } catch (e) {
-        throw lib._prettifyError(this.path, this.env.opts.dev, e);
-      }
+    const context = new Context(ctx || {}, this.blocks, this.env);
+    const frame = parentFrame ? parentFrame.push(true) : new Frame();
+    frame.topLevel = true;
 
-      const context = new Context(ctx || {}, this.blocks, this.env);
-      const frame = parentFrame ? parentFrame.push(true) : new Frame();
-      frame.topLevel = true;
-
-      try {
-        const result = await this.rootRenderFunc(this.env, context, frame, globalRuntime);
-        return result;
-      } catch (e) {
-        throw lib._prettifyError(this.path, this.env.opts.dev, e);
-      }
-    })();
-
-    if (cb) {
-      renderPromise.then(res => cb(null, res)).catch(err => cb(err));
+    try {
+      const result = await this.rootRenderFunc(this.env, context, frame, globalRuntime);
+      return result;
+    } catch (e) {
+      throw lib._prettifyError(this.path, this.env.opts.dev, e);
     }
-
-    return renderPromise;
   }
 
   async getExported(ctx, parentFrame) {

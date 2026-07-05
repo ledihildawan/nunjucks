@@ -727,16 +727,66 @@ class Parser extends Obj {
           node,
           this.parseSignature());
       } else if (tok.type === lexer.TOKEN_LEFT_BRACKET) {
-        // Reference
-        lookup = this.parseAggregate();
-        if (lookup.children.length > 1) {
-          this.fail('invalid index');
-        }
+        // Bracket access - could be slice or index
+        // Consume '[' first
+        const bracketTok = this.nextToken(); // consume '['
 
-        node = new nodes.LookupVal(tok.lineno,
-          tok.colno,
-          node,
-          lookup.children[0]);
+        // Check if this is a slice starting with ':'
+        if (this.skip(lexer.TOKEN_COLON)) {
+          // Slice starting with colon [:stop:step] or [::step]
+          let stop = null;
+          let step = null;
+
+          // Parse stop
+          if (this.peekToken() && this.peekToken().type !== lexer.TOKEN_RIGHT_BRACKET &&
+              this.peekToken().type !== lexer.TOKEN_COLON) {
+            stop = this.parseExpression();
+          }
+
+          // Parse step
+          if (this.skip(lexer.TOKEN_COLON)) {
+            if (this.peekToken() && this.peekToken().type !== lexer.TOKEN_RIGHT_BRACKET) {
+              step = this.parseExpression();
+            }
+          }
+
+          this.expect(lexer.TOKEN_RIGHT_BRACKET);
+          const sliceTok = this.peekToken();
+          const slice = new nodes.Slice(sliceTok.lineno, sliceTok.colno, null, stop, step);
+          node = new nodes.LookupVal(bracketTok.lineno, bracketTok.colno, node, slice);
+        } else {
+          // Parse first expression - could be start (for slice) or index
+          const start = this.parseExpression();
+
+          // Check if colon follows (slice) or right bracket (index)
+          if (this.skip(lexer.TOKEN_COLON)) {
+            // It's a slice [start:stop:step]
+            let stop = null;
+            let step = null;
+
+            // Parse stop
+            if (this.peekToken() && this.peekToken().type !== lexer.TOKEN_RIGHT_BRACKET &&
+                this.peekToken().type !== lexer.TOKEN_COLON) {
+              stop = this.parseExpression();
+            }
+
+            // Parse step
+            if (this.skip(lexer.TOKEN_COLON)) {
+              if (this.peekToken() && this.peekToken().type !== lexer.TOKEN_RIGHT_BRACKET) {
+                step = this.parseExpression();
+              }
+            }
+
+            this.expect(lexer.TOKEN_RIGHT_BRACKET);
+            const sliceTok = this.peekToken();
+            const slice = new nodes.Slice(sliceTok.lineno, sliceTok.colno, start, stop, step);
+            node = new nodes.LookupVal(bracketTok.lineno, bracketTok.colno, node, slice);
+          } else {
+            // Simple index like [1] or [foo.bar] or [foo["bar"]]
+            this.expect(lexer.TOKEN_RIGHT_BRACKET);
+            node = new nodes.LookupVal(bracketTok.lineno, bracketTok.colno, node, start);
+          }
+        }
       } else if (tok.type === lexer.TOKEN_OPERATOR && tok.value === '.') {
         // Reference
         this.nextToken();

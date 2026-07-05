@@ -240,6 +240,51 @@ function optionalMemberLookup(obj, val) {
   return obj[val];
 }
 
+function slice(arr, start, stop, step) {
+  if (step === 0) {
+    throw new Error('slice step cannot be 0');
+  }
+
+  const len = arr.length;
+
+  // Handle null/undefined start and stop based on step direction
+  if (start === null || start === undefined) {
+    start = (step < 0) ? len - 1 : 0;
+  }
+  if (stop === null || stop === undefined) {
+    stop = (step < 0) ? -1 : len;
+  }
+
+  // Handle negative indices for start only (stop can be -1 for negative step)
+  const normalizeStart = (idx) => {
+    if (idx < 0) return Math.max(0, len + idx);
+    return Math.min(len, idx);
+  };
+
+  start = normalizeStart(start);
+
+  // Handle step
+  if (step === null || step === undefined || step === 1) {
+    return arr.slice(start, stop);
+  }
+
+  if (step > 0) {
+    const result = [];
+    for (let i = start; i < stop; i += step) {
+      result.push(arr[i]);
+    }
+    return result;
+  } else {
+    // Negative step
+    const result = [];
+    // stop < 0 means go past 0, so we use > 0 condition
+    for (let i = start; i >= 0 && i > stop; i += step) {
+      result.push(arr[i]);
+    }
+    return result;
+  }
+}
+
 function nullishCoalesce(left, right) {
   return (left !== undefined && left !== null) ? left : right;
 }
@@ -364,6 +409,7 @@ export {
   ensureDefined,
   memberLookup,
   optionalMemberLookup,
+  slice,
   nullishCoalesce,
   contextOrFrameLookup,
   callWrap,
