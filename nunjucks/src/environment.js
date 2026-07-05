@@ -18,7 +18,7 @@ const noopTmplSrc = {
   }
 };
 
-class Environment extends EmitterObj {
+export class Environment extends EmitterObj {
   init(loaders, opts) {
     opts = this.opts = opts || {};
     this.opts.dev = !!opts.dev;
@@ -322,7 +322,7 @@ class Context extends Obj {
   }
 }
 
-class Template extends Obj {
+export class Template extends Obj {
   init(src, env, path, eagerCompile) {
     this.env = env || new Environment();
 
@@ -434,8 +434,3 @@ class Template extends Obj {
     return blocks;
   }
 }
-
-export {
-  Environment,
-  Template
-};

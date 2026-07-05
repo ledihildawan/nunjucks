@@ -31,7 +31,7 @@ function extendClass(cls, name, props) {
   return subclass;
 }
 
-class Obj {
+export class Obj {
   constructor(...args) {
     this.init(...args);
   }
@@ -51,7 +51,7 @@ class Obj {
   }
 }
 
-class EmitterObj extends EventEmitter {
+export class EmitterObj extends EventEmitter {
   constructor(...args) {
     super();
     this.init(...args);
@@ -71,5 +71,3 @@ class EmitterObj extends EventEmitter {
     return extendClass(this, name, props);
   }
 }
-
-export { Obj, EmitterObj };
