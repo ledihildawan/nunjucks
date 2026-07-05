@@ -6,7 +6,7 @@ import * as tests from './tests.js';
 import globals from './globals.js';
 import {Obj, EmitterObj} from './object.js';
 import * as globalRuntime from './runtime.js';
-import {handleError, Frame} from './runtime.js';
+import {Frame} from './runtime.js';
 import expressApp from './express-app.js';
 
 const noopTmplSrc = {

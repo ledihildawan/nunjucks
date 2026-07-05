@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { promisify } from 'util';
 import Loader from './loader.js';
 import {PrecompiledLoader} from './precompiled-loader.js';
 

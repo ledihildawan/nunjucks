@@ -1,11 +1,9 @@
-import path from 'path';
-
 export default function express(env, app) {
-  app.set('view', function(name, opts) {
+  app.set('view', function(name) {
     return {
       name: name,
-      render: async function(opts) {
-        return await env.render(name, opts);
+      render: async function(renderOpts) {
+        return await env.render(name, renderOpts);
       }
     };
   });
