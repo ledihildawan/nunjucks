@@ -269,87 +269,80 @@ function handleError(error, lineno, colno) {
   }
 }
 
-function asyncEach(arr, dimen, iter, cb) {
+async function asyncEach(arr, dimen, iter) {
   if (lib.isArray(arr)) {
     const len = arr.length;
 
-    lib.asyncIter(arr, function iterCallback(item, i, next) {
+    for (let i = 0; i < len; i++) {
+      const item = arr[i];
       switch (dimen) {
         case 1:
-          iter(item, i, len, next);
+          await iter(item, i, len);
           break;
         case 2:
-          iter(item[0], item[1], i, len, next);
+          await iter(item[0], item[1], i, len);
           break;
         case 3:
-          iter(item[0], item[1], item[2], i, len, next);
+          await iter(item[0], item[1], item[2], i, len);
           break;
         default:
-          item.push(i, len, next);
-          iter.apply(this, item);
-      }
-    }, cb);
-  } else {
-    lib.asyncFor(arr, function iterCallback(key, val, i, len, next) {
-      iter(key, val, i, len, next);
-    }, cb);
-  }
-}
-
-function asyncAll(arr, dimen, func, cb) {
-  var finished = 0;
-  var len;
-  var outputArr;
-
-  function done(i, output) {
-    finished++;
-    outputArr[i] = output;
-
-    if (finished === len) {
-      cb(null, outputArr.join(''));
-    }
-  }
-
-  if (lib.isArray(arr)) {
-    len = arr.length;
-    outputArr = new Array(len);
-
-    if (len === 0) {
-      cb(null, '');
-    } else {
-      for (let i = 0; i < arr.length; i++) {
-        const item = arr[i];
-
-        switch (dimen) {
-          case 1:
-            func(item, i, len, done);
-            break;
-          case 2:
-            func(item[0], item[1], i, len, done);
-            break;
-          case 3:
-            func(item[0], item[1], item[2], i, len, done);
-            break;
-          default:
-            item.push(i, len, done);
-            func.apply(this, item);
-        }
+          item.push(i, len);
+          await iter.apply(this, item);
       }
     }
   } else {
     const keys = lib.keys(arr || {});
-    len = keys.length;
-    outputArr = new Array(len);
-
-    if (len === 0) {
-      cb(null, '');
-    } else {
-      for (let i = 0; i < keys.length; i++) {
-        const k = keys[i];
-        func(k, arr[k], i, len, done);
-      }
+    const len = keys.length;
+    for (let i = 0; i < len; i++) {
+      const k = keys[i];
+      await iter(k, arr[k], i, len);
     }
   }
+}
+
+async function asyncAll(arr, dimen, func) {
+  const outputArr = [];
+
+  if (lib.isArray(arr)) {
+    const len = arr.length;
+
+    if (len === 0) {
+      return '';
+    }
+
+    for (let i = 0; i < len; i++) {
+      const item = arr[i];
+
+      switch (dimen) {
+        case 1:
+          outputArr[i] = await func(item, i, len);
+          break;
+        case 2:
+          outputArr[i] = await func(item[0], item[1], i, len);
+          break;
+        case 3:
+          outputArr[i] = await func(item[0], item[1], item[2], i, len);
+          break;
+        default:
+          item.push(i, len);
+          outputArr[i] = await func.apply(this, item);
+      }
+    }
+  } else {
+    const keys = lib.keys(arr || {});
+    const len = keys.length;
+
+    if (len === 0) {
+      return '';
+    }
+
+    for (let i = 0; i < len; i++) {
+      const k = keys[i];
+      outputArr[i] = await func(k, arr[k], i, len);
+    }
+  }
+
+  return outputArr.join('');
 }
 
 function fromIterator(arr) {

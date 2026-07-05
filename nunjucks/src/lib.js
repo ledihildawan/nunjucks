@@ -190,48 +190,13 @@ function map(obj, func) {
   return results;
 }
 
-function asyncIter(arr, iter, cb) {
-  let i = -1;
-
-  function next() {
-    i++;
-
-    if (i < arr.length) {
-      iter(arr[i], i, next, cb);
-    } else {
-      cb();
-    }
-  }
-
-  next();
-}
-
-async function asyncIterAsync(arr, iter) {
+async function asyncIter(arr, iter) {
   for (let i = 0; i < arr.length; i++) {
     await iter(arr[i], i);
   }
 }
 
-function asyncFor(obj, iter, cb) {
-  const keys = keys_(obj || {});
-  const len = keys.length;
-  let i = -1;
-
-  function next() {
-    i++;
-    const k = keys[i];
-
-    if (i < len) {
-      iter(k, obj[k], i, len, next);
-    } else {
-      cb();
-    }
-  }
-
-  next();
-}
-
-async function asyncForAsync(obj, iter) {
+async function asyncFor(obj, iter) {
   const keys = keys_(obj || {});
   const len = keys.length;
   for (let i = 0; i < len; i++) {
@@ -300,8 +265,6 @@ export {
   map,
   asyncIter,
   asyncFor,
-  asyncIterAsync,
-  asyncForAsync,
   indexOf,
   keys_ as keys,
   _entries,
@@ -330,8 +293,6 @@ export default {
   map,
   asyncIter,
   asyncFor,
-  asyncIterAsync,
-  asyncForAsync,
   indexOf,
   keys: keys_,
   _entries,
