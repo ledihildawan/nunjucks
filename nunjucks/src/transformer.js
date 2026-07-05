@@ -142,6 +142,7 @@ function liftSuper(ast) {
         hasSuper = true;
         return new nodes.Symbol(node.lineno, node.colno, symbol);
       }
+      return node;
     });
 
     if (hasSuper) {

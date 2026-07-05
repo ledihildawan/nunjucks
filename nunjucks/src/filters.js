@@ -466,10 +466,10 @@ function urlencode(obj) {
 }
 
 const puncRe = /^(?:\(|<|&lt;)?(.*?)(?:\.|,|\)|\n|&gt;)?$/;
-const emailRe = /^[\w.!#$%&'*+\-\/=?\^`{|}~]+@[a-z\d\-]+(\.[a-z\d\-]+)+$/i;
+const emailRe = /^[\w.!#$%&'*+\-/=?^`{|}~]+@[a-z\d-]+(\.[a-z\d-]+)+$/i;
 const httpHttpsRe = /^https?:\/\/.*$/;
 const wwwRe = /^www\./;
-const tldRe = /\.(?:org|net|com)(?:\:|\/|$)/;
+const tldRe = /\.(?:org|net|com)(?::|\/|$)/;
 
 function urlize(str, length, nofollow) {
   if (isNaN(length)) {

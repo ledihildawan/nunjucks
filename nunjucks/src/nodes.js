@@ -141,66 +141,6 @@ const CallExtension = Node.extend('CallExtension', {
 });
 const CallExtensionAsync = CallExtension.extend('CallExtensionAsync');
 
-function print(str, indent, inline) {
-  var lines = str.split('\n');
-
-  lines.forEach((line, i) => {
-    if (line && ((inline && i > 0) || !inline)) {
-      process.stdout.write((' ').repeat(indent));
-    }
-    const nl = (i === lines.length - 1) ? '' : '\n';
-    process.stdout.write(`${line}${nl}`);
-  });
-}
-
-function printNodes(node, indent) {
-  indent = indent || 0;
-
-  print(node.typename + ': ', indent);
-
-  if (node instanceof NodeList) {
-    print('\n');
-    node.children.forEach((n) => {
-      printNodes(n, indent + 2);
-    });
-  } else if (node instanceof CallExtension) {
-    print(`${node.extName}.${node.prop}\n`);
-
-    if (node.args) {
-      printNodes(node.args, indent + 2);
-    }
-
-    if (node.contentArgs) {
-      node.contentArgs.forEach((n) => {
-        printNodes(n, indent + 2);
-      });
-    }
-  } else {
-    let nodes = [];
-    let props = null;
-
-    node.iterFields((val, fieldName) => {
-      if (val instanceof Node) {
-        nodes.push([fieldName, val]);
-      } else {
-        props = props || {};
-        props[fieldName] = val;
-      }
-    });
-
-    if (props) {
-      print(JSON.stringify(props, null, 2) + '\n', null, true);
-    } else {
-      print('\n');
-    }
-
-    nodes.forEach(([fieldName, n]) => {
-      print(`[${fieldName}] =>`, indent + 2);
-      printNodes(n, indent + 4);
-    });
-  }
-}
-
 export {
   Node,
   Root,

@@ -1,4 +1,4 @@
-import { Parser, parse } from './parser.js';
+import { parse } from './parser.js';
 import { transform } from './transformer.js';
 import * as nodes from './nodes.js';
 import { TemplateError } from './lib.js';
@@ -740,7 +740,6 @@ class Compiler extends Obj {
 
   _compileAsyncEachLoop(node, frame, arr, i, len) {
     const loopId = this._tmpid();
-    const bodyResult = this._tmpid();
 
     if (node.name instanceof nodes.Array) {
       const isObj = this._tmpid();
@@ -783,9 +782,8 @@ class Compiler extends Obj {
 
   _compileAsyncAllLoop(node, frame, arr, i, len) {
     const loopId = this._tmpid();
-    const bufId = this._pushBuffer();
+    this._pushBuffer();
     const resultsVar = this._tmpid();
-    const keysId = this._tmpid();
 
     this._emitLine(`var ${resultsVar} = [];`);
 

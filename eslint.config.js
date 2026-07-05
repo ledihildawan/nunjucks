@@ -1,37 +1,36 @@
-if (!global.structuredClone) {
-  global.structuredClone = function structuredClone(val) {
-    return JSON.parse(JSON.stringify(val));
-  };
-}
-
-import { defineConfig, globalIgnores } from 'eslint/config';
-import js from '@eslint/js';
-
+import eslint from '@eslint/js';
 import globals from 'globals';
+import pluginImport from 'eslint-plugin-import';
+import { defineConfig } from 'eslint/config';
 
 export default defineConfig([
-  js.configs.recommended,
+  eslint.configs.recommended,
   {
+    plugins: {
+      import: pluginImport,
+    },
     languageOptions: {
-      sourceType: 'module',
-      ecmaVersion: 2017,
       globals: {
         ...globals.node,
-        nunjucks: false,
+        ...globals.mocha,
+        ...globals.browser,
       },
     },
     rules: {
-      'space-before-function-paren': [
+      'func-names': 'off',
+      'global-require': 'off',
+      'spaced-comment': [
         'error',
+        'always',
         {
-          anonymous: 'never',
-          named: 'never',
-          asyncArrow: 'always',
+          exceptions: ['*', ','],
         },
       ],
-
-      'no-use-before-define': 'off',
-      'no-cond-assign': ['error', 'except-parens'],
+      'one-var': 'off',
+      'one-var-declaration-per-line': 'off',
+      'no-restricted-syntax': 'off',
+      'no-redeclare': ['error', { builtinGlobals: false }],
+      'no-shadow': 'error',
       'no-unused-vars': [
         'error',
         {
@@ -39,35 +38,11 @@ export default defineConfig([
           caughtErrors: 'none',
         },
       ],
-      'no-underscore-dangle': 'off',
-      'no-param-reassign': 'off',
-      'class-methods-use-this': 'off',
-      'function-paren-newline': 'off',
-      'no-plusplus': 'off',
-      'object-curly-spacing': 'off',
-      'no-multi-assign': 'off',
-      'no-else-return': 'off',
-      'no-useless-escape': 'off',
-      'comma-dangle': 'off',
-      'prefer-exponentiation-operator': 'off',
-      'strict': 'off',
-      'max-classes-per-file': 'off',
-      'operator-linebreak': 'off',
-
-      'no-redeclare': 'off',
+      'no-eval': 'error',
+      'vars-on-top': 'error',
+      'no-array-constructor': 'error',
+      'no-new-wrappers': 'error',
+      'consistent-return': 'error',
     },
   },
-  globalIgnores([
-    '**/node_modules',
-    '**/spm_modules',
-    '**/coverage',
-    '**/dist',
-    '**/browser',
-    '**/docs',
-    'tests/express-sample',
-    'tests/express',
-    'tests/browser',
-    '**/bench',
-    '**/src',
-  ]),
 ]);

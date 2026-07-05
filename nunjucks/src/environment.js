@@ -20,6 +20,7 @@ function callbackAsap(cb, err, res) {
 const noopTmplSrc = {
   type: 'code',
   obj: {
+    /* eslint-disable consistent-return */
     root(env, context, frame, runtime, cb) {
       if (typeof cb === 'function') {
         try {
@@ -31,6 +32,7 @@ const noopTmplSrc = {
         return Promise.resolve('');
       }
     }
+    /* eslint-enable consistent-return */
   }
 };
 
@@ -499,6 +501,7 @@ class Template extends Obj {
     }
   }
 
+  /* eslint-disable consistent-return */
   render(ctx, parentFrame, cb) {
     if (typeof ctx === 'function') {
       cb = ctx;
@@ -539,6 +542,7 @@ class Template extends Obj {
 
     return renderPromise;
   }
+  /* eslint-enable consistent-return */
 
 
   getExported(ctx, parentFrame, cb) {
