@@ -96,7 +96,7 @@ directory, and the following options are available in **opts**:
 * **throwOnUndefined** *(default: false)* throw errors when outputting a null/undefined value
 * **trimBlocks** *(default: false)* automatically remove trailing newlines from a block/tag
 * **lstripBlocks** *(default: false)* automatically remove leading whitespace from a block/tag
-* **watch** *(default: false)* reload templates when they are changed (server-side). To use watch, make sure optional dependency *chokidar* is installed.
+* **watch** *(default: false)* reload templates when they are changed (server-side). Uses Bun's native file system watcher.
 * **noCache** *(default: false)* never use a cache and recompile templates each time (server-side)
 * **web** an object for configuring loading templates in the browser:
   * **useCache** *(default: false)* will enable cache and templates will never see updates.

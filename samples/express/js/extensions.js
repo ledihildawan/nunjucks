@@ -1,19 +1,17 @@
+'use strict';
 
-function RemoteExtension() {
-  this.tags = ['remote'];
+class RemoteExtension {
+  constructor() {
+    this.tags = ['remote'];
+  }
 
-  this.parse = function(parser, nodes, lexer) {
-    // get the tag token
-    var tok = parser.nextToken();
-
-    // parse the args and move after the block end. passing true
-    // as the second arg is required if there are no parentheses
-    var args = parser.parseSignature(null, true);
+  parse(parser, nodes, lexer) {
+    const tok = parser.nextToken();
+    const args = parser.parseSignature(null, true);
     parser.advanceAfterBlockEnd(tok.value);
 
-    // parse the body and move after block end
-    var body = parser.parseUntilBlocks('error', 'endtruncate');
-    var errorBody = null;
+    const body = parser.parseUntilBlocks('error', 'endremote');
+    let errorBody = null;
 
     if (parser.skipSymbol('error')) {
       parser.skip(lexer.TOKEN_BLOCK_END);
@@ -23,16 +21,16 @@ function RemoteExtension() {
     parser.advanceAfterBlockEnd();
 
     return new nodes.CallExtension(this, 'run', args, [body, errorBody]);
-  };
+  }
 
-  this.run = function(context, url, body, errorBody) {
-    var id = 'el' + Math.floor(Math.random() * 10000);
-    var ret = new nunjucks.runtime.SafeString('<div id="' + id + '">' + body() + '</div>');
-    var ajax = new XMLHttpRequest();
+  run(context, url, body, errorBody) {
+    const id = 'el' + Math.floor(Math.random() * 10000);
+    const ret = new nunjucks.runtime.SafeString('<div id="' + id + '">' + body() + '</div>');
+    const ajax = new XMLHttpRequest();
 
-    ajax.onreadystatechange = function() {
-      if (ajax.readyState == 4) {
-        if (ajax.status == 200) {
+    ajax.onreadystatechange = () => {
+      if (ajax.readyState === 4) {
+        if (ajax.status === 200) {
           document.getElementById(id).innerHTML = ajax.responseText;
         } else {
           document.getElementById(id).innerHTML = errorBody();
@@ -44,5 +42,5 @@ function RemoteExtension() {
     ajax.send();
 
     return ret;
-  };
+  }
 }
