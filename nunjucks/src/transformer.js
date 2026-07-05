@@ -1,7 +1,7 @@
 import * as nodes from './nodes.js';
 import * as lib from './lib.js';
 
-var sym = 0;
+let sym = 0;
 function gensym() {
   return 'hole_' + sym++;
 }
@@ -201,5 +201,6 @@ function cps(ast, asyncPipes) {
 }
 
 export function transform(ast, asyncPipes) {
+  sym = 0;  // Reset gensym counter per transformation
   return cps(ast, asyncPipes || []);
 }
