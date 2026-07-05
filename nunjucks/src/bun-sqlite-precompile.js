@@ -1,5 +1,5 @@
 import { existsSync, statSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, basename } from 'node:path';
 import { createHash } from 'node:crypto';
 import {_prettifyError} from './lib.js';
 import * as compiler from './compiler.js';
@@ -23,13 +23,17 @@ function hashContent(content) {
   return createHash('sha256').update(content).digest('hex').substring(0, 16);
 }
 
+function normalizePathSeparators(p) {
+  return p.split('\\').join('/');
+}
+
 function _precompile(str, name, env) {
   env = env || new Environment([]);
 
   const asyncFilters = env.asyncFilters;
   const extensions = env.extensionsList;
 
-  name = name.replace(/\\/g, '/');
+  name = normalizePathSeparators(name);
 
   try {
     return compiler.compile(str,
@@ -64,23 +68,27 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
     )
   `);
 
-  const templates = [];
+  const results = [];
   let updated = 0;
   let skipped = 0;
 
-  function addTemplates(dir) {
+  function addTemplates(dir, baseDir) {
     readdirSync(dir).forEach((file) => {
       const filepath = join(dir, file);
-      let subpath = filepath.substr(join(templateDir, '/').length);
+      const base = baseDir || templateDir;
+      let subpath = normalizePathSeparators(filepath.slice(base.length)).replace(/^\//, '');
+
       const stat = statSync(filepath);
 
       if (stat && stat.isDirectory()) {
-        subpath += '/';
+        subpath = subpath + '/';
         if (!match(subpath, exclude)) {
-          addTemplates(filepath);
+          addTemplates(filepath, base);
         }
       } else if (extensions.some(ext => file.endsWith(ext))) {
-        templates.push(filepath);
+        if (!match(subpath, exclude)) {
+          results.push({ filepath, name: subpath });
+        }
       }
     });
   }
@@ -90,9 +98,8 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
   if (pathStats.isDirectory()) {
     addTemplates(templateDir);
 
-    for (let i = 0; i < templates.length; i++) {
-      const name = templates[i].replace(join(templateDir, '/'), '');
-      const filepath = templates[i];
+    for (let i = 0; i < results.length; i++) {
+      const { filepath, name } = results[i];
 
       try {
         const source = readFileSync(filepath, 'utf-8');
@@ -122,7 +129,8 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
       }
     }
   } else if (pathStats.isFile()) {
-    const name = templateDir.replace(join(templateDir, '/'), '');
+    const name = normalizePathSeparators(basename(templateDir)).replace(/^\//, '');
+
     const source = readFileSync(templateDir, 'utf-8');
     const contentHash = hashContent(source);
     const compiledCode = _precompile(source, name, env);
@@ -135,9 +143,12 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
       );
       stmt.run(name, compiledCode, contentHash);
       updated++;
+      console.log(`[SQLite] Precompiled: ${name}`);
     } else {
       skipped++;
     }
+
+    results.push({ name, filepath: templateDir });
   }
 
   if (db.close) {
@@ -145,7 +156,7 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
   }
 
   console.log(`[SQLite] Done: ${updated} updated, ${skipped} skipped (hash unchanged)`);
-  return templates.map(t => t.name);
+  return results.map(r => r.name);
 }
 
 export function loadFromSQLite(dbPath) {
