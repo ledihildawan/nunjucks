@@ -23,8 +23,8 @@ describe('express', function() {
   });
 
   it('should render a view with extension', async function() {
-    app.get('/', function(req, res) {
-      res.render('about.html');
+    app.get('/', async function(req, res) {
+      await res.render('about.html');
     });
     await request(app)
       .get('/')
@@ -32,8 +32,8 @@ describe('express', function() {
   });
 
   it('should render a view without extension', async function() {
-    app.get('/', function(req, res) {
-      res.render('about');
+    app.get('/', async function(req, res) {
+      await res.render('about');
     });
     app.set('view engine', 'html');
     await request(app)

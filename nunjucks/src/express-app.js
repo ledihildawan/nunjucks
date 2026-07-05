@@ -15,12 +15,13 @@ export default function express(env, app) {
   }
 
   NunjucksView.prototype.render = function render(opts, callback) {
-    const result = env.render(this.name, opts);
-    if (callback) {
-      result.then(res => callback(null, res)).catch(err => callback(err));
-    } else {
-      return result;
+    if (typeof opts === 'function') {
+      callback = opts;
+      opts = {};
     }
+    env.render(this.name, opts)
+      .then(html => callback(null, html))
+      .catch(callback);
   };
 
   app.set('view', NunjucksView);
