@@ -36,10 +36,13 @@
     "test": "bun run lint && bun run test:mocha",
     "test:mocha": "bun run build && mocha -R spec tests/api.js tests/compiler.js tests/filters.js tests/lexer.js tests/express.js tests/core.js tests/precompile.js tests/loader.js tests/runtime.js tests/globals.js tests/tests.js"
   },
+  "exports": {
+    ".": "./index.js",
+    "./bin/precompile": "./bin/precompile"
+  },
   "bin": {
     "nunjucks-precompile": "./bin/precompile"
   },
-  "main": "index.js",
   "files": [
     "bin/**",
     "browser/**",
