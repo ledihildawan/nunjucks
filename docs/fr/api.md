@@ -85,7 +85,7 @@ et les options suivantes sont disponibles dans **opts** :
 * **throwOnUndefined** *(par défaut : false)* lève des erreurs quand le résultat a une valeur null/undefined
 * **trimBlocks** *(par défaut : false)* supprime automatiquement les sauts de lignes de fin de block/tag
 * **lstripBlocks** *(par défaut : false)* supprime automatiquement les espaces de début de block/tag
-* **watch** *(par défaut : false)* recharge les templates quand ils ont été changés (côté serveur). Pour utiliser watch, veuillez vérifier que la dépendance optionnelle *chokidar* soit installée.
+* **watch** *(par défaut : false)* recharge les templates quand ils ont été changés (côté serveur). Utilise le watcher natif de Bun.
 * **noCache** *(par défaut : false)* ne jamais utiliser le cache et recompiler les templates à chaque fois (côté serveur)
 * **web** un objet pour la configuration du chargement des templates dans le navigateur :
   * **useCache** *(par défaut : false)* activera le cache et les templates ne verront jamais les mises à jour.

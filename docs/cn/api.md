@@ -68,7 +68,7 @@ nunjucks.configure([path], [opts]);
 * **throwOnUndefined** *(default: false)* 当输出为 null 或 undefined 会抛出异常
 * **trimBlocks** *(default: false)* 自动去除 block/tag 后面的换行符
 * **lstripBlocks** *(default: false)* 自动去除 block/tag 签名的空格
-* **watch** *(默认值: false)* 当模板变化时重新加载。使用前请确保已安装可选依赖 *chokidar*。
+* **watch** *(默认值: false)* 当模板变化时重新加载。使用 Bun 原生文件系统监视器。
 * **noCache** *(default: false)* 不使用缓存，每次都重新编译
 * **web** 浏览器模块的配置项
   * **useCache** *(default: false)* 是否使用缓存，否则会重新请求下载模板

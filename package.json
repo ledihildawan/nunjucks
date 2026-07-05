@@ -27,14 +27,7 @@
     "uglify-js": "^2.8.29",
     "webpack": "^5.99.9"
   },
-  "peerDependencies": {
-    "chokidar": "^3.3.0"
-  },
-  "peerDependenciesMeta": {
-    "chokidar": {
-      "optional": true
-    }
-  },
+
   "scripts": {
     "build:transpile": "bun build nunjucks --target node --outdir . --format cjs",
     "build:bundle": "bun run scripts/bundle.js",
