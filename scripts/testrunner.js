@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 
-'use strict';
-
-var NYC = require('nyc');
+import NYC from 'nyc';
 
 process.env.NODE_ENV = 'test';
 
@@ -13,10 +11,10 @@ const nyc = new NYC({
 });
 nyc.reset();
 
-require('@babel/register');
+import '@babel/register';
 
-const runtests = require('./lib/runtests');
-const precompileTestTemplates = require('./lib/precompile');
+import runtests from './lib/runtests.js';
+import precompileTestTemplates from './lib/precompile.js';
 
 let err;
 
@@ -24,7 +22,7 @@ precompileTestTemplates()
   .then(() => runtests())
   .catch((e) => {
     err = e;
-    console.log(err); // eslint-disable-line no-console
+    console.log(err);
   })
   .then(() => {
     nyc.writeCoverageFile();

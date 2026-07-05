@@ -1,19 +1,23 @@
-var connect = require('connect');
-var getPort = require('get-port');
-var serveStatic = require('serve-static');
-var http = require('http');
-var path = require('path');
+import connect from 'connect';
+import getPort from 'get-port';
+import serveStatic from 'serve-static';
+import http from 'http';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function getStaticServer(port) {
-  var staticRoot = path.join(__dirname, '../..');
-  var portPromise = (typeof port === 'undefined') ? getPort() : Promise.resolve(port);
-  return portPromise.then((port) => { // eslint-disable-line no-shadow
+  const staticRoot = path.join(__dirname, '../..');
+  const portPromise = (typeof port === 'undefined') ? getPort() : Promise.resolve(port);
+  return portPromise.then((port) => {
     return new Promise((resolve, reject) => {
       try {
         const app = connect().use(serveStatic(staticRoot));
         const server = http.createServer(app);
         server.listen(port, () => {
-          console.log('Test server listening on port ' + port); // eslint-disable-line no-console
+          console.log('Test server listening on port ' + port);
           resolve([server, port]);
         });
       } catch (e) {
@@ -23,4 +27,4 @@ function getStaticServer(port) {
   });
 }
 
-module.exports = getStaticServer;
+export default getStaticServer;

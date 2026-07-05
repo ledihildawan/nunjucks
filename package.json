@@ -3,6 +3,7 @@
   "description": "A powerful templating engine with inheritance, asynchronous control, and more (jinja2 inspired)",
   "version": "3.2.4",
   "author": "James Long <longster@gmail.com>",
+  "type": "module",
 
   "dependencies": {
     "a-sync-waterfall": "^1.0.0",
@@ -32,10 +33,10 @@
     "build:transpile": "bun build nunjucks --target node --outdir . --format cjs",
     "build:bundle": "bun run scripts/bundle.js",
     "build": "bun run build:bundle",
-    "lint": "eslint nunjucks scripts",
+    "lint": "eslint nunjucks",
     "prepare": "bun run build",
     "test": "bun run lint && bun run test:mocha",
-    "test:mocha": "bun run build && mocha -R spec tests"
+    "test:mocha": "bun run build && mocha -R spec tests/api.js tests/compiler.js tests/filters.js tests/lexer.js tests/express.js tests/core.js tests/precompile.js tests/loader.js tests/runtime.js tests/globals.js tests/tests.js"
   },
   "bin": {
     "nunjucks-precompile": "./bin/precompile"

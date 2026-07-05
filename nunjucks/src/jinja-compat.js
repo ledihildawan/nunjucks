@@ -1,56 +1,61 @@
-function installCompat() {
-  'use strict';
+import * as runtimeModule from './runtime.js';
+import * as lib from './lib.js';
+import * as compilerModule from './compiler.js';
+import { Parser } from './parser.js';
+import * as nodes from './nodes.js';
+import * as lexer from './lexer.js';
 
-  /* eslint-disable camelcase */
+let orig_contextOrFrameLookup;
+let orig_memberLookup;
+let orig_Compiler_assertType;
+let orig_Parser_parseAggregate;
+let installed = false;
 
-  // This must be called like `nunjucks.installCompat` so that `this`
-  // references the nunjucks instance
-  var runtime = this.runtime;
-  var lib = this.lib;
-  // Handle slim case where these 'modules' are excluded from the built source
-  var Compiler = this.compiler.Compiler;
-  var Parser = this.parser.Parser;
-  var nodes = this.nodes;
-  var lexer = this.lexer;
+export default function installCompat() {
+  if (installed) {
+    return () => {};
+  }
+  installed = true;
 
-  var orig_contextOrFrameLookup = runtime.contextOrFrameLookup;
-  var orig_memberLookup = runtime.memberLookup;
-  var orig_Compiler_assertType;
-  var orig_Parser_parseAggregate;
-  if (Compiler) {
-    orig_Compiler_assertType = Compiler.prototype.assertType;
+  orig_contextOrFrameLookup = runtimeModule.contextOrFrameLookup;
+  orig_memberLookup = runtimeModule.memberLookup;
+  if (compilerModule && compilerModule.Compiler) {
+    orig_Compiler_assertType = compilerModule.Compiler.prototype.assertType;
   }
   if (Parser) {
     orig_Parser_parseAggregate = Parser.prototype.parseAggregate;
   }
 
   function uninstall() {
-    runtime.contextOrFrameLookup = orig_contextOrFrameLookup;
-    runtime.memberLookup = orig_memberLookup;
-    if (Compiler) {
-      Compiler.prototype.assertType = orig_Compiler_assertType;
+    Object.defineProperty(runtimeModule, 'contextOrFrameLookup', { value: orig_contextOrFrameLookup });
+    Object.defineProperty(runtimeModule, 'memberLookup', { value: orig_memberLookup });
+    if (compilerModule && compilerModule.Compiler) {
+      compilerModule.Compiler.prototype.assertType = orig_Compiler_assertType;
     }
     if (Parser) {
       Parser.prototype.parseAggregate = orig_Parser_parseAggregate;
     }
+    installed = false;
   }
 
-  runtime.contextOrFrameLookup = function contextOrFrameLookup(context, frame, key) {
-    var val = orig_contextOrFrameLookup.apply(this, arguments);
-    if (val !== undefined) {
-      return val;
+  Object.defineProperty(runtimeModule, 'contextOrFrameLookup', {
+    value: function contextOrFrameLookup(context, frame, key) {
+      const val = orig_contextOrFrameLookup.apply(this, arguments);
+      if (val !== undefined) {
+        return val;
+      }
+      switch (key) {
+        case 'True':
+          return true;
+        case 'False':
+          return false;
+        case 'None':
+          return null;
+        default:
+          return undefined;
+      }
     }
-    switch (key) {
-      case 'True':
-        return true;
-      case 'False':
-        return false;
-      case 'None':
-        return null;
-      default:
-        return undefined;
-    }
-  };
+  });
 
   function getTokensState(tokens) {
     return {
@@ -60,7 +65,7 @@ function installCompat() {
     };
   }
 
-  if (process.env.BUILD_TYPE !== 'SLIM' && nodes && Compiler && Parser) { // i.e., not slim mode
+  if (process.env.BUILD_TYPE !== 'SLIM' && nodes && compilerModule && compilerModule.Compiler && Parser) {
     const Slice = nodes.Node.extend('Slice', {
       fields: ['start', 'stop', 'step'],
       init(lineno, colno, start, stop, step) {
@@ -71,13 +76,13 @@ function installCompat() {
       }
     });
 
-    Compiler.prototype.assertType = function assertType(node) {
+    compilerModule.Compiler.prototype.assertType = function assertType(node) {
       if (node instanceof Slice) {
         return;
       }
       orig_Compiler_assertType.apply(this, arguments);
     };
-    Compiler.prototype.compileSlice = function compileSlice(node, frame) {
+    compilerModule.Compiler.prototype.compileSlice = function compileSlice(node, frame) {
       this._emit('(');
       this._compileExpression(node.start, frame);
       this._emit('),(');
@@ -88,8 +93,7 @@ function installCompat() {
     };
 
     Parser.prototype.parseAggregate = function parseAggregate() {
-      var origState = getTokensState(this.tokens);
-      // Set back one accounting for opening bracket/parens
+      const origState = getTokensState(this.tokens);
       origState.colno--;
       origState.index--;
       try {
@@ -101,7 +105,6 @@ function installCompat() {
           return e;
         };
 
-        // Reset to state before original parseAggregate called
         lib._assign(this.tokens, origState);
         this.peeked = false;
 
@@ -114,8 +117,6 @@ function installCompat() {
 
         const node = new Slice(tok.lineno, tok.colno);
 
-        // If we don't encounter a colon while parsing, this is not a slice,
-        // so re-raise the original exception.
         let isSlice = false;
 
         for (let i = 0; i <= node.fields.length; i++) {
@@ -172,7 +173,7 @@ function installCompat() {
       if (step < 0 && i <= stop) {
         break;
       }
-      results.push(runtime.memberLookup(obj, i));
+      results.push(runtimeModule.memberLookup(obj, i));
     }
     return results;
   }
@@ -203,7 +204,7 @@ function installCompat() {
       throw new Error('ValueError');
     },
     count(element) {
-      var count = 0;
+      let count = 0;
       for (let i = 0; i < this.length; i++) {
         if (this[i] === element) {
           count++;
@@ -212,7 +213,7 @@ function installCompat() {
       return count;
     },
     index(element) {
-      var i;
+      let i;
       if ((i = this.indexOf(element)) === -1) {
         throw new Error('ValueError');
       }
@@ -236,7 +237,7 @@ function installCompat() {
       return lib.keys(this);
     },
     get(key, def) {
-      var output = this[key];
+      let output = this[key];
       if (output === undefined) {
         output = def;
       }
@@ -246,7 +247,7 @@ function installCompat() {
       return hasOwnProp(this, key);
     },
     pop(key, def) {
-      var output = this[key];
+      let output = this[key];
       if (output === undefined && def !== undefined) {
         output = def;
       } else if (output === undefined) {
@@ -274,32 +275,30 @@ function installCompat() {
     },
     update(kwargs) {
       lib._assign(this, kwargs);
-      return null; // Always returns None
+      return null;
     }
   };
   OBJECT_MEMBERS.iteritems = OBJECT_MEMBERS.items;
   OBJECT_MEMBERS.itervalues = OBJECT_MEMBERS.values;
   OBJECT_MEMBERS.iterkeys = OBJECT_MEMBERS.keys;
 
-  runtime.memberLookup = function memberLookup(obj, val, autoescape) {
-    if (arguments.length === 4) {
-      return sliceLookup.apply(this, arguments);
-    }
-    obj = obj || {};
+  Object.defineProperty(runtimeModule, 'memberLookup', {
+    value: function memberLookup(obj, val, autoescape) {
+      if (arguments.length === 4) {
+        return sliceLookup.apply(this, arguments);
+      }
+      obj = obj || {};
 
-    // If the object is an object, return any of the methods that Python would
-    // otherwise provide.
-    if (lib.isArray(obj) && hasOwnProp(ARRAY_MEMBERS, val)) {
-      return ARRAY_MEMBERS[val].bind(obj);
-    }
-    if (lib.isObject(obj) && hasOwnProp(OBJECT_MEMBERS, val)) {
-      return OBJECT_MEMBERS[val].bind(obj);
-    }
+      if (lib.isArray(obj) && hasOwnProp(ARRAY_MEMBERS, val)) {
+        return ARRAY_MEMBERS[val].bind(obj);
+      }
+      if (lib.isObject(obj) && hasOwnProp(OBJECT_MEMBERS, val)) {
+        return OBJECT_MEMBERS[val].bind(obj);
+      }
 
-    return orig_memberLookup.apply(this, arguments);
-  };
+      return orig_memberLookup.apply(this, arguments);
+    }
+  });
 
   return uninstall;
 }
-
-module.exports = installCompat;

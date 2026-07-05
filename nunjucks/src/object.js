@@ -1,22 +1,15 @@
-'use strict';
-
-// A simple class system, more documentation to come
-const EventEmitter = require('events');
-const lib = require('./lib');
+import EventEmitter from 'events';
+import * as lib from './lib.js';
 
 function parentWrap(parent, prop) {
   if (typeof parent !== 'function' || typeof prop !== 'function') {
     return prop;
   }
   return function wrap() {
-    // Save the current parent method
     const tmp = this.parent;
-
-    // Set parent to the previous method, call, and restore
     this.parent = parent;
     const res = prop.apply(this, arguments);
     this.parent = tmp;
-
     return res;
   };
 }
@@ -34,14 +27,12 @@ function extendClass(cls, name, props) {
     }
   }
 
-  lib._assign(subclass.prototype, props);
-
+  lib.extend(subclass.prototype, props);
   return subclass;
 }
 
 class Obj {
   constructor(...args) {
-    // Unfortunately necessary for backwards compatibility
     this.init(...args);
   }
 
@@ -63,7 +54,6 @@ class Obj {
 class EmitterObj extends EventEmitter {
   constructor(...args) {
     super();
-    // Unfortunately necessary for backwards compatibility
     this.init(...args);
   }
 
@@ -82,4 +72,4 @@ class EmitterObj extends EventEmitter {
   }
 }
 
-module.exports = { Obj, EmitterObj };
+export { Obj, EmitterObj };

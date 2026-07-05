@@ -1,5 +1,3 @@
-'use strict';
-
 function precompileGlobal(templates, opts) {
   var out = '';
   opts = opts || {};
@@ -21,4 +19,4 @@ function precompileGlobal(templates, opts) {
   return out;
 }
 
-module.exports = precompileGlobal;
+export default precompileGlobal;

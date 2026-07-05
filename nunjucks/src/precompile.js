@@ -1,11 +1,9 @@
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
-const {_prettifyError} = require('./lib');
-const compiler = require('./compiler');
-const {Environment} = require('./environment');
-const precompileGlobal = require('./precompile-global');
+import fs from 'fs';
+import path from 'path';
+import {_prettifyError} from './lib.js';
+import * as compiler from './compiler.js';
+import {Environment} from './environment.js';
+import precompileGlobal from './precompile-global.js';
 
 function match(filename, patterns) {
   if (!Array.isArray(patterns)) {
@@ -27,20 +25,6 @@ function precompileString(str, opts) {
 }
 
 function precompile(input, opts) {
-  // The following options are available:
-  //
-  // * name: name of the template (auto-generated when compiling a directory)
-  // * isString: input is a string, not a file path
-  // * asFunction: generate a callable function
-  // * force: keep compiling on error
-  // * env: the Environment to use (gets extensions and async filters from it)
-  // * include: which file/folders to include (folders are auto-included, files are auto-excluded)
-  // * exclude: which file/folders to exclude (folders are auto-included, files are auto-excluded)
-  // * wrapper: function(templates, opts) {...}
-  //       Customize the output format to store the compiled template.
-  //       By default, templates are stored in a global variable used by the runtime.
-  //       A custom loader will be necessary to load your custom wrapper.
-
   opts = opts || {};
   const env = opts.env || new Environment([]);
   const wrapper = opts.wrapper || precompileGlobal;
@@ -90,9 +74,7 @@ function precompile(input, opts) {
         ));
       } catch (e) {
         if (opts.force) {
-          // Don't stop generating the output if we're
-          // forcing compilation.
-          console.error(e); // eslint-disable-line no-console
+          console.error(e);
         } else {
           throw e;
         }
@@ -128,7 +110,4 @@ function _precompile(str, name, env) {
   };
 }
 
-module.exports = {
-  precompile: precompile,
-  precompileString: precompileString
-};
+export {precompile, precompileString};

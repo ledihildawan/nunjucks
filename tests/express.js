@@ -1,11 +1,11 @@
-'use strict';
+import path from 'path';
+import express from 'express';
+import expect from 'expect.js';
+import request from 'supertest';
+import nunjucks from '../nunjucks/index.js';
+import { fileURLToPath } from 'url';
 
-var path = require('path');
-var express = require('express');
-var expect = require('expect.js');
-var request = require('supertest');
-var nunjucks = require('../nunjucks/index');
-
+var __dirname = path.dirname(fileURLToPath(import.meta.url));
 var VIEWS = path.join(__dirname, '../samples/express/views');
 
 describe('express', function() {

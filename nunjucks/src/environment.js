@@ -1,29 +1,22 @@
-'use strict';
+import asap from 'asap';
+import waterfall from 'a-sync-waterfall';
+import lib from './lib.js';
+import { compile } from './compiler.js';
+import * as filters from './filters.js';
+import {FileSystemLoader, WebLoader, PrecompiledLoader} from './loaders.js';
+import * as tests from './tests.js';
+import globals from './globals.js';
+import {Obj, EmitterObj} from './object.js';
+import * as globalRuntime from './runtime.js';
+import {handleError, Frame} from './runtime.js';
+import expressApp from './express-app.js';
 
-const asap = require('asap');
-const waterfall = require('a-sync-waterfall');
-const lib = require('./lib');
-const compiler = require('./compiler');
-const filters = require('./filters');
-const {FileSystemLoader, WebLoader, PrecompiledLoader} = require('./loaders');
-const tests = require('./tests');
-const globals = require('./globals');
-const {Obj, EmitterObj} = require('./object');
-const globalRuntime = require('./runtime');
-const {handleError, Frame} = globalRuntime;
-const expressApp = require('./express-app');
-
-// If the user is using the async API, *always* call it
-// asynchronously even if the template was synchronous.
 function callbackAsap(cb, err, res) {
   asap(() => {
     cb(err, res);
   });
 }
 
-/**
- * A no-op template, for use with {% include ignore missing %}
- */
 const noopTmplSrc = {
   type: 'code',
   obj: {
@@ -43,23 +36,11 @@ const noopTmplSrc = {
 
 class Environment extends EmitterObj {
   init(loaders, opts) {
-    // The dev flag determines the trace that'll be shown on errors.
-    // If set to true, returns the full trace from the error point,
-    // otherwise will return trace starting from Template.render
-    // (the full trace from within nunjucks may confuse developers using
-    //  the library)
-    // defaults to false
     opts = this.opts = opts || {};
     this.opts.dev = !!opts.dev;
 
-    // The autoescape flag sets global autoescaping. If true,
-    // every string variable will be escaped by default.
-    // If false, strings can be manually escaped using the `escape` filter.
-    // defaults to true
     this.opts.autoescape = opts.autoescape != null ? opts.autoescape : true;
 
-    // If true, this will make the system throw errors if trying
-    // to output a null or undefined value
     this.opts.throwOnUndefined = !!opts.throwOnUndefined;
     this.opts.trimBlocks = !!opts.trimBlocks;
     this.opts.lstripBlocks = !!opts.lstripBlocks;
@@ -67,7 +48,6 @@ class Environment extends EmitterObj {
     this.loaders = [];
 
     if (!loaders) {
-      // The filesystem loader is only available server-side
       if (FileSystemLoader) {
         this.loaders = [new FileSystemLoader('views')];
       } else if (WebLoader) {
@@ -77,9 +57,6 @@ class Environment extends EmitterObj {
       this.loaders = lib.isArray(loaders) ? loaders : [loaders];
     }
 
-    // It's easy to use precompiled templates: just include them
-    // before you configure nunjucks and this will automatically
-    // pick it up and use it
     if (typeof window !== 'undefined' && window.nunjucksPrecompiled) {
       this.loaders.unshift(
         new PrecompiledLoader(window.nunjucksPrecompiled)
@@ -101,7 +78,6 @@ class Environment extends EmitterObj {
 
   _initLoaders() {
     this.loaders.forEach((loader) => {
-      // Caching and cache busting
       loader.cache = {};
       if (typeof loader.on === 'function') {
         loader.on('update', (name, fullname) => {
@@ -219,7 +195,6 @@ class Environment extends EmitterObj {
     var that = this;
     var tmpl = null;
     if (name && name.raw) {
-      // this fixes autoescape for templates referenced in symbols
       name = name.raw;
     }
 
@@ -234,12 +209,10 @@ class Environment extends EmitterObj {
       eagerCompile = false;
     }
 
-    // When called without callback, return a Promise
     if (!cb) {
       return this._getTemplateAsync(name, eagerCompile, parentName, ignoreMissing);
     }
 
-    // Callback-based path (original)
     if (name instanceof Template) {
       tmpl = name;
     } else if (typeof name !== 'string') {
@@ -274,7 +247,6 @@ class Environment extends EmitterObj {
         }
       }
 
-      // Resolve name relative to parentName
       name = that.resolveTemplate(loader, parentName, name);
 
       if (loader.async) {
@@ -343,7 +315,6 @@ class Environment extends EmitterObj {
           }
         }
 
-        // Resolve name relative to parentName
         name = that.resolveTemplate(loader, parentName, name);
 
         if (loader.async) {
@@ -383,7 +354,6 @@ class Environment extends EmitterObj {
       ctx = null;
     }
 
-    // Async-by-default: Return a Promise
     const renderPromise = new Promise((resolve, reject) => {
       this.getTemplate(name, (err, tmpl) => {
         if (err) {
@@ -427,10 +397,8 @@ class Environment extends EmitterObj {
 
 class Context extends Obj {
   init(ctx, blocks, env) {
-    // Has to be tied to an environment so we can tap into its globals.
     this.env = env || new Environment();
 
-    // Make a duplicate of ctx
     this.ctx = lib.extend({}, ctx);
 
     this.blocks = {};
@@ -442,8 +410,6 @@ class Context extends Obj {
   }
 
   lookup(name) {
-    // This is one of the most called functions, so optimize for
-    // the typical case where the name isn't in the globals
     if (name in this.env.globals && !(name in this.ctx)) {
       return this.env.globals[name];
     } else {
@@ -575,7 +541,7 @@ class Template extends Obj {
   }
 
 
-  getExported(ctx, parentFrame, cb) { // eslint-disable-line consistent-return
+  getExported(ctx, parentFrame, cb) {
     if (typeof ctx === 'function') {
       cb = ctx;
       ctx = {};
@@ -586,9 +552,7 @@ class Template extends Obj {
       parentFrame = null;
     }
 
-    // Async-by-default: Always return a Promise
     const exportedPromise = (async () => {
-      // Catch compile errors for async rendering
       try {
         this.compile();
       } catch (e) {
@@ -599,7 +563,6 @@ class Template extends Obj {
       const frame = parentFrame ? parentFrame.push() : new Frame();
       frame.topLevel = true;
 
-      // Run the rootRenderFunc to populate the context with exported vars
       const context = new Context(ctx || {}, this.blocks, this.env);
       try {
         await this.rootRenderFunc(this.env, context, frame, globalRuntime);
@@ -609,7 +572,6 @@ class Template extends Obj {
       }
     })();
 
-    // Support callback style for backward compatibility
     if (cb) {
       exportedPromise.then((res) => cb(null, res)).catch((err) => cb(err));
     }
@@ -629,13 +591,13 @@ class Template extends Obj {
     if (this.tmplProps) {
       props = this.tmplProps;
     } else {
-      const source = compiler.compile(this.tmplStr,
+      const source = compile(this.tmplStr,
         this.env.asyncFilters,
         this.env.extensionsList,
         this.path,
         this.env.opts);
 
-      const func = new Function(source); // eslint-disable-line no-new-func
+      const func = new Function(source);
       props = func();
     }
 
@@ -657,7 +619,7 @@ class Template extends Obj {
   }
 }
 
-module.exports = {
-  Environment: Environment,
-  Template: Template
+export {
+  Environment,
+  Template
 };

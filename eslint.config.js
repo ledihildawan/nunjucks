@@ -4,12 +4,12 @@ if (!global.structuredClone) {
   };
 }
 
-const { defineConfig, globalIgnores } = require('eslint/config');
-const js = require('@eslint/js');
+import { defineConfig, globalIgnores } from 'eslint/config';
+import js from '@eslint/js';
 
-const globals = require('globals');
+import globals from 'globals';
 
-module.exports = defineConfig([
+export default defineConfig([
   js.configs.recommended,
   {
     languageOptions: {

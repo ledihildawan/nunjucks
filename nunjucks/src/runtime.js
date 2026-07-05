@@ -1,28 +1,18 @@
-'use strict';
-
-var lib = require('./lib');
+import lib from './lib.js';
 var arrayFrom = Array.from;
 var supportsIterators = (
   typeof Symbol === 'function' && Symbol.iterator && typeof arrayFrom === 'function'
 );
 
-
-// Frames keep track of scoping both at compile-time and run-time so
-// we know how to access variables. Block tags can introduce special
-// variables, for example.
 class Frame {
   constructor(parent, isolateWrites) {
     this.variables = Object.create(null);
     this.parent = parent;
     this.topLevel = false;
-    // if this is true, writes (set) should never propagate upwards past
-    // this frame to its parent (though reads may).
     this.isolateWrites = isolateWrites;
   }
 
   set(name, val, resolveUp) {
-    // Allow variables with dots by automatically creating the
-    // nested structure
     var parts = name.split('.');
     var obj = this.variables;
     var frame = this;
@@ -90,8 +80,6 @@ function makeMacro(argNames, kwargNames, func) {
     if (argCount > argNames.length) {
       args = macroArgs.slice(0, argNames.length);
 
-      // Positional arguments that should be passed in as
-      // keyword arguments (essentially default values)
       macroArgs.slice(args.length, argCount).forEach((val, i) => {
         if (i < kwargNames.length) {
           kwargs[kwargNames[i]] = val;
@@ -104,9 +92,6 @@ function makeMacro(argNames, kwargNames, func) {
       for (let i = argCount; i < argNames.length; i++) {
         const arg = argNames[i];
 
-        // Keyword arguments that should be passed as
-        // positional arguments, i.e. the caller explicitly
-        // used the name of a positional arg
         args.push(kwargs[arg]);
         delete kwargs[arg];
       }
@@ -153,9 +138,6 @@ function numArgs(args) {
   }
 }
 
-// A SafeString object indicates that the string should not be
-// autoescaped. This happens magically because autoescaping only
-// occurs on primitive string objects.
 function SafeString(val) {
   if (typeof val !== 'string') {
     return val;
@@ -380,27 +362,28 @@ function fromIterator(arr) {
   }
 }
 
-module.exports = {
-  Frame: Frame,
-  makeMacro: makeMacro,
-  makeKeywordArgs: makeKeywordArgs,
-  numArgs: numArgs,
-  suppressValue: suppressValue,
-  ensureDefined: ensureDefined,
-  memberLookup: memberLookup,
-  optionalMemberLookup: optionalMemberLookup,
-  nullishCoalesce: nullishCoalesce,
-  contextOrFrameLookup: contextOrFrameLookup,
-  callWrap: callWrap,
-  handleError: handleError,
-  isArray: lib.isArray,
-  keys: lib.keys,
-  SafeString: SafeString,
-  copySafeness: copySafeness,
-  markSafe: markSafe,
-  asyncEach: asyncEach,
-  asyncAll: asyncAll,
-  inOperator: lib.inOperator,
-  fromIterator: fromIterator,
-  awaitValue: awaitValue
+export {
+  Frame,
+  makeMacro,
+  makeKeywordArgs,
+  numArgs,
+  suppressValue,
+  ensureDefined,
+  memberLookup,
+  optionalMemberLookup,
+  nullishCoalesce,
+  contextOrFrameLookup,
+  callWrap,
+  handleError,
+  SafeString,
+  copySafeness,
+  markSafe,
+  asyncEach,
+  asyncAll,
+  fromIterator,
+  awaitValue
 };
+
+export const isArray = lib.isArray;
+export const keys = lib.keys;
+export const inOperator = lib.inOperator;

@@ -1,25 +1,13 @@
-'use strict';
+import Loader from './loader.js';
+import {PrecompiledLoader} from './precompiled-loader.js';
 
-const Loader = require('./loader');
-const {PrecompiledLoader} = require('./precompiled-loader.js');
-
-class WebLoader extends Loader {
+export class WebLoader extends Loader {
   constructor(baseURL, opts) {
     super();
     this.baseURL = baseURL || '.';
     opts = opts || {};
 
-    // By default, the cache is turned off because there's no way
-    // to "watch" templates over HTTP, so they are re-downloaded
-    // and compiled each time. (Remember, PRECOMPILE YOUR
-    // TEMPLATES in production!)
     this.useCache = !!opts.useCache;
-
-    // We default `async` to false so that the simple synchronous
-    // API can be used when you aren't doing anything async in
-    // your templates (which is most of the time). This performs a
-    // sync ajax request, but that's ok because it should *only*
-    // happen in development. PRECOMPILE YOUR TEMPLATES.
     this.async = !!opts.async;
   }
 
@@ -52,14 +40,10 @@ class WebLoader extends Loader {
       }
     });
 
-    // if this WebLoader isn't running asynchronously, the
-    // fetch above would actually run sync and we'll have a
-    // result here
     return result;
   }
 
   fetch(url, cb) {
-    // Only in the browser please
     if (typeof window === 'undefined') {
       throw new Error('WebLoader can only by used in a browser');
     }
@@ -89,7 +73,4 @@ class WebLoader extends Loader {
   }
 }
 
-module.exports = {
-  WebLoader: WebLoader,
-  PrecompiledLoader: PrecompiledLoader
-};
+export {PrecompiledLoader};

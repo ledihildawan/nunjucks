@@ -1,9 +1,7 @@
-'use strict';
+const ArrayProto = Array.prototype;
+const ObjProto = Object.prototype;
 
-var ArrayProto = Array.prototype;
-var ObjProto = Object.prototype;
-
-var escapeMap = {
+const escapeMap = {
   '&': '&amp;',
   '"': '&quot;',
   '\'': '&#39;',
@@ -12,15 +10,11 @@ var escapeMap = {
   '\\': '&#92;',
 };
 
-var escapeRegex = /[&"'<>\\]/g;
-
-var exports = module.exports = {};
+const escapeRegex = /[&"'<>\\]/g;
 
 function hasOwnProp(obj, k) {
   return ObjProto.hasOwnProperty.call(obj, k);
 }
-
-exports.hasOwnProp = hasOwnProp;
 
 function lookupEscape(ch) {
   return escapeMap[ch];
@@ -28,12 +22,10 @@ function lookupEscape(ch) {
 
 function _prettifyError(path, withInternals, err) {
   if (!err.Update) {
-    // not one of ours, cast it
-    err = new exports.TemplateError(err);
+    err = new TemplateError(err);
   }
   err.Update(path);
 
-  // Unless they marked the dev flag, show them a trace from here
   if (!withInternals) {
     const old = err;
     err = new Error(old.message);
@@ -43,67 +35,20 @@ function _prettifyError(path, withInternals, err) {
   return err;
 }
 
-exports._prettifyError = _prettifyError;
-
-function TemplateError(message, lineno, colno) {
-  var err;
-  var cause;
-
-  if (message instanceof Error) {
-    cause = message;
-    message = `${cause.name}: ${cause.message}`;
-  }
-
-  if (Object.setPrototypeOf) {
-    err = new Error(message);
-    Object.setPrototypeOf(err, TemplateError.prototype);
-  } else {
-    err = this;
-    Object.defineProperty(err, 'message', {
-      enumerable: false,
-      writable: true,
-      value: message,
-    });
-  }
-
-  Object.defineProperty(err, 'name', {
-    value: 'Template render error',
-  });
-
-  if (Error.captureStackTrace) {
-    Error.captureStackTrace(err, this.constructor);
-  }
-
-  let getStack;
-
-  if (cause) {
-    const stackDescriptor = Object.getOwnPropertyDescriptor(cause, 'stack');
-    getStack = stackDescriptor && (stackDescriptor.get || (() => stackDescriptor.value));
-    if (!getStack) {
-      getStack = () => cause.stack;
+class TemplateError extends Error {
+  constructor(message, lineno, colno) {
+    super(message);
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
     }
-  } else {
-    const stack = (new Error(message)).stack;
-    getStack = (() => stack);
+    this.name = 'Template render error';
+    this.lineno = lineno;
+    this.colno = colno;
+    this.firstUpdate = true;
   }
 
-  Object.defineProperty(err, 'stack', {
-    get: () => getStack.call(err),
-  });
-
-  Object.defineProperty(err, 'cause', {
-    value: cause
-  });
-
-  err.lineno = lineno;
-  err.colno = colno;
-  err.firstUpdate = true;
-
-  err.Update = function Update(path) {
+  Update(path) {
     let msg = '(' + (path || 'unknown path') + ')';
-
-    // only show lineno + colno next to path of template
-    // where error occurred
     if (this.firstUpdate) {
       if (this.lineno && this.colno) {
         msg += ` [Line ${this.lineno}, Column ${this.colno}]`;
@@ -111,107 +56,61 @@ function TemplateError(message, lineno, colno) {
         msg += ` [Line ${this.lineno}]`;
       }
     }
-
     msg += '\n ';
     if (this.firstUpdate) {
       msg += ' ';
     }
-
     this.message = msg + (this.message || '');
     this.firstUpdate = false;
     return this;
-  };
-
-  return err;
+  }
 }
-
-
-if (Object.setPrototypeOf) {
-  Object.setPrototypeOf(TemplateError.prototype, Error.prototype);
-} else {
-  TemplateError.prototype = Object.create(Error.prototype, {
-    constructor: {
-      value: TemplateError,
-    },
-  });
-}
-
-exports.TemplateError = TemplateError;
 
 function escape(val) {
   return val.replace(escapeRegex, lookupEscape);
 }
 
-exports.escape = escape;
-
 function isFunction(obj) {
   return ObjProto.toString.call(obj) === '[object Function]';
 }
-
-exports.isFunction = isFunction;
 
 function isArray(obj) {
   return ObjProto.toString.call(obj) === '[object Array]';
 }
 
-exports.isArray = isArray;
-
 function isString(obj) {
   return ObjProto.toString.call(obj) === '[object String]';
 }
-
-exports.isString = isString;
 
 function isObject(obj) {
   return ObjProto.toString.call(obj) === '[object Object]';
 }
 
-exports.isObject = isObject;
-
-/**
- * @param {string|number} attr
- * @returns {(string|number)[]}
- * @private
- */
 function _prepareAttributeParts(attr) {
   if (!attr) {
     return [];
   }
-
   if (typeof attr === 'string') {
     return attr.split('.');
   }
-
   return [attr];
 }
 
-/**
- * @param {string}   attribute      Attribute value. Dots allowed.
- * @returns {function(Object): *}
- */
 function getAttrGetter(attribute) {
   const parts = _prepareAttributeParts(attribute);
-
   return function attrGetter(item) {
     let _item = item;
-
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
-
-      // If item is not an object, and we still got parts to handle, it means
-      // that something goes wrong. Just roll out to undefined in that case.
       if (hasOwnProp(_item, part)) {
         _item = _item[part];
       } else {
         return undefined;
       }
     }
-
     return _item;
   };
 }
-
-exports.getAttrGetter = getAttrGetter;
 
 function groupBy(obj, val, throwOnUndefined) {
   const result = {};
@@ -227,13 +126,9 @@ function groupBy(obj, val, throwOnUndefined) {
   return result;
 }
 
-exports.groupBy = groupBy;
-
 function toArray(obj) {
   return Array.prototype.slice.call(obj);
 }
-
-exports.toArray = toArray;
 
 function without(array) {
   const result = [];
@@ -252,17 +147,13 @@ function without(array) {
   return result;
 }
 
-exports.without = without;
-
 function repeat(char_, n) {
-  var str = '';
+  let str = '';
   for (let i = 0; i < n; i++) {
     str += char_;
   }
   return str;
 }
-
-exports.repeat = repeat;
 
 function each(obj, func, context) {
   if (obj == null) {
@@ -278,10 +169,8 @@ function each(obj, func, context) {
   }
 }
 
-exports.each = each;
-
 function map(obj, func) {
-  var results = [];
+  const results = [];
   if (obj == null) {
     return results;
   }
@@ -301,8 +190,6 @@ function map(obj, func) {
   return results;
 }
 
-exports.map = map;
-
 function asyncIter(arr, iter, cb) {
   let i = -1;
 
@@ -318,8 +205,6 @@ function asyncIter(arr, iter, cb) {
 
   next();
 }
-
-exports.asyncIter = asyncIter;
 
 function asyncFor(obj, iter, cb) {
   const keys = keys_(obj || {});
@@ -340,16 +225,11 @@ function asyncFor(obj, iter, cb) {
   next();
 }
 
-exports.asyncFor = asyncFor;
-
 function indexOf(arr, searchElement, fromIndex) {
   return Array.prototype.indexOf.call(arr || [], searchElement, fromIndex);
 }
 
-exports.indexOf = indexOf;
-
 function keys_(obj) {
-  /* eslint-disable no-restricted-syntax */
   const arr = [];
   for (let k in obj) {
     if (hasOwnProp(obj, k)) {
@@ -359,19 +239,13 @@ function keys_(obj) {
   return arr;
 }
 
-exports.keys = keys_;
-
 function _entries(obj) {
   return keys_(obj).map((k) => [k, obj[k]]);
 }
 
-exports._entries = _entries;
-
 function _values(obj) {
   return keys_(obj).map((k) => obj[k]);
 }
-
-exports._values = _values;
 
 function extend(obj1, obj2) {
   obj1 = obj1 || {};
@@ -380,8 +254,6 @@ function extend(obj1, obj2) {
   });
   return obj1;
 }
-
-exports._assign = exports.extend = extend;
 
 function inOperator(key, val) {
   if (isArray(val) || isString(val)) {
@@ -393,4 +265,58 @@ function inOperator(key, val) {
     + key + '" in unexpected types.');
 }
 
-exports.inOperator = inOperator;
+export {
+  hasOwnProp,
+  lookupEscape,
+  _prettifyError,
+  TemplateError,
+  escape,
+  isFunction,
+  isArray,
+  isString,
+  isObject,
+  _prepareAttributeParts,
+  getAttrGetter,
+  groupBy,
+  toArray,
+  without,
+  repeat,
+  each,
+  map,
+  asyncIter,
+  asyncFor,
+  indexOf,
+  keys_ as keys,
+  _entries,
+  _values,
+  extend,
+  inOperator
+};
+
+export default {
+  hasOwnProp,
+  lookupEscape,
+  _prettifyError,
+  TemplateError,
+  escape,
+  isFunction,
+  isArray,
+  isString,
+  isObject,
+  _prepareAttributeParts,
+  getAttrGetter,
+  groupBy,
+  toArray,
+  without,
+  repeat,
+  each,
+  map,
+  asyncIter,
+  asyncFor,
+  indexOf,
+  keys: keys_,
+  _entries,
+  _values,
+  extend,
+  inOperator
+};

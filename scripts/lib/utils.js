@@ -1,7 +1,9 @@
-'use strict';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-var fs = require('fs');
-var path = require('path');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function lookup(relPath, isExecutable) {
   for (let i = 0; i < module.paths.length; i++) {
@@ -18,7 +20,7 @@ function lookup(relPath, isExecutable) {
 
 function promiseSequence(promises) {
   return new Promise((resolve, reject) => {
-    var results = [];
+    const results = [];
 
     function iterator(prev, curr) {
       return prev.then((result) => {
@@ -34,7 +36,7 @@ function promiseSequence(promises) {
   });
 }
 
-module.exports = {
-  lookup: lookup,
-  promiseSequence: promiseSequence
+export {
+  lookup,
+  promiseSequence
 };

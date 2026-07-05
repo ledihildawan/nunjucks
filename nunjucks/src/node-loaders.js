@@ -1,13 +1,11 @@
 /* eslint-disable no-console */
 
-'use strict';
+import fs from 'fs';
+import path from 'path';
+import Loader from './loader.js';
+import {PrecompiledLoader} from './precompiled-loader.js';
 
-const fs = require('fs');
-const path = require('path');
-const Loader = require('./loader');
-const {PrecompiledLoader} = require('./precompiled-loader.js');
-
-class FileSystemLoader extends Loader {
+export class FileSystemLoader extends Loader {
   constructor(searchPaths, opts) {
     super();
     if (typeof opts === 'boolean') {
@@ -24,7 +22,6 @@ class FileSystemLoader extends Loader {
 
     if (searchPaths) {
       searchPaths = Array.isArray(searchPaths) ? searchPaths : [searchPaths];
-      // For windows, convert to forward slashes
       this.searchPaths = searchPaths.map(path.normalize);
     } else {
       this.searchPaths = ['.'];
@@ -39,8 +36,6 @@ class FileSystemLoader extends Loader {
       const basePath = path.resolve(paths[i]);
       const p = path.resolve(paths[i], name);
 
-      // Only allow the current directory and anything
-      // underneath it to be searched
       if (p.indexOf(basePath) === 0 && fs.existsSync(p)) {
         fullpath = p;
         break;
@@ -63,7 +58,7 @@ class FileSystemLoader extends Loader {
   }
 }
 
-class NodeResolveLoader extends Loader {
+export class NodeResolveLoader extends Loader {
   constructor(opts) {
     super();
     opts = opts || {};
@@ -114,8 +109,4 @@ class NodeResolveLoader extends Loader {
   }
 }
 
-module.exports = {
-  FileSystemLoader: FileSystemLoader,
-  PrecompiledLoader: PrecompiledLoader,
-  NodeResolveLoader: NodeResolveLoader,
-};
+export {PrecompiledLoader};

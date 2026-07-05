@@ -1,6 +1,4 @@
-'use strict';
-
-const {Obj} = require('./object');
+import {Obj} from './object.js';
 
 function traverseAndCheck(obj, type, results) {
   if (obj instanceof type) {
@@ -18,11 +16,8 @@ class Node extends Obj {
     this.colno = colno;
 
     this.fields.forEach((field, i) => {
-      // The first two args are line/col numbers, so offset by 2
       var val = arguments[i + 2];
 
-      // Fields should never be undefined, but null. It makes
-      // testing easier to normalize values.
       if (val === undefined) {
         val = null;
       }
@@ -50,7 +45,6 @@ class Node extends Obj {
   }
 }
 
-// Abstract nodes
 class Value extends Node {
   get typename() { return 'Value'; }
   get fields() {
@@ -58,7 +52,6 @@ class Value extends Node {
   }
 }
 
-// Concrete nodes
 class NodeList extends Node {
   get typename() { return 'NodeList'; }
   get fields() { return ['children']; }
@@ -148,7 +141,6 @@ const CallExtension = Node.extend('CallExtension', {
 });
 const CallExtensionAsync = CallExtension.extend('CallExtensionAsync');
 
-// This is hacky, but this is just a debugging function anyway
 function print(str, indent, inline) {
   var lines = str.split('\n');
 
@@ -161,7 +153,6 @@ function print(str, indent, inline) {
   });
 }
 
-// Print the AST in a nicely formatted tree format for debuggin
 function printNodes(node, indent) {
   indent = indent || 0;
 
@@ -210,67 +201,125 @@ function printNodes(node, indent) {
   }
 }
 
-module.exports = {
-  Node: Node,
-  Root: Root,
-  NodeList: NodeList,
-  Value: Value,
-  Literal: Literal,
-  Symbol: Symbol,
-  Group: Group,
+export {
+  Node,
+  Root,
+  NodeList,
+  Value,
+  Literal,
+  Symbol,
+  Group,
+  ArrayNode as Array,
+  Pair,
+  Dict,
+  Output,
+  Capture,
+  TemplateData,
+  If,
+  IfAsync,
+  InlineIf,
+  For,
+  AsyncEach,
+  AsyncAll,
+  Macro,
+  Caller,
+  Import,
+  FromImport,
+  FunCall,
+  Pipe,
+  PipeAsync,
+  Pipe as Filter,
+  KeywordArgs,
+  Block,
+  Super,
+  Extends,
+  Include,
+  Set,
+  Switch,
+  Case,
+  LookupVal,
+  OptionalChain,
+  BinOp,
+  In,
+  Is,
+  Or,
+  And,
+  NullishCoalesce,
+  Not,
+  Add,
+  Concat,
+  Sub,
+  Mul,
+  Div,
+  FloorDiv,
+  Mod,
+  Pow,
+  Neg,
+  Pos,
+  Compare,
+  CompareOperand,
+  CallExtension,
+  CallExtensionAsync
+};
+
+export default {
+  Node,
+  Root,
+  NodeList,
+  Value,
+  Literal,
+  Symbol,
+  Group,
   Array: ArrayNode,
-  Pair: Pair,
-  Dict: Dict,
-  Output: Output,
-  Capture: Capture,
-  TemplateData: TemplateData,
-  If: If,
-  IfAsync: IfAsync,
-  InlineIf: InlineIf,
-  For: For,
-  AsyncEach: AsyncEach,
-  AsyncAll: AsyncAll,
-  Macro: Macro,
-  Caller: Caller,
-  Import: Import,
-  FromImport: FromImport,
-  FunCall: FunCall,
-  Pipe: Pipe,
-  PipeAsync: PipeAsync,
+  Pair,
+  Dict,
+  Output,
+  Capture,
+  TemplateData,
+  If,
+  IfAsync,
+  InlineIf,
+  For,
+  AsyncEach,
+  AsyncAll,
+  Macro,
+  Caller,
+  Import,
+  FromImport,
+  FunCall,
+  Pipe,
+  PipeAsync,
   Filter: Pipe,
   FilterAsync: PipeAsync,
-  KeywordArgs: KeywordArgs,
-  Block: Block,
-  Super: Super,
-  Extends: Extends,
-  Include: Include,
-  Set: Set,
-  Switch: Switch,
-  Case: Case,
-  LookupVal: LookupVal,
-  OptionalChain: OptionalChain,
-  BinOp: BinOp,
-  In: In,
-  Is: Is,
-  Or: Or,
-  And: And,
-  NullishCoalesce: NullishCoalesce,
-  Not: Not,
-  Add: Add,
-  Concat: Concat,
-  Sub: Sub,
-  Mul: Mul,
-  Div: Div,
-  FloorDiv: FloorDiv,
-  Mod: Mod,
-  Pow: Pow,
-  Neg: Neg,
-  Pos: Pos,
-  Compare: Compare,
-  CompareOperand: CompareOperand,
-
-  CallExtension: CallExtension,
-  CallExtensionAsync: CallExtensionAsync,
-
-  printNodes: printNodes
+  KeywordArgs,
+  Block,
+  Super,
+  Extends,
+  Include,
+  Set,
+  Switch,
+  Case,
+  LookupVal,
+  OptionalChain,
+  BinOp,
+  In,
+  Is,
+  Or,
+  And,
+  NullishCoalesce,
+  Not,
+  Add,
+  Concat,
+  Sub,
+  Mul,
+  Div,
+  FloorDiv,
+  Mod,
+  Pow,
+  Neg,
+  Pos,
+  Compare,
+  CompareOperand,
+  CallExtension,
+  CallExtensionAsync
 };

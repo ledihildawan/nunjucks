@@ -1,14 +1,10 @@
-'use strict';
+import { Parser, parse } from './parser.js';
+import { transform } from './transformer.js';
+import * as nodes from './nodes.js';
+import { TemplateError } from './lib.js';
+import { Frame } from './runtime.js';
+import { Obj } from './object.js';
 
-const parser = require('./parser');
-const transformer = require('./transformer');
-const nodes = require('./nodes');
-const {TemplateError} = require('./lib');
-const {Frame} = require('./runtime');
-const {Obj} = require('./object');
-
-// These are all the same for now, but shouldn't be passed straight
-// through
 const compareOps = {
   '==': '==',
   '===': '===',
@@ -150,8 +146,6 @@ class Compiler extends Obj {
   }
 
   _compileExpression(node, frame) {
-    // TODO: I'm not really sure if this type check is worth it or
-    // not.
     this.assertType(
       node,
       nodes.Literal,
@@ -217,9 +211,6 @@ class Compiler extends Obj {
       }
 
       args.children.forEach((arg, i) => {
-        // Tag arguments are passed normally to the call. Note
-        // that keyword arguments are turned into a single js
-        // object as the last argument, if they exist.
         this._compileExpression(arg, frame);
 
         if (i !== args.children.length - 1 || contentArgs.length) {
@@ -257,7 +248,7 @@ class Compiler extends Obj {
       const res = this._tmpid();
       this._emitLine(', ' + this._makeCallback(res));
       this._emitLine(
-        `${this.buffer} += runtime.suppressValue(${res}, ${autoescape} && env.opts.autoescape);`);
+        `${this.buffer} += runtime.suppressValue(${res}, ${autoescape} && env.opts.autoescape});`);
       this._addScopeLevel();
     } else {
       this._emit(')');
@@ -354,15 +345,11 @@ class Compiler extends Obj {
   }
 
   compileIs(node, frame) {
-    // first, we need to try to get the name of the test function, if it's a
-    // callable (i.e., has args) and not a symbol.
     var right = node.right.name
       ? node.right.name.value
-      // otherwise go with the symbol value
       : node.right.value;
     this._emit('env.getTest("' + right + '").call(context, ');
     this.compile(node.left, frame);
-    // compile the arguments for the callable if they exist
     if (node.right.args) {
       this._emit(',');
       this.compile(node.right.args, frame);
@@ -376,8 +363,6 @@ class Compiler extends Obj {
     this.compile(node.right, frame);
   }
 
-  // ensure concatenation instead of addition
-  // by adding empty string in between
   compileOr(node, frame) {
     return this._binOpEmitter(node, frame, ' || ');
   }
@@ -494,19 +479,12 @@ class Compiler extends Obj {
   }
 
   compileFunCall(node, frame) {
-    // Keep track of line/col info at runtime by settings
-    // variables within an expression. An expression in javascript
-    // like (x, y, z) returns the last value, and x and y can be
-    // anything
     this._emit('(lineno = ' + node.lineno +
       ', colno = ' + node.colno + ', ');
 
     this._emit('runtime.callWrap(');
-    // Compile it as normal.
     this._compileExpression(node.name, frame);
 
-    // Output the name of what we're calling so we can get friendly errors
-    // if the lookup fails.
     this._emit(', "' + this._getNodeName(node.name).replace(/"/g, '\\"') + '", context, ');
 
     this._compileAggregate(node.args, frame, '[', '])');
@@ -544,8 +522,6 @@ class Compiler extends Obj {
   compileSet(node, frame) {
     var ids = [];
 
-    // Lookup the variable names for each identifier and create
-    // new ones if necessary
     node.targets.forEach((target) => {
       var name = target.value;
       var id = frame.lookup(name);
@@ -553,8 +529,6 @@ class Compiler extends Obj {
       if (id === null || id === undefined) {
         id = this._tmpid();
 
-        // Note: This relies on js allowing scope across
-        // blocks, in case this is created inside an `if`
         this._emitLine('var ' + id + ';');
       }
 
@@ -576,8 +550,6 @@ class Compiler extends Obj {
       var id = ids[i];
       var name = target.value;
 
-      // We are running this for every var, but it's very
-      // uncommon to assign to multiple vars anyway
       this._emitLine(`frame.set("${name}", ${id}, true);`);
 
       this._emitLine('if(frame.topLevel) {');
@@ -601,7 +573,6 @@ class Compiler extends Obj {
       this.compile(c.cond, frame);
       this._emit(': ');
       this.compile(c.body, frame);
-      // preserve fall-throughs
       if (c.body.children.length) {
         this._emitLine('break;');
       }
@@ -656,10 +627,6 @@ class Compiler extends Obj {
   }
 
   compileFor(node, frame) {
-    // Some of this code is ugly, but it keeps the generated code
-    // as fast as possible. ForAsync also shares some of this, but
-    // not much.
-
     const i = this._tmpid();
     const len = this._tmpid();
     const arr = this._tmpid();
@@ -674,19 +641,13 @@ class Compiler extends Obj {
     this._emit(`if(${arr}) {`);
     this._emitLine(arr + ' = runtime.fromIterator(' + arr + ');');
 
-    // If multiple names are passed, we need to bind them
-    // appropriately
     if (node.name instanceof nodes.Array) {
       this._emitLine(`var ${i};`);
 
-      // The object could be an arroy or object. Note that the
-      // body of the loop is duplicated for each condition, but
-      // we are optimizing for speed over size.
       this._emitLine(`if(runtime.isArray(${arr})) {`);
       this._emitLine(`var ${len} = ${arr}.length;`);
       this._emitLine(`for(${i}=0; ${i} < ${arr}.length; ${i}++) {`);
 
-      // Bind each declared var
       node.name.children.forEach((child, u) => {
         var tid = this._tmpid();
         this._emitLine(`var ${tid} = ${arr}[${i}][${u}];`);
@@ -701,7 +662,6 @@ class Compiler extends Obj {
       this._emitLine('}');
 
       this._emitLine('} else {');
-      // Iterate over the key/values of an object
       const [key, val] = node.name.children;
       const k = this._tmpid();
       const v = this._tmpid();
@@ -724,7 +684,6 @@ class Compiler extends Obj {
 
       this._emitLine('}');
     } else {
-      // Generate a typical array iteration
       const v = this._tmpid();
       frame.set(node.name.value, v);
 
@@ -894,7 +853,6 @@ class Compiler extends Obj {
     var funcId = 'macro_' + this._tmpid();
     var keepFrame = (frame !== undefined);
 
-    // Type check the definition of the args
     node.args.children.forEach((arg, i) => {
       if (i === node.args.children.length - 1 && arg instanceof nodes.Dict) {
         kwargs = arg;
@@ -906,14 +864,9 @@ class Compiler extends Obj {
 
     const realNames = [...args.map((n) => `l_${n.value}`), 'kwargs'];
 
-    // Quoted argument names
     const argNames = args.map((n) => `"${n.value}"`);
     const kwargNames = ((kwargs && kwargs.children) || []).map((n) => `"${n.key.value}"`);
 
-    // We pass a function to makeMacro which destructures the
-    // arguments so support setting positional args with keywords
-    // args and passing keyword args as positional args
-    // (essentially default values). See runtime.js.
     let currFrame;
     if (keepFrame) {
       currFrame = frame.push(true);
@@ -931,15 +884,11 @@ class Compiler extends Obj {
       'if (Object.prototype.hasOwnProperty.call(kwargs, "caller")) {',
       'frame.set("caller", kwargs.caller); }');
 
-    // Expose the arguments to the template. Don't need to use
-    // random names because the function
-    // will create a new run-time scope for us
     args.forEach((arg) => {
       this._emitLine(`frame.set("${arg.value}", l_${arg.value});`);
       currFrame.set(arg.value, `l_${arg.value}`);
     });
 
-    // Expose the keyword arguments
     if (kwargs) {
       kwargs.children.forEach((pair) => {
         const name = pair.key.value;
@@ -968,7 +917,6 @@ class Compiler extends Obj {
   compileMacro(node, frame) {
     var funcId = this._compileMacro(node);
 
-    // Expose the macro to the templates
     var name = node.name.value;
     frame.set(name, funcId);
 
@@ -983,7 +931,6 @@ class Compiler extends Obj {
   }
 
   compileCaller(node, frame) {
-    // basically an anonymous "macro expression"
     this._emit('(function (){');
     const funcId = this._compileMacro(node, frame);
     this._emit(`return ${funcId};})()`);
@@ -1054,16 +1001,6 @@ class Compiler extends Obj {
   compileBlock(node) {
     var id = this._tmpid();
 
-    // If we are executing outside a block (creating a top-level
-    // block), we really don't want to execute its code because it
-    // will execute twice: once when the child template runs and
-    // again when the parent template runs. Note that blocks
-    // within blocks will *always* execute immediately *and*
-    // wherever else they are invoked (like used in a parent
-    // template). This may have behavioral differences from jinja
-    // because blocks can have side effects, but it seems like a
-    // waste of performance to always execute huge top-level
-    // blocks twice
     if (!this.inBlock) {
       this._emitLine(`var ${id} = parentTemplate ? "" : await (await context.getBlock("${node.name.value}"))(env, context, frame, runtime);`);
     } else {
@@ -1086,9 +1023,6 @@ class Compiler extends Obj {
 
     const parentTemplateId = this._compileGetTemplate(node, frame, true, false);
 
-    // extends is a dynamic tag and can occur within a block like
-    // `if`, so if this happens we need to capture the parent
-    // template in the top-level scope
     this._emitLine(`parentTemplate = ${parentTemplateId}`);
 
     this._emitLine(`for(var ${k} in parentTemplate.blocks) {`);
@@ -1129,8 +1063,6 @@ class Compiler extends Obj {
   compileOutput(node, frame) {
     const children = node.children;
     children.forEach(child => {
-      // TemplateData is a special case because it is never
-      // autoescaped, so simply output it for optimization
       if (child instanceof nodes.TemplateData) {
         if (child.value) {
           this._emit(`${this.buffer} += `);
@@ -1218,22 +1150,19 @@ class Compiler extends Obj {
   }
 }
 
-module.exports = {
-  compile: function compile(src, asyncPipes, extensions, name, opts = {}) {
-    const c = new Compiler(name, opts.throwOnUndefined);
+export function compile(src, asyncPipes, extensions, name, opts = {}) {
+  const c = new Compiler(name, opts.throwOnUndefined);
 
-    // Run the extension preprocessors against the source.
-    const preprocessors = (extensions || []).map(ext => ext.preprocess).filter(f => !!f);
+  const preprocessors = (extensions || []).map(ext => ext.preprocess).filter(f => !!f);
 
-    const processedSrc = preprocessors.reduce((s, processor) => processor(s), src);
+  const processedSrc = preprocessors.reduce((s, processor) => processor(s), src);
 
-    c.compile(transformer.transform(
-      parser.parse(processedSrc, extensions, opts),
-      asyncPipes,
-      name
-    ));
-    return c.getCode();
-  },
+  c.compile(transform(
+    parse(processedSrc, extensions, opts),
+    asyncPipes,
+    name
+  ));
+  return c.getCode();
+}
 
-  Compiler: Compiler
-};
+export {Compiler};
