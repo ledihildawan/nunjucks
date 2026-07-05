@@ -135,18 +135,6 @@ export class Environment extends EmitterObj {
     const filter = this.filters[name];
     const isAsync = this.asyncFilters.includes(name);
 
-    if (isAsync) {
-      return async function(...args) {
-        return new Promise((resolve, reject) => {
-          const cb = (err, result) => {
-            if (err) reject(err);
-            else resolve(result);
-          };
-          filter.apply(this, [...args, cb]);
-        });
-      };
-    }
-
     return async function(...args) {
       const resolvedArgs = await Promise.all(args.map(async arg => {
         if (arg && typeof arg.then === 'function') {

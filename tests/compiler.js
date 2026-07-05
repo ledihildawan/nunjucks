@@ -627,213 +627,136 @@ describe('compiler', function() {
   test('should compile async control', async function() {
     var opts = {
       asyncFilters: {
-        getContents: function(tmpl, cb) {
-          fs.readFile(tmpl, cb);
+        getContents: async function(tmpl) {
+          const fs = await import('fs');
+          return fs.promises.readFile(tmpl, 'utf-8');
         },
 
-        getContentsArr: function(arr, cb) {
-          fs.readFile(arr[0], function(err, res) {
-            cb(err, [res]);
-          });
+        getContentsArr: async function(arr) {
+          const fs = await import('fs');
+          const res = await fs.promises.readFile(arr[0], 'utf-8');
+          return [res];
         }
       }
     };
 
     {
-      const res = await new Promise((resolve, reject) => {
-        render('{{ tmpl |> getContents }}',
-          {
-            tmpl: 'tests/templates/for-async-content.njk'
-          },
-          opts,
-          function(err, res) {
-            if (err) reject(err);
-            else resolve(res);
-          });
-      });
+      const res = await render('{{ tmpl |> getContents }}',
+        {
+          tmpl: 'tests/templates/for-async-content.njk'
+        },
+        opts);
       expect(res).toBe('somecontenthere');
     }
 
     {
-      const res = await new Promise((resolve, reject) => {
-        render('{% if tmpl %}{{ tmpl |> getContents }}{% endif %}',
-          {
-            tmpl: 'tests/templates/for-async-content.njk'
-          },
-          opts,
-          function(err, res) {
-            if (err) reject(err);
-            else resolve(res);
-          });
-      });
+      const res = await render('{% if tmpl %}{{ tmpl |> getContents }}{% endif %}',
+        {
+          tmpl: 'tests/templates/for-async-content.njk'
+        },
+        opts);
       expect(res).toBe('somecontenthere');
     }
 
     {
-      const res = await new Promise((resolve, reject) => {
-        render('{% if tmpl |> getContents %}yes{% endif %}',
-          {
-            tmpl: 'tests/templates/for-async-content.njk'
-          },
-          opts,
-          function(err, res) {
-            if (err) reject(err);
-            else resolve(res);
-          });
-      });
+      const res = await render('{% if tmpl |> getContents %}yes{% endif %}',
+        {
+          tmpl: 'tests/templates/for-async-content.njk'
+        },
+        opts);
       expect(res).toBe('yes');
     }
 
     {
-      const res = await new Promise((resolve, reject) => {
-        render('{% for t in [tmpl, tmpl] %}{{ t |> getContents }}*{% endfor %}',
-          {
-            tmpl: 'tests/templates/for-async-content.njk'
-          },
-          opts,
-          function(err, res) {
-            if (err) reject(err);
-            else resolve(res);
-          });
-      });
+      const res = await render('{% for t in [tmpl, tmpl] %}{{ t |> getContents }}*{% endfor %}',
+        {
+          tmpl: 'tests/templates/for-async-content.njk'
+        },
+        opts);
       expect(res).toBe('somecontenthere*somecontenthere*');
     }
 
     {
-      const res = await new Promise((resolve, reject) => {
-        render('{% for t in [tmpl, tmpl] |> getContentsArr %}{{ t }}{% endfor %}',
-          {
-            tmpl: 'tests/templates/for-async-content.njk'
-          },
-          opts,
-          function(err, res) {
-            if (err) reject(err);
-            else resolve(res);
-          });
-      });
+      const res = await render('{% for t in [tmpl, tmpl] |> getContentsArr %}{{ t }}{% endfor %}',
+        {
+          tmpl: 'tests/templates/for-async-content.njk'
+        },
+        opts);
       expect(res).toBe('somecontenthere');
     }
 
     {
-      const res = await new Promise((resolve, reject) => {
-        render('{% if test %}{{ tmpl |> getContents }}{% endif %}oof',
-          {
-            tmpl: 'tests/templates/for-async-content.njk'
-          },
-          opts,
-          function(err, res) {
-            if (err) reject(err);
-            else resolve(res);
-          });
-      });
+      const res = await render('{% if test %}{{ tmpl |> getContents }}{% endif %}oof',
+        {
+          tmpl: 'tests/templates/for-async-content.njk'
+        },
+        opts);
       expect(res).toBe('oof');
     }
 
     {
-      const res = await new Promise((resolve, reject) => {
-        render(
-          '{% if tmpl %}' +
-          '{% for i in [0, 1] %}{{ tmpl |> getContents }}*{% endfor %}' +
-          '{% endif %}',
-          {
-            tmpl: 'tests/templates/for-async-content.njk'
-          },
-          opts,
-          function(err, res) {
-            if (err) reject(err);
-            else resolve(res);
-          });
-      });
+      const res = await render(
+        '{% if tmpl %}' +
+        '{% for i in [0, 1] %}{{ tmpl |> getContents }}*{% endfor %}' +
+        '{% endif %}',
+        {
+          tmpl: 'tests/templates/for-async-content.njk'
+        },
+        opts);
       expect(res).toBe('somecontenthere*somecontenthere*');
     }
 
     {
-      const res = await new Promise((resolve, reject) => {
-        render('{% block content %}{{ tmpl |> getContents }}{% endblock %}',
-          {
-            tmpl: 'tests/templates/for-async-content.njk'
-          },
-          opts,
-          function(err, res) {
-            if (err) reject(err);
-            else resolve(res);
-          });
-      });
+      const res = await render('{% block content %}{{ tmpl |> getContents }}{% endblock %}',
+        {
+          tmpl: 'tests/templates/for-async-content.njk'
+        },
+        opts);
       expect(res).toBe('somecontenthere');
     }
 
     {
-      const res = await new Promise((resolve, reject) => {
-        render('{% block content %}hello{% endblock %} {{ tmpl |> getContents }}',
-          {
-            tmpl: 'tests/templates/for-async-content.njk'
-          },
-          opts,
-          function(err, res) {
-            if (err) reject(err);
-            else resolve(res);
-          });
-      });
+      const res = await render('{% block content %}hello{% endblock %} {{ tmpl |> getContents }}',
+        {
+          tmpl: 'tests/templates/for-async-content.njk'
+        },
+        opts);
       expect(res).toBe('hello somecontenthere');
     }
 
     {
-      const res = await new Promise((resolve, reject) => {
-        render('{% block content %}{% set foo = tmpl |> getContents %}{{ foo }}{% endblock %}',
-          {
-            tmpl: 'tests/templates/for-async-content.njk'
-          },
-          opts,
-          function(err, res) {
-            if (err) reject(err);
-            else resolve(res);
-          });
-      });
+      const res = await render('{% block content %}{% set foo = tmpl |> getContents %}{{ foo }}{% endblock %}',
+        {
+          tmpl: 'tests/templates/for-async-content.njk'
+        },
+        opts);
       expect(res).toBe('somecontenthere');
     }
 
     {
-      const res = await new Promise((resolve, reject) => {
-        render('{% block content %}{% include "async.njk" %}{% endblock %}',
-          {
-            tmpl: 'tests/templates/for-async-content.njk'
-          },
-          opts,
-          function(err, res) {
-            if (err) reject(err);
-            else resolve(res);
-          });
-      });
+      const res = await render('{% block content %}{% include "async.njk" %}{% endblock %}',
+        {
+          tmpl: 'tests/templates/for-async-content.njk'
+        },
+        opts);
       expect(res).toBe('somecontenthere\n');
     }
 
     {
-      const res = await new Promise((resolve, reject) => {
-        render('{% asyncEach i in [0, 1] %}{% include "async.njk" %}{% endeach %}',
-          {
-            tmpl: 'tests/templates/for-async-content.njk'
-          },
-          opts,
-          function(err, res) {
-            if (err) reject(err);
-            else resolve(res);
-          });
-      });
+      const res = await render('{% asyncEach i in [0, 1] %}{% include "async.njk" %}{% endeach %}',
+        {
+          tmpl: 'tests/templates/for-async-content.njk'
+        },
+        opts);
       expect(res).toBe('somecontenthere\nsomecontenthere\n');
     }
 
     {
-      const res = await new Promise((resolve, reject) => {
-        render('{% asyncAll i in [0, 1, 2, 3, 4] %}-{{ i }}:{% include "async.njk" %}-{% endall %}',
-          {
-            tmpl: 'tests/templates/for-async-content.njk'
-          },
-          opts,
-          function(err, res) {
-            if (err) reject(err);
-            else resolve(res);
-          });
-      });
+      const res = await render('{% asyncAll i in [0, 1, 2, 3, 4] %}-{{ i }}:{% include "async.njk" %}-{% endall %}',
+        {
+          tmpl: 'tests/templates/for-async-content.njk'
+        },
+        opts);
       expect(res).toBe('-0:somecontenthere\n-' +
         '-1:somecontenthere\n-' +
         '-2:somecontenthere\n-' +
