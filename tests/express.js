@@ -22,24 +22,22 @@ describe('express', function() {
     expect(app.settings.nunjucksEnv).to.be(env);
   });
 
-  it('should render a view with extension', function(done) {
+  it('should render a view with extension', async function() {
     app.get('/', function(req, res) {
       res.render('about.html');
     });
-    request(app)
+    await request(app)
       .get('/')
-      .expect(/This is just the about page/)
-      .end(done);
+      .expect(/This is just the about page/);
   });
 
-  it('should render a view without extension', function(done) {
+  it('should render a view without extension', async function() {
     app.get('/', function(req, res) {
       res.render('about');
     });
     app.set('view engine', 'html');
-    request(app)
+    await request(app)
       .get('/')
-      .expect(/This is just the about page/)
-      .end(done);
+      .expect(/This is just the about page/);
   });
 });

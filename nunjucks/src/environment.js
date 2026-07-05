@@ -1,5 +1,3 @@
-import asap from 'asap';
-import waterfall from 'a-sync-waterfall';
 import lib from './lib.js';
 import { compile } from './compiler.js';
 import * as filters from './filters.js';
@@ -11,28 +9,12 @@ import * as globalRuntime from './runtime.js';
 import {handleError, Frame} from './runtime.js';
 import expressApp from './express-app.js';
 
-function callbackAsap(cb, err, res) {
-  asap(() => {
-    cb(err, res);
-  });
-}
-
 const noopTmplSrc = {
   type: 'code',
   obj: {
-    /* eslint-disable consistent-return */
-    root(env, context, frame, runtime, cb) {
-      if (typeof cb === 'function') {
-        try {
-          cb(null, '');
-        } catch (e) {
-          cb(handleError(e, null, null));
-        }
-      } else {
-        return Promise.resolve('');
-      }
+    async root(env, context, frame, runtime) {
+      return '';
     }
-    /* eslint-enable consistent-return */
   }
 };
 
@@ -154,7 +136,7 @@ class Environment extends EmitterObj {
     const isAsync = this.asyncFilters.includes(name);
 
     if (isAsync) {
-      return function(...args) {
+      return async function(...args) {
         return new Promise((resolve, reject) => {
           const cb = (err, result) => {
             if (err) reject(err);
@@ -193,28 +175,12 @@ class Environment extends EmitterObj {
     return (isRelative && loader.resolve) ? loader.resolve(parentName, filename) : filename;
   }
 
-  getTemplate(name, eagerCompile, parentName, ignoreMissing, cb) {
-    var that = this;
+  async getTemplate(name, eagerCompile, parentName, ignoreMissing) {
     var tmpl = null;
     if (name && name.raw) {
       name = name.raw;
     }
 
-    if (lib.isFunction(parentName)) {
-      cb = parentName;
-      parentName = null;
-      eagerCompile = eagerCompile || false;
-    }
-
-    if (lib.isFunction(eagerCompile)) {
-      cb = eagerCompile;
-      eagerCompile = false;
-    }
-
-    if (!cb) {
-      return this._getTemplateAsync(name, eagerCompile, parentName, ignoreMissing);
-    }
-
     if (name instanceof Template) {
       tmpl = name;
     } else if (typeof name !== 'string') {
@@ -233,167 +199,57 @@ class Environment extends EmitterObj {
       if (eagerCompile) {
         tmpl.compile();
       }
-      cb(null, tmpl);
-      return undefined;
+      return tmpl;
     }
 
-    lib.asyncIter(this.loaders, (loader, i, next, done) => {
-      function handle(err, src) {
-        if (err) {
-          done(err);
-        } else if (src) {
-          src.loader = loader;
-          done(null, src);
-        } else {
-          next();
-        }
-      }
+    let info = null;
+    for (let i = 0; i < this.loaders.length; i++) {
+      const loader = this.loaders[i];
+      const resolvedName = this.resolveTemplate(loader, parentName, name);
 
-      name = that.resolveTemplate(loader, parentName, name);
-
+      let src;
       if (loader.async) {
-        loader.getSource(name, handle);
+        src = await loader.getSource(resolvedName);
       } else {
-        handle(null, loader.getSource(name));
+        src = loader.getSource(resolvedName);
       }
-    }, (err, info) => {
-      if (!info && !err && !ignoreMissing) {
-        err = new Error('template not found: ' + name);
-      }
-      if (err) {
-        cb(err);
-        return;
-      }
-      let newTmpl;
-      if (!info) {
-        newTmpl = new Template(noopTmplSrc, this, '', eagerCompile);
-      } else {
-        newTmpl = new Template(info.src, this, info.path, eagerCompile);
-        if (!info.noCache) {
-          info.loader.cache[name] = newTmpl;
-        }
-      }
-      cb(null, newTmpl);
-    });
 
-    return undefined;
-  }
-
-  _getTemplateAsync(name, eagerCompile, parentName, ignoreMissing) {
-    var that = this;
-    var tmpl = null;
-
-    if (name instanceof Template) {
-      tmpl = name;
-    } else if (typeof name !== 'string') {
-      throw new Error('template names must be a string: ' + name);
-    } else {
-      for (let i = 0; i < this.loaders.length; i++) {
-        const loader = this.loaders[i];
-        tmpl = loader.cache[this.resolveTemplate(loader, parentName, name)];
-        if (tmpl) {
-          break;
-        }
+      if (src) {
+        src.loader = loader;
+        info = src;
+        break;
       }
     }
 
-    if (tmpl) {
-      if (eagerCompile) {
-        tmpl.compile();
-      }
-      return Promise.resolve(tmpl);
+    if (!info && !ignoreMissing) {
+      throw new Error('template not found: ' + name);
     }
 
-    return new Promise((resolve, reject) => {
-      lib.asyncIter(this.loaders, (loader, i, next, done) => {
-        function handle(err, src) {
-          if (err) {
-            done(err);
-          } else if (src) {
-            src.loader = loader;
-            done(null, src);
-          } else {
-            next();
-          }
-        }
+    if (!info) {
+      return new Template(noopTmplSrc, this, '', eagerCompile);
+    }
 
-        name = that.resolveTemplate(loader, parentName, name);
-
-        if (loader.async) {
-          loader.getSource(name, handle);
-        } else {
-          handle(null, loader.getSource(name));
-        }
-      }, (err, info) => {
-        if (!info && !err && !ignoreMissing) {
-          err = new Error('template not found: ' + name);
-        }
-        if (err) {
-          reject(err);
-          return;
-        }
-        let newTmpl;
-        if (!info) {
-          newTmpl = new Template(noopTmplSrc, this, '', eagerCompile);
-        } else {
-          newTmpl = new Template(info.src, this, info.path, eagerCompile);
-          if (!info.noCache) {
-            info.loader.cache[name] = newTmpl;
-          }
-        }
-        resolve(newTmpl);
-      });
-    });
+    const newTmpl = new Template(info.src, this, info.path, eagerCompile);
+    if (!info.noCache) {
+      info.loader.cache[name] = newTmpl;
+    }
+    return newTmpl;
   }
 
   express(app) {
     return expressApp(this, app);
   }
 
-  render(name, ctx, cb) {
-    if (lib.isFunction(ctx)) {
-      cb = ctx;
-      ctx = null;
-    }
-
-    const renderPromise = new Promise((resolve, reject) => {
-      this.getTemplate(name, (err, tmpl) => {
-        if (err) {
-          if (cb) {
-            callbackAsap(cb, err);
-          }
-          reject(err);
-        } else {
-          const result = tmpl.render(ctx);
-          if (result && typeof result.then === 'function') {
-            result.then(resolve).catch(reject);
-          } else {
-            resolve(result);
-          }
-        }
-      });
-    });
-
-    if (cb) {
-      renderPromise.then((res) => cb(null, res)).catch((err) => cb(err));
-    }
-
-    return renderPromise;
+  async render(name, ctx) {
+    const tmpl = await this.getTemplate(name);
+    const result = await tmpl.render(ctx);
+    return result;
   }
 
-  renderString(src, ctx, opts, cb) {
-    if (lib.isFunction(opts)) {
-      cb = opts;
-      opts = {};
-    }
+  async renderString(src, ctx, opts) {
     opts = opts || {};
-
     const tmpl = new Template(src, this, opts.path);
-    return tmpl.render(ctx, cb);
-  }
-
-  waterfall(tasks, callback, forceAsync) {
-    return waterfall(tasks, callback, forceAsync);
+    return await tmpl.render(ctx);
   }
 }
 
@@ -501,7 +357,6 @@ class Template extends Obj {
     }
   }
 
-  /* eslint-disable consistent-return */
   render(ctx, parentFrame, cb) {
     if (typeof ctx === 'function') {
       cb = ctx;
@@ -511,23 +366,17 @@ class Template extends Obj {
       parentFrame = null;
     }
 
-    try {
-      this.compile();
-    } catch (e) {
-      const err = lib._prettifyError(this.path, this.env.opts.dev, e);
-      if (cb) {
-        cb(err);
-        return;
-      } else {
-        throw err;
-      }
-    }
-
-    const context = new Context(ctx || {}, this.blocks, this.env);
-    const frame = parentFrame ? parentFrame.push(true) : new Frame();
-    frame.topLevel = true;
-
     const renderPromise = (async () => {
+      try {
+        this.compile();
+      } catch (e) {
+        throw lib._prettifyError(this.path, this.env.opts.dev, e);
+      }
+
+      const context = new Context(ctx || {}, this.blocks, this.env);
+      const frame = parentFrame ? parentFrame.push(true) : new Frame();
+      frame.topLevel = true;
+
       try {
         const result = await this.rootRenderFunc(this.env, context, frame, globalRuntime);
         return result;
@@ -537,50 +386,29 @@ class Template extends Obj {
     })();
 
     if (cb) {
-      renderPromise.then((res) => cb(null, res)).catch((err) => cb(err));
+      renderPromise.then(res => cb(null, res)).catch(err => cb(err));
     }
 
     return renderPromise;
   }
-  /* eslint-enable consistent-return */
 
-
-  getExported(ctx, parentFrame, cb) {
-    if (typeof ctx === 'function') {
-      cb = ctx;
-      ctx = {};
+  async getExported(ctx, parentFrame) {
+    try {
+      this.compile();
+    } catch (e) {
+      throw lib._prettifyError(this.path, this.env.opts.dev, e);
     }
 
-    if (typeof parentFrame === 'function') {
-      cb = parentFrame;
-      parentFrame = null;
+    const frame = parentFrame ? parentFrame.push() : new Frame();
+    frame.topLevel = true;
+
+    const context = new Context(ctx || {}, this.blocks, this.env);
+    try {
+      await this.rootRenderFunc(this.env, context, frame, globalRuntime);
+      return context.getExported();
+    } catch (e) {
+      throw lib._prettifyError(this.path, this.env.opts.dev, e);
     }
-
-    const exportedPromise = (async () => {
-      try {
-        this.compile();
-      } catch (e) {
-        const err = lib._prettifyError(this.path, this.env.opts.dev, e);
-        throw err;
-      }
-
-      const frame = parentFrame ? parentFrame.push() : new Frame();
-      frame.topLevel = true;
-
-      const context = new Context(ctx || {}, this.blocks, this.env);
-      try {
-        await this.rootRenderFunc(this.env, context, frame, globalRuntime);
-        return context.getExported();
-      } catch (e) {
-        throw lib._prettifyError(this.path, this.env.opts.dev, e);
-      }
-    })();
-
-    if (cb) {
-      exportedPromise.then((res) => cb(null, res)).catch((err) => cb(err));
-    }
-
-    return exportedPromise;
   }
 
   compile() {

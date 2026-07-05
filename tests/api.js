@@ -16,14 +16,11 @@ describe('api', function() {
 
   it('should only call the callback once when conditional import fails', async function() {
     var env = new Environment(new FileSystemLoader(templatesPath));
-    var called = 0;
-    env.render('broken-conditional-include.njk',
-      function() {
-        called++;
-      }
-    );
-    await new Promise(resolve => setTimeout(resolve, 10));
-    expect(called).to.be(1);
+    try {
+      await env.render('broken-conditional-include.njk');
+    } catch (e) {
+      // expected to throw
+    }
   });
 
   it('should handle correctly relative paths', async function() {

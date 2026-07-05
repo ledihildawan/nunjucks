@@ -1421,16 +1421,15 @@ describe('compiler', function() {
   });
 
   it('should error if same block is defined multiple times', async function() {
-    var func = function() {
-      render(
+    try {
+      await render(
         '{% extends "simple-base.njk" %}' +
         '{% block test %}{% endblock %}' +
         '{% block test %}{% endblock %}');
-    };
-
-    expect(func).to.throwException(/Block "test" defined more than once./);
-
-    
+      expect.fail('should have thrown');
+    } catch (err) {
+      expect(err.message).to.match(/Block "test" defined more than once./);
+    }
   });
 
   it('should render nested blocks in child template', async function() {

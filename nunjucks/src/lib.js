@@ -206,6 +206,12 @@ function asyncIter(arr, iter, cb) {
   next();
 }
 
+async function asyncIterAsync(arr, iter) {
+  for (let i = 0; i < arr.length; i++) {
+    await iter(arr[i], i);
+  }
+}
+
 function asyncFor(obj, iter, cb) {
   const keys = keys_(obj || {});
   const len = keys.length;
@@ -223,6 +229,15 @@ function asyncFor(obj, iter, cb) {
   }
 
   next();
+}
+
+async function asyncForAsync(obj, iter) {
+  const keys = keys_(obj || {});
+  const len = keys.length;
+  for (let i = 0; i < len; i++) {
+    const k = keys[i];
+    await iter(k, obj[k], i, len);
+  }
 }
 
 function indexOf(arr, searchElement, fromIndex) {
@@ -285,6 +300,8 @@ export {
   map,
   asyncIter,
   asyncFor,
+  asyncIterAsync,
+  asyncForAsync,
   indexOf,
   keys_ as keys,
   _entries,
@@ -313,6 +330,8 @@ export default {
   map,
   asyncIter,
   asyncFor,
+  asyncIterAsync,
+  asyncForAsync,
   indexOf,
   keys: keys_,
   _entries,

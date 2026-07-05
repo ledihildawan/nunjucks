@@ -32,20 +32,17 @@ describe('loader', function() {
       this.async = true;
     }
 
-    MyLoader.prototype.getSource = function(s, cb) {
-      setTimeout(function() {
-        cb(new Error('test'));
-      }, 1);
+    MyLoader.prototype.getSource = async function(s) {
+      throw new Error('test');
     };
 
     var env = new Environment(new MyLoader(templatesPath));
-    await new Promise((resolve, reject) => {
-      env.getTemplate('fake.njk', function(err, parent) {
-        expect(err).to.be.a(Error);
-        expect(parent).to.be(undefined);
-        resolve();
-      });
-    });
+    try {
+      await env.getTemplate('fake.njk');
+      expect.fail('should have thrown');
+    } catch (err) {
+      expect(err).to.be.a(Error);
+    }
   });
 
   describe('WebLoader', function() {
@@ -53,10 +50,10 @@ describe('loader', function() {
       var webLoader = new WebLoader(templatesPath);
       expect(webLoader).to.be.a(WebLoader);
       expect(webLoader.useCache).to.be(false);
-      expect(webLoader.async).to.be(false);
+      expect(webLoader.async).to.be(true);
     });
 
-    it('should emit a "load" event', function() {
+    it('should emit a "load" event', async function() {
       if (typeof window === 'undefined') {
         return;
       }
@@ -65,7 +62,7 @@ describe('loader', function() {
       loader.on('load', function(name, source) {
         loadedTemplate = name;
       });
-      loader.getSource('simple-base.njk');
+      await loader.getSource('simple-base.njk');
       expect(loadedTemplate).to.equal('simple-base.njk');
     });
   });
@@ -84,7 +81,7 @@ describe('loader', function() {
         loader.on('load', function(name, source) {
           loadedTemplate = name;
         });
-        loader.getSource('simple-base.njk');
+        await loader.getSource('simple-base.njk');
         expect(loadedTemplate).to.equal('simple-base.njk');
       });
     });
@@ -104,7 +101,7 @@ describe('loader', function() {
         loader.on('load', function(name, source) {
           loadedTemplate = name;
         });
-        loader.getSource('dummy-pkg/simple-template.html');
+        await loader.getSource('dummy-pkg/simple-template.html');
         expect(loadedTemplate).to.equal('dummy-pkg/simple-template.html');
       });
 
@@ -114,16 +111,16 @@ describe('loader', function() {
         expect(await tmpl.render({foo: 'foo'})).to.be('foo');
       });
 
-      it('should not allow directory traversal', function() {
+      it('should not allow directory traversal', async function() {
         var loader = new NodeResolveLoader({paths: [path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-node-pkgs')]});
         var dummyPkgPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-node-pkgs', 'dummy-pkg', 'simple-template.html');
-        expect(loader.getSource(dummyPkgPath)).to.be(null);
+        expect(await loader.getSource(dummyPkgPath)).to.be(null);
       });
 
-      it('should return null if no match', function() {
+      it('should return null if no match', async function() {
         var loader = new NodeResolveLoader();
         var tmplName = 'dummy-pkg/does-not-exist.html';
-        expect(loader.getSource(tmplName)).to.be(null);
+        expect(await loader.getSource(tmplName)).to.be(null);
       });
     });
   }

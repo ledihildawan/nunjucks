@@ -151,29 +151,44 @@ function render(str, ctx, opts, env, cb) {
     return t.render(ctx);
   } else {
     numAsyncs++;
-    t.render(ctx, function(err, res) {
-      if (err && !opts.noThrow) {
-        throw err;
-      }
-
-      try {
-        cb(err, normEOL(res));
-      } catch (exc) {
-        if (doneHandler) {
-          doneHandler(exc);
-          numAsyncs = 0;
-          doneHandler = null;
-        } else {
-          throw exc;
+    t.render(ctx)
+      .then(res => {
+        try {
+          cb(null, normEOL(res));
+        } catch (exc) {
+          if (doneHandler) {
+            doneHandler(exc);
+            numAsyncs = 0;
+            doneHandler = null;
+          } else {
+            throw exc;
+          }
         }
-      }
-
-      numAsyncs--;
-
-      if (numAsyncs === 0 && doneHandler) {
-        doneHandler();
-      }
-    });
+        numAsyncs--;
+        if (numAsyncs === 0 && doneHandler) {
+          doneHandler();
+        }
+      })
+      .catch(err => {
+        if (err && !opts.noThrow) {
+          throw err;
+        }
+        try {
+          cb(err);
+        } catch (exc) {
+          if (doneHandler) {
+            doneHandler(exc);
+            numAsyncs = 0;
+            doneHandler = null;
+          } else {
+            throw exc;
+          }
+        }
+        numAsyncs--;
+        if (numAsyncs === 0 && doneHandler) {
+          doneHandler();
+        }
+      });
   }
 }
 

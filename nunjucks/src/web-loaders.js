@@ -8,68 +8,65 @@ export class WebLoader extends Loader {
     opts = opts || {};
 
     this.useCache = !!opts.useCache;
-    this.async = !!opts.async;
+    this.async = true;
   }
 
   resolve(from, to) {
     throw new Error('relative templates not support in the browser yet');
   }
 
-  getSource(name, cb) {
+  async getSource(name) {
     var useCache = this.useCache;
     var result;
-    this.fetch(this.baseURL + '/' + name, (err, src) => {
-      if (err) {
-        if (cb) {
-          cb(err.content);
-        } else if (err.status === 404) {
-          result = null;
-        } else {
-          throw err.content;
-        }
-      } else {
-        result = {
-          src: src,
-          path: name,
-          noCache: !useCache
-        };
-        this.emit('load', name, result);
-        if (cb) {
-          cb(null, result);
-        }
-      }
-    });
 
-    return result;
+    try {
+      const src = await this.fetch(this.baseURL + '/' + name);
+      result = {
+        src: src,
+        path: name,
+        noCache: !useCache
+      };
+      this.emit('load', name, result);
+      return result;
+    } catch (err) {
+      if (err.status === 404) {
+        return null;
+      } else {
+        throw err.content;
+      }
+    }
   }
 
-  fetch(url, cb) {
-    if (typeof window === 'undefined') {
-      throw new Error('WebLoader can only by used in a browser');
-    }
-
-    const ajax = new XMLHttpRequest();
-    let loading = true;
-
-    ajax.onreadystatechange = () => {
-      if (ajax.readyState === 4 && loading) {
-        loading = false;
-        if (ajax.status === 0 || ajax.status === 200) {
-          cb(null, ajax.responseText);
-        } else {
-          cb({
-            status: ajax.status,
-            content: ajax.responseText
-          });
-        }
+  async fetch(url) {
+    return new Promise((resolve, reject) => {
+      if (typeof window === 'undefined') {
+        reject(new Error('WebLoader can only by used in a browser'));
+        return;
       }
-    };
 
-    url += (url.indexOf('?') === -1 ? '?' : '&') + 's=' +
-    (new Date().getTime());
+      const ajax = new XMLHttpRequest();
+      let loading = true;
 
-    ajax.open('GET', url, this.async);
-    ajax.send();
+      ajax.onreadystatechange = () => {
+        if (ajax.readyState === 4 && loading) {
+          loading = false;
+          if (ajax.status === 0 || ajax.status === 200) {
+            resolve(ajax.responseText);
+          } else {
+            reject({
+              status: ajax.status,
+              content: ajax.responseText
+            });
+          }
+        }
+      };
+
+      url += (url.indexOf('?') === -1 ? '?' : '&') + 's=' +
+      (new Date().getTime());
+
+      ajax.open('GET', url, this.async);
+      ajax.send();
+    });
   }
 }
 
