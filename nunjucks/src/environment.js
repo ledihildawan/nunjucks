@@ -1,4 +1,4 @@
-import lib from './lib.js';
+import * as lib from './lib.js';
 import { compile } from './compiler.js';
 import * as filters from './filters.js';
 import {FileSystemLoader, WebLoader, PrecompiledLoader} from './loaders.js';

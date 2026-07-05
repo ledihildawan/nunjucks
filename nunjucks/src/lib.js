@@ -246,31 +246,3 @@ export function inOperator(key, val) {
   throw new Error('Cannot use "in" operator to search for "'
     + key + '" in unexpected types.');
 }
-
-export default {
-  hasOwnProp,
-  lookupEscape,
-  _prettifyError,
-  TemplateError,
-  escape,
-  isFunction,
-  isArray,
-  isString,
-  isObject,
-  _prepareAttributeParts,
-  getAttrGetter,
-  groupBy,
-  toArray,
-  without,
-  repeat,
-  each,
-  map,
-  asyncIter,
-  asyncFor,
-  indexOf,
-  keys: keys_,
-  _entries,
-  _values,
-  extend,
-  inOperator
-};

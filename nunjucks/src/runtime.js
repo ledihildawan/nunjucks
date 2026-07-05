@@ -1,4 +1,4 @@
-import lib from './lib.js';
+import * as lib from './lib.js';
 var arrayFrom = Array.from;
 var supportsIterators = (
   typeof Symbol === 'function' && Symbol.iterator && typeof arrayFrom === 'function'

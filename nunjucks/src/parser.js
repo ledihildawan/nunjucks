@@ -1,7 +1,7 @@
 import * as lexer from './lexer.js';
 import * as nodes from './nodes.js';
 import { Obj } from './object.js';
-import lib from './lib.js';
+import * as lib from './lib.js';
 
 export class Parser extends Obj {
   init(tokens) {
