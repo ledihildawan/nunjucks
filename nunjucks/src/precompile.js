@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import { existsSync, statSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {_prettifyError} from './lib.js';
 import * as compiler from './compiler.js';
 import {Environment} from './environment.js';
@@ -33,15 +33,15 @@ export function precompile(input, opts) {
     return precompileString(input, opts);
   }
 
-  const pathStats = fs.existsSync(input) && fs.statSync(input);
+  const pathStats = existsSync(input) && statSync(input);
   const precompiled = [];
   const templates = [];
 
   function addTemplates(dir) {
-    fs.readdirSync(dir).forEach((file) => {
-      const filepath = path.join(dir, file);
-      let subpath = filepath.substr(path.join(input, '/').length);
-      const stat = fs.statSync(filepath);
+    readdirSync(dir).forEach((file) => {
+      const filepath = join(dir, file);
+      let subpath = filepath.substr(join(input, '/').length);
+      const stat = statSync(filepath);
 
       if (stat && stat.isDirectory()) {
         subpath += '/';
@@ -56,7 +56,7 @@ export function precompile(input, opts) {
 
   if (pathStats.isFile()) {
     precompiled.push(_precompile(
-      fs.readFileSync(input, 'utf-8'),
+      readFileSync(input, 'utf-8'),
       opts.name || input,
       env
     ));
@@ -64,11 +64,11 @@ export function precompile(input, opts) {
     addTemplates(input);
 
     for (let i = 0; i < templates.length; i++) {
-      const name = templates[i].replace(path.join(input, '/'), '');
+      const name = templates[i].replace(join(input, '/'), '');
 
       try {
         precompiled.push(_precompile(
-          fs.readFileSync(templates[i], 'utf-8'),
+          readFileSync(templates[i], 'utf-8'),
           name,
           env
         ));

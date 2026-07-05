@@ -1,10 +1,10 @@
-import fs from 'fs';
-import path from 'path';
+import { existsSync, readFileSync } from 'node:fs';
+import { normalize, resolve } from 'node:path';
+import { createRequire } from 'node:module';
 import Loader from './loader.js';
 export {PrecompiledLoader} from './precompiled-loader.js';
 
-const fsExistsSync = fs.existsSync;
-const fsReadFileSync = fs.readFileSync;
+const _require = createRequire(import.meta.url);
 
 export class FileSystemLoader extends Loader {
   constructor(searchPaths, opts) {
@@ -24,7 +24,7 @@ export class FileSystemLoader extends Loader {
 
     if (searchPaths) {
       searchPaths = Array.isArray(searchPaths) ? searchPaths : [searchPaths];
-      this.searchPaths = searchPaths.map(path.normalize);
+      this.searchPaths = searchPaths.map(normalize);
     } else {
       this.searchPaths = ['.'];
     }
@@ -35,10 +35,10 @@ export class FileSystemLoader extends Loader {
     var paths = this.searchPaths;
 
     for (let i = 0; i < paths.length; i++) {
-      const basePath = path.resolve(paths[i]);
-      const p = path.resolve(paths[i], name);
+      const basePath = resolve(paths[i]);
+      const p = resolve(paths[i], name);
 
-      if (p.indexOf(basePath) === 0 && fsExistsSync(p)) {
+      if (p.indexOf(basePath) === 0 && existsSync(p)) {
         fullpath = p;
         break;
       }
@@ -51,7 +51,7 @@ export class FileSystemLoader extends Loader {
     this.pathsToNames[fullpath] = name;
 
     const source = {
-      src: fsReadFileSync(fullpath, 'utf-8'),
+      src: readFileSync(fullpath, 'utf-8'),
       path: fullpath,
       noCache: this.noCache
     };
@@ -81,7 +81,7 @@ export class NodeResolveLoader extends Loader {
     let fullpath;
 
     try {
-      fullpath = require.resolve(name);
+      fullpath = _require.resolve(name);
     } catch (e) {
       fullpath = this.resolveFromPaths(name);
       if (!fullpath) {
@@ -92,7 +92,7 @@ export class NodeResolveLoader extends Loader {
     this.pathsToNames[fullpath] = name;
 
     const source = {
-      src: fsReadFileSync(fullpath, 'utf-8'),
+      src: readFileSync(fullpath, 'utf-8'),
       path: fullpath,
       noCache: this.noCache,
     };
@@ -103,8 +103,8 @@ export class NodeResolveLoader extends Loader {
 
   resolveFromPaths(name) {
     for (const basePath of this.paths) {
-      const fullPath = path.resolve(basePath, name);
-      if (fsExistsSync(fullPath)) {
+      const fullPath = resolve(basePath, name);
+      if (existsSync(fullPath)) {
         return fullPath;
       }
     }

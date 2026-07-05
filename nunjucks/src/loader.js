@@ -1,9 +1,9 @@
 import { EmitterObj } from './object.js';
-import path from 'path';
+import { resolve, dirname } from 'node:path';
 
 export default class Loader extends EmitterObj {
   resolve(from, to) {
-    return path.resolve(path.dirname(from), to);
+    return resolve(dirname(from), to);
   }
 
   isRelative(filename) {
