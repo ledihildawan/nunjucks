@@ -1,5 +1,6 @@
 import { existsSync, statSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { createHash } from 'node:crypto';
 import {_prettifyError} from './lib.js';
 import * as compiler from './compiler.js';
 import {Environment} from './environment.js';
@@ -16,6 +17,10 @@ function match(filename, patterns) {
     return false;
   }
   return patterns.some((pattern) => filename.match(pattern));
+}
+
+function hashContent(content) {
+  return createHash('sha256').update(content).digest('hex').substring(0, 16);
 }
 
 function _precompile(str, name, env) {
@@ -54,11 +59,14 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
     CREATE TABLE IF NOT EXISTS _compiled_templates (
       name TEXT PRIMARY KEY,
       template TEXT NOT NULL,
+      hash TEXT NOT NULL,
       updated_at INTEGER DEFAULT (strftime('%s', 'now'))
     )
   `);
 
   const templates = [];
+  let updated = 0;
+  let skipped = 0;
 
   function addTemplates(dir) {
     readdirSync(dir).forEach((file) => {
@@ -88,13 +96,21 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
 
       try {
         const source = readFileSync(filepath, 'utf-8');
+        const contentHash = hashContent(source);
         const compiledCode = _precompile(source, name, env);
-        templates[i] = { name, template: compiledCode };
+
+        const existing = db.prepare('SELECT hash FROM _compiled_templates WHERE name = ?').get(name);
+
+        if (existing && existing.hash === contentHash) {
+          skipped++;
+          continue;
+        }
 
         const stmt = db.prepare(
-          'INSERT OR REPLACE INTO _compiled_templates (name, template) VALUES (?, ?)'
+          'INSERT OR REPLACE INTO _compiled_templates (name, template, hash) VALUES (?, ?, ?)'
         );
-        stmt.run(name, compiledCode);
+        stmt.run(name, compiledCode, contentHash);
+        updated++;
 
         console.log(`[SQLite] Precompiled: ${name}`);
       } catch (e) {
@@ -108,20 +124,27 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
   } else if (pathStats.isFile()) {
     const name = templateDir.replace(join(templateDir, '/'), '');
     const source = readFileSync(templateDir, 'utf-8');
+    const contentHash = hashContent(source);
     const compiledCode = _precompile(source, name, env);
 
-    templates.push({ name, template: compiledCode });
+    const existing = db.prepare('SELECT hash FROM _compiled_templates WHERE name = ?').get(name);
 
-    const stmt = db.prepare(
-      'INSERT OR REPLACE INTO _compiled_templates (name, template) VALUES (?, ?)'
-    );
-    stmt.run(name, compiledCode);
+    if (!existing || existing.hash !== contentHash) {
+      const stmt = db.prepare(
+        'INSERT OR REPLACE INTO _compiled_templates (name, template, hash) VALUES (?, ?, ?)'
+      );
+      stmt.run(name, compiledCode, contentHash);
+      updated++;
+    } else {
+      skipped++;
+    }
   }
 
   if (db.close) {
     db.close();
   }
 
+  console.log(`[SQLite] Done: ${updated} updated, ${skipped} skipped (hash unchanged)`);
   return templates.map(t => t.name);
 }
 

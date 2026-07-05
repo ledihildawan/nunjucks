@@ -21,6 +21,14 @@ export function configure(templatesPath, opts) {
     templatesPath = null;
   }
 
+  if (opts.mode === 'production' && !opts.sqlite) {
+    opts.sqlite = './templates.db';
+  }
+
+  if (opts.mode === 'development') {
+    opts.watch = opts.watch !== false;
+  }
+
   let TemplateLoader;
 
   if (opts.sqlite) {
