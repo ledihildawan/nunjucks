@@ -12,7 +12,6 @@ export default defineConfig([
     languageOptions: {
       globals: {
         ...globals.node,
-        ...globals.mocha,
         ...globals.browser,
       },
     },
