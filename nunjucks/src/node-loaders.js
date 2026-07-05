@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { normalize, resolve } from 'node:path';
 import { createRequire } from 'node:module';
+import { watch } from 'fs';
 import Loader from './loader.js';
 export {PrecompiledLoader} from './precompiled-loader.js';
 
@@ -20,7 +21,9 @@ export class FileSystemLoader extends Loader {
     opts = opts || {};
     this.pathsToNames = {};
     this.noCache = !!opts.noCache;
+    this.watchEnabled = !!opts.watch;
     this.async = true;
+    this.watchedFiles = new Map();
 
     if (searchPaths) {
       searchPaths = Array.isArray(searchPaths) ? searchPaths : [searchPaths];
@@ -50,6 +53,10 @@ export class FileSystemLoader extends Loader {
 
     this.pathsToNames[fullpath] = name;
 
+    if (this.watchEnabled) {
+      this.watchFile(fullpath);
+    }
+
     const source = {
       src: readFileSync(fullpath, 'utf-8'),
       path: fullpath,
@@ -57,6 +64,35 @@ export class FileSystemLoader extends Loader {
     };
     this.emit('load', name, source);
     return source;
+  }
+
+  watchFile(filePath) {
+    if (this.watchedFiles.has(filePath)) {
+      return;
+    }
+
+    const normalizedPath = normalize(resolve(filePath));
+    const watcher = watch(filePath, (eventType, filename) => {
+      if (eventType === 'change') {
+        const name = filename || filePath;
+        this.cache = this.cache || {};
+        for (const [key, tmpl] of Object.entries(this.cache)) {
+          if (tmpl && tmpl.path && normalize(resolve(tmpl.path)) === normalizedPath) {
+            this.cache[key] = null;
+          }
+        }
+        this.emit('update', name, filePath);
+      }
+    });
+
+    this.watchedFiles.set(filePath, watcher);
+  }
+
+  unwatchAll() {
+    for (const [, watcher] of this.watchedFiles) {
+      watcher.close();
+    }
+    this.watchedFiles.clear();
   }
 }
 
