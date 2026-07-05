@@ -147,6 +147,9 @@ export class Environment extends EmitterObj {
     }
 
     return function(...args) {
+      if (!args.some(a => a && typeof a.then === 'function')) {
+        return filter.apply(this, args);
+      }
       return Promise.all(args).then(resolved => filter.apply(this, resolved));
     };
   }

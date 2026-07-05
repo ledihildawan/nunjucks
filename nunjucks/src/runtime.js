@@ -189,6 +189,10 @@ export function markSafe(val) {
 }
 
 export function suppressValue(val, autoescape) {
+  if (val && typeof val.then === 'function') {
+    return val.then(v => suppressValue(v, autoescape));
+  }
+
   val = (val !== undefined && val !== null) ? val : '';
 
   if (autoescape && !(val instanceof SafeString)) {
