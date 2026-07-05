@@ -107,13 +107,6 @@ class Compiler extends Obj {
     this._scopeClosers = _scopeClosers;
   }
 
-  _makeCallback(res) {
-    var err = this._tmpid();
-
-    return 'function(' + err + (res ? ',' + res : '') + ') {\n' +
-      'if(' + err + ') { cb(' + err + '); return; }';
-  }
-
   _tmpid() {
     this.lastId++;
     return 't_' + this.lastId;

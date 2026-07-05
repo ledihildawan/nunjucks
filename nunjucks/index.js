@@ -52,20 +52,20 @@ export function compile(src, env, path, eagerCompile) {
   return new Template(src, env, path, eagerCompile);
 }
 
-export function render(name, ctx, cb) {
+export function render(name, ctx) {
   if (!e) {
     configure();
   }
 
-  return e.render(name, ctx, cb);
+  return e.render(name, ctx);
 }
 
-export function renderString(src, ctx, cb) {
+export function renderString(src, ctx) {
   if (!e) {
     configure();
   }
 
-  return e.renderString(src, ctx, cb);
+  return e.renderString(src, ctx);
 }
 
 export { Environment, Template };
