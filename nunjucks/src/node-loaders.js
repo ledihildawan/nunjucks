@@ -73,7 +73,7 @@ export class FileSystemLoader extends Loader {
 
     const normalizedPath = normalize(resolve(filePath));
     const watcher = watch(filePath, (eventType, filename) => {
-      if (eventType === 'change') {
+      if (eventType === 'change' || eventType === 'rename') {
         const name = filename || filePath;
         this.cache = this.cache || {};
         for (const [key, tmpl] of Object.entries(this.cache)) {
@@ -82,10 +82,22 @@ export class FileSystemLoader extends Loader {
           }
         }
         this.emit('update', name, filePath);
+
+        if (eventType === 'rename') {
+          this.unwatchFile(filePath);
+        }
       }
     });
 
     this.watchedFiles.set(filePath, watcher);
+  }
+
+  unwatchFile(filePath) {
+    const watcher = this.watchedFiles.get(filePath);
+    if (watcher) {
+      watcher.close();
+      this.watchedFiles.delete(filePath);
+    }
   }
 
   unwatchAll() {
