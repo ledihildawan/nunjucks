@@ -105,21 +105,16 @@ describe('tests', function() {
   });
 
   it('mapping should detect Maps or hashes', async function() {
-    var map1, map2, mapOneIsMapping, mapTwoIsMapping;
-    if (typeof Map === 'undefined') {
-      this.skip();
-    } else {
-      map1 = new Map();
-      map2 = {};
-      mapOneIsMapping = await render('{{ map is mapping }}', {
-        map: map1
-      });
-      mapTwoIsMapping = await render('{{ map is mapping }}', {
-        map: map2
-      });
-      expect(mapOneIsMapping).to.be('true');
-      expect(mapTwoIsMapping).to.be('true');
-    }
+    var map1 = new Map();
+    var map2 = {};
+    var mapOneIsMapping = await render('{{ map is mapping }}', {
+      map: map1
+    });
+    var mapTwoIsMapping = await render('{{ map is mapping }}', {
+      map: map2
+    });
+    expect(mapOneIsMapping).to.be('true');
+    expect(mapTwoIsMapping).to.be('true');
   });
 
   it('falsy should detect whether or not a value is falsy', async function() {
@@ -171,15 +166,9 @@ describe('tests', function() {
     expect(four).to.be('false');
   });
 
-  it('iterable should detect that a generator is iterable', function(done) {
-    var iterable;
-    try {
-      iterable = (function* iterable() { yield true; })();
-    } catch (e) {
-      return this.skip();
-    }
+  it('iterable should detect that a generator is iterable', async function() {
+    var iterable = (function* iterable() { yield true; })();
     equal('{{ fn is iterable }}', { fn: iterable }, 'true');
-    return done();
   });
 
   it('iterable should detect that an Array is not non-iterable', async function() {
@@ -187,19 +176,11 @@ describe('tests', function() {
   });
 
   it('iterable should detect that a Map is iterable', async function() {
-    if (typeof Map === 'undefined') {
-      this.skip();
-    } else {
-      equal('{{ map is iterable }}', { map: new Map() }, 'true');
-    }
+    equal('{{ map is iterable }}', { map: new Map() }, 'true');
   });
 
   it('iterable should detect that a Set is not non-iterable', async function() {
-    if (typeof Set === 'undefined') {
-      this.skip();
-    } else {
-      equal('{{ set is not iterable }}', { set: new Set() }, 'false');
-    }
+    equal('{{ set is not iterable }}', { set: new Set() }, 'false');
   });
 
   it('number should detect whether a value is numeric', async function() {

@@ -27,9 +27,7 @@ describe('loader', function() {
     expect(await parent.render()).to.be('Hello World');
   });
 
-  it('should catch loader error', function(done) {
-    var env;
-
+  it('should catch loader error', async function() {
     function MyLoader() {
       this.async = true;
     }
@@ -40,12 +38,13 @@ describe('loader', function() {
       }, 1);
     };
 
-    env = new Environment(new MyLoader(templatesPath));
-    env.getTemplate('fake.njk', function(err, parent) {
-      expect(err).to.be.a(Error);
-      expect(parent).to.be(undefined);
-
-      done();
+    var env = new Environment(new MyLoader(templatesPath));
+    await new Promise((resolve, reject) => {
+      env.getTemplate('fake.njk', function(err, parent) {
+        expect(err).to.be.a(Error);
+        expect(parent).to.be(undefined);
+        resolve();
+      });
     });
   });
 
@@ -57,19 +56,17 @@ describe('loader', function() {
       expect(webLoader.async).to.be(false);
     });
 
-    it('should emit a "load" event', function(done) {
-      var loader = new WebLoader(templatesPath);
-
+    it('should emit a "load" event', function() {
       if (typeof window === 'undefined') {
-        this.skip();
+        return;
       }
-
+      var loader = new WebLoader(templatesPath);
+      var loadedTemplate;
       loader.on('load', function(name, source) {
-        expect(name).to.equal('simple-base.njk');
-        done();
+        loadedTemplate = name;
       });
-
       loader.getSource('simple-base.njk');
+      expect(loadedTemplate).to.equal('simple-base.njk');
     });
   });
 
@@ -81,14 +78,14 @@ describe('loader', function() {
         expect(loader.noCache).to.be(false);
       });
 
-      it('should emit a "load" event', function(done) {
+      it('should emit a "load" event', async function() {
         var loader = new FileSystemLoader(templatesPath);
+        var loadedTemplate;
         loader.on('load', function(name, source) {
-          expect(name).to.equal('simple-base.njk');
-          done();
+          loadedTemplate = name;
         });
-
         loader.getSource('simple-base.njk');
+        expect(loadedTemplate).to.equal('simple-base.njk');
       });
     });
   }
@@ -101,14 +98,14 @@ describe('loader', function() {
         expect(loader.noCache).to.be(false);
       });
 
-      it('should emit a "load" event', function(done) {
+      it('should emit a "load" event', async function() {
         var loader = new NodeResolveLoader({paths: [path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-node-pkgs')]});
+        var loadedTemplate;
         loader.on('load', function(name, source) {
-          expect(name).to.equal('dummy-pkg/simple-template.html');
-          done();
+          loadedTemplate = name;
         });
-
         loader.getSource('dummy-pkg/simple-template.html');
+        expect(loadedTemplate).to.equal('dummy-pkg/simple-template.html');
       });
 
       it('should render templates', async function() {

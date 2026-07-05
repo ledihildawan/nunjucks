@@ -508,26 +508,16 @@ describe('filter', function() {
       }, '2');
     });
     it('should output the length of a Map', function test() {
-      var map;
-      if (typeof Map === 'undefined') {
-        this.skip();
-      } else {
-        map = new Map([['key1', 'value1'], ['key2', 'value2']]);
-        map.set('key3', 'value3');
-        equal('{{ map |> length }}', {
-          map: map
-        }, '3');
-      }
+      var map = new Map([['key1', 'value1'], ['key2', 'value2']]);
+      map.set('key3', 'value3');
+      equal('{{ map |> length }}', {
+        map: map
+      }, '3');
     });
     it('should output the length of a Set', function test() {
-      var set;
-      if (typeof Set === 'undefined') {
-        this.skip();
-      } else {
-        set = new Set(['value1']);
-        set.add('value2');
-        equal('{{ set |> length }}', { set: set }, '2');
-      }
+      var set = new Set(['value1']);
+      set.add('value2');
+      equal('{{ set |> length }}', { set: set }, '2');
     });
   });
 

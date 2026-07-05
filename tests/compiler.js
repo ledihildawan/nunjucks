@@ -613,38 +613,30 @@ describe('compiler', function() {
           'showing test\nshowing 1\nshowing 2\nshowing 3\n');
       });
       it('should work with Set builtin', function() {
-        if (typeof Set === 'undefined') {
-          this.skip();
-        } else {
-          equal('{% ' + block + ' i in set %}{{ i }}{% ' + end + ' %}',
-            { set: new Set([1, 2, 3, 4, 5]) },
-            '12345');
+        equal('{% ' + block + ' i in set %}{{ i }}{% ' + end + ' %}',
+          { set: new Set([1, 2, 3, 4, 5]) },
+          '12345');
 
-          equal('{% ' + block + ' i in set %}{{ i }}{% else %}empty{% ' + end + ' %}',
-            { set: new Set([1, 2, 3, 4, 5]) },
-            '12345');
+        equal('{% ' + block + ' i in set %}{{ i }}{% else %}empty{% ' + end + ' %}',
+          { set: new Set([1, 2, 3, 4, 5]) },
+          '12345');
 
-          equal('{% ' + block + ' i in set %}{{ i }}{% else %}empty{% ' + end + ' %}',
-            { set: new Set() },
-            'empty');
-        }
+        equal('{% ' + block + ' i in set %}{{ i }}{% else %}empty{% ' + end + ' %}',
+          { set: new Set() },
+          'empty');
       });
       it('should work with Map builtin', function() {
-        if (typeof Map === 'undefined') {
-          this.skip();
-        } else {
-          equal('{% ' + block + ' k, v in map %}[{{ k }},{{ v }}]{% ' + end + ' %}',
-            { map: new Map([[1, 2], [3, 4], [5, 6]]) },
-            '[1,2][3,4][5,6]');
+        equal('{% ' + block + ' k, v in map %}[{{ k }},{{ v }}]{% ' + end + ' %}',
+          { map: new Map([[1, 2], [3, 4], [5, 6]]) },
+          '[1,2][3,4][5,6]');
 
-          equal('{% ' + block + ' k, v in map %}[{{ k }},{{ v }}]{% else %}empty{% ' + end + ' %}',
-            { map: new Map([[1, 2], [3, 4], [5, 6]]) },
-            '[1,2][3,4][5,6]');
+        equal('{% ' + block + ' k, v in map %}[{{ k }},{{ v }}]{% else %}empty{% ' + end + ' %}',
+          { map: new Map([[1, 2], [3, 4], [5, 6]]) },
+          '[1,2][3,4][5,6]');
 
-          equal('{% ' + block + ' k, v in map %}[{{ k }},{{ v }}]{% else %}empty{% ' + end + ' %}',
-            { map: new Map() },
-            'empty');
-        }
+        equal('{% ' + block + ' k, v in map %}[{{ k }},{{ v }}]{% else %}empty{% ' + end + ' %}',
+          { map: new Map() },
+          'empty');
       });
     });
   }
@@ -663,148 +655,143 @@ describe('compiler', function() {
   });
 
   it('should compile async control', function(done) {
-    var opts;
-    if (!fs) {
-      this.skip();
-    } else {
-      opts = {
-        asyncFilters: {
-          getContents: function(tmpl, cb) {
-            fs.readFile(tmpl, cb);
-          },
+    var opts = {
+      asyncFilters: {
+        getContents: function(tmpl, cb) {
+          fs.readFile(tmpl, cb);
+        },
 
-          getContentsArr: function(arr, cb) {
-            fs.readFile(arr[0], function(err, res) {
-              cb(err, [res]);
-            });
-          }
+        getContentsArr: function(arr, cb) {
+          fs.readFile(arr[0], function(err, res) {
+            cb(err, [res]);
+          });
         }
-      };
+      }
+    };
 
-      render('{{ tmpl |> getContents }}',
-        {
-          tmpl: 'tests/templates/for-async-content.njk'
-        },
-        opts,
-        function(err, res) {
-          expect(res).to.be('somecontenthere');
-        });
+    render('{{ tmpl |> getContents }}',
+      {
+        tmpl: 'tests/templates/for-async-content.njk'
+      },
+      opts,
+      function(err, res) {
+        expect(res).to.be('somecontenthere');
+      });
 
-      render('{% if tmpl %}{{ tmpl |> getContents }}{% endif %}',
-        {
-          tmpl: 'tests/templates/for-async-content.njk'
-        },
-        opts,
-        function(err, res) {
-          expect(res).to.be('somecontenthere');
-        });
+    render('{% if tmpl %}{{ tmpl |> getContents }}{% endif %}',
+      {
+        tmpl: 'tests/templates/for-async-content.njk'
+      },
+      opts,
+      function(err, res) {
+        expect(res).to.be('somecontenthere');
+      });
 
-      render('{% if tmpl |> getContents %}yes{% endif %}',
-        {
-          tmpl: 'tests/templates/for-async-content.njk'
-        },
-        opts,
-        function(err, res) {
-          expect(res).to.be('yes');
-        });
+    render('{% if tmpl |> getContents %}yes{% endif %}',
+      {
+        tmpl: 'tests/templates/for-async-content.njk'
+      },
+      opts,
+      function(err, res) {
+        expect(res).to.be('yes');
+      });
 
-      render('{% for t in [tmpl, tmpl] %}{{ t |> getContents }}*{% endfor %}',
-        {
-          tmpl: 'tests/templates/for-async-content.njk'
-        },
-        opts,
-        function(err, res) {
-          expect(res).to.be('somecontenthere*somecontenthere*');
-        });
+    render('{% for t in [tmpl, tmpl] %}{{ t |> getContents }}*{% endfor %}',
+      {
+        tmpl: 'tests/templates/for-async-content.njk'
+      },
+      opts,
+      function(err, res) {
+        expect(res).to.be('somecontenthere*somecontenthere*');
+      });
 
-      render('{% for t in [tmpl, tmpl] |> getContentsArr %}{{ t }}{% endfor %}',
-        {
-          tmpl: 'tests/templates/for-async-content.njk'
-        },
-        opts,
-        function(err, res) {
-          expect(res).to.be('somecontenthere');
-        });
+    render('{% for t in [tmpl, tmpl] |> getContentsArr %}{{ t }}{% endfor %}',
+      {
+        tmpl: 'tests/templates/for-async-content.njk'
+      },
+      opts,
+      function(err, res) {
+        expect(res).to.be('somecontenthere');
+      });
 
-      render('{% if test %}{{ tmpl |> getContents }}{% endif %}oof',
-        {
-          tmpl: 'tests/templates/for-async-content.njk'
-        },
-        opts,
-        function(err, res) {
-          expect(res).to.be('oof');
-        });
+    render('{% if test %}{{ tmpl |> getContents }}{% endif %}oof',
+      {
+        tmpl: 'tests/templates/for-async-content.njk'
+      },
+      opts,
+      function(err, res) {
+        expect(res).to.be('oof');
+      });
 
-      render(
-        '{% if tmpl %}' +
-        '{% for i in [0, 1] %}{{ tmpl |> getContents }}*{% endfor %}' +
-        '{% endif %}',
-        {
-          tmpl: 'tests/templates/for-async-content.njk'
-        },
-        opts,
-        function(err, res) {
-          expect(res).to.be('somecontenthere*somecontenthere*');
-        });
+    render(
+      '{% if tmpl %}' +
+      '{% for i in [0, 1] %}{{ tmpl |> getContents }}*{% endfor %}' +
+      '{% endif %}',
+      {
+        tmpl: 'tests/templates/for-async-content.njk'
+      },
+      opts,
+      function(err, res) {
+        expect(res).to.be('somecontenthere*somecontenthere*');
+      });
 
-      render('{% block content %}{{ tmpl |> getContents }}{% endblock %}',
-        {
-          tmpl: 'tests/templates/for-async-content.njk'
-        },
-        opts,
-        function(err, res) {
-          expect(res).to.be('somecontenthere');
-        });
+    render('{% block content %}{{ tmpl |> getContents }}{% endblock %}',
+      {
+        tmpl: 'tests/templates/for-async-content.njk'
+      },
+      opts,
+      function(err, res) {
+        expect(res).to.be('somecontenthere');
+      });
 
-      render('{% block content %}hello{% endblock %} {{ tmpl |> getContents }}',
-        {
-          tmpl: 'tests/templates/for-async-content.njk'
-        },
-        opts,
-        function(err, res) {
-          expect(res).to.be('hello somecontenthere');
-        });
+    render('{% block content %}hello{% endblock %} {{ tmpl |> getContents }}',
+      {
+        tmpl: 'tests/templates/for-async-content.njk'
+      },
+      opts,
+      function(err, res) {
+        expect(res).to.be('hello somecontenthere');
+      });
 
-      render('{% block content %}{% set foo = tmpl |> getContents %}{{ foo }}{% endblock %}',
-        {
-          tmpl: 'tests/templates/for-async-content.njk'
-        },
-        opts,
-        function(err, res) {
-          expect(res).to.be('somecontenthere');
-        });
+    render('{% block content %}{% set foo = tmpl |> getContents %}{{ foo }}{% endblock %}',
+      {
+        tmpl: 'tests/templates/for-async-content.njk'
+      },
+      opts,
+      function(err, res) {
+        expect(res).to.be('somecontenthere');
+      });
 
-      render('{% block content %}{% include "async.njk" %}{% endblock %}',
-        {
-          tmpl: 'tests/templates/for-async-content.njk'
-        },
-        opts,
-        function(err, res) {
-          expect(res).to.be('somecontenthere\n');
-        });
+    render('{% block content %}{% include "async.njk" %}{% endblock %}',
+      {
+        tmpl: 'tests/templates/for-async-content.njk'
+      },
+      opts,
+      function(err, res) {
+        expect(res).to.be('somecontenthere\n');
+      });
 
-      render('{% asyncEach i in [0, 1] %}{% include "async.njk" %}{% endeach %}',
-        {
-          tmpl: 'tests/templates/for-async-content.njk'
-        },
-        opts,
-        function(err, res) {
-          expect(res).to.be('somecontenthere\nsomecontenthere\n');
-        });
+    render('{% asyncEach i in [0, 1] %}{% include "async.njk" %}{% endeach %}',
+      {
+        tmpl: 'tests/templates/for-async-content.njk'
+      },
+      opts,
+      function(err, res) {
+        expect(res).to.be('somecontenthere\nsomecontenthere\n');
+      });
 
-      render('{% asyncAll i in [0, 1, 2, 3, 4] %}-{{ i }}:{% include "async.njk" %}-{% endall %}',
-        {
-          tmpl: 'tests/templates/for-async-content.njk'
-        },
-        opts,
-        function(err, res) {
-          expect(res).to.be('-0:somecontenthere\n-' +
-            '-1:somecontenthere\n-' +
-            '-2:somecontenthere\n-' +
-            '-3:somecontenthere\n-' +
-            '-4:somecontenthere\n-');
-        });
-    }
+    render('{% asyncAll i in [0, 1, 2, 3, 4] %}-{{ i }}:{% include "async.njk" %}-{% endall %}',
+      {
+        tmpl: 'tests/templates/for-async-content.njk'
+      },
+      opts,
+      function(err, res) {
+        expect(res).to.be('-0:somecontenthere\n-' +
+          '-1:somecontenthere\n-' +
+          '-2:somecontenthere\n-' +
+          '-3:somecontenthere\n-' +
+          '-4:somecontenthere\n-');
+      });
 
     finish(done);
   });

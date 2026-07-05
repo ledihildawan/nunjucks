@@ -34,10 +34,6 @@ describe('nunjucks.configure', function() {
   });
 
   it('should cache templates by default', async function() {
-    if (typeof fs === 'undefined') {
-      this.skip();
-      return;
-    }
     nunjucks.configure(tempdir);
 
     fs.writeFileSync(tempdir + '/test.html', '{{ name }}', 'utf-8');
@@ -48,10 +44,6 @@ describe('nunjucks.configure', function() {
   });
 
   it('should not cache templates with {noCache: true}', async function() {
-    if (typeof fs === 'undefined') {
-      this.skip();
-      return;
-    }
     nunjucks.configure(tempdir, {noCache: true});
 
     fs.writeFileSync(tempdir + '/test.html', '{{ name }}', 'utf-8');
