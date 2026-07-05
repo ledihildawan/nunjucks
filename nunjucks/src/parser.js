@@ -653,8 +653,8 @@ class Parser extends Obj {
         return this.parseImport();
       case 'from':
         return this.parseFrom();
-      case 'pipe':
-        return this.parsePipeStatement();
+      case 'filter':
+        return this.parseFilterStatement();
       case 'switch':
         return this.parseSwitch();
       default:
@@ -1042,7 +1042,7 @@ class Parser extends Obj {
     return node;
   }
 
-  parseUnary(noFilters) {
+  parseUnary(noPipes) {
     const tok = this.peekToken();
     let node;
 
@@ -1058,7 +1058,7 @@ class Parser extends Obj {
       node = this.parsePrimary();
     }
 
-    if (!noFilters) {
+    if (!noPipes) {
       node = this.parsePipe(node);
     }
 
@@ -1141,7 +1141,7 @@ class Parser extends Obj {
     while (this.skip(lexer.TOKEN_PIPEFORWARD)) {
       const name = this.parseFilterName();
 
-      node = new nodes.Filter(
+      node = new nodes.Pipe(
         name.lineno,
         name.colno,
         name,
@@ -1156,20 +1156,20 @@ class Parser extends Obj {
     return node;
   }
 
-  parsePipeStatement() {
-    var pipeTok = this.peekToken();
-    if (!this.skipSymbol('pipe')) {
-      this.fail('parsePipeStatement: expected pipe');
+  parseFilterStatement() {
+    var filterTok = this.peekToken();
+    if (!this.skipSymbol('filter')) {
+      this.fail('parseFilterStatement: expected filter');
     }
 
     const name = this.parseFilterName();
     const args = this.parseFilterArgs(name);
 
-    this.advanceAfterBlockEnd(pipeTok.value);
+    this.advanceAfterBlockEnd(filterTok.value);
     const body = new nodes.Capture(
       name.lineno,
       name.colno,
-      this.parseUntilBlocks('endpipe')
+      this.parseUntilBlocks('endfilter')
     );
     this.advanceAfterBlockEnd();
 

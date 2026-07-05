@@ -78,14 +78,14 @@ function _liftPipes(node, asyncPipes, prop) {
     let symbol;
     if (descNode instanceof nodes.Block) {
       return descNode;
-    } else if ((descNode instanceof nodes.Filter &&
+    } else if ((descNode instanceof nodes.Pipe &&
       lib.indexOf(asyncPipes, descNode.name.value) !== -1) ||
       descNode instanceof nodes.CallExtensionAsync) {
       symbol = new nodes.Symbol(descNode.lineno,
         descNode.colno,
         gensym());
 
-      children.push(new nodes.FilterAsync(descNode.lineno,
+      children.push(new nodes.PipeAsync(descNode.lineno,
         descNode.colno,
         descNode.name,
         descNode.args,
@@ -163,7 +163,7 @@ function convertStatements(ast) {
 
     let async = false;
     walk(node, (child) => {
-      if (child instanceof nodes.FilterAsync ||
+      if (child instanceof nodes.PipeAsync ||
         child instanceof nodes.IfAsync ||
         child instanceof nodes.AsyncEach ||
         child instanceof nodes.AsyncAll ||

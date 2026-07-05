@@ -284,7 +284,7 @@
         lexer.TOKEN_DATA);
     });
 
-    it('should parse filters', function() {
+    it('should parse pipes', function() {
       hasTokens(lexer.lex('{{ foo|>bar }}'),
         lexer.TOKEN_VARIABLE_START,
         [lexer.TOKEN_SYMBOL, 'foo'],

@@ -60,12 +60,12 @@ foo.bar }}`, `{{ foo.bar.baz }}`.
 ## Filtres
 
 Les filtres sont essentiellement des fonctions qui peuvent être appliquées aux variables.
-Ils sont appelés avec le caractère "pipe" (`|`) et peuvent prendre des arguments.
+Ils sont appelés avec l'opérateur pipe (`|>`) et peuvent prendre des arguments.
 
 ```jinja
-{{ foo | title }}
-{{ foo | join(",") }}
-{{ foo | replace("foo", "bar") | capitalize }}
+{{ foo |> title }}
+{{ foo |> join(",") }}
+{{ foo |> replace("foo", "bar") |> capitalize }}
 ```
 
 Le troisième exemple montre comment vous pouvez enchaîner des filtres. Cela affichera
@@ -327,7 +327,7 @@ en parallèle avec `asyncAll` :
 <h1>Articles</h1>
 <ul>
 {% asyncAll item in items %}
-  <li>{{ item.id | lookup }}</li>
+  <li>{{ item.id |> lookup }}</li>
 {% endall %}
 </ul>
 ```
@@ -347,7 +347,7 @@ une fonction dans un langage de programmation. Voici un exemple :
 {% macro field(name, value='', type='text') %}
 <div class="field">
   <input type="{{ type }}" name="{{ name }}"
-         value="{{ value | escape }}" />
+         value="{{ value |> escape }}" />
 </div>
 {% endmacro %}
 ```
@@ -402,7 +402,7 @@ Cela peut être utile dans certains cas, comme une alternative aux macros :
     {% include 'standardModalData.html' %}
 {% endset %}
 
-<div class="js-modal" data-modal="{{standardModal | e}}">
+<div class="js-modal" data-modal="{{standardModal |> e}}">
 ```
 
 ### extends
@@ -522,7 +522,7 @@ Commençons par un template appelé `forms.html` qui contient ce qui suit :
 {% macro field(name, value='', type='text') %}
 <div class="field">
   <input type="{{ type }}" name="{{ name }}"
-         value="{{ value | escape }}" />
+         value="{{ value |> escape }}" />
 </div>
 {% endmacro %}
 
@@ -580,8 +580,8 @@ un bloc `{% raw %}` et tout ce qui sera à l'intérieur de celui-ci sera affich�
 
 ### filter
 
-Un bloc `filter` vous permet d'appeler un filtre avec le contenu de ce
-bloc. Au lieu de passer une valeur avec la syntaxe `|`, le contenu
+Un bloc `filter` vous permet d'appeler un filter avec le contenu de ce
+bloc. Au lieu de passer une valeur avec la syntaxe `|>`, le contenu
 du bloc sera passé.
 
 ```jinja
@@ -589,7 +589,7 @@ du bloc sera passé.
 que la force soit avec toi
 {% endfilter %}
 
-{% filter replace("force", "forth") %}
+{% filter title %}
 que la force soit avec toi
 {% endfilter %}
 ```
@@ -825,7 +825,7 @@ filtre `safe`. Nunjucks n'échappera pas cet affichage.
 
 ```jinja
 {{ foo }}           // &lt;span%gt;
-{{ foo | safe }}    // <span>
+{{ foo |> safe }}    // <span>
 ```
 
 Si autoescaping n'est pas activé, tout l'affichage sera rendu tel quel. Vous pouvez
@@ -833,7 +833,7 @@ manuellement échapper les variables avec le filtre `escape`.
 
 ```jinja
 {{ foo }}           // <span>
-{{ foo | escape }}  // &lt;span&gt;
+{{ foo |> escape }}  // &lt;span&gt;
 ```
 
 ## Fonctions globales
@@ -897,7 +897,7 @@ Retourne la valeur absolue de l'argument :
 **Entrée**
 
 ```jinja
-{{ -3|abs }}
+{{ -3 |> abs }}
 ```
 
 **Sortie**
@@ -914,7 +914,7 @@ Retourne une liste de listes avec le numéro des éléments :
 
 ```jinja
 {% set items = [1,2,3,4,5,6] %}
-{% for item in items | batch(2) %}
+{% for item in items |> batch(2) %}
     -{% for items in item %}
        {{ items }}
     {% endfor %}
@@ -934,7 +934,7 @@ Met la première lettre en majuscule et le reste en minuscule :
 **Entrée**
 
 ```jinja
-{{ "Ceci Est Un Test" | capitalize }}
+{{ "Ceci Est Un Test" |> capitalize }}
 ```
 
 **Sortie**
@@ -951,7 +951,7 @@ Centre la valeur dans un champ d'une largeur donnée :
 **Entrée**
 
 ```jinja
-{{ "fooo" | center }}
+{{ "fooo" |> center }}
 ```
 
 **Sortie**
@@ -987,7 +987,7 @@ Tri un dictionnaire et rend des paires (clé, valeur) :
     'f': 5,
     'b': 6
 } %}
-{% for item in items | dictsort %}
+{% for item in items |> dictsort %}
     {{ item[0] }}
 {% endfor %}
 ```
@@ -1000,13 +1000,13 @@ a b c d e f
 ### dump
 
 Appelle [`JSON.stringify`](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify) sur un objet et déverse le résultat dans le
-template. C'est utile pour le débogage : `{{ foo | dump }}`.
+template. C'est utile pour le débogage : `{{ foo |> dump }}`.
 
 **Entrée**
 
 ```jinja
 {% set items = ["a", 1, { b : true}] %}
-{{ items | dump }}
+{{ items |> dump }}
 ```
 
 **Sortie**
@@ -1023,7 +1023,7 @@ retournées. Cela rend le résultat plus lisible.
 
 ```jinja
 {% set items = ["a", 1, { b : true}] %}
-{{ items | dump(2) }}
+{{ items |> dump(2) }}
 ```
 
 **Sortie**
@@ -1041,7 +1041,7 @@ retournées. Cela rend le résultat plus lisible.
 
 ```jinja
 {% set items = ["a", 1, { b : true}] %}
-{{ items | dump('\t') }}
+{{ items |> dump('\t') }}
 ```
 
 **Sortie**
@@ -1065,7 +1065,7 @@ Les résultats rendent la valeur comme une chaîne de balisage.
 **Entrée**
 
 ```jinja
-{{ "<html>" | escape }}
+{{ "<html>" |> escape }}
 ```
 
 **Sortie**
@@ -1082,7 +1082,7 @@ Donne le premier élément dans un tableau :
 
 ```jinja
 {% set items = [1,2,3] %}
-{{ items | first }}
+{{ items |> first }}
 ```
 
 **Sortie**
@@ -1099,7 +1099,7 @@ Cette valeur par défaut peut être modifiée en utilisant le premier paramètre
 **Entrée**
 
 ```jinja
-{{ "3.5" | float }}
+{{ "3.5" |> float }}
 ```
 
 **Sortie**
@@ -1123,7 +1123,7 @@ Groupe une séquence d'objets par un attribut commun :
     ]
 %}
 
-{% for type, items in items | groupby("type") %}
+{% for type, items in items |> groupby("type") %}
     <b>{{ type }}</b> :
     {% for item in items %}
         {{ item.name }}
@@ -1147,7 +1147,7 @@ Par défaut l'indentation est de 4 espaces.
 **Entrée**
 
 ```jinja
-{{ "one\ntwo\nthree" | indent }}
+{{ "one\ntwo\nthree" |> indent }}
 ```
 
 **Sortie**
@@ -1163,7 +1163,7 @@ Change l'indentation par défaut à 6 espaces :
 **Entrée**
 
 ```jinja
-{{ "one\ntwo\nthree" | indent(6) }}
+{{ "one\ntwo\nthree" |> indent(6) }}
 ```
 
 **Sortie**
@@ -1179,7 +1179,7 @@ Change l'indentation par défaut à 6 espaces et indente la première ligne :
 **Entrée**
 
 ```jinja
-{{ "one\ntwo\nthree" | indent(6, true) }}
+{{ "one\ntwo\nthree" |> indent(6, true) }}
 ```
 
 **Sortie**
@@ -1198,7 +1198,7 @@ Si la conversion échoue, cela retourne 0.
 **Entrée**
 
 ```jinja
-{{ "3.5" | int }}
+{{ "3.5" |> int }}
 ```
 
 **Sortie**
@@ -1215,7 +1215,7 @@ Retourne une chaine qui est la concaténation des chaines dans la séquence :
 
 ```jinja
 {% set items =  [1, 2, 3] %}
-{{ items | join }}
+{{ items |> join }}
 ```
 
 **Sortie**
@@ -1231,7 +1231,7 @@ Le séparateur entre les éléments est par défaut une chaine vide qui peut
 
 ```jinja
 {% set items = ['foo', 'bar', 'bear'] %}
-{{ items | join(",") }}
+{{ items |> join(",") }}
 ```
 
 **Sortie**
@@ -1251,7 +1251,7 @@ Ce comportement est applicable aux tableaux :
     { name: 'bear' }]
 %}
 
-{{ items | join(",", "name") }}
+{{ items |> join(",", "name") }}
 ```
 
 **Sortie**
@@ -1268,7 +1268,7 @@ Donne le dernier élément dans un tableau :
 
 ```jinja
 {% set items = [1,2,3] %}
-{{ items | last }}
+{{ items |> last }}
 ```
 
 **Sortie**
@@ -1284,9 +1284,9 @@ Retourne la longueur d'un tableau, d'une chaine ou le nombre de clés dans un ob
 **Entrée**
 
 ```jinja
-{{ [1,2,3] | length }}
-{{ "test" | length }}
-{{ {key: value} | length }}
+{{ [1,2,3] |> length }}
+{{ "test" |> length }}
+{{ {key: value} |> length }}
 ```
 
 **Sortie**
@@ -1306,7 +1306,7 @@ Si c'est une chaine, la liste retournée sera une liste de caractères.
 **Entrée**
 
 ```jinja
-{% for i in "foobar" | list %}{{ i }},{% endfor %}
+{% for i in "foobar" |> list %}{{ i }},{% endfor %}
 ```
 
 **Sortie**
@@ -1322,7 +1322,7 @@ Convertit une chaine en minuscule :
 **Entrée**
 
 ```jinja
-{{ "fOObAr" | lower }}
+{{ "fOObAr" |> lower }}
 ```
 
 **Sortie**
@@ -1338,7 +1338,7 @@ Remplace les nouvelles lignes par des éléments HTML `<br />` :
 **Entrée**
 
 ```jinja
-{{ "foo\nbar" | striptags(true) | escape | nl2br }}
+{{ "foo\nbar" |> striptags(true) |> escape |> nl2br }}
 ```
 
 **Sortie**
@@ -1355,7 +1355,7 @@ Sélectionne une valeur aléatoire depuis un tableau.
 **Entrée**
 
 ```jinja
-{{ [1,2,3,4,5,6,7,8,9] | random }}
+{{ [1,2,3,4,5,6,7,8,9] |> random }}
 ```
 
 **Sortie**
@@ -1376,7 +1376,7 @@ Si aucun test n'est spécifié, la valeur de l'attribut sera évaluée comme une
 
 ```jinja
 {% set foods = [{tasty: true}, {tasty: false}, {tasty: true}]%}
-{{ foods | rejectattr("tasty") | length }}
+{{ foods |> rejectattr("tasty") |> length }}
 ```
 
 **Sortie**
@@ -1394,7 +1394,7 @@ remplacer, le deuxième est la valeur de remplacement.
 
 ```jinja
 {% set numbers = 123456 %}
-{{ numbers | replace("4", ".") }}
+{{ numbers |> replace("4", ".") }}
 ```
 
 **Sortie**
@@ -1410,7 +1410,7 @@ cela mettra l'élément autour de la valeur :
 
 ```jinja
 {% set lettres = aaabbbccc%}
-{{ "lettres" | replace("", ".") }}
+{{ "lettres" |> replace("", ".") }}
 ```
 
 **Sortie**
@@ -1427,7 +1427,7 @@ Il possible de préciser le nombre de remplacement à effectuer (élément à re
 
 ```jinja
 {% set letters = "aaabbbccc" %}
-{{ letters | replace("a", "x", 2) }}
+{{ letters |> replace("a", "x", 2) }}
 ```
 Remarquez que dans ce cas, les guillemets sont nécessaires pour la liste.
 
@@ -1443,7 +1443,7 @@ Il est possible de rechercher des modèles dans une liste pour les remplacer :
 
 ```jinja
 {% set letters = "aaabbbccc" %}
-{{ letters | replace("ab", "x", 2) }}
+{{ letters |> replace("ab", "x", 2) }}
 ```
 
 **Sortie**
@@ -1459,7 +1459,7 @@ Inverse une chaine :
 **Entrée**
 
 ```jinja
-{{ "abcdef" | reverse }}
+{{ "abcdef" |> reverse }}
 ```
 
 **Sortie**
@@ -1473,7 +1473,7 @@ Inverse un tableau :
 **Entrée**
 
 ```jinja
-{% for i in [1, 2, 3, 4] | reverse %}
+{% for i in [1, 2, 3, 4] |> reverse %}
     {{ i }}
 {% endfor %}
 ```
@@ -1491,7 +1491,7 @@ Arrondit un nombre :
 **Entrée**
 
 ```jinja
-{{ 4.5 | round }}
+{{ 4.5 |> round }}
 ```
 
 **Sortie**
@@ -1505,7 +1505,7 @@ Arrondit au nombre entier le plus proche (qui arrondit vers le bas) :
 **Entrée**
 
 ```jinja
-{{ 4 | round(0, "floor") }}
+{{ 4 |> round(0, "floor") }}
 ```
 
 **Sortie**
@@ -1519,7 +1519,7 @@ Spécifiez le nombre de décimales pour arrondir :
 **Entrée**
 
 ```jinja
-{{ 4.12346 | round(4) }}
+{{ 4.12346 |> round(4) }}
 ```
 
 **Sortie**
@@ -1536,7 +1536,7 @@ cela permet à cette variable de ne pas être échappée.
 **Entrée**
 
 ```jinja
-{{ "foo http://www.example.com/ bar" | urlize | safe }}
+{{ "foo http://www.example.com/ bar" |> urlize |> safe }}
 ```
 
 **Sortie**
@@ -1558,7 +1558,7 @@ Si aucun test n'est spécifié, la valeur de l'attribut sera évaluée comme une
 
 ```jinja
 {% set foods = [{tasty: true}, {tasty: false}, {tasty: true}]%}
-{{ foods | selectattr("tasty") | length }}
+{{ foods |> selectattr("tasty") |> length }}
 ```
 
 **Sortie**
@@ -1577,7 +1577,7 @@ Découpe un itérateur et retourne une liste de listes contenant ces éléments 
 {% set arr = [1,2,3,4,5,6,7,8,9] %}
 
 <div class="columwrapper">
-  {%- for items in arr | slice(3) %}
+  {%- for items in arr |> slice(3) %}
     <ul class="column-{{ loop.index }}">
     {%- for item in items %}
       <li>{{ item }}</li>
@@ -1623,7 +1623,7 @@ Convertit un objet en une chaine :
 
 ```jinja
 {% set item = 1234 %}
-{% for i in item | string | list %}
+{% for i in item |> string |> list %}
     {{ i }},
 {% endfor %}
 ```
@@ -1641,7 +1641,7 @@ C'est similaire à
 `preserve_linebreaks` est à false (par défaut), cela enlève les balises SGML/XML et remplace
 les espaces adjacents par un seul espace. Si `preserve_linebreaks` est à true,
 cela normalise les espaces, en essayant de préserver les sauts de lignes originaux. Utiliser le second
-comportement si vous voulez utiliser ceci `{{ text | striptags(true) | escape | nl2br }}`.
+comportement si vous voulez utiliser ceci `{{ text |> striptags(true) |> escape |> nl2br }}`.
 Sinon utilisez le comportement par défaut.
 
 ### sum
@@ -1652,7 +1652,7 @@ Rend la somme des éléments dans le tableau :
 
 ```jinja
 {% set items = [1,2,3] %}
-{{ items | sum }}
+{{ items |> sum }}
 ```
 
 **Sortie**
@@ -1668,7 +1668,7 @@ Met la première lettre de chaque mot en majuscule :
 **Entrée**
 
 ```jinja
-{{ "foo bar baz" | title }}
+{{ "foo bar baz" |> title }}
 ```
 
 **Sortie**
@@ -1684,7 +1684,7 @@ Enlève les espaces avant et après :
 **Entrée**
 
 ```jinja
-{{ "  foo " | trim }}
+{{ "  foo " |> trim }}
 ```
 
 **Sortie**
@@ -1706,7 +1706,7 @@ Tronque 3 caractères :
 **Entrée**
 
 ```jinja
-{{ "foo bar" | truncate(3) }}
+{{ "foo bar" |> truncate(3) }}
 ```
 
 **Sortie**
@@ -1720,7 +1720,7 @@ Tronque 6 caractères et remplace "..." avec  "?" :
 **Entrée**
 
 ```jinja
-{{ "foo bar baz" | truncate(6, true, "?") }}
+{{ "foo bar baz" |> truncate(6, true, "?") }}
 ```
 
 **Sortie**
@@ -1736,7 +1736,7 @@ Convertit la chaine en majuscules :
 **Entrée**
 
 ```jinja
-{{ "foo" | upper }}
+{{ "foo" |> upper }}
 ```
 
 **Sortie**
@@ -1753,7 +1753,7 @@ Il accepte à la fois les dictionnaires et les chaînes régulières ainsi que l
 **Entrée**
 
 ```jinja
-{{ "&" | urlencode }}
+{{ "&" |> urlencode }}
 ```
 
 **Sortie**
@@ -1769,7 +1769,7 @@ Convertit les URL en texte brut dans des liens cliquables :
 **Entrée**
 
 ```jinja
-{{ "foo http://www.example.com/ bar" | urlize | safe }}
+{{ "foo http://www.example.com/ bar" |> urlize |> safe }}
 ```
 
 **Sortie**
@@ -1783,7 +1783,7 @@ Tronque le texte de l'URL selon le nombre donné :
 **Entrée**
 
 ```jinja
-{{ "http://mozilla.github.io/" | urlize(10, true) | safe }}
+{{ "http://mozilla.github.io/" |> urlize(10, true) |> safe }}
 ```
 
 **Sortie**
@@ -1801,7 +1801,7 @@ Compte et rend le nombre de mot à l'intérieur d'une chaine :
 
 ```
 {% set foo = "Hello World"%}
-{{ foo | wordcount }}
+{{ foo |> wordcount }}
 ```
 
 **Sortie**

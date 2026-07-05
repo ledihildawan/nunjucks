@@ -598,10 +598,10 @@ env.addFilter('shorten', function(str, count) {
 
 ```jinja
 {# Show the first 5 characters #}
-A message for you: {{ message|shorten }}
+A message for you: {{ message |> shorten }}
 
 {# Show the first 20 characters #}
-A message for you: {{ message|shorten(20) }}
+A message for you: {{ message |> shorten(20) }}
 ```
 
 ### Keyword/Default Arguments
@@ -619,8 +619,8 @@ env.addFilter('foo', function(num, x, y, kwargs) {
 模板可如下使用：
 
 ```jinja
-{{ 5 | foo(1, 2) }}          -> 15
-{{ 5 | foo(1, 2, bar=3) }}   -> 8
+{{ 5 |> foo(1, 2) }}          -> 15
+{{ 5 |> foo(1, 2, bar=3) }}   -> 8
 ```
 
 你*必须*在关键字参数之前传入所有的位置参数 (`foo(1)` 是有效的，而 `foo(1, bar=10)` 不是)，你不能使用将一个位置参数当作关键字参数来用 (如 `foo(1, y=1)`)。
@@ -636,7 +636,7 @@ env.addFilter('lookup', function(name, callback) {
     db.getItem(name, callback);
 }, true);
 
-env.render('{{ item|lookup }}', function(err, res) {
+env.render('{{ item |> lookup }}', function(err, res) {
     // do something with res
 });
 ```

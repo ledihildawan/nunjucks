@@ -2,6 +2,7 @@
   'use strict';
 
   var expect,
+    path,
     Environment,
     WebLoader,
     FileSystemLoader,
@@ -10,6 +11,7 @@
 
   if (typeof require !== 'undefined') {
     expect = require('expect.js');
+    path = require('path');
     Environment = require('../nunjucks/src/environment').Environment;
     WebLoader = require('../nunjucks/src/web-loaders').WebLoader;
     FileSystemLoader = require('../nunjucks/src/node-loaders').FileSystemLoader;
@@ -25,7 +27,7 @@
   }
 
   describe('loader', function() {
-    it('should allow a simple loader to be created', function() {
+    it('should allow a simple loader to be created', async function() {
       // From Docs: http://mozilla.github.io/nunjucks/api.html#writing-a-loader
       // We should be able to create a loader that only exposes getSource
       var env, parent;
@@ -42,8 +44,8 @@
       };
 
       env = new Environment(new MyLoader(templatesPath));
-      parent = env.getTemplate('fake.njk');
-      expect(parent.render()).to.be('Hello World');
+      parent = await env.getTemplate('fake.njk');
+      expect(await parent.render()).to.be('Hello World');
     });
 
     it('should catch loader error', function(done) {
@@ -124,7 +126,7 @@
         });
 
         it('should emit a "load" event', function(done) {
-          var loader = new NodeResolveLoader();
+          var loader = new NodeResolveLoader({paths: [path.join(__dirname, 'test-node-pkgs')]});
           loader.on('load', function(name, source) {
             expect(name).to.equal('dummy-pkg/simple-template.html');
             done();
@@ -133,15 +135,15 @@
           loader.getSource('dummy-pkg/simple-template.html');
         });
 
-        it('should render templates', function() {
-          var env = new Environment(new NodeResolveLoader());
-          var tmpl = env.getTemplate('dummy-pkg/simple-template.html');
-          expect(tmpl.render({foo: 'foo'})).to.be('foo');
+        it('should render templates', async function() {
+          var env = new Environment(new NodeResolveLoader({paths: [path.join(__dirname, 'test-node-pkgs')]}));
+          var tmpl = await env.getTemplate('dummy-pkg/simple-template.html');
+          expect(await tmpl.render({foo: 'foo'})).to.be('foo');
         });
 
         it('should not allow directory traversal', function() {
-          var loader = new NodeResolveLoader();
-          var dummyPkgPath = require.resolve('dummy-pkg/simple-template.html');
+          var loader = new NodeResolveLoader({paths: [path.join(__dirname, 'test-node-pkgs')]});
+          var dummyPkgPath = path.join(__dirname, 'test-node-pkgs', 'dummy-pkg', 'simple-template.html');
           expect(loader.getSource(dummyPkgPath)).to.be(null);
         });
 

@@ -695,7 +695,7 @@
         this.skip();
       } else {
         opts = {
-          asyncPipes: {
+          asyncFilters: {
             getContents: function(tmpl, cb) {
               fs.readFile(tmpl, cb);
             },
@@ -947,12 +947,14 @@
     });
 
     if (!isSlim) {
-      it('should throw exceptions when called synchronously', function() {
+      it('should throw exceptions when called synchronously', async function() {
         var tmpl = new Template('{% from "doesnotexist" import foo %}');
-        function templateRender() {
-          tmpl.render();
+        try {
+          await tmpl.render();
+          throw new Error('Expected exception was not thrown');
+        } catch (err) {
+          expect(err).to.match(/template not found: doesnotexist/);
         }
-        expect(templateRender).to.throwException(/template not found: doesnotexist/);
       });
 
       it('should include error line in raised TemplateError', function(done) {
@@ -999,11 +1001,13 @@
       });
     }
 
-    it('should throw exceptions from included templates when called synchronously', function() {
-      function templateRender() {
-        render('{% include "broken-import.njk" %}', {str: 'abc'});
+    it('should throw exceptions from included templates when called synchronously', async function() {
+      try {
+        await render('{% include "broken-import.njk" %}', {str: 'abc'});
+        throw new Error('Expected exception was not thrown');
+      } catch (err) {
+        expect(err).to.match(/template not found: doesnotexist/);
       }
-      expect(templateRender).to.throwException(/template not found: doesnotexist/);
     });
 
     it('should pass errors from included templates to callback when async', function(done) {
@@ -2178,7 +2182,7 @@
         '{{ foo |> hallo }}',
         { foo: 1, bar: 2 },
         {
-          pipes: {
+          filters: {
             hallo: function(foo) {
               return foo + this.lookup('bar');
             }
@@ -2447,21 +2451,21 @@
     }
   });
 
-  describe('the pipe tag', function() {
-    it('should apply the title pipe to the body', function(done) {
-      equal('{% pipe title %}may the force be with you{% endpipe %}',
+  describe('the filter tag', function() {
+    it('should apply the title filter to the body', function(done) {
+      equal('{% filter title %}may the force be with you{% endfilter %}',
         'May The Force Be With You');
       finish(done);
     });
 
-    it('should apply the replace pipe to the body', function(done) {
-      equal('{% pipe replace("force", "forth") %}may the force be with you{% endpipe %}',
+    it('should apply the replace filter to the body', function(done) {
+      equal('{% filter replace("force", "forth") %}may the force be with you{% endfilter %}',
         'may the forth be with you');
       finish(done);
     });
 
     it('should work with variables in the body', function(done) {
-      equal('{% set foo = "force" %}{% pipe replace("force", "forth") %}may the {{ foo }} be with you{% endpipe %}',
+      equal('{% set foo = "force" %}{% filter replace("force", "forth") %}may the {{ foo }} be with you{% endfilter %}',
         'may the forth be with you');
       finish(done);
     });

@@ -70,8 +70,8 @@
         'foobar,baz,');
 
       equal(
-        '{% set pipe = joiner("|") %}' +
-        'foo{{ pipe() }}bar{{ pipe() }}baz{{ pipe() }}',
+        '{% set pipeChar = joiner("|") %}' +
+        'foo{{ pipeChar() }}bar{{ pipeChar() }}baz{{ pipeChar() }}',
         'foobar|baz|');
 
       finish(done);
@@ -167,20 +167,17 @@
       finish(done);
     });
 
-    it('should return errors from globals', function(done) {
+    it('should return errors from globals', async function() {
       var env = new Environment();
-
       env.addGlobal('err', function() {
-        throw new Error('Global error');
+        throw new Error('test error');
       });
-
       try {
-        render('{{ err() }}', null, {}, env);
+        await render('{{ err() }}', null, {}, env);
+        expect().to.be(false);
       } catch (e) {
         expect(e).to.be.a(Error);
       }
-
-      finish(done);
     });
   });
 }());

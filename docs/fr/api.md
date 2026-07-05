@@ -821,21 +821,21 @@ il est utilisé :
 
 ```jinja
 {# Affiche les 5 premiers caractères #}
-Un message pour vous : {{ message|shorten }}
+Un message pour vous : {{ message |> shorten }}
 
 {# Affiche les 20 premiers caractères #}
-Un message pour vous : {{ message|shorten(20) }}
+Un message pour vous : {{ message |> shorten(20) }}
 ```
 
 ### Arguments avec Mots clefs/Par défaut
 
 Comme décrit dans la section
 [templating](templating.html#arguments-avec-mots-clefs), nunjucks supporte
-les arguments avec Mots clefs/Par défaut. Vous pouvez écrire un filtre javascript
+les arguments avec Mots clefs/Par défaut. Vous pouvez écrire un filter javascript
 qui les exploite.
 
 Tous les arguments avec mots clefs sont transmis en tant que hash comme dernier argument.
-Voici le filtre `foo` qui utilise des arguments avec mots clefs :
+Voici le filter `foo` qui utilise des arguments avec mots clefs :
 
 ```js
 env.addFilter('foo', function(num, x, y, kwargs) {
@@ -846,8 +846,8 @@ env.addFilter('foo', function(num, x, y, kwargs) {
 Le template peut l'utiliser ainsi :
 
 ```jinja
-{{ 5 | foo(1, 2) }}          -> 15
-{{ 5 | foo(1, 2, bar=3) }}   -> 8
+{{ 5 |> foo(1, 2) }}          -> 15
+{{ 5 |> foo(1, 2, bar=3) }}   -> 8
 ```
 
 Vous *devez* passer tous les arguments de position avant les arguments avec mots
@@ -867,7 +867,7 @@ env.addFilter('lookup', function(name, callback) {
     db.getItem(name, callback);
 }, true);
 
-env.renderString('{{ item|lookup }}', function(err, res) {
+env.renderString('{{ item |> lookup }}', function(err, res) {
     // faire quelque chose avec res
 });
 ```

@@ -58,6 +58,11 @@
     }
     opts = opts || {};
     var res = render(str, ctx, opts, env);
+    if (res && typeof res.then === 'function') {
+      return res.then((resolved) => {
+        expect(resolved).to.be(str2);
+      });
+    }
     expect(res).to.be(str2);
   }
 
@@ -126,18 +131,18 @@
     }
 
     var name;
-    if (opts.pipes) {
-      for (name in opts.pipes) {
-        if (Object.prototype.hasOwnProperty.call(opts.pipes, name)) {
-          e.addPipe(name, opts.pipes[name]);
+    if (opts.filters) {
+      for (name in opts.filters) {
+        if (Object.prototype.hasOwnProperty.call(opts.filters, name)) {
+          e.addFilter(name, opts.filters[name]);
         }
       }
     }
 
-    if (opts.asyncPipes) {
-      for (name in opts.asyncPipes) {
-        if (Object.prototype.hasOwnProperty.call(opts.asyncPipes, name)) {
-          e.addPipe(name, opts.asyncPipes[name], true);
+    if (opts.asyncFilters) {
+      for (name in opts.asyncFilters) {
+        if (Object.prototype.hasOwnProperty.call(opts.asyncFilters, name)) {
+          e.addFilter(name, opts.asyncFilters[name], true);
         }
       }
     }

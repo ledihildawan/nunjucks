@@ -830,10 +830,10 @@ is used:
 
 ```jinja
 {# Show the first 5 characters #}
-A message for you: {{ message|shorten }}
+A message for you: {{ message |> shorten }}
 
 {# Show the first 20 characters #}
-A message for you: {{ message|shorten(20) }}
+A message for you: {{ message |> shorten(20) }}
 ```
 
 ### Keyword/Default Arguments
@@ -855,8 +855,8 @@ env.addFilter('foo', function(num, x, y, kwargs) {
 The template can use it like this:
 
 ```jinja
-{{ 5 | foo(1, 2) }}          -> 15
-{{ 5 | foo(1, 2, bar=3) }}   -> 8
+{{ 5 |> foo(1, 2) }}          -> 15
+{{ 5 |> foo(1, 2, bar=3) }}   -> 8
 ```
 
 You *must* pass all of the positional arguments before keyword
@@ -876,7 +876,7 @@ env.addFilter('lookup', function(name, callback) {
     db.getItem(name, callback);
 }, true);
 
-env.renderString('{{ item|lookup }}', function(err, res) {
+env.renderString('{{ item |> lookup }}', function(err, res) {
     // do something with res
 });
 ```
