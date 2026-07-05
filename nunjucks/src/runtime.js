@@ -4,7 +4,7 @@ var supportsIterators = (
   typeof Symbol === 'function' && Symbol.iterator && typeof arrayFrom === 'function'
 );
 
-class Frame {
+export class Frame {
   constructor(parent, isolateWrites) {
     this.variables = Object.create(null);
     this.parent = parent;
@@ -71,7 +71,7 @@ class Frame {
   }
 }
 
-function makeMacro(argNames, kwargNames, func) {
+export function makeMacro(argNames, kwargNames, func) {
   return function macro(...macroArgs) {
     var argCount = numArgs(macroArgs);
     var args;
@@ -104,16 +104,16 @@ function makeMacro(argNames, kwargNames, func) {
   };
 }
 
-function makeKeywordArgs(obj) {
+export function makeKeywordArgs(obj) {
   obj.__keywords = true;
   return obj;
 }
 
-function isKeywordArgs(obj) {
+export function isKeywordArgs(obj) {
   return obj && Object.prototype.hasOwnProperty.call(obj, '__keywords');
 }
 
-function getKeywordArgs(args) {
+export function getKeywordArgs(args) {
   var len = args.length;
   if (len) {
     const lastArg = args[len - 1];
@@ -124,7 +124,7 @@ function getKeywordArgs(args) {
   return {};
 }
 
-function numArgs(args) {
+export function numArgs(args) {
   var len = args.length;
   if (len === 0) {
     return 0;
@@ -138,7 +138,7 @@ function numArgs(args) {
   }
 }
 
-function SafeString(val) {
+export function SafeString(val) {
   if (typeof val !== 'string') {
     return val;
   }
@@ -161,14 +161,14 @@ SafeString.prototype.toString = function toString() {
   return this.val;
 };
 
-function copySafeness(dest, target) {
+export function copySafeness(dest, target) {
   if (dest instanceof SafeString) {
     return new SafeString(target);
   }
   return target.toString();
 }
 
-function markSafe(val) {
+export function markSafe(val) {
   var type = typeof val;
 
   if (type === 'string') {
@@ -188,7 +188,7 @@ function markSafe(val) {
   }
 }
 
-function suppressValue(val, autoescape) {
+export function suppressValue(val, autoescape) {
   val = (val !== undefined && val !== null) ? val : '';
 
   if (autoescape && !(val instanceof SafeString)) {
@@ -198,14 +198,14 @@ function suppressValue(val, autoescape) {
   return val;
 }
 
-function awaitValue(val) {
+export function awaitValue(val) {
   if (val && typeof val.then === 'function') {
     return val.then(v => v);
   }
   return val;
 }
 
-function ensureDefined(val, lineno, colno) {
+export function ensureDefined(val, lineno, colno) {
   if (val === null || val === undefined) {
     throw new lib.TemplateError(
       'attempted to output null or undefined value',
@@ -216,7 +216,7 @@ function ensureDefined(val, lineno, colno) {
   return val;
 }
 
-function memberLookup(obj, val) {
+export function memberLookup(obj, val) {
   if (obj === undefined || obj === null) {
     return undefined;
   }
@@ -228,7 +228,7 @@ function memberLookup(obj, val) {
   return obj[val];
 }
 
-function optionalMemberLookup(obj, val) {
+export function optionalMemberLookup(obj, val) {
   if (obj === undefined || obj === null) {
     return undefined;
   }
@@ -240,7 +240,7 @@ function optionalMemberLookup(obj, val) {
   return obj[val];
 }
 
-function slice(arr, start, stop, step) {
+export function slice(arr, start, stop, step) {
   if (step === 0) {
     throw new Error('slice step cannot be 0');
   }
@@ -285,11 +285,11 @@ function slice(arr, start, stop, step) {
   }
 }
 
-function nullishCoalesce(left, right) {
+export function nullishCoalesce(left, right) {
   return (left !== undefined && left !== null) ? left : right;
 }
 
-function callWrap(obj, name, context, args) {
+export function callWrap(obj, name, context, args) {
   if (!obj) {
     throw new Error('Unable to call `' + name + '`, which is undefined or falsey');
   } else if (typeof obj !== 'function') {
@@ -299,14 +299,14 @@ function callWrap(obj, name, context, args) {
   return obj.apply(context, args);
 }
 
-function contextOrFrameLookup(context, frame, name) {
+export function contextOrFrameLookup(context, frame, name) {
   var val = frame.lookup(name);
   return (val !== undefined) ?
     val :
     context.lookup(name);
 }
 
-function handleError(error, lineno, colno) {
+export function handleError(error, lineno, colno) {
   if (error.lineno) {
     return error;
   } else {
@@ -314,7 +314,7 @@ function handleError(error, lineno, colno) {
   }
 }
 
-async function asyncEach(arr, dimen, iter) {
+export async function asyncEach(arr, dimen, iter) {
   if (lib.isArray(arr)) {
     const len = arr.length;
 
@@ -345,7 +345,7 @@ async function asyncEach(arr, dimen, iter) {
   }
 }
 
-async function asyncAll(arr, dimen, func) {
+export async function asyncAll(arr, dimen, func) {
   const outputArr = [];
 
   if (lib.isArray(arr)) {
@@ -390,7 +390,7 @@ async function asyncAll(arr, dimen, func) {
   return outputArr.join('');
 }
 
-function fromIterator(arr) {
+export function fromIterator(arr) {
   if (typeof arr !== 'object' || arr === null || lib.isArray(arr)) {
     return arr;
   } else if (supportsIterators && Symbol.iterator in arr) {
@@ -399,29 +399,6 @@ function fromIterator(arr) {
     return arr;
   }
 }
-
-export {
-  Frame,
-  makeMacro,
-  makeKeywordArgs,
-  numArgs,
-  suppressValue,
-  ensureDefined,
-  memberLookup,
-  optionalMemberLookup,
-  slice,
-  nullishCoalesce,
-  contextOrFrameLookup,
-  callWrap,
-  handleError,
-  SafeString,
-  copySafeness,
-  markSafe,
-  asyncEach,
-  asyncAll,
-  fromIterator,
-  awaitValue
-};
 
 export const isArray = lib.isArray;
 export const keys = lib.keys;
