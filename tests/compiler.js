@@ -1,4 +1,4 @@
-import expect from 'expect.js';
+import { expect, describe, test } from 'bun:test';
 import * as util from './util.js';
 import { Template } from '../nunjucks/src/environment.js';
 import { Environment } from '../nunjucks/src/environment.js';
@@ -11,7 +11,7 @@ var isSlim = util.isSlim;
 var Loader = util.Loader;
 
 describe('compiler', function() {
-  it('should compile templates', async function() {
+  test('should compile templates', async function() {
     await equal('Hello world', 'Hello world');
     await equal('Hello world, {{ name }}',
       {
@@ -27,15 +27,15 @@ describe('compiler', function() {
       'Hello world, James Long, how are you');
   });
 
-  it('should escape newlines', async function() {
+  test('should escape newlines', async function() {
     await equal('foo\\nbar', 'foo\\nbar');
   });
 
-  it('should escape Unicode line seperators', async function() {
+  test('should escape Unicode line seperators', async function() {
     await equal('\u2028', '\u2028');
   });
 
-  it('should compile references', async function() {
+  test('should compile references', async function() {
     await equal('{{ foo.bar }}',
       {
         foo: {
@@ -53,7 +53,7 @@ describe('compiler', function() {
       'baz');
   });
 
-  it('should compile references - object without prototype', async function() {
+  test('should compile references - object without prototype', async function() {
     var context = Object.create(null);
     context.foo = Object.create(null);
     context.foo.bar = 'baz';
@@ -67,14 +67,14 @@ describe('compiler', function() {
       'baz');
   });
 
-  it('should fail silently on undefined values', async function() {
+  test('should fail silently on undefined values', async function() {
     await equal('{{ foo }}', '');
     await equal('{{ foo.bar }}', '');
     await equal('{{ foo.bar.baz }}', '');
     await equal('{{ foo.bar.baz["biz"].mumble }}', '');
   });
 
-  it('should compile optional chaining', async function() {
+  test('should compile optional chaining', async function() {
     await equal('{{ foo?.bar }}',
       {
         foo: {
@@ -128,7 +128,7 @@ describe('compiler', function() {
       'hello');
   });
 
-  it('should compile nullish coalescing', async function() {
+  test('should compile nullish coalescing', async function() {
     await equal('{{ foo ?? "default" }}',
       {
         foo: null
@@ -180,7 +180,7 @@ describe('compiler', function() {
       '');
   });
 
-  it('should compile combined optional chaining and nullish coalescing', async function() {
+  test('should compile combined optional chaining and nullish coalescing', async function() {
     await equal('{{ foo?.bar ?? "default" }}',
       {
         foo: null
@@ -220,7 +220,7 @@ describe('compiler', function() {
       'qux');
   });
 
-  it('should not treat falsy values the same as undefined', async function() {
+  test('should not treat falsy values the same as undefined', async function() {
     await equal('{{ foo }}', {
       foo: 0
     }, '0');
@@ -229,19 +229,19 @@ describe('compiler', function() {
     }, 'false');
   });
 
-  it('should display none as empty string', async function() {
+  test('should display none as empty string', async function() {
     await equal('{{ none }}', '');
   });
 
-  it('should compile none as falsy', async function() {
+  test('should compile none as falsy', async function() {
     await equal('{% if not none %}yes{% endif %}', 'yes');
   });
 
-  it('should compile none as null, not undefined', async function() {
+  test('should compile none as null, not undefined', async function() {
     await equal('{{ none|>default("d", false) }}', '');
   });
 
-  it('should compile function calls', async function() {
+  test('should compile function calls', async function() {
     await equal('{{ foo("msg") }}',
       {
         foo: function(str) {
@@ -251,7 +251,7 @@ describe('compiler', function() {
       'msghi');
   });
 
-  it('should compile function calls with correct scope', async function() {
+  test('should compile function calls with correct scope', async function() {
     await equal('{{ foo.bar() }}', {
       foo: {
         bar: function() {
@@ -262,7 +262,7 @@ describe('compiler', function() {
     }, 'hello');
   });
 
-  it('should compile switch statements', async function() {
+  test('should compile switch statements', async function() {
     var tpl1 = '{% switch foo %}{% case "bar" %}BAR{% case "baz" %}BAZ{% default %}NEITHER FOO NOR BAR{% endswitch %}';
     var tpl2 = '{% switch foo %}{% case "bar" %}BAR{% case "baz" %}BAZ{% endswitch %}';
     var tpl3 = '{% switch foo %}{% case "bar" %}{% case "baz" %}BAR{% endswitch %}';
@@ -282,7 +282,7 @@ describe('compiler', function() {
     }, 'BAR');
   });
 
-  it('should compile if blocks', async function() {
+  test('should compile if blocks', async function() {
     var tmpl = ('Give me some {% if hungry %}pizza' +
       '{% else %}water{% endif %}');
 
@@ -369,14 +369,14 @@ describe('compiler', function() {
       'hmmm');
   });
 
-  it('should compile the ternary operator', async function() {
+  test('should compile the ternary operator', async function() {
     await equal('{{ "foo" if bar else "baz" }}', 'baz');
     await equal('{{ "foo" if bar else "baz" }}', {
       bar: true
     }, 'foo');
   });
 
-  it('should compile inline conditionals', async function() {
+  test('should compile inline conditionals', async function() {
     var tmpl = 'Give me some {{ "pizza" if hungry else "water" }}';
 
     await equal(tmpl, {
@@ -421,106 +421,106 @@ describe('compiler', function() {
     }[block];
 
     describe('the ' + block + ' tag', function() {
-      it('should loop over simple arrays', async function() {
+      test('should loop over simple arrays', async function() {
         await equal(
           '{% ' + block + ' i in arr %}{{ i }}{% ' + end + ' %}',
           { arr: [1, 2, 3, 4, 5] },
           '12345');
       });
-      it('should loop normally with an {% else %} tag and non-empty array', async function() {
+      test('should loop normally with an {% else %} tag and non-empty array', async function() {
         await equal(
           '{% ' + block + ' i in arr %}{{ i }}{% else %}empty{% ' + end + ' %}',
           { arr: [1, 2, 3, 4, 5] },
           '12345');
       });
-      it('should execute the {% else %} block when looping over an empty array', async function() {
+      test('should execute the {% else %} block when looping over an empty array', async function() {
         await equal(
           '{% ' + block + ' i in arr %}{{ i }}{% else %}empty{% ' + end + ' %}',
           { arr: [] },
           'empty');
       });
-      it('should support destructured looping', async function() {
+      test('should support destructured looping', async function() {
         await equal(
           '{% ' + block + ' a, b, c in arr %}' +
           '{{ a }},{{ b }},{{ c }}.{% ' + end + ' %}',
           { arr: [['x', 'y', 'z'], ['1', '2', '3']] },
           'x,y,z.1,2,3.');
       });
-      it('should do loop over key-values of a literal in-template Object', async function() {
+      test('should do loop over key-values of a literal in-template Object', async function() {
         await equal(
           '{% ' + block + ' k, v in { one: 1, two: 2 } %}' +
           '-{{ k }}:{{ v }}-{% ' + end + ' %}', '-one:1--two:2-');
       });
-      it('should support loop.index', async function() {
+      test('should support loop.index', async function() {
         await equal('{% ' + block + ' i in [7,3,6] %}{{ loop.index }}{% ' + end + ' %}', '123');
       });
-      it('should support loop.index0', async function() {
+      test('should support loop.index0', async function() {
         await equal('{% ' + block + ' i in [7,3,6] %}{{ loop.index0 }}{% ' + end + ' %}', '012');
       });
-      it('should support loop.revindex', async function() {
+      test('should support loop.revindex', async function() {
         await equal('{% ' + block + ' i in [7,3,6] %}{{ loop.revindex }}{% ' + end + ' %}', '321');
       });
-      it('should support loop.revindex0', async function() {
+      test('should support loop.revindex0', async function() {
         await equal('{% ' + block + ' i in [7,3,6] %}{{ loop.revindex0 }}{% ' + end + ' %}', '210');
       });
-      it('should support loop.first', async function() {
+      test('should support loop.first', async function() {
         await equal(
           '{% ' + block + ' i in [7,3,6] %}' +
           '{% if loop.first %}{{ i }}{% endif %}' +
           '{% ' + end + ' %}',
           '7');
       });
-      it('should support loop.last', async function() {
+      test('should support loop.last', async function() {
         await equal(
           '{% ' + block + ' i in [7,3,6] %}' +
           '{% if loop.last %}{{ i }}{% endif %}' +
           '{% ' + end + ' %}',
           '6');
       });
-      it('should support loop.length', async function() {
+      test('should support loop.length', async function() {
         await equal('{% ' + block + ' i in [7,3,6] %}{{ loop.length }}{% ' + end + ' %}', '333');
       });
-      it('should fail silently when looping over an undefined variable', async function() {
+      test('should fail silently when looping over an undefined variable', async function() {
         await equal('{% ' + block + ' i in foo %}{{ i }}{% ' + end + ' %}', '');
       });
-      it('should fail silently when looping over an undefined property', async function() {
+      test('should fail silently when looping over an undefined property', async function() {
         await equal(
           '{% ' + block + ' i in foo.bar %}{{ i }}{% ' + end + ' %}',
           { foo: {} },
           '');
       });
-      it('should fail silently when looping over a null variable', async function() {
+      test('should fail silently when looping over a null variable', async function() {
         await equal(
           '{% ' + block + ' i in foo %}{{ i }}{% ' + end + ' %}',
           { foo: null },
           '');
       });
-      it('should loop over two-dimensional arrays', async function() {
+      test('should loop over two-dimensional arrays', async function() {
         await equal('{% ' + block + ' x, y in points %}[{{ x }},{{ y }}]{% ' + end + ' %}',
           { points: [[1, 2], [3, 4], [5, 6]] },
           '[1,2][3,4][5,6]');
       });
-      it('should loop over four-dimensional arrays', async function() {
+      test('should loop over four-dimensional arrays', async function() {
         await equal(
           '{% ' + block + ' a, b, c, d in arr %}[{{ a }},{{ b }},{{ c }},{{ d }}]{% ' + end + '%}',
           { arr: [[1, 2, 3, 4], [5, 6, 7, 8]] },
           '[1,2,3,4][5,6,7,8]');
       });
-      it('should support loop.index with two-dimensional loops', async function() {
+      test('should support loop.index with two-dimensional loops', async function() {
         await equal('{% ' + block + ' x, y in points %}{{ loop.index }}{% ' + end + ' %}',
           {
             points: [[1, 2], [3, 4], [5, 6]]
           },
           '123');
       });
-      it('should support loop.revindex with two-dimensional loops', async function() {
+      test('should support loop.revindex with two-dimensional loops', async function() {
         await equal('{% ' + block + ' x, y in points %}{{ loop.revindex }}{% ' + end + ' %}',
           {
             points: [[1, 2], [3, 4], [5, 6]]
           },
           '321');
       });
-      it('should support key-value looping over an Object variable', async function() {
+      test('should support key-value looping over an Object variable', async function() {
         await equal('{% ' + block + ' k, v in items %}({{ k }},{{ v }}){% ' + end + ' %}',
           {
             items: {
@@ -530,7 +530,7 @@ describe('compiler', function() {
           },
           '(foo,1)(bar,2)');
       });
-      it('should support loop.index when looping over an Object\'s key-value pairs', async function() {
+      test('should support loop.index when looping over an Object\'s key-value pairs', async function() {
         await equal('{% ' + block + ' k, v in items %}{{ loop.index }}{% ' + end + ' %}',
           {
             items: {
@@ -540,7 +540,7 @@ describe('compiler', function() {
           },
           '12');
       });
-      it('should support loop.revindex when looping over an Object\'s key-value pairs', async function() {
+      test('should support loop.revindex when looping over an Object\'s key-value pairs', async function() {
         await equal('{% ' + block + ' k, v in items %}{{ loop.revindex }}{% ' + end + ' %}',
           {
             items: {
@@ -550,7 +550,7 @@ describe('compiler', function() {
           },
           '21');
       });
-      it('should support loop.length when looping over an Object\'s key-value pairs', async function() {
+      test('should support loop.length when looping over an Object\'s key-value pairs', async function() {
         await equal('{% ' + block + ' k, v in items %}{{ loop.length }}{% ' + end + ' %}',
           {
             items: {
@@ -560,7 +560,7 @@ describe('compiler', function() {
           },
           '22');
       });
-      it('should support include tags in the body of the loop', async function() {
+      test('should support include tags in the body of the loop', async function() {
         await equal('{% ' + block + ' item, v in items %}{% include "item.njk" %}{% ' + end + ' %}',
           {
             items: {
@@ -570,7 +570,7 @@ describe('compiler', function() {
           },
           'showing fooshowing bar');
       });
-      it('should work with {% set %} and {% include %} tags', async function() {
+      test('should work with {% set %} and {% include %} tags', async function() {
         await equal(
           '{% set item = passed_var %}' +
           '{% include "item.njk" %}\n' +
@@ -584,7 +584,7 @@ describe('compiler', function() {
           },
           'showing test\nshowing 1\nshowing 2\nshowing 3\n');
       });
-      it('should work with Set builtin', async function() {
+      test('should work with Set builtin', async function() {
         await equal('{% ' + block + ' i in set %}{{ i }}{% ' + end + ' %}',
           { set: new Set([1, 2, 3, 4, 5]) },
           '12345');
@@ -597,7 +597,7 @@ describe('compiler', function() {
           { set: new Set() },
           'empty');
       });
-      it('should work with Map builtin', async function() {
+      test('should work with Map builtin', async function() {
         await equal('{% ' + block + ' k, v in map %}[{{ k }},{{ v }}]{% ' + end + ' %}',
           { map: new Map([[1, 2], [3, 4], [5, 6]]) },
           '[1,2][3,4][5,6]');
@@ -617,14 +617,14 @@ describe('compiler', function() {
   runLoopTests('asyncEach');
   runLoopTests('asyncAll');
 
-  it('should allow overriding var with none inside nested scope', async function() {
+  test('should allow overriding var with none inside nested scope', async function() {
     await equal(
       '{% set var = "foo" %}' +
       '{% for i in [1] %}{% set var = none %}{{ var }}{% endfor %}',
       '');
   });
 
-  it('should compile async control', async function() {
+  test('should compile async control', async function() {
     var opts = {
       asyncFilters: {
         getContents: function(tmpl, cb) {
@@ -651,7 +651,7 @@ describe('compiler', function() {
             else resolve(res);
           });
       });
-      expect(res).to.be('somecontenthere');
+      expect(res).toBe('somecontenthere');
     }
 
     {
@@ -666,7 +666,7 @@ describe('compiler', function() {
             else resolve(res);
           });
       });
-      expect(res).to.be('somecontenthere');
+      expect(res).toBe('somecontenthere');
     }
 
     {
@@ -681,7 +681,7 @@ describe('compiler', function() {
             else resolve(res);
           });
       });
-      expect(res).to.be('yes');
+      expect(res).toBe('yes');
     }
 
     {
@@ -696,7 +696,7 @@ describe('compiler', function() {
             else resolve(res);
           });
       });
-      expect(res).to.be('somecontenthere*somecontenthere*');
+      expect(res).toBe('somecontenthere*somecontenthere*');
     }
 
     {
@@ -711,7 +711,7 @@ describe('compiler', function() {
             else resolve(res);
           });
       });
-      expect(res).to.be('somecontenthere');
+      expect(res).toBe('somecontenthere');
     }
 
     {
@@ -726,7 +726,7 @@ describe('compiler', function() {
             else resolve(res);
           });
       });
-      expect(res).to.be('oof');
+      expect(res).toBe('oof');
     }
 
     {
@@ -744,7 +744,7 @@ describe('compiler', function() {
             else resolve(res);
           });
       });
-      expect(res).to.be('somecontenthere*somecontenthere*');
+      expect(res).toBe('somecontenthere*somecontenthere*');
     }
 
     {
@@ -759,7 +759,7 @@ describe('compiler', function() {
             else resolve(res);
           });
       });
-      expect(res).to.be('somecontenthere');
+      expect(res).toBe('somecontenthere');
     }
 
     {
@@ -774,7 +774,7 @@ describe('compiler', function() {
             else resolve(res);
           });
       });
-      expect(res).to.be('hello somecontenthere');
+      expect(res).toBe('hello somecontenthere');
     }
 
     {
@@ -789,7 +789,7 @@ describe('compiler', function() {
             else resolve(res);
           });
       });
-      expect(res).to.be('somecontenthere');
+      expect(res).toBe('somecontenthere');
     }
 
     {
@@ -804,7 +804,7 @@ describe('compiler', function() {
             else resolve(res);
           });
       });
-      expect(res).to.be('somecontenthere\n');
+      expect(res).toBe('somecontenthere\n');
     }
 
     {
@@ -819,7 +819,7 @@ describe('compiler', function() {
             else resolve(res);
           });
       });
-      expect(res).to.be('somecontenthere\nsomecontenthere\n');
+      expect(res).toBe('somecontenthere\nsomecontenthere\n');
     }
 
     {
@@ -834,7 +834,7 @@ describe('compiler', function() {
             else resolve(res);
           });
       });
-      expect(res).to.be('-0:somecontenthere\n-' +
+      expect(res).toBe('-0:somecontenthere\n-' +
         '-1:somecontenthere\n-' +
         '-2:somecontenthere\n-' +
         '-3:somecontenthere\n-' +
@@ -842,27 +842,27 @@ describe('compiler', function() {
     }
   });
 
-  it('should compile basic arithmetic operators', async function() {
+  test('should compile basic arithmetic operators', async function() {
     await equal('{{ 3 + 4 - 5 * 6 / 10 }}', '4');
   });
 
-  it('should compile the exponentiation (**) operator', async function() {
+  test('should compile the exponentiation (**) operator', async function() {
     await equal('{{ 4**5 }}', '1024');
   });
 
-  it('should compile the integer division (//) operator', async function() {
+  test('should compile the integer division (//) operator', async function() {
     await equal('{{ 9//5 }}', '1');
   });
 
-  it('should compile the modulus operator', async function() {
+  test('should compile the modulus operator', async function() {
     await equal('{{ 9%5 }}', '4');
   });
 
-  it('should compile numeric negation operator', async function() {
+  test('should compile numeric negation operator', async function() {
     await equal('{{ -5 }}', '-5');
   });
 
-  it('should compile comparison operators', async function() {
+  test('should compile comparison operators', async function() {
     await equal('{% if 3 < 4 %}yes{% endif %}', 'yes');
     await equal('{% if 3 > 4 %}yes{% endif %}', '');
     await equal('{% if 9 >= 10 %}yes{% endif %}', '');
@@ -890,14 +890,14 @@ describe('compiler', function() {
       'yes');
   });
 
-  it('should compile python-style ternary operators', async function() {
+  test('should compile python-style ternary operators', async function() {
     await equal('{{ "yes" if 1 is odd else "no"  }}', 'yes');
     await equal('{{ "yes" if 2 is even else "no"  }}', 'yes');
     await equal('{{ "yes" if 2 is odd else "no"  }}', 'no');
     await equal('{{ "yes" if 1 is even else "no"  }}', 'no');
   });
 
-  it('should compile the "in" operator for Arrays', async function() {
+  test('should compile the "in" operator for Arrays', async function() {
     await equal('{% if 1 in [1, 2] %}yes{% endif %}', 'yes');
     await equal('{% if 1 in [2, 3] %}yes{% endif %}', '');
     await equal('{% if 1 not in [1, 2] %}yes{% endif %}', '');
@@ -907,7 +907,7 @@ describe('compiler', function() {
       'yes');
   });
 
-  it('should compile the "in" operator for objects', async function() {
+  test('should compile the "in" operator for objects', async function() {
     await equal('{% if "a" in obj %}yes{% endif %}',
       { obj: { a: true } },
       'yes');
@@ -916,11 +916,11 @@ describe('compiler', function() {
       '');
   });
 
-  it('should compile the "in" operator for strings', async function() {
+  test('should compile the "in" operator for strings', async function() {
     await equal('{% if "foo" in "foobar" %}yes{% endif %}', 'yes');
   });
 
-  it('should throw an error when using the "in" operator on unexpected types', async function() {
+  test('should throw an error when using the "in" operator on unexpected types', async function() {
     {
       const res = await new Promise((resolve, reject) => {
         render(
@@ -935,8 +935,8 @@ describe('compiler', function() {
           }
         );
       });
-      expect(res.res).to.be(undefined);
-      expect(res.err).to.match(
+      expect(res.res).toBe(undefined);
+      expect(res.err.message).toMatch(
         /Cannot use "in" operator to search for "a" in unexpected types\./
       );
     }
@@ -955,25 +955,25 @@ describe('compiler', function() {
           }
         );
       });
-      expect(res.res).to.be(undefined);
-      expect(res.err).to.match(
+      expect(res.res).toBe(undefined);
+      expect(res.err.message).toMatch(
         /Cannot use "in" operator to search for "a" in unexpected types\./
       );
     }
   });
 
   if (!isSlim) {
-    it('should throw exceptions when called synchronously', async function() {
+    test('should throw exceptions when called synchronously', async function() {
       var tmpl = new Template('{% from "doesnotexist" import foo %}');
       try {
         await tmpl.render();
         throw new Error('Expected exception was not thrown');
       } catch (err) {
-        expect(err).to.match(/template not found: doesnotexist/);
+        expect(err.message).toMatch(/template not found: doesnotexist/);
       }
     });
 
-    it('should include error line in raised TemplateError', async function() {
+    test('should include error line in raised TemplateError', async function() {
       var tmplStr = [
         '{% set items = ["a", "b",, "c"] %}',
         '{{ items |> join(",") }}',
@@ -990,14 +990,14 @@ describe('compiler', function() {
       } catch (e) {
         err = e;
       }
-      expect(res).to.be(undefined);
-      expect(err.toString()).to.be([
+      expect(res).toBe(undefined);
+      expect(err.toString()).toBe([
         'Template render error: (parse-error.njk) [Line 1, Column 26]',
         '  unexpected token: ,',
       ].join('\n'));
     });
 
-    it('should include error line when exception raised in user function', async function() {
+    test('should include error line when exception raised in user function', async function() {
       var tmplStr = [
         '{% block content %}',
         '<div>{{ foo() }}</div>',
@@ -1017,24 +1017,24 @@ describe('compiler', function() {
       } catch (e) {
         err = e;
       }
-      expect(res).to.be(undefined);
-      expect(err.toString()).to.be([
+      expect(res).toBe(undefined);
+      expect(err.toString()).toBe([
         'Template render error: (user-error.njk) [Line 1, Column 11]',
         '  Error: ERROR',
       ].join('\n'));
     });
   }
 
-  it('should throw exceptions from included templates when called synchronously', async function() {
+  test('should throw exceptions from included templates when called synchronously', async function() {
     try {
       await render('{% include "broken-import.njk" %}', {str: 'abc'});
       throw new Error('Expected exception was not thrown');
     } catch (err) {
-      expect(err).to.match(/template not found: doesnotexist/);
+      expect(err.message).toMatch(/template not found: doesnotexist/);
     }
   });
 
-  it('should pass errors from included templates to callback when async', async function() {
+  test('should pass errors from included templates to callback when async', async function() {
     const res = await new Promise((resolve, reject) => {
       render(
         '{% include "broken-import.njk" %}',
@@ -1045,45 +1045,45 @@ describe('compiler', function() {
           else resolve({err, res});
         });
     });
-    expect(res.err).to.match(/template not found: doesnotexist/);
-    expect(res.res).to.be(undefined);
+    expect(res.err.message).toMatch(/template not found: doesnotexist/);
+    expect(res.res).toBe(undefined);
   });
 
-  it('should compile string concatenations with tilde', async function() {
+  test('should compile string concatenations with tilde', async function() {
     await equal('{{ 4 ~ \'hello\' }}', '4hello');
     await equal('{{ 4 ~ 5 }}', '45');
     await equal('{{ \'a\' ~ \'b\' ~ 5 }}', 'ab5');
   });
 
-  it('should compile macros', async function() {
+  test('should compile macros', async function() {
     await equal(
       '{% macro foo() %}This is a macro{% endmacro %}' +
       '{{ foo() }}',
       'This is a macro');
   });
 
-  it('should compile macros with optional args', async function() {
+  test('should compile macros with optional args', async function() {
     await equal(
       '{% macro foo(x, y) %}{{ y }}{% endmacro %}' +
       '{{ foo(1) }}',
       '');
   });
 
-  it('should compile macros with args that can be passed to filters', async function() {
+  test('should compile macros with args that can be passed to filters', async function() {
     await equal(
       '{% macro foo(x) %}{{ x|>title }}{% endmacro %}' +
       '{{ foo("foo") }}',
       'Foo');
   });
 
-  it('should compile macros with positional args', async function() {
+  test('should compile macros with positional args', async function() {
     await equal(
       '{% macro foo(x, y) %}{{ y }}{% endmacro %}' +
       '{{ foo(1, 2) }}',
       '2');
   });
 
-  it('should compile macros with arg defaults', async function() {
+  test('should compile macros with arg defaults', async function() {
     await equal(
       '{% macro foo(x, y, z=5) %}{{ y }}{% endmacro %}' +
       '{{ foo(1, 2) }}',
@@ -1094,14 +1094,14 @@ describe('compiler', function() {
       '5');
   });
 
-  it('should compile macros with keyword args', async function() {
+  test('should compile macros with keyword args', async function() {
     await equal(
       '{% macro foo(x, y, z=5) %}{{ y }}{% endmacro %}' +
       '{{ foo(1, y=2) }}',
       '2');
   });
 
-  it('should compile macros with only keyword args', async function() {
+  test('should compile macros with only keyword args', async function() {
     await equal(
       '{% macro foo(x, y, z=5) %}{{ x }}{{ y }}{{ z }}' +
       '{% endmacro %}' +
@@ -1109,7 +1109,7 @@ describe('compiler', function() {
       '125');
   });
 
-  it('should compile macros with keyword args overriding defaults', async function() {
+  test('should compile macros with keyword args overriding defaults', async function() {
     await equal(
       '{% macro foo(x, y, z=5) %}{{ x }}{{ y }}{{ z }}' +
       '{% endmacro %}' +
@@ -1117,7 +1117,7 @@ describe('compiler', function() {
       '123');
   });
 
-  it('should compile macros with out-of-order keyword args', async function() {
+  test('should compile macros with out-of-order keyword args', async function() {
     await equal(
       '{% macro foo(x, y=2, z=5) %}{{ x }}{{ y }}{{ z }}' +
       '{% endmacro %}' +
@@ -1125,7 +1125,7 @@ describe('compiler', function() {
       '123');
   });
 
-  it('should compile macros', async function() {
+  test('should compile macros', async function() {
     await equal(
       '{% macro foo(x, y=2, z=5) %}{{ x }}{{ y }}{{ z }}' +
       '{% endmacro %}' +
@@ -1133,7 +1133,7 @@ describe('compiler', function() {
       '125');
   });
 
-  it('should compile macros with multiple overridden arg defaults', async function() {
+  test('should compile macros with multiple overridden arg defaults', async function() {
     await equal(
       '{% macro foo(x, y=2, z=5) %}{{ x }}{{ y }}{{ z }}' +
       '{% endmacro %}' +
@@ -1141,7 +1141,7 @@ describe('compiler', function() {
       '11020');
   });
 
-  it('should compile macro calls inside blocks', async function() {
+  test('should compile macro calls inside blocks', async function() {
     await equal(
       '{% extends "base.njk" %}' +
       '{% macro foo(x, y=2, z=5) %}{{ x }}{{ y }}{{ z }}' +
@@ -1152,7 +1152,7 @@ describe('compiler', function() {
       'Foo125BazFizzle');
   });
 
-  it('should compile macros defined in one block and called in another', async function() {
+  test('should compile macros defined in one block and called in another', async function() {
     await equal(
       '{% block bar %}' +
       '{% macro foo(x, y=2, z=5) %}{{ x }}{{ y }}{{ z }}' +
@@ -1164,7 +1164,7 @@ describe('compiler', function() {
       '125');
   });
 
-  it('should compile macros that include other templates', async function() {
+  test('should compile macros that include other templates', async function() {
     await equal(
       '{% macro foo() %}{% include "include.njk" %}{% endmacro %}' +
       '{{ foo() }}',
@@ -1174,7 +1174,7 @@ describe('compiler', function() {
       'FooInclude james');
   });
 
-  it('should compile macros that set vars', async function() {
+  test('should compile macros that set vars', async function() {
     await equal(
       '{% macro foo() %}{% set x = "foo"%}{{ x }}{% endmacro %}' +
       '{% set x = "bar" %}' +
@@ -1184,7 +1184,7 @@ describe('compiler', function() {
       'barfoobar');
   });
 
-  it('should not leak variables set in macro to calling scope', async function() {
+  test('should not leak variables set in macro to calling scope', async function() {
     await equal(
       '{% macro setFoo() %}' +
       '{% set x = "foo" %}' +
@@ -1199,7 +1199,7 @@ describe('compiler', function() {
       'foobar');
   });
 
-  it('should not leak variables set in nested scope within macro out to calling scope', async function() {
+  test('should not leak variables set in nested scope within macro out to calling scope', async function() {
     await equal(
       '{% macro setFoo() %}' +
       '{% for y in [1] %}{% set x = "foo" %}{{ x }}{% endfor %}' +
@@ -1213,7 +1213,7 @@ describe('compiler', function() {
       'foobar');
   });
 
-  it('should compile macros without leaking set to calling scope', async function() {
+  test('should compile macros without leaking set to calling scope', async function() {
     await equal(
       '{% macro foo(topLevel, prefix="") %}' +
       '{% if topLevel %}' +
@@ -1230,7 +1230,7 @@ describe('compiler', function() {
       'foofoo');
   });
 
-  it('should compile macros that cannot see variables in caller scope', async function() {
+  test('should compile macros that cannot see variables in caller scope', async function() {
     await equal(
       '{% macro one(var) %}{{ two() }}{% endmacro %}' +
       '{% macro two() %}{{ var }}{% endmacro %}' +
@@ -1238,7 +1238,7 @@ describe('compiler', function() {
       '');
   });
 
-  it('should compile call blocks', async function() {
+  test('should compile call blocks', async function() {
     await equal(
       '{% macro wrap(el) %}' +
       '<{{ el }}>{{ caller() }}</{{ el }}>' +
@@ -1247,7 +1247,7 @@ describe('compiler', function() {
       '<div>Hello</div>');
   });
 
-  it('should compile call blocks with args', async function() {
+  test('should compile call blocks with args', async function() {
     await equal(
       '{% macro list(items) %}' +
       '<ul>{% for i in items %}' +
@@ -1258,14 +1258,14 @@ describe('compiler', function() {
       '<ul><li>a</li><li>b</li></ul>');
   });
 
-  it('should compile call blocks using imported macros', async function() {
+  test('should compile call blocks using imported macros', async function() {
     await equal(
       '{% import "import.njk" as imp %}' +
       '{% call imp.wrap("span") %}Hey{% endcall %}',
       '<span>Hey</span>');
   });
 
-  it('should import templates', async function() {
+  test('should import templates', async function() {
     await equal(
       '{% import "import.njk" as imp %}' +
       '{{ imp.foo() }} {{ imp.bar }}',
@@ -1286,7 +1286,7 @@ describe('compiler', function() {
       'start: end: bazstart: bazend: bazfinal: ');
   });
 
-  it('should import templates with context', async function() {
+  test('should import templates with context', async function() {
     await equal(
       '{% set bar = "BAR" %}' +
       '{% import "import-context.njk" as imp with context %}' +
@@ -1326,7 +1326,7 @@ describe('compiler', function() {
     
   });
 
-  it('should import templates without context', async function() {
+  test('should import templates without context', async function() {
     await equal(
       '{% set bar = "BAR" %}' +
       '{% import "import-context.njk" as imp without context %}' +
@@ -1342,7 +1342,7 @@ describe('compiler', function() {
     
   });
 
-  it('should default to importing without context', async function() {
+  test('should default to importing without context', async function() {
     await equal(
       '{% set bar = "BAR" %}' +
       '{% import "import-context.njk" as imp %}' +
@@ -1358,7 +1358,7 @@ describe('compiler', function() {
     
   });
 
-  it('should inherit templates', async function() {
+  test('should inherit templates', async function() {
     await equal('{% extends "base.njk" %}', 'FooBarBazFizzle');
     await equal('hola {% extends "base.njk" %} hizzle mumble', 'FooBarBazFizzle');
 
@@ -1377,20 +1377,20 @@ describe('compiler', function() {
 
     
   });
-  it('should not call blocks not defined from template inheritance', async function() {
+  test('should not call blocks not defined from template inheritance', async function() {
     var count = 0;
     render(
       '{% extends "base.njk" %}' +
       '{% block notReal %}{{ foo() }}{% endblock %}',
       { foo: function() { count++; } },
       function() {
-        expect(count).to.be(0);
+        expect(count).toBe(0);
       });
 
     
   });
 
-  it('should conditionally inherit templates', async function() {
+  test('should conditionally inherit templates', async function() {
     await equal(
       '{% if false %}{% extends "base.njk" %}{% endif %}' +
       '{% block block1 %}BAR{% endblock %}',
@@ -1422,7 +1422,7 @@ describe('compiler', function() {
     
   });
 
-  it('should error if same block is defined multiple times', async function() {
+  test('should error if same block is defined multiple times', async function() {
     try {
       await render(
         '{% extends "simple-base.njk" %}' +
@@ -1430,11 +1430,11 @@ describe('compiler', function() {
         '{% block test %}{% endblock %}');
       expect.fail('should have thrown');
     } catch (err) {
-      expect(err.message).to.match(/Block "test" defined more than once./);
+      expect(err.message).toMatch(/Block "test" defined more than once./);
     }
   });
 
-  it('should render nested blocks in child template', async function() {
+  test('should render nested blocks in child template', async function() {
     await equal(
       '{% extends "base.njk" %}' +
       '{% block block1 %}{% block nested %}BAR{% endblock %}{% endblock %}',
@@ -1443,7 +1443,7 @@ describe('compiler', function() {
     
   });
 
-  it('should render parent blocks with super()', async function() {
+  test('should render parent blocks with super()', async function() {
     await equal(
       '{% extends "base.njk" %}' +
       '{% block block1 %}{{ super() }}BAR{% endblock %}',
@@ -1457,7 +1457,7 @@ describe('compiler', function() {
     
   });
 
-  it('should let super() see global vars from child template', async function() {
+  test('should let super() see global vars from child template', async function() {
     await equal(
       '{% extends "base-show.njk" %}{% set var = "child" %}' +
       '{% block main %}{{ super() }}{% endblock %}',
@@ -1466,7 +1466,7 @@ describe('compiler', function() {
     
   });
 
-  it('should not let super() see vars from child block', async function() {
+  test('should not let super() see vars from child block', async function() {
     await equal(
       '{% extends "base-show.njk" %}' +
       '{% block main %}{% set var = "child" %}{{ super() }}{% endblock %}',
@@ -1475,7 +1475,7 @@ describe('compiler', function() {
     
   });
 
-  it('should let child templates access parent global scope', async function() {
+  test('should let child templates access parent global scope', async function() {
     await equal(
       '{% extends "base-set.njk" %}' +
       '{% block main %}{{ var }}{% endblock %}',
@@ -1484,7 +1484,7 @@ describe('compiler', function() {
     
   });
 
-  it('should not let super() modify calling scope', async function() {
+  test('should not let super() modify calling scope', async function() {
     await equal(
       '{% extends "base-set-inside-block.njk" %}' +
       '{% block main %}{{ super() }}{{ var }}{% endblock %}',
@@ -1493,7 +1493,7 @@ describe('compiler', function() {
     
   });
 
-  it('should not let child templates set vars in parent scope', async function() {
+  test('should not let child templates set vars in parent scope', async function() {
     await equal(
       '{% extends "base-set-and-show.njk" %}' +
       '{% block main %}{% set var = "child" %}{% endblock %}',
@@ -1502,7 +1502,7 @@ describe('compiler', function() {
     
   });
 
-  it('should render blocks in their own scope', async function() {
+  test('should render blocks in their own scope', async function() {
     await equal(
       '{% set var = "parent" %}' +
       '{% block main %}{% set var = "inner" %}{% endblock %}' +
@@ -1512,19 +1512,19 @@ describe('compiler', function() {
     
   });
 
-  it('should include templates', async function() {
+  test('should include templates', async function() {
     await equal('hello world {% include "include.njk" %}',
       'hello world FooInclude ');
     
   });
 
-  it('should include 130 templates without call stack size exceed', async function() {
+  test('should include 130 templates without call stack size exceed', async function() {
     await equal('{% include "includeMany.njk" %}',
       new Array(131).join('FooInclude \n'));
     
   });
 
-  it('should include templates with context', async function() {
+  test('should include templates with context', async function() {
     await equal('hello world {% include "include.njk" %}',
       {
         name: 'james'
@@ -1533,12 +1533,12 @@ describe('compiler', function() {
     
   });
 
-  it('should include templates that can see including scope, but not write to it', async function() {
+  test('should include templates that can see including scope, but not write to it', async function() {
     await equal('{% set var = 1 %}{% include "include-set.njk" %}{{ var }}', '12\n1');
     
   });
 
-  it('should include templates dynamically', async function() {
+  test('should include templates dynamically', async function() {
     await equal('hello world {% include tmpl %}',
       {
         name: 'thedude',
@@ -1548,7 +1548,7 @@ describe('compiler', function() {
     
   });
 
-  it('should include templates dynamically based on a set var', async function() {
+  test('should include templates dynamically based on a set var', async function() {
     await equal('hello world {% set tmpl = "include.njk" %}{% include tmpl %}',
       {
         name: 'thedude'
@@ -1557,7 +1557,7 @@ describe('compiler', function() {
     
   });
 
-  it('should include templates dynamically based on an object attr', async function() {
+  test('should include templates dynamically based on an object attr', async function() {
     await equal('hello world {% include data.tmpl %}',
       {
         name: 'thedude',
@@ -1570,7 +1570,7 @@ describe('compiler', function() {
     
   });
 
-  it('should throw an error when including a file that does not exist', async function() {
+  test('should throw an error when including a file that does not exist', async function() {
     render(
       '{% include "missing.njk" %}',
       {},
@@ -1578,15 +1578,15 @@ describe('compiler', function() {
         noThrow: true
       },
       function(err, res) {
-        expect(res).to.be(undefined);
-        expect(err).to.match(/template not found: missing.njk/);
+        expect(res).toBe(undefined);
+        expect(err.message).toMatch(/template not found: missing.njk/);
       }
     );
 
     
   });
 
-  it('should fail silently on missing templates if requested', async function() {
+  test('should fail silently on missing templates if requested', async function() {
     await equal('hello world {% include "missing.njk" ignore missing %}',
       'hello world ');
 
@@ -1599,7 +1599,7 @@ describe('compiler', function() {
     
   });
 
-  it('should have access to "loop" inside an include', async function() {
+  test('should have access to "loop" inside an include', async function() {
     await equal('{% for item in [1,2,3] %}{% include "include-in-loop.njk" %}{% endfor %}',
       '1,0,true\n2,1,false\n3,2,false\n');
 
@@ -1615,7 +1615,7 @@ describe('compiler', function() {
     
   });
 
-  it('should maintain nested scopes', async function() {
+  test('should maintain nested scopes', async function() {
     await equal(
       '{% for i in [1,2] %}' +
       '{% for i in [3,4] %}{{ i }}{% endfor %}' +
@@ -1625,7 +1625,7 @@ describe('compiler', function() {
     
   });
 
-  it('should allow blocks in for loops', async function() {
+  test('should allow blocks in for loops', async function() {
     await equal(
       '{% extends "base2.njk" %}' +
       '{% block item %}hello{{ item }}{% endblock %}',
@@ -1634,7 +1634,7 @@ describe('compiler', function() {
     
   });
 
-  it('should make includes inherit scope', async function() {
+  test('should make includes inherit scope', async function() {
     await equal(
       '{% for item in [1,2] %}' +
       '{% include "item.njk" %}' +
@@ -1644,7 +1644,7 @@ describe('compiler', function() {
     
   });
 
-  it('should compile a set block', async function() {
+  test('should compile a set block', async function() {
     await equal('{% set username = "foo" %}{{ username }}',
       {
         username: 'james'
@@ -1705,7 +1705,7 @@ describe('compiler', function() {
     
   });
 
-  it('should compile set with frame references', async function() {
+  test('should compile set with frame references', async function() {
     await equal('{% set username = user.name %}{{ username }}',
       {
         user: {
@@ -1717,7 +1717,7 @@ describe('compiler', function() {
     
   });
 
-  it('should compile set assignments of the same variable', async function() {
+  test('should compile set assignments of the same variable', async function() {
     await equal(
       '{% set x = "hello" %}' +
       '{% if false %}{% set x = "world" %}{% endif %}' +
@@ -1733,7 +1733,7 @@ describe('compiler', function() {
     
   });
 
-  it('should compile block-set', async function() {
+  test('should compile block-set', async function() {
     await equal(
       '{% set block_content %}{% endset %}' +
       '{{ block_content }}',
@@ -1793,7 +1793,7 @@ describe('compiler', function() {
     
   });
 
-  it('should compile block-set wrapping an inherited block', async function() {
+  test('should compile block-set wrapping an inherited block', async function() {
     await equal(
       '{% extends "base-set-wraps-block.njk" %}' +
       '{% block somevar %}foo{% endblock %}',
@@ -1802,20 +1802,20 @@ describe('compiler', function() {
     
   });
 
-  it('should throw errors', async function() {
+  test('should throw errors', async function() {
     render('{% from "import.njk" import boozle %}',
       {},
       {
         noThrow: true
       },
       function(err) {
-        expect(err).to.match(/cannot import 'boozle'/);
+        expect(err.message).toMatch(/cannot import 'boozle'/);
       });
 
     
   });
 
-  it('should allow custom tag compilation', async function() {
+  test('should allow custom tag compilation', async function() {
     function TestExtension() {
       this.tags = ['test'];
 
@@ -1844,7 +1844,7 @@ describe('compiler', function() {
     
   });
 
-  it('should allow custom tag compilation without content', async function() {
+  test('should allow custom tag compilation without content', async function() {
     function TestExtension() {
       this.tags = ['test'];
 
@@ -1868,7 +1868,7 @@ describe('compiler', function() {
     
   });
 
-  it('should allow complicated custom tag compilation', async function() {
+  test('should allow complicated custom tag compilation', async function() {
     function TestExtension() {
       this.tags = ['test'];
 
@@ -1913,7 +1913,7 @@ describe('compiler', function() {
     
   });
 
-  it('should allow custom tag with args compilation', async function() {
+  test('should allow custom tag with args compilation', async function() {
     var opts;
 
     function TestExtension() {
@@ -1976,14 +1976,14 @@ describe('compiler', function() {
     
   });
 
-  it('should autoescape by default', async function() {
+  test('should autoescape by default', async function() {
     await equal('{{ foo }}', {
       foo: '"\'<>&'
     }, '&quot;&#39;&lt;&gt;&amp;');
     
   });
 
-  it('should autoescape if autoescape is on', async function() {
+  test('should autoescape if autoescape is on', async function() {
     await equal(
       '{{ foo }}',
       { foo: '"\'<>&' },
@@ -2045,7 +2045,7 @@ describe('compiler', function() {
     
   });
 
-  it('should not autoescape safe strings', async function() {
+  test('should not autoescape safe strings', async function() {
     await equal(
       '{{ foo|>safe }}',
       { foo: '"\'<>&' },
@@ -2055,7 +2055,7 @@ describe('compiler', function() {
     
   });
 
-  it('should not autoescape macros', async function() {
+  test('should not autoescape macros', async function() {
     render(
       '{% macro foo(x, y) %}{{ x }} and {{ y }}{% endmacro %}' +
       '{{ foo("<>&", "<>") }}',
@@ -2064,7 +2064,7 @@ describe('compiler', function() {
         autoescape: true
       },
       function(err, res) {
-        expect(res).to.be('&lt;&gt;&amp; and &lt;&gt;');
+        expect(res).toBe('&lt;&gt;&amp; and &lt;&gt;');
       }
     );
 
@@ -2076,14 +2076,14 @@ describe('compiler', function() {
         autoescape: true
       },
       function(err, res) {
-        expect(res).to.be('<>& and &lt;&gt;');
+        expect(res).toBe('<>& and &lt;&gt;');
       }
     );
 
     
   });
 
-  it('should not autoescape super()', async function() {
+  test('should not autoescape super()', async function() {
     render(
       '{% extends "base3.njk" %}' +
       '{% block block1 %}{{ super() }}{% endblock %}',
@@ -2092,14 +2092,14 @@ describe('compiler', function() {
         autoescape: true
       },
       function(err, res) {
-        expect(res).to.be('<b>Foo</b>');
+        expect(res).toBe('<b>Foo</b>');
       }
     );
 
     
   });
 
-  it('should autoescape backslashes', async function() {
+  test('should autoescape backslashes', async function() {
     await equal(
       '{{ foo }}',
       { foo: 'foo \\\' bar' },
@@ -2109,7 +2109,7 @@ describe('compiler', function() {
     
   });
 
-  it('should not autoescape when extension set false', async function() {
+  test('should not autoescape when extension set false', async function() {
     function TestExtension() {
       this.tags = ['test'];
 
@@ -2135,14 +2135,14 @@ describe('compiler', function() {
         autoescape: true
       },
       function(err, res) {
-        expect(res).to.be('<b>Foo</b>');
+        expect(res).toBe('<b>Foo</b>');
       }
     );
 
     
   });
 
-  it('should pass context as this to pipes', async function() {
+  test('should pass context as this to pipes', async function() {
     render(
       '{{ foo |> hallo }}',
       { foo: 1, bar: 2 },
@@ -2154,14 +2154,14 @@ describe('compiler', function() {
         }
       },
       function(err, res) {
-        expect(res).to.be('3');
+        expect(res).toBe('3');
       }
     );
 
     
   });
 
-  it('should render regexs', async function() {
+  test('should render regexs', async function() {
     await equal('{{ r/name [0-9] \\// }}', {}, { autoescape: false },
       '/name [0-9] \\//');
 
@@ -2171,20 +2171,20 @@ describe('compiler', function() {
     
   });
 
-  it('should throw an error when {% call %} is passed an object that is not a function', async function() {
+  test('should throw an error when {% call %} is passed an object that is not a function', async function() {
     render(
       '{% call foo() %}{% endcall %}',
       {foo: 'bar'},
       {noThrow: true},
       function(err, res) {
-        expect(res).to.be(undefined);
-        expect(err).to.match(/Unable to call `\w+`, which is not a function/);
+        expect(res).toBe(undefined);
+        expect(err.message).toMatch(/Unable to call `\w+`, which is not a function/);
       });
 
     
   });
 
-  it('should throw an error when including a file that calls an undefined macro', async function() {
+  test('should throw an error when including a file that calls an undefined macro', async function() {
     render(
       '{% include "undefined-macro.njk" %}',
       {},
@@ -2192,15 +2192,15 @@ describe('compiler', function() {
         noThrow: true
       },
       function(err, res) {
-        expect(res).to.be(undefined);
-        expect(err).to.match(/Unable to call `\w+`, which is undefined or falsey/);
+        expect(res).toBe(undefined);
+        expect(err.message).toMatch(/Unable to call `\w+`, which is undefined or falsey/);
       }
     );
 
     
   });
 
-  it('should throw an error when including a file that calls an undefined macro even inside {% if %} tag', async function() {
+  test('should throw an error when including a file that calls an undefined macro even inside {% if %} tag', async function() {
     render(
       '{% if true %}{% include "undefined-macro.njk" %}{% endif %}',
       {},
@@ -2208,22 +2208,22 @@ describe('compiler', function() {
         noThrow: true
       },
       function(err, res) {
-        expect(res).to.be(undefined);
-        expect(err).to.match(/Unable to call `\w+`, which is undefined or falsey/);
+        expect(res).toBe(undefined);
+        expect(err.message).toMatch(/Unable to call `\w+`, which is undefined or falsey/);
       }
     );
 
     
   });
 
-  it('should throw an error when including a file that imports macro that calls an undefined macro', async function() {
+  test('should throw an error when including a file that imports macro that calls an undefined macro', async function() {
     render(
       '{% include "import-macro-call-undefined-macro.njk" %}',
       { list: [1, 2, 3] },
       { noThrow: true },
       function(err, res) {
-        expect(res).to.be(undefined);
-        expect(err).to.match(/Unable to call `\w+`, which is undefined or falsey/);
+        expect(res).toBe(undefined);
+        expect(err.message).toMatch(/Unable to call `\w+`, which is undefined or falsey/);
       }
     );
 
@@ -2231,7 +2231,7 @@ describe('compiler', function() {
   });
 
 
-  it('should control whitespaces correctly', async function() {
+  test('should control whitespaces correctly', async function() {
     await equal(
       '{% if true -%}{{"hello"}} {{"world"}}{% endif %}',
       'hello world');
@@ -2248,7 +2248,7 @@ describe('compiler', function() {
     
   });
 
-  it('should control expression whitespaces correctly', async function() {
+  test('should control expression whitespaces correctly', async function() {
     await equal(
       'Well, {{- \' hello, \' -}} my friend',
       'Well, hello, my friend'
@@ -2265,7 +2265,7 @@ describe('compiler', function() {
     
   });
 
-  it('should get right value when macro parameter conflict with global macro name', async function() {
+  test('should get right value when macro parameter conflict with global macro name', async function() {
     render(
       '{# macro1 and macro2 definition #}' +
       '{% macro macro1() %}' +
@@ -2277,13 +2277,13 @@ describe('compiler', function() {
       '' +
       '{# calling macro2 #}' +
       '{{macro2("this should be outputted") }}', {}, {}, function(err, res) {
-          expect(res.trim()).to.eql('this should be outputted');
+          expect(res.trim()).toEqual('this should be outputted');
         });
 
     
   });
 
-  it('should get right value when macro include macro', async function() {
+  test('should get right value when macro include macro', async function() {
     render(
       '{# macro1 and macro2 definition #}' +
       '{% macro macro1() %} foo' +
@@ -2295,13 +2295,13 @@ describe('compiler', function() {
       '' +
       '{# calling macro2 #}' +
       '{{macro2("this should not be outputted") }}', {}, {}, function(err, res) {
-          expect(res.trim()).to.eql('foo');
+          expect(res.trim()).toEqual('foo');
         });
 
     
   });
 
-  it('should allow access to outer scope in call blocks', async function() {
+  test('should allow access to outer scope in call blocks', async function() {
     render(
       '{% macro inside() %}' +
       '{{ caller() }}' +
@@ -2313,13 +2313,13 @@ describe('compiler', function() {
       '{% endcall %}' +
       '{% endmacro %}' +
       '{{ outside("foobar") }}', {}, {}, function(err, res) {
-          expect(res.trim()).to.eql('foobar\nfoobar');
+          expect(res.trim()).toEqual('foobar\nfoobar');
         });
 
     
   });
 
-  it('should not leak scope from call blocks to parent', async function() {
+  test('should not leak scope from call blocks to parent', async function() {
     render(
       '{% set var = "expected" %}' +
       '{% macro inside() %}' +
@@ -2332,7 +2332,7 @@ describe('compiler', function() {
       '{% endmacro %}' +
       '{{ outside() }}' +
       '{{ var }}', {}, {}, function(err, res) {
-          expect(res.trim()).to.eql('expected');
+          expect(res.trim()).toEqual('expected');
         });
 
     
@@ -2340,7 +2340,7 @@ describe('compiler', function() {
 
 
   if (!isSlim) {
-    it('should import template objects', async function() {
+    test('should import template objects', async function() {
       var tmpl = new Template('{% macro foo() %}Inside a macro{% endmacro %}' +
         '{% set bar = "BAZ" %}');
 
@@ -2363,7 +2363,7 @@ describe('compiler', function() {
       
     });
 
-    it('should inherit template objects', async function() {
+    test('should inherit template objects', async function() {
       var tmpl = new Template('Foo{% block block1 %}Bar{% endblock %}' +
         '{% block block2 %}Baz{% endblock %}Whizzle');
 
@@ -2385,7 +2385,7 @@ describe('compiler', function() {
       
     });
 
-    it('should include template objects', async function() {
+    test('should include template objects', async function() {
       var tmpl = new Template('FooInclude {{ name }}');
 
       await equal('hello world {% include tmpl %}',
@@ -2398,7 +2398,7 @@ describe('compiler', function() {
       
     });
 
-    it('should throw an error when invalid expression whitespaces are used', async function() {
+    test('should throw an error when invalid expression whitespaces are used', async function() {
       render(
         ' {{ 2 + 2- }}',
         {},
@@ -2406,8 +2406,8 @@ describe('compiler', function() {
           noThrow: true
         },
         function(err, res) {
-          expect(res).to.be(undefined);
-          expect(err).to.match(/unexpected token: }}/);
+          expect(res).toBe(undefined);
+          expect(err.message).toMatch(/unexpected token: }}/);
         }
       );
 
@@ -2417,25 +2417,25 @@ describe('compiler', function() {
 });
 
 describe('the filter tag', function() {
-  it('should apply the title filter to the body', async function() {
+  test('should apply the title filter to the body', async function() {
     await equal('{% filter title %}may the force be with you{% endfilter %}',
       'May The Force Be With You');
     
   });
 
-  it('should apply the replace filter to the body', async function() {
+  test('should apply the replace filter to the body', async function() {
     await equal('{% filter replace("force", "forth") %}may the force be with you{% endfilter %}',
       'may the forth be with you');
     
   });
 
-  it('should work with variables in the body', async function() {
+  test('should work with variables in the body', async function() {
     await equal('{% set foo = "force" %}{% filter replace("force", "forth") %}may the {{ foo }} be with you{% endfilter %}',
       'may the forth be with you');
     
   });
 
-  it('should work with blocks in the body', async function() {
+  test('should work with blocks in the body', async function() {
     await equal(
       '{% extends "filter-block.html" %}' +
       '{% block block1 %}force{% endblock %}',

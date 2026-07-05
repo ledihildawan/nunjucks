@@ -1,4 +1,4 @@
-import expect from 'expect.js';
+import { expect, describe, test } from 'bun:test';
 import * as util from './util.js';
 import * as lib from '../nunjucks/src/lib.js';
 import * as r from '../nunjucks/src/runtime.js';
@@ -7,12 +7,12 @@ var render = util.render;
 var equal = util.equal;
 
 describe('filter', function() {
-  it('abs', async function() {
+  test('abs', async function() {
     await equal('{{ -3|>abs }}', '3');
     await equal('{{ -3.456|>abs }}', '3.456');
   });
 
-  it('batch', async function() {
+  test('batch', async function() {
     await equal(
       [
         '{% for a in [1,2,3,4,5,6]|>batch(2) %}',
@@ -23,7 +23,7 @@ describe('filter', function() {
       '-12--34--56-');
   });
 
-  it('capitalize', async function() {
+  test('capitalize', async function() {
     await equal('{{ "foo" |> capitalize }}', 'Foo');
     await equal('{{ str |> capitalize }}', {
       str: r.markSafe('foo')
@@ -33,7 +33,7 @@ describe('filter', function() {
     await equal('{{ nothing |> capitalize }}', '');
   });
 
-  it('center', async function() {
+  test('center', async function() {
     await equal('{{ "fooo" |> center }}',
       lib.repeat(' ', 38) + 'fooo' +
       lib.repeat(' ', 38));
@@ -59,7 +59,7 @@ describe('filter', function() {
       lib.repeat(' ', 39));
   });
 
-  it('default', async function() {
+  test('default', async function() {
     await equal('{{ undefined |> default("foo") }}', 'foo');
     await equal('{{ bar |> default("foo") }}', {
       bar: null
@@ -70,7 +70,7 @@ describe('filter', function() {
     await equal('{{ "bar" |> default("foo") }}', 'bar');
   });
 
-  it('dump', async function() {
+  test('dump', async function() {
     await equal('{{ [\'a\', 1, {b: true}] |> dump  }}',
       '[&quot;a&quot;,1,{&quot;b&quot;:true}]');
     await equal('{{ [\'a\', 1, {b: true}] |> dump(2) }}',
@@ -81,32 +81,32 @@ describe('filter', function() {
       '[\n\t&quot;a&quot;,\n\t1,\n\t{\n\t\t&quot;b&quot;: true\n\t}\n]');
   });
 
-  it('escape', async function() {
+  test('escape', async function() {
     await equal(
       '{{ "<html>\\\\" |> escape }}', {},
       { autoescape: false },
       '&lt;html&gt;&#92;');
   });
 
-  it('escape skip safe', async function() {
+  test('escape skip safe', async function() {
     await equal('{{ "<html>" |> safe |> escape }}', {},
       { autoescape: false },
       '<html>');
   });
 
-  it('should not double escape strings', async function() {
+  test('should not double escape strings', async function() {
     await equal('{{ "<html>" |> escape |> escape }}', {},
       { autoescape: false },
       '&lt;html&gt;');
   });
 
-  it('should not double escape with autoescape on', async function() {
+  test('should not double escape with autoescape on', async function() {
     await equal('{% set val = "<html>" |> escape %}{{ val }}', {},
       { autoescape: true },
       '&lt;html&gt;');
   });
 
-  it('should work with non-string values', async function() {
+  test('should work with non-string values', async function() {
     await equal(
       '{{ foo |> escape }}',
       { foo: ['<html>'] },
@@ -125,7 +125,7 @@ describe('filter', function() {
       '');
   });
 
-  it('should not escape safe strings with autoescape on', async function() {
+  test('should not escape safe strings with autoescape on', async function() {
     await equal(
       '{{ "<html>" |> safe |> escape }}', {},
       { autoescape: true },
@@ -137,14 +137,14 @@ describe('filter', function() {
       '<html>');
   });
 
-  it('should keep strings escaped after they have been escaped', async function() {
+  test('should keep strings escaped after they have been escaped', async function() {
     await equal(
       '{% set val = "<html>" |> e |> safe %}{{ val }}', {},
       { autoescape: false },
       '&lt;html&gt;');
   });
 
-  it('dictsort', async function() {
+  test('dictsort', async function() {
     await equal(
       '{% for item in items |> dictsort %}' +
       '{{ item[0] }}{% endfor %}',
@@ -183,21 +183,21 @@ describe('filter', function() {
       'cdba');
   });
 
-  it('first', async function() {
+  test('first', async function() {
     await equal('{{ [1,2,3] |> first }}', '1');
   });
 
-  it('float', async function() {
+  test('float', async function() {
     await equal('{{ "3.5" |> float }}', '3.5');
     await equal('{{ "0" |> float }}', '0');
   });
 
-  it('forceescape', async function() {
+  test('forceescape', async function() {
     await equal('{{ str |> forceescape }}', { str: r.markSafe('<html>')}, '&lt;html&gt;');
     await equal('{{ "<html>" |> safe |> forceescape }}', '&lt;html&gt;');
   });
 
-  it('int', async function() {
+  test('int', async function() {
     await equal('{{ "3.5" |> int }}', '3');
     await equal('{{ "0" |> int }}', '0');
     await equal('{{ "foobar" |> int("42") }}', '42');
@@ -205,15 +205,15 @@ describe('filter', function() {
     await equal('{{ "011" |> int(base=8) }}', '9');
   });
 
-  it('int (default value)', async function() {
+  test('int (default value)', async function() {
     await equal('{{ "bob" |> int("cat") }}', 'cat');
   });
 
-  it('float (default value)', async function() {
+  test('float (default value)', async function() {
     await equal('{{ "bob" |> float("cat") }}', 'cat');
   });
 
-  it('groupby', async function() {
+  test('groupby', async function() {
     const namesContext = {
       items: [{
         name: 'james',
@@ -358,13 +358,13 @@ describe('filter', function() {
 
     try {
       await render(undefinedTemplate, namesContext, { throwOnUndefined: true });
-      expect(true).to.equal(false);
+      expect(true).toEqual(false);
     } catch(err) {
-      expect(err.message || String(err)).to.match(/groupby: attribute "a\.b\.c" resolved to undefined/);
+      expect(err.message || String(err)).toMatch(/groupby: attribute "a\.b\.c" resolved to undefined/);
     }
   });
 
-  it('indent', async function() {
+  test('indent', async function() {
     await equal('{{ "one\ntwo\nthree" |> indent }}',
       'one\n    two\n    three');
     await equal('{{ "one\ntwo\nthree" |> indent(2) }}',
@@ -390,7 +390,7 @@ describe('filter', function() {
     await equal('{{ nothing |> indent(2, true) }}', '');
   });
 
-  it('join', async function() {
+  test('join', async function() {
     await equal('{{ items |> join }}',
       {
         items: [1, 2, 3]
@@ -418,51 +418,51 @@ describe('filter', function() {
       'foo,bar,bear');
   });
 
-  it('last', async function() {
+  test('last', async function() {
     await equal('{{ [1,2,3] |> last }}', '3');
   });
 
   describe('the length filter', function suite() {
-    it('should return length of a list literal', async function test() {
+    test('should return length of a list literal', async function test() {
       await equal('{{ [1,2,3] |> length }}', '3');
     });
-    it('should output 0 for a missing context variable', async function test() {
+    test('should output 0 for a missing context variable', async function test() {
       await equal('{{ blah|>length }}', '0');
     });
-    it('should output string length for string variables', async function test() {
+    test('should output string length for string variables', async function test() {
       await equal('{{ str |> length }}', {
         str: 'blah'
       }, '4');
     });
-    it('should output string length for a SafeString variable', async function test() {
+    test('should output string length for a SafeString variable', async function test() {
       await equal('{{ str |> length }}', {
         str: r.markSafe('<blah>')
       }, '6');
     });
-    it('should output the correct length of a string created with new String()', async function test() {
+    test('should output the correct length of a string created with new String()', async function test() {
       await equal('{{ str |> length }}', {
         str: new String('blah')
       }, '4');
     });
-    it('should output 0 for a literal "undefined"', async function test() {
+    test('should output 0 for a literal "undefined"', async function test() {
       await equal('{{ undefined |> length }}', '0');
     });
-    it('should output 0 for a literal "null"', async function test() {
+    test('should output 0 for a literal "null"', async function test() {
       await equal('{{ null |> length }}', '0');
     });
-    it('should output 0 for an Object with no properties', async function test() {
+    test('should output 0 for an Object with no properties', async function test() {
       await equal('{{ obj |> length }}', {
         obj: {}
       }, '0');
     });
-    it('should output 1 for an Object with 1 property', async function test() {
+    test('should output 1 for an Object with 1 property', async function test() {
       await equal('{{ obj |> length }}', {
         obj: {
           key: 'value'
         }
       }, '1');
     });
-    it('should output the number of properties for a plain Object, not the value of its length property', async function test() {
+    test('should output the number of properties for a plain Object, not the value of its length property', async function test() {
       await equal('{{ obj |> length }}', {
         obj: {
           key: 'value',
@@ -470,43 +470,43 @@ describe('filter', function() {
         }
       }, '2');
     });
-    it('should output the length of an array', async function test() {
+    test('should output the length of an array', async function test() {
       await equal('{{ arr |> length }}', {
         arr: [0, 1]
       }, '2');
     });
-    it('should output the full length of a sparse array', async function test() {
+    test('should output the full length of a sparse array', async function test() {
       await equal('{{ arr |> length }}', {
         arr: [0,, 2]
       }, '3');
     });
-    it('should output the length of an array created with "new Array"', async function test() {
+    test('should output the length of an array created with "new Array"', async function test() {
       await equal('{{ arr |> length }}', {
         arr: new Array(0, 1)
       }, '2');
     });
-    it('should output the length of an array created with "new Array" with user-defined properties', async function test() {
+    test('should output the length of an array created with "new Array" with user-defined properties', async function test() {
       var arr = new Array(0, 1);
       arr.key = 'value';
       await equal('{{ arr |> length }}', {
         arr: arr
       }, '2');
     });
-    it('should output the length of a Map', async function test() {
+    test('should output the length of a Map', async function test() {
       var map = new Map([['key1', 'value1'], ['key2', 'value2']]);
       map.set('key3', 'value3');
       await equal('{{ map |> length }}', {
         map: map
       }, '3');
     });
-    it('should output the length of a Set', async function test() {
+    test('should output the length of a Set', async function test() {
       var set = new Set(['value1']);
       set.add('value2');
       await equal('{{ set |> length }}', { set: set }, '2');
     });
   });
 
-  it('list', async function() {
+  test('list', async function() {
     var person = {
       name: 'Joe',
       age: 83
@@ -520,7 +520,7 @@ describe('filter', function() {
     await equal('{% for i in [1, 2] |> list %}{{ i }}{% endfor %}', '12');
   });
 
-  it('lower', async function() {
+  test('lower', async function() {
     await equal('{{ "fOObAr" |> lower }}', 'foobar');
     await equal('{{ str |> lower }}', {
       str: r.markSafe('fOObAr')
@@ -530,7 +530,7 @@ describe('filter', function() {
     await equal('{{ nothing |> lower }}', '');
   });
 
-  it('nl2br', async function() {
+  test('nl2br', async function() {
     await equal('{{ null |> nl2br }}', '');
     await equal('{{ undefined |> nl2br }}', '');
     await equal('{{ nothing |> nl2br }}', '');
@@ -546,16 +546,16 @@ describe('filter', function() {
     await equal('{{ "foo\nbar" |> nl2br }}', 'foo&lt;br /&gt;\nbar');
   });
 
-  it('random', async function() {
+  test('random', async function() {
     var i;
     for (i = 0; i < 100; i++) {
       var res = await render('{{ [1,2,3,4,5,6,7,8,9] |> random }}');
       var val = parseInt(res, 10);
-      expect(val).to.be.within(1, 9);
+      expect(val >= 1 && val <= 9).toBe(true);
     }
   });
 
-  it('reject', async function() {
+  test('reject', async function() {
     var context = {
       numbers: [0, 1, 2, 3, 4, 5]
     };
@@ -569,7 +569,7 @@ describe('filter', function() {
     await equal('{{ numbers |> reject() |> join }}', context, '0');
   });
 
-  it('rejectattr', async function() {
+  test('rejectattr', async function() {
     var foods = [{
       tasty: true
     }, {
@@ -582,7 +582,7 @@ describe('filter', function() {
     }, '1');
   });
 
-  it('select', async function() {
+  test('select', async function() {
     var context = {
       numbers: [0, 1, 2, 3, 4, 5]
     };
@@ -596,7 +596,7 @@ describe('filter', function() {
     await equal('{{ numbers |> select() |> join }}', context, '12345');
   });
 
-  it('selectattr', async function() {
+  test('selectattr', async function() {
     var foods = [{
       tasty: true
     }, {
@@ -609,7 +609,7 @@ describe('filter', function() {
     }, '2');
   });
 
-  it('replace', async function() {
+  test('replace', async function() {
     await equal('{{ 123456 |> replace("4", ".") }}', '123.56');
     await equal('{{ 123456 |> replace("4", ".") }}', '123.56');
     await equal('{{ 12345.6 |> replace("4", ".") }}', '123.5.6');
@@ -655,19 +655,19 @@ describe('filter', function() {
     }, 'xxxbbbccc');
   });
 
-  it('reverse', async function() {
+  test('reverse', async function() {
     await equal('{{ "abcdef" |> reverse }}', 'fedcba');
     await equal('{% for i in [1, 2, 3, 4] |> reverse %}{{ i }}{% endfor %}', '4321');
   });
 
-  it('round', async function() {
+  test('round', async function() {
     await equal('{{ 4.5 |> round }}', '5');
     await equal('{{ 4.5 |> round(0, "floor") }}', '4');
     await equal('{{ 4.12345 |> round(4) }}', '4.1235');
     await equal('{{ 4.12344 |> round(4) }}', ('4.1234'));
   });
 
-  it('slice', async function() {
+  test('slice', async function() {
     var tmpl = '{% for items in arr |> slice(3) %}' +
       '--' +
       '{% for item in items %}' +
@@ -689,7 +689,7 @@ describe('filter', function() {
       '--1234----567----8910--');
   });
 
-  it('sum', async function() {
+  test('sum', async function() {
     await equal('{{ items |> sum }}',
       {
         items: [1, 2, 3]
@@ -721,7 +721,7 @@ describe('filter', function() {
       '16');
   });
 
-  it('sort', async function() {
+  test('sort', async function() {
     await equal('{% for i in [3,5,2,1,4,6] |> sort %}{{ i }}{% endfor %}',
       '123456');
 
@@ -762,18 +762,18 @@ describe('filter', function() {
 
     try {
       await render(nestedAttributeSortTemplate, { items: [{name: 'james', meta: {age: 25}}, {name: 'fred'}, {name: 'john', meta: {age: 19}}] }, { throwOnUndefined: true });
-      expect(true).to.equal(false);
+      expect(true).toEqual(false);
     } catch(err) {
-      expect(err.message || String(err)).to.match(/sort: attribute "meta\.age" resolved to undefined/);
+      expect(err.message || String(err)).toMatch(/sort: attribute "meta\.age" resolved to undefined/);
     }
   });
 
-  it('string', async function() {
+  test('string', async function() {
     await equal('{% for i in 1234 |> string |> list %}{{ i }},{% endfor %}',
       '1,2,3,4,');
   });
 
-  it('striptags', async function() {
+  test('striptags', async function() {
     await equal('{{ html |> striptags }}', {
       html: '<foo>bar'
     }, 'bar');
@@ -794,7 +794,7 @@ describe('filter', function() {
       'row1\nrow2\nrow3\n\nHEADER\n\noption 1\noption 2');
   });
 
-  it('title', async function() {
+  test('title', async function() {
     await equal('{{ "foo bar baz" |> title }}', 'Foo Bar Baz');
     await equal('{{ str |> title }}', {
       str: r.markSafe('foo bar baz')
@@ -804,14 +804,14 @@ describe('filter', function() {
     await equal('{{ nothing |> title }}', '');
   });
 
-  it('trim', async function() {
+  test('trim', async function() {
     await equal('{{ "  foo " |> trim }}', 'foo');
     await equal('{{ str |> trim }}', {
       str: r.markSafe('  foo ')
     }, 'foo');
   });
 
-  it('truncate', async function() {
+  test('truncate', async function() {
     await equal('{{ "foo bar" |> truncate(3) }}', 'foo...');
     await equal('{{ "foo bar baz" |> truncate(6) }}', 'foo...');
     await equal('{{ "foo bar baz" |> truncate(7) }}', 'foo bar...');
@@ -840,7 +840,7 @@ describe('filter', function() {
     await equal('{{ nothing |> truncate(6, true, "?") }}', '');
   });
 
-  it('upper', async function() {
+  test('upper', async function() {
     await equal('{{ "foo" |> upper }}', 'FOO');
     await equal('{{ str |> upper }}', {
       str: r.markSafe('foo')
@@ -850,7 +850,7 @@ describe('filter', function() {
     await equal('{{ nothing |> upper }}', '');
   });
 
-  it('urlencode', async function() {
+  test('urlencode', async function() {
     await equal('{{ "&" |> urlencode }}', '%26');
     await equal('{{ arr |> urlencode |> safe }}', {
       arr: [[1, 2], ['&1', '&2']]
@@ -863,7 +863,7 @@ describe('filter', function() {
     }, '1=2&%261=%262');
   });
 
-  it('urlencode - object without prototype', async function() {
+  test('urlencode - object without prototype', async function() {
     var obj = Object.create(null);
     obj['1'] = 2;
     obj['&1'] = '&2';
@@ -873,7 +873,7 @@ describe('filter', function() {
     }, '1=2&%261=%262');
   });
 
-  it('urlize', async function() {
+  test('urlize', async function() {
     await equal('{{ "foo http://www.example.com/ bar" |> urlize |> safe }}',
       'foo <a href="http://www.example.com/">' +
       'http://www.example.com/</a> bar');
@@ -939,7 +939,7 @@ describe('filter', function() {
     await equal('{{ "what\tup" |> urlize |> safe }}', 'what\tup');
   });
 
-  it('wordcount', async function() {
+  test('wordcount', async function() {
     await equal('{{ "foo bar baz" |> wordcount }}', '3');
     await equal(
       '{{ str |> wordcount }}',

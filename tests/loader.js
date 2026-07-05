@@ -1,4 +1,4 @@
-import expect from 'expect.js';
+import { expect, describe, test, beforeEach } from 'bun:test';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Environment } from '../nunjucks/src/environment.js';
@@ -9,7 +9,7 @@ import { NodeResolveLoader } from '../nunjucks/src/node-loaders.js';
 var templatesPath = 'tests/templates';
 
 describe('loader', function() {
-  it('should allow a simple loader to be created', async function() {
+  test('should allow a simple loader to be created', async function() {
     var env, parent;
 
     function MyLoader() {
@@ -24,10 +24,10 @@ describe('loader', function() {
 
     env = new Environment(new MyLoader(templatesPath));
     parent = await env.getTemplate('fake.njk');
-    expect(await parent.render()).to.be('Hello World');
+    expect(await parent.render()).toBe('Hello World');
   });
 
-  it('should catch loader error', async function() {
+  test('should catch loader error', async function() {
     function MyLoader() {
       this.async = true;
     }
@@ -41,19 +41,19 @@ describe('loader', function() {
       await env.getTemplate('fake.njk');
       expect.fail('should have thrown');
     } catch (err) {
-      expect(err).to.be.a(Error);
+      expect(err).toBeInstanceOf(Error);
     }
   });
 
   describe('WebLoader', function() {
-    it('should have default opts for WebLoader', function() {
+    test('should have default opts for WebLoader', function() {
       var webLoader = new WebLoader(templatesPath);
-      expect(webLoader).to.be.a(WebLoader);
-      expect(webLoader.useCache).to.be(false);
-      expect(webLoader.async).to.be(true);
+      expect(webLoader).toBeInstanceOf(WebLoader);
+      expect(webLoader.useCache).toBe(false);
+      expect(webLoader.async).toBe(true);
     });
 
-    it('should emit a "load" event', async function() {
+    test('should emit a "load" event', async function() {
       if (typeof window === 'undefined') {
         return;
       }
@@ -63,64 +63,64 @@ describe('loader', function() {
         loadedTemplate = name;
       });
       await loader.getSource('simple-base.njk');
-      expect(loadedTemplate).to.equal('simple-base.njk');
+      expect(loadedTemplate).toEqual('simple-base.njk');
     });
   });
 
   if (typeof FileSystemLoader !== 'undefined') {
     describe('FileSystemLoader', function() {
-      it('should have default opts', function() {
+      test('should have default opts', function() {
         var loader = new FileSystemLoader(templatesPath);
-        expect(loader).to.be.a(FileSystemLoader);
-        expect(loader.noCache).to.be(false);
+        expect(loader).toBeInstanceOf(FileSystemLoader);
+        expect(loader.noCache).toBe(false);
       });
 
-      it('should emit a "load" event', async function() {
+      test('should emit a "load" event', async function() {
         var loader = new FileSystemLoader(templatesPath);
         var loadedTemplate;
         loader.on('load', function(name, source) {
           loadedTemplate = name;
         });
         await loader.getSource('simple-base.njk');
-        expect(loadedTemplate).to.equal('simple-base.njk');
+        expect(loadedTemplate).toEqual('simple-base.njk');
       });
     });
   }
 
   if (typeof NodeResolveLoader !== 'undefined') {
     describe('NodeResolveLoader', function() {
-      it('should have default opts', function() {
+      test('should have default opts', function() {
         var loader = new NodeResolveLoader();
-        expect(loader).to.be.a(NodeResolveLoader);
-        expect(loader.noCache).to.be(false);
+        expect(loader).toBeInstanceOf(NodeResolveLoader);
+        expect(loader.noCache).toBe(false);
       });
 
-      it('should emit a "load" event', async function() {
+      test('should emit a "load" event', async function() {
         var loader = new NodeResolveLoader({paths: [path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-node-pkgs')]});
         var loadedTemplate;
         loader.on('load', function(name, source) {
           loadedTemplate = name;
         });
         await loader.getSource('dummy-pkg/simple-template.html');
-        expect(loadedTemplate).to.equal('dummy-pkg/simple-template.html');
+        expect(loadedTemplate).toEqual('dummy-pkg/simple-template.html');
       });
 
-      it('should render templates', async function() {
+      test('should render templates', async function() {
         var env = new Environment(new NodeResolveLoader({paths: [path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-node-pkgs')]}));
         var tmpl = await env.getTemplate('dummy-pkg/simple-template.html');
-        expect(await tmpl.render({foo: 'foo'})).to.be('foo');
+        expect(await tmpl.render({foo: 'foo'})).toBe('foo');
       });
 
-      it('should not allow directory traversal', async function() {
+      test('should not allow directory traversal', async function() {
         var loader = new NodeResolveLoader({paths: [path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-node-pkgs')]});
         var dummyPkgPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-node-pkgs', 'dummy-pkg', 'simple-template.html');
-        expect(await loader.getSource(dummyPkgPath)).to.be(null);
+        expect(await loader.getSource(dummyPkgPath)).toBe(null);
       });
 
-      it('should return null if no match', async function() {
+      test('should return null if no match', async function() {
         var loader = new NodeResolveLoader();
         var tmplName = 'dummy-pkg/does-not-exist.html';
-        expect(await loader.getSource(tmplName)).to.be(null);
+        expect(await loader.getSource(tmplName)).toBe(null);
       });
     });
   }

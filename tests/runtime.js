@@ -1,102 +1,112 @@
-import expect from 'expect.js';
-import * as util from './util.js';
+import { expect, describe, test } from 'bun:test';
+import nunjucks from '../nunjucks/index.js';
 
-var render = util.render;
+var Environment = nunjucks.Environment;
+var Template = nunjucks.Template;
+var templatesPath = 'tests/templates';
+var Loader = nunjucks.FileSystemLoader;
 
 describe('runtime', function() {
-  it('should report the failed function calls to symbols', async function() {
-    render('{{ foo("cvan") }}', {}, {
-      noThrow: true
-    }, function(err) {
-      expect(err).to.match(/Unable to call `foo`, which is undefined/);
-    });
+  test('should report the failed function calls to symbols', async function() {
+    var env = new Environment(new Loader(templatesPath), { dev: true });
+    var t = new Template('{{ foo("cvan") }}', env);
+    try {
+      await t.render({});
+      throw new Error('should have thrown');
+    } catch (err) {
+      expect(err.message).toMatch(/Unable to call `foo`, which is undefined/);
+    }
   });
 
-  it('should report the failed function calls to lookups', async function() {
-    render('{{ foo["bar"]("cvan") }}', {}, {
-      noThrow: true
-    }, function(err) {
-      expect(err).to.match(/foo\["bar"\]/);
-    });
+  test('should report the failed function calls to lookups', async function() {
+    var env = new Environment(new Loader(templatesPath), { dev: true });
+    var t = new Template('{{ foo["bar"]("cvan") }}', env);
+    try {
+      await t.render({});
+      throw new Error('should have thrown');
+    } catch (err) {
+      expect(err.message).toMatch(/foo\["bar"\]/);
+    }
   });
 
-  it('should report the failed function calls to calls', async function() {
-    render('{{ foo.bar("second call") }}', {}, {
-      noThrow: true
-    }, function(err) {
-      expect(err).to.match(/foo\["bar"\]/);
-    });
+  test('should report the failed function calls to calls', async function() {
+    var env = new Environment(new Loader(templatesPath), { dev: true });
+    var t = new Template('{{ foo.bar("second call") }}', env);
+    try {
+      await t.render({});
+      throw new Error('should have thrown');
+    } catch (err) {
+      expect(err.message).toMatch(/foo\["bar"\]/);
+    }
   });
 
-  it('should report full function name in error', async function() {
-    render('{{ foo.barThatIsLongerThanTen() }}', {}, {
-      noThrow: true
-    }, function(err) {
-      expect(err).to.match(/foo\["barThatIsLongerThanTen"\]/);
-    });
+  test('should report full function name in error', async function() {
+    var env = new Environment(new Loader(templatesPath), { dev: true });
+    var t = new Template('{{ foo.barThatIsLongerThanTen() }}', env);
+    try {
+      await t.render({});
+      throw new Error('should have thrown');
+    } catch (err) {
+      expect(err.message).toMatch(/foo\["barThatIsLongerThanTen"\]/);
+    }
   });
 
-  it('should report the failed function calls w/multiple args', async function() {
-    render('{{ foo.bar("multiple", "args") }}', {}, {
-      noThrow: true
-    }, function(err) {
-      expect(err).to.match(/foo\["bar"\]/);
-    });
+  test('should report the failed function calls w/multiple args', async function() {
+    var env = new Environment(new Loader(templatesPath), { dev: true });
 
-    render('{{ foo["bar"]["zip"]("multiple", "args") }}',
-      {},
-      {
-        noThrow: true
-      },
-      function(err) {
-        expect(err).to.match(/foo\["bar"\]\["zip"\]/);
-      });
+    var t1 = new Template('{{ foo.bar("multiple", "args") }}', env);
+    try {
+      await t1.render({});
+      throw new Error('should have thrown');
+    } catch (err) {
+      expect(err.message).toMatch(/foo\["bar"\]/);
+    }
+
+    var t2 = new Template('{{ foo["bar"]["zip"]("multiple", "args") }}', env);
+    try {
+      await t2.render({});
+      throw new Error('should have thrown');
+    } catch (err) {
+      expect(err.message).toMatch(/foo\["bar"\]\["zip"\]/);
+    }
   });
 
-  it('should allow for undefined macro arguments in the last position', async function() {
-    render('{% macro foo(bar, baz) %}' +
+  test('should allow for undefined macro arguments in the last position', async function() {
+    var env = new Environment(new Loader(templatesPath), { dev: true, throwOnUndefined: false });
+    var t = new Template(
+      '{% macro foo(bar, baz) %}' +
       '{{ bar }} {{ baz }}{% endmacro %}' +
       '{{ foo("hello", nosuchvar) }}',
-    {},
-    {
-      noThrow: true
-    },
-    function(err, res) {
-      expect(err).to.equal(null);
-      expect(typeof res).to.be('string');
-    });
+      env
+    );
+    var res = await t.render({});
+    expect(res).toBe('hello ');
   });
 
-  it('should allow for objects without a prototype macro arguments in the last position', async function() {
+  test('should allow for objects without a prototype macro arguments in the last position', async function() {
     var noProto = Object.create(null);
     noProto.qux = 'world';
 
-    render('{% macro foo(bar, baz) %}' +
-    '{{ bar }} {{ baz.qux }}{% endmacro %}' +
-    '{{ foo("hello", noProto) }}',
-    {
-      noProto: noProto
-    },
-    {
-      noThrow: true
-    },
-    function(err, res) {
-      expect(err).to.equal(null);
-      expect(res).to.equal('hello world');
-    });
+    var env = new Environment(new Loader(templatesPath), { dev: true, throwOnUndefined: false });
+    var t = new Template(
+      '{% macro foo(bar, baz) %}' +
+      '{{ bar }} {{ baz.qux }}{% endmacro %}' +
+      '{{ foo("hello", noProto) }}',
+      env
+    );
+    var res = await t.render({ noProto: noProto });
+    expect(res).toBe('hello world');
   });
 
-  it('should not read variables property from Object.prototype', async function() {
+  test('should not read variables property from Object.prototype', async function() {
     var payload = 'function(){ return 1+2; }()';
     var data = {};
     Object.getPrototypeOf(data).payload = payload;
 
-    render('{{ payload }}', data, {
-      noThrow: true
-    }, function(err, res) {
-      expect(err).to.equal(null);
-      expect(res).to.equal(payload);
-    });
+    var env = new Environment(new Loader(templatesPath), { dev: true });
+    var t = new Template('{{ payload }}', env);
+    var res = await t.render(data);
+    expect(res).toBe(payload);
     delete Object.getPrototypeOf(data).payload;
   });
 });

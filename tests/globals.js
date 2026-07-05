@@ -1,4 +1,4 @@
-import expect from 'expect.js';
+import { expect, describe, test } from 'bun:test';
 import * as util from './util.js';
 import { Environment } from '../nunjucks/src/environment.js';
 
@@ -6,7 +6,7 @@ var equal = util.equal;
 var render = util.render;
 
 describe('global', function() {
-  it('should have range', async function() {
+  test('should have range', async function() {
     await equal('{% for i in range(0, 10) %}{{ i }}{% endfor %}', '0123456789');
     await equal('{% for i in range(10) %}{{ i }}{% endfor %}', '0123456789');
     await equal('{% for i in range(5, 10) %}{{ i }}{% endfor %}', '56789');
@@ -19,7 +19,7 @@ describe('global', function() {
     await equal('{% for i in range(10, 5, -2.5) %}{{ i }}{% endfor %}', '107.5');
   });
 
-  it('should have cycler', async function() {
+  test('should have cycler', async function() {
     await equal(
       '{% set cls = cycler("odd", "even") %}' +
       '{{ cls.next() }}' +
@@ -42,7 +42,7 @@ describe('global', function() {
       'oddeveneven');
   });
 
-  it('should have joiner', async function() {
+  test('should have joiner', async function() {
     await equal(
       '{% set comma = joiner() %}' +
       'foo{{ comma() }}bar{{ comma() }}baz{{ comma() }}',
@@ -54,7 +54,7 @@ describe('global', function() {
       'foobar|baz|');
   });
 
-  it('should allow addition of globals', async function() {
+  test('should allow addition of globals', async function() {
     var env = new Environment();
 
     env.addGlobal('hello', function(arg1) {
@@ -64,7 +64,7 @@ describe('global', function() {
     await equal('{{ hello("World!") }}', 'Hello World!', env);
   });
 
-  it('should allow chaining of globals', async function() {
+  test('should allow chaining of globals', async function() {
     var env = new Environment();
 
     env.addGlobal('hello', function(arg1) {
@@ -77,7 +77,7 @@ describe('global', function() {
     await equal('{{ goodbye("World!") }}', 'Goodbye World!', env);
   });
 
-  it('should allow getting of globals', async function() {
+  test('should allow getting of globals', async function() {
     var env = new Environment();
     var hello = function(arg1) {
       return 'Hello ' + arg1;
@@ -85,27 +85,27 @@ describe('global', function() {
 
     env.addGlobal('hello', hello);
 
-    expect(env.getGlobal('hello')).to.be.equal(hello);
+    expect(env.getGlobal('hello')).toEqual(hello);
   });
 
-  it('should allow getting boolean globals', async function() {
+  test('should allow getting boolean globals', async function() {
     var env = new Environment();
     var hello = false;
 
     env.addGlobal('hello', hello);
 
-    expect(env.getGlobal('hello')).to.be.equal(hello);
+    expect(env.getGlobal('hello')).toEqual(hello);
   });
 
-  it('should fail on getting non-existent global', async function() {
+  test('should fail on getting non-existent global', async function() {
     var env = new Environment();
 
     expect(function() {
       env.getGlobal('hello');
-    }).to.throwError();
+    }).toThrow();
   });
 
-  it('should pass context as this to global functions', async function() {
+  test('should pass context as this to global functions', async function() {
     var env = new Environment();
 
     env.addGlobal('hello', function() {
@@ -117,7 +117,7 @@ describe('global', function() {
     }, 'Hello James', env);
   });
 
-  it('should be exclusive to each environment', async function() {
+  test('should be exclusive to each environment', async function() {
     var env = new Environment();
     var env2;
 
@@ -126,19 +126,19 @@ describe('global', function() {
 
     expect(function() {
       env2.getGlobal('hello');
-    }).to.throwError();
+    }).toThrow();
   });
 
-  it('should return errors from globals', async function() {
+  test('should return errors from globals', async function() {
     var env = new Environment();
     env.addGlobal('err', function() {
       throw new Error('test error');
     });
     try {
       await render('{{ err() }}', null, {}, env);
-      expect().to.be(false);
+      expect().toBe(false);
     } catch (e) {
-      expect(e).to.be.a(Error);
+      expect(e).toBeInstanceOf(Error);
     }
   });
 });

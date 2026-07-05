@@ -1,4 +1,4 @@
-import expect from 'expect.js';
+import { expect, describe, test, beforeEach } from 'bun:test';
 import path from 'path';
 import * as util from './util.js';
 import { Environment } from '../nunjucks/src/environment.js';
@@ -7,14 +7,14 @@ import { FileSystemLoader } from '../nunjucks/src/node-loaders.js';
 var templatesPath = 'tests/templates';
 
 describe('api', function() {
-  it('should always force compilation of parent template', async function() {
+  test('should always force compilation of parent template', async function() {
     var env = new Environment(new FileSystemLoader(templatesPath));
 
     var child = await env.getTemplate('base-inherit.njk');
-    expect(await child.render()).to.be('Foo*Bar*BazFizzle');
+    expect(await child.render()).toBe('Foo*Bar*BazFizzle');
   });
 
-  it('should only call the callback once when conditional import fails', async function() {
+  test('should only call the callback once when conditional import fails', async function() {
     var env = new Environment(new FileSystemLoader(templatesPath));
     try {
       await env.render('broken-conditional-include.njk');
@@ -23,36 +23,36 @@ describe('api', function() {
     }
   });
 
-  it('should handle correctly relative paths', async function() {
+  test('should handle correctly relative paths', async function() {
     var env = new Environment(new FileSystemLoader(templatesPath));
     var child1 = await env.getTemplate('relative/test1.njk');
     var child2 = await env.getTemplate('relative/test2.njk');
 
-    expect(await child1.render()).to.be('FooTest1BazFizzle');
-    expect(await child2.render()).to.be('FooTest2BazFizzle');
+    expect(await child1.render()).toBe('FooTest1BazFizzle');
+    expect(await child2.render()).toBe('FooTest2BazFizzle');
   });
 
-  it('should handle correctly cache for relative paths', async function() {
+  test('should handle correctly cache for relative paths', async function() {
     var env = new Environment(new FileSystemLoader(templatesPath));
     var test = await env.getTemplate('relative/test-cache.njk');
 
-    expect(util.normEOL(await test.render())).to.be('Test1\nTest2');
+    expect(util.normEOL(await test.render())).toBe('Test1\nTest2');
   });
 
-  it('should handle correctly relative paths in renderString', async function() {
+  test('should handle correctly relative paths in renderString', async function() {
     var env = new Environment(new FileSystemLoader(templatesPath));
     expect(await env.renderString('{% extends "./relative/test1.njk" %}{% block block1 %}Test3{% endblock %}', {}, {
       path: path.resolve(templatesPath, 'string.njk')
-    })).to.be('FooTest3BazFizzle');
+    })).toBe('FooTest3BazFizzle');
   });
 
-  it('should emit "load" event on Environment instance', async function() {
+  test('should emit "load" event on Environment instance', async function() {
     var env = new Environment(new FileSystemLoader(templatesPath));
     var loadedTemplate;
     env.on('load', function(name, source) {
       loadedTemplate = name;
     });
     await env.render('item.njk', {});
-    expect(loadedTemplate).to.equal('item.njk');
+    expect(loadedTemplate).toEqual('item.njk');
   });
 });

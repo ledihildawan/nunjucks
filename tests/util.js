@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
-import expect from 'expect.js';
+import { expect } from 'bun:test';
 import nunjucks from '../nunjucks/index.js';
 
 var isSlim = false;
@@ -9,14 +9,6 @@ var Template = nunjucks.Template;
 var Loader = nunjucks.FileSystemLoader;
 var precompileString = nunjucks.precompileString;
 var templatesPath = 'tests/templates';
-
-var numAsyncs;
-var doneHandler;
-
-beforeEach(function() {
-  numAsyncs = 0;
-  doneHandler = null;
-});
 
 function equal(str, ctx, opts, str2, env) {
   if (typeof ctx === 'string') {
@@ -34,10 +26,10 @@ function equal(str, ctx, opts, str2, env) {
   var res = render(str, ctx, opts, env);
   if (res && typeof res.then === 'function') {
     return res.then((resolved) => {
-      expect(resolved).to.be(str2);
+      expect(resolved).toBe(str2);
     });
   }
-  expect(res).to.be(str2);
+  expect(res).toBe(str2);
 }
 
 function jinjaEqual(str, ctx, str2, env) {
@@ -48,14 +40,6 @@ function jinjaEqual(str, ctx, str2, env) {
     for (var i = 0; i < jinjaUninstalls.length; i++) {
       jinjaUninstalls[i]();
     }
-  }
-}
-
-function finish(done) {
-  if (numAsyncs > 0) {
-    doneHandler = done;
-  } else {
-    done();
   }
 }
 
@@ -150,46 +134,17 @@ function render(str, ctx, opts, env, cb) {
   if (!cb) {
     return t.render(ctx);
   } else {
-    numAsyncs++;
     t.render(ctx)
       .then(res => {
-        try {
-          cb(null, normEOL(res));
-        } catch (exc) {
-          if (doneHandler) {
-            doneHandler(exc);
-            numAsyncs = 0;
-            doneHandler = null;
-          } else {
-            throw exc;
-          }
-        }
-        numAsyncs--;
-        if (numAsyncs === 0 && doneHandler) {
-          doneHandler();
-        }
+        cb(null, normEOL(res));
       })
       .catch(err => {
         if (err && !opts.noThrow) {
           throw err;
         }
-        try {
-          cb(err);
-        } catch (exc) {
-          if (doneHandler) {
-            doneHandler(exc);
-            numAsyncs = 0;
-            doneHandler = null;
-          } else {
-            throw exc;
-          }
-        }
-        numAsyncs--;
-        if (numAsyncs === 0 && doneHandler) {
-          doneHandler();
-        }
+        cb(err);
       });
   }
 }
 
-export { render, equal, jinjaEqual, finish, normEOL, isSlim, Loader };
+export { render, equal, jinjaEqual, normEOL, isSlim, Loader };

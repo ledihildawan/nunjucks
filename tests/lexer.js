@@ -1,4 +1,4 @@
-import expect from 'expect.js';
+import { expect, describe, test } from 'bun:test';
 import * as lib from '../nunjucks/src/lib.js';
 import * as lexer from '../nunjucks/src/lexer.js';
 
@@ -17,21 +17,21 @@ function _hasTokens(ws, tokens, types) {
     }
 
     if (lib.isArray(type)) {
-      expect(tok.type).to.be(type[0]);
-      expect(tok.value).to.be(type[1]);
+      expect(tok.type).toBe(type[0]);
+      expect(tok.value).toBe(type[1]);
     } else if (lib.isObject(type)) {
-      expect(tok.type).to.be(type.type);
+      expect(tok.type).toBe(type.type);
       if (type.value != null) {
-        expect(tok.value).to.be(type.value);
+        expect(tok.value).toBe(type.value);
       }
       if (type.lineno != null) {
-        expect(tok.lineno).to.be(type.lineno);
+        expect(tok.lineno).toBe(type.lineno);
       }
       if (type.colno != null) {
-        expect(tok.colno).to.be(type.colno);
+        expect(tok.colno).toBe(type.colno);
       }
     } else {
-      expect(tok.type).to.be(type);
+      expect(tok.type).toBe(type);
     }
   }
 }
@@ -49,18 +49,18 @@ describe('lexer', function() {
   var tmpl;
   var tokens;
 
-  it('should parse template data', function() {
+  test('should parse template data', function() {
     tok = lexer.lex('3').nextToken();
-    expect(tok.type).to.be(lexer.TOKEN_DATA);
-    expect(tok.value).to.be('3');
+    expect(tok.type).toBe(lexer.TOKEN_DATA);
+    expect(tok.value).toBe('3');
 
     tmpl = 'foo bar bizzle 3 [1,2] !@#$%^&*()<>?:"{}|';
     tok = lexer.lex(tmpl).nextToken();
-    expect(tok.type).to.be(lexer.TOKEN_DATA);
-    expect(tok.value).to.be(tmpl);
+    expect(tok.type).toBe(lexer.TOKEN_DATA);
+    expect(tok.value).toBe(tmpl);
   });
 
-  it('should keep track of whitespace', function() {
+  test('should keep track of whitespace', function() {
     tokens = lexer.lex('data {% 1 2\n   3  %} data');
     hasTokensWithWS(tokens,
       lexer.TOKEN_DATA,
@@ -76,7 +76,7 @@ describe('lexer', function() {
       lexer.TOKEN_DATA);
   });
 
-  it('should trim blocks', function() {
+  test('should trim blocks', function() {
     tokens = lexer.lex('  {% if true %}\n    foo\n  {% endif %}\n', {
       trimBlocks: true
     });
@@ -92,7 +92,7 @@ describe('lexer', function() {
       lexer.TOKEN_BLOCK_END);
   });
 
-  it('should trim windows-style CRLF line endings after blocks', function() {
+  test('should trim windows-style CRLF line endings after blocks', function() {
     tokens = lexer.lex('  {% if true %}\r\n    foo\r\n  {% endif %}\r\n', {
       trimBlocks: true
     });
@@ -108,7 +108,7 @@ describe('lexer', function() {
       lexer.TOKEN_BLOCK_END);
   });
 
-  it('should not trim CR after blocks', function() {
+  test('should not trim CR after blocks', function() {
     tokens = lexer.lex('  {% if true %}\r    foo\r\n  {% endif %}\r', {
       trimBlocks: true
     });
@@ -125,7 +125,7 @@ describe('lexer', function() {
       [lexer.TOKEN_DATA, '\r']);
   });
 
-  it('should lstrip and trim blocks', function() {
+  test('should lstrip and trim blocks', function() {
     tokens = lexer.lex('test\n {% if true %}\n  foo\n {% endif %}\n</div>', {
       lstripBlocks: true,
       trimBlocks: true
@@ -143,7 +143,7 @@ describe('lexer', function() {
       [lexer.TOKEN_DATA, '</div>']);
   });
 
-  it('should lstrip and not collapse whitespace between blocks', function() {
+  test('should lstrip and not collapse whitespace between blocks', function() {
     tokens = lexer.lex('   {% t %} {% t %}', {
       lstripBlocks: true
     });
@@ -158,7 +158,7 @@ describe('lexer', function() {
   });
 
 
-  it('should parse variable start and end', function() {
+  test('should parse variable start and end', function() {
     tokens = lexer.lex('data {{ foo }} bar bizzle');
     hasTokens(tokens,
       lexer.TOKEN_DATA,
@@ -168,16 +168,16 @@ describe('lexer', function() {
       lexer.TOKEN_DATA);
   });
 
-  it('should treat the non-breaking space as valid whitespace', function() {
+  test('should treat the non-breaking space as valid whitespace', function() {
     tokens = lexer.lex('{{\u00A0foo }}');
     tok = tokens.nextToken();
     tok = tokens.nextToken();
     tok = tokens.nextToken();
-    expect(tok.type).to.be(lexer.TOKEN_SYMBOL);
-    expect(tok.value).to.be('foo');
+    expect(tok.type).toBe(lexer.TOKEN_SYMBOL);
+    expect(tok.value).toBe('foo');
   });
 
-  it('should parse block start and end', function() {
+  test('should parse block start and end', function() {
     tokens = lexer.lex('data {% foo %} bar bizzle');
     hasTokens(tokens,
       lexer.TOKEN_DATA,
@@ -187,7 +187,7 @@ describe('lexer', function() {
       lexer.TOKEN_DATA);
   });
 
-  it('should parse basic types', function() {
+  test('should parse basic types', function() {
     tokens = lexer.lex('{{ 3 4.5 true false none foo "hello" \'boo\' r/regex/ }}');
     hasTokens(tokens,
       lexer.TOKEN_VARIABLE_START,
@@ -203,7 +203,7 @@ describe('lexer', function() {
       lexer.TOKEN_VARIABLE_END);
   });
 
-  it('should parse function calls', function() {
+  test('should parse function calls', function() {
     tokens = lexer.lex('{{ foo(bar) }}');
     hasTokens(tokens,
       lexer.TOKEN_VARIABLE_START,
@@ -214,7 +214,7 @@ describe('lexer', function() {
       lexer.TOKEN_VARIABLE_END);
   });
 
-  it('should parse groups', function() {
+  test('should parse groups', function() {
     tokens = lexer.lex('{{ (1, 2, 3) }}');
     hasTokens(tokens,
       lexer.TOKEN_VARIABLE_START,
@@ -228,7 +228,7 @@ describe('lexer', function() {
       lexer.TOKEN_VARIABLE_END);
   });
 
-  it('should parse arrays', function() {
+  test('should parse arrays', function() {
     tokens = lexer.lex('{{ [1, 2, 3] }}');
     hasTokens(tokens,
       lexer.TOKEN_VARIABLE_START,
@@ -242,7 +242,7 @@ describe('lexer', function() {
       lexer.TOKEN_VARIABLE_END);
   });
 
-  it('should parse dicts', function() {
+  test('should parse dicts', function() {
     tokens = lexer.lex('{{ {one:1, "two":2} }}');
     hasTokens(tokens,
       lexer.TOKEN_VARIABLE_START,
@@ -258,7 +258,7 @@ describe('lexer', function() {
       lexer.TOKEN_VARIABLE_END);
   });
 
-  it('should parse blocks without whitespace', function() {
+  test('should parse blocks without whitespace', function() {
     tokens = lexer.lex('data{{hello}}{%if%}data');
     hasTokens(tokens,
       lexer.TOKEN_DATA,
@@ -271,7 +271,7 @@ describe('lexer', function() {
       lexer.TOKEN_DATA);
   });
 
-  it('should parse pipes', function() {
+  test('should parse pipes', function() {
     hasTokens(lexer.lex('{{ foo|>bar }}'),
       lexer.TOKEN_VARIABLE_START,
       [lexer.TOKEN_SYMBOL, 'foo'],
@@ -280,7 +280,7 @@ describe('lexer', function() {
       lexer.TOKEN_VARIABLE_END);
   });
 
-  it('should parse operators', function() {
+  test('should parse operators', function() {
     hasTokens(lexer.lex('{{ 3+3-3*3/3 }}'),
       lexer.TOKEN_VARIABLE_START,
       lexer.TOKEN_INT,
@@ -321,7 +321,7 @@ describe('lexer', function() {
       lexer.TOKEN_VARIABLE_END);
   });
 
-  it('should parse comments', function() {
+  test('should parse comments', function() {
     tokens = lexer.lex('data data {# comment #} data');
     hasTokens(tokens,
       lexer.TOKEN_DATA,
@@ -329,7 +329,7 @@ describe('lexer', function() {
       lexer.TOKEN_DATA);
   });
 
-  it('should allow changing the variable start and end', function() {
+  test('should allow changing the variable start and end', function() {
     tokens = lexer.lex('data {= var =}', {
       tags: {
         variableStart: '{=',
@@ -343,7 +343,7 @@ describe('lexer', function() {
       lexer.TOKEN_VARIABLE_END);
   });
 
-  it('should allow changing the block start and end', function() {
+  test('should allow changing the block start and end', function() {
     tokens = lexer.lex('{= =}', {
       tags: {
         blockStart: '{=',
@@ -355,7 +355,7 @@ describe('lexer', function() {
       lexer.TOKEN_BLOCK_END);
   });
 
-  it('should allow changing the variable start and end', function() {
+  test('should allow changing the variable start and end', function() {
     tokens = lexer.lex('data {= var =}', {
       tags: {
         variableStart: '{=',
@@ -369,7 +369,7 @@ describe('lexer', function() {
       lexer.TOKEN_VARIABLE_END);
   });
 
-  it('should allow changing the comment start and end', function() {
+  test('should allow changing the comment start and end', function() {
     tokens = lexer.lex('<!-- A comment! -->', {
       tags: {
         commentStart: '<!--',
@@ -380,7 +380,7 @@ describe('lexer', function() {
       lexer.TOKEN_COMMENT);
   });
 
-  it('should have individual lexer tag settings for each environment', function() {
+  test('should have individual lexer tag settings for each environment', function() {
     tokens = lexer.lex('{=', {
       tags: {
         variableStart: '{='
@@ -402,7 +402,7 @@ describe('lexer', function() {
     hasTokens(tokens, lexer.TOKEN_VARIABLE_START);
   });
 
-  it('should parse regular expressions', function() {
+  test('should parse regular expressions', function() {
     tokens = lexer.lex('{{ r/basic regex [a-z]/ }}');
     hasTokens(tokens,
       lexer.TOKEN_VARIABLE_START,
@@ -429,7 +429,7 @@ describe('lexer', function() {
       lexer.TOKEN_VARIABLE_END);
   });
 
-  it('should keep track of token positions', function() {
+  test('should keep track of token positions', function() {
     hasTokens(lexer.lex('{{ 3 != 4 == 5 <= 6 >= 7 < 8 > 9 }}'),
       {
         type: lexer.TOKEN_VARIABLE_START,

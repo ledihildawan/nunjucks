@@ -1,7 +1,6 @@
+import { expect, describe, test, beforeEach, afterEach } from 'bun:test';
 import path from 'path';
 import express from 'express';
-import expect from 'expect.js';
-import request from 'supertest';
 import nunjucks from '../nunjucks/index.js';
 import { fileURLToPath } from 'url';
 
@@ -11,31 +10,46 @@ var VIEWS = path.join(__dirname, '../samples/express/views');
 describe('express', function() {
   var app;
   var env;
+  var server;
+  var baseUrl;
 
-  beforeEach(function() {
+  beforeEach(async function() {
     app = express();
     env = new nunjucks.Environment(new nunjucks.FileSystemLoader(VIEWS), {
       autoescape: true
     });
+
+    await new Promise((resolve) => {
+      server = app.listen(0, resolve);
+    });
+    baseUrl = `http://localhost:${server.address().port}`;
   });
 
-  it('should render a view with extension', async function() {
+  afterEach(function() {
+    if (server) {
+      server.close();
+    }
+  });
+
+  test('should render a view with extension', async function() {
     app.get('/', async function(req, res) {
       const html = await env.render('about.html');
       res.send(html);
     });
-    await request(app)
-      .get('/')
-      .expect(/This is just the about page/);
+
+    const res = await fetch(baseUrl);
+    const text = await res.text();
+    expect(text).toContain('This is just the about page');
   });
 
-  it('should render a view with locals', async function() {
+  test('should render a view with locals', async function() {
     app.get('/', async function(req, res) {
       const html = await env.renderString('Hello {{ name }}!', { name: 'World' });
       res.send(html);
     });
-    await request(app)
-      .get('/')
-      .expect(/Hello World!/);
+
+    const res = await fetch(baseUrl);
+    const text = await res.text();
+    expect(text).toContain('Hello World!');
   });
 });

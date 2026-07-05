@@ -1,6 +1,4 @@
-'use strict';
-
-import expect from 'expect.js';
+import { expect, describe, test, beforeAll, afterAll } from 'bun:test';
 import nunjucks from '../nunjucks/index.js';
 import fs from 'fs';
 import path from 'path';
@@ -21,7 +19,7 @@ function rmdir(dirPath) {
 describe('nunjucks.configure', function() {
   var tempdir;
 
-  before(function() {
+  beforeAll(async function() {
     if (fs && path && os) {
       try {
         tempdir = fs.mkdtempSync(path.join(os.tmpdir(), 'templates'));
@@ -34,30 +32,30 @@ describe('nunjucks.configure', function() {
     }
   });
 
-  after(function() {
+  afterAll(async function() {
     nunjucks.reset();
     if (typeof tempdir !== 'undefined') {
       rmdir(tempdir);
     }
   });
 
-  it('should cache templates by default', async function() {
+  test('should cache templates by default', async function() {
     nunjucks.configure(tempdir);
 
     fs.writeFileSync(tempdir + '/test.html', '{{ name }}', 'utf-8');
-    expect(await nunjucks.render('test.html', {name: 'foo'})).to.be('foo');
+    expect(await nunjucks.render('test.html', {name: 'foo'})).toBe('foo');
 
     fs.writeFileSync(tempdir + '/test.html', '{{ name }}-changed', 'utf-8');
-    expect(await nunjucks.render('test.html', {name: 'foo'})).to.be('foo');
+    expect(await nunjucks.render('test.html', {name: 'foo'})).toBe('foo');
   });
 
-  it('should not cache templates with {noCache: true}', async function() {
+  test('should not cache templates with {noCache: true}', async function() {
     nunjucks.configure(tempdir, {noCache: true});
 
     fs.writeFileSync(tempdir + '/test.html', '{{ name }}', 'utf-8');
-    expect(await nunjucks.render('test.html', {name: 'foo'})).to.be('foo');
+    expect(await nunjucks.render('test.html', {name: 'foo'})).toBe('foo');
 
     fs.writeFileSync(tempdir + '/test.html', '{{ name }}-changed', 'utf-8');
-    expect(await nunjucks.render('test.html', {name: 'foo'})).to.be('foo-changed');
+    expect(await nunjucks.render('test.html', {name: 'foo'})).toBe('foo-changed');
   });
 });

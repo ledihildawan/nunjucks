@@ -1,15 +1,15 @@
-import expect from 'expect.js';
+import { expect, describe, test } from 'bun:test';
 import { precompile, precompileString } from '../nunjucks/src/precompile.js';
 
 describe('precompile', function() {
-  it('should return a string', function() {
+  test('should return a string', function() {
     expect(precompileString('{{ test }}', {
       name: 'test.njk'
-    })).to.be.an('string');
+    })).toBeTypeOf('string');
   });
 
   describe('templates', function() {
-    it('should return *NIX path seperators', function() {
+    test('should return *NIX path seperators', function() {
       var fileName;
 
       precompile('./tests/templates/item.njk', {
@@ -18,10 +18,10 @@ describe('precompile', function() {
         }
       });
 
-      expect(fileName).to.equal('./tests/templates/item.njk');
+      expect(fileName).toBe('./tests/templates/item.njk');
     });
 
-    it('should return *NIX path seperators, when name is passed as option', function() {
+    test('should return *NIX path seperators, when name is passed as option', function() {
       var fileName;
 
       precompile('<span>test</span>', {
@@ -32,7 +32,7 @@ describe('precompile', function() {
         }
       });
 
-      expect(fileName).to.equal('path/to/file.j2');
+      expect(fileName).toBe('path/to/file.j2');
     });
   });
 });
