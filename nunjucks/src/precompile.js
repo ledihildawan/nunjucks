@@ -1,11 +1,9 @@
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
-const {_prettifyError} = require('./lib');
-const compiler = require('./compiler');
-const {Environment} = require('./environment');
-const precompileGlobal = require('./precompile-global');
+import { existsSync, statSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import {_prettifyError} from './lib.js';
+import * as compiler from './compiler.js';
+import {Environment} from './environment.js';
+import precompileGlobal from './precompile-global.js';
 
 function match(filename, patterns) {
   if (!Array.isArray(patterns)) {
@@ -14,7 +12,7 @@ function match(filename, patterns) {
   return patterns.some((pattern) => filename.match(pattern));
 }
 
-function precompileString(str, opts) {
+export function precompileString(str, opts) {
   opts = opts || {};
   opts.isString = true;
   const env = opts.env || new Environment([]);
@@ -26,21 +24,7 @@ function precompileString(str, opts) {
   return wrapper([_precompile(str, opts.name, env)], opts);
 }
 
-function precompile(input, opts) {
-  // The following options are available:
-  //
-  // * name: name of the template (auto-generated when compiling a directory)
-  // * isString: input is a string, not a file path
-  // * asFunction: generate a callable function
-  // * force: keep compiling on error
-  // * env: the Environment to use (gets extensions and async filters from it)
-  // * include: which file/folders to include (folders are auto-included, files are auto-excluded)
-  // * exclude: which file/folders to exclude (folders are auto-included, files are auto-excluded)
-  // * wrapper: function(templates, opts) {...}
-  //       Customize the output format to store the compiled template.
-  //       By default, templates are stored in a global variable used by the runtime.
-  //       A custom loader will be necessary to load your custom wrapper.
-
+export function precompile(input, opts) {
   opts = opts || {};
   const env = opts.env || new Environment([]);
   const wrapper = opts.wrapper || precompileGlobal;
@@ -49,15 +33,15 @@ function precompile(input, opts) {
     return precompileString(input, opts);
   }
 
-  const pathStats = fs.existsSync(input) && fs.statSync(input);
+  const pathStats = existsSync(input) && statSync(input);
   const precompiled = [];
   const templates = [];
 
   function addTemplates(dir) {
-    fs.readdirSync(dir).forEach((file) => {
-      const filepath = path.join(dir, file);
-      let subpath = filepath.substr(path.join(input, '/').length);
-      const stat = fs.statSync(filepath);
+    readdirSync(dir).forEach((file) => {
+      const filepath = join(dir, file);
+      let subpath = filepath.substr(join(input, '/').length);
+      const stat = statSync(filepath);
 
       if (stat && stat.isDirectory()) {
         subpath += '/';
@@ -72,7 +56,7 @@ function precompile(input, opts) {
 
   if (pathStats.isFile()) {
     precompiled.push(_precompile(
-      fs.readFileSync(input, 'utf-8'),
+      readFileSync(input, 'utf-8'),
       opts.name || input,
       env
     ));
@@ -80,19 +64,17 @@ function precompile(input, opts) {
     addTemplates(input);
 
     for (let i = 0; i < templates.length; i++) {
-      const name = templates[i].replace(path.join(input, '/'), '');
+      const name = templates[i].replace(join(input, '/'), '');
 
       try {
         precompiled.push(_precompile(
-          fs.readFileSync(templates[i], 'utf-8'),
+          readFileSync(templates[i], 'utf-8'),
           name,
           env
         ));
       } catch (e) {
         if (opts.force) {
-          // Don't stop generating the output if we're
-          // forcing compilation.
-          console.error(e); // eslint-disable-line no-console
+          console.error(e);
         } else {
           throw e;
         }
@@ -127,8 +109,3 @@ function _precompile(str, name, env) {
     template: template
   };
 }
-
-module.exports = {
-  precompile: precompile,
-  precompileString: precompileString
-};

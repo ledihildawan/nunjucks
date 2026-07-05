@@ -1,5 +1,3 @@
-'use strict';
-
 function precompileGlobal(templates, opts) {
   var out = '';
   opts = opts || {};
@@ -13,7 +11,7 @@ function precompileGlobal(templates, opts) {
       '[' + name + '] = (function() {\n' + template + '\n})();\n';
 
     if (opts.asFunction) {
-      out += 'return function(ctx, cb) { return nunjucks.render(' + name + ', ctx, cb); }\n';
+      out += 'return async function(ctx) { return await nunjucks.render(' + name + ', ctx); }\n';
     }
 
     out += '})();\n';
@@ -21,4 +19,4 @@ function precompileGlobal(templates, opts) {
   return out;
 }
 
-module.exports = precompileGlobal;
+export default precompileGlobal;

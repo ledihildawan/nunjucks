@@ -1,10 +1,10 @@
-'use strict';
+import { lookup } from './utils.js';
+import { spawn } from 'child_process';
+import path from 'path';
 
-var spawn = require('child_process').spawn;
-var path = require('path');
-var lookup = require('./utils').lookup;
+const __dirname = import.meta.dirname;
 
-module.exports = function mochaPhantomJS(url, options) {
+export default function mochaPhantomJS(url, options) {
   options = options || {};
   const coverageFile = path.join(
     __dirname, '../../.nyc_output', (url.indexOf('slim') > -1) ? 'browser-slim.json' : 'browser-std.json');
@@ -53,4 +53,4 @@ module.exports = function mochaPhantomJS(url, options) {
       reject(err);
     }
   });
-};
+}

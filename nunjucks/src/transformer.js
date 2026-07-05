@@ -1,14 +1,11 @@
-'use strict';
+import * as nodes from './nodes.js';
+import * as lib from './lib.js';
 
-var nodes = require('./nodes');
-var lib = require('./lib');
-
-var sym = 0;
+let sym = 0;
 function gensym() {
   return 'hole_' + sym++;
 }
 
-// copy-on-write version of map
 function mapCOW(arr, func) {
   var res = null;
   for (let i = 0; i < arr.length; i++) {
@@ -140,11 +137,12 @@ function liftSuper(ast) {
     let hasSuper = false;
     const symbol = gensym();
 
-    blockNode.body = walk(blockNode.body, (node) => { // eslint-disable-line consistent-return
+    blockNode.body = walk(blockNode.body, (node) => {
       if (node instanceof nodes.FunCall && node.name.value === 'super') {
         hasSuper = true;
         return new nodes.Symbol(node.lineno, node.colno, symbol);
       }
+      return node;
     });
 
     if (hasSuper) {
@@ -169,7 +167,6 @@ function convertStatements(ast) {
         child instanceof nodes.AsyncAll ||
         child instanceof nodes.CallExtensionAsync) {
         async = true;
-        // Stop iterating by returning the node
         return child;
       }
       return undefined;
@@ -203,15 +200,7 @@ function cps(ast, asyncPipes) {
   return convertStatements(liftSuper(liftPipes(ast, asyncPipes)));
 }
 
-function transform(ast, asyncPipes) {
+export function transform(ast, asyncPipes) {
+  sym = 0;  // Reset gensym counter per transformation
   return cps(ast, asyncPipes || []);
 }
-
-// var parser = require('./parser');
-// var src = 'hello {% foo %}{% endfoo %} end';
-// var ast = transform(parser.parse(src, [new FooExtension()]), ['bar']);
-// nodes.printNodes(ast);
-
-module.exports = {
-  transform: transform
-};

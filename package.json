@@ -3,46 +3,25 @@
   "description": "A powerful templating engine with inheritance, asynchronous control, and more (jinja2 inspired)",
   "version": "3.2.4",
   "author": "James Long <longster@gmail.com>",
-
+  "type": "module",
   "dependencies": {
-    "a-sync-waterfall": "^1.0.0",
-    "asap": "^2.0.3",
-    "commander": "^5.1.0"
+    "express": "5"
   },
-  "browser": "./browser/nunjucks.js",
   "devDependencies": {
-    "@eslint/js": "^9.29.0",
-    "connect": "^3.6.5",
-    "eslint": "^9.29.0",
-    "eslint-plugin-import": "^2.31.0",
-    "expect.js": "*",
-    "express": "4.x",
-    "fs-extra": "^5.0.0",
-    "get-port": "^3.2.0",
-    "globals": "^16.2.0",
-    "mocha": "^10.0.0",
-    "serve-static": "^1.13.1",
-    "supertest": "*",
-    "terser-webpack-plugin": "^5.3.14",
-    "uglify-js": "^2.8.29",
-    "webpack": "^5.99.9"
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
+    "eslint-plugin-import": "^2.32.0"
   },
-
   "scripts": {
-    "build:transpile": "bun build nunjucks --target node --outdir . --format cjs",
-    "build:bundle": "bun run scripts/bundle.js",
-    "build": "bun run build:bundle",
-    "lint": "eslint nunjucks scripts",
+    "build": "bun run scripts/bundle.js",
+    "lint": "eslint nunjucks",
     "prepare": "bun run build",
-    "test": "bun run lint && bun run test:mocha",
-    "test:mocha": "bun run build && mocha -R spec tests"
+    "test": "bun run lint && bun test ./tests/api.js ./tests/compiler.js ./tests/filters.js ./tests/lexer.js ./tests/express.js ./tests/core.js ./tests/precompile.js ./tests/loader.js ./tests/runtime.js ./tests/globals.js ./tests/tests.js ./tests/jinja-compat.js"
   },
-  "bin": {
-    "nunjucks-precompile": "./bin/precompile"
+  "exports": {
+    ".": "./index.js"
   },
-  "main": "index.js",
   "files": [
-    "bin/**",
     "browser/**",
     "src/**"
   ],

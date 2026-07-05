@@ -1,15 +1,12 @@
-var mochaPhantom = require('./mocha-phantomjs');
-var spawn = require('child_process').spawn;
-var getStaticServer = require('./static-server');
-var path = require('path');
+import mochaPhantom from './mocha-phantomjs.js';
+import { spawn } from 'child_process';
+import getStaticServer from './static-server.js';
+import path from 'path';
+import { lookup, promiseSequence } from './utils.js';
 
-var utils = require('./utils');
-var lookup = utils.lookup;
-var promiseSequence = utils.promiseSequence;
+const __dirname = import.meta.dirname;
 
-function mochaRun({cliTest = false} = {}) {
-  // We need to run the cli test without nyc because of weird behavior
-  // with spawn-wrap
+export function mochaRun({cliTest = false} = {}) {
   const bin = lookup((cliTest) ? '.bin/mocha' : '.bin/nyc', true);
   const runArgs = (cliTest)
     ? []
@@ -57,7 +54,7 @@ function mochaRun({cliTest = false} = {}) {
   });
 }
 
-function runtests() {
+export function runtests() {
   return new Promise((resolve, reject) => {
     var server;
 
@@ -85,5 +82,3 @@ function runtests() {
     });
   });
 }
-
-module.exports = runtests;

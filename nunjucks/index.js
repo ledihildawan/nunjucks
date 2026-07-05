@@ -1,21 +1,18 @@
-'use strict';
+import * as lib from './src/lib.js';
+import { Environment, Template } from './src/environment.js';
+import Loader from './src/loader.js';
+import * as loaders from './src/loaders.js';
+import * as compiler from './src/compiler.js';
+import * as parser from './src/parser.js';
+import * as lexer from './src/lexer.js';
+import * as runtime from './src/runtime.js';
+import * as nodes from './src/nodes.js';
+import installJinjaCompat from './src/jinja-compat.js';
+import * as precompile from './src/precompile.js';
 
-const lib = require('./src/lib');
-const {Environment, Template} = require('./src/environment');
-const Loader = require('./src/loader');
-const loaders = require('./src/loaders');
-const precompile = require('./src/precompile');
-const compiler = require('./src/compiler');
-const parser = require('./src/parser');
-const lexer = require('./src/lexer');
-const runtime = require('./src/runtime');
-const nodes = require('./src/nodes');
-const installJinjaCompat = require('./src/jinja-compat');
-
-// A single instance of an environment, since this is so commonly used
 let e;
 
-function configure(templatesPath, opts) {
+export function configure(templatesPath, opts) {
   opts = opts || {};
   if (lib.isObject(templatesPath)) {
     opts = templatesPath;
@@ -44,45 +41,64 @@ function configure(templatesPath, opts) {
   return e;
 }
 
-module.exports = {
-  Environment: Environment,
-  Template: Template,
-  Loader: Loader,
+export function reset() {
+  e = undefined;
+}
+
+export function compile(src, env, path, eagerCompile) {
+  if (!e) {
+    configure();
+  }
+  return new Template(src, env, path, eagerCompile);
+}
+
+export function render(name, ctx) {
+  if (!e) {
+    configure();
+  }
+
+  return e.render(name, ctx);
+}
+
+export function renderString(src, ctx) {
+  if (!e) {
+    configure();
+  }
+
+  return e.renderString(src, ctx);
+}
+
+export { Environment, Template };
+export { Loader };
+export { FileSystemLoader } from './src/loaders.js';
+export { NodeResolveLoader } from './src/loaders.js';
+export { PrecompiledLoader } from './src/loaders.js';
+export { WebLoader } from './src/web-loaders.js';
+export { compiler, parser, lexer, runtime, lib, nodes, installJinjaCompat };
+export { precompile, precompileString } from './src/precompile.js';
+
+const nunjucks = {
+  Environment,
+  Template,
+  Loader,
   FileSystemLoader: loaders.FileSystemLoader,
   NodeResolveLoader: loaders.NodeResolveLoader,
   PrecompiledLoader: loaders.PrecompiledLoader,
   WebLoader: loaders.WebLoader,
-  compiler: compiler,
-  parser: parser,
-  lexer: lexer,
-  runtime: runtime,
-  lib: lib,
-  nodes: nodes,
-  installJinjaCompat: installJinjaCompat,
-  configure: configure,
-  reset() {
-    e = undefined;
-  },
-  compile(src, env, path, eagerCompile) {
-    if (!e) {
-      configure();
-    }
-    return new Template(src, env, path, eagerCompile);
-  },
-  render(name, ctx, cb) {
-    if (!e) {
-      configure();
-    }
-
-    return e.render(name, ctx, cb);
-  },
-  renderString(src, ctx, cb) {
-    if (!e) {
-      configure();
-    }
-
-    return e.renderString(src, ctx, cb);
-  },
-  precompile: (precompile) ? precompile.precompile : undefined,
-  precompileString: (precompile) ? precompile.precompileString : undefined,
+  compiler,
+  parser,
+  lexer,
+  runtime,
+  lib,
+  nodes,
+  installJinjaCompat,
+  configure,
+  reset,
+  compile,
+  render,
+  renderString,
+  precompile: precompile.precompile,
+  precompileString: precompile.precompileString
 };
+
+export default nunjucks;

@@ -1,5 +1,3 @@
-'use strict';
-
 function cycler(items) {
   var index = -1;
 
@@ -33,9 +31,6 @@ function joiner(sep) {
   };
 }
 
-// Making this a function instead so it returns a new object
-// each time it's called. That way, if something like an environment
-// uses it, they will each have their own copy.
 function globals() {
   return {
     range(start, stop, step) {
@@ -53,7 +48,7 @@ function globals() {
           arr.push(i);
         }
       } else {
-        for (let i = start; i > stop; i += step) { // eslint-disable-line for-direction
+        for (let i = start; i > stop; i += step) {
           arr.push(i);
         }
       }
@@ -70,4 +65,4 @@ function globals() {
   };
 }
 
-module.exports = globals;
+export default globals;

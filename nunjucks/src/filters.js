@@ -1,24 +1,20 @@
-'use strict';
+import * as lib from './lib.js';
+import * as r from './runtime.js';
 
-var lib = require('./lib');
-var r = require('./runtime');
-
-var exports = module.exports = {};
-
-function normalize(value, defaultValue) {
+export function normalize(value, defaultValue) {
   if (value === null || value === undefined || value === false) {
     return defaultValue;
   }
   return value;
 }
 
-exports.abs = Math.abs;
+export const abs = Math.abs;
 
-function isNaN(num) {
-  return num !== num; // eslint-disable-line no-self-compare
+export function isNaN(num) {
+  return num !== num;
 }
 
-function batch(arr, linecount, fillWith) {
+export function batch(arr, linecount, fillWith) {
   var i;
   var res = [];
   var tmp = [];
@@ -45,17 +41,13 @@ function batch(arr, linecount, fillWith) {
   return res;
 }
 
-exports.batch = batch;
-
-function capitalize(str) {
+export function capitalize(str) {
   str = normalize(str, '');
   const ret = str.toLowerCase();
   return r.copySafeness(str, ret.charAt(0).toUpperCase() + ret.slice(1));
 }
 
-exports.capitalize = capitalize;
-
-function center(str, width) {
+export function center(str, width) {
   str = normalize(str, '');
   width = width || 80;
 
@@ -69,9 +61,7 @@ function center(str, width) {
   return r.copySafeness(str, pre + str + post);
 }
 
-exports.center = center;
-
-function default_(val, def, bool) {
+export function default_(val, def, bool) {
   if (bool) {
     return val || def;
   } else {
@@ -79,17 +69,13 @@ function default_(val, def, bool) {
   }
 }
 
-// TODO: it is confusing to export something called 'default'
-exports['default'] = default_; // eslint-disable-line dot-notation
-
-function dictsort(val, caseSensitive, by) {
+export function dictsort(val, caseSensitive, by) {
   if (!lib.isObject(val)) {
     throw new lib.TemplateError('dictsort filter: val must be an object');
   }
 
   let array = [];
-  // deliberately include properties from the object's prototype
-  for (let k in val) { // eslint-disable-line guard-for-in, no-restricted-syntax
+  for (let k in val) {
     array.push([k, val[k]]);
   }
 
@@ -116,21 +102,17 @@ function dictsort(val, caseSensitive, by) {
       }
     }
 
-    return a > b ? 1 : (a === b ? 0 : -1); // eslint-disable-line no-nested-ternary
+    return a > b ? 1 : (a === b ? 0 : -1);
   });
 
   return array;
 }
 
-exports.dictsort = dictsort;
-
-function dump(obj, spaces) {
+export function dump(obj, spaces) {
   return JSON.stringify(obj, null, spaces);
 }
 
-exports.dump = dump;
-
-function escape(str) {
+export function escape(str) {
   if (str instanceof r.SafeString) {
     return str;
   }
@@ -138,9 +120,7 @@ function escape(str) {
   return r.markSafe(lib.escape(str.toString()));
 }
 
-exports.escape = escape;
-
-function safe(str) {
+export function safe(str) {
   if (str instanceof r.SafeString) {
     return str;
   }
@@ -148,28 +128,20 @@ function safe(str) {
   return r.markSafe(str.toString());
 }
 
-exports.safe = safe;
-
-function first(arr) {
+export function first(arr) {
   return arr[0];
 }
 
-exports.first = first;
-
-function forceescape(str) {
+export function forceescape(str) {
   str = (str === null || str === undefined) ? '' : str;
   return r.markSafe(lib.escape(str.toString()));
 }
 
-exports.forceescape = forceescape;
-
-function groupby(arr, attr) {
+export function groupby(arr, attr) {
   return lib.groupBy(arr, attr, this.env.opts.throwOnUndefined);
 }
 
-exports.groupby = groupby;
-
-function indent(str, width, indentfirst) {
+export function indent(str, width, indentfirst) {
   str = normalize(str, '');
 
   if (str === '') {
@@ -177,7 +149,6 @@ function indent(str, width, indentfirst) {
   }
 
   width = width || 4;
-  // let res = '';
   const lines = str.split('\n');
   const sp = lib.repeat(' ', width);
 
@@ -188,9 +159,7 @@ function indent(str, width, indentfirst) {
   return r.copySafeness(str, res);
 }
 
-exports.indent = indent;
-
-function join(arr, del, attr) {
+export function join(arr, del, attr) {
   del = del || '';
 
   if (attr) {
@@ -200,15 +169,11 @@ function join(arr, del, attr) {
   return arr.join(del);
 }
 
-exports.join = join;
-
-function last(arr) {
+export function last(arr) {
   return arr[arr.length - 1];
 }
 
-exports.last = last;
-
-function lengthFilter(val) {
+export function lengthFilter(val) {
   var value = normalize(val, '');
 
   if (value !== undefined) {
@@ -216,11 +181,9 @@ function lengthFilter(val) {
       (typeof Map === 'function' && value instanceof Map) ||
       (typeof Set === 'function' && value instanceof Set)
     ) {
-      // ECMAScript 2015 Maps and Sets
       return value.size;
     }
     if (lib.isObject(value) && !(value instanceof r.SafeString)) {
-      // Objects (besides SafeStrings), non-primative Arrays
       return lib.keys(value).length;
     }
     return value.length;
@@ -228,9 +191,7 @@ function lengthFilter(val) {
   return 0;
 }
 
-exports.length = lengthFilter;
-
-function list(val) {
+export function list(val) {
   if (lib.isString(val)) {
     return val.split('');
   } else if (lib.isObject(val)) {
@@ -242,37 +203,23 @@ function list(val) {
   }
 }
 
-exports.list = list;
-
-function lower(str) {
+export function lower(str) {
   str = normalize(str, '');
   return str.toLowerCase();
 }
 
-exports.lower = lower;
-
-function nl2br(str) {
+export function nl2br(str) {
   if (str === null || str === undefined) {
     return '';
   }
   return r.copySafeness(str, str.replace(/\r\n|\n/g, '<br />\n'));
 }
 
-exports.nl2br = nl2br;
-
-function random(arr) {
+export function random(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-exports.random = random;
-
-/**
- * Construct select or reject filter
- *
- * @param {boolean} expectedTestResult
- * @returns {function(array, string, *): array}
- */
-function getSelectOrReject(expectedTestResult) {
+export function getSelectOrReject(expectedTestResult) {
   function filter(arr, testName = 'truthy', secondArg) {
     const context = this;
     const test = context.env.getTest(testName);
@@ -285,23 +232,19 @@ function getSelectOrReject(expectedTestResult) {
   return filter;
 }
 
-exports.reject = getSelectOrReject(false);
+export const reject = getSelectOrReject(false);
 
-function rejectattr(arr, attr) {
+export function rejectattr(arr, attr) {
   return arr.filter((item) => !item[attr]);
 }
 
-exports.rejectattr = rejectattr;
+export const select = getSelectOrReject(true);
 
-exports.select = getSelectOrReject(true);
-
-function selectattr(arr, attr) {
+export function selectattr(arr, attr) {
   return arr.filter((item) => !!item[attr]);
 }
 
-exports.selectattr = selectattr;
-
-function replace(str, old, new_, maxCount) {
+export function replace(str, old, new_, maxCount) {
   var originalStr = str;
 
   if (old instanceof RegExp) {
@@ -312,58 +255,42 @@ function replace(str, old, new_, maxCount) {
     maxCount = -1;
   }
 
-  let res = ''; // Output
+  let res = '';
 
-  // Cast Numbers in the search term to string
   if (typeof old === 'number') {
     old = '' + old;
   } else if (typeof old !== 'string') {
-    // If it is something other than number or string,
-    // return the original string
     return str;
   }
 
-  // Cast numbers in the replacement to string
   if (typeof str === 'number') {
     str = '' + str;
   }
 
-  // If by now, we don't have a string, throw it back
   if (typeof str !== 'string' && !(str instanceof r.SafeString)) {
     return str;
   }
 
-  // ShortCircuits
   if (old === '') {
-    // Mimic the python behaviour: empty string is replaced
-    // by replacement e.g. "abc"|replace("", ".") -> .a.b.c.
     res = new_ + str.split('').join(new_) + new_;
     return r.copySafeness(str, res);
   }
 
   let nextIndex = str.indexOf(old);
-  // if # of replacements to perform is 0, or the string to does
-  // not contain the old value, return the string
   if (maxCount === 0 || nextIndex === -1) {
     return str;
   }
 
   let pos = 0;
-  let count = 0; // # of replacements made
+  let count = 0;
 
   while (nextIndex > -1 && (maxCount === -1 || count < maxCount)) {
-    // Grab the next chunk of src string and add it with the
-    // replacement, to the result
     res += str.substring(pos, nextIndex) + new_;
-    // Increment our pointer in the src string
     pos = nextIndex + old.length;
     count++;
-    // See if there are any more replacements to be made
     nextIndex = str.indexOf(old, pos);
   }
 
-  // We've either reached the end, or done the max # of
-  // replacements, tack on any remaining string
   if (pos < str.length) {
     res += str.substring(pos);
   }
@@ -371,14 +298,11 @@ function replace(str, old, new_, maxCount) {
   return r.copySafeness(originalStr, res);
 }
 
-exports.replace = replace;
-
-function reverse(val) {
+export function reverse(val) {
   var arr;
   if (lib.isString(val)) {
     arr = list(val);
   } else {
-    // Copy it
     arr = lib.map(val, v => v);
   }
 
@@ -390,9 +314,7 @@ function reverse(val) {
   return arr;
 }
 
-exports.reverse = reverse;
-
-function round(val, precision, method) {
+export function round(val, precision, method) {
   precision = precision || 0;
   const factor = Math.pow(10, precision);
   let rounder;
@@ -408,9 +330,7 @@ function round(val, precision, method) {
   return rounder(val * factor) / factor;
 }
 
-exports.round = round;
-
-function slice(arr, slices, fillWith) {
+export function slice(arr, slices, fillWith) {
   const sliceLength = Math.floor(arr.length / slices);
   const extra = arr.length % slices;
   const res = [];
@@ -433,9 +353,7 @@ function slice(arr, slices, fillWith) {
   return res;
 }
 
-exports.slice = slice;
-
-function sum(arr, attr, start = 0) {
+export function sum(arr, attr, start = 0) {
   if (attr) {
     arr = lib.map(arr, (v) => v[attr]);
   }
@@ -443,12 +361,9 @@ function sum(arr, attr, start = 0) {
   return start + arr.reduce((a, b) => a + b, 0);
 }
 
-exports.sum = sum;
-
-exports.sort = r.makeMacro(
+export const sort = r.makeMacro(
   ['value', 'reverse', 'case_sensitive', 'attribute'], [],
   function sortFilter(arr, reversed, caseSens, attr) {
-    // Copy it
     let array = lib.map(arr, v => v);
     let getAttribute = lib.getAttrGetter(attr);
 
@@ -480,46 +395,38 @@ exports.sort = r.makeMacro(
     return array;
   });
 
-function string(obj) {
+export function string(obj) {
   return r.copySafeness(obj, obj);
 }
 
-exports.string = string;
-
-function striptags(input, preserveLinebreaks) {
+export function striptags(input, preserveLinebreaks) {
   input = normalize(input, '');
   let tags = /<\/?([a-z][a-z0-9]*)\b[^>]*>|<!--[\s\S]*?-->/gi;
   let trimmedInput = trim(input.replace(tags, ''));
   let res = '';
   if (preserveLinebreaks) {
     res = trimmedInput
-      .replace(/^ +| +$/gm, '') // remove leading and trailing spaces
-      .replace(/ +/g, ' ') // squash adjacent spaces
-      .replace(/(\r\n)/g, '\n') // normalize linebreaks (CRLF -> LF)
-      .replace(/\n\n\n+/g, '\n\n'); // squash abnormal adjacent linebreaks
+      .replace(/^ +| +$/gm, '')
+      .replace(/ +/g, ' ')
+      .replace(/(\r\n)/g, '\n')
+      .replace(/\n\n\n+/g, '\n\n');
   } else {
     res = trimmedInput.replace(/\s+/gi, ' ');
   }
   return r.copySafeness(input, res);
 }
 
-exports.striptags = striptags;
-
-function title(str) {
+export function title(str) {
   str = normalize(str, '');
   let words = str.split(' ').map(word => capitalize(word));
   return r.copySafeness(str, words.join(' '));
 }
 
-exports.title = title;
-
-function trim(str) {
+export function trim(str) {
   return r.copySafeness(str, str.replace(/^\s*|\s*$/g, ''));
 }
 
-exports.trim = trim;
-
-function truncate(input, length, killwords, end) {
+export function truncate(input, length, killwords, end) {
   var orig = input;
   input = normalize(input, '');
   length = length || 255;
@@ -543,16 +450,12 @@ function truncate(input, length, killwords, end) {
   return r.copySafeness(orig, input);
 }
 
-exports.truncate = truncate;
-
-function upper(str) {
+export function upper(str) {
   str = normalize(str, '');
   return str.toUpperCase();
 }
 
-exports.upper = upper;
-
-function urlencode(obj) {
+export function urlencode(obj) {
   var enc = encodeURIComponent;
   if (lib.isString(obj)) {
     return enc(obj);
@@ -562,18 +465,13 @@ function urlencode(obj) {
   }
 }
 
-exports.urlencode = urlencode;
-
-// For the jinja regexp, see
-// https://github.com/mitsuhiko/jinja2/blob/f15b814dcba6aa12bc74d1f7d0c881d55f7126be/jinja2/utils.py#L20-L23
 const puncRe = /^(?:\(|<|&lt;)?(.*?)(?:\.|,|\)|\n|&gt;)?$/;
-// from http://blog.gerv.net/2011/05/html5_email_address_regexp/
-const emailRe = /^[\w.!#$%&'*+\-\/=?\^`{|}~]+@[a-z\d\-]+(\.[a-z\d\-]+)+$/i;
+const emailRe = /^[\w.!#$%&'*+\-/=?^`{|}~]+@[a-z\d-]+(\.[a-z\d-]+)+$/i;
 const httpHttpsRe = /^https?:\/\/.*$/;
 const wwwRe = /^www\./;
-const tldRe = /\.(?:org|net|com)(?:\:|\/|$)/;
+const tldRe = /\.(?:org|net|com)(?::|\/|$)/;
 
-function urlize(str, length, nofollow) {
+export function urlize(str, length, nofollow) {
   if (isNaN(length)) {
     length = Infinity;
   }
@@ -581,30 +479,24 @@ function urlize(str, length, nofollow) {
   const noFollowAttr = (nofollow === true ? ' rel="nofollow"' : '');
 
   const words = str.split(/(\s+)/).filter((word) => {
-    // If the word has no length, bail. This can happen for str with
-    // trailing whitespace.
     return word && word.length;
   }).map((word) => {
     var matches = word.match(puncRe);
     var possibleUrl = (matches) ? matches[1] : word;
     var shortUrl = possibleUrl.substr(0, length);
 
-    // url that starts with http or https
     if (httpHttpsRe.test(possibleUrl)) {
       return `<a href="${possibleUrl}"${noFollowAttr}>${shortUrl}</a>`;
     }
 
-    // url that starts with www.
     if (wwwRe.test(possibleUrl)) {
       return `<a href="http://${possibleUrl}"${noFollowAttr}>${shortUrl}</a>`;
     }
 
-    // an email address of the form username@domain.tld
     if (emailRe.test(possibleUrl)) {
       return `<a href="mailto:${possibleUrl}">${possibleUrl}</a>`;
     }
 
-    // url that ends in .com, .org or .net that is not an email address
     if (tldRe.test(possibleUrl)) {
       return `<a href="http://${possibleUrl}"${noFollowAttr}>${shortUrl}</a>`;
     }
@@ -615,24 +507,18 @@ function urlize(str, length, nofollow) {
   return words.join('');
 }
 
-exports.urlize = urlize;
-
-function wordcount(str) {
+export function wordcount(str) {
   str = normalize(str, '');
   const words = (str) ? str.match(/\w+/g) : null;
   return (words) ? words.length : null;
 }
 
-exports.wordcount = wordcount;
-
-function float(val, def) {
+export function float(val, def) {
   var res = parseFloat(val);
   return (isNaN(res)) ? def : res;
 }
 
-exports.float = float;
-
-const intFilter = r.makeMacro(
+export const intFilter = r.makeMacro(
   ['value', 'default', 'base'],
   [],
   function doInt(value, defaultValue, base = 10) {
@@ -641,8 +527,9 @@ const intFilter = r.makeMacro(
   }
 );
 
-exports.int = intFilter;
+export const d = default_;
+export const e = escape;
 
-// Aliases
-exports.d = exports.default;
-exports.e = exports.escape;
+export { default_ as default };
+export { lengthFilter as length };
+export { intFilter as int };

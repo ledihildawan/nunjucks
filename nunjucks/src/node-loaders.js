@@ -1,13 +1,13 @@
-/* eslint-disable no-console */
+import { existsSync, readFileSync } from 'node:fs';
+import { normalize, resolve } from 'node:path';
+import { createRequire } from 'node:module';
+import { watch } from 'fs';
+import Loader from './loader.js';
+export {PrecompiledLoader} from './precompiled-loader.js';
 
-'use strict';
+const _require = createRequire(import.meta.url);
 
-const fs = require('fs');
-const path = require('path');
-const Loader = require('./loader');
-const {PrecompiledLoader} = require('./precompiled-loader.js');
-
-class FileSystemLoader extends Loader {
+export class FileSystemLoader extends Loader {
   constructor(searchPaths, opts) {
     super();
     if (typeof opts === 'boolean') {
@@ -21,27 +21,27 @@ class FileSystemLoader extends Loader {
     opts = opts || {};
     this.pathsToNames = {};
     this.noCache = !!opts.noCache;
+    this.watchEnabled = !!opts.watch;
+    this.async = true;
+    this.watchedFiles = new Map();
 
     if (searchPaths) {
       searchPaths = Array.isArray(searchPaths) ? searchPaths : [searchPaths];
-      // For windows, convert to forward slashes
-      this.searchPaths = searchPaths.map(path.normalize);
+      this.searchPaths = searchPaths.map(normalize);
     } else {
       this.searchPaths = ['.'];
     }
   }
 
-  getSource(name) {
+  async getSource(name) {
     var fullpath = null;
     var paths = this.searchPaths;
 
     for (let i = 0; i < paths.length; i++) {
-      const basePath = path.resolve(paths[i]);
-      const p = path.resolve(paths[i], name);
+      const basePath = resolve(paths[i]);
+      const p = resolve(paths[i], name);
 
-      // Only allow the current directory and anything
-      // underneath it to be searched
-      if (p.indexOf(basePath) === 0 && fs.existsSync(p)) {
+      if (p.indexOf(basePath) === 0 && existsSync(p)) {
         fullpath = p;
         break;
       }
@@ -53,26 +53,72 @@ class FileSystemLoader extends Loader {
 
     this.pathsToNames[fullpath] = name;
 
+    if (this.watchEnabled) {
+      this.watchFile(fullpath);
+    }
+
     const source = {
-      src: fs.readFileSync(fullpath, 'utf-8'),
+      src: readFileSync(fullpath, 'utf-8'),
       path: fullpath,
       noCache: this.noCache
     };
     this.emit('load', name, source);
     return source;
   }
+
+  watchFile(filePath) {
+    if (this.watchedFiles.has(filePath)) {
+      return;
+    }
+
+    const normalizedPath = normalize(resolve(filePath));
+    const watcher = watch(filePath, (eventType, filename) => {
+      if (eventType === 'change' || eventType === 'rename') {
+        const name = filename || filePath;
+        this.cache = this.cache || {};
+        for (const [key, tmpl] of Object.entries(this.cache)) {
+          if (tmpl && tmpl.path && normalize(resolve(tmpl.path)) === normalizedPath) {
+            this.cache[key] = null;
+          }
+        }
+        this.emit('update', name, filePath);
+
+        if (eventType === 'rename') {
+          this.unwatchFile(filePath);
+        }
+      }
+    });
+
+    this.watchedFiles.set(filePath, watcher);
+  }
+
+  unwatchFile(filePath) {
+    const watcher = this.watchedFiles.get(filePath);
+    if (watcher) {
+      watcher.close();
+      this.watchedFiles.delete(filePath);
+    }
+  }
+
+  unwatchAll() {
+    for (const [, watcher] of this.watchedFiles) {
+      watcher.close();
+    }
+    this.watchedFiles.clear();
+  }
 }
 
-class NodeResolveLoader extends Loader {
+export class NodeResolveLoader extends Loader {
   constructor(opts) {
     super();
     opts = opts || {};
     this.pathsToNames = {};
     this.noCache = !!opts.noCache;
     this.paths = opts.paths || [];
+    this.async = true;
   }
 
-  getSource(name) {
+  async getSource(name) {
     if ((/^\.?\.?(\/|\\)/).test(name)) {
       return null;
     }
@@ -83,7 +129,7 @@ class NodeResolveLoader extends Loader {
     let fullpath;
 
     try {
-      fullpath = require.resolve(name);
+      fullpath = _require.resolve(name);
     } catch (e) {
       fullpath = this.resolveFromPaths(name);
       if (!fullpath) {
@@ -94,7 +140,7 @@ class NodeResolveLoader extends Loader {
     this.pathsToNames[fullpath] = name;
 
     const source = {
-      src: fs.readFileSync(fullpath, 'utf-8'),
+      src: readFileSync(fullpath, 'utf-8'),
       path: fullpath,
       noCache: this.noCache,
     };
@@ -105,17 +151,11 @@ class NodeResolveLoader extends Loader {
 
   resolveFromPaths(name) {
     for (const basePath of this.paths) {
-      const fullPath = path.resolve(basePath, name);
-      if (fs.existsSync(fullPath)) {
+      const fullPath = resolve(basePath, name);
+      if (existsSync(fullPath)) {
         return fullPath;
       }
     }
     return null;
   }
 }
-
-module.exports = {
-  FileSystemLoader: FileSystemLoader,
-  PrecompiledLoader: PrecompiledLoader,
-  NodeResolveLoader: NodeResolveLoader,
-};

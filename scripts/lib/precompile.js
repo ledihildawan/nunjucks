@@ -1,10 +1,12 @@
-const fs = require('fs');
-const path = require('path');
-const precompile = require('../../nunjucks/src/precompile').precompile;
+import { precompile } from '../../nunjucks/src/precompile.js';
+import fs from 'fs';
+import path from 'path';
 
-var testDir = path.join(__dirname, '../../tests');
+const __dirname = import.meta.dirname;
 
-function precompileTestTemplates() {
+const testDir = path.join(__dirname, '../../tests');
+
+export function precompileTestTemplates() {
   return new Promise((resolve, reject) => {
     try {
       const output = precompile(path.join(testDir, 'templates'), {
@@ -17,5 +19,3 @@ function precompileTestTemplates() {
     }
   });
 }
-
-module.exports = precompileTestTemplates;
