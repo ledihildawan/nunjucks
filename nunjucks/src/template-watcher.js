@@ -16,17 +16,17 @@ export class TemplateWatcher {
 
     const watcher = watch(filePath, (eventType, filename) => {
       if (eventType === 'change') {
+        const name = filename || filePath;
+
+        // Emit 'update' event on each loader - Environment will catch this
+        // and properly invalidate the cache, then emit its own 'update' event
         this.env.loaders.forEach(loader => {
-          if (loader.cache) {
-            for (const [key, tmpl] of Object.entries(loader.cache)) {
-              if (tmpl && tmpl.path && normalize(resolve(tmpl.path)) === normalizedPath) {
-                loader.cache[key] = null;
-                console.log(`[Nunjucks] Cache invalidated: ${key}`);
-              }
-            }
+          if (typeof loader.emit === 'function') {
+            loader.emit('update', name, filePath);
           }
         });
-        console.log(`[Nunjucks] Hot-reloaded: ${filename || filePath}`);
+
+        console.log(`[Nunjucks] Hot-reloaded: ${name}`);
       }
     });
 
