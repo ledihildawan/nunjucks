@@ -2,13 +2,20 @@
 
 import expect from 'expect.js';
 import nunjucks from '../nunjucks/index.js';
-import fs from 'fs-extra';
+import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
 function rmdir(dirPath) {
-  fs.emptyDirSync(dirPath);
-  fs.rmdirSync(dirPath);
+  try {
+    const files = fs.readdirSync(dirPath);
+    for (const file of files) {
+      fs.unlinkSync(path.join(dirPath, file));
+    }
+    fs.rmdirSync(dirPath);
+  } catch (e) {
+    // ignore
+  }
 }
 
 describe('nunjucks.configure', function() {
@@ -18,7 +25,8 @@ describe('nunjucks.configure', function() {
     if (fs && path && os) {
       try {
         tempdir = fs.mkdtempSync(path.join(os.tmpdir(), 'templates'));
-        fs.emptyDirSync(tempdir);
+        fs.rmSync(tempdir, { recursive: true, force: true });
+        fs.mkdirSync(tempdir);
       } catch (e) {
         rmdir(tempdir);
         throw e;

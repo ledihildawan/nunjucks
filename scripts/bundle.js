@@ -1,39 +1,15 @@
 #!/usr/bin/env node
 
-const TEST_ENV = process.env.NODE_ENV === 'test';
+const destDir = 'browser';
 
-const destDir = TEST_ENV ? 'tests/browser' : 'browser';
+async function buildBundle() {
+  const filename = 'nunjucks.js';
 
-const configs = [
-  { min: false, slim: false },
-  { min: false, slim: true },
-  { min: true, slim: false },
-  { min: true, slim: true },
-];
-
-async function buildBundle(opts) {
-  const { min, slim } = opts;
-  let ext = min ? '.min.js' : '.js';
-  if (slim) ext = '-slim' + ext;
-  const filename = `nunjucks${ext}`;
-  const type = slim ? '(slim, only works with precompiled templates)' : '';
-
-  console.log(`Building ${filename} ${type}...`);
+  console.log(`Building ${filename}...`);
 
   const defines = {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
-    'process.env.BUILD_TYPE': JSON.stringify(slim ? 'SLIM' : 'STD'),
   };
-
-  const externals = [];
-  if (slim) {
-    externals.push('nunjucks/src/nodes');
-    externals.push('nunjucks/src/lexer');
-    externals.push('nunjucks/src/parser');
-    externals.push('nunjucks/src/precompile');
-    externals.push('nunjucks/src/transformer');
-    externals.push('nunjucks/src/compiler');
-  }
 
   try {
     const result = await Bun.build({
@@ -42,10 +18,9 @@ async function buildBundle(opts) {
       naming: filename,
       target: 'browser',
       format: 'iife',
-      minify: min,
+      minify: false,
       sourcemap: 'linked',
       define: defines,
-      external: externals,
     });
 
     if (!result.success) {
@@ -61,13 +36,8 @@ async function buildBundle(opts) {
     console.error('Build error:', err);
     process.exit(1);
   }
-}
 
-async function main() {
-  for (const config of configs) {
-    await buildBundle(config);
-  }
   console.log('Build complete!');
 }
 
-main();
+buildBundle();

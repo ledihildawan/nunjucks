@@ -5,44 +5,31 @@
   "author": "James Long <longster@gmail.com>",
   "type": "module",
   "dependencies": {
-    "commander": "^5.1.0",
     "express": "5"
   },
-  "browser": "./browser/nunjucks.js",
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "connect": "^3.6.5",
     "eslint": "^9.39.4",
     "eslint-plugin-import": "^2.32.0",
     "expect.js": "*",
-    "fs-extra": "^5.0.0",
     "get-port": "^3.2.0",
     "globals": "^16.5.0",
     "mocha": "^10.8.2",
     "serve-static": "^1.13.1",
-    "supertest": "*",
-    "terser-webpack-plugin": "^5.3.14",
-    "uglify-js": "^2.8.29",
-    "webpack": "^5.99.9"
+    "supertest": "*"
   },
   "scripts": {
-    "build:transpile": "bun build nunjucks --target node --outdir . --format cjs",
-    "build:bundle": "bun run scripts/bundle.js",
-    "build": "bun run build:bundle",
+    "build": "bun run scripts/bundle.js",
     "lint": "eslint nunjucks",
     "prepare": "bun run build",
     "test": "bun run lint && bun run test:mocha",
     "test:mocha": "bun run build && mocha -R spec tests/api.js tests/compiler.js tests/filters.js tests/lexer.js tests/express.js tests/core.js tests/precompile.js tests/loader.js tests/runtime.js tests/globals.js tests/tests.js"
   },
   "exports": {
-    ".": "./index.js",
-    "./bin/precompile": "./bin/precompile"
-  },
-  "bin": {
-    "nunjucks-precompile": "./bin/precompile"
+    ".": "./index.js"
   },
   "files": [
-    "bin/**",
     "browser/**",
     "src/**"
   ],
