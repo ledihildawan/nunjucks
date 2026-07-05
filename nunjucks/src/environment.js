@@ -133,7 +133,6 @@ export class Environment extends EmitterObj {
       throw new Error('filter not found: ' + name);
     }
     const filter = this.filters[name];
-    const isAsync = this.asyncFilters.includes(name);
 
     return async function(...args) {
       const resolvedArgs = await Promise.all(args.map(async arg => {

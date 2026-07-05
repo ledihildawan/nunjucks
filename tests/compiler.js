@@ -2,7 +2,7 @@ import { expect, describe, test } from 'bun:test';
 import * as util from './util.js';
 import { Template } from '../nunjucks/src/environment.js';
 import { Environment } from '../nunjucks/src/environment.js';
-import fs from 'fs';
+import { readFile } from 'node:fs/promises';
 
 var render = util.render;
 var equal = util.equal;
@@ -628,13 +628,11 @@ describe('compiler', function() {
     var opts = {
       asyncFilters: {
         getContents: async function(tmpl) {
-          const fs = await import('fs');
-          return fs.promises.readFile(tmpl, 'utf-8');
+          return readFile(tmpl, 'utf-8');
         },
 
         getContentsArr: async function(arr) {
-          const fs = await import('fs');
-          const res = await fs.promises.readFile(arr[0], 'utf-8');
+          const res = await readFile(arr[0], 'utf-8');
           return [res];
         }
       }
