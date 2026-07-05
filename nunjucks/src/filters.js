@@ -1,20 +1,20 @@
 import lib from './lib.js';
 import * as r from './runtime.js';
 
-function normalize(value, defaultValue) {
+export function normalize(value, defaultValue) {
   if (value === null || value === undefined || value === false) {
     return defaultValue;
   }
   return value;
 }
 
-const abs = Math.abs;
+export const abs = Math.abs;
 
-function isNaN(num) {
+export function isNaN(num) {
   return num !== num;
 }
 
-function batch(arr, linecount, fillWith) {
+export function batch(arr, linecount, fillWith) {
   var i;
   var res = [];
   var tmp = [];
@@ -41,13 +41,13 @@ function batch(arr, linecount, fillWith) {
   return res;
 }
 
-function capitalize(str) {
+export function capitalize(str) {
   str = normalize(str, '');
   const ret = str.toLowerCase();
   return r.copySafeness(str, ret.charAt(0).toUpperCase() + ret.slice(1));
 }
 
-function center(str, width) {
+export function center(str, width) {
   str = normalize(str, '');
   width = width || 80;
 
@@ -61,7 +61,7 @@ function center(str, width) {
   return r.copySafeness(str, pre + str + post);
 }
 
-function default_(val, def, bool) {
+export function default_(val, def, bool) {
   if (bool) {
     return val || def;
   } else {
@@ -69,7 +69,7 @@ function default_(val, def, bool) {
   }
 }
 
-function dictsort(val, caseSensitive, by) {
+export function dictsort(val, caseSensitive, by) {
   if (!lib.isObject(val)) {
     throw new lib.TemplateError('dictsort filter: val must be an object');
   }
@@ -108,11 +108,11 @@ function dictsort(val, caseSensitive, by) {
   return array;
 }
 
-function dump(obj, spaces) {
+export function dump(obj, spaces) {
   return JSON.stringify(obj, null, spaces);
 }
 
-function escape(str) {
+export function escape(str) {
   if (str instanceof r.SafeString) {
     return str;
   }
@@ -120,7 +120,7 @@ function escape(str) {
   return r.markSafe(lib.escape(str.toString()));
 }
 
-function safe(str) {
+export function safe(str) {
   if (str instanceof r.SafeString) {
     return str;
   }
@@ -128,20 +128,20 @@ function safe(str) {
   return r.markSafe(str.toString());
 }
 
-function first(arr) {
+export function first(arr) {
   return arr[0];
 }
 
-function forceescape(str) {
+export function forceescape(str) {
   str = (str === null || str === undefined) ? '' : str;
   return r.markSafe(lib.escape(str.toString()));
 }
 
-function groupby(arr, attr) {
+export function groupby(arr, attr) {
   return lib.groupBy(arr, attr, this.env.opts.throwOnUndefined);
 }
 
-function indent(str, width, indentfirst) {
+export function indent(str, width, indentfirst) {
   str = normalize(str, '');
 
   if (str === '') {
@@ -159,7 +159,7 @@ function indent(str, width, indentfirst) {
   return r.copySafeness(str, res);
 }
 
-function join(arr, del, attr) {
+export function join(arr, del, attr) {
   del = del || '';
 
   if (attr) {
@@ -169,11 +169,11 @@ function join(arr, del, attr) {
   return arr.join(del);
 }
 
-function last(arr) {
+export function last(arr) {
   return arr[arr.length - 1];
 }
 
-function lengthFilter(val) {
+export function lengthFilter(val) {
   var value = normalize(val, '');
 
   if (value !== undefined) {
@@ -191,7 +191,7 @@ function lengthFilter(val) {
   return 0;
 }
 
-function list(val) {
+export function list(val) {
   if (lib.isString(val)) {
     return val.split('');
   } else if (lib.isObject(val)) {
@@ -203,23 +203,23 @@ function list(val) {
   }
 }
 
-function lower(str) {
+export function lower(str) {
   str = normalize(str, '');
   return str.toLowerCase();
 }
 
-function nl2br(str) {
+export function nl2br(str) {
   if (str === null || str === undefined) {
     return '';
   }
   return r.copySafeness(str, str.replace(/\r\n|\n/g, '<br />\n'));
 }
 
-function random(arr) {
+export function random(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function getSelectOrReject(expectedTestResult) {
+export function getSelectOrReject(expectedTestResult) {
   function filter(arr, testName = 'truthy', secondArg) {
     const context = this;
     const test = context.env.getTest(testName);
@@ -232,19 +232,19 @@ function getSelectOrReject(expectedTestResult) {
   return filter;
 }
 
-const reject = getSelectOrReject(false);
+export const reject = getSelectOrReject(false);
 
-function rejectattr(arr, attr) {
+export function rejectattr(arr, attr) {
   return arr.filter((item) => !item[attr]);
 }
 
-const select = getSelectOrReject(true);
+export const select = getSelectOrReject(true);
 
-function selectattr(arr, attr) {
+export function selectattr(arr, attr) {
   return arr.filter((item) => !!item[attr]);
 }
 
-function replace(str, old, new_, maxCount) {
+export function replace(str, old, new_, maxCount) {
   var originalStr = str;
 
   if (old instanceof RegExp) {
@@ -298,7 +298,7 @@ function replace(str, old, new_, maxCount) {
   return r.copySafeness(originalStr, res);
 }
 
-function reverse(val) {
+export function reverse(val) {
   var arr;
   if (lib.isString(val)) {
     arr = list(val);
@@ -314,7 +314,7 @@ function reverse(val) {
   return arr;
 }
 
-function round(val, precision, method) {
+export function round(val, precision, method) {
   precision = precision || 0;
   const factor = Math.pow(10, precision);
   let rounder;
@@ -330,7 +330,7 @@ function round(val, precision, method) {
   return rounder(val * factor) / factor;
 }
 
-function slice(arr, slices, fillWith) {
+export function slice(arr, slices, fillWith) {
   const sliceLength = Math.floor(arr.length / slices);
   const extra = arr.length % slices;
   const res = [];
@@ -353,7 +353,7 @@ function slice(arr, slices, fillWith) {
   return res;
 }
 
-function sum(arr, attr, start = 0) {
+export function sum(arr, attr, start = 0) {
   if (attr) {
     arr = lib.map(arr, (v) => v[attr]);
   }
@@ -361,7 +361,7 @@ function sum(arr, attr, start = 0) {
   return start + arr.reduce((a, b) => a + b, 0);
 }
 
-const sort = r.makeMacro(
+export const sort = r.makeMacro(
   ['value', 'reverse', 'case_sensitive', 'attribute'], [],
   function sortFilter(arr, reversed, caseSens, attr) {
     let array = lib.map(arr, v => v);
@@ -395,11 +395,11 @@ const sort = r.makeMacro(
     return array;
   });
 
-function string(obj) {
+export function string(obj) {
   return r.copySafeness(obj, obj);
 }
 
-function striptags(input, preserveLinebreaks) {
+export function striptags(input, preserveLinebreaks) {
   input = normalize(input, '');
   let tags = /<\/?([a-z][a-z0-9]*)\b[^>]*>|<!--[\s\S]*?-->/gi;
   let trimmedInput = trim(input.replace(tags, ''));
@@ -416,17 +416,17 @@ function striptags(input, preserveLinebreaks) {
   return r.copySafeness(input, res);
 }
 
-function title(str) {
+export function title(str) {
   str = normalize(str, '');
   let words = str.split(' ').map(word => capitalize(word));
   return r.copySafeness(str, words.join(' '));
 }
 
-function trim(str) {
+export function trim(str) {
   return r.copySafeness(str, str.replace(/^\s*|\s*$/g, ''));
 }
 
-function truncate(input, length, killwords, end) {
+export function truncate(input, length, killwords, end) {
   var orig = input;
   input = normalize(input, '');
   length = length || 255;
@@ -450,12 +450,12 @@ function truncate(input, length, killwords, end) {
   return r.copySafeness(orig, input);
 }
 
-function upper(str) {
+export function upper(str) {
   str = normalize(str, '');
   return str.toUpperCase();
 }
 
-function urlencode(obj) {
+export function urlencode(obj) {
   var enc = encodeURIComponent;
   if (lib.isString(obj)) {
     return enc(obj);
@@ -471,7 +471,7 @@ const httpHttpsRe = /^https?:\/\/.*$/;
 const wwwRe = /^www\./;
 const tldRe = /\.(?:org|net|com)(?::|\/|$)/;
 
-function urlize(str, length, nofollow) {
+export function urlize(str, length, nofollow) {
   if (isNaN(length)) {
     length = Infinity;
   }
@@ -507,18 +507,18 @@ function urlize(str, length, nofollow) {
   return words.join('');
 }
 
-function wordcount(str) {
+export function wordcount(str) {
   str = normalize(str, '');
   const words = (str) ? str.match(/\w+/g) : null;
   return (words) ? words.length : null;
 }
 
-function float(val, def) {
+export function float(val, def) {
   var res = parseFloat(val);
   return (isNaN(res)) ? def : res;
 }
 
-const intFilter = r.makeMacro(
+export const intFilter = r.makeMacro(
   ['value', 'default', 'base'],
   [],
   function doInt(value, defaultValue, base = 10) {
@@ -527,51 +527,9 @@ const intFilter = r.makeMacro(
   }
 );
 
-const d = default_;
-const e = escape;
+export const d = default_;
+export const e = escape;
 
-export {
-  abs,
-  batch,
-  capitalize,
-  center,
-  default_ as default,
-  dictsort,
-  dump,
-  escape,
-  safe,
-  first,
-  forceescape,
-  groupby,
-  indent,
-  join,
-  last,
-  lengthFilter as length,
-  list,
-  lower,
-  nl2br,
-  random,
-  reject,
-  rejectattr,
-  select,
-  selectattr,
-  replace,
-  reverse,
-  round,
-  slice,
-  sum,
-  sort,
-  string,
-  striptags,
-  title,
-  trim,
-  truncate,
-  upper,
-  urlencode,
-  urlize,
-  wordcount,
-  float,
-  intFilter as int,
-  d,
-  e
-};
+export { default_ as default };
+export { lengthFilter as length };
+export { intFilter as int };

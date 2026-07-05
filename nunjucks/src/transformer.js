@@ -200,8 +200,6 @@ function cps(ast, asyncPipes) {
   return convertStatements(liftSuper(liftPipes(ast, asyncPipes)));
 }
 
-function transform(ast, asyncPipes) {
+export function transform(ast, asyncPipes) {
   return cps(ast, asyncPipes || []);
 }
-
-export {transform};

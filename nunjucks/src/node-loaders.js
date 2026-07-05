@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import Loader from './loader.js';
-import {PrecompiledLoader} from './precompiled-loader.js';
+export {PrecompiledLoader} from './precompiled-loader.js';
 
 const fsExistsSync = fs.existsSync;
 const fsReadFileSync = fs.readFileSync;
@@ -111,5 +111,3 @@ export class NodeResolveLoader extends Loader {
     return null;
   }
 }
-
-export {PrecompiledLoader};

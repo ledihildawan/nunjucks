@@ -3,7 +3,7 @@ import * as nodes from './nodes.js';
 import { Obj } from './object.js';
 import lib from './lib.js';
 
-class Parser extends Obj {
+export class Parser extends Obj {
   init(tokens) {
     this.tokens = tokens;
     this.peeked = null;
@@ -1462,5 +1462,3 @@ export function parse(src, extensions, opts) {
   }
   return p.parseAsRoot();
 }
-
-export { Parser };

@@ -12,7 +12,7 @@ function match(filename, patterns) {
   return patterns.some((pattern) => filename.match(pattern));
 }
 
-function precompileString(str, opts) {
+export function precompileString(str, opts) {
   opts = opts || {};
   opts.isString = true;
   const env = opts.env || new Environment([]);
@@ -24,7 +24,7 @@ function precompileString(str, opts) {
   return wrapper([_precompile(str, opts.name, env)], opts);
 }
 
-function precompile(input, opts) {
+export function precompile(input, opts) {
   opts = opts || {};
   const env = opts.env || new Environment([]);
   const wrapper = opts.wrapper || precompileGlobal;
@@ -109,5 +109,3 @@ function _precompile(str, name, env) {
     template: template
   };
 }
-
-export {precompile, precompileString};

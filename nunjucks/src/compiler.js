@@ -16,7 +16,7 @@ const compareOps = {
   '>=': '>='
 };
 
-class Compiler extends Obj {
+export class Compiler extends Obj {
   init(templateName, throwOnUndefined) {
     this.templateName = templateName;
     this.codebuf = [];
@@ -1211,5 +1211,3 @@ export function compile(src, asyncPipes, extensions, name, opts = {}) {
   ));
   return c.getCode();
 }
-
-export {Compiler};

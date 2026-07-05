@@ -1,5 +1,5 @@
 import Loader from './loader.js';
-import {PrecompiledLoader} from './precompiled-loader.js';
+export {PrecompiledLoader} from './precompiled-loader.js';
 
 export class WebLoader extends Loader {
   constructor(baseURL, opts) {
@@ -69,5 +69,3 @@ export class WebLoader extends Loader {
     });
   }
 }
-
-export {PrecompiledLoader};
