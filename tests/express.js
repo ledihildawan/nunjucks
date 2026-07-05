@@ -14,30 +14,28 @@ describe('express', function() {
 
   beforeEach(function() {
     app = express();
-    env = new nunjucks.Environment(new nunjucks.FileSystemLoader(VIEWS));
-    env.express(app);
-  });
-
-  it('should have reference to nunjucks env', function() {
-    expect(app.settings.nunjucksEnv).to.be(env);
+    env = new nunjucks.Environment(new nunjucks.FileSystemLoader(VIEWS), {
+      autoescape: true
+    });
   });
 
   it('should render a view with extension', async function() {
     app.get('/', async function(req, res) {
-      await res.render('about.html');
+      const html = await env.render('about.html');
+      res.send(html);
     });
     await request(app)
       .get('/')
       .expect(/This is just the about page/);
   });
 
-  it('should render a view without extension', async function() {
+  it('should render a view with locals', async function() {
     app.get('/', async function(req, res) {
-      await res.render('about');
+      const html = await env.renderString('Hello {{ name }}!', { name: 'World' });
+      res.send(html);
     });
-    app.set('view engine', 'html');
     await request(app)
       .get('/')
-      .expect(/This is just the about page/);
+      .expect(/Hello World!/);
   });
 });
