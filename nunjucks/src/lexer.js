@@ -11,32 +11,32 @@ let VARIABLE_END = '}}';
 let COMMENT_START = '{#';
 let COMMENT_END = '#}';
 
-let TOKEN_STRING = 'string';
-let TOKEN_WHITESPACE = 'whitespace';
-let TOKEN_DATA = 'data';
-let TOKEN_BLOCK_START = 'block-start';
-let TOKEN_BLOCK_END = 'block-end';
-let TOKEN_VARIABLE_START = 'variable-start';
-let TOKEN_VARIABLE_END = 'variable-end';
-let TOKEN_COMMENT = 'comment';
-let TOKEN_LEFT_PAREN = 'left-paren';
-let TOKEN_RIGHT_PAREN = 'right-paren';
-let TOKEN_LEFT_BRACKET = 'left-bracket';
-let TOKEN_RIGHT_BRACKET = 'right-bracket';
-let TOKEN_LEFT_CURLY = 'left-curly';
-let TOKEN_RIGHT_CURLY = 'right-curly';
-let TOKEN_OPERATOR = 'operator';
-let TOKEN_COMMA = 'comma';
-let TOKEN_COLON = 'colon';
-let TOKEN_TILDE = 'tilde';
-let TOKEN_PIPEFORWARD = 'pipe-forward';
-let TOKEN_INT = 'int';
-let TOKEN_FLOAT = 'float';
-let TOKEN_BOOLEAN = 'boolean';
-let TOKEN_NONE = 'none';
-let TOKEN_SYMBOL = 'symbol';
-let TOKEN_SPECIAL = 'special';
-let TOKEN_REGEX = 'regex';
+export let TOKEN_STRING = 'string';
+export let TOKEN_WHITESPACE = 'whitespace';
+export let TOKEN_DATA = 'data';
+export let TOKEN_BLOCK_START = 'block-start';
+export let TOKEN_BLOCK_END = 'block-end';
+export let TOKEN_VARIABLE_START = 'variable-start';
+export let TOKEN_VARIABLE_END = 'variable-end';
+export let TOKEN_COMMENT = 'comment';
+export let TOKEN_LEFT_PAREN = 'left-paren';
+export let TOKEN_RIGHT_PAREN = 'right-paren';
+export let TOKEN_LEFT_BRACKET = 'left-bracket';
+export let TOKEN_RIGHT_BRACKET = 'right-bracket';
+export let TOKEN_LEFT_CURLY = 'left-curly';
+export let TOKEN_RIGHT_CURLY = 'right-curly';
+export let TOKEN_OPERATOR = 'operator';
+export let TOKEN_COMMA = 'comma';
+export let TOKEN_COLON = 'colon';
+export let TOKEN_TILDE = 'tilde';
+export let TOKEN_PIPEFORWARD = 'pipe-forward';
+export let TOKEN_INT = 'int';
+export let TOKEN_FLOAT = 'float';
+export let TOKEN_BOOLEAN = 'boolean';
+export let TOKEN_NONE = 'none';
+export let TOKEN_SYMBOL = 'symbol';
+export let TOKEN_SPECIAL = 'special';
+export let TOKEN_REGEX = 'regex';
 
 function token(type, value, lineno, colno) {
   return {
@@ -47,7 +47,7 @@ function token(type, value, lineno, colno) {
   };
 }
 
-class Tokenizer {
+export class Tokenizer {
   constructor(str, opts) {
     this.str = str;
     this.index = 0;
@@ -506,63 +506,3 @@ class Tokenizer {
 export function lex(src, opts) {
   return new Tokenizer(src, opts);
 }
-
-export {
-  TOKEN_STRING,
-  TOKEN_WHITESPACE,
-  TOKEN_DATA,
-  TOKEN_BLOCK_START,
-  TOKEN_BLOCK_END,
-  TOKEN_VARIABLE_START,
-  TOKEN_VARIABLE_END,
-  TOKEN_COMMENT,
-  TOKEN_LEFT_PAREN,
-  TOKEN_RIGHT_PAREN,
-  TOKEN_LEFT_BRACKET,
-  TOKEN_RIGHT_BRACKET,
-  TOKEN_LEFT_CURLY,
-  TOKEN_RIGHT_CURLY,
-  TOKEN_OPERATOR,
-  TOKEN_COMMA,
-  TOKEN_COLON,
-  TOKEN_TILDE,
-  TOKEN_PIPEFORWARD,
-  TOKEN_INT,
-  TOKEN_FLOAT,
-  TOKEN_BOOLEAN,
-  TOKEN_NONE,
-  TOKEN_SYMBOL,
-  TOKEN_SPECIAL,
-  TOKEN_REGEX,
-  Tokenizer
-};
-
-export default {
-  lex,
-  TOKEN_STRING,
-  TOKEN_WHITESPACE,
-  TOKEN_DATA,
-  TOKEN_BLOCK_START,
-  TOKEN_BLOCK_END,
-  TOKEN_VARIABLE_START,
-  TOKEN_VARIABLE_END,
-  TOKEN_COMMENT,
-  TOKEN_LEFT_PAREN,
-  TOKEN_RIGHT_PAREN,
-  TOKEN_LEFT_BRACKET,
-  TOKEN_RIGHT_BRACKET,
-  TOKEN_LEFT_CURLY,
-  TOKEN_RIGHT_CURLY,
-  TOKEN_OPERATOR,
-  TOKEN_COMMA,
-  TOKEN_COLON,
-  TOKEN_TILDE,
-  TOKEN_PIPEFORWARD,
-  TOKEN_INT,
-  TOKEN_FLOAT,
-  TOKEN_BOOLEAN,
-  TOKEN_NONE,
-  TOKEN_SYMBOL,
-  TOKEN_SPECIAL,
-  TOKEN_REGEX
-};
