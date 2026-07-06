@@ -30,6 +30,8 @@ export function _prettifyError(path, withInternals, err) {
     const old = err;
     err = new Error(old.message);
     err.name = old.name;
+    err.lineno = old.lineno;
+    err.colno = old.colno;
   }
 
   return err;

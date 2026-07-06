@@ -368,7 +368,7 @@ export class Template extends Obj {
       const result = await this.rootRenderFunc(this.env, context, frame, globalRuntime);
       return result;
     } catch (e) {
-      if (this.tmplProps && this.tmplProps.__sourceMap && e.lineno !== undefined) {
+      if (this.tmplProps && this.tmplProps.__sourceMap && (e.lineno === undefined || e.lineno === 0)) {
         const sm = this.tmplProps.__sourceMap;
         let bestMapping = null;
         for (const mapping of sm) {
