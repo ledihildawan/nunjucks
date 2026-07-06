@@ -63,25 +63,48 @@ export class NunjucksError extends Error {
 
   toConsoleString() {
     if (this.isProduction) {
-      return `${pc.bgRed(pc.white(' ERROR '))} ${pc.dim('[Nunjucks]')} Template error\n${pc.dim('  Error ID:')} ${pc.yellow(this.templateId || 'unknown')}`;
+      return `${pc.bgRed('[ERROR]')} Template Rendering Failed\n${pc.dim('Reference ID:')} ${pc.yellow(this.templateId || 'unknown')}`;
     }
+
+    const raw = this.message;
+    const errorText = raw.split('\n').find(l => l.match(/^  Error:/i))?.replace(/^  Error:\s*/i, '') || raw.split('\n').pop()?.trim() || raw;
+    const errorType = 'TemplateSyntaxError';
+
+    const locationFile = this.includeChain && this.includeChain.length > 0
+      ? `${this.templateName} (included from ${this.includeChain[0].parentTmpl}:${this.includeChain[0].parentLineno})`
+      : this.templateName;
+
+    const traceLines = this.snippet ? this.snippet.split('\n').map(l => l.trim()) : [];
 
     const lines = [];
 
-    lines.push(`${pc.red('Nunjucks Error')} ${pc.dim('in')} ${pc.white(this.templateName)}`);
+    lines.push(`${pc.bgRed('[ERROR]')} ${pc.bold('Template Rendering Failed')}`);
+    lines.push(pc.dim('─'.repeat(60)));
 
-    if (this.templateId) {
-      lines.push(`${pc.dim('  ID:')} ${pc.yellow(this.templateId)}`);
-    }
+    lines.push(`${pc.bold('Message:')} ${errorText}`);
 
-    if (this.snippet) {
+    lines.push(`${pc.bold('Reason:')} ${errorText.includes('undefined') ? 'Function is undefined or falsey' : errorText}`);
+    lines.push(`${pc.bold('Code:')} ${pc.yellow(errorType)}`);
+
+    lines.push('');
+    lines.push(`${pc.bold('Location:')}`);
+    lines.push(`  ${pc.bold('File:')} ${locationFile}`);
+    lines.push(`  ${pc.bold('Line:')} ${this.line || 'unknown'}`);
+
+    if (traceLines.length > 0) {
       lines.push('');
-      lines.push(this.snippet);
+      lines.push(`${pc.bold('Traceback:')}`);
+      for (const line of traceLines) {
+        if (line.startsWith('>>>')) {
+          lines.push(pc.red(line));
+        } else {
+          lines.push(pc.dim(line));
+        }
+      }
     }
 
     lines.push('');
-    lines.push(pc.dim('Trace:'));
-    lines.push(this.message);
+    lines.push(`${pc.dim('Reference ID:')} ${this.templateId || 'unknown'}`);
 
     return lines.join('\n');
   }
@@ -94,57 +117,84 @@ export class NunjucksError extends Error {
 
     if (this.isProduction) {
       return `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 60px auto; padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); text-align: center;">
-          <div style="width: 48px; height: 48px; margin: 0 auto 16px; background: #fee2e2; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-            <span style="color: #dc2626; font-size: 24px;">!</span>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 60px auto; padding: 32px; background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); text-align: center;">
+          <div style="width: 56px; height: 56px; margin: 0 auto 20px; background: #fee2e2; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <span style="color: #dc2626; font-size: 28px; font-weight: bold;">!</span>
           </div>
-          <div style="font-size: 18px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px;">Template Error</div>
-          <div style="font-size: 14px; color: #666; margin-bottom: 16px;">Error ID: <code style="background: #f5f5f5; padding: 2px 8px; border-radius: 4px;">${this.templateId || 'unknown'}</code></div>
-          <div style="font-size: 13px; color: #999;">Contact support with this error ID.</div>
+          <div style="font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">Template Rendering Failed</div>
+          <div style="font-size: 14px; color: #666; margin-bottom: 20px;">Reference ID: <code style="background: #f5f5f5; padding: 4px 12px; border-radius: 6px; font-family: monospace;">${this.templateId || 'unknown'}</code></div>
+          <div style="font-size: 13px; color: #999;">Contact support with this reference ID.</div>
         </div>
       `;
     }
 
+    const raw = this.message;
+    const errorText = raw.split('\n').find(l => l.match(/^  Error:/i))?.replace(/^  Error:\s*/i, '') || raw.split('\n').pop()?.trim() || raw;
+    const errorType = 'TemplateSyntaxError';
+
+    const locationFile = this.includeChain && this.includeChain.length > 0
+      ? `${escapeHtml(this.templateName)} (included from ${escapeHtml(this.includeChain[0].parentTmpl)}:${this.includeChain[0].parentLineno})`
+      : escapeHtml(this.templateName);
+
+    let snippetHtml = '';
+    if (this.snippet) {
+      const traceLines = this.snippet.split('\n');
+      snippetHtml = traceLines.map(line => {
+        const isError = line.trim().startsWith('>>>');
+        if (isError) {
+          return `<div style="background: #fef2f2; padding: 12px 16px; font-family: monospace; font-size: 13px; color: #dc2626; border-left: 4px solid #dc2626;">${escapeHtml(line.replace('>>>', '').trim())}</div>`;
+        }
+        return `<div style="padding: 4px 16px; font-family: monospace; font-size: 13px; color: #666;">${escapeHtml(line)}</div>`;
+      }).join('');
+    }
+
     let html = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 640px; margin: 40px auto; background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); overflow: hidden;">
-        <div style="padding: 20px 24px; background: #fef2f2; border-bottom: 1px solid #fecaca;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 36px; height: 36px; background: #dc2626; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-              <span style="color: white; font-weight: bold; font-size: 18px;">!</span>
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 40px auto; background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); overflow: hidden;">
+        <div style="padding: 24px; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+              <span style="color: white; font-size: 24px; font-weight: bold;">!</span>
             </div>
-            <div>
-              <div style="font-size: 16px; font-weight: 600; color: #1a1a1a;">Nunjucks Error</div>
-              <div style="font-size: 13px; color: #666;">${escapeHtml(this.templateName)}</div>
+            <div style="color: white;">
+              <div style="font-size: 20px; font-weight: 700;">Template Rendering Failed</div>
             </div>
           </div>
         </div>
         <div style="padding: 24px;">
+          <div style="margin-bottom: 20px;">
+            <div style="font-size: 13px; color: #666; margin-bottom: 4px;">Message</div>
+            <div style="font-size: 15px; color: #1a1a1a;">${escapeHtml(errorText)}</div>
+          </div>
+          <div style="margin-bottom: 20px;">
+            <div style="font-size: 13px; color: #666; margin-bottom: 4px;">Reason</div>
+            <div style="font-size: 15px; color: #1a1a1a;">${errorText.includes('undefined') ? 'Function is undefined or falsey' : escapeHtml(errorText)}</div>
+          </div>
+          <div style="margin-bottom: 20px;">
+            <div style="font-size: 13px; color: #666; margin-bottom: 4px;">Code</div>
+            <div style="font-size: 14px;"><code style="background: #fef2f2; color: #dc2626; padding: 4px 10px; border-radius: 4px; font-family: monospace;">${errorType}</code></div>
+          </div>
+          <div style="margin-bottom: 20px;">
+            <div style="font-size: 13px; color: #666; margin-bottom: 8px;">Location</div>
+            <div style="background: #f9f9f9; border-radius: 8px; padding: 12px 16px;">
+              <div style="margin-bottom: 4px;"><span style="color: #666;">File:</span> <code style="font-family: monospace;">${locationFile}</code></div>
+              <div><span style="color: #666;">Line:</span> <strong>${this.line || 'unknown'}</strong></div>
+            </div>
+          </div>
     `;
 
-    if (this.templateId) {
-      html += `<div style="margin-bottom: 16px; font-size: 13px;"><span style="color: #666;">ID:</span> <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 4px;">${this.templateId}</code></div>`;
-    }
-
-    if (this.snippet) {
-      const snippetLines = this.snippet.split('\n').map(line => {
-        const isError = line.trim().startsWith('>>>');
-        if (isError) {
-          return `<div style="background: #fef2f2; color: #dc2626; padding: 8px 12px; border-left: 3px solid #dc2626; font-family: monospace; font-size: 13px;">${escapeHtml(line.replace('>>>', '').trim())}</div>`;
-        }
-        return `<div style="color: #333; padding: 4px 12px; font-family: monospace; font-size: 13px;">${escapeHtml(line)}</div>`;
-      }).join('');
-
-      html += `<div style="margin-bottom: 16px; background: #f9f9f9; border-radius: 8px; overflow: hidden;">${snippetLines}</div>`;
+    if (snippetHtml) {
+      html += `
+          <div style="margin-bottom: 20px;">
+            <div style="font-size: 13px; color: #666; margin-bottom: 8px;">Traceback</div>
+            <div style="background: #1e1e1e; border-radius: 8px; overflow: hidden;">${snippetHtml}</div>
+          </div>
+      `;
     }
 
     html += `
-      <div style="font-size: 12px; color: #666; margin-bottom: 8px;">Trace:</div>
-      <div style="background: #f5f5f5; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 13px; white-space: pre-wrap; color: #333;">
-        ${escapeHtml(this.message)}
-      </div>
-    `;
-
-    html += `
+          <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e5e5;">
+            <div style="font-size: 12px; color: #999;">Reference ID: <code style="background: #f5f5f5; padding: 2px 8px; border-radius: 4px; font-family: monospace;">${this.templateId || 'unknown'}</code></div>
+          </div>
         </div>
       </div>
     `;
