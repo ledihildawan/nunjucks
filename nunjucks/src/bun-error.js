@@ -144,6 +144,16 @@ export class ErrorFormatter {
     }
   }
 
+  hasTables() {
+    if (!this.db) return false;
+    try {
+      this.db.prepare('SELECT 1 FROM _compiled_templates').get();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   getSourceLines(sourceContent) {
     if (!sourceContent) return null;
     return sourceContent.split('\n');
@@ -153,7 +163,8 @@ export class ErrorFormatter {
     this.init();
 
     const isProd = this.mode === 'production';
-    const templateInfo = this.getTemplateInfo(templateName);
+    const hasTables = this.hasTables();
+    const templateInfo = hasTables ? this.getTemplateInfo(templateName) : null;
     const templateId = templateInfo?.uuid || null;
 
     let line = error.lineno;
@@ -177,7 +188,7 @@ export class ErrorFormatter {
       isProduction: isProd
     };
 
-    if (isProd) {
+    if (isProd && hasTables) {
       this.logger.error({
         type: 'NUNJUCKS_RENDER_ERROR',
         templateName,
