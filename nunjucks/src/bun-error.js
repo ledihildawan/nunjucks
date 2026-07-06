@@ -283,6 +283,15 @@ export class ErrorFormatter {
     return { line: null, col: null };
   }
 
+  extractIncludeChainFromMessage(message) {
+    if (!message) return null;
+    const match = message.match(/\(included from ([^:]+\.html) at line (\d+)\)/);
+    if (match) {
+      return [{ parentTmpl: match[1], parentLineno: parseInt(match[2], 10) }];
+    }
+    return null;
+  }
+
   async formatError(error, templateName, includeChain = null) {
     this.init();
 
@@ -301,8 +310,11 @@ export class ErrorFormatter {
     let snippet = null;
 
     const effectiveChain = includeChain || error._includeChain || null;
+    const chainFromMessage = this.extractIncludeChainFromMessage(error.message);
 
-    const chainForDisplay = effectiveChain ? (Array.isArray(effectiveChain) ? effectiveChain : [effectiveChain]) : null;
+    const chainForDisplay = effectiveChain
+      ? (Array.isArray(effectiveChain) ? effectiveChain : [effectiveChain])
+      : chainFromMessage;
 
     if (templateInfo?.source_content) {
       const sourceLines = this.getSourceLines(templateInfo.source_content);

@@ -434,7 +434,7 @@ export class Template extends Obj {
         newError.name = e.name || 'Template render error';
         newError.lineno = sourceLineno;
         newError.colno = sourceColno;
-        newError._includeChain = e._includeChain || this._includeChain;
+        newError._includeChain = e._includeChain || this._includeChain || null;
         const renderLine = 'at ' + (e.getterName || 'root') + ' (' + templateLocation + ')';
         newError.stack = newError.message + '\n    ' + renderLine + '\n    at Environment.render';
         throw newError;
