@@ -35,8 +35,8 @@ export class NunjucksError extends Error {
     this.name = 'NunjucksError';
     this.templateName = meta.templateName || 'unknown';
     this.templateId = meta.templateId || null;
-    this.line = meta.line || null;
-    this.col = meta.col || null;
+    this.line = meta.line ?? null;
+    this.col = meta.col ?? null;
     this.snippet = meta.snippet || null;
     this.includeChain = meta.includeChain || null;
     this.isProduction = meta.isProduction || false;
@@ -71,7 +71,7 @@ export class NunjucksError extends Error {
     const errorType = 'TemplateSyntaxError';
 
     const locationFile = this.includeChain && this.includeChain.length > 0
-      ? `${this.templateName} (included from ${this.includeChain[0].parentTmpl}:${this.includeChain[0].parentLineno})`
+      ? `${this.templateName} (included from ${this.includeChain[0].parentTmpl}:${this.includeChain[0].parentLineno}${this.includeChain[0].parentColno ? ':' + this.includeChain[0].parentColno : ''})`
       : this.templateName;
 
     const traceLines = this.snippet ? this.snippet.split('\n').map(l => l.trim()) : [];
@@ -89,7 +89,7 @@ export class NunjucksError extends Error {
     lines.push('');
     lines.push(`${pc.bold('Location:')}`);
     lines.push(`  ${pc.bold('File:')} ${locationFile}`);
-    lines.push(`  ${pc.bold('Line:')} ${this.line || 'unknown'}${this.col ? ':' + this.col : ''}`);
+    lines.push(`  ${pc.bold('Line:')} ${this.line !== null && this.line !== undefined ? this.line + 1 : 'unknown'}${this.col !== null && this.col !== undefined ? ':' + this.col : ''}`);
 
     if (traceLines.length > 0) {
       lines.push('');
@@ -133,7 +133,7 @@ export class NunjucksError extends Error {
     const errorType = 'TemplateSyntaxError';
 
     const locationFile = this.includeChain && this.includeChain.length > 0
-      ? `${escapeHtml(this.templateName)} (included from ${escapeHtml(this.includeChain[0].parentTmpl)}:${this.includeChain[0].parentLineno})`
+      ? `${escapeHtml(this.templateName)} (included from ${escapeHtml(this.includeChain[0].parentTmpl)}:${this.includeChain[0].parentLineno}${this.includeChain[0].parentColno ? ':' + this.includeChain[0].parentColno : ''})`
       : escapeHtml(this.templateName);
 
     let snippetHtml = '';
@@ -177,7 +177,7 @@ export class NunjucksError extends Error {
             <div style="font-size: 13px; color: #666; margin-bottom: 8px;">Location</div>
             <div style="background: #f9f9f9; border-radius: 8px; padding: 12px 16px;">
               <div style="margin-bottom: 4px;"><span style="color: #666;">File:</span> <code style="font-family: monospace;">${locationFile}</code></div>
-              <div><span style="color: #666;">Line:</span> <strong>${this.line || 'unknown'}${this.col ? ':' + this.col : ''}</strong></div>
+              <div><span style="color: #666;">Line:</span> <strong>${this.line !== null && this.line !== undefined ? this.line + 1 : 'unknown'}${this.col !== null && this.col !== undefined ? ':' + this.col : ''}</strong></div>
             </div>
           </div>
     `;
@@ -270,6 +270,26 @@ export class ErrorFormatter {
     return match ? match[1] : null;
   }
 
+  extractChildTemplateName(message) {
+    if (!message) return null;
+    const lines = message.split('\n');
+    let foundFirstTemplate = false;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('(') && trimmed.endsWith(')')) {
+        const match = trimmed.match(/^\(([^)]+)\)$/);
+        if (match) {
+          if (!foundFirstTemplate) {
+            foundFirstTemplate = true;
+            continue;
+          }
+          return match[1];
+        }
+      }
+    }
+    return null;
+  }
+
   extractLineInfo(message) {
     if (!message) return { line: null, col: null };
     const lineMatch = message.match(/\[Line (\d+)(?:, Column (\d+))?\]/i);
@@ -294,9 +314,9 @@ export class ErrorFormatter {
 
   extractIncludeChainFromMessage(message) {
     if (!message) return null;
-    const match = message.match(/\(included from ([^:]+\.html) at line (\d+)\)/);
+    const match = message.match(/\(included from ([^:]+\.html):(\d+)(?::(\d+))?\)/);
     if (match) {
-      return [{ parentTmpl: match[1], parentLineno: parseInt(match[2], 10) }];
+      return [{ parentTmpl: match[1], parentLineno: parseInt(match[2], 10), parentColno: match[3] ? parseInt(match[3], 10) : null }];
     }
     return null;
   }
@@ -307,7 +327,9 @@ export class ErrorFormatter {
     const isProd = this.mode === 'production';
     const hasTables = this.hasTables();
 
-    const actualTemplateName = this.extractErrorTemplateName(error.message) || templateName;
+    const extractedTemplateName = this.extractErrorTemplateName(error.message);
+    const childTemplateName = this.extractChildTemplateName(error.message);
+    const actualTemplateName = childTemplateName || extractedTemplateName || templateName;
     const templateInfo = hasTables ? this.getTemplateInfo(actualTemplateName) : null;
     const templateId = templateInfo?.uuid || null;
 
@@ -315,7 +337,7 @@ export class ErrorFormatter {
     const colFromError = error.colno;
     const { line: lineFromMsg, col: colFromMsg } = this.extractLineInfo(error.message);
     const colFromRawMsg = this.extractColFromMessage(error.message);
-    let line = lineFromError || lineFromMsg;
+    let line = lineFromError ?? lineFromMsg;
     let col = colFromError || colFromMsg || colFromRawMsg;
     let snippet = null;
 
@@ -329,15 +351,15 @@ export class ErrorFormatter {
     if (templateInfo?.source_content) {
       const sourceLines = this.getSourceLines(templateInfo.source_content);
       const nonEmptyLines = sourceLines.filter(l => l.trim().length > 0);
-      if (!line && nonEmptyLines.length === 1) {
-        line = 1;
+      if ((line === null || line === undefined || line === 0) && nonEmptyLines.length === 1) {
+        line = 0;
       }
-      if (line) {
+      if (line !== null && line !== undefined) {
         const errorMeta = { templateName: actualTemplateName, templateId, line, col, snippet: null, includeChain: effectiveChain, isProduction: false };
         const tempError = new NunjucksError(error.message, errorMeta);
-        snippet = tempError.getSnippet(sourceLines, line, 3);
+        snippet = tempError.getSnippet(sourceLines, line + 1, 3);
       }
-    } else if (line) {
+    } else if (line !== null && line !== undefined) {
       snippet = `>>> ${line}: [source not available]`;
     }
 

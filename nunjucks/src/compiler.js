@@ -66,24 +66,24 @@ export class Compiler extends Obj {
     this._emit(code + '\n');
   }
 
-  _emitLineWithMapping(code, templateLine) {
+  _emitLineWithMapping(code, templateLine, templateCol) {
     this.compiledLine++;
     if (templateLine !== undefined) {
-      this.sourceMap.addMapping(this.compiledLine, templateLine + 1);
+      this.sourceMap.addMapping(this.compiledLine, templateLine + 1, templateCol || 0);
     }
     this._emit(code + '\n');
   }
 
-  _trackMapping(templateLine) {
+  _trackMapping(templateLine, templateCol) {
     if (templateLine !== undefined) {
-      this.sourceMap.addMapping(this.compiledLine + 1, templateLine + 1);
+      this.sourceMap.addMapping(this.compiledLine + 1, templateLine + 1, templateCol || 0);
     }
   }
 
-  _emitLineWithLineno(code, templateLine) {
+  _emitLineWithLineno(code, templateLine, templateCol) {
     this.compiledLine++;
     if (templateLine !== undefined) {
-      this.sourceMap.addMapping(this.compiledLine, templateLine + 1);
+      this.sourceMap.addMapping(this.compiledLine, templateLine + 1, templateCol || 0);
     }
     this._emit(code + '\n');
   }
@@ -96,7 +96,7 @@ export class Compiler extends Obj {
     this.buffer = 'output';
     this._scopeClosers = '';
     this._emitLine(`async function ${name}(env, context, frame, runtime) {`);
-    this._emitLineWithMapping(`var lineno = ${node.lineno};`, node.lineno);
+    this._emitLineWithMapping(`var lineno = ${node.lineno};`, node.lineno, node.colno);
     this._emitLine(`var colno = ${node.colno};`);
     this._emitLine(`var ${this.buffer} = "";`);
     this._emitLine('try {');
@@ -1112,7 +1112,7 @@ export class Compiler extends Obj {
     this._emit(`var ${tmplVar} = await env.getTemplate(`);
     this._compileExpression(node.template, frame);
     const ignoreMissing = node.ignoreMissing ? 'true' : 'false';
-    const includeChain = `{parentTmpl: ${this._templateName()}, parentLineno: ${node.lineno + 1}}`;
+    const includeChain = `{parentTmpl: ${this._templateName()}, parentLineno: ${node.lineno + 1}, parentColno: ${node.colno !== undefined ? node.colno + 1 : 0}}`;
     this._emitLine(`, false, ${includeChain}, ${ignoreMissing});`);
 
     this._emit(`var ${resultVar} = await ${tmplVar}.render(context.getVariables(), frame);`);
@@ -1147,7 +1147,7 @@ export class Compiler extends Obj {
         }
       } else {
         const isPipe = child instanceof nodes.Pipe || child instanceof nodes.PipeAsync;
-        this._emitLineWithLineno(`lineno = ${node.lineno}; colno = ${node.colno}; ${this.buffer} += runtime.suppressValue(`, node.lineno);
+        this._emitLineWithLineno(`lineno = ${child.lineno}; colno = ${child.colno}; ${this.buffer} += runtime.suppressValue(`, child.lineno, child.colno);
         if (!isPipe) {
           this._emit('await runtime.awaitValue(');
         }

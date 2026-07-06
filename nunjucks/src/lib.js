@@ -69,7 +69,7 @@ export class TemplateError extends Error {
       }
     }
     if (includeChain && this.firstUpdate) {
-      msg += `\n   (included from ${includeChain.parentTmpl} at line ${includeChain.parentLineno})`;
+      msg += `\n   (included from ${includeChain.parentTmpl}:${includeChain.parentLineno}${includeChain.parentColno ? ':' + includeChain.parentColno : ''})`;
     }
     msg += '\n ';
     if (this.firstUpdate) {

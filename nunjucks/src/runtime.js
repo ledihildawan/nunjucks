@@ -311,7 +311,7 @@ export function contextOrFrameLookup(context, frame, name) {
 }
 
 export function handleError(error, lineno, colno, sourceMapData) {
-  if (error.lineno) {
+  if (error.lineno !== undefined) {
     return error;
   }
 

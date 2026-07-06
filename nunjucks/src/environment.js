@@ -411,36 +411,34 @@ export class Template extends Obj {
       if (sourceMap && !hasIncludeChain) {
         let bestMapping = null;
         for (const mapping of sourceMap) {
-          if (sourceLineno >= mapping.compiledLine) {
+          if (sourceLineno === mapping.compiledLine) {
             bestMapping = mapping;
+            break;
           }
         }
         if (bestMapping) {
-          const offset = sourceLineno - bestMapping.compiledLine;
-          sourceLineno = bestMapping.originalLine + offset;
+          sourceLineno = bestMapping.originalLine;
           sourceColno = bestMapping.originalCol || 0;
+        } else if (sourceLineno !== undefined && sourceLineno > 0) {
+          const errColno = e.colno || 0;
+          const finalColno = (sourceColno > 0) ? sourceColno : errColno;
+          const templateLocation = this.path + ':' + sourceLineno + ':' + finalColno;
+          let msg = '(' + this.path + ')';
+          if (sourceLineno && finalColno > 0) {
+            msg += ` [Line ${sourceLineno}, Column ${finalColno}]`;
+          } else if (sourceLineno) {
+            msg += ` [Line ${sourceLineno}]`;
+          }
+          msg += '\n  ' + (e.message || '');
+          const newError = new Error(msg);
+          newError.name = e.name || 'Template render error';
+          newError.lineno = sourceLineno;
+          newError.colno = finalColno;
+          newError._includeChain = e._includeChain || this._includeChain || null;
+          const renderLine = 'at ' + (e.getterName || 'root') + ' (' + templateLocation + ')';
+          newError.stack = newError.message + '\n    ' + renderLine + '\n    at Environment.render';
+          throw newError;
         }
-      }
-
-      if (sourceLineno !== undefined && sourceLineno > 0) {
-        const errColno = e.colno || 0;
-        const finalColno = (sourceColno > 0) ? sourceColno : errColno;
-        const templateLocation = this.path + ':' + sourceLineno + ':' + finalColno;
-        let msg = '(' + this.path + ')';
-        if (sourceLineno && finalColno > 0) {
-          msg += ` [Line ${sourceLineno}, Column ${finalColno}]`;
-        } else if (sourceLineno) {
-          msg += ` [Line ${sourceLineno}]`;
-        }
-        msg += '\n  ' + (e.message || '');
-        const newError = new Error(msg);
-        newError.name = e.name || 'Template render error';
-        newError.lineno = sourceLineno;
-        newError.colno = finalColno;
-        newError._includeChain = e._includeChain || this._includeChain || null;
-        const renderLine = 'at ' + (e.getterName || 'root') + ' (' + templateLocation + ')';
-        newError.stack = newError.message + '\n    ' + renderLine + '\n    at Environment.render';
-        throw newError;
       }
 
       throw lib._prettifyError(this.path, this.env.opts.dev, e, e._includeChain || this._includeChain);
