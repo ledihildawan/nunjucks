@@ -392,44 +392,43 @@ export class Template extends Obj {
       let sourceColno = e.colno;
 
       const errorPath = e.path || this.path;
-      const isIncludeError = e.message && e.message.includes('(included from');
+      const hasIncludeChain = e._includeChain || this._includeChain;
+      let sourceMap = this.tmplProps?.__sourceMap;
 
-      if (!isIncludeError) {
-        let sourceMap = this.tmplProps?.__sourceMap;
-
-        if (errorPath !== this.path && this.env) {
-          const loaders = this.env.loaders || [];
-          for (const loader of loaders) {
-            if (loader._getSourceMap) {
-              const loaderMap = loader._getSourceMap(errorPath);
-              if (loaderMap) {
-                sourceMap = loaderMap;
-                break;
-              }
+      if (errorPath !== this.path && this.env && !hasIncludeChain) {
+        const loaders = this.env.loaders || [];
+        for (const loader of loaders) {
+          if (loader._getSourceMap) {
+            const loaderMap = loader._getSourceMap(errorPath);
+            if (loaderMap) {
+              sourceMap = loaderMap;
+              break;
             }
-          }
-        }
-
-        if (sourceMap) {
-          let bestMapping = null;
-          for (const mapping of sourceMap) {
-            if (sourceLineno >= mapping.compiledLine) {
-              bestMapping = mapping;
-            }
-          }
-          if (bestMapping) {
-            const offset = sourceLineno - bestMapping.compiledLine;
-            sourceLineno = bestMapping.originalLine + offset;
-            sourceColno = bestMapping.originalCol || 0;
           }
         }
       }
 
+      if (sourceMap && !hasIncludeChain) {
+        let bestMapping = null;
+        for (const mapping of sourceMap) {
+          if (sourceLineno >= mapping.compiledLine) {
+            bestMapping = mapping;
+          }
+        }
+        if (bestMapping) {
+          const offset = sourceLineno - bestMapping.compiledLine;
+          sourceLineno = bestMapping.originalLine + offset;
+          sourceColno = bestMapping.originalCol || 0;
+        }
+      }
+
       if (sourceLineno !== undefined && sourceLineno > 0) {
-        const templateLocation = this.path + ':' + sourceLineno + ':' + sourceColno;
+        const errColno = e.colno || 0;
+        const finalColno = (sourceColno > 0) ? sourceColno : errColno;
+        const templateLocation = this.path + ':' + sourceLineno + ':' + finalColno;
         let msg = '(' + this.path + ')';
-        if (sourceLineno && sourceColno) {
-          msg += ` [Line ${sourceLineno}, Column ${sourceColno}]`;
+        if (sourceLineno && finalColno > 0) {
+          msg += ` [Line ${sourceLineno}, Column ${finalColno}]`;
         } else if (sourceLineno) {
           msg += ` [Line ${sourceLineno}]`;
         }
@@ -437,7 +436,7 @@ export class Template extends Obj {
         const newError = new Error(msg);
         newError.name = e.name || 'Template render error';
         newError.lineno = sourceLineno;
-        newError.colno = sourceColno;
+        newError.colno = finalColno;
         newError._includeChain = e._includeChain || this._includeChain || null;
         const renderLine = 'at ' + (e.getterName || 'root') + ' (' + templateLocation + ')';
         newError.stack = newError.message + '\n    ' + renderLine + '\n    at Environment.render';
