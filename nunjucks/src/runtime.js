@@ -310,10 +310,34 @@ export function contextOrFrameLookup(context, frame, name) {
     context.lookup(name);
 }
 
-export function handleError(error, lineno, colno) {
+export function handleError(error, lineno, colno, sourceMapData) {
   if (error.lineno) {
     return error;
   }
+
+  if (sourceMapData && Array.isArray(sourceMapData) && sourceMapData.length > 0) {
+    const sm = {
+      mappings: sourceMapData,
+      getOriginalPosition(compiledLine) {
+        let best = null;
+        for (const mapping of this.mappings) {
+          if (compiledLine >= mapping.compiledLine) {
+            best = mapping;
+          }
+        }
+        if (best) {
+          return {
+            line: best.originalLine,
+            col: best.originalCol || 0
+          };
+        }
+        return { line: 0, col: 0 };
+      }
+    };
+    const pos = sm.getOriginalPosition(lineno);
+    return new lib.TemplateError(error, pos.line, pos.col);
+  }
+
   return new lib.TemplateError(error, lineno, colno);
 }
 

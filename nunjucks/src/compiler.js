@@ -4,7 +4,7 @@ import * as nodes from './nodes.js';
 import { TemplateError } from './lib.js';
 import { Frame } from './runtime.js';
 import { Obj } from './object.js';
-import { SourceMap, enableSourceMap } from './source-map.js';
+import { SourceMap } from './source-map.js';
 
 const compareOps = {
   '==': '==',
@@ -28,8 +28,7 @@ export class Compiler extends Obj {
     this.inBlock = false;
     this.throwOnUndefined = throwOnUndefined;
     this.compiledLine = 0;
-    this.sourceMap = new SourceMap(templateName, source);
-    enableSourceMap();
+    this.sourceMap = new SourceMap(templateName);
   }
 
   fail(msg, lineno, colno) {

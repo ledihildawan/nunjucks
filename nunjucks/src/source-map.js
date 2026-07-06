@@ -1,7 +1,6 @@
 export class SourceMap {
-  constructor(templateName, source) {
+  constructor(templateName) {
     this.templateName = templateName;
-    this.source = source;
     this.mappings = [];
   }
 
@@ -33,22 +32,29 @@ export class SourceMap {
     return { line: compiledLine, col: 0, name: this.templateName };
   }
 
-  static fromJSON(data) {
-    const sm = new SourceMap(data.templateName || 'unknown');
-    sm.mappings = data.mappings || [];
+  static fromArray(templateName, mappingsArray) {
+    const sm = new SourceMap(templateName);
+    if (Array.isArray(mappingsArray)) {
+      sm.mappings = mappingsArray;
+    }
     return sm;
   }
+}
 
-  toJSON() {
-    return {
-      templateName: this.templateName,
-      mappings: this.mappings
-    };
+export function applySourceMapToError(error, lineno, sourceMapData, templateName) {
+  if (!sourceMapData || !Array.isArray(sourceMapData)) {
+    return null;
   }
-}
 
-export function enableSourceMap() {
-}
+  const sm = SourceMap.fromArray(templateName, sourceMapData);
+  const pos = sm.getOriginalPosition(lineno);
 
-export function disableSourceMap() {
+  if (error.lineno === undefined) {
+    error.lineno = pos.line;
+  }
+  if (error.colno === undefined) {
+    error.colno = pos.col;
+  }
+
+  return error;
 }
