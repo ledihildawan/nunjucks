@@ -54,10 +54,11 @@ app.get('/dev/home', async (req, res) => {
       username: 'John Doe',
       items: ['Apple', 'Banana', 'Cherry']
     });
-    res.send(html);
+    res.type('html').send(html);
   } catch (e) {
     const formatted = await sqliteLoader.formatError(e, 'home.html');
-    res.status(500).send(`<pre>${escapeHtml(formatted.toVisualString())}</pre>`);
+    console.error(formatted.toConsoleString());
+    res.type('html').status(500).send(formatted.toHtmlString());
   }
 });
 
@@ -67,66 +68,48 @@ app.get('/prod/home', async (req, res) => {
       username: 'John Doe',
       items: ['Apple', 'Banana', 'Cherry']
     });
-    res.send(html);
+    res.type('html').send(html);
   } catch (e) {
     const loader = envProd.loaders[0];
     const formatted = await loader.formatError(e, 'home.html');
-    res.status(500).send(`<pre>${escapeHtml(formatted.toSafeString())}</pre>`);
+    console.error(formatted.toConsoleString());
+    res.type('html').status(500).send(formatted.toHtmlString());
   }
 });
 
 app.get('/dev/error', async (req, res) => {
   try {
     const html = await envDev.render('error-partial.html');
-    res.send(html);
+    res.type('html').send(html);
   } catch (e) {
     const loader = envDev.loaders[0];
     const formatted = await loader.formatError(e, 'error-partial.html');
-    res.status(500).send(`
-      <h1 style="color: red;">Dev Mode Error</h1>
-      <p>This error shows full context including code snippet and include chain.</p>
-      <hr>
-      <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto;">${escapeHtml(formatted.toVisualString())}</pre>
-    `);
+    console.error(formatted.toConsoleString());
+    res.type('html').status(500).send(formatted.toHtmlString());
   }
 });
 
 app.get('/dev/include-error', async (req, res) => {
   try {
     const html = await envDev.render('error-include.html');
-    res.send(html);
+    res.type('html').send(html);
   } catch (e) {
     const loader = envDev.loaders[0];
     const formatted = await loader.formatError(e, 'error-include.html');
-    res.status(500).send(`
-      <h1 style="color: red;">Dev Mode Error - Include Chain</h1>
-      <p>This error shows the include chain - which template included which.</p>
-      <hr>
-      <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto;">${escapeHtml(formatted.toVisualString())}</pre>
-    `);
+    console.error(formatted.toConsoleString());
+    res.type('html').status(500).send(formatted.toHtmlString());
   }
 });
 
 app.get('/prod/error', async (req, res) => {
   try {
     const html = await envProd.render('error-partial.html');
-    res.send(html);
+    res.type('html').send(html);
   } catch (e) {
     const loader = envProd.loaders[0];
     const formatted = await loader.formatError(e, 'error-partial.html');
-    res.status(500).send(`
-      <h1 style="color: red;">Production Mode Error</h1>
-      <p>This error is safe - no source code or internal paths are leaked.</p>
-      <hr>
-      <pre style="background: #ffdddd; padding: 10px; border-radius: 5px; color: #990000;">${escapeHtml(formatted.toSafeString())}</pre>
-      <hr>
-      <h3>What happened?</h3>
-      <ul>
-        <li>The error was logged internally with template ID</li>
-        <li>Client received only a safe error ID</li>
-        <li>Use the template ID to search logs for details</li>
-      </ul>
-    `);
+    console.error(formatted.toConsoleString());
+    res.type('html').status(500).send(formatted.toHtmlString());
   }
 });
 
@@ -167,15 +150,6 @@ app.get('/db-info', async (req, res) => {
     res.status(500).send(`DB info failed: ${e.message}<br><pre>${e.stack}</pre>`);
   }
 });
-
-function escapeHtml(text) {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
 
 app.listen(4000, () => {
   console.log('Dual-Mode Error Handler Demo running on http://localhost:4000');
