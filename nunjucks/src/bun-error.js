@@ -220,6 +220,15 @@ export class ErrorFormatter {
     return match ? match[1] : null;
   }
 
+  extractLineInfo(message) {
+    if (!message) return { line: null, col: null };
+    const lineMatch = message.match(/\[Line (\d+)(?:, Column (\d+))?\]/i);
+    if (lineMatch) {
+      return { line: parseInt(lineMatch[1], 10), col: lineMatch[2] ? parseInt(lineMatch[2], 10) : null };
+    }
+    return { line: null, col: null };
+  }
+
   async formatError(error, templateName, includeChain = null) {
     this.init();
 
@@ -230,8 +239,11 @@ export class ErrorFormatter {
     const templateInfo = hasTables ? this.getTemplateInfo(actualTemplateName) : null;
     const templateId = templateInfo?.uuid || null;
 
-    const line = error.lineno;
-    const col = error.colno;
+    const lineFromError = error.lineno;
+    const colFromError = error.colno;
+    const { line: lineFromMsg, col: colFromMsg } = this.extractLineInfo(error.message);
+    const line = lineFromError || lineFromMsg;
+    const col = colFromError || colFromMsg;
     let snippet = null;
 
     const effectiveChain = includeChain || error._includeChain || null;
