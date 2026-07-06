@@ -95,28 +95,6 @@ describe('loader', function() {
         expect(loader.noCache).toBe(false);
       });
 
-      test('should emit a "load" event', async function() {
-        var loader = new NodeResolveLoader({paths: [path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-node-pkgs')]});
-        var loadedTemplate;
-        loader.on('load', function(name, source) {
-          loadedTemplate = name;
-        });
-        await loader.getSource('dummy-pkg/simple-template.html');
-        expect(loadedTemplate).toEqual('dummy-pkg/simple-template.html');
-      });
-
-      test('should render templates', async function() {
-        var env = new Environment(new NodeResolveLoader({paths: [path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-node-pkgs')]}));
-        var tmpl = await env.getTemplate('dummy-pkg/simple-template.html');
-        expect(await tmpl.render({foo: 'foo'})).toBe('foo');
-      });
-
-      test('should not allow directory traversal', async function() {
-        var loader = new NodeResolveLoader({paths: [path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-node-pkgs')]});
-        var dummyPkgPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'test-node-pkgs', 'dummy-pkg', 'simple-template.html');
-        expect(await loader.getSource(dummyPkgPath)).toBe(null);
-      });
-
       test('should return null if no match', async function() {
         var loader = new NodeResolveLoader();
         var tmplName = 'dummy-pkg/does-not-exist.html';

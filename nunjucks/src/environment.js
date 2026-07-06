@@ -368,6 +368,20 @@ export class Template extends Obj {
       const result = await this.rootRenderFunc(this.env, context, frame, globalRuntime);
       return result;
     } catch (e) {
+      if (this.tmplProps && this.tmplProps.__sourceMap && e.lineno !== undefined) {
+        const sm = this.tmplProps.__sourceMap;
+        let bestMapping = null;
+        for (const mapping of sm) {
+          if (e.lineno >= mapping.compiledLine) {
+            bestMapping = mapping;
+          }
+        }
+        if (bestMapping) {
+          const offset = e.lineno - bestMapping.compiledLine;
+          e.lineno = bestMapping.originalLine + offset;
+          e.colno = bestMapping.originalCol || 0;
+        }
+      }
       throw lib._prettifyError(this.path, this.env.opts.dev, e);
     }
   }

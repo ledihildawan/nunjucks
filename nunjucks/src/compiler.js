@@ -1248,3 +1248,19 @@ export function compile(src, asyncPipes, extensions, name, opts = {}) {
 export function getSourceMap(compiler) {
   return compiler.sourceMap;
 }
+
+export function getSourceMapFromCompile(src, asyncPipes, extensions, name, opts = {}) {
+  const c = new Compiler(name, opts.throwOnUndefined, src);
+
+  const preprocessors = (extensions || []).map(ext => ext.preprocess).filter(f => !!f);
+
+  const processedSrc = preprocessors.reduce((s, processor) => processor(s), src);
+
+  c.compile(transform(
+    parse(processedSrc, extensions, opts),
+    asyncPipes,
+    name
+  ));
+
+  return c.getSourceMap();
+}

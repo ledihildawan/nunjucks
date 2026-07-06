@@ -35,6 +35,31 @@ export class BunSQLitePrecompiledLoader extends Loader {
     return null;
   }
 
+  _getSourceMap(name) {
+    const db = this._getDB();
+    if (!db) return null;
+
+    try {
+      const stmt = db.prepare(
+        'SELECT compiled_line, original_line, original_col FROM _sourcemaps WHERE name = ? ORDER BY compiled_line'
+      );
+      const rows = stmt.all(name);
+      db.close();
+
+      if (rows.length > 0) {
+        return rows.map(row => ({
+          compiledLine: row.compiled_line,
+          originalLine: row.original_line,
+          originalCol: row.original_col
+        }));
+      }
+      return null;
+    } catch (e) {
+      db.close();
+      return null;
+    }
+  }
+
   get(name) {
     if (this.cache[name]) {
       return this.cache[name];
@@ -50,6 +75,12 @@ export class BunSQLitePrecompiledLoader extends Loader {
         try {
           const func = new Function(row.template);
           template = func();
+          if (template) {
+            const sourceMap = this._getSourceMap(name);
+            if (sourceMap) {
+              template.__sourceMap = sourceMap;
+            }
+          }
         } catch (e) {
           console.error(`[SQLite] Error loading template ${name}:`, e.message);
         }

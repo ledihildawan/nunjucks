@@ -36,11 +36,17 @@ function _precompile(str, name, env) {
   name = normalizePathSeparators(name);
 
   try {
-    return compiler.compile(str,
+    const code = compiler.compile(str,
       asyncFilters,
       extensions,
       name,
       env.opts);
+    const sourceMap = compiler.getSourceMapFromCompile(str,
+      asyncFilters,
+      extensions,
+      name,
+      env.opts);
+    return { code, sourceMap };
   } catch (err) {
     throw _prettifyError(name, false, err);
   }
@@ -48,7 +54,10 @@ function _precompile(str, name, env) {
 
 export function precompileToSQLite(templateDir, dbPath, opts = {}) {
   opts = opts || {};
-  const env = opts.env || new Environment([]);
+  const envOptions = opts.env ? opts.env.opts : {};
+  const finalOpts = { ...envOptions, ...opts };
+  delete finalOpts.env;
+  const env = opts.env || new Environment([], finalOpts);
   const extensions = opts.extensions || ['.njk', '.html', '.j2'];
   const exclude = opts.exclude || [];
 
@@ -68,6 +77,16 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
     )
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS _sourcemaps (
+      name TEXT NOT NULL,
+      compiled_line INTEGER NOT NULL,
+      original_line INTEGER NOT NULL,
+      original_col INTEGER DEFAULT 0,
+      PRIMARY KEY (name, compiled_line)
+    )
+  `);
+
   const results = [];
   let updated = 0;
   let skipped = 0;
@@ -75,7 +94,7 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
   function addTemplates(dir, baseDir) {
     readdirSync(dir).forEach((file) => {
       const filepath = join(dir, file);
-      const base = baseDir || templateDir;
+      const base = normalizePathSeparators(baseDir || templateDir).replace(/^\.\//, '');
       let subpath = normalizePathSeparators(filepath.slice(base.length)).replace(/^\//, '');
 
       const stat = statSync(filepath);
@@ -104,7 +123,7 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
       try {
         const source = readFileSync(filepath, 'utf-8');
         const contentHash = hashContent(source);
-        const compiledCode = _precompile(source, name, env);
+        const { code: compiledCode, sourceMap } = _precompile(source, name, env);
 
         const existing = db.prepare('SELECT hash FROM _compiled_templates WHERE name = ?').get(name);
 
@@ -117,6 +136,19 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
           'INSERT OR REPLACE INTO _compiled_templates (name, template, hash) VALUES (?, ?, ?)'
         );
         stmt.run(name, compiledCode, contentHash);
+
+        if (sourceMap && sourceMap.mappings.length > 0) {
+          const deleteStmt = db.prepare('DELETE FROM _sourcemaps WHERE name = ?');
+          deleteStmt.run(name);
+
+          const insertStmt = db.prepare(
+            'INSERT INTO _sourcemaps (name, compiled_line, original_line, original_col) VALUES (?, ?, ?, ?)'
+          );
+          for (const mapping of sourceMap.mappings) {
+            insertStmt.run(name, mapping.compiledLine, mapping.originalLine, mapping.originalCol || 0);
+          }
+        }
+
         updated++;
 
         console.log(`[SQLite] Precompiled: ${name}`);
@@ -133,7 +165,7 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
 
     const source = readFileSync(templateDir, 'utf-8');
     const contentHash = hashContent(source);
-    const compiledCode = _precompile(source, name, env);
+    const { code: compiledCode, sourceMap } = _precompile(source, name, env);
 
     const existing = db.prepare('SELECT hash FROM _compiled_templates WHERE name = ?').get(name);
 
@@ -142,6 +174,19 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
         'INSERT OR REPLACE INTO _compiled_templates (name, template, hash) VALUES (?, ?, ?)'
       );
       stmt.run(name, compiledCode, contentHash);
+
+      if (sourceMap && sourceMap.mappings.length > 0) {
+        const deleteStmt = db.prepare('DELETE FROM _sourcemaps WHERE name = ?');
+        deleteStmt.run(name);
+
+        const insertStmt = db.prepare(
+          'INSERT INTO _sourcemaps (name, compiled_line, original_line, original_col) VALUES (?, ?, ?, ?)'
+        );
+        for (const mapping of sourceMap.mappings) {
+          insertStmt.run(name, mapping.compiledLine, mapping.originalLine, mapping.originalCol || 0);
+        }
+      }
+
       updated++;
       console.log(`[SQLite] Precompiled: ${name}`);
     } else {
@@ -191,7 +236,34 @@ export function clearSQLite(dbPath) {
   if (SQLite) {
     const db = new SQLite.Database(dbPath);
     db.exec('DELETE FROM _compiled_templates');
+    db.exec('DELETE FROM _sourcemaps');
     db.close();
     console.log('[SQLite] Cleared all precompiled templates');
+  }
+}
+
+export function getOriginalPosition(dbPath, templateName, compiledLine) {
+  if (!SQLite) {
+    return null;
+  }
+
+  const db = new SQLite.Database(dbPath);
+  try {
+    const stmt = db.prepare(
+      'SELECT original_line, original_col FROM _sourcemaps WHERE name = ? AND compiled_line <= ? ORDER BY compiled_line DESC LIMIT 1'
+    );
+    const row = stmt.get(templateName, compiledLine);
+    db.close();
+
+    if (row) {
+      return {
+        line: row.original_line,
+        col: row.original_col
+      };
+    }
+    return null;
+  } catch (e) {
+    db.close();
+    return null;
   }
 }
