@@ -68,26 +68,24 @@ export class NunjucksError extends Error {
 
     const lines = [];
 
-    const location = this.line
-      ? `${pc.dim('at line')} ${pc.cyan(this.line)}${this.col ? pc.dim(':') + pc.cyan(this.col) : ''}`
-      : '';
-    lines.push(`${pc.red('Nunjucks Error')} ${pc.dim('in')} ${pc.white(this.templateName)} ${location}`);
+    lines.push(`${pc.red('Nunjucks Error')} ${pc.dim('in')} ${pc.white(this.templateName)}`);
+    if (this.line) {
+      lines.push(`${pc.dim('  Line:')} ${pc.cyan(this.line)}${this.col ? pc.dim(':') + pc.cyan(this.col) : ''}`);
+    }
 
     if (this.templateId) {
-      lines.push(`${pc.dim('Template ID:')} ${pc.yellow(this.templateId)}`);
+      lines.push(`${pc.dim('  ID:')} ${pc.yellow(this.templateId)}`);
     }
 
     if (this.snippet) {
       lines.push('');
       lines.push(this.snippet);
-    } else if (this.line) {
-      lines.push('');
-      lines.push(`  ${pc.dim('>>')} ${pc.red('?')} ${pc.dim('line')} ${this.line}`);
     }
 
     if (this.includeChain && this.includeChain.length > 0) {
+      lines.push('');
       for (const chain of this.includeChain) {
-        lines.push(`${pc.dim('Included from:')} ${pc.yellow(chain.parentTmpl)} ${pc.dim('line')} ${pc.cyan(chain.parentLineno)}`);
+        lines.push(`${pc.dim('  ↳ Included from')} ${pc.yellow(chain.parentTmpl)} ${pc.dim('(line')} ${pc.cyan(chain.parentLineno)}${pc.dim(')')}`);
       }
     }
 
@@ -125,19 +123,19 @@ export class NunjucksError extends Error {
             </div>
             <div>
               <div style="font-size: 16px; font-weight: 600; color: #1a1a1a;">Nunjucks Error</div>
-              <div style="font-size: 13px; color: #666;">${escapeHtml(this.templateName)} <span style="color: #999;">line ${this.line}</span></div>
+              <div style="font-size: 13px; color: #666;">${escapeHtml(this.templateName)}</div>
             </div>
           </div>
         </div>
         <div style="padding: 24px;">
     `;
 
+    if (this.line) {
+      html += `<div style="margin-bottom: 8px; font-size: 13px;"><span style="color: #666;">Line:</span> <strong>${this.line}</strong>${this.col ? ':' + this.col : ''}</div>`;
+    }
+
     if (this.templateId) {
-      html += `
-        <div style="margin-bottom: 16px; font-size: 13px;">
-          <span style="color: #666;">Template ID:</span> <code style="background: #f5f5f5; padding: 2px 8px; border-radius: 4px; font-family: monospace;">${this.templateId}</code>
-        </div>
-      `;
+      html += `<div style="margin-bottom: 16px; font-size: 13px;"><span style="color: #666;">ID:</span> <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 4px;">${this.templateId}</code></div>`;
     }
 
     if (this.snippet) {
@@ -149,29 +147,20 @@ export class NunjucksError extends Error {
         return `<div style="color: #333; padding: 4px 12px; font-family: monospace; font-size: 13px;">${escapeHtml(line)}</div>`;
       }).join('');
 
-      html += `
-        <div style="margin-bottom: 16px; background: #f9f9f9; border-radius: 8px; overflow: hidden;">${snippetLines}</div>
-      `;
-    } else if (this.line) {
-      html += `
-        <div style="margin-bottom: 16px; font-size: 13px; color: #666;">
-          Line ${this.line}${this.col ? ':' + this.col : ''}
-        </div>
-      `;
+      html += `<div style="margin-bottom: 16px; background: #f9f9f9; border-radius: 8px; overflow: hidden;">${snippetLines}</div>`;
     }
 
     if (this.includeChain && this.includeChain.length > 0) {
-      html += `<div style="margin-bottom: 16px; font-size: 13px; color: #666;">`;
+      html += `<div style="margin-bottom: 16px; padding: 12px; background: #f9f9f9; border-radius: 8px; font-size: 13px;">`;
       for (const chain of this.includeChain) {
-        html += `<div style="margin-bottom: 4px;">↳ ${escapeHtml(chain.parentTmpl)} line ${chain.parentLineno}</div>`;
+        html += `<div style="color: #666;"><span style="color: #dc2626;">↳</span> Included from <strong>${escapeHtml(chain.parentTmpl)}</strong> (line ${chain.parentLineno})</div>`;
       }
       html += `</div>`;
     }
 
     html += `
       <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px;">
-        <div style="font-size: 12px; color: #dc2626; margin-bottom: 4px;">Error</div>
-        <div style="font-size: 14px; color: #1a1a1a; font-family: monospace; white-space: pre-wrap;">${escapeHtml(this.message)}</div>
+        <div style="font-size: 13px; color: #1a1a1a; font-family: monospace; white-space: pre-wrap;">${escapeHtml(this.message)}</div>
       </div>
     `;
 
