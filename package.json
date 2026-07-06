@@ -16,7 +16,7 @@
     "build": "bun run scripts/bundle.js",
     "lint": "eslint nunjucks",
     "prepare": "bun run build",
-    "test": "bun run lint && bun test ./tests/api.js ./tests/compiler.js ./tests/filters.js ./tests/lexer.js ./tests/express.js ./tests/core.js ./tests/precompile.js ./tests/loader.js ./tests/runtime.js ./tests/globals.js ./tests/tests.js ./tests/jinja-compat.js"
+    "test": "bun run lint && bun test ./tests/**/*.test.js"
   },
   "exports": {
     ".": "./index.js"
