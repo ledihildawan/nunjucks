@@ -66,6 +66,10 @@ export class NunjucksError extends Error {
       return `${pc.bgRed(pc.white(' ERROR '))} ${pc.dim('[Nunjucks]')} Template error\n${pc.dim('  Error ID:')} ${pc.yellow(this.templateId || 'unknown')}`;
     }
 
+    const cleanMessage = this.message
+      .replace(/^\([^)]+\)\s*/, '')
+      .replace(/^\s*Error:\s*/, '');
+
     const lines = [];
 
     lines.push(`${pc.red('Nunjucks Error')} ${pc.dim('in')} ${pc.white(this.templateName)}`);
@@ -90,7 +94,7 @@ export class NunjucksError extends Error {
     }
 
     lines.push('');
-    lines.push(this.message);
+    lines.push(pc.red('Error:') + ' ' + cleanMessage);
 
     return lines.join('\n');
   }
@@ -100,6 +104,10 @@ export class NunjucksError extends Error {
       if (!str) return '';
       return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     };
+
+    const cleanMessage = this.message
+      .replace(/^\([^)]+\)\s*/, '')
+      .replace(/^\s*Error:\s*/, '');
 
     if (this.isProduction) {
       return `
@@ -160,7 +168,7 @@ export class NunjucksError extends Error {
 
     html += `
       <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px;">
-        <div style="font-size: 13px; color: #1a1a1a; font-family: monospace; white-space: pre-wrap;">${escapeHtml(this.message)}</div>
+        <div style="font-size: 13px; color: #1a1a1a; font-family: monospace; white-space: pre-wrap;">${escapeHtml(cleanMessage)}</div>
       </div>
     `;
 
