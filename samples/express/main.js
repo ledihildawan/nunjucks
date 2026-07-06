@@ -84,7 +84,8 @@ app.get('/dev/error', async (req, res) => {
     res.type('html').send(html);
   } catch (e) {
     const loader = envDev.loaders[0];
-    const formatted = await loader.formatError(e, 'error-partial.html');
+    const templatePath = loader.templateDir + '/' + 'error-partial.html';
+    const formatted = await loader.formatError(e, 'error-partial.html', null, templatePath);
     console.error(formatted.toConsoleString());
     res.type('html').status(500).send(formatted.toHtmlString());
   }
@@ -96,7 +97,8 @@ app.get('/dev/include-error', async (req, res) => {
     res.type('html').send(html);
   } catch (e) {
     const loader = envDev.loaders[0];
-    const formatted = await loader.formatError(e, 'error-include.html', e._includeChain);
+    const templatePath = loader.templateDir + '/' + 'error-partial.html';
+    const formatted = await loader.formatError(e, 'error-include.html', e._includeChain, templatePath);
     console.error(formatted.toConsoleString());
     res.type('html').status(500).send(formatted.toHtmlString());
   }
@@ -108,7 +110,8 @@ app.get('/prod/error', async (req, res) => {
     res.type('html').send(html);
   } catch (e) {
     const loader = envProd.loaders[0];
-    const formatted = await loader.formatError(e, 'error-partial.html');
+    const templatePath = loader.templateDir + '/' + 'error-partial.html';
+    const formatted = await loader.formatError(e, 'error-partial.html', null, templatePath);
     console.error(formatted.toConsoleString());
     res.type('html').status(500).send(formatted.toHtmlString());
   }

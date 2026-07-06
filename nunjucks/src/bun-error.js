@@ -32,14 +32,16 @@ function stripAnsi(str) {
 export class NunjucksError extends Error {
   constructor(message, meta = {}) {
     super(message);
-    this.name = 'NunjucksError';
+    this.name = meta.errorName || 'NunjucksError';
     this.templateName = meta.templateName || 'unknown';
+    this.templatePath = meta.templatePath || null;
     this.templateId = meta.templateId || null;
     this.line = meta.line ?? null;
     this.col = meta.col ?? null;
     this.snippet = meta.snippet || null;
     this.includeChain = meta.includeChain || null;
     this.isProduction = meta.isProduction || false;
+    this.originalError = meta.originalError || null;
   }
 
   getSnippet(sourceLines, centerLine, context = 3) {
@@ -71,8 +73,11 @@ export class NunjucksError extends Error {
     const errorType = 'TemplateSyntaxError';
 
     const locationFile = this.includeChain && this.includeChain.length > 0
-      ? `${this.templateName} (included from ${this.includeChain[0].parentTmpl}:${this.includeChain[0].parentLineno}${this.includeChain[0].parentColno ? ':' + this.includeChain[0].parentColno : ''})`
+      ? `${this.templateName} ${pc.dim('(included from ' + this.includeChain[0].parentTmpl + ':' + this.includeChain[0].parentLineno + (this.includeChain[0].parentColno ? ':' + this.includeChain[0].parentColno : '') + ')')}`
       : this.templateName;
+
+    const displayLine = this.line !== null && this.line !== undefined ? this.line + 1 : '?';
+    const displayCol = this.col !== null && this.col !== undefined ? this.col : '?';
 
     const traceLines = this.snippet ? this.snippet.split('\n').map(l => l.trim()) : [];
 
@@ -81,19 +86,18 @@ export class NunjucksError extends Error {
     lines.push(`${pc.bgRed('[ERROR]')} ${pc.bold('Template Rendering Failed')}`);
     lines.push(pc.dim('─'.repeat(60)));
 
-    lines.push(`${pc.bold('Message:')} ${errorText}`);
-
-    lines.push(`${pc.bold('Reason:')} ${errorText.includes('undefined') ? 'Function is undefined or falsey' : errorText}`);
-    lines.push(`${pc.bold('Code:')} ${pc.yellow(errorType)}`);
+    lines.push(`${pc.bold('Message:')} ${errorText.includes('undefined') ? 'Unable to call `' + (errorText.match(/`([^`]+)`/) || ['', ''])[1] + '`, which is undefined or falsey.' : errorText}`);
 
     lines.push('');
-    lines.push(`${pc.bold('Location:')}`);
-    lines.push(`  ${pc.bold('File:')} ${locationFile}`);
-    lines.push(`  ${pc.bold('Line:')} ${this.line !== null && this.line !== undefined ? this.line + 1 : 'unknown'}${this.col !== null && this.col !== undefined ? ':' + this.col : ''}`);
+    lines.push(`${pc.bold('Error Type:')} ${pc.red(errorType)}`);
+    lines.push(`${pc.bold('Position:')} Line ${displayLine}, Col ${displayCol}`);
+
+    lines.push('');
+    lines.push(`${pc.bold('Location:')} ${locationFile}`);
 
     if (traceLines.length > 0) {
       lines.push('');
-      lines.push(`${pc.bold('Traceback:')}`);
+      lines.push(`${pc.bold('Code Trace:')}`);
       for (const line of traceLines) {
         if (line.startsWith('>>>')) {
           lines.push(pc.red(line));
@@ -104,7 +108,7 @@ export class NunjucksError extends Error {
     }
 
     lines.push('');
-    lines.push(`${pc.dim('Reference ID:')} ${this.templateId || 'unknown'}`);
+    lines.push(`${pc.dim('Reference ID:')} ${(this.templateId || 'unknown').substring(0, 18)}`);
 
     return lines.join('\n');
   }
@@ -115,89 +119,279 @@ export class NunjucksError extends Error {
       return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     };
 
+    const shortRefId = (this.templateId || 'unknown').substring(0, 8);
+    const displayLine = this.line !== null && this.line !== undefined ? this.line + 1 : '?';
+    const displayCol = this.col !== null && this.col !== undefined ? this.col : '?';
+
     if (this.isProduction) {
       return `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 60px auto; padding: 32px; background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); text-align: center;">
-          <div style="width: 56px; height: 56px; margin: 0 auto 20px; background: #fee2e2; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-            <span style="color: #dc2626; font-size: 28px; font-weight: bold;">!</span>
+        <div style="font-family: 'Inter', -apple-system, sans-serif; max-width: 520px; margin: 48px auto; padding: 32px; background: #fff; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15); text-align: center;">
+          <div style="margin-bottom: 20px;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="#DC2626"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
           </div>
-          <div style="font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">Template Rendering Failed</div>
-          <div style="font-size: 14px; color: #666; margin-bottom: 20px;">Reference ID: <code style="background: #f5f5f5; padding: 4px 12px; border-radius: 6px; font-family: monospace;">${this.templateId || 'unknown'}</code></div>
-          <div style="font-size: 13px; color: #999;">Contact support with this reference ID.</div>
+          <div style="font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 8px;">Rendering Interrupted</div>
+          <div style="font-size: 14px; color: #6B7280; margin-bottom: 20px;">An error occurred during template rendering.</div>
+          <div style="font-size: 14px; color: #111827; margin-bottom: 16px;">Reference ID: <code style="background: #F3F4F6; padding: 4px 8px; border-radius: 4px; font-family: monospace;">${shortRefId}</code></div>
+          <div style="font-size: 13px; color: #9CA3AF;">Contact support with this reference ID.</div>
         </div>
       `;
     }
 
-    const raw = this.message;
-    const errorText = raw.split('\n').find(l => l.match(/^  Error:/i))?.replace(/^  Error:\s*/i, '') || raw.split('\n').pop()?.trim() || raw;
-    const errorType = 'TemplateSyntaxError';
+    const errorName = this.originalError?.name || this.name || 'Error';
+    const rawMessage = this.originalError?.message || this.message || '';
+    const errorText = rawMessage.split('\n').find(l => l.match(/^  Error:/i))?.replace(/^  Error:\s*/i, '') || rawMessage.split('\n').pop()?.trim() || rawMessage;
 
-    const locationFile = this.includeChain && this.includeChain.length > 0
-      ? `${escapeHtml(this.templateName)} (included from ${escapeHtml(this.includeChain[0].parentTmpl)}:${this.includeChain[0].parentLineno}${this.includeChain[0].parentColno ? ':' + this.includeChain[0].parentColno : ''})`
-      : escapeHtml(this.templateName);
+    const fnMatch = errorText.match(/call\s+[`'"]?([^`'"\s,]+)[`'"]?\s*,?\s*which/i);
+    const fnName = fnMatch ? fnMatch[1] : null;
+    const headerTitle = fnName
+      ? `Unable to call <code style="color: var(--color-error-text); background: var(--color-error-bg); padding: 2px 6px; border-radius: 4px; font-size: 20px;">${escapeHtml(fnName)}</code>`
+      : escapeHtml(errorText);
 
-    let snippetHtml = '';
-    if (this.snippet) {
-      const traceLines = this.snippet.split('\n');
-      snippetHtml = traceLines.map(line => {
-        const isError = line.trim().startsWith('>>>');
-        if (isError) {
-          return `<div style="background: #fef2f2; padding: 12px 16px; font-family: monospace; font-size: 13px; color: #dc2626; border-left: 4px solid #dc2626;">${escapeHtml(line.replace('>>>', '').trim())}</div>`;
+    const stackLines = [];
+    if (this.originalError?.stack) {
+      const stackParts = this.originalError.stack.split('\n');
+      for (const part of stackParts) {
+        const match = part.match(/at\s+(.+?)\s+\((.+?):(\d+):(\d+)\)/);
+        if (match) {
+          stackLines.push({
+            func: match[1],
+            file: match[2].split(/[/\\]/).pop(),
+            line: match[3],
+            col: match[4]
+          });
         }
-        return `<div style="padding: 4px 16px; font-family: monospace; font-size: 13px; color: #666;">${escapeHtml(line)}</div>`;
+      }
+    }
+
+    const highlightHtml = (code) => {
+      const escaped = escapeHtml(code);
+
+      let result = escaped;
+
+      result = result.replace(/&lt;(\/?)([\w-]+)/g, (m, slash, name) => {
+        return `&lt;${slash}<span class="syntax-tag">${name}</span>`;
+      });
+
+      result = result.replace(/([\w-]+)=(&quot;[^&]*&quot;)/g, (m, attr, value) => {
+        return `<span class="syntax-attr">${attr}</span>=${value}`;
+      });
+
+      return result;
+    };
+
+    let codeTraceHtml = '';
+    if (this.snippet) {
+      const lines = this.snippet.split('\n');
+      codeTraceHtml = lines.map(line => {
+        const trimmed = line.trim();
+        const isError = trimmed.startsWith('>>>');
+        let lineNum, code;
+
+        if (isError) {
+          const content = trimmed.replace(/^>>>\s*/, '');
+          const colonIdx = content.indexOf(':');
+          lineNum = colonIdx > 0 ? content.substring(0, colonIdx) : '';
+          code = colonIdx > 0 ? content.substring(colonIdx + 1).trim() : content;
+          return `<div class="code-line is-error"><span class="line-number">${lineNum}</span><span>&nbsp;&nbsp;<span style="color: #FF7B72; font-weight: bold;">${highlightHtml(code)}</span></span></div>`;
+        }
+
+        const colonIdx = trimmed.indexOf(':');
+        if (colonIdx > 0) {
+          lineNum = trimmed.substring(0, colonIdx);
+          code = trimmed.substring(colonIdx + 1).trim();
+          return `<div class="code-line"><span class="line-number">${lineNum}</span><span style="color: #8B949E;">${highlightHtml(code)}</span></div>`;
+        }
+
+        return `<div class="code-line"><span class="line-number">&nbsp;</span><span style="color: #6B7280;">${escapeHtml(trimmed)}</span></div>`;
       }).join('');
     }
 
-    let html = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 40px auto; background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); overflow: hidden;">
-        <div style="padding: 24px; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
-          <div style="display: flex; align-items: center; gap: 16px;">
-            <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-              <span style="color: white; font-size: 24px; font-weight: bold;">!</span>
-            </div>
-            <div style="color: white;">
-              <div style="font-size: 20px; font-weight: 700;">Template Rendering Failed</div>
-            </div>
-          </div>
-        </div>
-        <div style="padding: 24px;">
-          <div style="margin-bottom: 20px;">
-            <div style="font-size: 13px; color: #666; margin-bottom: 4px;">Message</div>
-            <div style="font-size: 15px; color: #1a1a1a;">${escapeHtml(errorText)}</div>
-          </div>
-          <div style="margin-bottom: 20px;">
-            <div style="font-size: 13px; color: #666; margin-bottom: 4px;">Reason</div>
-            <div style="font-size: 15px; color: #1a1a1a;">${errorText.includes('undefined') ? 'Function is undefined or falsey' : escapeHtml(errorText)}</div>
-          </div>
-          <div style="margin-bottom: 20px;">
-            <div style="font-size: 13px; color: #666; margin-bottom: 4px;">Code</div>
-            <div style="font-size: 14px;"><code style="background: #fef2f2; color: #dc2626; padding: 4px 10px; border-radius: 4px; font-family: monospace;">${errorType}</code></div>
-          </div>
-          <div style="margin-bottom: 20px;">
-            <div style="font-size: 13px; color: #666; margin-bottom: 8px;">Location</div>
-            <div style="background: #f9f9f9; border-radius: 8px; padding: 12px 16px;">
-              <div style="margin-bottom: 4px;"><span style="color: #666;">File:</span> <code style="font-family: monospace;">${locationFile}</code></div>
-              <div><span style="color: #666;">Line:</span> <strong>${this.line !== null && this.line !== undefined ? this.line + 1 : 'unknown'}${this.col !== null && this.col !== undefined ? ':' + this.col : ''}</strong></div>
-            </div>
-          </div>
-    `;
+    const errorMappings = [
+      {
+        patterns: [/undefined.*falsey|Unable to call.*which is undefined|cannot call/i],
+        causes: [
+          'Helper or filter not registered with env.addGlobal()',
+          'Variable not passed in render context',
+          'Misspelled function or filter name'
+        ],
+        fixCode: "env.addGlobal('fn', callback)",
+        fixComment: '// Register the missing function'
+      },
+      {
+        patterns: [/is not a function|is not defined/i],
+        causes: [
+          'Calling a non-function value',
+          'Variable contains wrong data type'
+        ],
+        fixCode: "// Check variable type before calling\nconsole.log(typeof variable)",
+        fixComment: '// Verify the variable type'
+      },
+      {
+        patterns: [/Unexpected token|unexpected end|SyntaxError/i],
+        causes: [
+          'Missing closing tag ({{ endif }}, {% endfor %})',
+          'Mismatched quotes or brackets'
+        ],
+        fixCode: "{% raw %}{{ expression }}{% endraw %}",
+        fixComment: '// Use raw tag for literal content'
+      },
+      {
+        patterns: [/filter.*not found|invalid filter/i],
+        causes: [
+          'Filter not registered with env.addFilter()',
+          'Typo in filter name'
+        ],
+        fixCode: "env.addFilter('myFilter', fn)",
+        fixComment: '// Register the missing filter'
+      },
+      {
+        patterns: [/block.*not found|undefined block/i],
+        causes: [
+          'Extending template without block definition',
+          'Incorrect block name'
+        ],
+        fixCode: "{% block content %}{% endblock %}",
+        fixComment: '// Define the missing block'
+      }
+    ];
 
-    if (snippetHtml) {
-      html += `
-          <div style="margin-bottom: 20px;">
-            <div style="font-size: 13px; color: #666; margin-bottom: 8px;">Traceback</div>
-            <div style="background: #1e1e1e; border-radius: 8px; overflow: hidden;">${snippetHtml}</div>
-          </div>
-      `;
+    let mappedError = null;
+    for (const mapping of errorMappings) {
+      for (const pattern of mapping.patterns) {
+        if (pattern.test(errorText)) {
+          mappedError = mapping;
+          break;
+        }
+      }
+      if (mappedError) break;
     }
 
-    html += `
-          <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e5e5;">
-            <div style="font-size: 12px; color: #999;">Reference ID: <code style="background: #f5f5f5; padding: 2px 8px; border-radius: 4px; font-family: monospace;">${this.templateId || 'unknown'}</code></div>
-          </div>
+    const possibleCauses = mappedError ? mappedError.causes : [
+      'Check template syntax',
+      'Verify variable scope'
+    ];
+
+    const fixCode = mappedError ? mappedError.fixCode : "env.addGlobal('fn', callback)";
+    const fixComment = mappedError ? mappedError.fixComment : '// Register global function';
+
+    const locationInfo = this.includeChain && this.includeChain.length > 0
+      ? `${escapeHtml(this.templateName)} (included from ${escapeHtml(this.includeChain[0].parentTmpl)}:${this.includeChain[0].parentLineno})`
+      : escapeHtml(this.templateName);
+
+    const html = `
+<style>
+:root {
+  color-scheme: light dark;
+  --color-bg-panel: light-dark(oklch(99% 0.005 285), oklch(18% 0.01 285));
+  --color-bg-page: light-dark(oklch(97% 0.01 285), oklch(12% 0.01 285));
+  --color-text-primary: light-dark(oklch(15% 0.02 285), oklch(95% 0.01 285));
+  --color-text-secondary: light-dark(oklch(45% 0.02 285), oklch(75% 0.01 285));
+  --color-border: light-dark(oklch(90% 0.01 285), oklch(25% 0.02 285));
+  --color-error-text: oklch(60% 0.18 25);
+  --color-error-bg: light-dark(oklch(95% 0.03 25), oklch(25% 0.06 25));
+  --color-error-border: oklch(65% 0.2 25);
+  --color-code-bg: light-dark(oklch(20% 0.01 285), oklch(10% 0.01 285));
+  --color-code-text: oklch(90% 0.01 285);
+  --color-code-line-number: oklch(55% 0.01 285);
+  --color-code-highlight-bg: oklch(30% 0.08 25);
+}
+.error-wrapper{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;max-width:800px;margin:40px auto;background:var(--color-bg-panel);border:1px solid var(--color-border);border-radius:12px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04);color:var(--color-text-primary);line-height:1.5;overflow:hidden;border-top:4px solid var(--color-error-border);transition:background-color 0.3s ease,color 0.3s ease}
+.text-label{font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px}
+.error-header{padding:24px 32px;border-bottom:1px solid var(--color-border);background:linear-gradient(to bottom,var(--color-error-bg) 0%,var(--color-bg-panel) 100%)}
+.error-header-title{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--color-error-text);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px}
+.code-block{background:var(--color-code-bg);color:var(--color-code-text);border-radius:8px;font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:13px;overflow:hidden;padding:12px 0}
+.code-line{display:flex;padding:4px 20px}
+.code-line.is-error{background:var(--color-code-highlight-bg);border-left:3px solid var(--color-error-border);padding-left:17px}
+.line-number{color:var(--color-code-line-number);width:24px;user-select:none;text-align:right;margin-right:20px}
+.stack-container{font-size:13px;border:1px solid var(--color-border);border-radius:8px;overflow:hidden}
+.stack-row{display:flex;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--color-border);transition:background-color 0.15s ease}
+.stack-row:hover{background-color:light-dark(oklch(95% 0.01 285), oklch(22% 0.02 285))}
+.stack-row:last-child{border-bottom:none}
+.btn{padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s ease;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn-solid{background:light-dark(oklch(20% 0.02 285), oklch(90% 0.01 285));color:light-dark(oklch(98% 0.01 285), oklch(10% 0.01 285));border:1px solid transparent}
+.btn-solid:hover{background:light-dark(oklch(35% 0.02 285), oklch(100% 0 0))}
+.causes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:32px;margin-bottom:32px}
+.syntax-tag{color:oklch(75% 0.15 190)}
+.syntax-attr{color:oklch(80% 0.12 110)}
+</style>
+
+<div class="error-wrapper">
+  <div class="error-header">
+    <div class="error-header-title">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      Template Rendering Error
+    </div>
+    <div style="font-size: 24px; font-weight: 600;">${headerTitle}</div>
+    <div style="margin-top: 8px; font-size: 15px; color: var(--color-text-secondary);">
+      The function is undefined or returned a falsey value in <span style="font-weight: 600; color: var(--color-text-primary);">${escapeHtml(this.templateName)}</span>
+    </div>
+  </div>
+
+  <div style="padding: 32px;">
+    <div style="margin-bottom: 32px;">
+      <div class="text-label">Source Trace</div>
+      <div class="code-block">
+        ${codeTraceHtml || '<div class="code-line"><span class="line-number">&nbsp;</span><span>Source not available</span></div>'}
+      </div>
+    </div>
+
+    <div class="causes-grid">
+      <div>
+        <div class="text-label">Possible Causes</div>
+        <div style="font-size: 14px; color: var(--color-text-primary);">
+          ${possibleCauses.map(c => `• ${escapeHtml(c)}`).join('<br>')}
         </div>
       </div>
-    `;
+      <div>
+        <div class="text-label">Suggested Fix</div>
+        <div style="background:light-dark(oklch(96% 0.01 285), oklch(22% 0.01 285));padding:16px;border-radius:8px;font-family:monospace;font-size:13px;color:var(--color-text-primary);border:1px solid var(--color-border);">
+          <div style="color:var(--color-text-secondary);margin-bottom:8px;">${escapeHtml(fixComment)}</div>
+          ${fixCode.includes('{%') || fixCode.includes('{{') 
+            ? `<span>${escapeHtml(fixCode)}</span>`
+            : `<span style="color:oklch(70% 0.12 190);">${escapeHtml(fixCode.split('(')[0])}</span>${escapeHtml(fixCode.substring(fixCode.indexOf('(')))}`
+          }
+        </div>
+      </div>
+    </div>
+
+    ${stackLines.length > 0 ? `
+    <div>
+      <div class="text-label">Stack Trace</div>
+      <div class="stack-container">
+        ${stackLines.slice(0, 5).map((s, i) => `
+          <div class="stack-row">
+            <span style="font-weight:500;font-family:monospace;${i === 0 ? 'color:oklch(70% 0.12 190);' : ''}">${escapeHtml(s.func)}()</span>
+            <span style="color:var(--color-text-secondary);">${escapeHtml(s.file)}:${s.line}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    ` : ''}
+  </div>
+
+  <div style="padding:16px 32px;background:light-dark(oklch(96% 0.01 285), oklch(16% 0.01 285));border-top:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+    <div style="font-size:12px;color:var(--color-text-secondary);">
+      Environment: <span style="font-weight:600;color:var(--color-text-primary);">${this.isProduction ? 'Production' : 'Development'}</span> &nbsp;|&nbsp;
+      Reference: <span style="font-family:monospace;font-weight:600;color:var(--color-text-primary);">${shortRefId}</span>
+    </div>
+    <div style="display:flex;gap:12px;">
+      <a href="${this.templatePath ? 'vscode://file/' + escapeHtml(this.templatePath) + ':' + displayLine + ':' + displayCol : '#'}" class="btn btn-solid" ${!this.templatePath ? 'style="opacity:0.5;pointer-events:none;"' : ''}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3z"></path>
+          <path d="M3 6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6z"></path>
+          <path d="M9 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"></path>
+          <rect x="15" y="6" width="6" height="12" rx="2"></rect>
+        </svg>
+        Open in IDE
+      </a>
+    </div>
+  </div>
+</div>
+`;
 
     return html;
   }
@@ -266,28 +460,12 @@ export class ErrorFormatter {
 
   extractErrorTemplateName(message) {
     if (!message) return null;
-    const match = message.match(/Template render error: \(([^)]+)\)/);
-    return match ? match[1] : null;
-  }
-
-  extractChildTemplateName(message) {
-    if (!message) return null;
-    const lines = message.split('\n');
-    let foundFirstTemplate = false;
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('(') && trimmed.endsWith(')')) {
-        const match = trimmed.match(/^\(([^)]+)\)$/);
-        if (match) {
-          if (!foundFirstTemplate) {
-            foundFirstTemplate = true;
-            continue;
-          }
-          return match[1];
-        }
-      }
+    const match = message.match(/\(included from ([^:)]+\.html)(?::\d+)?(?::\d+)?\)/);
+    if (match) {
+      return match[1];
     }
-    return null;
+    const simpleMatch = message.match(/^\(([^)]+)\)/);
+    return simpleMatch ? simpleMatch[1] : null;
   }
 
   extractLineInfo(message) {
@@ -321,15 +499,15 @@ export class ErrorFormatter {
     return null;
   }
 
-  async formatError(error, templateName, includeChain = null) {
+  async formatError(error, templateName, includeChain = null, templatePath = null) {
     this.init();
 
     const isProd = this.mode === 'production';
     const hasTables = this.hasTables();
 
     const extractedTemplateName = this.extractErrorTemplateName(error.message);
-    const childTemplateName = this.extractChildTemplateName(error.message);
-    const actualTemplateName = childTemplateName || extractedTemplateName || templateName;
+    const actualTemplateName = extractedTemplateName || templateName;
+    const actualTemplatePath = templatePath || error.templatePath || null;
     const templateInfo = hasTables ? this.getTemplateInfo(actualTemplateName) : null;
     const templateId = templateInfo?.uuid || null;
 
@@ -355,7 +533,18 @@ export class ErrorFormatter {
         line = 0;
       }
       if (line !== null && line !== undefined) {
-        const errorMeta = { templateName: actualTemplateName, templateId, line, col, snippet: null, includeChain: effectiveChain, isProduction: false };
+        const errorMeta = { 
+          templateName: actualTemplateName, 
+          templatePath: actualTemplatePath, 
+          templateId, 
+          line, 
+          col, 
+          snippet: null, 
+          includeChain: effectiveChain, 
+          isProduction: false,
+          errorName: error.name,
+          originalError: error
+        };
         const tempError = new NunjucksError(error.message, errorMeta);
         snippet = tempError.getSnippet(sourceLines, line + 1, 3);
       }
@@ -365,18 +554,22 @@ export class ErrorFormatter {
 
     const meta = {
       templateName: actualTemplateName,
+      templatePath: actualTemplatePath,
       templateId,
       line,
       col,
       snippet,
       includeChain: chainForDisplay,
-      isProduction: isProd
+      isProduction: isProd,
+      errorName: error.name,
+      originalError: error
     };
 
     if (isProd && hasTables) {
       this.logger.error({
         type: 'NUNJUCKS_RENDER_ERROR',
         templateName: actualTemplateName,
+        templatePath: actualTemplatePath,
         templateId,
         line,
         col,

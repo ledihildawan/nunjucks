@@ -177,8 +177,8 @@ export class BunSQLitePrecompiledLoader extends Loader {
     return this.mode;
   }
 
-  async formatError(error, templateName, includeChain = null) {
-    return this._errorFormatter.formatError(error, templateName, includeChain);
+  async formatError(error, templateName, includeChain = null, templatePath = null) {
+    return this._errorFormatter.formatError(error, templateName, includeChain, templatePath);
   }
 
   getTemplateUUID(name) {
