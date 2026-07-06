@@ -368,20 +368,42 @@ export class Template extends Obj {
       const result = await this.rootRenderFunc(this.env, context, frame, globalRuntime);
       return result;
     } catch (e) {
-      if (this.tmplProps && this.tmplProps.__sourceMap && (e.lineno === undefined || e.lineno === 0)) {
+      let sourceLineno = e.lineno;
+      let sourceColno = e.colno;
+
+      if (this.tmplProps && this.tmplProps.__sourceMap && (sourceLineno === undefined || sourceLineno === 0)) {
         const sm = this.tmplProps.__sourceMap;
         let bestMapping = null;
         for (const mapping of sm) {
-          if (e.lineno >= mapping.compiledLine) {
+          if (sourceLineno >= mapping.compiledLine) {
             bestMapping = mapping;
           }
         }
         if (bestMapping) {
-          const offset = e.lineno - bestMapping.compiledLine;
-          e.lineno = bestMapping.originalLine + offset;
-          e.colno = bestMapping.originalCol || 0;
+          const offset = sourceLineno - bestMapping.compiledLine;
+          sourceLineno = bestMapping.originalLine + offset;
+          sourceColno = bestMapping.originalCol || 0;
         }
       }
+
+      if (sourceLineno !== undefined && sourceLineno > 0) {
+        const templateLocation = this.path + ':' + sourceLineno + ':' + sourceColno;
+        let msg = '(' + this.path + ')';
+        if (sourceLineno && sourceColno) {
+          msg += ` [Line ${sourceLineno}, Column ${sourceColno}]`;
+        } else if (sourceLineno) {
+          msg += ` [Line ${sourceLineno}]`;
+        }
+        msg += '\n  ' + (e.message || '');
+        const newError = new Error(msg);
+        newError.name = e.name || 'Template render error';
+        newError.lineno = sourceLineno;
+        newError.colno = sourceColno;
+        const renderLine = 'at ' + (e.getterName || 'root') + ' (' + templateLocation + ')';
+        newError.stack = newError.message + '\n    ' + renderLine + '\n    at Environment.render';
+        throw newError;
+      }
+
       throw lib._prettifyError(this.path, this.env.opts.dev, e);
     }
   }
