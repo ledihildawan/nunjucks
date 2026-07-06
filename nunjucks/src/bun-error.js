@@ -66,10 +66,6 @@ export class NunjucksError extends Error {
       return `${pc.bgRed(pc.white(' ERROR '))} ${pc.dim('[Nunjucks]')} Template error\n${pc.dim('  Error ID:')} ${pc.yellow(this.templateId || 'unknown')}`;
     }
 
-    const raw = this.message;
-    const errorText = raw.split('\n').find(l => l.match(/^Error:/i))?.replace(/^Error:\s*/i, '') ||
-                      raw.split('\n').find(l => l.match(/Error:/i))?.replace(/Error:\s*/i, '') || raw;
-
     const lines = [];
 
     lines.push(`${pc.red('Nunjucks Error')} ${pc.dim('in')} ${pc.white(this.templateName)}`);
@@ -84,13 +80,8 @@ export class NunjucksError extends Error {
     }
 
     lines.push('');
-    lines.push(pc.red('Error:') + ' ' + errorText.trim());
-
-    if (this.includeChain && this.includeChain.length > 0) {
-      for (const chain of this.includeChain) {
-        lines.push(`  ${pc.dim('at')} ${pc.yellow(chain.parentTmpl)} ${pc.dim('line')} ${pc.cyan(chain.parentLineno)} ${pc.dim('(included)')}`);
-      }
-    }
+    lines.push(pc.dim('Trace:'));
+    lines.push(this.message);
 
     return lines.join('\n');
   }
@@ -100,9 +91,6 @@ export class NunjucksError extends Error {
       if (!str) return '';
       return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     };
-
-    const raw = this.message;
-    const errorText = raw.split('\n').find(l => l.match(/Error:/i))?.replace(/Error:\s*/i, '') || raw;
 
     if (this.isProduction) {
       return `
@@ -149,16 +137,10 @@ export class NunjucksError extends Error {
       html += `<div style="margin-bottom: 16px; background: #f9f9f9; border-radius: 8px; overflow: hidden;">${snippetLines}</div>`;
     }
 
-    let errorDetail = escapeHtml(errorText.trim());
-    if (this.includeChain && this.includeChain.length > 0) {
-      for (const chain of this.includeChain) {
-        errorDetail += `<div style="color: #666; margin-top: 4px;">at ${escapeHtml(chain.parentTmpl)} line ${chain.parentLineno} (included)</div>`;
-      }
-    }
-
     html += `
-      <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px;">
-        <div style="font-size: 13px; color: #1a1a1a; font-family: monospace; white-space: pre-wrap;">${errorDetail}</div>
+      <div style="font-size: 12px; color: #666; margin-bottom: 8px;">Trace:</div>
+      <div style="background: #f5f5f5; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 13px; white-space: pre-wrap; color: #333;">
+        ${escapeHtml(this.message)}
       </div>
     `;
 
