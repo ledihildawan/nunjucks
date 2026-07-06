@@ -283,6 +283,15 @@ export class ErrorFormatter {
     return { line: null, col: null };
   }
 
+  extractColFromMessage(message) {
+    if (!message) return null;
+    const colMatch = message.match(/Column (\d+)/i);
+    if (colMatch) {
+      return parseInt(colMatch[1], 10);
+    }
+    return null;
+  }
+
   extractIncludeChainFromMessage(message) {
     if (!message) return null;
     const match = message.match(/\(included from ([^:]+\.html) at line (\d+)\)/);
@@ -305,8 +314,9 @@ export class ErrorFormatter {
     const lineFromError = error.lineno;
     const colFromError = error.colno;
     const { line: lineFromMsg, col: colFromMsg } = this.extractLineInfo(error.message);
+    const colFromRawMsg = this.extractColFromMessage(error.message);
     let line = lineFromError || lineFromMsg;
-    let col = colFromError || colFromMsg;
+    let col = colFromError || colFromMsg || colFromRawMsg;
     let snippet = null;
 
     const effectiveChain = includeChain || error._includeChain || null;
