@@ -97,16 +97,17 @@ export class NunjucksError extends Error {
   toHtmlString() {
     if (this.isProduction) {
       return `
-        <div style="font-family: monospace; background: #1e1e1e; color: #d4d4d4; padding: 20px; border-radius: 8px; max-width: 800px;">
-          <div style="background: #f85149; color: white; padding: 4px 12px; border-radius: 4px; display: inline-block; margin-bottom: 16px; font-weight: bold;">
-            ERROR
+        <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 40px auto; padding: 24px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="width: 32px; height: 32px; background: #dc3545; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+              <span style="color: white; font-weight: bold; font-size: 18px;">!</span>
+            </div>
+            <div>
+              <div style="font-size: 18px; font-weight: 600; color: #1a1a1a;">Template Error</div>
+              <div style="font-size: 13px; color: #666;">ID: ${this.templateId || 'unknown'}</div>
+            </div>
           </div>
-          <div style="color: #f85149; font-size: 16px; margin-bottom: 12px;">
-            [Nunjucks] Render failed
-          </div>
-          <div style="color: #6a9955; font-size: 14px;">
-            ID: <code style="background: #2d2d2d; padding: 2px 6px; border-radius: 3px;">${this.templateId || 'unknown'}</code>
-          </div>
+          <div style="font-size: 14px; color: #666;">An error occurred while rendering this template. Check server logs for details.</div>
         </div>
       `;
     }
@@ -116,67 +117,72 @@ export class NunjucksError extends Error {
       return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     };
 
-    let html = `
-      <div style="font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; background: #1e1e1e; color: #d4d4d4; padding: 20px; border-radius: 8px; max-width: 900px; white-space: pre-wrap;">
-        <div style="margin-bottom: 16px;">
-          <span style="background: #f85149; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; margin-right: 12px;">ERROR</span>
-          <span style="color: #f85149; font-size: 16px;">Nunjucks Runtime Error</span>
-        </div>
+    const errorParts = this.message.split('\n').filter(l => l.trim());
 
-        <div style="margin-bottom: 12px; padding: 12px; background: #2d2d2d; border-radius: 4px; border-left: 3px solid #569cd6;">
-          <div style="color: #9cdcfe; margin-bottom: 8px;">
-            <span style="color: #6a9955;">→</span> Location:
-            <span style="color: #ce9178;">"${escapeHtml(this.templateName)}"</span>
-            ${this.line ? `<span style="color: #b5cea8;">:${this.line}${this.col ? ':' + this.col : ''}</span>` : ''}
+    let html = `
+      <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 700px; margin: 40px auto; padding: 24px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #eee;">
+          <div style="width: 36px; height: 36px; background: #dc3545; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <span style="color: white; font-weight: bold; font-size: 20px;">✕</span>
           </div>
-          ${this.templateId ? `
-          <div style="color: #6a9955; font-size: 13px;">
-            Template ID: <code style="background: #1e1e1e; padding: 2px 6px; border-radius: 3px; color: #ce9178;">${this.templateId}</code>
+          <div>
+            <div style="font-size: 18px; font-weight: 600; color: #1a1a1a;">Nunjucks Error</div>
+            <div style="font-size: 13px; color: #666;">${escapeHtml(this.templateName)}${this.line ? ` <span style="color: #999;">line ${this.line}${this.col ? ', col ' + this.col : ''}</span>` : ''}</div>
           </div>
-          ` : ''}
         </div>
     `;
 
+    if (this.templateId) {
+      html += `
+        <div style="margin-bottom: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px;">
+          <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #999; margin-bottom: 4px;">Template ID</div>
+          <div style="font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 13px; color: #333;">${this.templateId}</div>
+        </div>
+      `;
+    }
+
     if (this.includeChain && this.includeChain.length > 0) {
       html += `
-        <div style="margin-bottom: 12px; padding: 12px; background: #2d2d2d; border-radius: 4px; border-left: 3px solid #dcdcaa;">
-          <div style="color: #9cdcfe; margin-bottom: 8px;">
-            <span style="color: #6a9955;">→</span> Include Chain:
-          </div>
+        <div style="margin-bottom: 16px;">
+          <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #999; margin-bottom: 8px;">Include Chain</div>
+          <div style="padding-left: 0;">
       `;
       for (const chain of this.includeChain) {
         html += `
-          <div style="color: #ce9178; margin-left: 16px; margin-bottom: 4px;">
-            <span style="color: #d7ba7d;">↳</span> ${escapeHtml(chain.parentTmpl)}
-            <span style="color: #6a9955;"> at line </span>
-            <span style="color: #b5cea8;">${chain.parentLineno}</span>
-          </div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+              <span style="color: #dc3545;">↳</span>
+              <span style="color: #333;">${escapeHtml(chain.parentTmpl)}</span>
+              <span style="color: #999; font-size: 13px;">at line ${chain.parentLineno}</span>
+            </div>
         `;
       }
-      html += `</div>`;
+      html += `
+          </div>
+        </div>
+      `;
     }
 
     if (this.snippet) {
       const snippetLines = this.snippet.split('\n').map(line => {
-        if (line.startsWith('>>>')) {
-          return `<div style="background: #f8514922; color: #f85149; padding: 4px 12px; border-left: 4px solid #f85149; font-weight: bold;">${escapeHtml(line)}</div>`;
+        const trimmed = line.trim();
+        if (trimmed.startsWith('>>>')) {
+          return `<div style="background: #fff5f5; color: #dc3545; padding: 8px 16px; border-left: 4px solid #dc3545; font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 13px; font-weight: 600;">${escapeHtml(line)}</div>`;
         }
-        return `<div style="color: #9cdcfe; padding: 4px 12px;">${escapeHtml(line)}</div>`;
+        return `<div style="color: #555; padding: 4px 16px; font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 13px;">${escapeHtml(line)}</div>`;
       }).join('');
 
       html += `
-        <div style="margin-bottom: 12px; background: #2d2d2d; border-radius: 4px; border-left: 4px solid #569cd6; overflow: hidden;">
-          <div style="color: #6a9955; padding: 8px 12px; font-size: 12px; border-bottom: 1px solid #3e3e3e;">Code snippet:</div>
-          <div style="font-family: 'SF Mono', 'Fira Code', Consolas, monospace; font-size: 13px; line-height: 1.5;">${snippetLines}</div>
+        <div style="margin-bottom: 16px;">
+          <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #999; margin-bottom: 8px;">Code</div>
+          <div style="background: #f8f9fa; border-radius: 6px; overflow: hidden; border: 1px solid #e5e5e5;">${snippetLines}</div>
         </div>
       `;
     }
 
     html += `
-      <div style="margin-top: 16px; padding: 12px; background: #f8514922; border-radius: 4px; border-left: 3px solid #f85149;">
-        <div style="color: #f85149; font-size: 14px; white-space: pre-wrap;">
-          <span style="color: #d7ba7d;">✖</span> ${escapeHtml(this.message)}
-        </div>
+      <div style="background: #fff5f5; border: 1px solid #f5c6cb; border-radius: 6px; padding: 12px 16px;">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #dc3545; margin-bottom: 4px;">Error</div>
+        <div style="font-size: 14px; color: #721c24; font-family: 'SF Mono', Monaco, Consolas, monospace;">${escapeHtml(errorParts[0] || this.message)}</div>
       </div>
     </div>
     `;
