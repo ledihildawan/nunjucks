@@ -313,9 +313,8 @@ export function contextOrFrameLookup(context, frame, name) {
 export function handleError(error, lineno, colno) {
   if (error.lineno) {
     return error;
-  } else {
-    return new lib.TemplateError(error, lineno, colno);
   }
+  return new lib.TemplateError(error, lineno, colno);
 }
 
 export async function asyncEach(arr, dimen, iter) {

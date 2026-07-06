@@ -4,6 +4,7 @@ import * as nodes from './nodes.js';
 import { TemplateError } from './lib.js';
 import { Frame } from './runtime.js';
 import { Obj } from './object.js';
+import { SourceMap, enableSourceMap } from './source-map.js';
 
 const compareOps = {
   '==': '==',
@@ -17,7 +18,7 @@ const compareOps = {
 };
 
 export class Compiler extends Obj {
-  init(templateName, throwOnUndefined) {
+  init(templateName, throwOnUndefined, source) {
     this.templateName = templateName;
     this.codebuf = [];
     this.lastId = 0;
@@ -26,6 +27,9 @@ export class Compiler extends Obj {
     this._scopeClosers = '';
     this.inBlock = false;
     this.throwOnUndefined = throwOnUndefined;
+    this.compiledLine = 0;
+    this.sourceMap = new SourceMap(templateName, source);
+    enableSourceMap();
   }
 
   fail(msg, lineno, colno) {
@@ -55,8 +59,26 @@ export class Compiler extends Obj {
     this.codebuf.push(code);
   }
 
-  _emitLine(code) {
+  _emitLine(code, originalLine) {
+    this.compiledLine++;
+    if (originalLine !== undefined && originalLine !== null) {
+      this.sourceMap.addMapping(this.compiledLine, originalLine);
+    }
     this._emit(code + '\n');
+  }
+
+  _emitLineWithMapping(code, templateLine) {
+    this.compiledLine++;
+    if (templateLine !== undefined) {
+      this.sourceMap.addMapping(this.compiledLine, templateLine);
+    }
+    this._emit(code + '\n');
+  }
+
+  _trackMapping(templateLine) {
+    if (templateLine !== undefined) {
+      this.sourceMap.addMapping(this.compiledLine + 1, templateLine);
+    }
   }
 
   _emitLines(...lines) {
@@ -67,7 +89,7 @@ export class Compiler extends Obj {
     this.buffer = 'output';
     this._scopeClosers = '';
     this._emitLine(`async function ${name}(env, context, frame, runtime) {`);
-    this._emitLine(`var lineno = ${node.lineno};`);
+    this._emitLineWithMapping(`var lineno = ${node.lineno};`, node.lineno);
     this._emitLine(`var colno = ${node.colno};`);
     this._emitLine(`var ${this.buffer} = "";`);
     this._emitLine('try {');
@@ -527,6 +549,7 @@ export class Compiler extends Obj {
   }
 
   compileFunCall(node, frame) {
+    this._trackMapping(node.lineno);
     this._emit('(lineno = ' + node.lineno +
       ', colno = ' + node.colno + ', ');
 
@@ -1202,10 +1225,14 @@ export class Compiler extends Obj {
   getCode() {
     return this.codebuf.join('');
   }
+
+  getSourceMap() {
+    return this.sourceMap;
+  }
 }
 
 export function compile(src, asyncPipes, extensions, name, opts = {}) {
-  const c = new Compiler(name, opts.throwOnUndefined);
+  const c = new Compiler(name, opts.throwOnUndefined, src);
 
   const preprocessors = (extensions || []).map(ext => ext.preprocess).filter(f => !!f);
 
@@ -1217,4 +1244,8 @@ export function compile(src, asyncPipes, extensions, name, opts = {}) {
     name
   ));
   return c.getCode();
+}
+
+export function getSourceMap(compiler) {
+  return compiler.sourceMap;
 }
