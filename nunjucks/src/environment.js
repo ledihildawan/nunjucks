@@ -441,7 +441,7 @@ export class Template extends Obj {
         }
       }
 
-      throw lib._prettifyError(this.path, this.env.opts.dev, e, e._includeChain || this._includeChain);
+      throw lib._prettifyError(e.path || this.path, this.env.opts.dev, e, e._includeChain || this._includeChain);
     }
   }
 
@@ -460,7 +460,7 @@ export class Template extends Obj {
       await this.rootRenderFunc(this.env, context, frame, globalRuntime);
       return context.getExported();
     } catch (e) {
-      throw lib._prettifyError(this.path, this.env.opts.dev, e, e._includeChain || this._includeChain);
+      throw lib._prettifyError(e.path || this.path, this.env.opts.dev, e, e._includeChain || this._includeChain);
     }
   }
 
