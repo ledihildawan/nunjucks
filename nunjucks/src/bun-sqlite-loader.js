@@ -21,6 +21,8 @@ export class BunSQLitePrecompiledLoader extends Loader {
     this.pathsToNames = {};
     this.async = true;
     this.mode = opts.mode || 'development';
+    this.autoPrecompile = opts.autoPrecompile !== false;
+    this.templateDir = opts.templateDir || dirname(dbPath);
 
     this._initDB();
     this._errorFormatter = new ErrorFormatter(dbPath, { mode: this.mode });
@@ -30,6 +32,21 @@ export class BunSQLitePrecompiledLoader extends Loader {
     const dir = dirname(this.dbPath);
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true });
+    }
+    if (this.autoPrecompile && !existsSync(this.dbPath)) {
+      this._precompileSync();
+    }
+  }
+
+  _precompileSync() {
+    if (!this.autoPrecompile) return;
+    if (!SQLite) return;
+
+    try {
+      const { precompileToSQLite } = require('./bun-sqlite-precompile.js');
+      precompileToSQLite(this.templateDir, this.dbPath, { force: true });
+    } catch (e) {
+      console.error('[SQLite Loader] Auto-precompile failed:', e.message);
     }
   }
 

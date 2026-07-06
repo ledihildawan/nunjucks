@@ -1,6 +1,5 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { existsSync } from 'node:fs';
 import nunjucks from '../../nunjucks/index.js';
 import express from 'express';
 
@@ -10,16 +9,10 @@ const DB_PATH = path.join(__dirname, 'views', 'templates.db');
 
 const app = express();
 
-async function ensureDB() {
-  if (!existsSync(DB_PATH)) {
-    console.log('[Init] Precompiling templates to SQLite...');
-    await nunjucks.precompileToSQLite(VIEWS, DB_PATH);
-    console.log('[Init] Precompilation complete.');
-  }
-}
-
 const sqliteLoader = new nunjucks.BunSQLitePrecompiledLoader(DB_PATH, {
-  mode: 'development'
+  mode: 'development',
+  templateDir: VIEWS,
+  autoPrecompile: true
 });
 
 const envDev = new nunjucks.Environment(sqliteLoader, {
@@ -28,12 +21,12 @@ const envDev = new nunjucks.Environment(sqliteLoader, {
 
 sqliteLoader.setMode('development');
 const envProd = new nunjucks.Environment(new nunjucks.BunSQLitePrecompiledLoader(DB_PATH, {
-  mode: 'production'
+  mode: 'production',
+  templateDir: VIEWS,
+  autoPrecompile: true
 }), {
   autoescape: true
 });
-
-ensureDB();
 
 app.get('/', (req, res) => {
   res.send(`
