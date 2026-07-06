@@ -276,6 +276,10 @@ export class ErrorFormatter {
     if (lineMatch) {
       return { line: parseInt(lineMatch[1], 10), col: lineMatch[2] ? parseInt(lineMatch[2], 10) : null };
     }
+    const includedMatch = message.match(/\(included from [^:]+:(\d+)\)/);
+    if (includedMatch) {
+      return { line: parseInt(includedMatch[1], 10), col: null };
+    }
     return { line: null, col: null };
   }
 
