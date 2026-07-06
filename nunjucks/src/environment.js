@@ -200,7 +200,9 @@ export class Environment extends EmitterObj {
     }
 
     if (tmpl) {
-      if (includeChain) {
+      if (!includeChain) {
+        tmpl._includeChain = null;
+      } else {
         tmpl._includeChain = includeChain;
       }
       if (eagerCompile) {
