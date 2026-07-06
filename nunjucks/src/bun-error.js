@@ -101,9 +101,13 @@ export class NunjucksError extends Error {
       return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     };
 
-    const cleanMessage = this.message
+    let cleanMessage = this.message
+      .replace(/\s*\(included from [^)]+\)\s*/g, '')
+      .replace(/\s*\[Line \d+\]\s*/gi, '')
+      .replace(/Template render error:/gi, '')
       .replace(/^\([^)]+\)\s*/, '')
-      .replace(/^\s*Error:\s*/, '');
+      .replace(/^\s*Error:\s*/i, '')
+      .trim();
 
     if (this.isProduction) {
       return `
@@ -262,6 +266,8 @@ export class ErrorFormatter {
       const errorMeta = { templateName: actualTemplateName, templateId, line, col, snippet: null, includeChain: effectiveChain, isProduction: false };
       const tempError = new NunjucksError(error.message, errorMeta);
       snippet = tempError.getSnippet(sourceLines, line, 3);
+    } else if (line) {
+      snippet = `>>> ${line}: [source not available]`;
     }
 
     const meta = {
