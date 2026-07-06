@@ -66,9 +66,9 @@ export class NunjucksError extends Error {
       return `${pc.bgRed(pc.white(' ERROR '))} ${pc.dim('[Nunjucks]')} Template error\n${pc.dim('  Error ID:')} ${pc.yellow(this.templateId || 'unknown')}`;
     }
 
-    const cleanMessage = this.message
-      .replace(/^\([^)]+\)\s*/, '')
-      .replace(/^\s*Error:\s*/, '');
+    const raw = this.message;
+    const errorText = raw.split('\n').find(l => l.match(/^Error:/i))?.replace(/^Error:\s*/i, '') ||
+                      raw.split('\n').find(l => l.match(/Error:/i))?.replace(/Error:\s*/i, '') || raw;
 
     const lines = [];
 
@@ -84,7 +84,7 @@ export class NunjucksError extends Error {
     }
 
     lines.push('');
-    lines.push(pc.red('Error:') + ' ' + cleanMessage);
+    lines.push(pc.red('Error:') + ' ' + errorText.trim());
 
     if (this.includeChain && this.includeChain.length > 0) {
       for (const chain of this.includeChain) {
@@ -101,13 +101,8 @@ export class NunjucksError extends Error {
       return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     };
 
-    let cleanMessage = this.message
-      .replace(/\s*\(included from [^)]+\)\s*/g, '')
-      .replace(/\s*\[Line \d+\]\s*/gi, '')
-      .replace(/Template render error:/gi, '')
-      .replace(/^\([^)]+\)\s*/, '')
-      .replace(/^\s*Error:\s*/i, '')
-      .trim();
+    const raw = this.message;
+    const errorText = raw.split('\n').find(l => l.match(/Error:/i))?.replace(/Error:\s*/i, '') || raw;
 
     if (this.isProduction) {
       return `
@@ -154,7 +149,7 @@ export class NunjucksError extends Error {
       html += `<div style="margin-bottom: 16px; background: #f9f9f9; border-radius: 8px; overflow: hidden;">${snippetLines}</div>`;
     }
 
-    let errorDetail = escapeHtml(cleanMessage);
+    let errorDetail = escapeHtml(errorText.trim());
     if (this.includeChain && this.includeChain.length > 0) {
       for (const chain of this.includeChain) {
         errorDetail += `<div style="color: #666; margin-top: 4px;">at ${escapeHtml(chain.parentTmpl)} line ${chain.parentLineno} (included)</div>`;
