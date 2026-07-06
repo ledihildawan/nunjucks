@@ -392,32 +392,36 @@ export class Template extends Obj {
       let sourceColno = e.colno;
 
       const errorPath = e.path || this.path;
-      let sourceMap = this.tmplProps?.__sourceMap;
+      const isIncludeError = e.message && e.message.includes('(included from');
 
-      if (errorPath !== this.path && this.env) {
-        const loaders = this.env.loaders || [];
-        for (const loader of loaders) {
-          if (loader._getSourceMap) {
-            const loaderMap = loader._getSourceMap(errorPath);
-            if (loaderMap) {
-              sourceMap = loaderMap;
-              break;
+      if (!isIncludeError) {
+        let sourceMap = this.tmplProps?.__sourceMap;
+
+        if (errorPath !== this.path && this.env) {
+          const loaders = this.env.loaders || [];
+          for (const loader of loaders) {
+            if (loader._getSourceMap) {
+              const loaderMap = loader._getSourceMap(errorPath);
+              if (loaderMap) {
+                sourceMap = loaderMap;
+                break;
+              }
             }
           }
         }
-      }
 
-      if (sourceMap) {
-        let bestMapping = null;
-        for (const mapping of sourceMap) {
-          if (sourceLineno >= mapping.compiledLine) {
-            bestMapping = mapping;
+        if (sourceMap) {
+          let bestMapping = null;
+          for (const mapping of sourceMap) {
+            if (sourceLineno >= mapping.compiledLine) {
+              bestMapping = mapping;
+            }
           }
-        }
-        if (bestMapping) {
-          const offset = sourceLineno - bestMapping.compiledLine;
-          sourceLineno = bestMapping.originalLine + offset;
-          sourceColno = bestMapping.originalCol || 0;
+          if (bestMapping) {
+            const offset = sourceLineno - bestMapping.compiledLine;
+            sourceLineno = bestMapping.originalLine + offset;
+            sourceColno = bestMapping.originalCol || 0;
+          }
         }
       }
 
