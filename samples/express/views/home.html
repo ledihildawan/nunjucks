@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="welcome">
+  <h2>Welcome, {{ username }}!</h2>
+  <p>This page demonstrates layout and blocks.</p>
+
+  <h3>Your Items:</h3>
+  <ul>
+    {% for item in items %}
+    <li>{{ item }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

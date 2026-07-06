@@ -20,11 +20,11 @@ export function lookupEscape(ch) {
   return escapeMap[ch];
 }
 
-export function _prettifyError(path, withInternals, err) {
+export function _prettifyError(path, withInternals, err, includeChain) {
   if (!err.Update) {
     err = new TemplateError(err);
   }
-  err.Update(path);
+  err.Update(path, includeChain);
 
   if (!withInternals) {
     const old = err;
@@ -49,7 +49,7 @@ export class TemplateError extends Error {
     this.firstUpdate = true;
   }
 
-  Update(path) {
+  Update(path, includeChain) {
     let msg = '(' + (path || 'unknown path') + ')';
     if (this.firstUpdate) {
       if (this.lineno && this.colno) {
@@ -57,6 +57,9 @@ export class TemplateError extends Error {
       } else if (this.lineno) {
         msg += ` [Line ${this.lineno}]`;
       }
+    }
+    if (includeChain && this.firstUpdate) {
+      msg += `\n   (included from ${includeChain.parentTmpl} at line ${includeChain.parentLineno})`;
     }
     msg += '\n ';
     if (this.firstUpdate) {

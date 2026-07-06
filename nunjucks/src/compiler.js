@@ -80,6 +80,14 @@ export class Compiler extends Obj {
     }
   }
 
+  _emitLineWithLineno(code, templateLine) {
+    this.compiledLine++;
+    if (templateLine !== undefined) {
+      this.sourceMap.addMapping(this.compiledLine, templateLine);
+    }
+    this._emit(code + '\n');
+  }
+
   _emitLines(...lines) {
     lines.forEach((line) => this._emitLine(line));
   }
@@ -548,7 +556,6 @@ export class Compiler extends Obj {
   }
 
   compileFunCall(node, frame) {
-    this._trackMapping(node.lineno);
     this._emit('(lineno = ' + node.lineno +
       ', colno = ' + node.colno + ', ');
 
@@ -1105,7 +1112,8 @@ export class Compiler extends Obj {
     this._emit(`var ${tmplVar} = await env.getTemplate(`);
     this._compileExpression(node.template, frame);
     const ignoreMissing = node.ignoreMissing ? 'true' : 'false';
-    this._emitLine(`, false, ${this._templateName()}, ${ignoreMissing});`);
+    const includeChain = `{parentTmpl: ${this._templateName()}, parentLineno: ${node.lineno + 1}}`;
+    this._emitLine(`, false, ${includeChain}, ${ignoreMissing});`);
 
     this._emit(`var ${resultVar} = await ${tmplVar}.render(context.getVariables(), frame);`);
     this._emitLine(`${this.buffer} += ${resultVar};`);
@@ -1139,7 +1147,7 @@ export class Compiler extends Obj {
         }
       } else {
         const isPipe = child instanceof nodes.Pipe || child instanceof nodes.PipeAsync;
-        this._emit(`lineno = ${node.lineno}; colno = ${node.colno}; ${this.buffer} += runtime.suppressValue(`);
+        this._emitLineWithLineno(`lineno = ${node.lineno}; colno = ${node.colno}; ${this.buffer} += runtime.suppressValue(`, node.lineno);
         if (!isPipe) {
           this._emit('await runtime.awaitValue(');
         }

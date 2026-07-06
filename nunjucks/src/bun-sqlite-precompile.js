@@ -27,6 +27,21 @@ function normalizePathSeparators(p) {
   return p.split('\\').join('/');
 }
 
+function detectTemplateCategory(source, name) {
+  if (source.includes('{% extends') || source.includes('{% extends ')) {
+    return 'layout';
+  }
+  if (name.startsWith('_') || name.includes('/partials/') || name.includes('partials/')) {
+    return 'partial';
+  }
+  return 'page';
+}
+
+function getOriginalDir(name, templateDir) {
+  const normalizedDir = normalizePathSeparators(templateDir).replace(/^\.\//, '');
+  return normalizedDir.split('/').pop() || '';
+}
+
 function _precompile(str, name, env) {
   env = env || new Environment([]);
 
@@ -84,6 +99,16 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
       original_line INTEGER NOT NULL,
       original_col INTEGER DEFAULT 0,
       PRIMARY KEY (name, compiled_line)
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS _template_meta (
+      name TEXT PRIMARY KEY,
+      originalDir TEXT,
+      category TEXT,
+      linesOfCode INTEGER,
+      compiledAt INTEGER
     )
   `);
 
@@ -149,6 +174,16 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
           }
         }
 
+        const category = detectTemplateCategory(source, name);
+        const originalDir = getOriginalDir(name, templateDir);
+        const linesOfCode = source.split('\n').length;
+        const compiledAt = Math.floor(Date.now() / 1000);
+
+        const metaStmt = db.prepare(
+          'INSERT OR REPLACE INTO _template_meta (name, originalDir, category, linesOfCode, compiledAt) VALUES (?, ?, ?, ?, ?)'
+        );
+        metaStmt.run(name, originalDir, category, linesOfCode, compiledAt);
+
         updated++;
 
         console.log(`[SQLite] Precompiled: ${name}`);
@@ -186,6 +221,16 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
           insertStmt.run(name, mapping.compiledLine, mapping.originalLine, mapping.originalCol || 0);
         }
       }
+
+      const category = detectTemplateCategory(source, name);
+      const originalDir = getOriginalDir(name, templateDir);
+      const linesOfCode = source.split('\n').length;
+      const compiledAt = Math.floor(Date.now() / 1000);
+
+      const metaStmt = db.prepare(
+        'INSERT OR REPLACE INTO _template_meta (name, originalDir, category, linesOfCode, compiledAt) VALUES (?, ?, ?, ?, ?)'
+      );
+      metaStmt.run(name, originalDir, category, linesOfCode, compiledAt);
 
       updated++;
       console.log(`[SQLite] Precompiled: ${name}`);

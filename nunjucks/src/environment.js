@@ -171,8 +171,16 @@ export class Environment extends EmitterObj {
     return (isRelative && loader.resolve) ? loader.resolve(parentName, filename) : filename;
   }
 
-  async getTemplate(name, eagerCompile, parentName, ignoreMissing) {
+  async getTemplate(name, eagerCompile, includeChain, ignoreMissing) {
     var tmpl = null;
+    var parentName = null;
+    if (includeChain && typeof includeChain === 'object') {
+      parentName = includeChain.parentTmpl;
+    } else if (typeof includeChain === 'string') {
+      parentName = includeChain;
+      includeChain = null;
+    }
+
     if (name && name.raw) {
       name = name.raw;
     }
@@ -192,6 +200,9 @@ export class Environment extends EmitterObj {
     }
 
     if (tmpl) {
+      if (includeChain) {
+        tmpl._includeChain = includeChain;
+      }
       if (eagerCompile) {
         tmpl.compile();
       }
@@ -222,10 +233,17 @@ export class Environment extends EmitterObj {
     }
 
     if (!info) {
-      return new Template(noopTmplSrc, this, '', eagerCompile);
+      const emptyTmpl = new Template(noopTmplSrc, this, '', eagerCompile);
+      if (includeChain) {
+        emptyTmpl._includeChain = includeChain;
+      }
+      return emptyTmpl;
     }
 
     const newTmpl = new Template(info.src, this, info.path, eagerCompile);
+    if (includeChain) {
+      newTmpl._includeChain = includeChain;
+    }
     if (!info.noCache) {
       info.loader.cache[name] = newTmpl;
     }
@@ -404,7 +422,7 @@ export class Template extends Obj {
         throw newError;
       }
 
-      throw lib._prettifyError(this.path, this.env.opts.dev, e);
+      throw lib._prettifyError(this.path, this.env.opts.dev, e, this._includeChain);
     }
   }
 
@@ -412,7 +430,7 @@ export class Template extends Obj {
     try {
       this.compile();
     } catch (e) {
-      throw lib._prettifyError(this.path, this.env.opts.dev, e);
+      throw lib._prettifyError(this.path, this.env.opts.dev, e, this._includeChain);
     }
 
     const frame = parentFrame ? parentFrame.push() : new Frame();
@@ -423,7 +441,7 @@ export class Template extends Obj {
       await this.rootRenderFunc(this.env, context, frame, globalRuntime);
       return context.getExported();
     } catch (e) {
-      throw lib._prettifyError(this.path, this.env.opts.dev, e);
+      throw lib._prettifyError(this.path, this.env.opts.dev, e, this._includeChain);
     }
   }
 
