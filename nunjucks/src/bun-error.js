@@ -89,7 +89,7 @@ export class NunjucksError extends Error {
     lines.push('');
     lines.push(`${pc.bold('Location:')}`);
     lines.push(`  ${pc.bold('File:')} ${locationFile}`);
-    lines.push(`  ${pc.bold('Line:')} ${this.line || 'unknown'}`);
+    lines.push(`  ${pc.bold('Line:')} ${this.line || 'unknown'}${this.col ? ':' + this.col : ''}`);
 
     if (traceLines.length > 0) {
       lines.push('');
@@ -177,7 +177,7 @@ export class NunjucksError extends Error {
             <div style="font-size: 13px; color: #666; margin-bottom: 8px;">Location</div>
             <div style="background: #f9f9f9; border-radius: 8px; padding: 12px 16px;">
               <div style="margin-bottom: 4px;"><span style="color: #666;">File:</span> <code style="font-family: monospace;">${locationFile}</code></div>
-              <div><span style="color: #666;">Line:</span> <strong>${this.line || 'unknown'}</strong></div>
+              <div><span style="color: #666;">Line:</span> <strong>${this.line || 'unknown'}${this.col ? ':' + this.col : ''}</strong></div>
             </div>
           </div>
     `;
