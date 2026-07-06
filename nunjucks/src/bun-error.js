@@ -296,19 +296,24 @@ export class ErrorFormatter {
     const lineFromError = error.lineno;
     const colFromError = error.colno;
     const { line: lineFromMsg, col: colFromMsg } = this.extractLineInfo(error.message);
-    const line = lineFromError || lineFromMsg;
-    const col = colFromError || colFromMsg;
+    let line = lineFromError || lineFromMsg;
+    let col = colFromError || colFromMsg;
     let snippet = null;
 
     const effectiveChain = includeChain || error._includeChain || null;
 
     const chainForDisplay = effectiveChain ? (Array.isArray(effectiveChain) ? effectiveChain : [effectiveChain]) : null;
 
-    if (templateInfo?.source_content && line) {
+    if (templateInfo?.source_content) {
       const sourceLines = this.getSourceLines(templateInfo.source_content);
-      const errorMeta = { templateName: actualTemplateName, templateId, line, col, snippet: null, includeChain: effectiveChain, isProduction: false };
-      const tempError = new NunjucksError(error.message, errorMeta);
-      snippet = tempError.getSnippet(sourceLines, line, 3);
+      if (!line && sourceLines.length === 1) {
+        line = 1;
+      }
+      if (line) {
+        const errorMeta = { templateName: actualTemplateName, templateId, line, col, snippet: null, includeChain: effectiveChain, isProduction: false };
+        const tempError = new NunjucksError(error.message, errorMeta);
+        snippet = tempError.getSnippet(sourceLines, line, 3);
+      }
     } else if (line) {
       snippet = `>>> ${line}: [source not available]`;
     }
