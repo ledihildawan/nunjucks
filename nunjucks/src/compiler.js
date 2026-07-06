@@ -1139,7 +1139,7 @@ export class Compiler extends Obj {
         }
       } else {
         const isPipe = child instanceof nodes.Pipe || child instanceof nodes.PipeAsync;
-        this._emit(`${this.buffer} += runtime.suppressValue(`);
+        this._emit(`lineno = ${node.lineno}; colno = ${node.colno}; ${this.buffer} += runtime.suppressValue(`);
         if (!isPipe) {
           this._emit('await runtime.awaitValue(');
         }
