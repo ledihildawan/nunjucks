@@ -73,9 +73,6 @@ export class NunjucksError extends Error {
     const lines = [];
 
     lines.push(`${pc.red('Nunjucks Error')} ${pc.dim('in')} ${pc.white(this.templateName)}`);
-    if (this.line) {
-      lines.push(`${pc.dim('  Line:')} ${pc.cyan(this.line)}${this.col ? pc.dim(':') + pc.cyan(this.col) : ''}`);
-    }
 
     if (this.templateId) {
       lines.push(`${pc.dim('  ID:')} ${pc.yellow(this.templateId)}`);
@@ -86,15 +83,14 @@ export class NunjucksError extends Error {
       lines.push(this.snippet);
     }
 
-    if (this.includeChain && this.includeChain.length > 0) {
-      lines.push('');
-      for (const chain of this.includeChain) {
-        lines.push(`${pc.dim('  ↳ Included from')} ${pc.yellow(chain.parentTmpl)} ${pc.dim('(line')} ${pc.cyan(chain.parentLineno)}${pc.dim(')')}`);
-      }
-    }
-
     lines.push('');
     lines.push(pc.red('Error:') + ' ' + cleanMessage);
+
+    if (this.includeChain && this.includeChain.length > 0) {
+      for (const chain of this.includeChain) {
+        lines.push(`  ${pc.dim('at')} ${pc.yellow(chain.parentTmpl)} ${pc.dim('line')} ${pc.cyan(chain.parentLineno)} ${pc.dim('(included)')}`);
+      }
+    }
 
     return lines.join('\n');
   }
@@ -138,10 +134,6 @@ export class NunjucksError extends Error {
         <div style="padding: 24px;">
     `;
 
-    if (this.line) {
-      html += `<div style="margin-bottom: 8px; font-size: 13px;"><span style="color: #666;">Line:</span> <strong>${this.line}</strong>${this.col ? ':' + this.col : ''}</div>`;
-    }
-
     if (this.templateId) {
       html += `<div style="margin-bottom: 16px; font-size: 13px;"><span style="color: #666;">ID:</span> <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 4px;">${this.templateId}</code></div>`;
     }
@@ -158,17 +150,16 @@ export class NunjucksError extends Error {
       html += `<div style="margin-bottom: 16px; background: #f9f9f9; border-radius: 8px; overflow: hidden;">${snippetLines}</div>`;
     }
 
+    let errorDetail = escapeHtml(cleanMessage);
     if (this.includeChain && this.includeChain.length > 0) {
-      html += `<div style="margin-bottom: 16px; padding: 12px; background: #f9f9f9; border-radius: 8px; font-size: 13px;">`;
       for (const chain of this.includeChain) {
-        html += `<div style="color: #666;"><span style="color: #dc2626;">↳</span> Included from <strong>${escapeHtml(chain.parentTmpl)}</strong> (line ${chain.parentLineno})</div>`;
+        errorDetail += `<div style="color: #666; margin-top: 4px;">at ${escapeHtml(chain.parentTmpl)} line ${chain.parentLineno} (included)</div>`;
       }
-      html += `</div>`;
     }
 
     html += `
       <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px;">
-        <div style="font-size: 13px; color: #1a1a1a; font-family: monospace; white-space: pre-wrap;">${escapeHtml(cleanMessage)}</div>
+        <div style="font-size: 13px; color: #1a1a1a; font-family: monospace; white-space: pre-wrap;">${errorDetail}</div>
       </div>
     `;
 
