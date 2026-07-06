@@ -91,7 +91,8 @@ export { FileSystemLoader } from './src/loaders.js';
 export { NodeResolveLoader } from './src/loaders.js';
 export { PrecompiledLoader } from './src/loaders.js';
 export { WebLoader } from './src/web-loaders.js';
-export { BunSQLitePrecompiledLoader, precompileToSQLite };
+export { BunSQLitePrecompiledLoader, precompileToSQLite } from './src/bun-sqlite-loader.js';
+export { NunjucksError, ErrorFormatter, createErrorFormatter } from './src/bun-error.js';
 export { compiler, parser, lexer, runtime, lib, nodes, installJinjaCompat };
 export { precompile, precompileString } from './src/precompile.js';
 

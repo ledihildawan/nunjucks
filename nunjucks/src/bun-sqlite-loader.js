@@ -1,6 +1,9 @@
 import { dirname } from 'node:path';
 import { existsSync, mkdirSync } from 'node:fs';
 import Loader from './loader.js';
+import { ErrorFormatter, NunjucksError } from './bun-error.js';
+
+export { precompileToSQLite } from './bun-sqlite-precompile.js';
 
 let SQLite;
 try {
@@ -17,8 +20,10 @@ export class BunSQLitePrecompiledLoader extends Loader {
     this.cache = {};
     this.pathsToNames = {};
     this.async = true;
+    this.mode = opts.mode || 'development';
 
     this._initDB();
+    this._errorFormatter = new ErrorFormatter(dbPath, { mode: this.mode });
   }
 
   _initDB() {
@@ -60,6 +65,36 @@ export class BunSQLitePrecompiledLoader extends Loader {
     }
   }
 
+  _getTemplateUUID(name) {
+    const db = this._getDB();
+    if (!db) return null;
+
+    try {
+      const stmt = db.prepare('SELECT uuid FROM _compiled_templates WHERE name = ?');
+      const row = stmt.get(name);
+      db.close();
+      return row?.uuid || null;
+    } catch (e) {
+      db.close();
+      return null;
+    }
+  }
+
+  _getSourceContent(name) {
+    const db = this._getDB();
+    if (!db) return null;
+
+    try {
+      const stmt = db.prepare('SELECT source_content FROM _compiled_templates WHERE name = ?');
+      const row = stmt.get(name);
+      db.close();
+      return row?.source_content || null;
+    } catch (e) {
+      db.close();
+      return null;
+    }
+  }
+
   get(name) {
     if (this.cache[name]) {
       return this.cache[name];
@@ -69,7 +104,7 @@ export class BunSQLitePrecompiledLoader extends Loader {
     let template = null;
 
     if (SQLite) {
-      const stmt = db.prepare('SELECT template FROM _compiled_templates WHERE name = ?');
+      const stmt = db.prepare('SELECT template, uuid FROM _compiled_templates WHERE name = ?');
       const row = stmt.get(name);
       if (row) {
         try {
@@ -80,6 +115,8 @@ export class BunSQLitePrecompiledLoader extends Loader {
             if (sourceMap) {
               template.__sourceMap = sourceMap;
             }
+            template.__uuid = row.uuid;
+            template.__name = name;
           }
         } catch (e) {
           console.error(`[SQLite] Error loading template ${name}:`, e.message);
@@ -114,10 +151,28 @@ export class BunSQLitePrecompiledLoader extends Loader {
     };
   }
 
+  setMode(mode) {
+    this.mode = mode;
+    this._errorFormatter.setMode(mode);
+  }
+
+  getMode() {
+    return this.mode;
+  }
+
+  async formatError(error, templateName, includeChain = null) {
+    return this._errorFormatter.formatError(error, templateName, includeChain);
+  }
+
+  getTemplateUUID(name) {
+    return this._getTemplateUUID(name);
+  }
+
   close() {
     if (this.db && this.db.close) {
       this.db.close();
     }
+    this._errorFormatter.close();
   }
 }
 

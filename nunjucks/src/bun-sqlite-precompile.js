@@ -1,6 +1,6 @@
 import { existsSync, statSync, readdirSync, readFileSync } from 'node:fs';
 import { join, basename } from 'node:path';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {_prettifyError} from './lib.js';
 import * as compiler from './compiler.js';
 import {Environment} from './environment.js';
@@ -21,6 +21,10 @@ function match(filename, patterns) {
 
 function hashContent(content) {
   return createHash('sha256').update(content).digest('hex').substring(0, 16);
+}
+
+function generateUUID() {
+  return randomUUID();
 }
 
 function normalizePathSeparators(p) {
@@ -86,8 +90,10 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS _compiled_templates (
       name TEXT PRIMARY KEY,
+      uuid TEXT UNIQUE NOT NULL,
       template TEXT NOT NULL,
       hash TEXT NOT NULL,
+      source_content TEXT,
       updated_at INTEGER DEFAULT (strftime('%s', 'now'))
     )
   `);
@@ -150,17 +156,18 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
         const contentHash = hashContent(source);
         const { code: compiledCode, sourceMap } = _precompile(source, name, env);
 
-        const existing = db.prepare('SELECT hash FROM _compiled_templates WHERE name = ?').get(name);
+        const existing = db.prepare('SELECT hash, uuid FROM _compiled_templates WHERE name = ?').get(name);
 
         if (existing && existing.hash === contentHash) {
           skipped++;
           continue;
         }
 
+        const uuid = existing?.uuid || generateUUID();
         const stmt = db.prepare(
-          'INSERT OR REPLACE INTO _compiled_templates (name, template, hash) VALUES (?, ?, ?)'
+          'INSERT OR REPLACE INTO _compiled_templates (name, uuid, template, hash, source_content) VALUES (?, ?, ?, ?, ?)'
         );
-        stmt.run(name, compiledCode, contentHash);
+        stmt.run(name, uuid, compiledCode, contentHash, source);
 
         if (sourceMap && sourceMap.mappings.length > 0) {
           const deleteStmt = db.prepare('DELETE FROM _sourcemaps WHERE name = ?');
@@ -202,13 +209,14 @@ export function precompileToSQLite(templateDir, dbPath, opts = {}) {
     const contentHash = hashContent(source);
     const { code: compiledCode, sourceMap } = _precompile(source, name, env);
 
-    const existing = db.prepare('SELECT hash FROM _compiled_templates WHERE name = ?').get(name);
+    const existing = db.prepare('SELECT hash, uuid FROM _compiled_templates WHERE name = ?').get(name);
 
     if (!existing || existing.hash !== contentHash) {
+      const uuid = existing?.uuid || generateUUID();
       const stmt = db.prepare(
-        'INSERT OR REPLACE INTO _compiled_templates (name, template, hash) VALUES (?, ?, ?)'
+        'INSERT OR REPLACE INTO _compiled_templates (name, uuid, template, hash, source_content) VALUES (?, ?, ?, ?, ?)'
       );
-      stmt.run(name, compiledCode, contentHash);
+      stmt.run(name, uuid, compiledCode, contentHash, source);
 
       if (sourceMap && sourceMap.mappings.length > 0) {
         const deleteStmt = db.prepare('DELETE FROM _sourcemaps WHERE name = ?');
