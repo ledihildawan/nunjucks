@@ -26,12 +26,22 @@ export function _prettifyError(path, withInternals, err, includeChain) {
   }
   err.Update(path, includeChain);
 
+  if (includeChain) {
+    err._includeChain = includeChain;
+  }
+
   if (!withInternals) {
     const old = err;
     err = new Error(old.message);
     err.name = old.name;
     err.lineno = old.lineno;
     err.colno = old.colno;
+    if (old._includeChain) {
+      err._includeChain = old._includeChain;
+    }
+    if (includeChain) {
+      err._includeChain = includeChain;
+    }
   }
 
   return err;

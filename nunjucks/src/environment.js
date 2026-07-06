@@ -389,10 +389,25 @@ export class Template extends Obj {
       let sourceLineno = e.lineno;
       let sourceColno = e.colno;
 
-      if (this.tmplProps && this.tmplProps.__sourceMap && (sourceLineno === undefined || sourceLineno === 0)) {
-        const sm = this.tmplProps.__sourceMap;
+      const errorPath = e.path || this.path;
+      let sourceMap = this.tmplProps?.__sourceMap;
+
+      if (errorPath !== this.path && this.env) {
+        const loaders = this.env.loaders || [];
+        for (const loader of loaders) {
+          if (loader._getSourceMap) {
+            const loaderMap = loader._getSourceMap(errorPath);
+            if (loaderMap) {
+              sourceMap = loaderMap;
+              break;
+            }
+          }
+        }
+      }
+
+      if (sourceMap) {
         let bestMapping = null;
-        for (const mapping of sm) {
+        for (const mapping of sourceMap) {
           if (sourceLineno >= mapping.compiledLine) {
             bestMapping = mapping;
           }
@@ -417,12 +432,13 @@ export class Template extends Obj {
         newError.name = e.name || 'Template render error';
         newError.lineno = sourceLineno;
         newError.colno = sourceColno;
+        newError._includeChain = e._includeChain || this._includeChain;
         const renderLine = 'at ' + (e.getterName || 'root') + ' (' + templateLocation + ')';
         newError.stack = newError.message + '\n    ' + renderLine + '\n    at Environment.render';
         throw newError;
       }
 
-      throw lib._prettifyError(this.path, this.env.opts.dev, e, this._includeChain);
+      throw lib._prettifyError(this.path, this.env.opts.dev, e, e._includeChain || this._includeChain);
     }
   }
 
@@ -430,7 +446,7 @@ export class Template extends Obj {
     try {
       this.compile();
     } catch (e) {
-      throw lib._prettifyError(this.path, this.env.opts.dev, e, this._includeChain);
+      throw lib._prettifyError(this.path, this.env.opts.dev, e, e._includeChain || this._includeChain);
     }
 
     const frame = parentFrame ? parentFrame.push() : new Frame();
@@ -441,7 +457,7 @@ export class Template extends Obj {
       await this.rootRenderFunc(this.env, context, frame, globalRuntime);
       return context.getExported();
     } catch (e) {
-      throw lib._prettifyError(this.path, this.env.opts.dev, e, this._includeChain);
+      throw lib._prettifyError(this.path, this.env.opts.dev, e, e._includeChain || this._includeChain);
     }
   }
 

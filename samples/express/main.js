@@ -95,7 +95,7 @@ app.get('/dev/include-error', async (req, res) => {
     res.type('html').send(html);
   } catch (e) {
     const loader = envDev.loaders[0];
-    const formatted = await loader.formatError(e, 'error-include.html');
+    const formatted = await loader.formatError(e, 'error-include.html', e._includeChain);
     console.error(formatted.toConsoleString());
     res.type('html').status(500).send(formatted.toHtmlString());
   }

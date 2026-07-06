@@ -48,13 +48,17 @@ export class NunjucksError extends Error {
     }
     const start = Math.max(0, centerLine - context - 1);
     const end = Math.min(sourceLines.length, centerLine + context);
-    return sourceLines.slice(start, end).map((line, i) => {
+    let lines = sourceLines.slice(start, end).map((line, i) => {
       const lineNum = start + i + 1;
       const isError = lineNum === centerLine;
       const prefix = isError ? '>>> ' : '    ';
       const content = line || ' ';
       return `${prefix}${lineNum}: ${content}`;
-    }).join('\n');
+    });
+    while (lines.length > 1 && lines[lines.length - 1].trim() === `${lines[lines.length - 1].split(':')[0].trim()}:`) {
+      lines.pop();
+    }
+    return lines.join('\n');
   }
 
   toConsoleString() {
@@ -64,32 +68,31 @@ export class NunjucksError extends Error {
 
     const lines = [];
 
-    lines.push(`${pc.bgRed(pc.white(' ERROR '))} ${pc.red('Nunjucks Runtime Error')}`);
+    lines.push(`${pc.red('Nunjucks Error')}`);
+    lines.push(`${pc.white(this.templateName)} ${pc.dim('line')} ${pc.cyan(this.line)}`);
     lines.push('');
 
-    const location = this.templateName + (this.line ? `:${pc.cyan(this.line)}${this.col ? ':' + pc.cyan(this.col) : ''}` : '');
-    lines.push(`${pc.bold('→ Location:')} ${pc.white(location)}`);
-
     if (this.templateId) {
-      lines.push(`${pc.dim('  Template ID:')} ${pc.yellow(this.templateId)}`);
+      lines.push(`${pc.dim('Template ID:')} ${pc.yellow(this.templateId)}`);
+    }
+
+    if (this.snippet) {
+      lines.push('');
+      lines.push(`${pc.dim('Code:')}`);
+      lines.push(this.snippet);
     }
 
     if (this.includeChain && this.includeChain.length > 0) {
-      lines.push(`${pc.bold('→ Include chain:')}`);
+      lines.push('');
+      lines.push(`${pc.dim('Include Chain:')}`);
       for (const chain of this.includeChain) {
         lines.push(`  ${pc.yellow('↳')} ${chain.parentTmpl} ${pc.dim('at line')} ${pc.cyan(chain.parentLineno)}`);
       }
     }
 
-    if (this.snippet) {
-      lines.push('');
-      lines.push(`${pc.dim('─'.repeat(50))}`);
-      lines.push(this.snippet);
-      lines.push(`${pc.dim('─'.repeat(50))}`);
-    }
-
     lines.push('');
-    lines.push(`${pc.red('✖ Message:')} ${this.message}`);
+    lines.push(`${pc.dim('Error:')}`);
+    lines.push(this.message);
 
     return lines.join('\n');
   }
@@ -121,14 +124,9 @@ export class NunjucksError extends Error {
 
     let html = `
       <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 700px; margin: 40px auto; padding: 24px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #eee;">
-          <div style="width: 36px; height: 36px; background: #dc3545; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <span style="color: white; font-weight: bold; font-size: 20px;">✕</span>
-          </div>
-          <div>
-            <div style="font-size: 18px; font-weight: 600; color: #1a1a1a;">Nunjucks Error</div>
-            <div style="font-size: 13px; color: #666;">${escapeHtml(this.templateName)}${this.line ? ` <span style="color: #999;">line ${this.line}${this.col ? ', col ' + this.col : ''}</span>` : ''}</div>
-          </div>
+        <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #eee;">
+          <div style="font-size: 18px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px;">Nunjucks Error</div>
+          <div style="font-size: 14px; color: #666;">${escapeHtml(this.templateName)}${this.line ? ` <span style="color: #999;">line ${this.line}</span>` : ''}</div>
         </div>
     `;
 
@@ -137,6 +135,23 @@ export class NunjucksError extends Error {
         <div style="margin-bottom: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px;">
           <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #999; margin-bottom: 4px;">Template ID</div>
           <div style="font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 13px; color: #333;">${this.templateId}</div>
+        </div>
+      `;
+    }
+
+    if (this.snippet) {
+      const snippetLines = this.snippet.split('\n').map(line => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('>>>')) {
+          return `<div style="background: #fff5f5; color: #dc3545; padding: 8px 16px; border-left: 4px solid #dc3545; font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 13px; font-weight: 600;">${escapeHtml(line)}</div>`;
+        }
+        return `<div style="color: #555; padding: 4px 16px; font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 13px;">${escapeHtml(line)}</div>`;
+      }).join('');
+
+      html += `
+        <div style="margin-bottom: 16px;">
+          <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #999; margin-bottom: 8px;">Code</div>
+          <div style="background: #f8f9fa; border-radius: 6px; overflow: hidden; border: 1px solid #e5e5e5;">${snippetLines}</div>
         </div>
       `;
     }
@@ -162,27 +177,10 @@ export class NunjucksError extends Error {
       `;
     }
 
-    if (this.snippet) {
-      const snippetLines = this.snippet.split('\n').map(line => {
-        const trimmed = line.trim();
-        if (trimmed.startsWith('>>>')) {
-          return `<div style="background: #fff5f5; color: #dc3545; padding: 8px 16px; border-left: 4px solid #dc3545; font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 13px; font-weight: 600;">${escapeHtml(line)}</div>`;
-        }
-        return `<div style="color: #555; padding: 4px 16px; font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 13px;">${escapeHtml(line)}</div>`;
-      }).join('');
-
-      html += `
-        <div style="margin-bottom: 16px;">
-          <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #999; margin-bottom: 8px;">Code</div>
-          <div style="background: #f8f9fa; border-radius: 6px; overflow: hidden; border: 1px solid #e5e5e5;">${snippetLines}</div>
-        </div>
-      `;
-    }
-
     html += `
       <div style="background: #fff5f5; border: 1px solid #f5c6cb; border-radius: 6px; padding: 12px 16px;">
         <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #dc3545; margin-bottom: 4px;">Error</div>
-        <div style="font-size: 14px; color: #721c24; font-family: 'SF Mono', Monaco, Consolas, monospace;">${escapeHtml(errorParts[0] || this.message)}</div>
+        <div style="font-size: 14px; color: #721c24; font-family: 'SF Mono', Monaco, Consolas, monospace; white-space: pre-wrap;">${escapeHtml(this.message)}</div>
       </div>
     </div>
     `;
@@ -252,44 +250,56 @@ export class ErrorFormatter {
     return sourceContent.split('\n');
   }
 
+  extractErrorTemplateName(message) {
+    if (!message) return null;
+    const match = message.match(/Template render error: \(([^)]+)\)/);
+    return match ? match[1] : null;
+  }
+
   async formatError(error, templateName, includeChain = null) {
     this.init();
 
     const isProd = this.mode === 'production';
     const hasTables = this.hasTables();
-    const templateInfo = hasTables ? this.getTemplateInfo(templateName) : null;
+
+    const actualTemplateName = this.extractErrorTemplateName(error.message) || templateName;
+    const templateInfo = hasTables ? this.getTemplateInfo(actualTemplateName) : null;
     const templateId = templateInfo?.uuid || null;
 
-    let line = error.lineno;
-    let col = error.colno;
+    const line = error.lineno;
+    const col = error.colno;
     let snippet = null;
+
+    const effectiveChain = includeChain || error._includeChain || null;
+
+    const chainForDisplay = effectiveChain ? (Array.isArray(effectiveChain) ? effectiveChain : [effectiveChain]) : null;
 
     if (templateInfo?.source_content && line) {
       const sourceLines = this.getSourceLines(templateInfo.source_content);
-      const errorMeta = { templateName, templateId, line, col, snippet: null, includeChain, isProduction: false };
+      const errorMeta = { templateName: actualTemplateName, templateId, line, col, snippet: null, includeChain: effectiveChain, isProduction: false };
       const tempError = new NunjucksError(error.message, errorMeta);
       snippet = tempError.getSnippet(sourceLines, line, 3);
     }
 
     const meta = {
-      templateName,
+      templateName: actualTemplateName,
       templateId,
       line,
       col,
       snippet,
-      includeChain,
+      includeChain: chainForDisplay,
       isProduction: isProd
     };
 
     if (isProd && hasTables) {
       this.logger.error({
         type: 'NUNJUCKS_RENDER_ERROR',
-        templateName,
+        templateName: actualTemplateName,
         templateId,
         line,
         col,
         message: error.message,
-        includeChain
+        includeChain: chainForDisplay
       });
     }
 

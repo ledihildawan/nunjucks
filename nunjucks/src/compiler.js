@@ -69,21 +69,21 @@ export class Compiler extends Obj {
   _emitLineWithMapping(code, templateLine) {
     this.compiledLine++;
     if (templateLine !== undefined) {
-      this.sourceMap.addMapping(this.compiledLine, templateLine);
+      this.sourceMap.addMapping(this.compiledLine, templateLine + 1);
     }
     this._emit(code + '\n');
   }
 
   _trackMapping(templateLine) {
     if (templateLine !== undefined) {
-      this.sourceMap.addMapping(this.compiledLine + 1, templateLine);
+      this.sourceMap.addMapping(this.compiledLine + 1, templateLine + 1);
     }
   }
 
   _emitLineWithLineno(code, templateLine) {
     this.compiledLine++;
     if (templateLine !== undefined) {
-      this.sourceMap.addMapping(this.compiledLine, templateLine);
+      this.sourceMap.addMapping(this.compiledLine, templateLine + 1);
     }
     this._emit(code + '\n');
   }
