@@ -306,7 +306,8 @@ export class ErrorFormatter {
 
     if (templateInfo?.source_content) {
       const sourceLines = this.getSourceLines(templateInfo.source_content);
-      if (!line && sourceLines.length === 1) {
+      const nonEmptyLines = sourceLines.filter(l => l.trim().length > 0);
+      if (!line && nonEmptyLines.length === 1) {
         line = 1;
       }
       if (line) {
