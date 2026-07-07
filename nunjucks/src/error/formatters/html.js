@@ -8,6 +8,14 @@ const escapeHtml = (str) => {
             .replace(/"/g, '&quot;');
 };
 
+const renderInlineMarkdown = (text) => {
+  if (!text) return '';
+  let s = escapeHtml(text);
+  s = s.replace(/`([^`]+)`/g, '<code class="md-code">$1</code>');
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  return s;
+};
+
 const SYNTAX_RULES = [
   { type: 'comment', re: /^\{#[\s\S]*?#\}/ },
   { type: 'tag', re: /^<\/?[a-zA-Z][\w-]*/ },
@@ -149,6 +157,9 @@ const CSS = `
 .syntax-operator{color:oklch(70% 0.04 285)}
 .code-content{color:oklch(65% 0.01 285)}
 .code-line.is-error .code-content{color:var(--color-code-text)}
+.md-code{font-family:'SFMono-Regular',Consolas,Menlo,monospace;background:var(--color-code-highlight-bg);color:var(--color-code-text);padding:1px 5px;border-radius:4px;font-size:12px}
+.causes-list{line-height:1.9}
+.causes-list strong{color:var(--color-text-primary);font-weight:600}
 `;
 
 const CSS_VARS = `
@@ -250,8 +261,8 @@ ${CSS}
     <div class="causes-grid">
       <div>
         <div class="text-label">Possible Causes</div>
-        <div style="font-size: 14px; color: var(--color-text-primary);">
-          ${possibleCauses.map(c => `• ${escapeHtml(c)}`).join('<br>')}
+        <div class="causes-list" style="font-size: 14px; color: var(--color-text-primary);">
+          ${possibleCauses.map(c => `• ${renderInlineMarkdown(c)}`).join('<br>')}
         </div>
       </div>
       <div>

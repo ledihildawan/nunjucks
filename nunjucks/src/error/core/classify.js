@@ -44,11 +44,11 @@ function myFilter(value) {
     category: 'filter_error',
     undefinedName: null,
     causes: [
-      'Filter threw an error during execution',
-      `Error: ${errorMsg}`,
+      '**Filter threw an error** during execution',
+      '**Error**: `' + errorMsg + '`',
       isAsyncError
-        ? 'Async filter must handle rejections with try-catch'
-        : 'Filter should handle null/undefined inputs'
+        ? '**Async filter** must handle rejections with `try-catch`'
+        : 'Filter should handle **null/undefined** inputs'
     ],
     fixCode,
     fixComment: `// Fix: ${isAsyncError ? 'Handle async errors with try-catch' : 'Check filter input validation'}`
