@@ -163,6 +163,11 @@ export const getDisplayMessage = (errorData) => {
       : 'Value is not a function';
   }
 
+  if (classified.category === 'syntax_error') {
+    const clean = errorText.replace(/^parse[A-Z][a-zA-Z]*:\s*/i, '');
+    return clean.charAt(0).toUpperCase() + clean.slice(1);
+  }
+
   return errorText;
 };
 
