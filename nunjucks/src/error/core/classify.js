@@ -87,6 +87,22 @@ export const classifyError = (rawMessage) => {
     };
   }
 
+  if (PATTERNS.NO_SUPER_BLOCK.test(rawMessage)) {
+    const blockMatch = rawMessage.match(/"([^"]+)"/);
+    const blockName = blockMatch ? blockMatch[1] : null;
+    return {
+      category: 'no_super_block',
+      undefinedName: blockName,
+      causes: [
+        `super() called in block '${blockName}' but parent has no block`,
+        'Using super() in a block that has no parent equivalent',
+        'Block override without corresponding parent block'
+      ],
+      fixCode: '{% block ' + (blockName || 'name') + ' %}...{% endblock %}',
+      fixComment: `// Remove super() or define parent block '${blockName}'`
+    };
+  }
+
   if (PATTERNS.UNDEFINED_VALUE.test(rawMessage)) {
     return {
       category: 'undefined_value',

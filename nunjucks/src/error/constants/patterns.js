@@ -6,6 +6,7 @@ export const PATTERNS = {
   SYNTAX_ERROR: /unexpected token|expected variable end|SyntaxError/i,
   UNDEFINED_FILTER: /filter not found: (\w+)/i,
   UNDEFINED_BLOCK: /block.*not found|undefined block/i,
+  NO_SUPER_BLOCK: /no super block available/i,
   FILE_NOT_FOUND: /template not found: (.+)/i,
   INVALID_INCLUDE: /template names must be a string/i,
   FILESYSTEM_ERROR: /EISDIR|ENOENT|permission denied/i,
