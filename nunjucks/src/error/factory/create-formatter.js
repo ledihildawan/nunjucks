@@ -147,22 +147,4 @@ export const createErrorFormatter = ({ fs = defaultFs, mode = 'development' } = 
   };
 }
 
-export class ErrorFormatter {
-  constructor(dbPath, options = {}) {
-    this._formatter = createErrorFormatter({
-      fs: defaultFs,
-      mode: options?.mode ?? 'development'
-    });
-  }
-
-  getMode() { return this._formatter.getMode(); }
-  setMode(mode) { this._formatter.setMode(mode); }
-
-  getSourceLines(sourceContent) {
-    return this._formatter.getSourceLines(sourceContent);
-  }
-
-  async formatError(error, templateName, includeChain, templatePath) {
-    return this._formatter.formatError(error, templateName, includeChain, templatePath);
-  }
-}
+export const ErrorFormatter = createErrorFormatter;

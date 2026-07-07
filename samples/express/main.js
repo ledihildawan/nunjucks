@@ -2,7 +2,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { readFileSync } from 'fs';
 import nunjucks from '../../nunjucks/index.js';
-import { createErrorFormatter } from '../../nunjucks/src/bun-error.js';
+import { createErrorFormatter } from '../../nunjucks/src/error/index.js';
 import express from 'express';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -26,8 +26,8 @@ const envProd = new nunjucks.Environment(fsLoader, {
 });
 
 // Error formatter for filesystem-based source reading
-const devErrorFormatter = createErrorFormatter(null, { mode: 'development' });
-const prodErrorFormatter = createErrorFormatter(null, { mode: 'production' });
+const devErrorFormatter = createErrorFormatter({ mode: 'development' });
+const prodErrorFormatter = createErrorFormatter({ mode: 'production' });
 
 // Helper to read source from filesystem
 function getTemplateSource(templateName) {
