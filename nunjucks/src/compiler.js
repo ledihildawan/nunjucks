@@ -1075,7 +1075,7 @@ export class Compiler extends Obj {
     var id = this._tmpid();
 
     if (!this.inBlock) {
-      this._emitLine(`var ${id} = parentTemplate ? "" : await (await context.getBlock("${node.name.value}"))(env, context, frame, runtime);`);
+      this._emitLine(`var ${id} = await (await context.getBlock("${node.name.value}"))(env, context, frame, runtime);`);
     } else {
       this._emitLine(`var ${id} = await (await context.getBlock("${node.name.value}"))(env, context, frame, runtime);`);
     }

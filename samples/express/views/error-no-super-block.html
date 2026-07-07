@@ -1,5 +1,2 @@
 {% extends "base.html" %}
-{% block content %}
-  <p>Child content with super:</p>
-  {{ super() }}
-{% endblock %}
+{% block nonexistent %}{{ super() }}{% endblock %}

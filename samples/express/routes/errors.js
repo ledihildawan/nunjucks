@@ -43,6 +43,7 @@ const errorRoutes = [
   { path: '/filter-error', template: 'error-filter-error.html', category: 'filter_error', desc: 'Filter throws during execution' },
   { path: '/undefined-value', template: 'error-undefined-value.html', category: 'undefined_value', desc: 'Nested property access returns null/undefined', context: { foo: {} } },
   { path: '/syntax-error', template: 'error-syntax-error.html', category: 'syntax_error', desc: 'Template syntax is invalid' },
+  { path: '/no-super-block', template: 'error-no-super-block.html', category: 'no_super_block', desc: 'super() called but no parent block' },
   { path: '/circular-include', template: 'error-circular-include.html', category: 'circular_include', desc: 'Template includes itself' },
   { path: '/file-not-found', template: 'error-file-not-found.html', category: 'file_not_found', desc: 'Template file does not exist' },
 ];
