@@ -39,6 +39,8 @@ export const CSS = `
 .causes-list li{position:relative;padding-left:16px;margin-bottom:4px}
 .causes-list li::before{content:'•';position:absolute;left:0;color:var(--color-text-secondary)}
 .causes-list strong{color:var(--color-text-primary);font-weight:600}
+.loc-link,.stack-link{color:inherit;text-decoration:underline;text-decoration-color:var(--color-text-secondary);text-underline-offset:2px;cursor:pointer;transition:color .15s}
+.loc-link:hover,.stack-link:hover{color:oklch(72% .15 190);text-decoration-color:oklch(72% .15 190)}
 `;
 
 export const CSS_VARS = `

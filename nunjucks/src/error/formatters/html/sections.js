@@ -33,6 +33,15 @@ export const renderContextHtml = (ctx) => {
     </section>`;
 };
 
+const linkifyFrame = (frame) => {
+  let s = escapeHtml(frame);
+  s = s.replace(/\(([^()]+):(\d+):(\d+)\)$/, (match, p, l, c) => {
+    if (/^native$/.test(p.trim()) || /^&lt;/.test(p) || !/[\\/]/.test(p)) return match;
+    return `(<a href="vscode://file/${p}:${l}:${c}" class="stack-link">${p}:${l}:${c}</a>)`;
+  });
+  return s;
+};
+
 export const formatStackTraceHtml = (originalError, isProduction = false) => {
   if (!originalError?.stack) return '';
 
@@ -52,8 +61,7 @@ export const formatStackTraceHtml = (originalError, isProduction = false) => {
   if (linesToShow.length === 0) return '';
 
   const rows = linesToShow.map(line => {
-    const trimmed = escapeHtml(line.trim());
-    return `<div class="stack-row"><code style="font-family:monospace;color:var(--color-code-text);">${trimmed}</code></div>`;
+    return `<div class="stack-row"><code style="font-family:monospace;color:var(--color-code-text);">${linkifyFrame(line.trim())}</code></div>`;
   }).join('');
 
   return `

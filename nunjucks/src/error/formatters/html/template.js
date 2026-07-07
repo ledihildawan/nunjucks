@@ -70,7 +70,10 @@ export const toHtmlString = (state) => {
       ${codeBadge}${phaseBadge}
     </p>
     <h1 id="err-title" class="error-title">${headerTitle}</h1>
-    <p class="error-location">The error occurred in <span style="font-weight:600;color:var(--color-text-primary);">${locationInfo}</span></p>
+    <p class="error-location">The error occurred in ${templatePath
+      ? `<a href="vscode://file/${escapeHtml(templatePath)}:${getDisplayLine()}:${getDisplayCol()}" class="loc-link" style="font-weight:600;color:var(--color-text-primary);">${locationInfo}</a>`
+      : `<span style="font-weight:600;color:var(--color-text-primary);">${locationInfo}</span>`
+    }</p>
   </header>
 
   <div style="padding: 32px;">
