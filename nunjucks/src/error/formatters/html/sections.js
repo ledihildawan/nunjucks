@@ -33,11 +33,14 @@ export const renderContextHtml = (ctx) => {
     </section>`;
 };
 
+const normalizePath = (p) => p.replace(/^file:\/\/+/, '');
+
 const linkifyFrame = (frame) => {
   let s = escapeHtml(frame);
   s = s.replace(/\(([^()]+):(\d+):(\d+)\)$/, (match, p, l, c) => {
     if (/^native$/.test(p.trim()) || /^&lt;/.test(p) || !/[\\/]/.test(p)) return match;
-    return `(<a href="vscode://file/${p}:${l}:${c}" class="stack-link">${p}:${l}:${c}</a>)`;
+    const norm = normalizePath(p);
+    return `(<a href="vscode://file/${norm}:${l}:${c}" class="stack-link">${norm}:${l}:${c}</a>)`;
   });
   return s;
 };
