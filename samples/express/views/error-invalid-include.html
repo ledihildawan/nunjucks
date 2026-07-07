@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html>
+<head><title>Error: Invalid Include</title></head>
+<body>
+  <h1>Invalid Include</h1>
+  <p>Include path must be a string literal, not a variable.</p>
+  {% set templateName = "base.html" %}
+  {% include templateName %}
+</body>
+</html>
