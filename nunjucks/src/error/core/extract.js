@@ -13,9 +13,6 @@ export const extractUndefinedName = (message) => {
     return name;
   }
 
-  const notFoundMatch = message.match(PATTERNS.FILTER_NOT_FOUND);
-  if (notFoundMatch) return notFoundMatch[1];
-
   return null;
 };
 

@@ -51,7 +51,7 @@ export const ERROR_RULES = [
   {
     pattern: PATTERNS.UNDEFINED_FILTER,
     category: 'undefined_filter',
-    subjectFrom: 'undefinedName',
+    subjectFrom: 'filter',
     causes: (s) => [
       `Filter '${s}' not registered with env.addFilter()`,
       'Typo in filter name'

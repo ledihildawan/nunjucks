@@ -6,6 +6,8 @@ const extractSubject = (rule, message) => {
   switch (rule.subjectFrom) {
     case 'undefinedName':
       return extractUndefinedName(message);
+    case 'filter':
+      return message.match(PATTERNS.UNDEFINED_FILTER)?.[1] || null;
     case 'quotes':
       return (message.match(/"([^"]+)"/) || [])[1] || null;
     case 'fileNotFound':
