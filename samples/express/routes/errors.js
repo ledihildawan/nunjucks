@@ -38,11 +38,11 @@ async function renderWithErrorHandler(res, templateName, context = {}) {
 }
 
 const errorRoutes = [
-  { path: '/undefined-variable', template: 'error-undefined-variable.html', category: 'undefined_variable', desc: 'Variable not passed in context' },
-  { path: '/undefined-function', template: 'error-undefined-function.html', category: 'undefined_function', desc: 'Function not registered with addGlobal()' },
+  { path: '/undefined-variable', template: 'error-undefined-variable.html', category: 'undefined_variable', desc: 'Variable not passed in context', context: { user: 'Alice', role: 'admin' } },
+  { path: '/undefined-function', template: 'error-undefined-function.html', category: 'undefined_function', desc: 'Function not registered with addGlobal()', context: { user: 'Alice' } },
   { path: '/not-a-function', template: 'error-not-a-function.html', category: 'not_a_function', desc: 'Calling a non-function value', context: { foo: 'I am a string' } },
-  { path: '/undefined-filter', template: 'error-undefined-filter.html', category: 'undefined_filter', desc: 'Filter not registered with addFilter()' },
-  { path: '/filter-error', template: 'error-filter-error.html', category: 'filter_error', desc: 'Filter throws during execution' },
+  { path: '/undefined-filter', template: 'error-undefined-filter.html', category: 'undefined_filter', desc: 'Filter not registered with addFilter()', context: { product: 'Widget' } },
+  { path: '/filter-error', template: 'error-filter-error.html', category: 'filter_error', desc: 'Filter throws during execution', context: { value: 42 } },
   { path: '/undefined-value', template: 'error-undefined-value.html', category: 'undefined_value', desc: 'Nested property access returns null/undefined', context: { foo: {} } },
   { path: '/syntax-error', template: 'error-syntax-error.html', category: 'syntax_error', desc: 'Template syntax is invalid' },
   { path: '/no-super-block', template: 'error-no-super-block.html', category: 'no_super_block', desc: 'super() called but no parent block' },
