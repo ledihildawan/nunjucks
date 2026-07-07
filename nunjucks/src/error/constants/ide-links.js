@@ -45,7 +45,7 @@ export const IDE_SCHEMES = {
   },
   phpstorm: {
     label: 'PhpStorm',
-    color: '#B12E description',
+    color: '#B12E5A',
     link: (p, l, c) => `phpstorm://open?path=${encodeURIComponent(p)}&line=${l}`,
     icon: GENERIC_ICON,
   },
