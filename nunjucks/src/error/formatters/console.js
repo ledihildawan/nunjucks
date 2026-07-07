@@ -129,6 +129,7 @@ export const toConsoleString = (state) => {
 
   const metaBits = [];
   if (phase) metaBits.push(`phase=${phase}`);
+  metaBits.push(`env=${isProduction ? 'production' : 'development'}`);
   if (errorId) metaBits.push(`id=${errorId}`);
   if (timestamp) metaBits.push(`at=${timestamp}`);
   const metaLine = metaBits.length ? pc.dim(`[${metaBits.join(' | ')}]`) : null;
