@@ -20,6 +20,14 @@ const pc = picocolors || {
   white: (s) => s,
 };
 
+const renderMarkdownToAnsi = (text) => {
+  if (!text) return '';
+  let s = text;
+  s = s.replace(/`([^`]+)`/g, (_, code) => pc.cyan(code));
+  s = s.replace(/\*\*([^*]+)\*\*/g, (_, bold) => pc.bold(bold));
+  return s;
+};
+
 const formatHeader = (code) => {
   const badge = code ? ` ${pc.yellow(`[${code}]`)}` : '';
   return [
@@ -61,7 +69,7 @@ const formatCodeTrace = (traceLines) => {
 const formatCauses = (causes) => {
   const lines = ['\n', pc.bold('Possible Causes:')];
   for (const cause of causes) {
-    lines.push(pc.dim(`  • ${cause}`));
+    lines.push(`  ${pc.dim('•')} ${renderMarkdownToAnsi(cause)}`);
   }
   return lines.join('\n');
 };
