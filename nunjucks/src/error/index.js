@@ -31,5 +31,5 @@ export {
   formatCodeTrace
 } from './state/data.js';
 export { toConsoleString } from './formatters/console.js';
-export { toHtmlString } from './formatters/html.js';
+export { toHtmlString } from './formatters/html/index.js';
 export { createErrorFormatter, createNunjucksError } from './factory/formatter.js';

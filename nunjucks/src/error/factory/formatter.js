@@ -5,7 +5,7 @@ import {
 import { extractLineFromSnippet } from '../core/snippet.js';
 import { createErrorData } from '../state/data.js';
 import { toConsoleString } from '../formatters/console.js';
-import { toHtmlString } from '../formatters/html.js';
+import { toHtmlString } from '../formatters/html/index.js';
 
 const defaultFs = {
   readFileSync: (path, encoding) => {
