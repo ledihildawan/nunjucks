@@ -31,13 +31,23 @@ function stripAnsi(str) {
 
 const ERROR_MAPPINGS = [
   {
-    patterns: [/undefined.*falsey|Unable to call.*which is undefined|cannot call|attempted to output null or undefined value/i],
+    patterns: [/attempted to output null or undefined value/i],
     causes: [
-      'Helper or filter not registered with env.addGlobal()',
       'Variable not passed in render context',
+      'Using undefined variable name',
+      'Typo in variable name'
+    ],
+    fixCode: "{{ variable|default('default_value') }}",
+    fixComment: '// Add default filter or pass variable in context'
+  },
+  {
+    patterns: [/Unable to call.*which is undefined|cannot call.*undefined/i],
+    causes: [
+      'Function not registered with env.addGlobal()',
+      'Filter not registered with env.addFilter()',
       'Misspelled function or filter name'
     ],
-    fixCode: "env.addGlobal('fn', callback)",
+    fixCode: "env.addGlobal('myFn', callback)",
     fixComment: '// Register the missing function'
   },
   {
@@ -135,7 +145,16 @@ export class NunjucksError extends Error {
     lines.push(`${pc.bgRed('[ERROR]')} ${pc.bold('Template Rendering Failed')}`);
     lines.push(pc.dim('─'.repeat(60)));
 
-    lines.push(`${pc.bold('Message:')} ${errorText.includes('undefined') ? 'Unable to call `' + (errorText.match(/`([^`]+)`/) || ['', ''])[1] + '`, which is undefined or falsey.' : errorText}`);
+    const originalMsg = this.originalError?.message || '';
+    let displayMessage = errorText;
+    if (originalMsg.includes('attempted to output null or undefined value')) {
+      displayMessage = 'Variable is undefined or null: provide the variable in render context or use default value';
+    } else if (originalMsg.includes('Unable to call')) {
+      const fnMatch = originalMsg.match(/Unable to call `([^`]+)`/);
+      const fnName = fnMatch ? fnMatch[1] : 'unknown';
+      displayMessage = `Unable to call \`${fnName}\`, which is undefined or falsey`;
+    }
+    lines.push(`${pc.bold('Message:')} ${displayMessage}`);
 
     lines.push('');
     lines.push(`${pc.bold('Error Type:')} ${pc.red(errorType)}`);
