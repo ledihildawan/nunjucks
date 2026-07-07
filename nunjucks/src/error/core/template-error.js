@@ -44,7 +44,7 @@ export const createTemplateError = (message, lineno, colno, info) =>
   new TemplateError(message, lineno, colno, info);
 
 const asTemplateError = (err) =>
-  err.applyLocation ? err : createTemplateError(err, null, null, {
+  err.applyLocation ? err : createTemplateError(err, err.lineno ?? null, err.colno ?? null, {
     code: err.code,
     subject: err.subject,
     phase: err.phase
