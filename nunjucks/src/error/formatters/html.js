@@ -247,12 +247,9 @@ ${CSS}
       </div>
       <div>
         <div class="text-label">Suggested Fix</div>
-        <div style="background:light-dark(oklch(96% 0.01 285), oklch(22% 0.01 285));padding:16px;border-radius:8px;font-family:monospace;font-size:13px;color:var(--color-text-primary);border:1px solid var(--color-border);">
-          <div style="color:var(--color-text-secondary);margin-bottom:8px;">${escapeHtml(fixComment)}</div>
-          ${fixCode.includes('{%') || fixCode.includes('{{')
-            ? `<span>${escapeHtml(fixCode)}</span>`
-            : `<span style="color:oklch(70% 0.12 190);">${escapeHtml(fixCode.split('(')[0])}</span>${escapeHtml(fixCode.substring(fixCode.indexOf('(')))}`
-          }
+        <div style="background:light-dark(oklch(96% 0.01 285), oklch(22% 0.01 285));padding:16px;border-radius:8px;font-family:monospace;font-size:13px;color:var(--color-text-primary);border:1px solid var(--color-border);white-space:pre-wrap;">
+          <div class="syntax-comment" style="margin-bottom:8px;">${escapeHtml(fixComment)}</div>
+          ${highlightHtml(fixCode)}
         </div>
       </div>
     </div>
