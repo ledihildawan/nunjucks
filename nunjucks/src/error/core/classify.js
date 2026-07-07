@@ -76,3 +76,11 @@ export const classifyError = (rawMessage) => {
 
   return null;
 };
+
+export const classifyFromError = (error) => {
+  if (!error) return null;
+  if (error.code === 'FILTER_ERROR') {
+    return classifyFilterError(error.message || '');
+  }
+  return classifyError(error.message || '');
+};

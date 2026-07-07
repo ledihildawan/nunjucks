@@ -1,4 +1,4 @@
-import { classifyError } from '../core/classify.js';
+import { classifyFromError } from '../core/classify.js';
 import {
   extractLineInfo,
   extractColFromMessage,
@@ -96,7 +96,7 @@ export const createErrorData = (error, options = {}) => {
       : `>>> ${getDisplayLine(line)}: [source not available]`;
   }
 
-  const classified = classifyError(message);
+  const classified = classifyFromError(error);
   const displayLine = getDisplayLine(line);
   const displayCol = getDisplayCol(col);
   const sourceLine = extractSourceLine(sourceContent, line);

@@ -142,6 +142,11 @@ export class Environment extends EmitterObj {
       throw err;
     }
     const filter = this.filters[name];
+    const tag = (err) => {
+      err.code = err.code || 'FILTER_ERROR';
+      err.subject = err.subject || name;
+      return err;
+    };
 
     if (this.asyncFilters.includes(name)) {
       return async function(...args) {
@@ -151,15 +156,29 @@ export class Environment extends EmitterObj {
           }
           return arg;
         }));
-        return filter.apply(this, resolvedArgs);
+        try {
+          return await filter.apply(this, resolvedArgs);
+        } catch (err) {
+          throw tag(err);
+        }
       };
     }
 
     return function(...args) {
       if (!args.some(a => a && typeof a.then === 'function')) {
-        return filter.apply(this, args);
+        try {
+          return filter.apply(this, args);
+        } catch (err) {
+          throw tag(err);
+        }
       }
-      return Promise.all(args).then(resolved => filter.apply(this, resolved));
+      return Promise.all(args).then(resolved => {
+        try {
+          return filter.apply(this, resolved);
+        } catch (err) {
+          throw tag(err);
+        }
+      });
     };
   }
 
