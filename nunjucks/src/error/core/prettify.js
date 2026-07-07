@@ -2,14 +2,14 @@ import { pipe } from '../../lib/index.js';
 import { createTemplateError } from './template-error.js';
 
 const asTemplateError = (err) =>
-  err.Update ? err : createTemplateError(err, null, null, {
+  err.applyLocation ? err : createTemplateError(err, null, null, {
     code: err.code,
     subject: err.subject,
     phase: err.phase
   });
 
 const withLocation = ({ path, includeChain }) => (err) => {
-  err.Update(path, includeChain);
+  err.applyLocation(path, includeChain);
   err.templateName = err.templateName || path;
   if (includeChain) {
     err._includeChain = includeChain;
@@ -33,7 +33,7 @@ const stripInternals = (path) => (err) => {
   return clean;
 };
 
-export function _prettifyError({ path, withInternals, err, includeChain } = {}) {
+export function prettifyError({ path, withInternals, err, includeChain } = {}) {
   const steps = [
     asTemplateError,
     withLocation({ path, includeChain }),

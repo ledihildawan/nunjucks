@@ -16,7 +16,7 @@ export class TemplateError extends Error {
     }
   }
 
-  Update(path, includeChain) {
+  applyLocation(path, includeChain) {
     let msg = '(' + (path || 'unknown path') + ')';
     if (this.firstUpdate) {
       if (this.lineno && this.colno) {
