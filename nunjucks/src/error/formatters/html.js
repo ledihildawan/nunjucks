@@ -8,34 +8,57 @@ const escapeHtml = (str) => {
             .replace(/"/g, '&quot;');
 };
 
+const SYNTAX_RULES = [
+  { type: 'comment', re: /^\{#[\s\S]*?#\}/ },
+  { type: 'tag', re: /^<\/?[a-zA-Z][\w-]*/ },
+  { type: 'delimiter', re: /^(?:\{\{|\}\}|\{%|%\})/ },
+  { type: 'pipe', re: /^\|>/ },
+  { type: 'string', re: /^(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/ },
+  { type: 'number', re: /^\d+(?:\.\d+)?/ },
+  { type: 'attr', re: /^[a-zA-Z_][\w-]*(?=\s*=)/ },
+  {
+    type: 'keyword',
+    re: /^(?:endraw|raw|endfilter|filter|endcall|call|endmacro|macro|endblock|block|endfor|for|endif|elif|else|if|extends|include|import|from|set|asyncEach|asyncAll|with|without|context|as|not|and|or|in|is|true|false|none|null)(?![\w-])/,
+  },
+  { type: 'variable', re: /^[a-zA-Z_]\w*/ },
+  { type: 'operator', re: /^(?:\||=|==|!=|<=|>=|<|>|\+|-|\*|\/|%|&|\[|\]|\(|\)|\.|,|:|\?)/ },
+];
+
 const highlightHtml = (code) => {
-  return escapeHtml(code);
+  if (!code) return '';
+  let out = '';
+  let i = 0;
+  while (i < code.length) {
+    const rest = code.slice(i);
+    const ws = rest.match(/^\s+/);
+    if (ws) { out += ws[0]; i += ws[0].length; continue; }
+    let matched = false;
+    for (const rule of SYNTAX_RULES) {
+      const m = rest.match(rule.re);
+      if (m && m[0]) {
+        out += `<span class="syntax-${rule.type}">${escapeHtml(m[0])}</span>`;
+        i += m[0].length;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) { out += escapeHtml(code[i]); i += 1; }
+  }
+  return out;
 };
 
 const formatCodeTraceHtml = (snippet) => {
-  if (!snippet) return '<div class="code-line"><span class="line-number">&nbsp;</span><span>Source not available</span></div>';
+  if (!snippet) return '<div class="code-line"><span class="line-number">&nbsp;</span><span class="code-content">Source not available</span></div>';
 
   const lines = snippet.split('\n');
   return lines.map(line => {
     const trimmed = line.trim();
     const isError = trimmed.startsWith('>>>');
-
-    if (isError) {
-      const content = trimmed.replace(/^>>>\s*/, '');
-      const colonIdx = content.indexOf(':');
-      const lineNum = colonIdx > 0 ? content.substring(0, colonIdx) : '';
-      const code = colonIdx > 0 ? content.substring(colonIdx + 1).trim() : content;
-      return `<div class="code-line is-error"><span class="line-number">${lineNum}</span><span>&nbsp;&nbsp;<span style="color: #FF7B72; font-weight: bold;">${highlightHtml(code)}</span></span></div>`;
-    }
-
-    const colonIdx = trimmed.indexOf(':');
-    if (colonIdx > 0) {
-      const lineNum = trimmed.substring(0, colonIdx);
-      const code = trimmed.substring(colonIdx + 1).trim();
-      return `<div class="code-line"><span class="line-number">${lineNum}</span><span style="color: #8B949E;">${highlightHtml(code)}</span></div>`;
-    }
-
-    return `<div class="code-line"><span class="line-number">&nbsp;</span><span style="color: #6B7280;">${escapeHtml(trimmed)}</span></div>`;
+    const content = isError ? trimmed.replace(/^>>>\s*/, '') : trimmed;
+    const colonIdx = content.indexOf(':');
+    const lineNum = colonIdx > 0 ? content.substring(0, colonIdx) : '';
+    const code = colonIdx > 0 ? content.substring(colonIdx + 1).trim() : content;
+    return `<div class="code-line${isError ? ' is-error' : ''}"><span class="line-number">${lineNum || '&nbsp;'}</span><span class="code-content">${highlightHtml(code)}</span></div>`;
   }).join('');
 };
 
@@ -105,8 +128,18 @@ const CSS = `
 .btn-solid{background:light-dark(oklch(20% 0.02 285), oklch(90% 0.01 285));color:light-dark(oklch(98% 0.01 285), oklch(10% 0.01 285));border:1px solid transparent}
 .btn-solid:hover{background:light-dark(oklch(35% 0.02 285), oklch(100% 0 0))}
 .causes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:32px;margin-bottom:32px}
-.syntax-tag{color:oklch(75% 0.15 190)}
-.syntax-attr{color:oklch(80% 0.12 110)}
+.syntax-comment{color:oklch(60% 0.02 285);font-style:italic}
+.syntax-tag{color:oklch(72% 0.15 25)}
+.syntax-attr{color:oklch(78% 0.14 110)}
+.syntax-delimiter{color:oklch(72% 0.13 190);font-weight:600}
+.syntax-pipe{color:oklch(72% 0.13 190);font-weight:600}
+.syntax-string{color:oklch(75% 0.15 145)}
+.syntax-number{color:oklch(78% 0.16 60)}
+.syntax-keyword{color:oklch(70% 0.18 280);font-weight:600}
+.syntax-variable{color:oklch(88% 0.02 285)}
+.syntax-operator{color:oklch(70% 0.04 285)}
+.code-content{color:oklch(65% 0.01 285)}
+.code-line.is-error .code-content{color:var(--color-code-text)}
 `;
 
 const CSS_VARS = `
