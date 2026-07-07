@@ -28,7 +28,6 @@ export class NunjucksError extends Error {
     this.name = meta.errorName ?? 'NunjucksError';
     this.templateName = meta.templateName ?? 'unknown';
     this.templatePath = meta.templatePath ?? null;
-    this.templateId = meta.templateId ?? null;
     this.tplLine = meta.line ?? null;
     this.tplCol = meta.col ?? null;
     this.snippet = meta.snippet ?? null;
@@ -134,7 +133,6 @@ export const createErrorFormatter = ({ fs = defaultFs, mode = 'development' } = 
       const meta = {
         templateName: actualTemplateName,
         templatePath: actualTemplatePath,
-        templateId: null,
         line,
         col,
         snippet,
