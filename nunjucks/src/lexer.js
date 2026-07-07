@@ -240,7 +240,7 @@ export class Tokenizer {
         } else if (tok) {
           return token(TOKEN_SYMBOL, tok, lineno, colno);
         } else {
-          throw new Error('Unexpected value while parsing: ' + tok);
+          throw new lib.TemplateError('Unexpected value while parsing: ' + tok, this.lineno, this.colno, { phase: 'lex' });
         }
       }
     } else {
@@ -304,7 +304,7 @@ export class Tokenizer {
             break;
           } else if (this._matches(this.tags.COMMENT_END)) {
             if (!inComment) {
-              throw new Error('unexpected end of comment');
+              throw new lib.TemplateError('unexpected end of comment', this.lineno, this.colno, { phase: 'lex' });
             }
             tok += this._extractString(this.tags.COMMENT_END);
             break;
@@ -317,7 +317,7 @@ export class Tokenizer {
         }
 
         if (data === null && inComment) {
-          throw new Error('expected end of comment, got end of file');
+          throw new lib.TemplateError('expected end of comment, got end of file', this.lineno, this.colno, { phase: 'lex' });
         }
 
         return token(inComment ? TOKEN_COMMENT : TOKEN_DATA,

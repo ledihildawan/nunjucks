@@ -104,6 +104,9 @@ export const createErrorData = (error, options = {}) => {
   return {
     errorId: generateErrorId(),
     timestamp: new Date().toISOString(),
+    code: error?.code ?? null,
+    subject: error?.subject ?? null,
+    phase: error?.phase ?? null,
     message,
     errorName: error?.name || 'Error',
     originalError: error,

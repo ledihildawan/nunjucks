@@ -22,9 +22,14 @@ export function lookupEscape(ch) {
 
 export function _prettifyError(path, withInternals, err, includeChain) {
   if (!err.Update) {
-    err = new TemplateError(err);
+    err = new TemplateError(err, null, null, {
+      code: err.code,
+      subject: err.subject,
+      phase: err.phase
+    });
   }
   err.Update(path, includeChain);
+  err.templateName = err.templateName || path;
 
   if (includeChain) {
     err._includeChain = includeChain;
@@ -37,6 +42,10 @@ export function _prettifyError(path, withInternals, err, includeChain) {
     err.lineno = old.lineno;
     err.colno = old.colno;
     err.path = old.path || path;
+    err.templateName = old.templateName || path;
+    err.code = old.code;
+    err.subject = old.subject;
+    err.phase = old.phase;
     if (old._includeChain) {
       err._includeChain = old._includeChain;
     }
@@ -49,7 +58,7 @@ export function _prettifyError(path, withInternals, err, includeChain) {
 }
 
 export class TemplateError extends Error {
-  constructor(message, lineno, colno) {
+  constructor(message, lineno, colno, info) {
     super(message);
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
@@ -58,6 +67,12 @@ export class TemplateError extends Error {
     this.lineno = lineno;
     this.colno = colno;
     this.firstUpdate = true;
+    if (info) {
+      if (info.code) this.code = info.code;
+      if (info.subject !== undefined && info.subject !== null) this.subject = info.subject;
+      if (info.phase) this.phase = info.phase;
+      if (info.templateName !== undefined && info.templateName !== null) this.templateName = info.templateName;
+    }
   }
 
   Update(path, includeChain) {

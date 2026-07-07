@@ -215,7 +215,8 @@ export function ensureDefined(val, lineno, colno, varName = null) {
     throw new lib.TemplateError(
       `attempted to output${varMsg} null or undefined value`,
       lineno,
-      colno
+      colno,
+      { code: varName ? 'UNDEFINED_VARIABLE' : 'UNDEFINED_VALUE', subject: varName, phase: 'render' }
     );
   }
   return val;
@@ -299,13 +300,15 @@ export function callWrap(obj, name, context, args, lineno, colno) {
     throw new lib.TemplateError(
       'Unable to call `' + name + '`, which is undefined or falsey',
       lineno,
-      colno
+      colno,
+      { code: 'UNDEFINED_FUNCTION', subject: name, phase: 'render' }
     );
   } else if (typeof obj !== 'function') {
     throw new lib.TemplateError(
       'Unable to call `' + name + '`, which is not a function',
       lineno,
-      colno
+      colno,
+      { code: 'NOT_A_FUNCTION', subject: name, phase: 'render' }
     );
   }
 
@@ -323,6 +326,12 @@ export function handleError(error, lineno, colno, sourceMapData) {
   if (error.lineno !== undefined) {
     return error;
   }
+
+  const info = {
+    code: error.code,
+    subject: error.subject,
+    phase: error.phase || 'render'
+  };
 
   if (sourceMapData && Array.isArray(sourceMapData) && sourceMapData.length > 0) {
     const sm = {
@@ -344,10 +353,10 @@ export function handleError(error, lineno, colno, sourceMapData) {
       }
     };
     const pos = sm.getOriginalPosition(lineno);
-    return new lib.TemplateError(error, pos.line, pos.col);
+    return new lib.TemplateError(error, pos.line, pos.col, info);
   }
 
-  return new lib.TemplateError(error, lineno, colno);
+  return new lib.TemplateError(error, lineno, colno, info);
 }
 
 export async function asyncEach(arr, dimen, iter) {

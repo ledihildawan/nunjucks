@@ -115,7 +115,10 @@ export class Environment extends EmitterObj {
 
   getGlobal(name) {
     if (typeof this.globals[name] === 'undefined') {
-      throw new Error('global not found: ' + name);
+      const err = new Error('global not found: ' + name);
+      err.code = 'GLOBAL_NOT_FOUND';
+      err.subject = name;
+      throw err;
     }
     return this.globals[name];
   }
@@ -132,7 +135,10 @@ export class Environment extends EmitterObj {
 
   getFilter(name) {
     if (!this.filters[name]) {
-      throw new Error('filter not found: ' + name);
+      const err = new Error('filter not found: ' + name);
+      err.code = 'UNDEFINED_FILTER';
+      err.subject = name;
+      throw err;
     }
     const filter = this.filters[name];
 
@@ -163,7 +169,10 @@ export class Environment extends EmitterObj {
 
   getTest(name) {
     if (!this.tests[name]) {
-      throw new Error('test not found: ' + name);
+      const err = new Error('test not found: ' + name);
+      err.code = 'TEST_NOT_FOUND';
+      err.subject = name;
+      throw err;
     }
     return this.tests[name];
   }
@@ -190,7 +199,9 @@ export class Environment extends EmitterObj {
     if (name instanceof Template) {
       tmpl = name;
     } else if (typeof name !== 'string') {
-      throw new Error('template names must be a string: ' + name);
+      const err = new Error('template names must be a string: ' + name);
+      err.code = 'INVALID_INCLUDE';
+      throw err;
     } else {
       for (let i = 0; i < this.loaders.length; i++) {
         const loader = this.loaders[i];
@@ -233,7 +244,10 @@ export class Environment extends EmitterObj {
     }
 
     if (!info && !ignoreMissing) {
-      throw new Error('template not found: ' + name);
+      const err = new Error('template not found: ' + name);
+      err.code = 'FILE_NOT_FOUND';
+      err.subject = name;
+      throw err;
     }
 
     if (!info) {
@@ -309,7 +323,10 @@ class Context extends Obj {
 
   getBlock(name) {
     if (!this.blocks[name]) {
-      throw new Error('unknown block "' + name + '"');
+      const err = new Error('unknown block "' + name + '"');
+      err.code = 'UNDEFINED_BLOCK';
+      err.subject = name;
+      throw err;
     }
 
     return this.blocks[name][0];
@@ -321,7 +338,10 @@ class Context extends Obj {
     var context = this;
 
     if (idx === -1 || !blk) {
-      throw new Error('no super block available for "' + name + '"');
+      const err = new Error('no super block available for "' + name + '"');
+      err.code = 'NO_SUPER_BLOCK';
+      err.subject = name;
+      throw err;
     }
 
     return blk(env, context, frame, runtime);
@@ -386,6 +406,8 @@ export class Template extends Obj {
       const err = new Error(`Circular include detected: "${this.path}" is already being rendered`);
       err.path = this.path;
       err.lineno = 0;
+      err.code = 'CIRCULAR_INCLUDE';
+      err.subject = this.path;
       throw err;
     }
 

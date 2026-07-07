@@ -39,7 +39,7 @@ export class Compiler extends Obj {
       colno += 1;
     }
 
-    throw new TemplateError(msg, lineno, colno);
+    throw new TemplateError(msg, lineno, colno, { phase: 'compile', templateName: this.templateName });
   }
 
   _pushBuffer() {
