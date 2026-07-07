@@ -24,6 +24,8 @@ export const createNunjucksError = (message, errorData) => {
   return {
     name: 'NunjucksError',
     message,
+    errorId: errorData.errorId,
+    timestamp: errorData.timestamp,
     templateName: errorData.templateName,
     templatePath: errorData.templatePath,
     originalError: errorData.originalError,
@@ -36,6 +38,8 @@ export const createNunjucksError = (message, errorData) => {
     getSrcLineFallback: fallbackLine,
     getDisplayLineFallback: () => fallbackLine() ?? '?',
 
+    get sourceLine() { return errorData.sourceLine; },
+    get renderContext() { return errorData.renderContext; },
     get snippet() { return errorData.snippet; },
     get includeChain() { return errorData.includeChain; },
     get isProduction() { return errorData.isProduction; },
@@ -47,7 +51,7 @@ export const createNunjucksError = (message, errorData) => {
 
 export const createErrorFormatter = ({ fs = defaultFs, autoDetect = true } = {}) => {
   return {
-    async formatError(error, templateName, includeChain = null, templatePath = null) {
+    async formatError(error, templateName, includeChain = null, templatePath = null, renderContext = null) {
       const isProduction = !autoDetect ? false : (error.lineno == null);
 
       const effectiveChain = includeChain ?? error._includeChain ?? null;
@@ -81,7 +85,8 @@ export const createErrorFormatter = ({ fs = defaultFs, autoDetect = true } = {})
         includeChain: chainForDisplay,
         isProduction,
         line: lineOverride,
-        col: colOverride
+        col: colOverride,
+        renderContext
       });
 
       return createNunjucksError(error.message, errorData);

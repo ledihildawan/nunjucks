@@ -119,6 +119,8 @@ const formatStackTrace = (originalError, isProduction = false) => {
 export const toConsoleString = (state) => {
   const {
     message,
+    errorId,
+    timestamp,
     templateName,
     includeChain,
     snippet,
@@ -130,7 +132,7 @@ export const toConsoleString = (state) => {
   } = state;
 
   if (isProduction) {
-    return `${pc.bgRed('[ERROR]')} Template Rendering Failed\n${pc.dim('Check logs for details')}`;
+    return `${pc.bgRed('[ERROR]')} Template Rendering Failed${errorId ? ` [${errorId}]` : ''}\n${pc.dim('Check logs for details')}`;
   }
 
   const locationFile = buildLocationFile(templateName, includeChain, getDisplayLine(), getDisplayCol());
@@ -141,11 +143,20 @@ export const toConsoleString = (state) => {
 
   const displayMessage = buildDisplayMessage(errorText, classified);
 
+  const metaBits = [];
+  if (errorId) metaBits.push(`id=${errorId}`);
+  if (timestamp) metaBits.push(`at=${timestamp}`);
+  const metaLine = metaBits.length ? pc.dim(`[${metaBits.join(' | ')}]`) : null;
+
   const parts = [
     formatHeader(),
     formatMessage(displayMessage),
     formatLocation(locationFile)
   ];
+
+  if (metaLine) {
+    parts.splice(1, 0, metaLine);
+  }
 
   if (traceLines.length > 0) {
     parts.push(formatCodeTrace(traceLines));

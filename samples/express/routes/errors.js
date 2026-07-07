@@ -29,7 +29,7 @@ async function renderWithErrorHandler(res, templateName, context = {}) {
   } catch (e) {
     const rawMsg = e.message.split('\n').pop()?.trim() || e.message;
     const classified = classifyError(rawMsg);
-    const formatted = await errorFormatter.formatError(e, templateName, e._includeChain, path.join(VIEWS, templateName));
+    const formatted = await errorFormatter.formatError(e, templateName, e._includeChain, path.join(VIEWS, templateName), context);
     console.error(`[${classified?.category || 'unknown'}]`, formatted.toConsoleString());
     res.type('html').status(500).send(formatted.toHtmlString());
   }
