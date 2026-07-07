@@ -21,9 +21,9 @@ export class TemplateError extends Error {
   applyLocation(path, includeChain) {
     let msg = '(' + (path || 'unknown path') + ')';
     if (this.firstUpdate) {
-      if (this.lineno && this.colno) {
+      if (this.lineno != null && this.colno != null) {
         msg += ` [Line ${this.lineno + 1}, Column ${this.colno + 1}]`;
-      } else if (this.lineno) {
+      } else if (this.lineno != null) {
         msg += ` [Line ${this.lineno + 1}]`;
       }
     }

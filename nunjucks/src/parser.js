@@ -56,12 +56,6 @@ export class Parser extends Obj {
       lineno = tok.lineno;
       colno = tok.colno;
     }
-    if (lineno !== undefined) {
-      lineno += 1;
-    }
-    if (colno !== undefined) {
-      colno += 1;
-    }
     return new TemplateError(msg, lineno, colno, { phase: 'parse' });
   }
 

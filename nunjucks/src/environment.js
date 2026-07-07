@@ -406,7 +406,6 @@ export class Template extends Obj {
     if (this.env._renderingTemplates.has(this.path)) {
       const err = new Error(`Circular include detected: "${this.path}" is already being rendered`);
       err.path = this.path;
-      err.lineno = 0;
       err.code = 'CIRCULAR_INCLUDE';
       err.subject = this.path;
       throw err;

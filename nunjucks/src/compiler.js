@@ -32,13 +32,6 @@ export class Compiler extends Obj {
   }
 
   fail(msg, lineno, colno) {
-    if (lineno !== undefined) {
-      lineno += 1;
-    }
-    if (colno !== undefined) {
-      colno += 1;
-    }
-
     throw new TemplateError(msg, lineno, colno, { phase: 'compile', templateName: this.templateName });
   }
 
@@ -583,6 +576,7 @@ export class Compiler extends Obj {
 
     frame.set(symbol, symbol);
 
+    this._emitLine(`lineno = ${node.lineno}; colno = ${node.colno != null ? node.colno : 0};`);
     this._emit(symbol + ' = await runtime.awaitValue(env.getFilter("' + name.value + '").call(context, ');
     this._compileAggregate(node.args, frame);
     this._emitLine('));');
@@ -1014,6 +1008,7 @@ export class Compiler extends Obj {
     const parentName = this._templateName();
     const eagerCompileArg = (eagerCompile) ? 'true' : 'false';
     const ignoreMissingArg = (ignoreMissing) ? 'true' : 'false';
+    this._emitLine(`lineno = ${node.lineno}; colno = ${node.colno != null ? node.colno : 0};`);
     this._emit(`var ${parentTemplateId} = await env.getTemplate(`);
     this._compileExpression(node.template, frame);
     this._emitLine(`, ${eagerCompileArg}, ${parentName}, ${ignoreMissingArg});`);
@@ -1116,6 +1111,7 @@ export class Compiler extends Obj {
     const tmplVar = this._tmpid();
     const resultVar = this._tmpid();
 
+    this._emitLine(`lineno = ${node.lineno}; colno = ${node.colno != null ? node.colno : 0};`);
     this._emit(`var ${tmplVar} = await env.getTemplate(`);
     this._compileExpression(node.template, frame);
     const ignoreMissing = node.ignoreMissing ? 'true' : 'false';
