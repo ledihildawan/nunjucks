@@ -213,8 +213,8 @@ export function ensureDefined(val, lineno, colno) {
   if (val === null || val === undefined) {
     throw new lib.TemplateError(
       'attempted to output null or undefined value',
-      lineno + 1,
-      colno + 1
+      lineno,
+      colno
     );
   }
   return val;
@@ -293,11 +293,19 @@ export function nullishCoalesce(left, right) {
   return (left !== undefined && left !== null) ? left : right;
 }
 
-export function callWrap(obj, name, context, args) {
+export function callWrap(obj, name, context, args, lineno, colno) {
   if (!obj) {
-    throw new Error('Unable to call `' + name + '`, which is undefined or falsey');
+    throw new lib.TemplateError(
+      'Unable to call `' + name + '`, which is undefined or falsey',
+      lineno,
+      colno
+    );
   } else if (typeof obj !== 'function') {
-    throw new Error('Unable to call `' + name + '`, which is not a function');
+    throw new lib.TemplateError(
+      'Unable to call `' + name + '`, which is not a function',
+      lineno,
+      colno
+    );
   }
 
   return obj.apply(context, args);

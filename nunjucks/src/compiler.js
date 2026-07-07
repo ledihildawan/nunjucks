@@ -564,9 +564,7 @@ export class Compiler extends Obj {
 
     this._emit(', "' + this._getNodeName(node.name).replace(/"/g, '\\"') + '", context, ');
 
-    this._compileAggregate(node.args, frame, '[', '])');
-
-    this._emit(')');
+    this._compileAggregate(node.args, frame, '[', '], ' + node.lineno + ', ' + node.colno + '))');
   }
 
   compilePipe(node, frame) {

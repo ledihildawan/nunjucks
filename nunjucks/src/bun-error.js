@@ -160,17 +160,22 @@ const ERROR_MAPPINGS = [
 export class NunjucksError extends Error {
   constructor(message, meta = {}) {
     super(message);
-    this.name = meta.errorName || 'NunjucksError';
-    this.templateName = meta.templateName || 'unknown';
-    this.templatePath = meta.templatePath || null;
-    this.templateId = meta.templateId || null;
-    this.line = meta.line ?? null;
-    this.col = meta.col ?? null;
-    this.snippet = meta.snippet || null;
-    this.includeChain = meta.includeChain || null;
-    this.isProduction = meta.isProduction || false;
-    this.originalError = meta.originalError || null;
+    this.name = meta.errorName ?? 'NunjucksError';
+    this.templateName = meta.templateName ?? 'unknown';
+    this.templatePath = meta.templatePath ?? null;
+    this.templateId = meta.templateId ?? null;
+    this.tplLine = meta.line ?? null;
+    this.tplCol = meta.col ?? null;
+    this.snippet = meta.snippet ?? null;
+    this.includeChain = meta.includeChain ?? null;
+    this.isProduction = meta.isProduction ?? false;
+    this.originalError = meta.originalError ?? null;
   }
+
+  getSrcLine() { return this.tplLine !== null ? this.tplLine + 1 : null; }
+  getSrcCol() { return this.tplCol !== null ? this.tplCol + 1 : null; }
+  get displayLine() { return this.getSrcLine() ?? '?'; }
+  get displayCol() { return this.getSrcCol() ?? '?'; }
 
   getSnippet(sourceLines, centerLine, context = 3) {
     if (!sourceLines || !Array.isArray(sourceLines)) {
@@ -220,8 +225,8 @@ export class NunjucksError extends Error {
       : this.templateName;
 
     const snippetLine = this.extractErrorLineFromSnippet(this.snippet);
-    const displayLine = snippetLine || (this.line !== null && this.line !== undefined ? this.line : '?');
-    const displayCol = this.col !== null && this.col !== undefined ? this.col : '?';
+    const displayLine = snippetLine ?? this.displayLine;
+    const displayCol = this.displayCol;
 
     const traceLines = this.snippet ? this.snippet.split('\n').map(l => l.trim()) : [];
 
@@ -288,8 +293,8 @@ export class NunjucksError extends Error {
 
     const shortRefId = (this.templateId || 'unknown').substring(0, 8);
     const snippetLine = this.extractErrorLineFromSnippet(this.snippet);
-    const displayLine = snippetLine || (this.line !== null && this.line !== undefined ? this.line : '?');
-    const displayCol = this.col !== null && this.col !== undefined ? this.col : '?';
+    const displayLine = snippetLine ?? this.displayLine;
+    const displayCol = this.displayCol;
 
     if (this.isProduction) {
       return `
@@ -632,7 +637,7 @@ export class ErrorFormatter {
     const { line: lineFromMsg, col: colFromMsg } = this.extractLineInfo(error.message);
     const colFromRawMsg = this.extractColFromMessage(error.message);
     let line = lineFromError ?? lineFromMsg;
-    let col = colFromError || colFromMsg || colFromRawMsg;
+    let col = colFromError ?? colFromMsg ?? colFromRawMsg;
     let snippet = null;
 
     let sourceContent = null;
@@ -648,7 +653,7 @@ export class ErrorFormatter {
     if (sourceContent) {
       const sourceLines = this.getSourceLines(sourceContent);
       const nonEmptyLines = sourceLines.filter(l => l.trim().length > 0);
-      if ((line === null || line === undefined || line === 0) && nonEmptyLines.length === 1) {
+      if ((line ?? 0) === 0 && nonEmptyLines.length === 1) {
         line = 0;
       }
       if (line !== null && line !== undefined) {
@@ -665,10 +670,10 @@ export class ErrorFormatter {
           originalError: error
         };
         const tempError = new NunjucksError(error.message, errorMeta);
-        snippet = tempError.getSnippet(sourceLines, line + 1, 3);
+        snippet = tempError.getSnippet(sourceLines, tempError.getSrcLine(), 3);
       }
     } else if (line !== null && line !== undefined) {
-      snippet = `>>> ${line}: [source not available]`;
+      snippet = `>>> ${line + 1}: [source not available]`;
     }
 
     const meta = {
