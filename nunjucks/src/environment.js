@@ -388,10 +388,11 @@ export class Template extends Obj {
       const result = await this.rootRenderFunc(this.env, context, frame, globalRuntime);
       return result;
     } catch (e) {
+      e.path = this.path;
       let sourceLineno = e.lineno;
       let sourceColno = e.colno;
 
-      const errorPath = e.path || this.path;
+      const errorPath = e.path;
       const hasIncludeChain = e._includeChain || this._includeChain;
       let sourceMap = this.tmplProps?.__sourceMap;
 
@@ -460,7 +461,8 @@ export class Template extends Obj {
       await this.rootRenderFunc(this.env, context, frame, globalRuntime);
       return context.getExported();
     } catch (e) {
-      throw lib._prettifyError(e.path || this.path, this.env.opts.dev, e, e._includeChain || this._includeChain);
+      e.path = this.path;
+      throw lib._prettifyError(e.path, this.env.opts.dev, e, e._includeChain || this._includeChain);
     }
   }
 

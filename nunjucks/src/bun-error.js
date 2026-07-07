@@ -505,8 +505,16 @@ export class ErrorFormatter {
     const isProd = this.mode === 'production';
     const hasTables = this.hasTables();
 
-    const extractedTemplateName = this.extractErrorTemplateName(error.message);
-    const actualTemplateName = extractedTemplateName || templateName;
+    const effectiveChain = includeChain || error._includeChain || null;
+    const chainFromMessage = this.extractIncludeChainFromMessage(error.message);
+
+    const chainForDisplay = effectiveChain
+      ? (Array.isArray(effectiveChain) ? effectiveChain : [effectiveChain])
+      : chainFromMessage;
+
+    const hasIncludeChain = chainForDisplay && chainForDisplay.length > 0;
+    const extractedTemplateName = hasIncludeChain ? null : this.extractErrorTemplateName(error.message);
+    const actualTemplateName = (hasIncludeChain ? error.path : null) || extractedTemplateName || templateName;
     const actualTemplatePath = templatePath || error.templatePath || null;
     const templateInfo = hasTables ? this.getTemplateInfo(actualTemplateName) : null;
     const templateId = templateInfo?.uuid || null;
@@ -518,13 +526,6 @@ export class ErrorFormatter {
     let line = lineFromError ?? lineFromMsg;
     let col = colFromError || colFromMsg || colFromRawMsg;
     let snippet = null;
-
-    const effectiveChain = includeChain || error._includeChain || null;
-    const chainFromMessage = this.extractIncludeChainFromMessage(error.message);
-
-    const chainForDisplay = effectiveChain
-      ? (Array.isArray(effectiveChain) ? effectiveChain : [effectiveChain])
-      : chainFromMessage;
 
     if (templateInfo?.source_content) {
       const sourceLines = this.getSourceLines(templateInfo.source_content);

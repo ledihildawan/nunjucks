@@ -36,6 +36,7 @@ export function _prettifyError(path, withInternals, err, includeChain) {
     err.name = old.name;
     err.lineno = old.lineno;
     err.colno = old.colno;
+    err.path = old.path || path;
     if (old._includeChain) {
       err._includeChain = old._includeChain;
     }
