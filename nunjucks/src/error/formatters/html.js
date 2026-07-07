@@ -87,14 +87,14 @@ const renderContextHtml = (ctx) => {
   const rows = keys.map((k) => {
     const raw = ctx[k];
     const val = typeof raw === 'string' ? raw : JSON.stringify(raw);
-    return `<div style="display:flex;gap:12px;padding:6px 12px;border-bottom:1px solid var(--color-border);font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:13px;"><span style="color:oklch(70% 0.15 190);min-width:120px;flex-shrink:0;">${escapeHtml(k)}</span><span style="color:var(--color-code-text);word-break:break-all;">${escapeHtml(val)}</span></div>`;
+    return `<div class="ctx-row" style="display:flex;gap:12px;padding:6px 12px;border-bottom:1px solid var(--color-border);font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:13px;"><dt style="color:oklch(70% 0.15 190);min-width:120px;flex-shrink:0;">${escapeHtml(k)}</dt><dd style="margin:0;color:var(--color-code-text);word-break:break-all;">${escapeHtml(val)}</dd></div>`;
   }).join('');
 
   return `
-    <div style="margin-bottom: 32px;">
-      <div class="text-label">Render Context</div>
-      <div style="background:var(--color-code-bg);border-radius:8px;overflow:hidden;border:1px solid var(--color-border);">${rows}</div>
-    </div>`;
+    <section class="render-context" style="margin-bottom: 32px;" aria-labelledby="h-ctx">
+      <h2 id="h-ctx" class="text-label">Render Context</h2>
+      <dl style="margin:0;background:var(--color-code-bg);border-radius:8px;overflow:hidden;border:1px solid var(--color-border);">${rows}</dl>
+    </section>`;
 };
 
 const formatStackTraceHtml = (originalError, isProduction = false) => {
@@ -117,19 +117,26 @@ const formatStackTraceHtml = (originalError, isProduction = false) => {
 
   const rows = linesToShow.map(line => {
     const trimmed = escapeHtml(line.trim());
-    return `<div class="stack-row"><span style="font-family:monospace;color:var(--color-code-text);">${trimmed}</span></div>`;
+    return `<div class="stack-row"><code style="font-family:monospace;color:var(--color-code-text);">${trimmed}</code></div>`;
   }).join('');
 
   return `
-    <div style="margin-bottom:32px;">
-      <div class="text-label">Stack Trace</div>
+    <section class="stack-trace" style="margin-bottom:32px;" aria-labelledby="h-stack">
+      <h2 id="h-stack" class="text-label">Stack Trace</h2>
       <div class="stack-container">${rows}</div>
-    </div>
+    </section>
   `;
 };
 
 const CSS = `
 .error-wrapper{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;max-width:800px;margin:40px auto;background:var(--color-bg-panel);border:1px solid var(--color-border);border-radius:12px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04);color:var(--color-text-primary);line-height:1.5;overflow:hidden;border-top:4px solid var(--color-error-border);transition:background-color 0.3s ease,color 0.3s ease}
+.error-wrapper h1,.error-wrapper h2,.error-wrapper p,.error-wrapper ul,.error-wrapper pre{margin:0}
+.error-wrapper h1,.error-wrapper h2{font-weight:inherit}
+.error-title{font-size:24px;font-weight:600;color:var(--color-text-primary);line-height:1.3}
+.error-location{margin-top:8px;font-size:15px;color:var(--color-text-secondary)}
+.error-footer{padding:16px 32px;background:light-dark(oklch(96% 0.01 285), oklch(16% 0.01 285));border-top:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+.error-footer .meta{font-size:12px;color:var(--color-text-secondary);word-break:break-all}
+.fix-block{margin:0;background:light-dark(oklch(96% 0.01 285), oklch(22% 0.01 285));padding:16px;border-radius:8px;font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:13px;color:var(--color-text-primary);border:1px solid var(--color-border);white-space:pre-wrap;overflow-x:auto}
 .text-label{font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px}
 .error-header{padding:24px 32px;border-bottom:1px solid var(--color-border);background:linear-gradient(to bottom,var(--color-error-bg) 0%,var(--color-bg-panel) 100%)}
 .error-header-title{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--color-error-text);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px}
@@ -158,7 +165,9 @@ const CSS = `
 .code-content{color:oklch(65% 0.01 285)}
 .code-line.is-error .code-content{color:var(--color-code-text)}
 .md-code{font-family:'SFMono-Regular',Consolas,Menlo,monospace;background:var(--color-code-highlight-bg);color:var(--color-code-text);padding:1px 5px;border-radius:4px;font-size:12px}
-.causes-list{line-height:1.9}
+.causes-list{list-style:none;padding:0;line-height:1.9;font-size:14px;color:var(--color-text-primary)}
+.causes-list li{position:relative;padding-left:16px;margin-bottom:4px}
+.causes-list li::before{content:'•';position:absolute;left:0;color:var(--color-text-secondary)}
 .causes-list strong{color:var(--color-text-primary);font-weight:600}
 `;
 
@@ -233,45 +242,40 @@ ${CSS_VARS}
 ${CSS}
 </style>
 
-<div class="error-wrapper">
-  <div class="error-header">
-    <div class="error-header-title">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<section class="error-wrapper" aria-labelledby="err-title">
+  <header class="error-header">
+    <p class="error-header-title">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="12" y1="8" x2="12" y2="12"></line>
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
       </svg>
       Template Rendering Error
       ${codeBadge}${phaseBadge}
-    </div>
-    <div style="font-size: 24px; font-weight: 600;">${headerTitle}</div>
-    <div style="margin-top: 8px; font-size: 15px; color: var(--color-text-secondary);">
-      The error occurred in <span style="font-weight: 600; color: var(--color-text-primary);">${locationInfo}</span>
-    </div>
-  </div>
+    </p>
+    <h1 id="err-title" class="error-title">${headerTitle}</h1>
+    <p class="error-location">The error occurred in <span style="font-weight:600;color:var(--color-text-primary);">${locationInfo}</span></p>
+  </header>
 
   <div style="padding: 32px;">
-    <div style="margin-bottom: 32px;">
-      <div class="text-label">Source Trace</div>
-      <div class="code-block">
+    <section aria-labelledby="h-source" style="margin-bottom: 32px;">
+      <h2 id="h-source" class="text-label">Source Trace</h2>
+      <div class="code-block" role="group" aria-label="Template source around the error">
         ${formatCodeTraceHtml(snippet)}
       </div>
-    </div>
+    </section>
 
     <div class="causes-grid">
-      <div>
-        <div class="text-label">Possible Causes</div>
-        <div class="causes-list" style="font-size: 14px; color: var(--color-text-primary);">
-          ${possibleCauses.map(c => `• ${renderInlineMarkdown(c)}`).join('<br>')}
-        </div>
-      </div>
-      <div>
-        <div class="text-label">Suggested Fix</div>
-        <div style="background:light-dark(oklch(96% 0.01 285), oklch(22% 0.01 285));padding:16px;border-radius:8px;font-family:monospace;font-size:13px;color:var(--color-text-primary);border:1px solid var(--color-border);white-space:pre-wrap;">
-          <div class="syntax-comment" style="margin-bottom:8px;">${escapeHtml(fixComment)}</div>
-          ${highlightHtml(fixCode)}
-        </div>
-      </div>
+      <section aria-labelledby="h-causes">
+        <h2 id="h-causes" class="text-label">Possible Causes</h2>
+        <ul class="causes-list">
+          ${possibleCauses.map(c => `<li>${renderInlineMarkdown(c)}</li>`).join('\n          ')}
+        </ul>
+      </section>
+      <section aria-labelledby="h-fix">
+        <h2 id="h-fix" class="text-label">Suggested Fix</h2>
+        <pre class="fix-block"><code>${fixComment ? `<span class="syntax-comment">${escapeHtml(fixComment)}</span>\n` : ''}${highlightHtml(fixCode)}</code></pre>
+      </section>
     </div>
 
     ${renderContextHtml(renderContext)}
@@ -279,22 +283,20 @@ ${CSS}
     ${formatStackTraceHtml(originalError, isProduction)}
   </div>
 
-  <div style="padding:16px 32px;background:light-dark(oklch(96% 0.01 285), oklch(16% 0.01 285));border-top:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
-    <div style="font-size:12px;color:var(--color-text-secondary);word-break:break-all;">
+  <footer class="error-footer">
+    <p class="meta">
       ${metaStrip}Environment: <span style="font-weight:600;color:var(--color-text-primary);">${isProduction ? 'Production' : 'Development'}</span>
-    </div>
-    <div style="display:flex;gap:12px;">
-      <a href="${templatePath ? 'vscode://file/' + escapeHtml(templatePath) + ':' + getDisplayLine() + ':' + getDisplayCol() : '#'}" class="btn btn-solid" ${!templatePath ? 'style="opacity:0.5;pointer-events:none;"' : ''}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3z"></path>
-          <path d="M3 6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6z"></path>
-          <path d="M9 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"></path>
-          <rect x="15" y="6" width="6" height="12" rx="2"></rect>
-        </svg>
-        Open in IDE
-      </a>
-    </div>
-  </div>
-</div>
+    </p>
+    <a href="${templatePath ? 'vscode://file/' + escapeHtml(templatePath) + ':' + getDisplayLine() + ':' + getDisplayCol() : '#'}" class="btn btn-solid" ${!templatePath ? 'aria-disabled="true" style="opacity:0.5;pointer-events:none;"' : ''}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3z"></path>
+        <path d="M3 6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6z"></path>
+        <path d="M9 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"></path>
+        <rect x="15" y="6" width="6" height="12" rx="2"></rect>
+      </svg>
+      Open in IDE
+    </a>
+  </footer>
+</section>
 `;
 };
