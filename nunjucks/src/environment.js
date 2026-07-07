@@ -1,4 +1,4 @@
-import * as lib from './lib.js';
+import * as lib from './lib/index.js';
 import { compile } from './compiler.js';
 import * as filters from './filters.js';
 import {FileSystemLoader, WebLoader, PrecompiledLoader} from './loaders.js';
@@ -388,7 +388,7 @@ export class Template extends Obj {
       try {
         this._compile();
       } catch (err) {
-        throw lib._prettifyError(this.path, this.env.opts.dev, err);
+        throw lib._prettifyError({ path: this.path, withInternals: this.env.opts.dev, err });
       }
     } else {
       this.compiled = false;
@@ -399,7 +399,7 @@ export class Template extends Obj {
     try {
       this.compile();
     } catch (e) {
-      throw lib._prettifyError(this.path, this.env.opts.dev, e);
+      throw lib._prettifyError({ path: this.path, withInternals: this.env.opts.dev, err: e });
     }
 
     if (this.env._renderingTemplates.has(this.path)) {
@@ -477,7 +477,7 @@ export class Template extends Obj {
         }
       }
 
-      throw lib._prettifyError(e.path || this.path, this.env.opts.dev, e, e._includeChain || this._includeChain);
+      throw lib._prettifyError({ path: e.path || this.path, withInternals: this.env.opts.dev, err: e, includeChain: e._includeChain || this._includeChain });
     } finally {
       this.env._renderingTemplates.delete(this.path);
     }
@@ -487,7 +487,7 @@ export class Template extends Obj {
     try {
       this.compile();
     } catch (e) {
-      throw lib._prettifyError(this.path, this.env.opts.dev, e, e._includeChain || this._includeChain);
+      throw lib._prettifyError({ path: this.path, withInternals: this.env.opts.dev, err: e, includeChain: e._includeChain || this._includeChain });
     }
 
     const frame = parentFrame ? parentFrame.push() : new Frame();
@@ -501,7 +501,7 @@ export class Template extends Obj {
       if (!e.path) {
         e.path = this.path;
       }
-      throw lib._prettifyError(e.path, this.env.opts.dev, e, e._includeChain || this._includeChain);
+      throw lib._prettifyError({ path: e.path, withInternals: this.env.opts.dev, err: e, includeChain: e._includeChain || this._includeChain });
     }
   }
 

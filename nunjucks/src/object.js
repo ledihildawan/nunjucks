@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import * as lib from './lib.js';
+import * as lib from './lib/index.js';
 
 function parentWrap(parent, prop) {
   if (typeof parent !== 'function' || typeof prop !== 'function') {

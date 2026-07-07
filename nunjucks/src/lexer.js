@@ -1,4 +1,4 @@
-import * as lib from './lib.js';
+import * as lib from './lib/index.js';
 
 let whitespaceChars = ' \n\t\r\u00A0';
 let delimChars = '()[]{}%*-+~/#,:|&.<>=!?';

@@ -1,5 +1,5 @@
 import { expect, describe, test } from 'bun:test';
-import * as lib from '../nunjucks/src/lib.js';
+import * as lib from '../nunjucks/src/lib/index.js';
 import * as lexer from '../nunjucks/src/lexer.js';
 
 function _hasTokens(ws, tokens, types) {

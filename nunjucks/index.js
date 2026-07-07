@@ -1,4 +1,4 @@
-import * as lib from './src/lib.js';
+import * as lib from './src/lib/index.js';
 import { Environment, Template } from './src/environment.js';
 import Loader from './src/loader.js';
 import * as loaders from './src/loaders.js';

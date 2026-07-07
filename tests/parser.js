@@ -1,5 +1,5 @@
 import { expect, describe, test } from "bun:test";
-import * as lib from "../nunjucks/src/lib.js";
+import * as lib from '../nunjucks/src/lib/index.js';
 import * as nodes from "../nunjucks/src/nodes.js";
 import * as parser from "../nunjucks/src/parser.js";
 

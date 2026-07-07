@@ -1,6 +1,6 @@
 import { existsSync, statSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {_prettifyError} from './lib.js';
+import {_prettifyError} from './lib/index.js';
 import * as compiler from './compiler.js';
 import {Environment} from './environment.js';
 import precompileGlobal from './precompile-global.js';
@@ -101,7 +101,7 @@ function _precompile(str, name, env) {
       name,
       env.opts);
   } catch (err) {
-    throw _prettifyError(name, false, err);
+    throw _prettifyError({ path: name, withInternals: false, err });
   }
 
   return {

@@ -1,5 +1,5 @@
 import * as nodes from './nodes.js';
-import * as lib from './lib.js';
+import * as lib from './lib/index.js';
 
 let sym = 0;
 function gensym() {
