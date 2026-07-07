@@ -14,7 +14,7 @@ export const classifyError = (rawMessage) => {
         'Using undefined variable name',
         'Typo in variable name'
       ],
-      fixCode: "{{ variable|default('default_value') }}",
+      fixCode: "{{ variable |> default('default_value') }}",
       fixComment: '// Add default filter or pass variable in context'
     };
   }
@@ -96,7 +96,7 @@ export const classifyError = (rawMessage) => {
         'Array index out of bounds',
         'Object property does not exist'
       ],
-      fixCode: "{{ object.property|default('default') }}",
+      fixCode: "{{ object.property |> default('default') }}",
       fixComment: '// Use default filter or safe navigation'
     };
   }

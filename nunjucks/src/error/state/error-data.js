@@ -97,7 +97,7 @@ const classifyErrorRaw = (message) => {
       category: 'undefined_variable',
       undefinedName: varName,
       causes: ['Variable not passed in render context', 'Using undefined variable name', 'Typo in variable name'],
-      fixCode: "{{ variable|default('default_value') }}",
+      fixCode: "{{ variable |> default('default_value') }}",
       fixComment: '// Add default filter or pass variable in context'
     };
   }
