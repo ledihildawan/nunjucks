@@ -55,7 +55,7 @@ const formatRenderContext = (ctx) => {
 };
 
 const formatCodeTrace = (traceLines) => {
-  const lines = ['\n', pc.bold('Code Trace:')];
+  const lines = ['\n', pc.bold('Source Trace:')];
   for (const line of traceLines) {
     if (line.startsWith('>>>')) {
       lines.push(pc.red(line));
