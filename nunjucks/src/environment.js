@@ -388,7 +388,9 @@ export class Template extends Obj {
       const result = await this.rootRenderFunc(this.env, context, frame, globalRuntime);
       return result;
     } catch (e) {
-      e.path = this.path;
+      if (!e.path) {
+        e.path = this.path;
+      }
       let sourceLineno = e.lineno;
       let sourceColno = e.colno;
 
@@ -461,7 +463,9 @@ export class Template extends Obj {
       await this.rootRenderFunc(this.env, context, frame, globalRuntime);
       return context.getExported();
     } catch (e) {
-      e.path = this.path;
+      if (!e.path) {
+        e.path = this.path;
+      }
       throw lib._prettifyError(e.path, this.env.opts.dev, e, e._includeChain || this._includeChain);
     }
   }
