@@ -22,7 +22,13 @@ const resolveField = (field, subject) =>
   Array.isArray(field) ? field.map(item => fill(item, subject)) : fill(field, subject);
 
 const classifyFilterError = (rawMessage) => {
-  const errorMsg = rawMessage.match(PATTERNS.FILTER_ERROR)?.[1] || rawMessage;
+  let errorMsg = '';
+  const errLine = rawMessage.split('\n').find(l => /^ {2}Error:/i.test(l));
+  if (errLine) {
+    errorMsg = errLine.replace(/^ {2}Error:\s*/i, '');
+  } else {
+    errorMsg = rawMessage.match(PATTERNS.FILTER_ERROR)?.[1] || rawMessage.split('\n').pop()?.trim() || rawMessage;
+  }
   const isAsyncError = /async filter|promise|rejected|await|network/i.test(errorMsg);
 
   const fixCode = isAsyncError

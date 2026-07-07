@@ -28,11 +28,10 @@ async function renderWithErrorHandler(res, templateName, context = {}) {
     res.type('html').send(html);
   } catch (e) {
     const formatted = await errorFormatter.formatError(e, templateName, e._includeChain, path.join(VIEWS, templateName), context);
-    const code = formatted.code || formatted.classified?.category || 'unknown';
     if (formatted.errorId) {
       res.setHeader('X-Error-Id', formatted.errorId);
     }
-    console.error(`[${code}]${formatted.errorId ? ` [${formatted.errorId}]` : ''}`, formatted.toConsoleString());
+    console.error(formatted.toConsoleString());
     res.type('html').status(500).send(formatted.toHtmlString());
   }
 }
