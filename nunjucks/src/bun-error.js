@@ -29,62 +29,131 @@ function stripAnsi(str) {
   return str.replace(/\x1b\[[0-9;]*m/g, '');
 }
 
+function classifyError(rawMessage) {
+  if (!rawMessage) return null;
+
+  if (/attempted to output null or undefined value/i.test(rawMessage)) {
+    return {
+      category: 'undefined_variable',
+      undefinedName: null,
+      causes: [
+        'Variable not passed in render context',
+        'Using undefined variable name',
+        'Typo in variable name'
+      ],
+      fixCode: "{{ variable|default('default_value') }}",
+      fixComment: '// Add default filter or pass variable in context'
+    };
+  }
+
+  if (/Unable to call `([^`]+)`.*which is undefined/i.test(rawMessage)) {
+    const fnName = extractUndefinedName(rawMessage);
+    return {
+      category: 'undefined_function',
+      undefinedName: fnName,
+      causes: [
+        `Function '${fnName}' not registered with env.addGlobal()`,
+        `Filter '${fnName}' not registered with env.addFilter()`,
+        'Misspelled function or filter name'
+      ],
+      fixCode: `env.addGlobal('${fnName}', callback)`,
+      fixComment: `// Register the missing function '${fnName}'`
+    };
+  }
+
+  if (/is not a function|is not defined/i.test(rawMessage)) {
+    return {
+      category: 'not_a_function',
+      undefinedName: extractUndefinedName(rawMessage),
+      causes: [
+        'Calling a non-function value',
+        'Variable contains wrong data type'
+      ],
+      fixCode: "// Check variable type before calling\nconsole.log(typeof variable)",
+      fixComment: '// Verify the variable type'
+    };
+  }
+
+  if (/Unexpected token|unexpected end|SyntaxError/i.test(rawMessage)) {
+    return {
+      category: 'syntax_error',
+      undefinedName: null,
+      causes: [
+        'Missing closing tag ({{ endif }}, {% endfor %})',
+        'Mismatched quotes or brackets'
+      ],
+      fixCode: "{% raw %}{{ expression }}{% endraw %}",
+      fixComment: '// Use raw tag for literal content'
+    };
+  }
+
+  if (/filter.*not found|invalid filter/i.test(rawMessage)) {
+    const filterName = extractUndefinedName(rawMessage);
+    return {
+      category: 'undefined_filter',
+      undefinedName: filterName,
+      causes: [
+        `Filter '${filterName}' not registered with env.addFilter()`,
+        'Typo in filter name'
+      ],
+      fixCode: `env.addFilter('${filterName}', fn)`,
+      fixComment: `// Register the missing filter '${filterName}'`
+    };
+  }
+
+  if (/block.*not found|undefined block/i.test(rawMessage)) {
+    return {
+      category: 'undefined_block',
+      undefinedName: null,
+      causes: [
+        'Extending template without block definition',
+        'Incorrect block name'
+      ],
+      fixCode: "{% block content %}{% endblock %}",
+      fixComment: '// Define the missing block'
+    };
+  }
+
+  return null;
+}
+
+function extractUndefinedName(message) {
+  const callMatch = message.match(/Unable to call `([^`]+)`/);
+  if (callMatch) return callMatch[1];
+
+  const outputMatch = message.match(/attempted to output ([^ ]+)/i);
+  if (outputMatch) return outputMatch[1];
+
+  const notFoundMatch = message.match(/filter "([^"]+)" not found/i);
+  if (notFoundMatch) return notFoundMatch[1];
+
+  return null;
+}
+
 const ERROR_MAPPINGS = [
   {
     patterns: [/attempted to output null or undefined value/i],
-    causes: [
-      'Variable not passed in render context',
-      'Using undefined variable name',
-      'Typo in variable name'
-    ],
-    fixCode: "{{ variable|default('default_value') }}",
-    fixComment: '// Add default filter or pass variable in context'
+    causes: ['Variable not passed in render context', 'Using undefined variable name', 'Typo in variable name']
   },
   {
     patterns: [/Unable to call.*which is undefined|cannot call.*undefined/i],
-    causes: [
-      'Function not registered with env.addGlobal()',
-      'Filter not registered with env.addFilter()',
-      'Misspelled function or filter name'
-    ],
-    fixCode: "env.addGlobal('myFn', callback)",
-    fixComment: '// Register the missing function'
+    causes: ['Function not registered with env.addGlobal()', 'Filter not registered with env.addFilter()', 'Misspelled function or filter name']
   },
   {
     patterns: [/is not a function|is not defined/i],
-    causes: [
-      'Calling a non-function value',
-      'Variable contains wrong data type'
-    ],
-    fixCode: "// Check variable type before calling\nconsole.log(typeof variable)",
-    fixComment: '// Verify the variable type'
+    causes: ['Calling a non-function value', 'Variable contains wrong data type']
   },
   {
     patterns: [/Unexpected token|unexpected end|SyntaxError/i],
-    causes: [
-      'Missing closing tag ({{ endif }}, {% endfor %})',
-      'Mismatched quotes or brackets'
-    ],
-    fixCode: "{% raw %}{{ expression }}{% endraw %}",
-    fixComment: '// Use raw tag for literal content'
+    causes: ['Missing closing tag ({{ endif }}, {% endfor %})', 'Mismatched quotes or brackets']
   },
   {
     patterns: [/filter.*not found|invalid filter/i],
-    causes: [
-      'Filter not registered with env.addFilter()',
-      'Typo in filter name'
-    ],
-    fixCode: "env.addFilter('myFilter', fn)",
-    fixComment: '// Register the missing filter'
+    causes: ['Filter not registered with env.addFilter()', 'Typo in filter name']
   },
   {
     patterns: [/block.*not found|undefined block/i],
-    causes: [
-      'Extending template without block definition',
-      'Incorrect block name'
-    ],
-    fixCode: "{% block content %}{% endblock %}",
-    fixComment: '// Define the missing block'
+    causes: ['Extending template without block definition', 'Incorrect block name']
   }
 ];
 
@@ -146,13 +215,17 @@ export class NunjucksError extends Error {
     lines.push(pc.dim('─'.repeat(60)));
 
     const originalMsg = this.originalError?.message || '';
+    const classified = classifyError(originalMsg);
+
     let displayMessage = errorText;
-    if (originalMsg.includes('attempted to output null or undefined value')) {
-      displayMessage = 'Variable is undefined or null: provide the variable in render context or use default value';
-    } else if (originalMsg.includes('Unable to call')) {
-      const fnMatch = originalMsg.match(/Unable to call `([^`]+)`/);
-      const fnName = fnMatch ? fnMatch[1] : 'unknown';
-      displayMessage = `Unable to call \`${fnName}\`, which is undefined or falsey`;
+    if (classified) {
+      if (classified.category === 'undefined_variable') {
+        displayMessage = classified.undefinedName
+          ? `Variable '${classified.undefinedName}' is undefined or null`
+          : 'Variable is undefined or null';
+      } else if (classified.category === 'undefined_function') {
+        displayMessage = `Unable to call '${classified.undefinedName}', which is undefined or falsey`;
+      }
     }
     lines.push(`${pc.bold('Message:')} ${displayMessage}`);
 
@@ -175,22 +248,15 @@ export class NunjucksError extends Error {
       }
     }
 
-    let mappedError = null;
-    const errorForMapping = this.originalError?.message || errorText;
-    for (const mapping of ERROR_MAPPINGS) {
-      for (const pattern of mapping.patterns) {
-        if (pattern.test(errorForMapping)) {
-          mappedError = mapping;
-          break;
-        }
-      }
-      if (mappedError) break;
-    }
-
-    if (mappedError) {
+    if (classified) {
       lines.push('');
-      lines.push(`${pc.bold('Suggested Fix:')} ${pc.cyan(mappedError.fixComment)}`);
-      lines.push(pc.dim('  ' + mappedError.fixCode.split('\n')[0]));
+      lines.push(`${pc.bold('Possible Causes:')}`);
+      for (const cause of classified.causes) {
+        lines.push(pc.dim(`  • ${cause}`));
+      }
+      lines.push('');
+      lines.push(`${pc.bold('Suggested Fix:')} ${pc.cyan(classified.fixComment)}`);
+      lines.push(pc.dim('  ' + classified.fixCode));
     }
 
     lines.push('');
@@ -226,21 +292,14 @@ export class NunjucksError extends Error {
     const rawMessage = this.originalError?.message || this.message || '';
     const errorText = rawMessage.split('\n').find(l => l.match(/^  Error:/i))?.replace(/^  Error:\s*/i, '') || rawMessage.split('\n').pop()?.trim() || rawMessage;
 
-    let mappedError = null;
-    for (const mapping of ERROR_MAPPINGS) {
-      for (const pattern of mapping.patterns) {
-        if (pattern.test(rawMessage)) {
-          mappedError = mapping;
-          break;
-        }
-      }
-      if (mappedError) break;
-    }
+    const classified = classifyError(rawMessage);
 
     let headerTitle = escapeHtml(errorText);
-    if (mappedError) {
-      if (rawMessage.includes('attempted to output null or undefined value')) {
-        headerTitle = `Variable is undefined or null`;
+    if (classified) {
+      if (classified.category === 'undefined_variable') {
+        headerTitle = `Variable '${classified.undefinedName}' is undefined or null`;
+      } else if (classified.category === 'undefined_function') {
+        headerTitle = `Unable to call '${classified.undefinedName}'`;
       }
     }
 
@@ -303,13 +362,13 @@ export class NunjucksError extends Error {
       }).join('');
     }
 
-    const possibleCauses = mappedError ? mappedError.causes : [
+    const possibleCauses = classified ? classified.causes : [
       'Check template syntax',
       'Verify variable scope'
     ];
 
-    const fixCode = mappedError ? mappedError.fixCode : "env.addGlobal('fn', callback)";
-    const fixComment = mappedError ? mappedError.fixComment : '// Register global function';
+    const fixCode = classified ? classified.fixCode : "env.addGlobal('fn', callback)";
+    const fixComment = classified ? classified.fixComment : '// Register global function';
 
     const locationInfo = this.includeChain && this.includeChain.length > 0
       ? `${escapeHtml(this.templateName)} (included from ${escapeHtml(this.includeChain[0].parentTmpl)}:${this.includeChain[0].parentLineno})`
