@@ -24,6 +24,13 @@ export {
   splitSnippetLines
 } from './core/snippet-utils.js';
 export { createErrorContext, createErrorState } from './state/error-context.js';
+export {
+  createErrorData,
+  formatLocation,
+  getDisplayMessage,
+  formatCodeTrace,
+  formatCodeTraceHtml
+} from './state/error-data.js';
 export { toConsoleString } from './formatters/console-formatter.js';
 export { toHtmlString } from './formatters/html-formatter.js';
-export { createErrorFormatter, NunjucksError, ErrorFormatter } from './factory/create-formatter.js';
+export { createErrorFormatter, createNunjucksError } from './factory/create-formatter.js';

@@ -5,9 +5,8 @@ import {
   extractIncludeChainFromMessage,
   extractErrorTemplateName
 } from '../core/extract.js';
-import { mergeLine, mergeCol } from '../core/line-utils.js';
+import { mergeLine, mergeCol, getDisplayLine, getDisplayCol } from '../core/line-utils.js';
 import { getSnippet, extractLineFromSnippet } from '../core/snippet-utils.js';
-import { createErrorContext } from '../state/error-context.js';
 import { toConsoleString } from '../formatters/console-formatter.js';
 import { toHtmlString } from '../formatters/html-formatter.js';
 
@@ -22,57 +21,69 @@ const defaultFs = {
   }
 };
 
-export class NunjucksError extends Error {
-  constructor(message, meta = {}) {
-    super(message);
-    this.name = meta.errorName ?? 'NunjucksError';
-    this.templateName = meta.templateName ?? 'unknown';
-    this.templatePath = meta.templatePath ?? null;
-    this.tplLine = meta.line ?? null;
-    this.tplCol = meta.col ?? null;
-    this.snippet = meta.snippet ?? null;
-    this.includeChain = meta.includeChain ?? null;
-    this.isProduction = meta.isProduction ?? false;
-    this.originalError = meta.originalError ?? null;
-  }
+export const createNunjucksError = (message, meta = {}) => {
+  const tplLine = meta.line ?? null;
+  const tplCol = meta.col ?? null;
+  const snippet = meta.snippet ?? null;
+  const includeChain = meta.includeChain ?? null;
+  const isProduction = meta.isProduction ?? false;
+  const originalError = meta.originalError ?? null;
+  const classified = classifyError(originalError?.message ?? '');
 
-  getSrcLine() { return this.tplLine !== null ? this.tplLine + 1 : null; }
-  getSrcCol() { return this.tplCol !== null ? this.tplCol + 1 : null; }
-  get displayLine() { return this.getSrcLine() ?? '?'; }
-  get displayCol() { return this.getSrcCol() ?? '?'; }
+  const err = {
+    name: meta.errorName ?? 'NunjucksError',
+    message,
+    templateName: meta.templateName ?? 'unknown',
+    templatePath: meta.templatePath ?? null,
+    originalError,
+    classified,
 
-  getSrcLineFallback() { return extractLineFromSnippet(this.snippet) ?? this.getSrcLine(); }
+    getSrcLine: () => getDisplayLine(tplLine),
+    getSrcCol: () => getDisplayCol(tplCol),
+    getDisplayLine: () => getDisplayLine(tplLine) ?? '?',
+    getDisplayCol: () => getDisplayCol(tplCol) ?? '?',
 
-  toConsoleString() {
-    const state = {
-      message: this.message,
-      templateName: this.templateName,
-      includeChain: this.includeChain,
-      snippet: this.snippet,
-      classified: classifyError(this.originalError?.message ?? ''),
-      getDisplayLine: () => this.getSrcLineFallback() ?? this.displayLine,
-      getDisplayCol: () => this.displayCol,
-      isProduction: this.isProduction
-    };
-    return toConsoleString(state);
-  }
+    getSrcLineFallback: () => extractLineFromSnippet(snippet) ?? getDisplayLine(tplLine),
+    getDisplayLineFallback: () => extractLineFromSnippet(snippet) ?? getDisplayLine(tplLine) ?? '?',
 
-  toHtmlString() {
-    const state = {
-      message: this.message,
-      templateName: this.templateName,
-      templatePath: this.templatePath,
-      includeChain: this.includeChain,
-      snippet: this.snippet,
-      classified: classifyError(this.originalError?.message ?? ''),
-      getDisplayLine: () => this.getSrcLineFallback() ?? this.displayLine,
-      getDisplayCol: () => this.displayCol,
-      isProduction: this.isProduction,
-      originalError: this.originalError
-    };
-    return toHtmlString(state);
-  }
-}
+    get snippet() { return snippet; },
+    get includeChain() { return includeChain; },
+    get isProduction() { return isProduction; },
+
+    toConsoleString: () => {
+      const state = {
+        message,
+        templateName: meta.templateName ?? 'unknown',
+        includeChain,
+        snippet,
+        classified,
+        getDisplayLine: () => err.getDisplayLineFallback(),
+        getDisplayCol: () => err.getDisplayCol(),
+        isProduction,
+        originalError
+      };
+      return toConsoleString(state);
+    },
+
+    toHtmlString: () => {
+      const state = {
+        message,
+        templateName: meta.templateName ?? 'unknown',
+        templatePath: meta.templatePath ?? null,
+        includeChain,
+        snippet,
+        classified,
+        getDisplayLine: () => err.getDisplayLineFallback(),
+        getDisplayCol: () => err.getDisplayCol(),
+        isProduction,
+        originalError
+      };
+      return toHtmlString(state);
+    }
+  };
+
+  return err;
+};
 
 export const createErrorFormatter = ({ fs = defaultFs, mode = 'development' } = {}) => {
   const isProd = mode === 'production';
@@ -99,8 +110,8 @@ export const createErrorFormatter = ({ fs = defaultFs, mode = 'development' } = 
       const actualTemplateName = (hasIncludeChain ? error.path : null) ?? extractedTemplateName ?? templateName;
       const actualTemplatePath = templatePath ?? error.templatePath ?? null;
 
-      const lineFromError = error.lineno;
-      const colFromError = error.colno;
+      const lineFromError = error.lineno != null ? error.lineno + 1 : null;
+      const colFromError = error.colno != null ? error.colno + 1 : null;
       const { line: lineFromMsg, col: colFromMsg } = extractLineInfo(error.message);
       const colFromRawMsg = extractColFromMessage(error.message);
 
@@ -121,14 +132,11 @@ export const createErrorFormatter = ({ fs = defaultFs, mode = 'development' } = 
       if (sourceContent) {
         const sourceLines = this.getSourceLines(sourceContent);
         if (line !== null) {
-          const ctx = createErrorContext({ line, col });
-          snippet = getSnippet(sourceLines, ctx.getSrcLine(), 3);
+          snippet = getSnippet(sourceLines, getDisplayLine(line), 3);
         }
       } else if (line !== null) {
-        snippet = `>>> ${line + 1}: [source not available]`;
+        snippet = `>>> ${getDisplayLine(line)}: [source not available]`;
       }
-
-      const classified = classifyError(error.originalError?.message ?? error.message);
 
       const meta = {
         templateName: actualTemplateName,
@@ -142,9 +150,7 @@ export const createErrorFormatter = ({ fs = defaultFs, mode = 'development' } = 
         originalError: error
       };
 
-      return new NunjucksError(error.message, meta);
+      return createNunjucksError(error.message, meta);
     }
   };
 }
-
-export const ErrorFormatter = createErrorFormatter;

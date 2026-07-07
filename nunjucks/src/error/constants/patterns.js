@@ -1,5 +1,5 @@
 export const PATTERNS = {
-  UNDEFINED_VARIABLE: /attempted to output null or undefined value/i,
+  UNDEFINED_VARIABLE: /attempted to output (.+)/i,
   UNDEFINED_FUNCTION: /Unable to call `([^`]+)`.*which is undefined/i,
   NOT_A_FUNCTION: /is not a function|is not defined/i,
   SYNTAX_ERROR: /Unexpected token|unexpected end|SyntaxError/i,

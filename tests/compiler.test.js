@@ -913,7 +913,7 @@ describe('compiler', function() {
       }
       expect(res).toBe(undefined);
       expect(err.toString()).toBe([
-        'Template render error: (parse-error.njk) [Line 1, Column 26]',
+        'Template render error: (parse-error.njk) [Line 2, Column 27]',
         '  unexpected token: ,',
       ].join('\n'));
     });
@@ -940,7 +940,7 @@ describe('compiler', function() {
       }
       expect(res).toBe(undefined);
       expect(err.toString()).toBe([
-        'Template render error: (user-error.njk) [Line 1, Column 11]',
+        'Template render error: (user-error.njk) [Line 2, Column 12]',
         '  Error: ERROR',
       ].join('\n'));
     });

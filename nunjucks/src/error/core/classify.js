@@ -5,9 +5,10 @@ export const classifyError = (rawMessage) => {
   if (!rawMessage) return null;
 
   if (PATTERNS.UNDEFINED_VARIABLE.test(rawMessage)) {
+    const varName = extractUndefinedName(rawMessage);
     return {
       category: 'undefined_variable',
-      undefinedName: null,
+      undefinedName: varName,
       causes: [
         'Variable not passed in render context',
         'Using undefined variable name',

@@ -13,24 +13,20 @@ const buildHeaderTitle = (classified, errorText) => {
   if (!classified) return escapeHtml(errorText);
 
   if (classified.category === 'undefined_variable') {
-    return `Variable '${classified.undefinedName ?? ''}' is undefined or null`;
+    return classified.undefinedName
+      ? `Variable '${escapeHtml(classified.undefinedName)}' is undefined or null`
+      : 'Variable is undefined or null';
   }
 
   if (classified.category === 'undefined_function') {
-    return `Unable to call '${classified.undefinedName}'`;
+    return `Unable to call '${escapeHtml(classified.undefinedName ?? '')}'`;
   }
 
   return escapeHtml(errorText);
 };
 
 const highlightHtml = (code) => {
-  const escaped = escapeHtml(code);
-  let result = escaped;
-  result = result.replace(/&lt;(\/?)([\w-]+)/g, (m, slash, name) =>
-    `&lt;${slash}<span class="syntax-tag">${name}</span>`);
-  result = result.replace(/([\w-]+)=(&quot;[^&]*&quot;)/g, (m, attr, value) =>
-    `<span class="syntax-attr">${attr}</span>=${value}`);
-  return result;
+  return escapeHtml(code);
 };
 
 const formatCodeTraceHtml = (snippet) => {
@@ -60,12 +56,38 @@ const formatCodeTraceHtml = (snippet) => {
   }).join('');
 };
 
-const buildLocationInfo = (templateName, includeChain) => {
+const buildLocationInfo = (templateName, includeChain, line, col) => {
+  const lineCol = line ? `:${line}${col ? `:${col}` : ''}` : '';
+  const mainLoc = escapeHtml(templateName) + lineCol;
+
   if (includeChain && includeChain.length > 0) {
     const first = includeChain[0];
-    return `${escapeHtml(templateName)} (included from ${escapeHtml(first.parentTmpl)}:${first.parentLineno})`;
+    const parentLoc = `${escapeHtml(first.parentTmpl)}:${first.parentLineno}${first.parentColno ? `:${first.parentColno}` : ''}`;
+    return `${mainLoc} (included from ${parentLoc})`;
   }
-  return escapeHtml(templateName);
+  return mainLoc;
+};
+
+const formatStackTraceHtml = (originalError) => {
+  if (!originalError?.stack) return '';
+
+  const stackLines = originalError.stack.split('\n').slice(1);
+  if (stackLines.length === 0) return '';
+
+  const jsStackLines = stackLines.filter(line => line.trim().startsWith('at '));
+  if (jsStackLines.length === 0) return '';
+
+  const rows = jsStackLines.map(line => {
+    const trimmed = escapeHtml(line.trim());
+    return `<div class="stack-row"><span style="font-family:monospace;color:var(--color-code-text);">${trimmed}</span></div>`;
+  }).join('');
+
+  return `
+    <div style="margin-bottom:32px;">
+      <div class="text-label">Stack Trace</div>
+      <div class="stack-container">${rows}</div>
+    </div>
+  `;
 };
 
 const CSS = `
@@ -128,19 +150,20 @@ export const toHtmlString = (state) => {
     classified,
     getDisplayLine,
     getDisplayCol,
-    isProduction
+    isProduction,
+    originalError
   } = state;
 
   if (isProduction) {
     return PRODUCTION_HTML;
   }
 
-  const rawMessage = state.originalError?.message || message || '';
+  const rawMessage = originalError?.message || message || '';
   const errorText = rawMessage.split('\n').find(l => l.match(/^  Error:/i))
     ?.replace(/^  Error:\s*/i, '') || rawMessage.split('\n').pop()?.trim() || rawMessage;
 
   const headerTitle = buildHeaderTitle(classified, errorText);
-  const locationInfo = buildLocationInfo(templateName, includeChain);
+  const locationInfo = buildLocationInfo(templateName, includeChain, getDisplayLine(), getDisplayCol());
   const possibleCauses = classified?.causes ?? ['Check template syntax', 'Verify variable scope'];
   const fixCode = classified?.fixCode ?? "env.addGlobal('fn', callback)";
   const fixComment = classified?.fixComment ?? '// Register global function';
@@ -193,6 +216,8 @@ ${CSS}
         </div>
       </div>
     </div>
+
+    ${formatStackTraceHtml(originalError)}
   </div>
 
   <div style="padding:16px 32px;background:light-dark(oklch(96% 0.01 285), oklch(16% 0.01 285));border-top:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">

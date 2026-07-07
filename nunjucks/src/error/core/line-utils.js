@@ -1,18 +1,23 @@
 export const normalizeLine = (raw) => raw ?? null;
 export const normalizeCol = (raw) => raw ?? null;
 
-export const getDisplayLine = (tplLine) => tplLine !== null ? tplLine + 1 : null;
-export const getDisplayCol = (tplCol) => tplCol !== null ? tplCol + 1 : null;
+export const getDisplayLine = (tplLine) => tplLine ?? null;
+export const getDisplayCol = (tplCol) => tplCol ?? null;
 
 export const getFallbackLine = (extracted, raw) => extracted ?? raw ?? null;
 export const getFallbackCol = (extracted, raw) => extracted ?? raw ?? null;
 
 export const mergeLine = (rawLine, extractedLine) => {
-  return rawLine ?? extractedLine ?? null;
+  if (rawLine != null) return rawLine;
+  if (extractedLine != null) return extractedLine;
+  return null;
 };
 
 export const mergeCol = (rawCol, extractedCol, msgCol) => {
-  return rawCol ?? extractedCol ?? msgCol ?? null;
+  if (rawCol != null) return rawCol;
+  if (extractedCol != null) return extractedCol;
+  if (msgCol != null) return msgCol;
+  return null;
 };
 
 export const createDisplayLine = (tplLine) => {

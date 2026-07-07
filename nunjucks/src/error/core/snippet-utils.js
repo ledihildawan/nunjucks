@@ -3,8 +3,9 @@ export const getSnippet = (sourceLines, centerLine, context = 3) => {
     return null;
   }
 
-  const start = Math.max(0, centerLine - context - 1);
-  const end = Math.min(sourceLines.length, centerLine + context);
+  const lineIndex = centerLine - 1;
+  const start = Math.max(0, lineIndex - context);
+  const end = Math.min(sourceLines.length, lineIndex + context + 1);
 
   const lines = sourceLines.slice(start, end).map((line, i) => {
     const lineNum = start + i + 1;

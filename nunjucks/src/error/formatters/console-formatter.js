@@ -20,12 +20,18 @@ const pc = picocolors || {
   white: (s) => s,
 };
 
-const buildLocationFile = (templateName, includeChain) => {
+const buildLocationFile = (templateName, includeChain, line, col) => {
+  const displayLine = line !== null ? line : '?';
+  const displayCol = col !== null ? col : '?';
+  const lineCol = line !== null ? `:${displayLine}${col !== null ? `:${displayCol}` : ''}` : '';
+  const mainLoc = templateName + lineCol;
+
   if (includeChain && includeChain.length > 0) {
     const first = includeChain[0];
-    return `${templateName} ${pc.dim('(included from ' + first.parentTmpl + ':' + first.parentLineno + (first.parentColno ? ':' + first.parentColno : '') + ')')}`;
+    const parentLoc = `${first.parentTmpl}:${first.parentLineno}${first.parentColno ? `:${first.parentColno}` : ''}`;
+    return `${mainLoc} ${pc.dim('(included from ' + parentLoc + ')')}`;
   }
-  return templateName;
+  return mainLoc;
 };
 
 const buildDisplayMessage = (errorText, classified) => {
@@ -38,7 +44,9 @@ const buildDisplayMessage = (errorText, classified) => {
   }
 
   if (classified.category === 'undefined_function') {
-    return `Unable to call '${classified.undefinedName}', which is undefined or falsey`;
+    return classified.undefinedName
+      ? `Unable to call '${classified.undefinedName}', which is undefined or falsey`
+      : 'Unable to call undefined function';
   }
 
   return errorText;
@@ -83,6 +91,22 @@ const formatFix = (fixComment, fixCode) => [
   pc.dim('  ' + fixCode)
 ].join('\n');
 
+const formatStackTrace = (originalError) => {
+  if (!originalError?.stack) return '';
+
+  const stackLines = originalError.stack.split('\n').slice(1);
+  if (stackLines.length === 0) return '';
+
+  const jsStackLines = stackLines.filter(line => line.trim().startsWith('at '));
+  if (jsStackLines.length === 0) return '';
+
+  const lines = ['\n', pc.bold('Stack Trace:')];
+  for (const line of jsStackLines) {
+    lines.push(pc.dim('  ' + line.trim()));
+  }
+  return lines.join('\n');
+};
+
 export const toConsoleString = (state) => {
   const {
     message,
@@ -92,14 +116,15 @@ export const toConsoleString = (state) => {
     classified,
     getDisplayLine,
     getDisplayCol,
-    isProduction
+    isProduction,
+    originalError
   } = state;
 
   if (isProduction) {
     return `${pc.bgRed('[ERROR]')} Template Rendering Failed\n${pc.dim('Check logs for details')}`;
   }
 
-  const locationFile = buildLocationFile(templateName, includeChain);
+  const locationFile = buildLocationFile(templateName, includeChain, getDisplayLine(), getDisplayCol());
   const traceLines = splitSnippetLines(snippet);
 
   const errorText = message.split('\n').find(l => l.match(/^  Error:/i))
@@ -110,7 +135,6 @@ export const toConsoleString = (state) => {
   const parts = [
     formatHeader(),
     formatMessage(displayMessage),
-    formatPosition(getDisplayLine(), getDisplayCol()),
     formatLocation(locationFile)
   ];
 
@@ -121,6 +145,11 @@ export const toConsoleString = (state) => {
   if (classified) {
     parts.push(formatCauses(classified.causes));
     parts.push(formatFix(classified.fixComment, classified.fixCode));
+  }
+
+  const stackTrace = formatStackTrace(originalError);
+  if (stackTrace) {
+    parts.push(stackTrace);
   }
 
   parts.push('');

@@ -7,7 +7,11 @@ export const extractUndefinedName = (message) => {
   if (callMatch) return callMatch[1];
 
   const outputMatch = message.match(PATTERNS.OUTPUT_MATCH);
-  if (outputMatch) return outputMatch[1];
+  if (outputMatch) {
+    const name = outputMatch[1];
+    if (name === 'null' || name === 'undefined') return null;
+    return name;
+  }
 
   const notFoundMatch = message.match(PATTERNS.FILTER_NOT_FOUND);
   if (notFoundMatch) return notFoundMatch[1];

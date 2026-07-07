@@ -64,9 +64,9 @@ export class TemplateError extends Error {
     let msg = '(' + (path || 'unknown path') + ')';
     if (this.firstUpdate) {
       if (this.lineno && this.colno) {
-        msg += ` [Line ${this.lineno}, Column ${this.colno}]`;
+        msg += ` [Line ${this.lineno + 1}, Column ${this.colno + 1}]`;
       } else if (this.lineno) {
-        msg += ` [Line ${this.lineno}]`;
+        msg += ` [Line ${this.lineno + 1}]`;
       }
     }
     if (includeChain && this.firstUpdate) {

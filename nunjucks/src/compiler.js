@@ -1154,7 +1154,7 @@ export class Compiler extends Obj {
         }
         this.compile(child, frame);
         if (this.throwOnUndefined) {
-          this._emit(`,${node.lineno},${node.colno})`);
+          this._emit(`,${child.lineno},${child.colno})`);
         }
         if (!isPipe) {
           this._emit(')');
