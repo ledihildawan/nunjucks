@@ -191,6 +191,21 @@ export class NunjucksError extends Error {
     return lines.join('\n');
   }
 
+  extractErrorLineFromSnippet(snippet) {
+    if (!snippet) return null;
+    const lines = snippet.split('\n');
+    for (const line of lines) {
+      if (line.trim().startsWith('>>>')) {
+        const colonIdx = line.indexOf(':');
+        if (colonIdx > 0) {
+          const lineNum = parseInt(line.substring(0, colonIdx).replace('>>>', '').trim(), 10);
+          if (!isNaN(lineNum)) return lineNum;
+        }
+      }
+    }
+    return null;
+  }
+
   toConsoleString() {
     if (this.isProduction) {
       return `${pc.bgRed('[ERROR]')} Template Rendering Failed\n${pc.dim('Check logs for details')}`;
@@ -204,7 +219,8 @@ export class NunjucksError extends Error {
       ? `${this.templateName} ${pc.dim('(included from ' + this.includeChain[0].parentTmpl + ':' + this.includeChain[0].parentLineno + (this.includeChain[0].parentColno ? ':' + this.includeChain[0].parentColno : '') + ')')}`
       : this.templateName;
 
-    const displayLine = this.line !== null && this.line !== undefined ? this.line : '?';
+    const snippetLine = this.extractErrorLineFromSnippet(this.snippet);
+    const displayLine = snippetLine || (this.line !== null && this.line !== undefined ? this.line : '?');
     const displayCol = this.col !== null && this.col !== undefined ? this.col : '?';
 
     const traceLines = this.snippet ? this.snippet.split('\n').map(l => l.trim()) : [];
@@ -271,7 +287,8 @@ export class NunjucksError extends Error {
     };
 
     const shortRefId = (this.templateId || 'unknown').substring(0, 8);
-    const displayLine = this.line !== null && this.line !== undefined ? this.line : '?';
+    const snippetLine = this.extractErrorLineFromSnippet(this.snippet);
+    const displayLine = snippetLine || (this.line !== null && this.line !== undefined ? this.line : '?');
     const displayCol = this.col !== null && this.col !== undefined ? this.col : '?';
 
     if (this.isProduction) {
@@ -648,7 +665,7 @@ export class ErrorFormatter {
           originalError: error
         };
         const tempError = new NunjucksError(error.message, errorMeta);
-        snippet = tempError.getSnippet(sourceLines, line, 3);
+        snippet = tempError.getSnippet(sourceLines, line + 1, 3);
       }
     } else if (line !== null && line !== undefined) {
       snippet = `>>> ${line}: [source not available]`;
