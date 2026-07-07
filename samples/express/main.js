@@ -17,7 +17,8 @@ const sqliteLoader = new nunjucks.BunSQLitePrecompiledLoader(DB_PATH, {
 
 const envDev = new nunjucks.Environment(sqliteLoader, {
   autoescape: true,
-  dev: true
+  dev: true,
+  throwOnUndefined: true
 });
 
 sqliteLoader.setMode('development');
