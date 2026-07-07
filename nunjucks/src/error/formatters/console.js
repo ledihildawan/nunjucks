@@ -28,10 +28,12 @@ const renderMarkdownToAnsi = (text) => {
   return s;
 };
 
-const formatHeader = (code) => {
-  const badge = code ? ` ${pc.yellow(`[${code}]`)}` : '';
+const formatHeader = (code, phase) => {
+  const bits = [`${pc.bgRed('[ERROR]')} ${pc.bold('Template Rendering Failed')}`];
+  if (code) bits.push(pc.yellow(`[${code}]`));
+  if (phase) bits.push(pc.dim(`(${phase})`));
   return [
-    `${pc.bgRed('[ERROR]')} ${pc.bold('Template Rendering Failed')}${badge}`,
+    bits.join(' '),
     pc.dim('─'.repeat(60))
   ].join('\n');
 };
@@ -127,31 +129,18 @@ export const toConsoleString = (state) => {
   const traceLines = splitSnippetLines(snippet);
   const displayMessage = getDisplayMessage(state);
 
-  const metaBits = [];
-  if (phase) metaBits.push(`phase=${phase}`);
-  metaBits.push(`env=${isProduction ? 'production' : 'development'}`);
-  if (errorId) metaBits.push(`id=${errorId}`);
-  if (timestamp) metaBits.push(`at=${timestamp}`);
-  const metaLine = metaBits.length ? pc.dim(`[${metaBits.join(' | ')}]`) : null;
-
   const parts = [
-    formatHeader(code),
+    formatHeader(code, phase),
     formatMessage(displayMessage),
     formatLocationLabel(locationFile)
   ];
-
-  if (metaLine) {
-    parts.splice(1, 0, metaLine);
-  }
 
   if (traceLines.length > 0) {
     parts.push(formatCodeTrace(traceLines));
   }
 
-  if (classified) {
-    parts.push(formatCauses(classified.causes));
-    parts.push(formatFix(classified.fixComment, classified.fixCode));
-  }
+  parts.push(formatCauses(classified.causes));
+  parts.push(formatFix(classified.fixComment, classified.fixCode));
 
   const ctxBlock = formatRenderContext(renderContext);
   if (ctxBlock) {
@@ -162,6 +151,12 @@ export const toConsoleString = (state) => {
   if (stackTrace) {
     parts.push(stackTrace);
   }
+
+  const footerBits = [];
+  if (errorId) footerBits.push(`ID: ${errorId}`);
+  if (timestamp) footerBits.push(timestamp);
+  footerBits.push(`Environment: ${isProduction ? 'Production' : 'Development'}`);
+  parts.push(pc.dim('\n' + footerBits.join(' · ')));
 
   parts.push('');
 
