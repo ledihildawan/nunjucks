@@ -1046,7 +1046,7 @@ describe('compiler', function() {
       '123');
   });
 
-  test('should compile macros', async function() {
+  test('should compile macros using defaults for trailing arguments', async function() {
     await equal(
       '{% macro foo(x, y=2, z=5) %}{{ x }}{{ y }}{{ z }}' +
       '{% endmacro %}' +
@@ -1296,7 +1296,11 @@ describe('compiler', function() {
       { tmpl: 'base.njk' },
       'FooBarBazFizzle');
 
-    
+    // multi-level inheritance: a child overriding a block without super() must
+    // win across the whole chain, skipping the middle template's block entirely
+    await equal('{% extends "base-inherit.njk" %}{% block block1 %}BAR{% endblock %}',
+      'FooBARBazFizzle');
+
   });
   test('should not call blocks not defined from template inheritance', async function() {
     var count = 0;
@@ -1375,7 +1379,15 @@ describe('compiler', function() {
       '{% block block1 %}*{{ super() }}*{% endblock %}',
       'Foo**Bar**BazFizzle');
 
-    
+    // super() must resolve through a middle template that does not override
+    // the block, reaching the root ancestor's block (block2 is passthrough in
+    // base-inherit)
+    await equal(
+      '{% extends "base-inherit.njk" %}' +
+      '{% block block2 %}{{ super() }}!{% endblock %}',
+      'Foo*Bar*Baz!Fizzle');
+
+  
   });
 
   test('should let super() see global vars from child template', async function() {
