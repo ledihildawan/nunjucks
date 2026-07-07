@@ -1,12 +1,9 @@
-import { classifyError } from '../core/classify.js';
 import {
-  extractLineInfo,
-  extractColFromMessage,
   extractIncludeChainFromMessage,
   extractErrorTemplateName
 } from '../core/extract.js';
-import { mergeLine, mergeCol, getDisplayLine, getDisplayCol } from '../core/line-utils.js';
-import { getSnippet, extractLineFromSnippet } from '../core/snippet-utils.js';
+import { extractLineFromSnippet } from '../core/snippet-utils.js';
+import { createErrorData } from '../state/error-data.js';
 import { toConsoleString } from '../formatters/console-formatter.js';
 import { toHtmlString } from '../formatters/html-formatter.js';
 
@@ -21,77 +18,35 @@ const defaultFs = {
   }
 };
 
-export const createNunjucksError = (message, meta = {}) => {
-  const tplLine = meta.line ?? null;
-  const tplCol = meta.col ?? null;
-  const snippet = meta.snippet ?? null;
-  const includeChain = meta.includeChain ?? null;
-  const isProduction = meta.isProduction ?? false;
-  const originalError = meta.originalError ?? null;
-  const classified = classifyError(originalError?.message ?? '');
+export const createNunjucksError = (message, errorData) => {
+  const fallbackLine = () => extractLineFromSnippet(errorData.snippet) ?? errorData.line;
 
-  const err = {
-    name: meta.errorName ?? 'NunjucksError',
+  return {
+    name: 'NunjucksError',
     message,
-    templateName: meta.templateName ?? 'unknown',
-    templatePath: meta.templatePath ?? null,
-    originalError,
-    classified,
+    templateName: errorData.templateName,
+    templatePath: errorData.templatePath,
+    originalError: errorData.originalError,
+    classified: errorData.classified,
 
-    getSrcLine: () => getDisplayLine(tplLine),
-    getSrcCol: () => getDisplayCol(tplCol),
-    getDisplayLine: () => getDisplayLine(tplLine) ?? '?',
-    getDisplayCol: () => getDisplayCol(tplCol) ?? '?',
+    getSrcLine: () => errorData.line,
+    getSrcCol: () => errorData.col,
+    getDisplayLine: errorData.getDisplayLine,
+    getDisplayCol: errorData.getDisplayCol,
+    getSrcLineFallback: fallbackLine,
+    getDisplayLineFallback: () => fallbackLine() ?? '?',
 
-    getSrcLineFallback: () => extractLineFromSnippet(snippet) ?? getDisplayLine(tplLine),
-    getDisplayLineFallback: () => extractLineFromSnippet(snippet) ?? getDisplayLine(tplLine) ?? '?',
+    get snippet() { return errorData.snippet; },
+    get includeChain() { return errorData.includeChain; },
+    get isProduction() { return errorData.isProduction; },
 
-    get snippet() { return snippet; },
-    get includeChain() { return includeChain; },
-    get isProduction() { return isProduction; },
-
-    toConsoleString: () => {
-      const state = {
-        message,
-        templateName: meta.templateName ?? 'unknown',
-        includeChain,
-        snippet,
-        classified,
-        getDisplayLine: () => err.getDisplayLineFallback(),
-        getDisplayCol: () => err.getDisplayCol(),
-        isProduction,
-        originalError
-      };
-      return toConsoleString(state);
-    },
-
-    toHtmlString: () => {
-      const state = {
-        message,
-        templateName: meta.templateName ?? 'unknown',
-        templatePath: meta.templatePath ?? null,
-        includeChain,
-        snippet,
-        classified,
-        getDisplayLine: () => err.getDisplayLineFallback(),
-        getDisplayCol: () => err.getDisplayCol(),
-        isProduction,
-        originalError
-      };
-      return toHtmlString(state);
-    }
+    toConsoleString: () => toConsoleString(errorData),
+    toHtmlString: () => toHtmlString(errorData)
   };
-
-  return err;
 };
 
 export const createErrorFormatter = ({ fs = defaultFs, autoDetect = true } = {}) => {
   return {
-    getSourceLines: (sourceContent) => {
-      if (!sourceContent) return null;
-      return sourceContent.split('\n');
-    },
-
     async formatError(error, templateName, includeChain = null, templatePath = null) {
       const isProduction = !autoDetect ? false : (error.lineno == null);
 
@@ -107,15 +62,8 @@ export const createErrorFormatter = ({ fs = defaultFs, autoDetect = true } = {})
       const actualTemplateName = (hasIncludeChain ? error.path : null) ?? extractedTemplateName ?? templateName;
       const actualTemplatePath = templatePath ?? error.templatePath ?? null;
 
-      const lineFromError = error.lineno != null ? error.lineno + 1 : null;
-      const colFromError = error.colno != null ? error.colno + 1 : null;
-      const { line: lineFromMsg, col: colFromMsg } = extractLineInfo(error.message);
-      const colFromRawMsg = extractColFromMessage(error.message);
-
-      const line = mergeLine(lineFromError, lineFromMsg);
-      const col = mergeCol(colFromError, colFromMsg, colFromRawMsg);
-
-      let snippet = null;
+      const lineOverride = error.lineno != null ? error.lineno + 1 : null;
+      const colOverride = error.colno != null ? error.colno + 1 : null;
 
       let sourceContent = null;
       if (templatePath) {
@@ -126,28 +74,17 @@ export const createErrorFormatter = ({ fs = defaultFs, autoDetect = true } = {})
         }
       }
 
-      if (sourceContent) {
-        const sourceLines = this.getSourceLines(sourceContent);
-        if (line !== null) {
-          snippet = getSnippet(sourceLines, getDisplayLine(line), 3);
-        }
-      } else if (line !== null) {
-        snippet = `>>> ${getDisplayLine(line)}: [source not available]`;
-      }
-
-      const meta = {
+      const errorData = createErrorData(error, {
         templateName: actualTemplateName,
         templatePath: actualTemplatePath,
-        line,
-        col,
-        snippet,
+        sourceContent,
         includeChain: chainForDisplay,
         isProduction,
-        errorName: error.name,
-        originalError: error
-      };
+        line: lineOverride,
+        col: colOverride
+      });
 
-      return createNunjucksError(error.message, meta);
+      return createNunjucksError(error.message, errorData);
     }
   };
 }

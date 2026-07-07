@@ -23,13 +23,11 @@ export {
   extractLineFromSnippet,
   splitSnippetLines
 } from './core/snippet-utils.js';
-export { createErrorContext, createErrorState } from './state/error-context.js';
 export {
   createErrorData,
   formatLocation,
   getDisplayMessage,
-  formatCodeTrace,
-  formatCodeTraceHtml
+  formatCodeTrace
 } from './state/error-data.js';
 export { toConsoleString } from './formatters/console-formatter.js';
 export { toHtmlString } from './formatters/html-formatter.js';
