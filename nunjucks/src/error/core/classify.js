@@ -176,16 +176,34 @@ export const classifyError = (rawMessage) => {
 
   if (PATTERNS.FILTER_ERROR.test(rawMessage)) {
     const errorMsg = rawMessage.match(PATTERNS.FILTER_ERROR)?.[1] || rawMessage;
+    const isAsyncError = /async filter|promise|rejected|await|network/i.test(errorMsg);
+
+    const fixCode = isAsyncError
+      ? `// Async filter error - wrap in try-catch or handle rejections
+async function myFilter(value) {
+  try {
+    return await someAsyncOperation(value);
+  } catch (err) {
+    console.error('Filter failed:', err.message);
+    return value; // or a default value
+  }
+}`
+      : `// Filter error - check input values and implementation
+function myFilter(value) {
+  if (value == null) return '';
+  // ... filter logic
+}`;
+
     return {
       category: 'filter_error',
       undefinedName: null,
       causes: [
         'Filter threw an error during execution',
         `Error: ${errorMsg}`,
-        'Check filter implementation'
+        isAsyncError ? 'Async filter must handle rejections with try-catch' : 'Filter should handle null/undefined inputs'
       ],
-      fixCode: "// Debug the filter\nconsole.log('Filter input:', input)",
-      fixComment: `// Filter error: ${errorMsg}`
+      fixCode,
+      fixComment: `// Fix: ${isAsyncError ? 'Handle async errors with try-catch' : 'Check filter input validation'}`
     };
   }
 
