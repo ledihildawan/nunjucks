@@ -1,6 +1,6 @@
 import express from 'express';
 import nunjucks from '../../../nunjucks/index.js';
-import { createErrorFormatter, classifyError } from '../../../nunjucks/src/error/index.js';
+import { createErrorFormatter } from '../../../nunjucks/src/error/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -27,10 +27,12 @@ async function renderWithErrorHandler(res, templateName, context = {}) {
     const html = await envDev.render(templateName, context);
     res.type('html').send(html);
   } catch (e) {
-    const rawMsg = e.message.split('\n').pop()?.trim() || e.message;
-    const classified = classifyError(rawMsg);
     const formatted = await errorFormatter.formatError(e, templateName, e._includeChain, path.join(VIEWS, templateName), context);
-    console.error(`[${classified?.category || 'unknown'}]`, formatted.toConsoleString());
+    const code = formatted.code || formatted.classified?.category || 'unknown';
+    if (formatted.errorId) {
+      res.setHeader('X-Error-Id', formatted.errorId);
+    }
+    console.error(`[${code}]${formatted.errorId ? ` [${formatted.errorId}]` : ''}`, formatted.toConsoleString());
     res.type('html').status(500).send(formatted.toHtmlString());
   }
 }
