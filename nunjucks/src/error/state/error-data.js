@@ -138,7 +138,9 @@ export const formatLocation = (errorData) => {
 
 export const getDisplayMessage = (errorData) => {
   const { message, classified } = errorData;
-  if (!classified) return message;
+  const errorText = extractErrorText(message);
+
+  if (!classified) return errorText;
 
   if (classified.category === 'undefined_variable') {
     return classified.undefinedName
@@ -158,7 +160,14 @@ export const getDisplayMessage = (errorData) => {
       : 'Value is not a function';
   }
 
-  return message;
+  return errorText;
+};
+
+const extractErrorText = (message) => {
+  if (!message) return '';
+  const errLine = message.split('\n').find((l) => /^ {2}Error:/i.test(l));
+  if (errLine) return errLine.replace(/^ {2}Error:\s*/i, '');
+  return message.split('\n').pop()?.trim() || message;
 };
 
 export const formatCodeTrace = (snippet) => {

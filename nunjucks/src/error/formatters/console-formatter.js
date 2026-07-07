@@ -1,5 +1,5 @@
-import { classifyError } from '../core/classify.js';
 import { splitSnippetLines } from '../core/snippet-utils.js';
+import { formatLocation, getDisplayMessage } from '../state/error-data.js';
 
 let picocolors;
 try {
@@ -20,38 +20,6 @@ const pc = picocolors || {
   white: (s) => s,
 };
 
-const buildLocationFile = (templateName, includeChain, line, col) => {
-  const displayLine = line !== null ? line : '?';
-  const displayCol = col !== null ? col : '?';
-  const lineCol = line !== null ? `:${displayLine}${col !== null ? `:${displayCol}` : ''}` : '';
-  const mainLoc = templateName + lineCol;
-
-  if (includeChain && includeChain.length > 0) {
-    const first = includeChain[0];
-    const parentLoc = `${first.parentTmpl}:${first.parentLineno}${first.parentColno ? `:${first.parentColno}` : ''}`;
-    return `${mainLoc} ${pc.dim('(included from ' + parentLoc + ')')}`;
-  }
-  return mainLoc;
-};
-
-const buildDisplayMessage = (errorText, classified) => {
-  if (!classified) return errorText;
-
-  if (classified.category === 'undefined_variable') {
-    return classified.undefinedName
-      ? `Variable '${classified.undefinedName}' is undefined or null`
-      : 'Variable is undefined or null';
-  }
-
-  if (classified.category === 'undefined_function') {
-    return classified.undefinedName
-      ? `Unable to call '${classified.undefinedName}', which is undefined or falsey`
-      : 'Unable to call undefined function';
-  }
-
-  return errorText;
-};
-
 const formatHeader = () => [
   `${pc.bgRed('[ERROR]')} ${pc.bold('Template Rendering Failed')}`,
   pc.dim('─'.repeat(60))
@@ -59,10 +27,7 @@ const formatHeader = () => [
 
 const formatMessage = (message) => `${pc.bold('Message:')} ${message}`;
 
-const formatPosition = (displayLine, displayCol) =>
-  `${pc.bold('Position:')} Line ${displayLine}, Col ${displayCol}`;
-
-const formatLocation = (locationFile) =>
+const formatLocationLabel = (locationFile) =>
   `${pc.bold('Location:')} ${locationFile}`;
 
 const formatCodeTrace = (traceLines) => {
@@ -118,15 +83,10 @@ const formatStackTrace = (originalError, isProduction = false) => {
 
 export const toConsoleString = (state) => {
   const {
-    message,
     errorId,
     timestamp,
-    templateName,
-    includeChain,
     snippet,
     classified,
-    getDisplayLine,
-    getDisplayCol,
     isProduction,
     originalError
   } = state;
@@ -135,13 +95,9 @@ export const toConsoleString = (state) => {
     return `${pc.bgRed('[ERROR]')} Template Rendering Failed${errorId ? ` [${errorId}]` : ''}\n${pc.dim('Check logs for details')}`;
   }
 
-  const locationFile = buildLocationFile(templateName, includeChain, getDisplayLine(), getDisplayCol());
+  const locationFile = formatLocation(state);
   const traceLines = splitSnippetLines(snippet);
-
-  const errorText = message.split('\n').find(l => l.match(/^  Error:/i))
-    ?.replace(/^  Error:\s*/i, '') || message.split('\n').pop()?.trim() || message;
-
-  const displayMessage = buildDisplayMessage(errorText, classified);
+  const displayMessage = getDisplayMessage(state);
 
   const metaBits = [];
   if (errorId) metaBits.push(`id=${errorId}`);
@@ -151,7 +107,7 @@ export const toConsoleString = (state) => {
   const parts = [
     formatHeader(),
     formatMessage(displayMessage),
-    formatLocation(locationFile)
+    formatLocationLabel(locationFile)
   ];
 
   if (metaLine) {

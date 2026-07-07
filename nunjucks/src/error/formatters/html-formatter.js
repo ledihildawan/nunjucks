@@ -1,5 +1,4 @@
-import { classifyError } from '../core/classify.js';
-import { splitSnippetLines } from '../core/snippet-utils.js';
+import { formatLocation, getDisplayMessage } from '../state/error-data.js';
 
 const escapeHtml = (str) => {
   if (!str) return '';
@@ -7,22 +6,6 @@ const escapeHtml = (str) => {
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
-};
-
-const buildHeaderTitle = (classified, errorText) => {
-  if (!classified) return escapeHtml(errorText);
-
-  if (classified.category === 'undefined_variable') {
-    return classified.undefinedName
-      ? `Variable '${escapeHtml(classified.undefinedName)}' is undefined or null`
-      : 'Variable is undefined or null';
-  }
-
-  if (classified.category === 'undefined_function') {
-    return `Unable to call '${escapeHtml(classified.undefinedName ?? '')}'`;
-  }
-
-  return escapeHtml(errorText);
 };
 
 const highlightHtml = (code) => {
@@ -56,16 +39,22 @@ const formatCodeTraceHtml = (snippet) => {
   }).join('');
 };
 
-const buildLocationInfo = (templateName, includeChain, line, col) => {
-  const lineCol = line ? `:${line}${col ? `:${col}` : ''}` : '';
-  const mainLoc = escapeHtml(templateName) + lineCol;
+const renderContextHtml = (ctx) => {
+  if (!ctx || typeof ctx !== 'object') return '';
+  const keys = Object.keys(ctx);
+  if (keys.length === 0) return '';
 
-  if (includeChain && includeChain.length > 0) {
-    const first = includeChain[0];
-    const parentLoc = `${escapeHtml(first.parentTmpl)}:${first.parentLineno}${first.parentColno ? `:${first.parentColno}` : ''}`;
-    return `${mainLoc} (included from ${parentLoc})`;
-  }
-  return mainLoc;
+  const rows = keys.map((k) => {
+    const raw = ctx[k];
+    const val = typeof raw === 'string' ? raw : JSON.stringify(raw);
+    return `<div style="display:flex;gap:12px;padding:6px 12px;border-bottom:1px solid var(--color-border);font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:13px;"><span style="color:oklch(70% 0.15 190);min-width:120px;flex-shrink:0;">${escapeHtml(k)}</span><span style="color:var(--color-code-text);word-break:break-all;">${escapeHtml(val)}</span></div>`;
+  }).join('');
+
+  return `
+    <div style="margin-bottom: 32px;">
+      <div class="text-label">Render Context</div>
+      <div style="background:var(--color-code-bg);border-radius:8px;overflow:hidden;border:1px solid var(--color-border);">${rows}</div>
+    </div>`;
 };
 
 const formatStackTraceHtml = (originalError, isProduction = false) => {
@@ -151,28 +140,22 @@ const PRODUCTION_HTML = `
 
 export const toHtmlString = (state) => {
   const {
-    message,
-    templateName,
     templatePath,
-    includeChain,
     snippet,
     classified,
     getDisplayLine,
     getDisplayCol,
     isProduction,
-    originalError
+    originalError,
+    renderContext
   } = state;
 
   if (isProduction) {
     return PRODUCTION_HTML;
   }
 
-  const rawMessage = originalError?.message || message || '';
-  const errorText = rawMessage.split('\n').find(l => l.match(/^  Error:/i))
-    ?.replace(/^  Error:\s*/i, '') || rawMessage.split('\n').pop()?.trim() || rawMessage;
-
-  const headerTitle = buildHeaderTitle(classified, errorText);
-  const locationInfo = buildLocationInfo(templateName, includeChain, getDisplayLine(), getDisplayCol());
+  const headerTitle = escapeHtml(getDisplayMessage(state));
+  const locationInfo = escapeHtml(formatLocation(state));
   const possibleCauses = classified?.causes ?? ['Check template syntax', 'Verify variable scope'];
   const fixCode = classified?.fixCode ?? "env.addGlobal('fn', callback)";
   const fixComment = classified?.fixComment ?? '// Register global function';
@@ -225,6 +208,8 @@ ${CSS}
         </div>
       </div>
     </div>
+
+    ${renderContextHtml(renderContext)}
 
     ${formatStackTraceHtml(originalError, isProduction)}
   </div>
