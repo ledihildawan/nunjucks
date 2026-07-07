@@ -140,6 +140,10 @@ const PRODUCTION_HTML = `
 
 export const toHtmlString = (state) => {
   const {
+    errorId,
+    timestamp,
+    code,
+    phase,
     templatePath,
     snippet,
     classified,
@@ -159,6 +163,16 @@ export const toHtmlString = (state) => {
   const possibleCauses = classified?.causes ?? ['Check template syntax', 'Verify variable scope'];
   const fixCode = classified?.fixCode ?? "env.addGlobal('fn', callback)";
   const fixComment = classified?.fixComment ?? '// Register global function';
+  const codeBadge = code
+    ? `<span style="margin-left:8px;padding:2px 8px;border-radius:4px;background:var(--color-error-bg);color:var(--color-error-text);font-size:10px;letter-spacing:0.05em;">${escapeHtml(code)}</span>`
+    : '';
+  const phaseBadge = phase
+    ? `<span style="margin-left:4px;padding:2px 8px;border-radius:4px;background:var(--color-code-highlight-bg);color:var(--color-code-text);font-size:10px;text-transform:lowercase;">${escapeHtml(phase)}</span>`
+    : '';
+  const metaBits = [];
+  if (errorId) metaBits.push(`ID: ${escapeHtml(errorId)}`);
+  if (timestamp) metaBits.push(escapeHtml(timestamp));
+  const metaStrip = metaBits.length ? `${metaBits.join(' · ')} · ` : '';
 
   return `
 <style>
@@ -175,6 +189,7 @@ ${CSS}
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
       </svg>
       Template Rendering Error
+      ${codeBadge}${phaseBadge}
     </div>
     <div style="font-size: 24px; font-weight: 600;">${headerTitle}</div>
     <div style="margin-top: 8px; font-size: 15px; color: var(--color-text-secondary);">
@@ -215,8 +230,8 @@ ${CSS}
   </div>
 
   <div style="padding:16px 32px;background:light-dark(oklch(96% 0.01 285), oklch(16% 0.01 285));border-top:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
-    <div style="font-size:12px;color:var(--color-text-secondary);">
-      Environment: <span style="font-weight:600;color:var(--color-text-primary);">${isProduction ? 'Production' : 'Development'}</span>
+    <div style="font-size:12px;color:var(--color-text-secondary);word-break:break-all;">
+      ${metaStrip}Environment: <span style="font-weight:600;color:var(--color-text-primary);">${isProduction ? 'Production' : 'Development'}</span>
     </div>
     <div style="display:flex;gap:12px;">
       <a href="${templatePath ? 'vscode://file/' + escapeHtml(templatePath) + ':' + getDisplayLine() + ':' + getDisplayCol() : '#'}" class="btn btn-solid" ${!templatePath ? 'style="opacity:0.5;pointer-events:none;"' : ''}>

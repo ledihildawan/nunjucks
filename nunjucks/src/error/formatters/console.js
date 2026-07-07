@@ -20,15 +20,31 @@ const pc = picocolors || {
   white: (s) => s,
 };
 
-const formatHeader = () => [
-  `${pc.bgRed('[ERROR]')} ${pc.bold('Template Rendering Failed')}`,
-  pc.dim('─'.repeat(60))
-].join('\n');
+const formatHeader = (code) => {
+  const badge = code ? ` ${pc.yellow(`[${code}]`)}` : '';
+  return [
+    `${pc.bgRed('[ERROR]')} ${pc.bold('Template Rendering Failed')}${badge}`,
+    pc.dim('─'.repeat(60))
+  ].join('\n');
+};
 
 const formatMessage = (message) => `${pc.bold('Message:')} ${message}`;
 
 const formatLocationLabel = (locationFile) =>
   `${pc.bold('Location:')} ${locationFile}`;
+
+const formatRenderContext = (ctx) => {
+  if (!ctx || typeof ctx !== 'object') return '';
+  const keys = Object.keys(ctx);
+  if (keys.length === 0) return '';
+  const lines = ['\n', pc.bold('Render Context:')];
+  for (const k of keys) {
+    const raw = ctx[k];
+    const val = typeof raw === 'string' ? raw : JSON.stringify(raw);
+    lines.push(pc.dim(`  ${k} = ${val}`));
+  }
+  return lines.join('\n');
+};
 
 const formatCodeTrace = (traceLines) => {
   const lines = ['\n', pc.bold('Code Trace:')];
@@ -85,14 +101,18 @@ export const toConsoleString = (state) => {
   const {
     errorId,
     timestamp,
+    code,
+    phase,
     snippet,
     classified,
     isProduction,
-    originalError
+    originalError,
+    renderContext
   } = state;
 
   if (isProduction) {
-    return `${pc.bgRed('[ERROR]')} Template Rendering Failed${errorId ? ` [${errorId}]` : ''}\n${pc.dim('Check logs for details')}`;
+    const badge = code ? ` [${code}]` : '';
+    return `${pc.bgRed('[ERROR]')} Template Rendering Failed${badge}${errorId ? ` [${errorId}]` : ''}\n${pc.dim('Check logs for details')}`;
   }
 
   const locationFile = formatLocation(state);
@@ -100,12 +120,13 @@ export const toConsoleString = (state) => {
   const displayMessage = getDisplayMessage(state);
 
   const metaBits = [];
+  if (phase) metaBits.push(`phase=${phase}`);
   if (errorId) metaBits.push(`id=${errorId}`);
   if (timestamp) metaBits.push(`at=${timestamp}`);
   const metaLine = metaBits.length ? pc.dim(`[${metaBits.join(' | ')}]`) : null;
 
   const parts = [
-    formatHeader(),
+    formatHeader(code),
     formatMessage(displayMessage),
     formatLocationLabel(locationFile)
   ];
@@ -121,6 +142,11 @@ export const toConsoleString = (state) => {
   if (classified) {
     parts.push(formatCauses(classified.causes));
     parts.push(formatFix(classified.fixComment, classified.fixCode));
+  }
+
+  const ctxBlock = formatRenderContext(renderContext);
+  if (ctxBlock) {
+    parts.push(ctxBlock);
   }
 
   const stackTrace = formatStackTrace(originalError, isProduction);
