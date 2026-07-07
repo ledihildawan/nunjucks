@@ -11,7 +11,7 @@ const escapeHtml = (str) => {
 const SYNTAX_RULES = [
   { type: 'comment', re: /^\{#[\s\S]*?#\}/ },
   { type: 'tag', re: /^<\/?[a-zA-Z][\w-]*/ },
-  { type: 'delimiter', re: /^(?:\{\{|\}\}|\{%|%\})/ },
+  { type: 'delimiter', re: /^(?:\{\{|\}\}|\{%|%\})/, toggle: true },
   { type: 'pipe', re: /^\|>/ },
   { type: 'string', re: /^(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/ },
   { type: 'number', re: /^\d+(?:\.\d+)?/ },
@@ -19,8 +19,9 @@ const SYNTAX_RULES = [
   {
     type: 'keyword',
     re: /^(?:endraw|raw|endfilter|filter|endcall|call|endmacro|macro|endblock|block|endfor|for|endif|elif|else|if|extends|include|import|from|set|asyncEach|asyncAll|with|without|context|as|not|and|or|in|is|true|false|none|null)(?![\w-])/,
+    tagOnly: true,
   },
-  { type: 'variable', re: /^[a-zA-Z_]\w*/ },
+  { type: 'variable', re: /^[a-zA-Z_]\w*/, tagOnly: true },
   { type: 'operator', re: /^(?:\||=|==|!=|<=|>=|<|>|\+|-|\*|\/|%|&|\[|\]|\(|\)|\.|,|:|\?)/ },
 ];
 
@@ -28,21 +29,29 @@ const highlightHtml = (code) => {
   if (!code) return '';
   let out = '';
   let i = 0;
+  let inTag = false;
+  const span = (type, text) => `<span class="syntax-${type}">${escapeHtml(text)}</span>`;
   while (i < code.length) {
     const rest = code.slice(i);
     const ws = rest.match(/^\s+/);
     if (ws) { out += ws[0]; i += ws[0].length; continue; }
     let matched = false;
     for (const rule of SYNTAX_RULES) {
+      if (rule.tagOnly && !inTag) continue;
       const m = rest.match(rule.re);
       if (m && m[0]) {
-        out += `<span class="syntax-${rule.type}">${escapeHtml(m[0])}</span>`;
+        if (rule.toggle) inTag = (m[0] === '{{' || m[0] === '{%');
+        out += span(rule.type, m[0]);
         i += m[0].length;
         matched = true;
         break;
       }
     }
-    if (!matched) { out += escapeHtml(code[i]); i += 1; }
+    if (!matched) {
+      const plain = rest.match(/^[^<{}"'|\s]+/);
+      if (plain) { out += escapeHtml(plain[0]); i += plain[0].length; }
+      else { out += escapeHtml(code[i]); i += 1; }
+    }
   }
   return out;
 };
