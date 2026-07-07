@@ -18,18 +18,18 @@ export {
   mergeCol,
   createDisplayLine,
   createDisplayCol
-} from './core/line-utils.js';
+} from './core/line.js';
 export {
   getSnippet,
   extractLineFromSnippet,
   splitSnippetLines
-} from './core/snippet-utils.js';
+} from './core/snippet.js';
 export {
   createErrorData,
   formatLocation,
   getDisplayMessage,
   formatCodeTrace
-} from './state/error-data.js';
-export { toConsoleString } from './formatters/console-formatter.js';
-export { toHtmlString } from './formatters/html-formatter.js';
-export { createErrorFormatter, createNunjucksError } from './factory/create-formatter.js';
+} from './state/data.js';
+export { toConsoleString } from './formatters/console.js';
+export { toHtmlString } from './formatters/html.js';
+export { createErrorFormatter, createNunjucksError } from './factory/formatter.js';

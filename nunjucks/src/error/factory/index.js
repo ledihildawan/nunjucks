@@ -1,1 +1,1 @@
-export { createErrorFormatter, createNunjucksError } from './create-formatter.js';
+export { createErrorFormatter, createNunjucksError } from './formatter.js';

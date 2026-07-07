@@ -1,4 +1,4 @@
-import { formatLocation, getDisplayMessage } from '../state/error-data.js';
+import { formatLocation, getDisplayMessage } from '../state/data.js';
 
 const escapeHtml = (str) => {
   if (!str) return '';

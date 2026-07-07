@@ -5,8 +5,8 @@ import {
   extractIncludeChainFromMessage,
   extractErrorTemplateName
 } from '../core/extract.js';
-import { getSnippet } from '../core/snippet-utils.js';
-import { mergeLine, mergeCol, getDisplayLine, getDisplayCol } from '../core/line-utils.js';
+import { getSnippet } from '../core/snippet.js';
+import { mergeLine, mergeCol, getDisplayLine, getDisplayCol } from '../core/line.js';
 
 const getSourceLines = (sourceContent) => (sourceContent ? sourceContent.split('\n') : null);
 

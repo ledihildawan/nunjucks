@@ -2,10 +2,10 @@ import {
   extractIncludeChainFromMessage,
   extractErrorTemplateName
 } from '../core/extract.js';
-import { extractLineFromSnippet } from '../core/snippet-utils.js';
-import { createErrorData } from '../state/error-data.js';
-import { toConsoleString } from '../formatters/console-formatter.js';
-import { toHtmlString } from '../formatters/html-formatter.js';
+import { extractLineFromSnippet } from '../core/snippet.js';
+import { createErrorData } from '../state/data.js';
+import { toConsoleString } from '../formatters/console.js';
+import { toHtmlString } from '../formatters/html.js';
 
 const defaultFs = {
   readFileSync: (path, encoding) => {

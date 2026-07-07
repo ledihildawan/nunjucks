@@ -18,9 +18,9 @@ export {
   mergeCol,
   createDisplayLine,
   createDisplayCol
-} from './line-utils.js';
+} from './line.js';
 export {
   getSnippet,
   extractLineFromSnippet,
   splitSnippetLines
-} from './snippet-utils.js';
+} from './snippet.js';

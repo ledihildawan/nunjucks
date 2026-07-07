@@ -1,2 +1,2 @@
 export { PATTERNS } from './patterns.js';
-export { ERROR_MAPPINGS } from './error-mappings.js';
+export { ERROR_RULES } from './mappings.js';
