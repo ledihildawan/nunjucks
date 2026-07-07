@@ -1,6 +1,6 @@
 export const PATTERNS = {
   UNDEFINED_VARIABLE: /attempted to output '([^']+)' null or undefined/i,
-  UNDEFINED_FUNCTION: /Unable to call `([^`]+)`.*which is undefined/i,
+  UNDEFINED_FUNCTION: /Unable to call `([^`]+)`.*which is (?:undefined|null|falsey)/i,
   NOT_A_FUNCTION: /is not a function|is not defined/i,
   SYNTAX_ERROR: /Unexpected token|unexpected end|SyntaxError/i,
   UNDEFINED_FILTER: /filter.*not found|invalid filter/i,
