@@ -9,19 +9,14 @@ const DB_PATH = path.join(__dirname, 'views', 'templates.db');
 
 const app = express();
 
-const sqliteLoader = new nunjucks.BunSQLitePrecompiledLoader(DB_PATH, {
-  mode: 'development',
-  templateDir: VIEWS,
-  autoPrecompile: true
-});
-
-const envDev = new nunjucks.Environment(sqliteLoader, {
+// DEV: FileSystemLoader - recompile setiap request, throwOnUndefined works
+const envDev = new nunjucks.Environment(new nunjucks.FileSystemLoader(VIEWS), {
   autoescape: true,
   dev: true,
   throwOnUndefined: true
 });
 
-sqliteLoader.setMode('development');
+// PROD: BunSQLitePrecompiledLoader - fast, pre-compiled
 const envProd = new nunjucks.Environment(new nunjucks.BunSQLitePrecompiledLoader(DB_PATH, {
   mode: 'production',
   templateDir: VIEWS,
