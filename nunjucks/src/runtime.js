@@ -209,10 +209,11 @@ export function awaitValue(val) {
   return val;
 }
 
-export function ensureDefined(val, lineno, colno) {
+export function ensureDefined(val, lineno, colno, varName = null) {
   if (val === null || val === undefined) {
+    const varMsg = varName ? ` '${varName}'` : '';
     throw new lib.TemplateError(
-      'attempted to output null or undefined value',
+      `attempted to output${varMsg} null or undefined value`,
       lineno,
       colno
     );

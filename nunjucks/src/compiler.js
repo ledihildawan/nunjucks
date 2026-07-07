@@ -1145,6 +1145,7 @@ export class Compiler extends Obj {
         }
       } else {
         const isPipe = child instanceof nodes.Pipe || child instanceof nodes.PipeAsync;
+        const varName = child instanceof nodes.Symbol ? child.value : null;
         this._emitLineWithLineno(`lineno = ${child.lineno}; colno = ${child.colno}; ${this.buffer} += runtime.suppressValue(`, child.lineno, child.colno);
         if (!isPipe) {
           this._emit('await runtime.awaitValue(');
@@ -1154,7 +1155,8 @@ export class Compiler extends Obj {
         }
         this.compile(child, frame);
         if (this.throwOnUndefined) {
-          this._emit(`,${child.lineno},${child.colno})`);
+          const nameArg = varName ? `, "${varName}"` : '';
+          this._emit(`,${child.lineno},${child.colno}${nameArg})`);
         }
         if (!isPipe) {
           this._emit(')');
