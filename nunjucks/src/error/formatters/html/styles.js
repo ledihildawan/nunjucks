@@ -60,12 +60,12 @@ export const CSS_VARS = `
 `;
 
 export const PRODUCTION_BODY = `
-<main style="font-family:'Inter',-apple-system,sans-serif;max-width:520px;margin:48px auto;padding:32px;background:#fff;border-radius:12px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.15);text-align:center;">
+<main style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;max-width:520px;margin:48px auto;padding:32px;background:var(--color-bg-panel);border:1px solid var(--color-border);border-radius:12px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.15);text-align:center;">
   <div style="margin-bottom:20px;">
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="#DC2626" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="var(--color-error-border)" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
   </div>
-  <h1 style="font-size:22px;font-weight:700;color:#111827;margin:0 0 8px;">Rendering Interrupted</h1>
-  <p style="font-size:14px;color:#6B7280;margin:0 0 20px;">An error occurred during template rendering.</p>
-  <p style="font-size:13px;color:#9CA3AF;margin:0;">Check server logs for details.</p>
+  <h1 style="font-size:22px;font-weight:700;color:var(--color-text-primary);margin:0 0 8px;">Rendering Interrupted</h1>
+  <p style="font-size:14px;color:var(--color-text-secondary);margin:0 0 20px;">An error occurred during template rendering.</p>
+  <p style="font-size:13px;color:var(--color-text-secondary);margin:0;">Check server logs for details.</p>
 </main>
 `;

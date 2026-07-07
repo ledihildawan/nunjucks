@@ -7,15 +7,26 @@ import { createErrorData } from '../state/data.js';
 import { toConsoleString } from '../formatters/console.js';
 import { toHtmlString } from '../formatters/html/index.js';
 
-const defaultFs = {
-  readFileSync: (path, encoding) => {
-    try {
-      const fs = require('fs');
-      return fs.readFileSync(path, encoding);
-    } catch (e) {
-      return null;
+const NO_FS = { readFileSync: () => null };
+let _cachedFs = null;
+
+const resolveFs = async (injected) => {
+  if (injected && injected.readFileSync) return injected;
+  if (_cachedFs) return _cachedFs;
+  try {
+    if (typeof require !== 'undefined') {
+      const m = require('fs');
+      _cachedFs = { readFileSync: m.readFileSync.bind(m) };
+    } else {
+      const { createRequire } = await import('module');
+      const req = createRequire(import.meta.url);
+      const m = req('fs');
+      _cachedFs = { readFileSync: m.readFileSync.bind(m) };
     }
+  } catch {
+    _cachedFs = NO_FS;
   }
+  return _cachedFs;
 };
 
 export const createNunjucksError = (message, errorData) => {
@@ -52,9 +63,10 @@ export const createNunjucksError = (message, errorData) => {
   };
 };
 
-export const createErrorFormatter = ({ fs = defaultFs, autoDetect = true } = {}) => {
+export const createErrorFormatter = ({ fs = null, autoDetect = true } = {}) => {
   return {
     async formatError(error, templateName, includeChain = null, templatePath = null, renderContext = null) {
+      const fsImpl = await resolveFs(fs);
       const isProduction = !autoDetect ? false : (error.lineno == null);
 
       const effectiveChain = includeChain ?? error._includeChain ?? null;
@@ -75,7 +87,7 @@ export const createErrorFormatter = ({ fs = defaultFs, autoDetect = true } = {})
       let sourceContent = null;
       if (templatePath) {
         try {
-          sourceContent = fs.readFileSync(templatePath, 'utf-8');
+          sourceContent = fsImpl.readFileSync(templatePath, 'utf-8');
         } catch (e) {
           sourceContent = null;
         }

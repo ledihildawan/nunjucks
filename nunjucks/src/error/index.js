@@ -24,12 +24,8 @@ export {
   extractLineFromSnippet,
   splitSnippetLines
 } from './core/snippet.js';
-export {
-  createErrorData,
-  formatLocation,
-  getDisplayMessage,
-  formatCodeTrace
-} from './state/data.js';
+export { createErrorData } from './state/data.js';
+export { formatLocation, getDisplayMessage, formatCodeTrace } from './state/display.js';
 export { toConsoleString } from './formatters/console.js';
 export { toHtmlString } from './formatters/html/index.js';
 export { createErrorFormatter, createNunjucksError } from './factory/formatter.js';

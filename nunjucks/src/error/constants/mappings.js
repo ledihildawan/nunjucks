@@ -17,13 +17,13 @@ export const ERROR_RULES = [
     pattern: PATTERNS.UNDEFINED_FUNCTION,
     category: 'undefined_function',
     subjectFrom: 'undefinedName',
-    causes: (s) => [
-      'Function `' + s + '` not registered with `env.addGlobal()`',
-      'Filter `' + s + '` not registered with `env.addFilter()`',
+    causes: [
+      'Function `{subject}` not registered with `env.addGlobal()`',
+      'Filter `{subject}` not registered with `env.addFilter()`',
       '**Misspelled** function or filter name'
     ],
-    fixCode: (s) => `env.addGlobal('${s}', callback)`,
-    fixComment: (s) => `// Register the missing function '${s}'`
+    fixCode: "env.addGlobal('{subject}', callback)",
+    fixComment: "// Register the missing function '{subject}'"
   },
   {
     pattern: PATTERNS.NOT_A_FUNCTION,
@@ -52,12 +52,12 @@ export const ERROR_RULES = [
     pattern: PATTERNS.UNDEFINED_FILTER,
     category: 'undefined_filter',
     subjectFrom: 'filter',
-    causes: (s) => [
-      'Filter `' + s + '` not registered with `env.addFilter()`',
+    causes: [
+      'Filter `{subject}` not registered with `env.addFilter()`',
       '**Typo** in filter name'
     ],
-    fixCode: (s) => `env.addFilter('${s}', fn)`,
-    fixComment: (s) => `// Register the missing filter '${s}'`
+    fixCode: "env.addFilter('{subject}', fn)",
+    fixComment: "// Register the missing filter '{subject}'"
   },
   {
     pattern: PATTERNS.UNDEFINED_BLOCK,
@@ -74,13 +74,13 @@ export const ERROR_RULES = [
     pattern: PATTERNS.NO_SUPER_BLOCK,
     category: 'no_super_block',
     subjectFrom: 'quotes',
-    causes: (s) => [
-      '`super()` called in block `' + s + '` but parent has no block',
+    causes: [
+      '`super()` called in block `{subject}` but parent has no block',
       'Using `super()` in a block with no **parent equivalent**',
       'Block override without a corresponding **parent block**'
     ],
-    fixCode: (s) => `{% block ${s || 'name'} %}...{% endblock %}`,
-    fixComment: (s) => `// Remove super() or define parent block '${s}'`
+    fixCode: '{% block {subject} %}...{% endblock %}',
+    fixComment: "// Remove super() or define parent block '{subject}'"
   },
   {
     pattern: PATTERNS.CIRCULAR_INCLUDE,
@@ -109,13 +109,13 @@ export const ERROR_RULES = [
     pattern: PATTERNS.FILE_NOT_FOUND,
     category: 'file_not_found',
     subjectFrom: 'fileNotFound',
-    causes: (s) => [
-      'Template file `' + s + '` **does not exist**',
+    causes: [
+      'Template file `{subject}` **does not exist**',
       '**Incorrect path** in `include`/`extends`',
       'File **deleted or moved**'
     ],
-    fixCode: (s) => `{% include "correct-path/${s}" %}`,
-    fixComment: (s) => `// Verify template file path: ${s}`
+    fixCode: '{% include "correct-path/{subject}" %}',
+    fixComment: '// Verify template file path: {subject}'
   },
   {
     pattern: PATTERNS.INVALID_INCLUDE,
@@ -141,3 +141,15 @@ export const ERROR_RULES = [
     fixComment: '// Verify template path is a valid file'
   }
 ];
+
+export const DEFAULT_CLASSIFICATION = {
+  category: 'unknown',
+  undefinedName: null,
+  causes: [
+    'Check template **syntax**',
+    'Verify **variable scope**',
+    'Check **render context** data'
+  ],
+  fixCode: '// Inspect the error message above for clues',
+  fixComment: '// Review the template source and context'
+};

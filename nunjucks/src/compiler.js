@@ -1068,21 +1068,16 @@ export class Compiler extends Obj {
 
   compileBlock(node) {
     var id = this._tmpid();
-
-    if (!this.inBlock) {
-      // At the root level, only render a block directly when this template does
-      // not extend a parent. When extending, the output is discarded anyway and
-      // rendering here would execute blocks before the full inheritance chain of
-      // blocks has been registered (every ancestor's `{% extends %}` must run
-      // first), which breaks `super()` calls that span more than two levels.
-      // The root-most ancestor drives rendering once the chain is complete.
-      this._emitLine(`if(!parentTemplate) {`);
+    const emit = () => {
       this._emitLine(`var ${id} = await (await context.getBlock("${node.name.value}"))(env, context, frame, runtime);`);
       this._emitLine(`${this.buffer} += ${id};`);
+    };
+    if (!this.inBlock) {
+      this._emitLine(`if(!parentTemplate) {`);
+      emit();
       this._emitLine(`}`);
     } else {
-      this._emitLine(`var ${id} = await (await context.getBlock("${node.name.value}"))(env, context, frame, runtime);`);
-      this._emitLine(`${this.buffer} += ${id};`);
+      emit();
     }
   }
 

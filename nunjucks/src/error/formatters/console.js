@@ -1,5 +1,5 @@
 import { splitSnippetLines } from '../core/snippet.js';
-import { formatLocation, getDisplayMessage } from '../state/data.js';
+import { formatLocation, getDisplayMessage } from '../state/display.js';
 
 let picocolors;
 try {

@@ -1,4 +1,4 @@
-import { formatLocation, getDisplayMessage } from '../../state/data.js';
+import { formatLocation, getDisplayMessage } from '../../state/display.js';
 import { escapeHtml, renderInlineMarkdown, highlightHtml } from './highlight.js';
 import { formatCodeTraceHtml, renderContextHtml, formatStackTraceHtml } from './sections.js';
 import { CSS, CSS_VARS, PRODUCTION_BODY } from './styles.js';
@@ -43,9 +43,9 @@ export const toHtmlString = (state) => {
 
   const headerTitle = escapeHtml(getDisplayMessage(state));
   const locationInfo = escapeHtml(formatLocation(state));
-  const possibleCauses = classified?.causes ?? ['Check template syntax', 'Verify variable scope'];
-  const fixCode = classified?.fixCode ?? "env.addGlobal('fn', callback)";
-  const fixComment = classified?.fixComment ?? '// Register global function';
+  const possibleCauses = classified.causes;
+  const fixCode = classified.fixCode;
+  const fixComment = classified.fixComment;
   const codeBadge = code
     ? `<span style="margin-left:8px;padding:2px 8px;border-radius:4px;background:var(--color-error-bg);color:var(--color-error-text);font-size:10px;letter-spacing:0.05em;">${escapeHtml(code)}</span>`
     : '';

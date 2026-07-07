@@ -1,5 +1,5 @@
 import { PATTERNS } from '../constants/patterns.js';
-import { ERROR_RULES } from '../constants/mappings.js';
+import { ERROR_RULES, DEFAULT_CLASSIFICATION } from '../constants/mappings.js';
 import { extractUndefinedName } from './extract.js';
 
 const extractSubject = (rule, message) => {
@@ -17,8 +17,9 @@ const extractSubject = (rule, message) => {
   }
 };
 
-const resolve = (field, subject) =>
-  typeof field === 'function' ? field(subject) : field;
+const fill = (text, subject) => text.replaceAll('{subject}', subject ?? '');
+const resolveField = (field, subject) =>
+  Array.isArray(field) ? field.map(item => fill(item, subject)) : fill(field, subject);
 
 const classifyFilterError = (rawMessage) => {
   const errorMsg = rawMessage.match(PATTERNS.FILTER_ERROR)?.[1] || rawMessage;
@@ -31,7 +32,7 @@ async function myFilter(value) {
     return await someAsyncOperation(value);
   } catch (err) {
     console.error('Filter failed:', err.message);
-    return value; // or a default value
+    return value;
   }
 }`
     : `// Filter error - check input values and implementation
@@ -56,7 +57,7 @@ function myFilter(value) {
 };
 
 export const classifyError = (rawMessage) => {
-  if (!rawMessage) return null;
+  if (!rawMessage) return DEFAULT_CLASSIFICATION;
 
   for (const rule of ERROR_RULES) {
     if (!rule.pattern.test(rawMessage)) continue;
@@ -64,9 +65,9 @@ export const classifyError = (rawMessage) => {
     return {
       category: rule.category,
       undefinedName: subject,
-      causes: resolve(rule.causes, subject),
-      fixCode: resolve(rule.fixCode, subject),
-      fixComment: resolve(rule.fixComment, subject)
+      causes: resolveField(rule.causes, subject),
+      fixCode: resolveField(rule.fixCode, subject),
+      fixComment: resolveField(rule.fixComment, subject)
     };
   }
 
@@ -74,11 +75,11 @@ export const classifyError = (rawMessage) => {
     return classifyFilterError(rawMessage);
   }
 
-  return null;
+  return DEFAULT_CLASSIFICATION;
 };
 
 export const classifyFromError = (error) => {
-  if (!error) return null;
+  if (!error) return DEFAULT_CLASSIFICATION;
   if (error.code === 'FILTER_ERROR') {
     return classifyFilterError(error.message || '');
   }
