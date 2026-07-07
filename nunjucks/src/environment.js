@@ -1,5 +1,5 @@
 import * as lib from './lib/index.js';
-import { prettifyError } from './error/index.js';
+import { prettifyError, createErrorFormatter } from './error/index.js';
 import { compile } from './compiler.js';
 import * as filters from './filters.js';
 import {FileSystemLoader, WebLoader, PrecompiledLoader} from './loaders.js';
@@ -29,6 +29,7 @@ export class Environment extends EmitterObj {
     this.opts.throwOnUndefined = !!opts.throwOnUndefined;
     this.opts.trimBlocks = !!opts.trimBlocks;
     this.opts.lstripBlocks = !!opts.lstripBlocks;
+    this.opts.ide = opts.ide || 'vscode';
 
     this._renderingTemplates = new Set();
 
@@ -290,6 +291,17 @@ export class Environment extends EmitterObj {
 
   express(app) {
     return expressApp(this, app);
+  }
+
+  getErrorFormatter() {
+    if (!this._errorFormatter) {
+      this._errorFormatter = createErrorFormatter({ ide: this.opts.ide });
+    }
+    return this._errorFormatter;
+  }
+
+  async formatError(error, templateName, includeChain = null, templatePath = null, renderContext = null) {
+    return this.getErrorFormatter().formatError(error, templateName, includeChain, templatePath, renderContext);
   }
 
   async render(name, ctx) {

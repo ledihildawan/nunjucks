@@ -1,4 +1,5 @@
 import { escapeHtml, highlightHtml } from './highlight.js';
+import { resolveIdeLink } from '../../constants/ide-links.js';
 
 export const formatCodeTraceHtml = (snippet) => {
   if (!snippet) return '<div class="code-line"><span class="line-number">&nbsp;</span><span class="code-content">Source not available</span></div>';
@@ -35,17 +36,17 @@ export const renderContextHtml = (ctx) => {
 
 const normalizePath = (p) => p.replace(/^file:\/\/+/, '');
 
-const linkifyFrame = (frame) => {
+const linkifyFrame = (frame, ide) => {
   let s = escapeHtml(frame);
   s = s.replace(/\(([^()]+):(\d+):(\d+)\)$/, (match, p, l, c) => {
     if (/^native$/.test(p.trim()) || /^&lt;/.test(p) || !/[\\/]/.test(p)) return match;
     const norm = normalizePath(p);
-    return `(<a href="vscode://file/${norm}:${l}:${c}" class="stack-link">${norm}:${l}:${c}</a>)`;
+    return `(<a href="${resolveIdeLink(ide, norm, l, c)}" class="stack-link">${norm}:${l}:${c}</a>)`;
   });
   return s;
 };
 
-export const formatStackTraceHtml = (originalError, isProduction = false) => {
+export const formatStackTraceHtml = (originalError, isProduction = false, ide = 'vscode') => {
   if (!originalError?.stack) return '';
 
   const stackLines = originalError.stack.split('\n').slice(1);
@@ -64,7 +65,7 @@ export const formatStackTraceHtml = (originalError, isProduction = false) => {
   if (linesToShow.length === 0) return '';
 
   const rows = linesToShow.map(line => {
-    return `<div class="stack-row"><code style="font-family:monospace;color:var(--color-code-text);">${linkifyFrame(line.trim())}</code></div>`;
+    return `<div class="stack-row"><code style="font-family:monospace;color:var(--color-code-text);">${linkifyFrame(line.trim(), ide)}</code></div>`;
   }).join('');
 
   return `

@@ -63,7 +63,7 @@ export const createNunjucksError = (message, errorData) => {
   };
 };
 
-export const createErrorFormatter = ({ fs = null, autoDetect = true } = {}) => {
+export const createErrorFormatter = ({ fs = null, autoDetect = true, ide = 'vscode' } = {}) => {
   return {
     async formatError(error, templateName, includeChain = null, templatePath = null, renderContext = null) {
       const fsImpl = await resolveFs(fs);
@@ -101,7 +101,8 @@ export const createErrorFormatter = ({ fs = null, autoDetect = true } = {}) => {
         isProduction,
         line: lineOverride,
         col: colOverride,
-        renderContext
+        renderContext,
+        ide
       });
 
       return createNunjucksError(error.message, errorData);

@@ -77,7 +77,8 @@ export const createErrorData = (error, options = {}) => {
     isProduction = false,
     line: lineOverride,
     col: colOverride,
-    renderContext = null
+    renderContext = null,
+    ide = 'vscode'
   } = options;
 
   const message = error?.message || '';
@@ -119,6 +120,7 @@ export const createErrorData = (error, options = {}) => {
     includeChain: includeChain || extractIncludeChainFromMessage(message),
     classified,
     isProduction,
+    ide,
     renderContext: snapshotContext(renderContext),
     getDisplayLine: () => displayLine ?? '?',
     getDisplayCol: () => displayCol ?? '?'

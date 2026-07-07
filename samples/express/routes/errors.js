@@ -1,6 +1,5 @@
 import express from 'express';
 import nunjucks from '../../../nunjucks/index.js';
-import { createErrorFormatter } from '../../../nunjucks/src/error/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -13,21 +12,20 @@ const router = express.Router();
 const envDev = new nunjucks.Environment(fsLoader, {
   autoescape: true,
   dev: true,
-  throwOnUndefined: true
+  throwOnUndefined: true,
+  ide: 'vscode'
 });
 
 envDev.addFilter('failingAsync', async function(val) {
   throw new Error('Async filter failed: network error');
 }, true);
 
-const errorFormatter = createErrorFormatter();
-
 async function renderWithErrorHandler(res, templateName, context = {}) {
   try {
     const html = await envDev.render(templateName, context);
     res.type('html').send(html);
   } catch (e) {
-    const formatted = await errorFormatter.formatError(e, templateName, e._includeChain, path.join(VIEWS, templateName), context);
+    const formatted = await envDev.formatError(e, templateName, e._includeChain, path.join(VIEWS, templateName), context);
     if (formatted.errorId) {
       res.setHeader('X-Error-Id', formatted.errorId);
     }

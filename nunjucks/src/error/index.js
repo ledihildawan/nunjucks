@@ -1,5 +1,6 @@
 export { TemplateError, createTemplateError, prettifyError } from './core/template-error.js';
 export { classifyError } from './core/classify.js';
+export { resolveIdeLink, getIdeMeta } from './constants/ide-links.js';
 export {
   extractUndefinedName,
   extractLineInfo,

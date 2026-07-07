@@ -2,6 +2,7 @@ import { formatLocation, getDisplayMessage } from '../../state/display.js';
 import { escapeHtml, renderInlineMarkdown, highlightHtml } from './highlight.js';
 import { formatCodeTraceHtml, renderContextHtml, formatStackTraceHtml } from './sections.js';
 import { CSS, CSS_VARS, PRODUCTION_BODY } from './styles.js';
+import { resolveIdeLink, getIdeMeta } from '../../constants/ide-links.js';
 
 const document = (title, body) => `<!DOCTYPE html>
 <html lang="en">
@@ -57,6 +58,9 @@ export const toHtmlString = (state) => {
   if (timestamp) metaBits.push(escapeHtml(timestamp));
   const metaStrip = metaBits.length ? `${metaBits.join(' · ')} · ` : '';
 
+  const ideMeta = getIdeMeta(state.ide || 'vscode');
+  const ideLabel = `Open in ${ideMeta.label}`;
+
   const body = `
 <section class="error-wrapper" aria-labelledby="err-title">
   <header class="error-header">
@@ -71,7 +75,7 @@ export const toHtmlString = (state) => {
     </p>
     <h1 id="err-title" class="error-title">${headerTitle}</h1>
     <p class="error-location">The error occurred in ${templatePath
-      ? `<a href="vscode://file/${escapeHtml(templatePath)}:${getDisplayLine()}:${getDisplayCol()}" class="loc-link" style="font-weight:600;color:var(--color-text-primary);">${locationInfo}</a>`
+      ? `<a href="${resolveIdeLink(state.ide, escapeHtml(templatePath), getDisplayLine(), getDisplayCol())}" class="loc-link" style="font-weight:600;color:var(--color-text-primary);">${locationInfo}</a>`
       : `<span style="font-weight:600;color:var(--color-text-primary);">${locationInfo}</span>`
     }</p>
   </header>
@@ -99,21 +103,16 @@ export const toHtmlString = (state) => {
 
     ${renderContextHtml(renderContext)}
 
-    ${formatStackTraceHtml(originalError, isProduction)}
+    ${formatStackTraceHtml(originalError, isProduction, state.ide)}
   </div>
 
   <footer class="error-footer">
     <p class="meta">
       ${metaStrip}Environment: <span style="font-weight:600;color:var(--color-text-primary);">${isProduction ? 'Production' : 'Development'}</span>
     </p>
-    <a href="${templatePath ? 'vscode://file/' + escapeHtml(templatePath) + ':' + getDisplayLine() + ':' + getDisplayCol() : '#'}" class="btn btn-solid" ${!templatePath ? 'aria-disabled="true" style="opacity:0.5;pointer-events:none;"' : ''}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3z"></path>
-        <path d="M3 6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6z"></path>
-        <path d="M9 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"></path>
-        <rect x="15" y="6" width="6" height="12" rx="2"></rect>
-      </svg>
-      Open in IDE
+    <a href="${templatePath ? resolveIdeLink(state.ide, escapeHtml(templatePath), getDisplayLine(), getDisplayCol()) : '#'}" class="btn btn-solid" ${!templatePath ? 'aria-disabled="true" style="opacity:0.5;pointer-events:none;"' : ''}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${ideMeta.icon}</svg>
+      ${ideLabel}
     </a>
   </footer>
 </section>`;
