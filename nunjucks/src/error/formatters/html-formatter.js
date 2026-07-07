@@ -77,7 +77,14 @@ const formatStackTraceHtml = (originalError) => {
   const jsStackLines = stackLines.filter(line => line.trim().startsWith('at '));
   if (jsStackLines.length === 0) return '';
 
-  const rows = jsStackLines.map(line => {
+  const userOnlyLines = jsStackLines.filter(line => {
+    const path = line.toLowerCase();
+    return !path.includes('nunjucks/nunjucks/src/') && !path.includes('nunjucks\\nunjucks\\src\\');
+  });
+
+  if (userOnlyLines.length === 0) return '';
+
+  const rows = userOnlyLines.map(line => {
     const trimmed = escapeHtml(line.trim());
     return `<div class="stack-row"><span style="font-family:monospace;color:var(--color-code-text);">${trimmed}</span></div>`;
   }).join('');

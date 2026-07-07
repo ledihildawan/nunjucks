@@ -100,8 +100,15 @@ const formatStackTrace = (originalError) => {
   const jsStackLines = stackLines.filter(line => line.trim().startsWith('at '));
   if (jsStackLines.length === 0) return '';
 
+  const userOnlyLines = jsStackLines.filter(line => {
+    const path = line.toLowerCase();
+    return !path.includes('nunjucks/nunjucks/src/') && !path.includes('nunjucks\\nunjucks\\src\\');
+  });
+
+  if (userOnlyLines.length === 0) return '';
+
   const lines = ['\n', pc.bold('Stack Trace:')];
-  for (const line of jsStackLines) {
+  for (const line of userOnlyLines) {
     lines.push(pc.dim('  ' + line.trim()));
   }
   return lines.join('\n');
