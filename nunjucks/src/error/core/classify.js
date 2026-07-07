@@ -53,10 +53,11 @@ export const classifyError = (rawMessage) => {
       undefinedName: null,
       causes: [
         'Missing closing tag ({{ endif }}, {% endfor %})',
-        'Mismatched quotes or brackets'
+        'Mismatched quotes or brackets',
+        'Unclosed array/object brackets'
       ],
-      fixCode: "{% raw %}{{ expression }}{% endraw %}",
-      fixComment: '// Use raw tag for literal content'
+      fixCode: "{{ [1, 2, 3] |> join(',') }}",
+      fixComment: '// Check brackets, quotes, and tag closures'
     };
   }
 

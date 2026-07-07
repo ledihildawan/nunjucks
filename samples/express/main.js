@@ -54,7 +54,7 @@ app.get('/', (req, res) => {
   <h1>🔧 Nunjucks Error Classification Demo</h1>
 
   <div class="info">
-    <p><strong>13 Error Categories</strong> - Click any route to see the error in action with full classification and fix suggestions.</p>
+    <p><strong>9 Error Categories</strong> - Click any route to see the error in action with full classification and fix suggestions.</p>
   </div>
 
   <h2>📋 Error Categories</h2>

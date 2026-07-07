@@ -3,7 +3,7 @@ export const PATTERNS = {
   UNDEFINED_VALUE: /attempted to output null or undefined value/i,
   UNDEFINED_FUNCTION: /Unable to call `([^`]+)`.*which is (?:undefined|null|falsey)/i,
   NOT_A_FUNCTION: /is not a function|is not defined/i,
-  SYNTAX_ERROR: /unexpected token|expected variable end|SyntaxError/i,
+  SYNTAX_ERROR: /unexpected token|expected (?:comma|variable end|end)|parse[A-Z]|SyntaxError/i,
   UNDEFINED_FILTER: /filter not found: (\w+)/i,
   UNDEFINED_BLOCK: /block.*not found|undefined block/i,
   NO_SUPER_BLOCK: /no super block available/i,
