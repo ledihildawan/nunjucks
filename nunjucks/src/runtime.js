@@ -1,4 +1,5 @@
 import * as lib from './lib/index.js';
+import { TemplateError } from './error/index.js';
 var arrayFrom = Array.from;
 var supportsIterators = (
   typeof Symbol === 'function' && Symbol.iterator && typeof arrayFrom === 'function'
@@ -212,7 +213,7 @@ export function awaitValue(val) {
 export function ensureDefined(val, lineno, colno, varName = null) {
   if (val === null || val === undefined) {
     const varMsg = varName ? ` '${varName}'` : '';
-    throw new lib.TemplateError(
+    throw new TemplateError(
       `attempted to output${varMsg} null or undefined value`,
       lineno,
       colno,
@@ -297,14 +298,14 @@ export function nullishCoalesce(left, right) {
 
 export function callWrap(obj, name, context, args, lineno, colno) {
   if (!obj) {
-    throw new lib.TemplateError(
+    throw new TemplateError(
       'Unable to call `' + name + '`, which is undefined or falsey',
       lineno,
       colno,
       { code: 'UNDEFINED_FUNCTION', subject: name, phase: 'render' }
     );
   } else if (typeof obj !== 'function') {
-    throw new lib.TemplateError(
+    throw new TemplateError(
       'Unable to call `' + name + '`, which is not a function',
       lineno,
       colno,
@@ -353,10 +354,10 @@ export function handleError(error, lineno, colno, sourceMapData) {
       }
     };
     const pos = sm.getOriginalPosition(lineno);
-    return new lib.TemplateError(error, pos.line, pos.col, info);
+    return new TemplateError(error, pos.line, pos.col, info);
   }
 
-  return new lib.TemplateError(error, lineno, colno, info);
+  return new TemplateError(error, lineno, colno, info);
 }
 
 export async function asyncEach(arr, dimen, iter) {

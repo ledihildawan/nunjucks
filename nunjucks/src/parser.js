@@ -2,6 +2,7 @@ import * as lexer from './lexer.js';
 import * as nodes from './nodes.js';
 import { Obj } from './object.js';
 import * as lib from './lib/index.js';
+import { TemplateError } from './error/index.js';
 
 export class Parser extends Obj {
   init(tokens) {
@@ -61,7 +62,7 @@ export class Parser extends Obj {
     if (colno !== undefined) {
       colno += 1;
     }
-    return new lib.TemplateError(msg, lineno, colno, { phase: 'parse' });
+    return new TemplateError(msg, lineno, colno, { phase: 'parse' });
   }
 
   fail(msg, lineno, colno) {

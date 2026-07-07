@@ -1,7 +1,7 @@
 import { parse } from './parser.js';
 import { transform } from './transformer.js';
 import * as nodes from './nodes.js';
-import { TemplateError } from './lib/index.js';
+import { TemplateError } from './error/index.js';
 import { Frame } from './runtime.js';
 import { Obj } from './object.js';
 import { SourceMap } from './source-map.js';

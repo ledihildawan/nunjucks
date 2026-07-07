@@ -16,7 +16,7 @@ export const PATTERNS = {
   INCLUDED_FROM: /\(included from ([^:)]+\.html)(?::\d+)?(?::\d+)?\)/,
   INCLUDED_FROM_WITH_LINE: /\(included from ([^:]+\.html):(\d+)(?::(\d+))?\)/,
   COLUMN_INFO: /Column (\d+)/i,
-  ERROR_PREFIX: /^  Error:/i,
+  ERROR_PREFIX: /^ {2}Error:/i,
   CALL_MATCH: /Unable to call `([^`]+)`/,
   OUTPUT_MATCH: /attempted to output '([^']+)'/i,
 };

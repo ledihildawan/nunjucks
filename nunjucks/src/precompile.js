@@ -1,6 +1,6 @@
 import { existsSync, statSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {_prettifyError} from './lib/index.js';
+import {_prettifyError} from './error/index.js';
 import * as compiler from './compiler.js';
 import {Environment} from './environment.js';
 import precompileGlobal from './precompile-global.js';
