@@ -25,9 +25,8 @@ const envProd = new nunjucks.Environment(fsLoader, {
   autoescape: true
 });
 
-// Error formatter for filesystem-based source reading
-const devErrorFormatter = createErrorFormatter({ mode: 'development' });
-const prodErrorFormatter = createErrorFormatter({ mode: 'production' });
+// Error formatter with auto-detect dev vs production
+const errorFormatter = createErrorFormatter();
 
 // Helper to read source from filesystem
 function getTemplateSource(templateName) {
@@ -66,7 +65,7 @@ app.get('/home', async (req, res) => {
     });
     res.type('html').send(html);
   } catch (e) {
-    const formatted = await devErrorFormatter.formatError(e, 'home.html', null, path.join(VIEWS, 'home.html'));
+    const formatted = await errorFormatter.formatError(e, 'home.html', null, path.join(VIEWS, 'home.html'));
     console.error(formatted.toConsoleString());
     res.type('html').status(500).send(formatted.toHtmlString());
   }
@@ -77,7 +76,7 @@ app.get('/error', async (req, res) => {
     const html = await envDev.render('error-partial.html');
     res.type('html').send(html);
   } catch (e) {
-    const formatted = await devErrorFormatter.formatError(e, 'error-partial.html', null, path.join(VIEWS, 'error-partial.html'));
+    const formatted = await errorFormatter.formatError(e, 'error-partial.html', null, path.join(VIEWS, 'error-partial.html'));
     console.error(formatted.toConsoleString());
     res.type('html').status(500).send(formatted.toHtmlString());
   }
@@ -88,7 +87,7 @@ app.get('/include-error', async (req, res) => {
     const html = await envDev.render('error-include.html');
     res.type('html').send(html);
   } catch (e) {
-    const formatted = await devErrorFormatter.formatError(e, 'error-include.html', e._includeChain, path.join(VIEWS, 'error-partial.html'));
+    const formatted = await errorFormatter.formatError(e, 'error-include.html', e._includeChain, path.join(VIEWS, 'error-partial.html'));
     console.error(formatted.toConsoleString());
     res.type('html').status(500).send(formatted.toHtmlString());
   }

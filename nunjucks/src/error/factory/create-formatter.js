@@ -85,19 +85,16 @@ export const createNunjucksError = (message, meta = {}) => {
   return err;
 };
 
-export const createErrorFormatter = ({ fs = defaultFs, mode = 'development' } = {}) => {
-  const isProd = mode === 'production';
-
+export const createErrorFormatter = ({ fs = defaultFs, autoDetect = true } = {}) => {
   return {
-    getMode: () => mode,
-    setMode: (newMode) => { mode = newMode; },
-
     getSourceLines: (sourceContent) => {
       if (!sourceContent) return null;
       return sourceContent.split('\n');
     },
 
     async formatError(error, templateName, includeChain = null, templatePath = null) {
+      const isProduction = !autoDetect ? false : (error.lineno == null);
+
       const effectiveChain = includeChain ?? error._includeChain ?? null;
       const chainFromMessage = extractIncludeChainFromMessage(error.message);
 
@@ -145,7 +142,7 @@ export const createErrorFormatter = ({ fs = defaultFs, mode = 'development' } = 
         col,
         snippet,
         includeChain: chainForDisplay,
-        isProduction: isProd,
+        isProduction,
         errorName: error.name,
         originalError: error
       };
