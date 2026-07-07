@@ -1,10 +1,13 @@
 export const PATTERNS = {
   UNDEFINED_VARIABLE: /attempted to output '([^']+)' null or undefined/i,
+  UNDEFINED_VALUE: /attempted to output null or undefined value/i,
   UNDEFINED_FUNCTION: /Unable to call `([^`]+)`.*which is (?:undefined|null|falsey)/i,
   NOT_A_FUNCTION: /is not a function|is not defined/i,
   SYNTAX_ERROR: /unexpected token|expected|SyntaxError/i,
   UNDEFINED_FILTER: /filter not found: (\w+)/i,
   UNDEFINED_BLOCK: /block.*not found|undefined block/i,
+  FILE_NOT_FOUND: /template not found: (.+)/i,
+  INVALID_INCLUDE: /template names must be a string/i,
   LINE_INFO: /\[Line (\d+)(?:, Column (\d+))?\]/i,
   INCLUDED_FROM: /\(included from ([^:)]+\.html)(?::\d+)?(?::\d+)?\)/,
   INCLUDED_FROM_WITH_LINE: /\(included from ([^:]+\.html):(\d+)(?::(\d+))?\)/,

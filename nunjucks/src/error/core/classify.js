@@ -87,5 +87,47 @@ export const classifyError = (rawMessage) => {
     };
   }
 
+  if (PATTERNS.UNDEFINED_VALUE.test(rawMessage)) {
+    return {
+      category: 'undefined_value',
+      undefinedName: null,
+      causes: [
+        'Nested property access returned null/undefined',
+        'Array index out of bounds',
+        'Object property does not exist'
+      ],
+      fixCode: "{{ object.property|default('default') }}",
+      fixComment: '// Use default filter or safe navigation'
+    };
+  }
+
+  if (PATTERNS.FILE_NOT_FOUND.test(rawMessage)) {
+    const fileName = rawMessage.match(PATTERNS.FILE_NOT_FOUND)?.[1] || 'unknown';
+    return {
+      category: 'file_not_found',
+      undefinedName: fileName,
+      causes: [
+        `Template file '${fileName}' does not exist`,
+        'Incorrect path in include/extends',
+        'File deleted or moved'
+      ],
+      fixCode: `{% include "correct-path/${fileName}" %}`,
+      fixComment: `// Verify template file path: ${fileName}`
+    };
+  }
+
+  if (PATTERNS.INVALID_INCLUDE.test(rawMessage)) {
+    return {
+      category: 'invalid_include',
+      undefinedName: null,
+      causes: [
+        'Include path is not a string literal',
+        'Variable used in include must be a string'
+      ],
+      fixCode: '{% include "template.html" %}',
+      fixComment: '// Use string literal for include path'
+    };
+  }
+
   return null;
 };
