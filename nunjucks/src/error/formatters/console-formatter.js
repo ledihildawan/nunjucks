@@ -91,7 +91,7 @@ const formatFix = (fixComment, fixCode) => [
   pc.dim('  ' + fixCode)
 ].join('\n');
 
-const formatStackTrace = (originalError) => {
+const formatStackTrace = (originalError, isProduction = false) => {
   if (!originalError?.stack) return '';
 
   const stackLines = originalError.stack.split('\n').slice(1);
@@ -100,15 +100,17 @@ const formatStackTrace = (originalError) => {
   const jsStackLines = stackLines.filter(line => line.trim().startsWith('at '));
   if (jsStackLines.length === 0) return '';
 
-  const userOnlyLines = jsStackLines.filter(line => {
-    const path = line.toLowerCase();
-    return !path.includes('nunjucks/nunjucks/src/') && !path.includes('nunjucks\\nunjucks\\src\\');
-  });
+  const linesToShow = isProduction
+    ? jsStackLines.filter(line => {
+        const path = line.toLowerCase();
+        return !path.includes('nunjucks/nunjucks/src/') && !path.includes('nunjucks\\nunjucks\\src\\');
+      })
+    : jsStackLines;
 
-  if (userOnlyLines.length === 0) return '';
+  if (linesToShow.length === 0) return '';
 
   const lines = ['\n', pc.bold('Stack Trace:')];
-  for (const line of userOnlyLines) {
+  for (const line of linesToShow) {
     lines.push(pc.dim('  ' + line.trim()));
   }
   return lines.join('\n');
@@ -154,7 +156,7 @@ export const toConsoleString = (state) => {
     parts.push(formatFix(classified.fixComment, classified.fixCode));
   }
 
-  const stackTrace = formatStackTrace(originalError);
+  const stackTrace = formatStackTrace(originalError, isProduction);
   if (stackTrace) {
     parts.push(stackTrace);
   }

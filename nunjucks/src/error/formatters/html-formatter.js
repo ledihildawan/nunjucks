@@ -68,7 +68,7 @@ const buildLocationInfo = (templateName, includeChain, line, col) => {
   return mainLoc;
 };
 
-const formatStackTraceHtml = (originalError) => {
+const formatStackTraceHtml = (originalError, isProduction = false) => {
   if (!originalError?.stack) return '';
 
   const stackLines = originalError.stack.split('\n').slice(1);
@@ -77,14 +77,16 @@ const formatStackTraceHtml = (originalError) => {
   const jsStackLines = stackLines.filter(line => line.trim().startsWith('at '));
   if (jsStackLines.length === 0) return '';
 
-  const userOnlyLines = jsStackLines.filter(line => {
-    const path = line.toLowerCase();
-    return !path.includes('nunjucks/nunjucks/src/') && !path.includes('nunjucks\\nunjucks\\src\\');
-  });
+  const linesToShow = isProduction
+    ? jsStackLines.filter(line => {
+        const path = line.toLowerCase();
+        return !path.includes('nunjucks/nunjucks/src/') && !path.includes('nunjucks\\nunjucks\\src\\');
+      })
+    : jsStackLines;
 
-  if (userOnlyLines.length === 0) return '';
+  if (linesToShow.length === 0) return '';
 
-  const rows = userOnlyLines.map(line => {
+  const rows = linesToShow.map(line => {
     const trimmed = escapeHtml(line.trim());
     return `<div class="stack-row"><span style="font-family:monospace;color:var(--color-code-text);">${trimmed}</span></div>`;
   }).join('');
@@ -224,7 +226,7 @@ ${CSS}
       </div>
     </div>
 
-    ${formatStackTraceHtml(originalError)}
+    ${formatStackTraceHtml(originalError, isProduction)}
   </div>
 
   <div style="padding:16px 32px;background:light-dark(oklch(96% 0.01 285), oklch(16% 0.01 285));border-top:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
