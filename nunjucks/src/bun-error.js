@@ -29,6 +29,55 @@ function stripAnsi(str) {
   return str.replace(/\x1b\[[0-9;]*m/g, '');
 }
 
+const ERROR_MAPPINGS = [
+  {
+    patterns: [/undefined.*falsey|Unable to call.*which is undefined|cannot call|attempted to output null or undefined value/i],
+    causes: [
+      'Helper or filter not registered with env.addGlobal()',
+      'Variable not passed in render context',
+      'Misspelled function or filter name'
+    ],
+    fixCode: "env.addGlobal('fn', callback)",
+    fixComment: '// Register the missing function'
+  },
+  {
+    patterns: [/is not a function|is not defined/i],
+    causes: [
+      'Calling a non-function value',
+      'Variable contains wrong data type'
+    ],
+    fixCode: "// Check variable type before calling\nconsole.log(typeof variable)",
+    fixComment: '// Verify the variable type'
+  },
+  {
+    patterns: [/Unexpected token|unexpected end|SyntaxError/i],
+    causes: [
+      'Missing closing tag ({{ endif }}, {% endfor %})',
+      'Mismatched quotes or brackets'
+    ],
+    fixCode: "{% raw %}{{ expression }}{% endraw %}",
+    fixComment: '// Use raw tag for literal content'
+  },
+  {
+    patterns: [/filter.*not found|invalid filter/i],
+    causes: [
+      'Filter not registered with env.addFilter()',
+      'Typo in filter name'
+    ],
+    fixCode: "env.addFilter('myFilter', fn)",
+    fixComment: '// Register the missing filter'
+  },
+  {
+    patterns: [/block.*not found|undefined block/i],
+    causes: [
+      'Extending template without block definition',
+      'Incorrect block name'
+    ],
+    fixCode: "{% block content %}{% endblock %}",
+    fixComment: '// Define the missing block'
+  }
+];
+
 export class NunjucksError extends Error {
   constructor(message, meta = {}) {
     super(message);
@@ -65,7 +114,7 @@ export class NunjucksError extends Error {
 
   toConsoleString() {
     if (this.isProduction) {
-      return `${pc.bgRed('[ERROR]')} Template Rendering Failed\n${pc.dim('Reference ID:')} ${pc.yellow(this.templateId || 'unknown')}`;
+      return `${pc.bgRed('[ERROR]')} Template Rendering Failed\n${pc.dim('Check logs for details')}`;
     }
 
     const raw = this.message;
@@ -76,7 +125,7 @@ export class NunjucksError extends Error {
       ? `${this.templateName} ${pc.dim('(included from ' + this.includeChain[0].parentTmpl + ':' + this.includeChain[0].parentLineno + (this.includeChain[0].parentColno ? ':' + this.includeChain[0].parentColno : '') + ')')}`
       : this.templateName;
 
-    const displayLine = this.line !== null && this.line !== undefined ? this.line + 1 : '?';
+    const displayLine = this.line !== null && this.line !== undefined ? this.line : '?';
     const displayCol = this.col !== null && this.col !== undefined ? this.col : '?';
 
     const traceLines = this.snippet ? this.snippet.split('\n').map(l => l.trim()) : [];
@@ -107,8 +156,25 @@ export class NunjucksError extends Error {
       }
     }
 
+    let mappedError = null;
+    const errorForMapping = this.originalError?.message || errorText;
+    for (const mapping of ERROR_MAPPINGS) {
+      for (const pattern of mapping.patterns) {
+        if (pattern.test(errorForMapping)) {
+          mappedError = mapping;
+          break;
+        }
+      }
+      if (mappedError) break;
+    }
+
+    if (mappedError) {
+      lines.push('');
+      lines.push(`${pc.bold('Suggested Fix:')} ${pc.cyan(mappedError.fixComment)}`);
+      lines.push(pc.dim('  ' + mappedError.fixCode.split('\n')[0]));
+    }
+
     lines.push('');
-    lines.push(`${pc.dim('Reference ID:')} ${(this.templateId || 'unknown').substring(0, 18)}`);
 
     return lines.join('\n');
   }
@@ -206,57 +272,8 @@ export class NunjucksError extends Error {
       }).join('');
     }
 
-    const errorMappings = [
-      {
-        patterns: [/undefined.*falsey|Unable to call.*which is undefined|cannot call/i],
-        causes: [
-          'Helper or filter not registered with env.addGlobal()',
-          'Variable not passed in render context',
-          'Misspelled function or filter name'
-        ],
-        fixCode: "env.addGlobal('fn', callback)",
-        fixComment: '// Register the missing function'
-      },
-      {
-        patterns: [/is not a function|is not defined/i],
-        causes: [
-          'Calling a non-function value',
-          'Variable contains wrong data type'
-        ],
-        fixCode: "// Check variable type before calling\nconsole.log(typeof variable)",
-        fixComment: '// Verify the variable type'
-      },
-      {
-        patterns: [/Unexpected token|unexpected end|SyntaxError/i],
-        causes: [
-          'Missing closing tag ({{ endif }}, {% endfor %})',
-          'Mismatched quotes or brackets'
-        ],
-        fixCode: "{% raw %}{{ expression }}{% endraw %}",
-        fixComment: '// Use raw tag for literal content'
-      },
-      {
-        patterns: [/filter.*not found|invalid filter/i],
-        causes: [
-          'Filter not registered with env.addFilter()',
-          'Typo in filter name'
-        ],
-        fixCode: "env.addFilter('myFilter', fn)",
-        fixComment: '// Register the missing filter'
-      },
-      {
-        patterns: [/block.*not found|undefined block/i],
-        causes: [
-          'Extending template without block definition',
-          'Incorrect block name'
-        ],
-        fixCode: "{% block content %}{% endblock %}",
-        fixComment: '// Define the missing block'
-      }
-    ];
-
     let mappedError = null;
-    for (const mapping of errorMappings) {
+    for (const mapping of ERROR_MAPPINGS) {
       for (const pattern of mapping.patterns) {
         if (pattern.test(errorText)) {
           mappedError = mapping;
@@ -552,7 +569,7 @@ export class ErrorFormatter {
           originalError: error
         };
         const tempError = new NunjucksError(error.message, errorMeta);
-        snippet = tempError.getSnippet(sourceLines, line + 1, 3);
+        snippet = tempError.getSnippet(sourceLines, line, 3);
       }
     } else if (line !== null && line !== undefined) {
       snippet = `>>> ${line}: [source not available]`;
