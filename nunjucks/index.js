@@ -9,8 +9,6 @@ import * as runtime from './src/runtime.js';
 import * as nodes from './src/nodes.js';
 import installJinjaCompat from './src/jinja-compat.js';
 import * as precompile from './src/precompile.js';
-import { BunSQLitePrecompiledLoader } from './src/bun-sqlite-loader.js';
-import { precompileToSQLite } from './src/bun-sqlite-precompile.js';
 
 let e;
 
@@ -21,23 +19,13 @@ export function configure(templatesPath, opts) {
     templatesPath = null;
   }
 
-  if (opts.mode === 'production' && !opts.sqlite) {
-    opts.sqlite = './templates.db';
-  }
-
   if (opts.mode === 'development') {
     opts.watch = opts.watch !== false;
   }
 
   let TemplateLoader;
 
-  if (opts.sqlite) {
-    if (BunSQLitePrecompiledLoader) {
-      TemplateLoader = new BunSQLitePrecompiledLoader(opts.sqlite);
-    } else {
-      throw new Error('bun:sqlite is not available. Use Bun runtime to enable SQLite loader.');
-    }
-  } else if (loaders.FileSystemLoader) {
+  if (loaders.FileSystemLoader) {
     TemplateLoader = new loaders.FileSystemLoader(templatesPath, {
       watch: opts.watch,
       noCache: opts.noCache
@@ -91,7 +79,6 @@ export { FileSystemLoader } from './src/loaders.js';
 export { NodeResolveLoader } from './src/loaders.js';
 export { PrecompiledLoader } from './src/loaders.js';
 export { WebLoader } from './src/web-loaders.js';
-export { BunSQLitePrecompiledLoader, precompileToSQLite } from './src/bun-sqlite-loader.js';
 export { NunjucksError, ErrorFormatter, createErrorFormatter } from './src/bun-error.js';
 export { compiler, parser, lexer, runtime, lib, nodes, installJinjaCompat };
 export { precompile, precompileString } from './src/precompile.js';
@@ -104,7 +91,6 @@ const nunjucks = {
   NodeResolveLoader: loaders.NodeResolveLoader,
   PrecompiledLoader: loaders.PrecompiledLoader,
   WebLoader: loaders.WebLoader,
-  BunSQLitePrecompiledLoader,
   compiler,
   parser,
   lexer,
@@ -118,8 +104,7 @@ const nunjucks = {
   render,
   renderString,
   precompile: precompile.precompile,
-  precompileString: precompile.precompileString,
-  precompileToSQLite
+  precompileString: precompile.precompileString
 };
 
 export default nunjucks;

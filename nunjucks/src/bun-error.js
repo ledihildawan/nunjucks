@@ -500,10 +500,7 @@ export class ErrorFormatter {
   }
 
   async formatError(error, templateName, includeChain = null, templatePath = null) {
-    this.init();
-
     const isProd = this.mode === 'production';
-    const hasTables = this.hasTables();
 
     const effectiveChain = includeChain || error._includeChain || null;
     const chainFromMessage = this.extractIncludeChainFromMessage(error.message);
@@ -516,8 +513,6 @@ export class ErrorFormatter {
     const extractedTemplateName = hasIncludeChain ? null : this.extractErrorTemplateName(error.message);
     const actualTemplateName = (hasIncludeChain ? error.path : null) || extractedTemplateName || templateName;
     const actualTemplatePath = templatePath || error.templatePath || null;
-    const templateInfo = hasTables ? this.getTemplateInfo(actualTemplateName) : null;
-    const templateId = templateInfo?.uuid || null;
 
     const lineFromError = error.lineno;
     const colFromError = error.colno;
@@ -527,21 +522,31 @@ export class ErrorFormatter {
     let col = colFromError || colFromMsg || colFromRawMsg;
     let snippet = null;
 
-    if (templateInfo?.source_content) {
-      const sourceLines = this.getSourceLines(templateInfo.source_content);
+    let sourceContent = null;
+    if (templatePath) {
+      try {
+        const fs = await import('fs');
+        sourceContent = fs.readFileSync(templatePath, 'utf-8');
+      } catch (e) {
+        sourceContent = null;
+      }
+    }
+
+    if (sourceContent) {
+      const sourceLines = this.getSourceLines(sourceContent);
       const nonEmptyLines = sourceLines.filter(l => l.trim().length > 0);
       if ((line === null || line === undefined || line === 0) && nonEmptyLines.length === 1) {
         line = 0;
       }
       if (line !== null && line !== undefined) {
-        const errorMeta = { 
-          templateName: actualTemplateName, 
-          templatePath: actualTemplatePath, 
-          templateId, 
-          line, 
-          col, 
-          snippet: null, 
-          includeChain: effectiveChain, 
+        const errorMeta = {
+          templateName: actualTemplateName,
+          templatePath: actualTemplatePath,
+          templateId: null,
+          line,
+          col,
+          snippet: null,
+          includeChain: effectiveChain,
           isProduction: false,
           errorName: error.name,
           originalError: error
@@ -556,7 +561,7 @@ export class ErrorFormatter {
     const meta = {
       templateName: actualTemplateName,
       templatePath: actualTemplatePath,
-      templateId,
+      templateId: null,
       line,
       col,
       snippet,
@@ -565,19 +570,6 @@ export class ErrorFormatter {
       errorName: error.name,
       originalError: error
     };
-
-    if (isProd && hasTables) {
-      this.logger.error({
-        type: 'NUNJUCKS_RENDER_ERROR',
-        templateName: actualTemplateName,
-        templatePath: actualTemplatePath,
-        templateId,
-        line,
-        col,
-        message: error.message,
-        includeChain: chainForDisplay
-      });
-    }
 
     return new NunjucksError(error.message, meta);
   }
