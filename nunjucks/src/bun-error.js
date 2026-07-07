@@ -205,7 +205,7 @@ export class NunjucksError extends Error {
     };
 
     const shortRefId = (this.templateId || 'unknown').substring(0, 8);
-    const displayLine = this.line !== null && this.line !== undefined ? this.line + 1 : '?';
+    const displayLine = this.line !== null && this.line !== undefined ? this.line : '?';
     const displayCol = this.col !== null && this.col !== undefined ? this.col : '?';
 
     if (this.isProduction) {
@@ -226,11 +226,23 @@ export class NunjucksError extends Error {
     const rawMessage = this.originalError?.message || this.message || '';
     const errorText = rawMessage.split('\n').find(l => l.match(/^  Error:/i))?.replace(/^  Error:\s*/i, '') || rawMessage.split('\n').pop()?.trim() || rawMessage;
 
-    const fnMatch = errorText.match(/call\s+[`'"]?([^`'"\s,]+)[`'"]?\s*,?\s*which/i);
-    const fnName = fnMatch ? fnMatch[1] : null;
-    const headerTitle = fnName
-      ? `Unable to call <code style="color: var(--color-error-text); background: var(--color-error-bg); padding: 2px 6px; border-radius: 4px; font-size: 20px;">${escapeHtml(fnName)}</code>`
-      : escapeHtml(errorText);
+    let mappedError = null;
+    for (const mapping of ERROR_MAPPINGS) {
+      for (const pattern of mapping.patterns) {
+        if (pattern.test(rawMessage)) {
+          mappedError = mapping;
+          break;
+        }
+      }
+      if (mappedError) break;
+    }
+
+    let headerTitle = escapeHtml(errorText);
+    if (mappedError) {
+      if (rawMessage.includes('attempted to output null or undefined value')) {
+        headerTitle = `Variable is undefined or null`;
+      }
+    }
 
     const stackLines = [];
     if (this.originalError?.stack) {
@@ -289,17 +301,6 @@ export class NunjucksError extends Error {
 
         return `<div class="code-line"><span class="line-number">&nbsp;</span><span style="color: #6B7280;">${escapeHtml(trimmed)}</span></div>`;
       }).join('');
-    }
-
-    let mappedError = null;
-    for (const mapping of ERROR_MAPPINGS) {
-      for (const pattern of mapping.patterns) {
-        if (pattern.test(errorText)) {
-          mappedError = mapping;
-          break;
-        }
-      }
-      if (mappedError) break;
     }
 
     const possibleCauses = mappedError ? mappedError.causes : [
