@@ -29,6 +29,8 @@ export class Environment extends EmitterObj {
     this.opts.trimBlocks = !!opts.trimBlocks;
     this.opts.lstripBlocks = !!opts.lstripBlocks;
 
+    this._renderingTemplates = new Set();
+
     this.loaders = [];
 
     if (!loaders) {
@@ -380,6 +382,15 @@ export class Template extends Obj {
       throw lib._prettifyError(this.path, this.env.opts.dev, e);
     }
 
+    if (this.env._renderingTemplates.has(this.path)) {
+      const err = new Error(`Circular include detected: "${this.path}" is already being rendered`);
+      err.path = this.path;
+      err.lineno = 0;
+      throw err;
+    }
+
+    this.env._renderingTemplates.add(this.path);
+
     const context = new Context(ctx || {}, this.blocks, this.env);
     const frame = parentFrame ? parentFrame.push(true) : new Frame();
     frame.topLevel = true;
@@ -445,6 +456,8 @@ export class Template extends Obj {
       }
 
       throw lib._prettifyError(e.path || this.path, this.env.opts.dev, e, e._includeChain || this._includeChain);
+    } finally {
+      this.env._renderingTemplates.delete(this.path);
     }
   }
 

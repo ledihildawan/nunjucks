@@ -103,6 +103,21 @@ export const classifyError = (rawMessage) => {
     };
   }
 
+  if (PATTERNS.CIRCULAR_INCLUDE.test(rawMessage)) {
+    const tmplMatch = rawMessage.match(/"([^"]+)"/);
+    const tmplName = tmplMatch ? tmplMatch[1] : null;
+    return {
+      category: 'circular_include',
+      undefinedName: tmplName,
+      causes: [
+        'Template includes itself (directly or indirectly)',
+        'Circular dependency between templates'
+      ],
+      fixCode: '{% include "template.html" %}',
+      fixComment: '// Remove circular include or use {% import %} for shared macros'
+    };
+  }
+
   if (PATTERNS.UNDEFINED_VALUE.test(rawMessage)) {
     return {
       category: 'undefined_value',
