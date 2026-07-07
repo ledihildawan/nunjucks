@@ -129,5 +129,19 @@ export const classifyError = (rawMessage) => {
     };
   }
 
+  if (PATTERNS.FILESYSTEM_ERROR.test(rawMessage)) {
+    return {
+      category: 'filesystem_error',
+      undefinedName: null,
+      causes: [
+        'Template path points to a directory instead of file',
+        'File or directory does not exist',
+        'Permission denied accessing file'
+      ],
+      fixCode: '{% include "template.html" %}',
+      fixComment: '// Verify template path is a valid file'
+    };
+  }
+
   return null;
 };
