@@ -1,3 +1,5 @@
+import { pipe } from '../lib/index.js';
+
 export class TemplateError extends Error {
   constructor(message, lineno, colno, info) {
     super(message);
@@ -38,39 +40,46 @@ export class TemplateError extends Error {
   }
 }
 
-export function _prettifyError({ path, withInternals, err, includeChain } = {}) {
-  if (!err.Update) {
-    err = new TemplateError(err, null, null, {
-      code: err.code,
-      subject: err.subject,
-      phase: err.phase
-    });
-  }
+export const createTemplateError = (message, lineno, colno, info) =>
+  new TemplateError(message, lineno, colno, info);
+
+const asTemplateError = (err) =>
+  err.Update ? err : createTemplateError(err, null, null, {
+    code: err.code,
+    subject: err.subject,
+    phase: err.phase
+  });
+
+const withLocation = ({ path, includeChain }) => (err) => {
   err.Update(path, includeChain);
   err.templateName = err.templateName || path;
-
   if (includeChain) {
     err._includeChain = includeChain;
   }
-
-  if (!withInternals) {
-    const old = err;
-    err = new Error(old.message);
-    err.name = old.name;
-    err.lineno = old.lineno;
-    err.colno = old.colno;
-    err.path = old.path || path;
-    err.templateName = old.templateName || path;
-    err.code = old.code;
-    err.subject = old.subject;
-    err.phase = old.phase;
-    if (old._includeChain) {
-      err._includeChain = old._includeChain;
-    }
-    if (includeChain) {
-      err._includeChain = includeChain;
-    }
-  }
-
   return err;
+};
+
+const stripInternals = (path) => (err) => {
+  const clean = new Error(err.message);
+  clean.name = err.name;
+  clean.lineno = err.lineno;
+  clean.colno = err.colno;
+  clean.path = err.path || path;
+  clean.templateName = err.templateName || path;
+  clean.code = err.code;
+  clean.subject = err.subject;
+  clean.phase = err.phase;
+  if (err._includeChain) {
+    clean._includeChain = err._includeChain;
+  }
+  return clean;
+};
+
+export function _prettifyError({ path, withInternals, err, includeChain } = {}) {
+  const steps = [
+    asTemplateError,
+    withLocation({ path, includeChain }),
+    ...(withInternals ? [] : [stripInternals(path)])
+  ];
+  return pipe(err, ...steps);
 }

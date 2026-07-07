@@ -1,4 +1,4 @@
-export { TemplateError, _prettifyError } from './template-error.js';
+export { TemplateError, createTemplateError, _prettifyError } from './template-error.js';
 export { classifyError } from './core/classify.js';
 export {
   extractUndefinedName,
