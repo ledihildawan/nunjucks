@@ -143,5 +143,20 @@ export const classifyError = (rawMessage) => {
     };
   }
 
+  if (PATTERNS.FILTER_ERROR.test(rawMessage)) {
+    const errorMsg = rawMessage.match(PATTERNS.FILTER_ERROR)?.[1] || rawMessage;
+    return {
+      category: 'filter_error',
+      undefinedName: null,
+      causes: [
+        'Filter threw an error during execution',
+        `Error: ${errorMsg}`,
+        'Check filter implementation'
+      ],
+      fixCode: "// Debug the filter\nconsole.log('Filter input:', input)",
+      fixComment: `// Filter error: ${errorMsg}`
+    };
+  }
+
   return null;
 };

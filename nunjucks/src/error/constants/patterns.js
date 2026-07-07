@@ -9,6 +9,7 @@ export const PATTERNS = {
   FILE_NOT_FOUND: /template not found: (.+)/i,
   INVALID_INCLUDE: /template names must be a string/i,
   FILESYSTEM_ERROR: /EISDIR|ENOENT|permission denied/i,
+  FILTER_ERROR: /^Error: (.+)/i,
   LINE_INFO: /\[Line (\d+)(?:, Column (\d+))?\]/i,
   INCLUDED_FROM: /\(included from ([^:)]+\.html)(?::\d+)?(?::\d+)?\)/,
   INCLUDED_FROM_WITH_LINE: /\(included from ([^:]+\.html):(\d+)(?::(\d+))?\)/,
@@ -16,5 +17,4 @@ export const PATTERNS = {
   ERROR_PREFIX: /^  Error:/i,
   CALL_MATCH: /Unable to call `([^`]+)`/,
   OUTPUT_MATCH: /attempted to output '([^']+)'/i,
-  FILTER_NOT_FOUND: /filter not found: (\w+)/i,
 };
