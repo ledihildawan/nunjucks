@@ -36,12 +36,21 @@ export const renderContextHtml = (ctx) => {
 
 const normalizePath = (p) => p.replace(/^file:\/\/+/, '');
 
+const shortenPath = (path, maxLen = 50) => {
+  if (path.length <= maxLen) return path;
+  const parts = path.split(/[\\/]/);
+  const filename = parts[parts.length - 1];
+  const firstDir = parts.slice(0, 2).join('\\');
+  return `${firstDir}\\...\\${filename}`;
+};
+
 const linkifyFrame = (frame, ide) => {
   let s = escapeHtml(frame);
   s = s.replace(/\(([^()]+):(\d+):(\d+)\)$/, (match, p, l, c) => {
     if (/^native$/.test(p.trim()) || /^&lt;/.test(p) || !/[\\/]/.test(p)) return match;
     const norm = normalizePath(p);
-    return `(<a href="${resolveIdeLink(ide, norm, l, c)}" class="stack-link">${norm}:${l}:${c}</a>)`;
+    const display = shortenPath(norm);
+    return `(<a href="${resolveIdeLink(ide, norm, l, c)}" class="stack-link">${display}:${l}:${c}</a>)`;
   });
   return s;
 };
@@ -65,7 +74,7 @@ export const formatStackTraceHtml = (originalError, isProduction = false, ide = 
   if (linesToShow.length === 0) return '';
 
   const rows = linesToShow.map(line => {
-    return `<div class="stack-row"><code style="font-family:monospace;color:var(--color-code-text);">${linkifyFrame(line.trim(), ide)}</code></div>`;
+    return `<div class="stack-row"><code class="stack-code">${linkifyFrame(line.trim(), ide)}</code></div>`;
   }).join('');
 
   return `

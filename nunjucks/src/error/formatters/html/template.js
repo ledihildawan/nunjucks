@@ -4,6 +4,14 @@ import { formatCodeTraceHtml, renderContextHtml, formatStackTraceHtml } from './
 import { CSS, CSS_VARS, PRODUCTION_BODY } from './styles.js';
 import { resolveIdeLink, getIdeMeta } from '../../constants/ide-links.js';
 
+const shortenPath = (path, maxLen = 60) => {
+  if (path.length <= maxLen) return path;
+  const parts = path.split(/[\\/]/);
+  const filename = parts[parts.length - 1];
+  const firstDir = parts.slice(0, 2).join('\\');
+  return `${firstDir}\\...\\${filename}`;
+};
+
 const document = (title, body) => `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,7 +20,7 @@ const document = (title, body) => `<!DOCTYPE html>
 <meta name="color-scheme" content="light dark">
 <title>${title}</title>
 <style>
-body{margin:0;background:var(--color-bg-page);color:var(--color-text-primary);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif}
+body{margin:0;background:var(--color-bg-page);color:var(--color-text-primary);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;padding:20px}
 ${CSS_VARS}
 ${CSS}
 </style>
@@ -48,23 +56,21 @@ export const toHtmlString = (state) => {
   const fixCode = classified.fixCode;
   const fixComment = classified.fixComment;
   const codeBadge = code
-    ? `<span style="margin-left:8px;padding:2px 8px;border-radius:4px;background:var(--color-error-bg);color:var(--color-error-text);font-size:10px;letter-spacing:0.05em;">${escapeHtml(code)}</span>`
+    ? `<span class="badge badge-error">${escapeHtml(code)}</span>`
     : '';
   const phaseBadge = phase
-    ? `<span style="margin-left:4px;padding:2px 8px;border-radius:4px;background:var(--color-code-highlight-bg);color:var(--color-code-text);font-size:10px;text-transform:lowercase;">${escapeHtml(phase)}</span>`
+    ? `<span class="badge badge-code">${escapeHtml(phase)}</span>`
     : '';
-  const metaBits = [];
-  if (errorId) metaBits.push(`ID: ${escapeHtml(errorId)}`);
-  if (timestamp) metaBits.push(escapeHtml(timestamp));
-  const metaStrip = metaBits.length ? `${metaBits.join(' · ')} · ` : '';
-
   const ideMeta = getIdeMeta(state.ide || 'vscode');
   const ideLabel = `Open in ${ideMeta.label}`;
+  const locDisplay = templatePath
+    ? shortenPath(escapeHtml(templatePath) + ':' + getDisplayLine() + ':' + getDisplayCol())
+    : locationInfo;
 
   const body = `
-<section class="error-wrapper" aria-labelledby="err-title">
+<main class="error-wrapper" aria-labelledby="err-title">
   <header class="error-header">
-    <p class="error-header-title">
+    <div class="error-header-title">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="12" y1="8" x2="12" y2="12"></line>
@@ -72,15 +78,15 @@ export const toHtmlString = (state) => {
       </svg>
       Template Rendering Error
       ${codeBadge}${phaseBadge}
-    </p>
+    </div>
     <h1 id="err-title" class="error-title">${headerTitle}</h1>
     <p class="error-location">The error occurred in ${templatePath
-      ? `<a href="${resolveIdeLink(state.ide, escapeHtml(templatePath), getDisplayLine(), getDisplayCol())}" class="loc-link" style="font-weight:600;color:var(--color-text-primary);">${locationInfo}</a>`
-      : `<span style="font-weight:600;color:var(--color-text-primary);">${locationInfo}</span>`
+      ? `<a href="${resolveIdeLink(state.ide, escapeHtml(templatePath), getDisplayLine(), getDisplayCol())}" class="loc-link" style="font-weight:600;color:var(--color-text-primary);">${locDisplay}</a>`
+      : `<span style="font-weight:600;color:var(--color-text-primary);">${locDisplay}</span>`
     }</p>
   </header>
 
-  <div style="padding: 32px;">
+  <div class="error-body">
     <section aria-labelledby="h-source" style="margin-bottom: 32px;">
       <h2 id="h-source" class="text-label">Source Trace</h2>
       <div class="code-block" role="group" aria-label="Template source around the error">
@@ -108,14 +114,14 @@ export const toHtmlString = (state) => {
 
   <footer class="error-footer">
     <p class="meta">
-      ${metaStrip}Environment: <span style="font-weight:600;color:var(--color-text-primary);">${isProduction ? 'Production' : 'Development'}</span>
+      ${errorId ? `ID: ${escapeHtml(errorId)}<br>\n      ` : ''}${timestamp ? `${escapeHtml(timestamp)} · ` : ''}Environment: <span style="font-weight:600;color:var(--color-text-primary);">${isProduction ? 'Production' : 'Development'}</span>
     </p>
     <a href="${templatePath ? resolveIdeLink(state.ide, escapeHtml(templatePath), getDisplayLine(), getDisplayCol()) : '#'}" class="btn btn-solid" ${!templatePath ? 'aria-disabled="true" style="opacity:0.5;pointer-events:none;"' : ''}>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${ideMeta.icon}</svg>
       ${ideLabel}
     </a>
   </footer>
-</section>`;
+</main>`;
 
   return document(`Error: ${getDisplayMessage(state)}`, body);
 };
