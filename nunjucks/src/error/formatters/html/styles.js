@@ -195,15 +195,43 @@ export const CSS = `
 
   .stack-container {
     font-size: 0.75rem; border: 1px solid var(--color-border);
-    border-radius: 0.5rem; overflow: hidden;
+    border-radius: 0.5rem;
+    display: flex; flex-direction: column;
     @media (width >= 40rem) { font-size: 0.8125rem; }
+
+    &.is-expanded {
+      max-block-size: 40rem;
+      .stack-content {
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-border) transparent;
+      }
+    }
 
     .stack-row {
       display: flex; padding: 0.625rem 0.75rem;
       border-block-end: 1px solid var(--color-border);
       transition: background-color 0.15s ease; overflow-wrap: anywhere;
       &:hover { background-color: var(--color-bg-alt); }
-      &:last-child { border-block-end: none; }
+      &:last-of-type { border-block-end: none; }
+      &.is-collapsed { display: none; }
+    }
+
+    .stack-toggle-btn {
+      display: flex; align-items: center; justify-content: center;
+      inline-size: 100%; padding: 0.625rem 0.75rem;
+      background: var(--color-bg-alt); color: var(--color-text-secondary);
+      border: none; border-block-start: 1px solid var(--color-border);
+      font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75rem; font-weight: 600; cursor: pointer;
+      transition: background-color 0.15s, color 0.15s;
+      position: sticky;
+      bottom: 0;
+      @media (width >= 40rem) { font-size: 0.8125rem; }
+      &:hover {
+        background-color: var(--color-code-highlight-bg);
+        color: var(--color-text-primary);
+      }
     }
   }
 

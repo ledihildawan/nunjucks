@@ -73,14 +73,22 @@ export const formatStackTraceHtml = (originalError, isProduction = false, ide = 
 
   if (linesToShow.length === 0) return '';
 
-  const rows = linesToShow.map(line => {
-    return `<div class="stack-row"><code class="stack-code">${linkifyFrame(line.trim(), ide)}</code></div>`;
+  const VISIBLE_COUNT = 5;
+  const totalHidden = Math.max(0, linesToShow.length - VISIBLE_COUNT);
+
+  const rows = linesToShow.map((line, index) => {
+    const isCollapsed = index >= VISIBLE_COUNT;
+    return `<div class="stack-row${isCollapsed ? ' is-collapsed' : ''}"><code class="stack-code">${linkifyFrame(line.trim(), ide)}</code></div>`;
   }).join('');
+
+  const toggleBtn = totalHidden > 0
+    ? `<button class="stack-toggle-btn" id="btn-toggle-stack" onclick="toggleStack()">Show ${totalHidden} more lines...</button>`
+    : '';
 
   return `
     <section class="stack-trace" style="margin-bottom:32px;" aria-labelledby="h-stack">
       <h2 id="h-stack" class="text-label">Stack Trace</h2>
-      <div class="stack-container">${rows}</div>
+      <div class="stack-container" id="stack-container"><div class="stack-content">${rows}</div>${toggleBtn}</div>
     </section>
   `;
 };

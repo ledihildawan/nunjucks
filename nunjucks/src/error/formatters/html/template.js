@@ -12,6 +12,11 @@ const shortenPath = (path, maxLen = 60) => {
   return `${firstDir}\\...\\${filename}`;
 };
 
+const TOGGLE_SCRIPT = `
+<script>
+function toggleStack(){const e=document.getElementById("stack-container"),t=e.querySelectorAll(".stack-row"),n=document.getElementById("btn-toggle-stack"),o=e.classList.contains("is-expanded");e.classList.toggle("is-expanded"),t.forEach((e,t)=>{t>=5&&(o?e.classList.add("is-collapsed"):e.classList.remove("is-collapsed"))}),o?n.textContent="Show "+(t.length-5)+" more lines...":n.textContent="Collapse stack trace"}
+</script>`;
+
 const document = (title, body) => `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,6 +31,7 @@ ${CSS}
 </head>
 <body>
 ${body}
+${TOGGLE_SCRIPT}
 </body>
 </html>`;
 
