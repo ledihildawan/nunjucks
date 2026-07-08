@@ -19,10 +19,13 @@ const noopTmplSrc = {
   }
 };
 
+const VERSION = '3.2.4';
+
 export class Environment extends EmitterObj {
   init(loaders, opts) {
     opts = this.opts = opts || {};
     this.opts.dev = !!opts.dev;
+    this.opts.version = opts.version || VERSION;
 
     this.opts.autoescape = opts.autoescape != null ? opts.autoescape : true;
 
@@ -295,7 +298,7 @@ export class Environment extends EmitterObj {
 
   getErrorFormatter() {
     if (!this._errorFormatter) {
-      this._errorFormatter = createErrorFormatter({ ide: this.opts.ide });
+      this._errorFormatter = createErrorFormatter({ ide: this.opts.ide, version: this.opts.version, dev: this.opts.dev });
     }
     return this._errorFormatter;
   }

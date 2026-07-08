@@ -10,12 +10,18 @@ import { mergeLine, mergeCol, getDisplayLine, getDisplayCol } from '../core/line
 
 const getSourceLines = (sourceContent) => (sourceContent ? sourceContent.split('\n') : null);
 
-let _idCounter = 0;
-const generateErrorId = () => {
-  if (typeof globalThis !== 'undefined' && globalThis.crypto?.randomUUID) {
-    return globalThis.crypto.randomUUID();
+const generateFingerprint = (code, templateName, line, col) => {
+  const str = [code, templateName, line, col].filter(Boolean).join(':');
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0;
   }
-  return `err_${Date.now().toString(36)}_${(_idCounter++).toString(36)}`;
+  return Math.abs(hash).toString(36).padStart(6, '0').slice(0, 8);
+};
+
+const formatTimestamp = (iso) => {
+  if (!iso) return '';
+  return iso.replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
 };
 
 const SENSITIVE_KEY = /pass|secret|token|api[-_]?key|auth|credit|ssn|cookie|private/i;
@@ -78,7 +84,8 @@ export const createErrorData = (error, options = {}) => {
     line: lineOverride,
     col: colOverride,
     renderContext = null,
-    ide = 'vscode'
+    ide = 'vscode',
+    version = '3.2.4'
   } = options;
 
   const message = error?.message || '';
@@ -101,17 +108,21 @@ export const createErrorData = (error, options = {}) => {
   const displayLine = getDisplayLine(line);
   const displayCol = getDisplayCol(col);
   const sourceLine = extractSourceLine(sourceContent, line);
+  const resolvedTemplateName = templateName || extractErrorTemplateName(message) || 'unknown';
+  const fingerprint = generateFingerprint(error?.code, resolvedTemplateName, line, col);
 
   return {
-    errorId: generateErrorId(),
-    timestamp: new Date().toISOString(),
+    errorId: fingerprint,
+    fingerprint,
+    timestamp: formatTimestamp(new Date().toISOString()),
+    version,
     code: error?.code ?? null,
     subject: error?.subject ?? null,
     phase: error?.phase ?? null,
     message,
     errorName: error?.name || 'Error',
     originalError: error,
-    templateName: templateName || extractErrorTemplateName(message) || 'unknown',
+    templateName: resolvedTemplateName,
     templatePath: templatePath || null,
     line,
     col,

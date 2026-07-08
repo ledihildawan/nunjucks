@@ -35,8 +35,10 @@ export const createNunjucksError = (message, errorData) => {
   return {
     name: 'NunjucksError',
     message,
-    errorId: errorData.errorId,
+    errorId: errorData.fingerprint,
+    fingerprint: errorData.fingerprint,
     timestamp: errorData.timestamp,
+    version: errorData.version,
     code: errorData.code,
     subject: errorData.subject,
     phase: errorData.phase,
@@ -63,11 +65,11 @@ export const createNunjucksError = (message, errorData) => {
   };
 };
 
-export const createErrorFormatter = ({ fs = null, autoDetect = true, ide = 'vscode' } = {}) => {
+export const createErrorFormatter = ({ fs = null, autoDetect = true, ide = 'vscode', version = '3.2.4', dev = true } = {}) => {
   return {
     async formatError(error, templateName, includeChain = null, templatePath = null, renderContext = null) {
       const fsImpl = await resolveFs(fs);
-      const isProduction = !autoDetect ? false : (error.lineno == null);
+      const isProduction = dev === false ? true : (autoDetect ? error.lineno == null : false);
 
       const effectiveChain = includeChain ?? error._includeChain ?? null;
       const chainFromMessage = extractIncludeChainFromMessage(error.message);
@@ -102,7 +104,8 @@ export const createErrorFormatter = ({ fs = null, autoDetect = true, ide = 'vsco
         line: lineOverride,
         col: colOverride,
         renderContext,
-        ide
+        ide,
+        version
       });
 
       return createNunjucksError(error.message, errorData);

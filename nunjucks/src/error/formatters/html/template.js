@@ -1,7 +1,7 @@
 import { formatLocation, getDisplayMessage } from '../../state/display.js';
 import { escapeHtml, renderInlineMarkdown, highlightHtml, highlightJs } from './highlight.js';
 import { formatCodeTraceHtml, renderContextHtml, formatStackTraceHtml } from './sections.js';
-import { CSS, PRODUCTION_BODY } from './styles.js';
+import { CSS } from './styles.js';
 import { resolveIdeLink, getIdeMeta } from '../../constants/ide-links.js';
 
 const shortenPath = (path, maxLen = 60) => {
@@ -29,10 +29,23 @@ ${body}
 </body>
 </html>`;
 
+const buildProductionBody = (state) => {
+  const ref = state.fingerprint ? `<p style="font-size:0.75rem;color:var(--color-text-secondary);margin:0;opacity:0.7;">Ref: #${escapeHtml(state.fingerprint)}${state.timestamp ? ' · ' + escapeHtml(state.timestamp) : ''}</p>` : '';
+  return `
+<main style="font-family:system-ui,-apple-system,sans-serif;max-width:32.5rem;margin:3rem auto;padding:2rem;background:var(--color-bg-panel);border:1px solid var(--color-border);border-radius:0.75rem;box-shadow:0 1.5rem 3rem -0.75rem rgba(0,0,0,0.15);text-align:center;">
+  <div style="margin-bottom:1.25rem;">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="var(--color-error-border)" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+  </div>
+  <h1 style="font-size:1.375rem;font-weight:700;color:var(--color-text-primary);margin:0 0 0.5rem;">Rendering Interrupted</h1>
+  <p style="font-size:0.875rem;color:var(--color-text-secondary);margin:0 0 0.25rem;">An error occurred during template rendering.</p>
+  <p style="font-size:0.75rem;color:var(--color-text-secondary);margin:0 0 1.25rem;opacity:0.8;">500 · Internal Server Error</p>
+  <a href="" style="display:inline-block;padding:0.6em 1.5em;border-radius:0.375rem;font-size:0.8125rem;font-weight:600;text-decoration:none;background:var(--color-btn-bg);color:var(--color-btn-text);margin-bottom:1.25rem;">Try Again</a>
+  ${ref}
+</main>`;
+};
+
 export const toHtmlString = (state) => {
   const {
-    errorId,
-    timestamp,
     code,
     phase,
     templatePath,
@@ -46,7 +59,7 @@ export const toHtmlString = (state) => {
   } = state;
 
   if (isProduction) {
-    return document('Rendering Interrupted', PRODUCTION_BODY);
+    return document('Rendering Interrupted', buildProductionBody(state));
   }
 
   const headerTitle = escapeHtml(getDisplayMessage(state));
@@ -77,6 +90,7 @@ export const toHtmlString = (state) => {
       </svg>
       Template Rendering Error
       ${codeBadge}${phaseBadge}
+      <span class="badge badge-code" style="margin-inline-start:auto;border:1px solid var(--color-border);">DEV</span>
     </div>
     <h1 id="err-title" class="error-title">${headerTitle}</h1>
     <p class="error-location">The error occurred in ${templatePath
@@ -113,12 +127,14 @@ export const toHtmlString = (state) => {
 
   <footer class="error-footer">
     <p class="meta">
-      ${errorId ? `ID: ${escapeHtml(errorId)}<br>\n      ` : ''}${timestamp ? `${escapeHtml(timestamp)} · ` : ''}Environment: <span style="font-weight:600;color:var(--color-text-primary);">${isProduction ? 'Production' : 'Development'}</span>
+      Nunjucks ${state.version || '3.2.4'}${state.fingerprint ? ` · #${escapeHtml(state.fingerprint)}` : ''}${state.timestamp ? ` · ${escapeHtml(state.timestamp)}` : ''}
     </p>
-    <a href="${templatePath ? resolveIdeLink(state.ide, escapeHtml(templatePath), getDisplayLine(), getDisplayCol()) : '#'}" class="btn btn-solid" ${!templatePath ? 'aria-disabled="true" style="opacity:0.5;pointer-events:none;"' : ''}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${ideMeta.icon}</svg>
-      ${ideLabel}
-    </a>
+    <div style="display:flex;align-items:center;">
+      <a href="${templatePath ? resolveIdeLink(state.ide, escapeHtml(templatePath), getDisplayLine(), getDisplayCol()) : '#'}" class="btn btn-solid" ${!templatePath ? 'aria-disabled="true" style="opacity:0.5;pointer-events:none;"' : ''}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${ideMeta.icon}</svg>
+        ${ideLabel}
+      </a>
+    </div>
   </footer>
 </main>`;
 

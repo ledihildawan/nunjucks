@@ -109,8 +109,6 @@ const formatStackTrace = (originalError, isProduction = false) => {
 
 export const toConsoleString = (state) => {
   const {
-    errorId,
-    timestamp,
     code,
     phase,
     snippet,
@@ -122,7 +120,12 @@ export const toConsoleString = (state) => {
 
   if (isProduction) {
     const badge = code ? ` [${code}]` : '';
-    return `${pc.bgRed('[ERROR]')} Template Rendering Failed${badge}${errorId ? ` [${errorId}]` : ''}\n${pc.dim('Check logs for details')}`;
+    const fp = state.fingerprint ? ` [#${state.fingerprint}]` : '';
+    const metaBits = [];
+    if (state.version) metaBits.push(`Nunjucks ${state.version}`);
+    if (state.timestamp) metaBits.push(state.timestamp);
+    const metaLine = metaBits.length ? pc.dim('\n' + metaBits.join(' · ')) : '';
+    return `${pc.bgRed('[ERROR]')} Template Rendering Failed${badge}${fp}${metaLine}\n${pc.dim('Check logs for details')}`;
   }
 
   const locationFile = formatLocation(state);
@@ -153,10 +156,10 @@ export const toConsoleString = (state) => {
   }
 
   const footerBits = [];
-  if (errorId) footerBits.push(`ID: ${errorId}`);
-  if (timestamp) footerBits.push(timestamp);
-  footerBits.push(`Environment: ${isProduction ? 'Production' : 'Development'}`);
-  parts.push(pc.dim('\n' + footerBits.join(' · ')));
+  footerBits.push(`Nunjucks ${state.version || '3.2.4'}`);
+  if (state.fingerprint) footerBits.push(`#${state.fingerprint}`);
+  if (state.timestamp) footerBits.push(state.timestamp);
+  parts.push(pc.dim('\n' + footerBits.join(' · ') + ' [DEV]'));
 
   parts.push('');
 
