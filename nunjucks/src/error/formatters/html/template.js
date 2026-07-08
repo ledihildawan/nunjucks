@@ -14,7 +14,43 @@ const shortenPath = (path, maxLen = 60) => {
 
 const TOGGLE_SCRIPT = `
 <script>
-function toggleStack(){const e=document.getElementById("stack-container"),t=e.querySelectorAll(".stack-row"),n=document.getElementById("btn-toggle-stack"),o=e.classList.contains("is-expanded");e.classList.toggle("is-expanded"),t.forEach((e,t)=>{t>=5&&(o?e.classList.add("is-collapsed"):e.classList.remove("is-collapsed"))}),o?n.textContent="Show "+(t.length-5)+" more lines...":n.textContent="Collapse stack trace"}
+(() => {
+  const content = document.querySelector('#stack-container .stack-content');
+  if (!content) return;
+
+  const allRows = Array.from(content.querySelectorAll('.stack-row'));
+  const btn = document.getElementById('btn-toggle-stack');
+  const VISIBLE_COUNT = 5;
+  const totalHidden = allRows.length - VISIBLE_COUNT;
+
+  if (totalHidden <= 0) {
+    btn?.remove();
+    return;
+  }
+
+  const hiddenRows = allRows.slice(VISIBLE_COUNT);
+  hiddenRows.forEach((row) => { row.style.display = 'none'; });
+
+  window.toggleStack = () => {
+    const isExpanded = content.classList.contains('is-expanded');
+
+    if (isExpanded) {
+      content.style.removeProperty('max-height');
+
+      content.addEventListener('transitionend', () => {
+        hiddenRows.forEach((row) => { row.style.display = 'none'; });
+      }, { once: true });
+
+      content.classList.remove('is-expanded');
+      btn.textContent = 'Show ' + totalHidden + ' more lines...';
+    } else {
+      hiddenRows.forEach((row) => { row.style.display = 'flex'; });
+      content.style.setProperty('max-height', '40rem');
+      content.classList.add('is-expanded');
+      btn.textContent = 'Collapse stack trace';
+    }
+  };
+})();
 </script>`;
 
 const document = (title, body) => `<!DOCTYPE html>

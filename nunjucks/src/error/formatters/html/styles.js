@@ -4,6 +4,7 @@ export const CSS = `
 @layer theme {
   :root {
     color-scheme: light dark;
+    interpolate-size: allow-keywords;
 
     --color-bg-page: light-dark(oklch(97% 0.01 285), oklch(12% 0.01 285));
     --color-bg-panel: light-dark(oklch(100% 0 0), oklch(18% 0.01 285));
@@ -193,47 +194,51 @@ export const CSS = `
     dd { margin: 0; color: var(--color-code-text); overflow-wrap: anywhere; }
   }
 
-  .stack-container {
-    font-size: 0.75rem; border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
-    display: flex; flex-direction: column;
-    @media (width >= 40rem) { font-size: 0.8125rem; }
-
-    &.is-expanded {
-      max-block-size: 40rem;
-      .stack-content {
-        overflow-y: auto;
-        scrollbar-width: thin;
-        scrollbar-color: var(--color-border) transparent;
-      }
-    }
-
-    .stack-row {
-      display: flex; padding: 0.625rem 0.75rem;
-      border-block-end: 1px solid var(--color-border);
-      transition: background-color 0.15s ease; overflow-wrap: anywhere;
-      &:hover { background-color: var(--color-bg-alt); }
-      &:last-of-type { border-block-end: none; }
-      &.is-collapsed { display: none; }
-    }
-
-    .stack-toggle-btn {
-      display: flex; align-items: center; justify-content: center;
-      inline-size: 100%; padding: 0.625rem 0.75rem;
-      background: var(--color-bg-alt); color: var(--color-text-secondary);
-      border: none; border-block-start: 1px solid var(--color-border);
-      font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
-      font-size: 0.75rem; font-weight: 600; cursor: pointer;
-      transition: background-color 0.15s, color 0.15s;
-      position: sticky;
-      bottom: 0;
+    .stack-container {
+      font-size: 0.75rem; border: 1px solid var(--color-border);
+      border-radius: 0.5rem; overflow: hidden;
       @media (width >= 40rem) { font-size: 0.8125rem; }
-      &:hover {
-        background-color: var(--color-code-highlight-bg);
-        color: var(--color-text-primary);
+
+      .stack-content {
+        display: flex; flex-direction: column;
+        max-height: 205px;
+        overflow: hidden;
+        transition: max-height 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        mask-image: linear-gradient(to bottom, transparent 0px, var(--color-code-bg) 20px, var(--color-code-bg) calc(100% - 20px), transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0px, var(--color-code-bg) 20px, var(--color-code-bg) calc(100% - 20px), transparent 100%);
+
+        &.is-expanded {
+          max-height: 40rem;
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: var(--color-border) transparent;
+        }
+      }
+
+      .stack-row {
+        display: flex; padding: 0.625rem 0.75rem;
+        border-block-end: 1px solid var(--color-border);
+        border-block-start: 1px solid var(--color-border);
+        transition: background-color 0.15s ease;
+        &:hover { background-color: var(--color-bg-alt); }
+        &:first-child { border-block-start: none; }
+        &:last-child { border-block-end: none; }
+      }
+
+      .stack-toggle-btn {
+        display: flex; align-items: center; justify-content: center;
+        inline-size: 100%; padding: 0.625rem 0.75rem;
+        background: var(--color-bg-alt); color: var(--color-text-secondary);
+        border: none; border-block-start: 1px solid var(--color-border);
+        font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+        font-size: 0.75rem; font-weight: 600; cursor: pointer;
+        transition: background-color 0.15s, color 0.15s;
+        &:hover {
+          background-color: var(--color-code-highlight-bg);
+          color: var(--color-text-primary);
+        }
       }
     }
-  }
 
   .stack-code {
     font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;

@@ -36,12 +36,38 @@ export const renderContextHtml = (ctx) => {
 
 const normalizePath = (p) => p.replace(/^file:\/\/+/, '');
 
-const shortenPath = (path, maxLen = 50) => {
-  if (path.length <= maxLen) return path;
-  const parts = path.split(/[\\/]/);
-  const filename = parts[parts.length - 1];
-  const firstDir = parts.slice(0, 2).join('\\');
-  return `${firstDir}\\...\\${filename}`;
+const PROJECT_ROOT = process.cwd();
+
+const shortenPath = (path) => {
+  const normalizedPath = path.replace(/\\/g, '/');
+  const normalizedRoot = PROJECT_ROOT.replace(/\\/g, '/');
+
+  const parts = normalizedPath.split('/').filter(Boolean);
+  const rootDirName = normalizedRoot.split('/').pop();
+
+  // Find 'users' or 'home' index
+  const privateIdx = parts.findIndex(p => 
+    p.toLowerCase() === 'users' || p.toLowerCase() === 'home'
+  );
+
+  if (privateIdx !== -1) {
+    // Find project root directory name in path (last part of PROJECT_ROOT)
+    const projectIdx = parts.findIndex(p => p === rootDirName);
+
+    if (projectIdx !== -1) {
+      // Show: drive/Users/.../[from project root]
+      const before = parts.slice(0, privateIdx + 1);
+      const after = parts.slice(projectIdx);
+      return [...before, '...', ...after].join('/');
+    }
+
+    // No project root found, just show Users/.../rest
+    const before = parts.slice(0, privateIdx + 1);
+    const after = parts.slice(privateIdx + 2);
+    return [...before, '...', ...after].join('/');
+  }
+
+  return normalizedPath;
 };
 
 const linkifyFrame = (frame, ide) => {
@@ -76,9 +102,9 @@ export const formatStackTraceHtml = (originalError, isProduction = false, ide = 
   const VISIBLE_COUNT = 5;
   const totalHidden = Math.max(0, linesToShow.length - VISIBLE_COUNT);
 
-  const rows = linesToShow.map((line, index) => {
-    const isCollapsed = index >= VISIBLE_COUNT;
-    return `<div class="stack-row${isCollapsed ? ' is-collapsed' : ''}"><code class="stack-code">${linkifyFrame(line.trim(), ide)}</code></div>`;
+  const allRows = linesToShow.map((line, index) => {
+    const isHidden = index >= VISIBLE_COUNT;
+    return `<div class="stack-row${isHidden ? ' is-collapsed' : ''}"><code class="stack-code">${linkifyFrame(line.trim(), ide)}</code></div>`;
   }).join('');
 
   const toggleBtn = totalHidden > 0
@@ -88,7 +114,10 @@ export const formatStackTraceHtml = (originalError, isProduction = false, ide = 
   return `
     <section class="stack-trace" style="margin-bottom:32px;" aria-labelledby="h-stack">
       <h2 id="h-stack" class="text-label">Stack Trace</h2>
-      <div class="stack-container" id="stack-container"><div class="stack-content">${rows}</div>${toggleBtn}</div>
+      <div class="stack-container" id="stack-container">
+        <div class="stack-content">${allRows}</div>
+        ${toggleBtn}
+      </div>
     </section>
   `;
 };
