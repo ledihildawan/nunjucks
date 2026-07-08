@@ -1,5 +1,5 @@
 import { formatLocation, getDisplayMessage } from '../../state/display.js';
-import { escapeHtml, renderInlineMarkdown, highlightHtml } from './highlight.js';
+import { escapeHtml, renderInlineMarkdown, highlightHtml, highlightJs } from './highlight.js';
 import { formatCodeTraceHtml, renderContextHtml, formatStackTraceHtml } from './sections.js';
 import { CSS, CSS_VARS, PRODUCTION_BODY } from './styles.js';
 import { resolveIdeLink, getIdeMeta } from '../../constants/ide-links.js';
@@ -97,7 +97,7 @@ export const toHtmlString = (state) => {
       </section>
       <section aria-labelledby="h-fix">
         <h2 id="h-fix" class="text-label">Suggested Fix</h2>
-        <pre class="fix-block"><code>${fixComment ? `<span class="syntax-comment">${escapeHtml(fixComment)}</span>\n` : ''}${highlightHtml(fixCode)}</code></pre>
+        <pre class="fix-block"><code>${fixComment ? `<span class="syntax-comment">${escapeHtml(fixComment)}</span>\n` : ''}${/\{\{|{%|{#/.test(fixCode) ? highlightHtml(fixCode) : highlightJs(fixCode)}</code></pre>
       </section>
     </div>
 
