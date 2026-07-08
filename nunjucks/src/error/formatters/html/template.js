@@ -1,7 +1,7 @@
 import { formatLocation, getDisplayMessage } from '../../state/display.js';
 import { escapeHtml, renderInlineMarkdown, highlightHtml, highlightJs } from './highlight.js';
 import { formatCodeTraceHtml, renderContextHtml, formatStackTraceHtml } from './sections.js';
-import { CSS, CSS_VARS, PRODUCTION_BODY } from './styles.js';
+import { CSS, PRODUCTION_BODY } from './styles.js';
 import { resolveIdeLink, getIdeMeta } from '../../constants/ide-links.js';
 
 const shortenPath = (path, maxLen = 60) => {
@@ -20,8 +20,7 @@ const document = (title, body) => `<!DOCTYPE html>
 <meta name="color-scheme" content="light dark">
 <title>${title}</title>
 <style>
-body{margin:0;background:var(--color-bg-page);color:var(--color-text-primary);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;padding:20px}
-${CSS_VARS}
+body{margin:0;min-block-size:100dvh;padding:1rem;background:var(--color-bg-page);color:var(--color-text-primary);font-family:system-ui,-apple-system,sans-serif}
 ${CSS}
 </style>
 </head>
@@ -87,7 +86,7 @@ export const toHtmlString = (state) => {
   </header>
 
   <div class="error-body">
-    <section aria-labelledby="h-source" style="margin-bottom: 32px;">
+    <section aria-labelledby="h-source" style="margin-block-end: 2rem;">
       <h2 id="h-source" class="text-label">Source Trace</h2>
       <div class="code-block" role="group" aria-label="Template source around the error">
         ${formatCodeTraceHtml(snippet)}
