@@ -74,10 +74,10 @@ export const renderString = (src, ctx) => getEnv().renderString(src, ctx);
 
 export { Environment, Template };
 export { Loader };
-export { FileSystemLoader } from './src/loaders/node/index.js';
-export { NodeResolveLoader } from './src/loaders/node/index.js';
+export { FileSystemLoader } from './src/loaders/file-system-loader.js';
+export { NodeResolveLoader } from './src/loaders/node-resolve-loader.js';
 export { PrecompiledLoader } from './src/loaders/precompiled-loader.js';
-export { WebLoader } from './src/loaders/web/index.js';
+export { WebLoader } from './src/loaders/web-loader.js';
 export { compiler, parser, lexer, runtime, nodes, installJinjaCompat };
 export { precompile, precompileString } from './src/precompile.js';
 export { getConfig, renderError, renderErrorString, Environment as ErrorEnvironment } from './src/error/index.js';

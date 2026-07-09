@@ -1,7 +1,7 @@
 import { prettifyError, createErrorFormatter } from '../error/index.js';
 import { compile } from '../compiler.js';
-import { FileSystemLoader } from '../loaders/node/index.js';
-import { WebLoader } from '../loaders/web/index.js';
+import { FileSystemLoader } from '../loaders/file-system-loader.js';
+import { WebLoader } from '../loaders/web-loader.js';
 import { PrecompiledLoader } from '../loaders/precompiled-loader.js';
 import { EmitterObj } from '../object.js';
 import { Frame } from '../runtime/index.js';
