@@ -1,4 +1,4 @@
-import Loader from './loader.js';
+import Loader from './base-loader.js';
 
 export class PrecompiledLoader extends Loader {
   constructor(compiledTemplates) {

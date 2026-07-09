@@ -2,9 +2,9 @@ import { expect, describe, test, beforeEach } from 'bun:test';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Environment } from '../nunjucks/src/environment.js';
-import { WebLoader } from '../nunjucks/src/web-loaders.js';
-import { FileSystemLoader } from '../nunjucks/src/node-loaders.js';
-import { NodeResolveLoader } from '../nunjucks/src/node-loaders.js';
+import { WebLoader } from '../nunjucks/src/loaders/web/index.js';
+import { FileSystemLoader } from '../nunjucks/src/loaders/node/index.js';
+import { NodeResolveLoader } from '../nunjucks/src/loaders/node/index.js';
 
 var templatesPath = 'tests/templates';
 

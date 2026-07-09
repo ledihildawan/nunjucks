@@ -1,5 +1,4 @@
-import Loader from './loader.js';
-export {PrecompiledLoader} from './precompiled-loader.js';
+import Loader from '../base-loader.js';
 
 export class WebLoader extends Loader {
   constructor(baseURL, opts) {

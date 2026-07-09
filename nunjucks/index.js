@@ -1,7 +1,7 @@
 import * as lib from './src/lib/index.js';
 import { Environment, Template } from './src/environment.js';
-import Loader from './src/loader.js';
-import * as loaders from './src/loaders.js';
+import Loader from './src/loaders/base-loader.js';
+import * as loaders from './src/loaders/index.js';
 import * as compiler from './src/compiler.js';
 import * as parser from './src/parser.js';
 import * as lexer from './src/lexer.js';
@@ -74,10 +74,10 @@ export const renderString = (src, ctx) => getEnv().renderString(src, ctx);
 
 export { Environment, Template };
 export { Loader };
-export { FileSystemLoader } from './src/loaders.js';
-export { NodeResolveLoader } from './src/loaders.js';
-export { PrecompiledLoader } from './src/loaders.js';
-export { WebLoader } from './src/web-loaders.js';
+export { FileSystemLoader } from './src/loaders/node/index.js';
+export { NodeResolveLoader } from './src/loaders/node/index.js';
+export { PrecompiledLoader } from './src/loaders/precompiled-loader.js';
+export { WebLoader } from './src/loaders/web/index.js';
 export { compiler, parser, lexer, runtime, lib, nodes, installJinjaCompat };
 export { precompile, precompileString } from './src/precompile.js';
 export { getConfig, renderError, renderErrorString, Environment as ErrorEnvironment } from './src/error/index.js';
