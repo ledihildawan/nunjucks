@@ -3,9 +3,52 @@ import { compile } from './compiler.js';
 import { prettifyError } from './error/index.js';
 import { createMappedError } from './source-map.js';
 import { Context } from './context.js';
-import { Frame } from './runtime/index.js';
-import * as globalRuntime from './runtime/index.js';
+import {
+  Frame,
+  SafeString,
+  copySafeness,
+  markSafe,
+  makeMacro,
+  makeKeywordArgs,
+  memberLookup,
+  optionalMemberLookup,
+  slice,
+  nullishCoalesce,
+  suppressValue,
+  awaitValue,
+  ensureDefined,
+  callWrap,
+  contextOrFrameLookup,
+  handleError,
+  fromIterator,
+  inOperator,
+  isArray,
+  keys,
+} from './runtime/index.js';
 import { Obj } from './object.js';
+
+const globalRuntime = {
+  Frame,
+  SafeString,
+  copySafeness,
+  markSafe,
+  makeMacro,
+  makeKeywordArgs,
+  memberLookup,
+  optionalMemberLookup,
+  slice,
+  nullishCoalesce,
+  suppressValue,
+  awaitValue,
+  ensureDefined,
+  callWrap,
+  contextOrFrameLookup,
+  handleError,
+  fromIterator,
+  inOperator,
+  isArray,
+  keys,
+};
 
 const getLoaderSourceMap = (env, errorPath, currentPath) => {
   if (errorPath === currentPath || !env?.loaders) return null;

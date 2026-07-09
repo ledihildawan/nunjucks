@@ -1,9 +1,85 @@
 import { isArray, entries } from 'remeda';
-import * as stringFilters from '../filters/string-filters.js';
-import * as arrayFilters from '../filters/array-filters.js';
-import * as objectFilters from '../filters/object-filters.js';
-import * as mathFilters from '../filters/math-filters.js';
-import * as tests from './built-in-tests.js';
+import {
+  normalize,
+  capitalize,
+  center,
+  default_,
+  dump,
+  escape,
+  safe,
+  forceescape,
+  indent,
+  join,
+  lower,
+  nl2br,
+  replace,
+  string,
+  striptags,
+  title,
+  trim,
+  truncate,
+  upper,
+  urlencode,
+  urlize,
+  wordcount,
+} from '../filters/string-filters.js';
+import {
+  batch,
+  first,
+  last,
+  lengthFilter,
+  list,
+  random,
+  reverse,
+  slice,
+  sum,
+  sort,
+  reject,
+  select,
+  rejectattr,
+  selectattr,
+} from '../filters/array-filters.js';
+import {
+  dictsort,
+  groupby,
+} from '../filters/object-filters.js';
+import {
+  abs,
+  isNaN,
+  round,
+  float,
+  intFilter,
+} from '../filters/math-filters.js';
+import {
+  callable,
+  defined,
+  divisibleby,
+  escaped,
+  equalto,
+  eq,
+  sameas,
+  even,
+  falsy,
+  ge,
+  greaterthan,
+  gt,
+  le,
+  lessthan,
+  lt,
+  lower as lowerTest,
+  ne,
+  nullTest,
+  null as nullAlias,
+  number,
+  odd,
+  string as stringTest,
+  truthy,
+  undefinedTest,
+  undefined as undefinedAlias,
+  upper as upperTest,
+  iterable,
+  mapping,
+} from './built-in-tests.js';
 import globals from '../globals.js';
 
 export const createBuiltIns = () => ({
@@ -24,17 +100,84 @@ export const normalizeLoaders = (loaders, FileSystemLoader, WebLoader) => {
   return isArray(loaders) ? loaders : [loaders];
 };
 
-// All filters with their public names (handling aliases like default -> default_, length -> lengthFilter, int -> intFilter)
 const allFilters = {
-  ...stringFilters,
-  ...arrayFilters,
-  ...objectFilters,
-  ...mathFilters,
-  default: stringFilters.default_,
-  length: arrayFilters.lengthFilter,
-  int: mathFilters.intFilter,
-  d: stringFilters.default_,
-  e: stringFilters.escape,
+  normalize,
+  capitalize,
+  center,
+  default_,
+  dump,
+  escape,
+  safe,
+  forceescape,
+  indent,
+  join,
+  lower,
+  nl2br,
+  replace,
+  string,
+  striptags,
+  title,
+  trim,
+  truncate,
+  upper,
+  urlencode,
+  urlize,
+  wordcount,
+  batch,
+  first,
+  last,
+  list,
+  random,
+  reverse,
+  slice,
+  sum,
+  sort,
+  reject,
+  select,
+  rejectattr,
+  selectattr,
+  dictsort,
+  groupby,
+  abs,
+  isNaN,
+  round,
+  float,
+  default: default_,
+  length: lengthFilter,
+  int: intFilter,
+  d: default_,
+  e: escape,
+};
+
+const allTests = {
+  callable,
+  defined,
+  divisibleby,
+  escaped,
+  equalto,
+  eq,
+  sameas,
+  even,
+  falsy,
+  ge,
+  greaterthan,
+  gt,
+  le,
+  lessthan,
+  lt,
+  lower: lowerTest,
+  ne,
+  nullTest,
+  null: nullAlias,
+  number,
+  odd,
+  string: stringTest,
+  truthy,
+  undefinedTest,
+  undefined: undefinedAlias,
+  upper: upperTest,
+  iterable,
+  mapping,
 };
 
 export const registerBuiltIns = (env) => {
@@ -46,5 +189,5 @@ export const registerBuiltIns = (env) => {
   env.extensionsList = [];
 
   entries(allFilters).forEach(([name, filter]) => env.addFilter(name, filter));
-  entries(tests).forEach(([name, test]) => env.addTest(name, test));
+  entries(allTests).forEach(([name, test]) => env.addTest(name, test));
 };
