@@ -1,4 +1,4 @@
-import { Literal, Symbol as ASTSymbol, Group, Array, Dict, NodeList, Pair } from '../../nodes.js';
+import { Literal, AstSymbol, Group, Array, Dict, NodeList, Pair } from '../../nodes.js';
 
 export const compileLiteral = (ctx, node) => {
   if (typeof node.value === 'string') {
@@ -48,7 +48,7 @@ export const compilePair = (ctx, node, frame) => {
   let key = node.key;
   const val = node.value;
 
-  if (key instanceof ASTSymbol) {
+  if (key instanceof AstSymbol) {
     key = new Literal(key.lineno, key.colno, key.value);
   } else if (!(key instanceof Literal &&
     typeof key.value === 'string')) {

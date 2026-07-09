@@ -1,5 +1,5 @@
 import * as lexer from '../../lexer/index.js';
-import { Set as ASTSet, Capture } from '../../nodes.js';
+import { Set as AstSet, Capture } from '../../nodes.js';
 import { peekToken, skip, skipValue, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseSet = (ctx) => {
@@ -8,7 +8,7 @@ export const parseSet = (ctx) => {
     fail(ctx, 'parseSet: expected set', tag.lineno, tag.colno);
   }
 
-  const node = new ASTSet(tag.lineno, tag.colno, []);
+  const node = new AstSet(tag.lineno, tag.colno, []);
 
   let target;
   while ((target = ctx.parsePrimary())) {

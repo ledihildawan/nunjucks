@@ -67,7 +67,7 @@ export class NodeList extends Node {
 
 export const Root = NodeList.extend('Root');
 export const Literal = Value.extend('Literal');
-export const Symbol = Value.extend('Symbol');
+export const AstSymbol = Value.extend('Symbol');
 export const Group = NodeList.extend('Group');
 export const ArrayNode = NodeList.extend('Array');
 export const Array = ArrayNode;

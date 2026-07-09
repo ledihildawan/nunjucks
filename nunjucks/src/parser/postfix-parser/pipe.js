@@ -1,5 +1,5 @@
 import * as lexer from '../../lexer/index.js';
-import { Symbol as ASTSymbol, Pipe, NodeList } from '../../nodes.js';
+import { AstSymbol, Pipe, NodeList } from '../../nodes.js';
 import { peekToken, skip, skipValue, expect } from '../cursor.js';
 
 export const parseFilterName = (ctx) => {
@@ -10,7 +10,7 @@ export const parseFilterName = (ctx) => {
     name += '.' + expect(ctx, lexer.TOKEN_SYMBOL).value;
   }
 
-  return new ASTSymbol(tok.lineno, tok.colno, name);
+  return new AstSymbol(tok.lineno, tok.colno, name);
 };
 
 export const parseFilterArgs = (ctx, node) => {

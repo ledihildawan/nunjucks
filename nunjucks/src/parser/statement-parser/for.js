@@ -4,7 +4,7 @@ import {
   For,
   AsyncEach,
   AsyncAll,
-  Symbol as ASTSymbol,
+  AstSymbol,
 } from '../../nodes.js';
 import { peekToken, skip, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
@@ -28,7 +28,7 @@ export const parseFor = (ctx) => {
 
   node.name = ctx.parsePrimary();
 
-  if (!(node.name instanceof ASTSymbol)) {
+  if (!(node.name instanceof AstSymbol)) {
     fail(ctx, 'parseFor: variable name expected for loop');
   }
 

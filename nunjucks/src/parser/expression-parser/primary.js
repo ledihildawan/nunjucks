@@ -1,5 +1,5 @@
 import * as lexer from '../../lexer/index.js';
-import { Literal, Symbol as ASTSymbol } from '../../nodes.js';
+import { Literal, AstSymbol } from '../../nodes.js';
 import { nextToken, pushToken, fail } from '../cursor.js';
 
 export const parsePrimary = (ctx, noPostfix) => {
@@ -34,7 +34,7 @@ export const parsePrimary = (ctx, noPostfix) => {
   if (val !== undefined) {
     node = new Literal(tok.lineno, tok.colno, val);
   } else if (tok.type === lexer.TOKEN_SYMBOL) {
-    node = new ASTSymbol(tok.lineno, tok.colno, tok.value);
+    node = new AstSymbol(tok.lineno, tok.colno, tok.value);
   } else {
     pushToken(ctx, tok);
     node = ctx.parseAggregate();

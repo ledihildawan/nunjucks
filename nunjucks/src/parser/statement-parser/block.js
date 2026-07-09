@@ -1,4 +1,4 @@
-import { Block, Symbol as ASTSymbol } from '../../nodes.js';
+import { Block, AstSymbol } from '../../nodes.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseBlock = (ctx) => {
@@ -10,7 +10,7 @@ export const parseBlock = (ctx) => {
   const node = new Block(tag.lineno, tag.colno);
 
   node.name = ctx.parsePrimary();
-  if (!(node.name instanceof ASTSymbol)) {
+  if (!(node.name instanceof AstSymbol)) {
     fail(ctx, 'parseBlock: variable name expected',
       tag.lineno,
       tag.colno);

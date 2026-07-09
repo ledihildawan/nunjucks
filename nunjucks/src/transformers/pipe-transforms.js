@@ -4,10 +4,10 @@ import {
   Pipe,
   PipeAsync,
   CallExtensionAsync,
-  Symbol as ASTSymbol,
+  AstSymbol,
   For,
   If,
-  Set as ASTSet,
+  Set as AstSet,
   Output,
 } from '../nodes.js';
 import { depthWalk } from './walk.js';
@@ -23,7 +23,7 @@ const _liftPipes = (node, asyncPipes, prop, gensym) => {
     } else if ((descNode instanceof Pipe &&
       asyncPipes.indexOf(descNode.name.value) !== -1) ||
       descNode instanceof CallExtensionAsync) {
-      symbol = new ASTSymbol(
+      symbol = new AstSymbol(
         descNode.lineno,
         descNode.colno,
         gensym()
@@ -57,7 +57,7 @@ export const liftPipes = (ast, asyncPipes) => {
   return depthWalk(ast, (node) => {
     if (node instanceof Output) {
       return _liftPipes(node, asyncPipes, null, gensym);
-    } else if (node instanceof ASTSet) {
+    } else if (node instanceof AstSet) {
       return _liftPipes(node, asyncPipes, 'value', gensym);
     } else if (node instanceof For) {
       return _liftPipes(node, asyncPipes, 'arr', gensym);

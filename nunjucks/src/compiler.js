@@ -2,7 +2,7 @@ import { parse } from './parser.js';
 import { transform } from './transformers/transformer.js';
 import {
   Literal,
-  Symbol as ASTSymbol,
+  AstSymbol,
   Group,
   Array,
   Dict,
@@ -168,7 +168,7 @@ export class Compiler extends Obj {
     this.assertType(
       node,
       Literal,
-      ASTSymbol,
+      AstSymbol,
       Group,
       Array,
       Dict,

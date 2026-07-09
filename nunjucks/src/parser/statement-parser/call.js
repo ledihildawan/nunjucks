@@ -4,7 +4,7 @@ import {
   KeywordArgs,
   Output,
   Caller,
-  Symbol as ASTSymbol,
+  AstSymbol,
 } from '../../nodes.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
@@ -21,7 +21,7 @@ export const parseCall = (ctx) => {
   const body = ctx.parseUntilBlocks('endcall');
   advanceAfterBlockEnd(ctx);
 
-  const callerName = new ASTSymbol(callTok.lineno,
+  const callerName = new AstSymbol(callTok.lineno,
     callTok.colno,
     'caller');
   const callerNode = new Caller(callTok.lineno,

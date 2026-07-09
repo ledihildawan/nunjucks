@@ -1,7 +1,7 @@
 import {
   Block,
   FunCall,
-  Symbol as ASTSymbol,
+  AstSymbol,
   Super,
 } from '../nodes.js';
 import { walk } from './walk.js';
@@ -20,14 +20,14 @@ export const liftSuper = (ast) => {
     blockNode.body = walk(blockNode.body, (node) => {
       if (node instanceof FunCall && node.name.value === 'super') {
         hasSuper = true;
-        return new ASTSymbol(node.lineno, node.colno, symbol);
+        return new AstSymbol(node.lineno, node.colno, symbol);
       }
       return node;
     });
 
     if (hasSuper) {
       blockNode.body.children.unshift(new Super(
-        0, 0, blockNode.name, new ASTSymbol(0, 0, symbol)
+        0, 0, blockNode.name, new AstSymbol(0, 0, symbol)
       ));
     }
   });

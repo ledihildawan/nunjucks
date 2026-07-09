@@ -1,4 +1,4 @@
-import { Symbol as ASTSymbol, Dict } from '../../nodes.js';
+import { AstSymbol, Dict } from '../../nodes.js';
 import { Frame } from '../../runtime/index.js';
 
 const compileMacro = (ctx, node, frame) => {
@@ -11,7 +11,7 @@ const compileMacro = (ctx, node, frame) => {
     if (i === node.args.children.length - 1 && arg instanceof Dict) {
       kwargs = arg;
     } else {
-      ctx.assertType(arg, ASTSymbol);
+      ctx.assertType(arg, AstSymbol);
       args.push(arg);
     }
   });
