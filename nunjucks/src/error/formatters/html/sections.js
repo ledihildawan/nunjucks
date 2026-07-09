@@ -1,5 +1,8 @@
 import { escapeHtml, highlightHtml } from './highlight.js';
 import { resolveIdeLink } from '../../constants/ide-links.js';
+import { shortenPath } from '../../utils/path-utils.js';
+
+const normalizePath = (p) => p.replace(/^file:\/\/+/, '');
 
 export const formatCodeTraceHtml = (snippet) => {
   if (!snippet) return '<div class="code-line"><span class="line-number">&nbsp;</span><span class="code-content">Source not available</span></div>';
@@ -29,38 +32,6 @@ export const renderContextHtml = (ctx) => {
 <h2 id="h-ctx" class="text-label">Render Context</h2>
 <div class="ctx-tree" id="ctx-tree"></div>
 </section>${dataScript}`;
-};
-
-const normalizePath = (p) => p.replace(/^file:\/\/+/, '');
-
-const PROJECT_ROOT = process.cwd();
-
-const shortenPath = (path) => {
-  const normalizedPath = path.replace(/\\/g, '/');
-  const normalizedRoot = PROJECT_ROOT.replace(/\\/g, '/');
-
-  const parts = normalizedPath.split('/').filter(Boolean);
-  const rootDirName = normalizedRoot.split('/').pop();
-
-  const privateIdx = parts.findIndex(p =>
-    p.toLowerCase() === 'users' || p.toLowerCase() === 'home'
-  );
-
-  if (privateIdx !== -1) {
-    const projectIdx = parts.findIndex(p => p === rootDirName);
-
-    if (projectIdx !== -1) {
-      const before = parts.slice(0, privateIdx + 1);
-      const after = parts.slice(projectIdx);
-      return [...before, '...', ...after].join('/');
-    }
-
-    const before = parts.slice(0, privateIdx + 1);
-    const after = parts.slice(privateIdx + 2);
-    return [...before, '...', ...after].join('/');
-  }
-
-  return normalizedPath;
 };
 
 const linkifyFrame = (frame, ide) => {

@@ -1,6 +1,8 @@
 import { expect, describe, test } from 'bun:test';
-import * as lib from '../nunjucks/src/lib/index.js';
+import { isArray, isPlainObject } from 'remeda';
 import * as lexer from '../nunjucks/src/lexer.js';
+
+const isObject = isPlainObject;
 
 function _hasTokens(ws, tokens, types) {
   var i;
@@ -16,10 +18,10 @@ function _hasTokens(ws, tokens, types) {
       }
     }
 
-    if (lib.isArray(type)) {
+    if (isArray(type)) {
       expect(tok.type).toBe(type[0]);
       expect(tok.value).toBe(type[1]);
-    } else if (lib.isObject(type)) {
+    } else if (isObject(type)) {
       expect(tok.type).toBe(type.type);
       if (type.value != null) {
         expect(tok.value).toBe(type.value);
@@ -37,11 +39,11 @@ function _hasTokens(ws, tokens, types) {
 }
 
 function hasTokens(tokens /* , types */) {
-  return _hasTokens(false, tokens, lib.toArray(arguments).slice(1));
+  return _hasTokens(false, tokens, Array.from(arguments).slice(1));
 }
 
 function hasTokensWithWS(tokens /* , types */) {
-  return _hasTokens(true, tokens, lib.toArray(arguments).slice(1));
+  return _hasTokens(true, tokens, Array.from(arguments).slice(1));
 }
 
 describe('lexer', function() {

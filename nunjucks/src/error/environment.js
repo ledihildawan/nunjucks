@@ -99,8 +99,6 @@ const buildErrorData = async (error, templateName, options, opts, fs) => {
 const createErrorResult = (error, errorData, csp) => ({
   name: 'NunjucksError',
   message: error.message,
-  errorId: errorData.fingerprint,
-  fingerprint: errorData.fingerprint,
   timestamp: errorData.timestamp,
   version: errorData.version,
   code: errorData.code,

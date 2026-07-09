@@ -1,20 +1,27 @@
+import { pipe } from 'remeda';
 import { existsSync, readFileSync } from 'node:fs';
 import { normalize, resolve } from 'node:path';
 import { watch } from 'fs';
 import Loader from '../base-loader.js';
 
-const normalizeSearchPaths = (searchPaths) => {
-  if (!searchPaths) return ['.'];
-  return (Array.isArray(searchPaths) ? searchPaths : [searchPaths]).map(normalize);
+const normalizeSearchPaths = (searchPaths) =>
+  !searchPaths ? ['.'] : (Array.isArray(searchPaths) ? searchPaths : [searchPaths]).map(normalize);
+
+const isPathWithinBase = (basePath) => (filePath) => filePath.indexOf(basePath) === 0;
+
+const resolveFromSearchPath = (name) => (searchPath) => {
+  const basePath = resolve(searchPath);
+  const fullPath = resolve(searchPath, name);
+  return { basePath, fullPath };
 };
 
-const isPathWithinBase = (filePath, basePath) => filePath.indexOf(basePath) === 0;
+const existsAndWithinBase = (basePath) => ({ fullPath }) =>
+  isPathWithinBase(basePath)(fullPath) && existsSync(fullPath);
 
 const findFileInSearchPaths = (searchPaths, name) => {
   for (const searchPath of searchPaths) {
-    const basePath = resolve(searchPath);
-    const fullPath = resolve(searchPath, name);
-    if (isPathWithinBase(fullPath, basePath) && existsSync(fullPath)) {
+    const { basePath, fullPath } = resolveFromSearchPath(name)(searchPath);
+    if (existsAndWithinBase(basePath)({ fullPath })) {
       return fullPath;
     }
   }
@@ -26,18 +33,36 @@ const readFileSource = (fullpath) => ({
   path: fullpath
 });
 
-const normalizeFilePath = (filePath) => normalize(resolve(filePath));
+const normalizeFilePath = (path) => resolve(normalize(path));
 
 const isFileChangeEvent = (eventType) => eventType === 'change' || eventType === 'rename';
+
+const createFileCacheInvalidator = (cache) => (normalizedPath) => {
+  for (const [key, tmpl] of Object.entries(cache)) {
+    if (tmpl?.path && normalizeFilePath(tmpl.path) === normalizedPath) {
+      cache[key] = null;
+    }
+  }
+};
+
+const createWatchHandler = (loader, filePath) => (eventType, filename) => {
+  if (!isFileChangeEvent(eventType)) return;
+
+  const name = filename || filePath;
+  loader.cache = loader.cache || {};
+  createFileCacheInvalidator(loader.cache)(normalizeFilePath(filePath));
+  loader.emit('update', name, filePath);
+
+  if (eventType === 'rename') loader.unwatchFile(filePath);
+};
 
 export class FileSystemLoader extends Loader {
   constructor(searchPaths, opts = {}) {
     super();
     if (typeof opts === 'boolean') {
       console.warn(
-        '[nunjucks] Warning: you passed a boolean as the second ' +
-        'argument to FileSystemLoader, which is deprecated. ' +
-        'Use an options object instead. ' +
+        '[nunjucks] Warning: boolean options are deprecated. ' +
+        'Use an options object. ' +
         'See http://mozilla.github.io/nunjucks/api.html#filesystemloader'
       );
     }
@@ -65,27 +90,8 @@ export class FileSystemLoader extends Loader {
   watchFile(filePath) {
     if (this.watchedFiles.has(filePath)) return;
 
-    const normalizedPath = normalizeFilePath(filePath);
-    const watcher = watch(filePath, (eventType, filename) => {
-      if (!isFileChangeEvent(eventType)) return;
-
-      const name = filename || filePath;
-      this.cache = this.cache || {};
-      this.invalidateCacheForPath(normalizedPath);
-      this.emit('update', name, filePath);
-
-      if (eventType === 'rename') this.unwatchFile(filePath);
-    });
-
+    const watcher = watch(filePath, createWatchHandler(this, filePath));
     this.watchedFiles.set(filePath, watcher);
-  }
-
-  invalidateCacheForPath(normalizedPath) {
-    for (const [key, tmpl] of Object.entries(this.cache)) {
-      if (tmpl?.path && normalizeFilePath(tmpl.path) === normalizedPath) {
-        this.cache[key] = null;
-      }
-    }
   }
 
   unwatchFile(filePath) {

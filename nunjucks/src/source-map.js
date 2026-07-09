@@ -58,3 +58,34 @@ export function applySourceMapToError(error, lineno, sourceMapData, templateName
 
   return error;
 }
+
+export function createMappedError(error, sourceMapData, lineno, colno, path) {
+  if (!sourceMapData || !Array.isArray(sourceMapData)) {
+    return null;
+  }
+
+  const sm = SourceMap.fromArray(path, sourceMapData);
+  const pos = sm.getOriginalPosition(lineno);
+
+  const errColno = error.colno || 0;
+  const finalColno = (pos.col > 0) ? pos.col : errColno;
+  const templateLocation = `${path}:${pos.line}:${finalColno}`;
+
+  let msg = `(${path})`;
+  if (pos.line && finalColno > 0) {
+    msg += ` [Line ${pos.line}, Column ${finalColno}]`;
+  } else if (pos.line) {
+    msg += ` [Line ${pos.line}]`;
+  }
+  msg += '\n  ' + (error.message || '');
+
+  const newError = new Error(msg);
+  newError.name = error.name || 'Template render error';
+  newError.lineno = pos.line;
+  newError.colno = finalColno;
+  newError._includeChain = error._includeChain;
+  const renderLine = 'at ' + (error.getterName || 'root') + ' (' + templateLocation + ')';
+  newError.stack = newError.message + '\n    ' + renderLine + '\n    at Environment.render';
+
+  return newError;
+}

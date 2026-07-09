@@ -1,4 +1,4 @@
-import { hasOwnProp } from './types.js';
+const hasOwnProp = (obj, k) => Object.hasOwn(obj, k);
 
 export function _prepareAttributeParts(attr) {
   if (!attr) {

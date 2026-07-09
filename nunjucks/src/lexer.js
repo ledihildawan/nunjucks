@@ -1,4 +1,3 @@
-import * as lib from './lib/index.js';
 import { TemplateError } from './error/index.js';
 
 let whitespaceChars = ' \n\t\r\u00A0';
@@ -165,12 +164,12 @@ export class Tokenizer {
         let curComplex = cur + this.current();
         let type;
 
-        if (lib.indexOf(complexOps, curComplex) !== -1) {
+        if (complexOps.indexOf(curComplex) !== -1) {
           this.forward();
           cur = curComplex;
 
           // See if this is a strict equality/inequality comparator
-          if (lib.indexOf(complexOps, curComplex + this.current()) !== -1) {
+          if (complexOps.indexOf(curComplex + this.current()) !== -1) {
             cur = curComplex + this.current();
             this.forward();
           }

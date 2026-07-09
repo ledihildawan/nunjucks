@@ -4,14 +4,7 @@ import { formatCodeTraceHtml, renderContextHtml, formatStackTraceHtml } from './
 import { CSS } from './styles.js';
 import { TOGGLE_SCRIPT } from './script.js';
 import { resolveIdeLink, getIdeMeta } from '../../constants/ide-links.js';
-
-const shortenPath = (path, maxLen = 60) => {
-  if (path.length <= maxLen) return path;
-  const parts = path.split(/[\\/]/);
-  const filename = parts[parts.length - 1];
-  const firstDir = parts.slice(0, 2).join('\\');
-  return `${firstDir}\\...\\${filename}`;
-};
+import { shortenPath } from '../../utils/path-utils.js';
 
 const document = (title, body, scripts = '', csp = null) => {
   const styleNonce = csp?.nonce ? ` nonce="${csp.nonce}"` : '';
@@ -35,7 +28,7 @@ ${scripts}
 };
 
 const buildProductionBody = (state) => {
-  const ref = state.fingerprint ? `<p class="prod-ref">Ref: #${escapeHtml(state.fingerprint)}${state.timestamp ? ' · ' + escapeHtml(state.timestamp) : ''}</p>` : '';
+  const ref = state.timestamp ? `<p class="prod-ref">${escapeHtml(state.timestamp)}</p>` : '';
   return `
 <main class="prod-main">
   <div class="prod-icon">
@@ -132,7 +125,7 @@ export const toHtmlString = (state) => {
 
   <footer class="error-footer">
     <p class="meta">
-      Nunjucks ${state.version || '3.2.4'}${state.fingerprint ? ` · #${escapeHtml(state.fingerprint)}` : ''}${state.timestamp ? ` · ${escapeHtml(state.timestamp)}` : ''}
+      Nunjucks ${state.version || '3.2.4'}${state.timestamp ? ` · ${escapeHtml(state.timestamp)}` : ''}
     </p>
     <div class="error-footer-actions">
       <a href="${templatePath ? resolveIdeLink(state.ide, escapeHtml(templatePath), getDisplayLine(), getDisplayCol()) : '#'}" class="btn btn-solid ${!templatePath ? 'btn-disabled' : ''}" ${!templatePath ? 'aria-disabled="true"' : ''}>

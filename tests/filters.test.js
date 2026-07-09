@@ -1,6 +1,5 @@
 import { expect, describe, test } from 'bun:test';
 import * as util from './util.js';
-import * as lib from '../nunjucks/src/lib/index.js';
 import * as r from '../nunjucks/src/runtime.js';
 
 var render = util.render;
@@ -35,28 +34,28 @@ describe('filter', function() {
 
   test('center', async function() {
     await equal('{{ "fooo" |> center }}',
-      lib.repeat(' ', 38) + 'fooo' +
-      lib.repeat(' ', 38));
+      ' '.repeat(38) + 'fooo' +
+      ' '.repeat(38));
 
     await equal('{{ str |> center }}',
       {str: r.markSafe('fooo')},
-      lib.repeat(' ', 38) + 'fooo' + lib.repeat(' ', 38));
+      ' '.repeat(38) + 'fooo' + ' '.repeat(38));
 
     await equal('{{ undefined |> center }}',
-      lib.repeat(' ', 40) + '' +
-      lib.repeat(' ', 40));
+      ' '.repeat(40) + '' +
+      ' '.repeat(40));
 
     await equal('{{ null |> center }}',
-      lib.repeat(' ', 40) + '' +
-      lib.repeat(' ', 40));
+      ' '.repeat(40) + '' +
+      ' '.repeat(40));
 
     await equal('{{ nothing |> center }}',
-      lib.repeat(' ', 40) + '' +
-      lib.repeat(' ', 40));
+      ' '.repeat(40) + '' +
+      ' '.repeat(40));
 
     await equal('{{ "foo" |> center }}',
-      lib.repeat(' ', 38) + 'foo' +
-      lib.repeat(' ', 39));
+      ' '.repeat(38) + 'foo' +
+      ' '.repeat(39));
   });
 
   test('default', async function() {

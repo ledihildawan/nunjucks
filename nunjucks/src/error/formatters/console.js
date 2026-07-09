@@ -1,5 +1,7 @@
 import { splitSnippetLines } from '../core/snippet.js';
 import { formatLocation, getDisplayMessage } from '../state/message-formatter.js';
+import { shortenPath, normalizeDrivePath } from '../utils/path-utils.js';
+import { resolveIdeLink } from '../constants/ide-links.js';
 
 const FALLBACK_PICOLORS = {
   red: (s) => s,
@@ -25,6 +27,10 @@ const getPicocolors = () => {
   return _pc;
 };
 
+const makeHyperlink = (text, url) => {
+  return `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
+};
+
 const renderMarkdownToAnsi = (text) => {
   if (!text) return '';
   let s = text;
@@ -37,6 +43,7 @@ const formatHeader = (code, phase) => {
   const bits = [`${getPicocolors().bgRed('[ERROR]')} ${getPicocolors().bold('Template Rendering Failed')}`];
   if (code) bits.push(getPicocolors().yellow(`[${code}]`));
   if (phase) bits.push(getPicocolors().dim(`(${phase})`));
+  bits.push(getPicocolors().dim('[DEV]'));
   return [
     bits.join(' '),
     getPicocolors().dim('─'.repeat(60))
@@ -45,8 +52,23 @@ const formatHeader = (code, phase) => {
 
 const formatMessage = (message) => `${getPicocolors().bold('Message:')} ${message}`;
 
-const formatLocationLabel = (locationFile) =>
-  `${getPicocolors().bold('Location:')} ${locationFile}`;
+const formatLocationLabel = (state) => {
+  const { templatePath, getDisplayLine, getDisplayCol } = state;
+  const line = getDisplayLine();
+  const col = getDisplayCol();
+
+  if (templatePath) {
+    const normalizedPath = normalizeDrivePath(templatePath);
+    const url = resolveIdeLink(state.ide || 'vscode', normalizedPath, line, col);
+    const display = shortenPath(normalizedPath);
+    const linkText = `${display}:${line}:${col}`;
+    const link = makeHyperlink(linkText, url);
+    return `${getPicocolors().bold('Location:')} ${link}`;
+  }
+
+  const locationFile = formatLocation(state);
+  return `${getPicocolors().bold('Location:')} ${shortenPath(locationFile)}`;
+};
 
 const formatRenderContext = (ctx) => {
   if (!ctx || typeof ctx !== 'object') return '';
@@ -88,7 +110,7 @@ const formatFix = (fixComment, fixCode) => [
   getPicocolors().dim('  ' + fixCode)
 ].join('\n');
 
-const formatStackTrace = (originalError, isProduction = false) => {
+const formatStackTrace = (originalError, isProduction = false, ide = 'vscode') => {
   if (!originalError?.stack) return '';
 
   const stackLines = originalError.stack.split('\n').slice(1);
@@ -106,9 +128,28 @@ const formatStackTrace = (originalError, isProduction = false) => {
 
   if (linesToShow.length === 0) return '';
 
+  const makeLink = (path, line, col) => {
+    const normalizedPath = normalizeDrivePath(path);
+    const url = resolveIdeLink(ide, normalizedPath, line, col);
+    const display = shortenPath(normalizedPath);
+    const linkText = `${display}:${line}:${col}`;
+    return makeHyperlink(linkText, url);
+  };
+
+  const shortenStackLine = (line) => {
+    const trimmed = line.trim();
+    return trimmed.replace(/\(([^()]+):(\d+):(\d+)\)$/, (_, path, l, c) => {
+      const cleanPath = normalizeDrivePath(path);
+      if (/^native$/.test(cleanPath) || /^<anonymous>$/.test(cleanPath) || !/[\\/]/.test(cleanPath)) {
+        return `(${cleanPath}:${l}:${c})`;
+      }
+      return `(${makeLink(path, l, c)})`;
+    });
+  };
+
   const lines = ['\n', getPicocolors().bold('Stack Trace:')];
   for (const line of linesToShow) {
-    lines.push(getPicocolors().dim('  ' + line.trim()));
+    lines.push(getPicocolors().dim('  ' + shortenStackLine(line)));
   }
   return lines.join('\n');
 };
@@ -126,22 +167,20 @@ export const toConsoleString = (state) => {
 
   if (isProduction) {
     const badge = code ? ` [${code}]` : '';
-    const fp = state.fingerprint ? ` [#${state.fingerprint}]` : '';
     const metaBits = [];
     if (state.version) metaBits.push(`Nunjucks ${state.version}`);
     if (state.timestamp) metaBits.push(state.timestamp);
     const metaLine = metaBits.length ? getPicocolors().dim('\n' + metaBits.join(' · ')) : '';
-    return `${getPicocolors().bgRed('[ERROR]')} Template Rendering Failed${badge}${fp}${metaLine}\n${getPicocolors().dim('Check logs for details')}`;
+    return `${getPicocolors().bgRed('[ERROR]')} Template Rendering Failed${badge}${metaLine}\n${getPicocolors().dim('Check logs for details')}`;
   }
 
-  const locationFile = formatLocation(state);
   const traceLines = splitSnippetLines(snippet);
   const displayMessage = getDisplayMessage(state);
 
   const parts = [
     formatHeader(code, phase),
     formatMessage(displayMessage),
-    formatLocationLabel(locationFile)
+    formatLocationLabel(state)
   ];
 
   if (traceLines.length > 0) {
@@ -156,16 +195,15 @@ export const toConsoleString = (state) => {
     parts.push(ctxBlock);
   }
 
-  const stackTrace = formatStackTrace(originalError, isProduction);
+  const stackTrace = formatStackTrace(originalError, isProduction, state.ide);
   if (stackTrace) {
     parts.push(stackTrace);
   }
 
   const footerBits = [];
   footerBits.push(`Nunjucks ${state.version || '3.2.4'}`);
-  if (state.fingerprint) footerBits.push(`#${state.fingerprint}`);
   if (state.timestamp) footerBits.push(state.timestamp);
-  parts.push(getPicocolors().dim('\n' + footerBits.join(' · ') + ' [DEV]'));
+  parts.push(getPicocolors().dim('\n' + footerBits.join(' · ')));
 
   parts.push('');
 

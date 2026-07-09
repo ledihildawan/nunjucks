@@ -1,4 +1,4 @@
-import { pipe } from '../../lib/compose.js';
+import { pipe } from 'remeda';
 
 export class TemplateError extends Error {
   constructor(message, lineno, colno, info) {

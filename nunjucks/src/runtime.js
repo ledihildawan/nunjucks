@@ -1,9 +1,7 @@
-import * as lib from './lib/index.js';
+import { isArray, keys } from 'remeda';
 import { TemplateError } from './error/index.js';
-var arrayFrom = Array.from;
-var supportsIterators = (
-  typeof Symbol === 'function' && Symbol.iterator && typeof arrayFrom === 'function'
-);
+
+const escapeHtml = (val) => Bun.escapeHTML(val).replace(/\\/g, '&#92;').replace(/&#x27;/g, '&#39;');
 
 export class Frame {
   constructor(parent, isolateWrites) {
@@ -197,7 +195,7 @@ export function suppressValue(val, autoescape) {
   val = (val !== undefined && val !== null) ? val : '';
 
   if (autoescape && !(val instanceof SafeString)) {
-    val = lib.escape(val.toString());
+    val = escapeHtml(val.toString());
   }
 
   return val;
@@ -361,7 +359,7 @@ export function handleError(error, lineno, colno, sourceMapData) {
 }
 
 export async function asyncEach(arr, dimen, iter) {
-  if (lib.isArray(arr)) {
+  if (isArray(arr)) {
     const len = arr.length;
 
     for (let i = 0; i < len; i++) {
@@ -382,7 +380,7 @@ export async function asyncEach(arr, dimen, iter) {
       }
     }
   } else {
-    const keys = lib.keys(arr || {});
+    const keys = keys(arr || {});
     const len = keys.length;
     for (let i = 0; i < len; i++) {
       const k = keys[i];
@@ -394,7 +392,7 @@ export async function asyncEach(arr, dimen, iter) {
 export async function asyncAll(arr, dimen, func) {
   const outputArr = [];
 
-  if (lib.isArray(arr)) {
+  if (isArray(arr)) {
     const len = arr.length;
 
     if (len === 0) {
@@ -420,7 +418,7 @@ export async function asyncAll(arr, dimen, func) {
       }
     }
   } else {
-    const keys = lib.keys(arr || {});
+    const keys = keys(arr || {});
     const len = keys.length;
 
     if (len === 0) {
@@ -437,15 +435,24 @@ export async function asyncAll(arr, dimen, func) {
 }
 
 export function fromIterator(arr) {
-  if (typeof arr !== 'object' || arr === null || lib.isArray(arr)) {
+  if (typeof arr !== 'object' || arr === null || isArray(arr)) {
     return arr;
-  } else if (supportsIterators && Symbol.iterator in arr) {
-    return arrayFrom(arr);
+  } else if (Symbol.iterator in arr) {
+    return Array.from(arr);
   } else {
     return arr;
   }
 }
 
-export const isArray = lib.isArray;
-export const keys = lib.keys;
-export const inOperator = lib.inOperator;
+export function inOperator(key, val) {
+  if (Array.isArray(val) || typeof val === 'string') {
+    return val.indexOf(key) !== -1;
+  }
+  if (val && typeof val === 'object') {
+    return key in val;
+  }
+  throw new Error(`Cannot use "in" operator to search for "${key}" in unexpected types.`);
+}
+
+export { isArray, keys };
+

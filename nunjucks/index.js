@@ -1,4 +1,4 @@
-import * as lib from './src/lib/index.js';
+import { isPlainObject } from 'remeda';
 import { Environment, Template } from './src/environment.js';
 import Loader from './src/loaders/base-loader.js';
 import * as loaders from './src/loaders/index.js';
@@ -37,7 +37,7 @@ const applyExpress = (env, opts) => {
 
 const normalizeOpts = (templatesPath, opts) => {
   opts = opts || {};
-  if (lib.isObject(templatesPath)) {
+  if (isPlainObject(templatesPath)) {
     return { opts: templatesPath, templatesPath: null };
   }
   if (opts.mode === 'development') {
@@ -78,7 +78,7 @@ export { FileSystemLoader } from './src/loaders/node/index.js';
 export { NodeResolveLoader } from './src/loaders/node/index.js';
 export { PrecompiledLoader } from './src/loaders/precompiled-loader.js';
 export { WebLoader } from './src/loaders/web/index.js';
-export { compiler, parser, lexer, runtime, lib, nodes, installJinjaCompat };
+export { compiler, parser, lexer, runtime, nodes, installJinjaCompat };
 export { precompile, precompileString } from './src/precompile.js';
 export { getConfig, renderError, renderErrorString, Environment as ErrorEnvironment } from './src/error/index.js';
 
@@ -94,7 +94,6 @@ export default {
   parser,
   lexer,
   runtime,
-  lib,
   nodes,
   installJinjaCompat,
   configure,

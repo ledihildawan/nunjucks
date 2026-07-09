@@ -10,18 +10,9 @@ import { mergeLine, mergeCol, getDisplayLine, getDisplayCol } from '../core/line
 
 const getSourceLines = (sourceContent) => (sourceContent ? sourceContent.split('\n') : null);
 
-const generateFingerprint = (code, templateName, line, col) => {
-  const str = [code, templateName, line, col].filter(Boolean).join(':');
-  let hash = 5381;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash).toString(36).padStart(6, '0').slice(0, 8);
-};
-
 const formatTimestamp = (iso) => {
   if (!iso) return '';
-  return iso.replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
+  return Math.floor(new Date(iso).getTime() / 1000).toString();
 };
 
 const SENSITIVE_KEY = /pass|secret|token|api[-_]?key|auth|credit|ssn|cookie|private/i;
@@ -109,11 +100,8 @@ export const createErrorData = (error, options = {}) => {
   const displayCol = getDisplayCol(col);
   const sourceLine = extractSourceLine(sourceContent, line);
   const resolvedTemplateName = templateName || extractErrorTemplateName(message) || 'unknown';
-  const fingerprint = generateFingerprint(error?.code, resolvedTemplateName, line, col);
 
   return {
-    errorId: fingerprint,
-    fingerprint,
     timestamp: formatTimestamp(new Date().toISOString()),
     version,
     code: error?.code ?? null,

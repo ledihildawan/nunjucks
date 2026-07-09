@@ -1,70 +1,99 @@
 import Loader from '../base-loader.js';
 
+const addCacheBust = (url) => {
+  const separator = url.indexOf('?') === -1 ? '?' : '&';
+  return url + separator + 's=' + new Date().getTime();
+};
+
+const isBrowser = () => typeof window !== 'undefined';
+
+const createAjaxHandler = (resolve, reject) => {
+  let loading = true;
+  return (ajax) => {
+    if (ajax.readyState === 4 && loading) {
+      loading = false;
+      if (ajax.status === 0 || ajax.status === 200) {
+        resolve(ajax.responseText);
+      } else {
+        reject({ status: ajax.status, content: ajax.responseText });
+      }
+    }
+  };
+};
+
+const fetchUrl = (async) => (url) =>
+  new Promise((resolve, reject) => {
+    if (!isBrowser()) {
+      reject(new Error('WebLoader can only be used in a browser'));
+      return;
+    }
+
+    const ajax = new XMLHttpRequest();
+    ajax.onreadystatechange = createAjaxHandler(resolve, reject)(ajax);
+    ajax.open('GET', url, async);
+    ajax.send();
+  });
+
+export const createWebLoader = (baseURL, opts = {}) => {
+  const loader = new Loader();
+  loader.baseURL = baseURL || '.';
+  loader.useCache = !!opts.useCache;
+  loader.async = true;
+
+  loader.resolve = () => {
+    throw new Error('relative templates not supported in the browser yet');
+  };
+
+  loader.getSource = async (name) => {
+    const url = loader.baseURL + '/' + name;
+    const cacheBustedUrl = addCacheBust(url);
+
+    try {
+      const src = await fetchUrl(loader.async)(cacheBustedUrl);
+      const result = {
+        src,
+        path: name,
+        noCache: !loader.useCache
+      };
+      loader.emit('load', name, result);
+      return result;
+    } catch (err) {
+      if (err.status === 404) return null;
+      throw err.content;
+    }
+  };
+
+  return loader;
+};
+
 export class WebLoader extends Loader {
-  constructor(baseURL, opts) {
+  constructor(baseURL, opts = {}) {
     super();
     this.baseURL = baseURL || '.';
-    opts = opts || {};
-
     this.useCache = !!opts.useCache;
     this.async = true;
   }
 
-  resolve(from, to) {
-    throw new Error('relative templates not support in the browser yet');
+  resolve() {
+    throw new Error('relative templates not supported in the browser yet');
   }
 
   async getSource(name) {
-    var useCache = this.useCache;
-    var result;
+    const url = this.baseURL + '/' + name;
+    const cacheBustedUrl = addCacheBust(url);
 
     try {
-      const src = await this.fetch(this.baseURL + '/' + name);
-      result = {
-        src: src,
+      const src = await fetchUrl(this.async)(cacheBustedUrl);
+      const result = {
+        src,
         path: name,
-        noCache: !useCache
+        noCache: !this.useCache
       };
       this.emit('load', name, result);
       return result;
     } catch (err) {
-      if (err.status === 404) {
-        return null;
-      } else {
-        throw err.content;
-      }
+      if (err.status === 404) return null;
+      throw err.content;
     }
-  }
-
-  async fetch(url) {
-    return new Promise((resolve, reject) => {
-      if (typeof window === 'undefined') {
-        reject(new Error('WebLoader can only by used in a browser'));
-        return;
-      }
-
-      const ajax = new XMLHttpRequest();
-      let loading = true;
-
-      ajax.onreadystatechange = () => {
-        if (ajax.readyState === 4 && loading) {
-          loading = false;
-          if (ajax.status === 0 || ajax.status === 200) {
-            resolve(ajax.responseText);
-          } else {
-            reject({
-              status: ajax.status,
-              content: ajax.responseText
-            });
-          }
-        }
-      };
-
-      url += (url.indexOf('?') === -1 ? '?' : '&') + 's=' +
-      (new Date().getTime());
-
-      ajax.open('GET', url, this.async);
-      ajax.send();
-    });
   }
 }

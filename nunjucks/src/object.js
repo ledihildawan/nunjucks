@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import * as lib from './lib/index.js';
+import { keys } from 'remeda';
 
 function parentWrap(parent, prop) {
   if (typeof parent !== 'function' || typeof prop !== 'function') {
@@ -17,7 +17,7 @@ function parentWrap(parent, prop) {
 function extendClass(cls, name, props) {
   props = props || {};
 
-  lib.keys(props).forEach(k => {
+  keys(props).forEach(k => {
     props[k] = parentWrap(cls.prototype[k], props[k]);
   });
 
@@ -27,7 +27,7 @@ function extendClass(cls, name, props) {
     }
   }
 
-  lib.extend(subclass.prototype, props);
+  Object.assign(subclass.prototype, props);
   return subclass;
 }
 
