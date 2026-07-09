@@ -4,19 +4,19 @@ import { createErrorData } from './state/error-data.js';
 import { toConsoleString } from './formatters/console.js';
 import { toHtmlString } from './formatters/html/index.js';
 
-/**
- * Lazy singleton pattern for filesystem access.
- * Side effect (require/import) is deferred until first use.
- * This violates strict tree-shaking but is necessary for optional fs dependency.
- */
 const NO_FS = { readFileSync: () => null };
-let _cachedFs = null;
 
-const resolveFs = async (injected) => {
-  if (injected?.readFileSync) return injected;
-  if (_cachedFs) return _cachedFs;
-  _cachedFs = await loadFs() || NO_FS;
-  return _cachedFs;
+const createFsResolver = () => {
+  let cachedFs = null;
+  return {
+    resolve: async (injected) => {
+      if (injected?.readFileSync) return injected;
+      if (cachedFs) return cachedFs;
+      cachedFs = await loadFs() || NO_FS;
+      return cachedFs;
+    },
+    getCached: () => cachedFs
+  };
 };
 
 const loadFs = async () => {
@@ -124,29 +124,34 @@ const createErrorResult = (error, errorData, csp) => ({
   toHtmlString: () => toHtmlString({ ...errorData, csp })
 });
 
-export class Environment {
-  constructor(options = {}) {
-    this.opts = { ...getErrorConfig(), ...options };
-  }
-
-  async formatError(error, templateName, options = {}) {
-    const fs = await resolveFs(this.opts.fs);
-    const errorData = await buildErrorData(error, templateName, options, this.opts, fs);
-    const csp = getCspNonce(options.requestHeaders, this.opts.csp);
-    return createErrorResult(error, errorData, csp);
-  }
-}
+export const createErrorEnvironment = (options = {}) => {
+  const fsResolver = createFsResolver();
+  return {
+    opts: { ...getErrorConfig(), ...options },
+    async formatError(error, templateName, options = {}) {
+      const fs = await fsResolver.resolve(this.opts.fs);
+      const errorData = await buildErrorData(error, templateName, options, this.opts, fs);
+      const csp = getCspNonce(options.requestHeaders, this.opts.csp);
+      return createErrorResult(error, errorData, csp);
+    }
+  };
+};
 
 let _defaultEnv = null;
 
-export const getEnvironment = () => _defaultEnv ??= new Environment();
+export const getEnvironment = () => {
+  if (!_defaultEnv) {
+    _defaultEnv = createErrorEnvironment();
+  }
+  return _defaultEnv;
+};
 
 export const renderError = async (error, templateName, options = {}) => {
   const err = await getEnvironment().formatError(error, templateName, options);
   return err.toHtmlString();
 };
 
-export const createErrorFormatter = (options = {}) => new Environment(options);
+export const createErrorFormatter = (options = {}) => createErrorEnvironment(options);
 
 export const renderErrorString = async (error, templateString, options = {}) => {
   const err = await getEnvironment().formatError(error, templateString, options);

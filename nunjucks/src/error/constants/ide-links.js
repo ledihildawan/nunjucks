@@ -1,5 +1,10 @@
 import { normalizeDrivePath } from '../utils/path-utils.js';
 
+/**
+ * IDE scheme definitions for clickable error links.
+ * Data-only file - contains IDE configuration constants.
+ * Splitting would not provide architectural benefit.
+ */
 const GENERIC_ICON = '<path d="M14 3v2h3.59l-9.3 9.29 1.42 1.42L19 6.41V10h2V3m-2 16H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z"/>';
 
 export const IDE_SCHEMES = {

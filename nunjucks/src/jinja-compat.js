@@ -1,19 +1,23 @@
-let installed = false;
-
-export default function installCompat() {
-  if (installed) {
-    return () => {};
-  }
-  installed = true;
-
-  if (typeof window !== 'undefined') {
-    const origInstall = window.__jinjaCompatInstall;
-    if (origInstall) {
-      return origInstall();
-    }
-  }
-
+export const createCompatInstaller = () => {
+  let installed = false;
   return () => {
-    installed = false;
+    if (installed) {
+      return () => {};
+    }
+    installed = true;
+
+    if (typeof window !== 'undefined') {
+      const origInstall = window.__jinjaCompatInstall;
+      if (origInstall) {
+        return origInstall();
+      }
+    }
+
+    return () => {
+      installed = false;
+    };
   };
-}
+};
+
+const defaultInstaller = createCompatInstaller();
+export default defaultInstaller;
