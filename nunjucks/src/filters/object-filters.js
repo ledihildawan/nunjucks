@@ -1,0 +1,60 @@
+import { isString, isPlainObject, groupBy } from 'remeda';
+import { TemplateError } from '../error/index.js';
+import { getAttrGetter } from '../lib/attributes.js';
+
+const isObject = isPlainObject;
+
+export function dictsort(val, caseSensitive, by) {
+  if (!isObject(val)) {
+    throw new TemplateError('dictsort filter: val must be an object');
+  }
+
+  let array = [];
+  for (let k in val) {
+    array.push([k, val[k]]);
+  }
+
+  let si;
+  if (by === undefined || by === 'key') {
+    si = 0;
+  } else if (by === 'value') {
+    si = 1;
+  } else {
+    throw new TemplateError(
+      'dictsort filter: You can only sort by either key or value');
+  }
+
+  array.sort((t1, t2) => {
+    var a = t1[si];
+    var b = t2[si];
+
+    if (!caseSensitive) {
+      if (isString(a)) {
+        a = a.toUpperCase();
+      }
+      if (isString(b)) {
+        b = b.toUpperCase();
+      }
+    }
+
+    return a > b ? 1 : (a === b ? 0 : -1);
+  });
+
+  return array;
+}
+
+export function groupby(arr, attr) {
+  const throwOnUndefined = this.env.opts.throwOnUndefined;
+  const getAttr = getAttrGetter(attr);
+
+  return groupBy(arr, (item, i) => {
+    const key = getAttr(item, i);
+    if (key === undefined) {
+      if (throwOnUndefined) {
+        throw new TypeError(`groupby: attribute "${attr}" resolved to undefined`);
+      }
+      return String(key);
+    }
+    return key;
+  });
+}
