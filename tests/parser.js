@@ -1,7 +1,9 @@
 import { expect, describe, test } from "bun:test";
-import * as lib from "../nunjucks/src/lib.js";
+import { isArray, isPlainObject, each, map } from 'remeda';
 import * as nodes from "../nunjucks/src/nodes.js";
 import * as parser from "../nunjucks/src/parser.js";
+
+const isObject = isPlainObject;
 
 function _isAST(node1, node2) {
   expect(node1.typename).toBe(node2.typename);
@@ -24,12 +26,12 @@ function _isAST(node1, node2) {
 
       if (value instanceof nodes.Node) {
         _isAST(ofield, value);
-      } else if (lib.isArray(ofield) && lib.isArray(value)) {
+      } else if (isArray(ofield) && isArray(value)) {
         expect("num-children: " + ofield.length).toBe(
           "num-children: " + value.length,
         );
 
-        lib.each(ofield, function (v, i) {
+        each(ofield, function (v, i) {
           if (ofield[i] instanceof nodes.Node) {
             _isAST(ofield[i], value[i]);
           } else if (ofield[i] !== null && value[i] !== null) {
@@ -65,13 +67,13 @@ function isAST(node1, ast) {
 }
 
 function toNodes(ast) {
-  if (!(ast && lib.isArray(ast))) {
+  if (!(ast && isArray(ast))) {
     return ast;
   }
 
   var Type = ast[0];
   if (Type instanceof Array) {
-    return lib.map(ast, toNodes);
+    return map(ast, toNodes);
   }
   var F = function () {};
   F.prototype = Type.prototype;
@@ -79,13 +81,13 @@ function toNodes(ast) {
   var dummy = new F();
 
   if (dummy instanceof nodes.NodeList) {
-    return new Type(0, 0, lib.map(ast.slice(1), toNodes));
+    return new Type(0, 0, map(ast.slice(1), toNodes));
   } else if (dummy instanceof nodes.CallExtension) {
     return new Type(
       ast[1],
       ast[2],
       ast[3] ? toNodes(ast[3]) : ast[3],
-      lib.isArray(ast[4]) ? lib.map(ast[4], toNodes) : ast[4],
+      isArray(ast[4]) ? map(ast[4], toNodes) : ast[4],
     );
   } else {
     return new Type(

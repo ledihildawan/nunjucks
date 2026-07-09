@@ -1,7 +1,64 @@
 import { parse } from './parser.js';
 import { transform } from './transformer.js';
-import * as nodes from './nodes.js';
-import { TemplateError } from './lib.js';
+import {
+  Node,
+  NodeList,
+  Literal,
+  Symbol as ASTSymbol,
+  Group,
+  Array,
+  Dict,
+  FunCall,
+  Caller,
+  Pipe,
+  PipeAsync,
+  LookupVal,
+  Compare,
+  CompareOperand,
+  InlineIf,
+  In as OperatorIn,
+  Is,
+  And,
+  Or,
+  Not,
+  Add,
+  Concat,
+  Sub,
+  Mul,
+  Div,
+  FloorDiv,
+  Mod,
+  Pow,
+  Neg,
+  Pos,
+  OptionalChain,
+  NullishCoalesce,
+  Slice,
+  TemplateData,
+  Block,
+  Pair,
+  Output,
+  For,
+  AsyncEach,
+  AsyncAll,
+  If,
+  IfAsync,
+  Set as ASTSet,
+  Switch,
+  Case,
+  Import,
+  FromImport,
+  Include,
+  Extends,
+  Macro,
+  Super,
+  KeywordArgs,
+  CallExtension,
+  CallExtensionAsync,
+  Capture,
+  TemplateRef,
+} from './nodes.js';
+import { TemplateError } from './error/index.js';
 import { Frame } from './runtime.js';
 import { Obj } from './object.js';
 import { SourceMap } from './source-map.js';
@@ -32,14 +89,7 @@ export class Compiler extends Obj {
   }
 
   fail(msg, lineno, colno) {
-    if (lineno !== undefined) {
-      lineno += 1;
-    }
-    if (colno !== undefined) {
-      colno += 1;
-    }
-
-    throw new TemplateError(msg, lineno, colno);
+    throw new TemplateError(msg, lineno, colno, { phase: 'compile', templateName: this.templateName });
   }
 
   _pushBuffer() {
@@ -66,18 +116,26 @@ export class Compiler extends Obj {
     this._emit(code + '\n');
   }
 
-  _emitLineWithMapping(code, templateLine) {
+  _emitLineWithMapping(code, templateLine, templateCol) {
     this.compiledLine++;
     if (templateLine !== undefined) {
-      this.sourceMap.addMapping(this.compiledLine, templateLine);
+      this.sourceMap.addMapping(this.compiledLine, templateLine + 1, templateCol || 0);
     }
     this._emit(code + '\n');
   }
 
-  _trackMapping(templateLine) {
+  _trackMapping(templateLine, templateCol) {
     if (templateLine !== undefined) {
-      this.sourceMap.addMapping(this.compiledLine + 1, templateLine);
+      this.sourceMap.addMapping(this.compiledLine + 1, templateLine + 1, templateCol || 0);
     }
+  }
+
+  _emitLineWithLineno(code, templateLine, templateCol) {
+    this.compiledLine++;
+    if (templateLine !== undefined) {
+      this.sourceMap.addMapping(this.compiledLine, templateLine + 1, templateCol || 0);
+    }
+    this._emit(code + '\n');
   }
 
   _emitLines(...lines) {
@@ -88,7 +146,7 @@ export class Compiler extends Obj {
     this.buffer = 'output';
     this._scopeClosers = '';
     this._emitLine(`async function ${name}(env, context, frame, runtime) {`);
-    this._emitLineWithMapping(`var lineno = ${node.lineno};`, node.lineno);
+    this._emitLineWithMapping(`var lineno = ${node.lineno};`, node.lineno, node.colno);
     this._emitLine(`var colno = ${node.colno};`);
     this._emitLine(`var ${this.buffer} = "";`);
     this._emitLine('try {');
@@ -164,37 +222,37 @@ export class Compiler extends Obj {
   _compileExpression(node, frame) {
     this.assertType(
       node,
-      nodes.Literal,
-      nodes.Symbol,
-      nodes.Group,
-      nodes.Array,
-      nodes.Dict,
-      nodes.FunCall,
-      nodes.Caller,
-      nodes.Pipe,
-      nodes.LookupVal,
-      nodes.Compare,
-      nodes.InlineIf,
-      nodes.In,
-      nodes.Is,
-      nodes.And,
-      nodes.Or,
-      nodes.Not,
-      nodes.Add,
-      nodes.Concat,
-      nodes.Sub,
-      nodes.Mul,
-      nodes.Div,
-      nodes.FloorDiv,
-      nodes.Mod,
-      nodes.Pow,
-      nodes.Neg,
-      nodes.Pos,
-      nodes.Compare,
-      nodes.OptionalChain,
-      nodes.NullishCoalesce,
-      nodes.NodeList,
-      nodes.Slice
+      Literal,
+      ASTSymbol,
+      Group,
+      Array,
+      Dict,
+      FunCall,
+      Caller,
+      Pipe,
+      LookupVal,
+      Compare,
+      InlineIf,
+      OperatorIn,
+      Is,
+      And,
+      Or,
+      Not,
+      Add,
+      Concat,
+      Sub,
+      Mul,
+      Div,
+      FloorDiv,
+      Mod,
+      Pow,
+      Neg,
+      Pos,
+      Compare,
+      OptionalChain,
+      NullishCoalesce,
+      NodeList,
+      Slice
     );
     this.compile(node, frame);
   }
@@ -233,7 +291,7 @@ export class Compiler extends Obj {
     }
 
     if (args) {
-      if (!(args instanceof nodes.NodeList)) {
+      if (!(args instanceof NodeList)) {
         this.fail('compileCallExtension: arguments must be a NodeList, ' +
           'use `parser.parseSignature`');
       }
@@ -330,9 +388,9 @@ export class Compiler extends Obj {
     var key = node.key;
     var val = node.value;
 
-    if (key instanceof nodes.Symbol) {
-      key = new nodes.Literal(key.lineno, key.colno, key.value);
-    } else if (!(key instanceof nodes.Literal &&
+    if (key instanceof ASTSymbol) {
+      key = new Literal(key.lineno, key.colno, key.value);
+    } else if (!(key instanceof Literal &&
       typeof key.value === 'string')) {
       this.fail('compilePair: Dict keys must be strings or names',
         key.lineno,
@@ -466,7 +524,7 @@ export class Compiler extends Obj {
   }
 
   compileLookupVal(node, frame) {
-    if (node.val instanceof nodes.Slice) {
+    if (node.val instanceof Slice) {
       // Slice: emit runtime.slice(arr, start, stop, step)
       this._emit('runtime.slice((');
       this._compileExpression(node.target, frame);
@@ -548,7 +606,6 @@ export class Compiler extends Obj {
   }
 
   compileFunCall(node, frame) {
-    this._trackMapping(node.lineno);
     this._emit('(lineno = ' + node.lineno +
       ', colno = ' + node.colno + ', ');
 
@@ -557,14 +614,12 @@ export class Compiler extends Obj {
 
     this._emit(', "' + this._getNodeName(node.name).replace(/"/g, '\\"') + '", context, ');
 
-    this._compileAggregate(node.args, frame, '[', '])');
-
-    this._emit(')');
+    this._compileAggregate(node.args, frame, '[', '], ' + node.lineno + ', ' + node.colno + '))');
   }
 
   compilePipe(node, frame) {
     var name = node.name;
-    this.assertType(name, nodes.Symbol);
+    this.assertType(name, ASTSymbol);
     this._emit('await runtime.awaitValue(env.getFilter("' + name.value + '").call(context, ');
     this._compileAggregate(node.args, frame);
     this._emit('))');
@@ -574,10 +629,11 @@ export class Compiler extends Obj {
     var name = node.name;
     var symbol = node.symbol.value;
 
-    this.assertType(name, nodes.Symbol);
+    this.assertType(name, ASTSymbol);
 
     frame.set(symbol, symbol);
 
+    this._emitLine(`lineno = ${node.lineno}; colno = ${node.colno != null ? node.colno : 0};`);
     this._emit(symbol + ' = await runtime.awaitValue(env.getFilter("' + name.value + '").call(context, ');
     this._compileAggregate(node.args, frame);
     this._emitLine('));');
@@ -711,7 +767,7 @@ export class Compiler extends Obj {
     this._emit(`if(${arr}) {`);
     this._emitLine(arr + ' = runtime.fromIterator(' + arr + ');');
 
-    if (node.name instanceof nodes.Array) {
+    if (node.name instanceof Array) {
       this._emitLine(`var ${i};`);
 
       this._emitLine(`if(runtime.isArray(${arr})) {`);
@@ -811,7 +867,7 @@ export class Compiler extends Obj {
   _compileAsyncEachLoop(node, frame, arr, i, len) {
     const loopId = this._tmpid();
 
-    if (node.name instanceof nodes.Array) {
+    if (node.name instanceof Array) {
       const isObj = this._tmpid();
       const arrLen = this._tmpid();
       this._emitLine(`var ${isObj} = !runtime.isArray(${arr});`);
@@ -857,7 +913,7 @@ export class Compiler extends Obj {
 
     this._emitLine(`var ${resultsVar} = [];`);
 
-    if (node.name instanceof nodes.Array) {
+    if (node.name instanceof Array) {
       const isObj = this._tmpid();
       const arrLen = this._tmpid();
       this._emitLine(`var ${isObj} = !runtime.isArray(${arr});`);
@@ -922,10 +978,10 @@ export class Compiler extends Obj {
     var keepFrame = (frame !== undefined);
 
     node.args.children.forEach((arg, i) => {
-      if (i === node.args.children.length - 1 && arg instanceof nodes.Dict) {
+      if (i === node.args.children.length - 1 && arg instanceof Dict) {
         kwargs = arg;
       } else {
-        this.assertType(arg, nodes.Symbol);
+        this.assertType(arg, ASTSymbol);
         args.push(arg);
       }
     });
@@ -1009,6 +1065,7 @@ export class Compiler extends Obj {
     const parentName = this._templateName();
     const eagerCompileArg = (eagerCompile) ? 'true' : 'false';
     const ignoreMissingArg = (ignoreMissing) ? 'true' : 'false';
+    this._emitLine(`lineno = ${node.lineno}; colno = ${node.colno != null ? node.colno : 0};`);
     this._emit(`var ${parentTemplateId} = await env.getTemplate(`);
     this._compileExpression(node.template, frame);
     this._emitLine(`, ${eagerCompileArg}, ${parentName}, ${ignoreMissingArg});`);
@@ -1042,7 +1099,7 @@ export class Compiler extends Obj {
       var alias;
       var id = this._tmpid();
 
-      if (nameNode instanceof nodes.Pair) {
+      if (nameNode instanceof Pair) {
         name = nameNode.key.value;
         alias = nameNode.value.value;
       } else {
@@ -1068,13 +1125,17 @@ export class Compiler extends Obj {
 
   compileBlock(node) {
     var id = this._tmpid();
-
-    if (!this.inBlock) {
-      this._emitLine(`var ${id} = parentTemplate ? "" : await (await context.getBlock("${node.name.value}"))(env, context, frame, runtime);`);
-    } else {
+    const emit = () => {
       this._emitLine(`var ${id} = await (await context.getBlock("${node.name.value}"))(env, context, frame, runtime);`);
+      this._emitLine(`${this.buffer} += ${id};`);
+    };
+    if (!this.inBlock) {
+      this._emitLine(`if(!parentTemplate) {`);
+      emit();
+      this._emitLine(`}`);
+    } else {
+      emit();
     }
-    this._emitLine(`${this.buffer} += ${id};`);
   }
 
   compileSuper(node, frame) {
@@ -1102,10 +1163,12 @@ export class Compiler extends Obj {
     const tmplVar = this._tmpid();
     const resultVar = this._tmpid();
 
+    this._emitLine(`lineno = ${node.lineno}; colno = ${node.colno != null ? node.colno : 0};`);
     this._emit(`var ${tmplVar} = await env.getTemplate(`);
     this._compileExpression(node.template, frame);
     const ignoreMissing = node.ignoreMissing ? 'true' : 'false';
-    this._emitLine(`, false, ${this._templateName()}, ${ignoreMissing});`);
+    const includeChain = `{parentTmpl: ${this._templateName()}, parentLineno: ${node.lineno + 1}, parentColno: ${node.colno !== undefined ? node.colno + 1 : 0}}`;
+    this._emitLine(`, false, ${includeChain}, ${ignoreMissing});`);
 
     this._emit(`var ${resultVar} = await ${tmplVar}.render(context.getVariables(), frame);`);
     this._emitLine(`${this.buffer} += ${resultVar};`);
@@ -1131,15 +1194,16 @@ export class Compiler extends Obj {
   compileOutput(node, frame) {
     const children = node.children;
     children.forEach(child => {
-      if (child instanceof nodes.TemplateData) {
+      if (child instanceof TemplateData) {
         if (child.value) {
           this._emit(`${this.buffer} += `);
           this.compileLiteral(child, frame);
           this._emit(';');
         }
       } else {
-        const isPipe = child instanceof nodes.Pipe || child instanceof nodes.PipeAsync;
-        this._emit(`lineno = ${node.lineno}; colno = ${node.colno}; ${this.buffer} += runtime.suppressValue(`);
+        const isPipe = child instanceof Pipe || child instanceof PipeAsync;
+        const varName = child instanceof ASTSymbol ? child.value : null;
+        this._emitLineWithLineno(`lineno = ${child.lineno}; colno = ${child.colno}; ${this.buffer} += runtime.suppressValue(`, child.lineno, child.colno);
         if (!isPipe) {
           this._emit('await runtime.awaitValue(');
         }
@@ -1148,7 +1212,8 @@ export class Compiler extends Obj {
         }
         this.compile(child, frame);
         if (this.throwOnUndefined) {
-          this._emit(`,${node.lineno},${node.colno})`);
+          const nameArg = varName ? `, "${varName}"` : '';
+          this._emit(`,${child.lineno},${child.colno}${nameArg})`);
         }
         if (!isPipe) {
           this._emit(')');
@@ -1184,7 +1249,7 @@ export class Compiler extends Obj {
 
     const blockNames = [];
 
-    const blocks = node.findAll(nodes.Block);
+    const blocks = node.findAll(Block);
 
     blocks.forEach((block, i) => {
       const name = block.name.value;
@@ -1247,4 +1312,20 @@ export function compile(src, asyncPipes, extensions, name, opts = {}) {
 
 export function getSourceMap(compiler) {
   return compiler.sourceMap;
+}
+
+export function getSourceMapFromCompile(src, asyncPipes, extensions, name, opts = {}) {
+  const c = new Compiler(name, opts.throwOnUndefined, src);
+
+  const preprocessors = (extensions || []).map(ext => ext.preprocess).filter(f => !!f);
+
+  const processedSrc = preprocessors.reduce((s, processor) => processor(s), src);
+
+  c.compile(transform(
+    parse(processedSrc, extensions, opts),
+    asyncPipes,
+    name
+  ));
+
+  return c.getSourceMap();
 }

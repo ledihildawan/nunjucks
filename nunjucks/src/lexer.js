@@ -1,4 +1,4 @@
-import * as lib from './lib.js';
+import { TemplateError } from './error/index.js';
 
 let whitespaceChars = ' \n\t\r\u00A0';
 let delimChars = '()[]{}%*-+~/#,:|&.<>=!?';
@@ -164,12 +164,12 @@ export class Tokenizer {
         let curComplex = cur + this.current();
         let type;
 
-        if (lib.indexOf(complexOps, curComplex) !== -1) {
+        if (complexOps.indexOf(curComplex) !== -1) {
           this.forward();
           cur = curComplex;
 
           // See if this is a strict equality/inequality comparator
-          if (lib.indexOf(complexOps, curComplex + this.current()) !== -1) {
+          if (complexOps.indexOf(curComplex + this.current()) !== -1) {
             cur = curComplex + this.current();
             this.forward();
           }
@@ -240,7 +240,7 @@ export class Tokenizer {
         } else if (tok) {
           return token(TOKEN_SYMBOL, tok, lineno, colno);
         } else {
-          throw new Error('Unexpected value while parsing: ' + tok);
+          throw new TemplateError('Unexpected value while parsing: ' + tok, this.lineno, this.colno, { phase: 'lex' });
         }
       }
     } else {
@@ -304,7 +304,7 @@ export class Tokenizer {
             break;
           } else if (this._matches(this.tags.COMMENT_END)) {
             if (!inComment) {
-              throw new Error('unexpected end of comment');
+              throw new TemplateError('unexpected end of comment', this.lineno, this.colno, { phase: 'lex' });
             }
             tok += this._extractString(this.tags.COMMENT_END);
             break;
@@ -317,7 +317,7 @@ export class Tokenizer {
         }
 
         if (data === null && inComment) {
-          throw new Error('expected end of comment, got end of file');
+          throw new TemplateError('expected end of comment, got end of file', this.lineno, this.colno, { phase: 'lex' });
         }
 
         return token(inComment ? TOKEN_COMMENT : TOKEN_DATA,

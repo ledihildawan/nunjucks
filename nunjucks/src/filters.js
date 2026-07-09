@@ -1,5 +1,10 @@
-import * as lib from './lib.js';
-import * as r from './runtime.js';
+import { isArray, isString, isPlainObject, map, keys, entries, groupBy } from 'remeda';
+import { getAttrGetter } from './lib/attributes.js';
+import { TemplateError } from './error/index.js';
+import { SafeString, markSafe, copySafeness, makeMacro } from './runtime.js';
+
+const isObject = isPlainObject;
+const _entries = entries;
 
 export function normalize(value, defaultValue) {
   if (value === null || value === undefined || value === false) {
@@ -44,7 +49,7 @@ export function batch(arr, linecount, fillWith) {
 export function capitalize(str) {
   str = normalize(str, '');
   const ret = str.toLowerCase();
-  return r.copySafeness(str, ret.charAt(0).toUpperCase() + ret.slice(1));
+  return copySafeness(str, ret.charAt(0).toUpperCase() + ret.slice(1));
 }
 
 export function center(str, width) {
@@ -56,9 +61,9 @@ export function center(str, width) {
   }
 
   const spaces = width - str.length;
-  const pre = lib.repeat(' ', (spaces / 2) - (spaces % 2));
-  const post = lib.repeat(' ', spaces / 2);
-  return r.copySafeness(str, pre + str + post);
+  const pre = ' '.repeat(Math.round((spaces / 2) - (spaces % 2)));
+  const post = ' '.repeat(Math.round(spaces / 2));
+  return copySafeness(str, pre + str + post);
 }
 
 export function default_(val, def, bool) {
@@ -70,8 +75,8 @@ export function default_(val, def, bool) {
 }
 
 export function dictsort(val, caseSensitive, by) {
-  if (!lib.isObject(val)) {
-    throw new lib.TemplateError('dictsort filter: val must be an object');
+  if (!isObject(val)) {
+    throw new TemplateError('dictsort filter: val must be an object');
   }
 
   let array = [];
@@ -85,7 +90,7 @@ export function dictsort(val, caseSensitive, by) {
   } else if (by === 'value') {
     si = 1;
   } else {
-    throw new lib.TemplateError(
+    throw new TemplateError(
       'dictsort filter: You can only sort by either key or value');
   }
 
@@ -94,10 +99,10 @@ export function dictsort(val, caseSensitive, by) {
     var b = t2[si];
 
     if (!caseSensitive) {
-      if (lib.isString(a)) {
+      if (isString(a)) {
         a = a.toUpperCase();
       }
-      if (lib.isString(b)) {
+      if (isString(b)) {
         b = b.toUpperCase();
       }
     }
@@ -113,19 +118,19 @@ export function dump(obj, spaces) {
 }
 
 export function escape(str) {
-  if (str instanceof r.SafeString) {
+  if (str instanceof SafeString) {
     return str;
   }
   str = (str === null || str === undefined) ? '' : str;
-  return r.markSafe(lib.escape(str.toString()));
+  return markSafe(Bun.escapeHTML(str.toString()).replace(/\\/g, '&#92;'));
 }
 
 export function safe(str) {
-  if (str instanceof r.SafeString) {
+  if (str instanceof SafeString) {
     return str;
   }
   str = (str === null || str === undefined) ? '' : str;
-  return r.markSafe(str.toString());
+  return markSafe(str.toString());
 }
 
 export function first(arr) {
@@ -134,11 +139,23 @@ export function first(arr) {
 
 export function forceescape(str) {
   str = (str === null || str === undefined) ? '' : str;
-  return r.markSafe(lib.escape(str.toString()));
+  return markSafe(Bun.escapeHTML(str.toString()).replace(/\\/g, '&#92;'));
 }
 
 export function groupby(arr, attr) {
-  return lib.groupBy(arr, attr, this.env.opts.throwOnUndefined);
+  const throwOnUndefined = this.env.opts.throwOnUndefined;
+  const getAttr = getAttrGetter(attr);
+  
+  return groupBy(arr, (item, i) => {
+    const key = getAttr(item, i);
+    if (key === undefined) {
+      if (throwOnUndefined) {
+        throw new TypeError(`groupby: attribute "${attr}" resolved to undefined`);
+      }
+      return String(key);
+    }
+    return key;
+  });
 }
 
 export function indent(str, width, indentfirst) {
@@ -150,20 +167,20 @@ export function indent(str, width, indentfirst) {
 
   width = width || 4;
   const lines = str.split('\n');
-  const sp = lib.repeat(' ', width);
+  const sp = ' '.repeat(Math.round(width));
 
   const res = lines.map((l, i) => {
     return (i === 0 && !indentfirst) ? l : `${sp}${l}`;
   }).join('\n');
 
-  return r.copySafeness(str, res);
+  return copySafeness(str, res);
 }
 
 export function join(arr, del, attr) {
   del = del || '';
 
   if (attr) {
-    arr = lib.map(arr, (v) => v[attr]);
+    arr = map(arr, (v) => v[attr]);
   }
 
   return arr.join(del);
@@ -183,8 +200,8 @@ export function lengthFilter(val) {
     ) {
       return value.size;
     }
-    if (lib.isObject(value) && !(value instanceof r.SafeString)) {
-      return lib.keys(value).length;
+    if (isObject(value) && !(value instanceof SafeString)) {
+      return keys(value).length;
     }
     return value.length;
   }
@@ -192,14 +209,14 @@ export function lengthFilter(val) {
 }
 
 export function list(val) {
-  if (lib.isString(val)) {
+  if (isString(val)) {
     return val.split('');
-  } else if (lib.isObject(val)) {
-    return lib._entries(val || {}).map(([key, value]) => ({key, value}));
-  } else if (lib.isArray(val)) {
+  } else if (isObject(val)) {
+    return _entries(val || {}).map(([key, value]) => ({key, value}));
+  } else if (isArray(val)) {
     return val;
   } else {
-    throw new lib.TemplateError('list filter: type not iterable');
+    throw new TemplateError('list filter: type not iterable');
   }
 }
 
@@ -212,7 +229,7 @@ export function nl2br(str) {
   if (str === null || str === undefined) {
     return '';
   }
-  return r.copySafeness(str, str.replace(/\r\n|\n/g, '<br />\n'));
+  return copySafeness(str, str.replace(/\r\n|\n/g, '<br />\n'));
 }
 
 export function random(arr) {
@@ -224,7 +241,7 @@ export function getSelectOrReject(expectedTestResult) {
     const context = this;
     const test = context.env.getTest(testName);
 
-    return lib.toArray(arr).filter(function examineTestResult(item) {
+    return Array.from(arr).filter(function examineTestResult(item) {
       return test.call(context, item, secondArg) === expectedTestResult;
     });
   }
@@ -267,13 +284,13 @@ export function replace(str, old, new_, maxCount) {
     str = '' + str;
   }
 
-  if (typeof str !== 'string' && !(str instanceof r.SafeString)) {
+  if (typeof str !== 'string' && !(str instanceof SafeString)) {
     return str;
   }
 
   if (old === '') {
     res = new_ + str.split('').join(new_) + new_;
-    return r.copySafeness(str, res);
+    return copySafeness(str, res);
   }
 
   let nextIndex = str.indexOf(old);
@@ -295,21 +312,21 @@ export function replace(str, old, new_, maxCount) {
     res += str.substring(pos);
   }
 
-  return r.copySafeness(originalStr, res);
+  return copySafeness(originalStr, res);
 }
 
 export function reverse(val) {
   var arr;
-  if (lib.isString(val)) {
+  if (isString(val)) {
     arr = list(val);
   } else {
-    arr = lib.map(val, v => v);
+    arr = map(val, v => v);
   }
 
   arr.reverse();
 
-  if (lib.isString(val)) {
-    return r.copySafeness(val, arr.join(''));
+  if (isString(val)) {
+    return copySafeness(val, arr.join(''));
   }
   return arr;
 }
@@ -355,17 +372,17 @@ export function slice(arr, slices, fillWith) {
 
 export function sum(arr, attr, start = 0) {
   if (attr) {
-    arr = lib.map(arr, (v) => v[attr]);
+    arr = map(arr, (v) => v[attr]);
   }
 
   return start + arr.reduce((a, b) => a + b, 0);
 }
 
-export const sort = r.makeMacro(
+export const sort = makeMacro(
   ['value', 'reverse', 'case_sensitive', 'attribute'], [],
   function sortFilter(arr, reversed, caseSens, attr) {
-    let array = lib.map(arr, v => v);
-    let getAttribute = lib.getAttrGetter(attr);
+    let array = map(arr, v => v);
+    let getAttribute = getAttrGetter(attr);
 
     array.sort((a, b) => {
       let x = (attr) ? getAttribute(a) : a;
@@ -378,7 +395,7 @@ export const sort = r.makeMacro(
         throw new TypeError(`sort: attribute "${attr}" resolved to undefined`);
       }
 
-      if (!caseSens && lib.isString(x) && lib.isString(y)) {
+      if (!caseSens && isString(x) && isString(y)) {
         x = x.toLowerCase();
         y = y.toLowerCase();
       }
@@ -396,7 +413,7 @@ export const sort = r.makeMacro(
   });
 
 export function string(obj) {
-  return r.copySafeness(obj, obj);
+  return copySafeness(obj, obj);
 }
 
 export function striptags(input, preserveLinebreaks) {
@@ -413,17 +430,17 @@ export function striptags(input, preserveLinebreaks) {
   } else {
     res = trimmedInput.replace(/\s+/gi, ' ');
   }
-  return r.copySafeness(input, res);
+  return copySafeness(input, res);
 }
 
 export function title(str) {
   str = normalize(str, '');
   let words = str.split(' ').map(word => capitalize(word));
-  return r.copySafeness(str, words.join(' '));
+  return copySafeness(str, words.join(' '));
 }
 
 export function trim(str) {
-  return r.copySafeness(str, str.replace(/^\s*|\s*$/g, ''));
+  return copySafeness(str, str.replace(/^\s*|\s*$/g, ''));
 }
 
 export function truncate(input, length, killwords, end) {
@@ -447,7 +464,7 @@ export function truncate(input, length, killwords, end) {
   }
 
   input += (end !== undefined && end !== null) ? end : '...';
-  return r.copySafeness(orig, input);
+  return copySafeness(orig, input);
 }
 
 export function upper(str) {
@@ -457,10 +474,10 @@ export function upper(str) {
 
 export function urlencode(obj) {
   var enc = encodeURIComponent;
-  if (lib.isString(obj)) {
+  if (isString(obj)) {
     return enc(obj);
   } else {
-    let keyvals = (lib.isArray(obj)) ? obj : lib._entries(obj);
+    let keyvals = (isArray(obj)) ? obj : _entries(obj);
     return keyvals.map(([k, v]) => `${enc(k)}=${enc(v)}`).join('&');
   }
 }
@@ -518,7 +535,7 @@ export function float(val, def) {
   return (isNaN(res)) ? def : res;
 }
 
-export const intFilter = r.makeMacro(
+export const intFilter = makeMacro(
   ['value', 'default', 'base'],
   [],
   function doInt(value, defaultValue, base = 10) {

@@ -1,8 +1,7 @@
-import * as lib from './lib.js';
-var arrayFrom = Array.from;
-var supportsIterators = (
-  typeof Symbol === 'function' && Symbol.iterator && typeof arrayFrom === 'function'
-);
+import { isArray, keys } from 'remeda';
+import { TemplateError } from './error/index.js';
+
+const escapeHtml = (val) => Bun.escapeHTML(val).replace(/\\/g, '&#92;').replace(/&#x27;/g, '&#39;');
 
 export class Frame {
   constructor(parent, isolateWrites) {
@@ -196,7 +195,7 @@ export function suppressValue(val, autoescape) {
   val = (val !== undefined && val !== null) ? val : '';
 
   if (autoescape && !(val instanceof SafeString)) {
-    val = lib.escape(val.toString());
+    val = escapeHtml(val.toString());
   }
 
   return val;
@@ -209,12 +208,14 @@ export function awaitValue(val) {
   return val;
 }
 
-export function ensureDefined(val, lineno, colno) {
+export function ensureDefined(val, lineno, colno, varName = null) {
   if (val === null || val === undefined) {
-    throw new lib.TemplateError(
-      'attempted to output null or undefined value',
-      lineno + 1,
-      colno + 1
+    const varMsg = varName ? ` '${varName}'` : '';
+    throw new TemplateError(
+      `attempted to output${varMsg} null or undefined value`,
+      lineno,
+      colno,
+      { code: varName ? 'UNDEFINED_VARIABLE' : 'UNDEFINED_VALUE', subject: varName, phase: 'render' }
     );
   }
   return val;
@@ -293,11 +294,21 @@ export function nullishCoalesce(left, right) {
   return (left !== undefined && left !== null) ? left : right;
 }
 
-export function callWrap(obj, name, context, args) {
+export function callWrap(obj, name, context, args, lineno, colno) {
   if (!obj) {
-    throw new Error('Unable to call `' + name + '`, which is undefined or falsey');
+    throw new TemplateError(
+      'Unable to call `' + name + '`, which is undefined or falsey',
+      lineno,
+      colno,
+      { code: 'UNDEFINED_FUNCTION', subject: name, phase: 'render' }
+    );
   } else if (typeof obj !== 'function') {
-    throw new Error('Unable to call `' + name + '`, which is not a function');
+    throw new TemplateError(
+      'Unable to call `' + name + '`, which is not a function',
+      lineno,
+      colno,
+      { code: 'NOT_A_FUNCTION', subject: name, phase: 'render' }
+    );
   }
 
   return obj.apply(context, args);
@@ -311,9 +322,15 @@ export function contextOrFrameLookup(context, frame, name) {
 }
 
 export function handleError(error, lineno, colno, sourceMapData) {
-  if (error.lineno) {
+  if (error.lineno !== undefined) {
     return error;
   }
+
+  const info = {
+    code: error.code,
+    subject: error.subject,
+    phase: error.phase || 'render'
+  };
 
   if (sourceMapData && Array.isArray(sourceMapData) && sourceMapData.length > 0) {
     const sm = {
@@ -335,14 +352,14 @@ export function handleError(error, lineno, colno, sourceMapData) {
       }
     };
     const pos = sm.getOriginalPosition(lineno);
-    return new lib.TemplateError(error, pos.line, pos.col);
+    return new TemplateError(error, pos.line, pos.col, info);
   }
 
-  return new lib.TemplateError(error, lineno, colno);
+  return new TemplateError(error, lineno, colno, info);
 }
 
 export async function asyncEach(arr, dimen, iter) {
-  if (lib.isArray(arr)) {
+  if (isArray(arr)) {
     const len = arr.length;
 
     for (let i = 0; i < len; i++) {
@@ -363,7 +380,7 @@ export async function asyncEach(arr, dimen, iter) {
       }
     }
   } else {
-    const keys = lib.keys(arr || {});
+    const keys = keys(arr || {});
     const len = keys.length;
     for (let i = 0; i < len; i++) {
       const k = keys[i];
@@ -375,7 +392,7 @@ export async function asyncEach(arr, dimen, iter) {
 export async function asyncAll(arr, dimen, func) {
   const outputArr = [];
 
-  if (lib.isArray(arr)) {
+  if (isArray(arr)) {
     const len = arr.length;
 
     if (len === 0) {
@@ -401,7 +418,7 @@ export async function asyncAll(arr, dimen, func) {
       }
     }
   } else {
-    const keys = lib.keys(arr || {});
+    const keys = keys(arr || {});
     const len = keys.length;
 
     if (len === 0) {
@@ -418,15 +435,24 @@ export async function asyncAll(arr, dimen, func) {
 }
 
 export function fromIterator(arr) {
-  if (typeof arr !== 'object' || arr === null || lib.isArray(arr)) {
+  if (typeof arr !== 'object' || arr === null || isArray(arr)) {
     return arr;
-  } else if (supportsIterators && Symbol.iterator in arr) {
-    return arrayFrom(arr);
+  } else if (Symbol.iterator in arr) {
+    return Array.from(arr);
   } else {
     return arr;
   }
 }
 
-export const isArray = lib.isArray;
-export const keys = lib.keys;
-export const inOperator = lib.inOperator;
+export function inOperator(key, val) {
+  if (Array.isArray(val) || typeof val === 'string') {
+    return val.indexOf(key) !== -1;
+  }
+  if (val && typeof val === 'object') {
+    return key in val;
+  }
+  throw new Error(`Cannot use "in" operator to search for "${key}" in unexpected types.`);
+}
+
+export { isArray, keys };
+

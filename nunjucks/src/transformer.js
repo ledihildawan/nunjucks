@@ -1,5 +1,40 @@
-import * as nodes from './nodes.js';
-import * as lib from './lib.js';
+import * as nodeTypes from './nodes.js';
+import {
+  Node,
+  NodeList,
+  Block,
+  FunCall,
+  Pipe,
+  PipeAsync,
+  CallExtension,
+  CallExtensionAsync,
+  Symbol as ASTSymbol,
+  Super,
+  Output,
+  Set as ASTSet,
+  For,
+  If,
+  IfAsync,
+  AsyncEach,
+  AsyncAll,
+  In as OperatorIn,
+  Is,
+  And,
+  Or,
+  Not,
+  Add,
+  Concat,
+  Sub,
+  Mul,
+  Div,
+  FloorDiv,
+  Mod,
+  Pow,
+  Neg,
+  Pos,
+  OptionalChain,
+  NullishCoalesce,
+} from './nodes.js';
 
 let sym = 0;
 function gensym() {
@@ -24,7 +59,7 @@ function mapCOW(arr, func) {
 }
 
 function walk(ast, func, depthFirst) {
-  if (!(ast instanceof nodes.Node)) {
+  if (!(ast instanceof Node)) {
     return ast;
   }
 
@@ -36,25 +71,25 @@ function walk(ast, func, depthFirst) {
     }
   }
 
-  if (ast instanceof nodes.NodeList) {
+  if (ast instanceof NodeList) {
     const children = mapCOW(ast.children, (node) => walk(node, func, depthFirst));
 
     if (children !== ast.children) {
-      ast = new nodes[ast.typename](ast.lineno, ast.colno, children);
+      ast = new nodeTypes[ast.typename](ast.lineno, ast.colno, children);
     }
-  } else if (ast instanceof nodes.CallExtension) {
+  } else if (ast instanceof CallExtension) {
     const args = walk(ast.args, func, depthFirst);
     const contentArgs = mapCOW(ast.contentArgs, (node) => walk(node, func, depthFirst));
 
     if (args !== ast.args || contentArgs !== ast.contentArgs) {
-      ast = new nodes[ast.typename](ast.extName, ast.prop, args, contentArgs);
+      ast = new nodeTypes[ast.typename](ast.extName, ast.prop, args, contentArgs);
     }
   } else {
     const props = ast.fields.map((field) => ast[field]);
     const propsT = mapCOW(props, (prop) => walk(prop, func, depthFirst));
 
     if (propsT !== props) {
-      ast = new nodes[ast.typename](ast.lineno, ast.colno);
+      ast = new nodeTypes[ast.typename](ast.lineno, ast.colno);
       propsT.forEach((prop, i) => {
         ast[ast.fields[i]] = prop;
       });
@@ -73,16 +108,16 @@ function _liftPipes(node, asyncPipes, prop) {
 
   var walked = depthWalk(prop ? node[prop] : node, (descNode) => {
     let symbol;
-    if (descNode instanceof nodes.Block) {
+    if (descNode instanceof Block) {
       return descNode;
-    } else if ((descNode instanceof nodes.Pipe &&
-      lib.indexOf(asyncPipes, descNode.name.value) !== -1) ||
-      descNode instanceof nodes.CallExtensionAsync) {
-      symbol = new nodes.Symbol(descNode.lineno,
+    } else if ((descNode instanceof Pipe &&
+      asyncPipes.indexOf(descNode.name.value) !== -1) ||
+      descNode instanceof CallExtensionAsync) {
+      symbol = new ASTSymbol(descNode.lineno,
         descNode.colno,
         gensym());
 
-      children.push(new nodes.PipeAsync(descNode.lineno,
+      children.push(new PipeAsync(descNode.lineno,
         descNode.colno,
         descNode.name,
         descNode.args,
@@ -100,7 +135,7 @@ function _liftPipes(node, asyncPipes, prop) {
   if (children.length) {
     children.push(node);
 
-    return new nodes.NodeList(
+    return new NodeList(
       node.lineno,
       node.colno,
       children
@@ -112,15 +147,15 @@ function _liftPipes(node, asyncPipes, prop) {
 
 function liftPipes(ast, asyncPipes) {
   return depthWalk(ast, (node) => {
-    if (node instanceof nodes.Output) {
+    if (node instanceof Output) {
       return _liftPipes(node, asyncPipes);
-    } else if (node instanceof nodes.Set) {
+    } else if (node instanceof ASTSet) {
       return _liftPipes(node, asyncPipes, 'value');
-    } else if (node instanceof nodes.For) {
+    } else if (node instanceof For) {
       return _liftPipes(node, asyncPipes, 'arr');
-    } else if (node instanceof nodes.If) {
+    } else if (node instanceof If) {
       return _liftPipes(node, asyncPipes, 'cond');
-    } else if (node instanceof nodes.CallExtension) {
+    } else if (node instanceof CallExtension) {
       return _liftPipes(node, asyncPipes, 'args');
     } else {
       return undefined;
@@ -130,7 +165,7 @@ function liftPipes(ast, asyncPipes) {
 
 function liftSuper(ast) {
   return walk(ast, (blockNode) => {
-    if (!(blockNode instanceof nodes.Block)) {
+    if (!(blockNode instanceof Block)) {
       return;
     }
 
@@ -138,16 +173,16 @@ function liftSuper(ast) {
     const symbol = gensym();
 
     blockNode.body = walk(blockNode.body, (node) => {
-      if (node instanceof nodes.FunCall && node.name.value === 'super') {
+      if (node instanceof FunCall && node.name.value === 'super') {
         hasSuper = true;
-        return new nodes.Symbol(node.lineno, node.colno, symbol);
+        return new ASTSymbol(node.lineno, node.colno, symbol);
       }
       return node;
     });
 
     if (hasSuper) {
-      blockNode.body.children.unshift(new nodes.Super(
-        0, 0, blockNode.name, new nodes.Symbol(0, 0, symbol)
+      blockNode.body.children.unshift(new Super(
+        0, 0, blockNode.name, new ASTSymbol(0, 0, symbol)
       ));
     }
   });
@@ -155,17 +190,17 @@ function liftSuper(ast) {
 
 function convertStatements(ast) {
   return depthWalk(ast, (node) => {
-    if (!(node instanceof nodes.If) && !(node instanceof nodes.For)) {
+    if (!(node instanceof If) && !(node instanceof For)) {
       return undefined;
     }
 
     let async = false;
     walk(node, (child) => {
-      if (child instanceof nodes.PipeAsync ||
-        child instanceof nodes.IfAsync ||
-        child instanceof nodes.AsyncEach ||
-        child instanceof nodes.AsyncAll ||
-        child instanceof nodes.CallExtensionAsync) {
+      if (child instanceof PipeAsync ||
+        child instanceof IfAsync ||
+        child instanceof AsyncEach ||
+        child instanceof AsyncAll ||
+        child instanceof CallExtensionAsync) {
         async = true;
         return child;
       }
@@ -173,16 +208,16 @@ function convertStatements(ast) {
     });
 
     if (async) {
-      if (node instanceof nodes.If) {
-        return new nodes.IfAsync(
+      if (node instanceof If) {
+        return new IfAsync(
           node.lineno,
           node.colno,
           node.cond,
           node.body,
           node.else_
         );
-      } else if (node instanceof nodes.For && !(node instanceof nodes.AsyncAll)) {
-        return new nodes.AsyncEach(
+      } else if (node instanceof For && !(node instanceof AsyncAll)) {
+        return new AsyncEach(
           node.lineno,
           node.colno,
           node.arr,
