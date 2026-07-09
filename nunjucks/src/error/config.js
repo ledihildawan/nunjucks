@@ -32,6 +32,6 @@ export const createConfigStore = (initial = {}) => {
 
 export const errorConfig = createConfigStore();
 
-export const getErrorConfig = () => errorConfig.get();
+export const getConfig = () => errorConfig.get();
 
 export const setErrorConfig = (options = {}) => errorConfig.set(options);

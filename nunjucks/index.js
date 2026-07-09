@@ -80,7 +80,7 @@ export { PrecompiledLoader } from './src/loaders/precompiled-loader.js';
 export { WebLoader } from './src/loaders/web-loader.js';
 export { compiler, parser, lexer, runtime, nodes, installJinjaCompat };
 export { precompile, precompileString } from './src/precompile.js';
-export { getConfig, renderError, renderErrorString, Environment as ErrorEnvironment } from './src/error/index.js';
+export { getConfig, renderError, renderErrorString, createEnvironment as ErrorEnvironment } from './src/error/index.js';
 
 export default {
   Environment,

@@ -1,4 +1,4 @@
-import { getErrorConfig } from './config.js';
+import { getConfig } from './config.js';
 import { extractIncludeChainFromMessage, extractErrorTemplateName } from './core/extract.js';
 import { createErrorData } from './state/error-data.js';
 import { toConsoleString } from './formatters/console.js';
@@ -124,10 +124,10 @@ const createErrorResult = (error, errorData, csp) => ({
   toHtmlString: () => toHtmlString({ ...errorData, csp })
 });
 
-export const createErrorEnvironment = (options = {}) => {
+export const createEnvironment = (options = {}) => {
   const fsResolver = createFsResolver();
   return {
-    opts: { ...getErrorConfig(), ...options },
+    opts: { ...getConfig(), ...options },
     async formatError(error, templateName, options = {}) {
       const fs = await fsResolver.resolve(this.opts.fs);
       const errorData = await buildErrorData(error, templateName, options, this.opts, fs);
@@ -141,7 +141,7 @@ let _defaultEnv = null;
 
 export const getEnvironment = () => {
   if (!_defaultEnv) {
-    _defaultEnv = createErrorEnvironment();
+    _defaultEnv = createEnvironment();
   }
   return _defaultEnv;
 };
@@ -151,7 +151,7 @@ export const renderError = async (error, templateName, options = {}) => {
   return err.toHtmlString();
 };
 
-export const createErrorFormatter = (options = {}) => createErrorEnvironment(options);
+export const createErrorFormatter = (options = {}) => createEnvironment(options);
 
 export const renderErrorString = async (error, templateString, options = {}) => {
   const err = await getEnvironment().formatError(error, templateString, options);

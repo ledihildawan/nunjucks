@@ -1,7 +1,7 @@
-export { getErrorConfig as getConfig } from './config.js';
+export { getConfig } from './config.js';
 
 export {
-  createErrorEnvironment as Environment,
+  createEnvironment,
   getEnvironment,
   renderError,
   renderErrorString,
