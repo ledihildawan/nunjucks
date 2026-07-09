@@ -51,7 +51,7 @@ export function lessthan(one, two) {
 
 export const lt = lessthan;
 
-export function lower(value) {
+export function isLowerCase(value) {
   return value.toLowerCase() === value;
 }
 
@@ -73,7 +73,7 @@ export function odd(value) {
   return value % 2 === 1;
 }
 
-export function string(value) {
+export function isString(value) {
   return typeof value === 'string';
 }
 
@@ -87,7 +87,7 @@ export function undefinedTest(value) {
 
 export { undefinedTest as undefined };
 
-export function upper(value) {
+export function isUpperCase(value) {
   return value.toUpperCase() === value;
 }
 
