@@ -1,4 +1,3 @@
-import * as nodeTypes from '../nodes.js';
 import {
   Node,
   NodeList,

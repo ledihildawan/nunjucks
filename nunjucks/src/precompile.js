@@ -1,7 +1,7 @@
 import { existsSync, statSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {prettifyError} from './error/index.js';
-import * as compiler from './compiler.js';
+import { compile } from './compiler.js';
 import {Environment} from './environment/index.js';
 import precompileGlobal from './precompile-global.js';
 
@@ -95,7 +95,7 @@ function _precompile(str, name, env) {
   name = name.replace(/\\/g, '/');
 
   try {
-    template = compiler.compile(str,
+    template = compile(str,
       asyncFilters,
       extensions,
       name,
