@@ -1,7 +1,7 @@
 import { expect, describe, test, beforeEach } from 'bun:test';
 import path from 'path';
 import * as util from './util.js';
-import { Environment } from '../nunjucks/src/environment.js';
+import { Environment } from '../nunjucks/src/environment/index.js';
 import { FileSystemLoader } from '../nunjucks/src/loaders/node/index.js';
 
 var templatesPath = 'tests/templates';

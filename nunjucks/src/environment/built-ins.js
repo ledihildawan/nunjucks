@@ -1,6 +1,6 @@
 import { isArray, entries } from 'remeda';
-import * as filters from '../filters.js';
-import * as tests from '../tests.js';
+import * as filters from '../filters/index.js';
+import * as tests from './built-in-tests.js';
 import globals from '../globals.js';
 
 export const createBuiltIns = () => ({

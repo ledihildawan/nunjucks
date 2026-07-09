@@ -2,7 +2,7 @@ import { existsSync, statSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {prettifyError} from './error/index.js';
 import * as compiler from './compiler.js';
-import {Environment} from './environment.js';
+import {Environment} from './environment/index.js';
 import precompileGlobal from './precompile-global.js';
 
 function match(filename, patterns) {

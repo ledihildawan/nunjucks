@@ -1,7 +1,7 @@
 import { expect, describe, test, beforeEach } from 'bun:test';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { Environment } from '../nunjucks/src/environment.js';
+import { Environment } from '../nunjucks/src/environment/index.js';
 import { WebLoader } from '../nunjucks/src/loaders/web/index.js';
 import { FileSystemLoader } from '../nunjucks/src/loaders/node/index.js';
 import { NodeResolveLoader } from '../nunjucks/src/loaders/node/index.js';

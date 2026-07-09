@@ -1,6 +1,6 @@
 import { expect, describe, test } from 'bun:test';
 import * as util from './util.js';
-import { Environment } from '../nunjucks/src/environment.js';
+import { Environment } from '../nunjucks/src/environment/index.js';
 
 var equal = util.equal;
 var render = util.render;

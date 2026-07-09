@@ -1,7 +1,7 @@
 import { expect, describe, test } from 'bun:test';
 import * as util from './util.js';
-import { Template } from '../nunjucks/src/environment.js';
-import { Environment } from '../nunjucks/src/environment.js';
+import { Template } from '../nunjucks/src/environment/index.js';
+import { Environment } from '../nunjucks/src/environment/index.js';
 import { readFile } from 'node:fs/promises';
 
 var render = util.render;

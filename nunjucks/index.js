@@ -1,5 +1,5 @@
 import { isPlainObject } from 'remeda';
-import { Environment, Template } from './src/environment.js';
+import { Environment, Template } from './src/environment/index.js';
 import Loader from './src/loaders/base-loader.js';
 import * as loaders from './src/loaders/index.js';
 import * as compiler from './src/compiler.js';

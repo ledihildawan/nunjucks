@@ -1,4 +1,4 @@
-import { SafeString } from './runtime/index.js';
+import { SafeString } from '../runtime/index.js';
 
 export function callable(value) {
   return typeof value === 'function';
