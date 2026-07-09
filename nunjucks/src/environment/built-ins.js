@@ -78,7 +78,7 @@ import {
   iterable,
   mapping,
 } from './built-in-tests.js';
-import globals from '../globals.js';
+import globals from './globals.js';
 
 export const createBuiltIns = () => ({
   globals: globals(),

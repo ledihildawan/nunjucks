@@ -1,8 +1,8 @@
 import { isString, isPlainObject } from 'remeda';
-import { compile } from './compiler.js';
-import { prettifyError } from './error/index.js';
-import { createMappedError } from './source-map.js';
-import { Context } from './context.js';
+import { compile } from '../compiler.js';
+import { prettifyError } from '../error/index.js';
+import { createMappedError } from '../lib/source-map.js';
+import { Context } from '../runtime/context.js';
 import {
   Frame,
   SafeString,
@@ -24,8 +24,8 @@ import {
   inOperator,
   isArray,
   keys,
-} from './runtime/index.js';
-import { Obj } from './object.js';
+} from '../runtime/index.js';
+import { Obj } from '../object/index.js';
 
 const globalRuntime = {
   Frame,

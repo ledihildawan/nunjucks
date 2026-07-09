@@ -1,4 +1,4 @@
-import { EmitterObj } from '../object.js';
+import { EmitterObj } from '../object/index.js';
 import { resolve, dirname } from 'node:path';
 
 export default class Loader extends EmitterObj {

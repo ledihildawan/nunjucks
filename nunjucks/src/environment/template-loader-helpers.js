@@ -1,4 +1,4 @@
-import { Template } from '../template.js';
+import { Template } from '../template/index.js';
 
 export const isRelativePath = (loader, filename) =>
   (loader.isRelative && filename) ? loader.isRelative(filename) : false;

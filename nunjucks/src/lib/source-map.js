@@ -1,4 +1,4 @@
-export class SourceMap {
+﻿export class SourceMap {
   constructor(templateName) {
     this.templateName = templateName;
     this.mappings = [];

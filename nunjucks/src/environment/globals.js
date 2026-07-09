@@ -1,4 +1,4 @@
-function cycler(items) {
+﻿function cycler(items) {
   var index = -1;
 
   return {

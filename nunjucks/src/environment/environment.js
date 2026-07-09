@@ -3,10 +3,10 @@ import { compile } from '../compiler.js';
 import { FileSystemLoader } from '../loaders/file-system-loader.js';
 import { WebLoader } from '../loaders/web-loader.js';
 import { PrecompiledLoader } from '../loaders/precompiled-loader.js';
-import { EmitterObj } from '../object.js';
+import { EmitterObj } from '../object/index.js';
 import { Frame } from '../runtime/index.js';
 import expressApp from '../express-app.js';
-import { Template } from '../template.js';
+import { Template } from '../template/index.js';
 import {
   isRelativePath,
   resolveTemplatePath,

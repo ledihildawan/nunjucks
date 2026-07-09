@@ -33,8 +33,8 @@ import {
   Slice,
 } from './nodes.js';
 import { TemplateError } from './error/index.js';
-import { Obj } from './object.js';
-import { SourceMap } from './source-map.js';
+import { Obj } from './object/index.js';
+import { SourceMap } from './lib/source-map.js';
 import { COMPILE_FUNCTIONS, compileDispatch } from './compiler/compile-node-dispatch.js';
 
 export class Compiler extends Obj {

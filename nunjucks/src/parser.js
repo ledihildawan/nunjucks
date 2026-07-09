@@ -5,7 +5,7 @@ import {
   Output,
   TemplateData,
 } from './nodes.js';
-import { Obj } from './object.js';
+import { Obj } from './object/index.js';
 import {
   nextToken,
   peekToken,
