@@ -1,6 +1,6 @@
 import { escapeHtml, highlightHtml } from './highlight.js';
 import { resolveIdeLink } from '../../constants/ide-links.js';
-import { shortenPath } from '../../utils/path-utils.js';
+import { shortenPath } from '../../utils/path-shortener.js';
 
 const normalizePath = (p) => p.replace(/^file:\/\/+/, '');
 

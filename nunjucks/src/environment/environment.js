@@ -10,7 +10,7 @@ import { Template } from '../template.js';
 import {
   isRelativePath,
   resolveTemplatePath,
-} from './loader-utils.js';
+} from './template-loader-helpers.js';
 import {
   findCachedTemplate,
   normalizeIncludeChain,

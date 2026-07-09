@@ -4,7 +4,7 @@ import { formatCodeTraceHtml, renderContextHtml, formatStackTraceHtml } from './
 import { CSS } from './styles.js';
 import { TOGGLE_SCRIPT } from './script.js';
 import { resolveIdeLink, getIdeMeta } from '../../constants/ide-links.js';
-import { shortenPath } from '../../utils/path-utils.js';
+import { shortenPath } from '../../utils/path-shortener.js';
 
 const document = (title, body, scripts = '', csp = null) => {
   const styleNonce = csp?.nonce ? ` nonce="${csp.nonce}"` : '';

@@ -1,4 +1,4 @@
-import { shortenPath, normalizeDrivePath } from '../../utils/path-utils.js';
+import { shortenPath, normalizeDrivePath } from '../../utils/path-shortener.js';
 import { resolveIdeLink } from '../../constants/ide-links.js';
 
 const FALLBACK_PICOLORS = {
