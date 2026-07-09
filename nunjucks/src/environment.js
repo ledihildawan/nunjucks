@@ -8,7 +8,7 @@ import { PrecompiledLoader } from './loaders/precompiled-loader.js';
 import * as tests from './tests.js';
 import globals from './globals.js';
 import { EmitterObj } from './object.js';
-import { Frame } from './runtime.js';
+import { Frame } from './runtime/index.js';
 import expressApp from './express-app.js';
 import { Template } from './template.js';
 

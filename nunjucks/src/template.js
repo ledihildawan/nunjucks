@@ -3,8 +3,8 @@ import { compile } from './compiler.js';
 import { prettifyError } from './error/index.js';
 import { createMappedError } from './source-map.js';
 import { Context } from './context.js';
-import { Frame } from './runtime.js';
-import * as globalRuntime from './runtime.js';
+import { Frame } from './runtime/index.js';
+import * as globalRuntime from './runtime/index.js';
 import { Obj } from './object.js';
 
 const getLoaderSourceMap = (env, errorPath, currentPath) => {

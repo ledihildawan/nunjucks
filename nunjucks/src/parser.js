@@ -1,4 +1,4 @@
-import * as lexer from './lexer.js';
+import * as lexer from './lexer/index.js';
 import * as nodes from './nodes.js';
 import {
   Node,

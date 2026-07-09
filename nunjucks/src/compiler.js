@@ -1,5 +1,5 @@
 import { parse } from './parser.js';
-import { transform } from './transformer.js';
+import { transform } from './transformers/transformer.js';
 import {
   Node,
   NodeList,
@@ -59,7 +59,7 @@ import {
   TemplateRef,
 } from './nodes.js';
 import { TemplateError } from './error/index.js';
-import { Frame } from './runtime.js';
+import { Frame } from './runtime/index.js';
 import { Obj } from './object.js';
 import { SourceMap } from './source-map.js';
 

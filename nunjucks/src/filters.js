@@ -1,7 +1,7 @@
 import { isArray, isString, isPlainObject, map, keys, entries, groupBy } from 'remeda';
 import { getAttrGetter } from './lib/attributes.js';
 import { TemplateError } from './error/index.js';
-import { SafeString, markSafe, copySafeness, makeMacro } from './runtime.js';
+import { SafeString, markSafe, copySafeness, makeMacro } from './runtime/index.js';
 
 const isObject = isPlainObject;
 const _entries = entries;
