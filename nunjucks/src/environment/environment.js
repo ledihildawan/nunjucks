@@ -10,11 +10,13 @@ import { Template } from '../template.js';
 import {
   isRelativePath,
   resolveTemplatePath,
+} from './loader-utils.js';
+import {
   findCachedTemplate,
   normalizeIncludeChain,
   resolveTemplateName,
   validateTemplateName
-} from './loader-utils.js';
+} from './template-resolver.js';
 import { wrapFilterWithError, wrapAsyncFilter } from './filter-wrappers.js';
 import { normalizeLoaders, registerBuiltIns } from './built-ins.js';
 

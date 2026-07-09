@@ -63,10 +63,9 @@ import {
 import { Obj } from './object.js';
 import * as cursor from './parser/cursor.js';
 import { parseAggregate, parseSignature } from './parser/node-parsers/index.js';
-import * as exprParser from './parser/expression-parser.js';
-import { parsePostfix } from './parser/postfix-parser.js';
-import * as stmtParser from './parser/statement-parser.js';
-import { parsePrimary, parseFilterName, parseFilterArgs, parsePipe } from './parser/primary-parser.js';
+import * as exprParser from './parser/expression-parser/index.js';
+import * as postfixParser from './parser/postfix-parser/index.js';
+import * as stmtParser from './parser/statement-parser/index.js';
 
 export class Parser extends Obj {
   init(tokens) {
@@ -178,7 +177,7 @@ export class Parser extends Obj {
   }
 
   parsePostfix(node) {
-    return parsePostfix(this, node);
+    return postfixParser.parsePostfix(this, node);
   }
 
   parseExpression() {
@@ -254,19 +253,19 @@ export class Parser extends Obj {
   }
 
   parsePrimary(noPostfix) {
-    return parsePrimary(this, noPostfix);
+    return exprParser.parsePrimary(this, noPostfix);
   }
 
   parseFilterName() {
-    return parseFilterName(this);
+    return postfixParser.parseFilterName(this);
   }
 
   parseFilterArgs(node) {
-    return parseFilterArgs(this, node);
+    return postfixParser.parseFilterArgs(this, node);
   }
 
   parsePipe(node) {
-    return parsePipe(this, node);
+    return postfixParser.parsePipe(this, node);
   }
 
   parseFilterStatement() {

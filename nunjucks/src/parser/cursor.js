@@ -1,5 +1,5 @@
 import * as lexer from '../lexer/index.js';
-import { TemplateError } from '../error/index.js';
+import { error, fail } from './error.js';
 
 export const createCursor = (tokens) => ({
   tokens,
@@ -116,15 +116,4 @@ export const advanceAfterVariableEnd = (ctx) => {
   }
 };
 
-export const error = (ctx, msg, lineno, colno) => {
-  if (lineno === undefined || colno === undefined) {
-    const tok = peekToken(ctx) || {};
-    lineno = tok.lineno;
-    colno = tok.colno;
-  }
-  return new TemplateError(msg, lineno, colno, { phase: 'parse' });
-};
-
-export const fail = (ctx, msg, lineno, colno) => {
-  throw error(ctx, msg, lineno, colno);
-};
+export { error, fail };
