@@ -7,17 +7,17 @@ import {
 } from './nodes.js';
 import { Obj } from './object.js';
 import {
-  nextToken as cursorNextToken,
-  peekToken as cursorPeekToken,
-  pushToken as cursorPushToken,
-  skip as cursorSkip,
-  expect as cursorExpect,
-  skipValue as cursorSkipValue,
-  skipSymbol as cursorSkipSymbol,
-  advanceAfterBlockEnd as cursorAdvanceAfterBlockEnd,
-  advanceAfterVariableEnd as cursorAdvanceAfterVariableEnd,
-  error as cursorError,
-  fail as cursorFail,
+  nextToken,
+  peekToken,
+  pushToken,
+  skip,
+  expect,
+  skipValue,
+  skipSymbol,
+  advanceAfterBlockEnd,
+  advanceAfterVariableEnd,
+  error,
+  fail,
 } from './parser/cursor.js';
 import { parseAggregate, parseSignature } from './parser/node-parsers/index.js';
 import {
@@ -76,47 +76,47 @@ export class Parser extends Obj {
   }
 
   nextToken(withWhitespace) {
-    return cursorNextToken(this, withWhitespace);
+    return nextToken(this, withWhitespace);
   }
 
   peekToken() {
-    return cursorPeekToken(this);
+    return peekToken(this);
   }
 
   pushToken(tok) {
-    return cursorPushToken(this, tok);
+    return pushToken(this, tok);
   }
 
   error(msg, lineno, colno) {
-    return cursorError(this, msg, lineno, colno);
+    return error(this, msg, lineno, colno);
   }
 
   fail(msg, lineno, colno) {
-    return cursorFail(this, msg, lineno, colno);
+    return fail(this, msg, lineno, colno);
   }
 
   skip(type) {
-    return cursorSkip(this, type);
+    return skip(this, type);
   }
 
   expect(type) {
-    return cursorExpect(this, type);
+    return expect(this, type);
   }
 
   skipValue(type, val) {
-    return cursorSkipValue(this, type, val);
+    return skipValue(this, type, val);
   }
 
   skipSymbol(val) {
-    return cursorSkipSymbol(this, val);
+    return skipSymbol(this, val);
   }
 
   advanceAfterBlockEnd(name) {
-    return cursorAdvanceAfterBlockEnd(this, name);
+    return advanceAfterBlockEnd(this, name);
   }
 
   advanceAfterVariableEnd() {
-    return cursorAdvanceAfterVariableEnd(this);
+    return advanceAfterVariableEnd(this);
   }
 
   parseFor() {
