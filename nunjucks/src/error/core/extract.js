@@ -1,4 +1,4 @@
-import { PATTERNS } from '../constants/patterns.js';
+import { PATTERNS } from '../constants/error-patterns.js';
 
 export const extractUndefinedName = (message) => {
   if (!message) return null;

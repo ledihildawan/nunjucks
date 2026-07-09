@@ -1,4 +1,4 @@
-import { PATTERNS } from './patterns.js';
+import { PATTERNS } from './error-patterns.js';
 
 export const ERROR_RULES = [
   {

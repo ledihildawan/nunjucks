@@ -1,7 +1,8 @@
-import { formatLocation, getDisplayMessage } from '../../state/display.js';
+import { formatLocation, getDisplayMessage } from '../../state/message-formatter.js';
 import { escapeHtml, renderInlineMarkdown, highlightHtml, highlightJs } from './highlight.js';
 import { formatCodeTraceHtml, renderContextHtml, formatStackTraceHtml } from './sections.js';
 import { CSS } from './styles.js';
+import { TOGGLE_SCRIPT } from './script.js';
 import { resolveIdeLink, getIdeMeta } from '../../constants/ide-links.js';
 
 const shortenPath = (path, maxLen = 60) => {
@@ -12,76 +13,38 @@ const shortenPath = (path, maxLen = 60) => {
   return `${firstDir}\\...\\${filename}`;
 };
 
-const TOGGLE_SCRIPT = `
-<script>
-(() => {
-  const content = document.querySelector('#stack-container .stack-content');
-  if (!content) return;
-
-  const allRows = Array.from(content.querySelectorAll('.stack-row'));
-  const btn = document.getElementById('btn-toggle-stack');
-  const VISIBLE_COUNT = 5;
-  const totalHidden = allRows.length - VISIBLE_COUNT;
-
-  if (totalHidden <= 0) {
-    btn?.remove();
-    return;
-  }
-
-  const hiddenRows = allRows.slice(VISIBLE_COUNT);
-  hiddenRows.forEach((row) => { row.style.display = 'none'; });
-
-  window.toggleStack = () => {
-    const isExpanded = content.classList.contains('is-expanded');
-
-    if (isExpanded) {
-      content.style.removeProperty('max-height');
-
-      content.addEventListener('transitionend', () => {
-        hiddenRows.forEach((row) => { row.style.display = 'none'; });
-      }, { once: true });
-
-      content.classList.remove('is-expanded');
-      btn.textContent = 'Show ' + totalHidden + ' more lines...';
-    } else {
-      hiddenRows.forEach((row) => { row.style.display = 'flex'; });
-      content.style.setProperty('max-height', '40rem');
-      content.classList.add('is-expanded');
-      btn.textContent = 'Collapse stack trace';
-    }
-  };
-})();
-</script>`;
-
-const document = (title, body) => `<!DOCTYPE html>
+const document = (title, body, scripts = '', csp = null) => {
+  const styleNonce = csp?.nonce ? ` nonce="${csp.nonce}"` : '';
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>${title}</title>
-<style>
+<style${styleNonce}>
 body{margin:0;min-block-size:100dvh;padding:1rem;background:var(--color-bg-page);color:var(--color-text-primary);font-family:system-ui,-apple-system,sans-serif}
 ${CSS}
 </style>
 </head>
 <body>
 ${body}
-${TOGGLE_SCRIPT}
+${scripts}
 </body>
 </html>`;
+};
 
 const buildProductionBody = (state) => {
-  const ref = state.fingerprint ? `<p style="font-size:0.75rem;color:var(--color-text-secondary);margin:0;opacity:0.7;">Ref: #${escapeHtml(state.fingerprint)}${state.timestamp ? ' · ' + escapeHtml(state.timestamp) : ''}</p>` : '';
+  const ref = state.fingerprint ? `<p class="prod-ref">Ref: #${escapeHtml(state.fingerprint)}${state.timestamp ? ' · ' + escapeHtml(state.timestamp) : ''}</p>` : '';
   return `
-<main style="font-family:system-ui,-apple-system,sans-serif;max-width:32.5rem;margin:3rem auto;padding:2rem;background:var(--color-bg-panel);border:1px solid var(--color-border);border-radius:0.75rem;box-shadow:0 1.5rem 3rem -0.75rem rgba(0,0,0,0.15);text-align:center;">
-  <div style="margin-bottom:1.25rem;">
+<main class="prod-main">
+  <div class="prod-icon">
     <svg width="48" height="48" viewBox="0 0 24 24" fill="var(--color-error-border)" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
   </div>
-  <h1 style="font-size:1.375rem;font-weight:700;color:var(--color-text-primary);margin:0 0 0.5rem;">Rendering Interrupted</h1>
-  <p style="font-size:0.875rem;color:var(--color-text-secondary);margin:0 0 0.25rem;">An error occurred during template rendering.</p>
-  <p style="font-size:0.75rem;color:var(--color-text-secondary);margin:0 0 1.25rem;opacity:0.8;">500 · Internal Server Error</p>
-  <a href="" style="display:inline-block;padding:0.6em 1.5em;border-radius:0.375rem;font-size:0.8125rem;font-weight:600;text-decoration:none;background:var(--color-btn-bg);color:var(--color-btn-text);margin-bottom:1.25rem;">Try Again</a>
+  <h1 class="prod-title">Rendering Interrupted</h1>
+  <p class="prod-desc">An error occurred during template rendering.</p>
+  <p class="prod-status">500 · Internal Server Error</p>
+  <a href="" class="prod-btn">Try Again</a>
   ${ref}
 </main>`;
 };
@@ -101,7 +64,7 @@ export const toHtmlString = (state) => {
   } = state;
 
   if (isProduction) {
-    return document('Rendering Interrupted', buildProductionBody(state));
+    return document('Rendering Interrupted', buildProductionBody(state), '', state.csp);
   }
 
   const headerTitle = escapeHtml(getDisplayMessage(state));
@@ -132,17 +95,17 @@ export const toHtmlString = (state) => {
       </svg>
       Template Rendering Error
       ${codeBadge}${phaseBadge}
-      <span class="badge badge-code" style="margin-inline-start:auto;border:1px solid var(--color-border);">DEV</span>
+      <span class="badge badge-dev">DEV</span>
     </div>
     <h1 id="err-title" class="error-title">${headerTitle}</h1>
     <p class="error-location">The error occurred in ${templatePath
-      ? `<a href="${resolveIdeLink(state.ide, escapeHtml(templatePath), getDisplayLine(), getDisplayCol())}" class="loc-link" style="font-weight:600;color:var(--color-text-primary);">${locDisplay}</a>`
-      : `<span style="font-weight:600;color:var(--color-text-primary);">${locDisplay}</span>`
+      ? `<a href="${resolveIdeLink(state.ide, escapeHtml(templatePath), getDisplayLine(), getDisplayCol())}" class="loc-link error-location-link">${locDisplay}</a>`
+      : `<span class="error-location-text">${locDisplay}</span>`
     }</p>
   </header>
 
   <div class="error-body">
-    <section aria-labelledby="h-source" style="margin-block-end: 2rem;">
+    <section aria-labelledby="h-source" class="source-section">
       <h2 id="h-source" class="text-label">Source Trace</h2>
       <div class="code-block" role="group" aria-label="Template source around the error">
         ${formatCodeTraceHtml(snippet)}
@@ -171,14 +134,18 @@ export const toHtmlString = (state) => {
     <p class="meta">
       Nunjucks ${state.version || '3.2.4'}${state.fingerprint ? ` · #${escapeHtml(state.fingerprint)}` : ''}${state.timestamp ? ` · ${escapeHtml(state.timestamp)}` : ''}
     </p>
-    <div style="display:flex;align-items:center;">
-      <a href="${templatePath ? resolveIdeLink(state.ide, escapeHtml(templatePath), getDisplayLine(), getDisplayCol()) : '#'}" class="btn btn-solid" ${!templatePath ? 'aria-disabled="true" style="opacity:0.5;pointer-events:none;"' : ''}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${ideMeta.icon}</svg>
+    <div class="error-footer-actions">
+      <a href="${templatePath ? resolveIdeLink(state.ide, escapeHtml(templatePath), getDisplayLine(), getDisplayCol()) : '#'}" class="btn btn-solid ${!templatePath ? 'btn-disabled' : ''}" ${!templatePath ? 'aria-disabled="true"' : ''}>
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">${ideMeta.icon}</svg>
         ${ideLabel}
       </a>
     </div>
   </footer>
 </main>`;
 
-  return document(`Error: ${getDisplayMessage(state)}`, body);
+  const nonce = state.csp?.nonce || null;
+  const scriptTag = nonce
+    ? `<script nonce="${nonce}">${TOGGLE_SCRIPT}</script>`
+    : `<script>${TOGGLE_SCRIPT}</script>`;
+  return document(`Error: ${getDisplayMessage(state)}`, body, scriptTag, state.csp);
 };

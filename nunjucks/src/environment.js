@@ -29,7 +29,7 @@ export class Environment extends EmitterObj {
 
     this.opts.autoescape = opts.autoescape != null ? opts.autoescape : true;
 
-    this.opts.throwOnUndefined = !!opts.throwOnUndefined;
+    this.opts.throwOnUndefined = opts.throwOnUndefined !== undefined ? !!opts.throwOnUndefined : true;
     this.opts.trimBlocks = !!opts.trimBlocks;
     this.opts.lstripBlocks = !!opts.lstripBlocks;
     this.opts.ide = opts.ide || 'vscode';

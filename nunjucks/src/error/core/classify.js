@@ -1,5 +1,5 @@
-import { PATTERNS } from '../constants/patterns.js';
-import { ERROR_RULES, DEFAULT_CLASSIFICATION } from '../constants/mappings.js';
+import { PATTERNS } from '../constants/error-patterns.js';
+import { ERROR_RULES, DEFAULT_CLASSIFICATION } from '../constants/error-rules.js';
 import { extractUndefinedName } from './extract.js';
 
 const extractSubject = (rule, message) => {

@@ -1,5 +1,5 @@
 import { splitSnippetLines } from '../core/snippet.js';
-import { formatLocation, getDisplayMessage } from '../state/display.js';
+import { formatLocation, getDisplayMessage } from '../state/message-formatter.js';
 
 let picocolors;
 try {
@@ -59,8 +59,9 @@ const formatRenderContext = (ctx) => {
 const formatCodeTrace = (traceLines) => {
   const lines = ['\n', pc.bold('Source Trace:')];
   for (const line of traceLines) {
+    const cleanLine = line.startsWith('>>>') ? line.slice(4) : line;
     if (line.startsWith('>>>')) {
-      lines.push(pc.red(line));
+      lines.push(pc.red(cleanLine));
     } else {
       lines.push(pc.dim(line));
     }

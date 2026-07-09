@@ -11,8 +11,10 @@ export const formatCodeTraceHtml = (snippet) => {
     const content = isError ? trimmed.replace(/^>>>\s*/, '') : trimmed;
     const colonIdx = content.indexOf(':');
     const lineNum = colonIdx > 0 ? content.substring(0, colonIdx) : '';
-    const code = colonIdx > 0 ? content.substring(colonIdx + 1).trim() : content;
-    return `<div class="code-line${isError ? ' is-error' : ''}"><span class="line-number">${lineNum || '&nbsp;'}</span><span class="code-content">${highlightHtml(code)}</span></div>`;
+    const code = colonIdx > 0 ? content.substring(colonIdx + 1) : content;
+    const leadingSpace = code.length !== code.trimStart().length ? code.match(/^\s*/)[0] : '';
+    const trimmedCode = code.trimStart();
+    return `<div class="code-line${isError ? ' is-error' : ''}"><span class="line-number">${lineNum || '&nbsp;'}</span><span class="code-content">${leadingSpace}${highlightHtml(trimmedCode)}</span></div>`;
   }).join('');
 };
 
@@ -21,17 +23,12 @@ export const renderContextHtml = (ctx) => {
   const keys = Object.keys(ctx);
   if (keys.length === 0) return '';
 
-  const rows = keys.map((k) => {
-    const raw = ctx[k];
-    const val = typeof raw === 'string' ? raw : JSON.stringify(raw);
-    return `<div class="ctx-row" style="display:flex;gap:12px;padding:6px 12px;border-bottom:1px solid var(--color-border);font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:13px;"><dt style="color:oklch(70% 0.15 190);min-width:120px;flex-shrink:0;">${escapeHtml(k)}</dt><dd style="margin:0;color:var(--color-code-text);word-break:break-all;">${escapeHtml(val)}</dd></div>`;
-  }).join('');
+  const dataScript = `<script>window.__ctxData=${JSON.stringify(ctx)};</scr` + `ipt>`;
 
-  return `
-    <section class="render-context" style="margin-bottom: 32px;" aria-labelledby="h-ctx">
-      <h2 id="h-ctx" class="text-label">Render Context</h2>
-      <dl style="margin:0;background:var(--color-code-bg);border-radius:8px;overflow:hidden;border:1px solid var(--color-border);">${rows}</dl>
-    </section>`;
+  return `<section class="render-context" aria-labelledby="h-ctx">
+<h2 id="h-ctx" class="text-label">Render Context</h2>
+<div class="ctx-tree" id="ctx-tree"></div>
+</section>${dataScript}`;
 };
 
 const normalizePath = (p) => p.replace(/^file:\/\/+/, '');
@@ -45,23 +42,19 @@ const shortenPath = (path) => {
   const parts = normalizedPath.split('/').filter(Boolean);
   const rootDirName = normalizedRoot.split('/').pop();
 
-  // Find 'users' or 'home' index
-  const privateIdx = parts.findIndex(p => 
+  const privateIdx = parts.findIndex(p =>
     p.toLowerCase() === 'users' || p.toLowerCase() === 'home'
   );
 
   if (privateIdx !== -1) {
-    // Find project root directory name in path (last part of PROJECT_ROOT)
     const projectIdx = parts.findIndex(p => p === rootDirName);
 
     if (projectIdx !== -1) {
-      // Show: drive/Users/.../[from project root]
       const before = parts.slice(0, privateIdx + 1);
       const after = parts.slice(projectIdx);
       return [...before, '...', ...after].join('/');
     }
 
-    // No project root found, just show Users/.../rest
     const before = parts.slice(0, privateIdx + 1);
     const after = parts.slice(privateIdx + 2);
     return [...before, '...', ...after].join('/');
@@ -78,6 +71,8 @@ const linkifyFrame = (frame, ide) => {
     const display = shortenPath(norm);
     return `(<a href="${resolveIdeLink(ide, norm, l, c)}" class="stack-link">${display}:${l}:${c}</a>)`;
   });
+  s = s.replace(/^at\s+/, '<span class="stack-at">at</span> ');
+  s = s.replace(/^(at\s+)([^\s(]+)/, (m, prefix, fn) => `${prefix}<span class="stack-fn">${fn}</span>`);
   return s;
 };
 
@@ -108,16 +103,13 @@ export const formatStackTraceHtml = (originalError, isProduction = false, ide = 
   }).join('');
 
   const toggleBtn = totalHidden > 0
-    ? `<button class="stack-toggle-btn" id="btn-toggle-stack" onclick="toggleStack()">Show ${totalHidden} more lines...</button>`
+    ? `<button class="stack-toggle-btn" id="btn-toggle-stack">Show ${totalHidden} more lines...</button>`
     : '';
 
-  return `
-    <section class="stack-trace" style="margin-bottom:32px;" aria-labelledby="h-stack">
-      <h2 id="h-stack" class="text-label">Stack Trace</h2>
-      <div class="stack-container" id="stack-container">
-        <div class="stack-content">${allRows}</div>
-        ${toggleBtn}
-      </div>
-    </section>
-  `;
+  return `<section class="stack-trace" aria-labelledby="h-stack">
+<h2 id="h-stack" class="text-label">Stack Trace</h2>
+<div class="stack-container" id="stack-container">
+  <div class="stack-content">${allRows}${toggleBtn}</div>
+</div>
+</section>`;
 };

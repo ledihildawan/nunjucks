@@ -37,7 +37,7 @@ const sanitizeValue = (value, depth = 0) => {
   if (type !== 'object') {
     return value;
   }
-  if (depth >= 2) return Array.isArray(value) ? '[Array]' : '[Object]';
+  if (depth >= 4) return '[Object]';
   if (Array.isArray(value)) {
     return value.slice(0, 10).map((v) => sanitizeValue(v, depth + 1));
   }
