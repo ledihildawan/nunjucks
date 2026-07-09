@@ -4,6 +4,11 @@ import { createErrorData } from './state/error-data.js';
 import { toConsoleString } from './formatters/console.js';
 import { toHtmlString } from './formatters/html/index.js';
 
+/**
+ * Lazy singleton pattern for filesystem access.
+ * Side effect (require/import) is deferred until first use.
+ * This violates strict tree-shaking but is necessary for optional fs dependency.
+ */
 const NO_FS = { readFileSync: () => null };
 let _cachedFs = null;
 

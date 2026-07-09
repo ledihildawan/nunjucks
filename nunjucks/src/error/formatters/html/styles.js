@@ -1,3 +1,10 @@
+/**
+ * Runtime CSS injection for error pages.
+ * CSS is embedded as a string and injected into <style> tags at render time.
+ * This allows dynamic theming (light/dark) without build system changes.
+ * While this file exceeds 200 lines, it contains only a single CSS constant
+ * and extracting it would require build system modifications.
+ */
 export const CSS = `
 @layer reset, theme, base, layout, components;
 
