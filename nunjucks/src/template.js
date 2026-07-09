@@ -19,6 +19,34 @@ const getLoaderSourceMap = (env, errorPath, currentPath) => {
   return null;
 };
 
+const extractFrameDetails = (e, sourceLineno, sourceColno, sourceMap, currentPath, hasIncludeChain) => {
+  if (!sourceMap || hasIncludeChain) return null;
+
+  const mapped = createMappedError(e, sourceMap, sourceLineno, sourceColno, currentPath);
+  if (mapped) return mapped;
+
+  if (sourceLineno === undefined || sourceLineno <= 0) return null;
+
+  const errColno = e.colno || 0;
+  const finalColno = (sourceColno > 0) ? sourceColno : errColno;
+  const templateLocation = currentPath + ':' + sourceLineno + ':' + finalColno;
+  let msg = '(' + currentPath + ')';
+  if (sourceLineno && finalColno > 0) {
+    msg += ` [Line ${sourceLineno}, Column ${finalColno}]`;
+  } else if (sourceLineno) {
+    msg += ` [Line ${sourceLineno}]`;
+  }
+  msg += '\n  ' + (e.message || '');
+  const newError = new Error(msg);
+  newError.name = e.name || 'Template render error';
+  newError.lineno = sourceLineno;
+  newError.colno = finalColno;
+  newError._includeChain = e._includeChain || null;
+  const renderLine = 'at ' + (e.getterName || 'root') + ' (' + templateLocation + ')';
+  newError.stack = newError.message + '\n    ' + renderLine + '\n    at Environment.render';
+  return newError;
+};
+
 const createFallbackEnv = () => ({
   opts: { dev: false, autoescape: true },
   asyncFilters: [],
@@ -68,11 +96,7 @@ export class Template extends Obj {
   }
 
   async render(ctx, parentFrame) {
-    try {
-      await this.compile();
-    } catch (e) {
-      throw prettifyError({ path: this.path, withInternals: this.env.opts.dev, err: e });
-    }
+    await this._safeCompile();
 
     if (this.env._renderingTemplates.has(this.path)) {
       const err = new Error(`Circular include detected: "${this.path}" is already being rendered`);
@@ -103,6 +127,14 @@ export class Template extends Obj {
     }
   }
 
+  async _safeCompile() {
+    try {
+      await this.compile();
+    } catch (e) {
+      throw prettifyError({ path: this.path, withInternals: this.env.opts.dev, err: e });
+    }
+  }
+
   _enrichError(e) {
     if (!e.path) e.path = this.path;
 
@@ -116,34 +148,8 @@ export class Template extends Obj {
       sourceMap = getLoaderSourceMap(this.env, errorPath, this.path) || sourceMap;
     }
 
-    if (sourceMap && !hasIncludeChain) {
-      const mapped = createMappedError(e, sourceMap, sourceLineno, sourceColno, this.path);
-
-      if (mapped) return mapped;
-
-      if (sourceLineno !== undefined && sourceLineno > 0) {
-        const errColno = e.colno || 0;
-        const finalColno = (sourceColno > 0) ? sourceColno : errColno;
-        const templateLocation = this.path + ':' + sourceLineno + ':' + finalColno;
-        let msg = '(' + this.path + ')';
-        if (sourceLineno && finalColno > 0) {
-          msg += ` [Line ${sourceLineno}, Column ${finalColno}]`;
-        } else if (sourceLineno) {
-          msg += ` [Line ${sourceLineno}]`;
-        }
-        msg += '\n  ' + (e.message || '');
-        const newError = new Error(msg);
-        newError.name = e.name || 'Template render error';
-        newError.lineno = sourceLineno;
-        newError.colno = finalColno;
-        newError._includeChain = e._includeChain || this._includeChain || null;
-        const renderLine = 'at ' + (e.getterName || 'root') + ' (' + templateLocation + ')';
-        newError.stack = newError.message + '\n    ' + renderLine + '\n    at Environment.render';
-        throw newError;
-      }
-    }
-
-    return e;
+    const enriched = extractFrameDetails(e, sourceLineno, sourceColno, sourceMap, this.path, hasIncludeChain);
+    return enriched || e;
   }
 
   async getExported(ctx, parentFrame) {

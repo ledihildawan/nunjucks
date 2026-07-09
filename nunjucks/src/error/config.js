@@ -1,4 +1,4 @@
-import { isDevelopment } from '../lib/env.js';
+import { isDevelopment } from '../lib/environment-check.js';
 
 let _config = {
   ide: 'vscode',

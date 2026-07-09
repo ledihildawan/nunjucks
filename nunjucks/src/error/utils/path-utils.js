@@ -1,12 +1,19 @@
 const normalizePath = (p) => p.replace(/^file:\/\/+/, '');
 
-const PROJECT_ROOT = process.cwd();
+let _projectRoot = null;
+
+const getProjectRoot = () => {
+  if (_projectRoot === null) {
+    _projectRoot = process.cwd();
+  }
+  return _projectRoot;
+};
 
 export const normalizeDrivePath = (p) => p.replace(/^[\\\/]+([A-Za-z]):/, '$1:').replace(/\\/g, '/');
 
 export const shortenPath = (path) => {
   const normalizedPath = normalizeDrivePath(path);
-  const normalizedRoot = normalizeDrivePath(PROJECT_ROOT);
+  const normalizedRoot = normalizeDrivePath(getProjectRoot());
 
   const parts = normalizedPath.split('/').filter(Boolean);
   const rootDirName = normalizedRoot.split('/').pop();
