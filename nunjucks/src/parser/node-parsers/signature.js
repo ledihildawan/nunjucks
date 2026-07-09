@@ -1,4 +1,10 @@
-import * as lexer from '../../lexer/index.js';
+import {
+  TOKEN_BLOCK_END,
+  TOKEN_COMMA,
+  TOKEN_LEFT_PAREN,
+  TOKEN_OPERATOR,
+  TOKEN_RIGHT_PAREN,
+} from '../../lexer/token-types.js';
 import {
   NodeList,
   Pair,
@@ -8,7 +14,7 @@ import { nextToken, peekToken, skip, skipValue, fail } from '../cursor.js';
 
 export const parseSignature = (ctx, tolerant, noParens) => {
   let tok = peekToken(ctx);
-  if (!noParens && tok.type !== lexer.TOKEN_LEFT_PAREN) {
+  if (!noParens && tok.type !== TOKEN_LEFT_PAREN) {
     if (tolerant) {
       return null;
     } else {
@@ -16,7 +22,7 @@ export const parseSignature = (ctx, tolerant, noParens) => {
     }
   }
 
-  if (tok.type === lexer.TOKEN_LEFT_PAREN) {
+  if (tok.type === TOKEN_LEFT_PAREN) {
     tok = nextToken(ctx);
   }
 
@@ -26,21 +32,21 @@ export const parseSignature = (ctx, tolerant, noParens) => {
 
   while (1) {
     tok = peekToken(ctx);
-    if (!noParens && tok.type === lexer.TOKEN_RIGHT_PAREN) {
+    if (!noParens && tok.type === TOKEN_RIGHT_PAREN) {
       nextToken(ctx);
       break;
-    } else if (noParens && tok.type === lexer.TOKEN_BLOCK_END) {
+    } else if (noParens && tok.type === TOKEN_BLOCK_END) {
       break;
     }
 
-    if (checkComma && !skip(ctx, lexer.TOKEN_COMMA)) {
+    if (checkComma && !skip(ctx, TOKEN_COMMA)) {
       fail(ctx, 'parseSignature: expected comma after expression',
         tok.lineno,
         tok.colno);
     } else {
       const arg = ctx.parseExpression();
 
-      if (skipValue(ctx, lexer.TOKEN_OPERATOR, '=')) {
+      if (skipValue(ctx, TOKEN_OPERATOR, '=')) {
         kwargs.addChild(
           new Pair(arg.lineno,
             arg.colno,

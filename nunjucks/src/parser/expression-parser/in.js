@@ -1,6 +1,6 @@
-import * as lexer from '../../lexer/index.js';
+import { TOKEN_SYMBOL } from '../../lexer/token-types.js';
 import { In as OperatorIn, Not } from '../../nodes.js';
-import { nextToken, peekToken, pushToken, skipSymbol } from '../cursor.js';
+import { nextToken, pushToken, skipSymbol } from '../cursor.js';
 import { parseIs } from './is.js';
 
 export const parseIn = (ctx) => {
@@ -10,7 +10,7 @@ export const parseIn = (ctx) => {
     if (!tok) {
       break;
     }
-    const invert = tok.type === lexer.TOKEN_SYMBOL && tok.value === 'not';
+    const invert = tok.type === TOKEN_SYMBOL && tok.value === 'not';
     if (!invert) {
       pushToken(ctx, tok);
     }

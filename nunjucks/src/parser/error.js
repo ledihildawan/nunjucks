@@ -1,4 +1,3 @@
-import * as lexer from '../lexer/index.js';
 import { TemplateError } from '../error/index.js';
 import { peekToken } from './cursor.js';
 

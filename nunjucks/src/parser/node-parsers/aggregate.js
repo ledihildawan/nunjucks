@@ -1,4 +1,13 @@
-import * as lexer from '../../lexer/index.js';
+import {
+  TOKEN_COLON,
+  TOKEN_COMMA,
+  TOKEN_LEFT_BRACKET,
+  TOKEN_LEFT_CURLY,
+  TOKEN_LEFT_PAREN,
+  TOKEN_RIGHT_BRACKET,
+  TOKEN_RIGHT_CURLY,
+  TOKEN_RIGHT_PAREN,
+} from '../../lexer/token-types.js';
 import {
   Group,
   Array as ArrayNode,
@@ -12,13 +21,13 @@ export const parseAggregate = (ctx) => {
   let node;
 
   switch (tok.type) {
-    case lexer.TOKEN_LEFT_PAREN:
+    case TOKEN_LEFT_PAREN:
       node = new Group(tok.lineno, tok.colno);
       break;
-    case lexer.TOKEN_LEFT_BRACKET:
+    case TOKEN_LEFT_BRACKET:
       node = new ArrayNode(tok.lineno, tok.colno);
       break;
-    case lexer.TOKEN_LEFT_CURLY:
+    case TOKEN_LEFT_CURLY:
       node = new Dict(tok.lineno, tok.colno);
       break;
     default:
@@ -27,15 +36,15 @@ export const parseAggregate = (ctx) => {
 
   while (1) {
     const type = peekToken(ctx).type;
-    if (type === lexer.TOKEN_RIGHT_PAREN ||
-      type === lexer.TOKEN_RIGHT_BRACKET ||
-      type === lexer.TOKEN_RIGHT_CURLY) {
+    if (type === TOKEN_RIGHT_PAREN ||
+      type === TOKEN_RIGHT_BRACKET ||
+      type === TOKEN_RIGHT_CURLY) {
       nextToken(ctx);
       break;
     }
 
     if (node.children.length > 0) {
-      if (!skip(ctx, lexer.TOKEN_COMMA)) {
+      if (!skip(ctx, TOKEN_COMMA)) {
         fail(ctx, 'parseAggregate: expected comma after expression',
           tok.lineno,
           tok.colno);
@@ -45,7 +54,7 @@ export const parseAggregate = (ctx) => {
     if (node instanceof Dict) {
       const key = ctx.parsePrimary();
 
-      if (!skip(ctx, lexer.TOKEN_COLON)) {
+      if (!skip(ctx, TOKEN_COLON)) {
         fail(ctx, 'parseAggregate: expected colon after dict key',
           tok.lineno,
           tok.colno);

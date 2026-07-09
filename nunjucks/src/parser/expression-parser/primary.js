@@ -1,4 +1,12 @@
-import * as lexer from '../../lexer/index.js';
+import {
+  TOKEN_STRING,
+  TOKEN_INT,
+  TOKEN_FLOAT,
+  TOKEN_BOOLEAN,
+  TOKEN_NONE,
+  TOKEN_REGEX,
+  TOKEN_SYMBOL,
+} from '../../lexer/token-types.js';
 import { Literal, AstSymbol } from '../../nodes.js';
 import { nextToken, pushToken, fail } from '../cursor.js';
 
@@ -9,13 +17,13 @@ export const parsePrimary = (ctx, noPostfix) => {
 
   if (!tok) {
     fail(ctx, 'expected expression, got end of file');
-  } else if (tok.type === lexer.TOKEN_STRING) {
+  } else if (tok.type === TOKEN_STRING) {
     val = tok.value;
-  } else if (tok.type === lexer.TOKEN_INT) {
+  } else if (tok.type === TOKEN_INT) {
     val = parseInt(tok.value, 10);
-  } else if (tok.type === lexer.TOKEN_FLOAT) {
+  } else if (tok.type === TOKEN_FLOAT) {
     val = parseFloat(tok.value);
-  } else if (tok.type === lexer.TOKEN_BOOLEAN) {
+  } else if (tok.type === TOKEN_BOOLEAN) {
     if (tok.value === 'true') {
       val = true;
     } else if (tok.value === 'false') {
@@ -25,15 +33,15 @@ export const parsePrimary = (ctx, noPostfix) => {
         tok.lineno,
         tok.colno);
     }
-  } else if (tok.type === lexer.TOKEN_NONE) {
+  } else if (tok.type === TOKEN_NONE) {
     val = null;
-  } else if (tok.type === lexer.TOKEN_REGEX) {
+  } else if (tok.type === TOKEN_REGEX) {
     val = new RegExp(tok.value.body, tok.value.flags);
   }
 
   if (val !== undefined) {
     node = new Literal(tok.lineno, tok.colno, val);
-  } else if (tok.type === lexer.TOKEN_SYMBOL) {
+  } else if (tok.type === TOKEN_SYMBOL) {
     node = new AstSymbol(tok.lineno, tok.colno, tok.value);
   } else {
     pushToken(ctx, tok);

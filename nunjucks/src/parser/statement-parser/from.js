@@ -1,4 +1,7 @@
-import * as lexer from '../../lexer/index.js';
+import {
+  TOKEN_BLOCK_END,
+  TOKEN_COMMA,
+} from '../../lexer/token-types.js';
 import { NodeList, Pair, FromImport } from '../../nodes.js';
 import { nextToken, peekToken, skip, skipSymbol, fail } from '../cursor.js';
 import { parseWithContext } from './with.js';
@@ -22,7 +25,7 @@ export const parseFrom = (ctx) => {
 
   while (1) {
     const nextTok = peekToken(ctx);
-    if (nextTok.type === lexer.TOKEN_BLOCK_END) {
+    if (nextTok.type === TOKEN_BLOCK_END) {
       if (!names.children.length) {
         fail(ctx, 'parseFrom: Expected at least one import name',
           fromTok.lineno,
@@ -37,7 +40,7 @@ export const parseFrom = (ctx) => {
       break;
     }
 
-    if (names.children.length > 0 && !skip(ctx, lexer.TOKEN_COMMA)) {
+    if (names.children.length > 0 && !skip(ctx, TOKEN_COMMA)) {
       fail(ctx, 'parseFrom: expected comma',
         fromTok.lineno,
         fromTok.colno);

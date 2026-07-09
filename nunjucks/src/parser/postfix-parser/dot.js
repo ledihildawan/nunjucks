@@ -1,4 +1,4 @@
-import * as lexer from '../../lexer/index.js';
+import { TOKEN_SYMBOL } from '../../lexer/token-types.js';
 import { LookupVal, Literal } from '../../nodes.js';
 import { nextToken, fail } from '../cursor.js';
 
@@ -6,7 +6,7 @@ export const parseDotAccess = (ctx, tok, target) => {
   nextToken(ctx);
   const val = nextToken(ctx);
 
-  if (val.type !== lexer.TOKEN_SYMBOL) {
+  if (val.type !== TOKEN_SYMBOL) {
     fail(ctx, 'expected name as lookup value, got ' + val.value,
       val.lineno,
       val.colno);

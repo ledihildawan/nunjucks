@@ -1,11 +1,11 @@
-import * as lexer from '../../lexer/index.js';
+import { TOKEN_OPERATOR } from '../../lexer/token-types.js';
 import { Add, Sub, Mul, Div, FloorDiv, Mod, Pow } from '../../nodes.js';
 import { skipValue } from '../cursor.js';
 import { parseUnary } from './unary.js';
 
 const binaryOp = (ctx, NodeClass, operator, next) => {
   let node = next(ctx);
-  while (skipValue(ctx, lexer.TOKEN_OPERATOR, operator)) {
+  while (skipValue(ctx, TOKEN_OPERATOR, operator)) {
     const node2 = next(ctx);
     node = new NodeClass(node.lineno, node.colno, node, node2);
   }

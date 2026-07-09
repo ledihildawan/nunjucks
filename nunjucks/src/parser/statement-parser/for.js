@@ -1,10 +1,10 @@
-import * as lexer from '../../lexer/index.js';
-import * as nodes from '../../nodes.js';
+import { TOKEN_COMMA } from '../../lexer/token-types.js';
 import {
   For,
   AsyncEach,
   AsyncAll,
   AstSymbol,
+  Array as ArrayNode,
 } from '../../nodes.js';
 import { peekToken, skip, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
@@ -33,12 +33,12 @@ export const parseFor = (ctx) => {
   }
 
   const type = peekToken(ctx).type;
-  if (type === lexer.TOKEN_COMMA) {
+  if (type === TOKEN_COMMA) {
     const key = node.name;
-    node.name = new nodes.Array(key.lineno, key.colno);
+    node.name = new ArrayNode(key.lineno, key.colno);
     node.name.addChild(key);
 
-    while (skip(ctx, lexer.TOKEN_COMMA)) {
+    while (skip(ctx, TOKEN_COMMA)) {
       const prim = ctx.parsePrimary();
       node.name.addChild(prim);
     }

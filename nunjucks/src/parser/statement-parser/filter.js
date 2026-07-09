@@ -1,4 +1,3 @@
-import * as nodes from '../../nodes.js';
 import { Capture, Filter, NodeList, Output } from '../../nodes.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 

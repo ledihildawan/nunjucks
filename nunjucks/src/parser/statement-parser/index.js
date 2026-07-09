@@ -14,6 +14,24 @@ import { parseSet } from './set.js';
 import { parseSwitch } from './switch.js';
 import { parseRaw } from './raw.js';
 import { parseFilterStatement } from './filter.js';
+import { parseWithContext } from './with.js';
+
+export {
+  parseFor,
+  parseMacro,
+  parseCall,
+  parseImport,
+  parseFrom,
+  parseBlock,
+  parseExtends,
+  parseInclude,
+  parseIf,
+  parseSet,
+  parseSwitch,
+  parseRaw,
+  parseFilterStatement,
+  parseWithContext,
+};
 
 export const parseStatement = (ctx) => {
   const tok = peekToken(ctx);

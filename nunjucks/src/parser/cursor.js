@@ -1,4 +1,9 @@
-import * as lexer from '../lexer/index.js';
+import {
+  TOKEN_BLOCK_END,
+  TOKEN_SYMBOL,
+  TOKEN_VARIABLE_END,
+  TOKEN_WHITESPACE,
+} from '../lexer/token-types.js';
 import { error, fail } from './error.js';
 
 export const createCursor = (tokens) => ({
@@ -13,7 +18,7 @@ export const nextToken = (ctx, withWhitespace) => {
   var tok;
 
   if (ctx.peeked) {
-    if (!withWhitespace && ctx.peeked.type === lexer.TOKEN_WHITESPACE) {
+    if (!withWhitespace && ctx.peeked.type === TOKEN_WHITESPACE) {
       ctx.peeked = null;
     } else {
       tok = ctx.peeked;
@@ -25,7 +30,7 @@ export const nextToken = (ctx, withWhitespace) => {
   tok = ctx.tokens.nextToken();
 
   if (!withWhitespace) {
-    while (tok && tok.type === lexer.TOKEN_WHITESPACE) {
+    while (tok && tok.type === TOKEN_WHITESPACE) {
       tok = ctx.tokens.nextToken();
     }
   }
@@ -71,7 +76,7 @@ export const skipValue = (ctx, type, val) => {
   return true;
 };
 
-export const skipSymbol = (ctx, val) => skipValue(ctx, lexer.TOKEN_SYMBOL, val);
+export const skipSymbol = (ctx, val) => skipValue(ctx, TOKEN_SYMBOL, val);
 
 export const advanceAfterBlockEnd = (ctx, name) => {
   var tok;
@@ -82,7 +87,7 @@ export const advanceAfterBlockEnd = (ctx, name) => {
       fail(ctx, 'unexpected end of file');
     }
 
-    if (tok.type !== lexer.TOKEN_SYMBOL) {
+    if (tok.type !== TOKEN_SYMBOL) {
       fail(ctx, 'advanceAfterBlockEnd: expected symbol token or ' +
         'explicit name to be passed');
     }
@@ -92,7 +97,7 @@ export const advanceAfterBlockEnd = (ctx, name) => {
 
   tok = nextToken(ctx);
 
-  if (tok && tok.type === lexer.TOKEN_BLOCK_END) {
+  if (tok && tok.type === TOKEN_BLOCK_END) {
     if (tok.value.charAt(0) === '-') {
       ctx.dropLeadingWhitespace = true;
     }
@@ -106,7 +111,7 @@ export const advanceAfterBlockEnd = (ctx, name) => {
 export const advanceAfterVariableEnd = (ctx) => {
   var tok = nextToken(ctx);
 
-  if (tok && tok.type === lexer.TOKEN_VARIABLE_END) {
+  if (tok && tok.type === TOKEN_VARIABLE_END) {
     ctx.dropLeadingWhitespace = tok.value.charAt(
       tok.value.length - ctx.tokens.tags.VARIABLE_END.length - 1
     ) === '-';

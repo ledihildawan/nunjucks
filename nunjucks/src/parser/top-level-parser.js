@@ -1,4 +1,9 @@
-import * as lexer from '../lexer/index.js';
+import {
+  TOKEN_BLOCK_START,
+  TOKEN_COMMENT,
+  TOKEN_DATA,
+  TOKEN_VARIABLE_START,
+} from '../lexer/token-types.js';
 import { Output, TemplateData } from '../nodes.js';
 import {
   nextToken,
@@ -22,7 +27,7 @@ export const parseNodes = (ctx) => {
   const buf = [];
 
   while ((tok = nextToken(ctx))) {
-    if (tok.type === lexer.TOKEN_DATA) {
+    if (tok.type === TOKEN_DATA) {
       let data = tok.value;
       const nextToken = peekToken(ctx);
       const nextVal = nextToken && nextToken.value;
@@ -33,11 +38,11 @@ export const parseNodes = (ctx) => {
       }
 
       if (nextToken &&
-        ((nextToken.type === lexer.TOKEN_BLOCK_START &&
+        ((nextToken.type === TOKEN_BLOCK_START &&
         nextVal.charAt(nextVal.length - 1) === '-') ||
-        (nextToken.type === lexer.TOKEN_VARIABLE_START &&
+        (nextToken.type === TOKEN_VARIABLE_START &&
         nextVal.charAt(ctx.tokens.tags.VARIABLE_START.length) === '-') ||
-        (nextToken.type === lexer.TOKEN_COMMENT &&
+        (nextToken.type === TOKEN_COMMENT &&
         nextVal.charAt(ctx.tokens.tags.COMMENT_START.length) === '-'))) {
         data = data.replace(/\s*$/, '');
       }
@@ -47,19 +52,19 @@ export const parseNodes = (ctx) => {
         tok.colno,
         [new TemplateData(tok.lineno, tok.colno, data)]
       ));
-    } else if (tok.type === lexer.TOKEN_BLOCK_START) {
+    } else if (tok.type === TOKEN_BLOCK_START) {
       ctx.dropLeadingWhitespace = false;
       const n = ctx.parseStatement();
       if (!n) {
         break;
       }
       buf.push(n);
-    } else if (tok.type === lexer.TOKEN_VARIABLE_START) {
+    } else if (tok.type === TOKEN_VARIABLE_START) {
       const e = ctx.parseExpression();
       ctx.dropLeadingWhitespace = false;
       advanceAfterVariableEnd(ctx);
       buf.push(new Output(tok.lineno, tok.colno, [e]));
-    } else if (tok.type === lexer.TOKEN_COMMENT) {
+    } else if (tok.type === TOKEN_COMMENT) {
       ctx.dropLeadingWhitespace = tok.value.charAt(
         tok.value.length - ctx.tokens.tags.COMMENT_END.length - 1
       ) === '-';

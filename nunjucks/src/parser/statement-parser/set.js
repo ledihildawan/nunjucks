@@ -1,4 +1,8 @@
-import * as lexer from '../../lexer/index.js';
+import {
+  TOKEN_BLOCK_END,
+  TOKEN_COMMA,
+  TOKEN_OPERATOR,
+} from '../../lexer/token-types.js';
 import { Set as AstSet, Capture } from '../../nodes.js';
 import { peekToken, skip, skipValue, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
@@ -14,18 +18,18 @@ export const parseSet = (ctx) => {
   while ((target = ctx.parsePrimary())) {
     node.targets.push(target);
 
-    if (!skip(ctx, lexer.TOKEN_COMMA)) {
+    if (!skip(ctx, TOKEN_COMMA)) {
       break;
     }
   }
 
-  if (!skipValue(ctx, lexer.TOKEN_OPERATOR, '=')) {
+  if (!skipValue(ctx, TOKEN_OPERATOR, '=')) {
     const assignOps = ['||=', '&&=', '??='];
     let foundOp = null;
 
     for (const op of assignOps) {
       const tok = peekToken(ctx);
-      if (tok && tok.type === lexer.TOKEN_OPERATOR && tok.value === op) {
+      if (tok && tok.type === TOKEN_OPERATOR && tok.value === op) {
         ctx.nextToken();
         foundOp = op;
         break;
@@ -33,7 +37,7 @@ export const parseSet = (ctx) => {
     }
 
     if (!foundOp) {
-      if (!skip(ctx, lexer.TOKEN_BLOCK_END)) {
+      if (!skip(ctx, TOKEN_BLOCK_END)) {
         fail(ctx, 'parseSet: expected =, ||= , &&=, ??= or block end in set tag',
           tag.lineno,
           tag.colno);
