@@ -66,6 +66,7 @@ import { parseAggregate, parseSignature } from './parser/node-parsers/index.js';
 import * as exprParser from './parser/expression-parser/index.js';
 import * as postfixParser from './parser/postfix-parser/index.js';
 import * as stmtParser from './parser/statement-parser/index.js';
+import { parseNodes, parseUntilBlocks } from './parser/top-level-parser.js';
 
 export class Parser extends Obj {
   init(tokens) {
@@ -281,77 +282,11 @@ export class Parser extends Obj {
   }
 
   parseUntilBlocks(...blockNames) {
-    const prev = this.breakOnBlocks;
-    this.breakOnBlocks = blockNames;
-
-    const ret = this.parse();
-
-    this.breakOnBlocks = prev;
-    return ret;
+    return parseUntilBlocks(this, ...blockNames);
   }
 
   parseNodes() {
-    let tok;
-    const buf = [];
-
-    while ((tok = this.nextToken())) {
-      if (tok.type === lexer.TOKEN_DATA) {
-        let data = tok.value;
-        const nextToken = this.peekToken();
-        const nextVal = nextToken && nextToken.value;
-
-        // If the last token has "-" we need to trim the
-        // leading whitespace of the data. This is marked with
-        // the `dropLeadingWhitespace` variable.
-        if (this.dropLeadingWhitespace) {
-          // TODO: this could be optimized (don't use regex)
-          data = data.replace(/^\s*/, '');
-          this.dropLeadingWhitespace = false;
-        }
-
-        // Same for the succeeding block start token
-        if (nextToken &&
-          ((nextToken.type === lexer.TOKEN_BLOCK_START &&
-          nextVal.charAt(nextVal.length - 1) === '-') ||
-          (nextToken.type === lexer.TOKEN_VARIABLE_START &&
-          nextVal.charAt(this.tokens.tags.VARIABLE_START.length)
-          === '-') ||
-          (nextToken.type === lexer.TOKEN_COMMENT &&
-          nextVal.charAt(this.tokens.tags.COMMENT_START.length)
-          === '-'))) {
-          // TODO: this could be optimized (don't use regex)
-          data = data.replace(/\s*$/, '');
-        }
-
-        buf.push(new Output(tok.lineno,
-          tok.colno,
-          [new TemplateData(tok.lineno,
-            tok.colno,
-            data)]));
-      } else if (tok.type === lexer.TOKEN_BLOCK_START) {
-        this.dropLeadingWhitespace = false;
-        const n = this.parseStatement();
-        if (!n) {
-          break;
-        }
-        buf.push(n);
-      } else if (tok.type === lexer.TOKEN_VARIABLE_START) {
-        const e = this.parseExpression();
-        this.dropLeadingWhitespace = false;
-        this.advanceAfterVariableEnd();
-        buf.push(new Output(tok.lineno, tok.colno, [e]));
-      } else if (tok.type === lexer.TOKEN_COMMENT) {
-        this.dropLeadingWhitespace = tok.value.charAt(
-          tok.value.length - this.tokens.tags.COMMENT_END.length - 1
-        ) === '-';
-      } else {
-        // Ignore comments, otherwise this should be an error
-        this.fail('Unexpected token at top-level: ' +
-          tok.type, tok.lineno, tok.colno);
-      }
-    }
-
-    return buf;
+    return parseNodes(this);
   }
 
   parse() {
