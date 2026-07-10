@@ -56,7 +56,7 @@ import {
   CompareOperand,
   CallExtension,
   CallExtensionAsync,
-} from '../nodes.js';
+} from '../nodes/index.js';
 
 const CONSTRUCTOR_MAP = {
   NodeList,

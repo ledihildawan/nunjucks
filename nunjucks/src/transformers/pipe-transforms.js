@@ -9,7 +9,7 @@ import {
   If,
   Set as AstSet,
   Output,
-} from '../nodes.js';
+} from '../nodes/index.js';
 import { depthWalk } from './walk.js';
 import { createGensym } from './symbol-generator.js';
 

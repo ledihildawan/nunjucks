@@ -9,7 +9,7 @@ import {
   NodeList,
   Pair,
   KeywordArgs,
-} from '../../nodes.js';
+} from '../../nodes/index.js';
 import { nextToken, peekToken, skip, skipValue, fail } from '../cursor.js';
 
 export const parseSignature = (ctx, tolerant, noParens) => {

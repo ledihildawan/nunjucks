@@ -1,4 +1,4 @@
-import { AstSymbol, Dict } from '../../nodes.js';
+import { AstSymbol, Dict } from '../../nodes/index.js';
 import { Frame } from '../../runtime/index.js';
 
 const compileMacro = (ctx, node, frame) => {

@@ -2,7 +2,7 @@ import {
   TOKEN_BLOCK_END,
   TOKEN_COMMA,
 } from '../../lexer/token-types.js';
-import { NodeList, Pair, FromImport } from '../../nodes.js';
+import { NodeList, Pair, FromImport } from '../../nodes/index.js';
 import { nextToken, peekToken, skip, skipSymbol, fail } from '../cursor.js';
 import { parseWithContext } from './with.js';
 

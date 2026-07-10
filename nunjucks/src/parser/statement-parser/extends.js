@@ -1,4 +1,4 @@
-import { Extends } from '../../nodes.js';
+import { Extends } from '../../nodes/index.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseExtends = (ctx) => {

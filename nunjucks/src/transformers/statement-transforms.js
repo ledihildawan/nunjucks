@@ -6,7 +6,7 @@ import {
   AsyncAll,
   PipeAsync,
   CallExtensionAsync,
-} from '../nodes.js';
+} from '../nodes/index.js';
 import { walk, depthWalk } from './walk.js';
 
 export const convertStatements = (ast) => {

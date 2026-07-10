@@ -1,4 +1,4 @@
-import { Compare, CompareOperand } from '../../nodes.js';
+import { Compare, CompareOperand } from '../../nodes/index.js';
 import { nextToken, pushToken } from '../cursor.js';
 import { parseConcat } from './concat.js';
 

@@ -4,7 +4,7 @@ import {
   Root,
   Output,
   TemplateData,
-} from './nodes.js';
+} from './nodes/index.js';
 import { Obj } from './object/index.js';
 import {
   nextToken,

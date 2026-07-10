@@ -16,7 +16,7 @@ import {
   IfAsync,
   AsyncEach,
   AsyncAll,
-} from '../nodes.js';
+} from '../nodes/index.js';
 
 export const createSymbolGenerator = (seed = 0) => {
   let counter = seed;

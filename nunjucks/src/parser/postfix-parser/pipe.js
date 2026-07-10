@@ -4,7 +4,7 @@ import {
   TOKEN_LEFT_PAREN,
   TOKEN_SYMBOL,
 } from '../../lexer/token-types.js';
-import { AstSymbol, Pipe, NodeList } from '../../nodes.js';
+import { AstSymbol, Pipe, NodeList } from '../../nodes/index.js';
 import { peekToken, skip, skipValue, expect } from '../cursor.js';
 
 export const parseFilterName = (ctx) => {

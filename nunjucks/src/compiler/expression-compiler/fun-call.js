@@ -1,4 +1,4 @@
-import { AstSymbol } from '../../nodes.js';
+import { AstSymbol } from '../../nodes/index.js';
 import { compileAggregate } from './container.js';
 
 const getNodeName = (ctx, node) => {

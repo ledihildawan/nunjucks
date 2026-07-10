@@ -1,5 +1,5 @@
 import { TOKEN_SYMBOL } from '../../lexer/token-types.js';
-import { In as OperatorIn, Not } from '../../nodes.js';
+import { In as OperatorIn, Not } from '../../nodes/index.js';
 import { nextToken, pushToken, skipSymbol } from '../cursor.js';
 import { parseIs } from './is.js';
 

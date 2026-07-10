@@ -1,4 +1,4 @@
-import { Output, TemplateData } from '../../nodes.js';
+import { Output, TemplateData } from '../../nodes/index.js';
 import { advanceAfterBlockEnd } from '../cursor.js';
 
 export const parseRaw = (ctx, tagName) => {

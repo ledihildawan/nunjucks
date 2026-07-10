@@ -1,5 +1,5 @@
 import { TOKEN_SYMBOL } from '../../lexer/token-types.js';
-import { LookupVal, Literal } from '../../nodes.js';
+import { LookupVal, Literal } from '../../nodes/index.js';
 import { nextToken, fail } from '../cursor.js';
 
 export const parseDotAccess = (ctx, tok, target) => {

@@ -1,4 +1,4 @@
-import { Macro } from '../../nodes.js';
+import { Macro } from '../../nodes/index.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseMacro = (ctx) => {

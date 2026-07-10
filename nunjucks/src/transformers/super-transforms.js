@@ -3,7 +3,7 @@ import {
   FunCall,
   AstSymbol,
   Super,
-} from '../nodes.js';
+} from '../nodes/index.js';
 import { walk } from './walk.js';
 import { createGensym } from './symbol-generator.js';
 

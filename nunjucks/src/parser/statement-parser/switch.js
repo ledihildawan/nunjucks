@@ -1,4 +1,4 @@
-import { Switch, Case } from '../../nodes.js';
+import { Switch, Case } from '../../nodes/index.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseSwitch = (ctx) => {

@@ -1,4 +1,4 @@
-import { Import } from '../../nodes.js';
+import { Import } from '../../nodes/index.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 import { parseWithContext } from './with.js';
 

@@ -1,5 +1,5 @@
 import { TOKEN_OPERATOR } from '../../lexer/token-types.js';
-import { Neg, Pos } from '../../nodes.js';
+import { Neg, Pos } from '../../nodes/index.js';
 import { peekToken, skipValue } from '../cursor.js';
 
 export const parseUnary = (ctx, noPipes) => {

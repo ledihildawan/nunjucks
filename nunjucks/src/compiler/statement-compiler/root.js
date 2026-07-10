@@ -1,4 +1,4 @@
-import { Block } from '../../nodes.js';
+import { Block } from '../../nodes/index.js';
 import { Frame } from '../../runtime/index.js';
 
 export const compileRoot = (ctx, node, frame) => {

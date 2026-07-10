@@ -56,7 +56,7 @@ import {
   Capture,
   TemplateRef,
   Super,
-} from '../../nodes.js';
+} from '../../nodes/index.js';
 import {
   TOKEN_SYMBOL,
   TOKEN_BLOCK_END,

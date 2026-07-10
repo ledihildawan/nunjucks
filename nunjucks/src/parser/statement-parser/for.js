@@ -5,7 +5,7 @@ import {
   AsyncAll,
   AstSymbol,
   Array as ArrayNode,
-} from '../../nodes.js';
+} from '../../nodes/index.js';
 import { peekToken, skip, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseFor = (ctx) => {

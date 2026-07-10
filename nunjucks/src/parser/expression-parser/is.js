@@ -1,4 +1,4 @@
-import { Is, Not } from '../../nodes.js';
+import { Is, Not } from '../../nodes/index.js';
 import { skipSymbol } from '../cursor.js';
 import { parseCompare } from './compare.js';
 

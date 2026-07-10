@@ -144,7 +144,7 @@ import {
   CompareOperand,
   CallExtension,
   CallExtensionAsync,
-} from './src/nodes.js';
+} from './src/nodes/index.js';
 import installJinjaCompat from './src/jinja-compat.js';
 import {
   precompile,

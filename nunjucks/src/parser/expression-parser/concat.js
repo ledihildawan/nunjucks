@@ -1,4 +1,4 @@
-import { Concat } from '../../nodes.js';
+import { Concat } from '../../nodes/index.js';
 import { TOKEN_TILDE } from '../../lexer/token-types.js';
 import { skipValue } from '../cursor.js';
 import { parseAdd } from './arithmetic.js';

@@ -1,4 +1,4 @@
-import { Or, And, Not, In as OperatorIn } from '../../nodes.js';
+import { Or, And, Not, In as OperatorIn } from '../../nodes/index.js';
 import { peekToken, skipSymbol } from '../cursor.js';
 import { parseNullishCoalesce } from './nullish.js';
 import { parseIn } from './in.js';

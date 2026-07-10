@@ -1,4 +1,4 @@
-import { NullishCoalesce } from '../../nodes.js';
+import { NullishCoalesce } from '../../nodes/index.js';
 import { TOKEN_OPERATOR } from '../../lexer/token-types.js';
 import { skipValue } from '../cursor.js';
 import { parseAnd } from './logical.js';

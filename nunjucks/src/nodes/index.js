@@ -1,4 +1,4 @@
-import {Obj} from './object/index.js';
+import {Obj} from '../object/index.js';
 
 function traverseAndCheck(obj, type, results) {
   if (obj instanceof type) {

@@ -5,7 +5,7 @@ import {
   Output,
   Caller,
   AstSymbol,
-} from '../../nodes.js';
+} from '../../nodes/index.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseCall = (ctx) => {

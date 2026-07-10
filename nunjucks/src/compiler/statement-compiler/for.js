@@ -1,4 +1,4 @@
-import { Array as ArrayNode } from '../../nodes.js';
+import { Array as ArrayNode } from '../../nodes/index.js';
 
 const emitLoopBindings = (ctx, arr, i, len) => {
   const bindings = [

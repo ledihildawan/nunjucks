@@ -31,7 +31,7 @@ import {
   NullishCoalesce,
   NodeList,
   Slice,
-} from './nodes.js';
+} from './nodes/index.js';
 import { TemplateError } from './error/index.js';
 import { Obj } from './object/index.js';
 import { SourceMap } from './lib/source-map.js';

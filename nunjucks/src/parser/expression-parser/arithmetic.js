@@ -1,5 +1,5 @@
 import { TOKEN_OPERATOR } from '../../lexer/token-types.js';
-import { Add, Sub, Mul, Div, FloorDiv, Mod, Pow } from '../../nodes.js';
+import { Add, Sub, Mul, Div, FloorDiv, Mod, Pow } from '../../nodes/index.js';
 import { skipValue } from '../cursor.js';
 import { parseUnary } from './unary.js';
 

@@ -1,4 +1,4 @@
-import { NodeList } from '../../nodes.js';
+import { NodeList } from '../../nodes/index.js';
 
 export const compileCallExtension = (ctx, node, frame, useAsync) => {
   const args = node.args;

@@ -2,7 +2,7 @@ import {
   TOKEN_COLON,
   TOKEN_RIGHT_BRACKET,
 } from '../../lexer/token-types.js';
-import { LookupVal, Slice } from '../../nodes.js';
+import { LookupVal, Slice } from '../../nodes/index.js';
 import { peekToken, skip, expect } from '../cursor.js';
 
 const buildSlice = (ctx, bracketTok, start) => {

@@ -1,5 +1,5 @@
 import { TOKEN_SYMBOL } from '../../lexer/token-types.js';
-import { OptionalChain, Literal } from '../../nodes.js';
+import { OptionalChain, Literal } from '../../nodes/index.js';
 import { nextToken, fail } from '../cursor.js';
 
 export const parseOptionalChain = (ctx, tok, target) => {

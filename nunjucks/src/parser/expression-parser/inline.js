@@ -1,4 +1,4 @@
-import { InlineIf } from '../../nodes.js';
+import { InlineIf } from '../../nodes/index.js';
 import { skipSymbol } from '../cursor.js';
 import { parseOr } from './logical.js';
 

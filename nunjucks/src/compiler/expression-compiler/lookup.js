@@ -1,4 +1,4 @@
-import { Slice } from '../../nodes.js';
+import { Slice } from '../../nodes/index.js';
 
 export const compileLookupVal = (ctx, node, frame) => {
   if (node.val instanceof Slice) {

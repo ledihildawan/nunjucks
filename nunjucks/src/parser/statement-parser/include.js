@@ -1,4 +1,4 @@
-import { Include } from '../../nodes.js';
+import { Include } from '../../nodes/index.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseInclude = (ctx) => {

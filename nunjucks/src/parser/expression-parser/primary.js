@@ -7,7 +7,7 @@ import {
   TOKEN_REGEX,
   TOKEN_SYMBOL,
 } from '../../lexer/token-types.js';
-import { Literal, AstSymbol } from '../../nodes.js';
+import { Literal, AstSymbol } from '../../nodes/index.js';
 import { nextToken, pushToken, fail } from '../cursor.js';
 
 export const parsePrimary = (ctx, noPostfix) => {

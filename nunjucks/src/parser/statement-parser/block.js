@@ -1,4 +1,4 @@
-import { Block, AstSymbol } from '../../nodes.js';
+import { Block, AstSymbol } from '../../nodes/index.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseBlock = (ctx) => {

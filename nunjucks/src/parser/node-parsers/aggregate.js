@@ -13,7 +13,7 @@ import {
   Array as ArrayNode,
   Dict,
   Pair,
-} from '../../nodes.js';
+} from '../../nodes/index.js';
 import { nextToken, peekToken, skip, fail } from '../cursor.js';
 
 export const parseAggregate = (ctx) => {

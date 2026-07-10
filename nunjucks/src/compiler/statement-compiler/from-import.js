@@ -1,4 +1,4 @@
-import { Pair } from '../../nodes.js';
+import { Pair } from '../../nodes/index.js';
 import { compileGetTemplate } from './import.js';
 
 export const compileFromImport = (ctx, node, frame) => {

@@ -1,4 +1,4 @@
-import { If, IfAsync } from '../../nodes.js';
+import { If, IfAsync } from '../../nodes/index.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseIf = (ctx) => {

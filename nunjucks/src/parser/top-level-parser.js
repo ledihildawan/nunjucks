@@ -4,7 +4,7 @@ import {
   TOKEN_DATA,
   TOKEN_VARIABLE_START,
 } from '../lexer/token-types.js';
-import { Output, TemplateData } from '../nodes.js';
+import { Output, TemplateData } from '../nodes/index.js';
 import {
   nextToken,
   peekToken,

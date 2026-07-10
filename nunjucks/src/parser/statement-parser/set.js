@@ -3,7 +3,7 @@ import {
   TOKEN_COMMA,
   TOKEN_OPERATOR,
 } from '../../lexer/token-types.js';
-import { Set as AstSet, Capture } from '../../nodes.js';
+import { Set as AstSet, Capture } from '../../nodes/index.js';
 import { peekToken, skip, skipValue, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseSet = (ctx) => {
