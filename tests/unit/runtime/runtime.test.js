@@ -1,5 +1,5 @@
 import { expect, describe, test } from 'bun:test';
-import nunjucks from '../nunjucks/index.js';
+import nunjucks from '../../../nunjucks/index.js';
 
 var Environment = nunjucks.Environment;
 var Template = nunjucks.Template;

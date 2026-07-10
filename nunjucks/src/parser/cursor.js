@@ -116,7 +116,7 @@ export const advanceAfterVariableEnd = (ctx) => {
       tok.value.length - ctx.tokens.tags.VARIABLE_END.length - 1
     ) === '-';
   } else {
-    pushToken(tok);
+    pushToken(ctx, tok);
     fail(ctx, 'expected variable end');
   }
 };

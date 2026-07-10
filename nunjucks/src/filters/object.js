@@ -1,6 +1,6 @@
 import { isString, isPlainObject, groupBy } from 'remeda';
 import { TemplateError } from '../error/index.js';
-import { getAttrGetter } from '../lib/attributes.js';
+import { getAttrGetter } from '../helpers/attributes.js';
 
 const isObject = isPlainObject;
 

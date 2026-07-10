@@ -1,7 +1,7 @@
 import { isString, isPlainObject } from 'remeda';
-import { compile } from '../compiler.js';
+import { compile } from '../compiler/index.js';
 import { prettifyError } from '../error/index.js';
-import { createMappedError } from '../lib/source-map.js';
+import { createMappedError } from '../helpers/source-map.js';
 import { Context } from '../runtime/context.js';
 import {
   Frame,

@@ -1,4 +1,4 @@
-import { normalizeDrivePath } from '../utils/path-shortener.js';
+import { normalizeDrivePath } from '../path-shortener.js';
 
 /**
  * IDE scheme definitions for clickable error links.

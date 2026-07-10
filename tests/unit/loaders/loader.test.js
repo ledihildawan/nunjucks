@@ -1,10 +1,10 @@
 import { expect, describe, test, beforeEach } from 'bun:test';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { Environment } from '../nunjucks/src/environment/index.js';
-import { WebLoader } from '../nunjucks/src/loaders/web-loader.js';
-import { FileSystemLoader } from '../nunjucks/src/loaders/file-system-loader.js';
-import { NodeResolveLoader } from '../nunjucks/src/loaders/node-resolve-loader.js';
+import { Environment } from '../../../nunjucks/src/environment/index.js';
+import { WebLoader } from '../../../nunjucks/src/loaders/web.js';
+import { FileSystemLoader } from '../../../nunjucks/src/loaders/file-system.js';
+import { NodeResolveLoader } from '../../../nunjucks/src/loaders/node-resolve.js';
 
 var templatesPath = 'tests/templates';
 

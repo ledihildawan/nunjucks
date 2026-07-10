@@ -1,9 +1,9 @@
 import { existsSync, statSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {prettifyError} from './error/index.js';
-import { compile } from './compiler.js';
-import {Environment} from './environment/index.js';
-import precompileGlobal from './precompile-global.js';
+import {prettifyError} from '../error/index.js';
+import { compile } from '../compiler/index.js';
+import {Environment} from '../environment/index.js';
+import precompileGlobal from './global.js';
 
 function match(filename, patterns) {
   if (!Array.isArray(patterns)) {

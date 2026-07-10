@@ -1,6 +1,6 @@
 import { expect, describe, test } from 'bun:test';
-import * as util from './util.js';
-import * as r from '../nunjucks/src/runtime/index.js';
+import * as util from '../../util.js';
+import * as r from '../../../nunjucks/src/runtime/index.js';
 
 var render = util.render;
 var equal = util.equal;

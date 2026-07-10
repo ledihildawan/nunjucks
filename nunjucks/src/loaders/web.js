@@ -1,4 +1,4 @@
-import Loader from './base-loader.js';
+import Loader from './base.js';
 
 const addCacheBust = (url) => {
   const separator = url.indexOf('?') === -1 ? '?' : '&';

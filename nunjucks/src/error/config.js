@@ -1,4 +1,4 @@
-import { isDevelopment } from '../lib/environment-check.js';
+import { isDevelopment } from '../helpers/environment-check.js';
 
 const DEFAULT_CONFIG = {
   ide: 'vscode',

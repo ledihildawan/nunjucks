@@ -1,7 +1,7 @@
 import { expect, describe, test } from "bun:test";
-import { isArray, isPlainObject, each, map } from 'remeda';
-import * as nodes from "../nunjucks/src/nodes.js";
-import * as parser from "../nunjucks/src/parser.js";
+import { isArray, isPlainObject, map } from 'remeda';
+import * as nodes from "../../../nunjucks/src/nodes/index.js";
+import * as parser from "../../../nunjucks/src/parser/index.js";
 
 const isObject = isPlainObject;
 
@@ -31,7 +31,7 @@ function _isAST(node1, node2) {
           "num-children: " + value.length,
         );
 
-        each(ofield, function (v, i) {
+        ofield.forEach(function (v, i) {
           if (ofield[i] instanceof nodes.Node) {
             _isAST(ofield[i], value[i]);
           } else if (ofield[i] !== null && value[i] !== null) {
@@ -141,7 +141,7 @@ describe("parser", function () {
 
     isAST(parser.parse("{{ foo }}"), [
       nodes.Root,
-      [nodes.Output, [nodes.Symbol, "foo"]],
+      [nodes.Output, [nodes.AstSymbol, "foo"]],
     ]);
 
     isAST(parser.parse("{{ r/23/gi }}"), [
@@ -183,7 +183,7 @@ describe("parser", function () {
         nodes.Output,
         [
           nodes.Dict,
-          [nodes.Pair, [nodes.Symbol, "foo"], [nodes.Literal, 1]],
+          [nodes.Pair, [nodes.AstSymbol, "foo"], [nodes.Literal, 1]],
           [nodes.Pair, [nodes.Literal, "two"], [nodes.Literal, 2]],
         ],
       ],
@@ -194,7 +194,7 @@ describe("parser", function () {
     isAST(parser.parse("hello {{ foo }}, how are you"), [
       nodes.Root,
       [nodes.Output, [nodes.TemplateData, "hello "]],
-      [nodes.Output, [nodes.Symbol, "foo"]],
+      [nodes.Output, [nodes.AstSymbol, "foo"]],
       [nodes.Output, [nodes.TemplateData, ", how are you"]],
     ]);
   });
@@ -206,27 +206,27 @@ describe("parser", function () {
         nodes.Output,
         [
           nodes.Compare,
-          [nodes.Symbol, "x"],
-          [[nodes.CompareOperand, [nodes.Symbol, "y"], "=="]],
+          [nodes.AstSymbol, "x"],
+          [[nodes.CompareOperand, [nodes.AstSymbol, "y"], "=="]],
         ],
       ],
     ]);
 
     isAST(parser.parse("{{ x or y }}"), [
       nodes.Root,
-      [nodes.Output, [nodes.Or, [nodes.Symbol, "x"], [nodes.Symbol, "y"]]],
+      [nodes.Output, [nodes.Or, [nodes.AstSymbol, "x"], [nodes.AstSymbol, "y"]]],
     ]);
 
     isAST(parser.parse("{{ x in y }}"), [
       nodes.Root,
-      [nodes.Output, [nodes.In, [nodes.Symbol, "x"], [nodes.Symbol, "y"]]],
+      [nodes.Output, [nodes.In, [nodes.AstSymbol, "x"], [nodes.AstSymbol, "y"]]],
     ]);
 
     isAST(parser.parse("{{ x not in y }}"), [
       nodes.Root,
       [
         nodes.Output,
-        [nodes.Not, [nodes.In, [nodes.Symbol, "x"], [nodes.Symbol, "y"]]],
+        [nodes.Not, [nodes.In, [nodes.AstSymbol, "x"], [nodes.AstSymbol, "y"]]],
       ],
     ]);
 
@@ -234,7 +234,7 @@ describe("parser", function () {
       nodes.Root,
       [
         nodes.Output,
-        [nodes.Is, [nodes.Symbol, "x"], [nodes.Symbol, "callable"]],
+        [nodes.Is, [nodes.AstSymbol, "x"], [nodes.AstSymbol, "callable"]],
       ],
     ]);
 
@@ -244,7 +244,7 @@ describe("parser", function () {
         nodes.Output,
         [
           nodes.Not,
-          [nodes.Is, [nodes.Symbol, "x"], [nodes.Symbol, "callable"]],
+          [nodes.Is, [nodes.AstSymbol, "x"], [nodes.AstSymbol, "callable"]],
         ],
       ],
     ]);
@@ -264,8 +264,8 @@ describe("parser", function () {
         nodes.Output,
         [
           nodes.And,
-          [nodes.In, [nodes.Symbol, "x"], [nodes.Symbol, "y"]],
-          [nodes.Symbol, "z"],
+          [nodes.In, [nodes.AstSymbol, "x"], [nodes.AstSymbol, "y"]],
+          [nodes.AstSymbol, "z"],
         ],
       ],
     ]);
@@ -276,8 +276,8 @@ describe("parser", function () {
         nodes.Output,
         [
           nodes.Or,
-          [nodes.Not, [nodes.In, [nodes.Symbol, "x"], [nodes.Symbol, "y"]]],
-          [nodes.Symbol, "z"],
+          [nodes.Not, [nodes.In, [nodes.AstSymbol, "x"], [nodes.AstSymbol, "y"]]],
+          [nodes.AstSymbol, "z"],
         ],
       ],
     ]);
@@ -288,8 +288,8 @@ describe("parser", function () {
         nodes.Output,
         [
           nodes.Or,
-          [nodes.Symbol, "x"],
-          [nodes.And, [nodes.Symbol, "y"], [nodes.Symbol, "z"]],
+          [nodes.AstSymbol, "x"],
+          [nodes.And, [nodes.AstSymbol, "y"], [nodes.AstSymbol, "z"]],
         ],
       ],
     ]);
@@ -353,8 +353,8 @@ describe("parser", function () {
       [
         nodes.For,
         [nodes.Array, [nodes.Literal, 1], [nodes.Literal, 2]],
-        [nodes.Symbol, "x"],
-        [nodes.NodeList, [nodes.Output, [nodes.Symbol, "x"]]],
+        [nodes.AstSymbol, "x"],
+        [nodes.NodeList, [nodes.Output, [nodes.AstSymbol, "x"]]],
       ],
     ]);
   });
@@ -365,8 +365,8 @@ describe("parser", function () {
       [
         nodes.For,
         [nodes.Array],
-        [nodes.Symbol, "x"],
-        [nodes.NodeList, [nodes.Output, [nodes.Symbol, "x"]]],
+        [nodes.AstSymbol, "x"],
+        [nodes.NodeList, [nodes.Output, [nodes.AstSymbol, "x"]]],
         [nodes.NodeList, [nodes.Output, [nodes.TemplateData, "empty"]]],
       ],
     ]);
@@ -379,8 +379,8 @@ describe("parser", function () {
         nodes.Output,
         [
           nodes.Pipe,
-          [nodes.Symbol, "bar"],
-          [nodes.NodeList, [nodes.Symbol, "foo"]],
+          [nodes.AstSymbol, "bar"],
+          [nodes.NodeList, [nodes.AstSymbol, "foo"]],
         ],
       ],
     ]);
@@ -391,13 +391,13 @@ describe("parser", function () {
         nodes.Output,
         [
           nodes.Pipe,
-          [nodes.Symbol, "baz"],
+          [nodes.AstSymbol, "baz"],
           [
             nodes.NodeList,
             [
               nodes.Pipe,
-              [nodes.Symbol, "bar"],
-              [nodes.NodeList, [nodes.Symbol, "foo"]],
+              [nodes.AstSymbol, "bar"],
+              [nodes.NodeList, [nodes.AstSymbol, "foo"]],
             ],
           ],
         ],
@@ -410,8 +410,8 @@ describe("parser", function () {
         nodes.Output,
         [
           nodes.Pipe,
-          [nodes.Symbol, "bar"],
-          [nodes.NodeList, [nodes.Symbol, "foo"], [nodes.Literal, 3]],
+          [nodes.AstSymbol, "bar"],
+          [nodes.NodeList, [nodes.AstSymbol, "foo"], [nodes.Literal, 3]],
         ],
       ],
     ]);
@@ -427,13 +427,13 @@ describe("parser", function () {
       nodes.Root,
       [
         nodes.Macro,
-        [nodes.Symbol, "foo"],
+        [nodes.AstSymbol, "foo"],
         [
           nodes.NodeList,
-          [nodes.Symbol, "bar"],
+          [nodes.AstSymbol, "bar"],
           [
             nodes.KeywordArgs,
-            [nodes.Pair, [nodes.Symbol, "baz"], [nodes.Literal, "foobar"]],
+            [nodes.Pair, [nodes.AstSymbol, "baz"], [nodes.Literal, "foobar"]],
           ],
         ],
         [
@@ -454,7 +454,7 @@ describe("parser", function () {
         nodes.Output,
         [
           nodes.FunCall,
-          [nodes.Symbol, "foo"],
+          [nodes.AstSymbol, "foo"],
           [
             nodes.NodeList,
             [nodes.Literal, "bar"],
@@ -462,10 +462,10 @@ describe("parser", function () {
               nodes.KeywordArgs,
               [
                 nodes.Pair,
-                [nodes.Symbol, "caller"],
+                [nodes.AstSymbol, "caller"],
                 [
                   nodes.Caller,
-                  [nodes.Symbol, "caller"],
+                  [nodes.AstSymbol, "caller"],
                   [nodes.NodeList],
                   [
                     nodes.NodeList,
@@ -492,24 +492,24 @@ describe("parser", function () {
         nodes.Output,
         [
           nodes.FunCall,
-          [nodes.Symbol, "foo"],
+          [nodes.AstSymbol, "foo"],
           [
             nodes.NodeList,
             [nodes.Literal, "bar"],
             [
               nodes.KeywordArgs,
-              [nodes.Pair, [nodes.Symbol, "baz"], [nodes.Literal, "foobar"]],
+              [nodes.Pair, [nodes.AstSymbol, "baz"], [nodes.Literal, "foobar"]],
               [
                 nodes.Pair,
-                [nodes.Symbol, "caller"],
+                [nodes.AstSymbol, "caller"],
                 [
                   nodes.Caller,
-                  [nodes.Symbol, "caller"],
-                  [nodes.NodeList, [nodes.Symbol, "i"]],
+                  [nodes.AstSymbol, "caller"],
+                  [nodes.NodeList, [nodes.AstSymbol, "i"]],
                   [
                     nodes.NodeList,
                     [nodes.Output, [nodes.TemplateData, "This is "]],
-                    [nodes.Output, [nodes.Symbol, "i"]],
+                    [nodes.Output, [nodes.AstSymbol, "i"]],
                   ],
                 ],
               ],
@@ -578,7 +578,7 @@ describe("parser", function () {
       [
         nodes.Root,
         [nodes.Output, [nodes.TemplateData, "{{ var }}"]],
-        [nodes.Output, [nodes.Symbol, "var"]],
+        [nodes.Output, [nodes.AstSymbol, "var"]],
         [nodes.Output, [nodes.TemplateData, "{{ var }}"]],
       ],
     );
@@ -594,7 +594,7 @@ describe("parser", function () {
         [nodes.Output, [nodes.TemplateData, "\n"]],
         [nodes.Output, [nodes.TemplateData, "{{ var }}"]],
         [nodes.Output, [nodes.TemplateData, "\n"]],
-        [nodes.Output, [nodes.Symbol, "var"]],
+        [nodes.Output, [nodes.AstSymbol, "var"]],
         [nodes.Output, [nodes.TemplateData, "\n"]],
         [nodes.Output, [nodes.TemplateData, "{{ var }}"]],
         [nodes.Output, [nodes.TemplateData, "\n"]],
@@ -668,7 +668,7 @@ describe("parser", function () {
       [
         nodes.Root,
         [nodes.Output, [nodes.TemplateData, "{{ var }}"]],
-        [nodes.Output, [nodes.Symbol, "var"]],
+        [nodes.Output, [nodes.AstSymbol, "var"]],
         [nodes.Output, [nodes.TemplateData, "{{ var }}"]],
       ],
     );
@@ -684,7 +684,7 @@ describe("parser", function () {
         [nodes.Output, [nodes.TemplateData, "\n"]],
         [nodes.Output, [nodes.TemplateData, "{{ var }}"]],
         [nodes.Output, [nodes.TemplateData, "\n"]],
-        [nodes.Output, [nodes.Symbol, "var"]],
+        [nodes.Output, [nodes.AstSymbol, "var"]],
         [nodes.Output, [nodes.TemplateData, "\n"]],
         [nodes.Output, [nodes.TemplateData, "{{ var }}"]],
         [nodes.Output, [nodes.TemplateData, "\n"]],
@@ -699,7 +699,7 @@ describe("parser", function () {
       nodes.Root,
       [
         nodes.Switch,
-        [nodes.Symbol, "foo"],
+        [nodes.AstSymbol, "foo"],
         [
           [
             nodes.Case,
@@ -727,14 +727,14 @@ describe("parser", function () {
         nodes.Output,
         [
           nodes.FunCall,
-          [nodes.Symbol, "foo"],
+          [nodes.AstSymbol, "foo"],
           [
             nodes.NodeList,
             [nodes.Literal, "bar"],
-            [nodes.Symbol, "falalalala"],
+            [nodes.AstSymbol, "falalalala"],
             [
               nodes.KeywordArgs,
-              [nodes.Pair, [nodes.Symbol, "baz"], [nodes.Literal, "foobar"]],
+              [nodes.Pair, [nodes.AstSymbol, "baz"], [nodes.Literal, "foobar"]],
             ],
           ],
         ],
@@ -745,7 +745,7 @@ describe("parser", function () {
   test("should parse imports", function () {
     isAST(parser.parse('{% import "foo/bar.njk" as baz %}'), [
       nodes.Root,
-      [nodes.Import, [nodes.Literal, "foo/bar.njk"], [nodes.Symbol, "baz"]],
+      [nodes.Import, [nodes.Literal, "foo/bar.njk"], [nodes.AstSymbol, "baz"]],
     ]);
 
     isAST(
@@ -757,8 +757,8 @@ describe("parser", function () {
           [nodes.Literal, "foo/bar.njk"],
           [
             nodes.NodeList,
-            [nodes.Symbol, "baz"],
-            [nodes.Pair, [nodes.Symbol, "foobar"], [nodes.Symbol, "foobarbaz"]],
+            [nodes.AstSymbol, "baz"],
+            [nodes.Pair, [nodes.AstSymbol, "foobar"], [nodes.AstSymbol, "foobarbaz"]],
           ],
         ],
       ],
@@ -772,7 +772,7 @@ describe("parser", function () {
           nodes.Import,
           [
             nodes.Pipe,
-            [nodes.Symbol, "replace"],
+            [nodes.AstSymbol, "replace"],
             [
               nodes.NodeList,
               [nodes.Literal, "foo/bar.html"],
@@ -780,7 +780,7 @@ describe("parser", function () {
               [nodes.Literal, "j2"],
             ],
           ],
-          [nodes.Symbol, "baz"],
+          [nodes.AstSymbol, "baz"],
         ],
       ],
     );
@@ -795,7 +795,7 @@ describe("parser", function () {
           nodes.FromImport,
           [
             nodes.Pipe,
-            [nodes.Symbol, "default"],
+            [nodes.AstSymbol, "default"],
             [
               nodes.NodeList,
               [nodes.Literal, ""],
@@ -804,11 +804,11 @@ describe("parser", function () {
           ],
           [
             nodes.NodeList,
-            [nodes.Symbol, "baz"],
+            [nodes.AstSymbol, "baz"],
             [
               nodes.Pair,
-              [nodes.Symbol, "foobar"],
-              [nodes.Symbol, "foobarbaz"],
+              [nodes.AstSymbol, "foobar"],
+              [nodes.AstSymbol, "foobarbaz"],
             ],
           ],
         ],
@@ -821,7 +821,7 @@ describe("parser", function () {
       nodes.Root,
       [
         nodes.If,
-        [nodes.Symbol, "x"],
+        [nodes.AstSymbol, "x"],
         [nodes.NodeList, [nodes.Output, [nodes.TemplateData, "\n  hi \n"]]],
       ],
     ]);
@@ -830,7 +830,7 @@ describe("parser", function () {
       nodes.Root,
       [
         nodes.If,
-        [nodes.Symbol, "x"],
+        [nodes.AstSymbol, "x"],
         [nodes.NodeList, [nodes.Output, [nodes.TemplateData, "hi \n"]]],
       ],
     ]);
@@ -839,7 +839,7 @@ describe("parser", function () {
       nodes.Root,
       [
         nodes.If,
-        [nodes.Symbol, "x"],
+        [nodes.AstSymbol, "x"],
         [nodes.NodeList, [nodes.Output, [nodes.TemplateData, "\n  hi"]]],
       ],
     ]);
@@ -848,7 +848,7 @@ describe("parser", function () {
       nodes.Root,
       [
         nodes.If,
-        [nodes.Symbol, "x"],
+        [nodes.AstSymbol, "x"],
         [nodes.NodeList, [nodes.Output, [nodes.TemplateData, "hi"]]],
       ],
     ]);
@@ -858,7 +858,7 @@ describe("parser", function () {
       [nodes.Output, [nodes.TemplateData, "poop"]],
       [
         nodes.If,
-        [nodes.Symbol, "x"],
+        [nodes.AstSymbol, "x"],
         [nodes.NodeList, [nodes.Output, [nodes.TemplateData, "hi"]]],
       ],
     ]);
@@ -889,8 +889,8 @@ describe("parser", function () {
       nodes.Root,
       [
         nodes.FromImport,
-        [nodes.Symbol, "x"],
-        [nodes.NodeList, [nodes.Symbol, "y"]],
+        [nodes.AstSymbol, "x"],
+        [nodes.NodeList, [nodes.AstSymbol, "y"]],
       ],
       [nodes.Output, [nodes.TemplateData, "\n  hi \n"]],
     ]);
@@ -899,8 +899,8 @@ describe("parser", function () {
       nodes.Root,
       [
         nodes.FromImport,
-        [nodes.Symbol, "x"],
-        [nodes.NodeList, [nodes.Symbol, "y"]],
+        [nodes.AstSymbol, "x"],
+        [nodes.NodeList, [nodes.AstSymbol, "y"]],
       ],
       [nodes.Output, [nodes.TemplateData, "hi \n"]],
     ]);
@@ -909,12 +909,12 @@ describe("parser", function () {
       nodes.Root,
       [
         nodes.If,
-        [nodes.Symbol, "x"],
+        [nodes.AstSymbol, "x"],
         [
           nodes.NodeList,
-          [nodes.Output, [nodes.Symbol, "y"]],
+          [nodes.Output, [nodes.AstSymbol, "y"]],
           [nodes.Output, [nodes.TemplateData, " "]],
-          [nodes.Output, [nodes.Symbol, "z"]],
+          [nodes.Output, [nodes.AstSymbol, "z"]],
         ],
       ],
     ]);
@@ -923,16 +923,16 @@ describe("parser", function () {
       nodes.Root,
       [
         nodes.If,
-        [nodes.Symbol, "x"],
+        [nodes.AstSymbol, "x"],
         [
           nodes.NodeList,
           [
             nodes.If,
-            [nodes.Symbol, "y"],
+            [nodes.AstSymbol, "y"],
             [
               nodes.NodeList,
               [nodes.Output, [nodes.TemplateData, " "]],
-              [nodes.Output, [nodes.Symbol, "z"]],
+              [nodes.Output, [nodes.AstSymbol, "z"]],
             ],
           ],
         ],
@@ -943,11 +943,11 @@ describe("parser", function () {
       nodes.Root,
       [
         nodes.If,
-        [nodes.Symbol, "x"],
+        [nodes.AstSymbol, "x"],
         [
           nodes.NodeList,
           [nodes.Output, [nodes.TemplateData, " "]],
-          [nodes.Output, [nodes.Symbol, "z"]],
+          [nodes.Output, [nodes.AstSymbol, "z"]],
         ],
       ],
     ]);
@@ -1107,7 +1107,7 @@ describe("parser", function () {
           [nodes.Literal, "abc"],
           [
             nodes.KeywordArgs,
-            [nodes.Pair, [nodes.Symbol, "foo"], [nodes.Literal, "bar"]],
+            [nodes.Pair, [nodes.AstSymbol, "foo"], [nodes.Literal, "bar"]],
           ],
         ],
       ],

@@ -1,20 +1,20 @@
 import { isPlainObject } from 'remeda';
 import { Environment, Template } from './src/environment/index.js';
-import Loader from './src/loaders/base-loader.js';
-import { FileSystemLoader } from './src/loaders/file-system-loader.js';
-import { NodeResolveLoader } from './src/loaders/node-resolve-loader.js';
-import { WebLoader } from './src/loaders/web-loader.js';
-import { PrecompiledLoader } from './src/loaders/precompiled-loader.js';
+import Loader from './src/loaders/base.js';
+import { FileSystemLoader } from './src/loaders/file-system.js';
+import { NodeResolveLoader } from './src/loaders/node-resolve.js';
+import { WebLoader } from './src/loaders/web.js';
+import { PrecompiledLoader } from './src/loaders/precompiled.js';
 import {
   Compiler,
   compile as compileSourceToCode,
   getSourceMap,
   getSourceMapFromCompile,
-} from './src/compiler.js';
+} from './src/compiler/index.js';
 import {
   Parser,
   parse,
-} from './src/parser.js';
+} from './src/parser/index.js';
 import {
   Tokenizer,
   lex,
@@ -145,7 +145,7 @@ import {
   CallExtension,
   CallExtensionAsync,
 } from './src/nodes/index.js';
-import installJinjaCompat from './src/jinja-compat.js';
+import installJinjaCompat from './src/integration/jinja-compat.js';
 import {
   precompile,
   precompileString,

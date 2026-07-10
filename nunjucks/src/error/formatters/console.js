@@ -1,6 +1,6 @@
 import { splitSnippetLines } from '../core/snippet.js';
 import { formatLocation, getDisplayMessage } from '../state/message-formatter.js';
-import { shortenPath, normalizeDrivePath } from '../utils/path-shortener.js';
+import { shortenPath, normalizeDrivePath } from '../path-shortener.js';
 import { resolveIdeLink } from '../constants/ide-links.js';
 import { formatStackTrace } from './console/stack-trace.js';
 

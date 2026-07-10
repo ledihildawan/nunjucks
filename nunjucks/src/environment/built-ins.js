@@ -22,7 +22,7 @@ import {
   urlencode,
   urlize,
   wordcount,
-} from '../filters/string-filters.js';
+} from '../filters/string.js';
 import {
   batch,
   first,
@@ -38,18 +38,18 @@ import {
   select,
   rejectattr,
   selectattr,
-} from '../filters/array-filters.js';
+} from '../filters/array.js';
 import {
   dictsort,
   groupby,
-} from '../filters/object-filters.js';
+} from '../filters/object.js';
 import {
   abs,
   isNaN,
   round,
   float,
   intFilter,
-} from '../filters/math-filters.js';
+} from '../filters/math.js';
 import {
   callable,
   defined,

@@ -1,5 +1,5 @@
-import { parse } from './parser.js';
-import { transform } from './transformers/transformer.js';
+import { parse } from '../parser/index.js';
+import { transform } from '../transformers/index.js';
 import {
   Literal,
   AstSymbol,
@@ -31,11 +31,11 @@ import {
   NullishCoalesce,
   NodeList,
   Slice,
-} from './nodes/index.js';
-import { TemplateError } from './error/index.js';
-import { Obj } from './object/index.js';
-import { SourceMap } from './lib/source-map.js';
-import { COMPILE_FUNCTIONS, compileDispatch } from './compiler/compile-node-dispatch.js';
+} from '../nodes/index.js';
+import { TemplateError } from '../error/index.js';
+import { Obj } from '../object/index.js';
+import { SourceMap } from '../helpers/source-map.js';
+import { COMPILE_FUNCTIONS, compileDispatch } from './node-dispatch.js';
 
 export class Compiler extends Obj {
   init(templateName, throwOnUndefined, source) {

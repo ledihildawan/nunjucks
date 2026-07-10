@@ -1,5 +1,5 @@
 import { expect, describe, test } from 'bun:test';
-import { precompile, precompileString } from '../nunjucks/src/precompile.js';
+import { precompile, precompileString } from '../../../nunjucks/src/precompile/index.js';
 
 describe('precompile', function() {
   test('should return a string', function() {

@@ -1,5 +1,5 @@
 import { describe, test } from 'bun:test';
-import * as util from './util.js';
+import * as util from '../util.js';
 
 var equal = util.jinjaEqual;
 

@@ -1,5 +1,5 @@
-import Loader from './base-loader.js';
-import { Maybe } from '../lib/monad.js';
+import Loader from './base.js';
+import { Maybe } from '../helpers/monad.js';
 
 const getPrecompiledSource = (precompiled) => (name) =>
   Maybe.just(precompiled[name])

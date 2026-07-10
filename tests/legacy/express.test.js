@@ -1,11 +1,11 @@
 import { expect, describe, test, beforeEach, afterEach } from 'bun:test';
 import path from 'path';
 import express from 'express';
-import nunjucks from '../nunjucks/index.js';
+import nunjucks from '../../nunjucks/index.js';
 import { fileURLToPath } from 'url';
 
 var __dirname = path.dirname(fileURLToPath(import.meta.url));
-var VIEWS = path.join(__dirname, '../samples/express/views');
+var VIEWS = path.join(__dirname, '../../samples/express/views');
 
 describe('express', function() {
   var app;

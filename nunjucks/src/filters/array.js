@@ -1,7 +1,7 @@
 import { isArray, isString, isPlainObject, map, keys, entries } from 'remeda';
 import { SafeString, copySafeness, makeMacro } from '../runtime/index.js';
-import { getAttrGetter } from '../lib/attributes.js';
-import { normalize } from './string-filters.js';
+import { getAttrGetter } from '../helpers/attributes.js';
+import { normalize } from './string.js';
 
 export function batch(arr, linecount, fillWith) {
   var i;

@@ -2,7 +2,7 @@ import { pipe } from 'remeda';
 import { existsSync, readFileSync } from 'node:fs';
 import { normalize, resolve } from 'node:path';
 import { watch } from 'fs';
-import Loader from './base-loader.js';
+import Loader from './base.js';
 
 const normalizeSearchPaths = (searchPaths) =>
   !searchPaths ? ['.'] : (Array.isArray(searchPaths) ? searchPaths : [searchPaths]).map(normalize);

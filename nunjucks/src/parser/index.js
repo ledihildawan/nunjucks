@@ -1,11 +1,11 @@
-import { lex } from './lexer/tokenizer.js';
+import { lex } from '../lexer/tokenizer.js';
 import {
   NodeList,
   Root,
   Output,
   TemplateData,
-} from './nodes/index.js';
-import { Obj } from './object/index.js';
+} from '../nodes/index.js';
+import { Obj } from '../object/index.js';
 import {
   nextToken,
   peekToken,
@@ -18,8 +18,8 @@ import {
   advanceAfterVariableEnd,
   error,
   fail,
-} from './parser/cursor.js';
-import { parseAggregate, parseSignature } from './parser/node-parsers/index.js';
+} from './cursor.js';
+import { parseAggregate, parseSignature } from './node-parsers/index.js';
 import {
   parseExpression,
   parseInlineIf,
@@ -40,13 +40,13 @@ import {
   parsePow,
   parseUnary,
   parsePrimary,
-} from './parser/expression-parser/index.js';
+} from './expression-parser/index.js';
 import {
   parsePostfix,
   parseFilterName,
   parseFilterArgs,
   parsePipe,
-} from './parser/postfix-parser/index.js';
+} from './postfix-parser/index.js';
 import {
   parseStatement,
   parseFor,
@@ -63,8 +63,8 @@ import {
   parseSwitch,
   parseRaw,
   parseFilterStatement,
-} from './parser/statement-parser/index.js';
-import { parseNodes, parseUntilBlocks } from './parser/top-level-parser.js';
+} from './statement-parser/index.js';
+import { parseNodes, parseUntilBlocks } from './top-level.js';
 
 export class Parser extends Obj {
   init(tokens) {
