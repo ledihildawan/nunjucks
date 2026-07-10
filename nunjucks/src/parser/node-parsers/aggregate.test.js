@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseAggregate } from './aggregate.js';
-import { Group, Array as ArrayNode, Dict, Pair, AstSymbol, Literal } from '../../nodes/index.js';
+import { Group, ArrayNode, Dict, Pair, AstSymbol, Literal } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import {
   TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN,

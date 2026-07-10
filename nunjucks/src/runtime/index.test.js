@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import {
   suppressValue, awaitValue, ensureDefined, callWrap,
   contextOrFrameLookup, handleError, fromIterator, inOperator,
-  SafeString,
+  createSafeString,
 } from './index.js';
 
 describe('suppressValue', () => {
@@ -21,7 +21,7 @@ describe('suppressValue', () => {
   });
 
   test('does not double-escape SafeString', () => {
-    const safe = new SafeString('<b>bold</b>');
+    const safe = createSafeString('<b>bold</b>');
     expect(suppressValue(safe, true)).toBe(safe);
   });
 

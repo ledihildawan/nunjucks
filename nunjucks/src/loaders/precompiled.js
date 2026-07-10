@@ -11,6 +11,7 @@ const getPrecompiledSource = (precompiled) => (name) => {
 
 export function createPrecompiledLoader(compiledTemplates = {}) {
   const loader = createLoader();
+  loader.typename = 'PrecompiledLoader';
   loader.precompiled = compiledTemplates;
 
   loader.getSource = (name) =>

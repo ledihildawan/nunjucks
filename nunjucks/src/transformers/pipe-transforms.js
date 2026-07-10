@@ -7,7 +7,7 @@ import {
   AstSymbol,
   For,
   If,
-  Set as AstSet,
+  Set,
   Output,
 } from '../nodes/index.js';
 import { depthWalk } from './walk.js';

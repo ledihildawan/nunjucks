@@ -2,11 +2,11 @@ import { describe, test, expect } from 'bun:test';
 import {
   callable, defined, divisibleby, escaped, equalto, eq, sameas,
   even, falsy, ge, greaterthan, gt, le, lessthan, lt,
-  isLowerCase, ne, nullTest, null as nullFn, number, odd,
-  isString, truthy, undefinedTest, undefined as undefinedFn,
+  isLowerCase, ne, nullTest, number, odd,
+  isString, truthy, undefinedTest,
   isUpperCase, iterable, mapping,
 } from './built-in-tests.js';
-import { SafeString } from '../runtime/index.js';
+import { createSafeString } from '../runtime/index.js';
 
 describe('callable', () => {
   test('returns true for functions', () => {
@@ -45,7 +45,7 @@ describe('divisibleby', () => {
 
 describe('escaped', () => {
   test('returns true for SafeString', () => {
-    expect(escaped(new SafeString('hello'))).toBe(true);
+    expect(escaped(createSafeString('hello'))).toBe(true);
   });
 
   test('returns false for plain string', () => {
@@ -160,8 +160,8 @@ describe('null test', () => {
     expect(nullTest(undefined)).toBe(false);
   });
 
-  test('null alias for nullTest', () => {
-    expect(nullFn).toBe(nullTest);
+  test('nullTest returns true for null', () => {
+    expect(nullTest(null)).toBe(true);
   });
 });
 
@@ -220,8 +220,8 @@ describe('undefined test', () => {
     expect(undefinedTest(null)).toBe(false);
   });
 
-  test('undefined alias for undefinedTest', () => {
-    expect(undefinedFn).toBe(undefinedTest);
+  test('undefinedTest returns true for undefined', () => {
+    expect(undefinedTest(undefined)).toBe(true);
   });
 });
 

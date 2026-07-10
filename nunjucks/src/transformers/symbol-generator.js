@@ -10,7 +10,7 @@ import {
   CallExtension,
   CallExtensionAsync,
   Output,
-  Set as AstSet,
+  Set,
   For,
   If,
   IfAsync,

@@ -1,5 +1,5 @@
 import { TOKEN_SYMBOL } from '../../lexer/token-types.js';
-import { In as OperatorIn, Not } from '../../nodes/index.js';
+import { In, Not } from '../../nodes/index.js';
 import { nextToken, pushToken, skipSymbol } from '../cursor.js';
 import { parseIs } from './is.js';
 
@@ -16,7 +16,7 @@ export const parseIn = (ctx) => {
     }
     if (skipSymbol(ctx, 'in')) {
       const node2 = parseIs(ctx);
-      node = OperatorIn(node.lineno, node.colno, node, node2);
+      node = In(node.lineno, node.colno, node, node2);
       if (invert) {
         node = Not(node.lineno, node.colno, node);
       }

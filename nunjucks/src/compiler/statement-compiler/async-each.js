@@ -1,4 +1,4 @@
-import { Array as ArrayNode } from '../../nodes/index.js';
+import { ArrayNode } from '../../nodes/index.js';
 import { emitLoopBindings } from './for.js';
 
 const compileAsyncEachLoop = (ctx, node, frame, arr, i, len) => {

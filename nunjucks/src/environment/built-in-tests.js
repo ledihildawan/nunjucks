@@ -1,4 +1,4 @@
-import { SafeString } from '../runtime/index.js';
+import { isSafeString } from '../runtime/index.js';
 
 export function callable(value) {
   return typeof value === 'function';
@@ -13,7 +13,7 @@ export function divisibleby(one, two) {
 }
 
 export function escaped(value) {
-  return value instanceof SafeString;
+  return isSafeString(value);
 }
 
 export function equalto(one, two) {
@@ -63,8 +63,6 @@ export function nullTest(value) {
   return value === null;
 }
 
-export { nullTest as null };
-
 export function number(value) {
   return typeof value === 'number';
 }
@@ -84,8 +82,6 @@ export function truthy(value) {
 export function undefinedTest(value) {
   return value === undefined;
 }
-
-export { undefinedTest as undefined };
 
 export function isUpperCase(value) {
   return value.toUpperCase() === value;

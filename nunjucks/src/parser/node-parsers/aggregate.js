@@ -10,7 +10,7 @@ import {
 } from '../../lexer/token-types.js';
 import {
   Group,
-  Array as ArrayNode,
+  ArrayNode,
   Dict,
   Pair,
 } from '../../nodes/index.js';

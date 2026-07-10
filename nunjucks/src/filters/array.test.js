@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import {
   batch, first, last, lengthFilter, list,
   random, reverse,
-  slice as sliceFilter,
+  slice,
   sum, sort, rejectattr, selectattr,
   select, reject,
 } from './array.js';
@@ -102,12 +102,12 @@ describe('reverse', () => {
 
 describe('slice filter', () => {
   test('splits array into slices', () => {
-    const result = sliceFilter([1, 2, 3, 4, 5, 6], 3);
+    const result = slice([1, 2, 3, 4, 5, 6], 3);
     expect(result).toEqual([[1, 2], [3, 4], [5, 6]]);
   });
 
   test('fills extra slice with fillWith', () => {
-    const result = sliceFilter([1, 2, 3, 4], 3, 'x');
+    const result = slice([1, 2, 3, 4], 3, 'x');
     expect(result[2]).toEqual([4, 'x']);
   });
 });

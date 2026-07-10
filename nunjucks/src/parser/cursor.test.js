@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import {
   createCursor, nextToken, peekToken, pushToken,
-  skip, expect as expectToken,
+  skip, expect as cursorExpect,
   skipValue, skipSymbol,
   advanceAfterBlockEnd, advanceAfterVariableEnd,
 } from './cursor.js';
@@ -96,13 +96,13 @@ describe('expect', () => {
   test('returns token if type matches', () => {
     const tokens = { nextToken: () => makeToken('block-end', '%}') };
     const ctx = createCursor(tokens);
-    expect(expectToken(ctx, 'block-end')).toEqual(makeToken('block-end', '%}'));
+    expect(cursorExpect(ctx, 'block-end')).toEqual(makeToken('block-end', '%}'));
   });
 
   test('fails if type does not match', () => {
     const tokens = { nextToken: () => makeToken('symbol', 'x') };
     const ctx = createCursor(tokens);
-    expect(() => expectToken(ctx, 'block-end')).toThrow('expected block-end');
+    expect(() => cursorExpect(ctx, 'block-end')).toThrow('expected block-end');
   });
 });
 

@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { compileAsyncEach, compileAsyncAll } from './async-each.js';
-import { Array as ArrayNode } from '../../nodes/index.js';
+import { ArrayNode } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];

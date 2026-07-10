@@ -61,7 +61,7 @@ const compileMacro = (ctx, node, frame) => {
   });
 
   ctx._emitLine('frame = ' + ((keepFrame) ? 'frame.pop();' : 'callerFrame;'));
-  ctx._emitLine(`return new runtime.SafeString(${bufferId});`);
+  ctx._emitLine(`return runtime.createSafeString(${bufferId});`);
   ctx._emitLine('});');
   ctx._popBuffer();
 

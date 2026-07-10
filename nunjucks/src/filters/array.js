@@ -1,5 +1,5 @@
 import { isArray, isString, isPlainObject, map, keys, entries } from 'remeda';
-import { SafeString, copySafeness, makeMacro } from '../runtime/index.js';
+import { isSafeString, copySafeness, makeMacro } from '../runtime/index.js';
 import { getAttrGetter } from '../helpers/attributes.js';
 import { normalize } from './string.js';
 
@@ -48,7 +48,7 @@ export function lengthFilter(val) {
     ) {
       return value.size;
     }
-    if (isPlainObject(value) && !(value instanceof SafeString)) {
+    if (isPlainObject(value) && !isSafeString(value)) {
       return keys(value).length;
     }
     return value.length;

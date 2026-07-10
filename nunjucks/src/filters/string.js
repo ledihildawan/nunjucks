@@ -1,5 +1,5 @@
 import { isString, isArray, map, entries } from 'remeda';
-import { SafeString, markSafe, copySafeness } from '../runtime/index.js';
+import { isSafeString, markSafe, copySafeness } from '../runtime/index.js';
 
 export function normalize(value, defaultValue) {
   if (value === null || value === undefined || value === false) {
@@ -41,7 +41,7 @@ export function dump(obj, spaces) {
 }
 
 export function escape(str) {
-  if (str instanceof SafeString) {
+  if (isSafeString(str)) {
     return str;
   }
   str = (str === null || str === undefined) ? '' : str;
@@ -49,7 +49,7 @@ export function escape(str) {
 }
 
 export function safe(str) {
-  if (str instanceof SafeString) {
+  if (isSafeString(str)) {
     return str;
   }
   str = (str === null || str === undefined) ? '' : str;
@@ -124,7 +124,7 @@ export function replace(str, old, new_, maxCount) {
     str = '' + str;
   }
 
-  if (typeof str !== 'string' && !(str instanceof SafeString)) {
+  if (typeof str !== 'string' && !isSafeString(str)) {
     return str;
   }
 

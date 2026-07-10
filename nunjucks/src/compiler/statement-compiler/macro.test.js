@@ -52,7 +52,7 @@ describe('compileMacroPublic', () => {
     expect(code).toContain('"a", "b"');
     expect(code).toContain('async function (l_a, l_b, kwargs)');
     expect(code).toContain('macro_t_1');
-    expect(code).toContain('new runtime.SafeString');
+    expect(code).toContain('runtime.createSafeString');
     expect(code).toContain('context.setVariable("myMacro"');
   });
 

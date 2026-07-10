@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { compileFor, emitLoopBindings } from './for.js';
-import { Array as ArrayNode } from '../../nodes/index.js';
+import { ArrayNode } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];

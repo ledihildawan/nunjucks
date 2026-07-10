@@ -1,6 +1,6 @@
 import { describe, test, expect, mock, beforeEach, afterEach } from 'bun:test';
 import { createWebLoader } from './web.js';
-import Loader from './base.js';
+import { createLoader } from './base.js';
 
 const mockXhr = (responseText, status) => {
   let onreadystatechange = null;
@@ -37,7 +37,7 @@ describe('WebLoader', () => {
   describe('createWebLoader', () => {
     test('returns a Loader instance', () => {
       const loader = createWebLoader('/templates');
-      expect(loader).toBeInstanceOf(Loader);
+      expect(loader.typename).toBe('WebLoader');
       expect(loader.baseURL).toBe('/templates');
       expect(loader.async).toBe(true);
     });

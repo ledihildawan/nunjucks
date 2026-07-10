@@ -5,7 +5,7 @@ import { createMappedError } from '../helpers/source-map.js';
 import { createContext } from '../runtime/context.js';
 import {
   createFrame,
-  SafeString,
+  createSafeString,
   copySafeness,
   markSafe,
   makeMacro,
@@ -29,7 +29,7 @@ import { createObj } from '../object/index.js';
 
 const globalRuntime = {
   createFrame,
-  SafeString,
+  createSafeString,
   copySafeness,
   markSafe,
   makeMacro,

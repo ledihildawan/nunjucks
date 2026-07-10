@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import { mapCOW, walk, depthWalk } from './walk.js';
 import {
   Node, NodeList, Root, Literal, AstSymbol, Group,
-  Array as ArrayNode, Pair, Dict, LookupVal, Slice,
+  ArrayNode, Pair, Dict, LookupVal, Slice,
   If, FunCall, KeywordArgs, Output, TemplateData,
   Add, Sub, Mul, Div, Mod, Not, Compare, CompareOperand,
   CallExtension, Block,

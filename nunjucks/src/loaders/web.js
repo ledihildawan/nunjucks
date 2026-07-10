@@ -37,6 +37,7 @@ const fetchUrl = (async) => (url) =>
 
 export function createWebLoader(baseURL, opts = {}) {
   const loader = createLoader();
+  loader.typename = 'WebLoader';
   loader.baseURL = baseURL || '.';
   loader.useCache = !!opts.useCache;
   loader.async = true;

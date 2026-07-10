@@ -96,7 +96,6 @@ export const Literal = extendObj(Value, 'Literal', {});
 export const AstSymbol = extendObj(Value, 'Symbol', {});
 export const Group = extendObj(NodeList, 'Group', {});
 export const ArrayNode = extendObj(NodeList, 'Array', {});
-export { ArrayNode as Array };
 export const Pair = extendObj(Node, 'Pair', { fields: ['key', 'value'] });
 export const Dict = extendObj(NodeList, 'Dict', {});
 export const LookupVal = extendObj(Node, 'LookupVal', { fields: ['target', 'val'] });

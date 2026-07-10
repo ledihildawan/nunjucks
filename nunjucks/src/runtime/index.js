@@ -2,7 +2,8 @@ import { createTemplateError } from '../error/index.js';
 import { isArray, keys } from 'remeda';
 import { createFrame } from './frame.js';
 import {
-  SafeString,
+  createSafeString,
+  isSafeString,
   copySafeness,
   markSafe,
 } from './safe-string.js';
@@ -28,7 +29,8 @@ const escapeHtml = (val) => Bun.escapeHTML(val).replace(/\\/g, '&#92;').replace(
 
 export {
   createFrame,
-  SafeString,
+  createSafeString,
+  isSafeString,
   copySafeness,
   markSafe,
   makeMacro,
@@ -53,7 +55,7 @@ export function suppressValue(val, autoescape) {
 
   val = (val !== undefined && val !== null) ? val : '';
 
-  if (autoescape && !(val instanceof SafeString)) {
+  if (autoescape && !isSafeString(val)) {
     val = escapeHtml(val.toString());
   }
 

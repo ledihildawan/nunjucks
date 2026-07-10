@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseFor } from './for.js';
-import { For, AsyncEach, AsyncAll, AstSymbol, Array as ArrayNode } from '../../nodes/index.js';
+import { For, AsyncEach, AsyncAll, AstSymbol, ArrayNode } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import { TOKEN_SYMBOL, TOKEN_BLOCK_END, TOKEN_COMMA } from '../../lexer/token-types.js';
 

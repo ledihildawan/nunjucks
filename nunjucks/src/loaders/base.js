@@ -1,24 +1,29 @@
 import EventEmitter from 'events';
 import { resolve, dirname } from 'node:path';
 
-function Loader(opts) {
-  if (!(this instanceof Loader)) {
-    return new Loader(opts);
-  }
-  EventEmitter.call(this);
-  this.typename = 'Loader';
-  this.resolve = function(from, to) {
-    return resolve(dirname(from), to);
-  };
-  this.isRelative = function(filename) {
-    return (filename.indexOf('./') === 0 || filename.indexOf('../') === 0);
+export function createLoader(opts = {}) {
+  const emitter = new EventEmitter();
+
+  let _typename = 'Loader';
+  let _resolve = (from, to) => resolve(dirname(from), to);
+  let _isRelative = (filename) => filename.indexOf('./') === 0 || filename.indexOf('../') === 0;
+
+  return {
+    get typename() { return _typename; },
+    set typename(v) { _typename = v; },
+    get resolve() { return _resolve; },
+    set resolve(v) { _resolve = v; },
+    get isRelative() { return _isRelative; },
+    set isRelative(v) { _isRelative = v; },
+
+    on(event, handler) {
+      emitter.on(event, handler);
+    },
+    emit(event, ...args) {
+      emitter.emit(event, ...args);
+    },
+    removeListener(event, handler) {
+      emitter.removeListener(event, handler);
+    },
   };
 }
-
-Loader.prototype = Object.create(EventEmitter.prototype);
-
-export function createLoader(opts) {
-  return new Loader(opts);
-}
-
-export { Loader as default };

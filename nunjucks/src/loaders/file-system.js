@@ -66,6 +66,7 @@ export function createFileSystemLoader(searchPaths, opts = {}) {
   }
 
   const loader = createLoader();
+  loader.typename = 'FileSystemLoader';
 
   loader.pathsToNames = {};
   loader.noCache = !!opts.noCache;

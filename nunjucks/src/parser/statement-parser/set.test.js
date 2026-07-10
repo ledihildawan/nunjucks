@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseSet } from './set.js';
-import { Set as AstSet, Capture, AstSymbol, Literal } from '../../nodes/index.js';
+import { Set, Capture, AstSymbol, Literal } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import {
   TOKEN_SYMBOL, TOKEN_BLOCK_END, TOKEN_COMMA, TOKEN_OPERATOR, TOKEN_INT,
@@ -27,7 +27,7 @@ describe('parseSet', () => {
 
     const result = parseSet(ctx);
 
-    expect(result).toBeInstanceOf(AstSet);
+    expect(result).toBeInstanceOf(Set);
     expect(result.targets).toEqual([target]);
     expect(result.value).toBe(value);
     expect(result.operator).toBeNull();
@@ -53,7 +53,7 @@ describe('parseSet', () => {
 
     const result = parseSet(ctx);
 
-    expect(result).toBeInstanceOf(AstSet);
+    expect(result).toBeInstanceOf(Set);
     expect(result.operator).toBe('||=');
     expect(result.value).toBe(value);
   });
@@ -78,7 +78,7 @@ describe('parseSet', () => {
 
     const result = parseSet(ctx);
 
-    expect(result).toBeInstanceOf(AstSet);
+    expect(result).toBeInstanceOf(Set);
     expect(result.operator).toBe('&&=');
   });
 
@@ -102,7 +102,7 @@ describe('parseSet', () => {
 
     const result = parseSet(ctx);
 
-    expect(result).toBeInstanceOf(AstSet);
+    expect(result).toBeInstanceOf(Set);
     expect(result.operator).toBe('??=');
   });
 
@@ -126,7 +126,7 @@ describe('parseSet', () => {
 
     const result = parseSet(ctx);
 
-    expect(result).toBeInstanceOf(AstSet);
+    expect(result).toBeInstanceOf(Set);
     expect(result.targets).toEqual([target]);
     expect(result.body).toBeInstanceOf(Capture);
     expect(result.body.body).toBe(body);
@@ -161,7 +161,7 @@ describe('parseSet', () => {
 
     const result = parseSet(ctx);
 
-    expect(result).toBeInstanceOf(AstSet);
+    expect(result).toBeInstanceOf(Set);
     expect(result.targets).toEqual(targets);
   });
 
