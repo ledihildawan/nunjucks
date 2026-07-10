@@ -247,9 +247,10 @@ export const CSS = `
   }
   .ctx-row {
     display: flex; align-items: flex-start;
-    padding: 2px 0.75rem; cursor: pointer;
+    padding: 2px 0.75rem;
     user-select: none;
   }
+  .ctx-row.is-expandable { cursor: pointer; }
   .ctx-row:hover { background: var(--color-bg-alt); }
   .ctx-toggle {
     width: 16px; color: var(--color-text-secondary);

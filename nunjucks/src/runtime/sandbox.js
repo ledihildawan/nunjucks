@@ -1,35 +1,6 @@
-const BLOCKED_KEYS = new Set([
-  '__proto__',
-  'constructor',
-  'prototype',
-  'hasOwnProperty',
-  'toString',
-  'valueOf',
-  'global',
-  'globalThis',
-  'window',
-  'process',
-  'eval',
-  'Function',
-]);
+import { isBlockedKey, isDangerousGlobal, BLOCKED_KEYS_LIST, DANGEROUS_GLOBALS_LIST } from '../shared/blocked-keys.js';
 
-const DANGEROUS_GLOBALS = new Set([
-  'global',
-  'globalThis',
-  'window',
-  'process',
-  'eval',
-  'Function',
-  'require',
-  'module',
-  'exports',
-  '__dirname',
-  '__filename',
-]);
-
-export const isBlockedKey = (key) => BLOCKED_KEYS.has(key);
-
-export const isDangerousGlobal = (key) => DANGEROUS_GLOBALS.has(key);
+export { isBlockedKey, isDangerousGlobal, BLOCKED_KEYS_LIST, DANGEROUS_GLOBALS_LIST };
 
 export const wrapFunction = (fn, sandboxEnabled) => {
   if (!sandboxEnabled || typeof fn !== 'function') {
@@ -121,6 +92,3 @@ export const wrapMemberAccess = (obj, val, sandboxEnabled) => {
 
   return value;
 };
-
-export const BLOCKED_KEYS_LIST = [...BLOCKED_KEYS];
-export const DANGEROUS_GLOBALS_LIST = [...DANGEROUS_GLOBALS];

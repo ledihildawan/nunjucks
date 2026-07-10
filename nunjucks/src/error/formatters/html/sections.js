@@ -1,6 +1,7 @@
 import { escapeHtml, highlightHtml } from './highlight.js';
 import { resolveIdeLink } from '../../constants/ide-links.js';
 import { shortenPath } from '../../../shared/path-shortener.js';
+import { isBlockedKey } from '../../../shared/blocked-keys.js';
 
 const normalizePath = (p) => p.replace(/^file:\/\/+/, '');
 
@@ -34,7 +35,7 @@ const serializeValue = (value, depth = 0) => {
     return '[' + value.slice(0, 10).map(v => serializeValue(v, depth + 1)).join(',') + ']';
   }
   if (typeof value === 'object') {
-    const keys = Object.keys(value).filter(k => !k.startsWith('__nunjucks'));
+    const keys = Object.keys(value).filter(k => !k.startsWith('__nunjucks') && !isBlockedKey(k));
     if (keys.length === 0) return '{}';
     const pairs = keys.slice(0, 20).map(k => JSON.stringify(k) + ':' + serializeValue(value[k], depth + 1));
     return '{' + pairs.join(',') + '}';
@@ -47,6 +48,7 @@ const filterContext = (ctx) => {
   const filtered = {};
   for (const k of Object.keys(ctx)) {
     if (k.startsWith('__nunjucks')) continue;
+    if (isBlockedKey(k)) continue;
     filtered[k] = ctx[k];
   }
   return filtered;

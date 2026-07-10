@@ -3,6 +3,7 @@ import { formatLocation, getDisplayMessage } from '../state/message-formatter.js
 import { shortenPath, normalizeDrivePath } from '../../shared/path-shortener.js';
 import { resolveIdeLink } from '../constants/ide-links.js';
 import { formatStackTrace } from './console/stack-trace.js';
+import { isBlockedKey } from '../../shared/blocked-keys.js';
 import picocolors from 'picocolors';
 
 const makeHyperlink = (text, url) => {
@@ -50,7 +51,7 @@ const formatLocationLabel = (state) => {
 
 const formatRenderContext = (ctx) => {
   if (!ctx || typeof ctx !== 'object') return '';
-  const keys = Object.keys(ctx).filter(k => !k.startsWith('__nunjucks'));
+  const keys = Object.keys(ctx).filter(k => !k.startsWith('__nunjucks') && !isBlockedKey(k));
   if (keys.length === 0) return '';
   const lines = ['\n', picocolors.bold('Render Context:')];
   for (const k of keys) {
@@ -62,6 +63,8 @@ const formatRenderContext = (ctx) => {
       val = 'null';
     } else if (typeof raw === 'string') {
       val = raw;
+    } else if (typeof raw === 'object') {
+      val = JSON.stringify(raw, (k2, v) => isBlockedKey(k2) ? undefined : v);
     } else {
       val = JSON.stringify(raw);
     }

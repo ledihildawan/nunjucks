@@ -101,7 +101,7 @@ export const TOGGLE_SCRIPT = `
   function createNode(key, value) {
     var isObject = value !== null && typeof value === 'object';
     var row = document.createElement('div');
-    row.className = 'ctx-row';
+    row.className = 'ctx-row' + (isObject ? ' is-expandable' : '');
 
     if (isObject) {
       row.innerHTML = '<span class="ctx-toggle">▶</span><span class="ctx-key">' + escapeHtml(key) + ':</span> <span class="ctx-label">' + (Array.isArray(value) ? 'Array' : 'Object') + '</span>';
