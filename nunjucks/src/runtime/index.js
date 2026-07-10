@@ -36,7 +36,7 @@ import {
   UNDEFINED_MODES,
   DEFAULT_UNDEFINED_MODE,
   isValidUndefinedMode,
-  convertThrowOnUndefined,
+  getUndefinedMode,
 } from './undefined.js';
 
 const escapeHtml = (val) => Bun.escapeHTML(val).replace(/\\/g, '&#92;').replace(/&#x27;/g, '&#39;');
@@ -69,7 +69,7 @@ export {
   UNDEFINED_MODES,
   DEFAULT_UNDEFINED_MODE,
   isValidUndefinedMode,
-  convertThrowOnUndefined,
+  getUndefinedMode,
 };
 
 export function suppressValue(val, autoescape) {

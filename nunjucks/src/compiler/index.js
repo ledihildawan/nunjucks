@@ -36,7 +36,7 @@ import { createTemplateError } from '../error/index.js';
 import { createObj } from '../object/index.js';
 import { createSourceMap } from '../helpers/source-map.js';
 import { COMPILE_FUNCTIONS, compileDispatch } from './node-dispatch.js';
-import { DEFAULT_UNDEFINED_MODE, convertThrowOnUndefined } from '../runtime/undefined.js';
+import { DEFAULT_UNDEFINED_MODE, getUndefinedMode } from '../runtime/undefined.js';
 
 export function createCompiler(templateName, undefinedMode, source) {
   const obj = createObj('Compiler', {
@@ -205,7 +205,7 @@ export function createCompiler(templateName, undefinedMode, source) {
 }
 
 export function compile(src, asyncPipes, extensions, name, opts = {}) {
-  const undefinedMode = convertThrowOnUndefined(opts.undefined);
+  const undefinedMode = getUndefinedMode(opts);
   const c = createCompiler(name, undefinedMode, src);
 
   const preprocessors = (extensions || []).map(ext => ext.preprocess).filter(f => !!f);
@@ -225,7 +225,7 @@ export function getSourceMap(compiler) {
 }
 
 export function getSourceMapFromCompile(src, asyncPipes, extensions, name, opts = {}) {
-  const undefinedMode = convertThrowOnUndefined(opts.undefined);
+  const undefinedMode = getUndefinedMode(opts);
   const c = createCompiler(name, undefinedMode, src);
 
   const preprocessors = (extensions || []).map(ext => ext.preprocess).filter(f => !!f);

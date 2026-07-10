@@ -4,7 +4,7 @@ import { createFileSystemLoader } from '../loaders/file-system.js';
 import { createWebLoader } from '../loaders/web.js';
 import { createPrecompiledLoader } from '../loaders/precompiled.js';
 import { createEmitter } from '../object/index.js';
-import { createFrame, createSandboxedContext, convertThrowOnUndefined, DEFAULT_UNDEFINED_MODE } from '../runtime/index.js';
+import { createFrame, createSandboxedContext, getUndefinedMode, DEFAULT_UNDEFINED_MODE } from '../runtime/index.js';
 import expressApp from '../integration/express-app.js';
 import { createTemplate } from '../template/index.js';
 import {
@@ -42,7 +42,7 @@ export function createEnvironment(loaders, opts) {
   const env = createEmitter('Environment');
 
   const normalizedOpts = { ...DEFAULT_OPTS, ...opts };
-  normalizedOpts.undefined = convertThrowOnUndefined(normalizedOpts.undefined, normalizedOpts.throwOnUndefined);
+  normalizedOpts.undefined = getUndefinedMode(normalizedOpts);
 
   env.opts = normalizedOpts;
   env._renderingTemplates = new Set();
