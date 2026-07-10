@@ -8,7 +8,7 @@ describe('COMPILE_FUNCTIONS', () => {
       'InlineIf', 'In', 'Is', 'Or', 'And', 'NullishCoalesce',
       'Add', 'Concat', 'Sub', 'Mul', 'Div', 'Mod', 'Not',
       'FloorDiv', 'Pow', 'Neg', 'Pos',
-      'Compare', 'LookupVal', 'OptionalChain', 'Slice',
+      'Compare', 'LookupVal', 'OptionalChain', 'OptionalCall', 'Slice',
       'FunCall', 'Pipe', 'PipeAsync', 'KeywordArgs',
       'Set', 'Switch', 'If', 'IfAsync', 'For', 'AsyncEach', 'AsyncAll',
       'Macro', 'Caller', 'Import', 'FromImport',
@@ -22,7 +22,7 @@ describe('COMPILE_FUNCTIONS', () => {
   });
 
   test('has the correct count', () => {
-    expect(Object.keys(COMPILE_FUNCTIONS).length).toBe(53);
+    expect(Object.keys(COMPILE_FUNCTIONS).length).toBe(54);
   });
 });
 

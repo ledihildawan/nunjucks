@@ -18,7 +18,8 @@
   "scripts": {
     "build": "bun run scripts/bundle.js",
     "lint": "eslint nunjucks",
-    "test": "bun test nunjucks/src/"
+    "test": "bun test nunjucks/src/",
+    "coverage": "bun test nunjucks/src/ --coverage"
   },
   "exports": {
     ".": "./index.js"

@@ -100,6 +100,7 @@ export const Pair = extendObj(Node, 'Pair', { fields: ['key', 'value'] });
 export const Dict = extendObj(NodeList, 'Dict', {});
 export const LookupVal = extendObj(Node, 'LookupVal', { fields: ['target', 'val'] });
 export const OptionalChain = extendObj(Node, 'OptionalChain', { fields: ['target', 'val'] });
+export const OptionalCall = extendObj(Node, 'OptionalCall', { fields: ['name', 'args'] });
 export const Slice = extendObj(Node, 'Slice', { fields: ['start', 'stop', 'step'] });
 export const If = extendObj(Node, 'If', { fields: ['cond', 'body', 'else_'] });
 export const IfAsync = extendObj(If, 'IfAsync', {});

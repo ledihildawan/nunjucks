@@ -112,6 +112,46 @@ describe('undefined mode integration', () => {
     const result = await env.renderString('{{ user?.name }}', { user: undefined });
     expect(result).toBe('undefined');
   });
+
+  test('optional call with defined function calls function', async () => {
+    const { createEnvironment } = await import('../environment/index.js');
+    const env = createEnvironment([], { undefined: 'strict' });
+
+    const result = await env.renderString('{{ foo?.() }}', { foo: () => 'Hello' });
+    expect(result).toBe('Hello');
+  });
+
+  test('optional call with null returns empty', async () => {
+    const { createEnvironment } = await import('../environment/index.js');
+    const env = createEnvironment([]);
+
+    const result = await env.renderString('{{ foo?.() }}', { foo: null });
+    expect(result).toBe('');
+  });
+
+  test('optional call with arguments passes args', async () => {
+    const { createEnvironment } = await import('../environment/index.js');
+    const env = createEnvironment([], { undefined: 'strict' });
+
+    const result = await env.renderString('{{ foo?.(x, y) }}', { foo: (a, b) => a + b, x: 3, y: 4 });
+    expect(result).toBe('7');
+  });
+
+  test('method optional call with defined method', async () => {
+    const { createEnvironment } = await import('../environment/index.js');
+    const env = createEnvironment([], { undefined: 'strict' });
+
+    const result = await env.renderString('{{ obj.method?.() }}', { obj: { method: () => 'result' } });
+    expect(result).toBe('result');
+  });
+
+  test('method optional call with undefined method returns empty', async () => {
+    const { createEnvironment } = await import('../environment/index.js');
+    const env = createEnvironment([]);
+
+    const result = await env.renderString('{{ obj.method?.() }}', { obj: {} });
+    expect(result).toBe('');
+  });
 });
 
 describe('callWrap', () => {
