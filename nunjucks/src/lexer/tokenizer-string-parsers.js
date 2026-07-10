@@ -47,12 +47,15 @@ export const parseRegexContent = (str, startIndex, flags, isValidRegexFlag) => {
   let body = '';
   let i = startIndex;
   
+  if (str[i] === '/') i++;
+  
   for (; i < str.length; i++) {
-    if (str[i] === '/' && str[i - 1] !== '\\') break;
+    if (str[i] === '/' && str[i - 1] !== '\\') {
+      i++;
+      break;
+    }
     body += str[i];
   }
-  
-  i++;
   
   let extractedFlags = '';
   for (; i < str.length; i++) {
