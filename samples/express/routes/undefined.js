@@ -122,13 +122,7 @@ router.get('/strict', async (req, res) => {
 });
 
 router.get('/debug', async (req, res) => {
-  const template = '{{ user.name }}';
-  const context = { user: undefined };
-  
-  const result = await debugEnv.renderString(template, context);
-  
-  res.type('html').send(`
-<!DOCTYPE html>
+  const template = `<!DOCTYPE html>
 <html>
 <head>
   <title>Debug Mode</title>
@@ -141,21 +135,19 @@ router.get('/debug', async (req, res) => {
   </style>
 </head>
 <body>
-  <h1>⚠️ Debug Mode - Warning + Output</h1>
-  <p>Template: <code>{{ user.name }}</code></p>
+  <h1>Debug Mode - Member Access Throws Error</h1>
+  <p>Template: <code>{{ user.testing }}</code></p>
   <p>Context: <code>{ user: undefined }</code></p>
-  
-  <div class="result">
-    <strong>Output:</strong> "${result}"
-  </div>
-  
-  <p><strong>Check console!</strong> You should see a warning like:</p>
-  <pre>[nunjucks] Warning: undefined variable 'user' at line 1:0</pre>
+
+  <p><strong>Note:</strong> In debug mode, member access like <code>user.testing</code> throws an error (not just warning)!</p>
 
   <p><a href="/undefined">← Back to Undefined Types Demo</a></p>
 </body>
-</html>
-  `);
+</html>`;
+  const context = { user: undefined };
+
+  const result = await debugEnv.renderString(template, context);
+  res.type('html').send(result);
 });
 
 router.get('/chainable', async (req, res) => {

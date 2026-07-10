@@ -1,4 +1,4 @@
-import { shortenPath, normalizeDrivePath } from '../../path-shortener.js';
+import { shortenPath, normalizeDrivePath } from '../../../shared/path-shortener.js';
 import { resolveIdeLink } from '../../constants/ide-links.js';
 import picocolors from 'picocolors';
 

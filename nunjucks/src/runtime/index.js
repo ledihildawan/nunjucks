@@ -39,6 +39,7 @@ import {
   isValidUndefinedMode,
   getUndefinedMode,
 } from './undefined.js';
+import { createUndefinedWarning, toConsoleString } from '../warning/index.js';
 
 const escapeHtml = (val) => Bun.escapeHTML(val).replace(/\\/g, '&#92;').replace(/&#x27;/g, '&#39;');
 
@@ -94,15 +95,11 @@ export function awaitValue(val) {
   return val;
 }
 
-export function ensureDefined(val, lineno, colno, varName = null, undefinedMode = 'chainable') {
+export function ensureDefined(val, lineno, colno, varName = null, templateName = null, undefinedMode = 'chainable') {
   if (val === null || val === undefined) {
-    const varMsg = varName ? ` '${varName}'` : '';
-    const lineNum = lineno + 1;
-    const colNum = colno + 1;
-
     if (undefinedMode === 'strict') {
       throw createTemplateError(
-        `attempted to output${varMsg} null or undefined value`,
+        `attempted to output${varName ? ` '${varName}'` : ''} null or undefined value`,
         lineno,
         colno,
         { code: varName ? 'UNDEFINED_VARIABLE' : 'UNDEFINED_VALUE', subject: varName, phase: 'render' }
@@ -110,8 +107,8 @@ export function ensureDefined(val, lineno, colno, varName = null, undefinedMode 
     }
 
     if (undefinedMode === 'debug') {
-      const warning = `${picocolors.yellow('[nunjucks]')} ${picocolors.yellow('Warning:')} undefined${varMsg} ${picocolors.dim('at line')} ${lineNum}:${colNum}`;
-      console.warn(warning);
+      const warning = createUndefinedWarning(varName, lineno, colno, templateName, undefinedMode);
+      console.warn(toConsoleString(warning));
     }
 
     return 'undefined';

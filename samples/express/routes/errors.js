@@ -18,26 +18,6 @@ envDev.addFilter('failingAsync', async function(val) {
   throw new Error('Async filter failed: network error');
 }, true);
 
-async function renderWithErrorHandler(res, templateName, context = {}, reqHeaders = {}) {
-  try {
-    const html = await envDev.render(templateName, context);
-    res.type('html').send(html);
-  } catch (e) {
-    const err = await envDev.formatError(e, templateName, {
-      templatePath: path.join(VIEWS, templateName),
-      renderContext: context,
-      requestHeaders: reqHeaders
-    });
-
-    if (err.csp?.nonce) {
-      res.setHeader('Content-Security-Policy', `script-src 'self' 'nonce-${err.csp.nonce}'; style-src 'self' 'nonce-${err.csp.nonce}'`);
-    }
-
-    console.error(err.toConsoleString());
-    res.type('html').status(500).send(err.toHtmlString());
-  }
-}
-
 const complexUserContext = {
   user: {
     id: 'usr_8a9b2c3d4e5f',
@@ -96,7 +76,8 @@ const router = express.Router();
 
 errorRoutes.forEach(({ path: routePath, template, category, desc, context }) => {
   router.get(routePath, async (req, res) => {
-    await renderWithErrorHandler(res, template, context || {}, req.headers);
+    const html = await envDev.render(template, context || {});
+    res.type('html').send(html);
   });
 });
 

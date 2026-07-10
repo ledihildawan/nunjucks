@@ -4,8 +4,9 @@ import express from './express-app.js';
 describe('express', () => {
   test('calls app.set with view function', () => {
     const setMock = mock();
-    const app = { set: setMock };
-    const env = { render: mock(() => 'rendered') };
+    const useMock = mock();
+    const app = { set: setMock, use: useMock };
+    const env = { render: mock(() => 'rendered'), opts: { dev: false } };
 
     const result = express(env, app);
 
@@ -17,12 +18,13 @@ describe('express', () => {
 
   test('view function returns object with render method that calls env.render', async () => {
     const setMock = mock();
+    const useMock = mock();
     let viewFn;
     setMock.mockImplementation((key, fn) => {
       if (key === 'view') viewFn = fn;
     });
-    const app = { set: setMock };
-    const env = { render: mock(() => 'rendered') };
+    const app = { set: setMock, use: useMock };
+    const env = { render: mock(() => 'rendered'), opts: { dev: false } };
 
     express(env, app);
 
@@ -36,8 +38,10 @@ describe('express', () => {
   });
 
   test('returns the environment', () => {
-    const app = { set: mock() };
-    const env = { render: mock() };
+    const setMock = mock();
+    const useMock = mock();
+    const app = { set: setMock, use: useMock };
+    const env = { render: mock(), opts: { dev: false } };
 
     const result = express(env, app);
 

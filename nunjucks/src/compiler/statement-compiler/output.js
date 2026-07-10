@@ -17,6 +17,23 @@ export const compileCapture = (ctx, node, frame) => {
   ctx.buffer = buffer;
 };
 
+const extractVarName = (node) => {
+  if (!node) return null;
+
+  if (node.typename === 'Symbol') {
+    return node.value;
+  }
+
+  if (node.typename === 'LookupVal') {
+    const base = extractVarName(node.target);
+    if (!base) return null;
+    const prop = node.val?.value || node.val?.name || '';
+    return `${base}.${prop}`;
+  }
+
+  return null;
+};
+
 export const compileOutput = (ctx, node, frame) => {
   const children = node.children;
   children.forEach(child => {
@@ -28,20 +45,32 @@ export const compileOutput = (ctx, node, frame) => {
       }
     } else {
       const isPipe = child.typename === 'Pipe' || child.typename === 'PipeAsync';
-      const varName = child.typename === 'Symbol' ? child.value : null;
-      const useEnsureDefined = ctx.undefinedMode && ctx.undefinedMode !== 'chainable';
+      const isLookupVal = child.typename === 'LookupVal';
+      const varName = extractVarName(child);
+      const undefinedMode = ctx.undefinedMode;
+
+      // LookupVal (e.g., user.name) in debug mode should throw error (not warning)
+      const useEnsureDefined = undefinedMode && undefinedMode !== 'chainable';
+      const shouldWarn = useEnsureDefined && !isLookupVal;
+      const shouldError = useEnsureDefined && isLookupVal && undefinedMode === 'debug';
+
+      // For LookupVal in debug mode, pass 'strict' to ensureDefined so it throws error
+      const effectiveMode = (isLookupVal && undefinedMode === 'debug') ? 'strict' : undefinedMode;
+
       ctx._emitLineWithLineno(`lineno = ${child.lineno}; colno = ${child.colno}; ${ctx.buffer} += runtime.suppressValue(`, child.lineno, child.colno);
       if (!isPipe) {
         ctx._emit('await runtime.awaitValue(');
       }
-      if (useEnsureDefined) {
+      if (shouldWarn || shouldError) {
         ctx._emit('runtime.ensureDefined(');
       }
       ctx.compile(child, frame);
-      if (useEnsureDefined) {
+      if (shouldWarn || shouldError) {
         const nameArg = varName ? `, "${varName}"` : ', null';
-        const modeArg = ctx.undefinedMode ? `, "${ctx.undefinedMode}"` : '';
-        ctx._emit(`,${child.lineno},${child.colno}${nameArg}${modeArg})`);
+        const modeArg = effectiveMode ? `, "${effectiveMode}"` : '';
+        const escapedTemplateName = ctx.templateName ? ctx.templateName.replace(/\\/g, '\\\\').replace(/"/g, '\\"') : null;
+        const tmplArg = escapedTemplateName ? `, "${escapedTemplateName}"` : ', null';
+        ctx._emit(`,${child.lineno},${child.colno}${nameArg}${tmplArg}${modeArg})`);
       }
       if (!isPipe) {
         ctx._emit(')');

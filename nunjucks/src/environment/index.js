@@ -221,14 +221,42 @@ export function createEnvironment(loaders, opts) {
     const tmpl = await env.getTemplate(name);
     const sandboxedCtx = createSandboxedContext(ctx, env.opts.sandbox);
     sandboxedCtx.__nunjucks_undefined_mode = env.opts.undefined;
-    return tmpl.render(sandboxedCtx);
+
+    try {
+      return await tmpl.render(sandboxedCtx);
+    } catch (e) {
+      if (env.opts.dev) {
+        const templatePath = tmpl.path || name;
+        const err = await env.getErrorFormatter().formatError(e, name, {
+          templatePath,
+          renderContext: ctx,
+        });
+        console.error(err.toConsoleString());
+        return err.toHtmlString();
+      }
+      throw e;
+    }
   };
 
   env.renderString = async function(src, ctx, opts) {
-    const tmpl = createTemplate(src, env, opts?.path);
+    const path = opts?.path || '<anonymous>';
+    const tmpl = createTemplate(src, env, path);
     const sandboxedCtx = createSandboxedContext(ctx, env.opts.sandbox);
     sandboxedCtx.__nunjucks_undefined_mode = env.opts.undefined;
-    return tmpl.render(sandboxedCtx);
+
+    try {
+      return await tmpl.render(sandboxedCtx);
+    } catch (e) {
+      if (env.opts.dev) {
+        const err = await env.getErrorFormatter().formatError(e, path, {
+          renderContext: ctx,
+          sourceContent: src,
+        });
+        console.error(err.toConsoleString());
+        return err.toHtmlString();
+      }
+      throw e;
+    }
   };
 
   registerBuiltIns(env);

@@ -91,4 +91,37 @@ describe('compileOutput', () => {
     const code = ctx.emitted.join('');
     expect(code).not.toContain('output += ""');
   });
+
+  test('emits strict mode for LookupVal in debug mode (throws error)', () => {
+    const ctx = makeCtx();
+    ctx.undefinedMode = 'debug';
+    const node = {
+      children: [{
+        typename: 'LookupVal',
+        target: { typename: 'Symbol', value: 'user' },
+        val: { typename: 'Literal', value: 'name' },
+        lineno: 1,
+        colno: 5,
+        mock: 'memberLookup'
+      }],
+    };
+    compileOutput(ctx, node);
+    const code = ctx.emitted.join('');
+    expect(code).toContain('runtime.ensureDefined(');
+    expect(code).toContain('"strict"');
+    expect(code).toContain('user.name');
+  });
+
+  test('emits debug mode for Symbol in debug mode (shows warning)', () => {
+    const ctx = makeCtx();
+    ctx.undefinedMode = 'debug';
+    const node = {
+      children: [{ typename: 'Symbol', value: 'user', lineno: 1, colno: 1, mock: 'user' }],
+    };
+    compileOutput(ctx, node);
+    const code = ctx.emitted.join('');
+    expect(code).toContain('runtime.ensureDefined(');
+    expect(code).toContain('"debug"');
+    expect(code).toContain('user');
+  });
 });

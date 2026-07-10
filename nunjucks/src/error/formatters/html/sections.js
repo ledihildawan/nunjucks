@@ -1,6 +1,6 @@
 import { escapeHtml, highlightHtml } from './highlight.js';
 import { resolveIdeLink } from '../../constants/ide-links.js';
-import { shortenPath } from '../../path-shortener.js';
+import { shortenPath } from '../../../shared/path-shortener.js';
 
 const normalizePath = (p) => p.replace(/^file:\/\/+/, '');
 
@@ -21,12 +21,44 @@ export const formatCodeTraceHtml = (snippet) => {
   }).join('');
 };
 
+const serializeValue = (value, depth = 0) => {
+  if (value === undefined) return 'undefined';
+  if (value === null) return 'null';
+  if (typeof value === 'function') return '[Function]';
+  if (typeof value === 'symbol') return '[Symbol]';
+  if (typeof value === 'string') return JSON.stringify(value);
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (depth >= 4) return 'null';
+  if (Array.isArray(value)) {
+    if (value.length === 0) return '[]';
+    return '[' + value.slice(0, 10).map(v => serializeValue(v, depth + 1)).join(',') + ']';
+  }
+  if (typeof value === 'object') {
+    const keys = Object.keys(value).filter(k => !k.startsWith('__nunjucks'));
+    if (keys.length === 0) return '{}';
+    const pairs = keys.slice(0, 20).map(k => JSON.stringify(k) + ':' + serializeValue(value[k], depth + 1));
+    return '{' + pairs.join(',') + '}';
+  }
+  return 'null';
+};
+
+const filterContext = (ctx) => {
+  if (!ctx || typeof ctx !== 'object') return {};
+  const filtered = {};
+  for (const k of Object.keys(ctx)) {
+    if (k.startsWith('__nunjucks')) continue;
+    filtered[k] = ctx[k];
+  }
+  return filtered;
+};
+
 export const renderContextHtml = (ctx) => {
   if (!ctx || typeof ctx !== 'object') return '';
-  const keys = Object.keys(ctx);
+  const filtered = filterContext(ctx);
+  const keys = Object.keys(filtered);
   if (keys.length === 0) return '';
 
-  const dataScript = `<script>window.__ctxData=${JSON.stringify(ctx)};</scr` + `ipt>`;
+  const dataScript = `<script>window.__ctxData=${serializeValue(filtered)};</scr` + `ipt>`;
 
   return `<section class="render-context" aria-labelledby="h-ctx">
 <h2 id="h-ctx" class="text-label">Render Context</h2>

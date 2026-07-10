@@ -76,11 +76,12 @@ const readSource = async (fs, path) => {
 const buildErrorData = async (error, templateName, options, opts, fs) => {
   const chain = resolveChain(options.includeChain, error._includeChain, extractIncludeChainFromMessage(error.message));
   const { name, path, line, col } = resolveTemplate(error, templateName, options.templatePath, chain);
-  const source = await readSource(fs, path);
+  const sourceFromFile = await readSource(fs, path);
+  const sourceContent = options.sourceContent ?? sourceFromFile;
   return createErrorData(error, {
     templateName: name,
     templatePath: path,
-    sourceContent: source,
+    sourceContent,
     includeChain: chain,
     isProduction: !opts.dev,
     line,

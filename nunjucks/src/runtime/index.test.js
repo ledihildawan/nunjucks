@@ -51,8 +51,8 @@ describe('ensureDefined', () => {
   });
 
   test('throws for null/undefined in strict mode', () => {
-    expect(() => ensureDefined(null, 1, 2, null, 'strict')).toThrow('null or undefined');
-    expect(() => ensureDefined(undefined, 1, 2, null, 'strict')).toThrow('null or undefined');
+    expect(() => ensureDefined(null, 1, 2, null, null, 'strict')).toThrow('null or undefined');
+    expect(() => ensureDefined(undefined, 1, 2, null, null, 'strict')).toThrow('null or undefined');
   });
 
   test('returns undefined string in chainable mode (default)', () => {
@@ -61,30 +61,56 @@ describe('ensureDefined', () => {
   });
 
   test('returns undefined string in debug mode', () => {
-    expect(ensureDefined(null, 1, 2, null, 'debug')).toBe('undefined');
-    expect(ensureDefined(undefined, 1, 2, null, 'debug')).toBe('undefined');
+    expect(ensureDefined(null, 1, 2, null, null, 'debug')).toBe('undefined');
+    expect(ensureDefined(undefined, 1, 2, null, null, 'debug')).toBe('undefined');
   });
 
   test('includes varName in error message (strict mode)', () => {
-    expect(() => ensureDefined(null, 1, 2, 'myVar', 'strict')).toThrow("'myVar'");
+    expect(() => ensureDefined(null, 1, 2, 'myVar', null, 'strict')).toThrow("'myVar'");
   });
 
   test('sets code UNDEFINED_VARIABLE with varName in strict mode', () => {
-    try { ensureDefined(null, 1, 2, 'x', 'strict'); } catch (e) {
+    try { ensureDefined(null, 1, 2, 'x', null, 'strict'); } catch (e) {
       expect(e.code).toBe('UNDEFINED_VARIABLE');
     }
   });
 
   test('sets code UNDEFINED_VALUE without varName in strict mode', () => {
-    try { ensureDefined(undefined, 1, 2, null, 'strict'); } catch (e) {
+    try { ensureDefined(undefined, 1, 2, null, null, 'strict'); } catch (e) {
       expect(e.code).toBe('UNDEFINED_VALUE');
     }
   });
 
   test('error has phase render in strict mode', () => {
-    try { ensureDefined(null, 1, 2, null, 'strict'); } catch (e) {
+    try { ensureDefined(null, 1, 2, null, null, 'strict'); } catch (e) {
       expect(e.phase).toBe('render');
     }
+  });
+});
+
+describe('undefined mode integration', () => {
+  test('Symbol in debug mode shows warning but returns undefined', async () => {
+    const { createEnvironment } = await import('../environment/index.js');
+    const env = createEnvironment([], { undefined: 'debug' });
+
+    const result = await env.renderString('{{ user }}', { user: undefined });
+    expect(result).toBe('undefined');
+  });
+
+  test('LookupVal (member access) in debug mode throws error', async () => {
+    const { createEnvironment } = await import('../environment/index.js');
+    const env = createEnvironment([], { undefined: 'debug' });
+
+    await expect(env.renderString('{{ user.name }}', { user: undefined }))
+      .rejects.toThrow();
+  });
+
+  test('optional chaining in debug mode returns undefined without error', async () => {
+    const { createEnvironment } = await import('../environment/index.js');
+    const env = createEnvironment([], { undefined: 'debug' });
+
+    const result = await env.renderString('{{ user?.name }}', { user: undefined });
+    expect(result).toBe('undefined');
   });
 });
 

@@ -220,7 +220,7 @@ describe('render and renderString', () => {
 
 describe('express', () => {
   test('returns environment and sets up app', () => {
-    const app = { set() {}, get() {} };
+    const app = { set() {}, get() {}, use() {} };
     const result = env.express(app);
     expect(result).toBe(env);
   });

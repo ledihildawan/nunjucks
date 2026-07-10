@@ -1,6 +1,6 @@
 import { splitSnippetLines } from '../core/snippet.js';
 import { formatLocation, getDisplayMessage } from '../state/message-formatter.js';
-import { shortenPath, normalizeDrivePath } from '../path-shortener.js';
+import { shortenPath, normalizeDrivePath } from '../../shared/path-shortener.js';
 import { resolveIdeLink } from '../constants/ide-links.js';
 import { formatStackTrace } from './console/stack-trace.js';
 import picocolors from 'picocolors';
@@ -50,12 +50,21 @@ const formatLocationLabel = (state) => {
 
 const formatRenderContext = (ctx) => {
   if (!ctx || typeof ctx !== 'object') return '';
-  const keys = Object.keys(ctx);
+  const keys = Object.keys(ctx).filter(k => !k.startsWith('__nunjucks'));
   if (keys.length === 0) return '';
   const lines = ['\n', picocolors.bold('Render Context:')];
   for (const k of keys) {
     const raw = ctx[k];
-    const val = typeof raw === 'string' ? raw : JSON.stringify(raw);
+    let val;
+    if (raw === undefined) {
+      val = 'undefined';
+    } else if (raw === null) {
+      val = 'null';
+    } else if (typeof raw === 'string') {
+      val = raw;
+    } else {
+      val = JSON.stringify(raw);
+    }
     lines.push(picocolors.dim(`  ${k} = ${val}`));
   }
   return lines.join('\n');
