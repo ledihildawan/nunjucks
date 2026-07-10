@@ -21,13 +21,8 @@ const createFsResolver = () => {
 
 const loadFs = async () => {
   try {
-    if (typeof require !== 'undefined') {
-      const m = require('fs');
-      return { readFileSync: m.readFileSync.bind(m) };
-    }
-    const { createRequire } = await import('module');
-    const m = createRequire(import.meta.url)('fs');
-    return { readFileSync: m.readFileSync.bind(m) };
+    const { readFileSync } = await import('node:fs');
+    return { readFileSync: readFileSync.bind(readFileSync) };
   } catch {
     return null;
   }

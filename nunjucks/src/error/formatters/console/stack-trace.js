@@ -1,21 +1,6 @@
 import { shortenPath, normalizeDrivePath } from '../../path-shortener.js';
 import { resolveIdeLink } from '../../constants/ide-links.js';
-
-const FALLBACK_PICOLORS = {
-  dim: (s) => s,
-};
-
-let _pc = null;
-
-const getPicocolors = () => {
-  if (_pc !== null) return _pc;
-  try {
-    _pc = require('picocolors');
-  } catch (e) {
-    _pc = FALLBACK_PICOLORS;
-  }
-  return _pc;
-};
+import picocolors from 'picocolors';
 
 const makeHyperlink = (text, url) => {
   return `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
@@ -58,9 +43,9 @@ export const formatStackTrace = (originalError, isProduction = false, ide = 'vsc
     });
   };
 
-  const lines = ['\n', getPicocolors().bold('Stack Trace:')];
+  const lines = ['\n', picocolors.bold('Stack Trace:')];
   for (const line of linesToShow) {
-    lines.push(getPicocolors().dim('  ' + shortenStackLine(line)));
+    lines.push(picocolors.dim('  ' + shortenStackLine(line)));
   }
   return lines.join('\n');
 };

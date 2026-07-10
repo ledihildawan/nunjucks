@@ -3,30 +3,7 @@ import { formatLocation, getDisplayMessage } from '../state/message-formatter.js
 import { shortenPath, normalizeDrivePath } from '../path-shortener.js';
 import { resolveIdeLink } from '../constants/ide-links.js';
 import { formatStackTrace } from './console/stack-trace.js';
-
-const FALLBACK_PICOLORS = {
-  red: (s) => s,
-  bold: (s) => s,
-  dim: (s) => s,
-  cyan: (s) => s,
-  yellow: (s) => s,
-  green: (s) => s,
-  magenta: (s) => s,
-  bgRed: (s) => s,
-  white: (s) => s,
-};
-
-let _pc = null;
-
-const getPicocolors = () => {
-  if (_pc !== null) return _pc;
-  try {
-    _pc = require('picocolors');
-  } catch (e) {
-    _pc = FALLBACK_PICOLORS;
-  }
-  return _pc;
-};
+import picocolors from 'picocolors';
 
 const makeHyperlink = (text, url) => {
   return `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
@@ -35,23 +12,23 @@ const makeHyperlink = (text, url) => {
 const renderMarkdownToAnsi = (text) => {
   if (!text) return '';
   let s = text;
-  s = s.replace(/`([^`]+)`/g, (_, code) => getPicocolors().cyan(code));
-  s = s.replace(/\*\*([^*]+)\*\*/g, (_, bold) => getPicocolors().bold(bold));
+  s = s.replace(/`([^`]+)`/g, (_, code) => picocolors.cyan(code));
+  s = s.replace(/\*\*([^*]+)\*\*/g, (_, bold) => picocolors.bold(bold));
   return s;
 };
 
 const formatHeader = (code, phase) => {
-  const bits = [`${getPicocolors().bgRed('[ERROR]')} ${getPicocolors().bold('Template Rendering Failed')}`];
-  if (code) bits.push(getPicocolors().yellow(`[${code}]`));
-  if (phase) bits.push(getPicocolors().dim(`(${phase})`));
-  bits.push(getPicocolors().dim('[DEV]'));
+  const bits = [`${picocolors.bgRed('[ERROR]')} ${picocolors.bold('Template Rendering Failed')}`];
+  if (code) bits.push(picocolors.yellow(`[${code}]`));
+  if (phase) bits.push(picocolors.dim(`(${phase})`));
+  bits.push(picocolors.dim('[DEV]'));
   return [
     bits.join(' '),
-    getPicocolors().dim('─'.repeat(60))
+    picocolors.dim('─'.repeat(60))
   ].join('\n');
 };
 
-const formatMessage = (message) => `${getPicocolors().bold('Message:')} ${message}`;
+const formatMessage = (message) => `${picocolors.bold('Message:')} ${message}`;
 
 const formatLocationLabel = (state) => {
   const { templatePath, getDisplayLine, getDisplayCol } = state;
@@ -64,51 +41,51 @@ const formatLocationLabel = (state) => {
     const display = shortenPath(normalizedPath);
     const linkText = `${display}:${line}:${col}`;
     const link = makeHyperlink(linkText, url);
-    return `${getPicocolors().bold('Location:')} ${link}`;
+    return `${picocolors.bold('Location:')} ${link}`;
   }
 
   const locationFile = formatLocation(state);
-  return `${getPicocolors().bold('Location:')} ${shortenPath(locationFile)}`;
+  return `${picocolors.bold('Location:')} ${shortenPath(locationFile)}`;
 };
 
 const formatRenderContext = (ctx) => {
   if (!ctx || typeof ctx !== 'object') return '';
   const keys = Object.keys(ctx);
   if (keys.length === 0) return '';
-  const lines = ['\n', getPicocolors().bold('Render Context:')];
+  const lines = ['\n', picocolors.bold('Render Context:')];
   for (const k of keys) {
     const raw = ctx[k];
     const val = typeof raw === 'string' ? raw : JSON.stringify(raw);
-    lines.push(getPicocolors().dim(`  ${k} = ${val}`));
+    lines.push(picocolors.dim(`  ${k} = ${val}`));
   }
   return lines.join('\n');
 };
 
 const formatCodeTrace = (traceLines) => {
-  const lines = ['\n', getPicocolors().bold('Source Trace:')];
+  const lines = ['\n', picocolors.bold('Source Trace:')];
   for (const line of traceLines) {
     const cleanLine = line.startsWith('>>>') ? line.slice(4) : line;
     if (line.startsWith('>>>')) {
-      lines.push(getPicocolors().red(cleanLine));
+      lines.push(picocolors.red(cleanLine));
     } else {
-      lines.push(getPicocolors().dim(line));
+      lines.push(picocolors.dim(line));
     }
   }
   return lines.join('\n');
 };
 
 const formatCauses = (causes) => {
-  const lines = ['\n', getPicocolors().bold('Possible Causes:')];
+  const lines = ['\n', picocolors.bold('Possible Causes:')];
   for (const cause of causes) {
-    lines.push(`  ${getPicocolors().dim('•')} ${renderMarkdownToAnsi(cause)}`);
+    lines.push(`  ${picocolors.dim('•')} ${renderMarkdownToAnsi(cause)}`);
   }
   return lines.join('\n');
 };
 
 const formatFix = (fixComment, fixCode) => [
   '\n',
-  `${getPicocolors().bold('Suggested Fix:')} ${getPicocolors().cyan(fixComment)}`,
-  getPicocolors().dim('  ' + fixCode)
+  `${picocolors.bold('Suggested Fix:')} ${picocolors.cyan(fixComment)}`,
+  picocolors.dim('  ' + fixCode)
 ].join('\n');
 
 export const toConsoleString = (state) => {
@@ -127,8 +104,8 @@ export const toConsoleString = (state) => {
     const metaBits = [];
     if (state.version) metaBits.push(`Nunjucks ${state.version}`);
     if (state.timestamp) metaBits.push(state.timestamp);
-    const metaLine = metaBits.length ? getPicocolors().dim('\n' + metaBits.join(' · ')) : '';
-    return `${getPicocolors().bgRed('[ERROR]')} Template Rendering Failed${badge}${metaLine}\n${getPicocolors().dim('Check logs for details')}`;
+    const metaLine = metaBits.length ? picocolors.dim('\n' + metaBits.join(' · ')) : '';
+    return `${picocolors.bgRed('[ERROR]')} Template Rendering Failed${badge}${metaLine}\n${picocolors.dim('Check logs for details')}`;
   }
 
   const traceLines = splitSnippetLines(snippet);
@@ -160,7 +137,7 @@ export const toConsoleString = (state) => {
   const footerBits = [];
   footerBits.push(`Nunjucks ${state.version || '3.2.4'}`);
   if (state.timestamp) footerBits.push(state.timestamp);
-  parts.push(getPicocolors().dim('\n' + footerBits.join(' · ')));
+  parts.push(picocolors.dim('\n' + footerBits.join(' · ')));
 
   parts.push('');
 
