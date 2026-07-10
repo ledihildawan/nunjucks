@@ -1,13 +1,11 @@
 import { fileURLToPath } from 'url';
-import path from 'path';
+import path from 'node:path';
 import { expect } from 'bun:test';
-import {
-  createEnvironment,
-  createTemplate,
-  createFileSystemLoader,
-  precompileString,
-  installJinjaCompat,
-} from '../../index.js';
+import { createEnvironment } from '../environment/index.js';
+import { createTemplate } from '../template/index.js';
+import { createFileSystemLoader } from '../loaders/file-system.js';
+import { precompileString } from '../precompile/index.js';
+import installJinjaCompat from '../integration/jinja-compat.js';
 
 var isSlim = false;
 var templatesPath = 'src/template/test-templates';

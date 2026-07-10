@@ -1,4 +1,4 @@
-export { getConfig } from './config.js';
+export { getConfig, setErrorConfig } from './config.js';
 
 export {
   createEnvironment,

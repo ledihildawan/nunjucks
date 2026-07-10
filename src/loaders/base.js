@@ -1,11 +1,11 @@
 import EventEmitter from 'events';
-import { resolve, dirname } from 'node:path';
+import path from 'node:path';
 
 export function createLoader(opts = {}) {
   const emitter = new EventEmitter();
 
   let _typename = 'Loader';
-  let _resolve = (from, to) => resolve(dirname(from), to);
+  let _resolve = (from, to) => path.resolve(path.dirname(from), to);
   let _isRelative = (filename) => filename.indexOf('./') === 0 || filename.indexOf('../') === 0;
 
   return {

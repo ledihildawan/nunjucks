@@ -1,6 +1,6 @@
 import { pipe, filter, map } from 'remeda';
 import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import path from 'node:path';
 import { createRequire } from 'node:module';
 import { createLoader } from './base.js';
 
@@ -23,7 +23,7 @@ const tryRequireResolve = (name) => {
 
 const findInSearchPaths = (searchPaths, name) => {
   for (const basePath of searchPaths) {
-    const fullPath = resolve(basePath, name);
+    const fullPath = path.resolve(basePath, name);
     if (existsSync(fullPath)) return fullPath;
   }
   return null;

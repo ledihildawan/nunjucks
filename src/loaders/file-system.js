@@ -1,17 +1,17 @@
 import { pipe, entries, isArray } from 'remeda';
 import { existsSync, readFileSync } from 'node:fs';
-import { normalize, resolve } from 'node:path';
+import path from 'node:path';
 import { watch } from 'fs';
 import { createLoader } from './base.js';
 
 const normalizeSearchPaths = (searchPaths) =>
-  !searchPaths ? ['.'] : (isArray(searchPaths) ? searchPaths : [searchPaths]).map(normalize);
+  !searchPaths ? ['.'] : (isArray(searchPaths) ? searchPaths : [searchPaths]).map(path.normalize);
 
 const isPathWithinBase = (basePath) => (filePath) => filePath.indexOf(basePath) === 0;
 
 const resolveFromSearchPath = (name) => (searchPath) => {
-  const basePath = resolve(searchPath);
-  const fullPath = resolve(searchPath, name);
+  const basePath = path.resolve(searchPath);
+  const fullPath = path.resolve(searchPath, name);
   return { basePath, fullPath };
 };
 
@@ -33,7 +33,7 @@ const readFileSource = (fullpath) => ({
   path: fullpath
 });
 
-const normalizeFilePath = (path) => resolve(normalize(path));
+const normalizeFilePath = (p) => path.resolve(path.normalize(p));
 
 const isFileChangeEvent = (eventType) => eventType === 'change' || eventType === 'rename';
 

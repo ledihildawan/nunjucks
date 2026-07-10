@@ -1,7 +1,8 @@
 import { expect, describe, test, beforeAll, afterAll } from 'bun:test';
-import { configure, reset, render } from '../../index.js';
+import { createEnvironment } from '../environment/index.js';
+import { createFileSystemLoader } from '../loaders/file-system.js';
 import fs from 'fs';
-import path from 'path';
+import path from 'node:path';
 import os from 'os';
 
 function rmdir(dirPath) {
@@ -18,6 +19,8 @@ function rmdir(dirPath) {
 
 describe('configure', function() {
   var tempdir;
+  var container;
+  var env;
 
   beforeAll(async function() {
     if (fs && path && os) {
@@ -33,29 +36,30 @@ describe('configure', function() {
   });
 
   afterAll(async function() {
-    reset();
     if (typeof tempdir !== 'undefined') {
       rmdir(tempdir);
     }
   });
 
   test('should cache templates by default', async function() {
-    configure(tempdir);
+    const loader = createFileSystemLoader(tempdir);
+    env = createEnvironment(loader);
 
     fs.writeFileSync(tempdir + '/test.html', '{{ name }}', 'utf-8');
-    expect(await render('test.html', {name: 'foo'})).toBe('foo');
+    expect(await env.render('test.html', {name: 'foo'})).toBe('foo');
 
     fs.writeFileSync(tempdir + '/test.html', '{{ name }}-changed', 'utf-8');
-    expect(await render('test.html', {name: 'foo'})).toBe('foo');
+    expect(await env.render('test.html', {name: 'foo'})).toBe('foo');
   });
 
   test('should not cache templates with {noCache: true}', async function() {
-    configure(tempdir, {noCache: true});
+    const loader = createFileSystemLoader(tempdir, { noCache: true });
+    env = createEnvironment(loader);
 
     fs.writeFileSync(tempdir + '/test.html', '{{ name }}', 'utf-8');
-    expect(await render('test.html', {name: 'foo'})).toBe('foo');
+    expect(await env.render('test.html', {name: 'foo'})).toBe('foo');
 
     fs.writeFileSync(tempdir + '/test.html', '{{ name }}-changed', 'utf-8');
-    expect(await render('test.html', {name: 'foo'})).toBe('foo-changed');
+    expect(await env.render('test.html', {name: 'foo'})).toBe('foo-changed');
   });
 });

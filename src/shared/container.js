@@ -1,4 +1,4 @@
-import { keys, isFunction, isNonNullish, map } from 'remeda';
+import { keys, isFunction, isNonNullish } from 'remeda';
 
 export const createContainer = () => {
   const factories = new Map();
@@ -74,7 +74,30 @@ export const createContainer = () => {
     has,
     remove,
     clear,
-    getRegistered
+    getRegistered,
+
+    environment: (...args) => resolve('environment', ...args),
+    template: (...args) => resolve('template', ...args),
+    context: (...args) => resolve('context', ...args),
+    frame: (...args) => resolve('frame', ...args),
+    compiler: (...args) => resolve('compiler', ...args),
+    parser: (...args) => resolve('parser', ...args),
+    tokenizer: (...args) => resolve('tokenizer', ...args),
+    errorFormatter: (...args) => resolve('errorFormatter', ...args),
+
+    loader: {
+      fileSystem: (...args) => resolve('loader.fileSystem', ...args),
+      web: (...args) => resolve('loader.web', ...args),
+      nodeResolve: (...args) => resolve('loader.nodeResolve', ...args),
+      precompiled: (...args) => resolve('loader.precompiled', ...args),
+    },
+
+    sandbox: {
+      environment: (...args) => resolve('sandbox.environment', ...args),
+      context: (...args) => resolve('sandbox.context', ...args),
+    },
+
+    createScopedContainer: () => createScopedContainer({ register, resolve, has, remove, clear, getRegistered }),
   };
 
   return container;

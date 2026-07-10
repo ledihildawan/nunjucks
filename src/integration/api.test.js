@@ -1,11 +1,19 @@
 import { expect, describe, test, beforeEach } from 'bun:test';
-import path from 'path';
+import path from 'node:path';
 import * as util from './util.js';
 import { createEnvironment } from '../environment/index.js';
 import { createFileSystemLoader } from '../loaders/file-system.js';
-import { configure } from '../../index.js';
+import { createContainer } from '../../src/index.js';
 
-var templatesPath = 'nunjucks/src/template/test-templates';
+var templatesPath = 'src/template/test-templates';
+
+const configure = (templatesPath, opts = {}) => {
+  const loader = createFileSystemLoader(templatesPath, {
+    watch: opts.watch,
+    noCache: opts.noCache
+  });
+  return createEnvironment(loader, opts);
+};
 
 describe('api', function() {
   test('should always force compilation of parent template', async function() {
@@ -60,7 +68,7 @@ describe('api', function() {
 
 describe('auto error handling in dev mode', () => {
   test('env.render returns HTML error in dev mode instead of throwing', async () => {
-    const env = configure('nunjucks/src/template/test-templates', {
+    const env = configure('src/template/test-templates', {
       dev: true,
       undefined: 'strict'
     });
@@ -71,7 +79,7 @@ describe('auto error handling in dev mode', () => {
   });
 
   test('env.render throws in production mode', async () => {
-    const env = configure('nunjucks/src/template/test-templates', {
+    const env = configure('src/template/test-templates', {
       dev: false,
       undefined: 'strict'
     });
@@ -80,7 +88,7 @@ describe('auto error handling in dev mode', () => {
   });
 
   test('env.renderString returns HTML error in dev mode instead of throwing', async () => {
-    const env = configure('nunjucks/src/template/test-templates', {
+    const env = configure('src/template/test-templates', {
       dev: true,
       undefined: 'strict'
     });
@@ -91,7 +99,7 @@ describe('auto error handling in dev mode', () => {
   });
 
   test('env.renderString throws in production mode', async () => {
-    const env = configure('nunjucks/src/template/test-templates', {
+    const env = configure('src/template/test-templates', {
       dev: false,
       undefined: 'strict'
     });
@@ -100,7 +108,7 @@ describe('auto error handling in dev mode', () => {
   });
 
   test('render context with blocked keys is filtered in error output', async () => {
-    const env = configure('nunjucks/src/template/test-templates', {
+    const env = configure('src/template/test-templates', {
       dev: true,
       undefined: 'strict'
     });
