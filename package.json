@@ -24,8 +24,7 @@
     ".": "./index.js"
   },
   "files": [
-    "browser/**",
-    "src/**"
+    "nunjucks/**"
   ],
   "repository": {
     "type": "git",
