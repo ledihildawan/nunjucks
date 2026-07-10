@@ -1,3 +1,4 @@
+import picocolors from 'picocolors';
 import { createTemplateError } from '../error/index.js';
 import { isArray, keys } from 'remeda';
 import { createFrame } from './frame.js';
@@ -109,7 +110,7 @@ export function ensureDefined(val, lineno, colno, varName = null, undefinedMode 
     }
 
     if (undefinedMode === 'debug') {
-      const warning = `[nunjucks] Warning: undefined${varMsg} at line ${lineNum}:${colNum}`;
+      const warning = `${picocolors.yellow('[nunjucks]')} ${picocolors.yellow('Warning:')} undefined${varMsg} ${picocolors.dim('at line')} ${lineNum}:${colNum}`;
       console.warn(warning);
     }
 
