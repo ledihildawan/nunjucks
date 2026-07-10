@@ -16,7 +16,7 @@ import {
   parse,
 } from './src/parser/index.js';
 import {
-  Tokenizer,
+  createTokenizer,
   lex,
   createToken,
   TOKEN_BLOCK_END,
@@ -54,7 +54,7 @@ import {
   createDelimiters,
 } from './src/lexer/index.js';
 import {
-  Frame,
+  createFrame,
   SafeString,
   copySafeness,
   markSafe,
@@ -295,7 +295,7 @@ const parser = {
 };
 
 const lexer = {
-  Tokenizer,
+  createTokenizer,
   lex,
   createToken,
   TOKEN_BLOCK_END,
@@ -334,7 +334,7 @@ const lexer = {
 };
 
 const runtime = {
-  Frame,
+  createFrame,
   SafeString,
   copySafeness,
   markSafe,
@@ -371,15 +371,25 @@ export const render = (name, ctx) => getEnv().render(name, ctx);
 
 export const renderString = (src, ctx) => getEnv().renderString(src, ctx);
 
-export { createEnvironment as Environment, createTemplate as Template };
-export { createLoader as Loader };
-export { createFileSystemLoader as FileSystemLoader };
-export { createNodeResolveLoader as NodeResolveLoader };
-export { createPrecompiledLoader as PrecompiledLoader };
-export { createWebLoader as WebLoader };
-export { compiler, parser, lexer, runtime, nodes, installJinjaCompat };
-export { precompile, precompileString };
-export { getConfig, renderError, renderErrorString, createEnvironment as ErrorEnvironment } from './src/error/index.js';
+export {
+  createEnvironment,
+  createTemplate,
+  createLoader,
+  createFileSystemLoader,
+  createNodeResolveLoader,
+  createPrecompiledLoader,
+  createWebLoader,
+  compiler,
+  parser,
+  lexer,
+  runtime,
+  nodes,
+  installJinjaCompat,
+  precompile,
+  precompileString,
+};
+
+export { getConfig, renderError, renderErrorString } from './src/error/index.js';
 
 export default {
   Environment: createEnvironment,

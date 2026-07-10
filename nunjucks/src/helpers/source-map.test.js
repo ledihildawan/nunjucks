@@ -1,31 +1,31 @@
 import { expect, describe, test } from 'bun:test';
-import { SourceMap, applySourceMapToError, createMappedError } from './source-map.js';
+import { createSourceMap, createSourceMapFromArray, applySourceMapToError, createMappedError } from './source-map.js';
 
 describe('SourceMap', () => {
   test('creates with template name', () => {
-    const sm = new SourceMap('test.njk');
+    const sm = createSourceMap('test.njk');
     expect(sm.templateName).toBe('test.njk');
     expect(sm.mappings).toEqual([]);
   });
 
   test('addMapping stores mapping', () => {
-    const sm = new SourceMap('t.njk');
+    const sm = createSourceMap('t.njk');
     sm.addMapping(5, 3, 7);
     expect(sm.mappings).toEqual([{ compiledLine: 5, originalLine: 3, originalCol: 7 }]);
   });
 
   test('getOriginalPosition returns start for line 0', () => {
-    const sm = new SourceMap('t.njk');
+    const sm = createSourceMap('t.njk');
     expect(sm.getOriginalPosition(0)).toEqual({ line: 1, col: 0, name: 't.njk' });
   });
 
   test('getOriginalPosition returns line+offset for negative', () => {
-    const sm = new SourceMap('t.njk');
+    const sm = createSourceMap('t.njk');
     expect(sm.getOriginalPosition(-5)).toEqual({ line: 1, col: 0, name: 't.njk' });
   });
 
   test('getOriginalPosition maps through stored mappings', () => {
-    const sm = new SourceMap('t.njk');
+    const sm = createSourceMap('t.njk');
     sm.addMapping(10, 5, 3);
     const pos = sm.getOriginalPosition(12);
     expect(pos.line).toBe(7);
@@ -34,23 +34,23 @@ describe('SourceMap', () => {
   });
 
   test('getOriginalPosition returns compiled line if no mapping covers it', () => {
-    const sm = new SourceMap('t.njk');
+    const sm = createSourceMap('t.njk');
     expect(sm.getOriginalPosition(42).line).toBe(42);
   });
 
   test('getOriginalPosition returns last mapping for lower line', () => {
-    const sm = new SourceMap('t.njk');
+    const sm = createSourceMap('t.njk');
     sm.addMapping(20, 10, 0);
     expect(sm.getOriginalPosition(5).line).toBe(5);
   });
 
   test('fromArray creates SourceMap with pre-filled mappings', () => {
-    const sm = SourceMap.fromArray('t.njk', [{ compiledLine: 1, originalLine: 1, originalCol: 0 }]);
+    const sm = createSourceMapFromArray('t.njk', [{ compiledLine: 1, originalLine: 1, originalCol: 0 }]);
     expect(sm.mappings).toHaveLength(1);
   });
 
   test('fromArray handles non-array input', () => {
-    const sm = SourceMap.fromArray('t.njk', null);
+    const sm = createSourceMapFromArray('t.njk', null);
     expect(sm.mappings).toEqual([]);
   });
 });

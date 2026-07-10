@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach } from 'bun:test';
 import { createCompiler, compile, getSourceMap, getSourceMapFromCompile } from './index.js';
 import { createTemplateError } from '../error/index.js';
 import { NodeList, Literal, AstSymbol } from '../nodes/index.js';
-import { Frame } from '../runtime/index.js';
+import { createFrame } from '../runtime/index.js';
 
 let compiler;
 
@@ -144,20 +144,20 @@ describe('Compiler', () => {
     const child1 = Literal(1, 1, 'hello');
     const child2 = Literal(1, 1, 'world');
     const node = NodeList(1, 1, [child1, child2]);
-    const frame = new Frame();
+    const frame = createFrame();
     compiler._compileChildren(node, frame);
     expect(compiler.codebuf.length).toBeGreaterThan(0);
   });
 
   test('_compileExpression compiles valid expression', () => {
     const node = Literal(1, 1, 42);
-    compiler._compileExpression(node, new Frame());
+    compiler._compileExpression(node, createFrame());
     expect(compiler.codebuf.length).toBeGreaterThan(0);
   });
 
   test('_compileExpression throws for invalid type', () => {
     const invalidNode = { typename: 'Unknown', lineno: 1, colno: 1 };
-    expect(() => compiler._compileExpression(invalidNode, new Frame())).toThrow();
+    expect(() => compiler._compileExpression(invalidNode, createFrame())).toThrow();
   });
 
   test('assertType passes for matching type', () => {
@@ -170,7 +170,7 @@ describe('Compiler', () => {
 
   test('compile delegates to compileDispatch', () => {
     const node = Literal(1, 1, 'hello');
-    compiler.compile(node, new Frame());
+    compiler.compile(node, createFrame());
     expect(compiler.codebuf.length).toBeGreaterThan(0);
   });
 

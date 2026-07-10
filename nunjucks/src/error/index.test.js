@@ -8,7 +8,6 @@ describe('error/index exports', () => {
   test('exports renderError', () => expect(mod.renderError).toBeFunction());
   test('exports renderErrorString', () => expect(mod.renderErrorString).toBeFunction());
   test('exports createErrorFormatter', () => expect(mod.createErrorFormatter).toBeFunction());
-  test('exports TemplateError', () => expect(mod.TemplateError).toBeFunction());
   test('exports createTemplateError', () => expect(mod.createTemplateError).toBeFunction());
   test('exports prettifyError', () => expect(mod.prettifyError).toBeFunction());
   test('exports classifyError', () => expect(mod.classifyError).toBeFunction());

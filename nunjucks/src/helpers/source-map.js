@@ -1,44 +1,46 @@
-﻿export class SourceMap {
-  constructor(templateName) {
-    this.templateName = templateName;
-    this.mappings = [];
-  }
+﻿export function createSourceMap(templateName) {
+  const state = {
+    templateName,
+    mappings: []
+  };
 
-  addMapping(compiledLine, originalLine, originalCol = 0) {
-    this.mappings.push({
-      compiledLine,
-      originalLine,
-      originalCol
-    });
-  }
+  return {
+    get templateName() { return state.templateName; },
+    get mappings() { return state.mappings; },
+    set mappings(val) { state.mappings = val; },
 
-  getOriginalPosition(compiledLine) {
-    if (compiledLine <= 0) {
-      return { line: 1, col: 0, name: this.templateName };
-    }
+    addMapping(compiledLine, originalLine, originalCol = 0) {
+      state.mappings.push({ compiledLine, originalLine, originalCol });
+    },
 
-    for (let i = this.mappings.length - 1; i >= 0; i--) {
-      const mapping = this.mappings[i];
-      if (compiledLine >= mapping.compiledLine) {
-        const offset = compiledLine - mapping.compiledLine;
-        return {
-          line: mapping.originalLine + offset,
-          col: mapping.originalCol,
-          name: this.templateName
-        };
+    getOriginalPosition(compiledLine) {
+      if (compiledLine <= 0) {
+        return { line: 1, col: 0, name: state.templateName };
       }
-    }
 
-    return { line: compiledLine, col: 0, name: this.templateName };
-  }
+      for (let i = state.mappings.length - 1; i >= 0; i--) {
+        const mapping = state.mappings[i];
+        if (compiledLine >= mapping.compiledLine) {
+          const offset = compiledLine - mapping.compiledLine;
+          return {
+            line: mapping.originalLine + offset,
+            col: mapping.originalCol,
+            name: state.templateName
+          };
+        }
+      }
 
-  static fromArray(templateName, mappingsArray) {
-    const sm = new SourceMap(templateName);
-    if (Array.isArray(mappingsArray)) {
-      sm.mappings = mappingsArray;
+      return { line: compiledLine, col: 0, name: state.templateName };
     }
-    return sm;
+  };
+}
+
+export function createSourceMapFromArray(templateName, mappingsArray) {
+  const sm = createSourceMap(templateName);
+  if (Array.isArray(mappingsArray)) {
+    sm.mappings = mappingsArray;
   }
+  return sm;
 }
 
 export function applySourceMapToError(error, lineno, sourceMapData, templateName) {
@@ -46,7 +48,7 @@ export function applySourceMapToError(error, lineno, sourceMapData, templateName
     return null;
   }
 
-  const sm = SourceMap.fromArray(templateName, sourceMapData);
+  const sm = createSourceMapFromArray(templateName, sourceMapData);
   const pos = sm.getOriginalPosition(lineno);
 
   if (error.lineno === undefined) {
@@ -64,7 +66,7 @@ export function createMappedError(error, sourceMapData, lineno, colno, path) {
     return null;
   }
 
-  const sm = SourceMap.fromArray(path, sourceMapData);
+  const sm = createSourceMapFromArray(path, sourceMapData);
   const pos = sm.getOriginalPosition(lineno);
 
   const errColno = error.colno || 0;

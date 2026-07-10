@@ -1,6 +1,6 @@
 import { createTemplateError } from '../error/index.js';
 import { isArray, keys } from 'remeda';
-import { Frame } from './frame.js';
+import { createFrame } from './frame.js';
 import {
   SafeString,
   copySafeness,
@@ -27,7 +27,7 @@ import {
 const escapeHtml = (val) => Bun.escapeHTML(val).replace(/\\/g, '&#92;').replace(/&#x27;/g, '&#39;');
 
 export {
-  Frame,
+  createFrame,
   SafeString,
   copySafeness,
   markSafe,

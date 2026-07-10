@@ -34,7 +34,7 @@ import {
 } from '../nodes/index.js';
 import { createTemplateError } from '../error/index.js';
 import { createObj } from '../object/index.js';
-import { SourceMap } from '../helpers/source-map.js';
+import { createSourceMap } from '../helpers/source-map.js';
 import { COMPILE_FUNCTIONS, compileDispatch } from './node-dispatch.js';
 
 export function createCompiler(templateName, throwOnUndefined, source) {
@@ -49,7 +49,7 @@ export function createCompiler(templateName, throwOnUndefined, source) {
       this.inBlock = false;
       this.throwOnUndefined = throwOnUndefined;
       this.compiledLine = 0;
-      this.sourceMap = new SourceMap(templateName);
+      this.sourceMap = createSourceMap(templateName);
     },
     fail: function(msg, lineno, colno) {
       throw createTemplateError(msg, lineno, colno, { phase: 'compile', templateName: this.templateName });

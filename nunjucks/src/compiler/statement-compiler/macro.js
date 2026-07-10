@@ -1,5 +1,5 @@
 import { AstSymbol, Dict } from '../../nodes/index.js';
-import { Frame } from '../../runtime/index.js';
+import { createFrame } from '../../runtime/index.js';
 
 const compileMacro = (ctx, node, frame) => {
   const args = [];
@@ -25,7 +25,7 @@ const compileMacro = (ctx, node, frame) => {
   if (keepFrame) {
     currFrame = frame.push(true);
   } else {
-    currFrame = new Frame();
+    currFrame = createFrame();
   }
   ctx._emitLines(
     `var ${funcId} = runtime.makeMacro(`,
@@ -33,7 +33,7 @@ const compileMacro = (ctx, node, frame) => {
     `[${kwargNames.join(', ')}], `,
     `async function (${realNames.join(', ')}) {`,
     'var callerFrame = frame;',
-    'frame = ' + ((keepFrame) ? 'frame.push(true);' : 'new runtime.Frame();'),
+    'frame = ' + ((keepFrame) ? 'frame.push(true);' : 'runtime.createFrame();'),
     'kwargs = kwargs || {};',
     'if (Object.prototype.hasOwnProperty.call(kwargs, "caller")) {',
     'frame.set("caller", kwargs.caller); }');

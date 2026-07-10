@@ -9,7 +9,6 @@ export {
 } from './environment.js';
 
 export { createTemplateError, prettifyError } from './core/template-error.js';
-export { createTemplateError as TemplateError } from './core/template-error.js';
 export { classifyError } from './core/classify.js';
 export { resolveIdeLink, getIdeMeta } from './constants/ide-links.js';
 export {

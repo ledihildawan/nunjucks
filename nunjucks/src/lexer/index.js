@@ -41,12 +41,12 @@ import {
   REGEX_FLAGS,
   WHITESPACE_CHARS,
 } from './delimiters.js';
-import { Tokenizer, lex, createToken } from './tokenizer.js';
+import { createTokenizer, lex, createToken } from './tokenizer.js';
 
 export {
-  Tokenizer,
   lex,
   createToken,
+  createTokenizer,
   TOKEN_BLOCK_END,
   TOKEN_BLOCK_START,
   TOKEN_BOOLEAN,

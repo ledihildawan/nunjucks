@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { Tokenizer, createToken, lex } from './tokenizer.js';
+import { createTokenizer, createToken, lex } from './tokenizer.js';
 import {
   TOKEN_STRING, TOKEN_WHITESPACE, TOKEN_DATA, TOKEN_BLOCK_START, TOKEN_BLOCK_END,
   TOKEN_VARIABLE_START, TOKEN_VARIABLE_END, TOKEN_COMMENT,
@@ -19,7 +19,7 @@ describe('createToken', () => {
 describe('Tokenizer', () => {
   describe('constructor', () => {
     test('initializes with empty string', () => {
-      const t = new Tokenizer('');
+      const t = createTokenizer('');
       expect(t.str).toBe('');
       expect(t.index).toBe(0);
       expect(t.len).toBe(0);
@@ -29,7 +29,7 @@ describe('Tokenizer', () => {
     });
 
     test('accepts custom tags', () => {
-      const t = new Tokenizer('', { tags: { blockStart: '<%', blockEnd: '%>', variableStart: '${', variableEnd: '}' } });
+      const t = createTokenizer('', { tags: { blockStart: '<%', blockEnd: '%>', variableStart: '${', variableEnd: '}' } });
       expect(t.tags.BLOCK_START).toBe('<%');
       expect(t.tags.BLOCK_END).toBe('%>');
       expect(t.tags.VARIABLE_START).toBe('${');
@@ -37,63 +37,63 @@ describe('Tokenizer', () => {
     });
 
     test('respects trimBlocks option', () => {
-      const t = new Tokenizer('', { trimBlocks: true });
+      const t = createTokenizer('', { trimBlocks: true });
       expect(t.trimBlocks).toBe(true);
     });
 
     test('respects lstripBlocks option', () => {
-      const t = new Tokenizer('', { lstripBlocks: true });
+      const t = createTokenizer('', { lstripBlocks: true });
       expect(t.lstripBlocks).toBe(true);
     });
   });
 
   describe('current', () => {
     test('returns current character', () => {
-      const t = new Tokenizer('abc');
+      const t = createTokenizer('abc');
       expect(t.current()).toBe('a');
     });
 
     test('returns empty string when finished', () => {
-      const t = new Tokenizer('');
+      const t = createTokenizer('');
       expect(t.current()).toBe('');
     });
   });
 
   describe('previous', () => {
     test('returns previous character', () => {
-      const t = new Tokenizer('abc');
+      const t = createTokenizer('abc');
       t.index = 1;
       expect(t.previous()).toBe('a');
     });
 
     test('returns empty when at start', () => {
-      const t = new Tokenizer('abc');
+      const t = createTokenizer('abc');
       expect(t.previous()).toBe('');
     });
   });
 
   describe('isFinished', () => {
     test('returns true when index >= len', () => {
-      const t = new Tokenizer('');
+      const t = createTokenizer('');
       expect(t.isFinished()).toBe(true);
     });
 
     test('returns false when more chars remain', () => {
-      const t = new Tokenizer('a');
+      const t = createTokenizer('a');
       expect(t.isFinished()).toBe(false);
     });
   });
 
   describe('forward', () => {
     test('advances index and colno', () => {
-      const t = new Tokenizer('abc');
+      const t = createTokenizer('abc');
       t.forward();
       expect(t.index).toBe(1);
       expect(t.colno).toBe(1);
     });
 
     test('increments lineno and resets colno on newline', () => {
-      const t = new Tokenizer('a\nb');
+      const t = createTokenizer('a\nb');
       t.forward();
       expect(t.index).toBe(1);
       expect(t.colno).toBe(1);
@@ -106,7 +106,7 @@ describe('Tokenizer', () => {
 
   describe('back', () => {
     test('decrements index and colno', () => {
-      const t = new Tokenizer('abc');
+      const t = createTokenizer('abc');
       t.index = 2;
       t.colno = 2;
       t.back();
@@ -115,7 +115,7 @@ describe('Tokenizer', () => {
     });
 
     test('decrements lineno and adjusts colno on newline', () => {
-      const t = new Tokenizer('a\nb');
+      const t = createTokenizer('a\nb');
       t.index = 2;
       t.lineno = 1;
       t.back();
@@ -127,13 +127,13 @@ describe('Tokenizer', () => {
 
   describe('forwardN/backN', () => {
     test('forwardN advances by n', () => {
-      const t = new Tokenizer('abcde');
+      const t = createTokenizer('abcde');
       t.forwardN(3);
       expect(t.index).toBe(3);
     });
 
     test('backN goes back by n', () => {
-      const t = new Tokenizer('abcde');
+      const t = createTokenizer('abcde');
       t.index = 5;
       t.backN(2);
       expect(t.index).toBe(3);
@@ -142,31 +142,31 @@ describe('Tokenizer', () => {
 
   describe('_matches', () => {
     test('returns true when substring matches', () => {
-      const t = new Tokenizer('hello world');
+      const t = createTokenizer('hello world');
       expect(t._matches('hello')).toBe(true);
     });
 
     test('returns false when no match', () => {
-      const t = new Tokenizer('hello');
+      const t = createTokenizer('hello');
       expect(t._matches('world')).toBe(false);
     });
 
     test('returns null when string extends past end', () => {
-      const t = new Tokenizer('hi');
+      const t = createTokenizer('hi');
       expect(t._matches('hello')).toBe(null);
     });
   });
 
   describe('_extractString', () => {
     test('extracts matching string and advances', () => {
-      const t = new Tokenizer('hello world');
+      const t = createTokenizer('hello world');
       const result = t._extractString('hello');
       expect(result).toBe('hello');
       expect(t.index).toBe(5);
     });
 
     test('returns null when no match', () => {
-      const t = new Tokenizer('hello');
+      const t = createTokenizer('hello');
       const result = t._extractString('world');
       expect(result).toBeNull();
       expect(t.index).toBe(0);
@@ -175,14 +175,14 @@ describe('Tokenizer', () => {
 
   describe('_extractUntil and _extract', () => {
     test('_extractUntil extracts until break char', () => {
-      const t = new Tokenizer('abc def');
+      const t = createTokenizer('abc def');
       const result = t._extractUntil(' ');
       expect(result).toBe('abc');
       expect(t.current()).toBe(' ');
     });
 
     test('_extract extracts matching chars', () => {
-      const t = new Tokenizer('   abc');
+      const t = createTokenizer('   abc');
       const result = t._extract(' ');
       expect(result).toBe('   ');
       expect(t.current()).toBe('a');
@@ -191,25 +191,25 @@ describe('Tokenizer', () => {
 
   describe('_parseString', () => {
     test('parses double-quoted string', () => {
-      const t = new Tokenizer('"hello"');
+      const t = createTokenizer('"hello"');
       const result = t._parseString('"');
       expect(result).toBe('hello');
     });
 
     test('parses single-quoted string', () => {
-      const t = new Tokenizer("'hello'");
+      const t = createTokenizer("'hello'");
       const result = t._parseString("'");
       expect(result).toBe('hello');
     });
 
     test('handles escape sequences', () => {
-      const t = new Tokenizer('"a\\nb"');
+      const t = createTokenizer('"a\\nb"');
       const result = t._parseString('"');
       expect(result).toBe('a\nb');
     });
 
     test('handles backslash escape', () => {
-      const t = new Tokenizer('"a\\\\b"');
+      const t = createTokenizer('"a\\\\b"');
       const result = t._parseString('"');
       expect(result).toBe('a\\b');
     });
@@ -217,61 +217,61 @@ describe('Tokenizer', () => {
 
   describe('_parseOperator', () => {
     test('returns LEFT_PAREN for (', () => {
-      const t = new Tokenizer('(');
+      const t = createTokenizer('(');
       const tok = t._parseOperator('(', 1, 1);
       expect(tok.type).toBe(TOKEN_LEFT_PAREN);
     });
 
     test('returns RIGHT_PAREN for )', () => {
-      const t = new Tokenizer(')');
+      const t = createTokenizer(')');
       const tok = t._parseOperator(')', 1, 1);
       expect(tok.type).toBe(TOKEN_RIGHT_PAREN);
     });
 
     test('returns LEFT_BRACKET for [', () => {
-      const t = new Tokenizer('[');
+      const t = createTokenizer('[');
       const tok = t._parseOperator('[', 1, 1);
       expect(tok.type).toBe(TOKEN_LEFT_BRACKET);
     });
 
     test('returns RIGHT_BRACKET for ]', () => {
-      const t = new Tokenizer(']');
+      const t = createTokenizer(']');
       const tok = t._parseOperator(']', 1, 1);
       expect(tok.type).toBe(TOKEN_RIGHT_BRACKET);
     });
 
     test('returns LEFT_CURLY for {', () => {
-      const t = new Tokenizer('{');
+      const t = createTokenizer('{');
       const tok = t._parseOperator('{', 1, 1);
       expect(tok.type).toBe(TOKEN_LEFT_CURLY);
     });
 
     test('returns RIGHT_CURLY for }', () => {
-      const t = new Tokenizer('}');
+      const t = createTokenizer('}');
       const tok = t._parseOperator('}', 1, 1);
       expect(tok.type).toBe(TOKEN_RIGHT_CURLY);
     });
 
     test('returns COMMA for ,', () => {
-      const t = new Tokenizer(',');
+      const t = createTokenizer(',');
       const tok = t._parseOperator(',', 1, 1);
       expect(tok.type).toBe(TOKEN_COMMA);
     });
 
     test('returns COLON for :', () => {
-      const t = new Tokenizer(':');
+      const t = createTokenizer(':');
       const tok = t._parseOperator(':', 1, 1);
       expect(tok.type).toBe(TOKEN_COLON);
     });
 
     test('returns TILDE for ~', () => {
-      const t = new Tokenizer('~');
+      const t = createTokenizer('~');
       const tok = t._parseOperator('~', 1, 1);
       expect(tok.type).toBe(TOKEN_TILDE);
     });
 
     test('returns PIPEFORWARD for |>', () => {
-      const t = new Tokenizer('|>');
+      const t = createTokenizer('|>');
       t.forward();
       const tok = t._parseOperator('|', 1, 1);
       expect(tok.type).toBe(TOKEN_PIPEFORWARD);
@@ -279,7 +279,7 @@ describe('Tokenizer', () => {
     });
 
     test('returns OPERATOR for other symbols', () => {
-      const t = new Tokenizer('+');
+      const t = createTokenizer('+');
       t.forward();
       const tok = t._parseOperator('+', 1, 1);
       expect(tok.type).toBe(TOKEN_OPERATOR);
@@ -287,7 +287,7 @@ describe('Tokenizer', () => {
     });
 
     test('handles complex operators like ==', () => {
-      const t = new Tokenizer('== ');
+      const t = createTokenizer('== ');
       t.forward();
       const tok = t._parseOperator('=', 1, 1);
       expect(tok.type).toBe(TOKEN_OPERATOR);
@@ -295,7 +295,7 @@ describe('Tokenizer', () => {
     });
 
     test('handles triple operators like ===', () => {
-      const t = new Tokenizer('===x');
+      const t = createTokenizer('===x');
       t.forward();
       const tok = t._parseOperator('=', 1, 1);
       expect(tok.value).toBe('===');
@@ -304,21 +304,21 @@ describe('Tokenizer', () => {
 
   describe('_parseSymbol', () => {
     test('parses integer', () => {
-      const t = new Tokenizer('42');
+      const t = createTokenizer('42');
       const tok = t._parseSymbol('42', 1, 1);
       expect(tok.type).toBe(TOKEN_INT);
       expect(tok.value).toBe('42');
     });
 
     test('parses negative integer', () => {
-      const t = new Tokenizer('-5');
+      const t = createTokenizer('-5');
       const tok = t._parseSymbol('-5', 1, 1);
       expect(tok.type).toBe(TOKEN_INT);
       expect(tok.value).toBe('-5');
     });
 
     test('parses float via _parseNumber', () => {
-      const t = new Tokenizer('3.14');
+      const t = createTokenizer('3.14');
       t.forward();
       const tok = t._parseSymbol('3', 1, 1);
       expect(tok.type).toBe(TOKEN_FLOAT);
@@ -326,74 +326,74 @@ describe('Tokenizer', () => {
     });
 
     test('parses boolean true', () => {
-      const t = new Tokenizer('');
+      const t = createTokenizer('');
       const tok = t._parseSymbol('true', 1, 1);
       expect(tok.type).toBe(TOKEN_BOOLEAN);
       expect(tok.value).toBe('true');
     });
 
     test('parses boolean false', () => {
-      const t = new Tokenizer('');
+      const t = createTokenizer('');
       const tok = t._parseSymbol('false', 1, 1);
       expect(tok.type).toBe(TOKEN_BOOLEAN);
     });
 
     test('parses none', () => {
-      const t = new Tokenizer('');
+      const t = createTokenizer('');
       const tok = t._parseSymbol('none', 1, 1);
       expect(tok.type).toBe(TOKEN_NONE);
     });
 
     test('parses null as none', () => {
-      const t = new Tokenizer('');
+      const t = createTokenizer('');
       const tok = t._parseSymbol('null', 1, 1);
       expect(tok.type).toBe(TOKEN_NONE);
     });
 
     test('parses symbol', () => {
-      const t = new Tokenizer('');
+      const t = createTokenizer('');
       const tok = t._parseSymbol('foo', 1, 1);
       expect(tok.type).toBe(TOKEN_SYMBOL);
       expect(tok.value).toBe('foo');
     });
 
     test('throws TemplateError for empty string', () => {
-      const t = new Tokenizer('');
+      const t = createTokenizer('');
       expect(() => t._parseSymbol('', 1, 1)).toThrow();
     });
   });
 
   describe('nextToken in template text mode', () => {
     test('returns DATA token for plain text', () => {
-      const t = new Tokenizer('hello');
+      const t = createTokenizer('hello');
       const tok = t.nextToken();
       expect(tok.type).toBe(TOKEN_DATA);
       expect(tok.value).toBe('hello');
     });
 
     test('returns BLOCK_START for block tag', () => {
-      const t = new Tokenizer('{% foo %}');
+      const t = createTokenizer('{% foo %}');
       const tok = t.nextToken();
       expect(tok.type).toBe(TOKEN_BLOCK_START);
       expect(tok.value).toBe('{%');
     });
 
     test('returns VARIABLE_START for variable tag', () => {
-      const t = new Tokenizer('{{ foo }}');
+      const t = createTokenizer('{{ foo }}');
       const tok = t.nextToken();
       expect(tok.type).toBe(TOKEN_VARIABLE_START);
       expect(tok.value).toBe('{{');
     });
 
     test('returns null at end', () => {
-      const t = new Tokenizer('');
+      const t = createTokenizer('');
       expect(t.nextToken()).toBeNull();
     });
   });
 
   describe('nextToken in code mode', () => {
     test('returns STRING token', () => {
-      const t = new Tokenizer("'hello'");
+      const t = createTokenizer("'hello'");
       t.in_code = true;
       const tok = t.nextToken();
       expect(tok.type).toBe(TOKEN_STRING);
@@ -401,7 +401,7 @@ describe('Tokenizer', () => {
     });
 
     test('returns WHITESPACE token', () => {
-      const t = new Tokenizer('  foo');
+      const t = createTokenizer('  foo');
       t.in_code = true;
       const tok = t.nextToken();
       expect(tok.type).toBe(TOKEN_WHITESPACE);
@@ -409,7 +409,7 @@ describe('Tokenizer', () => {
     });
 
     test('returns BLOCK_END token and exits code mode', () => {
-      const t = new Tokenizer('%}');
+      const t = createTokenizer('%}');
       t.in_code = true;
       const tok = t.nextToken();
       expect(tok.type).toBe(TOKEN_BLOCK_END);
@@ -417,7 +417,7 @@ describe('Tokenizer', () => {
     });
 
     test('returns VARIABLE_END token and exits code mode', () => {
-      const t = new Tokenizer('}}');
+      const t = createTokenizer('}}');
       t.in_code = true;
       const tok = t.nextToken();
       expect(tok.type).toBe(TOKEN_VARIABLE_END);
@@ -425,7 +425,7 @@ describe('Tokenizer', () => {
     });
 
     test('parses regex literal', () => {
-      const t = new Tokenizer('r/foo/g');
+      const t = createTokenizer('r/foo/g');
       t.in_code = true;
       const tok = t.nextToken();
       expect(tok.type).toBe(TOKEN_REGEX);
@@ -433,14 +433,14 @@ describe('Tokenizer', () => {
     });
 
     test('returns operator token for delim chars', () => {
-      const t = new Tokenizer('(');
+      const t = createTokenizer('(');
       t.in_code = true;
       const tok = t.nextToken();
       expect(tok.type).toBe(TOKEN_LEFT_PAREN);
     });
 
     test('parses symbol token', () => {
-      const t = new Tokenizer('myVar');
+      const t = createTokenizer('myVar');
       t.in_code = true;
       const tok = t.nextToken();
       expect(tok.type).toBe(TOKEN_SYMBOL);
@@ -448,7 +448,7 @@ describe('Tokenizer', () => {
     });
 
     test('returns null when finished in code mode', () => {
-      const t = new Tokenizer('');
+      const t = createTokenizer('');
       t.in_code = true;
       expect(t.nextToken()).toBeNull();
     });
@@ -456,7 +456,7 @@ describe('Tokenizer', () => {
 
   describe('trimBlocks option', () => {
     test('trims newline after block end when trimBlocks is true', () => {
-      const t = new Tokenizer('{% if y %}\nz', { trimBlocks: true });
+      const t = createTokenizer('{% if y %}\nz', { trimBlocks: true });
       t.nextToken();
       expect(t.in_code).toBe(true);
       while (!t.isFinished() && t.current() !== '%') {
@@ -471,7 +471,7 @@ describe('Tokenizer', () => {
   describe('lex helper', () => {
     test('creates a Tokenizer from lex', () => {
       const t = lex('hello');
-      expect(t).toBeInstanceOf(Tokenizer);
+      expect(typeof t).toBe('object');
       expect(t.str).toBe('hello');
     });
   });

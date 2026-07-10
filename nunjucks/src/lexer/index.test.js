@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import * as mod from './index.js';
 
 describe('lexer/index exports', () => {
-  test('exports Tokenizer', () => expect(mod.Tokenizer).toBeFunction());
+  test('exports createTokenizer', () => expect(mod.createTokenizer).toBeFunction());
   test('exports lex', () => expect(mod.lex).toBeFunction());
   test('exports createToken', () => expect(mod.createToken).toBeFunction());
   test('exports TOKEN_BLOCK_END', () => expect(mod.TOKEN_BLOCK_END).toBe('block-end'));

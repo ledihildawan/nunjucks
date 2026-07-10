@@ -150,8 +150,8 @@ describe('Template render', () => {
   test('parentFrame is used', async () => {
     const env = createEnvironment([]);
     const t = createTemplate('{{ x }}', env, 'test.njk', true);
-    const { Frame } = await import('../runtime/index.js');
-    const frame = new Frame();
+    const { createFrame } = await import('../runtime/index.js');
+    const frame = createFrame();
     frame.set('x', 42);
     const result = await t.render({}, frame);
     expect(result).toBe('42');

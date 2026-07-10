@@ -4,7 +4,7 @@ import { prettifyError } from '../error/index.js';
 import { createMappedError } from '../helpers/source-map.js';
 import { createContext } from '../runtime/context.js';
 import {
-  Frame,
+  createFrame,
   SafeString,
   copySafeness,
   markSafe,
@@ -28,7 +28,7 @@ import {
 import { createObj } from '../object/index.js';
 
 const globalRuntime = {
-  Frame,
+  createFrame,
   SafeString,
   copySafeness,
   markSafe,
@@ -152,7 +152,7 @@ export function createTemplate(src, env, path, eagerCompile) {
       this.env._renderingTemplates.add(this.path);
 
       const context = createContext(ctx || {}, this.blocks, this.env);
-      const frame = parentFrame ? parentFrame.push(true) : new Frame();
+      const frame = parentFrame ? parentFrame.push(true) : createFrame();
       frame.topLevel = true;
 
       try {
@@ -199,7 +199,7 @@ export function createTemplate(src, env, path, eagerCompile) {
         throw prettifyError({ path: this.path, withInternals: this.env.opts.dev, err: e, includeChain: this._includeChain });
       }
 
-      const frame = parentFrame ? parentFrame.push() : new Frame();
+      const frame = parentFrame ? parentFrame.push() : createFrame();
       frame.topLevel = true;
 
       const context = createContext(ctx || {}, this.blocks, this.env);

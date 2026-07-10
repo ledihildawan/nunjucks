@@ -1,12 +1,12 @@
 import { Block } from '../../nodes/index.js';
-import { Frame } from '../../runtime/index.js';
+import { createFrame } from '../../runtime/index.js';
 
 export const compileRoot = (ctx, node, frame) => {
   if (frame) {
     ctx.fail('compileRoot: root node can\'t have frame');
   }
 
-  frame = new Frame();
+  frame = createFrame();
 
   ctx._emitFuncBegin(node, 'root');
   ctx._emitLine('var parentTemplate = null;');
@@ -38,7 +38,7 @@ export const compileRoot = (ctx, node, frame) => {
 
     ctx._emitFuncBegin(block, `b_${name}`);
 
-    const tmpFrame = new Frame();
+    const tmpFrame = createFrame();
     ctx._emitLine('var frame = frame.push(true);');
     ctx.compile(block.body, tmpFrame);
     ctx._emitFuncEnd();

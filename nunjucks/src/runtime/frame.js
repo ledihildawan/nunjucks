@@ -1,65 +1,75 @@
-export class Frame {
-  constructor(parent, isolateWrites) {
-    this.variables = Object.create(null);
-    this.parent = parent;
-    this.topLevel = false;
-    this.isolateWrites = isolateWrites;
-  }
+export function createFrame(parent, isolateWrites) {
+  const state = {
+    variables: Object.create(null),
+    parent,
+    topLevel: false,
+    isolateWrites
+  };
 
-  set(name, val, resolveUp) {
-    var parts = name.split('.');
-    var obj = this.variables;
-    var frame = this;
+  return {
+    get variables() { return state.variables; },
+    set variables(val) { state.variables = val; },
+    get parent() { return state.parent; },
+    set parent(val) { state.parent = val; },
+    get topLevel() { return state.topLevel; },
+    set topLevel(val) { state.topLevel = val; },
+    get isolateWrites() { return state.isolateWrites; },
 
-    if (resolveUp) {
-      if ((frame = this.resolve(parts[0], true))) {
-        frame.set(name, val);
-        return;
+    set(name, val, resolveUp) {
+      const parts = name.split('.');
+      let obj = state.variables;
+      let frame = this;
+
+      if (resolveUp) {
+        if ((frame = this.resolve(parts[0], true))) {
+          frame.set(name, val);
+          return;
+        }
       }
-    }
 
-    for (let i = 0; i < parts.length - 1; i++) {
-      const id = parts[i];
-      if (!obj[id]) {
-        obj[id] = {};
+      for (let i = 0; i < parts.length - 1; i++) {
+        const id = parts[i];
+        if (!obj[id]) {
+          obj[id] = {};
+        }
+        obj = obj[id];
       }
-      obj = obj[id];
+
+      obj[parts[parts.length - 1]] = val;
+    },
+
+    get(name) {
+      const val = state.variables[name];
+      if (val !== undefined) {
+        return val;
+      }
+      return null;
+    },
+
+    lookup(name) {
+      const p = state.parent;
+      const val = state.variables[name];
+      if (val !== undefined) {
+        return val;
+      }
+      return p && p.lookup(name);
+    },
+
+    resolve(name, forWrite) {
+      const p = (forWrite && state.isolateWrites) ? undefined : state.parent;
+      const val = state.variables[name];
+      if (val !== undefined) {
+        return this;
+      }
+      return p && p.resolve(name);
+    },
+
+    push(isolateWrites) {
+      return createFrame(this, isolateWrites);
+    },
+
+    pop() {
+      return state.parent;
     }
-
-    obj[parts[parts.length - 1]] = val;
-  }
-
-  get(name) {
-    var val = this.variables[name];
-    if (val !== undefined) {
-      return val;
-    }
-    return null;
-  }
-
-  lookup(name) {
-    var p = this.parent;
-    var val = this.variables[name];
-    if (val !== undefined) {
-      return val;
-    }
-    return p && p.lookup(name);
-  }
-
-  resolve(name, forWrite) {
-    var p = (forWrite && this.isolateWrites) ? undefined : this.parent;
-    var val = this.variables[name];
-    if (val !== undefined) {
-      return this;
-    }
-    return p && p.resolve(name);
-  }
-
-  push(isolateWrites) {
-    return new Frame(this, isolateWrites);
-  }
-
-  pop() {
-    return this.parent;
-  }
+  };
 }

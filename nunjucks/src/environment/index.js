@@ -4,7 +4,7 @@ import { createFileSystemLoader } from '../loaders/file-system.js';
 import { createWebLoader } from '../loaders/web.js';
 import { createPrecompiledLoader } from '../loaders/precompiled.js';
 import { createEmitter } from '../object/index.js';
-import { Frame } from '../runtime/index.js';
+import { createFrame } from '../runtime/index.js';
 import expressApp from '../integration/express-app.js';
 import { createTemplate } from '../template/index.js';
 import {
