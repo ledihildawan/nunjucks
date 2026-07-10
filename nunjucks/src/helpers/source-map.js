@@ -1,4 +1,6 @@
-﻿export function createSourceMap(templateName) {
+﻿import { defaultTo, isArray } from 'remeda';
+
+export function createSourceMap(templateName) {
   const state = {
     templateName,
     mappings: []
@@ -37,14 +39,14 @@
 
 export function createSourceMapFromArray(templateName, mappingsArray) {
   const sm = createSourceMap(templateName);
-  if (Array.isArray(mappingsArray)) {
+  if (isArray(mappingsArray)) {
     sm.mappings = mappingsArray;
   }
   return sm;
 }
 
 export function applySourceMapToError(error, lineno, sourceMapData, templateName) {
-  if (!sourceMapData || !Array.isArray(sourceMapData)) {
+  if (!sourceMapData || !isArray(sourceMapData)) {
     return null;
   }
 
@@ -62,14 +64,14 @@ export function applySourceMapToError(error, lineno, sourceMapData, templateName
 }
 
 export function createMappedError(error, sourceMapData, lineno, colno, path) {
-  if (!sourceMapData || !Array.isArray(sourceMapData)) {
+  if (!sourceMapData || !isArray(sourceMapData)) {
     return null;
   }
 
   const sm = createSourceMapFromArray(path, sourceMapData);
   const pos = sm.getOriginalPosition(lineno);
 
-  const errColno = error.colno || 0;
+  const errColno = defaultTo(error.colno, 0);
   const finalColno = (pos.col > 0) ? pos.col : errColno;
   const templateLocation = `${path}:${pos.line}:${finalColno}`;
 
@@ -79,14 +81,14 @@ export function createMappedError(error, sourceMapData, lineno, colno, path) {
   } else if (pos.line) {
     msg += ` [Line ${pos.line}]`;
   }
-  msg += '\n  ' + (error.message || '');
+  msg += '\n  ' + defaultTo(error.message, '');
 
   const newError = new Error(msg);
-  newError.name = error.name || 'Template render error';
+  newError.name = defaultTo(error.name, 'Template render error');
   newError.lineno = pos.line;
   newError.colno = finalColno;
   newError._includeChain = error._includeChain;
-  const renderLine = 'at ' + (error.getterName || 'root') + ' (' + templateLocation + ')';
+  const renderLine = 'at ' + defaultTo(error.getterName, 'root') + ' (' + templateLocation + ')';
   newError.stack = newError.message + '\n    ' + renderLine + '\n    at Environment.render';
 
   return newError;

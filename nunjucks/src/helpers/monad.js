@@ -1,3 +1,5 @@
+import { isNonNullish } from 'remeda';
+
 export const Result = {
   ok: (value) => ({ isOk: true, isErr: false, value }),
   err: (error) => ({ isOk: false, isErr: true, error }),
@@ -23,7 +25,7 @@ export const Result = {
   },
 
   fromNullable: (value, errorMsg = 'Value is null or undefined') =>
-    value != null ? Result.ok(value) : Result.err(new Error(errorMsg)),
+    isNonNullish(value) ? Result.ok(value) : Result.err(new Error(errorMsg)),
 
   fromThrowable: (fn) => {
     try {
@@ -55,7 +57,7 @@ export const Maybe = {
     maybe.isJust ? maybe.value : defaultValue,
 
   fromNullable: (value) =>
-    value != null ? Maybe.just(value) : Maybe.nothing(),
+    isNonNullish(value) ? Maybe.just(value) : Maybe.nothing(),
 
   of: (value) => Maybe.just(value),
 

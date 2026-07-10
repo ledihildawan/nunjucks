@@ -1,4 +1,4 @@
-import { isString, isArray, map, entries } from 'remeda';
+import { isString, isArray, map, entries, defaultTo } from 'remeda';
 import { isSafeString, markSafe, copySafeness } from '../runtime/index.js';
 
 export function normalize(value, defaultValue) {
@@ -16,7 +16,7 @@ export function capitalize(str) {
 
 export function center(str, width) {
   str = normalize(str, '');
-  width = width || 80;
+  width = defaultTo(width, 80);
 
   if (str.length >= width) {
     return str;
@@ -68,7 +68,7 @@ export function indent(str, width, indentfirst) {
     return '';
   }
 
-  width = width || 4;
+  width = defaultTo(width, 4);
   const lines = str.split('\n');
   const sp = ' '.repeat(Math.round(width));
 
@@ -80,7 +80,7 @@ export function indent(str, width, indentfirst) {
 }
 
 export function join(arr, del, attr) {
-  del = del || '';
+  del = defaultTo(del, '');
 
   if (attr) {
     arr = map(arr, (v) => v[attr]);
@@ -189,7 +189,7 @@ export function trim(str) {
 export function truncate(input, length, killwords, end) {
   var orig = input;
   input = normalize(input, '');
-  length = length || 255;
+  length = defaultTo(length, 255);
 
   if (input.length <= length) {
     return input;
@@ -206,7 +206,7 @@ export function truncate(input, length, killwords, end) {
     input = input.substring(0, idx);
   }
 
-  input += (end !== undefined && end !== null) ? end : '...';
+  input += defaultTo(end, '...');
   return copySafeness(orig, input);
 }
 

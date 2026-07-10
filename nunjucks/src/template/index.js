@@ -1,4 +1,4 @@
-import { isString, isPlainObject } from 'remeda';
+import { isString, isPlainObject, defaultTo } from 'remeda';
 import { compile } from '../compiler/index.js';
 import { prettifyError } from '../error/index.js';
 import { createMappedError } from '../helpers/source-map.js';
@@ -70,7 +70,7 @@ const extractFrameDetails = (e, sourceLineno, sourceColno, sourceMap, currentPat
 
   if (sourceLineno === undefined || sourceLineno <= 0) return null;
 
-  const errColno = e.colno || 0;
+  const errColno = defaultTo(e.colno, 0);
   const finalColno = (sourceColno > 0) ? sourceColno : errColno;
   const templateLocation = currentPath + ':' + sourceLineno + ':' + finalColno;
   let msg = '(' + currentPath + ')';
@@ -79,9 +79,9 @@ const extractFrameDetails = (e, sourceLineno, sourceColno, sourceMap, currentPat
   } else if (sourceLineno) {
     msg += ` [Line ${sourceLineno}]`;
   }
-  msg += '\n  ' + (e.message || '');
+  msg += '\n  ' + defaultTo(e.message, '');
   const newError = new Error(msg);
-  newError.name = e.name || 'Template render error';
+  newError.name = defaultTo(e.name, 'Template render error');
   newError.lineno = sourceLineno;
   newError.colno = finalColno;
   newError._includeChain = e._includeChain || null;

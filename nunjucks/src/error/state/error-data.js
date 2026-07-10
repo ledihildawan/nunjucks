@@ -1,4 +1,4 @@
-import { keys, isArray } from 'remeda';
+import { keys, isArray, defaultTo } from 'remeda';
 import { classifyFromError } from '../core/classify.js';
 import {
   extractLineInfo,
@@ -80,7 +80,7 @@ export const createErrorData = (error, options = {}) => {
     version = '3.2.4'
   } = options;
 
-  const message = error?.message || '';
+  const message = defaultTo(error?.message, '');
 
   const { line: lineFromMsg, col: colFromMsg } = extractLineInfo(message);
   const colFromRawMsg = extractColFromMessage(message);
