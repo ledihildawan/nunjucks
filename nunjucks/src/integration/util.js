@@ -9,10 +9,6 @@ import {
   installJinjaCompat,
 } from '../../index.js';
 
-const Environment = createEnvironment;
-const Template = createTemplate;
-const Loader = createFileSystemLoader;
-
 var isSlim = false;
 var templatesPath = 'src/template/test-templates';
 
@@ -83,11 +79,11 @@ function render(str, ctx, opts, env, cb) {
   var e;
 
   if (isSlim) {
-    e = env || new Environment([], opts);
+    e = env || createEnvironment([], opts);
     loader = e.loaders[0];
   } else {
-    loader = new Loader(templatesPath);
-    e = env || new Environment(loader, opts);
+    loader = createFileSystemLoader(templatesPath);
+    e = env || createEnvironment(loader, opts);
   }
 
   var name;
@@ -132,9 +128,9 @@ function render(str, ctx, opts, env, cb) {
 
   if (isSlim) {
     var tmplSource = loader.getSource(tmplName);
-    t = Template(tmplSource.src, e, tmplSource.path);
+    t = createTemplate(tmplSource.src, e, tmplSource.path);
   } else {
-    t = Template(str, e);
+    t = createTemplate(str, e);
   }
 
   if (!cb) {
@@ -153,4 +149,4 @@ function render(str, ctx, opts, env, cb) {
   }
 }
 
-export { render, equal, jinjaEqual, normEOL, isSlim, Loader };
+export { render, equal, jinjaEqual, normEOL, isSlim };
