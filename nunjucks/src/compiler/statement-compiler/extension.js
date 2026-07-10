@@ -28,7 +28,7 @@ export const compileCallExtension = (ctx, node, frame, useAsync) => {
   }
 
   if (args) {
-    if (!(args instanceof NodeList)) {
+    if (args.typename !== 'NodeList') {
       ctx.fail('compileCallExtension: arguments must be a NodeList, ' +
         'use `parser.parseSignature`');
     }

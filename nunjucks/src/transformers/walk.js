@@ -1,5 +1,4 @@
 import {
-  Node,
   NodeList,
   Root,
   Literal,
@@ -134,7 +133,7 @@ export const mapCOW = (arr, func) => {
 };
 
 export const walk = (ast, func, depthFirst) => {
-  if (!(ast instanceof Node)) {
+  if (!ast || !ast.typename) {
     return ast;
   }
 
@@ -150,22 +149,22 @@ export const walk = (ast, func, depthFirst) => {
     throw new Error(`walk: unknown typename ${ast.typename}`);
   }
 
-  if (ast instanceof NodeList) {
+  if (ast.typename === 'NodeList' || ast.typename === 'Root' || (ast.children && Array.isArray(ast.children))) {
     const children = mapCOW(ast.children, (node) => walk(node, func, depthFirst));
     if (children !== ast.children) {
-      ast = new Ctor(ast.lineno, ast.colno, children);
+      ast = Ctor(ast.lineno, ast.colno, children);
     }
-  } else if (ast instanceof CallExtension) {
+  } else if (ast.typename === 'CallExtension' || ast.typename === 'CallExtensionAsync') {
     const args = walk(ast.args, func, depthFirst);
     const contentArgs = mapCOW(ast.contentArgs, (node) => walk(node, func, depthFirst));
     if (args !== ast.args || contentArgs !== ast.contentArgs) {
-      ast = new Ctor(ast.extName, ast.prop, args, contentArgs);
+      ast = Ctor(ast.extName, ast.prop, args, contentArgs);
     }
   } else {
     const props = ast.fields.map((field) => ast[field]);
     const propsT = mapCOW(props, (prop) => walk(prop, func, depthFirst));
     if (propsT !== props) {
-      ast = new Ctor(ast.lineno, ast.colno);
+      ast = Ctor(ast.lineno, ast.colno);
       propsT.forEach((prop, i) => {
         ast[ast.fields[i]] = prop;
       });

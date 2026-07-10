@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { precompileString, precompile } from './index.js';
-import { Environment } from '../environment/index.js';
+import { createEnvironment } from '../environment/index.js';
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -35,7 +35,7 @@ describe('precompileString', () => {
   });
 
   test('accepts custom env', () => {
-    const env = new Environment([]);
+    const env = createEnvironment([]);
     const result = precompileString('{{ foo }}', { name: 'test.njk', env });
     expect(result).toContain('test.njk');
   });

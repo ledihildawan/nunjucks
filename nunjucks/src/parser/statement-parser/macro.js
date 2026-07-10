@@ -9,7 +9,7 @@ export const parseMacro = (ctx) => {
 
   const name = ctx.parsePrimary(true);
   const args = ctx.parseSignature();
-  const node = new Macro(macroTok.lineno, macroTok.colno, name, args);
+  const node = Macro(macroTok.lineno, macroTok.colno, name, args);
 
   advanceAfterBlockEnd(ctx, macroTok.value);
   node.body = ctx.parseUntilBlocks('endmacro');

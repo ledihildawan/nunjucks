@@ -1,4 +1,4 @@
-import { TemplateError } from '../error/index.js';
+import { createTemplateError } from '../error/index.js';
 import { peekToken } from './cursor.js';
 
 export const error = (ctx, msg, lineno, colno) => {
@@ -7,7 +7,7 @@ export const error = (ctx, msg, lineno, colno) => {
     lineno = tok.lineno;
     colno = tok.colno;
   }
-  return new TemplateError(msg, lineno, colno, { phase: 'parse' });
+  return createTemplateError(msg, lineno, colno, { phase: 'parse' });
 };
 
 export const fail = (ctx, msg, lineno, colno) => {

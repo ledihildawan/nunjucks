@@ -1,146 +1,172 @@
-import {Obj} from '../object/index.js';
+import { createObj, extendObj } from '../object/index.js';
 
 function traverseAndCheck(obj, type, results) {
-  if (obj instanceof type) {
+  if (obj?.typename === type.typename) {
     results.push(obj);
   }
 
-  if (obj instanceof Node) {
-    obj.findAll(type, results);
+  if (obj?.typename === 'NodeList' || (obj?.children && Array.isArray(obj.children))) {
+    obj.children.forEach(child => traverseAndCheck(child, type, results));
+  } else if (obj?.typename && obj?.typename !== 'NodeList' && obj?.fields) {
+    obj.fields.forEach(field => traverseAndCheck(obj[field], type, results));
   }
 }
 
-export class Node extends Obj {
-  init(lineno, colno, ...args) {
+export function createNode(name, fields, initFn) {
+  const nodeInit = function(lineno, colno, ...args) {
     this.lineno = lineno;
     this.colno = colno;
 
-    this.fields.forEach((field, i) => {
-      var val = arguments[i + 2];
-
+    fields.forEach((field, i) => {
+      var val = args[i];
       if (val === undefined) {
         val = null;
       }
-
       this[field] = val;
     });
-  }
 
-  findAll(type, results) {
+    if (initFn) {
+      initFn.call(this, lineno, colno, ...args);
+    }
+  };
+
+  const findAllMethod = function(type, results) {
     results = results || [];
 
-    if (this instanceof NodeList) {
+    if (this.typename === 'NodeList' || (this.children && Array.isArray(this.children))) {
       this.children.forEach(child => traverseAndCheck(child, type, results));
-    } else {
+    } else if (this.typename && this.typename !== 'NodeList' && this.fields) {
       this.fields.forEach(field => traverseAndCheck(this[field], type, results));
     }
 
     return results;
-  }
+  };
 
-  iterFields(func) {
+  const iterFieldsMethod = function(func) {
     this.fields.forEach((field) => {
       func(this[field], field);
     });
-  }
+  };
+
+  const factoryFn = function(...args) {
+    if (this instanceof factoryFn) {
+      factoryFn.init.apply(this, args);
+      return this;
+    }
+    const instance = Object.create(factoryFn.prototype);
+    instance.init(...args);
+    return instance;
+  };
+
+  factoryFn.prototype.init = nodeInit;
+  factoryFn.prototype.findAll = findAllMethod;
+  factoryFn.prototype.iterFields = iterFieldsMethod;
+  Object.defineProperty(factoryFn.prototype, 'fields', { get: () => fields, configurable: true });
+  Object.defineProperty(factoryFn.prototype, 'typename', { get: () => name, configurable: true });
+
+  factoryFn.typename = name;
+  factoryFn.init = nodeInit;
+  factoryFn.fields = fields;
+  factoryFn.findAll = findAllMethod;
+  factoryFn.iterFields = iterFieldsMethod;
+  factoryFn.extend = function(name, props) {
+    return extendObj(this, name, props);
+  };
+
+  return factoryFn;
 }
 
-export class Value extends Node {
-  get typename() { return 'Value'; }
-  get fields() {
-    return ['value'];
+export const Node = createNode('Node', []);
+export const Value = createNode('Value', ['value']);
+
+export const NodeList = createNode('NodeList', ['children'], function(lineno, colno, nodes) {
+  if (!this.children) {
+    this.children = [];
   }
-}
-
-export class NodeList extends Node {
-  get typename() { return 'NodeList'; }
-  get fields() { return ['children']; }
-
-  init(lineno, colno, nodes) {
-    super.init(lineno, colno, nodes || []);
+  if (nodes) {
+    this.children = Array.isArray(nodes) ? nodes : [nodes];
   }
+});
+NodeList.prototype.addChild = function(node) {
+  this.children.push(node);
+};
 
-  addChild(node) {
-    this.children.push(node);
+export const Root = extendObj(NodeList, 'Root', {});
+export const Literal = extendObj(Value, 'Literal', {});
+export const AstSymbol = extendObj(Value, 'Symbol', {});
+export const Group = extendObj(NodeList, 'Group', {});
+export const ArrayNode = extendObj(NodeList, 'Array', {});
+export { ArrayNode as Array };
+export const Pair = extendObj(Node, 'Pair', { fields: ['key', 'value'] });
+export const Dict = extendObj(NodeList, 'Dict', {});
+export const LookupVal = extendObj(Node, 'LookupVal', { fields: ['target', 'val'] });
+export const OptionalChain = extendObj(Node, 'OptionalChain', { fields: ['target', 'val'] });
+export const Slice = extendObj(Node, 'Slice', { fields: ['start', 'stop', 'step'] });
+export const If = extendObj(Node, 'If', { fields: ['cond', 'body', 'else_'] });
+export const IfAsync = extendObj(If, 'IfAsync', {});
+export const InlineIf = extendObj(Node, 'InlineIf', { fields: ['cond', 'body', 'else_'] });
+export const For = extendObj(Node, 'For', { fields: ['arr', 'name', 'body', 'else_'] });
+export const AsyncEach = extendObj(For, 'AsyncEach', {});
+export const AsyncAll = extendObj(For, 'AsyncAll', {});
+export const Macro = extendObj(Node, 'Macro', { fields: ['name', 'args', 'body'] });
+export const Caller = extendObj(Macro, 'Caller', {});
+export const Import = extendObj(Node, 'Import', { fields: ['template', 'target', 'withContext'] });
+
+export const FromImport = createNode('FromImport', ['template', 'names', 'withContext'], function(lineno, colno, template, names, withContext) {
+  if (!this.names) {
+    this.names = NodeList(lineno, colno);
   }
-}
+});
 
-export const Root = NodeList.extend('Root');
-export const Literal = Value.extend('Literal');
-export const AstSymbol = Value.extend('Symbol');
-export const Group = NodeList.extend('Group');
-export const ArrayNode = NodeList.extend('Array');
-export const Array = ArrayNode;
-export const Pair = Node.extend('Pair', { fields: ['key', 'value'] });
-export const Dict = NodeList.extend('Dict');
-export const LookupVal = Node.extend('LookupVal', { fields: ['target', 'val'] });
-export const OptionalChain = Node.extend('OptionalChain', { fields: ['target', 'val'] });
-export const Slice = Node.extend('Slice', { fields: ['start', 'stop', 'step'] });
-export const If = Node.extend('If', { fields: ['cond', 'body', 'else_'] });
-export const IfAsync = If.extend('IfAsync');
-export const InlineIf = Node.extend('InlineIf', { fields: ['cond', 'body', 'else_'] });
-export const For = Node.extend('For', { fields: ['arr', 'name', 'body', 'else_'] });
-export const AsyncEach = For.extend('AsyncEach');
-export const AsyncAll = For.extend('AsyncAll');
-export const Macro = Node.extend('Macro', { fields: ['name', 'args', 'body'] });
-export const Caller = Macro.extend('Caller');
-export const Import = Node.extend('Import', { fields: ['template', 'target', 'withContext'] });
-
-export class FromImport extends Node {
-  get typename() { return 'FromImport'; }
-  get fields() { return ['template', 'names', 'withContext']; }
-
-  init(lineno, colno, template, names, withContext) {
-    super.init(lineno, colno, template, names || new NodeList(), withContext);
-  }
-}
-
-export const FunCall = Node.extend('FunCall', { fields: ['name', 'args'] });
-export const Pipe = FunCall.extend('Pipe');
-export const PipeAsync = Pipe.extend('PipeAsync', { fields: ['name', 'args', 'symbol'] });
+export const FunCall = extendObj(Node, 'FunCall', { fields: ['name', 'args'] });
+export const Pipe = extendObj(FunCall, 'Pipe', {});
+export const PipeAsync = extendObj(Pipe, 'PipeAsync', { fields: ['symbol'] });
 export const Filter = Pipe;
 export const FilterAsync = PipeAsync;
-export const KeywordArgs = Dict.extend('KeywordArgs');
-export const Block = Node.extend('Block', { fields: ['name', 'body'] });
-export const Super = Node.extend('Super', { fields: ['blockName', 'symbol'] });
-export const TemplateRef = Node.extend('TemplateRef', { fields: ['template'] });
-export const Extends = TemplateRef.extend('Extends');
-export const Include = Node.extend('Include', { fields: ['template', 'ignoreMissing'] });
-export const Set = Node.extend('Set', { fields: ['targets', 'value', 'operator'] });
-export const Switch = Node.extend('Switch', { fields: ['expr', 'cases', 'default'] });
-export const Case = Node.extend('Case', { fields: ['cond', 'body'] });
-export const Output = NodeList.extend('Output');
-export const Capture = Node.extend('Capture', { fields: ['body'] });
-export const TemplateData = Literal.extend('TemplateData');
-export const UnaryOp = Node.extend('UnaryOp', { fields: ['target'] });
-export const BinOp = Node.extend('BinOp', { fields: ['left', 'right'] });
-export const In = BinOp.extend('In');
-export const Is = BinOp.extend('Is');
-export const Or = BinOp.extend('Or');
-export const And = BinOp.extend('And');
-export const NullishCoalesce = BinOp.extend('NullishCoalesce');
-export const Not = UnaryOp.extend('Not');
-export const Add = BinOp.extend('Add');
-export const Concat = BinOp.extend('Concat');
-export const Sub = BinOp.extend('Sub');
-export const Mul = BinOp.extend('Mul');
-export const Div = BinOp.extend('Div');
-export const FloorDiv = BinOp.extend('FloorDiv');
-export const Mod = BinOp.extend('Mod');
-export const Pow = BinOp.extend('Pow');
-export const Neg = UnaryOp.extend('Neg');
-export const Pos = UnaryOp.extend('Pos');
-export const Compare = Node.extend('Compare', { fields: ['expr', 'ops'] });
-export const CompareOperand = Node.extend('CompareOperand', { fields: ['expr', 'type'] });
-export const CallExtension = Node.extend('CallExtension', {
-  init(ext, prop, args, contentArgs) {
-    this.parent();
+export const KeywordArgs = extendObj(Dict, 'KeywordArgs', {});
+export const Block = extendObj(Node, 'Block', { fields: ['name', 'body'] });
+export const Super = extendObj(Node, 'Super', { fields: ['blockName', 'symbol'] });
+export const TemplateRef = extendObj(Node, 'TemplateRef', { fields: ['template'] });
+export const Extends = extendObj(TemplateRef, 'Extends', {});
+export const Include = extendObj(Node, 'Include', { fields: ['template', 'ignoreMissing'] });
+export const Set = extendObj(Node, 'Set', { fields: ['targets', 'value', 'operator'] });
+export const Switch = extendObj(Node, 'Switch', { fields: ['expr', 'cases', 'default'] });
+export const Case = extendObj(Node, 'Case', { fields: ['cond', 'body'] });
+export const Output = extendObj(NodeList, 'Output', {});
+export const Capture = extendObj(Node, 'Capture', { fields: ['body'] });
+export const TemplateData = extendObj(Literal, 'TemplateData', {});
+export const UnaryOp = extendObj(Node, 'UnaryOp', { fields: ['target'] });
+export const BinOp = extendObj(Node, 'BinOp', { fields: ['left', 'right'] });
+export const In = extendObj(BinOp, 'In', {});
+export const Is = extendObj(BinOp, 'Is', {});
+export const Or = extendObj(BinOp, 'Or', {});
+export const And = extendObj(BinOp, 'And', {});
+export const NullishCoalesce = extendObj(BinOp, 'NullishCoalesce', {});
+export const Not = extendObj(UnaryOp, 'Not', {});
+export const Add = extendObj(BinOp, 'Add', {});
+export const Concat = extendObj(BinOp, 'Concat', {});
+export const Sub = extendObj(BinOp, 'Sub', {});
+export const Mul = extendObj(BinOp, 'Mul', {});
+export const Div = extendObj(BinOp, 'Div', {});
+export const FloorDiv = extendObj(BinOp, 'FloorDiv', {});
+export const Mod = extendObj(BinOp, 'Mod', {});
+export const Pow = extendObj(BinOp, 'Pow', {});
+export const Neg = extendObj(UnaryOp, 'Neg', {});
+export const Pos = extendObj(UnaryOp, 'Pos', {});
+export const Compare = extendObj(Node, 'Compare', { fields: ['expr', 'ops'] });
+export const CompareOperand = extendObj(Node, 'CompareOperand', { fields: ['expr', 'type'] });
+export const CallExtension = extendObj(Node, 'CallExtension', {
+  fields: ['extName', 'prop', 'args', 'contentArgs'],
+  init: function(ext, prop, args, contentArgs) {
     this.extName = ext.__name || ext;
     this.prop = prop;
-    this.args = args || new NodeList();
+    this.args = args || NodeList(0, 0);
     this.contentArgs = contentArgs || [];
     this.autoescape = ext.autoescape;
-  },
-  fields: ['extName', 'prop', 'args', 'contentArgs']
+  }
 });
-export const CallExtensionAsync = CallExtension.extend('CallExtensionAsync');
+export const CallExtensionAsync = extendObj(CallExtension, 'CallExtensionAsync', {});
+
+export function isType(node, type) {
+  return node?.typename === type?.typename || node?.typename === type;
+}

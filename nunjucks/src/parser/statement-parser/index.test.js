@@ -1,12 +1,11 @@
 import { describe, test, expect } from 'bun:test';
 import { parseStatement } from './index.js';
-import { Parser } from '../index.js';
+import { createParser } from '../index.js';
 import { lex } from '../../lexer/tokenizer.js';
 import { TOKEN_BLOCK_START } from '../../lexer/token-types.js';
 
 const makeParser = (src) => {
-  const p = new Parser();
-  p.init(lex(src));
+  const p = createParser(lex(src));
   return p;
 };
 

@@ -26,8 +26,8 @@ export const parseSignature = (ctx, tolerant, noParens) => {
     tok = nextToken(ctx);
   }
 
-  const args = new NodeList(tok.lineno, tok.colno);
-  const kwargs = new KeywordArgs(tok.lineno, tok.colno);
+  const args = NodeList(tok.lineno, tok.colno);
+  const kwargs = KeywordArgs(tok.lineno, tok.colno);
   let checkComma = false;
 
   while (1) {
@@ -48,7 +48,7 @@ export const parseSignature = (ctx, tolerant, noParens) => {
 
       if (skipValue(ctx, TOKEN_OPERATOR, '=')) {
         kwargs.addChild(
-          new Pair(arg.lineno,
+          Pair(arg.lineno,
             arg.colno,
             arg,
             ctx.parseExpression())

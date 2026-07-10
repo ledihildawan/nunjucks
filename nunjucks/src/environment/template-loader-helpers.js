@@ -1,4 +1,4 @@
-import { Template } from '../template/index.js';
+import { createTemplate } from '../template/index.js';
 
 export const isRelativePath = (loader, filename) =>
   (loader.isRelative && filename) ? loader.isRelative(filename) : false;
@@ -27,7 +27,7 @@ export const normalizeIncludeChain = (includeChain) => {
 export const resolveTemplateName = (name) => name?.raw || name;
 
 export const validateTemplateName = (name) => {
-  if (name instanceof Template) return null;
+  if (name?.typename === 'Template') return null;
   if (typeof name === 'string') return null;
   const err = new Error('template names must be a string: ' + name);
   err.code = 'INVALID_INCLUDE';

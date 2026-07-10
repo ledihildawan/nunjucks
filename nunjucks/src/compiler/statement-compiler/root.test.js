@@ -46,7 +46,7 @@ const makeCtx = () => {
 describe('compileRoot', () => {
   test('emits root function and block functions', () => {
     const ctx = makeCtx();
-    const blockNode = new Block(2, 1, new AstSymbol(2, 1, 'header'));
+    const blockNode = Block(2, 1, AstSymbol(2, 1, 'header'));
     blockNode.body = { mock: 'blockBody' };
     const node = {
       lineno: 1,
@@ -78,9 +78,9 @@ describe('compileRoot', () => {
 
   test('throws on duplicate block names', () => {
     const ctx = makeCtx();
-    const b1 = new Block(1, 1, new AstSymbol(1, 1, 'dup'));
+    const b1 = Block(1, 1, AstSymbol(1, 1, 'dup'));
     b1.body = { mock: 'body' };
-    const b2 = new Block(2, 1, new AstSymbol(2, 1, 'dup'));
+    const b2 = Block(2, 1, AstSymbol(2, 1, 'dup'));
     b2.body = { mock: 'body' };
     const node = {
       lineno: 1,

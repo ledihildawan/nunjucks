@@ -7,9 +7,9 @@ export const parseUnary = (ctx, noPipes) => {
   let node;
 
   if (skipValue(ctx, TOKEN_OPERATOR, '-')) {
-    node = new Neg(tok.lineno, tok.colno, parseUnary(ctx, true));
+    node = Neg(tok.lineno, tok.colno, parseUnary(ctx, true));
   } else if (skipValue(ctx, TOKEN_OPERATOR, '+')) {
-    node = new Pos(tok.lineno, tok.colno, parseUnary(ctx, true));
+    node = Pos(tok.lineno, tok.colno, parseUnary(ctx, true));
   } else {
     node = ctx.parsePrimary();
   }

@@ -16,9 +16,9 @@ export const parseIn = (ctx) => {
     }
     if (skipSymbol(ctx, 'in')) {
       const node2 = parseIs(ctx);
-      node = new OperatorIn(node.lineno, node.colno, node, node2);
+      node = OperatorIn(node.lineno, node.colno, node, node2);
       if (invert) {
-        node = new Not(node.lineno, node.colno, node);
+        node = Not(node.lineno, node.colno, node);
       }
     } else {
       if (invert) {

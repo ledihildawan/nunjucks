@@ -40,9 +40,9 @@ export const parsePrimary = (ctx, noPostfix) => {
   }
 
   if (val !== undefined) {
-    node = new Literal(tok.lineno, tok.colno, val);
+    node = Literal(tok.lineno, tok.colno, val);
   } else if (tok.type === TOKEN_SYMBOL) {
-    node = new AstSymbol(tok.lineno, tok.colno, tok.value);
+    node = AstSymbol(tok.lineno, tok.colno, tok.value);
   } else {
     pushToken(ctx, tok);
     node = ctx.parseAggregate();

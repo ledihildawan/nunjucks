@@ -1,12 +1,12 @@
 import { prettifyError, createErrorFormatter } from '../error/index.js';
 import { compile } from '../compiler/index.js';
-import { FileSystemLoader } from '../loaders/file-system.js';
-import { WebLoader } from '../loaders/web.js';
-import { PrecompiledLoader } from '../loaders/precompiled.js';
-import { EmitterObj } from '../object/index.js';
+import { createFileSystemLoader } from '../loaders/file-system.js';
+import { createWebLoader } from '../loaders/web.js';
+import { createPrecompiledLoader } from '../loaders/precompiled.js';
+import { createEmitter } from '../object/index.js';
 import { Frame } from '../runtime/index.js';
 import expressApp from '../integration/express-app.js';
-import { Template } from '../template/index.js';
+import { createTemplate } from '../template/index.js';
 import {
   isRelativePath,
   resolveTemplatePath,
@@ -19,8 +19,6 @@ import {
 } from './template-resolver.js';
 import { wrapFilterWithError, wrapAsyncFilter } from './filter-wrappers.js';
 import { normalizeLoaders, registerBuiltIns } from './built-ins.js';
-
-export { Template };
 
 const VERSION = '3.2.4';
 
@@ -39,115 +37,102 @@ const noopTmplSrc = {
   obj: { async root() { return ''; } }
 };
 
-export class Environment extends EmitterObj {
-  init(loaders, opts) {
-    this.opts = { ...DEFAULT_OPTS, ...opts };
-    this._renderingTemplates = new Set();
-    this.loaders = normalizeLoaders(loaders, FileSystemLoader, WebLoader);
-    this._initLoaders();
-    registerBuiltIns(this);
-  }
+export function createEnvironment(loaders, opts) {
+  const env = createEmitter('Environment');
 
-  _initLoaders() {
-    this.loaders.forEach((loader) => {
-      loader.cache = {};
-      if (typeof loader.on === 'function') {
-        loader.on('update', (name, fullname) => {
-          loader.cache[name] = null;
-          this.emit('update', name, fullname, loader);
-        });
-        loader.on('load', (name, source) => {
-          this.emit('load', name, source, loader);
-        });
-      }
-    });
+  env.opts = { ...DEFAULT_OPTS, ...opts };
+  env._renderingTemplates = new Set();
+  env.loaders = normalizeLoaders(loaders, createFileSystemLoader, createWebLoader);
+  env.filters = {};
+  env.asyncFilters = [];
+  env.globals = {};
+  env.extensions = {};
+  env.extensionsList = [];
+  env.tests = {};
 
-    if (typeof window !== 'undefined' && window.nunjucksPrecompiled) {
-      this.loaders.unshift(new PrecompiledLoader(window.nunjucksPrecompiled));
-    }
-  }
+  initLoaders(env);
 
-  invalidateCache() {
-    this.loaders.forEach(loader => { loader.cache = {}; });
-  }
+  env.invalidateCache = function() {
+    env.loaders.forEach(loader => { loader.cache = {}; });
+  };
 
-  addExtension(name, extension) {
+  env.addExtension = function(name, extension) {
     extension.__name = name;
-    this.extensions[name] = extension;
-    this.extensionsList.push(extension);
-    return this;
-  }
+    env.extensions[name] = extension;
+    env.extensionsList.push(extension);
+    return env;
+  };
 
-  removeExtension(name) {
-    const extension = this.getExtension(name);
+  env.removeExtension = function(name) {
+    const extension = env.getExtension(name);
     if (!extension) return;
-    this.extensionsList = this.extensionsList.filter(ext => ext !== extension);
-    delete this.extensions[name];
-  }
+    env.extensionsList = env.extensionsList.filter(ext => ext !== extension);
+    delete env.extensions[name];
+  };
 
-  getExtension(name) {
-    return this.extensions[name];
-  }
+  env.getExtension = function(name) {
+    return env.extensions[name];
+  };
 
-  hasExtension(name) {
-    return !!this.extensions[name];
-  }
+  env.hasExtension = function(name) {
+    return !!env.extensions[name];
+  };
 
-  addGlobal(name, value) {
-    this.globals[name] = value;
-    return this;
-  }
+  env.addGlobal = function(name, value) {
+    env.globals[name] = value;
+    return env;
+  };
 
-  getGlobal(name) {
-    if (typeof this.globals[name] === 'undefined') {
+  env.getGlobal = function(name) {
+    if (typeof env.globals[name] === 'undefined') {
       const err = new Error('global not found: ' + name);
       err.code = 'GLOBAL_NOT_FOUND';
       err.subject = name;
       throw err;
     }
-    return this.globals[name];
-  }
+    return env.globals[name];
+  };
 
-  addFilter(name, func, async) {
-    if (async) this.asyncFilters.push(name);
-    this.filters[name] = func;
-    return this;
-  }
+  env.addFilter = function(name, func, async) {
+    if (async) env.asyncFilters.push(name);
+    env.filters[name] = func;
+    return env;
+  };
 
-  getFilter(name) {
-    if (!this.filters[name]) {
+  env.getFilter = function(name) {
+    if (!env.filters[name]) {
       const err = new Error('filter not found: ' + name);
       err.code = 'UNDEFINED_FILTER';
       err.subject = name;
       throw err;
     }
-    const filter = this.filters[name];
-    const wrapped = this.asyncFilters.includes(name)
+    const filter = env.filters[name];
+    const wrapped = env.asyncFilters.includes(name)
       ? wrapAsyncFilter(filter, name)
       : wrapFilterWithError(filter, name);
     return wrapped;
-  }
+  };
 
-  addTest(name, func) {
-    this.tests[name] = func;
-    return this;
-  }
+  env.addTest = function(name, func) {
+    env.tests[name] = func;
+    return env;
+  };
 
-  getTest(name) {
-    if (!this.tests[name]) {
+  env.getTest = function(name) {
+    if (!env.tests[name]) {
       const err = new Error('test not found: ' + name);
       err.code = 'TEST_NOT_FOUND';
       err.subject = name;
       throw err;
     }
-    return this.tests[name];
-  }
+    return env.tests[name];
+  };
 
-  async getTemplate(name, eagerCompile, includeChain, ignoreMissing) {
+  env.getTemplate = async function(name, eagerCompile, includeChain, ignoreMissing) {
     const { parentName, chain } = normalizeIncludeChain(includeChain);
     const resolvedName = resolveTemplateName(name);
 
-    if (resolvedName instanceof Template) {
+    if (resolvedName?.typename === 'Template') {
       const tmpl = resolvedName;
       if (chain) tmpl._includeChain = chain;
       if (eagerCompile) tmpl.compile();
@@ -157,8 +142,8 @@ export class Environment extends EmitterObj {
     validateTemplateName(resolvedName);
 
     const cached = findCachedTemplate(
-      this.loaders,
-      (loader, pName, n) => this.resolveTemplate(loader, pName, n),
+      env.loaders,
+      (loader, pName, n) => env.resolveTemplate(loader, pName, n),
       resolvedName,
       parentName
     );
@@ -170,24 +155,24 @@ export class Environment extends EmitterObj {
       return cached.tmpl;
     }
 
-    const info = await this._loadTemplate(resolvedName, parentName, ignoreMissing);
+    const info = await env._loadTemplate(resolvedName, parentName, ignoreMissing);
     if (!info) {
-      const emptyTmpl = new Template(noopTmplSrc, this, '', eagerCompile);
+      const emptyTmpl = createTemplate(noopTmplSrc, env, '', eagerCompile);
       if (chain) emptyTmpl._includeChain = chain;
       return emptyTmpl;
     }
 
-    const newTmpl = new Template(info.src, this, info.path, eagerCompile);
+    const newTmpl = createTemplate(info.src, env, info.path, eagerCompile);
     if (chain) newTmpl._includeChain = chain;
     if (!info.loader.noCache) {
       info.loader.cache[resolvedName] = newTmpl;
     }
     return newTmpl;
-  }
+  };
 
-  async _loadTemplate(name, parentName, ignoreMissing) {
-    for (const loader of this.loaders) {
-      const resolvedName = this.resolveTemplate(loader, parentName, name);
+  env._loadTemplate = async function(name, parentName, ignoreMissing) {
+    for (const loader of env.loaders) {
+      const resolvedName = env.resolveTemplate(loader, parentName, name);
       const src = loader.async ? await loader.getSource(resolvedName) : loader.getSource(resolvedName);
 
       if (src) {
@@ -203,38 +188,63 @@ export class Environment extends EmitterObj {
       throw err;
     }
     return null;
-  }
+  };
 
-  resolveTemplate(loader, parentName, filename) {
+  env.resolveTemplate = function(loader, parentName, filename) {
     return resolveTemplatePath(loader, parentName, filename);
-  }
+  };
 
-  express(app) {
-    return expressApp(this, app);
-  }
+  env.express = function(app) {
+    return expressApp(env, app);
+  };
 
-  getErrorFormatter() {
-    if (!this._errorFormatter) {
-      this._errorFormatter = createErrorFormatter({
-        ide: this.opts.ide,
-        version: this.opts.version,
-        dev: this.opts.dev
+  env.getErrorFormatter = function() {
+    if (!env._errorFormatter) {
+      env._errorFormatter = createErrorFormatter({
+        ide: env.opts.ide,
+        version: env.opts.version,
+        dev: env.opts.dev
       });
     }
-    return this._errorFormatter;
-  }
+    return env._errorFormatter;
+  };
 
-  async formatError(error, templateName, options = {}) {
-    return this.getErrorFormatter().formatError(error, templateName, options);
-  }
+  env.formatError = async function(error, templateName, options = {}) {
+    return env.getErrorFormatter().formatError(error, templateName, options);
+  };
 
-  async render(name, ctx) {
-    const tmpl = await this.getTemplate(name);
+  env.render = async function(name, ctx) {
+    const tmpl = await env.getTemplate(name);
     return tmpl.render(ctx);
-  }
+  };
 
-  async renderString(src, ctx, opts) {
-    const tmpl = new Template(src, this, opts?.path);
+  env.renderString = async function(src, ctx, opts) {
+    const tmpl = createTemplate(src, env, opts?.path);
     return tmpl.render(ctx);
+  };
+
+  registerBuiltIns(env);
+
+  return env;
+}
+
+function initLoaders(env) {
+  env.loaders.forEach((loader) => {
+    loader.cache = {};
+    if (typeof loader.on === 'function') {
+      loader.on('update', (name, fullname) => {
+        loader.cache[name] = null;
+        env.emit('update', name, fullname, loader);
+      });
+      loader.on('load', (name, source) => {
+        env.emit('load', name, source, loader);
+      });
+    }
+  });
+
+  if (typeof window !== 'undefined' && window.nunjucksPrecompiled) {
+    env.loaders.unshift(createPrecompiledLoader(window.nunjucksPrecompiled));
   }
 }
+
+export { createTemplate };

@@ -6,9 +6,9 @@ export const parseIf = (ctx) => {
   let node;
 
   if (skipSymbol(ctx, 'if') || skipSymbol(ctx, 'elif') || skipSymbol(ctx, 'elseif')) {
-    node = new If(tag.lineno, tag.colno);
+    node = If(tag.lineno, tag.colno);
   } else if (skipSymbol(ctx, 'ifAsync')) {
-    node = new IfAsync(tag.lineno, tag.colno);
+    node = IfAsync(tag.lineno, tag.colno);
   } else {
     fail(ctx, 'parseIf: expected if, elif, or elseif',
       tag.lineno,

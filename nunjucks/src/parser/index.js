@@ -5,7 +5,7 @@ import {
   Output,
   TemplateData,
 } from '../nodes/index.js';
-import { Obj } from '../object/index.js';
+import { createObj } from '../object/index.js';
 import {
   nextToken,
   peekToken,
@@ -66,238 +66,187 @@ import {
 } from './statement-parser/index.js';
 import { parseNodes, parseUntilBlocks } from './top-level.js';
 
-export class Parser extends Obj {
-  init(tokens) {
-    this.tokens = tokens;
-    this.peeked = null;
-    this.breakOnBlocks = null;
-    this.dropLeadingWhitespace = false;
-    this.extensions = [];
-  }
-
-  nextToken(withWhitespace) {
-    return nextToken(this, withWhitespace);
-  }
-
-  peekToken() {
-    return peekToken(this);
-  }
-
-  pushToken(tok) {
-    return pushToken(this, tok);
-  }
-
-  error(msg, lineno, colno) {
-    return error(this, msg, lineno, colno);
-  }
-
-  fail(msg, lineno, colno) {
-    return fail(this, msg, lineno, colno);
-  }
-
-  skip(type) {
-    return skip(this, type);
-  }
-
-  expect(type) {
-    return expect(this, type);
-  }
-
-  skipValue(type, val) {
-    return skipValue(this, type, val);
-  }
-
-  skipSymbol(val) {
-    return skipSymbol(this, val);
-  }
-
-  advanceAfterBlockEnd(name) {
-    return advanceAfterBlockEnd(this, name);
-  }
-
-  advanceAfterVariableEnd() {
-    return advanceAfterVariableEnd(this);
-  }
-
-  parseFor() {
-    return parseFor(this);
-  }
-
-  parseMacro() {
-    return parseMacro(this);
-  }
-
-  parseCall() {
-    return parseCall(this);
-  }
-
-  parseWithContext() {
-    return parseWithContext(this);
-  }
-
-  parseImport() {
-    return parseImport(this);
-  }
-
-  parseFrom() {
-    return parseFrom(this);
-  }
-
-  parseBlock() {
-    return parseBlock(this);
-  }
-
-  parseExtends() {
-    return parseExtends(this);
-  }
-
-  parseInclude() {
-    return parseInclude(this);
-  }
-
-  parseIf() {
-    return parseIf(this);
-  }
-
-  parseSet() {
-    return parseSet(this);
-  }
-
-  parseSwitch() {
-    return parseSwitch(this);
-  }
-
-  parseStatement() {
-    return parseStatement(this);
-  }
-
-  parseRaw(tagName) {
-    return parseRaw(this, tagName);
-  }
-
-  parsePostfix(node) {
-    return parsePostfix(this, node);
-  }
-
-  parseExpression() {
-    return parseExpression(this);
-  }
-
-  parseInlineIf() {
-    return parseInlineIf(this);
-  }
-
-  parseOr() {
-    return parseOr(this);
-  }
-
-  parseNullishCoalesce() {
-    return parseNullishCoalesce(this);
-  }
-
-  parseAnd() {
-    return parseAnd(this);
-  }
-
-  parseNot() {
-    return parseNot(this);
-  }
-
-  parseIn() {
-    return parseIn(this);
-  }
-
-  parseIs() {
-    return parseIs(this);
-  }
-
-  parseCompare() {
-    return parseCompare(this);
-  }
-
-  parseConcat() {
-    return parseConcat(this);
-  }
-
-  parseAdd() {
-    return parseAdd(this);
-  }
-
-  parseSub() {
-    return parseSub(this);
-  }
-
-  parseMul() {
-    return parseMul(this);
-  }
-
-  parseDiv() {
-    return parseDiv(this);
-  }
-
-  parseFloorDiv() {
-    return parseFloorDiv(this);
-  }
-
-  parseMod() {
-    return parseMod(this);
-  }
-
-  parsePow() {
-    return parsePow(this);
-  }
-
-  parseUnary(noPipes) {
-    return parseUnary(this, noPipes);
-  }
-
-  parsePrimary(noPostfix) {
-    return parsePrimary(this, noPostfix);
-  }
-
-  parseFilterName() {
-    return parseFilterName(this);
-  }
-
-  parseFilterArgs(node) {
-    return parseFilterArgs(this, node);
-  }
-
-  parsePipe(node) {
-    return parsePipe(this, node);
-  }
-
-  parseFilterStatement() {
-    return parseFilterStatement(this);
-  }
-
-  parseAggregate() {
-    return parseAggregate(this);
-  }
-
-  parseSignature(tolerant, noParens) {
-    return parseSignature(this, tolerant, noParens);
-  }
-
-  parseUntilBlocks(...blockNames) {
-    return parseUntilBlocks(this, ...blockNames);
-  }
-
-  parseNodes() {
-    return parseNodes(this);
-  }
-
-  parse() {
-    return new NodeList(0, 0, this.parseNodes());
-  }
-
-  parseAsRoot() {
-    return new Root(0, 0, this.parseNodes());
-  }
+export function createParser(tokens) {
+  const obj = createObj('Parser', {
+    init: function(tokens) {
+      this.tokens = tokens;
+      this.peeked = null;
+      this.breakOnBlocks = null;
+      this.dropLeadingWhitespace = false;
+      this.extensions = [];
+    },
+    nextToken: function(withWhitespace) {
+      return nextToken(this, withWhitespace);
+    },
+    peekToken: function() {
+      return peekToken(this);
+    },
+    pushToken: function(tok) {
+      return pushToken(this, tok);
+    },
+    error: function(msg, lineno, colno) {
+      return error(this, msg, lineno, colno);
+    },
+    fail: function(msg, lineno, colno) {
+      return fail(this, msg, lineno, colno);
+    },
+    skip: function(type) {
+      return skip(this, type);
+    },
+    expect: function(type) {
+      return expect(this, type);
+    },
+    skipValue: function(type, val) {
+      return skipValue(this, type, val);
+    },
+    skipSymbol: function(val) {
+      return skipSymbol(this, val);
+    },
+    advanceAfterBlockEnd: function(name) {
+      return advanceAfterBlockEnd(this, name);
+    },
+    advanceAfterVariableEnd: function() {
+      return advanceAfterVariableEnd(this);
+    },
+    parseFor: function() {
+      return parseFor(this);
+    },
+    parseMacro: function() {
+      return parseMacro(this);
+    },
+    parseCall: function() {
+      return parseCall(this);
+    },
+    parseWithContext: function() {
+      return parseWithContext(this);
+    },
+    parseImport: function() {
+      return parseImport(this);
+    },
+    parseFrom: function() {
+      return parseFrom(this);
+    },
+    parseBlock: function() {
+      return parseBlock(this);
+    },
+    parseExtends: function() {
+      return parseExtends(this);
+    },
+    parseInclude: function() {
+      return parseInclude(this);
+    },
+    parseIf: function() {
+      return parseIf(this);
+    },
+    parseSet: function() {
+      return parseSet(this);
+    },
+    parseSwitch: function() {
+      return parseSwitch(this);
+    },
+    parseStatement: function() {
+      return parseStatement(this);
+    },
+    parseRaw: function(tagName) {
+      return parseRaw(this, tagName);
+    },
+    parsePostfix: function(node) {
+      return parsePostfix(this, node);
+    },
+    parseExpression: function() {
+      return parseExpression(this);
+    },
+    parseInlineIf: function() {
+      return parseInlineIf(this);
+    },
+    parseOr: function() {
+      return parseOr(this);
+    },
+    parseNullishCoalesce: function() {
+      return parseNullishCoalesce(this);
+    },
+    parseAnd: function() {
+      return parseAnd(this);
+    },
+    parseNot: function() {
+      return parseNot(this);
+    },
+    parseIn: function() {
+      return parseIn(this);
+    },
+    parseIs: function() {
+      return parseIs(this);
+    },
+    parseCompare: function() {
+      return parseCompare(this);
+    },
+    parseConcat: function() {
+      return parseConcat(this);
+    },
+    parseAdd: function() {
+      return parseAdd(this);
+    },
+    parseSub: function() {
+      return parseSub(this);
+    },
+    parseMul: function() {
+      return parseMul(this);
+    },
+    parseDiv: function() {
+      return parseDiv(this);
+    },
+    parseFloorDiv: function() {
+      return parseFloorDiv(this);
+    },
+    parseMod: function() {
+      return parseMod(this);
+    },
+    parsePow: function() {
+      return parsePow(this);
+    },
+    parseUnary: function(noPipes) {
+      return parseUnary(this, noPipes);
+    },
+    parsePrimary: function(noPostfix) {
+      return parsePrimary(this, noPostfix);
+    },
+    parseFilterName: function() {
+      return parseFilterName(this);
+    },
+    parseFilterArgs: function(node) {
+      return parseFilterArgs(this, node);
+    },
+    parsePipe: function(node) {
+      return parsePipe(this, node);
+    },
+    parseFilterStatement: function() {
+      return parseFilterStatement(this);
+    },
+    parseAggregate: function() {
+      return parseAggregate(this);
+    },
+    parseSignature: function(tolerant, noParens) {
+      return parseSignature(this, tolerant, noParens);
+    },
+    parseUntilBlocks: function(...blockNames) {
+      return parseUntilBlocks(this, ...blockNames);
+    },
+    parseNodes: function() {
+      return parseNodes(this);
+    },
+    parse: function() {
+      return NodeList(0, 0, this.parseNodes());
+    },
+    parseAsRoot: function() {
+      return Root(0, 0, this.parseNodes());
+    },
+  });
+  obj.init(tokens);
+  return obj;
 }
 
 export function parse(src, extensions, opts) {
-  const p = new Parser(lex(src, opts));
+  const p = createParser(lex(src, opts));
   if (extensions !== undefined) {
     p.extensions = extensions;
   }

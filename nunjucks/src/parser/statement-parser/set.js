@@ -12,7 +12,7 @@ export const parseSet = (ctx) => {
     fail(ctx, 'parseSet: expected set', tag.lineno, tag.colno);
   }
 
-  const node = new AstSet(tag.lineno, tag.colno, []);
+  const node = AstSet(tag.lineno, tag.colno, []);
 
   let target;
   while ((target = ctx.parsePrimary())) {
@@ -42,7 +42,7 @@ export const parseSet = (ctx) => {
           tag.lineno,
           tag.colno);
       } else {
-        node.body = new Capture(
+        node.body = Capture(
           tag.lineno,
           tag.colno,
           ctx.parseUntilBlocks('endset')

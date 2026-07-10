@@ -1,87 +1,73 @@
 import { expect, describe, test } from 'bun:test';
-import { Obj, EmitterObj } from './index.js';
+import { createObj, createEmitter, extendObj, extendEmitter } from './index.js';
 
-describe('Obj', () => {
-  test('constructs and calls init', () => {
+describe('createObj', () => {
+  test('creates object with typename', () => {
+    const obj = createObj('Test');
+    expect(obj.typename).toBe('Test');
+  });
+
+  test('stores init method for manual invocation', () => {
     let inited = false;
-    class Test extends Obj {
+    const obj = createObj('Test', {
       init() { inited = true; }
-    }
-    new Test();
+    });
+    expect(typeof obj.init).toBe('function');
+    obj.init();
     expect(inited).toBe(true);
   });
 
-  test('typename defaults to constructor name', () => {
-    class Foo extends Obj {}
-    expect(new Foo().typename).toBe('Foo');
-  });
-
-  test('extend creates subclass with typename', () => {
-    const MyType = Obj.extend('MyType');
-    const inst = new MyType();
-    expect(inst).toBeInstanceOf(Obj);
-    expect(inst.typename).toBe('MyType');
-  });
-
-  test('extend with props adds methods', () => {
-    const Greeter = Obj.extend('Greeter', {
+  test('adds methods from props', () => {
+    const obj = createObj('Greeter', {
       hello() { return 'hi'; }
     });
-    expect(new Greeter().hello()).toBe('hi');
-  });
-
-  test('extend wraps parent method', () => {
-    const Base = Obj.extend('Base', {
-      greet() { return 'base'; }
-    });
-    const Child = Base.extend('Child', {
-      greet() { return this.parent() + ' child'; }
-    });
-    expect(new Child().greet()).toBe('base child');
-  });
-
-  test('extend with anonymous name', () => {
-    const Anon = Obj.extend({ foo() { return 1; } });
-    expect(new Anon().typename).toBe('anonymous');
+    expect(obj.hello()).toBe('hi');
   });
 });
 
-describe('EmitterObj', () => {
-  test('constructs and calls init', () => {
-    let inited = false;
-    class Test extends EmitterObj {
-      init() { inited = true; }
-    }
-    new Test();
-    expect(inited).toBe(true);
+describe('createEmitter', () => {
+  test('creates object with typename', () => {
+    const emitter = createEmitter('TestEmitter');
+    expect(emitter.typename).toBe('TestEmitter');
   });
 
-  test('typename defaults to constructor name', () => {
-    class Foo extends EmitterObj {}
-    expect(new Foo().typename).toBe('Foo');
+  test('is an EventEmitter', () => {
+    const emitter = createEmitter('Test');
+    expect(typeof emitter.on).toBe('function');
+    expect(typeof emitter.emit).toBe('function');
   });
 
-  test('extends EventEmitter', () => {
-    const inst = new (class extends EmitterObj {})();
+  test('emits events', () => {
+    const emitter = createEmitter('Test');
     let emitted = false;
-    inst.on('test', () => { emitted = true; });
-    inst.emit('test');
+    emitter.on('test', () => { emitted = true; });
+    emitter.emit('test');
     expect(emitted).toBe(true);
   });
+});
 
-  test('extend creates subclass with typename', () => {
-    const MyType = EmitterObj.extend('MyEmitter');
-    const inst = new MyType();
-    expect(inst).toBeInstanceOf(EmitterObj);
-    expect(inst.typename).toBe('MyEmitter');
+describe('extendObj', () => {
+  test('extends existing object with typename', () => {
+    const base = createObj('Base');
+    const extended = extendObj(base, 'Extended');
+    expect(extended.typename).toBe('Extended');
   });
 
-  test('extend with props overrides init', () => {
-    let val = 0;
-    const InitType = EmitterObj.extend('InitType', {
-      init() { val = 42; }
+  test('inherits methods from base', () => {
+    const base = createObj('Base', {
+      hello() { return 'base'; }
     });
-    new InitType();
-    expect(val).toBe(42);
+    const extended = extendObj(base, 'Extended');
+    expect(extended.hello()).toBe('base');
+  });
+
+  test('can override methods', () => {
+    const base = createObj('Base', {
+      greet() { return 'base'; }
+    });
+    const extended = extendObj(base, 'Extended', {
+      greet() { return 'extended'; }
+    });
+    expect(extended.greet()).toBe('extended');
   });
 });

@@ -9,7 +9,7 @@ import { createGensym } from './symbol-generator.js';
 
 export const liftSuper = (ast) => {
   return walk(ast, (blockNode) => {
-    if (!(blockNode instanceof Block)) {
+    if (blockNode.typename !== 'Block') {
       return;
     }
 
@@ -18,16 +18,16 @@ export const liftSuper = (ast) => {
     const symbol = gensym();
 
     blockNode.body = walk(blockNode.body, (node) => {
-      if (node instanceof FunCall && node.name.value === 'super') {
+      if (node.typename === 'FunCall' && node.name.value === 'super') {
         hasSuper = true;
-        return new AstSymbol(node.lineno, node.colno, symbol);
+        return AstSymbol(node.lineno, node.colno, symbol);
       }
       return node;
     });
 
     if (hasSuper) {
-      blockNode.body.children.unshift(new Super(
-        0, 0, blockNode.name, new AstSymbol(0, 0, symbol)
+      blockNode.body.children.unshift(Super(
+        0, 0, blockNode.name, AstSymbol(0, 0, symbol)
       ));
     }
   });

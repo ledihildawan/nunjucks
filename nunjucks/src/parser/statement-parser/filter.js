@@ -11,25 +11,25 @@ export const parseFilterStatement = (ctx) => {
   const args = ctx.parseFilterArgs(name);
 
   advanceAfterBlockEnd(ctx, filterTok.value);
-  const body = new Capture(
+  const body = Capture(
     name.lineno,
     name.colno,
     ctx.parseUntilBlocks('endfilter')
   );
   advanceAfterBlockEnd(ctx);
 
-  const node = new Filter(
+  const node = Filter(
     name.lineno,
     name.colno,
     name,
-    new NodeList(
+    NodeList(
       name.lineno,
       name.colno,
       [body].concat(args)
     )
   );
 
-  return new Output(
+  return Output(
     name.lineno,
     name.colno,
     [node]

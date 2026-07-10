@@ -1,13 +1,13 @@
 import { describe, test, expect, beforeEach } from 'bun:test';
-import { Compiler, compile, getSourceMap, getSourceMapFromCompile } from './index.js';
-import { TemplateError } from '../error/index.js';
+import { createCompiler, compile, getSourceMap, getSourceMapFromCompile } from './index.js';
+import { createTemplateError } from '../error/index.js';
 import { NodeList, Literal, AstSymbol } from '../nodes/index.js';
 import { Frame } from '../runtime/index.js';
 
 let compiler;
 
 beforeEach(() => {
-  compiler = new Compiler('test.njk', false, 'source');
+  compiler = createCompiler('test.njk', false, 'source');
 });
 
 describe('Compiler', () => {
@@ -25,7 +25,7 @@ describe('Compiler', () => {
   });
 
   test('fail throws TemplateError', () => {
-    expect(() => compiler.fail('msg', 1, 2)).toThrow(TemplateError);
+    expect(() => compiler.fail('msg', 1, 2)).toThrow();
     expect(() => compiler.fail('msg', 1, 2)).toThrow('msg');
   });
 
@@ -83,7 +83,7 @@ describe('Compiler', () => {
   });
 
   test('_emitFuncBegin starts root function', () => {
-    const node = new NodeList(1, 2);
+    const node = NodeList(1, 2);
     compiler._emitFuncBegin(node, 'root');
     expect(compiler.buffer).toBe('output');
     expect(compiler.codebuf[0]).toContain('async function root');
@@ -136,21 +136,21 @@ describe('Compiler', () => {
   });
 
   test('_templateName returns undefined for null name', () => {
-    const c = new Compiler(null, false, '');
+    const c = createCompiler(null, false, '');
     expect(c._templateName()).toBe('undefined');
   });
 
   test('_compileChildren compiles each child', () => {
-    const child1 = new Literal(1, 1, 'hello');
-    const child2 = new Literal(1, 1, 'world');
-    const node = new NodeList(1, 1, [child1, child2]);
+    const child1 = Literal(1, 1, 'hello');
+    const child2 = Literal(1, 1, 'world');
+    const node = NodeList(1, 1, [child1, child2]);
     const frame = new Frame();
     compiler._compileChildren(node, frame);
     expect(compiler.codebuf.length).toBeGreaterThan(0);
   });
 
   test('_compileExpression compiles valid expression', () => {
-    const node = new Literal(1, 1, 42);
+    const node = Literal(1, 1, 42);
     compiler._compileExpression(node, new Frame());
     expect(compiler.codebuf.length).toBeGreaterThan(0);
   });
@@ -161,15 +161,15 @@ describe('Compiler', () => {
   });
 
   test('assertType passes for matching type', () => {
-    expect(() => compiler.assertType(new Literal(1, 1, 'x'), Literal)).not.toThrow();
+    expect(() => compiler.assertType(Literal(1, 1, 'x'), Literal)).not.toThrow();
   });
 
   test('assertType throws for non-matching type', () => {
-    expect(() => compiler.assertType(new AstSymbol(1, 1, 'x'), Literal)).toThrow('assertType');
+    expect(() => compiler.assertType(AstSymbol(1, 1, 'x'), Literal)).toThrow('assertType');
   });
 
   test('compile delegates to compileDispatch', () => {
-    const node = new Literal(1, 1, 'hello');
+    const node = Literal(1, 1, 'hello');
     compiler.compile(node, new Frame());
     expect(compiler.codebuf.length).toBeGreaterThan(0);
   });
@@ -218,7 +218,7 @@ describe('compile function', () => {
 
 describe('getSourceMap', () => {
   test('returns sourceMap from compiler', () => {
-    const c = new Compiler('test.njk', false, '');
+    const c = createCompiler('test.njk', false, '');
     expect(getSourceMap(c)).toBe(c.sourceMap);
   });
 });

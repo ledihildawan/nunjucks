@@ -1,4 +1,4 @@
-import { TemplateError } from '../error/index.js';
+import { createTemplateError } from '../error/index.js';
 import {
   TOKEN_STRING,
   TOKEN_WHITESPACE,
@@ -228,7 +228,7 @@ export class Tokenizer {
     } else if (tok) {
       return createToken(TOKEN_SYMBOL, tok, lineno, colno);
     }
-    throw new TemplateError('Unexpected value while parsing: ' + tok, this.lineno, this.colno, { phase: 'lex' });
+    throw createTemplateError('Unexpected value while parsing: ' + tok, this.lineno, this.colno, { phase: 'lex' });
   }
 
   _handleTrimBlocks(trimFunc) {
@@ -367,7 +367,7 @@ export class Tokenizer {
         break;
       } else if (this._matches(this.tags.COMMENT_END)) {
         if (!inComment) {
-          throw new TemplateError('unexpected end of comment', this.lineno, this.colno, { phase: 'lex' });
+          throw createTemplateError('unexpected end of comment', this.lineno, this.colno, { phase: 'lex' });
         }
         tok += this._extractString(this.tags.COMMENT_END);
         break;
@@ -386,7 +386,7 @@ export class Tokenizer {
     }
 
     if (data === null && inComment) {
-      throw new TemplateError('expected end of comment, got end of file', this.lineno, this.colno, { phase: 'lex' });
+      throw createTemplateError('expected end of comment, got end of file', this.lineno, this.colno, { phase: 'lex' });
     }
 
     return createToken(inComment ? TOKEN_COMMENT : TOKEN_DATA, tok, lineno, colno);

@@ -54,7 +54,7 @@ describe('compileIs', () => {
     const ctx = makeCtx();
     const node = {
       left: { mock: 'val' },
-      right: new AstSymbol(1, 1, 'odd'),
+      right: AstSymbol(1, 1, 'odd'),
     };
     compileIs(ctx, node);
     expect(ctx.emitted).toEqual([
@@ -69,7 +69,7 @@ describe('compileIs', () => {
     const node = {
       left: { mock: 'val' },
       right: {
-        name: new AstSymbol(1, 1, 'divisibleby'),
+        name: AstSymbol(1, 1, 'divisibleby'),
         args: { mock: '[2]' },
       },
     };

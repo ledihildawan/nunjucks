@@ -1,24 +1,23 @@
 import { pipe } from 'remeda';
 
-export class TemplateError extends Error {
-  constructor(message, lineno, colno, info) {
-    super(message);
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-    this.name = 'Template render error';
-    this.lineno = lineno;
-    this.colno = colno;
-    this.firstUpdate = true;
-    if (info) {
-      if (info.code) this.code = info.code;
-      if (info.subject !== undefined && info.subject !== null) this.subject = info.subject;
-      if (info.phase) this.phase = info.phase;
-      if (info.templateName !== undefined && info.templateName !== null) this.templateName = info.templateName;
-    }
+export function createTemplateError(message, lineno, colno, info) {
+  const err = new Error(message);
+  if (Error.captureStackTrace) {
+    Error.captureStackTrace(err, createTemplateError);
+  }
+  err.name = 'Template render error';
+  err.typename = 'TemplateError';
+  err.lineno = lineno;
+  err.colno = colno;
+  err.firstUpdate = true;
+  if (info) {
+    if (info.code) err.code = info.code;
+    if (info.subject !== undefined && info.subject !== null) err.subject = info.subject;
+    if (info.phase) err.phase = info.phase;
+    if (info.templateName !== undefined && info.templateName !== null) err.templateName = info.templateName;
   }
 
-  applyLocation(path, includeChain) {
+  err.applyLocation = function(path, includeChain) {
     let msg = '(' + (path || 'unknown path') + ')';
     if (this.firstUpdate) {
       if (this.lineno != null && this.colno != null) {
@@ -37,11 +36,10 @@ export class TemplateError extends Error {
     this.message = msg + (this.message || '');
     this.firstUpdate = false;
     return this;
-  }
-}
+  };
 
-export const createTemplateError = (message, lineno, colno, info) =>
-  new TemplateError(message, lineno, colno, info);
+  return err;
+}
 
 const asTemplateError = (err) =>
   err.applyLocation ? err : createTemplateError(err, err.lineno ?? null, err.colno ?? null, {

@@ -8,7 +8,7 @@ const compileMacro = (ctx, node, frame) => {
   const keepFrame = (frame !== undefined);
 
   node.args.children.forEach((arg, i) => {
-    if (i === node.args.children.length - 1 && arg instanceof Dict) {
+    if (i === node.args.children.length - 1 && arg?.typename === 'Dict') {
       kwargs = arg;
     } else {
       ctx.assertType(arg, AstSymbol);

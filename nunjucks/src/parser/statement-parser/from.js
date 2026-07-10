@@ -20,7 +20,7 @@ export const parseFrom = (ctx) => {
       fromTok.colno);
   }
 
-  const names = new NodeList();
+  const names = NodeList();
   let withContext;
 
   while (1) {
@@ -55,7 +55,7 @@ export const parseFrom = (ctx) => {
 
     if (skipSymbol(ctx, 'as')) {
       const alias = ctx.parsePrimary();
-      names.addChild(new Pair(name.lineno,
+      names.addChild(Pair(name.lineno,
         name.colno,
         name,
         alias));
@@ -66,7 +66,7 @@ export const parseFrom = (ctx) => {
     withContext = parseWithContext(ctx);
   }
 
-  return new FromImport(fromTok.lineno,
+  return FromImport(fromTok.lineno,
     fromTok.colno,
     template,
     names,

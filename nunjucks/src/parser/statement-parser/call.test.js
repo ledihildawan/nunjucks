@@ -16,11 +16,11 @@ describe('parseCall', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const macroCall = new FunCall(1, 1, new AstSymbol(1, 6, 'myMacro'), new NodeList());
+    const macroCall = FunCall(1, 1, new AstSymbol(1, 6, 'myMacro'), NodeList());
     const body = { lineno: 1, colno: 13 };
 
     const ctx = Object.assign(createCursor(tokens), {
-      parseSignature: () => new NodeList(),
+      parseSignature: () => NodeList(),
       parsePrimary: () => macroCall,
       parseUntilBlocks: () => body,
     });
@@ -39,11 +39,11 @@ describe('parseCall', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const sigArgs = new NodeList();
+    const sigArgs = NodeList();
     const kwargs = new KeywordArgs();
     sigArgs.addChild(kwargs);
     const name = new AstSymbol(1, 6, 'myMacro');
-    const macroCall = new FunCall(1, 1, name, sigArgs);
+    const macroCall = FunCall(1, 1, name, sigArgs);
     const body = { lineno: 1, colno: 13 };
 
     const ctx = Object.assign(createCursor(tokens), {

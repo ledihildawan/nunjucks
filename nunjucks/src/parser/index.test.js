@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { Parser, parse } from './index.js';
+import { createParser, parse } from './index.js';
 import { lex } from '../lexer/tokenizer.js';
 import {
   TOKEN_DATA, TOKEN_SYMBOL, TOKEN_BLOCK_START, TOKEN_BLOCK_END,
@@ -11,7 +11,7 @@ describe('Parser', () => {
   let parser;
 
   test('init sets properties', () => {
-    parser = new Parser();
+    parser = createParser();
     parser.init(tokens);
     expect(parser.tokens).toBe(tokens);
     expect(parser.peeked).toBeNull();
@@ -21,7 +21,7 @@ describe('Parser', () => {
   });
 
   test('nextToken returns a token', () => {
-    parser = new Parser();
+    parser = createParser();
     parser.init(lex('{{ x }}'));
     const tok = parser.nextToken();
     expect(tok).toBeTruthy();
@@ -29,7 +29,7 @@ describe('Parser', () => {
   });
 
   test('peekToken returns next token without consuming', () => {
-    parser = new Parser();
+    parser = createParser();
     parser.init(lex('Hello world'));
     const first = parser.peekToken();
     const second = parser.peekToken();
@@ -38,7 +38,7 @@ describe('Parser', () => {
   });
 
   test('pushToken puts token back', () => {
-    parser = new Parser();
+    parser = createParser();
     parser.init(lex('Hello world'));
     const tok = parser.nextToken();
     parser.pushToken(tok);
@@ -46,27 +46,27 @@ describe('Parser', () => {
   });
 
   test('skip advances past a token type', () => {
-    parser = new Parser();
+    parser = createParser();
     parser.init(lex('Hello world'));
     parser.skip(TOKEN_DATA);
     expect(parser.peekToken()).toBeNull();
   });
 
   test('expect returns matching token', () => {
-    parser = new Parser();
+    parser = createParser();
     parser.init(lex('Hello'));
     const tok = parser.expect(TOKEN_DATA);
     expect(tok.value).toBe('Hello');
   });
 
   test('expect throws on mismatch', () => {
-    parser = new Parser();
+    parser = createParser();
     parser.init(lex('Hello'));
     expect(() => parser.expect(TOKEN_SYMBOL)).toThrow();
   });
 
   test('skipValue advances past matching token', () => {
-    parser = new Parser();
+    parser = createParser();
     parser.init(lex('{% if %}'));
     parser.skip(TOKEN_BLOCK_START);
     parser.skipValue(TOKEN_SYMBOL, 'if');
@@ -74,7 +74,7 @@ describe('Parser', () => {
   });
 
   test('skipSymbol advances past symbol', () => {
-    parser = new Parser();
+    parser = createParser();
     parser.init(lex('{% for x %}'));
     parser.skip(TOKEN_BLOCK_START);
     parser.skipSymbol('for');
@@ -82,7 +82,7 @@ describe('Parser', () => {
   });
 
   test('advanceAfterBlockEnd skips block end tokens', () => {
-    parser = new Parser();
+    parser = createParser();
     parser.init(lex('{% if x %}'));
     parser.skip(TOKEN_BLOCK_START);
     parser.skipSymbol('if');
@@ -92,7 +92,7 @@ describe('Parser', () => {
   });
 
   test('advanceAfterVariableEnd skips variable end tokens', () => {
-    parser = new Parser();
+    parser = createParser();
     parser.init(lex('{{ x }}'));
     parser.skip(TOKEN_VARIABLE_START);
     parser.skip(TOKEN_SYMBOL);
@@ -101,14 +101,14 @@ describe('Parser', () => {
   });
 
   test('parse returns NodeList', () => {
-    parser = new Parser();
+    parser = createParser();
     parser.init(lex('Hello'));
     const result = parser.parse();
     expect(result.typename).toBe('NodeList');
   });
 
   test('parseAsRoot returns Root', () => {
-    parser = new Parser();
+    parser = createParser();
     parser.init(lex('Hello'));
     const result = parser.parseAsRoot();
     expect(result.typename).toBe('Root');

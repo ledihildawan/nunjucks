@@ -22,13 +22,13 @@ export const parseAggregate = (ctx) => {
 
   switch (tok.type) {
     case TOKEN_LEFT_PAREN:
-      node = new Group(tok.lineno, tok.colno);
+      node = Group(tok.lineno, tok.colno);
       break;
     case TOKEN_LEFT_BRACKET:
-      node = new ArrayNode(tok.lineno, tok.colno);
+      node = ArrayNode(tok.lineno, tok.colno);
       break;
     case TOKEN_LEFT_CURLY:
-      node = new Dict(tok.lineno, tok.colno);
+      node = Dict(tok.lineno, tok.colno);
       break;
     default:
       return null;
@@ -51,7 +51,7 @@ export const parseAggregate = (ctx) => {
       }
     }
 
-    if (node instanceof Dict) {
+    if (node?.typename === 'Dict') {
       const key = ctx.parsePrimary();
 
       if (!skip(ctx, TOKEN_COLON)) {
@@ -61,7 +61,7 @@ export const parseAggregate = (ctx) => {
       }
 
       const value = ctx.parseExpression();
-      node.addChild(new Pair(key.lineno,
+      node.addChild(Pair(key.lineno,
         key.colno,
         key,
         value));

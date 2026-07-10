@@ -2,7 +2,7 @@ import { pipe } from 'remeda';
 import { existsSync, readFileSync } from 'node:fs';
 import { normalize, resolve } from 'node:path';
 import { watch } from 'fs';
-import Loader from './base.js';
+import { createLoader } from './base.js';
 
 const normalizeSearchPaths = (searchPaths) =>
   !searchPaths ? ['.'] : (Array.isArray(searchPaths) ? searchPaths : [searchPaths]).map(normalize);
@@ -56,54 +56,55 @@ const createWatchHandler = (loader, filePath) => (eventType, filename) => {
   if (eventType === 'rename') loader.unwatchFile(filePath);
 };
 
-export class FileSystemLoader extends Loader {
-  constructor(searchPaths, opts = {}) {
-    super();
-    if (typeof opts === 'boolean') {
-      console.warn(
-        '[nunjucks] Warning: boolean options are deprecated. ' +
-        'Use an options object. ' +
-        'See http://mozilla.github.io/nunjucks/api.html#filesystemloader'
-      );
-    }
-
-    this.pathsToNames = {};
-    this.noCache = !!opts.noCache;
-    this.watchEnabled = !!opts.watch;
-    this.async = true;
-    this.watchedFiles = new Map();
-    this.searchPaths = normalizeSearchPaths(searchPaths);
+export function createFileSystemLoader(searchPaths, opts = {}) {
+  if (typeof opts === 'boolean') {
+    console.warn(
+      '[nunjucks] Warning: boolean options are deprecated. ' +
+      'Use an options object. ' +
+      'See http://mozilla.github.io/nunjucks/api.html#filesystemloader'
+    );
   }
 
-  async getSource(name) {
-    const fullpath = findFileInSearchPaths(this.searchPaths, name);
+  const loader = createLoader();
+
+  loader.pathsToNames = {};
+  loader.noCache = !!opts.noCache;
+  loader.watchEnabled = !!opts.watch;
+  loader.async = true;
+  loader.watchedFiles = new Map();
+  loader.searchPaths = normalizeSearchPaths(searchPaths);
+
+  loader.getSource = async function(name) {
+    const fullpath = findFileInSearchPaths(loader.searchPaths, name);
     if (!fullpath) return null;
 
-    this.pathsToNames[fullpath] = name;
-    if (this.watchEnabled) this.watchFile(fullpath);
+    loader.pathsToNames[fullpath] = name;
+    if (loader.watchEnabled) loader.watchFile(fullpath);
 
     const source = readFileSource(fullpath);
-    this.emit('load', name, source);
+    loader.emit('load', name, source);
     return source;
-  }
+  };
 
-  watchFile(filePath) {
-    if (this.watchedFiles.has(filePath)) return;
+  loader.watchFile = function(filePath) {
+    if (loader.watchedFiles.has(filePath)) return;
 
-    const watcher = watch(filePath, createWatchHandler(this, filePath));
-    this.watchedFiles.set(filePath, watcher);
-  }
+    const watcher = watch(filePath, createWatchHandler(loader, filePath));
+    loader.watchedFiles.set(filePath, watcher);
+  };
 
-  unwatchFile(filePath) {
-    const watcher = this.watchedFiles.get(filePath);
+  loader.unwatchFile = function(filePath) {
+    const watcher = loader.watchedFiles.get(filePath);
     if (watcher) {
       watcher.close();
-      this.watchedFiles.delete(filePath);
+      loader.watchedFiles.delete(filePath);
     }
-  }
+  };
 
-  unwatchAll() {
-    for (const [, watcher] of this.watchedFiles) watcher.close();
-    this.watchedFiles.clear();
-  }
+  loader.unwatchAll = function() {
+    for (const [, watcher] of loader.watchedFiles) watcher.close();
+    loader.watchedFiles.clear();
+  };
+
+  return loader;
 }

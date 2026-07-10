@@ -15,7 +15,7 @@ export const parseFilterName = (ctx) => {
     name += '.' + expect(ctx, TOKEN_SYMBOL).value;
   }
 
-  return new AstSymbol(tok.lineno, tok.colno, name);
+  return AstSymbol(tok.lineno, tok.colno, name);
 };
 
 export const parseFilterArgs = (ctx, node) => {
@@ -30,11 +30,11 @@ export const parsePipe = (ctx, node) => {
   while (skip(ctx, TOKEN_PIPEFORWARD)) {
     const name = parseFilterName(ctx);
 
-    node = new Pipe(
+    node = Pipe(
       name.lineno,
       name.colno,
       name,
-      new NodeList(
+      NodeList(
         name.lineno,
         name.colno,
         [node].concat(parseFilterArgs(ctx, node))

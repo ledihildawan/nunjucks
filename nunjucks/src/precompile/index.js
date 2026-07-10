@@ -2,7 +2,7 @@ import { existsSync, statSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {prettifyError} from '../error/index.js';
 import { compile } from '../compiler/index.js';
-import {Environment} from '../environment/index.js';
+import { createEnvironment } from '../environment/index.js';
 import precompileGlobal from './global.js';
 
 function match(filename, patterns) {
@@ -15,7 +15,7 @@ function match(filename, patterns) {
 export function precompileString(str, opts) {
   opts = opts || {};
   opts.isString = true;
-  const env = opts.env || new Environment([]);
+  const env = opts.env || createEnvironment([]);
   const wrapper = opts.wrapper || precompileGlobal;
 
   if (!opts.name) {
@@ -26,7 +26,7 @@ export function precompileString(str, opts) {
 
 export function precompile(input, opts) {
   opts = opts || {};
-  const env = opts.env || new Environment([]);
+  const env = opts.env || createEnvironment([]);
   const wrapper = opts.wrapper || precompileGlobal;
 
   if (opts.isString) {
@@ -86,7 +86,7 @@ export function precompile(input, opts) {
 }
 
 function _precompile(str, name, env) {
-  env = env || new Environment([]);
+  env = env || createEnvironment([]);
 
   const asyncFilters = env.asyncFilters;
   const extensions = env.extensionsList;

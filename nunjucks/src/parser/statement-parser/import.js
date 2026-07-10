@@ -20,7 +20,7 @@ export const parseImport = (ctx) => {
 
   const target = ctx.parseExpression();
   const withContext = parseWithContext(ctx);
-  const node = new Import(importTok.lineno,
+  const node = Import(importTok.lineno,
     importTok.colno,
     template,
     target,

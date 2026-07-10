@@ -8,7 +8,7 @@ export const parseExtends = (ctx) => {
     fail(ctx, 'parseTemplateRef: expected ' + tagName);
   }
 
-  const node = new Extends(tag.lineno, tag.colno);
+  const node = Extends(tag.lineno, tag.colno);
   node.template = ctx.parseExpression();
 
   advanceAfterBlockEnd(ctx, tag.value);

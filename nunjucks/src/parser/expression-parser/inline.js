@@ -7,7 +7,7 @@ export const parseInlineIf = (ctx) => {
   if (skipSymbol(ctx, 'if')) {
     const condNode = parseOr(ctx);
     const bodyNode = node;
-    node = new InlineIf(node.lineno, node.colno);
+    node = InlineIf(node.lineno, node.colno);
     node.body = bodyNode;
     node.cond = condNode;
     if (skipSymbol(ctx, 'else')) {

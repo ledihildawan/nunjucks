@@ -8,7 +8,7 @@ export const parseInclude = (ctx) => {
     fail(ctx, 'parseInclude: expected ' + tagName);
   }
 
-  const node = new Include(tag.lineno, tag.colno);
+  const node = Include(tag.lineno, tag.colno);
   node.template = ctx.parseExpression();
 
   if (skipSymbol(ctx, 'ignore') && skipSymbol(ctx, 'missing')) {

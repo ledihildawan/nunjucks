@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { FileSystemLoader } from './file-system.js';
+import { createFileSystemLoader } from './file-system.js';
 import Loader from './base.js';
 
 let tmpDir;
@@ -21,51 +21,51 @@ afterEach(() => {
 
 describe('FileSystemLoader', () => {
   test('extends Loader', () => {
-    const loader = new FileSystemLoader(tmpDir);
+    const loader = createFileSystemLoader(tmpDir);
     expect(loader).toBeInstanceOf(Loader);
   });
 
   test('constructor normalizes search paths', () => {
-    const loader = new FileSystemLoader(tmpDir);
+    const loader = createFileSystemLoader(tmpDir);
     expect(loader.searchPaths).toEqual([tmpDir.replace(/\//g, '\\')]);
   });
 
   test('constructor defaults searchPaths to ["."]', () => {
-    const loader = new FileSystemLoader();
+    const loader = createFileSystemLoader();
     expect(loader.searchPaths).toEqual(['.']);
   });
 
   test('constructor sets noCache from opts', () => {
-    const loader = new FileSystemLoader(tmpDir, { noCache: true });
+    const loader = createFileSystemLoader(tmpDir, { noCache: true });
     expect(loader.noCache).toBe(true);
   });
 
   test('constructor sets watch from opts', () => {
-    const loader = new FileSystemLoader(tmpDir, { watch: true });
+    const loader = createFileSystemLoader(tmpDir, { watch: true });
     expect(loader.watchEnabled).toBe(true);
   });
 
   test('getSource returns source for existing file', async () => {
-    const loader = new FileSystemLoader(tmpDir);
+    const loader = createFileSystemLoader(tmpDir);
     const result = await loader.getSource('hello.njk');
     expect(result.src).toBe('Hello {{ name }}');
     expect(result.path).toBe(join(tmpDir, 'hello.njk'));
   });
 
   test('getSource returns null for missing file', async () => {
-    const loader = new FileSystemLoader(tmpDir);
+    const loader = createFileSystemLoader(tmpDir);
     const result = await loader.getSource('missing.njk');
     expect(result).toBeNull();
   });
 
   test('getSource finds file in subdirectory', async () => {
-    const loader = new FileSystemLoader(tmpDir);
+    const loader = createFileSystemLoader(tmpDir);
     const result = await loader.getSource('sub/nested.njk');
     expect(result.src).toBe('Nested');
   });
 
   test('getSource emits load event', async () => {
-    const loader = new FileSystemLoader(tmpDir);
+    const loader = createFileSystemLoader(tmpDir);
     let emitted = null;
     loader.on('load', (name, source) => { emitted = { name, source }; });
 
@@ -76,7 +76,7 @@ describe('FileSystemLoader', () => {
   });
 
   test('watches file when watchEnabled is true', async () => {
-    const loader = new FileSystemLoader(tmpDir, { watch: true });
+    const loader = createFileSystemLoader(tmpDir, { watch: true });
     const result = await loader.getSource('hello.njk');
 
     expect(loader.watchedFiles.size).toBe(1);
@@ -85,7 +85,7 @@ describe('FileSystemLoader', () => {
   });
 
   test('unwatchFile removes watcher', () => {
-    const loader = new FileSystemLoader(tmpDir, { watch: true });
+    const loader = createFileSystemLoader(tmpDir, { watch: true });
     const filePath = join(tmpDir, 'hello.njk');
 
     loader.watchFile(filePath);
@@ -96,7 +96,7 @@ describe('FileSystemLoader', () => {
   });
 
   test('unwatchAll removes all watchers', () => {
-    const loader = new FileSystemLoader(tmpDir, { watch: true });
+    const loader = createFileSystemLoader(tmpDir, { watch: true });
     loader.watchFile(join(tmpDir, 'hello.njk'));
     loader.watchFile(join(tmpDir, 'world.njk'));
 
@@ -110,7 +110,7 @@ describe('FileSystemLoader', () => {
     const otherDir = mkdtempSync(join(tmpdir(), 'njk-other-'));
     try {
       writeFileSync(join(otherDir, 'other.njk'), 'Other');
-      const loader = new FileSystemLoader([tmpDir, otherDir]);
+      const loader = createFileSystemLoader([tmpDir, otherDir]);
       const result = await loader.getSource('other.njk');
       expect(result.src).toBe('Other');
     } finally {

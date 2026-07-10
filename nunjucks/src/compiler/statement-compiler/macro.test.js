@@ -37,9 +37,9 @@ const makeCtx = () => {
 describe('compileMacroPublic', () => {
   test('compiles macro with positional args', () => {
     const ctx = makeCtx();
-    const name = new AstSymbol(1, 1, 'myMacro');
-    const arg1 = new AstSymbol(1, 1, 'a');
-    const arg2 = new AstSymbol(1, 1, 'b');
+    const name = AstSymbol(1, 1, 'myMacro');
+    const arg1 = AstSymbol(1, 1, 'a');
+    const arg2 = AstSymbol(1, 1, 'b');
     const node = {
       name,
       args: { children: [arg1, arg2] },
@@ -58,9 +58,9 @@ describe('compileMacroPublic', () => {
 
   test('compiles macro with kwargs', () => {
     const ctx = makeCtx();
-    const name = new AstSymbol(1, 1, 'myMacro');
-    const arg1 = new AstSymbol(1, 1, 'a');
-    const kwarg = new Dict(1, 1, [new Pair(1, 1, new AstSymbol(1, 1, 'opt'), new AstSymbol(1, 1, 'default'))]);
+    const name = AstSymbol(1, 1, 'myMacro');
+    const arg1 = AstSymbol(1, 1, 'a');
+    const kwarg = Dict(1, 1, [Pair(1, 1, AstSymbol(1, 1, 'opt'), AstSymbol(1, 1, 'default'))]);
     const node = {
       name,
       args: { children: [arg1, kwarg] },
@@ -76,7 +76,7 @@ describe('compileMacroPublic', () => {
 
   test('compiles macro with frame parent', () => {
     const ctx = makeCtx();
-    const name = new AstSymbol(1, 1, 'myMacro');
+    const name = AstSymbol(1, 1, 'myMacro');
     const node = {
       name,
       args: { children: [] },
@@ -93,7 +93,7 @@ describe('compileMacroPublic', () => {
   test('asserts arg types', () => {
     const ctx = makeCtx();
     const node = {
-      name: new AstSymbol(1, 1, 'bad'),
+      name: AstSymbol(1, 1, 'bad'),
       args: { children: ['not a symbol'] },
       body: { mock: 'body' },
     };
@@ -105,7 +105,7 @@ describe('compileMacroPublic', () => {
 describe('compileCaller', () => {
   test('wraps macro in IIFE', () => {
     const ctx = makeCtx();
-    const name = new AstSymbol(1, 1, 'callerFn');
+    const name = AstSymbol(1, 1, 'callerFn');
     const node = {
       name,
       args: { children: [] },

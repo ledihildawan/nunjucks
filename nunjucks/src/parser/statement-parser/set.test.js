@@ -17,8 +17,8 @@ describe('parseSet', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const target = new AstSymbol(1, 5, 'x');
-    const value = new Literal(1, 9, 42);
+    const target = AstSymbol(1, 5, 'x');
+    const value = Literal(1, 9, 42);
     const ctx = Object.assign(createCursor(tokens), {
       nextToken: () => nextToken(ctx),
       parsePrimary: () => { nextToken(ctx); return target; },
@@ -43,8 +43,8 @@ describe('parseSet', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const target = new AstSymbol(1, 5, 'x');
-    const value = new Literal(1, 11, 42);
+    const target = AstSymbol(1, 5, 'x');
+    const value = Literal(1, 11, 42);
     const ctx = Object.assign(createCursor(tokens), {
       nextToken: () => nextToken(ctx),
       parsePrimary: () => { nextToken(ctx); return target; },
@@ -68,8 +68,8 @@ describe('parseSet', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const target = new AstSymbol(1, 5, 'x');
-    const value = new Literal(1, 11, 42);
+    const target = AstSymbol(1, 5, 'x');
+    const value = Literal(1, 11, 42);
     const ctx = Object.assign(createCursor(tokens), {
       nextToken: () => nextToken(ctx),
       parsePrimary: () => { nextToken(ctx); return target; },
@@ -92,8 +92,8 @@ describe('parseSet', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const target = new AstSymbol(1, 5, 'x');
-    const value = new Literal(1, 11, 42);
+    const target = AstSymbol(1, 5, 'x');
+    const value = Literal(1, 11, 42);
     const ctx = Object.assign(createCursor(tokens), {
       nextToken: () => nextToken(ctx),
       parsePrimary: () => { nextToken(ctx); return target; },
@@ -116,7 +116,7 @@ describe('parseSet', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const target = new AstSymbol(1, 5, 'x');
+    const target = AstSymbol(1, 5, 'x');
     const body = { lineno: 1, colno: 10 };
     const ctx = Object.assign(createCursor(tokens), {
       nextToken: () => nextToken(ctx),
@@ -146,7 +146,7 @@ describe('parseSet', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const targets = [new AstSymbol(1, 5, 'x'), new AstSymbol(1, 8, 'y')];
+    const targets = [AstSymbol(1, 5, 'x'), AstSymbol(1, 8, 'y')];
     let primCalls = 0;
     const ctx = Object.assign(createCursor(tokens), {
       nextToken: () => nextToken(ctx),
@@ -156,7 +156,7 @@ describe('parseSet', () => {
         nextToken(ctx);
         return v;
       },
-      parseExpression: () => { nextToken(ctx); return new Literal(1, 12, 42); },
+      parseExpression: () => { nextToken(ctx); return Literal(1, 12, 42); },
     });
 
     const result = parseSet(ctx);

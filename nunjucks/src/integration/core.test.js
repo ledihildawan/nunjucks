@@ -1,5 +1,5 @@
 import { expect, describe, test, beforeAll, afterAll } from 'bun:test';
-import nunjucks from '../../../../nunjucks/index.js';
+import nunjucks from '../../index.js';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';

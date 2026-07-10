@@ -2,9 +2,9 @@ import { describe, test, expect } from 'bun:test';
 import * as mod from './index.js';
 
 describe('loaders/index exports', () => {
-  test('exports FileSystemLoader', () => expect(mod.FileSystemLoader).toBeFunction());
-  test('exports NodeResolveLoader', () => expect(mod.NodeResolveLoader).toBeFunction());
-  test('exports WebLoader', () => expect(mod.WebLoader).toBeFunction());
-  test('exports PrecompiledLoader', () => expect(mod.PrecompiledLoader).toBeFunction());
-  test('exports Loader', () => expect(mod.Loader).toBeFunction());
+  test('exports createFileSystemLoader', () => expect(mod.createFileSystemLoader).toBeFunction());
+  test('exports createNodeResolveLoader', () => expect(mod.createNodeResolveLoader).toBeFunction());
+  test('exports createWebLoader', () => expect(mod.createWebLoader).toBeFunction());
+  test('exports createPrecompiledLoader', () => expect(mod.createPrecompiledLoader).toBeFunction());
+  test('exports createLoader', () => expect(mod.createLoader).toBeFunction());
 });

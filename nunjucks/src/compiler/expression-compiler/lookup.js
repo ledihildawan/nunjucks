@@ -1,7 +1,7 @@
 import { Slice } from '../../nodes/index.js';
 
 export const compileLookupVal = (ctx, node, frame) => {
-  if (node.val instanceof Slice) {
+  if (node.val?.typename === 'Slice') {
     ctx._emit('runtime.slice((');
     ctx._compileExpression(node.target, frame);
     ctx._emit('), ');

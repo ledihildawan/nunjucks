@@ -1,4 +1,4 @@
-import Loader from './base.js';
+import { createLoader } from './base.js';
 
 const addCacheBust = (url) => {
   const separator = url.indexOf('?') === -1 ? '?' : '&';
@@ -35,8 +35,8 @@ const fetchUrl = (async) => (url) =>
     ajax.send();
   });
 
-export const createWebLoader = (baseURL, opts = {}) => {
-  const loader = new Loader();
+export function createWebLoader(baseURL, opts = {}) {
+  const loader = createLoader();
   loader.baseURL = baseURL || '.';
   loader.useCache = !!opts.useCache;
   loader.async = true;
@@ -66,37 +66,4 @@ export const createWebLoader = (baseURL, opts = {}) => {
   };
 
   return loader;
-};
-
-export class WebLoader extends Loader {
-  constructor(baseURL, opts = {}) {
-    super();
-    this.baseURL = baseURL || '.';
-    this.useCache = !!opts.useCache;
-    this.async = true;
-  }
-
-  resolve() {
-    throw new Error('relative templates not supported in the browser yet');
-  }
-
-  async getSource(name) {
-    const url = this.baseURL + '/' + name;
-    const cacheBustedUrl = addCacheBust(url);
-
-    try {
-      const src = await fetchUrl(this.async)(cacheBustedUrl);
-      const result = {
-        src,
-        path: name,
-        noCache: !this.useCache
-      };
-      this.emit('load', name, result);
-      return result;
-    } catch (err) {
-      if (err && err.status === 404) return null;
-      if (err && err.content !== undefined) throw err.content;
-      throw err;
-    }
-  }
 }

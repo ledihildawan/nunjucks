@@ -31,7 +31,7 @@ export const compileFor = (ctx, node, frame) => {
   ctx._emit(`if(${arr}) {`);
   ctx._emitLine(arr + ' = runtime.fromIterator(' + arr + ');');
 
-  if (node.name instanceof ArrayNode) {
+  if (node.name?.typename === 'Array') {
     ctx._emitLine(`var ${i};`);
 
     ctx._emitLine(`if(runtime.isArray(${arr})) {`);

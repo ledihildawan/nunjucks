@@ -1,14 +1,14 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { expect } from 'bun:test';
-import nunjucks from '../../../nunjucks/index.js';
+import nunjucks from '../../index.js';
 
 var isSlim = false;
 var Environment = nunjucks.Environment;
 var Template = nunjucks.Template;
 var Loader = nunjucks.FileSystemLoader;
 var precompileString = nunjucks.precompileString;
-var templatesPath = 'nunjucks/src/tests/templates';
+var templatesPath = 'src/template/test-templates';
 
 function equal(str, ctx, opts, str2, env) {
   if (typeof ctx === 'string') {
@@ -126,9 +126,9 @@ function render(str, ctx, opts, env, cb) {
 
   if (isSlim) {
     var tmplSource = loader.getSource(tmplName);
-    t = new Template(tmplSource.src, e, tmplSource.path);
+    t = Template(tmplSource.src, e, tmplSource.path);
   } else {
-    t = new Template(str, e);
+    t = Template(str, e);
   }
 
   if (!cb) {

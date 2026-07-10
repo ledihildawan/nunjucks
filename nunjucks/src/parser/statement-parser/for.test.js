@@ -20,7 +20,7 @@ describe('parseFor', () => {
     const arrExpr = { lineno: 1, colno: 15 };
     const body = { lineno: 1, colno: 22 };
     const ctx = Object.assign(createCursor(tokens), {
-      parsePrimary: () => { nextToken(ctx); return new AstSymbol(1, 5, 'item'); },
+      parsePrimary: () => { nextToken(ctx); return AstSymbol(1, 5, 'item'); },
       parseExpression: () => { nextToken(ctx); return arrExpr; },
       parseUntilBlocks: () => body,
     });
@@ -52,7 +52,7 @@ describe('parseFor', () => {
     let primCalls = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => {
-        const v = primCalls === 0 ? new AstSymbol(1, 5, 'key') : (primCalls === 1 ? new AstSymbol(1, 10, 'value') : new AstSymbol(1, 21, 'items'));
+        const v = primCalls === 0 ? AstSymbol(1, 5, 'key') : (primCalls === 1 ? AstSymbol(1, 10, 'value') : AstSymbol(1, 21, 'items'));
         primCalls++;
         nextToken(ctx);
         return v;
@@ -81,7 +81,7 @@ describe('parseFor', () => {
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
     const ctx = Object.assign(createCursor(tokens), {
-      parsePrimary: () => { nextToken(ctx); return new AstSymbol(1, 11, 'item'); },
+      parsePrimary: () => { nextToken(ctx); return AstSymbol(1, 11, 'item'); },
       parseExpression: () => { nextToken(ctx); return { lineno: 1, colno: 21 }; },
       parseUntilBlocks: () => ({ lineno: 1, colno: 28 }),
     });
@@ -104,7 +104,7 @@ describe('parseFor', () => {
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
     const ctx = Object.assign(createCursor(tokens), {
-      parsePrimary: () => { nextToken(ctx); return new AstSymbol(1, 10, 'item'); },
+      parsePrimary: () => { nextToken(ctx); return AstSymbol(1, 10, 'item'); },
       parseExpression: () => { nextToken(ctx); return { lineno: 1, colno: 20 }; },
       parseUntilBlocks: () => ({ lineno: 1, colno: 27 }),
     });
@@ -132,7 +132,7 @@ describe('parseFor', () => {
     const elseBody = { lineno: 1, colno: 28 };
     let blocksCalls = 0;
     const ctx = Object.assign(createCursor(tokens), {
-      parsePrimary: () => { nextToken(ctx); return new AstSymbol(1, 5, 'item'); },
+      parsePrimary: () => { nextToken(ctx); return AstSymbol(1, 5, 'item'); },
       parseExpression: () => { nextToken(ctx); return { lineno: 1, colno: 15 }; },
       parseUntilBlocks: (...args) => {
         blocksCalls++;
@@ -163,7 +163,7 @@ describe('parseFor', () => {
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
     const ctx = Object.assign(createCursor(tokens), {
-      parsePrimary: () => { nextToken(ctx); return new AstSymbol(1, 5, 'item'); },
+      parsePrimary: () => { nextToken(ctx); return AstSymbol(1, 5, 'item'); },
     });
 
     expect(() => parseFor(ctx)).toThrow('parseFor: expected "in" keyword for loop');

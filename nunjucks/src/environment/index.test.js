@@ -1,12 +1,12 @@
 import { describe, test, expect, beforeEach } from 'bun:test';
-import { Environment } from './index.js';
-import { Template } from '../template/index.js';
-import { PrecompiledLoader } from '../loaders/precompiled.js';
+import { createEnvironment } from './index.js';
+import { createTemplate } from '../template/index.js';
+import { createPrecompiledLoader } from '../loaders/precompiled.js';
 
 let env;
 
 beforeEach(() => {
-  env = new Environment([]);
+  env = createEnvironment([]);
 });
 
 describe('Environment constructor', () => {
@@ -21,7 +21,7 @@ describe('Environment constructor', () => {
   });
 
   test('init merges custom opts', () => {
-    const custom = new Environment([], { dev: true, autoescape: false });
+    const custom = createEnvironment([], { dev: true, autoescape: false });
     expect(custom.opts.dev).toBe(true);
     expect(custom.opts.autoescape).toBe(false);
   });
@@ -46,7 +46,7 @@ describe('Environment constructor', () => {
 
   test('accepts a single loader', () => {
     const loader = { getSource: () => ({ src: 'Hello', path: 'test.njk' }) };
-    const e = new Environment(loader);
+    const e = createEnvironment(loader);
     expect(e.loaders).toBeArray();
   });
 });
@@ -183,14 +183,14 @@ describe('tests', () => {
 describe('getTemplate', () => {
   test('returns template from precompiled loader', async () => {
     const loader = { getSource: () => ({ src: 'Hello', path: 'test.njk' }) };
-    const e = new Environment(loader);
+    const e = createEnvironment(loader);
     const tmpl = await e.getTemplate('test', false);
-    expect(tmpl).toBeInstanceOf(Template);
+    expect(tmpl.typename).toBe('Template');
   });
 
   test('returns noop template when ignoreMissing', async () => {
     const tmpl = await env.getTemplate('nonexistent', false, null, true);
-    expect(tmpl).toBeInstanceOf(Template);
+    expect(tmpl.typename).toBe('Template');
   });
 
   test('throws FILE_NOT_FOUND when ignoreMissing is false', async () => {

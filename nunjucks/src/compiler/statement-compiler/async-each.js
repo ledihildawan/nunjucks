@@ -4,7 +4,7 @@ import { emitLoopBindings } from './for.js';
 const compileAsyncEachLoop = (ctx, node, frame, arr, i, len) => {
   const loopId = ctx._tmpid();
 
-  if (node.name instanceof ArrayNode) {
+  if (node.name?.typename === 'Array') {
     const isObj = ctx._tmpid();
     const arrLen = ctx._tmpid();
     ctx._emitLine(`var ${isObj} = !runtime.isArray(${arr});`);
@@ -50,7 +50,7 @@ const compileAsyncAllLoop = (ctx, node, frame, arr, i, len) => {
 
   ctx._emitLine(`var ${resultsVar} = [];`);
 
-  if (node.name instanceof ArrayNode) {
+  if (node.name ?.typename === 'Array') {
     const isObj = ctx._tmpid();
     const arrLen = ctx._tmpid();
     ctx._emitLine(`var ${isObj} = !runtime.isArray(${arr});`);

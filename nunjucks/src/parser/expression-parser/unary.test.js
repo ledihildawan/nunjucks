@@ -7,13 +7,13 @@ import { TOKEN_OPERATOR, TOKEN_SYMBOL } from '../../lexer/token-types.js';
 describe('parseUnary', () => {
   test('passes through without unary operator', () => {
     const ctx = Object.assign(createCursor({ nextToken: () => ({ type: TOKEN_SYMBOL, value: 'x', lineno: 1, colno: 1 }) }), {
-      parsePrimary: () => new Literal(1, 1, 42),
+      parsePrimary: () => Literal(1, 1, 42),
       parsePipe: (node) => node,
     });
 
     const result = parseUnary(ctx);
 
-    expect(result).toEqual(new Literal(1, 1, 42));
+    expect(result).toEqual(Literal(1, 1, 42));
   });
 
   test('creates Neg for - prefix', () => {
@@ -22,7 +22,7 @@ describe('parseUnary', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const value = new Literal(1, 2, 42);
+    const value = Literal(1, 2, 42);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => value,
       parsePipe: (node) => node,
@@ -40,7 +40,7 @@ describe('parseUnary', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const value = new Literal(1, 2, 42);
+    const value = Literal(1, 2, 42);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => value,
       parsePipe: (node) => node,
@@ -59,7 +59,7 @@ describe('parseUnary', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const value = new Literal(1, 3, 42);
+    const value = Literal(1, 3, 42);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => value,
       parsePipe: (node) => node,
@@ -79,7 +79,7 @@ describe('parseUnary', () => {
     let pipeCalled = false;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => {
-        n++; return new Literal(1, 1, 42);
+        n++; return Literal(1, 1, 42);
       },
       parsePipe: (node) => { pipeCalled = true; return node; },
     });
@@ -96,7 +96,7 @@ describe('parseUnary', () => {
     let pipeCalled = false;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => {
-        n++; return new Literal(1, 1, 42);
+        n++; return Literal(1, 1, 42);
       },
       parsePipe: (node) => { pipeCalled = true; return node; },
     });

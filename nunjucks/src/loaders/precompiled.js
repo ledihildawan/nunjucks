@@ -1,4 +1,4 @@
-import Loader from './base.js';
+import { createLoader } from './base.js';
 import { Maybe } from '../helpers/monad.js';
 
 const getPrecompiledSource = (precompiled) => (name) => {
@@ -9,23 +9,12 @@ const getPrecompiledSource = (precompiled) => (name) => {
   return null;
 };
 
-export const createPrecompiledLoader = (compiledTemplates = {}) => {
-  const loader = new Loader();
+export function createPrecompiledLoader(compiledTemplates = {}) {
+  const loader = createLoader();
   loader.precompiled = compiledTemplates;
 
   loader.getSource = (name) =>
     getPrecompiledSource(loader.precompiled)(name);
 
   return loader;
-};
-
-export class PrecompiledLoader extends Loader {
-  constructor(compiledTemplates = {}) {
-    super();
-    this.precompiled = compiledTemplates;
-  }
-
-  getSource(name) {
-    return getPrecompiledSource(this.precompiled)(name);
-  }
 }

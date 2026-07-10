@@ -21,7 +21,7 @@ describe('compilePipe', () => {
   test('emits filter call with context and args', () => {
     const ctx = makeCtx();
     const node = {
-      name: new AstSymbol(1, 1, 'upper'),
+      name: AstSymbol(1, 1, 'upper'),
       args: { children: [{ mock: 'arg1' }] },
     };
     compilePipe(ctx, node);
@@ -40,7 +40,7 @@ describe('compilePipeAsync', () => {
     const node = {
       lineno: 5,
       colno: 2,
-      name: new AstSymbol(1, 1, 'myFilter'),
+      name: AstSymbol(1, 1, 'myFilter'),
       symbol: { value: 't_1' },
       args: { children: [{ mock: 'arg1' }] },
     };

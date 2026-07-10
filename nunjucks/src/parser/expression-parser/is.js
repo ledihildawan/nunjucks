@@ -7,9 +7,9 @@ export const parseIs = (ctx) => {
   if (skipSymbol(ctx, 'is')) {
     const not = skipSymbol(ctx, 'not');
     const node2 = parseCompare(ctx);
-    node = new Is(node.lineno, node.colno, node, node2);
+    node = Is(node.lineno, node.colno, node, node2);
     if (not) {
-      node = new Not(node.lineno, node.colno, node);
+      node = Not(node.lineno, node.colno, node);
     }
   }
   return node;

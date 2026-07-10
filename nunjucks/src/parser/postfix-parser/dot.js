@@ -12,6 +12,6 @@ export const parseDotAccess = (ctx, tok, target) => {
       val.colno);
   }
 
-  const lookup = new Literal(val.lineno, val.colno, val.value);
-  return new LookupVal(tok.lineno, tok.colno, target, lookup);
+  const lookup = Literal(val.lineno, val.colno, val.value);
+  return LookupVal(tok.lineno, tok.colno, target, lookup);
 };

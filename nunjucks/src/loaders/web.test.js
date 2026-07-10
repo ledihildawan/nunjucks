@@ -1,5 +1,5 @@
 import { describe, test, expect, mock, beforeEach, afterEach } from 'bun:test';
-import { createWebLoader, WebLoader } from './web.js';
+import { createWebLoader } from './web.js';
 import Loader from './base.js';
 
 const mockXhr = (responseText, status) => {
@@ -128,19 +128,19 @@ describe('WebLoader', () => {
 
   describe('WebLoader class', () => {
     test('constructor sets baseURL, useCache, async', () => {
-      const loader = new WebLoader('/templates', { useCache: true });
+      const loader = createWebLoader('/templates', { useCache: true });
       expect(loader.baseURL).toBe('/templates');
       expect(loader.useCache).toBe(true);
       expect(loader.async).toBe(true);
     });
 
     test('constructor defaults baseURL to "."', () => {
-      const loader = new WebLoader();
+      const loader = createWebLoader();
       expect(loader.baseURL).toBe('.');
     });
 
     test('resolve throws error', () => {
-      const loader = new WebLoader('/templates');
+      const loader = createWebLoader('/templates');
       expect(() => loader.resolve()).toThrow('relative templates not supported');
     });
 
@@ -148,7 +148,7 @@ describe('WebLoader', () => {
       const xhr = mockXhr('class content', 200);
       globalThis.XMLHttpRequest = mock(() => xhr);
 
-      const loader = new WebLoader('/base');
+      const loader = createWebLoader('/base');
       const result = await loader.getSource('test.njk');
 
       expect(result.src).toBe('class content');
@@ -160,7 +160,7 @@ describe('WebLoader', () => {
       const xhr = mockXhr('content', 200);
       globalThis.XMLHttpRequest = mock(() => xhr);
 
-      const loader = new WebLoader('/templates');
+      const loader = createWebLoader('/templates');
 
       expect(loader.getSource('test.njk')).rejects.toThrow('WebLoader can only be used in a browser');
     });

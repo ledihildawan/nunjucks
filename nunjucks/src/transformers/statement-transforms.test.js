@@ -7,40 +7,40 @@ import {
 
 describe('convertStatements', () => {
   test('returns ast unchanged when no If or For nodes', () => {
-    const root = new Root(1, 0, [new Literal(1, 0, 'hi')]);
+    const root = Root(1, 0, [Literal(1, 0, 'hi')]);
     const result = convertStatements(root);
     expect(result).toBe(root);
   });
 
   test('converts If with PipeAsync child to IfAsync', () => {
-    const cond = new PipeAsync(1, 0, new AstSymbol(1, 0, 'filter'), [], new AstSymbol(1, 0, 's'));
-    const ifNode = new If(1, 0, cond, new NodeList(1, 0, []));
-    const root = new Root(1, 0, [ifNode]);
+    const cond = PipeAsync(1, 0, AstSymbol(1, 0, 'filter'), [], AstSymbol(1, 0, 's'));
+    const ifNode = If(1, 0, cond, NodeList(1, 0, []));
+    const root = Root(1, 0, [ifNode]);
     const result = convertStatements(root);
-    expect(result.children[0]).toBeInstanceOf(IfAsync);
+    expect(result.children[0].typename).toBe('IfAsync');
   });
 
   test('keeps If without async children as If', () => {
-    const ifNode = new If(1, 0, new Literal(1, 0, true), new NodeList(1, 0, []));
-    const root = new Root(1, 0, [ifNode]);
+    const ifNode = If(1, 0, Literal(1, 0, true), NodeList(1, 0, []));
+    const root = Root(1, 0, [ifNode]);
     const result = convertStatements(root);
-    expect(result.children[0]).toBeInstanceOf(If);
-    expect(result.children[0]).not.toBeInstanceOf(IfAsync);
+    expect(result.children[0].typename).toBe('If');
+    expect(result.children[0].typename).not.toBe('IfAsync');
   });
 
   test('converts For with async child to AsyncEach', () => {
-    const arr = new PipeAsync(1, 0, new AstSymbol(1, 0, 'filter'), [], new AstSymbol(1, 0, 's'));
-    const forNode = new For(1, 0, arr, new AstSymbol(1, 0, 'x'), new NodeList(1, 0, []));
-    const root = new Root(1, 0, [forNode]);
+    const arr = PipeAsync(1, 0, AstSymbol(1, 0, 'filter'), [], AstSymbol(1, 0, 's'));
+    const forNode = For(1, 0, arr, AstSymbol(1, 0, 'x'), NodeList(1, 0, []));
+    const root = Root(1, 0, [forNode]);
     const result = convertStatements(root);
-    expect(result.children[0]).toBeInstanceOf(AsyncEach);
+    expect(result.children[0].typename).toBe('AsyncEach');
   });
 
   test('keeps For without async children as For', () => {
-    const forNode = new For(1, 0, new Literal(1, 0, [1, 2]), new AstSymbol(1, 0, 'x'), new NodeList(1, 0, []));
-    const root = new Root(1, 0, [forNode]);
+    const forNode = For(1, 0, Literal(1, 0, [1, 2]), AstSymbol(1, 0, 'x'), NodeList(1, 0, []));
+    const root = Root(1, 0, [forNode]);
     const result = convertStatements(root);
-    expect(result.children[0]).toBeInstanceOf(For);
-    expect(result.children[0]).not.toBeInstanceOf(AsyncEach);
+    expect(result.children[0].typename).toBe('For');
+    expect(result.children[0].typename).not.toBe('AsyncEach');
   });
 });

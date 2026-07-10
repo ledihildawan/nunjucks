@@ -7,10 +7,10 @@ export const parseBlock = (ctx) => {
     fail(ctx, 'parseBlock: expected block', tag.lineno, tag.colno);
   }
 
-  const node = new Block(tag.lineno, tag.colno);
+  const node = Block(tag.lineno, tag.colno);
 
   node.name = ctx.parsePrimary();
-  if (!(node.name instanceof AstSymbol)) {
+  if (node.name?.typename !== 'Symbol') {
     fail(ctx, 'parseBlock: variable name expected',
       tag.lineno,
       tag.colno);

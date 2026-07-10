@@ -13,7 +13,7 @@ export const compileFromImport = (ctx, node, frame) => {
     let alias;
     const id = ctx._tmpid();
 
-    if (nameNode instanceof Pair) {
+    if (nameNode?.typename === 'Pair') {
       name = nameNode.key.value;
       alias = nameNode.value.value;
     } else {

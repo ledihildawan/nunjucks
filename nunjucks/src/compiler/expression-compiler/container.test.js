@@ -14,9 +14,9 @@ import { Literal, AstSymbol } from '../../nodes/index.js';
 const makeCtx = () => {
   const emitted = [];
   const compile = (node) => {
-    if (node instanceof Literal) {
+    if (node?.typename === 'Literal' || node instanceof Literal) {
       emitted.push(`LIT(${node.value})`);
-    } else if (node instanceof AstSymbol) {
+    } else if (node?.typename === 'Symbol' || node instanceof AstSymbol) {
       emitted.push(`SYM(${node.value})`);
     } else if (typeof node === 'string') {
       emitted.push(node);
@@ -158,7 +158,7 @@ describe('compilePair', () => {
   test('compiles AstSymbol key as string literal', () => {
     const ctx = makeCtx();
     const node = {
-      key: new AstSymbol(1, 1, 'myKey'),
+      key: AstSymbol(1, 1, 'myKey'),
       value: { mock: 'val' },
     };
     compilePair(ctx, node, mockFrame);
@@ -168,7 +168,7 @@ describe('compilePair', () => {
   test('compiles Literal string key directly', () => {
     const ctx = makeCtx();
     const node = {
-      key: new Literal(1, 1, 'keyName'),
+      key: Literal(1, 1, 'keyName'),
       value: { mock: 'val' },
     };
     compilePair(ctx, node, mockFrame);

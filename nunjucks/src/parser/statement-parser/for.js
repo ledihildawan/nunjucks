@@ -14,13 +14,13 @@ export const parseFor = (ctx) => {
   let endBlock;
 
   if (skipSymbol(ctx, 'for')) {
-    node = new For(forTok.lineno, forTok.colno);
+    node = For(forTok.lineno, forTok.colno);
     endBlock = 'endfor';
   } else if (skipSymbol(ctx, 'asyncEach')) {
-    node = new AsyncEach(forTok.lineno, forTok.colno);
+    node = AsyncEach(forTok.lineno, forTok.colno);
     endBlock = 'endeach';
   } else if (skipSymbol(ctx, 'asyncAll')) {
-    node = new AsyncAll(forTok.lineno, forTok.colno);
+    node = AsyncAll(forTok.lineno, forTok.colno);
     endBlock = 'endall';
   } else {
     fail(ctx, 'parseFor: expected for{Async}', forTok.lineno, forTok.colno);
@@ -28,14 +28,14 @@ export const parseFor = (ctx) => {
 
   node.name = ctx.parsePrimary();
 
-  if (!(node.name instanceof AstSymbol)) {
+  if (node.name?.typename !== 'Symbol') {
     fail(ctx, 'parseFor: variable name expected for loop');
   }
 
   const type = peekToken(ctx).type;
   if (type === TOKEN_COMMA) {
     const key = node.name;
-    node.name = new ArrayNode(key.lineno, key.colno);
+    node.name = ArrayNode(key.lineno, key.colno);
     node.name.addChild(key);
 
     while (skip(ctx, TOKEN_COMMA)) {

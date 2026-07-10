@@ -1,4 +1,4 @@
-import { TemplateError } from '../error/index.js';
+import { createTemplateError } from '../error/index.js';
 import { isArray, keys } from 'remeda';
 import { Frame } from './frame.js';
 import {
@@ -70,7 +70,7 @@ export function awaitValue(val) {
 export function ensureDefined(val, lineno, colno, varName = null) {
   if (val === null || val === undefined) {
     const varMsg = varName ? ` '${varName}'` : '';
-    throw new TemplateError(
+    throw createTemplateError(
       `attempted to output${varMsg} null or undefined value`,
       lineno,
       colno,
@@ -82,14 +82,14 @@ export function ensureDefined(val, lineno, colno, varName = null) {
 
 export function callWrap(obj, name, context, args, lineno, colno) {
   if (!obj) {
-    throw new TemplateError(
+    throw createTemplateError(
       'Unable to call `' + name + '`, which is undefined or falsey',
       lineno,
       colno,
       { code: 'UNDEFINED_FUNCTION', subject: name, phase: 'render' }
     );
   } else if (typeof obj !== 'function') {
-    throw new TemplateError(
+    throw createTemplateError(
       'Unable to call `' + name + '`, which is not a function',
       lineno,
       colno,
@@ -138,10 +138,10 @@ export function handleError(error, lineno, colno, sourceMapData) {
       }
     };
     const pos = sm.getOriginalPosition(lineno);
-    return new TemplateError(error, pos.line, pos.col, info);
+    return createTemplateError(error, pos.line, pos.col, info);
   }
 
-  return new TemplateError(error, lineno, colno, info);
+  return createTemplateError(error, lineno, colno, info);
 }
 
 export function fromIterator(arr) {

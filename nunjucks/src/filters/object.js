@@ -1,12 +1,12 @@
 import { isString, isPlainObject, groupBy } from 'remeda';
-import { TemplateError } from '../error/index.js';
+import { createTemplateError } from '../error/index.js';
 import { getAttrGetter } from '../helpers/attributes.js';
 
 const isObject = isPlainObject;
 
 export function dictsort(val, caseSensitive, by) {
   if (!isObject(val)) {
-    throw new TemplateError('dictsort filter: val must be an object');
+    throw createTemplateError('dictsort filter: val must be an object');
   }
 
   let array = [];
@@ -20,7 +20,7 @@ export function dictsort(val, caseSensitive, by) {
   } else if (by === 'value') {
     si = 1;
   } else {
-    throw new TemplateError(
+    throw createTemplateError(
       'dictsort filter: You can only sort by either key or value');
   }
 

@@ -30,9 +30,9 @@ export const parseRaw = (ctx, tagName) => {
     }
   }
 
-  return new Output(
+  return Output(
     begun.lineno,
     begun.colno,
-    [new TemplateData(begun.lineno, begun.colno, str)]
+    [TemplateData(begun.lineno, begun.colno, str)]
   );
 };

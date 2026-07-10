@@ -20,8 +20,8 @@ describe('parseMacro', () => {
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
     const nameNode = new AstSymbol(1, 7, 'myMacro');
-    const args = new NodeList(1, 15, []);
-    const body = new NodeList(2, 1, []);
+    const args = NodeList(1, 15, []);
+    const body = NodeList(2, 1, []);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: (noPostfix) => {
         nextToken(ctx);

@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { createPrecompiledLoader, PrecompiledLoader } from './precompiled.js';
+import { createPrecompiledLoader } from './precompiled.js';
 
 describe('createPrecompiledLoader', () => {
   test('creates loader that returns precompiled template', () => {
@@ -23,19 +23,19 @@ describe('createPrecompiledLoader', () => {
 
 describe('PrecompiledLoader', () => {
   test('constructor stores precompiled templates', () => {
-    const loader = new PrecompiledLoader({ 'a.html': { tmpl: 'fn' } });
+    const loader = createPrecompiledLoader({ 'a.html': { tmpl: 'fn' } });
     expect(loader.precompiled['a.html']).toEqual({ tmpl: 'fn' });
   });
 
   test('getSource returns precompiled template', () => {
     const obj = { tmpl: 'fn' };
-    const loader = new PrecompiledLoader({ 't.html': obj });
+    const loader = createPrecompiledLoader({ 't.html': obj });
     const source = loader.getSource('t.html');
     expect(source.src).toEqual({ type: 'code', obj });
   });
 
   test('getSource returns null for missing template', () => {
-    const loader = new PrecompiledLoader({});
+    const loader = createPrecompiledLoader({});
     expect(loader.getSource('x')).toBeNull();
   });
 });

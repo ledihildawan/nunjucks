@@ -2,7 +2,7 @@ import { pipe, filter, map } from 'remeda';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createRequire } from 'node:module';
-import Loader from './base.js';
+import { createLoader } from './base.js';
 
 const _require = createRequire(import.meta.url);
 
@@ -35,27 +35,28 @@ const readSource = (fullpath, noCache) => ({
   noCache
 });
 
-export class NodeResolveLoader extends Loader {
-  constructor(opts = {}) {
-    super();
-    this.pathsToNames = {};
-    this.noCache = !!opts.noCache;
-    this.paths = opts.paths || [];
-    this.async = true;
-  }
+export function createNodeResolveLoader(opts = {}) {
+  const loader = createLoader();
+  loader.typename = 'NodeResolveLoader';
+  loader.pathsToNames = {};
+  loader.noCache = !!opts.noCache;
+  loader.paths = opts.paths || [];
+  loader.async = true;
 
-  async getSource(name) {
+  loader.getSource = async (name) => {
     if (!isExternalModule(name)) return null;
 
     let fullpath = tryRequireResolve(name);
     if (!fullpath) {
-      fullpath = findInSearchPaths(this.paths, name);
+      fullpath = findInSearchPaths(loader.paths, name);
       if (!fullpath) return null;
     }
 
-    this.pathsToNames[fullpath] = name;
-    const source = readSource(fullpath, this.noCache);
-    this.emit('load', name, source);
+    loader.pathsToNames[fullpath] = name;
+    const source = readSource(fullpath, loader.noCache);
+    loader.emit('load', name, source);
     return source;
-  }
+  };
+
+  return loader;
 }

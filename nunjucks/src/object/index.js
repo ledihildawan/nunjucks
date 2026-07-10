@@ -14,60 +14,118 @@ function parentWrap(parent, prop) {
   };
 }
 
-function extendClass(cls, name, props) {
-  props = props || {};
-
-  keys(props).forEach(k => {
-    props[k] = parentWrap(cls.prototype[k], props[k]);
+export function createObj(name = 'Obj', props = {}) {
+  const clonedProps = { ...props };
+  keys(clonedProps).forEach(k => {
+    clonedProps[k] = parentWrap(clonedProps[k], clonedProps[k]);
   });
 
-  class subclass extends cls {
+  const obj = {
     get typename() {
       return name;
-    }
-  }
+    },
+    ...clonedProps,
+  };
 
-  Object.assign(subclass.prototype, props);
-  return subclass;
+  obj.init = clonedProps.init || function() {};
+
+  return obj;
 }
 
-export class Obj {
-  constructor(...args) {
-    this.init(...args);
-  }
+export function createEmitter(name = 'EmitterObj', props = {}) {
+  const emitter = new EventEmitter();
+  const clonedProps = { ...props };
 
-  init() {}
+  keys(clonedProps).forEach(k => {
+    clonedProps[k] = parentWrap(emitter[k], clonedProps[k]);
+  });
 
-  get typename() {
-    return this.constructor.name;
-  }
+  Object.assign(emitter, {
+    get typename() {
+      return name;
+    },
+    init: clonedProps.init || function() {},
+    ...clonedProps,
+  });
 
-  static extend(name, props) {
-    if (typeof name === 'object') {
-      props = name;
-      name = 'anonymous';
-    }
-    return extendClass(this, name, props);
-  }
+  return emitter;
 }
 
-export class EmitterObj extends EventEmitter {
-  constructor(...args) {
-    super();
-    this.init(...args);
+export function extendObj(baseObj, name, props) {
+  if (typeof name === 'object') {
+    props = name;
+    name = 'anonymous';
   }
 
-  init() {}
+  props = props || {};
 
-  get typename() {
-    return this.constructor.name;
-  }
+  const isBaseFunction = typeof baseObj === 'function';
+  const baseFields = isBaseFunction ? (baseObj.fields || []) : [];
+  const newFields = props.fields || [];
+  const allFields = [...baseFields, ...newFields];
 
-  static extend(name, props) {
-    if (typeof name === 'object') {
-      props = name;
-      name = 'anonymous';
+  const customInit = props.init;
+  const baseInit = isBaseFunction ? baseObj.init : null;
+
+  const factoryFn = function(...args) {
+    if (this instanceof factoryFn) {
+      factoryFn.init.apply(this, args);
+      return this;
     }
-    return extendClass(this, name, props);
+    const obj = Object.create(factoryFn.prototype);
+
+    factoryFn.init.call(obj, ...args);
+    return obj;
+  };
+
+  factoryFn.typename = name;
+  factoryFn.findAll = isBaseFunction ? baseObj.findAll : null;
+  factoryFn.iterFields = isBaseFunction ? baseObj.iterFields : null;
+
+  if (!isBaseFunction) {
+    for (const key of Object.keys(baseObj)) {
+      if (key !== 'typename' && key !== 'init') {
+        factoryFn[key] = baseObj[key];
+      }
+    }
   }
+
+  for (const key of Object.keys(props)) {
+    if (key !== 'fields' && key !== 'init') {
+      factoryFn[key] = props[key];
+    }
+  }
+
+  factoryFn.init = customInit || function(lineno, colno, ...args) {
+    if (baseInit) {
+      baseInit.call(this, lineno, colno, ...args);
+    }
+    this.lineno = lineno;
+    this.colno = colno;
+
+    newFields.forEach((field, i) => {
+      var val = args[i + baseFields.length];
+      if (val === undefined) {
+        val = null;
+      }
+      this[field] = val;
+    });
+  };
+
+  const baseProto = isBaseFunction ? baseObj.prototype : Object.prototype;
+  factoryFn.prototype = Object.create(baseProto);
+  factoryFn.prototype.findAll = isBaseFunction ? baseObj.findAll : null;
+  factoryFn.prototype.iterFields = isBaseFunction ? baseObj.iterFields : null;
+  Object.defineProperty(factoryFn.prototype, 'fields', { get: () => allFields, configurable: true });
+  Object.defineProperty(factoryFn.prototype, 'typename', { get: () => name, configurable: true });
+  Object.defineProperty(factoryFn, 'fields', { get: () => allFields, configurable: true });
+  return factoryFn;
+}
+
+export function extendEmitter(baseEmitter, name, props) {
+  if (typeof name === 'object') {
+    props = name;
+    name = 'anonymous';
+  }
+  return createEmitter(name, { ...baseEmitter, ...props });
 }

@@ -1,9 +1,9 @@
 import { describe, test, expect } from 'bun:test';
-import { TemplateError, createTemplateError, prettifyError } from './template-error.js';
+import { createTemplateError, prettifyError } from './template-error.js';
 
 describe('TemplateError', () => {
   test('stores message, lineno, colno', () => {
-    const err = new TemplateError('test', 5, 10);
+    const err = createTemplateError('test', 5, 10);
     expect(err.message).toContain('test');
     expect(err.lineno).toBe(5);
     expect(err.colno).toBe(10);
@@ -11,7 +11,7 @@ describe('TemplateError', () => {
   });
 
   test('stores info fields', () => {
-    const err = new TemplateError('msg', 1, 2, {
+    const err = createTemplateError('msg', 1, 2, {
       code: 'TEST_CODE',
       subject: 'x',
       phase: 'render',
@@ -24,27 +24,27 @@ describe('TemplateError', () => {
   });
 
   test('omits null/undefined info fields', () => {
-    const err = new TemplateError('msg', 1, 2, { subject: null, templateName: undefined });
+    const err = createTemplateError('msg', 1, 2, { subject: null, templateName: undefined });
     expect(err.subject).toBeUndefined();
     expect(err.templateName).toBeUndefined();
   });
 
   test('applyLocation prepends path and line info', () => {
-    const err = new TemplateError('boom', 3, 7);
+    const err = createTemplateError('boom', 3, 7);
     err.applyLocation('test.njk');
     expect(err.message).toContain('(test.njk)');
     expect(err.message).toContain('[Line 4, Column 8]');
   });
 
   test('applyLocation includes chain info', () => {
-    const err = new TemplateError('boom', 3, 7);
+    const err = createTemplateError('boom', 3, 7);
     const chain = { parentTmpl: 'base.njk', parentLineno: 10, parentColno: 5 };
     err.applyLocation('child.njk', chain);
     expect(err.message).toContain('included from base.njk:10:5');
   });
 
   test('applyLocation always prepends path', () => {
-    const err = new TemplateError('boom', 3, 7);
+    const err = createTemplateError('boom', 3, 7);
     err.applyLocation('a.njk');
     err.firstUpdate = false;
     err.applyLocation('b.njk');
@@ -52,7 +52,7 @@ describe('TemplateError', () => {
   });
 
   test('applyLocation returns this', () => {
-    const err = new TemplateError('msg', 1, 1);
+    const err = createTemplateError('msg', 1, 1);
     expect(err.applyLocation('t')).toBe(err);
   });
 });
@@ -60,7 +60,7 @@ describe('TemplateError', () => {
 describe('createTemplateError', () => {
   test('creates TemplateError with given args', () => {
     const err = createTemplateError('err', 2, 3, { phase: 'compile' });
-    expect(err).toBeInstanceOf(TemplateError);
+    expect(err.typename).toBe('TemplateError');
     expect(err.lineno).toBe(2);
     expect(err.phase).toBe('compile');
   });
@@ -76,15 +76,15 @@ describe('prettifyError', () => {
   });
 
   test('keeps internals when withInternals is true', () => {
-    const err = new TemplateError('test', 1, 2);
+    const err = createTemplateError('test', 1, 2);
     const result = prettifyError({ path: 't.njk', err, withInternals: true });
-    expect(result).toBeInstanceOf(TemplateError);
+    expect(result.typename).toBe('TemplateError');
   });
 
   test('strips internals by default', () => {
-    const err = new TemplateError('test', 1, 2);
+    const err = createTemplateError('test', 1, 2);
     const result = prettifyError({ path: 't.njk', err });
     expect(result).toBeInstanceOf(Error);
-    expect(result).not.toBeInstanceOf(TemplateError);
+    expect(result.typename).not.toBe('TemplateError');
   });
 });

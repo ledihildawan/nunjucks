@@ -5,7 +5,7 @@ import {
   validateTemplateName,
   findCachedTemplate,
 } from './template-resolver.js';
-import { Template } from '../template/index.js';
+import { createTemplate } from '../template/index.js';
 
 describe('normalizeIncludeChain', () => {
   test('returns defaults for null/undefined', () => {
@@ -35,7 +35,7 @@ describe('resolveTemplateName', () => {
 
 describe('validateTemplateName', () => {
   test('returns null for Template instance', () => {
-    const tmpl = new Template('hi', null);
+    const tmpl = createTemplate('hi', null);
     expect(validateTemplateName(tmpl)).toBeNull();
   });
 

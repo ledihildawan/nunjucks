@@ -66,7 +66,7 @@ describe('compileCallExtension', () => {
 
   test('emits extension call with real NodeList args', () => {
     const ctx = makeCtx();
-    const args = new NodeList();
+    const args = NodeList();
     const mockChild = { mock: 'arg1' };
     args.addChild(mockChild);
     const node = {

@@ -12,6 +12,6 @@ export const parseOptionalChain = (ctx, tok, target) => {
       val.colno);
   }
 
-  const lookup = new Literal(val.lineno, val.colno, val.value);
-  return new OptionalChain(tok.lineno, tok.colno, target, lookup);
+  const lookup = Literal(val.lineno, val.colno, val.value);
+  return OptionalChain(tok.lineno, tok.colno, target, lookup);
 };

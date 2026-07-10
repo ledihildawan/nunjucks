@@ -1,18 +1,18 @@
 import { isPlainObject } from 'remeda';
-import { Environment, Template } from './src/environment/index.js';
-import Loader from './src/loaders/base.js';
-import { FileSystemLoader } from './src/loaders/file-system.js';
-import { NodeResolveLoader } from './src/loaders/node-resolve.js';
-import { WebLoader } from './src/loaders/web.js';
-import { PrecompiledLoader } from './src/loaders/precompiled.js';
+import { createEnvironment, createTemplate } from './src/environment/index.js';
+import { createLoader } from './src/loaders/base.js';
+import { createFileSystemLoader } from './src/loaders/file-system.js';
+import { createNodeResolveLoader } from './src/loaders/node-resolve.js';
+import { createWebLoader } from './src/loaders/web.js';
+import { createPrecompiledLoader } from './src/loaders/precompiled.js';
 import {
-  Compiler,
+  createCompiler,
   compile as compileSourceToCode,
   getSourceMap,
   getSourceMapFromCompile,
 } from './src/compiler/index.js';
 import {
-  Parser,
+  createParser,
   parse,
 } from './src/parser/index.js';
 import {
@@ -159,8 +159,8 @@ const createDefaultEnv = () => {
     configure(templatesPath, opts) {
       const { opts: normalizedOpts, templatesPath: normalizedPath } = normalizeOpts(templatesPath, opts);
       setErrorConfig(normalizedOpts);
-      const loader = createLoader(loaders, normalizedPath, normalizedOpts);
-      _env = new Environment(loader, normalizedOpts);
+      const loader = makeLoader(loaders, normalizedPath, normalizedOpts);
+      _env = createEnvironment(loader, normalizedOpts);
       applyExpress(_env, normalizedOpts);
       return _env;
     },
@@ -242,15 +242,15 @@ const nodes = {
   CallExtensionAsync,
 };
 
-const createLoader = (loaders, templatesPath, opts) => {
+const makeLoader = (loaders, templatesPath, opts) => {
   if (loaders.FileSystemLoader) {
-    return new loaders.FileSystemLoader(templatesPath, {
+    return loaders.FileSystemLoader(templatesPath, {
       watch: opts.watch,
       noCache: opts.noCache
     });
   }
   if (loaders.WebLoader) {
-    return new loaders.WebLoader(templatesPath, {
+    return loaders.WebLoader(templatesPath, {
       useCache: opts.web?.useCache,
       async: opts.web?.async
     });
@@ -276,21 +276,21 @@ const normalizeOpts = (templatesPath, opts) => {
 };
 
 const loaders = {
-  FileSystemLoader,
-  NodeResolveLoader,
-  PrecompiledLoader,
-  WebLoader,
+  FileSystemLoader: createFileSystemLoader,
+  NodeResolveLoader: createNodeResolveLoader,
+  PrecompiledLoader: createPrecompiledLoader,
+  WebLoader: createWebLoader,
 };
 
 const compiler = {
-  Compiler,
+  Compiler: createCompiler,
   compile: compileSourceToCode,
   getSourceMap,
   getSourceMapFromCompile,
 };
 
 const parser = {
-  Parser,
+  Parser: createParser,
   parse,
 };
 
@@ -365,30 +365,30 @@ export const configure = defaultEnv.configure.bind(defaultEnv);
 export const reset = defaultEnv.reset.bind(defaultEnv);
 const getEnv = defaultEnv.getEnv.bind(defaultEnv);
 
-export const compileTemplate = (src, env, path, eagerCompile) => new Template(src, env, path, eagerCompile);
+export const compileTemplate = (src, env, path, eagerCompile) => createTemplate(src, env, path, eagerCompile);
 
 export const render = (name, ctx) => getEnv().render(name, ctx);
 
 export const renderString = (src, ctx) => getEnv().renderString(src, ctx);
 
-export { Environment, Template };
-export { Loader };
-export { FileSystemLoader };
-export { NodeResolveLoader };
-export { PrecompiledLoader };
-export { WebLoader };
+export { createEnvironment as Environment, createTemplate as Template };
+export { createLoader as Loader };
+export { createFileSystemLoader as FileSystemLoader };
+export { createNodeResolveLoader as NodeResolveLoader };
+export { createPrecompiledLoader as PrecompiledLoader };
+export { createWebLoader as WebLoader };
 export { compiler, parser, lexer, runtime, nodes, installJinjaCompat };
 export { precompile, precompileString };
 export { getConfig, renderError, renderErrorString, createEnvironment as ErrorEnvironment } from './src/error/index.js';
 
 export default {
-  Environment,
-  Template,
-  Loader,
-  FileSystemLoader,
-  NodeResolveLoader,
-  PrecompiledLoader,
-  WebLoader,
+  Environment: createEnvironment,
+  Template: createTemplate,
+  Loader: createLoader,
+  FileSystemLoader: createFileSystemLoader,
+  NodeResolveLoader: createNodeResolveLoader,
+  PrecompiledLoader: createPrecompiledLoader,
+  WebLoader: createWebLoader,
   compiler,
   parser,
   lexer,

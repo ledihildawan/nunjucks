@@ -13,7 +13,7 @@ export const parseCompare = (ctx) => {
     if (!tok) {
       break;
     } else if (compareOps.indexOf(tok.value) !== -1) {
-      ops.push(new CompareOperand(tok.lineno, tok.colno, parseConcat(ctx), tok.value));
+      ops.push(CompareOperand(tok.lineno, tok.colno, parseConcat(ctx), tok.value));
     } else {
       pushToken(ctx, tok);
       break;
@@ -21,7 +21,7 @@ export const parseCompare = (ctx) => {
   }
 
   if (ops.length) {
-    return new Compare(ops[0].lineno, ops[0].colno, expr, ops);
+    return Compare(ops[0].lineno, ops[0].colno, expr, ops);
   } else {
     return expr;
   }

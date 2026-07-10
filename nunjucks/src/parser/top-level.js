@@ -47,10 +47,10 @@ export const parseNodes = (ctx) => {
         data = data.replace(/\s*$/, '');
       }
 
-      buf.push(new Output(
+      buf.push(Output(
         tok.lineno,
         tok.colno,
-        [new TemplateData(tok.lineno, tok.colno, data)]
+        [TemplateData(tok.lineno, tok.colno, data)]
       ));
     } else if (tok.type === TOKEN_BLOCK_START) {
       ctx.dropLeadingWhitespace = false;
@@ -63,7 +63,7 @@ export const parseNodes = (ctx) => {
       const e = ctx.parseExpression();
       ctx.dropLeadingWhitespace = false;
       advanceAfterVariableEnd(ctx);
-      buf.push(new Output(tok.lineno, tok.colno, [e]));
+      buf.push(Output(tok.lineno, tok.colno, [e]));
     } else if (tok.type === TOKEN_COMMENT) {
       ctx.dropLeadingWhitespace = tok.value.charAt(
         tok.value.length - ctx.tokens.tags.COMMENT_END.length - 1
