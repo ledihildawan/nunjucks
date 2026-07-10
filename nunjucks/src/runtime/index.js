@@ -96,6 +96,8 @@ export function awaitValue(val) {
 export function ensureDefined(val, lineno, colno, varName = null, undefinedMode = 'chainable') {
   if (val === null || val === undefined) {
     const varMsg = varName ? ` '${varName}'` : '';
+    const lineNum = lineno + 1;
+    const colNum = colno + 1;
 
     if (undefinedMode === 'strict') {
       throw createTemplateError(
@@ -107,7 +109,7 @@ export function ensureDefined(val, lineno, colno, varName = null, undefinedMode 
     }
 
     if (undefinedMode === 'debug') {
-      const warning = `[nunjucks] Warning: undefined${varMsg} at line ${lineno}:${colno}`;
+      const warning = `[nunjucks] Warning: undefined${varMsg} at line ${lineNum}:${colNum}`;
       console.warn(warning);
     }
 
