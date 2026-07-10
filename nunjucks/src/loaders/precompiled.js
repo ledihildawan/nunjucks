@@ -1,13 +1,13 @@
 import Loader from './base.js';
 import { Maybe } from '../helpers/monad.js';
 
-const getPrecompiledSource = (precompiled) => (name) =>
-  Maybe.just(precompiled[name])
-    .map(obj => ({
-      src: { type: 'code', obj },
-      path: name
-    }))
-    .getOrElse(() => null);
+const getPrecompiledSource = (precompiled) => (name) => {
+  const maybe = Maybe.fromNullable(precompiled[name]);
+  if (Maybe.isJust(maybe)) {
+    return { src: { type: 'code', obj: maybe.value }, path: name };
+  }
+  return null;
+};
 
 export const createPrecompiledLoader = (compiledTemplates = {}) => {
   const loader = new Loader();

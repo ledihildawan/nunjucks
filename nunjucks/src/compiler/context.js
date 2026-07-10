@@ -1,4 +1,4 @@
-import { SourceMap } from '../source-map.js';
+import { SourceMap } from '../helpers/source-map.js';
 
 export const createCompilerContext = (templateName, throwOnUndefined, source) => ({
   templateName,
