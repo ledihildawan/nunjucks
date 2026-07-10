@@ -91,7 +91,7 @@ export class Tokenizer {
     this.index--;
     if (this.current() === '\n') {
       this.lineno--;
-      let idx = this.src.lastIndexOf('\n', this.index - 1);
+      let idx = this.str.lastIndexOf('\n', this.index - 1);
       this.colno = idx === -1 ? this.index : this.index - idx;
     } else {
       this.colno--;
