@@ -124,13 +124,14 @@ export const sort = makeMacro(
   function sortFilter(arr, reversed, caseSens, attr) {
     let array = map(arr, v => v);
     let getAttribute = getAttrGetter(attr);
+    const undefinedMode = this.env.opts.undefined;
 
     array.sort((a, b) => {
       let x = (attr) ? getAttribute(a) : a;
       let y = (attr) ? getAttribute(b) : b;
 
       if (
-        this.env.opts.throwOnUndefined &&
+        undefinedMode === 'strict' &&
         attr && (x === undefined || y === undefined)
       ) {
         throw new TypeError(`sort: attribute "${attr}" resolved to undefined`);

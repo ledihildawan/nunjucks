@@ -26,7 +26,6 @@ const DEFAULT_OPTS = {
   dev: false,
   version: VERSION,
   autoescape: true,
-  throwOnUndefined: false,
   undefined: DEFAULT_UNDEFINED_MODE,
   trimBlocks: false,
   lstripBlocks: false,

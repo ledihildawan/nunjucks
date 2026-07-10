@@ -127,7 +127,7 @@ describe('sum', () => {
 });
 
 describe('sort', () => {
-  const mockThis = { env: { opts: { throwOnUndefined: false } } };
+  const mockThis = { env: { opts: { undefined: 'chainable' } } };
 
   test('sorts array ascending', () => {
     expect(sort.call(mockThis, [3, 1, 2])).toEqual([1, 2, 3]);

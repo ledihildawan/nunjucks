@@ -14,7 +14,7 @@ describe('Environment constructor', () => {
     expect(env.opts.autoescape).toBe(true);
     expect(env.opts.dev).toBe(false);
     expect(env.opts.version).toBe('3.2.4');
-    expect(env.opts.throwOnUndefined).toBe(false);
+    expect(env.opts.undefined).toBe('chainable');
     expect(env.opts.trimBlocks).toBe(false);
     expect(env.opts.lstripBlocks).toBe(false);
     expect(env.opts.ide).toBe('vscode');

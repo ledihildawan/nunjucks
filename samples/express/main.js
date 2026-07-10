@@ -4,6 +4,7 @@ import { createFileSystemLoader, createEnvironment } from '../../nunjucks/index.
 import express from 'express';
 import { errorRouter, errorRoutes } from './routes/errors.js';
 import { sandboxRouter } from './routes/sandbox.js';
+import { undefinedRouter } from './routes/undefined.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const VIEWS = path.join(__dirname, 'views');
@@ -15,11 +16,12 @@ const fsLoader = createFileSystemLoader(VIEWS);
 const envDev = createEnvironment(fsLoader, {
   autoescape: true,
   dev: true,
-  throwOnUndefined: true
+  undefined: 'strict'
 });
 
 app.use('/errors', errorRouter);
 app.use('/sandbox', sandboxRouter);
+app.use('/undefined', undefinedRouter);
 
 app.get('/', (req, res) => {
   const routesList = errorRoutes.map(r =>
@@ -74,15 +76,17 @@ ${routesList}
     <a href="/home">/home - Normal render</a>
     <a href="/info">/info - Environment info</a>
     <a href="/sandbox">/sandbox - Sandbox Demo</a>
+    <a href="/undefined">/undefined - Undefined Types</a>
   </div>
 
   <h2>📚 How It Works</h2>
   <ul>
-    <li><strong>throwOnUndefined</strong>: Enabled in dev mode for all error routes</li>
+    <li><strong>undefined: 'strict'</strong>: Error on undefined (formerly throwOnUndefined: true)</li>
+    <li><strong>undefined: 'debug'</strong>: Warning + "undefined" string</li>
+    <li><strong>undefined: 'chainable'</strong>: Silent "undefined" (default)</li>
+    <li><strong>Sandbox Mode</strong>: Block dangerous template access</li>
     <li><strong>Auto-detect</strong>: Dev vs production mode based on error.lineno presence</li>
     <li><strong>Stack filtering</strong>: Internal nunjucks frames hidden in production</li>
-    <li><strong>Dynamic fix suggestions</strong>: Based on error category</li>
-    <li><strong>Sandbox Mode</strong>: Block dangerous template access</li>
   </ul>
 
   <footer style="margin-top: 40px; color: #7f8c8d;">

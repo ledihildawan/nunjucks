@@ -205,7 +205,7 @@ export function createCompiler(templateName, undefinedMode, source) {
 }
 
 export function compile(src, asyncPipes, extensions, name, opts = {}) {
-  const undefinedMode = convertThrowOnUndefined(opts.undefined, opts.throwOnUndefined);
+  const undefinedMode = convertThrowOnUndefined(opts.undefined);
   const c = createCompiler(name, undefinedMode, src);
 
   const preprocessors = (extensions || []).map(ext => ext.preprocess).filter(f => !!f);
@@ -225,7 +225,7 @@ export function getSourceMap(compiler) {
 }
 
 export function getSourceMapFromCompile(src, asyncPipes, extensions, name, opts = {}) {
-  const undefinedMode = convertThrowOnUndefined(opts.undefined, opts.throwOnUndefined);
+  const undefinedMode = convertThrowOnUndefined(opts.undefined);
   const c = createCompiler(name, undefinedMode, src);
 
   const preprocessors = (extensions || []).map(ext => ext.preprocess).filter(f => !!f);

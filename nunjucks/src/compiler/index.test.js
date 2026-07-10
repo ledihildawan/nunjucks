@@ -204,7 +204,7 @@ describe('compile function', () => {
   });
 
   test('compiles with opts', () => {
-    const result = compile('{{ x }}', [], [], 'test.njk', { throwOnUndefined: true });
+    const result = compile('{{ x }}', [], [], 'test.njk', { undefined: 'strict' });
     expect(result).toContain('ensureDefined');
   });
 

@@ -44,13 +44,13 @@ export function dictsort(val, caseSensitive, by) {
 }
 
 export function groupby(arr, attr) {
-  const throwOnUndefined = this.env.opts.throwOnUndefined;
+  const undefinedMode = this.env.opts.undefined;
   const getAttr = getAttrGetter(attr);
 
   return groupBy(arr, (item, i) => {
     const key = getAttr(item, i);
     if (key === undefined) {
-      if (throwOnUndefined) {
+      if (undefinedMode === 'strict') {
         throw new TypeError(`groupby: attribute "${attr}" resolved to undefined`);
       }
       return String(key);

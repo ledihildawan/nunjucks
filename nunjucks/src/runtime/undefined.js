@@ -21,17 +21,9 @@ export function handleUndefined(varName, lineno, colno, mode) {
   }
 }
 
-export function convertThrowOnUndefined(undefinedOption, throwOnUndefined) {
-  if (undefinedOption !== undefined) {
+export function convertThrowOnUndefined(undefinedOption) {
+  if (undefinedOption !== undefined && isValidUndefinedMode(undefinedOption)) {
     return undefinedOption;
-  }
-
-  if (throwOnUndefined === true) {
-    return 'strict';
-  }
-
-  if (throwOnUndefined === false) {
-    return 'chainable';
   }
 
   return DEFAULT_UNDEFINED_MODE;
