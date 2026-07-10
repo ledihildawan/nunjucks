@@ -1,6 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import nunjucks from '../../nunjucks/index.js';
+import { createFileSystemLoader, createEnvironment } from '../../nunjucks/index.js';
 import express from 'express';
 import { errorRouter, errorRoutes } from './routes/errors.js';
 
@@ -9,9 +9,9 @@ const VIEWS = path.join(__dirname, 'views');
 
 const app = express();
 
-const fsLoader = nunjucks.createFileSystemLoader(VIEWS);
+const fsLoader = createFileSystemLoader(VIEWS);
 
-const envDev = nunjucks.createEnvironment(fsLoader, {
+const envDev = createEnvironment(fsLoader, {
   autoescape: true,
   dev: true,
   throwOnUndefined: true

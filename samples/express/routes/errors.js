@@ -1,5 +1,5 @@
 import express from 'express';
-import nunjucks from '../../../nunjucks/index.js';
+import { configure } from '../../../nunjucks/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const VIEWS = path.join(__dirname, '..', 'views');
 
-const envDev = nunjucks.configure(VIEWS, {
+const envDev = configure(VIEWS, {
   autoescape: true,
   dev: true,
   ide: 'vscode',

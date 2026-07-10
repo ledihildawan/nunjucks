@@ -1,10 +1,10 @@
 'use strict';
 
-import nunjucks from '../../../nunjucks/index.js';
+import { configure, render, renderString } from '../../../nunjucks/index.js';
 
-nunjucks.configure('views', {
+configure('views', {
   autoescape: true,
   ide: 'vscode'
 });
 
-export default nunjucks;
+export { configure, render, renderString };
