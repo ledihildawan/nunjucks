@@ -24,6 +24,14 @@ import {
   asyncEach,
   asyncAll,
 } from './async.js';
+import {
+  createSandboxedContext,
+  wrapMemberAccess,
+  isBlockedKey,
+  isDangerousGlobal,
+  BLOCKED_KEYS_LIST,
+  DANGEROUS_GLOBALS_LIST,
+} from './sandbox.js';
 
 const escapeHtml = (val) => Bun.escapeHTML(val).replace(/\\/g, '&#92;').replace(/&#x27;/g, '&#39;');
 
@@ -46,6 +54,12 @@ export {
   asyncAll,
   isArray,
   keys,
+  createSandboxedContext,
+  wrapMemberAccess,
+  isBlockedKey,
+  isDangerousGlobal,
+  BLOCKED_KEYS_LIST,
+  DANGEROUS_GLOBALS_LIST,
 };
 
 export function suppressValue(val, autoescape) {

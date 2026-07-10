@@ -4,7 +4,7 @@ import { createFileSystemLoader } from '../loaders/file-system.js';
 import { createWebLoader } from '../loaders/web.js';
 import { createPrecompiledLoader } from '../loaders/precompiled.js';
 import { createEmitter } from '../object/index.js';
-import { createFrame } from '../runtime/index.js';
+import { createFrame, createSandboxedContext } from '../runtime/index.js';
 import expressApp from '../integration/express-app.js';
 import { createTemplate } from '../template/index.js';
 import {
@@ -29,7 +29,8 @@ const DEFAULT_OPTS = {
   throwOnUndefined: false,
   trimBlocks: false,
   lstripBlocks: false,
-  ide: 'vscode'
+  ide: 'vscode',
+  sandbox: false
 };
 
 const noopTmplSrc = {
@@ -215,12 +216,14 @@ export function createEnvironment(loaders, opts) {
 
   env.render = async function(name, ctx) {
     const tmpl = await env.getTemplate(name);
-    return tmpl.render(ctx);
+    const sandboxedCtx = createSandboxedContext(ctx, env.opts.sandbox);
+    return tmpl.render(sandboxedCtx);
   };
 
   env.renderString = async function(src, ctx, opts) {
     const tmpl = createTemplate(src, env, opts?.path);
-    return tmpl.render(ctx);
+    const sandboxedCtx = createSandboxedContext(ctx, env.opts.sandbox);
+    return tmpl.render(sandboxedCtx);
   };
 
   registerBuiltIns(env);
@@ -245,6 +248,10 @@ function initLoaders(env) {
   if (typeof window !== 'undefined' && window.nunjucksPrecompiled) {
     env.loaders.unshift(createPrecompiledLoader(window.nunjucksPrecompiled));
   }
+}
+
+export function createSandboxedEnvironment(loaders, opts) {
+  return createEnvironment(loaders, { ...opts, sandbox: true });
 }
 
 export { createTemplate };

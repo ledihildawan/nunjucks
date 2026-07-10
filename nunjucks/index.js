@@ -1,5 +1,5 @@
 import { isPlainObject } from 'remeda';
-import { createEnvironment, createTemplate } from './src/environment/index.js';
+import { createEnvironment, createSandboxedEnvironment, createTemplate } from './src/environment/index.js';
 import { createLoader } from './src/loaders/base.js';
 import { createFileSystemLoader } from './src/loaders/file-system.js';
 import { createNodeResolveLoader } from './src/loaders/node-resolve.js';
@@ -291,6 +291,7 @@ export const renderString = (src, ctx) => getEnv().renderString(src, ctx);
 
 export {
   createEnvironment,
+  createSandboxedEnvironment,
   createTemplate,
   createLoader,
   createFileSystemLoader,
