@@ -149,7 +149,7 @@ import installJinjaCompat from './src/jinja-compat.js';
 import {
   precompile,
   precompileString,
-} from './src/precompile.js';
+} from './src/precompile/index.js';
 import { setErrorConfig } from './src/error/config.js';
 
 let _env = null;
