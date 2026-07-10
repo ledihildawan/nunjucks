@@ -39,7 +39,7 @@ export const compileOutput = (ctx, node, frame) => {
       }
       ctx.compile(child, frame);
       if (useEnsureDefined) {
-        const nameArg = varName ? `, "${varName}"` : '';
+        const nameArg = varName ? `, "${varName}"` : ', null';
         const modeArg = ctx.undefinedMode ? `, "${ctx.undefinedMode}"` : '';
         ctx._emit(`,${child.lineno},${child.colno}${nameArg}${modeArg})`);
       }

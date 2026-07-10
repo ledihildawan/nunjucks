@@ -11,7 +11,7 @@ const envDev = configure(VIEWS, {
   autoescape: true,
   dev: true,
   ide: 'vscode',
-  throwOnUndefined: true
+  undefined: 'strict'
 });
 
 envDev.addFilter('failingAsync', async function(val) {
