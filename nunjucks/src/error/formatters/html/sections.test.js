@@ -47,6 +47,38 @@ describe('renderContextHtml', () => {
   test('returns empty for empty object', () => {
     expect(renderContextHtml({})).toBe('');
   });
+
+  test('filters __nunjucks keys', () => {
+    const result = renderContextHtml({ foo: 'bar', __nunjucks_internal: true });
+    expect(result).toContain('"foo"');
+    expect(result).not.toContain('__nunjucks_internal');
+  });
+
+  test('filters blocked keys', () => {
+    const result = renderContextHtml({
+      name: 'Alice',
+      __proto__: { dangerous: true },
+      constructor: { dangerous: true },
+      toString: () => 'test'
+    });
+    expect(result).toContain('"name"');
+    expect(result).not.toContain('__proto__');
+    expect(result).not.toContain('constructor');
+    expect(result).not.toContain('toString');
+  });
+
+  test('filters blocked keys in nested objects', () => {
+    const result = renderContextHtml({
+      user: {
+        name: 'Alice',
+        __proto__: { evil: true },
+        constructor: { evil: true }
+      }
+    });
+    expect(result).toContain('"name"');
+    expect(result).not.toContain('__proto__');
+    expect(result).not.toContain('constructor');
+  });
 });
 
 describe('formatStackTraceHtml', () => {

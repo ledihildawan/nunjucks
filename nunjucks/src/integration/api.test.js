@@ -3,6 +3,7 @@ import path from 'path';
 import * as util from './util.js';
 import { createEnvironment } from '../environment/index.js';
 import { createFileSystemLoader } from '../loaders/file-system.js';
+import { configure } from '../../index.js';
 
 var templatesPath = 'nunjucks/src/template/test-templates';
 
@@ -54,5 +55,65 @@ describe('api', function() {
     });
     await env.render('item.njk', {});
     expect(loadedTemplate).toEqual('item.njk');
+  });
+});
+
+describe('auto error handling in dev mode', () => {
+  test('env.render returns HTML error in dev mode instead of throwing', async () => {
+    const env = configure('nunjucks/src/template/test-templates', {
+      dev: true,
+      undefined: 'strict'
+    });
+
+    const result = await env.render('throws.njk', {});
+    expect(result).toContain('Error:');
+    expect(result).toContain('UNDEFINED_FUNCTION');
+  });
+
+  test('env.render throws in production mode', async () => {
+    const env = configure('nunjucks/src/template/test-templates', {
+      dev: false,
+      undefined: 'strict'
+    });
+
+    await expect(env.render('throws.njk', {})).rejects.toThrow();
+  });
+
+  test('env.renderString returns HTML error in dev mode instead of throwing', async () => {
+    const env = configure('nunjucks/src/template/test-templates', {
+      dev: true,
+      undefined: 'strict'
+    });
+
+    const result = await env.renderString('{{ undefined_var }}', {});
+    expect(result).toContain('Error:');
+    expect(result).toContain('UNDEFINED_VARIABLE');
+  });
+
+  test('env.renderString throws in production mode', async () => {
+    const env = configure('nunjucks/src/template/test-templates', {
+      dev: false,
+      undefined: 'strict'
+    });
+
+    await expect(env.renderString('{{ undefined_var }}', {})).rejects.toThrow();
+  });
+
+  test('render context with blocked keys is filtered in error output', async () => {
+    const env = configure('nunjucks/src/template/test-templates', {
+      dev: true,
+      undefined: 'strict'
+    });
+
+    const result = await env.renderString('{{ user.name }}', {
+      user: {
+        name: 'Alice',
+        __proto__: { dangerous: true },
+        constructor: { dangerous: true }
+      }
+    });
+    expect(result).toContain('Alice');
+    expect(result).not.toContain('__proto__');
+    expect(result).not.toContain('constructor');
   });
 });

@@ -68,4 +68,46 @@ describe('toConsoleString', () => {
     });
     expect(result).not.toContain('Render Context:');
   });
+
+  test('filters blocked keys from render context', () => {
+    const result = toConsoleString({
+      isProduction: false,
+      classified: {
+        causes: ['Cause'],
+        fixComment: 'Fix',
+        fixCode: 'doFix()',
+      },
+      getDisplayLine: () => '?',
+      getDisplayCol: () => '?',
+      renderContext: {
+        name: 'Alice',
+        __proto__: { dangerous: true },
+        constructor: { dangerous: true },
+        toString: () => 'test'
+      },
+    });
+    expect(result).toContain('name = Alice');
+    expect(result).not.toContain('__proto__');
+    expect(result).not.toContain('constructor');
+    expect(result).not.toContain('toString');
+  });
+
+  test('filters __nunjucks keys from render context', () => {
+    const result = toConsoleString({
+      isProduction: false,
+      classified: {
+        causes: ['Cause'],
+        fixComment: 'Fix',
+        fixCode: 'doFix()',
+      },
+      getDisplayLine: () => '?',
+      getDisplayCol: () => '?',
+      renderContext: {
+        foo: 'bar',
+        __nunjucks_internal: true,
+      },
+    });
+    expect(result).toContain('foo = bar');
+    expect(result).not.toContain('__nunjucks');
+  });
 });
