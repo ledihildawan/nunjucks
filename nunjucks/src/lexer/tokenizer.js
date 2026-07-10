@@ -8,22 +8,6 @@ import {
   TOKEN_VARIABLE_START,
   TOKEN_VARIABLE_END,
   TOKEN_COMMENT,
-  TOKEN_LEFT_PAREN,
-  TOKEN_RIGHT_PAREN,
-  TOKEN_LEFT_BRACKET,
-  TOKEN_RIGHT_BRACKET,
-  TOKEN_LEFT_CURLY,
-  TOKEN_RIGHT_CURLY,
-  TOKEN_OPERATOR,
-  TOKEN_COMMA,
-  TOKEN_COLON,
-  TOKEN_TILDE,
-  TOKEN_PIPEFORWARD,
-  TOKEN_INT,
-  TOKEN_FLOAT,
-  TOKEN_BOOLEAN,
-  TOKEN_NONE,
-  TOKEN_SYMBOL,
   TOKEN_REGEX,
 } from './token-types.js';
 import {
@@ -34,15 +18,35 @@ import {
   REGEX_FLAGS,
   createDelimiters,
 } from './delimiters.js';
+import {
+  createToken,
+  parseEscapeChar,
+  isComplexOperator,
+  isValidRegexFlag,
+  isNumericString,
+  isBooleanString,
+  isNullString,
+  createOperatorToken,
+  createNumberToken,
+  createSymbolToken,
+  extractBeginChars,
+  extractWhileInCharSet,
+  extractUntilCharSet,
+  parseStringContent,
+  parseRegexContent,
+} from './tokenizer-helpers.js';
 
-export const createToken = (type, value, lineno, colno) => ({
-  type,
-  value,
-  lineno,
-  colno,
-});
+// Re-export createToken for external use
+export { createToken };
+
+// ===========================================
+// FACTORY FUNCTION - Main entry point
+// ===========================================
 
 export function createTokenizer(str, opts = {}) {
+  // -----------------------------------------
+  // STATE - internal mutable state
+  // -----------------------------------------
   const state = {
     str,
     index: 0,
@@ -52,10 +56,15 @@ export function createTokenizer(str, opts = {}) {
     in_code: false,
     tags: createDelimiters(opts.tags),
     trimBlocks: !!opts.trimBlocks,
-    lstripBlocks: !!opts.lstripBlocks
+    lstripBlocks: !!opts.lstripBlocks,
   };
 
+  // ===========================================
+  // NAVIGATION - cursor movement methods
+  // ===========================================
+  
   const api = {
+    // Getters
     get str() { return state.str; },
     get index() { return state.index; },
     set index(val) { state.index = val; },
@@ -70,22 +79,17 @@ export function createTokenizer(str, opts = {}) {
     get trimBlocks() { return state.trimBlocks; },
     get lstripBlocks() { return state.lstripBlocks; },
 
+    // Navigation
     current() {
-      if (!api.isFinished()) {
-        return state.str.charAt(state.index);
-      }
-      return '';
+      return state.index >= state.len ? '' : state.str.charAt(state.index);
     },
 
     previous() {
-      return state.str.charAt(state.index - 1);
+      return state.index > 0 ? state.str.charAt(state.index - 1) : '';
     },
 
     currentStr() {
-      if (!api.isFinished()) {
-        return state.str.substr(state.index);
-      }
-      return '';
+      return state.index >= state.len ? '' : state.str.substr(state.index);
     },
 
     isFinished() {
@@ -94,7 +98,7 @@ export function createTokenizer(str, opts = {}) {
 
     forward() {
       state.index++;
-      if (api.previous() === '\n') {
+      if (this.previous() === '\n') {
         state.lineno++;
         state.colno = 0;
       } else {
@@ -104,7 +108,7 @@ export function createTokenizer(str, opts = {}) {
 
     back() {
       state.index--;
-      if (api.current() === '\n') {
+      if (this.current() === '\n') {
         state.lineno--;
         const idx = state.str.lastIndexOf('\n', state.index - 1);
         state.colno = idx === -1 ? state.index : state.index - idx;
@@ -114,309 +118,264 @@ export function createTokenizer(str, opts = {}) {
     },
 
     forwardN(n) {
-      for (let i = 0; i < n; i++) {
-        api.forward();
-      }
+      for (let i = 0; i < n; i++) this.forward();
     },
 
     backN(n) {
-      for (let i = 0; i < n; i++) {
-        api.back();
-      }
+      for (let i = 0; i < n; i++) this.back();
     },
 
-    _matches(str) {
-      if (state.index + str.length > state.len) {
-        return null;
-      }
-      return state.str.slice(state.index, state.index + str.length) === str;
+    peek() {
+      return state.index + 1 < state.len ? state.str.charAt(state.index + 1) : '';
+    },
+
+    // ===========================================
+    // EXTRACTION - string extraction methods
+    // ===========================================
+
+    _matches(target) {
+      if (state.index + target.length > state.len) return null;
+      return state.str.slice(state.index, state.index + target.length) === target;
     },
 
     _extractString(str) {
-      if (api._matches(str)) {
-        api.forwardN(str.length);
+      if (this._matches(str)) {
+        this.forwardN(str.length);
         return str;
       }
       return null;
     },
 
-    _extractMatching(breakOnMatch, charString) {
-      if (api.isFinished()) {
-        return null;
-      }
-
-      let first = charString.indexOf(api.current());
-      if ((breakOnMatch && first === -1) || (!breakOnMatch && first !== -1)) {
-        let t = api.current();
-        api.forward();
-        let idx = charString.indexOf(api.current());
-        while (((breakOnMatch && idx === -1) || (!breakOnMatch && idx !== -1)) && !api.isFinished()) {
-          t += api.current();
-          api.forward();
-          idx = charString.indexOf(api.current());
-        }
-        return t;
-      }
-      return '';
+    // Extract while current char is in the set
+    _extractWhileIn(charSet) {
+      const extracted = extractWhileInCharSet(state.str, state.index, charSet);
+      this.forwardN(extracted.length);
+      return extracted;
     },
 
-    _extractUntil(charString) {
-      return api._extractMatching(true, charString || '');
+    // Extract until current char is in the set
+    _extractUntil(charSet) {
+      const extracted = extractUntilCharSet(state.str, state.index, charSet);
+      this.forwardN(extracted.length);
+      return extracted;
     },
 
-    _extract(charString) {
-      return api._extractMatching(false, charString);
+    // Legacy alias for backward compatibility
+    _extract(charSet) {
+      return this._extractWhileIn(charSet);
     },
 
-    _parseString(delimiter) {
-      api.forward();
-      let str = '';
-      while (!api.isFinished() && api.current() !== delimiter) {
-        let cur = api.current();
-        if (cur === '\\') {
-          api.forward();
-          switch (api.current()) {
-            case 'n': str += '\n'; break;
-            case 't': str += '\t'; break;
-            case 'r': str += '\r'; break;
-            default: str += api.current();
-          }
-          api.forward();
-        } else {
-          str += cur;
-          api.forward();
-        }
-      }
-      api.forward();
-      return str;
-    },
+    // ===========================================
+    // PARSING - token parsing methods
+    // ===========================================
 
-    _extractRegex(regex) {
-      const matches = api.currentStr().match(regex);
-      if (!matches) return null;
-      api.forwardN(matches[0].length);
-      return matches;
+    _parseString(quote) {
+      const content = parseStringContent(state.str, state.index + 1, quote);
+      this.forwardN(content.length + 2);
+      return content;
     },
 
     _parseOperator(cur, lineno, colno) {
-      let complexCur = cur + api.current();
-      if (COMPLEX_OPERATORS.indexOf(complexCur) !== -1) {
-        api.forward();
-        cur = complexCur;
-        if (COMPLEX_OPERATORS.indexOf(complexCur + api.current()) !== -1) {
-          cur = complexCur + api.current();
-          api.forward();
+      let op = cur;
+      let next = this.current();
+      if (next && isComplexOperator(cur + next, COMPLEX_OPERATORS)) {
+        op = cur + next;
+        this.forward();
+        next = this.current();
+        if (next && isComplexOperator(op + next, COMPLEX_OPERATORS)) {
+          op = op + next;
+          this.forward();
         }
       }
-
-      switch (cur) {
-        case '(': return createToken(TOKEN_LEFT_PAREN, cur, lineno, colno);
-        case ')': return createToken(TOKEN_RIGHT_PAREN, cur, lineno, colno);
-        case '[': return createToken(TOKEN_LEFT_BRACKET, cur, lineno, colno);
-        case ']': return createToken(TOKEN_RIGHT_BRACKET, cur, lineno, colno);
-        case '{': return createToken(TOKEN_LEFT_CURLY, cur, lineno, colno);
-        case '}': return createToken(TOKEN_RIGHT_CURLY, cur, lineno, colno);
-        case ',': return createToken(TOKEN_COMMA, cur, lineno, colno);
-        case ':': return createToken(TOKEN_COLON, cur, lineno, colno);
-        case '~': return createToken(TOKEN_TILDE, cur, lineno, colno);
-        case '|>': return createToken(TOKEN_PIPEFORWARD, cur, lineno, colno);
-        default: return createToken(TOKEN_OPERATOR, cur, lineno, colno);
-      }
+      return createOperatorToken(op, lineno, colno);
     },
 
     _parseNumber(tok, lineno, colno) {
-      if (api.current() === '.') {
-        api.forward();
-        let dec = api._extract(INT_CHARS);
-        return createToken(TOKEN_FLOAT, tok + '.' + dec, lineno, colno);
+      if (this.current() === '.') {
+        this.forward();
+        const dec = this._extractWhileIn(INT_CHARS);
+        return createNumberToken(tok + '.' + dec, lineno, colno, true);
       }
-      return createToken(TOKEN_INT, tok, lineno, colno);
+      return createNumberToken(tok, lineno, colno, false);
     },
 
     _parseSymbol(tok, lineno, colno) {
-      if (tok.match(/^[-+]?[0-9]+$/)) {
-        return api._parseNumber(tok, lineno, colno);
-      } else if (tok.match(/^(true|false)$/)) {
-        return createToken(TOKEN_BOOLEAN, tok, lineno, colno);
-      } else if (tok === 'none' || tok === 'null') {
-        return createToken(TOKEN_NONE, tok, lineno, colno);
-      } else if (tok) {
-        return createToken(TOKEN_SYMBOL, tok, lineno, colno);
+      if (isNumericString(tok)) {
+        return this._parseNumber(tok, lineno, colno);
       }
+      const symbolToken = createSymbolToken(tok, lineno, colno);
+      if (symbolToken) return symbolToken;
       throw createTemplateError('Unexpected value while parsing: ' + tok, state.lineno, state.colno, { phase: 'lex' });
     },
 
-    _handleTrimBlocks(trimFunc) {
-      let cur = api.current();
-      if (cur === '\n') {
-        api.forward();
-      } else if (cur === '\r') {
-        api.forward();
-        cur = api.current();
-        if (cur === '\n') {
-          api.forward();
-        } else {
-          api.back();
-        }
-      }
-    },
-
-    nextToken() {
-      let lineno = state.lineno;
-      let colno = state.colno;
-      let tok;
-
-      if (state.in_code) {
-        if (api.isFinished()) {
-          return null;
-        }
-
-        let cur = api.current();
-
-        if (cur === '"' || cur === '\'') {
-          return createToken(TOKEN_STRING, api._parseString(cur), lineno, colno);
-        } else if ((tok = api._extract(WHITESPACE_CHARS))) {
-          return createToken(TOKEN_WHITESPACE, tok, lineno, colno);
-        } else if ((tok = api._extractString(state.tags.BLOCK_END)) ||
-          (tok = api._extractString('-' + state.tags.BLOCK_END))) {
-          state.in_code = false;
-          if (state.trimBlocks) {
-            api._handleTrimBlocks();
-          }
-          return createToken(TOKEN_BLOCK_END, tok, lineno, colno);
-        } else if ((tok = api._extractString(state.tags.VARIABLE_END)) ||
-          (tok = api._extractString('-' + state.tags.VARIABLE_END))) {
-          state.in_code = false;
-          return createToken(TOKEN_VARIABLE_END, tok, lineno, colno);
-        } else if (cur === 'r' && state.str.charAt(state.index + 1) === '/') {
-          return api._parseRegex(lineno, colno);
-        } else if (DELIM_CHARS.indexOf(cur) !== -1) {
-          api.forward();
-          return api._parseOperator(cur, lineno, colno);
-        } else {
-          tok = api._extractUntil(WHITESPACE_CHARS + DELIM_CHARS);
-          return api._parseSymbol(tok, lineno, colno);
-        }
-      } else {
-        return api._parseTemplateText(lineno, colno);
-      }
-    },
-
     _parseRegex(lineno, colno) {
-      api.forwardN(2);
-      let regexBody = '';
-      while (!api.isFinished()) {
-        if (api.current() === '/' && api.previous() !== '\\') {
-          api.forward();
-          break;
-        }
-        regexBody += api.current();
-        api.forward();
-      }
-
-      let regexFlags = '';
-      while (!api.isFinished()) {
-        if (REGEX_FLAGS.indexOf(api.current()) !== -1) {
-          regexFlags += api.current();
-          api.forward();
-        } else {
-          break;
-        }
-      }
-
-      return createToken(TOKEN_REGEX, { body: regexBody, flags: regexFlags }, lineno, colno);
+      this.forwardN(2);
+      const { body, flags } = parseRegexContent(state.str, state.index, REGEX_FLAGS);
+      this.forwardN(body.length + flags.length + 1);
+      return createToken(TOKEN_REGEX, { body, flags }, lineno, colno);
     },
+
+    // Legacy alias for backward compatibility
+    _extractRegex(regex) {
+      const matches = this.currentStr().match(regex);
+      if (!matches) return null;
+      this.forwardN(matches[0].length);
+      return matches;
+    },
+
+    _handleTrimBlocks() {
+      const cur = this.current();
+      if (cur === '\n') {
+        this.forward();
+      } else if (cur === '\r') {
+        this.forward();
+        if (this.current() === '\n') {
+          this.forward();
+        } else {
+          this.back();
+        }
+      }
+    },
+
+    // ===========================================
+    // TEMPLATE TEXT PARSING
+    // ===========================================
 
     _parseTemplateText(lineno, colno) {
-      let beginChars = (
-        state.tags.BLOCK_START.charAt(0) +
-        state.tags.VARIABLE_START.charAt(0) +
-        state.tags.COMMENT_START.charAt(0) +
-        state.tags.COMMENT_END.charAt(0)
-      );
+      const beginChars = extractBeginChars(state.tags);
 
-      if (api.isFinished()) {
-        return null;
-      }
+      if (this.isFinished()) return null;
 
-      let tok;
-      if ((tok = api._extractString(state.tags.BLOCK_START + '-')) ||
-        (tok = api._extractString(state.tags.BLOCK_START))) {
+      const blockStart = this._extractString(state.tags.BLOCK_START + '-') || 
+                         this._extractString(state.tags.BLOCK_START);
+      if (blockStart) {
         state.in_code = true;
-        return createToken(TOKEN_BLOCK_START, tok, lineno, colno);
+        return createToken(TOKEN_BLOCK_START, blockStart, lineno, colno);
       }
 
-      if ((tok = api._extractString(state.tags.VARIABLE_START + '-')) ||
-        (tok = api._extractString(state.tags.VARIABLE_START))) {
+      const varStart = this._extractString(state.tags.VARIABLE_START + '-') || 
+                       this._extractString(state.tags.VARIABLE_START);
+      if (varStart) {
         state.in_code = true;
-        return createToken(TOKEN_VARIABLE_START, tok, lineno, colno);
+        return createToken(TOKEN_VARIABLE_START, varStart, lineno, colno);
       }
 
-      tok = '';
-      let data;
+      let tok = '';
       let inComment = false;
 
-      if (api._matches(state.tags.COMMENT_START)) {
+      if (this._matches(state.tags.COMMENT_START)) {
         inComment = true;
-        tok = api._extractString(state.tags.COMMENT_START);
+        tok = this._extractString(state.tags.COMMENT_START);
       }
 
-      while ((data = api._extractUntil(beginChars)) !== null) {
-        tok += data;
-
-        if ((api._matches(state.tags.BLOCK_START) ||
-          api._matches(state.tags.VARIABLE_START) ||
-          api._matches(state.tags.COMMENT_START)) && !inComment) {
+      while (!this.isFinished()) {
+        if ((this._matches(state.tags.BLOCK_START) ||
+             this._matches(state.tags.VARIABLE_START) ||
+             this._matches(state.tags.COMMENT_START)) && !inComment) {
           if (state.lstripBlocks &&
-            api._matches(state.tags.BLOCK_START) &&
-            state.colno > 0 &&
-            state.colno <= tok.length) {
-            let lastLine = tok.slice(-state.colno);
+              this._matches(state.tags.BLOCK_START) &&
+              state.colno > 0 &&
+              state.colno <= tok.length) {
+            const lastLine = tok.slice(-state.colno);
             if (/^\s+$/.test(lastLine)) {
               tok = tok.slice(0, -state.colno);
-              if (!tok.length) {
-                return api.nextToken();
-              }
+              if (!tok.length) return this.nextToken();
             }
           }
           break;
-        } else if (api._matches(state.tags.COMMENT_END)) {
-          if (!inComment) {
-            throw createTemplateError('unexpected end of comment', state.lineno, state.colno, { phase: 'lex' });
-          }
-          tok += api._extractString(state.tags.COMMENT_END);
-          break;
-        } else if (api._matches(state.tags.BLOCK_END)) {
-          state.in_code = true;
-          break;
-        } else if (api.current() === '%' && api.peek && api.peek() === '}') {
-          api.forward();
-          api.forward();
-          state.in_code = true;
-          break;
-        } else {
-          tok += api.current();
-          api.forward();
         }
+
+        if (this._matches(state.tags.COMMENT_END) && inComment) {
+          tok += this._extractString(state.tags.COMMENT_END);
+          break;
+        }
+
+        if (this._matches(state.tags.BLOCK_END)) {
+          state.in_code = true;
+          break;
+        }
+
+        if (this.current() === '%' && this.peek() === '}') {
+          this.forward();
+          this.forward();
+          state.in_code = true;
+          break;
+        }
+
+        tok += this.current();
+        this.forward();
       }
 
-      if (data === null && inComment) {
-        throw createTemplateError('expected end of comment, got end of file', state.lineno, state.colno, { phase: 'lex' });
+      if (tok) {
+        return createToken(inComment ? TOKEN_COMMENT : TOKEN_DATA, tok, lineno, colno);
       }
 
-      return createToken(inComment ? TOKEN_COMMENT : TOKEN_DATA, tok, lineno, colno);
+      return this.nextToken();
     },
 
-    peek() {
-      if (state.index + 1 < state.len) {
-        return state.str.charAt(state.index + 1);
+    // ===========================================
+    // TOKEN API - main public method
+    // ===========================================
+
+    nextToken() {
+      const lineno = state.lineno;
+      const colno = state.colno;
+
+      if (state.in_code) {
+        return this._parseCodeToken(lineno, colno);
       }
-      return '';
-    }
+      return this._parseTemplateText(lineno, colno);
+    },
+
+    _parseCodeToken(lineno, colno) {
+      if (this.isFinished()) return null;
+
+      const cur = this.current();
+
+      if (cur === '"' || cur === '\'') {
+        return createToken(TOKEN_STRING, this._parseString(cur), lineno, colno);
+      }
+
+      const ws = this._extractWhileIn(WHITESPACE_CHARS);
+      if (ws) {
+        return createToken(TOKEN_WHITESPACE, ws, lineno, colno);
+      }
+
+      const blockEnd = this._extractString(state.tags.BLOCK_END) || 
+                       this._extractString('-' + state.tags.BLOCK_END);
+      if (blockEnd) {
+        state.in_code = false;
+        if (state.trimBlocks) this._handleTrimBlocks();
+        return createToken(TOKEN_BLOCK_END, blockEnd, lineno, colno);
+      }
+
+      const varEnd = this._extractString(state.tags.VARIABLE_END) || 
+                     this._extractString('-' + state.tags.VARIABLE_END);
+      if (varEnd) {
+        state.in_code = false;
+        return createToken(TOKEN_VARIABLE_END, varEnd, lineno, colno);
+      }
+
+      if (cur === 'r' && state.str.charAt(state.index + 1) === '/') {
+        return this._parseRegex(lineno, colno);
+      }
+
+      if (DELIM_CHARS.indexOf(cur) !== -1) {
+        this.forward();
+        return this._parseOperator(cur, lineno, colno);
+      }
+
+      const sym = this._extractUntil(WHITESPACE_CHARS + DELIM_CHARS);
+      return this._parseSymbol(sym, lineno, colno);
+    },
   };
 
   return api;
 }
+
+// ===========================================
+// LEX HELPER - convenience function
+// ===========================================
 
 export function lex(src, opts) {
   return createTokenizer(src, opts);
