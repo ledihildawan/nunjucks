@@ -7,7 +7,7 @@ import { createFrame } from '../runtime/index.js';
 let compiler;
 
 beforeEach(() => {
-  compiler = createCompiler('test.njk', false, 'source');
+  compiler = createCompiler('test.njk', 'chainable', 'source');
 });
 
 describe('Compiler', () => {
@@ -19,7 +19,7 @@ describe('Compiler', () => {
     expect(compiler.bufferStack).toEqual([]);
     expect(compiler._scopeClosers).toBe('');
     expect(compiler.inBlock).toBe(false);
-    expect(compiler.throwOnUndefined).toBe(false);
+    expect(compiler.undefinedMode).toBe('chainable');
     expect(compiler.compiledLine).toBe(0);
     expect(compiler.sourceMap).toBeDefined();
   });

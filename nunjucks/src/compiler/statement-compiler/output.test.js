@@ -6,7 +6,7 @@ const makeCtx = () => {
   return {
     emitted,
     buffer: 'output',
-    throwOnUndefined: false,
+    undefinedMode: 'chainable',
     _emit: (s) => emitted.push(s),
     _emitLine: (s) => emitted.push(s + '\n'),
     _emitLineWithLineno: (s, line, col) => emitted.push(s + '\n'),
@@ -59,16 +59,16 @@ describe('compileOutput', () => {
     expect(code).toContain('env.opts.autoescape');
   });
 
-  test('wraps with ensureDefined when throwOnUndefined', () => {
+  test('wraps with ensureDefined when undefinedMode is strict', () => {
     const ctx = makeCtx();
-    ctx.throwOnUndefined = true;
+    ctx.undefinedMode = 'strict';
     const node = {
       children: [{ typename: 'Symbol', value: 'x', lineno: 2, colno: 3, mock: 'x' }],
     };
     compileOutput(ctx, node);
     const code = ctx.emitted.join('');
     expect(code).toContain('runtime.ensureDefined(');
-    expect(code).toContain('"x")');
+    expect(code).toContain('"strict"');
   });
 
   test('handles Pipe without awaitValue wrapper', () => {

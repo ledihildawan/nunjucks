@@ -3,9 +3,9 @@ import { createCompilerContext } from './context.js';
 
 describe('createCompilerContext', () => {
   test('creates context with default values', () => {
-    const ctx = createCompilerContext('test.html', false, 'hello {{ x }}');
+    const ctx = createCompilerContext('test.html', 'chainable', 'hello {{ x }}');
     expect(ctx.templateName).toBe('test.html');
-    expect(ctx.throwOnUndefined).toBe(false);
+    expect(ctx.undefinedMode).toBe('chainable');
     expect(ctx.codebuf).toEqual([]);
     expect(ctx.lastId).toBe(0);
     expect(ctx.buffer).toBeNull();
@@ -16,8 +16,8 @@ describe('createCompilerContext', () => {
     expect(ctx.sourceMap).toBeDefined();
   });
 
-  test('stores throwOnUndefined', () => {
-    const ctx = createCompilerContext('t', true, 'src');
-    expect(ctx.throwOnUndefined).toBe(true);
+  test('stores undefinedMode', () => {
+    const ctx = createCompilerContext('t', 'strict', 'src');
+    expect(ctx.undefinedMode).toBe('strict');
   });
 });

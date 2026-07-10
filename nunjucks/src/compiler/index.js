@@ -36,10 +36,11 @@ import { createTemplateError } from '../error/index.js';
 import { createObj } from '../object/index.js';
 import { createSourceMap } from '../helpers/source-map.js';
 import { COMPILE_FUNCTIONS, compileDispatch } from './node-dispatch.js';
+import { DEFAULT_UNDEFINED_MODE, convertThrowOnUndefined } from '../runtime/undefined.js';
 
-export function createCompiler(templateName, throwOnUndefined, source) {
+export function createCompiler(templateName, undefinedMode, source) {
   const obj = createObj('Compiler', {
-    init: function(templateName, throwOnUndefined, source) {
+    init: function(templateName, undefinedMode, source) {
       this.templateName = templateName;
       this.codebuf = [];
       this.lastId = 0;
@@ -47,7 +48,7 @@ export function createCompiler(templateName, throwOnUndefined, source) {
       this.bufferStack = [];
       this._scopeClosers = '';
       this.inBlock = false;
-      this.throwOnUndefined = throwOnUndefined;
+      this.undefinedMode = undefinedMode || DEFAULT_UNDEFINED_MODE;
       this.compiledLine = 0;
       this.sourceMap = createSourceMap(templateName);
     },
@@ -199,12 +200,13 @@ export function createCompiler(templateName, throwOnUndefined, source) {
       return this.sourceMap;
     },
   });
-  obj.init(templateName, throwOnUndefined, source);
+  obj.init(templateName, undefinedMode, source);
   return obj;
 }
 
 export function compile(src, asyncPipes, extensions, name, opts = {}) {
-  const c = createCompiler(name, opts.throwOnUndefined, src);
+  const undefinedMode = convertThrowOnUndefined(opts.undefined, opts.throwOnUndefined);
+  const c = createCompiler(name, undefinedMode, src);
 
   const preprocessors = (extensions || []).map(ext => ext.preprocess).filter(f => !!f);
 
@@ -223,7 +225,8 @@ export function getSourceMap(compiler) {
 }
 
 export function getSourceMapFromCompile(src, asyncPipes, extensions, name, opts = {}) {
-  const c = createCompiler(name, opts.throwOnUndefined, src);
+  const undefinedMode = convertThrowOnUndefined(opts.undefined, opts.throwOnUndefined);
+  const c = createCompiler(name, undefinedMode, src);
 
   const preprocessors = (extensions || []).map(ext => ext.preprocess).filter(f => !!f);
 

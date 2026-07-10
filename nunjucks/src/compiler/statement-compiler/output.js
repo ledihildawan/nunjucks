@@ -29,17 +29,19 @@ export const compileOutput = (ctx, node, frame) => {
     } else {
       const isPipe = child.typename === 'Pipe' || child.typename === 'PipeAsync';
       const varName = child.typename === 'Symbol' ? child.value : null;
+      const useEnsureDefined = ctx.undefinedMode && ctx.undefinedMode !== 'chainable';
       ctx._emitLineWithLineno(`lineno = ${child.lineno}; colno = ${child.colno}; ${ctx.buffer} += runtime.suppressValue(`, child.lineno, child.colno);
       if (!isPipe) {
         ctx._emit('await runtime.awaitValue(');
       }
-      if (ctx.throwOnUndefined) {
+      if (useEnsureDefined) {
         ctx._emit('runtime.ensureDefined(');
       }
       ctx.compile(child, frame);
-      if (ctx.throwOnUndefined) {
+      if (useEnsureDefined) {
         const nameArg = varName ? `, "${varName}"` : '';
-        ctx._emit(`,${child.lineno},${child.colno}${nameArg})`);
+        const modeArg = ctx.undefinedMode ? `, "${ctx.undefinedMode}"` : '';
+        ctx._emit(`,${child.lineno},${child.colno}${nameArg}${modeArg})`);
       }
       if (!isPipe) {
         ctx._emit(')');

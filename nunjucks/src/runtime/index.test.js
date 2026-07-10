@@ -50,29 +50,39 @@ describe('ensureDefined', () => {
     expect(ensureDefined('')).toBe('');
   });
 
-  test('throws for null/undefined', () => {
-    expect(() => ensureDefined(null, 1, 2)).toThrow('null or undefined');
-    expect(() => ensureDefined(undefined, 1, 2)).toThrow('null or undefined');
+  test('throws for null/undefined in strict mode', () => {
+    expect(() => ensureDefined(null, 1, 2, null, 'strict')).toThrow('null or undefined');
+    expect(() => ensureDefined(undefined, 1, 2, null, 'strict')).toThrow('null or undefined');
   });
 
-  test('includes varName in error message', () => {
-    expect(() => ensureDefined(null, 1, 2, 'myVar')).toThrow("'myVar'");
+  test('returns undefined string in chainable mode (default)', () => {
+    expect(ensureDefined(null, 1, 2)).toBe('undefined');
+    expect(ensureDefined(undefined, 1, 2)).toBe('undefined');
   });
 
-  test('sets code UNDEFINED_VARIABLE with varName', () => {
-    try { ensureDefined(null, 1, 2, 'x'); } catch (e) {
+  test('returns undefined string in debug mode', () => {
+    expect(ensureDefined(null, 1, 2, null, 'debug')).toBe('undefined');
+    expect(ensureDefined(undefined, 1, 2, null, 'debug')).toBe('undefined');
+  });
+
+  test('includes varName in error message (strict mode)', () => {
+    expect(() => ensureDefined(null, 1, 2, 'myVar', 'strict')).toThrow("'myVar'");
+  });
+
+  test('sets code UNDEFINED_VARIABLE with varName in strict mode', () => {
+    try { ensureDefined(null, 1, 2, 'x', 'strict'); } catch (e) {
       expect(e.code).toBe('UNDEFINED_VARIABLE');
     }
   });
 
-  test('sets code UNDEFINED_VALUE without varName', () => {
-    try { ensureDefined(undefined, 1, 2); } catch (e) {
+  test('sets code UNDEFINED_VALUE without varName in strict mode', () => {
+    try { ensureDefined(undefined, 1, 2, null, 'strict'); } catch (e) {
       expect(e.code).toBe('UNDEFINED_VALUE');
     }
   });
 
-  test('error has phase render', () => {
-    try { ensureDefined(null, 1, 2); } catch (e) {
+  test('error has phase render in strict mode', () => {
+    try { ensureDefined(null, 1, 2, null, 'strict'); } catch (e) {
       expect(e.phase).toBe('render');
     }
   });

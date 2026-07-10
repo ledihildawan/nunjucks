@@ -4,7 +4,7 @@ import { createFileSystemLoader } from '../loaders/file-system.js';
 import { createWebLoader } from '../loaders/web.js';
 import { createPrecompiledLoader } from '../loaders/precompiled.js';
 import { createEmitter } from '../object/index.js';
-import { createFrame, createSandboxedContext } from '../runtime/index.js';
+import { createFrame, createSandboxedContext, convertThrowOnUndefined, DEFAULT_UNDEFINED_MODE } from '../runtime/index.js';
 import expressApp from '../integration/express-app.js';
 import { createTemplate } from '../template/index.js';
 import {
@@ -27,6 +27,7 @@ const DEFAULT_OPTS = {
   version: VERSION,
   autoescape: true,
   throwOnUndefined: false,
+  undefined: DEFAULT_UNDEFINED_MODE,
   trimBlocks: false,
   lstripBlocks: false,
   ide: 'vscode',
@@ -41,7 +42,10 @@ const noopTmplSrc = {
 export function createEnvironment(loaders, opts) {
   const env = createEmitter('Environment');
 
-  env.opts = { ...DEFAULT_OPTS, ...opts };
+  const normalizedOpts = { ...DEFAULT_OPTS, ...opts };
+  normalizedOpts.undefined = convertThrowOnUndefined(normalizedOpts.undefined, normalizedOpts.throwOnUndefined);
+
+  env.opts = normalizedOpts;
   env._renderingTemplates = new Set();
   env.loaders = normalizeLoaders(loaders, createFileSystemLoader, createWebLoader);
   env.filters = {};
@@ -217,12 +221,14 @@ export function createEnvironment(loaders, opts) {
   env.render = async function(name, ctx) {
     const tmpl = await env.getTemplate(name);
     const sandboxedCtx = createSandboxedContext(ctx, env.opts.sandbox);
+    sandboxedCtx.__nunjucks_undefined_mode = env.opts.undefined;
     return tmpl.render(sandboxedCtx);
   };
 
   env.renderString = async function(src, ctx, opts) {
     const tmpl = createTemplate(src, env, opts?.path);
     const sandboxedCtx = createSandboxedContext(ctx, env.opts.sandbox);
+    sandboxedCtx.__nunjucks_undefined_mode = env.opts.undefined;
     return tmpl.render(sandboxedCtx);
   };
 

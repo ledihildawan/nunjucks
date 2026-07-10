@@ -32,6 +32,12 @@ import {
   BLOCKED_KEYS_LIST,
   DANGEROUS_GLOBALS_LIST,
 } from './sandbox.js';
+import {
+  UNDEFINED_MODES,
+  DEFAULT_UNDEFINED_MODE,
+  isValidUndefinedMode,
+  convertThrowOnUndefined,
+} from './undefined.js';
 
 const escapeHtml = (val) => Bun.escapeHTML(val).replace(/\\/g, '&#92;').replace(/&#x27;/g, '&#39;');
 
@@ -60,6 +66,10 @@ export {
   isDangerousGlobal,
   BLOCKED_KEYS_LIST,
   DANGEROUS_GLOBALS_LIST,
+  UNDEFINED_MODES,
+  DEFAULT_UNDEFINED_MODE,
+  isValidUndefinedMode,
+  convertThrowOnUndefined,
 };
 
 export function suppressValue(val, autoescape) {
@@ -83,15 +93,25 @@ export function awaitValue(val) {
   return val;
 }
 
-export function ensureDefined(val, lineno, colno, varName = null) {
+export function ensureDefined(val, lineno, colno, varName = null, undefinedMode = 'chainable') {
   if (val === null || val === undefined) {
     const varMsg = varName ? ` '${varName}'` : '';
-    throw createTemplateError(
-      `attempted to output${varMsg} null or undefined value`,
-      lineno,
-      colno,
-      { code: varName ? 'UNDEFINED_VARIABLE' : 'UNDEFINED_VALUE', subject: varName, phase: 'render' }
-    );
+
+    if (undefinedMode === 'strict') {
+      throw createTemplateError(
+        `attempted to output${varMsg} null or undefined value`,
+        lineno,
+        colno,
+        { code: varName ? 'UNDEFINED_VARIABLE' : 'UNDEFINED_VALUE', subject: varName, phase: 'render' }
+      );
+    }
+
+    if (undefinedMode === 'debug') {
+      const warning = `[nunjucks] Warning: undefined${varMsg} at line ${lineno}:${colno}`;
+      console.warn(warning);
+    }
+
+    return 'undefined';
   }
   return val;
 }
