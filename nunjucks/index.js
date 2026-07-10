@@ -152,7 +152,29 @@ import {
 } from './src/precompile/index.js';
 import { setErrorConfig } from './src/error/config.js';
 
-let _env = null;
+const createDefaultEnv = () => {
+  let _env = null;
+
+  return {
+    configure(templatesPath, opts) {
+      const { opts: normalizedOpts, templatesPath: normalizedPath } = normalizeOpts(templatesPath, opts);
+      setErrorConfig(normalizedOpts);
+      const loader = createLoader(loaders, normalizedPath, normalizedOpts);
+      _env = new Environment(loader, normalizedOpts);
+      applyExpress(_env, normalizedOpts);
+      return _env;
+    },
+    reset() {
+      _env = null;
+    },
+    getEnv() {
+      if (!_env) this.configure();
+      return _env;
+    }
+  };
+};
+
+const defaultEnv = createDefaultEnv();
 
 const nodes = {
   Node,
@@ -339,25 +361,9 @@ const runtime = {
   inOperator,
 };
 
-export const configure = (templatesPath, opts) => {
-  const { opts: normalizedOpts, templatesPath: normalizedPath } = normalizeOpts(templatesPath, opts);
-  setErrorConfig(normalizedOpts);
-  const loader = createLoader(loaders, normalizedPath, normalizedOpts);
-  _env = new Environment(loader, normalizedOpts);
-  applyExpress(_env, normalizedOpts);
-  return _env;
-};
-
-export const reset = () => {
-  _env = null;
-};
-
-const getEnv = () => {
-  if (!_env) {
-    configure();
-  }
-  return _env;
-};
+export const configure = defaultEnv.configure.bind(defaultEnv);
+export const reset = defaultEnv.reset.bind(defaultEnv);
+const getEnv = defaultEnv.getEnv.bind(defaultEnv);
 
 export const compileTemplate = (src, env, path, eagerCompile) => new Template(src, env, path, eagerCompile);
 
