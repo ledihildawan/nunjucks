@@ -1,5 +1,5 @@
 import { expect, describe, test, beforeAll, afterAll } from 'bun:test';
-import nunjucks from '../../index.js';
+import { configure, reset, render } from '../../index.js';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -16,7 +16,7 @@ function rmdir(dirPath) {
   }
 }
 
-describe('nunjucks.configure', function() {
+describe('configure', function() {
   var tempdir;
 
   beforeAll(async function() {
@@ -33,29 +33,29 @@ describe('nunjucks.configure', function() {
   });
 
   afterAll(async function() {
-    nunjucks.reset();
+    reset();
     if (typeof tempdir !== 'undefined') {
       rmdir(tempdir);
     }
   });
 
   test('should cache templates by default', async function() {
-    nunjucks.configure(tempdir);
+    configure(tempdir);
 
     fs.writeFileSync(tempdir + '/test.html', '{{ name }}', 'utf-8');
-    expect(await nunjucks.render('test.html', {name: 'foo'})).toBe('foo');
+    expect(await render('test.html', {name: 'foo'})).toBe('foo');
 
     fs.writeFileSync(tempdir + '/test.html', '{{ name }}-changed', 'utf-8');
-    expect(await nunjucks.render('test.html', {name: 'foo'})).toBe('foo');
+    expect(await render('test.html', {name: 'foo'})).toBe('foo');
   });
 
   test('should not cache templates with {noCache: true}', async function() {
-    nunjucks.configure(tempdir, {noCache: true});
+    configure(tempdir, {noCache: true});
 
     fs.writeFileSync(tempdir + '/test.html', '{{ name }}', 'utf-8');
-    expect(await nunjucks.render('test.html', {name: 'foo'})).toBe('foo');
+    expect(await render('test.html', {name: 'foo'})).toBe('foo');
 
     fs.writeFileSync(tempdir + '/test.html', '{{ name }}-changed', 'utf-8');
-    expect(await nunjucks.render('test.html', {name: 'foo'})).toBe('foo-changed');
+    expect(await render('test.html', {name: 'foo'})).toBe('foo-changed');
   });
 });

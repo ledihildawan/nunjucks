@@ -1,13 +1,19 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { expect } from 'bun:test';
-import nunjucks from '../../index.js';
+import {
+  createEnvironment,
+  createTemplate,
+  createFileSystemLoader,
+  precompileString,
+  installJinjaCompat,
+} from '../../index.js';
+
+const Environment = createEnvironment;
+const Template = createTemplate;
+const Loader = createFileSystemLoader;
 
 var isSlim = false;
-var Environment = nunjucks.Environment;
-var Template = nunjucks.Template;
-var Loader = nunjucks.FileSystemLoader;
-var precompileString = nunjucks.precompileString;
 var templatesPath = 'src/template/test-templates';
 
 function equal(str, ctx, opts, str2, env) {
@@ -33,7 +39,7 @@ function equal(str, ctx, opts, str2, env) {
 }
 
 function jinjaEqual(str, ctx, str2, env) {
-  var jinjaUninstalls = [nunjucks.installJinjaCompat()];
+  var jinjaUninstalls = [installJinjaCompat()];
   try {
     return equal(str, ctx, str2, env);
   } finally {

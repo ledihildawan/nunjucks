@@ -7,7 +7,7 @@ import { createWebLoader } from './src/loaders/web.js';
 import { createPrecompiledLoader } from './src/loaders/precompiled.js';
 import {
   createCompiler,
-  compile as compileSourceToCode,
+  compile,
   getSourceMap,
   getSourceMapFromCompile,
 } from './src/compiler/index.js';
@@ -152,6 +152,11 @@ import {
 } from './src/precompile/index.js';
 import { setErrorConfig } from './src/error/config.js';
 
+const loaderCreators = {
+  FileSystemLoader: createFileSystemLoader,
+  WebLoader: createWebLoader,
+};
+
 const createDefaultEnv = () => {
   let _env = null;
 
@@ -159,7 +164,7 @@ const createDefaultEnv = () => {
     configure(templatesPath, opts) {
       const { opts: normalizedOpts, templatesPath: normalizedPath } = normalizeOpts(templatesPath, opts);
       setErrorConfig(normalizedOpts);
-      const loader = makeLoader(loaders, normalizedPath, normalizedOpts);
+      const loader = makeLoader(loaderCreators, normalizedPath, normalizedOpts);
       _env = createEnvironment(loader, normalizedOpts);
       applyExpress(_env, normalizedOpts);
       return _env;
@@ -275,29 +280,62 @@ const normalizeOpts = (templatesPath, opts) => {
   return { opts, templatesPath };
 };
 
-const loaders = {
-  FileSystemLoader: createFileSystemLoader,
-  NodeResolveLoader: createNodeResolveLoader,
-  PrecompiledLoader: createPrecompiledLoader,
-  WebLoader: createWebLoader,
-};
+export const configure = defaultEnv.configure.bind(defaultEnv);
+export const reset = defaultEnv.reset.bind(defaultEnv);
+const getEnv = defaultEnv.getEnv.bind(defaultEnv);
 
-const compiler = {
-  Compiler: createCompiler,
-  compile: compileSourceToCode,
+export const compileTemplate = (src, env, path, eagerCompile) => createTemplate(src, env, path, eagerCompile);
+
+export const render = (name, ctx) => getEnv().render(name, ctx);
+
+export const renderString = (src, ctx) => getEnv().renderString(src, ctx);
+
+export {
+  createEnvironment,
+  createTemplate,
+  createLoader,
+  createFileSystemLoader,
+  createNodeResolveLoader,
+  createPrecompiledLoader,
+  createWebLoader,
+  createCompiler,
+  compile,
   getSourceMap,
   getSourceMapFromCompile,
-};
-
-const parser = {
-  Parser: createParser,
+  createParser,
   parse,
-};
-
-const lexer = {
   createTokenizer,
   lex,
   createToken,
+  createFrame,
+  SafeString,
+  copySafeness,
+  markSafe,
+  makeMacro,
+  makeKeywordArgs,
+  isKeywordArgs,
+  getKeywordArgs,
+  numArgs,
+  memberLookup,
+  optionalMemberLookup,
+  slice,
+  nullishCoalesce,
+  asyncEach,
+  asyncAll,
+  isArray,
+  keys,
+  suppressValue,
+  awaitValue,
+  ensureDefined,
+  callWrap,
+  contextOrFrameLookup,
+  handleError,
+  fromIterator,
+  inOperator,
+  nodes,
+  installJinjaCompat,
+  precompile,
+  precompileString,
   TOKEN_BLOCK_END,
   TOKEN_BLOCK_START,
   TOKEN_BOOLEAN,
@@ -333,83 +371,4 @@ const lexer = {
   createDelimiters,
 };
 
-const runtime = {
-  createFrame,
-  SafeString,
-  copySafeness,
-  markSafe,
-  makeMacro,
-  makeKeywordArgs,
-  isKeywordArgs,
-  getKeywordArgs,
-  numArgs,
-  memberLookup,
-  optionalMemberLookup,
-  slice,
-  nullishCoalesce,
-  asyncEach,
-  asyncAll,
-  isArray,
-  keys,
-  suppressValue,
-  awaitValue,
-  ensureDefined,
-  callWrap,
-  contextOrFrameLookup,
-  handleError,
-  fromIterator,
-  inOperator,
-};
-
-export const configure = defaultEnv.configure.bind(defaultEnv);
-export const reset = defaultEnv.reset.bind(defaultEnv);
-const getEnv = defaultEnv.getEnv.bind(defaultEnv);
-
-export const compileTemplate = (src, env, path, eagerCompile) => createTemplate(src, env, path, eagerCompile);
-
-export const render = (name, ctx) => getEnv().render(name, ctx);
-
-export const renderString = (src, ctx) => getEnv().renderString(src, ctx);
-
-export {
-  createEnvironment,
-  createTemplate,
-  createLoader,
-  createFileSystemLoader,
-  createNodeResolveLoader,
-  createPrecompiledLoader,
-  createWebLoader,
-  compiler,
-  parser,
-  lexer,
-  runtime,
-  nodes,
-  installJinjaCompat,
-  precompile,
-  precompileString,
-};
-
 export { getConfig, renderError, renderErrorString } from './src/error/index.js';
-
-export default {
-  Environment: createEnvironment,
-  Template: createTemplate,
-  Loader: createLoader,
-  FileSystemLoader: createFileSystemLoader,
-  NodeResolveLoader: createNodeResolveLoader,
-  PrecompiledLoader: createPrecompiledLoader,
-  WebLoader: createWebLoader,
-  compiler,
-  parser,
-  lexer,
-  runtime,
-  nodes,
-  installJinjaCompat,
-  configure,
-  reset,
-  compileTemplate,
-  render,
-  renderString,
-  precompile,
-  precompileString
-};
