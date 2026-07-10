@@ -18,21 +18,9 @@ import {
   REGEX_FLAGS,
   createDelimiters,
 } from './delimiters.js';
-import {
-  createToken,
-  parseEscapeChar,
-  isComplexOperator,
-  isValidRegexFlag,
-  isNumericString,
-  createOperatorToken,
-  createNumberToken,
-  createSymbolToken,
-  extractBeginChars,
-  extractWhileInCharSet,
-  extractUntilCharSet,
-  parseStringContent,
-  parseRegexContent,
-} from './tokenizer-helpers.js';
+import { createToken, createOperatorToken, createNumberToken, createSymbolToken } from './tokenizer-token-creators.js';
+import { isComplexOperator, isValidRegexFlag, isNumericString, isBooleanString, isNullString } from './tokenizer-validators.js';
+import { extractBeginChars, extractWhileInCharSet, extractUntilCharSet, parseStringContent, parseRegexContent } from './tokenizer-string-parsers.js';
 
 export { createToken };
 
@@ -176,14 +164,14 @@ export function createTokenizer(str, opts = {}) {
       if (isNumericString(tok)) {
         return this._parseNumber(tok, lineno, colno);
       }
-      const symbolToken = createSymbolToken(tok, lineno, colno);
+      const symbolToken = createSymbolToken(tok, lineno, colno, false, isBooleanString(tok), isNullString(tok));
       if (symbolToken) return symbolToken;
       throw createTemplateError('Unexpected value while parsing: ' + tok, state.lineno, state.colno, { phase: 'lex' });
     },
 
     _parseRegex(lineno, colno) {
       this.forwardN(2);
-      const { body, flags } = parseRegexContent(state.str, state.index, REGEX_FLAGS);
+      const { body, flags } = parseRegexContent(state.str, state.index, REGEX_FLAGS, isValidRegexFlag);
       this.forwardN(body.length + flags.length + 1);
       return createToken(TOKEN_REGEX, { body, flags }, lineno, colno);
     },
