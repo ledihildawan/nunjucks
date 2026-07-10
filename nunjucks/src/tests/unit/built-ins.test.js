@@ -1,5 +1,5 @@
 import { expect, describe, test } from 'bun:test';
-import * as util from '../../util.js';
+import * as util from '../util.js';
 
 var render = util.render;
 var equal = util.equal;

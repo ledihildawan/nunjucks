@@ -1,9 +1,9 @@
 import { expect, describe, test } from 'bun:test';
-import nunjucks from '../../../nunjucks/index.js';
+import nunjucks from '../../../../nunjucks/index.js';
 
 var Environment = nunjucks.Environment;
 var Template = nunjucks.Template;
-var templatesPath = 'tests/templates';
+var templatesPath = 'nunjucks/src/tests/templates';
 var Loader = nunjucks.FileSystemLoader;
 
 describe('runtime', function() {

@@ -1,7 +1,7 @@
 import { expect, describe, test } from 'bun:test';
-import * as util from '../../util.js';
-import { Template } from '../../../nunjucks/src/environment/index.js';
-import { Environment } from '../../../nunjucks/src/environment/index.js';
+import * as util from '../util.js';
+import { Template } from '../../environment/index.js';
+import { Environment } from '../../environment/index.js';
 import { readFile } from 'node:fs/promises';
 
 var render = util.render;
@@ -641,7 +641,7 @@ describe('compiler', function() {
     {
       const res = await render('{{ tmpl |> getContents }}',
         {
-          tmpl: 'tests/templates/for-async-content.njk'
+          tmpl: 'nunjucks/src/tests/templates/for-async-content.njk'
         },
         opts);
       expect(res).toBe('somecontenthere');
@@ -650,7 +650,7 @@ describe('compiler', function() {
     {
       const res = await render('{% if tmpl %}{{ tmpl |> getContents }}{% endif %}',
         {
-          tmpl: 'tests/templates/for-async-content.njk'
+          tmpl: 'nunjucks/src/tests/templates/for-async-content.njk'
         },
         opts);
       expect(res).toBe('somecontenthere');
@@ -659,7 +659,7 @@ describe('compiler', function() {
     {
       const res = await render('{% if tmpl |> getContents %}yes{% endif %}',
         {
-          tmpl: 'tests/templates/for-async-content.njk'
+          tmpl: 'nunjucks/src/tests/templates/for-async-content.njk'
         },
         opts);
       expect(res).toBe('yes');
@@ -668,7 +668,7 @@ describe('compiler', function() {
     {
       const res = await render('{% for t in [tmpl, tmpl] %}{{ t |> getContents }}*{% endfor %}',
         {
-          tmpl: 'tests/templates/for-async-content.njk'
+          tmpl: 'nunjucks/src/tests/templates/for-async-content.njk'
         },
         opts);
       expect(res).toBe('somecontenthere*somecontenthere*');
@@ -677,7 +677,7 @@ describe('compiler', function() {
     {
       const res = await render('{% for t in [tmpl, tmpl] |> getContentsArr %}{{ t }}{% endfor %}',
         {
-          tmpl: 'tests/templates/for-async-content.njk'
+          tmpl: 'nunjucks/src/tests/templates/for-async-content.njk'
         },
         opts);
       expect(res).toBe('somecontenthere');
@@ -686,7 +686,7 @@ describe('compiler', function() {
     {
       const res = await render('{% if test %}{{ tmpl |> getContents }}{% endif %}oof',
         {
-          tmpl: 'tests/templates/for-async-content.njk'
+          tmpl: 'nunjucks/src/tests/templates/for-async-content.njk'
         },
         opts);
       expect(res).toBe('oof');
@@ -698,7 +698,7 @@ describe('compiler', function() {
         '{% for i in [0, 1] %}{{ tmpl |> getContents }}*{% endfor %}' +
         '{% endif %}',
         {
-          tmpl: 'tests/templates/for-async-content.njk'
+          tmpl: 'nunjucks/src/tests/templates/for-async-content.njk'
         },
         opts);
       expect(res).toBe('somecontenthere*somecontenthere*');
@@ -707,7 +707,7 @@ describe('compiler', function() {
     {
       const res = await render('{% block content %}{{ tmpl |> getContents }}{% endblock %}',
         {
-          tmpl: 'tests/templates/for-async-content.njk'
+          tmpl: 'nunjucks/src/tests/templates/for-async-content.njk'
         },
         opts);
       expect(res).toBe('somecontenthere');
@@ -716,7 +716,7 @@ describe('compiler', function() {
     {
       const res = await render('{% block content %}hello{% endblock %} {{ tmpl |> getContents }}',
         {
-          tmpl: 'tests/templates/for-async-content.njk'
+          tmpl: 'nunjucks/src/tests/templates/for-async-content.njk'
         },
         opts);
       expect(res).toBe('hello somecontenthere');
@@ -725,7 +725,7 @@ describe('compiler', function() {
     {
       const res = await render('{% block content %}{% set foo = tmpl |> getContents %}{{ foo }}{% endblock %}',
         {
-          tmpl: 'tests/templates/for-async-content.njk'
+          tmpl: 'nunjucks/src/tests/templates/for-async-content.njk'
         },
         opts);
       expect(res).toBe('somecontenthere');
@@ -734,7 +734,7 @@ describe('compiler', function() {
     {
       const res = await render('{% block content %}{% include "async.njk" %}{% endblock %}',
         {
-          tmpl: 'tests/templates/for-async-content.njk'
+          tmpl: 'nunjucks/src/tests/templates/for-async-content.njk'
         },
         opts);
       expect(res).toBe('somecontenthere\n');
@@ -743,7 +743,7 @@ describe('compiler', function() {
     {
       const res = await render('{% asyncEach i in [0, 1] %}{% include "async.njk" %}{% endeach %}',
         {
-          tmpl: 'tests/templates/for-async-content.njk'
+          tmpl: 'nunjucks/src/tests/templates/for-async-content.njk'
         },
         opts);
       expect(res).toBe('somecontenthere\nsomecontenthere\n');
@@ -752,7 +752,7 @@ describe('compiler', function() {
     {
       const res = await render('{% asyncAll i in [0, 1, 2, 3, 4] %}-{{ i }}:{% include "async.njk" %}-{% endall %}',
         {
-          tmpl: 'tests/templates/for-async-content.njk'
+          tmpl: 'nunjucks/src/tests/templates/for-async-content.njk'
         },
         opts);
       expect(res).toBe('-0:somecontenthere\n-' +
@@ -900,7 +900,7 @@ describe('compiler', function() {
         '{{ items |> join(",") }}',
       ].join('\n');
 
-      var loader = new Loader('tests/templates');
+      var loader = new Loader('nunjucks/src/tests/templates');
       var env = new Environment(loader);
       var tmpl = new Template(tmplStr, env, 'parse-error.njk');
 
@@ -924,7 +924,7 @@ describe('compiler', function() {
         '<div>{{ foo() }}</div>',
         '{% endblock %}',
       ].join('\n');
-      var env = new Environment(new Loader('tests/templates'));
+      var env = new Environment(new Loader('nunjucks/src/tests/templates'));
       var tmpl = new Template(tmplStr, env, 'user-error.njk');
 
       function foo() {
@@ -1859,7 +1859,7 @@ describe('compiler', function() {
         var args;
         var tok = parser.nextToken();
 
-        args = parser.parseSignature(true);
+        args = parser.parseSignature(null, true);
         parser.advanceAfterBlockEnd(tok.value);
 
         body = parser.parseUntilBlocks('endtest');
@@ -1868,511 +1868,14 @@ describe('compiler', function() {
         return new nodes.CallExtension(this, 'run', args, [body]);
       };
 
-      this.run = async function(context, prefix, kwargs, body) {
-        var output;
-        if (typeof prefix === 'function') {
-          body = prefix;
-          prefix = '';
-          kwargs = {};
-        } else if (typeof kwargs === 'function') {
-          body = kwargs;
-          kwargs = {};
-        }
-
-        output = prefix + (await body()).split('').reverse().join('');
-        if (kwargs.cutoff) {
-          output = output.slice(0, kwargs.cutoff);
-        }
-
-        return output;
+      this.run = async function(context, arg1, body) {
+        var content = await body();
+        return arg1 + ':' + content;
       };
     }
 
-    opts = {
-      extensions: {
-        TestExtension: new TestExtension()
-      }
-    };
-
-    await equal(
-      '{% test %}foobar{% endtest %}', null, opts,
-      'raboof');
-
-    await equal(
-      '{% test("biz") %}foobar{% endtest %}', null, opts,
-      'bizraboof');
-
-    await equal(
-      '{% test("biz", cutoff=5) %}foobar{% endtest %}', null, opts,
-      'bizra');
-
-    
-  });
-
-  test('should autoescape by default', async function() {
-    await equal('{{ foo }}', {
-      foo: '"\'<>&'
-    }, '&quot;&#39;&lt;&gt;&amp;');
-    
-  });
-
-  test('should autoescape if autoescape is on', async function() {
-    await equal(
-      '{{ foo }}',
-      { foo: '"\'<>&' },
-      { autoescape: true },
-      '&quot;&#39;&lt;&gt;&amp;');
-
-    await equal('{{ foo|>reverse }}',
-      { foo: '"\'<>&' },
-      { autoescape: true },
-      '&amp;&gt;&lt;&#39;&quot;');
-
-    await equal(
-      '{{ foo|>reverse|>safe }}',
-      { foo: '"\'<>&' },
-      { autoescape: true },
-      '&><\'"');
-
-    await equal(
-      '{{ foo }}',
-      { foo: null },
-      { autoescape: true },
-      '');
-
-    await equal(
-      '{{ foo }}',
-      { foo: ['<p>foo</p>'] },
-      { autoescape: true },
-      '&lt;p&gt;foo&lt;/p&gt;');
-
-    await equal(
-      '{{ foo }}',
-      { foo: { toString: function() { return '<p>foo</p>'; } } },
-      { autoescape: true },
-      '&lt;p&gt;foo&lt;/p&gt;');
-
-    await equal('{{ foo |> safe }}',
-      { foo: null },
-      { autoescape: true },
-      '');
-
-    await equal(
-      '{{ foo |> safe }}',
-      { foo: '<p>foo</p>' },
-      { autoescape: true },
-      '<p>foo</p>');
-
-    await equal(
-      '{{ foo |> safe }}',
-      { foo: ['<p>foo</p>'] },
-      { autoescape: true },
-      '<p>foo</p>');
-
-    await equal(
-      '{{ foo |> safe }}',
-      { foo: { toString: function() { return '<p>foo</p>'; } } },
-      { autoescape: true },
-      '<p>foo</p>');
-
-    
-  });
-
-  test('should not autoescape safe strings', async function() {
-    await equal(
-      '{{ foo|>safe }}',
-      { foo: '"\'<>&' },
-      { autoescape: true },
-      '"\'<>&');
-
-    
-  });
-
-  test('should not autoescape macros', async function() {
-    render(
-      '{% macro foo(x, y) %}{{ x }} and {{ y }}{% endmacro %}' +
-      '{{ foo("<>&", "<>") }}',
-      null,
-      {
-        autoescape: true
-      },
-      function(err, res) {
-        expect(res).toBe('&lt;&gt;&amp; and &lt;&gt;');
-      }
-    );
-
-    render(
-      '{% macro foo(x, y) %}{{ x|>safe }} and {{ y }}{% endmacro %}' +
-      '{{ foo("<>&", "<>") }}',
-      null,
-      {
-        autoescape: true
-      },
-      function(err, res) {
-        expect(res).toBe('<>& and &lt;&gt;');
-      }
-    );
-
-    
-  });
-
-  test('should not autoescape super()', async function() {
-    render(
-      '{% extends "base3.njk" %}' +
-      '{% block block1 %}{{ super() }}{% endblock %}',
-      null,
-      {
-        autoescape: true
-      },
-      function(err, res) {
-        expect(res).toBe('<b>Foo</b>');
-      }
-    );
-
-    
-  });
-
-  test('should autoescape backslashes', async function() {
-    await equal(
-      '{{ foo }}',
-      { foo: 'foo \\\' bar' },
-      { autoescape: true },
-      'foo &#92;&#39; bar');
-
-    
-  });
-
-  test('should not autoescape when extension set false', async function() {
-    function TestExtension() {
-      this.tags = ['test'];
-
-      this.autoescape = false;
-
-      this.parse = function(parser, nodes) {
-        var tok = parser.nextToken();
-        var args = parser.parseSignature(null, true);
-        parser.advanceAfterBlockEnd(tok.value);
-        return new nodes.CallExtension(this, 'run', args, null);
-      };
-
-      this.run = function() {
-        return '<b>Foo</b>';
-      };
-    }
-
-    render(
-      '{% test "123456" %}',
-      null,
-      {
-        extensions: { TestExtension: new TestExtension() },
-        autoescape: true
-      },
-      function(err, res) {
-        expect(res).toBe('<b>Foo</b>');
-      }
-    );
-
-    
-  });
-
-  test('should pass context as this to pipes', async function() {
-    render(
-      '{{ foo |> hallo }}',
-      { foo: 1, bar: 2 },
-      {
-        filters: {
-          hallo: function(foo) {
-            return foo + this.lookup('bar');
-          }
-        }
-      },
-      function(err, res) {
-        expect(res).toBe('3');
-      }
-    );
-
-    
-  });
-
-  test('should render regexs', async function() {
-    await equal('{{ r/name [0-9] \\// }}', {}, { autoescape: false },
-      '/name [0-9] \\//');
-
-    await equal('{{ r/x/gi }}',
-      '/x/gi');
-
-    
-  });
-
-  test('should throw an error when {% call %} is passed an object that is not a function', async function() {
-    render(
-      '{% call foo() %}{% endcall %}',
-      {foo: 'bar'},
-      {noThrow: true},
-      function(err, res) {
-        expect(res).toBe(undefined);
-        expect(err.message).toMatch(/Unable to call `\w+`, which is not a function/);
-      });
-
-    
-  });
-
-  test('should throw an error when including a file that calls an undefined macro', async function() {
-    render(
-      '{% include "undefined-macro.njk" %}',
-      {},
-      {
-        noThrow: true
-      },
-      function(err, res) {
-        expect(res).toBe(undefined);
-        expect(err.message).toMatch(/Unable to call `\w+`, which is undefined or falsey/);
-      }
-    );
-
-    
-  });
-
-  test('should throw an error when including a file that calls an undefined macro even inside {% if %} tag', async function() {
-    render(
-      '{% if true %}{% include "undefined-macro.njk" %}{% endif %}',
-      {},
-      {
-        noThrow: true
-      },
-      function(err, res) {
-        expect(res).toBe(undefined);
-        expect(err.message).toMatch(/Unable to call `\w+`, which is undefined or falsey/);
-      }
-    );
-
-    
-  });
-
-  test('should throw an error when including a file that imports macro that calls an undefined macro', async function() {
-    render(
-      '{% include "import-macro-call-undefined-macro.njk" %}',
-      { list: [1, 2, 3] },
-      { noThrow: true },
-      function(err, res) {
-        expect(res).toBe(undefined);
-        expect(err.message).toMatch(/Unable to call `\w+`, which is undefined or falsey/);
-      }
-    );
-
-    
-  });
-
-
-  test('should control whitespaces correctly', async function() {
-    await equal(
-      '{% if true -%}{{"hello"}} {{"world"}}{% endif %}',
-      'hello world');
-
-    await equal(
-      '{% if true -%}{% if true %} {{"hello"}} {{"world"}}'
-      + '{% endif %}{% endif %}',
-      ' hello world');
-
-    await equal(
-      '{% if true -%}{# comment #} {{"hello"}}{% endif %}',
-      ' hello');
-
-    
-  });
-
-  test('should control expression whitespaces correctly', async function() {
-    await equal(
-      'Well, {{- \' hello, \' -}} my friend',
-      'Well, hello, my friend'
-    );
-
-    await equal(' {{ 2 + 2 }} ', ' 4 ');
-
-    await equal(' {{-2 + 2 }} ', '4 ');
-
-    await equal(' {{ -2 + 2 }} ', ' 0 ');
-
-    await equal(' {{ 2 + 2 -}} ', ' 4');
-
-    
-  });
-
-  test('should get right value when macro parameter conflict with global macro name', async function() {
-    render(
-      '{# macro1 and macro2 definition #}' +
-      '{% macro macro1() %}' +
-      '{% endmacro %}' +
-      '' +
-      '{% macro macro2(macro1="default") %}' +
-      '{{macro1}}' +
-      '{% endmacro %}' +
-      '' +
-      '{# calling macro2 #}' +
-      '{{macro2("this should be outputted") }}', {}, {}, function(err, res) {
-          expect(res.trim()).toEqual('this should be outputted');
-        });
-
-    
-  });
-
-  test('should get right value when macro include macro', async function() {
-    render(
-      '{# macro1 and macro2 definition #}' +
-      '{% macro macro1() %} foo' +
-      '{% endmacro %}' +
-      '' +
-      '{% macro macro2(text="default") %}' +
-      '{{macro1()}}' +
-      '{% endmacro %}' +
-      '' +
-      '{# calling macro2 #}' +
-      '{{macro2("this should not be outputted") }}', {}, {}, function(err, res) {
-          expect(res.trim()).toEqual('foo');
-        });
-
-    
-  });
-
-  test('should allow access to outer scope in call blocks', async function() {
-    render(
-      '{% macro inside() %}' +
-      '{{ caller() }}' +
-      '{% endmacro %}' +
-      '{% macro outside(var) %}' +
-      '{{ var }}\n' +
-      '{% call inside() %}' +
-      '{{ var }}' +
-      '{% endcall %}' +
-      '{% endmacro %}' +
-      '{{ outside("foobar") }}', {}, {}, function(err, res) {
-          expect(res.trim()).toEqual('foobar\nfoobar');
-        });
-
-    
-  });
-
-  test('should not leak scope from call blocks to parent', async function() {
-    render(
-      '{% set var = "expected" %}' +
-      '{% macro inside() %}' +
-      '{% set var = "incorrect-value" %}' +
-      '{{ caller() }}' +
-      '{% endmacro %}' +
-      '{% macro outside() %}' +
-      '{% call inside() %}' +
-      '{% endcall %}' +
-      '{% endmacro %}' +
-      '{{ outside() }}' +
-      '{{ var }}', {}, {}, function(err, res) {
-          expect(res.trim()).toEqual('expected');
-        });
-
-    
-  });
-
-
-  if (!isSlim) {
-    test('should import template objects', async function() {
-      var tmpl = new Template('{% macro foo() %}Inside a macro{% endmacro %}' +
-        '{% set bar = "BAZ" %}');
-
-      await equal(
-        '{% import tmpl as imp %}' +
-        '{{ imp.foo() }} {{ imp.bar }}',
-        {
-          tmpl: tmpl
-        },
-        'Inside a macro BAZ');
-
-      await equal(
-        '{% from tmpl import foo as baz, bar %}' +
-        '{{ bar }} {{ baz() }}',
-        {
-          tmpl: tmpl
-        },
-        'BAZ Inside a macro');
-
-      
-    });
-
-    test('should inherit template objects', async function() {
-      var tmpl = new Template('Foo{% block block1 %}Bar{% endblock %}' +
-        '{% block block2 %}Baz{% endblock %}Whizzle');
-
-      await equal('hola {% extends tmpl %} fizzle mumble',
-        {
-          tmpl: tmpl
-        },
-        'FooBarBazWhizzle');
-
-      await equal(
-        '{% extends tmpl %}' +
-        '{% block block1 %}BAR{% endblock %}' +
-        '{% block block2 %}BAZ{% endblock %}',
-        {
-          tmpl: tmpl
-        },
-        'FooBARBAZWhizzle');
-
-      
-    });
-
-    test('should include template objects', async function() {
-      var tmpl = new Template('FooInclude {{ name }}');
-
-      await equal('hello world {% include tmpl %}',
-        {
-          name: 'thedude',
-          tmpl: tmpl
-        },
-        'hello world FooInclude thedude');
-
-      
-    });
-
-    test('should throw an error when invalid expression whitespaces are used', async function() {
-      render(
-        ' {{ 2 + 2- }}',
-        {},
-        {
-          noThrow: true
-        },
-        function(err, res) {
-          expect(res).toBe(undefined);
-          expect(err.message).toMatch(/unexpected token: }}/);
-        }
-      );
-
-      
-    });
-  }
-});
-
-describe('the filter tag', function() {
-  test('should apply the title filter to the body', async function() {
-    await equal('{% filter title %}may the force be with you{% endfilter %}',
-      'May The Force Be With You');
-    
-  });
-
-  test('should apply the replace filter to the body', async function() {
-    await equal('{% filter replace("force", "forth") %}may the force be with you{% endfilter %}',
-      'may the forth be with you');
-    
-  });
-
-  test('should work with variables in the body', async function() {
-    await equal('{% set foo = "force" %}{% filter replace("force", "forth") %}may the {{ foo }} be with you{% endfilter %}',
-      'may the forth be with you');
-    
-  });
-
-  test('should work with blocks in the body', async function() {
-    await equal(
-      '{% extends "filter-block.html" %}' +
-      '{% block block1 %}force{% endblock %}',
-      'may the forth be with you\n');
-    
+    await equal('{% test "label" %}content{% endtest %}', null,
+      { extensions: { TestExtension: new TestExtension() } },
+      'label:content');
   });
 });

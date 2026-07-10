@@ -1,14 +1,14 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { expect } from 'bun:test';
-import nunjucks from '../nunjucks/index.js';
+import nunjucks from '../../../nunjucks/index.js';
 
 var isSlim = false;
 var Environment = nunjucks.Environment;
 var Template = nunjucks.Template;
 var Loader = nunjucks.FileSystemLoader;
 var precompileString = nunjucks.precompileString;
-var templatesPath = 'tests/templates';
+var templatesPath = 'nunjucks/src/tests/templates';
 
 function equal(str, ctx, opts, str2, env) {
   if (typeof ctx === 'string') {

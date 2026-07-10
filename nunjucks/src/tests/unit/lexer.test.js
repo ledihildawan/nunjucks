@@ -1,6 +1,6 @@
 import { expect, describe, test } from 'bun:test';
 import { isArray, isPlainObject } from 'remeda';
-import * as lexer from '../../../nunjucks/src/lexer/index.js';
+import * as lexer from '../../lexer/index.js';
 
 const isObject = isPlainObject;
 

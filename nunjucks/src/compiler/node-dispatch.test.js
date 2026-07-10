@@ -28,14 +28,19 @@ describe('COMPILE_FUNCTIONS', () => {
 
 describe('compileDispatch', () => {
   test('calls the correct function for node typename', () => {
-    const called = [];
-    const ctx = {
-      fail: () => { throw new Error('fail'); },
-    };
-    COMPILE_FUNCTIONS.Literal = (c, n) => { called.push('literal'); };
-    const node = { typename: 'Literal' };
-    compileDispatch(ctx, node);
-    expect(called).toEqual(['literal']);
+    const orig = COMPILE_FUNCTIONS.Literal;
+    try {
+      const called = [];
+      const ctx = {
+        fail: () => { throw new Error('fail'); },
+      };
+      COMPILE_FUNCTIONS.Literal = (c, n) => { called.push('literal'); };
+      const node = { typename: 'Literal' };
+      compileDispatch(ctx, node);
+      expect(called).toEqual(['literal']);
+    } finally {
+      COMPILE_FUNCTIONS.Literal = orig;
+    }
   });
 
   test('calls fail for unknown typename', () => {

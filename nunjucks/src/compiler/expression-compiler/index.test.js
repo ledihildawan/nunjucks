@@ -1,0 +1,38 @@
+import { describe, test, expect } from 'bun:test';
+import * as mod from './index.js';
+
+describe('compiler/expression-compiler exports', () => {
+  test('exports compileLiteral', () => expect(mod.compileLiteral).toBeFunction());
+  test('exports compileSymbol', () => expect(mod.compileSymbol).toBeFunction());
+  test('exports compileGroup', () => expect(mod.compileGroup).toBeFunction());
+  test('exports compileArray', () => expect(mod.compileArray).toBeFunction());
+  test('exports compileDict', () => expect(mod.compileDict).toBeFunction());
+  test('exports compileNodeList', () => expect(mod.compileNodeList).toBeFunction());
+  test('exports compilePair', () => expect(mod.compilePair).toBeFunction());
+  test('exports compileKeywordArgs', () => expect(mod.compileKeywordArgs).toBeFunction());
+  test('exports compileAggregate', () => expect(mod.compileAggregate).toBeFunction());
+  test('exports compileFunCall', () => expect(mod.compileFunCall).toBeFunction());
+  test('exports compilePipe', () => expect(mod.compilePipe).toBeFunction());
+  test('exports compilePipeAsync', () => expect(mod.compilePipeAsync).toBeFunction());
+  test('exports compileLookupVal', () => expect(mod.compileLookupVal).toBeFunction());
+  test('exports compileOptionalChain', () => expect(mod.compileOptionalChain).toBeFunction());
+  test('exports compileSlice', () => expect(mod.compileSlice).toBeFunction());
+  test('exports compileCompare', () => expect(mod.compileCompare).toBeFunction());
+  test('exports compileIs', () => expect(mod.compileIs).toBeFunction());
+  test('exports compileInlineIf', () => expect(mod.compileInlineIf).toBeFunction());
+  test('exports compileOr', () => expect(mod.compileOr).toBeFunction());
+  test('exports compileAnd', () => expect(mod.compileAnd).toBeFunction());
+  test('exports compileAdd', () => expect(mod.compileAdd).toBeFunction());
+  test('exports compileConcat', () => expect(mod.compileConcat).toBeFunction());
+  test('exports compileSub', () => expect(mod.compileSub).toBeFunction());
+  test('exports compileMul', () => expect(mod.compileMul).toBeFunction());
+  test('exports compileDiv', () => expect(mod.compileDiv).toBeFunction());
+  test('exports compileMod', () => expect(mod.compileMod).toBeFunction());
+  test('exports compileNullishCoalesce', () => expect(mod.compileNullishCoalesce).toBeFunction());
+  test('exports compileIn', () => expect(mod.compileIn).toBeFunction());
+  test('exports compileFloorDiv', () => expect(mod.compileFloorDiv).toBeFunction());
+  test('exports compilePow', () => expect(mod.compilePow).toBeFunction());
+  test('exports compileNot', () => expect(mod.compileNot).toBeFunction());
+  test('exports compileNeg', () => expect(mod.compileNeg).toBeFunction());
+  test('exports compilePos', () => expect(mod.compilePos).toBeFunction());
+});

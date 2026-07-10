@@ -1,12 +1,12 @@
 import { expect, describe, test, beforeEach } from 'bun:test';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { Environment } from '../../../nunjucks/src/environment/index.js';
-import { WebLoader } from '../../../nunjucks/src/loaders/web.js';
-import { FileSystemLoader } from '../../../nunjucks/src/loaders/file-system.js';
-import { NodeResolveLoader } from '../../../nunjucks/src/loaders/node-resolve.js';
+import { Environment } from '../../environment/index.js';
+import { WebLoader } from '../../loaders/web.js';
+import { FileSystemLoader } from '../../loaders/file-system.js';
+import { NodeResolveLoader } from '../../loaders/node-resolve.js';
 
-var templatesPath = 'tests/templates';
+var templatesPath = 'nunjucks/src/tests/templates';
 
 describe('loader', function() {
   test('should allow a simple loader to be created', async function() {

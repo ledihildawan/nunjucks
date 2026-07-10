@@ -29,7 +29,8 @@ const fetchUrl = (async) => (url) =>
     }
 
     const ajax = new XMLHttpRequest();
-    ajax.onreadystatechange = createAjaxHandler(resolve, reject)(ajax);
+    const handler = createAjaxHandler(resolve, reject);
+    ajax.onreadystatechange = () => handler(ajax);
     ajax.open('GET', url, async);
     ajax.send();
   });
@@ -58,8 +59,9 @@ export const createWebLoader = (baseURL, opts = {}) => {
       loader.emit('load', name, result);
       return result;
     } catch (err) {
-      if (err.status === 404) return null;
-      throw err.content;
+      if (err && err.status === 404) return null;
+      if (err && err.content !== undefined) throw err.content;
+      throw err;
     }
   };
 
@@ -92,8 +94,9 @@ export class WebLoader extends Loader {
       this.emit('load', name, result);
       return result;
     } catch (err) {
-      if (err.status === 404) return null;
-      throw err.content;
+      if (err && err.status === 404) return null;
+      if (err && err.content !== undefined) throw err.content;
+      throw err;
     }
   }
 }

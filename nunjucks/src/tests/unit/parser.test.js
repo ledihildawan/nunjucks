@@ -1,7 +1,7 @@
 import { expect, describe, test } from "bun:test";
 import { isArray, isPlainObject, map } from 'remeda';
-import * as nodes from "../../../nunjucks/src/nodes/index.js";
-import * as parser from "../../../nunjucks/src/parser/index.js";
+import * as nodes from "../../nodes/index.js";
+import * as parser from "../../parser/index.js";
 
 const isObject = isPlainObject;
 
@@ -645,10 +645,7 @@ describe("parser", function () {
       ),
       [
         nodes.Root,
-        [
-          nodes.Output,
-          [nodes.TemplateData, "{% verbatim %}{{ x }{% endverbatim %}"],
-        ],
+        [nodes.Output, [nodes.TemplateData, "{% verbatim %}{{ x }{% endverbatim %}"]],
       ],
     );
   });

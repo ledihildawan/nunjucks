@@ -1,5 +1,5 @@
 import { expect, describe, test } from 'bun:test';
-import { precompile, precompileString } from '../../../nunjucks/src/precompile/index.js';
+import { precompile, precompileString } from '../../precompile/index.js';
 
 describe('precompile', function() {
   test('should return a string', function() {
@@ -12,13 +12,13 @@ describe('precompile', function() {
     test('should return *NIX path seperators', function() {
       var fileName;
 
-      precompile('./tests/templates/item.njk', {
+      precompile('./nunjucks/src/tests/templates/item.njk', {
         wrapper: function(templates) {
           fileName = templates[0].name;
         }
       });
 
-      expect(fileName).toBe('./tests/templates/item.njk');
+      expect(fileName).toBe('./nunjucks/src/tests/templates/item.njk');
     });
 
     test('should return *NIX path seperators, when name is passed as option', function() {

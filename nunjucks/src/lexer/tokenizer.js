@@ -371,6 +371,14 @@ export class Tokenizer {
         }
         tok += this._extractString(this.tags.COMMENT_END);
         break;
+      } else if (this._matches(this.tags.BLOCK_END)) {
+        this.in_code = true;
+        break;
+      } else if (this.current() === '%' && this.peek() === '}') {
+        this.forward();
+        this.forward();
+        this.in_code = true;
+        break;
       } else {
         tok += this.current();
         this.forward();
