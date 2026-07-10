@@ -24,8 +24,6 @@ import {
   isComplexOperator,
   isValidRegexFlag,
   isNumericString,
-  isBooleanString,
-  isNullString,
   createOperatorToken,
   createNumberToken,
   createSymbolToken,
@@ -36,17 +34,9 @@ import {
   parseRegexContent,
 } from './tokenizer-helpers.js';
 
-// Re-export createToken for external use
 export { createToken };
 
-// ===========================================
-// FACTORY FUNCTION - Main entry point
-// ===========================================
-
 export function createTokenizer(str, opts = {}) {
-  // -----------------------------------------
-  // STATE - internal mutable state
-  // -----------------------------------------
   const state = {
     str,
     index: 0,
@@ -59,12 +49,7 @@ export function createTokenizer(str, opts = {}) {
     lstripBlocks: !!opts.lstripBlocks,
   };
 
-  // ===========================================
-  // NAVIGATION - cursor movement methods
-  // ===========================================
-  
   const api = {
-    // Getters
     get str() { return state.str; },
     get index() { return state.index; },
     set index(val) { state.index = val; },
@@ -79,7 +64,6 @@ export function createTokenizer(str, opts = {}) {
     get trimBlocks() { return state.trimBlocks; },
     get lstripBlocks() { return state.lstripBlocks; },
 
-    // Navigation
     current() {
       return state.index >= state.len ? '' : state.str.charAt(state.index);
     },
@@ -129,10 +113,6 @@ export function createTokenizer(str, opts = {}) {
       return state.index + 1 < state.len ? state.str.charAt(state.index + 1) : '';
     },
 
-    // ===========================================
-    // EXTRACTION - string extraction methods
-    // ===========================================
-
     _matches(target) {
       if (state.index + target.length > state.len) return null;
       return state.str.slice(state.index, state.index + target.length) === target;
@@ -146,28 +126,21 @@ export function createTokenizer(str, opts = {}) {
       return null;
     },
 
-    // Extract while current char is in the set
     _extractWhileIn(charSet) {
       const extracted = extractWhileInCharSet(state.str, state.index, charSet);
       this.forwardN(extracted.length);
       return extracted;
     },
 
-    // Extract until current char is in the set
     _extractUntil(charSet) {
       const extracted = extractUntilCharSet(state.str, state.index, charSet);
       this.forwardN(extracted.length);
       return extracted;
     },
 
-    // Legacy alias for backward compatibility
     _extract(charSet) {
       return this._extractWhileIn(charSet);
     },
-
-    // ===========================================
-    // PARSING - token parsing methods
-    // ===========================================
 
     _parseString(quote) {
       const content = parseStringContent(state.str, state.index + 1, quote);
@@ -215,7 +188,6 @@ export function createTokenizer(str, opts = {}) {
       return createToken(TOKEN_REGEX, { body, flags }, lineno, colno);
     },
 
-    // Legacy alias for backward compatibility
     _extractRegex(regex) {
       const matches = this.currentStr().match(regex);
       if (!matches) return null;
@@ -236,10 +208,6 @@ export function createTokenizer(str, opts = {}) {
         }
       }
     },
-
-    // ===========================================
-    // TEMPLATE TEXT PARSING
-    // ===========================================
 
     _parseTemplateText(lineno, colno) {
       const beginChars = extractBeginChars(state.tags);
@@ -313,10 +281,6 @@ export function createTokenizer(str, opts = {}) {
       return this.nextToken();
     },
 
-    // ===========================================
-    // TOKEN API - main public method
-    // ===========================================
-
     nextToken() {
       const lineno = state.lineno;
       const colno = state.colno;
@@ -372,10 +336,6 @@ export function createTokenizer(str, opts = {}) {
 
   return api;
 }
-
-// ===========================================
-// LEX HELPER - convenience function
-// ===========================================
 
 export function lex(src, opts) {
   return createTokenizer(src, opts);

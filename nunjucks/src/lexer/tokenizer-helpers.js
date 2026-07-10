@@ -26,10 +26,6 @@ import {
   TOKEN_REGEX,
 } from './token-types.js';
 
-// ===========================================
-// PURE FUNCTIONS - Easy to test, no side effects
-// ===========================================
-
 export const createToken = (type, value, lineno, colno) => ({
   type,
   value,
@@ -75,7 +71,7 @@ export const createNumberToken = (tok, lineno, colno, hasDecimal) =>
   createToken(hasDecimal ? TOKEN_FLOAT : TOKEN_INT, tok, lineno, colno);
 
 export const createSymbolToken = (tok, lineno, colno) => {
-  if (isNumericString(tok)) return null; // Will be handled by number parser
+  if (isNumericString(tok)) return null;
   if (isBooleanString(tok)) return createToken(TOKEN_BOOLEAN, tok, lineno, colno);
   if (isNullString(tok)) return createToken(TOKEN_NONE, tok, lineno, colno);
   if (tok) return createToken(TOKEN_SYMBOL, tok, lineno, colno);
@@ -126,16 +122,13 @@ export const parseRegexContent = (str, startIndex, flags) => {
   let body = '';
   let i = startIndex;
   
-  // Extract regex body
   for (; i < str.length; i++) {
     if (str[i] === '/' && str[i - 1] !== '\\') break;
     body += str[i];
   }
   
-  // Skip the closing /
   i++;
   
-  // Extract flags
   let extractedFlags = '';
   for (; i < str.length; i++) {
     if (isValidRegexFlag(str[i], flags)) {
