@@ -32,7 +32,7 @@ export const parseSwitch = (ctx) => {
     const cond = ctx.parseExpression();
     advanceAfterBlockEnd(ctx, switchStart);
     const body = ctx.parseUntilBlocks(caseStart, caseDefault, switchEnd);
-    cases.push(new Case(tok.line, tok.col, cond, body));
+    cases.push(new Case(tok.lineno, tok.colno, cond, body));
     tok = peekToken(ctx);
   } while (tok && tok.value === caseStart);
 
