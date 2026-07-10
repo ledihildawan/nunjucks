@@ -9,9 +9,9 @@ const VIEWS = path.join(__dirname, 'views');
 
 const app = express();
 
-const fsLoader = new nunjucks.FileSystemLoader(VIEWS);
+const fsLoader = nunjucks.createFileSystemLoader(VIEWS);
 
-const envDev = new nunjucks.Environment(fsLoader, {
+const envDev = nunjucks.createEnvironment(fsLoader, {
   autoescape: true,
   dev: true,
   throwOnUndefined: true
