@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url';
 import { createFileSystemLoader, createEnvironment } from '../../nunjucks/index.js';
 import express from 'express';
 import { errorRouter, errorRoutes } from './routes/errors.js';
+import { sandboxRouter } from './routes/sandbox.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const VIEWS = path.join(__dirname, 'views');
@@ -18,6 +19,7 @@ const envDev = createEnvironment(fsLoader, {
 });
 
 app.use('/errors', errorRouter);
+app.use('/sandbox', sandboxRouter);
 
 app.get('/', (req, res) => {
   const routesList = errorRoutes.map(r =>
@@ -71,6 +73,7 @@ ${routesList}
   <div class="nav">
     <a href="/home">/home - Normal render</a>
     <a href="/info">/info - Environment info</a>
+    <a href="/sandbox">/sandbox - Sandbox Demo</a>
   </div>
 
   <h2>📚 How It Works</h2>
@@ -79,6 +82,7 @@ ${routesList}
     <li><strong>Auto-detect</strong>: Dev vs production mode based on error.lineno presence</li>
     <li><strong>Stack filtering</strong>: Internal nunjucks frames hidden in production</li>
     <li><strong>Dynamic fix suggestions</strong>: Based on error category</li>
+    <li><strong>Sandbox Mode</strong>: Block dangerous template access</li>
   </ul>
 
   <footer style="margin-top: 40px; color: #7f8c8d;">
