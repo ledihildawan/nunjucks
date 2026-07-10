@@ -1,3 +1,4 @@
+import { keys, filter } from 'remeda';
 import { splitSnippetLines } from '../core/snippet.js';
 import { formatLocation, getDisplayMessage } from '../state/message-formatter.js';
 import { shortenPath, normalizeDrivePath } from '../../shared/path-shortener.js';
@@ -51,10 +52,10 @@ const formatLocationLabel = (state) => {
 
 const formatRenderContext = (ctx) => {
   if (!ctx || typeof ctx !== 'object') return '';
-  const keys = Object.keys(ctx).filter(k => !k.startsWith('__nunjucks') && !isBlockedKey(k));
-  if (keys.length === 0) return '';
+  const filteredKeys = filter(keys(ctx), k => !k.startsWith('__nunjucks') && !isBlockedKey(k));
+  if (filteredKeys.length === 0) return '';
   const lines = ['\n', picocolors.bold('Render Context:')];
-  for (const k of keys) {
+  for (const k of filteredKeys) {
     const raw = ctx[k];
     let val;
     if (raw === undefined) {

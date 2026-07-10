@@ -1,3 +1,4 @@
+import { pipe, filter, isDefined, reduce } from 'remeda';
 import { parse } from '../parser/index.js';
 import { transform } from '../transformers/index.js';
 import {
@@ -208,9 +209,12 @@ export function compile(src, asyncPipes, extensions, name, opts = {}) {
   const undefinedMode = getUndefinedMode(opts);
   const c = createCompiler(name, undefinedMode, src);
 
-  const preprocessors = (extensions || []).map(ext => ext.preprocess).filter(f => !!f);
-
-  const processedSrc = preprocessors.reduce((s, processor) => processor(s), src);
+  const processedSrc = pipe(
+    extensions || [],
+    exts => exts.map(ext => ext.preprocess),
+    comps => filter(comps, isDefined),
+    processors => reduce(processors, (s, processor) => processor(s), src)
+  );
 
   c.compile(transform(
     parse(processedSrc, extensions, opts),
@@ -228,9 +232,12 @@ export function getSourceMapFromCompile(src, asyncPipes, extensions, name, opts 
   const undefinedMode = getUndefinedMode(opts);
   const c = createCompiler(name, undefinedMode, src);
 
-  const preprocessors = (extensions || []).map(ext => ext.preprocess).filter(f => !!f);
-
-  const processedSrc = preprocessors.reduce((s, processor) => processor(s), src);
+  const processedSrc = pipe(
+    extensions || [],
+    exts => exts.map(ext => ext.preprocess),
+    comps => filter(comps, isDefined),
+    processors => reduce(processors, (s, processor) => processor(s), src)
+  );
 
   c.compile(transform(
     parse(processedSrc, extensions, opts),

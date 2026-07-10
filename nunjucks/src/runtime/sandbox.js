@@ -1,3 +1,4 @@
+import { keys } from 'remeda';
 import { isBlockedKey, isDangerousGlobal, BLOCKED_KEYS_LIST, DANGEROUS_GLOBALS_LIST } from '../shared/blocked-keys.js';
 
 export { isBlockedKey, isDangerousGlobal, BLOCKED_KEYS_LIST, DANGEROUS_GLOBALS_LIST };
@@ -64,7 +65,7 @@ export const createSandboxedContext = (context, sandboxEnabled) => {
   }
 
   const sandboxed = {};
-  for (const key of Object.keys(context)) {
+  for (const key of keys(context)) {
     sandboxed[key] = createSandboxedObject(context[key], sandboxEnabled);
   }
 

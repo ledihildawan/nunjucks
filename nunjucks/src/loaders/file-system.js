@@ -1,11 +1,11 @@
-import { pipe } from 'remeda';
+import { pipe, entries, isArray } from 'remeda';
 import { existsSync, readFileSync } from 'node:fs';
 import { normalize, resolve } from 'node:path';
 import { watch } from 'fs';
 import { createLoader } from './base.js';
 
 const normalizeSearchPaths = (searchPaths) =>
-  !searchPaths ? ['.'] : (Array.isArray(searchPaths) ? searchPaths : [searchPaths]).map(normalize);
+  !searchPaths ? ['.'] : (isArray(searchPaths) ? searchPaths : [searchPaths]).map(normalize);
 
 const isPathWithinBase = (basePath) => (filePath) => filePath.indexOf(basePath) === 0;
 
@@ -38,7 +38,7 @@ const normalizeFilePath = (path) => resolve(normalize(path));
 const isFileChangeEvent = (eventType) => eventType === 'change' || eventType === 'rename';
 
 const createFileCacheInvalidator = (cache) => (normalizedPath) => {
-  for (const [key, tmpl] of Object.entries(cache)) {
+  for (const [key, tmpl] of entries(cache)) {
     if (tmpl?.path && normalizeFilePath(tmpl.path) === normalizedPath) {
       cache[key] = null;
     }

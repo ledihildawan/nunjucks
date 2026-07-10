@@ -83,14 +83,14 @@ export function extendObj(baseObj, name, props) {
   factoryFn.iterFields = isBaseFunction ? baseObj.iterFields : null;
 
   if (!isBaseFunction) {
-    for (const key of Object.keys(baseObj)) {
+    for (const key of keys(baseObj)) {
       if (key !== 'typename' && key !== 'init') {
         factoryFn[key] = baseObj[key];
       }
     }
   }
 
-  for (const key of Object.keys(props)) {
+  for (const key of keys(props)) {
     if (key !== 'fields' && key !== 'init') {
       factoryFn[key] = props[key];
     }

@@ -1,4 +1,4 @@
-import { isArray, isString, isPlainObject, map, keys, entries } from 'remeda';
+import { isArray, isString, isPlainObject, map, keys, entries, sum as sumValues } from 'remeda';
 import { isSafeString, copySafeness, makeMacro } from '../runtime/index.js';
 import { getAttrGetter } from '../helpers/attributes.js';
 import { normalize } from './string.js';
@@ -116,7 +116,7 @@ export function sum(arr, attr, start = 0) {
     arr = map(arr, (v) => v[attr]);
   }
 
-  return start + arr.reduce((a, b) => a + b, 0);
+  return start + sumValues(arr);
 }
 
 export const sort = makeMacro(

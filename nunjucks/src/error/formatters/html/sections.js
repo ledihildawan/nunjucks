@@ -1,3 +1,4 @@
+import { keys, isArray, filter } from 'remeda';
 import { escapeHtml, highlightHtml } from './highlight.js';
 import { resolveIdeLink } from '../../constants/ide-links.js';
 import { shortenPath } from '../../../shared/path-shortener.js';
@@ -30,14 +31,14 @@ const serializeValue = (value, depth = 0) => {
   if (typeof value === 'string') return JSON.stringify(value);
   if (typeof value === 'number' || typeof value === 'boolean') return String(value);
   if (depth >= 4) return 'null';
-  if (Array.isArray(value)) {
+  if (isArray(value)) {
     if (value.length === 0) return '[]';
     return '[' + value.slice(0, 10).map(v => serializeValue(v, depth + 1)).join(',') + ']';
   }
   if (typeof value === 'object') {
-    const keys = Object.keys(value).filter(k => !k.startsWith('__nunjucks') && !isBlockedKey(k));
-    if (keys.length === 0) return '{}';
-    const pairs = keys.slice(0, 20).map(k => JSON.stringify(k) + ':' + serializeValue(value[k], depth + 1));
+    const filteredKeys = filter(keys(value), k => !k.startsWith('__nunjucks') && !isBlockedKey(k));
+    if (filteredKeys.length === 0) return '{}';
+    const pairs = filteredKeys.slice(0, 20).map(k => JSON.stringify(k) + ':' + serializeValue(value[k], depth + 1));
     return '{' + pairs.join(',') + '}';
   }
   return 'null';
@@ -46,7 +47,7 @@ const serializeValue = (value, depth = 0) => {
 const filterContext = (ctx) => {
   if (!ctx || typeof ctx !== 'object') return {};
   const filtered = {};
-  for (const k of Object.keys(ctx)) {
+  for (const k of keys(ctx)) {
     if (k.startsWith('__nunjucks')) continue;
     if (isBlockedKey(k)) continue;
     filtered[k] = ctx[k];
@@ -57,8 +58,8 @@ const filterContext = (ctx) => {
 export const renderContextHtml = (ctx) => {
   if (!ctx || typeof ctx !== 'object') return '';
   const filtered = filterContext(ctx);
-  const keys = Object.keys(filtered);
-  if (keys.length === 0) return '';
+  const filteredKeys = keys(filtered);
+  if (filteredKeys.length === 0) return '';
 
   const dataScript = `<script>window.__ctxData=${serializeValue(filtered)};</scr` + `ipt>`;
 

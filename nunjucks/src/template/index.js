@@ -239,7 +239,7 @@ export function createTemplate(src, env, path, eagerCompile) {
     },
     _getBlocks: function(props) {
       const blocks = {};
-      Object.keys(props).forEach((k) => {
+      keys(props).forEach((k) => {
         if (k.slice(0, 2) === 'b_') {
           blocks[k.slice(2)] = props[k];
         }

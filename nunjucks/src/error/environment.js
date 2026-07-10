@@ -1,3 +1,4 @@
+import { entries } from 'remeda';
 import { getConfig } from './config.js';
 import { extractIncludeChainFromMessage, extractErrorTemplateName } from './core/extract.js';
 import { createErrorData } from './state/error-data.js';
@@ -37,7 +38,7 @@ const getCspNonce = (headers, cspConfig) => {
 const findHeader = (headers, name) => {
   if (!name || !headers) return null;
   const key = name.toLowerCase();
-  for (const [k, v] of Object.entries(headers)) {
+  for (const [k, v] of entries(headers)) {
     if (k.toLowerCase() === key) return v;
   }
   return null;

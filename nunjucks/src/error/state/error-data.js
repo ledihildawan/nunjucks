@@ -1,3 +1,4 @@
+import { keys, isArray } from 'remeda';
 import { classifyFromError } from '../core/classify.js';
 import {
   extractLineInfo,
@@ -29,12 +30,12 @@ const sanitizeValue = (value, depth = 0) => {
     return value;
   }
   if (depth >= 4) return '[Object]';
-  if (Array.isArray(value)) {
+  if (isArray(value)) {
     return value.slice(0, 10).map((v) => sanitizeValue(v, depth + 1));
   }
   const out = {};
   let count = 0;
-  for (const k of Object.keys(value)) {
+  for (const k of keys(value)) {
     if (count++ >= 20) {
       out['…'] = '(truncated)';
       break;
@@ -48,7 +49,7 @@ const snapshotContext = (ctx) => {
   if (!ctx || typeof ctx !== 'object') return null;
   const snapshot = {};
   let count = 0;
-  for (const k of Object.keys(ctx)) {
+  for (const k of keys(ctx)) {
     if (count++ >= 30) {
       snapshot['…'] = '(truncated)';
       break;
