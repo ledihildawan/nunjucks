@@ -271,6 +271,7 @@ export const CSS = `
         border-radius: 0.5rem;
         overflow: hidden;
         border: 1px solid var(--color-border);
+        background: var(--color-bg-panel);
         box-shadow:
           0 0 0 1px oklch(0 0 0 / 0.06),
           0 1px 2px -1px oklch(0 0 0 / 0.06),
@@ -287,7 +288,7 @@ export const CSS = `
           border-block-end: 1px solid var(--color-border);
           transition: background-color 0.2s ease-out;
           &:hover { background-color: var(--color-bg-alt); }
-          &:last-child { border-block-end: none; }
+          &:last-child { border-block-end: none; border-end-start-radius: 0; border-end-end-radius: 0; }
         }
 
       .stack-toggle-btn {
