@@ -38,12 +38,12 @@ const serializeValue = (value, depth = 0) => {
   if (typeof value === 'symbol') return '[Symbol]';
   if (typeof value === 'string') return JSON.stringify(value);
   if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (depth >= 4) return 'null';
   if (isArray(value)) {
     if (value.length === 0) return '[]';
     return '[' + value.slice(0, 10).map(v => serializeValue(v, depth + 1)).join(',') + ']';
   }
-  if (typeof value === 'object') {
+    if (typeof value === 'object') {
+    if (depth >= 10) return '[Object]';
     const filteredKeys = filter(keys(value), k => !k.startsWith('__nunjucks') && !isBlockedKey(k));
     if (filteredKeys.length === 0) return '{}';
     const pairs = filteredKeys.slice(0, 20).map(k => JSON.stringify(k) + ':' + serializeValue(value[k], depth + 1));
