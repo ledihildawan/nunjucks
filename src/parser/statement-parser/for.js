@@ -1,8 +1,6 @@
 import { TOKEN_COMMA } from '../../lexer/token-types.js';
 import {
   For,
-  AsyncEach,
-  AsyncAll,
   AstSymbol,
   ArrayNode,
 } from '../../nodes/index.js';
@@ -16,14 +14,8 @@ export const parseFor = (ctx) => {
   if (skipSymbol(ctx, 'for')) {
     node = For(forTok.lineno, forTok.colno);
     endBlock = 'endfor';
-  } else if (skipSymbol(ctx, 'asyncEach')) {
-    node = AsyncEach(forTok.lineno, forTok.colno);
-    endBlock = 'endeach';
-  } else if (skipSymbol(ctx, 'asyncAll')) {
-    node = AsyncAll(forTok.lineno, forTok.colno);
-    endBlock = 'endall';
   } else {
-    fail(ctx, 'parseFor: expected for{Async}', forTok.lineno, forTok.colno);
+    fail(ctx, 'parseFor: expected for', forTok.lineno, forTok.colno);
   }
 
   node.name = ctx.parsePrimary();

@@ -2,7 +2,6 @@ export { compileIf, compileIfAsync } from './if.js';
 export { compileSet } from './set.js';
 export { compileSwitch } from './switch.js';
 export { compileFor, emitLoopBindings } from './for.js';
-export { compileAsyncEach, compileAsyncAll } from './async-each.js';
 export { compileMacroPublic, compileCaller } from './macro.js';
 export { compileBlock, compileSuper } from './block.js';
 export { compileImport } from './import.js';

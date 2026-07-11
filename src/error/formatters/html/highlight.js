@@ -24,7 +24,7 @@ const SYNTAX_RULES = [
   { type: 'attr', re: /^[a-zA-Z_][\w-]*(?=\s*=)/ },
   {
     type: 'keyword',
-    re: /^(?:endraw|raw|endfilter|filter|endcall|call|endmacro|macro|endblock|block|endfor|for|endif|elif|else|if|extends|include|import|from|set|asyncEach|asyncAll|with|without|context|as|not|and|or|in|is|true|false|none|null)(?![\w-])/,
+    re: /^(?:endraw|raw|endfilter|filter|endcall|call|endmacro|macro|endblock|block|endfor|for|endif|elif|else|if|extends|include|import|from|set|with|without|context|as|not|and|or|in|is|true|false|none|null)(?![\w-])/,
     tagOnly: true,
   },
   { type: 'variable', re: /^[a-zA-Z_]\w*/, tagOnly: true },

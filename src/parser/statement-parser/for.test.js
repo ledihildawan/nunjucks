@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseFor } from './for.js';
-import { For, AsyncEach, AsyncAll, AstSymbol, ArrayNode } from '../../nodes/index.js';
+import { For, AstSymbol, ArrayNode } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import { TOKEN_SYMBOL, TOKEN_BLOCK_END, TOKEN_COMMA } from '../../lexer/token-types.js';
 
@@ -66,52 +66,6 @@ describe('parseFor', () => {
     expect(result).toBeInstanceOf(For);
     expect(result.name).toBeInstanceOf(ArrayNode);
     expect(result.name.children.length).toBe(2);
-  });
-
-  test('parses asyncEach loop', () => {
-    const seq = [
-      { type: TOKEN_SYMBOL, value: 'asyncEach', lineno: 1, colno: 1 },
-      { type: TOKEN_SYMBOL, value: 'item', lineno: 1, colno: 11 },
-      { type: TOKEN_SYMBOL, value: 'in', lineno: 1, colno: 16 },
-      { type: TOKEN_SYMBOL, value: 'items', lineno: 1, colno: 19 },
-      { type: TOKEN_BLOCK_END, value: '%}', lineno: 1, colno: 25 },
-      { type: TOKEN_SYMBOL, value: 'endeach', lineno: 1, colno: 31 },
-      { type: TOKEN_BLOCK_END, value: '%}', lineno: 1, colno: 39 },
-    ];
-    let n = 0;
-    const tokens = { nextToken: () => seq[n++] };
-    const ctx = Object.assign(createCursor(tokens), {
-      parsePrimary: () => { nextToken(ctx); return AstSymbol(1, 11, 'item'); },
-      parseExpression: () => { nextToken(ctx); return { lineno: 1, colno: 21 }; },
-      parseUntilBlocks: () => ({ lineno: 1, colno: 28 }),
-    });
-
-    const result = parseFor(ctx);
-
-    expect(result).toBeInstanceOf(AsyncEach);
-  });
-
-  test('parses asyncAll loop', () => {
-    const seq = [
-      { type: TOKEN_SYMBOL, value: 'asyncAll', lineno: 1, colno: 1 },
-      { type: TOKEN_SYMBOL, value: 'item', lineno: 1, colno: 10 },
-      { type: TOKEN_SYMBOL, value: 'in', lineno: 1, colno: 15 },
-      { type: TOKEN_SYMBOL, value: 'items', lineno: 1, colno: 18 },
-      { type: TOKEN_BLOCK_END, value: '%}', lineno: 1, colno: 24 },
-      { type: TOKEN_SYMBOL, value: 'endall', lineno: 1, colno: 30 },
-      { type: TOKEN_BLOCK_END, value: '%}', lineno: 1, colno: 37 },
-    ];
-    let n = 0;
-    const tokens = { nextToken: () => seq[n++] };
-    const ctx = Object.assign(createCursor(tokens), {
-      parsePrimary: () => { nextToken(ctx); return AstSymbol(1, 10, 'item'); },
-      parseExpression: () => { nextToken(ctx); return { lineno: 1, colno: 20 }; },
-      parseUntilBlocks: () => ({ lineno: 1, colno: 27 }),
-    });
-
-    const result = parseFor(ctx);
-
-    expect(result).toBeInstanceOf(AsyncAll);
   });
 
   test('parses for loop with else block', () => {

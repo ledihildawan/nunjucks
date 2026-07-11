@@ -35,8 +35,6 @@ import {
   NodeList,
   Slice,
   For,
-  AsyncEach,
-  AsyncAll,
   If,
   IfAsync,
   Set,
@@ -105,7 +103,7 @@ const nodes = {
   FunCall, Caller, Pipe, PipeAsync, Filter, LookupVal, Compare,
   CompareOperand, InlineIf, In, Is, And, Or, Not, Add,
   Concat, Sub, Mul, Div, FloorDiv, Mod, Pow, Neg, Pos, OptionalChain,
-  NullishCoalesce, NodeList, Slice, For, AsyncEach, AsyncAll, If,
+  NullishCoalesce, NodeList, Slice, For, If,
   IfAsync, Set, Switch, Case, Block, Output, TemplateData,
   Extends, Include, Import, FromImport, Macro, KeywordArgs,
   CallExtension, CallExtensionAsync, Capture, TemplateRef, Super,
@@ -177,8 +175,6 @@ export const parseStatement = (ctx) => {
     case 'ifAsync':
       return parseIf(ctx);
     case 'for':
-    case 'asyncEach':
-    case 'asyncAll':
       return parseFor(ctx);
     case 'block':
       return parseBlock(ctx);

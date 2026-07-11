@@ -22,10 +22,6 @@ import {
   nullishCoalesce,
 } from './member-access.js';
 import {
-  asyncEach,
-  asyncAll,
-} from './async.js';
-import {
   createSandboxedContext,
   wrapMemberAccess,
   isBlockedKey,
@@ -58,8 +54,6 @@ export {
   optionalMemberLookup,
   slice,
   nullishCoalesce,
-  asyncEach,
-  asyncAll,
   isArray,
   keys,
   createSandboxedContext,

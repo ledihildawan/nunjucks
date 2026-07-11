@@ -10,7 +10,7 @@ describe('COMPILE_FUNCTIONS', () => {
       'FloorDiv', 'Pow', 'Neg', 'Pos',
       'Compare', 'LookupVal', 'OptionalChain', 'OptionalCall', 'Slice',
       'FunCall', 'Pipe', 'PipeAsync', 'KeywordArgs',
-      'Set', 'Switch', 'If', 'IfAsync', 'For', 'AsyncEach', 'AsyncAll',
+      'Set', 'Switch', 'If', 'IfAsync', 'For',
       'Macro', 'Caller', 'Import', 'FromImport',
       'Block', 'Super', 'Extends', 'Include', 'TemplateData',
       'Capture', 'Output', 'CallExtension', 'CallExtensionAsync',
@@ -22,7 +22,7 @@ describe('COMPILE_FUNCTIONS', () => {
   });
 
   test('has the correct count', () => {
-    expect(Object.keys(COMPILE_FUNCTIONS).length).toBe(54);
+    expect(Object.keys(COMPILE_FUNCTIONS).length).toBe(52);
   });
 });
 
