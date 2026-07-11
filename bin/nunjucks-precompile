@@ -1,0 +1,715 @@
+#!/usr/bin/env node
+
+import { existsSync, statSync, readdirSync, readFileSync, writeFileSync, mkdirSync, createReadStream } from 'node:fs';
+import { join, dirname, basename, extname } from 'node:path';
+import { fileURLToPath } from 'url';
+import { createHash } from 'node:crypto';
+import { createRequire } from 'node:module';
+import { parseArgs } from 'node:util';
+
+const require = createRequire(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const DEFAULT_INCLUDE = '**/*.html';
+const DEFAULT_EXCLUDE = '**/node_modules/**';
+
+const COLORS = {
+  reset: '\x1b[0m',
+  bright: '\x1b[1m',
+  dim: '\x1b[2m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  magenta: '\x1b[35m',
+  cyan: '\x1b[36m',
+};
+
+function colorize(text, color) {
+  return `${COLORS[color] || ''}${text}${COLORS.reset}`;
+}
+
+function info(msg) {
+  console.log(colorize('●', 'cyan') + ' ' + msg);
+}
+
+function success(msg) {
+  console.log(colorize('✓', 'green') + ' ' + msg);
+}
+
+function warn(msg) {
+  console.log(colorize('⚠', 'yellow') + ' ' + msg);
+}
+
+function error(msg) {
+  console.error(colorize('✗', 'red') + ' ' + msg);
+}
+
+function debug(msg) {
+  if (process.env.DEBUG) {
+    console.log(colorize('◌', 'dim') + ' ' + msg);
+  }
+}
+
+function match(filename, patterns) {
+  if (!patterns || patterns.length === 0) return true;
+  const normalized = filename.replace(/\\/g, '/');
+  for (const pattern of patterns) {
+    if (matchPattern(normalized, pattern)) return true;
+  }
+  return false;
+}
+
+function matchPattern(filename, pattern) {
+  if (pattern === '**/*.html') {
+    return filename.endsWith('.html');
+  }
+  if (pattern === '**/*') {
+    return true;
+  }
+  const regexPattern = pattern
+    .replace(/\./g, '\\\\.')
+    .replace(/\*\*/g, '{{GLOBSTAR}}')
+    .replace(/\*/g, '[^/]*')
+    .replace(/{{GLOBSTAR}}/g, '.*')
+    .replace(/\?/g, '.');
+  try {
+    return new RegExp('^' + regexPattern + '$').test(filename);
+  } catch (e) {
+    return false;
+  }
+}
+
+function getFiles(dir, include, exclude) {
+  const files = [];
+  
+  function walk(directory) {
+    if (!existsSync(directory)) return;
+    
+    const entries = readdirSync(directory, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      const fullPath = join(directory, entry.name);
+      const relativePath = fullPath.replace(/\\/g, '/');
+      
+      if (entry.isDirectory()) {
+        if (!match(relativePath + '/', exclude)) {
+          walk(fullPath);
+        }
+      } else if (entry.isFile()) {
+        if (match(relativePath, include) && !match(relativePath, exclude)) {
+          files.push(fullPath);
+        }
+      }
+    }
+  }
+  
+  walk(dir);
+  return files;
+}
+
+function computeHash(content) {
+  return createHash('sha256').update(content).digest('hex').slice(0, 8);
+}
+
+async function minifyCode(code, isEsm) {
+  try {
+    const esbuild = await import('esbuild');
+    const result = await esbuild.transform(code, {
+      format: isEsm ? 'esm' : 'iife',
+      minify: true,
+    });
+    return result.code;
+  } catch (e) {
+    warn('Minification failed, using unminified code: ' + e.message);
+    return code;
+  }
+}
+
+function generateSourcemap(sourceMapData) {
+  const mappings = [];
+  for (const item of sourceMapData) {
+    mappings.push({
+      generated: { line: item.compiledLine, column: item.compiledCol || 0 },
+      original: { line: item.originalLine, column: item.originalCol || 0 },
+      source: item.source || '',
+    });
+  }
+  return JSON.stringify({ version: 3, mappings: '', sources: [], names: [] });
+}
+
+function generateRuntime(slim = true) {
+  if (slim) {
+    return `
+(function(global) {
+  "use strict";
+  var nunjucksRuntime = {
+    suppressValue: function(val, autoescape) {
+      if (val && typeof val.then === "function") {
+        return val.then(function(v) { return nunjucksRuntime.suppressValue(v, autoescape); });
+      }
+      val = (val !== undefined && val !== null) ? val : "";
+      if (autoescape && typeof val === "string") {
+        val = val.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/\\\\/g, "&#92;");
+      }
+      return val;
+    },
+    awaitValue: function(val) {
+      if (val && typeof val.then === "function") {
+        return val.then(function(v) { return v; });
+      }
+      return val;
+    },
+    contextOrFrameLookup: function(context, frame, name) {
+      var val = frame && frame.lookup(name);
+      return (val !== undefined) ? val : context.lookup(name);
+    },
+    memberLookup: function(obj, prop) {
+      if (obj == null) return undefined;
+      return obj[prop];
+    },
+    optionalMemberLookup: function(obj, prop) {
+      if (obj == null) return [undefined, true];
+      var val = obj[prop];
+      return [val, val === undefined];
+    },
+    slice: function(obj, start, end) {
+      if (typeof obj === "string") return obj.slice(start, end);
+      if (Array.isArray(obj)) return obj.slice(start, end);
+      return null;
+    },
+    nullishCoalesce: function(obj, prop, defaultValue) {
+      var val = obj[prop];
+      return val !== undefined && val !== null ? val : defaultValue;
+    },
+    inOperator: function(key, val) {
+      if (Array.isArray(val) || typeof val === "string") return val.indexOf(key) !== -1;
+      if (val && typeof val === "object") return key in val;
+      return false;
+    },
+    fromIterator: function(arr) {
+      if (typeof arr !== "object" || arr === null || Array.isArray(arr)) return arr;
+      if (Symbol.iterator in arr) return Array.from(arr);
+      return arr;
+    },
+    isArray: Array.isArray,
+    keys: function(obj) {
+      if (!obj || typeof obj !== "object") return [];
+      return Object.keys(obj);
+    },
+    SafeString: function(val) { return String(val); },
+    isSafeString: function() { return false; },
+    copySafeness: function(dest, src) { return src; },
+    markSafe: function(val) { return String(val); },
+    handleError: function(error, lineno, colno) {
+      if (error.lineno !== undefined) return error;
+      var err = new Error(error.message);
+      err.lineno = lineno;
+      err.colno = colno;
+      return err;
+    },
+    callWrap: function(obj, name, context, args, lineno, colno) {
+      if (!obj) {
+        var err = new Error("Unable to call \\\`" + name + "\\\`, which is undefined or falsey");
+        err.lineno = lineno;
+        err.colno = colno;
+        throw err;
+      } else if (typeof obj !== "function") {
+        var err = new Error("Unable to call \\\`" + name + "\\\`, which is not a function");
+        err.lineno = lineno;
+        err.colno = colno;
+        throw err;
+      }
+      return obj.apply(context, args);
+    },
+    isObject: function(val) {
+      return val !== null && typeof val === "object" && !Array.isArray(val);
+    },
+    safeString: function(val) { return String(val); },
+    copySafeString: function(obj) { return String(obj); },
+    coerce: function(val) { return val; },
+    undefinedValue: function() { return undefined; },
+    frameLookup: function(ctx, frame, name) {
+      var val = frame && frame.lookup(name);
+      if (val !== undefined) return val;
+      return ctx.get(name);
+    },
+    merge: function(src, dest) {
+      for (var key in src) {
+        if (Object.prototype.hasOwnProperty.call(src, key)) {
+          dest[key] = src[key];
+        }
+      }
+      return dest;
+    }
+  };
+  global.nunjucksRuntime = nunjucksRuntime;
+})(typeof window !== "undefined" ? window : global);
+`;
+  }
+  return '';
+}
+
+function generateErrorHandling() {
+  return `
+(function() {
+  var ERROR_PATTERNS = {
+    UNDEFINED_VALUE: /attempted to output '([^']+\\\\.[^']+)' null or undefined value/i,
+    UNDEFINED_VARIABLE: /attempted to output '([^.]+)' null or undefined value/i,
+    NOT_A_FUNCTION: /is not a function|is not defined/i,
+    SYNTAX_ERROR: /unexpected token|expected (?:comma|variable end|end|expression)/i,
+    FILTER_ERROR: /^Error: (.+)/,
+    SANDBOX_BLOCKED: /cannot access|cannot read|permission denied/i,
+    SLICE_ERROR: /slice/i,
+    ITERABLE_ERROR: /iterator|iterable/i,
+    OPERATOR_ERROR: /operator|operand/i
+  };
+
+  var ERROR_RULES = {
+    undefined_value: {
+      causes: ['Nested property access returned null/undefined', 'Array index out of bounds', 'Object property does not exist'],
+      fix: "Use default filter: {{ object.property | default('default_value') }}"
+    },
+    undefined_variable: {
+      causes: ['Variable not passed in render context', 'Typo in variable name'],
+      fix: "Add default filter or pass variable in context"
+    },
+    not_a_function: {
+      causes: ['Calling a non-function value', 'Variable contains wrong data type'],
+      fix: "Check variable type before calling"
+    },
+    syntax_error: {
+      causes: ['Missing closing tag', 'Mismatched quotes or brackets', 'Unclosed array/object brackets'],
+      fix: "Check brackets, quotes, and tag closures"
+    },
+    filter_error: {
+      causes: ['Filter threw an error during execution', 'Filter should handle null/undefined inputs'],
+      fix: "Check filter input validation"
+    },
+    sandbox_blocked: {
+      causes: ['Accessing blocked properties in sandbox mode', 'Attempting to access prototype properties'],
+      fix: "Use safe property access or disable sandbox restrictions"
+    },
+    slice_error: {
+      causes: ['Invalid slice parameters', 'Step value cannot be zero'],
+      fix: "Ensure slice start/end/step are valid"
+    },
+    iterable_error: {
+      causes: ['Object is not iterable', 'Missing iterator'],
+      fix: "Use array or object with proper iterator"
+    },
+    operator_error: {
+      causes: ['Invalid operator usage', 'Type mismatch'],
+      fix: "Check operand types"
+    }
+  };
+
+  function classifyError(message) {
+    for (var key in ERROR_PATTERNS) {
+      if (ERROR_PATTERNS[key].test(message)) {
+        var category = key.toLowerCase().replace(/_([a-z])/g, function(m, c) { return c; });
+        return ERROR_RULES[category] || { causes: ['Unknown error'], fix: 'Check error message' };
+      }
+    }
+    return { causes: ['Check template syntax', 'Verify variable scope'], fix: 'Review error details' };
+  }
+
+  function escapeHtml(str) {
+    if (typeof str !== 'string') return str;
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function renderErrorHtml(error, templateName, lineno) {
+    var msg = error.message || error.toString();
+    var classified = classifyError(msg);
+    var causesHtml = '';
+    for (var i = 0; i < classified.causes.length; i++) {
+      causesHtml += '<li>' + classified.causes[i] + '</li>';
+    }
+    
+    return '<div style="font-family: system-ui, sans-serif; padding: 1rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 0.5rem; color: #991b1b; max-width: 600px; margin: 1rem 0;">' +
+      '<div style="font-weight: 600; font-size: 1rem; margin-bottom: 0.5rem;">Template Error: ' + escapeHtml(templateName) + '</div>' +
+      '<div style="font-size: 0.875rem; font-family: monospace; word-break: break-all;">' + escapeHtml(msg) + '</div>' +
+      '<div style="font-size: 0.75rem; color: #dc2626; margin-top: 0.5rem;">Line: ' + lineno + '</div>' +
+      '<div style="margin-top: 0.5rem; font-size: 0.75rem; color: #7f1d1d;"><strong>Possible Causes:</strong><ul>' + causesHtml + '</ul></div>' +
+      '<div style="margin-top: 0.5rem; font-size: 0.75rem; color: #7f1d1d;"><strong>Suggested Fix:</strong><pre style="background: #fee2e2; padding: 0.5rem; border-radius: 0.25rem; overflow-x: auto; margin: 0.5rem 0 0 0;">' + escapeHtml(classified.fix) + '</pre></div>' +
+    '</div>';
+  }
+
+  window.__nunjucksError = {
+    classifyError: classifyError,
+    renderErrorHtml: renderErrorHtml
+  };
+})();
+`;
+}
+
+function generateRenderHelper() {
+  return `
+window.renderTemplate = window.renderTemplate || function(name, context) {
+  var tmpl = window.nunjucksPrecompiled && window.nunjucksPrecompiled[name];
+  if (!tmpl) {
+    return '<div style="color: red; padding: 1rem;">Template not found: ' + name + '</div>';
+  }
+  var env = { 
+    opts: { autoescape: true }, 
+    getTemplate: function() { return null; } 
+  };
+  var runtime = window.nunjucksRuntime;
+  var ctx = {
+    get: function(k) { 
+      return (context || {})[k]; 
+    },
+    getBlock: function() { return null; }
+  };
+  try {
+    var result = tmpl.root(env, ctx, null, runtime);
+    if (result && result.then) {
+      return result.then(function(r) { return r; }).catch(function(e) {
+        return window.__nunjucksError.renderErrorHtml(e, name, e.lineno || 0);
+      });
+    }
+    return result;
+  } catch(e) {
+    return window.__nunjucksError.renderErrorHtml(e, name, e.lineno || 0);
+  }
+};
+`;
+}
+
+async function precompileTemplates(files, opts) {
+  const { precompileString } = await import('../src/precompile/index.js');
+  
+  const precompiled = {};
+  const sourceMapData = [];
+  let hasErrors = false;
+  
+  for (const file of files) {
+    const name = basename(file, extname(file));
+    const source = readFileSync(file, 'utf-8');
+    
+    try {
+      const result = precompileString(source, {
+        name: file,
+        asFunction: false,
+      });
+      
+      precompiled[file] = result;
+      
+      if (opts.sourceMap) {
+        sourceMapData.push({
+          source: file,
+          compiledLine: 1,
+          originalLine: 1,
+        });
+      }
+      
+      success(`Compiled: ${colorize(name, 'dim')}`);
+    } catch (e) {
+      error(`Failed to compile ${name}: ${e.message}`);
+      if (!opts.force) {
+        hasErrors = true;
+      }
+    }
+  }
+  
+  if (hasErrors && !opts.force) {
+    throw new Error('Compilation failed. Use --force to ignore errors.');
+  }
+  
+  return { precompiled, sourceMapData };
+}
+
+function extractTemplateBody(compiledCode, name) {
+  try {
+    if (!compiledCode || typeof compiledCode !== 'string') {
+      return 'return "";';
+    }
+    const innerMatch = compiledCode.match(/\[([^\]]+)\]\s*=\s*\(function\(\)\s*\{([\s\S]*?)\}\)\(\);/);
+    if (innerMatch && innerMatch[2]) {
+      return innerMatch[2];
+    }
+    return compiledCode;
+  } catch (e) {
+    warn(`Error extracting template body for ${name}: ${e.message}`);
+    return 'return "";';
+  }
+}
+
+function wrapTemplates(precompiled, opts) {
+  opts = opts || {};
+  const entries = Object.entries(precompiled);
+  
+  if (entries.length === 0) {
+    warn('No templates to wrap.');
+    return '';
+  }
+  
+  let code = '';
+  
+  if (opts.format === 'esm') {
+    code += '// Nunjucks precompiled templates (ESM)\\n';
+    code += 'import * as nunjucksRuntime from "./nunjucks-runtime.js";\\n\\n';
+  } else if (opts.format === 'iife') {
+    code += '(function(global) {\\n';
+    code += generateRuntime(opts.slim);
+  } else {
+    code += '// Nunjucks precompiled templates\\n';
+    code += generateRuntime(opts.slim);
+  }
+  
+  code += generateErrorHandling();
+  code += '(function() {\\n';
+  code += '  window.nunjucksPrecompiled = window.nunjucksPrecompiled || {};\\n';
+  
+  for (const [name, template] of entries) {
+    if (!name || !template || typeof template !== 'string') {
+      warn(`Skipping invalid template: ${name || 'unknown'}`);
+      continue;
+    }
+    const key = name.replace(/\\/g, '/');
+    const templateBody = extractTemplateBody(template, key);
+    code += `  window.nunjucksPrecompiled["${key}"] = (function() {\n`;
+    code += `    ${templateBody}\n`;
+    code += `  })();\n`;
+  }
+  
+  code += '})();\\n';
+  code += generateRenderHelper();
+  
+  if (opts.format === 'iife') {
+    code += '})(typeof window !== "undefined" ? window : global);\\n';
+  }
+  
+  return code;
+}
+
+async function writeOutput(code, opts) {
+  const outputDir = dirname(opts.output);
+  
+  if (outputDir && !existsSync(outputDir)) {
+    mkdirSync(outputDir, { recursive: true });
+  }
+  
+  let finalCode = code;
+  let sourceMap = null;
+  
+  if (opts.minify) {
+    info('Minifying output...');
+    finalCode = await minifyCode(code, opts.format === 'esm');
+  }
+  
+  if (opts.hash) {
+    const hash = computeHash(finalCode);
+    const ext = extname(opts.output);
+    const base = opts.output.slice(0, -ext.length);
+    const newOutput = `${base}.${hash}${ext}`;
+    
+    writeFileSync(newOutput, finalCode, 'utf-8');
+    success(`Written: ${colorize(newOutput, 'green')}`);
+    
+    if (opts.sourceMap) {
+      writeFileSync(newOutput + '.map', JSON.stringify(sourceMap), 'utf-8');
+    }
+    
+    const manifest = { [hash]: basename(newOutput) };
+    const manifestPath = join(dirname(opts.output), 'manifest.json');
+    writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), 'utf-8');
+    
+    return newOutput;
+  }
+  
+  writeFileSync(opts.output, finalCode, 'utf-8');
+  success(`Written: ${colorize(opts.output, 'green')}`);
+  
+  if (opts.sourceMap && sourceMap) {
+    writeFileSync(opts.output + '.map', JSON.stringify(sourceMap), 'utf-8');
+  }
+  
+  return opts.output;
+}
+
+async function watchAndCompile(files, opts) {
+  const chokidar = await import('chokidar');
+  
+  let debounceTimer;
+  const recompile = async (changedPath) => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(async () => {
+      info(`File changed: ${changedPath}`);
+      await compileAll(opts);
+    }, 300);
+  };
+  
+  const watcher = chokidar.watch(files, {
+    persistent: true,
+    ignoreInitial: true,
+  });
+  
+  watcher.on('change', recompile);
+  watcher.on('add', recompile);
+  watcher.on('unlink', recompile);
+  
+  info(colorize('Watching for changes... (Ctrl+C to stop)', 'cyan'));
+}
+
+async function compileAll(opts) {
+  const { precompileString } = await import('../src/precompile/index.js');
+  
+  const allFiles = [];
+  
+  const includeList = Array.isArray(opts.include) ? opts.include : [opts.include];
+  const excludeList = opts.exclude ? opts.exclude.split(',') : [];
+  
+  for (const dir of opts.dirs) {
+    const files = getFiles(dir, includeList, excludeList);
+    allFiles.push(...files);
+  }
+  
+  if (allFiles.length === 0) {
+    warn('No templates found to compile.');
+    return;
+  }
+  
+  info(`Found ${allFiles.length} template(s)`);
+  
+  const precompiled = {};
+  
+  for (const file of allFiles) {
+    const relativePath = file.replace(/\\/g, '/');
+    const source = readFileSync(file, 'utf-8');
+    
+    try {
+      const result = precompileString(source, {
+        name: relativePath,
+        asFunction: false,
+      });
+      
+      precompiled[relativePath] = result;
+      success(`Compiled: ${colorize(basename(file), 'dim')}`);
+    } catch (e) {
+      error(`Failed: ${basename(file)} - ${e.message}`);
+      if (!opts.force) {
+        throw e;
+      }
+    }
+  }
+  
+  try {
+    let code = wrapTemplates(precompiled, opts);
+    await writeOutput(code, opts);
+  } catch (e) {
+    error(`Error wrapping/writing templates: ${e.message}`);
+    if (!opts.force) {
+      throw e;
+    }
+  }
+  
+  return allFiles;
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  
+  const options = {
+    help: { type: 'boolean', default: false, short: 'h' },
+    output: { type: 'string', short: 'o', default: 'templates.js' },
+    include: { type: 'string', short: 'i', default: DEFAULT_INCLUDE },
+    exclude: { type: 'string', short: 'e', default: DEFAULT_EXCLUDE },
+    watch: { type: 'boolean', short: 'w', default: false },
+    force: { type: 'boolean', short: 'f', default: false },
+    slim: { type: 'boolean', default: true },
+    minify: { type: 'boolean', short: 'm', default: false },
+    'source-map': { type: 'boolean', default: false },
+    hash: { type: 'boolean', default: false },
+    format: { type: 'string', short: 'F', default: 'iife', choices: ['iife', 'esm', 'cjs'] },
+    name: { type: 'string', short: 'n', default: 'nunjucks' },
+    version: { type: 'boolean', short: 'v', default: false },
+  };
+  
+  let parsed;
+  try {
+    parsed = parseArgs({ args, options, allowPositionals: true });
+  } catch (e) {
+    error(e.message);
+    process.exit(1);
+  }
+  
+  const opts = parsed.values;
+  const dirs = parsed.positionals;
+  
+  if (opts.help) {
+    console.log(`
+${colorize('Nunjucks Precompile CLI', 'bright')}
+
+${colorize('Usage:', 'cyan')} nunjucks-precompile [dirs...] [options]
+
+${colorize('Options:', 'cyan')}
+  -o, --output <file>     Output file (default: templates.js)
+  -i, --include <pattern> Include pattern (default: **/*.html)
+  -e, --exclude <pattern> Exclude pattern (default: **/node_modules/**)
+  -w, --watch             Watch for changes
+  -f, --force             Continue on errors
+  --slim                  Use slim runtime (default: true)
+  -m, --minify            Minify output
+  --source-map            Generate source map
+  --hash                  Add content hash to filename
+  -F, --format <format>   Output format: iife, esm, cjs (default: iife)
+  -n, --name <name>       Template name prefix
+  -h, --help              Show this help
+  -v, --version           Show version
+
+${colorize('Examples:', 'cyan')}
+  nunjucks-precompile views/
+  nunjucks-precompile views/ -o dist/templates.js
+  nunjucks-precompile views/ -w --minify
+  nunjucks-precompile views/ --hash
+  nunjucks-precompile views/ -F esm -o dist/templates.mjs
+`);
+    process.exit(0);
+  }
+  
+  if (opts.version) {
+    console.log('Nunjucks Precompile CLI v1.0.0');
+    process.exit(0);
+  }
+  
+  if (dirs.length === 0) {
+    dirs.push('views');
+  }
+  
+  opts.dirs = dirs;
+  
+  const allFiles = [];
+  for (const dir of dirs) {
+    if (!existsSync(dir)) {
+      warn(`Directory not found: ${dir}, skipping...`);
+      continue;
+    }
+    const excludeList = opts.exclude ? opts.exclude.split(',') : [];
+    const files = getFiles(dir, [opts.include], excludeList);
+    allFiles.push(...files);
+  }
+  
+  if (allFiles.length === 0) {
+    error('No templates found!');
+    process.exit(1);
+  }
+  
+  try {
+    const files = await compileAll(opts);
+    
+    if (opts.watch) {
+      await watchAndCompile(files, opts);
+    }
+  } catch (e) {
+    error(e.message);
+    process.exit(1);
+  }
+}
+
+main().catch(e => {
+  error(e.message);
+  process.exit(1);
+});
