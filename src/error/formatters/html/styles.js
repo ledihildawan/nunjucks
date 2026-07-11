@@ -266,28 +266,28 @@ export const CSS = `
   .ctx-boolean { color: oklch(70% 0.15 280); font-style: italic; }
   .ctx-null, .ctx-undefined { color: oklch(60% 0.15 25); font-style: italic; }
 
-    .stack-container {
-      font-size: 0.75rem;
-      border-radius: 0.5rem;
-      box-shadow:
-        0 0 0 1px oklch(0 0 0 / 0.06),
-        0 1px 2px -1px oklch(0 0 0 / 0.06),
-        0 2px 4px 0 oklch(0 0 0 / 0.04);
-      @media (width >= 40rem) { font-size: 0.8125rem; }
+      .stack-container {
+        font-size: 0.75rem;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow:
+          0 0 0 1px oklch(0 0 0 / 0.06),
+          0 1px 2px -1px oklch(0 0 0 / 0.06),
+          0 2px 4px 0 oklch(0 0 0 / 0.04);
+        @media (width >= 40rem) { font-size: 0.8125rem; }
 
-      .stack-content {
-        display: flex; flex-direction: column;
-      }
+        .stack-content {
+          display: flex; flex-direction: column;
+        }
 
-      .stack-row {
-        display: flex; padding: 0.625rem 0.75rem;
-        overflow-x: auto;
-        border-block-end: 1px solid var(--color-border);
-        transition: background-color 0.2s ease-out;
-        &:hover { background-color: var(--color-bg-alt); }
-        &:first-child { border-start-start-radius: 0.5rem; border-start-end-radius: 0.5rem; }
-        &:last-child { border-block-end: none; border-end-start-radius: 0.5rem; border-end-end-radius: 0.5rem; }
-      }
+        .stack-row {
+          display: flex; padding: 0.625rem 0.75rem;
+          overflow-x: auto;
+          border-block-end: 1px solid var(--color-border);
+          transition: background-color 0.2s ease-out;
+          &:hover { background-color: var(--color-bg-alt); }
+          &:last-child { border-block-end: none; }
+        }
 
       .stack-toggle-btn {
         display: flex; align-items: center; justify-content: center;
