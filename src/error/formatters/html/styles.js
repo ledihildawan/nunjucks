@@ -270,6 +270,7 @@ export const CSS = `
         font-size: 0.75rem;
         border-radius: 0.5rem;
         overflow: hidden;
+        border: 1px solid var(--color-border);
         box-shadow:
           0 0 0 1px oklch(0 0 0 / 0.06),
           0 1px 2px -1px oklch(0 0 0 / 0.06),
