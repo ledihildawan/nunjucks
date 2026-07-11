@@ -202,6 +202,12 @@ app.get('/info', (req, res) => {
   `);
 });
 
+app.use('/js', express.static(path.join(__dirname, 'js')));
+
+app.get('/precompiled', (req, res) => {
+  res.sendFile(path.join(__dirname, 'browser-demo.html'));
+});
+
 app.listen(4000, () => {
   console.log('Nunjucks Error Classification Demo: http://localhost:4000');
   console.log('Run: node --watch samples/express/main.js');
