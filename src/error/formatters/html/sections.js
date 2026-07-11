@@ -123,7 +123,8 @@ export const formatStackTraceHtml = (originalError, isProduction = false, ide = 
   return `<section class="stack-trace" aria-labelledby="h-stack">
 <h2 id="h-stack" class="text-label">Stack Trace</h2>
 <div class="stack-container" id="stack-container">
-  <div class="stack-content">${allRows}${toggleBtn}</div>
+  <div class="stack-content">${allRows}</div>
+  ${toggleBtn}
 </div>
 </section>`;
 };

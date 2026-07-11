@@ -294,6 +294,7 @@ export const CSS = `
         inline-size: 100%; padding: 0.625rem 0.75rem;
         background: var(--color-bg-alt); color: var(--color-text-secondary);
         border: none; border-block-start: 1px solid var(--color-border);
+        border-radius: 0 0 0.5rem 0.5rem;
         font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
         font-size: 0.75rem; font-weight: 600; cursor: pointer;
         transition: background-color 0.2s ease-out, color 0.2s ease-out;
