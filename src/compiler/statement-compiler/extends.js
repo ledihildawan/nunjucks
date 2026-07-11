@@ -17,9 +17,14 @@ export const compileExtends = (ctx, node, frame) => {
 
   ctx._emitLine(`parentTemplate = ${parentTemplateId}`);
 
+  ctx._emitLine(`var __parentBlockNames = Object.keys(parentTemplate.blocks);`);
+  ctx._emitLine(`context.setParentBlockNames(__parentBlockNames);`);
+
   ctx._emitLine(`for(var ${k} in parentTemplate.blocks) {`);
   ctx._emitLine(`context.addBlock(${k}, parentTemplate.blocks[${k}]);`);
   ctx._emitLine('}');
+
+  ctx._emitLine(`context.validateBlocks();`);
 };
 
 export const compileInclude = (ctx, node, frame) => {

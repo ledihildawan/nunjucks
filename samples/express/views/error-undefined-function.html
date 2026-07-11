@@ -1,9 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head><title>Error: Undefined Function</title></head>
-<body>
-  <h1>Undefined Function</h1>
-  <p>The function <code>undefined_function()</code> is not registered with addGlobal().</p>
-  <p>Result: {{ undefined_function() }}</p>
-</body>
-</html>
+User: {{ getCurrentUser().username }}
+Role: {{ getUserRole(user.id) }}
+Last login: {{ formatDate(timestamp) }}

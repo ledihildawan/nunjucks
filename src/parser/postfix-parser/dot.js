@@ -7,11 +7,14 @@ export const parseDotAccess = (ctx, tok, target) => {
   const val = nextToken(ctx);
 
   if (val.type !== TOKEN_SYMBOL) {
-    fail(ctx, 'expected name as lookup value, got ' + val.value,
+    const targetName = target?.name || 'expression';
+    fail(ctx, 'expected name as lookup value after dot on ' + targetName + ', got ' + val.value,
       val.lineno,
       val.colno);
   }
 
   const lookup = Literal(val.lineno, val.colno, val.value);
-  return LookupVal(tok.lineno, tok.colno, target, lookup);
+  const node = LookupVal(tok.lineno, tok.colno, target, lookup);
+  node.isBracketNotation = false;
+  return node;
 };

@@ -112,6 +112,26 @@ describe('compileOutput', () => {
     expect(code).toContain('user.name');
   });
 
+  test('emits strict mode for LookupVal in strict mode (throws error)', () => {
+    const ctx = makeCtx();
+    ctx.undefinedMode = 'strict';
+    const node = {
+      children: [{
+        typename: 'LookupVal',
+        target: { typename: 'Symbol', value: 'user' },
+        val: { typename: 'Literal', value: 'name' },
+        lineno: 1,
+        colno: 5,
+        mock: 'memberLookup'
+      }],
+    };
+    compileOutput(ctx, node);
+    const code = ctx.emitted.join('');
+    expect(code).toContain('runtime.ensureDefined(');
+    expect(code).toContain('"strict"');
+    expect(code).toContain('user.name');
+  });
+
   test('emits debug mode for Symbol in debug mode (shows warning)', () => {
     const ctx = makeCtx();
     ctx.undefinedMode = 'debug';

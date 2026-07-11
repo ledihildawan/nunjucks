@@ -2,16 +2,28 @@ import { PATTERNS } from './error-patterns.js';
 
 export const ERROR_RULES = [
   {
+    pattern: PATTERNS.UNDEFINED_VALUE,
+    category: 'undefined_value',
+    subjectFrom: 'undefinedName',
+    causes: [
+      '**Nested property access** returned `null`/`undefined`',
+      '**Array index** out of bounds',
+      '**Object property** does not exist'
+    ],
+    fixCode: "{{ object.property |> default('default_value') }}",
+    fixComment: '// Use default filter or safe navigation for nested properties'
+  },
+  {
     pattern: PATTERNS.UNDEFINED_VARIABLE,
     category: 'undefined_variable',
     subjectFrom: 'undefinedName',
     causes: [
-      'Variable not passed in `render` context',
-      'Using an **undefined variable** name',
-      '**Typo** in variable name'
+      'Variable `{subject}` not passed in `render` context',
+      '**Typo** in variable name',
+      'Using an **undefined variable** name'
     ],
-    fixCode: "{{ variable |> default('default_value') }}",
-    fixComment: '// Add default filter or pass variable in context'
+    fixCode: "{{ '{subject}' |> default('default_value') }}",
+    fixComment: '// Add default filter or pass {subject} in context'
   },
   {
     pattern: PATTERNS.UNDEFINED_FUNCTION,
@@ -35,6 +47,40 @@ export const ERROR_RULES = [
     ],
     fixCode: "// Check variable type before calling\nconsole.log(typeof variable)",
     fixComment: '// Verify the variable type'
+  },
+  {
+    pattern: PATTERNS.INVALID_LOOKUP,
+    category: 'invalid_lookup',
+    subjectFrom: 'invalidLookup',
+    causes: [
+      'Invalid character `{subject}` after dot (e.g. `{target}.[{subject}]`)',
+      'Use **either dot** (`{target}.key`) **or bracket** (`{target}["key"]`) **notation**',
+      '**Mixed notation** is not allowed'
+    ],
+    fixCode: "{{ {target}.key }} or {{ {target}['key'] }}",
+    fixComment: '// Use dot OR bracket notation, not both'
+  },
+  {
+    pattern: PATTERNS.DUPLICATE_BLOCK,
+    category: 'duplicate_block',
+    subjectFrom: 'duplicateBlock',
+    causes: [
+      '**Duplicate block** definition in template',
+      'Block is defined multiple times'
+    ],
+    fixCode: "{% block content %}{% endblock %}",
+    fixComment: '// Remove duplicate block definitions'
+  },
+  {
+    pattern: PATTERNS.UNKNOWN_BLOCK_TAG,
+    category: 'unknown_block_tag',
+    subjectFrom: 'unknownBlockTag',
+    causes: [
+      '**Unmatched** closing tag (e.g. `{% endif %}` without `{% if %}`)',
+      '**Typo** in block tag name'
+    ],
+    fixCode: "{% if condition %}...{% endif %}",
+    fixComment: '// Ensure all block tags are properly opened and closed'
   },
   {
     pattern: PATTERNS.SYNTAX_ERROR,
@@ -92,18 +138,6 @@ export const ERROR_RULES = [
     ],
     fixCode: '{% include "template.html" %}',
     fixComment: '// Remove circular include or use {% import %} for shared macros'
-  },
-  {
-    pattern: PATTERNS.UNDEFINED_VALUE,
-    category: 'undefined_value',
-    subjectFrom: null,
-    causes: [
-      '**Nested property access** returned `null`/`undefined`',
-      '**Array index** out of bounds',
-      '**Object property** does not exist'
-    ],
-    fixCode: "{{ object.property |> default('default') }}",
-    fixComment: '// Use default filter or safe navigation'
   },
   {
     pattern: PATTERNS.FILE_NOT_FOUND,

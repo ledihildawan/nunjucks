@@ -67,15 +67,13 @@ describe('api', function() {
 });
 
 describe('auto error handling in dev mode', () => {
-  test('env.render returns HTML error in dev mode instead of throwing', async () => {
+  test('env.render throws in dev mode', async () => {
     const env = configure('src/template/test-templates', {
       dev: true,
       undefined: 'strict'
     });
 
-    const result = await env.render('throws.njk', {});
-    expect(result).toContain('Error:');
-    expect(result).toContain('UNDEFINED_FUNCTION');
+    await expect(env.render('throws.njk', {})).rejects.toThrow();
   });
 
   test('env.render throws in production mode', async () => {
@@ -87,15 +85,13 @@ describe('auto error handling in dev mode', () => {
     await expect(env.render('throws.njk', {})).rejects.toThrow();
   });
 
-  test('env.renderString returns HTML error in dev mode instead of throwing', async () => {
+  test('env.renderString throws in dev mode', async () => {
     const env = configure('src/template/test-templates', {
       dev: true,
       undefined: 'strict'
     });
 
-    const result = await env.renderString('{{ undefined_var }}', {});
-    expect(result).toContain('Error:');
-    expect(result).toContain('UNDEFINED_VARIABLE');
+    await expect(env.renderString('{{ undefined_var }}', {})).rejects.toThrow();
   });
 
   test('env.renderString throws in production mode', async () => {

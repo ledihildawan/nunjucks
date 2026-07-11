@@ -9,10 +9,30 @@ export function createContext(ctx, blocks, env) {
       this.ctx = Object.assign({}, ctx);
       this.blocks = {};
       this.exported = [];
+      this._parentBlockNames = null;
+      this._validatedBlocks = false;
 
       keys(blocks).forEach(name => {
         this.addBlock(name, blocks[name]);
       });
+    },
+    validateBlocks: function() {
+      if (this._validatedBlocks) return;
+      this._validatedBlocks = true;
+
+      if (this._parentBlockNames !== null) {
+        const parentBlockNames = new Set(this._parentBlockNames);
+        const childOnlyBlocks = keys(this.blocks).filter(name => !parentBlockNames.has(name));
+        if (childOnlyBlocks.length > 0) {
+          const err = new Error('Block "' + childOnlyBlocks[0] + '" is not defined in parent template');
+          err.code = 'UNDEFINED_BLOCK';
+          err.subject = childOnlyBlocks[0];
+          throw err;
+        }
+      }
+    },
+    setParentBlockNames: function(names) {
+      this._parentBlockNames = names;
     },
     lookup: function(name) {
       if (name in this.env.globals && !(name in this.ctx)) {
@@ -32,6 +52,7 @@ export function createContext(ctx, blocks, env) {
       return this;
     },
     getBlock: function(name) {
+      this.validateBlocks();
       if (!this.blocks[name]) {
         const err = new Error('unknown block "' + name + '"');
         err.code = 'UNDEFINED_BLOCK';

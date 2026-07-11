@@ -218,23 +218,31 @@ export function createEnvironment(loaders, opts) {
   };
 
   env.render = async function(name, ctx) {
-    const tmpl = await env.getTemplate(name);
+    let tmpl;
+    try {
+      tmpl = await env.getTemplate(name);
+    } catch (e) {
+      const err = await env.getErrorFormatter().formatError(e, name, {
+        templatePath: name,
+        renderContext: ctx,
+      });
+      console.error(err.toConsoleString());
+      throw err;
+    }
+
     const sandboxedCtx = createSandboxedContext(ctx, env.opts.sandbox);
     sandboxedCtx.__nunjucks_undefined_mode = env.opts.undefined;
 
     try {
       return await tmpl.render(sandboxedCtx);
     } catch (e) {
-      if (env.opts.dev) {
-        const templatePath = tmpl.path || name;
-        const err = await env.getErrorFormatter().formatError(e, name, {
-          templatePath,
-          renderContext: ctx,
-        });
-        console.error(err.toConsoleString());
-        return err.toHtmlString();
-      }
-      throw e;
+      const templatePath = tmpl.path || name;
+      const err = await env.getErrorFormatter().formatError(e, name, {
+        templatePath,
+        renderContext: ctx,
+      });
+      console.error(err.toConsoleString());
+      throw err;
     }
   };
 
@@ -247,15 +255,12 @@ export function createEnvironment(loaders, opts) {
     try {
       return await tmpl.render(sandboxedCtx);
     } catch (e) {
-      if (env.opts.dev) {
-        const err = await env.getErrorFormatter().formatError(e, path, {
-          renderContext: ctx,
-          sourceContent: src,
-        });
-        console.error(err.toConsoleString());
-        return err.toHtmlString();
-      }
-      throw e;
+      const err = await env.getErrorFormatter().formatError(e, path, {
+        renderContext: ctx,
+        sourceContent: src,
+      });
+      console.error(err.toConsoleString());
+      throw err;
     }
   };
 

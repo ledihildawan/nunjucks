@@ -1,5 +1,5 @@
 import { pipe, entries, isArray } from 'remeda';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { watch } from 'fs';
 import { createLoader } from './base.js';
@@ -15,23 +15,67 @@ const resolveFromSearchPath = (name) => (searchPath) => {
   return { basePath, fullPath };
 };
 
-const existsAndWithinBase = (basePath) => ({ fullPath }) =>
-  isPathWithinBase(basePath)(fullPath) && existsSync(fullPath);
+const existsAndWithinBase = (basePath) => ({ fullPath }) => {
+  if (!isPathWithinBase(basePath)(fullPath)) return false;
+  try {
+    const stat = statSync(fullPath);
+    if (stat.isDirectory()) {
+      const err = new Error(`EISDIR: illegal operation - path is a directory: ${fullPath}`);
+      err.code = 'FILESYSTEM_ERROR';
+      throw err;
+    }
+    return true;
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      // Check if the base path (search path) exists
+      try {
+        statSync(basePath);
+      } catch (baseErr) {
+        if (baseErr.code === 'ENOENT') {
+          const pathErr = new Error(`ENOENT: no such file or directory: ${basePath}`);
+          pathErr.code = 'FILESYSTEM_ERROR';
+          throw pathErr;
+        }
+        baseErr.code = 'FILESYSTEM_ERROR';
+        throw baseErr;
+      }
+      return false;
+    }
+    if (err.code === 'EISDIR') {
+      err.code = 'FILESYSTEM_ERROR';
+      throw err;
+    }
+    err.code = 'FILESYSTEM_ERROR';
+    throw err;
+  }
+};
 
 const findFileInSearchPaths = (searchPaths, name) => {
   for (const searchPath of searchPaths) {
-    const { basePath, fullPath } = resolveFromSearchPath(name)(searchPath);
-    if (existsAndWithinBase(basePath)({ fullPath })) {
-      return fullPath;
+    try {
+      const { basePath, fullPath } = resolveFromSearchPath(name)(searchPath);
+      if (existsAndWithinBase(basePath)({ fullPath })) {
+        return fullPath;
+      }
+    } catch (err) {
+      throw err;
     }
   }
   return null;
 };
 
-const readFileSource = (fullpath) => ({
-  src: readFileSync(fullpath, 'utf-8'),
-  path: fullpath
-});
+const readFileSource = (fullpath) => {
+  try {
+    return {
+      src: readFileSync(fullpath, 'utf-8'),
+      path: fullpath
+    };
+  } catch (err) {
+    if (err.code === 'ENOENT') return null;
+    err.code = 'FILESYSTEM_ERROR';
+    throw err;
+  }
+};
 
 const normalizeFilePath = (p) => path.resolve(path.normalize(p));
 

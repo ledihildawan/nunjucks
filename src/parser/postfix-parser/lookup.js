@@ -29,16 +29,22 @@ const buildSlice = (ctx, bracketTok, start) => {
 export const parseBracketAccess = (ctx, bracketTok, target) => {
   if (skip(ctx, TOKEN_COLON)) {
     const slice = buildSlice(ctx, bracketTok, null);
-    return new LookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
+    const node = new LookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
+    node.isBracketNotation = true;
+    return node;
   }
 
   const start = ctx.parseExpression();
 
   if (skip(ctx, TOKEN_COLON)) {
     const slice = buildSlice(ctx, bracketTok, start);
-    return new LookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
+    const node = new LookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
+    node.isBracketNotation = true;
+    return node;
   }
 
   expect(ctx, TOKEN_RIGHT_BRACKET);
-  return new LookupVal(bracketTok.lineno, bracketTok.colno, target, start);
+  const node = new LookupVal(bracketTok.lineno, bracketTok.colno, target, start);
+  node.isBracketNotation = true;
+  return node;
 };

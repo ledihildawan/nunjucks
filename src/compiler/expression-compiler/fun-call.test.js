@@ -25,7 +25,7 @@ describe('compileFunCall', () => {
       '(lineno = 3, colno = 7, ',
       'runtime.callWrap(',
       'myFunc',
-      ', "myFunc", context, ',
+      ', "myFunc", "myFunc()", context, ',
       '[', 'arg1', ',', 'arg2', '], 3, 7))',
     ]);
   });

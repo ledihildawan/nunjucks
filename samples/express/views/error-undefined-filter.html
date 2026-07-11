@@ -1,9 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head><title>Error: Undefined Filter</title></head>
-<body>
-  <h1>Undefined Filter</h1>
-  <p>The filter <code>nonexistent_filter</code> is not registered with addFilter().</p>
-  <p>Result: {{ "test" |> nonexistent_filter }}</p>
-</body>
-</html>
+Name: {{ "john doe" |> capitalize }}
+Email: {{ user.email |> maskEmail }}
+Phone: {{ phoneNumber |> formatPhone }}

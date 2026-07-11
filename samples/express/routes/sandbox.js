@@ -1,5 +1,5 @@
 import express from 'express';
-import { createSandboxedEnvironment, createEnvironment, createFileSystemLoader } from '../../../nunjucks/index.js';
+import { createContainer } from '../../../src/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -7,16 +7,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const VIEWS = path.join(__dirname, '..', 'views');
 
-const sandboxLoader = createFileSystemLoader(VIEWS);
-const normalLoader = createFileSystemLoader(VIEWS);
+const c = createContainer();
 
-const sandboxEnv = createSandboxedEnvironment(sandboxLoader, {
+const sandboxEnv = c.environment(c.loader.fileSystem(VIEWS), {
   autoescape: true,
   dev: true,
-  ide: 'vscode'
+  ide: 'vscode',
+  sandbox: true
 });
 
-const normalEnv = createEnvironment(normalLoader, {
+const normalEnv = c.environment(c.loader.fileSystem(VIEWS), {
   autoescape: true,
   dev: true,
   ide: 'vscode'

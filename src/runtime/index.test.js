@@ -158,19 +158,19 @@ describe('callWrap', () => {
   test('calls function with context and args', () => {
     const fn = function(a, b) { return this.prefix + a + b; };
     const ctx = { prefix: 'r:' };
-    expect(callWrap(fn, 'test', ctx, ['x', 'y'])).toBe('r:xy');
+    expect(callWrap(fn, 'test', 'test()', ctx, ['x', 'y'])).toBe('r:xy');
   });
 
   test('throws UNDEFINED_FUNCTION for null/undefined obj', () => {
-    expect(() => callWrap(null, 'foo', {}, [], 1, 2)).toThrow('Unable to call');
-    try { callWrap(null, 'foo', {}, [], 1, 2); } catch (e) {
+    expect(() => callWrap(null, 'foo', 'foo()', {}, [], 1, 2)).toThrow('Unable to call');
+    try { callWrap(null, 'foo', 'foo()', {}, [], 1, 2); } catch (e) {
       expect(e.code).toBe('UNDEFINED_FUNCTION');
     }
   });
 
   test('throws NOT_A_FUNCTION for non-function', () => {
-    expect(() => callWrap(42, 'bar', {}, [], 1, 2)).toThrow('not a function');
-    try { callWrap(42, 'bar', {}, [], 1, 2); } catch (e) {
+    expect(() => callWrap(42, 'bar', 'bar()', {}, [], 1, 2)).toThrow('not a function');
+    try { callWrap(42, 'bar', 'bar()', {}, [], 1, 2); } catch (e) {
       expect(e.code).toBe('NOT_A_FUNCTION');
     }
   });

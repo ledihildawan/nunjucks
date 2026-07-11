@@ -1,5 +1,5 @@
 import express from 'express';
-import { createEnvironment, createFileSystemLoader } from '../../../nunjucks/index.js';
+import { createContainer } from '../../../src/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -10,8 +10,8 @@ const VIEWS = path.join(__dirname, '..', 'views');
 const router = express.Router();
 
 const createTestEnv = (undefinedMode) => {
-  const loader = createFileSystemLoader(VIEWS);
-  return createEnvironment(loader, {
+  const c = createContainer();
+  return c.environment(c.loader.fileSystem(VIEWS), {
     autoescape: true,
     dev: true,
     ide: 'vscode',
@@ -92,37 +92,18 @@ router.get('/strict', async (req, res) => {
     await strictEnv.renderString(template, context);
     res.send('Should have thrown error');
   } catch (e) {
-    res.type('html').send(`
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Strict Mode Error</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
-    h1 { color: #e74c3c; }
-    .error { background: #fee; border: 1px solid #e74c3c; padding: 15px; border-radius: 8px; }
-    pre { background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 8px; overflow-x: auto; }
-    a { color: #3498db; }
-  </style>
-</head>
-<body>
-  <h1>🚫 Strict Mode - Error!</h1>
-  <p>Template: <code>{{ user.name }}</code></p>
-  <p>Context: <code>{ user: undefined }</code></p>
-  
-  <div class="error">
-    <strong>Error:</strong> ${e.message}
-  </div>
-
-  <p><a href="/undefined">← Back to Undefined Types Demo</a></p>
-</body>
-</html>
-    `);
+    res.status(500).type('html').send(e.toHtmlString());
   }
 });
 
 router.get('/debug', async (req, res) => {
-  const template = `<!DOCTYPE html>
+  const template = `{{ user.testing }}`;
+  const context = { user: undefined };
+
+  try {
+    const result = await debugEnv.renderString(template, context);
+    res.type('html').send(`
+<!DOCTYPE html>
 <html>
 <head>
   <title>Debug Mode</title>
@@ -135,19 +116,16 @@ router.get('/debug', async (req, res) => {
   </style>
 </head>
 <body>
-  <h1>Debug Mode - Member Access Throws Error</h1>
-  <p>Template: <code>{{ user.testing }}</code></p>
+  <h1>Debug Mode - No Error (Symbol)</h1>
+  <p>Template: <code>{{ user }}</code></p>
   <p>Context: <code>{ user: undefined }</code></p>
-
-  <p><strong>Note:</strong> In debug mode, member access like <code>user.testing</code> throws an error (not just warning)!</p>
-
+  <p><strong>Result:</strong> "${result}"</p>
   <p><a href="/undefined">← Back to Undefined Types Demo</a></p>
 </body>
-</html>`;
-  const context = { user: undefined };
-
-  const result = await debugEnv.renderString(template, context);
-  res.type('html').send(result);
+</html>`);
+  } catch (e) {
+    res.status(500).type('html').send(e.toHtmlString());
+  }
 });
 
 router.get('/chainable', async (req, res) => {

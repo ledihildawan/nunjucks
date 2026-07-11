@@ -1,4 +1,4 @@
-import { TOKEN_SYMBOL, TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_COMMA } from '../../lexer/token-types.js';
+import { TOKEN_SYMBOL, TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_COMMA, TOKEN_LEFT_BRACKET, TOKEN_OPERATOR } from '../../lexer/token-types.js';
 import { OptionalChain, OptionalCall, Literal, NodeList } from '../../nodes/index.js';
 import { nextToken, peekToken, fail } from '../cursor.js';
 
@@ -40,14 +40,36 @@ export const parseOptionalChain = (ctx, tok, target) => {
     return OptionalCall(tok.lineno, tok.colno, target, args);
   }
 
+  // Check if next token is bracket or dot
+  const nextTok = peekToken(ctx);
+  if (nextTok && nextTok.type === TOKEN_LEFT_BRACKET) {
+    // Handle bracket notation: user?.["status"]
+    const bracketTok = nextToken(ctx); // consume [
+    const start = ctx.parseExpression();
+    
+    // consume ]
+    const rightBracket = nextToken(ctx);
+    if (rightBracket.type !== 'right-bracket') {
+      fail(ctx, 'expected right bracket', rightBracket.lineno, rightBracket.colno);
+    }
+    
+    const node = OptionalChain(tok.lineno, tok.colno, target, start);
+    node.isBracketNotation = true;
+    return node;
+  }
+
+  // Handle dot notation: user?.status
   const val2 = nextToken(ctx);
 
   if (val2.type !== TOKEN_SYMBOL) {
-    fail(ctx, 'expected name as lookup value, got ' + val2.value,
+    const targetName = target?.name || 'expression';
+    fail(ctx, 'expected name as lookup value after ?. on ' + targetName + ', got ' + val2.value,
       val2.lineno,
       val2.colno);
   }
 
   const lookup = Literal(val2.lineno, val2.colno, val2.value);
-  return OptionalChain(tok.lineno, tok.colno, target, lookup);
+  const node = OptionalChain(tok.lineno, tok.colno, target, lookup);
+  node.isBracketNotation = false;
+  return node;
 };

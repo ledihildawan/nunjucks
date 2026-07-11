@@ -116,17 +116,18 @@ export function ensureDefined(val, lineno, colno, varName = null, templateName =
   return val;
 }
 
-export function callWrap(obj, name, context, args, lineno, colno) {
+export function callWrap(obj, name, displayName, context, args, lineno, colno) {
+  const messageName = displayName || name;
   if (!obj) {
     throw createTemplateError(
-      'Unable to call `' + name + '`, which is undefined or falsey',
+      'Unable to call `' + messageName + '`, which is undefined or falsey',
       lineno,
       colno,
       { code: 'UNDEFINED_FUNCTION', subject: name, phase: 'render' }
     );
   } else if (typeof obj !== 'function') {
     throw createTemplateError(
-      'Unable to call `' + name + '`, which is not a function',
+      'Unable to call `' + messageName + '`, which is not a function',
       lineno,
       colno,
       { code: 'NOT_A_FUNCTION', subject: name, phase: 'render' }

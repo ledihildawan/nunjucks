@@ -3,12 +3,13 @@ import { PATTERNS } from './error-patterns.js';
 
 describe('PATTERNS', () => {
   test('UNDEFINED_VARIABLE matches attempted output of null/undefined', () => {
-    expect(PATTERNS.UNDEFINED_VARIABLE.test("attempted to output 'foo' null or undefined")).toBe(true);
-    expect(PATTERNS.UNDEFINED_VARIABLE.exec("attempted to output 'bar' null or undefined")?.[1]).toBe('bar');
+    expect(PATTERNS.UNDEFINED_VARIABLE.test("attempted to output 'foo' null or undefined value")).toBe(true);
+    expect(PATTERNS.UNDEFINED_VARIABLE.exec("attempted to output 'bar' null or undefined value")?.[1]).toBe('bar');
   });
 
-  test('UNDEFINED_VALUE matches generic null output', () => {
-    expect(PATTERNS.UNDEFINED_VALUE.test('attempted to output null or undefined value')).toBe(true);
+  test('UNDEFINED_VALUE matches nested property access null output', () => {
+    expect(PATTERNS.UNDEFINED_VALUE.test("attempted to output 'product.name' null or undefined value")).toBe(true);
+    expect(PATTERNS.UNDEFINED_VALUE.exec("attempted to output 'user.profile.name' null or undefined value")?.[1]).toBe('user.profile.name');
   });
 
   test('UNDEFINED_FUNCTION matches unable to call', () => {
@@ -26,6 +27,7 @@ describe('PATTERNS', () => {
     expect(PATTERNS.SYNTAX_ERROR.test('unexpected token')).toBe(true);
     expect(PATTERNS.SYNTAX_ERROR.test('expected comma')).toBe(true);
     expect(PATTERNS.SYNTAX_ERROR.test('expected variable end')).toBe(true);
+    expect(PATTERNS.SYNTAX_ERROR.test('expected expression')).toBe(true);
     expect(PATTERNS.SYNTAX_ERROR.test('ParseError')).toBe(true);
     expect(PATTERNS.SYNTAX_ERROR.test('SyntaxError')).toBe(true);
   });
@@ -85,5 +87,13 @@ describe('PATTERNS', () => {
 
   test('OUTPUT_MATCH matches attempted to output', () => {
     expect(PATTERNS.OUTPUT_MATCH.exec("attempted to output 'data'")?.[1]).toBe('data');
+  });
+
+  test('INVALID_LOOKUP matches expected name as lookup value', () => {
+    expect(PATTERNS.INVALID_LOOKUP.test('expected name as lookup value after dot on user, got [')).toBe(true);
+    expect(PATTERNS.INVALID_LOOKUP.test('expected name as lookup value after ?. on user, got [')).toBe(true);
+    const m = PATTERNS.INVALID_LOOKUP.exec('expected name as lookup value after dot on user, got [');
+    expect(m?.[1]).toBe('user');
+    expect(m?.[2]).toBe('[');
   });
 });

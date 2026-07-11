@@ -4,7 +4,13 @@ export const extractUndefinedName = (message) => {
   if (!message) return null;
 
   const callMatch = message.match(PATTERNS.CALL_MATCH);
-  if (callMatch) return callMatch[1];
+  if (callMatch) {
+    let name = callMatch[1];
+    if (name.endsWith('()')) {
+      name = name.slice(0, -2);
+    }
+    return name;
+  }
 
   const outputMatch = message.match(PATTERNS.OUTPUT_MATCH);
   if (outputMatch) {

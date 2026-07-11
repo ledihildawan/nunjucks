@@ -9,7 +9,7 @@ describe('classifyError', () => {
   });
 
   test('detects undefined variable', () => {
-    const result = classifyError("attempted to output 'x' null or undefined");
+    const result = classifyError("attempted to output 'x' null or undefined value");
     expect(result.category).toBe('undefined_variable');
     expect(result.undefinedName).toBe('x');
   });
@@ -62,7 +62,7 @@ describe('classifyFromError', () => {
   });
 
   test('falls back to classifyError for non-filter errors', () => {
-    const error = { code: 'UNDEFINED_VARIABLE', message: "attempted to output 'x' null or undefined" };
+    const error = { code: 'UNDEFINED_VARIABLE', message: "attempted to output 'x' null or undefined value" };
     const result = classifyFromError(error);
     expect(result.category).toBe('undefined_variable');
   });

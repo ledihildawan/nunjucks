@@ -12,12 +12,27 @@ const extractSubject = (rule, message) => {
       return (message.match(/"([^"]+)"/) || [])[1] || null;
     case 'fileNotFound':
       return message.match(PATTERNS.FILE_NOT_FOUND)?.[1] || 'unknown';
+    case 'unknownBlockTag':
+      return message.match(PATTERNS.UNKNOWN_BLOCK_TAG)?.[1] || null;
+    case 'duplicateBlock':
+      return message.match(PATTERNS.DUPLICATE_BLOCK)?.[1] || null;
+    case 'invalidLookup': {
+      const match = message.match(PATTERNS.INVALID_LOOKUP);
+      return match ? { target: match[1], value: match[2] } : null;
+    }
     default:
       return null;
   }
 };
 
-const fill = (text, subject) => text.replaceAll('{subject}', subject ?? '');
+const fill = (text, subject) => {
+  if (subject && typeof subject === 'object') {
+    return text
+      .replaceAll('{target}', subject.target ?? '')
+      .replaceAll('{subject}', subject.value ?? '');
+  }
+  return text.replaceAll('{subject}', subject ?? '');
+};
 const resolveField = (field, subject) =>
   Array.isArray(field) ? field.map(item => fill(item, subject)) : fill(field, subject);
 
@@ -88,6 +103,19 @@ export const classifyFromError = (error) => {
   if (!error) return DEFAULT_CLASSIFICATION;
   if (error.code === 'FILTER_ERROR') {
     return classifyFilterError(error.message || '');
+  }
+  if (error.code === 'UNDEFINED_BLOCK') {
+    const rule = ERROR_RULES.find(r => r.category === 'undefined_block');
+    if (rule) {
+      const subject = error.subject || null;
+      return {
+        category: rule.category,
+        undefinedName: subject,
+        causes: resolveField(rule.causes, subject),
+        fixCode: resolveField(rule.fixCode, subject),
+        fixComment: resolveField(rule.fixComment, subject)
+      };
+    }
   }
   return classifyError(error.message || '');
 };

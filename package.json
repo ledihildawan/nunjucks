@@ -23,10 +23,12 @@
     "coverage": "bun test src/ --coverage"
   },
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.js",
+    "./bundle": "./dist/index.js"
   },
   "files": [
-    "src/**"
+    "src/**",
+    "dist/**"
   ],
   "repository": {
     "type": "git",

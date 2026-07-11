@@ -49,10 +49,10 @@ export const compileOutput = (ctx, node, frame) => {
       const varName = extractVarName(child);
       const undefinedMode = ctx.undefinedMode;
 
-      // LookupVal (e.g., user.name) in debug mode should throw error (not warning)
+      // LookupVal (e.g., user.name) in strict/debug mode should throw error
       const useEnsureDefined = undefinedMode && undefinedMode !== 'chainable';
       const shouldWarn = useEnsureDefined && !isLookupVal;
-      const shouldError = useEnsureDefined && isLookupVal && undefinedMode === 'debug';
+      const shouldError = useEnsureDefined && isLookupVal && (undefinedMode === 'debug' || undefinedMode === 'strict');
 
       // For LookupVal in debug mode, pass 'strict' to ensureDefined so it throws error
       const effectiveMode = (isLookupVal && undefinedMode === 'debug') ? 'strict' : undefinedMode;

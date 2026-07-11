@@ -38,7 +38,7 @@ describe('createErrorData', () => {
   });
 
   test('classifies the error', () => {
-    const err = new Error("attempted to output 'x' null or undefined");
+    const err = new Error("attempted to output 'x' null or undefined value");
     const data = createErrorData(err, { templateName: 't.njk' });
     expect(data.classified.category).toBe('undefined_variable');
   });

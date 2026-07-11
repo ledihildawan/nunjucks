@@ -1,6 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createFileSystemLoader, createEnvironment } from '../../nunjucks/index.js';
+import { createContainer } from '../../src/index.js';
 import express from 'express';
 import { errorRouter, errorRoutes } from './routes/errors.js';
 import { sandboxRouter } from './routes/sandbox.js';
@@ -11,9 +11,9 @@ const VIEWS = path.join(__dirname, 'views');
 
 const app = express();
 
-const fsLoader = createFileSystemLoader(VIEWS);
+const c = createContainer();
 
-const envDev = createEnvironment(fsLoader, {
+const envDev = c.environment(c.loader.fileSystem(VIEWS), {
   autoescape: true,
   dev: true,
   undefined: 'strict'
@@ -105,7 +105,7 @@ app.get('/home', async (req, res) => {
     });
     res.type('html').send(html);
   } catch (e) {
-    res.status(500).type('html').send('<h1>Error</h1><pre>' + e.message + '</pre>');
+    res.status(500).type('html').send(e.toHtmlString());
   }
 });
 
