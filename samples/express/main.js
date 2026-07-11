@@ -5,6 +5,7 @@ import express from 'express';
 import { errorRouter, errorRoutes } from './routes/errors.js';
 import { sandboxRouter } from './routes/sandbox.js';
 import { undefinedRouter } from './routes/undefined.js';
+import { remoteRouter } from './routes/remote.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const VIEWS = path.join(__dirname, 'views');
@@ -22,6 +23,7 @@ const envDev = c.environment(c.loader.fileSystem(VIEWS), {
 app.use('/errors', errorRouter);
 app.use('/sandbox', sandboxRouter);
 app.use('/undefined', undefinedRouter);
+app.use('/remote', remoteRouter);
 
 app.get('/', (req, res) => {
   const routesList = errorRoutes.map(r =>
@@ -146,6 +148,7 @@ app.get('/', (req, res) => {
     <a href="/info">/info - Environment info</a>
     <a href="/sandbox">/sandbox - Sandbox Demo</a>
     <a href="/undefined">/undefined - Undefined Types</a>
+    <a href="/remote">/remote - Remote Extension</a>
   </div>
 
   <h2>📚 How It Works</h2>
