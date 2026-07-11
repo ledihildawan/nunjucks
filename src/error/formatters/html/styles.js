@@ -270,9 +270,8 @@ export const CSS = `
         font-size: 0.75rem;
         border-radius: 0.5rem;
         overflow: hidden;
-        border: 1px solid var(--color-border);
-        background: var(--color-bg-panel);
         box-shadow:
+          0 0 0 1px var(--color-border),
           0 0 0 1px oklch(0 0 0 / 0.06),
           0 1px 2px -1px oklch(0 0 0 / 0.06),
           0 2px 4px 0 oklch(0 0 0 / 0.04);
@@ -288,7 +287,7 @@ export const CSS = `
           border-block-end: 1px solid var(--color-border);
           transition: background-color 0.2s ease-out;
           &:hover { background-color: var(--color-bg-alt); }
-          &:last-child { border-block-end: none; border-end-start-radius: 0; border-end-end-radius: 0; }
+          &:last-child { border-block-end: none; }
         }
 
       .stack-toggle-btn {
@@ -296,6 +295,7 @@ export const CSS = `
         inline-size: 100%; padding: 0.625rem 0.75rem;
         background: var(--color-bg-alt); color: var(--color-text-secondary);
         border: none; border-block-start: 1px solid var(--color-border);
+        border-radius: 0 0 0.5rem 0.5rem;
         font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
         font-size: 0.75rem; font-weight: 600; cursor: pointer;
         transition: background-color 0.2s ease-out, color 0.2s ease-out;
