@@ -19,35 +19,12 @@ export const TOGGLE_SCRIPT = `
     var hiddenRows = allRows.slice(VISIBLE_COUNT);
     hiddenRows.forEach(function(row) { row.style.display = 'none'; });
 
-    var lastVisibleRow = allRows[VISIBLE_COUNT - 1];
-    if (lastVisibleRow) {
-      lastVisibleRow.style.borderBottom = 'none';
-      lastVisibleRow.style.borderEndStartRadius = '0';
-      lastVisibleRow.style.borderEndEndRadius = '0';
-    }
-    btn.style.borderEndStartRadius = '0.5rem';
-    btn.style.borderEndEndRadius = '0.5rem';
-
     var toggleStack = function() {
       if (prefersReducedMotion) {
         var isExpanded = content.classList.contains('is-expanded');
         hiddenRows.forEach(function(row) { row.style.display = isExpanded ? 'none' : 'flex'; });
         content.classList.toggle('is-expanded');
         btn.textContent = isExpanded ? 'Show ' + totalHidden + ' more lines...' : 'Collapse stack trace';
-        if (isExpanded) {
-          var lastVis = allRows[VISIBLE_COUNT - 1];
-          if (lastVis) {
-            lastVis.style.borderBottom = 'none';
-            lastVis.style.borderEndStartRadius = '0';
-            lastVis.style.borderEndEndRadius = '0';
-          }
-          btn.style.borderEndStartRadius = '0.5rem';
-          btn.style.borderEndEndRadius = '0.5rem';
-        } else {
-          allRows.forEach(function(row) { row.style.borderBottom = ''; row.style.borderRadius = ''; });
-          btn.style.borderEndStartRadius = '0';
-          btn.style.borderEndEndRadius = '0';
-        }
         return;
       }
 
@@ -57,28 +34,11 @@ export const TOGGLE_SCRIPT = `
         content.style.removeProperty('max-height');
         content.classList.remove('is-expanded');
         btn.textContent = 'Show ' + totalHidden + ' more lines...';
-        allRows.forEach(function(row) { row.style.borderBottom = ''; row.style.borderRadius = ''; });
         hiddenRows.forEach(function(row) { row.style.display = 'none'; });
-        var lastVisible = allRows[VISIBLE_COUNT - 1];
-        if (lastVisible) {
-          lastVisible.style.borderBottom = 'none';
-          lastVisible.style.borderEndStartRadius = '0';
-          lastVisible.style.borderEndEndRadius = '0';
-        }
-        btn.style.borderEndStartRadius = '0.5rem';
-        btn.style.borderEndEndRadius = '0.5rem';
       } else {
         hiddenRows.forEach(function(row) { row.style.display = 'flex'; });
         content.classList.add('is-expanded');
         btn.textContent = 'Collapse stack trace';
-        var lastRow = allRows[allRows.length - 1];
-        if (lastRow) {
-          lastRow.style.borderBottom = 'none';
-          lastRow.style.borderEndStartRadius = '0.5rem';
-          lastRow.style.borderEndEndRadius = '0.5rem';
-        }
-        btn.style.borderEndStartRadius = '0';
-        btn.style.borderEndEndRadius = '0';
       }
     };
 
