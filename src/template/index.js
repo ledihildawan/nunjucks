@@ -92,7 +92,6 @@ const extractFrameDetails = (e, sourceLineno, sourceColno, sourceMap, currentPat
 
 const createFallbackEnv = () => ({
   opts: { dev: false, autoescape: true },
-  asyncFilters: [],
   extensionsList: [],
   globals: {},
   _renderingTemplates: new Set(),
@@ -224,7 +223,7 @@ export function createTemplate(src, env, path, eagerCompile) {
       } else {
         const source = compile(
           this.tmplStr,
-          this.env.asyncFilters,
+          [],
           this.env.extensionsList,
           this.path,
           this.env.opts

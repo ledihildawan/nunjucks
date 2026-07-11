@@ -84,7 +84,6 @@ export const createBuiltIns = () => ({
   globals: globals(),
   filters: {},
   tests: {},
-  asyncFilters: [],
   extensions: {},
   extensionsList: []
 });
@@ -181,7 +180,6 @@ export const registerBuiltIns = (env) => {
   env.globals = globals();
   env.filters = {};
   env.tests = {};
-  env.asyncFilters = [];
   env.extensions = {};
   env.extensionsList = [];
 

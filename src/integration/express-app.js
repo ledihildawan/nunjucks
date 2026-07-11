@@ -12,9 +12,9 @@ export default function express(env, app) {
 
   app.use((req, res, next) => {
     const originalRender = res.render.bind(res);
-    res.render = async function(view, options, callback) {
+    res.render = async function(view, options) {
       try {
-        return await originalRender(view, options, callback);
+        return await originalRender(view, options);
       } catch (e) {
         if (env.opts.dev) {
           const err = await env.getErrorFormatter().formatError(e, view, {

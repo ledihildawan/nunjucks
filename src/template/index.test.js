@@ -54,7 +54,6 @@ describe('Template constructor', () => {
   test('uses fallback env when env is null', () => {
     const t = createTemplate('Hello {{ name }}', null);
     expect(t.env.opts).toBeDefined();
-    expect(t.env.asyncFilters).toEqual([]);
     expect(t.env.extensionsList).toEqual([]);
   });
 

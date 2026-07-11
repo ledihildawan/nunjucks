@@ -40,7 +40,6 @@ describe('Environment constructor', () => {
     expect(env.globals).toBeDefined();
     expect(env.extensions).toBeDefined();
     expect(env.extensionsList).toBeDefined();
-    expect(env.asyncFilters).toBeDefined();
   });
 
   test('accepts a single loader', () => {
@@ -136,12 +135,7 @@ describe('filters', () => {
     expect(env.addFilter('f', (x) => x)).toBe(env);
   });
 
-  test('addFilter with async registers in asyncFilters', () => {
-    env.addFilter('asyncFilter', () => {}, true);
-    expect(env.asyncFilters).toContain('asyncFilter');
-  });
-
-  test('getFilter returns wrapped sync filter', () => {
+  test('getFilter returns wrapped async filter', () => {
     env.addFilter('upper', (x) => String(x).toUpperCase());
     const filter = env.getFilter('upper');
     expect(filter).toBeFunction();

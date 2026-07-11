@@ -192,7 +192,7 @@ describe('compile function', () => {
     expect(result).toContain('runtime.suppressValue');
   });
 
-  test('compiles with asyncFilters', () => {
+  test('compiles with async pipes', () => {
     const result = compile('Hello {{ x }}', ['upper'], [], 'test.njk');
     expect(result).toContain('async function root');
   });

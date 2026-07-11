@@ -81,14 +81,6 @@ function render(str, ctx, opts, env, cb) {
     }
   }
 
-  if (opts.asyncFilters) {
-    for (name in opts.asyncFilters) {
-      if (Object.prototype.hasOwnProperty.call(opts.asyncFilters, name)) {
-        e.addFilter(name, opts.asyncFilters[name], true);
-      }
-    }
-  }
-
   if (opts.extensions) {
     for (name in opts.extensions) {
       if (Object.prototype.hasOwnProperty.call(opts.extensions, name)) {

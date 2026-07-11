@@ -7,7 +7,6 @@ describe('createBuiltIns', () => {
     expect(result).toHaveProperty('globals');
     expect(result).toHaveProperty('filters');
     expect(result).toHaveProperty('tests');
-    expect(result).toHaveProperty('asyncFilters');
     expect(result).toHaveProperty('extensions');
     expect(result).toHaveProperty('extensionsList');
   });

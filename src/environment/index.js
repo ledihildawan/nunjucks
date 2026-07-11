@@ -16,7 +16,7 @@ import {
   resolveTemplateName,
   validateTemplateName
 } from './template-resolver.js';
-import { wrapFilterWithError, wrapAsyncFilter } from './filter-wrappers.js';
+import { wrapAsyncFilter } from './filter-wrappers.js';
 import { normalizeLoaders, registerBuiltIns } from './built-ins.js';
 import { getCallerLocation } from '../shared/caller-location.js';
 
@@ -48,7 +48,6 @@ export function createEnvironment(loaders, opts) {
   env._renderingTemplates = new Set();
   env.loaders = normalizeLoaders(loaders, createFileSystemLoader);
   env.filters = {};
-  env.asyncFilters = [];
   env.globals = {};
   env.extensions = {};
   env.extensionsList = [];
@@ -97,8 +96,7 @@ export function createEnvironment(loaders, opts) {
     return env.globals[name];
   };
 
-  env.addFilter = function(name, func, async) {
-    if (async) env.asyncFilters.push(name);
+  env.addFilter = function(name, func) {
     env.filters[name] = func;
     return env;
   };
@@ -111,9 +109,7 @@ export function createEnvironment(loaders, opts) {
       throw err;
     }
     const filter = env.filters[name];
-    const wrapped = env.asyncFilters.includes(name)
-      ? wrapAsyncFilter(filter, name)
-      : wrapFilterWithError(filter, name);
+    const wrapped = wrapAsyncFilter(filter, name);
     return wrapped;
   };
 
