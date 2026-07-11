@@ -4,6 +4,5 @@ import * as mod from './index.js';
 describe('loaders/index exports', () => {
   test('exports createFileSystemLoader', () => expect(mod.createFileSystemLoader).toBeFunction());
   test('exports createNodeResolveLoader', () => expect(mod.createNodeResolveLoader).toBeFunction());
-  test('exports createWebLoader', () => expect(mod.createWebLoader).toBeFunction());
   test('exports createLoader', () => expect(mod.createLoader).toBeFunction());
 });

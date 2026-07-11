@@ -89,10 +89,9 @@ export const createBuiltIns = () => ({
   extensionsList: []
 });
 
-export const normalizeLoaders = (loaders, FileSystemLoader, WebLoader) => {
+export const normalizeLoaders = (loaders, FileSystemLoader) => {
   if (!loaders) {
     if (FileSystemLoader) return [new FileSystemLoader('views')];
-    if (WebLoader) return [new WebLoader('/views')];
     return [];
   }
   return isArray(loaders) ? loaders : [loaders];

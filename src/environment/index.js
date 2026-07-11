@@ -1,7 +1,6 @@
 import { prettifyError, createErrorFormatter } from '../error/index.js';
 import { compile } from '../compiler/index.js';
 import { createFileSystemLoader } from '../loaders/file-system.js';
-import { createWebLoader } from '../loaders/web.js';
 import { createEmitter } from '../object/index.js';
 import { createFrame, createSandboxedContext, getUndefinedMode, DEFAULT_UNDEFINED_MODE } from '../runtime/index.js';
 import expressApp from '../integration/express-app.js';
@@ -47,7 +46,7 @@ export function createEnvironment(loaders, opts) {
 
   env.opts = normalizedOpts;
   env._renderingTemplates = new Set();
-  env.loaders = normalizeLoaders(loaders, createFileSystemLoader, createWebLoader);
+  env.loaders = normalizeLoaders(loaders, createFileSystemLoader);
   env.filters = {};
   env.asyncFilters = [];
   env.globals = {};

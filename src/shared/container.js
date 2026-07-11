@@ -87,7 +87,6 @@ export const createContainer = () => {
 
     loader: {
       fileSystem: (...args) => resolve('loader.fileSystem', ...args),
-      web: (...args) => resolve('loader.web', ...args),
       nodeResolve: (...args) => resolve('loader.nodeResolve', ...args),
     },
 
