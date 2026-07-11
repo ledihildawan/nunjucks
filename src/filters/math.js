@@ -23,7 +23,7 @@ export function round(val, precision, method) {
 }
 
 export function float(val, def) {
-  var res = parseFloat(val);
+  const res = parseFloat(val);
   return (isNaN(res)) ? def : res;
 }
 
@@ -31,7 +31,7 @@ export const intFilter = makeMacro(
   ['value', 'default', 'base'],
   [],
   function doInt(value, defaultValue, base = 10) {
-    var res = parseInt(value, base);
+    const res = parseInt(value, base);
     return (isNaN(res)) ? defaultValue : res;
   }
 );

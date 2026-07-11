@@ -132,7 +132,7 @@ export function callWrap(obj, name, displayName, context, args, lineno, colno) {
 }
 
 export function contextOrFrameLookup(context, frame, name) {
-  var val = frame.lookup(name);
+  let val = frame.lookup(name);
   return (val !== undefined) ?
     val :
     context.lookup(name);

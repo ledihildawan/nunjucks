@@ -1,8 +1,8 @@
 export function makeMacro(argNames, kwargNames, func) {
   return function macro(...macroArgs) {
-    var argCount = numArgs(macroArgs);
-    var args;
-    var kwargs = getKeywordArgs(macroArgs);
+    const argCount = numArgs(macroArgs);
+    let args;
+    const kwargs = getKeywordArgs(macroArgs);
 
     if (argCount > argNames.length) {
       args = macroArgs.slice(0, argNames.length);
@@ -38,7 +38,7 @@ export function isKeywordArgs(obj) {
 }
 
 export function getKeywordArgs(args) {
-  var len = args.length;
+  const len = args.length;
   if (len) {
     const lastArg = args[len - 1];
     if (isKeywordArgs(lastArg)) {
@@ -49,7 +49,7 @@ export function getKeywordArgs(args) {
 }
 
 export function numArgs(args) {
-  var len = args.length;
+  const len = args.length;
   if (len === 0) {
     return 0;
   }

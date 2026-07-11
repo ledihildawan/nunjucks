@@ -23,7 +23,7 @@ export function copySafeness(dest, target) {
 }
 
 export function markSafe(val) {
-  var type = typeof val;
+  const type = typeof val;
 
   if (type === 'string') {
     return createSafeString(val);
@@ -31,7 +31,7 @@ export function markSafe(val) {
     return val;
   } else {
     return function wrapSafe(args) {
-      var ret = val.apply(this, arguments);
+      let ret = val.apply(this, arguments);
       if (typeof ret === 'string') {
         return createSafeString(ret);
       }

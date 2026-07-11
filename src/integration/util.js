@@ -6,7 +6,7 @@ import { createTemplate } from '../template/index.js';
 import { createFileSystemLoader } from '../loaders/file-system.js';
 import installJinjaCompat from '../integration/jinja-compat.js';
 
-var templatesPath = 'src/template/test-templates';
+const templatesPath = 'src/template/test-templates';
 
 function equal(str, ctx, opts, str2, env) {
   if (typeof ctx === 'string') {
@@ -21,7 +21,7 @@ function equal(str, ctx, opts, str2, env) {
     opts = {};
   }
   opts = opts || {};
-  var res = render(str, ctx, opts, env);
+  const res = render(str, ctx, opts, env);
   if (res && typeof res.then === 'function') {
     return res.then((resolved) => {
       expect(resolved).toBe(str2);
@@ -31,11 +31,11 @@ function equal(str, ctx, opts, str2, env) {
 }
 
 function jinjaEqual(str, ctx, str2, env) {
-  var jinjaUninstalls = [installJinjaCompat()];
+  const jinjaUninstalls = [installJinjaCompat()];
   try {
     return equal(str, ctx, str2, env);
   } finally {
-    for (var i = 0; i < jinjaUninstalls.length; i++) {
+    for (let i = 0; i < jinjaUninstalls.length; i++) {
       jinjaUninstalls[i]();
     }
   }
@@ -66,13 +66,10 @@ function render(str, ctx, opts, env, cb) {
   opts = opts || {};
   opts.dev = true;
 
-  var loader;
-  var e;
+  const loader = createFileSystemLoader(templatesPath);
+  const e = env || createEnvironment(loader, opts);
 
-  loader = createFileSystemLoader(templatesPath);
-  e = env || createEnvironment(loader, opts);
-
-  var name;
+  let name;
   if (opts.filters) {
     for (name in opts.filters) {
       if (Object.prototype.hasOwnProperty.call(opts.filters, name)) {
@@ -91,9 +88,7 @@ function render(str, ctx, opts, env, cb) {
 
   ctx = ctx || {};
 
-  var t;
-
-  t = createTemplate(str, e);
+  const t = createTemplate(str, e);
 
   if (!cb) {
     return t.render(ctx);

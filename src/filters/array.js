@@ -4,9 +4,9 @@ import { getAttrGetter } from '../helpers/attributes.js';
 import { normalize } from './string.js';
 
 export function batch(arr, linecount, fillWith) {
-  var i;
-  var res = [];
-  var tmp = [];
+  let i;
+  const res = [];
+  let tmp = [];
 
   for (i = 0; i < arr.length; i++) {
     if (i % linecount === 0 && tmp.length) {
@@ -39,7 +39,7 @@ export function last(arr) {
 }
 
 export function lengthFilter(val) {
-  var value = normalize(val, '');
+  const value = normalize(val, '');
 
   if (value !== undefined) {
     if (
@@ -73,7 +73,7 @@ export function random(arr) {
 }
 
 export function reverse(val) {
-  var arr;
+  let arr;
   if (isString(val)) {
     arr = list(val);
   } else {

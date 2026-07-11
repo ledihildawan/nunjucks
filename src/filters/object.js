@@ -25,8 +25,8 @@ export function dictsort(val, caseSensitive, by) {
   }
 
   array.sort((t1, t2) => {
-    var a = t1[si];
-    var b = t2[si];
+    let a = t1[si];
+    let b = t2[si];
 
     if (!caseSensitive) {
       if (isString(a)) {

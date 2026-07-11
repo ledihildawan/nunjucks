@@ -104,7 +104,7 @@ export function extendObj(baseObj, name, props) {
     this.colno = colno;
 
     newFields.forEach((field, i) => {
-      var val = args[i + baseFields.length];
+      let val = args[i + baseFields.length];
       if (val === undefined) {
         val = null;
       }

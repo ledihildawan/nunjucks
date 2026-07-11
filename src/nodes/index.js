@@ -18,7 +18,7 @@ export function createNode(name, fields, initFn) {
     this.colno = colno;
 
     fields.forEach((field, i) => {
-      var val = args[i];
+      let val = args[i];
       if (val === undefined) {
         val = null;
       }

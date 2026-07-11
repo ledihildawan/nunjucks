@@ -15,7 +15,7 @@ export const createCursor = (tokens) => ({
 });
 
 export const nextToken = (ctx, withWhitespace) => {
-  var tok;
+  let tok;
 
   if (ctx.peeked) {
     if (!withWhitespace && ctx.peeked.type === TOKEN_WHITESPACE) {
@@ -51,7 +51,7 @@ export const pushToken = (ctx, tok) => {
 };
 
 export const skip = (ctx, type) => {
-  var tok = nextToken(ctx);
+  let tok = nextToken(ctx);
   if (!tok || tok.type !== type) {
     pushToken(ctx, tok);
     return false;
@@ -60,7 +60,7 @@ export const skip = (ctx, type) => {
 };
 
 export const expect = (ctx, type) => {
-  var tok = nextToken(ctx);
+  let tok = nextToken(ctx);
   if (tok.type !== type) {
     fail(ctx, 'expected ' + type + ', got ' + tok.type, tok.lineno, tok.colno);
   }
@@ -68,7 +68,7 @@ export const expect = (ctx, type) => {
 };
 
 export const skipValue = (ctx, type, val) => {
-  var tok = nextToken(ctx);
+  let tok = nextToken(ctx);
   if (!tok || tok.type !== type || tok.value !== val) {
     pushToken(ctx, tok);
     return false;
@@ -79,7 +79,7 @@ export const skipValue = (ctx, type, val) => {
 export const skipSymbol = (ctx, val) => skipValue(ctx, TOKEN_SYMBOL, val);
 
 export const advanceAfterBlockEnd = (ctx, name) => {
-  var tok;
+  let tok;
   if (!name) {
     tok = peekToken(ctx);
 
@@ -109,7 +109,7 @@ export const advanceAfterBlockEnd = (ctx, name) => {
 };
 
 export const advanceAfterVariableEnd = (ctx) => {
-  var tok = nextToken(ctx);
+  let tok = nextToken(ctx);
 
   if (tok && tok.type === TOKEN_VARIABLE_END) {
     ctx.dropLeadingWhitespace = tok.value.charAt(

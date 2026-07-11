@@ -102,7 +102,7 @@ export function nl2br(str) {
 }
 
 export function replace(str, old, new_, maxCount) {
-  var originalStr = str;
+  const originalStr = str;
 
   if (old instanceof RegExp) {
     return str.replace(old, new_);
@@ -187,7 +187,7 @@ export function trim(str) {
 }
 
 export function truncate(input, length, killwords, end) {
-  var orig = input;
+  const orig = input;
   input = normalize(input, '');
   length = defaultTo(length, 255);
 
@@ -216,7 +216,7 @@ export function upper(str) {
 }
 
 export function urlencode(obj) {
-  var enc = encodeURIComponent;
+  const enc = encodeURIComponent;
   if (isString(obj)) {
     return enc(obj);
   } else {
@@ -241,9 +241,9 @@ export function urlize(str, length, nofollow) {
   const words = str.split(/(\s+)/).filter((word) => {
     return word && word.length;
   }).map((word) => {
-    var matches = word.match(puncRe);
-    var possibleUrl = (matches) ? matches[1] : word;
-    var shortUrl = possibleUrl.substr(0, length);
+    const matches = word.match(puncRe);
+    const possibleUrl = (matches) ? matches[1] : word;
+    const shortUrl = possibleUrl.substr(0, length);
 
     if (httpHttpsRe.test(possibleUrl)) {
       return `<a href="${possibleUrl}"${noFollowAttr}>${shortUrl}</a>`;
