@@ -173,6 +173,61 @@ export const ERROR_RULES = [
     ],
     fixCode: '{% include "template.html" %}',
     fixComment: '// Verify template path is a valid file'
+  },
+  {
+    pattern: PATTERNS.SANDBOX_ACCESS,
+    category: 'sandbox_blocked',
+    subjectFrom: 'blockedKey',
+    causes: [
+      '**Sandbox mode** blocks access to `{subject}`',
+      'Dangerous property access attempted in sandboxed template'
+    ],
+    fixCode: '// Remove access to blocked property or disable sandbox',
+    fixComment: '// Remove access to {subject} in your template'
+  },
+  {
+    pattern: PATTERNS.SANDBOX_SET,
+    category: 'sandbox_blocked',
+    subjectFrom: 'blockedKey',
+    causes: [
+      '**Sandbox mode** blocks setting `{subject}`',
+      'Attempted to modify blocked property in sandboxed template'
+    ],
+    fixCode: '// Remove assignment to blocked property or disable sandbox',
+    fixComment: '// Remove assignment to {subject} in your template'
+  },
+  {
+    pattern: PATTERNS.SLICE_STEP,
+    category: 'slice_error',
+    subjectFrom: null,
+    causes: [
+      '**Slice step** cannot be zero (division by zero)',
+      'Invalid slice notation: `[::0]` is not allowed'
+    ],
+    fixCode: '{{ list[::1] }}  // Use step of 1 or higher',
+    fixComment: '// Slice step must be non-zero'
+  },
+  {
+    pattern: PATTERNS.LIST_FILTER,
+    category: 'iterable_error',
+    subjectFrom: null,
+    causes: [
+      '**List filter** requires an **iterable** input',
+      'Passed value type is not iterable (e.g., number, null)'
+    ],
+    fixCode: '{{ "string" | list }}  // Works with strings',
+    fixComment: '// Use list filter with strings or arrays'
+  },
+  {
+    pattern: PATTERNS.IN_OPERATOR,
+    category: 'operator_error',
+    subjectFrom: 'searchValue',
+    causes: [
+      '**In operator** only works with **objects**, not primitives',
+      'Cannot search for value in **string/number/boolean**'
+    ],
+    fixCode: '{{ "key" in { key: "value" } }}  // Use with objects',
+    fixComment: '// In operator requires an object, not a primitive'
   }
 ];
 

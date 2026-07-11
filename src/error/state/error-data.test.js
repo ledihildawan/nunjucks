@@ -53,6 +53,74 @@ describe('createErrorData', () => {
     expect(data.renderContext.password).toBe('***');
   });
 
+  test('sanitizes function in context to [Function]', () => {
+    const err = new Error('test');
+    const data = createErrorData(err, {
+      templateName: 't.njk',
+      renderContext: { getName: function() {} },
+    });
+    expect(data.renderContext.getName).toBe('[Function]');
+  });
+
+  test('sanitizes symbol in context to [Symbol]', () => {
+    const err = new Error('test');
+    const data = createErrorData(err, {
+      templateName: 't.njk',
+      renderContext: { sym: Symbol('test') },
+    });
+    expect(data.renderContext.sym).toBe('[Symbol]');
+  });
+
+  test('truncates long strings at 120 chars', () => {
+    const err = new Error('test');
+    const longString = 'a'.repeat(150);
+    const data = createErrorData(err, {
+      templateName: 't.njk',
+      renderContext: { text: longString },
+    });
+    expect(data.renderContext.text.length).toBe(121);
+    expect(data.renderContext.text.endsWith('…')).toBe(true);
+  });
+
+  test('truncates context with many keys at 30', () => {
+    const err = new Error('test');
+    const manyKeys = {};
+    for (let i = 0; i < 35; i++) manyKeys['key' + i] = i;
+    const data = createErrorData(err, {
+      templateName: 't.njk',
+      renderContext: manyKeys,
+    });
+    expect(Object.keys(data.renderContext).length).toBe(31);
+    expect(data.renderContext['…']).toBe('(truncated)');
+  });
+
+  test('handles null and undefined in arrays', () => {
+    const err = new Error('test');
+    const data = createErrorData(err, {
+      templateName: 't.njk',
+      renderContext: { items: [1, null, undefined, 'test'] },
+    });
+    expect(data.renderContext.items).toEqual([1, null, undefined, 'test']);
+  });
+
+  test('handles empty object', () => {
+    const err = new Error('test');
+    const data = createErrorData(err, {
+      templateName: 't.njk',
+      renderContext: { empty: {} },
+    });
+    expect(data.renderContext.empty).toEqual({});
+  });
+
+  test('handles empty array', () => {
+    const err = new Error('test');
+    const data = createErrorData(err, {
+      templateName: 't.njk',
+      renderContext: { items: [] },
+    });
+    expect(data.renderContext.items).toEqual([]);
+  });
+
   test('provides getDisplayLine and getDisplayCol', () => {
     const err = new Error('test');
     err.lineno = 7;

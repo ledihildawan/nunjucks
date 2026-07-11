@@ -7,6 +7,7 @@ import { createEmitter } from '../object/index.js';
 import { createFrame, createSandboxedContext, getUndefinedMode, DEFAULT_UNDEFINED_MODE } from '../runtime/index.js';
 import expressApp from '../integration/express-app.js';
 import { createTemplate } from '../template/index.js';
+import fs from 'fs';
 import {
   isRelativePath,
   resolveTemplatePath,
@@ -19,6 +20,7 @@ import {
 } from './template-resolver.js';
 import { wrapFilterWithError, wrapAsyncFilter } from './filter-wrappers.js';
 import { normalizeLoaders, registerBuiltIns } from './built-ins.js';
+import { getCallerLocation } from '../shared/caller-location.js';
 
 const VERSION = '3.2.4';
 
@@ -247,7 +249,35 @@ export function createEnvironment(loaders, opts) {
   };
 
   env.renderString = async function(src, ctx, opts) {
-    const path = opts?.path || '<anonymous>';
+    const callerLocation = !opts?.path || opts.path === '<anonymous>' 
+      ? getCallerLocation() 
+      : null;
+    
+    let jsCallerSource = null;
+    if (callerLocation?.fullPath) {
+      try {
+        const content = fs.readFileSync(callerLocation.fullPath, 'utf-8').replace(/\r\n/g, '\n');
+        const lines = content.split('\n');
+        const startLine = Math.max(0, callerLocation.line - 3);
+        const endLine = Math.min(lines.length, callerLocation.line + 2);
+        const relevantLines = lines.slice(startLine, endLine);
+        jsCallerSource = relevantLines
+          .map((line, idx) => `${startLine + idx + 1}: ${line}`)
+          .join('\n');
+      } catch (e) {
+        // Ignore file read errors
+      }
+    }
+    
+    let path;
+    if (opts?.path && opts.path !== '<anonymous>') {
+      path = opts.path;
+    } else if (callerLocation) {
+      path = `${callerLocation.fullPath}:${callerLocation.line}`;
+    } else {
+      path = '<anonymous>';
+    }
+    
     const tmpl = createTemplate(src, env, path);
     const sandboxedCtx = createSandboxedContext(ctx, env.opts.sandbox);
     sandboxedCtx.__nunjucks_undefined_mode = env.opts.undefined;
@@ -258,6 +288,9 @@ export function createEnvironment(loaders, opts) {
       const err = await env.getErrorFormatter().formatError(e, path, {
         renderContext: ctx,
         sourceContent: src,
+        jsCaller: callerLocation,
+        jsCallerSource: jsCallerSource,
+        jsCallerErrorLine: callerLocation?.line,
       });
       console.error(err.toConsoleString());
       throw err;

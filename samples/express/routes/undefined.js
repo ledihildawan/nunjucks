@@ -131,9 +131,9 @@ router.get('/debug', async (req, res) => {
 router.get('/chainable', async (req, res) => {
   const template = '{{ user.name }}';
   const context = { user: undefined };
-  
+
   const result = await chainableEnv.renderString(template, context);
-  
+
   res.type('html').send(`
 <!DOCTYPE html>
 <html>
@@ -151,17 +151,41 @@ router.get('/chainable', async (req, res) => {
   <h1>✅ Chainable Mode - Silent</h1>
   <p>Template: <code>{{ user.name }}</code></p>
   <p>Context: <code>{ user: undefined }</code></p>
-  
+
   <div class="result">
     <strong>Output:</strong> "${result}"
   </div>
-  
+
   <p>No warning in console - silent "undefined" string returned.</p>
 
   <p><a href="/undefined">← Back to Undefined Types Demo</a></p>
 </body>
 </html>
   `);
+});
+
+router.get('/strict-nested', async (req, res) => {
+  const template = '{{ user.profile.name }}';
+  const context = { user: { profile: null } };
+
+  try {
+    await strictEnv.renderString(template, context);
+    res.send('Should have thrown error');
+  } catch (e) {
+    res.status(500).type('html').send(e.toHtmlString());
+  }
+});
+
+router.get('/strict-array', async (req, res) => {
+  const template = '{{ items[5] }}';
+  const context = { items: [1, 2, 3] };
+
+  try {
+    await strictEnv.renderString(template, context);
+    res.send('Should have thrown error');
+  } catch (e) {
+    res.status(500).type('html').send(e.toHtmlString());
+  }
 });
 
 export { router as undefinedRouter };

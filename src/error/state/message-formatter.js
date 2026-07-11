@@ -6,10 +6,16 @@ const extractErrorText = (message) => {
 };
 
 export const formatLocation = (errorData) => {
-  const { templateName, line, col, includeChain } = errorData;
+  const { templateName, line, col, includeChain, jsCaller } = errorData;
 
   const lineCol = line !== null ? `:${line}${col !== null ? `:${col}` : ''}` : '';
-  const mainLoc = templateName + lineCol;
+  
+  let mainLoc = templateName + lineCol;
+  
+  if (jsCaller && templateName && !templateName.match(/\.(html|njk|j2|tmpl)$/i)) {
+    const jsCol = col !== null ? `:${col}` : '';
+    mainLoc = `${templateName}${jsCol}`;
+  }
 
   if (includeChain && includeChain.length > 0) {
     const first = includeChain[0];

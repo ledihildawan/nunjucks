@@ -1,6 +1,6 @@
 import { formatLocation, getDisplayMessage } from '../../state/message-formatter.js';
 import { escapeHtml, renderInlineMarkdown, highlightHtml, highlightJs } from './highlight.js';
-import { formatCodeTraceHtml, renderContextHtml, formatStackTraceHtml } from './sections.js';
+import { formatCodeTraceHtml, formatJsTraceHtml, renderContextHtml, formatStackTraceHtml } from './sections.js';
 import { CSS } from './styles.js';
 import { TOGGLE_SCRIPT } from './script.js';
 import { resolveIdeLink, getIdeMeta } from '../../constants/ide-links.js';
@@ -53,7 +53,9 @@ export const toHtmlString = (state) => {
     getDisplayCol,
     isProduction,
     originalError,
-    renderContext
+    renderContext,
+    jsCaller,
+    jsCallerLines
   } = state;
 
   if (isProduction) {
@@ -73,9 +75,16 @@ export const toHtmlString = (state) => {
     : '';
   const ideMeta = getIdeMeta(state.ide || 'vscode');
   const ideLabel = `Open in ${ideMeta.label}`;
-  const locDisplay = templatePath
-    ? shortenPath(escapeHtml(templatePath) + ':' + getDisplayLine() + ':' + getDisplayCol())
-    : locationInfo;
+  const basePath = templatePath ? templatePath.replace(/\\/g, '/') : '';
+  const extMatch = basePath.match(/\.(html|njk|j2|tmpl)$/i);
+  const isJsLocation = jsCaller && templatePath && !extMatch;
+  const displayLine = getDisplayLine();
+  const displayCol = getDisplayCol();
+  const locDisplay = isJsLocation
+    ? shortenPath(escapeHtml(templatePath) + (displayCol && displayCol !== '?' ? ':' + displayCol : ''))
+    : templatePath
+      ? shortenPath(escapeHtml(templatePath) + ':' + displayLine + ':' + displayCol)
+      : locationInfo;
 
   const body = `
 <main class="error-wrapper" aria-labelledby="err-title">
@@ -91,7 +100,7 @@ export const toHtmlString = (state) => {
       <span class="badge badge-dev">DEV</span>
     </div>
     <h1 id="err-title" class="error-title">${headerTitle}</h1>
-    <p class="error-location">The error occurred in ${templatePath
+    <p class="error-location">The error occurred in ${isJsLocation || templatePath
       ? `<a href="${resolveIdeLink(state.ide, escapeHtml(templatePath), getDisplayLine(), getDisplayCol())}" class="loc-link error-location-link">${locDisplay}</a>`
       : `<span class="error-location-text">${locDisplay}</span>`
     }</p>
@@ -100,8 +109,8 @@ export const toHtmlString = (state) => {
   <div class="error-body">
     <section aria-labelledby="h-source" class="source-section">
       <h2 id="h-source" class="text-label">Source Trace</h2>
-      <div class="code-block" role="group" aria-label="Template source around the error">
-        ${formatCodeTraceHtml(snippet)}
+      <div class="code-block" role="group" aria-label="Source around the error">
+        ${jsCallerLines ? formatJsTraceHtml(jsCallerLines) : formatCodeTraceHtml(snippet)}
       </div>
     </section>
 

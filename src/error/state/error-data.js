@@ -11,6 +11,19 @@ import { mergeLine, mergeCol, getDisplayLine, getDisplayCol } from '../core/line
 
 const getSourceLines = (sourceContent) => (sourceContent ? sourceContent.split('\n') : null);
 
+const parseJsCallerLines = (jsCallerSource, jsCallerErrorLine) => {
+  if (!jsCallerSource) return null;
+  const lines = jsCallerSource.split('\n');
+  return lines.map(line => {
+    const colonIdx = line.indexOf(':');
+    const lineNum = colonIdx > 0 ? line.substring(0, colonIdx).trim() : '';
+    const code = colonIdx > 0 ? line.substring(colonIdx + 1) : line;
+    const parsedLineNum = parseInt(lineNum, 10);
+    const isError = jsCallerErrorLine && parsedLineNum === jsCallerErrorLine;
+    return { lineNum, code, isError };
+  });
+};
+
 const formatTimestamp = (iso) => {
   if (!iso) return '';
   return Math.floor(new Date(iso).getTime() / 1000).toString();
@@ -77,7 +90,10 @@ export const createErrorData = (error, options = {}) => {
     col: colOverride,
     renderContext = null,
     ide = 'vscode',
-    version = '3.2.4'
+    version = '3.2.4',
+    jsCaller = null,
+    jsCallerSource = null,
+    jsCallerErrorLine = null
   } = options;
 
   const message = defaultTo(error?.message, '');
@@ -101,6 +117,7 @@ export const createErrorData = (error, options = {}) => {
   const displayCol = getDisplayCol(col);
   const sourceLine = extractSourceLine(sourceContent, line);
   const resolvedTemplateName = templateName || extractErrorTemplateName(message) || 'unknown';
+  const jsCallerLines = parseJsCallerLines(jsCallerSource, jsCallerErrorLine);
 
   return {
     timestamp: formatTimestamp(new Date().toISOString()),
@@ -121,6 +138,10 @@ export const createErrorData = (error, options = {}) => {
     classified,
     isProduction,
     ide,
+    jsCaller,
+    jsCallerSource,
+    jsCallerErrorLine,
+    jsCallerLines,
     renderContext: snapshotContext(renderContext),
     getDisplayLine: () => displayLine ?? '?',
     getDisplayCol: () => displayCol ?? '?'

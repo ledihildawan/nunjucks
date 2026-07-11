@@ -32,15 +32,74 @@ app.get('/', (req, res) => {
       </tr>`
   ).join('\n');
 
+  const extraRoutes = `
+      <tr>
+        <td><code>inline_error</code></td>
+        <td><a href="/errors/inline-error">/errors/inline-error</a></td>
+        <td>renderString with undefined variable</td>
+      </tr>
+      <tr>
+        <td><code>sandbox_blocked</code></td>
+        <td><a href="/errors/sandbox-proto">/errors/sandbox-proto</a></td>
+        <td>Sandbox blocks __proto__ access</td>
+      </tr>
+      <tr>
+        <td><code>sandbox_blocked</code></td>
+        <td><a href="/errors/sandbox-constructor">/errors/sandbox-constructor</a></td>
+        <td>Sandbox blocks constructor access</td>
+      </tr>
+      <tr>
+        <td><code>sandbox_blocked</code></td>
+        <td><a href="/errors/sandbox-process">/errors/sandbox-process</a></td>
+        <td>Sandbox blocks process access</td>
+      </tr>
+      <tr>
+        <td><code>slice_error</code></td>
+        <td><a href="/errors/slice-error">/errors/slice-error</a></td>
+        <td>Slice step cannot be zero</td>
+      </tr>
+      <tr>
+        <td><code>iterable_error</code></td>
+        <td><a href="/errors/list-filter-error">/errors/list-filter-error</a></td>
+        <td>List filter requires iterable</td>
+      </tr>
+      <tr>
+        <td><code>operator_error</code></td>
+        <td><a href="/errors/in-operator-error">/errors/in-operator-error</a></td>
+        <td>In operator on primitive type</td>
+      </tr>
+      <tr>
+        <td><code>filter_error</code></td>
+        <td><a href="/errors/filter-throw">/errors/filter-throw</a></td>
+        <td>Filter throws during execution</td>
+      </tr>
+      <tr>
+        <td><code>undefined_value</code></td>
+        <td><a href="/undefined/strict">/undefined/strict</a></td>
+        <td>Undefined variable (strict mode)</td>
+      </tr>
+      <tr>
+        <td><code>undefined_value</code></td>
+        <td><a href="/undefined/strict-nested">/undefined/strict-nested</a></td>
+        <td>Nested property is null (strict)</td>
+      </tr>
+      <tr>
+        <td><code>undefined_value</code></td>
+        <td><a href="/undefined/strict-array">/undefined/strict-array</a></td>
+        <td>Array index out of bounds (strict)</td>
+      </tr>
+`;
+
   res.send(`
 <!DOCTYPE html>
 <html>
 <head>
   <title>Nunjucks Error Classification Demo</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1100px; margin: 0 auto; padding: 20px; }
     h1 { color: #e74c3c; }
     h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
+    h3 { color: #3498db; margin-top: 30px; }
     table { width: 100%; border-collapse: collapse; margin: 20px 0; }
     th, td { text-align: left; padding: 12px; border: 1px solid #ddd; }
     th { background: #3498db; color: white; }
@@ -58,17 +117,27 @@ app.get('/', (req, res) => {
   <h1>🔧 Nunjucks Error Classification Demo</h1>
 
   <div class="info">
-    <p><strong>11 Error Categories</strong> - Click any route to see the error in action with full classification and fix suggestions.</p>
+    <p><strong>20+ Error Categories</strong> - Click any route to see the error in action with full classification, causes, and fix suggestions.</p>
   </div>
 
-  <h2>📋 Error Categories</h2>
+  <h2>📋 Template Errors (from files)</h2>
   <table>
     <tr>
       <th>Category</th>
       <th>Route</th>
       <th>Description</th>
     </tr>
-${routesList}
+  ${routesList}
+  </table>
+
+  <h2>📋 Inline Errors (from renderString)</h2>
+  <table>
+    <tr>
+      <th>Category</th>
+      <th>Route</th>
+      <th>Description</th>
+    </tr>
+  ${extraRoutes}
   </table>
 
   <h2>🧪 Also Try</h2>
@@ -87,6 +156,7 @@ ${routesList}
     <li><strong>Sandbox Mode</strong>: Block dangerous template access</li>
     <li><strong>Auto-detect</strong>: Dev vs production mode based on error.lineno presence</li>
     <li><strong>Stack filtering</strong>: Internal nunjucks frames hidden in production</li>
+    <li><strong>JS Source Detection</strong>: Shows JS caller location for renderString errors</li>
   </ul>
 
   <footer style="margin-top: 40px; color: #7f8c8d;">

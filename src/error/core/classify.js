@@ -20,6 +20,17 @@ const extractSubject = (rule, message) => {
       const match = message.match(PATTERNS.INVALID_LOOKUP);
       return match ? { target: match[1], value: match[2] } : null;
     }
+    case 'blockedKey': {
+      const accessMatch = message.match(PATTERNS.SANDBOX_ACCESS);
+      if (accessMatch) return accessMatch[1];
+      const setMatch = message.match(PATTERNS.SANDBOX_SET);
+      if (setMatch) return setMatch[1];
+      return null;
+    }
+    case 'searchValue': {
+      const match = message.match(/"([^"]+)"/);
+      return match ? match[1] : null;
+    }
     default:
       return null;
   }

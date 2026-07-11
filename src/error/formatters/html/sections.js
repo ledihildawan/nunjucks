@@ -1,5 +1,5 @@
 import { keys, isArray, filter } from 'remeda';
-import { escapeHtml, highlightHtml } from './highlight.js';
+import { escapeHtml, highlightHtml, highlightJs } from './highlight.js';
 import { resolveIdeLink } from '../../constants/ide-links.js';
 import { shortenPath } from '../../../shared/path-shortener.js';
 import { isBlockedKey } from '../../../shared/blocked-keys.js';
@@ -21,6 +21,14 @@ export const formatCodeTraceHtml = (snippet) => {
     const trimmedCode = code.trimStart();
     return `<div class="code-line${isError ? ' is-error' : ''}"><span class="line-number">${lineNum || '&nbsp;'}</span><span class="code-content">${leadingSpace}${highlightHtml(trimmedCode)}</span></div>`;
   }).join('');
+};
+
+export const formatJsTraceHtml = (jsCallerLines) => {
+  if (!jsCallerLines || jsCallerLines.length === 0) return '';
+
+  return jsCallerLines.map(({ lineNum, code, isError }) =>
+    `<div class="code-line${isError ? ' is-error' : ''}"><span class="line-number">${lineNum || '&nbsp;'}</span><span class="code-content">${highlightJs(code)}</span></div>`
+  ).join('');
 };
 
 const serializeValue = (value, depth = 0) => {

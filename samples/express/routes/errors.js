@@ -16,9 +16,20 @@ const envDev = c.environment(c.loader.fileSystem(VIEWS), {
   undefined: 'strict'
 });
 
+const envSandbox = c.environment(c.loader.fileSystem(VIEWS), {
+  autoescape: true,
+  dev: true,
+  ide: 'vscode',
+  sandbox: true
+});
+
 envDev.addFilter('failingAsync', async function(val) {
   throw new Error('Async filter failed: network error');
 }, true);
+
+envDev.addFilter('throwingFilter', function(val) {
+  throw new Error('Filter intentionally threw an error');
+});
 
 const complexUserContext = {
   user: {
@@ -92,6 +103,15 @@ errorRoutes.forEach(({ path: routePath, template, category, desc, context }) => 
   });
 });
 
+router.get('/inline-error', async (req, res) => {
+  try {
+    const html = await envDev.renderString('{{ undefinedVar }}', {});
+    res.type('html').send(html);
+  } catch (e) {
+    res.status(500).type('html').send(e.toHtmlString());
+  }
+});
+
 router.get('/filesystem-error', async (req, res) => {
   const c2 = createContainer();
   const envFsError = c2.environment(c2.loader.fileSystem('/nonexistent/path/that/does/not/exist'), {
@@ -102,6 +122,69 @@ router.get('/filesystem-error', async (req, res) => {
   });
   try {
     await envFsError.render('test.html', {});
+  } catch (e) {
+    res.status(500).type('html').send(e.toHtmlString());
+  }
+});
+
+router.get('/sandbox-proto', async (req, res) => {
+  try {
+    const html = await envSandbox.renderString('{{ user.__proto__ }}', { user: {} });
+    res.type('html').send(html);
+  } catch (e) {
+    res.status(500).type('html').send(e.toHtmlString());
+  }
+});
+
+router.get('/sandbox-constructor', async (req, res) => {
+  try {
+    const html = await envSandbox.renderString('{{ user.constructor }}', { user: {} });
+    res.type('html').send(html);
+  } catch (e) {
+    res.status(500).type('html').send(e.toHtmlString());
+  }
+});
+
+router.get('/sandbox-process', async (req, res) => {
+  try {
+    const html = await envSandbox.renderString('{{ user.global }}', { user: { global: process } });
+    res.type('html').send(html);
+  } catch (e) {
+    res.status(500).type('html').send(e.toHtmlString());
+  }
+});
+
+router.get('/slice-error', async (req, res) => {
+  try {
+    const html = await envDev.renderString('{{ [1,2,3][::0] }}', {});
+    res.type('html').send(html);
+  } catch (e) {
+    res.status(500).type('html').send(e.toHtmlString());
+  }
+});
+
+router.get('/list-filter-error', async (req, res) => {
+  try {
+    const html = await envDev.renderString('{{ 42 |> list }}', {});
+    res.type('html').send(html);
+  } catch (e) {
+    res.status(500).type('html').send(e.toHtmlString());
+  }
+});
+
+router.get('/in-operator-error', async (req, res) => {
+  try {
+    const html = await envDev.renderString('{{ key in value }}', { key: 'test', value: 123 });
+    res.type('html').send(html);
+  } catch (e) {
+    res.status(500).type('html').send(e.toHtmlString());
+  }
+});
+
+router.get('/filter-throw', async (req, res) => {
+  try {
+    const html = await envDev.renderString('{{ "test" |> throwingFilter }}', {});
+    res.type('html').send(html);
   } catch (e) {
     res.status(500).type('html').send(e.toHtmlString());
   }

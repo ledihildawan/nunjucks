@@ -3,7 +3,7 @@ import { ERROR_RULES, DEFAULT_CLASSIFICATION } from './error-rules.js';
 
 describe('ERROR_RULES', () => {
   test('has expected number of rules', () => {
-    expect(ERROR_RULES).toHaveLength(15);
+    expect(ERROR_RULES).toHaveLength(20);
   });
 
   test('each rule has pattern, category, causes, fixCode, fixComment', () => {
@@ -17,9 +17,12 @@ describe('ERROR_RULES', () => {
     }
   });
 
-  test('rules have unique categories', () => {
+  test('rules have unique categories (sandbox_blocked may appear twice)', () => {
     const categories = ERROR_RULES.map(r => r.category);
-    expect(new Set(categories).size).toBe(categories.length);
+    const unique = new Set(categories);
+    const sandboxCount = categories.filter(c => c === 'sandbox_blocked').length;
+    expect(unique.size).toBe(categories.length - (sandboxCount - 1));
+    expect(sandboxCount).toBe(2);
   });
 
   test('first rule is undefined_value (nested property access)', () => {
@@ -27,9 +30,9 @@ describe('ERROR_RULES', () => {
     expect(ERROR_RULES[0].subjectFrom).toBe('undefinedName');
   });
 
-  test('last rule is filesystem_error', () => {
+  test('last rule is operator_error', () => {
     const last = ERROR_RULES[ERROR_RULES.length - 1];
-    expect(last.category).toBe('filesystem_error');
+    expect(last.category).toBe('operator_error');
   });
 
   test.each(ERROR_RULES.filter(r => r.subjectFrom === 'undefinedName'))(

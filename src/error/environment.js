@@ -57,9 +57,10 @@ const resolveChain = (explicit, fromError, fromMessage) => {
 
 const resolveTemplate = (error, name, path, chain) => {
   const hasChain = chain?.length > 0;
+  const resolvedPath = path ?? error.templatePath ?? (name && !name.includes('.njk') && !name.includes('.html') ? name : null);
   return {
     name: hasChain ? error.path : extractErrorTemplateName(error.message) ?? name,
-    path: path ?? error.templatePath ?? null,
+    path: resolvedPath,
     line: error.lineno != null ? error.lineno + 1 : null,
     col: error.colno != null ? error.colno + 1 : null
   };
@@ -89,7 +90,10 @@ const buildErrorData = async (error, templateName, options, opts, fs) => {
     col,
     renderContext: options.renderContext,
     ide: opts.ide,
-    version: opts.version
+    version: opts.version,
+    jsCaller: options.jsCaller || null,
+    jsCallerSource: options.jsCallerSource || null,
+    jsCallerErrorLine: options.jsCallerErrorLine || null
   });
 };
 
@@ -106,6 +110,8 @@ const createErrorResult = (error, errorData, csp) => ({
   originalError: errorData.originalError,
   classified: errorData.classified,
   csp,
+  jsCallerSource: errorData.jsCallerSource,
+  jsCallerLines: errorData.jsCallerLines,
   getSrcLine: () => errorData.line,
   getSrcCol: () => errorData.col,
   getDisplayLine: errorData.getDisplayLine,

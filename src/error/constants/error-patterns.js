@@ -21,4 +21,9 @@ export const PATTERNS = {
   COLUMN_INFO: /Column (\d+)/i,
   CALL_MATCH: /Unable to call `([^`]+)`/,
   OUTPUT_MATCH: /attempted to output '([^']+)'/i,
+  SANDBOX_ACCESS: /Sandbox: Access to '([^']+)' is blocked/i,
+  SANDBOX_SET: /Sandbox: Setting '([^']+)' is blocked/i,
+  SLICE_STEP: /slice step cannot be 0/i,
+  LIST_FILTER: /list filter: type not iterable/i,
+  IN_OPERATOR: /Cannot use "in" operator to search for/i,
 };

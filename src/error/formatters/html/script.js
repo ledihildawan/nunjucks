@@ -104,7 +104,9 @@ export const TOGGLE_SCRIPT = `
     row.className = 'ctx-row' + (isObject ? ' is-expandable' : '');
 
     if (isObject) {
-      row.innerHTML = '<span class="ctx-toggle">▶</span><span class="ctx-key">' + escapeHtml(key) + ':</span> <span class="ctx-label">' + (Array.isArray(value) ? 'Array' : 'Object') + '</span>';
+      var isArray = Array.isArray(value);
+      var label = isArray ? 'Array(' + value.length + ')' : 'Object';
+      row.innerHTML = '<span class="ctx-toggle">▶</span><span class="ctx-key">' + escapeHtml(key) + ':</span> <span class="ctx-label">' + label + '</span>';
 
       var container = document.createElement('div');
       container.className = 'ctx-indent hidden';
@@ -117,8 +119,17 @@ export const TOGGLE_SCRIPT = `
 
         if (!isHidden && !loaded) {
           var entries = Object.entries(value);
-          var nodes = entries.map(function(entry) { return createNode(entry[0], entry[1]); });
-          batchRender(container, nodes, 0);
+          if (entries.length === 0) {
+            var emptyMsg = document.createElement('div');
+            emptyMsg.className = 'ctx-row';
+            emptyMsg.style.color = 'var(--color-text-secondary)';
+            emptyMsg.style.fontStyle = 'italic';
+            emptyMsg.textContent = '(empty)';
+            container.appendChild(emptyMsg);
+          } else {
+            var nodes = entries.map(function(entry) { return createNode(entry[0], entry[1]); });
+            batchRender(container, nodes, 0);
+          }
           loaded = true;
         }
       };
