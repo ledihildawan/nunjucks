@@ -13,7 +13,6 @@ import {
   Set,
   For,
   If,
-  IfAsync,
 } from '../nodes/index.js';
 
 export const createSymbolGenerator = (seed = 0) => {

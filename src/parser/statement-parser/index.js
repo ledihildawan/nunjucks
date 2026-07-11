@@ -36,7 +36,6 @@ import {
   Slice,
   For,
   If,
-  IfAsync,
   Set,
   Switch,
   Case,
@@ -104,7 +103,7 @@ const nodes = {
   CompareOperand, InlineIf, In, Is, And, Or, Not, Add,
   Concat, Sub, Mul, Div, FloorDiv, Mod, Pow, Neg, Pos, OptionalChain,
   NullishCoalesce, NodeList, Slice, For, If,
-  IfAsync, Set, Switch, Case, Block, Output, TemplateData,
+  Set, Switch, Case, Block, Output, TemplateData,
   Extends, Include, Import, FromImport, Macro, KeywordArgs,
   CallExtension, CallExtensionAsync, Capture, TemplateRef, Super,
 };
@@ -172,7 +171,6 @@ export const parseStatement = (ctx) => {
     case 'verbatim':
       return parseRaw(ctx, 'verbatim');
     case 'if':
-    case 'ifAsync':
       return parseIf(ctx);
     case 'for':
       return parseFor(ctx);

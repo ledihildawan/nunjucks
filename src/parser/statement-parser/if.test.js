@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseIf } from './if.js';
-import { If, IfAsync, AstSymbol } from '../../nodes/index.js';
+import { If, AstSymbol } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import { TOKEN_SYMBOL, TOKEN_BLOCK_END } from '../../lexer/token-types.js';
 
@@ -95,30 +95,6 @@ describe('parseIf', () => {
     expect(result.else_).toBeInstanceOf(If);
     expect(result.else_.cond).toBe(cond2);
     expect(result.else_.else_).toBeNull();
-  });
-
-  test('parses ifAsync', () => {
-    const seq = [
-      { type: TOKEN_SYMBOL, value: 'ifAsync', lineno: 1, colno: 1 },
-      { type: TOKEN_SYMBOL, value: 'cond', lineno: 1, colno: 9 },
-      { type: TOKEN_BLOCK_END, value: '%}', lineno: 1, colno: 14 },
-      { type: TOKEN_SYMBOL, value: 'endif', lineno: 1, colno: 20 },
-      { type: TOKEN_BLOCK_END, value: '%}', lineno: 1, colno: 26 },
-    ];
-    let n = 0;
-    const tokens = { nextToken: () => seq[n++] };
-    const cond = new AstSymbol(1, 9, 'x');
-    const body = { lineno: 1, colno: 17 };
-    const ctx = Object.assign(createCursor(tokens), {
-      parseExpression: () => { nextToken(ctx); return cond; },
-      parseUntilBlocks: () => body,
-    });
-
-    const result = parseIf(ctx);
-
-    expect(result).toBeInstanceOf(IfAsync);
-    expect(result.cond).toBe(cond);
-    expect(result.body).toBe(body);
   });
 
   test('parses elseif as elif', () => {

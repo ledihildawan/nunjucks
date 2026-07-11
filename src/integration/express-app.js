@@ -11,7 +11,7 @@ export default function express(env, app) {
   app.set('nunjucksEnv', env);
 
   app.use((req, res, next) => {
-    const originalRender = res.render.bind(res);
+    const originalRender = (view, options) => res.render(view, options);
     res.render = async function(view, options) {
       try {
         return await originalRender(view, options);

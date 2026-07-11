@@ -17,9 +17,3 @@ export const compileIf = (ctx, node, frame) => {
 
   ctx._emitLine('}');
 };
-
-export const compileIfAsync = (ctx, node, frame) => {
-  ctx._emit('await (async function() {');
-  compileIf(ctx, node, frame, true);
-  ctx._emit('})();');
-};

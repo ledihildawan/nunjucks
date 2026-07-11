@@ -36,7 +36,6 @@ import {
 
 import {
   compileIf,
-  compileIfAsync,
   compileSet,
   compileSwitch,
   compileFor,
@@ -93,7 +92,6 @@ export const COMPILE_FUNCTIONS = {
   Set: compileSet,
   Switch: compileSwitch,
   If: compileIf,
-  IfAsync: compileIfAsync,
   For: compileFor,
   Macro: compileMacroPublic,
   Caller: compileCaller,

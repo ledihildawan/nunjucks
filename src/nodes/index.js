@@ -103,7 +103,6 @@ export const OptionalChain = extendObj(Node, 'OptionalChain', { fields: ['target
 export const OptionalCall = extendObj(Node, 'OptionalCall', { fields: ['name', 'args'] });
 export const Slice = extendObj(Node, 'Slice', { fields: ['start', 'stop', 'step'] });
 export const If = extendObj(Node, 'If', { fields: ['cond', 'body', 'else_'] });
-export const IfAsync = extendObj(If, 'IfAsync', {});
 export const InlineIf = extendObj(Node, 'InlineIf', { fields: ['cond', 'body', 'else_'] });
 export const For = extendObj(Node, 'For', { fields: ['arr', 'name', 'body', 'else_'] });
 export const Macro = extendObj(Node, 'Macro', { fields: ['name', 'args', 'body'] });

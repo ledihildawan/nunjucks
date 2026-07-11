@@ -1,4 +1,4 @@
-export { compileIf, compileIfAsync } from './if.js';
+export { compileIf } from './if.js';
 export { compileSet } from './set.js';
 export { compileSwitch } from './switch.js';
 export { compileFor, emitLoopBindings } from './for.js';

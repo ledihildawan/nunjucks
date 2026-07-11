@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { compileIf, compileIfAsync } from './if.js';
+import { compileIf } from './if.js';
 
 const makeCtx = () => {
   const emitted = [];
@@ -54,20 +54,5 @@ describe('compileIf', () => {
     compileIf(ctx, node);
     const code = ctx.emitted.join('');
     expect(code).not.toContain('else');
-  });
-});
-
-describe('compileIfAsync', () => {
-  test('wraps if in async IIFE', () => {
-    const ctx = makeCtx();
-    const node = {
-      cond: { mock: 'cond' },
-      body: { mock: 'body' },
-    };
-    compileIfAsync(ctx, node);
-    const code = ctx.emitted.join('');
-    expect(code).toContain('await (async function()');
-    expect(code).toContain('if(');
-    expect(code).toContain('})()');
   });
 });
