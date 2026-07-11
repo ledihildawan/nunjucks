@@ -23,6 +23,9 @@ const envDev = c.environment(c.loader.fileSystem(VIEWS), {
 app.use('/errors', errorRouter);
 app.use('/sandbox', sandboxRouter);
 app.use('/undefined', undefinedRouter);
+
+console.log('remoteRouter routes:', remoteRouter.stack.map(l => l.route?.path));
+
 app.use('/remote', remoteRouter);
 
 app.get('/', (req, res) => {
