@@ -8,7 +8,6 @@ import { createSandboxedContext } from './runtime/sandbox.js';
 import { createFileSystemLoader } from './loaders/file-system.js';
 import { createWebLoader } from './loaders/web.js';
 import { createNodeResolveLoader } from './loaders/node-resolve.js';
-import { createPrecompiledLoader } from './loaders/precompiled.js';
 import { createErrorFormatter } from './error/environment.js';
 import { createCompiler } from './compiler/index.js';
 import { createParser } from './parser/index.js';
@@ -26,7 +25,6 @@ export const createContainer = () => {
   container.register('loader.fileSystem', createFileSystemLoader);
   container.register('loader.web', createWebLoader);
   container.register('loader.nodeResolve', createNodeResolveLoader);
-  container.register('loader.precompiled', createPrecompiledLoader);
   container.register('compiler', createCompiler);
   container.register('parser', createParser);
   container.register('tokenizer', createTokenizer);

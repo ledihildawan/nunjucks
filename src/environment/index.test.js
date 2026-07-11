@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach } from 'bun:test';
 import { createEnvironment } from './index.js';
 import { createTemplate } from '../template/index.js';
-import { createPrecompiledLoader } from '../loaders/precompiled.js';
 
 let env;
 

@@ -89,7 +89,6 @@ export const createContainer = () => {
       fileSystem: (...args) => resolve('loader.fileSystem', ...args),
       web: (...args) => resolve('loader.web', ...args),
       nodeResolve: (...args) => resolve('loader.nodeResolve', ...args),
-      precompiled: (...args) => resolve('loader.precompiled', ...args),
     },
 
     sandbox: {

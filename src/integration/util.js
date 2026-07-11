@@ -4,10 +4,8 @@ import { expect } from 'bun:test';
 import { createEnvironment } from '../environment/index.js';
 import { createTemplate } from '../template/index.js';
 import { createFileSystemLoader } from '../loaders/file-system.js';
-import { precompileString } from '../precompile/index.js';
 import installJinjaCompat from '../integration/jinja-compat.js';
 
-var isSlim = false;
 var templatesPath = 'src/template/test-templates';
 
 function equal(str, ctx, opts, str2, env) {
@@ -50,11 +48,6 @@ function normEOL(str) {
   return str.replace(/\r\n|\r/g, '\n');
 }
 
-function randomTemplateName() {
-  var rand = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
-  return rand + '.njk';
-}
-
 function render(str, ctx, opts, env, cb) {
   if (typeof ctx === 'function') {
     cb = ctx;
@@ -76,13 +69,8 @@ function render(str, ctx, opts, env, cb) {
   var loader;
   var e;
 
-  if (isSlim) {
-    e = env || createEnvironment([], opts);
-    loader = e.loaders[0];
-  } else {
-    loader = createFileSystemLoader(templatesPath);
-    e = env || createEnvironment(loader, opts);
-  }
+  loader = createFileSystemLoader(templatesPath);
+  e = env || createEnvironment(loader, opts);
 
   var name;
   if (opts.filters) {
@@ -109,27 +97,11 @@ function render(str, ctx, opts, env, cb) {
     }
   }
 
-  var tmplName;
-  if (isSlim) {
-    tmplName = randomTemplateName();
-    var precompileJs = precompileString(str, {
-      name: tmplName,
-      asFunction: true,
-      env: e
-    });
-    eval(precompileJs);
-  }
-
   ctx = ctx || {};
 
   var t;
 
-  if (isSlim) {
-    var tmplSource = loader.getSource(tmplName);
-    t = createTemplate(tmplSource.src, e, tmplSource.path);
-  } else {
-    t = createTemplate(str, e);
-  }
+  t = createTemplate(str, e);
 
   if (!cb) {
     return t.render(ctx);
@@ -147,4 +119,4 @@ function render(str, ctx, opts, env, cb) {
   }
 }
 
-export { render, equal, jinjaEqual, normEOL, isSlim };
+export { render, equal, jinjaEqual, normEOL };
