@@ -19,12 +19,27 @@ export const TOGGLE_SCRIPT = `
     var hiddenRows = allRows.slice(VISIBLE_COUNT);
     hiddenRows.forEach(function(row) { row.style.display = 'none'; });
 
+    var lastVisibleRow = allRows[VISIBLE_COUNT - 1];
+    if (lastVisibleRow) {
+      lastVisibleRow.style.borderBottom = 'none';
+    }
+
     var toggleStack = function() {
       if (prefersReducedMotion) {
         var isExpanded = content.classList.contains('is-expanded');
         hiddenRows.forEach(function(row) { row.style.display = isExpanded ? 'none' : 'flex'; });
         content.classList.toggle('is-expanded');
         btn.textContent = isExpanded ? 'Show ' + totalHidden + ' more lines...' : 'Collapse stack trace';
+        if (isExpanded) {
+          if (lastVisibleRow) {
+            lastVisibleRow.style.borderBottom = 'none';
+          }
+        } else {
+          var lastRow = allRows[allRows.length - 1];
+          if (lastRow) {
+            lastRow.style.borderBottom = '';
+          }
+        }
         return;
       }
 
@@ -35,10 +50,17 @@ export const TOGGLE_SCRIPT = `
         content.classList.remove('is-expanded');
         btn.textContent = 'Show ' + totalHidden + ' more lines...';
         hiddenRows.forEach(function(row) { row.style.display = 'none'; });
+        if (lastVisibleRow) {
+          lastVisibleRow.style.borderBottom = 'none';
+        }
       } else {
         hiddenRows.forEach(function(row) { row.style.display = 'flex'; });
         content.classList.add('is-expanded');
         btn.textContent = 'Collapse stack trace';
+        var lastRow = allRows[allRows.length - 1];
+        if (lastRow) {
+          lastRow.style.borderBottom = '';
+        }
       }
     };
 
