@@ -37,23 +37,23 @@ import {
 import { createTemplateError } from '../error/index.js';
 import { createObj } from '../object/index.js';
 import { createSourceMap } from '../helpers/source-map.js';
-import { COMPILE_FUNCTIONS, compileDispatch } from './node-dispatch.js';
+import { compileDispatch } from './node-dispatch.js';
 import { DEFAULT_UNDEFINED_MODE, getUndefinedMode } from '../runtime/undefined.js';
 
 export function createCompiler(templateName, undefinedMode, source) {
   const obj = createObj({
     name: 'Compiler',
-    init: function(templateName, undefinedMode, source) {
-      this.templateName = templateName;
+    init: function(tmplName, undefMode, src) {
+      this.templateName = tmplName;
       this.codebuf = [];
       this.lastId = 0;
       this.buffer = null;
       this.bufferStack = [];
       this._scopeClosers = '';
       this.inBlock = false;
-      this.undefinedMode = undefinedMode || DEFAULT_UNDEFINED_MODE;
+      this.undefinedMode = undefMode || DEFAULT_UNDEFINED_MODE;
       this.compiledLine = 0;
-      this.sourceMap = createSourceMap(templateName);
+      this.sourceMap = createSourceMap(tmplName);
     },
     fail: function(msg, lineno, colno) {
       throw createTemplateError(msg, lineno, colno, { phase: 'compile', templateName: this.templateName });

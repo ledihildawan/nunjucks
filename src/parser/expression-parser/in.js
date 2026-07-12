@@ -5,7 +5,7 @@ import { parseIs } from './is.js';
 
 export const parseIn = (ctx) => {
   let node = parseIs(ctx);
-  while (1) {
+  while (true) {
     const tok = nextToken(ctx);
     if (!tok) {
       break;

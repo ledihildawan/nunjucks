@@ -7,9 +7,9 @@ const Context = Symbol('Context');
 export function createContext(ctx, blocks, env) {
   const obj = createObj({
     name: 'Context',
-    init: function(ctx, blocks, env) {
-      this.env = env || createEnvironment();
-      this.ctx = { ...ctx };
+    init: function(ctxArg, blocksArg, envArg) {
+      this.env = envArg || createEnvironment();
+      this.ctx = { ...ctxArg };
       this.blocks = {};
       this.exported = [];
       this._parentBlockNames = null;
@@ -62,7 +62,7 @@ export function createContext(ctx, blocks, env) {
       }
       return this.blocks[name][0];
     },
-    getSuper: function(env, name, block, frame, runtime) {
+    getSuper: function(envObj, name, block, frame, runtime) {
       const idx = (this.blocks[name] || []).indexOf(block);
       const blk = this.blocks[name][idx + 1];
 
@@ -73,7 +73,7 @@ export function createContext(ctx, blocks, env) {
         throw err;
       }
 
-      return blk(env, this, frame, runtime);
+      return blk(envObj, this, frame, runtime);
     },
     addExport: function(name) {
       this.exported.push(name);

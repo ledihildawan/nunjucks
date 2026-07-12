@@ -203,6 +203,6 @@ export const parseStatement = (ctx) => {
           }
         }
       }
-      fail(ctx, `unknown block tag: ${tok.value}`, tok.lineno, tok.colno);
+      return fail(ctx, `unknown block tag: ${tok.value}`, tok.lineno, tok.colno);
   }
 };

@@ -1,4 +1,4 @@
-import { pipe, filter, map } from 'remeda';
+import { pipe } from 'remeda';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';

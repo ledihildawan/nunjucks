@@ -1,11 +1,9 @@
 import { describe, test, expect } from 'bun:test';
 import { mapCOW, walk, depthWalk } from './walk.js';
 import {
-  Node, NodeList, Root, Literal, AstSymbol, Group,
-  ArrayNode, Pair, Dict, LookupVal, Slice,
-  If, FunCall, KeywordArgs, Output, TemplateData,
-  Add, Sub, Mul, Div, Mod, Not, Compare, CompareOperand,
-  CallExtension, Block, getNodeTypeName, isLiteral,
+  Node, NodeList, Literal, AstSymbol, FunCall, KeywordArgs, Output, TemplateData,
+  Add, Compare,
+  CallExtension, getNodeTypeName, isLiteral,
 } from '../nodes/index.js';
 
 describe('mapCOW', () => {
@@ -75,6 +73,7 @@ describe('walk', () => {
       if (isLiteral(node)) {
         return Literal(node.lineno, node.colno, 99);
       }
+      return undefined;
     });
     expect(getNodeTypeName(result)).toBe('NodeList');
     expect(result.children[0].value).toBe(99);

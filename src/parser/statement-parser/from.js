@@ -23,7 +23,7 @@ export const parseFrom = (ctx) => {
   const names = NodeList();
   let withContext;
 
-  while (1) {
+  while (true) {
     const nextTok = peekToken(ctx);
     if (nextTok.type === TOKEN_BLOCK_END) {
       if (!names.children.length) {

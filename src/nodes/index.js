@@ -1,4 +1,4 @@
-import { createObj, extendObj } from '../object/index.js';
+import { extendObj } from '../object/index.js';
 
 export const NODE = Symbol('node');
 
@@ -165,8 +165,8 @@ export function createNode(name, fields, initFn) {
       if (typeOrSymbol[NODE]) {
         symbol = NODE;
       } else if (typeOrSymbol.fields) {
-        const name = typeOrSymbol.typename;
-        symbol = SYMBOLS[name];
+        const typeName = typeOrSymbol.typename;
+        symbol = SYMBOLS[typeName];
       }
     }
 
@@ -209,8 +209,8 @@ export function createNode(name, fields, initFn) {
   factoryFn.findAll = findAllMethod;
   factoryFn.iterFields = iterFieldsMethod;
   factoryFn.typename = name;
-  factoryFn.extend = function(name, props) {
-    const extended = extendObj(this, name, props);
+  factoryFn.extend = function(extName, props) {
+    const extended = extendObj(this, extName, props);
     // Add Symbol marker for the extended type
     const extSymbol = Symbol(name);
     REVERSE_SYMBOLS.set(extSymbol, name);

@@ -30,7 +30,6 @@ export const compileExtends = (ctx, node, frame) => {
 export const compileInclude = (ctx, node, frame) => {
   const tmplVar = ctx._tmpid();
   const resultVar = ctx._tmpid();
-  const useFork = node.only || node.with;
 
   ctx._emitLine(`lineno = ${node.lineno}; colno = ${node.colno != null ? node.colno : 0};`);
   ctx._emit(`var ${tmplVar} = await env.getTemplate(`);

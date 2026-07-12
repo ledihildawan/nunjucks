@@ -55,13 +55,10 @@ export const compileOutput = (ctx, node, frame) => {
       }
     } else {
       const isPipeType = isPipe(child) || isPipeAsync(child);
-      const isLookupValType = isLookupVal(child);
       const isOptionalChainType = isOptionalChain(child) || isOptionalCall(child);
       const varName = extractVarName(child);
       const undefinedMode = ctx.undefinedMode;
 
-      const shouldWarn = undefinedMode === 'debug' && !isLookupValType;
-      const shouldError = undefinedMode === 'strict' && !isOptionalChainType;
       const useEnsureDefined = !isOptionalChainType || undefinedMode !== 'chainable';
       const effectiveMode = undefinedMode;
 

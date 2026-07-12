@@ -9,7 +9,6 @@ const makeCtx = () => {
   let buf = 'output';
   return {
     emitted,
-    buffer: buf,
     _emit: (s) => emitted.push(s),
     _emitLine: (s) => emitted.push(s + '\n'),
     _emitLines: (...lines) => lines.forEach(l => emitted.push(l + '\n')),

@@ -1,14 +1,12 @@
-import { prettifyError, createErrorFormatter } from '../error/index.js';
-import { compile } from '../compiler/index.js';
+import { createErrorFormatter } from '../error/index.js';
 import { createFileSystemLoader } from '../loaders/file-system.js';
 import { createEmitter } from '../object/index.js';
-import { createFrame, createSandboxedContext, getUndefinedMode, DEFAULT_UNDEFINED_MODE, toContext } from '../runtime/index.js';
+import { createSandboxedContext, getUndefinedMode, DEFAULT_UNDEFINED_MODE, toContext } from '../runtime/index.js';
 import { HOOK_EVENTS, createHookEmitter } from '../runtime/hooks.js';
 import { createTemplate, isTemplate } from '../template/index.js';
 import { createDelimiters, DEFAULT_BLOCK_START, DEFAULT_VARIABLE_START, DEFAULT_COMMENT_START } from '../lexer/delimiters.js';
 import fs from 'fs';
 import {
-  isRelativePath,
   resolveTemplatePath,
 } from './loader-helpers.js';
 import {
@@ -241,12 +239,12 @@ export function createEnvironment(loaders, opts) {
     return env.getErrorFormatter().formatError(error, templateName, options);
   };
 
-  env.render = async function(source, ctx, opts) {
+  env.render = async function(source, ctx, renderOpts) {
     const renderContext = toContext(ctx);
     const startTime = Date.now();
 
-    if (NUNJUCKS_PATTERN.test(source) || opts?.path) {
-      return await renderStringInternal(source, renderContext, opts, startTime);
+    if (NUNJUCKS_PATTERN.test(source) || renderOpts?.path) {
+      return await renderStringInternal(source, renderContext, renderOpts, startTime);
     }
 
     let tmpl;
@@ -282,9 +280,9 @@ export function createEnvironment(loaders, opts) {
     }
   };
 
-  async function renderStringInternal(src, ctx, opts, startTime = Date.now()) {
+  async function renderStringInternal(src, ctx, strOpts, startTime = Date.now()) {
     const renderContext = toContext(ctx);
-    const callerLocation = !opts?.path || opts.path === '<anonymous>' 
+    const callerLocation = !strOpts?.path || strOpts.path === '<anonymous>' 
       ? getCallerLocation() 
       : null;
     
@@ -305,8 +303,8 @@ export function createEnvironment(loaders, opts) {
     }
     
     let path;
-    if (opts?.path && opts.path !== '<anonymous>') {
-      path = opts.path;
+    if (strOpts?.path && strOpts.path !== '<anonymous>') {
+      path = strOpts.path;
     } else if (callerLocation) {
       path = `${callerLocation.fullPath}:${callerLocation.line}`;
     } else {
@@ -355,10 +353,6 @@ function initLoaders(env) {
       });
     }
   });
-
-  if (typeof window !== 'undefined' && window.nunjucksPrecompiled) {
-    env.loaders.unshift(createPrecompiledLoader(window.nunjucksPrecompiled));
-  }
 }
 
 export function createSandboxedEnvironment(loaders, opts) {

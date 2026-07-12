@@ -1,4 +1,4 @@
-import { describe, test, expect, mock } from 'bun:test';
+import { describe, test, expect } from 'bun:test';
 import { parsePostfix } from './index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import { TOKEN_LEFT_PAREN, TOKEN_LEFT_BRACKET, TOKEN_OPERATOR, TOKEN_SYMBOL } from '../../lexer/token-types.js';

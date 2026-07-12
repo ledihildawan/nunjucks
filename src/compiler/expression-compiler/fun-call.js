@@ -1,4 +1,4 @@
-import { AstSymbol, isSymbol, isFunCall, isLookupVal, isLiteral, isOptionalChain, getNodeTypeName, BracketNotation } from '../../nodes/index.js';
+import { isSymbol, isLiteral, getNodeTypeName, BracketNotation } from '../../nodes/index.js';
 import { compileAggregate } from './container.js';
 
 const getNodeName = (ctx, node, isBracketCall = false) => {

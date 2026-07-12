@@ -1,4 +1,3 @@
-import picocolors from 'picocolors';
 import { createTemplateError } from '../error/index.js';
 import { isArray, keys, isNonNullish, isFunction, isString, isPlainObject } from 'remeda';
 import { createFrame } from './frame.js';

@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { createNodeResolveLoader } from './node-resolve.js';
-import { createLoader, isLoader } from './base.js';
+import { isLoader } from './base.js';
 
 describe('NodeResolveLoader', () => {
   test('extends Loader', () => {

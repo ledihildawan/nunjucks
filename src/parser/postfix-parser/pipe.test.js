@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parsePipe, parseFilterName, parseFilterArgs } from './pipe.js';
-import { AstSymbol, Pipe, NodeList, Literal } from '../../nodes/index.js';
+import { AstSymbol, Pipe, Literal } from '../../nodes/index.js';
 import { createCursor } from '../cursor.js';
 import { TOKEN_SYMBOL, TOKEN_OPERATOR, TOKEN_PIPEFORWARD, TOKEN_LEFT_PAREN } from '../../lexer/token-types.js';
 

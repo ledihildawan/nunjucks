@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { compileTemplateData, compileCapture, compileOutput } from './output.js';
-import { TemplateData, AstSymbol, LookupVal, Pipe, Slice } from '../../nodes/index.js';
+import { TemplateData, AstSymbol, LookupVal, Pipe } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];

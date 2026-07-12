@@ -1,5 +1,5 @@
-import { pipe, entries, isArray } from 'remeda';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { entries, isArray } from 'remeda';
+import { readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { watch } from 'fs';
 import { createLoader } from './base.js';
@@ -52,13 +52,9 @@ const existsAndWithinBase = (basePath) => ({ fullPath }) => {
 
 const findFileInSearchPaths = (searchPaths, name) => {
   for (const searchPath of searchPaths) {
-    try {
-      const { basePath, fullPath } = resolveFromSearchPath(name)(searchPath);
-      if (existsAndWithinBase(basePath)({ fullPath })) {
-        return fullPath;
-      }
-    } catch (err) {
-      throw err;
+    const { basePath, fullPath } = resolveFromSearchPath(name)(searchPath);
+    if (existsAndWithinBase(basePath)({ fullPath })) {
+      return fullPath;
     }
   }
   return null;

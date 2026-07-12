@@ -10,7 +10,7 @@ describe('parseInlineIf', () => {
     const node = new Literal(1, 1, 42);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => node,
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     expect(parseInlineIf(ctx)).toBe(node);
@@ -30,7 +30,7 @@ describe('parseInlineIf', () => {
         const v = [body, cond];
         return v[c++];
       },
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     const result = parseInlineIf(ctx);
@@ -57,7 +57,7 @@ describe('parseInlineIf', () => {
         const v = [body, cond, else_];
         return v[c++];
       },
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     const result = parseInlineIf(ctx);

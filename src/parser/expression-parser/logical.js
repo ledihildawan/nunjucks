@@ -1,8 +1,7 @@
-import { Or, And, Not, In } from '../../nodes/index.js';
+import { Or, And, Not } from '../../nodes/index.js';
 import { peekToken, skipSymbol } from '../cursor.js';
 import { parseNullishCoalesce } from './nullish.js';
 import { parseIn } from './in.js';
-import { parseIs } from './is.js';
 
 export const parseOr = (ctx) => {
   let node = parseNullishCoalesce(ctx);

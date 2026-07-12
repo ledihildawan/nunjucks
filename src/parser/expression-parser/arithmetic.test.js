@@ -37,7 +37,7 @@ describe('parseAdd', () => {
     const node = new Literal(1, 1, 42);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => node,
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     expect(parseAdd(ctx)).toBe(node);
@@ -62,7 +62,7 @@ describe('parseSub', () => {
         nextToken(ctx);
         return v[c++];
       },
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     const result = parseSub(ctx);
@@ -85,7 +85,7 @@ describe('parseMul', () => {
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     const result = parseMul(ctx);
@@ -106,7 +106,7 @@ describe('parseDiv', () => {
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     const result = parseDiv(ctx);
@@ -127,7 +127,7 @@ describe('parseFloorDiv', () => {
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     const result = parseFloorDiv(ctx);
@@ -148,7 +148,7 @@ describe('parseMod', () => {
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     const result = parseMod(ctx);
@@ -169,7 +169,7 @@ describe('parsePow', () => {
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     const result = parsePow(ctx);

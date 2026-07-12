@@ -3,7 +3,7 @@ import { pipe, filter } from 'remeda';
 import { shortenPath } from '../shared/path-shortener.js';
 
 export const toConsoleString = (warning) => {
-  const { message, lineno, colno, templateName, varName } = warning;
+  const { lineno, templateName, varName } = warning;
 
   const lineNum = lineno + 1;
 

@@ -16,7 +16,7 @@ describe('parseOr', () => {
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     const result = parseOr(ctx);
@@ -31,7 +31,7 @@ describe('parseOr', () => {
     const node = new Literal(1, 1, true);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => node,
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     expect(parseOr(ctx)).toBe(node);
@@ -50,7 +50,7 @@ describe('parseAnd', () => {
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     const result = parseAnd(ctx);
@@ -65,7 +65,7 @@ describe('parseAnd', () => {
     const node = new Literal(1, 1, true);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => node,
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     expect(parseAnd(ctx)).toBe(node);
@@ -82,7 +82,7 @@ describe('parseNot', () => {
     const node = new Literal(1, 5, false);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => node,
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     const result = parseNot(ctx);
@@ -96,7 +96,7 @@ describe('parseNot', () => {
     const node = new Literal(1, 1, true);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => node,
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     expect(parseNot(ctx)).toBe(node);
@@ -112,7 +112,7 @@ describe('parseNot', () => {
     const node = new Literal(1, 9, true);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => node,
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     const result = parseNot(ctx);

@@ -20,7 +20,7 @@ import {
 } from './delimiters.js';
 import { createToken, createOperatorToken, createNumberToken, createSymbolToken } from './tokenizer-token-creators.js';
 import { isComplexOperator, isValidRegexFlag, isNumericString, isBooleanString, isNullString } from './tokenizer-validators.js';
-import { extractBeginChars, extractWhileInCharSet, extractUntilCharSet, parseStringContent, parseRegexContent } from './tokenizer-string-parsers.js';
+import { extractWhileInCharSet, extractUntilCharSet, parseStringContent, parseRegexContent } from './tokenizer-string-parsers.js';
 
 export { createToken };
 
@@ -106,10 +106,10 @@ export function createTokenizer(str, opts = {}) {
       return state.str.slice(state.index, state.index + target.length) === target;
     },
 
-    _extractString(str) {
-      if (this._matches(str)) {
-        this.forwardN(str.length);
-        return str;
+    _extractString(txt) {
+      if (this._matches(txt)) {
+        this.forwardN(txt.length);
+        return txt;
       }
       return null;
     },
@@ -198,7 +198,6 @@ export function createTokenizer(str, opts = {}) {
     },
 
     _parseTemplateText(lineno, colno) {
-      const beginChars = extractBeginChars(state.tags);
 
       if (this.isFinished()) return null;
 

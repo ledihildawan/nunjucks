@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach } from 'bun:test';
 import { createCompiler, compile, getSourceMap, getSourceMapFromCompile } from './index.js';
-import { createTemplateError } from '../error/index.js';
 import { NodeList, Literal, AstSymbol } from '../nodes/index.js';
 import { createFrame } from '../runtime/index.js';
 

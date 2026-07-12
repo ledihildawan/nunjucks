@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { compileCompare, compileIs } from './compare.js';
-import { AstSymbol, Literal } from '../../nodes/index.js';
+import { AstSymbol } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];

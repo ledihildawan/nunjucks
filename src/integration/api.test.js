@@ -1,14 +1,13 @@
-import { expect, describe, test, beforeEach } from 'bun:test';
+import { expect, describe, test } from 'bun:test';
 import path from 'node:path';
 import * as util from './test-helpers.js';
 import { createEnvironment } from '../environment/index.js';
 import { createFileSystemLoader } from '../loaders/file-system.js';
-import { createContainer } from '../../src/index.js';
 
 const templatesPath = 'src/template/test-templates';
 
-const configure = (templatesPath, opts = {}) => {
-  const loader = createFileSystemLoader(templatesPath, {
+const configure = (tmplPath, opts = {}) => {
+  const loader = createFileSystemLoader(tmplPath || templatesPath, {
     watch: opts.watch,
     noCache: opts.noCache
   });
@@ -43,9 +42,9 @@ describe('api', function() {
 
   test('should handle correctly cache for relative paths', async function() {
     const env = createEnvironment(createFileSystemLoader(templatesPath));
-    const test = await env.getTemplate('relative/test-cache.njk');
+    const tmpl = await env.getTemplate('relative/test-cache.njk');
 
-    expect(util.normEOL(await test.render())).toBe('Test1\nTest2');
+    expect(util.normEOL(await tmpl.render())).toBe('Test1\nTest2');
   });
 
   test('should handle correctly relative paths in render', async function() {

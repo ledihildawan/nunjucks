@@ -47,8 +47,7 @@ describe('parseBlock', () => {
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
     const ctx = Object.assign(createCursor(tokens), {
-      parsePrimary: (noPostfix) => {
-        const tok = nextToken(ctx);
+      parsePrimary: () => {
         return { lineno: 1, colno: 7, typename: 'Literal', value: 42 };
       },
     });

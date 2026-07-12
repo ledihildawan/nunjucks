@@ -131,10 +131,10 @@ export const createEnvironment = (options = {}) => {
   const fsResolver = createFsResolver();
   return {
     opts: { ...getConfig(), ...options },
-    async formatError(error, templateName, options = {}) {
+    async formatError(error, templateName, formatOptions = {}) {
       const fs = await fsResolver.resolve(this.opts.fs);
-      const errorData = await buildErrorData(error, templateName, options, this.opts, fs);
-      const csp = getCspNonce(options.requestHeaders, this.opts.csp);
+      const errorData = await buildErrorData(error, templateName, formatOptions, this.opts, fs);
+      const csp = getCspNonce(formatOptions.requestHeaders, this.opts.csp);
       return createErrorResult(error, errorData, csp);
     }
   };

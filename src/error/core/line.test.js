@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import {
   normalizeLine, normalizeCol,
   getDisplayLine, getDisplayCol,
-  getFallbackLine, getFallbackCol,
+  getFallbackLine,
   mergeLine, mergeCol,
   createDisplayLine, createDisplayCol,
 } from './line.js';

@@ -1,4 +1,4 @@
-import { AstSymbol, Dict, isDict } from '../../nodes/index.js';
+import { AstSymbol, isDict } from '../../nodes/index.js';
 import { createFrame } from '../../runtime/index.js';
 
 const compileMacro = (ctx, node, frame) => {

@@ -45,7 +45,7 @@ describe('validateTemplateName', () => {
 
   test('throws for non-string, non-Template', () => {
     expect(() => validateTemplateName(123)).toThrow('template names must be a string: 123');
-    const err = (() => { try { validateTemplateName(123); } catch (e) { return e; } })();
+    const err = (() => { try { validateTemplateName(123); } catch (e) { return e; } return undefined; })();
     expect(err.code).toBe('INVALID_INCLUDE');
   });
 });

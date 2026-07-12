@@ -2,8 +2,6 @@ import { lex } from '../lexer/tokenizer.js';
 import {
   NodeList,
   Root,
-  Output,
-  TemplateData,
 } from '../nodes/index.js';
 import { createObj } from '../object/index.js';
 import {
@@ -69,8 +67,8 @@ import { parseNodes, parseUntilBlocks } from './top-level.js';
 export function createParser(tokens) {
   const obj = createObj({
     name: 'Parser',
-    init: function(tokens) {
-      this.tokens = tokens;
+    init: function(tok) {
+      this.tokens = tok;
       this.peeked = null;
       this.breakOnBlocks = null;
       this.dropLeadingWhitespace = false;

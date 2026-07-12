@@ -9,7 +9,7 @@ const getProjectRoot = () => {
   return _projectRoot;
 };
 
-export const normalizeDrivePath = (p) => p.replace(/^[\\\/]+([A-Za-z]):/, '$1:').replace(/\\/g, '/');
+export const normalizeDrivePath = (p) => p.replace(/^[\\/]+([A-Za-z]):/, '$1:').replace(/\\/g, '/');
 
 export const shortenPath = (path) => {
   const normalizedPath = normalizeDrivePath(path);

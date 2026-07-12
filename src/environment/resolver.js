@@ -1,4 +1,4 @@
-import { createTemplate, isTemplate } from '../template/index.js';
+import { isTemplate } from '../template/index.js';
 
 export const normalizeIncludeChain = (includeChain) => {
   if (!includeChain) return { parentName: null, chain: null };

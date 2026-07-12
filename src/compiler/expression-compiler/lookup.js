@@ -1,4 +1,4 @@
-import { Slice, OptionalCall, isSlice } from '../../nodes/index.js';
+import { isSlice } from '../../nodes/index.js';
 import { compileAggregate } from './container.js';
 
 export const compileLookupVal = (ctx, node, frame) => {

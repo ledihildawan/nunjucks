@@ -111,28 +111,28 @@ export function createTemplate(src, env, path, eagerCompile) {
   const obj = createObj({
     name: 'Template',
     [Template]: true,
-    init: function(src, env, path, eagerCompile) {
-      this.env = env || createFallbackEnv();
-      this.path = path;
+    init: function(srcArg, envArg, pathArg, eagerCompileArg) {
+      this.env = envArg || createFallbackEnv();
+      this.path = pathArg;
 
-      if (isPlainObject(src)) {
-        switch (src.type) {
+      if (isPlainObject(srcArg)) {
+        switch (srcArg.type) {
           case 'code':
-            this.tmplProps = src.obj;
+            this.tmplProps = srcArg.obj;
             break;
           case 'string':
-            this.tmplStr = src.obj;
+            this.tmplStr = srcArg.obj;
             break;
           default:
-            throw new Error(`Unexpected template object type ${src.type}; expected 'code', or 'string'`);
+            throw new Error(`Unexpected template object type ${srcArg.type}; expected 'code', or 'string'`);
         }
-      } else if (isString(src)) {
-        this.tmplStr = src;
+      } else if (isString(srcArg)) {
+        this.tmplStr = srcArg;
       } else {
         throw new Error('src must be a string or an object describing the source');
       }
 
-      if (eagerCompile) {
+      if (eagerCompileArg) {
         try {
           this._compile();
         } catch (err) {

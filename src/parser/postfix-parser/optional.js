@@ -1,4 +1,4 @@
-import { TOKEN_SYMBOL, TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_COMMA, TOKEN_LEFT_BRACKET, TOKEN_OPERATOR } from '../../lexer/token-types.js';
+import { TOKEN_SYMBOL, TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_COMMA, TOKEN_LEFT_BRACKET } from '../../lexer/token-types.js';
 import { OptionalChain, OptionalCall, Literal, NodeList } from '../../nodes/index.js';
 import { nextToken, peekToken, fail } from '../cursor.js';
 import { BracketNotation } from './lookup.js';
@@ -42,10 +42,10 @@ export const parseOptionalChain = (ctx, tok, target) => {
   }
 
   // Check if next token is bracket or dot
-  const nextTok = peekToken(ctx);
+    const nextTok = peekToken(ctx);
   if (nextTok && nextTok.type === TOKEN_LEFT_BRACKET) {
     // Handle bracket notation: user?.["status"]
-    const bracketTok = nextToken(ctx); // consume [
+    nextToken(ctx); // consume [
     const start = ctx.parseExpression();
     
     // consume ]

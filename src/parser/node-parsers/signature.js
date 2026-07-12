@@ -30,7 +30,7 @@ export const parseSignature = (ctx, tolerant, noParens) => {
   const kwargs = KeywordArgs(tok.lineno, tok.colno);
   let checkComma = false;
 
-  while (1) {
+  while (true) {
     tok = peekToken(ctx);
     if (!noParens && tok.type === TOKEN_RIGHT_PAREN) {
       nextToken(ctx);

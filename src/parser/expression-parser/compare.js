@@ -7,7 +7,7 @@ export const parseCompare = (ctx) => {
   const expr = parseConcat(ctx);
   const ops = [];
 
-  while (1) {
+  while (true) {
     const tok = nextToken(ctx);
 
     if (!tok) {

@@ -1,7 +1,6 @@
 import { TOKEN_COMMA } from '../../lexer/token-types.js';
 import {
   For,
-  AstSymbol,
   ArrayNode,
   isSymbol,
 } from '../../nodes/index.js';

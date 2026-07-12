@@ -1,6 +1,4 @@
 import {
-  Block,
-  FunCall,
   AstSymbol,
   Super,
   isBlock,

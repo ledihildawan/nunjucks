@@ -19,7 +19,6 @@ function rmdir(dirPath) {
 
 describe('configure', function() {
   let tempdir;
-  let container;
   let env;
 
   beforeAll(async function() {

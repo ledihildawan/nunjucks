@@ -49,14 +49,14 @@ const highlightJsToAnsi = (code) => {
 };
 
 const CONSOLE_TEMPLATE_RULES = [
-  { type: 'tag', re: /^(\{%-?|\%-?|\{%|#\{)/ },
+  { type: 'tag', re: /^(?:\{%-?|%-?|\{%|#\{)/ },
   { type: 'variable', re: /^(\{\{-?|\{\{-|#\{)/ },
   { type: 'string', re: /^"(?:[^"\\]|\\.)*"|^'(?:[^'\\]|\\.)*'/ },
   { type: 'number', re: /^\d+\.?\d*/ },
   { type: 'filter', re: /^\|\s*\w+/ },
   { type: 'keyword', re: /^(?:true|false|null|undefined|and|or|not|in|is|as|import)/ },
   { type: 'operator', re: /^(?:==|!=|>=|<=|\.\.|::|\?:|==|!)/ },
-  { type: 'punctuation', re: /^[\[\]{}(),:]/ },
+  { type: 'punctuation', re: /^[\](){},:]/ },
 ];
 
 const highlightTemplateToAnsi = (code) => {
@@ -230,8 +230,8 @@ export const toConsoleString = (state) => {
 
   if (jsCallerLines && jsCallerLines.length > 0) {
     const jsTraceLabel = picocolors.bold('Source Trace:');
-    const jsTraceLines = jsCallerLines.map(({ lineNum, code, isError }) => {
-      const highlighted = highlightJsToAnsi(code);
+    const jsTraceLines = jsCallerLines.map(({ lineNum, code: lineCode, isError }) => {
+      const highlighted = highlightJsToAnsi(lineCode);
       const lineText = '  ' + lineNum + ':' + highlighted;
       return isError ? picocolors.red(lineText) : picocolors.dim(lineText);
     });

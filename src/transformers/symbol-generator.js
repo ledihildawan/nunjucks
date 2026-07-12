@@ -1,20 +1,3 @@
-import {
-  Node,
-  NodeList,
-  Block,
-  FunCall,
-  AstSymbol,
-  Super,
-  Pipe,
-  PipeAsync,
-  CallExtension,
-  CallExtensionAsync,
-  Output,
-  Set,
-  For,
-  If,
-} from '../nodes/index.js';
-
 export const createSymbolGenerator = (seed = 0) => {
   let counter = seed;
   return () => {

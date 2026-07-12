@@ -64,8 +64,8 @@ export function createFrame(parent, isolateWrites) {
       return p && p.resolve(name);
     },
 
-    push(isolateWrites) {
-      return createFrame(this, isolateWrites);
+    push(writeIsolation) {
+      return createFrame(this, writeIsolation);
     },
 
     pop() {

@@ -1,5 +1,3 @@
-import { fileURLToPath } from 'url';
-import path from 'node:path';
 import { expect } from 'bun:test';
 import { createEnvironment } from '../environment/index.js';
 import { createTemplate } from '../template/index.js';
@@ -14,8 +12,7 @@ function equal(str, ctx, opts, str2, env) {
     str2 = ctx;
     ctx = null;
     opts = {};
-  }
-  if (typeof opts === 'string') {
+  } else if (typeof opts === 'string') {
     env = str2;
     str2 = opts;
     opts = {};
@@ -28,6 +25,7 @@ function equal(str, ctx, opts, str2, env) {
     });
   }
   expect(res).toBe(str2);
+  return undefined;
 }
 
 function jinjaEqual(str, ctx, str2, env) {
@@ -92,18 +90,18 @@ function render(str, ctx, opts, env, cb) {
 
   if (!cb) {
     return t.render(ctx);
-  } else {
-    t.render(ctx)
-      .then(res => {
-        cb(null, normEOL(res));
-      })
-      .catch(err => {
-        if (err && !opts.noThrow) {
-          throw err;
-        }
-        cb(err);
-      });
   }
+
+  return t.render(ctx)
+    .then(res => {
+      cb(null, normEOL(res));
+    })
+    .catch(err => {
+      if (err && !opts.noThrow) {
+        throw err;
+      }
+      cb(err);
+    });
 }
 
 export { render, equal, jinjaEqual, normEOL };

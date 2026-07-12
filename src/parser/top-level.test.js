@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { parseUntilBlocks, parseNodes } from './top-level.js';
-import { createCursor, nextToken } from './cursor.js';
-import { TOKEN_DATA, TOKEN_BLOCK_START, TOKEN_BLOCK_END, TOKEN_VARIABLE_START, TOKEN_VARIABLE_END, TOKEN_COMMENT } from '../lexer/token-types.js';
+import { createCursor } from './cursor.js';
+import { TOKEN_DATA, TOKEN_BLOCK_START, TOKEN_VARIABLE_START, TOKEN_VARIABLE_END, TOKEN_COMMENT } from '../lexer/token-types.js';
 import { Output, TemplateData } from '../nodes/index.js';
 
 describe('parseUntilBlocks', () => {

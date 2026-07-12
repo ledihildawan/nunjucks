@@ -1,4 +1,4 @@
-import { Literal, AstSymbol, Group, Dict, NodeList, Pair, isSymbol, isLiteral } from '../../nodes/index.js';
+import { Literal, isSymbol, isLiteral } from '../../nodes/index.js';
 
 export const compileLiteral = (ctx, node) => {
   if (typeof node.value === 'string') {

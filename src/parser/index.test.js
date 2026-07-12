@@ -3,7 +3,7 @@ import { createParser, parse } from './index.js';
 import { lex } from '../lexer/tokenizer.js';
 import {
   TOKEN_DATA, TOKEN_SYMBOL, TOKEN_BLOCK_START, TOKEN_BLOCK_END,
-  TOKEN_VARIABLE_START, TOKEN_VARIABLE_END,
+  TOKEN_VARIABLE_START,
 } from '../lexer/token-types.js';
 import { getNodeTypeName } from '../nodes/index.js';
 

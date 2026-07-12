@@ -8,7 +8,6 @@ const makeCtx = () => {
   let buf = 'output';
   return {
     emitted,
-    buffer: buf,
     inBlock: false,
     _emit: (s) => emitted.push(s),
     _emitLine: (s) => emitted.push(s + '\n'),

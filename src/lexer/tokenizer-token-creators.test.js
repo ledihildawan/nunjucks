@@ -7,14 +7,6 @@ import {
   createSymbolToken,
 } from './tokenizer-token-creators.js';
 import {
-  TOKEN_STRING,
-  TOKEN_WHITESPACE,
-  TOKEN_DATA,
-  TOKEN_BLOCK_START,
-  TOKEN_BLOCK_END,
-  TOKEN_VARIABLE_START,
-  TOKEN_VARIABLE_END,
-  TOKEN_COMMENT,
   TOKEN_LEFT_PAREN,
   TOKEN_RIGHT_PAREN,
   TOKEN_LEFT_BRACKET,

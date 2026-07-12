@@ -21,17 +21,15 @@ describe('parseFrom', () => {
     const tokens = { nextToken: () => seq[n++] };
     const names = [new AstSymbol(1, 20, 'x'), new AstSymbol(1, 23, 'y')];
     const template = new AstSymbol(1, 6, 'macros');
-    let primCalls = 0;
-    let exprCalls = 0;
+    let pi = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => {
-        const v = names[primCalls];
-        primCalls++;
+        const v = names[pi];
+        pi++;
         nextToken(ctx);
         return v;
       },
       parseExpression: () => {
-        exprCalls++;
         nextToken(ctx);
         return template;
       },
@@ -62,16 +60,13 @@ describe('parseFrom', () => {
     const name = new AstSymbol(1, 20, 'x');
     const alias = new AstSymbol(1, 25, 'alias_x');
     const template = new AstSymbol(1, 6, 'macros');
-    let primCalls = 0;
-    let exprCalls = 0;
+    const primaryValues = [name, alias];
+    let pi = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => {
-        primCalls++;
-        if (primCalls === 1) { nextToken(ctx); return name; }
-        nextToken(ctx); return alias;
+        nextToken(ctx); return primaryValues[pi++];
       },
       parseExpression: () => {
-        exprCalls++;
         nextToken(ctx);
         return template;
       },
@@ -100,16 +95,12 @@ describe('parseFrom', () => {
     const tokens = { nextToken: () => seq[n++] };
     const name = new AstSymbol(1, 20, 'x');
     const template = new AstSymbol(1, 6, 'macros');
-    let primCalls = 0;
-    let exprCalls = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => {
-        primCalls++;
         nextToken(ctx);
         return name;
       },
       parseExpression: () => {
-        exprCalls++;
         nextToken(ctx);
         return template;
       },
@@ -135,16 +126,12 @@ describe('parseFrom', () => {
     const tokens = { nextToken: () => seq[n++] };
     const name = new AstSymbol(1, 20, 'x');
     const template = new AstSymbol(1, 6, 'macros');
-    let primCalls = 0;
-    let exprCalls = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => {
-        primCalls++;
         nextToken(ctx);
         return name;
       },
       parseExpression: () => {
-        exprCalls++;
         nextToken(ctx);
         return template;
       },
@@ -195,10 +182,9 @@ describe('parseFrom', () => {
     const tokens = { nextToken: () => seq[n++] };
     const name = new AstSymbol(1, 20, '_private');
     const template = new AstSymbol(1, 6, 'macros');
-    let exprCalls = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { nextToken(ctx); return name; },
-      parseExpression: () => { exprCalls++; nextToken(ctx); return template; },
+      parseExpression: () => { nextToken(ctx); return template; },
     });
 
     expect(() => parseFrom(ctx)).toThrow('names starting with an underscore');

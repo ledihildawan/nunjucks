@@ -1,4 +1,4 @@
-import { Pair, isPair } from '../../nodes/index.js';
+import { isPair } from '../../nodes/index.js';
 import { compileGetTemplate } from './import.js';
 
 export const compileFromImport = (ctx, node, frame) => {

@@ -1,5 +1,5 @@
 import { expect, describe, test } from 'bun:test';
-import { createObj, createEmitter, extendObj, extendEmitter, isObj, isEmitter } from './index.js';
+import { createObj, createEmitter, extendObj, isObj, isEmitter } from './index.js';
 
 describe('createObj', () => {
   test('creates object with symbol marker', () => {

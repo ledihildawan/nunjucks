@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { liftPipes } from './pipe-transforms.js';
 import {
-  NodeList, Root, Output, Pipe, PipeAsync, AstSymbol, Literal, FunCall, KeywordArgs,
+  Root, Output, Pipe, AstSymbol, Literal, KeywordArgs,
   getNodeTypeName,
 } from '../nodes/index.js';
 

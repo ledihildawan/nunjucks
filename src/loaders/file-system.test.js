@@ -77,7 +77,7 @@ describe('FileSystemLoader', () => {
 
   test('watches file when watchEnabled is true', async () => {
     const loader = createFileSystemLoader(tmpDir, { watch: true });
-    const result = await loader.getSource('hello.njk');
+    await loader.getSource('hello.njk');
 
     expect(loader.watchedFiles.size).toBe(1);
     const watcher = loader.watchedFiles.get(join(tmpDir, 'hello.njk'));

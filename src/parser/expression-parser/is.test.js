@@ -16,7 +16,7 @@ describe('parseIs', () => {
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     const result = parseIs(ctx);
@@ -38,7 +38,7 @@ describe('parseIs', () => {
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     const result = parseIs(ctx);
@@ -54,7 +54,7 @@ describe('parseIs', () => {
     const node = new Literal(1, 1, 'x');
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => node,
-      parsePipe: (n) => n,
+      parsePipe: (x) => x,
     });
 
     expect(parseIs(ctx)).toBe(node);

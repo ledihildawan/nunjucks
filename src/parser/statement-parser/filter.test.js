@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseFilterStatement } from './filter.js';
-import { Output, Filter, Capture, AstSymbol, NodeList } from '../../nodes/index.js';
+import { Output, Filter, AstSymbol } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import { TOKEN_SYMBOL, TOKEN_BLOCK_END } from '../../lexer/token-types.js';
 

@@ -54,7 +54,7 @@ export const parsePrimary = (ctx, noPostfix) => {
 
   if (node) {
     return node;
-  } else {
-    fail(ctx, `unexpected token: ${tok.value}`, tok.lineno, tok.colno);
   }
+
+  return fail(ctx, `unexpected token: ${tok.value}`, tok.lineno, tok.colno);
 };

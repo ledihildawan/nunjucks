@@ -1,9 +1,9 @@
 import { describe, test, expect } from 'bun:test';
 import { parseCall } from './call.js';
 import {
-  NodeList, Output, Caller, AstSymbol, KeywordArgs, Pair, FunCall,
+  NodeList, Output, AstSymbol, KeywordArgs, Pair, FunCall,
 } from '../../nodes/index.js';
-import { createCursor, nextToken } from '../cursor.js';
+import { createCursor } from '../cursor.js';
 import { TOKEN_SYMBOL, TOKEN_BLOCK_END } from '../../lexer/token-types.js';
 
 describe('parseCall', () => {

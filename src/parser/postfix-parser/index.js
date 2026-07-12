@@ -3,7 +3,7 @@ import {
   TOKEN_LEFT_PAREN,
   TOKEN_OPERATOR,
 } from '../../lexer/token-types.js';
-import { nextToken, peekToken, pushToken } from '../cursor.js';
+import { nextToken, peekToken } from '../cursor.js';
 import { parseFunCall } from './fun-call.js';
 import { parseBracketAccess } from './lookup.js';
 import { parseDotAccess } from './dot.js';

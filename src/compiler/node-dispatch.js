@@ -117,7 +117,8 @@ export const compileDispatch = (ctx, node, frame) => {
   const fn = COMPILE_FUNCTIONS[typeName];
   if (fn) {
     return fn(ctx, node, frame);
-  } else {
-    ctx.fail(`compile: Cannot compile node: ${typeName}`, node.lineno, node.colno);
   }
+
+  ctx.fail(`compile: Cannot compile node: ${typeName}`, node.lineno, node.colno);
+  return undefined;
 };

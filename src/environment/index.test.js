@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from 'bun:test';
 import { createEnvironment } from './index.js';
-import { createTemplate, isTemplate } from '../template/index.js';
+import { isTemplate } from '../template/index.js';
 
 let env;
 
