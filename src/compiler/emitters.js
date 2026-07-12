@@ -1,8 +1,10 @@
+import { isNonNullish } from 'remeda';
+
 export const emit = (ctx, code) => ctx.codebuf.push(code);
 
 export const emitLine = (ctx, code, originalLine) => {
   ctx.compiledLine++;
-  if (originalLine !== undefined && originalLine !== null) {
+  if (isNonNullish(originalLine)) {
     ctx.sourceMap.addMapping(ctx.compiledLine, originalLine);
   }
   emit(ctx, code + '\n');

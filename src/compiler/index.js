@@ -1,4 +1,4 @@
-import { pipe, filter, isDefined, reduce } from 'remeda';
+import { pipe, filter, isDefined, isNonNullish, reduce } from 'remeda';
 import { parse } from '../parser/index.js';
 import { transform } from '../transformers/index.js';
 import { getNodeTypeName } from '../nodes/index.js';
@@ -73,7 +73,7 @@ export function createCompiler(templateName, undefinedMode, source) {
     },
     _emitLine: function(code, originalLine) {
       this.compiledLine++;
-      if (originalLine !== undefined && originalLine !== null) {
+      if (isNonNullish(originalLine)) {
         this.sourceMap.addMapping(this.compiledLine, originalLine);
       }
       this._emit(code + '\n');

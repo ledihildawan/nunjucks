@@ -1,6 +1,6 @@
 import { expect, describe, test, beforeEach } from 'bun:test';
 import path from 'node:path';
-import * as util from './util.js';
+import * as util from './test-helpers.js';
 import { createEnvironment } from '../environment/index.js';
 import { createFileSystemLoader } from '../loaders/file-system.js';
 import { createContainer } from '../../src/index.js';

@@ -1,11 +1,12 @@
 import { isSafeString } from '../runtime/index.js';
+import { isPlainObject, isFunction, isString as isStringCheck, isNumber, isArray, isDefined, isTruthy } from 'remeda';
 
 export function callable(value) {
-  return typeof value === 'function';
+  return isFunction(value);
 }
 
 export function defined(value) {
-  return value !== undefined;
+  return isDefined(value);
 }
 
 export function divisibleby(one, two) {
@@ -28,7 +29,7 @@ export function even(value) {
 }
 
 export function falsy(value) {
-  return !value;
+  return !isTruthy(value);
 }
 
 export function ge(one, two) {
@@ -64,7 +65,7 @@ export function nullTest(value) {
 }
 
 export function number(value) {
-  return typeof value === 'number';
+  return isNumber(value);
 }
 
 export function odd(value) {
@@ -72,15 +73,15 @@ export function odd(value) {
 }
 
 export function isString(value) {
-  return typeof value === 'string';
+  return isStringCheck(value);
 }
 
 export function truthy(value) {
-  return !!value;
+  return isTruthy(value);
 }
 
 export function undefinedTest(value) {
-  return value === undefined;
+  return !isDefined(value);
 }
 
 export function isUpperCase(value) {
@@ -91,18 +92,13 @@ export function iterable(value) {
   if (typeof Symbol !== 'undefined') {
     return !!value[Symbol.iterator];
   } else {
-    return Array.isArray(value) || typeof value === 'string';
+    return isArray(value) || isStringCheck(value);
   }
 }
 
 export function mapping(value) {
-  const bool = value !== null
-    && value !== undefined
-    && typeof value === 'object'
-    && !Array.isArray(value);
   if (typeof Set !== 'undefined') {
-    return bool && !(value instanceof Set);
-  } else {
-    return bool;
+    return isPlainObject(value) && !(value instanceof Set);
   }
+  return isPlainObject(value);
 }

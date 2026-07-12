@@ -1,11 +1,11 @@
 ﻿import EventEmitter from 'events';
-import { keys } from 'remeda';
+import { keys, isFunction } from 'remeda';
 
 const OBJ = Symbol('obj');
 const EMITTER = Symbol('emitter');
 
 function parentWrap(parent, prop) {
-  if (typeof parent !== 'function' || typeof prop !== 'function') {
+  if (!isFunction(parent) || !isFunction(prop)) {
     return prop;
   }
   return function wrap(...args) {
@@ -57,7 +57,7 @@ export function extendObj(baseObj, nameOrProps = 'anonymous', props = {}) {
     nameOrProps = props.name || 'anonymous';
   }
 
-  const isBaseFunction = typeof baseObj === 'function';
+  const isBaseFunction = isFunction(baseObj);
   const baseFields = isBaseFunction ? (baseObj.fields || []) : [];
   const newFields = props.fields || [];
   const allFields = [...baseFields, ...newFields];

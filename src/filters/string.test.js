@@ -3,7 +3,7 @@ import {
   normalize,
   capitalize,
   center,
-  default_,
+  fallback,
   dump,
   escape,
   safe,
@@ -66,20 +66,20 @@ describe('center', () => {
   });
 });
 
-describe('default_', () => {
+describe('fallback', () => {
   test('returns val if not undefined', () => {
-    expect(default_(0, 1)).toBe(0);
-    expect(default_(false, true)).toBe(false);
-    expect(default_('', 'fallback')).toBe('');
+    expect(fallback(0, 1)).toBe(0);
+    expect(fallback(false, true)).toBe(false);
+    expect(fallback('', 'fallback')).toBe('');
   });
 
   test('returns default for undefined', () => {
-    expect(default_(undefined, 'fallback')).toBe('fallback');
+    expect(fallback(undefined, 'fallback')).toBe('fallback');
   });
 
   test('uses truthy check when bool is true', () => {
-    expect(default_(0, 1, true)).toBe(1);
-    expect(default_('hello', 'fallback', true)).toBe('hello');
+    expect(fallback(0, 1, true)).toBe(1);
+    expect(fallback('hello', 'fallback', true)).toBe('hello');
   });
 });
 

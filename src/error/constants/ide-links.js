@@ -1,4 +1,5 @@
 import { normalizeDrivePath } from '../../shared/path-shortener.js';
+import { isFunction } from 'remeda';
 
 /**
  * IDE scheme definitions for clickable error links.
@@ -67,13 +68,13 @@ export const IDE_SCHEMES = {
 const DEFAULT_META = { label: 'IDE', color: null, icon: GENERIC_ICON };
 
 export const resolveIdeLink = (ide, path, line, col) => {
-  if (typeof ide === 'function') return ide(path, line, col);
+  if (isFunction(ide)) return ide(path, line, col);
   const entry = IDE_SCHEMES[ide] || IDE_SCHEMES.vscode;
   const normalizedPath = normalizeDrivePath(path);
   return entry.link(normalizedPath, line, col);
 };
 
 export const getIdeMeta = (ide) => {
-  if (typeof ide === 'function') return DEFAULT_META;
+  if (isFunction(ide)) return DEFAULT_META;
   return IDE_SCHEMES[ide] || IDE_SCHEMES.vscode;
 };

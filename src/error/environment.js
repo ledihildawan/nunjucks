@@ -1,4 +1,4 @@
-import { entries } from 'remeda';
+import { entries, isArray } from 'remeda';
 import { getConfig } from './config.js';
 import { extractIncludeChainFromMessage, extractErrorTemplateName } from './core/extract.js';
 import { createErrorData } from './state/error-data.js';
@@ -51,7 +51,7 @@ const parseFallbackLine = (snippet, fallback) => {
 
 const resolveChain = (explicit, fromError, fromMessage) => {
   const chain = explicit ?? fromError;
-  if (chain) return Array.isArray(chain) ? chain : [chain];
+  if (chain) return isArray(chain) ? chain : [chain];
   return fromMessage;
 };
 

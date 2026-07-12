@@ -1,9 +1,9 @@
 import { describe, test, expect } from 'bun:test';
+import { isRelativePath, resolveTemplatePath } from './loader-helpers.js';
 import {
-  isRelativePath, resolveTemplatePath,
   findCachedTemplate, normalizeIncludeChain,
   resolveTemplateName, validateTemplateName,
-} from './template-loader-helpers.js';
+} from './resolver.js';
 
 describe('isRelativePath', () => {
   test('returns true when loader.isRelative returns truthy', () => {

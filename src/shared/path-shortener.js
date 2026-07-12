@@ -1,4 +1,4 @@
-const normalizePath = (p) => p.replace(/^file:\/\/+/, '');
+import { pipe, filter } from 'remeda';
 
 let _projectRoot = null;
 
@@ -15,7 +15,10 @@ export const shortenPath = (path) => {
   const normalizedPath = normalizeDrivePath(path);
   const normalizedRoot = normalizeDrivePath(getProjectRoot());
 
-  const parts = normalizedPath.split('/').filter(Boolean);
+  const parts = pipe(
+    normalizedPath.split('/'),
+    filter(Boolean)
+  );
   const rootDirName = normalizedRoot.split('/').pop();
 
   const privateIdx = parts.findIndex(p =>

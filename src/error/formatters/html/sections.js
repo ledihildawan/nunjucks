@@ -1,4 +1,4 @@
-import { keys, isArray, filter } from 'remeda';
+import { keys, isArray, filter, isFunction, isSymbol, isString, isNumber, isBoolean, isNullish } from 'remeda';
 import { escapeHtml, highlightHtml, highlightJs } from './highlight.js';
 import { resolveIdeLink } from '../../constants/ide-links.js';
 import { shortenPath } from '../../../shared/path-shortener.js';
@@ -33,11 +33,11 @@ export const formatJsTraceHtml = (jsCallerLines) => {
 
 const serializeValue = (value, depth = 0) => {
   if (value === undefined) return 'undefined';
-  if (value === null) return 'null';
-  if (typeof value === 'function') return '[Function]';
-  if (typeof value === 'symbol') return '[Symbol]';
-  if (typeof value === 'string') return JSON.stringify(value);
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (isNullish(value)) return 'null';
+  if (isFunction(value)) return '[Function]';
+  if (isSymbol(value)) return '[Symbol]';
+  if (isString(value)) return JSON.stringify(value);
+  if (isNumber(value) || isBoolean(value)) return String(value);
   if (isArray(value)) {
     if (value.length === 0) return '[]';
     return '[' + value.slice(0, 10).map(v => serializeValue(v, depth + 1)).join(',') + ']';

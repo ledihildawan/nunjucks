@@ -1,10 +1,10 @@
-import { keys } from 'remeda';
+import { keys, isNonNullish, isFunction } from 'remeda';
 import { isBlockedKey, isDangerousGlobal, BLOCKED_KEYS_LIST, DANGEROUS_GLOBALS_LIST } from '../shared/blocked-keys.js';
 
 export { isBlockedKey, isDangerousGlobal, BLOCKED_KEYS_LIST, DANGEROUS_GLOBALS_LIST };
 
 export const wrapFunction = (fn, sandboxEnabled) => {
-  if (!sandboxEnabled || typeof fn !== 'function') {
+  if (!sandboxEnabled || !isFunction(fn)) {
     return fn;
   }
   return (...args) => {
@@ -13,15 +13,15 @@ export const wrapFunction = (fn, sandboxEnabled) => {
 };
 
 export const createSandboxedObject = (obj, sandboxEnabled) => {
-  if (!sandboxEnabled || obj === null || obj === undefined) {
+  if (!sandboxEnabled || !isNonNullish(obj)) {
     return obj;
   }
 
-  if (typeof obj !== 'object' && typeof obj !== 'function') {
+  if (typeof obj !== 'object' && !isFunction(obj)) {
     return obj;
   }
 
-  if (typeof obj === 'function') {
+  if (isFunction(obj)) {
     return wrapFunction(obj, sandboxEnabled);
   }
 
@@ -31,10 +31,10 @@ export const createSandboxedObject = (obj, sandboxEnabled) => {
         throw new Error(`Sandbox: Access to '${key}' is blocked`);
       }
       const value = target[key];
-      if (typeof value === 'function') {
+      if (isFunction(value)) {
         return wrapFunction(value, sandboxEnabled);
       }
-      if (typeof value === 'object' && value !== null) {
+      if (typeof value === 'object' && isNonNullish(value)) {
         return createSandboxedObject(value, sandboxEnabled);
       }
       return value;
@@ -83,11 +83,11 @@ export const wrapMemberAccess = (obj, val, sandboxEnabled) => {
 
   const value = obj?.[val];
 
-  if (typeof value === 'function') {
+  if (isFunction(value)) {
     return wrapFunction(value, sandboxEnabled);
   }
 
-  if (typeof value === 'object' && value !== null) {
+  if (typeof value === 'object' && isNonNullish(value)) {
     return createSandboxedObject(value, sandboxEnabled);
   }
 

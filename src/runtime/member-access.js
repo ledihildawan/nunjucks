@@ -1,9 +1,11 @@
+import { isNonNullish, isFunction } from 'remeda';
+
 export function memberLookup(obj, val) {
-  if (obj === undefined || obj === null) {
+  if (!isNonNullish(obj)) {
     return undefined;
   }
 
-  if (typeof obj[val] === 'function') {
+  if (isFunction(obj[val])) {
     return (...args) => obj[val].apply(obj, args);
   }
 
@@ -11,11 +13,11 @@ export function memberLookup(obj, val) {
 }
 
 export function optionalMemberLookup(obj, val) {
-  if (obj === undefined || obj === null) {
+  if (!isNonNullish(obj)) {
     return undefined;
   }
 
-  if (typeof obj[val] === 'function') {
+  if (isFunction(obj[val])) {
     return (...args) => obj[val].apply(obj, args);
   }
 
@@ -29,10 +31,10 @@ export function slice(arr, start, stop, step) {
 
   const len = arr.length;
 
-  if (start === null || start === undefined) {
+  if (!isNonNullish(start)) {
     start = (step < 0) ? len - 1 : 0;
   }
-  if (stop === null || stop === undefined) {
+  if (!isNonNullish(stop)) {
     stop = (step < 0) ? -1 : len;
   }
 
@@ -43,7 +45,7 @@ export function slice(arr, start, stop, step) {
 
   start = normalizeStart(start);
 
-  if (step === null || step === undefined || step === 1) {
+  if (!isNonNullish(step) || step === 1) {
     return arr.slice(start, stop);
   }
 
@@ -63,5 +65,5 @@ export function slice(arr, start, stop, step) {
 }
 
 export function nullishCoalesce(left, right) {
-  return (left !== undefined && left !== null) ? left : right;
+  return isNonNullish(left) ? left : right;
 }

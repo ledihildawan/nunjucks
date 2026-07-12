@@ -1,6 +1,6 @@
 import picocolors from 'picocolors';
 import { createTemplateError } from '../error/index.js';
-import { isArray, keys } from 'remeda';
+import { isArray, keys, isNonNullish, isFunction, isString, isPlainObject } from 'remeda';
 import { createFrame } from './frame.js';
 import {
   createSafeString,
@@ -39,7 +39,7 @@ import { createUndefinedWarning, toConsoleString } from '../warning/index.js';
 import { toContext, createIsolatedContext, createForkedContext } from './render-context.js';
 
 const escapeHtml = (val) => {
-  if (val === null || val === undefined) return '';
+  if (!isNonNullish(val)) return '';
   const str = String(val);
   return str
     .replace(/&/g, '&amp;')
@@ -67,6 +67,10 @@ export {
   nullishCoalesce,
   isArray,
   keys,
+  isNonNullish,
+  isFunction,
+  isString,
+  isPlainObject,
   createSandboxedContext,
   wrapMemberAccess,
   isBlockedKey,
@@ -87,7 +91,7 @@ export function suppressValue(val, autoescape) {
     return val.then(v => suppressValue(v, autoescape));
   }
 
-  val = (val !== undefined && val !== null) ? val : '';
+  val = isNonNullish(val) ? val : '';
 
   if (autoescape && !isSafeString(val)) {
     val = escapeHtml(val.toString());
@@ -104,7 +108,7 @@ export function awaitValue(val) {
 }
 
 export function ensureDefined(val, lineno, colno, varName = null, templateName = null, undefinedMode = 'chainable') {
-  if (val === null || val === undefined) {
+  if (!isNonNullish(val)) {
     if (undefinedMode === 'strict') {
       throw createTemplateError(
         `attempted to output${varName ? ` '${varName}'` : ''} null or undefined value`,
@@ -133,7 +137,7 @@ export function callWrap(obj, name, displayName, context, args, lineno, colno) {
       colno,
       { code: 'UNDEFINED_FUNCTION', subject: name, phase: 'render' }
     );
-  } else if (typeof obj !== 'function') {
+  } else if (!isFunction(obj)) {
     throw createTemplateError(
       `Unable to call \`${messageName}\`, which is not a function`,
       lineno,
@@ -163,7 +167,7 @@ export function handleError(error, lineno, colno, sourceMapData) {
     phase: error.phase || 'render'
   };
 
-  if (sourceMapData && Array.isArray(sourceMapData) && sourceMapData.length > 0) {
+  if (sourceMapData && isArray(sourceMapData) && sourceMapData.length > 0) {
     const sm = {
       mappings: sourceMapData,
       getOriginalPosition(compiledLine) {
@@ -200,10 +204,10 @@ export function fromIterator(arr) {
 }
 
 export function inOperator(key, val) {
-  if (Array.isArray(val) || typeof val === 'string') {
+  if (isArray(val) || isString(val)) {
     return val.includes(key);
   }
-  if (val && typeof val === 'object') {
+  if (isPlainObject(val)) {
     return key in val;
   }
   throw new Error(`Cannot use "in" operator to search for \`${key}\` in unexpected types.`);

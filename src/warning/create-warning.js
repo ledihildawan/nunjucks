@@ -13,8 +13,10 @@ export function createWarning(message, lineno, colno, info = {}) {
   return warning;
 }
 
+import { isNonNullish } from 'remeda';
+
 export function createUndefinedWarning(varName, lineno, colno, templateName, undefinedMode) {
-  const isVar = varName !== null && varName !== undefined;
+  const isVar = isNonNullish(varName);
   const message = isVar
     ? `Variable '${varName}' is undefined or null`
     : 'Variable is undefined or null';

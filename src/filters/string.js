@@ -1,8 +1,8 @@
-import { isString, isArray, map, entries, defaultTo } from 'remeda';
+import { isString, isArray, map, entries, defaultTo, isNonNullish, isNullish, isNumber, pipe, filter } from 'remeda';
 import { isSafeString, markSafe, copySafeness } from '../runtime/index.js';
 
 export function normalize(value, defaultValue) {
-  if (value === null || value === undefined || value === false) {
+  if (isNullish(value) || value === false) {
     return defaultValue;
   }
   return value;
@@ -28,11 +28,11 @@ export function center(str, width) {
   return copySafeness(str, `${pre}${str}${post}`);
 }
 
-export function default_(val, def, bool) {
+export function fallback(val, def, bool) {
   if (bool) {
     return val || def;
   } else {
-    return (val !== undefined) ? val : def;
+    return (val === undefined) ? def : val;
   }
 }
 
@@ -44,7 +44,7 @@ export function escape(str) {
   if (isSafeString(str)) {
     return str;
   }
-  str = (str === null || str === undefined) ? '' : str;
+  str = isNonNullish(str) ? str : '';
   const s = str.toString();
   return markSafe(s
     .replace(/&/g, '&amp;')
@@ -59,12 +59,12 @@ export function safe(str) {
   if (isSafeString(str)) {
     return str;
   }
-  str = (str === null || str === undefined) ? '' : str;
+  str = isNonNullish(str) ? str : '';
   return markSafe(str.toString());
 }
 
 export function forceescape(str) {
-  str = (str === null || str === undefined) ? '' : str;
+  str = isNonNullish(str) ? str : '';
   const s = str.toString();
   return markSafe(s
     .replace(/&/g, '&amp;')
@@ -109,7 +109,7 @@ export function lower(str) {
 }
 
 export function nl2br(str) {
-  if (str === null || str === undefined) {
+  if (!isNonNullish(str)) {
     return '';
   }
   return copySafeness(str, str.replace(/\r\n|\n/g, '<br />\n'));
@@ -122,23 +122,23 @@ export function replace(str, old, new_, maxCount) {
     return str.replace(old, new_);
   }
 
-  if (typeof maxCount === 'undefined') {
+  if (maxCount === undefined) {
     maxCount = -1;
   }
 
   let res = '';
 
-  if (typeof old === 'number') {
+  if (isNumber(old)) {
     old = String(old);
-  } else if (typeof old !== 'string') {
+  } else if (!isString(old)) {
     return str;
   }
 
-  if (typeof str === 'number') {
+  if (isNumber(str)) {
     str = String(str);
   }
 
-  if (typeof str !== 'string' && !isSafeString(str)) {
+  if (!isString(str) && !isSafeString(str)) {
     return str;
   }
 
@@ -252,9 +252,7 @@ export function urlize(str, length, nofollow) {
 
   const noFollowAttr = (nofollow === true ? ' rel="nofollow"' : '');
 
-  const words = str.split(/(\s+)/).filter((word) => {
-    return word && word.length;
-  }).map((word) => {
+  const processWord = (word) => {
     const matches = word.match(puncRe);
     const possibleUrl = (matches) ? matches[1] : word;
     const shortUrl = possibleUrl.substr(0, length);
@@ -276,7 +274,13 @@ export function urlize(str, length, nofollow) {
     }
 
     return word;
-  });
+  };
+
+  const words = pipe(
+    str.split(/(\s+)/),
+    filter((word) => word && word.length),
+    map(processWord)
+  );
 
   return words.join('');
 }

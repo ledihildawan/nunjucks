@@ -4,7 +4,7 @@ import {
   resolveTemplateName,
   validateTemplateName,
   findCachedTemplate,
-} from './template-resolver.js';
+} from './resolver.js';
 import { createTemplate } from '../template/index.js';
 
 describe('normalizeIncludeChain', () => {

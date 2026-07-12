@@ -1,4 +1,4 @@
-import { keys, isArray, defaultTo } from 'remeda';
+import { keys, isArray, defaultTo, isFunction, isString, isNullish, isPlainObject } from 'remeda';
 import { classifyFromError } from '../core/classify.js';
 import {
   extractLineInfo,
@@ -32,14 +32,13 @@ const formatTimestamp = (iso) => {
 const SENSITIVE_KEY = /pass|secret|token|api[-_]?key|auth|credit|ssn|cookie|private/i;
 
 const sanitizeValue = (value, depth = 0) => {
-  if (value === null || value === undefined) return value;
-  const type = typeof value;
-  if (type === 'function') return '[Function]';
-  if (type === 'symbol') return '[Symbol]';
-  if (type === 'string') {
+  if (isNullish(value)) return value;
+  if (isFunction(value)) return '[Function]';
+  if (typeof value === 'symbol') return '[Symbol]';
+  if (isString(value)) {
     return value.length > 120 ? value.slice(0, 120) + '…' : value;
   }
-  if (type !== 'object') {
+  if (!isPlainObject(value)) {
     return value;
   }
   if (depth >= 4) return '[Object]';
@@ -59,7 +58,7 @@ const sanitizeValue = (value, depth = 0) => {
 };
 
 const snapshotContext = (ctx) => {
-  if (!ctx || typeof ctx !== 'object') return null;
+  if (!ctx || !isPlainObject(ctx)) return null;
   const snapshot = {};
   let count = 0;
   for (const k of keys(ctx)) {

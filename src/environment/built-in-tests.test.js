@@ -168,11 +168,15 @@ describe('null test', () => {
 describe('number', () => {
   test('returns true for numbers', () => {
     expect(number(42)).toBe(true);
-    expect(number(NaN)).toBe(true);
+    expect(number(0)).toBe(true);
+    expect(number(-3.14)).toBe(true);
   });
 
   test('returns false for non-numbers', () => {
     expect(number('str')).toBe(false);
+    expect(number(NaN)).toBe(false);
+    expect(number(null)).toBe(false);
+    expect(number(undefined)).toBe(false);
   });
 });
 

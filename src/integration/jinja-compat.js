@@ -19,5 +19,11 @@ export const createCompatInstaller = () => {
   };
 };
 
-const defaultInstaller = createCompatInstaller();
-export default defaultInstaller;
+let _defaultInstaller;
+export const getDefaultInstaller = () => {
+  if (!_defaultInstaller) {
+    _defaultInstaller = createCompatInstaller();
+  }
+  return _defaultInstaller;
+};
+export default getDefaultInstaller;

@@ -1,4 +1,5 @@
 import picocolors from 'picocolors';
+import { pipe, filter } from 'remeda';
 import { shortenPath } from '../shared/path-shortener.js';
 
 export const toConsoleString = (warning) => {
@@ -18,12 +19,15 @@ export const toConsoleString = (warning) => {
     ? `Undefined variable '${varName}'`
     : 'Undefined variable';
 
-  const parts = [
-    picocolors.bgYellow(picocolors.black('[WARNING]')),
-    picocolors.yellow(title),
-    picocolors.dim('at'),
-    picocolors.cyan(locationStr)
-  ].filter(Boolean);
+  const parts = pipe(
+    [
+      picocolors.bgYellow(picocolors.black('[WARNING]')),
+      picocolors.yellow(title),
+      picocolors.dim('at'),
+      picocolors.cyan(locationStr)
+    ],
+    filter(Boolean)
+  );
 
   return parts.join(' ');
 };

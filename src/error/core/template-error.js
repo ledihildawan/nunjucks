@@ -1,4 +1,4 @@
-import { pipe } from 'remeda';
+import { pipe, isNonNullish } from 'remeda';
 
 const TEMPLATE_ERROR = Symbol('TemplateError');
 
@@ -18,17 +18,17 @@ export function createTemplateError(message, lineno, colno, info) {
   err.firstUpdate = true;
   if (info) {
     if (info.code) err.code = info.code;
-    if (info.subject !== undefined && info.subject !== null) err.subject = info.subject;
+    if (isNonNullish(info.subject)) err.subject = info.subject;
     if (info.phase) err.phase = info.phase;
-    if (info.templateName !== undefined && info.templateName !== null) err.templateName = info.templateName;
+    if (isNonNullish(info.templateName)) err.templateName = info.templateName;
   }
 
   err.applyLocation = function(path, includeChain) {
     let msg = '(' + (path || 'unknown path') + ')';
     if (this.firstUpdate) {
-      if (this.lineno !== null && this.colno !== null) {
+      if (isNonNullish(this.lineno) && isNonNullish(this.colno)) {
         msg += ` [Line ${this.lineno + 1}, Column ${this.colno + 1}]`;
-      } else if (this.lineno !== null) {
+      } else if (isNonNullish(this.lineno)) {
         msg += ` [Line ${this.lineno + 1}]`;
       }
     }

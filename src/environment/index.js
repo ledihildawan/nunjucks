@@ -10,13 +10,13 @@ import fs from 'fs';
 import {
   isRelativePath,
   resolveTemplatePath,
-} from './template-loader-helpers.js';
+} from './loader-helpers.js';
 import {
   findCachedTemplate,
   normalizeIncludeChain,
   resolveTemplateName,
   validateTemplateName
-} from './template-resolver.js';
+} from './resolver.js';
 import { wrapAsyncFilter } from './filter-wrappers.js';
 import { normalizeLoaders, registerBuiltIns } from './built-ins.js';
 import { getCallerLocation } from '../shared/caller-location.js';
