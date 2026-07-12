@@ -2,6 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import { liftSuper } from './super-transforms.js';
 import {
   NodeList, Root, Block, FunCall, AstSymbol, Super, Literal,
+  getNodeTypeName,
 } from '../nodes/index.js';
 
 describe('liftSuper', () => {
@@ -20,7 +21,7 @@ describe('liftSuper', () => {
     const result = liftSuper(root);
     const resultBlock = result.children[0];
     const secondChild = resultBlock.body.children[1];
-    expect(secondChild.typename).toBe('Symbol');
+    expect(getNodeTypeName(secondChild)).toBe('Symbol');
   });
 
   test('result has correct block name', () => {

@@ -13,6 +13,7 @@ import {
   ArrayNode,
   Dict,
   Pair,
+  isDict,
 } from '../../nodes/index.js';
 import { nextToken, peekToken, skip, fail } from '../cursor.js';
 
@@ -51,7 +52,7 @@ export const parseAggregate = (ctx) => {
       }
     }
 
-    if (node?.typename === 'Dict') {
+    if (isDict(node)) {
       const key = ctx.parsePrimary();
 
       if (!skip(ctx, TOKEN_COLON)) {

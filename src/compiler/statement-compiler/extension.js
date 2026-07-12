@@ -1,4 +1,4 @@
-import { NodeList } from '../../nodes/index.js';
+import { NodeList, isNodeList } from '../../nodes/index.js';
 
 export const compileCallExtension = (ctx, node, frame, useAsync) => {
   const args = node.args;
@@ -28,15 +28,15 @@ export const compileCallExtension = (ctx, node, frame, useAsync) => {
   }
 
   if (args) {
-    if (args.typename !== 'NodeList') {
+    if (!isNodeList(args)) {
       ctx.fail('compileCallExtension: arguments must be a NodeList, ' +
         'use `parser.parseSignature`');
     }
 
-    args.children.forEach((arg, i) => {
+    args.children.forEach((arg, i, arr) => {
       ctx._compileExpression(arg, frame);
 
-      if (i !== args.children.length - 1 || contentArgs.length) {
+      if (i !== arr.length - 1 || contentArgs.length) {
         ctx._emit(',');
       }
     });

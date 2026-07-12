@@ -69,7 +69,7 @@ async function myFilter(value) {
 }`
     : `// Filter error - check input values and implementation
 function myFilter(value) {
-  if (value == null) return '';
+  if (value === null || value === undefined) return '';
   // ... filter logic
 }`;
 
@@ -78,7 +78,7 @@ function myFilter(value) {
     undefinedName: null,
     causes: [
       '**Filter threw an error** during execution',
-      '**Error**: `' + errorMsg + '`',
+      `**Error**: \`${errorMsg}\``,
       isAsyncError
         ? '**Async filter** must handle rejections with `try-catch`'
         : 'Filter should handle **null/undefined** inputs'

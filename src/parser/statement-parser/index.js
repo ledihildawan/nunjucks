@@ -161,7 +161,7 @@ export const parseStatement = (ctx) => {
   }
 
   if (ctx.breakOnBlocks &&
-    (ctx.breakOnBlocks || []).indexOf(tok.value) !== -1) {
+    (ctx.breakOnBlocks || []).includes(tok.value)) {
     return null;
   }
 
@@ -198,11 +198,11 @@ export const parseStatement = (ctx) => {
       if (ctx.extensions.length) {
         for (let i = 0; i < ctx.extensions.length; i++) {
           const ext = ctx.extensions[i];
-          if ((ext.tags || []).indexOf(tok.value) !== -1) {
+          if ((ext.tags || []).includes(tok.value)) {
             return ext.parse(ctx, nodes, lexer);
           }
         }
       }
-      fail(ctx, 'unknown block tag: ' + tok.value, tok.lineno, tok.colno);
+      fail(ctx, `unknown block tag: ${tok.value}`, tok.lineno, tok.colno);
   }
 };

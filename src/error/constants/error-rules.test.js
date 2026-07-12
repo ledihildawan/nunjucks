@@ -31,7 +31,7 @@ describe('ERROR_RULES', () => {
   });
 
   test('last rule is operator_error', () => {
-    const last = ERROR_RULES[ERROR_RULES.length - 1];
+    const last = ERROR_RULES.at(-1);
     expect(last.category).toBe('operator_error');
   });
 

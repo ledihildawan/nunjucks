@@ -65,7 +65,7 @@ export const withScopedSyntax = (ctx, func) => {
 };
 
 export const templateNameStr = (ctx) =>
-  ctx.templateName == null ? 'undefined' : JSON.stringify(ctx.templateName);
+  ctx.templateName === null || ctx.templateName === undefined ? 'undefined' : JSON.stringify(ctx.templateName);
 
 export const emitFuncBegin = (ctx, node, name) => {
   ctx.buffer = 'output';

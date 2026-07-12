@@ -3,6 +3,7 @@ import { compile } from '../compiler/index.js';
 import { prettifyError } from '../error/index.js';
 import { createMappedError } from '../helpers/source-map.js';
 import { createContext } from '../runtime/context.js';
+import { HOOK_EVENTS } from '../runtime/hooks.js';
 import {
   createFrame,
   createSafeString,
@@ -26,6 +27,8 @@ import {
   keys,
 } from '../runtime/index.js';
 import { createObj } from '../object/index.js';
+
+const Template = Symbol('Template');
 
 const globalRuntime = {
   createFrame,
@@ -72,8 +75,8 @@ const extractFrameDetails = (e, sourceLineno, sourceColno, sourceMap, currentPat
 
   const errColno = defaultTo(e.colno, 0);
   const finalColno = (sourceColno > 0) ? sourceColno : errColno;
-  const templateLocation = currentPath + ':' + sourceLineno + ':' + finalColno;
-  let msg = '(' + currentPath + ')';
+  const templateLocation = `${currentPath}:${sourceLineno}:${finalColno}`;
+  let msg = `(${currentPath})`;
   if (sourceLineno && finalColno > 0) {
     msg += ` [Line ${sourceLineno}, Column ${finalColno}]`;
   } else if (sourceLineno) {
@@ -85,8 +88,8 @@ const extractFrameDetails = (e, sourceLineno, sourceColno, sourceMap, currentPat
   newError.lineno = sourceLineno;
   newError.colno = finalColno;
   newError._includeChain = e._includeChain || null;
-  const renderLine = 'at ' + (e.getterName || 'root') + ' (' + templateLocation + ')';
-  newError.stack = newError.message + '\n    ' + renderLine + '\n    at Environment.render';
+  const renderLine = `at ${e.getterName || 'root'} (${templateLocation})`;
+  newError.stack = `${newError.message}\n    ${renderLine}\n    at Environment.render`;
   return newError;
 };
 
@@ -97,7 +100,7 @@ const createFallbackEnv = () => ({
   _renderingTemplates: new Set(),
   async getTemplate(name, eagerCompile, includeChain, ignoreMissing) {
     if (ignoreMissing) return null;
-    const err = new Error('template not found: ' + name);
+    const err = new Error(`template not found: ${name}`);
     err.code = 'FILE_NOT_FOUND';
     err.subject = name;
     throw err;
@@ -105,7 +108,9 @@ const createFallbackEnv = () => ({
 });
 
 export function createTemplate(src, env, path, eagerCompile) {
-  const obj = createObj('Template', {
+  const obj = createObj({
+    name: 'Template',
+    [Template]: true,
     init: function(src, env, path, eagerCompile) {
       this.env = env || createFallbackEnv();
       this.path = path;
@@ -216,25 +221,35 @@ export function createTemplate(src, env, path, eagerCompile) {
       }
     },
     _compile: function() {
+      const startTime = Date.now();
+      this.env.emit(HOOK_EVENTS.TEMPLATE_COMPILE_START, { template: this, path: this.path });
+
       let props;
 
-      if (this.tmplProps) {
-        props = this.tmplProps;
-      } else {
-        const source = compile(
-          this.tmplStr,
-          [],
-          this.env.extensionsList,
-          this.path,
-          this.env.opts
-        );
-        const func = new Function(source);
-        props = func();
-      }
+      try {
+        if (this.tmplProps) {
+          props = this.tmplProps;
+        } else {
+          const source = compile(
+            this.tmplStr,
+            [],
+            this.env.extensionsList,
+            this.path,
+            this.env.opts
+          );
+          const func = new Function(source);
+          props = func();
+        }
 
-      this.blocks = this._getBlocks(props);
-      this.rootRenderFunc = props.root;
-      this.compiled = true;
+        this.blocks = this._getBlocks(props);
+        this.rootRenderFunc = props.root;
+        this.compiled = true;
+
+        this.env.emit(HOOK_EVENTS.TEMPLATE_COMPILE_COMPLETE, { template: this, path: this.path, duration: Date.now() - startTime });
+      } catch (error) {
+        this.env.emit(HOOK_EVENTS.TEMPLATE_COMPILE_ERROR, { template: this, path: this.path, error, duration: Date.now() - startTime });
+        throw error;
+      }
     },
     _getBlocks: function(props) {
       const blocks = {};
@@ -249,3 +264,5 @@ export function createTemplate(src, env, path, eagerCompile) {
   obj.init(src, env, path, eagerCompile);
   return obj;
 }
+
+export const isTemplate = (obj) => obj?.[Template] === true;

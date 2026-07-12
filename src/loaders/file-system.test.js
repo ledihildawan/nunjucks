@@ -3,6 +3,7 @@ import { mkdtempSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createFileSystemLoader } from './file-system.js';
+import { isLoader } from './base.js';
 
 let tmpDir;
 
@@ -19,9 +20,9 @@ afterEach(() => {
 });
 
 describe('FileSystemLoader', () => {
-  test('creates loader with typename', () => {
+  test('creates loader with symbol marker', () => {
     const loader = createFileSystemLoader(tmpDir);
-    expect(loader.typename).toBe('FileSystemLoader');
+    expect(isLoader(loader)).toBe(true);
   });
 
   test('constructor normalizes search paths', () => {

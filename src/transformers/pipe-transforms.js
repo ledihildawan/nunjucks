@@ -9,6 +9,13 @@ import {
   If,
   Set,
   Output,
+  isBlock,
+  isPipe,
+  isCallExtensionAsync,
+  isOutput,
+  isSet,
+  isFor,
+  isIf,
 } from '../nodes/index.js';
 import { depthWalk } from './walk.js';
 import { createGensym } from './symbol-generator.js';
@@ -18,11 +25,11 @@ const _liftPipes = (node, asyncPipes, prop, gensym) => {
 
   let walked = depthWalk(prop ? node[prop] : node, (descNode) => {
     let symbol;
-    if (descNode.typename === 'Block') {
+    if (isBlock(descNode)) {
       return descNode;
-    } else if ((descNode.typename === 'Pipe' &&
-      asyncPipes.indexOf(descNode.name.value) !== -1) ||
-      descNode.typename === 'CallExtensionAsync') {
+    } else if ((isPipe(descNode) &&
+      asyncPipes.includes(descNode.name.value)) ||
+      isCallExtensionAsync(descNode)) {
       symbol = AstSymbol(
         descNode.lineno,
         descNode.colno,
@@ -55,15 +62,15 @@ const _liftPipes = (node, asyncPipes, prop, gensym) => {
 export const liftPipes = (ast, asyncPipes) => {
   const gensym = createGensym();
   return depthWalk(ast, (node) => {
-    if (node.typename === 'Output') {
+    if (isOutput(node)) {
       return _liftPipes(node, asyncPipes, null, gensym);
-    } else if (node.typename === 'Set') {
+    } else if (isSet(node)) {
       return _liftPipes(node, asyncPipes, 'value', gensym);
-    } else if (node.typename === 'For') {
+    } else if (isFor(node)) {
       return _liftPipes(node, asyncPipes, 'arr', gensym);
-    } else if (node.typename === 'If') {
+    } else if (isIf(node)) {
       return _liftPipes(node, asyncPipes, 'cond', gensym);
-    } else if (node.typename === 'CallExtensionAsync') {
+    } else if (isCallExtensionAsync(node)) {
       return _liftPipes(node, asyncPipes, 'args', gensym);
     }
     return undefined;

@@ -11,6 +11,7 @@ import {
   Compare, CompareOperand,
   CallExtension, CallExtensionAsync,
   NullishCoalesce, Concat,
+  getNodeTypeName,
 } from './index.js';
 
 describe('Node', () => {
@@ -22,7 +23,7 @@ describe('Node', () => {
 
   test('typename from extended class', () => {
     const MyNode = Node.extend('MyNode', { fields: [] });
-    expect(MyNode(0, 0).typename).toBe('MyNode');
+    expect(getNodeTypeName(MyNode(0, 0))).toBe('MyNode');
   });
 
   test('iterFields iterates over field values', () => {
@@ -47,7 +48,7 @@ describe('Value', () => {
   });
 
   test('typename is Value', () => {
-    expect(Value(0, 0).typename).toBe('Value');
+    expect(getNodeTypeName(Value(0, 0))).toBe('Value');
   });
 
   test('findAll returns 0 for leaf value (it only traverses children/fields)', () => {
@@ -76,7 +77,7 @@ describe('NodeList', () => {
   });
 
   test('typename is NodeList', () => {
-    expect(NodeList(0, 0).typename).toBe('NodeList');
+    expect(getNodeTypeName(NodeList(0, 0))).toBe('NodeList');
   });
 
   test('findAll finds nodes in children', () => {
@@ -90,7 +91,7 @@ describe('Root', () => {
   test('is NodeList and has typename Root', () => {
     const r = Root(0, 0);
     expect(r instanceof NodeList).toBe(true);
-    expect(r.typename).toBe('Root');
+    expect(getNodeTypeName(r)).toBe('Root');
   });
 });
 
@@ -167,8 +168,8 @@ describe('If', () => {
   test('stores cond, body, else_', () => {
     const i = If(0, 0, Literal(1, 1, true), NodeList(2, 2), NodeList(3, 3));
     expect(i.cond.value).toBe(true);
-    expect(i.body.typename).toBe('NodeList');
-    expect(i.else_.typename).toBe('NodeList');
+    expect(getNodeTypeName(i.body)).toBe('NodeList');
+    expect(getNodeTypeName(i.else_)).toBe('NodeList');
   });
 });
 
@@ -196,7 +197,7 @@ describe('Macro / Caller', () => {
   });
 
   test('Caller extends Macro', () => {
-    expect(Caller(0, 0, '', NodeList(), NodeList()).typename).toBe('Caller');
+    expect(getNodeTypeName(Caller(0, 0, '', NodeList(), NodeList()))).toBe('Caller');
   });
 });
 
@@ -213,13 +214,13 @@ describe('FromImport', () => {
   test('stores template, names, withContext', () => {
     const fi = FromImport(0, 0, Literal(1, 1, 'foo.njk'), NodeList(2, 2), true);
     expect(fi.template.value).toBe('foo.njk');
-    expect(fi.names.typename).toBe('NodeList');
+    expect(getNodeTypeName(fi.names)).toBe('NodeList');
     expect(fi.withContext).toBe(true);
   });
 
   test('defaults names to empty NodeList', () => {
     const fi = FromImport(0, 0, Literal(1, 1, 'foo.njk'), undefined, false);
-    expect(fi.names.typename).toBe('NodeList');
+    expect(getNodeTypeName(fi.names)).toBe('NodeList');
     expect(fi.names.children).toEqual([]);
   });
 });
@@ -231,7 +232,7 @@ describe('FunCall / Pipe', () => {
   });
 
   test('Pipe extends FunCall', () => {
-    expect(Pipe(0, 0, AstSymbol(1, 1, 'f'), NodeList()).typename).toBe('Pipe');
+    expect(getNodeTypeName(Pipe(0, 0, AstSymbol(1, 1, 'f'), NodeList()))).toBe('Pipe');
   });
 });
 
@@ -239,7 +240,7 @@ describe('Block', () => {
   test('stores name and body', () => {
     const b = Block(0, 0, 'content', NodeList(1, 1));
     expect(b.name).toBe('content');
-    expect(b.body.typename).toBe('NodeList');
+    expect(getNodeTypeName(b.body)).toBe('NodeList');
   });
 });
 

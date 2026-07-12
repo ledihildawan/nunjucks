@@ -1,30 +1,31 @@
-import { AstSymbol } from '../../nodes/index.js';
+import { AstSymbol, isSymbol, isFunCall, isLookupVal, isLiteral, isOptionalChain, getNodeTypeName, BracketNotation } from '../../nodes/index.js';
 import { compileAggregate } from './container.js';
 
 const getNodeName = (ctx, node, isBracketCall = false) => {
-  switch (node.typename) {
+  const typeName = getNodeTypeName(node);
+  switch (typeName) {
     case 'Symbol':
       return node.value;
     case 'FunCall':
       return 'the return value of (' + getNodeName(ctx, node.name) + ')';
     case 'LookupVal': {
       const target = getNodeName(ctx, node.target);
-      const isBracket = node.isBracketNotation === true;
-      if (node.val.typename === 'Symbol') {
+      const isBracket = node[BracketNotation] === true;
+      if (isSymbol(node.val)) {
         return target + (isBracket ? '[' + getNodeName(ctx, node.val) + ']' : '.' + getNodeName(ctx, node.val));
       }
-      if (node.val.typename === 'Literal' && typeof node.val.value === 'string') {
+      if (isLiteral(node.val) && typeof node.val.value === 'string') {
         return target + (isBracket ? '["' + node.val.value + '"]' : '.' + node.val.value);
       }
       return target + '[' + getNodeName(ctx, node.val) + ']';
     }
     case 'OptionalChain': {
       const target = getNodeName(ctx, node.target);
-      const isBracket = node.isBracketNotation === true;
-      if (node.val.typename === 'Symbol') {
+      const isBracket = node[BracketNotation] === true;
+      if (isSymbol(node.val)) {
         return target + (isBracket ? '?.[' + getNodeName(ctx, node.val) + ']' : '?.' + getNodeName(ctx, node.val));
       }
-      if (node.val.typename === 'Literal' && typeof node.val.value === 'string') {
+      if (isLiteral(node.val) && typeof node.val.value === 'string') {
         return target + (isBracket ? '?.["' + node.val.value + '"]' : '?.' + node.val.value);
       }
       return target + '?.[' + getNodeName(ctx, node.val) + ']';

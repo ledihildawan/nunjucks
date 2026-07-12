@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { createTemplateError, prettifyError } from './template-error.js';
+import { createTemplateError, prettifyError, isTemplateError } from './template-error.js';
 
 describe('TemplateError', () => {
   test('stores message, lineno, colno', () => {
@@ -60,7 +60,7 @@ describe('TemplateError', () => {
 describe('createTemplateError', () => {
   test('creates TemplateError with given args', () => {
     const err = createTemplateError('err', 2, 3, { phase: 'compile' });
-    expect(err.typename).toBe('TemplateError');
+    expect(isTemplateError(err)).toBe(true);
     expect(err.lineno).toBe(2);
     expect(err.phase).toBe('compile');
   });
@@ -78,13 +78,13 @@ describe('prettifyError', () => {
   test('keeps internals when withInternals is true', () => {
     const err = createTemplateError('test', 1, 2);
     const result = prettifyError({ path: 't.njk', err, withInternals: true });
-    expect(result.typename).toBe('TemplateError');
+    expect(isTemplateError(result)).toBe(true);
   });
 
   test('strips internals by default', () => {
     const err = createTemplateError('test', 1, 2);
     const result = prettifyError({ path: 't.njk', err });
     expect(result).toBeInstanceOf(Error);
-    expect(result.typename).not.toBe('TemplateError');
+    expect(isTemplateError(result)).toBe(false);
   });
 });

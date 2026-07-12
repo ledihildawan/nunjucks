@@ -37,9 +37,8 @@ const readSource = (fullpath, noCache) => ({
 
 export function createNodeResolveLoader(opts = {}) {
   const loader = createLoader();
-  loader.typename = 'NodeResolveLoader';
   loader.pathsToNames = {};
-  loader.noCache = !!opts.noCache;
+  loader.noCache = Boolean(opts.noCache);
   loader.paths = opts.paths || [];
   loader.async = true;
 

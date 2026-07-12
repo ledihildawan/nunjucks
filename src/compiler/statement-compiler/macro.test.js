@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { compileMacroPublic, compileCaller } from './macro.js';
-import { AstSymbol, Dict, Pair } from '../../nodes/index.js';
+import { AstSymbol, Dict, Pair, getNodeTypeName } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];
@@ -28,7 +28,7 @@ const makeCtx = () => {
     set buffer(v) { buf = v; },
     assertType: (node, ...types) => {
       if (!types.some(t => node instanceof t)) {
-        throw new Error(`assertType: invalid type: ${node.typename}`);
+        throw new Error(`assertType: invalid type: ${getNodeTypeName(node)}`);
       }
     },
   };

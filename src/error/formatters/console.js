@@ -127,7 +127,7 @@ const formatLocationLabel = (state) => {
 
   if (jsCaller && templatePath && !templatePath.match(/\.(html|njk|j2|tmpl)$/i)) {
     const normalizedPath = normalizeDrivePath(templatePath);
-    const url = resolveIdeLink(state.ide || 'vscode', normalizedPath, 1, col && col !== '?' ? parseInt(col, 10) : 1);
+    const url = resolveIdeLink(state.ide || 'vscode', normalizedPath, 1, col && col !== '?' ? Number(col) : 1);
     const display = shortenPath(normalizedPath);
     const linkText = col && col !== '?' ? `${display}:${col}` : display;
     const link = makeHyperlink(linkText, url);

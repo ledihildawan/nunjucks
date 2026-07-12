@@ -14,10 +14,11 @@ const makeCtx = () => {
 describe('compileFunCall', () => {
   test('emits callWrap with lineno, colno, name, args', () => {
     const ctx = makeCtx();
+    const AstSymbol = Symbol('Symbol');
     const node = {
       lineno: 3,
       colno: 7,
-      name: { typename: 'Symbol', value: 'myFunc', mock: 'myFunc' },
+      name: { [AstSymbol]: true, value: 'myFunc', mock: 'myFunc' },
       args: { children: [{ mock: 'arg1' }, { mock: 'arg2' }] },
     };
     compileFunCall(ctx, node);

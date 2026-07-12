@@ -23,7 +23,6 @@ export function getCallerLocation() {
       'createEnvironment',
       'createTemplate',
       'createSandboxedContext',
-      'renderString',
       'render',
     ];
 
@@ -37,8 +36,8 @@ export function getCallerLocation() {
     if (match) {
       const fullPath = match[1];
       const shortFileName = fullPath.split(/[\\/]/).pop();
-      const lineNum = parseInt(match[2], 10);
-      const colNum = parseInt(match[3], 10);
+      const lineNum = Number(match[2]);
+      const colNum = Number(match[3]);
 
       if (/\.(?:mjs|cjs|ts|jsx|tsx|js|sjs)$/i.test(fullPath)) {
         return {
@@ -54,7 +53,7 @@ export function getCallerLocation() {
     if (simpleMatch && /\.(?:mjs|cjs|ts|jsx|tsx|js|sjs)$/i.test(simpleMatch[1])) {
       const fullPath = simpleMatch[1];
       const shortFileName = fullPath.split(/[\\/]/).pop();
-      const lineNum = parseInt(simpleMatch[2], 10);
+      const lineNum = Number(simpleMatch[2]);
 
       return {
         file: shortFileName,

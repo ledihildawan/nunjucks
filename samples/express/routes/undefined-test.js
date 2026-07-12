@@ -29,7 +29,7 @@ router.get('/strict', async (req, res) => {
   console.log('Template:', template);
   
   try {
-    await strictEnv.renderString(template, context);
+    await strictEnv.render(template, context);
     res.send('Should have thrown error');
   } catch (e) {
     console.log('Error templatePath:', e.templatePath);

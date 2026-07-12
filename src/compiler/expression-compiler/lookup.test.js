@@ -26,7 +26,7 @@ describe('compileLookupVal', () => {
 
   test('emits slice helper for Slice val with all parts', () => {
     const ctx = makeCtx();
-    const sliceVal = new Slice(1, 1, { mock: 'start' }, { mock: 'stop' }, { mock: 'step' });
+    const sliceVal = Slice(1, 1, { mock: 'start' }, { mock: 'stop' }, { mock: 'step' });
     compileLookupVal(ctx, {
       target: { mock: 'arr' },
       val: sliceVal,
@@ -38,7 +38,7 @@ describe('compileLookupVal', () => {
 
   test('emits null for missing slice start/stop/step', () => {
     const ctx = makeCtx();
-    const sliceVal = new Slice(1, 1, null, null, null);
+    const sliceVal = Slice(1, 1, null, null, null);
     compileLookupVal(ctx, {
       target: { mock: 'arr' },
       val: sliceVal,

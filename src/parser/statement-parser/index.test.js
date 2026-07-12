@@ -3,6 +3,7 @@ import { parseStatement } from './index.js';
 import { createParser } from '../index.js';
 import { lex } from '../../lexer/tokenizer.js';
 import { TOKEN_BLOCK_START } from '../../lexer/token-types.js';
+import { getNodeTypeName } from '../../nodes/index.js';
 
 const makeParser = (src) => {
   const p = createParser(lex(src));
@@ -30,73 +31,73 @@ describe('parseStatement dispatch', () => {
   test('dispatches if', () => {
     const p = advanceToStatement(makeParser('{% if x %}y{% endif %}'));
     const node = parseStatement(p);
-    expect(node.typename).toBe('If');
+    expect(getNodeTypeName(node)).toBe('If');
   });
 
   test('dispatches for', () => {
     const p = advanceToStatement(makeParser('{% for x in y %}z{% endfor %}'));
     const node = parseStatement(p);
-    expect(node.typename).toBe('For');
+    expect(getNodeTypeName(node)).toBe('For');
   });
 
   test('dispatches block', () => {
     const p = advanceToStatement(makeParser('{% block name %}content{% endblock %}'));
     const node = parseStatement(p);
-    expect(node.typename).toBe('Block');
+    expect(getNodeTypeName(node)).toBe('Block');
   });
 
   test('dispatches extends', () => {
     const p = advanceToStatement(makeParser('{% extends "base.njk" %}'));
     const node = parseStatement(p);
-    expect(node.typename).toBe('Extends');
+    expect(getNodeTypeName(node)).toBe('Extends');
   });
 
   test('dispatches include', () => {
     const p = advanceToStatement(makeParser('{% include "header.njk" %}'));
     const node = parseStatement(p);
-    expect(node.typename).toBe('Include');
+    expect(getNodeTypeName(node)).toBe('Include');
   });
 
   test('dispatches set', () => {
     const p = advanceToStatement(makeParser('{% set x = 1 %}'));
     const node = parseStatement(p);
-    expect(node.typename).toBe('Set');
+    expect(getNodeTypeName(node)).toBe('Set');
   });
 
   test('dispatches macro', () => {
     const p = advanceToStatement(makeParser('{% macro mymacro() %}body{% endmacro %}'));
     const node = parseStatement(p);
-    expect(node.typename).toBe('Macro');
+    expect(getNodeTypeName(node)).toBe('Macro');
   });
 
   test('dispatches call', () => {
     const p = advanceToStatement(makeParser('{% call block() %}body{% endcall %}'));
     const node = parseStatement(p);
-    expect(node.typename).toBe('Output');
+    expect(getNodeTypeName(node)).toBe('Output');
   });
 
   test('dispatches import', () => {
     const p = advanceToStatement(makeParser('{% import "macros.njk" as m %}'));
     const node = parseStatement(p);
-    expect(node.typename).toBe('Import');
+    expect(getNodeTypeName(node)).toBe('Import');
   });
 
   test('dispatches from', () => {
     const p = advanceToStatement(makeParser('{% from "macros.njk" import mymacro %}'));
     const node = parseStatement(p);
-    expect(node.typename).toBe('FromImport');
+    expect(getNodeTypeName(node)).toBe('FromImport');
   });
 
   test('dispatches filter', () => {
     const p = advanceToStatement(makeParser('{% filter upper %}text{% endfilter %}'));
     const node = parseStatement(p);
-    expect(node.typename).toBe('Output');
+    expect(getNodeTypeName(node)).toBe('Output');
   });
 
   test('dispatches switch', () => {
     const p = advanceToStatement(makeParser('{% switch x %}{% case 1 %}{% endswitch %}'));
     const node = parseStatement(p);
-    expect(node.typename).toBe('Switch');
+    expect(getNodeTypeName(node)).toBe('Switch');
   });
 
   test('fails on unknown tag', () => {
@@ -117,11 +118,19 @@ describe('parseStatement dispatch', () => {
   });
 
   test('dispatches to extension tags', () => {
-    const ext = { tags: ['custom'], parse: () => ({ typename: 'Custom' }) };
+    const Custom = Symbol('Custom');
+    const ext = {
+      tags: ['custom'],
+      parse: () => {
+        const node = { init: function() {} };
+        node[Custom] = true;
+        return node;
+      }
+    };
     const p = advanceToStatement(makeParser('{% custom %}'));
     p.extensions = [ext];
     const node = parseStatement(p);
-    expect(node.typename).toBe('Custom');
+    expect(getNodeTypeName(node)).toBe('Custom');
   });
 
   test('fails when no extension matches', () => {

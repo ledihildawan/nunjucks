@@ -30,6 +30,7 @@ export const compileExtends = (ctx, node, frame) => {
 export const compileInclude = (ctx, node, frame) => {
   const tmplVar = ctx._tmpid();
   const resultVar = ctx._tmpid();
+  const useFork = node.only || node.with;
 
   ctx._emitLine(`lineno = ${node.lineno}; colno = ${node.colno != null ? node.colno : 0};`);
   ctx._emit(`var ${tmplVar} = await env.getTemplate(`);
@@ -38,6 +39,17 @@ export const compileInclude = (ctx, node, frame) => {
   const includeChain = `{parentTmpl: ${ctx._templateName()}, parentLineno: ${node.lineno + 1}, parentColno: ${node.colno !== undefined ? node.colno + 1 : 0}}`;
   ctx._emitLine(`, false, ${includeChain}, ${ignoreMissing});`);
 
-  ctx._emit(`var ${resultVar} = await ${tmplVar}.render(context.getVariables(), frame);`);
+  if (node.only) {
+    ctx._emit(`var ${resultVar} = await ${tmplVar}.render({}, frame);`);
+  } else if (node.with) {
+    ctx._emit(`var __forkedCtx = context.fork();`);
+    ctx._emit(`var __withData = `);
+    ctx._compileExpression(node.with, frame);
+    ctx._emitLine(';');
+    ctx._emit(`Object.assign(__forkedCtx.ctx, __withData);`);
+    ctx._emit(`var ${resultVar} = await ${tmplVar}.render(__forkedCtx.getVariables(), frame);`);
+  } else {
+    ctx._emit(`var ${resultVar} = await ${tmplVar}.render(context.getVariables(), frame);`);
+  }
   ctx._emitLine(`${ctx.buffer} += ${resultVar};`);
 };

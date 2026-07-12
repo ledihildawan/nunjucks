@@ -20,7 +20,7 @@ export const parsePrimary = (ctx, noPostfix) => {
   } else if (tok.type === TOKEN_STRING) {
     val = tok.value;
   } else if (tok.type === TOKEN_INT) {
-    val = parseInt(tok.value, 10);
+    val = Number(tok.value);
   } else if (tok.type === TOKEN_FLOAT) {
     val = parseFloat(tok.value);
   } else if (tok.type === TOKEN_BOOLEAN) {

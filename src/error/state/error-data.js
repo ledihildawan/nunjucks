@@ -18,7 +18,7 @@ const parseJsCallerLines = (jsCallerSource, jsCallerErrorLine) => {
     const colonIdx = line.indexOf(':');
     const lineNum = colonIdx > 0 ? line.substring(0, colonIdx).trim() : '';
     const code = colonIdx > 0 ? line.substring(colonIdx + 1) : line;
-    const parsedLineNum = parseInt(lineNum, 10);
+    const parsedLineNum = Number(lineNum);
     const isError = jsCallerErrorLine && parsedLineNum === jsCallerErrorLine;
     return { lineNum, code, isError };
   });
@@ -32,7 +32,7 @@ const formatTimestamp = (iso) => {
 const SENSITIVE_KEY = /pass|secret|token|api[-_]?key|auth|credit|ssn|cookie|private/i;
 
 const sanitizeValue = (value, depth = 0) => {
-  if (value == null) return value;
+  if (value === null || value === undefined) return value;
   const type = typeof value;
   if (type === 'function') return '[Function]';
   if (type === 'symbol') return '[Symbol]';
@@ -73,7 +73,7 @@ const snapshotContext = (ctx) => {
 };
 
 const extractSourceLine = (sourceContent, line) => {
-  if (!sourceContent || line == null) return null;
+  if (!sourceContent || line === null || line === undefined) return null;
   const lines = sourceContent.split('\n');
   const idx = line - 1;
   return idx >= 0 && idx < lines.length ? lines[idx] : null;

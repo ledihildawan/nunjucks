@@ -11,7 +11,7 @@ export function normalize(value, defaultValue) {
 export function capitalize(str) {
   str = normalize(str, '');
   const ret = str.toLowerCase();
-  return copySafeness(str, ret.charAt(0).toUpperCase() + ret.slice(1));
+  return copySafeness(str, `${ret.charAt(0).toUpperCase()}${ret.slice(1)}`);
 }
 
 export function center(str, width) {
@@ -25,7 +25,7 @@ export function center(str, width) {
   const spaces = width - str.length;
   const pre = ' '.repeat(Math.round((spaces / 2) - (spaces % 2)));
   const post = ' '.repeat(Math.round(spaces / 2));
-  return copySafeness(str, pre + str + post);
+  return copySafeness(str, `${pre}${str}${post}`);
 }
 
 export function default_(val, def, bool) {
@@ -45,7 +45,14 @@ export function escape(str) {
     return str;
   }
   str = (str === null || str === undefined) ? '' : str;
-  return markSafe(Bun.escapeHTML(str.toString()).replace(/\\/g, '&#92;'));
+  const s = str.toString();
+  return markSafe(s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/\\/g, '&#92;'));
 }
 
 export function safe(str) {
@@ -58,7 +65,14 @@ export function safe(str) {
 
 export function forceescape(str) {
   str = (str === null || str === undefined) ? '' : str;
-  return markSafe(Bun.escapeHTML(str.toString()).replace(/\\/g, '&#92;'));
+  const s = str.toString();
+  return markSafe(s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/\\/g, '&#92;'));
 }
 
 export function indent(str, width, indentfirst) {
@@ -115,13 +129,13 @@ export function replace(str, old, new_, maxCount) {
   let res = '';
 
   if (typeof old === 'number') {
-    old = '' + old;
+    old = String(old);
   } else if (typeof old !== 'string') {
     return str;
   }
 
   if (typeof str === 'number') {
-    str = '' + str;
+    str = String(str);
   }
 
   if (typeof str !== 'string' && !isSafeString(str)) {

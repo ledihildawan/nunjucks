@@ -20,6 +20,18 @@ const envDev = c.environment(c.loader.fileSystem(VIEWS), {
   undefined: 'strict'
 });
 
+app.set('views', VIEWS);
+app.engine('.njk', async (filePath, options, callback) => {
+  try {
+    const name = filePath.split(/[\\/]/).pop();
+    const html = await envDev.render(name, options);
+    callback(null, html);
+  } catch (err) {
+    callback(err);
+  }
+});
+app.set('view engine', 'njk');
+
 app.use('/errors', errorRouter);
 app.use('/sandbox', sandboxRouter);
 app.use('/undefined', undefinedRouter);
@@ -93,7 +105,7 @@ app.get('/', (req, res) => {
         <td><a href="/undefined/strict-array">/undefined/strict-array</a></td>
         <td>Array index out of bounds (strict)</td>
       </tr>
-`;
+  `;
 
   res.send(`
 <!DOCTYPE html>
@@ -173,16 +185,11 @@ app.get('/', (req, res) => {
   `);
 });
 
-app.get('/home', async (req, res) => {
-  try {
-    const html = await envDev.render('home.html', {
-      username: 'John Doe',
-      items: ['Apple', 'Banana', 'Cherry']
-    });
-    res.type('html').send(html);
-  } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString());
-  }
+app.get('/home', (req, res) => {
+  res.render('home.njk', {
+    username: 'John Doe',
+    items: ['Apple', 'Banana', 'Cherry']
+  });
 });
 
 app.get('/info', (req, res) => {

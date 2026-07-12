@@ -55,8 +55,8 @@ function globals() {
       return arr;
     },
 
-    cycler() {
-      return cycler(Array.prototype.slice.call(arguments));
+    cycler(...args) {
+      return cycler([...args]);
     },
 
     joiner(sep) {

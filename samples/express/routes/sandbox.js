@@ -96,7 +96,7 @@ router.get('/test', async (req, res) => {
   for (const test of tests) {
     const env = test.sandbox ? sandboxEnv : normalEnv;
     try {
-      const result = await env.renderString(test.template, context);
+      const result = await env.render(test.template, context);
       results.push({ name: test.name, result, error: null, blocked: false });
     } catch (e) {
       results.push({ name: test.name, result: null, error: e.message, blocked: true });
@@ -160,7 +160,7 @@ router.get('/normal', async (req, res) => {
 
   for (const test of tests) {
     try {
-      const result = await normalEnv.renderString(test.template, context);
+      const result = await normalEnv.render(test.template, context);
       results.push({ name: test.name, result, error: null });
     } catch (e) {
       results.push({ name: test.name, result: null, error: e.message });

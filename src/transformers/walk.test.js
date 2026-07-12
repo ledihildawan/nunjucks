@@ -5,7 +5,7 @@ import {
   ArrayNode, Pair, Dict, LookupVal, Slice,
   If, FunCall, KeywordArgs, Output, TemplateData,
   Add, Sub, Mul, Div, Mod, Not, Compare, CompareOperand,
-  CallExtension, Block,
+  CallExtension, Block, getNodeTypeName, isLiteral,
 } from '../nodes/index.js';
 
 describe('mapCOW', () => {
@@ -47,7 +47,7 @@ describe('walk', () => {
   test('applies func to Literal node', () => {
     const lit = Literal(1, 0, 42);
     const spy = [];
-    const result = walk(lit, (node) => { spy.push(node.typename); });
+    const result = walk(lit, (node) => { spy.push(getNodeTypeName(node)); });
     expect(spy).toContain('Literal');
     expect(result).toBe(lit);
   });
@@ -63,7 +63,7 @@ describe('walk', () => {
     const inner = Literal(2, 0, 1);
     const list = NodeList(1, 0, [inner]);
     const visited = [];
-    walk(list, (node) => { visited.push(node.typename); });
+    walk(list, (node) => { visited.push(getNodeTypeName(node)); });
     expect(visited).toContain('NodeList');
     expect(visited).toContain('Literal');
   });
@@ -72,11 +72,11 @@ describe('walk', () => {
     const inner = Literal(2, 0, 1);
     const list = NodeList(1, 0, [inner]);
     const result = walk(list, (node) => {
-      if (node.typename === 'Literal') {
+      if (isLiteral(node)) {
         return Literal(node.lineno, node.colno, 99);
       }
     });
-    expect(result.typename).toBe('NodeList');
+    expect(getNodeTypeName(result)).toBe('NodeList');
     expect(result.children[0].value).toBe(99);
   });
 
@@ -84,7 +84,7 @@ describe('walk', () => {
     const data = TemplateData(1, 0, 'hello');
     const out = Output(1, 0, [data]);
     const visited = [];
-    walk(out, (node) => { visited.push(node.typename); });
+    walk(out, (node) => { visited.push(getNodeTypeName(node)); });
     expect(visited).toContain('Output');
     expect(visited).toContain('TemplateData');
   });
@@ -94,7 +94,7 @@ describe('walk', () => {
     const args = KeywordArgs(2, 0, [lit]);
     const call = FunCall(1, 0, AstSymbol(1, 0, 'foo'), args);
     const visited = [];
-    walk(call, (node) => { visited.push(node.typename); });
+    walk(call, (node) => { visited.push(getNodeTypeName(node)); });
     expect(visited).toContain('FunCall');
     expect(visited).toContain('Literal');
   });
@@ -104,7 +104,7 @@ describe('walk', () => {
     const right = Literal(1, 0, 2);
     const add = Add(1, 0, left, right);
     const visited = [];
-    walk(add, (node) => { visited.push(node.typename); });
+    walk(add, (node) => { visited.push(getNodeTypeName(node)); });
     expect(visited).toContain('Add');
     expect(visited).toContain('Literal');
   });
@@ -113,24 +113,26 @@ describe('walk', () => {
     const left = Literal(1, 0, 5);
     const compare = Compare(1, 0, left, []);
     const visited = [];
-    walk(compare, (node) => { visited.push(node.typename); });
+    walk(compare, (node) => { visited.push(getNodeTypeName(node)); });
     expect(visited).toContain('Compare');
     expect(visited).toContain('Literal');
   });
 
-  test('throws for unknown typename', () => {
+  test('walks unknown node type using generic Node handler', () => {
     class FakeNode extends Node {
       get typename() { return 'UnknownType'; }
       get fields() { return []; }
     }
     const fakeNode = new FakeNode(1, 1);
-    expect(() => walk(fakeNode, () => {})).toThrow('unknown typename');
+    const visited = [];
+    walk(fakeNode, (node) => { visited.push(getNodeTypeName(node)); });
+    expect(visited).toContain('Node');
   });
 
   test('walks CallExtension', () => {
-    const ext = CallExtension(1, 0, 'myExt', 'method', [], []);
+    const ext = CallExtension('myExt', 'method', [], []);
     const visited = [];
-    walk(ext, (node) => { visited.push(node.typename); });
+    walk(ext, (node) => { visited.push(getNodeTypeName(node)); });
     expect(visited).toContain('CallExtension');
   });
 });
@@ -141,7 +143,7 @@ describe('depthWalk', () => {
     const outer = Literal(1, 0, 2);
     const list = NodeList(1, 0, [inner, outer]);
     const order = [];
-    depthWalk(list, (node) => { order.push(node.typename); });
+    depthWalk(list, (node) => { order.push(getNodeTypeName(node)); });
     expect(order.indexOf('Literal')).toBeLessThan(order.lastIndexOf('NodeList'));
   });
 

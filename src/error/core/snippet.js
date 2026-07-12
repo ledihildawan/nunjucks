@@ -15,7 +15,7 @@ export const getSnippet = (sourceLines, centerLine, context = 3) => {
     return `${prefix}${lineNum}: ${content}`;
   });
 
-  while (lines.length > 1 && lines[lines.length - 1].trim() === `${lines[lines.length - 1].split(':')[0].trim()}:`) {
+  while (lines.length > 1 && lines.at(-1).trim() === `${lines.at(-1).split(':')[0].trim()}:`) {
     lines.pop();
   }
 
@@ -30,7 +30,7 @@ export const extractLineFromSnippet = (snippet) => {
     if (line.trim().startsWith('>>>')) {
       const colonIdx = line.indexOf(':');
       if (colonIdx > 0) {
-        const lineNum = parseInt(line.substring(0, colonIdx).replace('>>>', '').trim(), 10);
+        const lineNum = Number(line.substring(0, colonIdx).replace('>>>', '').trim());
         if (!isNaN(lineNum)) return lineNum;
       }
     }

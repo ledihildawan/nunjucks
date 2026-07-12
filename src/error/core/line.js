@@ -8,15 +8,15 @@ export const getFallbackLine = (extracted, raw) => extracted ?? raw ?? null;
 export const getFallbackCol = (extracted, raw) => extracted ?? raw ?? null;
 
 export const mergeLine = (rawLine, extractedLine) => {
-  if (rawLine != null) return rawLine;
-  if (extractedLine != null) return extractedLine;
+  if (rawLine !== null && rawLine !== undefined) return rawLine;
+  if (extractedLine !== null && extractedLine !== undefined) return extractedLine;
   return null;
 };
 
 export const mergeCol = (rawCol, extractedCol, msgCol) => {
-  if (rawCol != null) return rawCol;
-  if (extractedCol != null) return extractedCol;
-  if (msgCol != null) return msgCol;
+  if (rawCol !== null && rawCol !== undefined) return rawCol;
+  if (extractedCol !== null && extractedCol !== undefined) return extractedCol;
+  if (msgCol !== null && msgCol !== undefined) return msgCol;
   return null;
 };
 

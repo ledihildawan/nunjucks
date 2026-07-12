@@ -1,4 +1,4 @@
-import { AstSymbol, Dict } from '../../nodes/index.js';
+import { AstSymbol, Dict, isDict } from '../../nodes/index.js';
 import { createFrame } from '../../runtime/index.js';
 
 const compileMacro = (ctx, node, frame) => {
@@ -7,8 +7,8 @@ const compileMacro = (ctx, node, frame) => {
   const funcId = 'macro_' + ctx._tmpid();
   const keepFrame = (frame !== undefined);
 
-  node.args.children.forEach((arg, i) => {
-    if (i === node.args.children.length - 1 && arg?.typename === 'Dict') {
+  node.args.children.forEach((arg, i, arr) => {
+    if (i === arr.length - 1 && isDict(arg)) {
       kwargs = arg;
     } else {
       ctx.assertType(arg, AstSymbol);

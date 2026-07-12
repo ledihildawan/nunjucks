@@ -1,4 +1,6 @@
 import {
+  Node,
+  Value,
   NodeList,
   Root,
   Literal,
@@ -53,9 +55,17 @@ import {
   CompareOperand,
   CallExtension,
   CallExtensionAsync,
+  isNode,
+  isNodeList,
+  isCallExtension,
+  isCallExtensionAsync,
+  isRoot,
+  getNodeTypeName,
 } from '../nodes/index.js';
 
 const CONSTRUCTOR_MAP = {
+  Node,
+  Value,
   NodeList,
   Root,
   Literal,
@@ -120,7 +130,7 @@ export const mapCOW = (arr, func) => {
 
     if (item !== arr[i]) {
       if (!res) {
-        res = arr.slice();
+        res = [...arr];
       }
       res[i] = item;
     }
@@ -129,7 +139,8 @@ export const mapCOW = (arr, func) => {
 };
 
 export const walk = (ast, func, depthFirst) => {
-  if (!ast || !ast.typename) {
+  // Handle nodes that don't have NODE symbol (like CallExtension)
+  if (!ast || (!isNode(ast) && !isCallExtension(ast) && !isCallExtensionAsync(ast))) {
     return ast;
   }
 
@@ -140,17 +151,18 @@ export const walk = (ast, func, depthFirst) => {
     }
   }
 
-  const Ctor = CONSTRUCTOR_MAP[ast.typename];
+  const typeName = getNodeTypeName(ast);
+  const Ctor = CONSTRUCTOR_MAP[typeName];
   if (!Ctor) {
-    throw new Error(`walk: unknown typename ${ast.typename}`);
+    throw new Error(`walk: unknown typename ${typeName}`);
   }
 
-  if (ast.typename === 'NodeList' || ast.typename === 'Root' || (ast.children && Array.isArray(ast.children))) {
+  if (isNodeList(ast) || isRoot(ast) || (ast.children && Array.isArray(ast.children))) {
     const children = mapCOW(ast.children, (node) => walk(node, func, depthFirst));
     if (children !== ast.children) {
       ast = Ctor(ast.lineno, ast.colno, children);
     }
-  } else if (ast.typename === 'CallExtension' || ast.typename === 'CallExtensionAsync') {
+  } else if (isCallExtension(ast) || isCallExtensionAsync(ast)) {
     const args = walk(ast.args, func, depthFirst);
     const contentArgs = mapCOW(ast.contentArgs, (node) => walk(node, func, depthFirst));
     if (args !== ast.args || contentArgs !== ast.contentArgs) {

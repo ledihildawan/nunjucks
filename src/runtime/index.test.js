@@ -93,23 +93,23 @@ describe('undefined mode integration', () => {
     const { createEnvironment } = await import('../environment/index.js');
     const env = createEnvironment([], { undefined: 'debug' });
 
-    const result = await env.renderString('{{ user }}', { user: undefined });
+    const result = await env.render('{{ user }}', { user: undefined });
     expect(result).toBe('undefined');
   });
 
-  test('LookupVal (member access) in debug mode throws error', async () => {
+  test('LookupVal (member access) in debug mode shows warning but returns undefined', async () => {
     const { createEnvironment } = await import('../environment/index.js');
     const env = createEnvironment([], { undefined: 'debug' });
 
-    await expect(env.renderString('{{ user.name }}', { user: undefined }))
-      .rejects.toThrow();
+    const result = await env.render('{{ user.name }}', { user: undefined });
+    expect(result).toBe('undefined');
   });
 
   test('optional chaining in debug mode returns undefined without error', async () => {
     const { createEnvironment } = await import('../environment/index.js');
     const env = createEnvironment([], { undefined: 'debug' });
 
-    const result = await env.renderString('{{ user?.name }}', { user: undefined });
+    const result = await env.render('{{ user?.name }}', { user: undefined });
     expect(result).toBe('undefined');
   });
 
@@ -117,7 +117,7 @@ describe('undefined mode integration', () => {
     const { createEnvironment } = await import('../environment/index.js');
     const env = createEnvironment([], { undefined: 'strict' });
 
-    const result = await env.renderString('{{ foo?.() }}', { foo: () => 'Hello' });
+    const result = await env.render('{{ foo?.() }}', { foo: () => 'Hello' });
     expect(result).toBe('Hello');
   });
 
@@ -125,7 +125,7 @@ describe('undefined mode integration', () => {
     const { createEnvironment } = await import('../environment/index.js');
     const env = createEnvironment([]);
 
-    const result = await env.renderString('{{ foo?.() }}', { foo: null });
+    const result = await env.render('{{ foo?.() }}', { foo: null });
     expect(result).toBe('');
   });
 
@@ -133,7 +133,7 @@ describe('undefined mode integration', () => {
     const { createEnvironment } = await import('../environment/index.js');
     const env = createEnvironment([], { undefined: 'strict' });
 
-    const result = await env.renderString('{{ foo?.(x, y) }}', { foo: (a, b) => a + b, x: 3, y: 4 });
+    const result = await env.render('{{ foo?.(x, y) }}', { foo: (a, b) => a + b, x: 3, y: 4 });
     expect(result).toBe('7');
   });
 
@@ -141,7 +141,7 @@ describe('undefined mode integration', () => {
     const { createEnvironment } = await import('../environment/index.js');
     const env = createEnvironment([], { undefined: 'strict' });
 
-    const result = await env.renderString('{{ obj.method?.() }}', { obj: { method: () => 'result' } });
+    const result = await env.render('{{ obj.method?.() }}', { obj: { method: () => 'result' } });
     expect(result).toBe('result');
   });
 
@@ -149,7 +149,7 @@ describe('undefined mode integration', () => {
     const { createEnvironment } = await import('../environment/index.js');
     const env = createEnvironment([]);
 
-    const result = await env.renderString('{{ obj.method?.() }}', { obj: {} });
+    const result = await env.render('{{ obj.method?.() }}', { obj: {} });
     expect(result).toBe('');
   });
 });

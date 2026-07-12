@@ -7,7 +7,7 @@ import { createLoader } from './base.js';
 const normalizeSearchPaths = (searchPaths) =>
   !searchPaths ? ['.'] : (isArray(searchPaths) ? searchPaths : [searchPaths]).map(path.normalize);
 
-const isPathWithinBase = (basePath) => (filePath) => filePath.indexOf(basePath) === 0;
+const isPathWithinBase = (basePath) => (filePath) => filePath.startsWith(basePath);
 
 const resolveFromSearchPath = (name) => (searchPath) => {
   const basePath = path.resolve(searchPath);
@@ -110,11 +110,9 @@ export function createFileSystemLoader(searchPaths, opts = {}) {
   }
 
   const loader = createLoader();
-  loader.typename = 'FileSystemLoader';
-
   loader.pathsToNames = {};
-  loader.noCache = !!opts.noCache;
-  loader.watchEnabled = !!opts.watch;
+  loader.noCache = Boolean(opts.noCache);
+  loader.watchEnabled = Boolean(opts.watch);
   loader.async = true;
   loader.watchedFiles = new Map();
   loader.searchPaths = normalizeSearchPaths(searchPaths);

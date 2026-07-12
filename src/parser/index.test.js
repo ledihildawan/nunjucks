@@ -5,6 +5,7 @@ import {
   TOKEN_DATA, TOKEN_SYMBOL, TOKEN_BLOCK_START, TOKEN_BLOCK_END,
   TOKEN_VARIABLE_START, TOKEN_VARIABLE_END,
 } from '../lexer/token-types.js';
+import { getNodeTypeName } from '../nodes/index.js';
 
 describe('Parser', () => {
   const tokens = lex('Hello {{ name }}');
@@ -104,42 +105,42 @@ describe('Parser', () => {
     parser = createParser();
     parser.init(lex('Hello'));
     const result = parser.parse();
-    expect(result.typename).toBe('NodeList');
+    expect(getNodeTypeName(result)).toBe('NodeList');
   });
 
   test('parseAsRoot returns Root', () => {
     parser = createParser();
     parser.init(lex('Hello'));
     const result = parser.parseAsRoot();
-    expect(result.typename).toBe('Root');
+    expect(getNodeTypeName(result)).toBe('Root');
   });
 });
 
 describe('parse function', () => {
   test('parses plain text', () => {
     const result = parse('Hello world');
-    expect(result.typename).toBe('Root');
+    expect(getNodeTypeName(result)).toBe('Root');
     expect(result.children.length).toBe(1);
   });
 
   test('parses variable expression', () => {
     const result = parse('{{ name }}');
-    expect(result.typename).toBe('Root');
+    expect(getNodeTypeName(result)).toBe('Root');
   });
 
   test('parses block', () => {
     const result = parse('{% if x %}y{% endif %}');
-    expect(result.typename).toBe('Root');
+    expect(getNodeTypeName(result)).toBe('Root');
   });
 
   test('passes extensions to parser', () => {
     const ext = { tags: ['custom'], parse: () => null };
     const result = parse('Hello', [ext]);
-    expect(result.typename).toBe('Root');
+    expect(getNodeTypeName(result)).toBe('Root');
   });
 
   test('passes opts to lexer', () => {
     const result = parse('Hello', undefined, { autoescape: true });
-    expect(result.typename).toBe('Root');
+    expect(getNodeTypeName(result)).toBe('Root');
   });
 });

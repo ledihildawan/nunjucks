@@ -1,16 +1,16 @@
 import EventEmitter from 'events';
 import path from 'node:path';
 
+const Loader = Symbol('Loader');
+
 export function createLoader(opts = {}) {
   const emitter = new EventEmitter();
 
-  let _typename = 'Loader';
   let _resolve = (from, to) => path.resolve(path.dirname(from), to);
-  let _isRelative = (filename) => filename.indexOf('./') === 0 || filename.indexOf('../') === 0;
+  let _isRelative = (filename) => filename.startsWith('./') || filename.startsWith('../');
 
-  return {
-    get typename() { return _typename; },
-    set typename(v) { _typename = v; },
+  const loader = {
+    [Loader]: true,
     get resolve() { return _resolve; },
     set resolve(v) { _resolve = v; },
     get isRelative() { return _isRelative; },
@@ -26,4 +26,10 @@ export function createLoader(opts = {}) {
       emitter.removeListener(event, handler);
     },
   };
+
+  loader[Loader] = true;
+  return loader;
 }
+
+export const isLoader = (obj) => obj?.[Loader] === true;
+export { Loader };

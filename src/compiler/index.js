@@ -1,6 +1,7 @@
 import { pipe, filter, isDefined, reduce } from 'remeda';
 import { parse } from '../parser/index.js';
 import { transform } from '../transformers/index.js';
+import { getNodeTypeName } from '../nodes/index.js';
 import {
   Literal,
   AstSymbol,
@@ -40,7 +41,8 @@ import { COMPILE_FUNCTIONS, compileDispatch } from './node-dispatch.js';
 import { DEFAULT_UNDEFINED_MODE, getUndefinedMode } from '../runtime/undefined.js';
 
 export function createCompiler(templateName, undefinedMode, source) {
-  const obj = createObj('Compiler', {
+  const obj = createObj({
+    name: 'Compiler',
     init: function(templateName, undefinedMode, source) {
       this.templateName = templateName;
       this.codebuf = [];
@@ -142,7 +144,7 @@ export function createCompiler(templateName, undefinedMode, source) {
       return 't_' + this.lastId;
     },
     _templateName: function() {
-      return this.templateName == null ? 'undefined' : JSON.stringify(this.templateName);
+      return this.templateName === null || this.templateName === undefined ? 'undefined' : JSON.stringify(this.templateName);
     },
     _compileChildren: function(node, frame) {
       node.children.forEach((child) => {
@@ -187,8 +189,23 @@ export function createCompiler(templateName, undefinedMode, source) {
       this.compile(node, frame);
     },
     assertType: function(node, ...types) {
-      if (!types.some(t => node.typename === t.typename || node.typename === t)) {
-        this.fail(`assertType: invalid type: ${node.typename}`, node.lineno, node.colno);
+      const typeName = getNodeTypeName(node);
+      const matches = types.some(t => {
+        if (typeof t === 'string') {
+          return typeName === t;
+        }
+        // Check by constructor
+        if (t && t.name && typeName === t.name) {
+          return true;
+        }
+        // Check via prototype chain
+        if (node instanceof t) {
+          return true;
+        }
+        return false;
+      });
+      if (!matches) {
+        this.fail(`assertType: invalid type: ${typeName}`, node.lineno, node.colno);
       }
     },
     compile: function(node, frame) {

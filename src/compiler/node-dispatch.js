@@ -1,3 +1,4 @@
+import { getNodeTypeName } from '../nodes/index.js';
 import {
   compileLiteral,
   compileSymbol,
@@ -56,6 +57,8 @@ import {
 } from './statement-compiler/index.js';
 
 export const COMPILE_FUNCTIONS = {
+  Node: compileLiteral,
+  Value: compileLiteral,
   Literal: compileLiteral,
   Symbol: compileSymbol,
   Group: compileGroup,
@@ -110,10 +113,11 @@ export const COMPILE_FUNCTIONS = {
 };
 
 export const compileDispatch = (ctx, node, frame) => {
-  const fn = COMPILE_FUNCTIONS[node.typename];
+  const typeName = getNodeTypeName(node);
+  const fn = COMPILE_FUNCTIONS[typeName];
   if (fn) {
     return fn(ctx, node, frame);
   } else {
-    ctx.fail(`compile: Cannot compile node: ${node.typename}`, node.lineno, node.colno);
+    ctx.fail(`compile: Cannot compile node: ${typeName}`, node.lineno, node.colno);
   }
 };

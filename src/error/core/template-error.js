@@ -1,12 +1,18 @@
 import { pipe } from 'remeda';
 
+const TEMPLATE_ERROR = Symbol('TemplateError');
+
+export function isTemplateError(obj) {
+  return obj?.[TEMPLATE_ERROR] === true;
+}
+
 export function createTemplateError(message, lineno, colno, info) {
   const err = new Error(message);
   if (Error.captureStackTrace) {
     Error.captureStackTrace(err, createTemplateError);
   }
   err.name = 'Template render error';
-  err.typename = 'TemplateError';
+  err[TEMPLATE_ERROR] = true;
   err.lineno = lineno;
   err.colno = colno;
   err.firstUpdate = true;
@@ -20,9 +26,9 @@ export function createTemplateError(message, lineno, colno, info) {
   err.applyLocation = function(path, includeChain) {
     let msg = '(' + (path || 'unknown path') + ')';
     if (this.firstUpdate) {
-      if (this.lineno != null && this.colno != null) {
+      if (this.lineno !== null && this.colno !== null) {
         msg += ` [Line ${this.lineno + 1}, Column ${this.colno + 1}]`;
-      } else if (this.lineno != null) {
+      } else if (this.lineno !== null) {
         msg += ` [Line ${this.lineno + 1}]`;
       }
     }

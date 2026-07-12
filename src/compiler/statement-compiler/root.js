@@ -31,7 +31,7 @@ export const compileRoot = (ctx, node, frame) => {
   blocks.forEach((block) => {
     const name = block.name.value;
 
-    if (blockNames.indexOf(name) !== -1) {
+    if (blockNames.includes(name)) {
       throw new Error(`Block "${name}" defined more than once.`);
     }
     blockNames.push(name);

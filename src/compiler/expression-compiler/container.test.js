@@ -9,14 +9,14 @@ import {
   compilePair,
   compileKeywordArgs,
 } from './container.js';
-import { Literal, AstSymbol } from '../../nodes/index.js';
+import { Literal, AstSymbol, getNodeTypeName, isLiteral, isSymbol } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];
   const compile = (node) => {
-    if (node?.typename === 'Literal' || node instanceof Literal) {
+    if (isLiteral(node) || node instanceof Literal) {
       emitted.push(`LIT(${node.value})`);
-    } else if (node?.typename === 'Symbol' || node instanceof AstSymbol) {
+    } else if (isSymbol(node) || node instanceof AstSymbol) {
       emitted.push(`SYM(${node.value})`);
     } else if (typeof node === 'string') {
       emitted.push(node);
@@ -25,7 +25,7 @@ const makeCtx = () => {
     } else if (node.children) {
       node.children.forEach((c) => compile(c));
     } else {
-      emitted.push(`?${node.typename || typeof node}`);
+      emitted.push(`?${getNodeTypeName(node) || typeof node}`);
     }
   };
   return {

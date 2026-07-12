@@ -5,7 +5,7 @@ import { createEnvironment } from '../environment/index.js';
 import { createFileSystemLoader } from '../loaders/file-system.js';
 import { createContainer } from '../../src/index.js';
 
-var templatesPath = 'src/template/test-templates';
+const templatesPath = 'src/template/test-templates';
 
 const configure = (templatesPath, opts = {}) => {
   const loader = createFileSystemLoader(templatesPath, {
@@ -17,14 +17,14 @@ const configure = (templatesPath, opts = {}) => {
 
 describe('api', function() {
   test('should always force compilation of parent template', async function() {
-    var env = createEnvironment(createFileSystemLoader(templatesPath));
+    const env = createEnvironment(createFileSystemLoader(templatesPath));
 
-    var child = await env.getTemplate('base-inherit.njk');
+    const child = await env.getTemplate('base-inherit.njk');
     expect(await child.render()).toBe('Foo*Bar*BazFizzle');
   });
 
   test('should only call the callback once when conditional import fails', async function() {
-    var env = createEnvironment(createFileSystemLoader(templatesPath));
+    const env = createEnvironment(createFileSystemLoader(templatesPath));
     try {
       await env.render('broken-conditional-include.njk');
     } catch (e) {
@@ -33,31 +33,31 @@ describe('api', function() {
   });
 
   test('should handle correctly relative paths', async function() {
-    var env = createEnvironment(createFileSystemLoader(templatesPath));
-    var child1 = await env.getTemplate('relative/test1.njk');
-    var child2 = await env.getTemplate('relative/test2.njk');
+    const env = createEnvironment(createFileSystemLoader(templatesPath));
+    const child1 = await env.getTemplate('relative/test1.njk');
+    const child2 = await env.getTemplate('relative/test2.njk');
 
     expect(await child1.render()).toBe('FooTest1BazFizzle');
     expect(await child2.render()).toBe('FooTest2BazFizzle');
   });
 
   test('should handle correctly cache for relative paths', async function() {
-    var env = createEnvironment(createFileSystemLoader(templatesPath));
-    var test = await env.getTemplate('relative/test-cache.njk');
+    const env = createEnvironment(createFileSystemLoader(templatesPath));
+    const test = await env.getTemplate('relative/test-cache.njk');
 
     expect(util.normEOL(await test.render())).toBe('Test1\nTest2');
   });
 
-  test('should handle correctly relative paths in renderString', async function() {
-    var env = createEnvironment(createFileSystemLoader(templatesPath));
-    expect(await env.renderString('{% extends "./relative/test1.njk" %}{% block block1 %}Test3{% endblock %}', {}, {
+  test('should handle correctly relative paths in render', async function() {
+    const env = createEnvironment(createFileSystemLoader(templatesPath));
+    expect(await env.render('{% extends "./relative/test1.njk" %}{% block block1 %}Test3{% endblock %}', {}, {
       path: path.resolve(templatesPath, 'string.njk')
     })).toBe('FooTest3BazFizzle');
   });
 
   test('should emit "load" event on Environment instance', async function() {
-    var env = createEnvironment(createFileSystemLoader(templatesPath));
-    var loadedTemplate;
+    const env = createEnvironment(createFileSystemLoader(templatesPath));
+    let loadedTemplate;
     env.on('load', function(name, source) {
       loadedTemplate = name;
     });
@@ -85,22 +85,22 @@ describe('auto error handling in dev mode', () => {
     await expect(env.render('throws.njk', {})).rejects.toThrow();
   });
 
-  test('env.renderString throws in dev mode', async () => {
+  test('env.render throws in dev mode with inline template', async () => {
     const env = configure('src/template/test-templates', {
       dev: true,
       undefined: 'strict'
     });
 
-    await expect(env.renderString('{{ undefined_var }}', {})).rejects.toThrow();
+    await expect(env.render('{{ undefined_var }}', {})).rejects.toThrow();
   });
 
-  test('env.renderString throws in production mode', async () => {
+  test('env.render throws in production mode with inline template', async () => {
     const env = configure('src/template/test-templates', {
       dev: false,
       undefined: 'strict'
     });
 
-    await expect(env.renderString('{{ undefined_var }}', {})).rejects.toThrow();
+    await expect(env.render('{{ undefined_var }}', {})).rejects.toThrow();
   });
 
   test('render context with blocked keys is filtered in error output', async () => {
@@ -109,7 +109,7 @@ describe('auto error handling in dev mode', () => {
       undefined: 'strict'
     });
 
-    const result = await env.renderString('{{ user.name }}', {
+    const result = await env.render('{{ user.name }}', {
       user: {
         name: 'Alice',
         __proto__: { dangerous: true },

@@ -1,8 +1,8 @@
-import { Slice, OptionalCall } from '../../nodes/index.js';
+import { Slice, OptionalCall, isSlice } from '../../nodes/index.js';
 import { compileAggregate } from './container.js';
 
 export const compileLookupVal = (ctx, node, frame) => {
-  if (node.val?.typename === 'Slice') {
+  if (isSlice(node.val)) {
     ctx._emit('runtime.slice((');
     ctx._compileExpression(node.target, frame);
     ctx._emit('), ');

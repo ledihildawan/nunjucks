@@ -1,6 +1,7 @@
 import { TOKEN_SYMBOL, TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_COMMA, TOKEN_LEFT_BRACKET, TOKEN_OPERATOR } from '../../lexer/token-types.js';
 import { OptionalChain, OptionalCall, Literal, NodeList } from '../../nodes/index.js';
 import { nextToken, peekToken, fail } from '../cursor.js';
+import { BracketNotation } from './lookup.js';
 
 const parseOptionalCallArgs = (ctx, tok) => {
   const args = NodeList(tok.lineno, tok.colno);
@@ -54,7 +55,7 @@ export const parseOptionalChain = (ctx, tok, target) => {
     }
     
     const node = OptionalChain(tok.lineno, tok.colno, target, start);
-    node.isBracketNotation = true;
+    node[BracketNotation] = true;
     return node;
   }
 
@@ -70,6 +71,6 @@ export const parseOptionalChain = (ctx, tok, target) => {
 
   const lookup = Literal(val2.lineno, val2.colno, val2.value);
   const node = OptionalChain(tok.lineno, tok.colno, target, lookup);
-  node.isBracketNotation = false;
+  node[BracketNotation] = false;
   return node;
 };

@@ -14,7 +14,7 @@ describe('parseBlock', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const nameNode = new AstSymbol(1, 7, 'content');
+    const nameNode = AstSymbol(1, 7, 'content');
     const body = { lineno: 2, colno: 1 };
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: (noPostfix) => {

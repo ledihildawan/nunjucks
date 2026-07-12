@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { compilePipe, compilePipeAsync } from './pipe.js';
-import { AstSymbol } from '../../nodes/index.js';
+import { AstSymbol, getNodeTypeName } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];
@@ -11,7 +11,7 @@ const makeCtx = () => {
     compile: (node) => emitted.push(node.mock),
     assertType: (node, ...types) => {
       if (!types.some(t => node instanceof t)) {
-        throw new Error(`assertType failed: ${node.typename}`);
+        throw new Error(`assertType failed: ${getNodeTypeName(node)}`);
       }
     },
   };

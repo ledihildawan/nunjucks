@@ -35,7 +35,7 @@ export function createFrame(parent, isolateWrites) {
         obj = obj[id];
       }
 
-      obj[parts[parts.length - 1]] = val;
+      obj[parts.at(-1)] = val;
     },
 
     get(name) {

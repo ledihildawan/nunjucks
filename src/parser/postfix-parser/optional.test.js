@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { parse } from '../index.js';
 import { parseOptionalChain } from './optional.js';
-import { OptionalChain, Literal } from '../../nodes/index.js';
+import { OptionalChain, Literal, getNodeTypeName } from '../../nodes/index.js';
 import { createCursor } from '../cursor.js';
 import { TOKEN_SYMBOL } from '../../lexer/token-types.js';
 
@@ -46,7 +46,7 @@ describe('optional call parsing (integration)', () => {
   test('parses optional call with no args', () => {
     const ast = parse('{{ foo?.() }}');
     const output = ast.children[0].children[0];
-    expect(output.typename).toBe('OptionalCall');
+    expect(getNodeTypeName(output)).toBe('OptionalCall');
     expect(output.name.value).toBe('foo');
     expect(output.args.children).toHaveLength(0);
   });
@@ -54,7 +54,7 @@ describe('optional call parsing (integration)', () => {
   test('parses optional call with args', () => {
     const ast = parse('{{ foo?.(x) }}');
     const output = ast.children[0].children[0];
-    expect(output.typename).toBe('OptionalCall');
+    expect(getNodeTypeName(output)).toBe('OptionalCall');
     expect(output.name.value).toBe('foo');
     expect(output.args.children).toHaveLength(1);
   });
@@ -62,14 +62,14 @@ describe('optional call parsing (integration)', () => {
   test('parses optional call with multiple args', () => {
     const ast = parse('{{ foo?.(x, y) }}');
     const output = ast.children[0].children[0];
-    expect(output.typename).toBe('OptionalCall');
+    expect(getNodeTypeName(output)).toBe('OptionalCall');
     expect(output.args.children).toHaveLength(2);
   });
 
   test('parses method optional call', () => {
     const ast = parse('{{ obj.method?.() }}');
     const output = ast.children[0].children[0];
-    expect(output.typename).toBe('OptionalCall');
-    expect(output.name.typename).toBe('LookupVal');
+    expect(getNodeTypeName(output)).toBe('OptionalCall');
+    expect(getNodeTypeName(output.name)).toBe('LookupVal');
   });
 });

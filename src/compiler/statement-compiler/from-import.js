@@ -1,4 +1,4 @@
-import { Pair } from '../../nodes/index.js';
+import { Pair, isPair } from '../../nodes/index.js';
 import { compileGetTemplate } from './import.js';
 
 export const compileFromImport = (ctx, node, frame) => {
@@ -13,7 +13,7 @@ export const compileFromImport = (ctx, node, frame) => {
     let alias;
     const id = ctx._tmpid();
 
-    if (nameNode?.typename === 'Pair') {
+    if (isPair(nameNode)) {
       name = nameNode.key.value;
       alias = nameNode.value.value;
     } else {

@@ -1,6 +1,7 @@
 import { TOKEN_SYMBOL } from '../../lexer/token-types.js';
 import { LookupVal, Literal } from '../../nodes/index.js';
 import { nextToken, fail } from '../cursor.js';
+import { BracketNotation } from './lookup.js';
 
 export const parseDotAccess = (ctx, tok, target) => {
   nextToken(ctx);
@@ -15,6 +16,6 @@ export const parseDotAccess = (ctx, tok, target) => {
 
   const lookup = Literal(val.lineno, val.colno, val.value);
   const node = LookupVal(tok.lineno, tok.colno, target, lookup);
-  node.isBracketNotation = false;
+  node[BracketNotation] = false;
   return node;
 };

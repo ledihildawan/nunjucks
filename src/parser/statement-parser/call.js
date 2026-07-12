@@ -5,6 +5,7 @@ import {
   Output,
   Caller,
   AstSymbol,
+  isKeywordArgs,
 } from '../../nodes/index.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
@@ -31,10 +32,10 @@ export const parseCall = (ctx) => {
     body);
 
   const args = macroCall.args.children;
-  if (args[args.length - 1]?.typename !== 'KeywordArgs') {
+  if (!isKeywordArgs(args.at(-1))) {
     args.push(KeywordArgs());
   }
-  const kwargs = args[args.length - 1];
+  const kwargs = args.at(-1);
   kwargs.addChild(Pair(callTok.lineno,
     callTok.colno,
     callerName,

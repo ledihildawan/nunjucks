@@ -33,8 +33,8 @@ export function createTokenizer(str, opts = {}) {
     colno: 0,
     in_code: false,
     tags: createDelimiters(opts.tags),
-    trimBlocks: !!opts.trimBlocks,
-    lstripBlocks: !!opts.lstripBlocks,
+    trimBlocks: Boolean(opts.trimBlocks),
+    lstripBlocks: Boolean(opts.lstripBlocks),
   };
 
   const api = {
@@ -312,7 +312,7 @@ export function createTokenizer(str, opts = {}) {
         return this._parseRegex(lineno, colno);
       }
 
-      if (DELIM_CHARS.indexOf(cur) !== -1) {
+      if (DELIM_CHARS.includes(cur)) {
         this.forward();
         return this._parseOperator(cur, lineno, colno);
       }

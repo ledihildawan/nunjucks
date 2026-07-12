@@ -7,7 +7,7 @@ export const extractBeginChars = (tags) =>
 export const extractWhileInCharSet = (str, startIndex, charSet) => {
   let result = '';
   for (let i = startIndex; i < str.length; i++) {
-    if (charSet.indexOf(str[i]) === -1) break;
+    if (!charSet.includes(str[i])) break;
     result += str[i];
   }
   return result;
@@ -16,7 +16,7 @@ export const extractWhileInCharSet = (str, startIndex, charSet) => {
 export const extractUntilCharSet = (str, startIndex, charSet) => {
   let result = '';
   for (let i = startIndex; i < str.length; i++) {
-    if (charSet.indexOf(str[i]) !== -1) break;
+    if (charSet.includes(str[i])) break;
     result += str[i];
   }
   return result;

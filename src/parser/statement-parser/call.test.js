@@ -56,7 +56,7 @@ describe('parseCall', () => {
 
     expect(result).toBeInstanceOf(Output);
     const funCall = result.children[0];
-    const callKwargs = funCall.args.children[funCall.args.children.length - 1];
+    const callKwargs = funCall.args.children.at(-1);
     expect(callKwargs).toBeInstanceOf(KeywordArgs);
     expect(callKwargs.children[0]).toBeInstanceOf(Pair);
     expect(callKwargs.children[0].key.value).toBe('caller');

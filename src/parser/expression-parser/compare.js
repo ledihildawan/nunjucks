@@ -12,7 +12,7 @@ export const parseCompare = (ctx) => {
 
     if (!tok) {
       break;
-    } else if (compareOps.indexOf(tok.value) !== -1) {
+    } else if (compareOps.includes(tok.value)) {
       ops.push(CompareOperand(tok.lineno, tok.colno, parseConcat(ctx), tok.value));
     } else {
       pushToken(ctx, tok);

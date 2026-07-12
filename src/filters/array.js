@@ -35,7 +35,7 @@ export function first(arr) {
 }
 
 export function last(arr) {
-  return arr[arr.length - 1];
+  return arr.at(-1);
 }
 
 export function lengthFilter(val) {
@@ -80,7 +80,7 @@ export function reverse(val) {
     arr = map(val, v => v);
   }
 
-  arr.reverse();
+  arr = arr.toReversed();
 
   if (isString(val)) {
     return copySafeness(val, arr.join(''));
@@ -126,7 +126,7 @@ export const sort = makeMacro(
     let getAttribute = getAttrGetter(attr);
     const undefinedMode = this.env.opts.undefined;
 
-    array.sort((a, b) => {
+    array = array.toSorted((a, b) => {
       let x = (attr) ? getAttribute(a) : a;
       let y = (attr) ? getAttribute(b) : b;
 
@@ -159,7 +159,7 @@ export function getSelectOrReject(expectedTestResult) {
     const context = this;
     const test = context.env.getTest(testName);
 
-    return Array.from(arr).filter(function examineTestResult(item) {
+    return Array.from(arr).filter((item) => {
       return test.call(context, item, secondArg) === expectedTestResult;
     });
   }
@@ -176,5 +176,5 @@ export function rejectattr(arr, attr) {
 export const select = getSelectOrReject(true);
 
 export function selectattr(arr, attr) {
-  return arr.filter((item) => !!item[attr]);
+  return arr.filter((item) => Boolean(item[attr]));
 }

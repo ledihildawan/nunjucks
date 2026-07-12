@@ -24,7 +24,7 @@ export function dictsort(val, caseSensitive, by) {
       'dictsort filter: You can only sort by either key or value');
   }
 
-  array.sort((t1, t2) => {
+  array = array.toSorted((t1, t2) => {
     let a = t1[si];
     let b = t2[si];
 

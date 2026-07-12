@@ -18,9 +18,9 @@ function rmdir(dirPath) {
 }
 
 describe('configure', function() {
-  var tempdir;
-  var container;
-  var env;
+  let tempdir;
+  let container;
+  let env;
 
   beforeAll(async function() {
     if (fs && path && os) {

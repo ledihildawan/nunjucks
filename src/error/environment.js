@@ -23,7 +23,7 @@ const createFsResolver = () => {
 const loadFs = async () => {
   try {
     const { readFileSync } = await import('node:fs');
-    return { readFileSync: readFileSync.bind(readFileSync) };
+    return { readFileSync };
   } catch {
     return null;
   }
@@ -46,7 +46,7 @@ const findHeader = (headers, name) => {
 
 const parseFallbackLine = (snippet, fallback) => {
   const match = snippet?.match(/\d+/);
-  return match ? parseInt(match[0], 10) : fallback;
+  return match ? Number(match[0]) : fallback;
 };
 
 const resolveChain = (explicit, fromError, fromMessage) => {
@@ -57,12 +57,12 @@ const resolveChain = (explicit, fromError, fromMessage) => {
 
 const resolveTemplate = (error, name, path, chain) => {
   const hasChain = chain?.length > 0;
-  const resolvedPath = path ?? error.templatePath ?? (name && !name.includes('.njk') && !name.includes('.html') ? name : null);
+  const resolvedPath = path ?? error.templatePath ?? (name && typeof name === 'string' && !name.includes('.njk') && !name.includes('.html') ? name : null);
   return {
     name: hasChain ? error.path : extractErrorTemplateName(error.message) ?? name,
     path: resolvedPath,
-    line: error.lineno != null ? error.lineno + 1 : null,
-    col: error.colno != null ? error.colno + 1 : null
+    line: error.lineno !== null ? error.lineno + 1 : null,
+    col: error.colno !== null ? error.colno + 1 : null
   };
 };
 

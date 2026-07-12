@@ -36,8 +36,19 @@ import {
   getUndefinedMode,
 } from './undefined.js';
 import { createUndefinedWarning, toConsoleString } from '../warning/index.js';
+import { toContext, createIsolatedContext, createForkedContext } from './render-context.js';
 
-const escapeHtml = (val) => Bun.escapeHTML(val).replace(/\\/g, '&#92;').replace(/&#x27;/g, '&#39;');
+const escapeHtml = (val) => {
+  if (val === null || val === undefined) return '';
+  const str = String(val);
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/\\/g, '&#92;');
+};
 
 export {
   createFrame,
@@ -66,6 +77,9 @@ export {
   DEFAULT_UNDEFINED_MODE,
   isValidUndefinedMode,
   getUndefinedMode,
+  toContext,
+  createIsolatedContext,
+  createForkedContext,
 };
 
 export function suppressValue(val, autoescape) {
@@ -114,14 +128,14 @@ export function callWrap(obj, name, displayName, context, args, lineno, colno) {
   const messageName = displayName || name;
   if (!obj) {
     throw createTemplateError(
-      'Unable to call `' + messageName + '`, which is undefined or falsey',
+      `Unable to call \`${messageName}\`, which is undefined or falsey`,
       lineno,
       colno,
       { code: 'UNDEFINED_FUNCTION', subject: name, phase: 'render' }
     );
   } else if (typeof obj !== 'function') {
     throw createTemplateError(
-      'Unable to call `' + messageName + '`, which is not a function',
+      `Unable to call \`${messageName}\`, which is not a function`,
       lineno,
       colno,
       { code: 'NOT_A_FUNCTION', subject: name, phase: 'render' }
@@ -187,10 +201,10 @@ export function fromIterator(arr) {
 
 export function inOperator(key, val) {
   if (Array.isArray(val) || typeof val === 'string') {
-    return val.indexOf(key) !== -1;
+    return val.includes(key);
   }
   if (val && typeof val === 'object') {
     return key in val;
   }
-  throw new Error(`Cannot use "in" operator to search for "${key}" in unexpected types.`);
+  throw new Error(`Cannot use "in" operator to search for \`${key}\` in unexpected types.`);
 }

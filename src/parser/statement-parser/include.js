@@ -11,6 +11,12 @@ export const parseInclude = (ctx) => {
   const node = Include(tag.lineno, tag.colno);
   node.template = ctx.parseExpression();
 
+  if (skipSymbol(ctx, 'only')) {
+    node.only = true;
+  } else if (skipSymbol(ctx, 'with')) {
+    node.with = ctx.parseExpression();
+  }
+
   if (skipSymbol(ctx, 'ignore') && skipSymbol(ctx, 'missing')) {
     node.ignoreMissing = true;
   }

@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { compileFor, emitLoopBindings } from './for.js';
-import { ArrayNode } from '../../nodes/index.js';
+import { ArrayNode, Literal } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];
@@ -73,7 +73,7 @@ describe('compileFor', () => {
 
   test('compiles for loop with two-element array name (key, value) for object iteration', () => {
     const ctx = makeCtx();
-    const nameNode = new ArrayNode(1, 1, [{ value: 'k' }, { value: 'v' }]);
+    const nameNode = ArrayNode(1, 1, [Literal(1, 1, 'k'), Literal(1, 1, 'v')]);
     const frame = makeFrame();
     const node = {
       name: nameNode,

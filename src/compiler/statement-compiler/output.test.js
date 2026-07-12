@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { compileTemplateData, compileCapture, compileOutput } from './output.js';
+import { TemplateData, AstSymbol, LookupVal, Pipe, Slice } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];
@@ -9,8 +10,8 @@ const makeCtx = () => {
     undefinedMode: 'chainable',
     _emit: (s) => emitted.push(s),
     _emitLine: (s) => emitted.push(s + '\n'),
-    _emitLineWithLineno: (s, line, col) => emitted.push(s + '\n'),
-    compile: (node) => emitted.push(node.mock),
+    _emitLineWithLineno: (s, line, col) => emitted.push(`${s}\n`),
+    compile: (node) => emitted.push(node.mock || JSON.stringify(node.value)),
     _withScopedSyntax: (func) => func(),
   };
 };
@@ -40,7 +41,7 @@ describe('compileOutput', () => {
   test('emits TemplateData as string literal', () => {
     const ctx = makeCtx();
     const node = {
-      children: [{ typename: 'TemplateData', value: 'text' }],
+      children: [TemplateData(0, 0, 'text')],
     };
     compileOutput(ctx, node);
     const code = ctx.emitted.join('');
@@ -50,8 +51,9 @@ describe('compileOutput', () => {
   test('emits Symbol with suppressValue and awaitValue', () => {
     const ctx = makeCtx();
     const node = {
-      children: [{ typename: 'Symbol', value: 'x', lineno: 1, colno: 1, mock: 'x' }],
+      children: [AstSymbol(1, 1, 'x')],
     };
+    node.children[0].mock = 'x';
     compileOutput(ctx, node);
     const code = ctx.emitted.join('');
     expect(code).toContain('runtime.suppressValue(');
@@ -63,8 +65,9 @@ describe('compileOutput', () => {
     const ctx = makeCtx();
     ctx.undefinedMode = 'strict';
     const node = {
-      children: [{ typename: 'Symbol', value: 'x', lineno: 2, colno: 3, mock: 'x' }],
+      children: [AstSymbol(2, 3, 'x')],
     };
+    node.children[0].mock = 'x';
     compileOutput(ctx, node);
     const code = ctx.emitted.join('');
     expect(code).toContain('runtime.ensureDefined(');
@@ -73,9 +76,9 @@ describe('compileOutput', () => {
 
   test('handles Pipe without awaitValue wrapper', () => {
     const ctx = makeCtx();
-    const node = {
-      children: [{ typename: 'Pipe', lineno: 1, colno: 1, mock: 'piped' }],
-    };
+    const pipeNode = Pipe(1, 1);
+    pipeNode.mock = 'piped';
+    const node = { children: [pipeNode] };
     compileOutput(ctx, node);
     const code = ctx.emitted.join('');
     expect(code).toContain('runtime.suppressValue(');
@@ -84,47 +87,41 @@ describe('compileOutput', () => {
 
   test('skips empty TemplateData', () => {
     const ctx = makeCtx();
-    const node = {
-      children: [{ typename: 'TemplateData', value: '' }, { typename: 'Symbol', value: 'x', lineno: 1, colno: 1, mock: 'x' }],
-    };
+    const td = TemplateData(0, 0, '');
+    td.mock = '';
+    const sym = AstSymbol(1, 1, 'x');
+    sym.mock = 'x';
+    const node = { children: [td, sym] };
     compileOutput(ctx, node);
     const code = ctx.emitted.join('');
     expect(code).not.toContain('output += ""');
   });
 
-  test('emits strict mode for LookupVal in debug mode (throws error)', () => {
+  test('emits debug mode for LookupVal in debug mode (shows warning)', () => {
     const ctx = makeCtx();
     ctx.undefinedMode = 'debug';
-    const node = {
-      children: [{
-        typename: 'LookupVal',
-        target: { typename: 'Symbol', value: 'user' },
-        val: { typename: 'Literal', value: 'name' },
-        lineno: 1,
-        colno: 5,
-        mock: 'memberLookup'
-      }],
-    };
+    const target = AstSymbol(0, 0, 'user');
+    target.mock = 'user';
+    const val = { value: 'name' };
+    const lookupVal = LookupVal(1, 5, target, val);
+    lookupVal.mock = 'memberLookup';
+    const node = { children: [lookupVal] };
     compileOutput(ctx, node);
     const code = ctx.emitted.join('');
     expect(code).toContain('runtime.ensureDefined(');
-    expect(code).toContain('"strict"');
+    expect(code).toContain('"debug"');
     expect(code).toContain('user.name');
   });
 
   test('emits strict mode for LookupVal in strict mode (throws error)', () => {
     const ctx = makeCtx();
     ctx.undefinedMode = 'strict';
-    const node = {
-      children: [{
-        typename: 'LookupVal',
-        target: { typename: 'Symbol', value: 'user' },
-        val: { typename: 'Literal', value: 'name' },
-        lineno: 1,
-        colno: 5,
-        mock: 'memberLookup'
-      }],
-    };
+    const target = AstSymbol(0, 0, 'user');
+    target.mock = 'user';
+    const val = { value: 'name' };
+    const lookupVal = LookupVal(1, 5, target, val);
+    lookupVal.mock = 'memberLookup';
+    const node = { children: [lookupVal] };
     compileOutput(ctx, node);
     const code = ctx.emitted.join('');
     expect(code).toContain('runtime.ensureDefined(');
@@ -135,9 +132,9 @@ describe('compileOutput', () => {
   test('emits debug mode for Symbol in debug mode (shows warning)', () => {
     const ctx = makeCtx();
     ctx.undefinedMode = 'debug';
-    const node = {
-      children: [{ typename: 'Symbol', value: 'user', lineno: 1, colno: 1, mock: 'user' }],
-    };
+    const sym = AstSymbol(1, 1, 'user');
+    sym.mock = 'user';
+    const node = { children: [sym] };
     compileOutput(ctx, node);
     const code = ctx.emitted.join('');
     expect(code).toContain('runtime.ensureDefined(');

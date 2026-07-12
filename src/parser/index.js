@@ -67,7 +67,8 @@ import {
 import { parseNodes, parseUntilBlocks } from './top-level.js';
 
 export function createParser(tokens) {
-  const obj = createObj('Parser', {
+  const obj = createObj({
+    name: 'Parser',
     init: function(tokens) {
       this.tokens = tokens;
       this.peeked = null;

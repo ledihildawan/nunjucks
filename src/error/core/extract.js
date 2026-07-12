@@ -28,14 +28,14 @@ export const extractLineInfo = (message) => {
   const lineMatch = message.match(PATTERNS.LINE_INFO);
   if (lineMatch) {
     return {
-      line: parseInt(lineMatch[1], 10),
-      col: lineMatch[2] ? parseInt(lineMatch[2], 10) : null
+      line: Number(lineMatch[1]),
+      col: lineMatch[2] ? Number(lineMatch[2]) : null
     };
   }
 
   const includedMatch = message.match(/\(included from [^:]+:(\d+)\)/);
   if (includedMatch) {
-    return { line: parseInt(includedMatch[1], 10), col: null };
+    return { line: Number(includedMatch[1]), col: null };
   }
 
   return { line: null, col: null };
@@ -46,7 +46,7 @@ export const extractColFromMessage = (message) => {
 
   const colMatch = message.match(PATTERNS.COLUMN_INFO);
   if (colMatch) {
-    return parseInt(colMatch[1], 10);
+    return Number(colMatch[1]);
   }
 
   return null;
@@ -59,8 +59,8 @@ export const extractIncludeChainFromMessage = (message) => {
   if (match) {
     return [{
       parentTmpl: match[1],
-      parentLineno: parseInt(match[2], 10),
-      parentColno: match[3] ? parseInt(match[3], 10) : null
+      parentLineno: Number(match[2]),
+      parentColno: match[3] ? Number(match[3]) : null
     }];
   }
 

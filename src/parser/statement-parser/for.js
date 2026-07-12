@@ -3,6 +3,7 @@ import {
   For,
   AstSymbol,
   ArrayNode,
+  isSymbol,
 } from '../../nodes/index.js';
 import { peekToken, skip, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
@@ -20,7 +21,7 @@ export const parseFor = (ctx) => {
 
   node.name = ctx.parsePrimary();
 
-  if (node.name?.typename !== 'Symbol') {
+  if (!isSymbol(node.name)) {
     fail(ctx, 'parseFor: variable name expected for loop');
   }
 

@@ -1,11 +1,11 @@
 import { describe, test, expect } from 'bun:test';
 import { createNodeResolveLoader } from './node-resolve.js';
-import { createLoader } from './base.js';
+import { createLoader, isLoader } from './base.js';
 
 describe('NodeResolveLoader', () => {
   test('extends Loader', () => {
     const loader = createNodeResolveLoader();
-    expect(loader.typename).toBe('NodeResolveLoader');
+    expect(isLoader(loader)).toBe(true);
   });
 
   test('constructor sets options', () => {

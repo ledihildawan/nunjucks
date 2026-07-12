@@ -1,3 +1,13 @@
+import {
+  isSymbol,
+  isLookupVal,
+  isTemplateData,
+  isPipe,
+  isPipeAsync,
+  isOptionalChain,
+  isOptionalCall,
+} from '../../nodes/index.js';
+
 export const compileTemplateData = (ctx, node, frame) => {
   ctx._emit(`${ctx.buffer} += `);
   ctx._emit(JSON.stringify(node.value));
@@ -20,11 +30,11 @@ export const compileCapture = (ctx, node, frame) => {
 const extractVarName = (node) => {
   if (!node) return null;
 
-  if (node.typename === 'Symbol') {
+  if (isSymbol(node)) {
     return node.value;
   }
 
-  if (node.typename === 'LookupVal') {
+  if (isLookupVal(node)) {
     const base = extractVarName(node.target);
     if (!base) return null;
     const prop = node.val?.value || node.val?.name || '';
@@ -37,35 +47,33 @@ const extractVarName = (node) => {
 export const compileOutput = (ctx, node, frame) => {
   const children = node.children;
   children.forEach(child => {
-    if (child.typename === 'TemplateData') {
+    if (isTemplateData(child)) {
       if (child.value) {
         ctx._emit(`${ctx.buffer} += `);
         ctx._emit(JSON.stringify(child.value));
         ctx._emit(';');
       }
     } else {
-      const isPipe = child.typename === 'Pipe' || child.typename === 'PipeAsync';
-      const isLookupVal = child.typename === 'LookupVal';
+      const isPipeType = isPipe(child) || isPipeAsync(child);
+      const isLookupValType = isLookupVal(child);
+      const isOptionalChainType = isOptionalChain(child) || isOptionalCall(child);
       const varName = extractVarName(child);
       const undefinedMode = ctx.undefinedMode;
 
-      // LookupVal (e.g., user.name) in strict/debug mode should throw error
-      const useEnsureDefined = undefinedMode && undefinedMode !== 'chainable';
-      const shouldWarn = useEnsureDefined && !isLookupVal;
-      const shouldError = useEnsureDefined && isLookupVal && (undefinedMode === 'debug' || undefinedMode === 'strict');
-
-      // For LookupVal in debug mode, pass 'strict' to ensureDefined so it throws error
-      const effectiveMode = (isLookupVal && undefinedMode === 'debug') ? 'strict' : undefinedMode;
+      const shouldWarn = undefinedMode === 'debug' && !isLookupValType;
+      const shouldError = undefinedMode === 'strict' && !isOptionalChainType;
+      const useEnsureDefined = !isOptionalChainType || undefinedMode !== 'chainable';
+      const effectiveMode = undefinedMode;
 
       ctx._emitLineWithLineno(`lineno = ${child.lineno}; colno = ${child.colno}; ${ctx.buffer} += runtime.suppressValue(`, child.lineno, child.colno);
-      if (!isPipe) {
+      if (!isPipeType) {
         ctx._emit('await runtime.awaitValue(');
       }
-      if (shouldWarn || shouldError) {
+      if (useEnsureDefined) {
         ctx._emit('runtime.ensureDefined(');
       }
       ctx.compile(child, frame);
-      if (shouldWarn || shouldError) {
+      if (useEnsureDefined) {
         const nameArg = varName ? `, "${varName}"` : ', null';
         const modeArg = effectiveMode ? `, "${effectiveMode}"` : '';
         const escapedTemplateName = ctx.templateName ? ctx.templateName.replace(/\\/g, '\\\\').replace(/"/g, '\\"') : null;
@@ -75,7 +83,7 @@ export const compileOutput = (ctx, node, frame) => {
       if (!isPipe) {
         ctx._emit(')');
       }
-      ctx._emit(', env.opts.autoescape);');
+      ctx._emit(', env.opts.autoescape));');
     }
   });
   ctx._emit('\n');

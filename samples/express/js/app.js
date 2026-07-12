@@ -7,6 +7,5 @@ const configure = (views, options) => {
 };
 
 const render = (name, context) => c.environment().render(name, context);
-const renderString = (str, context) => c.environment().renderString(str, context);
 
-export { configure, render, renderString };
+export { configure, render };

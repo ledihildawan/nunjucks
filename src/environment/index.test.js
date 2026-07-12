@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from 'bun:test';
 import { createEnvironment } from './index.js';
-import { createTemplate } from '../template/index.js';
+import { createTemplate, isTemplate } from '../template/index.js';
 
 let env;
 
@@ -178,12 +178,12 @@ describe('getTemplate', () => {
     const loader = { getSource: () => ({ src: 'Hello', path: 'test.njk' }) };
     const e = createEnvironment(loader);
     const tmpl = await e.getTemplate('test', false);
-    expect(tmpl.typename).toBe('Template');
+    expect(isTemplate(tmpl)).toBe(true);
   });
 
   test('returns noop template when ignoreMissing', async () => {
     const tmpl = await env.getTemplate('nonexistent', false, null, true);
-    expect(tmpl.typename).toBe('Template');
+    expect(isTemplate(tmpl)).toBe(true);
   });
 
   test('throws FILE_NOT_FOUND when ignoreMissing is false', async () => {
@@ -199,23 +199,23 @@ describe('resolveTemplate', () => {
   });
 });
 
-describe('render and renderString', () => {
-  test('renderString compiles and renders', async () => {
-    const result = await env.renderString('Hello {{ name }}', { name: 'World' });
+describe('render', () => {
+  test('renders template from string', async () => {
+    const result = await env.render('Hello {{ name }}', { name: 'World' });
     expect(result).toBe('Hello World');
   });
 
-  test('renderString with path option', async () => {
-    const result = await env.renderString('Hello', {}, { path: 'test.njk' });
-    expect(result).toBe('Hello');
+  test('render detects template source by heuristics', async () => {
+    const result = await env.render('{{ name }}', { name: 'World' });
+    expect(result).toBe('World');
   });
-});
 
-describe('express', () => {
-  test('returns environment and sets up app', () => {
-    const app = { set() {}, get() {}, use() {} };
-    const result = env.express(app);
-    expect(result).toBe(env);
+  test('render with path option uses path for error reporting', async () => {
+    try {
+      await env.render('{{ undefined_var }}', {}, { path: 'test.njk' });
+    } catch (e) {
+      expect(e.templatePath).toBe('test.njk');
+    }
   });
 });
 

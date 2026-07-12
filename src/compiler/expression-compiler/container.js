@@ -1,4 +1,4 @@
-import { Literal, AstSymbol, Group, Dict, NodeList, Pair } from '../../nodes/index.js';
+import { Literal, AstSymbol, Group, Dict, NodeList, Pair, isSymbol, isLiteral } from '../../nodes/index.js';
 
 export const compileLiteral = (ctx, node) => {
   if (typeof node.value === 'string') {
@@ -48,9 +48,9 @@ export const compilePair = (ctx, node, frame) => {
   let key = node.key;
   const val = node.value;
 
-  if (key?.typename === 'Symbol') {
-    key = { typename: 'Literal', lineno: key.lineno, colno: key.colno, value: key.value };
-  } else if (!(key?.typename === 'Literal' &&
+  if (isSymbol(key)) {
+    key = Literal(key.lineno, key.colno, key.value);
+  } else if (!(isLiteral(key) &&
     typeof key.value === 'string')) {
     ctx.fail('compilePair: Dict keys must be strings or names',
       key.lineno,

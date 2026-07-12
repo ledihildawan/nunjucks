@@ -89,7 +89,7 @@ router.get('/strict', async (req, res) => {
   const context = { user: undefined };
   
   try {
-    await strictEnv.renderString(template, context);
+    await strictEnv.render(template, context);
     res.send('Should have thrown error');
   } catch (e) {
     res.status(500).type('html').send(e.toHtmlString());
@@ -101,7 +101,7 @@ router.get('/debug', async (req, res) => {
   const context = { user: undefined };
 
   try {
-    const result = await debugEnv.renderString(template, context);
+    const result = await debugEnv.render(template, context);
     res.type('html').send(`
 <!DOCTYPE html>
 <html>
@@ -132,7 +132,7 @@ router.get('/chainable', async (req, res) => {
   const template = '{{ user.name }}';
   const context = { user: undefined };
 
-  const result = await chainableEnv.renderString(template, context);
+  const result = await chainableEnv.render(template, context);
 
   res.type('html').send(`
 <!DOCTYPE html>
@@ -169,7 +169,7 @@ router.get('/strict-nested', async (req, res) => {
   const context = { user: { profile: null } };
 
   try {
-    await strictEnv.renderString(template, context);
+    await strictEnv.render(template, context);
     res.send('Should have thrown error');
   } catch (e) {
     res.status(500).type('html').send(e.toHtmlString());
@@ -181,7 +181,7 @@ router.get('/strict-array', async (req, res) => {
   const context = { items: [1, 2, 3] };
 
   try {
-    await strictEnv.renderString(template, context);
+    await strictEnv.render(template, context);
     res.send('Should have thrown error');
   } catch (e) {
     res.status(500).type('html').send(e.toHtmlString());

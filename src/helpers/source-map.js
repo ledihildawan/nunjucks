@@ -81,15 +81,15 @@ export function createMappedError(error, sourceMapData, lineno, colno, path) {
   } else if (pos.line) {
     msg += ` [Line ${pos.line}]`;
   }
-  msg += '\n  ' + defaultTo(error.message, '');
+  msg += `\n  ${defaultTo(error.message, '')}`;
 
   const newError = new Error(msg);
   newError.name = defaultTo(error.name, 'Template render error');
   newError.lineno = pos.line;
   newError.colno = finalColno;
   newError._includeChain = error._includeChain;
-  const renderLine = 'at ' + defaultTo(error.getterName, 'root') + ' (' + templateLocation + ')';
-  newError.stack = newError.message + '\n    ' + renderLine + '\n    at Environment.render';
+  const renderLine = `at ${defaultTo(error.getterName, 'root')} (${templateLocation})`;
+  newError.stack = `${newError.message}\n    ${renderLine}\n    at Environment.render`;
 
   return newError;
 }

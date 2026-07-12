@@ -2,8 +2,10 @@ import {
   TOKEN_COLON,
   TOKEN_RIGHT_BRACKET,
 } from '../../lexer/token-types.js';
-import { LookupVal, Slice } from '../../nodes/index.js';
+import { LookupVal, Slice, BracketNotation } from '../../nodes/index.js';
 import { peekToken, skip, expect } from '../cursor.js';
+
+export { BracketNotation };
 
 const buildSlice = (ctx, bracketTok, start) => {
   let stop = null;
@@ -30,7 +32,7 @@ export const parseBracketAccess = (ctx, bracketTok, target) => {
   if (skip(ctx, TOKEN_COLON)) {
     const slice = buildSlice(ctx, bracketTok, null);
     const node = new LookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
-    node.isBracketNotation = true;
+    node[BracketNotation] = true;
     return node;
   }
 
@@ -39,12 +41,12 @@ export const parseBracketAccess = (ctx, bracketTok, target) => {
   if (skip(ctx, TOKEN_COLON)) {
     const slice = buildSlice(ctx, bracketTok, start);
     const node = new LookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
-    node.isBracketNotation = true;
+    node[BracketNotation] = true;
     return node;
   }
 
   expect(ctx, TOKEN_RIGHT_BRACKET);
   const node = new LookupVal(bracketTok.lineno, bracketTok.colno, target, start);
-  node.isBracketNotation = true;
+  node[BracketNotation] = true;
   return node;
 };

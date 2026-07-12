@@ -2,6 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import { liftPipes } from './pipe-transforms.js';
 import {
   NodeList, Root, Output, Pipe, PipeAsync, AstSymbol, Literal, FunCall, KeywordArgs,
+  getNodeTypeName,
 } from '../nodes/index.js';
 
 describe('liftPipes', () => {
@@ -20,8 +21,8 @@ describe('liftPipes', () => {
     const root = Root(1, 0, [out]);
     const result = liftPipes(root, ['asyncFilter']);
     const wrapper = result.children[0];
-    expect(wrapper.children[0].typename).toBe('PipeAsync');
-    expect(wrapper.children[1].typename).toBe('Output');
+    expect(getNodeTypeName(wrapper.children[0])).toBe('PipeAsync');
+    expect(getNodeTypeName(wrapper.children[1])).toBe('Output');
   });
 
   test('lifts multiple async pipes', () => {
@@ -35,9 +36,9 @@ describe('liftPipes', () => {
     const result = liftPipes(root, ['filterA', 'filterB']);
     const wrapper = result.children[0];
     expect(wrapper.children.length).toBe(3);
-    expect(wrapper.children[0].typename).toBe('PipeAsync');
-    expect(wrapper.children[1].typename).toBe('PipeAsync');
-    expect(wrapper.children[2].typename).toBe('Output');
+    expect(getNodeTypeName(wrapper.children[0])).toBe('PipeAsync');
+    expect(getNodeTypeName(wrapper.children[1])).toBe('PipeAsync');
+    expect(getNodeTypeName(wrapper.children[2])).toBe('Output');
   });
 
   test('does not lift non-async pipes', () => {
@@ -59,8 +60,8 @@ describe('liftPipes', () => {
     const result = liftPipes(root, ['myFilter']);
     const wrapper = result.children[0];
     const pipeAsync = wrapper.children[0];
-    expect(pipeAsync.typename).toBe('PipeAsync');
+    expect(getNodeTypeName(pipeAsync)).toBe('PipeAsync');
     expect(pipeAsync.name.value).toBe('myFilter');
-    expect(pipeAsync.symbol.typename).toBe('Symbol');
+    expect(getNodeTypeName(pipeAsync.name)).toBe('Symbol');
   });
 });

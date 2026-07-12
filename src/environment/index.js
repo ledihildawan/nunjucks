@@ -2,9 +2,10 @@ import { prettifyError, createErrorFormatter } from '../error/index.js';
 import { compile } from '../compiler/index.js';
 import { createFileSystemLoader } from '../loaders/file-system.js';
 import { createEmitter } from '../object/index.js';
-import { createFrame, createSandboxedContext, getUndefinedMode, DEFAULT_UNDEFINED_MODE } from '../runtime/index.js';
-import expressApp from '../integration/express-app.js';
-import { createTemplate } from '../template/index.js';
+import { createFrame, createSandboxedContext, getUndefinedMode, DEFAULT_UNDEFINED_MODE, toContext } from '../runtime/index.js';
+import { HOOK_EVENTS, createHookEmitter } from '../runtime/hooks.js';
+import { createTemplate, isTemplate } from '../template/index.js';
+import { createDelimiters, DEFAULT_BLOCK_START, DEFAULT_VARIABLE_START, DEFAULT_COMMENT_START } from '../lexer/delimiters.js';
 import fs from 'fs';
 import {
   isRelativePath,
@@ -38,11 +39,30 @@ const noopTmplSrc = {
   obj: { async root() { return ''; } }
 };
 
+function escapeRegex(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function buildNunjucksPattern(tags) {
+  const blockStart = tags?.BLOCK_START || DEFAULT_BLOCK_START;
+  const variableStart = tags?.VARIABLE_START || DEFAULT_VARIABLE_START;
+  const commentStart = tags?.COMMENT_START || DEFAULT_COMMENT_START;
+  return new RegExp(`${escapeRegex(blockStart)}|${escapeRegex(variableStart)}|${escapeRegex(commentStart)}`);
+}
+
 export function createEnvironment(loaders, opts) {
-  const env = createEmitter('Environment');
+  const env = createEmitter({ name: 'Environment' });
 
   const normalizedOpts = { ...DEFAULT_OPTS, ...opts };
   normalizedOpts.undefined = getUndefinedMode(normalizedOpts);
+
+  if (opts?.tags) {
+    normalizedOpts.tags = createDelimiters(opts.tags);
+  }
+
+  const NUNJUCKS_PATTERN = buildNunjucksPattern(normalizedOpts.tags);
+
+  const { emitHook } = createHookEmitter(env, { envName: opts?.name });
 
   env.opts = normalizedOpts;
   env._renderingTemplates = new Set();
@@ -78,7 +98,7 @@ export function createEnvironment(loaders, opts) {
   };
 
   env.hasExtension = function(name) {
-    return !!env.extensions[name];
+    return Boolean(env.extensions[name]);
   };
 
   env.addGlobal = function(name, value) {
@@ -88,7 +108,7 @@ export function createEnvironment(loaders, opts) {
 
   env.getGlobal = function(name) {
     if (typeof env.globals[name] === 'undefined') {
-      const err = new Error('global not found: ' + name);
+      const err = new Error(`global not found: ${name}`);
       err.code = 'GLOBAL_NOT_FOUND';
       err.subject = name;
       throw err;
@@ -103,7 +123,7 @@ export function createEnvironment(loaders, opts) {
 
   env.getFilter = function(name) {
     if (!env.filters[name]) {
-      const err = new Error('filter not found: ' + name);
+      const err = new Error(`filter not found: ${name}`);
       err.code = 'UNDEFINED_FILTER';
       err.subject = name;
       throw err;
@@ -120,7 +140,7 @@ export function createEnvironment(loaders, opts) {
 
   env.getTest = function(name) {
     if (!env.tests[name]) {
-      const err = new Error('test not found: ' + name);
+      const err = new Error(`test not found: ${name}`);
       err.code = 'TEST_NOT_FOUND';
       err.subject = name;
       throw err;
@@ -129,45 +149,57 @@ export function createEnvironment(loaders, opts) {
   };
 
   env.getTemplate = async function(name, eagerCompile, includeChain, ignoreMissing) {
+    const startTime = Date.now();
     const { parentName, chain } = normalizeIncludeChain(includeChain);
     const resolvedName = resolveTemplateName(name);
 
-    if (resolvedName?.typename === 'Template') {
+    emitHook(HOOK_EVENTS.TEMPLATE_LOADING, { name: resolvedName, eagerCompile, parentName });
+
+    if (isTemplate(resolvedName)) {
       const tmpl = resolvedName;
       if (chain) tmpl._includeChain = chain;
       if (eagerCompile) tmpl.compile();
+      emitHook(HOOK_EVENTS.TEMPLATE_LOADED, { name: resolvedName, template: tmpl, duration: Date.now() - startTime, fromCache: true });
       return tmpl;
     }
 
-    validateTemplateName(resolvedName);
+    try {
+      validateTemplateName(resolvedName);
 
-    const cached = findCachedTemplate(
-      env.loaders,
-      (loader, pName, n) => env.resolveTemplate(loader, pName, n),
-      resolvedName,
-      parentName
-    );
+      const cached = findCachedTemplate(
+        env.loaders,
+        (loader, pName, n) => env.resolveTemplate(loader, pName, n),
+        resolvedName,
+        parentName
+      );
 
-    if (cached) {
-      if (!chain) cached.tmpl._includeChain = null;
-      else cached.tmpl._includeChain = chain;
-      if (eagerCompile) cached.tmpl.compile();
-      return cached.tmpl;
+      if (cached) {
+        if (!chain) cached.tmpl._includeChain = null;
+        else cached.tmpl._includeChain = chain;
+        if (eagerCompile) cached.tmpl.compile();
+        emitHook(HOOK_EVENTS.TEMPLATE_LOADED, { name: resolvedName, template: cached.tmpl, duration: Date.now() - startTime, fromCache: true });
+        return cached.tmpl;
+      }
+
+      const info = await env._loadTemplate(resolvedName, parentName, ignoreMissing);
+      if (!info) {
+        const emptyTmpl = createTemplate(noopTmplSrc, env, '', eagerCompile);
+        if (chain) emptyTmpl._includeChain = chain;
+        emitHook(HOOK_EVENTS.TEMPLATE_LOADED, { name: resolvedName, template: emptyTmpl, duration: Date.now() - startTime, fromCache: false });
+        return emptyTmpl;
+      }
+
+      const newTmpl = createTemplate(info.src, env, info.path, eagerCompile);
+      if (chain) newTmpl._includeChain = chain;
+      if (!info.loader.noCache) {
+        info.loader.cache[resolvedName] = newTmpl;
+      }
+      emitHook(HOOK_EVENTS.TEMPLATE_LOADED, { name: resolvedName, template: newTmpl, duration: Date.now() - startTime, fromCache: false });
+      return newTmpl;
+    } catch (error) {
+      emitHook(HOOK_EVENTS.TEMPLATE_LOAD_ERROR, { name: resolvedName, error, parentName });
+      throw error;
     }
-
-    const info = await env._loadTemplate(resolvedName, parentName, ignoreMissing);
-    if (!info) {
-      const emptyTmpl = createTemplate(noopTmplSrc, env, '', eagerCompile);
-      if (chain) emptyTmpl._includeChain = chain;
-      return emptyTmpl;
-    }
-
-    const newTmpl = createTemplate(info.src, env, info.path, eagerCompile);
-    if (chain) newTmpl._includeChain = chain;
-    if (!info.loader.noCache) {
-      info.loader.cache[resolvedName] = newTmpl;
-    }
-    return newTmpl;
   };
 
   env._loadTemplate = async function(name, parentName, ignoreMissing) {
@@ -194,10 +226,6 @@ export function createEnvironment(loaders, opts) {
     return resolveTemplatePath(loader, parentName, filename);
   };
 
-  env.express = function(app) {
-    return expressApp(env, app);
-  };
-
   env.getErrorFormatter = function() {
     if (!env._errorFormatter) {
       env._errorFormatter = createErrorFormatter({
@@ -213,36 +241,49 @@ export function createEnvironment(loaders, opts) {
     return env.getErrorFormatter().formatError(error, templateName, options);
   };
 
-  env.render = async function(name, ctx) {
+  env.render = async function(source, ctx, opts) {
+    const renderContext = toContext(ctx);
+    const startTime = Date.now();
+
+    if (NUNJUCKS_PATTERN.test(source) || opts?.path) {
+      return await renderStringInternal(source, renderContext, opts, startTime);
+    }
+
     let tmpl;
     try {
-      tmpl = await env.getTemplate(name);
+      tmpl = await env.getTemplate(source);
     } catch (e) {
-      const err = await env.getErrorFormatter().formatError(e, name, {
-        templatePath: name,
-        renderContext: ctx,
+      const err = await env.getErrorFormatter().formatError(e, source, {
+        templatePath: source,
+        renderContext: renderContext.toObject(),
       });
       console.error(err.toConsoleString());
       throw err;
     }
 
-    const sandboxedCtx = createSandboxedContext(ctx, env.opts.sandbox);
+    const sandboxedCtx = createSandboxedContext(renderContext.toObject(), env.opts.sandbox);
     sandboxedCtx.__nunjucks_undefined_mode = env.opts.undefined;
 
+    emitHook(HOOK_EVENTS.RENDER_START, { template: source, context: renderContext.toObject(), templatePath: tmpl.path });
+
     try {
-      return await tmpl.render(sandboxedCtx);
+      const result = await tmpl.render(sandboxedCtx);
+      emitHook(HOOK_EVENTS.RENDER_COMPLETE, { template: source, output: result, duration: Date.now() - startTime, templatePath: tmpl.path });
+      return result;
     } catch (e) {
-      const templatePath = tmpl.path || name;
-      const err = await env.getErrorFormatter().formatError(e, name, {
+      const templatePath = tmpl.path || source;
+      const err = await env.getErrorFormatter().formatError(e, source, {
         templatePath,
-        renderContext: ctx,
+        renderContext: renderContext.toObject(),
       });
       console.error(err.toConsoleString());
+      emitHook(HOOK_EVENTS.RENDER_ERROR, { template: source, error: e, context: renderContext.toObject(), templatePath });
       throw err;
     }
   };
 
-  env.renderString = async function(src, ctx, opts) {
+  async function renderStringInternal(src, ctx, opts, startTime = Date.now()) {
+    const renderContext = toContext(ctx);
     const callerLocation = !opts?.path || opts.path === '<anonymous>' 
       ? getCallerLocation() 
       : null;
@@ -273,20 +314,25 @@ export function createEnvironment(loaders, opts) {
     }
     
     const tmpl = createTemplate(src, env, path);
-    const sandboxedCtx = createSandboxedContext(ctx, env.opts.sandbox);
+    const sandboxedCtx = createSandboxedContext(renderContext.toObject(), env.opts.sandbox);
     sandboxedCtx.__nunjucks_undefined_mode = env.opts.undefined;
 
+    emitHook(HOOK_EVENTS.RENDER_START, { template: 'renderString', context: renderContext.toObject(), templatePath: path });
+
     try {
-      return await tmpl.render(sandboxedCtx);
+      const result = await tmpl.render(sandboxedCtx);
+      emitHook(HOOK_EVENTS.RENDER_COMPLETE, { template: 'renderString', output: result, duration: Date.now() - startTime, templatePath: path });
+      return result;
     } catch (e) {
-      const err = await env.getErrorFormatter().formatError(e, path, {
-        renderContext: ctx,
+      const err = await env.getErrorFormatter().formatError(path, {
+        renderContext: renderContext.toObject(),
         sourceContent: src,
         jsCaller: callerLocation,
         jsCallerSource: jsCallerSource,
         jsCallerErrorLine: callerLocation?.line,
       });
       console.error(err.toConsoleString());
+      emitHook(HOOK_EVENTS.RENDER_ERROR, { template: 'renderString', error: e, context: renderContext.toObject(), templatePath: path });
       throw err;
     }
   };

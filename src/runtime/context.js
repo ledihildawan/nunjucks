@@ -2,15 +2,19 @@
 import { createObj } from '../object/index.js';
 import { createEnvironment } from '../environment/index.js';
 
+const Context = Symbol('Context');
+
 export function createContext(ctx, blocks, env) {
-  const obj = createObj('Context', {
+  const obj = createObj({
+    name: 'Context',
     init: function(ctx, blocks, env) {
       this.env = env || createEnvironment();
-      this.ctx = Object.assign({}, ctx);
+      this.ctx = { ...ctx };
       this.blocks = {};
       this.exported = [];
       this._parentBlockNames = null;
       this._validatedBlocks = false;
+      this._parentContext = null;
 
       keys(blocks).forEach(name => {
         this.addBlock(name, blocks[name]);
@@ -24,7 +28,7 @@ export function createContext(ctx, blocks, env) {
         const parentBlockNames = new Set(this._parentBlockNames);
         const childOnlyBlocks = keys(this.blocks).filter(name => !parentBlockNames.has(name));
         if (childOnlyBlocks.length > 0) {
-          const err = new Error('Block "' + childOnlyBlocks[0] + '" is not defined in parent template');
+          const err = new Error(`Block "${childOnlyBlocks[0]}" is not defined in parent template`);
           err.code = 'UNDEFINED_BLOCK';
           err.subject = childOnlyBlocks[0];
           throw err;
@@ -43,9 +47,6 @@ export function createContext(ctx, blocks, env) {
     setVariable: function(name, val) {
       this.ctx[name] = val;
     },
-    getVariables: function() {
-      return this.ctx;
-    },
     addBlock: function(name, block) {
       this.blocks[name] = this.blocks[name] || [];
       this.blocks[name].push(block);
@@ -54,7 +55,7 @@ export function createContext(ctx, blocks, env) {
     getBlock: function(name) {
       this.validateBlocks();
       if (!this.blocks[name]) {
-        const err = new Error('unknown block "' + name + '"');
+        const err = new Error(`unknown block "${name}"`);
         err.code = 'UNDEFINED_BLOCK';
         err.subject = name;
         throw err;
@@ -66,7 +67,7 @@ export function createContext(ctx, blocks, env) {
       const blk = this.blocks[name][idx + 1];
 
       if (idx === -1 || !blk) {
-        const err = new Error('no super block available for "' + name + '"');
+        const err = new Error(`no super block available for "${name}"`);
         err.code = 'NO_SUPER_BLOCK';
         err.subject = name;
         throw err;
@@ -84,7 +85,22 @@ export function createContext(ctx, blocks, env) {
       });
       return exported;
     },
+    fork: function(data = {}) {
+      const childCtx = createContext(data, {}, this.env);
+      childCtx._parentContext = this;
+      return childCtx;
+    },
+    getVariables: function() {
+      if (this._parentContext) {
+        const parentVars = this._parentContext.getVariables();
+        return { ...parentVars, ...this.ctx };
+      }
+      return this.ctx;
+    },
   });
+  obj[Context] = true;
   obj.init(ctx, blocks, env);
   return obj;
 }
+
+export const isContext = (obj) => obj?.[Context] === true;
