@@ -423,7 +423,7 @@ CodeBuilder.prototype.buildGroup = function(node) {
 CodeBuilder.prototype.buildFunCall = function(node) {
   const nameCode = this.build(node.name);
   const argsCode = node.args?.children?.map(arg => this.build(arg)).join(', ') || '';
-  return `${nameCode}(${argsCode})`;
+  return `await ${nameCode}(${argsCode})`;
 };
 
 CodeBuilder.prototype.buildBinaryOp = function(node) {
