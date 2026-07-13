@@ -7,6 +7,7 @@ import { createObj } from '../object/index.js';
 import { createSourceMap } from '../helpers/source-map.js';
 import { compileDispatch } from './node-dispatch.js';
 import { DEFAULT_UNDEFINED_MODE, getUndefinedMode } from '../runtime/undefined.js';
+import { compile as compileModern } from './code-gen.js';
 
 export function createCompiler(templateName, undefinedMode, source) {
   const obj = createObj({
@@ -193,21 +194,39 @@ export function createCompiler(templateName, undefinedMode, source) {
 
 export function compile(src, asyncPipes, extensions, name, opts = {}) {
   const undefinedMode = getUndefinedMode(opts);
-  const c = createCompiler(name, undefinedMode, src);
+  
+  const modernOpts = {
+    async: asyncPipes ? 'auto' : false,
+    sourceMap: false,
+    autoescape: opts.autoescape ?? true,
+    trimBlocks: opts.trimBlocks ?? false,
+    lstripBlocks: opts.lstripBlocks ?? false,
+    undefined: undefinedMode,
+  };
 
-  const processedSrc = pipe(
-    extensions || [],
-    exts => exts.map(ext => ext.preprocess),
-    comps => filter(comps, isDefined),
-    processors => reduce(processors, (s, processor) => processor(s), src)
-  );
+  try {
+    const result = compileModern(src, extensions || [], extensions || [], name, modernOpts);
+    if (typeof result === 'object' && result.code) {
+      return result.code;
+    }
+    return result;
+  } catch (e) {
+    const c = createCompiler(name, undefinedMode, src);
 
-  c.compile(transform(
-    parse(processedSrc, extensions, opts),
-    asyncPipes,
-    name
-  ));
-  return c.getCode();
+    const processedSrc = pipe(
+      extensions || [],
+      exts => exts.map(ext => ext.preprocess),
+      comps => filter(comps, isDefined),
+      processors => reduce(processors, (s, processor) => processor(s), src)
+    );
+
+    c.compile(transform(
+      parse(processedSrc, extensions, opts),
+      asyncPipes,
+      name
+    ));
+    return c.getCode();
+  }
 }
 
 export function getSourceMap(compiler) {
