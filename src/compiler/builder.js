@@ -124,6 +124,41 @@ CodeBuilder.prototype.build = function(node) {
       return this.buildOptionalChain(node);
     case 'optionalCall':
       return this.buildOptionalCall(node);
+    case 'array':
+      return this.buildArray(node);
+    case 'dict':
+      return this.buildDict(node);
+    case 'group':
+      return this.buildGroup(node);
+    case 'funCall':
+      return this.buildFunCall(node);
+    case 'add':
+    case 'sub':
+    case 'mul':
+    case 'div':
+    case 'mod':
+    case 'concat':
+    case 'floorDiv':
+    case 'pow':
+      return this.buildBinaryOp(node);
+    case 'or':
+    case 'and':
+      return this.buildLogicalOp(node);
+    case 'nullishCoalesce':
+      return this.buildNullishCoalesce(node);
+    case 'not':
+      return this.buildUnaryNot(node);
+    case 'neg':
+    case 'pos':
+      return this.buildUnaryOp(node);
+    case 'compare':
+      return this.buildCompare(node);
+    case 'in':
+      return this.buildIn(node);
+    case 'slice':
+      return this.buildSlice(node);
+    case 'inlineIf':
+      return this.buildInlineIf(node);
     default:
       throw new Error(`Unknown node type: ${type}`);
   }
@@ -288,6 +323,106 @@ CodeBuilder.prototype.buildOptionalCall = function(node) {
   }
   const argsCode = node.args?.children?.map(arg => this.build(arg)).join(', ') || '';
   return `(${nameCode}?.(${argsCode}) ?? '')`;
+};
+
+CodeBuilder.prototype.buildArray = function(node) {
+  const elements = node.children?.map(child => this.build(child)).join(', ') || '';
+  return `[${elements}].join(',')`;
+};
+
+CodeBuilder.prototype.buildDict = function(node) {
+  const pairs = node.children?.map(child => {
+    const key = child.key?.value || (child.key?.type === 'symbol' ? child.key.value : child.key);
+    const val = this.build(child.value);
+    return `${JSON.stringify(key)}: ${val}`;
+  }).join(', ') || '';
+  return `{${pairs}}`;
+};
+
+CodeBuilder.prototype.buildGroup = function(node) {
+  // Group just wraps an expression in parens
+  return `(${this.build(node.children[0])})`;
+};
+
+CodeBuilder.prototype.buildFunCall = function(node) {
+  const nameCode = this.build(node.name);
+  const argsCode = node.args?.children?.map(arg => this.build(arg)).join(', ') || '';
+  return `${nameCode}(${argsCode})`;
+};
+
+CodeBuilder.prototype.buildBinaryOp = function(node) {
+  const leftCode = this.build(node.left);
+  const rightCode = this.build(node.right);
+  const op = node.type;
+  const opMap = {
+    add: '+', sub: '-', mul: '*', div: '/', mod: '%',
+    concat: ' + "" + ', floorDiv: 'Math.floor(', pow: '**'
+  };
+  const operator = opMap[op] || op;
+  if (op === 'floorDiv') {
+    return `Math.floor(${leftCode} / ${rightCode})`;
+  }
+  return `${leftCode} ${operator} ${rightCode}`;
+};
+
+CodeBuilder.prototype.buildLogicalOp = function(node) {
+  const leftCode = this.build(node.left);
+  const rightCode = this.build(node.right);
+  const op = node.type === 'or' ? '||' : '&&';
+  return `${leftCode} ${op} ${rightCode}`;
+};
+
+CodeBuilder.prototype.buildNullishCoalesce = function(node) {
+  // For nullish coalescing, we need raw values, so use __ for symbol lookups
+  let leftCode;
+  if (node.left?.type === 'symbol') {
+    leftCode = `__('${node.left.value}')`;
+  } else {
+    leftCode = this.build(node.left);
+  }
+  const rightCode = this.build(node.right);
+  return `${leftCode} ?? ${rightCode}`;
+};
+
+CodeBuilder.prototype.buildUnaryNot = function(node) {
+  const targetCode = this.build(node.target);
+  return `!${targetCode}`;
+};
+
+CodeBuilder.prototype.buildUnaryOp = function(node) {
+  const targetCode = this.build(node.target);
+  return node.type === 'neg' ? `-${targetCode}` : `+${targetCode}`;
+};
+
+CodeBuilder.prototype.buildCompare = function(node) {
+  const parts = node.ops?.map((op, i) => {
+    const left = i === 0 ? this.build(node.expr) : this.build(node.conditions?.[i - 1] || op.expr);
+    const right = this.build(op.expr);
+    const cmp = op.operator;
+    return `${left} ${cmp} ${right}`;
+  }) || [];
+  return parts.join(' && ');
+};
+
+CodeBuilder.prototype.buildIn = function(node) {
+  const leftCode = this.build(node.left);
+  const rightCode = this.build(node.right);
+  return `rt.inOperator(${leftCode}, ${rightCode})`;
+};
+
+CodeBuilder.prototype.buildSlice = function(node) {
+  const arrCode = this.build(node.start);
+  const startCode = node.stop ? this.build(node.start) : 'null';
+  const stopCode = node.stop ? this.build(node.stop) : 'null';
+  const stepCode = node.step ? this.build(node.step) : 'null';
+  return `rt.slice(${arrCode}, ${startCode}, ${stopCode}, ${stepCode})`;
+};
+
+CodeBuilder.prototype.buildInlineIf = function(node) {
+  const condCode = this.build(node.cond);
+  const bodyCode = this.build(node.body);
+  const elseCode = this.build(node.else_);
+  return `(${condCode} ? ${bodyCode} : ${elseCode})`;
 };
 
 CodeBuilder.prototype.buildFor = function(node) {
