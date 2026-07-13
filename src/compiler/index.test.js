@@ -188,7 +188,7 @@ describe('compile function', () => {
   test('compiles template string to JS code', () => {
     const result = compile('Hello {{ name }}', [], [], 'test.njk');
     expect(result).toContain('async function root');
-    expect(result).toContain('runtime.suppressValue');
+    expect(result).toContain('suppressValue');
   });
 
   test('compiles with async pipes', () => {

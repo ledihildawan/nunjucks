@@ -128,20 +128,28 @@ CodeBuilder.prototype.buildRoot = function(node) {
   
   const asyncKeyword = this.options.async !== false ? 'async ' : '';
   this.emitLine(`${asyncKeyword}function root(env, context, frame, runtime) {`);
+  this.emitLine(`  // Destructure helpers for cleaner code`);
+  this.emitLine(`  const { escape, suppressValue, ensureDefined, contextOrFrameLookup, fromIterator } = runtime;`);
+  this.emitLine(`  const getFilter = env.getFilter;`);
   this.emitLine(`  const output = [];`);
+  this.emitLine(`  const autoescape = env.opts.autoescape;`);
+  this.emitLine(``);
   
   if (node.children) {
     node.children.forEach(child => this.build(child));
   }
 
   if (this.hasBlocks) {
+    this.emitLine(``);
     this.emitLine(`  if (parentTemplate) {`);
     this.emitLine(`    return await parentTemplate.rootRenderFunc(env, context, frame, runtime);`);
     this.emitLine(`  }`);
   }
 
-  this.emitLine(`  return output.join("");`);
+  this.emitLine(``);
+  this.emitLine(`  return output.join('');`);
   this.emitLine(`}`);
+  this.emitLine(``);
   this.emitLine(`return { root };`);
 
   this.popFrame();
@@ -174,11 +182,11 @@ CodeBuilder.prototype.buildSymbol = function(node) {
     return varName;
   }
   
-  const lookup = `runtime.contextOrFrameLookup(context, frame, "${varName}")`;
+  const lookup = `contextOrFrameLookup(context, frame, "${varName}")`;
   
   // Use ensureDefined if undefined mode is strict
   if (this.options.undefined === 'strict') {
-    return `runtime.ensureDefined(${lookup}, 0, 0, "${varName}", "${this.name}", "strict")`;
+    return `ensureDefined(${lookup}, 0, 0, "${varName}", "${this.name}", "strict")`;
   }
   
   // Debug mode should return the string "undefined"
@@ -196,13 +204,13 @@ CodeBuilder.prototype.buildLiteral = function(node) {
 CodeBuilder.prototype.buildExpression = function(node) {
   if (isSymbol(node)) {
     const symbolCode = this.buildSymbol(node);
-    this.emitLine(`  output.push(runtime.suppressValue(${symbolCode}, env.opts.autoescape));`);
+    this.emitLine(`  output.push(suppressValue(${symbolCode}, autoescape));`);
   } else if (isLiteral(node)) {
-    this.emitLine(`  output.push(runtime.suppressValue(${this.buildLiteral(node)}, env.opts.autoescape));`);
+    this.emitLine(`  output.push(suppressValue(${this.buildLiteral(node)}, autoescape));`);
   } else if (isPipe(node) || isPipeAsync(node)) {
     this.buildPipe(node);
   } else {
-    this.emitLine(`  output.push(runtime.suppressValue(${this.build(node)}, env.opts.autoescape));`);
+    this.emitLine(`  output.push(suppressValue(${this.build(node)}, autoescape));`);
   }
 };
 
@@ -213,7 +221,14 @@ CodeBuilder.prototype.buildPipe = function(node) {
   const argsCode = args.map((arg) => this.build(arg)).join(', ');
 
   const awaitKw = this.options.async !== false ? 'await ' : '';
-  this.emitLine(`  output.push(runtime.escape(${awaitKw}env.getFilter("${filterName}").call(context, ${argsCode})));`);
+  
+  // Use cleaner syntax with destructure
+  if (awaitKw) {
+    this.emitLine(`  const _filterResult = ${awaitKw}getFilter("${filterName}").call(context, ${argsCode});`);
+    this.emitLine(`  output.push(escape(_filterResult));`);
+  } else {
+    this.emitLine(`  output.push(escape(getFilter("${filterName}").call(context, ${argsCode})));`);
+  }
 };
 
 CodeBuilder.prototype.buildPipeAsync = function(node) {
@@ -229,7 +244,8 @@ CodeBuilder.prototype.buildFor = function(node) {
   this.pushFrame();
   this.setVar(itemVar, itemVar);
 
-  this.emitLine(`  for (const ${itemVar} of runtime.fromIterator(${arrCode})) {`);
+  this.emitLine(``);
+  this.emitLine(`  for (const ${itemVar} of fromIterator(${arrCode})) {`);
   
   if (node.body?.children) {
     node.body.children.forEach(child => this.build(child));
@@ -238,6 +254,7 @@ CodeBuilder.prototype.buildFor = function(node) {
   this.emitLine(`  }`);
 
   if (node.else_?.children) {
+    this.emitLine(``);
     this.emitLine(`  if (!${arrCode} || ${arrCode}.length === 0) {`);
     node.else_.children.forEach(child => this.build(child));
     this.emitLine(`  }`);
