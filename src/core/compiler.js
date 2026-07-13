@@ -23,13 +23,17 @@ const getRuntimeHelpers = () => ({
   markSafe,
   copySafeness,
   lookup,
-  escape: (str) => String(str).replace(/[&<>"']/g, char => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  }[char])),
+  escape: (str) => {
+    if (Array.isArray(str)) return str.join(',');
+    if (str && typeof str === 'object') return JSON.stringify(str);
+    return String(str).replace(/[&<>"']/g, char => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[char]));
+  },
 });
 
 export const execute = async (code, context = {}, config = {}) => {
@@ -58,8 +62,8 @@ export const execute = async (code, context = {}, config = {}) => {
     ...context,
     _autoescape: config.autoescape ?? true,
     lookup: function(key) {
-      if (key in context) {
-        return context[key];
+      if (key in ctx) {
+        return ctx[key];
       }
       return undefined;
     }

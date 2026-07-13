@@ -14,6 +14,7 @@ class CodeBuilder {
     this.currentFrame = null;
     this.hasAsync = false;
     this.hasBlocks = false;
+    this.currentOutput = 'out';
   }
 
   emit(code) {
@@ -23,6 +24,10 @@ class CodeBuilder {
   emitLine(code, line = null) {
     this.buffer.push(code);
     this.buffer.push('\n');
+  }
+
+  emitToOutput(code) {
+    this.buffer.push(`  ${this.currentOutput}.push(${code});\n`);
   }
 
   emitLines(...lines) {
@@ -262,13 +267,13 @@ CodeBuilder.prototype.buildTemplateData = function(node) {
 
 CodeBuilder.prototype.buildSymbol = function(node) {
   const varName = node.value;
+  
+  // Check if variable is defined in local scope (e.g., for loop variable)
   if (this.getVar(varName)) {
     return varName;
   }
   
-  // Use rt.lookup for new format
-  const lookup = `rt.lookup(ctx, "${varName}")`;
-  
+  // Always use lookup function for consistency with ctx changes
   // Use require if undefined mode is strict
   if (this.options.undefined === 'strict') {
     return `require("${varName}")`;
@@ -360,7 +365,7 @@ CodeBuilder.prototype.buildOptionalCall = function(node) {
 
 CodeBuilder.prototype.buildArray = function(node) {
   const elements = node.children?.map(child => this.build(child)).join(', ') || '';
-  return `[${elements}].join(',')`;
+  return `[${elements}]`;
 };
 
 CodeBuilder.prototype.buildDict = function(node) {
@@ -497,14 +502,21 @@ CodeBuilder.prototype.buildFor = function(node) {
   this.pushFrame();
   this.setVar(itemVar, itemVar);
 
-  this.emitLine(``);
-  this.emitLine(`  out.push((Array.isArray(${arrCode}) ? ${arrCode} : Object.values(${arrCode} ?? {})).map(${itemVar} => {`);
-  this.emitLine(`    const _out = [];`);
+  // Generate body content separately
+  const bodyBuffer = this.buffer;
+  this.buffer = [];
   
   if (node.body?.children) {
     node.body.children.forEach(child => this.build(child));
   }
+  
+  const bodyContent = this.buffer.join('').replace(/out\./g, '_out.');
+  this.buffer = bodyBuffer;
 
+  this.emitLine(``);
+  this.emitLine(`  out.push((Array.isArray(${arrCode}) ? ${arrCode} : Object.values(${arrCode} ?? {})).map(${itemVar} => {`);
+  this.emitLine(`    const _out = [];`);
+  this.emitLine(bodyContent);
   this.emitLine(`    return _out.join('');`);
   this.emitLine(`  }).join(''));`);
 
@@ -541,11 +553,13 @@ CodeBuilder.prototype.buildIf = function(node) {
 };
 
 CodeBuilder.prototype.buildSet = function(node) {
-  const target = node.target?.value;
+  const targets = node.targets || [node.target];
+  const target = targets[0]?.value;
   const valueCode = node.value ? this.build(node.value) : '""';
 
   this.setVar(target, target);
-  this.emitLine(`  frame.set("${target}", ${valueCode});`);
+  this.emitLine(`  const ${target} = ${valueCode};`);
+  this.emitLine(`  ctx["${target}"] = ${target};`);
 };
 
 CodeBuilder.prototype.buildBlock = function(node) {
