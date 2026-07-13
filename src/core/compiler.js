@@ -25,6 +25,7 @@ const getRuntimeHelpers = () => ({
   lookup,
   escape: (str, autoescape = true) => {
     if (!autoescape) return str;
+    if (str && typeof str === 'object' && isSafeString(str)) return str.val;
     if (Array.isArray(str)) return str.join(',');
     if (str && typeof str === 'object') return JSON.stringify(str);
     return String(str).replace(/[&<>"']/g, char => ({
@@ -44,10 +45,9 @@ export const execute = async (code, context = {}, config = {}) => {
 
   const getFilter = (name) => {
     const filterFn = filters[name];
-    if (!filterFn) {
-      throw new Error(`Filter "${name}" not found`);
-    }
-    return filterFn;
+    if (filterFn) return filterFn;
+    if (context[name] && typeof context[name] === 'function') return context[name];
+    throw new Error(`Filter "${name}" not found`);
   };
 
   // Create runtime object for the new format
