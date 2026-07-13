@@ -495,12 +495,22 @@ CodeBuilder.prototype.buildCase = function(node) {
 };
 
 CodeBuilder.prototype.buildFor = function(node) {
-  const itemVar = node.name?.value;
+  // Handle both single variable and (k, v) destructuring
+  let itemVar, itemVar2;
+  if (node.name?.type === 'array') {
+    itemVar = node.name.children[0]?.value;
+    itemVar2 = node.name.children[1]?.value;
+  } else {
+    itemVar = node.name?.value;
+  }
+  
   const arrNode = node.arr;
   const arrCode = this.build(arrNode);
+  const loopOutput = `out${this.tempId++}`;
 
   this.pushFrame();
   this.setVar(itemVar, itemVar);
+  if (itemVar2) this.setVar(itemVar2, itemVar2);
 
   // Generate body content separately
   const bodyBuffer = this.buffer;
@@ -510,14 +520,32 @@ CodeBuilder.prototype.buildFor = function(node) {
     node.body.children.forEach(child => this.build(child));
   }
   
-  const bodyContent = this.buffer.join('').replace(/out\./g, '_out.');
+  const bodyContent = this.buffer.join('').replace(/out\./g, `${loopOutput}.`);
   this.buffer = bodyBuffer;
 
+  // For object iteration with two variables, use Object.entries
+  let iterCode;
+  if (itemVar2) {
+    iterCode = `Object.entries(${arrCode} ?? {})`;
+  } else {
+    iterCode = `(Array.isArray(${arrCode}) ? ${arrCode} : Object.values(${arrCode} ?? {}))`;
+  }
+
   this.emitLine(``);
-  this.emitLine(`  out.push((Array.isArray(${arrCode}) ? ${arrCode} : Object.values(${arrCode} ?? {})).map(${itemVar} => {`);
-  this.emitLine(`    const _out = [];`);
+  
+  if (itemVar2) {
+    // For object iteration with key, value
+    this.emitLine(`  out.push(${iterCode}.map(e => {`);
+    this.emitLine(`    const ${itemVar} = e[0];`);
+    this.emitLine(`    const ${itemVar2} = e[1];`);
+    this.emitLine(`    const ${loopOutput} = [];`);
+  } else {
+    this.emitLine(`  out.push(${iterCode}.map(${itemVar} => {`);
+    this.emitLine(`    const ${loopOutput} = [];`);
+  }
+  
   this.emitLine(bodyContent);
-  this.emitLine(`    return _out.join('');`);
+  this.emitLine(`    return ${loopOutput}.join('');`);
   this.emitLine(`  }).join(''));`);
 
   if (node.else_?.children) {
