@@ -159,6 +159,10 @@ CodeBuilder.prototype.build = function(node) {
       return this.buildSlice(node);
     case 'inlineIf':
       return this.buildInlineIf(node);
+    case 'switch':
+      return this.buildSwitch(node);
+    case 'case':
+      return this.buildCase(node);
     default:
       throw new Error(`Unknown node type: ${type}`);
   }
@@ -296,6 +300,13 @@ CodeBuilder.prototype.buildPipeAsync = function(node) {
 
 CodeBuilder.prototype.buildLookupVal = function(node) {
   const targetCode = this.build(node.target);
+  
+  // Handle slice specially - it's an object with start/stop/step
+  if (node.val?.type === 'slice') {
+    const sliceInfo = this.build(node.val);
+    return `rt.slice(${targetCode}, ${sliceInfo.start}, ${sliceInfo.stop}, ${sliceInfo.step})`;
+  }
+  
   const valCode = this.build(node.val);
   return `rt.memberLookup(${targetCode}, ${valCode})`;
 };
@@ -411,11 +422,12 @@ CodeBuilder.prototype.buildIn = function(node) {
 };
 
 CodeBuilder.prototype.buildSlice = function(node) {
-  const arrCode = this.build(node.start);
-  const startCode = node.stop ? this.build(node.start) : 'null';
+  // Slice parameters only - the array comes from the lookupVal target
+  const startCode = node.start ? this.build(node.start) : 'null';
   const stopCode = node.stop ? this.build(node.stop) : 'null';
   const stepCode = node.step ? this.build(node.step) : 'null';
-  return `rt.slice(${arrCode}, ${startCode}, ${stopCode}, ${stepCode})`;
+  // Return a function that takes the array
+  return { start: startCode, stop: stopCode, step: stepCode };
 };
 
 CodeBuilder.prototype.buildInlineIf = function(node) {
@@ -423,6 +435,36 @@ CodeBuilder.prototype.buildInlineIf = function(node) {
   const bodyCode = this.build(node.body);
   const elseCode = this.build(node.else_);
   return `(${condCode} ? ${bodyCode} : ${elseCode})`;
+};
+
+CodeBuilder.prototype.buildSwitch = function(node) {
+  const exprCode = this.build(node.expr);
+  
+  this.emitLine(`  switch (${exprCode}) {`);
+  
+  if (node.cases) {
+    node.cases.forEach(caseNode => {
+      this.build(caseNode);
+    });
+  }
+  
+  if (node.default_) {
+    this.emitLine(`  default:`);
+    if (node.default_.children) {
+      node.default_.children.forEach(child => this.build(child));
+    }
+  }
+  
+  this.emitLine(`  }`);
+};
+
+CodeBuilder.prototype.buildCase = function(node) {
+  const condCode = this.build(node.cond);
+  this.emitLine(`  case ${condCode}:`);
+  if (node.body?.children) {
+    node.body.children.forEach(child => this.build(child));
+  }
+  this.emitLine(`    break;`);
 };
 
 CodeBuilder.prototype.buildFor = function(node) {
