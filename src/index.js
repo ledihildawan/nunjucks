@@ -1,5 +1,5 @@
 import { setGlobalConfig, getGlobalConfig, mergeConfig, resetConfig } from './config/global.js';
-import { renderString, renderStringSync, compileTemplate, render, isTemplateString, detectTemplateType } from './core/render.js';
+import { renderString, compileTemplate, isTemplateString, detectTemplateType } from './core/render.js';
 
 const Result = {
   success: (value) => ({ ok: true, value, error: undefined }),
@@ -45,18 +45,6 @@ nunjucks.render = async (template, context = {}, config = {}) => {
   return renderString(template, context, mergeConfig(config));
 };
 
-nunjucks.renderSync = async (template, context = {}, config = {}) => {
-  return renderStringSync(template, context, mergeConfig(config));
-};
-
-nunjucks.renderString = async (template, context = {}, config = {}) => {
-  return renderString(template, context, mergeConfig(config));
-};
-
-nunjucks.renderStringSync = async (template, context = {}, config = {}) => {
-  return renderStringSync(template, context, mergeConfig(config));
-};
-
 nunjucks.compile = (template, config = {}) => {
   return compileTemplate(template, mergeConfig(config));
 };
@@ -83,9 +71,7 @@ export {
   mergeConfig,
   resetConfig,
   renderString,
-  renderStringSync,
   compileTemplate,
-  render,
   isTemplateString,
   detectTemplateType,
   Result
