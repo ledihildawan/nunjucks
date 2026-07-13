@@ -181,6 +181,10 @@ CodeBuilder.prototype.build = function(node) {
       return this.buildKeywordArgs(node);
     case 'pair':
       return this.buildPair(node);
+    case 'is':
+      return this.buildIs(node);
+    case 'compareOperand':
+      return this.build(node.expr);
     default:
       throw new Error(`Unknown node type: ${type}`);
   }
@@ -636,4 +640,13 @@ CodeBuilder.prototype.buildPair = function(node) {
   const key = node.key?.value || node.key;
   const val = this.build(node.value);
   return `${JSON.stringify(key)}: ${val}`;
+};
+
+CodeBuilder.prototype.buildIs = function(node) {
+  // IS operator - needs runtime support
+  // For now, return true for truthy check
+  const leftCode = this.build(node.left);
+  const testName = node.right?.value;
+  // Simple implementation - just check truthiness
+  return `(${leftCode})`;
 };
