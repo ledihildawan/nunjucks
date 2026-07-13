@@ -37,6 +37,7 @@ const CONSTRUCTOR_MAP = {
   case: nodes.case,
   output: nodes.output,
   capture: nodes.capture,
+  tryCatch: nodes.tryCatch,
   templateData: nodes.templateData,
   in: nodes.in,
   is: nodes.is,

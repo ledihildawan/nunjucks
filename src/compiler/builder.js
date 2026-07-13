@@ -166,6 +166,8 @@ CodeBuilder.prototype.build = function(node) {
       return this.buildInlineIf(node);
     case 'switch':
       return this.buildSwitch(node);
+    case 'tryCatch':
+      return this.buildTryCatch(node);
     case 'case':
       return this.buildCase(node);
     case 'super':
@@ -543,6 +545,24 @@ CodeBuilder.prototype.buildSwitch = function(node) {
   this.emitLine(`  }`);
 };
 
+CodeBuilder.prototype.buildTryCatch = function(node) {
+  this.emitLine(`try {`);
+  
+  if (node.body?.children) {
+    node.body.children.forEach(child => this.build(child));
+  }
+  
+  if (node.catch) {
+    this.emitLine(`} catch (err) {`);
+    this.emitLine(`  ctx["err"] = err;`);
+    if (node.catch?.children) {
+      node.catch.children.forEach(child => this.build(child));
+    }
+  }
+  
+  this.emitLine(`}`);
+};
+
 CodeBuilder.prototype.buildCase = function(node) {
   const condCode = this.build(node.cond);
   this.emitLine(`  case ${condCode}:`);
@@ -699,16 +719,16 @@ CodeBuilder.prototype.buildMacro = function(node) {
   const macroBody = this.buffer.join('');
   this.buffer = savedBuffer;
   
-  this.emitLine(`  ctx["${macroName}"] = (function(rt) { return async function(${macroArgs}) {`);
+  this.emitLine(`  ctx["${macroName}"] = (function(rt, parentCtx) { return async function(${macroArgs}) {`);
   this.emitLine(`    const $ = rt.escape;`);
-  this.emitLine(`    const _ = (k, d) => (k in this ? this[k] : d);`);
-  this.emitLine(`    const __ = (k) => this[k];`);
+  this.emitLine(`    const _ = (k, d) => (k in this ? this[k] : rt.lookup(parentCtx, k) ?? d);`);
+  this.emitLine(`    const __ = (k) => this[k] ?? rt.lookup(parentCtx, k);`);
   this.emitLine(`    const f = rt.getFilter;`);
   this.emitLine(`    const autoescape = true;`);
   this.emitLine(`    const out = [];`);
   this.emitLine(`    ${macroBody}`);
   this.emitLine(`    return out.join('');`);
-  this.emitLine(`  }; })(rt);`);
+  this.emitLine(`  }; })(rt, ctx);`);
 };
 
 CodeBuilder.prototype.buildCall = function(node) {

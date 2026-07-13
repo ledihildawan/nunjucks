@@ -43,6 +43,7 @@ import { parseSwitch } from './switch.js';
 import { parseRaw } from './raw.js';
 import { parseFilterStatement } from './filter.js';
 import { parseWithContext } from './with.js';
+import { parseTry } from './try-catch.js';
 
 const lexer = {
   TOKEN_SYMBOL,
@@ -130,6 +131,8 @@ export const parseStatement = (ctx) => {
       return parseFilterStatement(ctx);
     case 'switch':
       return parseSwitch(ctx);
+    case 'try':
+      return parseTry(ctx);
     default:
       if (ctx.extensions.length) {
         for (let i = 0; i < ctx.extensions.length; i++) {

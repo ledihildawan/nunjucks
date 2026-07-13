@@ -67,6 +67,7 @@ export const NODE_TYPES = Object.freeze({
   PIPE_ASYNC: 'pipeAsync',
   NULLISH_COALESCE: 'nullishCoalesce',
   IN: 'in',
+  TRY_CATCH: 'tryCatch',
   IS: 'is',
 });
 
@@ -289,6 +290,9 @@ export const set = (...args) => {
 export const capture = (lineno, colno, body) =>
   createNode(NODE_TYPES.CAPTURE, lineno, colno, { body });
 
+export const tryCatch = (lineno, colno, body, catchBody = null, errVar = null) =>
+  createNode(NODE_TYPES.TRY_CATCH, lineno, colno, { body, catch: catchBody, errVar });
+
 export const switch_ = (lineno, colno, expr, cases = [], default_ = null) =>
   createNode(NODE_TYPES.SWITCH, lineno, colno, { expr, cases: cases || [], default: default_ });
 
@@ -430,6 +434,7 @@ export const isFromImport = (n) => n?.type === NODE_TYPES.FROM_IMPORT;
 export const isSwitch = (n) => n?.type === NODE_TYPES.SWITCH;
 export const isCase = (n) => n?.type === NODE_TYPES.CASE;
 export const isCapture = (n) => n?.type === NODE_TYPES.CAPTURE;
+export const isTryCatch = (n) => n?.type === NODE_TYPES.TRY_CATCH;
 export const isCaller = (n) => n?.type === NODE_TYPES.CALLER;
 export const isSuper = (n) => n?.type === NODE_TYPES.SUPER;
 export const isTemplateRef = (n) => n?.type === NODE_TYPES.TEMPLATE_REF;
@@ -539,6 +544,7 @@ export const nodes = Object.freeze({
   fromImport,
   set,
   capture,
+  tryCatch,
   switch: switch_,
   case: case_,
 
@@ -604,6 +610,7 @@ export const nodes = Object.freeze({
   isSwitch,
   isCase,
   isCapture,
+  isTryCatch,
   isCaller,
   isSuper,
   isTemplateRef,
