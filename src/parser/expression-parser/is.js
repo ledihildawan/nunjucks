@@ -1,4 +1,4 @@
-import { Is, Not } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { skipSymbol } from '../cursor.js';
 import { parseCompare } from './compare.js';
 
@@ -7,9 +7,9 @@ export const parseIs = (ctx) => {
   if (skipSymbol(ctx, 'is')) {
     const not = skipSymbol(ctx, 'not');
     const node2 = parseCompare(ctx);
-    node = Is(node.lineno, node.colno, node, node2);
+    node = nodes.is(node.lineno, node.colno, node, node2);
     if (not) {
-      node = Not(node.lineno, node.colno, node);
+      node = nodes.not(node.lineno, node.colno, node);
     }
   }
   return node;

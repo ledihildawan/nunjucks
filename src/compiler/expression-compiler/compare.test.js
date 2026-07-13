@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { compileCompare, compileIs } from './compare.js';
-import { AstSymbol } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];
@@ -54,7 +54,7 @@ describe('compileIs', () => {
     const ctx = makeCtx();
     const node = {
       left: { mock: 'val' },
-      right: AstSymbol(1, 1, 'odd'),
+      right: nodes.symbol(1, 1, 'odd'),
     };
     compileIs(ctx, node);
     expect(ctx.emitted).toEqual([
@@ -69,7 +69,7 @@ describe('compileIs', () => {
     const node = {
       left: { mock: 'val' },
       right: {
-        name: AstSymbol(1, 1, 'divisibleby'),
+        name: nodes.symbol(1, 1, 'divisibleby'),
         args: { mock: '[2]' },
       },
     };

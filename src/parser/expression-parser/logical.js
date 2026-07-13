@@ -1,4 +1,4 @@
-import { Or, And, Not } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { peekToken, skipSymbol } from '../cursor.js';
 import { parseNullishCoalesce } from './nullish.js';
 import { parseIn } from './in.js';
@@ -7,7 +7,7 @@ export const parseOr = (ctx) => {
   let node = parseNullishCoalesce(ctx);
   while (skipSymbol(ctx, 'or')) {
     const node2 = parseNullishCoalesce(ctx);
-    node = Or(node.lineno, node.colno, node, node2);
+    node = nodes.or(node.lineno, node.colno, node, node2);
   }
   return node;
 };
@@ -16,7 +16,7 @@ export const parseAnd = (ctx) => {
   let node = parseNot(ctx);
   while (skipSymbol(ctx, 'and')) {
     const node2 = parseNot(ctx);
-    node = And(node.lineno, node.colno, node, node2);
+    node = nodes.and(node.lineno, node.colno, node, node2);
   }
   return node;
 };
@@ -24,7 +24,7 @@ export const parseAnd = (ctx) => {
 export const parseNot = (ctx) => {
   const tok = peekToken(ctx);
   if (skipSymbol(ctx, 'not')) {
-    return Not(tok.lineno, tok.colno, parseNot(ctx));
+    return nodes.not(tok.lineno, tok.colno, parseNot(ctx));
   }
   return parseIn(ctx);
 };

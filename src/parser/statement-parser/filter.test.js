@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseFilterStatement } from './filter.js';
-import { Output, Filter, AstSymbol } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import { TOKEN_SYMBOL, TOKEN_BLOCK_END } from '../../lexer/token-types.js';
 
@@ -15,7 +15,7 @@ describe('parseFilterStatement', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const nameNode = new AstSymbol(1, 8, 'escape');
+    const nameNode = nodes.symbol(1, 8, 'escape');
     const captureBody = { lineno: 2, colno: 1 };
     const ctx = Object.assign(createCursor(tokens), {
       parseFilterName: () => {
@@ -28,9 +28,9 @@ describe('parseFilterStatement', () => {
 
     const result = parseFilterStatement(ctx);
 
-    expect(result).toBeInstanceOf(Output);
+    expect(nodes.getNodeTypeName(result)).toBe('output');
     const filterNode = result.children[0];
-    expect(filterNode).toBeInstanceOf(Filter);
+    expect(nodes.isFilter(filterNode)).toBe(true);
     expect(filterNode.name).toBe(nameNode);
   });
 

@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseDotAccess } from './dot.js';
-import { LookupVal, Literal } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor } from '../cursor.js';
 import { TOKEN_SYMBOL } from '../../lexer/token-types.js';
 
@@ -14,15 +14,15 @@ describe('parseDotAccess', () => {
     const tokens = { nextToken: () => seq[n++] };
     const ctx = createCursor(tokens);
     const tok = { lineno: 1, colno: 2, type: 'operator', value: '.' };
-    const target = { lineno: 1, colno: 1, typename: 'Symbol', value: 'foo' };
+    const target = { lineno: 1, colno: 1, type: 'symbol', value: 'foo' };
 
     const result = parseDotAccess(ctx, tok, target);
 
-    expect(result).toBeInstanceOf(LookupVal);
+    expect(nodes.isLookupVal(result)).toBe(true);
     expect(result.lineno).toBe(1);
     expect(result.colno).toBe(2);
     expect(result.target).toBe(target);
-    expect(result.val).toBeInstanceOf(Literal);
+    expect(nodes.isLiteral(result.val)).toBe(true);
     expect(result.val.value).toBe('bar');
   });
 
@@ -35,7 +35,7 @@ describe('parseDotAccess', () => {
     const tokens = { nextToken: () => seq[n++] };
     const ctx = createCursor(tokens);
     const tok = { lineno: 1, colno: 2, type: 'operator', value: '.' };
-    const target = { lineno: 1, colno: 1, typename: 'Symbol', value: 'foo' };
+    const target = { lineno: 1, colno: 1, type: 'symbol', value: 'foo' };
 
     expect(() => parseDotAccess(ctx, tok, target)).toThrow('expected name');
   });

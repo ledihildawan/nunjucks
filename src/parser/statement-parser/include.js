@@ -1,4 +1,4 @@
-import { Include } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseInclude = (ctx) => {
@@ -8,7 +8,7 @@ export const parseInclude = (ctx) => {
     fail(ctx, 'parseInclude: expected ' + tagName);
   }
 
-  const node = Include(tag.lineno, tag.colno);
+  const node = nodes.include(tag.lineno, tag.colno);
   node.template = ctx.parseExpression();
 
   if (skipSymbol(ctx, 'only')) {

@@ -173,6 +173,45 @@ export function createTemplate(src, env, path, eagerCompile) {
         this.env._renderingTemplates.delete(this.path);
       }
     },
+    // ============================================
+    // MODERN API: Sync render
+    // ============================================
+    renderSync: function(ctx, parentFrame) {
+      this._safeCompileSync();
+
+      if (this.env._renderingTemplates.has(this.path)) {
+        const err = new Error(`Circular include detected: "${this.path}" is already being rendered`);
+        err.path = this.path;
+        err.code = 'CIRCULAR_INCLUDE';
+        err.subject = this.path;
+        throw err;
+      }
+
+      this.env._renderingTemplates.add(this.path);
+
+      const context = createContext(ctx || {}, this.blocks, this.env);
+      const frame = parentFrame ? parentFrame.push(true) : createFrame();
+      frame.topLevel = true;
+
+      try {
+        return this.rootRenderFunc(this.env, context, frame, globalRuntime);
+      } catch (e) {
+        const errorWithPath = this._enrichError(e);
+        throw prettifyError({
+          path: e.path || this.path,
+          withInternals: this.env.opts.dev,
+          err: errorWithPath,
+          includeChain: e._includeChain || this._includeChain
+        });
+      } finally {
+        this.env._renderingTemplates.delete(this.path);
+      }
+    },
+    _safeCompileSync: function() {
+      if (!this.compiled) {
+        this.compile();
+      }
+    },
     _safeCompile: async function() {
       try {
         await this.compile();

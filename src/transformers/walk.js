@@ -1,126 +1,63 @@
-import {
-  Node,
-  Value,
-  NodeList,
-  Root,
-  Literal,
-  AstSymbol,
-  Group,
-  ArrayNode,
-  Pair,
-  Dict,
-  LookupVal,
-  OptionalChain,
-  OptionalCall,
-  Slice,
-  If,
-  InlineIf,
-  For,
-  Macro,
-  Caller,
-  Import,
-  FromImport,
-  FunCall,
-  Pipe,
-  PipeAsync,
-  KeywordArgs,
-  Block,
-  Super,
-  TemplateRef,
-  Extends,
-  Include,
-  Set,
-  Switch,
-  Case,
-  Output,
-  Capture,
-  TemplateData,
-  In,
-  Is,
-  Or,
-  And,
-  NullishCoalesce,
-  Not,
-  Add,
-  Concat,
-  Sub,
-  Mul,
-  Div,
-  FloorDiv,
-  Mod,
-  Pow,
-  Neg,
-  Pos,
-  Compare,
-  CompareOperand,
-  CallExtension,
-  CallExtensionAsync,
-  isNode,
-  isNodeList,
-  isCallExtension,
-  isCallExtensionAsync,
-  isRoot,
-  getNodeTypeName,
-} from '../nodes/index.js';
+import { nodes } from '../nodes/index.js';
 
 const CONSTRUCTOR_MAP = {
-  Node,
-  Value,
-  NodeList,
-  Root,
-  Literal,
-  Symbol: AstSymbol,
-  Group,
-  Array: ArrayNode,
-  Pair,
-  Dict,
-  LookupVal,
-  OptionalChain,
-  OptionalCall,
-  Slice,
-  If,
-  InlineIf,
-  For,
-  Macro,
-  Caller,
-  Import,
-  FromImport,
-  FunCall,
-  Pipe,
-  PipeAsync,
-  Filter: Pipe,
-  KeywordArgs,
-  Block,
-  Super,
-  TemplateRef,
-  Extends,
-  Include,
-  Set: Set,
-  Switch,
-  Case,
-  Output,
-  Capture,
-  TemplateData,
-  In,
-  Is,
-  Or,
-  And,
-  NullishCoalesce,
-  Not,
-  Add,
-  Concat,
-  Sub,
-  Mul,
-  Div,
-  FloorDiv,
-  Mod,
-  Pow,
-  Neg,
-  Pos,
-  Compare,
-  CompareOperand,
-  CallExtension,
-  CallExtensionAsync,
+  node: nodes.node,
+  value: nodes.value,
+  nodeList: nodes.nodeList,
+  root: nodes.root,
+  literal: nodes.literal,
+  symbol: nodes.symbol,
+  group: nodes.group,
+  array: nodes.array,
+  pair: nodes.pair,
+  dict: nodes.dict,
+  lookupVal: nodes.lookupVal,
+  optionalChain: nodes.optionalChain,
+  optionalCall: nodes.optionalCall,
+  slice: nodes.slice,
+  if: nodes.if,
+  inlineIf: nodes.inlineIf,
+  for: nodes.for,
+  macro: nodes.macro,
+  caller: nodes.caller,
+  import: nodes.import,
+  fromImport: nodes.fromImport,
+  funCall: nodes.funCall,
+  pipe: nodes.pipe,
+  pipeAsync: nodes.pipeAsync,
+  filter: nodes.pipe,
+  keywordArgs: nodes.keywordArgs,
+  block: nodes.block,
+  super: nodes.super,
+  templateRef: nodes.templateRef,
+  extends: nodes.extends,
+  include: nodes.include,
+  set: nodes.set,
+  switch: nodes.switch,
+  case: nodes.case,
+  output: nodes.output,
+  capture: nodes.capture,
+  templateData: nodes.templateData,
+  in: nodes.in,
+  is: nodes.is,
+  or: nodes.or,
+  and: nodes.and,
+  nullishCoalesce: nodes.nullishCoalesce,
+  not: nodes.not,
+  add: nodes.add,
+  concat: nodes.concat,
+  sub: nodes.sub,
+  mul: nodes.mul,
+  div: nodes.div,
+  floorDiv: nodes.floorDiv,
+  mod: nodes.mod,
+  pow: nodes.pow,
+  neg: nodes.neg,
+  pos: nodes.pos,
+  compare: nodes.compare,
+  compareOperand: nodes.compareOperand,
+  callExtension: nodes.callExtension,
+  callExtensionAsync: nodes.callExtensionAsync,
 };
 
 export const mapCOW = (arr, func) => {
@@ -139,8 +76,7 @@ export const mapCOW = (arr, func) => {
 };
 
 export const walk = (ast, func, depthFirst) => {
-  // Handle nodes that don't have NODE symbol (like CallExtension)
-  if (!ast || (!isNode(ast) && !isCallExtension(ast) && !isCallExtensionAsync(ast))) {
+  if (!ast || (!nodes.isNode(ast) && !nodes.isCallExtension(ast) && !nodes.isCallExtensionAsync(ast))) {
     return ast;
   }
 
@@ -151,30 +87,31 @@ export const walk = (ast, func, depthFirst) => {
     }
   }
 
-  const typeName = getNodeTypeName(ast);
+  const typeName = nodes.getNodeTypeName(ast);
   const Ctor = CONSTRUCTOR_MAP[typeName];
   if (!Ctor) {
     throw new Error(`walk: unknown typename ${typeName}`);
   }
 
-  if (isNodeList(ast) || isRoot(ast) || (ast.children && Array.isArray(ast.children))) {
+  if (nodes.isNodeList(ast) || nodes.isRoot(ast) || (ast.children && Array.isArray(ast.children))) {
     const children = mapCOW(ast.children, (node) => walk(node, func, depthFirst));
     if (children !== ast.children) {
       ast = Ctor(ast.lineno, ast.colno, children);
     }
-  } else if (isCallExtension(ast) || isCallExtensionAsync(ast)) {
+  } else if (nodes.isCallExtension(ast) || nodes.isCallExtensionAsync(ast)) {
     const args = walk(ast.args, func, depthFirst);
     const contentArgs = mapCOW(ast.contentArgs, (node) => walk(node, func, depthFirst));
     if (args !== ast.args || contentArgs !== ast.contentArgs) {
       ast = Ctor(ast.extName, ast.prop, args, contentArgs);
     }
   } else {
-    const props = ast.fields.map((field) => ast[field]);
+    const fields = nodes.getNodeFields(ast);
+    const props = fields.map((field) => ast[field]);
     const propsT = mapCOW(props, (prop) => walk(prop, func, depthFirst));
     if (propsT !== props) {
       ast = Ctor(ast.lineno, ast.colno);
       propsT.forEach((prop, i) => {
-        ast[ast.fields[i]] = prop;
+        ast[fields[i]] = prop;
       });
     }
   }

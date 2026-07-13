@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseFor } from './for.js';
-import { For, AstSymbol, ArrayNode } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import { TOKEN_SYMBOL, TOKEN_BLOCK_END, TOKEN_COMMA } from '../../lexer/token-types.js';
 
@@ -20,14 +20,14 @@ describe('parseFor', () => {
     const arrExpr = { lineno: 1, colno: 15 };
     const body = { lineno: 1, colno: 22 };
     const ctx = Object.assign(createCursor(tokens), {
-      parsePrimary: () => { nextToken(ctx); return AstSymbol(1, 5, 'item'); },
+      parsePrimary: () => { nextToken(ctx); return nodes.symbol(1, 5, 'item'); },
       parseExpression: () => { nextToken(ctx); return arrExpr; },
       parseUntilBlocks: () => body,
     });
 
     const result = parseFor(ctx);
 
-    expect(result).toBeInstanceOf(For);
+    expect(nodes.isFor(result)).toBe(true);
     expect(result.arr).toBe(arrExpr);
     expect(result.body).toBe(body);
     expect(result.else_).toBeNull();
@@ -52,7 +52,7 @@ describe('parseFor', () => {
     let primCalls = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => {
-        const v = primCalls === 0 ? AstSymbol(1, 5, 'key') : (primCalls === 1 ? AstSymbol(1, 10, 'value') : AstSymbol(1, 21, 'items'));
+        const v = primCalls === 0 ? nodes.symbol(1, 5, 'key') : (primCalls === 1 ? nodes.symbol(1, 10, 'value') : nodes.symbol(1, 21, 'items'));
         primCalls++;
         nextToken(ctx);
         return v;
@@ -63,8 +63,8 @@ describe('parseFor', () => {
 
     const result = parseFor(ctx);
 
-    expect(result).toBeInstanceOf(For);
-    expect(result.name).toBeInstanceOf(ArrayNode);
+    expect(nodes.isFor(result)).toBe(true);
+    expect(nodes.isArray(result.name)).toBe(true);
     expect(result.name.children.length).toBe(2);
   });
 
@@ -86,7 +86,7 @@ describe('parseFor', () => {
     const elseBody = { lineno: 1, colno: 28 };
     let blocksCalls = 0;
     const ctx = Object.assign(createCursor(tokens), {
-      parsePrimary: () => { nextToken(ctx); return AstSymbol(1, 5, 'item'); },
+      parsePrimary: () => { nextToken(ctx); return nodes.symbol(1, 5, 'item'); },
       parseExpression: () => { nextToken(ctx); return { lineno: 1, colno: 15 }; },
       parseUntilBlocks: (...args) => {
         blocksCalls++;
@@ -96,7 +96,7 @@ describe('parseFor', () => {
 
     const result = parseFor(ctx);
 
-    expect(result).toBeInstanceOf(For);
+    expect(nodes.isFor(result)).toBe(true);
     expect(result.body).toBe(body);
     expect(result.else_).toBe(elseBody);
   });
@@ -117,7 +117,7 @@ describe('parseFor', () => {
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
     const ctx = Object.assign(createCursor(tokens), {
-      parsePrimary: () => { nextToken(ctx); return AstSymbol(1, 5, 'item'); },
+      parsePrimary: () => { nextToken(ctx); return nodes.symbol(1, 5, 'item'); },
     });
 
     expect(() => parseFor(ctx)).toThrow('parseFor: expected "in" keyword for loop');

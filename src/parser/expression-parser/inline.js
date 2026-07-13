@@ -1,4 +1,4 @@
-import { InlineIf } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { skipSymbol } from '../cursor.js';
 import { parseOr } from './logical.js';
 
@@ -7,7 +7,7 @@ export const parseInlineIf = (ctx) => {
   if (skipSymbol(ctx, 'if')) {
     const condNode = parseOr(ctx);
     const bodyNode = node;
-    node = InlineIf(node.lineno, node.colno);
+    node = nodes.inlineIf(node.lineno, node.colno);
     node.body = bodyNode;
     node.cond = condNode;
     if (skipSymbol(ctx, 'else')) {

@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { compileFromImport } from './from-import.js';
-import { Pair, AstSymbol } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];
@@ -18,7 +18,7 @@ const makeCtx = () => {
 describe('compileFromImport', () => {
   test('emits from-import with getTemplate and getExported', () => {
     const ctx = makeCtx();
-    const nameNode = AstSymbol(1, 1, 'foo');
+    const nameNode = nodes.symbol(1, 1, 'foo');
     const node = {
       template: { mock: '"lib.html"' },
       names: { children: [nameNode] },
@@ -37,9 +37,9 @@ describe('compileFromImport', () => {
 
   test('handles Pair names with alias', () => {
     const ctx = makeCtx();
-    const pairNode = Pair(1, 1,
-      AstSymbol(1, 1, 'origName'),
-      AstSymbol(1, 1, 'aliasName'),
+    const pairNode = nodes.pair(1, 1,
+      nodes.symbol(1, 1, 'origName'),
+      nodes.symbol(1, 1, 'aliasName'),
     );
     const node = {
       template: { mock: '"lib.html"' },
@@ -58,7 +58,7 @@ describe('compileFromImport', () => {
 
   test('emits throw for unknown export', () => {
     const ctx = makeCtx();
-    const nameNode = AstSymbol(1, 1, 'missingExport');
+    const nameNode = nodes.symbol(1, 1, 'missingExport');
     const node = {
       template: { mock: '"lib.html"' },
       names: { children: [nameNode] },
@@ -75,7 +75,7 @@ describe('compileFromImport', () => {
 
   test('uses frame.set when frame has parent', () => {
     const ctx = makeCtx();
-    const nameNode = AstSymbol(1, 1, 'x');
+    const nameNode = nodes.symbol(1, 1, 'x');
     const node = {
       template: { mock: '"lib.html"' },
       names: { children: [nameNode] },

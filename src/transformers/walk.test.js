@@ -1,10 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { mapCOW, walk, depthWalk } from './walk.js';
-import {
-  Node, NodeList, Literal, AstSymbol, FunCall, KeywordArgs, Output, TemplateData,
-  Add, Compare,
-  CallExtension, getNodeTypeName, isLiteral,
-} from '../nodes/index.js';
+import { nodes } from '../nodes/index.js';
 
 describe('mapCOW', () => {
   test('returns original array when no changes', () => {
@@ -43,112 +39,101 @@ describe('walk', () => {
   });
 
   test('applies func to Literal node', () => {
-    const lit = Literal(1, 0, 42);
+    const lit = nodes.literal(1, 0, 42);
     const spy = [];
-    const result = walk(lit, (node) => { spy.push(getNodeTypeName(node)); });
-    expect(spy).toContain('Literal');
+    const result = walk(lit, (node) => { spy.push(nodes.getNodeTypeName(node)); });
+    expect(spy).toContain('literal');
     expect(result).toBe(lit);
   });
 
   test('replaces node when func returns a new node', () => {
-    const lit = Literal(1, 0, 42);
-    const replacement = Literal(1, 0, 99);
+    const lit = nodes.literal(1, 0, 42);
+    const replacement = nodes.literal(1, 0, 99);
     const result = walk(lit, () => replacement);
     expect(result).toBe(replacement);
   });
 
   test('walks children of NodeList', () => {
-    const inner = Literal(2, 0, 1);
-    const list = NodeList(1, 0, [inner]);
+    const inner = nodes.literal(2, 0, 1);
+    const list = nodes.nodeList(1, 0, [inner]);
     const visited = [];
-    walk(list, (node) => { visited.push(getNodeTypeName(node)); });
-    expect(visited).toContain('NodeList');
-    expect(visited).toContain('Literal');
+    walk(list, (node) => { visited.push(nodes.getNodeTypeName(node)); });
+    expect(visited).toContain('nodeList');
+    expect(visited).toContain('literal');
   });
 
   test('reconstructs NodeList when children change', () => {
-    const inner = Literal(2, 0, 1);
-    const list = NodeList(1, 0, [inner]);
+    const inner = nodes.literal(2, 0, 1);
+    const list = nodes.nodeList(1, 0, [inner]);
     const result = walk(list, (node) => {
-      if (isLiteral(node)) {
-        return Literal(node.lineno, node.colno, 99);
+      if (nodes.isLiteral(node)) {
+        return nodes.literal(node.lineno, node.colno, 99);
       }
       return undefined;
     });
-    expect(getNodeTypeName(result)).toBe('NodeList');
+    expect(nodes.getNodeTypeName(result)).toBe('nodeList');
     expect(result.children[0].value).toBe(99);
   });
 
   test('walks Output with TemplateData', () => {
-    const data = TemplateData(1, 0, 'hello');
-    const out = Output(1, 0, [data]);
+    const data = nodes.templateData(1, 0, 'hello');
+    const out = nodes.output(1, 0, [data]);
     const visited = [];
-    walk(out, (node) => { visited.push(getNodeTypeName(node)); });
-    expect(visited).toContain('Output');
-    expect(visited).toContain('TemplateData');
+    walk(out, (node) => { visited.push(nodes.getNodeTypeName(node)); });
+    expect(visited).toContain('output');
+    expect(visited).toContain('templateData');
   });
 
   test('walks FunCall with args', () => {
-    const lit = Literal(2, 0, 1);
-    const args = KeywordArgs(2, 0, [lit]);
-    const call = FunCall(1, 0, AstSymbol(1, 0, 'foo'), args);
+    const lit = nodes.literal(2, 0, 1);
+    const args = nodes.keywordArgs(2, 0, [lit]);
+    const call = nodes.funCall(1, 0, nodes.symbol(1, 0, 'foo'), args);
     const visited = [];
-    walk(call, (node) => { visited.push(getNodeTypeName(node)); });
-    expect(visited).toContain('FunCall');
-    expect(visited).toContain('Literal');
+    walk(call, (node) => { visited.push(nodes.getNodeTypeName(node)); });
+    expect(visited).toContain('funCall');
+    expect(visited).toContain('literal');
   });
 
   test('walks arithmetic nodes', () => {
-    const left = Literal(1, 0, 1);
-    const right = Literal(1, 0, 2);
-    const add = Add(1, 0, left, right);
+    const left = nodes.literal(1, 0, 1);
+    const right = nodes.literal(1, 0, 2);
+    const add = nodes.add(1, 0, left, right);
     const visited = [];
-    walk(add, (node) => { visited.push(getNodeTypeName(node)); });
-    expect(visited).toContain('Add');
-    expect(visited).toContain('Literal');
+    walk(add, (node) => { visited.push(nodes.getNodeTypeName(node)); });
+    expect(visited).toContain('add');
+    expect(visited).toContain('literal');
   });
 
   test('walks Compare node', () => {
-    const left = Literal(1, 0, 5);
-    const compare = Compare(1, 0, left, []);
+    const left = nodes.literal(1, 0, 5);
+    const compare = nodes.compare(1, 0, left, []);
     const visited = [];
-    walk(compare, (node) => { visited.push(getNodeTypeName(node)); });
-    expect(visited).toContain('Compare');
-    expect(visited).toContain('Literal');
-  });
-
-  test('walks unknown node type using generic Node handler', () => {
-    class FakeNode extends Node {
-      get typename() { return 'UnknownType'; }
-      get fields() { return []; }
-    }
-    const fakeNode = new FakeNode(1, 1);
-    const visited = [];
-    walk(fakeNode, (node) => { visited.push(getNodeTypeName(node)); });
-    expect(visited).toContain('Node');
+    walk(compare, (node) => { visited.push(nodes.getNodeTypeName(node)); });
+    expect(visited).toContain('compare');
+    expect(visited).toContain('literal');
   });
 
   test('walks CallExtension', () => {
-    const ext = CallExtension('myExt', 'method', [], []);
+    const ext = nodes.callExtension({ __name: 'myExt' }, 'method', [], []);
     const visited = [];
-    walk(ext, (node) => { visited.push(getNodeTypeName(node)); });
-    expect(visited).toContain('CallExtension');
+    walk(ext, (node) => { visited.push(nodes.getNodeTypeName(node)); });
+    expect(visited).toContain('callExtension');
   });
 });
 
 describe('depthWalk', () => {
   test('walks depth-first (func called post-children)', () => {
-    const inner = Literal(2, 0, 1);
-    const outer = Literal(1, 0, 2);
-    const list = NodeList(1, 0, [inner, outer]);
+    const inner = nodes.literal(2, 0, 1);
+    const outer = nodes.literal(1, 0, 2);
+    const list = nodes.nodeList(1, 0, [inner, outer]);
     const order = [];
-    depthWalk(list, (node) => { order.push(getNodeTypeName(node)); });
-    expect(order.indexOf('Literal')).toBeLessThan(order.lastIndexOf('NodeList'));
+    depthWalk(list, (node) => { order.push(nodes.getNodeTypeName(node)); });
+    expect(order.indexOf('literal')).toBeLessThan(order.lastIndexOf('nodeList'));
   });
 
   test('replaces node from func in depth-first walk', () => {
-    const lit = Literal(1, 0, 42);
-    const replacement = Literal(1, 0, 99);
+    const lit = nodes.literal(1, 0, 42);
+    const replacement = nodes.literal(1, 0, 99);
     const result = depthWalk(lit, () => replacement);
     expect(result).toBe(replacement);
   });

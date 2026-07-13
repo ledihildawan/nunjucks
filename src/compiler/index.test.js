@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from 'bun:test';
 import { createCompiler, compile, getSourceMap, getSourceMapFromCompile } from './index.js';
-import { NodeList, Literal, AstSymbol } from '../nodes/index.js';
+import { nodes } from '../nodes/index.js';
 import { createFrame } from '../runtime/index.js';
 
 let compiler;
@@ -82,7 +82,7 @@ describe('Compiler', () => {
   });
 
   test('_emitFuncBegin starts root function', () => {
-    const node = NodeList(1, 2);
+    const node = nodes.nodeList(1, 2);
     compiler._emitFuncBegin(node, 'root');
     expect(compiler.buffer).toBe('output');
     expect(compiler.codebuf[0]).toContain('async function root');
@@ -140,35 +140,35 @@ describe('Compiler', () => {
   });
 
   test('_compileChildren compiles each child', () => {
-    const child1 = Literal(1, 1, 'hello');
-    const child2 = Literal(1, 1, 'world');
-    const node = NodeList(1, 1, [child1, child2]);
+    const child1 = nodes.literal(1, 1, 'hello');
+    const child2 = nodes.literal(1, 1, 'world');
+    const node = nodes.nodeList(1, 1, [child1, child2]);
     const frame = createFrame();
     compiler._compileChildren(node, frame);
     expect(compiler.codebuf.length).toBeGreaterThan(0);
   });
 
   test('_compileExpression compiles valid expression', () => {
-    const node = Literal(1, 1, 42);
+    const node = nodes.literal(1, 1, 42);
     compiler._compileExpression(node, createFrame());
     expect(compiler.codebuf.length).toBeGreaterThan(0);
   });
 
   test('_compileExpression throws for invalid type', () => {
-    const invalidNode = { typename: 'Unknown', lineno: 1, colno: 1 };
+    const invalidNode = { type: 'Unknown', lineno: 1, colno: 1 };
     expect(() => compiler._compileExpression(invalidNode, createFrame())).toThrow();
   });
 
   test('assertType passes for matching type', () => {
-    expect(() => compiler.assertType(Literal(1, 1, 'x'), Literal)).not.toThrow();
+    expect(() => compiler.assertType(nodes.literal(1, 1, 'x'), 'literal')).not.toThrow();
   });
 
   test('assertType throws for non-matching type', () => {
-    expect(() => compiler.assertType(AstSymbol(1, 1, 'x'), Literal)).toThrow('assertType');
+    expect(() => compiler.assertType(nodes.symbol(1, 1, 'x'), 'literal')).toThrow('assertType');
   });
 
   test('compile delegates to compileDispatch', () => {
-    const node = Literal(1, 1, 'hello');
+    const node = nodes.literal(1, 1, 'hello');
     compiler.compile(node, createFrame());
     expect(compiler.codebuf.length).toBeGreaterThan(0);
   });

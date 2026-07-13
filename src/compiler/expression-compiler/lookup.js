@@ -1,8 +1,8 @@
-import { isSlice } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { compileAggregate } from './container.js';
 
 export const compileLookupVal = (ctx, node, frame) => {
-  if (isSlice(node.val)) {
+  if (nodes.isSlice(node.val)) {
     ctx._emit('runtime.slice((');
     ctx._compileExpression(node.target, frame);
     ctx._emit('), ');

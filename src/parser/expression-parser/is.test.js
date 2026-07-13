@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseIs } from './is.js';
-import { Is, Not, Literal } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor } from '../cursor.js';
 import { TOKEN_SYMBOL } from '../../lexer/token-types.js';
 
@@ -11,8 +11,8 @@ describe('parseIs', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const left = new Literal(1, 1, 'x');
-    const right = new Literal(1, 6, 'defined');
+    const left = nodes.literal(1, 1, 'x');
+    const right = nodes.literal(1, 6, 'defined');
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
@@ -21,7 +21,7 @@ describe('parseIs', () => {
 
     const result = parseIs(ctx);
 
-    expect(result).toBeInstanceOf(Is);
+    expect(nodes.getNodeTypeName(result)).toBe('is');
     expect(result.left).toBe(left);
     expect(result.right).toBe(right);
   });
@@ -33,8 +33,8 @@ describe('parseIs', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const left = new Literal(1, 1, 'x');
-    const right = new Literal(1, 10, 'undefined');
+    const left = nodes.literal(1, 1, 'x');
+    const right = nodes.literal(1, 10, 'undefined');
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
@@ -43,15 +43,15 @@ describe('parseIs', () => {
 
     const result = parseIs(ctx);
 
-    expect(result).toBeInstanceOf(Not);
-    expect(result.target).toBeInstanceOf(Is);
+    expect(nodes.getNodeTypeName(result)).toBe('not');
+    expect(nodes.getNodeTypeName(result.target)).toBe('is');
     expect(result.target.left).toBe(left);
     expect(result.target.right).toBe(right);
   });
 
   test('passes through without is', () => {
     const tokens = { nextToken: () => ({ type: TOKEN_SYMBOL, value: 'x', lineno: 1, colno: 1 }) };
-    const node = new Literal(1, 1, 'x');
+    const node = nodes.literal(1, 1, 'x');
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => node,
       parsePipe: (x) => x,

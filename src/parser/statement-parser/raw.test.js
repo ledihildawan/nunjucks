@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseRaw } from './raw.js';
-import { Output, TemplateData } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor } from '../cursor.js';
 import { TOKEN_SYMBOL, TOKEN_BLOCK_END } from '../../lexer/token-types.js';
 
@@ -30,8 +30,8 @@ describe('parseRaw', () => {
 
     const result = parseRaw(ctx);
 
-    expect(result).toBeInstanceOf(Output);
-    expect(result.children[0]).toBeInstanceOf(TemplateData);
+    expect(nodes.getNodeTypeName(result)).toBe('output');
+    expect(nodes.getNodeTypeName(result.children[0])).toBe('templateData');
     expect(result.children[0].value).toBe('some content here');
   });
 
@@ -67,7 +67,7 @@ describe('parseRaw', () => {
 
     const result = parseRaw(ctx);
 
-    expect(result).toBeInstanceOf(Output);
+    expect(nodes.getNodeTypeName(result)).toBe('output');
     expect(result.children[0].value).toBe('outer {% raw %}inner{% endraw %} middle ');
   });
 

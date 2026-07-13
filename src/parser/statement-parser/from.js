@@ -2,7 +2,7 @@ import {
   TOKEN_BLOCK_END,
   TOKEN_COMMA,
 } from '../../lexer/token-types.js';
-import { NodeList, Pair, FromImport } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { nextToken, peekToken, skip, skipSymbol, fail } from '../cursor.js';
 import { parseWithContext } from './with.js';
 
@@ -20,7 +20,7 @@ export const parseFrom = (ctx) => {
       fromTok.colno);
   }
 
-  const names = NodeList();
+  const names = nodes.nodeList();
   let withContext;
 
   while (true) {
@@ -55,7 +55,7 @@ export const parseFrom = (ctx) => {
 
     if (skipSymbol(ctx, 'as')) {
       const alias = ctx.parsePrimary();
-      names.addChild(Pair(name.lineno,
+      names.addChild(nodes.pair(name.lineno,
         name.colno,
         name,
         alias));
@@ -66,7 +66,7 @@ export const parseFrom = (ctx) => {
     withContext = parseWithContext(ctx);
   }
 
-  return FromImport(fromTok.lineno,
+  return nodes.fromImport(fromTok.lineno,
     fromTok.colno,
     template,
     names,

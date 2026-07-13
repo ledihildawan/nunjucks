@@ -6,9 +6,7 @@ import {
   TOKEN_RIGHT_PAREN,
 } from '../../lexer/token-types.js';
 import {
-  NodeList,
-  Pair,
-  KeywordArgs,
+  nodes,
 } from '../../nodes/index.js';
 import { nextToken, peekToken, skip, skipValue, fail } from '../cursor.js';
 
@@ -26,8 +24,8 @@ export const parseSignature = (ctx, tolerant, noParens) => {
     tok = nextToken(ctx);
   }
 
-  const args = NodeList(tok.lineno, tok.colno);
-  const kwargs = KeywordArgs(tok.lineno, tok.colno);
+  const args = nodes.nodeList(tok.lineno, tok.colno);
+  const kwargs = nodes.keywordArgs(tok.lineno, tok.colno);
   let checkComma = false;
 
   while (true) {
@@ -48,7 +46,7 @@ export const parseSignature = (ctx, tolerant, noParens) => {
 
       if (skipValue(ctx, TOKEN_OPERATOR, '=')) {
         kwargs.addChild(
-          Pair(arg.lineno,
+          nodes.pair(arg.lineno,
             arg.colno,
             arg,
             ctx.parseExpression())

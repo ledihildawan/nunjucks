@@ -1,19 +1,22 @@
 import { describe, test, expect } from 'bun:test';
 import { parseUnary } from './unary.js';
-import { Neg, Pos, Literal } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor } from '../cursor.js';
 import { TOKEN_OPERATOR, TOKEN_SYMBOL } from '../../lexer/token-types.js';
 
 describe('parseUnary', () => {
   test('passes through without unary operator', () => {
     const ctx = Object.assign(createCursor({ nextToken: () => ({ type: TOKEN_SYMBOL, value: 'x', lineno: 1, colno: 1 }) }), {
-      parsePrimary: () => Literal(1, 1, 42),
+      parsePrimary: () => nodes.literal(1, 1, 42),
       parsePipe: (node) => node,
     });
 
     const result = parseUnary(ctx);
 
-    expect(result).toEqual(Literal(1, 1, 42));
+    expect(nodes.getNodeTypeName(result)).toBe('literal');
+    expect(result.value).toBe(42);
+    expect(result.lineno).toBe(1);
+    expect(result.colno).toBe(1);
   });
 
   test('creates Neg for - prefix', () => {
@@ -22,7 +25,7 @@ describe('parseUnary', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const value = Literal(1, 2, 42);
+    const value = nodes.literal(1, 2, 42);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => value,
       parsePipe: (node) => node,
@@ -30,7 +33,7 @@ describe('parseUnary', () => {
 
     const result = parseUnary(ctx);
 
-    expect(result).toBeInstanceOf(Neg);
+    expect(nodes.getNodeTypeName(result)).toBe('neg');
     expect(result.target).toBe(value);
   });
 
@@ -40,7 +43,7 @@ describe('parseUnary', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const value = Literal(1, 2, 42);
+    const value = nodes.literal(1, 2, 42);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => value,
       parsePipe: (node) => node,
@@ -48,7 +51,7 @@ describe('parseUnary', () => {
 
     const result = parseUnary(ctx);
 
-    expect(result).toBeInstanceOf(Pos);
+    expect(nodes.getNodeTypeName(result)).toBe('pos');
     expect(result.target).toBe(value);
   });
 
@@ -59,7 +62,7 @@ describe('parseUnary', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const value = Literal(1, 3, 42);
+    const value = nodes.literal(1, 3, 42);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => value,
       parsePipe: (node) => node,
@@ -67,8 +70,8 @@ describe('parseUnary', () => {
 
     const result = parseUnary(ctx);
 
-    expect(result).toBeInstanceOf(Neg);
-    expect(result.target).toBeInstanceOf(Neg);
+    expect(nodes.getNodeTypeName(result)).toBe('neg');
+    expect(nodes.getNodeTypeName(result.target)).toBe('neg');
     expect(result.target.target).toBe(value);
   });
 
@@ -79,7 +82,7 @@ describe('parseUnary', () => {
     let pipeCalled = false;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => {
-        n++; return Literal(1, 1, 42);
+        n++; return nodes.literal(1, 1, 42);
       },
       parsePipe: (node) => { pipeCalled = true; return node; },
     });
@@ -96,7 +99,7 @@ describe('parseUnary', () => {
     let pipeCalled = false;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => {
-        n++; return Literal(1, 1, 42);
+        n++; return nodes.literal(1, 1, 42);
       },
       parsePipe: (node) => { pipeCalled = true; return node; },
     });

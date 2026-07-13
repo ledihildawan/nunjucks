@@ -90,66 +90,50 @@ describe('ensureDefined', () => {
 
 describe('undefined mode integration', () => {
   test('Symbol in debug mode shows warning but returns undefined', async () => {
-    const { createEnvironment } = await import('../environment/index.js');
-    const env = createEnvironment([], { undefined: 'debug' });
-
-    const result = await env.render('{{ user }}', { user: undefined });
+    const nunjucks = (await import('../index.js')).default;
+    const result = await nunjucks('{{ user }}', { user: undefined }, { undefined: 'debug' });
     expect(result).toBe('undefined');
   });
 
   test('LookupVal (member access) in debug mode shows warning but returns undefined', async () => {
-    const { createEnvironment } = await import('../environment/index.js');
-    const env = createEnvironment([], { undefined: 'debug' });
-
-    const result = await env.render('{{ user.name }}', { user: undefined });
+    const nunjucks = (await import('../index.js')).default;
+    const result = await nunjucks('{{ user.name }}', { user: undefined }, { undefined: 'debug' });
     expect(result).toBe('undefined');
   });
 
   test('optional chaining in debug mode returns undefined without error', async () => {
-    const { createEnvironment } = await import('../environment/index.js');
-    const env = createEnvironment([], { undefined: 'debug' });
-
-    const result = await env.render('{{ user?.name }}', { user: undefined });
+    const nunjucks = (await import('../index.js')).default;
+    const result = await nunjucks('{{ user?.name }}', { user: undefined }, { undefined: 'debug' });
     expect(result).toBe('undefined');
   });
 
   test('optional call with defined function calls function', async () => {
-    const { createEnvironment } = await import('../environment/index.js');
-    const env = createEnvironment([], { undefined: 'strict' });
-
-    const result = await env.render('{{ foo?.() }}', { foo: () => 'Hello' });
+    const nunjucks = (await import('../index.js')).default;
+    const result = await nunjucks('{{ foo?.() }}', { foo: () => 'Hello' }, { undefined: 'strict' });
     expect(result).toBe('Hello');
   });
 
   test('optional call with null returns empty', async () => {
-    const { createEnvironment } = await import('../environment/index.js');
-    const env = createEnvironment([]);
-
-    const result = await env.render('{{ foo?.() }}', { foo: null });
+    const nunjucks = (await import('../index.js')).default;
+    const result = await nunjucks('{{ foo?.() }}', { foo: null });
     expect(result).toBe('');
   });
 
   test('optional call with arguments passes args', async () => {
-    const { createEnvironment } = await import('../environment/index.js');
-    const env = createEnvironment([], { undefined: 'strict' });
-
-    const result = await env.render('{{ foo?.(x, y) }}', { foo: (a, b) => a + b, x: 3, y: 4 });
+    const nunjucks = (await import('../index.js')).default;
+    const result = await nunjucks('{{ foo?.(x, y) }}', { foo: (a, b) => a + b, x: 3, y: 4 }, { undefined: 'strict' });
     expect(result).toBe('7');
   });
 
   test('method optional call with defined method', async () => {
-    const { createEnvironment } = await import('../environment/index.js');
-    const env = createEnvironment([], { undefined: 'strict' });
-
-    const result = await env.render('{{ obj.method?.() }}', { obj: { method: () => 'result' } });
+    const nunjucks = (await import('../index.js')).default;
+    const result = await nunjucks('{{ obj.method?.() }}', { obj: { method: () => 'result' } }, { undefined: 'strict' });
     expect(result).toBe('result');
   });
 
   test('method optional call with undefined method returns empty', async () => {
-    const { createEnvironment } = await import('../environment/index.js');
-    const env = createEnvironment([]);
-
-    const result = await env.render('{{ obj.method?.() }}', { obj: {} });
+    const nunjucks = (await import('../index.js')).default;
+    const result = await nunjucks('{{ obj.method?.() }}', { obj: {} });
     expect(result).toBe('');
   });
 });

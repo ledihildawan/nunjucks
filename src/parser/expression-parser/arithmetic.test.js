@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseAdd, parseSub, parseMul, parseDiv, parseFloorDiv, parseMod, parsePow } from './arithmetic.js';
-import { Add, Sub, Mul, Div, FloorDiv, Mod, Pow, Literal } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import { TOKEN_OPERATOR, TOKEN_SYMBOL } from '../../lexer/token-types.js';
 
@@ -13,8 +13,8 @@ describe('parseAdd', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const left = new Literal(1, 1, 1);
-    const right = new Literal(1, 5, 2);
+    const left = nodes.literal(1, 1, 1);
+    const right = nodes.literal(1, 5, 2);
     let primaryCalls = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => {
@@ -27,14 +27,14 @@ describe('parseAdd', () => {
 
     const result = parseAdd(ctx);
 
-    expect(result).toBeInstanceOf(Add);
+    expect(nodes.isAdd(result)).toBe(true);
     expect(result.left).toBe(left);
     expect(result.right).toBe(right);
   });
 
   test('returns single node without +', () => {
     const tokens = { nextToken: () => ({ type: TOKEN_SYMBOL, value: 'x', lineno: 1, colno: 1 }) };
-    const node = new Literal(1, 1, 42);
+    const node = nodes.literal(1, 1, 42);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => node,
       parsePipe: (x) => x,
@@ -53,8 +53,8 @@ describe('parseSub', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const left = new Literal(1, 1, 10);
-    const right = new Literal(1, 5, 3);
+    const left = nodes.literal(1, 1, 10);
+    const right = nodes.literal(1, 5, 3);
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => {
@@ -67,7 +67,7 @@ describe('parseSub', () => {
 
     const result = parseSub(ctx);
 
-    expect(result).toBeInstanceOf(Sub);
+    expect(nodes.getNodeTypeName(result)).toBe('sub');
     expect(result.left).toBe(left);
     expect(result.right).toBe(right);
   });
@@ -80,8 +80,8 @@ describe('parseMul', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const left = new Literal(1, 1, 3);
-    const right = new Literal(1, 5, 4);
+    const left = nodes.literal(1, 1, 3);
+    const right = nodes.literal(1, 5, 4);
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
@@ -90,7 +90,7 @@ describe('parseMul', () => {
 
     const result = parseMul(ctx);
 
-    expect(result).toBeInstanceOf(Mul);
+    expect(nodes.getNodeTypeName(result)).toBe('mul');
   });
 });
 
@@ -101,8 +101,8 @@ describe('parseDiv', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const left = new Literal(1, 1, 10);
-    const right = new Literal(1, 5, 2);
+    const left = nodes.literal(1, 1, 10);
+    const right = nodes.literal(1, 5, 2);
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
@@ -111,7 +111,7 @@ describe('parseDiv', () => {
 
     const result = parseDiv(ctx);
 
-    expect(result).toBeInstanceOf(Div);
+    expect(nodes.getNodeTypeName(result)).toBe('div');
   });
 });
 
@@ -122,8 +122,8 @@ describe('parseFloorDiv', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const left = new Literal(1, 1, 10);
-    const right = new Literal(1, 5, 3);
+    const left = nodes.literal(1, 1, 10);
+    const right = nodes.literal(1, 5, 3);
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
@@ -132,7 +132,7 @@ describe('parseFloorDiv', () => {
 
     const result = parseFloorDiv(ctx);
 
-    expect(result).toBeInstanceOf(FloorDiv);
+    expect(nodes.getNodeTypeName(result)).toBe('floorDiv');
   });
 });
 
@@ -143,8 +143,8 @@ describe('parseMod', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const left = new Literal(1, 1, 10);
-    const right = new Literal(1, 5, 3);
+    const left = nodes.literal(1, 1, 10);
+    const right = nodes.literal(1, 5, 3);
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
@@ -153,7 +153,7 @@ describe('parseMod', () => {
 
     const result = parseMod(ctx);
 
-    expect(result).toBeInstanceOf(Mod);
+    expect(nodes.getNodeTypeName(result)).toBe('mod');
   });
 });
 
@@ -164,8 +164,8 @@ describe('parsePow', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const left = new Literal(1, 1, 2);
-    const right = new Literal(1, 5, 3);
+    const left = nodes.literal(1, 1, 2);
+    const right = nodes.literal(1, 5, 3);
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
@@ -174,6 +174,6 @@ describe('parsePow', () => {
 
     const result = parsePow(ctx);
 
-    expect(result).toBeInstanceOf(Pow);
+    expect(nodes.getNodeTypeName(result)).toBe('pow');
   });
 });

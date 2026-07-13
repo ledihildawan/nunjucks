@@ -1,12 +1,4 @@
-import {
-  isSymbol,
-  isLookupVal,
-  isTemplateData,
-  isPipe,
-  isPipeAsync,
-  isOptionalChain,
-  isOptionalCall,
-} from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 
 export const compileTemplateData = (ctx, node, frame) => {
   ctx._emit(`${ctx.buffer} += `);
@@ -30,11 +22,11 @@ export const compileCapture = (ctx, node, frame) => {
 const extractVarName = (node) => {
   if (!node) return null;
 
-  if (isSymbol(node)) {
+  if (nodes.isSymbol(node)) {
     return node.value;
   }
 
-  if (isLookupVal(node)) {
+  if (nodes.isLookupVal(node)) {
     const base = extractVarName(node.target);
     if (!base) return null;
     const prop = node.val?.value || node.val?.name || '';
@@ -47,15 +39,15 @@ const extractVarName = (node) => {
 export const compileOutput = (ctx, node, frame) => {
   const children = node.children;
   children.forEach(child => {
-    if (isTemplateData(child)) {
+    if (nodes.isTemplateData(child)) {
       if (child.value) {
         ctx._emit(`${ctx.buffer} += `);
         ctx._emit(JSON.stringify(child.value));
         ctx._emit(';');
       }
     } else {
-      const isPipeType = isPipe(child) || isPipeAsync(child);
-      const isOptionalChainType = isOptionalChain(child) || isOptionalCall(child);
+      const isPipeType = nodes.isPipe(child) || nodes.isPipeAsync(child);
+      const isOptionalChainType = nodes.isOptionalChain(child) || nodes.isOptionalCall(child);
       const varName = extractVarName(child);
       const undefinedMode = ctx.undefinedMode;
 
@@ -77,10 +69,10 @@ export const compileOutput = (ctx, node, frame) => {
         const tmplArg = escapedTemplateName ? `, "${escapedTemplateName}"` : ', null';
         ctx._emit(`,${child.lineno},${child.colno}${nameArg}${tmplArg}${modeArg})`);
       }
-      if (!isPipe) {
+      if (!isPipeType) {
         ctx._emit(')');
       }
-      ctx._emit(', env.opts.autoescape));');
+      ctx._emit(', env.opts.autoescape);');
     }
   });
   ctx._emit('\n');

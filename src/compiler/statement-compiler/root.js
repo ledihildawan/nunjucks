@@ -1,4 +1,3 @@
-import { Block } from '../../nodes/index.js';
 import { createFrame } from '../../runtime/index.js';
 
 export const compileRoot = (ctx, node, frame) => {
@@ -26,10 +25,12 @@ export const compileRoot = (ctx, node, frame) => {
 
   const blockNames = [];
 
-  const blocks = node.findAll(Block);
+  const blocks = node.findAll('block');
 
   blocks.forEach((block) => {
-    const name = block.name.value;
+    const name = block.name?.value;
+
+    if (!name) return;
 
     if (blockNames.includes(name)) {
       throw new Error(`Block "${name}" defined more than once.`);

@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { compileCallExtension, compileCallExtensionAsync } from './extension.js';
-import { NodeList } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];
@@ -65,13 +65,13 @@ describe('compileCallExtension', () => {
 
   test('emits extension call with real NodeList args', () => {
     const ctx = makeCtx();
-    const args = NodeList();
+    const args = nodes.nodeList();
     const mockChild = { mock: 'arg1' };
-    args.addChild(mockChild);
+    const argsWithChild = nodes.addChild(args, mockChild);
     const node = {
       extName: 'myExt',
       prop: 'myMethod',
-      args,
+      args: argsWithChild,
       contentArgs: [],
       autoescape: true,
     };

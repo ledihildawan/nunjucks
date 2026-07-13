@@ -7,7 +7,7 @@ import {
   TOKEN_REGEX,
   TOKEN_SYMBOL,
 } from '../../lexer/token-types.js';
-import { Literal, AstSymbol } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { nextToken, pushToken, fail } from '../cursor.js';
 
 export const parsePrimary = (ctx, noPostfix) => {
@@ -40,9 +40,9 @@ export const parsePrimary = (ctx, noPostfix) => {
   }
 
   if (val !== undefined) {
-    node = Literal(tok.lineno, tok.colno, val);
+    node = nodes.literal(tok.lineno, tok.colno, val);
   } else if (tok.type === TOKEN_SYMBOL) {
-    node = AstSymbol(tok.lineno, tok.colno, tok.value);
+    node = nodes.symbol(tok.lineno, tok.colno, tok.value);
   } else {
     pushToken(ctx, tok);
     node = ctx.parseAggregate();

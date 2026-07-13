@@ -1,14 +1,19 @@
 ﻿import { keys } from 'remeda';
 import { createObj } from '../object/index.js';
-import { createEnvironment } from '../environment/index.js';
 
 const Context = Symbol('Context');
+
+const createDefaultEnv = () => ({
+  globals: {},
+  getFilter: () => null,
+  opts: {}
+});
 
 export function createContext(ctx, blocks, env) {
   const obj = createObj({
     name: 'Context',
     init: function(ctxArg, blocksArg, envArg) {
-      this.env = envArg || createEnvironment();
+      this.env = envArg || createDefaultEnv();
       this.ctx = { ...ctxArg };
       this.blocks = {};
       this.exported = [];

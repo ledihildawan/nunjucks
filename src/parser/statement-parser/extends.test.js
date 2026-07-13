@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseExtends } from './extends.js';
-import { Extends } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import { TOKEN_SYMBOL, TOKEN_BLOCK_END } from '../../lexer/token-types.js';
 
@@ -23,7 +23,7 @@ describe('parseExtends', () => {
 
     const result = parseExtends(ctx);
 
-    expect(result).toBeInstanceOf(Extends);
+    expect(nodes.isExtends(result)).toBe(true);
     expect(result.template).toBe(templateNode);
   });
 

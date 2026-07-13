@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseFrom } from './from.js';
-import { FromImport, AstSymbol, Pair } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import {
   TOKEN_SYMBOL, TOKEN_BLOCK_END, TOKEN_COMMA,
@@ -19,8 +19,8 @@ describe('parseFrom', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const names = [new AstSymbol(1, 20, 'x'), new AstSymbol(1, 23, 'y')];
-    const template = new AstSymbol(1, 6, 'macros');
+    const names = [nodes.symbol(1, 20, 'x'), nodes.symbol(1, 23, 'y')];
+    const template = nodes.symbol(1, 6, 'macros');
     let pi = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => {
@@ -37,7 +37,7 @@ describe('parseFrom', () => {
 
     const result = parseFrom(ctx);
 
-    expect(result).toBeInstanceOf(FromImport);
+    expect(nodes.isFromImport(result)).toBe(true);
     expect(result.template).toBe(template);
     expect(result.names.children).toHaveLength(2);
     expect(result.names.children[0]).toBe(names[0]);
@@ -57,9 +57,9 @@ describe('parseFrom', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const name = new AstSymbol(1, 20, 'x');
-    const alias = new AstSymbol(1, 25, 'alias_x');
-    const template = new AstSymbol(1, 6, 'macros');
+    const name = nodes.symbol(1, 20, 'x');
+    const alias = nodes.symbol(1, 25, 'alias_x');
+    const template = nodes.symbol(1, 6, 'macros');
     const primaryValues = [name, alias];
     let pi = 0;
     const ctx = Object.assign(createCursor(tokens), {
@@ -74,9 +74,9 @@ describe('parseFrom', () => {
 
     const result = parseFrom(ctx);
 
-    expect(result).toBeInstanceOf(FromImport);
+    expect(nodes.isFromImport(result)).toBe(true);
     expect(result.names.children).toHaveLength(1);
-    expect(result.names.children[0]).toBeInstanceOf(Pair);
+    expect(nodes.isPair(result.names.children[0])).toBe(true);
     expect(result.names.children[0].key).toBe(name);
     expect(result.names.children[0].value).toBe(alias);
   });
@@ -93,8 +93,8 @@ describe('parseFrom', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const name = new AstSymbol(1, 20, 'x');
-    const template = new AstSymbol(1, 6, 'macros');
+    const name = nodes.symbol(1, 20, 'x');
+    const template = nodes.symbol(1, 6, 'macros');
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => {
         nextToken(ctx);
@@ -108,7 +108,7 @@ describe('parseFrom', () => {
 
     const result = parseFrom(ctx);
 
-    expect(result).toBeInstanceOf(FromImport);
+    expect(nodes.isFromImport(result)).toBe(true);
     expect(result.withContext).toBe(true);
   });
 
@@ -124,8 +124,8 @@ describe('parseFrom', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const name = new AstSymbol(1, 20, 'x');
-    const template = new AstSymbol(1, 6, 'macros');
+    const name = nodes.symbol(1, 20, 'x');
+    const template = nodes.symbol(1, 6, 'macros');
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => {
         nextToken(ctx);
@@ -139,7 +139,7 @@ describe('parseFrom', () => {
 
     const result = parseFrom(ctx);
 
-    expect(result).toBeInstanceOf(FromImport);
+    expect(nodes.isFromImport(result)).toBe(true);
     expect(result.withContext).toBe(false);
   });
 
@@ -162,7 +162,7 @@ describe('parseFrom', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const template = new AstSymbol(1, 6, 'macros');
+    const template = nodes.symbol(1, 6, 'macros');
     const ctx = Object.assign(createCursor(tokens), {
       parseExpression: () => { nextToken(ctx); return template; },
     });
@@ -180,8 +180,8 @@ describe('parseFrom', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const name = new AstSymbol(1, 20, '_private');
-    const template = new AstSymbol(1, 6, 'macros');
+    const name = nodes.symbol(1, 20, '_private');
+    const template = nodes.symbol(1, 6, 'macros');
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { nextToken(ctx); return name; },
       parseExpression: () => { nextToken(ctx); return template; },
@@ -199,7 +199,7 @@ describe('parseFrom', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const template = new AstSymbol(1, 6, 'macros');
+    const template = nodes.symbol(1, 6, 'macros');
     const ctx = Object.assign(createCursor(tokens), {
       parseExpression: () => { nextToken(ctx); return template; },
     });

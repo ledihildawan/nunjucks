@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseBracketAccess } from './lookup.js';
-import { LookupVal, Slice, Literal } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import { TOKEN_RIGHT_BRACKET, TOKEN_COLON, TOKEN_SYMBOL } from '../../lexer/token-types.js';
 
@@ -18,19 +18,19 @@ describe('parseBracketAccess', () => {
     const ctx = Object.assign(createCursor(tokens), {
       parseExpression: () => {
         nextToken(ctx);
-        return new Literal(1, 2, 'key');
+        return nodes.literal(1, 2, 'key');
       },
     });
     const bracketTok = makeTok('left-bracket', '[', 1, 1);
-    const target = { lineno: 1, colno: 0, typename: 'Symbol', value: 'foo' };
+    const target = { lineno: 1, colno: 0, type: 'symbol', value: 'foo' };
 
     const result = parseBracketAccess(ctx, bracketTok, target);
 
-    expect(result).toBeInstanceOf(LookupVal);
+    expect(nodes.isLookupVal(result)).toBe(true);
     expect(result.lineno).toBe(1);
     expect(result.colno).toBe(1);
     expect(result.target).toBe(target);
-    expect(result.val).toBeInstanceOf(Literal);
+    expect(nodes.isLiteral(result.val)).toBe(true);
     expect(result.val.value).toBe('key');
   });
 
@@ -46,20 +46,20 @@ describe('parseBracketAccess', () => {
       parseExpression: () => { throw new Error('should not be called'); },
     });
     const bracketTok = makeTok('left-bracket', '[', 1, 1);
-    const target = { lineno: 1, colno: 0, typename: 'Symbol', value: 'foo' };
+    const target = { lineno: 1, colno: 0, type: 'symbol', value: 'foo' };
 
     const result = parseBracketAccess(ctx, bracketTok, target);
 
-    expect(result).toBeInstanceOf(LookupVal);
-    expect(result.val).toBeInstanceOf(Slice);
+    expect(nodes.isLookupVal(result)).toBe(true);
+    expect(nodes.isSlice(result.val)).toBe(true);
     expect(result.val.start).toBeNull();
     expect(result.val.stop).toBeNull();
     expect(result.val.step).toBeNull();
   });
 
   test('parses slice [start:stop]', () => {
-    const startNode = new Literal(1, 2, 0);
-    const stopNode = new Literal(1, 4, 10);
+    const startNode = nodes.literal(1, 2, 0);
+    const stopNode = nodes.literal(1, 4, 10);
     const seq = [
       makeTok(TOKEN_SYMBOL, 'start', 1, 2),
       makeTok(TOKEN_COLON, ':', 1, 7),
@@ -78,11 +78,11 @@ describe('parseBracketAccess', () => {
       },
     });
     const bracketTok = makeTok('left-bracket', '[', 1, 1);
-    const target = { lineno: 1, colno: 0, typename: 'Symbol', value: 'foo' };
+    const target = { lineno: 1, colno: 0, type: 'symbol', value: 'foo' };
 
     const result = parseBracketAccess(ctx, bracketTok, target);
 
-    expect(result.val).toBeInstanceOf(Slice);
+    expect(nodes.isSlice(result.val)).toBe(true);
     expect(result.val.start).toBe(startNode);
     expect(result.val.stop).toBe(stopNode);
     expect(result.val.step).toBeNull();

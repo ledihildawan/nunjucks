@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { compileMacroPublic, compileCaller } from './macro.js';
-import { AstSymbol, Dict, Pair, getNodeTypeName } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];
@@ -19,15 +19,15 @@ const makeCtx = () => {
     _pushBuffer: () => {
       bufStack.push(buf);
       buf = 't_' + (++lastId);
-      emitted.push('var ' + buf + ' = "";\n');
+      emitted.push('var ' + buf + ' = ""\n');
       return buf;
     },
     _popBuffer: () => { buf = bufStack.pop(); },
     get buffer() { return buf; },
     set buffer(v) { buf = v; },
     assertType: (node, ...types) => {
-      if (!types.some(t => node instanceof t)) {
-        throw new Error(`assertType: invalid type: ${getNodeTypeName(node)}`);
+      if (!types.some(t => nodes.getNodeTypeName(node) === t)) {
+        throw new Error(`assertType: invalid type: ${nodes.getNodeTypeName(node)}`);
       }
     },
   };
@@ -36,12 +36,12 @@ const makeCtx = () => {
 describe('compileMacroPublic', () => {
   test('compiles macro with positional args', () => {
     const ctx = makeCtx();
-    const name = AstSymbol(1, 1, 'myMacro');
-    const arg1 = AstSymbol(1, 1, 'a');
-    const arg2 = AstSymbol(1, 1, 'b');
+    const name = nodes.symbol(1, 1, 'myMacro');
+    const arg1 = nodes.symbol(1, 1, 'a');
+    const arg2 = nodes.symbol(1, 1, 'b');
     const node = {
       name,
-      args: { children: [arg1, arg2] },
+      args: { type: 'nodeList', children: [arg1, arg2] },
       body: { mock: 'body' },
     };
     const frame = { parent: null, set: () => {} };
@@ -57,12 +57,12 @@ describe('compileMacroPublic', () => {
 
   test('compiles macro with kwargs', () => {
     const ctx = makeCtx();
-    const name = AstSymbol(1, 1, 'myMacro');
-    const arg1 = AstSymbol(1, 1, 'a');
-    const kwarg = Dict(1, 1, [Pair(1, 1, AstSymbol(1, 1, 'opt'), AstSymbol(1, 1, 'default'))]);
+    const name = nodes.symbol(1, 1, 'myMacro');
+    const arg1 = nodes.symbol(1, 1, 'a');
+    const kwarg = nodes.dict(1, 1, [nodes.pair(1, 1, nodes.symbol(1, 1, 'opt'), nodes.symbol(1, 1, 'default'))]);
     const node = {
       name,
-      args: { children: [arg1, kwarg] },
+      args: { type: 'nodeList', children: [arg1, kwarg] },
       body: { mock: 'body' },
     };
     const frame = { parent: null, set: () => {} };
@@ -75,7 +75,7 @@ describe('compileMacroPublic', () => {
 
   test('compiles macro with frame parent', () => {
     const ctx = makeCtx();
-    const name = AstSymbol(1, 1, 'myMacro');
+    const name = nodes.symbol(1, 1, 'myMacro');
     const node = {
       name,
       args: { children: [] },
@@ -92,7 +92,7 @@ describe('compileMacroPublic', () => {
   test('asserts arg types', () => {
     const ctx = makeCtx();
     const node = {
-      name: AstSymbol(1, 1, 'bad'),
+      name: nodes.symbol(1, 1, 'bad'),
       args: { children: ['not a symbol'] },
       body: { mock: 'body' },
     };
@@ -104,7 +104,7 @@ describe('compileMacroPublic', () => {
 describe('compileCaller', () => {
   test('wraps macro in IIFE', () => {
     const ctx = makeCtx();
-    const name = AstSymbol(1, 1, 'callerFn');
+    const name = nodes.symbol(1, 1, 'callerFn');
     const node = {
       name,
       args: { children: [] },

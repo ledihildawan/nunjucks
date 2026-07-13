@@ -2,7 +2,7 @@ import {
   TOKEN_COLON,
   TOKEN_RIGHT_BRACKET,
 } from '../../lexer/token-types.js';
-import { LookupVal, Slice, BracketNotation } from '../../nodes/index.js';
+import { nodes, BracketNotation } from '../../nodes/index.js';
 import { peekToken, skip, expect } from '../cursor.js';
 
 export { BracketNotation };
@@ -24,14 +24,14 @@ const buildSlice = (ctx, bracketTok, start) => {
 
   expect(ctx, TOKEN_RIGHT_BRACKET);
   const sliceTok = peekToken(ctx);
-  const slice = new Slice(sliceTok.lineno, sliceTok.colno, start, stop, step);
+  const slice = nodes.slice(sliceTok.lineno, sliceTok.colno, start, stop, step);
   return slice;
 };
 
 export const parseBracketAccess = (ctx, bracketTok, target) => {
   if (skip(ctx, TOKEN_COLON)) {
     const slice = buildSlice(ctx, bracketTok, null);
-    const node = new LookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
+    const node = nodes.lookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
     node[BracketNotation] = true;
     return node;
   }
@@ -40,13 +40,13 @@ export const parseBracketAccess = (ctx, bracketTok, target) => {
 
   if (skip(ctx, TOKEN_COLON)) {
     const slice = buildSlice(ctx, bracketTok, start);
-    const node = new LookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
+    const node = nodes.lookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
     node[BracketNotation] = true;
     return node;
   }
 
   expect(ctx, TOKEN_RIGHT_BRACKET);
-  const node = new LookupVal(bracketTok.lineno, bracketTok.colno, target, start);
+  const node = nodes.lookupVal(bracketTok.lineno, bracketTok.colno, target, start);
   node[BracketNotation] = true;
   return node;
 };

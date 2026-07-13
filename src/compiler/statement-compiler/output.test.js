@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { compileTemplateData, compileCapture, compileOutput } from './output.js';
-import { TemplateData, AstSymbol, LookupVal, Pipe } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];
@@ -41,7 +41,7 @@ describe('compileOutput', () => {
   test('emits TemplateData as string literal', () => {
     const ctx = makeCtx();
     const node = {
-      children: [TemplateData(0, 0, 'text')],
+      children: [nodes.templateData(0, 0, 'text')],
     };
     compileOutput(ctx, node);
     const code = ctx.emitted.join('');
@@ -51,7 +51,7 @@ describe('compileOutput', () => {
   test('emits Symbol with suppressValue and awaitValue', () => {
     const ctx = makeCtx();
     const node = {
-      children: [AstSymbol(1, 1, 'x')],
+      children: [nodes.symbol(1, 1, 'x')],
     };
     node.children[0].mock = 'x';
     compileOutput(ctx, node);
@@ -65,7 +65,7 @@ describe('compileOutput', () => {
     const ctx = makeCtx();
     ctx.undefinedMode = 'strict';
     const node = {
-      children: [AstSymbol(2, 3, 'x')],
+      children: [nodes.symbol(2, 3, 'x')],
     };
     node.children[0].mock = 'x';
     compileOutput(ctx, node);
@@ -76,7 +76,7 @@ describe('compileOutput', () => {
 
   test('handles Pipe without awaitValue wrapper', () => {
     const ctx = makeCtx();
-    const pipeNode = Pipe(1, 1);
+    const pipeNode = nodes.pipe(1, 1);
     pipeNode.mock = 'piped';
     const node = { children: [pipeNode] };
     compileOutput(ctx, node);
@@ -87,9 +87,9 @@ describe('compileOutput', () => {
 
   test('skips empty TemplateData', () => {
     const ctx = makeCtx();
-    const td = TemplateData(0, 0, '');
+    const td = nodes.templateData(0, 0, '');
     td.mock = '';
-    const sym = AstSymbol(1, 1, 'x');
+    const sym = nodes.symbol(1, 1, 'x');
     sym.mock = 'x';
     const node = { children: [td, sym] };
     compileOutput(ctx, node);
@@ -100,10 +100,10 @@ describe('compileOutput', () => {
   test('emits debug mode for LookupVal in debug mode (shows warning)', () => {
     const ctx = makeCtx();
     ctx.undefinedMode = 'debug';
-    const target = AstSymbol(0, 0, 'user');
+    const target = nodes.symbol(0, 0, 'user');
     target.mock = 'user';
     const val = { value: 'name' };
-    const lookupVal = LookupVal(1, 5, target, val);
+    const lookupVal = nodes.lookupVal(1, 5, target, val);
     lookupVal.mock = 'memberLookup';
     const node = { children: [lookupVal] };
     compileOutput(ctx, node);
@@ -116,10 +116,10 @@ describe('compileOutput', () => {
   test('emits strict mode for LookupVal in strict mode (throws error)', () => {
     const ctx = makeCtx();
     ctx.undefinedMode = 'strict';
-    const target = AstSymbol(0, 0, 'user');
+    const target = nodes.symbol(0, 0, 'user');
     target.mock = 'user';
     const val = { value: 'name' };
-    const lookupVal = LookupVal(1, 5, target, val);
+    const lookupVal = nodes.lookupVal(1, 5, target, val);
     lookupVal.mock = 'memberLookup';
     const node = { children: [lookupVal] };
     compileOutput(ctx, node);
@@ -132,7 +132,7 @@ describe('compileOutput', () => {
   test('emits debug mode for Symbol in debug mode (shows warning)', () => {
     const ctx = makeCtx();
     ctx.undefinedMode = 'debug';
-    const sym = AstSymbol(1, 1, 'user');
+    const sym = nodes.symbol(1, 1, 'user');
     sym.mock = 'user';
     const node = { children: [sym] };
     compileOutput(ctx, node);

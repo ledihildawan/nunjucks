@@ -1,0 +1,56 @@
+export * from './string.js';
+export * from './array.js';
+export * from './object.js';
+export * from './math.js';
+
+export const filters = {
+  capitalize: require('./string.js').capitalize,
+  center: require('./string.js').center,
+  default: require('./string.js').fallback,
+  dump: require('./string.js').dump,
+  escape: require('./string.js').escape,
+  safe: require('./string.js').safe,
+  forceescape: require('./string.js').forceescape,
+  indent: require('./string.js').indent,
+  join: require('./string.js').join,
+  lower: require('./string.js').lower,
+  nl2br: require('./string.js').nl2br,
+  replace: require('./string.js').replace,
+  string: require('./string.js').string,
+  striptags: require('./string.js').striptags,
+  title: require('./string.js').title,
+  trim: require('./string.js').trim,
+  truncate: require('./string.js').truncate,
+  upper: require('./string.js').upper,
+  urlencode: require('./string.js').urlencode,
+  urlize: require('./string.js').urlize,
+  wordcount: require('./string.js').wordcount,
+
+  batch: require('./array.js').batch,
+  first: require('./array.js').first,
+  last: require('./array.js').last,
+  list: require('./array.js').list,
+  random: require('./array.js').random,
+  reverse: require('./array.js').reverse,
+  slice: require('./array.js').slice,
+  sum: require('./array.js').sumFilter,
+  sort: require('./array.js').sortFilter,
+  reject: require('./array.js').reject,
+  select: require('./array.js').select,
+  rejectattr: require('./array.js').rejectattr,
+  selectattr: require('./array.js').selectattr,
+  dictsort: require('./array.js').dictsort,
+  groupby: require('./array.js').groupby,
+
+  abs: require('./math.js').abs,
+  isNaN: require('./math.js').isNaN,
+  round: require('./math.js').round,
+  float: require('./math.js').floatFilter,
+  int: require('./object.js').intFilter,
+  length: require('./object.js').lengthFilter,
+
+  normalize: require('./string.js').normalize,
+  fallback: require('./string.js').fallback,
+  d: require('./string.js').fallback,
+  e: require('./string.js').escape,
+};

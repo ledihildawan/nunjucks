@@ -1,8 +1,6 @@
 import { TOKEN_COMMA } from '../../lexer/token-types.js';
 import {
-  For,
-  ArrayNode,
-  isSymbol,
+  nodes,
 } from '../../nodes/index.js';
 import { peekToken, skip, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
@@ -12,7 +10,7 @@ export const parseFor = (ctx) => {
   let endBlock;
 
   if (skipSymbol(ctx, 'for')) {
-    node = For(forTok.lineno, forTok.colno);
+    node = nodes.for(forTok.lineno, forTok.colno);
     endBlock = 'endfor';
   } else {
     fail(ctx, 'parseFor: expected for', forTok.lineno, forTok.colno);
@@ -20,14 +18,14 @@ export const parseFor = (ctx) => {
 
   node.name = ctx.parsePrimary();
 
-  if (!isSymbol(node.name)) {
+  if (!nodes.isSymbol(node.name)) {
     fail(ctx, 'parseFor: variable name expected for loop');
   }
 
   const type = peekToken(ctx).type;
   if (type === TOKEN_COMMA) {
     const key = node.name;
-    node.name = ArrayNode(key.lineno, key.colno);
+    node.name = nodes.array(key.lineno, key.colno);
     node.name.addChild(key);
 
     while (skip(ctx, TOKEN_COMMA)) {

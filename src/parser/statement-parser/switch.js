@@ -1,4 +1,4 @@
-import { Switch, Case } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseSwitch = (ctx) => {
@@ -32,7 +32,7 @@ export const parseSwitch = (ctx) => {
     const cond = ctx.parseExpression();
     advanceAfterBlockEnd(ctx, switchStart);
     const body = ctx.parseUntilBlocks(caseStart, caseDefault, switchEnd);
-    cases.push(new Case(tok.lineno, tok.colno, cond, body));
+    cases.push(nodes.case(tok.lineno, tok.colno, cond, body));
     tok = peekToken(ctx);
   } while (tok && tok.value === caseStart);
 
@@ -49,5 +49,5 @@ export const parseSwitch = (ctx) => {
       fail(ctx, 'parseSwitch: expected "case," "default" or "endswitch," got EOF.');
   }
 
-  return new Switch(tag.lineno, tag.colno, expr, cases, defaultCase);
+  return nodes.switch(tag.lineno, tag.colno, expr, cases, defaultCase);
 };

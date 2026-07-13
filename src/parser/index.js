@@ -1,7 +1,6 @@
 import { lex } from '../lexer/tokenizer.js';
 import {
-  NodeList,
-  Root,
+  nodes,
 } from '../nodes/index.js';
 import { createObj } from '../object/index.js';
 import {
@@ -234,10 +233,10 @@ export function createParser(tokens) {
       return parseNodes(this);
     },
     parse: function() {
-      return NodeList(0, 0, this.parseNodes());
+      return nodes.nodeList(0, 0, this.parseNodes());
     },
     parseAsRoot: function() {
-      return Root(0, 0, this.parseNodes());
+      return nodes.root(0, 0, this.parseNodes());
     },
   });
   obj.init(tokens);

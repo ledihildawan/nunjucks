@@ -1,36 +1,36 @@
-import { isSymbol, isLiteral, getNodeTypeName, BracketNotation } from '../../nodes/index.js';
+import { nodes, NODE_TYPES } from '../../nodes/index.js';
 import { compileAggregate } from './container.js';
 
 const getNodeName = (ctx, node, isBracketCall = false) => {
-  const typeName = getNodeTypeName(node);
+  const typeName = nodes.getNodeTypeName(node);
   switch (typeName) {
-    case 'Symbol':
+    case 'symbol':
       return node.value;
-    case 'FunCall':
+    case 'funCall':
       return 'the return value of (' + getNodeName(ctx, node.name) + ')';
-    case 'LookupVal': {
+    case 'lookupVal': {
       const target = getNodeName(ctx, node.target);
-      const isBracket = node[BracketNotation] === true;
-      if (isSymbol(node.val)) {
+      const isBracket = node[NODE_TYPES.BracketNotation] === true;
+      if (nodes.isSymbol(node.val)) {
         return target + (isBracket ? '[' + getNodeName(ctx, node.val) + ']' : '.' + getNodeName(ctx, node.val));
       }
-      if (isLiteral(node.val) && typeof node.val.value === 'string') {
+      if (nodes.isLiteral(node.val) && typeof node.val.value === 'string') {
         return target + (isBracket ? '["' + node.val.value + '"]' : '.' + node.val.value);
       }
       return target + '[' + getNodeName(ctx, node.val) + ']';
     }
-    case 'OptionalChain': {
+    case 'optionalChain': {
       const target = getNodeName(ctx, node.target);
-      const isBracket = node[BracketNotation] === true;
-      if (isSymbol(node.val)) {
+      const isBracket = node[NODE_TYPES.BracketNotation] === true;
+      if (nodes.isSymbol(node.val)) {
         return target + (isBracket ? '?.[' + getNodeName(ctx, node.val) + ']' : '?.' + getNodeName(ctx, node.val));
       }
-      if (isLiteral(node.val) && typeof node.val.value === 'string') {
+      if (nodes.isLiteral(node.val) && typeof node.val.value === 'string') {
         return target + (isBracket ? '?.["' + node.val.value + '"]' : '?.' + node.val.value);
       }
       return target + '?.[' + getNodeName(ctx, node.val) + ']';
     }
-    case 'Literal':
+    case 'literal':
       return node.value.toString();
     default:
       return '--expression--';

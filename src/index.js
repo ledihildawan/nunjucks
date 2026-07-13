@@ -1,32 +1,92 @@
-import { createContainer as createBaseContainer } from './shared/container.js';
+import { setGlobalConfig, getGlobalConfig, mergeConfig, resetConfig } from './config/global.js';
+import { renderString, renderStringSync, compileTemplate, render, isTemplateString, detectTemplateType } from './core/render.js';
 
-import { createEnvironment, createSandboxedEnvironment } from './environment/index.js';
-import { createTemplate } from './template/index.js';
-import { createContext } from './runtime/context.js';
-import { createFrame } from './runtime/frame.js';
-import { createSandboxedContext } from './runtime/sandbox.js';
-import { createFileSystemLoader } from './loaders/file-system.js';
-import { createNodeResolveLoader } from './loaders/node-resolve.js';
-import { createErrorFormatter } from './error/environment.js';
-import { createCompiler } from './compiler/index.js';
-import { createParser } from './parser/index.js';
-import { createTokenizer } from './lexer/tokenizer.js';
+const Result = {
+  success: (value) => ({ ok: true, value, error: undefined }),
+  failure: (error) => ({ ok: false, value: undefined, error }),
+};
 
-export const createContainer = () => {
-  const container = createBaseContainer();
+const nunjucks = (template, context, localConfig) => {
+  if (template === undefined) {
+    return nunjucks;
+  }
 
-  container.register('environment', createEnvironment);
-  container.register('sandbox.environment', createSandboxedEnvironment);
-  container.register('template', createTemplate);
-  container.register('context', createContext);
-  container.register('frame', createFrame);
-  container.register('sandbox.context', createSandboxedContext);
-  container.register('loader.fileSystem', createFileSystemLoader);
-  container.register('loader.nodeResolve', createNodeResolveLoader);
-  container.register('compiler', createCompiler);
-  container.register('parser', createParser);
-  container.register('tokenizer', createTokenizer);
-  container.register('errorFormatter', createErrorFormatter);
+  if (typeof template === 'object' && template !== null) {
+    setGlobalConfig(template);
+    return nunjucks;
+  }
 
-  return container;
+  if (typeof template !== 'string') {
+    throw new Error('Template must be a string');
+  }
+
+  const config = mergeConfig(localConfig || {});
+
+  if (context && typeof context === 'object' && !localConfig) {
+    return renderString(template, context, config);
+  }
+
+  if (context && typeof context === 'object' && localConfig) {
+    const mergedConfig = { ...config, ...localConfig };
+    return renderString(template, context, mergedConfig);
+  }
+
+  return (ctx) => renderString(template, ctx || {}, config);
+};
+
+nunjucks.configure = (globalConfig) => {
+  if (globalConfig) {
+    setGlobalConfig(globalConfig);
+  }
+  return nunjucks;
+};
+
+nunjucks.render = async (template, context = {}, config = {}) => {
+  return renderString(template, context, mergeConfig(config));
+};
+
+nunjucks.renderSync = async (template, context = {}, config = {}) => {
+  return renderStringSync(template, context, mergeConfig(config));
+};
+
+nunjucks.renderString = async (template, context = {}, config = {}) => {
+  return renderString(template, context, mergeConfig(config));
+};
+
+nunjucks.renderStringSync = async (template, context = {}, config = {}) => {
+  return renderStringSync(template, context, mergeConfig(config));
+};
+
+nunjucks.compile = (template, config = {}) => {
+  return compileTemplate(template, mergeConfig(config));
+};
+
+nunjucks.getConfig = getGlobalConfig;
+
+nunjucks.setConfig = setGlobalConfig;
+
+nunjucks.resetConfig = resetConfig;
+
+nunjucks.isTemplateString = isTemplateString;
+
+nunjucks.detectTemplateType = detectTemplateType;
+
+nunjucks.Result = Result;
+
+nunjucks.version = '3.2.4';
+
+export default nunjucks;
+
+export {
+  setGlobalConfig,
+  getGlobalConfig,
+  mergeConfig,
+  resetConfig,
+  renderString,
+  renderStringSync,
+  compileTemplate,
+  render,
+  isTemplateString,
+  detectTemplateType,
+  Result
 };

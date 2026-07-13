@@ -4,7 +4,7 @@ import {
   TOKEN_LEFT_PAREN,
   TOKEN_SYMBOL,
 } from '../../lexer/token-types.js';
-import { AstSymbol, Pipe, NodeList } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { peekToken, skip, skipValue, expect } from '../cursor.js';
 
 export const parseFilterName = (ctx) => {
@@ -15,7 +15,7 @@ export const parseFilterName = (ctx) => {
     name += '.' + expect(ctx, TOKEN_SYMBOL).value;
   }
 
-  return AstSymbol(tok.lineno, tok.colno, name);
+  return nodes.symbol(tok.lineno, tok.colno, name);
 };
 
 export const parseFilterArgs = (ctx, node) => {
@@ -30,11 +30,11 @@ export const parsePipe = (ctx, node) => {
   while (skip(ctx, TOKEN_PIPEFORWARD)) {
     const name = parseFilterName(ctx);
 
-    node = Pipe(
+    node = nodes.pipe(
       name.lineno,
       name.colno,
       name,
-      NodeList(
+      nodes.nodeList(
         name.lineno,
         name.colno,
         [node].concat(parseFilterArgs(ctx, node))

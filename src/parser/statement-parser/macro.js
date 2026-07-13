@@ -1,4 +1,4 @@
-import { Macro } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseMacro = (ctx) => {
@@ -9,7 +9,7 @@ export const parseMacro = (ctx) => {
 
   const name = ctx.parsePrimary(true);
   const args = ctx.parseSignature();
-  const node = Macro(macroTok.lineno, macroTok.colno, name, args);
+  const node = nodes.macro(macroTok.lineno, macroTok.colno, name, args);
 
   advanceAfterBlockEnd(ctx, macroTok.value);
   node.body = ctx.parseUntilBlocks('endmacro');

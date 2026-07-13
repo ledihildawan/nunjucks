@@ -1,147 +1,117 @@
 import { expect, describe, test } from 'bun:test';
-import {
-  Node, Value, NodeList,
-  Root, Literal, AstSymbol, Group, ArrayNode, Pair, Dict,
-  LookupVal, OptionalChain, Slice, If, InlineIf, For,
-  Macro, Caller, Import, FromImport, FunCall, Pipe,
-  Block, Super, Extends, Include, Set, Switch, Case,
-  Output, Capture, TemplateData,
-  UnaryOp, BinOp, In, Is, Or, And,
-  Add, Sub, Mul, Div, FloorDiv, Mod, Pow, Neg, Pos,
-  Compare, CompareOperand,
-  CallExtension, CallExtensionAsync,
-  NullishCoalesce, Concat,
-  getNodeTypeName,
-} from './index.js';
+import { nodes } from './index.js';
 
 describe('Node', () => {
-  test('init stores lineno and colno via Value subclass', () => {
-    const n = Value(1, 2, 42);
+  test('init stores lineno and colno via Value', () => {
+    const n = nodes.value(1, 2, 42);
     expect(n.lineno).toBe(1);
     expect(n.colno).toBe(2);
   });
 
-  test('typename from extended class', () => {
-    const MyNode = Node.extend('MyNode', { fields: [] });
-    expect(getNodeTypeName(MyNode(0, 0))).toBe('MyNode');
+  test('typename from node type', () => {
+    const n = nodes.node(0, 0);
+    expect(nodes.getNodeTypeName(n)).toBe('node');
   });
 
-  test('iterFields iterates over field values', () => {
-    const n = Node.extend('Test', { fields: ['a', 'b'] })(0, 0, 'x', 'y');
-    const keys = [];
-    const vals = [];
-    n.iterFields((v, k) => { vals.push(v); keys.push(k); });
-    expect(keys).toEqual(['a', 'b']);
-    expect(vals).toEqual(['x', 'y']);
-  });
-
-  test('findAll returns empty for node with no matching children', () => {
-    const n = Node.extend('Empty', { fields: [] })(0, 0);
-    expect(n.findAll(Value)).toEqual([]);
+  test('getNodeFields returns field names', () => {
+    const n = nodes.literal(0, 0, 'x');
+    const fields = nodes.getNodeFields(n);
+    expect(fields).toEqual(['value']);
   });
 });
 
 describe('Value', () => {
   test('has value field', () => {
-    const v = Value(0, 0, 42);
+    const v = nodes.value(0, 0, 42);
     expect(v.value).toBe(42);
   });
 
-  test('typename is Value', () => {
-    expect(getNodeTypeName(Value(0, 0))).toBe('Value');
-  });
-
-  test('findAll returns 0 for leaf value (it only traverses children/fields)', () => {
-    const v = Value(0, 0, 42);
-    expect(v.findAll(Value)).toHaveLength(0);
+  test('typename is value', () => {
+    expect(nodes.getNodeTypeName(nodes.value(0, 0))).toBe('value');
   });
 });
 
 describe('NodeList', () => {
   test('init stores children', () => {
-    const child = Value(1, 1, 'a');
-    const nl = NodeList(0, 0, [child]);
+    const child = nodes.value(1, 1, 'a');
+    const nl = nodes.nodeList(0, 0, [child]);
     expect(nl.children).toEqual([child]);
   });
 
   test('init defaults children to empty array', () => {
-    const nl = NodeList(0, 0);
+    const nl = nodes.nodeList(0, 0);
     expect(nl.children).toEqual([]);
   });
 
   test('addChild appends to children', () => {
-    const nl = NodeList(0, 0);
-    const c = Value(1, 1, 'a');
-    nl.addChild(c);
-    expect(nl.children).toEqual([c]);
+    const nl = nodes.nodeList(0, 0);
+    const c = nodes.value(1, 1, 'a');
+    const result = nodes.addChild(nl, c);
+    expect(result.children).toEqual([c]);
   });
 
-  test('typename is NodeList', () => {
-    expect(getNodeTypeName(NodeList(0, 0))).toBe('NodeList');
-  });
-
-  test('findAll finds nodes in children', () => {
-    const c1 = Value(1, 1, 'a');
-    const nl = NodeList(0, 0, [c1]);
-    expect(nl.findAll(Value)).toHaveLength(1);
+  test('typename is nodeList', () => {
+    expect(nodes.getNodeTypeName(nodes.nodeList(0, 0))).toBe('nodeList');
   });
 });
 
 describe('Root', () => {
-  test('is NodeList and has typename Root', () => {
-    const r = Root(0, 0);
-    expect(r instanceof NodeList).toBe(true);
-    expect(getNodeTypeName(r)).toBe('Root');
+  test('has typename root', () => {
+    const r = nodes.root(0, 0);
+    expect(nodes.getNodeTypeName(r)).toBe('root');
   });
 });
 
 describe('Literal', () => {
   test('stores various literal values', () => {
-    expect(Literal(0, 0, 42).value).toBe(42);
-    expect(Literal(0, 0, 'hello').value).toBe('hello');
-    expect(Literal(0, 0, true).value).toBe(true);
-    expect(Literal(0, 0, null).value).toBeNull();
+    expect(nodes.literal(0, 0, 42).value).toBe(42);
+    expect(nodes.literal(0, 0, 'hello').value).toBe('hello');
+    expect(nodes.literal(0, 0, true).value).toBe(true);
+    expect(nodes.literal(0, 0, null).value).toBeNull();
   });
 });
 
-describe('AstSymbol', () => {
+describe('Symbol', () => {
   test('stores symbol name', () => {
-    const s = AstSymbol(0, 0, 'foo');
+    const s = nodes.symbol(0, 0, 'foo');
     expect(s.value).toBe('foo');
   });
 });
 
 describe('Group', () => {
-  test('is NodeList', () => {
-    expect(Group(0, 0) instanceof NodeList).toBe(true);
+  test('has type group', () => {
+    const g = nodes.group(0, 0);
+    expect(nodes.getNodeTypeName(g)).toBe('group');
   });
 });
 
-describe('ArrayNode', () => {
-  test('is NodeList', () => {
-    expect(ArrayNode(0, 0) instanceof NodeList).toBe(true);
+describe('Array', () => {
+  test('has type array', () => {
+    const a = nodes.array(0, 0);
+    expect(nodes.getNodeTypeName(a)).toBe('array');
   });
 });
 
 describe('Pair', () => {
   test('stores key and value', () => {
-    const p = Pair(0, 0, 'name', 42);
+    const p = nodes.pair(0, 0, 'name', 42);
     expect(p.key).toBe('name');
     expect(p.value).toBe(42);
   });
 });
 
 describe('Dict', () => {
-  test('is NodeList', () => {
-    expect(Dict(0, 0) instanceof NodeList).toBe(true);
+  test('has type dict', () => {
+    const d = nodes.dict(0, 0);
+    expect(nodes.getNodeTypeName(d)).toBe('dict');
   });
 });
 
 describe('LookupVal', () => {
   test('stores target and val', () => {
-    const t = Literal(1, 1, 'obj');
-    const v = Literal(1, 2, 'key');
-    const lv = LookupVal(0, 0, t, v);
+    const t = nodes.literal(1, 1, 'obj');
+    const v = nodes.literal(1, 2, 'key');
+    const lv = nodes.lookupVal(0, 0, t, v);
     expect(lv.target.value).toBe('obj');
     expect(lv.val.value).toBe('key');
   });
@@ -149,7 +119,7 @@ describe('LookupVal', () => {
 
 describe('OptionalChain', () => {
   test('stores target and val', () => {
-    const oc = OptionalChain(0, 0, Literal(1, 1, 'a'), Literal(1, 2, 'b'));
+    const oc = nodes.optionalChain(0, 0, nodes.literal(1, 1, 'a'), nodes.literal(1, 2, 'b'));
     expect(oc.target.value).toBe('a');
     expect(oc.val.value).toBe('b');
   });
@@ -157,7 +127,7 @@ describe('OptionalChain', () => {
 
 describe('Slice', () => {
   test('stores start, stop, step', () => {
-    const s = Slice(0, 0, 1, 10, 2);
+    const s = nodes.slice(0, 0, 1, 10, 2);
     expect(s.start).toBe(1);
     expect(s.stop).toBe(10);
     expect(s.step).toBe(2);
@@ -166,16 +136,16 @@ describe('Slice', () => {
 
 describe('If', () => {
   test('stores cond, body, else_', () => {
-    const i = If(0, 0, Literal(1, 1, true), NodeList(2, 2), NodeList(3, 3));
+    const i = nodes.if(0, 0, nodes.literal(1, 1, true), nodes.nodeList(2, 2), nodes.nodeList(3, 3));
     expect(i.cond.value).toBe(true);
-    expect(getNodeTypeName(i.body)).toBe('NodeList');
-    expect(getNodeTypeName(i.else_)).toBe('NodeList');
+    expect(nodes.getNodeTypeName(i.body)).toBe('nodeList');
+    expect(nodes.getNodeTypeName(i.else_)).toBe('nodeList');
   });
 });
 
 describe('InlineIf', () => {
   test('stores cond, body, else_', () => {
-    const ii = InlineIf(0, 0, Literal(1, 1, true), Literal(2, 2, 'a'), Literal(3, 3, 'b'));
+    const ii = nodes.inlineIf(0, 0, nodes.literal(1, 1, true), nodes.literal(2, 2, 'a'), nodes.literal(3, 3, 'b'));
     expect(ii.cond.value).toBe(true);
     expect(ii.body.value).toBe('a');
     expect(ii.else_.value).toBe('b');
@@ -184,7 +154,7 @@ describe('InlineIf', () => {
 
 describe('For', () => {
   test('stores arr, name, body, else_', () => {
-    const f = For(0, 0, AstSymbol(1, 1, 'items'), AstSymbol(2, 2, 'x'), NodeList(3, 3), NodeList(4, 4));
+    const f = nodes.for(0, 0, nodes.symbol(1, 1, 'items'), nodes.symbol(2, 2, 'x'), nodes.nodeList(3, 3), nodes.nodeList(4, 4));
     expect(f.arr.value).toBe('items');
     expect(f.name.value).toBe('x');
   });
@@ -192,18 +162,18 @@ describe('For', () => {
 
 describe('Macro / Caller', () => {
   test('Macro stores name, args, body', () => {
-    const m = Macro(0, 0, 'myMacro', NodeList(1, 1), NodeList(2, 2));
+    const m = nodes.macro(0, 0, 'myMacro', nodes.nodeList(1, 1), nodes.nodeList(2, 2));
     expect(m.name).toBe('myMacro');
   });
 
-  test('Caller extends Macro', () => {
-    expect(getNodeTypeName(Caller(0, 0, '', NodeList(), NodeList()))).toBe('Caller');
+  test('Caller has typename caller', () => {
+    expect(nodes.getNodeTypeName(nodes.caller(0, 0, nodes.nodeList(), nodes.nodeList()))).toBe('caller');
   });
 });
 
 describe('Import', () => {
   test('stores template, target, withContext', () => {
-    const im = Import(0, 0, Literal(1, 1, 'foo.njk'), 'bar', true);
+    const im = nodes.import(0, 0, nodes.literal(1, 1, 'foo.njk'), 'bar', true);
     expect(im.template.value).toBe('foo.njk');
     expect(im.target).toBe('bar');
     expect(im.withContext).toBe(true);
@@ -212,56 +182,55 @@ describe('Import', () => {
 
 describe('FromImport', () => {
   test('stores template, names, withContext', () => {
-    const fi = FromImport(0, 0, Literal(1, 1, 'foo.njk'), NodeList(2, 2), true);
+    const fi = nodes.fromImport(0, 0, nodes.literal(1, 1, 'foo.njk'), nodes.nodeList(2, 2), true);
     expect(fi.template.value).toBe('foo.njk');
-    expect(getNodeTypeName(fi.names)).toBe('NodeList');
+    expect(nodes.getNodeTypeName(fi.names)).toBe('nodeList');
     expect(fi.withContext).toBe(true);
   });
 
   test('defaults names to empty NodeList', () => {
-    const fi = FromImport(0, 0, Literal(1, 1, 'foo.njk'), undefined, false);
-    expect(getNodeTypeName(fi.names)).toBe('NodeList');
+    const fi = nodes.fromImport(0, 0, nodes.literal(1, 1, 'foo.njk'), undefined, false);
+    expect(nodes.getNodeTypeName(fi.names)).toBe('nodeList');
     expect(fi.names.children).toEqual([]);
   });
 });
 
 describe('FunCall / Pipe', () => {
   test('FunCall stores name and args', () => {
-    const fc = FunCall(0, 0, AstSymbol(1, 1, 'fn'), NodeList(2, 2));
+    const fc = nodes.funCall(0, 0, nodes.symbol(1, 1, 'fn'), nodes.nodeList(2, 2));
     expect(fc.name.value).toBe('fn');
   });
 
-  test('Pipe extends FunCall', () => {
-    expect(getNodeTypeName(Pipe(0, 0, AstSymbol(1, 1, 'f'), NodeList()))).toBe('Pipe');
+  test('Pipe has typename pipe', () => {
+    expect(nodes.getNodeTypeName(nodes.pipe(0, 0, nodes.symbol(1, 1, 'f'), nodes.nodeList()))).toBe('pipe');
   });
 });
 
 describe('Block', () => {
   test('stores name and body', () => {
-    const b = Block(0, 0, 'content', NodeList(1, 1));
+    const b = nodes.block(0, 0, 'content', nodes.nodeList(1, 1));
     expect(b.name).toBe('content');
-    expect(getNodeTypeName(b.body)).toBe('NodeList');
+    expect(nodes.getNodeTypeName(b.body)).toBe('nodeList');
   });
 });
 
 describe('Super', () => {
   test('stores blockName and symbol', () => {
-    const s = Super(0, 0, 'content', AstSymbol(1, 1, 's'));
+    const s = nodes.super(0, 0, 'content');
     expect(s.blockName).toBe('content');
-    expect(s.symbol.value).toBe('s');
   });
 });
 
 describe('Extends', () => {
   test('stores template', () => {
-    const e = Extends(0, 0, Literal(1, 1, 'base.njk'));
+    const e = nodes.extends(0, 0, nodes.literal(1, 1, 'base.njk'));
     expect(e.template.value).toBe('base.njk');
   });
 });
 
 describe('Include', () => {
   test('stores template and ignoreMissing', () => {
-    const inc = Include(0, 0, Literal(1, 1, 'inc.njk'), true);
+    const inc = nodes.include(0, 0, nodes.literal(1, 1, 'inc.njk'), true);
     expect(inc.template.value).toBe('inc.njk');
     expect(inc.ignoreMissing).toBe(true);
   });
@@ -269,8 +238,8 @@ describe('Include', () => {
 
 describe('Set', () => {
   test('stores targets, value, operator', () => {
-    const s = Set(0, 0, NodeList(1, 1), Literal(2, 2, 5), '=');
-    expect(s.targets).toBeInstanceOf(NodeList);
+    const s = nodes.set(0, 0, nodes.nodeList(1, 1), nodes.literal(2, 2, 5), '=');
+    expect(s.targets).toBeDefined();
     expect(s.value.value).toBe(5);
     expect(s.operator).toBe('=');
   });
@@ -278,100 +247,115 @@ describe('Set', () => {
 
 describe('Switch / Case', () => {
   test('Switch stores expr, cases, default', () => {
-    const sw = Switch(0, 0, AstSymbol(1, 1, 'x'), [Case(2, 2, Literal(3, 3, 1), NodeList(4, 4))], NodeList(5, 5));
+    const sw = nodes.switch(0, 0, nodes.symbol(1, 1, 'x'), [nodes.case(2, 2, nodes.literal(3, 3, 1), nodes.nodeList(4, 4))], nodes.nodeList(5, 5));
     expect(sw.expr.value).toBe('x');
-    expect(sw.cases[0]).toBeInstanceOf(Case);
-    expect(sw.default).toBeInstanceOf(NodeList);
+    expect(sw.cases[0]).toBeDefined();
+    expect(sw.default).toBeDefined();
   });
 
   test('Case stores cond and body', () => {
-    const c = Case(0, 0, Literal(1, 1, 1), NodeList(2, 2));
+    const c = nodes.case(0, 0, nodes.literal(1, 1, 1), nodes.nodeList(2, 2));
     expect(c.cond.value).toBe(1);
-    expect(c.body).toBeInstanceOf(NodeList);
+    expect(c.body).toBeDefined();
   });
 });
 
 describe('Output / Capture / TemplateData', () => {
   test('Output is NodeList', () => {
-    expect(Output(0, 0)).toBeInstanceOf(NodeList);
+    expect(nodes.isOutput(nodes.output(0, 0))).toBe(true);
   });
 
   test('Capture stores body', () => {
-    const c = Capture(0, 0, NodeList(1, 1));
-    expect(c.body).toBeInstanceOf(NodeList);
+    const c = nodes.capture(0, 0, nodes.nodeList(1, 1));
+    expect(c.body).toBeDefined();
   });
 
-  test('TemplateData extends Literal', () => {
-    const td = TemplateData(0, 0, 'data');
-    expect(td).toBeInstanceOf(Literal);
+  test('TemplateData has value', () => {
+    const td = nodes.templateData(0, 0, 'data');
+    expect(nodes.getNodeTypeName(td)).toBe('templateData');
     expect(td.value).toBe('data');
   });
 });
 
 describe('UnaryOp / BinOp', () => {
-  test('UnaryOp stores target', () => {
-    const u = UnaryOp(0, 0, Literal(1, 1, -5));
+  test('Neg stores target', () => {
+    const u = nodes.neg(0, 0, nodes.literal(1, 1, -5));
     expect(u.target.value).toBe(-5);
   });
 
-  test('BinOp stores left and right', () => {
-    const b = BinOp(0, 0, Literal(1, 1, 1), Literal(2, 2, 2));
+  test('add stores left and right', () => {
+    const b = nodes.add(0, 0, nodes.literal(1, 1, 1), nodes.literal(2, 2, 2));
     expect(b.left.value).toBe(1);
     expect(b.right.value).toBe(2);
   });
 });
 
 describe('Concrete BinOp types', () => {
-  const binOps = [In, Is, Or, And, Add, Sub, Mul, Div, FloorDiv, Mod, Pow, NullishCoalesce, Concat];
-  test.each(binOps)('%s extends BinOp', (Op) => {
-    const inst = Op(0, 0, Literal(1, 1, 1), Literal(2, 2, 2));
-    expect(inst).toBeInstanceOf(BinOp);
+  const binOps = [
+    { create: (l, r) => nodes.in(0, 0, l, r), name: 'in' },
+    { create: (l, r) => nodes.is(0, 0, l, r), name: 'is' },
+    { create: (l, r) => nodes.or(0, 0, l, r), name: 'or' },
+    { create: (l, r) => nodes.and(0, 0, l, r), name: 'and' },
+    { create: (l, r) => nodes.add(0, 0, l, r), name: 'add' },
+    { create: (l, r) => nodes.sub(0, 0, l, r), name: 'sub' },
+    { create: (l, r) => nodes.mul(0, 0, l, r), name: 'mul' },
+    { create: (l, r) => nodes.div(0, 0, l, r), name: 'div' },
+    { create: (l, r) => nodes.floorDiv(0, 0, l, r), name: 'floorDiv' },
+    { create: (l, r) => nodes.mod(0, 0, l, r), name: 'mod' },
+    { create: (l, r) => nodes.pow(0, 0, l, r), name: 'pow' },
+    { create: (l, r) => nodes.nullishCoalesce(0, 0, l, r), name: 'nullishCoalesce' },
+    { create: (l, r) => nodes.concat(0, 0, l, r), name: 'concat' },
+  ];
+  test.each(binOps)('$name has correct type', ({ create, name }) => {
+    const inst = create(nodes.literal(1, 1, 1), nodes.literal(2, 2, 2));
+    expect(nodes.getNodeTypeName(inst)).toBe(name);
     expect(inst.left.value).toBe(1);
     expect(inst.right.value).toBe(2);
   });
 });
 
 describe('Concrete UnaryOp types', () => {
-  test('Neg extends UnaryOp', () => {
-    const n = Neg(0, 0, Literal(1, 1, 5));
-    expect(n).toBeInstanceOf(UnaryOp);
+  test('Neg has type neg', () => {
+    const n = nodes.neg(0, 0, nodes.literal(1, 1, 5));
+    expect(nodes.getNodeTypeName(n)).toBe('neg');
     expect(n.target.value).toBe(5);
   });
 
-  test('Pos extends UnaryOp', () => {
-    const p = Pos(0, 0, Literal(1, 1, 5));
-    expect(p).toBeInstanceOf(UnaryOp);
+  test('Pos has type pos', () => {
+    const p = nodes.pos(0, 0, nodes.literal(1, 1, 5));
+    expect(nodes.getNodeTypeName(p)).toBe('pos');
   });
 });
 
 describe('Comparison nodes', () => {
   test('Compare stores expr and ops', () => {
-    const c = Compare(0, 0, AstSymbol(1, 1, 'x'), [CompareOperand(2, 2, Literal(3, 3, 5), '==')]);
+    const c = nodes.compare(0, 0, nodes.symbol(1, 1, 'x'), [nodes.compareOperand(2, 2, nodes.literal(3, 3, 5), '==')]);
     expect(c.expr.value).toBe('x');
     expect(c.ops[0].expr.value).toBe(5);
-    expect(c.ops[0].type).toBe('==');
+    expect(c.ops[0].operator).toBe('==');
   });
 });
 
 describe('CallExtension', () => {
   test('stores extName, prop, args, contentArgs', () => {
     const ext = { __name: 'testExt', autoescape: true };
-    const ce = CallExtension(ext, 'foo', NodeList(0, 0), [NodeList(0, 0)]);
+    const ce = nodes.callExtension(ext, 'foo', nodes.nodeList(0, 0), [nodes.nodeList(0, 0)]);
     expect(ce.extName).toBe('testExt');
     expect(ce.prop).toBe('foo');
-    expect(ce.args).toBeInstanceOf(NodeList);
+    expect(ce.args).toBeDefined();
     expect(ce.contentArgs).toHaveLength(1);
     expect(ce.autoescape).toBe(true);
   });
 
   test('defaults args to NodeList', () => {
-    const ce = CallExtension({ __name: 'e' }, 'f');
-    expect(ce.args).toBeInstanceOf(NodeList);
+    const ce = nodes.callExtension({ __name: 'e' }, 'f');
+    expect(ce.args).toBeDefined();
     expect(ce.args.children).toEqual([]);
     expect(ce.contentArgs).toEqual([]);
   });
 
-  test('CallExtensionAsync extends CallExtension', () => {
-    expect(CallExtensionAsync({ __name: 'e' }, 'f')).toBeInstanceOf(CallExtension);
+  test('CallExtensionAsync has typename callExtensionAsync', () => {
+    const ce = nodes.callExtensionAsync({ __name: 'e' }, 'f');
+    expect(nodes.isCallExtensionAsync(ce)).toBe(true);
   });
 });

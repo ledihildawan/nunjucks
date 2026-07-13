@@ -9,11 +9,7 @@ import {
   TOKEN_RIGHT_PAREN,
 } from '../../lexer/token-types.js';
 import {
-  Group,
-  ArrayNode,
-  Dict,
-  Pair,
-  isDict,
+  nodes,
 } from '../../nodes/index.js';
 import { nextToken, peekToken, skip, fail } from '../cursor.js';
 
@@ -23,13 +19,13 @@ export const parseAggregate = (ctx) => {
 
   switch (tok.type) {
     case TOKEN_LEFT_PAREN:
-      node = Group(tok.lineno, tok.colno);
+      node = nodes.group(tok.lineno, tok.colno);
       break;
     case TOKEN_LEFT_BRACKET:
-      node = ArrayNode(tok.lineno, tok.colno);
+      node = nodes.array(tok.lineno, tok.colno);
       break;
     case TOKEN_LEFT_CURLY:
-      node = Dict(tok.lineno, tok.colno);
+      node = nodes.dict(tok.lineno, tok.colno);
       break;
     default:
       return null;
@@ -52,7 +48,7 @@ export const parseAggregate = (ctx) => {
       }
     }
 
-    if (isDict(node)) {
+    if (nodes.isDict(node)) {
       const key = ctx.parsePrimary();
 
       if (!skip(ctx, TOKEN_COLON)) {
@@ -62,7 +58,7 @@ export const parseAggregate = (ctx) => {
       }
 
       const value = ctx.parseExpression();
-      node.addChild(Pair(key.lineno,
+      node.addChild(nodes.pair(key.lineno,
         key.colno,
         key,
         value));

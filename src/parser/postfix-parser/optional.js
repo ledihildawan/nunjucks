@@ -1,10 +1,10 @@
 import { TOKEN_SYMBOL, TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_COMMA, TOKEN_LEFT_BRACKET } from '../../lexer/token-types.js';
-import { OptionalChain, OptionalCall, Literal, NodeList } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { nextToken, peekToken, fail } from '../cursor.js';
 import { BracketNotation } from './lookup.js';
 
 const parseOptionalCallArgs = (ctx, tok) => {
-  const args = NodeList(tok.lineno, tok.colno);
+  const args = nodes.nodeList(tok.lineno, tok.colno);
   let expectComma = false;
 
   while (true) {
@@ -38,7 +38,7 @@ export const parseOptionalChain = (ctx, tok, target) => {
   if (val && val.type === TOKEN_LEFT_PAREN) {
     nextToken(ctx);
     const args = parseOptionalCallArgs(ctx, tok);
-    return OptionalCall(tok.lineno, tok.colno, target, args);
+    return nodes.optionalCall(tok.lineno, tok.colno, target, args);
   }
 
   // Check if next token is bracket or dot
@@ -54,7 +54,7 @@ export const parseOptionalChain = (ctx, tok, target) => {
       fail(ctx, 'expected right bracket', rightBracket.lineno, rightBracket.colno);
     }
     
-    const node = OptionalChain(tok.lineno, tok.colno, target, start);
+    const node = nodes.optionalChain(tok.lineno, tok.colno, target, start);
     node[BracketNotation] = true;
     return node;
   }
@@ -69,8 +69,8 @@ export const parseOptionalChain = (ctx, tok, target) => {
       val2.colno);
   }
 
-  const lookup = Literal(val2.lineno, val2.colno, val2.value);
-  const node = OptionalChain(tok.lineno, tok.colno, target, lookup);
+  const lookup = nodes.literal(val2.lineno, val2.colno, val2.value);
+  const node = nodes.optionalChain(tok.lineno, tok.colno, target, lookup);
   node[BracketNotation] = false;
   return node;
 };

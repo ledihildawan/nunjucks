@@ -1,4 +1,4 @@
-import { Output, TemplateData } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { advanceAfterBlockEnd } from '../cursor.js';
 
 export const parseRaw = (ctx, tagName) => {
@@ -30,9 +30,9 @@ export const parseRaw = (ctx, tagName) => {
     }
   }
 
-  return Output(
+  return nodes.output(
     begun.lineno,
     begun.colno,
-    [TemplateData(begun.lineno, begun.colno, str)]
+    [nodes.templateData(begun.lineno, begun.colno, str)]
   );
 };

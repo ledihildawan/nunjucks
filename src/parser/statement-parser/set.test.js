@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseSet } from './set.js';
-import { Set, Capture, AstSymbol, Literal } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import {
   TOKEN_SYMBOL, TOKEN_BLOCK_END, TOKEN_COMMA, TOKEN_OPERATOR, TOKEN_INT,
@@ -17,8 +17,8 @@ describe('parseSet', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const target = AstSymbol(1, 5, 'x');
-    const value = Literal(1, 9, 42);
+    const target = nodes.symbol(1, 5, 'x');
+    const value = nodes.literal(1, 9, 42);
     const ctx = Object.assign(createCursor(tokens), {
       nextToken: () => nextToken(ctx),
       parsePrimary: () => { nextToken(ctx); return target; },
@@ -27,7 +27,7 @@ describe('parseSet', () => {
 
     const result = parseSet(ctx);
 
-    expect(result).toBeInstanceOf(Set);
+    expect(nodes.isSet(result)).toBe(true);
     expect(result.targets).toEqual([target]);
     expect(result.value).toBe(value);
     expect(result.operator).toBeNull();
@@ -43,8 +43,8 @@ describe('parseSet', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const target = AstSymbol(1, 5, 'x');
-    const value = Literal(1, 11, 42);
+    const target = nodes.symbol(1, 5, 'x');
+    const value = nodes.literal(1, 11, 42);
     const ctx = Object.assign(createCursor(tokens), {
       nextToken: () => nextToken(ctx),
       parsePrimary: () => { nextToken(ctx); return target; },
@@ -53,7 +53,7 @@ describe('parseSet', () => {
 
     const result = parseSet(ctx);
 
-    expect(result).toBeInstanceOf(Set);
+    expect(nodes.isSet(result)).toBe(true);
     expect(result.operator).toBe('||=');
     expect(result.value).toBe(value);
   });
@@ -68,8 +68,8 @@ describe('parseSet', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const target = AstSymbol(1, 5, 'x');
-    const value = Literal(1, 11, 42);
+    const target = nodes.symbol(1, 5, 'x');
+    const value = nodes.literal(1, 11, 42);
     const ctx = Object.assign(createCursor(tokens), {
       nextToken: () => nextToken(ctx),
       parsePrimary: () => { nextToken(ctx); return target; },
@@ -78,7 +78,7 @@ describe('parseSet', () => {
 
     const result = parseSet(ctx);
 
-    expect(result).toBeInstanceOf(Set);
+    expect(nodes.isSet(result)).toBe(true);
     expect(result.operator).toBe('&&=');
   });
 
@@ -92,8 +92,8 @@ describe('parseSet', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const target = AstSymbol(1, 5, 'x');
-    const value = Literal(1, 11, 42);
+    const target = nodes.symbol(1, 5, 'x');
+    const value = nodes.literal(1, 11, 42);
     const ctx = Object.assign(createCursor(tokens), {
       nextToken: () => nextToken(ctx),
       parsePrimary: () => { nextToken(ctx); return target; },
@@ -102,7 +102,7 @@ describe('parseSet', () => {
 
     const result = parseSet(ctx);
 
-    expect(result).toBeInstanceOf(Set);
+    expect(nodes.isSet(result)).toBe(true);
     expect(result.operator).toBe('??=');
   });
 
@@ -116,7 +116,7 @@ describe('parseSet', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const target = AstSymbol(1, 5, 'x');
+    const target = nodes.symbol(1, 5, 'x');
     const body = { lineno: 1, colno: 10 };
     const ctx = Object.assign(createCursor(tokens), {
       nextToken: () => nextToken(ctx),
@@ -126,9 +126,9 @@ describe('parseSet', () => {
 
     const result = parseSet(ctx);
 
-    expect(result).toBeInstanceOf(Set);
+    expect(nodes.isSet(result)).toBe(true);
     expect(result.targets).toEqual([target]);
-    expect(result.body).toBeInstanceOf(Capture);
+    expect(nodes.isCapture(result.body)).toBe(true);
     expect(result.body.body).toBe(body);
     expect(result.value).toBeNull();
     expect(result.operator).toBeNull();
@@ -146,7 +146,7 @@ describe('parseSet', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const targets = [AstSymbol(1, 5, 'x'), AstSymbol(1, 8, 'y')];
+    const targets = [nodes.symbol(1, 5, 'x'), nodes.symbol(1, 8, 'y')];
     let primCalls = 0;
     const ctx = Object.assign(createCursor(tokens), {
       nextToken: () => nextToken(ctx),
@@ -156,12 +156,12 @@ describe('parseSet', () => {
         nextToken(ctx);
         return v;
       },
-      parseExpression: () => { nextToken(ctx); return Literal(1, 12, 42); },
+      parseExpression: () => { nextToken(ctx); return nodes.literal(1, 12, 42); },
     });
 
     const result = parseSet(ctx);
 
-    expect(result).toBeInstanceOf(Set);
+    expect(nodes.isSet(result)).toBe(true);
     expect(result.targets).toEqual(targets);
   });
 

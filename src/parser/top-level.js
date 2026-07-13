@@ -4,7 +4,7 @@ import {
   TOKEN_DATA,
   TOKEN_VARIABLE_START,
 } from '../lexer/token-types.js';
-import { Output, TemplateData } from '../nodes/index.js';
+import { nodes } from '../nodes/index.js';
 import {
   nextToken,
   peekToken,
@@ -47,10 +47,10 @@ export const parseNodes = (ctx) => {
         data = data.replace(/\s*$/, '');
       }
 
-      buf.push(Output(
+      buf.push(nodes.output(
         tok.lineno,
         tok.colno,
-        [TemplateData(tok.lineno, tok.colno, data)]
+        [nodes.templateData(tok.lineno, tok.colno, data)]
       ));
     } else if (tok.type === TOKEN_BLOCK_START) {
       ctx.dropLeadingWhitespace = false;
@@ -63,7 +63,7 @@ export const parseNodes = (ctx) => {
       const e = ctx.parseExpression();
       ctx.dropLeadingWhitespace = false;
       advanceAfterVariableEnd(ctx);
-      buf.push(Output(tok.lineno, tok.colno, [e]));
+      buf.push(nodes.output(tok.lineno, tok.colno, [e]));
     } else if (tok.type === TOKEN_COMMENT) {
       ctx.dropLeadingWhitespace = tok.value.charAt(
         tok.value.length - ctx.tokens.tags.COMMENT_END.length - 1

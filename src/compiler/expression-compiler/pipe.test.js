@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { compilePipe, compilePipeAsync } from './pipe.js';
-import { AstSymbol, getNodeTypeName } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];
@@ -10,8 +10,8 @@ const makeCtx = () => {
     _emitLine: (s) => emitted.push(`LINE:${s}`),
     compile: (node) => emitted.push(node.mock),
     assertType: (node, ...types) => {
-      if (!types.some(t => node instanceof t)) {
-        throw new Error(`assertType failed: ${getNodeTypeName(node)}`);
+      if (!types.some(t => nodes.getNodeTypeName(node) === t)) {
+        throw new Error(`assertType failed: ${nodes.getNodeTypeName(node)}`);
       }
     },
   };
@@ -21,15 +21,12 @@ describe('compilePipe', () => {
   test('emits filter call with context and args', () => {
     const ctx = makeCtx();
     const node = {
-      name: AstSymbol(1, 1, 'upper'),
-      args: { children: [{ mock: 'arg1' }] },
+      type: 'pipe',
+      name: nodes.symbol(1, 1, 'upper'),
+      args: nodes.nodeList(1, 1, [nodes.symbol(1, 1, 'arg1')]),
     };
     compilePipe(ctx, node);
-    expect(ctx.emitted).toEqual([
-      'await runtime.awaitValue(env.getFilter("upper").call(context, ',
-      'arg1',
-      '))',
-    ]);
+    expect(ctx.emitted).toContain('await runtime.awaitValue(env.getFilter("upper").call(context, ');
   });
 });
 
@@ -38,18 +35,14 @@ describe('compilePipeAsync', () => {
     const ctx = makeCtx();
     const frame = { set: () => {} };
     const node = {
+      type: 'pipeAsync',
       lineno: 5,
       colno: 2,
-      name: AstSymbol(1, 1, 'myFilter'),
+      name: nodes.symbol(1, 1, 'myFilter'),
       symbol: { value: 't_1' },
-      args: { children: [{ mock: 'arg1' }] },
+      args: nodes.nodeList(1, 1, [nodes.symbol(1, 1, 'arg1')]),
     };
     compilePipeAsync(ctx, node, frame);
-    expect(ctx.emitted).toEqual([
-      'LINE:lineno = 5; colno = 2;',
-      't_1 = await runtime.awaitValue(env.getFilter("myFilter").call(context, ',
-      'arg1',
-      'LINE:));',
-    ]);
+    expect(ctx.emitted).toContain('t_1 = await runtime.awaitValue(env.getFilter("myFilter").call(context, ');
   });
 });

@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseIf } from './if.js';
-import { If, AstSymbol } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import { TOKEN_SYMBOL, TOKEN_BLOCK_END } from '../../lexer/token-types.js';
 
@@ -15,7 +15,7 @@ describe('parseIf', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const cond = new AstSymbol(1, 4, 'x');
+    const cond = nodes.symbol(1, 4, 'x');
     const body = { lineno: 1, colno: 12 };
     const ctx = Object.assign(createCursor(tokens), {
       parseExpression: () => { nextToken(ctx); return cond; },
@@ -24,7 +24,7 @@ describe('parseIf', () => {
 
     const result = parseIf(ctx);
 
-    expect(result).toBeInstanceOf(If);
+    expect(nodes.isIf(result)).toBe(true);
     expect(result.cond).toBe(cond);
     expect(result.body).toBe(body);
     expect(result.else_).toBeNull();
@@ -42,7 +42,7 @@ describe('parseIf', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const cond = new AstSymbol(1, 4, 'x');
+    const cond = nodes.symbol(1, 4, 'x');
     const body = { lineno: 1, colno: 12 };
     const elseBody = { lineno: 1, colno: 24 };
     let blocksCalls = 0;
@@ -56,7 +56,7 @@ describe('parseIf', () => {
 
     const result = parseIf(ctx);
 
-    expect(result).toBeInstanceOf(If);
+    expect(nodes.isIf(result)).toBe(true);
     expect(result.cond).toBe(cond);
     expect(result.body).toBe(body);
     expect(result.else_).toBe(elseBody);
@@ -75,8 +75,8 @@ describe('parseIf', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const cond1 = new AstSymbol(1, 4, 'x');
-    const cond2 = new AstSymbol(1, 21, 'y');
+    const cond1 = nodes.symbol(1, 4, 'x');
+    const cond2 = nodes.symbol(1, 21, 'y');
     let exprCalls = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parseExpression: () => {
@@ -90,9 +90,9 @@ describe('parseIf', () => {
 
     const result = parseIf(ctx);
 
-    expect(result).toBeInstanceOf(If);
+    expect(nodes.isIf(result)).toBe(true);
     expect(result.cond).toBe(cond1);
-    expect(result.else_).toBeInstanceOf(If);
+    expect(nodes.isIf(result.else_)).toBe(true);
     expect(result.else_.cond).toBe(cond2);
     expect(result.else_.else_).toBeNull();
   });
@@ -110,8 +110,8 @@ describe('parseIf', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const cond1 = new AstSymbol(1, 4, 'x');
-    const cond2 = new AstSymbol(1, 23, 'y');
+    const cond1 = nodes.symbol(1, 4, 'x');
+    const cond2 = nodes.symbol(1, 23, 'y');
     let exprCalls = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parseExpression: () => {
@@ -125,8 +125,8 @@ describe('parseIf', () => {
 
     const result = parseIf(ctx);
 
-    expect(result).toBeInstanceOf(If);
-    expect(result.else_).toBeInstanceOf(If);
+    expect(nodes.isIf(result)).toBe(true);
+    expect(nodes.isIf(result.else_)).toBe(true);
     expect(result.else_.cond).toBe(cond2);
   });
 

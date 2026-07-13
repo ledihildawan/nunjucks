@@ -3,7 +3,7 @@ import {
   TOKEN_COMMA,
   TOKEN_OPERATOR,
 } from '../../lexer/token-types.js';
-import { Set, Capture } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { peekToken, skip, skipValue, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseSet = (ctx) => {
@@ -12,7 +12,7 @@ export const parseSet = (ctx) => {
     fail(ctx, 'parseSet: expected set', tag.lineno, tag.colno);
   }
 
-  const node = Set(tag.lineno, tag.colno, []);
+  const node = nodes.set(tag.lineno, tag.colno, []);
 
   let target;
   while ((target = ctx.parsePrimary())) {
@@ -42,7 +42,7 @@ export const parseSet = (ctx) => {
           tag.lineno,
           tag.colno);
       } else {
-        node.body = Capture(
+        node.body = nodes.capture(
           tag.lineno,
           tag.colno,
           ctx.parseUntilBlocks('endset')

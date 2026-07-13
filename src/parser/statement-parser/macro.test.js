@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseMacro } from './macro.js';
-import { Macro, AstSymbol, NodeList } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import { TOKEN_SYMBOL, TOKEN_BLOCK_END } from '../../lexer/token-types.js';
 
@@ -19,9 +19,9 @@ describe('parseMacro', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const nameNode = new AstSymbol(1, 7, 'myMacro');
-    const args = NodeList(1, 15, []);
-    const body = NodeList(2, 1, []);
+    const nameNode = nodes.symbol(1, 7, 'myMacro');
+    const args = nodes.nodeList(1, 15, []);
+    const body = nodes.nodeList(2, 1, []);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: (noPostfix) => {
         nextToken(ctx);
@@ -37,7 +37,7 @@ describe('parseMacro', () => {
 
     const result = parseMacro(ctx);
 
-    expect(result).toBeInstanceOf(Macro);
+    expect(nodes.isMacro(result)).toBe(true);
     expect(result.name).toBe(nameNode);
     expect(result.args).toBe(args);
     expect(result.body).toBe(body);

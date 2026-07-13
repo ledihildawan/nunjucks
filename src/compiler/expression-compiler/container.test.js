@@ -9,14 +9,14 @@ import {
   compilePair,
   compileKeywordArgs,
 } from './container.js';
-import { Literal, AstSymbol, getNodeTypeName, isLiteral, isSymbol } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];
   const compile = (node) => {
-    if (isLiteral(node) || node instanceof Literal) {
+    if (nodes.isLiteral(node)) {
       emitted.push(`LIT(${node.value})`);
-    } else if (isSymbol(node) || node instanceof AstSymbol) {
+    } else if (nodes.isSymbol(node)) {
       emitted.push(`SYM(${node.value})`);
     } else if (typeof node === 'string') {
       emitted.push(node);
@@ -25,7 +25,7 @@ const makeCtx = () => {
     } else if (node.children) {
       node.children.forEach((c) => compile(c));
     } else {
-      emitted.push(`?${getNodeTypeName(node) || typeof node}`);
+      emitted.push(`?${nodes.getNodeTypeName(node) || typeof node}`);
     }
   };
   return {
@@ -155,10 +155,10 @@ describe('compileNodeList', () => {
 });
 
 describe('compilePair', () => {
-  test('compiles AstSymbol key as string literal', () => {
+  test('compiles Symbol key as string literal', () => {
     const ctx = makeCtx();
     const node = {
-      key: AstSymbol(1, 1, 'myKey'),
+      key: nodes.symbol(1, 1, 'myKey'),
       value: { mock: 'val' },
     };
     compilePair(ctx, node, mockFrame);
@@ -168,7 +168,7 @@ describe('compilePair', () => {
   test('compiles Literal string key directly', () => {
     const ctx = makeCtx();
     const node = {
-      key: Literal(1, 1, 'keyName'),
+      key: nodes.literal(1, 1, 'keyName'),
       value: { mock: 'val' },
     };
     compilePair(ctx, node, mockFrame);

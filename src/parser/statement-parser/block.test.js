@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseBlock } from './block.js';
-import { Block, AstSymbol } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import { TOKEN_SYMBOL, TOKEN_BLOCK_END } from '../../lexer/token-types.js';
 
@@ -14,7 +14,7 @@ describe('parseBlock', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const nameNode = AstSymbol(1, 7, 'content');
+    const nameNode = nodes.symbol(1, 7, 'content');
     const body = { lineno: 2, colno: 1 };
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: (noPostfix) => {
@@ -26,7 +26,7 @@ describe('parseBlock', () => {
 
     const result = parseBlock(ctx);
 
-    expect(result).toBeInstanceOf(Block);
+    expect(nodes.isBlock(result)).toBe(true);
     expect(result.name).toBe(nameNode);
     expect(result.name.value).toBe('content');
     expect(result.body).toBe(body);

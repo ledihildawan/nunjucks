@@ -1,4 +1,4 @@
-import { Capture, Filter, NodeList, Output } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseFilterStatement = (ctx) => {
@@ -11,25 +11,25 @@ export const parseFilterStatement = (ctx) => {
   const args = ctx.parseFilterArgs(name);
 
   advanceAfterBlockEnd(ctx, filterTok.value);
-  const body = Capture(
+  const body = nodes.capture(
     name.lineno,
     name.colno,
     ctx.parseUntilBlocks('endfilter')
   );
   advanceAfterBlockEnd(ctx);
 
-  const node = Filter(
+  const node = nodes.pipe(
     name.lineno,
     name.colno,
     name,
-    NodeList(
+    nodes.nodeList(
       name.lineno,
       name.colno,
       [body].concat(args)
     )
   );
 
-  return Output(
+  return nodes.output(
     name.lineno,
     name.colno,
     [node]

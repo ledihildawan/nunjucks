@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseImport } from './import.js';
-import { Import, AstSymbol } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import { TOKEN_SYMBOL, TOKEN_BLOCK_END } from '../../lexer/token-types.js';
 
@@ -15,8 +15,8 @@ describe('parseImport', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const template = new AstSymbol(1, 8, 'macros');
-    const target = new AstSymbol(1, 18, 'mac');
+    const template = nodes.symbol(1, 8, 'macros');
+    const target = nodes.symbol(1, 18, 'mac');
     let exprCalls = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parseExpression: () => {
@@ -29,7 +29,7 @@ describe('parseImport', () => {
 
     const result = parseImport(ctx);
 
-    expect(result).toBeInstanceOf(Import);
+    expect(nodes.isImport(result)).toBe(true);
     expect(result.template).toBe(template);
     expect(result.target).toBe(target);
     expect(result.withContext).toBeNull();
@@ -47,8 +47,8 @@ describe('parseImport', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const template = new AstSymbol(1, 8, 'macros');
-    const target = new AstSymbol(1, 18, 'mac');
+    const template = nodes.symbol(1, 8, 'macros');
+    const target = nodes.symbol(1, 18, 'mac');
     let exprCalls = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parseExpression: () => {
@@ -61,7 +61,7 @@ describe('parseImport', () => {
 
     const result = parseImport(ctx);
 
-    expect(result).toBeInstanceOf(Import);
+    expect(nodes.isImport(result)).toBe(true);
     expect(result.withContext).toBe(true);
   });
 
@@ -81,7 +81,7 @@ describe('parseImport', () => {
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
     const ctx = Object.assign(createCursor(tokens), {
-      parseExpression: () => { nextToken(ctx); return new AstSymbol(1, 8, 'macros'); },
+      parseExpression: () => { nextToken(ctx); return nodes.symbol(1, 8, 'macros'); },
     });
 
     expect(() => parseImport(ctx)).toThrow('parseImport: expected "as" keyword');

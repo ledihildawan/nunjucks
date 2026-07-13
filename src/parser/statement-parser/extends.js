@@ -1,4 +1,4 @@
-import { Extends } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseExtends = (ctx) => {
@@ -8,7 +8,7 @@ export const parseExtends = (ctx) => {
     fail(ctx, 'parseTemplateRef: expected ' + tagName);
   }
 
-  const node = Extends(tag.lineno, tag.colno);
+  const node = nodes.extends(tag.lineno, tag.colno);
   node.template = ctx.parseExpression();
 
   advanceAfterBlockEnd(ctx, tag.value);

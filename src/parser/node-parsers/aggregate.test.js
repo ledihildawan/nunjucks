@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseAggregate } from './aggregate.js';
-import { Group, ArrayNode, Dict, Pair, AstSymbol, Literal } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import {
   TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN,
@@ -22,7 +22,7 @@ describe('parseAggregate', () => {
 
     const result = parseAggregate(ctx);
 
-    expect(result).toBeInstanceOf(Group);
+    expect(nodes.getNodeTypeName(result)).toBe('group');
     expect(result.children).toEqual([]);
   });
 
@@ -34,14 +34,14 @@ describe('parseAggregate', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const expr = new AstSymbol(1, 2, 'x');
+    const expr = nodes.symbol(1, 2, 'x');
     const ctx = Object.assign(createCursor(tokens), {
       parseExpression: () => { nextToken(ctx); return expr; },
     });
 
     const result = parseAggregate(ctx);
 
-    expect(result).toBeInstanceOf(Group);
+    expect(nodes.getNodeTypeName(result)).toBe('group');
     expect(result.children).toEqual([expr]);
   });
 
@@ -55,7 +55,7 @@ describe('parseAggregate', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const exprs = [new AstSymbol(1, 2, 'a'), new AstSymbol(1, 5, 'b')];
+    const exprs = [nodes.symbol(1, 2, 'a'), nodes.symbol(1, 5, 'b')];
     let i = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parseExpression: () => { const v = exprs[i++]; nextToken(ctx); return v; },
@@ -63,7 +63,7 @@ describe('parseAggregate', () => {
 
     const result = parseAggregate(ctx);
 
-    expect(result).toBeInstanceOf(Group);
+    expect(nodes.getNodeTypeName(result)).toBe('group');
     expect(result.children).toEqual(exprs);
   });
 
@@ -78,7 +78,7 @@ describe('parseAggregate', () => {
 
     const result = parseAggregate(ctx);
 
-    expect(result).toBeInstanceOf(ArrayNode);
+    expect(nodes.getNodeTypeName(result)).toBe('array');
     expect(result.children).toEqual([]);
   });
 
@@ -93,7 +93,7 @@ describe('parseAggregate', () => {
 
     const result = parseAggregate(ctx);
 
-    expect(result).toBeInstanceOf(Dict);
+    expect(nodes.getNodeTypeName(result)).toBe('dict');
     expect(result.children).toEqual([]);
   });
 
@@ -107,8 +107,8 @@ describe('parseAggregate', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const key = new Literal(1, 2, 'name');
-    const value = new Literal(1, 9, 'test');
+    const key = nodes.literal(1, 2, 'name');
+    const value = nodes.literal(1, 9, 'test');
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { nextToken(ctx); return key; },
       parseExpression: () => { nextToken(ctx); return value; },
@@ -116,9 +116,9 @@ describe('parseAggregate', () => {
 
     const result = parseAggregate(ctx);
 
-    expect(result).toBeInstanceOf(Dict);
+    expect(nodes.getNodeTypeName(result)).toBe('dict');
     expect(result.children.length).toBe(1);
-    expect(result.children[0]).toBeInstanceOf(Pair);
+    expect(nodes.getNodeTypeName(result.children[0])).toBe('pair');
     expect(result.children[0].key).toBe(key);
     expect(result.children[0].value).toBe(value);
   });
@@ -145,7 +145,7 @@ describe('parseAggregate', () => {
     const tokens = { nextToken: () => seq[n++] };
     let i = 0;
     const ctx = Object.assign(createCursor(tokens), {
-      parseExpression: () => { const v = new AstSymbol(1, i === 0 ? 2 : 5, i === 0 ? 'a' : 'b'); i++; nextToken(ctx); return v; },
+      parseExpression: () => { const v = nodes.symbol(1, i === 0 ? 2 : 5, i === 0 ? 'a' : 'b'); i++; nextToken(ctx); return v; },
     });
 
     expect(() => parseAggregate(ctx)).toThrow('parseAggregate: expected comma after expression');
@@ -159,7 +159,7 @@ describe('parseAggregate', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const key = new Literal(1, 2, 'name');
+    const key = nodes.literal(1, 2, 'name');
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { nextToken(ctx); return key; },
       parseExpression: () => key,

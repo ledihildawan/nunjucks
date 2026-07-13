@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parsePipe, parseFilterName, parseFilterArgs } from './pipe.js';
-import { AstSymbol, Pipe, Literal } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor } from '../cursor.js';
 import { TOKEN_SYMBOL, TOKEN_OPERATOR, TOKEN_PIPEFORWARD, TOKEN_LEFT_PAREN } from '../../lexer/token-types.js';
 
@@ -11,7 +11,7 @@ describe('parseFilterName', () => {
 
     const result = parseFilterName(ctx);
 
-    expect(result).toBeInstanceOf(AstSymbol);
+    expect(nodes.isSymbol(result)).toBe(true);
     expect(result.value).toBe('escape');
   });
 
@@ -31,7 +31,7 @@ describe('parseFilterName', () => {
 
     const result = parseFilterName(ctx);
 
-    expect(result).toBeInstanceOf(AstSymbol);
+    expect(nodes.isSymbol(result)).toBe(true);
     expect(result.value).toBe('my.filter');
   });
 
@@ -54,7 +54,7 @@ describe('parseFilterArgs', () => {
   });
 
   test('parses args when next token is left paren', () => {
-    const argNodes = [new Literal(1, 3, 'x')];
+    const argNodes = [nodes.literal(1, 3, 'x')];
     const tokens = {
       nextToken: () => ({ type: TOKEN_LEFT_PAREN, value: '(', lineno: 1, colno: 5 }),
     };
@@ -90,11 +90,11 @@ describe('parsePipe', () => {
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
     const ctx = Object.assign(createCursor(tokens));
-    const node = new Literal(1, 1, 'hello');
+    const node = nodes.literal(1, 1, 'hello');
 
     const result = parsePipe(ctx, node);
 
-    expect(result).toBeInstanceOf(Pipe);
+    expect(nodes.getNodeTypeName(result)).toBe('pipe');
     expect(result.name.value).toBe('escape');
     expect(result.args.children[0]).toBe(node);
   });

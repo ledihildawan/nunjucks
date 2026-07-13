@@ -1,39 +1,7 @@
 import { pipe, filter, isDefined, isNonNullish, reduce } from 'remeda';
 import { parse } from '../parser/index.js';
 import { transform } from '../transformers/index.js';
-import { getNodeTypeName } from '../nodes/index.js';
-import {
-  Literal,
-  AstSymbol,
-  Group,
-  ArrayNode,
-  Dict,
-  FunCall,
-  Caller,
-  Pipe,
-  LookupVal,
-  Compare,
-  InlineIf,
-  In,
-  Is,
-  And,
-  Or,
-  Not,
-  Add,
-  Concat,
-  Sub,
-  Mul,
-  Div,
-  FloorDiv,
-  Mod,
-  Pow,
-  Neg,
-  Pos,
-  OptionalChain,
-  NullishCoalesce,
-  NodeList,
-  Slice,
-} from '../nodes/index.js';
+import { nodes } from '../nodes/index.js';
 import { createTemplateError } from '../error/index.js';
 import { createObj } from '../object/index.js';
 import { createSourceMap } from '../helpers/source-map.js';
@@ -154,53 +122,54 @@ export function createCompiler(templateName, undefinedMode, source) {
     _compileExpression: function(node, frame) {
       this.assertType(
         node,
-        Literal,
-        AstSymbol,
-        Group,
-        ArrayNode,
-        Dict,
-        FunCall,
-        Caller,
-        Pipe,
-        LookupVal,
-        Compare,
-        InlineIf,
-        In,
-        Is,
-        And,
-        Or,
-        Not,
-        Add,
-        Concat,
-        Sub,
-        Mul,
-        Div,
-        FloorDiv,
-        Mod,
-        Pow,
-        Neg,
-        Pos,
-        Compare,
-        OptionalChain,
-        NullishCoalesce,
-        NodeList,
-        Slice
+        nodes.literal,
+        nodes.symbol,
+        nodes.group,
+        nodes.array,
+        nodes.dict,
+        nodes.funCall,
+        nodes.caller,
+        nodes.pipe,
+        nodes.lookupVal,
+        nodes.compare,
+        nodes.inlineIf,
+        nodes.in,
+        nodes.is,
+        nodes.and,
+        nodes.or,
+        nodes.not,
+        nodes.add,
+        nodes.concat,
+        nodes.sub,
+        nodes.mul,
+        nodes.div,
+        nodes.floorDiv,
+        nodes.mod,
+        nodes.pow,
+        nodes.neg,
+        nodes.pos,
+        nodes.compare,
+        nodes.optionalChain,
+        nodes.nullishCoalesce,
+        nodes.nodeList,
+        nodes.slice
       );
       this.compile(node, frame);
     },
     assertType: function(node, ...types) {
-      const typeName = getNodeTypeName(node);
+      const typeName = nodes.getNodeTypeName(node);
       const matches = types.some(t => {
         if (typeof t === 'string') {
           return typeName === t;
         }
-        // Check by constructor
+        // Check by constructor name (for backward compat with old pattern)
         if (t && t.name && typeName === t.name) {
           return true;
         }
-        // Check via prototype chain
-        if (node instanceof t) {
-          return true;
+        // Check by type function - use lowercase type name
+        if (t && t.name) {
+          const tName = t.name.toLowerCase();
+          return typeName === tName;
         }
         return false;
       });

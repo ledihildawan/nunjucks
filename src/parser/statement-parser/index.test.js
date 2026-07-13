@@ -3,7 +3,7 @@ import { parseStatement } from './index.js';
 import { createParser } from '../index.js';
 import { lex } from '../../lexer/tokenizer.js';
 import { TOKEN_BLOCK_START } from '../../lexer/token-types.js';
-import { getNodeTypeName } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 
 const makeParser = (src) => {
   const p = createParser(lex(src));
@@ -31,73 +31,73 @@ describe('parseStatement dispatch', () => {
   test('dispatches if', () => {
     const p = advanceToStatement(makeParser('{% if x %}y{% endif %}'));
     const node = parseStatement(p);
-    expect(getNodeTypeName(node)).toBe('If');
+    expect(nodes.getNodeTypeName(node)).toBe('if');
   });
 
   test('dispatches for', () => {
     const p = advanceToStatement(makeParser('{% for x in y %}z{% endfor %}'));
     const node = parseStatement(p);
-    expect(getNodeTypeName(node)).toBe('For');
+    expect(nodes.getNodeTypeName(node)).toBe('for');
   });
 
   test('dispatches block', () => {
     const p = advanceToStatement(makeParser('{% block name %}content{% endblock %}'));
     const node = parseStatement(p);
-    expect(getNodeTypeName(node)).toBe('Block');
+    expect(nodes.getNodeTypeName(node)).toBe('block');
   });
 
   test('dispatches extends', () => {
     const p = advanceToStatement(makeParser('{% extends "base.njk" %}'));
     const node = parseStatement(p);
-    expect(getNodeTypeName(node)).toBe('Extends');
+    expect(nodes.getNodeTypeName(node)).toBe('extends');
   });
 
   test('dispatches include', () => {
     const p = advanceToStatement(makeParser('{% include "header.njk" %}'));
     const node = parseStatement(p);
-    expect(getNodeTypeName(node)).toBe('Include');
+    expect(nodes.getNodeTypeName(node)).toBe('include');
   });
 
   test('dispatches set', () => {
     const p = advanceToStatement(makeParser('{% set x = 1 %}'));
     const node = parseStatement(p);
-    expect(getNodeTypeName(node)).toBe('Set');
+    expect(nodes.getNodeTypeName(node)).toBe('set');
   });
 
   test('dispatches macro', () => {
     const p = advanceToStatement(makeParser('{% macro mymacro() %}body{% endmacro %}'));
     const node = parseStatement(p);
-    expect(getNodeTypeName(node)).toBe('Macro');
+    expect(nodes.getNodeTypeName(node)).toBe('macro');
   });
 
   test('dispatches call', () => {
     const p = advanceToStatement(makeParser('{% call block() %}body{% endcall %}'));
     const node = parseStatement(p);
-    expect(getNodeTypeName(node)).toBe('Output');
+    expect(nodes.getNodeTypeName(node)).toBe('output');
   });
 
   test('dispatches import', () => {
     const p = advanceToStatement(makeParser('{% import "macros.njk" as m %}'));
     const node = parseStatement(p);
-    expect(getNodeTypeName(node)).toBe('Import');
+    expect(nodes.getNodeTypeName(node)).toBe('import');
   });
 
   test('dispatches from', () => {
     const p = advanceToStatement(makeParser('{% from "macros.njk" import mymacro %}'));
     const node = parseStatement(p);
-    expect(getNodeTypeName(node)).toBe('FromImport');
+    expect(nodes.getNodeTypeName(node)).toBe('fromImport');
   });
 
   test('dispatches filter', () => {
     const p = advanceToStatement(makeParser('{% filter upper %}text{% endfilter %}'));
     const node = parseStatement(p);
-    expect(getNodeTypeName(node)).toBe('Output');
+    expect(nodes.getNodeTypeName(node)).toBe('output');
   });
 
   test('dispatches switch', () => {
     const p = advanceToStatement(makeParser('{% switch x %}{% case 1 %}{% endswitch %}'));
     const node = parseStatement(p);
-    expect(getNodeTypeName(node)).toBe('Switch');
+    expect(nodes.getNodeTypeName(node)).toBe('switch');
   });
 
   test('fails on unknown tag', () => {
@@ -118,19 +118,16 @@ describe('parseStatement dispatch', () => {
   });
 
   test('dispatches to extension tags', () => {
-    const Custom = Symbol('Custom');
     const ext = {
       tags: ['custom'],
       parse: () => {
-        const node = { init: function() {} };
-        node[Custom] = true;
-        return node;
+        return nodes.symbol(1, 1, 'custom');
       }
     };
     const p = advanceToStatement(makeParser('{% custom %}'));
     p.extensions = [ext];
     const node = parseStatement(p);
-    expect(getNodeTypeName(node)).toBe('Custom');
+    expect(nodes.isSymbol(node)).toBe(true);
   });
 
   test('fails when no extension matches', () => {

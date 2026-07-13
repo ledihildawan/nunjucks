@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import { parseUntilBlocks, parseNodes } from './top-level.js';
 import { createCursor } from './cursor.js';
 import { TOKEN_DATA, TOKEN_BLOCK_START, TOKEN_VARIABLE_START, TOKEN_VARIABLE_END, TOKEN_COMMENT } from '../lexer/token-types.js';
-import { Output, TemplateData } from '../nodes/index.js';
+import { nodes } from '../nodes/index.js';
 
 describe('parseUntilBlocks', () => {
   test('sets breakOnBlocks and calls ctx.parse', () => {
@@ -63,8 +63,8 @@ describe('parseNodes', () => {
     const result = parseNodes(ctx);
 
     expect(result).toHaveLength(1);
-    expect(result[0]).toBeInstanceOf(Output);
-    expect(result[0].children[0]).toBeInstanceOf(TemplateData);
+    expect(nodes.getNodeTypeName(result[0])).toBe('output');
+    expect(nodes.getNodeTypeName(result[0].children[0])).toBe('templateData');
     expect(result[0].children[0].value).toBe('hello');
   });
 
@@ -138,7 +138,7 @@ describe('parseNodes', () => {
     const result = parseNodes(ctx);
 
     expect(result).toHaveLength(1);
-    expect(result[0]).toBeInstanceOf(Output);
+    expect(nodes.getNodeTypeName(result[0])).toBe('output');
     expect(result[0].children[0]).toBe(expr);
   });
 

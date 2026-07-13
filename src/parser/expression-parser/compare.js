@@ -1,4 +1,4 @@
-import { Compare, CompareOperand } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { nextToken, pushToken } from '../cursor.js';
 import { parseConcat } from './concat.js';
 
@@ -13,7 +13,7 @@ export const parseCompare = (ctx) => {
     if (!tok) {
       break;
     } else if (compareOps.includes(tok.value)) {
-      ops.push(CompareOperand(tok.lineno, tok.colno, parseConcat(ctx), tok.value));
+      ops.push(nodes.compareOperand(tok.lineno, tok.colno, parseConcat(ctx), tok.value));
     } else {
       pushToken(ctx, tok);
       break;
@@ -21,7 +21,7 @@ export const parseCompare = (ctx) => {
   }
 
   if (ops.length) {
-    return Compare(ops[0].lineno, ops[0].colno, expr, ops);
+    return nodes.compare(ops[0].lineno, ops[0].colno, expr, ops);
   } else {
     return expr;
   }

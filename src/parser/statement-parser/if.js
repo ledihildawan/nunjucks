@@ -1,4 +1,4 @@
-import { If } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
 export const parseIf = (ctx) => {
@@ -6,7 +6,7 @@ export const parseIf = (ctx) => {
   let node;
 
   if (skipSymbol(ctx, 'if') || skipSymbol(ctx, 'elif') || skipSymbol(ctx, 'elseif')) {
-    node = If(tag.lineno, tag.colno);
+    node = nodes.if(tag.lineno, tag.colno);
   } else {
     fail(ctx, 'parseIf: expected if, elif, or elseif',
       tag.lineno,

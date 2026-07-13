@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseOr, parseAnd, parseNot } from './logical.js';
-import { Or, And, Not, Literal } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor } from '../cursor.js';
 import { TOKEN_SYMBOL } from '../../lexer/token-types.js';
 
@@ -11,8 +11,8 @@ describe('parseOr', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const left = new Literal(1, 1, true);
-    const right = new Literal(1, 6, false);
+    const left = nodes.literal(1, 1, true);
+    const right = nodes.literal(1, 6, false);
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
@@ -21,14 +21,14 @@ describe('parseOr', () => {
 
     const result = parseOr(ctx);
 
-    expect(result).toBeInstanceOf(Or);
+    expect(nodes.isOr(result)).toBe(true);
     expect(result.left).toBe(left);
     expect(result.right).toBe(right);
   });
 
   test('returns single node without or', () => {
     const tokens = { nextToken: () => ({ type: TOKEN_SYMBOL, value: 'x', lineno: 1, colno: 1 }) };
-    const node = new Literal(1, 1, true);
+    const node = nodes.literal(1, 1, true);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => node,
       parsePipe: (x) => x,
@@ -45,8 +45,8 @@ describe('parseAnd', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const left = new Literal(1, 1, true);
-    const right = new Literal(1, 7, false);
+    const left = nodes.literal(1, 1, true);
+    const right = nodes.literal(1, 7, false);
     let c = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => { const v = [left, right]; return v[c++]; },
@@ -55,14 +55,14 @@ describe('parseAnd', () => {
 
     const result = parseAnd(ctx);
 
-    expect(result).toBeInstanceOf(And);
+    expect(nodes.isAnd(result)).toBe(true);
     expect(result.left).toBe(left);
     expect(result.right).toBe(right);
   });
 
   test('returns single node without and', () => {
     const tokens = { nextToken: () => ({ type: TOKEN_SYMBOL, value: 'x', lineno: 1, colno: 1 }) };
-    const node = new Literal(1, 1, true);
+    const node = nodes.literal(1, 1, true);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => node,
       parsePipe: (x) => x,
@@ -79,7 +79,7 @@ describe('parseNot', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const node = new Literal(1, 5, false);
+    const node = nodes.literal(1, 5, false);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => node,
       parsePipe: (x) => x,
@@ -87,13 +87,13 @@ describe('parseNot', () => {
 
     const result = parseNot(ctx);
 
-    expect(result).toBeInstanceOf(Not);
+    expect(nodes.isNot(result)).toBe(true);
     expect(result.target).toBe(node);
   });
 
   test('passes through without not', () => {
     const tokens = { nextToken: () => ({ type: TOKEN_SYMBOL, value: 'x', lineno: 1, colno: 1 }) };
-    const node = new Literal(1, 1, true);
+    const node = nodes.literal(1, 1, true);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => node,
       parsePipe: (x) => x,
@@ -109,7 +109,7 @@ describe('parseNot', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const node = new Literal(1, 9, true);
+    const node = nodes.literal(1, 9, true);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => node,
       parsePipe: (x) => x,
@@ -117,8 +117,8 @@ describe('parseNot', () => {
 
     const result = parseNot(ctx);
 
-    expect(result).toBeInstanceOf(Not);
-    expect(result.target).toBeInstanceOf(Not);
+    expect(nodes.isNot(result)).toBe(true);
+    expect(nodes.isNot(result.target)).toBe(true);
     expect(result.target.target).toBe(node);
   });
 });

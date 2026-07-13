@@ -1,11 +1,5 @@
 import {
-  NodeList,
-  Pair,
-  KeywordArgs,
-  Output,
-  Caller,
-  AstSymbol,
-  isKeywordArgs,
+  nodes,
 } from '../../nodes/index.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 
@@ -15,33 +9,33 @@ export const parseCall = (ctx) => {
     fail(ctx, 'expected call');
   }
 
-  const callerArgs = ctx.parseSignature(true) || NodeList();
+  const callerArgs = ctx.parseSignature(true) || nodes.nodeList();
   const macroCall = ctx.parsePrimary();
 
   advanceAfterBlockEnd(ctx, callTok.value);
   const body = ctx.parseUntilBlocks('endcall');
   advanceAfterBlockEnd(ctx);
 
-  const callerName = AstSymbol(callTok.lineno,
+  const callerName = nodes.symbol(callTok.lineno,
     callTok.colno,
     'caller');
-  const callerNode = Caller(callTok.lineno,
+  const callerNode = nodes.caller(callTok.lineno,
     callTok.colno,
     callerName,
     callerArgs,
     body);
 
   const args = macroCall.args.children;
-  if (!isKeywordArgs(args.at(-1))) {
-    args.push(KeywordArgs());
+  if (!nodes.isKeywordArgs(args.at(-1))) {
+    args.push(nodes.keywordArgs());
   }
   const kwargs = args.at(-1);
-  kwargs.addChild(Pair(callTok.lineno,
+  kwargs.addChild(nodes.pair(callTok.lineno,
     callTok.colno,
     callerName,
     callerNode));
 
-  return Output(callTok.lineno,
+  return nodes.output(callTok.lineno,
     callTok.colno,
     [macroCall]);
 };

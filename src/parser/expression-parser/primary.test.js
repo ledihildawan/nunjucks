@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parsePrimary } from './primary.js';
-import { Literal, AstSymbol } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor } from '../cursor.js';
 import { TOKEN_STRING, TOKEN_INT, TOKEN_FLOAT, TOKEN_BOOLEAN, TOKEN_NONE, TOKEN_REGEX, TOKEN_SYMBOL } from '../../lexer/token-types.js';
 
@@ -14,7 +14,7 @@ describe('parsePrimary', () => {
 
     const result = parsePrimary(ctx);
 
-    expect(result).toBeInstanceOf(Literal);
+    expect(nodes.isLiteral(result)).toBe(true);
     expect(result.value).toBe('hello');
   });
 
@@ -26,7 +26,7 @@ describe('parsePrimary', () => {
 
     const result = parsePrimary(ctx);
 
-    expect(result).toBeInstanceOf(Literal);
+    expect(nodes.isLiteral(result)).toBe(true);
     expect(result.value).toBe(42);
   });
 
@@ -38,7 +38,7 @@ describe('parsePrimary', () => {
 
     const result = parsePrimary(ctx);
 
-    expect(result).toBeInstanceOf(Literal);
+    expect(nodes.isLiteral(result)).toBe(true);
     expect(result.value).toBe(3.14);
   });
 
@@ -50,7 +50,7 @@ describe('parsePrimary', () => {
 
     const result = parsePrimary(ctx);
 
-    expect(result).toBeInstanceOf(Literal);
+    expect(nodes.isLiteral(result)).toBe(true);
     expect(result.value).toBe(true);
   });
 
@@ -62,7 +62,7 @@ describe('parsePrimary', () => {
 
     const result = parsePrimary(ctx);
 
-    expect(result).toBeInstanceOf(Literal);
+    expect(nodes.isLiteral(result)).toBe(true);
     expect(result.value).toBe(false);
   });
 
@@ -74,7 +74,7 @@ describe('parsePrimary', () => {
 
     const result = parsePrimary(ctx);
 
-    expect(result).toBeInstanceOf(Literal);
+    expect(nodes.isLiteral(result)).toBe(true);
     expect(result.value).toBeNull();
   });
 
@@ -86,7 +86,7 @@ describe('parsePrimary', () => {
 
     const result = parsePrimary(ctx);
 
-    expect(result).toBeInstanceOf(Literal);
+    expect(nodes.isLiteral(result)).toBe(true);
     expect(result.value).toBeInstanceOf(RegExp);
     expect(result.value.source).toBe('\\d+');
     expect(result.value.flags).toBe('g');
@@ -100,7 +100,7 @@ describe('parsePrimary', () => {
 
     const result = parsePrimary(ctx);
 
-    expect(result).toBeInstanceOf(AstSymbol);
+    expect(nodes.isSymbol(result)).toBe(true);
     expect(result.value).toBe('myVar');
   });
 
@@ -130,7 +130,7 @@ describe('parsePrimary', () => {
 
   test('calls parseAggregate for unknown token type', () => {
     const tokens = { nextToken: () => ({ type: 'unknown', value: '(', lineno: 1, colno: 1 }) };
-    const subNode = new AstSymbol(1, 2, 'expr');
+    const subNode = nodes.symbol(1, 2, 'expr');
     const ctx = Object.assign(createCursor(tokens), {
       parsePostfix: (n) => n,
       parseAggregate: () => subNode,

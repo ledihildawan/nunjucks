@@ -1,15 +1,4 @@
-import {
-  NodeList,
-  PipeAsync,
-  AstSymbol,
-  isBlock,
-  isPipe,
-  isCallExtensionAsync,
-  isOutput,
-  isSet,
-  isFor,
-  isIf,
-} from '../nodes/index.js';
+import { nodes } from '../nodes/index.js';
 import { depthWalk } from './walk.js';
 import { createGensym } from './symbol-generator.js';
 
@@ -18,17 +7,17 @@ const _liftPipes = (node, asyncPipes, prop, gensym) => {
 
   let walked = depthWalk(prop ? node[prop] : node, (descNode) => {
     let symbol;
-    if (isBlock(descNode)) {
+    if (nodes.isBlock(descNode)) {
       return descNode;
-    } else if ((isPipe(descNode) &&
+    } else if ((nodes.isPipe(descNode) &&
       asyncPipes.includes(descNode.name.value)) ||
-      isCallExtensionAsync(descNode)) {
-      symbol = AstSymbol(
+      nodes.isCallExtensionAsync(descNode)) {
+      symbol = nodes.symbol(
         descNode.lineno,
         descNode.colno,
         gensym()
       );
-      children.push(PipeAsync(
+      children.push(nodes.pipeAsync(
         descNode.lineno,
         descNode.colno,
         descNode.name,
@@ -47,7 +36,7 @@ const _liftPipes = (node, asyncPipes, prop, gensym) => {
 
   if (children.length) {
     children.push(node);
-    return NodeList(node.lineno, node.colno, children);
+    return nodes.nodeList(node.lineno, node.colno, children);
   }
   return node;
 };
@@ -55,15 +44,15 @@ const _liftPipes = (node, asyncPipes, prop, gensym) => {
 export const liftPipes = (ast, asyncPipes) => {
   const gensym = createGensym();
   return depthWalk(ast, (node) => {
-    if (isOutput(node)) {
+    if (nodes.isOutput(node)) {
       return _liftPipes(node, asyncPipes, null, gensym);
-    } else if (isSet(node)) {
+    } else if (nodes.isSet(node)) {
       return _liftPipes(node, asyncPipes, 'value', gensym);
-    } else if (isFor(node)) {
+    } else if (nodes.isFor(node)) {
       return _liftPipes(node, asyncPipes, 'arr', gensym);
-    } else if (isIf(node)) {
+    } else if (nodes.isIf(node)) {
       return _liftPipes(node, asyncPipes, 'cond', gensym);
-    } else if (isCallExtensionAsync(node)) {
+    } else if (nodes.isCallExtensionAsync(node)) {
       return _liftPipes(node, asyncPipes, 'args', gensym);
     }
     return undefined;

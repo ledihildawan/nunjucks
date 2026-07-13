@@ -1,9 +1,8 @@
-import { AstSymbol } from '../../nodes/index.js';
 import { compileAggregate } from './container.js';
 
 export const compilePipe = (ctx, node, frame) => {
   const name = node.name;
-  ctx.assertType(name, AstSymbol);
+  ctx.assertType(name, 'symbol');
   ctx._emit('await runtime.awaitValue(env.getFilter("' + name.value + '").call(context, ');
   compileAggregate(ctx, node.args, frame);
   ctx._emit('))');
@@ -13,7 +12,7 @@ export const compilePipeAsync = (ctx, node, frame) => {
   const name = node.name;
   const symbol = node.symbol.value;
 
-  ctx.assertType(name, AstSymbol);
+  ctx.assertType(name, 'symbol');
 
   frame.set(symbol, symbol);
 

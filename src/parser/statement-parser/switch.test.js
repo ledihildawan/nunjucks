@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseSwitch } from './switch.js';
-import { Switch, Case, AstSymbol } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import { TOKEN_SYMBOL, TOKEN_BLOCK_END } from '../../lexer/token-types.js';
 
@@ -18,8 +18,8 @@ describe('parseSwitch', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const expr = new AstSymbol(1, 8, 'x');
-    const cond = new AstSymbol(1, 21, '1');
+    const expr = nodes.symbol(1, 8, 'x');
+    const cond = nodes.symbol(1, 21, '1');
     const caseBody = { lineno: 1, colno: 26 };
     let exprCalls = 0;
     const ctx = Object.assign(createCursor(tokens), {
@@ -34,10 +34,10 @@ describe('parseSwitch', () => {
 
     const result = parseSwitch(ctx);
 
-    expect(result).toBeInstanceOf(Switch);
+    expect(nodes.isSwitch(result)).toBe(true);
     expect(result.expr).toBe(expr);
     expect(result.cases.length).toBe(1);
-    expect(result.cases[0]).toBeInstanceOf(Case);
+    expect(nodes.isCase(result.cases[0])).toBe(true);
     expect(result.cases[0].cond).toBe(cond);
     expect(result.cases[0].body).toBe(caseBody);
   });
@@ -58,9 +58,9 @@ describe('parseSwitch', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const expr = new AstSymbol(1, 8, 'x');
-    const cond1 = new AstSymbol(1, 21, '1');
-    const cond2 = new AstSymbol(1, 34, '2');
+    const expr = nodes.symbol(1, 8, 'x');
+    const cond1 = nodes.symbol(1, 21, '1');
+    const cond2 = nodes.symbol(1, 34, '2');
     const body1 = { lineno: 1, colno: 26 };
     const body2 = { lineno: 1, colno: 39 };
     let exprCalls = 0;
@@ -80,7 +80,7 @@ describe('parseSwitch', () => {
 
     const result = parseSwitch(ctx);
 
-    expect(result).toBeInstanceOf(Switch);
+    expect(nodes.isSwitch(result)).toBe(true);
     expect(result.cases.length).toBe(2);
   });
 
@@ -99,8 +99,8 @@ describe('parseSwitch', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const expr = new AstSymbol(1, 8, 'x');
-    const cond = new AstSymbol(1, 21, '1');
+    const expr = nodes.symbol(1, 8, 'x');
+    const cond = nodes.symbol(1, 21, '1');
     const caseBody = { lineno: 1, colno: 26 };
     const defaultBody = { lineno: 1, colno: 40 };
     let exprCalls = 0;
@@ -120,7 +120,7 @@ describe('parseSwitch', () => {
 
     const result = parseSwitch(ctx);
 
-    expect(result).toBeInstanceOf(Switch);
+    expect(nodes.isSwitch(result)).toBe(true);
     expect(result.cases.length).toBe(1);
     expect(result.default).toBe(defaultBody);
   });

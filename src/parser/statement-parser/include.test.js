@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseInclude } from './include.js';
-import { Include } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import { TOKEN_SYMBOL, TOKEN_BLOCK_END } from '../../lexer/token-types.js';
 
@@ -23,7 +23,7 @@ describe('parseInclude', () => {
 
     const result = parseInclude(ctx);
 
-    expect(result).toBeInstanceOf(Include);
+    expect(nodes.isInclude(result)).toBe(true);
     expect(result.template).toBe(templateNode);
     expect(result.ignoreMissing).toBeNull();
   });
@@ -48,7 +48,7 @@ describe('parseInclude', () => {
 
     const result = parseInclude(ctx);
 
-    expect(result).toBeInstanceOf(Include);
+    expect(nodes.isInclude(result)).toBe(true);
     expect(result.ignoreMissing).toBe(true);
   });
 
@@ -78,7 +78,7 @@ describe('parseInclude', () => {
 
     const result = parseInclude(ctx);
 
-    expect(result).toBeInstanceOf(Include);
+    expect(nodes.isInclude(result)).toBe(true);
     expect(result.only).toBe(true);
   });
 
@@ -103,7 +103,7 @@ describe('parseInclude', () => {
 
     const result = parseInclude(ctx);
 
-    expect(result).toBeInstanceOf(Include);
+    expect(nodes.isInclude(result)).toBe(true);
     expect(result.with).toBe(dataNode);
   });
 });

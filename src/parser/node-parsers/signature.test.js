@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { parseSignature } from './signature.js';
-import { NodeList, Pair, KeywordArgs, AstSymbol, Literal } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { createCursor, nextToken } from '../cursor.js';
 import {
   TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN,
@@ -20,7 +20,7 @@ describe('parseSignature', () => {
 
     const result = parseSignature(ctx);
 
-    expect(result).toBeInstanceOf(NodeList);
+    expect(nodes.isNodeList(result)).toBe(true);
     expect(result.children).toEqual([]);
   });
 
@@ -34,7 +34,7 @@ describe('parseSignature', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const args = [new AstSymbol(1, 2, 'a'), new AstSymbol(1, 5, 'b')];
+    const args = [nodes.symbol(1, 2, 'a'), nodes.symbol(1, 5, 'b')];
     let i = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parseExpression: () => { const v = args[i++]; nextToken(ctx); return v; },
@@ -42,7 +42,7 @@ describe('parseSignature', () => {
 
     const result = parseSignature(ctx);
 
-    expect(result).toBeInstanceOf(NodeList);
+    expect(nodes.isNodeList(result)).toBe(true);
     expect(result.children).toEqual(args);
   });
 
@@ -56,8 +56,8 @@ describe('parseSignature', () => {
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
-    const name = new AstSymbol(1, 2, 'name');
-    const value = new Literal(1, 9, 'test');
+    const name = nodes.symbol(1, 2, 'name');
+    const value = nodes.literal(1, 9, 'test');
     let call = 0;
     const ctx = Object.assign(createCursor(tokens), {
       parseExpression: () => {
@@ -70,10 +70,10 @@ describe('parseSignature', () => {
 
     const result = parseSignature(ctx);
 
-    expect(result).toBeInstanceOf(NodeList);
+    expect(nodes.isNodeList(result)).toBe(true);
     const kw = result.children[0];
-    expect(kw).toBeInstanceOf(KeywordArgs);
-    expect(kw.children[0]).toBeInstanceOf(Pair);
+    expect(nodes.getNodeTypeName(kw)).toBe('keywordArgs');
+    expect(nodes.getNodeTypeName(kw.children[0])).toBe('pair');
     expect(kw.children[0].key).toBe(name);
     expect(kw.children[0].value).toBe(value);
   });
@@ -102,7 +102,7 @@ describe('parseSignature', () => {
 
     const result = parseSignature(ctx, false, true);
 
-    expect(result).toBeInstanceOf(NodeList);
+    expect(nodes.isNodeList(result)).toBe(true);
     expect(result.children).toEqual([]);
   });
 
@@ -116,7 +116,7 @@ describe('parseSignature', () => {
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
     const ctx = Object.assign(createCursor(tokens), {
-      parseExpression: () => { nextToken(ctx); return new AstSymbol(1, 2, 'a'); },
+      parseExpression: () => { nextToken(ctx); return nodes.symbol(1, 2, 'a'); },
     });
 
     expect(() => parseSignature(ctx)).toThrow('parseSignature: expected comma after expression');

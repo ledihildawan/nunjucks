@@ -1,4 +1,4 @@
-import { isArray } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 
 const emitLoopBindings = (ctx, arr, i, len) => {
   const bindings = [
@@ -31,7 +31,7 @@ export const compileFor = (ctx, node, frame) => {
   ctx._emit(`if(${arr}) {`);
   ctx._emitLine(arr + ' = runtime.fromIterator(' + arr + ');');
 
-  if (isArray(node.name)) {
+  if (nodes.isArray(node.name)) {
     ctx._emitLine(`var ${i};`);
 
     ctx._emitLine(`if(runtime.isArray(${arr})) {`);

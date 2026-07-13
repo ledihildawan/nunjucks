@@ -1,4 +1,4 @@
-import { Import } from '../../nodes/index.js';
+import { nodes } from '../../nodes/index.js';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
 import { parseWithContext } from './with.js';
 
@@ -20,7 +20,7 @@ export const parseImport = (ctx) => {
 
   const target = ctx.parseExpression();
   const withContext = parseWithContext(ctx);
-  const node = Import(importTok.lineno,
+  const node = nodes.import(importTok.lineno,
     importTok.colno,
     template,
     target,
