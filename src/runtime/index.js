@@ -155,6 +155,16 @@ export function contextOrFrameLookup(context, frame, name) {
     context.lookup(name);
 }
 
+export function lookup(ctx, key, defaultValue = undefined) {
+  if (!ctx) return defaultValue;
+  if (typeof ctx.lookup === 'function') {
+    const val = ctx.lookup(key);
+    return val !== undefined ? val : defaultValue;
+  }
+  const val = ctx[key];
+  return val !== undefined ? val : defaultValue;
+}
+
 export function handleError(error, lineno, colno, sourceMapData) {
   if (error.lineno !== undefined) {
     return error;

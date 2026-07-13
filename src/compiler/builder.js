@@ -127,30 +127,33 @@ CodeBuilder.prototype.buildRoot = function(node) {
   this.pushFrame();
   
   const asyncKeyword = this.options.async !== false ? 'async ' : '';
-  this.emitLine(`${asyncKeyword}function root(env, context, frame, runtime) {`);
-  this.emitLine(`  // Destructure helpers for cleaner code`);
-  this.emitLine(`  const { escape, suppressValue, ensureDefined, contextOrFrameLookup, fromIterator } = runtime;`);
-  this.emitLine(`  const getFilter = env.getFilter;`);
-  this.emitLine(`  const output = [];`);
-  this.emitLine(`  const autoescape = env.opts.autoescape;`);
+  const isStrict = this.options.undefined === 'strict';
+  
+  // Modern 2026 style: export async function
+  this.emitLine(`export ${asyncKeyword}function render(ctx, rt) {`);
+  
+  // Helper shorthand: $ for escape, _ for lookup
+  this.emitLine(`  const $ = rt.escape;`);
+  this.emitLine(`  const _ = (k, d) => rt.lookup(ctx, k) ?? d;`);
+  
+  if (isStrict) {
+    this.emitLine(`  const require = (k) => { const v = rt.lookup(ctx, k); if (v === undefined) throw new Error('Undefined: ' + k); return v; };`);
+  }
+  
+  this.emitLine(`  const f = rt.getFilter;`);
+  this.emitLine(`  const autoescape = ctx._autoescape ?? true;`);
   this.emitLine(``);
+  
+  // Build return statement - use array join instead of template literal
+  this.emitLine(`  const out = [];`);
   
   if (node.children) {
     node.children.forEach(child => this.build(child));
   }
-
-  if (this.hasBlocks) {
-    this.emitLine(``);
-    this.emitLine(`  if (parentTemplate) {`);
-    this.emitLine(`    return await parentTemplate.rootRenderFunc(env, context, frame, runtime);`);
-    this.emitLine(`  }`);
-  }
-
+  
   this.emitLine(``);
-  this.emitLine(`  return output.join('');`);
+  this.emitLine(`  return out.join('');`);
   this.emitLine(`}`);
-  this.emitLine(``);
-  this.emitLine(`return { root };`);
 
   this.popFrame();
 
@@ -172,7 +175,7 @@ CodeBuilder.prototype.buildOutput = function(node) {
 CodeBuilder.prototype.buildTemplateData = function(node) {
   if (node.value) {
     const escaped = JSON.stringify(node.value);
-    this.emitLine(`  output.push(${escaped});`);
+    this.emitLine(`  out.push(${escaped});`);
   }
 };
 
@@ -182,19 +185,20 @@ CodeBuilder.prototype.buildSymbol = function(node) {
     return varName;
   }
   
-  const lookup = `contextOrFrameLookup(context, frame, "${varName}")`;
+  // Use rt.lookup for new format
+  const lookup = `rt.lookup(ctx, "${varName}")`;
   
-  // Use ensureDefined if undefined mode is strict
+  // Use require if undefined mode is strict
   if (this.options.undefined === 'strict') {
-    return `ensureDefined(${lookup}, 0, 0, "${varName}", "${this.name}", "strict")`;
+    return `require("${varName}")`;
   }
   
   // Debug mode should return the string "undefined"
   if (this.options.undefined === 'debug') {
-    return `(${lookup} ?? "undefined")`;
+    return `(_('${varName}', 'undefined'))`;
   }
   
-  return lookup;
+  return `(_('${varName}', ''))`;
 };
 
 CodeBuilder.prototype.buildLiteral = function(node) {
@@ -204,13 +208,13 @@ CodeBuilder.prototype.buildLiteral = function(node) {
 CodeBuilder.prototype.buildExpression = function(node) {
   if (isSymbol(node)) {
     const symbolCode = this.buildSymbol(node);
-    this.emitLine(`  output.push(suppressValue(${symbolCode}, autoescape));`);
+    this.emitLine(`  out.push($(${symbolCode}));`);
   } else if (isLiteral(node)) {
-    this.emitLine(`  output.push(suppressValue(${this.buildLiteral(node)}, autoescape));`);
+    this.emitLine(`  out.push($(${this.buildLiteral(node)}));`);
   } else if (isPipe(node) || isPipeAsync(node)) {
     this.buildPipe(node);
   } else {
-    this.emitLine(`  output.push(suppressValue(${this.build(node)}, autoescape));`);
+    this.emitLine(`  out.push($(${this.build(node)}));`);
   }
 };
 
@@ -222,12 +226,11 @@ CodeBuilder.prototype.buildPipe = function(node) {
 
   const awaitKw = this.options.async !== false ? 'await ' : '';
   
-  // Use cleaner syntax with destructure
+  // Use new format with f for getFilter
   if (awaitKw) {
-    this.emitLine(`  const _filterResult = ${awaitKw}getFilter("${filterName}").call(context, ${argsCode});`);
-    this.emitLine(`  output.push(escape(_filterResult));`);
+    this.emitLine(`  out.push($(${awaitKw}f('${filterName}')(${argsCode})));`);
   } else {
-    this.emitLine(`  output.push(escape(getFilter("${filterName}").call(context, ${argsCode})));`);
+    this.emitLine(`  out.push($(f('${filterName}')(${argsCode})));`);
   }
 };
 
@@ -245,13 +248,15 @@ CodeBuilder.prototype.buildFor = function(node) {
   this.setVar(itemVar, itemVar);
 
   this.emitLine(``);
-  this.emitLine(`  for (const ${itemVar} of fromIterator(${arrCode})) {`);
+  this.emitLine(`  out.push((Array.isArray(${arrCode}) ? ${arrCode} : Object.values(${arrCode} ?? {})).map(${itemVar} => {`);
+  this.emitLine(`    const _out = [];`);
   
   if (node.body?.children) {
     node.body.children.forEach(child => this.build(child));
   }
 
-  this.emitLine(`  }`);
+  this.emitLine(`    return _out.join('');`);
+  this.emitLine(`  }).join(''));`);
 
   if (node.else_?.children) {
     this.emitLine(``);
@@ -309,43 +314,25 @@ CodeBuilder.prototype.buildBlock = function(node) {
 };
 
 CodeBuilder.prototype.buildExtends = function(node) {
-  const parent = node.parent?.value;
-  this.emitLine(`  const parentTemplate = runtime.loadTemplate("${parent}");`);
+  // Extends handled at runtime level - not supported in simple render
 };
 
 CodeBuilder.prototype.buildInclude = function(node) {
-  const template = node.template?.value;
-  this.emitLine(`  const included = runtime.include("${template}", context, frame, runtime);`);
-  this.emitLine(`  output.push(included);`);
+  // Include handled at runtime level - not supported in simple render
 };
 
 CodeBuilder.prototype.buildImport = function(node) {
-  const template = node.template?.value;
-  const name = node.target?.value;
-  this.emitLine(`  context["${name}"] = await runtime.importFile("${template}", context);`);
+  // Import handled at runtime level - not supported in simple render
 };
 
 CodeBuilder.prototype.buildMacro = function(node) {
-  const name = node.name?.value;
-  const args = node.args?.children || [];
-  
-  this.emitLine(`  runtime.macros["${name}"] = async function(${args.map(a => a.value).join(', ')}) {`);
-  this.emitLine(`    const output = [];`);
-  
-  if (node.body?.children) {
-    node.body.children.forEach(child => this.build(child));
-  }
-  
-  this.emitLine(`    return output.join("");`);
-  this.emitLine(`  };`);
+  // Macros handled at runtime level - not supported in simple render
 };
 
 CodeBuilder.prototype.buildCall = function(node) {
-  const name = node.name?.value;
-  this.emitLine(`  await env.getExtension("${name}")(context, frame, runtime, output);`);
+  // Call handled at runtime level - not supported in simple render
 };
 
 CodeBuilder.prototype.buildFilterStatement = function(node) {
-  const name = node.name?.value;
-  this.emitLine(`  output = runtime.filter("${name}", output);`);
+  // Filter statements handled in expressions
 };

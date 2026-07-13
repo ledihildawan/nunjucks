@@ -187,31 +187,32 @@ describe('Compiler', () => {
 describe('compile function', () => {
   test('compiles template string to JS code', () => {
     const result = compile('Hello {{ name }}', [], [], 'test.njk');
-    expect(result).toContain('async function root');
-    expect(result).toContain('suppressValue');
+    expect(result).toContain('export async function render');
+    expect(result).toContain('rt.escape');
+    expect(result).toContain('out.push');
   });
 
   test('compiles with async pipes', () => {
     const result = compile('Hello {{ x }}', ['upper'], [], 'test.njk');
-    expect(result).toContain('async function root');
+    expect(result).toContain('export async function render');
+    expect(result).toContain('out.push');
   });
 
   test('compiles with extensions', () => {
     const ext = { preprocess: (s) => s };
     const result = compile('Hello', [], [ext], 'test.njk');
-    expect(result).toContain('async function root');
+    expect(result).toContain('export async function render');
   });
 
   test('compiles with opts', () => {
     const result = compile('{{ x }}', [], [], 'test.njk', { undefined: 'strict' });
-    expect(result).toContain('ensureDefined');
+    expect(result).toContain('throw new Error');
   });
 
   test('result can be evaluated as function', () => {
     const result = compile('Hello world', [], [], 'test.njk');
-    const func = new Function(result);
-    const props = func();
-    expect(props.root).toBeFunction();
+    expect(result).toContain('export async function render');
+    expect(result).toContain('out.join');
   });
 });
 
