@@ -23,7 +23,8 @@ const getRuntimeHelpers = () => ({
   markSafe,
   copySafeness,
   lookup,
-  escape: (str) => {
+  escape: (str, autoescape = true) => {
+    if (!autoescape) return str;
     if (Array.isArray(str)) return str.join(',');
     if (str && typeof str === 'object') return JSON.stringify(str);
     return String(str).replace(/[&<>"']/g, char => ({
@@ -64,6 +65,9 @@ export const execute = async (code, context = {}, config = {}) => {
     lookup: function(key) {
       if (key in ctx) {
         return ctx[key];
+      }
+      if (key in runtime) {
+        return runtime[key];
       }
       return undefined;
     }

@@ -294,13 +294,13 @@ CodeBuilder.prototype.buildLiteral = function(node) {
 CodeBuilder.prototype.buildExpression = function(node) {
   if (isSymbol(node)) {
     const symbolCode = this.buildSymbol(node);
-    this.emitLine(`  out.push($(${symbolCode}));`);
+    this.emitLine(`  out.push($(${symbolCode}, autoescape));`);
   } else if (isLiteral(node)) {
-    this.emitLine(`  out.push($(${this.buildLiteral(node)}));`);
+    this.emitLine(`  out.push($(${this.buildLiteral(node)}, autoescape));`);
   } else if (isPipe(node) || isPipeAsync(node)) {
     this.buildPipe(node);
   } else {
-    this.emitLine(`  out.push($(${this.build(node)}));`);
+    this.emitLine(`  out.push($(${this.build(node)}, autoescape));`);
   }
 };
 
@@ -308,16 +308,54 @@ CodeBuilder.prototype.buildPipe = function(node) {
   const filterName = node.name?.value;
   const args = node.args?.children || [];
   
-  const argsCode = args.map((arg) => this.build(arg)).join(', ');
+  // The first argument is the piped value (which could be another pipe)
+  // We need to get the code for the input
+  let inputCode;
+  if (args.length > 0 && args[0]) {
+    // Check if first arg is a pipe (chained filter)
+    if (args[0].type === 'pipe' || args[0].type === 'pipeAsync') {
+      // For chained pipes, we need to evaluate them inline
+      inputCode = this.buildPipeInline(args[0]);
+    } else {
+      inputCode = this.build(args[0]);
+    }
+  } else {
+    inputCode = '""';
+  }
+  
+  // Other args are filter arguments
+  const filterArgs = args.slice(1).map((arg) => this.build(arg)).join(', ');
 
   const awaitKw = this.options.async !== false ? 'await ' : '';
   
   // Use new format with f for getFilter
   if (awaitKw) {
-    this.emitLine(`  out.push($(${awaitKw}f('${filterName}')(${argsCode})));`);
+    this.emitLine(`  out.push($(${awaitKw}f('${filterName}')(${inputCode}${filterArgs ? ', ' + filterArgs : ''}), autoescape));`);
   } else {
-    this.emitLine(`  out.push($(f('${filterName}')(${argsCode})));`);
+    this.emitLine(`  out.push($(f('${filterName}')(${inputCode}${filterArgs ? ', ' + filterArgs : ''}), autoescape));`);
   }
+};
+
+CodeBuilder.prototype.buildPipeInline = function(node) {
+  // Handle pipe inline (for chained filters)
+  const filterName = node.name?.value;
+  const args = node.args?.children || [];
+  
+  let inputCode;
+  if (args.length > 0 && args[0]) {
+    if (args[0].type === 'pipe' || args[0].type === 'pipeAsync') {
+      inputCode = this.buildPipeInline(args[0]);
+    } else {
+      inputCode = this.build(args[0]);
+    }
+  } else {
+    inputCode = '""';
+  }
+  
+  const filterArgs = args.slice(1).map((arg) => this.build(arg)).join(', ');
+  const awaitKw = this.options.async !== false ? 'await ' : '';
+  
+  return `${awaitKw}f('${filterName}')(${inputCode}${filterArgs ? ', ' + filterArgs : ''})`;
 };
 
 CodeBuilder.prototype.buildPipeAsync = function(node) {
