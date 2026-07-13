@@ -1,4 +1,5 @@
-import { compile, execute } from './compiler.js';
+import { compile } from '../compiler/index.js';
+import { execute } from './compiler.js';
 import { validateTemplate, validateRenderContext, validateConfig } from './validator.js';
 import { withTimeout } from '../runtime/timeout.js';
 import { createSandboxedContext } from '../runtime/sandbox.js';
@@ -19,7 +20,7 @@ export const renderString = async (template, context = {}, config = {}) => {
     throw new Error(contextValidation.errors[0].message);
   }
 
-  const code = compile(template, { ...config, name: 'renderString' });
+  const code = compile(template, [], [], 'renderString', config);
   
   const sandboxedCtx = createSandboxedContext(context, config.sandbox);
   sandboxedCtx.__nunjucks_undefined_mode = config.undefined || 'default';

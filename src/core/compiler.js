@@ -58,7 +58,10 @@ export const execute = async (code, context = {}, config = {}) => {
     ...context,
     _autoescape: config.autoescape ?? true,
     lookup: function(key) {
-      return context[key];
+      if (key in context) {
+        return context[key];
+      }
+      return undefined;
     }
   };
 

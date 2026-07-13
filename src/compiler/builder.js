@@ -118,6 +118,12 @@ CodeBuilder.prototype.build = function(node) {
       return this.buildCall(node);
     case 'filter':
       return this.buildFilterStatement(node);
+    case 'lookupVal':
+      return this.buildLookupVal(node);
+    case 'optionalChain':
+      return this.buildOptionalChain(node);
+    case 'optionalCall':
+      return this.buildOptionalCall(node);
     default:
       throw new Error(`Unknown node type: ${type}`);
   }
@@ -128,16 +134,30 @@ CodeBuilder.prototype.buildRoot = function(node) {
   
   const asyncKeyword = this.options.async !== false ? 'async ' : '';
   const isStrict = this.options.undefined === 'strict';
+  const isDebug = this.options.undefined === 'debug';
   
   // Modern 2026 style: export async function
   this.emitLine(`export ${asyncKeyword}function render(ctx, rt) {`);
   
   // Helper shorthand: $ for escape, _ for lookup
   this.emitLine(`  const $ = rt.escape;`);
-  this.emitLine(`  const _ = (k, d) => rt.lookup(ctx, k) ?? d;`);
+  
+  if (isDebug) {
+    // Debug mode: return 'undefined' string when key exists but value is undefined
+    this.emitLine(`  const _ = (k, d) => (k in ctx ? ctx[k] : d);`);
+  } else if (isStrict) {
+    // Strict mode: throw error when key doesn't exist or is undefined
+    this.emitLine(`  const _ = (k, d) => { const v = ctx[k]; if (v === undefined) throw new Error('Undefined: ' + k); return v ?? d; };`);
+  } else {
+    // Chainable mode (default): use nullish coalescing
+    this.emitLine(`  const _ = (k, d) => rt.lookup(ctx, k) ?? d;`);
+  }
+  
+  // Raw lookup without default - for optional chaining
+  this.emitLine(`  const __ = (k) => rt.lookup(ctx, k);`);
   
   if (isStrict) {
-    this.emitLine(`  const require = (k) => { const v = rt.lookup(ctx, k); if (v === undefined) throw new Error('Undefined: ' + k); return v; };`);
+    this.emitLine(`  const require = (k) => { const v = ctx[k]; if (v === undefined) throw new Error('Undefined: ' + k); return v; };`);
   }
   
   this.emitLine(`  const f = rt.getFilter;`);
@@ -237,6 +257,37 @@ CodeBuilder.prototype.buildPipe = function(node) {
 CodeBuilder.prototype.buildPipeAsync = function(node) {
   this.hasAsync = true;
   this.buildPipe(node);
+};
+
+CodeBuilder.prototype.buildLookupVal = function(node) {
+  const targetCode = this.build(node.target);
+  const valCode = this.build(node.val);
+  return `rt.memberLookup(${targetCode}, ${valCode})`;
+};
+
+CodeBuilder.prototype.buildOptionalChain = function(node) {
+  // For optional chain like user?.name, use __ for raw lookup
+  let targetCode;
+  if (node.target?.type === 'symbol') {
+    targetCode = `__('${node.target.value}')`;
+  } else {
+    targetCode = this.build(node.target);
+  }
+  const valCode = this.build(node.val);
+  return `rt.optionalMemberLookup(${targetCode}, ${valCode})`;
+};
+
+CodeBuilder.prototype.buildOptionalCall = function(node) {
+  // For optional calls, we need to get the raw value to check if it's callable
+  // Use __ for raw lookup (without default)
+  let nameCode;
+  if (node.name?.type === 'symbol') {
+    nameCode = `__('${node.name.value}')`;
+  } else {
+    nameCode = this.build(node.name);
+  }
+  const argsCode = node.args?.children?.map(arg => this.build(arg)).join(', ') || '';
+  return `(${nameCode}?.(${argsCode}) ?? '')`;
 };
 
 CodeBuilder.prototype.buildFor = function(node) {
