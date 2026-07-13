@@ -163,6 +163,24 @@ CodeBuilder.prototype.build = function(node) {
       return this.buildSwitch(node);
     case 'case':
       return this.buildCase(node);
+    case 'super':
+      return this.buildSuper(node);
+    case 'caller':
+      return this.buildCaller(node);
+    case 'fromImport':
+      return this.buildFromImport(node);
+    case 'callExtension':
+      return this.buildCallExtension(node);
+    case 'callExtensionAsync':
+      return this.buildCallExtension(node);
+    case 'capture':
+      return this.buildCapture(node);
+    case 'nodeList':
+      return this.buildNodeList(node);
+    case 'keywordArgs':
+      return this.buildKeywordArgs(node);
+    case 'pair':
+      return this.buildPair(node);
     default:
       throw new Error(`Unknown node type: ${type}`);
   }
@@ -563,4 +581,59 @@ CodeBuilder.prototype.buildCall = function(node) {
 
 CodeBuilder.prototype.buildFilterStatement = function(node) {
   // Filter statements handled in expressions
+};
+
+CodeBuilder.prototype.buildSuper = function(node) {
+  // Super - for calling parent block content
+  // In simple render mode, return empty string
+  this.emitLine(`  out.push('');`);
+};
+
+CodeBuilder.prototype.buildCaller = function(node) {
+  // Caller - for macro with caller
+  // In simple render mode, return empty string
+  return `''`;
+};
+
+CodeBuilder.prototype.buildFromImport = function(node) {
+  // From import - handled at runtime level
+  return '';
+};
+
+CodeBuilder.prototype.buildCallExtension = function(node) {
+  // Call extension - handled at runtime level
+  return '';
+};
+
+CodeBuilder.prototype.buildCapture = function(node) {
+  // Capture - for set with block
+  if (node.body?.children) {
+    node.body.children.forEach(child => this.build(child));
+  }
+  return '';
+};
+
+CodeBuilder.prototype.buildNodeList = function(node) {
+  // NodeList - just process children
+  if (node.children) {
+    node.children.forEach(child => this.build(child));
+  }
+  return '';
+};
+
+CodeBuilder.prototype.buildKeywordArgs = function(node) {
+  // Keyword args - convert to object
+  const pairs = node.children?.map(child => {
+    const key = child.key?.value || child.key;
+    const val = this.build(child.value);
+    return `${JSON.stringify(key)}: ${val}`;
+  }).join(', ') || '';
+  return `{${pairs}}`;
+};
+
+CodeBuilder.prototype.buildPair = function(node) {
+  // Pair - for dict key:value
+  const key = node.key?.value || node.key;
+  const val = this.build(node.value);
+  return `${JSON.stringify(key)}: ${val}`;
 };
