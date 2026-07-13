@@ -15,6 +15,8 @@ class CodeBuilder {
     this.hasAsync = false;
     this.hasBlocks = false;
     this.currentOutput = 'out';
+    this.inBlock = false;
+    this.blockName = null;
   }
 
   emit(code) {
@@ -453,9 +455,12 @@ CodeBuilder.prototype.buildGroup = function(node) {
 };
 
 CodeBuilder.prototype.buildFunCall = function(node) {
-  // Handle special case: super() should return empty string
+  // Handle special case: super() should only be used inside a block
   if (node.name?.type === 'symbol' && node.name?.value === 'super') {
-    return `''`;
+    if (!this.inBlock) {
+      throw new Error('super() can only be used inside a block');
+    }
+    return `rt.super ? rt.super(ctx, '${this.blockName}') : ''`;
   }
   // Handle special case: caller() should return ctx.caller
   if (node.name?.type === 'symbol' && node.name?.value === 'caller') {
@@ -713,9 +718,17 @@ CodeBuilder.prototype.buildBlock = function(node) {
   this.emitLine(`  const b_${blockName} = async function(env, context, frame, runtime) {`);
   this.emitLine(`    const output = [];`);
   
+  const savedInBlock = this.inBlock;
+  const savedBlockName = this.blockName;
+  this.inBlock = true;
+  this.blockName = blockName;
+  
   if (node.body?.children) {
     node.body.children.forEach(child => this.build(child));
   }
+  
+  this.inBlock = savedInBlock;
+  this.blockName = savedBlockName;
   
   this.emitLine(`    return output.join("");`);
   this.emitLine(`  };`);
