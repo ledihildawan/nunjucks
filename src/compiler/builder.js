@@ -336,6 +336,26 @@ CodeBuilder.prototype.buildPipe = function(node) {
   }
 };
 
+CodeBuilder.prototype.buildPipeValue = function(node) {
+  const filterName = node.name?.value;
+  const args = node.args?.children || [];
+  
+  let inputCode;
+  if (args.length > 0 && args[0]) {
+    if (args[0].type === 'pipe' || args[0].type === 'pipeAsync') {
+      inputCode = this.buildPipeValue(args[0]);
+    } else {
+      inputCode = this.build(args[0]);
+    }
+  } else {
+    inputCode = '""';
+  }
+  
+  const filterArgs = args.slice(1).map((arg) => this.build(arg)).join(', ');
+  
+  return `await f('${filterName}')(${inputCode}${filterArgs ? ', ' + filterArgs : ''})`;
+};
+
 CodeBuilder.prototype.buildPipeInline = function(node) {
   // Handle pipe inline (for chained filters)
   const filterName = node.name?.value;
@@ -423,7 +443,7 @@ CodeBuilder.prototype.buildGroup = function(node) {
 CodeBuilder.prototype.buildFunCall = function(node) {
   const nameCode = this.build(node.name);
   const argsCode = node.args?.children?.map(arg => this.build(arg)).join(', ') || '';
-  return `await ${nameCode}(${argsCode})`;
+  return `await (${nameCode})(${argsCode})`;
 };
 
 CodeBuilder.prototype.buildBinaryOp = function(node) {
@@ -619,7 +639,17 @@ CodeBuilder.prototype.buildIf = function(node) {
 CodeBuilder.prototype.buildSet = function(node) {
   const targets = node.targets || [node.target];
   const target = targets[0]?.value;
-  const valueCode = node.value ? this.build(node.value) : '""';
+  
+  let valueCode;
+  if (node.value) {
+    if (node.value.type === 'pipe' || node.value.type === 'pipeAsync') {
+      valueCode = this.buildPipeValue(node.value);
+    } else {
+      valueCode = this.build(node.value);
+    }
+  } else {
+    valueCode = '""';
+  }
 
   this.setVar(target, target);
   this.emitLine(`  const ${target} = ${valueCode};`);
@@ -654,7 +684,31 @@ CodeBuilder.prototype.buildImport = function(node) {
 };
 
 CodeBuilder.prototype.buildMacro = function(node) {
-  // Macros handled at runtime level - not supported in simple render
+  const macroName = node.name?.value;
+  const args = node.args?.children?.map(a => a.value) || [];
+  const body = node.body?.children || [];
+  
+  const macroArgs = args.join(', ');
+  
+  args.forEach(arg => this.setVar(arg, arg));
+  
+  const savedBuffer = this.buffer;
+  this.buffer = [];
+  
+  body.forEach(child => this.build(child));
+  const macroBody = this.buffer.join('');
+  this.buffer = savedBuffer;
+  
+  this.emitLine(`  ctx["${macroName}"] = (function(rt) { return async function(${macroArgs}) {`);
+  this.emitLine(`    const $ = rt.escape;`);
+  this.emitLine(`    const _ = (k, d) => (k in this ? this[k] : d);`);
+  this.emitLine(`    const __ = (k) => this[k];`);
+  this.emitLine(`    const f = rt.getFilter;`);
+  this.emitLine(`    const autoescape = true;`);
+  this.emitLine(`    const out = [];`);
+  this.emitLine(`    ${macroBody}`);
+  this.emitLine(`    return out.join('');`);
+  this.emitLine(`  }; })(rt);`);
 };
 
 CodeBuilder.prototype.buildCall = function(node) {
@@ -666,15 +720,12 @@ CodeBuilder.prototype.buildFilterStatement = function(node) {
 };
 
 CodeBuilder.prototype.buildSuper = function(node) {
-  // Super - for calling parent block content
-  // In simple render mode, return empty string
-  this.emitLine(`  out.push('');`);
+  return `''`;
 };
 
 CodeBuilder.prototype.buildCaller = function(node) {
-  // Caller - for macro with caller
-  // In simple render mode, return empty string
-  return `''`;
+  this.emitLine(`  const caller = ctx.caller;`);
+  return `caller`;
 };
 
 CodeBuilder.prototype.buildFromImport = function(node) {

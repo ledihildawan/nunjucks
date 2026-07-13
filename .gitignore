@@ -13,3 +13,4 @@ build
 /tests/browser/precompiled-templates.js
 /samples/express/js/nunjucks.js
 /samples/express/js/templates.js
+/nunjucks-original
