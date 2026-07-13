@@ -38,6 +38,8 @@ const CONSTRUCTOR_MAP = {
   output: nodes.output,
   capture: nodes.capture,
   tryCatch: nodes.tryCatch,
+  do: nodes.do,
+  with: nodes.with,
   templateData: nodes.templateData,
   in: nodes.in,
   is: nodes.is,

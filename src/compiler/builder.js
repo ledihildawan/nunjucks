@@ -1,7 +1,7 @@
 import { isArray } from 'remeda';
 import { nodes } from '../nodes/index.js';
 
-const { isSymbol, isLiteral, isPipe, isPipeAsync, isOutput, isTemplateData, isFor, isIf, isSet, isMacro, isBlock, isExtends, isInclude, isImport, isCall, isFilter } = nodes;
+const { isSymbol, isLiteral, isPipe, isPipeAsync, isOutput, isTemplateData, isFor, isIf, isSet, isMacro, isBlock, isExtends, isInclude, isImport, isCall, isFilter, isDo, isWith } = nodes;
 
 class CodeBuilder {
   constructor(options, name, sourceMap = null) {
@@ -56,6 +56,12 @@ class CodeBuilder {
   setVar(name, value) {
     if (this.currentFrame) {
       this.currentFrame.vars.set(name, value);
+    }
+  }
+
+  clearVar(name) {
+    if (this.currentFrame) {
+      this.currentFrame.vars.delete(name);
     }
   }
 
@@ -168,6 +174,10 @@ CodeBuilder.prototype.build = function(node) {
       return this.buildSwitch(node);
     case 'tryCatch':
       return this.buildTryCatch(node);
+    case 'do':
+      return this.buildDo(node);
+    case 'with':
+      return this.buildWith(node);
     case 'case':
       return this.buildCase(node);
     case 'super':
@@ -443,6 +453,14 @@ CodeBuilder.prototype.buildGroup = function(node) {
 };
 
 CodeBuilder.prototype.buildFunCall = function(node) {
+  // Handle special case: super() should return empty string
+  if (node.name?.type === 'symbol' && node.name?.value === 'super') {
+    return `''`;
+  }
+  // Handle special case: caller() should return ctx.caller
+  if (node.name?.type === 'symbol' && node.name?.value === 'caller') {
+    return `ctx.caller || ''`;
+  }
   const nameCode = this.build(node.name);
   const argsCode = node.args?.children?.map(arg => this.build(arg)).join(', ') || '';
   return `await (${nameCode})(${argsCode})`;
@@ -561,6 +579,18 @@ CodeBuilder.prototype.buildTryCatch = function(node) {
   }
   
   this.emitLine(`}`);
+};
+
+CodeBuilder.prototype.buildDo = function(node) {
+  const exprCode = this.build(node.expr);
+  this.emitLine(`  ${exprCode};`);
+};
+
+CodeBuilder.prototype.buildWith = function(node) {
+  // Simple version - just build the body
+  if (node.body?.children) {
+    node.body.children.forEach(child => this.build(child));
+  }
 };
 
 CodeBuilder.prototype.buildCase = function(node) {

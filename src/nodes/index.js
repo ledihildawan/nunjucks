@@ -68,6 +68,8 @@ export const NODE_TYPES = Object.freeze({
   NULLISH_COALESCE: 'nullishCoalesce',
   IN: 'in',
   TRY_CATCH: 'tryCatch',
+  DO: 'do',
+  WITH: 'with',
   IS: 'is',
 });
 
@@ -293,6 +295,12 @@ export const capture = (lineno, colno, body) =>
 export const tryCatch = (lineno, colno, body, catchBody = null, errVar = null) =>
   createNode(NODE_TYPES.TRY_CATCH, lineno, colno, { body, catch: catchBody, errVar });
 
+export const do_ = (lineno, colno, expr) =>
+  createNode(NODE_TYPES.DO, lineno, colno, { expr });
+
+export const with_ = (lineno, colno, assignments = [], body = null) =>
+  createNode(NODE_TYPES.WITH, lineno, colno, { assignments, body });
+
 export const switch_ = (lineno, colno, expr, cases = [], default_ = null) =>
   createNode(NODE_TYPES.SWITCH, lineno, colno, { expr, cases: cases || [], default: default_ });
 
@@ -435,6 +443,8 @@ export const isSwitch = (n) => n?.type === NODE_TYPES.SWITCH;
 export const isCase = (n) => n?.type === NODE_TYPES.CASE;
 export const isCapture = (n) => n?.type === NODE_TYPES.CAPTURE;
 export const isTryCatch = (n) => n?.type === NODE_TYPES.TRY_CATCH;
+export const isDo = (n) => n?.type === NODE_TYPES.DO;
+export const isWith = (n) => n?.type === NODE_TYPES.WITH;
 export const isCaller = (n) => n?.type === NODE_TYPES.CALLER;
 export const isSuper = (n) => n?.type === NODE_TYPES.SUPER;
 export const isTemplateRef = (n) => n?.type === NODE_TYPES.TEMPLATE_REF;
@@ -545,6 +555,8 @@ export const nodes = Object.freeze({
   set,
   capture,
   tryCatch,
+  do: do_,
+  with: with_,
   switch: switch_,
   case: case_,
 
@@ -611,6 +623,8 @@ export const nodes = Object.freeze({
   isCase,
   isCapture,
   isTryCatch,
+  isDo,
+  isWith,
   isCaller,
   isSuper,
   isTemplateRef,
