@@ -17,6 +17,7 @@ const builtInFilters = {
 
 const DEFAULT_CONFIG = Object.freeze({
   sandbox: false,
+  devWarningSandbox: true,
   strictMode: false,
   executionTimeout: 0,
   maxTemplateSize: 0,

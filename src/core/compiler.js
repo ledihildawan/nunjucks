@@ -53,8 +53,17 @@ const getRuntimeHelpers = () => ({
 
 export const execute = async (code, context = {}, config = {}) => {
   const sandbox = config.sandbox ?? false;
+  const devWarningSandbox = config.devWarningSandbox ?? true;
   const globals = config.globals ?? {};
   const filters = config.filters ?? {};
+
+  // Dev warning for unsandboxed rendering
+  if (!sandbox && devWarningSandbox) {
+    console.warn(
+      `[Nunjucks] WARNING: Rendering template without sandbox enabled. ` +
+      `For user-provided templates, enable sandbox: { sandbox: true } to prevent security issues.`
+    );
+  }
 
   const getFilter = (name) => {
     const filterFn = filters[name];
