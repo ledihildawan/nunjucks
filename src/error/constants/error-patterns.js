@@ -51,4 +51,6 @@ export const PATTERNS = {
   ASSERT_TYPE_ERROR: /assertType.*invalid type/i,
   SANDBOX_CODE_EXECUTION: /Code execution is blocked/i,
   CODE_EXECUTION_BLOCKED: /Sandbox: Code execution.*is blocked/i,
+  DICTSORT_VALUE_ERROR: /dictsort filter: val must be an object/i,
+  DICTSORT_BY_ERROR: /dictsort filter: You can only sort by either key or value/i,
 };
