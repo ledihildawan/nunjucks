@@ -37,7 +37,8 @@ const DEFAULT_CONFIG = Object.freeze({
   undefined: 'default',
   filters: builtInFilters,
   globals: {},
-  extensions: {}
+  extensions: {},
+  views: null
 });
 
 let _globalConfig = { ...DEFAULT_CONFIG };

@@ -67,7 +67,7 @@ const router = express.Router();
 errorRoutes.forEach(({ path: routePath, template, context }) => {
   router.get(routePath, async (req, res, next) => {
     try {
-      const html = await nunjucks(template, context, { dev: true, undefined: 'strict', templatePath: path.join(VIEWS, template) });
+      const html = await nunjucks.render(template, context, { dev: true, undefined: 'strict', views: VIEWS });
       res.type('html').send(html);
     } catch (err) {
       next(err);

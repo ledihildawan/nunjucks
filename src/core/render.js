@@ -6,6 +6,23 @@ import { validateTemplate, validateRenderContext, validateConfig } from './valid
 import { withTimeout } from '../runtime/timeout.js';
 import { createSandboxedContext } from '../runtime/sandbox.js';
 import { renderError } from '../error/index.js';
+import { createFileSystemLoader } from '../loaders/index.js';
+
+let cachedLoader = null;
+let cachedViewsPath = null;
+
+const getLoader = (config) => {
+  const viewsPath = config.views || config.root;
+  if (!viewsPath) return null;
+  
+  if (cachedLoader && cachedViewsPath === viewsPath) {
+    return cachedLoader;
+  }
+  
+  cachedLoader = createFileSystemLoader(viewsPath, { noCache: config.dev || false });
+  cachedViewsPath = viewsPath;
+  return cachedLoader;
+};
 
 const wrapErrorWithHtml = async (err, config, template = null, renderContext = null) => {
   const templateName = config.templatePath || 'renderString';
@@ -28,6 +45,23 @@ export const render = async (template, context = {}, config = {}) => {
     throw new Error(validation.errors[0].message);
   }
 
+  const loader = getLoader(config);
+  let templateSource = template;
+  
+  if (loader && !template.includes('{{') && !template.includes('{%') && !template.includes('{#')) {
+    try {
+      const source = await loader.getSource(template);
+      if (source && source.src) {
+        templateSource = source.src;
+        if (!config.templatePath) {
+          config.templatePath = source.path;
+        }
+      }
+    } catch (loaderErr) {
+      // Fall back to treating template as inline template string
+    }
+  }
+
   const templateValidation = validateTemplate(template, config);
   if (!templateValidation.valid) {
     throw new Error(templateValidation.errors[0].message);
@@ -41,8 +75,8 @@ export const render = async (template, context = {}, config = {}) => {
   let code;
   const templateName = config.templatePath || 'renderString';
   try {
-    const c = createCompiler(templateName, config.undefined, template);
-    const ast = parse(template, config, templateName);
+    const c = createCompiler(templateName, config.undefined, templateSource);
+    const ast = parse(templateSource, config, templateName);
     const transformedAst = transform(ast, [], templateName);
     c.compile(transformedAst);
     code = c.getCode();
