@@ -228,6 +228,128 @@ export const ERROR_RULES = [
     ],
     fixCode: '{{ "key" in { key: "value" } }}  // Use with objects',
     fixComment: '// In operator requires an object, not a primitive'
+  },
+  {
+    pattern: PATTERNS.TIMEOUT_ERROR,
+    category: 'timeout_error',
+    subjectFrom: null,
+    causes: [
+      'Template **took too long** to execute',
+      'Infinite loop in template',
+      'Large data processing in template'
+    ],
+    fixCode: '// Increase timeout or optimize template',
+    fixComment: '// Set executionTimeout to a higher value or optimize template'
+  },
+  {
+    pattern: PATTERNS.SANDBOX_CONTEXT_MODIFY,
+    category: 'sandbox_blocked',
+    subjectFrom: null,
+    causes: [
+      'Attempted to modify **sandboxed context**',
+      'Setting globals or protected keys in sandbox mode'
+    ],
+    fixCode: '// Disable sandbox or use allowed keys',
+    fixComment: '// Remove the set statement or disable sandbox mode'
+  },
+  {
+    pattern: PATTERNS.BLOCKED_CONTEXT_KEYS,
+    category: 'security_error',
+    subjectFrom: null,
+    causes: [
+      'Context contains **blocked keys** like __proto__',
+      'Dangerous keys detected in render context'
+    ],
+    fixCode: '// Remove blocked keys from context',
+    fixComment: '// Clean the context before passing to render'
+  },
+  {
+    pattern: PATTERNS.DANGEROUS_CONTEXT_VALUES,
+    category: 'security_error',
+    subjectFrom: null,
+    causes: [
+      'Context contains **dangerous values** like eval or Function',
+      'Potentially malicious functions in context'
+    ],
+    fixCode: '// Remove dangerous functions from context',
+    fixComment: '// Clean the context before passing to render'
+  },
+  {
+    pattern: PATTERNS.DANGEROUS_TEMPLATE_CODE,
+    category: 'security_error',
+    subjectFrom: null,
+    causes: [
+      'Template contains **dangerous code patterns**',
+      'Attempted to access global objects'
+    ],
+    fixCode: '// Remove dangerous code from template',
+    fixComment: '// Do not use eval, Function, or access global in templates'
+  },
+  {
+    pattern: PATTERNS.TEMPLATE_SIZE_EXCEEDED,
+    category: 'validation_error',
+    subjectFrom: null,
+    causes: [
+      'Template **exceeds maximum allowed size**',
+      'Template is too large for processing'
+    ],
+    fixCode: '// Increase maxTemplateSize or split template',
+    fixComment: '// Set maxTemplateSize to a higher value'
+  },
+  {
+    pattern: PATTERNS.INVALID_CONFIG,
+    category: 'validation_error',
+    subjectFrom: null,
+    causes: [
+      'Invalid **configuration value**',
+      'Negative timeout or size values are not allowed'
+    ],
+    fixCode: '// Set executionTimeout and maxTemplateSize to >= 0',
+    fixComment: '// Use non-negative values for timeout and size'
+  },
+  {
+    pattern: PATTERNS.TEMPLATE_MUST_BE_STRING,
+    category: 'validation_error',
+    subjectFrom: null,
+    causes: [
+      'Template must be a **string**, got null/undefined',
+      'Passed template is not a valid string'
+    ],
+    fixCode: '// Pass a valid template string',
+    fixComment: '// Ensure template parameter is a string'
+  },
+  {
+    pattern: PATTERNS.DICTSORT_VALUE_ERROR,
+    category: 'filter_error',
+    subjectFrom: null,
+    causes: [
+      '**Dictsort filter** requires an **object** input',
+      'Passed value is not an object'
+    ],
+    fixCode: '{{ { a: 1, b: 2 } | dictsort }}  // Use with objects',
+    fixComment: '// Use dictsort with an object'
+  },
+  {
+    pattern: PATTERNS.FILTER_TYPE_ERROR,
+    category: 'filter_error',
+    subjectFrom: null,
+    causes: [
+      'Filter attribute **resolved to undefined**',
+      'Property used in filter does not exist'
+    ],
+    fixCode: '// Use an attribute that exists on the items',
+    fixComment: '// Check that the attribute exists on all items'
+  },
+  {
+    pattern: PATTERNS.GROUPBY_TYPE_ERROR,
+    category: 'filter_error',
+    subjectFrom: null,
+    causes: [
+      'Groupby attribute **resolved to undefined**',
+      'Property used in groupby does not exist'
+    ],
+    fixCode: '// Use an attribute that exists on the items',
+    fixComment: '// Check that the attribute exists on all items'
   }
 ];
 
