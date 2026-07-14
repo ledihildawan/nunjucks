@@ -340,7 +340,7 @@ router.get('/container-error', async (req, res, next) => {
 
 router.get('/reserved-keyword-filter', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ value |> upper }}', { value: 'test' }, { dev: true, filters: { myFilter: (v) => v } });
+    const html = await nunjucks('{{ value }}', { value: 'test' }, { dev: true, filters: { 'if': (v) => v } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
