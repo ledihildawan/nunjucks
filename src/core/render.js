@@ -42,7 +42,8 @@ const wrapErrorWithHtml = async (err, config, template = null, renderContext = n
 export const render = async (template, context = {}, config = {}) => {
   const validation = validateConfig(config);
   if (!validation.valid) {
-    throw new Error(validation.errors[0].message);
+    const err = new Error(validation.errors[0].message);
+    throw await wrapErrorWithHtml(err, config, template, context);
   }
 
   const loader = getLoader(config);
@@ -64,12 +65,14 @@ export const render = async (template, context = {}, config = {}) => {
 
   const templateValidation = validateTemplate(template, config);
   if (!templateValidation.valid) {
-    throw new Error(templateValidation.errors[0].message);
+    const err = new Error(templateValidation.errors[0].message);
+    throw await wrapErrorWithHtml(err, config, templateSource, context);
   }
 
   const contextValidation = validateRenderContext(context, config);
   if (!contextValidation.valid) {
-    throw new Error(contextValidation.errors[0].message);
+    const err = new Error(contextValidation.errors[0].message);
+    throw await wrapErrorWithHtml(err, config, templateSource, context);
   }
 
   let code;
@@ -132,12 +135,14 @@ const buildRuntime = (config) => {
 export const renderWithEnv = async (templateName, env, context = {}, config = {}) => {
   const validation = validateConfig(config);
   if (!validation.valid) {
-    throw new Error(validation.errors[0].message);
+    const err = new Error(validation.errors[0].message);
+    throw await wrapErrorWithHtml(err, { ...config, templatePath: config.templatePath || templateName, env }, null, context);
   }
 
   const contextValidation = validateRenderContext(context, config);
   if (!contextValidation.valid) {
-    throw new Error(contextValidation.errors[0].message);
+    const err = new Error(contextValidation.errors[0].message);
+    throw await wrapErrorWithHtml(err, { ...config, templatePath: config.templatePath || templateName, env }, null, context);
   }
 
   let template;
