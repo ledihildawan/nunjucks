@@ -238,11 +238,27 @@ app.get('/', (req, res) => {
   `);
 });
 
-app.get('/home', (req, res) => {
-  res.render('home', {
+app.get('/home', async (req, res) => {
+  const template = `<!DOCTYPE html>
+<html>
+<head><title>Home</title></head>
+<body>
+  <h1>Welcome, {{ username }}!</h1>
+  <h2>Items:</h2>
+  <ul>
+    {% for item in items %}
+    <li>{{ item }}</li>
+    {% endfor %}
+  </ul>
+</body>
+</html>`;
+  
+  const html = await nunjucks(template, {
     username: 'John Doe',
     items: ['Apple', 'Banana', 'Cherry']
-  });
+  }, { dev: true });
+  
+  res.type('html').send(html);
 });
 
 app.get('/info', (req, res) => {
