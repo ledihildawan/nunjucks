@@ -3,6 +3,9 @@ import {
   createSandboxedObject,
   createSandboxedContext,
   wrapMemberAccess,
+  isAllowedKey,
+  isBlockedKey,
+  isCodeExecutionPattern,
 } from './sandbox.js';
 
 describe('createSandboxedObject', () => {
@@ -126,5 +129,139 @@ describe('wrapMemberAccess', () => {
     const obj = { user: { name: 'test' } };
     const sandboxed = wrapMemberAccess(obj, 'user', true);
     expect(() => sandboxed.__proto__).toThrow();
+  });
+});
+
+describe('isAllowedKey', () => {
+  test('returns true when no allowlist', () => {
+    expect(isAllowedKey('any', null)).toBe(true);
+    expect(isAllowedKey('any', undefined)).toBe(true);
+    expect(isAllowedKey('any', [])).toBe(true);
+  });
+
+  test('returns true when key is in allowlist', () => {
+    expect(isAllowedKey('user', ['user', 'name'])).toBe(true);
+  });
+
+  test('returns false when key is not in allowlist', () => {
+    expect(isAllowedKey('admin', ['user', 'name'])).toBe(false);
+  });
+});
+
+describe('isBlockedKey', () => {
+  test('blocks common dangerous keys', () => {
+    expect(isBlockedKey('__proto__')).toBe(true);
+    expect(isBlockedKey('constructor')).toBe(true);
+    expect(isBlockedKey('prototype')).toBe(true);
+    expect(isBlockedKey('eval')).toBe(true);
+    expect(isBlockedKey('Function')).toBe(true);
+  });
+
+  test('allows normal keys', () => {
+    expect(isBlockedKey('name')).toBe(false);
+    expect(isBlockedKey('user')).toBe(false);
+    expect(isBlockedKey('data')).toBe(false);
+  });
+
+  test('supports environment-specific blocking', () => {
+    expect(isBlockedKey('process', 'node')).toBe(true);
+    expect(isBlockedKey('window', 'browser')).toBe(true);
+    expect(isBlockedKey('Deno', 'deno')).toBe(true);
+  });
+});
+
+describe('isCodeExecutionPattern', () => {
+  test('detects timing functions', () => {
+    expect(isCodeExecutionPattern('setTimeout')).toBe(true);
+    expect(isCodeExecutionPattern('setInterval')).toBe(true);
+    expect(isCodeExecutionPattern('setImmediate')).toBe(true);
+    expect(isCodeExecutionPattern('requestAnimationFrame')).toBe(true);
+  });
+
+  test('detects code execution functions', () => {
+    expect(isCodeExecutionPattern('eval')).toBe(true);
+    expect(isCodeExecutionPattern('Function')).toBe(true);
+    expect(isCodeExecutionPattern('exec')).toBe(true);
+    expect(isCodeExecutionPattern('execSync')).toBe(true);
+    expect(isCodeExecutionPattern('spawn')).toBe(true);
+    expect(isCodeExecutionPattern('spawnSync')).toBe(true);
+  });
+
+  test('detects network functions', () => {
+    expect(isCodeExecutionPattern('fetch')).toBe(true);
+    expect(isCodeExecutionPattern('XMLHttpRequest')).toBe(true);
+  });
+
+  test('returns false for safe functions', () => {
+    expect(isCodeExecutionPattern('map')).toBe(false);
+    expect(isCodeExecutionPattern('filter')).toBe(false);
+    expect(isCodeExecutionPattern('toString')).toBe(false);
+  });
+});
+
+describe('Allowlist Mode', () => {
+  test('createSandboxedObject allows blocklist-only mode by default', () => {
+    const obj = { user: 'john', admin: 'secret' };
+    const sandboxed = createSandboxedObject(obj, true, { allowlist: [], blocklistMode: true });
+    expect(sandboxed.user).toBe('john');
+    expect(sandboxed.admin).toBe('secret');
+  });
+
+  test('createSandboxedObject blocks non-allowlisted keys in allowlist mode', () => {
+    const obj = { user: 'john', admin: 'secret', password: '123' };
+    const sandboxed = createSandboxedObject(obj, true, { allowlist: ['user'], blocklistMode: false });
+    expect(sandboxed.user).toBe('john');
+    expect(() => sandboxed.admin).toThrow();
+    expect(() => sandboxed.password).toThrow();
+  });
+
+  test('createSandboxedContext blocks non-allowlisted keys in allowlist mode', () => {
+    const ctx = { user: 'john', admin: 'secret' };
+    const sandboxed = createSandboxedContext(ctx, true, { allowlist: ['user'], blocklistMode: false });
+    expect(sandboxed.user).toBe('john');
+    expect(() => sandboxed.admin).toThrow();
+  });
+
+  test('wrapMemberAccess supports allowlist mode', () => {
+    const obj = { user: 'john', admin: 'secret' };
+    expect(wrapMemberAccess(obj, 'user', true, { allowlist: ['user'], blocklistMode: false })).toBe('john');
+    expect(() => wrapMemberAccess(obj, 'admin', true, { allowlist: ['user'], blocklistMode: false })).toThrow();
+  });
+
+  test('nested objects inherit allowlist options', () => {
+    const obj = { user: { name: 'john', password: '123' } };
+    const sandboxed = createSandboxedObject(obj, true, { allowlist: ['user', 'name'], blocklistMode: false });
+    expect(sandboxed.user.name).toBe('john');
+    expect(() => sandboxed.user.password).toThrow();
+  });
+});
+
+describe('Environment-Aware Blocking', () => {
+  test('Node.js specific keys blocked in node env', () => {
+    expect(isBlockedKey('process', 'node')).toBe(true);
+    expect(isBlockedKey('require', 'node')).toBe(true);
+    expect(isBlockedKey('module', 'node')).toBe(true);
+    expect(isBlockedKey('__dirname', 'node')).toBe(true);
+  });
+
+  test('Browser specific keys blocked in browser env', () => {
+    expect(isBlockedKey('window', 'browser')).toBe(true);
+    expect(isBlockedKey('document', 'browser')).toBe(true);
+    expect(isBlockedKey('localStorage', 'browser')).toBe(true);
+    expect(isBlockedKey('sessionStorage', 'browser')).toBe(true);
+    expect(isBlockedKey('fetch', 'browser')).toBe(true);
+  });
+
+  test('Deno specific keys blocked in deno env', () => {
+    expect(isBlockedKey('Deno', 'deno')).toBe(true);
+    expect(isBlockedKey('process', 'deno')).toBe(true);
+  });
+
+  test('common keys blocked in all environments', () => {
+    expect(isBlockedKey('__proto__', 'node')).toBe(true);
+    expect(isBlockedKey('__proto__', 'browser')).toBe(true);
+    expect(isBlockedKey('__proto__', 'deno')).toBe(true);
+    expect(isBlockedKey('constructor', 'node')).toBe(true);
+    expect(isBlockedKey('eval', 'browser')).toBe(true);
   });
 });
