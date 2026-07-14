@@ -35,4 +35,7 @@ export const PATTERNS = {
   CONTAINER_ERROR: /Container: (?:factory for '([^']+')|'([^']+)' is not registered)/i,
   TEMPLATE_OBJECT_ERROR: /Unexpected template object type/i,
   FILTER_TYPE_ERROR: /attribute "([^"]+)" resolved to undefined/i,
+  UNRECOGNIZED_CODE_FORMAT: /Unrecognized code format/i,
+  INVALID_SRC_ARGUMENT: /src must be a string or an object describing the source/i,
+  WALK_UNKNOWN_TYPENAME: /walk: unknown typename/i,
 };
