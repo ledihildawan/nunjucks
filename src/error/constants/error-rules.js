@@ -350,6 +350,149 @@ export const ERROR_RULES = [
     ],
     fixCode: '// Use an attribute that exists on the items',
     fixComment: '// Check that the attribute exists on all items'
+  },
+  {
+    pattern: PATTERNS.RESERVED_KEYWORD,
+    category: 'reserved_keyword',
+    subjectFrom: null,
+    causes: [
+      'Used a **reserved keyword** as filter or global name',
+      'Cannot override built-in JavaScript or nunjucks keywords'
+    ],
+    fixCode: '// Use a different name for your filter or global',
+    fixComment: '// Choose a name that is not a reserved keyword'
+  },
+  {
+    pattern: PATTERNS.UNKNOWN_BLOCK_RUNTIME,
+    category: 'undefined_block',
+    subjectFrom: null,
+    causes: [
+      '**Block** referenced in template does not exist',
+      'Block name misspelled or not defined'
+    ],
+    fixCode: '<!-- Define the block in parent template -->',
+    fixComment: '// Ensure the block is defined in an extended template'
+  },
+  {
+    pattern: PATTERNS.NO_SUPER_BLOCK,
+    category: 'no_super_block',
+    subjectFrom: null,
+    causes: [
+      'Called **super()** on a block with no parent',
+      'Block has no parent template to inherit from'
+    ],
+    fixCode: '<!-- Remove super() call or extend a parent template -->',
+    fixComment: '// Remove super() or ensure template extends a parent with the block'
+  },
+  {
+    pattern: PATTERNS.PARSER_EXPECTED,
+    category: 'syntax_error',
+    subjectFrom: null,
+    causes: [
+      '**Parser expected** a different token',
+      'Missing or misplaced token in template'
+    ],
+    fixCode: '<!-- Check template syntax around the error line -->',
+    fixComment: '// Review the template syntax at the error location'
+  },
+  {
+    pattern: PATTERNS.PARSER_EXPECTED_IN,
+    category: 'syntax_error',
+    subjectFrom: null,
+    causes: [
+      '**For loop** missing **in** keyword',
+      'For loop syntax is incorrect'
+    ],
+    fixCode: '{% for item in items %}...{% endfor %}',
+    fixComment: '// Use correct for loop syntax: for item in items'
+  },
+  {
+    pattern: PATTERNS.PARSER_VARIABLE_NAME,
+    category: 'syntax_error',
+    subjectFrom: null,
+    causes: [
+      '**Variable name expected** in context',
+      'Missing or invalid variable identifier'
+    ],
+    fixCode: '{% set validName = value %}',
+    fixComment: '// Use a valid variable name ( alphanumeric and underscore)'
+  },
+  {
+    pattern: PATTERNS.PARSER_TAG_NAME,
+    category: 'syntax_error',
+    subjectFrom: null,
+    causes: [
+      '**Tag name expected** but not found',
+      'Missing tag identifier'
+    ],
+    fixCode: '{% if condition %}...{% endif %}',
+    fixComment: '// Ensure tag has a valid name'
+  },
+  {
+    pattern: PATTERNS.ASSERT_TYPE_ERROR,
+    category: 'type_error',
+    subjectFrom: null,
+    causes: [
+      '**Type assertion failed** in compiled code',
+      'Internal nunjucks type mismatch'
+    ],
+    fixCode: '// This is likely a nunjucks internal error',
+    fixComment: '// Report this as a bug if it occurs'
+  },
+  {
+    pattern: PATTERNS.INVALID_BOOLEAN,
+    category: 'syntax_error',
+    subjectFrom: null,
+    causes: [
+      '**Invalid boolean** value in template',
+      'Template contains non-boolean where boolean expected'
+    ],
+    fixCode: '{{ true }} or {{ false }}',
+    fixComment: '// Use valid boolean values: true or false'
+  },
+  {
+    pattern: PATTERNS.PARSER_EXPRESSION,
+    category: 'syntax_error',
+    subjectFrom: null,
+    causes: [
+      '**Expression expected** but not found',
+      'Missing expression in template'
+    ],
+    fixCode: '{{ someExpression }}',
+    fixComment: '// Add a valid expression'
+  },
+  {
+    pattern: PATTERNS.CONTAINER_FACTORY,
+    category: 'config_error',
+    subjectFrom: null,
+    causes: [
+      '**Container factory** must be a function',
+      'Registered container factory is not callable'
+    ],
+    fixCode: 'container.register("name", () => new MyClass())',
+    fixComment: '// Pass a function that returns an instance'
+  },
+  {
+    pattern: PATTERNS.CONTAINER_NOT_REGISTERED,
+    category: 'config_error',
+    subjectFrom: null,
+    causes: [
+      '**Container** not registered',
+      'Requested container has not been registered'
+    ],
+    fixCode: 'container.register("name", () => new MyClass())',
+    fixComment: '// Register the container before resolving'
+  },
+  {
+    pattern: PATTERNS.SORT_TYPE_ERROR,
+    category: 'filter_error',
+    subjectFrom: null,
+    causes: [
+      'Sort attribute **resolved to undefined**',
+      'Property used in sort does not exist'
+    ],
+    fixCode: '// Use an attribute that exists on the items',
+    fixComment: '// Check that the attribute exists on all items'
   }
 ];
 

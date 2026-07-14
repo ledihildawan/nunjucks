@@ -1,4 +1,5 @@
 import { validateContext, scanTemplateForDangerousCode } from '../runtime/security.js';
+import { validateFilterName, validateGlobalName } from '../config/reserved.js';
 
 export const validateTemplate = (template, config) => {
   const errors = [];
@@ -62,6 +63,24 @@ export const validateConfig = (config) => {
 
   if (config.maxTemplateSize < 0) {
     errors.push({ code: 'INVALID_CONFIG', message: 'maxTemplateSize must be >= 0' });
+  }
+
+  if (config.filters) {
+    for (const [name] of Object.entries(config.filters)) {
+      const validation = validateFilterName(name);
+      if (!validation.valid) {
+        errors.push({ code: validation.error.code, message: validation.error.message });
+      }
+    }
+  }
+
+  if (config.globals) {
+    for (const [name] of Object.entries(config.globals)) {
+      const validation = validateGlobalName(name);
+      if (!validation.valid) {
+        errors.push({ code: validation.error.code, message: validation.error.message });
+      }
+    }
   }
 
   return {
