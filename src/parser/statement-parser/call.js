@@ -16,26 +16,9 @@ export const parseCall = (ctx) => {
   const body = ctx.parseUntilBlocks('endcall');
   advanceAfterBlockEnd(ctx);
 
-  const callerName = nodes.symbol(callTok.lineno,
+  return nodes.call(callTok.lineno,
     callTok.colno,
-    'caller');
-  const callerNode = nodes.caller(callTok.lineno,
-    callTok.colno,
-    callerName,
+    macroCall,
     callerArgs,
     body);
-
-  const args = macroCall.args.children;
-  if (!nodes.isKeywordArgs(args.at(-1))) {
-    args.push(nodes.keywordArgs());
-  }
-  const kwargs = args.at(-1);
-  kwargs.addChild(nodes.pair(callTok.lineno,
-    callTok.colno,
-    callerName,
-    callerNode));
-
-  return nodes.output(callTok.lineno,
-    callTok.colno,
-    [macroCall]);
 };

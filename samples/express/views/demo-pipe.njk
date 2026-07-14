@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head><title>Pipe Forward Demo</title></head>
+<body>
+  <h1>Pipe Forward (|>) Demo</h1>
+  
+  <h2>Basic Pipe Forward</h2>
+  <p>{{ "hello" |> upper }}</p>
+  <p>{{ "WORLD" |> lower }}</p>
+  
+  <h2>Chained Pipes</h2>
+  <p>{{ "  hello world  " |> trim |> upper |> default("EMPTY") }}</p>
+  
+  <h2>Filter with Args</h2>
+  <p>{{ "hello" |> replace("l", "x") }}</p>
+  
+  <h2>Complex Chain</h2>
+  <p>{{ items |> join(", ") |> upper }}</p>
+</body>
+</html>

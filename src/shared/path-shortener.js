@@ -9,7 +9,12 @@ const getProjectRoot = () => {
   return _projectRoot;
 };
 
-export const normalizeDrivePath = (p) => p.replace(/^[\\/]+([A-Za-z]):/, '$1:').replace(/\\/g, '/');
+export const normalizeDrivePath = (p) => {
+  let path = p.replace(/^file:\/\//, '');
+  path = path.replace(/^[\\/]+([A-Za-z]):/, '$1:');
+  path = path.replace(/\\/g, '/');
+  return path;
+};
 
 export const shortenPath = (path) => {
   const normalizedPath = normalizeDrivePath(path);

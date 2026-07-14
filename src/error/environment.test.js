@@ -79,11 +79,14 @@ describe('createErrorFormatter', () => {
 });
 
 describe('renderError', () => {
-  test('renders error to HTML string', async () => {
+  test('renders error to error result object with toHtmlString', async () => {
     const error = new Error('render test');
     error.lineno = 0;
-    const html = await renderError(error, 'test.html');
-    expect(typeof html).toBe('string');
+    const result = await renderError(error, 'test.html');
+    expect(typeof result).toBe('object');
+    expect(result.name).toBe('NunjucksError');
+    expect(typeof result.toHtmlString).toBe('function');
+    expect(typeof result.toHtmlString()).toBe('string');
   });
 });
 

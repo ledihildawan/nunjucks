@@ -1,35 +1,10 @@
-import express from 'express';
-import { createContainer } from '../../../src/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import nunjucks from '../../../src/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const VIEWS = path.join(__dirname, '..', 'views');
-
-const c = createContainer();
-
-const envDev = c.environment(c.loader.fileSystem(VIEWS), {
-  autoescape: true,
-  dev: true,
-  ide: 'vscode',
-  undefined: 'strict'
-});
-
-const envSandbox = c.environment(c.loader.fileSystem(VIEWS), {
-  autoescape: true,
-  dev: true,
-  ide: 'vscode',
-  sandbox: true
-});
-
-envDev.addFilter('failingAsync', async function(val) {
-  throw new Error('Async filter failed: network error');
-}, true);
-
-envDev.addFilter('throwingFilter', function(val) {
-  throw new Error('Filter intentionally threw an error');
-});
 
 const complexUserContext = {
   user: {
@@ -72,121 +47,156 @@ const complexUserContext = {
 };
 
 const errorRoutes = [
-  { path: '/undefined-variable', template: 'error-undefined-variable.njk', category: 'undefined_variable', desc: 'Variable not passed in context', context: { user: complexUserContext.user } },
-  { path: '/undefined-function', template: 'error-undefined-function.njk', category: 'undefined_function', desc: 'Function not registered with addGlobal()', context: complexUserContext },
-  { path: '/not-a-function', template: 'error-not-a-function.njk', category: 'not_a_function', desc: 'Calling a non-function value', context: { user: { name: 'Alice', status: 'active' } } },
-  { path: '/undefined-filter', template: 'error-undefined-filter.njk', category: 'undefined_filter', desc: 'Filter not registered with addFilter()', context: complexUserContext },
-  { path: '/filter-error', template: 'error-filter-error.njk', category: 'filter_error', desc: 'Filter throws during execution', context: { value: 42, data: complexUserContext } },
-  { path: '/undefined-value', template: 'error-undefined-value.njk', category: 'undefined_value', desc: 'Nested property access returns null/undefined', context: { product: null } },
-  { path: '/undefined-block', template: 'error-undefined-block.njk', category: 'undefined_block', desc: 'Block defined in child but not in parent' },
-  { path: '/syntax-error', template: 'error-syntax-error.njk', category: 'syntax_error', desc: 'Template syntax is invalid' },
-  { path: '/no-super-block', template: 'error-no-super-block.njk', category: 'no_super_block', desc: 'super() called but no parent block' },
-  { path: '/invalid-include', template: 'error-invalid-include.njk', category: 'invalid_include', desc: 'Include path is not a string' },
-  { path: '/circular-include', template: 'error-circular-include.njk', category: 'circular_include', desc: 'Template includes itself' },
-  { path: '/file-not-found', template: 'error-file-not-found.njk', category: 'file_not_found', desc: 'Template file does not exist' },
-  { path: '/filesystem-error', template: 'error-filesystem-error.njk', category: 'filesystem_error', desc: 'Loader search path does not exist' },
-  { path: '/invalid-lookup', template: 'error-invalid-lookup.njk', category: 'invalid_lookup', desc: 'Invalid bracket notation after dot' },
-  { path: '/duplicate-block', template: 'error-duplicate-block.njk', category: 'duplicate_block', desc: 'Duplicate block definition' },
-  { path: '/unknown-block-tag', template: 'error-unknown-block-tag.njk', category: 'unknown_block_tag', desc: 'Unmatched closing tag' },
+  { path: '/undefined-variable', template: 'error-undefined-variable.njk', context: { user: complexUserContext.user } },
+  { path: '/undefined-function', template: 'error-undefined-function.njk', context: complexUserContext },
+  { path: '/not-a-function', template: 'error-not-a-function.njk', context: { user: { name: 'Alice', status: 'active' } } },
+  { path: '/undefined-filter', template: 'error-undefined-filter.njk', context: complexUserContext },
+  { path: '/filter-error', template: 'error-filter-error.njk', context: { value: 42, data: complexUserContext } },
+  { path: '/undefined-value', template: 'error-undefined-value.njk', context: { product: null } },
+  { path: '/syntax-error', template: 'error-syntax-error.njk', context: {} },
+  { path: '/no-caller-macro', template: 'error-no-caller-macro.njk', context: {} },
+  { path: '/invalid-lookup', template: 'error-invalid-lookup.njk', context: {} },
+  { path: '/duplicate-block', template: 'error-duplicate-block.njk', context: {} },
+  { path: '/unknown-block-tag', template: 'error-unknown-block-tag.njk', context: {} },
+  { path: '/switch', template: 'error-switch.njk', context: {} },
 ];
 
+import express from 'express';
 const router = express.Router();
 
-errorRoutes.forEach(({ path: routePath, template, category, desc, context }) => {
-  router.get(routePath, async (req, res) => {
+errorRoutes.forEach(({ path: routePath, template, context }) => {
+  router.get(routePath, async (req, res, next) => {
     try {
-      const html = await envDev.render(template, context || {});
+      const html = await nunjucks(template, context, { dev: true, undefined: 'strict', templatePath: path.join(VIEWS, template) });
       res.type('html').send(html);
-    } catch (e) {
-      res.status(500).type('html').send(e.toHtmlString());
+    } catch (err) {
+      next(err);
     }
   });
 });
 
-router.get('/inline-error', async (req, res) => {
+router.get('/undefined-block', async (req, res, next) => {
   try {
-    const html = await envDev.render('{{ undefinedVar }}', {});
-    res.type('html').send(html);
-  } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString());
+    res.render('error-undefined-block', {});
+  } catch (err) {
+    next(err);
   }
 });
 
-router.get('/filesystem-error', async (req, res) => {
-  const c2 = createContainer();
-  const envFsError = c2.environment(c2.loader.fileSystem('/nonexistent/path/that/does/not/exist'), {
-    autoescape: true,
-    dev: true,
-    ide: 'vscode',
-    undefined: 'strict'
-  });
+router.get('/no-super-block', async (req, res, next) => {
   try {
-    await envFsError.render('test.html', {});
-  } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString());
+    res.render('error-no-super-block', {});
+  } catch (err) {
+    next(err);
   }
 });
 
-router.get('/sandbox-proto', async (req, res) => {
+router.get('/invalid-include', async (req, res, next) => {
   try {
-    const html = await envSandbox.render('{{ user.__proto__ }}', { user: {} });
-    res.type('html').send(html);
-  } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString());
+    res.render('error-invalid-include', {});
+  } catch (err) {
+    next(err);
   }
 });
 
-router.get('/sandbox-constructor', async (req, res) => {
+router.get('/circular-include', async (req, res, next) => {
   try {
-    const html = await envSandbox.render('{{ user.constructor }}', { user: {} });
-    res.type('html').send(html);
-  } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString());
+    res.render('error-circular-include', {});
+  } catch (err) {
+    next(err);
   }
 });
 
-router.get('/sandbox-process', async (req, res) => {
+router.get('/file-not-found', async (req, res, next) => {
   try {
-    const html = await envSandbox.render('{{ user.global }}', { user: { global: process } });
-    res.type('html').send(html);
-  } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString());
+    res.render('error-file-not-found', {});
+  } catch (err) {
+    next(err);
   }
 });
 
-router.get('/slice-error', async (req, res) => {
+router.get('/filesystem-error', async (req, res, next) => {
   try {
-    const html = await envDev.render('{{ [1,2,3][::0] }}', {});
-    res.type('html').send(html);
-  } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString());
+    res.render('error-filesystem-error', {});
+  } catch (err) {
+    next(err);
   }
 });
 
-router.get('/list-filter-error', async (req, res) => {
+router.get('/inline-error', async (req, res, next) => {
   try {
-    const html = await envDev.render('{{ 42 |> list }}', {});
+    const html = await nunjucks('{{ undefinedVar }}', {}, { dev: true, undefined: 'strict' });
     res.type('html').send(html);
-  } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString());
+  } catch (err) {
+    next(err);
   }
 });
 
-router.get('/in-operator-error', async (req, res) => {
+router.get('/sandbox-proto', async (req, res, next) => {
   try {
-    const html = await envDev.render('{{ key in value }}', { key: 'test', value: 123 });
+    const html = await nunjucks('{{ user.__proto__ }}', { user: {} }, { dev: true, sandbox: true });
     res.type('html').send(html);
-  } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString());
+  } catch (err) {
+    next(err);
   }
 });
 
-router.get('/filter-throw', async (req, res) => {
+router.get('/sandbox-constructor', async (req, res, next) => {
   try {
-    const html = await envDev.render('{{ "test" |> throwingFilter }}', {});
+    const html = await nunjucks('{{ user.constructor }}', { user: {} }, { dev: true, sandbox: true });
     res.type('html').send(html);
-  } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString());
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/sandbox-process', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ user.global }}', { user: { global: process } }, { dev: true, sandbox: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/slice-error', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ [1,2,3][::0] }}', {}, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/list-filter-error', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ 42 |> list }}', {}, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/in-operator-error', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ key in value }}', { key: 'test', value: 123 }, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/filter-throw', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ "test" |> throwingFilter }}', {}, {
+      dev: true,
+      filters: {
+        throwingFilter: () => { throw new Error('Filter intentionally threw'); }
+      }
+    });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
   }
 });
 

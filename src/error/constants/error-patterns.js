@@ -13,7 +13,7 @@ export const PATTERNS = {
   FILESYSTEM_ERROR: /EISDIR|ENOENT|permission denied/i,
   FILTER_ERROR: /^Error: (.+)/i,
   INVALID_LOOKUP: /expected name as lookup value.* (\w+), got (.+)/i,
-  DUPLICATE_BLOCK: /Block "([^"]+)" defined more than once/i,
+  DUPLICATE_BLOCK: /Block "([^"]+)" defined more than once\.?/i,
   UNKNOWN_BLOCK_TAG: /unknown block tag: (\w+)/i,
   LINE_INFO: /\[Line (\d+)(?:, Column (\d+))?\]/i,
   INCLUDED_FROM: /\(included from ([^:)]+\.html)(?::\d+)?(?::\d+)?\)/,

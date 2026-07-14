@@ -1,6 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createContainer } from '../../src/index.js';
+import { createEngine } from '../../src/index.js';
 import express from 'express';
 import { errorRouter, errorRoutes } from './routes/errors.js';
 import { sandboxRouter } from './routes/sandbox.js';
@@ -12,24 +12,12 @@ const VIEWS = path.join(__dirname, 'views');
 
 const app = express();
 
-const c = createContainer();
-
-const envDev = c.environment(c.loader.fileSystem(VIEWS), {
+app.set('views', VIEWS);
+app.engine('.njk', createEngine({
   autoescape: true,
   dev: true,
   undefined: 'strict'
-});
-
-app.set('views', VIEWS);
-app.engine('.njk', async (filePath, options, callback) => {
-  try {
-    const name = filePath.split(/[\\/]/).pop();
-    const html = await envDev.render(name, options);
-    callback(null, html);
-  } catch (err) {
-    callback(err);
-  }
-});
+}));
 app.set('view engine', 'njk');
 
 app.use('/errors', errorRouter);
@@ -40,6 +28,18 @@ console.log('remoteRouter routes:', remoteRouter.stack.map(l => l.route?.path));
 
 app.use('/remote', remoteRouter);
 
+app.get('/file-error', (req, res, next) => {
+  res.render('test_error', {});
+});
+
+app.use((err, req, res, next) => {
+  if (err.toHtmlString) {
+    res.status(500).type('html').send(err.toHtmlString());
+  } else {
+    res.status(500).type('html').send(err.message);
+  }
+});
+
 app.get('/', (req, res) => {
   const routesList = errorRoutes.map(r =>
     `      <tr>
@@ -49,11 +49,44 @@ app.get('/', (req, res) => {
       </tr>`
   ).join('\n');
 
+  const extendsIncludeRoutes = `
+      <tr>
+        <td><code>extends_error</code></td>
+        <td><a href="/errors/undefined-block">/errors/undefined-block</a></td>
+        <td>Block not in parent template (extends)</td>
+      </tr>
+      <tr>
+        <td><code>extends_error</code></td>
+        <td><a href="/errors/no-super-block">/errors/no-super-block</a></td>
+        <td>super() called without parent block</td>
+      </tr>
+      <tr>
+        <td><code>include_error</code></td>
+        <td><a href="/errors/invalid-include">/errors/invalid-include</a></td>
+        <td>Non-string template name for include</td>
+      </tr>
+      <tr>
+        <td><code>include_error</code></td>
+        <td><a href="/errors/circular-include">/errors/circular-include</a></td>
+        <td>Template includes itself</td>
+      </tr>
+      <tr>
+        <td><code>include_error</code></td>
+        <td><a href="/errors/file-not-found">/errors/file-not-found</a></td>
+        <td>Included template not found</td>
+      </tr>
+      <tr>
+        <td><code>filesystem_error</code></td>
+        <td><a href="/errors/filesystem-error">/errors/filesystem-error</a></td>
+        <td>Absolute path with non-existent file</td>
+      </tr>
+  `;
+
   const extraRoutes = `
       <tr>
         <td><code>inline_error</code></td>
         <td><a href="/errors/inline-error">/errors/inline-error</a></td>
-        <td>renderString with undefined variable</td>
+        <td>render with undefined variable</td>
       </tr>
       <tr>
         <td><code>sandbox_blocked</code></td>
@@ -131,13 +164,13 @@ app.get('/', (req, res) => {
   </style>
 </head>
 <body>
-  <h1>🔧 Nunjucks Error Classification Demo</h1>
+  <h1>Nunjucks Error Classification Demo</h1>
 
   <div class="info">
-    <p><strong>20+ Error Categories</strong> - Click any route to see the error in action with full classification, causes, and fix suggestions.</p>
+    <p><strong>25+ Error Categories</strong> - Click any route to see the error in action with full classification, causes, and fix suggestions.</p>
   </div>
 
-  <h2>📋 Template Errors (from files)</h2>
+  <h2>Template Errors (from files)</h2>
   <table>
     <tr>
       <th>Category</th>
@@ -147,7 +180,17 @@ app.get('/', (req, res) => {
   ${routesList}
   </table>
 
-  <h2>📋 Inline Errors (from renderString)</h2>
+  <h2>Extends/Include Errors (requires full environment)</h2>
+  <table>
+    <tr>
+      <th>Category</th>
+      <th>Route</th>
+      <th>Description</th>
+    </tr>
+  ${extendsIncludeRoutes}
+  </table>
+
+  <h2>Inline Errors (from render)</h2>
   <table>
     <tr>
       <th>Category</th>
@@ -157,7 +200,7 @@ app.get('/', (req, res) => {
   ${extraRoutes}
   </table>
 
-  <h2>🧪 Also Try</h2>
+  <h2>Also Try</h2>
   <div class="nav">
     <a href="/home">/home - Normal render</a>
     <a href="/info">/info - Environment info</a>
@@ -166,7 +209,17 @@ app.get('/', (req, res) => {
     <a href="/remote">/remote - Remote Extension</a>
   </div>
 
-  <h2>📚 How It Works</h2>
+  <h2>New Features (2026 Style)</h2>
+  <div class="nav">
+    <a href="/demo/try-catch">/demo/try-catch - Try/Catch block</a>
+    <a href="/demo/with">/demo/with - With scoped variables</a>
+    <a href="/demo/do">/demo/do - Do statement</a>
+    <a href="/demo/switch">/demo/switch - Switch statement</a>
+    <a href="/demo/call">/demo/call - Call/Caller</a>
+    <a href="/demo/pipe">/demo/pipe - Pipe forward (|>)</a>
+  </div>
+
+  <h2>How It Works</h2>
   <ul>
     <li><strong>undefined: 'strict'</strong>: Error on undefined (formerly throwOnUndefined: true)</li>
     <li><strong>undefined: 'debug'</strong>: Warning + "undefined" string</li>
@@ -174,7 +227,7 @@ app.get('/', (req, res) => {
     <li><strong>Sandbox Mode</strong>: Block dangerous template access</li>
     <li><strong>Auto-detect</strong>: Dev vs production mode based on error.lineno presence</li>
     <li><strong>Stack filtering</strong>: Internal nunjucks frames hidden in production</li>
-    <li><strong>JS Source Detection</strong>: Shows JS caller location for renderString errors</li>
+    <li><strong>JS Source Detection</strong>: Shows JS caller location for render errors</li>
   </ul>
 
   <footer style="margin-top: 40px; color: #7f8c8d;">
@@ -186,36 +239,64 @@ app.get('/', (req, res) => {
 });
 
 app.get('/home', (req, res) => {
-  res.render('home.njk', {
+  res.render('home', {
     username: 'John Doe',
     items: ['Apple', 'Banana', 'Cherry']
   });
 });
 
 app.get('/info', (req, res) => {
-  const globals = Object.keys(envDev.globals || {});
-  const filters = Object.keys(envDev.filters || {});
-  const tests = Object.keys(envDev.tests || {});
-
   res.type('html').send(`
 <!DOCTYPE html>
 <html>
 <head><title>Environment Info</title></head>
 <body>
   <h1>Environment Info</h1>
-  <h2>Globals (${globals.length})</h2>
-  <ul>${globals.map(g => `<li>${g}</li>`).join('')}</ul>
-  <h2>Filters (${filters.length})</h2>
-  <ul>${filters.map(f => `<li>${f}</li>`).join('')}</ul>
-  <h2>Tests (${tests.length})</h2>
-  <ul>${tests.map(t => `<li>${t}</li>`).join('')}</ul>
-  <p><a href="/">← Back to Index</a></p>
+  <p>Nunjucks 2026 Style API</p>
+  <p><a href="/">Back to Index</a></p>
 </body>
 </html>
   `);
 });
 
 app.use('/js', express.static(path.join(__dirname, 'js')));
+
+app.get('/demo/try-catch', (req, res) => {
+  res.render('demo-try-catch', {
+    arr: [],
+    name: { append: function(x) { return this.value + x; }, value: "Hello" },
+    items: []
+  });
+});
+
+app.get('/demo/with', (req, res) => {
+  res.render('demo-with', {});
+});
+
+app.get('/demo/do', (req, res) => {
+  res.render('demo-do', {
+    arr: [],
+    name: { append: function(x) { return this.value + x; }, value: "Hello" },
+    items: []
+  });
+});
+
+app.get('/demo/switch', (req, res) => {
+  res.render('demo-switch', {
+    status: "active",
+    priority: 2
+  });
+});
+
+app.get('/demo/call', (req, res) => {
+  res.render('demo-call', {});
+});
+
+app.get('/demo/pipe', (req, res) => {
+  res.render('demo-pipe', {
+    items: ["one", "two", "three"]
+  });
+});
 
 app.listen(4000, () => {
   console.log('Nunjucks Error Classification Demo: http://localhost:4000');

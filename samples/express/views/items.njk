@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base.njk" %}
 
 {% block content %}
 <h2>Items List</h2>
@@ -6,7 +6,7 @@
 
 <div class="items">
   {% for item in items %}
-    {% include "item-card.html" %}
+    {% include "item-card.njk" %}
   {% endfor %}
 </div>
 {% endblock %}

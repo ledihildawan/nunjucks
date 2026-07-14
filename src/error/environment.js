@@ -151,7 +151,7 @@ export const getEnvironment = () => {
 
 export const renderError = async (error, templateName, options = {}) => {
   const err = await getEnvironment().formatError(error, templateName, options);
-  return err.toHtmlString();
+  return err;
 };
 
 export const createErrorFormatter = (options = {}) => createEnvironment(options);

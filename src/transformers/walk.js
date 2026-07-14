@@ -20,6 +20,7 @@ const CONSTRUCTOR_MAP = {
   for: nodes.for,
   macro: nodes.macro,
   caller: nodes.caller,
+  call: nodes.call,
   import: nodes.import,
   fromImport: nodes.fromImport,
   funCall: nodes.funCall,

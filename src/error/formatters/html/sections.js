@@ -79,12 +79,27 @@ export const renderContextHtml = (ctx) => {
 
 const linkifyFrame = (frame, ide) => {
   let s = escapeHtml(frame);
-  s = s.replace(/\(([^()]+):(\d+):(\d+)\)$/, (match, p, l, c) => {
-    if (/^native$/.test(p.trim()) || /^&lt;/.test(p) || !/[\\/]/.test(p)) return match;
+  if (!/[\\/:]/.test(s)) {
+    s = s.replace(/^at\s+/, '<span class="stack-at">at</span> ');
+    return s;
+  }
+  s = s.replace(/\(([^()]+):(\d+):(\d+)\)/g, (match, p, l, c) => {
+    if (/^native$/.test(p.trim()) || /^&lt;/.test(p) || !/[\\/:]/.test(p)) return match;
     const norm = normalizePath(p);
     const display = shortenPath(norm);
     return `(<a href="${resolveIdeLink(ide, norm, l, c)}" class="stack-link">${display}:${l}:${c}</a>)`;
   });
+  const lcMatch = s.match(/(.*?)(file:\/\/+.*?):(\d+):(\d+)$/);
+  if (lcMatch) {
+    const [, prefix, p, l, c] = lcMatch;
+    if (/[\\/:]/.test(p) && !/^native$/.test(p.trim())) {
+      const norm = normalizePath(p);
+      const display = shortenPath(norm);
+      const link = `<a href="${resolveIdeLink(ide, norm, l, c)}" class="stack-link">${display}:${l}:${c}</a>`;
+      s = prefix + link;
+      return s;
+    }
+  }
   s = s.replace(/^at\s+/, '<span class="stack-at">at</span> ');
   s = s.replace(/^(at\s+)([^\s(]+)/, (m, prefix, fn) => `${prefix}<span class="stack-fn">${fn}</span>`);
   return s;

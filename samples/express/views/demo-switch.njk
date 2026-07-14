@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head><title>Switch Demo</title></head>
+<body>
+  <h1>Switch Demo</h1>
+  
+  <h2>Basic Switch</h2>
+  {% switch status %}
+    {% case "active" %}
+      <p>User is active</p>
+    {% case "inactive" %}
+      <p>User is inactive</p>
+    {% case "pending" %}
+      <p>User is pending</p>
+    {% default %}
+      <p>Unknown status</p>
+  {% endswitch %}
+  
+  <h2>Switch with number</h2>
+  {% switch priority %}
+    {% case 1 %}
+      <p>Highest priority</p>
+    {% case 2 %}
+      <p>High priority</p>
+    {% case 3 %}
+      <p>Medium priority</p>
+    {% default %}
+      <p>Default priority</p>
+  {% endswitch %}
+</body>
+</html>

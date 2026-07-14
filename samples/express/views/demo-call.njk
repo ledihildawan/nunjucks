@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head><title>Call/Caller Demo</title></head>
+<body>
+  <h1>Call/Caller Demo</h1>
+  
+  <h2>Macro with caller()</h2>
+  {% macro wrapper() %}
+    <div class="wrapper">
+      {{ caller() }}
+    </div>
+  {% endmacro %}
+  
+  {% call wrapper() %}
+    <strong>This content is passed to the macro via caller()</strong>
+  {% endcall %}
+  
+  <h2>Macro with args and caller()</h2>
+  {% macro box(title) %}
+    <div class="box">
+      <h3>{{ title }}</h3>
+      <div class="content">
+        {{ caller() }}
+      </div>
+    </div>
+  {% endmacro %}
+  
+  {% call box("My Box Title") %}
+    <p>This is the content inside the box.</p>
+  {% endcall %}
+</body>
+</html>

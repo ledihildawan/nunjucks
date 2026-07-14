@@ -1,11 +1,12 @@
-import { createContainer } from '../../../src/index.js';
+import nunjucks from '../../../src/index.js';
 
-const c = createContainer();
-
-const configure = (views, options) => {
-  return c.environment(c.loader.fileSystem(views), options);
+const configure = (options = {}) => {
+  nunjucks.configure(options);
+  return {
+    render: (template, context) => nunjucks.render(template, context)
+  };
 };
 
-const render = (name, context) => c.environment().render(name, context);
+const render = (template, context) => nunjucks.render(template, context);
 
 export { configure, render };

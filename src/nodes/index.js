@@ -62,6 +62,7 @@ export const NODE_TYPES = Object.freeze({
   CASE: 'case',
   CAPTURE: 'capture',
   CALLER: 'caller',
+  CALL: 'call',
   OPTIONAL_CHAIN: 'optionalChain',
   OPTIONAL_CALL: 'optionalCall',
   PIPE_ASYNC: 'pipeAsync',
@@ -274,6 +275,9 @@ export const macro = (lineno, colno, name, args, body) =>
 export const caller = (lineno, colno, args, body) =>
   createNode(NODE_TYPES.CALLER, lineno, colno, { args: args || [], body });
 
+export const call = (lineno, colno, name, args, body) =>
+  createNode(NODE_TYPES.CALL, lineno, colno, { name, args: args || [], body });
+
 export const import_ = (lineno, colno, template, target, withContext = false) => 
   createNode(NODE_TYPES.IMPORT, lineno, colno, { template, target, withContext });
 
@@ -446,6 +450,7 @@ export const isTryCatch = (n) => n?.type === NODE_TYPES.TRY_CATCH;
 export const isDo = (n) => n?.type === NODE_TYPES.DO;
 export const isWith = (n) => n?.type === NODE_TYPES.WITH;
 export const isCaller = (n) => n?.type === NODE_TYPES.CALLER;
+export const isCall = (n) => n?.type === NODE_TYPES.CALL;
 export const isSuper = (n) => n?.type === NODE_TYPES.SUPER;
 export const isTemplateRef = (n) => n?.type === NODE_TYPES.TEMPLATE_REF;
 export const isInlineIf = (n) => n?.type === NODE_TYPES.INLINE_IF;
@@ -550,6 +555,7 @@ export const nodes = Object.freeze({
   for: for_,
   macro,
   caller,
+  call,
   import: import_,
   fromImport,
   set,
@@ -626,6 +632,7 @@ export const nodes = Object.freeze({
   isDo,
   isWith,
   isCaller,
+  isCall,
   isSuper,
   isTemplateRef,
   isInlineIf,

@@ -31,7 +31,7 @@ export function createContext(ctx, blocks, env) {
 
       if (this._parentBlockNames !== null) {
         const parentBlockNames = new Set(this._parentBlockNames);
-        const childOnlyBlocks = keys(this.blocks).filter(name => !parentBlockNames.has(name));
+        const childOnlyBlocks = keys(this.blocks || {}).filter(name => !parentBlockNames.has(name));
         if (childOnlyBlocks.length > 0) {
           const err = new Error(`Block "${childOnlyBlocks[0]}" is not defined in parent template`);
           err.code = 'UNDEFINED_BLOCK';
@@ -68,8 +68,15 @@ export function createContext(ctx, blocks, env) {
       return this.blocks[name][0];
     },
     getSuper: function(envObj, name, block, frame, runtime) {
-      const idx = (this.blocks[name] || []).indexOf(block);
-      const blk = this.blocks[name][idx + 1];
+      const blockList = this.blocks[name];
+      if (!blockList) {
+        const err = new Error(`no super block available for "${name}"`);
+        err.code = 'NO_SUPER_BLOCK';
+        err.subject = name;
+        throw err;
+      }
+      const idx = blockList.indexOf(block);
+      const blk = blockList[idx + 1];
 
       if (idx === -1 || !blk) {
         const err = new Error(`no super block available for "${name}"`);

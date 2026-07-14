@@ -1,5 +1,5 @@
 import express from 'express';
-import { createContainer } from '../../../src/index.js';
+import nunjucks from '../../../src/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -9,19 +9,14 @@ const VIEWS = path.join(__dirname, '..', 'views');
 
 const router = express.Router();
 
-const createTestEnv = (undefinedMode) => {
-  const c = createContainer();
-  return c.environment(c.loader.fileSystem(VIEWS), {
+const renderTemplate = async (template, context, config = {}) => {
+  return await nunjucks(template, context, {
     autoescape: true,
     dev: true,
     ide: 'vscode',
-    undefined: undefinedMode
+    ...config
   });
 };
-
-const strictEnv = createTestEnv('strict');
-const debugEnv = createTestEnv('debug');
-const chainableEnv = createTestEnv('chainable');
 
 router.get('/', async (req, res) => {
   res.type('html').send(`
@@ -46,8 +41,8 @@ router.get('/', async (req, res) => {
   </style>
 </head>
 <body>
-  <h1>🔍 Undefined Types Demo</h1>
-  
+  <h1>Undefined Types Demo</h1>
+
   <p>Nunjucks has 3 modes for handling undefined variables:</p>
 
   <div class="mode strict">
@@ -72,12 +67,11 @@ router.get('/', async (req, res) => {
   </div>
 
   <h2>Code Example</h2>
-  <pre>const env = createEnvironment(loader, {
-  undefined: 'strict'  // or 'debug' or 'chainable'
-});</pre>
+  <pre>// via config
+const html = await nunjucks(template, context, { undefined: 'strict' });</pre>
 
   <div class="nav">
-    <a href="/">← Back to Home</a>
+    <a href="/">Back to Home</a>
   </div>
 </body>
 </html>
@@ -87,21 +81,21 @@ router.get('/', async (req, res) => {
 router.get('/strict', async (req, res) => {
   const template = '{{ user.name }}';
   const context = { user: undefined };
-  
+
   try {
-    await strictEnv.render(template, context);
+    await renderTemplate(template, context, { undefined: 'strict' });
     res.send('Should have thrown error');
   } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString());
+    res.status(500).type('html').send(e.toHtmlString ? e.toHtmlString() : e.message);
   }
 });
 
 router.get('/debug', async (req, res) => {
-  const template = `{{ user.testing }}`;
+  const template = '{{ user.testing }}';
   const context = { user: undefined };
 
   try {
-    const result = await debugEnv.render(template, context);
+    const result = await renderTemplate(template, context, { undefined: 'debug' });
     res.type('html').send(`
 <!DOCTYPE html>
 <html>
@@ -116,15 +110,15 @@ router.get('/debug', async (req, res) => {
   </style>
 </head>
 <body>
-  <h1>Debug Mode - No Error (Symbol)</h1>
-  <p>Template: <code>{{ user }}</code></p>
+  <h1>Debug Mode - No Error</h1>
+  <p>Template: <code>{{ user.testing }}</code></p>
   <p>Context: <code>{ user: undefined }</code></p>
   <p><strong>Result:</strong> "${result}"</p>
-  <p><a href="/undefined">← Back to Undefined Types Demo</a></p>
+  <p><a href="/undefined">Back to Undefined Types Demo</a></p>
 </body>
 </html>`);
   } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString());
+    res.status(500).type('html').send(e.toHtmlString ? e.toHtmlString() : e.message);
   }
 });
 
@@ -132,7 +126,7 @@ router.get('/chainable', async (req, res) => {
   const template = '{{ user.name }}';
   const context = { user: undefined };
 
-  const result = await chainableEnv.render(template, context);
+  const result = await renderTemplate(template, context, { undefined: 'chainable' });
 
   res.type('html').send(`
 <!DOCTYPE html>
@@ -148,7 +142,7 @@ router.get('/chainable', async (req, res) => {
   </style>
 </head>
 <body>
-  <h1>✅ Chainable Mode - Silent</h1>
+  <h1>Chainable Mode - Silent</h1>
   <p>Template: <code>{{ user.name }}</code></p>
   <p>Context: <code>{ user: undefined }</code></p>
 
@@ -158,7 +152,7 @@ router.get('/chainable', async (req, res) => {
 
   <p>No warning in console - silent "undefined" string returned.</p>
 
-  <p><a href="/undefined">← Back to Undefined Types Demo</a></p>
+  <p><a href="/undefined">Back to Undefined Types Demo</a></p>
 </body>
 </html>
   `);
@@ -166,25 +160,25 @@ router.get('/chainable', async (req, res) => {
 
 router.get('/strict-nested', async (req, res) => {
   const template = '{{ user.profile.name }}';
-  const context = { user: { profile: null } };
+  const context = { user: undefined };
 
   try {
-    await strictEnv.render(template, context);
+    await renderTemplate(template, context, { undefined: 'strict' });
     res.send('Should have thrown error');
   } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString());
+    res.status(500).type('html').send(e.toHtmlString ? e.toHtmlString() : e.message);
   }
 });
 
 router.get('/strict-array', async (req, res) => {
-  const template = '{{ items[5] }}';
-  const context = { items: [1, 2, 3] };
+  const template = '{{ items }}';
+  const context = { items: undefined };
 
   try {
-    await strictEnv.render(template, context);
+    await renderTemplate(template, context, { undefined: 'strict' });
     res.send('Should have thrown error');
   } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString());
+    res.status(500).type('html').send(e.toHtmlString ? e.toHtmlString() : e.message);
   }
 });
 

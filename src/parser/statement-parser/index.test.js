@@ -73,7 +73,7 @@ describe('parseStatement dispatch', () => {
   test('dispatches call', () => {
     const p = advanceToStatement(makeParser('{% call block() %}body{% endcall %}'));
     const node = parseStatement(p);
-    expect(nodes.getNodeTypeName(node)).toBe('output');
+    expect(nodes.getNodeTypeName(node)).toBe('call');
   });
 
   test('dispatches import', () => {

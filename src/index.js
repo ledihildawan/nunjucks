@@ -1,9 +1,31 @@
 import { setGlobalConfig, getGlobalConfig, mergeConfig, resetConfig } from './config/global.js';
-import { renderString, compileTemplate, isTemplateString, detectTemplateType } from './core/render.js';
+import { render, renderWithEnv } from './core/render.js';
+import { createEngine } from './integrations/express.js';
 
-const Result = {
-  success: (value) => ({ ok: true, value, error: undefined }),
-  failure: (error) => ({ ok: false, value: undefined, error }),
+const getCallerLocation = () => {
+  const stack = new Error().stack;
+  if (!stack) return null;
+  const lines = stack.split('\n');
+  for (let i = 2; i < lines.length; i++) {
+    const line = lines[i];
+    let match = line.match(/at\s+.+\s+\((.+):(\d+):(\d+)\)/);
+    if (match) {
+      const path = match[1];
+      if (path.includes('/nunjucks/src/') || path.includes('\\nunjucks\\src\\')) {
+        continue;
+      }
+      return { path, line: parseInt(match[2]), col: parseInt(match[3]) };
+    }
+    match = line.match(/at\s+(.+):(\d+):(\d+)$/);
+    if (match) {
+      const path = match[1];
+      if (path.includes('/nunjucks/src/') || path.includes('\\nunjucks\\src\\')) {
+        continue;
+      }
+      return { path, line: parseInt(match[2]), col: parseInt(match[3]) };
+    }
+  }
+  return null;
 };
 
 const nunjucks = (template, context, localConfig) => {
@@ -20,18 +42,24 @@ const nunjucks = (template, context, localConfig) => {
     throw new Error('Template must be a string');
   }
 
+  const callerLoc = getCallerLocation();
   const config = mergeConfig(localConfig || {});
 
+  if (callerLoc) {
+    config.jsCaller = callerLoc.path;
+    config.jsCallerErrorLine = callerLoc.line;
+  }
+
   if (context && typeof context === 'object' && !localConfig) {
-    return renderString(template, context, config);
+    return render(template, context, config);
   }
 
   if (context && typeof context === 'object' && localConfig) {
     const mergedConfig = { ...config, ...localConfig };
-    return renderString(template, context, mergedConfig);
+    return render(template, context, mergedConfig);
   }
 
-  return (ctx) => renderString(template, ctx || {}, config);
+  return (ctx) => render(template, ctx || {}, config);
 };
 
 nunjucks.configure = (globalConfig) => {
@@ -41,25 +69,15 @@ nunjucks.configure = (globalConfig) => {
   return nunjucks;
 };
 
-nunjucks.render = async (template, context = {}, config = {}) => {
-  return renderString(template, context, mergeConfig(config));
-};
+nunjucks.render = render;
 
-nunjucks.compile = (template, config = {}) => {
-  return compileTemplate(template, mergeConfig(config));
-};
+nunjucks.renderWithEnv = renderWithEnv;
 
 nunjucks.getConfig = getGlobalConfig;
 
 nunjucks.setConfig = setGlobalConfig;
 
 nunjucks.resetConfig = resetConfig;
-
-nunjucks.isTemplateString = isTemplateString;
-
-nunjucks.detectTemplateType = detectTemplateType;
-
-nunjucks.Result = Result;
 
 nunjucks.version = '3.2.4';
 
@@ -70,9 +88,7 @@ export {
   getGlobalConfig,
   mergeConfig,
   resetConfig,
-  renderString,
-  compileTemplate,
-  isTemplateString,
-  detectTemplateType,
-  Result
+  render,
+  renderWithEnv,
+  createEngine
 };

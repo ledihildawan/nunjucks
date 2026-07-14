@@ -76,15 +76,14 @@ export const toHtmlString = (state) => {
   const ideMeta = getIdeMeta(state.ide || 'vscode');
   const ideLabel = `Open in ${ideMeta.label}`;
   const basePath = templatePath ? templatePath.replace(/\\/g, '/') : '';
-  const extMatch = basePath.match(/\.(html|njk|j2|tmpl)$/i);
-  const isJsLocation = jsCaller && templatePath && !extMatch;
-  const displayLine = getDisplayLine();
-  const displayCol = getDisplayCol();
-  const locDisplay = isJsLocation
-    ? shortenPath(escapeHtml(templatePath) + (displayCol && displayCol !== '?' ? ':' + displayCol : ''))
-    : templatePath
-      ? shortenPath(escapeHtml(templatePath) + ':' + displayLine + ':' + displayCol)
-      : locationInfo;
+  const extMatch = basePath && basePath.match(/\.(html|njk|j2|tmpl)$/i);
+  const isJsLocation = jsCaller && !extMatch;
+  const displayLine = isJsLocation ? (state.jsCallerErrorLine || 1) : getDisplayLine();
+  const displayCol = isJsLocation ? 1 : getDisplayCol();
+  const displayPath = isJsLocation ? jsCaller : templatePath;
+  const locDisplay = displayPath
+    ? shortenPath(escapeHtml(displayPath) + ':' + displayLine + ':' + displayCol)
+    : locationInfo;
 
   const body = `
 <main class="error-wrapper" aria-labelledby="err-title">
@@ -100,8 +99,8 @@ export const toHtmlString = (state) => {
       <span class="badge badge-dev">DEV</span>
     </div>
     <h1 id="err-title" class="error-title">${headerTitle}</h1>
-    <p class="error-location">The error occurred in ${isJsLocation || templatePath
-      ? `<a href="${resolveIdeLink(state.ide, escapeHtml(templatePath), getDisplayLine(), getDisplayCol())}" class="loc-link error-location-link">${locDisplay}</a>`
+    <p class="error-location">The error occurred in ${displayPath
+      ? `<a href="${resolveIdeLink(state.ide, escapeHtml(displayPath), displayLine, displayCol)}" class="loc-link error-location-link">${locDisplay}</a>`
       : `<span class="error-location-text">${locDisplay}</span>`
     }</p>
   </header>
@@ -137,7 +136,7 @@ export const toHtmlString = (state) => {
       Nunjucks ${state.version || '3.2.4'}${state.timestamp ? ` · ${escapeHtml(state.timestamp)}` : ''}
     </p>
     <div class="error-footer-actions">
-      <a href="${templatePath ? resolveIdeLink(state.ide, escapeHtml(templatePath), getDisplayLine(), getDisplayCol()) : '#'}" class="btn btn-solid ${!templatePath ? 'btn-disabled' : ''}" ${!templatePath ? 'aria-disabled="true"' : ''}>
+      <a href="${displayPath ? resolveIdeLink(state.ide, escapeHtml(displayPath), displayLine, displayCol) : '#'}" class="btn btn-solid ${!displayPath ? 'btn-disabled' : ''}" ${!displayPath ? 'aria-disabled="true"' : ''}>
         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">${ideMeta.icon}</svg>
         ${ideLabel}
       </a>

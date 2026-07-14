@@ -1,5 +1,7 @@
 import { isString, isPlainObject, defaultTo } from 'remeda';
-import { compile } from '../compiler/index.js';
+import { createCompiler } from '../compiler/index.js';
+import { parse } from '../parser/index.js';
+import { transform } from '../transformers/index.js';
 import { prettifyError } from '../error/index.js';
 import { createMappedError } from '../helpers/source-map.js';
 import { createContext } from '../runtime/context.js';
@@ -269,14 +271,12 @@ export function createTemplate(src, env, path, eagerCompile) {
         if (this.tmplProps) {
           props = this.tmplProps;
         } else {
-          const source = compile(
-            this.tmplStr,
-            [],
-            this.env.extensionsList,
-            this.path,
-            this.env.opts
-          );
-          const func = new Function(source);
+          const c = createCompiler(this.path, this.env.opts.undefined, this.tmplStr);
+          const ast = parse(this.tmplStr, this.env.opts, this.path);
+          const transformedAst = transform(ast, this.env.extensionsList, this.path);
+          c.compile(transformedAst);
+          const code = c.getCode();
+          const func = new Function(code);
           props = func();
         }
 

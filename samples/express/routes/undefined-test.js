@@ -1,35 +1,26 @@
 import express from 'express';
-import { createContainer } from '../../../src/index.js';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const VIEWS = path.join(__dirname, '..', 'views');
+import nunjucks from '../../../src/index.js';
 
 const router = express.Router();
 
-const createTestEnv = (undefinedMode) => {
-  const c = createContainer();
-  return c.environment(c.loader.fileSystem(VIEWS), {
+const renderTemplate = async (template, context, config = {}) => {
+  return await nunjucks(template, context, {
     autoescape: true,
     dev: true,
     ide: 'vscode',
-    undefined: undefinedMode
+    ...config
   });
 };
-
-const strictEnv = createTestEnv('strict');
 
 router.get('/strict', async (req, res) => {
   const template = '{{ user.name }}';
   const context = { user: undefined };
-  
+
   console.log('=== DEBUG ===');
   console.log('Template:', template);
-  
+
   try {
-    await strictEnv.render(template, context);
+    await renderTemplate(template, context, { undefined: 'strict' });
     res.send('Should have thrown error');
   } catch (e) {
     console.log('Error templatePath:', e.templatePath);
@@ -40,7 +31,7 @@ router.get('/strict', async (req, res) => {
       path: e.path,
       templateName: e.templateName
     }, null, 2));
-    res.status(500).type('html').send(e.toHtmlString());
+    res.status(500).type('html').send(e.toHtmlString ? e.toHtmlString() : e.message);
   }
 });
 
