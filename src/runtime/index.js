@@ -34,8 +34,9 @@ import {
   isValidUndefinedMode,
   getUndefinedMode,
 } from './undefined.js';
-import { createUndefinedWarning, toConsoleString } from '../warning/index.js';
+
 import { toContext, createIsolatedContext, createForkedContext } from './render-context.js';
+import { createContext } from './context.js';
 
 const escapeHtml = (val) => {
   if (!isNonNullish(val)) return '';
@@ -83,6 +84,7 @@ export {
   toContext,
   createIsolatedContext,
   createForkedContext,
+  createContext,
 };
 
 export function suppressValue(val, autoescape) {
@@ -115,11 +117,6 @@ export function ensureDefined(val, lineno, colno, varName = null, templateName =
         colno,
         { code: varName ? 'UNDEFINED_VARIABLE' : 'UNDEFINED_VALUE', subject: varName, phase: 'render' }
       );
-    }
-
-    if (undefinedMode === 'debug') {
-      const warning = createUndefinedWarning(varName, lineno, colno, templateName, undefinedMode);
-      console.warn(toConsoleString(warning));
     }
 
     return 'undefined';

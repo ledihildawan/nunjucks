@@ -17,7 +17,7 @@ const makeCtx = () => {
     _pushBuffer: () => {
       bufStack.push(buf);
       buf = 't_' + (++lastId);
-      emitted.push('var ' + buf + ' = "";\n');
+      emitted.push('let ' + buf + ' = "";\n');
       return buf;
     },
     _popBuffer: () => { buf = bufStack.pop(); },
@@ -56,7 +56,7 @@ describe('compileCallExtension', () => {
     };
     compileCallExtension(ctx, node);
     const code = ctx.emitted.join('');
-    expect(code).toContain('var t_1 = await env.getExtension("myExt")["myAsync"](');
+    expect(code).toContain('let t_1 = await env.getExtension("myExt")["myAsync"](');
     expect(code).toContain('context');
     expect(code).toContain('async function()');
     expect(code).toContain('output += runtime.suppressValue(await t_1');
@@ -105,6 +105,6 @@ describe('compileCallExtensionAsync', () => {
     };
     compileCallExtensionAsync(ctx, node);
     const code = ctx.emitted.join('');
-    expect(code).toContain('var t_1 = await env.getExtension');
+    expect(code).toContain('let t_1 = await env.getExtension');
   });
 });

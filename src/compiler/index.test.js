@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from 'bun:test';
-import { createCompiler, compile, getSourceMap, getSourceMapFromCompile } from './index.js';
+import { createCompiler, getSourceMap, getSourceMapFromCompile } from './index.js';
 import { nodes } from '../nodes/index.js';
 import { createFrame } from '../runtime/index.js';
 
@@ -31,7 +31,7 @@ describe('Compiler', () => {
   test('_pushBuffer creates new buffer variable', () => {
     const id = compiler._pushBuffer();
     expect(id).toBe('t_1');
-    expect(compiler.codebuf[0]).toBe('var t_1 = "";');
+    expect(compiler.codebuf[0]).toBe('let t_1 = "";');
     expect(compiler.buffer).toBe('t_1');
   });
 
@@ -86,8 +86,8 @@ describe('Compiler', () => {
     compiler._emitFuncBegin(node, 'root');
     expect(compiler.buffer).toBe('output');
     expect(compiler.codebuf[0]).toContain('async function root');
-    expect(compiler.codebuf[1]).toContain('var lineno = 1');
-    expect(compiler.codebuf[2]).toContain('var colno = 2');
+    expect(compiler.codebuf[1]).toContain('let lineno = 1');
+    expect(compiler.codebuf[2]).toContain('let colno = 2');
   });
 
   test('_emitFuncEnd returns buffer and closes', () => {
@@ -181,38 +181,6 @@ describe('Compiler', () => {
 
   test('getSourceMap returns sourceMap', () => {
     expect(compiler.getSourceMap()).toBe(compiler.sourceMap);
-  });
-});
-
-describe('compile function', () => {
-  test('compiles template string to JS code', () => {
-    const result = compile('Hello {{ name }}', [], [], 'test.njk');
-    expect(result).toContain('export async function render');
-    expect(result).toContain('rt.escape');
-    expect(result).toContain('out.push');
-  });
-
-  test('compiles with async pipes', () => {
-    const result = compile('Hello {{ x }}', ['upper'], [], 'test.njk');
-    expect(result).toContain('export async function render');
-    expect(result).toContain('out.push');
-  });
-
-  test('compiles with extensions', () => {
-    const ext = { preprocess: (s) => s };
-    const result = compile('Hello', [], [ext], 'test.njk');
-    expect(result).toContain('export async function render');
-  });
-
-  test('compiles with opts', () => {
-    const result = compile('{{ x }}', [], [], 'test.njk', { undefined: 'strict' });
-    expect(result).toContain('throw new Error');
-  });
-
-  test('result can be evaluated as function', () => {
-    const result = compile('Hello world', [], [], 'test.njk');
-    expect(result).toContain('export async function render');
-    expect(result).toContain('out.join');
   });
 });
 

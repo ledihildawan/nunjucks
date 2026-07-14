@@ -19,7 +19,7 @@ const makeCtx = () => {
     _pushBuffer: () => {
       bufStack.push(buf);
       buf = 't_' + (++lastId);
-      emitted.push('var ' + buf + ' = ""\n');
+      emitted.push('let ' + buf + ' = ""\n');
       return buf;
     },
     _popBuffer: () => { buf = bufStack.pop(); },
@@ -49,7 +49,7 @@ describe('compileMacroPublic', () => {
     const code = ctx.emitted.join('');
     expect(code).toContain('runtime.makeMacro(');
     expect(code).toContain('"a", "b"');
-    expect(code).toContain('async function (l_a, l_b, kwargs)');
+    expect(code).toContain('async (l_a, l_b, kwargs) =>');
     expect(code).toContain('macro_t_1');
     expect(code).toContain('runtime.createSafeString');
     expect(code).toContain('context.setVariable("myMacro"');

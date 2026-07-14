@@ -13,24 +13,24 @@ const makeCtx = () => {
 };
 
 describe('compileBlock', () => {
-  test('emits block with parentTemplate guard when not inBlock', () => {
+  test('emits block getBlock call directly', () => {
     const ctx = makeCtx();
     const node = { name: { value: 'header' } };
     compileBlock(ctx, node);
     const code = ctx.emitted.join('');
-    expect(code).toContain('if(!parentTemplate) {');
-    expect(code).toContain('context.getBlock("header")');
+    expect(code).toContain('ctx.getBlock("header")');
     expect(code).toContain('output += t_1');
+    expect(code).not.toContain('parentTemplate');
   });
 
-  test('omits parentTemplate guard when inBlock', () => {
+  test('emits block getBlock call when inBlock', () => {
     const ctx = makeCtx();
     ctx.inBlock = true;
     const node = { name: { value: 'footer' } };
     compileBlock(ctx, node);
     const code = ctx.emitted.join('');
-    expect(code).not.toContain('parentTemplate');
-    expect(code).toContain('context.getBlock("footer")');
+    expect(code).toContain('ctx.getBlock("footer")');
+    expect(code).toContain('output += t_1');
   });
 });
 
@@ -44,7 +44,7 @@ describe('compileSuper', () => {
     const frame = { set: () => {} };
     compileSuper(ctx, node, frame);
     const code = ctx.emitted.join('');
-    expect(code).toContain('context.getSuper(env, "header", b_header');
-    expect(code).toContain('runtime.markSafe(t_1)');
+    expect(code).toContain('ctx.getSuper(env, "header", b_header');
+    expect(code).toContain('rt.markSafe(t_1)');
   });
 });

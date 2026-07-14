@@ -4,7 +4,7 @@ import { compileGetTemplate } from './import.js';
 export const compileFromImport = (ctx, node, frame) => {
   const importedId = compileGetTemplate(ctx, node, frame, false, false);
 
-  ctx._emitLine(`var ${importedId}_exported = await ${importedId}.getExported(` +
+  ctx._emitLine(`let ${importedId}_exported = await ${importedId}.getExported(` +
     (node.withContext ? 'context.getVariables(), frame' : '') +
     ');');
 
@@ -22,7 +22,7 @@ export const compileFromImport = (ctx, node, frame) => {
     }
 
     ctx._emitLine(`if(Object.prototype.hasOwnProperty.call(${importedId}_exported, "${name}")) {`);
-    ctx._emitLine(`var ${id} = ${importedId}_exported["${name}"];`);
+    ctx._emitLine(`let ${id} = ${importedId}_exported["${name}"];`);
     ctx._emitLine('} else {');
     ctx._emitLine(`throw new Error("cannot import '${name}'");`);
     ctx._emitLine('}');

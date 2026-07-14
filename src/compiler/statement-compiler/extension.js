@@ -16,7 +16,7 @@ export const compileCallExtension = (ctx, node, frame, useAsync) => {
   }
 
   if (useAsync) {
-    ctx._emit(`var ${res} = await env.getExtension("${node.extName}")["${node.prop}"](`);
+    ctx._emit(`let ${res} = await env.getExtension("${node.extName}")["${node.prop}"](`);
   } else {
     ctx._emit(`env.getExtension("${node.extName}")["${node.prop}"](`);
   }

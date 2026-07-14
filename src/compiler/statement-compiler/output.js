@@ -9,8 +9,8 @@ export const compileTemplateData = (ctx, node, frame) => {
 export const compileCapture = (ctx, node, frame) => {
   const buffer = ctx.buffer;
   ctx.buffer = 'output';
-  ctx._emitLine('(async function() {');
-  ctx._emitLine('var output = "";');
+  ctx._emitLine('(async () => {');
+  ctx._emitLine('let output = "";');
   ctx._withScopedSyntax(() => {
     ctx.compile(node.body, frame);
   });
@@ -51,7 +51,7 @@ export const compileOutput = (ctx, node, frame) => {
       const varName = extractVarName(child);
       const undefinedMode = ctx.undefinedMode;
 
-      const useEnsureDefined = !isOptionalChainType || undefinedMode !== 'chainable';
+      const useEnsureDefined = !isOptionalChainType || undefinedMode === 'debug';
       const effectiveMode = undefinedMode;
 
       ctx._emitLineWithLineno(`lineno = ${child.lineno}; colno = ${child.colno}; ${ctx.buffer} += runtime.suppressValue(`, child.lineno, child.colno);

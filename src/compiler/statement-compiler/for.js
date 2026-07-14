@@ -24,7 +24,7 @@ export const compileFor = (ctx, node, frame) => {
 
   ctx._emitLine('frame = frame.push();');
 
-  ctx._emit(`var ${arr} = `);
+  ctx._emit(`let ${arr} = `);
   ctx._compileExpression(node.arr, frame);
   ctx._emitLine(';');
 
@@ -32,15 +32,15 @@ export const compileFor = (ctx, node, frame) => {
   ctx._emitLine(arr + ' = runtime.fromIterator(' + arr + ');');
 
   if (nodes.isArray(node.name)) {
-    ctx._emitLine(`var ${i};`);
+    ctx._emitLine(`let ${i};`);
 
     ctx._emitLine(`if(runtime.isArray(${arr})) {`);
-    ctx._emitLine(`var ${len} = ${arr}.length;`);
+    ctx._emitLine(`let ${len} = ${arr}.length;`);
     ctx._emitLine(`for(${i}=0; ${i} < ${arr}.length; ${i}++) {`);
 
     node.name.children.forEach((child, u) => {
       const tid = ctx._tmpid();
-      ctx._emitLine(`var ${tid} = ${arr}[${i}][${u}];`);
+      ctx._emitLine(`let ${tid} = ${arr}[${i}][${u}];`);
       ctx._emitLine(`frame.set("${child}", ${arr}[${i}][${u}]);`);
       frame.set(node.name.children[u].value, tid);
     });
@@ -59,10 +59,10 @@ export const compileFor = (ctx, node, frame) => {
     frame.set(val.value, v);
 
     ctx._emitLine(`${i} = -1;`);
-    ctx._emitLine(`var ${len} = runtime.keys(${arr}).length;`);
-    ctx._emitLine(`for(var ${k} in ${arr}) {`);
+    ctx._emitLine(`let ${len} = runtime.keys(${arr}).length;`);
+    ctx._emitLine(`for(let ${k} in ${arr}) {`);
     ctx._emitLine(`${i}++;`);
-    ctx._emitLine(`var ${v} = ${arr}[${k}];`);
+    ctx._emitLine(`let ${v} = ${arr}[${k}];`);
     ctx._emitLine(`frame.set("${key.value}", ${k});`);
     ctx._emitLine(`frame.set("${val.value}", ${v});`);
 
@@ -77,9 +77,9 @@ export const compileFor = (ctx, node, frame) => {
     const v = ctx._tmpid();
     frame.set(node.name.value, v);
 
-    ctx._emitLine(`var ${len} = ${arr}.length;`);
-    ctx._emitLine(`for(var ${i}=0; ${i} < ${arr}.length; ${i}++) {`);
-    ctx._emitLine(`var ${v} = ${arr}[${i}];`);
+    ctx._emitLine(`let ${len} = ${arr}.length;`);
+    ctx._emitLine(`for(let ${i}=0; ${i} < ${arr}.length; ${i}++) {`);
+    ctx._emitLine(`let ${v} = ${arr}[${i}];`);
     ctx._emitLine(`frame.set("${node.name.value}", ${v});`);
 
     emitLoopBindings(ctx, arr, i, len);

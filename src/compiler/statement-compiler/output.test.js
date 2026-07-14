@@ -30,8 +30,8 @@ describe('compileCapture', () => {
     const node = { body: { mock: 'body' } };
     compileCapture(ctx, node);
     const code = ctx.emitted.join('');
-    expect(code).toContain('(async function() {');
-    expect(code).toContain('var output = "";');
+    expect(code).toContain('(async () => {');
+    expect(code).toContain('let output = "";');
     expect(code).toContain('return output;');
     expect(code).toContain('})()');
   });

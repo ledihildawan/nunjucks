@@ -27,21 +27,21 @@ describe('emit', () => {
 describe('emitLine', () => {
   test('appends newline and increments compiledLine', () => {
     const ctx = makeCtx();
-    emitLine(ctx, 'var x = 1', 5);
+    emitLine(ctx, 'let x = 1', 5);
     expect(ctx.compiledLine).toBe(1);
-    expect(ctx.codebuf).toEqual(['var x = 1\n']);
+    expect(ctx.codebuf).toEqual(['let x = 1\n']);
     expect(ctx.sourceMap.addMapping).toHaveBeenCalledWith(1, 5);
   });
 
   test('skips addMapping when originalLine is null', () => {
     const ctx = makeCtx();
-    emitLine(ctx, 'var x = 1', null);
+    emitLine(ctx, 'let x = 1', null);
     expect(ctx.sourceMap.addMapping).not.toHaveBeenCalled();
   });
 
   test('skips addMapping when originalLine is undefined', () => {
     const ctx = makeCtx();
-    emitLine(ctx, 'var x = 1');
+    emitLine(ctx, 'let x = 1');
     expect(ctx.sourceMap.addMapping).not.toHaveBeenCalled();
   });
 });
@@ -88,7 +88,7 @@ describe('pushBuffer / popBuffer', () => {
     expect(id).toBe('t_1');
     expect(ctx.buffer).toBe('t_1');
     expect(ctx.bufferStack).toEqual(['output']);
-    expect(ctx.codebuf[0]).toContain('var t_1');
+    expect(ctx.codebuf[0]).toContain('let t_1');
   });
 
   test('popBuffer restores previous buffer', () => {

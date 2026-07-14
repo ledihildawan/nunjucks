@@ -3,8 +3,21 @@ import {
   memberLookup, optionalMemberLookup, slice, nullishCoalesce,
   inOperator, fromIterator, callWrap,
   ensureDefined, isSafeString, markSafe, copySafeness,
-  lookup
+  lookup,
+  createContext
 } from '../runtime/index.js';
+
+const getRenderFunction = (code) => {
+  const newFormatMatch = code.match(/^async\s+function\s+root\s*\(/);
+  if (newFormatMatch) {
+    const codeWithReturn = code + '; return root;';
+    const renderFn = new Function(codeWithReturn);
+    const result = renderFn();
+    return { render: result.root };
+  }
+  
+  throw new Error('Unrecognized code format: expected "async function root"');
+};
 
 const getRuntimeHelpers = () => ({
   suppressValue,
@@ -57,20 +70,34 @@ export const execute = async (code, context = {}, config = {}) => {
     ...getRuntimeHelpers(),
     getFilter,
   };
+
+  if (config.env) {
+    runtime.env = config.env;
+  }
   
-  // Create simple context with lookup capability
-  const ctx = {
-    ...context,
-    _autoescape: config.autoescape ?? true,
-    lookup: function(key) {
-      if (key in ctx) {
-        return ctx[key];
+  let ctx;
+  if (config.env) {
+    ctx = createContext(context, {}, config.env);
+    ctx._autoescape = config.autoescape ?? true;
+  } else {
+    ctx = {
+      ...context,
+      _autoescape: config.autoescape ?? true,
+      lookup: function(key) {
+        if (key in ctx) {
+          return ctx[key];
+        }
+        if (key in runtime) {
+          return runtime[key];
+        }
+        return undefined;
       }
-      if (key in runtime) {
-        return runtime[key];
-      }
-      return undefined;
-    }
+    };
+  }
+
+  // Create a minimal frame object with lookup method (used by contextOrFrameLookup)
+  const emptyFrame = {
+    lookup: () => undefined
   };
 
   // Handle sandbox mode
@@ -87,21 +114,20 @@ export const execute = async (code, context = {}, config = {}) => {
     
     const safeRuntime = { ...runtime };
     
-    // Execute new format code
-    const codeAsConst = code.replace(/^export\s+async\s+function\s+render/, 'const render = async function render');
-    const fullCode = codeAsConst + '; return render;';
-    const renderFn = new Function(fullCode);
-    const render = renderFn();
+    // Create env object for new format
+    const env = { opts: { autoescape: config.autoescape ?? true } };
     
-    return await render(safeContext, safeRuntime);
+    // Execute code - support both old and new format
+    const { render } = getRenderFunction(code);
+    
+    return await render(env, safeContext, emptyFrame, safeRuntime);
   }
 
-  // New format: code starts with "export async function render"
-  // Replace "export async function render(...)" with "const render = async function render(...)"
-  const codeAsConst = code.replace(/^export\s+async\s+function\s+render/, 'const render = async function render');
-  const fullCode = codeAsConst + '; return render;';
-  const renderFn = new Function(fullCode);
-  const render = renderFn();
+  // Execute code - support both old and new format
+  const { render } = getRenderFunction(code);
   
-  return await render(ctx, runtime);
+  // Create env object for new format (matches new compiler expectations)
+  const env = { opts: { autoescape: config.autoescape ?? true } };
+  
+  return await render(env, ctx, emptyFrame, runtime);
 };

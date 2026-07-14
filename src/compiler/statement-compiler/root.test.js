@@ -15,9 +15,9 @@ const makeCtx = () => {
     _emitFuncBegin: (node, name) => {
       buf = 'output';
       emitted.push(`async function ${name}(env, context, frame, runtime) {\n`);
-      emitted.push(`var lineno = ${node.lineno};\n`);
-      emitted.push(`var colno = ${node.colno};\n`);
-      emitted.push('var output = "";\n');
+      emitted.push(`let lineno = ${node.lineno};\n`);
+      emitted.push(`let colno = ${node.colno};\n`);
+      emitted.push('let output = "";\n');
       emitted.push('try {\n');
     },
     _emitFuncEnd: (noReturn) => {
@@ -59,7 +59,7 @@ describe('compileRoot', () => {
     compileRoot(ctx, node);
     const code = ctx.emitted.join('');
     expect(code).toContain('async function root(env, context, frame, runtime) {');
-    expect(code).toContain('var parentTemplate = null;');
+    expect(code).toContain('let parentTemplate = null;');
     expect(code).toContain('childOutput');
     expect(code).toContain('root: root');
   });

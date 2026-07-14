@@ -1,4 +1,5 @@
 import { createFrame } from '../../runtime/index.js';
+import { nodes } from '../../nodes/index.js';
 
 export const compileRoot = (ctx, node, frame) => {
   if (frame) {
@@ -8,39 +9,50 @@ export const compileRoot = (ctx, node, frame) => {
   frame = createFrame();
 
   ctx._emitFuncBegin(node, 'root');
-  ctx._emitLine('var parentTemplate = null;');
+  ctx._emitLine('let parentTemplate = null;');
   const childBuffer = 'childOutput';
-  ctx._emitLine(`var ${childBuffer} = "";`);
+  ctx._emitLine(`let ${childBuffer} = "";`);
   const savedBuffer = ctx.buffer;
   ctx.buffer = childBuffer;
-  ctx._compileChildren(node, frame);
+
+  const blocks = node.findAll('block');
+  const blockNames = blocks.map(b => b.name?.value).filter(Boolean);
+
+  const nonBlockChildren = node.children.filter(child => !nodes.isBlock(child));
+  nonBlockChildren.forEach(child => {
+    ctx.compile(child, frame);
+  });
+
   ctx.buffer = savedBuffer;
+
   ctx._emitLine('if(parentTemplate) {');
-  ctx._emitLine(`return await parentTemplate.rootRenderFunc(env, context, frame, runtime);`);
+  ctx._emitLine(`return await parentTemplate.rootRenderFunc(env, ctx, frame, rt);`);
+  ctx._emitLine('} else {');
+  blockNames.forEach(name => {
+    ctx._emitLine(`  ${childBuffer} += await ctx.getBlock("${name}")(env, ctx, frame, rt);`);
+  });
   ctx._emitLine('}');
   ctx._emitLine(`return ${childBuffer};`);
   ctx._emitFuncEnd(true);
 
   ctx.inBlock = true;
 
-  const blockNames = [];
-
-  const blocks = node.findAll('block');
+  const seenBlocks = [];
 
   blocks.forEach((block) => {
     const name = block.name?.value;
 
     if (!name) return;
 
-    if (blockNames.includes(name)) {
+    if (seenBlocks.includes(name)) {
       throw new Error(`Block "${name}" defined more than once.`);
     }
-    blockNames.push(name);
+    seenBlocks.push(name);
 
     ctx._emitFuncBegin(block, `b_${name}`);
 
     const tmpFrame = createFrame();
-    ctx._emitLine('var frame = frame.push(true);');
+    ctx._emitLine('let frame = frame.push(true);');
     ctx.compile(block.body, tmpFrame);
     ctx._emitFuncEnd();
   });

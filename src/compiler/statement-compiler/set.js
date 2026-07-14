@@ -7,7 +7,7 @@ export const compileSet = (ctx, node, frame) => {
 
     if (id === null || id === undefined) {
       id = ctx._tmpid();
-      ctx._emitLine('var ' + id + ';');
+      ctx._emitLine('let ' + id + ';');
     }
 
     ids.push(id);

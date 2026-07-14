@@ -30,7 +30,7 @@ describe('compileExtends', () => {
     expect(code).toContain('lineno = 1; colno = 1');
     expect(code).toContain('env.getTemplate(');
     expect(code).toContain('parentTemplate = t_2');
-    expect(code).toContain('for(var t_1 in parentTemplate.blocks)');
+    expect(code).toContain('for(let t_1 in parentTemplate.blocks)');
     expect(code).toContain('context.addBlock(t_1, parentTemplate.blocks[t_1])');
   });
 });

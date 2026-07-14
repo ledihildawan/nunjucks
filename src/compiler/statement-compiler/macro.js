@@ -28,11 +28,11 @@ const compileMacro = (ctx, node, frame) => {
     currFrame = createFrame();
   }
   ctx._emitLines(
-    `var ${funcId} = runtime.makeMacro(`,
+    `let ${funcId} = runtime.makeMacro(`,
     `[${argNames.join(', ')}], `,
     `[${kwargNames.join(', ')}], `,
-    `async function (${realNames.join(', ')}) {`,
-    'var callerFrame = frame;',
+    `async (${realNames.join(', ')}) => {`,
+    'let callerFrame = frame;',
     'frame = ' + ((keepFrame) ? 'frame.push(true);' : 'runtime.createFrame();'),
     'kwargs = kwargs || {};',
     'if (Object.prototype.hasOwnProperty.call(kwargs, "caller")) {',

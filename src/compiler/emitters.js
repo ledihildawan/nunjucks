@@ -34,7 +34,7 @@ export const pushBuffer = (ctx) => {
   const id = tmpid(ctx);
   ctx.bufferStack.push(ctx.buffer);
   ctx.buffer = id;
-  emit(ctx, `var ${id} = "";`);
+  emit(ctx, `let ${id} = "";`);
   return id;
 };
 
@@ -73,9 +73,9 @@ export const emitFuncBegin = (ctx, node, name) => {
   ctx.buffer = 'output';
   ctx._scopeClosers = '';
   emitLine(ctx, `async function ${name}(env, context, frame, runtime) {`);
-  emitLineWithMapping(ctx, `var lineno = ${node.lineno};`, node.lineno, node.colno);
-  emitLine(ctx, `var colno = ${node.colno};`);
-  emitLine(ctx, `var ${ctx.buffer} = "";`);
+  emitLineWithMapping(ctx, `let lineno = ${node.lineno};`, node.lineno, node.colno);
+  emitLine(ctx, `let colno = ${node.colno};`);
+  emitLine(ctx, `let ${ctx.buffer} = "";`);
   emitLine(ctx, 'try {');
 };
 

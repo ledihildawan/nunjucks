@@ -7,7 +7,6 @@ import { createObj } from '../object/index.js';
 import { createSourceMap } from '../helpers/source-map.js';
 import { compileDispatch } from './node-dispatch.js';
 import { DEFAULT_UNDEFINED_MODE, getUndefinedMode } from '../runtime/undefined.js';
-export { compile, compileSync } from './code-gen.js';
 
 export function createCompiler(templateName, undefinedMode, source) {
   const obj = createObj({
@@ -31,7 +30,7 @@ export function createCompiler(templateName, undefinedMode, source) {
       const id = this._tmpid();
       this.bufferStack.push(this.buffer);
       this.buffer = id;
-      this._emit(`var ${this.buffer} = "";`);
+      this._emit(`let ${this.buffer} = "";`);
       return id;
     },
     _popBuffer: function() {
@@ -73,9 +72,9 @@ export function createCompiler(templateName, undefinedMode, source) {
       this.buffer = 'output';
       this._scopeClosers = '';
       this._emitLine(`async function ${name}(env, context, frame, runtime) {`);
-      this._emitLineWithMapping(`var lineno = ${node.lineno};`, node.lineno, node.colno);
-      this._emitLine(`var colno = ${node.colno};`);
-      this._emitLine(`var ${this.buffer} = "";`);
+      this._emitLineWithMapping(`let lineno = ${node.lineno};`, node.lineno, node.colno);
+      this._emitLine(`let colno = ${node.colno};`);
+      this._emitLine(`let ${this.buffer} = "";`);
       this._emitLine('try {');
     },
     _emitFuncEnd: function(noReturn) {
