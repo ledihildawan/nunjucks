@@ -189,6 +189,15 @@ router.get('/sandbox-process', async (req, res, next) => {
   }
 });
 
+router.get('/sandbox-set', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{% set user.__proto__ = {} %}', {}, { dev: true, sandbox: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/slice-error', async (req, res, next) => {
   try {
     const html = await nunjucks('{{ [1,2,3][::0] }}', {}, { dev: true });
