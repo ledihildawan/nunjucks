@@ -75,6 +75,36 @@ errorRoutes.forEach(({ path: routePath, template, context }) => {
   });
 });
 
+router.get('/inline-error', async (req, res, next) => {
+  try {
+    const template = '{{ undefinedVar }}';
+    await nunjucks(template, {}, { dev: true, undefined: 'strict' });
+    res.send('Should have thrown');
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/inline-filter-error', async (req, res, next) => {
+  try {
+    const template = '{{ "test" |> nonexistentFilter }}';
+    await nunjucks(template, {}, { dev: true });
+    res.send('Should have thrown');
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/inline-syntax-error', async (req, res, next) => {
+  try {
+    const template = '{% if true %} {% endif %} {{ invalid';
+    await nunjucks(template, {}, { dev: true });
+    res.send('Should have thrown');
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/undefined-block', async (req, res, next) => {
   try {
     res.render('error-undefined-block', {});
