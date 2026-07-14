@@ -1,7 +1,61 @@
-{% extends "base.njk" %}
-
-{% block content %}
-Hello, {{ username |> default('poop') |> safe }}! This is just some content.
-
-<div id="dynamic"></div>
-{% endblock %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Nunjucks Error Classification Demo</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1100px; margin: 0 auto; padding: 20px; }
+    h1 { color: #e74c3c; }
+    h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th, td { text-align: left; padding: 12px; border: 1px solid #ddd; }
+    th { background: #3498db; color: white; }
+    tr:nth-child(even) { background: #f9f9f9; }
+    a { color: #3498db; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .info { background: #ecf0f1; padding: 15px; border-radius: 8px; margin: 20px 0; }
+    .nav { margin: 20px 0; }
+    .nav a { display: inline-block; padding: 10px 15px; background: #3498db; color: white; border-radius: 5px; margin-right: 10px; }
+    .nav a:hover { background: #2980b9; }
+  </style>
+</head>
+<body>
+  <h1>Nunjucks Error Classification Demo</h1>
+  <div class="info">
+    <p><strong>25+ Error Categories</strong> - Click any route to see the error in action.</p>
+  </div>
+  <h2>Template Errors</h2>
+  <table>
+    <tr>
+      <th>Category</th>
+      <th>Route</th>
+      <th>Description</th>
+    </tr>
+    <tr><td><code>undefined_variable</code></td><td><a href="/errors/undefined-variable">/errors/undefined-variable</a></td><td>Variable not in context</td></tr>
+    <tr><td><code>undefined_function</code></td><td><a href="/errors/undefined-function">/errors/undefined-function</a></td><td>Function not registered</td></tr>
+    <tr><td><code>not_a_function</code></td><td><a href="/errors/not-a-function">/errors/not-a-function</a></td><td>Calling non-function value</td></tr>
+    <tr><td><code>undefined_filter</code></td><td><a href="/errors/undefined-filter">/errors/undefined-filter</a></td><td>Filter not registered</td></tr>
+    <tr><td><code>filter_error</code></td><td><a href="/errors/filter-error">/errors/filter-error</a></td><td>Filter throws during execution</td></tr>
+    <tr><td><code>undefined_value</code></td><td><a href="/errors/undefined-value">/errors/undefined-value</a></td><td>Nested property is null</td></tr>
+    <tr><td><code>syntax_error</code></td><td><a href="/errors/syntax-error">/errors/syntax-error</a></td><td>Invalid template syntax</td></tr>
+    <tr><td><code>invalid_lookup</code></td><td><a href="/errors/invalid-lookup">/errors/invalid-lookup</a></td><td>Invalid bracket notation</td></tr>
+    <tr><td><code>duplicate_block</code></td><td><a href="/errors/duplicate-block">/errors/duplicate-block</a></td><td>Duplicate block definition</td></tr>
+  </table>
+  <h2>Also Try</h2>
+  <div class="nav">
+    <a href="/home">/home</a>
+    <a href="/info">/info</a>
+    <a href="/sandbox">/sandbox</a>
+    <a href="/undefined">/undefined</a>
+    <a href="/remote">/remote</a>
+  </div>
+  <h2>New Features</h2>
+  <div class="nav">
+    <a href="/demo/try-catch">/demo/try-catch</a>
+    <a href="/demo/with">/demo/with</a>
+    <a href="/demo/do">/demo/do</a>
+    <a href="/demo/switch">/demo/switch</a>
+    <a href="/demo/call">/demo/call</a>
+    <a href="/demo/pipe">/demo/pipe</a>
+  </div>
+</body>
+</html>
