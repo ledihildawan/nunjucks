@@ -81,7 +81,7 @@ export const render = async (template, context = {}, config = {}) => {
     c.compile(transformedAst);
     code = c.getCode();
   } catch (err) {
-    throw await wrapErrorWithHtml(err, config, template, context);
+    throw await wrapErrorWithHtml(err, config, templateSource, context);
   }
 
   const internalKeys = ['__nunjucks_undefined_mode', 'exports', 'module', 'require', '__dirname', '__filename', 'global', 'globalThis', 'process'];
@@ -108,7 +108,7 @@ export const render = async (template, context = {}, config = {}) => {
     }
     return await renderPromise;
   } catch (err) {
-    throw await wrapErrorWithHtml(err, config, template, context);
+    throw await wrapErrorWithHtml(err, config, templateSource, context);
   }
 };
 
