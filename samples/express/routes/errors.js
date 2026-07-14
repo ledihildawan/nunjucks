@@ -338,40 +338,4 @@ router.get('/container-error', async (req, res, next) => {
   }
 });
 
-router.get('/filter-type-error', async (req, res, next) => {
-  try {
-    const html = await nunjucks('{{ items | sort(attribute="missingAttr") }}', { items: [{ a: 1 }] }, { dev: true });
-    res.type('html').send(html);
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get('/groupby-error', async (req, res, next) => {
-  try {
-    const html = await nunjucks('{{ items | groupby(attribute="missingAttr") }}', { items: [{ a: 1 }] }, { dev: true });
-    res.type('html').send(html);
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get('/dictsort-error', async (req, res, next) => {
-  try {
-    const html = await nunjucks('{{ nonObjectVar | dictsort }}', { nonObjectVar: "not an object" }, { dev: true });
-    res.type('html').send(html);
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get('/sort-error', async (req, res, next) => {
-  try {
-    const html = await nunjucks('{{ items | sort(attribute="missingAttr") }}', { items: [{ a: 1 }] }, { dev: true });
-    res.type('html').send(html);
-  } catch (err) {
-    next(err);
-  }
-});
-
 export { router as errorRouter, errorRoutes };
