@@ -48,4 +48,7 @@ export const PATTERNS = {
   PARSER_ERROR: /Unexpected value while parsing/i,
   PUSH_TOKEN_ERROR: /can only push one token on between reads/i,
   GROUPBY_TYPE_ERROR: /groupby: attribute/i,
+  ASSERT_TYPE_ERROR: /assertType.*invalid type/i,
+  SANDBOX_CODE_EXECUTION: /Code execution is blocked/i,
+  CODE_EXECUTION_BLOCKED: /Sandbox: Code execution.*is blocked/i,
 };
