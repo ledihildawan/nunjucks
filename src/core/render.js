@@ -50,7 +50,15 @@ export const render = async (template, context = {}, config = {}) => {
     throw await wrapErrorWithHtml(err, config, template, context);
   }
 
-  const sandboxedCtx = createSandboxedContext(context, config.sandbox);
+  const internalKeys = ['__nunjucks_undefined_mode', 'exports', 'module', 'require', '__dirname', '__filename', 'global', 'globalThis', 'process'];
+  const userAllowlist = config.sandboxAllowlist || [];
+  const mergedAllowlist = [...new Set([...internalKeys, ...userAllowlist])];
+  
+  const sandboxOptions = {
+    allowlist: mergedAllowlist,
+    blocklistMode: config.sandboxMode !== 'allowlist'
+  };
+  const sandboxedCtx = createSandboxedContext(context, config.sandbox, sandboxOptions);
   sandboxedCtx.__nunjucks_undefined_mode = config.undefined || 'default';
 
   const runtime = buildRuntime(config);
