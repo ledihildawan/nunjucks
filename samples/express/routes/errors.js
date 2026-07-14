@@ -239,4 +239,139 @@ router.get('/filter-throw', async (req, res, next) => {
   }
 });
 
+router.get('/sandbox-timeout', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{% for i in range(0, 100000) %}{{ i }}{% endfor %}', {}, { dev: true, sandbox: true, executionTimeout: 1 });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/sandbox-context-modify', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{% set globals = {} %}', {}, { dev: true, sandbox: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/blocked-context-keys', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ user.name }}', { user: { name: 'test', __proto__: {} } }, { dev: true, strictMode: true, blockedContextKeys: ['__proto__'] });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/dangerous-context', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ user.name }}', { user: { name: 'test', eval: () => {} } }, { dev: true, strictMode: true, scanContextValues: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/dangerous-template', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ (function(){return global})() }}', {}, { dev: true, strictMode: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/template-size', async (req, res, next) => {
+  try {
+    const largeTemplate = 'x'.repeat(10000);
+    const html = await nunjucks(largeTemplate, {}, { dev: true, maxTemplateSize: 1000 });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/invalid-config', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ test }}', { test: 'value' }, { dev: true, executionTimeout: -1 });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/template-not-string', async (req, res, next) => {
+  try {
+    const html = await nunjucks(null, {}, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/key-not-found', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ missingKey }}', {}, { dev: true, undefined: 'strict' });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/import-error', async (req, res, next) => {
+  try {
+    res.render('error-import-error', {});
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/container-error', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{% set x = container.get("missing") %}', {}, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/filter-type-error', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ items | sort("missingAttr") }}', { items: [{ a: 1 }] }, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/groupby-error', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ items | groupby("missingAttr") }}', { items: [{ a: 1 }] }, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/dictsort-error', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ "not an object" | dictsort }}', {}, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/sort-error', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ items | sort("missingAttr") }}', { items: [{ a: 1 }] }, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export { router as errorRouter, errorRoutes };

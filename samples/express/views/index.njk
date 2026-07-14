@@ -21,7 +21,7 @@
 <body>
   <h1>Nunjucks Error Classification Demo</h1>
   <div class="info">
-    <p><strong>25+ Error Categories</strong> - Click any route to see the error in action.</p>
+    <p><strong>56 Error Patterns</strong> - Click any route to see the error in action.</p>
   </div>
 
   <h2>Template Errors (from .njk files)</h2>
@@ -66,10 +66,35 @@
     <tr><td><code>sandbox_blocked</code></td><td><a href="/errors/sandbox-constructor">/errors/sandbox-constructor</a></td><td>Sandbox blocks constructor access</td></tr>
     <tr><td><code>sandbox_blocked</code></td><td><a href="/errors/sandbox-process">/errors/sandbox-process</a></td><td>Sandbox blocks process access</td></tr>
     <tr><td><code>sandbox_blocked</code></td><td><a href="/errors/sandbox-set">/errors/sandbox-set</a></td><td>Sandbox blocks setting __proto__</td></tr>
+    <tr><td><code>sandbox_blocked</code></td><td><a href="/errors/sandbox-timeout">/errors/sandbox-timeout</a></td><td>Template execution timed out</td></tr>
+    <tr><td><code>sandbox_blocked</code></td><td><a href="/errors/sandbox-context-modify">/errors/sandbox-context-modify</a></td><td>Cannot modify sandboxed context</td></tr>
     <tr><td><code>slice_error</code></td><td><a href="/errors/slice-error">/errors/slice-error</a></td><td>Slice step cannot be zero</td></tr>
     <tr><td><code>iterable_error</code></td><td><a href="/errors/list-filter-error">/errors/list-filter-error</a></td><td>List filter requires iterable</td></tr>
     <tr><td><code>operator_error</code></td><td><a href="/errors/in-operator-error">/errors/in-operator-error</a></td><td>In operator on primitive type</td></tr>
     <tr><td><code>filter_error</code></td><td><a href="/errors/filter-throw">/errors/filter-throw</a></td><td>Filter throws during execution</td></tr>
+  </table>
+
+  <h2>Security & Validation Errors</h2>
+  <table>
+    <tr><th>Category</th><th>Route</th><th>Description</th></tr>
+    <tr><td><code>security_error</code></td><td><a href="/errors/blocked-context-keys">/errors/blocked-context-keys</a></td><td>Context contains blocked keys</td></tr>
+    <tr><td><code>security_error</code></td><td><a href="/errors/dangerous-context">/errors/dangerous-context</a></td><td>Context contains dangerous values</td></tr>
+    <tr><td><code>security_error</code></td><td><a href="/errors/dangerous-template">/errors/dangerous-template</a></td><td>Template contains dangerous code</td></tr>
+    <tr><td><code>validation_error</code></td><td><a href="/errors/template-size">/errors/template-size</a></td><td>Template exceeds maximum size</td></tr>
+    <tr><td><code>validation_error</code></td><td><a href="/errors/invalid-config">/errors/invalid-config</a></td><td>Invalid config (negative timeout)</td></tr>
+    <tr><td><code>validation_error</code></td><td><a href="/errors/template-not-string">/errors/template-not-string</a></td><td>Template must be a string</td></tr>
+  </table>
+
+  <h2>Runtime & Filter Errors</h2>
+  <table>
+    <tr><th>Category</th><th>Route</th><th>Description</th></tr>
+    <tr><td><code>runtime_error</code></td><td><a href="/errors/key-not-found">/errors/key-not-found</a></td><td>Key not found in context</td></tr>
+    <tr><td><code>runtime_error</code></td><td><a href="/errors/import-error">/errors/import-error</a></td><td>Cannot import symbol</td></tr>
+    <tr><td><code>runtime_error</code></td><td><a href="/errors/container-error">/errors/container-error</a></td><td>Container not registered</td></tr>
+    <tr><td><code>runtime_error</code></td><td><a href="/errors/filter-type-error">/errors/filter-type-error</a></td><td>Filter attribute resolved to undefined</td></tr>
+    <tr><td><code>runtime_error</code></td><td><a href="/errors/groupby-error">/errors/groupby-error</a></td><td>Groupby attribute undefined</td></tr>
+    <tr><td><code>runtime_error</code></td><td><a href="/errors/dictsort-error">/errors/dictsort-error</a></td><td>Dictsort val must be object</td></tr>
+    <tr><td><code>runtime_error</code></td><td><a href="/errors/sort-error">/errors/sort-error</a></td><td>Sort attribute undefined</td></tr>
   </table>
 
   <h2>Also Try</h2>
