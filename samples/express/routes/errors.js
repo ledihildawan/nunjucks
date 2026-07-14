@@ -338,4 +338,85 @@ router.get('/container-error', async (req, res, next) => {
   }
 });
 
+router.get('/reserved-keyword-filter', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ value |> upper }}', { value: 'test' }, { dev: true, filters: { myFilter: (v) => v } });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/reserved-keyword-global', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ myArray }}', { myArray: [1, 2, 3] }, { dev: true, globals: { Array: {} } });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/groupby-type-error', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ items | groupby("missing") }}', { items: [{ name: 'test' }] }, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/sort-type-error', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ items | sort("missing") }}', { items: [{ name: 'test' }] }, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/dictsort-value-error', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ data | dictsort }}', { data: 'not an object' }, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/dictsort-by-error', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{{ data | dictsort(false, "invalid") }}', { data: { a: 1, b: 2 } }, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/no-super-block-runtime', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{% block content %}{{ super() }}{% endblock %}', {}, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/invalid-boolean', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{% if invalidBoolean %}test{% endif %}', { invalidBoolean: 'not a boolean' }, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/parser-expected', async (req, res, next) => {
+  try {
+    const html = await nunjucks('{% for item in items %}{{ item }}{% endfor %}', {}, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export { router as errorRouter, errorRoutes };
