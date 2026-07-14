@@ -37,26 +37,26 @@
     <tr><td><code>invalid_lookup</code></td><td><a href="/errors/invalid-lookup">/errors/invalid-lookup</a></td><td>Invalid bracket notation</td></tr>
     <tr><td><code>duplicate_block</code></td><td><a href="/errors/duplicate-block">/errors/duplicate-block</a></td><td>Duplicate block definition</td></tr>
     <tr><td><code>unknown_block_tag</code></td><td><a href="/errors/unknown-block-tag">/errors/unknown-block-tag</a></td><td>Unmatched closing tag</td></tr>
-    <tr><td><code>no_caller</code></td><td><a href="/errors/no-caller-macro">/errors/no-caller-macro</a></td><td>caller outside macro</td></tr>
+    <tr><td><code>undefined_variable</code></td><td><a href="/errors/no-caller-macro">/errors/no-caller-macro</a></td><td>caller outside macro</td></tr>
   </table>
 
   <h2>Extends/Include Errors</h2>
   <table>
     <tr><th>Category</th><th>Route</th><th>Description</th></tr>
-    <tr><td><code>extends_error</code></td><td><a href="/errors/undefined-block">/errors/undefined-block</a></td><td>Block not in parent template</td></tr>
-    <tr><td><code>extends_error</code></td><td><a href="/errors/no-super-block">/errors/no-super-block</a></td><td>super() called without parent block</td></tr>
-    <tr><td><code>include_error</code></td><td><a href="/errors/invalid-include">/errors/invalid-include</a></td><td>Non-string template name for include</td></tr>
-    <tr><td><code>include_error</code></td><td><a href="/errors/circular-include">/errors/circular-include</a></td><td>Template includes itself</td></tr>
-    <tr><td><code>include_error</code></td><td><a href="/errors/file-not-found">/errors/file-not-found</a></td><td>Included template not found</td></tr>
+    <tr><td><code>undefined_block</code></td><td><a href="/errors/undefined-block">/errors/undefined-block</a></td><td>Block not in parent template</td></tr>
+    <tr><td><code>no_super_block</code></td><td><a href="/errors/no-super-block">/errors/no-super-block</a></td><td>super() called without parent block</td></tr>
+    <tr><td><code>invalid_include</code></td><td><a href="/errors/invalid-include">/errors/invalid-include</a></td><td>Non-string template name for include</td></tr>
+    <tr><td><code>circular_include</code></td><td><a href="/errors/circular-include">/errors/circular-include</a></td><td>Template includes itself</td></tr>
+    <tr><td><code>file_not_found</code></td><td><a href="/errors/file-not-found">/errors/file-not-found</a></td><td>Included template not found</td></tr>
     <tr><td><code>filesystem_error</code></td><td><a href="/errors/filesystem-error">/errors/filesystem-error</a></td><td>Absolute path with non-existent file</td></tr>
   </table>
 
   <h2>Inline Template Errors</h2>
   <table>
     <tr><th>Category</th><th>Route</th><th>Description</th></tr>
-    <tr><td><code>inline_error</code></td><td><a href="/errors/inline-error">/errors/inline-error</a></td><td>Inline template undefined variable</td></tr>
-    <tr><td><code>inline_filter_error</code></td><td><a href="/errors/inline-filter-error">/errors/inline-filter-error</a></td><td>Inline template undefined filter</td></tr>
-    <tr><td><code>inline_syntax_error</code></td><td><a href="/errors/inline-syntax-error">/errors/inline-syntax-error</a></td><td>Inline template syntax error</td></tr>
+    <tr><td><code>undefined_variable</code></td><td><a href="/errors/inline-error">/errors/inline-error</a></td><td>Inline template undefined variable</td></tr>
+    <tr><td><code>undefined_filter</code></td><td><a href="/errors/inline-filter-error">/errors/inline-filter-error</a></td><td>Inline template undefined filter</td></tr>
+    <tr><td><code>syntax_error</code></td><td><a href="/errors/inline-syntax-error">/errors/inline-syntax-error</a></td><td>Inline template syntax error</td></tr>
   </table>
 
   <h2>Sandbox Errors</h2>
@@ -88,14 +88,14 @@
   <h2>Runtime & Filter Errors</h2>
   <table>
     <tr><th>Category</th><th>Route</th><th>Description</th></tr>
-    <tr><td><code>runtime_error</code></td><td><a href="/errors/key-not-found">/errors/key-not-found</a></td><td>Key not found in context</td></tr>
+    <tr><td><code>validation_error</code></td><td><a href="/errors/key-not-found">/errors/key-not-found</a></td><td>Key not found in context</td></tr>
     <tr><td><code>runtime_error</code></td><td><a href="/errors/import-error">/errors/import-error</a></td><td>Cannot import symbol</td></tr>
-    <tr><td><code>runtime_error</code></td><td><a href="/errors/container-error">/errors/container-error</a></td><td>Container not registered</td></tr>
+    <tr><td><code>config_error</code></td><td><a href="/errors/container-error">/errors/container-error</a></td><td>Container not registered</td></tr>
     <tr><td><code>filter_error</code></td><td><a href="/errors/groupby-type-error">/errors/groupby-type-error</a></td><td>Groupby attribute undefined</td></tr>
     <tr><td><code>filter_error</code></td><td><a href="/errors/sort-type-error">/errors/sort-type-error</a></td><td>Sort attribute undefined</td></tr>
     <tr><td><code>filter_error</code></td><td><a href="/errors/dictsort-value-error">/errors/dictsort-value-error</a></td><td>Dictsort requires object</td></tr>
     <tr><td><code>filter_error</code></td><td><a href="/errors/dictsort-by-error">/errors/dictsort-by-error</a></td><td>Dictsort invalid 'by' param</td></tr>
-    <tr><td><code>undefined_block</code></td><td><a href="/errors/no-super-block-runtime">/errors/no-super-block-runtime</a></td><td>super() without parent block</td></tr>
+    <tr><td><code>no_super_block</code></td><td><a href="/errors/no-super-block-runtime">/errors/no-super-block-runtime</a></td><td>super() without parent block</td></tr>
   </table>
 
   <h2>Reserved Keyword Errors</h2>
