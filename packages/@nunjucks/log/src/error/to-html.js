@@ -90,7 +90,8 @@ export const toHtml = (error, options = {}) => {
   const plain = toText(error, { verbosity: 'simple' });
 
   const category = error.code || classified?.category?.toUpperCase() || 'UNKNOWN';
-  const displayLine = (lineno ?? error?.lineno ?? 0) + 1;
+  const rawLineno = lineno ?? error?.lineno ?? 0;
+  const displayLine = rawLineno > 0 ? rawLineno : 1;
   const displayCol = (colno ?? error?.colno ?? 0) + 1;
   const displayPath = templatePath || 'unknown';
 
@@ -100,10 +101,11 @@ export const toHtml = (error, options = {}) => {
   let startLine = 0;
   if (!codeSnippet && sourceContent) {
     const lines = sourceContent.split('\n');
-    startLine = Math.max(0, displayLine - 3);
-    const endLine = Math.min(lines.length, displayLine + 2);
+    const clampedLine = Math.min(displayLine, lines.length);
+    startLine = Math.max(0, clampedLine - 3);
+    const endLine = Math.min(lines.length, clampedLine + 2);
     codeSnippet = lines.slice(startLine, endLine).join('\n');
-    snippetErrorIndex = displayLine - startLine - 1;
+    snippetErrorIndex = clampedLine - startLine - 1;
   }
 
   const badgeCode = category;
