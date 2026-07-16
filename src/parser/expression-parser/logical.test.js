@@ -2,12 +2,33 @@ import { describe, test, expect } from 'bun:test';
 import { parseOr, parseAnd, parseNot } from './logical.js';
 import { nodes } from '../../nodes/index.js';
 import { createCursor } from '../cursor.js';
-import { TOKEN_SYMBOL } from '../../lexer/token-types.js';
+import { TOKEN_SYMBOL, TOKEN_OPERATOR } from '../../lexer/token-types.js';
 
 describe('parseOr', () => {
   test('creates Or node for or operator', () => {
     const seq = [
       { type: TOKEN_SYMBOL, value: 'or', lineno: 1, colno: 3 },
+    ];
+    let n = 0;
+    const tokens = { nextToken: () => seq[n++] };
+    const left = nodes.literal(1, 1, true);
+    const right = nodes.literal(1, 6, false);
+    let c = 0;
+    const ctx = Object.assign(createCursor(tokens), {
+      parsePrimary: () => { const v = [left, right]; return v[c++]; },
+      parsePipe: (x) => x,
+    });
+
+    const result = parseOr(ctx);
+
+    expect(nodes.isOr(result)).toBe(true);
+    expect(result.left).toBe(left);
+    expect(result.right).toBe(right);
+  });
+
+  test('creates Or node for || operator', () => {
+    const seq = [
+      { type: TOKEN_OPERATOR, value: '||', lineno: 1, colno: 3 },
     ];
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
@@ -60,6 +81,27 @@ describe('parseAnd', () => {
     expect(result.right).toBe(right);
   });
 
+  test('creates And node for && operator', () => {
+    const seq = [
+      { type: TOKEN_OPERATOR, value: '&&', lineno: 1, colno: 3 },
+    ];
+    let n = 0;
+    const tokens = { nextToken: () => seq[n++] };
+    const left = nodes.literal(1, 1, true);
+    const right = nodes.literal(1, 6, false);
+    let c = 0;
+    const ctx = Object.assign(createCursor(tokens), {
+      parsePrimary: () => { const v = [left, right]; return v[c++]; },
+      parsePipe: (x) => x,
+    });
+
+    const result = parseAnd(ctx);
+
+    expect(nodes.isAnd(result)).toBe(true);
+    expect(result.left).toBe(left);
+    expect(result.right).toBe(right);
+  });
+
   test('returns single node without and', () => {
     const tokens = { nextToken: () => ({ type: TOKEN_SYMBOL, value: 'x', lineno: 1, colno: 1 }) };
     const node = nodes.literal(1, 1, true);
@@ -80,6 +122,24 @@ describe('parseNot', () => {
     let n = 0;
     const tokens = { nextToken: () => seq[n++] };
     const node = nodes.literal(1, 5, false);
+    const ctx = Object.assign(createCursor(tokens), {
+      parsePrimary: () => node,
+      parsePipe: (x) => x,
+    });
+
+    const result = parseNot(ctx);
+
+    expect(nodes.isNot(result)).toBe(true);
+    expect(result.target).toBe(node);
+  });
+
+  test('creates Not node for ! operator', () => {
+    const seq = [
+      { type: TOKEN_OPERATOR, value: '!', lineno: 1, colno: 1 },
+    ];
+    let n = 0;
+    const tokens = { nextToken: () => seq[n++] };
+    const node = nodes.literal(1, 2, false);
     const ctx = Object.assign(createCursor(tokens), {
       parsePrimary: () => node,
       parsePipe: (x) => x,

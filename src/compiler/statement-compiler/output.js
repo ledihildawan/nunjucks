@@ -65,9 +65,7 @@ export const compileOutput = (ctx, node, frame) => {
       if (useEnsureDefined) {
         const nameArg = varName ? `, "${varName}"` : ', null';
         const modeArg = effectiveMode ? `, "${effectiveMode}"` : '';
-        const escapedTemplateName = ctx.templateName ? ctx.templateName.replace(/\\/g, '\\\\').replace(/"/g, '\\"') : null;
-        const tmplArg = escapedTemplateName ? `, "${escapedTemplateName}"` : ', null';
-        ctx._emit(`,${child.lineno},${child.colno}${nameArg}${tmplArg}${modeArg})`);
+        ctx._emit(`,${child.lineno},${child.colno}${nameArg}, null${modeArg})`);
       }
       if (!isPipeType) {
         ctx._emit(')');

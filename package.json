@@ -4,7 +4,13 @@
   "version": "3.2.4",
   "author": "James Long <longster@gmail.com>",
   "type": "module",
+  "workspaces": [
+    "packages/@nunjucks/shared",
+    "packages/@nunjucks/log"
+  ],
   "dependencies": {
+    "@nunjucks/log": "workspace:*",
+    "@nunjucks/shared": "workspace:*",
     "express": "5",
     "picocolors": "^1.1.1",
     "remeda": "^2.39.0",

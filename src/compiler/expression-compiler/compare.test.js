@@ -17,7 +17,7 @@ describe('compileCompare', () => {
     const ctx = makeCtx();
     const node = {
       expr: { mock: 'left' },
-      ops: [{ type: '==', expr: { mock: 'right' } }],
+      ops: [{ operator: '==', expr: { mock: 'right' } }],
     };
     compileCompare(ctx, node);
     expect(ctx.emitted).toEqual(['left', ' == ', 'right']);
@@ -28,8 +28,8 @@ describe('compileCompare', () => {
     const node = {
       expr: { mock: 'x' },
       ops: [
-        { type: '<', expr: { mock: 'y' } },
-        { type: '<', expr: { mock: 'z' } },
+        { operator: '<', expr: { mock: 'y' } },
+        { operator: '<', expr: { mock: 'z' } },
       ],
     };
     compileCompare(ctx, node);
@@ -42,7 +42,7 @@ describe('compileCompare', () => {
       const ctx = makeCtx();
       compileCompare(ctx, {
         expr: { mock: 'a' },
-        ops: [{ type: op, expr: { mock: 'b' } }],
+        ops: [{ operator: op, expr: { mock: 'b' } }],
       });
       expect(ctx.emitted[1].trim()).toBe(op);
     }

@@ -1,12 +1,16 @@
 import { isString, isPlainObject, groupBy } from 'remeda';
-import { createTemplateError } from '../error/index.js';
+import { createLog } from '@nunjucks/log';
 import { getAttrGetter } from '../helpers/attributes.js';
 
 const isObject = isPlainObject;
 
 export function dictsort(val, caseSensitive, by) {
   if (!isObject(val)) {
-    throw createTemplateError('dictsort filter: val must be an object');
+    throw createLog('error', {
+      message: 'dictsort filter: val must be an object',
+      lineno: 0,
+      colno: 0
+    });
   }
 
   let array = [];
@@ -20,8 +24,11 @@ export function dictsort(val, caseSensitive, by) {
   } else if (by === 'value') {
     si = 1;
   } else {
-    throw createTemplateError(
-      'dictsort filter: You can only sort by either key or value');
+    throw createLog('error', {
+      message: 'dictsort filter: You can only sort by either key or value',
+      lineno: 0,
+      colno: 0
+    });
   }
 
   array = array.toSorted((t1, t2) => {
@@ -44,16 +51,22 @@ export function dictsort(val, caseSensitive, by) {
 }
 
 export function groupby(arr, attr) {
-  const undefinedMode = this.env.opts.undefined;
+  if (!arr || !Array.isArray(arr)) {
+    throw new TypeError('groupby: first argument must be an array');
+  }
+
+  for (const item of arr) {
+    if (item && typeof item === 'object' && !(attr in item)) {
+      throw new TypeError(`groupby: attribute "${attr}" resolved to undefined`);
+    }
+  }
+
   const getAttr = getAttrGetter(attr);
 
   return groupBy(arr, (item, i) => {
     const key = getAttr(item, i);
     if (key === undefined) {
-      if (undefinedMode === 'strict') {
-        throw new TypeError(`groupby: attribute "${attr}" resolved to undefined`);
-      }
-      return String(key);
+      throw new TypeError(`groupby: attribute "${attr}" resolved to undefined`);
     }
     return key;
   });

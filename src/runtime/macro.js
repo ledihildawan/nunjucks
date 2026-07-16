@@ -61,3 +61,20 @@ export function numArgs(args) {
     return len;
   }
 }
+
+export function withKwargs(func) {
+  return function(...args) {
+    const positionalArgs = [];
+    const kwargs = {};
+
+    for (const arg of args) {
+      if (isKeywordArgs(arg)) {
+        Object.assign(kwargs, arg);
+      } else {
+        positionalArgs.push(arg);
+      }
+    }
+
+    return func.apply(this, [...positionalArgs, kwargs]);
+  };
+}

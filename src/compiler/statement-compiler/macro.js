@@ -8,7 +8,7 @@ const compileMacro = (ctx, node, frame) => {
   const keepFrame = (frame !== undefined);
 
   node.args.children.forEach((arg, i, arr) => {
-    if (i === arr.length - 1 && nodes.isDict(arg)) {
+    if (i === arr.length - 1 && (nodes.isDict(arg) || nodes.isKeywordArgs(arg))) {
       kwargs = arg;
     } else {
       ctx.assertType(arg, 'symbol');

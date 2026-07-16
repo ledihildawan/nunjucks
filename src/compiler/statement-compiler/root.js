@@ -41,11 +41,15 @@ export const compileRoot = (ctx, node, frame) => {
 
   blocks.forEach((block) => {
     const name = block.name?.value;
+    const lineno = block.lineno;
 
     if (!name) return;
 
     if (seenBlocks.includes(name)) {
-      throw new Error(`Block "${name}" defined more than once.`);
+      const err = new Error(`Block "${name}" defined more than once.`);
+      err.lineno = lineno;
+      err.colno = block.name?.colno || 0;
+      throw err;
     }
     seenBlocks.push(name);
 

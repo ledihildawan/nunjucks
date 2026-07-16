@@ -4,7 +4,14 @@ import {
   inOperator, fromIterator, callWrap,
   ensureDefined, isSafeString, markSafe, copySafeness,
   lookup,
-  createContext
+  createContext,
+  createFrame,
+  makeKeywordArgs,
+  isKeywordArgs,
+  getKeywordArgs,
+  numArgs,
+  makeMacro,
+  createSafeString,
 } from '../runtime/index.js';
 
 const getRenderFunction = (code) => {
@@ -36,6 +43,13 @@ const getRuntimeHelpers = () => ({
   markSafe,
   copySafeness,
   lookup,
+  createFrame,
+  createSafeString,
+  makeKeywordArgs,
+  isKeywordArgs,
+  getKeywordArgs,
+  numArgs,
+  makeMacro,
   escape: (str, autoescape = true) => {
     if (!autoescape) return str;
     if (str && typeof str === 'object' && isSafeString(str)) return str.val;
@@ -68,16 +82,24 @@ export const execute = async (code, context = {}, config = {}) => {
   const getFilter = (name) => {
     const filterFn = filters[name];
     if (filterFn) return filterFn;
-    if (context[name] && typeof context[name] === 'function') return context[name];
+    const ctxFn = context[name] && typeof context[name] === 'function' ? context[name] : null;
+    if (ctxFn) return ctxFn;
     throw new Error(`Filter "${name}" not found`);
   };
 
   // Create runtime object for the new format
+  const warningsCollector = config.warningsCollector || [];
+  const logContext = {
+    templateName: config.templateName || 'inline',
+    phase: 'render'
+  };
   const runtime = { 
     ...globals, 
     ...filters, 
     ...getRuntimeHelpers(),
     getFilter,
+    __warnings__: warningsCollector,
+    logContext
   };
 
   if (config.env) {
@@ -89,6 +111,7 @@ export const execute = async (code, context = {}, config = {}) => {
     ctx = createContext(context, {}, config.env);
     ctx._autoescape = config.autoescape ?? true;
   } else {
+    const exported = [];
     ctx = {
       ...context,
       _autoescape: config.autoescape ?? true,
@@ -100,6 +123,19 @@ export const execute = async (code, context = {}, config = {}) => {
           return runtime[key];
         }
         return undefined;
+      },
+      setVariable: function(name, val) {
+        ctx[name] = val;
+      },
+      addExport: function(name) {
+        exported.push(name);
+      },
+      getExported: function() {
+        const result = {};
+        exported.forEach((name) => {
+          result[name] = ctx[name];
+        });
+        return result;
       }
     };
   }
@@ -123,8 +159,18 @@ export const execute = async (code, context = {}, config = {}) => {
     
     const safeRuntime = { ...runtime };
     
-    // Create env object for new format
-    const env = { opts: { autoescape: config.autoescape ?? true } };
+    // Create env object for new format with getFilter
+    const env = {
+      opts: {
+        autoescape: config.autoescape ?? true,
+        undefined: config.undefined ?? 'default'
+      },
+      getFilter: (name) => {
+        const filterFn = filters[name];
+        if (filterFn) return filterFn;
+        throw new Error(`Filter "${name}" not found`);
+      }
+    };
     
     // Execute code - support both old and new format
     const { render } = getRenderFunction(code);
@@ -136,7 +182,17 @@ export const execute = async (code, context = {}, config = {}) => {
   const { render } = getRenderFunction(code);
   
   // Create env object for new format (matches new compiler expectations)
-  const env = { opts: { autoescape: config.autoescape ?? true } };
+  const env = {
+    opts: {
+      autoescape: config.autoescape ?? true,
+      undefined: config.undefined ?? 'default'
+    },
+    getFilter: (name) => {
+      const filterFn = filters[name];
+      if (filterFn) return filterFn;
+      throw new Error(`Filter "${name}" not found`);
+    }
+  };
   
   return await render(env, ctx, emptyFrame, runtime);
 };

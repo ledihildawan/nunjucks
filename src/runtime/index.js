@@ -1,4 +1,4 @@
-import { createTemplateError } from '../error/index.js';
+import { createLog } from '@nunjucks/log';
 import { isArray, keys, isNonNullish, isFunction, isString, isPlainObject } from 'remeda';
 import { createFrame } from './frame.js';
 import {
@@ -13,6 +13,7 @@ import {
   isKeywordArgs,
   getKeywordArgs,
   numArgs,
+  withKwargs,
 } from './macro.js';
 import {
   memberLookup,
@@ -61,6 +62,7 @@ export {
   isKeywordArgs,
   getKeywordArgs,
   numArgs,
+  withKwargs,
   memberLookup,
   optionalMemberLookup,
   slice,
@@ -110,13 +112,31 @@ export function awaitValue(val) {
 
 export function ensureDefined(val, lineno, colno, varName = null, templateName = null, undefinedMode = 'chainable') {
   if (!isNonNullish(val)) {
+    const ctx = (this && this.logContext) ? this.logContext : { templateName: null, phase: 'render' };
+    const effectiveTemplateName = templateName || ctx.templateName || 'inline';
+
     if (undefinedMode === 'strict') {
-      throw createTemplateError(
-        `attempted to output${varName ? ` '${varName}'` : ''} null or undefined value`,
+      throw createLog('error', {
+        message: `attempted to output${varName ? ` '${varName}'` : ''} null or undefined value`,
         lineno,
         colno,
-        { code: varName ? 'UNDEFINED_VARIABLE' : 'UNDEFINED_VALUE', subject: varName, phase: 'render' }
-      );
+        info: { code: varName ? 'UNDEFINED_VARIABLE' : 'UNDEFINED_VALUE', subject: varName, phase: ctx.phase || 'render', templateName: effectiveTemplateName }
+      });
+    }
+
+    if (undefinedMode === 'debug') {
+      const warning = createLog('warning', {
+        message: varName
+          ? `Variable '${varName}' is undefined or null`
+          : 'Variable is undefined or null',
+        lineno,
+        colno,
+        info: { varName, templateName: effectiveTemplateName, undefinedMode, phase: ctx.phase || 'render', code: varName ? 'UNDEFINED_VARIABLE' : 'UNDEFINED_VALUE' }
+      });
+      console.warn(warning.output({ verbosity: 'medium', dev: true }));
+      if (this && this.__warnings__) {
+        this.__warnings__.push(warning);
+      }
     }
 
     return 'undefined';
@@ -125,21 +145,22 @@ export function ensureDefined(val, lineno, colno, varName = null, templateName =
 }
 
 export function callWrap(obj, name, displayName, context, args, lineno, colno) {
+  const ctx = (this && this.logContext) ? this.logContext : { templateName: null, phase: 'render' };
   const messageName = displayName || name;
   if (!obj) {
-    throw createTemplateError(
-      `Unable to call \`${messageName}\`, which is undefined or falsey`,
+    throw createLog('error', {
+      message: `Unable to call \`${messageName}\`, which is undefined or falsey`,
       lineno,
       colno,
-      { code: 'UNDEFINED_FUNCTION', subject: name, phase: 'render' }
-    );
+      info: { code: 'UNDEFINED_FUNCTION', subject: name, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline' }
+    });
   } else if (!isFunction(obj)) {
-    throw createTemplateError(
-      `Unable to call \`${messageName}\`, which is not a function`,
+    throw createLog('error', {
+      message: `Unable to call \`${messageName}\`, which is not a function`,
       lineno,
       colno,
-      { code: 'NOT_A_FUNCTION', subject: name, phase: 'render' }
-    );
+      info: { code: 'NOT_A_FUNCTION', subject: name, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline' }
+    });
   }
 
   return obj.apply(context, args);
@@ -167,10 +188,12 @@ export function handleError(error, lineno, colno, sourceMapData) {
     return error;
   }
 
+  const ctx = (this && this.logContext) ? this.logContext : { templateName: null, phase: 'render' };
   const info = {
     code: error.code,
     subject: error.subject,
-    phase: error.phase || 'render'
+    phase: error.phase || ctx.phase || 'render',
+    templateName: ctx.templateName || 'inline'
   };
 
   if (sourceMapData && isArray(sourceMapData) && sourceMapData.length > 0) {
@@ -193,10 +216,20 @@ export function handleError(error, lineno, colno, sourceMapData) {
       }
     };
     const pos = sm.getOriginalPosition(lineno);
-    return createTemplateError(error, pos.line, pos.col, info);
+    return createLog('error', {
+      message: error.message || String(error),
+      lineno: pos.line,
+      colno: pos.col,
+      info
+    });
   }
 
-  return createTemplateError(error, lineno, colno, info);
+  return createLog('error', {
+    message: error.message || String(error),
+    lineno,
+    colno,
+    info
+  });
 }
 
 export function fromIterator(arr) {

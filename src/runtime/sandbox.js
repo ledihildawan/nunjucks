@@ -1,5 +1,5 @@
 import { keys, isNonNullish, isFunction } from 'remeda';
-import { isBlockedKey, isDangerousGlobal, isCodeExecutionPattern, BLOCKED_KEYS_LIST, DANGEROUS_GLOBALS_LIST } from '../shared/blocked-keys.js';
+import { isBlockedKey, isDangerousGlobal, isCodeExecutionPattern, BLOCKED_KEYS_LIST, DANGEROUS_GLOBALS_LIST } from '@nunjucks/shared/blocked-keys';
 
 export { isBlockedKey, isDangerousGlobal, isCodeExecutionPattern, BLOCKED_KEYS_LIST, DANGEROUS_GLOBALS_LIST };
 

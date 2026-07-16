@@ -122,20 +122,33 @@ export function sum(arr, attr, start = 0) {
 export const sort = makeMacro(
   ['value', 'reverse', 'case_sensitive', 'attribute'], [],
   function sortFilter(arr, reversed, caseSens, attr) {
+    if (!arr || !Array.isArray(arr)) {
+      throw new TypeError('sort: first argument must be an array');
+    }
+
+    // Handle positional args: sort(items, attr) or sort(items, attr, reverse)
+    // The attribute can be passed as 2nd arg (string) or 4th arg (keyword)
+    let sortAttr = attr;
+    let sortReverse = reversed;
+    if (typeof reversed === 'string') {
+      sortAttr = reversed;
+      sortReverse = caseSens;
+    }
+
+    if (sortAttr) {
+      for (const item of arr) {
+        if (item && typeof item === 'object' && !(sortAttr in item)) {
+          throw new TypeError(`sort: attribute "${sortAttr}" resolved to undefined`);
+        }
+      }
+    }
+
     let array = map(arr, v => v);
-    let getAttribute = getAttrGetter(attr);
-    const undefinedMode = this.env.opts.undefined;
+    let getAttribute = getAttrGetter(sortAttr);
 
     array = array.toSorted((a, b) => {
-      let x = (attr) ? getAttribute(a) : a;
-      let y = (attr) ? getAttribute(b) : b;
-
-      if (
-        undefinedMode === 'strict' &&
-        attr && (x === undefined || y === undefined)
-      ) {
-        throw new TypeError(`sort: attribute "${attr}" resolved to undefined`);
-      }
+      let x = (sortAttr) ? getAttribute(a) : a;
+      let y = (sortAttr) ? getAttribute(b) : b;
 
       if (!caseSens && isString(x) && isString(y)) {
         x = x.toLowerCase();
@@ -143,9 +156,9 @@ export const sort = makeMacro(
       }
 
       if (x < y) {
-        return reversed ? 1 : -1;
+        return sortReverse ? 1 : -1;
       } else if (x > y) {
-        return reversed ? -1 : 1;
+        return sortReverse ? -1 : 1;
       } else {
         return 0;
       }

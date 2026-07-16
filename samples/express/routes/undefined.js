@@ -86,7 +86,7 @@ router.get('/strict', async (req, res) => {
     await renderTemplate(template, context, { undefined: 'strict' });
     res.send('Should have thrown error');
   } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString ? e.toHtmlString() : e.message);
+    res.status(500).type('html').send(e.output());
   }
 });
 
@@ -118,7 +118,7 @@ router.get('/debug', async (req, res) => {
 </body>
 </html>`);
   } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString ? e.toHtmlString() : e.message);
+    res.status(500).type('html').send(e.output());
   }
 });
 
@@ -166,7 +166,7 @@ router.get('/strict-nested', async (req, res) => {
     await renderTemplate(template, context, { undefined: 'strict' });
     res.send('Should have thrown error');
   } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString ? e.toHtmlString() : e.message);
+    res.status(500).type('html').send(e.output());
   }
 });
 
@@ -178,7 +178,7 @@ router.get('/strict-array', async (req, res) => {
     await renderTemplate(template, context, { undefined: 'strict' });
     res.send('Should have thrown error');
   } catch (e) {
-    res.status(500).type('html').send(e.toHtmlString ? e.toHtmlString() : e.message);
+    res.status(500).type('html').send(e.output());
   }
 });
 

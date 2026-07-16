@@ -1,4 +1,4 @@
-import { createTemplateError } from '../error/index.js';
+import { createLog } from '@nunjucks/log';
 import {
   TOKEN_STRING,
   TOKEN_WHITESPACE,
@@ -166,7 +166,12 @@ export function createTokenizer(str, opts = {}) {
       }
       const symbolToken = createSymbolToken(tok, lineno, colno, false, isBooleanString(tok), isNullString(tok));
       if (symbolToken) return symbolToken;
-      throw createTemplateError('Unexpected value while parsing: ' + tok, state.lineno, state.colno, { phase: 'lex' });
+      throw createLog('error', {
+        message: 'Unexpected value while parsing: ' + tok,
+        lineno: state.lineno,
+        colno: state.colno,
+        info: { phase: 'lex' }
+      });
     },
 
     _parseRegex(lineno, colno) {

@@ -5,37 +5,37 @@ import { RESERVED_KEYWORDS, getReservedKeywords } from '../config/reserved.js';
 describe('validateConfig - reserved keyword validation', () => {
   describe('filters', () => {
     test('rejects nunjucks template keyword as filter name', () => {
-      const result = validateConfig({ filters: { 'if': () => {} } });
+      const result = validateConfig({ _customFilters: { 'if': () => {} } });
       expect(result.valid).toBe(false);
       expect(result.errors[0].message).toContain('reserved');
       expect(result.errors[0].message).toContain('filter');
     });
 
     test('rejects JavaScript built-in as filter name', () => {
-      const result = validateConfig({ filters: { 'Array': () => {} } });
+      const result = validateConfig({ _customFilters: { 'Array': () => {} } });
       expect(result.valid).toBe(false);
       expect(result.errors[0].message).toContain('reserved');
     });
 
     test('rejects nunjucks runtime global as filter name', () => {
-      const result = validateConfig({ filters: { 'range': () => {} } });
+      const result = validateConfig({ _customFilters: { 'range': () => {} } });
       expect(result.valid).toBe(false);
     });
 
     test('rejects existing filter name as filter name', () => {
-      const result = validateConfig({ filters: { 'upper': () => {} } });
+      const result = validateConfig({ _customFilters: { 'upper': () => {} } });
       expect(result.valid).toBe(false);
     });
 
     test('accepts non-reserved filter names', () => {
-      const result = validateConfig({ filters: { 'myCustomFilter': () => {} } });
+      const result = validateConfig({ _customFilters: { 'myCustomFilter': () => {} } });
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
 
     test('rejects multiple reserved filter names in one config', () => {
       const result = validateConfig({
-        filters: {
+        _customFilters: {
           'if': () => {},
           'Array': () => {},
           'upper': () => {}
@@ -48,31 +48,31 @@ describe('validateConfig - reserved keyword validation', () => {
 
   describe('globals', () => {
     test('rejects nunjucks template keyword as global name', () => {
-      const result = validateConfig({ globals: { 'for': {} } });
+      const result = validateConfig({ _customGlobals: { 'for': {} } });
       expect(result.valid).toBe(false);
       expect(result.errors[0].message).toContain('reserved');
       expect(result.errors[0].message).toContain('global');
     });
 
     test('rejects JavaScript built-in as global name', () => {
-      const result = validateConfig({ globals: { 'Object': {} } });
+      const result = validateConfig({ _customGlobals: { 'Object': {} } });
       expect(result.valid).toBe(false);
     });
 
     test('rejects nunjucks runtime global as global name', () => {
-      const result = validateConfig({ globals: { 'cycler': {} } });
+      const result = validateConfig({ _customGlobals: { 'cycler': {} } });
       expect(result.valid).toBe(false);
     });
 
     test('accepts non-reserved global names', () => {
-      const result = validateConfig({ globals: { 'myGlobal': {} } });
+      const result = validateConfig({ _customGlobals: { 'myGlobal': {} } });
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
 
     test('rejects multiple reserved global names in one config', () => {
       const result = validateConfig({
-        globals: {
+        _customGlobals: {
           'for': {},
           'String': {},
           'log': {}
@@ -86,8 +86,8 @@ describe('validateConfig - reserved keyword validation', () => {
   describe('mixed filters and globals', () => {
     test('rejects reserved keywords in both filters and globals', () => {
       const result = validateConfig({
-        filters: { 'if': () => {} },
-        globals: { 'Array': {} }
+        _customFilters: { 'if': () => {} },
+        _customGlobals: { 'Array': {} }
       });
       expect(result.valid).toBe(false);
       expect(result.errors).toHaveLength(2);
@@ -95,8 +95,8 @@ describe('validateConfig - reserved keyword validation', () => {
 
     test('accepts valid filters and globals together', () => {
       const result = validateConfig({
-        filters: { 'myFilter': () => {} },
-        globals: { 'myGlobal': {} }
+        _customFilters: { 'myFilter': () => {} },
+        _customGlobals: { 'myGlobal': {} }
       });
       expect(result.valid).toBe(true);
     });
@@ -104,12 +104,12 @@ describe('validateConfig - reserved keyword validation', () => {
 
   describe('error codes', () => {
     test('returns RESERVED_KEYWORD error code for filters', () => {
-      const result = validateConfig({ filters: { 'if': () => {} } });
+      const result = validateConfig({ _customFilters: { 'if': () => {} } });
       expect(result.errors[0].code).toBe('RESERVED_KEYWORD');
     });
 
     test('returns RESERVED_KEYWORD error code for globals', () => {
-      const result = validateConfig({ globals: { 'for': {} } });
+      const result = validateConfig({ _customGlobals: { 'for': {} } });
       expect(result.errors[0].code).toBe('RESERVED_KEYWORD');
     });
   });

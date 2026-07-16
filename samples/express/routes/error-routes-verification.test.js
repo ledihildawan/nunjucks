@@ -133,44 +133,44 @@ describe('Error Routes - All Throw Errors', () => {
 
 describe('Error HTML Output - All Have toHtmlString', () => {
   
-  test('errors have toHtmlString method', async () => {
+  test('errors have format method', async () => {
     const err = await render('{{ undefinedVar }}', {}, { undefined: 'strict' }).catch(e => e);
-    expect(typeof err.toHtmlString).toBe('function');
+    expect(typeof err.output).toBe('function');
   });
 
   test('HTML output contains error message', async () => {
     const err = await render('{{ undefinedVar }}', {}, { undefined: 'strict' }).catch(e => e);
-    const html = err.toHtmlString();
+    const html = err.output();
     expect(html.length).toBeGreaterThan(100);
   });
 
   test('HTML output contains Possible Causes', async () => {
     const err = await render('{{ undefinedVar }}', {}, { undefined: 'strict' }).catch(e => e);
-    const html = err.toHtmlString();
+    const html = err.output();
     expect(html).toContain('Possible Causes');
   });
 
   test('HTML output contains Suggested Fix', async () => {
     const err = await render('{{ undefinedVar }}', {}, { undefined: 'strict' }).catch(e => e);
-    const html = err.toHtmlString();
+    const html = err.output();
     expect(html).toContain('Suggested Fix');
   });
 
   test('HTML output contains Source Trace', async () => {
     const err = await render('{{ undefinedVar }}', {}, { undefined: 'strict' }).catch(e => e);
-    const html = err.toHtmlString();
+    const html = err.output();
     expect(html).toContain('Source Trace');
   });
 
   test('HTML output contains Render Context', async () => {
     const err = await render('{{ undefinedVar }}', { user: { name: 'test' } }, { undefined: 'strict' }).catch(e => e);
-    const html = err.toHtmlString();
+    const html = err.output();
     expect(html).toContain('Render Context');
   });
 
   test('HTML output contains Stack Trace', async () => {
     const err = await render('{{ undefinedVar }}', {}, { undefined: 'strict' }).catch(e => e);
-    const html = err.toHtmlString();
+    const html = err.output();
     expect(html).toContain('Stack Trace');
   });
 });

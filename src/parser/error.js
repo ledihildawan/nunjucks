@@ -1,4 +1,4 @@
-import { createTemplateError } from '../error/index.js';
+import { createLog } from '@nunjucks/log';
 import { peekToken } from './cursor.js';
 
 export const error = (ctx, msg, lineno, colno) => {
@@ -7,7 +7,12 @@ export const error = (ctx, msg, lineno, colno) => {
     lineno = tok.lineno;
     colno = tok.colno;
   }
-  return createTemplateError(msg, lineno, colno, { phase: 'parse' });
+  return createLog('error', {
+    message: msg,
+    lineno,
+    colno,
+    info: { phase: 'parse' }
+  });
 };
 
 export const fail = (ctx, msg, lineno, colno) => {

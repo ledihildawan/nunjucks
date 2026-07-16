@@ -1,6 +1,7 @@
 import { setGlobalConfig, getGlobalConfig, mergeConfig, resetConfig } from './config/global.js';
 import { render, renderWithEnv } from './core/render.js';
 import { createEngine } from './integrations/express.js';
+import { createLog, toText, toAnsi, toHtml, toConsoleString, classify, CSS, PRODUCTION_BODY, TOGGLE_SCRIPT } from '@nunjucks/log';
 
 const getCallerLocation = () => {
   const stack = new Error().stack;
@@ -38,12 +39,15 @@ const nunjucks = (template, context, localConfig) => {
     return nunjucks;
   }
 
-  if (typeof template !== 'string') {
-    throw new Error('Template must be a string');
-  }
-
   const callerLoc = getCallerLocation();
   const config = mergeConfig(localConfig || {});
+
+  if (localConfig?.filters) {
+    config._customFilters = localConfig.filters;
+  }
+  if (localConfig?.globals) {
+    config._customGlobals = localConfig.globals;
+  }
 
   if (callerLoc) {
     config.jsCaller = callerLoc.path;
@@ -56,6 +60,12 @@ const nunjucks = (template, context, localConfig) => {
 
   if (context && typeof context === 'object' && localConfig) {
     const mergedConfig = { ...config, ...localConfig };
+    if (localConfig.filters) {
+      mergedConfig._customFilters = localConfig.filters;
+    }
+    if (localConfig.globals) {
+      mergedConfig._customGlobals = localConfig.globals;
+    }
     return render(template, context, mergedConfig);
   }
 
@@ -90,5 +100,14 @@ export {
   resetConfig,
   render,
   renderWithEnv,
-  createEngine
+  createEngine,
+  createLog,
+  toText,
+  toAnsi,
+  toHtml,
+  toConsoleString,
+  classify,
+  CSS,
+  PRODUCTION_BODY,
+  TOGGLE_SCRIPT
 };

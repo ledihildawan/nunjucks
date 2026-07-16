@@ -1,0 +1,13 @@
+{
+  "name": "@nunjucks/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./path-shortener": "./src/path-shortener.js",
+    "./caller-file": "./src/caller-file.js",
+    "./blocked-keys": "./src/blocked-keys.js"
+  },
+  "description": "Shared utilities for Nunjucks"
+}

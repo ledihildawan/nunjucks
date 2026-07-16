@@ -13,7 +13,7 @@ export const compileCompare = (ctx, node, frame) => {
   ctx.compile(node.expr, frame);
 
   node.ops.forEach((op) => {
-    ctx._emit(` ${compareOps[op.type]} `);
+    ctx._emit(` ${compareOps[op.operator]} `);
     ctx.compile(op.expr, frame);
   });
 };

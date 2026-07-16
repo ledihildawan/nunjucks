@@ -1,5 +1,5 @@
 import { keys, isFunction } from 'remeda';
-import { isBlockedKey, isDangerousGlobal } from '../shared/blocked-keys.js';
+import { isBlockedKey, isDangerousGlobal } from '@nunjucks/shared/blocked-keys';
 
 const isObject = (val) => val !== null && typeof val === 'object' && !Array.isArray(val);
 

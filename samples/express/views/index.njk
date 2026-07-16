@@ -1,134 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Nunjucks Error Classification Demo</title>
+  <title>Nunjucks Error Demo</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1100px; margin: 0 auto; padding: 20px; }
-    h1 { color: #e74c3c; }
-    h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
-    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-    th, td { text-align: left; padding: 12px; border: 1px solid #ddd; }
-    th { background: #3498db; color: white; }
-    tr:nth-child(even) { background: #f9f9f9; }
-    a { color: #3498db; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .info { background: #ecf0f1; padding: 15px; border-radius: 8px; margin: 20px 0; }
-    .nav { margin: 20px 0; }
-    .nav a { display: inline-block; padding: 10px 15px; background: #3498db; color: white; border-radius: 5px; margin-right: 10px; }
-    .nav a:hover { background: #2980b9; }
+    body { font-family: monospace; margin: 40px; }
+    h1 { font-size: 20px; }
+    a { color: #c00; font-size: 16px; }
   </style>
 </head>
 <body>
   <h1>Nunjucks Error Classification Demo</h1>
-  <div class="info">
-    <p><strong>56 Error Patterns</strong> - Click any route to see the error in action.</p>
-  </div>
-
-  <h2>Template Errors (from .njk files)</h2>
-  <table>
-    <tr><th>Category</th><th>Route</th><th>Description</th></tr>
-    <tr><td><code>undefined_variable</code></td><td><a href="/errors/undefined-variable">/errors/undefined-variable</a></td><td>Variable not in context</td></tr>
-    <tr><td><code>undefined_function</code></td><td><a href="/errors/undefined-function">/errors/undefined-function</a></td><td>Function not registered</td></tr>
-    <tr><td><code>not_a_function</code></td><td><a href="/errors/not-a-function">/errors/not-a-function</a></td><td>Calling non-function value</td></tr>
-    <tr><td><code>undefined_filter</code></td><td><a href="/errors/undefined-filter">/errors/undefined-filter</a></td><td>Filter not registered</td></tr>
-    <tr><td><code>filter_error</code></td><td><a href="/errors/filter-error">/errors/filter-error</a></td><td>Filter throws during execution</td></tr>
-    <tr><td><code>undefined_value</code></td><td><a href="/errors/undefined-value">/errors/undefined-value</a></td><td>Nested property is null</td></tr>
-    <tr><td><code>syntax_error</code></td><td><a href="/errors/syntax-error">/errors/syntax-error</a></td><td>Invalid template syntax</td></tr>
-    <tr><td><code>invalid_lookup</code></td><td><a href="/errors/invalid-lookup">/errors/invalid-lookup</a></td><td>Invalid bracket notation</td></tr>
-    <tr><td><code>duplicate_block</code></td><td><a href="/errors/duplicate-block">/errors/duplicate-block</a></td><td>Duplicate block definition</td></tr>
-    <tr><td><code>unknown_block_tag</code></td><td><a href="/errors/unknown-block-tag">/errors/unknown-block-tag</a></td><td>Unmatched closing tag</td></tr>
-    <tr><td><code>undefined_variable</code></td><td><a href="/errors/no-caller-macro">/errors/no-caller-macro</a></td><td>caller outside macro</td></tr>
-  </table>
-
-  <h2>Extends/Include Errors</h2>
-  <table>
-    <tr><th>Category</th><th>Route</th><th>Description</th></tr>
-    <tr><td><code>undefined_block</code></td><td><a href="/errors/undefined-block">/errors/undefined-block</a></td><td>Block not in parent template</td></tr>
-    <tr><td><code>no_super_block</code></td><td><a href="/errors/no-super-block">/errors/no-super-block</a></td><td>super() called without parent block</td></tr>
-    <tr><td><code>invalid_include</code></td><td><a href="/errors/invalid-include">/errors/invalid-include</a></td><td>Non-string template name for include</td></tr>
-    <tr><td><code>circular_include</code></td><td><a href="/errors/circular-include">/errors/circular-include</a></td><td>Template includes itself</td></tr>
-    <tr><td><code>file_not_found</code></td><td><a href="/errors/file-not-found">/errors/file-not-found</a></td><td>Included template not found</td></tr>
-    <tr><td><code>filesystem_error</code></td><td><a href="/errors/filesystem-error">/errors/filesystem-error</a></td><td>Absolute path with non-existent file</td></tr>
-  </table>
-
-  <h2>Inline Template Errors</h2>
-  <table>
-    <tr><th>Category</th><th>Route</th><th>Description</th></tr>
-    <tr><td><code>undefined_variable</code></td><td><a href="/errors/inline-error">/errors/inline-error</a></td><td>Inline template undefined variable</td></tr>
-    <tr><td><code>undefined_filter</code></td><td><a href="/errors/inline-filter-error">/errors/inline-filter-error</a></td><td>Inline template undefined filter</td></tr>
-    <tr><td><code>syntax_error</code></td><td><a href="/errors/inline-syntax-error">/errors/inline-syntax-error</a></td><td>Inline template syntax error</td></tr>
-  </table>
-
-  <h2>Sandbox Errors</h2>
-  <table>
-    <tr><th>Category</th><th>Route</th><th>Description</th></tr>
-    <tr><td><code>sandbox_blocked</code></td><td><a href="/errors/sandbox-proto">/errors/sandbox-proto</a></td><td>Sandbox blocks __proto__ access</td></tr>
-    <tr><td><code>sandbox_blocked</code></td><td><a href="/errors/sandbox-constructor">/errors/sandbox-constructor</a></td><td>Sandbox blocks constructor access</td></tr>
-    <tr><td><code>sandbox_blocked</code></td><td><a href="/errors/sandbox-process">/errors/sandbox-process</a></td><td>Sandbox blocks process access</td></tr>
-    <tr><td><code>sandbox_blocked</code></td><td><a href="/errors/sandbox-set">/errors/sandbox-set</a></td><td>Sandbox blocks setting __proto__</td></tr>
-    <tr><td><code>sandbox_blocked</code></td><td><a href="/errors/sandbox-timeout">/errors/sandbox-timeout</a></td><td>Template execution timed out</td></tr>
-    <tr><td><code>sandbox_blocked</code></td><td><a href="/errors/sandbox-context-modify">/errors/sandbox-context-modify</a></td><td>Cannot modify sandboxed context</td></tr>
-    <tr><td><code>slice_error</code></td><td><a href="/errors/slice-error">/errors/slice-error</a></td><td>Slice step cannot be zero</td></tr>
-    <tr><td><code>iterable_error</code></td><td><a href="/errors/list-filter-error">/errors/list-filter-error</a></td><td>List filter requires iterable</td></tr>
-    <tr><td><code>operator_error</code></td><td><a href="/errors/in-operator-error">/errors/in-operator-error</a></td><td>In operator on primitive type</td></tr>
-    <tr><td><code>filter_error</code></td><td><a href="/errors/filter-throw">/errors/filter-throw</a></td><td>Filter throws during execution</td></tr>
-  </table>
-
-  <h2>Security & Validation Errors</h2>
-  <table>
-    <tr><th>Category</th><th>Route</th><th>Description</th></tr>
-    <tr><td><code>security_error</code></td><td><a href="/errors/blocked-context-keys">/errors/blocked-context-keys</a></td><td>Context contains blocked keys</td></tr>
-    <tr><td><code>security_error</code></td><td><a href="/errors/dangerous-context">/errors/dangerous-context</a></td><td>Context contains dangerous values</td></tr>
-    <tr><td><code>security_error</code></td><td><a href="/errors/dangerous-template">/errors/dangerous-template</a></td><td>Template contains dangerous code</td></tr>
-    <tr><td><code>validation_error</code></td><td><a href="/errors/template-size">/errors/template-size</a></td><td>Template exceeds maximum size</td></tr>
-    <tr><td><code>validation_error</code></td><td><a href="/errors/invalid-config">/errors/invalid-config</a></td><td>Invalid config (negative timeout)</td></tr>
-    <tr><td><code>validation_error</code></td><td><a href="/errors/template-not-string">/errors/template-not-string</a></td><td>Template must be a string</td></tr>
-  </table>
-
-  <h2>Runtime & Filter Errors</h2>
-  <table>
-    <tr><th>Category</th><th>Route</th><th>Description</th></tr>
-    <tr><td><code>validation_error</code></td><td><a href="/errors/key-not-found">/errors/key-not-found</a></td><td>Key not found in context (strict mode)</td></tr>
-    <tr><td><code>filter_error</code></td><td><a href="/errors/import-error">/errors/import-error</a></td><td>Cannot import symbol</td></tr>
-    <tr><td><code>config_error</code></td><td><a href="/errors/container-error">/errors/container-error</a></td><td>Container not registered</td></tr>
-    <tr><td><code>filter_error</code></td><td><a href="/errors/groupby-type-error">/errors/groupby-type-error</a></td><td>Groupby attribute undefined</td></tr>
-    <tr><td><code>filter_error</code></td><td><a href="/errors/sort-type-error">/errors/sort-type-error</a></td><td>Sort attribute undefined</td></tr>
-    <tr><td><code>filter_error</code></td><td><a href="/errors/dictsort-value-error">/errors/dictsort-value-error</a></td><td>Dictsort requires object</td></tr>
-    <tr><td><code>filter_error</code></td><td><a href="/errors/dictsort-by-error">/errors/dictsort-by-error</a></td><td>Dictsort invalid 'by' param</td></tr>
-    <tr><td><code>no_super_block</code></td><td><a href="/errors/no-super-block-runtime">/errors/no-super-block-runtime</a></td><td>super() without parent block</td></tr>
-  </table>
-
-  <h2>Reserved Keyword Errors</h2>
-  <table>
-    <tr><th>Category</th><th>Route</th><th>Description</th></tr>
-    <tr><td><code>reserved_keyword</code></td><td><a href="/errors/reserved-keyword-filter">/errors/reserved-keyword-filter</a></td><td>Using reserved word as filter</td></tr>
-    <tr><td><code>reserved_keyword</code></td><td><a href="/errors/reserved-keyword-global">/errors/reserved-keyword-global</a></td><td>Using reserved word as global</td></tr>
-  </table>
-
-  <h2>Parser Errors</h2>
-  <table>
-    <tr><th>Category</th><th>Route</th><th>Description</th></tr>
-    <tr><td><code>syntax_error</code></td><td><a href="/errors/invalid-boolean">/errors/invalid-boolean</a></td><td>Invalid boolean value</td></tr>
-    <tr><td><code>syntax_error</code></td><td><a href="/errors/parser-expected">/errors/parser-expected</a></td><td>Parser expected token</td></tr>
-  </table>
-
-  <h2>Also Try</h2>
-  <div class="nav">
-    <a href="/home">/home</a>
-    <a href="/info">/info</a>
-    <a href="/sandbox">/sandbox</a>
-    <a href="/undefined">/undefined</a>
-    <a href="/remote">/remote</a>
-  </div>
-
-  <h2>New Features</h2>
-  <div class="nav">
-    <a href="/demo/try-catch">/demo/try-catch</a>
-    <a href="/demo/with">/demo/with</a>
-    <a href="/demo/do">/demo/do</a>
-    <a href="/demo/switch">/demo/switch</a>
-    <a href="/demo/call">/demo/call</a>
-    <a href="/demo/pipe">/demo/pipe</a>
-  </div>
+  <p><a href="/errors">View all error routes</a></p>
 </body>
 </html>

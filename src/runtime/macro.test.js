@@ -2,6 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import {
   makeMacro, makeKeywordArgs,
   isKeywordArgs, getKeywordArgs, numArgs,
+  withKwargs,
 } from './macro.js';
 
 describe('makeKeywordArgs', () => {
@@ -83,5 +84,50 @@ describe('makeMacro', () => {
   test('preserves this context', () => {
     const macro = makeMacro([], [], function () { return this.val; });
     expect(macro.call({ val: 42 })).toBe(42);
+  });
+});
+
+describe('withKwargs', () => {
+  test('wraps function to handle kwargs correctly', () => {
+    const greet = withKwargs(({name = 'World', greeting = 'Hello'} = {}) => {
+      return `${greeting} ${name}!`;
+    });
+    expect(greet(makeKeywordArgs({ name: 'John' }))).toBe('Hello John!');
+  });
+
+  test('handles kwargs in any order', () => {
+    const greet = withKwargs(({name = 'World', greeting = 'Hello'} = {}) => {
+      return `${greeting} ${name}!`;
+    });
+    expect(greet(makeKeywordArgs({ greeting: 'Hi', name: 'Alice' }))).toBe('Hi Alice!');
+  });
+
+  test('passes positional args before kwargs', () => {
+    const format = withKwargs((a, b, {sep = '-'} = {}) => {
+      return `${a}${sep}${b}`;
+    });
+    expect(format('X', 'Y', makeKeywordArgs({ sep: '::' }))).toBe('X::Y');
+  });
+
+  test('uses defaults when kwargs not provided', () => {
+    const greet = withKwargs(({name = 'World', greeting = 'Hello'} = {}) => {
+      return `${greeting} ${name}!`;
+    });
+    expect(greet(makeKeywordArgs({}))).toBe('Hello World!');
+  });
+
+  test('preserves this context', () => {
+    const greet = withKwargs(function({name = 'World'} = {}) {
+      return `${this.greeting} ${name}!`;
+    });
+    const obj = { greeting: 'Hi', greet };
+    expect(obj.greet(makeKeywordArgs({ name: 'Bob' }))).toBe('Hi Bob!');
+  });
+
+  test('handles only positional args', () => {
+    const add = withKwargs((a, b, {multiplier = 1} = {}) => {
+      return (a + b) * multiplier;
+    });
+    expect(add(1, 2, makeKeywordArgs({ multiplier: 10 }))).toBe(30);
   });
 });

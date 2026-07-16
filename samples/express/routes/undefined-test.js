@@ -31,7 +31,7 @@ router.get('/strict', async (req, res) => {
       path: e.path,
       templateName: e.templateName
     }, null, 2));
-    res.status(500).type('html').send(e.toHtmlString ? e.toHtmlString() : e.message);
+    res.status(500).type('html').send(e.output());
   }
 });
 

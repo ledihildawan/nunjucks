@@ -14,3 +14,4 @@ build
 /samples/express/js/nunjucks.js
 /samples/express/js/templates.js
 /nunjucks-original
+/output-error-html

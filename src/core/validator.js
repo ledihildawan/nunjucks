@@ -65,8 +65,8 @@ export const validateConfig = (config) => {
     errors.push({ code: 'INVALID_CONFIG', message: 'maxTemplateSize must be >= 0' });
   }
 
-  if (config.filters) {
-    for (const [name] of Object.entries(config.filters)) {
+  if (config._customFilters) {
+    for (const [name] of Object.entries(config._customFilters)) {
       const validation = validateFilterName(name);
       if (!validation.valid) {
         errors.push({ code: validation.error.code, message: validation.error.message });
@@ -74,8 +74,8 @@ export const validateConfig = (config) => {
     }
   }
 
-  if (config.globals) {
-    for (const [name] of Object.entries(config.globals)) {
+  if (config._customGlobals) {
+    for (const [name] of Object.entries(config._customGlobals)) {
       const validation = validateGlobalName(name);
       if (!validation.valid) {
         errors.push({ code: validation.error.code, message: validation.error.message });

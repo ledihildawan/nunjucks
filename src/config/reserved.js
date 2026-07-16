@@ -37,7 +37,7 @@ export const RESERVED_KEYWORDS = new Set([
   'default', 'defaultFilter', 'first', 'last', 'batch',
   'list', 'join', 'sort', 'reverse', 'length', 'items',
   'keys', 'values', 'replace', 'truncate', 'wordwrap', 'striptags',
-  'title', 'upper', 'lower', 'capitalize', 'center', 'format',
+  'title', 'upper', 'lower', 'center', 'format',
   'pprint', 'sum', 'min', 'max', 'groupby', 'round', 'random',
   'truncatewords', 'strip', 'urlize', 'wordcount', 'string',
   'stringify', 'slice',

@@ -1,0 +1,23 @@
+{
+  "name": "@nunjucks/log",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./create-log": "./src/create-log.js",
+    "./error/to-console": "./src/error/to-console.js",
+    "./error/to-html": "./src/error/to-html.js",
+    "./error/to-ansi": "./src/error/to-ansi.js",
+    "./error/to-text": "./src/error/to-text.js",
+    "./error/classify": "./src/error/classify.js",
+    "./error/classify/template-error": "./src/error/classify/template-error.js",
+    "./error/classify/extract": "./src/error/classify/extract.js",
+    "./warning/collector": "./src/warning/collector.js"
+  },
+  "dependencies": {
+    "@nunjucks/shared": "workspace:*",
+    "picocolors": "*"
+  },
+  "description": "Unified logging system for Nunjucks"
+}

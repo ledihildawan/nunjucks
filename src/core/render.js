@@ -5,8 +5,9 @@ import { execute } from './compiler.js';
 import { validateTemplate, validateRenderContext, validateConfig } from './validator.js';
 import { withTimeout } from '../runtime/timeout.js';
 import { createSandboxedContext } from '../runtime/sandbox.js';
-import { renderError } from '../error/index.js';
+import { createLog, toHtml, toAnsi, toText, injectWarningsScript } from '@nunjucks/log';
 import { createFileSystemLoader } from '../loaders/index.js';
+import { getCallerFile } from '@nunjucks/shared/caller-file';
 
 let cachedLoader = null;
 let cachedViewsPath = null;
@@ -24,26 +25,63 @@ const getLoader = (config) => {
   return cachedLoader;
 };
 
-const wrapErrorWithHtml = async (err, config, template = null, renderContext = null) => {
-  const templateName = config.templatePath || 'renderString';
-  const errorResult = await renderError(err, templateName, {
-    dev: config.dev,
-    ide: config.ide,
-    sourceContent: template,
-    templatePath: config.templatePath,
-    jsCaller: config.jsCaller || null,
-    jsCallerErrorLine: config.jsCallerErrorLine || null,
-    renderContext
+const wrapWithError = (err, config, template = null, renderContext = null) => {
+  const templatePath = config.templatePath || config.jsCaller || config._callerFile || err.templateName || null;
+  const lineno = (err.lineno != null && err.lineno > 0) ? err.lineno : (config.jsCallerErrorLine ?? config.lineno ?? 1);
+  const colno = (err.colno != null && err.colno > 0) ? err.colno : (config.jsCallerErrorCol ?? config.colno ?? 1);
+  const phase = err.phase || config.phase || 'render';
+  const dev = config.dev ?? false;
+  const ide = config.ide ?? 'vscode';
+  const timestamp = new Date().toISOString();
+
+  const errorObj = createLog('error', {
+    message: err.message,
+    lineno,
+    colno,
+    info: {
+      code: err.code,
+      subject: err.subject,
+      phase,
+      templateName: templatePath
+    }
   });
-  Object.assign(err, errorResult);
-  return err;
+
+  errorObj.output = (options = {}) => {
+    const { format = 'html', verbosity = 'full' } = options;
+    const formatConfig = { dev, ide, templatePath, lineno, colno, phase, sourceContent: template, renderContext, timestamp, verbosity };
+
+    switch (format) {
+      case 'html':
+        return toHtml(errorObj, formatConfig);
+      case 'ansi':
+        return toAnsi(errorObj, formatConfig);
+      case 'text':
+        return toText(errorObj, formatConfig);
+      default:
+        return {
+          html: toHtml(errorObj, formatConfig),
+          ansi: toAnsi(errorObj, formatConfig),
+          text: toText(errorObj, formatConfig)
+        };
+    }
+  };
+
+  return errorObj;
 };
 
 export const render = async (template, context = {}, config = {}) => {
+  config._callerFile = config._callerFile || getCallerFile();
+
+  if (typeof template !== 'string') {
+    const err = new Error('Template must be a string');
+    err.code = 'TEMPLATE_MUST_BE_STRING';
+    throw wrapWithError(err, config, template, context);
+  }
+
   const validation = validateConfig(config);
   if (!validation.valid) {
     const err = new Error(validation.errors[0].message);
-    throw await wrapErrorWithHtml(err, config, template, context);
+    throw wrapWithError(err, config, template, context);
   }
 
   const loader = getLoader(config);
@@ -66,17 +104,18 @@ export const render = async (template, context = {}, config = {}) => {
   const templateValidation = validateTemplate(template, config);
   if (!templateValidation.valid) {
     const err = new Error(templateValidation.errors[0].message);
-    throw await wrapErrorWithHtml(err, config, templateSource, context);
+    throw wrapWithError(err, config, templateSource, context);
   }
 
   const contextValidation = validateRenderContext(context, config);
   if (!contextValidation.valid) {
     const err = new Error(contextValidation.errors[0].message);
-    throw await wrapErrorWithHtml(err, config, templateSource, context);
+    throw wrapWithError(err, config, templateSource, context);
   }
 
   let code;
-  const templateName = config.templatePath || 'renderString';
+  const looksLikeFile = /\.(njk|js|html|htm|twig|ejs|eta)$/i.test(template);
+  const templateName = config.templatePath || (looksLikeFile ? template : config._callerFile);
   try {
     const c = createCompiler(templateName, config.undefined, templateSource);
     const ast = parse(templateSource, config, templateName);
@@ -84,7 +123,7 @@ export const render = async (template, context = {}, config = {}) => {
     c.compile(transformedAst);
     code = c.getCode();
   } catch (err) {
-    throw await wrapErrorWithHtml(err, config, templateSource, context);
+    throw wrapWithError(err, config, templateSource, context);
   }
 
   const internalKeys = ['__nunjucks_undefined_mode', 'exports', 'module', 'require', '__dirname', '__filename', 'global', 'globalThis', 'process'];
@@ -99,20 +138,31 @@ export const render = async (template, context = {}, config = {}) => {
   sandboxedCtx.__nunjucks_undefined_mode = config.undefined || 'default';
 
   const runtime = buildRuntime(config);
+  const warningsCollector = [];
 
-  const renderPromise = execute(code, sandboxedCtx, {
-    ...config,
-    runtime
-  });
-
+  let result;
   try {
+    const renderPromise = execute(code, sandboxedCtx, {
+      ...config,
+      runtime,
+      warningsCollector,
+      templateName
+    });
+
     if (config.executionTimeout > 0) {
-      return await withTimeout(renderPromise, config.executionTimeout);
+      result = await withTimeout(renderPromise, config.executionTimeout);
+    } else {
+      result = await renderPromise;
     }
-    return await renderPromise;
   } catch (err) {
-    throw await wrapErrorWithHtml(err, config, templateSource, context);
+    throw wrapWithError(err, config, templateSource, context);
   }
+
+  if (warningsCollector.length > 0 && (config.dev ?? false)) {
+    result = result + injectWarningsScript(warningsCollector, { dev: true, verbosity: 'medium' });
+  }
+
+  return result;
 };
 
 const buildRuntime = (config) => {
@@ -136,13 +186,13 @@ export const renderWithEnv = async (templateName, env, context = {}, config = {}
   const validation = validateConfig(config);
   if (!validation.valid) {
     const err = new Error(validation.errors[0].message);
-    throw await wrapErrorWithHtml(err, { ...config, templatePath: config.templatePath || templateName, env }, null, context);
+    throw wrapWithError(err, { ...config, templatePath: config.templatePath || templateName, env }, null, context);
   }
 
   const contextValidation = validateRenderContext(context, config);
   if (!contextValidation.valid) {
     const err = new Error(contextValidation.errors[0].message);
-    throw await wrapErrorWithHtml(err, { ...config, templatePath: config.templatePath || templateName, env }, null, context);
+    throw wrapWithError(err, { ...config, templatePath: config.templatePath || templateName, env }, null, context);
   }
 
   let template;
@@ -156,6 +206,6 @@ export const renderWithEnv = async (templateName, env, context = {}, config = {}
     
     throw new Error('Template does not have a render method');
   } catch (err) {
-    throw await wrapErrorWithHtml(err, { ...config, templatePath: config.templatePath || templateName, env }, template?.tmplStr ?? null, context);
+    throw wrapWithError(err, { ...config, templatePath: config.templatePath || templateName, env }, template?.tmplStr ?? null, context);
   }
 };

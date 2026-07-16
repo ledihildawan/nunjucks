@@ -37,11 +37,9 @@ app.get('/file-error', (req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-  if (err.toHtmlString) {
-    res.status(500).type('html').send(err.toHtmlString());
-  } else {
-    res.status(500).type('html').send(err.message);
-  }
+  console.log(err)
+  console.log('\n' + err.output({ format: 'ansi' }) + '\n');
+  res.status(500).type('html').send(err.output());
 });
 
 app.get('/', async (req, res) => {

@@ -2,7 +2,7 @@ import { pipe, filter, isDefined, isNonNullish, reduce } from 'remeda';
 import { parse } from '../parser/index.js';
 import { transform } from '../transformers/index.js';
 import { nodes } from '../nodes/index.js';
-import { createTemplateError } from '../error/index.js';
+import { createLog } from '@nunjucks/log';
 import { createObj } from '../object/index.js';
 import { createSourceMap } from '../helpers/source-map.js';
 import { compileDispatch } from './node-dispatch.js';
@@ -24,7 +24,12 @@ export function createCompiler(templateName, undefinedMode, source) {
       this.sourceMap = createSourceMap(tmplName);
     },
     fail: function(msg, lineno, colno) {
-      throw createTemplateError(msg, lineno, colno, { phase: 'compile', templateName: this.templateName });
+      throw createLog('error', {
+        message: msg,
+        lineno,
+        colno,
+        info: { phase: 'compile', templateName: this.templateName }
+      });
     },
     _pushBuffer: function() {
       const id = this._tmpid();

@@ -1,478 +1,553 @@
 import { describe, test, expect } from 'bun:test';
-import { createTokenizer, createToken, lex } from './tokenizer.js';
+import { lex } from './tokenizer.js';
 import {
-  TOKEN_STRING, TOKEN_WHITESPACE, TOKEN_DATA, TOKEN_BLOCK_START, TOKEN_BLOCK_END,
-  TOKEN_VARIABLE_START, TOKEN_VARIABLE_END,
-  TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_LEFT_BRACKET, TOKEN_RIGHT_BRACKET,
-  TOKEN_LEFT_CURLY, TOKEN_RIGHT_CURLY, TOKEN_OPERATOR,
-  TOKEN_COMMA, TOKEN_COLON, TOKEN_TILDE, TOKEN_PIPEFORWARD,
-  TOKEN_INT, TOKEN_FLOAT, TOKEN_BOOLEAN, TOKEN_NONE, TOKEN_SYMBOL, TOKEN_REGEX,
+  TOKEN_STRING,
+  TOKEN_WHITESPACE,
+  TOKEN_DATA,
+  TOKEN_BLOCK_START,
+  TOKEN_BLOCK_END,
+  TOKEN_VARIABLE_START,
+  TOKEN_VARIABLE_END,
+  TOKEN_COMMENT,
+  TOKEN_LEFT_PAREN,
+  TOKEN_RIGHT_PAREN,
+  TOKEN_LEFT_BRACKET,
+  TOKEN_RIGHT_BRACKET,
+  TOKEN_LEFT_CURLY,
+  TOKEN_RIGHT_CURLY,
+  TOKEN_OPERATOR,
+  TOKEN_COMMA,
+  TOKEN_COLON,
+  TOKEN_TILDE,
+  TOKEN_PIPEFORWARD,
+  TOKEN_INT,
+  TOKEN_FLOAT,
+  TOKEN_BOOLEAN,
+  TOKEN_NONE,
+  TOKEN_SYMBOL,
+  TOKEN_REGEX,
 } from './token-types.js';
 
-describe('createToken', () => {
-  test('creates a token object', () => {
-    const tok = createToken('TYPE', 'val', 1, 2);
-    expect(tok).toEqual({ type: 'TYPE', value: 'val', lineno: 1, colno: 2 });
+const tokenize = (template) => {
+  const tokenizer = lex(template);
+  const tokens = [];
+  let tok;
+  while ((tok = tokenizer.nextToken()) !== null) {
+    tokens.push(tok);
+  }
+  return tokens;
+};
+
+const getTokensByType = (tokens, type) => tokens.filter(t => t.type === type);
+const getTokensByValue = (tokens, value) => tokens.filter(t => t.value === value);
+const hasToken = (tokens, type, value) => tokens.some(t => t.type === type && t.value === value);
+
+describe('lex - variable expressions', () => {
+  test('tokenizes simple variable', () => {
+    const tokens = tokenize('{{ x }}');
+    expect(getTokensByType(tokens, TOKEN_VARIABLE_START)).toHaveLength(1);
+    expect(getTokensByType(tokens, TOKEN_VARIABLE_END)).toHaveLength(1);
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'x')).toBe(true);
+  });
+
+  test('tokenizes variable with property access', () => {
+    const tokens = tokenize('{{ user.name }}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'user')).toBe(true);
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'name')).toBe(true);
+    expect(hasToken(tokens, TOKEN_OPERATOR, '.')).toBe(true);
+  });
+
+  test('tokenizes bracket notation', () => {
+    const tokens = tokenize('{{ arr[0] }}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'arr')).toBe(true);
+    expect(hasToken(tokens, TOKEN_LEFT_BRACKET, '[')).toBe(true);
+    expect(hasToken(tokens, TOKEN_RIGHT_BRACKET, ']')).toBe(true);
+    expect(hasToken(tokens, TOKEN_INT, '0')).toBe(true);
+  });
+
+  test('tokenizes nested bracket notation', () => {
+    const tokens = tokenize('{{ arr[0][1] }}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'arr')).toBe(true);
+    expect(getTokensByValue(tokens, '[')).toHaveLength(2);
+    expect(getTokensByValue(tokens, ']')).toHaveLength(2);
+    expect(hasToken(tokens, TOKEN_INT, '0')).toBe(true);
+    expect(hasToken(tokens, TOKEN_INT, '1')).toBe(true);
+  });
+
+  test('tokenizes deep property access', () => {
+    const tokens = tokenize('{{ user.profile.settings.theme }}');
+    const symbols = getTokensByType(tokens, TOKEN_SYMBOL);
+    expect(symbols.map(t => t.value)).toEqual(['user', 'profile', 'settings', 'theme']);
   });
 });
 
-describe('Tokenizer', () => {
-  describe('constructor', () => {
-    test('initializes with empty string', () => {
-      const t = createTokenizer('');
-      expect(t.str).toBe('');
-      expect(t.index).toBe(0);
-      expect(t.len).toBe(0);
-      expect(t.lineno).toBe(0);
-      expect(t.colno).toBe(0);
-      expect(t.in_code).toBe(false);
-    });
-
-    test('accepts custom tags', () => {
-      const t = createTokenizer('', { tags: { blockStart: '<%', blockEnd: '%>', variableStart: '${', variableEnd: '}' } });
-      expect(t.tags.BLOCK_START).toBe('<%');
-      expect(t.tags.BLOCK_END).toBe('%>');
-      expect(t.tags.VARIABLE_START).toBe('${');
-      expect(t.tags.VARIABLE_END).toBe('}');
-    });
-
-    test('respects trimBlocks option', () => {
-      const t = createTokenizer('', { trimBlocks: true });
-      expect(t.trimBlocks).toBe(true);
-    });
-
-    test('respects lstripBlocks option', () => {
-      const t = createTokenizer('', { lstripBlocks: true });
-      expect(t.lstripBlocks).toBe(true);
-    });
+describe('lex - block tags', () => {
+  test('tokenizes if statement', () => {
+    const tokens = tokenize('{% if x %}');
+    expect(getTokensByType(tokens, TOKEN_BLOCK_START)).toHaveLength(1);
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'if')).toBe(true);
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'x')).toBe(true);
   });
 
-  describe('current', () => {
-    test('returns current character', () => {
-      const t = createTokenizer('abc');
-      expect(t.current()).toBe('a');
-    });
-
-    test('returns empty string when finished', () => {
-      const t = createTokenizer('');
-      expect(t.current()).toBe('');
-    });
+  test('tokenizes for loop', () => {
+    const tokens = tokenize('{% for i in items %}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'for')).toBe(true);
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'i')).toBe(true);
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'in')).toBe(true);
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'items')).toBe(true);
   });
 
-  describe('previous', () => {
-    test('returns previous character', () => {
-      const t = createTokenizer('abc');
-      t.index = 1;
-      expect(t.previous()).toBe('a');
-    });
-
-    test('returns empty when at start', () => {
-      const t = createTokenizer('abc');
-      expect(t.previous()).toBe('');
-    });
+  test('tokenizes set variable', () => {
+    const tokens = tokenize('{% set x = 1 %}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'set')).toBe(true);
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'x')).toBe(true);
+    expect(hasToken(tokens, TOKEN_OPERATOR, '=')).toBe(true);
+    expect(hasToken(tokens, TOKEN_INT, '1')).toBe(true);
   });
 
-  describe('isFinished', () => {
-    test('returns true when index >= len', () => {
-      const t = createTokenizer('');
-      expect(t.isFinished()).toBe(true);
-    });
-
-    test('returns false when more chars remain', () => {
-      const t = createTokenizer('a');
-      expect(t.isFinished()).toBe(false);
-    });
+  test('tokenizes set with string', () => {
+    const tokens = tokenize('{% set name = "Alice" %}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'set')).toBe(true);
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'name')).toBe(true);
+    expect(hasToken(tokens, TOKEN_STRING, 'Alice')).toBe(true);
   });
 
-  describe('forward', () => {
-    test('advances index and colno', () => {
-      const t = createTokenizer('abc');
-      t.forward();
-      expect(t.index).toBe(1);
-      expect(t.colno).toBe(1);
-    });
-
-    test('increments lineno and resets colno on newline', () => {
-      const t = createTokenizer('a\nb');
-      t.forward();
-      expect(t.index).toBe(1);
-      expect(t.colno).toBe(1);
-      t.forward();
-      expect(t.index).toBe(2);
-      expect(t.lineno).toBe(1);
-      expect(t.colno).toBe(0);
-    });
+  test('tokenizes macro definition', () => {
+    const tokens = tokenize('{% macro foo(arg1, arg2) %}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'macro')).toBe(true);
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'foo')).toBe(true);
+    expect(hasToken(tokens, TOKEN_LEFT_PAREN, '(')).toBe(true);
+    expect(hasToken(tokens, TOKEN_RIGHT_PAREN, ')')).toBe(true);
+    expect(hasToken(tokens, TOKEN_COMMA, ',')).toBe(true);
   });
 
-  describe('back', () => {
-    test('decrements index and colno', () => {
-      const t = createTokenizer('abc');
-      t.index = 2;
-      t.colno = 2;
-      t.back();
-      expect(t.index).toBe(1);
-      expect(t.colno).toBe(1);
-    });
-
-    test('decrements lineno and adjusts colno on newline', () => {
-      const t = createTokenizer('a\nb');
-      t.index = 2;
-      t.lineno = 1;
-      t.back();
-      expect(t.index).toBe(1);
-      expect(t.lineno).toBe(0);
-      expect(t.colno).toBe(1);
-    });
+  test('tokenizes include', () => {
+    const tokens = tokenize('{% include "test.njk" %}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'include')).toBe(true);
+    expect(hasToken(tokens, TOKEN_STRING, 'test.njk')).toBe(true);
   });
 
-  describe('forwardN/backN', () => {
-    test('forwardN advances by n', () => {
-      const t = createTokenizer('abcde');
-      t.forwardN(3);
-      expect(t.index).toBe(3);
-    });
-
-    test('backN goes back by n', () => {
-      const t = createTokenizer('abcde');
-      t.index = 5;
-      t.backN(2);
-      expect(t.index).toBe(3);
-    });
+  test('tokenizes extends', () => {
+    const tokens = tokenize('{% extends "base.njk" %}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'extends')).toBe(true);
+    expect(hasToken(tokens, TOKEN_STRING, 'base.njk')).toBe(true);
   });
 
-  describe('_matches', () => {
-    test('returns true when substring matches', () => {
-      const t = createTokenizer('hello world');
-      expect(t._matches('hello')).toBe(true);
-    });
+  test('tokenizes block', () => {
+    const tokens = tokenize('{% block content %}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'block')).toBe(true);
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'content')).toBe(true);
+  });
+});
 
-    test('returns false when no match', () => {
-      const t = createTokenizer('hello');
-      expect(t._matches('world')).toBe(false);
-    });
-
-    test('returns null when string extends past end', () => {
-      const t = createTokenizer('hi');
-      expect(t._matches('hello')).toBe(null);
-    });
+describe('lex - arithmetic operators', () => {
+  test('tokenizes addition', () => {
+    const tokens = tokenize('{{ a + b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '+')).toBe(true);
   });
 
-  describe('_extractString', () => {
-    test('extracts matching string and advances', () => {
-      const t = createTokenizer('hello world');
-      const result = t._extractString('hello');
-      expect(result).toBe('hello');
-      expect(t.index).toBe(5);
-    });
-
-    test('returns null when no match', () => {
-      const t = createTokenizer('hello');
-      const result = t._extractString('world');
-      expect(result).toBeNull();
-      expect(t.index).toBe(0);
-    });
+  test('tokenizes subtraction', () => {
+    const tokens = tokenize('{{ a - b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '-')).toBe(true);
   });
 
-  describe('_extractUntil and _extract', () => {
-    test('_extractUntil extracts until break char', () => {
-      const t = createTokenizer('abc def');
-      const result = t._extractUntil(' ');
-      expect(result).toBe('abc');
-      expect(t.current()).toBe(' ');
-    });
-
-    test('_extract extracts matching chars', () => {
-      const t = createTokenizer('   abc');
-      const result = t._extract(' ');
-      expect(result).toBe('   ');
-      expect(t.current()).toBe('a');
-    });
+  test('tokenizes multiplication', () => {
+    const tokens = tokenize('{{ a * b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '*')).toBe(true);
   });
 
-  describe('_parseString', () => {
-    test('parses double-quoted string', () => {
-      const t = createTokenizer('"hello"');
-      const result = t._parseString('"');
-      expect(result).toBe('hello');
-    });
-
-    test('parses single-quoted string', () => {
-      const t = createTokenizer("'hello'");
-      const result = t._parseString("'");
-      expect(result).toBe('hello');
-    });
-
-    test('handles escape sequences', () => {
-      const t = createTokenizer('"a\\nb"');
-      const result = t._parseString('"');
-      expect(result).toBe('a\nb');
-    });
-
-    test('handles backslash escape', () => {
-      const t = createTokenizer('"a\\\\b"');
-      const result = t._parseString('"');
-      expect(result).toBe('a\\b');
-    });
+  test('tokenizes division', () => {
+    const tokens = tokenize('{{ a / b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '/')).toBe(true);
   });
 
-  describe('_parseOperator', () => {
-    test('returns LEFT_PAREN for (', () => {
-      const t = createTokenizer('(');
-      const tok = t._parseOperator('(', 1, 1);
-      expect(tok.type).toBe(TOKEN_LEFT_PAREN);
-    });
-
-    test('returns RIGHT_PAREN for )', () => {
-      const t = createTokenizer(')');
-      const tok = t._parseOperator(')', 1, 1);
-      expect(tok.type).toBe(TOKEN_RIGHT_PAREN);
-    });
-
-    test('returns LEFT_BRACKET for [', () => {
-      const t = createTokenizer('[');
-      const tok = t._parseOperator('[', 1, 1);
-      expect(tok.type).toBe(TOKEN_LEFT_BRACKET);
-    });
-
-    test('returns RIGHT_BRACKET for ]', () => {
-      const t = createTokenizer(']');
-      const tok = t._parseOperator(']', 1, 1);
-      expect(tok.type).toBe(TOKEN_RIGHT_BRACKET);
-    });
-
-    test('returns LEFT_CURLY for {', () => {
-      const t = createTokenizer('{');
-      const tok = t._parseOperator('{', 1, 1);
-      expect(tok.type).toBe(TOKEN_LEFT_CURLY);
-    });
-
-    test('returns RIGHT_CURLY for }', () => {
-      const t = createTokenizer('}');
-      const tok = t._parseOperator('}', 1, 1);
-      expect(tok.type).toBe(TOKEN_RIGHT_CURLY);
-    });
-
-    test('returns COMMA for ,', () => {
-      const t = createTokenizer(',');
-      const tok = t._parseOperator(',', 1, 1);
-      expect(tok.type).toBe(TOKEN_COMMA);
-    });
-
-    test('returns COLON for :', () => {
-      const t = createTokenizer(':');
-      const tok = t._parseOperator(':', 1, 1);
-      expect(tok.type).toBe(TOKEN_COLON);
-    });
-
-    test('returns TILDE for ~', () => {
-      const t = createTokenizer('~');
-      const tok = t._parseOperator('~', 1, 1);
-      expect(tok.type).toBe(TOKEN_TILDE);
-    });
-
-    test('returns PIPEFORWARD for |>', () => {
-      const t = createTokenizer('|>');
-      t.forward();
-      const tok = t._parseOperator('|', 1, 1);
-      expect(tok.type).toBe(TOKEN_PIPEFORWARD);
-      expect(tok.value).toBe('|>');
-    });
-
-    test('returns OPERATOR for other symbols', () => {
-      const t = createTokenizer('+');
-      t.forward();
-      const tok = t._parseOperator('+', 1, 1);
-      expect(tok.type).toBe(TOKEN_OPERATOR);
-      expect(tok.value).toBe('+');
-    });
-
-    test('handles complex operators like ==', () => {
-      const t = createTokenizer('== ');
-      t.forward();
-      const tok = t._parseOperator('=', 1, 1);
-      expect(tok.type).toBe(TOKEN_OPERATOR);
-      expect(tok.value).toBe('==');
-    });
-
-    test('handles triple operators like ===', () => {
-      const t = createTokenizer('===x');
-      t.forward();
-      const tok = t._parseOperator('=', 1, 1);
-      expect(tok.value).toBe('===');
-    });
+  test('tokenizes floor division', () => {
+    const tokens = tokenize('{{ a // b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '//')).toBe(true);
   });
 
-  describe('_parseSymbol', () => {
-    test('parses integer', () => {
-      const t = createTokenizer('42');
-      const tok = t._parseSymbol('42', 1, 1);
-      expect(tok.type).toBe(TOKEN_INT);
-      expect(tok.value).toBe('42');
-    });
-
-    test('parses negative integer', () => {
-      const t = createTokenizer('-5');
-      const tok = t._parseSymbol('-5', 1, 1);
-      expect(tok.type).toBe(TOKEN_INT);
-      expect(tok.value).toBe('-5');
-    });
-
-    test('parses float via _parseNumber', () => {
-      const t = createTokenizer('3.14');
-      t.forward();
-      const tok = t._parseSymbol('3', 1, 1);
-      expect(tok.type).toBe(TOKEN_FLOAT);
-      expect(tok.value).toBe('3.14');
-    });
-
-    test('parses boolean true', () => {
-      const t = createTokenizer('');
-      const tok = t._parseSymbol('true', 1, 1);
-      expect(tok.type).toBe(TOKEN_BOOLEAN);
-      expect(tok.value).toBe('true');
-    });
-
-    test('parses boolean false', () => {
-      const t = createTokenizer('');
-      const tok = t._parseSymbol('false', 1, 1);
-      expect(tok.type).toBe(TOKEN_BOOLEAN);
-    });
-
-    test('parses none', () => {
-      const t = createTokenizer('');
-      const tok = t._parseSymbol('none', 1, 1);
-      expect(tok.type).toBe(TOKEN_NONE);
-    });
-
-    test('parses null as none', () => {
-      const t = createTokenizer('');
-      const tok = t._parseSymbol('null', 1, 1);
-      expect(tok.type).toBe(TOKEN_NONE);
-    });
-
-    test('parses symbol', () => {
-      const t = createTokenizer('');
-      const tok = t._parseSymbol('foo', 1, 1);
-      expect(tok.type).toBe(TOKEN_SYMBOL);
-      expect(tok.value).toBe('foo');
-    });
-
-    test('throws TemplateError for empty string', () => {
-      const t = createTokenizer('');
-      expect(() => t._parseSymbol('', 1, 1)).toThrow();
-    });
+  test('tokenizes modulo', () => {
+    const tokens = tokenize('{{ a % b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '%')).toBe(true);
   });
 
-  describe('nextToken in template text mode', () => {
-    test('returns DATA token for plain text', () => {
-      const t = createTokenizer('hello');
-      const tok = t.nextToken();
-      expect(tok.type).toBe(TOKEN_DATA);
-      expect(tok.value).toBe('hello');
-    });
+  test('tokenizes power', () => {
+    const tokens = tokenize('{{ a ** b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '**')).toBe(true);
+  });
+});
 
-    test('returns BLOCK_START for block tag', () => {
-      const t = createTokenizer('{% foo %}');
-      const tok = t.nextToken();
-      expect(tok.type).toBe(TOKEN_BLOCK_START);
-      expect(tok.value).toBe('{%');
-    });
-
-    test('returns VARIABLE_START for variable tag', () => {
-      const t = createTokenizer('{{ foo }}');
-      const tok = t.nextToken();
-      expect(tok.type).toBe(TOKEN_VARIABLE_START);
-      expect(tok.value).toBe('{{');
-    });
-
-    test('returns null at end', () => {
-      const t = createTokenizer('');
-      expect(t.nextToken()).toBeNull();
-    });
+describe('lex - comparison operators', () => {
+  test('tokenizes ==', () => {
+    const tokens = tokenize('{{ a == b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '==')).toBe(true);
   });
 
-  describe('nextToken in code mode', () => {
-    test('returns STRING token', () => {
-      const t = createTokenizer("'hello'");
-      t.in_code = true;
-      const tok = t.nextToken();
-      expect(tok.type).toBe(TOKEN_STRING);
-      expect(tok.value).toBe('hello');
-    });
-
-    test('returns WHITESPACE token', () => {
-      const t = createTokenizer('  foo');
-      t.in_code = true;
-      const tok = t.nextToken();
-      expect(tok.type).toBe(TOKEN_WHITESPACE);
-      expect(tok.value).toBe('  ');
-    });
-
-    test('returns BLOCK_END token and exits code mode', () => {
-      const t = createTokenizer('%}');
-      t.in_code = true;
-      const tok = t.nextToken();
-      expect(tok.type).toBe(TOKEN_BLOCK_END);
-      expect(t.in_code).toBe(false);
-    });
-
-    test('returns VARIABLE_END token and exits code mode', () => {
-      const t = createTokenizer('}}');
-      t.in_code = true;
-      const tok = t.nextToken();
-      expect(tok.type).toBe(TOKEN_VARIABLE_END);
-      expect(t.in_code).toBe(false);
-    });
-
-    test('parses regex literal', () => {
-      const t = createTokenizer('r/foo/g');
-      t.in_code = true;
-      const tok = t.nextToken();
-      expect(tok.type).toBe(TOKEN_REGEX);
-      expect(tok.value).toEqual({ body: 'foo', flags: 'g' });
-    });
-
-    test('returns operator token for delim chars', () => {
-      const t = createTokenizer('(');
-      t.in_code = true;
-      const tok = t.nextToken();
-      expect(tok.type).toBe(TOKEN_LEFT_PAREN);
-    });
-
-    test('parses symbol token', () => {
-      const t = createTokenizer('myVar');
-      t.in_code = true;
-      const tok = t.nextToken();
-      expect(tok.type).toBe(TOKEN_SYMBOL);
-      expect(tok.value).toBe('myVar');
-    });
-
-    test('returns null when finished in code mode', () => {
-      const t = createTokenizer('');
-      t.in_code = true;
-      expect(t.nextToken()).toBeNull();
-    });
+  test('tokenizes !=', () => {
+    const tokens = tokenize('{{ a != b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '!=')).toBe(true);
   });
 
-  describe('trimBlocks option', () => {
-    test('trims newline after block end when trimBlocks is true', () => {
-      const t = createTokenizer('{% if y %}\nz', { trimBlocks: true });
-      t.nextToken();
-      expect(t.in_code).toBe(true);
-      while (!t.isFinished() && t.current() !== '%') {
-        t.forward();
-      }
-      const end = t.nextToken();
-      expect(end.type).toBe(TOKEN_BLOCK_END);
-      expect(t.current()).toBe('z');
-    });
+  test('tokenizes ===', () => {
+    const tokens = tokenize('{{ a === b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '===')).toBe(true);
   });
 
-  describe('lex helper', () => {
-    test('creates a Tokenizer from lex', () => {
-      const t = lex('hello');
-      expect(typeof t).toBe('object');
-      expect(t.str).toBe('hello');
-    });
+  test('tokenizes !==', () => {
+    const tokens = tokenize('{{ a !== b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '!==')).toBe(true);
+  });
+
+  test('tokenizes <', () => {
+    const tokens = tokenize('{{ a < b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '<')).toBe(true);
+  });
+
+  test('tokenizes >', () => {
+    const tokens = tokenize('{{ a > b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '>')).toBe(true);
+  });
+
+  test('tokenizes <=', () => {
+    const tokens = tokenize('{{ a <= b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '<=')).toBe(true);
+  });
+
+  test('tokenizes >=', () => {
+    const tokens = tokenize('{{ a >= b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '>=')).toBe(true);
+  });
+});
+
+describe('lex - logical operators', () => {
+  test('tokenizes && operator', () => {
+    const tokens = tokenize('{{ a && b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '&&')).toBe(true);
+  });
+
+  test('tokenizes || operator', () => {
+    const tokens = tokenize('{{ a || b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '||')).toBe(true);
+  });
+
+  test('tokenizes ! operator', () => {
+    const tokens = tokenize('{{ !a }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '!')).toBe(true);
+  });
+
+  test('tokenizes and keyword', () => {
+    const tokens = tokenize('{{ a and b }}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'and')).toBe(true);
+  });
+
+  test('tokenizes or keyword', () => {
+    const tokens = tokenize('{{ a or b }}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'or')).toBe(true);
+  });
+
+  test('tokenizes not keyword', () => {
+    const tokens = tokenize('{{ not a }}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'not')).toBe(true);
+  });
+
+  test('tokenizes complex logical expression with operators', () => {
+    const tokens = tokenize('{{ true && false || true }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '&&')).toBe(true);
+    expect(hasToken(tokens, TOKEN_OPERATOR, '||')).toBe(true);
+  });
+
+  test('tokenizes complex logical expression with keywords', () => {
+    const tokens = tokenize('{{ true and false or true }}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'and')).toBe(true);
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'or')).toBe(true);
+  });
+});
+
+describe('lex - other operators', () => {
+  test('tokenizes ternary operator', () => {
+    const tokens = tokenize('{{ a ? b : c }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '?')).toBe(true);
+    expect(hasToken(tokens, TOKEN_COLON, ':')).toBe(true);
+  });
+
+  test('tokenizes nullish coalescing', () => {
+    const tokens = tokenize('{{ a ?? b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '??')).toBe(true);
+  });
+
+  test('tokenizes pipe forward', () => {
+    const tokens = tokenize('{{ a |> safe }}');
+    expect(hasToken(tokens, TOKEN_PIPEFORWARD, '|>')).toBe(true);
+  });
+
+  test('tokenizes tilde for concat', () => {
+    const tokens = tokenize('{{ "hello" ~ "world" }}');
+    expect(hasToken(tokens, TOKEN_TILDE, '~')).toBe(true);
+  });
+
+  test('tokenizes dot operator', () => {
+    const tokens = tokenize('{{ a.b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '.')).toBe(true);
+  });
+
+  test('tokenizes optional chaining', () => {
+    const tokens = tokenize('{{ a?.b }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '?.')).toBe(true);
+  });
+});
+
+describe('lex - strings', () => {
+  test('tokenizes double quoted string', () => {
+    const tokens = tokenize('{{ "hello" }}');
+    expect(hasToken(tokens, TOKEN_STRING, 'hello')).toBe(true);
+  });
+
+  test('tokenizes single quoted string', () => {
+    const tokens = tokenize("{{ 'hello' }}");
+    expect(hasToken(tokens, TOKEN_STRING, 'hello')).toBe(true);
+  });
+
+  test('tokenizes string with escape', () => {
+    const tokens = tokenize('{{ "hello\\nworld" }}');
+    const strToken = tokens.find(t => t.type === TOKEN_STRING);
+    expect(strToken.value).toBe('hello\nworld');
+  });
+
+  test('tokenizes escaped quote in string', () => {
+    const tokens = tokenize('{{ "say \\"hi\\"" }}');
+    const strToken = tokens.find(t => t.type === TOKEN_STRING);
+    expect(strToken.value).toBe('say "hi"');
+  });
+
+  test('tokenizes empty string double quotes', () => {
+    const tokens = tokenize('{{ "" }}');
+    expect(hasToken(tokens, TOKEN_STRING, '')).toBe(true);
+  });
+
+  test('tokenizes empty string single quotes', () => {
+    const tokens = tokenize("{{ '' }}");
+    expect(hasToken(tokens, TOKEN_STRING, '')).toBe(true);
+  });
+
+  test('handles escaped backslash', () => {
+    const tokens = tokenize('{{ "a\\\\b" }}');
+    const strToken = tokens.find(t => t.type === TOKEN_STRING);
+    expect(strToken.value).toBe('a\\b');
+  });
+});
+
+describe('lex - numbers', () => {
+  test('tokenizes integer', () => {
+    const tokens = tokenize('{{ 42 }}');
+    expect(hasToken(tokens, TOKEN_INT, '42')).toBe(true);
+  });
+
+  test('tokenizes float', () => {
+    const tokens = tokenize('{{ 3.14 }}');
+    expect(hasToken(tokens, TOKEN_FLOAT, '3.14')).toBe(true);
+  });
+
+  test('tokenizes negative integer', () => {
+    const tokens = tokenize('{{ -5 }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '-')).toBe(true);
+    expect(hasToken(tokens, TOKEN_INT, '5')).toBe(true);
+  });
+
+  test('tokenizes negative float', () => {
+    const tokens = tokenize('{{ -3.14 }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '-')).toBe(true);
+    expect(hasToken(tokens, TOKEN_FLOAT, '3.14')).toBe(true);
+  });
+
+  test('tokenizes zero', () => {
+    const tokens = tokenize('{{ 0 }}');
+    expect(hasToken(tokens, TOKEN_INT, '0')).toBe(true);
+  });
+
+  test('tokenizes large number', () => {
+    const tokens = tokenize('{{ 1000000 }}');
+    expect(hasToken(tokens, TOKEN_INT, '1000000')).toBe(true);
+  });
+});
+
+describe('lex - booleans and null', () => {
+  test('tokenizes true', () => {
+    const tokens = tokenize('{{ true }}');
+    expect(hasToken(tokens, TOKEN_BOOLEAN, 'true')).toBe(true);
+  });
+
+  test('tokenizes false', () => {
+    const tokens = tokenize('{{ false }}');
+    expect(hasToken(tokens, TOKEN_BOOLEAN, 'false')).toBe(true);
+  });
+
+  test('tokenizes none', () => {
+    const tokens = tokenize('{{ none }}');
+    expect(hasToken(tokens, TOKEN_NONE, 'none')).toBe(true);
+  });
+
+  test('tokenizes null', () => {
+    const tokens = tokenize('{{ null }}');
+    expect(hasToken(tokens, TOKEN_NONE, 'null')).toBe(true);
+  });
+});
+
+describe('lex - comments', () => {
+  test('tokenizes single line comment', () => {
+    const tokens = tokenize('{# comment #}');
+    expect(tokens).toHaveLength(1);
+    expect(tokens[0]).toMatchObject({ type: TOKEN_COMMENT, value: '{# comment #}' });
+  });
+
+  test('tokenizes comment with multiple words', () => {
+    const tokens = tokenize('{# this is a comment #}');
+    expect(tokens[0].value).toBe('{# this is a comment #}');
+  });
+
+  test('tokenizes comment without spaces', () => {
+    const tokens = tokenize('{#comment#}');
+    expect(tokens[0].value).toBe('{#comment#}');
+  });
+
+  test('template text before and after comment', () => {
+    const tokens = tokenize('hello {# comment #} world');
+    expect(getTokensByType(tokens, TOKEN_DATA)).toHaveLength(2);
+    expect(hasToken(tokens, TOKEN_COMMENT, '{# comment #}')).toBe(true);
+  });
+});
+
+describe('lex - whitespace handling', () => {
+  test('tokenizes with no spaces', () => {
+    const tokens = tokenize('{{x}}');
+    expect(getTokensByType(tokens, TOKEN_WHITESPACE)).toHaveLength(0);
+  });
+
+  test('tokenizes with extra spaces', () => {
+    const tokens = tokenize('{{  x  }}');
+    const ws = getTokensByType(tokens, TOKEN_WHITESPACE);
+    expect(ws.length).toBeGreaterThan(0);
+  });
+
+  test('tokenizes block with no spaces', () => {
+    const tokens = tokenize('{%if x%}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'if')).toBe(true);
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'x')).toBe(true);
+  });
+});
+
+describe('lex - mixed access patterns', () => {
+  test('tokenizes items[0].name', () => {
+    const tokens = tokenize('{{ items[0].name }}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'items')).toBe(true);
+    expect(hasToken(tokens, TOKEN_INT, '0')).toBe(true);
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'name')).toBe(true);
+  });
+
+  test('tokenizes function call', () => {
+    const tokens = tokenize('{{ fn(arg1, arg2) }}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'fn')).toBe(true);
+    expect(hasToken(tokens, TOKEN_LEFT_PAREN, '(')).toBe(true);
+    expect(hasToken(tokens, TOKEN_RIGHT_PAREN, ')')).toBe(true);
+    expect(hasToken(tokens, TOKEN_COMMA, ',')).toBe(true);
+  });
+
+  test('tokenizes nested function call', () => {
+    const tokens = tokenize('{{ fn(arr[0]) }}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'fn')).toBe(true);
+    expect(hasToken(tokens, TOKEN_INT, '0')).toBe(true);
+  });
+});
+
+describe('lex - complex expressions', () => {
+  test('tokenizes operator precedence with && and ||', () => {
+    const tokens = tokenize('{{ a && b || c }}');
+    const ops = getTokensByType(tokens, TOKEN_OPERATOR);
+    expect(ops.map(t => t.value)).toContain('&&');
+    expect(ops.map(t => t.value)).toContain('||');
+  });
+
+  test('tokenizes comparison chain', () => {
+    const tokens = tokenize('{{ a == b && c != d }}');
+    const ops = getTokensByType(tokens, TOKEN_OPERATOR);
+    expect(ops.map(t => t.value)).toEqual(['==', '&&', '!=']);
+  });
+
+  test('tokenizes unary not with comparison', () => {
+    const tokens = tokenize('{{ not a == b }}');
+    expect(hasToken(tokens, TOKEN_SYMBOL, 'not')).toBe(true);
+  });
+
+  test('tokenizes negation with !', () => {
+    const tokens = tokenize('{{ !true }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '!')).toBe(true);
+    expect(hasToken(tokens, TOKEN_BOOLEAN, 'true')).toBe(true);
+  });
+
+  test('tokenizes ternary with expressions', () => {
+    const tokens = tokenize('{{ x ? a + b : c - d }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '?')).toBe(true);
+    expect(hasToken(tokens, TOKEN_COLON, ':')).toBe(true);
+  });
+});
+
+describe('lex - regex', () => {
+  test('tokenizes simple regex', () => {
+    const tokens = tokenize('{{ r/test/ }}');
+    const regexTokens = getTokensByType(tokens, TOKEN_REGEX);
+    expect(regexTokens).toHaveLength(1);
+    expect(regexTokens[0].value.body).toBe('test');
+    expect(regexTokens[0].value.flags).toBe('');
+  });
+
+  test('tokenizes regex with flags', () => {
+    const tokens = tokenize('{{ r/test/gi }}');
+    const regexTokens = getTokensByType(tokens, TOKEN_REGEX);
+    expect(regexTokens[0].value.body).toBe('test');
+    expect(regexTokens[0].value.flags).toBe('gi');
+  });
+
+  test('tokenizes empty regex', () => {
+    const tokens = tokenize('{{ r/// }}');
+    const regexTokens = getTokensByType(tokens, TOKEN_REGEX);
+    expect(regexTokens[0].value.body).toBe('');
+    expect(regexTokens[0].value.flags).toBe('');
+  });
+});
+
+describe('lex - plain text', () => {
+  test('tokenizes plain text as DATA', () => {
+    const tokens = tokenize('hello world');
+    expect(tokens).toHaveLength(1);
+    expect(tokens[0]).toMatchObject({ type: TOKEN_DATA, value: 'hello world' });
+  });
+
+  test('tokenizes text before and after variable', () => {
+    const tokens = tokenize('Hello {{ name }}!');
+    expect(getTokensByType(tokens, TOKEN_DATA)).toHaveLength(2);
+  });
+
+  test('tokenizes text before and after block', () => {
+    const tokens = tokenize('{% if x %}yes{% endif %}');
+    expect(getTokensByType(tokens, TOKEN_DATA)).toHaveLength(1);
+    expect(tokens.find(t => t.value === 'yes')).toBeTruthy();
+  });
+});
+
+describe('lex - line and column tracking', () => {
+  test('tracks colno correctly', () => {
+    const tokens = tokenize('abc');
+    expect(tokens[0].colno).toBe(0);
+  });
+
+  test('handles multiline template', () => {
+    const tokens = tokenize('{{ x }}\n{{ y }}');
+    expect(getTokensByType(tokens, TOKEN_VARIABLE_START)).toHaveLength(2);
+    expect(getTokensByType(tokens, TOKEN_VARIABLE_END)).toHaveLength(2);
+  });
+
+  test('preserves newlines in data tokens', () => {
+    const tokens = tokenize('line1\nline2');
+    expect(tokens).toHaveLength(1);
+    expect(tokens[0].value).toContain('\n');
   });
 });

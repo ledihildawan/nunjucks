@@ -2,10 +2,11 @@ import { isString, isPlainObject, defaultTo } from 'remeda';
 import { createCompiler } from '../compiler/index.js';
 import { parse } from '../parser/index.js';
 import { transform } from '../transformers/index.js';
-import { prettifyError } from '../error/index.js';
+import { prettifyError } from '@nunjucks/log/error/classify/template-error';
 import { createMappedError } from '../helpers/source-map.js';
 import { createContext } from '../runtime/context.js';
 import { HOOK_EVENTS } from '../runtime/hooks.js';
+import { injectWarningsScript } from '@nunjucks/log';
 import {
   createFrame,
   createSafeString,
@@ -32,27 +33,34 @@ import { createObj } from '../object/index.js';
 
 const Template = Symbol('Template');
 
-const globalRuntime = {
-  createFrame,
-  createSafeString,
-  copySafeness,
-  markSafe,
-  makeMacro,
-  makeKeywordArgs,
-  memberLookup,
-  optionalMemberLookup,
-  slice,
-  nullishCoalesce,
-  suppressValue,
-  awaitValue,
-  ensureDefined,
-  callWrap,
-  contextOrFrameLookup,
-  handleError,
-  fromIterator,
-  inOperator,
-  isArray,
-  keys,
+const createRuntimeWithContext = (templatePath, envOpts) => {
+  return {
+    createFrame,
+    createSafeString,
+    copySafeness,
+    markSafe,
+    makeMacro,
+    makeKeywordArgs,
+    memberLookup,
+    optionalMemberLookup,
+    slice,
+    nullishCoalesce,
+    suppressValue,
+    awaitValue,
+    ensureDefined,
+    callWrap,
+    contextOrFrameLookup,
+    handleError,
+    fromIterator,
+    inOperator,
+    isArray,
+    keys,
+    __warnings__: [],
+    logContext: {
+      templateName: templatePath || 'inline',
+      phase: 'render'
+    }
+  };
 };
 
 const getLoaderSourceMap = (env, errorPath, currentPath) => {
@@ -162,7 +170,13 @@ export function createTemplate(src, env, path, eagerCompile) {
       frame.topLevel = true;
 
       try {
-        return await this.rootRenderFunc(this.env, context, frame, globalRuntime);
+        const runtime = createRuntimeWithContext(this.path, this.env.opts);
+        const result = await this.rootRenderFunc(this.env, context, frame, runtime);
+        if (runtime.__warnings__ && runtime.__warnings__.length > 0 && this.env.opts.dev) {
+          const script = injectWarningsScript(runtime.__warnings__, { dev: true, verbosity: 'medium' });
+          return result + script;
+        }
+        return result;
       } catch (e) {
         const errorWithPath = this._enrichError(e);
         throw prettifyError({
@@ -196,7 +210,13 @@ export function createTemplate(src, env, path, eagerCompile) {
       frame.topLevel = true;
 
       try {
-        return this.rootRenderFunc(this.env, context, frame, globalRuntime);
+        const runtime = createRuntimeWithContext(this.path, this.env.opts);
+        const result = this.rootRenderFunc(this.env, context, frame, runtime);
+        if (runtime.__warnings__ && runtime.__warnings__.length > 0 && this.env.opts.dev) {
+          const script = injectWarningsScript(runtime.__warnings__, { dev: true, verbosity: 'medium' });
+          return result + script;
+        }
+        return result;
       } catch (e) {
         const errorWithPath = this._enrichError(e);
         throw prettifyError({
@@ -249,7 +269,8 @@ export function createTemplate(src, env, path, eagerCompile) {
 
       const context = createContext(ctx || {}, this.blocks, this.env);
       try {
-        await this.rootRenderFunc(this.env, context, frame, globalRuntime);
+        const runtime = createRuntimeWithContext(this.path, this.env.opts);
+        await this.rootRenderFunc(this.env, context, frame, runtime);
         return context.getExported();
       } catch (e) {
         if (!e.path) e.path = this.path;

@@ -1,6 +1,7 @@
 import {
   TOKEN_BLOCK_END,
   TOKEN_SYMBOL,
+  TOKEN_OPERATOR,
   TOKEN_VARIABLE_END,
   TOKEN_WHITESPACE,
 } from '../lexer/token-types.js';
@@ -77,6 +78,15 @@ export const skipValue = (ctx, type, val) => {
 };
 
 export const skipSymbol = (ctx, val) => skipValue(ctx, TOKEN_SYMBOL, val);
+
+export const skipOperator = (ctx, ...vals) => {
+  for (const val of vals) {
+    if (skipValue(ctx, TOKEN_OPERATOR, val)) {
+      return true;
+    }
+  }
+  return false;
+};
 
 export const advanceAfterBlockEnd = (ctx, name) => {
   let tok;
