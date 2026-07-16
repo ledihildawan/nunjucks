@@ -17,6 +17,31 @@ export const extractUndefinedName = (message) => {
     return varNotDefinedMatch[1];
   }
 
+  const funcNotDefinedMatch = message.match(PATTERNS.UNDEFINED_FUNCTION);
+  if (funcNotDefinedMatch) {
+    return funcNotDefinedMatch[1];
+  }
+
+  const notAFunctionMatch = message.match(PATTERNS.NOT_A_FUNCTION);
+  if (notAFunctionMatch) {
+    return notAFunctionMatch[1];
+  }
+
+  const filterNotFoundMatch = message.match(PATTERNS.UNDEFINED_FILTER);
+  if (filterNotFoundMatch) {
+    return filterNotFoundMatch[1];
+  }
+
+  const sandboxAccessMatch = message.match(PATTERNS.SANDBOX_ACCESS);
+  if (sandboxAccessMatch) {
+    return sandboxAccessMatch[1];
+  }
+
+  const sandboxSetMatch = message.match(PATTERNS.SANDBOX_SET);
+  if (sandboxSetMatch) {
+    return sandboxSetMatch[1];
+  }
+
   const outputMatch = message.match(PATTERNS.OUTPUT_MATCH);
   if (outputMatch) {
     const name = outputMatch[1];

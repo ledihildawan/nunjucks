@@ -253,6 +253,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.SANDBOX_ACCESS,
     category: 'sandbox_blocked',
     subjectFrom: 'blockedKey',
+    titleTemplate: "Cannot access '{subject}' in sandbox mode",
     causes: [
       '**Sandbox mode** blocks access to `{subject}`',
       'Dangerous property access attempted in sandboxed template'
@@ -264,6 +265,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.SANDBOX_SET,
     category: 'sandbox_blocked',
     subjectFrom: 'blockedKey',
+    titleTemplate: "Cannot set '{subject}' in sandbox mode",
     causes: [
       '**Sandbox mode** blocks setting `{subject}`',
       'Attempted to modify blocked property in sandboxed template'
@@ -275,6 +277,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.SLICE_STEP,
     category: 'slice_error',
     subjectFrom: null,
+    titleTemplate: 'Slice step cannot be zero',
     causes: [
       '**Slice step** cannot be zero (division by zero)',
       'Invalid slice notation: `[::0]` is not allowed'
@@ -286,6 +289,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.LIST_FILTER,
     category: 'iterable_error',
     subjectFrom: null,
+    titleTemplate: "List value '{subject}' is not iterable",
     causes: [
       '**List filter** requires an **iterable** input',
       'Passed value type is not iterable (e.g., number, null)'
