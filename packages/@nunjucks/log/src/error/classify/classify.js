@@ -119,6 +119,7 @@ export const classifyError = (rawMessage) => {
     return {
       category: rule.category,
       undefinedName: subject,
+      title: rule.titleTemplate ? resolveField(rule.titleTemplate, subject) : null,
       causes: resolveField(rule.causes, subject),
       fixCode: resolveField(rule.fixCode, subject),
       fixComment: resolveField(rule.fixComment, subject)

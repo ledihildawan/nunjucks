@@ -5,6 +5,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.UNDEFINED_VALUE,
     category: 'undefined_value',
     subjectFrom: 'undefinedName',
+    titleTemplate: "Cannot read property '{subject}' of undefined",
     causes: [
       '**Nested property access** returned `null`/`undefined`',
       '**Array index** out of bounds',
@@ -17,6 +18,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.UNDEFINED_VARIABLE,
     category: 'undefined_variable',
     subjectFrom: 'undefinedName',
+    titleTemplate: "Variable '{subject}' is not defined",
     causes: [
       'Variable `{subject}` not passed in `render` context',
       '**Typo** in variable name',
@@ -29,6 +31,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.UNDEFINED_FUNCTION,
     category: 'undefined_function',
     subjectFrom: 'undefinedName',
+    titleTemplate: "Function '{subject}' is not defined",
     causes: [
       'Function `{subject}` not registered with `env.addGlobal()`',
       'Filter `{subject}` not registered with `env.addFilter()`',
@@ -41,6 +44,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.SANDBOX_PROTO_ACCESS,
     category: 'sandbox_blocked',
     subjectFrom: null,
+    titleTemplate: "Cannot access property in sandbox mode",
     causes: [
       'Attempted to access **undefined variable** in sandbox mode',
       'Accessing properties on undefined in sandboxed template'
@@ -52,6 +56,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.SANDBOX_TIMEOUT,
     category: 'timeout_error',
     subjectFrom: null,
+    titleTemplate: "Template execution timed out",
     causes: [
       'Template execution **timed out**',
       'Infinite loop or large data processing'
@@ -63,6 +68,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.SANDBOX_CONTEXT_ERROR,
     category: 'sandbox_blocked',
     subjectFrom: null,
+    titleTemplate: "Cannot modify sandboxed context",
     causes: [
       'Attempted to access or modify **sandboxed context**',
       'Template tried to use restricted functionality'
@@ -74,6 +80,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.NOT_A_FUNCTION,
     category: 'sandbox_blocked',
     subjectFrom: 'undefinedName',
+    titleTemplate: "'{subject}' is not a function",
     causes: [
       '**Calling a non-function value**',
       'Variable contains wrong data type',
@@ -86,6 +93,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.INVALID_LOOKUP,
     category: 'invalid_lookup',
     subjectFrom: 'invalidLookup',
+    titleTemplate: "Invalid property access: {subject}",
     causes: [
       'Invalid character `{subject}` after dot (e.g. `{target}.[{subject}]`)',
       'Use **either dot** (`{target}.key`) **or bracket** (`{target}["key"]`) **notation**',
@@ -98,6 +106,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.DUPLICATE_BLOCK,
     category: 'duplicate_block',
     subjectFrom: 'duplicateBlock',
+    titleTemplate: "Block '{subject}' is defined more than once",
     causes: [
       '**Duplicate block** definition in template',
       'Block is defined multiple times'
@@ -109,6 +118,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.UNKNOWN_BLOCK_TAG,
     category: 'unknown_block_tag',
     subjectFrom: 'unknownBlockTag',
+    titleTemplate: "Unknown tag or block: {subject}",
     causes: [
       '**Unmatched** closing tag (e.g. `{% endif %}` without `{% if %}`)',
       '**Typo** in block tag name'
@@ -131,6 +141,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.SYNTAX_ERROR,
     category: 'syntax_error',
     subjectFrom: null,
+    titleTemplate: "Template syntax error",
     causes: [
       'Missing closing tag (`{{ endif }}`, `{% endfor %}`)',
       '**Mismatched quotes** or brackets',
@@ -143,6 +154,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.UNDEFINED_FILTER,
     category: 'undefined_filter',
     subjectFrom: 'filter',
+    titleTemplate: "Filter '{subject}' is not defined",
     causes: [
       'Filter `{subject}` not registered with `env.addFilter()`',
       '**Typo** in filter name'
@@ -154,6 +166,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.UNDEFINED_BLOCK,
     category: 'undefined_block',
     subjectFrom: null,
+    titleTemplate: "Block is not defined in parent template",
     causes: [
       '**Extending template** without block definition',
       'Incorrect **block name**'
@@ -165,6 +178,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.NO_SUPER_BLOCK,
     category: 'no_super_block',
     subjectFrom: 'quotes',
+    titleTemplate: "Cannot call super() - parent has no block",
     causes: [
       '`super()` called in block {subject} but parent has no block',
       'Using `super()` in a block with no **parent equivalent**',
@@ -188,6 +202,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.FILE_NOT_FOUND,
     category: 'file_not_found',
     subjectFrom: 'fileNotFound',
+    titleTemplate: "Template file not found: {subject}",
     causes: [
       'Template file `{subject}` **does not exist**',
       '**Incorrect path** in `include`/`extends`',
@@ -200,6 +215,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.IMPORT_ERROR,
     category: 'import_error',
     subjectFrom: null,
+    titleTemplate: "Cannot import template - module not found",
     causes: [
       '**Import failed** - template could not be loaded',
       'Module **not found** or path is incorrect',
@@ -212,6 +228,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.INVALID_INCLUDE,
     category: 'invalid_include',
     subjectFrom: null,
+    titleTemplate: "Include path must be a string literal",
     causes: [
       '**Include path** is not a string literal',
       'Variable used in `include` must be a **string**'
@@ -223,6 +240,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.FILESYSTEM_ERROR,
     category: 'filesystem_error',
     subjectFrom: null,
+    titleTemplate: "Cannot access template file",
     causes: [
       'Template path points to a **directory** instead of a file',
       'File or directory **does not exist**',
@@ -369,6 +387,7 @@ export const ERROR_RULES = [
     category: 'validation_error',
     subjectFrom: null,
     sourceFromStack: true,
+    titleTemplate: "Template must be a string",
     causes: [
       'Template must be a **string**, got null/undefined',
       'Passed template is not a valid string'
@@ -381,6 +400,7 @@ export const ERROR_RULES = [
     category: 'js_stack_source',
     subjectFrom: null,
     sourceFromStack: true,
+    titleTemplate: "Template parameter is null or invalid",
     causes: [
       '**Template parameter** is null or invalid',
       'Passed template is not a valid string'
@@ -392,6 +412,7 @@ export const ERROR_RULES = [
     pattern: PATTERNS.TEMPLATE_NULL,
     category: 'invalid_template',
     subjectFrom: null,
+    titleTemplate: "Template is null or undefined",
     causes: [
       'Template is **null** or **undefined**',
       'Passed template parameter is not a valid string'

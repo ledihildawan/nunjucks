@@ -14,6 +14,7 @@ export const classify = (error) => {
     category: classified.category || 'unknown',
     message: error.message || String(error),
     undefinedName: classified.undefinedName || null,
+    title: classified.title || null,
     causes: classified.causes || [],
     fixCode: classified.fixCode || null,
     fixComment: classified.fixComment || null,

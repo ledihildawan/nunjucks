@@ -116,8 +116,11 @@ export function ensureDefined(val, lineno, colno, varName = null, templateName =
     const effectiveTemplateName = templateName || ctx.templateName || 'inline';
 
     if (undefinedMode === 'strict') {
+      const humanMessage = varName
+        ? `Variable '${varName}' is not defined`
+        : 'Attempted to output null or undefined value';
       throw createLog('error', {
-        message: `attempted to output${varName ? ` '${varName}'` : ''} null or undefined value`,
+        message: humanMessage,
         lineno,
         colno,
         info: { code: varName ? 'UNDEFINED_VARIABLE' : 'UNDEFINED_VALUE', subject: varName, phase: ctx.phase || 'render', templateName: effectiveTemplateName }

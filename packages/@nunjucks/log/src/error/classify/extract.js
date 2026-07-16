@@ -12,6 +12,11 @@ export const extractUndefinedName = (message) => {
     return name;
   }
 
+  const varNotDefinedMatch = message.match(PATTERNS.VARIABLE_NOT_DEFINED);
+  if (varNotDefinedMatch) {
+    return varNotDefinedMatch[1];
+  }
+
   const outputMatch = message.match(PATTERNS.OUTPUT_MATCH);
   if (outputMatch) {
     const name = outputMatch[1];

@@ -94,6 +94,24 @@ export const toHtml = (error, options = {}) => {
   const plain = toText(error, { verbosity: 'simple' });
 
   const category = error.code || classified?.category?.toUpperCase() || 'UNKNOWN';
+  const undefinedName = classified?.undefinedName || plain.match(/attempted to output '([^']+)'/)?.[1] || null;
+
+  let humanTitle = classified?.title || plain;
+  if (category === 'UNDEFINED_VARIABLE' && undefinedName) {
+    humanTitle = `Variable '${undefinedName}' is not defined`;
+  } else if (category === 'UNDEFINED_FUNCTION') {
+    humanTitle = `Function '${undefinedName || 'unknown'}' is not defined`;
+  } else if (category === 'UNDEFINED_FILTER') {
+    humanTitle = `Filter '${undefinedName || 'unknown'}' is not defined`;
+  } else if (category === 'IMPORT_ERROR') {
+    humanTitle = 'Cannot import template - module not found';
+  } else if (category === 'FILE_NOT_FOUND') {
+    humanTitle = `Template file not found: ${undefinedName || 'unknown'}`;
+  } else if (category === 'SYNTAX_ERROR') {
+    humanTitle = 'Template syntax error';
+  } else if (category === 'VALIDATION_ERROR') {
+    humanTitle = 'Template must be a string';
+  }
   const displayLine = isJsCaller ? (lineno ?? 1) : ((lineno ?? error?.lineno ?? 0) + 1);
   const displayCol = isJsCaller ? (colno ?? 1) : ((colno ?? error?.colno ?? 0) + 1);
   const displayPath = templatePath || 'unknown';
@@ -143,7 +161,7 @@ export const toHtml = (error, options = {}) => {
 
   const locDisplay = `${shortenPath(displayPath)}:${displayLine}:${displayCol}`;
 
-  const headerTitle = escapeHtml(plain);
+  const headerTitle = escapeHtml(humanTitle);
   const locationInfo = escapeHtml(`${displayPath}:${displayLine}:${displayCol}`);
 
   const possibleCauses = classified?.causes || [];
