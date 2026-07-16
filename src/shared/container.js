@@ -7,7 +7,7 @@ export const createContainer = () => {
 
   const register = (name, factory, options = {}) => {
     if (!isFunction(factory)) {
-      throw new Error(`Container: factory for '${name}' must be a function`);
+      throw new Error(`Container: factory for '${name}' must be a function, got ${typeof factory}`);
     }
     factories.set(name, factory);
     if (options.singleton) {
@@ -28,7 +28,7 @@ export const createContainer = () => {
 
     const factory = factories.get(name);
     if (!factory) {
-      throw new Error(`Container: '${name}' is not registered`);
+      throw new Error(`Container: '${name}' is not registered. Did you forget to register it?`);
     }
 
     const deps = factory.length > 0 && args.length === 0

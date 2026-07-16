@@ -167,7 +167,7 @@ export function createTokenizer(str, opts = {}) {
       const symbolToken = createSymbolToken(tok, lineno, colno, false, isBooleanString(tok), isNullString(tok));
       if (symbolToken) return symbolToken;
       throw createLog('error', {
-        message: 'Unexpected value while parsing: ' + tok,
+        message: `Unexpected token '${tok}' while parsing`,
         lineno: state.lineno,
         colno: state.colno,
         info: { phase: 'lex' }

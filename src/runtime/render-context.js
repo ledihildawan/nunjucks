@@ -124,7 +124,7 @@ export const withValidation = (validators) => (context) => {
   const originalSet = newCtx.set;
   newCtx.set = (key, value) => {
     if (validators[key] && !validators[key](value)) {
-      throw new Error(`Validation failed for '${key}'`);
+      throw new Error(`Invalid value for '${key}'`);
     }
     return originalSet(key, value);
   };

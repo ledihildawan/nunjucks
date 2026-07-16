@@ -94,7 +94,7 @@ export const walk = (ast, func, depthFirst) => {
   const typeName = nodes.getNodeTypeName(ast);
   const Ctor = CONSTRUCTOR_MAP[typeName];
   if (!Ctor) {
-    throw new Error(`walk: unknown typename ${typeName}`);
+    throw new Error(`walk: unknown node type '${typeName}'`);
   }
 
   if (nodes.isNodeList(ast) || nodes.isRoot(ast) || (ast.children && Array.isArray(ast.children))) {

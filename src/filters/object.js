@@ -7,7 +7,7 @@ const isObject = isPlainObject;
 export function dictsort(val, caseSensitive, by) {
   if (!isObject(val)) {
     throw createLog('error', {
-      message: 'dictsort filter: val must be an object',
+      message: `dictsort: expected object, got ${typeof val}`,
       lineno: 0,
       colno: 0
     });
@@ -25,7 +25,7 @@ export function dictsort(val, caseSensitive, by) {
     si = 1;
   } else {
     throw createLog('error', {
-      message: 'dictsort filter: You can only sort by either key or value',
+      message: `dictsort: invalid sort mode '${by}'. Must be 'key' or 'value'`,
       lineno: 0,
       colno: 0
     });
@@ -52,12 +52,12 @@ export function dictsort(val, caseSensitive, by) {
 
 export function groupby(arr, attr) {
   if (!arr || !Array.isArray(arr)) {
-    throw new TypeError('groupby: first argument must be an array');
+    throw new TypeError(`groupby: expected array, got ${typeof arr}`);
   }
 
   for (const item of arr) {
     if (item && typeof item === 'object' && !(attr in item)) {
-      throw new TypeError(`groupby: attribute "${attr}" resolved to undefined`);
+      throw new TypeError(`groupby: attribute '${attr}' does not exist on object`);
     }
   }
 
@@ -66,7 +66,7 @@ export function groupby(arr, attr) {
   return groupBy(arr, (item, i) => {
     const key = getAttr(item, i);
     if (key === undefined) {
-      throw new TypeError(`groupby: attribute "${attr}" resolved to undefined`);
+      throw new TypeError(`groupby: attribute '${attr}' does not exist on object`);
     }
     return key;
   });

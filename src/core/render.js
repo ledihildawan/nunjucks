@@ -210,7 +210,7 @@ export const renderWithEnv = async (templateName, env, context = {}, config = {}
       return result;
     }
     
-    throw new Error('Template does not have a render method');
+    throw new Error('Template object is invalid: missing render method');
   } catch (err) {
     throw wrapWithError(err, { ...config, templatePath: config.templatePath || templateName, env }, template?.tmplStr ?? null, context);
   }

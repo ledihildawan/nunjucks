@@ -134,12 +134,12 @@ export function createTemplate(src, env, path, eagerCompile) {
             this.tmplStr = srcArg.obj;
             break;
           default:
-            throw new Error(`Unexpected template object type ${srcArg.type}; expected 'code', or 'string'`);
+            throw new Error(`Invalid template source: expected 'code' or 'string', got '${srcArg.type}'`);
         }
       } else if (isString(srcArg)) {
         this.tmplStr = srcArg;
       } else {
-        throw new Error('src must be a string or an object describing the source');
+        throw new Error('Template src must be a string or an object');
       }
 
       if (eagerCompileArg) {

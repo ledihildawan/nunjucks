@@ -152,14 +152,14 @@ export function callWrap(obj, name, displayName, context, args, lineno, colno) {
   const messageName = displayName || name;
   if (!obj) {
     throw createLog('error', {
-      message: `Unable to call \`${messageName}\`, which is undefined or falsey`,
+      message: `Function '${messageName}' is not defined`,
       lineno,
       colno,
       info: { code: 'UNDEFINED_FUNCTION', subject: name, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline' }
     });
   } else if (!isFunction(obj)) {
     throw createLog('error', {
-      message: `Unable to call \`${messageName}\`, which is not a function`,
+      message: `'${messageName}' is not a function`,
       lineno,
       colno,
       info: { code: 'NOT_A_FUNCTION', subject: name, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline' }
@@ -257,5 +257,5 @@ export function inOperator(key, val) {
   if (isPlainObject(val)) {
     return key in val;
   }
-  throw new Error(`Cannot use "in" operator to search for \`${key}\` in unexpected types.`);
+  throw new Error(`Cannot use 'in' operator to search for '${key}' in ${typeof val}`);
 }

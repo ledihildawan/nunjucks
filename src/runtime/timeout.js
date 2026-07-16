@@ -43,7 +43,7 @@ export const withTimeoutSync = (fn, ms, onTimeout) => {
     if (!finished && onTimeout) {
       onTimeout();
     }
-    throw new TimeoutError(`Template execution timed out after ${ms}ms`);
+    throw new TimeoutError(`Template rendering timed out after ${ms}ms`);
   }, ms);
 
   try {

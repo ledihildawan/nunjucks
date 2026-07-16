@@ -55,12 +55,12 @@ export const createSandboxedObject = (obj, sandboxEnabled, options = {}) => {
     get(target, key) {
       // Check blocklist
       if (isBlockedKey(key)) {
-        throw new Error(`Sandbox: Access to '${key}' is blocked`);
+        throw new Error(`Cannot access '${key}' in sandbox mode`);
       }
-      
+
       // Check allowlist if not in blocklist-only mode
       if (!blocklistMode && !isAllowedKey(key, allowlist)) {
-        throw new Error(`Sandbox: Access to '${key}' is not allowed. Add it to allowlist.`);
+        throw new Error(`'${key}' is not allowed in sandbox mode. Add it to allowlist.`);
       }
       
       const value = target[key];
@@ -75,12 +75,12 @@ export const createSandboxedObject = (obj, sandboxEnabled, options = {}) => {
     set(target, key, value) {
       // Check blocklist
       if (isBlockedKey(key)) {
-        throw new Error(`Sandbox: Setting '${key}' is blocked`);
+        throw new Error(`Cannot set '${key}' in sandbox mode`);
       }
-      
+
       // Check allowlist if not in blocklist-only mode
       if (!blocklistMode && !isAllowedKey(key, allowlist)) {
-        throw new Error(`Sandbox: Setting '${key}' is not allowed. Add it to allowlist.`);
+        throw new Error(`Cannot set '${key}' in sandbox mode. Add it to allowlist.`);
       }
       
       target[key] = value;
@@ -109,32 +109,32 @@ export const createSandboxedContext = (context, sandboxEnabled, options = {}) =>
   return new Proxy(context, {
     get(target, key) {
       if (isBlockedKey(key)) {
-        throw new Error(`Sandbox: Access to '${key}' is blocked`);
+        throw new Error(`Cannot access '${key}' in sandbox mode`);
       }
-      
+
       if (!blocklistMode && !isAllowedKey(key, allowlist)) {
-        throw new Error(`Sandbox: Access to '${key}' is not allowed. Add it to allowlist.`);
+        throw new Error(`'${key}' is not allowed in sandbox mode. Add it to allowlist.`);
       }
-      
+
       const value = target[key];
-      
+
       if (isFunction(value)) {
         return wrapFunction(value, sandboxEnabled);
       }
-      
+
       if (typeof value === 'object' && isNonNullish(value)) {
         return createSandboxedObject(value, sandboxEnabled, options);
       }
-      
+
       return value;
     },
     set(target, key, value) {
       if (isBlockedKey(key)) {
-        throw new Error(`Sandbox: Setting '${key}' is blocked`);
+        throw new Error(`Cannot set '${key}' in sandbox mode`);
       }
-      
+
       if (!blocklistMode && !isAllowedKey(key, allowlist)) {
-        throw new Error(`Sandbox: Setting '${key}' is not allowed. Add it to allowlist.`);
+        throw new Error(`Cannot set '${key}' in sandbox mode. Add it to allowlist.`);
       }
       
       target[key] = value;
@@ -160,11 +160,11 @@ export const wrapMemberAccess = (obj, val, sandboxEnabled, options = {}) => {
   }
 
   if (isBlockedKey(val)) {
-    throw new Error(`Sandbox: Access to '${val}' is blocked`);
+    throw new Error(`Cannot access '${val}' in sandbox mode`);
   }
 
   if (!blocklistMode && !isAllowedKey(val, allowlist)) {
-    throw new Error(`Sandbox: Access to '${val}' is not allowed. Add it to allowlist.`);
+    throw new Error(`'${val}' is not allowed in sandbox mode. Add it to allowlist.`);
   }
 
   const value = obj?.[val];

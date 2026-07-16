@@ -26,7 +26,7 @@ export function optionalMemberLookup(obj, val) {
 
 export function slice(arr, start, stop, step) {
   if (step === 0) {
-    throw new Error('slice step cannot be 0');
+    throw new Error('slice: step cannot be zero');
   }
 
   const len = arr.length;

@@ -72,7 +72,7 @@ export const validateContext = (context, options = {}) => {
   const keyValidation = validateContextKeys(context, allowedKeys, blockedKeys);
   if (!keyValidation.valid) {
     throw new SecurityError(
-      `Context contains blocked keys: ${keyValidation.blocked.map(b => b.key).join(', ')}`,
+      `Cannot use blocked keys in context: ${keyValidation.blocked.map(b => b.key).join(', ')}`,
       'BLOCKED_CONTEXT_KEYS'
     );
   }
@@ -81,7 +81,7 @@ export const validateContext = (context, options = {}) => {
     const dangerousValues = findDangerousValues(context, allowedGlobals);
     if (dangerousValues.length > 0) {
       throw new SecurityError(
-        `Context contains dangerous values: ${dangerousValues.join(', ')}`,
+        `Context contains unsafe values: ${dangerousValues.join(', ')}`,
         'DANGEROUS_CONTEXT_VALUES'
       );
     }
@@ -163,7 +163,7 @@ export const createSecurityValidator = (options = {}) => {
       const violations = scanTemplateForDangerousCode(content);
       if (violations.length > 0 && strictMode) {
         throw new SecurityError(
-          `Template contains dangerous code: ${violations.map(v => v.message).join('; ')}`,
+          `Template contains unsafe code: ${violations.map(v => v.message).join('; ')}`,
           'DANGEROUS_TEMPLATE_CODE'
         );
       }

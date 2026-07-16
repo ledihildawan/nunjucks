@@ -24,7 +24,7 @@ export const compileFromImport = (ctx, node, frame) => {
     ctx._emitLine(`if(Object.prototype.hasOwnProperty.call(${importedId}_exported, "${name}")) {`);
     ctx._emitLine(`let ${id} = ${importedId}_exported["${name}"];`);
     ctx._emitLine('} else {');
-    ctx._emitLine(`throw new Error("cannot import '${name}'");`);
+    ctx._emitLine(`throw new Error("Cannot import '${name}' from module");`);
     ctx._emitLine('}');
 
     frame.set(alias, id);

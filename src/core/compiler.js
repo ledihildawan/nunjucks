@@ -23,7 +23,7 @@ const getRenderFunction = (code) => {
     return { render: result.root };
   }
   
-  throw new Error('Unrecognized code format: expected "async function root"');
+  throw new Error('Invalid template: expected compiled template to start with "async function root"');
 };
 
 const getRuntimeHelpers = () => ({
@@ -84,7 +84,7 @@ export const execute = async (code, context = {}, config = {}) => {
     if (filterFn) return filterFn;
     const ctxFn = context[name] && typeof context[name] === 'function' ? context[name] : null;
     if (ctxFn) return ctxFn;
-    throw new Error(`Filter "${name}" not found`);
+    throw new Error(`Filter '${name}' is not defined`);
   };
 
   // Create runtime object for the new format
@@ -154,7 +154,7 @@ export const execute = async (code, context = {}, config = {}) => {
         return target[key];
       },
       set() {
-        throw new Error('Cannot modify sandboxed context');
+        throw new Error('Cannot modify context in sandbox mode');
       }
     });
     
@@ -169,7 +169,7 @@ export const execute = async (code, context = {}, config = {}) => {
       getFilter: (name) => {
         const filterFn = filters[name];
         if (filterFn) return filterFn;
-        throw new Error(`Filter "${name}" not found`);
+    throw new Error(`Filter '${name}' is not defined`);
       }
     };
     
@@ -191,7 +191,7 @@ export const execute = async (code, context = {}, config = {}) => {
     getFilter: (name) => {
       const filterFn = filters[name];
       if (filterFn) return filterFn;
-      throw new Error(`Filter "${name}" not found`);
+    throw new Error(`Filter '${name}' is not defined`);
     }
   };
   

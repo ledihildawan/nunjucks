@@ -46,7 +46,7 @@ export const peekToken = (ctx) => {
 
 export const pushToken = (ctx, tok) => {
   if (ctx.peeked) {
-    throw new Error('pushToken: can only push one token on between reads');
+    throw new Error('Parser error: cannot push token while another is peeked');
   }
   ctx.peeked = tok;
 };
