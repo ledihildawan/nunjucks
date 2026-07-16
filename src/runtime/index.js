@@ -183,9 +183,9 @@ export function lookup(ctx, key, defaultValue = undefined) {
   return val !== undefined ? val : defaultValue;
 }
 
-export function handleError(error, lineno, colno, sourceMapData) {
+export function handleError(error, lineno, colno, runtime) {
   if (error.lineno !== undefined) {
-    return error;
+    throw error;
   }
 
   const ctx = (this && this.logContext) ? this.logContext : { templateName: null, phase: 'render' };
@@ -195,6 +195,11 @@ export function handleError(error, lineno, colno, sourceMapData) {
     phase: error.phase || ctx.phase || 'render',
     templateName: ctx.templateName || 'inline'
   };
+
+  let sourceMapData = null;
+  if (runtime && runtime.sourceMapData) {
+    sourceMapData = runtime.sourceMapData;
+  }
 
   if (sourceMapData && isArray(sourceMapData) && sourceMapData.length > 0) {
     const sm = {
@@ -216,7 +221,7 @@ export function handleError(error, lineno, colno, sourceMapData) {
       }
     };
     const pos = sm.getOriginalPosition(lineno);
-    return createLog('error', {
+    throw createLog('error', {
       message: error.message || String(error),
       lineno: pos.line,
       colno: pos.col,
@@ -224,7 +229,7 @@ export function handleError(error, lineno, colno, sourceMapData) {
     });
   }
 
-  return createLog('error', {
+  throw createLog('error', {
     message: error.message || String(error),
     lineno,
     colno,

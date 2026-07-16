@@ -50,6 +50,7 @@ export const PATTERNS = {
   INVALID_CONFIG: /executionTimeout|maxTemplateSize must be >= 0/i,
   TEMPLATE_MUST_BE_STRING: /Template must be a string/i,
   TEMPLATE_NULL: /Cannot read properties of null \(reading 'length'\)|template.*null/i,
+  JS_STACK_SOURCE: /template is null|null template/i,
   TEMPLATE_NO_RENDER: /Template does not have a render method/i,
   PARSER_ERROR: /Unexpected value while parsing/i,
   PUSH_TOKEN_ERROR: /can only push one token on between reads/i,

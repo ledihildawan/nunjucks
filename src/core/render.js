@@ -27,8 +27,11 @@ const getLoader = (config) => {
 
 const wrapWithError = (err, config, template = null, renderContext = null) => {
   const templatePath = config.templatePath || config.jsCaller || config._callerFile || err.templateName || null;
-  const lineno = (err.lineno != null && err.lineno > 0) ? err.lineno : (config.jsCallerErrorLine ?? config.lineno ?? 1);
-  const colno = (err.colno != null && err.colno > 0) ? err.colno : (config.jsCallerErrorCol ?? config.colno ?? 1);
+  const errLineno = err.lineno;
+  const errColno = err.colno;
+  const useJsCaller = errLineno == null && config.jsCallerErrorLine;
+  const lineno = useJsCaller ? config.jsCallerErrorLine : (errLineno ?? config.lineno ?? 1);
+  const colno = useJsCaller ? config.jsCallerErrorCol : (errColno ?? config.colno ?? 1);
   const phase = err.phase || config.phase || 'render';
   const dev = config.dev ?? false;
   const ide = config.ide ?? 'vscode';
@@ -48,7 +51,7 @@ const wrapWithError = (err, config, template = null, renderContext = null) => {
 
   errorObj.output = (options = {}) => {
     const { format = 'html', verbosity = 'full' } = options;
-    const formatConfig = { dev, ide, templatePath, lineno, colno, phase, sourceContent: template, renderContext, timestamp, verbosity };
+    const formatConfig = { dev, ide, templatePath, lineno, colno, phase, sourceContent: template, renderContext, timestamp, verbosity, isJsCaller: useJsCaller };
 
     switch (format) {
       case 'html':
@@ -114,6 +117,7 @@ export const render = async (template, context = {}, config = {}) => {
   }
 
   let code;
+  let sourceMapData;
   const looksLikeFile = /\.(njk|js|html|htm|twig|ejs|eta)$/i.test(template);
   const templateName = config.templatePath || (looksLikeFile ? template : config._callerFile);
   try {
@@ -122,6 +126,7 @@ export const render = async (template, context = {}, config = {}) => {
     const transformedAst = transform(ast, [], templateName);
     c.compile(transformedAst);
     code = c.getCode();
+    sourceMapData = c.getSourceMap().mappings;
   } catch (err) {
     throw wrapWithError(err, config, templateSource, context);
   }
@@ -146,7 +151,8 @@ export const render = async (template, context = {}, config = {}) => {
       ...config,
       runtime,
       warningsCollector,
-      templateName
+      templateName,
+      sourceMapData
     });
 
     if (config.executionTimeout > 0) {

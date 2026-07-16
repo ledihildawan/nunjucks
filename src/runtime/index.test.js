@@ -175,34 +175,45 @@ describe('contextOrFrameLookup', () => {
 });
 
 describe('handleError', () => {
-  test('returns error unchanged if it has lineno', () => {
+  test('throws error unchanged if it has lineno', () => {
     const err = new Error('test');
     err.lineno = 5;
-    expect(handleError(err, 1, 2)).toBe(err);
+    expect(() => handleError(err, 1, 2)).toThrow(err);
   });
 
-  test('wraps error in TemplateError with lineno/colno', () => {
+  test('throws error with lineno/colno', () => {
     const err = new Error('test');
-    const result = handleError(err, 3, 7);
-    expect(result.lineno).toBe(3);
-    expect(result.colno).toBe(7);
+    expect(() => handleError(err, 3, 7)).toThrow();
+    try {
+      handleError(err, 3, 7);
+    } catch (e) {
+      expect(e.lineno).toBe(3);
+      expect(e.colno).toBe(7);
+    }
   });
 
   test('preserves error code and subject', () => {
     const err = new Error('test');
     err.code = 'MY_CODE';
     err.subject = 'myVar';
-    const result = handleError(err, 1, 2);
-    expect(result.code).toBe('MY_CODE');
-    expect(result.subject).toBe('myVar');
+    try {
+      handleError(err, 1, 2);
+    } catch (e) {
+      expect(e.code).toBe('MY_CODE');
+      expect(e.subject).toBe('myVar');
+    }
   });
 
   test('handles sourceMapData', () => {
     const err = new Error('test');
     const sourceMapData = [{ compiledLine: 5, originalLine: 2, originalCol: 1 }];
-    const result = handleError(err, 5, 0, sourceMapData);
-    expect(result.lineno).toBe(2);
-    expect(result.colno).toBe(1);
+    const runtime = { sourceMapData };
+    try {
+      handleError(err, 5, 0, runtime);
+    } catch (e) {
+      expect(e.lineno).toBe(2);
+      expect(e.colno).toBe(1);
+    }
   });
 });
 

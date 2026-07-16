@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { classify } from './classify.js';
 import { toText } from './to-text.js';
 import { escapeHtml, highlightHtml } from './formatters/html/highlight.js';
@@ -75,7 +78,8 @@ export const toHtml = (error, options = {}) => {
     sourceContent,
     snippet,
     ide = 'vscode',
-    verbosity = 'full'
+    verbosity = 'full',
+    isJsCaller = false
   } = options;
 
   if (!error) {
@@ -90,9 +94,8 @@ export const toHtml = (error, options = {}) => {
   const plain = toText(error, { verbosity: 'simple' });
 
   const category = error.code || classified?.category?.toUpperCase() || 'UNKNOWN';
-  const rawLineno = lineno ?? error?.lineno ?? 0;
-  const displayLine = rawLineno > 0 ? rawLineno : 1;
-  const displayCol = (colno ?? error?.colno ?? 0) + 1;
+  const displayLine = isJsCaller ? (lineno ?? 1) : ((lineno ?? error?.lineno ?? 0) + 1);
+  const displayCol = isJsCaller ? (colno ?? 1) : ((colno ?? error?.colno ?? 0) + 1);
   const displayPath = templatePath || 'unknown';
 
   // Generate snippet from sourceContent if not provided
@@ -106,6 +109,25 @@ export const toHtml = (error, options = {}) => {
     const endLine = Math.min(lines.length, clampedLine + 2);
     codeSnippet = lines.slice(startLine, endLine).join('\n');
     snippetErrorIndex = clampedLine - startLine - 1;
+  } else if (!codeSnippet && templatePath && /\.js$/i.test(templatePath)) {
+    try {
+      let resolvedPath = templatePath;
+      if (templatePath.startsWith('file://')) {
+        resolvedPath = fileURLToPath(templatePath);
+      } else {
+        resolvedPath = path.resolve(templatePath);
+      }
+      const content = fs.readFileSync(resolvedPath, 'utf-8');
+      const lines = content.split('\n');
+      const errorLine = lineno ?? 1;
+      const clampedLine = Math.min(errorLine, lines.length);
+      startLine = Math.max(0, clampedLine - 3);
+      const endLine = Math.min(lines.length, clampedLine + 2);
+      codeSnippet = lines.slice(startLine, endLine).join('\n');
+      snippetErrorIndex = clampedLine - startLine - 1;
+    } catch (e) {
+      // Ignore - fall back to no snippet
+    }
   }
 
   const badgeCode = category;

@@ -47,12 +47,12 @@ describe('emitLine', () => {
 });
 
 describe('emitLineWithMapping', () => {
-  test('adds mapping with templateLine + 1', () => {
+  test('adds mapping with templateLine directly (no +1)', () => {
     const ctx = makeCtx();
     emitLineWithMapping(ctx, 'code', 3, 5);
     expect(ctx.compiledLine).toBe(1);
     expect(ctx.codebuf).toEqual(['code\n']);
-    expect(ctx.sourceMap.addMapping).toHaveBeenCalledWith(1, 4, 5);
+    expect(ctx.sourceMap.addMapping).toHaveBeenCalledWith(1, 3, 5);
   });
 
   test('skips mapping when templateLine is undefined', () => {
@@ -63,12 +63,12 @@ describe('emitLineWithMapping', () => {
 });
 
 describe('emitLineWithLineno', () => {
-  test('adds mapping with templateLine + 1', () => {
+  test('adds mapping with templateLine directly (no +1)', () => {
     const ctx = makeCtx();
     emitLineWithLineno(ctx, 'code', 2, 3);
     expect(ctx.compiledLine).toBe(1);
     expect(ctx.codebuf).toEqual(['code\n']);
-    expect(ctx.sourceMap.addMapping).toHaveBeenCalledWith(1, 3, 3);
+    expect(ctx.sourceMap.addMapping).toHaveBeenCalledWith(1, 2, 3);
   });
 });
 
@@ -171,7 +171,7 @@ describe('emitFuncBegin / emitFuncEnd', () => {
     const output = ctx.codebuf.join('');
     expect(output).toContain('return output;');
     expect(output).toContain('} catch (e) {');
-    expect(output).toContain('throw runtime.handleError(e, lineno, colno);');
+    expect(output).toContain('throw runtime.handleError(e, lineno, colno, runtime);');
     expect(ctx.buffer).toBeNull();
   });
 

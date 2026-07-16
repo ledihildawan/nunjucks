@@ -47,7 +47,7 @@ export function createCompiler(templateName, undefinedMode, source) {
     _emitLine: function(code, originalLine) {
       this.compiledLine++;
       if (isNonNullish(originalLine)) {
-        this.sourceMap.addMapping(this.compiledLine, originalLine);
+        this.sourceMap.addMapping(this.compiledLine, originalLine + 1);
       }
       this._emit(code + '\n');
     },
@@ -89,7 +89,7 @@ export function createCompiler(templateName, undefinedMode, source) {
 
       this._closeScopeLevels();
       this._emitLine('} catch (e) {');
-      this._emitLine('  throw runtime.handleError(e, lineno, colno);');
+      this._emitLine('  throw runtime.handleError(e, lineno, colno, runtime);');
       this._emitLine('}');
       this._emitLine('}');
       this.buffer = null;

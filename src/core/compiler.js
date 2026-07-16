@@ -99,7 +99,8 @@ export const execute = async (code, context = {}, config = {}) => {
     ...getRuntimeHelpers(),
     getFilter,
     __warnings__: warningsCollector,
-    logContext
+    logContext,
+    sourceMapData: config.sourceMapData || null
   };
 
   if (config.env) {

@@ -4,12 +4,12 @@ import { toText } from './error/to-text.js';
 import { toConsoleString } from './error/to-console.js';
 
 export function createLog(type, data) {
-  const { message, lineno, colno, info = {} } = data;
+  const { message, lineno: topLineno, colno: topColno, info = {} } = data;
 
   if (type === 'error') {
-    return createErrorObject(message, lineno, colno, info);
+    return createErrorObject(message, topLineno, topColno, info);
   } else if (type === 'warning') {
-    return createWarningObject(message, lineno, colno, info);
+    return createWarningObject(message, topLineno, topColno, info);
   }
   throw new Error(`Unknown log type: ${type}`);
 }

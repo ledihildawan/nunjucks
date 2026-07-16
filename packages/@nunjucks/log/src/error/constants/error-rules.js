@@ -368,8 +368,21 @@ export const ERROR_RULES = [
     pattern: PATTERNS.TEMPLATE_MUST_BE_STRING,
     category: 'validation_error',
     subjectFrom: null,
+    sourceFromStack: true,
     causes: [
       'Template must be a **string**, got null/undefined',
+      'Passed template is not a valid string'
+    ],
+    fixCode: '// Pass a valid template string',
+    fixComment: '// Ensure template parameter is a string'
+  },
+  {
+    pattern: PATTERNS.JS_STACK_SOURCE,
+    category: 'js_stack_source',
+    subjectFrom: null,
+    sourceFromStack: true,
+    causes: [
+      '**Template parameter** is null or invalid',
       'Passed template is not a valid string'
     ],
     fixCode: '// Pass a valid template string',

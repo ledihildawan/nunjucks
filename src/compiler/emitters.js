@@ -13,7 +13,7 @@ export const emitLine = (ctx, code, originalLine) => {
 export const emitLineWithMapping = (ctx, code, templateLine, templateCol) => {
   ctx.compiledLine++;
   if (templateLine !== undefined) {
-    ctx.sourceMap.addMapping(ctx.compiledLine, templateLine + 1, templateCol || 0);
+    ctx.sourceMap.addMapping(ctx.compiledLine, templateLine, templateCol || 0);
   }
   emit(ctx, code + '\n');
 };
@@ -21,7 +21,7 @@ export const emitLineWithMapping = (ctx, code, templateLine, templateCol) => {
 export const emitLineWithLineno = (ctx, code, templateLine, templateCol) => {
   ctx.compiledLine++;
   if (templateLine !== undefined) {
-    ctx.sourceMap.addMapping(ctx.compiledLine, templateLine + 1, templateCol || 0);
+    ctx.sourceMap.addMapping(ctx.compiledLine, templateLine, templateCol || 0);
   }
   emit(ctx, code + '\n');
 };
@@ -85,7 +85,7 @@ export const emitFuncEnd = (ctx, noReturn) => {
   }
   closeScopeLevels(ctx);
   emitLine(ctx, '} catch (e) {');
-  emitLine(ctx, '  throw runtime.handleError(e, lineno, colno);');
+  emitLine(ctx, '  throw runtime.handleError(e, lineno, colno, runtime);');
   emitLine(ctx, '}');
   emitLine(ctx, '}');
   ctx.buffer = null;

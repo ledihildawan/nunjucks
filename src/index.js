@@ -52,6 +52,7 @@ const nunjucks = (template, context, localConfig) => {
   if (callerLoc) {
     config.jsCaller = callerLoc.path;
     config.jsCallerErrorLine = callerLoc.line;
+    config.jsCallerErrorCol = callerLoc.column;
   }
 
   if (context && typeof context === 'object' && !localConfig) {
