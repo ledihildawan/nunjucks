@@ -2,17 +2,23 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { classify } from './classify.js';
+import type { ClassifiedError } from './classify.js';
 import { toText } from './to-text.js';
 import { escapeHtml, highlightHtml } from './formatters/html/highlight.js';
 import { renderContextHtml, formatStackTraceHtml } from './formatters/html/sections.js';
 import { CSS, PRODUCTION_BODY } from './formatters/html/styles.js';
 import { TOGGLE_SCRIPT } from './formatters/html/script.js';
-import { resolveIdeLink, getIdeMeta } from './constants/ide-links.js';
+import { resolveIdeLink, getIdeMeta } from './ide-links.js';
 import { shortenPath } from '@nunjucks/shared/path-shortener';
+import { toDisplayLocation } from './location.js';
 
 export { CSS, PRODUCTION_BODY, TOGGLE_SCRIPT };
 
-const document = (title, body, scripts = '', csp = null) => {
+interface Csp {
+  nonce?: string;
+}
+
+const document = (title: string, body: string, scripts = '', csp: Csp | null = null): string => {
   const styleNonce = csp?.nonce ? ` nonce="${csp.nonce}"` : '';
   return `<!DOCTYPE html>
 <html lang="en">
@@ -33,7 +39,7 @@ ${scripts}
 </html>`;
 };
 
-const buildProductionBody = (options) => {
+const buildProductionBody = (options: ToHtmlOptions): string => {
   const ref = options.timestamp ? `<p class="prod-ref">${escapeHtml(options.timestamp)}</p>` : '';
   return `
 <main class="prod-main">
@@ -48,7 +54,7 @@ const buildProductionBody = (options) => {
 </main>`;
 };
 
-const renderMarkdownToAnsi = (text) => {
+const renderMarkdownToAnsi = (text: string): string => {
   if (!text) return '';
   let s = text;
   s = s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -57,13 +63,37 @@ const renderMarkdownToAnsi = (text) => {
   return s;
 };
 
-/**
- * Render error to HTML output
- * @param {Error} error - Raw error from nunjucks
- * @param {object} options - Optional configuration
- * @returns {string} HTML string
- */
-export const toHtml = (error, options = {}) => {
+interface ErrorLike {
+  message?: string;
+  stack?: string;
+  lineno?: number | null;
+  colno?: number | null;
+  templateName?: string | null;
+  phase?: string | null;
+  code?: string | null;
+  lineBase?: 'zero' | 'one' | null;
+}
+
+export interface ToHtmlOptions {
+  templatePath?: string;
+  lineno?: number | null;
+  colno?: number | null;
+  renderContext?: object;
+  phase?: string | null;
+  version?: string;
+  timestamp?: string;
+  csp?: Csp;
+  jsCaller?: string;
+  jsCallerErrorLine?: number;
+  sourceContent?: string;
+  snippet?: string;
+  ide?: string;
+  verbosity?: 'simple' | 'medium' | 'full';
+  isJsCaller?: boolean;
+  isProduction?: boolean;
+}
+
+export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string => {
   const {
     templatePath,
     lineno,
@@ -83,14 +113,14 @@ export const toHtml = (error, options = {}) => {
   } = options;
 
   if (!error) {
-    return document('Error', buildProductionBody(options), '', csp);
+    return document('Error', buildProductionBody(options), '', csp ?? null);
   }
 
   if (options.isProduction) {
-    return document('Rendering Interrupted', buildProductionBody(options), '', csp);
+    return document('Rendering Interrupted', buildProductionBody(options), '', csp ?? null);
   }
 
-  const classified = classify(error);
+  const classified = classify(error as Parameters<typeof classify>[0]);
   const plain = toText(error, { verbosity: 'simple' });
 
   const category = error.code || classified?.category?.toUpperCase() || 'UNKNOWN';
@@ -112,11 +142,15 @@ export const toHtml = (error, options = {}) => {
   } else if (category === 'VALIDATION_ERROR') {
     humanTitle = 'Template must be a string';
   }
-  const displayLine = isJsCaller ? (lineno ?? 1) : ((lineno ?? error?.lineno ?? 0) + 1);
-  const displayCol = isJsCaller ? (colno ?? 1) : ((colno ?? error?.colno ?? 0) + 1);
+  const location = toDisplayLocation(
+    lineno ?? error?.lineno ?? null,
+    colno ?? error?.colno ?? null,
+    isJsCaller ? 'one' : (error?.lineBase ?? 'zero')
+  );
+  const displayLine = location.line;
+  const displayCol = location.col;
   const displayPath = templatePath || 'unknown';
 
-  // Generate snippet from sourceContent if not provided
   let codeSnippet = snippet;
   let snippetErrorIndex = -1;
   let startLine = 0;
@@ -143,8 +177,7 @@ export const toHtml = (error, options = {}) => {
       const endLine = Math.min(lines.length, clampedLine + 2);
       codeSnippet = lines.slice(startLine, endLine).join('\n');
       snippetErrorIndex = clampedLine - startLine - 1;
-    } catch (e) {
-      // Ignore - fall back to no snippet
+    } catch {
     }
   }
 
@@ -243,5 +276,5 @@ export const toHtml = (error, options = {}) => {
   </footer>
 </main>`;
 
-  return document('Template Error', body, TOGGLE_SCRIPT, csp);
+  return document('Template Error', body, TOGGLE_SCRIPT, csp ?? null);
 };

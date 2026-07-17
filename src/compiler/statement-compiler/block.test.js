@@ -18,7 +18,7 @@ describe('compileBlock', () => {
     const node = { name: { value: 'header' } };
     compileBlock(ctx, node);
     const code = ctx.emitted.join('');
-    expect(code).toContain('ctx.getBlock("header")');
+    expect(code).toContain('context.getBlock("header")');
     expect(code).toContain('output += t_1');
     expect(code).not.toContain('parentTemplate');
   });
@@ -29,7 +29,7 @@ describe('compileBlock', () => {
     const node = { name: { value: 'footer' } };
     compileBlock(ctx, node);
     const code = ctx.emitted.join('');
-    expect(code).toContain('ctx.getBlock("footer")');
+    expect(code).toContain('context.getBlock("footer")');
     expect(code).toContain('output += t_1');
   });
 });
@@ -44,7 +44,7 @@ describe('compileSuper', () => {
     const frame = { set: () => {} };
     compileSuper(ctx, node, frame);
     const code = ctx.emitted.join('');
-    expect(code).toContain('ctx.getSuper(env, "header", b_header');
-    expect(code).toContain('rt.markSafe(t_1)');
+    expect(code).toContain('context.getSuper(env, "header", b_header');
+    expect(code).toContain('runtime.markSafe(t_1)');
   });
 });

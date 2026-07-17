@@ -1,19 +1,41 @@
 import picocolors from 'picocolors';
 import { pipe, filter } from 'remeda';
 import { shortenPath, normalizeDrivePath } from '@nunjucks/shared/path-shortener';
+import { toDisplayLocation } from './location.js';
 
-const makeHyperlink = (text, url) => {
+const makeHyperlink = (text: string, url: string): string => {
   return `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
 };
 
-const formatSimple = (warning) => {
+export interface Warning {
+  message?: string;
+  lineno?: number | null;
+  colno?: number | null;
+  varName?: string | null;
+  templateName?: string | null;
+  undefinedMode?: string;
+  code?: string | null;
+  subject?: string | null;
+  lineBase?: 'zero' | 'one' | null;
+}
+
+export interface ToConsoleOptions {
+  verbosity?: 'simple' | 'medium' | 'full';
+  dev?: boolean;
+  ide?: string;
+  templatePath?: string;
+  version?: string;
+  timestamp?: string;
+}
+
+const formatSimple = (warning: Warning): string => {
   const title = warning.varName
     ? `Undefined variable '${warning.varName}'`
     : 'Undefined variable';
   return `${picocolors.bgYellow(picocolors.black('[WARNING]'))} ${picocolors.yellow(title)}`;
 };
 
-const formatMedium = (warning, options) => {
+const formatMedium = (warning: Warning, options: ToConsoleOptions): string => {
   const { templatePath, ide = 'vscode' } = options;
   const { lineno, templateName, varName } = warning;
 
@@ -21,11 +43,12 @@ const formatMedium = (warning, options) => {
     ? `Undefined variable '${varName}'`
     : 'Undefined variable';
 
-  const lineNum = (lineno ?? 0) + 1;
+  const location = toDisplayLocation(lineno ?? null, 0, warning.lineBase ?? 'zero');
+  const lineNum = location.line;
 
-  let locationStr;
+  let locationStr: string;
   if (templateName || templatePath) {
-    const path = templateName || templatePath;
+    const path = templateName || templatePath!;
     const shortPath = shortenPath(path);
     const displayPath = `${shortPath}:${lineNum}`;
     const normalizedPath = normalizeDrivePath(path);
@@ -48,11 +71,11 @@ const formatMedium = (warning, options) => {
   return parts.join(' ');
 };
 
-const formatFull = (warning, options) => {
-  const { dev = false } = options;
+const formatFull = (warning: Warning, options: ToConsoleOptions): string => {
+  const { dev = false, version = '3.2.4', timestamp } = options;
   const { lineno, templateName, varName, undefinedMode, code, subject } = warning;
 
-  const parts = [];
+  const parts: string[] = [];
 
   parts.push(picocolors.bgYellow(picocolors.black('[WARNING]')) + ' ' + picocolors.bold('Template Warning'));
 
@@ -71,8 +94,9 @@ const formatFull = (warning, options) => {
     : 'Undefined variable';
   parts.push(picocolors.bold('Message:') + ' ' + picocolors.yellow(title));
 
-  const lineNum = (lineno ?? 0) + 1;
-  let locationStr;
+  const location = toDisplayLocation(lineno ?? null, 0, warning.lineBase ?? 'zero');
+  const lineNum = location.line;
+  let locationStr: string;
   if (templateName) {
     const shortPath = shortenPath(templateName);
     const displayPath = `${shortPath}:${lineNum}`;
@@ -92,13 +116,17 @@ const formatFull = (warning, options) => {
     parts.push(picocolors.bold('Subject:') + ' ' + picocolors.cyan(subject));
   }
 
+  const footer = [`Nunjucks ${version}`];
+  if (timestamp) {
+    footer.push(timestamp);
+  }
   parts.push('');
-  parts.push(picocolors.dim(`Nunjucks 3.2.4 · ${new Date().toISOString()}`));
+  parts.push(picocolors.dim(footer.join(' · ')));
 
   return parts.join('\n');
 };
 
-export const toConsoleString = (warning, options = {}) => {
+export const toConsoleString = (warning: Warning, options: ToConsoleOptions = {}): string => {
   const { verbosity = 'full' } = options;
 
   if (verbosity === 'simple') {

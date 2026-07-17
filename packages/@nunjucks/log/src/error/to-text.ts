@@ -1,17 +1,19 @@
 import { shortenPath } from '@nunjucks/shared/path-shortener';
+import { toDisplayLocation } from './location.js';
 
-/**
- * Get plain text error message (for logging/debugging)
- * @param {Error} error - Raw error from nunjucks
- * @param {object} options - Optional configuration
- * @returns {string} Plain text error message
- */
-export const toText = (error, options = {}) => {
+export interface ToTextOptions {
+  verbosity?: 'simple' | 'medium' | 'full';
+  templatePath?: string;
+  lineno?: number | null;
+  colno?: number | null;
+}
+
+export const toText = (error: unknown, options: ToTextOptions = {}): string => {
   if (!error) return '';
 
   const { verbosity = 'full', templatePath, lineno, colno } = options;
 
-  let message = error.message;
+  let message = (error as Error).message;
   if (!message || typeof message !== 'string') {
     message = String(error);
   }
@@ -26,29 +28,38 @@ export const toText = (error, options = {}) => {
   }
 
   let locationStr = '';
-  if (verbosity === 'medium' && (templatePath || lineno || colno)) {
-    const path = templatePath || error.templateName || 'unknown';
-    const line = lineno ?? error.lineno ?? 0;
-    const col = colno ?? error.colno ?? 0;
+  if (
+    verbosity === 'medium' &&
+    (
+      Boolean(templatePath) ||
+      lineno !== undefined && lineno !== null ||
+      colno !== undefined && colno !== null
+    )
+  ) {
+    const path = templatePath || (error as { templateName?: string }).templateName || 'unknown';
+    const location = toDisplayLocation(
+      lineno ?? (error as { lineno?: number | null }).lineno ?? null,
+      colno ?? (error as { colno?: number | null }).colno ?? null,
+      (error as { lineBase?: 'zero' | 'one' | null }).lineBase ?? 'zero'
+    );
     const shortPath = shortenPath(path);
-    locationStr = ` at ${shortPath}:${line}:${col}`;
+    locationStr = ` at ${shortPath}:${location.line}:${location.col}`;
     return `${message}${locationStr}`;
   }
 
-  // full verbosity - format stack trace
-  const stack = error.stack || '';
+  const stack = (error as Error).stack || '';
   const stackLines = stack.split('\n').slice(1);
 
   const formattedStack = stackLines
     .map(line => {
       const trimmed = line.trim();
       const pathMatch = trimmed.match(/\(([^()]+):(\d+):(\d+)\)$/);
-      if (pathMatch) {
+      if (pathMatch?.[1] && pathMatch[2]) {
         const fullPath = pathMatch[1];
         const lineNum = pathMatch[2];
         const shortPath = shortenPath(fullPath);
         const fnMatch = trimmed.match(/^at\s+([^\s]+)/);
-        const fn = fnMatch ? fnMatch[1] : '';
+        const fn = fnMatch?.[1] ?? '';
         return fn ? `  at ${fn} (${shortPath}:${lineNum})` : `  at ${shortPath}:${lineNum}`;
       }
       return `  ${trimmed}`;

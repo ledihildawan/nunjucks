@@ -26,10 +26,10 @@ export const compileRoot = (ctx, node, frame) => {
   ctx.buffer = savedBuffer;
 
   ctx._emitLine('if(parentTemplate) {');
-  ctx._emitLine(`return await parentTemplate.rootRenderFunc(env, ctx, frame, rt);`);
+  ctx._emitLine('  return await parentTemplate.rootRenderFunc(env, context, frame, runtime);');
   ctx._emitLine('} else {');
   blockNames.forEach(name => {
-    ctx._emitLine(`  ${childBuffer} += await ctx.getBlock("${name}")(env, ctx, frame, rt);`);
+    ctx._emitLine(`  ${childBuffer} += await context.getBlock("${name}")(env, context, frame, runtime);`);
   });
   ctx._emitLine('}');
   ctx._emitLine(`return ${childBuffer};`);
@@ -56,7 +56,7 @@ export const compileRoot = (ctx, node, frame) => {
     ctx._emitFuncBegin(block, `b_${name}`);
 
     const tmpFrame = createFrame();
-    ctx._emitLine('let frame = frame.push(true);');
+    ctx._emitLine('frame = frame.push(true);');
     ctx.compile(block.body, tmpFrame);
     ctx._emitFuncEnd();
   });
@@ -67,6 +67,14 @@ export const compileRoot = (ctx, node, frame) => {
     const blockName = `b_${block.name.value}`;
     ctx._emitLine(`${blockName}: ${blockName},`);
   });
+  ctx._emitLine('__blockMeta: {');
+  blocks.forEach((block) => {
+    const name = block.name.value;
+    const lineno = block.lineno ?? 0;
+    const colno = block.colno ?? 0;
+    ctx._emitLine(`${JSON.stringify(name)}: { lineno: ${lineno}, colno: ${colno} },`);
+  });
+  ctx._emitLine('},');
 
   ctx._emitLine('root: root\n};');
 };

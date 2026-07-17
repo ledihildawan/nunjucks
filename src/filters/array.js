@@ -1,3 +1,4 @@
+import { ERRORS } from '@nunjucks/log/error/messages';
 import { isArray, isString, isPlainObject, map, keys, entries, sum as sumValues } from 'remeda';
 import { isSafeString, copySafeness, makeMacro } from '../runtime/index.js';
 import { getAttrGetter } from '../helpers/attributes.js';
@@ -64,7 +65,7 @@ export function list(val) {
   } else if (isArray(val)) {
     return val;
   } else {
-    throw new Error(`list: '${typeof val}' is not iterable`);
+    throw new Error(ERRORS.LIST_FILTER(typeof val));
   }
 }
 
@@ -123,7 +124,7 @@ export const sort = makeMacro(
   ['value', 'reverse', 'case_sensitive', 'attribute'], [],
   function sortFilter(arr, reversed, caseSens, attr) {
     if (!arr || !Array.isArray(arr)) {
-      throw new TypeError(`sort: expected array, got ${typeof arr}`);
+      throw new TypeError(ERRORS.SORT_FILTER(typeof arr));
     }
 
     // Handle positional args: sort(items, attr) or sort(items, attr, reverse)
@@ -138,7 +139,7 @@ export const sort = makeMacro(
     if (sortAttr) {
       for (const item of arr) {
         if (item && typeof item === 'object' && !(sortAttr in item)) {
-          throw new TypeError(`sort: attribute '${sortAttr}' does not exist on object`);
+          throw new TypeError(ERRORS.SORT_FILTER_ATTR(sortAttr));
         }
       }
     }

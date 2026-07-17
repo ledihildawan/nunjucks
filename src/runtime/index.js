@@ -1,4 +1,5 @@
 import { createLog } from '@nunjucks/log';
+import { ERRORS } from '@nunjucks/log/error/messages';
 import { isArray, keys, isNonNullish, isFunction, isString, isPlainObject } from 'remeda';
 import { createFrame } from './frame.js';
 import {
@@ -116,15 +117,12 @@ export function ensureDefined(val, lineno, colno, varName = null, templateName =
     const effectiveTemplateName = templateName || ctx.templateName || 'inline';
 
     if (undefinedMode === 'strict') {
-      const humanMessage = varName
-        ? `Variable '${varName}' is not defined`
-        : 'Attempted to output null or undefined value';
       throw createLog('error', {
-        message: humanMessage,
+        message: ERRORS.UNDEFINED_VARIABLE(varName),
         lineno,
         colno,
-        info: { code: varName ? 'UNDEFINED_VARIABLE' : 'UNDEFINED_VALUE', subject: varName, phase: ctx.phase || 'render', templateName: effectiveTemplateName }
-      });
+        info: { code: varName ? 'UNDEFINED_VARIABLE' : 'UNDEFINED_VALUE', subject: varName, phase: ctx.phase || 'render', templateName: effectiveTemplateName, lineBase: 'zero' }
+      }, ctx.renderContext);
     }
 
     if (undefinedMode === 'debug') {
@@ -152,18 +150,18 @@ export function callWrap(obj, name, displayName, context, args, lineno, colno) {
   const messageName = displayName || name;
   if (!obj) {
     throw createLog('error', {
-      message: `Function '${messageName}' is not defined`,
+      message: ERRORS.UNDEFINED_FUNCTION(messageName),
       lineno,
       colno,
-      info: { code: 'UNDEFINED_FUNCTION', subject: name, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline' }
-    });
+      info: { code: 'UNDEFINED_FUNCTION', subject: name, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline', lineBase: 'zero' }
+    }, ctx.renderContext);
   } else if (!isFunction(obj)) {
     throw createLog('error', {
-      message: `'${messageName}' is not a function`,
+      message: ERRORS.NOT_A_FUNCTION(messageName),
       lineno,
       colno,
-      info: { code: 'NOT_A_FUNCTION', subject: name, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline' }
-    });
+      info: { code: 'NOT_A_FUNCTION', subject: name, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline', lineBase: 'zero' }
+    }, ctx.renderContext);
   }
 
   return obj.apply(context, args);
@@ -228,16 +226,16 @@ export function handleError(error, lineno, colno, runtime) {
       message: error.message || String(error),
       lineno: pos.line,
       colno: pos.col,
-      info
-    });
+      info: { ...info, lineBase: 'one' }
+    }, ctx.renderContext);
   }
 
   throw createLog('error', {
     message: error.message || String(error),
     lineno,
     colno,
-    info
-  });
+    info: { ...info, lineBase: 'zero' }
+  }, ctx.renderContext);
 }
 
 export function fromIterator(arr) {
@@ -257,5 +255,5 @@ export function inOperator(key, val) {
   if (isPlainObject(val)) {
     return key in val;
   }
-  throw new Error(`Cannot use 'in' operator to search for '${key}' in ${typeof val}`);
+  throw new Error(ERRORS.IN_OPERATOR(key, typeof val));
 }

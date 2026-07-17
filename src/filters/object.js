@@ -1,3 +1,4 @@
+import { ERRORS } from '@nunjucks/log/error/messages';
 import { isString, isPlainObject, groupBy } from 'remeda';
 import { createLog } from '@nunjucks/log';
 import { getAttrGetter } from '../helpers/attributes.js';
@@ -7,7 +8,7 @@ const isObject = isPlainObject;
 export function dictsort(val, caseSensitive, by) {
   if (!isObject(val)) {
     throw createLog('error', {
-      message: `dictsort: expected object, got ${typeof val}`,
+      message: ERRORS.DICTSORT_FILTER(typeof val),
       lineno: 0,
       colno: 0
     });
@@ -25,7 +26,7 @@ export function dictsort(val, caseSensitive, by) {
     si = 1;
   } else {
     throw createLog('error', {
-      message: `dictsort: invalid sort mode '${by}'. Must be 'key' or 'value'`,
+      message: ERRORS.DICSORT_FILTER_BY(by),
       lineno: 0,
       colno: 0
     });
@@ -52,12 +53,12 @@ export function dictsort(val, caseSensitive, by) {
 
 export function groupby(arr, attr) {
   if (!arr || !Array.isArray(arr)) {
-    throw new TypeError(`groupby: expected array, got ${typeof arr}`);
+    throw new TypeError(ERRORS.GROUPBY_FILTER(typeof arr));
   }
 
   for (const item of arr) {
     if (item && typeof item === 'object' && !(attr in item)) {
-      throw new TypeError(`groupby: attribute '${attr}' does not exist on object`);
+      throw new TypeError(ERRORS.GROUPBY_FILTER_ATTR(attr));
     }
   }
 
@@ -66,7 +67,7 @@ export function groupby(arr, attr) {
   return groupBy(arr, (item, i) => {
     const key = getAttr(item, i);
     if (key === undefined) {
-      throw new TypeError(`groupby: attribute '${attr}' does not exist on object`);
+      throw new TypeError(ERRORS.GROUPBY_FILTER_ATTR(attr));
     }
     return key;
   });

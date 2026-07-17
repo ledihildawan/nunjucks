@@ -59,6 +59,7 @@ export function applySourceMapToError(error, lineno, sourceMapData, templateName
   if (error.colno === undefined) {
     error.colno = pos.col;
   }
+  error.lineBase = 'one';
 
   return error;
 }
@@ -87,6 +88,7 @@ export function createMappedError(error, sourceMapData, lineno, colno, path) {
   newError.name = defaultTo(error.name, 'Template render error');
   newError.lineno = pos.line;
   newError.colno = finalColno;
+  newError.lineBase = 'one';
   newError._includeChain = error._includeChain;
   const renderLine = `at ${defaultTo(error.getterName, 'root')} (${templateLocation})`;
   newError.stack = `${newError.message}\n    ${renderLine}\n    at Environment.render`;

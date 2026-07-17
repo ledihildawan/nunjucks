@@ -3,7 +3,7 @@ import { createLog } from './create-log.js';
 
 describe('createLog', () => {
   describe('error', () => {
-    test('membuat error object dengan message', () => {
+    test('preserves the original error message', () => {
       const err = createLog('error', {
         message: 'Test error',
         lineno: 1,
@@ -14,7 +14,7 @@ describe('createLog', () => {
       expect(err.colno).toBe(0);
     });
 
-    test('error memiliki properties dari info', () => {
+    test('preserves metadata needed by downstream formatters', () => {
       const err = createLog('error', {
         message: 'Test error',
         lineno: 5,
@@ -32,7 +32,21 @@ describe('createLog', () => {
       expect(err.templateName).toBe('test.njk');
     });
 
-    test('error.output() mengembalikan html string', () => {
+    test('renders one-based source locations when metadata says lineBase is one', () => {
+      const err = createLog('error', {
+        message: 'Test error',
+        lineno: 5,
+        colno: 10,
+        info: {
+          lineBase: 'one',
+          templateName: 'test.njk'
+        }
+      });
+      const text = err.output({ format: 'text', verbosity: 'medium' });
+      expect(text).toContain('test.njk:5:10');
+    });
+
+    test('renders html output', () => {
       const err = createLog('error', {
         message: 'Test error',
         lineno: 1,
@@ -43,7 +57,7 @@ describe('createLog', () => {
       expect(html.length).toBeGreaterThan(0);
     });
 
-    test('error.output() mengembalikan ansi string', () => {
+    test('renders ansi output', () => {
       const err = createLog('error', {
         message: 'Test error',
         lineno: 1,
@@ -53,7 +67,7 @@ describe('createLog', () => {
       expect(typeof ansi).toBe('string');
     });
 
-    test('error.output() mengembalikan text string', () => {
+    test('renders text output containing the message', () => {
       const err = createLog('error', {
         message: 'Test error',
         lineno: 1,
@@ -64,7 +78,7 @@ describe('createLog', () => {
       expect(text).toContain('Test error');
     });
 
-    test('error.output() dengan verbosity simple', () => {
+    test('simple text output omits extra framing', () => {
       const err = createLog('error', {
         message: 'Test error',
         lineno: 1,
@@ -74,7 +88,7 @@ describe('createLog', () => {
       expect(text).toBe('Test error');
     });
 
-    test('error.output() tanpa format mengembalikan semua formats', () => {
+    test('default output exposes all supported formats', () => {
       const err = createLog('error', {
         message: 'Test error',
         lineno: 1,
@@ -88,7 +102,7 @@ describe('createLog', () => {
   });
 
   describe('warning', () => {
-    test('membuat warning object dengan message', () => {
+    test('preserves the original warning message', () => {
       const warn = createLog('warning', {
         message: 'Test warning',
         lineno: 1,
@@ -99,7 +113,7 @@ describe('createLog', () => {
       expect(warn.colno).toBe(0);
     });
 
-    test('warning memiliki properties dari info', () => {
+    test('preserves warning-specific metadata', () => {
       const warn = createLog('warning', {
         message: 'Test warning',
         lineno: 5,
@@ -119,7 +133,7 @@ describe('createLog', () => {
       expect(warn.subject).toBe('x');
     });
 
-    test('warning.output() mengembalikan console string', () => {
+    test('renders console output', () => {
       const warn = createLog('warning', {
         message: 'Test warning',
         lineno: 1,
@@ -129,7 +143,7 @@ describe('createLog', () => {
       expect(typeof output).toBe('string');
     });
 
-    test('warning.output() dengan verbosity simple', () => {
+    test('simple warning output shows the warning label', () => {
       const warn = createLog('warning', {
         message: 'Test warning',
         lineno: 1,
@@ -141,7 +155,7 @@ describe('createLog', () => {
       expect(output).toContain('[WARNING]');
     });
 
-    test('warning.output() dengan verbosity medium', () => {
+    test('medium warning output shows the warning label', () => {
       const warn = createLog('warning', {
         message: 'Test warning',
         lineno: 1,
@@ -153,7 +167,22 @@ describe('createLog', () => {
       expect(output).toContain('[WARNING]');
     });
 
-    test('warning.output() dengan verbosity full', () => {
+    test('warning output respects one-based location metadata', () => {
+      const warn = createLog('warning', {
+        message: 'Test warning',
+        lineno: 4,
+        colno: 0,
+        info: {
+          varName: 'x',
+          templateName: 'test.njk',
+          lineBase: 'one'
+        }
+      });
+      const output = warn.output({ verbosity: 'medium' });
+      expect(output).toContain('test.njk:4');
+    });
+
+    test('full warning output shows rich context', () => {
       const warn = createLog('warning', {
         message: 'Test warning',
         lineno: 1,
@@ -165,13 +194,29 @@ describe('createLog', () => {
       expect(output).toContain('[WARNING]');
       expect(output).toContain('Template Warning');
     });
+
+    test('full warning output uses caller-provided version and timestamp', () => {
+      const warn = createLog('warning', {
+        message: 'Test warning',
+        lineno: 1,
+        colno: 0,
+        info: { varName: 'x' }
+      });
+      const output = warn.output({
+        verbosity: 'full',
+        version: '9.9.9',
+        timestamp: '2026-07-17T12:00:00.000Z'
+      });
+      expect(output).toContain('Nunjucks 9.9.9');
+      expect(output).toContain('2026-07-17T12:00:00.000Z');
+    });
   });
 
-  test('melemparkan error untuk type yang tidak dikenal', () => {
+  test('throws for unknown log types', () => {
     expect(() => createLog('unknown', { message: 'test' })).toThrow();
   });
 
-  test('info default ke empty object', () => {
+  test('defaults missing info fields to nulls', () => {
     const err = createLog('error', {
       message: 'Test',
       lineno: 0,
@@ -179,5 +224,19 @@ describe('createLog', () => {
     });
     expect(err.code).toBeNull();
     expect(err.subject).toBeNull();
+  });
+
+  test('zero-based metadata is displayed as one-based locations', () => {
+    const err = createLog('error', {
+      message: 'Test',
+      lineno: 1,
+      colno: 2,
+      info: {
+        templateName: 'a.njk',
+        lineBase: 'zero'
+      }
+    });
+    const text = err.output({ format: 'text', verbosity: 'medium' });
+    expect(text).toContain('a.njk:2:3');
   });
 });

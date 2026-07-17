@@ -97,7 +97,8 @@ export const TOGGLE_SCRIPT = `<script>
 
       row.onclick = function() {
         const isHidden = container.classList.toggle('hidden');
-        row.querySelector('.ctx-toggle').textContent = isHidden ? '▶' : '▼';
+        const toggleEl = row.querySelector('.ctx-toggle');
+        if (toggleEl) toggleEl.textContent = isHidden ? '▶' : '▼';
 
         if (!isHidden && !loaded) {
           const entries = Object.entries(value);
@@ -129,7 +130,7 @@ export const TOGGLE_SCRIPT = `<script>
   }
 
   function escapeHtml(str) {
-    if (typeof str !== 'string') return str;
+    if (typeof str !== 'string') return String(str);
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 

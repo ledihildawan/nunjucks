@@ -1,3 +1,4 @@
+import { ERRORS } from '@nunjucks/log/error/messages';
 import { isNonNullish, isFunction } from 'remeda';
 
 export function memberLookup(obj, val) {
@@ -26,7 +27,7 @@ export function optionalMemberLookup(obj, val) {
 
 export function slice(arr, start, stop, step) {
   if (step === 0) {
-    throw new Error('slice: step cannot be zero');
+    throw new Error(ERRORS.SLICE_STEP());
   }
 
   const len = arr.length;

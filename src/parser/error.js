@@ -11,7 +11,7 @@ export const error = (ctx, msg, lineno, colno) => {
     message: msg,
     lineno,
     colno,
-    info: { phase: 'parse' }
+    info: { phase: 'parse', lineBase: 'zero' }
   });
 };
 

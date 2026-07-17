@@ -6,6 +6,7 @@ import {
   TOKEN_WHITESPACE,
 } from '../lexer/token-types.js';
 import { error, fail } from './error.js';
+import { ERRORS } from '@nunjucks/log/error/messages';
 
 export const createCursor = (tokens) => ({
   tokens,
@@ -46,7 +47,7 @@ export const peekToken = (ctx) => {
 
 export const pushToken = (ctx, tok) => {
   if (ctx.peeked) {
-    throw new Error('Parser error: cannot push token while another is peeked');
+    throw new Error(ERRORS.PARSER_PUSH_TOKEN());
   }
   ctx.peeked = tok;
 };

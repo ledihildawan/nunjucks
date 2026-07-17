@@ -32,23 +32,26 @@ export const compileInclude = (ctx, node, frame) => {
   const resultVar = ctx._tmpid();
 
   ctx._emitLine(`lineno = ${node.lineno}; colno = ${node.colno != null ? node.colno : 0};`);
-  ctx._emit(`let ${tmplVar} = await env.getTemplate(`);
+  ctx._emit(`let ${tmplVar} = `);
   ctx._compileExpression(node.template, frame);
+  ctx._emitLine(';');
+  ctx._emitLine(`if(typeof ${tmplVar} !== 'string') { const err = new Error('template names must be a string'); err.code = 'INVALID_INCLUDE'; err.subject = ${tmplVar}; throw err; }`);
+  ctx._emit(`let ${tmplVar}_template = await env.getTemplate(${tmplVar}, false, `);
   const ignoreMissing = node.ignoreMissing ? 'true' : 'false';
   const includeChain = `{parentTmpl: ${ctx._templateName()}, parentLineno: ${node.lineno + 1}, parentColno: ${node.colno !== undefined ? node.colno + 1 : 0}}`;
-  ctx._emitLine(`, false, ${includeChain}, ${ignoreMissing});`);
+  ctx._emitLine(`${includeChain}, ${ignoreMissing});`);
 
   if (node.only) {
-    ctx._emit(`let ${resultVar} = await ${tmplVar}.render({}, frame);`);
+    ctx._emit(`let ${resultVar} = await ${tmplVar}_template.render({}, frame);`);
   } else if (node.with) {
     ctx._emit(`let __forkedCtx = context.fork();`);
     ctx._emit(`let __withData = `);
     ctx._compileExpression(node.with, frame);
     ctx._emitLine(';');
     ctx._emit(`Object.assign(__forkedCtx.ctx, __withData);`);
-    ctx._emit(`let ${resultVar} = await ${tmplVar}.render(__forkedCtx.getVariables(), frame);`);
+    ctx._emit(`let ${resultVar} = await ${tmplVar}_template.render(__forkedCtx.getVariables(), frame);`);
   } else {
-    ctx._emit(`let ${resultVar} = await ${tmplVar}.render(context.getVariables(), frame);`);
+    ctx._emit(`let ${resultVar} = await ${tmplVar}_template.render(context.getVariables(), frame);`);
   }
   ctx._emitLine(`${ctx.buffer} += ${resultVar};`);
 };

@@ -69,7 +69,7 @@ describe('compileFromImport', () => {
     const frame = { parent: null, set: () => {} };
     compileFromImport(ctx, node, frame);
     const code = ctx.emitted.join('');
-    expect(code).toContain('cannot import');
+    expect(code).toContain('Cannot import');
     expect(code).toContain('missingExport');
   });
 

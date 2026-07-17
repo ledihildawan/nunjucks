@@ -9,13 +9,15 @@ const createDefaultEnv = () => ({
   opts: {}
 });
 
-export function createContext(ctx, blocks, env) {
+export function createContext(ctx, blocks, env, metadata = {}) {
   const obj = createObj({
     name: 'Context',
-    init: function(ctxArg, blocksArg, envArg) {
+    init: function(ctxArg, blocksArg, envArg, metadataArg) {
       this.env = envArg || createDefaultEnv();
       this.ctx = { ...ctxArg };
       this.blocks = {};
+      this.metadata = metadataArg || {};
+      this.blockLocations = this.metadata.blockLocations || {};
       this.exported = [];
       this._parentBlockNames = null;
       this._validatedBlocks = false;
@@ -33,9 +35,14 @@ export function createContext(ctx, blocks, env) {
         const parentBlockNames = new Set(this._parentBlockNames);
         const childOnlyBlocks = keys(this.blocks || {}).filter(name => !parentBlockNames.has(name));
         if (childOnlyBlocks.length > 0) {
-          const err = new Error(`Block "${childOnlyBlocks[0]}" is not defined in parent template`);
+          const blockName = childOnlyBlocks[0];
+          const location = this.blockLocations[blockName] || {};
+          const err = new Error(`Block "${blockName}" is not defined in parent template`);
           err.code = 'UNDEFINED_BLOCK';
-          err.subject = childOnlyBlocks[0];
+          err.subject = blockName;
+          err.lineno = location.lineno ?? null;
+          err.colno = location.colno ?? null;
+          err.lineBase = 'zero';
           throw err;
         }
       }
@@ -111,7 +118,7 @@ export function createContext(ctx, blocks, env) {
     },
   });
   obj[Context] = true;
-  obj.init(ctx, blocks, env);
+  obj.init(ctx, blocks, env, metadata);
   return obj;
 }
 

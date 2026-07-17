@@ -1,4 +1,4 @@
-const escapeHtml = (str) => {
+const escapeHtml = (str: string): string => {
   if (!str) return '';
   return str.replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
@@ -6,7 +6,7 @@ const escapeHtml = (str) => {
             .replace(/"/g, '&quot;');
 };
 
-const renderInlineMarkdown = (text) => {
+const renderInlineMarkdown = (text: string): string => {
   if (!text) return '';
   let s = escapeHtml(text);
   s = s.replace(/`([^`]+)`/g, '<code class="md-code">$1</code>');
@@ -14,7 +14,14 @@ const renderInlineMarkdown = (text) => {
   return s;
 };
 
-const SYNTAX_RULES = [
+interface SyntaxRule {
+  type: string;
+  re: RegExp;
+  tagOnly?: boolean;
+  toggle?: boolean;
+}
+
+const SYNTAX_RULES: SyntaxRule[] = [
   { type: 'comment', re: /^\{#[\s\S]*?#\}/ },
   { type: 'tag', re: /^<\/?[a-zA-Z][\w-]*/ },
   { type: 'delimiter', re: /^(?:\{\{|\}\}|\{%|%\})/, toggle: true },
@@ -31,12 +38,12 @@ const SYNTAX_RULES = [
   { type: 'operator', re: /^(?:\||=|==|!=|<=|>=|<|>|\+|-|\*|\/|%|&|\[|\]|\(|\)|\.|,|:|\?)/ },
 ];
 
-const highlightHtml = (code) => {
+const highlightHtml = (code: string): string => {
   if (!code) return '';
   let out = '';
   let i = 0;
   let inTag = false;
-  const span = (type, text) => `<span class="syntax-${type}">${escapeHtml(text)}</span>`;
+  const span = (type: string, text: string) => `<span class="syntax-${type}">${escapeHtml(text)}</span>`;
   while (i < code.length) {
     const rest = code.slice(i);
     const ws = rest.match(/^\s+/);
@@ -55,14 +62,14 @@ const highlightHtml = (code) => {
     }
     if (!matched) {
       const plain = rest.match(/^[^<{}"'|\s]+/);
-      if (plain) { out += escapeHtml(plain[0]); i += plain[0].length; }
-      else { out += escapeHtml(code[i]); i += 1; }
+      if (plain?.[0]) { out += escapeHtml(plain[0]); i += plain[0].length; }
+      else { out += escapeHtml(code[i] ?? ''); i += 1; }
     }
   }
   return out;
 };
 
-const JS_RULES = [
+const JS_RULES: SyntaxRule[] = [
   { type: 'comment', re: /^\/\/[^\n]*/ },
   { type: 'comment', re: /^\/\*[\s\S]*?\*\// },
   { type: 'string', re: /^(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/ },
@@ -75,11 +82,11 @@ const JS_RULES = [
   { type: 'operator', re: /^(?:=>|==|!=|<=|>=|&&|\|\||<|>|\+|-|\*|\/|%|&|\||\^|!|=|\?|:|;|,|\.|\(|\)|\[|\]|\{|\})/ },
 ];
 
-const highlightJs = (code) => {
+const highlightJs = (code: string): string => {
   if (!code) return '';
   let out = '';
   let i = 0;
-  const span = (type, text) => `<span class="syntax-${type}">${escapeHtml(text)}</span>`;
+  const span = (type: string, text: string) => `<span class="syntax-${type}">${escapeHtml(text)}</span>`;
   while (i < code.length) {
     const rest = code.slice(i);
     const ws = rest.match(/^\s+/);
@@ -94,7 +101,7 @@ const highlightJs = (code) => {
         break;
       }
     }
-    if (!matched) { out += escapeHtml(code[i]); i += 1; }
+    if (!matched) { out += escapeHtml(code[i] ?? ''); i += 1; }
   }
   return out;
 };

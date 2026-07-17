@@ -51,8 +51,8 @@ describe('ensureDefined', () => {
   });
 
   test('throws for null/undefined in strict mode', () => {
-    expect(() => ensureDefined(null, 1, 2, null, null, 'strict')).toThrow('null or undefined');
-    expect(() => ensureDefined(undefined, 1, 2, null, null, 'strict')).toThrow('null or undefined');
+    expect(() => ensureDefined(null, 1, 2, null, null, 'strict')).toThrow("Variable '' is not defined");
+    expect(() => ensureDefined(undefined, 1, 2, null, null, 'strict')).toThrow("Variable '' is not defined");
   });
 
   test('returns undefined string in chainable mode (default)', () => {
@@ -146,7 +146,7 @@ describe('callWrap', () => {
   });
 
   test('throws UNDEFINED_FUNCTION for null/undefined obj', () => {
-    expect(() => callWrap(null, 'foo', 'foo()', {}, [], 1, 2)).toThrow('Unable to call');
+    expect(() => callWrap(null, 'foo', 'foo()', {}, [], 1, 2)).toThrow("Function 'foo()' is not defined");
     try { callWrap(null, 'foo', 'foo()', {}, [], 1, 2); } catch (e) {
       expect(e.code).toBe('UNDEFINED_FUNCTION');
     }
@@ -213,6 +213,7 @@ describe('handleError', () => {
     } catch (e) {
       expect(e.lineno).toBe(2);
       expect(e.colno).toBe(1);
+      expect(e.lineBase).toBe('one');
     }
   });
 });
@@ -256,6 +257,6 @@ describe('inOperator', () => {
   });
 
   test('throws for unexpected types', () => {
-    expect(() => inOperator('x', 42)).toThrow('Cannot use "in" operator');
+    expect(() => inOperator('x', 42)).toThrow("Cannot use 'in' operator to search for 'x' in number");
   });
 });

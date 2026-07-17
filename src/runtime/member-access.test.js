@@ -96,7 +96,7 @@ describe('slice', () => {
   });
 
   test('throws for step=0', () => {
-    expect(() => slice(arr, 0, 5, 0)).toThrow('slice step cannot be 0');
+    expect(() => slice(arr, 0, 5, 0)).toThrow('slice: step cannot be zero');
   });
 
   test('works on strings', () => {

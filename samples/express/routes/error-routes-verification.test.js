@@ -1,7 +1,12 @@
 import { expect, describe, test } from 'bun:test';
 import { render as nunjucksRender } from '../../../src/index.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const render = (template, context, config) => nunjucksRender(template, context, { dev: true, ...config });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const VIEWS = path.join(__dirname, '..', 'views');
 
 describe('Error Routes - All Throw Errors', () => {
   
@@ -129,6 +134,19 @@ describe('Error Routes - All Throw Errors', () => {
     const err = await render('{% for item in items %}{{ item }}{% endfor %}', {}).catch(e => e);
     expect(err).toBeTruthy();
   });
+
+  test('undefined-block throws with structured metadata', async () => {
+    const err = await nunjucksRender('error-undefined-block.njk', {}, {
+      dev: true,
+      undefined: 'strict',
+      views: VIEWS
+    }).catch(e => e);
+
+    expect(err).toBeTruthy();
+    expect(err.code).toBe('UNDEFINED_BLOCK');
+    expect(err.subject).toBe('nonexistent');
+    expect(err.message).toContain('not defined in parent template');
+  });
 });
 
 describe('Error HTML Output - All Have toHtmlString', () => {
@@ -172,5 +190,18 @@ describe('Error HTML Output - All Have toHtmlString', () => {
     const err = await render('{{ undefinedVar }}', {}, { undefined: 'strict' }).catch(e => e);
     const html = err.output();
     expect(html).toContain('Stack Trace');
+  });
+
+  test('undefined-block HTML output is humanized for parent-child block mismatch', async () => {
+    const err = await nunjucksRender('error-undefined-block.njk', {}, {
+      dev: true,
+      undefined: 'strict',
+      views: VIEWS
+    }).catch(e => e);
+
+    const html = err.output();
+    expect(html).toContain("Block 'nonexistent' does not exist in the parent template");
+    expect(html).toContain('The child template overrides block');
+    expect(html).toContain('Rename the child block to a block that exists in the parent');
   });
 });

@@ -85,6 +85,25 @@ describe('Context', () => {
     }
   });
 
+  test('validateBlocks uses centralized block location metadata', () => {
+    const ctx = createContext({}, { missing: () => {} }, mockEnv, {
+      blockLocations: {
+        missing: { lineno: 1, colno: 3 }
+      }
+    });
+    ctx.setParentBlockNames(['content']);
+
+    try {
+      ctx.validateBlocks();
+    } catch (e) {
+      expect(e.code).toBe('UNDEFINED_BLOCK');
+      expect(e.subject).toBe('missing');
+      expect(e.lineno).toBe(1);
+      expect(e.colno).toBe(3);
+      expect(e.lineBase).toBe('zero');
+    }
+  });
+
   test('getSuper throws when block not found', () => {
     const ctx = createContext({}, {}, mockEnv);
     expect(() => ctx.getSuper(mockEnv, 'main', () => {}, null, null))

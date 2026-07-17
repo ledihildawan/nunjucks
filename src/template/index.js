@@ -165,7 +165,7 @@ export function createTemplate(src, env, path, eagerCompile) {
 
       this.env._renderingTemplates.add(this.path);
 
-      const context = createContext(ctx || {}, this.blocks, this.env);
+      const context = createContext(ctx || {}, this.blocks, this.env, { blockLocations: this.blockMeta });
       const frame = parentFrame ? parentFrame.push(true) : createFrame();
       frame.topLevel = true;
 
@@ -205,7 +205,7 @@ export function createTemplate(src, env, path, eagerCompile) {
 
       this.env._renderingTemplates.add(this.path);
 
-      const context = createContext(ctx || {}, this.blocks, this.env);
+      const context = createContext(ctx || {}, this.blocks, this.env, { blockLocations: this.blockMeta });
       const frame = parentFrame ? parentFrame.push(true) : createFrame();
       frame.topLevel = true;
 
@@ -267,7 +267,7 @@ export function createTemplate(src, env, path, eagerCompile) {
       const frame = parentFrame ? parentFrame.push() : createFrame();
       frame.topLevel = true;
 
-      const context = createContext(ctx || {}, this.blocks, this.env);
+      const context = createContext(ctx || {}, this.blocks, this.env, { blockLocations: this.blockMeta });
       try {
         const runtime = createRuntimeWithContext(this.path, this.env.opts);
         await this.rootRenderFunc(this.env, context, frame, runtime);
@@ -302,6 +302,7 @@ export function createTemplate(src, env, path, eagerCompile) {
         }
 
         this.blocks = this._getBlocks(props);
+        this.blockMeta = props.__blockMeta || {};
         this.rootRenderFunc = props.root;
         this.compiled = true;
 

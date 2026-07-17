@@ -20,7 +20,13 @@ const getRenderFunction = (code) => {
     const codeWithReturn = code + '; return root;';
     const renderFn = new Function(codeWithReturn);
     const result = renderFn();
-    return { render: result.root };
+    const blocks = {};
+    Object.keys(result).forEach((key) => {
+      if (key.startsWith('b_')) {
+        blocks[key.slice(2)] = result[key];
+      }
+    });
+    return { render: result.root, blocks, blockMeta: result.__blockMeta || {} };
   }
   
   throw new Error('Invalid template: expected compiled template to start with "async function root"');
@@ -91,7 +97,8 @@ export const execute = async (code, context = {}, config = {}) => {
   const warningsCollector = config.warningsCollector || [];
   const logContext = {
     templateName: config.templateName || 'inline',
-    phase: 'render'
+    phase: 'render',
+    renderContext: config.renderContext
   };
   const runtime = { 
     ...globals, 
@@ -141,10 +148,8 @@ export const execute = async (code, context = {}, config = {}) => {
     };
   }
 
-  // Create a minimal frame object with lookup method (used by contextOrFrameLookup)
-  const emptyFrame = {
-    lookup: () => undefined
-  };
+  // Create a proper frame object
+  const frame = createFrame();
 
   // Handle sandbox mode
   if (sandbox) {
@@ -163,37 +168,50 @@ export const execute = async (code, context = {}, config = {}) => {
     // Create env object for new format with getFilter
     const env = {
       opts: {
+        dev: config.dev ?? false,
         autoescape: config.autoescape ?? true,
-        undefined: config.undefined ?? 'default'
+        undefined: config.undefined ?? 'default',
+        ...(config.env?.opts || {})
       },
       getFilter: (name) => {
         const filterFn = filters[name];
         if (filterFn) return filterFn;
-    throw new Error(`Filter '${name}' is not defined`);
-      }
+        if (config.env?.getFilter) return config.env.getFilter(name);
+        throw new Error(`Filter '${name}' is not defined`);
+      },
+      ...(config.env ? { getTemplate: (...args) => config.env.getTemplate(...args) } : {})
     };
     
     // Execute code - support both old and new format
     const { render } = getRenderFunction(code);
     
-    return await render(env, safeContext, emptyFrame, safeRuntime);
+    return await render(env, safeContext, frame, safeRuntime);
   }
 
   // Execute code - support both old and new format
-  const { render } = getRenderFunction(code);
+  const { render, blocks, blockMeta } = getRenderFunction(code);
   
   // Create env object for new format (matches new compiler expectations)
   const env = {
     opts: {
+      dev: config.dev ?? false,
       autoescape: config.autoescape ?? true,
-      undefined: config.undefined ?? 'default'
+      undefined: config.undefined ?? 'default',
+      ...(config.env?.opts || {})
     },
     getFilter: (name) => {
       const filterFn = filters[name];
       if (filterFn) return filterFn;
-    throw new Error(`Filter '${name}' is not defined`);
-    }
+      if (config.env?.getFilter) return config.env.getFilter(name);
+      throw new Error(`Filter '${name}' is not defined`);
+    },
+    ...(config.env ? { getTemplate: (...args) => config.env.getTemplate(...args) } : {})
   };
   
-  return await render(env, ctx, emptyFrame, runtime);
+  if (config.env) {
+    ctx = createContext(context, blocks, config.env, { blockLocations: blockMeta });
+    ctx._autoescape = config.autoescape ?? true;
+  }
+
+  return await render(env, ctx, frame, runtime);
 };

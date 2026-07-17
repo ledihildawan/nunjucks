@@ -1,11 +1,23 @@
 import { keys, filter } from 'remeda';
 import { classify } from './classify.js';
+import type { ClassifiedError } from './classify.js';
 import { toText } from './to-text.js';
 import { isBlockedKey } from '@nunjucks/shared/blocked-keys';
 import { shortenPath, normalizeDrivePath } from '@nunjucks/shared/path-shortener';
 import picocolors from 'picocolors';
+import { toDisplayLocation } from './location.js';
 
-const CONSOLE_JS_RULES = [
+interface JsRule {
+  type: string;
+  re: RegExp;
+}
+
+interface TemplateRule {
+  type: string;
+  re: RegExp;
+}
+
+const CONSOLE_JS_RULES: JsRule[] = [
   { type: 'string', re: /^"(?:[^"\\]|\\.)*"|^'(?:[^'\\]|\\.)*'|^`(?:[^`\\]|\\.)*`/ },
   { type: 'number', re: /^\d+\.?\d*/ },
   { type: 'keyword', re: /^(?:async|await|function|return|if|else|for|while|const|let|var|class|import|export|from|default|try|catch|throw|new|this|typeof|instanceof|null|undefined|true|false)/ },
@@ -13,12 +25,12 @@ const CONSOLE_JS_RULES = [
   { type: 'operator', re: /^(?:=>|==|!=|<=|>=|&&|\|\||<|>|\+|-|\*|\/|%|&|\||\^|!|=|\?|:|;|,|\.|\(|\)|\[|\]|\{|\})/ },
 ];
 
-const highlightJsToAnsi = (code) => {
+const highlightJsToAnsi = (code: string): string => {
   if (!code) return '';
   let out = '';
   let i = 0;
-  const span = (type, text) => {
-    const colors = {
+  const span = (type: string, text: string) => {
+    const colors: Record<string, (text: string) => string> = {
       string: picocolors.cyan,
       number: picocolors.yellow,
       keyword: picocolors.magenta,
@@ -46,7 +58,7 @@ const highlightJsToAnsi = (code) => {
   return out;
 };
 
-const CONSOLE_TEMPLATE_RULES = [
+const CONSOLE_TEMPLATE_RULES: TemplateRule[] = [
   { type: 'tag', re: /^(?:\{%-?|%-?|\{%|#\{)/ },
   { type: 'variable', re: /^(\{\{-?|\{\{-|#\{)/ },
   { type: 'string', re: /^"(?:[^"\\]|\\.)*"|^'(?:[^'\\]|\\.)*'/ },
@@ -57,12 +69,12 @@ const CONSOLE_TEMPLATE_RULES = [
   { type: 'punctuation', re: /^[\](){},:]/ },
 ];
 
-const highlightTemplateToAnsi = (code) => {
+const highlightTemplateToAnsi = (code: string): string => {
   if (!code) return '';
   let out = '';
   let i = 0;
-  const span = (type, text) => {
-    const colors = {
+  const span = (type: string, text: string) => {
+    const colors: Record<string, (text: string) => string> = {
       tag: picocolors.red,
       variable: picocolors.red,
       string: picocolors.cyan,
@@ -93,11 +105,11 @@ const highlightTemplateToAnsi = (code) => {
   return out;
 };
 
-const makeHyperlink = (text, url) => {
+const makeHyperlink = (text: string, url: string): string => {
   return `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
 };
 
-const renderMarkdownToAnsi = (text) => {
+const renderMarkdownToAnsi = (text: string): string => {
   if (!text) return '';
   let s = text;
   s = s.replace(/`([^`]+)`/g, (_, code) => picocolors.cyan(code));
@@ -105,7 +117,7 @@ const renderMarkdownToAnsi = (text) => {
   return s;
 };
 
-const formatHeader = (category, phase) => {
+const formatHeader = (category: string | undefined, phase: string | null | undefined): string => {
   const bits = [`${picocolors.bgRed('[ERROR]')} ${picocolors.bold('Template Rendering Failed')}`];
   if (category) bits.push(picocolors.yellow(`[${category}]`));
   if (phase) bits.push(picocolors.dim(`(${phase})`));
@@ -116,19 +128,22 @@ const formatHeader = (category, phase) => {
   ].join('\n');
 };
 
-const formatMessage = (message) => `${picocolors.bold('Message:')} ${message}`;
+const formatMessage = (message: string): string => `${picocolors.bold('Message:')} ${message}`;
 
-const formatLocationLabel = (options, error) => {
+const formatLocationLabel = (options: ToAnsiOptions, error: ErrorLike): string => {
   const { templatePath = error?.templateName, jsCaller, jsCallerErrorLine, ide = 'vscode' } = options;
-  const lineno = (options.lineno ?? error?.lineno ?? 0) + 1;
-  const colno = (options.colno ?? error?.colno ?? 0) + 1;
+  const location = toDisplayLocation(
+    options.lineno ?? error?.lineno ?? null,
+    options.colno ?? error?.colno ?? null,
+    jsCaller ? 'one' : (error?.lineBase ?? 'zero')
+  );
 
   if (!templatePath) {
     return `${picocolors.bold('Location:')} ${picocolors.dim('unknown')}`;
   }
 
-  const line = lineno;
-  const col = colno;
+  const line = location.line;
+  const col = location.col;
   const shortPath = shortenPath(templatePath);
   const displayPath = `${shortPath}:${line}:${col}`;
   const normalizedPath = normalizeDrivePath(templatePath);
@@ -138,14 +153,14 @@ const formatLocationLabel = (options, error) => {
   return `${picocolors.bold('Location:')} ${link}`;
 };
 
-const formatRenderContext = (renderContext) => {
+const formatRenderContext = (renderContext: RenderContext): string => {
   if (!renderContext || typeof renderContext !== 'object') return '';
-  const filteredKeys = filter(keys(renderContext), k => !k.startsWith('__nunjucks') && !isBlockedKey(k));
+  const filteredKeys = filter(keys(renderContext), (k: string) => !k.startsWith('__nunjucks') && !isBlockedKey(k));
   if (filteredKeys.length === 0) return '';
-  const lines = ['\n', picocolors.bold('Render Context:')];
+  const lines: string[] = ['\n', picocolors.bold('Render Context:')];
   for (const k of filteredKeys) {
     const raw = renderContext[k];
-    let val;
+    let val: string;
     if (raw === undefined) {
       val = 'undefined';
     } else if (raw === null) {
@@ -162,13 +177,13 @@ const formatRenderContext = (renderContext) => {
   return lines.join('\n');
 };
 
-const formatCodeTrace = (snippet, errorIndex = -1, startLine = 1) => {
+const formatCodeTrace = (snippet: string, errorIndex = -1, startLine = 1): string => {
   if (!snippet) return '';
-  const lines = ['\n', picocolors.bold('Source Trace:')];
+  const lines: string[] = ['\n', picocolors.bold('Source Trace:')];
   const snippetLines = snippet.split('\n');
   for (let i = 0; i < snippetLines.length; i++) {
     const lineNum = startLine + i;
-    const line = snippetLines[i];
+    const line = snippetLines[i] ?? '';
     const highlighted = highlightTemplateToAnsi(line);
     const prefix = i === errorIndex ? picocolors.red(`${lineNum} | `) : picocolors.dim(`${lineNum} | `);
     if (i === errorIndex) {
@@ -180,16 +195,16 @@ const formatCodeTrace = (snippet, errorIndex = -1, startLine = 1) => {
   return lines.join('\n');
 };
 
-const formatCauses = (causes) => {
+const formatCauses = (causes: string[] | undefined): string => {
   if (!causes || causes.length === 0) return '';
-  const lines = ['\n', picocolors.bold('Possible Causes:')];
+  const lines: string[] = ['\n', picocolors.bold('Possible Causes:')];
   for (const cause of causes) {
     lines.push(`  ${picocolors.dim('•')} ${renderMarkdownToAnsi(cause)}`);
   }
   return lines.join('\n');
 };
 
-const formatFix = (fixComment, fixCode) => {
+const formatFix = (fixComment: string | null | undefined, fixCode: string | null | undefined): string => {
   if (!fixComment && !fixCode) return '';
   return [
     '\n',
@@ -199,7 +214,7 @@ const formatFix = (fixComment, fixCode) => {
   ].filter(Boolean).join('\n');
 };
 
-const formatStackTrace = (error, isProduction = false) => {
+const formatStackTrace = (error: ErrorLike, isProduction = false): string => {
   if (!error?.stack) return '';
 
   const stackLines = error.stack.split('\n').slice(1);
@@ -217,18 +232,18 @@ const formatStackTrace = (error, isProduction = false) => {
 
   if (visibleLines.length === 0) return '';
 
-  const lines = ['\n', picocolors.bold('Stack Trace:')];
+  const lines: string[] = ['\n', picocolors.bold('Stack Trace:')];
 
   for (const frame of visibleLines) {
     const trimmed = frame.trim();
     const pathMatch = trimmed.match(/\(([^()]+):(\d+):(\d+)\)$/);
-    if (pathMatch) {
-      let fullPath = pathMatch[1];
+    if (pathMatch?.[1] && pathMatch[2] && pathMatch[3]) {
+      const fullPath = pathMatch[1];
       const line = pathMatch[2];
       const col = pathMatch[3];
       const shortPath = shortenPath(fullPath);
       const fnMatch = trimmed.match(/^at\s+([^\s]+)/);
-      const fn = fnMatch ? fnMatch[1] : '';
+      const fn = fnMatch?.[1] ?? '';
       const linkText = fn ? `${fn} (${shortPath}:${line}:${col})` : `(${shortPath}:${line}:${col})`;
       const normalizedPath = normalizeDrivePath(fullPath);
       const vscodeUrl = `vscode://file/${normalizedPath}:${line}:${col}`;
@@ -242,20 +257,44 @@ const formatStackTrace = (error, isProduction = false) => {
   return lines.join('\n');
 };
 
-const formatFooter = (options) => {
+const formatFooter = (options: ToAnsiOptions): string => {
   const { version = '3.2.4', timestamp } = options;
   const bits = [`Nunjucks ${version}`];
   if (timestamp) bits.push(timestamp);
   return picocolors.dim('\n' + bits.join(' · '));
 };
 
-/**
- * Render error to ANSI-colored console output
- * @param {Error} error - Raw error from nunjucks
- * @param {object} options - Optional configuration
- * @returns {string} ANSI-colored string
- */
-export const toAnsi = (error, options = {}) => {
+interface ErrorLike {
+  message?: string;
+  stack?: string;
+  lineno?: number | null;
+  colno?: number | null;
+  templateName?: string | null;
+  phase?: string | null;
+  code?: string | null;
+}
+
+type RenderContext = Record<string, unknown>;
+
+export interface ToAnsiOptions {
+  templatePath?: string | null;
+  lineno?: number | null;
+  colno?: number | null;
+  renderContext?: RenderContext;
+  phase?: string | null;
+  version?: string;
+  timestamp?: string;
+  sourceContent?: string;
+  snippet?: string;
+  verbosity?: 'simple' | 'medium' | 'full';
+  isProduction?: boolean;
+  dev?: boolean;
+  ide?: string;
+  jsCaller?: string;
+  jsCallerErrorLine?: number;
+}
+
+export const toAnsi = (error: ErrorLike, options: ToAnsiOptions = {}): string => {
   if (!error) return '';
 
   const {
@@ -276,12 +315,16 @@ export const toAnsi = (error, options = {}) => {
     return `${picocolors.bgRed('[ERROR]')} Template Rendering Failed${badge}\n${picocolors.dim('Check logs for details')}`;
   }
 
-  const classified = classify(error);
+  const classified = classify(error as Parameters<typeof classify>[0]);
   const plain = toText(error, { verbosity: 'simple' });
 
-  const displayLine = (lineno ?? error?.lineno ?? 0) + 1;
+  const location = toDisplayLocation(
+    lineno ?? error?.lineno ?? null,
+    colno ?? error?.colno ?? null,
+    error?.lineBase ?? 'zero'
+  );
+  const displayLine = location.line;
 
-  // Auto-generate snippet from sourceContent if not provided
   let codeSnippet = snippet;
   let errorIndex = -1;
   let startLine = 1;
@@ -295,7 +338,7 @@ export const toAnsi = (error, options = {}) => {
 
   const category = error.code || classified?.category?.toUpperCase() || 'UNKNOWN';
 
-  const parts = [];
+  const parts: string[] = [];
 
   if (verbosity === 'simple') {
     parts.push(formatMessage(plain));
@@ -313,7 +356,6 @@ export const toAnsi = (error, options = {}) => {
     return parts.join('\n');
   }
 
-  // full verbosity
   if (codeSnippet) {
     parts.push(formatCodeTrace(codeSnippet, errorIndex, startLine));
   }

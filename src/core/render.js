@@ -1,3 +1,4 @@
+import EventEmitter from 'events';
 import { createCompiler } from '../compiler/index.js';
 import { parse } from '../parser/index.js';
 import { transform } from '../transformers/index.js';
@@ -25,13 +26,13 @@ const getLoader = (config) => {
   return cachedLoader;
 };
 
-const wrapWithError = (err, config, template = null, renderContext = null) => {
+const wrapWithLog = (err, config, template = null, renderContext = null) => {
   const templatePath = config.templatePath || config.jsCaller || config._callerFile || err.templateName || null;
   const errLineno = err.lineno;
   const errColno = err.colno;
   const useJsCaller = errLineno == null && config.jsCallerErrorLine;
-  const lineno = useJsCaller ? config.jsCallerErrorLine : (errLineno ?? config.lineno ?? 1);
-  const colno = useJsCaller ? config.jsCallerErrorCol : (errColno ?? config.colno ?? 1);
+  const lineno = useJsCaller ? (config.jsCallerErrorLine ?? null) : (errLineno ?? config.lineno ?? null);
+  const colno = useJsCaller ? (config.jsCallerErrorCol ?? null) : (errColno ?? config.colno ?? null);
   const phase = err.phase || config.phase || 'render';
   const dev = config.dev ?? false;
   const ide = config.ide ?? 'vscode';
@@ -45,9 +46,10 @@ const wrapWithError = (err, config, template = null, renderContext = null) => {
       code: err.code,
       subject: err.subject,
       phase,
-      templateName: templatePath
+      templateName: templatePath,
+      lineBase: err.lineBase ?? (useJsCaller ? 'one' : 'zero')
     }
-  });
+  }, renderContext);
 
   errorObj.output = (options = {}) => {
     const { format = 'html', verbosity = 'full' } = options;
@@ -78,13 +80,13 @@ export const render = async (template, context = {}, config = {}) => {
   if (typeof template !== 'string') {
     const err = new Error('Template must be a string');
     err.code = 'TEMPLATE_MUST_BE_STRING';
-    throw wrapWithError(err, config, template, context);
+    throw wrapWithLog(err, config, template, context);
   }
 
   const validation = validateConfig(config);
   if (!validation.valid) {
     const err = new Error(validation.errors[0].message);
-    throw wrapWithError(err, config, template, context);
+    throw wrapWithLog(err, config, template, context);
   }
 
   const loader = getLoader(config);
@@ -107,13 +109,13 @@ export const render = async (template, context = {}, config = {}) => {
   const templateValidation = validateTemplate(template, config);
   if (!templateValidation.valid) {
     const err = new Error(templateValidation.errors[0].message);
-    throw wrapWithError(err, config, templateSource, context);
+    throw wrapWithLog(err, config, templateSource, context);
   }
 
   const contextValidation = validateRenderContext(context, config);
   if (!contextValidation.valid) {
     const err = new Error(contextValidation.errors[0].message);
-    throw wrapWithError(err, config, templateSource, context);
+    throw wrapWithLog(err, config, templateSource, context);
   }
 
   let code;
@@ -128,7 +130,7 @@ export const render = async (template, context = {}, config = {}) => {
     code = c.getCode();
     sourceMapData = c.getSourceMap().mappings;
   } catch (err) {
-    throw wrapWithError(err, config, templateSource, context);
+    throw wrapWithLog(err, config, templateSource, context);
   }
 
   const internalKeys = ['__nunjucks_undefined_mode', 'exports', 'module', 'require', '__dirname', '__filename', 'global', 'globalThis', 'process'];
@@ -142,6 +144,35 @@ export const render = async (template, context = {}, config = {}) => {
   const sandboxedCtx = createSandboxedContext(context, config.sandbox, sandboxOptions);
   sandboxedCtx.__nunjucks_undefined_mode = config.undefined || 'default';
 
+  if (loader && !config.env) {
+    const emitter = new EventEmitter();
+    config.env = {
+      opts: {
+        dev: config.dev ?? false,
+        autoescape: config.autoescape ?? true,
+        undefined: config.undefined ?? 'default'
+      },
+      extensionsList: [],
+      globals: config.globals || {},
+      _renderingTemplates: new Set(),
+      on: (event, handler) => emitter.on(event, handler),
+      emit: (event, ...args) => emitter.emit(event, ...args),
+      removeListener: (event, handler) => emitter.removeListener(event, handler),
+      async getTemplate(name, eagerCompile, includeChain, ignoreMissing) {
+        const source = await loader.getSource(name);
+        if (!source) {
+          if (ignoreMissing) return null;
+          const err = new Error(`template not found: ${name}`);
+          err.code = 'FILE_NOT_FOUND';
+          err.subject = name;
+          throw err;
+        }
+        const { createTemplate } = await import('../template/index.js');
+        return createTemplate(source.src, this, source.path, eagerCompile);
+      }
+    };
+  }
+
   const runtime = buildRuntime(config);
   const warningsCollector = [];
 
@@ -152,7 +183,8 @@ export const render = async (template, context = {}, config = {}) => {
       runtime,
       warningsCollector,
       templateName,
-      sourceMapData
+      sourceMapData,
+      renderContext: context
     });
 
     if (config.executionTimeout > 0) {
@@ -161,7 +193,7 @@ export const render = async (template, context = {}, config = {}) => {
       result = await renderPromise;
     }
   } catch (err) {
-    throw wrapWithError(err, config, templateSource, context);
+    throw wrapWithLog(err, config, templateSource, context);
   }
 
   if (warningsCollector.length > 0 && (config.dev ?? false)) {
@@ -192,13 +224,13 @@ export const renderWithEnv = async (templateName, env, context = {}, config = {}
   const validation = validateConfig(config);
   if (!validation.valid) {
     const err = new Error(validation.errors[0].message);
-    throw wrapWithError(err, { ...config, templatePath: config.templatePath || templateName, env }, null, context);
+    throw wrapWithLog(err, { ...config, templatePath: config.templatePath || templateName, env }, null, context);
   }
 
   const contextValidation = validateRenderContext(context, config);
   if (!contextValidation.valid) {
     const err = new Error(contextValidation.errors[0].message);
-    throw wrapWithError(err, { ...config, templatePath: config.templatePath || templateName, env }, null, context);
+    throw wrapWithLog(err, { ...config, templatePath: config.templatePath || templateName, env }, null, context);
   }
 
   let template;
@@ -212,6 +244,6 @@ export const renderWithEnv = async (templateName, env, context = {}, config = {}
     
     throw new Error('Template object is invalid: missing render method');
   } catch (err) {
-    throw wrapWithError(err, { ...config, templatePath: config.templatePath || templateName, env }, template?.tmplStr ?? null, context);
+    throw wrapWithLog(err, { ...config, templatePath: config.templatePath || templateName, env }, template?.tmplStr ?? null, context);
   }
 };
