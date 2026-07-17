@@ -146,6 +146,15 @@ export const execute = async (code, context = {}, config = {}) => {
           result[name] = ctx[name];
         });
         return result;
+      },
+      getBlock: function(name) {
+        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, { phase: 'render' });
+      },
+      getSuper: function(envObj, name, block, frame, runtime) {
+        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, { phase: 'render' });
+      },
+      getSuperBlock: function(name) {
+        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, { phase: 'render' });
       }
     };
   }

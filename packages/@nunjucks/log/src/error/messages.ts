@@ -87,6 +87,7 @@ export const ERROR_DEFINITIONS = {
   VALIDATION_ERROR: createError('VALIDATION_ERROR', "Invalid value for '{key}'", ['key']),
   INVALID_BOOLEAN: createError('INVALID_BOOLEAN', 'invalid boolean', []),
   RESERVED_KEYWORD: createError('RESERVED_KEYWORD', "Cannot use reserved {type} '{name}'", ['type', 'name']),
+  RESERVED_KEYWORD_CONTEXT: createError('RESERVED_KEYWORD_CONTEXT', "Cannot use reserved keyword '{name}' outside of its intended context", ['name'], /reserved keyword.*context|cannot use.*reserved keyword|caller.*only available|only available inside.*call/i),
   KEY_NOT_FOUND: createError('KEY_NOT_FOUND', "Key '{key}' not found", ['key'], /Key '([^']+)' not found/i),
   ASSERT_TYPE_ERROR: createError('ASSERT_TYPE_ERROR', 'Invalid type assertion', [], /assertType.*invalid type/i),
 

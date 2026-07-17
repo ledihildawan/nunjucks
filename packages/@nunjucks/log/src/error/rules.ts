@@ -539,6 +539,18 @@ export const RULES: Rule[] = [
     fixComment: 'Choose a name that is not a reserved keyword'
   },
   {
+    pattern: PATTERNS.RESERVED_KEYWORD_CONTEXT,
+    category: 'reserved_keyword_context',
+    subjectFrom: undefinedNameExtractor,
+    titleTemplate: "Cannot use reserved keyword '{subject}' outside of its intended context",
+    causes: [
+      '`{subject}` is a **reserved keyword** with special context requirements',
+      'Only available in specific template constructs'
+    ],
+    fixCode: 'Use {subject} only in its intended context',
+    fixComment: 'Review when {subject} can be used'
+  },
+  {
     pattern: PATTERNS.UNKNOWN_BLOCK_RUNTIME,
     category: 'undefined_block',
     subjectFrom: null,

@@ -129,6 +129,37 @@ export const classifyFromError = (error: ErrorInput | null): Classification => {
       fixComment: 'caller is only available inside macros called with {% call %}'
     };
   }
+  if (error.code === 'RESERVED_KEYWORD_CONTEXT') {
+    const keyword = error.subject || 'unknown';
+    const contextMap: Record<string, { causes: string[]; fixCode: string; fixComment: string }> = {
+      'caller': {
+        causes: [
+          '`caller` is a **special macro variable** - only available inside a `call` block',
+          'Used to access content from `{% call %}` blocks',
+          'Cannot be used outside of macro context'
+        ],
+        fixCode: `{% macro render(content) %}
+  {{ caller() }}
+{% endmacro %}
+
+{% call render() %}
+  This content will be passed to caller
+{% endcall %}`,
+        fixComment: 'caller is only available inside macros called with {% call %}'
+      },
+      'super': {
+        causes: [
+          '`super()` can only be called inside a **block that extends a parent template**',
+          'The template must use `{% extends "parent.njk" %}`',
+          '`super()` calls the parent template\'s block content'
+        ],
+        fixCode: '{% extends "parent.njk" %}\n{% block content %}{{ super() }}{% endblock %}',
+        fixComment: 'super() requires the template to extend a parent with the block'
+      }
+    };
+    const info = contextMap[keyword] || { causes: ['Reserved keyword used outside its context'], fixCode: '', fixComment: '' };
+    return { category: 'reserved_keyword_context', undefinedName: keyword, ...info };
+  }
   if (error.code === 'UNDEFINED_BLOCK') {
     const rule = RULES.find(r => r.category === 'undefined_block');
     if (rule) {

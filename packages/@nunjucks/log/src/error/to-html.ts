@@ -145,6 +145,8 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
     humanTitle = 'Template syntax error';
   } else if (category === 'VALIDATION_ERROR') {
     humanTitle = 'Template must be a string';
+  } else if (category === 'RESERVED_KEYWORD_CONTEXT') {
+    humanTitle = plain;
   }
   const location = toDisplayLocation(
     lineno ?? error?.lineno ?? null,

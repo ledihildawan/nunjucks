@@ -141,6 +141,13 @@ export function ensureDefined(val, lineno, colno, varName = null, templateName =
 export function callWrap(obj, name, displayName, context, args, lineno, colno) {
   const ctx = (this && this.logContext) ? this.logContext : { templateName: null, phase: 'render' };
   const messageName = displayName || name;
+  const reservedKeywordContexts = {
+    'caller': 'macro context ({% call %} block)',
+    'super': 'block that extends a parent template'
+  };
+  if (reservedKeywordContexts[name]) {
+    throw createLog('error', ERROR_DEFINITIONS.RESERVED_KEYWORD_CONTEXT, { name }, name, { lineno, colno, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline', lineBase: 'zero' });
+  }
   if (!obj) {
     throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_FUNCTION, { name: messageName }, name, { lineno, colno, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline', lineBase: 'zero' });
   } else if (!isFunction(obj)) {
