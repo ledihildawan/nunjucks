@@ -1,4 +1,6 @@
 import { keys, isFunction, isNonNullish } from 'remeda';
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { createLog } from '@nunjucks/log';
 
 export const createContainer = () => {
   const factories = new Map();
@@ -7,7 +9,7 @@ export const createContainer = () => {
 
   const register = (name, factory, options = {}) => {
     if (!isFunction(factory)) {
-      throw new Error(`Container: factory for '${name}' must be a function, got ${typeof factory}`);
+      throw createLog('error', ERROR_DEFINITIONS.CONTAINER_FACTORY, { name, type: typeof factory }, name);
     }
     factories.set(name, factory);
     if (options.singleton) {
@@ -28,7 +30,7 @@ export const createContainer = () => {
 
     const factory = factories.get(name);
     if (!factory) {
-      throw new Error(`Container: '${name}' is not registered. Did you forget to register it?`);
+      throw createLog('error', ERROR_DEFINITIONS.CONTAINER_NOT_REGISTERED, { name }, name);
     }
 
     const deps = factory.length > 0 && args.length === 0

@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { createLog } from './create-log.js';
+import { createLog } from '../../src/create-log.js';
 
 describe('createLog', () => {
   describe('error', () => {

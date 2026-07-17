@@ -8,11 +8,10 @@ export const error = (ctx, msg, lineno, colno) => {
     colno = tok.colno;
   }
   return createLog('error', {
-    message: msg,
-    lineno,
-    colno,
-    info: { phase: 'parse', lineBase: 'zero' }
-  });
+    name: 'PARSER_ERROR',
+    message: () => msg,
+    pattern: /./
+  }, {}, null, { lineno, colno, phase: 'parse', lineBase: 'zero' });
 };
 
 export const fail = (ctx, msg, lineno, colno) => {

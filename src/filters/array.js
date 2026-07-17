@@ -1,8 +1,16 @@
-import { ERRORS } from '@nunjucks/log/error/messages';
+import { createLog } from '@nunjucks/log';
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
 import { isArray, isString, isPlainObject, map, keys, entries, sum as sumValues } from 'remeda';
 import { isSafeString, copySafeness, makeMacro } from '../runtime/index.js';
 import { getAttrGetter } from '../helpers/attributes.js';
 import { normalize } from './string.js';
+
+const getLogContext = (ctx) => (ctx && ctx.logContext) ? ctx.logContext : { templateName: 'inline', phase: 'render', renderContext: null };
+
+const filterError = (ctx, errorDef, params, subject) => {
+  const logContext = getLogContext(ctx);
+  return createLog('error', errorDef, params, subject, { phase: logContext.phase || 'render', templateName: logContext.templateName || 'inline', lineBase: 'zero' });
+};
 
 export function batch(arr, linecount, fillWith) {
   let i;
@@ -65,7 +73,7 @@ export function list(val) {
   } else if (isArray(val)) {
     return val;
   } else {
-    throw new Error(ERRORS.LIST_FILTER(typeof val));
+    throw filterError(this, ERROR_DEFINITIONS.LIST_FILTER, { type: typeof val }, typeof val);
   }
 }
 
@@ -124,7 +132,7 @@ export const sort = makeMacro(
   ['value', 'reverse', 'case_sensitive', 'attribute'], [],
   function sortFilter(arr, reversed, caseSens, attr) {
     if (!arr || !Array.isArray(arr)) {
-      throw new TypeError(ERRORS.SORT_FILTER(typeof arr));
+      throw filterError(this, ERROR_DEFINITIONS.SORT_FILTER, { type: typeof arr }, typeof arr);
     }
 
     // Handle positional args: sort(items, attr) or sort(items, attr, reverse)
@@ -139,7 +147,7 @@ export const sort = makeMacro(
     if (sortAttr) {
       for (const item of arr) {
         if (item && typeof item === 'object' && !(sortAttr in item)) {
-          throw new TypeError(ERRORS.SORT_FILTER_ATTR(sortAttr));
+          throw filterError(this, ERROR_DEFINITIONS.SORT_FILTER_ATTR, { attr: sortAttr }, sortAttr);
         }
       }
     }

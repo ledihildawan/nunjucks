@@ -13,6 +13,8 @@ import {
   makeMacro,
   createSafeString,
 } from '../runtime/index.js';
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { createLog } from '@nunjucks/log';
 
 const getRenderFunction = (code) => {
   const newFormatMatch = code.match(/^async\s+function\s+root\s*\(/);
@@ -29,7 +31,7 @@ const getRenderFunction = (code) => {
     return { render: result.root, blocks, blockMeta: result.__blockMeta || {} };
   }
   
-  throw new Error('Invalid template: expected compiled template to start with "async function root"');
+  throw createLog('error', ERROR_DEFINITIONS.INVALID_CODE_FORMAT, {}, null, { phase: 'compile' });
 };
 
 const getRuntimeHelpers = () => ({
@@ -85,12 +87,12 @@ export const execute = async (code, context = {}, config = {}) => {
     );
   }
 
-  const getFilter = (name) => {
+  const getFilter = (name, lineno, colno) => {
     const filterFn = filters[name];
     if (filterFn) return filterFn;
     const ctxFn = context[name] && typeof context[name] === 'function' ? context[name] : null;
     if (ctxFn) return ctxFn;
-    throw new Error(`Filter '${name}' is not defined`);
+    throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_FILTER, { name }, name, { lineno: lineno ?? null, colno: colno ?? null, phase: 'render', lineBase: 'zero' });
   };
 
   // Create runtime object for the new format
@@ -159,7 +161,7 @@ export const execute = async (code, context = {}, config = {}) => {
         return target[key];
       },
       set() {
-        throw new Error('Cannot modify context in sandbox mode');
+        throw createLog('error', ERROR_DEFINITIONS.SANDBOX_CONTEXT_MODIFY, {}, null, { phase: 'render' });
       }
     });
     
@@ -173,11 +175,11 @@ export const execute = async (code, context = {}, config = {}) => {
         undefined: config.undefined ?? 'default',
         ...(config.env?.opts || {})
       },
-      getFilter: (name) => {
+      getFilter: (name, lineno, colno) => {
         const filterFn = filters[name];
         if (filterFn) return filterFn;
-        if (config.env?.getFilter) return config.env.getFilter(name);
-        throw new Error(`Filter '${name}' is not defined`);
+        if (config.env?.getFilter) return config.env.getFilter(name, lineno, colno);
+        throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_FILTER, { name }, name, { lineno: lineno ?? null, colno: colno ?? null, phase: 'render', lineBase: 'zero' });
       },
       ...(config.env ? { getTemplate: (...args) => config.env.getTemplate(...args) } : {})
     };
@@ -199,11 +201,11 @@ export const execute = async (code, context = {}, config = {}) => {
       undefined: config.undefined ?? 'default',
       ...(config.env?.opts || {})
     },
-    getFilter: (name) => {
+    getFilter: (name, lineno, colno) => {
       const filterFn = filters[name];
       if (filterFn) return filterFn;
-      if (config.env?.getFilter) return config.env.getFilter(name);
-      throw new Error(`Filter '${name}' is not defined`);
+      if (config.env?.getFilter) return config.env.getFilter(name, lineno, colno);
+      throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_FILTER, { name }, name, { lineno: lineno ?? null, colno: colno ?? null, phase: 'render', lineBase: 'zero' });
     },
     ...(config.env ? { getTemplate: (...args) => config.env.getTemplate(...args) } : {})
   };

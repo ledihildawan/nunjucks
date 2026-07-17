@@ -32,6 +32,7 @@ export interface FormatterStateInput {
     version?: string;
     timestamp?: string;
     sourceContent?: string;
+    sourceStartLine?: number;
     snippet?: string;
     csp?: { nonce?: string };
     jsCaller?: string;
@@ -55,6 +56,7 @@ export interface FormatterState {
   version?: string;
   timestamp?: string;
   sourceContent?: string;
+  sourceStartLine?: number;
   snippet?: string;
   csp?: { nonce?: string };
   jsCaller?: string;
@@ -82,11 +84,12 @@ export const createFormatterState = ({ metadata, options = {} }: FormatterStateI
   templateName: metadata.templateName,
   lineno: metadata.lineno,
   colno: metadata.colno,
-  templatePath: options.templatePath,
+  templatePath: options.templatePath ?? metadata.templatePath,
   renderContext: metadata.renderContext ?? options.renderContext,
   version: options.version,
   timestamp: options.timestamp,
   sourceContent: options.sourceContent,
+  sourceStartLine: options.sourceStartLine,
   snippet: options.snippet,
   csp: options.csp,
   jsCaller: options.jsCaller,

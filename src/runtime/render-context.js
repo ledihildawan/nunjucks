@@ -1,6 +1,8 @@
 // ============================================
 // Section 1: Internal Scope Functions
 // ============================================
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { createLog } from '@nunjucks/log';
 
 const createScope = (data = {}, parent = null) => ({
   data: new Map(Object.entries(data)),
@@ -10,7 +12,7 @@ const createScope = (data = {}, parent = null) => ({
 const scopeGet = (scope, key) => {
   if (scope.data.has(key)) return [null, scope.data.get(key)];
   if (scope.parent) return scopeGet(scope.parent, key);
-  return [new Error(`Key '${key}' not found`)];
+  return [createLog('error', ERROR_DEFINITIONS.KEY_NOT_FOUND, { key }, key, { phase: 'render' })];
 };
 
 const scopeSet = (scope, key, value) => ({
@@ -124,7 +126,7 @@ export const withValidation = (validators) => (context) => {
   const originalSet = newCtx.set;
   newCtx.set = (key, value) => {
     if (validators[key] && !validators[key](value)) {
-      throw new Error(`Invalid value for '${key}'`);
+      throw createLog('error', ERROR_DEFINITIONS.VALIDATION_ERROR, { key }, key, { phase: 'render' });
     }
     return originalSet(key, value);
   };

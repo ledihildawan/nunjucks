@@ -72,7 +72,7 @@ describe('Context', () => {
 
   test('getBlock throws for unknown block', () => {
     const ctx = createContext({}, {}, mockEnv);
-    expect(() => ctx.getBlock('missing')).toThrow('unknown block "missing"');
+    expect(() => ctx.getBlock('missing')).toThrow('Undefined block: missing');
   });
 
   test('getBlock error has code and subject', () => {
@@ -114,7 +114,7 @@ describe('Context', () => {
     const fn = () => {};
     const ctx = createContext({}, { main: fn }, mockEnv);
     expect(() => ctx.getSuper(mockEnv, 'main', fn, null, null))
-      .toThrow('no super block available for "main"');
+      .toThrow('No super block available');
   });
 
   test('getSuper calls next block', () => {

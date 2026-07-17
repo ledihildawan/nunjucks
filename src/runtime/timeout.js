@@ -1,8 +1,10 @@
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+
 export class TimeoutError extends Error {
   constructor(message = 'Template execution timed out') {
     super(message);
     this.name = 'TimeoutError';
-    this.code = 'TIMEOUT';
+    this.code = ERROR_DEFINITIONS.TIMEOUT.name;
   }
 }
 

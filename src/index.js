@@ -4,28 +4,33 @@ import { createEngine } from './integrations/express.js';
 import { createLog, toText, toAnsi, toHtml, toConsoleString, classify, CSS, PRODUCTION_BODY, TOGGLE_SCRIPT } from '@nunjucks/log';
 
 const getCallerLocation = () => {
+  const original = Error.prepareStackTrace;
+  Error.prepareStackTrace = (_, stack) => stack;
   const stack = new Error().stack;
-  if (!stack) return null;
-  const lines = stack.split('\n');
-  for (let i = 2; i < lines.length; i++) {
-    const line = lines[i];
-    let match = line.match(/at\s+.+\s+\((.+):(\d+):(\d+)\)/);
-    if (match) {
-      const path = match[1];
-      if (path.includes('/nunjucks/src/') || path.includes('\\nunjucks\\src\\')) {
-        continue;
-      }
-      return { path, line: parseInt(match[2]), col: parseInt(match[3]) };
-    }
-    match = line.match(/at\s+(.+):(\d+):(\d+)$/);
-    if (match) {
-      const path = match[1];
-      if (path.includes('/nunjucks/src/') || path.includes('\\nunjucks\\src\\')) {
-        continue;
-      }
-      return { path, line: parseInt(match[2]), col: parseInt(match[3]) };
-    }
+  Error.prepareStackTrace = original;
+
+  if (!stack || stack.length < 3) return null;
+
+  const skipPrefixes = ['/nunjucks/src/', '\\nunjucks\\src\\'];
+
+  for (let i = 2; i < stack.length; i++) {
+    const frame = stack[i];
+    if (!frame || typeof frame.getFileName !== 'function') continue;
+
+    const fileName = frame.getFileName();
+    if (!fileName) continue;
+
+    const normalizedFile = fileName.replace(/\\/g, '/');
+    const shouldSkip = skipPrefixes.some(prefix => normalizedFile.includes(prefix));
+    if (shouldSkip) continue;
+
+    return {
+      path: fileName,
+      line: frame.getLineNumber?.() || null,
+      col: frame.getColumnNumber?.() || null
+    };
   }
+
   return null;
 };
 
@@ -52,7 +57,7 @@ const nunjucks = (template, context, localConfig) => {
   if (callerLoc) {
     config.jsCaller = callerLoc.path;
     config.jsCallerErrorLine = callerLoc.line;
-    config.jsCallerErrorCol = callerLoc.column;
+    config.jsCallerErrorCol = callerLoc.col;
   }
 
   if (context && typeof context === 'object' && !localConfig) {

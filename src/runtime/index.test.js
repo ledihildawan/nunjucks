@@ -51,8 +51,8 @@ describe('ensureDefined', () => {
   });
 
   test('throws for null/undefined in strict mode', () => {
-    expect(() => ensureDefined(null, 1, 2, null, null, 'strict')).toThrow("Variable '' is not defined");
-    expect(() => ensureDefined(undefined, 1, 2, null, null, 'strict')).toThrow("Variable '' is not defined");
+    expect(() => ensureDefined(null, 1, 2, null, null, 'strict')).toThrow('Undefined value');
+    expect(() => ensureDefined(undefined, 1, 2, null, null, 'strict')).toThrow('Undefined value');
   });
 
   test('returns undefined string in chainable mode (default)', () => {
@@ -204,16 +204,16 @@ describe('handleError', () => {
     }
   });
 
-  test('handles sourceMapData', () => {
+  test('keeps canonical template location even when sourceMapData is present', () => {
     const err = new Error('test');
     const sourceMapData = [{ compiledLine: 5, originalLine: 2, originalCol: 1 }];
     const runtime = { sourceMapData };
     try {
       handleError(err, 5, 0, runtime);
     } catch (e) {
-      expect(e.lineno).toBe(2);
-      expect(e.colno).toBe(1);
-      expect(e.lineBase).toBe('one');
+      expect(e.lineno).toBe(5);
+      expect(e.colno).toBe(0);
+      expect(e.lineBase).toBe('zero');
     }
   });
 });

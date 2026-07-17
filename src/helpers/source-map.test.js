@@ -16,12 +16,12 @@ describe('SourceMap', () => {
 
   test('getOriginalPosition returns start for line 0', () => {
     const sm = createSourceMap('t.njk');
-    expect(sm.getOriginalPosition(0)).toEqual({ line: 1, col: 0, name: 't.njk' });
+    expect(sm.getOriginalPosition(0)).toEqual({ line: 0, col: 0, name: 't.njk' });
   });
 
   test('getOriginalPosition returns line+offset for negative', () => {
     const sm = createSourceMap('t.njk');
-    expect(sm.getOriginalPosition(-5)).toEqual({ line: 1, col: 0, name: 't.njk' });
+    expect(sm.getOriginalPosition(-5)).toEqual({ line: 0, col: 0, name: 't.njk' });
   });
 
   test('getOriginalPosition maps through stored mappings', () => {
@@ -35,13 +35,13 @@ describe('SourceMap', () => {
 
   test('getOriginalPosition returns compiled line if no mapping covers it', () => {
     const sm = createSourceMap('t.njk');
-    expect(sm.getOriginalPosition(42).line).toBe(42);
+    expect(sm.getOriginalPosition(42).line).toBe(41);
   });
 
   test('getOriginalPosition returns last mapping for lower line', () => {
     const sm = createSourceMap('t.njk');
     sm.addMapping(20, 10, 0);
-    expect(sm.getOriginalPosition(5).line).toBe(5);
+    expect(sm.getOriginalPosition(5).line).toBe(4);
   });
 
   test('fromArray creates SourceMap with pre-filled mappings', () => {
@@ -70,6 +70,7 @@ describe('applySourceMapToError', () => {
     const result = applySourceMapToError(err, 10, smData, 't.njk');
     expect(result.lineno).toBe(3);
     expect(result.colno).toBe(5);
+    expect(result.lineBase).toBe('zero');
   });
 });
 
@@ -84,7 +85,10 @@ describe('createMappedError', () => {
     const mapped = createMappedError(err, smData, 10, 0, 'test.njk');
     expect(mapped).toBeInstanceOf(Error);
     expect(mapped.message).toContain('test.njk');
+    expect(mapped.message).toContain('Line 4, Column 8');
     expect(mapped.message).toContain('test error');
     expect(mapped.lineno).toBe(3);
+    expect(mapped.colno).toBe(7);
+    expect(mapped.lineBase).toBe('zero');
   });
 });

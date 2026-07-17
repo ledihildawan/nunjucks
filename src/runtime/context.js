@@ -1,5 +1,7 @@
 ﻿import { keys } from 'remeda';
 import { createObj } from '../object/index.js';
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { createLog } from '@nunjucks/log';
 
 const Context = Symbol('Context');
 
@@ -37,13 +39,7 @@ export function createContext(ctx, blocks, env, metadata = {}) {
         if (childOnlyBlocks.length > 0) {
           const blockName = childOnlyBlocks[0];
           const location = this.blockLocations[blockName] || {};
-          const err = new Error(`Block "${blockName}" is not defined in parent template`);
-          err.code = 'UNDEFINED_BLOCK';
-          err.subject = blockName;
-          err.lineno = location.lineno ?? null;
-          err.colno = location.colno ?? null;
-          err.lineBase = 'zero';
-          throw err;
+          throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_BLOCK, { name: blockName }, blockName, { lineno: location.lineno ?? null, colno: location.colno ?? null, lineBase: 'zero', phase: 'render' });
         }
       }
     },
@@ -67,29 +63,20 @@ export function createContext(ctx, blocks, env, metadata = {}) {
     getBlock: function(name) {
       this.validateBlocks();
       if (!this.blocks[name]) {
-        const err = new Error(`unknown block "${name}"`);
-        err.code = 'UNDEFINED_BLOCK';
-        err.subject = name;
-        throw err;
+        throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_BLOCK, { name }, name, { phase: 'render' });
       }
       return this.blocks[name][0];
     },
     getSuper: function(envObj, name, block, frame, runtime) {
       const blockList = this.blocks[name];
       if (!blockList) {
-        const err = new Error(`no super block available for "${name}"`);
-        err.code = 'NO_SUPER_BLOCK';
-        err.subject = name;
-        throw err;
+        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, { phase: 'render' });
       }
       const idx = blockList.indexOf(block);
       const blk = blockList[idx + 1];
 
       if (idx === -1 || !blk) {
-        const err = new Error(`no super block available for "${name}"`);
-        err.code = 'NO_SUPER_BLOCK';
-        err.subject = name;
-        throw err;
+        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, { phase: 'render' });
       }
 
       return blk(envObj, this, frame, runtime);

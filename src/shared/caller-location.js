@@ -49,6 +49,23 @@ export function getCallerLocation() {
       }
     }
 
+    const asyncMatch = line.match(/at\s+async\s+\(([^)]+):(\d+):(\d+)\)/);
+    if (asyncMatch) {
+      const fullPath = asyncMatch[1];
+      const shortFileName = fullPath.split(/[\\/]/).pop();
+      const lineNum = Number(asyncMatch[2]);
+      const colNum = Number(asyncMatch[3]);
+
+      if (/\.(?:mjs|cjs|ts|jsx|tsx|js|sjs)$/i.test(fullPath)) {
+        return {
+          file: shortFileName,
+          fullPath,
+          line: lineNum,
+          column: colNum
+        };
+      }
+    }
+
     const simpleMatch = line.match(/\(([^)]+):(\d+)\)$/);
     if (simpleMatch && /\.(?:mjs|cjs|ts|jsx|tsx|js|sjs)$/i.test(simpleMatch[1])) {
       const fullPath = simpleMatch[1];

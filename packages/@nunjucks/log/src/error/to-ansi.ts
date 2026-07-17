@@ -285,6 +285,7 @@ export interface ToAnsiOptions {
   version?: string;
   timestamp?: string;
   sourceContent?: string;
+  sourceStartLine?: number;
   snippet?: string;
   verbosity?: 'simple' | 'medium' | 'full';
   isProduction?: boolean;
@@ -306,6 +307,7 @@ export const toAnsi = (error: ErrorLike, options: ToAnsiOptions = {}): string =>
     version,
     timestamp,
     sourceContent,
+    sourceStartLine,
     snippet,
     verbosity = 'full'
   } = options;
@@ -330,10 +332,12 @@ export const toAnsi = (error: ErrorLike, options: ToAnsiOptions = {}): string =>
   let startLine = 1;
   if (!codeSnippet && sourceContent) {
     const lines = sourceContent.split('\n');
-    startLine = Math.max(0, displayLine - 3) + 1;
-    const endLine = Math.min(lines.length, displayLine + 2);
-    codeSnippet = lines.slice(startLine - 1, endLine).join('\n');
-    errorIndex = displayLine - startLine;
+    const relativeLine = sourceStartLine ? displayLine - sourceStartLine + 1 : displayLine;
+    const startIndex = Math.max(0, relativeLine - 3);
+    startLine = sourceStartLine ? sourceStartLine + startIndex : startIndex + 1;
+    const endLine = Math.min(lines.length, relativeLine + 2);
+    codeSnippet = lines.slice(startIndex, endLine).join('\n');
+    errorIndex = relativeLine - startIndex - 1;
   }
 
   const category = error.code || classified?.category?.toUpperCase() || 'UNKNOWN';

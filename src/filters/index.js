@@ -39,8 +39,8 @@ export const filters = {
   select: require('./array.js').select,
   rejectattr: require('./array.js').rejectattr,
   selectattr: require('./array.js').selectattr,
-  dictsort: require('./array.js').dictsort,
-  groupby: require('./array.js').groupby,
+  dictsort: require('./object.js').dictsort,
+  groupby: require('./object.js').groupby,
 
   abs: require('./math.js').abs,
   isNaN: require('./math.js').isNaN,

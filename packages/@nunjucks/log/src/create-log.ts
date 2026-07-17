@@ -4,7 +4,13 @@ import { toAnsi } from './error/to-ansi.js';
 import { toText } from './error/to-text.js';
 import { toConsoleString } from './error/to-console.js';
 import type { LineBase } from './error/location.js';
-import { createFormatterState, normalizeLogMetadata } from './error/metadata.js';
+import { createFormatterState } from './error/metadata.js';
+
+export interface ErrorDefinitionEntry {
+  name: string;
+  message: (args?: Record<string, string> | string[]) => string;
+  pattern: RegExp;
+}
 
 export interface ErrorInfo {
   code?: string | null;
@@ -31,6 +37,7 @@ export interface OutputOptions {
   version?: string;
   timestamp?: string;
   sourceContent?: string;
+  sourceStartLine?: number;
   snippet?: string;
   csp?: { nonce?: string };
   jsCaller?: string;
@@ -48,6 +55,7 @@ export interface TemplateError extends Error {
   templateName: string | null;
   renderContext?: Record<string, unknown>;
   lineBase?: LineBase | null;
+  outputOptions?: Omit<OutputOptions, 'format'>;
   output: (options?: OutputOptions) => {
     html: string;
     ansi: string;
@@ -68,29 +76,122 @@ export interface TemplateWarning {
   output: (options?: Omit<OutputOptions, 'format' | 'isProduction'>) => string;
 }
 
-export function createLog(type: 'error', data: { message: string; lineno?: number | null; colno?: number | null; info?: ErrorInfo }, renderContext?: Record<string, unknown>): TemplateError;
-export function createLog(type: 'warning', data: { message: string; lineno?: number | null; colno?: number | null; info?: WarningInfo }, renderContext?: Record<string, unknown>): TemplateWarning;
-export function createLog(type: string, data: { message: string; lineno?: number | null; colno?: number | null; info?: ErrorInfo | WarningInfo }, renderContext?: Record<string, unknown>): TemplateError | TemplateWarning {
-  const { message, lineno: topLineno, colno: topColno, info = {} } = data;
-  const metadata = normalizeLogMetadata({
-    lineno: topLineno,
-    colno: topColno,
-    renderContext,
-    ...info
-  });
+export interface ErrorContext {
+  lineno?: number | null;
+  colno?: number | null;
+  phase?: string | null;
+  templateName?: string | null;
+  templatePath?: string | null;
+  lineBase?: LineBase | null;
+}
+
+export interface WarningContext extends ErrorContext {
+  varName?: string | null;
+  undefinedMode?: string | null;
+}
+
+interface NormalizedErrorContext {
+  lineno: number | null;
+  colno: number | null;
+  phase: string | null;
+  templateName: string | null;
+  lineBase: LineBase | null;
+}
+
+interface NormalizedWarningContext extends NormalizedErrorContext {
+  varName: string | null;
+  undefinedMode: string;
+}
+
+const normalizeErrorContext = (context?: ErrorContext | null): NormalizedErrorContext => ({
+  lineno: context?.lineno ?? null,
+  colno: context?.colno ?? null,
+  phase: context?.phase ?? null,
+  templateName: context?.templateName ?? null,
+  lineBase: context?.lineBase ?? null,
+});
+
+const normalizeWarningContext = (context?: WarningContext | null): NormalizedWarningContext => ({
+  ...normalizeErrorContext(context),
+  varName: context?.varName ?? null,
+  undefinedMode: context?.undefinedMode ?? 'chainable',
+});
+
+const isErrorDefinitionEntry = (data: any): data is ErrorDefinitionEntry =>
+  typeof data === 'object' &&
+  data !== null &&
+  'message' in data &&
+  typeof data.message === 'function' &&
+  !('lineno' in data);
+
+export function createLog(
+  type: 'error',
+  errorDef: ErrorDefinitionEntry,
+  params?: Record<string, string>,
+  subject?: string | null,
+  context?: ErrorContext | null
+): TemplateError;
+
+export function createLog(
+  type: 'warning',
+  errorDef: ErrorDefinitionEntry,
+  params?: Record<string, string>,
+  subject?: string | null,
+  context?: WarningContext | null
+): TemplateWarning;
+
+export function createLog(
+  type: string,
+  errorDefOrData: ErrorDefinitionEntry | { message: string; lineno?: number | null; colno?: number | null; info?: ErrorInfo | WarningInfo },
+  paramsOrContext?: Record<string, string> | Record<string, unknown>,
+  subject?: string | null,
+  context?: ErrorContext | null
+): TemplateError | TemplateWarning {
+  if (!isErrorDefinitionEntry(errorDefOrData)) {
+    throw new Error('createLog: second argument must be an ErrorDefinitionEntry');
+  }
+
+  const errorDef = errorDefOrData;
+  const params = paramsOrContext as Record<string, string> | undefined;
 
   if (type === 'error') {
-    return createErrorObject(message, metadata);
-  } else if (type === 'warning') {
-    return createWarningObject(message, {
-      ...metadata,
-      ...info
-    } as ReturnType<typeof normalizeLogMetadata> & WarningInfo);
+    const normalized = normalizeErrorContext(context);
+    const extraKeys = ['lineno', 'colno', 'phase', 'templateName', 'lineBase', 'varName', 'undefinedMode'];
+    const extra = context ? Object.fromEntries(
+      Object.entries(context).filter(([k]) => !extraKeys.includes(k))
+    ) : undefined;
+    return createErrorObject(errorDef.message(params), {
+      code: errorDef.name,
+      subject: subject ?? null,
+      ...normalized
+    }, extra);
   }
+
+  if (type === 'warning') {
+    const normalized = normalizeWarningContext(context);
+    return createWarningObject(errorDef.message(params), {
+      code: errorDef.name,
+      subject: subject ?? null,
+      ...normalized
+    });
+  }
+
   throw new Error(`Unknown log type: ${type}`);
 }
 
-function createErrorObject(message: string, metadata: ReturnType<typeof normalizeLogMetadata>): TemplateError {
+function createErrorObject(
+  message: string,
+  metadata: {
+    code: string | null;
+    subject: string | null;
+    lineno: number | null;
+    colno: number | null;
+    phase: string | null;
+    templateName: string | null;
+    lineBase: LineBase | null;
+  },
+  extra?: Record<string, unknown>
+): TemplateError {
   const err = new Error(message) as TemplateError;
   err.name = 'Template render error';
   err.lineno = metadata.lineno;
@@ -99,40 +200,73 @@ function createErrorObject(message: string, metadata: ReturnType<typeof normaliz
   err.subject = metadata.subject;
   err.phase = metadata.phase;
   err.templateName = metadata.templateName;
-  err.renderContext = metadata.renderContext;
   err.lineBase = metadata.lineBase;
 
+  const storedOptions = extra ? { ...extra } : {};
+
   err.output = function(options: OutputOptions = {}) {
+    const mergedOptions = { ...storedOptions, ...options };
     const opts = createFormatterState({
-      metadata,
-      options
+      metadata: {
+        lineno: err.lineno,
+        colno: err.colno,
+        phase: err.phase,
+        templateName: err.templateName,
+        code: err.code,
+        subject: err.subject,
+        renderContext: undefined,
+        lineBase: err.lineBase ?? undefined
+      },
+      options: mergedOptions
     });
 
     if (options.format === 'html') return toHtml(err, opts);
     if (options.format === 'ansi') return toAnsi(err, opts);
     if (options.format === 'text') return toText(err, opts);
 
-    return { html: toHtml(err, opts), ansi: toAnsi(err, opts), text: toText(err, opts) };
+    return toHtml(err, opts);
   };
 
   return err;
 }
 
-function createWarningObject(message: string, metadata: ReturnType<typeof normalizeLogMetadata> & WarningInfo): TemplateWarning {
+function createWarningObject(
+  message: string,
+  metadata: {
+    code: string | null;
+    subject: string | null;
+    lineno: number | null;
+    colno: number | null;
+    phase: string | null;
+    templateName: string | null;
+    lineBase: LineBase | null;
+    varName: string | null;
+    undefinedMode: string;
+  }
+): TemplateWarning {
   const warning: TemplateWarning = {
     message,
     lineno: metadata.lineno,
     colno: metadata.colno,
     varName: metadata.varName ?? null,
     templateName: metadata.templateName,
-    undefinedMode: metadata.undefinedMode ?? 'chainable',
+    undefinedMode: metadata.undefinedMode,
     code: metadata.code,
     subject: metadata.subject,
     lineBase: metadata.lineBase,
 
     output(options: Omit<OutputOptions, 'format' | 'isProduction'> = {}) {
       const state = createFormatterState({
-        metadata,
+        metadata: {
+          lineno: warning.lineno,
+          colno: warning.colno,
+          phase: warning.templateName,
+          templateName: warning.templateName,
+          code: warning.code,
+          subject: warning.subject,
+          renderContext: undefined,
+          lineBase: warning.lineBase ?? undefined
+        },
         options
       });
       return toConsoleString(warning, state);

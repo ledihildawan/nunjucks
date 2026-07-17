@@ -86,6 +86,7 @@ export interface ToHtmlOptions {
   jsCaller?: string;
   jsCallerErrorLine?: number;
   sourceContent?: string;
+  sourceStartLine?: number;
   snippet?: string;
   ide?: string;
   verbosity?: 'simple' | 'medium' | 'full';
@@ -106,6 +107,7 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
     jsCaller,
     jsCallerErrorLine,
     sourceContent,
+    sourceStartLine,
     snippet,
     ide = 'vscode',
     verbosity = 'full',
@@ -137,6 +139,8 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
     humanTitle = 'Cannot import template - module not found';
   } else if (category === 'FILE_NOT_FOUND') {
     humanTitle = `Template file not found: ${undefinedName || 'unknown'}`;
+  } else if (category === 'DICTSDICT_FILTER_BY') {
+    humanTitle = plain;
   } else if (category === 'SYNTAX_ERROR') {
     humanTitle = 'Template syntax error';
   } else if (category === 'VALIDATION_ERROR') {
@@ -154,10 +158,13 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
   let codeSnippet = snippet;
   let snippetErrorIndex = -1;
   let startLine = 0;
+  let displayStartLine = 1;
   if (!codeSnippet && sourceContent) {
     const lines = sourceContent.split('\n');
-    const clampedLine = Math.min(displayLine, lines.length);
+    const relativeLine = sourceStartLine ? displayLine - sourceStartLine + 1 : displayLine;
+    const clampedLine = Math.min(relativeLine, lines.length);
     startLine = Math.max(0, clampedLine - 3);
+    displayStartLine = sourceStartLine ? sourceStartLine + startLine : startLine + 1;
     const endLine = Math.min(lines.length, clampedLine + 2);
     codeSnippet = lines.slice(startLine, endLine).join('\n');
     snippetErrorIndex = clampedLine - startLine - 1;
@@ -174,6 +181,7 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
       const errorLine = lineno ?? 1;
       const clampedLine = Math.min(errorLine, lines.length);
       startLine = Math.max(0, clampedLine - 3);
+      displayStartLine = startLine + 1;
       const endLine = Math.min(lines.length, clampedLine + 2);
       codeSnippet = lines.slice(startLine, endLine).join('\n');
       snippetErrorIndex = clampedLine - startLine - 1;
@@ -228,11 +236,11 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
 
     ${codeSnippet ? `
     <section class="source-section" aria-labelledby="h-source">
-      <h2 id="h-source" class="text-label">Source Trace</h2>
+        <h2 id="h-source" class="text-label">Source Trace</h2>
       <div class="code-block">
         ${codeSnippet.split('\n').map((line, idx) => {
           const isError = idx === snippetErrorIndex;
-          const lineNum = startLine + idx + 1;
+          const lineNum = displayStartLine + idx;
           return `<div class="code-line ${isError ? 'is-error' : ''}"><span class="line-number">${lineNum}</span><span class="code-content">${highlightHtml(line)}</span></div>`;
         }).join('\n')}
       </div>

@@ -1,4 +1,8 @@
-﻿import { defaultTo, isArray } from 'remeda';
+import { defaultTo, isArray } from 'remeda';
+
+const createLocation = (line, col, name) => ({ line, col, name });
+
+const hasValue = (value) => value !== null && value !== undefined;
 
 export function createSourceMap(templateName) {
   const state = {
@@ -17,22 +21,18 @@ export function createSourceMap(templateName) {
 
     getOriginalPosition(compiledLine) {
       if (compiledLine <= 0) {
-        return { line: 1, col: 0, name: state.templateName };
+        return createLocation(0, 0, state.templateName);
       }
 
       for (let i = state.mappings.length - 1; i >= 0; i--) {
         const mapping = state.mappings[i];
         if (compiledLine >= mapping.compiledLine) {
           const offset = compiledLine - mapping.compiledLine;
-          return {
-            line: mapping.originalLine + offset,
-            col: mapping.originalCol,
-            name: state.templateName
-          };
+          return createLocation(mapping.originalLine + offset, mapping.originalCol, state.templateName);
         }
       }
 
-      return { line: compiledLine, col: 0, name: state.templateName };
+      return createLocation(compiledLine - 1, 0, state.templateName);
     }
   };
 }
@@ -59,7 +59,7 @@ export function applySourceMapToError(error, lineno, sourceMapData, templateName
   if (error.colno === undefined) {
     error.colno = pos.col;
   }
-  error.lineBase = 'one';
+  error.lineBase = 'zero';
 
   return error;
 }
@@ -73,14 +73,18 @@ export function createMappedError(error, sourceMapData, lineno, colno, path) {
   const pos = sm.getOriginalPosition(lineno);
 
   const errColno = defaultTo(error.colno, 0);
-  const finalColno = (pos.col > 0) ? pos.col : errColno;
-  const templateLocation = `${path}:${pos.line}:${finalColno}`;
+  const finalColno = pos.col > 0 ? pos.col : errColno;
+  const displayLine = pos.line + 1;
+  const displayCol = finalColno + 1;
+  const templateLocation = `${path}:${displayLine}:${displayCol}`;
 
   let msg = `(${path})`;
-  if (pos.line && finalColno > 0) {
-    msg += ` [Line ${pos.line}, Column ${finalColno}]`;
-  } else if (pos.line) {
-    msg += ` [Line ${pos.line}]`;
+  if (hasValue(pos.line)) {
+    if (hasValue(finalColno)) {
+      msg += ` [Line ${displayLine}, Column ${displayCol}]`;
+    } else {
+      msg += ` [Line ${displayLine}]`;
+    }
   }
   msg += `\n  ${defaultTo(error.message, '')}`;
 
@@ -88,7 +92,7 @@ export function createMappedError(error, sourceMapData, lineno, colno, path) {
   newError.name = defaultTo(error.name, 'Template render error');
   newError.lineno = pos.line;
   newError.colno = finalColno;
-  newError.lineBase = 'one';
+  newError.lineBase = 'zero';
   newError._includeChain = error._includeChain;
   const renderLine = `at ${defaultTo(error.getterName, 'root')} (${templateLocation})`;
   newError.stack = `${newError.message}\n    ${renderLine}\n    at Environment.render`;

@@ -3,6 +3,8 @@ import { readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { watch } from 'fs';
 import { createLoader } from './base.js';
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { createLog } from '@nunjucks/log';
 
 const normalizeSearchPaths = (searchPaths) =>
   !searchPaths ? ['.'] : (isArray(searchPaths) ? searchPaths : [searchPaths]).map(path.normalize);
@@ -17,37 +19,60 @@ const resolveFromSearchPath = (name) => (searchPath) => {
 
 const existsAndWithinBase = (basePath) => ({ fullPath }) => {
   if (!isPathWithinBase(basePath)(fullPath)) return false;
-  try {
-    const stat = statSync(fullPath);
-    if (stat.isDirectory()) {
-      const err = new Error(`EISDIR: illegal operation - path is a directory: ${fullPath}`);
-      err.code = 'FILESYSTEM_ERROR';
-      throw err;
-    }
-    return true;
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      // Check if the base path (search path) exists
-      try {
-        statSync(basePath);
-      } catch (baseErr) {
-        if (baseErr.code === 'ENOENT') {
-          const pathErr = new Error(`ENOENT: no such file or directory: ${basePath}`);
-          pathErr.code = 'FILESYSTEM_ERROR';
-          throw pathErr;
-        }
-        baseErr.code = 'FILESYSTEM_ERROR';
-        throw baseErr;
+    try {
+      const stat = statSync(fullPath);
+      if (stat.isDirectory()) {
+        throw createLog(
+          'error',
+          ERROR_DEFINITIONS.FILESYSTEM_ERROR,
+          { msg: `EISDIR: illegal operation - path is a directory: ${fullPath}` },
+          fullPath,
+          { phase: 'load' }
+        );
       }
-      return false;
+      return true;
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        // Check if the base path (search path) exists
+        try {
+          statSync(basePath);
+        } catch (baseErr) {
+          if (baseErr.code === 'ENOENT') {
+            throw createLog(
+              'error',
+              ERROR_DEFINITIONS.FILESYSTEM_ERROR,
+              { msg: `ENOENT: no such file or directory: ${basePath}` },
+              basePath,
+              { phase: 'load' }
+            );
+          }
+          throw createLog(
+            'error',
+            ERROR_DEFINITIONS.FILESYSTEM_ERROR,
+            { msg: String(baseErr) },
+            basePath,
+            { phase: 'load' }
+          );
+        }
+        return false;
+      }
+      if (err.code === 'EISDIR') {
+        throw createLog(
+          'error',
+          ERROR_DEFINITIONS.FILESYSTEM_ERROR,
+          { msg: String(err) },
+          fullPath,
+          { phase: 'load' }
+        );
+      }
+      throw createLog(
+        'error',
+        ERROR_DEFINITIONS.FILESYSTEM_ERROR,
+        { msg: String(err) },
+        fullPath,
+        { phase: 'load' }
+      );
     }
-    if (err.code === 'EISDIR') {
-      err.code = 'FILESYSTEM_ERROR';
-      throw err;
-    }
-    err.code = 'FILESYSTEM_ERROR';
-    throw err;
-  }
 };
 
 const findFileInSearchPaths = (searchPaths, name) => {
@@ -68,8 +93,13 @@ const readFileSource = (fullpath) => {
     };
   } catch (err) {
     if (err.code === 'ENOENT') return null;
-    err.code = 'FILESYSTEM_ERROR';
-    throw err;
+    throw createLog(
+      'error',
+      ERROR_DEFINITIONS.FILESYSTEM_ERROR,
+      { msg: String(err) },
+      fullpath,
+      { phase: 'load' }
+    );
   }
 };
 

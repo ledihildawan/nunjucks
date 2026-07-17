@@ -1,7 +1,11 @@
 import { keys, isNonNullish, isFunction } from 'remeda';
 import { isBlockedKey, isDangerousGlobal, isCodeExecutionPattern, BLOCKED_KEYS_LIST, DANGEROUS_GLOBALS_LIST } from '@nunjucks/shared/blocked-keys';
+import { createLog } from '@nunjucks/log';
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
 
 export { isBlockedKey, isDangerousGlobal, isCodeExecutionPattern, BLOCKED_KEYS_LIST, DANGEROUS_GLOBALS_LIST };
+
+const sandboxError = (errorDef, key) => createLog('error', errorDef, { key }, String(key), { phase: 'render', lineBase: 'zero' });
 
 const wrapFunction = (fn, sandboxEnabled) => {
   if (!sandboxEnabled || !isFunction(fn)) {
@@ -55,12 +59,12 @@ export const createSandboxedObject = (obj, sandboxEnabled, options = {}) => {
     get(target, key) {
       // Check blocklist
       if (isBlockedKey(key)) {
-        throw new Error(`Cannot access '${key}' in sandbox mode`);
+        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS, key);
       }
 
       // Check allowlist if not in blocklist-only mode
       if (!blocklistMode && !isAllowedKey(key, allowlist)) {
-        throw new Error(`'${key}' is not allowed in sandbox mode. Add it to allowlist.`);
+        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, key);
       }
       
       const value = target[key];
@@ -75,12 +79,12 @@ export const createSandboxedObject = (obj, sandboxEnabled, options = {}) => {
     set(target, key, value) {
       // Check blocklist
       if (isBlockedKey(key)) {
-        throw new Error(`Cannot set '${key}' in sandbox mode`);
+        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_SET, key);
       }
 
       // Check allowlist if not in blocklist-only mode
       if (!blocklistMode && !isAllowedKey(key, allowlist)) {
-        throw new Error(`Cannot set '${key}' in sandbox mode. Add it to allowlist.`);
+        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, key);
       }
       
       target[key] = value;
@@ -109,11 +113,11 @@ export const createSandboxedContext = (context, sandboxEnabled, options = {}) =>
   return new Proxy(context, {
     get(target, key) {
       if (isBlockedKey(key)) {
-        throw new Error(`Cannot access '${key}' in sandbox mode`);
+        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS, key);
       }
 
       if (!blocklistMode && !isAllowedKey(key, allowlist)) {
-        throw new Error(`'${key}' is not allowed in sandbox mode. Add it to allowlist.`);
+        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, key);
       }
 
       const value = target[key];
@@ -130,11 +134,11 @@ export const createSandboxedContext = (context, sandboxEnabled, options = {}) =>
     },
     set(target, key, value) {
       if (isBlockedKey(key)) {
-        throw new Error(`Cannot set '${key}' in sandbox mode`);
+        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_SET, key);
       }
 
       if (!blocklistMode && !isAllowedKey(key, allowlist)) {
-        throw new Error(`Cannot set '${key}' in sandbox mode. Add it to allowlist.`);
+        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, key);
       }
       
       target[key] = value;
@@ -160,11 +164,11 @@ export const wrapMemberAccess = (obj, val, sandboxEnabled, options = {}) => {
   }
 
   if (isBlockedKey(val)) {
-    throw new Error(`Cannot access '${val}' in sandbox mode`);
+    throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS, val);
   }
 
   if (!blocklistMode && !isAllowedKey(val, allowlist)) {
-    throw new Error(`'${val}' is not allowed in sandbox mode. Add it to allowlist.`);
+    throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, val);
   }
 
   const value = obj?.[val];

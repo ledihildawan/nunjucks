@@ -1,17 +1,20 @@
-import { ERRORS } from '@nunjucks/log/error/messages';
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
 import { isString, isPlainObject, groupBy } from 'remeda';
 import { createLog } from '@nunjucks/log';
 import { getAttrGetter } from '../helpers/attributes.js';
 
 const isObject = isPlainObject;
 
+const getLogContext = (ctx) => (ctx && ctx.logContext) ? ctx.logContext : { templateName: 'inline', phase: 'render', renderContext: null };
+
+const filterError = (ctx, errorDef, params, subject) => {
+  const logContext = getLogContext(ctx);
+  return createLog('error', errorDef, params, subject, { phase: logContext.phase || 'render', templateName: logContext.templateName || 'inline', lineBase: 'zero' });
+};
+
 export function dictsort(val, caseSensitive, by) {
   if (!isObject(val)) {
-    throw createLog('error', {
-      message: ERRORS.DICTSORT_FILTER(typeof val),
-      lineno: 0,
-      colno: 0
-    });
+    throw filterError(this, ERROR_DEFINITIONS.DICTSDICT_FILTER, { type: typeof val }, typeof val);
   }
 
   let array = [];
@@ -25,11 +28,7 @@ export function dictsort(val, caseSensitive, by) {
   } else if (by === 'value') {
     si = 1;
   } else {
-    throw createLog('error', {
-      message: ERRORS.DICSORT_FILTER_BY(by),
-      lineno: 0,
-      colno: 0
-    });
+    throw filterError(this, ERROR_DEFINITIONS.DICTSDICT_FILTER_BY, { by }, by);
   }
 
   array = array.toSorted((t1, t2) => {
@@ -53,12 +52,12 @@ export function dictsort(val, caseSensitive, by) {
 
 export function groupby(arr, attr) {
   if (!arr || !Array.isArray(arr)) {
-    throw new TypeError(ERRORS.GROUPBY_FILTER(typeof arr));
+    throw filterError(this, ERROR_DEFINITIONS.GROUPBY_FILTER, { type: typeof arr }, typeof arr);
   }
 
   for (const item of arr) {
     if (item && typeof item === 'object' && !(attr in item)) {
-      throw new TypeError(ERRORS.GROUPBY_FILTER_ATTR(attr));
+      throw filterError(this, ERROR_DEFINITIONS.GROUPBY_FILTER_ATTR, { attr }, attr);
     }
   }
 
@@ -67,7 +66,7 @@ export function groupby(arr, attr) {
   return groupBy(arr, (item, i) => {
     const key = getAttr(item, i);
     if (key === undefined) {
-      throw new TypeError(ERRORS.GROUPBY_FILTER_ATTR(attr));
+      throw filterError(this, ERROR_DEFINITIONS.GROUPBY_FILTER_ATTR, { attr }, attr);
     }
     return key;
   });

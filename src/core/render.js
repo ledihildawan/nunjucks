@@ -6,9 +6,10 @@ import { execute } from './compiler.js';
 import { validateTemplate, validateRenderContext, validateConfig } from './validator.js';
 import { withTimeout } from '../runtime/timeout.js';
 import { createSandboxedContext } from '../runtime/sandbox.js';
-import { createLog, toHtml, toAnsi, toText, injectWarningsScript } from '@nunjucks/log';
+import { createLog, injectWarningsScript } from '@nunjucks/log';
 import { createFileSystemLoader } from '../loaders/index.js';
 import { getCallerFile } from '@nunjucks/shared/caller-file';
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
 
 let cachedLoader = null;
 let cachedViewsPath = null;
@@ -16,60 +17,92 @@ let cachedViewsPath = null;
 const getLoader = (config) => {
   const viewsPath = config.views || config.root;
   if (!viewsPath) return null;
-  
+
   if (cachedLoader && cachedViewsPath === viewsPath) {
     return cachedLoader;
   }
-  
+
   cachedLoader = createFileSystemLoader(viewsPath, { noCache: config.dev || false });
   cachedViewsPath = viewsPath;
   return cachedLoader;
+};
+
+const extractCodeContext = (filePath, errorLine, errorCol) => {
+  try {
+    const fs = require('fs');
+    const content = fs.readFileSync(filePath, 'utf8');
+    const lines = content.split('\n');
+
+    if (errorLine < 1 || errorLine > lines.length) {
+      return { content, startLine: 1 };
+    }
+
+    const windowSize = 10;
+    let startLine = Math.max(1, errorLine - windowSize);
+    let endLine = Math.min(lines.length, errorLine + windowSize);
+
+    return {
+      content: lines.slice(startLine - 1, endLine).join('\n'),
+      startLine,
+      errorCol
+    };
+  } catch {
+    return null;
+  }
 };
 
 const wrapWithLog = (err, config, template = null, renderContext = null) => {
   const templatePath = config.templatePath || config.jsCaller || config._callerFile || err.templateName || null;
   const errLineno = err.lineno;
   const errColno = err.colno;
-  const useJsCaller = errLineno == null && config.jsCallerErrorLine;
-  const lineno = useJsCaller ? (config.jsCallerErrorLine ?? null) : (errLineno ?? config.lineno ?? null);
-  const colno = useJsCaller ? (config.jsCallerErrorCol ?? null) : (errColno ?? config.colno ?? null);
+  const useJsCaller = config.jsCallerErrorLine != null;
+  const hasErrorLocation = errLineno !== undefined && errLineno !== null;
+  const isInlineTemplate = typeof template === 'string' &&
+    (template.includes('{{') || template.includes('{%') || template.includes('{#'));
+  const preferJsCallerLocation = useJsCaller && !config.templatePath && isInlineTemplate;
+  const lineno = preferJsCallerLocation
+    ? (config.jsCallerErrorLine ?? errLineno ?? config.lineno ?? null)
+    : (hasErrorLocation ? errLineno : (config.jsCallerErrorLine ?? config.lineno ?? null));
+  const colno = preferJsCallerLocation
+    ? (config.jsCallerErrorCol ?? errColno ?? config.colno ?? null)
+    : (hasErrorLocation ? (errColno ?? null) : (config.jsCallerErrorCol ?? config.colno ?? null));
   const phase = err.phase || config.phase || 'render';
   const dev = config.dev ?? false;
   const ide = config.ide ?? 'vscode';
   const timestamp = new Date().toISOString();
 
-  const errorObj = createLog('error', {
-    message: err.message,
+  let sourceContent = template;
+  let sourceStartLine = 1;
+
+  if (useJsCaller && config.jsCaller) {
+    const codeContext = extractCodeContext(config.jsCaller, config.jsCallerErrorLine, config.jsCallerErrorCol);
+    if (codeContext) {
+      sourceContent = codeContext.content;
+      sourceStartLine = codeContext.startLine;
+    }
+  }
+
+  const errorDef = {
+    name: err.code || 'RENDER_ERROR',
+    message: () => err.message,
+    pattern: /./,
+  };
+  const errorObj = createLog('error', errorDef, {}, err.subject, {
     lineno,
     colno,
-    info: {
-      code: err.code,
-      subject: err.subject,
-      phase,
-      templateName: templatePath,
-      lineBase: err.lineBase ?? (useJsCaller ? 'one' : 'zero')
-    }
-  }, renderContext);
-
-  errorObj.output = (options = {}) => {
-    const { format = 'html', verbosity = 'full' } = options;
-    const formatConfig = { dev, ide, templatePath, lineno, colno, phase, sourceContent: template, renderContext, timestamp, verbosity, isJsCaller: useJsCaller };
-
-    switch (format) {
-      case 'html':
-        return toHtml(errorObj, formatConfig);
-      case 'ansi':
-        return toAnsi(errorObj, formatConfig);
-      case 'text':
-        return toText(errorObj, formatConfig);
-      default:
-        return {
-          html: toHtml(errorObj, formatConfig),
-          ansi: toAnsi(errorObj, formatConfig),
-          text: toText(errorObj, formatConfig)
-        };
-    }
-  };
+    phase,
+    templateName: templatePath,
+    lineBase: preferJsCallerLocation ? 'one' : (err.lineBase ?? (!hasErrorLocation && useJsCaller ? 'one' : 'zero')),
+    dev,
+    ide,
+    templatePath,
+    sourceContent,
+    sourceStartLine,
+    renderContext,
+    timestamp,
+    verbosity: 'full',
+    isJsCaller: useJsCaller,
+  });
 
   return errorObj;
 };
@@ -78,8 +111,7 @@ export const render = async (template, context = {}, config = {}) => {
   config._callerFile = config._callerFile || getCallerFile();
 
   if (typeof template !== 'string') {
-    const err = new Error('Template must be a string');
-    err.code = 'TEMPLATE_MUST_BE_STRING';
+    const err = createLog('error', ERROR_DEFINITIONS.TEMPLATE_MUST_BE_STRING, {}, null, { phase: 'render' });
     throw wrapWithLog(err, config, template, context);
   }
 
@@ -162,10 +194,7 @@ export const render = async (template, context = {}, config = {}) => {
         const source = await loader.getSource(name);
         if (!source) {
           if (ignoreMissing) return null;
-          const err = new Error(`template not found: ${name}`);
-          err.code = 'FILE_NOT_FOUND';
-          err.subject = name;
-          throw err;
+          throw createLog('error', ERROR_DEFINITIONS.FILE_NOT_FOUND, { path: name }, name, { phase: 'load' });
         }
         const { createTemplate } = await import('../template/index.js');
         return createTemplate(source.src, this, source.path, eagerCompile);
@@ -242,7 +271,7 @@ export const renderWithEnv = async (templateName, env, context = {}, config = {}
       return result;
     }
     
-    throw new Error('Template object is invalid: missing render method');
+    throw createLog('error', ERROR_DEFINITIONS.TEMPLATE_NO_RENDER, {}, null, { phase: 'render' });
   } catch (err) {
     throw wrapWithLog(err, { ...config, templatePath: config.templatePath || templateName, env }, template?.tmplStr ?? null, context);
   }

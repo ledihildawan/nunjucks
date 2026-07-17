@@ -58,14 +58,14 @@ describe('Compiler', () => {
     compiler._emitLine('hello', 5);
     expect(compiler.sourceMap.mappings.length).toBe(initialLen + 1);
     expect(compiler.sourceMap.mappings[initialLen].compiledLine).toBe(1);
-    expect(compiler.sourceMap.mappings[initialLen].originalLine).toBe(6);
+    expect(compiler.sourceMap.mappings[initialLen].originalLine).toBe(5);
   });
 
-  test('_emitLineWithMapping emits with templateLine + 1', () => {
+  test('_emitLineWithMapping emits with canonical templateLine', () => {
     const initialLen = compiler.sourceMap.mappings.length;
     compiler._emitLineWithMapping('code', 3, 7);
     expect(compiler.sourceMap.mappings.length).toBe(initialLen + 1);
-    expect(compiler.sourceMap.mappings[initialLen].originalLine).toBe(4);
+    expect(compiler.sourceMap.mappings[initialLen].originalLine).toBe(3);
     expect(compiler.codebuf[0]).toBe('code\n');
   });
 

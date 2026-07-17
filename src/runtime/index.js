@@ -1,5 +1,5 @@
 import { createLog } from '@nunjucks/log';
-import { ERRORS } from '@nunjucks/log/error/messages';
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
 import { isArray, keys, isNonNullish, isFunction, isString, isPlainObject } from 'remeda';
 import { createFrame } from './frame.js';
 import {
@@ -117,23 +117,16 @@ export function ensureDefined(val, lineno, colno, varName = null, templateName =
     const effectiveTemplateName = templateName || ctx.templateName || 'inline';
 
     if (undefinedMode === 'strict') {
-      throw createLog('error', {
-        message: ERRORS.UNDEFINED_VARIABLE(varName),
-        lineno,
-        colno,
-        info: { code: varName ? 'UNDEFINED_VARIABLE' : 'UNDEFINED_VALUE', subject: varName, phase: ctx.phase || 'render', templateName: effectiveTemplateName, lineBase: 'zero' }
-      }, ctx.renderContext);
+      const errorDef = varName ? ERROR_DEFINITIONS.UNDEFINED_VARIABLE : { name: 'UNDEFINED_VALUE', message: () => 'Undefined value', pattern: /./ };
+      throw createLog('error', errorDef, { name: varName }, varName, { lineno, colno, phase: ctx.phase || 'render', templateName: effectiveTemplateName, lineBase: 'zero' });
     }
 
     if (undefinedMode === 'debug') {
       const warning = createLog('warning', {
-        message: varName
-          ? `Variable '${varName}' is undefined or null`
-          : 'Variable is undefined or null',
-        lineno,
-        colno,
-        info: { varName, templateName: effectiveTemplateName, undefinedMode, phase: ctx.phase || 'render', code: varName ? 'UNDEFINED_VARIABLE' : 'UNDEFINED_VALUE' }
-      });
+        name: 'UNDEFINED_VARIABLE',
+        message: () => varName ? `Variable '${varName}' is undefined or null` : 'Variable is undefined or null',
+        pattern: /./
+      }, {}, varName, { lineno, colno, phase: ctx.phase || 'render', templateName: effectiveTemplateName, undefinedMode, varName, lineBase: 'zero' });
       console.warn(warning.output({ verbosity: 'medium', dev: true }));
       if (this && this.__warnings__) {
         this.__warnings__.push(warning);
@@ -149,19 +142,9 @@ export function callWrap(obj, name, displayName, context, args, lineno, colno) {
   const ctx = (this && this.logContext) ? this.logContext : { templateName: null, phase: 'render' };
   const messageName = displayName || name;
   if (!obj) {
-    throw createLog('error', {
-      message: ERRORS.UNDEFINED_FUNCTION(messageName),
-      lineno,
-      colno,
-      info: { code: 'UNDEFINED_FUNCTION', subject: name, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline', lineBase: 'zero' }
-    }, ctx.renderContext);
+    throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_FUNCTION, { name: messageName }, name, { lineno, colno, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline', lineBase: 'zero' });
   } else if (!isFunction(obj)) {
-    throw createLog('error', {
-      message: ERRORS.NOT_A_FUNCTION(messageName),
-      lineno,
-      colno,
-      info: { code: 'NOT_A_FUNCTION', subject: name, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline', lineBase: 'zero' }
-    }, ctx.renderContext);
+    throw createLog('error', ERROR_DEFINITIONS.NOT_A_FUNCTION, { name: messageName }, name, { lineno, colno, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline', lineBase: 'zero' });
   }
 
   return obj.apply(context, args);
@@ -190,52 +173,12 @@ export function handleError(error, lineno, colno, runtime) {
   }
 
   const ctx = (this && this.logContext) ? this.logContext : { templateName: null, phase: 'render' };
-  const info = {
-    code: error.code,
-    subject: error.subject,
-    phase: error.phase || ctx.phase || 'render',
-    templateName: ctx.templateName || 'inline'
-  };
-
-  let sourceMapData = null;
-  if (runtime && runtime.sourceMapData) {
-    sourceMapData = runtime.sourceMapData;
-  }
-
-  if (sourceMapData && isArray(sourceMapData) && sourceMapData.length > 0) {
-    const sm = {
-      mappings: sourceMapData,
-      getOriginalPosition(compiledLine) {
-        let best = null;
-        for (const mapping of this.mappings) {
-          if (compiledLine >= mapping.compiledLine) {
-            best = mapping;
-          }
-        }
-        if (best) {
-          return {
-            line: best.originalLine,
-            col: best.originalCol || 0
-          };
-        }
-        return { line: 0, col: 0 };
-      }
-    };
-    const pos = sm.getOriginalPosition(lineno);
-    throw createLog('error', {
-      message: error.message || String(error),
-      lineno: pos.line,
-      colno: pos.col,
-      info: { ...info, lineBase: 'one' }
-    }, ctx.renderContext);
-  }
 
   throw createLog('error', {
-    message: error.message || String(error),
-    lineno,
-    colno,
-    info: { ...info, lineBase: 'zero' }
-  }, ctx.renderContext);
+    name: error.code || 'RUNTIME_ERROR',
+    message: () => error.message || String(error),
+    pattern: /./
+  }, {}, error.subject, { lineno, colno, phase: error.phase || ctx.phase || 'render', templateName: ctx.templateName || 'inline', code: error.code, subject: error.subject, lineBase: 'zero' });
 }
 
 export function fromIterator(arr) {
@@ -255,5 +198,6 @@ export function inOperator(key, val) {
   if (isPlainObject(val)) {
     return key in val;
   }
-  throw new Error(ERRORS.IN_OPERATOR(key, typeof val));
+  const ctx = (this && this.logContext) ? this.logContext : { templateName: 'inline', phase: 'render', renderContext: null };
+  throw createLog('error', ERROR_DEFINITIONS.IN_OPERATOR, { key: String(key), type: typeof val }, String(key), { phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline', lineBase: 'zero' });
 }

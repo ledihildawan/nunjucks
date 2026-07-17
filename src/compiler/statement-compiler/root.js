@@ -1,5 +1,7 @@
 import { createFrame } from '../../runtime/index.js';
 import { nodes } from '../../nodes/index.js';
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { createLog } from '@nunjucks/log';
 
 export const compileRoot = (ctx, node, frame) => {
   if (frame) {
@@ -28,7 +30,13 @@ export const compileRoot = (ctx, node, frame) => {
   ctx._emitLine('if(parentTemplate) {');
   ctx._emitLine('  return await parentTemplate.rootRenderFunc(env, context, frame, runtime);');
   ctx._emitLine('} else {');
-  blockNames.forEach(name => {
+  blocks.forEach((block) => {
+    const name = block.name?.value;
+    if (!name) return;
+
+    const lineno = block.lineno ?? 0;
+    const colno = block.colno ?? 0;
+    ctx._emitLine(`  lineno = ${lineno}; colno = ${colno};`);
     ctx._emitLine(`  ${childBuffer} += await context.getBlock("${name}")(env, context, frame, runtime);`);
   });
   ctx._emitLine('}');
@@ -46,10 +54,7 @@ export const compileRoot = (ctx, node, frame) => {
     if (!name) return;
 
     if (seenBlocks.includes(name)) {
-      const err = new Error(`Block "${name}" defined more than once.`);
-      err.lineno = lineno;
-      err.colno = block.name?.colno || 0;
-      throw err;
+      throw createLog('error', ERROR_DEFINITIONS.DUPLICATE_BLOCK, { name }, name, { lineno, colno: block.name?.colno || 0, phase: 'compile' });
     }
     seenBlocks.push(name);
 

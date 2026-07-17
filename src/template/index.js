@@ -3,6 +3,8 @@ import { createCompiler } from '../compiler/index.js';
 import { parse } from '../parser/index.js';
 import { transform } from '../transformers/index.js';
 import { prettifyError } from '@nunjucks/log/error/classify/template-error';
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { createLog } from '@nunjucks/log';
 import { createMappedError } from '../helpers/source-map.js';
 import { createContext } from '../runtime/context.js';
 import { HOOK_EVENTS } from '../runtime/hooks.js';
@@ -33,7 +35,7 @@ import { createObj } from '../object/index.js';
 
 const Template = Symbol('Template');
 
-const createRuntimeWithContext = (templatePath, envOpts) => {
+const createRuntimeWithContext = (templatePath, envOpts, renderContext = null) => {
   return {
     createFrame,
     createSafeString,
@@ -58,7 +60,8 @@ const createRuntimeWithContext = (templatePath, envOpts) => {
     __warnings__: [],
     logContext: {
       templateName: templatePath || 'inline',
-      phase: 'render'
+      phase: 'render',
+      renderContext
     }
   };
 };
@@ -77,11 +80,12 @@ const getLoaderSourceMap = (env, errorPath, currentPath) => {
 
 const extractFrameDetails = (e, sourceLineno, sourceColno, sourceMap, currentPath, hasIncludeChain) => {
   if (!sourceMap || hasIncludeChain) return null;
+  if (e.lineBase === 'zero' || e.lineBase === 'one') return null;
 
   const mapped = createMappedError(e, sourceMap, sourceLineno, sourceColno, currentPath);
   if (mapped) return mapped;
 
-  if (sourceLineno === undefined || sourceLineno <= 0) return null;
+  if (sourceLineno === undefined || sourceLineno < 0) return null;
 
   const errColno = defaultTo(e.colno, 0);
   const finalColno = (sourceColno > 0) ? sourceColno : errColno;
@@ -97,6 +101,7 @@ const extractFrameDetails = (e, sourceLineno, sourceColno, sourceMap, currentPat
   newError.name = defaultTo(e.name, 'Template render error');
   newError.lineno = sourceLineno;
   newError.colno = finalColno;
+  newError.lineBase = 'zero';
   newError._includeChain = e._includeChain || null;
   const renderLine = `at ${e.getterName || 'root'} (${templateLocation})`;
   newError.stack = `${newError.message}\n    ${renderLine}\n    at Environment.render`;
@@ -110,10 +115,7 @@ const createFallbackEnv = () => ({
   _renderingTemplates: new Set(),
   async getTemplate(name, eagerCompile, includeChain, ignoreMissing) {
     if (ignoreMissing) return null;
-    const err = new Error(`template not found: ${name}`);
-    err.code = 'FILE_NOT_FOUND';
-    err.subject = name;
-    throw err;
+    throw createLog('error', ERROR_DEFINITIONS.FILE_NOT_FOUND, { path: name }, name, { phase: 'load' });
   }
 });
 
@@ -133,13 +135,14 @@ export function createTemplate(src, env, path, eagerCompile) {
           case 'string':
             this.tmplStr = srcArg.obj;
             break;
-          default:
-            throw new Error(`Invalid template source: expected 'code' or 'string', got '${srcArg.type}'`);
+          default: {
+            throw createLog('error', ERROR_DEFINITIONS.TEMPLATE_INVALID_SOURCE, { type: srcArg.type }, srcArg.type, { phase: 'load' });
+          }
         }
       } else if (isString(srcArg)) {
         this.tmplStr = srcArg;
       } else {
-        throw new Error('Template src must be a string or an object');
+        throw createLog('error', ERROR_DEFINITIONS.TEMPLATE_SRC_STRING, {}, null, { phase: 'load' });
       }
 
       if (eagerCompileArg) {
@@ -156,11 +159,7 @@ export function createTemplate(src, env, path, eagerCompile) {
       await this._safeCompile();
 
       if (this.env._renderingTemplates.has(this.path)) {
-        const err = new Error(`Circular include detected: "${this.path}" is already being rendered`);
-        err.path = this.path;
-        err.code = 'CIRCULAR_INCLUDE';
-        err.subject = this.path;
-        throw err;
+        throw createLog('error', ERROR_DEFINITIONS.CIRCULAR_INCLUDE, { path: this.path }, this.path, { phase: 'render' });
       }
 
       this.env._renderingTemplates.add(this.path);
@@ -170,7 +169,7 @@ export function createTemplate(src, env, path, eagerCompile) {
       frame.topLevel = true;
 
       try {
-        const runtime = createRuntimeWithContext(this.path, this.env.opts);
+        const runtime = createRuntimeWithContext(this.path, this.env.opts, ctx || {});
         const result = await this.rootRenderFunc(this.env, context, frame, runtime);
         if (runtime.__warnings__ && runtime.__warnings__.length > 0 && this.env.opts.dev) {
           const script = injectWarningsScript(runtime.__warnings__, { dev: true, verbosity: 'medium' });
@@ -196,11 +195,7 @@ export function createTemplate(src, env, path, eagerCompile) {
       this._safeCompileSync();
 
       if (this.env._renderingTemplates.has(this.path)) {
-        const err = new Error(`Circular include detected: "${this.path}" is already being rendered`);
-        err.path = this.path;
-        err.code = 'CIRCULAR_INCLUDE';
-        err.subject = this.path;
-        throw err;
+        throw createLog('error', ERROR_DEFINITIONS.CIRCULAR_INCLUDE, { path: this.path }, this.path, { phase: 'render' });
       }
 
       this.env._renderingTemplates.add(this.path);
@@ -210,7 +205,7 @@ export function createTemplate(src, env, path, eagerCompile) {
       frame.topLevel = true;
 
       try {
-        const runtime = createRuntimeWithContext(this.path, this.env.opts);
+        const runtime = createRuntimeWithContext(this.path, this.env.opts, ctx || {});
         const result = this.rootRenderFunc(this.env, context, frame, runtime);
         if (runtime.__warnings__ && runtime.__warnings__.length > 0 && this.env.opts.dev) {
           const script = injectWarningsScript(runtime.__warnings__, { dev: true, verbosity: 'medium' });
@@ -269,7 +264,7 @@ export function createTemplate(src, env, path, eagerCompile) {
 
       const context = createContext(ctx || {}, this.blocks, this.env, { blockLocations: this.blockMeta });
       try {
-        const runtime = createRuntimeWithContext(this.path, this.env.opts);
+        const runtime = createRuntimeWithContext(this.path, this.env.opts, ctx || {});
         await this.rootRenderFunc(this.env, context, frame, runtime);
         return context.getExported();
       } catch (e) {

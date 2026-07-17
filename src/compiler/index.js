@@ -24,12 +24,11 @@ export function createCompiler(templateName, undefinedMode, source) {
       this.sourceMap = createSourceMap(tmplName);
     },
     fail: function(msg, lineno, colno) {
-      throw createLog('error', {
-        message: msg,
-        lineno,
-        colno,
-        info: { phase: 'compile', templateName: this.templateName }
-      });
+      throw createLog('error', { 
+        name: 'COMPILER_ERROR', 
+        message: () => msg, 
+        pattern: /./ 
+      }, {}, null, { lineno, colno, phase: 'compile', templateName: this.templateName });
     },
     _pushBuffer: function() {
       const id = this._tmpid();
@@ -47,26 +46,26 @@ export function createCompiler(templateName, undefinedMode, source) {
     _emitLine: function(code, originalLine) {
       this.compiledLine++;
       if (isNonNullish(originalLine)) {
-        this.sourceMap.addMapping(this.compiledLine, originalLine + 1);
+        this.sourceMap.addMapping(this.compiledLine, originalLine);
       }
       this._emit(code + '\n');
     },
     _emitLineWithMapping: function(code, templateLine, templateCol) {
       this.compiledLine++;
       if (templateLine !== undefined) {
-        this.sourceMap.addMapping(this.compiledLine, templateLine + 1, templateCol || 0);
+        this.sourceMap.addMapping(this.compiledLine, templateLine, templateCol || 0);
       }
       this._emit(code + '\n');
     },
     _trackMapping: function(templateLine, templateCol) {
       if (templateLine !== undefined) {
-        this.sourceMap.addMapping(this.compiledLine + 1, templateLine + 1, templateCol || 0);
+        this.sourceMap.addMapping(this.compiledLine + 1, templateLine, templateCol || 0);
       }
     },
     _emitLineWithLineno: function(code, templateLine, templateCol) {
       this.compiledLine++;
       if (templateLine !== undefined) {
-        this.sourceMap.addMapping(this.compiledLine, templateLine + 1, templateCol || 0);
+        this.sourceMap.addMapping(this.compiledLine, templateLine, templateCol || 0);
       }
       this._emit(code + '\n');
     },

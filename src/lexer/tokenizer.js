@@ -1,4 +1,5 @@
 import { createLog } from '@nunjucks/log';
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
 import {
   TOKEN_STRING,
   TOKEN_WHITESPACE,
@@ -166,12 +167,7 @@ export function createTokenizer(str, opts = {}) {
       }
       const symbolToken = createSymbolToken(tok, lineno, colno, false, isBooleanString(tok), isNullString(tok));
       if (symbolToken) return symbolToken;
-      throw createLog('error', {
-        message: `Unexpected token '${tok}' while parsing`,
-        lineno: state.lineno,
-        colno: state.colno,
-        info: { phase: 'lex' }
-      });
+      throw createLog('error', ERROR_DEFINITIONS.PARSER_UNEXPECTED_TOKEN, { token: tok }, tok, { lineno: state.lineno, colno: state.colno, phase: 'lex', lineBase: 'zero' });
     },
 
     _parseRegex(lineno, colno) {

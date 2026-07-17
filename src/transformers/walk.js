@@ -1,4 +1,6 @@
 import { nodes } from '../nodes/index.js';
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { createLog } from '@nunjucks/log';
 
 const CONSTRUCTOR_MAP = {
   node: nodes.node,
@@ -94,7 +96,7 @@ export const walk = (ast, func, depthFirst) => {
   const typeName = nodes.getNodeTypeName(ast);
   const Ctor = CONSTRUCTOR_MAP[typeName];
   if (!Ctor) {
-    throw new Error(`walk: unknown node type '${typeName}'`);
+    throw createLog('error', ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE, { type: typeName }, null, { phase: 'compile' });
   }
 
   if (nodes.isNodeList(ast) || nodes.isRoot(ast) || (ast.children && Array.isArray(ast.children))) {

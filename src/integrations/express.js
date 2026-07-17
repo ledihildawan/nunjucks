@@ -3,6 +3,8 @@ import EventEmitter from 'events';
 import nunjucks from '../index.js';
 import { createFileSystemLoader } from '../loaders/index.js';
 import { createTemplate } from '../template/index.js';
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { createLog } from '@nunjucks/log';
 
 export function createEngine(config = {}) {
   return function nunjucksExpressEngine(filePath, options, callback) {
@@ -23,10 +25,7 @@ export function createEngine(config = {}) {
         const source = await loader.getSource(name);
         if (!source) {
           if (ignoreMissing) return null;
-          const err = new Error(`template not found: ${name}`);
-          err.code = 'FILE_NOT_FOUND';
-          err.subject = name;
-          throw err;
+          throw createLog('error', ERROR_DEFINITIONS.FILE_NOT_FOUND, { path: name }, name, { phase: 'load' });
         }
         const template = createTemplate(source.src, this, source.path, eagerCompile);
         template.tmplStr = source.src;

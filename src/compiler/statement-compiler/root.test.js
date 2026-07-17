@@ -52,7 +52,7 @@ describe('compileRoot', () => {
       colno: 1,
       children: [blockNode],
       findAll: (type) => {
-        if (nodes.isBlock(type)) return [blockNode];
+        if (type === 'block') return [blockNode];
         return [];
       },
     };
@@ -61,6 +61,7 @@ describe('compileRoot', () => {
     expect(code).toContain('async function root(env, context, frame, runtime) {');
     expect(code).toContain('let parentTemplate = null;');
     expect(code).toContain('childOutput');
+    expect(code).toContain('lineno = 2; colno = 1;');
     expect(code).toContain('root: root');
   });
 
@@ -82,7 +83,7 @@ describe('compileRoot', () => {
       colno: 1,
       children: [b1, b2],
       findAll: (type) => {
-        if (nodes.isBlock(type)) return [b1, b2];
+        if (type === 'block') return [b1, b2];
         return [];
       },
     };

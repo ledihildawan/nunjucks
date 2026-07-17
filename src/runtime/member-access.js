@@ -1,4 +1,5 @@
-import { ERRORS } from '@nunjucks/log/error/messages';
+import { createLog } from '@nunjucks/log';
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
 import { isNonNullish, isFunction } from 'remeda';
 
 export function memberLookup(obj, val) {
@@ -27,7 +28,7 @@ export function optionalMemberLookup(obj, val) {
 
 export function slice(arr, start, stop, step) {
   if (step === 0) {
-    throw new Error(ERRORS.SLICE_STEP());
+    throw createLog('error', ERROR_DEFINITIONS.SLICE_STEP, {}, null, { phase: 'render', lineBase: 'zero' });
   }
 
   const len = arr.length;
