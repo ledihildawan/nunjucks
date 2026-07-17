@@ -27,24 +27,44 @@ const getLoader = (config) => {
   return cachedLoader;
 };
 
-const extractCodeContext = (filePath, errorLine, errorCol) => {
+const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null) => {
   try {
     const fs = require('fs');
     const content = fs.readFileSync(filePath, 'utf8');
     const lines = content.split('\n');
 
-    if (errorLine < 1 || errorLine > lines.length) {
+    let resolvedLine = errorLine;
+    let resolvedCol = errorCol;
+
+    if (templateHint && typeof templateHint === 'string') {
+      const searchStart = Math.max(1, (errorLine ?? 1) - 2);
+      const searchEnd = Math.min(lines.length, (errorLine ?? 1) + 2);
+      const snippetHint = templateHint.length > 80 ? templateHint.slice(0, 80) : templateHint;
+
+      for (let lineNumber = searchStart; lineNumber <= searchEnd; lineNumber++) {
+        const line = lines[lineNumber - 1] || '';
+        const hintIndex = line.indexOf(snippetHint);
+        if (hintIndex !== -1) {
+          resolvedLine = lineNumber;
+          resolvedCol = hintIndex + 1;
+          break;
+        }
+      }
+    }
+
+    if (resolvedLine < 1 || resolvedLine > lines.length) {
       return { content, startLine: 1 };
     }
 
     const windowSize = 10;
-    let startLine = Math.max(1, errorLine - windowSize);
-    let endLine = Math.min(lines.length, errorLine + windowSize);
+    let startLine = Math.max(1, resolvedLine - windowSize);
+    let endLine = Math.min(lines.length, resolvedLine + windowSize);
 
     return {
       content: lines.slice(startLine - 1, endLine).join('\n'),
       startLine,
-      errorCol
+      errorCol: resolvedCol,
+      errorLine: resolvedLine
     };
   } catch {
     return null;
@@ -60,12 +80,6 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
   const isInlineTemplate = typeof template === 'string' &&
     (template.includes('{{') || template.includes('{%') || template.includes('{#'));
   const preferJsCallerLocation = useJsCaller && !config.templatePath && isInlineTemplate;
-  const lineno = preferJsCallerLocation
-    ? (config.jsCallerErrorLine ?? errLineno ?? config.lineno ?? null)
-    : (hasErrorLocation ? errLineno : (config.jsCallerErrorLine ?? config.lineno ?? null));
-  const colno = preferJsCallerLocation
-    ? (config.jsCallerErrorCol ?? errColno ?? config.colno ?? null)
-    : (hasErrorLocation ? (errColno ?? null) : (config.jsCallerErrorCol ?? config.colno ?? null));
   const phase = err.phase || config.phase || 'render';
   const dev = config.dev ?? false;
   const ide = config.ide ?? 'vscode';
@@ -73,14 +87,30 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
 
   let sourceContent = template;
   let sourceStartLine = 1;
+  let resolvedJsCallerLine = config.jsCallerErrorLine ?? null;
+  let resolvedJsCallerCol = config.jsCallerErrorCol ?? null;
 
   if (useJsCaller && config.jsCaller) {
-    const codeContext = extractCodeContext(config.jsCaller, config.jsCallerErrorLine, config.jsCallerErrorCol);
+    const codeContext = extractCodeContext(
+      config.jsCaller,
+      config.jsCallerErrorLine,
+      config.jsCallerErrorCol,
+      preferJsCallerLocation ? template : null
+    );
     if (codeContext) {
       sourceContent = codeContext.content;
       sourceStartLine = codeContext.startLine;
+      resolvedJsCallerLine = codeContext.errorLine ?? resolvedJsCallerLine;
+      resolvedJsCallerCol = codeContext.errorCol ?? resolvedJsCallerCol;
     }
   }
+
+  const lineno = preferJsCallerLocation
+    ? (resolvedJsCallerLine ?? errLineno ?? config.lineno ?? null)
+    : (hasErrorLocation ? errLineno : (resolvedJsCallerLine ?? config.lineno ?? null));
+  const colno = preferJsCallerLocation
+    ? (resolvedJsCallerCol ?? errColno ?? config.colno ?? null)
+    : (hasErrorLocation ? (errColno ?? null) : (resolvedJsCallerCol ?? config.colno ?? null));
 
   const errorDef = {
     name: err.code || 'RENDER_ERROR',

@@ -34,6 +34,11 @@ const getCallerLocation = () => {
   return null;
 };
 
+const createConfiguredInstance = () => {
+  const configured = (template, context, localConfig) => nunjucks(template, context, localConfig);
+  return Object.assign(configured, nunjucks);
+};
+
 const nunjucks = (template, context, localConfig) => {
   if (template === undefined) {
     return nunjucks;
@@ -82,7 +87,7 @@ nunjucks.configure = (globalConfig) => {
   if (globalConfig) {
     setGlobalConfig(globalConfig);
   }
-  return nunjucks;
+  return createConfiguredInstance();
 };
 
 nunjucks.render = render;
