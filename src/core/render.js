@@ -27,7 +27,7 @@ const getLoader = (config) => {
   return cachedLoader;
 };
 
-const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null) => {
+const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, templateErrorCol = null) => {
   try {
     const fs = require('fs');
     const content = fs.readFileSync(filePath, 'utf8');
@@ -46,7 +46,7 @@ const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null) 
         const hintIndex = line.indexOf(snippetHint);
         if (hintIndex !== -1) {
           resolvedLine = lineNumber;
-          resolvedCol = hintIndex + 1;
+          resolvedCol = hintIndex + 1 + (Number.isInteger(templateErrorCol) ? templateErrorCol : 0);
           break;
         }
       }
@@ -97,7 +97,8 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
       config.jsCaller,
       config.jsCallerErrorLine,
       config.jsCallerErrorCol,
-      template
+      template,
+      errColno
     );
     if (codeContext) {
       sourceContent = codeContext.content;

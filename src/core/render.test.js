@@ -1,4 +1,6 @@
 import { describe, test, expect } from 'bun:test';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { render } from './render.js';
 
 const renderTemplate = async (template, context = {}, config = {}) => {
@@ -7,6 +9,27 @@ const renderTemplate = async (template, context = {}, config = {}) => {
     ...config
   });
 };
+
+describe('inline template error locations', () => {
+  test('points at the failing template token inside the caller source line', async () => {
+    const filePath = fileURLToPath(import.meta.url);
+    const source = fs.readFileSync(filePath, 'utf8').split('\n');
+    const marker = 'INLINE_LOCATION_' + 'MARKER';
+    const markerLine = source.findIndex(line => line.includes(marker)) + 1;
+    const err = await render('{{ missingKey }}', {}, { // INLINE_LOCATION_MARKER
+      dev: true,
+      undefined: 'strict',
+      jsCaller: filePath,
+      jsCallerErrorLine: markerLine,
+      jsCallerErrorCol: 1
+    }).catch(e => e);
+    const callerLine = source[err.lineno - 1];
+
+    expect(err.lineBase).toBe('one');
+    expect(err.templateName).toBe(filePath);
+    expect(err.colno).toBe(callerLine.indexOf('missingKey') + 1);
+  });
+});
 
 describe('keyword arguments rendering', () => {
   describe('global functions with kwargs', () => {
