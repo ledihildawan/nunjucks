@@ -254,10 +254,10 @@ export const RULES: Rule[] = [
     fixComment: 'Use string literal for include path'
   },
   {
-    pattern: PATTERNS.FILE_NOT_FOUND,
+    pattern: PATTERNS.FILESYSTEM_ERROR,
     category: 'filesystem_error',
-    subjectFrom: null,
-    titleTemplate: "Cannot access template file",
+    subjectFrom: firstCapture,
+    titleTemplate: "Filesystem error: {subject}",
     causes: [
       'Template path points to a **directory** instead of a file',
       'File or directory **does not exist**',
@@ -329,7 +329,8 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.IN_OPERATOR,
     category: 'operator_error',
-    subjectFrom: firstCapture,
+    subjectFrom: (groups) => `${groups[1]} in ${groups[2]}`,
+    titleTemplate: "Cannot use 'in' operator to search for '{subject}'",
     causes: [
       '**In operator** only works with **objects**, not primitives',
       'Cannot search for value in **string/number/boolean**'
@@ -496,6 +497,30 @@ export const RULES: Rule[] = [
     ],
     fixCode: 'Use an attribute that exists on the items',
     fixComment: 'Check that the attribute exists on all items'
+  },
+  {
+    pattern: PATTERNS.SORT_FILTER_ATTR,
+    category: 'sort_attr_error',
+    subjectFrom: firstCapture,
+    titleTemplate: "Sort attribute '{subject}' does not exist",
+    causes: [
+      '**Sort attribute** resolved to `undefined`',
+      'The property `{subject}` is missing on one or more items'
+    ],
+    fixCode: '{{ items |> sort(false, false, "existingAttr") }}',
+    fixComment: "Ensure all items have the attribute '{subject}'"
+  },
+  {
+    pattern: PATTERNS.GROUPBY_FILTER,
+    category: 'groupby_type_error',
+    subjectFrom: firstCapture,
+    titleTemplate: "Groupby input '{subject}' is not an array",
+    causes: [
+      '**Groupby filter** requires an **array** input',
+      'Passed value type `{subject}` is not iterable'
+    ],
+    fixCode: '{{ items |> groupby("category") }}',
+    fixComment: 'Pass an array to groupby filter'
   },
   {
     pattern: PATTERNS.RESERVED_KEYWORD,
