@@ -1,7 +1,19 @@
 import { nodes } from '../../nodes/index.js';
 import { compileAggregate } from './container.js';
 
+const locationFor = (node, fallback = node) => ({
+  lineno: node?.lineno ?? fallback?.lineno ?? 0,
+  colno: node?.colno ?? fallback?.colno ?? 0
+});
+
+const emitLocationGuard = (ctx, location) => {
+  ctx._emit('(lineno = ' + location.lineno + ', colno = ' + location.colno + ', ');
+};
+
 export const compileLookupVal = (ctx, node, frame) => {
+  const location = locationFor(node.val, node);
+  emitLocationGuard(ctx, location);
+
   if (nodes.isSlice(node.val)) {
     ctx._emit('runtime.slice((');
     ctx._compileExpression(node.target, frame);
@@ -31,13 +43,17 @@ export const compileLookupVal = (ctx, node, frame) => {
     ctx._compileExpression(node.val, frame);
     ctx._emit(')');
   }
+
+  ctx._emit(')');
 };
 
 export const compileOptionalChain = (ctx, node, frame) => {
+  emitLocationGuard(ctx, locationFor(node.val, node));
   ctx._emit('runtime.optionalMemberLookup((');
   ctx._compileExpression(node.target, frame);
   ctx._emit('),');
   ctx._compileExpression(node.val, frame);
+  ctx._emit(')');
   ctx._emit(')');
 };
 
@@ -52,6 +68,7 @@ export const compileOptionalCall = (ctx, node, frame) => {
 };
 
 export const compileSlice = (ctx, node, frame) => {
+  emitLocationGuard(ctx, locationFor(node));
   ctx._emit('runtime.slice((');
   if (node.start) {
     ctx._compileExpression(node.start, frame);
@@ -71,4 +88,5 @@ export const compileSlice = (ctx, node, frame) => {
     ctx._emit('null');
   }
   ctx._emit('))');
+  ctx._emit(')');
 };
