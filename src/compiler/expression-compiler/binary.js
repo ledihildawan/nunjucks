@@ -29,11 +29,13 @@ export const compileNullishCoalesce = (ctx, node, frame) => {
 };
 
 export const compileIn = (ctx, node, frame) => {
-  ctx._emit('runtime.inOperator(');
+  const lineno = node.lineno ?? 0;
+  const colno = node.colno ?? 0;
+  ctx._emit('(lineno = ' + lineno + ', colno = ' + colno + ', runtime.inOperator(');
   ctx.compile(node.left, frame);
   ctx._emit(',');
   ctx.compile(node.right, frame);
-  ctx._emit(')');
+  ctx._emit(', ' + lineno + ', ' + colno + '))');
 };
 
 export const compileFloorDiv = (ctx, node, frame) => {

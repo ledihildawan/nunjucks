@@ -40,7 +40,7 @@ export const compileRoot = (ctx, node, frame) => {
 
     const { lineno, colno } = blockLocation(block);
     ctx._emitLine(`  lineno = ${lineno}; colno = ${colno};`);
-    ctx._emitLine(`  ${childBuffer} += await context.getBlock("${name}")(env, context, frame, runtime);`);
+    ctx._emitLine(`  ${childBuffer} += await context.getBlock("${name}", ${lineno}, ${colno})(env, context, frame, runtime);`);
   });
   ctx._emitLine('}');
   ctx._emitLine(`return ${childBuffer};`);

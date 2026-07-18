@@ -62,6 +62,7 @@ describe('compileRoot', () => {
     expect(code).toContain('let parentTemplate = null;');
     expect(code).toContain('childOutput');
     expect(code).toContain('lineno = 2; colno = 9;');
+    expect(code).toContain('context.getBlock("header", 2, 9)');
     expect(code).toContain('"header": { lineno: 2, colno: 9 }');
     expect(code).toContain('root: root');
   });

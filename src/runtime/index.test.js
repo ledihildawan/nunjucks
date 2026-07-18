@@ -259,4 +259,17 @@ describe('inOperator', () => {
   test('throws for unexpected types', () => {
     expect(() => inOperator('x', 42)).toThrow("Cannot use 'in' operator to search for 'x' in number");
   });
+
+  test('preserves provided location on unexpected types', () => {
+    try {
+      inOperator('x', 42, 3, 7);
+    } catch (e) {
+      expect(e.code).toBe('IN_OPERATOR');
+      expect(e.lineno).toBe(3);
+      expect(e.colno).toBe(7);
+      expect(e.lineBase).toBe('zero');
+      return;
+    }
+    throw new Error('Expected inOperator to throw');
+  });
 });

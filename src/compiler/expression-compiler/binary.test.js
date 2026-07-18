@@ -71,8 +71,8 @@ describe('binary operators', () => {
 
   test('compileIn emits runtime.inOperator()', () => {
     const ctx = makeCtx();
-    compileIn(ctx, { left: leftNode, right: rightNode });
-    expect(ctx.emitted).toEqual(['runtime.inOperator(', '[left]', ',', '[right]', ')']);
+    compileIn(ctx, { lineno: 3, colno: 7, left: leftNode, right: rightNode });
+    expect(ctx.emitted).toEqual(['(lineno = 3, colno = 7, runtime.inOperator(', '[left]', ',', '[right]', ', 3, 7))']);
   });
 
   test('compileFloorDiv emits Math.floor()', () => {

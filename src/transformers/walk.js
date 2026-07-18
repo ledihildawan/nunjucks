@@ -96,7 +96,12 @@ export const walk = (ast, func, depthFirst) => {
   const typeName = nodes.getNodeTypeName(ast);
   const Ctor = CONSTRUCTOR_MAP[typeName];
   if (!Ctor) {
-    throw createLog('error', ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE, { type: typeName }, null, { phase: 'compile' });
+    throw createLog('error', ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE, { type: typeName }, null, {
+      lineno: ast.lineno ?? null,
+      colno: ast.colno ?? null,
+      phase: 'compile',
+      lineBase: 'zero'
+    });
   }
 
   if (nodes.isNodeList(ast) || nodes.isRoot(ast) || (ast.children && Array.isArray(ast.children))) {

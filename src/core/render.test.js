@@ -236,6 +236,20 @@ describe('inline template error locations', () => {
     expect(err.templateName).toBe(filePath);
     expect(err.colno).toBe(callerLine.indexOf('::0') + 3);
   });
+
+  test('points in-operator errors inside statements at the operator', async () => {
+    const filePath = fileURLToPath(import.meta.url);
+    const source = fs.readFileSync(filePath, 'utf8').split('\n');
+    const marker = 'STATEMENT_IN_LOCATION_' + 'MARKER';
+    const markerLine = source.findIndex(line => line.includes(marker)) + 1;
+    const err = await render('{% if key in invalid %}ok{% endif %}', { key: 'x', invalid: 42 }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e); // STATEMENT_IN_LOCATION_MARKER
+    const callerLine = source[err.lineno - 1];
+
+    expect(err.code).toBe('IN_OPERATOR');
+    expect(err.lineBase).toBe('one');
+    expect(err.templateName).toBe(filePath);
+    expect(err.colno).toBe(callerLine.indexOf(' in ') + 2);
+  });
 });
 
 describe('keyword arguments rendering', () => {

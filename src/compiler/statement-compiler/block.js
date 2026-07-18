@@ -1,6 +1,8 @@
 export const compileBlock = (ctx, node) => {
   const id = ctx._tmpid();
-  ctx._emitLine(`let ${id} = await (await context.getBlock("${node.name.value}"))(env, context, frame, runtime);`);
+  const lineno = node.name?.lineno ?? node.lineno ?? 0;
+  const colno = node.name?.colno ?? node.colno ?? 0;
+  ctx._emitLine(`let ${id} = await (await context.getBlock("${node.name.value}", ${lineno}, ${colno}))(env, context, frame, runtime);`);
   ctx._emitLine(`${ctx.buffer} += ${id};`);
 };
 

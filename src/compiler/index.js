@@ -137,7 +137,7 @@ export function createCompiler(templateName, undefinedMode, source) {
         nodes.lookupVal,
         nodes.compare,
         nodes.inlineIf,
-        nodes.in,
+        'in',
         nodes.is,
         nodes.and,
         nodes.or,

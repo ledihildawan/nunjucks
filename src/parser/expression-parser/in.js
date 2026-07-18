@@ -1,6 +1,6 @@
 import { TOKEN_SYMBOL } from '../../lexer/token-types.js';
 import { nodes } from '../../nodes/index.js';
-import { nextToken, pushToken, skipSymbol } from '../cursor.js';
+import { nextToken, pushToken } from '../cursor.js';
 import { parseIs } from './is.js';
 
 export const parseIn = (ctx) => {
@@ -12,18 +12,21 @@ export const parseIn = (ctx) => {
     }
     const invert = tok.type === TOKEN_SYMBOL && tok.value === 'not';
     if (!invert) {
-      pushToken(ctx, tok);
+      if (tok.type !== TOKEN_SYMBOL || tok.value !== 'in') {
+        pushToken(ctx, tok);
+        break;
+      }
     }
-    if (skipSymbol(ctx, 'in')) {
+
+    const inTok = invert ? nextToken(ctx) : tok;
+    if (inTok && inTok.type === TOKEN_SYMBOL && inTok.value === 'in') {
       const node2 = parseIs(ctx);
-      node = nodes.in(node.lineno, node.colno, node, node2);
+      node = nodes.in(inTok.lineno, inTok.colno, node, node2);
       if (invert) {
-        node = nodes.not(node.lineno, node.colno, node);
+        node = nodes.not(tok.lineno, tok.colno, node);
       }
     } else {
-      if (invert) {
-        pushToken(ctx, tok);
-      }
+      if (inTok) pushToken(ctx, inTok);
       break;
     }
   }

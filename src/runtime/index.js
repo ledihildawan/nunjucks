@@ -198,7 +198,7 @@ export function fromIterator(arr) {
   }
 }
 
-export function inOperator(key, val) {
+export function inOperator(key, val, lineno = null, colno = null) {
   if (isArray(val) || isString(val)) {
     return val.includes(key);
   }
@@ -206,5 +206,5 @@ export function inOperator(key, val) {
     return key in val;
   }
   const ctx = (this && this.logContext) ? this.logContext : { templateName: 'inline', phase: 'render', renderContext: null };
-  throw createLog('error', ERROR_DEFINITIONS.IN_OPERATOR, { key: String(key), type: typeof val }, String(key), { phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline', lineBase: 'zero' });
+  throw createLog('error', ERROR_DEFINITIONS.IN_OPERATOR, { key: String(key), type: typeof val }, String(key), { lineno, colno, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline', lineBase: 'zero' });
 }

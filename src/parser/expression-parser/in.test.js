@@ -22,6 +22,8 @@ describe('parseIn', () => {
     const result = parseIn(ctx);
 
     expect(nodes.getNodeTypeName(result)).toBe('in');
+    expect(result.lineno).toBe(1);
+    expect(result.colno).toBe(3);
     expect(result.left).toBe(left);
     expect(result.right).toBe(right);
   });
@@ -44,7 +46,11 @@ describe('parseIn', () => {
     const result = parseIn(ctx);
 
     expect(nodes.getNodeTypeName(result)).toBe('not');
+    expect(result.lineno).toBe(1);
+    expect(result.colno).toBe(3);
     expect(nodes.getNodeTypeName(result.target)).toBe('in');
+    expect(result.target.lineno).toBe(1);
+    expect(result.target.colno).toBe(7);
     expect(result.target.left).toBe(left);
     expect(result.target.right).toBe(right);
   });

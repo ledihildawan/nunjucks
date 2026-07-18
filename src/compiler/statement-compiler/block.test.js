@@ -15,10 +15,10 @@ const makeCtx = () => {
 describe('compileBlock', () => {
   test('emits block getBlock call directly', () => {
     const ctx = makeCtx();
-    const node = { name: { value: 'header' } };
+    const node = { lineno: 2, colno: 1, name: { value: 'header', lineno: 2, colno: 9 } };
     compileBlock(ctx, node);
     const code = ctx.emitted.join('');
-    expect(code).toContain('context.getBlock("header")');
+    expect(code).toContain('context.getBlock("header", 2, 9)');
     expect(code).toContain('output += t_1');
     expect(code).not.toContain('parentTemplate');
   });
@@ -26,10 +26,10 @@ describe('compileBlock', () => {
   test('emits block getBlock call when inBlock', () => {
     const ctx = makeCtx();
     ctx.inBlock = true;
-    const node = { name: { value: 'footer' } };
+    const node = { lineno: 3, colno: 1, name: { value: 'footer', lineno: 3, colno: 9 } };
     compileBlock(ctx, node);
     const code = ctx.emitted.join('');
-    expect(code).toContain('context.getBlock("footer")');
+    expect(code).toContain('context.getBlock("footer", 3, 9)');
     expect(code).toContain('output += t_1');
   });
 });

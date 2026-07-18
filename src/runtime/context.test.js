@@ -78,10 +78,13 @@ describe('Context', () => {
   test('getBlock error has code and subject', () => {
     const ctx = createContext({}, {}, mockEnv);
     try {
-      ctx.getBlock('missing');
+      ctx.getBlock('missing', 3, 9);
     } catch (e) {
       expect(e.code).toBe('UNDEFINED_BLOCK');
       expect(e.subject).toBe('missing');
+      expect(e.lineno).toBe(3);
+      expect(e.colno).toBe(9);
+      expect(e.lineBase).toBe('zero');
     }
   });
 

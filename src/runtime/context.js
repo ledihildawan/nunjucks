@@ -60,10 +60,16 @@ export function createContext(ctx, blocks, env, metadata = {}) {
       this.blocks[name].push(block);
       return this;
     },
-    getBlock: function(name) {
+    getBlock: function(name, lineno = null, colno = null) {
       this.validateBlocks();
       if (!this.blocks[name]) {
-        throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_BLOCK, { name }, name, { phase: 'render' });
+        const location = this.blockLocations[name] || {};
+        throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_BLOCK, { name }, name, {
+          lineno: lineno ?? location.lineno ?? null,
+          colno: colno ?? location.colno ?? null,
+          phase: 'render',
+          lineBase: 'zero'
+        });
       }
       return this.blocks[name][0];
     },
