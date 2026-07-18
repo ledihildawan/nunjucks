@@ -23,8 +23,8 @@ const buildSlice = (ctx, bracketTok, start) => {
   }
 
   expect(ctx, TOKEN_RIGHT_BRACKET);
-  const sliceTok = peekToken(ctx);
-  const slice = nodes.slice(sliceTok.lineno, sliceTok.colno, start, stop, step);
+  const location = step || stop || start || bracketTok;
+  const slice = nodes.slice(location.lineno, location.colno, start, stop, step);
   return slice;
 };
 

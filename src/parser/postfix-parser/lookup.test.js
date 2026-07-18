@@ -87,4 +87,31 @@ describe('parseBracketAccess', () => {
     expect(result.val.stop).toBe(stopNode);
     expect(result.val.step).toBeNull();
   });
+
+  test('uses step expression location for slice node', () => {
+    const stepNode = nodes.literal(1, 8, 0);
+    const seq = [
+      makeTok(TOKEN_COLON, ':', 1, 2),
+      makeTok(TOKEN_COLON, ':', 1, 3),
+      makeTok(TOKEN_SYMBOL, '0', 1, 4),
+      makeTok(TOKEN_RIGHT_BRACKET, ']', 1, 5),
+      makeTok(TOKEN_SYMBOL, 'end', 1, 6),
+    ];
+    let n = 0;
+    const tokens = { nextToken: () => seq[n++] };
+    const ctx = Object.assign(createCursor(tokens), {
+      parseExpression: () => {
+        nextToken(ctx);
+        return stepNode;
+      },
+    });
+    const bracketTok = makeTok('left-bracket', '[', 1, 1);
+    const target = { lineno: 1, colno: 0, type: 'symbol', value: 'foo' };
+
+    const result = parseBracketAccess(ctx, bracketTok, target);
+
+    expect(nodes.isSlice(result.val)).toBe(true);
+    expect(result.val.lineno).toBe(1);
+    expect(result.val.colno).toBe(8);
+  });
 });

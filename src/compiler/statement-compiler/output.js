@@ -36,6 +36,16 @@ const extractVarName = (node) => {
   return null;
 };
 
+const extractLocation = (node) => {
+  if (!node) return { lineno: null, colno: null };
+
+  if (nodes.isLookupVal(node) && node.val?.lineno != null && node.val?.colno != null) {
+    return { lineno: node.val.lineno, colno: node.val.colno };
+  }
+
+  return { lineno: node.lineno, colno: node.colno };
+};
+
 export const compileOutput = (ctx, node, frame) => {
   const children = node.children;
   children.forEach(child => {
@@ -49,12 +59,17 @@ export const compileOutput = (ctx, node, frame) => {
       const isPipeType = nodes.isPipe(child) || nodes.isPipeAsync(child);
       const isOptionalChainType = nodes.isOptionalChain(child) || nodes.isOptionalCall(child);
       const varName = extractVarName(child);
+      const errorLocation = extractLocation(child);
       const undefinedMode = ctx.undefinedMode;
 
       const useEnsureDefined = !isOptionalChainType || undefinedMode === 'debug';
       const effectiveMode = undefinedMode;
 
-      ctx._emitLineWithLineno(`lineno = ${child.lineno}; colno = ${child.colno}; ${ctx.buffer} += runtime.suppressValue(`, child.lineno, child.colno);
+      ctx._emitLineWithLineno(
+        `lineno = ${errorLocation.lineno}; colno = ${errorLocation.colno}; ${ctx.buffer} += runtime.suppressValue(`,
+        errorLocation.lineno,
+        errorLocation.colno
+      );
       if (!isPipeType) {
         ctx._emit('await runtime.awaitValue(');
       }
@@ -65,7 +80,7 @@ export const compileOutput = (ctx, node, frame) => {
       if (useEnsureDefined) {
         const nameArg = varName ? `, "${varName}"` : ', null';
         const modeArg = effectiveMode ? `, "${effectiveMode}"` : '';
-        ctx._emit(`,${child.lineno},${child.colno}${nameArg}, null${modeArg})`);
+        ctx._emit(`,${errorLocation.lineno},${errorLocation.colno}${nameArg}, null${modeArg})`);
       }
       if (!isPipeType) {
         ctx._emit(')');

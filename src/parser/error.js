@@ -4,8 +4,8 @@ import { peekToken } from './cursor.js';
 export const error = (ctx, msg, lineno, colno) => {
   if (lineno === undefined || colno === undefined) {
     const tok = peekToken(ctx) || {};
-    lineno = tok.lineno;
-    colno = tok.colno;
+    lineno = tok.lineno ?? ctx.tokens?.lineno;
+    colno = tok.colno ?? ctx.tokens?.colno;
   }
   return createLog('error', {
     name: 'PARSER_ERROR',

@@ -115,6 +115,21 @@ describe('inline template error locations', () => {
     expect(err.templateName).toBe(filePath);
     expect(err.colno).toBe(callerLine.indexOf('executionTimeout') + 1);
   });
+
+  test('points undefined member lookups at the missing property', async () => {
+    const filePath = fileURLToPath(import.meta.url);
+    const source = fs.readFileSync(filePath, 'utf8').split('\n');
+    const marker = 'MISSING_PROPERTY_LOCATION_' + 'MARKER';
+    const markerLine = source.findIndex(line => line.includes(marker)) + 1;
+    const err = await render('{{ product.name }}', { product: { test: 'test' } }, { dev: true, undefined: 'strict', jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e); // MISSING_PROPERTY_LOCATION_MARKER
+    const callerLine = source[err.lineno - 1];
+
+    expect(err.code).toBe('UNDEFINED_VARIABLE');
+    expect(err.subject).toBe('product.name');
+    expect(err.lineBase).toBe('one');
+    expect(err.templateName).toBe(filePath);
+    expect(err.colno).toBe(callerLine.indexOf('product.name') + 'product.'.length + 1);
+  });
 });
 
 describe('keyword arguments rendering', () => {

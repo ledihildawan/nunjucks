@@ -148,7 +148,16 @@ describe('parseAggregate', () => {
       parseExpression: () => { const v = nodes.symbol(1, i === 0 ? 2 : 5, i === 0 ? 'a' : 'b'); i++; nextToken(ctx); return v; },
     });
 
-    expect(() => parseAggregate(ctx)).toThrow('parseAggregate: expected comma after expression');
+    try {
+      parseAggregate(ctx);
+    } catch (e) {
+      expect(e.message).toContain('parseAggregate: expected comma after expression');
+      expect(e.lineno).toBe(1);
+      expect(e.colno).toBe(4);
+      return;
+    }
+
+    throw new Error('Expected parseAggregate to throw');
   });
 
   test('fails on missing colon in dict', () => {
@@ -165,6 +174,15 @@ describe('parseAggregate', () => {
       parseExpression: () => key,
     });
 
-    expect(() => parseAggregate(ctx)).toThrow('parseAggregate: expected colon after dict key');
+    try {
+      parseAggregate(ctx);
+    } catch (e) {
+      expect(e.message).toContain('parseAggregate: expected colon after dict key');
+      expect(e.lineno).toBe(1);
+      expect(e.colno).toBe(7);
+      return;
+    }
+
+    throw new Error('Expected parseAggregate to throw');
   });
 });

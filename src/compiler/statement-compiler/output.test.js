@@ -118,7 +118,7 @@ describe('compileOutput', () => {
     ctx.undefinedMode = 'strict';
     const target = nodes.symbol(0, 0, 'user');
     target.mock = 'user';
-    const val = { value: 'name' };
+    const val = nodes.literal(1, 5, 'name');
     const lookupVal = nodes.lookupVal(1, 5, target, val);
     lookupVal.mock = 'memberLookup';
     const node = { children: [lookupVal] };
@@ -127,6 +127,23 @@ describe('compileOutput', () => {
     expect(code).toContain('runtime.ensureDefined(');
     expect(code).toContain('"strict"');
     expect(code).toContain('user.name');
+    expect(code).toContain(',1,5,');
+  });
+
+  test('uses lookup property location for undefined lookup errors', () => {
+    const ctx = makeCtx();
+    ctx.undefinedMode = 'strict';
+    const target = nodes.symbol(0, 0, 'product');
+    target.mock = 'product';
+    const val = nodes.literal(0, 8, 'name');
+    const lookupVal = nodes.lookupVal(0, 0, target, val);
+    lookupVal.mock = 'memberLookup';
+    const node = { children: [lookupVal] };
+    compileOutput(ctx, node);
+    const code = ctx.emitted.join('');
+
+    expect(code).toContain('runtime.ensureDefined(');
+    expect(code).toContain('memberLookup,0,8, "product.name"');
   });
 
   test('emits debug mode for Symbol in debug mode (shows warning)', () => {

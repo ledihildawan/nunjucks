@@ -131,12 +131,16 @@ describe('Error Routes - All Throw Errors', () => {
   });
 
   test('parser-expected throws', async () => {
-    const err = await render('{% for item in items %}{{ item }}{% endfor %}', {}).catch(e => e);
+    const err = await nunjucksRender('errors/parser-expected.njk', {}, {
+      dev: true,
+      undefined: 'strict',
+      views: VIEWS
+    }).catch(e => e);
     expect(err).toBeTruthy();
   });
 
   test('undefined-block throws with structured metadata', async () => {
-    const err = await nunjucksRender('error-undefined-block.njk', {}, {
+    const err = await nunjucksRender('errors/undefined-block.njk', {}, {
       dev: true,
       undefined: 'strict',
       views: VIEWS
@@ -145,7 +149,7 @@ describe('Error Routes - All Throw Errors', () => {
     expect(err).toBeTruthy();
     expect(err.code).toBe('UNDEFINED_BLOCK');
     expect(err.subject).toBe('nonexistent');
-    expect(err.message).toContain('not defined in parent template');
+    expect(err.message).toContain('Undefined block: nonexistent');
   });
 });
 
@@ -193,7 +197,7 @@ describe('Error HTML Output - All Have toHtmlString', () => {
   });
 
   test('undefined-block HTML output is humanized for parent-child block mismatch', async () => {
-    const err = await nunjucksRender('error-undefined-block.njk', {}, {
+    const err = await nunjucksRender('errors/undefined-block.njk', {}, {
       dev: true,
       undefined: 'strict',
       views: VIEWS

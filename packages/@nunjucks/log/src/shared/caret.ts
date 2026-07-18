@@ -15,6 +15,15 @@ export function calculateCaretPosition(
   let charAtPos = line[pos];
 
   if (!/[\w.]/.test(charAtPos)) {
+    if (charAtPos && !/\s/.test(charAtPos)) {
+      return {
+        wordStart: pos,
+        wordEnd: pos + 1,
+        highlightWord: charAtPos,
+        carets: '^'
+      };
+    }
+
     let searchLeft = pos - 1;
     while (searchLeft >= 0 && !/[\w.]/.test(line[searchLeft])) {
       searchLeft--;
@@ -40,7 +49,20 @@ export function calculateCaretPosition(
 
   let highlightWord = line.slice(wordStart, wordEnd);
   if (highlightWord?.includes('.')) {
-    highlightWord = highlightWord.split('.')[0];
+    const relativePos = pos - wordStart;
+    let segmentStart = wordStart;
+    let segmentEnd = wordStart;
+
+    for (const segment of highlightWord.split('.')) {
+      segmentEnd = segmentStart + segment.length;
+      if (relativePos >= segmentStart - wordStart && relativePos <= segmentEnd - wordStart) {
+        wordStart = segmentStart;
+        wordEnd = segmentEnd;
+        highlightWord = segment;
+        break;
+      }
+      segmentStart = segmentEnd + 1;
+    }
   }
 
   const carets = highlightWord ? '^'.repeat(highlightWord.length) : '^'.repeat(3);

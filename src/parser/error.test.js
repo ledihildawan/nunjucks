@@ -25,6 +25,20 @@ describe('error', () => {
     expect(err.lineno).toBe(7);
     expect(err.colno).toBe(3);
   });
+
+  test('falls back to tokenizer position at end of file', () => {
+    const ctx = {
+      peeked: null,
+      tokens: {
+        lineno: 2,
+        colno: 14,
+        nextToken: () => null,
+      },
+    };
+    const err = error(ctx, 'test error');
+    expect(err.lineno).toBe(2);
+    expect(err.colno).toBe(14);
+  });
 });
 
 describe('fail', () => {

@@ -19,6 +19,10 @@ export const compileRoot = (ctx, node, frame) => {
 
   const blocks = node.findAll('block');
   const blockNames = blocks.map(b => b.name?.value).filter(Boolean);
+  const blockLocation = (block) => ({
+    lineno: block.name?.lineno ?? block.lineno ?? 0,
+    colno: block.name?.colno ?? block.colno ?? 0
+  });
 
   const nonBlockChildren = node.children.filter(child => !nodes.isBlock(child));
   nonBlockChildren.forEach(child => {
@@ -34,8 +38,7 @@ export const compileRoot = (ctx, node, frame) => {
     const name = block.name?.value;
     if (!name) return;
 
-    const lineno = block.lineno ?? 0;
-    const colno = block.colno ?? 0;
+    const { lineno, colno } = blockLocation(block);
     ctx._emitLine(`  lineno = ${lineno}; colno = ${colno};`);
     ctx._emitLine(`  ${childBuffer} += await context.getBlock("${name}")(env, context, frame, runtime);`);
   });
@@ -75,8 +78,7 @@ export const compileRoot = (ctx, node, frame) => {
   ctx._emitLine('__blockMeta: {');
   blocks.forEach((block) => {
     const name = block.name.value;
-    const lineno = block.lineno ?? 0;
-    const colno = block.colno ?? 0;
+    const { lineno, colno } = blockLocation(block);
     ctx._emitLine(`${JSON.stringify(name)}: { lineno: ${lineno}, colno: ${colno} },`);
   });
   ctx._emitLine('},');

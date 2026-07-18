@@ -45,7 +45,7 @@ const makeCtx = () => {
 describe('compileRoot', () => {
   test('emits root function and block functions', () => {
     const ctx = makeCtx();
-    const blockNode = nodes.block(2, 1, nodes.symbol(2, 1, 'header'));
+    const blockNode = nodes.block(2, 1, nodes.symbol(2, 9, 'header'));
     blockNode.body = { mock: 'blockBody' };
     const node = {
       lineno: 1,
@@ -61,7 +61,8 @@ describe('compileRoot', () => {
     expect(code).toContain('async function root(env, context, frame, runtime) {');
     expect(code).toContain('let parentTemplate = null;');
     expect(code).toContain('childOutput');
-    expect(code).toContain('lineno = 2; colno = 1;');
+    expect(code).toContain('lineno = 2; colno = 9;');
+    expect(code).toContain('"header": { lineno: 2, colno: 9 }');
     expect(code).toContain('root: root');
   });
 

@@ -159,29 +159,42 @@ const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, 
     let resolvedCol = errorCol;
 
     if (resolveInlineLocation) {
-      const subjectMatch = findSubjectOccurrence(content, subjectHint, errorLine);
-      if (subjectMatch) {
-        resolvedLine = subjectMatch.line;
-        resolvedCol = subjectMatch.col;
-      } else if (templateHint === null || templateHint === undefined) {
-        const nullMatch = findSubjectOccurrence(content, 'null', errorLine);
-        if (nullMatch) {
-          resolvedLine = nullMatch.line;
-          resolvedCol = nullMatch.col;
-        }
-      } else if (typeof templateHint === 'string') {
-        const templateMatch = findTemplateOccurrence(content, templateHint, errorLine);
+      let templateMatch = null;
+      if (typeof templateHint === 'string' && Number.isInteger(templateErrorLine) && Number.isInteger(templateErrorCol)) {
+        templateMatch = findTemplateOccurrence(content, templateHint, errorLine);
         if (templateMatch) {
-          const targetOffset = templateMatch.index + templateLocationOffset(templateMatch.template, templateErrorLine, templateErrorCol - 1);
+          const targetOffset = templateMatch.index + templateLocationOffset(templateMatch.template, templateErrorLine, templateErrorCol);
           const position = positionAtOffset(content, targetOffset);
           resolvedLine = position.lineOffset + 1;
           resolvedCol = position.col;
         }
-      } else {
-        const templateValueMatch = findSubjectOccurrence(content, String(templateHint), errorLine);
-        if (templateValueMatch) {
-          resolvedLine = templateValueMatch.line;
-          resolvedCol = templateValueMatch.col;
+      }
+
+      if (!templateMatch) {
+        const subjectMatch = findSubjectOccurrence(content, subjectHint, errorLine);
+        if (subjectMatch) {
+          resolvedLine = subjectMatch.line;
+          resolvedCol = subjectMatch.col;
+        } else if (templateHint === null || templateHint === undefined) {
+          const nullMatch = findSubjectOccurrence(content, 'null', errorLine);
+          if (nullMatch) {
+            resolvedLine = nullMatch.line;
+            resolvedCol = nullMatch.col;
+          }
+        } else if (typeof templateHint === 'string') {
+          templateMatch = findTemplateOccurrence(content, templateHint, errorLine);
+          if (templateMatch) {
+            const targetOffset = templateMatch.index + templateLocationOffset(templateMatch.template, templateErrorLine, templateErrorCol);
+            const position = positionAtOffset(content, targetOffset);
+            resolvedLine = position.lineOffset + 1;
+            resolvedCol = position.col;
+          }
+        } else {
+          const templateValueMatch = findSubjectOccurrence(content, String(templateHint), errorLine);
+          if (templateValueMatch) {
+            resolvedLine = templateValueMatch.line;
+            resolvedCol = templateValueMatch.col;
+          }
         }
       }
     } else if (templateHint !== null && templateHint !== undefined && typeof templateHint !== 'string') {

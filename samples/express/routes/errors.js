@@ -1,7 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import nunjucks, { createLog } from '../../../src/index.js';
-import { ERROR_DEFINITIONS } from '@nunjucks/log';
+import nunjucks from '../../../src/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -60,7 +59,6 @@ const errorRoutes = [
   { path: 'invalid-lookup', template: 'errors/invalid-lookup.njk', context: {}, category: 'invalid_lookup', desc: 'Invalid bracket notation' },
   { path: 'duplicate-block', template: 'errors/duplicate-block.njk', context: {}, category: 'duplicate_block', desc: 'Duplicate block definition' },
   { path: 'unknown-block-tag', template: 'errors/unknown-block-tag.njk', context: {}, category: 'unknown_block_tag', desc: 'Unmatched closing tag' },
-  { path: 'sort-filter', template: 'errors/sort-filter.njk', context: { items: ['a', 'b'] }, category: 'sort_filter', desc: 'Sort filter type error' },
   { path: 'sort-filter-attr', template: 'errors/sort-filter-attr.njk', context: { items: [{ name: 'test' }] }, category: 'sort_filter_attr', desc: 'Sort attribute undefined' },
   { path: 'groupby-filter', template: 'errors/groupby-filter.njk', context: { items: [{ name: 'test' }] }, category: 'groupby_filter', desc: 'Groupby filter type error' },
   { path: 'groupby-filter-attr', template: 'errors/groupby-filter-attr.njk', context: { items: [{ name: 'test' }] }, category: 'groupby_filter_attr', desc: 'Groupby attribute undefined' },
@@ -293,7 +291,7 @@ router.get('/blocked-context-keys', async (req, res, next) => {
 
 router.get('/dangerous-context', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ user.name }}', { user: { name: 'test', eval: () => {} } }, { dev: true, strictMode: true, scanContextValues: true });
+    const html = await nunjucks('{{ user.name }}', { user: { name: 'test' }, eval: () => {} }, { dev: true, strictMode: true, scanContextValues: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -325,15 +323,6 @@ router.get('/invalid-config', async (req, res, next) => {
     res.type('html').send(html);
   } catch (err) {
     next(err);
-  }
-});
-
-router.get('/template-not-string', async (req, res, next) => {
-  try {
-    const html = await nunjucks(null, {}, { dev: true });
-    res.type('html').send(html);
-  } catch (err) {
-    res.status(500).type('html').send(err.output());
   }
 });
 
@@ -423,24 +412,6 @@ router.get('/dictsort-by-error', async (req, res, next) => {
   }
 });
 
-router.get('/no-super-block-runtime', async (req, res, next) => {
-  try {
-    const html = await nunjucks('{% block content %}{{ super() }}{% endblock %}', {}, { dev: true });
-    res.type('html').send(html);
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get('/filter-type-error', async (req, res, next) => {
-  try {
-    const html = await nunjucks('{{ items |> list }}', { items: 42 }, { dev: true });
-    res.type('html').send(html);
-  } catch (err) {
-    next(err);
-  }
-});
-
 router.get('/unknown-block-runtime', async (req, res, next) => {
   try {
     const html = await nunjucks('{% extends "base.njk" %}{% block nonexistent %}{{ super() }}{% endblock %}', {}, { dev: true, views: VIEWS });
@@ -468,36 +439,9 @@ router.get('/parser-unexpected-token', async (req, res, next) => {
   }
 });
 
-router.get('/dangerous-context', async (req, res, next) => {
-  try {
-    const html = await nunjucks('{{ user.name }}', { user: { name: 'test', eval: () => {} } }, { dev: true, strictMode: true, scanContextValues: true });
-    res.type('html').send(html);
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get('/dangerous-template', async (req, res, next) => {
-  try {
-    const html = await nunjucks('{% set x = eval("1+1") %}{{ x }}', {}, { dev: true, strictMode: true });
-    res.type('html').send(html);
-  } catch (err) {
-    next(err);
-  }
-});
-
 router.get('/sandbox-access', async (req, res, next) => {
   try {
     const html = await nunjucks('{{ user.global }}', { user: { global: process } }, { dev: true, sandbox: true });
-    res.type('html').send(html);
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get('/sandbox-set', async (req, res, next) => {
-  try {
-    const html = await nunjucks('{% set user.__proto__ = {} %}', {}, { dev: true, sandbox: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -549,15 +493,6 @@ router.get('/container-not-registered', async (req, res, next) => {
   }
 });
 
-router.get('/template-invalid-source', async (req, res, next) => {
-  try {
-    const html = await nunjucks.render(null, {}, { dev: true });
-    res.type('html').send(html);
-  } catch (err) {
-    next(err);
-  }
-});
-
 router.get('/template-must-be-string', async (req, res, next) => {
   try {
     const html = await nunjucks(123, {}, { dev: true });
@@ -576,46 +511,9 @@ router.get('/template-null', async (req, res, next) => {
   }
 });
 
-router.get('/assert-type-error', async (req, res, next) => {
-  try {
-    throw createLog('error', ERROR_DEFINITIONS.ASSERT_TYPE_ERROR, {}, null, {
-      lineno: 1,
-      colno: 1,
-      phase: 'parse',
-      templateName: 'inline',
-      lineBase: 'zero'
-    });
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get('/invalid-boolean', async (req, res, next) => {
-  try {
-    throw createLog('error', ERROR_DEFINITIONS.INVALID_BOOLEAN, {}, null, {
-      lineno: 1,
-      colno: 1,
-      phase: 'parse',
-      templateName: 'inline',
-      lineBase: 'zero'
-    });
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get('/validation-error', async (req, res, next) => {
-  try {
-    const html = await nunjucks('{{ test }}', { test: 'value' }, { dev: true, executionTimeout: -1 });
-    res.type('html').send(html);
-  } catch (err) {
-    next(err);
-  }
-});
-
 router.get('/undefined-value-match', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ product.name }}', { product: null }, { dev: true, undefined: 'strict' });
+    const html = await nunjucks('{{ product.name }}', { product: { test: 'test' } }, { dev: true, undefined: 'strict' });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -649,7 +547,6 @@ router.get('/', async (req, res, next) => {
         name: 'UNDEFINED_FILTER',
         items: [
           { path: 'undefined-filter', desc: 'Filter not registered' },
-          { path: 'sort-filter', desc: 'Sort filter not registered' },
           { path: 'sort-filter-attr', desc: 'Sort filter attribute undefined' },
           { path: 'groupby-filter', desc: 'Groupby filter not registered' },
           { path: 'groupby-filter-attr', desc: 'Groupby filter attribute undefined' },
@@ -672,15 +569,8 @@ router.get('/', async (req, res, next) => {
         ]
       },
       {
-        name: 'TYPE_ERROR',
-        items: [
-          { path: 'assert-type-error', desc: 'Invalid type assertion' },
-        ]
-      },
-      {
         name: 'FILTER_TYPE_ERROR',
         items: [
-          { path: 'filter-type-error', desc: 'List filter on non-iterable' },
           { path: 'list-filter-error', desc: 'List filter requires iterable' },
         ]
       },
@@ -710,7 +600,7 @@ router.get('/', async (req, res, next) => {
           { path: 'expected-variable-end', desc: 'Expected variable end' },
           { path: 'parser-unexpected-token', desc: 'Unexpected token while parsing' },
           { path: 'sandbox-code-execution', desc: 'Code execution blocked (parser)' },
-          { path: 'invalid-boolean', desc: 'Invalid boolean value' },
+          { path: 'slice-error', desc: 'Slice step cannot be zero' },
         ]
       },
       {
@@ -731,8 +621,7 @@ router.get('/', async (req, res, next) => {
         items: [
           { path: 'filter-error', desc: 'Filter throws during execution' },
           { path: 'no-super-block', desc: 'super() called without parent block' },
-          { path: 'no-super-block-runtime', desc: 'super() without parent block' },
-          { path: 'filter-throw', desc: 'Filter throws during execution' },
+          { path: 'filter-throw', desc: 'Inline filter throws during execution' },
         ]
       },
       {
@@ -761,7 +650,6 @@ router.get('/', async (req, res, next) => {
           { path: 'reserved-keyword-global', desc: 'Using reserved word as global' },
           { path: 'template-size', desc: 'Template exceeds maximum size' },
           { path: 'invalid-config', desc: 'Invalid config (negative timeout)' },
-          { path: 'validation-error', desc: 'Invalid configuration value' },
           { path: 'blocked-context-keys', desc: 'Context contains blocked keys' },
           { path: 'dangerous-context', desc: 'Context contains dangerous values' },
           { path: 'dangerous-template', desc: 'Template contains dangerous code' },
@@ -779,8 +667,6 @@ router.get('/', async (req, res, next) => {
       {
         name: 'TEMPLATE_MUST_BE_STRING',
         items: [
-          { path: 'template-not-string', desc: 'Template must be a string' },
-          { path: 'template-invalid-source', desc: 'Invalid template source' },
           { path: 'template-must-be-string', desc: 'Template must be string' },
           { path: 'template-null', desc: 'Template is null' },
         ]

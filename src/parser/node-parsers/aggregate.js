@@ -41,10 +41,11 @@ export const parseAggregate = (ctx) => {
     }
 
     if (node.children.length > 0) {
+      const next = peekToken(ctx) || tok;
       if (!skip(ctx, TOKEN_COMMA)) {
         fail(ctx, 'parseAggregate: expected comma after expression',
-          tok.lineno,
-          tok.colno);
+          next.lineno,
+          next.colno);
       }
     }
 
@@ -52,9 +53,10 @@ export const parseAggregate = (ctx) => {
       const key = ctx.parsePrimary();
 
       if (!skip(ctx, TOKEN_COLON)) {
+        const next = peekToken(ctx) || tok;
         fail(ctx, 'parseAggregate: expected colon after dict key',
-          tok.lineno,
-          tok.colno);
+          next.lineno,
+          next.colno);
       }
 
       const value = ctx.parseExpression();
