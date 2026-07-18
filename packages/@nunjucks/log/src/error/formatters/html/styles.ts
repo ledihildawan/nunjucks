@@ -26,6 +26,9 @@ export const CSS = `
     --color-btn-bg: light-dark(oklch(20% 0.02 285), oklch(90% 0.01 285));
     --color-btn-text: light-dark(oklch(98% 0.01 285), oklch(15% 0.01 285));
     --color-btn-hover: light-dark(oklch(35% 0.02 285), oklch(100% 0 0));
+
+    --color-scrollbar-thumb: light-dark(oklch(65% 0.01 285), oklch(45% 0.02 285));
+    --color-scrollbar-track: light-dark(oklch(92% 0.01 285), oklch(20% 0.01 285));
   }
 }
 
@@ -35,6 +38,10 @@ export const CSS = `
   h1, h2 { font-weight: inherit; }
   ul { padding-inline-start: 0; }
   ::selection { background: oklch(0.55 0.15 285 / 0.3); color: inherit; }
+
+  :root { scrollbar-width: thin; scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track); }
+  * { scrollbar-width: inherit; scrollbar-color: inherit; }
+
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 }
 
