@@ -45,7 +45,7 @@ app.use((err, req, res, next) => {
     } catch (e) {
     }
   }
-  console.log('ERROR PROPERTIES:', { lineno: err.lineno, colno: err.colno, lineBase: err.lineBase, isJsCaller: err.isJsCaller });
+  console.log(err.output({ format: 'ansi' }));
   res.status(500).type('html').send(err.output());
 });
 

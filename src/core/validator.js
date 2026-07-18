@@ -73,6 +73,10 @@ export const validateConfig = (config) => {
     errors.push({ code: 'INVALID_CONFIG', message: 'maxTemplateSize must be >= 0', subject: 'maxTemplateSize' });
   }
 
+  if (config.sandboxEnvironment && !['auto', 'node', 'browser', 'deno'].includes(config.sandboxEnvironment)) {
+    errors.push({ code: 'INVALID_CONFIG', message: 'sandboxEnvironment must be auto, node, browser, or deno', subject: 'sandboxEnvironment' });
+  }
+
   if (config._customFilters) {
     for (const [name] of Object.entries(config._customFilters)) {
       const validation = validateFilterName(name);

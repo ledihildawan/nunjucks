@@ -50,8 +50,9 @@
 
     *, *::before, *::after { box-sizing: border-box; }
     ::selection { background: oklch(0.55 0.15 285 / 0.3); color: inherit; }
-    :root { scrollbar-width: thin; scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track); }
-    * { scrollbar-width: inherit; scrollbar-color: inherit; }
+    :root {
+      scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
+    }
 
     body {
       font-family: system-ui, -apple-system, sans-serif;
@@ -183,12 +184,12 @@
       position: relative;
     }
 
-    .sidebar-header {
+    .sidebar-footer {
       padding: 15px;
-      border-bottom: 1px solid var(--color-border);
+      border-top: 1px solid var(--color-border);
       background: var(--color-bg-panel);
       position: sticky;
-      top: 0;
+      bottom: 0;
     }
 
     .resize-handle {
@@ -211,7 +212,8 @@
       flex: 1;
       overflow-y: auto;
       padding: 15px;
-      scrollbar-gutter: stable;
+      scrollbar-width: thin;
+      scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
 
       --scroll-mask-fade-from-t: 92%;
       --scroll-mask-fade-from-b: 92%;
@@ -222,9 +224,6 @@
       mask-composite: intersect;
       animation: scroll-mask-y linear;
       animation-timeline: scroll(self block);
-
-      scrollbar-width: thin;
-      scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
     }
 
     .sidebar-content::-webkit-scrollbar { width: var(--scrollbar-width); }
@@ -237,34 +236,42 @@
     .preview {
       flex: 1; display: none; overflow: auto;
       background: var(--color-bg-page);
-      scrollbar-gutter: stable;
-      scrollbar-width: thin;
-      scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
     }
     .preview.active { display: flex; flex-direction: column; }
 
-    .preview::-webkit-scrollbar { width: var(--scrollbar-width); }
-    .preview::-webkit-scrollbar-track { background: transparent; }
-    .preview::-webkit-scrollbar-thumb {
-      background-color: var(--color-scrollbar-thumb);
-      border-radius: 9999px;
-    }
     .preview-header {
-      padding: 8px 12px; background: var(--color-bg-alt); border-bottom: 1px solid var(--color-border);
-      font-size: 13px; display: flex; align-items: center; gap: 10px;
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 12px;
+      background: var(--color-bg-panel);
+      border-bottom: 1px solid var(--color-border);
       flex-shrink: 0;
     }
-    .preview-header .url { color: var(--color-text-secondary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .active-dot { color: var(--color-error-text); font-size: 10px; margin-right: 4px; }
-    .preview-header .btn {
-      background: var(--color-btn-bg); color: var(--color-btn-text); border: none; padding: 4px 10px;
-      font-size: 12px; cursor: pointer; font-family: inherit; border-radius: 0.25rem;
-      transition: background-color 0.2s ease-out;
+    .preview-label {
+      display: flex; align-items: center; gap: 6px;
+      color: var(--color-text-secondary); font-size: 12px; font-weight: 500;
+      flex-shrink: 0;
     }
-    .preview-header .btn:hover { background: var(--color-btn-hover); }
+    .preview-label svg { opacity: 0.6; }
+    .preview-url {
+      flex: 1; font-size: 12px; font-family: ui-monospace, monospace;
+      color: var(--color-text-primary);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      background: var(--color-bg-alt); padding: 4px 8px; border-radius: 4px;
+    }
+    .preview-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px;
+      background: transparent; color: var(--color-text-secondary);
+      border: none; border-radius: 4px; cursor: pointer;
+      transition: background-color 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+    .preview-btn:hover { background: var(--color-bg-alt); color: var(--color-text-primary); }
     iframe { flex: 1; border: none; width: 100%; }
 
     .group { margin-bottom: 10px; container-type: inline-size; }
+    .group:first-of-type { margin-top: 0; }
+    .group:last-of-type { margin-bottom: 0; }
     .group-header {
       font-size: 14px; color: var(--color-text-secondary); margin: 15px 0 10px;
       border-bottom: 1px solid var(--color-border); padding-bottom: 5px;
@@ -272,6 +279,7 @@
       display: flex; align-items: center; gap: 8px;
       transition: color 0.2s ease-out;
     }
+    .group:first-of-type .group-header { margin-top: 0; }
     .group-header:hover { color: var(--color-text-primary); }
     .group-header::before { content: '▶'; font-size: 10px; transition: transform 0.2s; flex-shrink: 0; }
     .group-header.open::before { transform: rotate(90deg); }
@@ -279,6 +287,8 @@
     .group-header .count { color: var(--color-text-secondary); font-weight: normal; flex-shrink: 0; }
     ul { list-style: none; padding: 0; margin: 0; display: none; }
     ul.open { display: block; }
+    ul li:first-child { margin-top: 0; }
+    ul li:last-child { margin-bottom: 0; }
 
     @container (max-width: 180px) {
       .group-header { flex-wrap: wrap; gap: 4px; }
@@ -305,18 +315,6 @@
 
   <div class="container" role="main">
     <aside class="sidebar" aria-label="Error routes list">
-      <div class="sidebar-header">
-        <div class="search-wrapper">
-          <input
-            type="search"
-            id="search-input"
-            placeholder="Search error routes..."
-            aria-label="Search error routes"
-            autocomplete="off"
-            spellcheck="false"
-          >
-        </div>
-      </div>
       <div class="sidebar-content">
         {% for group in groups %}
         <section class="group" aria-labelledby="group-heading-{{ loop.index }}">
@@ -337,16 +335,32 @@
         </section>
         {% endfor %}
       </div>
+      <footer class="sidebar-footer">
+        <div class="search-wrapper">
+          <input
+            type="search"
+            id="search-input"
+            placeholder="Search error routes..."
+            aria-label="Search error routes"
+            autocomplete="off"
+            spellcheck="false"
+          >
+        </div>
+      </footer>
       <div class="resize-handle" id="resize-handle" role="separator" aria-orientation="vertical" aria-label="Resize sidebar" tabindex="0"></div>
     </aside>
 
     <div class="preview" id="preview" role="region" aria-label="Error preview" aria-live="polite">
-      <div class="preview-header">
-        <span class="preview-label">Preview:</span>
-        <span class="url" id="preview-url" aria-live="off"></span>
-        <span class="active-dot" id="active-dot" hidden>●</span>
-        <button class="btn" type="button" onclick="openInNewTab()">Open</button>
-      </div>
+      <header class="preview-header">
+        <span class="preview-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Preview
+        </span>
+        <span class="preview-url" id="preview-url" aria-live="off"></span>
+        <button class="preview-btn" type="button" onclick="openInNewTab()" aria-label="Open in new tab">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </button>
+      </header>
       <iframe id="preview-frame" src="about:blank" title="Error preview" aria-label="Error preview frame"></iframe>
     </div>
   </div>
@@ -355,7 +369,6 @@
     const preview = document.getElementById('preview');
     const previewFrame = document.getElementById('preview-frame');
     const previewUrl = document.getElementById('preview-url');
-    const activeDot = document.getElementById('active-dot');
     const searchInput = document.getElementById('search-input');
     const resizeHandle = document.getElementById('resize-handle');
     const sidebar = document.querySelector('.sidebar');
@@ -427,7 +440,6 @@
         currentUrl = '/errors/' + path;
         preview.classList.add('active');
         previewUrl.textContent = currentUrl;
-        activeDot.hidden = false;
         previewFrame.src = currentUrl;
         location.hash = 'preview=' + currentUrl;
       });
@@ -448,7 +460,6 @@
         currentUrl = '/errors/' + path;
         preview.classList.add('active');
         previewUrl.textContent = currentUrl;
-        activeDot.hidden = false;
         previewFrame.src = currentUrl;
         card.scrollIntoView();
       }

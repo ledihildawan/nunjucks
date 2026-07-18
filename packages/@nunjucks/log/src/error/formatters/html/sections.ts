@@ -6,6 +6,8 @@ import { isBlockedKey } from '@nunjucks/shared/blocked-keys';
 
 const normalizePath = (p: string): string => p.replace(/^file:\/\/+/, '');
 
+const isFilePath = (p: string): boolean => /\.(njk|nunjucks|js|ts|mjs|cjs|jsx|tsx|html|htm|tmpl|tpl|pug|ejs|handlebars|hbs|erb|php|py|rb|go|java|c|cpp|h|cs|rs|swift|kt|scala|css|scss|sass|less|styl|json|yaml|yml|xml|md|txt)$/i.test(p);
+
 export const formatCodeTraceHtml = (snippet: string): string => {
   if (!snippet) return '<div class="code-line"><span class="line-number">&nbsp;</span><span class="code-content">Source not available</span></div>';
 
@@ -90,7 +92,7 @@ const linkifyFrame = (frame: string, ide: string): string => {
     return s;
   }
   s = s.replace(/\(([^()]+):(\d+):(\d+)\)/g, (match: string, p: string, l: string, c: string) => {
-    if (/^native$/.test(p.trim()) || /^&lt;/.test(p) || !/[\\/:]/.test(p)) return match;
+    if (/^native$/.test(p.trim()) || /^&lt;/.test(p) || !/[\\/:]/.test(p) || !isFilePath(p)) return match;
     const norm = normalizePath(p);
     const display = shortenPath(norm);
     return `(<a href="${resolveIdeLink(ide, norm, parseInt(l), parseInt(c))}" class="stack-link">${display}:${l}:${c}</a>)`;
@@ -101,7 +103,7 @@ const linkifyFrame = (frame: string, ide: string): string => {
     const p = lcMatch[2];
     const l = lcMatch[3];
     const c = lcMatch[4];
-    if (prefix && p && l && c && /[\\/:]/.test(p) && !/^native$/.test(p.trim())) {
+    if (prefix && p && l && c && /[\\/:]/.test(p) && !/^native$/.test(p.trim()) && isFilePath(p)) {
       const norm = normalizePath(p);
       const display = shortenPath(norm);
       const link = `<a href="${resolveIdeLink(ide, norm, parseInt(l), parseInt(c))}" class="stack-link">${display}:${l}:${c}</a>`;

@@ -29,6 +29,8 @@ export const CSS = `
 
     --color-scrollbar-thumb: light-dark(oklch(65% 0.01 285), oklch(45% 0.02 285));
     --color-scrollbar-track: light-dark(oklch(92% 0.01 285), oklch(20% 0.01 285));
+
+    --scrollbar-width: 8px;
   }
 }
 
@@ -39,8 +41,10 @@ export const CSS = `
   ul { padding-inline-start: 0; }
   ::selection { background: oklch(0.55 0.15 285 / 0.3); color: inherit; }
 
-  :root { scrollbar-width: thin; scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track); }
-  * { scrollbar-width: inherit; scrollbar-color: inherit; }
+  :root {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
+  }
 
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 }
@@ -175,7 +179,17 @@ export const CSS = `
     font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
     font-variant-numeric: tabular-nums;
     font-size: 0.75rem; overflow-x: auto; padding-block: 0.75rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
     @media (width >= 40rem) { font-size: 0.8125rem; }
+  }
+
+  .code-block::-webkit-scrollbar { height: var(--scrollbar-width); }
+  .code-block::-webkit-scrollbar-track { background: transparent; }
+  .code-block::-webkit-scrollbar-thumb {
+    background-color: var(--color-scrollbar-thumb);
+    border-radius: 9999px;
+  }
 
     .code-line {
       display: flex; padding-inline: 0.75rem; min-inline-size: max-content;
@@ -196,10 +210,6 @@ export const CSS = `
       }
     }
 
-    .error-marker-content {
-      color: var(--color-error-text);
-    }
-
     .line-number {
       color: var(--color-code-line-number); inline-size: 1.25rem;
       font-variant-numeric: tabular-nums;
@@ -209,6 +219,7 @@ export const CSS = `
   }
 
   .code-content { color: var(--color-code-text); line-height: inherit; white-space: pre; }
+  .code-content.error-marker-content { color: var(--color-error-text); }
 
   .syntax-tag { color: light-dark(oklch(45% 0.15 25), oklch(72% 0.15 25)); }
   .syntax-attr { color: light-dark(oklch(45% 0.15 110), oklch(78% 0.14 110)); }
@@ -248,7 +259,17 @@ export const CSS = `
     width: 100%;
     max-width: 100%;
     white-space: pre; overflow-x: auto; overflow-y: auto; line-height: 1.5;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
+    scrollbar-gutter: stable;
     @media (width >= 40rem) { font-size: 0.8125rem; }
+  }
+
+  .fix-block::-webkit-scrollbar { width: var(--scrollbar-width); }
+  .fix-block::-webkit-scrollbar-track { background: transparent; }
+  .fix-block::-webkit-scrollbar-thumb {
+    background-color: var(--color-scrollbar-thumb);
+    border-radius: 9999px;
   }
 
   .render-context { margin-block-end: 2rem; }

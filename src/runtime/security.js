@@ -1,5 +1,5 @@
 import { keys, isFunction } from 'remeda';
-import { isBlockedKey, isDangerousGlobal } from '@nunjucks/shared/blocked-keys';
+import { getBlockedKeyCategory, isBlockedKey, isDangerousGlobal } from '@nunjucks/shared/blocked-keys';
 
 const isObject = (val) => val !== null && typeof val === 'object' && !Array.isArray(val);
 
@@ -116,6 +116,8 @@ const PROTOTYPE_POLLUTION_KEYS = new Set([
 
 const isPrototypePollutionKey = (key) => PROTOTYPE_POLLUTION_KEYS.has(key);
 
+const isBlockedNestedContextKey = (key) => getBlockedKeyCategory(key) === 'object_intrinsic';
+
 const findDangerousValues = (obj, allowedGlobals, path = '', isTopLevel = true) => {
   const dangerous = [];
 
@@ -128,7 +130,7 @@ const findDangerousValues = (obj, allowedGlobals, path = '', isTopLevel = true) 
     const value = obj[key];
 
     // Prototype pollution keys - check at ALL levels (nested + top-level)
-    if (isPrototypePollutionKey(key)) {
+    if (isPrototypePollutionKey(key) || isBlockedNestedContextKey(key)) {
       dangerous.push(currentPath);
     }
     // Dangerous globals - check ONLY at top-level

@@ -12,6 +12,8 @@ import {
   numArgs,
   makeMacro,
   createSafeString,
+  createSandboxedContext,
+  wrapMemberAccess,
 } from '../runtime/index.js';
 import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
 import { createLog } from '@nunjucks/log';
@@ -112,6 +114,16 @@ export const execute = async (code, context = {}, config = {}) => {
     sourceMapData: config.sourceMapData || null
   };
 
+  if (config.sandbox) {
+    const sandboxOptions = {
+      allowlist: config.sandboxAllowlist || [],
+      blocklistMode: config.sandboxMode !== 'allowlist',
+      environment: config.sandboxEnvironment || 'auto'
+    };
+    runtime.memberLookup = (obj, val) => wrapMemberAccess(obj, val, true, sandboxOptions);
+    runtime.optionalMemberLookup = (obj, val) => obj == null ? undefined : wrapMemberAccess(obj, val, true, sandboxOptions);
+  }
+
   if (config.env) {
     runtime.env = config.env;
   }
@@ -158,23 +170,10 @@ export const execute = async (code, context = {}, config = {}) => {
 
   // Handle sandbox mode
   if (sandbox) {
-    const safeContext = new Proxy(ctx, {
-      get(target, key) {
-        if (key === '__proto__' || key === 'constructor') return undefined;
-        const value = target[key];
-        if (typeof value === 'function') {
-          return (...args) => {
-            if (args.length >= 2) {
-              Reflect.set(safeContext, args[0], args[1]);
-            }
-            return value.apply(target, args);
-          };
-        }
-        return value;
-      },
-      set() {
-        throw createLog('error', ERROR_DEFINITIONS.SANDBOX_CONTEXT_MODIFY, {}, null, { phase: 'render' });
-      }
+    const safeContext = createSandboxedContext(ctx, true, {
+      allowlist: config.sandboxAllowlist || [],
+      blocklistMode: config.sandboxMode !== 'allowlist',
+      environment: config.sandboxEnvironment || 'auto'
     });
     
     const safeRuntime = { ...runtime };

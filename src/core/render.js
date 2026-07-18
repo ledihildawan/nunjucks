@@ -388,7 +388,8 @@ export const render = async (template, context = {}, config = {}) => {
   
   const sandboxOptions = {
     allowlist: mergedAllowlist,
-    blocklistMode: config.sandboxMode !== 'allowlist'
+    blocklistMode: config.sandboxMode !== 'allowlist',
+    environment: config.sandboxEnvironment || 'auto'
   };
   const sandboxedCtx = createSandboxedContext(context, config.sandbox, sandboxOptions);
   sandboxedCtx.__nunjucks_undefined_mode = config.undefined || 'default';

@@ -11,6 +11,98 @@ const renderTemplate = async (template, context = {}, config = {}) => {
 };
 
 describe('inline template error locations', () => {
+  test('applies sandboxEnvironment to render context access', async () => {
+    const html = await renderTemplate('{{ document.title }}', {
+      document: { title: 'node scoped value' }
+    }, {
+      sandbox: true,
+      sandboxEnvironment: 'node'
+    });
+    const err = await renderTemplate('{{ process.env }}', {
+      process: { env: {} }
+    }, {
+      sandbox: true,
+      sandboxEnvironment: 'node'
+    }).catch(e => e);
+
+    expect(html).toBe('node scoped value');
+    expect(err.code).toBe('SANDBOX_ACCESS');
+    expect(err.subject).toBe('process');
+  });
+
+  test('allows nested context fields named like globals in sandbox mode', async () => {
+    const html = await renderTemplate('{{ user.eval }} {{ user.global }}', {
+      user: {
+        eval: 'profile',
+        global: 'team'
+      }
+    }, {
+      sandbox: true
+    });
+
+    expect(html).toBe('profile team');
+  });
+
+  test('blocks constructor-chain escapes in sandbox mode', async () => {
+    const err = await renderTemplate('{{ user.constructor.constructor("return process")() }}', {
+      user: { name: 'Ada' }
+    }, {
+      sandbox: true
+    }).catch(e => e);
+
+    expect(err.code).toBe('SANDBOX_ACCESS');
+    expect(err.subject).toBe('constructor');
+  });
+
+  test('does not expose inherited context properties in sandbox mode', async () => {
+    const parent = { inheritedSecret: 'hidden' };
+    const user = Object.create(parent);
+    user.name = 'Ada';
+
+    const html = await renderTemplate('{{ user.name }}:{{ user.inheritedSecret }}', {
+      user
+    }, {
+      sandbox: true
+    });
+
+    expect(html).toBe('Ada:undefined');
+    expect(html).not.toContain('hidden');
+  });
+
+  test('blocks nested prototype mutation from templates in sandbox mode', async () => {
+    const err = await renderTemplate('{% set user.__proto__ = payload %}', {
+      user: {},
+      payload: { polluted: true }
+    }, {
+      sandbox: true
+    }).catch(e => e);
+
+    expect(err.code).toBe('SANDBOX_SET');
+    expect(err.subject).toBe('__proto__');
+  });
+
+  test('does not invoke blocked-key getters in sandbox mode', async () => {
+    let getterCalled = false;
+    const user = {};
+    Object.defineProperty(user, 'constructor', {
+      enumerable: true,
+      get() {
+        getterCalled = true;
+        return Function;
+      }
+    });
+
+    const err = await renderTemplate('{{ user.constructor }}', {
+      user
+    }, {
+      sandbox: true
+    }).catch(e => e);
+
+    expect(err.code).toBe('SANDBOX_ACCESS');
+    expect(err.subject).toBe('constructor');
+    expect(getterCalled).toBe(false);
+  });
+
   test('points at the failing template token inside the caller source line', async () => {
     const filePath = fileURLToPath(import.meta.url);
     const source = fs.readFileSync(filePath, 'utf8').split('\n');

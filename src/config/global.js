@@ -18,6 +18,7 @@ const builtInFilters = {
 const DEFAULT_CONFIG = Object.freeze({
   sandbox: false,
   sandboxAllowlist: [],
+  sandboxEnvironment: 'auto',
   sandboxMode: 'blocklist',
   devWarningSandbox: true,
   strictMode: false,

@@ -291,7 +291,7 @@ router.get('/blocked-context-keys', async (req, res, next) => {
 
 router.get('/dangerous-context', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ user.name }}', { user: { name: 'test' }, eval: () => {} }, { dev: true, strictMode: true, scanContextValues: true });
+    const html = await nunjucks('{{ user.name }}', { user: { name: 'test', eval: 'profile label' }, globalThis }, { dev: true, strictMode: true, scanContextValues: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -441,7 +441,7 @@ router.get('/parser-unexpected-token', async (req, res, next) => {
 
 router.get('/sandbox-access', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ user.global }}', { user: { global: process } }, { dev: true, sandbox: true });
+    const html = await nunjucks('{{ global }}', { global: process }, { dev: true, sandbox: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);

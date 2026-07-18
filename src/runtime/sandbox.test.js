@@ -53,6 +53,35 @@ describe('createSandboxedObject', () => {
     expect(() => sandboxed.user.__proto__).toThrow();
   });
 
+  test('allows nested data keys that only look like globals', () => {
+    const obj = { user: { eval: 'label', global: 'team', process: 'workflow' } };
+    const sandboxed = createSandboxedObject(obj, true);
+
+    expect(sandboxed.user.eval).toBe('label');
+    expect(sandboxed.user.global).toBe('team');
+    expect(sandboxed.user.process).toBe('workflow');
+  });
+
+  test('does not expose inherited properties as sandbox data', () => {
+    const parent = { inheritedSecret: 'hidden' };
+    const obj = Object.create(parent);
+    obj.name = 'visible';
+    const sandboxed = createSandboxedObject(obj, true);
+
+    expect(sandboxed.name).toBe('visible');
+    expect(sandboxed.inheritedSecret).toBeUndefined();
+    expect('inheritedSecret' in sandboxed).toBe(false);
+  });
+
+  test('does not treat symbol access as string key escape', () => {
+    const tag = Symbol.toStringTag;
+    const obj = { [tag]: 'SafeThing', name: 'visible' };
+    const sandboxed = createSandboxedObject(obj, true);
+
+    expect(sandboxed[tag]).toBe('SafeThing');
+    expect(sandboxed.name).toBe('visible');
+  });
+
   test('handles null', () => {
     expect(createSandboxedObject(null, true)).toBe(null);
   });
@@ -104,6 +133,15 @@ describe('createSandboxedContext', () => {
     expect(() => sandboxed.user.__proto__).toThrow();
   });
 
+  test('blocks global-like names only at the top-level context boundary', () => {
+    const ctx = { user: { eval: 'profile label', global: 'account' }, eval: 'global collision' };
+    const sandboxed = createSandboxedContext(ctx, true);
+
+    expect(sandboxed.user.eval).toBe('profile label');
+    expect(sandboxed.user.global).toBe('account');
+    expect(() => sandboxed.eval).toThrow();
+  });
+
   test('handles empty context', () => {
     expect(createSandboxedContext({}, true)).toEqual({});
     expect(createSandboxedContext(null, true)).toBe(null);
@@ -120,6 +158,13 @@ describe('wrapMemberAccess', () => {
   test('blocks access to blocked keys', () => {
     const obj = { name: 'test' };
     expect(() => wrapMemberAccess(obj, '__proto__', true)).toThrow();
+  });
+
+  test('allows member access for nested global-like data keys', () => {
+    const obj = { eval: 'label', global: 'team' };
+
+    expect(wrapMemberAccess(obj, 'eval', true)).toBe('label');
+    expect(wrapMemberAccess(obj, 'global', true)).toBe('team');
   });
 
   test('allows access to normal keys', () => {
@@ -181,6 +226,21 @@ describe('isBlockedKey', () => {
     expect(isBlockedKey('process', 'node')).toBe(true);
     expect(isBlockedKey('window', 'browser')).toBe(true);
     expect(isBlockedKey('Deno', 'deno')).toBe(true);
+  });
+
+  test('createSandboxedContext applies the requested sandbox environment', () => {
+    const ctx = { document: { title: 'safe in node scope' }, process: { env: {} } };
+    const sandboxed = createSandboxedContext(ctx, true, { environment: 'node' });
+
+    expect(sandboxed.document.title).toBe('safe in node scope');
+    expect(() => sandboxed.process).toThrow();
+  });
+
+  test('wrapMemberAccess applies the requested sandbox environment', () => {
+    const obj = { document: 'node-local', process: 'node-global' };
+
+    expect(wrapMemberAccess(obj, 'document', true, { environment: 'node' })).toBe('node-local');
+    expect(() => wrapMemberAccess(obj, 'process', true, { environment: 'node', topLevel: true })).toThrow();
   });
 });
 
