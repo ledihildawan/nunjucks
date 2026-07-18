@@ -90,17 +90,24 @@ const findContextKeyPosition = (sourceFile, callLine, dangerousPath) => {
     const searchLine = Math.max(0, callLine - 1);
     const searchRadius = 5;
 
+    let best = null;
+    let bestDistance = Infinity;
+
     for (let i = Math.max(0, searchLine - searchRadius); i <= Math.min(lines.length - 1, searchLine + searchRadius); i++) {
       const line = lines[i];
-      const col = line.indexOf(keyName);
-      if (col !== -1) {
-        return { line: i + 1, col: col + 1 };
+      let col = 0;
+      while ((col = line.indexOf(keyName, col)) !== -1) {
+        const distance = Math.abs(i - searchLine);
+        if (distance < bestDistance || (distance === bestDistance && col < (best?.col ?? Infinity))) {
+          bestDistance = distance;
+          best = { line: i + 1, col: col + 1 };
+        }
+        col++;
       }
     }
 
-    const col = lines[searchLine]?.indexOf(keyName);
-    if (col !== -1) {
-      return { line: searchLine + 1, col: col + 1 };
+    if (best) {
+      return best;
     }
   } catch {
     // File read error, ignore

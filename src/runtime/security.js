@@ -82,10 +82,12 @@ export const validateContext = (context, options = {}) => {
 
   const keyValidation = validateContextKeys(context, allowedKeys, blockedKeys);
   if (!keyValidation.valid) {
-    throw new SecurityError(
+    const err = new SecurityError(
       `Cannot use blocked keys in context: ${keyValidation.blocked.map(b => b.key).join(', ')}`,
       'BLOCKED_CONTEXT_KEYS'
     );
+    err.dangerousPaths = keyValidation.blocked.map(b => b.key);
+    throw err;
   }
 
   if (scanValues) {
