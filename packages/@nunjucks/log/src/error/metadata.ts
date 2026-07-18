@@ -1,4 +1,4 @@
-import type { LineBase } from './location.js';
+import type { LineBase } from './location.ts';
 
 export interface LogMetadataInput {
   lineno?: number | null;
@@ -7,6 +7,7 @@ export interface LogMetadataInput {
   subject?: string | null;
   phase?: string | null;
   templateName?: string | null;
+  templatePath?: string | null;
   renderContext?: Record<string, unknown>;
   lineBase?: LineBase | null;
 }
@@ -18,6 +19,7 @@ export interface NormalizedLogMetadata {
   subject: string | null;
   phase: string | null;
   templateName: string | null;
+  templatePath?: string | null;
   renderContext?: Record<string, unknown>;
   lineBase: LineBase;
 }
@@ -72,6 +74,7 @@ export const normalizeLogMetadata = (input: LogMetadataInput = {}): NormalizedLo
   subject: input.subject ?? null,
   phase: input.phase ?? null,
   templateName: input.templateName ?? null,
+  templatePath: input.templatePath ?? input.templateName ?? null,
   renderContext: input.renderContext,
   lineBase: input.lineBase === 'one' ? 'one' : 'zero'
 });

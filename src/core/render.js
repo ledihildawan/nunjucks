@@ -53,7 +53,7 @@ const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null) 
     }
 
     if (resolvedLine < 1 || resolvedLine > lines.length) {
-      return { content, startLine: 1 };
+      return null;
     }
 
     const windowSize = 10;
@@ -72,14 +72,16 @@ const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null) 
 };
 
 const wrapWithLog = (err, config, template = null, renderContext = null) => {
-  const templatePath = config.templatePath || config.jsCaller || config._callerFile || err.templateName || null;
   const errLineno = err.lineno;
   const errColno = err.colno;
   const useJsCaller = config.jsCallerErrorLine != null;
   const hasErrorLocation = errLineno !== undefined && errLineno !== null;
   const isInlineTemplate = typeof template === 'string' &&
     (template.includes('{{') || template.includes('{%') || template.includes('{#'));
-  const preferJsCallerLocation = useJsCaller && !config.templatePath && isInlineTemplate;
+  const preferJsCallerLocation = !config.templatePath && useJsCaller && isInlineTemplate;
+  const templatePath = preferJsCallerLocation
+    ? (config.jsCaller || config._callerFile || err.templateName || null)
+    : (config.templatePath || err.templateName || (typeof template === 'string' ? config._callerFile : null) || null);
   const phase = err.phase || config.phase || 'render';
   const dev = config.dev ?? false;
   const ide = config.ide ?? 'vscode';
@@ -90,12 +92,12 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
   let resolvedJsCallerLine = config.jsCallerErrorLine ?? null;
   let resolvedJsCallerCol = config.jsCallerErrorCol ?? null;
 
-  if (useJsCaller && config.jsCaller) {
+  if (preferJsCallerLocation && useJsCaller && config.jsCaller) {
     const codeContext = extractCodeContext(
       config.jsCaller,
       config.jsCallerErrorLine,
       config.jsCallerErrorCol,
-      preferJsCallerLocation ? template : null
+      template
     );
     if (codeContext) {
       sourceContent = codeContext.content;
@@ -106,11 +108,14 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
   }
 
   const lineno = preferJsCallerLocation
-    ? (resolvedJsCallerLine ?? errLineno ?? config.lineno ?? null)
-    : (hasErrorLocation ? errLineno : (resolvedJsCallerLine ?? config.lineno ?? null));
+    ? (resolvedJsCallerLine ?? config.lineno ?? errLineno ?? null)
+    : (hasErrorLocation && errLineno != null ? errLineno : (resolvedJsCallerLine ?? config.lineno ?? null));
   const colno = preferJsCallerLocation
-    ? (resolvedJsCallerCol ?? errColno ?? config.colno ?? null)
-    : (hasErrorLocation ? (errColno ?? null) : (resolvedJsCallerCol ?? config.colno ?? null));
+    ? (resolvedJsCallerCol ?? config.colno ?? errColno ?? null)
+    : (hasErrorLocation && errColno != null ? errColno : (resolvedJsCallerCol ?? config.colno ?? null));
+  const lineBase = preferJsCallerLocation
+    ? 'one'
+    : (hasErrorLocation ? (err.lineBase ?? 'zero') : (err.lineBase ?? (!hasErrorLocation && useJsCaller ? 'one' : 'zero')));
 
   const errorDef = {
     name: err.code || 'RENDER_ERROR',
@@ -122,7 +127,7 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
     colno,
     phase,
     templateName: templatePath,
-    lineBase: preferJsCallerLocation ? 'one' : (err.lineBase ?? (!hasErrorLocation && useJsCaller ? 'one' : 'zero')),
+    lineBase,
     dev,
     ide,
     templatePath,
@@ -131,7 +136,7 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
     renderContext,
     timestamp,
     verbosity: 'full',
-    isJsCaller: useJsCaller,
+    isJsCaller: preferJsCallerLocation,
   });
 
   return errorObj;
@@ -227,7 +232,7 @@ export const render = async (template, context = {}, config = {}) => {
           throw createLog('error', ERROR_DEFINITIONS.FILE_NOT_FOUND, { path: name }, name, { phase: 'load' });
         }
         const { createTemplate } = await import('../template/index.js');
-        return createTemplate(source.src, this, source.path, eagerCompile);
+        return createTemplate(source.src, this, source.path, eagerCompile, includeChain);
       }
     };
   }

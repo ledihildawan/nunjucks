@@ -121,6 +121,67 @@ describe('createLog', () => {
       const result = err.output({ format: 'html' });
       expect(typeof result).toBe('string');
     });
+
+    test('html output highlights one-based js caller source without shifting lines', () => {
+      const source = [
+        'const a = 1;',
+        'const b = 2;',
+        "render('Hello {{ missing }}');",
+        'const c = 3;'
+      ].join('\n');
+      const err = createLog(
+        'error',
+        ERROR_DEFINITIONS.UNDEFINED_VARIABLE,
+        { name: 'missing' },
+        'missing',
+        {
+          phase: 'render',
+          templateName: 'C:/app/page.ts',
+          lineno: 10,
+          colno: 8,
+          lineBase: 'one',
+          sourceContent: source,
+          sourceStartLine: 8,
+          isJsCaller: true
+        } as any
+      );
+
+      const html = err.output({ format: 'html' });
+      expect(html).toContain('page.ts:10:8');
+      expect(html).toContain('<span class="line-number">10</span>');
+      expect(html).toContain('syntax-keyword">const</span>');
+      expect(html).toContain('is-error');
+    });
+
+    test('ansi output highlights one-based js caller source without shifting lines', () => {
+      const source = [
+        'const a = 1;',
+        'const b = 2;',
+        "render('Hello {{ missing }}');",
+        'const c = 3;'
+      ].join('\n');
+      const err = createLog(
+        'error',
+        ERROR_DEFINITIONS.UNDEFINED_VARIABLE,
+        { name: 'missing' },
+        'missing',
+        {
+          phase: 'render',
+          templateName: 'C:/app/page.ts',
+          lineno: 10,
+          colno: 8,
+          lineBase: 'one',
+          sourceContent: source,
+          sourceStartLine: 8,
+          isJsCaller: true
+        } as any
+      );
+
+      const ansi = err.output({ format: 'ansi' });
+      expect(ansi).toContain('page.ts:10:8');
+      expect(ansi).toContain('10 | ');
+      expect(ansi).toContain("'Hello {{ missing }}'");
+    });
   });
 
   describe('createLog warning path', () => {

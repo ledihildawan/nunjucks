@@ -1,10 +1,10 @@
-import { toHtml } from './error/to-html.js';
-import type { CSS, PRODUCTION_BODY, TOGGLE_SCRIPT } from './error/to-html.js';
-import { toAnsi } from './error/to-ansi.js';
-import { toText } from './error/to-text.js';
-import { toConsoleString } from './error/to-console.js';
-import type { LineBase } from './error/location.js';
-import { createFormatterState } from './error/metadata.js';
+import { toHtml } from './error/to-html.ts';
+import type { CSS, PRODUCTION_BODY, TOGGLE_SCRIPT } from './error/to-html.ts';
+import { toAnsi } from './error/to-ansi.ts';
+import { toText } from './error/to-text.ts';
+import { toConsoleString } from './error/to-console.ts';
+import type { LineBase } from './error/location.ts';
+import { createFormatterState } from './error/metadata.ts';
 
 export interface ErrorDefinitionEntry {
   name: string;
@@ -72,6 +72,7 @@ export interface TemplateWarning {
   undefinedMode: string;
   code: string | null;
   subject: string | null;
+  phase: string | null;
   lineBase?: LineBase | null;
   output: (options?: Omit<OutputOptions, 'format' | 'isProduction'>) => string;
 }
@@ -203,9 +204,13 @@ function createErrorObject(
   err.lineBase = metadata.lineBase;
 
   const storedOptions = extra ? { ...extra } : {};
+  err.sourceContent = extra?.sourceContent;
 
   err.output = function(options: OutputOptions = {}) {
     const mergedOptions = { ...storedOptions, ...options };
+    if (err.sourceContent && err.sourceContent !== storedOptions.sourceContent) {
+      mergedOptions.sourceContent = err.sourceContent;
+    }
     const opts = createFormatterState({
       metadata: {
         lineno: err.lineno,
@@ -253,6 +258,7 @@ function createWarningObject(
     undefinedMode: metadata.undefinedMode,
     code: metadata.code,
     subject: metadata.subject,
+    phase: metadata.phase,
     lineBase: metadata.lineBase,
 
     output(options: Omit<OutputOptions, 'format' | 'isProduction'> = {}) {
@@ -260,7 +266,7 @@ function createWarningObject(
         metadata: {
           lineno: warning.lineno,
           colno: warning.colno,
-          phase: warning.templateName,
+          phase: warning.phase,
           templateName: warning.templateName,
           code: warning.code,
           subject: warning.subject,

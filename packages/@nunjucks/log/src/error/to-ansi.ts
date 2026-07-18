@@ -1,11 +1,11 @@
 import { keys, filter } from 'remeda';
-import { classify } from './classify.js';
-import type { ClassifiedError } from './classify.js';
-import { toText } from './to-text.js';
+import { classify } from './classify.ts';
+import type { ClassifiedError } from './classify.ts';
+import { toText } from './to-text.ts';
 import { isBlockedKey } from '@nunjucks/shared/blocked-keys';
 import { shortenPath, normalizeDrivePath } from '@nunjucks/shared/path-shortener';
 import picocolors from 'picocolors';
-import { toDisplayLocation } from './location.js';
+import { toDisplayLocation } from './location.ts';
 
 interface JsRule {
   type: string;
@@ -131,11 +131,11 @@ const formatHeader = (category: string | undefined, phase: string | null | undef
 const formatMessage = (message: string): string => `${picocolors.bold('Message:')} ${message}`;
 
 const formatLocationLabel = (options: ToAnsiOptions, error: ErrorLike): string => {
-  const { templatePath = error?.templateName, jsCaller, jsCallerErrorLine, ide = 'vscode' } = options;
+  const { templatePath = error?.templateName, ide = 'vscode' } = options;
   const location = toDisplayLocation(
     options.lineno ?? error?.lineno ?? null,
     options.colno ?? error?.colno ?? null,
-    jsCaller ? 'one' : (error?.lineBase ?? 'zero')
+    options.isJsCaller ? 'one' : (options.lineBase ?? error?.lineBase ?? 'zero')
   );
 
   if (!templatePath) {
@@ -177,14 +177,20 @@ const formatRenderContext = (renderContext: RenderContext): string => {
   return lines.join('\n');
 };
 
-const formatCodeTrace = (snippet: string, errorIndex = -1, startLine = 1): string => {
+const isScriptPath = (filePath?: string | null): boolean =>
+  /\.(?:[cm]?[jt]sx?|mjs|cjs)$/i.test(filePath || '');
+
+const highlightSourceToAnsi = (code: string, filePath?: string | null): string =>
+  isScriptPath(filePath) ? highlightJsToAnsi(code) : highlightTemplateToAnsi(code);
+
+const formatCodeTrace = (snippet: string, errorIndex = -1, startLine = 1, sourcePath?: string | null): string => {
   if (!snippet) return '';
   const lines: string[] = ['\n', picocolors.bold('Source Trace:')];
   const snippetLines = snippet.split('\n');
   for (let i = 0; i < snippetLines.length; i++) {
     const lineNum = startLine + i;
     const line = snippetLines[i] ?? '';
-    const highlighted = highlightTemplateToAnsi(line);
+    const highlighted = highlightSourceToAnsi(line, sourcePath);
     const prefix = i === errorIndex ? picocolors.red(`${lineNum} | `) : picocolors.dim(`${lineNum} | `);
     if (i === errorIndex) {
       lines.push(prefix + highlighted);
@@ -272,6 +278,7 @@ interface ErrorLike {
   templateName?: string | null;
   phase?: string | null;
   code?: string | null;
+  lineBase?: 'zero' | 'one' | null;
 }
 
 type RenderContext = Record<string, unknown>;
@@ -293,6 +300,8 @@ export interface ToAnsiOptions {
   ide?: string;
   jsCaller?: string;
   jsCallerErrorLine?: number;
+  lineBase?: 'zero' | 'one' | null;
+  isJsCaller?: boolean;
 }
 
 export const toAnsi = (error: ErrorLike, options: ToAnsiOptions = {}): string => {
@@ -309,7 +318,9 @@ export const toAnsi = (error: ErrorLike, options: ToAnsiOptions = {}): string =>
     sourceContent,
     sourceStartLine,
     snippet,
-    verbosity = 'full'
+    verbosity = 'full',
+    isJsCaller = false,
+    lineBase = error?.lineBase ?? 'zero'
   } = options;
 
   if (options.isProduction) {
@@ -323,7 +334,7 @@ export const toAnsi = (error: ErrorLike, options: ToAnsiOptions = {}): string =>
   const location = toDisplayLocation(
     lineno ?? error?.lineno ?? null,
     colno ?? error?.colno ?? null,
-    error?.lineBase ?? 'zero'
+    isJsCaller ? 'one' : lineBase
   );
   const displayLine = location.line;
 
@@ -333,11 +344,12 @@ export const toAnsi = (error: ErrorLike, options: ToAnsiOptions = {}): string =>
   if (!codeSnippet && sourceContent) {
     const lines = sourceContent.split('\n');
     const relativeLine = sourceStartLine ? displayLine - sourceStartLine + 1 : displayLine;
-    const startIndex = Math.max(0, relativeLine - 3);
+    const clampedLine = Math.max(1, Math.min(relativeLine, lines.length));
+    const startIndex = Math.max(0, clampedLine - 3);
     startLine = sourceStartLine ? sourceStartLine + startIndex : startIndex + 1;
-    const endLine = Math.min(lines.length, relativeLine + 2);
+    const endLine = Math.min(lines.length, clampedLine + 2);
     codeSnippet = lines.slice(startIndex, endLine).join('\n');
-    errorIndex = relativeLine - startIndex - 1;
+    errorIndex = clampedLine - startIndex - 1;
   }
 
   const category = error.code || classified?.category?.toUpperCase() || 'UNKNOWN';
@@ -361,7 +373,7 @@ export const toAnsi = (error: ErrorLike, options: ToAnsiOptions = {}): string =>
   }
 
   if (codeSnippet) {
-    parts.push(formatCodeTrace(codeSnippet, errorIndex, startLine));
+    parts.push(formatCodeTrace(codeSnippet, errorIndex, startLine, templatePath));
   }
 
   if (classified?.causes) {

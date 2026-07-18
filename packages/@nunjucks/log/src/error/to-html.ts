@@ -1,16 +1,16 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { classify } from './classify.js';
-import type { ClassifiedError } from './classify.js';
-import { toText } from './to-text.js';
-import { escapeHtml, highlightHtml } from './formatters/html/highlight.js';
-import { renderContextHtml, formatStackTraceHtml } from './formatters/html/sections.js';
-import { CSS, PRODUCTION_BODY } from './formatters/html/styles.js';
-import { TOGGLE_SCRIPT } from './formatters/html/script.js';
-import { resolveIdeLink, getIdeMeta } from './ide-links.js';
+import { classify } from './classify.ts';
+import type { ClassifiedError } from './classify.ts';
+import { toText } from './to-text.ts';
+import { escapeHtml, highlightHtml, highlightJs } from './formatters/html/highlight.ts';
+import { renderContextHtml, formatStackTraceHtml } from './formatters/html/sections.ts';
+import { CSS, PRODUCTION_BODY } from './formatters/html/styles.ts';
+import { TOGGLE_SCRIPT } from './formatters/html/script.ts';
+import { resolveIdeLink, getIdeMeta } from './ide-links.ts';
+import { toDisplayLocation } from './location.ts';
 import { shortenPath } from '@nunjucks/shared/path-shortener';
-import { toDisplayLocation } from './location.js';
 
 export { CSS, PRODUCTION_BODY, TOGGLE_SCRIPT };
 
@@ -69,6 +69,7 @@ interface ErrorLike {
   lineno?: number | null;
   colno?: number | null;
   templateName?: string | null;
+  sourceContent?: string;
   phase?: string | null;
   code?: string | null;
   lineBase?: 'zero' | 'one' | null;
@@ -94,9 +95,15 @@ export interface ToHtmlOptions {
   isProduction?: boolean;
 }
 
+const isScriptPath = (filePath?: string | null): boolean =>
+  /\.(?:[cm]?[jt]sx?|mjs|cjs)$/i.test(filePath || '');
+
+const highlightSource = (code: string, filePath?: string | null): string =>
+  isScriptPath(filePath) ? highlightJs(code) : highlightHtml(code);
+
 export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string => {
   const {
-    templatePath,
+    templatePath = error?.templateName,
     lineno,
     colno,
     renderContext,
@@ -106,7 +113,7 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
     csp,
     jsCaller,
     jsCallerErrorLine,
-    sourceContent,
+    sourceContent = error?.sourceContent,
     sourceStartLine,
     snippet,
     ide = 'vscode',
@@ -164,24 +171,25 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
   if (!codeSnippet && sourceContent) {
     const lines = sourceContent.split('\n');
     const relativeLine = sourceStartLine ? displayLine - sourceStartLine + 1 : displayLine;
-    const clampedLine = Math.min(relativeLine, lines.length);
+    const clampedLine = Math.max(1, Math.min(relativeLine, lines.length));
     startLine = Math.max(0, clampedLine - 3);
     displayStartLine = sourceStartLine ? sourceStartLine + startLine : startLine + 1;
     const endLine = Math.min(lines.length, clampedLine + 2);
     codeSnippet = lines.slice(startLine, endLine).join('\n');
     snippetErrorIndex = clampedLine - startLine - 1;
-  } else if (!codeSnippet && templatePath && /\.js$/i.test(templatePath)) {
+  } else if (!codeSnippet && templatePath && /\.(js|njk|tmpl|tpl|html|htm)$/i.test(templatePath)) {
     try {
       let resolvedPath = templatePath;
       if (templatePath.startsWith('file://')) {
         resolvedPath = fileURLToPath(templatePath);
+      } else if (/^[a-zA-Z]:[/\\]/.test(templatePath) || templatePath.startsWith('/')) {
+        resolvedPath = templatePath.replace(/\//g, path.sep);
       } else {
         resolvedPath = path.resolve(templatePath);
       }
       const content = fs.readFileSync(resolvedPath, 'utf-8');
       const lines = content.split('\n');
-      const errorLine = lineno ?? 1;
-      const clampedLine = Math.min(errorLine, lines.length);
+      const clampedLine = Math.max(1, Math.min(displayLine, lines.length));
       startLine = Math.max(0, clampedLine - 3);
       displayStartLine = startLine + 1;
       const endLine = Math.min(lines.length, clampedLine + 2);
@@ -243,7 +251,7 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
         ${codeSnippet.split('\n').map((line, idx) => {
           const isError = idx === snippetErrorIndex;
           const lineNum = displayStartLine + idx;
-          return `<div class="code-line ${isError ? 'is-error' : ''}"><span class="line-number">${lineNum}</span><span class="code-content">${highlightHtml(line)}</span></div>`;
+          return `<div class="code-line ${isError ? 'is-error' : ''}"><span class="line-number">${lineNum}</span><span class="code-content">${highlightSource(line, displayPath)}</span></div>`;
         }).join('\n')}
       </div>
     </section>
