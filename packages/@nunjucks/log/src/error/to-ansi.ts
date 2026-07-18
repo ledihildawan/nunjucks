@@ -60,32 +60,34 @@ const highlightJsToAnsi = (code: string): string => {
 };
 
 const CONSOLE_TEMPLATE_RULES: TemplateRule[] = [
-  { type: 'tag', re: /^(?:\{%-?|%-?|\{%|#\{)/ },
-  { type: 'variable', re: /^(\{\{-?|\{\{-|#\{)/ },
+  { type: 'comment', re: /^\{#[\s\S]*?#\}/ },
+  { type: 'delimiter', re: /^(?:\{\{|\}\}|\{%|%\})/ },
   { type: 'string', re: /^"(?:[^"\\]|\\.)*"|^'(?:[^'\\]|\\.)*'/ },
-  { type: 'number', re: /^\d+\.?\d*/ },
-  { type: 'filter', re: /^\|\s*\w+/ },
-  { type: 'keyword', re: /^(?:true|false|null|undefined|and|or|not|in|is|as|import)/ },
-  { type: 'operator', re: /^(?:==|!=|>=|<=|\.\.|::|\?:|==|!)/ },
-  { type: 'punctuation', re: /^[\](){},:]/ },
+  { type: 'number', re: /^\d+(?:\.\d+)?/ },
+  { type: 'filter', re: /^\|>/ },
+  { type: 'keyword', re: /^(?:endraw|raw|endfilter|filter|endcall|call|endmacro|macro|endblock|block|endfor|for|endif|elif|else|if|extends|include|import|from|set|with|without|context|as|not|and|or|in|is|true|false|none|null)(?![\w-])/ },
+  { type: 'variable', re: /^[a-zA-Z_]\w*/ },
+  { type: 'operator', re: /^(?:\.{2,3}|::|\?:|==|!=|>=|<=|\+|-|\*|\/|%|&|\||\^|!|=|\?|:|;|,|\.|\(|\)|\[|\]|\{|\}|<|>)/ },
 ];
 
 const highlightTemplateToAnsi = (code: string): string => {
   if (!code) return '';
   let out = '';
   let i = 0;
+  let inTag = false;
+  let bracketDepth = 0;
+  const colors: Record<string, (text: string) => string> = {
+    comment: picocolors.gray,
+    delimiter: picocolors.red,
+    string: picocolors.cyan,
+    number: picocolors.yellow,
+    filter: picocolors.green,
+    keyword: picocolors.magenta,
+    variable: (text: string) => inTag ? text : text,
+    operator: picocolors.white,
+  };
   const span = (type: string, text: string) => {
-    const colors: Record<string, (text: string) => string> = {
-      tag: picocolors.red,
-      variable: picocolors.red,
-      string: picocolors.cyan,
-      number: picocolors.yellow,
-      filter: picocolors.green,
-      keyword: picocolors.magenta,
-      operator: picocolors.white,
-      punctuation: picocolors.dim,
-    };
-    return (colors[type] || picocolors.white)(text);
+    return (colors[type] || ((t: string) => t))(text);
   };
   while (i < code.length) {
     const rest = code.slice(i);
@@ -95,13 +97,29 @@ const highlightTemplateToAnsi = (code: string): string => {
     for (const rule of CONSOLE_TEMPLATE_RULES) {
       const m = rest.match(rule.re);
       if (m && m[0]) {
+        if (rule.type === 'delimiter') {
+          if (m[0] === '{{' || m[0] === '{%') {
+            inTag = true;
+            bracketDepth = 0;
+          } else if (m[0] === '}}' || m[0] === '%}') {
+            inTag = false;
+            bracketDepth = 0;
+          }
+        }
+        if (rule.type === 'variable' && !inTag) {
+          break;
+        }
         out += span(rule.type, m[0]);
         i += m[0].length;
         matched = true;
         break;
       }
     }
-    if (!matched) { out += code[i]; i += 1; }
+    if (!matched) {
+      const plain = rest.match(/^[^<{}"'|\s]+/);
+      if (plain?.[0]) { out += plain[0]; i += plain[0].length; }
+      else { out += code[i] ?? ''; i += 1; }
+    }
   }
   return out;
 };
@@ -194,7 +212,7 @@ const formatCodeTrace = (snippet: string, errorIndex = -1, startLine = 1, source
     const highlighted = highlightSourceToAnsi(line, sourcePath);
     const prefix = i === errorIndex ? picocolors.red(`${lineNum} | `) : picocolors.dim(`${lineNum} | `);
     if (i === errorIndex) {
-      lines.push(prefix + highlighted);
+      lines.push(picocolors.bgRed(picocolors.black(prefix + highlighted)));
       if (displayCol > 0 && line) {
         const caret = calculateCaretPosition(line, displayCol);
         if (caret) {
