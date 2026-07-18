@@ -29,6 +29,32 @@ describe('inline template error locations', () => {
     expect(err.templateName).toBe(filePath);
     expect(err.colno).toBe(callerLine.indexOf('missingKey') + 1);
   });
+
+  test('points at the failing template token inside a multiline caller template literal', async () => {
+    const filePath = fileURLToPath(import.meta.url);
+    const source = fs.readFileSync(filePath, 'utf8').split('\n');
+    const marker = 'MULTILINE_INLINE_' + 'MARKER';
+    const markerLine = source.findIndex(line => line.includes(marker)) + 1;
+    // MULTILINE_INLINE_MARKER
+    const err = await render(`
+      
+      {{ missingKey }}
+       
+      `, {}, {
+      dev: true,
+      undefined: 'strict',
+      jsCaller: filePath,
+      jsCallerErrorLine: markerLine + 1,
+      jsCallerErrorCol: 1
+    }).catch(e => e);
+    const expectedLine = source.findIndex((line, idx) => idx + 1 > markerLine && line.includes('{{ missingKey }}')) + 1;
+    const callerLine = source[expectedLine - 1];
+
+    expect(err.lineBase).toBe('one');
+    expect(err.templateName).toBe(filePath);
+    expect(err.lineno).toBe(expectedLine);
+    expect(err.colno).toBe(callerLine.indexOf('missingKey') + 1);
+  });
 });
 
 describe('keyword arguments rendering', () => {

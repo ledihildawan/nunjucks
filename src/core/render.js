@@ -27,7 +27,61 @@ const getLoader = (config) => {
   return cachedLoader;
 };
 
-const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, templateErrorCol = null) => {
+const positionAtOffset = (text, offset) => {
+  const before = text.slice(0, offset);
+  const parts = before.split('\n');
+  return {
+    lineOffset: parts.length - 1,
+    col: parts[parts.length - 1].length + 1
+  };
+};
+
+const templateLocationOffset = (template, templateErrorLine, templateErrorCol) => {
+  const templateLines = template.split('\n');
+  const line = Number.isInteger(templateErrorLine) ? templateErrorLine : 0;
+  const col = Number.isInteger(templateErrorCol) ? templateErrorCol : 0;
+  const clampedLine = Math.max(0, Math.min(line, templateLines.length - 1));
+  let offset = 0;
+
+  for (let i = 0; i < clampedLine; i++) {
+    offset += templateLines[i].length + 1;
+  }
+
+  return offset + Math.max(0, Math.min(col, templateLines[clampedLine].length));
+};
+
+const findTemplateOccurrence = (content, templateHint, preferredLine) => {
+  let best = -1;
+  let bestTemplate = templateHint;
+  let bestDistance = Infinity;
+  const candidates = templateHint.includes('\n')
+    ? [templateHint, templateHint.replace(/\n/g, '\r\n')]
+    : [templateHint];
+
+  for (const candidate of candidates) {
+    let searchFrom = 0;
+
+    while (true) {
+      const found = content.indexOf(candidate, searchFrom);
+      if (found === -1) break;
+
+      const position = positionAtOffset(content, found);
+      const line = position.lineOffset + 1;
+      const distance = preferredLine ? Math.abs(line - preferredLine) : 0;
+      if (distance < bestDistance) {
+        best = found;
+        bestTemplate = candidate;
+        bestDistance = distance;
+      }
+
+      searchFrom = found + 1;
+    }
+  }
+
+  return best === -1 ? null : { index: best, template: bestTemplate };
+};
+
+const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, templateErrorLine = null, templateErrorCol = null) => {
   try {
     const fs = require('fs');
     const content = fs.readFileSync(filePath, 'utf8');
@@ -37,18 +91,12 @@ const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, 
     let resolvedCol = errorCol;
 
     if (templateHint && typeof templateHint === 'string') {
-      const searchStart = Math.max(1, (errorLine ?? 1) - 2);
-      const searchEnd = Math.min(lines.length, (errorLine ?? 1) + 2);
-      const snippetHint = templateHint.length > 80 ? templateHint.slice(0, 80) : templateHint;
-
-      for (let lineNumber = searchStart; lineNumber <= searchEnd; lineNumber++) {
-        const line = lines[lineNumber - 1] || '';
-        const hintIndex = line.indexOf(snippetHint);
-        if (hintIndex !== -1) {
-          resolvedLine = lineNumber;
-          resolvedCol = hintIndex + 1 + (Number.isInteger(templateErrorCol) ? templateErrorCol : 0);
-          break;
-        }
+      const templateMatch = findTemplateOccurrence(content, templateHint, errorLine);
+      if (templateMatch) {
+        const targetOffset = templateMatch.index + templateLocationOffset(templateMatch.template, templateErrorLine, templateErrorCol);
+        const position = positionAtOffset(content, targetOffset);
+        resolvedLine = position.lineOffset + 1;
+        resolvedCol = position.col;
       }
     }
 
@@ -98,6 +146,7 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
       config.jsCallerErrorLine,
       config.jsCallerErrorCol,
       template,
+      errLineno,
       errColno
     );
     if (codeContext) {
