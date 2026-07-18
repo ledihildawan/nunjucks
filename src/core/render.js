@@ -149,7 +149,7 @@ const findSubjectOccurrence = (content, subject, preferredLine) => {
   return best;
 };
 
-const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, templateErrorLine = null, templateErrorCol = null, subjectHint = null) => {
+const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, templateErrorLine = null, templateErrorCol = null, subjectHint = null, resolveInlineLocation = true) => {
   try {
     const fs = require('fs');
     const content = fs.readFileSync(filePath, 'utf8');
@@ -158,25 +158,33 @@ const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, 
     let resolvedLine = errorLine;
     let resolvedCol = errorCol;
 
-    const subjectMatch = findSubjectOccurrence(content, subjectHint, errorLine);
-    if (subjectMatch) {
-      resolvedLine = subjectMatch.line;
-      resolvedCol = subjectMatch.col;
-    } else if (templateHint === null || templateHint === undefined) {
-      const nullMatch = findSubjectOccurrence(content, 'null', errorLine);
-      if (nullMatch) {
-        resolvedLine = nullMatch.line;
-        resolvedCol = nullMatch.col;
+    if (resolveInlineLocation) {
+      const subjectMatch = findSubjectOccurrence(content, subjectHint, errorLine);
+      if (subjectMatch) {
+        resolvedLine = subjectMatch.line;
+        resolvedCol = subjectMatch.col;
+      } else if (templateHint === null || templateHint === undefined) {
+        const nullMatch = findSubjectOccurrence(content, 'null', errorLine);
+        if (nullMatch) {
+          resolvedLine = nullMatch.line;
+          resolvedCol = nullMatch.col;
+        }
+      } else if (typeof templateHint === 'string') {
+        const templateMatch = findTemplateOccurrence(content, templateHint, errorLine);
+        if (templateMatch) {
+          const targetOffset = templateMatch.index + templateLocationOffset(templateMatch.template, templateErrorLine, templateErrorCol - 1);
+          const position = positionAtOffset(content, targetOffset);
+          resolvedLine = position.lineOffset + 1;
+          resolvedCol = position.col;
+        }
+      } else {
+        const templateValueMatch = findSubjectOccurrence(content, String(templateHint), errorLine);
+        if (templateValueMatch) {
+          resolvedLine = templateValueMatch.line;
+          resolvedCol = templateValueMatch.col;
+        }
       }
-    } else if (typeof templateHint === 'string') {
-      const templateMatch = findTemplateOccurrence(content, templateHint, errorLine);
-      if (templateMatch) {
-        const targetOffset = templateMatch.index + templateLocationOffset(templateMatch.template, templateErrorLine, templateErrorCol - 1);
-        const position = positionAtOffset(content, targetOffset);
-        resolvedLine = position.lineOffset + 1;
-        resolvedCol = position.col;
-      }
-    } else {
+    } else if (templateHint !== null && templateHint !== undefined && typeof templateHint !== 'string') {
       const templateValueMatch = findSubjectOccurrence(content, String(templateHint), errorLine);
       if (templateValueMatch) {
         resolvedLine = templateValueMatch.line;
@@ -224,15 +232,18 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
   let resolvedJsCallerLine = config.jsCallerErrorLine ?? null;
   let resolvedJsCallerCol = config.jsCallerErrorCol ?? null;
 
+  const hasCallerLocation = hasErrorLocation && err.lineBase === 'one';
+
   if (preferJsCallerLocation && useJsCaller && config.jsCaller) {
     const codeContext = extractCodeContext(
       config.jsCaller,
-      config.jsCallerErrorLine,
-      config.jsCallerErrorCol,
+      hasCallerLocation ? errLineno : config.jsCallerErrorLine,
+      hasCallerLocation ? errColno : config.jsCallerErrorCol,
       template,
       errLineno,
       errColno,
-      err.subject
+      err.subject,
+      !hasCallerLocation
     );
     if (codeContext) {
       sourceContent = codeContext.content;
@@ -335,6 +346,7 @@ export const render = async (template, context = {}, config = {}) => {
         if (pos) {
           err.lineno = pos.line;
           err.colno = pos.col;
+          err.lineBase = 'one';
         }
       }
     }
@@ -462,6 +474,7 @@ export const renderWithEnv = async (templateName, env, context = {}, config = {}
         if (pos) {
           err.lineno = pos.line;
           err.colno = pos.col;
+          err.lineBase = 'one';
         }
       }
     }

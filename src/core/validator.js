@@ -65,11 +65,11 @@ export const validateConfig = (config) => {
   const errors = [];
 
   if (config.executionTimeout < 0) {
-    errors.push({ code: 'INVALID_CONFIG', message: 'executionTimeout must be >= 0' });
+    errors.push({ code: 'INVALID_CONFIG', message: 'executionTimeout must be >= 0', subject: 'executionTimeout' });
   }
 
   if (config.maxTemplateSize < 0) {
-    errors.push({ code: 'INVALID_CONFIG', message: 'maxTemplateSize must be >= 0' });
+    errors.push({ code: 'INVALID_CONFIG', message: 'maxTemplateSize must be >= 0', subject: 'maxTemplateSize' });
   }
 
   if (config._customFilters) {

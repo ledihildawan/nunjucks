@@ -70,6 +70,51 @@ describe('inline template error locations', () => {
     expect(err.templateName).toBe(filePath);
     expect(err.colno).toBe(callerLine.indexOf("'if'") + 2);
   });
+
+  test('does not remap blocked context key caller locations as template offsets', async () => {
+    const filePath = fileURLToPath(import.meta.url);
+    const source = fs.readFileSync(filePath, 'utf8').split('\n');
+    const marker = 'BLOCKED_CONTEXT_KEY_' + 'MARKER';
+    const markerLine = source.findIndex(line => line.includes(marker)) + 1;
+    const err = await render('{{ password }}', { password: 'secret123' }, { dev: true, strictMode: true, blockedContextKeys: ['password'], jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1, _callerLocation: { fileName: filePath, lineNumber: markerLine } }).catch(e => e); // BLOCKED_CONTEXT_KEY_MARKER
+    const callerLine = source[err.lineno - 1];
+
+    expect(err.code).toBe('BLOCKED_CONTEXT_KEYS');
+    expect(err.lineBase).toBe('one');
+    expect(err.templateName).toBe(filePath);
+    expect(err.colno).toBe(callerLine.indexOf('password') + 1);
+    expect(callerLine[err.colno - 1]).toBe('p');
+  });
+
+  test('points non-string template errors at the invalid template argument', async () => {
+    const filePath = fileURLToPath(import.meta.url);
+    const source = fs.readFileSync(filePath, 'utf8').split('\n');
+    const marker = 'NON_STRING_TEMPLATE_' + 'MARKER';
+    const markerLine = source.findIndex(line => line.includes(marker)) + 1;
+    const err = await render(123, {}, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e); // NON_STRING_TEMPLATE_MARKER
+    const callerLine = source[err.lineno - 1];
+
+    expect(err.code).toBe('TEMPLATE_MUST_BE_STRING');
+    expect(err.lineBase).toBe('one');
+    expect(err.templateName).toBe(filePath);
+    expect(err.colno).toBe(callerLine.indexOf('123') + 1);
+    expect(callerLine.slice(err.colno - 1, err.colno + 2)).toBe('123');
+  });
+
+  test('points invalid config errors at the failing config key', async () => {
+    const filePath = fileURLToPath(import.meta.url);
+    const source = fs.readFileSync(filePath, 'utf8').split('\n');
+    const marker = 'INVALID_CONFIG_LOCATION_' + 'MARKER';
+    const markerLine = source.findIndex(line => line.includes(marker)) + 1;
+    const err = await render('{{ test }}', { test: 'value' }, { dev: true, executionTimeout: -1, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e); // INVALID_CONFIG_LOCATION_MARKER
+    const callerLine = source[err.lineno - 1];
+
+    expect(err.code).toBe('INVALID_CONFIG');
+    expect(err.subject).toBe('executionTimeout');
+    expect(err.lineBase).toBe('one');
+    expect(err.templateName).toBe(filePath);
+    expect(err.colno).toBe(callerLine.indexOf('executionTimeout') + 1);
+  });
 });
 
 describe('keyword arguments rendering', () => {

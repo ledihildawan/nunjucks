@@ -606,13 +606,8 @@ router.get('/invalid-boolean', async (req, res, next) => {
 
 router.get('/validation-error', async (req, res, next) => {
   try {
-    throw createLog('error', ERROR_DEFINITIONS.INVALID_CONFIG, { key: 'executionTimeout' }, null, {
-      lineno: 1,
-      colno: 1,
-      phase: 'parse',
-      templateName: 'inline',
-      lineBase: 'zero'
-    });
+    const html = await nunjucks('{{ test }}', { test: 'value' }, { dev: true, executionTimeout: -1 });
+    res.type('html').send(html);
   } catch (err) {
     next(err);
   }
