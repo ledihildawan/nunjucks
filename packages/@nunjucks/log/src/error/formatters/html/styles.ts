@@ -188,6 +188,18 @@ export const CSS = `
       }
     }
 
+    .error-marker {
+      .line-number {
+        inline-size: 1.25rem;
+        margin-inline-end: 0.75rem;
+        @media (width >= 40rem) { inline-size: 1.5rem; margin-inline-end: 1.25rem; }
+      }
+    }
+
+    .error-marker-content {
+      color: var(--color-error-text);
+    }
+
     .line-number {
       color: var(--color-code-line-number); inline-size: 1.25rem;
       font-variant-numeric: tabular-nums;

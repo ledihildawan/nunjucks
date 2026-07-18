@@ -253,11 +253,35 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
     <section class="source-section" aria-labelledby="h-source">
         <h2 id="h-source" class="text-label">Source Trace</h2>
       <div class="code-block">
-        ${codeSnippet.split('\n').map((line, idx) => {
+        ${codeSnippet.split('\n').reduce((acc, line, idx) => {
           const isError = idx === snippetErrorIndex;
           const lineNum = displayStartLine + idx;
-          return `<div class="code-line ${isError ? 'is-error' : ''}"><span class="line-number">${lineNum}</span><span class="code-content">${highlightSource(line, displayPath)}</span></div>`;
-        }).join('\n')}
+          acc.push(`<div class="code-line ${isError ? 'is-error' : ''}"><span class="line-number">${lineNum}</span><span class="code-content">${highlightSource(line, displayPath)}</span></div>`);
+          if (isError && displayCol > 0 && line) {
+            const pos = displayCol - 1;
+            const charAtPos = line[pos];
+            let wordStart = pos;
+            let wordEnd = pos;
+            if (/[\w.]/.test(charAtPos)) {
+              wordEnd = pos;
+              while (wordEnd < line.length && /[\w.]/.test(line[wordEnd])) {
+                wordEnd++;
+              }
+              wordStart = wordEnd - 1;
+              while (wordStart > 0 && /[\w.]/.test(line[wordStart - 1])) {
+                wordStart--;
+              }
+            }
+            let highlightWord = line.slice(wordStart, wordEnd);
+            if (highlightWord?.includes('.')) {
+              highlightWord = highlightWord.split('.')[0];
+            }
+            const carets = highlightWord ? '^'.repeat(highlightWord.length) : '^'.repeat(3);
+            const spaces = ' '.repeat(wordStart);
+            acc.push(`<div class="code-line error-marker"><span class="line-number"></span><span class="code-content error-marker-content">${spaces}${carets}</span></div>`);
+          }
+          return acc;
+        }, []).join('\n')}
       </div>
     </section>
     ` : ''}
