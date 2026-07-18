@@ -183,7 +183,7 @@ const isScriptPath = (filePath?: string | null): boolean =>
 const highlightSourceToAnsi = (code: string, filePath?: string | null): string =>
   isScriptPath(filePath) ? highlightJsToAnsi(code) : highlightTemplateToAnsi(code);
 
-const formatCodeTrace = (snippet: string, errorIndex = -1, startLine = 1, sourcePath?: string | null): string => {
+const formatCodeTrace = (snippet: string, errorIndex = -1, startLine = 1, sourcePath?: string | null, displayCol = 0): string => {
   if (!snippet) return '';
   const lines: string[] = ['\n', picocolors.bold('Source Trace:')];
   const snippetLines = snippet.split('\n');
@@ -194,6 +194,29 @@ const formatCodeTrace = (snippet: string, errorIndex = -1, startLine = 1, source
     const prefix = i === errorIndex ? picocolors.red(`${lineNum} | `) : picocolors.dim(`${lineNum} | `);
     if (i === errorIndex) {
       lines.push(prefix + highlighted);
+      if (displayCol > 0 && line) {
+        const pos = displayCol - 1;
+        const charAtPos = line[pos];
+        let wordStart = pos;
+        let wordEnd = pos;
+        if (/[\w.]/.test(charAtPos)) {
+          wordEnd = pos;
+          while (wordEnd < line.length && /[\w.]/.test(line[wordEnd])) {
+            wordEnd++;
+          }
+          wordStart = wordEnd - 1;
+          while (wordStart > 0 && /[\w.]/.test(line[wordStart - 1])) {
+            wordStart--;
+          }
+        }
+        let highlightWord = line.slice(wordStart, wordEnd);
+        if (highlightWord?.includes('.')) {
+          highlightWord = highlightWord.split('.')[0];
+        }
+        const carets = highlightWord ? '^'.repeat(highlightWord.length) : '^'.repeat(3);
+        const spaces = ' '.repeat(wordStart);
+        lines.push(picocolors.red(`${' '.repeat(String(startLine).length + 2)}${spaces}${carets}`));
+      }
     } else {
       lines.push(prefix + highlighted);
     }
@@ -337,6 +360,7 @@ export const toAnsi = (error: ErrorLike, options: ToAnsiOptions = {}): string =>
     isJsCaller ? 'one' : lineBase
   );
   const displayLine = location.line;
+  const displayCol = location.col;
 
   let codeSnippet = snippet;
   let errorIndex = -1;
@@ -373,7 +397,7 @@ export const toAnsi = (error: ErrorLike, options: ToAnsiOptions = {}): string =>
   }
 
   if (codeSnippet) {
-    parts.push(formatCodeTrace(codeSnippet, errorIndex, startLine, templatePath));
+    parts.push(formatCodeTrace(codeSnippet, errorIndex, startLine, templatePath, displayCol));
   }
 
   if (classified?.causes) {
