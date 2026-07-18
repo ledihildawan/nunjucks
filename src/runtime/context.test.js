@@ -117,6 +117,22 @@ describe('Context', () => {
       .toThrow('No super block available');
   });
 
+  test('getSuper errors keep call location', () => {
+    const fn = () => {};
+    const ctx = createContext({}, { main: fn }, mockEnv);
+
+    try {
+      ctx.getSuper(mockEnv, 'main', fn, null, null, 3, 9);
+    } catch (e) {
+      expect(e.code).toBe('NO_SUPER_BLOCK');
+      expect(e.lineno).toBe(3);
+      expect(e.colno).toBe(9);
+      return;
+    }
+
+    throw new Error('Expected getSuper to throw');
+  });
+
   test('getSuper calls next block', () => {
     const childBlock = () => 'child result';
     const parentBlock = () => 'parent result';

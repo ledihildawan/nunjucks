@@ -67,6 +67,7 @@ const ERROR_CODE_TO_CATEGORY: Record<string, string> = {
 	SANDBOX_SET: 'sandbox_blocked',
 	SANDBOX_CONTEXT_MODIFY: 'sandbox_blocked',
 	SANDBOX_ALLOWLIST: 'sandbox_blocked',
+	SANDBOX_CODE_EXECUTION: 'sandbox_blocked',
 	BLOCKED_CONTEXT_KEYS: 'security_error',
 	DANGEROUS_CONTEXT_VALUES: 'security_error',
 	DANGEROUS_TEMPLATE_CODE: 'security_error',
@@ -161,6 +162,10 @@ const SPECIAL_CASES: Record<string, (error: { message?: string; subject?: string
 	SANDBOX_ALLOWLIST: (error) => {
 		const rule = RULES.find(r => r.category === 'sandbox_blocked' && r.pattern.source.includes('Cannot access'));
 		return createClassificationFromRule(rule, error.subject || null) || DEFAULT_CLASSIFICATION;
+	},
+	SANDBOX_CODE_EXECUTION: () => {
+		const rule = RULES.find(r => r.category === 'sandbox_blocked' && r.pattern.source.includes('Code execution'));
+		return createClassificationFromRule(rule, null) || DEFAULT_CLASSIFICATION;
 	},
 	BLOCKED_CONTEXT_KEYS: () => {
 		const rule = RULES.find(r => r.category === 'security_error' && r.pattern.source.includes('blocked'));

@@ -37,9 +37,22 @@ const getNodeName = (ctx, node, isBracketCall = false) => {
   }
 };
 
+const getCallLocation = (node) => {
+  if (nodes.isLookupVal(node.name) && node.name.val?.lineno != null && node.name.val?.colno != null) {
+    return { lineno: node.name.val.lineno, colno: node.name.val.colno };
+  }
+
+  return {
+    lineno: node.name?.lineno ?? node.lineno,
+    colno: node.name?.colno ?? node.colno
+  };
+};
+
 export const compileFunCall = (ctx, node, frame) => {
-  ctx._emit('(lineno = ' + node.lineno +
-    ', colno = ' + node.colno + ', ');
+  const { lineno, colno } = getCallLocation(node);
+
+  ctx._emit('(lineno = ' + lineno +
+    ', colno = ' + colno + ', ');
 
   ctx._emit('runtime.callWrap(');
   ctx._compileExpression(node.name, frame);
@@ -48,5 +61,5 @@ export const compileFunCall = (ctx, node, frame) => {
   const displayName = funcName + '()';
   ctx._emit(', "' + funcName.replace(/"/g, '\\"') + '", "' + displayName.replace(/"/g, '\\"') + '", context, ');
 
-  compileAggregate(ctx, node.args, frame, '[', '], ' + node.lineno + ', ' + node.colno + '))');
+  compileAggregate(ctx, node.args, frame, '[', '], ' + lineno + ', ' + colno + '))');
 };

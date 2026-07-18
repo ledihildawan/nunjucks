@@ -7,27 +7,25 @@ export { isBlockedKey, isDangerousGlobal, isCodeExecutionPattern, BLOCKED_KEYS_L
 
 const sandboxError = (errorDef, key) => createLog('error', errorDef, { key }, String(key), { phase: 'render', lineBase: 'zero' });
 
-const wrapFunction = (fn, sandboxEnabled) => {
+const wrapFunction = (fn, sandboxEnabled, key = null) => {
   if (!sandboxEnabled || !isFunction(fn)) {
     return fn;
   }
   return (...args) => {
+    if (key && isCodeExecutionPattern(String(key)) && typeof args[0] === 'string') {
+      throw sandboxError(ERROR_DEFINITIONS.SANDBOX_CODE_EXECUTION, key);
+    }
     return fn(...args);
   };
 };
 
-export const wrapFunctionWithBlocking = (fn, sandboxEnabled) => {
+export const wrapFunctionWithBlocking = (fn, sandboxEnabled, key = null) => {
   if (!sandboxEnabled || !isFunction(fn)) {
     return fn;
   }
   return (...args) => {
-    // Block dangerous patterns in arguments
-    if (args.length > 0) {
-      const firstArg = args[0];
-      // Block string code execution: setTimeout('code', 0)
-      if (typeof firstArg === 'string' && !firstArg.includes('(')) {
-        // Allow normal string arguments but be cautious
-      }
+    if (key && isCodeExecutionPattern(String(key)) && typeof args[0] === 'string') {
+      throw sandboxError(ERROR_DEFINITIONS.SANDBOX_CODE_EXECUTION, key);
     }
     return fn(...args);
   };
@@ -69,7 +67,7 @@ export const createSandboxedObject = (obj, sandboxEnabled, options = {}) => {
       
       const value = target[key];
       if (isFunction(value)) {
-        return wrapFunction(value, sandboxEnabled);
+        return wrapFunctionWithBlocking(value, sandboxEnabled, key);
       }
       if (typeof value === 'object' && isNonNullish(value)) {
         return createSandboxedObject(value, sandboxEnabled, options);
@@ -123,7 +121,7 @@ export const createSandboxedContext = (context, sandboxEnabled, options = {}) =>
       const value = target[key];
 
       if (isFunction(value)) {
-        return wrapFunction(value, sandboxEnabled);
+        return wrapFunctionWithBlocking(value, sandboxEnabled, key);
       }
 
       if (typeof value === 'object' && isNonNullish(value)) {
@@ -174,7 +172,7 @@ export const wrapMemberAccess = (obj, val, sandboxEnabled, options = {}) => {
   const value = obj?.[val];
 
   if (isFunction(value)) {
-    return wrapFunction(value, sandboxEnabled);
+    return wrapFunctionWithBlocking(value, sandboxEnabled, val);
   }
 
   if (typeof value === 'object' && isNonNullish(value)) {

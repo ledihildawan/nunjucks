@@ -291,6 +291,18 @@ export const RULES: Rule[] = [
     fixComment: 'Remove assignment to {subject} in your template'
   },
   {
+    pattern: PATTERNS.SANDBOX_CODE_EXECUTION,
+    category: 'sandbox_blocked',
+    subjectFrom: null,
+    titleTemplate: 'Code execution is blocked in sandbox mode',
+    causes: [
+      '**Sandbox mode** blocks string-based code execution',
+      'APIs like `setTimeout`, `eval`, or `Function` cannot receive code strings'
+    ],
+    fixCode: '{{ setTimeout(callback, 0) }}',
+    fixComment: 'Pass a safe callback or remove code execution from the template'
+  },
+  {
     pattern: PATTERNS.SLICE_STEP,
     category: 'slice_error',
     subjectFrom: null,

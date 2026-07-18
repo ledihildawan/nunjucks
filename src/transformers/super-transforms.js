@@ -9,20 +9,30 @@ export const liftSuper = (ast) => {
     }
 
     let hasSuper = false;
+    let superLocation = null;
     const gensym = createGensym();
     const symbol = gensym();
 
     blockNode.body = walk(blockNode.body, (node) => {
       if (nodes.isFunCall(node) && node.name.value === 'super') {
         hasSuper = true;
-        return nodes.symbol(node.lineno, node.colno, symbol);
+        superLocation = {
+          lineno: node.name?.lineno ?? node.lineno,
+          colno: node.name?.colno ?? node.colno
+        };
+        return nodes.symbol(superLocation.lineno, superLocation.colno, symbol);
       }
       return node;
     });
 
     if (hasSuper) {
+      const lineno = superLocation?.lineno ?? blockNode.lineno;
+      const colno = superLocation?.colno ?? blockNode.colno;
       blockNode.body.children.unshift(nodes.super(
-        0, 0, blockNode.name, nodes.symbol(0, 0, symbol)
+        lineno,
+        colno,
+        blockNode.name,
+        nodes.symbol(lineno, colno, symbol)
       ));
     }
   });

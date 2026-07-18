@@ -344,6 +344,7 @@ export const render = async (template, context = {}, config = {}) => {
     err.lineno = validationError.lineno;
     err.colno = validationError.colno;
     err.code = validationError.code;
+    err.subject = validationError.subject;
     throw wrapWithLog(err, config, templateSource, context);
   }
 

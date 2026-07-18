@@ -73,6 +73,20 @@ describe('createSandboxedObject', () => {
     expect(typeof sandboxed.fn).toBe('function');
     expect(sandboxed.fn()).toBe('called');
   });
+
+  test('blocks string code execution in sandboxed functions', () => {
+    const obj = { setTimeout: () => 'scheduled' };
+    const sandboxed = createSandboxedObject(obj, true);
+
+    try {
+      sandboxed.setTimeout('alert(1)', 0);
+    } catch (e) {
+      expect(e.code).toBe('SANDBOX_CODE_EXECUTION');
+      return;
+    }
+
+    throw new Error('Expected sandboxed function to throw');
+  });
 });
 
 describe('createSandboxedContext', () => {

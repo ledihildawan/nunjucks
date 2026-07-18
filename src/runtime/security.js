@@ -22,7 +22,7 @@ const getLineColFromIndex = (content, index) => {
   const beforeMatch = content.slice(0, index);
   const lines = beforeMatch.split('\n');
   const line = lines.length;
-  const col = lines[lines.length - 1].length + 1;
+  const col = lines[lines.length - 1].length;
   return { line, col };
 };
 

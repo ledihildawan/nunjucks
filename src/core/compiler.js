@@ -147,8 +147,8 @@ export const execute = async (code, context = {}, config = {}) => {
         });
         return result;
       },
-      getSuper: function(envObj, name, block, frame, runtime) {
-        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, { phase: 'render' });
+      getSuper: function(envObj, name, block, frame, runtime, lineno = null, colno = null) {
+        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, { lineno, colno, phase: 'render', lineBase: 'zero' });
       }
     };
   }
@@ -225,6 +225,14 @@ export const execute = async (code, context = {}, config = {}) => {
   if (config.env) {
     ctx = createContext(context, blocks, config.env, { blockLocations: blockMeta });
     ctx._autoescape = config.autoescape ?? true;
+  } else {
+    ctx.blocks = blocks;
+    ctx.getBlock = function(name) {
+      if (!blocks[name]) {
+        throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_BLOCK, { name }, name, { phase: 'render' });
+      }
+      return blocks[name];
+    };
   }
 
   return await render(env, ctx, frame, runtime);

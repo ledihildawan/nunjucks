@@ -38,13 +38,16 @@ describe('compileSuper', () => {
   test('emits super call with markSafe', () => {
     const ctx = makeCtx();
     const node = {
+      lineno: 2,
+      colno: 12,
       blockName: { value: 'header' },
       symbol: { value: 't_1' },
     };
     const frame = { set: () => {} };
     compileSuper(ctx, node, frame);
     const code = ctx.emitted.join('');
-    expect(code).toContain('context.getSuper(env, "header", b_header');
+    expect(code).toContain('lineno = 2; colno = 12;');
+    expect(code).toContain('context.getSuper(env, "header", b_header, frame, runtime, 2, 12)');
     expect(code).toContain('runtime.markSafe(t_1)');
   });
 });

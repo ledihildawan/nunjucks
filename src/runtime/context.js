@@ -67,16 +67,16 @@ export function createContext(ctx, blocks, env, metadata = {}) {
       }
       return this.blocks[name][0];
     },
-    getSuper: function(envObj, name, block, frame, runtime) {
+    getSuper: function(envObj, name, block, frame, runtime, lineno = null, colno = null) {
       const blockList = this.blocks[name];
       if (!blockList) {
-        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, { phase: 'render' });
+        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, { lineno, colno, phase: 'render', lineBase: 'zero' });
       }
       const idx = blockList.indexOf(block);
       const blk = blockList[idx + 1];
 
       if (idx === -1 || !blk) {
-        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, { phase: 'render' });
+        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, { lineno, colno, phase: 'render', lineBase: 'zero' });
       }
 
       return blk(envObj, this, frame, runtime);

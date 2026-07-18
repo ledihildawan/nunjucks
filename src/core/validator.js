@@ -9,7 +9,8 @@ export const validateTemplate = (template, config) => {
     if (size > config.maxTemplateSize) {
       errors.push({
         code: 'TEMPLATE_SIZE_EXCEEDED',
-        message: `Template exceeds maximum size of ${config.maxTemplateSize} bytes`
+        message: `Template exceeds maximum size of ${config.maxTemplateSize} bytes`,
+        subject: 'maxTemplateSize'
       });
     }
   }

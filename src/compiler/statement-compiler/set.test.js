@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { compileSet } from './set.js';
+import { nodes } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];
@@ -87,5 +88,33 @@ describe('compileSet', () => {
     compileSet(ctx, node, frame);
     const code = ctx.emitted.join('');
     expect(code).not.toContain('context.addExport');
+  });
+
+  test('throws structured error for property assignment targets', () => {
+    const ctx = makeCtx();
+    const target = nodes.lookupVal(
+      0,
+      0,
+      nodes.symbol(0, 0, 'user'),
+      nodes.literal(0, 9, '__proto__')
+    );
+    const node = {
+      targets: [target],
+      value: { mock: '{}' },
+      operator: '=',
+    };
+    const frame = makeFrame();
+
+    try {
+      compileSet(ctx, node, frame);
+    } catch (e) {
+      expect(e.code).toBe('SANDBOX_SET');
+      expect(e.subject).toBe('__proto__');
+      expect(e.lineno).toBe(0);
+      expect(e.colno).toBe(9);
+      return;
+    }
+
+    throw new Error('Expected compileSet to throw');
   });
 });

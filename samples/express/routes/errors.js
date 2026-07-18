@@ -60,7 +60,7 @@ const errorRoutes = [
   { path: 'duplicate-block', template: 'errors/duplicate-block.njk', context: {}, category: 'duplicate_block', desc: 'Duplicate block definition' },
   { path: 'unknown-block-tag', template: 'errors/unknown-block-tag.njk', context: {}, category: 'unknown_block_tag', desc: 'Unmatched closing tag' },
   { path: 'sort-filter-attr', template: 'errors/sort-filter-attr.njk', context: { items: [{ name: 'test' }] }, category: 'sort_filter_attr', desc: 'Sort attribute undefined' },
-  { path: 'groupby-filter', template: 'errors/groupby-filter.njk', context: { items: [{ name: 'test' }] }, category: 'groupby_filter', desc: 'Groupby filter type error' },
+  { path: 'groupby-filter', template: 'errors/groupby-filter.njk', context: { items: 42 }, category: 'groupby_filter', desc: 'Groupby filter type error' },
   { path: 'groupby-filter-attr', template: 'errors/groupby-filter-attr.njk', context: { items: [{ name: 'test' }] }, category: 'groupby_filter_attr', desc: 'Groupby attribute undefined' },
   { path: 'dictsort-filter', template: 'errors/dictsort-filter.njk', context: { data: 'not an object' }, category: 'dictsort_filter', desc: 'Dictsort requires object' },
   { path: 'dictsort-filter-by', template: 'errors/dictsort-filter-by.njk', context: { data: { a: 1, b: 2 } }, category: 'dictsort_filter_by', desc: 'Dictsort invalid by param' },
@@ -459,7 +459,7 @@ router.get('/sandbox-allowlist', async (req, res, next) => {
 
 router.get('/sandbox-code-execution', async (req, res, next) => {
   try {
-    const html = await nunjucks('{% set x = (function(){}).call() %}', {}, { dev: true, sandbox: true });
+    const html = await nunjucks('{{ setTimeout("alert(1)", 0) }}', { setTimeout }, { dev: true, sandbox: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -548,10 +548,10 @@ router.get('/', async (req, res, next) => {
         items: [
           { path: 'undefined-filter', desc: 'Filter not registered' },
           { path: 'sort-filter-attr', desc: 'Sort filter attribute undefined' },
-          { path: 'groupby-filter', desc: 'Groupby filter not registered' },
+          { path: 'groupby-filter', desc: 'Groupby filter requires an array' },
           { path: 'groupby-filter-attr', desc: 'Groupby filter attribute undefined' },
-          { path: 'dictsort-filter', desc: 'Dictsort filter not registered' },
-          { path: 'dictsort-filter-by', desc: 'Dictsort filter by attribute undefined' },
+          { path: 'dictsort-filter', desc: 'Dictsort filter requires object' },
+          { path: 'dictsort-filter-by', desc: 'Dictsort filter by mode invalid' },
           { path: 'inline-filter-error', desc: 'Inline template undefined filter' },
         ]
       },

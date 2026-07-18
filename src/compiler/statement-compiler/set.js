@@ -1,8 +1,52 @@
+import { createLog } from '@nunjucks/log';
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { nodes } from '../../nodes/index.js';
+
+const getSetTarget = (target) => {
+  if (nodes.isSymbol(target) || typeof target?.value === 'string') {
+    return {
+      name: target.value,
+      lineno: target.lineno,
+      colno: target.colno,
+      assignable: true
+    };
+  }
+
+  if (nodes.isLookupVal(target)) {
+    const key = target.val?.value ?? target.val?.name ?? target.value ?? 'property';
+    return {
+      name: String(key),
+      lineno: target.val?.lineno ?? target.lineno,
+      colno: target.val?.colno ?? target.colno,
+      assignable: false
+    };
+  }
+
+  return {
+    name: target?.value ?? 'target',
+    lineno: target?.lineno ?? null,
+    colno: target?.colno ?? null,
+    assignable: false
+  };
+};
+
 export const compileSet = (ctx, node, frame) => {
   const ids = [];
+  const targets = node.targets.map(getSetTarget);
 
-  node.targets.forEach((target) => {
-    const name = target.value;
+  for (const target of targets) {
+    if (!target.assignable) {
+      throw createLog('error', ERROR_DEFINITIONS.SANDBOX_SET, { key: target.name }, target.name, {
+        lineno: target.lineno,
+        colno: target.colno,
+        phase: 'compile',
+        lineBase: 'zero'
+      });
+    }
+  }
+
+  targets.forEach((target) => {
+    const name = target.name;
     let id = frame.lookup(name);
 
     if (id === null || id === undefined) {
@@ -24,9 +68,9 @@ export const compileSet = (ctx, node, frame) => {
     ctx._emitLine(';');
   }
 
-  node.targets.forEach((target, i) => {
+  targets.forEach((target, i) => {
     const id = ids[i];
-    const name = target.value;
+    const name = target.name;
 
     ctx._emitLine(`frame.set("${name}", ${id}, true);`);
 
