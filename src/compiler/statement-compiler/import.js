@@ -4,7 +4,9 @@ const compileGetTemplate = (ctx, node, frame, eagerCompile, ignoreMissing) => {
   const eagerCompileArg = (eagerCompile) ? 'true' : 'false';
   const ignoreMissingArg = (ignoreMissing) ? 'true' : 'false';
   const loc = (node?.template && typeof node.template === 'object' && (node.template.lineno !== undefined || node.template.colno !== undefined))
-    ? { lineno: node.template.lineno, colno: node.template.colno }
+    ? (node.template.type === 'literal' && typeof node.template.colno === 'number'
+        ? { lineno: node.template.lineno, colno: node.template.colno + 1 }
+        : { lineno: node.template.lineno, colno: node.template.colno })
     : { lineno: node.lineno, colno: node.colno };
   ctx._emitLine(`lineno = ${loc.lineno != null ? loc.lineno : 0}; colno = ${loc.colno != null ? loc.colno : 0};`);
   ctx._emit(`let ${parentTemplateId} = await env.getTemplate(`);

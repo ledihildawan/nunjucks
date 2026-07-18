@@ -1,6 +1,11 @@
 const getTemplateLocation = (node) => {
   if (node?.template && typeof node.template === 'object' && (node.template.lineno !== undefined || node.template.colno !== undefined)) {
-    return { lineno: node.template.lineno, colno: node.template.colno };
+    let colno = node.template.colno;
+    let lineno = node.template.lineno;
+    if (node.template.type === 'literal' && typeof colno === 'number') {
+      colno = colno + 1;
+    }
+    return { lineno, colno };
   }
   return { lineno: node.lineno, colno: node.colno };
 };
