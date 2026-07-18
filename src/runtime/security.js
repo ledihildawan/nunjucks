@@ -103,7 +103,18 @@ export const validateContext = (context, options = {}) => {
   return true;
 };
 
-const findDangerousValues = (obj, allowedGlobals, path = '') => {
+const PROTOTYPE_POLLUTION_KEYS = new Set([
+  '__proto__',
+  'constructor',
+  'prototype',
+  'hasOwnProperty',
+  'toString',
+  'valueOf'
+]);
+
+const isPrototypePollutionKey = (key) => PROTOTYPE_POLLUTION_KEYS.has(key);
+
+const findDangerousValues = (obj, allowedGlobals, path = '', isTopLevel = true) => {
   const dangerous = [];
 
   if (!obj || typeof obj !== 'object') {
@@ -114,19 +125,33 @@ const findDangerousValues = (obj, allowedGlobals, path = '') => {
     const currentPath = path ? `${path}.${key}` : key;
     const value = obj[key];
 
+    // Prototype pollution keys - check at ALL levels (nested + top-level)
+    if (isPrototypePollutionKey(key)) {
+      dangerous.push(currentPath);
+    }
+    // Dangerous globals - check ONLY at top-level
+    else if (isTopLevel && isDangerousGlobal(key)) {
+      dangerous.push(currentPath);
+    }
+
     if (isFunction(value)) {
       const fnName = value.name || key;
-      if (isDangerousGlobal(fnName) || fnName === 'eval' || fnName === 'Function') {
+      // eval/Function - only dangerous at top-level (nested user.eval is not the global eval)
+      if (isTopLevel && (fnName === 'eval' || fnName === 'Function')) {
         dangerous.push(currentPath);
       }
-
-      if (allowedGlobals && !allowedGlobals.includes(fnName) && !isBuiltIn(fnName)) {
+      // Other dangerous globals - only dangerous at top-level
+      if (isTopLevel && isDangerousGlobal(fnName)) {
+        dangerous.push(currentPath);
+      }
+      // Non-builtin non-global functions at top-level
+      if (isTopLevel && allowedGlobals && !allowedGlobals.includes(fnName) && !isBuiltIn(fnName)) {
         dangerous.push(currentPath);
       }
     }
 
     if (value && typeof value === 'object') {
-      dangerous.push(...findDangerousValues(value, allowedGlobals, currentPath));
+      dangerous.push(...findDangerousValues(value, allowedGlobals, currentPath, false));
     }
   }
 
