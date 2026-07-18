@@ -1,8 +1,8 @@
-import { keys, filter, isFunction, isSymbol, isString, isNumber, isBoolean, isNullish, isArray } from 'remeda';
+import { keys } from 'remeda';
 import { escapeHtml, highlightHtml, highlightJs } from './highlight.ts';
 import { resolveIdeLink } from '../../ide-links.ts';
 import { shortenPath } from '@nunjucks/shared/path-shortener';
-import { isBlockedKey } from '@nunjucks/shared/blocked-keys';
+import { getBlockedKeyCategory, isDangerousGlobal } from '@nunjucks/shared/blocked-keys';
 
 const normalizePath = (p: string): string => p.replace(/^file:\/\/+/, '');
 
@@ -39,25 +39,71 @@ export const formatJsTraceHtml = (jsCallerLines: JsCallerLine[]): string => {
   ).join('');
 };
 
-const serializeValue = (value: unknown, depth = 0): string => {
-  if (value === undefined) return 'undefined';
-  if (isNullish(value)) return 'null';
-  if (isFunction(value)) return '[Function]';
-  if (isSymbol(value)) return '[Symbol]';
-  if (isString(value)) return JSON.stringify(value);
-  if (isNumber(value) || isBoolean(value)) return String(value);
-  if (isArray(value)) {
-    if (value.length === 0) return '[]';
-    return '[' + value.slice(0, 10).map(v => serializeValue(v, depth + 1)).join(',') + ']';
+const MAX_CONTEXT_DEPTH = 8;
+const MAX_CONTEXT_ENTRIES = 50;
+
+type SerializableContext =
+  | null
+  | string
+  | number
+  | boolean
+  | SerializableContext[]
+  | { [key: string]: SerializableContext };
+
+const safeJson = (value: SerializableContext): string =>
+  JSON.stringify(value).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026');
+
+const describeFunction = (value: Function): string => value.name ? `[Function: ${value.name}]` : '[Function]';
+
+const shouldHideContextKey = (key: string, isTopLevel: boolean): boolean => {
+  if (key.startsWith('__nunjucks')) return true;
+  if (getBlockedKeyCategory(key) === 'object_intrinsic') return true;
+  return isTopLevel && isDangerousGlobal(key);
+};
+
+const serializeContextValue = (value: unknown, depth = 0, seen = new WeakSet<object>()): SerializableContext => {
+  if (value === undefined) return '[Undefined]';
+  if (value === null) return null;
+
+  const type = typeof value;
+  if (type === 'function') return describeFunction(value as Function);
+  if (type === 'symbol') return String(value);
+  if (type === 'bigint') return `${String(value)}n`;
+  if (type === 'string' || type === 'number' || type === 'boolean') return value as SerializableContext;
+
+  if (type !== 'object') return String(value);
+
+  const objectValue = value as object;
+  if (seen.has(objectValue)) return '[Circular]';
+  if (depth >= MAX_CONTEXT_DEPTH) return '[Max depth reached]';
+
+  seen.add(objectValue);
+
+  if (Array.isArray(value)) {
+    const items = value.slice(0, MAX_CONTEXT_ENTRIES).map(item => serializeContextValue(item, depth + 1, seen));
+    if (value.length > MAX_CONTEXT_ENTRIES) {
+      items.push(`[... ${value.length - MAX_CONTEXT_ENTRIES} more items]`);
+    }
+    seen.delete(objectValue);
+    return items;
   }
-  if (typeof value === 'object') {
-    if (depth >= 10) return '[Object]';
-    const filteredKeys = filter(keys(value as object), (k: string) => !k.startsWith('__nunjucks') && !isBlockedKey(k));
-    if (filteredKeys.length === 0) return '{}';
-    const pairs = filteredKeys.slice(0, 20).map(k => JSON.stringify(k) + ':' + serializeValue((value as Record<string, unknown>)[k], depth + 1));
-    return '{' + pairs.join(',') + '}';
+
+  if (value instanceof Date) {
+    seen.delete(objectValue);
+    return Number.isNaN(value.getTime()) ? '[Invalid Date]' : value.toISOString();
   }
-  return 'null';
+
+  const serialized: Record<string, SerializableContext> = {};
+  const visibleKeys = keys(objectValue).filter((k: string) => !shouldHideContextKey(k, depth === 0));
+  for (const k of visibleKeys.slice(0, MAX_CONTEXT_ENTRIES)) {
+    serialized[k] = serializeContextValue((value as Record<string, unknown>)[k], depth + 1, seen);
+  }
+  if (visibleKeys.length > MAX_CONTEXT_ENTRIES) {
+    serialized['...'] = `${visibleKeys.length - MAX_CONTEXT_ENTRIES} more keys`;
+  }
+
+  seen.delete(objectValue);
+  return serialized;
 };
 
 const filterContext = (ctx: unknown): Record<string, unknown> => {
@@ -65,7 +111,7 @@ const filterContext = (ctx: unknown): Record<string, unknown> => {
   const filtered: Record<string, unknown> = {};
   for (const k of keys(ctx as object) as string[]) {
     if (k.startsWith('__nunjucks')) continue;
-    if (isBlockedKey(k)) continue;
+    if (shouldHideContextKey(k, true)) continue;
     filtered[k] = (ctx as Record<string, unknown>)[k];
   }
   return filtered;
@@ -77,10 +123,18 @@ export const renderContextHtml = (ctx: unknown): string => {
   const filteredKeys = keys(filtered);
   if (filteredKeys.length === 0) return '';
 
-  const dataScript = `<script>window.__ctxData=${serializeValue(filtered)};</scr` + `ipt>`;
+  const serialized = serializeContextValue(filtered);
+  const dataScript = `<script type="application/json" id="ctx-data">${safeJson(serialized)}</scr` + `ipt>`;
 
   return `<section class="render-context" aria-labelledby="h-ctx">
-<h2 id="h-ctx" class="text-label">Render Context</h2>
+<div class="section-heading">
+  <h2 id="h-ctx" class="text-label">Render Context</h2>
+  <div class="ctx-toolbar" aria-label="Render context controls">
+    <button type="button" class="ctx-action" data-ctx-action="expand">Expand all</button>
+    <button type="button" class="ctx-action" data-ctx-action="collapse">Collapse all</button>
+    <button type="button" class="ctx-action" data-ctx-action="copy">Copy JSON</button>
+  </div>
+</div>
 <div class="ctx-tree" id="ctx-tree"></div>
 </section>${dataScript}`;
 };

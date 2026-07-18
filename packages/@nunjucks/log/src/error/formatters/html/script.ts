@@ -80,33 +80,50 @@ export const TOGGLE_SCRIPT = `<script>
     }
   }
 
+  function escapeHtml(str) {
+    if (typeof str !== 'string') return String(str);
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function valueType(value) {
+    if (value === null) return 'null';
+    if (Array.isArray(value)) return 'array';
+    return typeof value;
+  }
+
+  function previewValue(value) {
+    if (Array.isArray(value)) return 'Array(' + value.length + ')';
+    if (value !== null && typeof value === 'object') return 'Object(' + Object.keys(value).length + ')';
+    if (typeof value === 'string') return '"' + value + '"';
+    return String(value);
+  }
+
   function createNode(key, value) {
     const isObject = value !== null && typeof value === 'object';
     const row = document.createElement('div');
     row.className = 'ctx-row' + (isObject ? ' is-expandable' : '');
 
     if (isObject) {
-      const isArray = Array.isArray(value);
-      const label = isArray ? 'Array(' + value.length + ')' : 'Object';
-      row.innerHTML = '<span class="ctx-toggle">▶</span><span class="ctx-key">' + escapeHtml(key) + ':</span> <span class="ctx-label">' + label + '</span>';
+      row.setAttribute('role', 'button');
+      row.setAttribute('tabindex', '0');
+      row.setAttribute('aria-expanded', 'false');
+      row.innerHTML = '<span class="ctx-toggle">+</span><span class="ctx-key">' + escapeHtml(key) + ':</span> <span class="ctx-label">' + escapeHtml(previewValue(value)) + '</span>';
 
       const container = document.createElement('div');
       container.className = 'ctx-indent hidden';
-
       let loaded = false;
 
-      row.onclick = function() {
+      const toggle = function() {
         const isHidden = container.classList.toggle('hidden');
         const toggleEl = row.querySelector('.ctx-toggle');
-        if (toggleEl) toggleEl.textContent = isHidden ? '▶' : '▼';
+        row.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+        if (toggleEl) toggleEl.textContent = isHidden ? '+' : '-';
 
         if (!isHidden && !loaded) {
           const entries = Object.entries(value);
           if (entries.length === 0) {
             const emptyMsg = document.createElement('div');
-            emptyMsg.className = 'ctx-row';
-            emptyMsg.style.color = 'var(--color-text-secondary)';
-            emptyMsg.style.fontStyle = 'italic';
+            emptyMsg.className = 'ctx-row is-empty';
             emptyMsg.textContent = '(empty)';
             container.appendChild(emptyMsg);
           } else {
@@ -117,33 +134,103 @@ export const TOGGLE_SCRIPT = `<script>
         }
       };
 
+      row.addEventListener('click', toggle);
+      row.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          toggle();
+        }
+      });
+
       const wrapper = document.createElement('div');
       wrapper.appendChild(row);
       wrapper.appendChild(container);
       return wrapper;
-    } else {
-      const type = typeof value;
-      const displayVal = type === 'string' ? '"' + escapeHtml(value) + '"' : String(value);
-      row.innerHTML = '<span class="ctx-toggle"></span><span class="ctx-key">' + escapeHtml(key) + ':</span> <span class="ctx-' + type + '">' + displayVal + '</span>';
-      return row;
     }
+
+    const type = valueType(value);
+    const displayVal = escapeHtml(previewValue(value));
+    row.innerHTML = '<span class="ctx-toggle"></span><span class="ctx-key">' + escapeHtml(key) + ':</span> <span class="ctx-' + type + '">' + displayVal + '</span>';
+    return row;
   }
 
-  function escapeHtml(str) {
-    if (typeof str !== 'string') return String(str);
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.inset = '0 auto auto 0';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    try {
+      document.execCommand('copy');
+      return Promise.resolve();
+    } catch (error) {
+      return Promise.reject(error);
+    } finally {
+      document.body.removeChild(textarea);
+    }
   }
 
   function initContextToggle() {
     const viewer = document.getElementById('ctx-tree');
     if (!viewer) return;
 
-    const data = window.__ctxData;
+    const dataEl = document.getElementById('ctx-data');
+    if (!dataEl) return;
+
+    let data;
+    try {
+      data = JSON.parse(dataEl.textContent || '{}');
+    } catch (error) {
+      viewer.textContent = 'Render context is not valid JSON.';
+      return;
+    }
     if (!data) return;
 
     Object.entries(data).forEach((entry) => {
       const node = createNode(entry[0], entry[1]);
       viewer.appendChild(node);
+    });
+
+    const expandAll = function(root) {
+      Array.from(root.querySelectorAll('.ctx-row.is-expandable')).forEach(function(row) {
+        if (row.getAttribute('aria-expanded') !== 'true') row.click();
+      });
+      const stillHasCollapsed = Array.from(root.querySelectorAll('.ctx-row.is-expandable')).some(function(row) {
+        return row.getAttribute('aria-expanded') !== 'true';
+      });
+      if (stillHasCollapsed) requestAnimationFrame(function() { expandAll(root); });
+    };
+
+    const collapseAll = function(root) {
+      Array.from(root.querySelectorAll('.ctx-row.is-expandable')).reverse().forEach(function(row) {
+        if (row.getAttribute('aria-expanded') === 'true') row.click();
+      });
+    };
+
+    document.querySelectorAll('[data-ctx-action]').forEach(function(button) {
+      button.addEventListener('click', function() {
+        const action = button.getAttribute('data-ctx-action');
+        if (action === 'expand') expandAll(viewer);
+        if (action === 'collapse') collapseAll(viewer);
+        if (action === 'copy') {
+          const original = button.textContent;
+          copyText(JSON.stringify(data, null, 2)).then(function() {
+            button.textContent = 'Copied';
+            setTimeout(function() { button.textContent = original; }, 1200);
+          }).catch(function() {
+            button.textContent = 'Copy failed';
+            setTimeout(function() { button.textContent = original; }, 1200);
+          });
+        }
+      });
     });
   }
 

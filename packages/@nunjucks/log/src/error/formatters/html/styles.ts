@@ -153,6 +153,11 @@ export const CSS = `
     font-size: 0.6875rem; font-weight: 700; color: var(--color-text-secondary);
     text-transform: uppercase; letter-spacing: 0.05em; margin-block-end: 0.75rem;
   }
+  .section-heading {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+    flex-wrap: wrap; margin-block-end: 0.75rem;
+  }
+  .section-heading .text-label { margin-block-end: 0; }
 
   .badge { padding: 0.2em 0.6em; border-radius: 0.25rem; font-size: 0.625rem; }
   .badge-error { background: var(--color-error-bg); color: var(--color-error-text); letter-spacing: 0.05em; }
@@ -274,6 +279,24 @@ export const CSS = `
 
   .render-context { margin-block-end: 2rem; }
   .stack-trace { margin-block-end: 2rem; }
+  .ctx-toolbar {
+    display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap;
+  }
+  .ctx-action {
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    background: var(--color-bg-panel);
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: 0.75rem;
+    line-height: 1;
+    padding: 0.375rem 0.5rem;
+    cursor: pointer;
+  }
+  .ctx-action:hover {
+    color: var(--color-text-primary);
+    border-color: var(--color-text-secondary);
+  }
   .ctx-tree {
     margin: 0; background: var(--color-code-bg);
     border-radius: 0.5rem;
@@ -292,10 +315,11 @@ export const CSS = `
     user-select: none;
   }
   .ctx-row.is-expandable { cursor: pointer; }
-  .ctx-row:hover { background: var(--color-bg-alt); }
+  .ctx-row:hover, .ctx-row:focus-visible { background: var(--color-bg-alt); outline: none; }
+  .ctx-row.is-empty { color: var(--color-text-secondary); font-style: italic; }
   .ctx-toggle {
     width: 16px; color: var(--color-text-secondary);
-    font-size: 10px; line-height: 18px; text-align: center;
+    font-size: 12px; line-height: 18px; text-align: center;
     flex-shrink: 0;
   }
   .ctx-key { color: oklch(70% 0.15 190); font-weight: 600; margin-right: 5px; }
