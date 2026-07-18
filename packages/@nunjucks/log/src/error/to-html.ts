@@ -154,6 +154,11 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
     humanTitle = 'Template must be a string';
   } else if (category === 'RESERVED_KEYWORD_CONTEXT') {
     humanTitle = plain;
+  } else if (category === 'RESERVED_KEYWORD') {
+    const match = plain.match(/Cannot use reserved (\w+) '([^']+)'/);
+    if (match) {
+      humanTitle = `Cannot use reserved ${match[1]} '${match[2]}'`;
+    }
   }
   const location = toDisplayLocation(
     lineno ?? error?.lineno ?? null,

@@ -80,8 +80,9 @@ export function createTokenizer(str, opts = {}) {
     },
 
     back() {
+      const prevChar = this.current();
       state.index--;
-      if (this.current() === '\n') {
+      if (prevChar === '\n') {
         state.lineno--;
         const idx = state.str.lastIndexOf('\n', state.index - 1);
         state.colno = idx === -1 ? state.index : state.index - idx;

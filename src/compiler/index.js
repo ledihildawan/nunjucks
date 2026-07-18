@@ -59,7 +59,7 @@ export function createCompiler(templateName, undefinedMode, source) {
     },
     _trackMapping: function(templateLine, templateCol) {
       if (templateLine !== undefined) {
-        this.sourceMap.addMapping(this.compiledLine + 1, templateLine, templateCol || 0);
+        this.sourceMap.addMapping(this.compiledLine, templateLine, templateCol || 0);
       }
     },
     _emitLineWithLineno: function(code, templateLine, templateCol) {
@@ -77,7 +77,7 @@ export function createCompiler(templateName, undefinedMode, source) {
       this._scopeClosers = '';
       this._emitLine(`async function ${name}(env, context, frame, runtime) {`);
       this._emitLineWithMapping(`let lineno = ${node.lineno};`, node.lineno, node.colno);
-      this._emitLine(`let colno = ${node.colno};`);
+      this._emitLine(`let colno = ${node.colno != null ? node.colno : 0};`);
       this._emitLine(`let ${this.buffer} = "";`);
       this._emitLine('try {');
     },
