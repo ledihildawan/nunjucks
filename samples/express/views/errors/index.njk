@@ -109,6 +109,10 @@
     let currentUrl = '';
     let activeLink = null;
 
+    if (location.pathname.startsWith('/errors/') && location.pathname !== '/errors/') {
+      location.replace('/errors');
+    }
+
     document.querySelectorAll('.group-header').forEach(header => {
       header.addEventListener('click', () => {
         const index = header.dataset.group;
