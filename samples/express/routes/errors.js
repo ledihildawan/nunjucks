@@ -1,6 +1,7 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import nunjucks from '../../../src/index.js';
+import { createSandboxedContext } from '../../../src/runtime/sandbox.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -273,7 +274,12 @@ router.get('/sandbox-timeout', async (req, res, next) => {
 
 router.get('/sandbox-context-modify', async (req, res, next) => {
   try {
-    const html = await nunjucks('{% set globals = {} %}', {}, { dev: true, sandbox: true });
+    const html = await nunjucks('{{ modifyContext() }}', {
+      modifyContext: () => {
+        const context = createSandboxedContext({ user: 'alice' }, true);
+        context.user = 'bob';
+      }
+    }, { dev: true, sandbox: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);

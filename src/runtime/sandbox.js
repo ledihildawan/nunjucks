@@ -70,6 +70,7 @@ const isBlockedAtScope = (key, options, topLevel = false) => {
 };
 
 const hasOwn = (target, key) => Object.prototype.hasOwnProperty.call(target, key);
+const isInternalKey = (key) => typeof key === 'string' && key.startsWith('__nunjucks');
 
 export const createSandboxedObject = (obj, sandboxEnabled, options = {}) => {
   const sandboxOptions = resolveSandboxOptions(options);
@@ -195,6 +196,11 @@ export const createSandboxedContext = (context, sandboxEnabled, options = {}) =>
         return true;
       }
 
+      if (isInternalKey(key)) {
+        target[key] = value;
+        return true;
+      }
+
       if (isBlockedAtScope(key, sandboxOptions, true)) {
         throw sandboxError(ERROR_DEFINITIONS.SANDBOX_SET, key, sandboxOptions);
       }
@@ -203,8 +209,7 @@ export const createSandboxedContext = (context, sandboxEnabled, options = {}) =>
         throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, key, sandboxOptions);
       }
       
-      target[key] = value;
-      return true;
+      throw sandboxError(ERROR_DEFINITIONS.SANDBOX_CONTEXT_MODIFY, key, sandboxOptions);
     },
     has(target, key) {
       if (typeof key === 'symbol') {

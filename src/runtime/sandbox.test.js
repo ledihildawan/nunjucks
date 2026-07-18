@@ -142,6 +142,28 @@ describe('createSandboxedContext', () => {
     expect(() => sandboxed.eval).toThrow();
   });
 
+  test('blocks direct context mutation in sandbox mode', () => {
+    const ctx = { user: 'john' };
+    const sandboxed = createSandboxedContext(ctx, true);
+
+    try {
+      sandboxed.user = 'jane';
+    } catch (e) {
+      expect(e.code).toBe('SANDBOX_CONTEXT_MODIFY');
+      return;
+    }
+
+    throw new Error('Expected sandboxed context mutation to throw');
+  });
+
+  test('allows internal runtime metadata on sandboxed context', () => {
+    const sandboxed = createSandboxedContext({}, true);
+
+    sandboxed.__nunjucks_undefined_mode = 'strict';
+
+    expect(sandboxed.__nunjucks_undefined_mode).toBe('strict');
+  });
+
   test('handles empty context', () => {
     expect(createSandboxedContext({}, true)).toEqual({});
     expect(createSandboxedContext(null, true)).toBe(null);
