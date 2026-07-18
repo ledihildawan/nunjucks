@@ -1,8 +1,7 @@
-import { keys, filter } from 'remeda';
 import { classify } from './classify.ts';
 import type { ClassifiedError } from './classify.ts';
 import { toText } from './to-text.ts';
-import { isBlockedKey } from '@nunjucks/shared/blocked-keys';
+import { normalizeRenderContext, stringifyRenderContextValue } from '@nunjucks/shared/safe-context';
 import { shortenPath } from '@nunjucks/shared/path-shortener';
 import { isFilePath, resolveIdeLink } from './ide-links.ts';
 import picocolors from 'picocolors';
@@ -176,24 +175,12 @@ const formatLocationLabel = (options: ToAnsiOptions, error: ErrorLike): string =
 
 const formatRenderContext = (renderContext: RenderContext): string => {
   if (!renderContext || typeof renderContext !== 'object') return '';
-  const filteredKeys = filter(keys(renderContext), (k: string) => !k.startsWith('__nunjucks') && !isBlockedKey(k));
+  const normalized = normalizeRenderContext(renderContext) as Record<string, unknown>;
+  const filteredKeys = Object.keys(normalized);
   if (filteredKeys.length === 0) return '';
   const lines: string[] = ['\n', picocolors.bold('Render Context:')];
-  for (const k of filteredKeys) {
-    const raw = renderContext[k];
-    let val: string;
-    if (raw === undefined) {
-      val = 'undefined';
-    } else if (raw === null) {
-      val = 'null';
-    } else if (typeof raw === 'string') {
-      val = raw;
-    } else if (typeof raw === 'object') {
-      val = JSON.stringify(raw, (k2, v) => isBlockedKey(k2) ? undefined : v);
-    } else {
-      val = JSON.stringify(raw);
-    }
-    lines.push(picocolors.dim(`  ${k} = ${val}`));
+  for (const key of filteredKeys) {
+    lines.push(picocolors.dim(`  ${key} = ${stringifyRenderContextValue(normalized[key])}`));
   }
   return lines.join('\n');
 };

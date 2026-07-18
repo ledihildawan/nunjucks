@@ -9,6 +9,8 @@ export { classify } from './error/classify.ts';
 export { injectWarningsScript } from './warning/collector.ts';
 export { normalizeLogMetadata, createFormatterState } from './error/metadata.ts';
 export { normalizeErrorMetadata } from './error/normalize.ts';
+export { getErrorMetadata, formatSnippet } from './error/metadata-extras.ts';
+export type { ErrorMetadata, GetErrorMetadataOptions } from './error/metadata-extras.ts';
 export type { ErrorMetadataFallback, NormalizedErrorMetadata } from './error/normalize.ts';
 export { ERROR_DEFINITIONS, ERRORS, PATTERNS } from './error/messages.ts';
 export type { ErrorName } from './error/messages.ts';

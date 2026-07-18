@@ -153,6 +153,32 @@ describe('createLog', () => {
       expect(html).toContain('is-error');
     });
 
+    test('html and ansi apply identical render-context safety rules', () => {
+      const error = createLog(
+        'error',
+        ERROR_DEFINITIONS.UNDEFINED_VARIABLE,
+        { name: 'missing' },
+        'missing',
+        { templateName: 'inline', lineno: 0, colno: 0 }
+      );
+      const context = {
+        password: 'secret',
+        user: { accessToken: 'sensitive-value', name: 'Ada' },
+        fn: function helper() {},
+        circular: {} as Record<string, unknown>
+      };
+      context.circular.self = context.circular;
+
+      const html = error.output({ format: 'html', renderContext: context });
+      const ansi = error.output({ format: 'ansi', renderContext: context });
+      for (const output of [html, ansi]) {
+        expect(output).toContain('[Redacted]');
+        expect(output).toContain('[Function: helper]');
+        expect(output).toContain('[Circular]');
+        expect(output).not.toContain('secret');
+        expect(output).not.toContain('sensitive-value');
+      }
+    });
     test('html output only links file paths', () => {
       const inline = createLog(
         'error',

@@ -4,12 +4,13 @@ import { createCompiler } from '../compiler/index.js';
 import { parse } from '../parser/index.js';
 import { transform } from '../transformers/index.js';
 import { execute } from './compiler.js';
-import { validateTemplate, validateRenderContext, validateConfig } from './validator.js';
+import { validateTemplate, validateConfig, validateRenderContext, findContextDangerousValues } from './validator.js';
 import { withTimeout } from '../runtime/timeout.js';
 import { createSandboxedContext } from '../runtime/sandbox.js';
-import { createLog, injectWarningsScript, normalizeErrorMetadata } from '@nunjucks/log';
+import { scrubDangerousReferences } from '../runtime/security.js';
 import { createFileSystemLoader } from '../loaders/index.js';
 import { getCallerFile, getCallerLocation } from '@nunjucks/shared/caller-file';
+import { createLog, injectWarningsScript, normalizeErrorMetadata } from '@nunjucks/log';
 import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
 
 let cachedLoader = null;
@@ -121,6 +122,7 @@ const findSubjectOccurrence = (content, subject, preferredLine) => {
 
   let best = null;
   let bestDistance = Infinity;
+  const subjectColOffset = subject.includes('.') ? subject.lastIndexOf('.') + 1 : 0;
   const escaped = subject.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const patterns = [
     { re: new RegExp(`'(${escaped})'`, 'g'), group: 1 },
@@ -135,7 +137,7 @@ const findSubjectOccurrence = (content, subject, preferredLine) => {
       if (!groupText) continue;
 
       const groupOffset = match[0].indexOf(groupText);
-      const offset = match.index + groupOffset;
+      const offset = match.index + groupOffset + subjectColOffset;
       const position = positionAtOffset(content, offset);
       const line = position.lineOffset + 1;
       const distance = preferredLine ? Math.abs(line - preferredLine) : 0;
@@ -321,6 +323,8 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
     verbosity: 'full',
     isJsCaller: preferJsCallerLocation,
   });
+  errorObj.templatePath = templatePath;
+  errorObj.sourceStartLine = sourceStartLine;
 
   return errorObj;
 };
@@ -393,7 +397,7 @@ export const render = async (template, context = {}, config = {}) => {
   let code;
   let sourceMapData;
   const looksLikeFile = /\.(njk|js|html|htm|twig|ejs|eta)$/i.test(template);
-  const templateName = config.templatePath || (looksLikeFile ? template : config._callerFile);
+  const templateName = config.templatePath || (looksLikeFile ? template : (config._callerFile || 'inline'));
   try {
     const c = createCompiler(templateName, config.undefined, templateSource);
     const ast = parse(templateSource, config, templateName);
@@ -405,10 +409,36 @@ export const render = async (template, context = {}, config = {}) => {
     throw wrapWithLog(err, config, templateSource, context);
   }
 
+  const runtime = buildRuntime(config);
+  const warningsCollector = [];
+
+  const contextStrict = config.contextStrict === true || (config.contextStrict !== false && config.dev === true);
+  const dangerousValuePaths = contextStrict ? findContextDangerousValues(context, config) : [];
+  if (contextStrict && dangerousValuePaths.length > 0) {
+    if (config.contextStrict === 'error' || config.production === true) {
+      const err = new Error(`Context contains unsafe values: ${dangerousValuePaths.join(', ')}`);
+      err.code = 'DANGEROUS_CONTEXT_VALUES';
+      err.subject = dangerousValuePaths.join(', ');
+      throw wrapWithLog(err, config, templateSource, context);
+    }
+    scrubDangerousReferences(context, config.allowedGlobals);
+    const warning = createLog('warning', {
+      name: 'DANGEROUS_CONTEXT_VALUE_SCRUBBED',
+      message: () => `Scrubbed unsafe values from context: ${dangerousValuePaths.join(', ')}`,
+      pattern: /./
+    }, { values: dangerousValuePaths.join(', ') }, dangerousValuePaths.join(', '), {
+      phase: 'render',
+      templateName: templateName,
+      lineBase: 'zero',
+      dev: config.dev ?? false
+    });
+    warningsCollector.push(warning);
+  }
+
   const internalKeys = ['__nunjucks_undefined_mode', 'exports', 'module', 'require', '__dirname', '__filename', 'global', 'globalThis', 'process'];
   const userAllowlist = config.sandboxAllowlist || [];
   const mergedAllowlist = [...new Set([...internalKeys, ...userAllowlist])];
-  
+
   const sandboxOptions = {
     allowlist: mergedAllowlist,
     blocklistMode: config.sandboxMode !== 'allowlist',
@@ -442,9 +472,6 @@ export const render = async (template, context = {}, config = {}) => {
       }
     };
   }
-
-  const runtime = buildRuntime(config);
-  const warningsCollector = [];
 
   let result;
   try {

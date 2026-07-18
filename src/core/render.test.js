@@ -12,18 +12,51 @@ const renderTemplate = async (template, context = {}, config = {}) => {
 };
 
 describe('inline template error locations', () => {
+  test('scrubs dangerous global references from context in dev mode and emits a warning', async () => {
+    const html = await renderTemplate('{{ user.name }}', {
+      user: { name: 'Ada', global: process }
+    }, { dev: true, contextStrict: 'warn' });
+    expect(html).toStartWith('Ada');
+    expect(html).toContain('Scrubbed unsafe values from context: user.global');
+  });
+
+  test('throws DANGEROUS_CONTEXT_VALUES when contextStrict is error', async () => {
+    const filePath = fileURLToPath(import.meta.url);
+    const source = fs.readFileSync(filePath, 'utf8').split('\n');
+    const marker = 'DANGEROUS_CONTEXT_LOCATION_' + 'MARKER';
+    const markerLine = source.findIndex(line => line.includes(marker)) + 1;
+    const err = await renderTemplate('{{ user.global }}', {
+      user: { name: 'Ada', global: process }
+    }, { dev: true, contextStrict: 'error', jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e); // DANGEROUS_CONTEXT_LOCATION_MARKER
+    const callerLine = source[err.lineno - 1];
+
+    expect(err.code).toBe('DANGEROUS_CONTEXT_VALUES');
+    expect(err.subject).toContain('user.global');
+    expect(err.lineBase).toBe('one');
+    expect(err.colno).toBe(callerLine.indexOf('user.global') + 'user.'.length + 1);
+  });
+
+  test('does not scrub when contextStrict is false and dev is false', async () => {
+    const html = await renderTemplate('{{ user.name }}', {
+      user: { name: 'Ada', global: process }
+    }, { dev: false, contextStrict: false });
+    expect(html).toBe('Ada');
+  });
+
   test('applies sandboxEnvironment to render context access', async () => {
     const html = await renderTemplate('{{ document.title }}', {
       document: { title: 'node scoped value' }
     }, {
       sandbox: true,
-      sandboxEnvironment: 'node'
+      sandboxEnvironment: 'node',
+      contextStrict: false
     });
     const err = await renderTemplate('{{ process.env }}', {
       process: { env: {} }
     }, {
       sandbox: true,
-      sandboxEnvironment: 'node'
+      sandboxEnvironment: 'node',
+      contextStrict: false
     }).catch(e => e);
 
     expect(html).toBe('node scoped value');
@@ -244,7 +277,7 @@ describe('inline template error locations', () => {
     const marker = 'STATEMENT_ARITHMETIC_LOCATION_' + 'MARKER';
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
     const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
-    const err = await render('{% if 1 + invalid %}ok{% endif %}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e); // STATEMENT_ARITHMETIC_LOCATION_MARKER
+    const err = await render('{% if 1 + invalid %}ok{% endif %}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1, contextStrict: false }).catch(e => e); // STATEMENT_ARITHMETIC_LOCATION_MARKER
     const callerLine = source[err.lineno - 1];
 
     expect(err.lineBase).toBe('one');
@@ -258,7 +291,7 @@ describe('inline template error locations', () => {
     const marker = 'STATEMENT_COMPARISON_LOCATION_' + 'MARKER';
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
     const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
-    const err = await render('{% if 1 < invalid %}ok{% endif %}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e); // STATEMENT_COMPARISON_LOCATION_MARKER
+    const err = await render('{% if 1 < invalid %}ok{% endif %}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1, contextStrict: false }).catch(e => e); // STATEMENT_COMPARISON_LOCATION_MARKER
     const callerLine = source[err.lineno - 1];
 
     expect(err.lineBase).toBe('one');
@@ -272,7 +305,7 @@ describe('inline template error locations', () => {
     const marker = 'STATEMENT_UNARY_LOCATION_' + 'MARKER';
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
     const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
-    const err = await render('{% if -invalid %}ok{% endif %}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e); // STATEMENT_UNARY_LOCATION_MARKER
+    const err = await render('{% if -invalid %}ok{% endif %}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1, contextStrict: false }).catch(e => e); // STATEMENT_UNARY_LOCATION_MARKER
     const callerLine = source[err.lineno - 1];
 
     expect(err.lineBase).toBe('one');
@@ -372,6 +405,19 @@ describe('inline template error locations', () => {
     expect(err.lineBase).toBe('one');
     expect(err.templateName).toBe(filePath);
     expect(err.colno).toBe(callerLine.indexOf(' in ') + 2);
+  });
+
+  test('points bracket-string call errors at the property name', async () => {
+    const err = await render('Your status: {{ user["status"]() }}', {
+      user: { status: 'active' }
+    }, {
+      dev: true
+    }).catch(e => e);
+
+    expect(err.code).toBe('NOT_A_FUNCTION');
+    expect(err.lineBase).toBe('zero');
+    expect(err.lineno).toBe(0);
+    expect(err.colno).toBe('Your status: {{ user["'.length);
   });
 });
 

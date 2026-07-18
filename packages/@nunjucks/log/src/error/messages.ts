@@ -78,6 +78,7 @@ export const ERROR_DEFINITIONS = {
   TIMEOUT: createError('TIMEOUT', 'Template rendering timed out after {ms}ms', ['ms'], /^Template rendering timed out after (\d+)ms$/i),
   BLOCKED_CONTEXT_KEYS: createError('BLOCKED_CONTEXT_KEYS', 'Cannot use blocked keys in context: {keys}', ['keys'], /^Cannot use blocked keys in context: (.+)$/i),
   DANGEROUS_CONTEXT_VALUES: createError('DANGEROUS_CONTEXT_VALUES', 'Context contains unsafe values: {values}', ['values'], /^Context contains unsafe values: (.+)$/i),
+  DANGEROUS_CONTEXT_VALUE_SCRUBBED: createError('DANGEROUS_CONTEXT_VALUE_SCRUBBED', 'Scrubbed unsafe values from context: {values}', ['values'], /^Scrubbed unsafe values from context: (.+)$/i),
   DANGEROUS_TEMPLATE_CODE: createError('DANGEROUS_TEMPLATE_CODE', 'Template contains unsafe code: {violations}', ['violations'], /^Template contains unsafe code: (.+)$/i),
   INVALID_LOOKUP: createError('INVALID_LOOKUP', 'expected name as lookup value after {marker} on {target}, got {value}', ['marker', 'target', 'value'], /expected name as lookup value after (dot|\?\.) on (.+), got (.+)$/i),
   CIRCULAR_INCLUDE: createError('CIRCULAR_INCLUDE', 'Circular include detected: {path}', ['path'], /^Circular include detected: (.+)$/i),

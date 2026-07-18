@@ -190,7 +190,7 @@ export function handleError(error, lineno, colno, runtime) {
     throw error;
   }
 
-  throw createLog('error', {
+  const thrown = createLog('error', {
     name: metadata.code || 'RUNTIME_ERROR',
     message: () => metadata.message,
     pattern: /./
@@ -207,6 +207,9 @@ export function handleError(error, lineno, colno, runtime) {
     subject: metadata.subject,
     lineBase: metadata.lineBase
   });
+  thrown.templatePath = metadata.templatePath;
+  thrown.sourceStartLine = metadata.sourceStartLine;
+  throw thrown;
 }
 
 export function fromIterator(arr) {

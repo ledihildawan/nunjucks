@@ -7,7 +7,8 @@
     ".": "./src/index.js",
     "./path-shortener": "./src/path-shortener.js",
     "./caller-file": "./src/caller-file.js",
-    "./blocked-keys": "./src/blocked-keys.js"
+    "./blocked-keys": "./src/blocked-keys.js",
+    "./safe-context": "./src/safe-context.js"
   },
   "description": "Shared utilities for Nunjucks"
 }

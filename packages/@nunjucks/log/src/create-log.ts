@@ -50,9 +50,12 @@ export interface TemplateError extends Error {
   subject: string | null;
   phase: string | null;
   templateName: string | null;
+  templatePath: string | null;
   renderContext?: Record<string, unknown>;
   lineBase?: LineBase | null;
   sourceContent?: string;
+  sourceStartLine?: number;
+  toJSON?: () => Record<string, unknown>;
   outputOptions?: Omit<OutputOptions, 'format'>;
   output: (options?: OutputOptions) => {
     html: string;
@@ -241,6 +244,26 @@ function createErrorObject(
 
   const storedOptions = extra ? { ...extra } : {};
   err.sourceContent = typeof extra?.sourceContent === 'string' ? extra.sourceContent : undefined;
+  const sourceStartLineValue = extra?.sourceStartLine;
+  err.sourceStartLine = Number.isInteger(sourceStartLineValue) ? (sourceStartLineValue as number) : 1;
+  err.templatePath = typeof metadata.templateName === 'string' ? metadata.templateName : null;
+
+  err.toJSON = function toJSON(this: TemplateError) {
+    return {
+      name: this.name,
+      code: this.code,
+      subject: this.subject,
+      message: this.message,
+      phase: this.phase,
+      templateName: this.templateName,
+      templatePath: this.templatePath,
+      sourceStartLine: this.sourceStartLine,
+      lineno: this.lineno,
+      colno: this.colno,
+      lineBase: this.lineBase,
+      stack: this.stack
+    };
+  };
 
   err.output = function(options: OutputOptions = {}) {
     const mergedOptions = { ...storedOptions, ...options };

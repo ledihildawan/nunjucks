@@ -64,6 +64,46 @@ describe('renderContextHtml', () => {
     });
   });
 
+  test('redacts secrets and never invokes getters', () => {
+    let getterCalls = 0;
+    const context = {
+      password: 'secret',
+      apiKey: 'key',
+      nested: { token: 'token' }
+    };
+    Object.defineProperty(context, 'dangerous', {
+      enumerable: true,
+      get() {
+        getterCalls += 1;
+        throw new Error('must not run');
+      }
+    });
+
+    const html = renderContextHtml(context);
+    expect(extractContextJson(html)).toEqual({
+      password: '[Redacted]',
+      apiKey: '[Redacted]',
+      nested: { token: '[Redacted]' },
+      dangerous: '[Accessor omitted]'
+    });
+    expect(getterCalls).toBe(0);
+    expect(html).not.toContain('secret');
+  });
+
+  test('normalizes maps, sets, binary values, and long strings', () => {
+    const html = renderContextHtml({
+      map: new Map([['key', 'value']]),
+      set: new Set([1, 2]),
+      bytes: new Uint8Array([1, 2, 3]),
+      text: 'x'.repeat(1200)
+    });
+    const normalized = extractContextJson(html) as Record<string, unknown>;
+
+    expect(normalized.map).toEqual({ '[Map]': [['key', 'value']] });
+    expect(normalized.set).toEqual({ '[Set]': [1, 2] });
+    expect(normalized.bytes).toBe('[Binary: 3 bytes]');
+    expect(String(normalized.text)).toContain('[Truncated]');
+  });
   test('serializes circular values without throwing', () => {
     const user: Record<string, unknown> = { name: 'Ada' };
     user.profile = user;

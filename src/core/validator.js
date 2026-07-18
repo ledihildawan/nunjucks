@@ -1,4 +1,4 @@
-import { validateContext, scanTemplateForDangerousCode } from '../runtime/security.js';
+import { validateContext, findDangerousValues, scanTemplateForDangerousCode } from '../runtime/security.js';
 import { validateFilterName, validateGlobalName } from '../config/reserved.js';
 
 export const validateTemplate = (template, config) => {
@@ -56,10 +56,16 @@ export const validateRenderContext = (context, config) => {
       }]
     };
     if (err.dangerousPaths) {
+      errorObj.errors[0].subject = err.dangerousPaths[0];
       errorObj.errors[0].dangerousPaths = err.dangerousPaths;
     }
     return errorObj;
   }
+};
+
+export const findContextDangerousValues = (context, config = {}) => {
+  if (!context || typeof context !== 'object') return [];
+  return findDangerousValues(context, config.allowedGlobals);
 };
 
 export const validateConfig = (config) => {

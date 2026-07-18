@@ -1,4 +1,4 @@
-import { nodes, NODE_TYPES } from '../../nodes/index.js';
+import { nodes, BracketNotation } from '../../nodes/index.js';
 import { compileAggregate } from './container.js';
 
 const getNodeName = (ctx, node, isBracketCall = false) => {
@@ -10,7 +10,7 @@ const getNodeName = (ctx, node, isBracketCall = false) => {
       return 'the return value of (' + getNodeName(ctx, node.name) + ')';
     case 'lookupVal': {
       const target = getNodeName(ctx, node.target);
-      const isBracket = node[NODE_TYPES.BracketNotation] === true;
+      const isBracket = node[BracketNotation] === true;
       if (nodes.isSymbol(node.val)) {
         return target + (isBracket ? '[' + getNodeName(ctx, node.val) + ']' : '.' + getNodeName(ctx, node.val));
       }
@@ -21,7 +21,7 @@ const getNodeName = (ctx, node, isBracketCall = false) => {
     }
     case 'optionalChain': {
       const target = getNodeName(ctx, node.target);
-      const isBracket = node[NODE_TYPES.BracketNotation] === true;
+      const isBracket = node[BracketNotation] === true;
       if (nodes.isSymbol(node.val)) {
         return target + (isBracket ? '?.[' + getNodeName(ctx, node.val) + ']' : '?.' + getNodeName(ctx, node.val));
       }
@@ -39,7 +39,13 @@ const getNodeName = (ctx, node, isBracketCall = false) => {
 
 const getCallLocation = (node) => {
   if (nodes.isLookupVal(node.name) && node.name.val?.lineno != null && node.name.val?.colno != null) {
-    return { lineno: node.name.val.lineno, colno: node.name.val.colno };
+    const isQuotedBracketString = node.name[BracketNotation] === true &&
+      nodes.isLiteral(node.name.val) &&
+      typeof node.name.val.value === 'string';
+    return {
+      lineno: node.name.val.lineno,
+      colno: node.name.val.colno + (isQuotedBracketString ? 1 : 0)
+    };
   }
 
   return {

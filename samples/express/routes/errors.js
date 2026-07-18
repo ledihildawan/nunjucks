@@ -206,7 +206,7 @@ router.get('/sandbox-constructor', async (req, res, next) => {
 
 router.get('/sandbox-process', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ user.global }}', { user: { global: process } }, { dev: true, sandbox: true });
+    const html = await nunjucks('{{ user.global }}', { user: { global: process } }, { dev: true, sandbox: true, contextStrict: 'error' });
     res.type('html').send(html);
   } catch (err) {
     next(err);

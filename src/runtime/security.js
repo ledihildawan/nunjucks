@@ -3,6 +3,19 @@ import { getBlockedKeyCategory, isBlockedKey, isDangerousGlobal } from '@nunjuck
 
 const isObject = (val) => val !== null && typeof val === 'object' && !Array.isArray(val);
 
+const isDangerousReference = (value) => {
+  if (value === null || value === undefined) return false;
+  if (typeof value !== 'object' && typeof value !== 'function') return false;
+  if (typeof process !== 'undefined' && value === process) return true;
+  if (typeof globalThis !== 'undefined' && value === globalThis) return true;
+  if (typeof window !== 'undefined' && value === window) return true;
+  if (typeof document !== 'undefined' && value === document) return true;
+  if (typeof self !== 'undefined' && value === self) return true;
+  if (typeof Buffer !== 'undefined' && value instanceof Buffer) return true;
+  if (typeof global !== 'undefined' && value === global) return true;
+  return false;
+};
+
 export class SecurityError extends Error {
   constructor(message, code = 'SECURITY_VIOLATION') {
     super(message);
@@ -118,12 +131,13 @@ const isPrototypePollutionKey = (key) => PROTOTYPE_POLLUTION_KEYS.has(key);
 
 const isBlockedNestedContextKey = (key) => getBlockedKeyCategory(key) === 'object_intrinsic';
 
-const findDangerousValues = (obj, allowedGlobals, path = '', isTopLevel = true) => {
+const findDangerousValues = (obj, allowedGlobals, path = '', isTopLevel = true, seen = new WeakSet()) => {
   const dangerous = [];
 
-  if (!obj || typeof obj !== 'object') {
+  if (!obj || typeof obj !== 'object' || seen.has(obj)) {
     return dangerous;
   }
+  seen.add(obj);
 
   for (const key of keys(obj)) {
     const currentPath = path ? `${path}.${key}` : key;
@@ -154,8 +168,12 @@ const findDangerousValues = (obj, allowedGlobals, path = '', isTopLevel = true) 
       }
     }
 
-    if (value && typeof value === 'object') {
-      dangerous.push(...findDangerousValues(value, allowedGlobals, currentPath, false));
+    if (isDangerousReference(value)) {
+      dangerous.push(currentPath);
+    }
+
+    if (value && typeof value === 'object' && !isDangerousReference(value)) {
+      dangerous.push(...findDangerousValues(value, allowedGlobals, currentPath, false, seen));
     }
   }
 
@@ -169,6 +187,32 @@ const BUILTIN_GLOBALS = new Set([
 ]);
 
 const isBuiltIn = (name) => BUILTIN_GLOBALS.has(name);
+
+const scrubDangerousReferences = (context, allowedGlobals) => {
+  const seen = new WeakSet();
+  const visit = (value) => {
+    if (!value || typeof value !== 'object' || seen.has(value)) return value;
+    seen.add(value);
+    for (const key of Object.keys(value)) {
+      const child = value[key];
+      if (isDangerousReference(child)) {
+        delete value[key];
+        continue;
+      }
+      if (child && typeof child === 'object') {
+        visit(child);
+      }
+    }
+    return value;
+  };
+  return visit(context);
+};
+
+export {
+  findDangerousValues,
+  scrubDangerousReferences,
+  isDangerousReference
+};
 
 export const restrictGlobals = (context, allowedGlobals = []) => {
   const allowed = new Set(allowedGlobals);

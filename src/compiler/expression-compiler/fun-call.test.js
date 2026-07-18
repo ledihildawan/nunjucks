@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { compileFunCall } from './fun-call.js';
-import { nodes } from '../../nodes/index.js';
+import { nodes, BracketNotation } from '../../nodes/index.js';
 
 const makeCtx = () => {
   const emitted = [];
@@ -53,5 +53,29 @@ describe('compileFunCall', () => {
     expect(fullOutput).toContain('lineno = 3, colno = 20');
     expect(fullOutput).toContain('], 3, 20))');
     expect(fullOutput).toContain('container.get');
+  });
+
+  test('uses string content location for bracket-string callees', () => {
+    const ctx = makeCtx();
+    const callee = nodes.lookupVal(
+      3,
+      10,
+      nodes.symbol(3, 10, 'user'),
+      nodes.literal(3, 21, 'status')
+    );
+    callee[BracketNotation] = true;
+    const node = {
+      lineno: 3,
+      colno: 31,
+      name: callee,
+      args: nodes.nodeList(3, 31, []),
+    };
+
+    compileFunCall(ctx, node);
+    const fullOutput = ctx.emitted.join('');
+
+    expect(fullOutput).toContain('lineno = 3, colno = 22');
+    expect(fullOutput).toContain('], 3, 22))');
+    expect(fullOutput).toContain('user[\\"status\\"]');
   });
 });
