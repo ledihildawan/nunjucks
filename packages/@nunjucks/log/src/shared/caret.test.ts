@@ -40,4 +40,17 @@ describe('calculateCaretPosition', () => {
       carets: '^'
     });
   });
+
+  test('highlights a full filename with hyphen and extension', () => {
+    const line = '{% include "nonexistent-template.html" %}';
+    const col = line.indexOf('nonexistent-template.html') + 1;
+    const caret = calculateCaretPosition(line, col);
+
+    expect(caret).toEqual({
+      wordStart: line.indexOf('nonexistent-template.html'),
+      wordEnd: line.indexOf('nonexistent-template.html') + 'nonexistent-template.html'.length,
+      highlightWord: 'nonexistent-template.html',
+      carets: '^^^^^^^^^^^^^^^^^^^^^^^^^'
+    });
+  });
 });

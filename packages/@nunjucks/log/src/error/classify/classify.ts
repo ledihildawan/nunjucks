@@ -1,6 +1,7 @@
 import { PATTERNS } from '../messages.ts';
 import { RULES, DEFAULT_CLASSIFICATION } from '../rules.ts';
 import type { Classification } from '../rules.ts';
+import { shortenPath } from '@nunjucks/shared/path-shortener';
 
 const extractSubjectFromMessage = (message: string, pattern: RegExp): string | null => {
 	const match = message.match(pattern);
@@ -10,6 +11,11 @@ const extractSubjectFromMessage = (message: string, pattern: RegExp): string | n
 const replacePlaceholders = (str: string | null | undefined, undefinedName: string | null): string | null => {
 	if (!str) return str ?? null;
 	return str.replaceAll('{subject}', undefinedName || '').replaceAll('{target}', undefinedName || '');
+};
+
+const humanizeTemplatePath = (path: string | null): string | null => {
+	if (!path) return null;
+	return shortenPath(path).replace(/^.*?[\\/]views[\\/]/i, '');
 };
 
 const classifyFilterError = (rawMessage: string): Classification => {
@@ -131,7 +137,7 @@ const SPECIAL_CASES: Record<string, (error: { message?: string; subject?: string
 	CIRCULAR_INCLUDE: (error) => {
 		const rule = RULES.find(r => r.category === 'circular_include');
 		const pathMatch = error.message?.match(/Circular include detected: (.+)/i);
-		const undefinedName = error.subject || pathMatch?.[1] || null;
+		const undefinedName = humanizeTemplatePath(error.subject || pathMatch?.[1] || null);
 		return createClassificationFromRule(rule, undefinedName) || DEFAULT_CLASSIFICATION;
 	},
 	IMPORT_ERROR: (error) => {

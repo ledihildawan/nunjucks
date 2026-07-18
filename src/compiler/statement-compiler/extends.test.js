@@ -21,13 +21,13 @@ describe('compileExtends', () => {
   test('emits getTemplate and block iteration', () => {
     const ctx = makeCtx();
     const node = {
-      template: { mock: '"base.html"' },
+      template: { type: 'literal', value: 'base.html', mock: '"base.html"', lineno: 1, colno: 12 },
       lineno: 1,
       colno: 1,
     };
     compileExtends(ctx, node);
     const code = ctx.emitted.join('');
-    expect(code).toContain('lineno = 1; colno = 1');
+    expect(code).toContain('lineno = 1; colno = 13');
     expect(code).toContain('env.getTemplate(');
     expect(code).toContain('parentTemplate = t_2');
     expect(code).toContain('for(let t_1 in parentTemplate.blocks)');
@@ -39,16 +39,16 @@ describe('compileInclude', () => {
   test('emits getTemplate and render call', () => {
     const ctx = makeCtx();
     const node = {
-      template: { mock: '"other.html"' },
+      template: { type: 'literal', value: 'other.html', mock: '"other.html"', lineno: 2, colno: 12 },
       lineno: 2,
       colno: 3,
       ignoreMissing: false,
     };
     compileInclude(ctx, node);
     const code = ctx.emitted.join('');
-    expect(code).toContain('lineno = 2; colno = 3');
+    expect(code).toContain('lineno = 2; colno = 13');
     expect(code).toContain('env.getTemplate(');
-    expect(code).toContain('parentLineno: 3, parentColno: 4');
+    expect(code).toContain('parentLineno: 3, parentColno: 14');
     expect(code).toContain('context.getVariables(), frame');
     expect(code).toContain('output += t_2');
   });

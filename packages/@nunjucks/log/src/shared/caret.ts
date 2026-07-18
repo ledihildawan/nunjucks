@@ -11,10 +11,15 @@ export function calculateCaretPosition(
 ): CaretResult | null {
   if (displayCol <= 0 || !line) return null;
 
+  const isWordChar = (char: string | undefined): boolean => /[\w./\\-]/.test(char ?? '');
+  const isPathLike = (word: string): boolean =>
+    /[\\/-]/.test(word) ||
+    /\.(?:njk|nunjucks|html?|tmpl|tpl|js|ts|mjs|cjs|jsx|tsx|json|ya?ml|css|scss|sass|less|md|txt)$/i.test(word);
+
   let pos = displayCol - 1;
   let charAtPos = line[pos];
 
-  if (!/[\w.]/.test(charAtPos)) {
+  if (!isWordChar(charAtPos)) {
     if (charAtPos && !/\s/.test(charAtPos)) {
       return {
         wordStart: pos,
@@ -25,10 +30,10 @@ export function calculateCaretPosition(
     }
 
     let searchLeft = pos - 1;
-    while (searchLeft >= 0 && !/[\w.]/.test(line[searchLeft])) {
+    while (searchLeft >= 0 && !isWordChar(line[searchLeft])) {
       searchLeft--;
     }
-    if (searchLeft >= 0 && /[\w.]/.test(line[searchLeft])) {
+    if (searchLeft >= 0 && isWordChar(line[searchLeft])) {
       pos = searchLeft;
       charAtPos = line[pos];
     }
@@ -36,19 +41,19 @@ export function calculateCaretPosition(
 
   let wordStart = pos;
   let wordEnd = pos;
-  if (/[\w.]/.test(charAtPos)) {
+  if (isWordChar(charAtPos)) {
     wordEnd = pos;
-    while (wordEnd < line.length && /[\w.]/.test(line[wordEnd])) {
+    while (wordEnd < line.length && isWordChar(line[wordEnd])) {
       wordEnd++;
     }
     wordStart = wordEnd - 1;
-    while (wordStart > 0 && /[\w.]/.test(line[wordStart - 1])) {
+    while (wordStart > 0 && isWordChar(line[wordStart - 1])) {
       wordStart--;
     }
   }
 
   let highlightWord = line.slice(wordStart, wordEnd);
-  if (highlightWord?.includes('.')) {
+  if (highlightWord?.includes('.') && !isPathLike(highlightWord)) {
     const relativePos = pos - wordStart;
     let segmentStart = wordStart;
     let segmentEnd = wordStart;

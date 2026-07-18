@@ -208,6 +208,7 @@ export const RULES: Rule[] = [
     pattern: PATTERNS.CIRCULAR_INCLUDE,
     category: 'circular_include',
     subjectFrom: firstCapture,
+    titleTemplate: "Circular include detected: {subject}",
     causes: [
       '**Template includes itself** (directly or indirectly)',
       '**Circular dependency** between templates'

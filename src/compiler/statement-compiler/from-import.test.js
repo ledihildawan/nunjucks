@@ -20,7 +20,7 @@ describe('compileFromImport', () => {
     const ctx = makeCtx();
     const nameNode = nodes.symbol(1, 1, 'foo');
     const node = {
-      template: { mock: '"lib.html"' },
+      template: { type: 'literal', value: 'lib.html', mock: '"lib.html"', lineno: 1, colno: 8 },
       names: { children: [nameNode] },
       lineno: 1,
       colno: 1,

@@ -19,7 +19,7 @@ describe('compileImport', () => {
     const ctx = makeCtx();
     const node = {
       target: { value: 'myLib' },
-      template: { mock: '"lib.html"' },
+      template: { type: 'literal', value: 'lib.html', mock: '"lib.html"', lineno: 1, colno: 10 },
       lineno: 1,
       colno: 1,
       withContext: false,
@@ -27,7 +27,7 @@ describe('compileImport', () => {
     const frame = { parent: null };
     compileImport(ctx, node, frame);
     const code = ctx.emitted.join('');
-    expect(code).toContain('lineno = 1; colno = 1');
+    expect(code).toContain('lineno = 1; colno = 11');
     expect(code).toContain('env.getTemplate(');
     expect(code).toContain('t_1.getExported(');
     expect(code).toContain('context.setVariable("myLib"');
