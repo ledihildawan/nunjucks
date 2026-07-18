@@ -1,4 +1,5 @@
 import EventEmitter from 'events';
+import { readFileSync } from 'node:fs';
 import { createCompiler } from '../compiler/index.js';
 import { parse } from '../parser/index.js';
 import { transform } from '../transformers/index.js';
@@ -8,7 +9,7 @@ import { withTimeout } from '../runtime/timeout.js';
 import { createSandboxedContext } from '../runtime/sandbox.js';
 import { createLog, injectWarningsScript } from '@nunjucks/log';
 import { createFileSystemLoader } from '../loaders/index.js';
-import { getCallerFile } from '@nunjucks/shared/caller-file';
+import { getCallerFile, getCallerLocation } from '@nunjucks/shared/caller-file';
 import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
 
 let cachedLoader = null;
@@ -81,6 +82,33 @@ const findTemplateOccurrence = (content, templateHint, preferredLine) => {
   return best === -1 ? null : { index: best, template: bestTemplate };
 };
 
+const findContextKeyPosition = (sourceFile, callLine, dangerousPath) => {
+  try {
+    const content = readFileSync(sourceFile, 'utf-8');
+    const lines = content.split('\n');
+    const keyName = dangerousPath.split('.').pop();
+    const searchLine = Math.max(0, callLine - 1);
+    const searchRadius = 5;
+
+    for (let i = Math.max(0, searchLine - searchRadius); i <= Math.min(lines.length - 1, searchLine + searchRadius); i++) {
+      const line = lines[i];
+      const col = line.indexOf(keyName);
+      if (col !== -1) {
+        return { line: i + 1, col: col + 1 };
+      }
+    }
+
+    const col = lines[searchLine]?.indexOf(keyName);
+    if (col !== -1) {
+      return { line: searchLine + 1, col: col + 1 };
+    }
+  } catch {
+    // File read error, ignore
+  }
+
+  return null;
+};
+
 const findSubjectOccurrence = (content, subject, preferredLine) => {
   if (!subject || typeof subject !== 'string') return null;
 
@@ -136,10 +164,16 @@ const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, 
     } else if (typeof templateHint === 'string') {
       const templateMatch = findTemplateOccurrence(content, templateHint, errorLine);
       if (templateMatch) {
-        const targetOffset = templateMatch.index + templateLocationOffset(templateMatch.template, templateErrorLine, templateErrorCol);
+        const targetOffset = templateMatch.index + templateLocationOffset(templateMatch.template, templateErrorLine, templateErrorCol - 1);
         const position = positionAtOffset(content, targetOffset);
         resolvedLine = position.lineOffset + 1;
         resolvedCol = position.col;
+      }
+    } else {
+      const templateValueMatch = findSubjectOccurrence(content, String(templateHint), errorLine);
+      if (templateValueMatch) {
+        resolvedLine = templateValueMatch.line;
+        resolvedCol = templateValueMatch.col;
       }
     }
 
@@ -239,6 +273,7 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
 
 export const render = async (template, context = {}, config = {}) => {
   config._callerFile = config._callerFile || getCallerFile();
+  config._callerLocation = config._callerLocation || getCallerLocation();
 
   if (typeof template !== 'string') {
     const err = createLog('error', ERROR_DEFINITIONS.TEMPLATE_MUST_BE_STRING, {}, null, { phase: 'render' });
@@ -273,13 +308,29 @@ export const render = async (template, context = {}, config = {}) => {
 
   const templateValidation = validateTemplate(template, config);
   if (!templateValidation.valid) {
-    const err = new Error(templateValidation.errors[0].message);
+    const validationError = templateValidation.errors[0];
+    const err = new Error(validationError.message);
+    err.lineno = validationError.lineno;
+    err.colno = validationError.colno;
+    err.code = validationError.code;
     throw wrapWithLog(err, config, templateSource, context);
   }
 
   const contextValidation = validateRenderContext(context, config);
   if (!contextValidation.valid) {
-    const err = new Error(contextValidation.errors[0].message);
+    const contextError = contextValidation.errors[0];
+    const err = new Error(contextError.message);
+    err.code = contextError.code;
+    if (contextError.dangerousPaths && contextError.dangerousPaths.length > 0) {
+      const callerLocation = config._callerLocation;
+      if (callerLocation && callerLocation.fileName !== 'unknown') {
+        const pos = findContextKeyPosition(callerLocation.fileName, callerLocation.lineNumber || 1, contextError.dangerousPaths[0]);
+        if (pos) {
+          err.lineno = pos.line;
+          err.colno = pos.col;
+        }
+      }
+    }
     throw wrapWithLog(err, config, templateSource, context);
   }
 
@@ -394,7 +445,19 @@ export const renderWithEnv = async (templateName, env, context = {}, config = {}
 
   const contextValidation = validateRenderContext(context, config);
   if (!contextValidation.valid) {
-    const err = new Error(contextValidation.errors[0].message);
+    const contextError = contextValidation.errors[0];
+    const err = new Error(contextError.message);
+    err.code = contextError.code;
+    if (contextError.dangerousPaths && contextError.dangerousPaths.length > 0) {
+      const callerLocation = config._callerLocation;
+      if (callerLocation && callerLocation.fileName !== 'unknown') {
+        const pos = findContextKeyPosition(callerLocation.fileName, callerLocation.lineNumber || 1, contextError.dangerousPaths[0]);
+        if (pos) {
+          err.lineno = pos.line;
+          err.colno = pos.col;
+        }
+      }
+    }
     throw wrapWithLog(err, { ...config, templatePath: config.templatePath || templateName, env }, null, context);
   }
 

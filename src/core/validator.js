@@ -17,10 +17,13 @@ export const validateTemplate = (template, config) => {
   if (config.strictMode || config.whitelistStrict) {
     const violations = scanTemplateForDangerousCode(template);
     if (violations.length > 0) {
+      const first = violations[0];
       errors.push({
         code: 'DANGEROUS_TEMPLATE_CODE',
         message: `Template contains dangerous code: ${violations.map(v => v.message).join('; ')}`,
-        violations
+        violations,
+        lineno: first.line,
+        colno: first.col
       });
     }
   }
@@ -44,13 +47,17 @@ export const validateRenderContext = (context, config) => {
     });
     return { valid: true, errors: [] };
   } catch (err) {
-    return {
+    const errorObj = {
       valid: false,
       errors: [{
         code: err.code || 'SECURITY_VIOLATION',
         message: err.message
       }]
     };
+    if (err.dangerousPaths) {
+      errorObj.errors[0].dangerousPaths = err.dangerousPaths;
+    }
+    return errorObj;
   }
 };
 

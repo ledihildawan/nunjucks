@@ -18,12 +18,23 @@ const DANGEROUS_PATTERNS = [
   { pattern: /\bimport\s+\(/, message: 'dynamic import() is not allowed' },
 ];
 
+const getLineColFromIndex = (content, index) => {
+  const beforeMatch = content.slice(0, index);
+  const lines = beforeMatch.split('\n');
+  const line = lines.length;
+  const col = lines[lines.length - 1].length + 1;
+  return { line, col };
+};
+
 export const scanTemplateForDangerousCode = (templateContent) => {
   const violations = [];
 
   for (const { pattern, message } of DANGEROUS_PATTERNS) {
-    if (pattern.test(templateContent)) {
-      violations.push({ message, pattern: pattern.source });
+    const regex = new RegExp(pattern.source, 'g');
+    let match;
+    while ((match = regex.exec(templateContent)) !== null) {
+      const { line, col } = getLineColFromIndex(templateContent, match.index);
+      violations.push({ message, pattern: pattern.source, line, col });
     }
   }
 
@@ -80,10 +91,12 @@ export const validateContext = (context, options = {}) => {
   if (scanValues) {
     const dangerousValues = findDangerousValues(context, allowedGlobals);
     if (dangerousValues.length > 0) {
-      throw new SecurityError(
+      const err = new SecurityError(
         `Context contains unsafe values: ${dangerousValues.join(', ')}`,
         'DANGEROUS_CONTEXT_VALUES'
       );
+      err.dangerousPaths = dangerousValues;
+      throw err;
     }
   }
 
