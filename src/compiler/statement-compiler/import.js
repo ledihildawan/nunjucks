@@ -3,7 +3,10 @@ const compileGetTemplate = (ctx, node, frame, eagerCompile, ignoreMissing) => {
   const parentName = ctx._templateName();
   const eagerCompileArg = (eagerCompile) ? 'true' : 'false';
   const ignoreMissingArg = (ignoreMissing) ? 'true' : 'false';
-  ctx._emitLine(`lineno = ${node.lineno}; colno = ${node.colno != null ? node.colno : 0};`);
+  const loc = (node?.template && typeof node.template === 'object' && (node.template.lineno !== undefined || node.template.colno !== undefined))
+    ? { lineno: node.template.lineno, colno: node.template.colno }
+    : { lineno: node.lineno, colno: node.colno };
+  ctx._emitLine(`lineno = ${loc.lineno != null ? loc.lineno : 0}; colno = ${loc.colno != null ? loc.colno : 0};`);
   ctx._emit(`let ${parentTemplateId} = await env.getTemplate(`);
   ctx._compileExpression(node.template, frame);
   ctx._emitLine(`, ${eagerCompileArg}, ${parentName}, ${ignoreMissingArg});`);

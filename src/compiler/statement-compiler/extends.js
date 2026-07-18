@@ -1,9 +1,17 @@
+const getTemplateLocation = (node) => {
+  if (node?.template && typeof node.template === 'object' && (node.template.lineno !== undefined || node.template.colno !== undefined)) {
+    return { lineno: node.template.lineno, colno: node.template.colno };
+  }
+  return { lineno: node.lineno, colno: node.colno };
+};
+
 const compileGetTemplate = (ctx, node, frame, eagerCompile, ignoreMissing) => {
   const parentTemplateId = ctx._tmpid();
   const parentName = ctx._templateName();
   const eagerCompileArg = (eagerCompile) ? 'true' : 'false';
   const ignoreMissingArg = (ignoreMissing) ? 'true' : 'false';
-  ctx._emitLine(`lineno = ${node.lineno}; colno = ${node.colno != null ? node.colno : 0};`);
+  const loc = getTemplateLocation(node);
+  ctx._emitLine(`lineno = ${loc.lineno != null ? loc.lineno : 0}; colno = ${loc.colno != null ? loc.colno : 0};`);
   ctx._emit(`let ${parentTemplateId} = await env.getTemplate(`);
   ctx._compileExpression(node.template, frame);
   ctx._emitLine(`, ${eagerCompileArg}, ${parentName}, ${ignoreMissingArg});`);
@@ -31,14 +39,15 @@ export const compileInclude = (ctx, node, frame) => {
   const tmplVar = ctx._tmpid();
   const resultVar = ctx._tmpid();
 
-  ctx._emitLine(`lineno = ${node.lineno}; colno = ${node.colno != null ? node.colno : 0};`);
+  const loc = getTemplateLocation(node);
+  ctx._emitLine(`lineno = ${loc.lineno != null ? loc.lineno : 0}; colno = ${loc.colno != null ? loc.colno : 0};`);
   ctx._emit(`let ${tmplVar} = `);
   ctx._compileExpression(node.template, frame);
   ctx._emitLine(';');
   ctx._emitLine(`if(typeof ${tmplVar} !== 'string') { const err = new Error('template names must be a string'); err.code = 'INVALID_INCLUDE'; err.subject = ${tmplVar}; throw err; }`);
   ctx._emit(`let ${tmplVar}_template = await env.getTemplate(${tmplVar}, false, `);
   const ignoreMissing = node.ignoreMissing ? 'true' : 'false';
-  const includeChain = `{parentTmpl: ${ctx._templateName()}, parentLineno: ${node.lineno + 1}, parentColno: ${node.colno !== undefined ? node.colno + 1 : 0}}`;
+  const includeChain = `{parentTmpl: ${ctx._templateName()}, parentLineno: ${(loc.lineno != null ? loc.lineno : 0) + 1}, parentColno: ${loc.colno != null ? loc.colno + 1 : 0}}`;
   ctx._emitLine(`${includeChain}, ${ignoreMissing});`);
 
   if (node.only) {
