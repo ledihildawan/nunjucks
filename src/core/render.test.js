@@ -55,6 +55,21 @@ describe('inline template error locations', () => {
     expect(err.lineno).toBe(expectedLine);
     expect(err.colno).toBe(callerLine.indexOf('missingKey') + 1);
   });
+
+  test('points reserved filter errors at the filter key in caller config', async () => {
+    const filePath = fileURLToPath(import.meta.url);
+    const source = fs.readFileSync(filePath, 'utf8').split('\n');
+    const marker = 'RESERVED_FILTER_' + 'MARKER';
+    const markerLine = source.findIndex(line => line.includes(marker)) + 1;
+    const err = await render('{{ value }}', { value: 'test' }, { dev: true, filters: { 'if': (v) => v }, _customFilters: { 'if': (v) => v }, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e); // RESERVED_FILTER_MARKER
+    const callerLine = source[err.lineno - 1];
+
+    expect(err.code).toBe('RESERVED_KEYWORD');
+    expect(err.subject).toBe('if');
+    expect(err.lineBase).toBe('one');
+    expect(err.templateName).toBe(filePath);
+    expect(err.colno).toBe(callerLine.indexOf("'if'") + 2);
+  });
 });
 
 describe('keyword arguments rendering', () => {

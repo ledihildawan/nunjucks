@@ -106,11 +106,15 @@ describe('validateConfig - reserved keyword validation', () => {
     test('returns RESERVED_KEYWORD error code for filters', () => {
       const result = validateConfig({ _customFilters: { 'if': () => {} } });
       expect(result.errors[0].code).toBe('RESERVED_KEYWORD');
+      expect(result.errors[0].subject).toBe('if');
+      expect(result.errors[0].type).toBe('filter');
     });
 
     test('returns RESERVED_KEYWORD error code for globals', () => {
       const result = validateConfig({ _customGlobals: { 'for': {} } });
       expect(result.errors[0].code).toBe('RESERVED_KEYWORD');
+      expect(result.errors[0].subject).toBe('for');
+      expect(result.errors[0].type).toBe('global');
     });
   });
 });

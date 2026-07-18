@@ -54,6 +54,8 @@ export const validateReservedName = (name, type = 'name') => {
       valid: false,
       error: {
         code: 'RESERVED_KEYWORD',
+        subject: name,
+        type,
         message: `Cannot use reserved ${type} '${name}' - this is a reserved keyword in nunjucks`
       }
     };

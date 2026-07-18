@@ -81,7 +81,40 @@ const findTemplateOccurrence = (content, templateHint, preferredLine) => {
   return best === -1 ? null : { index: best, template: bestTemplate };
 };
 
-const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, templateErrorLine = null, templateErrorCol = null) => {
+const findSubjectOccurrence = (content, subject, preferredLine) => {
+  if (!subject || typeof subject !== 'string') return null;
+
+  let best = null;
+  let bestDistance = Infinity;
+  const escaped = subject.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const patterns = [
+    { re: new RegExp(`'(${escaped})'`, 'g'), group: 1 },
+    { re: new RegExp(`"(${escaped})"`, 'g'), group: 1 },
+    { re: new RegExp(`\\b(${escaped})\\b`, 'g'), group: 1 }
+  ];
+
+  for (const { re, group } of patterns) {
+    let match;
+    while ((match = re.exec(content)) !== null) {
+      const groupText = match[group];
+      if (!groupText) continue;
+
+      const groupOffset = match[0].indexOf(groupText);
+      const offset = match.index + groupOffset;
+      const position = positionAtOffset(content, offset);
+      const line = position.lineOffset + 1;
+      const distance = preferredLine ? Math.abs(line - preferredLine) : 0;
+      if (distance < bestDistance) {
+        best = { line, col: position.col };
+        bestDistance = distance;
+      }
+    }
+  }
+
+  return best;
+};
+
+const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, templateErrorLine = null, templateErrorCol = null, subjectHint = null) => {
   try {
     const fs = require('fs');
     const content = fs.readFileSync(filePath, 'utf8');
@@ -90,7 +123,11 @@ const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, 
     let resolvedLine = errorLine;
     let resolvedCol = errorCol;
 
-    if (templateHint && typeof templateHint === 'string') {
+    const subjectMatch = findSubjectOccurrence(content, subjectHint, errorLine);
+    if (subjectMatch) {
+      resolvedLine = subjectMatch.line;
+      resolvedCol = subjectMatch.col;
+    } else if (templateHint && typeof templateHint === 'string') {
       const templateMatch = findTemplateOccurrence(content, templateHint, errorLine);
       if (templateMatch) {
         const targetOffset = templateMatch.index + templateLocationOffset(templateMatch.template, templateErrorLine, templateErrorCol);
@@ -147,7 +184,8 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
       config.jsCallerErrorCol,
       template,
       errLineno,
-      errColno
+      errColno,
+      err.subject
     );
     if (codeContext) {
       sourceContent = codeContext.content;
@@ -177,6 +215,7 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
     colno,
     phase,
     templateName: templatePath,
+    code: err.code,
     lineBase,
     dev,
     ide,
@@ -202,7 +241,10 @@ export const render = async (template, context = {}, config = {}) => {
 
   const validation = validateConfig(config);
   if (!validation.valid) {
-    const err = new Error(validation.errors[0].message);
+    const validationError = validation.errors[0];
+    const err = new Error(validationError.message);
+    err.code = validationError.code;
+    err.subject = validationError.subject;
     throw wrapWithLog(err, config, template, context);
   }
 
@@ -337,7 +379,10 @@ const buildRuntime = (config) => {
 export const renderWithEnv = async (templateName, env, context = {}, config = {}) => {
   const validation = validateConfig(config);
   if (!validation.valid) {
-    const err = new Error(validation.errors[0].message);
+    const validationError = validation.errors[0];
+    const err = new Error(validationError.message);
+    err.code = validationError.code;
+    err.subject = validationError.subject;
     throw wrapWithLog(err, { ...config, templatePath: config.templatePath || templateName, env }, null, context);
   }
 

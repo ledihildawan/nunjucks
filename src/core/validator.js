@@ -69,7 +69,7 @@ export const validateConfig = (config) => {
     for (const [name] of Object.entries(config._customFilters)) {
       const validation = validateFilterName(name);
       if (!validation.valid) {
-        errors.push({ code: validation.error.code, message: validation.error.message });
+        errors.push({ ...validation.error });
       }
     }
   }
@@ -78,7 +78,7 @@ export const validateConfig = (config) => {
     for (const [name] of Object.entries(config._customGlobals)) {
       const validation = validateGlobalName(name);
       if (!validation.valid) {
-        errors.push({ code: validation.error.code, message: validation.error.message });
+        errors.push({ ...validation.error });
       }
     }
   }
