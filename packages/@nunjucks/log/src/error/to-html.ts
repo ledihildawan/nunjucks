@@ -10,6 +10,7 @@ import { CSS, PRODUCTION_BODY } from './formatters/html/styles.ts';
 import { TOGGLE_SCRIPT } from './formatters/html/script.ts';
 import { resolveIdeLink, getIdeMeta } from './ide-links.ts';
 import { toDisplayLocation } from '../shared/location.ts';
+import { calculateCaretPosition } from '../shared/caret.ts';
 import { shortenPath } from '@nunjucks/shared/path-shortener';
 
 export { CSS, PRODUCTION_BODY, TOGGLE_SCRIPT };
@@ -258,27 +259,11 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
           const lineNum = displayStartLine + idx;
           acc.push(`<div class="code-line ${isError ? 'is-error' : ''}"><span class="line-number">${lineNum}</span><span class="code-content">${highlightSource(line, displayPath)}</span></div>`);
           if (isError && displayCol > 0 && line) {
-            const pos = displayCol - 1;
-            const charAtPos = line[pos];
-            let wordStart = pos;
-            let wordEnd = pos;
-            if (/[\w.]/.test(charAtPos)) {
-              wordEnd = pos;
-              while (wordEnd < line.length && /[\w.]/.test(line[wordEnd])) {
-                wordEnd++;
-              }
-              wordStart = wordEnd - 1;
-              while (wordStart > 0 && /[\w.]/.test(line[wordStart - 1])) {
-                wordStart--;
-              }
+            const caret = calculateCaretPosition(line, displayCol);
+            if (caret) {
+              const spaces = ' '.repeat(caret.wordStart);
+              acc.push(`<div class="code-line error-marker"><span class="line-number"></span><span class="code-content error-marker-content">${spaces}${caret.carets}</span></div>`);
             }
-            let highlightWord = line.slice(wordStart, wordEnd);
-            if (highlightWord?.includes('.')) {
-              highlightWord = highlightWord.split('.')[0];
-            }
-            const carets = highlightWord ? '^'.repeat(highlightWord.length) : '^'.repeat(3);
-            const spaces = ' '.repeat(wordStart);
-            acc.push(`<div class="code-line error-marker"><span class="line-number"></span><span class="code-content error-marker-content">${spaces}${carets}</span></div>`);
           }
           return acc;
         }, []).join('\n')}

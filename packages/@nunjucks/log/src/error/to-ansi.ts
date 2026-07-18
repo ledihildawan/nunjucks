@@ -6,6 +6,7 @@ import { isBlockedKey } from '@nunjucks/shared/blocked-keys';
 import { shortenPath, normalizeDrivePath } from '@nunjucks/shared/path-shortener';
 import picocolors from 'picocolors';
 import { toDisplayLocation } from '../shared/location.ts';
+import { calculateCaretPosition } from '../shared/caret.ts';
 
 interface JsRule {
   type: string;
@@ -195,27 +196,11 @@ const formatCodeTrace = (snippet: string, errorIndex = -1, startLine = 1, source
     if (i === errorIndex) {
       lines.push(prefix + highlighted);
       if (displayCol > 0 && line) {
-        const pos = displayCol - 1;
-        const charAtPos = line[pos];
-        let wordStart = pos;
-        let wordEnd = pos;
-        if (/[\w.]/.test(charAtPos)) {
-          wordEnd = pos;
-          while (wordEnd < line.length && /[\w.]/.test(line[wordEnd])) {
-            wordEnd++;
-          }
-          wordStart = wordEnd - 1;
-          while (wordStart > 0 && /[\w.]/.test(line[wordStart - 1])) {
-            wordStart--;
-          }
+        const caret = calculateCaretPosition(line, displayCol);
+        if (caret) {
+          const spaces = ' '.repeat(caret.wordStart);
+          lines.push(picocolors.red(`${' '.repeat(String(startLine).length + 2)}${spaces}${caret.carets}`));
         }
-        let highlightWord = line.slice(wordStart, wordEnd);
-        if (highlightWord?.includes('.')) {
-          highlightWord = highlightWord.split('.')[0];
-        }
-        const carets = highlightWord ? '^'.repeat(highlightWord.length) : '^'.repeat(3);
-        const spaces = ' '.repeat(wordStart);
-        lines.push(picocolors.red(`${' '.repeat(String(startLine).length + 2)}${spaces}${carets}`));
       }
     } else {
       lines.push(prefix + highlighted);
