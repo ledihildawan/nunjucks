@@ -73,7 +73,7 @@
 <body>
   <div class="header">
     <h1>Error Routes ({{ total }})</h1>
-    <span style="color:#999;font-size:12px">Click to preview • Wide screen: side-by-side view</span>
+    <span style="color:#999;font-size:12px">Click to preview • URL stays on /errors (uses hash)</span>
   </div>
 
   <div class="container">
@@ -109,10 +109,6 @@
     let currentUrl = '';
     let activeLink = null;
 
-    if (location.pathname.startsWith('/errors/') && location.pathname !== '/errors/') {
-      location.replace('/errors');
-    }
-
     document.querySelectorAll('.group-header').forEach(header => {
       header.addEventListener('click', () => {
         const index = header.dataset.group;
@@ -132,7 +128,7 @@
         preview.classList.add('active');
         previewUrl.textContent = currentUrl;
         previewFrame.src = currentUrl;
-        history.pushState({}, '', currentUrl);
+        location.hash = 'preview=' + currentUrl;
       });
     });
 
@@ -140,17 +136,13 @@
       if (currentUrl) window.open(currentUrl, '_blank');
     }
 
-    window.addEventListener('popstate', () => {
-      if (location.pathname.startsWith('/errors/')) {
-        const url = location.pathname;
-        currentUrl = url;
-        preview.classList.add('active');
-        previewUrl.textContent = url;
-        previewFrame.src = url;
-        if (activeLink) activeLink.classList.remove('active');
-        activeLink = null;
+    if (location.hash.startsWith('#preview=')) {
+      const url = location.hash.slice('#preview='.length);
+      const link = document.querySelector('a[data-url="' + url + '"]');
+      if (link) {
+        link.click();
       }
-    });
+    }
   </script>
 </body>
 </html>
