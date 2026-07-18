@@ -14,55 +14,13 @@ interface Rule {
   sourceFromStack?: boolean;
 }
 
-const undefinedNameExtractor = (groups: RegExpMatchArray): string | null => {
-  return groups[1] ?? null;
-};
-
-const fileNotFoundExtractor = (groups: RegExpMatchArray): string | null => {
-  return groups[1] ?? null;
-};
-
-const importErrorExtractor = (groups: RegExpMatchArray): string | null => {
-  return groups[1] ?? null;
-};
-
-const undefinedBlockExtractor = (groups: RegExpMatchArray): string | null => {
-  return groups[1] ?? null;
-};
-
-const duplicateBlockExtractor = (groups: RegExpMatchArray): string | null => {
-  return groups[1] ?? null;
-};
-
-const unknownBlockTagExtractor = (groups: RegExpMatchArray): string | null => {
-  return groups[1] ?? null;
-};
-
-const blockedKeyExtractor = (groups: RegExpMatchArray): string | null => {
-  return groups[1] ?? null;
-};
-
-const filterExtractor = (groups: RegExpMatchArray): string | null => {
-  return groups[1] ?? null;
-};
-
-const invalidLookupExtractor = (groups: RegExpMatchArray): string | null => {
-  return groups[1] ?? null;
-};
-
-const searchValueExtractor = (groups: RegExpMatchArray): string | null => {
-  return groups[1] ?? null;
-};
-
-const quotesExtractor = (groups: RegExpMatchArray): string | null => {
-  return groups[1] ?? null;
-};
+const firstCapture: SubjectExtractor = (groups) => groups[1] ?? null;
 
 export const RULES: Rule[] = [
   {
     pattern: PATTERNS.UNDEFINED_VALUE_MATCH,
     category: 'undefined_value',
-    subjectFrom: undefinedNameExtractor,
+    subjectFrom: firstCapture,
     titleTemplate: "Cannot read property '{subject}' of undefined",
     causes: [
       '**Nested property access** returned `null`/`undefined`',
@@ -75,7 +33,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.UNDEFINED_VARIABLE,
     category: 'undefined_variable',
-    subjectFrom: undefinedNameExtractor,
+    subjectFrom: firstCapture,
     titleTemplate: "Variable '{subject}' is not defined",
     causes: [
       'Variable `{subject}` not passed in `render` context',
@@ -88,7 +46,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.UNDEFINED_FUNCTION,
     category: 'undefined_function',
-    subjectFrom: undefinedNameExtractor,
+    subjectFrom: firstCapture,
     titleTemplate: "Function '{subject}' is not defined",
     causes: [
       'Function `{subject}` not registered with `env.addGlobal()`',
@@ -137,7 +95,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.NOT_A_FUNCTION,
     category: 'sandbox_blocked',
-    subjectFrom: undefinedNameExtractor,
+    subjectFrom: firstCapture,
     titleTemplate: "'{subject}' is not a function",
     causes: [
       '**Calling a non-function value**',
@@ -150,7 +108,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.INVALID_LOOKUP,
     category: 'invalid_lookup',
-    subjectFrom: invalidLookupExtractor,
+    subjectFrom: firstCapture,
     titleTemplate: "Invalid property access: {subject}",
     causes: [
       'Invalid character `{subject}` after dot (e.g. `{target}.[{subject}]`)',
@@ -163,7 +121,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.DUPLICATE_BLOCK,
     category: 'duplicate_block',
-    subjectFrom: duplicateBlockExtractor,
+    subjectFrom: firstCapture,
     titleTemplate: "Block '{subject}' is defined more than once",
     causes: [
       '**Duplicate block** definition in template',
@@ -175,7 +133,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.UNKNOWN_BLOCK_TAG,
     category: 'unknown_block_tag',
-    subjectFrom: unknownBlockTagExtractor,
+    subjectFrom: firstCapture,
     titleTemplate: "Unknown tag or block: {subject}",
     causes: [
       '**Unmatched** closing tag (e.g. `{% endif %}` without `{% if %}`)',
@@ -211,7 +169,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.UNDEFINED_FILTER,
     category: 'undefined_filter',
-    subjectFrom: filterExtractor,
+    subjectFrom: firstCapture,
     titleTemplate: "Filter '{subject}' is not defined",
     causes: [
       'Filter `{subject}` not registered with `env.addFilter()`',
@@ -223,7 +181,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.UNKNOWN_BLOCK_RUNTIME,
     category: 'undefined_block',
-    subjectFrom: undefinedBlockExtractor,
+    subjectFrom: firstCapture,
     titleTemplate: "Block '{subject}' does not exist in the parent template",
     causes: [
       'The child template overrides block `{subject}`, but the parent template never defines it',
@@ -236,7 +194,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.NO_SUPER_BLOCK,
     category: 'no_super_block',
-    subjectFrom: quotesExtractor,
+    subjectFrom: firstCapture,
     titleTemplate: "Cannot call super() - parent has no block",
     causes: [
       '`super()` called in block {subject} but parent has no block',
@@ -249,7 +207,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.CIRCULAR_INCLUDE,
     category: 'circular_include',
-    subjectFrom: quotesExtractor,
+    subjectFrom: firstCapture,
     causes: [
       '**Template includes itself** (directly or indirectly)',
       '**Circular dependency** between templates'
@@ -260,7 +218,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.FILE_NOT_FOUND,
     category: 'file_not_found',
-    subjectFrom: fileNotFoundExtractor,
+    subjectFrom: firstCapture,
     titleTemplate: "Template file not found: {subject}",
     causes: [
       'Template file `{subject}` **does not exist**',
@@ -273,7 +231,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.IMPORT_ERROR,
     category: 'import_error',
-    subjectFrom: importErrorExtractor,
+    subjectFrom: firstCapture,
     titleTemplate: "Cannot import template - module not found",
     causes: [
       '**Import failed** - template could not be loaded',
@@ -311,7 +269,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.SANDBOX_ACCESS,
     category: 'sandbox_blocked',
-    subjectFrom: blockedKeyExtractor,
+    subjectFrom: firstCapture,
     titleTemplate: "Cannot access '{subject}' in sandbox mode",
     causes: [
       '**Sandbox mode** blocks access to `{subject}`',
@@ -323,7 +281,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.SANDBOX_SET,
     category: 'sandbox_blocked',
-    subjectFrom: blockedKeyExtractor,
+    subjectFrom: firstCapture,
     titleTemplate: "Cannot set '{subject}' in sandbox mode",
     causes: [
       '**Sandbox mode** blocks setting `{subject}`',
@@ -347,7 +305,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.LIST_FILTER,
     category: 'iterable_error',
-    subjectFrom: undefinedNameExtractor,
+    subjectFrom: firstCapture,
     titleTemplate: "List value '{subject}' is not iterable",
     causes: [
       '**List filter** requires an **iterable** input',
@@ -359,7 +317,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.IN_OPERATOR,
     category: 'operator_error',
-    subjectFrom: searchValueExtractor,
+    subjectFrom: firstCapture,
     causes: [
       '**In operator** only works with **objects**, not primitives',
       'Cannot search for value in **string/number/boolean**'
@@ -519,7 +477,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.SORT_FILTER,
     category: 'sort_type_error',
-    subjectFrom: undefinedNameExtractor,
+    subjectFrom: firstCapture,
     causes: [
       'Sort attribute **resolved to undefined**',
       'Property used in sort does not exist'
@@ -541,7 +499,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.RESERVED_KEYWORD_CONTEXT,
     category: 'reserved_keyword_context',
-    subjectFrom: undefinedNameExtractor,
+    subjectFrom: firstCapture,
     titleTemplate: "Cannot use reserved keyword '{subject}' outside of its intended context",
     causes: [
       '`{subject}` is a **reserved keyword** with special context requirements',
@@ -652,7 +610,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.CONTAINER_FACTORY,
     category: 'config_error',
-    subjectFrom: undefinedNameExtractor,
+    subjectFrom: firstCapture,
     causes: [
       '**Container factory** must be a function',
       'Registered container factory is not callable'
@@ -663,7 +621,7 @@ export const RULES: Rule[] = [
   {
     pattern: PATTERNS.CONTAINER_NOT_REGISTERED,
     category: 'config_error',
-    subjectFrom: undefinedNameExtractor,
+    subjectFrom: firstCapture,
     causes: [
       '**Container** not registered',
       'Requested container has not been registered'

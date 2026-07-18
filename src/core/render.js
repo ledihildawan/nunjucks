@@ -127,7 +127,13 @@ const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, 
     if (subjectMatch) {
       resolvedLine = subjectMatch.line;
       resolvedCol = subjectMatch.col;
-    } else if (templateHint && typeof templateHint === 'string') {
+    } else if (templateHint === null || templateHint === undefined) {
+      const nullMatch = findSubjectOccurrence(content, 'null', errorLine);
+      if (nullMatch) {
+        resolvedLine = nullMatch.line;
+        resolvedCol = nullMatch.col;
+      }
+    } else if (typeof templateHint === 'string') {
       const templateMatch = findTemplateOccurrence(content, templateHint, errorLine);
       if (templateMatch) {
         const targetOffset = templateMatch.index + templateLocationOffset(templateMatch.template, templateErrorLine, templateErrorCol);
@@ -163,10 +169,10 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
   const hasErrorLocation = errLineno !== undefined && errLineno !== null;
   const isInlineTemplate = typeof template === 'string' &&
     (template.includes('{{') || template.includes('{%') || template.includes('{#'));
-  const preferJsCallerLocation = !config.templatePath && useJsCaller && isInlineTemplate;
+  const preferJsCallerLocation = !config.templatePath && useJsCaller;
   const templatePath = preferJsCallerLocation
     ? (config.jsCaller || config._callerFile || err.templateName || null)
-    : (config.templatePath || err.templateName || (typeof template === 'string' ? config._callerFile : null) || null);
+    : (config.templatePath || err.templateName || config._callerFile || null);
   const phase = err.phase || config.phase || 'render';
   const dev = config.dev ?? false;
   const ide = config.ide ?? 'vscode';

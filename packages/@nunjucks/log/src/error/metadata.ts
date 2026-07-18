@@ -1,4 +1,4 @@
-import type { LineBase } from './location.ts';
+import type { LineBase } from '../shared/location.ts';
 
 export interface LogMetadataInput {
   lineno?: number | null;

@@ -9,7 +9,7 @@ import { renderContextHtml, formatStackTraceHtml } from './formatters/html/secti
 import { CSS, PRODUCTION_BODY } from './formatters/html/styles.ts';
 import { TOGGLE_SCRIPT } from './formatters/html/script.ts';
 import { resolveIdeLink, getIdeMeta } from './ide-links.ts';
-import { toDisplayLocation } from './location.ts';
+import { toDisplayLocation } from '../shared/location.ts';
 import { shortenPath } from '@nunjucks/shared/path-shortener';
 
 export { CSS, PRODUCTION_BODY, TOGGLE_SCRIPT };

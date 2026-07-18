@@ -1,9 +1,4 @@
-import { toHtml } from './error/to-html.ts';
-import type { CSS, PRODUCTION_BODY, TOGGLE_SCRIPT } from './error/to-html.ts';
-import { toAnsi } from './error/to-ansi.ts';
-import { toText } from './error/to-text.ts';
-import { toConsoleString } from './error/to-console.ts';
-import type { LineBase } from './error/location.ts';
+import type { LineBase } from './shared/location.ts';
 import { createFormatterState } from './error/metadata.ts';
 
 export interface ErrorDefinitionEntry {
@@ -225,10 +220,16 @@ function createErrorObject(
       options: mergedOptions
     });
 
-    if (options.format === 'html') return toHtml(err, opts);
-    if (options.format === 'ansi') return toAnsi(err, opts);
-    if (options.format === 'text') return toText(err, opts);
+    if (options.format === 'ansi') {
+      const { toAnsi } = require('./error/to-ansi.ts');
+      return toAnsi(err, opts);
+    }
+    if (options.format === 'text') {
+      const { toText } = require('./error/to-text.ts');
+      return toText(err, opts);
+    }
 
+    const { toHtml } = require('./error/to-html.ts');
     return toHtml(err, opts);
   };
 
@@ -275,6 +276,7 @@ function createWarningObject(
         },
         options
       });
+      const { toConsoleString } = require('./error/to-console.ts');
       return toConsoleString(warning, state);
     }
   };

@@ -5,7 +5,7 @@ import { toText } from './to-text.ts';
 import { isBlockedKey } from '@nunjucks/shared/blocked-keys';
 import { shortenPath, normalizeDrivePath } from '@nunjucks/shared/path-shortener';
 import picocolors from 'picocolors';
-import { toDisplayLocation } from './location.ts';
+import { toDisplayLocation } from '../shared/location.ts';
 
 interface JsRule {
   type: string;
