@@ -121,7 +121,13 @@ export const CSS = `
     grid-template-columns: 1fr;
     gap: 1.5rem 2rem;
     margin-block-end: 2rem;
+    align-items: start;
     @media (width >= 40rem) { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .causes-grid section {
+    min-height: 0;
+    overflow: hidden;
   }
 }
 
@@ -220,7 +226,9 @@ export const CSS = `
       0 0 0 1px oklch(0 0 0 / 0.06),
       0 1px 2px -1px oklch(0 0 0 / 0.06),
       0 2px 4px 0 oklch(0 0 0 / 0.04);
-    white-space: pre; overflow-x: auto; line-height: 1.5;
+    width: 100%;
+    max-width: 100%;
+    white-space: pre; overflow-x: auto; overflow-y: auto; line-height: 1.5;
     @media (width >= 40rem) { font-size: 0.8125rem; }
   }
 
