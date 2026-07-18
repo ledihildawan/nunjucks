@@ -199,7 +199,7 @@ const formatCodeTrace = (snippet: string, errorIndex = -1, startLine = 1, source
         const caret = calculateCaretPosition(line, displayCol);
         if (caret) {
           const spaces = ' '.repeat(caret.wordStart);
-          lines.push(picocolors.red(`${' '.repeat(String(startLine).length + 2)}${spaces}${caret.carets}`));
+          lines.push(picocolors.red(`${' '.repeat(String(startLine).length + 3)}${spaces}${caret.carets}`));
         }
       }
     } else {
