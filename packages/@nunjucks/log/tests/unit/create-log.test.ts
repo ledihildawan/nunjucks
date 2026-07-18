@@ -153,6 +153,68 @@ describe('createLog', () => {
       expect(html).toContain('is-error');
     });
 
+    test('html output only links file paths', () => {
+      const inline = createLog(
+        'error',
+        ERROR_DEFINITIONS.UNDEFINED_VARIABLE,
+        { name: 'missing' },
+        'missing',
+        { templateName: 'inline', lineno: 0, colno: 3 }
+      );
+      const inlineHtml = inline.output({ format: 'html', verbosity: 'full' });
+      expect(inlineHtml).toContain('<span class="error-location-text">inline:1:4</span>');
+      expect(inlineHtml).not.toContain('vscode://file/inline');
+      expect(inlineHtml).not.toContain('<div class="error-footer-actions">');
+
+      const file = createLog(
+        'error',
+        ERROR_DEFINITIONS.UNDEFINED_VARIABLE,
+        { name: 'missing' },
+        'missing',
+        { templateName: 'C:/app/page.ts', lineno: 0, colno: 3 }
+      );
+      const fileHtml = file.output({ format: 'html', verbosity: 'full', ide: 'cursor' });
+      expect(fileHtml).toContain('href="cursor://file/C:/app/page.ts:1:4" class="loc-link error-location-link"');
+      expect(fileHtml).toContain('error-footer-actions');
+      expect(fileHtml).toContain('Open in Cursor');
+    });
+    test('ansi output only links file paths', () => {
+      const inline = createLog(
+        'error',
+        ERROR_DEFINITIONS.UNDEFINED_VARIABLE,
+        { name: 'missing' },
+        'missing',
+        { templateName: 'inline', lineno: 0, colno: 3 }
+      );
+      const inlineAnsi = inline.output({ format: 'ansi', verbosity: 'medium' });
+      expect(inlineAnsi).toContain('inline:1:4');
+      expect(inlineAnsi).not.toContain('\x1b]8;;');
+
+      const file = createLog(
+        'error',
+        ERROR_DEFINITIONS.UNDEFINED_VARIABLE,
+        { name: 'missing' },
+        'missing',
+        { templateName: 'C:/app/page.ts', lineno: 0, colno: 3 }
+      );
+      const fileAnsi = file.output({ format: 'ansi', verbosity: 'medium', ide: 'cursor' });
+      expect(fileAnsi).toContain('\x1b]8;;cursor://file/C:/app/page.ts:1:4\x1b\\');
+    });
+
+    test('ansi stack trace only links file frames', () => {
+      const err = createLog(
+        'error',
+        ERROR_DEFINITIONS.UNDEFINED_VARIABLE,
+        { name: 'missing' },
+        'missing',
+        { templateName: 'inline', lineno: 0, colno: 0 }
+      );
+      err.stack = 'Error: boom\n    at render (inline:2:3)\n    at run (C:\\app\\page.ts:5:7)';
+      const ansi = err.output({ format: 'ansi', verbosity: 'full' });
+      expect(ansi).toContain('render (inline:2:3)');
+      expect(ansi).not.toContain('vscode://file/inline:2:3');
+      expect(ansi).toContain('vscode://file/C:/app/page.ts:5:7');
+    });
     test('ansi output highlights one-based js caller source without shifting lines', () => {
       const source = [
         'const a = 1;',
@@ -201,6 +263,27 @@ describe('createLog', () => {
       expect(warn.varName).toBe(null);
     });
 
+    test('warning only links file paths', () => {
+      const inline = createLog(
+        'warning',
+        ERROR_DEFINITIONS.UNDEFINED_VARIABLE,
+        { name: 'foo' },
+        'foo',
+        { templateName: 'inline', lineno: 1, lineBase: 'zero', varName: 'foo' }
+      );
+      const inlineOutput = inline.output({ verbosity: 'medium' });
+      expect(inlineOutput).toContain('inline:2');
+      expect(inlineOutput).not.toContain('\x1b]8;;');
+
+      const file = createLog(
+        'warning',
+        ERROR_DEFINITIONS.UNDEFINED_VARIABLE,
+        { name: 'foo' },
+        'foo',
+        { templateName: 'C:/app/page.ts', lineno: 1, lineBase: 'zero', varName: 'foo' }
+      );
+      expect(file.output({ verbosity: 'medium', ide: 'cursor' })).toContain('cursor://file/C:/app/page.ts:2:1');
+    });
     test('warning has output method', () => {
       const warn = createLog(
         'warning',

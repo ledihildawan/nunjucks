@@ -19,8 +19,8 @@ describe('renderContextHtml', () => {
     });
 
     expect(html).toContain('type="application/json" id="ctx-data"');
-    expect(html).toContain('data-ctx-action="expand"');
-    expect(html).toContain('data-ctx-action="collapse"');
+    expect(html).not.toContain('data-ctx-action="expand"');
+    expect(html).not.toContain('data-ctx-action="collapse"');
     expect(html).toContain('data-ctx-action="copy"');
     expect(html).not.toContain('</script><script>alert(1)</script>');
 
@@ -32,6 +32,18 @@ describe('renderContextHtml', () => {
       helper: '[Function: formatPrice]',
       createdAt: '2026-07-19T00:00:00.000Z'
     });
+  });
+
+  test('shows state-aware expand controls for nested data', () => {
+    const html = renderContextHtml({ user: { name: 'Ada' } });
+
+    expect(html).toContain('data-ctx-action="expand"');
+    expect(html).toContain('data-ctx-action="collapse" disabled');
+    expect(html).toContain('data-ctx-action="copy"');
+  });
+
+  test('returns no render-context controls for empty visible data', () => {
+    expect(renderContextHtml({ __nunjucksInternal: true, globalThis: true })).toBe('');
   });
 
   test('filters private and blocked keys while preserving safe nested data', () => {

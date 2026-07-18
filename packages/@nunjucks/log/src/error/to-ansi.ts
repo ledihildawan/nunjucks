@@ -3,7 +3,8 @@ import { classify } from './classify.ts';
 import type { ClassifiedError } from './classify.ts';
 import { toText } from './to-text.ts';
 import { isBlockedKey } from '@nunjucks/shared/blocked-keys';
-import { shortenPath, normalizeDrivePath } from '@nunjucks/shared/path-shortener';
+import { shortenPath } from '@nunjucks/shared/path-shortener';
+import { isFilePath, resolveIdeLink } from './ide-links.ts';
 import picocolors from 'picocolors';
 import { toDisplayLocation } from '../shared/location.ts';
 import { calculateCaretPosition } from '../shared/caret.ts';
@@ -165,9 +166,10 @@ const formatLocationLabel = (options: ToAnsiOptions, error: ErrorLike): string =
   const col = location.col;
   const shortPath = shortenPath(templatePath);
   const displayPath = `${shortPath}:${line}:${col}`;
-  const normalizedPath = normalizeDrivePath(templatePath);
-  const vscodeUrl = `vscode://file/${normalizedPath}:${line}:${col}`;
-  const link = makeHyperlink(displayPath, vscodeUrl);
+  if (!isFilePath(templatePath)) {
+    return `${picocolors.bold('Location:')} ${displayPath}`;
+  }
+  const link = makeHyperlink(displayPath, resolveIdeLink(ide, templatePath, line, col));
 
   return `${picocolors.bold('Location:')} ${link}`;
 };
@@ -246,7 +248,7 @@ const formatFix = (fixComment: string | null | undefined, fixCode: string | null
   ].filter(Boolean).join('\n');
 };
 
-const formatStackTrace = (error: ErrorLike, isProduction = false): string => {
+const formatStackTrace = (error: ErrorLike, isProduction = false, ide = 'vscode'): string => {
   if (!error?.stack) return '';
 
   const stackLines = error.stack.split('\n').slice(1);
@@ -277,10 +279,10 @@ const formatStackTrace = (error: ErrorLike, isProduction = false): string => {
       const fnMatch = trimmed.match(/^at\s+([^\s]+)/);
       const fn = fnMatch?.[1] ?? '';
       const linkText = fn ? `${fn} (${shortPath}:${line}:${col})` : `(${shortPath}:${line}:${col})`;
-      const normalizedPath = normalizeDrivePath(fullPath);
-      const vscodeUrl = `vscode://file/${normalizedPath}:${line}:${col}`;
-      const link = makeHyperlink(linkText, vscodeUrl);
-      lines.push(picocolors.dim(`  ${link}`));
+      const frameText = isFilePath(fullPath)
+        ? makeHyperlink(linkText, resolveIdeLink(ide, fullPath, Number(line), Number(col)))
+        : linkText;
+      lines.push(picocolors.dim(`  ${frameText}`));
     } else {
       lines.push(picocolors.dim(`  ${trimmed}`));
     }
@@ -418,7 +420,7 @@ export const toAnsi = (error: ErrorLike, options: ToAnsiOptions = {}): string =>
     }
   }
 
-  parts.push(formatStackTrace(error, options.isProduction));
+  parts.push(formatStackTrace(error, options.isProduction, options.ide));
 
   parts.push(formatFooter(options));
   parts.push('');

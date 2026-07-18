@@ -8,7 +8,7 @@ import { escapeHtml, highlightHtml, highlightJs } from './formatters/html/highli
 import { renderContextHtml, formatStackTraceHtml } from './formatters/html/sections.ts';
 import { CSS, PRODUCTION_BODY } from './formatters/html/styles.ts';
 import { TOGGLE_SCRIPT } from './formatters/html/script.ts';
-import { resolveIdeLink, getIdeMeta } from './ide-links.ts';
+import { isFilePath, resolveIdeLink, getIdeMeta } from './ide-links.ts';
 import { toDisplayLocation } from '../shared/location.ts';
 import { calculateCaretPosition } from '../shared/caret.ts';
 import { shortenPath } from '@nunjucks/shared/path-shortener';
@@ -217,6 +217,7 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
   const ideLabel = `Open in ${ideMeta.label}`;
 
   const locDisplay = `${shortenPath(displayPath)}:${displayLine}:${displayCol}`;
+  const canLinkLocation = isFilePath(displayPath);
 
   const headerTitle = escapeHtml(humanTitle);
   const locationInfo = escapeHtml(`${displayPath}:${displayLine}:${displayCol}`);
@@ -240,7 +241,7 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
     </div>
     <h1 id="err-title" class="error-title">${headerTitle}</h1>
     ${verbosity !== 'simple' ? `
-    <p class="error-location">The error occurred in ${displayPath
+    <p class="error-location">The error occurred in ${canLinkLocation
       ? `<a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="loc-link error-location-link">${escapeHtml(locDisplay)}</a>`
       : `<span class="error-location-text">${locationInfo}</span>`
     }</p>
@@ -297,7 +298,7 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
     <p class="meta">
       Nunjucks ${version}${timestamp ? ` · ${escapeHtml(timestamp)}` : ''}
     </p>
-    ${verbosity === 'full' ? `
+    ${verbosity === 'full' && canLinkLocation ? `
     <div class="error-footer-actions">
       <a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="btn btn-solid">
         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">${ideMeta.icon}</svg>

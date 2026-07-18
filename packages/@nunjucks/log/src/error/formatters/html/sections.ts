@@ -1,12 +1,10 @@
 import { keys } from 'remeda';
 import { escapeHtml, highlightHtml, highlightJs } from './highlight.ts';
-import { resolveIdeLink } from '../../ide-links.ts';
+import { isFilePath, resolveIdeLink } from '../../ide-links.ts';
 import { shortenPath } from '@nunjucks/shared/path-shortener';
 import { getBlockedKeyCategory, isDangerousGlobal } from '@nunjucks/shared/blocked-keys';
 
 const normalizePath = (p: string): string => p.replace(/^file:\/\/+/, '');
-
-const isFilePath = (p: string): boolean => /\.(njk|nunjucks|js|ts|mjs|cjs|jsx|tsx|html|htm|tmpl|tpl|pug|ejs|handlebars|hbs|erb|php|py|rb|go|java|c|cpp|h|cs|rs|swift|kt|scala|css|scss|sass|less|styl|json|yaml|yml|xml|md|txt)$/i.test(p);
 
 export const formatCodeTraceHtml = (snippet: string): string => {
   if (!snippet) return '<div class="code-line"><span class="line-number">&nbsp;</span><span class="code-content">Source not available</span></div>';
@@ -123,15 +121,16 @@ export const renderContextHtml = (ctx: unknown): string => {
   const filteredKeys = keys(filtered);
   if (filteredKeys.length === 0) return '';
 
-  const serialized = serializeContextValue(filtered);
+  const serialized = serializeContextValue(filtered) as Record<string, SerializableContext>;
+  const hasExpandableValues = Object.values(serialized).some(value => value !== null && typeof value === 'object');
   const dataScript = `<script type="application/json" id="ctx-data">${safeJson(serialized)}</scr` + `ipt>`;
 
   return `<section class="render-context" aria-labelledby="h-ctx">
 <div class="section-heading">
   <h2 id="h-ctx" class="text-label">Render Context</h2>
   <div class="ctx-toolbar" aria-label="Render context controls">
-    <button type="button" class="ctx-action" data-ctx-action="expand">Expand all</button>
-    <button type="button" class="ctx-action" data-ctx-action="collapse">Collapse all</button>
+    ${hasExpandableValues ? '<button type="button" class="ctx-action" data-ctx-action="expand">Expand all</button>' : ''}
+    ${hasExpandableValues ? '<button type="button" class="ctx-action" data-ctx-action="collapse" disabled>Collapse all</button>' : ''}
     <button type="button" class="ctx-action" data-ctx-action="copy">Copy JSON</button>
   </div>
 </div>

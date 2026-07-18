@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ pageTitle }}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; }
+    h1 { color: #b45309; }
+    .demo { border-left: 4px solid #f59e0b; background: #fffbeb; margin: 20px 0; padding: 16px; }
+    .result { font-family: monospace; background: #fff; border: 1px solid #fde68a; padding: 8px; }
+    code { background: #f3f4f6; padding: 2px 6px; }
+  </style>
+</head>
+<body>
+  <h1>Debug Warning Demo</h1>
+  <p>This page renders with <code>dev: true</code> and <code>undefined: 'debug'</code>. Open the browser console to inspect the collected warnings.</p>
+
+  <section class="demo">
+    <h2>Defined value</h2>
+    <p class="result">{{ availableValue }}</p>
+  </section>
+
+  <section class="demo">
+    <h2>Missing flat value</h2>
+    <p><code>{{ missingValue }}</code></p>
+    <p class="result">{{ missingValue }}</p>
+  </section>
+
+  <section class="demo">
+    <h2>Missing nested value</h2>
+    <p><code>{{ user.profile.name }}</code></p>
+    <p class="result">{{ user.profile.name }}</p>
+  </section>
+
+  <p><a href="/">Back to Index</a></p>
+</body>
+</html>

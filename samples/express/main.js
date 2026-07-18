@@ -9,6 +9,7 @@ import { sandboxRouter } from './routes/sandbox.js';
 import { undefinedRouter } from './routes/undefined.js';
 import { remoteRouter } from './routes/remote.js';
 import { demoRouter } from './routes/demo.js';
+import { warningsRouter } from './routes/warnings.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const VIEWS = path.join(__dirname, 'views');
@@ -31,6 +32,7 @@ console.log('remoteRouter routes:', remoteRouter.stack.map(l => l.route?.path));
 app.use('/remote', remoteRouter);
 
 app.use('/demo', demoRouter);
+app.use('/warnings', warningsRouter);
 
 app.get('/file-error', (req, res, next) => {
   res.render('test_error', {});

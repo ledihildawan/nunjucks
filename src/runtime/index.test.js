@@ -61,10 +61,37 @@ describe('ensureDefined', () => {
   });
 
   test('returns undefined string in debug mode', () => {
-    expect(ensureDefined(null, 1, 2, null, null, 'debug')).toBe('undefined');
-    expect(ensureDefined(undefined, 1, 2, null, null, 'debug')).toBe('undefined');
+    const warnings = [];
+    expect(ensureDefined.call({ __warnings__: warnings }, null, 1, 2, null, null, 'debug')).toBe('undefined');
+    expect(ensureDefined.call({ __warnings__: warnings }, undefined, 1, 2, null, null, 'debug')).toBe('undefined');
+    expect(warnings).toHaveLength(2);
   });
 
+  test('collects debug warnings without duplicate console output', () => {
+    const warnings = [];
+    const originalWarn = console.warn;
+    let calls = 0;
+    console.warn = () => { calls += 1; };
+    try {
+      expect(ensureDefined.call({ __warnings__: warnings }, undefined, 1, 2, 'value', 'inline', 'debug')).toBe('undefined');
+    } finally {
+      console.warn = originalWarn;
+    }
+    expect(calls).toBe(0);
+    expect(warnings).toHaveLength(1);
+  });
+
+  test('prints debug warnings when no collector exists', () => {
+    const originalWarn = console.warn;
+    let calls = 0;
+    console.warn = () => { calls += 1; };
+    try {
+      ensureDefined(undefined, 1, 2, 'value', 'inline', 'debug');
+    } finally {
+      console.warn = originalWarn;
+    }
+    expect(calls).toBe(1);
+  });
   test('includes varName in error message (strict mode)', () => {
     expect(() => ensureDefined(null, 1, 2, 'myVar', null, 'strict')).toThrow("'myVar'");
   });
@@ -204,6 +231,28 @@ describe('handleError', () => {
     }
   });
 
+  test('normalizes primitive thrown values', () => {
+    for (const value of ['boom', 42, null, undefined]) {
+      try {
+        handleError(value, 3, 7);
+      } catch (error) {
+        expect(error.lineno).toBe(3);
+        expect(error.colno).toBe(7);
+        expect(error.code).toBe('RUNTIME_ERROR');
+      }
+    }
+  });
+
+  test('handles frozen errors without mutating them', () => {
+    const error = Object.freeze(new Error('frozen'));
+    try {
+      handleError(error, 2, 4);
+    } catch (normalized) {
+      expect(normalized.message).toBe('frozen');
+      expect(normalized.lineno).toBe(2);
+      expect(normalized.colno).toBe(4);
+    }
+  });
   test('keeps canonical template location even when sourceMapData is present', () => {
     const err = new Error('test');
     const sourceMapData = [{ compiledLine: 5, originalLine: 2, originalCol: 1 }];

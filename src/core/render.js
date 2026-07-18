@@ -7,7 +7,7 @@ import { execute } from './compiler.js';
 import { validateTemplate, validateRenderContext, validateConfig } from './validator.js';
 import { withTimeout } from '../runtime/timeout.js';
 import { createSandboxedContext } from '../runtime/sandbox.js';
-import { createLog, injectWarningsScript } from '@nunjucks/log';
+import { createLog, injectWarningsScript, normalizeErrorMetadata } from '@nunjucks/log';
 import { createFileSystemLoader } from '../loaders/index.js';
 import { getCallerFile, getCallerLocation } from '@nunjucks/shared/caller-file';
 import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
@@ -225,15 +225,21 @@ const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, 
 };
 
 const wrapWithLog = (err, config, template = null, renderContext = null) => {
-  const errLineno = err.lineno;
-  const errColno = err.colno;
+  const initialMetadata = normalizeErrorMetadata(err, {
+    phase: config.phase || 'render',
+    templatePath: config.templatePath || config._callerFile || null,
+    sourceContent: typeof template === 'string' ? template : null,
+    renderContext
+  });
+  const errLineno = initialMetadata.lineno;
+  const errColno = initialMetadata.colno;
   const useJsCaller = config.jsCallerErrorLine != null;
   const hasErrorLocation = errLineno !== undefined && errLineno !== null;
   const preferJsCallerLocation = !config.templatePath && useJsCaller;
   const templatePath = preferJsCallerLocation
-    ? (config.jsCaller || config._callerFile || err.templateName || null)
-    : (config.templatePath || err.templateName || config._callerFile || null);
-  const phase = err.phase || config.phase || 'render';
+    ? (config.jsCaller || config._callerFile || initialMetadata.templateName || null)
+    : (config.templatePath || initialMetadata.templatePath || initialMetadata.templateName || config._callerFile || null);
+  const phase = initialMetadata.phase || config.phase || 'render';
   const dev = config.dev ?? false;
   const ide = config.ide ?? 'vscode';
   const timestamp = new Date().toISOString();
@@ -243,7 +249,7 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
   let resolvedJsCallerLine = config.jsCallerErrorLine ?? null;
   let resolvedJsCallerCol = config.jsCallerErrorCol ?? null;
 
-  const hasCallerLocation = hasErrorLocation && err.lineBase === 'one';
+  const hasCallerLocation = hasErrorLocation && initialMetadata.lineBase === 'one';
 
   if (preferJsCallerLocation && useJsCaller && config.jsCaller) {
     const codeContext = extractCodeContext(
@@ -253,7 +259,7 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
       template,
       errLineno,
       errColno,
-      err.subject,
+      initialMetadata.subject,
       !hasCallerLocation
     );
     if (codeContext) {
@@ -272,20 +278,39 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
     : (hasErrorLocation && errColno != null ? errColno : (resolvedJsCallerCol ?? config.colno ?? null));
   const lineBase = preferJsCallerLocation
     ? 'one'
-    : (hasErrorLocation ? (err.lineBase ?? 'zero') : (err.lineBase ?? (!hasErrorLocation && useJsCaller ? 'one' : 'zero')));
-
-  const errorDef = {
-    name: err.code || 'RENDER_ERROR',
-    message: () => err.message,
-    pattern: /./,
-  };
-  const errorObj = createLog('error', errorDef, {}, err.subject, {
+    : (hasErrorLocation ? initialMetadata.lineBase : (!hasErrorLocation && useJsCaller ? 'one' : initialMetadata.lineBase));
+  const metadata = normalizeErrorMetadata(err, {
     lineno,
     colno,
     phase,
     templateName: templatePath,
-    code: err.code,
-    lineBase,
+    templatePath,
+    sourceContent,
+    sourceStartLine,
+    renderContext,
+    code: 'RENDER_ERROR'
+  });
+  metadata.lineno = lineno;
+  metadata.colno = colno;
+  metadata.lineBase = lineBase;
+  metadata.templateName = templatePath;
+  metadata.templatePath = templatePath;
+  metadata.sourceContent = sourceContent;
+  metadata.sourceStartLine = sourceStartLine;
+  metadata.renderContext = renderContext;
+
+  const errorDef = {
+    name: metadata.code || 'RENDER_ERROR',
+    message: () => metadata.message,
+    pattern: /./,
+  };
+  const errorObj = createLog('error', errorDef, {}, metadata.subject, {
+    lineno: metadata.lineno,
+    colno: metadata.colno,
+    phase: metadata.phase,
+    templateName: metadata.templateName,
+    code: metadata.code,
+    lineBase: metadata.lineBase,
     dev,
     ide,
     templatePath,

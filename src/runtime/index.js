@@ -1,4 +1,4 @@
-import { createLog } from '@nunjucks/log';
+import { createLog, normalizeErrorMetadata } from '@nunjucks/log';
 import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
 import { isArray, keys, isNonNullish, isFunction, isString, isPlainObject } from 'remeda';
 import { createFrame } from './frame.js';
@@ -127,9 +127,10 @@ export function ensureDefined(val, lineno, colno, varName = null, templateName =
         message: () => varName ? `Variable '${varName}' is undefined or null` : 'Variable is undefined or null',
         pattern: /./
       }, {}, varName, { lineno, colno, phase: ctx.phase || 'render', templateName: effectiveTemplateName, undefinedMode, varName, lineBase: 'zero' });
-      console.warn(warning.output({ verbosity: 'medium', dev: true }));
       if (this && this.__warnings__) {
         this.__warnings__.push(warning);
+      } else {
+        console.warn(warning.output({ verbosity: 'medium', dev: true }));
       }
     }
 
@@ -175,17 +176,37 @@ export function lookup(ctx, key, defaultValue = undefined) {
 }
 
 export function handleError(error, lineno, colno, runtime) {
-  if (error.lineno !== undefined && error.lineno !== null) {
+  const ctx = (this && this.logContext) ? this.logContext : { templateName: null, phase: 'render', renderContext: null };
+  const metadata = normalizeErrorMetadata(error, {
+    lineno,
+    colno,
+    phase: ctx.phase || 'render',
+    templateName: ctx.templateName || 'inline',
+    renderContext: ctx.renderContext || null,
+    lineBase: 'zero'
+  });
+
+  if (metadata.lineno !== null && error instanceof Error && error.lineno !== undefined && error.lineno !== null) {
     throw error;
   }
 
-  const ctx = (this && this.logContext) ? this.logContext : { templateName: null, phase: 'render' };
-
   throw createLog('error', {
-    name: error.code || 'RUNTIME_ERROR',
-    message: () => error.message || String(error),
+    name: metadata.code || 'RUNTIME_ERROR',
+    message: () => metadata.message,
     pattern: /./
-  }, {}, error.subject, { lineno, colno, phase: error.phase || ctx.phase || 'render', templateName: ctx.templateName || 'inline', code: error.code, subject: error.subject, lineBase: 'zero' });
+  }, {}, metadata.subject, {
+    lineno: metadata.lineno,
+    colno: metadata.colno,
+    phase: metadata.phase,
+    templateName: metadata.templateName,
+    templatePath: metadata.templatePath,
+    sourceContent: metadata.sourceContent,
+    sourceStartLine: metadata.sourceStartLine,
+    renderContext: metadata.renderContext,
+    code: metadata.code,
+    subject: metadata.subject,
+    lineBase: metadata.lineBase
+  });
 }
 
 export function fromIterator(arr) {

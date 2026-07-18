@@ -199,6 +199,18 @@ export const TOGGLE_SCRIPT = `<script>
       viewer.appendChild(node);
     });
 
+    const expandButton = document.querySelector('[data-ctx-action="expand"]');
+    const collapseButton = document.querySelector('[data-ctx-action="collapse"]');
+
+    const updateContextActions = function() {
+      const expandableRows = Array.from(viewer.querySelectorAll('.ctx-row.is-expandable'));
+      const expandedCount = expandableRows.filter(function(row) {
+        return row.getAttribute('aria-expanded') === 'true';
+      }).length;
+      if (expandButton) expandButton.disabled = expandableRows.length === 0 || expandedCount === expandableRows.length;
+      if (collapseButton) collapseButton.disabled = expandedCount === 0;
+    };
+
     const expandAll = function(root) {
       Array.from(root.querySelectorAll('.ctx-row.is-expandable')).forEach(function(row) {
         if (row.getAttribute('aria-expanded') !== 'true') row.click();
@@ -206,14 +218,24 @@ export const TOGGLE_SCRIPT = `<script>
       const stillHasCollapsed = Array.from(root.querySelectorAll('.ctx-row.is-expandable')).some(function(row) {
         return row.getAttribute('aria-expanded') !== 'true';
       });
-      if (stillHasCollapsed) requestAnimationFrame(function() { expandAll(root); });
+      if (stillHasCollapsed) {
+        requestAnimationFrame(function() { expandAll(root); });
+      } else {
+        updateContextActions();
+      }
     };
 
     const collapseAll = function(root) {
       Array.from(root.querySelectorAll('.ctx-row.is-expandable')).reverse().forEach(function(row) {
         if (row.getAttribute('aria-expanded') === 'true') row.click();
       });
+      updateContextActions();
     };
+
+    viewer.addEventListener('click', function(event) {
+      if (event.target.closest('.ctx-row.is-expandable')) requestAnimationFrame(updateContextActions);
+    });
+    updateContextActions();
 
     document.querySelectorAll('[data-ctx-action]').forEach(function(button) {
       button.addEventListener('click', function() {

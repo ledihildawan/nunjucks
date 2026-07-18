@@ -1,6 +1,7 @@
 import picocolors from 'picocolors';
 import { pipe, filter } from 'remeda';
-import { shortenPath, normalizeDrivePath } from '@nunjucks/shared/path-shortener';
+import { shortenPath } from '@nunjucks/shared/path-shortener';
+import { isFilePath, resolveIdeLink } from './ide-links.ts';
 import { toDisplayLocation } from '../shared/location.ts';
 
 const makeHyperlink = (text: string, url: string): string => {
@@ -47,14 +48,14 @@ const formatMedium = (warning: Warning, options: ToConsoleOptions): string => {
   const lineNum = location.line;
 
   let locationStr: string;
-  if (templateName || templatePath) {
-    const path = templateName || templatePath!;
+  const path = templateName || templatePath;
+  if (path) {
     const shortPath = shortenPath(path);
     const displayPath = `${shortPath}:${lineNum}`;
-    const normalizedPath = normalizeDrivePath(path);
-    const vscodeUrl = `vscode://file/${normalizedPath}:${lineNum}`;
-    const link = makeHyperlink(displayPath, vscodeUrl);
-    locationStr = `${picocolors.dim('at')} ${link}`;
+    const location = isFilePath(path)
+      ? makeHyperlink(displayPath, resolveIdeLink(ide, path, lineNum, 1))
+      : displayPath;
+    locationStr = `${picocolors.dim('at')} ${location}`;
   } else {
     locationStr = `${picocolors.dim('at line')} ${picocolors.cyan(lineNum)}`;
   }
@@ -72,7 +73,7 @@ const formatMedium = (warning: Warning, options: ToConsoleOptions): string => {
 };
 
 const formatFull = (warning: Warning, options: ToConsoleOptions): string => {
-  const { dev = false, version = '3.2.4', timestamp } = options;
+  const { dev = false, version = '3.2.4', timestamp, ide = 'vscode' } = options;
   const { lineno, templateName, varName, undefinedMode, code, subject } = warning;
 
   const parts: string[] = [];
@@ -100,10 +101,9 @@ const formatFull = (warning: Warning, options: ToConsoleOptions): string => {
   if (templateName) {
     const shortPath = shortenPath(templateName);
     const displayPath = `${shortPath}:${lineNum}`;
-    const normalizedPath = normalizeDrivePath(templateName);
-    const vscodeUrl = `vscode://file/${normalizedPath}:${lineNum}`;
-    const link = makeHyperlink(displayPath, vscodeUrl);
-    locationStr = link;
+    locationStr = isFilePath(templateName)
+      ? makeHyperlink(displayPath, resolveIdeLink(ide, templateName, lineNum, 1))
+      : displayPath;
   } else if (lineno !== undefined && lineno !== null) {
     locationStr = picocolors.dim(`line ${lineNum}`);
   } else {

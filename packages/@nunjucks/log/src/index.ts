@@ -8,5 +8,7 @@ export { toConsoleString } from './error/to-console.ts';
 export { classify } from './error/classify.ts';
 export { injectWarningsScript } from './warning/collector.ts';
 export { normalizeLogMetadata, createFormatterState } from './error/metadata.ts';
+export { normalizeErrorMetadata } from './error/normalize.ts';
+export type { ErrorMetadataFallback, NormalizedErrorMetadata } from './error/normalize.ts';
 export { ERROR_DEFINITIONS, ERRORS, PATTERNS } from './error/messages.ts';
 export type { ErrorName } from './error/messages.ts';

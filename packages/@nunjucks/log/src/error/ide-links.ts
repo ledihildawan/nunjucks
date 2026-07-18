@@ -1,6 +1,15 @@
 import { normalizeDrivePath } from '@nunjucks/shared/path-shortener';
 import { isFunction } from 'remeda';
 
+const FILE_PATH_PATTERN = /\.(njk|nunjucks|js|ts|mjs|cjs|jsx|tsx|html|htm|tmpl|tpl|pug|ejs|handlebars|hbs|erb|php|py|rb|go|java|c|cpp|h|cs|rs|swift|kt|scala|css|scss|sass|less|styl|json|yaml|yml|xml|md|txt)$/i;
+
+export const isFilePath = (path?: string | null): boolean =>
+  typeof path === 'string' &&
+  path.trim() !== '' &&
+  !/^native$/i.test(path.trim()) &&
+  !/^</.test(path.trim()) &&
+  FILE_PATH_PATTERN.test(path);
+
 const GENERIC_ICON = '<path d="M14 3v2h3.59l-9.3 9.29 1.42 1.42L19 6.41V10h2V3m-2 16H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z"/>';
 
 type IdeLinkFn = (path: string, line: number, col: number) => string;
