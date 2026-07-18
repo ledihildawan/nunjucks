@@ -1,0 +1,4 @@
+remoteRouter routes: [ '/', '/api/hello', '/api/time', '/api/slow', '/api/error' ]
+Nunjucks Error Classification Demo: http://localhost:4000
+Run: node --watch samples/express/main.js
+ERROR PROPERTIES: { lineno: 0, colno: 10, lineBase: 'zero', isJsCaller: undefined }

@@ -119,13 +119,14 @@ const createFallbackEnv = () => ({
   }
 });
 
-export function createTemplate(src, env, path, eagerCompile) {
+export function createTemplate(src, env, path, eagerCompile, includeChain) {
   const obj = createObj({
     name: 'Template',
     [Template]: true,
-    init: function(srcArg, envArg, pathArg, eagerCompileArg) {
+    init: function(srcArg, envArg, pathArg, eagerCompileArg, includeChainArg) {
       this.env = envArg || createFallbackEnv();
       this.path = pathArg;
+      this._includeChain = includeChainArg || null;
 
       if (isPlainObject(srcArg)) {
         switch (srcArg.type) {

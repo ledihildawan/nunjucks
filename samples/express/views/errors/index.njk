@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Error Routes</title>
+  <style>
+    body { font-family: monospace; margin: 20px; }
+    h1 { font-size: 18px; margin-bottom: 20px; }
+    .group { margin-bottom: 10px; }
+    .group-header {
+      font-size: 14px; color: #666; margin: 15px 0 10px;
+      border-bottom: 1px solid #ccc; padding-bottom: 5px;
+      cursor: pointer; user-select: none;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .group-header:hover { color: #333; }
+    .group-header::before { content: '▶'; font-size: 10px; transition: transform 0.2s; }
+    .group-header.open::before { transform: rotate(90deg); }
+    .group-header .count { color: #999; font-weight: normal; }
+    ul { list-style: none; padding: 0; margin: 0; display: none; }
+    ul.open { display: block; }
+    li { margin: 4px 0; }
+    a { color: #c00; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>Error Routes ({{ total }})</h1>
+
+  {% for group in groups %}
+  <div class="group">
+    <h2 class="group-header open" data-group="{{ loop.index }}">
+      {{ group.name }} <span class="count">({{ group.items.length }})</span>
+    </h2>
+    <ul class="open" id="group-{{ loop.index }}">
+      {% for item in group.items %}
+      <li><a href="/errors/{{ item.path }}">{{ item.path }}</a> - {{ item.desc }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endfor %}
+
+  <script>
+    document.querySelectorAll('.group-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const index = header.dataset.group;
+        const list = document.getElementById('group-' + index);
+        header.classList.toggle('open');
+        list.classList.toggle('open');
+      });
+    });
+  </script>
+</body>
+</html>

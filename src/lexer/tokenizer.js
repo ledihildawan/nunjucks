@@ -317,8 +317,9 @@ export function createTokenizer(str, opts = {}) {
         return this._parseOperator(cur, lineno, colno);
       }
 
+      const symColno = state.colno;
       const sym = this._extractUntil(WHITESPACE_CHARS + DELIM_CHARS);
-      return this._parseSymbol(sym, lineno, colno);
+      return this._parseSymbol(sym, lineno, symColno);
     },
   };
 

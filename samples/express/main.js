@@ -37,8 +37,15 @@ app.get('/file-error', (req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-  console.log(err)
-  console.log('\n' + err.output({ format: 'ansi' }) + '\n');
+  if (!err.sourceContent && err.templateName) {
+    try {
+      const fs = require('fs');
+      const templatePath = err.templateName.replace(/\//g, path.sep);
+      err.sourceContent = fs.readFileSync(templatePath, 'utf-8');
+    } catch (e) {
+    }
+  }
+  console.log('ERROR PROPERTIES:', { lineno: err.lineno, colno: err.colno, lineBase: err.lineBase, isJsCaller: err.isJsCaller });
   res.status(500).type('html').send(err.output());
 });
 
@@ -55,9 +62,9 @@ app.get('/home', async (req, res) => {
   <h1>Welcome, {{ username }}!</h1>
   <h2>Items:</h2>
   <ul>
-    {% for item in items %}
+  {% for item in items %}
     <li>{{ item }}</li>
-    {% endfor %}
+  {% endfor %}
   </ul>
 </body>
 </html>`;

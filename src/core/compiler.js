@@ -147,13 +147,7 @@ export const execute = async (code, context = {}, config = {}) => {
         });
         return result;
       },
-      getBlock: function(name) {
-        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, { phase: 'render' });
-      },
       getSuper: function(envObj, name, block, frame, runtime) {
-        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, { phase: 'render' });
-      },
-      getSuperBlock: function(name) {
         throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, { phase: 'render' });
       }
     };
@@ -167,7 +161,16 @@ export const execute = async (code, context = {}, config = {}) => {
     const safeContext = new Proxy(ctx, {
       get(target, key) {
         if (key === '__proto__' || key === 'constructor') return undefined;
-        return target[key];
+        const value = target[key];
+        if (typeof value === 'function') {
+          return (...args) => {
+            if (args.length >= 2) {
+              Reflect.set(safeContext, args[0], args[1]);
+            }
+            return value.apply(target, args);
+          };
+        }
+        return value;
       },
       set() {
         throw createLog('error', ERROR_DEFINITIONS.SANDBOX_CONTEXT_MODIFY, {}, null, { phase: 'render' });

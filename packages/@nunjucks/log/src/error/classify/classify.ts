@@ -1,6 +1,6 @@
-import { PATTERNS } from '../messages.js';
-import { RULES, DEFAULT_CLASSIFICATION } from '../rules.js';
-import type { Classification } from '../rules.js';
+import { PATTERNS } from '../messages.ts';
+import { RULES, DEFAULT_CLASSIFICATION } from '../rules.ts';
+import type { Classification } from '../rules.ts';
 
 const classifyFilterError = (rawMessage: string): Classification => {
   const errorMsg = rawMessage.split('\n').find(l => /^ {2}Error:/i.test(l))?.replace(/^ {2}Error:\s*/i, '') || rawMessage.match(PATTERNS.FILTER_ERROR)?.[1] || rawMessage.split('\n').pop()?.trim() || rawMessage;
@@ -213,6 +213,172 @@ export const classifyFromError = (error: ErrorInput | null): Classification => {
         causes: rule.causes.map(c => replacePlaceholders(c, undefinedName)),
         fixCode: replacePlaceholders(rule.fixCode, undefinedName),
         fixComment: replacePlaceholders(rule.fixComment, undefinedName)
+      };
+    }
+  }
+  if (error.code === 'FILE_NOT_FOUND') {
+    const rule = RULES.find(r => r.category === 'file_not_found');
+    const pathMatch = error.message?.match(/template not found: (.+)/i);
+    const undefinedName = error.subject || pathMatch?.[1] || null;
+    if (rule) {
+      return {
+        category: rule.category,
+        undefinedName,
+        title: rule.titleTemplate ? rule.titleTemplate.replaceAll('{subject}', undefinedName || '') : null,
+        causes: rule.causes.map(c => replacePlaceholders(c, undefinedName)),
+        fixCode: replacePlaceholders(rule.fixCode, undefinedName),
+        fixComment: replacePlaceholders(rule.fixComment, undefinedName)
+      };
+    }
+  }
+  if (error.code === 'CIRCULAR_INCLUDE') {
+    const rule = RULES.find(r => r.category === 'circular_include');
+    const pathMatch = error.message?.match(/Circular include detected: (.+)/i);
+    const undefinedName = error.subject || pathMatch?.[1] || null;
+    if (rule) {
+      return {
+        category: rule.category,
+        undefinedName,
+        title: rule.titleTemplate ? rule.titleTemplate.replaceAll('{subject}', undefinedName || '') : null,
+        causes: rule.causes.map(c => replacePlaceholders(c, undefinedName)),
+        fixCode: replacePlaceholders(rule.fixCode, undefinedName),
+        fixComment: replacePlaceholders(rule.fixComment, undefinedName)
+      };
+    }
+  }
+  if (error.code === 'FILESYSTEM_ERROR') {
+    const rule = RULES.find(r => r.category === 'filesystem_error');
+    if (rule) {
+      const undefinedName = error.subject || null;
+      return {
+        category: rule.category,
+        undefinedName,
+        title: rule.titleTemplate || null,
+        causes: rule.causes,
+        fixCode: rule.fixCode || null,
+        fixComment: rule.fixComment || null
+      };
+    }
+  }
+  if (error.code === 'IMPORT_ERROR') {
+    const rule = RULES.find(r => r.category === 'import_error');
+    const nameMatch = error.message?.match(/Cannot import '(.+?)' from module/i);
+    const undefinedName = error.subject || nameMatch?.[1] || null;
+    if (rule) {
+      return {
+        category: rule.category,
+        undefinedName,
+        title: rule.titleTemplate || null,
+        causes: rule.causes,
+        fixCode: rule.fixCode || null,
+        fixComment: rule.fixComment || null
+      };
+    }
+  }
+  if (error.code === 'SANDBOX_SET') {
+    const rule = RULES.find(r => r.category === 'sandbox_blocked' && r.pattern.source.includes('Cannot set'));
+    const undefinedName = error.subject || null;
+    if (rule) {
+      return {
+        category: rule.category,
+        undefinedName,
+        title: rule.titleTemplate ? rule.titleTemplate.replaceAll('{subject}', undefinedName || '') : null,
+        causes: rule.causes.map(c => replacePlaceholders(c, undefinedName)),
+        fixCode: replacePlaceholders(rule.fixCode, undefinedName),
+        fixComment: replacePlaceholders(rule.fixComment, undefinedName)
+      };
+    }
+  }
+  if (error.code === 'SANDBOX_CONTEXT_MODIFY') {
+    const rule = RULES.find(r => r.category === 'sandbox_blocked' && r.pattern.source.includes('context'));
+    if (rule) {
+      return {
+        category: rule.category,
+        undefinedName: null,
+        title: rule.titleTemplate || null,
+        causes: rule.causes,
+        fixCode: rule.fixCode || null,
+        fixComment: rule.fixComment || null
+      };
+    }
+  }
+  if (error.code === 'SANDBOX_ALLOWLIST') {
+    const rule = RULES.find(r => r.category === 'sandbox_blocked' && r.pattern.source.includes('Cannot access'));
+    const undefinedName = error.subject || null;
+    if (rule) {
+      return {
+        category: rule.category,
+        undefinedName,
+        title: rule.titleTemplate ? rule.titleTemplate.replaceAll('{subject}', undefinedName || '') : null,
+        causes: rule.causes.map(c => replacePlaceholders(c, undefinedName)),
+        fixCode: replacePlaceholders(rule.fixCode, undefinedName),
+        fixComment: replacePlaceholders(rule.fixComment, undefinedName)
+      };
+    }
+  }
+  if (error.code === 'BLOCKED_CONTEXT_KEYS') {
+    const rule = RULES.find(r => r.category === 'security_error' && r.pattern.source.includes('blocked'));
+    const undefinedName = error.subject || null;
+    if (rule) {
+      return {
+        category: rule.category,
+        undefinedName,
+        title: rule.titleTemplate || null,
+        causes: rule.causes,
+        fixCode: rule.fixCode || null,
+        fixComment: rule.fixComment || null
+      };
+    }
+  }
+  if (error.code === 'DANGEROUS_CONTEXT_VALUES') {
+    const rule = RULES.find(r => r.category === 'security_error' && r.pattern.source.includes('dangerous values'));
+    if (rule) {
+      return {
+        category: rule.category,
+        undefinedName: null,
+        title: rule.titleTemplate || null,
+        causes: rule.causes,
+        fixCode: rule.fixCode || null,
+        fixComment: rule.fixComment || null
+      };
+    }
+  }
+  if (error.code === 'DANGEROUS_TEMPLATE_CODE') {
+    const rule = RULES.find(r => r.category === 'security_error' && r.pattern.source.includes('dangerous code'));
+    if (rule) {
+      return {
+        category: rule.category,
+        undefinedName: null,
+        title: rule.titleTemplate || null,
+        causes: rule.causes,
+        fixCode: rule.fixCode || null,
+        fixComment: rule.fixComment || null
+      };
+    }
+  }
+  if (error.code === 'TEMPLATE_SIZE_EXCEEDED') {
+    const rule = RULES.find(r => r.category === 'validation_error' && r.pattern.source.includes('Template exceeds'));
+    if (rule) {
+      return {
+        category: rule.category,
+        undefinedName: null,
+        title: rule.titleTemplate || null,
+        causes: rule.causes,
+        fixCode: rule.fixCode || null,
+        fixComment: rule.fixComment || null
+      };
+    }
+  }
+  if (error.code === 'INVALID_CONFIG') {
+    const rule = RULES.find(r => r.category === 'validation_error' && r.pattern.source.includes('Invalid configuration'));
+    if (rule) {
+      return {
+        category: rule.category,
+        undefinedName: null,
+        title: rule.titleTemplate || null,
+        causes: rule.causes,
+        fixCode: rule.fixCode || null,
+        fixComment: rule.fixComment || null
       };
     }
   }

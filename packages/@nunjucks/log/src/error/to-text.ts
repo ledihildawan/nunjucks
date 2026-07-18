@@ -1,5 +1,5 @@
 import { shortenPath } from '@nunjucks/shared/path-shortener';
-import { toDisplayLocation } from './location.js';
+import { toDisplayLocation } from './location.ts';
 
 export interface ToTextOptions {
   verbosity?: 'simple' | 'medium' | 'full';

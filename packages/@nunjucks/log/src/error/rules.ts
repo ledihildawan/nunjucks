@@ -1,5 +1,5 @@
-import { PATTERNS } from './messages.js';
-import type { ErrorName } from './messages.js';
+import { PATTERNS } from './messages.ts';
+import type { ErrorName } from './messages.ts';
 
 type SubjectExtractor = (groups: RegExpMatchArray) => string | null;
 

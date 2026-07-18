@@ -1,5 +1,5 @@
 import { pipe, isNonNullish } from 'remeda';
-import { formatLocationAnnotation, type LineBase } from '../location.js';
+import { formatLocationAnnotation, type LineBase } from '../location.ts';
 
 const TEMPLATE_ERROR = Symbol('TemplateError');
 

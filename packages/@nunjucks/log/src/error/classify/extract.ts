@@ -1,4 +1,4 @@
-import { PATTERNS } from '../messages.js';
+import { PATTERNS } from '../messages.ts';
 
 export const extractUndefinedName = (message: string): string | null => {
   if (!message) return null;

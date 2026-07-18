@@ -90,7 +90,25 @@ nunjucks.configure = (globalConfig) => {
   return createConfiguredInstance();
 };
 
-nunjucks.render = render;
+nunjucks.render = (template, context, localConfig) => {
+  const callerLoc = getCallerLocation();
+  const config = mergeConfig(localConfig || {});
+
+  if (callerLoc) {
+    config.jsCaller = callerLoc.path;
+    config.jsCallerErrorLine = callerLoc.line;
+    config.jsCallerErrorCol = callerLoc.col;
+  }
+
+  if (localConfig?.filters) {
+    config._customFilters = localConfig.filters;
+  }
+  if (localConfig?.globals) {
+    config._customGlobals = localConfig.globals;
+  }
+
+  return render(template, context, config);
+};
 
 nunjucks.renderWithEnv = renderWithEnv;
 

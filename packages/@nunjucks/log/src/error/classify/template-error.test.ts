@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { prettifyError } from './template-error.js';
+import { prettifyError } from './template-error.ts';
 
 describe('prettifyError', () => {
   test('applies zero-based locations as one-based display text', () => {

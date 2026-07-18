@@ -175,7 +175,7 @@ export function lookup(ctx, key, defaultValue = undefined) {
 }
 
 export function handleError(error, lineno, colno, runtime) {
-  if (error.lineno !== undefined) {
+  if (error.lineno !== undefined && error.lineno !== null) {
     throw error;
   }
 

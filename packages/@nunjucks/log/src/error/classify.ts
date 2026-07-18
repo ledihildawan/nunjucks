@@ -1,4 +1,4 @@
-import { classifyFromError } from './classify/classify.js';
+import { classifyFromError } from './classify/classify.ts';
 
 export interface ClassifiedError {
   category: string;

@@ -30,9 +30,7 @@ export const compileSet = (ctx, node, frame) => {
 
     ctx._emitLine(`frame.set("${name}", ${id}, true);`);
 
-    ctx._emitLine('if(frame.topLevel) {');
     ctx._emitLine(`context.setVariable("${name}", ${id});`);
-    ctx._emitLine('}');
 
     if (name.charAt(0) !== '_') {
       ctx._emitLine('if(frame.topLevel) {');

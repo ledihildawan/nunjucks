@@ -1,7 +1,7 @@
 import picocolors from 'picocolors';
 import { pipe, filter } from 'remeda';
 import { shortenPath, normalizeDrivePath } from '@nunjucks/shared/path-shortener';
-import { toDisplayLocation } from './location.js';
+import { toDisplayLocation } from './location.ts';
 
 const makeHyperlink = (text: string, url: string): string => {
   return `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;

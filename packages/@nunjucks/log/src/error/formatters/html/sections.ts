@@ -1,6 +1,6 @@
 import { keys, filter, isFunction, isSymbol, isString, isNumber, isBoolean, isNullish, isArray } from 'remeda';
-import { escapeHtml, highlightHtml, highlightJs } from './highlight.js';
-import { resolveIdeLink } from '../../ide-links.js';
+import { escapeHtml, highlightHtml, highlightJs } from './highlight.ts';
+import { resolveIdeLink } from '../../ide-links.ts';
 import { shortenPath } from '@nunjucks/shared/path-shortener';
 import { isBlockedKey } from '@nunjucks/shared/blocked-keys';
 
