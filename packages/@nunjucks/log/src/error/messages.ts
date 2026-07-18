@@ -47,6 +47,7 @@ export const ERROR_DEFINITIONS = {
   NOT_A_FUNCTION: createError('NOT_A_FUNCTION', "'{name}' is not a function", ['name'], /^'([^']+)' is not a function$/i),
   UNDEFINED_BLOCK: createError('UNDEFINED_BLOCK', 'Undefined block: {name}', ['name'], /^Undefined block: (.+)$/i),
   UNDEFINED_FILTER: createError('UNDEFINED_FILTER', "Filter '{name}' is not defined", ['name'], /^Filter '([^']+)' is not defined$/i),
+  UNDEFINED_TEST: createError('UNDEFINED_TEST', "Test '{name}' is not defined", ['name'], /^Test '([^']+)' is not defined$/i),
   FILTER_ERROR: createError('FILTER_ERROR', "Filter failed", [], /^Error: Filter .+? threw|filter threw|Filter .+? failed/i),
   FILTER_TYPE_ERROR: createError('FILTER_TYPE_ERROR', "Filter type error", [], /attribute "([^"]+)" resolved to undefined/i),
   UNKNOWN_BLOCK_TAG: createError('UNKNOWN_BLOCK_TAG', "unknown block tag: {tag}", ['tag'], /^unknown block tag: (.+)$/i),

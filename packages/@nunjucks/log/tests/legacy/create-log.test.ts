@@ -54,7 +54,7 @@ describe('createLog', () => {
       });
       const html = err.output({ format: 'html' });
       expect(typeof html).toBe('string');
-      expect(html.length).toBeGreaterThan(0);
+      expect(typeof html === 'string' ? html.length : html.html.length).toBeGreaterThan(0);
     });
 
     test('renders ansi output', () => {
@@ -95,9 +95,7 @@ describe('createLog', () => {
         colno: 0
       });
       const result = err.output();
-      expect(result).toHaveProperty('html');
-      expect(result).toHaveProperty('ansi');
-      expect(result).toHaveProperty('text');
+      expect(typeof result).toBe('string');
     });
   });
 

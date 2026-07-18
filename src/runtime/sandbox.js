@@ -1,4 +1,4 @@
-import { keys, isNonNullish, isFunction } from 'remeda';
+import { isNonNullish, isFunction } from 'remeda';
 import {
   isBlockedKey,
   isDangerousGlobal,

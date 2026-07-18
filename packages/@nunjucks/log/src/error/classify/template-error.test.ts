@@ -3,7 +3,7 @@ import { prettifyError } from './template-error.ts';
 
 describe('prettifyError', () => {
   test('applies zero-based locations as one-based display text', () => {
-    const err = new Error('Boom');
+    const err = new Error('Boom') as Error & { lineno: number; colno: number; lineBase: 'zero' | 'one' };
     err.lineno = 1;
     err.colno = 3;
     err.lineBase = 'zero';
@@ -19,7 +19,7 @@ describe('prettifyError', () => {
   });
 
   test('preserves one-based locations without shifting them again', () => {
-    const err = new Error('Boom');
+    const err = new Error('Boom') as Error & { lineno: number; colno: number; lineBase: 'zero' | 'one' };
     err.lineno = 5;
     err.colno = 8;
     err.lineBase = 'one';
@@ -34,7 +34,7 @@ describe('prettifyError', () => {
   });
 
   test('includes include-chain context when available', () => {
-    const err = new Error('Boom');
+    const err = new Error('Boom') as Error & { lineno: number; colno: number; lineBase: 'zero' | 'one' };
     err.lineno = 0;
     err.colno = 0;
     err.lineBase = 'zero';

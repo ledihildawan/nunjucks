@@ -1,7 +1,13 @@
+const emitLocation = (ctx, node) => {
+  ctx._emit('(lineno = ' + (node.lineno ?? 0) + ', colno = ' + (node.colno ?? 0) + ', ');
+};
+
 const binOpEmitter = (ctx, node, frame, str) => {
+  emitLocation(ctx, node);
   ctx.compile(node.left, frame);
   ctx._emit(str);
   ctx.compile(node.right, frame);
+  ctx._emit(')');
 };
 
 export const compileOr = (ctx, node, frame) => binOpEmitter(ctx, node, frame, ' || ');
@@ -21,9 +27,9 @@ export const compileDiv = (ctx, node, frame) => binOpEmitter(ctx, node, frame, '
 export const compileMod = (ctx, node, frame) => binOpEmitter(ctx, node, frame, ' % ');
 
 export const compileNullishCoalesce = (ctx, node, frame) => {
-  ctx._emit('runtime.nullishCoalesce(');
+  emitLocation(ctx, node);
   ctx.compile(node.left, frame);
-  ctx._emit(',');
+  ctx._emit(' ?? ');
   ctx.compile(node.right, frame);
   ctx._emit(')');
 };
@@ -39,17 +45,19 @@ export const compileIn = (ctx, node, frame) => {
 };
 
 export const compileFloorDiv = (ctx, node, frame) => {
+  emitLocation(ctx, node);
   ctx._emit('Math.floor(');
   ctx.compile(node.left, frame);
   ctx._emit(' / ');
   ctx.compile(node.right, frame);
-  ctx._emit(')');
+  ctx._emit('))');
 };
 
 export const compilePow = (ctx, node, frame) => {
+  emitLocation(ctx, node);
   ctx._emit('Math.pow(');
   ctx.compile(node.left, frame);
   ctx._emit(', ');
   ctx.compile(node.right, frame);
-  ctx._emit(')');
+  ctx._emit('))');
 };

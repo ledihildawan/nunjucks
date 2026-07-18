@@ -6,18 +6,22 @@ import { parseIn } from './in.js';
 
 export const parseOr = (ctx) => {
   let node = parseNullishCoalesce(ctx);
+  let tok = peekToken(ctx);
   while (skipSymbol(ctx, 'or') || skipOperator(ctx, '||')) {
     const node2 = parseNullishCoalesce(ctx);
-    node = nodes.or(node.lineno, node.colno, node, node2);
+    node = nodes.or(tok.lineno, tok.colno, node, node2);
+    tok = peekToken(ctx);
   }
   return node;
 };
 
 export const parseAnd = (ctx) => {
   let node = parseNot(ctx);
+  let tok = peekToken(ctx);
   while (skipSymbol(ctx, 'and') || skipOperator(ctx, '&&')) {
     const node2 = parseNot(ctx);
-    node = nodes.and(node.lineno, node.colno, node, node2);
+    node = nodes.and(tok.lineno, tok.colno, node, node2);
+    tok = peekToken(ctx);
   }
   return node;
 };

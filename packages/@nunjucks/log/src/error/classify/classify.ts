@@ -56,7 +56,7 @@ const createClassificationFromRule = (rule: typeof RULES[0] | undefined, undefin
 		category: rule.category,
 		undefinedName,
 		title: rule.titleTemplate?.replaceAll('{subject}', undefinedName || '') || null,
-		causes: rule.causes.map(c => replacePlaceholders(c, undefinedName)),
+		causes: rule.causes.map(c => replacePlaceholders(c, undefinedName)).filter((cause): cause is string => cause !== null),
 		fixCode: replacePlaceholders(rule.fixCode, undefinedName),
 		fixComment: replacePlaceholders(rule.fixComment, undefinedName)
 	};
@@ -240,7 +240,7 @@ export const classifyError = (rawMessage: string): Classification => {
 			category: rule.category,
 			undefinedName,
 			title: rule.titleTemplate ? rule.titleTemplate.replaceAll('{subject}', undefinedName || '') : null,
-			causes: rule.causes.map(c => replacePlaceholders(c, undefinedName)),
+			causes: rule.causes.map(c => replacePlaceholders(c, undefinedName)).filter((cause): cause is string => cause !== null),
 			fixCode: replacePlaceholders(rule.fixCode, undefinedName),
 			fixComment: replacePlaceholders(rule.fixComment, undefinedName)
 		};

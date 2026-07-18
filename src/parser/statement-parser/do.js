@@ -7,7 +7,7 @@ export const parseDo = (ctx) => {
   const expr = ctx.parseExpression();
   
   // Consume the block-end token
-  const endTok = nextToken(ctx);
+  nextToken(ctx);
   
   return nodes.do(tag.lineno, tag.colno, expr);
 };

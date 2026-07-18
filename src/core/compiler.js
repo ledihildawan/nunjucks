@@ -80,6 +80,14 @@ export const execute = async (code, context = {}, config = {}) => {
   const devWarningSandbox = config.devWarningSandbox ?? true;
   const globals = config.globals ?? {};
   const filters = config.filters ?? {};
+  const tests = config.tests ?? {};
+
+  const getTest = (name, lineno, colno) => {
+    const testFn = tests[name];
+    if (testFn) return testFn;
+    if (config.env?.getTest) return config.env.getTest(name, lineno, colno);
+    throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_TEST, { name }, name, { lineno: lineno ?? null, colno: colno ?? null, phase: 'render', lineBase: 'zero' });
+  };
 
   // Dev warning for unsandboxed rendering
   if (!sandbox && devWarningSandbox) {
@@ -159,7 +167,7 @@ export const execute = async (code, context = {}, config = {}) => {
         });
         return result;
       },
-      getSuper: function(envObj, name, block, frame, runtime, lineno = null, colno = null) {
+      getSuper: function(envObj, name, block, frame, lineno = null, colno = null) {
         throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, { lineno, colno, phase: 'render', lineBase: 'zero' });
       }
     };
@@ -192,6 +200,7 @@ export const execute = async (code, context = {}, config = {}) => {
         if (config.env?.getFilter) return config.env.getFilter(name, lineno, colno);
         throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_FILTER, { name }, name, { lineno: lineno ?? null, colno: colno ?? null, phase: 'render', lineBase: 'zero' });
       },
+      getTest,
       ...(config.env ? { getTemplate: (...args) => config.env.getTemplate(...args) } : {})
     };
     
@@ -218,6 +227,7 @@ export const execute = async (code, context = {}, config = {}) => {
       if (config.env?.getFilter) return config.env.getFilter(name, lineno, colno);
       throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_FILTER, { name }, name, { lineno: lineno ?? null, colno: colno ?? null, phase: 'render', lineBase: 'zero' });
     },
+    getTest,
     ...(config.env ? { getTemplate: (...args) => config.env.getTemplate(...args) } : {})
   };
   

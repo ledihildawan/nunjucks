@@ -2,6 +2,7 @@ import * as stringFilters from '../filters/string.js';
 import * as arrayFilters from '../filters/array.js';
 import * as objectFilters from '../filters/object.js';
 import * as mathFilters from '../filters/math.js';
+import { builtInTests } from '../tests.js';
 
 const builtInFilters = {
   ...stringFilters,
@@ -37,6 +38,7 @@ const DEFAULT_CONFIG = Object.freeze({
   lstripBlocks: false,
   undefined: 'default',
   filters: builtInFilters,
+  tests: builtInTests,
   globals: {},
   extensions: {},
   views: null
@@ -56,6 +58,7 @@ export const mergeConfig = (localConfig) => {
     ..._globalConfig,
     ...localConfig,
     filters: { ..._globalConfig.filters, ...(localConfig.filters || {}) },
+    tests: { ..._globalConfig.tests, ...(localConfig.tests || {}) },
     globals: { ..._globalConfig.globals, ...(localConfig.globals || {}) },
     extensions: { ..._globalConfig.extensions, ...(localConfig.extensions || {}) }
   };
@@ -70,7 +73,7 @@ export const resetConfig = () => {
 
 export const isConfigured = () => {
   return Object.keys(_globalConfig).some(key => 
-    key !== 'filters' && key !== 'globals' && key !== 'extensions' 
+    key !== 'filters' && key !== 'tests' && key !== 'globals' && key !== 'extensions'
       ? _globalConfig[key] !== DEFAULT_CONFIG[key]
       : Object.keys(_globalConfig[key]).length > 0
   );

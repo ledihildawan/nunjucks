@@ -41,6 +41,8 @@ describe('parseConcat', () => {
     expect(nodes.isConcat(result)).toBe(true);
     expect(result.left).toBe(left);
     expect(result.right).toBe(right);
+    expect(result.lineno).toBe(1);
+    expect(result.colno).toBe(3);
   });
 
   test('chains multiple tilde operators', () => {
@@ -63,6 +65,8 @@ describe('parseConcat', () => {
     expect(nodes.isConcat(result.left)).toBe(true);
     expect(result.left.left).toBe(values[0]);
     expect(result.left.right).toBe(values[1]);
+    expect(result.left.colno).toBe(3);
     expect(result.right).toBe(values[2]);
+    expect(result.colno).toBe(7);
   });
 });

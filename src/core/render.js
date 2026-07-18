@@ -229,8 +229,6 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
   const errColno = err.colno;
   const useJsCaller = config.jsCallerErrorLine != null;
   const hasErrorLocation = errLineno !== undefined && errLineno !== null;
-  const isInlineTemplate = typeof template === 'string' &&
-    (template.includes('{{') || template.includes('{%') || template.includes('{#'));
   const preferJsCallerLocation = !config.templatePath && useJsCaller;
   const templatePath = preferJsCallerLocation
     ? (config.jsCaller || config._callerFile || err.templateName || null)

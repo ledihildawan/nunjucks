@@ -87,7 +87,7 @@ export const createFormatterState = ({ metadata, options = {} }: FormatterStateI
   templateName: metadata.templateName,
   lineno: metadata.lineno,
   colno: metadata.colno,
-  templatePath: options.templatePath ?? metadata.templatePath,
+  templatePath: options.templatePath ?? metadata.templatePath ?? undefined,
   renderContext: metadata.renderContext ?? options.renderContext,
   version: options.version,
   timestamp: options.timestamp,

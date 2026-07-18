@@ -30,6 +30,8 @@ describe('parseAdd', () => {
     expect(nodes.isAdd(result)).toBe(true);
     expect(result.left).toBe(left);
     expect(result.right).toBe(right);
+    expect(result.lineno).toBe(1);
+    expect(result.colno).toBe(3);
   });
 
   test('returns single node without +', () => {

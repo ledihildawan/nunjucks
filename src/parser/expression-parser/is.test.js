@@ -24,6 +24,8 @@ describe('parseIs', () => {
     expect(nodes.getNodeTypeName(result)).toBe('is');
     expect(result.left).toBe(left);
     expect(result.right).toBe(right);
+    expect(result.lineno).toBe(1);
+    expect(result.colno).toBe(3);
   });
 
   test('creates Not(Is) for is not operator', () => {
@@ -47,6 +49,9 @@ describe('parseIs', () => {
     expect(nodes.getNodeTypeName(result.target)).toBe('is');
     expect(result.target.left).toBe(left);
     expect(result.target.right).toBe(right);
+    expect(result.lineno).toBe(1);
+    expect(result.colno).toBe(3);
+    expect(result.target.colno).toBe(3);
   });
 
   test('passes through without is', () => {

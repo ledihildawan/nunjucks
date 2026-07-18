@@ -24,4 +24,4 @@ export {
 	DEFAULT_CLASSIFICATION
 } from './types.ts';
 
-export { createErrorLog } from './create-log.ts';
+export { createLog } from '../create-log.ts';

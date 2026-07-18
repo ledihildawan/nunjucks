@@ -24,6 +24,8 @@ describe('parseOr', () => {
     expect(nodes.isOr(result)).toBe(true);
     expect(result.left).toBe(left);
     expect(result.right).toBe(right);
+    expect(result.lineno).toBe(1);
+    expect(result.colno).toBe(3);
   });
 
   test('creates Or node for || operator', () => {
@@ -45,6 +47,8 @@ describe('parseOr', () => {
     expect(nodes.isOr(result)).toBe(true);
     expect(result.left).toBe(left);
     expect(result.right).toBe(right);
+    expect(result.lineno).toBe(1);
+    expect(result.colno).toBe(3);
   });
 
   test('returns single node without or', () => {
@@ -79,6 +83,8 @@ describe('parseAnd', () => {
     expect(nodes.isAnd(result)).toBe(true);
     expect(result.left).toBe(left);
     expect(result.right).toBe(right);
+    expect(result.lineno).toBe(1);
+    expect(result.colno).toBe(3);
   });
 
   test('creates And node for && operator', () => {
@@ -100,6 +106,8 @@ describe('parseAnd', () => {
     expect(nodes.isAnd(result)).toBe(true);
     expect(result.left).toBe(left);
     expect(result.right).toBe(right);
+    expect(result.lineno).toBe(1);
+    expect(result.colno).toBe(3);
   });
 
   test('returns single node without and', () => {

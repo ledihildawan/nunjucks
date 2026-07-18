@@ -46,6 +46,7 @@ export function createEngine(config = {}) {
             const templatePath = err.templateName.replace(/\//g, path.sep);
             err.sourceContent = await readFile(templatePath, 'utf-8');
           } catch (e) {
+            err.sourceReadError = e;
           }
         }
         callback(err);

@@ -1,4 +1,5 @@
 import type { LineBase } from './shared/location.ts';
+import { normalizeLineBase } from './shared/location.ts';
 import { createFormatterState } from './error/metadata.ts';
 
 export interface ErrorDefinitionEntry {
@@ -14,6 +15,7 @@ export interface ErrorInfo {
   templateName?: string | null;
   renderContext?: Record<string, unknown>;
   lineBase?: LineBase | null;
+  dev?: boolean;
 }
 
 export interface WarningInfo extends ErrorInfo {
@@ -50,6 +52,7 @@ export interface TemplateError extends Error {
   templateName: string | null;
   renderContext?: Record<string, unknown>;
   lineBase?: LineBase | null;
+  sourceContent?: string;
   outputOptions?: Omit<OutputOptions, 'format'>;
   output: (options?: OutputOptions) => {
     html: string;
@@ -120,6 +123,18 @@ const isErrorDefinitionEntry = (data: any): data is ErrorDefinitionEntry =>
   typeof data.message === 'function' &&
   !('lineno' in data);
 
+interface LegacyLogData {
+  message: string;
+  lineno?: number | null;
+  colno?: number | null;
+  info?: ErrorInfo | WarningInfo;
+}
+
+export function createLog(type: 'error', data: LegacyLogData): TemplateError;
+export function createLog(type: 'warning', data: LegacyLogData): TemplateWarning;
+
+export function createLog(type: string, data: LegacyLogData): TemplateError | TemplateWarning;
+
 export function createLog(
   type: 'error',
   errorDef: ErrorDefinitionEntry,
@@ -138,13 +153,39 @@ export function createLog(
 
 export function createLog(
   type: string,
-  errorDefOrData: ErrorDefinitionEntry | { message: string; lineno?: number | null; colno?: number | null; info?: ErrorInfo | WarningInfo },
+  errorDefOrData: ErrorDefinitionEntry | LegacyLogData,
   paramsOrContext?: Record<string, string> | Record<string, unknown>,
   subject?: string | null,
   context?: ErrorContext | null
 ): TemplateError | TemplateWarning {
   if (!isErrorDefinitionEntry(errorDefOrData)) {
-    throw new Error('createLog: second argument must be an ErrorDefinitionEntry');
+    if (type === 'error') {
+      const info = (errorDefOrData.info ?? {}) as ErrorInfo;
+      return createErrorObject(errorDefOrData.message, {
+        code: info.code ?? null,
+        subject: info.subject ?? null,
+        lineno: errorDefOrData.lineno ?? null,
+        colno: errorDefOrData.colno ?? null,
+        phase: info.phase ?? null,
+        templateName: info.templateName ?? null,
+        lineBase: info.lineBase ?? null,
+      });
+    }
+    if (type === 'warning') {
+      const info = (errorDefOrData.info ?? {}) as WarningInfo;
+      return createWarningObject(errorDefOrData.message, {
+        code: info.code ?? null,
+        subject: info.subject ?? null,
+        lineno: errorDefOrData.lineno ?? null,
+        colno: errorDefOrData.colno ?? null,
+        phase: info.phase ?? null,
+        templateName: info.templateName ?? null,
+        lineBase: info.lineBase ?? null,
+        varName: 'varName' in info ? info.varName ?? null : null,
+        undefinedMode: 'undefinedMode' in info ? info.undefinedMode ?? 'chainable' : 'chainable',
+      });
+    }
+    throw new Error(`Unknown log type: ${type}`);
   }
 
   const errorDef = errorDefOrData;
@@ -199,7 +240,7 @@ function createErrorObject(
   err.lineBase = metadata.lineBase;
 
   const storedOptions = extra ? { ...extra } : {};
-  err.sourceContent = extra?.sourceContent;
+  err.sourceContent = typeof extra?.sourceContent === 'string' ? extra.sourceContent : undefined;
 
   err.output = function(options: OutputOptions = {}) {
     const mergedOptions = { ...storedOptions, ...options };
@@ -215,7 +256,7 @@ function createErrorObject(
         code: err.code,
         subject: err.subject,
         renderContext: undefined,
-        lineBase: err.lineBase ?? undefined
+         lineBase: normalizeLineBase(err.lineBase)
       },
       options: mergedOptions
     });
@@ -272,7 +313,7 @@ function createWarningObject(
           code: warning.code,
           subject: warning.subject,
           renderContext: undefined,
-          lineBase: warning.lineBase ?? undefined
+          lineBase: normalizeLineBase(warning.lineBase)
         },
         options
       });

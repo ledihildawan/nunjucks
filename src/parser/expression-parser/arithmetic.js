@@ -1,13 +1,15 @@
 import { TOKEN_OPERATOR } from '../../lexer/token-types.js';
 import { nodes } from '../../nodes/index.js';
-import { skipValue } from '../cursor.js';
+import { peekToken, skipValue } from '../cursor.js';
 import { parseUnary } from './unary.js';
 
 const binaryOp = (ctx, NodeClass, operator, next) => {
   let node = next(ctx);
+  let tok = peekToken(ctx);
   while (skipValue(ctx, TOKEN_OPERATOR, operator)) {
     const node2 = next(ctx);
-    node = NodeClass(node.lineno, node.colno, node, node2);
+    node = NodeClass(tok.lineno, tok.colno, node, node2);
+    tok = peekToken(ctx);
   }
   return node;
 };

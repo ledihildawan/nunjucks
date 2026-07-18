@@ -18,7 +18,7 @@ export const compileRoot = (ctx, node, frame) => {
   ctx.buffer = childBuffer;
 
   const blocks = node.findAll('block');
-  const blockNames = blocks.map(b => b.name?.value).filter(Boolean);
+
   const blockLocation = (block) => ({
     lineno: block.name?.lineno ?? block.lineno ?? 0,
     colno: block.name?.colno ?? block.colno ?? 0

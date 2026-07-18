@@ -17,10 +17,10 @@ describe('compileCompare', () => {
     const ctx = makeCtx();
     const node = {
       expr: { mock: 'left' },
-      ops: [{ operator: '==', expr: { mock: 'right' } }],
+      ops: [{ lineno: 2, colno: 4, operator: '==', expr: { mock: 'right' } }],
     };
     compileCompare(ctx, node);
-    expect(ctx.emitted).toEqual(['left', ' == ', 'right']);
+    expect(ctx.emitted).toEqual(['(lineno = 2, colno = 4, ', 'left', ' == (lineno = 2, colno = 4, ', 'right', ')', ')']);
   });
 
   test('compiles expression with multiple operators', () => {
@@ -28,12 +28,16 @@ describe('compileCompare', () => {
     const node = {
       expr: { mock: 'x' },
       ops: [
-        { operator: '<', expr: { mock: 'y' } },
-        { operator: '<', expr: { mock: 'z' } },
+        { lineno: 1, colno: 2, operator: '<', expr: { mock: 'y' } },
+        { lineno: 1, colno: 6, operator: '<', expr: { mock: 'z' } },
       ],
     };
     compileCompare(ctx, node);
-    expect(ctx.emitted).toEqual(['x', ' < ', 'y', ' < ', 'z']);
+    expect(ctx.emitted).toEqual([
+      '(lineno = 1, colno = 2, ', 'x',
+      ' < (lineno = 1, colno = 2, ', 'y', ')',
+      ' < (lineno = 1, colno = 6, ', 'z', ')', ')'
+    ]);
   });
 
   test('handles all comparison operators', () => {
@@ -44,7 +48,7 @@ describe('compileCompare', () => {
         expr: { mock: 'a' },
         ops: [{ operator: op, expr: { mock: 'b' } }],
       });
-      expect(ctx.emitted[1].trim()).toBe(op);
+      expect(ctx.emitted[2]).toContain(` ${op} `);
     }
   });
 });
@@ -58,10 +62,21 @@ describe('compileIs', () => {
     };
     compileIs(ctx, node);
     expect(ctx.emitted).toEqual([
-      'env.getTest("odd").call(context, ',
+      '(lineno = 0, colno = 0, env.getTest("odd", 0, 0).call(context, ',
       'val',
-      ') === true',
+      ') === true)',
     ]);
+  });
+
+  test('escapes test names and forwards location', () => {
+    const ctx = makeCtx();
+    compileIs(ctx, {
+      lineno: 4,
+      colno: 9,
+      left: { mock: 'val' },
+      right: nodes.symbol(4, 12, 'a"b\\c'),
+    });
+    expect(ctx.emitted[0]).toBe('(lineno = 4, colno = 9, env.getTest("a\\"b\\\\c", 4, 9).call(context, ');
   });
 
   test('compiles test with args', () => {
@@ -75,11 +90,11 @@ describe('compileIs', () => {
     };
     compileIs(ctx, node);
     expect(ctx.emitted).toEqual([
-      'env.getTest("divisibleby").call(context, ',
+      '(lineno = 0, colno = 0, env.getTest("divisibleby", 0, 0).call(context, ',
       'val',
       ',',
       '[2]',
-      ') === true',
+      ') === true)',
     ]);
   });
 });

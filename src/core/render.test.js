@@ -2,12 +2,13 @@ import { describe, test, expect } from 'bun:test';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { render } from './render.js';
+import { mergeConfig } from '../config/global.js';
 
 const renderTemplate = async (template, context = {}, config = {}) => {
-  return await render(template, context, {
+  return await render(template, context, mergeConfig({
     autoescape: false,
     ...config
-  });
+  }));
 };
 
 describe('inline template error locations', () => {
@@ -235,6 +236,128 @@ describe('inline template error locations', () => {
     expect(err.lineBase).toBe('one');
     expect(err.templateName).toBe(filePath);
     expect(err.colno).toBe(callerLine.indexOf('::0') + 3);
+  });
+
+  test('points native arithmetic errors inside statements at the operator', async () => {
+    const filePath = fileURLToPath(import.meta.url);
+    const source = fs.readFileSync(filePath, 'utf8').split('\n');
+    const marker = 'STATEMENT_ARITHMETIC_LOCATION_' + 'MARKER';
+    const markerLine = source.findIndex(line => line.includes(marker)) + 1;
+    const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
+    const err = await render('{% if 1 + invalid %}ok{% endif %}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e); // STATEMENT_ARITHMETIC_LOCATION_MARKER
+    const callerLine = source[err.lineno - 1];
+
+    expect(err.lineBase).toBe('one');
+    expect(err.templateName).toBe(filePath);
+    expect(err.colno).toBe(callerLine.indexOf(' + ') + 2);
+  });
+
+  test('points native comparison errors inside statements at the operator', async () => {
+    const filePath = fileURLToPath(import.meta.url);
+    const source = fs.readFileSync(filePath, 'utf8').split('\n');
+    const marker = 'STATEMENT_COMPARISON_LOCATION_' + 'MARKER';
+    const markerLine = source.findIndex(line => line.includes(marker)) + 1;
+    const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
+    const err = await render('{% if 1 < invalid %}ok{% endif %}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e); // STATEMENT_COMPARISON_LOCATION_MARKER
+    const callerLine = source[err.lineno - 1];
+
+    expect(err.lineBase).toBe('one');
+    expect(err.templateName).toBe(filePath);
+    expect(err.colno).toBe(callerLine.indexOf(' < ') + 2);
+  });
+
+  test('points native unary errors inside statements at the operator', async () => {
+    const filePath = fileURLToPath(import.meta.url);
+    const source = fs.readFileSync(filePath, 'utf8').split('\n');
+    const marker = 'STATEMENT_UNARY_LOCATION_' + 'MARKER';
+    const markerLine = source.findIndex(line => line.includes(marker)) + 1;
+    const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
+    const err = await render('{% if -invalid %}ok{% endif %}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e); // STATEMENT_UNARY_LOCATION_MARKER
+    const callerLine = source[err.lineno - 1];
+
+    expect(err.lineBase).toBe('one');
+    expect(err.templateName).toBe(filePath);
+    expect(err.colno).toBe(callerLine.indexOf('-invalid') + 1);
+  });
+
+  test('preserves short-circuit semantics for logical and nullish operators', async () => {
+    const explode = () => { throw new Error('must not run'); };
+    await expect(renderTemplate('{{ true or explode() }}', { explode })).resolves.toBe('true');
+    await expect(renderTemplate('{{ true || explode() }}', { explode })).resolves.toBe('true');
+    await expect(renderTemplate('{{ false and explode() }}', { explode })).resolves.toBe('false');
+    await expect(renderTemplate('{{ false && explode() }}', { explode })).resolves.toBe('false');
+    await expect(renderTemplate('{{ 0 ?? explode() }}', { explode })).resolves.toBe('0');
+  });
+
+  test('supports concat and is tests with custom tests', async () => {
+    await expect(renderTemplate('{{ "a" ~ 2 }}')).resolves.toBe('a2');
+    await expect(renderTemplate('{{ 5 is odd }}')).resolves.toBe('true');
+    await expect(renderTemplate('{{ 4 is not odd }}')).resolves.toBe('true');
+    await expect(renderTemplate('{{ 6 is divisibleby(3) }}')).resolves.toBe('true');
+    await expect(renderTemplate('{{ 3 is custom }}', {}, { tests: { custom: value => value === 3 } })).resolves.toBe('true');
+  });
+
+  test('reports unknown tests at the is operator', async () => {
+    const err = await renderTemplate('{{ value is missing }}', { value: 1 }).catch(e => e);
+    expect(err.code).toBe('UNDEFINED_TEST');
+    expect(err.subject).toBe('missing');
+    expect(err.lineno).toBe(0);
+    expect(err.colno).toBe('{{ value '.length);
+  });
+
+  test('tracks nested, multiline, and column-zero operator locations', async () => {
+    const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
+    const nested = await renderTemplate('{% if 1 + (2 * invalid) %}ok{% endif %}', { invalid }).catch(e => e);
+    expect(nested.colno).toBe('{% if 1 + (2 '.length);
+
+    const multiline = await renderTemplate('{% if 1 +\ninvalid %}ok{% endif %}', { invalid }).catch(e => e);
+    expect(multiline.lineno).toBe(0);
+    expect(multiline.colno).toBe('{% if 1 '.length);
+  });
+
+  test('points native throws at every coercing operator variant', async () => {
+    const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
+    const cases = [
+      ['{% if 1 + invalid %}x{% endif %}', '+'],
+      ['{% if 1 - invalid %}x{% endif %}', '-'],
+      ['{% if 1 * invalid %}x{% endif %}', '*'],
+      ['{% if 1 / invalid %}x{% endif %}', '/'],
+      ['{% if 1 % invalid %}x{% endif %}', '%'],
+      ['{% if 1 // invalid %}x{% endif %}', '//'],
+      ['{% if 1 ** invalid %}x{% endif %}', '**'],
+      ['{% if "x" ~ invalid %}x{% endif %}', '~'],
+      ['{% if 1 == invalid %}x{% endif %}', '=='],
+      ['{% if 1 != invalid %}x{% endif %}', '!='],
+      ['{% if 1 < invalid %}x{% endif %}', '<'],
+      ['{% if 1 > invalid %}x{% endif %}', '>'],
+      ['{% if 1 <= invalid %}x{% endif %}', '<='],
+      ['{% if 1 >= invalid %}x{% endif %}', '>='],
+      ['{% if +invalid %}x{% endif %}', '+invalid'],
+      ['{% if -invalid %}x{% endif %}', '-invalid'],
+    ];
+
+    for (const [template, operator] of cases) {
+      const err = await renderTemplate(template, { invalid }).catch(e => e);
+      expect(err).toBeInstanceOf(Error);
+      expect(err.colno).toBe(template.indexOf(operator, template.indexOf('if') + 2));
+    }
+  });
+
+  test('uses each operator location in chained comparisons', async () => {
+    const first = { valueOf: () => { throw new Error('first'); } };
+    const second = { valueOf: () => { throw new Error('second'); } };
+    const template = '{% if 1 < first < second %}x{% endif %}';
+    const firstErr = await renderTemplate(template, { first, second: 3 }).catch(e => e);
+    expect(firstErr.colno).toBe(template.indexOf('<'));
+    const secondErr = await renderTemplate(template, { first: 2, second }).catch(e => e);
+    expect(secondErr.colno).toBe(template.lastIndexOf('<'));
+  });
+
+  test('preserves zero coordinates in compiler fallbacks', async () => {
+    const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
+    const err = await renderTemplate('{{ -invalid }}', { invalid }).catch(e => e);
+    expect(err.lineno).toBe(0);
+    expect(err.colno).toBe(3);
   });
 
   test('points in-operator errors inside statements at the operator', async () => {
