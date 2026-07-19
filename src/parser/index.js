@@ -62,8 +62,9 @@ import {
   parseFilterStatement,
 } from './statement-parser/index.js';
 import { parseNodes, parseUntilBlocks } from './top-level.js';
+import { validateExpression, DEFAULT_SECURITY_CONFIG } from '../shared/expression-validator.js';
 
-export function createParser(tokens) {
+export function createParser(tokens, securityConfig = {}) {
   const obj = createObj({
     name: 'Parser',
     init: function(tok) {
@@ -72,6 +73,7 @@ export function createParser(tokens) {
       this.breakOnBlocks = null;
       this.dropLeadingWhitespace = false;
       this.extensions = [];
+      this.securityConfig = { ...DEFAULT_SECURITY_CONFIG, ...securityConfig };
     },
     nextToken: function(withWhitespace) {
       return nextToken(this, withWhitespace);
@@ -244,9 +246,20 @@ export function createParser(tokens) {
 }
 
 export function parse(src, extensions, opts) {
-  const p = createParser(lex(src, opts));
+  const securityConfig = opts?.security ?? null;
+  const p = createParser(lex(src, opts), securityConfig ?? {});
   if (extensions !== undefined) {
     p.extensions = extensions;
   }
-  return p.parseAsRoot();
+  const ast = p.parseAsRoot();
+
+  if (securityConfig !== null) {
+    const errors = validateExpression(ast, securityConfig);
+    if (errors.length > 0) {
+      const firstError = errors[0];
+      fail(p, firstError.message, firstError.lineno, firstError.colno);
+    }
+  }
+
+  return ast;
 }

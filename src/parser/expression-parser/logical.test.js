@@ -1,6 +1,5 @@
 import { describe, test, expect } from 'bun:test';
 import { parse } from '../index.js';
-import { nodes } from '../../nodes/index.js';
 
 describe('parse - logical operators', () => {
   test('parses and', () => {
