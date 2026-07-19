@@ -2,6 +2,8 @@ import type { ErrorDefinition, SubjectExtractor } from './types.ts';
 
 const firstCapture: SubjectExtractor = (groups) => groups[1] ?? null;
 
+const DOCS_BASE = 'https://mozilla.github.io/nunjucks/templating.html';
+
 export const IO_ERRORS = {
   FILE_NOT_FOUND: {
     name: 'FILE_NOT_FOUND',
@@ -10,12 +12,15 @@ export const IO_ERRORS = {
     category: 'file_not_found',
     titleTemplate: "Template file not found: {subject}",
     causes: [
-      'Template file `{subject}` **does not exist**',
-      '**Incorrect path** in `include`/`extends`',
-      'File **deleted or moved**'
+      'The template file `{subject}` **does not exist** at the given path',
+      'The path used in `{% include %}` or `{% extends %}` is **incorrect**',
+      'The file was **deleted, moved, or renamed** since the template was written',
+      'The configured loader cannot resolve the path (check loaders config)'
     ],
-    fixCode: '{% include "correct-path/{subject}" %}',
-    fixComment: 'Verify template file path: {subject}',
+    fixCode: '{% include "views/{subject}" %}',
+    fixComment: 'Verify the file path and ensure it is in one of the configured search paths',
+    suggestion: 'Check the loader configuration: `new FileSystemLoader("views")` or similar',
+    documentationUrl: `${DOCS_BASE}#includes`,
     subjectFrom: firstCapture
   },
   CIRCULAR_INCLUDE: {
@@ -25,11 +30,14 @@ export const IO_ERRORS = {
     category: 'circular_include',
     titleTemplate: "Circular include detected",
     causes: [
-      '**Template includes itself** (directly or indirectly)',
-      '**Circular dependency** between templates'
+      'Template **includes itself** directly or through a chain of includes',
+      'Two or more templates include each other in a loop',
+      'A template is being included from its own descendant'
     ],
-    fixCode: '{% include "template.html" %}',
-    fixComment: 'Remove circular include or use {% import %} for shared macros',
+    fixCode: '{% include "shared/header.html" %}',
+    fixComment: 'Break the cycle by extracting shared content into a third template',
+    suggestion: 'Use `{% import %}` for shared macros instead of `{% include %}` to avoid cycles',
+    documentationUrl: `${DOCS_BASE}#includes`,
     subjectFrom: null
   },
   FILESYSTEM_ERROR: {
@@ -39,12 +47,14 @@ export const IO_ERRORS = {
     category: 'filesystem_error',
     titleTemplate: "Filesystem error: {subject}",
     causes: [
-      'Template path points to a **directory** instead of a file',
-      'File or directory **does not exist**',
-      '**Permission denied** accessing file'
+      'The template path points to a **directory** instead of a file',
+      'The file or directory **does not exist**',
+      '**Permission denied** when accessing the file',
+      'Disk I/O error or filesystem corruption'
     ],
-    fixCode: '{% include "template.html" %}',
-    fixComment: 'Verify template path is a valid file',
+    fixCode: '{% include "templates/header.html" %}',
+    fixComment: 'Verify the template path points to a readable file',
+    suggestion: 'Check file permissions and ensure the path is correct',
     subjectFrom: firstCapture
   },
   INVALID_INCLUDE: {
@@ -54,11 +64,13 @@ export const IO_ERRORS = {
     category: 'invalid_include',
     titleTemplate: "Include path must be a string literal",
     causes: [
-      '**Include path** is not a string literal',
-      'Variable used in `include` must be a **string**'
+      'The include path is **not a string literal** (it is a number, object, or expression)',
+      'A variable used in `{% include %}` evaluates to a non-string value',
+      'Missing quotes around the template name'
     ],
-    fixCode: '{% include "template.html" %}',
-    fixComment: 'Use string literal for include path',
+    fixCode: '{% include "template.html" %}\n{% set name = "header.html" %}\n{% include name %}',
+    fixComment: 'Wrap the template name in quotes, or ensure the variable holds a string',
+    suggestion: 'Use a string variable for dynamic paths: `{% include templateName %}` where templateName is a string',
     subjectFrom: null
   },
   IMPORT_ERROR: {
@@ -68,12 +80,14 @@ export const IO_ERRORS = {
     category: 'import_error',
     titleTemplate: "Cannot import template - module not found",
     causes: [
-      '**Import failed** - template could not be loaded',
-      'Module **not found** or path is incorrect',
-      'Check **file path** in import statement'
+      'The **import failed** because the template could not be loaded',
+      'The module **was not found** at the given path',
+      'The **file path** in the `{% import %}` statement is incorrect',
+      'The loader is not configured to find this type of file'
     ],
-    fixCode: '{% import "correct-path/template.njk" as mod %}',
-    fixComment: 'Verify import path exists',
+    fixCode: '{% import "macros/{name}.njk" as macros %}',
+    fixComment: 'Verify the import path exists and the loader can find it',
+    suggestion: 'Check `FileSystemLoader` paths and the file extension',
     subjectFrom: firstCapture
   }
 } as const satisfies Record<string, ErrorDefinition>;

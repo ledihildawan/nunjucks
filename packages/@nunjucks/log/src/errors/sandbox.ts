@@ -2,6 +2,8 @@ import type { ErrorDefinition, SubjectExtractor } from './types.ts';
 
 const firstCapture: SubjectExtractor = (groups) => groups[1] ?? null;
 
+const DOCS_BASE = 'https://mozilla.github.io/nunjucks/templating.html';
+
 export const SANDBOX_ERRORS = {
   SANDBOX_ACCESS: {
     name: 'SANDBOX_ACCESS',
@@ -10,11 +12,13 @@ export const SANDBOX_ERRORS = {
     category: 'sandbox_blocked',
     titleTemplate: "Cannot access '{subject}' in sandbox mode",
     causes: [
-      '**Sandbox mode** blocks access to `{subject}`',
-      'Dangerous property access attempted in sandboxed template'
+      '**Sandbox mode** blocks access to dangerous properties like `{subject}`',
+      'The template tried to reach internal JavaScript or DOM properties',
+      'Property `{subject}` is in the sandbox blocklist by default'
     ],
-    fixCode: 'Remove access to blocked property or disable sandbox',
-    fixComment: 'Remove access to {subject} in your template',
+    fixCode: '{{ allowedProperty }}',
+    fixComment: 'Use only sandbox-allowed properties, or add `{subject}` to the allowlist',
+    suggestion: 'Run with `sandbox: false` only for trusted templates (NEVER for user input)',
     subjectFrom: firstCapture
   },
   SANDBOX_SET: {
@@ -24,11 +28,13 @@ export const SANDBOX_ERRORS = {
     category: 'sandbox_blocked',
     titleTemplate: "Cannot set '{subject}' in sandbox mode",
     causes: [
-      '**Sandbox mode** blocks setting `{subject}`',
-      'Attempted to modify blocked property in sandboxed template'
+      '**Sandbox mode** blocks assignments to dangerous properties like `{subject}`',
+      'Trying to modify `__proto__`, `constructor`, or other reserved names',
+      'Prototype pollution attempt was blocked'
     ],
-    fixCode: 'Remove assignment to blocked property or disable sandbox',
-    fixComment: 'Remove assignment to {subject} in your template',
+    fixCode: '{% set safeVar = value %}',
+    fixComment: 'Use a regular variable instead of mutating an object property',
+    suggestion: 'If you need to set a property, use a different property name or disable sandbox',
     subjectFrom: firstCapture
   },
   SANDBOX_ALLOWLIST: {
@@ -38,11 +44,13 @@ export const SANDBOX_ERRORS = {
     category: 'sandbox_blocked',
     titleTemplate: "'{subject}' is not allowed in sandbox mode",
     causes: [
-      '**Sandbox mode** blocks access to `{subject}`',
-      'Property not in allowlist'
+      '**Sandbox mode** uses allowlist mode and `{subject}` is not in it',
+      'The default sandbox blocks `{subject}` for safety reasons',
+      'You have not whitelisted `{subject}` for this template'
     ],
-    fixCode: 'Add to sandbox allowlist or disable sandbox',
-    fixComment: 'Add {subject} to sandbox allowlist or disable sandbox',
+    fixCode: 'env.sandboxAllowlist.push("{subject}")',
+    fixComment: 'Add `{subject}` to `sandboxAllowlist` or disable allowlist mode',
+    suggestion: 'Review the security implications before adding to the allowlist',
     subjectFrom: firstCapture
   },
   SANDBOX_CONTEXT_MODIFY: {
@@ -52,11 +60,13 @@ export const SANDBOX_ERRORS = {
     category: 'sandbox_blocked',
     titleTemplate: "Cannot modify sandboxed context",
     causes: [
-      'Attempted to modify **sandboxed context**',
-      'Setting globals or protected keys in sandbox mode'
+      'Attempted to modify the **sandboxed render context**',
+      'Tried to set globals or protected keys from inside the template',
+      '`{% set %}` was used with a reserved context key'
     ],
-    fixCode: 'Disable sandbox or use allowed keys',
-    fixComment: 'Remove the set statement or disable sandbox mode',
+    fixCode: '{% set localVar = value %}',
+    fixComment: 'Set local template variables instead of modifying the context',
+    suggestion: 'Pass derived values via the render context from your JavaScript code',
     subjectFrom: null
   },
   SANDBOX_CODE_EXECUTION: {
@@ -66,11 +76,13 @@ export const SANDBOX_ERRORS = {
     category: 'sandbox_blocked',
     titleTemplate: 'Code execution is blocked in sandbox mode',
     causes: [
-      '**Sandbox mode** blocks string-based code execution',
-      'APIs like `setTimeout`, `eval`, or `Function` cannot receive code strings'
+      '**Sandbox mode** blocks string-based code execution for safety',
+      'APIs like `setTimeout`, `eval`, or `Function` cannot receive string code',
+      'A filter tried to invoke a code-execution API'
     ],
     fixCode: '{{ setTimeout(callback, 0) }}',
-    fixComment: 'Pass a safe callback or remove code execution from the template',
+    fixComment: 'Pass a function reference instead of a string of code',
+    suggestion: 'Use a pre-built function instead of dynamic code strings',
     subjectFrom: null
   },
   SANDBOX_TIMEOUT_EXEC: {
@@ -78,13 +90,15 @@ export const SANDBOX_ERRORS = {
     message: 'Sandbox timeout',
     pattern: /frame\.push is not a function/i,
     category: 'timeout_error',
-    titleTemplate: "Template execution timed out",
+    titleTemplate: 'Template execution timed out',
     causes: [
-      'Template execution **timed out**',
-      'Infinite loop or large data processing'
+      'Template execution **timed out** before completion',
+      'An infinite loop or unbounded recursion',
+      'Large data processing that exceeds the timeout'
     ],
-    fixCode: 'Increase executionTimeout or optimize template',
-    fixComment: 'Set executionTimeout to a higher value or simplify template',
+    fixCode: 'env.opts.executionTimeout = 60000',
+    fixComment: 'Increase `executionTimeout` or refactor to break long work into smaller chunks',
+    suggestion: 'Pre-process large data outside of template rendering',
     subjectFrom: null
   },
   SANDBOX_CONTEXT_ERROR: {
@@ -92,13 +106,15 @@ export const SANDBOX_ERRORS = {
     message: 'Sandbox context error',
     pattern: /Value is not a function/i,
     category: 'sandbox_blocked',
-    titleTemplate: "Cannot modify sandboxed context",
+    titleTemplate: 'Cannot modify sandboxed context',
     causes: [
       'Attempted to access or modify **sandboxed context**',
-      'Template tried to use restricted functionality'
+      'Template tried to use restricted functionality',
+      'Calling a blocked global function in sandbox mode'
     ],
-    fixCode: 'Disable sandbox or use allowed operations',
-    fixComment: 'Sandbox mode restricts certain operations',
+    fixCode: '{{ value }}',
+    fixComment: 'Use only allowed operations in sandbox mode',
+    suggestion: 'Define the operation as a regular filter or function outside the sandbox',
     subjectFrom: null
   },
   SANDBOX_PROTO_ACCESS: {
@@ -106,13 +122,15 @@ export const SANDBOX_ERRORS = {
     message: 'Sandbox proto access',
     pattern: /Cannot read properties of undefined \(reading 'charAt'\)/i,
     category: 'sandbox_blocked',
-    titleTemplate: "Cannot access property in sandbox mode",
+    titleTemplate: 'Cannot access property in sandbox mode',
     causes: [
       'Attempted to access **undefined variable** in sandbox mode',
-      'Accessing properties on undefined in sandboxed template'
+      'Accessing properties on undefined in sandboxed template',
+      'A property path goes through an undefined intermediate value'
     ],
-    fixCode: 'Define the variable in render context',
-    fixComment: 'Pass the variable in the context object',
+    fixCode: '{{ value |> default("") }}',
+    fixComment: 'Use `default()` filter or check for undefined before accessing properties',
+    suggestion: 'Use optional chaining `?.` to safely access nested properties',
     subjectFrom: null
   },
   BLOCKED_CONTEXT_KEYS: {
@@ -120,12 +138,15 @@ export const SANDBOX_ERRORS = {
     message: 'Cannot use blocked keys in context: {keys}',
     pattern: /^Cannot use blocked keys in context: (.+)$/i,
     category: 'security_error',
+    titleTemplate: 'Blocked keys in render context',
     causes: [
-      'Context contains **blocked keys** like __proto__',
-      'Dangerous keys detected in render context'
+      'Context contains **blocked keys** like `__proto__`, `constructor`, or `prototype`',
+      'Dangerous keys detected in the render context',
+      'Object was not properly sanitized before passing to render'
     ],
-    fixCode: 'Remove blocked keys from context',
-    fixComment: 'Clean the context before passing to render',
+    fixCode: 'const safe = JSON.parse(JSON.stringify(context)); delete safe.__proto__;',
+    fixComment: 'Clean the context object before passing it to render',
+    suggestion: 'Use a sanitization helper to strip prototype-pollution-prone keys',
     subjectFrom: null
   },
   DANGEROUS_CONTEXT_VALUES: {
@@ -133,12 +154,15 @@ export const SANDBOX_ERRORS = {
     message: 'Context contains unsafe values: {values}',
     pattern: /^Context contains unsafe values: (.+)$/i,
     category: 'security_error',
+    titleTemplate: 'Unsafe values detected in context',
     causes: [
-      'Context contains **dangerous values** like eval or Function',
-      'Potentially malicious functions in context'
+      'Context contains **dangerous values** like `eval`, `Function`, or `process`',
+      'Potentially malicious functions in the render context',
+      'A user-supplied object was not sanitized'
     ],
-    fixCode: 'Remove dangerous functions from context',
-    fixComment: 'Clean the context before passing to render',
+    fixCode: 'const safe = Object.assign({}, context, { eval: undefined, Function: undefined });',
+    fixComment: 'Remove dangerous functions from the context before rendering',
+    suggestion: 'Validate and sanitize all values passed to the render context',
     subjectFrom: null
   },
   DANGEROUS_CONTEXT_VALUE_SCRUBBED: {
@@ -146,11 +170,15 @@ export const SANDBOX_ERRORS = {
     message: 'Scrubbed unsafe values from context: {values}',
     pattern: /^Scrubbed unsafe values from context: (.+)$/i,
     category: 'security_error',
+    titleTemplate: 'Unsafe values were removed from context',
     causes: [
-      'Context contains **dangerous values** that were removed'
+      'Context contained **dangerous values** that were automatically removed',
+      'Security scrubbing removed `eval`, `Function`, or other dangerous globals',
+      'The template may not behave as expected after scrubbing'
     ],
-    fixCode: 'Remove dangerous functions from context',
-    fixComment: 'Clean the context before passing to render',
+    fixCode: 'const safe = Object.assign({}, context, { eval: undefined, Function: undefined });',
+    fixComment: 'Clean the context yourself before passing to render',
+    suggestion: 'Pre-sanitize your context to know exactly what is removed',
     subjectFrom: null
   },
   DANGEROUS_TEMPLATE_CODE: {
@@ -158,12 +186,16 @@ export const SANDBOX_ERRORS = {
     message: 'Template contains unsafe code: {violations}',
     pattern: /^Template contains unsafe code: (.+)$/i,
     category: 'security_error',
+    titleTemplate: 'Unsafe code detected in template',
     causes: [
-      'Template contains **dangerous code patterns**',
-      'Attempted to access global objects'
+      'Template contains **dangerous code patterns** that the security scanner caught',
+      'Attempted to access global objects like `process`, `require`, or `global`',
+      'Use of `eval`, `Function`, or other code-execution APIs'
     ],
-    fixCode: 'Remove dangerous code from template',
-    fixComment: 'Do not use eval, Function, or access global in templates',
+    fixCode: '/* Refactor to use env globals or filters instead of direct code execution */',
+    fixComment: 'Remove dangerous code from the template',
+    suggestion: 'Expose functionality via env.addGlobal() or env.addFilter() instead of accessing internals',
+    documentationUrl: 'https://mozilla.github.io/nunjucks/api.html#security',
     subjectFrom: null
   }
 } as const satisfies Record<string, ErrorDefinition>;

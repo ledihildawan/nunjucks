@@ -8,9 +8,12 @@ export const META_ERRORS = {
     message: 'Line info',
     pattern: /\[Line (\d+)(?:, Column (\d+))?\]/i,
     category: 'line_info',
-    causes: [],
-    fixCode: '',
-    fixComment: '',
+    causes: [
+      'Internal regex for extracting line info from error messages',
+      'Used by the classifier to parse `[Line X, Column Y]` annotations'
+    ],
+    fixCode: '/* Internal regex helper - not a user-facing error */',
+    fixComment: 'This is an internal helper used by the classification system',
     subjectFrom: null
   },
   COLUMN_INFO_MATCH: {
@@ -18,9 +21,12 @@ export const META_ERRORS = {
     message: 'Column info',
     pattern: /Column (\d+)/i,
     category: 'column_info',
-    causes: [],
-    fixCode: '',
-    fixComment: '',
+    causes: [
+      'Internal regex for extracting column info from error messages',
+      'Used by the classifier to parse `Column N` annotations'
+    ],
+    fixCode: '/* Internal regex helper - not a user-facing error */',
+    fixComment: 'This is an internal helper used by the classification system',
     subjectFrom: null
   },
   INCLUDED_FROM_MATCH: {
@@ -28,9 +34,12 @@ export const META_ERRORS = {
     message: 'Included from',
     pattern: /\(included from ([^:)]+\.html)(?::\d+)?(?::\d+)?\)/,
     category: 'included_from',
-    causes: [],
-    fixCode: '',
-    fixComment: '',
+    causes: [
+      'Internal regex for extracting the include chain from error messages',
+      'Used by the classifier to show the template inclusion chain'
+    ],
+    fixCode: '/* Internal regex helper - not a user-facing error */',
+    fixComment: 'This is an internal helper used by the classification system',
     subjectFrom: null
   },
   INCLUDED_FROM_WITH_LINE_MATCH: {
@@ -38,9 +47,12 @@ export const META_ERRORS = {
     message: 'Included from with line',
     pattern: /\(included from ([^:]+\.html):(\d+)(?::(\d+))?\)/,
     category: 'included_from',
-    causes: [],
-    fixCode: '',
-    fixComment: '',
+    causes: [
+      'Internal regex for extracting the include chain with line info',
+      'Used by the classifier to show where the template was included from'
+    ],
+    fixCode: '/* Internal regex helper - not a user-facing error */',
+    fixComment: 'This is an internal helper used by the classification system',
     subjectFrom: null
   }
 } as const satisfies Record<string, ErrorDefinition>;

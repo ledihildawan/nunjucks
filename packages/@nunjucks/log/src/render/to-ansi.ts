@@ -123,10 +123,12 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   };
 
   const classification = classifyFromError(errObj);
-  const causes = errObj.causes && errObj.causes.length > 0 ? errObj.causes : classification.causes;
-  const fixCode = errObj.fixCode ?? classification.fixCode;
-  const fixComment = errObj.fixComment ?? classification.fixComment;
-  const suggestion = errObj.suggestion ?? classification.suggestion;
+  const causes = classification.causes && classification.causes.length > 0
+    ? classification.causes
+    : (errObj.causes || []);
+  const fixCode = classification.fixCode ?? errObj.fixCode ?? '';
+  const fixComment = classification.fixComment ?? errObj.fixComment ?? '';
+  const suggestion = classification.suggestion ?? errObj.suggestion ?? null;
 
   const path = templatePath || (error as { templateName?: string }).templateName || '';
   const displayLineno = lineno ?? (error as { lineno?: number | null }).lineno ?? null;

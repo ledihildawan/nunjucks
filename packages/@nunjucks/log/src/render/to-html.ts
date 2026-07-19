@@ -147,15 +147,15 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
   const category = error.code || classified?.category?.toUpperCase() || 'UNKNOWN';
   const undefinedName = classified?.undefinedName || plain.match(/attempted to output '([^']+)'/)?.[1] || null;
 
-  const possibleCauses = (errWithExtras.causes && errWithExtras.causes.length > 0)
-    ? errWithExtras.causes
-    : (classified?.causes || []);
-  const fixCode = errWithExtras.fixCode ?? classified?.fixCode ?? '';
-  const fixComment = errWithExtras.fixComment ?? classified?.fixComment ?? '';
-  const suggestion = errWithExtras.suggestion ?? classified?.suggestion ?? null;
-  const documentationUrl = errWithExtras.documentationUrl ?? classified?.documentationUrl ?? null;
-  const relatedLinks = errWithExtras.relatedLinks ?? classified?.relatedLinks ?? [];
-  const severity = errWithExtras.severity ?? classified?.severity ?? 'error';
+  const possibleCauses = (classified?.causes && classified.causes.length > 0)
+    ? classified.causes
+    : (errWithExtras.causes || []);
+  const fixCode = classified?.fixCode ?? errWithExtras.fixCode ?? '';
+  const fixComment = classified?.fixComment ?? errWithExtras.fixComment ?? '';
+  const suggestion = classified?.suggestion ?? errWithExtras.suggestion ?? null;
+  const documentationUrl = classified?.documentationUrl ?? errWithExtras.documentationUrl ?? null;
+  const relatedLinks = classified?.relatedLinks ?? errWithExtras.relatedLinks ?? [];
+  const severity = classified?.severity ?? errWithExtras.severity ?? 'error';
 
   let humanTitle = classified?.title || plain;
   if (category === 'UNDEFINED_VARIABLE' && undefinedName) {

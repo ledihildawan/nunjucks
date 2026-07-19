@@ -2,6 +2,8 @@ import type { ErrorDefinition, SubjectExtractor } from './types.ts';
 
 const firstCapture: SubjectExtractor = (groups) => groups[1] ?? null;
 
+const DOCS_BASE = 'https://mozilla.github.io/nunjucks/templating.html';
+
 export const PARSER_ERRORS = {
   SYNTAX_ERROR: {
     name: 'SYNTAX_ERROR',
@@ -10,12 +12,15 @@ export const PARSER_ERRORS = {
     category: 'syntax_error',
     titleTemplate: "Template syntax error",
     causes: [
-      'Missing closing tag (`{{ endif }}`, `{% endfor %}`)',
-      '**Mismatched quotes** or brackets',
-      '**Unclosed** array/object brackets'
+      'Missing closing tag (e.g. `{% endif %}`, `{% endfor %}`, `{% endblock %}`)',
+      '**Mismatched quotes** or brackets in expressions',
+      '**Unclosed** array or object brackets like `[` without `]`',
+      'A character is missing or out of place at the caret position'
     ],
-    fixCode: "{{ [1, 2, 3] |> join(',') }}",
-    fixComment: 'Check brackets, quotes, and tag closures',
+    fixCode: '{% if condition %}\n  {{ value }}\n{% endif %}',
+    fixComment: 'Verify all opening tags have matching closing tags and all brackets/quotes are paired',
+    suggestion: 'Use an editor with Nunjucks syntax highlighting to visually spot mismatched brackets',
+    documentationUrl: `${DOCS_BASE}#tags`,
     subjectFrom: null
   },
   PARSER_UNEXPECTED_TOKEN: {
@@ -23,11 +28,16 @@ export const PARSER_ERRORS = {
     message: "Unexpected token '{token}' while parsing",
     pattern: /^Unexpected token '([^']+)' while parsing$/i,
     category: 'syntax_error',
+    titleTemplate: "Unexpected token '{subject}'",
     causes: [
-      '**Unexpected token** in template'
+      'A character that the parser did not expect at this position',
+      'An operator used in an invalid context',
+      'A keyword used where a value was expected (or vice versa)'
     ],
-    fixCode: 'Check template syntax around the error location',
-    fixComment: 'Review the template syntax',
+    fixCode: '{{ a + b }}',
+    fixComment: 'Check the operator and operand types around the error position',
+    suggestion: 'Verify the syntax matches the docs at the caret position',
+    documentationUrl: `${DOCS_BASE}#expressions`,
     subjectFrom: firstCapture
   },
   PARSER_EXPECTED: {
@@ -35,12 +45,15 @@ export const PARSER_ERRORS = {
     message: 'expected {expected}',
     pattern: /^expected (.+)$/i,
     category: 'syntax_error',
+    titleTemplate: "Expected token '{subject}'",
     causes: [
-      '**Parser expected** a different token',
-      'Missing or misplaced token in template'
+      'The parser expected a specific token at this position',
+      'A required keyword or symbol is missing',
+      'A previous tag is unclosed or missing a parameter'
     ],
-    fixCode: 'Check template syntax around the error line',
-    fixComment: 'Review the template syntax at the error location',
+    fixCode: '{% if condition %}{% endif %}',
+    fixComment: 'Add the missing token indicated by the error message',
+    suggestion: 'Look at the line above and below for unclosed tags or missing syntax',
     subjectFrom: firstCapture
   },
   PARSER_EXPECTED_IN: {
@@ -48,12 +61,15 @@ export const PARSER_ERRORS = {
     message: 'expected "in" keyword for loop',
     pattern: /parseFor: expected "in" keyword for loop|^expected "in" keyword for loop$/i,
     category: 'syntax_error',
+    titleTemplate: 'For loop missing "in" keyword',
     causes: [
-      '**For loop** missing **in** keyword',
-      'For loop syntax is incorrect'
+      'The `for` loop syntax is incomplete',
+      'Missing the `in` keyword between the variable and the iterable',
+      'A typo (e.g. `of` instead of `in`)'
     ],
-    fixCode: '{% for item in items %}...{% endfor %}',
-    fixComment: 'Use correct for loop syntax: for item in items',
+    fixCode: '{% for item in items %}\n  {{ item }}\n{% endfor %}',
+    fixComment: 'The correct syntax is `{% for VAR in COLLECTION %}`',
+    suggestion: 'Nunjucks uses `in` not `of` like Python',
     subjectFrom: null
   },
   PARSER_VARIABLE_NAME: {
@@ -61,12 +77,15 @@ export const PARSER_ERRORS = {
     message: 'variable name expected',
     pattern: /(?:parseBlock|parseFor): variable name expected|^variable name expected$/i,
     category: 'syntax_error',
+    titleTemplate: 'Variable name expected',
     causes: [
-      '**Variable name expected** in context',
-      'Missing or invalid variable identifier'
+      'A variable name is missing where one is required',
+      'The identifier starts with a digit or contains invalid characters',
+      'Missing identifier after a `set` or `for` keyword'
     ],
     fixCode: '{% set validName = value %}',
-    fixComment: 'Use a valid variable name ( alphanumeric and underscore)',
+    fixComment: 'Use a valid identifier: letters, digits, underscores (not starting with digit)',
+    suggestion: 'Identifiers can only contain `[a-zA-Z0-9_]` and cannot start with a number',
     subjectFrom: null
   },
   PARSER_TAG_NAME: {
@@ -74,12 +93,16 @@ export const PARSER_ERRORS = {
     message: 'tag name expected',
     pattern: /^tag name expected$|parse(?:Block|From|TemplateRef|FilterStatement|If|Import|Include): expected [a-zA-Z]+$/i,
     category: 'syntax_error',
+    titleTemplate: 'Tag name expected',
     causes: [
-      '**Tag name expected** but not found',
-      'Missing tag identifier'
+      'A tag (e.g. `if`, `for`, `set`) is missing its name',
+      'A keyword was used where a tag was expected',
+      'The tag is malformed'
     ],
     fixCode: '{% if condition %}...{% endif %}',
-    fixComment: 'Ensure tag has a valid name',
+    fixComment: 'Make sure the tag has a valid name like `if`, `for`, `block`, `set`, etc.',
+    suggestion: 'See the docs for the full list of supported tags',
+    documentationUrl: `${DOCS_BASE}#tags`,
     subjectFrom: null
   },
   PARSER_EXPRESSION: {
@@ -87,12 +110,15 @@ export const PARSER_ERRORS = {
     message: 'expected expression',
     pattern: /^expected expression, got end of file$|parseAggregate: expected (?:comma|colon)/i,
     category: 'syntax_error',
+    titleTemplate: 'Expression expected',
     causes: [
-      '**Expression expected** but not found',
-      'Missing expression in template'
+      'An expression is required but was not provided',
+      'Empty `{{ }}` or `{% %}` blocks',
+      'Missing expression after `=`, `:`, `,`, or other operator'
     ],
-    fixCode: '{{ someExpression }}',
-    fixComment: 'Add a valid expression',
+    fixCode: '{{ variableName }}\n{% if variableName %}...{% endif %}',
+    fixComment: 'Add a valid expression in place of the missing one',
+    suggestion: 'A simple expression can be a variable name, number, or string',
     subjectFrom: null
   },
   PARSER_ERROR: {
@@ -100,11 +126,15 @@ export const PARSER_ERRORS = {
     message: 'Unexpected value while parsing',
     pattern: /^Unexpected value while parsing$/i,
     category: 'syntax_error',
+    titleTemplate: 'Unexpected value while parsing',
     causes: [
-      '**Unexpected value** while parsing'
+      'An unexpected value was encountered during parsing',
+      'Template contains a token sequence that the parser cannot interpret',
+      'A custom extension returned an invalid AST node'
     ],
-    fixCode: 'Check template syntax',
-    fixComment: 'Review the template syntax',
+    fixCode: '/* Check syntax at the reported location */',
+    fixComment: 'Review the template around the reported line and column',
+    suggestion: 'Try simplifying the problematic expression to isolate the issue',
     subjectFrom: null
   },
   PARSER_PUSH_TOKEN: {
@@ -112,11 +142,15 @@ export const PARSER_ERRORS = {
     message: 'can only push one token',
     pattern: /can only push one token/i,
     category: 'syntax_error',
+    titleTemplate: 'Parser internal error - too many pushed tokens',
     causes: [
-      '**Parser error** - can only push one token'
+      'The parser tried to push back multiple tokens at once',
+      'This is typically a nunjucks internal issue, not a template syntax problem'
     ],
-    fixCode: 'Check template syntax',
-    fixComment: 'Review the template syntax',
+    fixCode: '/* This is an internal parser issue */',
+    fixComment: 'This is a parser bug, please report it with the template that triggered it',
+    suggestion: 'Try to simplify the expression that triggers this error',
+    documentationUrl: 'https://github.com/mozilla/nunjucks/issues',
     subjectFrom: null
   },
   EXPECTED_VARIABLE_END: {
@@ -124,12 +158,15 @@ export const PARSER_ERRORS = {
     message: 'expected variable end',
     pattern: /^expected variable end$/i,
     category: 'syntax_error',
+    titleTemplate: 'Missing closing }}',
     causes: [
-      'Missing closing `}}` in variable expression',
-      'Unclosed variable like `{{ value`'
+      'Missing closing `}}` in a variable expression like `{{ value`',
+      'The variable expression is not properly terminated',
+      'A multi-line expression is missing its closing tag'
     ],
     fixCode: '{{ value }}',
-    fixComment: 'Add closing }} to the variable',
+    fixComment: 'Add the missing closing `}}` to terminate the variable expression',
+    suggestion: 'Make sure every `{{` has a matching `}}`',
     subjectFrom: null
   },
   UNKNOWN_BLOCK_TAG: {
@@ -137,13 +174,16 @@ export const PARSER_ERRORS = {
     message: "unknown block tag: {tag}",
     pattern: /^unknown block tag: (.+)$/i,
     category: 'unknown_block_tag',
-    titleTemplate: "Unknown tag or block: {subject}",
+    titleTemplate: "Unknown tag: {subject}",
     causes: [
-      '**Unmatched** closing tag (e.g. `{% endif %}` without `{% if %}`)',
-      '**Typo** in block tag name'
+      'A typo in the block tag name (e.g. `{% iff %}` instead of `{% if %}`)',
+      'A custom tag has not been registered',
+      'An unmatched closing tag (e.g. `{% endif %}` without `{% if %}`)'
     ],
-    fixCode: "{% if condition %}...{% endif %}",
-    fixComment: 'Ensure all block tags are properly opened and closed',
+    fixCode: '{% if condition %}...{% endif %}',
+    fixComment: 'Use only registered tags, or register custom tags via env.addExtension()',
+    suggestion: 'See the docs for the list of built-in tags and how to register custom ones',
+    documentationUrl: `${DOCS_BASE}#tags`,
     subjectFrom: firstCapture
   },
   INVALID_BOOLEAN: {
@@ -151,12 +191,15 @@ export const PARSER_ERRORS = {
     message: 'invalid boolean',
     pattern: /^invalid boolean(?:: .+)?$/i,
     category: 'syntax_error',
+    titleTemplate: 'Invalid boolean value',
     causes: [
-      '**Invalid boolean** value in template',
-      'Template contains non-boolean where boolean expected'
+      'A non-boolean value was used where a boolean was expected',
+      'A custom extension returns a non-boolean from a test',
+      'The literal `true` or `false` was misspelled'
     ],
     fixCode: '{{ true }} or {{ false }}',
-    fixComment: 'Use valid boolean values: true or false',
+    fixComment: 'Use the literals `true` or `false` (lowercase)',
+    suggestion: 'In Nunjucks, booleans are lowercase: `true` and `false`',
     subjectFrom: null
   }
 } as const satisfies Record<string, ErrorDefinition>;

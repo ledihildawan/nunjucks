@@ -2,17 +2,23 @@ import type { ErrorDefinition, SubjectExtractor } from './types.ts';
 
 const firstCapture: SubjectExtractor = (groups) => groups[1] ?? null;
 
+const DOCS_BASE = 'https://mozilla.github.io/nunjucks/api.html';
+
 export const TEMPLATE_ERRORS = {
   VALIDATION_ERROR: {
     name: 'VALIDATION_ERROR',
     message: "Invalid value for '{key}'",
     pattern: /^Invalid value for '([^']+)'$/i,
     category: 'validation_error',
+    titleTemplate: "Invalid value for '{subject}'",
     causes: [
-      '**Invalid value** for configuration'
+      'The value provided for `{subject}` is **not in the expected format**',
+      'A required field is missing or empty',
+      'A type mismatch (e.g. string expected, number given)'
     ],
-    fixCode: 'Check the value and try again',
-    fixComment: 'Verify the value is valid',
+    fixCode: 'env.opts.{subject} = "valid-value";',
+    fixComment: 'Provide a valid value for the `{subject}` option',
+    suggestion: 'Check the documentation for the expected type and format of `{subject}`',
     subjectFrom: firstCapture
   },
   CONTAINER_FACTORY: {
@@ -22,11 +28,12 @@ export const TEMPLATE_ERRORS = {
     category: 'config_error',
     titleTemplate: "Container factory '{subject}' is not a function",
     causes: [
-      '**Container factory** must be a function',
-      'Registered container factory is not callable'
+      'A **non-function** value was registered as a container factory',
+      'A typo: you registered the class itself instead of `() => new Class()`',
+      'Missing parentheses: `MyClass` should be `() => new MyClass()`'
     ],
-    fixCode: 'container.register("name", () => new MyClass())',
-    fixComment: 'Pass a function that returns an instance',
+    fixCode: 'container.register("{subject}", () => new MyClass())',
+    fixComment: 'Register a factory function that returns an instance, not the instance itself',
     subjectFrom: firstCapture
   },
   CONTAINER_NOT_REGISTERED: {
@@ -36,11 +43,13 @@ export const TEMPLATE_ERRORS = {
     category: 'config_error',
     titleTemplate: "Container '{subject}' is not registered",
     causes: [
-      '**Container** not registered',
-      'Requested container has not been registered'
+      'The container `{subject}` was **never registered**',
+      'The registration order is wrong (registered after the resolve call)',
+      'A typo in the container name when registering'
     ],
-    fixCode: 'container.register("name", () => new MyClass())',
-    fixComment: 'Register the container before resolving',
+    fixCode: 'container.register("{subject}", () => new MyClass());\nconst instance = container.resolve("{subject}");',
+    fixComment: 'Call `container.register()` before resolving',
+    suggestion: 'Check that your DI bootstrap code runs before any rendering',
     subjectFrom: firstCapture
   },
   CONTAINER_ERROR: {
@@ -48,11 +57,15 @@ export const TEMPLATE_ERRORS = {
     message: 'Container error',
     pattern: /Container: (?:factory for '([^']+)'|'([^']+)' is not registered)/i,
     category: 'config_error',
+    titleTemplate: 'Container system error',
     causes: [
-      '**Container** error occurred'
+      'A **container operation failed** (resolve, register, or factory invocation)',
+      'The factory function threw an error',
+      'Container configuration is inconsistent'
     ],
-    fixCode: 'Check container registration',
-    fixComment: 'Verify container is properly registered',
+    fixCode: 'try {\n  const instance = container.resolve("name");\n} catch (e) {\n  console.error("Container failed:", e);\n}',
+    fixComment: 'Wrap container operations in try/catch to see the actual error',
+    suggestion: 'Add logging to your container factories to debug failures',
     subjectFrom: null
   },
   TEMPLATE_INVALID_SOURCE: {
@@ -60,11 +73,14 @@ export const TEMPLATE_ERRORS = {
     message: "Invalid template source: expected 'code' or 'string', got '{type}'",
     pattern: /src must be a string or an object describing the source/i,
     category: 'invalid_template',
+    titleTemplate: 'Invalid template source',
     causes: [
-      'Template source is **invalid**'
+      'The template source is **not a string and not an object**',
+      'A `null`, `undefined`, number, or boolean was passed instead',
+      'The template loader returned an unexpected value'
     ],
-    fixCode: 'Pass a valid template string or object',
-    fixComment: 'Ensure template source is valid',
+    fixCode: 'render("Hello {{ name }}", { name: "World" })\n// or\nrender({ src: "template.njk", path: "/path" }, ctx)',
+    fixComment: 'Pass a template string or a source descriptor object',
     subjectFrom: null
   },
   TEMPLATE_SRC_STRING: {
@@ -72,11 +88,14 @@ export const TEMPLATE_ERRORS = {
     message: 'Template src must be a string or an object',
     pattern: /^Template src must be a string or an object$/i,
     category: 'invalid_template',
+    titleTemplate: 'Template src must be string or object',
     causes: [
-      'Template source must be a **string or object**'
+      'The `src` field of a template descriptor must be a **string** or **object**',
+      'A primitive value like number, boolean, or null was given',
+      'The template was loaded from an unsupported source'
     ],
-    fixCode: 'Pass a valid template string or object',
-    fixComment: 'Ensure template source is valid',
+    fixCode: 'render({ src: "template.njk", path: "/templates/template.njk" }, context)',
+    fixComment: 'Provide src as a string path or a `{ src, path }` object',
     subjectFrom: null
   },
   TEMPLATE_NO_RENDER: {
@@ -84,11 +103,14 @@ export const TEMPLATE_ERRORS = {
     message: 'Template object is invalid: missing render method',
     pattern: /Unexpected template object type/i,
     category: 'invalid_template',
+    titleTemplate: 'Invalid template object',
     causes: [
-      'Template object is **invalid** - missing render method'
+      'The template object is **missing the `render` method**',
+      'A custom template implementation does not conform to the template interface',
+      'The template object was corrupted during processing'
     ],
-    fixCode: 'Pass a valid template object',
-    fixComment: 'Ensure template has a render method',
+    fixCode: 'render("Hello {{ name }}", { name: "World" })',
+    fixComment: 'Pass a string template or a proper Template object',
     subjectFrom: null
   },
   INVALID_CODE_FORMAT: {
@@ -96,11 +118,16 @@ export const TEMPLATE_ERRORS = {
     message: 'Invalid template: expected compiled template to start with "async function root"',
     pattern: /Unrecognized code format/i,
     category: 'invalid_template',
+    titleTemplate: 'Invalid compiled template format',
     causes: [
-      'Template code format is **invalid**'
+      'The compiled template code **does not start with the expected format**',
+      'A custom compiler produced non-standard output',
+      'The template was not compiled by nunjucks'
     ],
-    fixCode: 'Ensure template is properly compiled',
-    fixComment: 'Check template compilation',
+    fixCode: 'render("Hello {{ name }}", { name: "World" })',
+    fixComment: 'Ensure the template is compiled by nunjucks using `compile()`',
+    suggestion: 'See the compile API docs for how to produce a valid compiled template',
+    documentationUrl: `${DOCS_BASE}#compile`,
     subjectFrom: null
   },
   WALK_UNKNOWN_TYPE: {
@@ -108,11 +135,16 @@ export const TEMPLATE_ERRORS = {
     message: "walk: unknown node type '{type}'",
     pattern: /walk: unknown (?:node type|typename)/i,
     category: 'internal_error',
+    titleTemplate: 'Unknown AST node type',
     causes: [
-      '**Internal error** - unknown node type'
+      'The AST transformer encountered a **node type it does not recognize**',
+      'A custom extension produced an unexpected AST node',
+      'Internal nunjucks bug'
     ],
-    fixCode: 'This is a nunjucks internal error',
-    fixComment: 'Report this as a bug',
+    fixCode: '/* Please report this as a bug at https://github.com/mozilla/nunjucks/issues */',
+    fixComment: 'This is a nunjucks internal error',
+    suggestion: 'File an issue with the failing template and stack trace at the GitHub repo',
+    documentationUrl: 'https://github.com/mozilla/nunjucks/issues',
     subjectFrom: null
   },
   TEMPLATE_SIZE_EXCEEDED: {
@@ -120,12 +152,15 @@ export const TEMPLATE_ERRORS = {
     message: 'Template exceeds maximum size of {max} bytes',
     pattern: /Template exceeds maximum size/i,
     category: 'validation_error',
+    titleTemplate: 'Template size limit exceeded',
     causes: [
-      'Template **exceeds maximum allowed size**',
-      'Template is too large for processing'
+      'The template is **larger than the configured `maxTemplateSize`**',
+      'A single template is too large for safe processing',
+      'The size limit is too restrictive for your use case'
     ],
-    fixCode: 'Increase maxTemplateSize or split template',
-    fixComment: 'Set maxTemplateSize to a higher value',
+    fixCode: 'env.opts.maxTemplateSize = 1024 * 1024;  // 1 MB',
+    fixComment: 'Increase `maxTemplateSize` or split the template into smaller files',
+    suggestion: 'Split large templates into partials using `{% include %}`',
     subjectFrom: null
   },
   INVALID_CONFIG: {
@@ -135,11 +170,13 @@ export const TEMPLATE_ERRORS = {
     category: 'validation_error',
     titleTemplate: "Invalid configuration value for '{subject}'",
     causes: [
-      'Invalid **configuration value**',
-      'Negative timeout or size values are not allowed'
+      'The configuration value `{subject}` is **negative** but must be `>= 0`',
+      'Timeout or size values cannot be negative',
+      'A unit mismatch (e.g. milliseconds vs seconds)'
     ],
-    fixCode: 'Set executionTimeout and maxTemplateSize to >= 0',
-    fixComment: 'Use non-negative values for timeout and size',
+    fixCode: 'env.opts.executionTimeout = 30000;  // 30 seconds\nenv.opts.maxTemplateSize = 1024 * 1024;',
+    fixComment: 'Use non-negative values for `{subject}` (0 means unlimited)',
+    suggestion: 'Set `0` to disable the limit entirely (use with caution)',
     subjectFrom: firstCapture
   },
   TEMPLATE_MUST_BE_STRING: {
@@ -148,13 +185,15 @@ export const TEMPLATE_ERRORS = {
     pattern: /^Template must be a string$/i,
     category: 'validation_error',
     sourceFromStack: true,
-    titleTemplate: "Template must be a string",
+    titleTemplate: 'Template must be a string',
     causes: [
-      'Template must be a **string**, got null/undefined',
-      'Passed template is not a valid string'
+      'The template parameter is **not a string** (got `null`, `undefined`, object, etc.)',
+      'A file path was passed without a loader',
+      'The render function received the wrong argument'
     ],
-    fixCode: 'Pass a valid template string',
-    fixComment: 'Ensure template parameter is a string',
+    fixCode: 'render("Hello {{ name }}", { name: "World" })\nrender("./template.njk", context, { loader: new FileSystemLoader(".") })',
+    fixComment: 'Pass a string template or configure a loader for file paths',
+    suggestion: 'Check the function signature: `render(template: string, context: object, config?: object)`',
     subjectFrom: null
   },
   TEMPLATE_NULL: {
@@ -162,13 +201,15 @@ export const TEMPLATE_ERRORS = {
     message: 'Template is null',
     pattern: /^Template is null$/i,
     category: 'invalid_template',
-    titleTemplate: "Template is null or undefined",
+    titleTemplate: 'Template is null or undefined',
     causes: [
-      'Template is **null** or **undefined**',
-      'Passed template parameter is not a valid string'
+      'The template parameter is **`null`** or **`undefined`**',
+      'A variable was not set when it should have been',
+      'A loader returned `null` for a missing template (use `getSource` instead)'
     ],
-    fixCode: 'Pass a valid template string',
-    fixComment: 'Ensure template is a non-null string',
+    fixCode: 'render("Hello {{ name }}", { name: "World" })',
+    fixComment: 'Provide a non-null template string',
+    suggestion: 'Add a check before rendering: `if (template) render(template, ctx)`',
     subjectFrom: null
   },
   JS_STACK_SOURCE: {
@@ -177,13 +218,15 @@ export const TEMPLATE_ERRORS = {
     pattern: /^template is null$/i,
     category: 'js_stack_source',
     sourceFromStack: true,
-    titleTemplate: "Template parameter is null or invalid",
+    titleTemplate: 'Template parameter is null',
     causes: [
-      '**Template parameter** is null or invalid',
-      'Passed template is not a valid string'
+      'The template parameter was passed as **`null`** from JavaScript code',
+      'A function returned null instead of a template string',
+      'A conditional render was triggered without a template'
     ],
-    fixCode: 'Pass a valid template string',
-    fixComment: 'Ensure template parameter is a string',
+    fixCode: 'const template = isValid ? "Hello" : "Default";\nrender(template, context);',
+    fixComment: 'Ensure the template string is not null before passing to render',
+    suggestion: 'Trace back through the call stack to find where null was introduced',
     subjectFrom: null
   }
 } as const satisfies Record<string, ErrorDefinition>;
