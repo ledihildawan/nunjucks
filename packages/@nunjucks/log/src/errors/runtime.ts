@@ -1,8 +1,24 @@
-import type { ErrorDefinition, SubjectExtractor } from './types.ts';
+import type { ErrorDefinition, SubjectExtractor, ExtraExtractor } from './types.ts';
 
 const firstCapture: SubjectExtractor = (groups) => groups[1] ?? null;
 
 export const RUNTIME_ERRORS = {
+  NULL_VALUE: {
+    name: 'NULL_VALUE',
+    message: "Cannot access '{accessPath}' on {state} '{parent}'",
+    pattern: /^Cannot access '([^']+)' on (null|undefined) '([^']+)'$/i,
+    category: 'null_value',
+    titleTemplate: "Cannot access '{subject}'",
+    causes: [
+      'Parent object is **null** or **undefined**',
+      'Check for proper **null checks** before access',
+      'Use **optional chaining** `?.` to safely access'
+    ],
+    fixCode: "{{ {parent}?.{accessPath} }}",
+    fixComment: 'Use optional chaining `?.` or add null check',
+    subjectFrom: firstCapture,
+    extraFrom: (groups) => ({ accessPath: groups[1] || '', state: groups[2] || '', parent: groups[3] || '' })
+  },
   UNDEFINED_VARIABLE: {
     name: 'UNDEFINED_VARIABLE',
     message: "Variable '{name}' is not defined",

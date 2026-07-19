@@ -21,6 +21,8 @@ import {
   optionalMemberLookup,
   slice,
   nullishCoalesce,
+  isNullAccessResult,
+  getNullParentName
 } from './member-access.js';
 import {
   createSandboxedContext,
@@ -149,10 +151,16 @@ export function callWrap(obj, name, displayName, context, args, lineno, colno) {
   if (reservedKeywordContexts[name]) {
     throw createLog('error', ERROR_DEFINITIONS.RESERVED_KEYWORD_CONTEXT, { name }, name, { lineno, colno, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline', lineBase: 'zero' });
   }
+
+  if (isNullAccessResult(obj)) {
+    const parentName = getNullParentName(obj) || name;
+    throw createLog('error', ERROR_DEFINITIONS.NULL_VALUE, { accessPath: name, state: 'null', parent: parentName }, name, { lineno, colno, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline', lineBase: 'zero' });
+  }
+
   if (!obj) {
-    throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_FUNCTION, { name: messageName }, name, { lineno, colno, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline', lineBase: 'zero' });
+    throw createLog('error', ERROR_DEFINITIONS.NULL_VALUE, { accessPath: name, state: 'null', parent: name }, name, { lineno, colno, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline', lineBase: 'zero' });
   } else if (!isFunction(obj)) {
-    throw createLog('error', ERROR_DEFINITIONS.NOT_A_FUNCTION, { name: messageName }, name, { lineno, colno, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline', lineBase: 'zero' });
+    throw createLog('error', ERROR_DEFINITIONS.NOT_A_FUNCTION, { name: messageName, type: typeof obj }, name, { lineno, colno, phase: ctx.phase || 'render', templateName: ctx.templateName || 'inline', lineBase: 'zero' });
   }
 
   return obj.apply(context, args);

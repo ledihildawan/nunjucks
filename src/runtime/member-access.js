@@ -2,9 +2,13 @@ import { createLog } from '@nunjucks/log';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { isNonNullish, isFunction } from 'remeda';
 
-export function memberLookup(obj, val) {
-  if (!isNonNullish(obj)) {
-    return undefined;
+const NULL_MARKER = '__nunjucks_null__';
+const PARENT_NAME = '__nunjucks_parent__';
+const ACCESS_PATH = '__access_path__';
+
+export function memberLookup(obj, val, parentName = null) {
+  if (obj == null) {
+    return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
   }
 
   if (isFunction(obj[val])) {
@@ -14,9 +18,21 @@ export function memberLookup(obj, val) {
   return obj[val];
 }
 
-export function optionalMemberLookup(obj, val) {
-  if (!isNonNullish(obj)) {
-    return undefined;
+export function isNullAccessResult(val) {
+  return val && typeof val === 'object' && val[NULL_MARKER] === true;
+}
+
+export function getNullParentName(val) {
+  return val && val[PARENT_NAME];
+}
+
+export function getAccessPath(val) {
+  return val && val[ACCESS_PATH];
+}
+
+export function optionalMemberLookup(obj, val, parentName = null) {
+  if (obj == null) {
+    return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
   }
 
   if (isFunction(obj[val])) {
