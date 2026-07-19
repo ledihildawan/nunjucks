@@ -73,6 +73,26 @@ export const compileSpread = (ctx, node, frame) => {
   ctx.compile(node.argument, frame);
 };
 
+export const compileTemplateLiteral = (ctx, node, frame) => {
+  const quasis = node.quasis?.quasis || node.quasis || [];
+  ctx._emit('`');
+
+  for (const quasi of quasis) {
+    if (quasi.type === 'template') {
+      let val = quasi.value.replace(/\\/g, '\\\\');
+      val = val.replace(/`/g, '\\`');
+      val = val.replace(/\$/g, '\\$');
+      ctx._emit(val);
+    } else if (quasi.type === 'expression') {
+      ctx._emit('${');
+      ctx.compile(quasi.node, frame);
+      ctx._emit('}');
+    }
+  }
+
+  ctx._emit('`');
+};
+
 export const compileAggregate = (ctx, node, frame, startChar, endChar) => {
   if (startChar) {
     ctx._emit(startChar);

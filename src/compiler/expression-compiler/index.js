@@ -9,6 +9,7 @@ export {
   compileKeywordArgs,
   compileAggregate,
   compileSpread,
+  compileTemplateLiteral,
 } from './container.js';
 
 export { compileFunCall } from './fun-call.js';

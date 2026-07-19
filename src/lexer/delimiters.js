@@ -1,5 +1,5 @@
 export const WHITESPACE_CHARS = ' \n\t\r\u00A0';
-export const DELIM_CHARS = '()[]{}%*-+~/#,:|&.<>=!?';
+export const DELIM_CHARS = '()[]{}%*-+~/#,:|&.<>=!?`';
 export const INT_CHARS = '0123456789';
 
 export const DEFAULT_BLOCK_START = '{%';

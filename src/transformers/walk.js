@@ -66,6 +66,7 @@ const CONSTRUCTOR_MAP = {
   callExtensionAsync: nodes.callExtensionAsync,
   spread: nodes.spread,
   walrus: nodes.walrus,
+  templateLiteral: nodes.templateLiteral,
 };
 
 export const mapCOW = (arr, func) => {

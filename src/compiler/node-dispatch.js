@@ -35,6 +35,7 @@ import {
   compileNeg,
   compilePos,
   compileSpread,
+  compileTemplateLiteral,
 } from './expression-compiler/index.js';
 
 import {
@@ -87,6 +88,7 @@ export const COMPILE_FUNCTIONS = {
   neg: compileNeg,
   pos: compilePos,
   spread: compileSpread,
+  templateLiteral: compileTemplateLiteral,
   compare: compileCompare,
   lookupVal: compileLookupVal,
   optionalChain: compileOptionalChain,

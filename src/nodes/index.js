@@ -74,6 +74,7 @@ export const NODE_TYPES = Object.freeze({
   IS: 'is',
   SPREAD: 'spread',
   WALRUS: 'walrus',
+  TEMPLATE_LITERAL: 'templateLiteral',
 });
 
 // ============================================
@@ -357,6 +358,9 @@ export const spread = (lineno, colno, argument) =>
 export const walrus = (lineno, colno, target, val) =>
   createNode(NODE_TYPES.WALRUS, lineno, colno, { target, value: val });
 
+export const templateLiteral = (lineno, colno, quasis) =>
+  createNode(NODE_TYPES.TEMPLATE_LITERAL, lineno, colno, { quasis: quasis || [] });
+
 export const keywordArgs = (lineno, colno, children = []) => 
   createNodeWithChildren(NODE_TYPES.KEYWORD_ARGS, lineno, colno, children);
 
@@ -471,6 +475,7 @@ export const isIn = (n) => n?.type === NODE_TYPES.IN;
 export const isIs = (n) => n?.type === NODE_TYPES.IS;
 export const isSpread = (n) => n?.type === NODE_TYPES.SPREAD;
 export const isWalrus = (n) => n?.type === NODE_TYPES.WALRUS;
+export const isTemplateLiteral = (n) => n?.type === NODE_TYPES.TEMPLATE_LITERAL;
 export const isGroup = (n) => n?.type === NODE_TYPES.GROUP;
 export const isSub = (n) => n?.type === NODE_TYPES.SUB;
 export const isMul = (n) => n?.type === NODE_TYPES.MUL;
@@ -589,6 +594,7 @@ export const nodes = Object.freeze({
   pair,
   spread,
   walrus,
+  templateLiteral,
   keywordArgs,
 
   // Extension creators
@@ -657,6 +663,7 @@ export const nodes = Object.freeze({
   isIs,
   isSpread,
   isWalrus,
+  isTemplateLiteral,
   isGroup,
   isSub,
   isMul,

@@ -10,6 +10,7 @@ import {
   TOKEN_VARIABLE_END,
   TOKEN_COMMENT,
   TOKEN_REGEX,
+  TOKEN_TEMPLATE_LITERAL,
 } from './token-types.js';
 import {
   WHITESPACE_CHARS,
@@ -136,6 +137,63 @@ export function createTokenizer(str, opts = {}) {
       const content = parseStringContent(state.str, state.index + 1, quote);
       this.forwardN(content.length + 2);
       return content;
+    },
+
+    _parseTemplateLiteral() {
+      this.forward();
+      const quasis = [];
+      let current = '';
+
+      while (!this.isFinished()) {
+        const char = this.current();
+
+        if (char === '$' && this.peek() === '{') {
+          if (current) {
+            quasis.push({ type: 'template', value: current });
+            current = '';
+          }
+          this.forward();
+          this.forward();
+
+          let exprDepth = 1;
+          let exprContent = '';
+
+          while (!this.isFinished() && exprDepth > 0) {
+            const exprChar = this.current();
+
+            if (exprChar === '{') {
+              exprDepth++;
+              exprContent += exprChar;
+            } else if (exprChar === '}') {
+              exprDepth--;
+              if (exprDepth > 0) {
+                exprContent += exprChar;
+              }
+            } else if (exprChar === '`' && exprDepth === 1) {
+              throw new Error('Unexpected backtick in template expression');
+            } else {
+              exprContent += exprChar;
+            }
+            this.forward();
+          }
+
+          quasis.push({ type: 'expression', value: exprContent.trim() });
+          continue;
+        }
+
+        if (char === '`') {
+          if (current) {
+            quasis.push({ type: 'template', value: current });
+          }
+          this.forward();
+          return { quasis, expressions: [] };
+        }
+
+        current += char;
+        this.forward();
+      }
+
+      return { quasis, expressions: [] };
     },
 
     _parseOperator(cur, lineno, colno) {
@@ -288,6 +346,10 @@ export function createTokenizer(str, opts = {}) {
 
       if (cur === '"' || cur === '\'') {
         return createToken(TOKEN_STRING, this._parseString(cur), lineno, colno);
+      }
+
+      if (cur === '`') {
+        return createToken(TOKEN_TEMPLATE_LITERAL, this._parseTemplateLiteral(), lineno, colno);
       }
 
       const ws = this._extractWhileIn(WHITESPACE_CHARS);

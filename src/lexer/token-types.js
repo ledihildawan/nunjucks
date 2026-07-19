@@ -25,6 +25,7 @@ export const TOKEN_NONE = 'none';
 export const TOKEN_SYMBOL = 'symbol';
 export const TOKEN_SPECIAL = 'special';
 export const TOKEN_REGEX = 'regex';
+export const TOKEN_TEMPLATE_LITERAL = 'template-literal';
 
 export const TOKEN_TYPES = {
   STRING: TOKEN_STRING,
@@ -54,4 +55,5 @@ export const TOKEN_TYPES = {
   SYMBOL: TOKEN_SYMBOL,
   SPECIAL: TOKEN_SPECIAL,
   REGEX: TOKEN_REGEX,
+  TEMPLATE_LITERAL: TOKEN_TEMPLATE_LITERAL,
 };
