@@ -5,10 +5,15 @@ import { isNonNullish, isFunction } from 'remeda';
 const NULL_MARKER = '__nunjucks_null__';
 const PARENT_NAME = '__nunjucks_parent__';
 const ACCESS_PATH = '__access_path__';
+const PROP_NOT_FOUND = '__nunjucks_prop_not_found__';
 
 export function memberLookup(obj, val, parentName = null) {
   if (obj == null) {
     return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(obj, val) && !(val in obj)) {
+    return { [PROP_NOT_FOUND]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
   }
 
   if (isFunction(obj[val])) {
@@ -22,6 +27,10 @@ export function isNullAccessResult(val) {
   return val && typeof val === 'object' && val[NULL_MARKER] === true;
 }
 
+export function isPropertyNotFoundResult(val) {
+  return val && typeof val === 'object' && val[PROP_NOT_FOUND] === true;
+}
+
 export function getNullParentName(val) {
   return val && val[PARENT_NAME];
 }
@@ -33,6 +42,10 @@ export function getAccessPath(val) {
 export function optionalMemberLookup(obj, val, parentName = null) {
   if (obj == null) {
     return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(obj, val) && !(val in obj)) {
+    return { [PROP_NOT_FOUND]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
   }
 
   if (isFunction(obj[val])) {

@@ -22,6 +22,7 @@ import {
   slice,
   nullishCoalesce,
   isNullAccessResult,
+  isPropertyNotFoundResult,
   getNullParentName
 } from './member-access.js';
 import {
@@ -114,6 +115,20 @@ export function awaitValue(val) {
 }
 
 export function ensureDefined(val, lineno, colno, varName = null, templateName = null, undefinedMode = 'chainable') {
+  if (isPropertyNotFoundResult(val)) {
+    const ctx = (this && this.logContext) ? this.logContext : { templateName: null, phase: 'render' };
+    const effectiveTemplateName = templateName || ctx.templateName || 'inline';
+    const accessPath = val.__access_path__ || varName || 'unknown';
+
+    let parentName = val.__nunjucks_parent__;
+    if (!parentName && varName && varName.includes('.')) {
+      const lastDot = varName.lastIndexOf('.');
+      parentName = varName.substring(0, lastDot);
+    }
+
+    throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_PROPERTY, { property: accessPath, parent: parentName || 'unknown' }, accessPath, { lineno, colno, phase: ctx.phase || 'render', templateName: effectiveTemplateName, lineBase: 'zero' });
+  }
+
   if (!isNonNullish(val)) {
     const ctx = (this && this.logContext) ? this.logContext : { templateName: null, phase: 'render' };
     const effectiveTemplateName = templateName || ctx.templateName || 'inline';
