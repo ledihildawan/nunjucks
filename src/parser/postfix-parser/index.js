@@ -24,11 +24,7 @@ export const parsePostfix = (ctx, node) => {
     } else if (tok.type === TOKEN_OPERATOR && tok.value === '?.') {
       node = parseOptionalChain(ctx, tok, node);
     } else if (tok.type === TOKEN_OPERATOR && tok.value === '|') {
-      fail(ctx,
-        'Invalid pipeline syntax. Use "|>" for pipeline/filter. ' +
-        'Example: {{ value |> filterName }}',
-        tok.lineno,
-        tok.colno);
+      fail(ctx, 'unexpected token', tok.lineno, tok.colno);
     } else {
       break;
     }

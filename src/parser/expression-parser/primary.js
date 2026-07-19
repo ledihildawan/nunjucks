@@ -40,11 +40,7 @@ export const parsePrimary = (ctx, noPostfix) => {
   } else if (tok.type === TOKEN_REGEX) {
     val = new RegExp(tok.value.body, tok.value.flags);
   } else if (tok.type === TOKEN_OPERATOR && tok.value === '|') {
-    fail(ctx,
-      'Invalid pipeline syntax. Use "|>" for pipeline/filter. ' +
-      'Example: {{ value |> filterName }}',
-      tok.lineno,
-      tok.colno);
+    fail(ctx, 'unexpected token', tok.lineno, tok.colno);
   }
 
   if (val !== undefined) {
