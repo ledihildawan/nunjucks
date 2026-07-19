@@ -41,8 +41,8 @@ export const parsePrimary = (ctx, noPostfix) => {
     val = new RegExp(tok.value.body, tok.value.flags);
   } else if (tok.type === TOKEN_OPERATOR && tok.value === '|') {
     fail(ctx,
-      'Invalid operator "|". Use "|>" for pipeline/filter. ' +
-      'Example: {{ value |> filterName }} instead of {{ value | filterName }}',
+      'Invalid pipeline syntax. Use "|>" for pipeline/filter. ' +
+      'Example: {{ value |> filterName }}',
       tok.lineno,
       tok.colno);
   }

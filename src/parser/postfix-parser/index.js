@@ -25,8 +25,8 @@ export const parsePostfix = (ctx, node) => {
       node = parseOptionalChain(ctx, tok, node);
     } else if (tok.type === TOKEN_OPERATOR && tok.value === '|') {
       fail(ctx,
-        'Invalid operator "|". Use "|>" for pipeline/filter. ' +
-        'Example: {{ value |> filterName }} instead of {{ value | filterName }}',
+        'Invalid pipeline syntax. Use "|>" for pipeline/filter. ' +
+        'Example: {{ value |> filterName }}',
         tok.lineno,
         tok.colno);
     } else {
