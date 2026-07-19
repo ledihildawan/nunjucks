@@ -301,10 +301,25 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
   metadata.sourceStartLine = sourceStartLine;
   metadata.renderContext = renderContext;
 
+  const originalCauses = err.causes;
+  const originalFixCode = err.fixCode;
+  const originalFixComment = err.fixComment;
+  const originalSuggestion = err.suggestion;
+  const originalDocumentationUrl = err.documentationUrl;
+  const originalRelatedLinks = err.relatedLinks;
+  const originalSeverity = err.severity;
+
   const errorDef = {
     name: metadata.code || 'RENDER_ERROR',
     message: () => metadata.message,
     pattern: /./,
+    causes: Array.isArray(originalCauses) && originalCauses.length > 0 ? originalCauses : undefined,
+    fixCode: typeof originalFixCode === 'string' ? originalFixCode : undefined,
+    fixComment: typeof originalFixComment === 'string' ? originalFixComment : undefined,
+    suggestion: typeof originalSuggestion === 'string' ? originalSuggestion : undefined,
+    documentationUrl: typeof originalDocumentationUrl === 'string' ? originalDocumentationUrl : undefined,
+    relatedLinks: Array.isArray(originalRelatedLinks) ? originalRelatedLinks : undefined,
+    severity: originalSeverity || 'error',
   };
   const errorObj = createLog('error', errorDef, {}, metadata.subject, {
     lineno: metadata.lineno,

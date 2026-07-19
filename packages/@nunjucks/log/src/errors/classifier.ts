@@ -1,4 +1,4 @@
-import { entries, forEach } from 'remeda';
+import { entries } from 'remeda';
 import type { Classifier, ClassifyInput, Classification, SubjectExtractor } from './types.ts';
 import { RULES, ERROR_DEFINITIONS, DEFAULT_CLASSIFICATION } from './registry.ts';
 import { timeoutClassifier } from './timeout.ts';
@@ -14,9 +14,10 @@ const replacePlaceholders = (
   if (!str) return str ?? null;
   let result = str.replaceAll('{subject}', undefinedName || '').replaceAll('{target}', undefinedName || '');
   if (extra) {
-    forEach(extra, (value, key) => {
+    for (const key of Object.keys(extra)) {
+      const value = extra[key];
       result = result.replaceAll(`{${key}}`, value || '');
-    });
+    }
   }
   return result;
 };
@@ -29,13 +30,21 @@ const deriveFromRule = (
   const undefinedName = match != null && rule.subjectFrom ? rule.subjectFrom(match) : null;
   const extra = rule.extraFrom ? (match ? rule.extraFrom(match) : null) : null;
 
+  const baseCauses = input.causes && input.causes.length > 0 ? input.causes : rule.causes;
+  const baseFixCode = input.fixCode ?? rule.fixCode;
+  const baseFixComment = input.fixComment ?? rule.fixComment;
+
   return {
     category: rule.category,
     undefinedName,
     title: rule.titleTemplate ? replacePlaceholders(rule.titleTemplate, undefinedName, extra) : null,
-    causes: rule.causes.map(c => replacePlaceholders(c, undefinedName, extra)).filter((cause): cause is string => cause !== null),
-    fixCode: replacePlaceholders(rule.fixCode, undefinedName, extra),
-    fixComment: replacePlaceholders(rule.fixComment, undefinedName, extra)
+    causes: baseCauses.map(c => replacePlaceholders(c, undefinedName, extra)).filter((cause): cause is string => cause !== null),
+    fixCode: replacePlaceholders(baseFixCode, undefinedName, extra),
+    fixComment: replacePlaceholders(baseFixComment, undefinedName, extra),
+    suggestion: replacePlaceholders(input.suggestion ?? rule.suggestion, undefinedName, extra),
+    documentationUrl: rule.documentationUrl ?? null,
+    relatedLinks: rule.relatedLinks ?? [],
+    severity: rule.severity ?? 'error'
   };
 };
 
@@ -53,7 +62,11 @@ const codeClassifier: Classifier = (input) => {
       titleTemplate: errorDef.titleTemplate,
       causes: errorDef.causes,
       fixCode: errorDef.fixCode,
-      fixComment: errorDef.fixComment
+      fixComment: errorDef.fixComment,
+      suggestion: errorDef.suggestion,
+      documentationUrl: errorDef.documentationUrl,
+      relatedLinks: errorDef.relatedLinks,
+      severity: errorDef.severity
     }, input);
   }
   return null;

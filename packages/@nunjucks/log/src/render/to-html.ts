@@ -129,11 +129,33 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
     return document('Rendering Interrupted', buildProductionBody(options), '', csp ?? null);
   }
 
-  const classified = classifyFromError(error as { message?: string; code?: string; subject?: string });
+  const errWithExtras = error as {
+    message?: string;
+    code?: string | null;
+    subject?: string | null;
+    causes?: string[];
+    fixCode?: string | null;
+    fixComment?: string | null;
+    suggestion?: string | null;
+    documentationUrl?: string | null;
+    relatedLinks?: Array<{ label: string; url: string }>;
+    severity?: 'error' | 'warning' | 'info';
+  };
+  const classified = classifyFromError(errWithExtras);
   const plain = toText(error, { verbosity: 'simple' });
 
   const category = error.code || classified?.category?.toUpperCase() || 'UNKNOWN';
   const undefinedName = classified?.undefinedName || plain.match(/attempted to output '([^']+)'/)?.[1] || null;
+
+  const possibleCauses = (errWithExtras.causes && errWithExtras.causes.length > 0)
+    ? errWithExtras.causes
+    : (classified?.causes || []);
+  const fixCode = errWithExtras.fixCode ?? classified?.fixCode ?? '';
+  const fixComment = errWithExtras.fixComment ?? classified?.fixComment ?? '';
+  const suggestion = errWithExtras.suggestion ?? classified?.suggestion ?? null;
+  const documentationUrl = errWithExtras.documentationUrl ?? classified?.documentationUrl ?? null;
+  const relatedLinks = errWithExtras.relatedLinks ?? classified?.relatedLinks ?? [];
+  const severity = errWithExtras.severity ?? classified?.severity ?? 'error';
 
   let humanTitle = classified?.title || plain;
   if (category === 'UNDEFINED_VARIABLE' && undefinedName) {
@@ -223,10 +245,6 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
   const headerTitle = escapeHtml(humanTitle);
   const locationInfo = escapeHtml(`${displayPath}:${displayLine}:${displayCol}`);
 
-  const possibleCauses = classified?.causes || [];
-  const fixCode = classified?.fixCode || '';
-  const fixComment = classified?.fixComment || '';
-
   const body = `
 <main class="error-wrapper" aria-labelledby="err-title">
   <header class="error-header">
@@ -236,7 +254,7 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
         <line x1="12" y1="8" x2="12" y2="12"></line>
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
       </svg>
-      Template Rendering Error
+      ${severity === 'warning' ? 'Template Warning' : severity === 'info' ? 'Template Info' : 'Template Rendering Error'}
       ${codeBadge}${phaseBadge ? ' ' + phaseBadge : ''}
       ${verbosity === 'full' ? '<span class="badge badge-dev">DEV</span>' : ''}
     </div>
@@ -289,6 +307,23 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
       </section>
     </div>
 
+    ${suggestion ? `
+    <section class="suggestion-section" aria-labelledby="h-suggestion">
+      <h2 id="h-suggestion" class="text-label">💡 Tip</h2>
+      <p class="suggestion-text">${renderMarkdownToAnsi(suggestion)}</p>
+    </section>
+    ` : ''}
+
+    ${(documentationUrl || relatedLinks.length > 0) ? `
+    <section class="docs-section" aria-labelledby="h-docs">
+      <h2 id="h-docs" class="text-label">Learn More</h2>
+      <ul class="docs-list">
+        ${documentationUrl ? `<li><a href="${escapeHtml(documentationUrl)}" target="_blank" rel="noopener noreferrer">📖 Documentation</a></li>` : ''}
+        ${relatedLinks.map(l => `<li><a href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(l.label)}</a></li>`).join('')}
+      </ul>
+    </section>
+    ` : ''}
+
     ${renderContext ? renderContextHtml(renderContext) : ''}
 
     ${error.stack ? formatStackTraceHtml(error, false, ide) : ''}
@@ -310,5 +345,5 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
   </footer>
 </main>`;
 
-  return document('Template Error', body, TOGGLE_SCRIPT, csp ?? null);
+  return document(severity === 'warning' ? 'Template Warning' : 'Template Error', body, TOGGLE_SCRIPT, csp ?? null);
 };

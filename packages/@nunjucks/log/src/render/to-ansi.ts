@@ -4,6 +4,7 @@ import { shortenPath } from './internal/path-shortener.ts';
 import { toDisplayLocation } from './internal/location.ts';
 import { isFilePath, resolveIdeLink } from './internal/ide-links.ts';
 import { normalizeRenderContext } from './internal/safe-context.ts';
+import { classifyFromError } from '../errors/classify.ts';
 
 export interface AnsiOptions {
   verbosity?: 'simple' | 'medium' | 'full';
@@ -66,6 +67,31 @@ const makeHyperlink = (text: string, url: string): string => {
   return `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
 };
 
+const stripMarkdown = (text: string): string => {
+  return text.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1');
+};
+
+const formatCausesAnsi = (causes: string[]): string => {
+  if (!causes || causes.length === 0) return '';
+  const items = causes.map(c => `  ${picocolors.yellow('•')} ${stripMarkdown(c)}`).join('\n');
+  return `\n${picocolors.bold('Possible Causes:')}\n${items}`;
+};
+
+const formatFixAnsi = (fixCode: string | null, fixComment: string | null): string => {
+  if (!fixCode) return '';
+  let out = `\n${picocolors.bold('Suggested Fix:')}`;
+  if (fixComment) {
+    out += `\n${picocolors.dim('// ' + stripMarkdown(fixComment))}`;
+  }
+  out += `\n${picocolors.green(fixCode)}`;
+  return out;
+};
+
+const formatSuggestionAnsi = (suggestion: string | null): string => {
+  if (!suggestion) return '';
+  return `\n${picocolors.bold(picocolors.cyan('💡 Tip:'))} ${stripMarkdown(suggestion)}`;
+};
+
 export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   if (!error) return '';
 
@@ -85,6 +111,23 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
     return message;
   }
 
+  const errObj = error as {
+    code?: string | null;
+    subject?: string | null;
+    causes?: string[];
+    fixCode?: string | null;
+    fixComment?: string | null;
+    suggestion?: string | null;
+    documentationUrl?: string | null;
+    severity?: 'error' | 'warning' | 'info';
+  };
+
+  const classification = classifyFromError(errObj);
+  const causes = errObj.causes && errObj.causes.length > 0 ? errObj.causes : classification.causes;
+  const fixCode = errObj.fixCode ?? classification.fixCode;
+  const fixComment = errObj.fixComment ?? classification.fixComment;
+  const suggestion = errObj.suggestion ?? classification.suggestion;
+
   const path = templatePath || (error as { templateName?: string }).templateName || '';
   const displayLineno = lineno ?? (error as { lineno?: number | null }).lineno ?? null;
   const displayColno = colno ?? (error as { colno?: number | null }).colno ?? null;
@@ -93,15 +136,16 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   const location = toDisplayLocation(displayLineno, displayColno, lineBase);
 
   if (verbosity === 'medium') {
+    const causeHint = causes.length > 0 ? ` (${causes[0]})` : '';
     if (path) {
       const shortPath = shortenPath(path);
       if (isFilePath(path)) {
         const url = makeHyperlink(`${shortPath}:${location.line}:${location.col}`, resolveIdeLink(ide, path, location.line, location.col));
-        return `${message} at ${url}`;
+        return `${message} at ${url}${causeHint ? '\n' + stripMarkdown(causes[0]) : ''}`;
       }
-      return `${message} at ${shortPath}:${location.line}:${location.col}`;
+      return `${message} at ${shortPath}:${location.line}:${location.col}${causeHint ? '\n' + stripMarkdown(causes[0]) : ''}`;
     }
-    return `${message} at line ${location.line}`;
+    return `${message} at line ${location.line}${causeHint ? '\n' + stripMarkdown(causes[0]) : ''}`;
   }
 
   const stack = (error as Error).stack || '';
@@ -139,7 +183,13 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
     }
   }
 
-  const header = `${picocolors.bold(picocolors.red('Error:'))} ${message}${locationStr}`;
+  const severityLabel = errObj.severity === 'warning'
+    ? picocolors.bold(picocolors.yellow('Warning:'))
+    : errObj.severity === 'info'
+      ? picocolors.bold(picocolors.blue('Info:'))
+      : picocolors.bold(picocolors.red('Error:'));
+
+  const header = `${severityLabel} ${message}${locationStr}`;
 
   const parts: string[] = [header];
 
@@ -161,6 +211,15 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
       });
     }
   }
+
+  const causesStr = formatCausesAnsi(causes);
+  if (causesStr) parts.push(causesStr);
+
+  const fixStr = formatFixAnsi(fixCode, fixComment);
+  if (fixStr) parts.push(fixStr);
+
+  const sugStr = formatSuggestionAnsi(suggestion);
+  if (sugStr) parts.push(sugStr);
 
   if (options.renderContext && verbosity === 'full') {
     parts.push(renderContextAnsi(options.renderContext));

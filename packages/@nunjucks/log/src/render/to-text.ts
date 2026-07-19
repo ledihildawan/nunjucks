@@ -1,5 +1,6 @@
 import { shortenPath } from './internal/path-shortener.ts';
 import { toDisplayLocation } from './internal/location.ts';
+import { classifyFromError } from '../errors/classify.ts';
 
 export interface ToTextOptions {
   verbosity?: 'simple' | 'medium' | 'full';
@@ -7,6 +8,10 @@ export interface ToTextOptions {
   lineno?: number | null;
   colno?: number | null;
 }
+
+const stripMarkdown = (text: string): string => {
+  return text.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1');
+};
 
 export const toText = (error: unknown, options: ToTextOptions = {}): string => {
   if (!error) return '';
@@ -27,6 +32,24 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
     return message;
   }
 
+  const errObj = error as {
+    code?: string | null;
+    subject?: string | null;
+    causes?: string[];
+    fixCode?: string | null;
+    fixComment?: string | null;
+    suggestion?: string | null;
+    severity?: 'error' | 'warning' | 'info';
+  };
+
+  const classification = classifyFromError(errObj);
+  const causes = errObj.causes && errObj.causes.length > 0 ? errObj.causes : classification.causes;
+  const fixCode = errObj.fixCode ?? classification.fixCode;
+  const fixComment = errObj.fixComment ?? classification.fixComment;
+  const suggestion = errObj.suggestion ?? classification.suggestion;
+
+  const severityLabel = errObj.severity === 'warning' ? 'Warning:' : errObj.severity === 'info' ? 'Info:' : 'Error:';
+
   let locationStr = '';
   if (
     verbosity === 'medium' &&
@@ -44,7 +67,9 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
     );
     const shortPath = shortenPath(path);
     locationStr = ` at ${shortPath}:${location.line}:${location.col}`;
-    return `${message}${locationStr}`;
+    const causeHint = causes.length > 0 ? `\n${stripMarkdown(causes[0])}` : '';
+    const sugHint = suggestion ? `\n💡 Tip: ${stripMarkdown(suggestion)}` : '';
+    return `${severityLabel} ${message}${locationStr}${causeHint}${sugHint}`;
   }
 
   const stack = (error as Error).stack || '';
@@ -66,5 +91,30 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
     })
     .join('\n');
 
-  return formattedStack ? `${message}\n${formattedStack}` : message;
+  const parts: string[] = [`${severityLabel} ${message}`];
+
+  if (causes.length > 0) {
+    parts.push('');
+    parts.push('Possible Causes:');
+    causes.forEach(c => parts.push(`  • ${stripMarkdown(c)}`));
+  }
+
+  if (fixCode) {
+    parts.push('');
+    parts.push('Suggested Fix:');
+    if (fixComment) parts.push(`  // ${stripMarkdown(fixComment)}`);
+    parts.push(`  ${fixCode}`);
+  }
+
+  if (suggestion) {
+    parts.push('');
+    parts.push(`💡 Tip: ${stripMarkdown(suggestion)}`);
+  }
+
+  if (formattedStack) {
+    parts.push('');
+    parts.push(formattedStack);
+  }
+
+  return parts.filter(Boolean).join('\n');
 };
