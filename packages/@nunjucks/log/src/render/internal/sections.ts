@@ -1,3 +1,4 @@
+import { keys, values } from 'remeda';
 import { escapeHtml, highlightHtml, highlightJs } from './highlight.ts';
 import { isFilePath, resolveIdeLink } from './ide-links.ts';
 import { shortenPath } from './path-shortener.ts';
@@ -50,10 +51,10 @@ const safeJson = (value: SerializableContext): string =>
 export const renderContextHtml = (ctx: unknown): string => {
   if (!ctx || typeof ctx !== 'object') return '';
   const serialized = normalizeRenderContext(ctx) as Record<string, SerializableContext>;
-  const filteredKeys = Object.keys(serialized);
+  const filteredKeys = keys(serialized);
   if (filteredKeys.length === 0) return '';
 
-  const hasExpandableValues = Object.values(serialized).some(value => value !== null && typeof value === 'object');
+  const hasExpandableValues = values(serialized).some(value => value !== null && typeof value === 'object');
   const dataScript = `<script type="application/json" id="ctx-data">${safeJson(serialized)}</scr` + `ipt>`;
 
   return `<section class="render-context" aria-labelledby="h-ctx">

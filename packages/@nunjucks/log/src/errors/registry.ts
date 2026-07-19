@@ -1,3 +1,4 @@
+import { mapValues, fromEntries, values } from 'remeda';
 import type { ErrorDefinition, Classification, SubjectExtractor } from './types.ts';
 import { firstCapture } from './types.ts';
 import { RUNTIME_ERRORS } from './runtime.ts';
@@ -22,13 +23,9 @@ export type ErrorName = keyof typeof ERROR_DEFINITIONS;
 
 type ErrorMessageFn = (args?: Record<string, string> | string[]) => string;
 
-export const ERRORS: Record<ErrorName, ErrorMessageFn> = Object.fromEntries(
-  Object.entries(ERROR_DEFINITIONS).map(([name, def]) => [name, def.message])
-) as Record<ErrorName, ErrorMessageFn>;
+export const ERRORS: Record<ErrorName, ErrorMessageFn> = mapValues(ERROR_DEFINITIONS, (def) => def.message) as Record<ErrorName, ErrorMessageFn>;
 
-export const PATTERNS: Record<ErrorName, RegExp> = Object.fromEntries(
-  Object.entries(ERROR_DEFINITIONS).map(([name, def]) => [name, def.pattern])
-) as Record<ErrorName, RegExp>;
+export const PATTERNS: Record<ErrorName, RegExp> = mapValues(ERROR_DEFINITIONS, (def) => def.pattern) as Record<ErrorName, RegExp>;
 
 interface Rule {
   pattern: RegExp;
@@ -41,7 +38,7 @@ interface Rule {
   sourceFromStack?: boolean;
 }
 
-export const RULES: Rule[] = Object.values(ERROR_DEFINITIONS).map((def) => ({
+export const RULES: Rule[] = values(ERROR_DEFINITIONS).map((def) => ({
   pattern: def.pattern,
   category: def.category,
   subjectFrom: def.subjectFrom ?? firstCapture,

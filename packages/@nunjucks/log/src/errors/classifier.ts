@@ -1,3 +1,4 @@
+import { entries, forEach } from 'remeda';
 import type { Classifier, ClassifyInput, Classification, SubjectExtractor } from './types.ts';
 import { RULES, ERROR_DEFINITIONS, DEFAULT_CLASSIFICATION } from './registry.ts';
 import { timeoutClassifier } from './timeout.ts';
@@ -13,9 +14,9 @@ const replacePlaceholders = (
   if (!str) return str ?? null;
   let result = str.replaceAll('{subject}', undefinedName || '').replaceAll('{target}', undefinedName || '');
   if (extra) {
-    for (const [key, value] of Object.entries(extra)) {
+    forEach(extra, (value, key) => {
       result = result.replaceAll(`{${key}}`, value || '');
-    }
+    });
   }
   return result;
 };
@@ -40,11 +41,9 @@ const deriveFromRule = (
 
 const codeClassifier: Classifier = (input) => {
   if (!input.code) {
-    console.log('codeClassifier: no code in input');
     return null;
   }
   const errorDef = ERROR_DEFINITIONS[input.code as keyof typeof ERROR_DEFINITIONS];
-  console.log('codeClassifier: input.code =', input.code, 'errorDef =', errorDef);
   if (errorDef) {
     return deriveFromRule({
       pattern: errorDef.pattern,
@@ -57,7 +56,6 @@ const codeClassifier: Classifier = (input) => {
       fixComment: errorDef.fixComment
     }, input);
   }
-  console.log('codeClassifier: errorDef not found for', input.code);
   return null;
 };
 
