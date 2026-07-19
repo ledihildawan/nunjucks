@@ -207,7 +207,8 @@ export function createLog(
 
     if (type === 'error') {
       const err = new Error(base.message) as TemplateError;
-      Object.assign(err, { name: 'Template render error', code: base.code, subject: base.subject, lineno: base.lineno, colno: base.colno, phase: base.phase, templateName: base.templateName, lineBase: base.lineBase, templatePath: base.templateName });
+      const props = { name: 'Template render error', code: base.code, subject: base.subject, lineno: base.lineno, colno: base.colno, phase: base.phase, templateName: base.templateName, lineBase: base.lineBase, templatePath: base.templateName };
+      Object.assign(err, props);
       err.output = createOutputFn('error');
       return err;
     }
