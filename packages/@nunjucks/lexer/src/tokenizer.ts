@@ -67,10 +67,10 @@ export const createState = (str: string, opts: LexerOptions = {}): LexerState =>
 });
 
 export const getChar = (state: LexerState): string =>
-  state.index < state.str.length ? state.str[state.index] : '';
+  state.index < state.str.length ? (state.str[state.index] ?? '') : '';
 
 export const getPeek = (state: LexerState): string =>
-  state.index + 1 < state.str.length ? state.str[state.index + 1] : '';
+  state.index + 1 < state.str.length ? (state.str[state.index + 1] ?? '') : '';
 
 export const isFinished = (state: LexerState): boolean =>
   state.index >= state.str.length;
@@ -116,20 +116,20 @@ const isNullString = (str: string): boolean =>
 
 const extractWhile = (str: string, start: number, chars: string): string => {
   let end = start;
-  while (end < str.length && chars.includes(str[end])) end++;
+  while (end < str.length && chars.includes(str[end] ?? '')) end++;
   return str.slice(start, end);
 };
 
 const extractUntil = (str: string, start: number, chars: string): string => {
   let end = start;
-  while (end < str.length && !chars.includes(str[end])) end++;
+  while (end < str.length && !chars.includes(str[end] ?? '')) end++;
   return str.slice(start, end);
 };
 
 const parseStringContent = (str: string, start: number, quote: string): string => {
   let end = start;
-  while (end < str.length && str[end] !== quote) {
-    if (str[end] === '\\' && end + 1 < str.length) end++;
+  while (end < str.length && (str[end] ?? '') !== quote) {
+    if ((str[end] ?? '') === '\\' && end + 1 < str.length) end++;
     end++;
   }
   return str.slice(start, end);
@@ -157,17 +157,17 @@ const tokenizeNumber: Tokenizer = (state) => {
   let hasDecimal = false;
   let current = state;
   
-  while (current.index < current.str.length && isDigit(current.str[current.index])) {
-    num += current.str[current.index];
+  while (current.index < current.str.length && isDigit(current.str[current.index] ?? '')) {
+    num += current.str[current.index] ?? '';
     current = advance(current);
   }
   
-  if (current.index < current.str.length && current.str[current.index] === '.') {
+  if (current.index < current.str.length && (current.str[current.index] ?? '') === '.') {
     hasDecimal = true;
     num += '.';
     current = advance(current);
-    while (current.index < current.str.length && isDigit(current.str[current.index])) {
-      num += current.str[current.index];
+    while (current.index < current.str.length && isDigit(current.str[current.index] ?? '')) {
+      num += current.str[current.index] ?? '';
       current = advance(current);
     }
   }
