@@ -277,9 +277,9 @@ describe('lex - other operators', () => {
     expect(hasToken(tokens, TOKEN_PIPEFORWARD, '|>')).toBe(true);
   });
 
-  test('tokenizes tilde for concat', () => {
-    const tokens = tokenize('{{ "hello" ~ "world" }}');
-    expect(hasToken(tokens, TOKEN_TILDE, '~')).toBe(true);
+  test('tokenizes bitwise not', () => {
+    const tokens = tokenize('{{ ~5 }}');
+    expect(hasToken(tokens, TOKEN_OPERATOR, '~')).toBe(true);
   });
 
   test('tokenizes dot operator', () => {

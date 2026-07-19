@@ -158,7 +158,15 @@ export function createCompiler(templateName, undefinedMode, source) {
         nodes.optionalChain,
         nodes.nullishCoalesce,
         nodes.nodeList,
-        nodes.slice
+        nodes.slice,
+        nodes.bitwiseOr,
+        nodes.bitwiseAnd,
+        nodes.bitwiseXor,
+        nodes.bitwiseLShift,
+        nodes.bitwiseRShift,
+        nodes.bitwiseNot,
+        nodes.increment,
+        nodes.decrement
       );
       this.compile(node, frame);
     },

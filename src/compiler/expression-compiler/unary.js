@@ -9,3 +9,5 @@ export const compileNot = (ctx, node, frame) => compileUnary(ctx, node, frame, '
 export const compileNeg = (ctx, node, frame) => compileUnary(ctx, node, frame, '-');
 
 export const compilePos = (ctx, node, frame) => compileUnary(ctx, node, frame, '+');
+
+export const compileBitwiseNot = (ctx, node, frame) => compileUnary(ctx, node, frame, '~');

@@ -3,6 +3,7 @@ import {
   TOKEN_LEFT_PAREN,
   TOKEN_OPERATOR,
 } from '../../lexer/token-types.js';
+import { nodes } from '../../nodes/index.js';
 import { nextToken, peekToken, fail } from '../cursor.js';
 import { parseFunCall } from './fun-call.js';
 import { parseBracketAccess } from './lookup.js';
@@ -23,8 +24,12 @@ export const parsePostfix = (ctx, node) => {
       node = parseDotAccess(ctx, tok, node);
     } else if (tok.type === TOKEN_OPERATOR && tok.value === '?.') {
       node = parseOptionalChain(ctx, tok, node);
-    } else if (tok.type === TOKEN_OPERATOR && tok.value === '|') {
-      fail(ctx, 'unexpected token', tok.lineno, tok.colno);
+    } else if (tok.type === TOKEN_OPERATOR && tok.value === '++') {
+      nextToken(ctx);
+      node = nodes.increment(tok.lineno, tok.colno, node, true);
+    } else if (tok.type === TOKEN_OPERATOR && tok.value === '--') {
+      nextToken(ctx);
+      node = nodes.decrement(tok.lineno, tok.colno, node, true);
     } else {
       break;
     }

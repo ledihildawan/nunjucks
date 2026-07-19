@@ -323,7 +323,7 @@ describe('inline template error locations', () => {
   });
 
   test('supports concat and is tests with custom tests', async () => {
-    await expect(renderTemplate('{{ "a" ~ 2 }}')).resolves.toBe('a2');
+    await expect(renderTemplate('{{ "a" + "2" }}')).resolves.toBe('a2');
     await expect(renderTemplate('{{ 5 is odd }}')).resolves.toBe('true');
     await expect(renderTemplate('{{ 4 is not odd }}')).resolves.toBe('true');
     await expect(renderTemplate('{{ 6 is divisibleby(3) }}')).resolves.toBe('true');
@@ -358,7 +358,7 @@ describe('inline template error locations', () => {
       ['{% if 1 % invalid %}x{% endif %}', '%'],
       ['{% if 1 // invalid %}x{% endif %}', '//'],
       ['{% if 1 ** invalid %}x{% endif %}', '**'],
-      ['{% if "x" ~ invalid %}x{% endif %}', '~'],
+      ['{% if "x" + invalid %}x{% endif %}', '+'],
       ['{% if 1 == invalid %}x{% endif %}', '=='],
       ['{% if 1 != invalid %}x{% endif %}', '!='],
       ['{% if 1 < invalid %}x{% endif %}', '<'],

@@ -35,7 +35,6 @@ export const matchTokenType = (char) => {
     '}' : TOKEN_RIGHT_CURLY,
     ',' : TOKEN_COMMA,
     ':' : TOKEN_COLON,
-    '~' : TOKEN_TILDE,
     '|>' : TOKEN_PIPEFORWARD,
   };
   return map[char] ?? TOKEN_OPERATOR;

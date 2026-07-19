@@ -4,6 +4,7 @@ export { parseNullishCoalesce } from './nullish.js';
 export { parseIn } from './in.js';
 export { parseIs } from './is.js';
 export { parseCompare } from './compare.js';
+export { parseBitwiseOr } from './bitwise.js';
 export { parseConcat } from './concat.js';
 export {
   parseAdd,

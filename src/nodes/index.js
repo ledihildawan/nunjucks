@@ -75,6 +75,14 @@ export const NODE_TYPES = Object.freeze({
   SPREAD: 'spread',
   WALRUS: 'walrus',
   TEMPLATE_LITERAL: 'templateLiteral',
+  BITWISE_OR: 'bitwiseOr',
+  BITWISE_AND: 'bitwiseAnd',
+  BITWISE_XOR: 'bitwiseXor',
+  BITWISE_LSHIFT: 'bitwiseLShift',
+  BITWISE_RSHIFT: 'bitwiseRShift',
+  BITWISE_NOT: 'bitwiseNot',
+  INCREMENT: 'increment',
+  DECREMENT: 'decrement',
 });
 
 // ============================================
@@ -230,6 +238,30 @@ export const compare = (lineno, colno, expr, ops = []) =>
 
 export const compareOperand = (lineno, colno, expr, operator) => 
   createNode(NODE_TYPES.COMPARE_OPERAND, lineno, colno, { expr, operator });
+
+export const bitwiseOr = (lineno, colno, left, right) =>
+  createNode(NODE_TYPES.BITWISE_OR, lineno, colno, { left, right });
+
+export const bitwiseAnd = (lineno, colno, left, right) =>
+  createNode(NODE_TYPES.BITWISE_AND, lineno, colno, { left, right });
+
+export const bitwiseXor = (lineno, colno, left, right) =>
+  createNode(NODE_TYPES.BITWISE_XOR, lineno, colno, { left, right });
+
+export const bitwiseLShift = (lineno, colno, left, right) =>
+  createNode(NODE_TYPES.BITWISE_LSHIFT, lineno, colno, { left, right });
+
+export const bitwiseRShift = (lineno, colno, left, right) =>
+  createNode(NODE_TYPES.BITWISE_RSHIFT, lineno, colno, { left, right });
+
+export const bitwiseNot = (lineno, colno, target) =>
+  createNode(NODE_TYPES.BITWISE_NOT, lineno, colno, { target });
+
+export const increment = (lineno, colno, target, isPostfix) =>
+  createNode(NODE_TYPES.INCREMENT, lineno, colno, { target, isPostfix });
+
+export const decrement = (lineno, colno, target, isPostfix) =>
+  createNode(NODE_TYPES.DECREMENT, lineno, colno, { target, isPostfix });
 
 // Type checks
 export const is = (lineno, colno, left, right) => createNode(NODE_TYPES.IS, lineno, colno, { left, right });
@@ -558,6 +590,18 @@ export const nodes = Object.freeze({
   // Comparison creators
   compare,
   compareOperand,
+
+  // Bitwise creators
+  bitwiseOr,
+  bitwiseAnd,
+  bitwiseXor,
+  bitwiseLShift,
+  bitwiseRShift,
+  bitwiseNot,
+
+  // Increment/Decrement creators
+  increment,
+  decrement,
 
   // Type check creators
   is,

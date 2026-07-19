@@ -2,13 +2,13 @@ import { describe, test, expect } from 'bun:test';
 import { parse } from '../index.js';
 
 describe('parse - string concatenation', () => {
-  test('parses ~ operator', () => {
-    const ast = parse('{{ "hello" ~ "world" }}');
+  test('parses + operator', () => {
+    const ast = parse('{{ "hello" + "world" }}');
     expect(ast.children).toHaveLength(1);
   });
 
   test('parses mixed concatenation', () => {
-    const ast = parse('{{ name ~ " is " ~ age }}');
+    const ast = parse('{{ name + " is " + age }}');
     expect(ast.children).toHaveLength(1);
   });
 });

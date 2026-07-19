@@ -1,10 +1,11 @@
 import { TOKEN_SYMBOL } from '../../lexer/token-types.js';
 import { nodes } from '../../nodes/index.js';
 import { nextToken, pushToken } from '../cursor.js';
+import { parseBitwiseOr } from './bitwise.js';
 import { parseIs } from './is.js';
 
 export const parseIn = (ctx) => {
-  let node = parseIs(ctx);
+  let node = parseBitwiseOr(ctx);
   while (true) {
     const tok = nextToken(ctx);
     if (!tok) {
