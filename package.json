@@ -6,9 +6,11 @@
   "type": "module",
   "workspaces": [
     "packages/@nunjucks/shared",
-    "packages/@nunjucks/log"
+    "packages/@nunjucks/log",
+    "packages/@nunjucks/lexer"
   ],
   "dependencies": {
+    "@nunjucks/lexer": "workspace:*",
     "@nunjucks/log": "workspace:*",
     "@nunjucks/shared": "workspace:*",
     "express": "5",
