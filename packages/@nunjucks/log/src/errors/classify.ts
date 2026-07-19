@@ -1,5 +1,5 @@
 import type { Classification } from './types.ts';
-import { classifyInput } from './classifiers.ts';
+import { classifyInput } from './classifier.ts';
 
 export interface ClassifyInput {
   message?: string;
