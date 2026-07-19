@@ -194,7 +194,7 @@ const scrubDangerousReferences = (context, allowedGlobals) => {
   const visit = (value) => {
     if (!value || typeof value !== 'object' || seen.has(value)) return value;
     seen.add(value);
-    for (const key of Object.keys(value)) {
+    for (const key of keys(value)) {
       const child = value[key];
       if (isDangerousReference(child)) {
         delete value[key];

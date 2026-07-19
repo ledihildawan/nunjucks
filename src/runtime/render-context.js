@@ -3,9 +3,10 @@
 // ============================================
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
+import { entries, fromEntries, forEachObj } from 'remeda';
 
 const createScope = (data = {}, parent = null) => ({
-  data: new Map(Object.entries(data)),
+  data: new Map(entries(data)),
   parent
 });
 
@@ -67,9 +68,9 @@ export const createRenderContext = (initialData = {}) => {
     },
 
     merge: (data = {}) => {
-      for (const [k, v] of Object.entries(data)) {
+      forEachObj(data, (v, k) => {
         currentScope = scopeSet(currentScope, k, v);
-      }
+      });
       return context;
     },
 
@@ -86,9 +87,9 @@ export const createRenderContext = (initialData = {}) => {
     clone: () => createRenderContext(context.toObject()),
 
     _debug: () => ({
-      current: Object.fromEntries(currentScope.data),
+      current: fromEntries(currentScope.data),
       parent: currentScope.parent
-        ? Object.fromEntries(currentScope.parent.data)
+        ? fromEntries(currentScope.parent.data)
         : null
     })
   };
@@ -105,19 +106,19 @@ export const ctx = createRenderContext;
 
 export const withDefaults = (defaults) => (context) => {
   const newCtx = context.clone();
-  for (const [k, v] of Object.entries(defaults)) {
+  forEachObj(defaults, (v, k) => {
     if (newCtx.get(k) === undefined) {
       newCtx.set(k, v);
     }
-  }
+  });
   return newCtx;
 };
 
 export const withComputed = (computations) => (context) => {
   const newCtx = context.clone();
-  for (const [k, computeFn] of Object.entries(computations)) {
+  forEachObj(computations, (computeFn, k) => {
     newCtx.set(k, computeFn(newCtx));
-  }
+  });
   return newCtx;
 };
 
