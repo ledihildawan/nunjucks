@@ -7,6 +7,7 @@ import {
   TOKEN_RIGHT_BRACKET,
   TOKEN_RIGHT_CURLY,
   TOKEN_RIGHT_PAREN,
+  TOKEN_SPREAD,
 } from '../../lexer/token-types.js';
 import {
   nodes,
@@ -50,23 +51,35 @@ export const parseAggregate = (ctx) => {
     }
 
     if (nodes.isDict(node)) {
-      const key = ctx.parsePrimary();
+      if (peekToken(ctx).type === TOKEN_SPREAD) {
+        nextToken(ctx);
+        const arg = ctx.parseExpression();
+        node.addChild(nodes.spread(tok.lineno, tok.colno, arg));
+      } else {
+        const key = ctx.parsePrimary();
 
-      if (!skip(ctx, TOKEN_COLON)) {
-        const next = peekToken(ctx) || tok;
-        fail(ctx, 'parseAggregate: expected colon after dict key',
-          next.lineno,
-          next.colno);
+        if (!skip(ctx, TOKEN_COLON)) {
+          const next = peekToken(ctx) || tok;
+          fail(ctx, 'parseAggregate: expected colon after dict key',
+            next.lineno,
+            next.colno);
+        }
+
+        const value = ctx.parseExpression();
+        node.addChild(nodes.pair(key.lineno,
+          key.colno,
+          key,
+          value));
       }
-
-      const value = ctx.parseExpression();
-      node.addChild(nodes.pair(key.lineno,
-        key.colno,
-        key,
-        value));
     } else {
-      const expr = ctx.parseExpression();
-      node.addChild(expr);
+      if (peekToken(ctx).type === TOKEN_SPREAD) {
+        nextToken(ctx);
+        const arg = ctx.parseExpression();
+        node.addChild(nodes.spread(tok.lineno, tok.colno, arg));
+      } else {
+        const expr = ctx.parseExpression();
+        node.addChild(expr);
+      }
     }
   }
 

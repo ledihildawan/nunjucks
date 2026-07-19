@@ -6,6 +6,7 @@ import {
   TOKEN_LEFT_CURLY,
   TOKEN_RIGHT_CURLY,
   TOKEN_OPERATOR,
+  TOKEN_SPREAD,
   TOKEN_COMMA,
   TOKEN_COLON,
   TOKEN_TILDE,
@@ -40,8 +41,12 @@ export const matchTokenType = (char) => {
   return map[char] ?? TOKEN_OPERATOR;
 };
 
-export const createOperatorToken = (char, lineno, colno) => 
-  createToken(matchTokenType(char), char, lineno, colno);
+export const createOperatorToken = (char, lineno, colno) => {
+  if (char === '...') {
+    return createToken(TOKEN_SPREAD, char, lineno, colno);
+  }
+  return createToken(matchTokenType(char), char, lineno, colno);
+};
 
 export const createNumberToken = (tok, lineno, colno, hasDecimal) => 
   createToken(hasDecimal ? TOKEN_FLOAT : TOKEN_INT, tok, lineno, colno);

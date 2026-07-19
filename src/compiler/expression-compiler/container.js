@@ -68,6 +68,11 @@ export const compileKeywordArgs = (ctx, node, frame) => {
   ctx._emit(')');
 };
 
+export const compileSpread = (ctx, node, frame) => {
+  ctx._emit('...');
+  ctx.compile(node.argument, frame);
+};
+
 export const compileAggregate = (ctx, node, frame, startChar, endChar) => {
   if (startChar) {
     ctx._emit(startChar);
@@ -77,7 +82,12 @@ export const compileAggregate = (ctx, node, frame, startChar, endChar) => {
     if (i > 0) {
       ctx._emit(',');
     }
-    ctx.compile(child, frame);
+    if (nodes.isSpread(child)) {
+      ctx._emit('...');
+      ctx.compile(child.argument, frame);
+    } else {
+      ctx.compile(child, frame);
+    }
   });
 
   if (endChar) {

@@ -13,6 +13,7 @@ export const TOKEN_RIGHT_BRACKET = 'right-bracket';
 export const TOKEN_LEFT_CURLY = 'left-curly';
 export const TOKEN_RIGHT_CURLY = 'right-curly';
 export const TOKEN_OPERATOR = 'operator';
+export const TOKEN_SPREAD = 'spread';
 export const TOKEN_COMMA = 'comma';
 export const TOKEN_COLON = 'colon';
 export const TOKEN_TILDE = 'tilde';
@@ -41,6 +42,7 @@ export const TOKEN_TYPES = {
   LEFT_CURLY: TOKEN_LEFT_CURLY,
   RIGHT_CURLY: TOKEN_RIGHT_CURLY,
   OPERATOR: TOKEN_OPERATOR,
+  SPREAD: TOKEN_SPREAD,
   COMMA: TOKEN_COMMA,
   COLON: TOKEN_COLON,
   TILDE: TOKEN_TILDE,

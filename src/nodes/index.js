@@ -72,6 +72,7 @@ export const NODE_TYPES = Object.freeze({
   DO: 'do',
   WITH: 'with',
   IS: 'is',
+  SPREAD: 'spread',
 });
 
 // ============================================
@@ -349,6 +350,9 @@ export const dict = (lineno, colno, children = []) =>
 export const pair = (lineno, colno, key, val) =>
   createNode(NODE_TYPES.PAIR, lineno, colno, { key, value: val });
 
+export const spread = (lineno, colno, argument) =>
+  createNode(NODE_TYPES.SPREAD, lineno, colno, { argument });
+
 export const keywordArgs = (lineno, colno, children = []) => 
   createNodeWithChildren(NODE_TYPES.KEYWORD_ARGS, lineno, colno, children);
 
@@ -461,6 +465,7 @@ export const isNullishCoalesce = (n) => n?.type === NODE_TYPES.NULLISH_COALESCE;
 export const isCompareOperand = (n) => n?.type === NODE_TYPES.COMPARE_OPERAND;
 export const isIn = (n) => n?.type === NODE_TYPES.IN;
 export const isIs = (n) => n?.type === NODE_TYPES.IS;
+export const isSpread = (n) => n?.type === NODE_TYPES.SPREAD;
 export const isGroup = (n) => n?.type === NODE_TYPES.GROUP;
 export const isSub = (n) => n?.type === NODE_TYPES.SUB;
 export const isMul = (n) => n?.type === NODE_TYPES.MUL;
@@ -577,6 +582,7 @@ export const nodes = Object.freeze({
   array,
   dict,
   pair,
+  spread,
   keywordArgs,
 
   // Extension creators
@@ -643,6 +649,7 @@ export const nodes = Object.freeze({
   isCompareOperand,
   isIn,
   isIs,
+  isSpread,
   isGroup,
   isSub,
   isMul,

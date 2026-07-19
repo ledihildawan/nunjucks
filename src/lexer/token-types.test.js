@@ -80,7 +80,7 @@ describe('TOKEN_TYPES map', () => {
     expect(TOKEN_TYPES.REGEX).toBe('regex');
   });
 
-  test('has exactly 26 entries', () => {
-    expect(Object.keys(TOKEN_TYPES)).toHaveLength(26);
+  test('has exactly 27 entries', () => {
+    expect(Object.keys(TOKEN_TYPES)).toHaveLength(27);
   });
 });

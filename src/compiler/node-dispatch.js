@@ -33,6 +33,7 @@ import {
   compileNot,
   compileNeg,
   compilePos,
+  compileSpread,
 } from './expression-compiler/index.js';
 
 import {
@@ -83,6 +84,7 @@ export const COMPILE_FUNCTIONS = {
   pow: compilePow,
   neg: compileNeg,
   pos: compilePos,
+  spread: compileSpread,
   compare: compileCompare,
   lookupVal: compileLookupVal,
   optionalChain: compileOptionalChain,

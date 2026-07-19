@@ -8,6 +8,7 @@ export {
   compilePair,
   compileKeywordArgs,
   compileAggregate,
+  compileSpread,
 } from './container.js';
 
 export { compileFunCall } from './fun-call.js';
