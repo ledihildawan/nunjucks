@@ -10,6 +10,17 @@ const emitLocationGuard = (ctx, location) => {
   ctx._emit('(lineno = ' + location.lineno + ', colno = ' + location.colno + ', ');
 };
 
+const getTargetName = (node) => {
+  if (!node) return null;
+  if (nodes.isSymbol(node)) return node.value;
+  if (nodes.isLookupVal(node)) {
+    const parentName = getTargetName(node.target);
+    const propName = nodes.isLiteral(node.val) ? node.val.value : null;
+    if (parentName && propName) return `${parentName}.${propName}`;
+  }
+  return null;
+};
+
 export const compileLookupVal = (ctx, node, frame) => {
   const location = locationFor(node.val, node);
   emitLocationGuard(ctx, location);
@@ -37,10 +48,16 @@ export const compileLookupVal = (ctx, node, frame) => {
     }
     ctx._emit(')');
   } else {
+    const parentName = getTargetName(node.target);
     ctx._emit('runtime.memberLookup((');
     ctx._compileExpression(node.target, frame);
     ctx._emit('),');
     ctx._compileExpression(node.val, frame);
+    if (parentName !== null) {
+      ctx._emit(`, ${JSON.stringify(parentName)}`);
+    } else {
+      ctx._emit(', null');
+    }
     ctx._emit(')');
   }
 

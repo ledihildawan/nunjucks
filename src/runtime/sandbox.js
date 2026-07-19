@@ -226,11 +226,14 @@ export const createSandboxedContext = (context, sandboxEnabled, options = {}) =>
   });
 };
 
-export const wrapMemberAccess = (obj, val, sandboxEnabled, options = {}) => {
+export const wrapMemberAccess = (obj, val, sandboxEnabled, options = {}, parentName = null) => {
   const sandboxOptions = resolveSandboxOptions(options);
   const { allowlist, blocklistMode, topLevel = false } = { ...sandboxOptions, topLevel: options.topLevel ?? false };
-  
+
   if (!sandboxEnabled) {
+    if (!isNonNullish(obj)) {
+      return { __nunjucks_null__: true, __nunjucks_parent__: parentName, __access_path__: val };
+    }
     return obj?.[val];
   }
 
@@ -246,8 +249,19 @@ export const wrapMemberAccess = (obj, val, sandboxEnabled, options = {}) => {
     throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, val, sandboxOptions);
   }
 
-  if (!isNonNullish(obj) || !hasOwn(obj, val)) {
-    return undefined;
+  if (!isNonNullish(obj)) {
+    return { __nunjucks_null__: true, __nunjucks_parent__: parentName, __access_path__: val };
+  }
+
+  if (!hasOwn(obj, val)) {
+    const callable = () => undefined;
+    Object.setPrototypeOf(callable, null);
+    Object.assign(callable, {
+      __nunjucks_prop_not_found__: true,
+      __nunjucks_parent__: parentName,
+      __access_path__: val
+    });
+    return callable;
   }
 
   const value = obj[val];

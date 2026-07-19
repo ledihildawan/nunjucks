@@ -195,8 +195,13 @@ describe('wrapMemberAccess', () => {
   });
 
   test('handles null/undefined target', () => {
-    expect(wrapMemberAccess(null, 'name', true)).toBe(undefined);
-    expect(wrapMemberAccess(undefined, 'name', true)).toBe(undefined);
+    const nullResult = wrapMemberAccess(null, 'name', true);
+    expect(nullResult).toBeDefined();
+    expect(nullResult.__nunjucks_null__).toBe(true);
+    expect(nullResult.__access_path__).toBe('name');
+    const undefinedResult = wrapMemberAccess(undefined, 'name', true);
+    expect(undefinedResult.__nunjucks_null__).toBe(true);
+    expect(undefinedResult.__access_path__).toBe('name');
   });
 
   test('wraps functions in object', () => {

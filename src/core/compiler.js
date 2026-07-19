@@ -196,8 +196,8 @@ export const execute = async (code, context = {}, config = {}) => {
       blocklistMode: config.sandboxMode !== 'allowlist',
       environment: config.sandboxEnvironment || 'auto'
     };
-    runtime.memberLookup = (obj, val) => wrapMemberAccess(obj, val, true, sandboxOptions);
-    runtime.optionalMemberLookup = (obj, val) => obj == null ? undefined : wrapMemberAccess(obj, val, true, sandboxOptions);
+    runtime.memberLookup = (obj, val, parentName = null) => wrapMemberAccess(obj, val, true, sandboxOptions, parentName);
+    runtime.optionalMemberLookup = (obj, val, parentName = null) => wrapMemberAccess(obj, val, true, sandboxOptions, parentName);
   }
 
   if (config.env) {

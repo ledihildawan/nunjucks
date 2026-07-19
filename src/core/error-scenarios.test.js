@@ -11,7 +11,7 @@ const renderTemplate = async (template, context = {}, config = {}) => {
 };
 
 describe('error messages - real scenarios', () => {
-  test('Variable "user.something" is not defined - has correct causes/fix', async () => {
+  test('Variable "user.something" output', async () => {
     const err = await renderTemplate('{{ user.something }}', { user: { name: 'Ada' } }).catch(e => e);
 
     expect(err.code).toBe('UNDEFINED_PROPERTY');
@@ -27,6 +27,50 @@ describe('error messages - real scenarios', () => {
     const text = err.output({ format: 'text', verbosity: 'full' });
     expect(text).toContain('Possible Causes');
     expect(text).toContain('Suggested Fix');
+  });
+
+  test('Variable "user.something" with user=undefined throws NULL_VALUE not UNDEFINED_VARIABLE', async () => {
+    const err = await renderTemplate('{{ user.something }}', { user: undefined }).catch(e => e);
+
+    expect(err.code).toBe('NULL_VALUE');
+    expect(err.subject).toBe('something');
+    expect(err.message).toContain("Cannot access 'something' on null 'user'");
+    expect(err.message).not.toContain("is not defined");
+    expect(err.message).not.toContain('user.something is not defined');
+
+    const text = err.output({ format: 'text', verbosity: 'full' });
+    expect(text).toContain('Possible Causes');
+    expect(text).toContain('Suggested Fix');
+    expect(text).not.toContain('user.something is not defined');
+  });
+
+  test('Variable "user.something" with user=null throws NULL_VALUE', async () => {
+    const err = await renderTemplate('{{ user.something }}', { user: null }).catch(e => e);
+
+    expect(err.code).toBe('NULL_VALUE');
+    expect(err.subject).toBe('something');
+    expect(err.message).toContain("Cannot access 'something' on null 'user'");
+  });
+
+  test('Variable "missing" with no user at all throws UNDEFINED_VARIABLE', async () => {
+    const err = await renderTemplate('{{ missing }}', {}).catch(e => e);
+
+    expect(err.code).toBe('UNDEFINED_VARIABLE');
+    expect(err.subject).toBe('missing');
+    expect(err.message).toContain("Variable 'missing' is not defined");
+  });
+
+  test('sandbox-context-error route scenario produces correct NULL_VALUE', async () => {
+    const err = await renderTemplate(
+      '{{ user.something }}',
+      { user: undefined },
+      { sandbox: true }
+    ).catch(e => e);
+
+    expect(err.code).toBe('NULL_VALUE');
+    expect(err.message).toContain('something');
+    expect(err.message).toContain('user');
+    expect(err.message).not.toContain('user.something is not defined');
   });
 
   test('UNDEFINED_VARIABLE has helpful suggestion', async () => {
