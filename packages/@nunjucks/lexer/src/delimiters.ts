@@ -14,6 +14,8 @@ export const COMPLEX_OPERATORS = [
   '||=', '&&=', '??=', '|>', '..', '...', '**=', '//=', ':=', '<<', '>>', '++', '--'
 ] as const;
 
+export type ComplexOperator = typeof COMPLEX_OPERATORS[number];
+
 export const REGEX_FLAGS = ['g', 'i', 'm', 'y'] as const;
 
 export interface Delimiters {
@@ -33,5 +35,3 @@ export const createDelimiters = (tags: Record<string, string> = {}): Delimiters 
   COMMENT_START: tags.commentStart || DEFAULT_COMMENT_START,
   COMMENT_END: tags.commentEnd || DEFAULT_COMMENT_END,
 });
-
-export type ComplexOperator = typeof COMPLEX_OPERATORS[number];

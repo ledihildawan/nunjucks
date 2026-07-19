@@ -1,3 +1,3 @@
 export * from './token-types';
 export * from './delimiters';
-export * from './tokenizer';
+export { createToken, createOperatorToken, createNumberToken, lex, createTokenizer } from './tokenizer';
