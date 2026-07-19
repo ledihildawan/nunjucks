@@ -3,7 +3,7 @@ import {
   TOKEN_LEFT_PAREN,
   TOKEN_OPERATOR,
 } from '../../lexer/token-types.js';
-import { nextToken, peekToken } from '../cursor.js';
+import { nextToken, peekToken, fail } from '../cursor.js';
 import { parseFunCall } from './fun-call.js';
 import { parseBracketAccess } from './lookup.js';
 import { parseDotAccess } from './dot.js';
@@ -23,6 +23,12 @@ export const parsePostfix = (ctx, node) => {
       node = parseDotAccess(ctx, tok, node);
     } else if (tok.type === TOKEN_OPERATOR && tok.value === '?.') {
       node = parseOptionalChain(ctx, tok, node);
+    } else if (tok.type === TOKEN_OPERATOR && tok.value === '|') {
+      fail(ctx,
+        'Invalid operator "|". Use "|>" for pipeline/filter. ' +
+        'Example: {{ value |> filterName }} instead of {{ value | filterName }}',
+        tok.lineno,
+        tok.colno);
     } else {
       break;
     }

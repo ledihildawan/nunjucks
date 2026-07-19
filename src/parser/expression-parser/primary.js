@@ -7,6 +7,7 @@ import {
   TOKEN_REGEX,
   TOKEN_SYMBOL,
   TOKEN_TEMPLATE_LITERAL,
+  TOKEN_OPERATOR,
 } from '../../lexer/token-types.js';
 import { nodes } from '../../nodes/index.js';
 import { nextToken, pushToken, fail } from '../cursor.js';
@@ -38,6 +39,12 @@ export const parsePrimary = (ctx, noPostfix) => {
     val = null;
   } else if (tok.type === TOKEN_REGEX) {
     val = new RegExp(tok.value.body, tok.value.flags);
+  } else if (tok.type === TOKEN_OPERATOR && tok.value === '|') {
+    fail(ctx,
+      'Invalid operator "|". Use "|>" for pipeline/filter. ' +
+      'Example: {{ value |> filterName }} instead of {{ value | filterName }}',
+      tok.lineno,
+      tok.colno);
   }
 
   if (val !== undefined) {
