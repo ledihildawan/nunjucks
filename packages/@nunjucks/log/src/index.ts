@@ -1,7 +1,6 @@
-export { createLog } from './create-log.ts';
+export { createLog, isTemplateError, prettifyError } from './create-log.ts';
 export { toHtml, toAnsi, toText, toConsoleString, CSS, PRODUCTION_BODY, TOGGLE_SCRIPT } from './render/index.ts';
 export { classify, classifyFromError } from './errors/classify.ts';
-export { prettifyError, createTemplateError, isTemplateError } from './errors/template-error.ts';
 export { injectWarningsScript } from './warning/collector.ts';
 export { ERROR_DEFINITIONS, ERRORS, PATTERNS, RULES, DEFAULT_CLASSIFICATION } from './errors/registry.ts';
 export { normalizeLogMetadata, createFormatterState } from './render/internal/metadata.ts';

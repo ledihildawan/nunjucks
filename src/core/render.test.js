@@ -250,8 +250,8 @@ describe('inline template error locations', () => {
     const err = await render('{{ product.name }}', { product: { test: 'test' } }, { dev: true, undefined: 'strict', jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e); // MISSING_PROPERTY_LOCATION_MARKER
     const callerLine = source[err.lineno - 1];
 
-    expect(err.code).toBe('UNDEFINED_VARIABLE');
-    expect(err.subject).toBe('product.name');
+    expect(err.code).toBe('UNDEFINED_PROPERTY');
+    expect(err.subject).toBe('name');
     expect(err.lineBase).toBe('one');
     expect(err.templateName).toBe(filePath);
     expect(err.colno).toBe(callerLine.indexOf('product.name') + 'product.'.length + 1);

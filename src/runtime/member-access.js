@@ -13,7 +13,11 @@ export function memberLookup(obj, val, parentName = null) {
   }
 
   if (!Object.prototype.hasOwnProperty.call(obj, val) && !(val in obj)) {
-    return { [PROP_NOT_FOUND]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
+    const marker = { [PROP_NOT_FOUND]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
+    const callable = () => undefined;
+    Object.setPrototypeOf(callable, null);
+    Object.assign(callable, marker);
+    return callable;
   }
 
   if (isFunction(obj[val])) {
@@ -28,7 +32,7 @@ export function isNullAccessResult(val) {
 }
 
 export function isPropertyNotFoundResult(val) {
-  return val && typeof val === 'object' && val[PROP_NOT_FOUND] === true;
+  return val && (val[PROP_NOT_FOUND] === true);
 }
 
 export function getNullParentName(val) {
@@ -41,11 +45,11 @@ export function getAccessPath(val) {
 
 export function optionalMemberLookup(obj, val, parentName = null) {
   if (obj == null) {
-    return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
+    return undefined;
   }
 
   if (!Object.prototype.hasOwnProperty.call(obj, val) && !(val in obj)) {
-    return { [PROP_NOT_FOUND]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
+    return undefined;
   }
 
   if (isFunction(obj[val])) {

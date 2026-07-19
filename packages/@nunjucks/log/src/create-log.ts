@@ -1,6 +1,6 @@
-import { isFunction, isString } from 'remeda';
+import { isFunction, isString, pipe, isNonNullish } from 'remeda';
 import type { LineBase } from './render/internal/location.ts';
-import { normalizeLineBase } from './render/internal/location.ts';
+import { normalizeLineBase, formatLocationAnnotation } from './render/internal/location.ts';
 import { createFormatterState } from './render/internal/metadata.ts';
 
 export interface ErrorDefinitionEntry {
@@ -62,9 +62,12 @@ export interface TemplateError extends Error {
   lineBase?: LineBase | null;
   sourceContent?: string;
   sourceStartLine?: number;
+  firstUpdate?: boolean;
   toJSON?: () => Record<string, unknown>;
   outputOptions?: Omit<OutputOptions, 'format'>;
   output: (options?: OutputOptions) => { html: string; ansi: string; text: string } | string;
+  applyLocation?: (path: string | undefined, includeChain?: IncludeChain) => TemplateError;
+  _includeChain?: IncludeChain;
 }
 
 export interface TemplateWarning {
@@ -241,4 +244,84 @@ export function createLog(
   const warn: TemplateWarning = { message: resolveMessage(errorDef.message, paramsValue), code: errorDef.name, subject: subject ?? null, ...normalizedWarning, output: null! };
   warn.output = createOutputFn('warning');
   return warn;
+}
+
+const TEMPLATE_ERROR = Symbol('TemplateError');
+
+export function isTemplateError(obj: unknown): obj is TemplateError {
+  return (obj as TemplateError)?.[TEMPLATE_ERROR] === true;
+}
+
+interface IncludeChain {
+  parentTmpl: string;
+  parentLineno: number;
+  parentColno?: number | null;
+}
+
+interface PrettifyErrorOptions {
+  path?: string;
+  withInternals?: boolean;
+  err: Error | TemplateError;
+  includeChain?: IncludeChain;
+}
+
+const asTemplateError = (err: Error | TemplateError): TemplateError => {
+  if (isTemplateError(err)) return err;
+  return createLog('error', { name: err.code ?? 'ERROR', message: err.message }, undefined, err.subject, {
+    lineno: err.lineno ?? null,
+    colno: err.colno ?? null,
+    phase: err.phase ?? 'render',
+    templateName: err.templateName ?? null,
+    lineBase: err.lineBase ?? 'zero'
+  });
+};
+
+const withLocation = ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) => (err: TemplateError): TemplateError => {
+  err.applyLocation = function(path: string | undefined, includeChain?: IncludeChain): TemplateError {
+    let msg = '(' + (path || 'unknown path') + ')';
+    if (this.firstUpdate) {
+      const annotation = formatLocationAnnotation(this.lineno, this.colno, this.lineBase);
+      if (annotation) msg += ` ${annotation}`;
+    }
+    if (includeChain && this.firstUpdate) {
+      msg += `\n   (included from ${includeChain.parentTmpl}:${includeChain.parentLineno}${includeChain.parentColno ? ':' + includeChain.parentColno : ''})`;
+    }
+    msg += '\n ';
+    if (this.firstUpdate) {
+      msg += ' ';
+    }
+    this.message = msg + (this.message || '');
+    this.firstUpdate = false;
+    return this;
+  };
+  err.templateName = err.templateName || path;
+  if (includeChain) {
+    err._includeChain = includeChain;
+  }
+  return err;
+};
+
+const stripInternals = (path?: string) => (err: TemplateError): TemplateError => {
+  const clean = new Error(err.message) as TemplateError;
+  clean.name = err.name;
+  clean.lineno = err.lineno;
+  clean.colno = err.colno;
+  clean.path = err.path || path;
+  clean.templateName = err.templateName || path;
+  clean.code = err.code;
+  clean.subject = err.subject;
+  clean.phase = err.phase;
+  clean.lineBase = err.lineBase ?? 'zero';
+  if (err._includeChain) {
+    clean._includeChain = err._includeChain;
+  }
+  return clean;
+};
+
+export function prettifyError(options: PrettifyErrorOptions): TemplateError {
+  const { path, withInternals, err, includeChain } = options;
+  if (withInternals) {
+    return pipe(err, asTemplateError, withLocation({ path, includeChain })) as TemplateError;
+  }
+  return pipe(err, asTemplateError, withLocation({ path, includeChain }), stripInternals(path)) as TemplateError;
 }

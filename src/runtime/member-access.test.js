@@ -2,12 +2,15 @@ import { describe, test, expect } from 'bun:test';
 import {
   memberLookup, optionalMemberLookup,
   slice, nullishCoalesce,
+  isNullAccessResult,
 } from './member-access.js';
 
 describe('memberLookup', () => {
-  test('returns undefined for null/undefined object', () => {
-    expect(memberLookup(null, 'key')).toBeUndefined();
-    expect(memberLookup(undefined, 'key')).toBeUndefined();
+  test('returns null marker for null/undefined object', () => {
+    const result = memberLookup(null, 'key');
+    expect(isNullAccessResult(result)).toBe(true);
+    expect(result.__nunjucks_parent__).toBe(null);
+    expect(result.__access_path__).toBe('key');
   });
 
   test('gets property value', () => {
@@ -26,8 +29,9 @@ describe('memberLookup', () => {
     expect(proxy()).toBe('test');
   });
 
-  test('returns undefined for missing key', () => {
-    expect(memberLookup({}, 'missing')).toBeUndefined();
+  test('returns callable proxy for missing key that returns undefined when called', () => {
+    const result = memberLookup({}, 'missing');
+    expect(result()).toBeUndefined();
   });
 });
 

@@ -172,10 +172,10 @@ describe('callWrap', () => {
     expect(callWrap(fn, 'test', 'test()', ctx, ['x', 'y'])).toBe('r:xy');
   });
 
-  test('throws UNDEFINED_FUNCTION for null/undefined obj', () => {
-    expect(() => callWrap(null, 'foo', 'foo()', {}, [], 1, 2)).toThrow("Function 'foo()' is not defined");
+  test('throws NULL_VALUE for null/undefined obj', () => {
+    expect(() => callWrap(null, 'foo', 'foo()', {}, [], 1, 2)).toThrow("Cannot access 'foo' on null");
     try { callWrap(null, 'foo', 'foo()', {}, [], 1, 2); } catch (e) {
-      expect(e.code).toBe('UNDEFINED_FUNCTION');
+      expect(e.code).toBe('NULL_VALUE');
     }
   });
 

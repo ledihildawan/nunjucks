@@ -115,18 +115,59 @@ export function awaitValue(val) {
 }
 
 export function ensureDefined(val, lineno, colno, varName = null, templateName = null, undefinedMode = 'chainable') {
-  if (isPropertyNotFoundResult(val)) {
+  if (isPropertyNotFoundResult(val) || isNullAccessResult(val)) {
     const ctx = (this && this.logContext) ? this.logContext : { templateName: null, phase: 'render' };
     const effectiveTemplateName = templateName || ctx.templateName || 'inline';
-    const accessPath = val.__access_path__ || varName || 'unknown';
 
-    let parentName = val.__nunjucks_parent__;
-    if (!parentName && varName && varName.includes('.')) {
-      const lastDot = varName.lastIndexOf('.');
-      parentName = varName.substring(0, lastDot);
+    if (isPropertyNotFoundResult(val)) {
+      const accessPath = val.__access_path__ || varName || 'unknown';
+      let parentName = val.__nunjucks_parent__;
+      if (!parentName && varName && varName.includes('.')) {
+        const lastDot = varName.lastIndexOf('.');
+        parentName = varName.substring(0, lastDot);
+      }
+
+      if (undefinedMode === 'strict') {
+        throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_PROPERTY, { property: accessPath, parent: parentName || 'unknown' }, accessPath, { lineno, colno, phase: ctx.phase || 'render', templateName: effectiveTemplateName, lineBase: 'zero' });
+      }
+
+      if (undefinedMode === 'debug') {
+        const warning = createLog('warning', {
+          name: 'UNDEFINED_PROPERTY',
+          message: () => `Property '${accessPath}' not found in '${parentName || 'unknown'}'`,
+          pattern: /./
+        }, {}, accessPath, { lineno, colno, phase: ctx.phase || 'render', templateName: effectiveTemplateName, undefinedMode, varName: accessPath, lineBase: 'zero' });
+        if (this && this.__warnings__) {
+          this.__warnings__.push(warning);
+        } else {
+          console.warn(warning.output({ verbosity: 'medium', dev: true }));
+        }
+      }
+
+      return 'undefined';
     }
 
-    throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_PROPERTY, { property: accessPath, parent: parentName || 'unknown' }, accessPath, { lineno, colno, phase: ctx.phase || 'render', templateName: effectiveTemplateName, lineBase: 'zero' });
+    const accessPath = val.__access_path__ || varName || 'unknown';
+    const parentName = val.__nunjucks_parent__ || varName || 'unknown';
+
+    if (undefinedMode === 'strict') {
+      throw createLog('error', ERROR_DEFINITIONS.NULL_VALUE, { accessPath, state: 'null', parent: parentName }, accessPath, { lineno, colno, phase: ctx.phase || 'render', templateName: effectiveTemplateName, lineBase: 'zero' });
+    }
+
+    if (undefinedMode === 'debug') {
+      const warning = createLog('warning', {
+        name: 'NULL_VALUE',
+        message: () => `Cannot access '${accessPath}' on null '${parentName}'`,
+        pattern: /./
+      }, {}, accessPath, { lineno, colno, phase: ctx.phase || 'render', templateName: effectiveTemplateName, undefinedMode, varName: accessPath, lineBase: 'zero' });
+      if (this && this.__warnings__) {
+        this.__warnings__.push(warning);
+      } else {
+        console.warn(warning.output({ verbosity: 'medium', dev: true }));
+      }
+    }
+
+    return 'undefined';
   }
 
   if (!isNonNullish(val)) {
