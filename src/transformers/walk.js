@@ -75,6 +75,12 @@ const CONSTRUCTOR_MAP = {
   spread: nodes.spread,
   walrus: nodes.walrus,
   templateLiteral: nodes.templateLiteral,
+  arrayPattern: nodes.arrayPattern,
+  objectPattern: nodes.objectPattern,
+  patternProperty: nodes.patternProperty,
+  restPattern: nodes.restPattern,
+  assignmentPattern: nodes.assignmentPattern,
+  hole: nodes.hole,
 };
 
 export const mapCOW = (arr, func) => {

@@ -83,6 +83,12 @@ export const NODE_TYPES = Object.freeze({
   BITWISE_NOT: 'bitwiseNot',
   INCREMENT: 'increment',
   DECREMENT: 'decrement',
+  ARRAY_PATTERN: 'arrayPattern',
+  OBJECT_PATTERN: 'objectPattern',
+  PATTERN_PROPERTY: 'patternProperty',
+  REST_PATTERN: 'restPattern',
+  ASSIGNMENT_PATTERN: 'assignmentPattern',
+  HOLE: 'hole',
 });
 
 // ============================================
@@ -262,6 +268,25 @@ export const increment = (lineno, colno, target, isPostfix) =>
 
 export const decrement = (lineno, colno, target, isPostfix) =>
   createNode(NODE_TYPES.DECREMENT, lineno, colno, { target, isPostfix });
+
+// Destructuring pattern nodes
+export const arrayPattern = (lineno, colno, children = []) =>
+  createNodeWithChildren(NODE_TYPES.ARRAY_PATTERN, lineno, colno, children);
+
+export const objectPattern = (lineno, colno, children = []) =>
+  createNodeWithChildren(NODE_TYPES.OBJECT_PATTERN, lineno, colno, children);
+
+export const patternProperty = (lineno, colno, key, value) =>
+  createNode(NODE_TYPES.PATTERN_PROPERTY, lineno, colno, { key, value });
+
+export const restPattern = (lineno, colno, target) =>
+  createNode(NODE_TYPES.REST_PATTERN, lineno, colno, { target });
+
+export const assignmentPattern = (lineno, colno, target, defaultVal) =>
+  createNode(NODE_TYPES.ASSIGNMENT_PATTERN, lineno, colno, { target, value: defaultVal });
+
+export const hole = (lineno, colno) =>
+  createNode(NODE_TYPES.HOLE, lineno, colno, {});
 
 // Type checks
 export const is = (lineno, colno, left, right) => createNode(NODE_TYPES.IS, lineno, colno, { left, right });
@@ -517,6 +542,19 @@ export const isMod = (n) => n?.type === NODE_TYPES.MOD;
 export const isPow = (n) => n?.type === NODE_TYPES.POW;
 export const isNeg = (n) => n?.type === NODE_TYPES.NEG;
 export const isPos = (n) => n?.type === NODE_TYPES.POS;
+export const isArrayPattern = (n) => n?.type === NODE_TYPES.ARRAY_PATTERN;
+export const isObjectPattern = (n) => n?.type === NODE_TYPES.OBJECT_PATTERN;
+export const isPatternProperty = (n) => n?.type === NODE_TYPES.PATTERN_PROPERTY;
+export const isRestPattern = (n) => n?.type === NODE_TYPES.REST_PATTERN;
+export const isAssignmentPattern = (n) => n?.type === NODE_TYPES.ASSIGNMENT_PATTERN;
+export const isHole = (n) => n?.type === NODE_TYPES.HOLE;
+export const isPattern = (n) =>
+  isArrayPattern(n) ||
+  isObjectPattern(n) ||
+  isRestPattern(n) ||
+  isAssignmentPattern(n) ||
+  isSymbol(n) ||
+  isHole(n);
 
 // ============================================
 // HELPERS
@@ -602,6 +640,14 @@ export const nodes = Object.freeze({
   // Increment/Decrement creators
   increment,
   decrement,
+
+  // Destructuring pattern creators
+  arrayPattern,
+  objectPattern,
+  patternProperty,
+  restPattern,
+  assignmentPattern,
+  hole,
 
   // Type check creators
   is,
@@ -717,6 +763,13 @@ export const nodes = Object.freeze({
   isPow,
   isNeg,
   isPos,
+  isArrayPattern,
+  isObjectPattern,
+  isPatternProperty,
+  isRestPattern,
+  isAssignmentPattern,
+  isHole,
+  isPattern,
 
   // Helpers
   getNodeTypeName,

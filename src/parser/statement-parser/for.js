@@ -3,6 +3,7 @@ import {
   nodes,
 } from '../../nodes/index.js';
 import { peekToken, skip, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
+import { tryParsePattern } from '../node-parsers/index.js';
 
 export const parseFor = (ctx) => {
   const forTok = peekToken(ctx);
@@ -16,21 +17,26 @@ export const parseFor = (ctx) => {
     fail(ctx, 'parseFor: expected for', forTok.lineno, forTok.colno);
   }
 
-  node.name = ctx.parsePrimary();
+  const patternNode = tryParsePattern(ctx);
+  if (patternNode) {
+    node.name = patternNode;
+  } else {
+    node.name = ctx.parsePrimary();
 
-  if (!nodes.isSymbol(node.name)) {
-    fail(ctx, 'parseFor: variable name expected for loop');
-  }
+    if (!nodes.isSymbol(node.name)) {
+      fail(ctx, 'parseFor: variable name expected for loop');
+    }
 
-  const type = peekToken(ctx).type;
-  if (type === TOKEN_COMMA) {
-    const key = node.name;
-    node.name = nodes.array(key.lineno, key.colno);
-    node.name.addChild(key);
+    const type = peekToken(ctx).type;
+    if (type === TOKEN_COMMA) {
+      const key = node.name;
+      node.name = nodes.array(key.lineno, key.colno);
+      node.name.addChild(key);
 
-    while (skip(ctx, TOKEN_COMMA)) {
-      const prim = ctx.parsePrimary();
-      node.name.addChild(prim);
+      while (skip(ctx, TOKEN_COMMA)) {
+        const prim = ctx.parsePrimary();
+        node.name.addChild(prim);
+      }
     }
   }
 

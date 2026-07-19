@@ -5,6 +5,7 @@ import {
 } from '../../lexer/token-types.js';
 import { nodes } from '../../nodes/index.js';
 import { peekToken, skip, skipValue, skipSymbol, advanceAfterBlockEnd, fail } from '../cursor.js';
+import { tryParsePattern } from '../node-parsers/index.js';
 
 export const parseSet = (ctx) => {
   const tag = peekToken(ctx);
@@ -14,12 +15,17 @@ export const parseSet = (ctx) => {
 
   const node = nodes.set(tag.lineno, tag.colno, []);
 
-  let target;
-  while ((target = ctx.parsePrimary())) {
-    node.targets.push(target);
+  const patternNode = tryParsePattern(ctx);
+  if (patternNode) {
+    node.targets.push(patternNode);
+  } else {
+    let target;
+    while ((target = ctx.parsePrimary())) {
+      node.targets.push(target);
 
-    if (!skip(ctx, TOKEN_COMMA)) {
-      break;
+      if (!skip(ctx, TOKEN_COMMA)) {
+        break;
+      }
     }
   }
 

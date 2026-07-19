@@ -1,4 +1,5 @@
 import { nodes } from '../../nodes/index.js';
+import { compileDestructuring } from './pattern.js';
 
 const emitLoopBindings = (ctx, arr, i, len) => {
   const bindings = [
@@ -16,6 +17,13 @@ const emitLoopBindings = (ctx, arr, i, len) => {
   });
 };
 
+const isArrayBinding = (n) =>
+  nodes.isArray(n) ||
+  nodes.isArrayPattern(n) ||
+  nodes.isObjectPattern(n);
+
+const isFlatArrayBinding = (n) => nodes.isArray(n);
+
 export const compileFor = (ctx, node, frame) => {
   const i = ctx._tmpid();
   const len = ctx._tmpid();
@@ -31,19 +39,26 @@ export const compileFor = (ctx, node, frame) => {
   ctx._emit(`if(${arr}) {`);
   ctx._emitLine(arr + ' = runtime.fromIterator(' + arr + ');');
 
-  if (nodes.isArray(node.name)) {
+  if (isArrayBinding(node.name)) {
     ctx._emitLine(`let ${i};`);
 
-    ctx._emitLine(`if(runtime.isArray(${arr})) {`);
+    ctx._emitLine(`if(Array.isArray(${arr})) {`);
     ctx._emitLine(`let ${len} = ${arr}.length;`);
     ctx._emitLine(`for(${i}=0; ${i} < ${arr}.length; ${i}++) {`);
 
-    node.name.children.forEach((child, u) => {
-      const tid = ctx._tmpid();
-      ctx._emitLine(`let ${tid} = ${arr}[${i}][${u}];`);
-      ctx._emitLine(`frame.set("${child}", ${arr}[${i}][${u}]);`);
-      frame.set(node.name.children[u].value, tid);
-    });
+    const itemId = ctx._tmpid();
+    ctx._emitLine(`let ${itemId} = ${arr}[${i}];`);
+
+    if (isFlatArrayBinding(node.name)) {
+      node.name.children.forEach((child, u) => {
+        const tid = ctx._tmpid();
+        ctx._emitLine(`let ${tid} = ${itemId}[${u}];`);
+        ctx._emitLine(`frame.set("${child.value}", ${tid});`);
+        frame.set(child.value, tid);
+      });
+    } else {
+      compileDestructuring(ctx, frame, node.name, itemId);
+    }
 
     emitLoopBindings(ctx, arr, i, len);
     ctx._withScopedSyntax(() => {
@@ -51,26 +66,43 @@ export const compileFor = (ctx, node, frame) => {
     });
     ctx._emitLine('}');
 
-    ctx._emitLine('} else {');
-    const [key, val] = node.name.children;
-    const k = ctx._tmpid();
-    const v = ctx._tmpid();
-    frame.set(key.value, k);
-    frame.set(val.value, v);
+    ctx._emitLine(`} else if (typeof ${arr} === "object") {`);
+    if (isFlatArrayBinding(node.name)) {
+      const [key, val] = node.name.children;
+      const k = ctx._tmpid();
+      const v = ctx._tmpid();
+      frame.set(key.value, k);
+      frame.set(val.value, v);
 
-    ctx._emitLine(`${i} = -1;`);
-    ctx._emitLine(`let ${len} = runtime.keys(${arr}).length;`);
-    ctx._emitLine(`for(let ${k} in ${arr}) {`);
-    ctx._emitLine(`${i}++;`);
-    ctx._emitLine(`let ${v} = ${arr}[${k}];`);
-    ctx._emitLine(`frame.set("${key.value}", ${k});`);
-    ctx._emitLine(`frame.set("${val.value}", ${v});`);
+      ctx._emitLine(`${i} = -1;`);
+      ctx._emitLine(`let ${len} = runtime.keys(${arr}).length;`);
+      ctx._emitLine(`for(let ${k} in ${arr}) {`);
+      ctx._emitLine(`${i}++;`);
+      ctx._emitLine(`let ${v} = ${arr}[${k}];`);
+      ctx._emitLine(`frame.set("${key.value}", ${k});`);
+      ctx._emitLine(`frame.set("${val.value}", ${v});`);
 
-    emitLoopBindings(ctx, arr, i, len);
-    ctx._withScopedSyntax(() => {
-      ctx.compile(node.body, frame);
-    });
-    ctx._emitLine('}');
+      emitLoopBindings(ctx, arr, i, len);
+      ctx._withScopedSyntax(() => {
+        ctx.compile(node.body, frame);
+      });
+      ctx._emitLine('}');
+    } else {
+      ctx._emitLine(`${i} = -1;`);
+      ctx._emitLine(`let ${len} = runtime.keys(${arr}).length;`);
+      const k = ctx._tmpid();
+      ctx._emitLine(`for(const ${k} in ${arr}) {`);
+      ctx._emitLine(`${i}++;`);
+      const itemId = ctx._tmpid();
+      ctx._emitLine(`let ${itemId} = ${arr}[${k}];`);
+      compileDestructuring(ctx, frame, node.name, itemId);
+
+      emitLoopBindings(ctx, arr, i, len);
+      ctx._withScopedSyntax(() => {
+        ctx.compile(node.body, frame);
+      });
+      ctx._emitLine('}');
+    }
 
     ctx._emitLine('}');
   } else {

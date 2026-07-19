@@ -1,6 +1,7 @@
 import { createLog } from '@nunjucks/log';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { nodes } from '../../nodes/index.js';
+import { compileDestructuring } from './pattern.js';
 
 const getSetTarget = (target) => {
   if (nodes.isSymbol(target) || typeof target?.value === 'string') {
@@ -30,7 +31,31 @@ const getSetTarget = (target) => {
   };
 };
 
+const hasPatternTarget = (node) => {
+  return node.targets.some(t =>
+    nodes.isArrayPattern(t) || nodes.isObjectPattern(t)
+  );
+};
+
 export const compileSet = (ctx, node, frame) => {
+  if (hasPatternTarget(node) && !node.body && !node.operator) {
+    if (node.targets.length > 1) {
+      throw createLog('error', ERROR_DEFINITIONS.SANDBOX_SET, { key: 'destructuring' }, 'destructuring', {
+        lineno: node.lineno,
+        colno: node.colno,
+        phase: 'compile',
+        lineBase: 'zero'
+      });
+    }
+    const pattern = node.targets[0];
+    const valueId = ctx._tmpid();
+    ctx._emitLine(`let ${valueId} = `);
+    ctx._compileExpression(node.value, frame);
+    ctx._emitLine(';');
+    compileDestructuring(ctx, frame, pattern, valueId);
+    return;
+  }
+
   const ids = [];
   const targets = node.targets.map(getSetTarget);
   const isCompoundAssignment = node.operator && node.operator !== '=';

@@ -16,7 +16,7 @@ import {
   error,
   fail,
 } from './cursor.js';
-import { parseAggregate, parseSignature, parseTemplateLiteral } from './node-parsers/index.js';
+import { parseAggregate, parseSignature, parseTemplateLiteral, parsePattern, tryParsePattern } from './node-parsers/index.js';
 import {
   parseExpression,
   parseInlineIf,
@@ -227,6 +227,12 @@ export function createParser(tokens, securityConfig = {}) {
     },
     parseTemplateLiteral: function() {
       return parseTemplateLiteral(this);
+    },
+    parsePattern: function() {
+      return parsePattern(this);
+    },
+    tryParsePattern: function() {
+      return tryParsePattern(this);
     },
     parseSignature: function(tolerant, noParens) {
       return parseSignature(this, tolerant, noParens);
