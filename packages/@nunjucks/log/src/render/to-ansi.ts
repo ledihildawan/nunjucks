@@ -92,6 +92,21 @@ const formatSuggestionAnsi = (suggestion: string | null): string => {
   return `\n${picocolors.bold(picocolors.cyan('💡 Tip:'))} ${stripMarkdown(suggestion)}`;
 };
 
+const formatDocsAnsi = (
+  documentationUrl: string | null,
+  relatedLinks: Array<{ label: string; url: string }>
+): string => {
+  if (!documentationUrl && relatedLinks.length === 0) return '';
+  let out = `\n${picocolors.bold(picocolors.blue('📖 Learn More:'))}`;
+  if (documentationUrl) {
+    out += `\n  ${picocolors.cyan(documentationUrl)}`;
+  }
+  for (const link of relatedLinks) {
+    out += `\n  ${picocolors.cyan(link.label)}: ${link.url}`;
+  }
+  return out;
+};
+
 export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   if (!error) return '';
 
@@ -119,6 +134,7 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
     fixComment?: string | null;
     suggestion?: string | null;
     documentationUrl?: string | null;
+    relatedLinks?: Array<{ label: string; url: string }>;
     severity?: 'error' | 'warning' | 'info';
   };
 
@@ -129,6 +145,8 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   const fixCode = classification.fixCode ?? errObj.fixCode ?? '';
   const fixComment = classification.fixComment ?? errObj.fixComment ?? '';
   const suggestion = classification.suggestion ?? errObj.suggestion ?? null;
+  const documentationUrl = classification.documentationUrl ?? errObj.documentationUrl ?? null;
+  const relatedLinks = classification.relatedLinks ?? errObj.relatedLinks ?? [];
 
   const path = templatePath || (error as { templateName?: string }).templateName || '';
   const displayLineno = lineno ?? (error as { lineno?: number | null }).lineno ?? null;
@@ -222,6 +240,9 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
 
   const sugStr = formatSuggestionAnsi(suggestion);
   if (sugStr) parts.push(sugStr);
+
+  const docsStr = formatDocsAnsi(documentationUrl, relatedLinks);
+  if (docsStr) parts.push(docsStr);
 
   if (options.renderContext && verbosity === 'full') {
     parts.push(renderContextAnsi(options.renderContext));

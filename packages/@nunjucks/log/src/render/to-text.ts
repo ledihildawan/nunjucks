@@ -39,6 +39,8 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
     fixCode?: string | null;
     fixComment?: string | null;
     suggestion?: string | null;
+    documentationUrl?: string | null;
+    relatedLinks?: Array<{ label: string; url: string }>;
     severity?: 'error' | 'warning' | 'info';
   };
 
@@ -49,6 +51,8 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
   const fixCode = classification.fixCode ?? errObj.fixCode ?? '';
   const fixComment = classification.fixComment ?? errObj.fixComment ?? '';
   const suggestion = classification.suggestion ?? errObj.suggestion ?? null;
+  const documentationUrl = classification.documentationUrl ?? errObj.documentationUrl ?? null;
+  const relatedLinks = classification.relatedLinks ?? errObj.relatedLinks ?? [];
 
   const severityLabel = errObj.severity === 'warning' ? 'Warning:' : errObj.severity === 'info' ? 'Info:' : 'Error:';
 
@@ -111,6 +115,13 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
   if (suggestion) {
     parts.push('');
     parts.push(`💡 Tip: ${stripMarkdown(suggestion)}`);
+  }
+
+  if (documentationUrl || relatedLinks.length > 0) {
+    parts.push('');
+    parts.push('Learn More:');
+    if (documentationUrl) parts.push(`  ${documentationUrl}`);
+    relatedLinks.forEach(l => parts.push(`  ${l.label}: ${l.url}`));
   }
 
   if (formattedStack) {

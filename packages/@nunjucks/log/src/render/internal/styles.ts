@@ -140,6 +140,49 @@ export const CSS = `
     min-height: 0;
     overflow: hidden;
   }
+
+  .insight-section {
+    margin-block-end: 2rem;
+  }
+
+  .insight-text {
+    font-size: 0.875rem;
+    color: var(--color-text-primary);
+    line-height: 1.6;
+    text-wrap: pretty;
+    strong { font-weight: 600; }
+    code { font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace; }
+  }
+
+  .docs-list {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+  }
+
+  .docs-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.4375rem 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    text-decoration: none;
+    transition: border-color 0.15s ease-out, color 0.15s ease-out, background-color 0.15s ease-out;
+
+    &:hover {
+      border-color: var(--color-text-secondary);
+      color: light-dark(oklch(45% 0.15 190), oklch(72% 0.13 190));
+      background: var(--color-bg-panel);
+    }
+  }
 }
 
 @layer components {
