@@ -1,4 +1,5 @@
 import picocolors from 'picocolors';
+import { keys, entries, forEachObj } from 'remeda';
 import { shortenPath } from './internal/path-shortener.ts';
 import { toDisplayLocation } from './internal/location.ts';
 import { isFilePath, resolveIdeLink } from './internal/ide-links.ts';
@@ -26,7 +27,7 @@ const sanitizeForAnsi = (value: unknown, seen?: WeakSet<object>): string => {
     if (Array.isArray(value)) {
       return 'Array(' + value.length + ')';
     }
-    return 'Object(' + Object.keys(value).length + ')';
+    return 'Object(' + keys(value).length + ')';
   }
   if (typeof value === 'string') return '"' + value + '"';
   return String(value);
@@ -46,16 +47,16 @@ const renderContextAnsi = (context: Record<string, unknown>): string => {
         return `${prefix}${key}: ${sanitizeForAnsi(value)}`;
       }
       const obj = value as Record<string, unknown>;
-      const keys = Object.keys(obj);
-      if (keys.length === 0) {
+      const k = keys(obj);
+      if (k.length === 0) {
         return `${prefix}${key}: (empty)`;
       }
-      const entries = keys.map(k => `${prefix}  ${k}: ${sanitizeForAnsi(obj[k])}`).join('\n');
-      return `${prefix}${key}:\n${entries}`;
+      const entryStrs = k.map(k => `${prefix}  ${k}: ${sanitizeForAnsi(obj[k])}`).join('\n');
+      return `${prefix}${key}:\n${entryStrs}`;
     }
     return `${prefix}${key}: ${sanitizeForAnsi(value)}`;
   };
-  Object.entries(normalized as Record<string, unknown>).forEach(([key, value]) => {
+  forEachObj(normalized as Record<string, unknown>, (value, key) => {
     lines.push(renderValue(key, value));
   });
   return lines.join('\n');
