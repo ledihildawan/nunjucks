@@ -64,6 +64,8 @@ const CONSTRUCTOR_MAP = {
   compareOperand: nodes.compareOperand,
   callExtension: nodes.callExtension,
   callExtensionAsync: nodes.callExtensionAsync,
+  spread: nodes.spread,
+  walrus: nodes.walrus,
 };
 
 export const mapCOW = (arr, func) => {

@@ -11,3 +11,10 @@ export const compileInlineIf = (ctx, node, frame) => {
   }
   ctx._emit(')');
 };
+
+export const compileWalrus = (ctx, node, frame) => {
+  const targetName = node.target.value;
+  ctx._emit('((' + targetName + '=');
+  ctx.compile(node.value, frame);
+  ctx._emit('), ' + targetName + ')');
+};

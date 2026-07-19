@@ -18,6 +18,18 @@ const parseTernary = (ctx, node) => {
   return node;
 };
 
+const parseWalrus = (ctx, node) => {
+  if (skipValue(ctx, TOKEN_OPERATOR, ':=')) {
+    if (!nodes.isSymbol(node)) {
+      throw new Error('Walrus operator target must be a symbol');
+    }
+    const valueNode = parseOr(ctx);
+    const walrusNode = nodes.walrus(node.lineno, node.colno, node, valueNode);
+    return parseWalrus(ctx, walrusNode);
+  }
+  return node;
+};
+
 export const parseInlineIf = (ctx) => {
   let node = parseOr(ctx);
 
@@ -35,7 +47,8 @@ export const parseInlineIf = (ctx) => {
     return node;
   }
 
-  return parseTernary(ctx, node);
+  node = parseTernary(ctx, node);
+  return parseWalrus(ctx, node);
 };
 
 export const parseExpression = (ctx) => parseInlineIf(ctx);

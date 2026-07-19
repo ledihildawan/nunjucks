@@ -33,6 +33,7 @@ const getSetTarget = (target) => {
 export const compileSet = (ctx, node, frame) => {
   const ids = [];
   const targets = node.targets.map(getSetTarget);
+  const isCompoundAssignment = node.operator && node.operator !== '=';
 
   for (const target of targets) {
     if (!target.assignable) {
@@ -47,21 +48,34 @@ export const compileSet = (ctx, node, frame) => {
 
   targets.forEach((target) => {
     const name = target.name;
-    let id = frame.lookup(name);
 
-    if (id === null || id === undefined) {
-      id = ctx._tmpid();
-      ctx._emitLine('let ' + id + ';');
+    if (isCompoundAssignment) {
+      const id = ctx._tmpid();
+      ctx._emitLine('let ' + id + ' = runtime.contextOrFrameLookup(context, frame, "' + name + '");');
+      ids.push(id);
+    } else {
+      let id = frame.lookup(name);
+
+      if (id === null || id === undefined) {
+        id = ctx._tmpid();
+        ctx._emitLine('let ' + id + ';');
+      }
+
+      ids.push(id);
     }
-
-    ids.push(id);
   });
 
   if (node.value) {
     const op = node.operator || '=';
-    ctx._emit(ids.join(' = ') + ' ' + op + ' ');
-    ctx._compileExpression(node.value, frame);
-    ctx._emitLine(';');
+    if (op === '//=') {
+      ctx._emit(ids.join(' = ') + ' = Math.floor(' + ids.join(' = ') + ' / ');
+      ctx._compileExpression(node.value, frame);
+      ctx._emitLine(');');
+    } else {
+      ctx._emit(ids.join(' = ') + ' ' + op + ' ');
+      ctx._compileExpression(node.value, frame);
+      ctx._emitLine(';');
+    }
   } else {
     ctx._emit(ids.join(' = ') + ' = await ');
     ctx.compile(node.body, frame);

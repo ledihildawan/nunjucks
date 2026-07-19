@@ -24,7 +24,7 @@ export const parseSet = (ctx) => {
   }
 
   if (!skipValue(ctx, TOKEN_OPERATOR, '=')) {
-    const assignOps = ['||=', '&&=', '??='];
+    const assignOps = ['||=', '&&=', '??=', '**=', '//='];
     let foundOp = null;
 
     for (const op of assignOps) {
@@ -38,7 +38,7 @@ export const parseSet = (ctx) => {
 
     if (!foundOp) {
       if (!skip(ctx, TOKEN_BLOCK_END)) {
-        fail(ctx, 'parseSet: expected =, ||= , &&=, ??= or block end in set tag',
+        fail(ctx, 'parseSet: expected =, ||= , &&=, ??=, **=, //= or block end in set tag',
           tag.lineno,
           tag.colno);
       } else {

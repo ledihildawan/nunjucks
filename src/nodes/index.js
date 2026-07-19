@@ -73,6 +73,7 @@ export const NODE_TYPES = Object.freeze({
   WITH: 'with',
   IS: 'is',
   SPREAD: 'spread',
+  WALRUS: 'walrus',
 });
 
 // ============================================
@@ -353,6 +354,9 @@ export const pair = (lineno, colno, key, val) =>
 export const spread = (lineno, colno, argument) =>
   createNode(NODE_TYPES.SPREAD, lineno, colno, { argument });
 
+export const walrus = (lineno, colno, target, val) =>
+  createNode(NODE_TYPES.WALRUS, lineno, colno, { target, value: val });
+
 export const keywordArgs = (lineno, colno, children = []) => 
   createNodeWithChildren(NODE_TYPES.KEYWORD_ARGS, lineno, colno, children);
 
@@ -466,6 +470,7 @@ export const isCompareOperand = (n) => n?.type === NODE_TYPES.COMPARE_OPERAND;
 export const isIn = (n) => n?.type === NODE_TYPES.IN;
 export const isIs = (n) => n?.type === NODE_TYPES.IS;
 export const isSpread = (n) => n?.type === NODE_TYPES.SPREAD;
+export const isWalrus = (n) => n?.type === NODE_TYPES.WALRUS;
 export const isGroup = (n) => n?.type === NODE_TYPES.GROUP;
 export const isSub = (n) => n?.type === NODE_TYPES.SUB;
 export const isMul = (n) => n?.type === NODE_TYPES.MUL;
@@ -583,6 +588,7 @@ export const nodes = Object.freeze({
   dict,
   pair,
   spread,
+  walrus,
   keywordArgs,
 
   // Extension creators
@@ -650,6 +656,7 @@ export const nodes = Object.freeze({
   isIn,
   isIs,
   isSpread,
+  isWalrus,
   isGroup,
   isSub,
   isMul,
