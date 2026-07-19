@@ -66,7 +66,10 @@ export const compileSet = (ctx, node, frame) => {
   });
 
   if (node.value) {
-    const op = node.operator || '=';
+    let op = node.operator || '=';
+    if (op === ':=') {
+      op = '=';
+    }
     if (op === '//=') {
       ctx._emit(ids.join(' = ') + ' = Math.floor(' + ids.join(' = ') + ' / ');
       ctx._compileExpression(node.value, frame);

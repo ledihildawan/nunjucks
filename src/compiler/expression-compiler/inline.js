@@ -1,3 +1,5 @@
+import { nodes } from '../../nodes/index.js';
+
 export const compileInlineIf = (ctx, node, frame) => {
   ctx._emit('(');
   ctx.compile(node.cond, frame);
@@ -14,7 +16,14 @@ export const compileInlineIf = (ctx, node, frame) => {
 
 export const compileWalrus = (ctx, node, frame) => {
   const targetName = node.target.value;
-  ctx._emit('((' + targetName + '=');
+  const id = ctx._tmpid();
+  
+  ctx._emit('(lineno = ' + (node.lineno ?? 0) + ', colno = ' + (node.colno ?? 0) + ', (() => {');
+  ctx._emit('let ' + id + ' = ');
   ctx.compile(node.value, frame);
-  ctx._emit('), ' + targetName + ')');
+  ctx._emit(';');
+  ctx._emit('frame.set("' + targetName + '", ' + id + ', true);');
+  ctx._emit('context.setVariable("' + targetName + '", ' + id + ');');
+  ctx._emit('return ' + id + ';');
+  ctx._emit('})())');
 };
