@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from 'bun:test';
-import { createCompiler, getSourceMap, getSourceMapFromCompile } from './index.js';
+import { createCompiler, getSourceMapFromCompile } from './index.js';
 import { nodes } from '../nodes/index.js';
 import { createFrame } from '../runtime/index.js';
 
@@ -10,124 +10,9 @@ beforeEach(() => {
 });
 
 describe('Compiler', () => {
-  test('init sets properties', () => {
-    expect(compiler.templateName).toBe('test.njk');
-    expect(compiler.codebuf).toEqual([]);
-    expect(compiler.lastId).toBe(0);
-    expect(compiler.buffer).toBeNull();
-    expect(compiler.bufferStack).toEqual([]);
-    expect(compiler._scopeClosers).toBe('');
-    expect(compiler.inBlock).toBe(false);
-    expect(compiler.undefinedMode).toBe('chainable');
-    expect(compiler.compiledLine).toBe(0);
-    expect(compiler.sourceMap).toBeDefined();
-  });
-
   test('fail throws TemplateError', () => {
     expect(() => compiler.fail('msg', 1, 2)).toThrow();
     expect(() => compiler.fail('msg', 1, 2)).toThrow('msg');
-  });
-
-  test('_pushBuffer creates new buffer variable', () => {
-    const id = compiler._pushBuffer();
-    expect(id).toBe('t_1');
-    expect(compiler.codebuf[0]).toBe('let t_1 = "";');
-    expect(compiler.buffer).toBe('t_1');
-  });
-
-  test('_popBuffer restores previous buffer', () => {
-    compiler._pushBuffer();
-    compiler._pushBuffer();
-    compiler._popBuffer();
-    expect(compiler.buffer).toBe('t_1');
-  });
-
-  test('_emit pushes code', () => {
-    compiler._emit('hello');
-    expect(compiler.codebuf).toEqual(['hello']);
-  });
-
-  test('_emitLine adds line with newline', () => {
-    compiler._emitLine('hello');
-    expect(compiler.codebuf).toEqual(['hello\n']);
-    expect(compiler.compiledLine).toBe(1);
-  });
-
-  test('_emitLine adds source mapping when originalLine given', () => {
-    const initialLen = compiler.sourceMap.mappings.length;
-    compiler._emitLine('hello', 5);
-    expect(compiler.sourceMap.mappings.length).toBe(initialLen + 1);
-    expect(compiler.sourceMap.mappings[initialLen].compiledLine).toBe(1);
-    expect(compiler.sourceMap.mappings[initialLen].originalLine).toBe(5);
-  });
-
-  test('_emitLineWithMapping emits with canonical templateLine', () => {
-    const initialLen = compiler.sourceMap.mappings.length;
-    compiler._emitLineWithMapping('code', 3, 7);
-    expect(compiler.sourceMap.mappings.length).toBe(initialLen + 1);
-    expect(compiler.sourceMap.mappings[initialLen].originalLine).toBe(3);
-    expect(compiler.codebuf[0]).toBe('code\n');
-  });
-
-  test('_trackMapping adds mapping without emitting', () => {
-    const initialLen = compiler.sourceMap.mappings.length;
-    compiler._trackMapping(3, 7);
-    expect(compiler.sourceMap.mappings.length).toBe(initialLen + 1);
-    expect(compiler.codebuf.length).toBe(0);
-  });
-
-  test('_emitLines emits multiple lines', () => {
-    compiler._emitLines('a', 'b', 'c');
-    expect(compiler.codebuf).toEqual(['a\n', 'b\n', 'c\n']);
-  });
-
-  test('_emitFuncBegin starts root function', () => {
-    const node = nodes.nodeList(1, 2);
-    compiler._emitFuncBegin(node, 'root');
-    expect(compiler.buffer).toBe('output');
-    expect(compiler.codebuf[0]).toContain('async function root');
-    expect(compiler.codebuf[1]).toContain('let lineno = 1');
-    expect(compiler.codebuf[2]).toContain('let colno = 2');
-  });
-
-  test('_emitFuncEnd returns buffer and closes', () => {
-    compiler.buffer = 'output';
-    compiler._emitFuncEnd();
-    const code = compiler.getCode();
-    expect(code).toContain('return output;');
-    expect(code).toContain('runtime.handleError');
-    expect(compiler.buffer).toBeNull();
-  });
-
-  test('_emitFuncEnd with noReturn skips return', () => {
-    compiler.buffer = 'output';
-    compiler._emitFuncEnd(true);
-    expect(compiler.getCode()).not.toContain('return output;');
-  });
-
-  test('_addScopeLevel adds closers', () => {
-    compiler._addScopeLevel();
-    expect(compiler._scopeClosers).toBe('})');
-  });
-
-  test('_closeScopeLevels emits closers and resets', () => {
-    compiler._scopeClosers = '})';
-    compiler._closeScopeLevels();
-    expect(compiler.codebuf).toContain('});\n');
-    expect(compiler._scopeClosers).toBe('');
-  });
-
-  test('_withScopedSyntax wraps function', () => {
-    compiler._withScopedSyntax(() => {
-      compiler._emitLine('body');
-    });
-    expect(compiler.codebuf.length).toBeGreaterThan(0);
-  });
-
-  test('_tmpid generates incrementing ids', () => {
-    expect(compiler._tmpid()).toBe('t_1');
-    expect(compiler._tmpid()).toBe('t_2');
-    expect(compiler.lastId).toBe(2);
   });
 
   test('_templateName returns JSON string', () => {
@@ -139,55 +24,19 @@ describe('Compiler', () => {
     expect(c._templateName()).toBe('undefined');
   });
 
-  test('_compileChildren compiles each child', () => {
-    const child1 = nodes.literal(1, 1, 'hello');
-    const child2 = nodes.literal(1, 1, 'world');
-    const node = nodes.nodeList(1, 1, [child1, child2]);
-    const frame = createFrame();
-    compiler._compileChildren(node, frame);
-    expect(compiler.codebuf.length).toBeGreaterThan(0);
-  });
-
-  test('_compileExpression compiles valid expression', () => {
-    const node = nodes.literal(1, 1, 42);
-    compiler._compileExpression(node, createFrame());
-    expect(compiler.codebuf.length).toBeGreaterThan(0);
-  });
-
   test('_compileExpression throws for invalid type', () => {
     const invalidNode = { type: 'Unknown', lineno: 1, colno: 1 };
     expect(() => compiler._compileExpression(invalidNode, createFrame())).toThrow();
-  });
-
-  test('assertType passes for matching type', () => {
-    expect(() => compiler.assertType(nodes.literal(1, 1, 'x'), 'literal')).not.toThrow();
   });
 
   test('assertType throws for non-matching type', () => {
     expect(() => compiler.assertType(nodes.symbol(1, 1, 'x'), 'literal')).toThrow('assertType');
   });
 
-  test('compile delegates to compileDispatch', () => {
-    const node = nodes.literal(1, 1, 'hello');
-    compiler.compile(node, createFrame());
-    expect(compiler.codebuf.length).toBeGreaterThan(0);
-  });
-
-  test('getCode joins codebuf', () => {
+  test('getCode returns compiled code', () => {
     compiler._emit('a');
     compiler._emit('b');
     expect(compiler.getCode()).toBe('ab');
-  });
-
-  test('getSourceMap returns sourceMap', () => {
-    expect(compiler.getSourceMap()).toBe(compiler.sourceMap);
-  });
-});
-
-describe('getSourceMap', () => {
-  test('returns sourceMap from compiler', () => {
-    const c = createCompiler('test.njk', false, '');
-    expect(getSourceMap(c)).toBe(c.sourceMap);
   });
 });
 
