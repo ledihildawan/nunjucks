@@ -23,4 +23,19 @@ describe('parse - ternary expression', () => {
     const ast = parse('{{ a if cond else b }}');
     expect(ast.children).toHaveLength(1);
   });
+
+  test('parses ternary operator ? :', () => {
+    const ast = parse('{{ a ? b : c }}');
+    expect(ast.children).toHaveLength(1);
+  });
+
+  test('parses ternary with comparison', () => {
+    const ast = parse('{{ x > 5 ? "big" : "small" }}');
+    expect(ast.children).toHaveLength(1);
+  });
+
+  test('parses ternary in complex expression', () => {
+    const ast = parse('{{ a + b ? c * d : e - f }}');
+    expect(ast.children).toHaveLength(1);
+  });
 });
