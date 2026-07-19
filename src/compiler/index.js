@@ -3,7 +3,7 @@ import { parse } from '../parser/index.js';
 import { transform } from '../transformers/index.js';
 import { nodes } from '../nodes/index.js';
 import { createLog } from '@nunjucks/log';
-import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { createObj } from '../object/index.js';
 import { createSourceMap } from '../helpers/source-map.js';
 import { compileDispatch } from './node-dispatch.js';

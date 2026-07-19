@@ -1,4 +1,4 @@
-import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { isString, isPlainObject, groupBy } from 'remeda';
 import { createLog } from '@nunjucks/log';
 import { getAttrGetter } from '../helpers/attributes.js';

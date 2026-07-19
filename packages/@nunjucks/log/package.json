@@ -5,16 +5,7 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./create-log": "./src/create-log.ts",
-    "./error/messages": "./src/error/messages.ts",
-    "./error/to-console": "./src/error/to-console.ts",
-    "./error/to-html": "./src/error/to-html.ts",
-    "./error/to-ansi": "./src/error/to-ansi.ts",
-    "./error/to-text": "./src/error/to-text.ts",
-    "./error/classify": "./src/error/classify.ts",
-    "./error/classify/template-error": "./src/error/classify/template-error.ts",
-    "./error/classify/extract": "./src/error/classify/extract.ts",
-    "./warning/collector": "./src/warning/collector.ts"
+    "./create-log": "./src/create-log.ts"
   },
   "dependencies": {
     "@nunjucks/shared": "workspace:*",

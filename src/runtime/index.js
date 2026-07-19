@@ -1,5 +1,5 @@
 import { createLog, normalizeErrorMetadata } from '@nunjucks/log';
-import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { isArray, keys, isNonNullish, isFunction, isString, isPlainObject } from 'remeda';
 import { createFrame } from './frame.js';
 import {

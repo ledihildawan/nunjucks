@@ -1,5 +1,5 @@
 import { createLog } from '@nunjucks/log';
-import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { isNonNullish, isFunction } from 'remeda';
 
 export function memberLookup(obj, val) {

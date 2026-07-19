@@ -8,7 +8,7 @@ import {
   DANGEROUS_GLOBALS_LIST
 } from '@nunjucks/shared/blocked-keys';
 import { createLog } from '@nunjucks/log';
-import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { ERROR_DEFINITIONS } from '@nunjucks/log';
 
 export {
   isBlockedKey,

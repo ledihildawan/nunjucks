@@ -11,7 +11,7 @@ import { scrubDangerousReferences } from '../runtime/security.js';
 import { createFileSystemLoader } from '../loaders/index.js';
 import { getCallerFile, getCallerLocation } from '@nunjucks/shared/caller-file';
 import { createLog, injectWarningsScript, normalizeErrorMetadata } from '@nunjucks/log';
-import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { ERROR_DEFINITIONS } from '@nunjucks/log';
 
 let cachedLoader = null;
 let cachedViewsPath = null;
@@ -325,6 +325,7 @@ const wrapWithLog = (err, config, template = null, renderContext = null) => {
   });
   errorObj.templatePath = templatePath;
   errorObj.sourceStartLine = sourceStartLine;
+  errorObj.renderContext = metadata.renderContext;
 
   return errorObj;
 };

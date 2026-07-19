@@ -4,7 +4,7 @@ import EventEmitter from 'events';
 import nunjucks from '../index.js';
 import { createFileSystemLoader } from '../loaders/index.js';
 import { createTemplate } from '../template/index.js';
-import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
 
 export function createEngine(config = {}) {

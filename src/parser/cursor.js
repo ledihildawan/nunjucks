@@ -7,7 +7,7 @@ import {
 } from '../lexer/token-types.js';
 import { error, fail } from './error.js';
 import { createLog } from '@nunjucks/log';
-import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { ERROR_DEFINITIONS } from '@nunjucks/log';
 
 export const createCursor = (tokens) => ({
   tokens,

@@ -3,7 +3,7 @@ import { readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { watch } from 'fs';
 import { createLoader } from './base.js';
-import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
 
 const normalizeSearchPaths = (searchPaths) =>

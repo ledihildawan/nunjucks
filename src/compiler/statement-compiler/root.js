@@ -1,6 +1,6 @@
 import { createFrame } from '../../runtime/index.js';
 import { nodes } from '../../nodes/index.js';
-import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
 
 export const compileRoot = (ctx, node, frame) => {

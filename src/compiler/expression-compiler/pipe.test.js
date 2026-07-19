@@ -28,7 +28,7 @@ describe('compilePipe', () => {
       args: nodes.nodeList(1, 1, [nodes.symbol(1, 1, 'arg1')]),
     };
     compilePipe(ctx, node);
-    expect(ctx.emitted).toContain('await runtime.awaitValue(env.getFilter("upper", 1, 1).call(context, ');
+    expect(ctx.emitted).toContain('await runtime.awaitValue(env.getFilter("upper", 1, 1, 1, 1, "arg1").call(context, ');
   });
 });
 
@@ -45,6 +45,6 @@ describe('compilePipeAsync', () => {
       args: nodes.nodeList(1, 1, [nodes.symbol(1, 1, 'arg1')]),
     };
     compilePipeAsync(ctx, node, frame);
-    expect(ctx.emitted).toContain('t_1 = await runtime.awaitValue(env.getFilter("myFilter", 5, 2).call(context, ');
+    expect(ctx.emitted).toContain('t_1 = await runtime.awaitValue(env.getFilter("myFilter", 5, 2, 1, 1, "arg1").call(context, ');
   });
 });

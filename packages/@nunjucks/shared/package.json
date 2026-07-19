@@ -2,13 +2,11 @@
   "name": "@nunjucks/shared",
   "version": "1.0.0",
   "type": "module",
-  "main": "./src/index.js",
+  "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.js",
-    "./path-shortener": "./src/path-shortener.js",
-    "./caller-file": "./src/caller-file.js",
-    "./blocked-keys": "./src/blocked-keys.js",
-    "./safe-context": "./src/safe-context.js"
+    ".": "./src/index.ts",
+    "./caller-file": "./src/caller-file.ts",
+    "./blocked-keys": "./src/blocked-keys.ts"
   },
   "description": "Shared utilities for Nunjucks"
 }

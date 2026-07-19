@@ -1,4 +1,4 @@
-import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { ERROR_DEFINITIONS } from '@nunjucks/log';
 
 export class TimeoutError extends Error {
   constructor(message = 'Template execution timed out') {

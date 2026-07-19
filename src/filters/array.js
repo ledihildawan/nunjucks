@@ -1,5 +1,5 @@
 import { createLog } from '@nunjucks/log';
-import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { isArray, isString, isPlainObject, map, keys, entries, sum as sumValues } from 'remeda';
 import { isSafeString, copySafeness, makeMacro } from '../runtime/index.js';
 import { getAttrGetter } from '../helpers/attributes.js';

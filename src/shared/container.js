@@ -1,5 +1,5 @@
 import { keys, isFunction, isNonNullish } from 'remeda';
-import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
 
 export const createContainer = () => {

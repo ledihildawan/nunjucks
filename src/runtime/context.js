@@ -1,6 +1,6 @@
-﻿import { keys } from 'remeda';
+import { keys } from 'remeda';
 import { createObj } from '../object/index.js';
-import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
 
 const Context = Symbol('Context');

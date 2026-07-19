@@ -1,5 +1,5 @@
 import { createLog } from '@nunjucks/log';
-import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
+import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import {
   TOKEN_STRING,
   TOKEN_WHITESPACE,

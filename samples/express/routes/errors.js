@@ -11,7 +11,6 @@ const complexUserContext = {
   user: {
     id: 'usr_8a9b2c3d4e5f',
     username: 'alice_dev',
-    email: 'alice@example.com',
     profile: {
       firstName: 'Alice',
       lastName: 'Johnson',
@@ -153,7 +152,7 @@ router.get('/invalid-include', async (req, res, next) => {
 router.get('/circular-include', async (req, res, next) => {
   try {
     const html = await nunjucks.render('errors/circular-include.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
-    res.type('html').send(html);
+    res.type('html').send(html);  
   } catch (err) {
     next(err);
   }
