@@ -1,4 +1,4 @@
-import { isFunction, isString, pipe, isNonNullish } from 'remeda';
+import { isFunction, isString, pipe, isNonNullish, pickBy } from 'remeda';
 import type { LineBase } from './render/internal/location.ts';
 import { normalizeLineBase, formatLocationAnnotation } from './render/internal/location.ts';
 import { createFormatterState } from './render/internal/metadata.ts';
@@ -225,7 +225,7 @@ export function createLog(
     : normalizeContext<NormalizedWarningContext>(context as WarningContext, (c) => ({ varName: (c as WarningContext).varName ?? null, undefinedMode: (c as WarningContext).undefinedMode ?? 'chainable' }));
 
   const extraKeys = ['lineno', 'colno', 'phase', 'templateName', 'lineBase', 'varName', 'undefinedMode'];
-  const extra = context ? Object.fromEntries(Object.entries(context).filter(([k]) => !extraKeys.includes(k))) : undefined;
+  const extra = context ? pickBy(context, (_, k) => !extraKeys.includes(k)) : undefined;
 
   if (type === 'error') {
     const err = new Error(resolveMessage(errorDef.message, paramsValue)) as TemplateError;
