@@ -18,6 +18,79 @@ import {
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
 
+function createGetFilter(context, filters, config, strictPipeInput) {
+  return function getFilter(name, filterLineno, filterColno, inputLineno, inputColno, inputValue) {
+    const filterFn = filters[name];
+    if (filterFn) return filterFn;
+
+    const ctxFn = context[name] && typeof context[name] === 'function' ? context[name] : null;
+    if (ctxFn) return ctxFn;
+
+    if (config.env?.getFilter) {
+      const envFilter = config.env.getFilter(name, filterLineno, filterColno);
+      if (envFilter) return envFilter;
+    }
+
+    const useInputLocation = inputLineno !== undefined && inputColno !== undefined;
+    const errorLineno = useInputLocation ? inputLineno : filterLineno;
+    const errorColno = useInputLocation ? inputColno : filterColno;
+
+    if (inputValue !== undefined) {
+      let isUndefinedInput = false;
+      let undefinedVarName = null;
+      let undefinedParentName = null;
+      let isPropertyLookup = false;
+
+      if (inputValue === null) {
+        isUndefinedInput = true;
+        undefinedVarName = '<null>';
+      } else if (typeof inputValue === 'string' && inputValue.includes('.')) {
+        isPropertyLookup = true;
+        const parts = inputValue.split('.');
+        try {
+          let val = context;
+          for (let i = 0; i < parts.length; i++) {
+            if (val === undefined || val === null) {
+              isUndefinedInput = true;
+              undefinedVarName = parts.slice(i).join('.');
+              undefinedParentName = i > 0 ? parts[i - 1] : null;
+              break;
+            }
+            val = val[parts[i]];
+          }
+          if (!isUndefinedInput && (val === undefined || val === null)) {
+            isUndefinedInput = true;
+            undefinedVarName = parts[parts.length - 1];
+            undefinedParentName = parts.length > 1 ? parts[parts.length - 2] : null;
+          }
+        } catch (e) {
+          isUndefinedInput = true;
+          undefinedVarName = inputValue;
+        }
+      } else if (typeof inputValue === 'string') {
+        try {
+          if (context[inputValue] === undefined) {
+            isUndefinedInput = true;
+            undefinedVarName = inputValue;
+          }
+        } catch (e) {
+          isUndefinedInput = true;
+          undefinedVarName = inputValue;
+        }
+      }
+
+      if (isUndefinedInput || strictPipeInput) {
+        if (isPropertyLookup && undefinedParentName) {
+          throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_PROPERTY, { property: undefinedVarName, parent: undefinedParentName }, undefinedVarName, { lineno: errorLineno ?? null, colno: errorColno ?? null, phase: 'render', lineBase: 'zero' });
+        }
+        throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_VARIABLE, { name: undefinedVarName ?? inputValue }, undefinedVarName ?? inputValue, { lineno: errorLineno ?? null, colno: errorColno ?? null, phase: 'render', lineBase: 'zero' });
+      }
+    }
+
+    throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_FILTER, { name }, name, { lineno: filterLineno ?? null, colno: filterColno ?? null, phase: 'render', lineBase: 'zero' });
+  };
+}
+
 const getRenderFunction = (code) => {
   const newFormatMatch = code.match(/^async\s+function\s+root\s*\(/);
   if (newFormatMatch) {
@@ -98,70 +171,7 @@ export const execute = async (code, context = {}, config = {}) => {
   }
 
   const strictPipeInput = config.strictPipeInput ?? false;
-  const getFilter = (name, filterLineno, filterColno, inputLineno, inputColno, inputValue) => {
-    const filterFn = filters[name];
-    if (filterFn) return filterFn;
-    const ctxFn = context[name] && typeof context[name] === 'function' ? context[name] : null;
-    if (ctxFn) return ctxFn;
-    
-    const useInputLocation = inputLineno !== undefined && inputColno !== undefined;
-    const errorLineno = useInputLocation ? inputLineno : filterLineno;
-    const errorColno = useInputLocation ? inputColno : filterColno;
-    
-    if (inputValue !== undefined) {
-      let isUndefinedInput = false;
-      let undefinedVarName = null;
-      let undefinedParentName = null;
-      let isPropertyLookup = false;
-      
-      if (inputValue === null) {
-        isUndefinedInput = true;
-        undefinedVarName = '<null>';
-      } else if (typeof inputValue === 'string' && inputValue.includes('.')) {
-        isPropertyLookup = true;
-        const parts = inputValue.split('.');
-        try {
-          let val = context;
-          for (let i = 0; i < parts.length; i++) {
-            if (val === undefined || val === null) {
-              isUndefinedInput = true;
-              undefinedVarName = parts.slice(i).join('.');
-              undefinedParentName = i > 0 ? parts[i - 1] : null;
-              break;
-            }
-            val = val[parts[i]];
-          }
-          if (!isUndefinedInput && (val === undefined || val === null)) {
-            isUndefinedInput = true;
-            undefinedVarName = parts[parts.length - 1];
-            undefinedParentName = parts.length > 1 ? parts[parts.length - 2] : null;
-          }
-        } catch (e) {
-          isUndefinedInput = true;
-          undefinedVarName = inputValue;
-        }
-      } else if (typeof inputValue === 'string') {
-        try {
-          if (context[inputValue] === undefined) {
-            isUndefinedInput = true;
-            undefinedVarName = inputValue;
-          }
-        } catch (e) {
-          isUndefinedInput = true;
-          undefinedVarName = inputValue;
-        }
-      }
-      
-      if (isUndefinedInput || strictPipeInput) {
-        if (isPropertyLookup && undefinedParentName) {
-          throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_PROPERTY, { property: undefinedVarName, parent: undefinedParentName }, undefinedVarName, { lineno: errorLineno ?? null, colno: errorColno ?? null, phase: 'render', lineBase: 'zero' });
-        }
-        throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_VARIABLE, { name: undefinedVarName ?? inputValue }, undefinedVarName ?? inputValue, { lineno: errorLineno ?? null, colno: errorColno ?? null, phase: 'render', lineBase: 'zero' });
-      }
-    }
-    
-    throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_FILTER, { name }, name, { lineno: filterLineno ?? null, colno: filterColno ?? null, phase: 'render', lineBase: 'zero' });
-  };
+  const getFilter = createGetFilter(context, filters, config, strictPipeInput);
 
   // Create runtime object for the new format
   const warningsCollector = config.warningsCollector || [];
@@ -252,69 +262,7 @@ export const execute = async (code, context = {}, config = {}) => {
         undefined: config.undefined ?? 'default',
         ...(config.env?.opts || {})
       },
-      getFilter: (name, filterLineno, filterColno, inputLineno, inputColno, inputValue) => {
-        const filterFn = filters[name];
-        if (filterFn) return filterFn;
-        if (config.env?.getFilter) return config.env.getFilter(name, filterLineno, filterColno);
-        
-        const useInputLocation = inputLineno !== undefined && inputColno !== undefined;
-        const errorLineno = useInputLocation ? inputLineno : filterLineno;
-        const errorColno = useInputLocation ? inputColno : filterColno;
-        
-        if (inputValue !== undefined) {
-          let isUndefinedInput = false;
-          let undefinedVarName = null;
-          let undefinedParentName = null;
-          let isPropertyLookup = false;
-          
-          if (inputValue === null) {
-            isUndefinedInput = true;
-            undefinedVarName = '<null>';
-          } else if (typeof inputValue === 'string' && inputValue.includes('.')) {
-            isPropertyLookup = true;
-            const parts = inputValue.split('.');
-            try {
-              let val = context;
-              for (let i = 0; i < parts.length; i++) {
-                if (val === undefined || val === null) {
-                  isUndefinedInput = true;
-                  undefinedVarName = parts.slice(i).join('.');
-                  undefinedParentName = i > 0 ? parts[i - 1] : null;
-                  break;
-                }
-                val = val[parts[i]];
-              }
-              if (!isUndefinedInput && (val === undefined || val === null)) {
-                isUndefinedInput = true;
-                undefinedVarName = parts[parts.length - 1];
-                undefinedParentName = parts.length > 1 ? parts[parts.length - 2] : null;
-              }
-            } catch (e) {
-              isUndefinedInput = true;
-              undefinedVarName = inputValue;
-            }
-          } else if (typeof inputValue === 'string') {
-            try {
-              if (context[inputValue] === undefined) {
-                isUndefinedInput = true;
-                undefinedVarName = inputValue;
-              }
-            } catch (e) {
-              isUndefinedInput = true;
-              undefinedVarName = inputValue;
-            }
-          }
-          
-          if (isUndefinedInput || strictPipeInput) {
-            if (isPropertyLookup && undefinedParentName) {
-              throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_PROPERTY, { property: undefinedVarName, parent: undefinedParentName }, undefinedVarName, { lineno: errorLineno ?? null, colno: errorColno ?? null, phase: 'render', lineBase: 'zero' });
-            }
-            throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_VARIABLE, { name: undefinedVarName ?? inputValue }, undefinedVarName ?? inputValue, { lineno: errorLineno ?? null, colno: errorColno ?? null, phase: 'render', lineBase: 'zero' });
-          }
-        }
-        
-        throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_FILTER, { name }, name, { lineno: filterLineno ?? null, colno: filterColno ?? null, phase: 'render', lineBase: 'zero' });
-      },
+      getFilter: createGetFilter(context, filters, config, strictPipeInput),
       getTest,
       ...(config.env ? { getTemplate: (...args) => config.env.getTemplate(...args) } : {})
     };
@@ -336,69 +284,7 @@ export const execute = async (code, context = {}, config = {}) => {
       undefined: config.undefined ?? 'default',
       ...(config.env?.opts || {})
     },
-    getFilter: (name, filterLineno, filterColno, inputLineno, inputColno, inputValue) => {
-      const filterFn = filters[name];
-      if (filterFn) return filterFn;
-      if (config.env?.getFilter) return config.env.getFilter(name, filterLineno, filterColno);
-      
-      const useInputLocation = inputLineno !== undefined && inputColno !== undefined;
-      const errorLineno = useInputLocation ? inputLineno : filterLineno;
-      const errorColno = useInputLocation ? inputColno : filterColno;
-      
-      if (inputValue !== undefined) {
-        let isUndefinedInput = false;
-        let undefinedVarName = null;
-        let undefinedParentName = null;
-        let isPropertyLookup = false;
-        
-        if (inputValue === null) {
-          isUndefinedInput = true;
-          undefinedVarName = '<null>';
-        } else if (typeof inputValue === 'string' && inputValue.includes('.')) {
-          isPropertyLookup = true;
-          const parts = inputValue.split('.');
-          try {
-            let val = context;
-            for (let i = 0; i < parts.length; i++) {
-              if (val === undefined || val === null) {
-                isUndefinedInput = true;
-                undefinedVarName = parts.slice(i).join('.');
-                undefinedParentName = i > 0 ? parts[i - 1] : null;
-                break;
-              }
-              val = val[parts[i]];
-            }
-            if (!isUndefinedInput && (val === undefined || val === null)) {
-              isUndefinedInput = true;
-              undefinedVarName = parts[parts.length - 1];
-              undefinedParentName = parts.length > 1 ? parts[parts.length - 2] : null;
-            }
-          } catch (e) {
-            isUndefinedInput = true;
-            undefinedVarName = inputValue;
-          }
-        } else if (typeof inputValue === 'string') {
-          try {
-            if (context[inputValue] === undefined) {
-              isUndefinedInput = true;
-              undefinedVarName = inputValue;
-            }
-          } catch (e) {
-            isUndefinedInput = true;
-            undefinedVarName = inputValue;
-          }
-        }
-        
-        if (isUndefinedInput || strictPipeInput) {
-          if (isPropertyLookup && undefinedParentName) {
-            throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_PROPERTY, { property: undefinedVarName, parent: undefinedParentName }, undefinedVarName, { lineno: errorLineno ?? null, colno: errorColno ?? null, phase: 'render', lineBase: 'zero' });
-          }
-          throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_VARIABLE, { name: undefinedVarName ?? inputValue }, undefinedVarName ?? inputValue, { lineno: errorLineno ?? null, colno: errorColno ?? null, phase: 'render', lineBase: 'zero' });
-        }
-      }
-      
-      throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_FILTER, { name }, name, { lineno: filterLineno ?? null, colno: filterColno ?? null, phase: 'render', lineBase: 'zero' });
-    },
+    getFilter: createGetFilter(context, filters, config, strictPipeInput),
     getTest,
     ...(config.env ? { getTemplate: (...args) => config.env.getTemplate(...args) } : {})
   };
