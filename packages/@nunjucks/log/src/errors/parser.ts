@@ -199,7 +199,7 @@ export const PARSER_ERRORS = {
     ],
     fixCode: '{{ true }} or {{ false }}',
     fixComment: 'Use the literals `true` or `false` (lowercase)',
-    suggestion: 'In Nunjucks, booleans are lowercase: `true` and `false`',
+    suggestion: 'Use `0` or `1` for numeric flags if you need cross-language compatibility',
     subjectFrom: null
   }
 } as const satisfies Record<string, ErrorDefinition>;

@@ -36,7 +36,7 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: "{{ {subject} |> default('fallback') }}",
     fixComment: 'Add a default value with the `default` filter, or pass `{subject}` in the render context',
-    suggestion: 'Pass the variable in your render call: `render(template, { {subject}: value })`',
+    suggestion: 'Print `{{ {subject} |> dump }}` in a debug template to see all available variables and their values',
     documentationUrl: `${DOCS_BASE}#variables`,
     subjectFrom: firstCapture
   },
@@ -71,8 +71,8 @@ export const RUNTIME_ERRORS = {
       'Missing import - the function may live in another module'
     ],
     fixCode: "env.addGlobal('{subject}', function() { /* ... */ })",
-    fixComment: 'Register the missing function globally on the environment',
-    suggestion: 'Check your environment setup and ensure `addGlobal` is called before rendering',
+    fixComment: 'Register the missing function globally on the environment before rendering',
+    suggestion: 'Search your codebase for `addGlobal` to see where functions are registered and verify setup order',
     subjectFrom: firstCapture
   },
   NOT_A_FUNCTION: {
@@ -121,8 +121,8 @@ export const RUNTIME_ERRORS = {
       'You may have meant a global function - check `env.addGlobal()`'
     ],
     fixCode: "env.addFilter('{subject}', function(value) { return value; })",
-    fixComment: 'Register the missing filter on the environment',
-    suggestion: 'Check the list of built-in filters in the docs - it may already exist under another name',
+    fixComment: 'Register the missing filter on the environment before rendering',
+    suggestion: 'Check `env.filters` in your debugger to see all currently registered filters',
     documentationUrl: `${DOCS_BASE}#filters`,
     subjectFrom: firstCapture
   },
@@ -156,7 +156,7 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: '{% block content %}\n  {{ super() }}\n  Additional child content\n{% endblock %}',
     fixComment: 'Rename the child block or remove the `super()` call',
-    suggestion: 'Verify that the parent template defines block `{subject}`',
+    suggestion: 'Add a default `{% block X %}{% endblock %}` placeholder in the parent template to prevent this error',
     subjectFrom: firstCapture
   },
   DUPLICATE_BLOCK: {
