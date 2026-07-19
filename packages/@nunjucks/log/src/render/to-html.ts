@@ -307,20 +307,16 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
       </section>
     </div>
 
-    ${suggestion ? `
-    <section class="insight-section" aria-labelledby="h-suggestion">
-      <h2 id="h-suggestion" class="text-label">💡 Tip</h2>
-      <p class="insight-text">${renderMarkdownToAnsi(suggestion)}</p>
-    </section>
-    ` : ''}
-
-    ${(documentationUrl || relatedLinks.length > 0) ? `
-    <section class="insight-section" aria-labelledby="h-docs">
-      <h2 id="h-docs" class="text-label">Learn More</h2>
+    ${(suggestion || documentationUrl || relatedLinks.length > 0) ? `
+    <section class="more-info-section" aria-labelledby="h-more-info">
+      <h2 id="h-more-info" class="text-label">💡 More Info</h2>
+      ${suggestion ? `<p class="insight-text">${renderMarkdownToAnsi(suggestion)}</p>` : ''}
+      ${(documentationUrl || relatedLinks.length > 0) ? `
       <ul class="docs-list">
         ${documentationUrl ? `<li><a href="${escapeHtml(documentationUrl)}" target="_blank" rel="noopener noreferrer" class="docs-link">📖 Documentation</a></li>` : ''}
         ${relatedLinks.map(l => `<li><a href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer" class="docs-link">${escapeHtml(l.label)}</a></li>`).join('')}
       </ul>
+      ` : ''}
     </section>
     ` : ''}
 

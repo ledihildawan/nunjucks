@@ -73,9 +73,11 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
     );
     const shortPath = shortenPath(path);
     locationStr = ` at ${shortPath}:${location.line}:${location.col}`;
-    const causeHint = causes.length > 0 ? `\n${stripMarkdown(causes[0])}` : '';
-    const sugHint = suggestion ? `\n💡 Tip: ${stripMarkdown(suggestion)}` : '';
-    return `${severityLabel} ${message}${locationStr}${causeHint}${sugHint}`;
+    const causeHint = causes.length > 0 ? stripMarkdown(causes[0]) : '';
+    const tipHint = suggestion ? stripMarkdown(suggestion) : '';
+    const docHint = documentationUrl ? documentationUrl : '';
+    const extras = [causeHint, tipHint, docHint].filter(Boolean).join(' | ');
+    return `${severityLabel} ${message}${locationStr}${extras ? '\n' + extras : ''}`;
   }
 
   const stack = (error as Error).stack || '';
@@ -112,16 +114,12 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
     parts.push(`  ${fixCode}`);
   }
 
-  if (suggestion) {
+  if (suggestion || documentationUrl || relatedLinks.length > 0) {
     parts.push('');
-    parts.push(`💡 Tip: ${stripMarkdown(suggestion)}`);
-  }
-
-  if (documentationUrl || relatedLinks.length > 0) {
-    parts.push('');
-    parts.push('Learn More:');
-    if (documentationUrl) parts.push(`  ${documentationUrl}`);
-    relatedLinks.forEach(l => parts.push(`  ${l.label}: ${l.url}`));
+    parts.push('💡 More Info:');
+    if (suggestion) parts.push(`  ${stripMarkdown(suggestion)}`);
+    if (documentationUrl) parts.push(`  📖 ${documentationUrl}`);
+    relatedLinks.forEach(l => parts.push(`  📖 ${l.label}: ${l.url}`));
   }
 
   if (formattedStack) {

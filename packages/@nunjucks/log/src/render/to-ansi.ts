@@ -87,23 +87,27 @@ const formatFixAnsi = (fixCode: string | null, fixComment: string | null): strin
   return out;
 };
 
-const formatSuggestionAnsi = (suggestion: string | null): string => {
-  if (!suggestion) return '';
-  return `\n${picocolors.bold(picocolors.cyan('💡 Tip:'))} ${stripMarkdown(suggestion)}`;
-};
-
-const formatDocsAnsi = (
+const formatMoreInfoAnsi = (
+  suggestion: string | null,
   documentationUrl: string | null,
   relatedLinks: Array<{ label: string; url: string }>
 ): string => {
-  if (!documentationUrl && relatedLinks.length === 0) return '';
-  let out = `\n${picocolors.bold(picocolors.blue('📖 Learn More:'))}`;
+  if (!suggestion && !documentationUrl && relatedLinks.length === 0) return '';
+
+  let out = `\n${picocolors.bold(picocolors.cyan('💡 More Info:'))}`;
+
+  if (suggestion) {
+    out += `\n  ${stripMarkdown(suggestion)}`;
+  }
+
   if (documentationUrl) {
     out += `\n  ${picocolors.cyan(documentationUrl)}`;
   }
+
   for (const link of relatedLinks) {
     out += `\n  ${picocolors.cyan(link.label)}: ${link.url}`;
   }
+
   return out;
 };
 
@@ -156,16 +160,19 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   const location = toDisplayLocation(displayLineno, displayColno, lineBase);
 
   if (verbosity === 'medium') {
-    const causeHint = causes.length > 0 ? ` (${causes[0]})` : '';
+    const causeHint = causes.length > 0 ? stripMarkdown(causes[0]) : '';
+    const tipHint = suggestion ? stripMarkdown(suggestion) : '';
+    const docHint = documentationUrl ? documentationUrl : '';
+    const extras = [causeHint, tipHint, docHint].filter(Boolean).join(' | ');
     if (path) {
       const shortPath = shortenPath(path);
       if (isFilePath(path)) {
         const url = makeHyperlink(`${shortPath}:${location.line}:${location.col}`, resolveIdeLink(ide, path, location.line, location.col));
-        return `${message} at ${url}${causeHint ? '\n' + stripMarkdown(causes[0]) : ''}`;
+        return `${message} at ${url}${extras ? '\n' + extras : ''}`;
       }
-      return `${message} at ${shortPath}:${location.line}:${location.col}${causeHint ? '\n' + stripMarkdown(causes[0]) : ''}`;
+      return `${message} at ${shortPath}:${location.line}:${location.col}${extras ? '\n' + extras : ''}`;
     }
-    return `${message} at line ${location.line}${causeHint ? '\n' + stripMarkdown(causes[0]) : ''}`;
+    return `${message} at line ${location.line}${extras ? '\n' + extras : ''}`;
   }
 
   const stack = (error as Error).stack || '';
@@ -238,11 +245,8 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   const fixStr = formatFixAnsi(fixCode, fixComment);
   if (fixStr) parts.push(fixStr);
 
-  const sugStr = formatSuggestionAnsi(suggestion);
-  if (sugStr) parts.push(sugStr);
-
-  const docsStr = formatDocsAnsi(documentationUrl, relatedLinks);
-  if (docsStr) parts.push(docsStr);
+  const moreInfoStr = formatMoreInfoAnsi(suggestion, documentationUrl, relatedLinks);
+  if (moreInfoStr) parts.push(moreInfoStr);
 
   if (options.renderContext && verbosity === 'full') {
     parts.push(renderContextAnsi(options.renderContext));

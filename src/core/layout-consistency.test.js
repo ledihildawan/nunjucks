@@ -11,13 +11,12 @@ const renderTemplate = async (template, context = {}, config = {}) => {
 };
 
 describe('error layout consistency', () => {
-  test('tip section uses insight-section class matching existing layout', async () => {
+  test('more-info section uses unified class', async () => {
     const err = await renderTemplate('{{ missing }}', {}).catch(e => e);
     const html = err.output({ format: 'html', verbosity: 'full' });
 
-    expect(html).toContain('class="insight-section"');
-    expect(html).toMatch(/<section class="insight-section" aria-labelledby="h-suggestion">/);
-    expect(html).toMatch(/<section class="insight-section" aria-labelledby="h-docs">/);
+    expect(html).toContain('class="more-info-section"');
+    expect(html).toMatch(/<section class="more-info-section" aria-labelledby="h-more-info">/);
   });
 
   test('all sections use text-label class for consistency', async () => {
@@ -26,7 +25,7 @@ describe('error layout consistency', () => {
 
     const textLabels = html.match(/class="text-label"/g);
     expect(textLabels).toBeTruthy();
-    expect(textLabels.length).toBeGreaterThanOrEqual(4);
+    expect(textLabels.length).toBeGreaterThanOrEqual(3);
   });
 
   test('docs links are styled as badges/pills', async () => {
@@ -42,8 +41,7 @@ describe('error layout consistency', () => {
     const text = err.output({ format: 'text', verbosity: 'full' });
 
     expect(text.indexOf('Possible Causes:')).toBeLessThan(text.indexOf('Suggested Fix:'));
-    expect(text.indexOf('Suggested Fix:')).toBeLessThan(text.indexOf('💡 Tip:'));
-    expect(text.indexOf('💡 Tip:')).toBeLessThan(text.indexOf('Learn More:'));
+    expect(text.indexOf('Suggested Fix:')).toBeLessThan(text.indexOf('💡 More Info:'));
   });
 
   test('ansi output includes all sections with consistent format', async () => {
@@ -52,8 +50,7 @@ describe('error layout consistency', () => {
 
     expect(ansi).toContain('Possible Causes:');
     expect(ansi).toContain('Suggested Fix:');
-    expect(ansi).toContain('💡 Tip:');
-    expect(ansi).toContain('Learn More:');
+    expect(ansi).toContain('💡 More Info:');
   });
 
   test('html structure has consistent section ordering', async () => {
@@ -62,12 +59,21 @@ describe('error layout consistency', () => {
 
     const causesIdx = html.indexOf('h-causes');
     const fixIdx = html.indexOf('h-fix');
-    const suggestionIdx = html.indexOf('h-suggestion');
-    const docsIdx = html.indexOf('h-docs');
+    const moreInfoIdx = html.indexOf('h-more-info');
 
     expect(causesIdx).toBeGreaterThan(-1);
     expect(fixIdx).toBeGreaterThan(causesIdx);
-    expect(suggestionIdx).toBeGreaterThan(fixIdx);
-    expect(docsIdx).toBeGreaterThan(suggestionIdx);
+    expect(moreInfoIdx).toBeGreaterThan(fixIdx);
+  });
+
+  test('tip and docs are combined in single section', async () => {
+    const err = await renderTemplate('{{ missing }}', {}).catch(e => e);
+    const html = err.output({ format: 'html', verbosity: 'full' });
+
+    const sectionMatches = html.match(/<section class="more-info-section"/g) || [];
+    expect(sectionMatches.length).toBe(1);
+
+    const insightSectionCount = (html.match(/insight-section/g) || []).length;
+    expect(insightSectionCount).toBe(0);
   });
 });

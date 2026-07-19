@@ -141,7 +141,7 @@ export const CSS = `
     overflow: hidden;
   }
 
-  .insight-section {
+  .more-info-section {
     margin-block-end: 2rem;
   }
 
@@ -150,6 +150,7 @@ export const CSS = `
     color: var(--color-text-primary);
     line-height: 1.6;
     text-wrap: pretty;
+    margin-block-end: 0.75rem;
     strong { font-weight: 600; }
     code { font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace; }
   }

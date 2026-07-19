@@ -82,7 +82,7 @@ describe('error messages - real scenarios', () => {
     expect(err.suggestion).toBeTruthy();
 
     const text = err.output({ format: 'text', verbosity: 'full' });
-    expect(text).toContain('Tip');
+    expect(text).toContain('💡 More Info:');
   });
 
   test('UNDEFINED_FILTER error explains how to register', async () => {
