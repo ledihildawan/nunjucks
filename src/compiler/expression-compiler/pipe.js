@@ -3,7 +3,9 @@ import { compileAggregate } from './container.js';
 export const compilePipe = (ctx, node, frame) => {
   const name = node.name;
   ctx.assertType(name, 'symbol');
-  ctx._emit('await runtime.awaitValue(env.getFilter("' + name.value + '", ' + node.lineno + ', ' + (node.colno != null ? node.colno : 0) + ').call(context, ');
+  const filterName = String(name.value);
+  const location = `${node.lineno}, ${node.colno != null ? node.colno : 0}`;
+  ctx._emit(`await runtime.awaitValue(env.getFilter("${filterName}", ${location}).call(context, `);
   compileAggregate(ctx, node.args, frame);
   ctx._emit('))');
 };
@@ -16,7 +18,9 @@ export const compilePipeAsync = (ctx, node, frame) => {
 
   frame.set(symbol, symbol);
 
-  ctx._emit(symbol + ' = await runtime.awaitValue(env.getFilter("' + name.value + '", ' + node.lineno + ', ' + (node.colno != null ? node.colno : 0) + ').call(context, ');
+  const filterName = String(name.value);
+  const location = `${node.lineno}, ${node.colno != null ? node.colno : 0}`;
+  ctx._emit(symbol + ' = await runtime.awaitValue(env.getFilter("' + filterName + '", ' + location + ').call(context, ');
   compileAggregate(ctx, node.args, frame);
   ctx._emitLine('));');
 };

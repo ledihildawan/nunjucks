@@ -47,7 +47,8 @@ export const scanTemplateForDangerousCode = (templateContent) => {
     let match;
     while ((match = regex.exec(templateContent)) !== null) {
       const { line, col } = getLineColFromIndex(templateContent, match.index);
-      violations.push({ message, pattern: pattern.source, line, col });
+      const nameMatch = match[0].match(/[a-zA-Z_$][\w$]*/);
+      violations.push({ message, pattern: pattern.source, line, col, name: nameMatch ? nameMatch[0] : null });
     }
   }
 

@@ -21,6 +21,7 @@ export const validateTemplate = (template, config) => {
       const first = violations[0];
       errors.push({
         code: 'DANGEROUS_TEMPLATE_CODE',
+        subject: first.name ?? 'template',
         message: `Template contains dangerous code: ${violations.map(v => v.message).join('; ')}`,
         violations,
         lineno: first.line,

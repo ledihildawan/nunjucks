@@ -28,7 +28,7 @@ export function optionalMemberLookup(obj, val) {
 
 export function slice(arr, start, stop, step) {
   if (step === 0) {
-    throw createLog('error', ERROR_DEFINITIONS.SLICE_STEP, {}, null, { phase: 'render', lineBase: 'zero' });
+    throw createLog('error', ERROR_DEFINITIONS.SLICE_STEP, {}, 'step', { phase: 'render', lineBase: 'zero' });
   }
 
   const len = arr.length;

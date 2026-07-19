@@ -3,6 +3,7 @@ import { parse } from '../parser/index.js';
 import { transform } from '../transformers/index.js';
 import { nodes } from '../nodes/index.js';
 import { createLog } from '@nunjucks/log';
+import { ERROR_DEFINITIONS } from '@nunjucks/log/error/messages';
 import { createObj } from '../object/index.js';
 import { createSourceMap } from '../helpers/source-map.js';
 import { compileDispatch } from './node-dispatch.js';
@@ -24,11 +25,12 @@ export function createCompiler(templateName, undefinedMode, source) {
       this.sourceMap = createSourceMap(tmplName);
     },
     fail: function(msg, lineno, colno) {
-      throw createLog('error', { 
-        name: 'COMPILER_ERROR', 
-        message: () => msg, 
-        pattern: /./ 
-      }, {}, null, { lineno, colno, phase: 'compile', templateName: this.templateName });
+      const subject = typeof msg === 'string' ? (msg.split(':').pop() || 'compile').trim() : 'compile';
+      throw createLog('error',
+        ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE,
+        { type: subject },
+        subject,
+        { lineno, colno, phase: 'compile', templateName: this.templateName, lineBase: 'zero' });
     },
     _pushBuffer: function() {
       const id = this._tmpid();
@@ -178,7 +180,13 @@ export function createCompiler(templateName, undefinedMode, source) {
         return false;
       });
       if (!matches) {
-        this.fail(`assertType: invalid type: ${typeName}`, node.lineno, node.colno);
+        const err = new Error(`assertType: invalid type: ${typeName}`);
+        err.code = 'ASSERT_TYPE_ERROR';
+        err.subject = typeName;
+        err.lineno = node.lineno ?? null;
+        err.colno = node.colno ?? null;
+        err.lineBase = 'zero';
+        throw err;
       }
     },
     compile: function(node, frame) {

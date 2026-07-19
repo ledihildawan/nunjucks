@@ -254,7 +254,16 @@ router.get('/filter-throw', async (req, res, next) => {
     const html = await nunjucks('{{ "test" |> throwingFilter }}', {}, {
       dev: true,
       filters: {
-        throwingFilter: () => { throw new Error('Filter intentionally threw'); }
+        throwingFilter: () => {
+          try {
+            throw new Error('Filter intentionally threw');
+          } catch (e) {
+            const err = new Error('Filter throwingFilter threw: ' + e.message);
+            err.code = 'FILTER_ERROR';
+            err.subject = 'throwingFilter';
+            throw err;
+          }
+        }
       }
     });
     res.type('html').send(html);
