@@ -60,15 +60,34 @@ export const compileVariableAssignment = (ctx, node, frame) => {
   }
 };
 
+const getCompoundOpJs = (operator) => {
+  switch (operator) {
+    case '||=': return '||';
+    case '&&=': return '&&';
+    case '??=': return '??';
+    case '**=': return '**';
+    case '//=': return null;
+    default: return null;
+  }
+};
+
 export const compileCompoundAssignment = (ctx, node, frame) => {
+  const jsOp = getCompoundOpJs(node.operator);
+
   if (hasPatternTarget(node)) {
     const valueId = ctx._tmpid();
     const targetName = getTargetName(node.targets[0]);
 
-    ctx._emitLine('let ' + valueId + ' = ');
-    ctx._emit('frame.lookup("' + targetName + '") ' + node.operator.replace('=', '') + ' ');
-    ctx._compileExpression(node.value, frame);
-    ctx._emitLine(';');
+    if (node.operator === '//=') {
+      ctx._emitLine('let ' + valueId + ' = Math.floor(frame.lookup("' + targetName + '") / ');
+      ctx._compileExpression(node.value, frame);
+      ctx._emitLine('));');
+    } else {
+      ctx._emitLine('let ' + valueId + ' = ');
+      ctx._emit('frame.lookup("' + targetName + '") ' + jsOp + ' ');
+      ctx._compileExpression(node.value, frame);
+      ctx._emitLine(';');
+    }
 
     node.targets.forEach(pattern => {
       compileDestructuring(ctx, frame, pattern, valueId);
@@ -76,15 +95,22 @@ export const compileCompoundAssignment = (ctx, node, frame) => {
   } else {
     const name = getTargetName(node.targets[0]);
 
+    ctx._emitLine('{');
     ctx._emitLine('if (frame.lookup("' + name + '") === undefined) { throw new ReferenceError("Variable \'' + name + '\' is not defined"); }');
 
     const valueId = ctx._tmpid();
-    ctx._emitLine('let ' + valueId + ' = ');
-    ctx._emit('frame.lookup("' + name + '") ' + node.operator.replace('=', '') + ' ');
-    ctx._compileExpression(node.value, frame);
-    ctx._emitLine(';');
+    if (node.operator === '//=') {
+      ctx._emit('let ' + valueId + ' = Math.floor(frame.lookup("' + name + '") / ');
+      ctx._compileExpression(node.value, frame);
+      ctx._emitLine(');');
+    } else {
+      ctx._emit('let ' + valueId + ' = frame.lookup("' + name + '") ' + jsOp + ' ');
+      ctx._compileExpression(node.value, frame);
+      ctx._emitLine(';');
+    }
 
     ctx._emitLine('frame.set("' + name + '", ' + valueId + ', true);');
+    ctx._emitLine('}');
   }
 };
 

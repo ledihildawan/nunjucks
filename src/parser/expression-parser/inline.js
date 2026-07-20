@@ -1,7 +1,24 @@
 import { nodes } from '../../nodes/index.js';
-import { skipSymbol, skipValue } from '../cursor.js';
+import { skipSymbol, skipValue, peekToken, nextToken } from '../cursor.js';
 import { parseOr } from './logical.js';
-import { TOKEN_OPERATOR, TOKEN_COLON } from '../../lexer/token-types.js';
+import { TOKEN_OPERATOR, TOKEN_COLON, TOKEN_INT, TOKEN_FLOAT, TOKEN_STRING } from '../../lexer/token-types.js';
+
+const tokenToLiteral = (tok) => {
+  switch (tok.type) {
+    case TOKEN_INT:
+      return nodes.literal(tok.lineno, tok.colno, Number(tok.value));
+    case TOKEN_FLOAT:
+      return nodes.literal(tok.lineno, tok.colno, parseFloat(tok.value));
+    case TOKEN_STRING:
+      return nodes.literal(tok.lineno, tok.colno, tok.value);
+    case 'boolean':
+      return nodes.literal(tok.lineno, tok.colno, tok.value === 'true');
+    case 'none':
+      return nodes.literal(tok.lineno, tok.colno, null);
+    default:
+      return nodes.symbol(tok.lineno, tok.colno, tok.value);
+  }
+};
 
 const parseTernary = (ctx, node) => {
   if (skipValue(ctx, TOKEN_OPERATOR, '?')) {
@@ -18,46 +35,62 @@ const parseTernary = (ctx, node) => {
   return node;
 };
 
+const COMPOUND_OPS = ['||=', '&&=', '??=', '**=', '//='];
+
 const parseWalrus = (ctx, node) => {
-  if (skipValue(ctx, TOKEN_OPERATOR, ':=')) {
-    const valueNode = parseOr(ctx);
-    let resultNode;
-    if (nodes.isSymbol(node)) {
-      resultNode = nodes.variableDeclaration(node.lineno, node.colno, [node], valueNode);
-    } else if (nodes.isArrayPattern(node) || nodes.isArray(node)) {
-      const pattern = nodes.isArrayPattern(node)
-        ? node
-        : nodes.arrayPattern(node.lineno, node.colno, node.children.map(c => {
-            if (nodes.isPair(c) && nodes.isSymbol(c.value) && c.key.value === c.value.value) {
-              return c.value;
-            }
-            if (nodes.isSpread(c)) {
+  const tok = peekToken(ctx);
+  if (tok && tok.type === TOKEN_OPERATOR) {
+    if (tok.value === ':=') {
+      nextToken(ctx);
+      const valueNode = parseOr(ctx);
+      let resultNode;
+      if (nodes.isSymbol(node)) {
+        resultNode = nodes.variableDeclaration(node.lineno, node.colno, [node], valueNode);
+      } else if (nodes.isArrayPattern(node) || nodes.isArray(node)) {
+        const pattern = nodes.isArrayPattern(node)
+          ? node
+          : nodes.arrayPattern(node.lineno, node.colno, node.children.map(c => {
+              if (nodes.isPair(c) && nodes.isSymbol(c.value) && c.key.value === c.value.value) {
+                return c.value;
+              }
+              if (nodes.isSpread(c)) {
+                return nodes.restPattern(c.lineno, c.colno, c.argument);
+              }
+              return c;
+            }));
+        resultNode = nodes.variableDeclaration(node.lineno, node.colno, [pattern], valueNode);
+      } else if (nodes.isObjectPattern(node) || nodes.isDict(node)) {
+        let pattern;
+        if (nodes.isObjectPattern(node)) {
+          pattern = node;
+        } else {
+          pattern = nodes.objectPattern(node.lineno, node.colno, node.children.map(c => {
+            if (nodes.isPair(c)) {
+              if (nodes.isSymbol(c.key) && nodes.isSymbol(c.value) && c.key.value === c.value.value) {
+                return nodes.patternProperty(c.key.lineno, c.key.colno, c.key.value, c.key);
+              }
+            } else if (nodes.isSpread(c)) {
               return nodes.restPattern(c.lineno, c.colno, c.argument);
             }
             return c;
           }));
-      resultNode = nodes.variableDeclaration(node.lineno, node.colno, [pattern], valueNode);
-    } else if (nodes.isObjectPattern(node) || nodes.isDict(node)) {
-      let pattern;
-      if (nodes.isObjectPattern(node)) {
-        pattern = node;
+        }
+        resultNode = nodes.variableDeclaration(node.lineno, node.colno, [pattern], valueNode);
       } else {
-        pattern = nodes.objectPattern(node.lineno, node.colno, node.children.map(c => {
-          if (nodes.isPair(c)) {
-            if (nodes.isSymbol(c.key) && nodes.isSymbol(c.value) && c.key.value === c.value.value) {
-              return nodes.patternProperty(c.key.lineno, c.key.colno, c.key.value, c.key);
-            }
-          } else if (nodes.isSpread(c)) {
-            return nodes.restPattern(c.lineno, c.colno, c.argument);
-          }
-          return c;
-        }));
+        throw new Error('Walrus operator target must be a symbol or pattern');
       }
-      resultNode = nodes.variableDeclaration(node.lineno, node.colno, [pattern], valueNode);
-    } else {
-      throw new Error('Walrus operator target must be a symbol or pattern');
+      return parseWalrus(ctx, resultNode);
     }
-    return parseWalrus(ctx, resultNode);
+
+    if (COMPOUND_OPS.includes(tok.value)) {
+      const operator = tok.value;
+      nextToken(ctx);
+      const valueNode = parseOr(ctx);
+      if (nodes.isSymbol(node)) {
+        return nodes.compoundAssignment(node.lineno, node.colno, [node], operator, valueNode);
+      }
+      throw new Error('Assignment target must be a symbol');
+    }
   }
 
   return node;

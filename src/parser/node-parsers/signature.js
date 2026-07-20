@@ -44,7 +44,11 @@ export const parseSignature = (ctx, tolerant, noParens) => {
     } else {
       const arg = ctx.parseExpression();
 
-      if (skipValue(ctx, TOKEN_OPERATOR, '=')) {
+      if (nodes.isAssignmentPattern(arg) && peekToken(ctx)?.type === TOKEN_OPERATOR && peekToken(ctx)?.value === '=') {
+        nextToken(ctx);
+        const value = ctx.parseExpression();
+        kwargs.addChild(nodes.pair(arg.lineno, arg.colno, arg.target, value));
+      } else if (skipValue(ctx, TOKEN_OPERATOR, '=')) {
         kwargs.addChild(
           nodes.pair(arg.lineno,
             arg.colno,

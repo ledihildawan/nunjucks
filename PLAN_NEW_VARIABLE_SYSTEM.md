@@ -14,7 +14,7 @@
 | Operator | Purpose | Example | Status |
 |----------|---------|---------|--------|
 | `:=` | Declaration (block-scoped) | `{{ x := 100 }}` | ✅ Done |
-| `=` | Reassignment (must exist) | `{{ x = 200 }}` | ✅ Done |
+| `=` | Reassignment (must exist) | `{{ x = 200 }}` | ❌ Not implemented |
 | `:=` in expr | Walrus/inline assignment | `{{ if (d := fn()) > 0 }}` | ✅ Done |
 | `\|\|=`, `&&=`, `??=`, `**=`, `//=` | Compound assignment | `{{ x \|\|= default }}` | ✅ Done |
 | `define` | Block capture | `{% define name %}...{% enddefine %}` | ✅ Done (basic, no params) |
@@ -142,19 +142,16 @@ Note: `define` creates a simple macro without parameters. For parameterized macr
 | `{% set x = 100 %}` | `{{ x := 100 }}` | Declaration uses `:=` |
 | `{% set x := 100 %}` | `{{ x := 100 }}` | Walrus now IS `:=` |
 | `{% set x %}{{ content }}{% endset %}` | `{% define x %}...{% enddefine %}` | Block capture (IMPLEMENTED) |
-| Chained assignment | Multiple statements | No longer supported |
+| `{% set x \|\|= val %}` | `{{ x \|\|= val }}` | Compound assignment NOW IMPLEMENTED |
 
 ---
 
 ## Pending / Not Implemented
 
-### 1. Tests for Compound Assignment
-Compound assignment (`||=`, `&&=`, etc.) is implemented but has no dedicated test file.
+### 1. Tests for Walrus in Expressions
+Walrus operator in conditions (`{% if (x := fn()) > 0 %}`) is implemented but has limited test coverage.
 
-### 2. Tests for Walrus in Expressions
-Walrus operator in conditions is implemented but has limited test coverage.
-
-### 3. Define with Parameters
+### 2. Define with Parameters
 `define` currently creates a simple macro without parameters. For parameterized macros, use `macro` instead.
 
 ---

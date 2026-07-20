@@ -46,18 +46,22 @@ export const parseAggregate = (ctx) => {
     if (node.children.length > 0) {
       const next = peekToken(ctx) || tok;
       if (!skip(ctx, TOKEN_COMMA)) {
-        fail(ctx, 'parseAggregate: expected comma after expression',
-          next.lineno,
-          next.colno);
-      }
-      const afterComma = peekToken(ctx).type;
-      if (afterComma === TOKEN_COMMA || afterComma === TOKEN_RIGHT_BRACKET || afterComma === TOKEN_RIGHT_PAREN) {
-        node.addChild(nodes.hole(tok.lineno, tok.colno));
-        if (afterComma === TOKEN_RIGHT_BRACKET || afterComma === TOKEN_RIGHT_PAREN) {
-          nextToken(ctx);
-          break;
+        if (next.type === TOKEN_SYMBOL || next.type === TOKEN_LEFT_BRACKET || next.type === TOKEN_LEFT_CURLY || next.type === TOKEN_LEFT_PAREN) {
+        } else {
+          fail(ctx, 'parseAggregate: expected comma after expression',
+            next.lineno,
+            next.colno);
         }
-        continue;
+      } else {
+        const afterComma = peekToken(ctx).type;
+        if (afterComma === TOKEN_COMMA || afterComma === TOKEN_RIGHT_BRACKET || afterComma === TOKEN_RIGHT_PAREN) {
+          node.addChild(nodes.hole(tok.lineno, tok.colno));
+          if (afterComma === TOKEN_RIGHT_BRACKET || afterComma === TOKEN_RIGHT_PAREN) {
+            nextToken(ctx);
+            break;
+          }
+          continue;
+        }
       }
     }
 
