@@ -65,6 +65,8 @@ import {
   compileRoot,
   compileCallExtension,
   compileCallExtensionAsync,
+  compileDo,
+  compileWith,
 } from './statement-compiler/index.js';
 
 export const COMPILE_FUNCTIONS = {
@@ -132,6 +134,8 @@ export const COMPILE_FUNCTIONS = {
   callExtension: compileCallExtension,
   callExtensionAsync: compileCallExtensionAsync,
   root: compileRoot,
+  do: compileDo,
+  with: compileWith,
 };
 
 export const compileDispatch = (ctx, node, frame) => {
