@@ -1,4 +1,5 @@
 import { nodes } from '../../nodes/index.js';
+import { compileDestructuring } from '../statement-compiler/pattern.js';
 
 export const compileInlineIf = (ctx, node, frame) => {
   ctx._emit('(');
@@ -15,17 +16,19 @@ export const compileInlineIf = (ctx, node, frame) => {
 };
 
 export const compileWalrus = (ctx, node, frame) => {
-  if (!nodes.isSymbol(node.target)) {
-    ctx.fail('Walrus operator in expressions only supports simple symbol targets', node.lineno, node.colno);
-  }
-  const targetName = node.target.value;
   const valueId = ctx._tmpid();
 
   ctx._emit('(lineno = ' + (node.lineno ?? 0) + ', colno = ' + (node.colno ?? 0) + ', (() => {');
   ctx._emit('let ' + valueId + ' = ');
   ctx.compile(node.value, frame);
   ctx._emit(';');
-  ctx._emit('frame.set("' + targetName + '", ' + valueId + ', true);');
+  if (nodes.isSymbol(node.target)) {
+    ctx._emit('frame.set(' + JSON.stringify(node.target.value) + ', ' + valueId + ', true);');
+  } else if (nodes.isArrayPattern(node.target) || nodes.isObjectPattern(node.target)) {
+    compileDestructuring(ctx, frame, node.target, valueId, false);
+  } else {
+    ctx.fail('Walrus target must be a symbol or destructuring pattern', node.lineno, node.colno);
+  }
   ctx._emit('return ' + valueId + ';');
   ctx._emit('})())');
 };
