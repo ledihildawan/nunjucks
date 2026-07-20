@@ -117,12 +117,42 @@ export const compileCompoundAssignment = (ctx, node, frame) => {
 export const compileDefineBlock = (ctx, node, frame) => {
   const name = node.name;
   const funcId = ctx._tmpid();
+  const args = node.args || [];
 
-  ctx._emitLine('let ' + funcId + ' = runtime.makeMacro([], [], async function() {');
+  const argNames = args.map(a => `"${a.name}"`);
+  const hasDefaults = args.some(a => a.defaultVal !== null);
+  const paramNames = args.map((a, i) => `l_${a.name}`);
+  const realParams = hasDefaults ? [...paramNames, 'kwargs'] : paramNames;
+
+  ctx._emitLine(`let ${funcId} = runtime.makeMacro([${argNames.join(', ')}], [], async (${realParams.join(', ')}) => {`);
+
+  ctx._emitLine('let callerFrame = frame;');
+  ctx._emitLine('frame = frame.push(true);');
+
+  if (hasDefaults) {
+    ctx._emitLine('kwargs = kwargs || {};');
+    args.forEach((arg, i) => {
+      if (arg.defaultVal) {
+        ctx._emit(`let ${arg.name} = ${paramNames[i]} !== undefined ? ${paramNames[i]} : (`);
+        ctx.compile(arg.defaultVal, frame);
+        ctx._emit(');');
+      } else {
+        ctx._emitLine(`let ${arg.name} = ${paramNames[i]};`);
+      }
+      ctx._emitLine(`frame.set("${arg.name}", ${arg.name});`);
+    });
+  } else {
+    args.forEach((arg) => {
+      ctx._emitLine(`let ${arg.name} = l_${arg.name};`);
+      ctx._emitLine(`frame.set("${arg.name}", ${arg.name});`);
+    });
+  }
+
   const bufferId = ctx._pushBuffer();
   ctx._withScopedSyntax(() => {
     ctx.compile(node.body, frame);
   });
+  ctx._emitLine('frame = callerFrame;');
   ctx._emitLine('return runtime.createSafeString(' + bufferId + ');');
   ctx._emitLine('});');
   ctx._popBuffer();

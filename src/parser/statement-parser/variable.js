@@ -1,6 +1,8 @@
 import {
   TOKEN_BLOCK_END,
   TOKEN_COMMA,
+  TOKEN_LEFT_PAREN,
+  TOKEN_RIGHT_PAREN,
   TOKEN_OPERATOR,
 } from '../../lexer/token-types.js';
 import { nodes } from '../../nodes/index.js';
@@ -80,9 +82,42 @@ export const parseDefineBlock = (ctx) => {
     fail(ctx, 'Expected define', tag.lineno, tag.colno);
   }
 
-  const nameTok = ctx.parsePrimary();
+  const nameTok = ctx.parsePrimary(true);
   if (!nameTok || (nameTok.type !== 'symbol' && !nameTok.value)) {
     fail(ctx, 'Expected block name', tag.lineno, tag.colno);
+  }
+
+  const args = [];
+  const tok = peekToken(ctx);
+  if (tok && tok.type === TOKEN_LEFT_PAREN) {
+    nextToken(ctx);
+    while (true) {
+      const argTok = peekToken(ctx);
+      if (argTok.type === TOKEN_RIGHT_PAREN) {
+        nextToken(ctx);
+        break;
+      }
+      if (argTok.type === 'symbol') {
+        const argName = nextToken(ctx).value;
+        let defaultVal = null;
+        if (skipValue(ctx, TOKEN_OPERATOR, '=')) {
+          defaultVal = ctx.parseExpression();
+        }
+        args.push({ name: argName, defaultVal });
+        const afterArg = peekToken(ctx);
+        if (afterArg.type === TOKEN_COMMA) {
+          nextToken(ctx);
+          continue;
+        } else if (afterArg.type === TOKEN_RIGHT_PAREN) {
+          nextToken(ctx);
+          break;
+        } else {
+          fail(ctx, 'Expected , or ) after argument', afterArg.lineno, afterArg.colno);
+        }
+      } else {
+        fail(ctx, 'Expected argument name', argTok.lineno, argTok.colno);
+      }
+    }
   }
 
   advanceAfterBlockEnd(ctx, 'define');
@@ -95,5 +130,5 @@ export const parseDefineBlock = (ctx) => {
 
   advanceAfterBlockEnd(ctx, 'enddefine');
 
-  return nodes.defineBlock(tag.lineno, tag.colno, nameTok.value || nameTok, body);
+  return nodes.defineBlock(tag.lineno, tag.colno, nameTok.value || nameTok, body, args);
 };

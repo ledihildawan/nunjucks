@@ -428,8 +428,8 @@ export const variableAssignment = (lineno, colno, targets, value) =>
 export const compoundAssignment = (lineno, colno, targets, operator, value) =>
   createNode(NODE_TYPES.COMPOUND_ASSIGNMENT, lineno, colno, { targets: targets || [], operator, value });
 
-export const defineBlock = (lineno, colno, name, body) =>
-  createNode(NODE_TYPES.DEFINE_BLOCK, lineno, colno, { name, body });
+export const defineBlock = (lineno, colno, name, body, args = []) =>
+  createNode(NODE_TYPES.DEFINE_BLOCK, lineno, colno, { name, body, args });
 
 export const templateLiteral = (lineno, colno, quasis) =>
   createNode(NODE_TYPES.TEMPLATE_LITERAL, lineno, colno, { quasis: quasis || [] });

@@ -43,27 +43,35 @@ const parseWalrus = (ctx, node) => {
     if (tok.value === ':=') {
       nextToken(ctx);
       const valueNode = parseOr(ctx);
+      const afterTok = peekToken(ctx);
+      const isExpressionContext = afterTok && (
+        afterTok.type === 'operator' ||
+        afterTok.type === 'right-paren' ||
+        afterTok.type === 'comma'
+      );
       let resultNode;
       if (nodes.isSymbol(node)) {
-        resultNode = nodes.variableDeclaration(node.lineno, node.colno, [node], valueNode);
-      } else if (nodes.isArrayPattern(node) || nodes.isArray(node)) {
-        const pattern = nodes.isArrayPattern(node)
-          ? node
-          : nodes.arrayPattern(node.lineno, node.colno, node.children.map(c => {
-              if (nodes.isPair(c) && nodes.isSymbol(c.value) && c.key.value === c.value.value) {
-                return c.value;
-              }
-              if (nodes.isSpread(c)) {
-                return nodes.restPattern(c.lineno, c.colno, c.argument);
-              }
-              return c;
-            }));
-        resultNode = nodes.variableDeclaration(node.lineno, node.colno, [pattern], valueNode);
-      } else if (nodes.isObjectPattern(node) || nodes.isDict(node)) {
-        let pattern;
-        if (nodes.isObjectPattern(node)) {
-          pattern = node;
+        if (isExpressionContext) {
+          resultNode = nodes.walrus(node.lineno, node.colno, node, valueNode);
         } else {
+          resultNode = nodes.variableDeclaration(node.lineno, node.colno, [node], valueNode);
+        }
+      } else if (nodes.isArrayPattern(node) || nodes.isArray(node) || nodes.isObjectPattern(node) || nodes.isDict(node)) {
+        if (isExpressionContext) {
+          throw new Error('Walrus operator in expressions only supports simple symbol targets');
+        }
+        let pattern = node;
+        if (nodes.isArray(node)) {
+          pattern = nodes.arrayPattern(node.lineno, node.colno, node.children.map(c => {
+            if (nodes.isPair(c) && nodes.isSymbol(c.value) && c.key.value === c.value.value) {
+              return c.value;
+            }
+            if (nodes.isSpread(c)) {
+              return nodes.restPattern(c.lineno, c.colno, c.argument);
+            }
+            return c;
+          }));
+        } else if (nodes.isDict(node)) {
           pattern = nodes.objectPattern(node.lineno, node.colno, node.children.map(c => {
             if (nodes.isPair(c)) {
               if (nodes.isSymbol(c.key) && nodes.isSymbol(c.value) && c.key.value === c.value.value) {

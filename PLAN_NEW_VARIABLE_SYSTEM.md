@@ -14,10 +14,10 @@
 | Operator | Purpose | Example | Status |
 |----------|---------|---------|--------|
 | `:=` | Declaration (block-scoped) | `{{ x := 100 }}` | ✅ Done |
-| `=` | Reassignment (must exist) | `{{ x = 200 }}` | ❌ Not implemented |
+| `=` | Reassignment (must exist) | `{{ x = 200 }}` | ✅ Done |
 | `:=` in expr | Walrus/inline assignment | `{{ if (d := fn()) > 0 }}` | ✅ Done |
 | `\|\|=`, `&&=`, `??=`, `**=`, `//=` | Compound assignment | `{{ x \|\|= default }}` | ✅ Done |
-| `define` | Block capture | `{% define name %}...{% enddefine %}` | ✅ Done (basic, no params) |
+| `define` | Block capture with params | `{% define name(x) %}...{% enddefine %}` | ✅ Done |
 
 ---
 
@@ -99,7 +99,18 @@ Block capture syntax for macro-like behavior:
 {{ greeting() }}  {# Outputs: Hello! #}
 ```
 
-Note: `define` creates a simple macro without parameters. For parameterized macros, use `macro` instead.
+With parameters:
+
+```nunjucks
+{% define greet(name) %}Hello {{ name }}!{% enddefine %}
+{{ greet("World") }}  {# Outputs: Hello World! #}
+
+{% define add(a, b) %}{{ a + b }}{% enddefine %}
+{{ add(1, 2) }}  {# Outputs: 3 #}
+
+{% define greet(name="Guest") %}Hello {{ name }}!{% enddefine %}
+{{ greet() }}  {# Outputs: Hello Guest! #}
+```
 
 ---
 
@@ -148,11 +159,7 @@ Note: `define` creates a simple macro without parameters. For parameterized macr
 
 ## Pending / Not Implemented
 
-### 1. Tests for Walrus in Expressions
-Walrus operator in conditions (`{% if (x := fn()) > 0 %}`) is implemented but has limited test coverage.
-
-### 2. Define with Parameters
-`define` currently creates a simple macro without parameters. For parameterized macros, use `macro` instead.
+All planned features are now IMPLEMENTED.
 
 ---
 
