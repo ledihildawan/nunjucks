@@ -65,4 +65,34 @@ describe('scope isolation', () => {
       expect(result).toBe('initial');
     });
   });
+
+  describe('switch statement', () => {
+    test('set inside case does not leak to parent', async () => {
+      const result = await renderTemplate(
+        '{% set x = 1 %}{% switch 2 %}{% case 1 %}{% set x = 10 %}{% endswitch %}{{ x }}'
+      );
+      expect(result).toBe('1');
+    });
+
+    test('set inside default case does not leak', async () => {
+      const result = await renderTemplate(
+        '{% set x = 1 %}{% switch 99 %}{% case 1 %}one{% default %}{% set x = 99 %}{% endswitch %}{{ x }}'
+      );
+      expect(result).toBe('1');
+    });
+
+    test('set inside different cases are isolated from each other', async () => {
+      const result = await renderTemplate(
+        '{% switch 1 %}{% case 1 %}{% set x = 10 %}{{ x }}{% case 2 %}{% set x = 20 %}{{ x }}{% endswitch %}'
+      );
+      expect(result).toBe('10');
+    });
+
+    test('set inside switch with nested if', async () => {
+      const result = await renderTemplate(
+        '{% set result = "original" %}{% switch 1 %}{% case 1 %}{% if true %}{% set result = "changed" %}{% endif %}{% endswitch %}{{ result }}'
+      );
+      expect(result).toBe('original');
+    });
+  });
 });
