@@ -75,6 +75,10 @@ export const NODE_TYPES = Object.freeze({
   SPREAD: 'spread',
   WALRUS: 'walrus',
   TEMPLATE_LITERAL: 'templateLiteral',
+  VARIABLE_DECLARATION: 'variableDeclaration',
+  VARIABLE_ASSIGNMENT: 'variableAssignment',
+  COMPOUND_ASSIGNMENT: 'compoundAssignment',
+  DEFINE_BLOCK: 'defineBlock',
   BITWISE_OR: 'bitwiseOr',
   BITWISE_AND: 'bitwiseAnd',
   BITWISE_XOR: 'bitwiseXor',
@@ -415,6 +419,18 @@ export const spread = (lineno, colno, argument) =>
 export const walrus = (lineno, colno, target, val) =>
   createNode(NODE_TYPES.WALRUS, lineno, colno, { target, value: val });
 
+export const variableDeclaration = (lineno, colno, targets, value) =>
+  createNode(NODE_TYPES.VARIABLE_DECLARATION, lineno, colno, { targets: targets || [], value });
+
+export const variableAssignment = (lineno, colno, targets, value) =>
+  createNode(NODE_TYPES.VARIABLE_ASSIGNMENT, lineno, colno, { targets: targets || [], value });
+
+export const compoundAssignment = (lineno, colno, targets, operator, value) =>
+  createNode(NODE_TYPES.COMPOUND_ASSIGNMENT, lineno, colno, { targets: targets || [], operator, value });
+
+export const defineBlock = (lineno, colno, name, body) =>
+  createNode(NODE_TYPES.DEFINE_BLOCK, lineno, colno, { name, body });
+
 export const templateLiteral = (lineno, colno, quasis) =>
   createNode(NODE_TYPES.TEMPLATE_LITERAL, lineno, colno, { quasis: quasis || [] });
 
@@ -533,6 +549,10 @@ export const isIs = (n) => n?.type === NODE_TYPES.IS;
 export const isSpread = (n) => n?.type === NODE_TYPES.SPREAD;
 export const isWalrus = (n) => n?.type === NODE_TYPES.WALRUS;
 export const isTemplateLiteral = (n) => n?.type === NODE_TYPES.TEMPLATE_LITERAL;
+export const isVariableDeclaration = (n) => n?.type === NODE_TYPES.VARIABLE_DECLARATION;
+export const isVariableAssignment = (n) => n?.type === NODE_TYPES.VARIABLE_ASSIGNMENT;
+export const isCompoundAssignment = (n) => n?.type === NODE_TYPES.COMPOUND_ASSIGNMENT;
+export const isDefineBlock = (n) => n?.type === NODE_TYPES.DEFINE_BLOCK;
 export const isGroup = (n) => n?.type === NODE_TYPES.GROUP;
 export const isSub = (n) => n?.type === NODE_TYPES.SUB;
 export const isMul = (n) => n?.type === NODE_TYPES.MUL;
@@ -686,6 +706,10 @@ export const nodes = Object.freeze({
   walrus,
   templateLiteral,
   keywordArgs,
+  variableDeclaration,
+  variableAssignment,
+  compoundAssignment,
+  defineBlock,
 
   // Extension creators
   callExtension,
@@ -754,6 +778,10 @@ export const nodes = Object.freeze({
   isSpread,
   isWalrus,
   isTemplateLiteral,
+  isVariableDeclaration,
+  isVariableAssignment,
+  isCompoundAssignment,
+  isDefineBlock,
   isGroup,
   isSub,
   isMul,

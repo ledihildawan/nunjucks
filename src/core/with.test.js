@@ -13,49 +13,49 @@ describe('with tag', () => {
   describe('set inside with (Form 1)', () => {
     test('creates isolated scope', async () => {
       const result = await renderTemplate(
-        '{% set x = 1 %}{% with %}{% set x = 2 %}{% endwith %}{{ x }}'
+        '{{ x := 1 }}{% with %}{{ x := 2 }}{% endwith %}{{ x }}'
       );
       expect(result).toBe('1');
     });
 
     test('variable set inside with does not leak', async () => {
       const result = await renderTemplate(
-        '{% with %}{% set inside = "yes" %}{% endwith %}{{ inside }}'
+        '{% with %}{{ inside := "yes" }}{% endwith %}{{ inside }}'
       );
       expect(result).not.toContain('yes');
     });
 
     test('can read parent variables inside with', async () => {
       const result = await renderTemplate(
-        '{% set x = "parent" %}{% with %}{{ x }}{% endwith %}'
+        '{{ x := "parent" }}{% with %}{{ x }}{% endwith %}'
       );
       expect(result).toBe('parent');
     });
 
     test('nested with blocks are isolated', async () => {
       const result = await renderTemplate(
-        '{% set x = 0 %}{% with %}{% set x = 1 %}{% with %}{% set x = 2 %}{% endwith %}{{ x }}{% endwith %}{{ x }}'
+        '{{ x := 0 }}{% with %}{{ x := 1 }}{% with %}{{ x := 2 }}{% endwith %}{{ x }}{% endwith %}{{ x }}'
       );
       expect(result).toBe('10');
     });
 
     test('with inside for loop', async () => {
       const result = await renderTemplate(
-        '{% for i in [1, 2] %}{% with %}{% set x = i * 10 %}{{ x }}{% endwith %}{% endfor %}'
+        '{% for i in [1, 2] %}{% with %}{{ x := i * 10 }}{{ x }}{% endwith %}{% endfor %}'
       );
       expect(result).toBe('1020');
     });
 
     test('with preserves original variable', async () => {
       const result = await renderTemplate(
-        '{% set msg = "original" %}{% with %}{% set msg = "changed" %}{% endwith %}{{ msg }}'
+        '{{ msg := "original" }}{% with %}{{ msg := "changed" }}{% endwith %}{{ msg }}'
       );
       expect(result).toBe('original');
     });
 
     test('multiple variables inside with are isolated', async () => {
       const result = await renderTemplate(
-        '{% with %}{% set a = 1 %}{% set b = 2 %}{{ a + b }}{% endwith %}'
+        '{% with %}{{ a := 1 }}{{ b := 2 }}{{ a + b }}{% endwith %}'
       );
       expect(result).toBe('3');
     });
@@ -101,7 +101,7 @@ describe('with tag', () => {
 
     test('inline assignment can read parent variables', async () => {
       const result = await renderTemplate(
-        '{% set base = 10 %}{% with x = base * 2 %}{{ x }}{% endwith %}'
+        '{{ base := 10 }}{% with x = base * 2 %}{{ x }}{% endwith %}'
       );
       expect(result).toBe('20');
     });
@@ -115,7 +115,7 @@ describe('with tag', () => {
 
     test('inline and set inside can coexist', async () => {
       const result = await renderTemplate(
-        '{% with x = 1 %}{% set y = 2 %}{{ x + y }}{% endwith %}'
+        '{% with x = 1 %}{{ y := 2 }}{{ x + y }}{% endwith %}'
       );
       expect(result).toBe('3');
     });

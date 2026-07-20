@@ -56,10 +56,12 @@ import {
   parseExtends,
   parseInclude,
   parseIf,
-  parseSet,
   parseSwitch,
   parseRaw,
   parseFilterStatement,
+  parseVariableDeclaration,
+  parseVariableAssignment,
+  parseDefineBlock,
 } from './statement-parser/index.js';
 import { parseNodes, parseUntilBlocks } from './top-level.js';
 import { validateExpression, DEFAULT_SECURITY_CONFIG } from '../shared/expression-validator.js';
@@ -138,11 +140,17 @@ export function createParser(tokens, securityConfig = {}) {
     parseIf: function() {
       return parseIf(this);
     },
-    parseSet: function() {
-      return parseSet(this);
-    },
     parseSwitch: function() {
       return parseSwitch(this);
+    },
+    parseVariableDeclaration: function() {
+      return parseVariableDeclaration(this);
+    },
+    parseVariableAssignment: function() {
+      return parseVariableAssignment(this);
+    },
+    parseDefineBlock: function() {
+      return parseDefineBlock(this);
     },
     parseStatement: function() {
       return parseStatement(this);

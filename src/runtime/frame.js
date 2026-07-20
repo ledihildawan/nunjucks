@@ -56,11 +56,17 @@ export function createFrame(parent, isolateWrites) {
     },
 
     resolve(name, forWrite) {
-      const p = (forWrite && state.isolateWrites) ? undefined : state.parent;
       const val = state.variables[name];
       if (val !== undefined) {
+        if (forWrite && state.isolateWrites) {
+          return undefined;
+        }
         return this;
       }
+      if (forWrite && state.isolateWrites) {
+        return undefined;
+      }
+      const p = state.parent;
       return p && p.resolve(name);
     },
 

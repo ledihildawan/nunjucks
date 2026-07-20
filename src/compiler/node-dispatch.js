@@ -48,7 +48,10 @@ import {
 
 import {
   compileIf,
-  compileSet,
+  compileVariableDeclaration,
+  compileVariableAssignment,
+  compileCompoundAssignment,
+  compileDefineBlock,
   compileSwitch,
   compileFor,
   compileMacroPublic,
@@ -116,7 +119,10 @@ export const COMPILE_FUNCTIONS = {
   pipe: compilePipe,
   pipeAsync: compilePipeAsync,
   keywordArgs: compileKeywordArgs,
-  set: compileSet,
+  variableDeclaration: compileVariableDeclaration,
+  variableAssignment: compileVariableAssignment,
+  compoundAssignment: compileCompoundAssignment,
+  defineBlock: compileDefineBlock,
   switch: compileSwitch,
   if: compileIf,
   for: compileFor,

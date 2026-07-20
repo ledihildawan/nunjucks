@@ -12,7 +12,7 @@ const renderTemplate = async (template, context = {}, config = {}) => {
 describe('destructuring - array', () => {
   test('basic array destructuring', async () => {
     const html = await renderTemplate(
-      '{% set [a, b, c] = [1, 2, 3] %}{{ a }}-{{ b }}-{{ c }}',
+      '{{ [a, b, c] := [1, 2, 3] }}{{ a }}-{{ b }}-{{ c }}',
       {}
     );
     expect(html).toBe('1-2-3');
@@ -20,7 +20,7 @@ describe('destructuring - array', () => {
 
   test('array destructuring with rest', async () => {
     const html = await renderTemplate(
-      '{% set [first, ...rest] = [1, 2, 3, 4] %}{{ first }}-{{ rest |> join(",") }}',
+      '{{ [first, ...rest] := [1, 2, 3, 4] }}{{ first }}-{{ rest |> join(",") }}',
       {}
     );
     expect(html).toBe('1-2,3,4');
@@ -28,7 +28,7 @@ describe('destructuring - array', () => {
 
   test('array destructuring with holes', async () => {
     const html = await renderTemplate(
-      '{% set [a, , c] = [1, 2, 3] %}{{ a }}-{{ c }}',
+      '{{ [a, , c] := [1, 2, 3] }}{{ a }}-{{ c }}',
       {}
     );
     expect(html).toBe('1-3');
@@ -36,7 +36,7 @@ describe('destructuring - array', () => {
 
   test('array destructuring with default', async () => {
     const html = await renderTemplate(
-      '{% set [a, b = 99] = [1] %}{{ a }}-{{ b }}',
+      '{{ [a, b = 99] := [1] }}{{ a }}-{{ b }}',
       {}
     );
     expect(html).toBe('1-99');
@@ -44,7 +44,7 @@ describe('destructuring - array', () => {
 
   test('array destructuring with nested object', async () => {
     const html = await renderTemplate(
-      '{% set [a, {name}] = [1, {name: "John"}] %}{{ a }}-{{ name }}',
+      '{{ [a, {name}] := [1, {name: "John"}] }}{{ a }}-{{ name }}',
       {}
     );
     expect(html).toBe('1-John');
@@ -54,7 +54,7 @@ describe('destructuring - array', () => {
 describe('destructuring - object', () => {
   test('basic object destructuring', async () => {
     const html = await renderTemplate(
-      '{% set {a, b} = {a: 1, b: 2} %}{{ a }}-{{ b }}',
+      '{{ {a, b} := {a: 1, b: 2} }}{{ a }}-{{ b }}',
       {}
     );
     expect(html).toBe('1-2');
@@ -62,7 +62,7 @@ describe('destructuring - object', () => {
 
   test('object destructuring with alias', async () => {
     const html = await renderTemplate(
-      '{% set {a: x, b: y} = {a: 1, b: 2} %}{{ x }}-{{ y }}',
+      '{{ {a: x, b: y} := {a: 1, b: 2} }}{{ x }}-{{ y }}',
       {}
     );
     expect(html).toBe('1-2');
@@ -70,7 +70,7 @@ describe('destructuring - object', () => {
 
   test('object destructuring with rest', async () => {
     const html = await renderTemplate(
-      '{% set {a, ...rest} = {a: 1, b: 2, c: 3} %}{{ a }}-{{ rest.b }}-{{ rest.c }}',
+      '{{ {a, ...rest} := {a: 1, b: 2, c: 3} }}{{ a }}-{{ rest.b }}-{{ rest.c }}',
       {}
     );
     expect(html).toBe('1-2-3');
@@ -78,7 +78,7 @@ describe('destructuring - object', () => {
 
   test('object destructuring with default', async () => {
     const html = await renderTemplate(
-      '{% set {a, b = 99} = {a: 1} %}{{ a }}-{{ b }}',
+      '{{ {a, b = 99} := {a: 1} }}{{ a }}-{{ b }}',
       {}
     );
     expect(html).toBe('1-99');
@@ -86,7 +86,7 @@ describe('destructuring - object', () => {
 
   test('object destructuring with nested array', async () => {
     const html = await renderTemplate(
-      '{% set {items: [first, second]} = {items: [10, 20]} %}{{ first }}-{{ second }}',
+      '{{ {items: [first, second]} := {items: [10, 20]} }}{{ first }}-{{ second }}',
       {}
     );
     expect(html).toBe('10-20');
@@ -94,7 +94,7 @@ describe('destructuring - object', () => {
 
   test('object destructuring missing key', async () => {
     const html = await renderTemplate(
-      '{% set {a, b} = {a: 1} %}{{ a }}-{{ b }}',
+      '{{ {a, b} := {a: 1} }}{{ a }}-{{ b }}',
       {}
     );
     expect(html).toBe('1-undefined');

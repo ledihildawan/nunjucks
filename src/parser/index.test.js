@@ -124,11 +124,6 @@ describe('parse - statements', () => {
     expect(nodes.getNodeTypeName(ast.children[0])).toBe('macro');
   });
 
-  test('parses set statement', () => {
-    const ast = parse('{% set x = 1 %}');
-    expect(nodes.getNodeTypeName(ast.children[0])).toBe('set');
-  });
-
   test('parses block', () => {
     const ast = parse('{% block title %}Default{% endblock %}');
     expect(nodes.getNodeTypeName(ast.children[0])).toBe('block');

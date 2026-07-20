@@ -27,25 +27,3 @@ describe('parse - spread operator', () => {
     expect(ast.children).toHaveLength(1);
   });
 });
-
-describe('parse - logical assignment', () => {
-  test('parses ||= in set statement', () => {
-    const ast = parse('{% set x ||= "default" %}');
-    expect(ast.children).toHaveLength(1);
-  });
-
-  test('parses &&= in set statement', () => {
-    const ast = parse('{% set x &&= "value" %}');
-    expect(ast.children).toHaveLength(1);
-  });
-
-  test('parses ??= in set statement', () => {
-    const ast = parse('{% set x ??= "default" %}');
-    expect(ast.children).toHaveLength(1);
-  });
-
-  test('parses multiple logical assignments', () => {
-    const ast = parse('{% set a ||= 1 %}{% set b ??= 2 %}{% set c &&= 3 %}');
-    expect(ast.children).toHaveLength(3);
-  });
-});

@@ -103,18 +103,6 @@ describe('inline template error locations', () => {
     expect(html).not.toContain('hidden');
   });
 
-  test('blocks nested prototype mutation from templates in sandbox mode', async () => {
-    const err = await renderTemplate('{% set user.__proto__ = payload %}', {
-      user: {},
-      payload: { polluted: true }
-    }, {
-      sandbox: true
-    }).catch(e => e);
-
-    expect(err.code).toBe('SANDBOX_SET');
-    expect(err.subject).toBe('__proto__');
-  });
-
   test('does not invoke blocked-key getters in sandbox mode', async () => {
     let getterCalled = false;
     const user = {};

@@ -3,7 +3,6 @@ import * as mod from './index.js';
 
 describe('compiler/statement-compiler exports', () => {
   test('exports compileIf', () => expect(mod.compileIf).toBeFunction());
-  test('exports compileSet', () => expect(mod.compileSet).toBeFunction());
   test('exports compileSwitch', () => expect(mod.compileSwitch).toBeFunction());
   test('exports compileFor', () => expect(mod.compileFor).toBeFunction());
   test('exports emitLoopBindings', () => expect(mod.emitLoopBindings).toBeFunction());

@@ -55,6 +55,8 @@ export const compileOutput = (ctx, node, frame) => {
         ctx._emit(JSON.stringify(child.value));
         ctx._emit(';');
       }
+    } else if (nodes.isVariableDeclaration(child) || nodes.isVariableAssignment(child)) {
+      ctx.compile(child, frame);
     } else {
       const isPipeType = nodes.isPipe(child) || nodes.isPipeAsync(child);
       const isOptionalChainType = nodes.isOptionalChain(child) || nodes.isOptionalCall(child);

@@ -38,7 +38,7 @@ import { parseBlock } from './block.js';
 import { parseExtends } from './extends.js';
 import { parseInclude } from './include.js';
 import { parseIf } from './if.js';
-import { parseSet } from './set.js';
+import { parseVariableDeclaration, parseVariableAssignment, parseDefineBlock } from './variable.js';
 import { parseSwitch } from './switch.js';
 import { parseRaw } from './raw.js';
 import { parseFilterStatement } from './filter.js';
@@ -85,11 +85,13 @@ export {
   parseExtends,
   parseInclude,
   parseIf,
-  parseSet,
   parseSwitch,
   parseRaw,
   parseFilterStatement,
   parseWithContext,
+  parseVariableDeclaration,
+  parseVariableAssignment,
+  parseDefineBlock,
 };
 
 export const parseStatement = (ctx) => {
@@ -119,8 +121,8 @@ export const parseStatement = (ctx) => {
       return parseExtends(ctx);
     case 'include':
       return parseInclude(ctx);
-    case 'set':
-      return parseSet(ctx);
+    case 'define':
+      return parseDefineBlock(ctx);
     case 'macro':
       return parseMacro(ctx);
     case 'call':

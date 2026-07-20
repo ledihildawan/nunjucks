@@ -10,6 +10,7 @@ import {
 } from '../../lexer/token-types.js';
 import { nodes } from '../../nodes/index.js';
 import { nextToken, pushToken, fail } from '../cursor.js';
+import { tryParsePattern } from '../node-parsers/index.js';
 
 export const parsePrimary = (ctx, noPostfix) => {
   const tok = nextToken(ctx);
@@ -49,7 +50,18 @@ export const parsePrimary = (ctx, noPostfix) => {
     node = ctx.parseTemplateLiteral();
   } else {
     pushToken(ctx, tok);
-    node = ctx.parseAggregate();
+    try {
+      node = ctx.parseAggregate();
+    } catch (e) {
+      if (e.message && e.message.includes('expected colon after dict key')) {
+        node = tryParsePattern(ctx);
+        if (!node) {
+          throw e;
+        }
+      } else {
+        throw e;
+      }
+    }
   }
 
   if (!noPostfix) {

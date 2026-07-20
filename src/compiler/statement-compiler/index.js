@@ -1,5 +1,5 @@
 export { compileIf } from './if.js';
-export { compileSet } from './set.js';
+export { compileVariableDeclaration, compileVariableAssignment, compileCompoundAssignment, compileDefineBlock } from './variable.js';
 export { compileSwitch } from './switch.js';
 export { compileFor, emitLoopBindings } from './for.js';
 export { compileMacroPublic, compileCaller } from './macro.js';
