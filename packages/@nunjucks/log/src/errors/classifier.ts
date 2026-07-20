@@ -41,9 +41,7 @@ const deriveFromRule = (
     causes: baseCauses.map(c => replacePlaceholders(c, undefinedName, extra)).filter((cause): cause is string => cause !== null),
     fixCode: replacePlaceholders(baseFixCode, undefinedName, extra),
     fixComment: replacePlaceholders(baseFixComment, undefinedName, extra),
-    suggestion: replacePlaceholders(input.suggestion ?? rule.suggestion, undefinedName, extra),
     documentationUrl: rule.documentationUrl ?? null,
-    relatedLinks: rule.relatedLinks ?? [],
     severity: rule.severity ?? 'error'
   };
 };
@@ -63,9 +61,7 @@ const codeClassifier: Classifier = (input) => {
       causes: errorDef.causes,
       fixCode: errorDef.fixCode,
       fixComment: errorDef.fixComment,
-      suggestion: errorDef.suggestion,
       documentationUrl: errorDef.documentationUrl,
-      relatedLinks: errorDef.relatedLinks,
       severity: errorDef.severity
     }, input);
   }

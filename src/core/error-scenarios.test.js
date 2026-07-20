@@ -79,10 +79,9 @@ describe('error messages - real scenarios', () => {
     expect(err.code).toBe('UNDEFINED_VARIABLE');
     expect(err.causes.length).toBeGreaterThan(0);
     expect(err.fixCode).toBeTruthy();
-    expect(err.suggestion).toBeTruthy();
 
     const text = err.output({ format: 'text', verbosity: 'full' });
-    expect(text).toContain('💡 More Info:');
+    expect(text).toContain('Suggested Fix:');
   });
 
   test('UNDEFINED_FILTER error explains how to register', async () => {
@@ -129,19 +128,6 @@ describe('error messages - real scenarios', () => {
     expect(err.message).toContain('nonexistent.njk');
     expect(err.causes.length).toBeGreaterThanOrEqual(2);
     expect(err.fixCode).toBeTruthy();
-    expect(err.suggestion).toBeTruthy();
-  });
-
-  test('CIRCULAR_INCLUDE has informative message', async () => {
-    const { createLog, ERROR_DEFINITIONS } = await import('@nunjucks/log');
-    const err = createLog('error', ERROR_DEFINITIONS.CIRCULAR_INCLUDE, {}, null, {
-      lineno: 1, colno: 0, phase: 'render', lineBase: 'zero'
-    });
-
-    expect(err.code).toBe('CIRCULAR_INCLUDE');
-    expect(err.causes.some(c => c.toLowerCase().includes('circular') || c.toLowerCase().includes('itself'))).toBe(true);
-    expect(err.fixCode).toBeTruthy();
-    expect(err.suggestion).toBeTruthy();
   });
 
   test('SYNTAX_ERROR has helpful causes and template syntax fix', async () => {

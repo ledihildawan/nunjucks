@@ -4,16 +4,6 @@ import { ERROR_DEFINITIONS } from '@nunjucks/log';
 const AUDIT_CONFIG = {
   minCauses: 1,
   minFixQuality: 'ok',
-  requireSuggestion: [
-    'UNDEFINED_VARIABLE',
-    'UNDEFINED_FUNCTION',
-    'UNDEFINED_FILTER',
-    'SYNTAX_ERROR',
-    'PARSE_ERROR',
-    'UNKNOWN_BLOCK_TAG',
-    'TEMPLATE_NOT_FOUND',
-    'FILE_NOT_FOUND',
-  ],
 };
 
 const isLowQualityFix = (fix) => {
@@ -77,17 +67,6 @@ describe('error definitions audit', () => {
       }
     }
     expect(lowQuality).toEqual([]);
-  });
-
-  test('critical errors have suggestions', () => {
-    const missingSuggestions = [];
-    for (const name of AUDIT_CONFIG.requireSuggestion) {
-      if (!ERROR_DEFINITIONS[name]) continue;
-      if (!ERROR_DEFINITIONS[name].suggestion) {
-        missingSuggestions.push(name);
-      }
-    }
-    expect(missingSuggestions).toEqual([]);
   });
 
   test('each cause has at least 2 items', () => {

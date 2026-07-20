@@ -18,7 +18,6 @@ export const TEMPLATE_ERRORS = {
     ],
     fixCode: 'env.opts.{subject} = "valid-value";',
     fixComment: 'Provide a valid value for the `{subject}` option',
-    suggestion: 'Check the documentation for the expected type and format of `{subject}`',
     subjectFrom: firstCapture
   },
   CONTAINER_FACTORY: {
@@ -49,7 +48,6 @@ export const TEMPLATE_ERRORS = {
     ],
     fixCode: 'container.register("{subject}", () => new MyClass());\nconst instance = container.resolve("{subject}");',
     fixComment: 'Call `container.register()` before resolving',
-    suggestion: 'Check that your DI bootstrap code runs before any rendering',
     subjectFrom: firstCapture
   },
   CONTAINER_ERROR: {
@@ -65,7 +63,6 @@ export const TEMPLATE_ERRORS = {
     ],
     fixCode: 'try {\n  const instance = container.resolve("name");\n} catch (e) {\n  console.error("Container failed:", e);\n}',
     fixComment: 'Wrap container operations in try/catch to see the actual error',
-    suggestion: 'Add logging to your container factories to debug failures',
     subjectFrom: null
   },
   TEMPLATE_INVALID_SOURCE: {
@@ -126,7 +123,6 @@ export const TEMPLATE_ERRORS = {
     ],
     fixCode: 'render("Hello {{ name }}", { name: "World" })',
     fixComment: 'Ensure the template is compiled by nunjucks using `compile()`',
-    suggestion: 'See the compile API docs for how to produce a valid compiled template',
     documentationUrl: `${DOCS_BASE}#compile`,
     subjectFrom: null
   },
@@ -143,7 +139,6 @@ export const TEMPLATE_ERRORS = {
     ],
     fixCode: '/* Please report this as a bug at https://github.com/mozilla/nunjucks/issues */',
     fixComment: 'This is a nunjucks internal error',
-    suggestion: 'File an issue with the failing template and stack trace at the GitHub repo',
     documentationUrl: 'https://github.com/mozilla/nunjucks/issues',
     subjectFrom: null
   },
@@ -160,7 +155,6 @@ export const TEMPLATE_ERRORS = {
     ],
     fixCode: 'env.opts.maxTemplateSize = 1024 * 1024;  // 1 MB',
     fixComment: 'Increase `maxTemplateSize` or split the template into smaller files',
-    suggestion: 'Split large templates into partials using `{% include %}`',
     subjectFrom: null
   },
   INVALID_CONFIG: {
@@ -176,7 +170,6 @@ export const TEMPLATE_ERRORS = {
     ],
     fixCode: 'env.opts.executionTimeout = 30000;  // 30 seconds\nenv.opts.maxTemplateSize = 1024 * 1024;',
     fixComment: 'Use non-negative values for `{subject}` (0 means unlimited)',
-    suggestion: 'Set `0` to disable the limit entirely (use with caution)',
     subjectFrom: firstCapture
   },
   TEMPLATE_MUST_BE_STRING: {
@@ -193,7 +186,6 @@ export const TEMPLATE_ERRORS = {
     ],
     fixCode: 'render("Hello {{ name }}", { name: "World" })\nrender("./template.njk", context, { loader: new FileSystemLoader(".") })',
     fixComment: 'Pass a string template or configure a loader for file paths',
-    suggestion: 'Check the function signature: `render(template: string, context: object, config?: object)`',
     subjectFrom: null
   },
   TEMPLATE_NULL: {
@@ -209,7 +201,6 @@ export const TEMPLATE_ERRORS = {
     ],
     fixCode: 'render("Hello {{ name }}", { name: "World" })',
     fixComment: 'Provide a non-null template string',
-    suggestion: 'Add a check before rendering: `if (template) render(template, ctx)`',
     subjectFrom: null
   },
   JS_STACK_SOURCE: {
@@ -226,7 +217,6 @@ export const TEMPLATE_ERRORS = {
     ],
     fixCode: 'const template = isValid ? "Hello" : "Default";\nrender(template, context);',
     fixComment: 'Ensure the template string is not null before passing to render',
-    suggestion: 'Trace back through the call stack to find where null was introduced',
     subjectFrom: null
   }
 } as const satisfies Record<string, ErrorDefinition>;

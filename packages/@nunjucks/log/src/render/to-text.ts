@@ -38,9 +38,7 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
     causes?: string[];
     fixCode?: string | null;
     fixComment?: string | null;
-    suggestion?: string | null;
     documentationUrl?: string | null;
-    relatedLinks?: Array<{ label: string; url: string }>;
     severity?: 'error' | 'warning' | 'info';
   };
 
@@ -50,9 +48,7 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
     : (errObj.causes || []);
   const fixCode = classification.fixCode ?? errObj.fixCode ?? '';
   const fixComment = classification.fixComment ?? errObj.fixComment ?? '';
-  const suggestion = classification.suggestion ?? errObj.suggestion ?? null;
   const documentationUrl = classification.documentationUrl ?? errObj.documentationUrl ?? null;
-  const relatedLinks = classification.relatedLinks ?? errObj.relatedLinks ?? [];
 
   const severityLabel = errObj.severity === 'warning' ? 'Warning:' : errObj.severity === 'info' ? 'Info:' : 'Error:';
 
@@ -74,9 +70,8 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
     const shortPath = shortenPath(path);
     locationStr = ` at ${shortPath}:${location.line}:${location.col}`;
     const causeHint = causes.length > 0 ? stripMarkdown(causes[0]) : '';
-    const tipHint = suggestion ? stripMarkdown(suggestion) : '';
     const docHint = documentationUrl ? documentationUrl : '';
-    const extras = [causeHint, tipHint, docHint].filter(Boolean).join(' | ');
+    const extras = [causeHint, docHint].filter(Boolean).join(' | ');
     return `${severityLabel} ${message}${locationStr}${extras ? '\n' + extras : ''}`;
   }
 
@@ -112,14 +107,7 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
     parts.push('Suggested Fix:');
     if (fixComment) parts.push(`  // ${stripMarkdown(fixComment)}`);
     parts.push(`  ${fixCode}`);
-  }
-
-  if (suggestion || documentationUrl || relatedLinks.length > 0) {
-    parts.push('');
-    parts.push('💡 More Info:');
-    if (suggestion) parts.push(`  ${stripMarkdown(suggestion)}`);
-    if (documentationUrl) parts.push(`  📖 ${documentationUrl}`);
-    relatedLinks.forEach(l => parts.push(`  📖 ${l.label}: ${l.url}`));
+    if (documentationUrl) parts.push(`  Learn more: ${documentationUrl}`);
   }
 
   if (formattedStack) {

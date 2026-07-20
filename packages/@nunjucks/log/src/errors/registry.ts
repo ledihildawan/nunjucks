@@ -35,9 +35,7 @@ interface Rule {
   causes: string[];
   fixCode?: string;
   fixComment?: string;
-  suggestion?: string;
   documentationUrl?: string;
-  relatedLinks?: Array<{ label: string; url: string }>;
   severity?: ErrorDefinition['severity'];
   sourceFromStack?: boolean;
 }
@@ -50,9 +48,7 @@ export const RULES: Rule[] = values(ERROR_DEFINITIONS).map((def) => ({
   causes: def.causes,
   fixCode: def.fixCode,
   fixComment: def.fixComment,
-  suggestion: def.suggestion,
   documentationUrl: def.documentationUrl,
-  relatedLinks: def.relatedLinks,
   severity: def.severity,
   sourceFromStack: def.sourceFromStack
 }));
@@ -67,8 +63,6 @@ export const DEFAULT_CLASSIFICATION: Classification = {
   ],
   fixCode: 'Inspect the error message above for clues',
   fixComment: 'Review the template source and context',
-  suggestion: null,
   documentationUrl: null,
-  relatedLinks: [],
   severity: 'error'
 };

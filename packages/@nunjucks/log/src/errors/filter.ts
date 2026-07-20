@@ -2,8 +2,6 @@ import type { ErrorDefinition, SubjectExtractor } from './types.ts';
 
 const firstCapture: SubjectExtractor = (groups) => groups[1] ?? null;
 
-const DOCS_BASE = 'https://mozilla.github.io/nunjucks/templating.html';
-
 export const FILTER_ERRORS = {
   FILTER_ERROR: {
     name: 'FILTER_ERROR',
@@ -18,7 +16,6 @@ export const FILTER_ERRORS = {
     ],
     fixCode: 'env.addFilter("myFilter", function(value) {\n  if (value === null || value === undefined) return "";\n  return value.toUpperCase();\n})',
     fixComment: 'Add input validation in your custom filter and handle edge cases',
-    suggestion: 'Wrap the filter call in a try/catch in your JavaScript filter implementation',
     subjectFrom: null
   },
   FILTER_TYPE_ERROR: {
@@ -34,7 +31,6 @@ export const FILTER_ERRORS = {
     ],
     fixCode: '{{ items |> groupby("existingAttr") }}',
     fixComment: 'Use an attribute name that exists on all items',
-    suggestion: 'Print `{{ items[0] |> dump }}` to inspect the structure',
     subjectFrom: firstCapture
   },
   SLICE_STEP: {
@@ -50,7 +46,6 @@ export const FILTER_ERRORS = {
     ],
     fixCode: '{{ list[::1] }}\n{{ list[::2] }}\n{{ list[1::2] }}',
     fixComment: 'Use a non-zero step. Positive steps go forward, negative go backward',
-    suggestion: 'Step must be a non-zero integer. Use 1 for "every element", -1 for "reverse"',
     subjectFrom: null
   },
   LIST_FILTER: {
@@ -66,7 +61,6 @@ export const FILTER_ERRORS = {
     ],
     fixCode: '{{ "hello" |> list }}  {# ["h", "e", "l", "l", "o"] #}\n{{ [1, 2] |> list }}  {# [1, 2] #}',
     fixComment: 'Convert the value to a string or array first using `string()` or `array()`',
-    suggestion: 'Check the value type with `{{ value | type }}` before passing to list',
     subjectFrom: firstCapture
   },
   SORT_FILTER: {
@@ -82,7 +76,6 @@ export const FILTER_ERRORS = {
     ],
     fixCode: '{{ items |> sort }}',
     fixComment: 'Ensure the value passed to `sort` is an array',
-    suggestion: 'Use `{{ value | type }}` to verify, or convert with `array()`',
     subjectFrom: firstCapture
   },
   SORT_FILTER_ATTR: {
@@ -98,7 +91,6 @@ export const FILTER_ERRORS = {
     ],
     fixCode: '{{ items |> sort(false, false, "existingAttr") }}',
     fixComment: 'Use an attribute that exists on every item in the array',
-    suggestion: 'Print items first: `{% for i in items %}{{ i | dump }}{% endfor %}` to see available fields',
     subjectFrom: firstCapture
   },
   GROUPBY_FILTER: {
@@ -114,7 +106,6 @@ export const FILTER_ERRORS = {
     ],
     fixCode: '{{ items |> groupby("category") }}',
     fixComment: 'Pass an array to the groupby filter',
-    suggestion: 'Check the query result and ensure you have an array, even if empty',
     subjectFrom: firstCapture
   },
   GROUPBY_FILTER_ATTR: {
@@ -130,7 +121,6 @@ export const FILTER_ERRORS = {
     ],
     fixCode: '{% for group in items |> groupby("category") %}\n  {{ group.grouper }}: {{ group.list | length }}\n{% endfor %}',
     fixComment: 'Use an attribute that exists on all items',
-    suggestion: 'Inspect items with `dump` to find the correct attribute name',
     subjectFrom: firstCapture
   },
   DICTSDICT_FILTER: {
@@ -146,7 +136,6 @@ export const FILTER_ERRORS = {
     ],
     fixCode: '{{ { b: 2, a: 1, c: 3 } |> dictsort }}',
     fixComment: 'Pass an object to dictsort, not an array',
-    suggestion: 'Use `items | dictsort` for an array of objects or `myObj | dictsort` for a flat object',
     subjectFrom: firstCapture
   },
   DICTSDICT_FILTER_BY: {
@@ -162,7 +151,6 @@ export const FILTER_ERRORS = {
     ],
     fixCode: '{{ data |> dictsort(false, "key") }}  {# sort by keys #}\n{{ data |> dictsort(false, "value") }}  {# sort by values #}',
     fixComment: 'Use exactly `"key"` or `"value"` (with quotes) as the by parameter',
-    suggestion: 'The by parameter is case-sensitive: `"key"` not `"Key"`',
     subjectFrom: firstCapture
   }
 } as const satisfies Record<string, ErrorDefinition>;

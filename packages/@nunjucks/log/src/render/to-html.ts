@@ -136,9 +136,7 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
     causes?: string[];
     fixCode?: string | null;
     fixComment?: string | null;
-    suggestion?: string | null;
     documentationUrl?: string | null;
-    relatedLinks?: Array<{ label: string; url: string }>;
     severity?: 'error' | 'warning' | 'info';
   };
   const classified = classifyFromError(errWithExtras);
@@ -152,9 +150,7 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
     : (errWithExtras.causes || []);
   const fixCode = classified?.fixCode ?? errWithExtras.fixCode ?? '';
   const fixComment = classified?.fixComment ?? errWithExtras.fixComment ?? '';
-  const suggestion = classified?.suggestion ?? errWithExtras.suggestion ?? null;
   const documentationUrl = classified?.documentationUrl ?? errWithExtras.documentationUrl ?? null;
-  const relatedLinks = classified?.relatedLinks ?? errWithExtras.relatedLinks ?? [];
   const severity = classified?.severity ?? errWithExtras.severity ?? 'error';
 
   let humanTitle = classified?.title || plain;
@@ -303,22 +299,9 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
       </section>
       <section aria-labelledby="h-fix">
         <h2 id="h-fix" class="text-label">Suggested Fix</h2>
-        <pre class="fix-block"><code>${fixComment ? `<span class="syntax-comment">${escapeHtml(fixComment)}</span>\n` : ''}${fixCode ? highlightHtml(fixCode) : '// No fix available'}</code></pre>
+        <pre class="fix-block"><code>${fixComment ? `<span class="syntax-comment">${escapeHtml(fixComment)}</span>\n` : ''}${fixCode ? highlightHtml(fixCode) : '// No fix available'}${documentationUrl ? `\n<span class="docs-inline">Learn more: <a href="${escapeHtml(documentationUrl)}" target="_blank" rel="noopener noreferrer" class="docs-link">${escapeHtml(documentationUrl)}</a></span>` : ''}</code></pre>
       </section>
     </div>
-
-    ${(suggestion || documentationUrl || relatedLinks.length > 0) ? `
-    <section class="more-info-section" aria-labelledby="h-more-info">
-      <h2 id="h-more-info" class="text-label">💡 More Info</h2>
-      ${suggestion ? `<p class="insight-text">${renderMarkdownToAnsi(suggestion)}</p>` : ''}
-      ${(documentationUrl || relatedLinks.length > 0) ? `
-      <ul class="docs-list">
-        ${documentationUrl ? `<li><a href="${escapeHtml(documentationUrl)}" target="_blank" rel="noopener noreferrer" class="docs-link">📖 Documentation</a></li>` : ''}
-        ${relatedLinks.map(l => `<li><a href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer" class="docs-link">${escapeHtml(l.label)}</a></li>`).join('')}
-      </ul>
-      ` : ''}
-    </section>
-    ` : ''}
 
     ${renderContext ? renderContextHtml(renderContext) : ''}
 

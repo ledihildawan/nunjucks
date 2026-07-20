@@ -19,7 +19,6 @@ export const PARSER_ERRORS = {
     ],
     fixCode: '{% if condition %}\n  {{ value }}\n{% endif %}',
     fixComment: 'Verify all opening tags have matching closing tags and all brackets/quotes are paired',
-    suggestion: 'Use an editor with Nunjucks syntax highlighting to visually spot mismatched brackets',
     documentationUrl: `${DOCS_BASE}#tags`,
     subjectFrom: null
   },
@@ -36,7 +35,6 @@ export const PARSER_ERRORS = {
     ],
     fixCode: '{{ a + b }}',
     fixComment: 'Check the operator and operand types around the error position',
-    suggestion: 'Verify the syntax matches the docs at the caret position',
     documentationUrl: `${DOCS_BASE}#expressions`,
     subjectFrom: firstCapture
   },
@@ -53,7 +51,6 @@ export const PARSER_ERRORS = {
     ],
     fixCode: '{% if condition %}{% endif %}',
     fixComment: 'Add the missing token indicated by the error message',
-    suggestion: 'Look at the line above and below for unclosed tags or missing syntax',
     subjectFrom: firstCapture
   },
   PARSER_EXPECTED_IN: {
@@ -69,7 +66,6 @@ export const PARSER_ERRORS = {
     ],
     fixCode: '{% for item in items %}\n  {{ item }}\n{% endfor %}',
     fixComment: 'The correct syntax is `{% for VAR in COLLECTION %}`',
-    suggestion: 'Nunjucks uses `in` not `of` like Python',
     subjectFrom: null
   },
   PARSER_VARIABLE_NAME: {
@@ -85,7 +81,6 @@ export const PARSER_ERRORS = {
     ],
     fixCode: '{% set validName = value %}',
     fixComment: 'Use a valid identifier: letters, digits, underscores (not starting with digit)',
-    suggestion: 'Identifiers can only contain `[a-zA-Z0-9_]` and cannot start with a number',
     subjectFrom: null
   },
   PARSER_TAG_NAME: {
@@ -101,7 +96,6 @@ export const PARSER_ERRORS = {
     ],
     fixCode: '{% if condition %}...{% endif %}',
     fixComment: 'Make sure the tag has a valid name like `if`, `for`, `block`, `set`, etc.',
-    suggestion: 'See the docs for the full list of supported tags',
     documentationUrl: `${DOCS_BASE}#tags`,
     subjectFrom: null
   },
@@ -118,7 +112,6 @@ export const PARSER_ERRORS = {
     ],
     fixCode: '{{ variableName }}\n{% if variableName %}...{% endif %}',
     fixComment: 'Add a valid expression in place of the missing one',
-    suggestion: 'A simple expression can be a variable name, number, or string',
     subjectFrom: null
   },
   PARSER_ERROR: {
@@ -134,7 +127,6 @@ export const PARSER_ERRORS = {
     ],
     fixCode: '/* Check syntax at the reported location */',
     fixComment: 'Review the template around the reported line and column',
-    suggestion: 'Try simplifying the problematic expression to isolate the issue',
     subjectFrom: null
   },
   PARSER_PUSH_TOKEN: {
@@ -149,7 +141,6 @@ export const PARSER_ERRORS = {
     ],
     fixCode: '/* This is an internal parser issue */',
     fixComment: 'This is a parser bug, please report it with the template that triggered it',
-    suggestion: 'Try to simplify the expression that triggers this error',
     documentationUrl: 'https://github.com/mozilla/nunjucks/issues',
     subjectFrom: null
   },
@@ -166,7 +157,6 @@ export const PARSER_ERRORS = {
     ],
     fixCode: '{{ value }}',
     fixComment: 'Add the missing closing `}}` to terminate the variable expression',
-    suggestion: 'Make sure every `{{` has a matching `}}`',
     subjectFrom: null
   },
   UNKNOWN_BLOCK_TAG: {
@@ -180,9 +170,8 @@ export const PARSER_ERRORS = {
       'A custom tag has not been registered',
       'An unmatched closing tag (e.g. `{% endif %}` without `{% if %}`)'
     ],
-    fixCode: '{% if condition %}...{% endif %}',
+    fixCode: "{% if condition %}...{% endif %}",
     fixComment: 'Use only registered tags, or register custom tags via env.addExtension()',
-    suggestion: 'See the docs for the list of built-in tags and how to register custom ones',
     documentationUrl: `${DOCS_BASE}#tags`,
     subjectFrom: firstCapture
   },
@@ -199,7 +188,6 @@ export const PARSER_ERRORS = {
     ],
     fixCode: '{{ true }} or {{ false }}',
     fixComment: 'Use the literals `true` or `false` (lowercase)',
-    suggestion: 'Use `0` or `1` for numeric flags if you need cross-language compatibility',
     subjectFrom: null
   }
 } as const satisfies Record<string, ErrorDefinition>;

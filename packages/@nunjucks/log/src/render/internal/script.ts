@@ -82,7 +82,7 @@ export const TOGGLE_SCRIPT = `<script>
 
   function escapeHtml(str) {
     if (typeof str !== 'string') return String(str);
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   function valueType(value) {
@@ -92,44 +92,73 @@ export const TOGGLE_SCRIPT = `<script>
   }
 
   function previewValue(value) {
-    if (Array.isArray(value)) return 'Array(' + value.length + ')';
-    if (value !== null && typeof value === 'object') return 'Object(' + Object.keys(value).length + ')';
-    if (typeof value === 'string') return '"' + value + '"';
+    if (Array.isArray(value)) {
+      if (value.length === 0) return '[]';
+      const preview = value.slice(0, 3).map(function(v) {
+        if (typeof v === 'string') return '"' + (v.length > 40 ? v.substring(0, 40) + '...' : v) + '"';
+        if (v !== null && typeof v === 'object') return Array.isArray(v) ? '[...]' : '{...}';
+        return String(v);
+      }).join(', ');
+      return '(' + value.length + ') [' + preview + (value.length > 3 ? ', ...' : '') + ']';
+    }
+    if (value !== null && typeof value === 'object') {
+      const keys = Object.keys(value);
+      if (keys.length === 0) return '{}';
+      const preview = keys.slice(0, 3).map(function(k) {
+        const v = value[k];
+        const vStr = typeof v === 'string' ? '"' + (v.length > 40 ? v.substring(0, 40) + '...' : v) + '"' :
+          (v !== null && typeof v === 'object' ? (Array.isArray(v) ? '[...]' : '{...}') : String(v));
+        return k + ': ' + vStr;
+      }).join(', ');
+      return '{' + preview + (keys.length > 3 ? ', ...' : '') + '}';
+    }
+    if (typeof value === 'string') {
+      const truncated = value.length > 40 ? value.substring(0, 40) + '...' : value;
+      return '"' + truncated + '"';
+    }
     return String(value);
   }
 
   function createNode(key, value) {
     const isObject = value !== null && typeof value === 'object';
-    const row = document.createElement('div');
-    row.className = 'ctx-row' + (isObject ? ' is-expandable' : '');
+    const isEmpty = isObject && (
+      Array.isArray(value) ? value.length === 0 : Object.keys(value).length === 0
+    );
+    const isExpandable = isObject && !isEmpty;
 
-    if (isObject) {
+    const row = document.createElement('div');
+    row.className = 'ctx-row' + (isExpandable ? ' is-expandable' : '');
+
+    if (isExpandable) {
+      const isArray = Array.isArray(value);
+      const openBracket = isArray ? '[' : '{';
+      const closeBracket = isArray ? ']' : '}';
+
       row.setAttribute('role', 'button');
       row.setAttribute('tabindex', '0');
       row.setAttribute('aria-expanded', 'false');
-      row.innerHTML = '<span class="ctx-toggle">+</span><span class="ctx-key">' + escapeHtml(key) + ':</span> <span class="ctx-label">' + escapeHtml(previewValue(value)) + '</span>';
+      row.innerHTML = '<span class="ctx-toggle">\u25B6</span><span class="ctx-key">' + escapeHtml(key) + ':</span> <span class="ctx-label">' + escapeHtml(previewValue(value)) + '</span>';
 
       const container = document.createElement('div');
-      container.className = 'ctx-indent hidden';
+      container.className = 'ctx-children hidden';
       let loaded = false;
+
+      const closing = document.createElement('div');
+      closing.className = 'ctx-closing hidden';
+      closing.textContent = closeBracket;
 
       const toggle = function() {
         const isHidden = container.classList.toggle('hidden');
         const toggleEl = row.querySelector('.ctx-toggle');
+        const labelEl = row.querySelector('.ctx-label');
         row.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
-        if (toggleEl) toggleEl.textContent = isHidden ? '+' : '-';
+        if (labelEl) labelEl.textContent = isHidden ? escapeHtml(previewValue(value)) : openBracket;
+        closing.classList.toggle('hidden', isHidden);
 
         if (!isHidden && !loaded) {
           const entries = Object.entries(value);
-          if (entries.length === 0) {
-            const emptyMsg = document.createElement('div');
-            emptyMsg.className = 'ctx-row is-empty';
-            emptyMsg.textContent = '(empty)';
-            container.appendChild(emptyMsg);
-          } else {
-            const nodes = entries.map((entry) => createNode(entry[0], entry[1]));
-            batchRender(container, nodes, 0);
-          }
+          const nodes = entries.map(function(entry) { return createNode(entry[0], entry[1]); });
+          batchRender(container, nodes, 0);
           loaded = true;
         }
       };
@@ -143,8 +172,10 @@ export const TOGGLE_SCRIPT = `<script>
       });
 
       const wrapper = document.createElement('div');
+      wrapper.className = 'ctx-node';
       wrapper.appendChild(row);
       wrapper.appendChild(container);
+      wrapper.appendChild(closing);
       return wrapper;
     }
 
@@ -194,10 +225,23 @@ export const TOGGLE_SCRIPT = `<script>
     }
     if (!data) return;
 
+    const opening = document.createElement('div');
+    opening.className = 'ctx-row ctx-bracket';
+    opening.innerHTML = '<span class="ctx-label">{</span>';
+    viewer.appendChild(opening);
+
+    const container = document.createElement('div');
+    container.className = 'ctx-children';
     Object.entries(data).forEach((entry) => {
       const node = createNode(entry[0], entry[1]);
-      viewer.appendChild(node);
+      container.appendChild(node);
     });
+    viewer.appendChild(container);
+
+    const closing = document.createElement('div');
+    closing.className = 'ctx-row ctx-bracket';
+    closing.innerHTML = '<span class="ctx-label">}</span>';
+    viewer.appendChild(closing);
 
     const expandButton = document.querySelector('[data-ctx-action="expand"]');
     const collapseButton = document.querySelector('[data-ctx-action="collapse"]');

@@ -19,7 +19,6 @@ export const IO_ERRORS = {
     ],
     fixCode: '{% include "views/{subject}" %}',
     fixComment: 'Verify the file path and ensure it is in one of the configured search paths',
-    suggestion: 'Check the loader configuration: `new FileSystemLoader("views")` or similar',
     documentationUrl: `${DOCS_BASE}#includes`,
     subjectFrom: firstCapture
   },
@@ -36,7 +35,6 @@ export const IO_ERRORS = {
     ],
     fixCode: '{% include "shared/header.html" %}',
     fixComment: 'Break the cycle by extracting shared content into a third template',
-    suggestion: 'Use `{% import %}` for shared macros instead of `{% include %}` to avoid cycles',
     documentationUrl: `${DOCS_BASE}#includes`,
     subjectFrom: null
   },
@@ -54,7 +52,6 @@ export const IO_ERRORS = {
     ],
     fixCode: '{% include "templates/header.html" %}',
     fixComment: 'Verify the template path points to a readable file',
-    suggestion: 'Check file permissions and ensure the path is correct',
     subjectFrom: firstCapture
   },
   INVALID_INCLUDE: {
@@ -70,7 +67,6 @@ export const IO_ERRORS = {
     ],
     fixCode: '{% include "template.html" %}\n{% set name = "header.html" %}\n{% include name %}',
     fixComment: 'Wrap the template name in quotes, or ensure the variable holds a string',
-    suggestion: 'Use a string variable for dynamic paths: `{% include templateName %}` where templateName is a string',
     subjectFrom: null
   },
   IMPORT_ERROR: {
@@ -87,7 +83,6 @@ export const IO_ERRORS = {
     ],
     fixCode: '{% import "macros/{name}.njk" as macros %}',
     fixComment: 'Verify the import path exists and the loader can find it',
-    suggestion: 'Check `FileSystemLoader` paths and the file extension',
     subjectFrom: firstCapture
   }
 } as const satisfies Record<string, ErrorDefinition>;

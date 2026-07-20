@@ -2,8 +2,6 @@ import type { ErrorDefinition, SubjectExtractor } from './types.ts';
 
 const firstCapture: SubjectExtractor = (groups) => groups[1] ?? null;
 
-const DOCS_BASE = 'https://mozilla.github.io/nunjucks/templating.html';
-
 export const SANDBOX_ERRORS = {
   SANDBOX_ACCESS: {
     name: 'SANDBOX_ACCESS',
@@ -18,7 +16,6 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: '{{ allowedProperty }}',
     fixComment: 'Use only sandbox-allowed properties, or add `{subject}` to the allowlist',
-    suggestion: 'Run with `sandbox: false` only for trusted templates (NEVER for user input)',
     subjectFrom: firstCapture
   },
   SANDBOX_SET: {
@@ -34,7 +31,6 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: '{% set safeVar = value %}',
     fixComment: 'Use a regular variable instead of mutating an object property',
-    suggestion: 'If you need to set a property, use a different property name or disable sandbox',
     subjectFrom: firstCapture
   },
   SANDBOX_ALLOWLIST: {
@@ -50,7 +46,6 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: 'env.sandboxAllowlist.push("{subject}")',
     fixComment: 'Add `{subject}` to `sandboxAllowlist` or disable allowlist mode',
-    suggestion: 'Review the security implications before adding to the allowlist',
     subjectFrom: firstCapture
   },
   SANDBOX_CONTEXT_MODIFY: {
@@ -66,7 +61,6 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: '{% set localVar = value %}',
     fixComment: 'Set local template variables instead of modifying the context',
-    suggestion: 'Pass derived values via the render context from your JavaScript code',
     subjectFrom: null
   },
   SANDBOX_CODE_EXECUTION: {
@@ -82,7 +76,6 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: '{{ setTimeout(callback, 0) }}',
     fixComment: 'Pass a function reference instead of a string of code',
-    suggestion: 'Use a pre-built function instead of dynamic code strings',
     subjectFrom: null
   },
   SANDBOX_TIMEOUT_EXEC: {
@@ -98,7 +91,6 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: 'env.opts.executionTimeout = 60000',
     fixComment: 'Increase `executionTimeout` or refactor to break long work into smaller chunks',
-    suggestion: 'Pre-process large data outside of template rendering',
     subjectFrom: null
   },
   SANDBOX_CONTEXT_ERROR: {
@@ -114,7 +106,6 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: '{{ value }}',
     fixComment: 'Use only allowed operations in sandbox mode',
-    suggestion: 'Define the operation as a regular filter or function outside the sandbox',
     subjectFrom: null
   },
   SANDBOX_PROTO_ACCESS: {
@@ -130,7 +121,6 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: '{{ value |> default("") }}',
     fixComment: 'Use `default()` filter or check for undefined before accessing properties',
-    suggestion: 'Use optional chaining `?.` to safely access nested properties',
     subjectFrom: null
   },
   BLOCKED_CONTEXT_KEYS: {
@@ -138,7 +128,6 @@ export const SANDBOX_ERRORS = {
     message: 'Cannot use blocked keys in context: {keys}',
     pattern: /^Cannot use blocked keys in context: (.+)$/i,
     category: 'security_error',
-    titleTemplate: 'Blocked keys in render context',
     causes: [
       'Context contains **blocked keys** like `__proto__`, `constructor`, or `prototype`',
       'Dangerous keys detected in the render context',
@@ -146,7 +135,6 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: 'const safe = JSON.parse(JSON.stringify(context)); delete safe.__proto__;',
     fixComment: 'Clean the context object before passing it to render',
-    suggestion: 'Use a sanitization helper to strip prototype-pollution-prone keys',
     subjectFrom: null
   },
   DANGEROUS_CONTEXT_VALUES: {
@@ -154,7 +142,6 @@ export const SANDBOX_ERRORS = {
     message: 'Context contains unsafe values: {values}',
     pattern: /^Context contains unsafe values: (.+)$/i,
     category: 'security_error',
-    titleTemplate: 'Unsafe values detected in context',
     causes: [
       'Context contains **dangerous values** like `eval`, `Function`, or `process`',
       'Potentially malicious functions in the render context',
@@ -162,7 +149,6 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: 'const safe = Object.assign({}, context, { eval: undefined, Function: undefined });',
     fixComment: 'Remove dangerous functions from the context before rendering',
-    suggestion: 'Validate and sanitize all values passed to the render context',
     subjectFrom: null
   },
   DANGEROUS_CONTEXT_VALUE_SCRUBBED: {
@@ -170,7 +156,6 @@ export const SANDBOX_ERRORS = {
     message: 'Scrubbed unsafe values from context: {values}',
     pattern: /^Scrubbed unsafe values from context: (.+)$/i,
     category: 'security_error',
-    titleTemplate: 'Unsafe values were removed from context',
     causes: [
       'Context contained **dangerous values** that were automatically removed',
       'Security scrubbing removed `eval`, `Function`, or other dangerous globals',
@@ -178,7 +163,6 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: 'const safe = Object.assign({}, context, { eval: undefined, Function: undefined });',
     fixComment: 'Clean the context yourself before passing to render',
-    suggestion: 'Pre-sanitize your context to know exactly what is removed',
     subjectFrom: null
   },
   DANGEROUS_TEMPLATE_CODE: {
@@ -186,7 +170,6 @@ export const SANDBOX_ERRORS = {
     message: 'Template contains unsafe code: {violations}',
     pattern: /^Template contains unsafe code: (.+)$/i,
     category: 'security_error',
-    titleTemplate: 'Unsafe code detected in template',
     causes: [
       'Template contains **dangerous code patterns** that the security scanner caught',
       'Attempted to access global objects like `process`, `require`, or `global`',
@@ -194,7 +177,6 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: '/* Refactor to use env globals or filters instead of direct code execution */',
     fixComment: 'Remove dangerous code from the template',
-    suggestion: 'Expose functionality via env.addGlobal() or env.addFilter() instead of accessing internals',
     documentationUrl: 'https://mozilla.github.io/nunjucks/api.html#security',
     subjectFrom: null
   }

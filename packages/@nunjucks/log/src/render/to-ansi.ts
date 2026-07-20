@@ -77,37 +77,16 @@ const formatCausesAnsi = (causes: string[]): string => {
   return `\n${picocolors.bold('Possible Causes:')}\n${items}`;
 };
 
-const formatFixAnsi = (fixCode: string | null, fixComment: string | null): string => {
+const formatFixAnsi = (fixCode: string | null, fixComment: string | null, documentationUrl: string | null): string => {
   if (!fixCode) return '';
   let out = `\n${picocolors.bold('Suggested Fix:')}`;
   if (fixComment) {
     out += `\n${picocolors.dim('// ' + stripMarkdown(fixComment))}`;
   }
   out += `\n${picocolors.green(fixCode)}`;
-  return out;
-};
-
-const formatMoreInfoAnsi = (
-  suggestion: string | null,
-  documentationUrl: string | null,
-  relatedLinks: Array<{ label: string; url: string }>
-): string => {
-  if (!suggestion && !documentationUrl && relatedLinks.length === 0) return '';
-
-  let out = `\n${picocolors.bold(picocolors.cyan('💡 More Info:'))}`;
-
-  if (suggestion) {
-    out += `\n  ${stripMarkdown(suggestion)}`;
-  }
-
   if (documentationUrl) {
-    out += `\n  ${picocolors.cyan(documentationUrl)}`;
+    out += `\n${picocolors.dim('Learn more: ' + documentationUrl)}`;
   }
-
-  for (const link of relatedLinks) {
-    out += `\n  ${picocolors.cyan(link.label)}: ${link.url}`;
-  }
-
   return out;
 };
 
@@ -136,9 +115,7 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
     causes?: string[];
     fixCode?: string | null;
     fixComment?: string | null;
-    suggestion?: string | null;
     documentationUrl?: string | null;
-    relatedLinks?: Array<{ label: string; url: string }>;
     severity?: 'error' | 'warning' | 'info';
   };
 
@@ -148,9 +125,7 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
     : (errObj.causes || []);
   const fixCode = classification.fixCode ?? errObj.fixCode ?? '';
   const fixComment = classification.fixComment ?? errObj.fixComment ?? '';
-  const suggestion = classification.suggestion ?? errObj.suggestion ?? null;
   const documentationUrl = classification.documentationUrl ?? errObj.documentationUrl ?? null;
-  const relatedLinks = classification.relatedLinks ?? errObj.relatedLinks ?? [];
 
   const path = templatePath || (error as { templateName?: string }).templateName || '';
   const displayLineno = lineno ?? (error as { lineno?: number | null }).lineno ?? null;
@@ -161,9 +136,8 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
 
   if (verbosity === 'medium') {
     const causeHint = causes.length > 0 ? stripMarkdown(causes[0]) : '';
-    const tipHint = suggestion ? stripMarkdown(suggestion) : '';
     const docHint = documentationUrl ? documentationUrl : '';
-    const extras = [causeHint, tipHint, docHint].filter(Boolean).join(' | ');
+    const extras = [causeHint, docHint].filter(Boolean).join(' | ');
     if (path) {
       const shortPath = shortenPath(path);
       if (isFilePath(path)) {
@@ -242,11 +216,8 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   const causesStr = formatCausesAnsi(causes);
   if (causesStr) parts.push(causesStr);
 
-  const fixStr = formatFixAnsi(fixCode, fixComment);
+  const fixStr = formatFixAnsi(fixCode, fixComment, documentationUrl);
   if (fixStr) parts.push(fixStr);
-
-  const moreInfoStr = formatMoreInfoAnsi(suggestion, documentationUrl, relatedLinks);
-  if (moreInfoStr) parts.push(moreInfoStr);
 
   if (options.renderContext && verbosity === 'full') {
     parts.push(renderContextAnsi(options.renderContext));

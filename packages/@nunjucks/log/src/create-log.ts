@@ -10,9 +10,7 @@ export interface ErrorDefinitionEntry {
   causes?: string[];
   fixCode?: string;
   fixComment?: string;
-  suggestion?: string;
   documentationUrl?: string;
-  relatedLinks?: Array<{ label: string; url: string }>;
   severity?: 'error' | 'warning' | 'info';
 }
 
@@ -73,9 +71,7 @@ export interface TemplateError extends Error {
   causes?: string[];
   fixCode?: string | null;
   fixComment?: string | null;
-  suggestion?: string | null;
   documentationUrl?: string | null;
-  relatedLinks?: Array<{ label: string; url: string }>;
   severity?: 'error' | 'warning' | 'info';
   toJSON?: () => Record<string, unknown>;
   outputOptions?: Omit<OutputOptions, 'format'>;
@@ -98,7 +94,6 @@ export interface TemplateWarning {
   causes?: string[];
   fixCode?: string | null;
   fixComment?: string | null;
-  suggestion?: string | null;
   output: (options?: Omit<OutputOptions, 'format' | 'isProduction'>) => string;
 }
 
@@ -255,12 +250,10 @@ export function createLog(
     if (errorDef.causes && errorDef.causes.length > 0) err.causes = errorDef.causes;
     if (errorDef.fixCode) err.fixCode = errorDef.fixCode;
     if (errorDef.fixComment) err.fixComment = errorDef.fixComment;
-    if (errorDef.suggestion) err.suggestion = errorDef.suggestion;
     if (errorDef.documentationUrl) err.documentationUrl = errorDef.documentationUrl;
-    if (errorDef.relatedLinks) err.relatedLinks = errorDef.relatedLinks;
     if (errorDef.severity) err.severity = errorDef.severity;
     err.toJSON = function() {
-      return { name: this.name, code: this.code, subject: this.subject, message: this.message, phase: this.phase, templateName: this.templateName, templatePath: this.templatePath, sourceStartLine: this.sourceStartLine, lineno: this.lineno, colno: this.colno, lineBase: this.lineBase, causes: this.causes, fixCode: this.fixCode, fixComment: this.fixComment, suggestion: this.suggestion, severity: this.severity, stack: this.stack };
+      return { name: this.name, code: this.code, subject: this.subject, message: this.message, phase: this.phase, templateName: this.templateName, templatePath: this.templatePath, sourceStartLine: this.sourceStartLine, lineno: this.lineno, colno: this.colno, lineBase: this.lineBase, causes: this.causes, fixCode: this.fixCode, fixComment: this.fixComment, severity: this.severity, stack: this.stack };
     };
     err.output = createOutputFn('error');
     return err;
@@ -271,7 +264,6 @@ export function createLog(
   if (errorDef.causes && errorDef.causes.length > 0) warn.causes = errorDef.causes;
   if (errorDef.fixCode) warn.fixCode = errorDef.fixCode;
   if (errorDef.fixComment) warn.fixComment = errorDef.fixComment;
-  if (errorDef.suggestion) warn.suggestion = errorDef.suggestion;
   warn.output = createOutputFn('warning');
   return warn;
 }

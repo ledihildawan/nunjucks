@@ -7,17 +7,15 @@ export type ErrorSeverity = 'error' | 'warning' | 'info';
 
 export interface ErrorDefinition {
   name: string;
-  message: string | ((args?: Record<string, string> | CaptureGroup[]) => string);
+  message: string | ((args?) => string);
   pattern: RegExp;
   category: string;
   titleTemplate?: string;
   causes: string[];
   fixCode?: string;
   fixComment?: string;
-  suggestion?: string;
   documentationUrl?: string;
-  relatedLinks?: Array<{ label: string; url: string }>;
-  severity?: ErrorSeverity;
+  severity?: 'error' | 'warning' | 'info';
   subjectFrom?: SubjectExtractor | null;
   extraFrom?: ExtraExtractor | null;
   sourceFromStack?: boolean;
@@ -29,9 +27,7 @@ export interface Classification {
   causes: string[];
   fixCode: string | null;
   fixComment: string | null;
-  suggestion: string | null;
   documentationUrl: string | null;
-  relatedLinks: Array<{ label: string; url: string }>;
   severity: ErrorSeverity;
   title?: string | null;
 }
@@ -43,7 +39,6 @@ export interface ClassifyInput {
   causes?: string[];
   fixCode?: string;
   fixComment?: string;
-  suggestion?: string;
 }
 
 export type Classifier = (input: ClassifyInput) => Classification | null;

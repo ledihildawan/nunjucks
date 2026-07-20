@@ -14,7 +14,6 @@ interface ErrorWithExtras {
   causes?: string[];
   fixCode?: string | null;
   fixComment?: string | null;
-  suggestion?: string | null;
 }
 
 export const classify = (message: string): Classification => {
@@ -29,9 +28,7 @@ export const classifyFromError = (error: ErrorWithExtras | null): Classification
       causes: ['Unknown error occurred'],
       fixCode: null,
       fixComment: null,
-      suggestion: null,
       documentationUrl: null,
-      relatedLinks: [],
       severity: 'error'
     };
   }
@@ -41,8 +38,7 @@ export const classifyFromError = (error: ErrorWithExtras | null): Classification
     subject: error.subject,
     causes: error.causes,
     fixCode: error.fixCode ?? undefined,
-    fixComment: error.fixComment ?? undefined,
-    suggestion: error.suggestion ?? undefined
+    fixComment: error.fixComment ?? undefined
   });
 };
 

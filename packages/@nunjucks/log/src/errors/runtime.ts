@@ -18,7 +18,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: '{{ {parent}?.{accessPath} |> default("") }}',
     fixComment: 'Use optional chaining `?.` or `default()` filter to handle null safely',
-    suggestion: 'Run `{{ {parent} |> dump }}` in a debug template to inspect the value at runtime',
     subjectFrom: firstCapture,
     extraFrom: (groups) => ({ accessPath: groups[1] || '', state: groups[2] || '', parent: groups[3] || '' })
   },
@@ -36,7 +35,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: "{{ {subject} |> default('fallback') }}",
     fixComment: 'Add a default value with the `default` filter, or pass `{subject}` in the render context',
-    suggestion: 'Print `{{ {subject} |> dump }}` in a debug template to see all available variables and their values',
     documentationUrl: `${DOCS_BASE}#variables`,
     subjectFrom: firstCapture
   },
@@ -54,7 +52,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: '{{ {parent }?.{property} |> default("N/A") }}',
     fixComment: 'Use optional chaining `?.` or `default()` to handle missing properties gracefully',
-    suggestion: 'Inspect the data structure with `{{ {parent} |> dump(2) }}` to see available properties',
     subjectFrom: firstCapture,
     extraFrom: (groups) => ({ property: groups[1] || '', parent: groups[2] || '' })
   },
@@ -72,7 +69,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: "env.addGlobal('{subject}', function() { /* ... */ })",
     fixComment: 'Register the missing function globally on the environment before rendering',
-    suggestion: 'Search your codebase for `addGlobal` to see where functions are registered and verify setup order',
     subjectFrom: firstCapture
   },
   NOT_A_FUNCTION: {
@@ -88,7 +84,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: "{{ typeof {subject} === 'function' ? {subject}() : '' }}",
     fixComment: 'Add a type check before calling, or use `if` to conditionally invoke',
-    suggestion: 'Print `typeof {subject}` first to see what type it actually is',
     subjectFrom: firstCapture
   },
   UNDEFINED_BLOCK: {
@@ -105,7 +100,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: '{% extends "base.njk" %}\n\n{% block content %}\n  Your content here\n{% endblock %}',
     fixComment: 'Either rename the block or add the corresponding block to the parent template',
-    suggestion: 'Open the parent template and check the list of `{% block %}` declarations',
     subjectFrom: firstCapture
   },
   UNDEFINED_FILTER: {
@@ -122,7 +116,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: "env.addFilter('{subject}', function(value) { return value; })",
     fixComment: 'Register the missing filter on the environment before rendering',
-    suggestion: 'Check `env.filters` in your debugger to see all currently registered filters',
     documentationUrl: `${DOCS_BASE}#filters`,
     subjectFrom: firstCapture
   },
@@ -139,7 +132,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: "env.addTest('{subject}', function(value) { return /* boolean */ false; })",
     fixComment: 'Register the missing test on the environment',
-    suggestion: 'Use `is defined` or `is undefined` for the most common checks',
     subjectFrom: firstCapture
   },
   UNKNOWN_BLOCK_RUNTIME: {
@@ -156,7 +148,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: '{% block content %}\n  {{ super() }}\n  Additional child content\n{% endblock %}',
     fixComment: 'Rename the child block or remove the `super()` call',
-    suggestion: 'Add a default `{% block X %}{% endblock %}` placeholder in the parent template to prevent this error',
     subjectFrom: firstCapture
   },
   DUPLICATE_BLOCK: {
@@ -170,9 +161,8 @@ export const RUNTIME_ERRORS = {
       'A copy-paste error left two block declarations with the same name',
       'The template is being compiled twice (e.g. included and extended simultaneously)'
     ],
-    fixCode: '{% block content %}{% endblock %}',
+    fixCode: "{% block content %}{% endblock %}",
     fixComment: 'Remove or rename the duplicate block',
-    suggestion: 'Search the template for `{% block {subject} %}` and keep only one',
     subjectFrom: firstCapture
   },
   NO_SUPER_BLOCK: {
@@ -188,7 +178,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: '{% block {subject} %}\n  {% if false %}{{ super() }}{% endif %}\n  Your content\n{% endblock %}',
     fixComment: 'Guard the `super()` call with an `{% if %}` or remove it',
-    suggestion: 'Check the inheritance chain and ensure the parent template defines the block',
     subjectFrom: firstCapture
   },
   IN_OPERATOR: {
@@ -204,7 +193,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: '{{ ["a", "b", "c"] |> contains("a") }}',
     fixComment: 'Use the `contains` filter or check `is in array` for arrays',
-    suggestion: 'For arrays use `array.indexOf(value) !== -1`. For objects use `key in object`',
     subjectFrom: (groups) => `${groups[1]} in ${groups[2]}`
   },
   TIMEOUT: {
@@ -221,7 +209,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: '{{ env.opts.executionTimeout = 60000; /* 60s */ }}',
     fixComment: 'Increase the `executionTimeout` config or simplify the template',
-    suggestion: 'Move heavy computation to pre-processing rather than rendering',
     subjectFrom: null
   },
   KEY_NOT_FOUND: {
@@ -237,7 +224,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: '{{ object?.{subject} |> default("missing") }}',
     fixComment: 'Use optional chaining or provide a default value',
-    suggestion: 'Use `Object.keys(obj)` to see what keys are available',
     subjectFrom: firstCapture
   },
   INVALID_LOOKUP: {
@@ -253,7 +239,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: "{{ {target}.key }} or {{ {target}['key'] }}",
     fixComment: 'Use either dot notation OR bracket notation, never mixed',
-    suggestion: 'For dynamic keys use `obj[variable]`, for static keys use `obj.key`',
     subjectFrom: firstCapture
   },
   UNDEFINED_VALUE_MATCH: {
@@ -270,7 +255,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: "{{ object?.{subject} |> default('N/A') }}",
     fixComment: 'Use optional chaining `?.` and the `default` filter to handle missing values',
-    suggestion: 'Wrap the expression in `{% if value %}{{ value }}{% endif %}` to render conditionally',
     subjectFrom: firstCapture
   },
   CALL_MATCH: {
@@ -287,7 +271,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: 'env.addGlobal("funcName", function(arg) { /* ... */ })',
     fixComment: 'Register the function with `addGlobal` before rendering',
-    suggestion: 'Verify the function is defined and accessible from the template scope',
     subjectFrom: firstCapture
   },
   OUTPUT_MATCH: {
@@ -303,7 +286,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: "{{ value |> default('No value') }}",
     fixComment: 'Provide a default value with the `default` filter',
-    suggestion: 'Use `{% if value is defined %}{{ value }}{% endif %}` to guard the output',
     subjectFrom: firstCapture
   },
   RESERVED_KEYWORD: {
@@ -319,7 +301,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: "env.addFilter('my{subject}', function(value) { /* ... */ })",
     fixComment: 'Choose a different name with a prefix or suffix to avoid the conflict',
-    suggestion: 'See the list of reserved words: if, for, set, block, macro, include, extends, etc.',
     subjectFrom: null
   },
   RESERVED_KEYWORD_CONTEXT: {
@@ -329,14 +310,11 @@ export const RUNTIME_ERRORS = {
     category: 'reserved_keyword_context',
     titleTemplate: "Cannot use reserved keyword '{subject}' outside of its intended context",
     causes: [
-      '`caller` is only available inside a `{% call %}` block',
-      '`super` is only available inside an overriding `{% block %}`',
-      '`loop` is only available inside a `{% for %}` body',
-      '`self` or other reserved context keywords are used outside their scope'
+      '`{subject}` is a **reserved keyword** with special context requirements',
+      'Only available in specific template constructs'
     ],
-    fixCode: '{% call macro() %}{% endcall %}',
-    fixComment: 'Use `{subject}` only inside the appropriate template construct',
-    suggestion: 'Move `{subject}` inside the matching tag (e.g. `{{ caller() }}` inside a `{% call %}`)',
+    fixCode: 'Use {subject} only in its intended context',
+    fixComment: 'Review when {subject} can be used',
     subjectFrom: firstCapture
   },
   ASSERT_TYPE_ERROR: {
@@ -352,7 +330,6 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: '/* Please report this as a bug at https://github.com/mozilla/nunjucks/issues */',
     fixComment: 'This is a nunjucks internal error - not caused by your template',
-    suggestion: 'File an issue with the failing template and stack trace at the GitHub repository',
     documentationUrl: 'https://github.com/mozilla/nunjucks/issues',
     subjectFrom: null
   }

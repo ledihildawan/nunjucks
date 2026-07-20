@@ -141,27 +141,11 @@ export const CSS = `
     overflow: hidden;
   }
 
-  .more-info-section {
-    margin-block-end: 2rem;
-  }
-
-  .insight-text {
-    font-size: 0.875rem;
-    color: var(--color-text-primary);
-    line-height: 1.6;
-    text-wrap: pretty;
-    margin-block-end: 0.75rem;
-    strong { font-weight: 600; }
-    code { font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace; }
-  }
-
-  .docs-list {
-    list-style: none;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: 0;
-    padding: 0;
+  .docs-inline {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
   }
 
   .docs-link {
@@ -342,6 +326,11 @@ export const CSS = `
     border-color: var(--color-text-secondary);
   }
   .ctx-tree {
+    --ctx-indent: 2ch;
+    --ctx-toggle-font-size: 8px;
+    --ctx-toggle-width: 16px;
+    --ctx-connector-width: 12px;
+    --ctx-connector-color: var(--color-border);
     margin: 0; background: var(--color-code-bg);
     border-radius: 0.5rem;
     box-shadow:
@@ -354,26 +343,64 @@ export const CSS = `
     @media (width >= 40rem) { font-size: 0.8125rem; }
   }
   .ctx-row {
-    display: flex; align-items: flex-start;
-    padding: 2px 0.75rem;
+    display: flex; align-items: center;
+    padding: 2px 0;
     user-select: none;
   }
   .ctx-row.is-expandable { cursor: pointer; }
   .ctx-row:hover, .ctx-row:focus-visible { background: var(--color-bg-alt); outline: none; }
+  .ctx-row:focus-visible { box-shadow: inset 0 0 0 1px var(--color-error-border); }
   .ctx-row.is-empty { color: var(--color-text-secondary); font-style: italic; }
   .ctx-toggle {
-    width: 16px; color: var(--color-text-secondary);
-    font-size: 12px; line-height: 18px; text-align: center;
-    flex-shrink: 0;
+    width: var(--ctx-toggle-width); color: var(--color-text-secondary);
+    font-size: var(--ctx-toggle-font-size); line-height: 18px; text-align: center;
+    flex-shrink: 0; display: inline-block;
+    transition: transform 0.15s;
   }
-  .ctx-key { color: oklch(70% 0.15 190); font-weight: 600; margin-right: 5px; }
-  .ctx-label { color: var(--color-text-secondary); font-style: italic; }
-  .ctx-indent { margin-left: 20px; box-shadow: inset 1px 0 0 var(--color-border); padding-left: 5px; }
-  .ctx-indent.hidden { display: none; }
-  .ctx-string { color: light-dark(oklch(40% 0.15 145), oklch(75% 0.15 145)); }
-  .ctx-number { color: light-dark(oklch(45% 0.16 60), oklch(78% 0.16 60)); }
-  .ctx-boolean { color: oklch(70% 0.15 280); font-style: italic; }
-  .ctx-null, .ctx-undefined { color: oklch(60% 0.15 25); font-style: italic; }
+  .ctx-row.is-expandable[aria-expanded="true"] .ctx-toggle {
+    transform: rotate(90deg);
+  }
+  .ctx-key {
+    color: light-dark(oklch(45% 0.18 300), oklch(75% 0.14 300));
+    font-weight: 600; margin-right: 5px;
+  }
+  .ctx-label { color: var(--color-text-secondary); }
+  .ctx-children {
+    margin-left: var(--ctx-indent); padding-left: 0;
+    border-left: 1px dotted var(--ctx-connector-color);
+  }
+  .ctx-children.hidden { display: none; }
+  .ctx-closing {
+    padding-left: var(--ctx-toggle-width);
+    color: var(--color-text-secondary);
+  }
+  .ctx-closing.hidden { display: none; }
+  .ctx-row.ctx-bracket {
+    padding-left: var(--ctx-indent); cursor: default;
+  }
+  .ctx-row.ctx-bracket:hover { background: transparent; }
+  .ctx-children .ctx-row {
+    position: relative;
+    isolation: isolate;
+  }
+  .ctx-children .ctx-row::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: var(--ctx-connector-width);
+    height: 0;
+    border-top: 1px dotted var(--ctx-connector-color);
+    pointer-events: none;
+    z-index: -1;
+  }
+  .ctx-string { color: light-dark(oklch(45% 0.15 25), oklch(72% 0.15 25)); }
+  .ctx-number { color: light-dark(oklch(45% 0.18 200), oklch(70% 0.14 200)); }
+  .ctx-boolean { color: light-dark(oklch(45% 0.18 140), oklch(75% 0.14 140)); font-weight: 600; }
+  .ctx-null, .ctx-undefined {
+    color: light-dark(oklch(55% 0.01 285), oklch(60% 0.01 285));
+    font-style: italic;
+  }
 
   .stack-container {
     font-size: 0.75rem;
