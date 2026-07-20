@@ -157,9 +157,27 @@ With parameters:
 
 ---
 
-## Pending / Not Implemented
+## Potential Improvements
 
-All planned features are now IMPLEMENTED.
+### 1. Walrus operator with destructuring in expressions
+Currently walrus in expressions only supports simple symbol targets:
+```nunjucks
+{% if (d := getData()) > 0 %}  {# works #}
+{% if ([a, b] := getPair()) %}  {# currently NOT supported in expression context #}
+```
+
+### 2. Tests for edge cases
+- Walrus with compound operators in expression: `{{ (x := 1) &&= 2 }}`
+- Nested walrus: `{{ (a := (b := 2)) }}`
+- Walrus in list comprehension: `{% for i in [(x := 1)] %}`
+
+### 3. Performance optimizations
+- Cache compiled frame lookups
+- Reduce IIFE overhead in walrus expressions
+
+### 4. Error messages improvements
+- Better error messages for compound assignment on undefined variables
+- Suggest using `:=` when `=` is used on undefined variable
 
 ---
 
