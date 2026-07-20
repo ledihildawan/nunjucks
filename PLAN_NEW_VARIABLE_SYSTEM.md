@@ -157,45 +157,21 @@ With parameters:
 
 ---
 
-## Potential Improvements
+## Completed Improvements
 
-### 1. Walrus operator with destructuring in expressions
-Currently walrus in expressions only supports simple symbol targets:
-```nunjucks
-{% if (d := getData()) > 0 %}  {# works #}
-{% if ([a, b] := getPair()) %}  {# currently NOT supported in expression context #}
-```
+All planned features are implemented. Additional improvements completed:
 
-### 2. Tests for edge cases
-- Walrus with compound operators in expression: `{{ (x := 1) &&= 2 }}`
+- Array destructuring walrus: `{% if ([a, b] := pair) %}`
+- Object destructuring walrus: `{% if ({a, b} := value) %}`
 - Nested walrus: `{{ (a := (b := 2)) }}`
-- Walrus in list comprehension: `{% for i in [(x := 1)] %}`
-
-### 3. Performance optimizations
-- Cache compiled frame lookups
-- Reduce IIFE overhead in walrus expressions
-
-### 4. Error messages improvements
-- Better error messages for compound assignment on undefined variables
-- Suggest using `:=` when `=` is used on undefined variable
-
----
-
-## Implementation Order (Completed)
-
-1. ✅ Phase 1: Lexer - `:=` token
-2. ✅ Phase 2: Nodes - New node types (VARIABLE_DECLARATION, VARIABLE_ASSIGNMENT, COMPOUND_ASSIGNMENT)
-3. ✅ Phase 3: Parser - Variable parsing + expression handling
-4. ✅ Phase 4: Compiler - Variable compilation
-5. ✅ Phase 5: Destructuring - Pattern compiler
-6. ✅ Phase 6: Tests - Updated existing tests
-7. ✅ Phase 7: Integration - Removed old `set` code
+- Walrus in arrays: `{{ [(x := 1), (y := 2)] }}`
+- Prefix/postfix increment/decrement: `{{ ++x }}-{{ x++ }}`
 
 ---
 
 ## Test Results
 
 ```
-890 passing tests
+895 passing tests
 0 failing tests
 ```
