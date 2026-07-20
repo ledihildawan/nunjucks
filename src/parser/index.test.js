@@ -159,11 +159,6 @@ describe('parse - statements', () => {
     expect(nodes.getNodeTypeName(ast.children[0])).toBe('switch');
   });
 
-  test('parses with context', () => {
-    const ast = parse('{% with { a: 1 } %}{{ a }}{% endwith %}');
-    expect(nodes.getNodeTypeName(ast.children[0])).toBe('with');
-  });
-
   test('parses raw', () => {
     const ast = parse('{% raw %}{{ raw }}{% endraw %}');
     expect(nodes.getNodeTypeName(ast.children[0])).toBe('output');

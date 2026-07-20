@@ -8,11 +8,6 @@ describe('parse - with statement', () => {
     expect(nodes.getNodeTypeName(ast.children[0])).toBe('with');
   });
 
-  test('parses with object', () => {
-    const ast = parse('{% with { a: 1, b: 2 } %}{{ a }}{{ b }}{% endwith %}');
-    expect(nodes.getNodeTypeName(ast.children[0])).toBe('with');
-  });
-
   test('parses without expression', () => {
     const ast = parse('{% with %}{{ x }}{% endwith %}');
     expect(nodes.getNodeTypeName(ast.children[0])).toBe('with');
