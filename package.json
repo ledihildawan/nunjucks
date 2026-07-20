@@ -4,7 +4,15 @@
   "version": "3.2.4",
   "author": "James Long <longster@gmail.com>",
   "type": "module",
+  "workspaces": [
+    "packages/@nunjucks/shared",
+    "packages/@nunjucks/log",
+    "packages/@nunjucks/lexer"
+  ],
   "dependencies": {
+    "@nunjucks/lexer": "workspace:*",
+    "@nunjucks/log": "workspace:*",
+    "@nunjucks/shared": "workspace:*",
     "express": "5",
     "picocolors": "^1.1.1",
     "remeda": "^2.39.0",
@@ -12,20 +20,25 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@types/bun": "latest",
+    "@types/node": "^26.1.1",
     "eslint": "^9.39.4",
-    "eslint-plugin-import": "^2.32.0"
+    "eslint-plugin-import": "^2.32.0",
+    "typescript": "^7.0.2"
   },
   "scripts": {
     "build": "bun run scripts/bundle.js",
-    "lint": "eslint nunjucks",
-    "test": "bun test ./tests/**/*.test.js"
+    "lint": "eslint src/",
+    "test": "bun test src/",
+    "coverage": "bun test src/ --coverage"
   },
   "exports": {
-    ".": "./index.js"
+    ".": "./src/index.js",
+    "./bundle": "./dist/index.js"
   },
   "files": [
-    "browser/**",
-    "src/**"
+    "src/**",
+    "dist/**"
   ],
   "repository": {
     "type": "git",

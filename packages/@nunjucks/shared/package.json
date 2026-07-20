@@ -1,0 +1,12 @@
+{
+  "name": "@nunjucks/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./caller-file": "./src/caller-file.ts",
+    "./blocked-keys": "./src/blocked-keys.ts"
+  },
+  "description": "Shared utilities for Nunjucks"
+}

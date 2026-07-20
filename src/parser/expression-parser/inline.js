@@ -1,0 +1,54 @@
+import { nodes } from '../../nodes/index.js';
+import { skipSymbol, skipValue } from '../cursor.js';
+import { parseOr } from './logical.js';
+import { TOKEN_OPERATOR, TOKEN_COLON } from '../../lexer/token-types.js';
+
+const parseTernary = (ctx, node) => {
+  if (skipValue(ctx, TOKEN_OPERATOR, '?')) {
+    const thenNode = parseOr(ctx);
+    if (skipValue(ctx, TOKEN_COLON, ':')) {
+      const elseNode = parseOr(ctx);
+      const newNode = nodes.inlineIf(node.lineno, node.colno);
+      newNode.cond = node;
+      newNode.body = thenNode;
+      newNode.else_ = elseNode;
+      return parseTernary(ctx, newNode);
+    }
+  }
+  return node;
+};
+
+const parseWalrus = (ctx, node) => {
+  if (skipValue(ctx, TOKEN_OPERATOR, ':=')) {
+    if (!nodes.isSymbol(node)) {
+      throw new Error('Walrus operator target must be a symbol');
+    }
+    const valueNode = parseOr(ctx);
+    const walrusNode = nodes.walrus(node.lineno, node.colno, node, valueNode);
+    return parseWalrus(ctx, walrusNode);
+  }
+  return node;
+};
+
+export const parseInlineIf = (ctx) => {
+  let node = parseOr(ctx);
+
+  if (skipSymbol(ctx, 'if')) {
+    const condNode = parseOr(ctx);
+    const bodyNode = node;
+    node = nodes.inlineIf(node.lineno, node.colno);
+    node.body = bodyNode;
+    node.cond = condNode;
+    if (skipSymbol(ctx, 'else')) {
+      node.else_ = parseOr(ctx);
+    } else {
+      node.else_ = null;
+    }
+    return node;
+  }
+
+  node = parseTernary(ctx, node);
+  return parseWalrus(ctx, node);
+};
+
+export const parseExpression = (ctx) => parseInlineIf(ctx);

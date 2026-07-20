@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head><title>With Block Demo</title></head>
+<body>
+  <h1>With Block Demo</h1>
+  
+  <h2>Scoped Variables</h2>
+  {% with %}
+    {% set x = 42 %}
+    {% set name = "World" %}
+    <p>Inside with: x = {{ x }}, name = {{ name }}</p>
+  {% endwith %}
+  
+  <h2>Multiple Variables</h2>
+  {% with foo="hello" bar="world" %}
+    <p>foo = {{ foo }}, bar = {{ bar }}</p>
+  {% endwith %}
+</body>
+</html>

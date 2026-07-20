@@ -1,10 +1,12 @@
-'use strict';
+import nunjucks from '../../../src/index.js';
 
-import nunjucks from '../../../nunjucks/index.js';
+const configure = (options = {}) => {
+  nunjucks.configure(options);
+  return {
+    render: (template, context) => nunjucks.render(template, context)
+  };
+};
 
-nunjucks.configure('views', {
-  autoescape: true,
-  ide: 'vscode'
-});
+const render = (template, context) => nunjucks.render(template, context);
 
-export default nunjucks;
+export { configure, render };

@@ -1,0 +1,12 @@
+{% extends "base.njk" %}
+
+{% block content %}
+<h2>Items List</h2>
+<p>Each item is rendered using an include:</p>
+
+<div class="items">
+  {% for item in items %}
+    {% include "item-card.njk" %}
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.njk" %}
+{% import "macros.njk" as macros %}
+
+{% block content %}
+<h2>Macro Demo</h2>
+<p>Welcome, {{ username }}!</p>
+
+<h3>User Cards (using macro):</h3>
+{{ macros.user_card(username, "Active") }}
+{{ macros.user_card("Jane", "Inactive") }}
+{{ macros.user_card("Bob", "Active") }}
+
+<h3>Simple List:</h3>
+{{ macros.simple_list(["One", "Two", "Three"]) }}
+{% endblock %}

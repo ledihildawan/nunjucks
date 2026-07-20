@@ -1,6 +1,17 @@
-# Set the default behavior, in case people don't have core.autocrlf set.
-* text=auto
+# Normalize text files to LF in the repository and working tree.
+* text=auto eol=lf
 
-# Checkout example and test fixtures with linux line ending
-# to guarantee test successes
-tests/** text eol=lf
+# Preserve Windows command scripts with CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Keep binary files unchanged.
+*.eot binary
+*.gif binary
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.ttf binary
+*.woff binary
+*.woff2 binary

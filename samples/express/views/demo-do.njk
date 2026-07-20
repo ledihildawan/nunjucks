@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><title>Do Statement Demo</title></head>
+<body>
+  <h1>Do Statement Demo</h1>
+  
+  <h2>Do with array push</h2>
+  {% do arr.push(1) %}
+  {% do arr.push(2) %}
+  {% do arr.push(3) %}
+  <p>Array: {{ arr }}</p>
+  
+  <h2>Do with string operation</h2>
+  {% do name.append("!") %}
+  <p>Name: {{ name }}</p>
+  
+  <h2>Do with logging</h2>
+  {% do items.push("item1") %}
+  {% do items.push("item2") %}
+  <p>Items: {{ items }}</p>
+</body>
+</html>

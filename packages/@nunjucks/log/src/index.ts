@@ -1,0 +1,11 @@
+export { createLog, isTemplateError, prettifyError } from './create-log.ts';
+export { toHtml, toAnsi, toText, toConsoleString, CSS, PRODUCTION_BODY, TOGGLE_SCRIPT } from './render/index.ts';
+export { classify, classifyFromError } from './errors/classify.ts';
+export { injectWarningsScript } from './warning/collector.ts';
+export { ERROR_DEFINITIONS, ERRORS, PATTERNS, RULES, DEFAULT_CLASSIFICATION } from './errors/registry.ts';
+export { normalizeLogMetadata, createFormatterState } from './render/internal/metadata.ts';
+export { normalizeErrorMetadata } from './render/internal/normalize.ts';
+export { getErrorMetadata, formatSnippet } from './render/internal/metadata-extras.ts';
+export type { ErrorMetadata, GetErrorMetadataOptions } from './render/internal/metadata-extras.ts';
+export type { ErrorMetadataFallback, NormalizedErrorMetadata } from './render/internal/normalize.ts';
+export type { ErrorName } from './errors/registry.ts';

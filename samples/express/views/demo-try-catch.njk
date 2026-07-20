@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><title>Try/Catch Demo</title></head>
+<body>
+  <h1>Try/Catch Demo</h1>
+  
+  <h2>Example 1: Successful try</h2>
+  {% try %}
+    <p>{{ "Success!" }}</p>
+  {% catch %}
+    <p>Error: {{ error }}</p>
+  {% endtry %}
+  
+  <h2>Example 2: With fallback</h2>
+  {% try %}
+    {% set x = undefined_var %}
+    <p>{{ x }}</p>
+  {% catch %}
+    <p>Caught error: {{ error }}</p>
+  {% endtry %}
+</body>
+</html>
