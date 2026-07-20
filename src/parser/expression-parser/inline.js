@@ -35,7 +35,7 @@ const parseTernary = (ctx, node) => {
   return node;
 };
 
-const COMPOUND_OPS = ['||=', '&&=', '??=', '**=', '//='];
+const COMPOUND_OPS = ['||=', '&&=', '??=', '**=', '//=', '+=', '-=', '*=', '/=', '%='];
 
 const normalizePattern = (node) => {
   if (nodes.isArrayPattern(node) || nodes.isObjectPattern(node)) return node;

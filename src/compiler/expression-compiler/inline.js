@@ -16,19 +16,25 @@ export const compileInlineIf = (ctx, node, frame) => {
 };
 
 export const compileWalrus = (ctx, node, frame) => {
-  const valueId = ctx._tmpid();
-
-  ctx._emit('(lineno = ' + (node.lineno ?? 0) + ', colno = ' + (node.colno ?? 0) + ', (() => {');
-  ctx._emit('let ' + valueId + ' = ');
-  ctx.compile(node.value, frame);
-  ctx._emit(';');
   if (nodes.isSymbol(node.target)) {
+    const valueId = ctx._tmpid();
+    ctx._emit('(lineno = ' + (node.lineno ?? 0) + ', colno = ' + (node.colno ?? 0) + ', (() => {');
+    ctx._emit('let ' + valueId + ' = ');
+    ctx.compile(node.value, frame);
+    ctx._emit(';');
     ctx._emit('frame.set(' + JSON.stringify(node.target.value) + ', ' + valueId + ', true);');
+    ctx._emit('return ' + valueId + ';');
+    ctx._emit('})())');
   } else if (nodes.isArrayPattern(node.target) || nodes.isObjectPattern(node.target)) {
+    const valueId = ctx._tmpid();
+    ctx._emit('(lineno = ' + (node.lineno ?? 0) + ', colno = ' + (node.colno ?? 0) + ', (() => {');
+    ctx._emit('let ' + valueId + ' = ');
+    ctx.compile(node.value, frame);
+    ctx._emit(';');
     compileDestructuring(ctx, frame, node.target, valueId, false);
+    ctx._emit('return ' + valueId + ';');
+    ctx._emit('})())');
   } else {
     ctx.fail('Walrus target must be a symbol or destructuring pattern', node.lineno, node.colno);
   }
-  ctx._emit('return ' + valueId + ';');
-  ctx._emit('})())');
 };

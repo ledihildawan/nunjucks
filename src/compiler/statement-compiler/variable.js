@@ -49,7 +49,7 @@ export const compileVariableAssignment = (ctx, node, frame) => {
   } else {
     const name = getTargetName(node.targets[0]);
 
-    ctx._emitLine('if (frame.lookup("' + name + '") === undefined) { throw new ReferenceError("Variable \'' + name + '\' is not defined"); }');
+    ctx._emitLine('if (frame.lookup("' + name + '") === undefined) { throw new ReferenceError("Variable \'' + name + '\' is not defined. Use ' + name + ' := value to declare it."); }');
 
     const valueId = ctx._tmpid();
     ctx._emitLine('let ' + valueId + ' = ');
@@ -67,6 +67,11 @@ const getCompoundOpJs = (operator) => {
     case '??=': return '??';
     case '**=': return '**';
     case '//=': return null;
+    case '+=': return '+';
+    case '-=': return '-';
+    case '*=': return '*';
+    case '/=': return '/';
+    case '%=': return '%';
     default: return null;
   }
 };
@@ -96,7 +101,7 @@ export const compileCompoundAssignment = (ctx, node, frame) => {
     const name = getTargetName(node.targets[0]);
 
     ctx._emitLine('{');
-    ctx._emitLine('if (frame.lookup("' + name + '") === undefined) { throw new ReferenceError("Variable \'' + name + '\' is not defined"); }');
+    ctx._emitLine('if (frame.lookup("' + name + '") === undefined) { throw new ReferenceError("Variable \'' + name + '\' is not defined. Use ' + name + ' := value to declare it."); }');
 
     const valueId = ctx._tmpid();
     if (node.operator === '//=') {
