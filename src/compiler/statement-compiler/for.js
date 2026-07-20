@@ -28,9 +28,9 @@ export const compileFor = (ctx, node, frame) => {
   const i = ctx._tmpid();
   const len = ctx._tmpid();
   const arr = ctx._tmpid();
-  frame = frame.push();
+  frame = frame.push(true);
 
-  ctx._emitLine('frame = frame.push();');
+  ctx._emitLine('frame = frame.push(true);');
 
   ctx._emit(`let ${arr} = `);
   ctx._compileExpression(node.arr, frame);

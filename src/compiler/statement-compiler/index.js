@@ -10,3 +10,5 @@ export { compileExtends, compileInclude } from './extends.js';
 export { compileTemplateData, compileCapture, compileOutput } from './output.js';
 export { compileRoot } from './root.js';
 export { compileCallExtension, compileCallExtensionAsync } from './extension.js';
+export { compileDo } from './do.js';
+export { compileWith } from './with.js';
