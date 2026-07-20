@@ -161,11 +161,22 @@ With parameters:
 
 All planned features are implemented. Additional improvements completed:
 
+### Compound Assignment
+- `{{ x += 1 }}` - addition assignment
+- `{{ x -= 1 }}` - subtraction assignment
+- `{{ x *= 2 }}` - multiplication assignment
+- `{{ x /= 2 }}` - division assignment
+- `{{ x %= 3 }}` - modulo assignment
+
+### Walrus in Expressions
 - Array destructuring walrus: `{% if ([a, b] := pair) %}`
 - Object destructuring walrus: `{% if ({a, b} := value) %}`
 - Nested walrus: `{{ (a := (b := 2)) }}`
 - Walrus in arrays: `{{ [(x := 1), (y := 2)] }}`
 - Prefix/postfix increment/decrement: `{{ ++x }}-{{ x++ }}`
+
+### Error Messages
+- Better error for undeclared variable: "Variable 'x' is not defined. Use x := value to declare it."
 
 ---
 
