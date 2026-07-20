@@ -1,7 +1,7 @@
 import { nodes } from '../../nodes/index.js';
 import { skipSymbol, skipValue, peekToken, nextToken } from '../cursor.js';
 import { parseOr } from './logical.js';
-import { TOKEN_OPERATOR, TOKEN_COLON, TOKEN_INT, TOKEN_FLOAT, TOKEN_STRING } from '../../lexer/token-types.js';
+import { TOKEN_OPERATOR, TOKEN_PIPEFORWARD, TOKEN_COLON, TOKEN_INT, TOKEN_FLOAT, TOKEN_STRING } from '../../lexer/token-types.js';
 
 const tokenToLiteral = (tok) => {
   switch (tok.type) {
@@ -35,7 +35,7 @@ const parseTernary = (ctx, node) => {
   return node;
 };
 
-const COMPOUND_OPS = ['||=', '&&=', '??=', '**=', '//=', '+=', '-=', '*=', '/=', '%='];
+const COMPOUND_OPS = ['||=', '&&=', '??=', '**=', '//=', '+=', '-=', '*=', '/=', '%=', '|> ='];
 
 const normalizePattern = (node) => {
   if (nodes.isArrayPattern(node) || nodes.isObjectPattern(node)) return node;
@@ -57,7 +57,7 @@ const normalizePattern = (node) => {
 
 const parseWalrus = (ctx, node) => {
   const tok = peekToken(ctx);
-  if (tok && tok.type === TOKEN_OPERATOR) {
+  if (tok && (tok.type === TOKEN_OPERATOR || tok.type === TOKEN_PIPEFORWARD)) {
     if (tok.value === ':=') {
       nextToken(ctx);
       const valueNode = parseOr(ctx);
@@ -107,6 +107,16 @@ const parseWalrus = (ctx, node) => {
         throw new Error('Walrus operator target must be a symbol or pattern');
       }
       return parseWalrus(ctx, resultNode);
+    }
+
+    if (tok.type === TOKEN_OPERATOR && tok.value === '|>=') {
+      const operator = tok.value;
+      nextToken(ctx);
+      const valueNode = parseOr(ctx);
+      if (nodes.isSymbol(node)) {
+        return nodes.compoundAssignment(node.lineno, node.colno, [node], operator, valueNode);
+      }
+      throw new Error('Assignment target must be a symbol');
     }
 
     if (COMPOUND_OPS.includes(tok.value)) {

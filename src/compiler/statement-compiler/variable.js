@@ -108,6 +108,18 @@ export const compileCompoundAssignment = (ctx, node, frame) => {
       ctx._emit('let ' + valueId + ' = Math.floor(frame.lookup("' + name + '") / ');
       ctx._compileExpression(node.value, frame);
       ctx._emitLine(');');
+    } else if (node.operator === '|>=') {
+      const filterName = node.value.type === 'symbol' ? node.value.value : null;
+      const inputLocation = `${node.lineno ?? 0}, ${node.colno ?? 0}`;
+      if (filterName) {
+        ctx._emit('let ' + valueId + ' = await runtime.awaitValue(env.getFilter("' + filterName + '", ' + inputLocation + ', ' + inputLocation + ', "' + name + '").call(context, ');
+        ctx._emit('frame.lookup("' + name + '")');
+        ctx._emitLine('))');
+      } else {
+        ctx._emit('let ' + valueId + ' = await runtime.awaitValue(');
+        ctx._compileExpression(node.value, frame);
+        ctx._emit(', frame.lookup("' + name + '"))');
+      }
     } else {
       ctx._emit('let ' + valueId + ' = frame.lookup("' + name + '") ' + jsOp + ' ');
       ctx._compileExpression(node.value, frame);

@@ -206,6 +206,11 @@ export function createTokenizer(str, opts = {}) {
         if (next && isComplexOperator(op + next, COMPLEX_OPERATORS)) {
           op = op + next;
           this.forward();
+          next = this.current();
+          if (next && isComplexOperator(op + next, COMPLEX_OPERATORS)) {
+            op = op + next;
+            this.forward();
+          }
         }
       }
       return createOperatorToken(op, lineno, colno);
