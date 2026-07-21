@@ -259,6 +259,13 @@ describe('inline template error locations', () => {
     expect(err.colno).toBe(callerLine.indexOf('::0') + 3);
   });
 
+  test('renders slice steps with omitted bounds', async () => {
+    await expect(render('{{ items[::2] }}', { items: [0, 1, 2, 3, 4] }))
+      .resolves.toBe('0,2,4');
+    await expect(render('{{ items[1::2] }}', { items: [0, 1, 2, 3, 4] }))
+      .resolves.toBe('1,3');
+  });
+
   test('points native arithmetic errors inside statements at the operator', async () => {
     const filePath = fileURLToPath(import.meta.url);
     const source = fs.readFileSync(filePath, 'utf8').split('\n');

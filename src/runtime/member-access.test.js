@@ -83,6 +83,10 @@ describe('slice', () => {
     expect(slice(arr, 1, 4, undefined)).toEqual([1, 2, 3]);
   });
 
+  test('supports omitted start and stop with a step', () => {
+    expect(slice(arr, null, null, 2)).toEqual([0, 2, 4]);
+  });
+
   test('positive step skips elements', () => {
     expect(slice(arr, 0, 6, 2)).toEqual([0, 2, 4]);
   });

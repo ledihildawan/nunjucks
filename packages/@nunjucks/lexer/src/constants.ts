@@ -32,8 +32,10 @@ export {
 
 export type { Delimiters, ComplexOperator };
 
+const COMPLEX_OPERATOR_SET = new Set<string>(COMPLEX_OPERATORS);
+
 const isComplexOperator = (str: string): boolean =>
-  (COMPLEX_OPERATORS as readonly string[]).includes(str);
+  COMPLEX_OPERATOR_SET.has(str);
 
 const isDigit = (char: string): boolean => char >= '0' && char <= '9';
 

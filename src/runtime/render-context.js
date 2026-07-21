@@ -25,9 +25,9 @@ const scopeHas = (scope, key) =>
   scope.data.has(key) || (scope.parent ? scopeHas(scope.parent, key) : false);
 
 const scopeKeys = (scope) => {
-  const keys = scope.parent ? scopeKeys(scope.parent) : [];
+  const keys = new Set(scope.parent ? scopeKeys(scope.parent) : []);
   for (const k of scope.data.keys()) {
-    if (!keys.includes(k)) keys.push(k);
+    keys.add(k);
   }
   return keys;
 };

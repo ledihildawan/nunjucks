@@ -43,7 +43,6 @@ const parseAssignmentDefault = (ctx, target) => {
 };
 
 const parseArrayPattern = (ctx, lineno, colno) => {
-  console.log('DEBUG parseArrayPattern called');
   const node = nodes.arrayPattern(lineno, colno);
   const startTok = nextToken(ctx);
   if (startTok.type !== TOKEN_LEFT_BRACKET) {
@@ -53,7 +52,6 @@ const parseArrayPattern = (ctx, lineno, colno) => {
   let sawRest = false;
   while (true) {
     const tok = peekToken(ctx);
-    console.log('DEBUG loop tok:', tok?.type, tok?.value);
     if (tok.type === TOKEN_RIGHT_BRACKET) {
       nextToken(ctx);
       break;
@@ -76,12 +74,9 @@ const parseArrayPattern = (ctx, lineno, colno) => {
     }
 
     if (peekToken(ctx).type === TOKEN_SPREAD) {
-      console.log('DEBUG: Found SPREAD token');
       nextToken(ctx);
       const inner = parseInnerPattern(ctx);
-      console.log('DEBUG: inner type:', inner.type, 'value:', inner.value);
       const rp = nodes.restPattern(tok.lineno, tok.colno, inner);
-      console.log('DEBUG: restPattern type:', rp.type);
       node.addChild(rp);
       sawRest = true;
       const after = peekToken(ctx);

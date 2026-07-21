@@ -6,19 +6,20 @@ import type { TokenType } from '../token-types';
 
 const { isComplexOperator } = validators;
 
+const TOKEN_TYPES: Record<string, TokenType> = {
+  '(' : 'left-paren' as TokenType,
+  ')' : 'right-paren' as TokenType,
+  '[' : 'left-bracket' as TokenType,
+  ']' : 'right-bracket' as TokenType,
+  '{' : 'left-curly' as TokenType,
+  '}' : 'right-curly' as TokenType,
+  ',' : 'comma' as TokenType,
+  ':' : 'colon' as TokenType,
+  '|>' : 'pipe-forward' as TokenType,
+};
+
 const matchTokenType = (char: string): TokenType => {
-  const map: Record<string, TokenType> = {
-    '(' : 'left-paren' as TokenType,
-    ')' : 'right-paren' as TokenType,
-    '[' : 'left-bracket' as TokenType,
-    ']' : 'right-bracket' as TokenType,
-    '{' : 'left-curly' as TokenType,
-    '}' : 'right-curly' as TokenType,
-    ',' : 'comma' as TokenType,
-    ':' : 'colon' as TokenType,
-    '|>' : 'pipe-forward' as TokenType,
-  };
-  return map[char] ?? 'operator' as TokenType;
+  return TOKEN_TYPES[char] ?? 'operator' as TokenType;
 };
 
 export const tokenizeOperator: Tokenizer = (state) => {
