@@ -1,0 +1,17 @@
+{
+  "name": "@nunjucks/transformers",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./walk": "./src/walk.ts",
+    "./pipe": "./src/pipe.ts",
+    "./super": "./src/super.ts",
+    "./statement": "./src/statement.ts"
+  },
+  "dependencies": {
+    "@nunjucks/nodes": "workspace:*"
+  },
+  "description": "AST transformers for Nunjucks template engine"
+}
