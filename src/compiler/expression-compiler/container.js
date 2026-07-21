@@ -1,13 +1,32 @@
 import { nodes } from '../../nodes/index.js';
 
+const STRING_ESCAPE_MAP = {
+  '\\': '\\\\',
+  '"': '\\"',
+  '\n': '\\n',
+  '\r': '\\r',
+  '\t': '\\t',
+  '\u2028': '\\u2028',
+};
+
+const TEMPLATE_ESCAPE_MAP = {
+  '\\': '\\\\',
+  '`': '\\`',
+  '$': '\\$',
+};
+
+const escapeString = (str) => {
+  let result = '';
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    result += STRING_ESCAPE_MAP[char] ?? char;
+  }
+  return result;
+};
+
 export const compileLiteral = (ctx, node) => {
   if (typeof node.value === 'string') {
-    let val = node.value.replace(/\\/g, '\\\\');
-    val = val.replace(/"/g, '\\"');
-    val = val.replace(/\n/g, '\\n');
-    val = val.replace(/\r/g, '\\r');
-    val = val.replace(/\t/g, '\\t');
-    val = val.replace(/\u2028/g, '\\u2028');
+    const val = escapeString(node.value);
     ctx._emit(`"${val}"`);
   } else if (node.value === null) {
     ctx._emit('null');
@@ -73,16 +92,22 @@ export const compileSpread = (ctx, node, frame) => {
   ctx.compile(node.argument, frame);
 };
 
+const escapeTemplateString = (str) => {
+  let result = '';
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    result += TEMPLATE_ESCAPE_MAP[char] ?? char;
+  }
+  return result;
+};
+
 export const compileTemplateLiteral = (ctx, node, frame) => {
   const quasis = node.quasis?.quasis || node.quasis || [];
   ctx._emit('`');
 
   for (const quasi of quasis) {
     if (quasi.type === 'template') {
-      let val = quasi.value.replace(/\\/g, '\\\\');
-      val = val.replace(/`/g, '\\`');
-      val = val.replace(/\$/g, '\\$');
-      ctx._emit(val);
+      ctx._emit(escapeTemplateString(quasi.value));
     } else if (quasi.type === 'expression') {
       ctx._emit('${');
       ctx.compile(quasi.node, frame);

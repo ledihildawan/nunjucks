@@ -8,6 +8,8 @@
 // ============================================
 export const BracketNotation = Symbol('BracketNotation');
 
+const FIELDS_CACHE = new Map();
+
 export const NODE_TYPES = Object.freeze({
   NODE: 'node',
   VALUE: 'value',
@@ -102,7 +104,12 @@ export const NODE_TYPES = Object.freeze({
 // Base creators
 const createNode = (nodeType, lineno, colno, data = {}) => {
   const node = { type: nodeType, lineno, colno, ...data };
-  node.fields = Object.keys(data);
+  
+  if (!FIELDS_CACHE.has(nodeType)) {
+    FIELDS_CACHE.set(nodeType, Object.freeze(Object.keys(data)));
+  }
+  node.fields = FIELDS_CACHE.get(nodeType);
+  
   node.findAll = function(findType) {
     const results = [];
     const seen = new Set();

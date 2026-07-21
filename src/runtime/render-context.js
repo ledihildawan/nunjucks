@@ -11,8 +11,12 @@ const createScope = (data = {}, parent = null) => ({
 });
 
 const scopeGet = (scope, key) => {
-  if (scope.data.has(key)) return [null, scope.data.get(key)];
-  if (scope.parent) return scopeGet(scope.parent, key);
+  let current = scope;
+  while (current) {
+    const val = current.data.get(key);
+    if (val !== undefined) return [null, val];
+    current = current.parent;
+  }
   return [createLog('error', ERROR_DEFINITIONS.KEY_NOT_FOUND, { key }, key, { phase: 'render' })];
 };
 
@@ -21,13 +25,23 @@ const scopeSet = (scope, key, value) => ({
   data: new Map(scope.data).set(key, value)
 });
 
-const scopeHas = (scope, key) =>
-  scope.data.has(key) || (scope.parent ? scopeHas(scope.parent, key) : false);
+const scopeHas = (scope, key) => {
+  let current = scope;
+  while (current) {
+    if (current.data.has(key)) return true;
+    current = current.parent;
+  }
+  return false;
+};
 
 const scopeKeys = (scope) => {
-  const keys = new Set(scope.parent ? scopeKeys(scope.parent) : []);
-  for (const k of scope.data.keys()) {
-    keys.add(k);
+  const keys = new Set();
+  let current = scope;
+  while (current) {
+    for (const k of current.data.keys()) {
+      keys.add(k);
+    }
+    current = current.parent;
   }
   return keys;
 };
@@ -38,15 +52,23 @@ const scopeKeys = (scope) => {
 
 export const createRenderContext = (initialData = {}) => {
   let currentScope = createScope(initialData);
+  let cachedToObject = null;
+  let cachedToObjectScope = null;
 
   const context = {
     get: (key) => {
-      const [err, value] = scopeGet(currentScope, key);
-      return err ? undefined : value;
+      let current = currentScope;
+      while (current) {
+        const val = current.data.get(key);
+        if (val !== undefined) return val;
+        current = current.parent;
+      }
+      return undefined;
     },
 
     set: (key, value) => {
       currentScope = scopeSet(currentScope, key, value);
+      cachedToObject = null;
       return context;
     },
 
@@ -55,32 +77,43 @@ export const createRenderContext = (initialData = {}) => {
     delete: (key) => {
       const newData = new Map(currentScope.data);
       newData.delete(key);
-      currentScope = {
-        ...currentScope,
-        data: newData
-      };
+      currentScope = { ...currentScope, data: newData };
+      cachedToObject = null;
       return context;
     },
 
     fork: (data = {}) => {
       currentScope = createScope(data, currentScope);
+      cachedToObject = null;
       return context;
     },
 
     merge: (data = {}) => {
-      forEachObj(data, (v, k) => {
+      for (const [k, v] of Object.entries(data)) {
         currentScope = scopeSet(currentScope, k, v);
-      });
+      }
+      cachedToObject = null;
       return context;
     },
 
     toObject: () => {
-      const result = {};
-      const keys = scopeKeys(currentScope);
-      for (const k of keys) {
-        const [err, value] = scopeGet(currentScope, k);
-        if (!err) result[k] = value;
+      if (cachedToObject && cachedToObjectScope === currentScope) {
+        return cachedToObject;
       }
+      const result = {};
+      let current = currentScope;
+      const seen = new Set();
+      while (current) {
+        for (const [k, v] of current.data) {
+          if (!seen.has(k)) {
+            seen.add(k);
+            result[k] = v;
+          }
+        }
+        current = current.parent;
+      }
+      cachedToObject = result;
+      cachedToObjectScope = currentScope;
       return result;
     },
 
@@ -106,19 +139,19 @@ export const ctx = createRenderContext;
 
 export const withDefaults = (defaults) => (context) => {
   const newCtx = context.clone();
-  forEachObj(defaults, (v, k) => {
+  for (const [k, v] of Object.entries(defaults)) {
     if (newCtx.get(k) === undefined) {
       newCtx.set(k, v);
     }
-  });
+  }
   return newCtx;
 };
 
 export const withComputed = (computations) => (context) => {
   const newCtx = context.clone();
-  forEachObj(computations, (computeFn, k) => {
+  for (const [k, computeFn] of Object.entries(computations)) {
     newCtx.set(k, computeFn(newCtx));
-  });
+  }
   return newCtx;
 };
 

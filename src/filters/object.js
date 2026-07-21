@@ -1,5 +1,5 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
-import { isString, isPlainObject, groupBy } from 'remeda';
+import { isString, isPlainObject } from 'remeda';
 import { createLog } from '@nunjucks/log';
 import { getAttrGetter } from '../helpers/attributes.js';
 
@@ -63,7 +63,7 @@ export function groupby(arr, attr) {
 
   const getAttr = getAttrGetter(attr);
 
-  return groupBy(arr, (item, i) => {
+  return Object.groupBy(arr, (item, i) => {
     const key = getAttr(item, i);
     if (key === undefined) {
       throw filterError(this, ERROR_DEFINITIONS.GROUPBY_FILTER_ATTR, { attr }, attr);

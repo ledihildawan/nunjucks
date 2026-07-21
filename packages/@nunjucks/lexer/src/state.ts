@@ -22,10 +22,13 @@ export const isFinished = (state: LexerState): boolean =>
   state.index >= state.str.length;
 
 export const advance = (state: LexerState, n: number = 1): LexerState => {
+  const str = state.str;
   let { index, lineno, colno } = state;
-  for (let i = 0; i < n && index < state.str.length; i++) {
+  const maxIndex = str.length;
+  
+  for (let i = 0; i < n && index < maxIndex; i++) {
+    const prev = str[index];
     index++;
-    const prev = index > 0 ? state.str[index - 1] : '';
     if (prev === '\n') {
       lineno++;
       colno = 0;
@@ -33,8 +36,20 @@ export const advance = (state: LexerState, n: number = 1): LexerState => {
       colno++;
     }
   }
+  
+  if (state.index === index) {
+    return state;
+  }
   return { ...state, index, lineno, colno };
 };
 
-export const matches = (state: LexerState, text: string): boolean =>
-  state.str.slice(state.index, state.index + text.length) === text;
+export const matches = (state: LexerState, text: string): boolean => {
+  const { index, str } = state;
+  const textLen = text.length;
+  if (index + textLen > str.length) return false;
+  
+  for (let i = 0; i < textLen; i++) {
+    if (str[index + i] !== text[i]) return false;
+  }
+  return true;
+};

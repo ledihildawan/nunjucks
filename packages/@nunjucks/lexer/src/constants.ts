@@ -39,8 +39,13 @@ const isComplexOperator = (str: string): boolean =>
 
 const isDigit = (char: string): boolean => char >= '0' && char <= '9';
 
-const isNumericString = (str: string): boolean =>
-  str.length > 0 && str.split('').every(isDigit);
+const isNumericString = (str: string): boolean => {
+  if (str.length === 0) return false;
+  for (let i = 0; i < str.length; i++) {
+    if (!isDigit(str[i])) return false;
+  }
+  return true;
+};
 
 const isBooleanString = (str: string): boolean =>
   str === 'true' || str === 'false';

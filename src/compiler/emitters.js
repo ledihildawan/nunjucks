@@ -2,29 +2,17 @@ import { isNonNullish } from 'remeda';
 
 export const emit = (ctx, code) => ctx.codebuf.push(code);
 
-export const emitLine = (ctx, code, originalLine) => {
+export const emitLine = (ctx, code, originalLine, colno = 0) => {
   ctx.compiledLine++;
-  if (isNonNullish(originalLine)) {
-    ctx.sourceMap.addMapping(ctx.compiledLine, originalLine);
+  if (originalLine !== undefined) {
+    ctx.sourceMap.addMapping(ctx.compiledLine, originalLine, colno);
   }
   emit(ctx, code + '\n');
 };
 
-export const emitLineWithMapping = (ctx, code, templateLine, templateCol) => {
-  ctx.compiledLine++;
-  if (templateLine !== undefined) {
-    ctx.sourceMap.addMapping(ctx.compiledLine, templateLine, templateCol || 0);
-  }
-  emit(ctx, code + '\n');
-};
+export const emitLineWithMapping = emitLine;
 
-export const emitLineWithLineno = (ctx, code, templateLine, templateCol) => {
-  ctx.compiledLine++;
-  if (templateLine !== undefined) {
-    ctx.sourceMap.addMapping(ctx.compiledLine, templateLine, templateCol || 0);
-  }
-  emit(ctx, code + '\n');
-};
+export const emitLineWithLineno = emitLine;
 
 export const emitLines = (ctx, ...lines) => {
   lines.forEach((line) => emitLine(ctx, line));

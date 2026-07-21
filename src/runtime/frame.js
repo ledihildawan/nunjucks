@@ -6,12 +6,13 @@ export function createFrame(parent, isolateWrites) {
     topLevel: false,
     isolateWrites,
     rootState,
-    resolveCache: new Map()
+    resolveCache: new Map(),
+    lookupCache: new Map()
   };
 
   return {
     get variables() { return state.variables; },
-    set variables(val) { state.variables = val; state.rootState.revision++; state.resolveCache.clear(); },
+    set variables(val) { state.variables = val; state.rootState.revision++; state.resolveCache.clear(); state.lookupCache.clear(); },
     get _rootState() { return state.rootState; },
     get parent() { return state.parent; },
     set parent(val) { state.parent = val; },
@@ -42,6 +43,7 @@ export function createFrame(parent, isolateWrites) {
       obj[parts.at(-1)] = val;
       state.rootState.revision++;
       state.resolveCache.clear();
+      state.lookupCache.clear();
     },
 
     get(name) {
@@ -53,12 +55,16 @@ export function createFrame(parent, isolateWrites) {
     },
 
     lookup(name) {
+      const cached = state.lookupCache.get(name);
+      if (cached !== undefined) {
+        return cached;
+      }
+
       const p = state.parent;
       const val = state.variables[name];
-      if (val !== undefined) {
-        return val;
-      }
-      return p && p.lookup(name);
+      const result = val !== undefined ? val : (p && p.lookup(name));
+      state.lookupCache.set(name, result);
+      return result;
     },
 
     resolve(name, forWrite) {
@@ -80,8 +86,6 @@ export function createFrame(parent, isolateWrites) {
         return undefined;
       }
       const p = state.parent;
-      // Preserve the existing write-resolution behavior for parent frames:
-      // a parent lookup is a normal read, even when the child is resolving a write.
       const frame = p && p.resolve(name);
       state.resolveCache.set(cacheKey, { revision: state.rootState.revision, frame });
       return frame;
