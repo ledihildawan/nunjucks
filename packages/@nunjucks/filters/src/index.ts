@@ -50,9 +50,9 @@ export const filters = {
   abs: mathFilters.abs,
   isNaN: mathFilters.isNaN,
   round: mathFilters.round,
-  float: mathFilters.floatFilter,
-  int: objectFilters.intFilter,
-  length: objectFilters.lengthFilter,
+  float: mathFilters.float,
+  int: mathFilters.intFilter,
+  length: arrayFilters.lengthFilter,
 
   normalize: stringFilters.normalize,
   fallback: stringFilters.fallback,

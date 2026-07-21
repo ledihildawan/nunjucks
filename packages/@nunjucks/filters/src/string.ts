@@ -1,34 +1,34 @@
 import { isString, isArray, map, entries, defaultTo, isNonNullish, isNullish, isNumber, pipe, filter } from 'remeda';
 import { isSafeString, markSafe, copySafeness } from '@nunjucks/runtime';
 
-export function normalize(value, defaultValue) {
+export function normalize<T>(value: unknown, defaultValue: T): T {
   if (isNullish(value) || value === false) {
     return defaultValue;
   }
-  return value;
+  return value as T;
 }
 
-export function capitalize(str) {
-  str = normalize(str, '');
-  const ret = str.toLowerCase();
-  return copySafeness(str, `${ret.charAt(0).toUpperCase()}${ret.slice(1)}`);
+export function capitalize(str: unknown): unknown {
+  const s = normalize(str, '');
+  const ret = s.toLowerCase();
+  return copySafeness(str as object, `${ret.charAt(0).toUpperCase()}${ret.slice(1)}`);
 }
 
-export function center(str, width) {
-  str = normalize(str, '');
-  width = defaultTo(width, 80);
+export function center(str: unknown, width?: number): unknown {
+  const s = normalize(str, '');
+  const w = defaultTo(width, 80);
 
-  if (str.length >= width) {
-    return str;
+  if (s.length >= w) {
+    return s;
   }
 
-  const spaces = width - str.length;
+  const spaces = w - s.length;
   const pre = ' '.repeat(Math.round((spaces / 2) - (spaces % 2)));
   const post = ' '.repeat(Math.round(spaces / 2));
-  return copySafeness(str, `${pre}${str}${post}`);
+  return copySafeness(str as object, `${pre}${s}${post}`);
 }
 
-export function fallback(val, def, bool) {
+export function fallback(val: unknown, def: unknown, bool?: boolean): unknown {
   if (bool) {
     return val || def;
   } else {
@@ -36,16 +36,15 @@ export function fallback(val, def, bool) {
   }
 }
 
-export function dump(obj, spaces) {
+export function dump(obj: unknown, spaces?: number): string {
   return JSON.stringify(obj, null, spaces);
 }
 
-export function escape(str) {
+export function escape(str: unknown): unknown {
   if (isSafeString(str)) {
     return str;
   }
-  str = isNonNullish(str) ? str : '';
-  const s = str.toString();
+  const s = isNonNullish(str) ? String(str) : '';
   return markSafe(s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -55,17 +54,16 @@ export function escape(str) {
     .replace(/\\/g, '&#92;'));
 }
 
-export function safe(str) {
+export function safe(str: unknown): unknown {
   if (isSafeString(str)) {
     return str;
   }
-  str = isNonNullish(str) ? str : '';
-  return markSafe(str.toString());
+  const s = isNonNullish(str) ? String(str) : '';
+  return markSafe(s);
 }
 
-export function forceescape(str) {
-  str = isNonNullish(str) ? str : '';
-  const s = str.toString();
+export function forceescape(str: unknown): unknown {
+  const s = isNonNullish(str) ? String(str) : '';
   return markSafe(s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -75,58 +73,55 @@ export function forceescape(str) {
     .replace(/\\/g, '&#92;'));
 }
 
-export function indent(str, width, indentfirst) {
-  str = normalize(str, '');
+export function indent(str: unknown, width?: number, indentfirst?: boolean): unknown {
+  const s = normalize(str, '');
 
-  if (str === '') {
+  if (s === '') {
     return '';
   }
 
-  width = defaultTo(width, 4);
-  const lines = str.split('\n');
-  const sp = ' '.repeat(Math.round(width));
+  const w = defaultTo(width, 4);
+  const lines = s.split('\n');
+  const sp = ' '.repeat(Math.round(w));
 
   const res = lines.map((l, i) => {
     return (i === 0 && !indentfirst) ? l : `${sp}${l}`;
   }).join('\n');
 
-  return copySafeness(str, res);
+  return copySafeness(str as object, res);
 }
 
-export function join(arr, del, attr) {
-  del = defaultTo(del, '');
+export function join(arr: unknown[], del?: string, attr?: string): string {
+  const d = defaultTo(del, '');
 
   if (attr) {
-    arr = map(arr, (v) => v[attr]);
+    arr = map(arr as Record<string, unknown>[], (v) => v[attr]);
   }
 
-  return arr.join(del);
+  return (arr as unknown[]).join(d);
 }
 
-export function lower(str) {
-  str = normalize(str, '');
-  return str.toLowerCase();
+export function lower(str: unknown): string {
+  const s = normalize(str, '');
+  return s.toLowerCase();
 }
 
-export function nl2br(str) {
+export function nl2br(str: unknown): unknown {
   if (!isNonNullish(str)) {
     return '';
   }
-  return copySafeness(str, str.replace(/\r\n|\n/g, '<br />\n'));
+  const s = str as string;
+  return copySafeness(str as object, s.replace(/\r\n|\n/g, '<br />\n'));
 }
 
-export function replace(str, old, new_, maxCount) {
+export function replace(str: unknown, old: unknown, new_: string, maxCount?: number): unknown {
   const originalStr = str;
 
   if (old instanceof RegExp) {
-    return str.replace(old, new_);
+    return (str as string).replace(old, new_);
   }
 
-  if (maxCount === undefined) {
-    maxCount = -1;
-  }
-
-  let res = '';
+  const max = maxCount === undefined ? -1 : maxCount;
 
   if (isNumber(old)) {
     old = String(old);
@@ -134,50 +129,54 @@ export function replace(str, old, new_, maxCount) {
     return str;
   }
 
+  let s: string;
   if (isNumber(str)) {
-    str = String(str);
-  }
-
-  if (!isString(str) && !isSafeString(str)) {
+    s = String(str);
+  } else if (isString(str) || isSafeString(str)) {
+    s = str as string;
+  } else {
     return str;
   }
 
-  if (old === '') {
-    res = new_ + str.split('').join(new_) + new_;
-    return copySafeness(str, res);
+  const oldStr = old as string;
+
+  if (oldStr === '') {
+    const res = new_ + s.split('').join(new_) + new_;
+    return copySafeness(originalStr as object, res);
   }
 
-  let nextIndex = str.indexOf(old);
-  if (maxCount === 0 || nextIndex === -1) {
-    return str;
+  let nextIndex = s.indexOf(oldStr);
+  if (max === 0 || nextIndex === -1) {
+    return s;
   }
 
+  let res = '';
   let pos = 0;
   let count = 0;
 
-  while (nextIndex > -1 && (maxCount === -1 || count < maxCount)) {
-    res += str.substring(pos, nextIndex) + new_;
-    pos = nextIndex + old.length;
+  while (nextIndex > -1 && (max === -1 || count < max)) {
+    res += s.substring(pos, nextIndex) + new_;
+    pos = nextIndex + oldStr.length;
     count++;
-    nextIndex = str.indexOf(old, pos);
+    nextIndex = s.indexOf(oldStr, pos);
   }
 
-  if (pos < str.length) {
-    res += str.substring(pos);
+  if (pos < s.length) {
+    res += s.substring(pos);
   }
 
-  return copySafeness(originalStr, res);
+  return copySafeness(originalStr as object, res);
 }
 
-export function string(obj) {
-  return copySafeness(obj, obj);
+export function string(obj: unknown): unknown {
+  return copySafeness(obj as object, obj);
 }
 
-export function striptags(input, preserveLinebreaks) {
-  input = normalize(input, '');
-  let tags = /<\/?([a-z][a-z0-9]*)\b[^>]*>|<!--[\s\S]*?-->/gi;
-  let trimmedInput = trim(input.replace(tags, ''));
-  let res = '';
+export function striptags(input: unknown, preserveLinebreaks?: boolean): unknown {
+  const inp = normalize(input, '');
+  const tags = /<\/?([a-z][a-z0-9]*)\b[^>]*>|<!--[\s\S]*?-->/gi;
+  const trimmedInput = trim(inp.replace(tags, '')) as unknown as string;
+  let res: string;
   if (preserveLinebreaks) {
     res = trimmedInput
       .replace(/^ +| +$/gm, '')
@@ -187,55 +186,56 @@ export function striptags(input, preserveLinebreaks) {
   } else {
     res = trimmedInput.replace(/\s+/gi, ' ');
   }
-  return copySafeness(input, res);
+  return copySafeness(input as object, res);
 }
 
-export function title(str) {
-  str = normalize(str, '');
-  let words = str.split(' ').map(word => capitalize(word));
-  return copySafeness(str, words.join(' '));
+export function title(str: unknown): unknown {
+  const s = normalize(str, '');
+  const words = s.split(' ').map(word => capitalize(word));
+  return copySafeness(str as object, (words as string[]).join(' '));
 }
 
-export function trim(str) {
-  return copySafeness(str, str.replace(/^\s*|\s*$/g, ''));
+export function trim(str: unknown): unknown {
+  const s = String(str ?? '');
+  return copySafeness(str as object, s.replace(/^\s*|\s*$/g, ''));
 }
 
-export function truncate(input, length, killwords, end) {
+export function truncate(input: unknown, length?: number, killwords?: boolean, end?: string): unknown {
   const orig = input;
-  input = normalize(input, '');
-  length = defaultTo(length, 255);
+  let inp = normalize(input, '');
+  const len = defaultTo(length, 255);
 
-  if (input.length <= length) {
-    return input;
+  if (inp.length <= len) {
+    return inp;
   }
 
   if (killwords) {
-    input = input.substring(0, length);
+    inp = inp.substring(0, len);
   } else {
-    let idx = input.lastIndexOf(' ', length);
+    let idx = inp.lastIndexOf(' ', len);
     if (idx === -1) {
-      idx = length;
+      idx = len;
     }
 
-    input = input.substring(0, idx);
+    inp = inp.substring(0, idx);
   }
 
-  input += defaultTo(end, '...');
-  return copySafeness(orig, input);
+  inp += defaultTo(end, '...');
+  return copySafeness(orig as object, inp);
 }
 
-export function upper(str) {
-  str = normalize(str, '');
-  return str.toUpperCase();
+export function upper(str: unknown): string {
+  const s = normalize(str, '');
+  return s.toUpperCase();
 }
 
-export function urlencode(obj) {
+export function urlencode(obj: unknown): string {
   const enc = encodeURIComponent;
   if (isString(obj)) {
     return enc(obj);
   } else {
-    let keyvals = (isArray(obj)) ? obj : entries(obj);
-    return keyvals.map(([k, v]) => `${enc(k)}=${enc(v)}`).join('&');
+    const keyvals = (isArray(obj)) ? (obj as [string, unknown][]) : entries(obj as Record<string, unknown>);
+    return keyvals.map(([k, v]) => `${enc(k)}=${enc(String(v))}`).join('&');
   }
 }
 
@@ -245,17 +245,18 @@ const httpHttpsRe = /^https?:\/\/.*$/;
 const wwwRe = /^www\./;
 const tldRe = /\.(?:org|net|com)(?::|\/|$)/;
 
-export function urlize(str, length, nofollow) {
-  if (isNaN(length)) {
-    length = Infinity;
+export function urlize(str: string, length?: number, nofollow?: boolean): string {
+  let len = length;
+  if (isNaN(len as number)) {
+    len = Infinity;
   }
 
   const noFollowAttr = (nofollow === true ? ' rel="nofollow"' : '');
 
-  const processWord = (word) => {
+  const processWord = (word: string): string => {
     const matches = word.match(puncRe);
     const possibleUrl = (matches) ? matches[1] : word;
-    const shortUrl = possibleUrl.substr(0, length);
+    const shortUrl = possibleUrl.substring(0, len);
 
     if (httpHttpsRe.test(possibleUrl)) {
       return `<a href="${possibleUrl}"${noFollowAttr}>${shortUrl}</a>`;
@@ -278,15 +279,15 @@ export function urlize(str, length, nofollow) {
 
   const words = pipe(
     str.split(/(\s+)/),
-    filter((word) => word && word.length),
+    filter((word: string) => word.length > 0),
     map(processWord)
   );
 
-  return words.join('');
+  return (words as string[]).join('');
 }
 
-export function wordcount(str) {
-  str = normalize(str, '');
-  const words = (str) ? str.match(/\w+/g) : null;
+export function wordcount(str: unknown): number | null {
+  const s = normalize(str, '');
+  const words = (s) ? s.match(/\w+/g) : null;
   return (words) ? words.length : null;
 }

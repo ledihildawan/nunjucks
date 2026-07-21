@@ -5,19 +5,21 @@ import { isSafeString, copySafeness, makeMacro } from '@nunjucks/runtime';
 import { getAttrGetter } from './attributes.ts';
 import { normalize } from './string.ts';
 
-const getLogContext = (ctx) => (ctx && ctx.logContext) ? ctx.logContext : { templateName: 'inline', phase: 'render', renderContext: null };
+type FilterContext = { logContext?: { templateName?: string; phase?: string; renderContext?: unknown } } | undefined;
 
-const filterError = (ctx, errorDef, params, subject) => {
+const getLogContext = (ctx: FilterContext): { templateName: string; phase: string; renderContext: unknown } =>
+  (ctx && ctx.logContext) ? { templateName: ctx.logContext.templateName || 'inline', phase: ctx.logContext.phase || 'render', renderContext: ctx.logContext.renderContext ?? null } : { templateName: 'inline', phase: 'render', renderContext: null };
+
+const filterError = (ctx: FilterContext, errorDef: unknown, params: Record<string, unknown>, subject: unknown) => {
   const logContext = getLogContext(ctx);
-  return createLog('error', errorDef, params, subject, { phase: logContext.phase || 'render', templateName: logContext.templateName || 'inline', lineBase: 'zero' });
+  return createLog('error', errorDef, params, subject, { phase: logContext.phase, templateName: logContext.templateName, lineBase: 'zero' });
 };
 
-export function batch(arr, linecount, fillWith) {
-  let i;
-  const res = [];
-  let tmp = [];
+export function batch(arr: unknown[], linecount: number, fillWith?: unknown): unknown[][] {
+  const res: unknown[][] = [];
+  let tmp: unknown[] = [];
 
-  for (i = 0; i < arr.length; i++) {
+  for (let i = 0; i < arr.length; i++) {
     if (i % linecount === 0 && tmp.length) {
       res.push(tmp);
       tmp = [];
@@ -27,8 +29,8 @@ export function batch(arr, linecount, fillWith) {
   }
 
   if (tmp.length) {
-    if (fillWith) {
-      for (i = tmp.length; i < linecount; i++) {
+    if (fillWith !== undefined) {
+      for (let i = tmp.length; i < linecount; i++) {
         tmp.push(fillWith);
       }
     }
@@ -39,68 +41,68 @@ export function batch(arr, linecount, fillWith) {
   return res;
 }
 
-export function first(arr) {
+export function first(arr: unknown[]): unknown {
   return arr[0];
 }
 
-export function last(arr) {
+export function last(arr: unknown[]): unknown {
   return arr.at(-1);
 }
 
-export function lengthFilter(val) {
+export function lengthFilter(val: unknown): number {
   const value = normalize(val, '');
 
-  if (value !== undefined) {
+  if (value !== undefined && value !== null) {
     if (
       (typeof Map === 'function' && value instanceof Map) ||
       (typeof Set === 'function' && value instanceof Set)
     ) {
-      return value.size;
+      return (value as Map<unknown, unknown> | Set<unknown>).size;
     }
     if (isPlainObject(value) && !isSafeString(value)) {
-      return keys(value).length;
+      return keys(value as Record<string, unknown>).length;
     }
-    return value.length;
+    return (value as { length: number }).length;
   }
   return 0;
 }
 
-export function list(val) {
+export function list(val: unknown): unknown[] | { key: string; value: unknown }[] {
   if (isString(val)) {
-    return val.split('');
+    return (val as string).split('');
   } else if (isPlainObject(val)) {
-    return entries(val || {}).map(([key, value]) => ({key, value}));
+    return entries(val as Record<string, unknown>).map(([key, value]) => ({ key, value }));
   } else if (isArray(val)) {
-    return val;
+    return val as unknown[];
   } else {
     throw filterError(this, ERROR_DEFINITIONS.LIST_FILTER, { type: typeof val }, typeof val);
   }
 }
 
-export function random(arr) {
+export function random(arr: unknown[]): unknown {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-export function reverse(val) {
-  let arr;
+export function reverse(val: unknown): unknown {
+  let arr: unknown[];
   if (isString(val)) {
-    arr = list(val);
+    arr = list(val) as unknown[];
   } else {
-    arr = map(val, v => v);
+    arr = map(val as unknown[], v => v);
   }
 
   arr = arr.toReversed();
 
   if (isString(val)) {
-    return copySafeness(val, arr.join(''));
+    return copySafeness(val as object, (arr as string[]).join(''));
   }
   return arr;
 }
 
-export function slice(arr, slices, fillWith) {
+export function slice(arr: unknown[], slices: number, fillWith?: unknown): unknown[][] {
   const sliceLength = Math.floor(arr.length / slices);
   const extra = arr.length % slices;
-  const res = [];
+  const res: unknown[][] = [];
   let offset = 0;
 
   for (let i = 0; i < slices; i++) {
@@ -111,7 +113,7 @@ export function slice(arr, slices, fillWith) {
     const end = offset + ((i + 1) * sliceLength);
 
     const currSlice = arr.slice(start, end);
-    if (fillWith && i >= extra) {
+    if (fillWith !== undefined && i >= extra) {
       currSlice.push(fillWith);
     }
     res.push(currSlice);
@@ -120,24 +122,24 @@ export function slice(arr, slices, fillWith) {
   return res;
 }
 
-export function sum(arr, attr, start = 0) {
+export function sum(arr: unknown[], attr?: string, start: number = 0): number {
   if (attr) {
-    arr = map(arr, (v) => v[attr]);
+    arr = map(arr, (v) => (v as Record<string, unknown>)[attr]);
   }
 
-  return start + sumValues(arr);
+  return start + sumValues(arr as number[]);
 }
 
 export const sort = makeMacro(
   ['value', 'reverse', 'case_sensitive', 'attribute'], [],
-  function sortFilter(arr, reversed, caseSens, attr) {
+  function sortFilter(arr: unknown[], reversed?: boolean | string, caseSens?: boolean, attr?: string): unknown[] {
     if (!arr || !Array.isArray(arr)) {
       throw filterError(this, ERROR_DEFINITIONS.SORT_FILTER, { type: typeof arr }, typeof arr);
     }
 
     // Handle positional args: sort(items, attr) or sort(items, attr, reverse)
     // The attribute can be passed as 2nd arg (string) or 4th arg (keyword)
-    let sortAttr = attr;
+    let sortAttr: string | undefined = attr;
     let sortReverse = reversed;
     if (typeof reversed === 'string') {
       sortAttr = reversed;
@@ -146,22 +148,22 @@ export const sort = makeMacro(
 
     if (sortAttr) {
       for (const item of arr) {
-        if (item && typeof item === 'object' && !(sortAttr in item)) {
+        if (item && typeof item === 'object' && !(sortAttr in (item as object))) {
           throw filterError(this, ERROR_DEFINITIONS.SORT_FILTER_ATTR, { attr: sortAttr }, sortAttr);
         }
       }
     }
 
     let array = map(arr, v => v);
-    let getAttribute = getAttrGetter(sortAttr);
+    const getAttribute = getAttrGetter(sortAttr as string);
 
     array = array.toSorted((a, b) => {
-      let x = (sortAttr) ? getAttribute(a) : a;
-      let y = (sortAttr) ? getAttribute(b) : b;
+      let x: unknown = (sortAttr) ? getAttribute(a as Record<string, unknown>) : a;
+      let y: unknown = (sortAttr) ? getAttribute(b as Record<string, unknown>) : b;
 
       if (!caseSens && isString(x) && isString(y)) {
-        x = x.toLowerCase();
-        y = y.toLowerCase();
+        x = (x as string).toLowerCase();
+        y = (y as string).toLowerCase();
       }
 
       if (x < y) {
@@ -176,10 +178,10 @@ export const sort = makeMacro(
     return array;
   });
 
-export function getSelectOrReject(expectedTestResult) {
-  function filter(arr, testName = 'truthy', secondArg) {
+export function getSelectOrReject(expectedTestResult: boolean): (arr: unknown[], testName?: string, secondArg?: unknown) => unknown[] {
+  function filter(this: FilterContext, arr: unknown[], testName: string = 'truthy', secondArg?: unknown): unknown[] {
     const context = this;
-    const test = context.env.getTest(testName);
+    const test = (context as { env: { getTest: (name: string) => (this: unknown, ...args: unknown[]) => boolean } }).env.getTest(testName);
 
     return Array.from(arr).filter((item) => {
       return test.call(context, item, secondArg) === expectedTestResult;
@@ -191,12 +193,12 @@ export function getSelectOrReject(expectedTestResult) {
 
 export const reject = getSelectOrReject(false);
 
-export function rejectattr(arr, attr) {
+export function rejectattr(arr: Record<string, unknown>[], attr: string): Record<string, unknown>[] {
   return arr.filter((item) => !item[attr]);
 }
 
 export const select = getSelectOrReject(true);
 
-export function selectattr(arr, attr) {
+export function selectattr(arr: Record<string, unknown>[], attr: string): Record<string, unknown>[] {
   return arr.filter((item) => Boolean(item[attr]));
 }

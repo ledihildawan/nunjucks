@@ -2,14 +2,14 @@ import { makeMacro } from '@nunjucks/runtime';
 
 export const abs = Math.abs;
 
-export function isNaN(num) {
+export function isNaN(num: unknown): boolean {
   return num !== num;
 }
 
-export function round(val, precision, method) {
+export function round(val: number, precision: number = 0, method?: 'ceil' | 'floor' | 'round'): number {
   precision = precision || 0;
   const factor = Math.pow(10, precision);
-  let rounder;
+  let rounder: (x: number) => number;
 
   if (method === 'ceil') {
     rounder = Math.ceil;
@@ -22,17 +22,17 @@ export function round(val, precision, method) {
   return rounder(val * factor) / factor;
 }
 
-export function float(val, def) {
-  const res = parseFloat(val);
-  return (isNaN(res)) ? def : res;
+export function float(val: unknown, def?: number): number {
+  const res = parseFloat(String(val));
+  return (isNaN(res)) ? (def as number) : res;
 }
 
 export const intFilter = makeMacro(
   ['value', 'default', 'base'],
   [],
-  function doInt(value, defaultValue, base = 10) {
-    const res = parseInt(value, base);
-    return (isNaN(res)) ? defaultValue : res;
+  function doInt(value: unknown, defaultValue?: number, base: number = 10): number {
+    const res = parseInt(String(value), base);
+    return (isNaN(res)) ? (defaultValue as number) : res;
   }
 );
 
