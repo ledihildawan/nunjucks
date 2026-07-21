@@ -203,6 +203,7 @@ export function trim(str: unknown): unknown {
 export function truncate(input: unknown, length?: number, killwords?: boolean, end?: string): unknown {
   const orig = input;
   let inp = normalize(input, '');
+  if (typeof inp !== 'string') inp = String(inp);
   const len = defaultTo(length, 255);
 
   if (inp.length <= len) {

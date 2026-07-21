@@ -104,7 +104,7 @@ export function* iterateNodes(node: Node): Generator<Node> {
   
   if (CHILDREN_TYPES.has(node.type)) {
     for (const child of (node as unknown as { children: Node[] }).children) {
-      yield* nodes(child);
+      yield* iterateNodes(child);
     }
   }
   
@@ -112,9 +112,9 @@ export function* iterateNodes(node: Node): Generator<Node> {
     const val = node[field];
     if (val && typeof val === 'object') {
       if (Array.isArray(val)) {
-        for (const item of val) yield* nodes(item as Node);
+        for (const item of val) yield* iterateNodes(item as Node);
       } else {
-        yield* nodes(val as Node);
+        yield* iterateNodes(val as Node);
       }
     }
   }

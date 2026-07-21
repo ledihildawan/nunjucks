@@ -66,6 +66,14 @@ describe('truncate', () => {
     const r = truncate('hello world', 5, true) as string;
     expect(r).toContain('hello');
   });
+  test('handles non-string input (number)', () => {
+    const r = truncate(123456789, 3, true) as string;
+    expect(r).toContain('123');
+  });
+  test('handles SafeString input', () => {
+    const r = truncate('hello world foo bar baz', 11) as string;
+    expect(r).toContain('...');
+  });
 });
 
 describe('trim', () => {
