@@ -1,0 +1,12 @@
+{
+  "name": "@nunjucks/nodes",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "description": "AST node types for Nunjucks template engine",
+  "keywords": ["nunjucks", "ast", "nodes"],
+  "license": "BSD-2-Clause"
+}

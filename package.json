@@ -7,7 +7,9 @@
   "workspaces": [
     "packages/@nunjucks/shared",
     "packages/@nunjucks/log",
-    "packages/@nunjucks/lexer"
+    "packages/@nunjucks/lexer",
+    "packages/@nunjucks/nodes",
+    "packages/@nunjucks/parser"
   ],
   "dependencies": {
     "@nunjucks/lexer": "workspace:*",

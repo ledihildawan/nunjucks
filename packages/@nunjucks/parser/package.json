@@ -1,0 +1,16 @@
+{
+  "name": "@nunjucks/parser",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@nunjucks/lexer": "workspace:*",
+    "@nunjucks/nodes": "workspace:*"
+  },
+  "description": "Parser for Nunjucks template engine",
+  "keywords": ["nunjucks", "parser", "ast"],
+  "license": "BSD-2-Clause"
+}

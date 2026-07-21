@@ -37,6 +37,18 @@
         "picocolors": "*",
       },
     },
+    "packages/@nunjucks/nodes": {
+      "name": "@nunjucks/nodes",
+      "version": "1.0.0",
+    },
+    "packages/@nunjucks/parser": {
+      "name": "@nunjucks/parser",
+      "version": "1.0.0",
+      "dependencies": {
+        "@nunjucks/lexer": "workspace:*",
+        "@nunjucks/nodes": "workspace:*",
+      },
+    },
     "packages/@nunjucks/shared": {
       "name": "@nunjucks/shared",
       "version": "1.0.0",
@@ -72,6 +84,10 @@
     "@nunjucks/lexer": ["@nunjucks/lexer@workspace:packages/@nunjucks/lexer"],
 
     "@nunjucks/log": ["@nunjucks/log@workspace:packages/@nunjucks/log"],
+
+    "@nunjucks/nodes": ["@nunjucks/nodes@workspace:packages/@nunjucks/nodes"],
+
+    "@nunjucks/parser": ["@nunjucks/parser@workspace:packages/@nunjucks/parser"],
 
     "@nunjucks/shared": ["@nunjucks/shared@workspace:packages/@nunjucks/shared"],
 
