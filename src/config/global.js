@@ -1,7 +1,7 @@
-import * as stringFilters from '../filters/string.js';
-import * as arrayFilters from '../filters/array.js';
-import * as objectFilters from '../filters/object.js';
-import * as mathFilters from '../filters/math.js';
+import * as stringFilters from '@nunjucks/filters/string';
+import * as arrayFilters from '@nunjucks/filters/array';
+import * as objectFilters from '@nunjucks/filters/object';
+import * as mathFilters from '@nunjucks/filters/math';
 import { builtInTests } from '../tests.js';
 
 const builtInFilters = {

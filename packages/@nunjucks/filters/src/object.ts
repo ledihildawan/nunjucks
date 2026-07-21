@@ -1,7 +1,7 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { isString, isPlainObject } from 'remeda';
 import { createLog } from '@nunjucks/log';
-import { getAttrGetter } from '../helpers/attributes.js';
+import { getAttrGetter } from './attributes.ts';
 
 const isObject = isPlainObject;
 

@@ -1,0 +1,20 @@
+{
+  "name": "@nunjucks/filters",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./string": "./src/string.ts",
+    "./array": "./src/array.ts",
+    "./object": "./src/object.ts",
+    "./math": "./src/math.ts",
+    "./attributes": "./src/attributes.ts"
+  },
+  "dependencies": {
+    "@nunjucks/runtime": "workspace:*",
+    "@nunjucks/log": "workspace:*",
+    "remeda": "*"
+  },
+  "description": "Built-in filters for Nunjucks template engine"
+}

@@ -12,7 +12,8 @@
     "packages/@nunjucks/parser",
     "packages/@nunjucks/transformers",
     "packages/@nunjucks/compiler",
-    "packages/@nunjucks/runtime"
+    "packages/@nunjucks/runtime",
+    "packages/@nunjucks/filters"
   ],
   "dependencies": {
     "@nunjucks/lexer": "workspace:*",
@@ -22,6 +23,7 @@
     "@nunjucks/transformers": "workspace:*",
     "@nunjucks/compiler": "workspace:*",
     "@nunjucks/runtime": "workspace:*",
+    "@nunjucks/filters": "workspace:*",
     "express": "5",
     "picocolors": "^1.1.1",
     "remeda": "^2.39.0",

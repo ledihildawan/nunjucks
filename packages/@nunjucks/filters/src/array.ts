@@ -2,8 +2,8 @@ import { createLog } from '@nunjucks/log';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { isArray, isString, isPlainObject, map, keys, entries, sum as sumValues } from 'remeda';
 import { isSafeString, copySafeness, makeMacro } from '@nunjucks/runtime';
-import { getAttrGetter } from '../helpers/attributes.js';
-import { normalize } from './string.js';
+import { getAttrGetter } from './attributes.ts';
+import { normalize } from './string.ts';
 
 const getLogContext = (ctx) => (ctx && ctx.logContext) ? ctx.logContext : { templateName: 'inline', phase: 'render', renderContext: null };
 
