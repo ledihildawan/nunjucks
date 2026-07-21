@@ -43,6 +43,8 @@ export const reservedKeywordClassifier = (input: ClassifyInput): Classification 
     category: 'reserved_keyword_context',
     undefinedName: keyword,
     title: `Cannot use reserved keyword '${keyword}' outside of its intended context`,
+    documentationUrl: null,
+    severity: 'error',
     ...info
   };
 };

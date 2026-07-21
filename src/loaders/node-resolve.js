@@ -18,7 +18,10 @@ const isExternalModule = (name) => !isRelativePath(name) && !isWindowsAbsolutePa
 
 const tryRequireResolve = (name) => {
   try { return _require.resolve(name); }
-  catch { return null; }
+  catch (e) {
+    if (e && (e.code === 'MODULE_NOT_FOUND' || e.code === 'ERR_MODULE_NOT_FOUND')) return null;
+    throw e;
+  }
 };
 
 const findInSearchPaths = (searchPaths, name) => {

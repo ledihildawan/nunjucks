@@ -9,13 +9,16 @@ import {
   TOKEN_TEMPLATE_LITERAL,
 } from '@nunjucks/lexer';
 import { nodes } from '@nunjucks/nodes';
-import { nextToken, pushToken, fail } from "../cursor.ts";
-import { tryParsePattern } from "../node-parsers/index.ts";
+import type { Node } from '@nunjucks/nodes';
+import { nextToken, pushToken, fail, EXPECTED_COLON_AFTER_DICT_KEY } from "../cursor.ts";
+import type { ParserContext } from "../cursor.ts";
+import { tryParsePattern, parseAggregate, parseTemplateLiteral } from "../node-parsers/index.ts";
+import { parsePostfix } from "../postfix-parser/index.ts";
 
-export const parsePrimary = (ctx, noPostfix) => {
+export const parsePrimary = (ctx: ParserContext, noPostfix?: boolean): Node => {
   const tok = nextToken(ctx);
   let val;
-  let node = null;
+  let node: Node | null = null;
 
   if (!tok) {
     fail(ctx, 'expected expression, got end of file');
@@ -24,7 +27,7 @@ export const parsePrimary = (ctx, noPostfix) => {
   } else if (tok.type === TOKEN_INT) {
     val = Number(tok.value);
   } else if (tok.type === TOKEN_FLOAT) {
-    val = parseFloat(tok.value);
+    val = parseFloat(tok.value as string);
   } else if (tok.type === TOKEN_BOOLEAN) {
     if (tok.value === 'true') {
       val = true;
@@ -38,22 +41,22 @@ export const parsePrimary = (ctx, noPostfix) => {
   } else if (tok.type === TOKEN_NONE) {
     val = null;
   } else if (tok.type === TOKEN_REGEX) {
-    val = new RegExp(tok.value.body, tok.value.flags);
+    val = new RegExp((tok.value as { body: string; flags: string }).body, (tok.value as { body: string; flags: string }).flags);
   }
 
   if (val !== undefined) {
     node = nodes.literal(tok.lineno, tok.colno, val);
   } else if (tok.type === TOKEN_SYMBOL) {
-    node = nodes.symbol(tok.lineno, tok.colno, tok.value);
+    node = nodes.symbol(tok.lineno, tok.colno, tok.value as string);
   } else if (tok.type === TOKEN_TEMPLATE_LITERAL) {
     pushToken(ctx, tok);
-    node = ctx.parseTemplateLiteral();
+    node = parseTemplateLiteral(ctx);
   } else {
     pushToken(ctx, tok);
     try {
-      node = ctx.parseAggregate();
+      node = parseAggregate(ctx);
     } catch (e) {
-      if (e.message && e.message.includes('expected colon after dict key')) {
+      if (e !== null && typeof e === 'object' && (e as { sentinel?: unknown }).sentinel === EXPECTED_COLON_AFTER_DICT_KEY) {
         node = tryParsePattern(ctx);
         if (!node) {
           throw e;
@@ -65,7 +68,7 @@ export const parsePrimary = (ctx, noPostfix) => {
   }
 
   if (!noPostfix) {
-    node = ctx.parsePostfix(node);
+    node = parsePostfix(ctx, node!);
   }
 
   if (node) {

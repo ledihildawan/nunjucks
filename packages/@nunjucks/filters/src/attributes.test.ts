@@ -44,12 +44,12 @@ describe('getAttrGetter', () => {
 
   test('works with string key', () => {
     const getter = getAttrGetter('0');
-    expect(getter(['x', 'y'])).toBe('x');
+    expect(getter(['x', 'y'] as unknown as Record<string, unknown>)).toBe('x');
   });
 
   test('falsy numeric key returns item itself (attr is falsy, parts empty)', () => {
     const getter = getAttrGetter(0);
-    expect(getter(['x', 'y'])).toEqual(['x', 'y']);
+    expect(getter(['x', 'y'] as unknown as Record<string, unknown>)).toEqual(['x', 'y']);
   });
 
   test('uses hasOwnProperty check', () => {

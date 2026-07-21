@@ -33,7 +33,7 @@ export const RESERVED_KEYWORDS = new Set([
   'toString', 'valueOf', 'toJSON',
 
   // Filter/function names that would conflict
-  'dump', 'inspect', 'toJson', 'safe', 'escape', ' Markup',
+  'dump', 'inspect', 'toJson', 'safe', 'escape', 'Markup',
   'default', 'defaultFilter', 'first', 'last', 'batch',
   'list', 'join', 'sort', 'reverse', 'length', 'items',
   'keys', 'values', 'replace', 'truncate', 'wordwrap', 'striptags',

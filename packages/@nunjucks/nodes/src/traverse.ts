@@ -3,7 +3,7 @@
 
 import { T, type Node } from './types.ts';
 
-const CHILDREN_TYPES = new Set([T.NODE_LIST, T.ROOT, T.OUTPUT, T.GROUP, T.ARRAY, T.DICT]);
+const CHILDREN_TYPES: ReadonlySet<string> = new Set([T.NODE_LIST, T.ROOT, T.OUTPUT, T.GROUP, T.ARRAY, T.DICT]);
 
 const getFields = (n: Node): string[] => {
   const excluded = new Set(['type', 'lineno', 'colno', 'fields']);
@@ -95,7 +95,7 @@ export const findFirst = (node: Node, predicate: (n: Node) => boolean): Node | u
 
 export const count = (node: Node, predicate?: (n: Node) => boolean): number => {
   let n = 0;
-  findAll(node, (node) => { if (!predicate || predicate(node)) n++; });
+  findAll(node, (nd): boolean => { if (!predicate || predicate(nd)) n++; return true; });
   return n;
 };
 

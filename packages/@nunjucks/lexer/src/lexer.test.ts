@@ -38,9 +38,9 @@ describe('lex - variable interpolation', () => {
       TOKEN_WHITESPACE,
       TOKEN_VARIABLE_END,
     ]);
-    expect(tokens[0].value).toBe('{{');
-    expect(tokens[2].value).toBe('variable');
-    expect(tokens[4].value).toBe('}}');
+    expect(tokens[0]!.value).toBe('{{');
+    expect(tokens[2]!.value).toBe('variable');
+    expect(tokens[4]!.value).toBe('}}');
   });
 
   test('lexes {{x}} without whitespace', () => {
@@ -50,7 +50,7 @@ describe('lex - variable interpolation', () => {
       TOKEN_SYMBOL,
       TOKEN_VARIABLE_END,
     ]);
-    expect(tokens[1].value).toBe('x');
+    expect(tokens[1]!.value).toBe('x');
   });
 
   test('lexes multiple interpolations', () => {
@@ -74,10 +74,10 @@ describe('lex - block tags', () => {
       TOKEN_WHITESPACE,
       TOKEN_BLOCK_END,
     ]);
-    expect(tokens[0].value).toBe('{%');
-    expect(tokens[2].value).toBe('if');
-    expect(tokens[4].value).toBe('x');
-    expect(tokens[6].value).toBe('%}');
+    expect(tokens[0]!.value).toBe('{%');
+    expect(tokens[2]!.value).toBe('if');
+    expect(tokens[4]!.value).toBe('x');
+    expect(tokens[6]!.value).toBe('%}');
   });
 
   test('lexes {% for i in items %}', () => {
@@ -102,22 +102,22 @@ describe('lex - comments', () => {
   test('lexes {# comment #} into a single comment token', () => {
     const tokens = collect('{# comment #}');
     expect(tokens).toHaveLength(1);
-    expect(tokens[0].type).toBe(TOKEN_COMMENT);
-    expect(tokens[0].value).toBe('{# comment #}');
+    expect(tokens[0]!.type).toBe(TOKEN_COMMENT);
+    expect(tokens[0]!.value).toBe('{# comment #}');
   });
 
   test('lexes empty comment {##}', () => {
     const tokens = collect('{##}');
     expect(tokens).toHaveLength(1);
-    expect(tokens[0].type).toBe(TOKEN_COMMENT);
-    expect(tokens[0].value).toBe('{##}');
+    expect(tokens[0]!.type).toBe(TOKEN_COMMENT);
+    expect(tokens[0]!.value).toBe('{##}');
   });
 
   test('lexes comment containing delimiters-like text', () => {
     const tokens = collect('{# a {{ b }} c #}');
     expect(tokens).toHaveLength(1);
-    expect(tokens[0].type).toBe(TOKEN_COMMENT);
-    expect(tokens[0].value).toBe('{# a {{ b }} c #}');
+    expect(tokens[0]!.type).toBe(TOKEN_COMMENT);
+    expect(tokens[0]!.value).toBe('{# a {{ b }} c #}');
   });
 });
 
@@ -125,16 +125,16 @@ describe('lex - raw text', () => {
   test('lexes plain text into a data token', () => {
     const tokens = collect('hello world');
     expect(tokens).toHaveLength(1);
-    expect(tokens[0].type).toBe(TOKEN_DATA);
-    expect(tokens[0].value).toBe('hello world');
+    expect(tokens[0]!.type).toBe(TOKEN_DATA);
+    expect(tokens[0]!.value).toBe('hello world');
   });
 
   test('lexes text adjacent to interpolation', () => {
     const tokens = collect('Hello {{ name }}!');
-    expect(tokens[0].type).toBe(TOKEN_DATA);
-    expect(tokens[0].value).toBe('Hello ');
-    expect(tokens[tokens.length - 1].type).toBe(TOKEN_DATA);
-    expect(tokens[tokens.length - 1].value).toBe('!');
+    expect(tokens[0]!.type).toBe(TOKEN_DATA);
+    expect(tokens[0]!.value).toBe('Hello ');
+    expect(tokens[tokens.length - 1]!.type).toBe(TOKEN_DATA);
+    expect(tokens[tokens.length - 1]!.value).toBe('!');
   });
 });
 
@@ -159,75 +159,75 @@ describe('lex - empty input', () => {
 describe('lex - token positions', () => {
   test('first token starts at line 0, column 0', () => {
     const [first] = collect('{{ x }}');
-    expect(first.lineno).toBe(0);
-    expect(first.colno).toBe(0);
+    expect(first!.lineno).toBe(0);
+    expect(first!.colno).toBe(0);
   });
 
   test('tracks advancing column position', () => {
     const tokens = collect('{{ x }}');
-    expect(tokens[0].colno).toBe(0);
-    expect(tokens[1].colno).toBe(2);
+    expect(tokens[0]!.colno).toBe(0);
+    expect(tokens[1]!.colno).toBe(2);
   });
 
   test('tracks line number across newlines', () => {
     const tokens = collect('a\n{{ x }}');
-    expect(tokens[0].type).toBe(TOKEN_DATA);
-    expect(tokens[0].value).toBe('a\n');
+    expect(tokens[0]!.type).toBe(TOKEN_DATA);
+    expect(tokens[0]!.value).toBe('a\n');
     const varStart = tokens[1];
-    expect(varStart.type).toBe(TOKEN_VARIABLE_START);
-    expect(varStart.lineno).toBe(1);
+    expect(varStart!.type).toBe(TOKEN_VARIABLE_START);
+    expect(varStart!.lineno).toBe(1);
   });
 
   test('resets column after newline', () => {
     const tokens = collect('ab\ncd');
     expect(tokens).toHaveLength(1);
-    expect(tokens[0].type).toBe(TOKEN_DATA);
-    expect(tokens[0].value).toBe('ab\ncd');
+    expect(tokens[0]!.type).toBe(TOKEN_DATA);
+    expect(tokens[0]!.value).toBe('ab\ncd');
   });
 });
 
 describe('lex - code expressions', () => {
   test('lexes an integer literal', () => {
     const tokens = collect('{{ 42 }}');
-    expect(tokens[2].type).toBe(TOKEN_INT);
-    expect(tokens[2].value).toBe(42);
+    expect(tokens[2]!.type).toBe(TOKEN_INT);
+    expect(tokens[2]!.value).toBe(42);
   });
 
   test('lexes a float literal', () => {
     const tokens = collect('{{ 3.14 }}');
-    expect(tokens[2].type).toBe(TOKEN_FLOAT);
-    expect(tokens[2].value).toBe(3.14);
+    expect(tokens[2]!.type).toBe(TOKEN_FLOAT);
+    expect(tokens[2]!.value).toBe(3.14);
   });
 
   test('lexes a double-quoted string literal', () => {
     const tokens = collect('{{ "hi" }}');
-    expect(tokens[2].type).toBe(TOKEN_STRING);
-    expect(tokens[2].value).toBe('hi');
+    expect(tokens[2]!.type).toBe(TOKEN_STRING);
+    expect(tokens[2]!.value).toBe('hi');
   });
 
   test('lexes a single-quoted string literal', () => {
     const tokens = collect("{{ 'hi' }}");
-    expect(tokens[2].type).toBe(TOKEN_STRING);
-    expect(tokens[2].value).toBe('hi');
+    expect(tokens[2]!.type).toBe(TOKEN_STRING);
+    expect(tokens[2]!.value).toBe('hi');
   });
 
   test('lexes a boolean literal', () => {
     const tokens = collect('{{ true }}');
-    expect(tokens[2].type).toBe(TOKEN_BOOLEAN);
-    expect(tokens[2].value).toBe('true');
+    expect(tokens[2]!.type).toBe(TOKEN_BOOLEAN);
+    expect(tokens[2]!.value).toBe('true');
   });
 
   test('lexes a none literal', () => {
     const tokens = collect('{{ none }}');
-    expect(tokens[2].type).toBe(TOKEN_NONE);
-    expect(tokens[2].value).toBe('none');
+    expect(tokens[2]!.type).toBe(TOKEN_NONE);
+    expect(tokens[2]!.value).toBe('none');
   });
 
   test('lexes an arithmetic operator', () => {
     const tokens = collect('{{ 1 + 2 }}');
     const ops = tokens.filter((t) => t.type === TOKEN_OPERATOR);
     expect(ops).toHaveLength(1);
-    expect(ops[0].value).toBe('+');
+    expect(ops[0]!.value).toBe('+');
   });
 });
 
@@ -243,18 +243,18 @@ describe('lex - custom delimiters', () => {
       TOKEN_WHITESPACE,
       TOKEN_VARIABLE_END,
     ]);
-    expect(tokens[0].value).toBe('<<');
-    expect(tokens[4].value).toBe('>>');
+    expect(tokens[0]!.value).toBe('<<');
+    expect(tokens[4]!.value).toBe('>>');
   });
 
   test('supports custom block delimiters', () => {
     const tokens = collect('<% if x %>', {
       tags: { blockStart: '<%', blockEnd: '%>' },
     });
-    expect(tokens[0].type).toBe(TOKEN_BLOCK_START);
-    expect(tokens[0].value).toBe('<%');
-    expect(tokens[tokens.length - 1].type).toBe(TOKEN_BLOCK_END);
-    expect(tokens[tokens.length - 1].value).toBe('%>');
+    expect(tokens[0]!.type).toBe(TOKEN_BLOCK_START);
+    expect(tokens[0]!.value).toBe('<%');
+    expect(tokens[tokens.length - 1]!.type).toBe(TOKEN_BLOCK_END);
+    expect(tokens[tokens.length - 1]!.value).toBe('%>');
   });
 
   test('default delimiters are exposed via tags', () => {

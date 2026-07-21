@@ -9,11 +9,13 @@ export interface ClassifyInput {
 
 interface ErrorWithExtras {
   message?: string;
-  code?: string;
-  subject?: string;
+  code?: string | null;
+  subject?: string | null;
   causes?: string[];
   fixCode?: string | null;
   fixComment?: string | null;
+  documentationUrl?: string | null;
+  severity?: 'error' | 'warning' | 'info';
 }
 
 export const classify = (message: string): Classification => {

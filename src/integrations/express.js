@@ -4,6 +4,7 @@ import EventEmitter from 'events';
 import nunjucks from '../index.js';
 import { createFileSystemLoader } from '../loaders/index.js';
 import { createTemplate } from '../template/index.js';
+import { createEnv } from '../core/env.js';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
 
@@ -13,15 +14,11 @@ export function createEngine(config = {}) {
     const loader = createFileSystemLoader(viewsPath, { noCache: config.dev || false });
     
     const emitter = new EventEmitter();
-    
-    const env = {
+
+    const env = createEnv({
       opts: { dev: config.dev || false, autoescape: true, ...config },
-      extensionsList: [],
       globals: {},
-      _renderingTemplates: new Set(),
-      on: (event, handler) => emitter.on(event, handler),
-      emit: (event, ...args) => emitter.emit(event, ...args),
-      removeListener: (event, handler) => emitter.removeListener(event, handler),
+      emitter,
       async getTemplate(name, eagerCompile, includeChain, ignoreMissing) {
         const source = await loader.getSource(name);
         if (!source) {
@@ -32,7 +29,7 @@ export function createEngine(config = {}) {
         template.tmplStr = source.src;
         return template;
       }
-    };
+    });
     
     const templateName = path.basename(filePath);
     const envWithPath = Object.create(env);

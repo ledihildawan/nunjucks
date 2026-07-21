@@ -27,7 +27,16 @@ export interface Delimiters {
   COMMENT_END: string;
 }
 
-export const createDelimiters = (tags: Record<string, string> = {}): Delimiters => ({
+export interface DelimiterTags {
+  blockStart?: string;
+  blockEnd?: string;
+  variableStart?: string;
+  variableEnd?: string;
+  commentStart?: string;
+  commentEnd?: string;
+}
+
+export const createDelimiters = (tags: DelimiterTags = {}): Delimiters => ({
   BLOCK_START: tags.blockStart || DEFAULT_BLOCK_START,
   BLOCK_END: tags.blockEnd || DEFAULT_BLOCK_END,
   VARIABLE_START: tags.variableStart || DEFAULT_VARIABLE_START,

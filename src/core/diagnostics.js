@@ -123,69 +123,79 @@ const findSubjectOccurrence = (content, subject, preferredLine) => {
   return best;
 };
 
-const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, templateErrorLine = null, templateErrorCol = null, subjectHint = null, resolveInlineLocation = true) => {
-  try {
-    const fs = require('fs');
-    const content = fs.readFileSync(filePath, 'utf8');
-    const lines = content.split('\n');
+const matchTemplateInContent = (content, templateHint, templateErrorLine, templateErrorCol, preferredLine) => {
+  const templateMatch = findTemplateOccurrence(content, templateHint, preferredLine);
+  if (!templateMatch) return null;
+  const targetOffset = templateMatch.index + templateLocationOffset(templateMatch.template, templateErrorLine, templateErrorCol);
+  const position = positionAtOffset(content, targetOffset);
+  return { line: position.lineOffset + 1, col: position.col };
+};
 
-    let resolvedLine = errorLine;
-    let resolvedCol = errorCol;
+const resolveInlineCoordinates = (content, errorLine, errorCol, templateHint, templateErrorLine, templateErrorCol, subjectHint, resolveInlineLocation) => {
+  let resolvedLine = errorLine;
+  let resolvedCol = errorCol;
 
-    if (resolveInlineLocation) {
-      let templateMatch = null;
-      if (typeof templateHint === 'string' && Number.isInteger(templateErrorLine) && Number.isInteger(templateErrorCol)) {
-        templateMatch = findTemplateOccurrence(content, templateHint, errorLine);
-        if (templateMatch) {
-          const targetOffset = templateMatch.index + templateLocationOffset(templateMatch.template, templateErrorLine, templateErrorCol);
-          const position = positionAtOffset(content, targetOffset);
-          resolvedLine = position.lineOffset + 1;
-          resolvedCol = position.col;
-        }
-      }
-
-      if (!templateMatch) {
-        const subjectMatch = findSubjectOccurrence(content, subjectHint, errorLine);
-        if (subjectMatch) {
-          resolvedLine = subjectMatch.line;
-          resolvedCol = subjectMatch.col;
-        } else if (templateHint === null || templateHint === undefined) {
-          const nullMatch = findSubjectOccurrence(content, 'null', errorLine);
-          if (nullMatch) {
-            resolvedLine = nullMatch.line;
-            resolvedCol = nullMatch.col;
-          }
-        } else if (typeof templateHint === 'string') {
-          templateMatch = findTemplateOccurrence(content, templateHint, errorLine);
-          if (templateMatch) {
-            const targetOffset = templateMatch.index + templateLocationOffset(templateMatch.template, templateErrorLine, templateErrorCol);
-            const position = positionAtOffset(content, targetOffset);
-            resolvedLine = position.lineOffset + 1;
-            resolvedCol = position.col;
-          }
-        } else {
-          const templateValueMatch = findSubjectOccurrence(content, String(templateHint), errorLine);
-          if (templateValueMatch) {
-            resolvedLine = templateValueMatch.line;
-            resolvedCol = templateValueMatch.col;
-          }
-        }
-      }
-    } else if (templateHint !== null && templateHint !== undefined && typeof templateHint !== 'string') {
-      const templateValueMatch = findSubjectOccurrence(content, String(templateHint), errorLine);
-      if (templateValueMatch) {
-        resolvedLine = templateValueMatch.line;
-        resolvedCol = templateValueMatch.col;
+  if (resolveInlineLocation) {
+    let templateMatched = false;
+    if (typeof templateHint === 'string' && Number.isInteger(templateErrorLine) && Number.isInteger(templateErrorCol)) {
+      const match = matchTemplateInContent(content, templateHint, templateErrorLine, templateErrorCol, errorLine);
+      if (match) {
+        templateMatched = true;
+        resolvedLine = match.line;
+        resolvedCol = match.col;
       }
     }
+
+    if (!templateMatched) {
+      const subjectMatch = findSubjectOccurrence(content, subjectHint, errorLine);
+      if (subjectMatch) {
+        resolvedLine = subjectMatch.line;
+        resolvedCol = subjectMatch.col;
+      } else if (templateHint === null || templateHint === undefined) {
+        const nullMatch = findSubjectOccurrence(content, 'null', errorLine);
+        if (nullMatch) {
+          resolvedLine = nullMatch.line;
+          resolvedCol = nullMatch.col;
+        }
+      } else if (typeof templateHint === 'string') {
+        const match = matchTemplateInContent(content, templateHint, templateErrorLine, templateErrorCol, errorLine);
+        if (match) {
+          resolvedLine = match.line;
+          resolvedCol = match.col;
+        }
+      } else {
+        const templateValueMatch = findSubjectOccurrence(content, String(templateHint), errorLine);
+        if (templateValueMatch) {
+          resolvedLine = templateValueMatch.line;
+          resolvedCol = templateValueMatch.col;
+        }
+      }
+    }
+  } else if (templateHint !== null && templateHint !== undefined && typeof templateHint !== 'string') {
+    const templateValueMatch = findSubjectOccurrence(content, String(templateHint), errorLine);
+    if (templateValueMatch) {
+      resolvedLine = templateValueMatch.line;
+      resolvedCol = templateValueMatch.col;
+    }
+  }
+
+  return { resolvedLine, resolvedCol };
+};
+
+const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, templateErrorLine = null, templateErrorCol = null, subjectHint = null, resolveInlineLocation = true) => {
+  try {
+    const content = readFileSync(filePath, 'utf8');
+    const lines = content.split('\n');
+
+    const { resolvedLine, resolvedCol } = resolveInlineCoordinates(content, errorLine, errorCol, templateHint, templateErrorLine, templateErrorCol, subjectHint, resolveInlineLocation);
 
     if (resolvedLine < 1 || resolvedLine > lines.length) {
       return null;
     }
 
     const windowSize = 10;
-    let startLine = Math.max(1, resolvedLine - windowSize);
-    let endLine = Math.min(lines.length, resolvedLine + windowSize);
+    const startLine = Math.max(1, resolvedLine - windowSize);
+    const endLine = Math.min(lines.length, resolvedLine + windowSize);
 
     return {
       content: lines.slice(startLine - 1, endLine).join('\n'),
@@ -198,25 +208,13 @@ const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, 
   }
 };
 
-export const wrapWithLog = (err, config, template = null, renderContext = null) => {
-  const initialMetadata = normalizeErrorMetadata(err, {
-    phase: config.phase || 'render',
-    templatePath: config.templatePath || config._callerFile || null,
-    sourceContent: typeof template === 'string' ? template : null,
-    renderContext
-  });
-  const errLineno = initialMetadata.lineno;
-  const errColno = initialMetadata.colno;
+const resolveErrorLocation = (config, initialMetadata, errLineno, errColno, template) => {
   const useJsCaller = config.jsCallerErrorLine != null;
   const hasErrorLocation = errLineno !== undefined && errLineno !== null;
   const preferJsCallerLocation = !config.templatePath && useJsCaller;
   const templatePath = preferJsCallerLocation
     ? (config.jsCaller || config._callerFile || initialMetadata.templateName || null)
     : (config.templatePath || initialMetadata.templatePath || initialMetadata.templateName || config._callerFile || null);
-  const phase = initialMetadata.phase || config.phase || 'render';
-  const dev = config.dev ?? false;
-  const ide = config.ide ?? 'vscode';
-  const timestamp = new Date().toISOString();
 
   let sourceContent = template;
   let sourceStartLine = 1;
@@ -253,6 +251,27 @@ export const wrapWithLog = (err, config, template = null, renderContext = null) 
   const lineBase = preferJsCallerLocation
     ? 'one'
     : (hasErrorLocation ? initialMetadata.lineBase : (!hasErrorLocation && useJsCaller ? 'one' : initialMetadata.lineBase));
+
+  return { lineno, colno, lineBase, templatePath, sourceContent, sourceStartLine, preferJsCallerLocation };
+};
+
+export const wrapWithLog = (err, config, template = null, renderContext = null) => {
+  const initialMetadata = normalizeErrorMetadata(err, {
+    phase: config.phase || 'render',
+    templatePath: config.templatePath || config._callerFile || null,
+    sourceContent: typeof template === 'string' ? template : null,
+    renderContext
+  });
+  const errLineno = initialMetadata.lineno;
+  const errColno = initialMetadata.colno;
+  const phase = initialMetadata.phase || config.phase || 'render';
+  const dev = config.dev ?? false;
+  const ide = config.ide ?? 'vscode';
+  const timestamp = new Date().toISOString();
+
+  const { lineno, colno, lineBase, templatePath, sourceContent, sourceStartLine, preferJsCallerLocation } =
+    resolveErrorLocation(config, initialMetadata, errLineno, errColno, template);
+
   const metadata = normalizeErrorMetadata(err, {
     lineno,
     colno,

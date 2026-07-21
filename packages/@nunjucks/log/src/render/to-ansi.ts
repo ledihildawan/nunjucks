@@ -135,7 +135,7 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   const location = toDisplayLocation(displayLineno, displayColno, lineBase);
 
   if (verbosity === 'medium') {
-    const causeHint = causes.length > 0 ? stripMarkdown(causes[0]) : '';
+    const causeHint = causes.length > 0 ? stripMarkdown(causes[0] ?? '') : '';
     const docHint = documentationUrl ? documentationUrl : '';
     const extras = [causeHint, docHint].filter(Boolean).join(' | ');
     if (path) {

@@ -1,15 +1,14 @@
 import { entries } from 'remeda';
-import type { Classifier, ClassifyInput, Classification, SubjectExtractor } from './types.ts';
+import type { Classifier, ClassifyInput, Classification } from './types.ts';
+import { firstCapture } from './types.ts';
 import { RULES, ERROR_DEFINITIONS, DEFAULT_CLASSIFICATION } from './registry.ts';
 import { timeoutClassifier } from './timeout.ts';
 import { reservedKeywordClassifier } from './reserved-keyword.ts';
 
-const firstCapture: SubjectExtractor = (groups) => groups[1] ?? null;
-
 const replacePlaceholders = (
   str: string | null | undefined,
   undefinedName: string | null,
-  extra?: Record<string, string | null>
+  extra?: Record<string, string | null> | null
 ): string | null => {
   if (!str) return str ?? null;
   let result = str.replaceAll('{subject}', undefinedName || '').replaceAll('{target}', undefinedName || '');

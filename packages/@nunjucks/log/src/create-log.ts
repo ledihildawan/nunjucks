@@ -2,6 +2,12 @@ import { isFunction, isString, pipe, isNonNullish, pickBy } from 'remeda';
 import type { LineBase } from './render/internal/location.ts';
 import { normalizeLineBase, formatLocationAnnotation } from './render/internal/location.ts';
 import { createFormatterState } from './render/internal/metadata.ts';
+import { toAnsi } from './render/to-ansi.ts';
+import { toText } from './render/to-text.ts';
+import { toHtml } from './render/to-html.ts';
+import { toConsoleString } from './render/to-console.ts';
+
+const TEMPLATE_ERROR = Symbol('TemplateError');
 
 export interface ErrorDefinitionEntry {
   name: string;
@@ -73,11 +79,13 @@ export interface TemplateError extends Error {
   fixComment?: string | null;
   documentationUrl?: string | null;
   severity?: 'error' | 'warning' | 'info';
+  path?: string | null;
   toJSON?: () => Record<string, unknown>;
   outputOptions?: Omit<OutputOptions, 'format'>;
   output: (options?: OutputOptions) => { html: string; ansi: string; text: string } | string;
   applyLocation?: (path: string | undefined, includeChain?: IncludeChain) => TemplateError;
   _includeChain?: IncludeChain;
+  [TEMPLATE_ERROR]?: boolean;
 }
 
 export interface TemplateWarning {
@@ -104,6 +112,8 @@ export interface ErrorContext {
   templateName?: string | null;
   templatePath?: string | null;
   lineBase?: LineBase | null;
+  sourceContent?: string;
+  sourceStartLine?: number;
 }
 
 export interface WarningContext extends ErrorContext {
@@ -183,9 +193,9 @@ const createOutputFn = (type: 'error' | 'warning') => {
         options
       });
 
-      if (options.format === 'ansi') return require('./render/to-ansi.ts').toAnsi(this, opts);
-      if (options.format === 'text') return require('./render/to-text.ts').toText(this, opts);
-      return require('./render/to-html.ts').toHtml(this, opts);
+      if (options.format === 'ansi') return toAnsi(this, opts);
+      if (options.format === 'text') return toText(this, opts);
+      return toHtml(this, opts);
     };
   }
   return function(this: TemplateWarning, options: Omit<OutputOptions, 'format' | 'isProduction'> = {}) {
@@ -202,7 +212,7 @@ const createOutputFn = (type: 'error' | 'warning') => {
       },
       options
     });
-    return require('./render/to-console.ts').toConsoleString(this, state);
+    return toConsoleString(this, state);
   };
 };
 
@@ -220,7 +230,7 @@ export function createLog(
 
     if (type === 'error') {
       const err = new Error(base.message) as TemplateError;
-      const props = { name: 'Template render error', code: base.code, subject: base.subject, lineno: base.lineno, colno: base.colno, phase: base.phase, templateName: base.templateName, lineBase: base.lineBase, templatePath: base.templateName };
+      const props = { name: 'Template render error', code: base.code, subject: base.subject, lineno: base.lineno, colno: base.colno, phase: base.phase, templateName: base.templateName, lineBase: base.lineBase, templatePath: base.templateName, [TEMPLATE_ERROR]: true as const };
       Object.assign(err, props);
       err.output = createOutputFn('error');
       return err;
@@ -243,7 +253,7 @@ export function createLog(
 
   if (type === 'error') {
     const err = new Error(resolveMessage(errorDef.message, paramsValue)) as TemplateError;
-    Object.assign(err, { name: 'Template render error', code: errorDef.name, subject: subject ?? null, ...normalized });
+    Object.assign(err, { name: 'Template render error', code: errorDef.name, subject: subject ?? null, ...normalized, [TEMPLATE_ERROR]: true });
     if (extra?.sourceContent) err.sourceContent = extra.sourceContent;
     if (extra && Number.isInteger(extra.sourceStartLine)) err.sourceStartLine = extra.sourceStartLine;
     err.templatePath = normalized.templateName;
@@ -268,8 +278,6 @@ export function createLog(
   return warn;
 }
 
-const TEMPLATE_ERROR = Symbol('TemplateError');
-
 export function isTemplateError(obj: unknown): obj is TemplateError {
   return (obj as TemplateError)?.[TEMPLATE_ERROR] === true;
 }
@@ -289,13 +297,14 @@ interface PrettifyErrorOptions {
 
 const asTemplateError = (err: Error | TemplateError): TemplateError => {
   if (isTemplateError(err)) return err;
-  return createLog('error', { name: err.code ?? 'ERROR', message: err.message }, undefined, err.subject, {
-    lineno: err.lineno ?? null,
-    colno: err.colno ?? null,
-    phase: err.phase ?? 'render',
-    templateName: err.templateName ?? null,
-    lineBase: err.lineBase ?? 'zero'
-  });
+  const e = err as Partial<TemplateError>;
+  return createLog('error', { name: e.code ?? 'ERROR', message: err.message }, undefined, e.subject ?? null, {
+    lineno: e.lineno ?? null,
+    colno: e.colno ?? null,
+    phase: e.phase ?? 'render',
+    templateName: e.templateName ?? null,
+    lineBase: e.lineBase ?? 'zero'
+  }) as TemplateError;
 };
 
 const withLocation = ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) => (err: TemplateError): TemplateError => {
@@ -316,7 +325,7 @@ const withLocation = ({ path, includeChain }: { path?: string; includeChain?: In
     this.firstUpdate = false;
     return this;
   };
-  err.templateName = err.templateName || path;
+  err.templateName = err.templateName ?? (path ?? null);
   if (includeChain) {
     err._includeChain = includeChain;
   }
@@ -324,12 +333,12 @@ const withLocation = ({ path, includeChain }: { path?: string; includeChain?: In
 };
 
 const stripInternals = (path?: string) => (err: TemplateError): TemplateError => {
-  const clean = new Error(err.message) as TemplateError;
+  const clean = new Error(err.message, { cause: err }) as TemplateError;
   clean.name = err.name;
   clean.lineno = err.lineno;
   clean.colno = err.colno;
-  clean.path = err.path || path;
-  clean.templateName = err.templateName || path;
+  clean.path = err.path ?? (path ?? null);
+  clean.templateName = err.templateName ?? (path ?? null);
   clean.code = err.code;
   clean.subject = err.subject;
   clean.phase = err.phase;

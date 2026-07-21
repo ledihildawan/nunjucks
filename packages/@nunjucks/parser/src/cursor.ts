@@ -5,11 +5,43 @@ import {
   TOKEN_VARIABLE_END,
   TOKEN_WHITESPACE,
 } from '@nunjucks/lexer';
-import { error, fail } from "./error.ts";
+import type { Token, Delimiters } from '@nunjucks/lexer';
+import type { Node } from '@nunjucks/nodes';
+import { error, fail, EXPECTED_COLON_AFTER_DICT_KEY } from "./error.ts";
 import { createLog } from '@nunjucks/log';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 
-export const createCursor = (tokens) => ({
+export interface TokenStream {
+  nextToken(): Token | null;
+  tags: Delimiters;
+  trimBlocks?: boolean;
+  lstripBlocks?: boolean;
+  lineno?: number;
+  colno?: number;
+}
+
+export interface ParserExtension {
+  tags?: string[];
+  parse?(ctx: ParserContext, nodes: unknown, lexer: unknown): Node | null;
+  [key: string]: unknown;
+}
+
+export interface ParserContext {
+  tokens: TokenStream;
+  peeked: Token | null;
+  breakOnBlocks: readonly string[] | null;
+  dropLeadingWhitespace: boolean;
+  extensions: ParserExtension[];
+  securityConfig: Record<string, unknown>;
+  TOKEN_SYMBOL?: string;
+}
+
+export type MutableNode = Node & {
+  children: Node[];
+  addChild(child: Node): void;
+};
+
+export const createCursor = (tokens: TokenStream) => ({
   tokens,
   peeked: null,
   breakOnBlocks: null,
@@ -17,8 +49,8 @@ export const createCursor = (tokens) => ({
   extensions: []
 });
 
-export const nextToken = (ctx, withWhitespace) => {
-  let tok;
+export const nextToken = (ctx: ParserContext, withWhitespace?: boolean): Token => {
+  let tok: Token | null;
 
   if (ctx.peeked) {
     if (!withWhitespace && ctx.peeked.type === TOKEN_WHITESPACE) {
@@ -38,22 +70,22 @@ export const nextToken = (ctx, withWhitespace) => {
     }
   }
 
-  return tok;
+  return tok as Token;
 };
 
-export const peekToken = (ctx) => {
+export const peekToken = (ctx: ParserContext): Token => {
   ctx.peeked = ctx.peeked || nextToken(ctx);
-  return ctx.peeked;
+  return ctx.peeked as Token;
 };
 
-export const pushToken = (ctx, tok) => {
+export const pushToken = (ctx: ParserContext, tok: Token | null): void => {
   if (ctx.peeked) {
-    throw createLog('error', ERROR_DEFINITIONS.PARSER_PUSH_TOKEN, {}, null, { phase: 'parse', lineBase: 'zero' });
+    throw createLog('error', ERROR_DEFINITIONS.PARSER_PUSH_TOKEN!, {}, null, { phase: 'parse', lineBase: 'zero' });
   }
   ctx.peeked = tok;
 };
 
-export const skip = (ctx, type) => {
+export const skip = (ctx: ParserContext, type: Token['type']): boolean => {
   let tok = nextToken(ctx);
   if (!tok || tok.type !== type) {
     pushToken(ctx, tok);
@@ -62,7 +94,7 @@ export const skip = (ctx, type) => {
   return true;
 };
 
-export const expect = (ctx, type) => {
+export const expect = (ctx: ParserContext, type: Token['type']): Token => {
   let tok = nextToken(ctx);
   if (tok.type !== type) {
     fail(ctx, 'expected ' + type + ', got ' + tok.type, tok.lineno, tok.colno);
@@ -70,7 +102,7 @@ export const expect = (ctx, type) => {
   return tok;
 };
 
-export const skipValue = (ctx, type, val) => {
+export const skipValue = (ctx: ParserContext, type: Token['type'], val?: Token['value']): boolean => {
   let tok = nextToken(ctx);
   if (!tok || tok.type !== type || tok.value !== val) {
     pushToken(ctx, tok);
@@ -79,9 +111,9 @@ export const skipValue = (ctx, type, val) => {
   return true;
 };
 
-export const skipSymbol = (ctx, val) => skipValue(ctx, TOKEN_SYMBOL, val);
+export const skipSymbol = (ctx: ParserContext, val: string): boolean => skipValue(ctx, TOKEN_SYMBOL, val);
 
-export const skipOperator = (ctx, ...vals) => {
+export const skipOperator = (ctx: ParserContext, ...vals: string[]): boolean => {
   for (const val of vals) {
     if (skipValue(ctx, TOKEN_OPERATOR, val)) {
       return true;
@@ -90,8 +122,8 @@ export const skipOperator = (ctx, ...vals) => {
   return false;
 };
 
-export const advanceAfterBlockEnd = (ctx, name) => {
-  let tok;
+export const advanceAfterBlockEnd = (ctx: ParserContext, name?: string): Token => {
+  let tok: Token;
   if (!name) {
     tok = peekToken(ctx);
 
@@ -104,13 +136,13 @@ export const advanceAfterBlockEnd = (ctx, name) => {
         'explicit name to be passed');
     }
 
-    name = nextToken(ctx).value;
+    name = nextToken(ctx).value as string;
   }
 
   tok = nextToken(ctx);
 
   if (tok && tok.type === TOKEN_BLOCK_END) {
-    if (tok.value.charAt(0) === '-') {
+    if ((tok.value as string).charAt(0) === '-') {
       ctx.dropLeadingWhitespace = true;
     }
   } else {
@@ -120,12 +152,12 @@ export const advanceAfterBlockEnd = (ctx, name) => {
   return tok;
 };
 
-export const advanceAfterVariableEnd = (ctx) => {
+export const advanceAfterVariableEnd = (ctx: ParserContext): void => {
   let tok = nextToken(ctx);
 
   if (tok && tok.type === TOKEN_VARIABLE_END) {
-    ctx.dropLeadingWhitespace = tok.value.charAt(
-      tok.value.length - ctx.tokens.tags.VARIABLE_END.length - 1
+    ctx.dropLeadingWhitespace = (tok.value as string).charAt(
+      (tok.value as string).length - ctx.tokens.tags.VARIABLE_END.length - 1
     ) === '-';
   } else {
     pushToken(ctx, tok);
@@ -133,4 +165,4 @@ export const advanceAfterVariableEnd = (ctx) => {
   }
 };
 
-export { error, fail };
+export { error, fail, EXPECTED_COLON_AFTER_DICT_KEY };

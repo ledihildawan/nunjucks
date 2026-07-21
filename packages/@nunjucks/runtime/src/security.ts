@@ -1,28 +1,38 @@
 import { keys, isFunction } from 'remeda';
 import { getBlockedKeyCategory, isBlockedKey, isDangerousGlobal } from '@nunjucks/shared/blocked-keys';
 
-const isObject = (val) => val !== null && typeof val === 'object' && !Array.isArray(val);
+const isObject = (val: unknown): val is Record<string, unknown> =>
+  val !== null && typeof val === 'object' && !Array.isArray(val);
 
-const isDangerousReference = (value) => {
+const globalRecord = globalThis as Record<string, unknown>;
+
+const isDangerousReference = (value: unknown): boolean => {
   if (value === null || value === undefined) return false;
   if (typeof value !== 'object' && typeof value !== 'function') return false;
   if (typeof process !== 'undefined' && value === process) return true;
   if (typeof globalThis !== 'undefined' && value === globalThis) return true;
-  if (typeof window !== 'undefined' && value === window) return true;
-  if (typeof document !== 'undefined' && value === document) return true;
-  if (typeof self !== 'undefined' && value === self) return true;
+  if (globalRecord.window !== undefined && value === globalRecord.window) return true;
+  if (globalRecord.document !== undefined && value === globalRecord.document) return true;
+  if (globalRecord.self !== undefined && value === globalRecord.self) return true;
   if (typeof Buffer !== 'undefined' && value instanceof Buffer) return true;
   if (typeof global !== 'undefined' && value === global) return true;
   return false;
 };
 
-export class SecurityError extends Error {
-  constructor(message, code = 'SECURITY_VIOLATION') {
-    super(message);
-    this.name = 'SecurityError';
-    this.code = code;
-  }
+export interface SecurityError extends Error {
+  code: string;
+  dangerousPaths?: string[];
 }
+
+export const createSecurityError = (message: string, code = 'SECURITY_VIOLATION'): SecurityError => {
+  const err = new Error(message) as SecurityError;
+  err.name = 'SecurityError';
+  err.code = code;
+  return err;
+};
+
+export const isSecurityError = (e: unknown): e is SecurityError =>
+  e instanceof Error && (e as Error).name === 'SecurityError';
 
 const DANGEROUS_PATTERNS = [
   { pattern: /\beval\s*\(/, message: 'eval() is not allowed' },
@@ -31,20 +41,28 @@ const DANGEROUS_PATTERNS = [
   { pattern: /\bimport\s+\(/, message: 'dynamic import() is not allowed' },
 ];
 
-const getLineColFromIndex = (content, index) => {
+interface DangerousCodeViolation {
+  message: string;
+  pattern: string;
+  line: number;
+  col: number;
+  name: string | null;
+}
+
+const getLineColFromIndex = (content: string, index: number): { line: number; col: number } => {
   const beforeMatch = content.slice(0, index);
   const lines = beforeMatch.split('\n');
   const line = lines.length;
-  const col = lines[lines.length - 1].length;
+  const col = lines[lines.length - 1]!.length;
   return { line, col };
 };
 
-export const scanTemplateForDangerousCode = (templateContent) => {
-  const violations = [];
+export const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeViolation[] => {
+  const violations: DangerousCodeViolation[] = [];
 
   for (const { pattern, message } of DANGEROUS_PATTERNS) {
     const regex = new RegExp(pattern.source, 'g');
-    let match;
+    let match: RegExpExecArray | null;
     while ((match = regex.exec(templateContent)) !== null) {
       const { line, col } = getLineColFromIndex(templateContent, match.index);
       const nameMatch = match[0].match(/[a-zA-Z_$][\w$]*/);
@@ -55,13 +73,27 @@ export const scanTemplateForDangerousCode = (templateContent) => {
   return violations;
 };
 
-export const validateContextKeys = (context, allowedKeys = null, blockedKeys = null) => {
+interface BlockedKeyResult {
+  key: string;
+  reason: string;
+}
+
+interface ValidateContextKeysResult {
+  valid: boolean;
+  blocked: BlockedKeyResult[];
+}
+
+export const validateContextKeys = (
+  context: unknown,
+  allowedKeys: readonly string[] | null = null,
+  blockedKeys: readonly string[] | null = null
+): ValidateContextKeysResult => {
   if (!isObject(context) || isFunction(context)) {
     return { valid: true, blocked: [] };
   }
 
   const contextKeys = keys(context);
-  const blocked = [];
+  const blocked: BlockedKeyResult[] = [];
 
   for (const key of contextKeys) {
     if (isBlockedKey(key)) {
@@ -86,7 +118,14 @@ export const validateContextKeys = (context, allowedKeys = null, blockedKeys = n
   };
 };
 
-export const validateContext = (context, options = {}) => {
+export interface ValidateContextOptions {
+  allowedKeys?: readonly string[] | null;
+  blockedKeys?: readonly string[] | null;
+  allowedGlobals?: readonly string[] | null;
+  scanValues?: boolean;
+}
+
+export const validateContext = (context: unknown, options: ValidateContextOptions = {}): true => {
   const {
     allowedKeys = null,
     blockedKeys = null,
@@ -96,7 +135,7 @@ export const validateContext = (context, options = {}) => {
 
   const keyValidation = validateContextKeys(context, allowedKeys, blockedKeys);
   if (!keyValidation.valid) {
-    const err = new SecurityError(
+    const err = createSecurityError(
       `Cannot use blocked keys in context: ${keyValidation.blocked.map(b => b.key).join(', ')}`,
       'BLOCKED_CONTEXT_KEYS'
     );
@@ -107,7 +146,7 @@ export const validateContext = (context, options = {}) => {
   if (scanValues) {
     const dangerousValues = findDangerousValues(context, allowedGlobals);
     if (dangerousValues.length > 0) {
-      const err = new SecurityError(
+      const err = createSecurityError(
         `Context contains unsafe values: ${dangerousValues.join(', ')}`,
         'DANGEROUS_CONTEXT_VALUES'
       );
@@ -128,21 +167,27 @@ const PROTOTYPE_POLLUTION_KEYS = new Set([
   'valueOf'
 ]);
 
-const isPrototypePollutionKey = (key) => PROTOTYPE_POLLUTION_KEYS.has(key);
+const isPrototypePollutionKey = (key: string): boolean => PROTOTYPE_POLLUTION_KEYS.has(key);
 
-const isBlockedNestedContextKey = (key) => getBlockedKeyCategory(key) === 'object_intrinsic';
+const isBlockedNestedContextKey = (key: string): boolean => getBlockedKeyCategory(key, 'auto') === 'object_intrinsic';
 
-const findDangerousValues = (obj, allowedGlobals, path = '', isTopLevel = true, seen = new WeakSet()) => {
-  const dangerous = [];
+const findDangerousValues = (
+  obj: unknown,
+  allowedGlobals?: readonly string[] | null,
+  path = '',
+  isTopLevel = true,
+  seen: WeakSet<object> = new WeakSet()
+): string[] => {
+  const dangerous: string[] = [];
 
-  if (!obj || typeof obj !== 'object' || seen.has(obj)) {
+  if (!obj || typeof obj !== 'object' || seen.has(obj as object)) {
     return dangerous;
   }
-  seen.add(obj);
+  seen.add(obj as object);
 
-  for (const key of keys(obj)) {
+  for (const key of keys(obj as Record<string, unknown>)) {
     const currentPath = path ? `${path}.${key}` : key;
-    const value = obj[key];
+    const value = (obj as Record<string, unknown>)[key];
 
     // Prototype pollution keys - check at ALL levels (nested + top-level)
     if (isPrototypePollutionKey(key) || isBlockedNestedContextKey(key)) {
@@ -187,17 +232,18 @@ const BUILTIN_GLOBALS = new Set([
   'Symbol', 'Error', 'TypeError', 'RangeError', 'SyntaxError'
 ]);
 
-const isBuiltIn = (name) => BUILTIN_GLOBALS.has(name);
+const isBuiltIn = (name: string): boolean => BUILTIN_GLOBALS.has(name);
 
-const scrubDangerousReferences = (context, allowedGlobals) => {
-  const seen = new WeakSet();
-  const visit = (value) => {
-    if (!value || typeof value !== 'object' || seen.has(value)) return value;
-    seen.add(value);
-    for (const key of keys(value)) {
-      const child = value[key];
+const scrubDangerousReferences = <T>(context: T, _allowedGlobals: readonly string[] | null): T => {
+  const seen = new WeakSet<object>();
+  const visit = <V>(value: V): V => {
+    if (!value || typeof value !== 'object' || seen.has(value as object)) return value;
+    seen.add(value as object);
+    const record = value as Record<string, unknown>;
+    for (const key of keys(record)) {
+      const child = record[key];
       if (isDangerousReference(child)) {
-        delete value[key];
+        delete record[key];
         continue;
       }
       if (child && typeof child === 'object') {
@@ -215,9 +261,12 @@ export {
   isDangerousReference
 };
 
-export const restrictGlobals = (context, allowedGlobals = []) => {
+export const restrictGlobals = (
+  context: Record<string, unknown>,
+  allowedGlobals: readonly string[] = []
+): Record<string, unknown> => {
   const allowed = new Set(allowedGlobals);
-  const restricted = {};
+  const restricted: Record<string, unknown> = {};
 
   for (const key of keys(context)) {
     if (isDangerousGlobal(key) && !allowed.has(key)) {
@@ -229,7 +278,17 @@ export const restrictGlobals = (context, allowedGlobals = []) => {
   return restricted;
 };
 
-export const createSecurityValidator = (options = {}) => {
+export interface CreateSecurityValidatorOptions extends ValidateContextOptions {
+  strictMode?: boolean;
+}
+
+export interface SecurityValidator {
+  validateContext: (context: unknown) => true;
+  scanTemplate: (content: string) => DangerousCodeViolation[];
+  options: CreateSecurityValidatorOptions;
+}
+
+export const createSecurityValidator = (options: CreateSecurityValidatorOptions = {}): SecurityValidator => {
   const {
     allowedKeys = null,
     blockedKeys = null,
@@ -239,17 +298,17 @@ export const createSecurityValidator = (options = {}) => {
   } = options;
 
   return {
-    validateContext: (context) => validateContext(context, {
+    validateContext: (context: unknown): true => validateContext(context, {
       allowedKeys,
       blockedKeys,
       allowedGlobals: strictMode ? [] : allowedGlobals,
       scanValues: strictMode || scanValues
     }),
 
-    scanTemplate: (content) => {
+    scanTemplate: (content: string): DangerousCodeViolation[] => {
       const violations = scanTemplateForDangerousCode(content);
       if (violations.length > 0 && strictMode) {
-        throw new SecurityError(
+        throw createSecurityError(
           `Template contains unsafe code: ${violations.map(v => v.message).join('; ')}`,
           'DANGEROUS_TEMPLATE_CODE'
         );

@@ -1,8 +1,11 @@
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
+import type { Frame } from '@nunjucks/runtime';
+import type { Compiler } from '../index.ts';
 
-export const compileCallExtension = (ctx, node, frame, useAsync) => {
-  const args = node.args;
-  const contentArgs = node.contentArgs;
+export const compileCallExtension = (ctx: Compiler, node: Node, frame: Frame, useAsync?: boolean): void => {
+  const args = node.args as Node;
+  const contentArgs = node.contentArgs as Node[];
   const autoescape = typeof node.autoescape === 'boolean' ? node.autoescape : true;
 
   if (contentArgs.length > 0) {
@@ -16,9 +19,9 @@ export const compileCallExtension = (ctx, node, frame, useAsync) => {
   }
 
   if (useAsync) {
-    ctx._emit(`let ${res} = await env.getExtension("${node.extName}")["${node.prop}"](`);
+    ctx._emit(`let ${res} = await env.getExtension("${node.extName as string}")["${node.prop as string}"](`);
   } else {
-    ctx._emit(`env.getExtension("${node.extName}")["${node.prop}"](`);
+    ctx._emit(`env.getExtension("${node.extName as string}")["${node.prop as string}"](`);
   }
 
   ctx._emit('context');
@@ -33,7 +36,7 @@ export const compileCallExtension = (ctx, node, frame, useAsync) => {
         'use `parser.parseSignature`');
     }
 
-    args.children.forEach((arg, i, arr) => {
+    args.children!.forEach((arg, i, arr) => {
       ctx._compileExpression(arg, frame);
 
       if (i !== arr.length - 1 || contentArgs.length) {
@@ -73,6 +76,6 @@ export const compileCallExtension = (ctx, node, frame, useAsync) => {
   }
 };
 
-export const compileCallExtensionAsync = (ctx, node, frame) => {
+export const compileCallExtensionAsync = (ctx: Compiler, node: Node, frame: Frame): void => {
   compileCallExtension(ctx, node, frame, true);
 };

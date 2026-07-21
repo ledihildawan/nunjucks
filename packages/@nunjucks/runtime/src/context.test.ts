@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { createContext } from '@nunjucks/runtime/context';
 
-const mockEnv = { globals: {} };
+const mockEnv = { globals: {}, getFilter: () => null, opts: {} };
 
 describe('Context', () => {
   test('init stores ctx and env', () => {
@@ -28,13 +28,13 @@ describe('Context', () => {
   });
 
   test('lookup returns global when not in context', () => {
-    const env = { globals: { siteName: 'MySite' } };
+    const env = { globals: { siteName: 'MySite' }, getFilter: () => null, opts: {} };
     const ctx = createContext({}, {}, env);
     expect(ctx.lookup('siteName')).toBe('MySite');
   });
 
   test('lookup prefers context variable over global', () => {
-    const env = { globals: { name: 'Global' } };
+    const env = { globals: { name: 'Global' }, getFilter: () => null, opts: {} };
     const ctx = createContext({ name: 'Local' }, {}, env);
     expect(ctx.lookup('name')).toBe('Local');
   });

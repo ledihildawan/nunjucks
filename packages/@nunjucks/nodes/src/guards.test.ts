@@ -47,7 +47,7 @@ describe('type-specific guards', () => {
   });
 
   test('isFunCall', () => {
-    const fn = funCall(0, 0, symbol(0, 0, 'fn'), nodeList(0, 0));
+    const fn = funCall(0, 0, symbol(0, 0, 'fn'), []);
     expect(isFunCall(fn)).toBe(true);
   });
 
@@ -74,7 +74,7 @@ describe('type-specific guards', () => {
 
 describe('composite guards', () => {
   test('isFilter matches pipe nodes', () => {
-    const p = pipe(0, 0, symbol(0, 0, 'x'), symbol(0, 0, 'upper'), nodeList(0, 0));
+    const p = pipe(0, 0, symbol(0, 0, 'x'), [symbol(0, 0, 'upper')]);
     expect(isPipe(p)).toBe(true);
     expect(isFilter(p)).toBe(true);
   });

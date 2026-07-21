@@ -27,7 +27,7 @@ describe('liftSuper', () => {
     const blk = block(1, 0, 'content', body);
     const ast = root(1, 0, [blk]);
     const result = liftSuper(ast);
-    const resultBlock = (result as unknown as { children: { name: string }[] }).children[0];
+    const resultBlock = (result as unknown as { children: { name: string }[] }).children[0]!;
     expect(resultBlock.name).toBe('content');
   });
 

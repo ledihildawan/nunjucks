@@ -17,6 +17,62 @@ import {
 } from '@nunjucks/runtime';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
+import { extractBlocks } from './env.js';
+
+const detectUndefinedInput = (context, inputValue) => {
+  let isUndefinedInput = false;
+  let undefinedVarName = null;
+  let undefinedParentName = null;
+  let isPropertyLookup = false;
+
+  if (inputValue === null) {
+    isUndefinedInput = true;
+    undefinedVarName = '<null>';
+  } else if (typeof inputValue === 'string' && inputValue.includes('.')) {
+    isPropertyLookup = true;
+    const parts = inputValue.split('.');
+    try {
+      let val = context;
+      for (let i = 0; i < parts.length; i++) {
+        if (val === undefined || val === null) {
+          isUndefinedInput = true;
+          undefinedVarName = parts.slice(i).join('.');
+          undefinedParentName = i > 0 ? parts[i - 1] : null;
+          break;
+        }
+        val = val[parts[i]];
+      }
+      if (!isUndefinedInput && (val === undefined || val === null)) {
+        isUndefinedInput = true;
+        undefinedVarName = parts[parts.length - 1];
+        undefinedParentName = parts.length > 1 ? parts[parts.length - 2] : null;
+      }
+    } catch (e) {
+      if (e instanceof TypeError) {
+        isUndefinedInput = true;
+        undefinedVarName = inputValue;
+      } else {
+        throw e;
+      }
+    }
+  } else if (typeof inputValue === 'string') {
+    try {
+      if (context[inputValue] === undefined) {
+        isUndefinedInput = true;
+        undefinedVarName = inputValue;
+      }
+    } catch (e) {
+      if (e instanceof TypeError) {
+        isUndefinedInput = true;
+        undefinedVarName = inputValue;
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  return { isUndefinedInput, undefinedVarName, undefinedParentName, isPropertyLookup };
+};
 
 function createGetFilter(context, filters, config, strictPipeInput) {
   return function getFilter(name, filterLineno, filterColno, inputLineno, inputColno, inputValue) {
@@ -36,48 +92,7 @@ function createGetFilter(context, filters, config, strictPipeInput) {
     const errorColno = useInputLocation ? inputColno : filterColno;
 
     if (inputValue !== undefined) {
-      let isUndefinedInput = false;
-      let undefinedVarName = null;
-      let undefinedParentName = null;
-      let isPropertyLookup = false;
-
-      if (inputValue === null) {
-        isUndefinedInput = true;
-        undefinedVarName = '<null>';
-      } else if (typeof inputValue === 'string' && inputValue.includes('.')) {
-        isPropertyLookup = true;
-        const parts = inputValue.split('.');
-        try {
-          let val = context;
-          for (let i = 0; i < parts.length; i++) {
-            if (val === undefined || val === null) {
-              isUndefinedInput = true;
-              undefinedVarName = parts.slice(i).join('.');
-              undefinedParentName = i > 0 ? parts[i - 1] : null;
-              break;
-            }
-            val = val[parts[i]];
-          }
-          if (!isUndefinedInput && (val === undefined || val === null)) {
-            isUndefinedInput = true;
-            undefinedVarName = parts[parts.length - 1];
-            undefinedParentName = parts.length > 1 ? parts[parts.length - 2] : null;
-          }
-        } catch (e) {
-          isUndefinedInput = true;
-          undefinedVarName = inputValue;
-        }
-      } else if (typeof inputValue === 'string') {
-        try {
-          if (context[inputValue] === undefined) {
-            isUndefinedInput = true;
-            undefinedVarName = inputValue;
-          }
-        } catch (e) {
-          isUndefinedInput = true;
-          undefinedVarName = inputValue;
-        }
-      }
+      const { isUndefinedInput, undefinedVarName, undefinedParentName, isPropertyLookup } = detectUndefinedInput(context, inputValue);
 
       if (isUndefinedInput || strictPipeInput) {
         if (isPropertyLookup && undefinedParentName) {
@@ -97,12 +112,7 @@ const getRenderFunction = (code) => {
     const codeWithReturn = code + '; return root;';
     const renderFn = new Function(codeWithReturn);
     const result = renderFn();
-    const blocks = {};
-    Object.keys(result).forEach((key) => {
-      if (key.startsWith('b_')) {
-        blocks[key.slice(2)] = result[key];
-      }
-    });
+    const blocks = extractBlocks(result);
     return { render: result.root, blocks, blockMeta: result.__blockMeta || {} };
   }
   
@@ -148,6 +158,30 @@ const getRuntimeHelpers = () => ({
   },
 });
 
+const buildSandboxOptions = (config) => ({
+  allowlist: config.sandboxAllowlist || [],
+  blocklistMode: config.sandboxMode !== 'allowlist',
+  environment: config.sandboxEnvironment || 'auto'
+});
+
+const buildSandboxedRuntime = (runtime, sandboxOptions) => {
+  runtime.memberLookup = (obj, val, parentName = null) => wrapMemberAccess(obj, val, true, sandboxOptions, parentName);
+  runtime.optionalMemberLookup = (obj, val, parentName = null) => wrapMemberAccess(obj, val, true, sandboxOptions, parentName);
+  return runtime;
+};
+
+const buildEnvObject = (config, getFilter, getTest) => ({
+  opts: {
+    dev: config.dev ?? false,
+    autoescape: config.autoescape ?? true,
+    undefined: config.undefined ?? 'default',
+    ...(config.env?.opts || {})
+  },
+  getFilter,
+  getTest,
+  ...(config.env ? { getTemplate: (...args) => config.env.getTemplate(...args) } : {})
+});
+
 export const execute = async (code, context = {}, config = {}) => {
   const sandbox = config.sandbox ?? false;
   const devWarningSandbox = config.devWarningSandbox ?? true;
@@ -191,13 +225,7 @@ export const execute = async (code, context = {}, config = {}) => {
   };
 
   if (config.sandbox) {
-    const sandboxOptions = {
-      allowlist: config.sandboxAllowlist || [],
-      blocklistMode: config.sandboxMode !== 'allowlist',
-      environment: config.sandboxEnvironment || 'auto'
-    };
-    runtime.memberLookup = (obj, val, parentName = null) => wrapMemberAccess(obj, val, true, sandboxOptions, parentName);
-    runtime.optionalMemberLookup = (obj, val, parentName = null) => wrapMemberAccess(obj, val, true, sandboxOptions, parentName);
+    buildSandboxedRuntime(runtime, buildSandboxOptions(config));
   }
 
   if (config.env) {
@@ -246,27 +274,10 @@ export const execute = async (code, context = {}, config = {}) => {
 
   // Handle sandbox mode
   if (sandbox) {
-    const safeContext = createSandboxedContext(ctx, true, {
-      allowlist: config.sandboxAllowlist || [],
-      blocklistMode: config.sandboxMode !== 'allowlist',
-      environment: config.sandboxEnvironment || 'auto'
-    });
-    
+    const safeContext = createSandboxedContext(ctx, true, buildSandboxOptions(config));
     const safeRuntime = { ...runtime };
-    
-    // Create env object for new format with getFilter
-    const env = {
-      opts: {
-        dev: config.dev ?? false,
-        autoescape: config.autoescape ?? true,
-        undefined: config.undefined ?? 'default',
-        ...(config.env?.opts || {})
-      },
-      getFilter: createGetFilter(context, filters, config, strictPipeInput),
-      getTest,
-      ...(config.env ? { getTemplate: (...args) => config.env.getTemplate(...args) } : {})
-    };
-    
+    const env = buildEnvObject(config, getFilter, getTest);
+
     // Execute code - support both old and new format
     const { render } = getRenderFunction(code);
     
@@ -277,17 +288,7 @@ export const execute = async (code, context = {}, config = {}) => {
   const { render, blocks, blockMeta } = getRenderFunction(code);
   
   // Create env object for new format (matches new compiler expectations)
-  const env = {
-    opts: {
-      dev: config.dev ?? false,
-      autoescape: config.autoescape ?? true,
-      undefined: config.undefined ?? 'default',
-      ...(config.env?.opts || {})
-    },
-    getFilter: createGetFilter(context, filters, config, strictPipeInput),
-    getTest,
-    ...(config.env ? { getTemplate: (...args) => config.env.getTemplate(...args) } : {})
-  };
+  const env = buildEnvObject(config, getFilter, getTest);
   
   if (config.env) {
     ctx = createContext(context, blocks, config.env, { blockLocations: blockMeta });

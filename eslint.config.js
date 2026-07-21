@@ -4,6 +4,16 @@ import pluginImport from 'eslint-plugin-import';
 import { defineConfig } from 'eslint/config';
 
 export default defineConfig([
+  {
+    ignores: [
+      'dist/**',
+      'coverage/**',
+      'nunjucks-original/**',
+      'node_modules/**',
+      'html-output-test/**',
+      'samples/**',
+    ],
+  },
   eslint.configs.recommended,
   {
     plugins: {

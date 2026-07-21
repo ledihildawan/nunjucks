@@ -1,6 +1,6 @@
 const hasOwnProp = (obj: Record<string, unknown>, k: string): boolean => Object.hasOwn(obj, k);
 
-export function _prepareAttributeParts(attr: string | number | null | undefined): string[] {
+export function _prepareAttributeParts(attr: string | number | null | undefined): (string | number)[] {
   if (!attr) {
     return [];
   }
@@ -16,7 +16,7 @@ export function getAttrGetter(attribute: string | number): (item: Record<string,
     let _item: Record<string, unknown> | unknown = item;
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
-      if (_item !== null && _item !== undefined && typeof _item === 'object' && hasOwnProp(_item as Record<string, unknown>, part)) {
+      if (part !== undefined && _item !== null && _item !== undefined && typeof _item === 'object' && hasOwnProp(_item as Record<string, unknown>, String(part))) {
         _item = (_item as Record<string, unknown>)[part];
       } else {
         return undefined;

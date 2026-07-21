@@ -4,14 +4,16 @@ import {
   TOKEN_OPERATOR,
 } from '@nunjucks/lexer';
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, fail } from "../cursor.ts";
+import type { ParserContext } from "../cursor.ts";
 import { parseFunCall } from "./fun-call.ts";
 import { parseBracketAccess } from "./lookup.ts";
 import { parseDotAccess } from "./dot.ts";
 import { parseOptionalChain } from "./optional.ts";
 import { parsePipe, parseFilterName, parseFilterArgs } from "./pipe.ts";
 
-export const parsePostfix = (ctx, node) => {
+export const parsePostfix = (ctx: ParserContext, node: Node): Node => {
   let tok = peekToken(ctx);
 
   while (tok) {

@@ -35,7 +35,7 @@ describe('addMapping', () => {
   test('uses provided column', () => {
     const sm = createSourceMap('foo.njk');
     sm.addMapping(1, 10, 5);
-    expect(sm.mappings[0].originalCol).toBe(5);
+    expect(sm.mappings[0]!.originalCol).toBe(5);
   });
 
   test('appends multiple mappings in order', () => {

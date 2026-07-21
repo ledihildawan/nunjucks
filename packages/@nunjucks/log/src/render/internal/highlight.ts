@@ -1,10 +1,4 @@
-const escapeHtml = (str: string): string => {
-  if (!str) return '';
-  return str.replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
-};
+import { escapeHtml } from '@nunjucks/shared';
 
 const renderInlineMarkdown = (text: string): string => {
   if (!text) return '';

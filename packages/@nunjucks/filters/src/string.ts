@@ -1,11 +1,12 @@
 import { isString, isArray, map, entries, defaultTo, isNonNullish, isNullish, isNumber, pipe, filter } from 'remeda';
 import { isSafeString, markSafe, copySafeness } from '@nunjucks/runtime';
+import { escapeHtml } from '@nunjucks/shared';
 
-export function normalize<T>(value: unknown, defaultValue: T): T {
+export function normalize(value: unknown, defaultValue: string): string {
   if (isNullish(value) || value === false) {
     return defaultValue;
   }
-  return value as T;
+  return value as string;
 }
 
 export function capitalize(str: unknown): unknown {
@@ -45,13 +46,7 @@ export function escape(str: unknown): unknown {
     return str;
   }
   const s = isNonNullish(str) ? String(str) : '';
-  return markSafe(s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/\\/g, '&#92;'));
+  return markSafe(escapeHtml(s));
 }
 
 export function safe(str: unknown): unknown {
@@ -64,13 +59,7 @@ export function safe(str: unknown): unknown {
 
 export function forceescape(str: unknown): unknown {
   const s = isNonNullish(str) ? String(str) : '';
-  return markSafe(s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/\\/g, '&#92;'));
+  return markSafe(escapeHtml(s));
 }
 
 export function indent(str: unknown, width?: number, indentfirst?: boolean): unknown {
@@ -169,7 +158,7 @@ export function replace(str: unknown, old: unknown, new_: string, maxCount?: num
 }
 
 export function string(obj: unknown): unknown {
-  return copySafeness(obj as object, obj);
+  return copySafeness(obj, obj as { toString(): string });
 }
 
 export function striptags(input: unknown, preserveLinebreaks?: boolean): unknown {
@@ -256,7 +245,7 @@ export function urlize(str: string, length?: number, nofollow?: boolean): string
 
   const processWord = (word: string): string => {
     const matches = word.match(puncRe);
-    const possibleUrl = (matches) ? matches[1] : word;
+    const possibleUrl = (matches && matches[1]) ? matches[1] : word;
     const shortUrl = possibleUrl.substring(0, len);
 
     if (httpHttpsRe.test(possibleUrl)) {

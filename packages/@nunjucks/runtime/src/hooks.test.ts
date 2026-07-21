@@ -29,20 +29,20 @@ describe('globalHooks', () => {
 describe('createHookEmitter', () => {
   test('emitHook calls env.emit with event and augmented payload', () => {
     const calls: { event: string; payload: Record<string, unknown> }[] = [];
-    const env = { emit: (event: string, payload: Record<string, unknown>) => calls.push({ event, payload }) };
+    const env = { emit: (event: string, payload: Record<string, unknown>) => { calls.push({ event, payload }); return true; } };
     const { emitHook } = createHookEmitter(env, { emitGlobal: false });
 
     emitHook('render:start', { data: 1 });
 
     expect(calls).toHaveLength(1);
-    expect(calls[0].event).toBe('render:start');
-    expect(calls[0].payload.data).toBe(1);
-    expect(typeof calls[0].payload.timestamp).toBe('number');
+    expect(calls[0]!.event).toBe('render:start');
+    expect(calls[0]!.payload.data).toBe(1);
+    expect(typeof calls[0]!.payload.timestamp).toBe('number');
   });
 
   test('envName defaults to null when not provided', () => {
     let payload: Record<string, unknown> | null = null;
-    const env = { emit: (_e: string, p: Record<string, unknown>) => { payload = p; } };
+    const env = { emit: (_e: string, p: Record<string, unknown>) => { payload = p; return true; } };
     const { emitHook } = createHookEmitter(env, { emitGlobal: false });
     emitHook('render:start', {});
     expect(payload!.envName).toBeNull();
@@ -50,7 +50,7 @@ describe('createHookEmitter', () => {
 
   test('passes configured envName through to the payload', () => {
     let payload: Record<string, unknown> | null = null;
-    const env = { emit: (_e: string, p: Record<string, unknown>) => { payload = p; } };
+    const env = { emit: (_e: string, p: Record<string, unknown>) => { payload = p; return true; } };
     const { emitHook } = createHookEmitter(env, { envName: 'myEnv', emitGlobal: false });
     emitHook('render:start', {});
     expect(payload!.envName).toBe('myEnv');
@@ -59,18 +59,18 @@ describe('createHookEmitter', () => {
   test('emits on global hooks when emitGlobal is true', () => {
     let received: Record<string, unknown> | null = null;
     globalHooks.once('render:complete', (p: Record<string, unknown>) => { received = p; });
-    const env = { emit() { /* noop */ } };
+    const env = { emit() { return true; /* noop */ } };
     const { emitHook } = createHookEmitter(env, { emitGlobal: true });
     emitHook('render:complete', { ok: true });
     expect(received).not.toBeNull();
-    expect((received as { ok: boolean }).ok).toBe(true);
-    expect((received as { env: unknown }).env).toBe(env);
+    expect((received! as { ok: boolean }).ok).toBe(true);
+    expect((received! as { env: unknown }).env).toBe(env);
   });
 
   test('does not emit on global hooks when emitGlobal is false', () => {
     let received: unknown = null;
     globalHooks.once('render:error', (p: unknown) => { received = p; });
-    const env = { emit() { /* noop */ } };
+    const env = { emit() { return true; /* noop */ } };
     const { emitHook } = createHookEmitter(env, { emitGlobal: false });
     emitHook('render:error', {});
     expect(received).toBeNull();
@@ -79,7 +79,7 @@ describe('createHookEmitter', () => {
   test('defaults options to emit globally', () => {
     let received: unknown = null;
     globalHooks.once('render:start', (p: unknown) => { received = p; });
-    const env = { emit() { /* noop */ } };
+    const env = { emit() { return true; /* noop */ } };
     const { emitHook } = createHookEmitter(env);
     emitHook('render:start', {});
     expect(received).not.toBeNull();

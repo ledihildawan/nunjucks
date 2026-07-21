@@ -1,53 +1,58 @@
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
+import type { Frame } from '@nunjucks/runtime';
+import type { Compiler } from '../index.ts';
 
-export const compileTemplateData = (ctx, node, frame) => {
+export const compileTemplateData = (ctx: Compiler, node: Node, frame: Frame): void => {
   ctx._emit(`${ctx.buffer} += `);
   ctx._emit(JSON.stringify(node.value));
   ctx._emit(';');
 };
 
-export const compileCapture = (ctx, node, frame) => {
+export const compileCapture = (ctx: Compiler, node: Node, frame: Frame): void => {
   const buffer = ctx.buffer;
   ctx.buffer = 'output';
   ctx._emitLine('(async () => {');
   ctx._emitLine('let output = "";');
   ctx._withScopedSyntax(() => {
-    ctx.compile(node.body, frame);
+    ctx.compile(node.body as Node, frame);
   });
   ctx._emitLine('return output;');
   ctx._emitLine('})()');
   ctx.buffer = buffer;
 };
 
-const extractVarName = (node) => {
+const extractVarName = (node: Node): string | null => {
   if (!node) return null;
 
   if (nodes.isSymbol(node)) {
-    return node.value;
+    return node.value as string;
   }
 
   if (nodes.isLookupVal(node)) {
-    const base = extractVarName(node.target);
+    const base = extractVarName(node.target as Node);
     if (!base) return null;
-    const prop = node.val?.value || node.val?.name || '';
+    const val = node.val as Node;
+    const prop = (val?.value as unknown) || (val?.name as unknown) || '';
     return `${base}.${prop}`;
   }
 
   return null;
 };
 
-const extractLocation = (node) => {
+const extractLocation = (node: Node): { lineno: number | null; colno: number | null } => {
   if (!node) return { lineno: null, colno: null };
 
-  if (nodes.isLookupVal(node) && node.val?.lineno != null && node.val?.colno != null) {
-    return { lineno: node.val.lineno, colno: node.val.colno };
+  if (nodes.isLookupVal(node) && (node.val as Node)?.lineno != null && (node.val as Node)?.colno != null) {
+    const val = node.val as Node;
+    return { lineno: val.lineno, colno: val.colno };
   }
 
   return { lineno: node.lineno, colno: node.colno };
 };
 
-export const compileOutput = (ctx, node, frame) => {
-  const children = node.children;
+export const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => {
+  const children = node.children!;
   children.forEach(child => {
     if (nodes.isTemplateData(child)) {
       if (child.value) {
@@ -69,8 +74,8 @@ export const compileOutput = (ctx, node, frame) => {
 
       ctx._emitLineWithLineno(
         `lineno = ${errorLocation.lineno}; colno = ${errorLocation.colno}; ${ctx.buffer} += runtime.suppressValue(`,
-        errorLocation.lineno,
-        errorLocation.colno
+        errorLocation.lineno!,
+        errorLocation.colno!
       );
       if (!isPipeType) {
         ctx._emit('await runtime.awaitValue(');

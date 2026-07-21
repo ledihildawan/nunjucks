@@ -6,7 +6,7 @@ const AUDIT_CONFIG = {
   minFixQuality: 'ok',
 };
 
-const isLowQualityFix = (fix) => {
+const isLowQualityFix = (fix: unknown): boolean => {
   if (!fix) return true;
   if (typeof fix !== 'string') return true;
   const trimmed = fix.trim();
@@ -20,9 +20,9 @@ const isLowQualityFix = (fix) => {
   return false;
 };
 
-const isLowQualityCauses = (causes) => {
-  if (!causes || causes.length === 0) return true;
-  return causes.every(c => c.toLowerCase().includes('internal'));
+const isLowQualityCauses = (causes: unknown): boolean => {
+  if (!Array.isArray(causes) || causes.length === 0) return true;
+  return causes.every((c: unknown) => typeof c === 'string' && c.toLowerCase().includes('internal'));
 };
 
 describe('error definitions audit', () => {
@@ -117,18 +117,18 @@ describe('error definitions audit', () => {
 describe('error messages - sample output', () => {
   test('UNDEFINED_VARIABLE message includes subject', async () => {
     const { createLog } = await import('@nunjucks/log');
-    const err = createLog('error', ERROR_DEFINITIONS.UNDEFINED_VARIABLE, { name: 'user.something' }, 'user.something', {
+    const err = createLog('error', ERROR_DEFINITIONS.UNDEFINED_VARIABLE!, { name: 'user.something' }, 'user.something', {
       lineno: 1, colno: 0, phase: 'render', lineBase: 'zero'
-    });
+    }) as import('@nunjucks/log').TemplateError;
     expect(err.subject).toBe('user.something');
     expect(err.message).toContain('user.something');
-    expect(err.causes.length).toBeGreaterThan(0);
+    expect(err.causes!.length).toBeGreaterThan(0);
     expect(err.fixCode).toBeTruthy();
   });
 
   test('NULL_VALUE error handles nested access', async () => {
     const { createLog } = await import('@nunjucks/log');
-    const err = createLog('error', ERROR_DEFINITIONS.NULL_VALUE, { accessPath: 'name', parent: 'user', state: 'null' }, 'name', {
+    const err = createLog('error', ERROR_DEFINITIONS.NULL_VALUE!, { accessPath: 'name', parent: 'user', state: 'null' }, 'name', {
       lineno: 1, colno: 0, phase: 'render', lineBase: 'zero'
     });
     expect(err.message).toContain('name');
@@ -137,18 +137,18 @@ describe('error messages - sample output', () => {
 
   test('FILE_NOT_FOUND has helpful message', async () => {
     const { createLog } = await import('@nunjucks/log');
-    const err = createLog('error', ERROR_DEFINITIONS.FILE_NOT_FOUND, { path: 'missing.njk' }, 'missing.njk', {
+    const err = createLog('error', ERROR_DEFINITIONS.FILE_NOT_FOUND!, { path: 'missing.njk' }, 'missing.njk', {
       lineno: 1, colno: 0, phase: 'render', lineBase: 'zero'
-    });
+    }) as import('@nunjucks/log').TemplateError;
     expect(err.message).toContain('missing.njk');
     expect(err.fixCode).toBeTruthy();
   });
 
   test('UNDEFINED_FILTER has helpful fix', async () => {
     const { createLog } = await import('@nunjucks/log');
-    const err = createLog('error', ERROR_DEFINITIONS.UNDEFINED_FILTER, { name: 'myFilter' }, 'myFilter', {
+    const err = createLog('error', ERROR_DEFINITIONS.UNDEFINED_FILTER!, { name: 'myFilter' }, 'myFilter', {
       lineno: 1, colno: 0, phase: 'render', lineBase: 'zero'
-    });
+    }) as import('@nunjucks/log').TemplateError;
     expect(err.message).toContain('myFilter');
     expect(err.fixCode).toContain('addFilter');
   });

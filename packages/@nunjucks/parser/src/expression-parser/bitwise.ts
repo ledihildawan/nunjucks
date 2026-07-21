@@ -1,8 +1,12 @@
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
 import { nextToken, pushToken } from "../cursor.ts";
+import type { ParserContext } from "../cursor.ts";
 import { parseIs } from "./is.ts";
 
-const bitwiseNodeMap = {
+type BinNodeFn = (lineno: number, colno: number, left: Node, right: Node) => Node;
+
+const bitwiseNodeMap: Record<string, BinNodeFn> = {
   '|': nodes.bitwiseOr,
   '&': nodes.bitwiseAnd,
   '^': nodes.bitwiseXor,
@@ -10,7 +14,7 @@ const bitwiseNodeMap = {
   '>>': nodes.bitwiseRShift
 };
 
-export const parseBitwiseOr = (ctx) => {
+export const parseBitwiseOr = (ctx: ParserContext): Node => {
   let node = parseIs(ctx);
   let tok = nextToken(ctx);
 
@@ -18,7 +22,7 @@ export const parseBitwiseOr = (ctx) => {
     return node;
   }
 
-  const createNode = bitwiseNodeMap[tok.value];
+  const createNode = bitwiseNodeMap[tok.value as string];
   if (createNode) {
     const right = parseIs(ctx);
     node = createNode(tok.lineno, tok.colno, node, right);

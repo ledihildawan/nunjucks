@@ -1,10 +1,17 @@
 import { TOKEN_TEMPLATE_LITERAL } from '@nunjucks/lexer';
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
 import { nextToken, fail } from "../cursor.ts";
+import type { ParserContext } from "../cursor.ts";
 
 const SIMPLE_IDENTIFIER_PATTERN = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
 
-const isSafeTemplateExpression = (expr) => {
+interface Quasi {
+  type: string;
+  value: string;
+}
+
+const isSafeTemplateExpression = (expr: string): boolean => {
   if (!expr) return true;
   const trimmed = expr.trim();
   if (!trimmed) return true;
@@ -17,17 +24,17 @@ const isSafeTemplateExpression = (expr) => {
   return true;
 };
 
-export const parseTemplateLiteral = (ctx) => {
+export const parseTemplateLiteral = (ctx: ParserContext): Node | null => {
   const tok = nextToken(ctx);
 
   if (tok.type !== TOKEN_TEMPLATE_LITERAL) {
     return null;
   }
 
-  const templateData = tok.value;
+  const templateData = tok.value as { quasis?: Quasi[] };
   const quasis = templateData.quasis || [];
 
-  const processedQuasis = [];
+  const processedQuasis: { type: string; node?: Node; value?: string }[] = [];
 
   for (const quasi of quasis) {
     if (quasi.type === 'expression' && quasi.value) {

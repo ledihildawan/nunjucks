@@ -11,39 +11,41 @@ import {
   TOKEN_SYMBOL,
 } from '@nunjucks/lexer';
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, skip, fail } from "../cursor.ts";
+import type { ParserContext, MutableNode } from "../cursor.ts";
+import { parseExpression } from "../expression-parser/index.ts";
 
-const isDestructuringStart = (ctx) => {
+const isDestructuringStart = (ctx: ParserContext): boolean => {
   const tok = peekToken(ctx);
-  return tok && (tok.type === TOKEN_LEFT_BRACKET || tok.type === TOKEN_LEFT_CURLY);
+  return !!tok && (tok.type === TOKEN_LEFT_BRACKET || tok.type === TOKEN_LEFT_CURLY);
 };
 
-const parseInnerPattern = (ctx) => {
+const parseInnerPattern = (ctx: ParserContext): Node => {
   if (isDestructuringStart(ctx)) {
-    return parsePattern(ctx);
+    return parsePattern(ctx) as Node;
   }
   const tok = peekToken(ctx);
   if (tok && tok.type === TOKEN_SYMBOL) {
     const t = nextToken(ctx);
-    return nodes.symbol(t.lineno, t.colno, t.value);
+    return nodes.symbol(t.lineno, t.colno, t.value as string);
   }
-  fail(ctx, 'parseInnerPattern: expected symbol or pattern',
+  return fail(ctx, 'parseInnerPattern: expected symbol or pattern',
     tok?.lineno ?? 0, tok?.colno ?? 0);
-  return null;
 };
 
-const parseAssignmentDefault = (ctx, target) => {
+const parseAssignmentDefault = (ctx: ParserContext, target: Node): Node | null => {
   const peeked = peekToken(ctx);
   if (peeked && peeked.type === TOKEN_OPERATOR && peeked.value === '=') {
     nextToken(ctx);
-    const defaultExpr = ctx.parseExpression();
+    const defaultExpr = parseExpression(ctx);
     return nodes.assignmentPattern(target.lineno, target.colno, target, defaultExpr);
   }
   return null;
 };
 
-const parseArrayPattern = (ctx, lineno, colno) => {
-  const node = nodes.arrayPattern(lineno, colno);
+const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): Node => {
+  const node = nodes.arrayPattern(lineno, colno) as MutableNode;
   const startTok = nextToken(ctx);
   if (startTok.type !== TOKEN_LEFT_BRACKET) {
     fail(ctx, 'parseArrayPattern: expected [', lineno, colno);
@@ -60,7 +62,8 @@ const parseArrayPattern = (ctx, lineno, colno) => {
     if (node.children.length > 0 && !sawRest) {
       if (!skip(ctx, TOKEN_COMMA)) {
         fail(ctx, 'parseArrayPattern: expected comma',
-          tok.lineno, tok.colno);
+          tok.lineno,
+          tok.colno);
       }
       const after = peekToken(ctx);
       if (after && after.type === TOKEN_RIGHT_BRACKET) {
@@ -107,7 +110,7 @@ const parseArrayPattern = (ctx, lineno, colno) => {
       fail(ctx, 'parseArrayPattern: expected symbol in pattern',
         symTok?.lineno ?? tok.lineno, symTok?.colno ?? tok.colno);
     }
-    const target = nodes.symbol(symTok.lineno, symTok.colno, symTok.value);
+    const target = nodes.symbol(symTok!.lineno, symTok!.colno, symTok!.value as string);
     const withDefault = parseAssignmentDefault(ctx, target);
     node.addChild(withDefault ?? target);
   }
@@ -115,8 +118,8 @@ const parseArrayPattern = (ctx, lineno, colno) => {
   return node;
 };
 
-const parseObjectPattern = (ctx, lineno, colno) => {
-  const node = nodes.objectPattern(lineno, colno);
+const parseObjectPattern = (ctx: ParserContext, lineno: number, colno: number): Node => {
+  const node = nodes.objectPattern(lineno, colno) as MutableNode;
   const startTok = nextToken(ctx);
   if (startTok.type !== TOKEN_LEFT_CURLY) {
     fail(ctx, 'parseObjectPattern: expected {', lineno, colno);
@@ -133,7 +136,8 @@ const parseObjectPattern = (ctx, lineno, colno) => {
     if (node.children.length > 0 && !sawRest) {
       if (!skip(ctx, TOKEN_COMMA)) {
         fail(ctx, 'parseObjectPattern: expected comma',
-          tok.lineno, tok.colno);
+          tok.lineno,
+          tok.colno);
       }
       const after = peekToken(ctx);
       if (after && after.type === TOKEN_RIGHT_CURLY) {
@@ -158,17 +162,18 @@ const parseObjectPattern = (ctx, lineno, colno) => {
     }
 
     let keyTok = nextToken(ctx);
-    let keyName = null;
+    let keyName: string | null = null;
     if (keyTok.type === TOKEN_STRING) {
       keyName = String(keyTok.value);
     } else if (keyTok.type === TOKEN_SYMBOL) {
-      keyName = keyTok.value;
+      keyName = keyTok.value as string;
     } else {
       fail(ctx, 'parseObjectPattern: expected property name',
-        keyTok.lineno, keyTok.colno);
+        keyTok.lineno,
+        keyTok.colno);
     }
 
-    let valueTarget = null;
+    let valueTarget: Node;
     if (skip(ctx, TOKEN_COLON)) {
       if (peekToken(ctx).type === TOKEN_LEFT_BRACKET) {
         const t = peekToken(ctx);
@@ -180,14 +185,14 @@ const parseObjectPattern = (ctx, lineno, colno) => {
         valueTarget = parseInnerPattern(ctx);
       }
     } else {
-      valueTarget = nodes.symbol(keyTok.lineno, keyTok.colno, keyName);
+      valueTarget = nodes.symbol(keyTok.lineno, keyTok.colno, keyName as string);
     }
 
     const withDefault = parseAssignmentDefault(ctx, valueTarget);
     const propNode = nodes.patternProperty(
       keyTok.lineno,
       keyTok.colno,
-      keyName,
+      keyName as unknown as Node,
       withDefault ?? valueTarget
     );
     node.addChild(propNode);
@@ -196,7 +201,7 @@ const parseObjectPattern = (ctx, lineno, colno) => {
   return node;
 };
 
-export const parsePattern = (ctx) => {
+export const parsePattern = (ctx: ParserContext): Node | null => {
   const tok = peekToken(ctx);
   if (!tok) {
     fail(ctx, 'parsePattern: unexpected end of input', 0, 0);
@@ -208,11 +213,12 @@ export const parsePattern = (ctx) => {
     return parseObjectPattern(ctx, tok.lineno, tok.colno);
   }
   fail(ctx, 'parsePattern: expected [ or {',
-    tok.lineno, tok.colno);
+    tok.lineno,
+    tok.colno);
   return null;
 };
 
-export const tryParsePattern = (ctx) => {
+export const tryParsePattern = (ctx: ParserContext): Node | null => {
   if (isDestructuringStart(ctx)) {
     return parsePattern(ctx);
   }

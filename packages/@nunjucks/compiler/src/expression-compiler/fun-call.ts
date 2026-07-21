@@ -1,71 +1,80 @@
 import { nodes, BracketNotation } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
+import type { Frame } from '@nunjucks/runtime';
+import type { Compiler } from '../index.ts';
 import { compileAggregate } from './container.ts';
 
-const getNodeName = (ctx, node, isBracketCall = false) => {
+const bracketFlag = (n: Node): unknown => (n as unknown as Record<symbol, unknown>)[BracketNotation];
+
+const getNodeName = (ctx: Compiler, node: Node, isBracketCall: boolean = false): string => {
   const typeName = nodes.getNodeTypeName(node);
   switch (typeName) {
     case 'symbol':
-      return node.value;
+      return node.value as string;
     case 'funCall':
-      return 'the return value of (' + getNodeName(ctx, node.name) + ')';
+      return 'the return value of (' + getNodeName(ctx, node.name as Node) + ')';
     case 'lookupVal': {
-      const target = getNodeName(ctx, node.target);
-      const isBracket = node[BracketNotation] === true;
-      if (nodes.isSymbol(node.val)) {
-        return target + (isBracket ? '[' + getNodeName(ctx, node.val) + ']' : '.' + getNodeName(ctx, node.val));
+      const target = getNodeName(ctx, node.target as Node);
+      const isBracket = bracketFlag(node) === true;
+      const val = node.val as Node;
+      if (nodes.isSymbol(val)) {
+        return target + (isBracket ? '[' + getNodeName(ctx, val) + ']' : '.' + getNodeName(ctx, val));
       }
-      if (nodes.isLiteral(node.val) && typeof node.val.value === 'string') {
-        return target + (isBracket ? '["' + node.val.value + '"]' : '.' + node.val.value);
+      if (nodes.isLiteral(val) && typeof val.value === 'string') {
+        return target + (isBracket ? '["' + val.value + '"]' : '.' + val.value);
       }
-      return target + '[' + getNodeName(ctx, node.val) + ']';
+      return target + '[' + getNodeName(ctx, val) + ']';
     }
     case 'optionalChain': {
-      const target = getNodeName(ctx, node.target);
-      const isBracket = node[BracketNotation] === true;
-      if (nodes.isSymbol(node.val)) {
-        return target + (isBracket ? '?.[' + getNodeName(ctx, node.val) + ']' : '?.' + getNodeName(ctx, node.val));
+      const target = getNodeName(ctx, node.target as Node);
+      const isBracket = bracketFlag(node) === true;
+      const val = node.val as Node;
+      if (nodes.isSymbol(val)) {
+        return target + (isBracket ? '?.[' + getNodeName(ctx, val) + ']' : '?.' + getNodeName(ctx, val));
       }
-      if (nodes.isLiteral(node.val) && typeof node.val.value === 'string') {
-        return target + (isBracket ? '?.["' + node.val.value + '"]' : '?.' + node.val.value);
+      if (nodes.isLiteral(val) && typeof val.value === 'string') {
+        return target + (isBracket ? '?.["' + val.value + '"]' : '?.' + val.value);
       }
-      return target + '?.[' + getNodeName(ctx, node.val) + ']';
+      return target + '?.[' + getNodeName(ctx, val) + ']';
     }
     case 'literal':
-      return node.value.toString();
+      return (node.value as { toString(): string }).toString();
     default:
       return '--expression--';
   }
 };
 
-const getCallLocation = (node) => {
-  if (nodes.isLookupVal(node.name) && node.name.val?.lineno != null && node.name.val?.colno != null) {
-    const isQuotedBracketString = node.name[BracketNotation] === true &&
-      nodes.isLiteral(node.name.val) &&
-      typeof node.name.val.value === 'string';
+const getCallLocation = (node: Node): { lineno: number; colno: number } => {
+  const name = node.name as Node;
+  if (nodes.isLookupVal(name) && (name.val as Node)?.lineno != null && (name.val as Node)?.colno != null) {
+    const nameVal = name.val as Node;
+    const isQuotedBracketString = bracketFlag(name) === true &&
+      nodes.isLiteral(nameVal) &&
+      typeof nameVal.value === 'string';
     return {
-      lineno: node.name.val.lineno,
-      colno: node.name.val.colno + (isQuotedBracketString ? 1 : 0)
+      lineno: nameVal.lineno,
+      colno: nameVal.colno + (isQuotedBracketString ? 1 : 0)
     };
   }
 
   return {
-    lineno: node.name?.lineno ?? node.lineno,
-    colno: node.name?.colno ?? node.colno
+    lineno: name?.lineno ?? node.lineno,
+    colno: name?.colno ?? node.colno
   };
 };
 
-export const compileFunCall = (ctx, node, frame) => {
+export const compileFunCall = (ctx: Compiler, node: Node, frame: Frame): void => {
   const { lineno, colno } = getCallLocation(node);
 
   ctx._emit('(lineno = ' + lineno +
     ', colno = ' + colno + ', ');
 
   ctx._emit('runtime.callWrap(');
-  ctx._compileExpression(node.name, frame);
+  ctx._compileExpression(node.name as Node, frame);
 
-  const funcName = getNodeName(ctx, node.name);
+  const funcName = getNodeName(ctx, node.name as Node);
   const displayName = funcName + '()';
   ctx._emit(', "' + funcName.replace(/"/g, '\\"') + '", "' + displayName.replace(/"/g, '\\"') + '", context, ');
 
-  compileAggregate(ctx, node.args, frame, '[', '], ' + lineno + ', ' + colno + '))');
+  compileAggregate(ctx, node.args as Node, frame, '[', '], ' + lineno + ', ' + colno + '))');
 };

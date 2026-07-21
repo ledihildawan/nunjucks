@@ -1,9 +1,9 @@
 import { describe, test, expect } from 'bun:test';
-import { TimeoutError, withTimeout, withTimeoutSync } from './timeout.ts';
+import { createTimeoutError, isTimeoutError, withTimeout, withTimeoutSync } from './timeout.ts';
 
 describe('TimeoutError', () => {
   test('uses default message and TIMEOUT code', () => {
-    const err = new TimeoutError();
+    const err = createTimeoutError();
     expect(err.name).toBe('TimeoutError');
     expect(err.code).toBe('TIMEOUT');
     expect(err.message).toBe('Template execution timed out');
@@ -11,8 +11,14 @@ describe('TimeoutError', () => {
   });
 
   test('accepts a custom message', () => {
-    const err = new TimeoutError('custom');
+    const err = createTimeoutError('custom');
     expect(err.message).toBe('custom');
+  });
+
+  test('isTimeoutError recognises the factory output', () => {
+    expect(isTimeoutError(createTimeoutError('x'))).toBe(true);
+    expect(isTimeoutError(new Error('x'))).toBe(false);
+    expect(isTimeoutError(null)).toBe(false);
   });
 });
 
@@ -38,20 +44,16 @@ describe('withTimeout', () => {
 
   test('rejects with TimeoutError when the promise does not settle in time', async () => {
     const never = new Promise(() => {});
-    await expect(withTimeout(never, 30)).rejects.toBeInstanceOf(TimeoutError);
-    try {
-      await withTimeout(new Promise(() => {}), 30);
-    } catch (e) {
-      expect((e as Error).message).toContain('timed out after 30ms');
-    }
+    const err = await withTimeout(never, 30).catch((e: unknown) => e);
+    expect(isTimeoutError(err)).toBe(true);
+    expect((err as Error).message).toContain('timed out after 30ms');
   });
 
   test('invokes onTimeout callback when timing out', async () => {
     let called = false;
     const never = new Promise(() => {});
-    await expect(
-      withTimeout(never, 30, () => { called = true; }),
-    ).rejects.toBeInstanceOf(TimeoutError);
+    const err = await withTimeout(never, 30, () => { called = true; }).catch((e: unknown) => e);
+    expect(isTimeoutError(err)).toBe(true);
     expect(called).toBe(true);
   });
 

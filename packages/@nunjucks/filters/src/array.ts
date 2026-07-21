@@ -1,16 +1,16 @@
 import { createLog } from '@nunjucks/log';
+import type { ErrorDefinitionEntry } from '@nunjucks/log';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { isArray, isString, isPlainObject, map, keys, entries, sum as sumValues } from 'remeda';
 import { isSafeString, copySafeness, makeMacro } from '@nunjucks/runtime';
 import { getAttrGetter } from './attributes.ts';
-import { normalize } from './string.ts';
 
 type FilterContext = { logContext?: { templateName?: string; phase?: string; renderContext?: unknown } } | undefined;
 
 const getLogContext = (ctx: FilterContext): { templateName: string; phase: string; renderContext: unknown } =>
   (ctx && ctx.logContext) ? { templateName: ctx.logContext.templateName || 'inline', phase: ctx.logContext.phase || 'render', renderContext: ctx.logContext.renderContext ?? null } : { templateName: 'inline', phase: 'render', renderContext: null };
 
-const filterError = (ctx: FilterContext, errorDef: unknown, params: Record<string, unknown>, subject: unknown) => {
+const filterError = (ctx: FilterContext, errorDef: ErrorDefinitionEntry, params: Record<string, string>, subject: string) => {
   const logContext = getLogContext(ctx);
   return createLog('error', errorDef, params, subject, { phase: logContext.phase, templateName: logContext.templateName, lineBase: 'zero' });
 };
@@ -50,13 +50,13 @@ export function last(arr: unknown[]): unknown {
 }
 
 export function lengthFilter(val: unknown): number {
-  const value = normalize(val, '');
+  const value: unknown = (val === null || val === undefined || val === false) ? '' : val;
 
   if (value !== undefined && value !== null) {
-    if (
+    if (typeof value === 'object' && (
       (typeof Map === 'function' && value instanceof Map) ||
       (typeof Set === 'function' && value instanceof Set)
-    ) {
+    )) {
       return (value as Map<unknown, unknown> | Set<unknown>).size;
     }
     if (isPlainObject(value) && !isSafeString(value)) {
@@ -67,7 +67,7 @@ export function lengthFilter(val: unknown): number {
   return 0;
 }
 
-export function list(val: unknown): unknown[] | { key: string; value: unknown }[] {
+export function list(this: unknown, val: unknown): unknown[] | { key: string; value: unknown }[] {
   if (isString(val)) {
     return (val as string).split('');
   } else if (isPlainObject(val)) {
@@ -75,7 +75,7 @@ export function list(val: unknown): unknown[] | { key: string; value: unknown }[
   } else if (isArray(val)) {
     return val as unknown[];
   } else {
-    throw filterError(this, ERROR_DEFINITIONS.LIST_FILTER, { type: typeof val }, typeof val);
+    throw filterError(this as FilterContext, ERROR_DEFINITIONS.LIST_FILTER!, { type: typeof val }, typeof val);
   }
 }
 
@@ -94,7 +94,7 @@ export function reverse(val: unknown): unknown {
   arr = arr.toReversed();
 
   if (isString(val)) {
-    return copySafeness(val as object, (arr as string[]).join(''));
+    return copySafeness(val as unknown as object, (arr as string[]).join(''));
   }
   return arr;
 }
@@ -132,9 +132,9 @@ export function sum(arr: unknown[], attr?: string, start: number = 0): number {
 
 export const sort = makeMacro(
   ['value', 'reverse', 'case_sensitive', 'attribute'], [],
-  function sortFilter(arr: unknown[], reversed?: boolean | string, caseSens?: boolean, attr?: string): unknown[] {
+  function sortFilter(this: unknown, arr: unknown[], reversed?: boolean | string, caseSens?: boolean, attr?: string): unknown[] {
     if (!arr || !Array.isArray(arr)) {
-      throw filterError(this, ERROR_DEFINITIONS.SORT_FILTER, { type: typeof arr }, typeof arr);
+      throw filterError(this as FilterContext, ERROR_DEFINITIONS.SORT_FILTER!, { type: typeof arr }, typeof arr);
     }
 
     // Handle positional args: sort(items, attr) or sort(items, attr, reverse)
@@ -149,7 +149,7 @@ export const sort = makeMacro(
     if (sortAttr) {
       for (const item of arr) {
         if (item && typeof item === 'object' && !(sortAttr in (item as object))) {
-          throw filterError(this, ERROR_DEFINITIONS.SORT_FILTER_ATTR, { attr: sortAttr }, sortAttr);
+          throw filterError(this as FilterContext, ERROR_DEFINITIONS.SORT_FILTER_ATTR!, { attr: sortAttr }, sortAttr);
         }
       }
     }
@@ -158,8 +158,8 @@ export const sort = makeMacro(
     const getAttribute = getAttrGetter(sortAttr as string);
 
     array = array.toSorted((a, b) => {
-      let x: unknown = (sortAttr) ? getAttribute(a as Record<string, unknown>) : a;
-      let y: unknown = (sortAttr) ? getAttribute(b as Record<string, unknown>) : b;
+      let x: string | number = (sortAttr) ? getAttribute(a as Record<string, unknown>) as string | number : a as string | number;
+      let y: string | number = (sortAttr) ? getAttribute(b as Record<string, unknown>) as string | number : b as string | number;
 
       if (!caseSens && isString(x) && isString(y)) {
         x = (x as string).toLowerCase();

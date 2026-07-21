@@ -1,10 +1,12 @@
 import { TOKEN_SYMBOL } from '@nunjucks/lexer';
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
 import { nextToken, pushToken } from "../cursor.ts";
+import type { ParserContext } from "../cursor.ts";
 import { parseBitwiseOr } from "./bitwise.ts";
 import { parseIs } from "./is.ts";
 
-export const parseIn = (ctx) => {
+export const parseIn = (ctx: ParserContext): Node => {
   let node = parseBitwiseOr(ctx);
   while (true) {
     const tok = nextToken(ctx);

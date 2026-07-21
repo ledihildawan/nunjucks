@@ -1,5 +1,5 @@
 import { mapValues, fromEntries, values } from 'remeda';
-import type { ErrorDefinition, Classification, SubjectExtractor } from './types.ts';
+import type { ErrorDefinition, Classification, SubjectExtractor, ExtraExtractor } from './types.ts';
 import { firstCapture } from './types.ts';
 import { RUNTIME_ERRORS } from './runtime.ts';
 import { PARSER_ERRORS } from './parser.ts';
@@ -31,6 +31,7 @@ interface Rule {
   pattern: RegExp;
   category: string;
   subjectFrom: SubjectExtractor | null;
+  extraFrom: ExtraExtractor | null;
   titleTemplate?: string;
   causes: string[];
   fixCode?: string;
@@ -44,6 +45,7 @@ export const RULES: Rule[] = values(ERROR_DEFINITIONS).map((def) => ({
   pattern: def.pattern,
   category: def.category,
   subjectFrom: def.subjectFrom ?? firstCapture,
+  extraFrom: def.extraFrom ?? null,
   titleTemplate: def.titleTemplate,
   causes: def.causes,
   fixCode: def.fixCode,

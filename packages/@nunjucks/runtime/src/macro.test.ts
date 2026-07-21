@@ -12,7 +12,7 @@ describe('makeKeywordArgs', () => {
   test('adds __keywords flag to object', () => {
     const obj = { a: 1 };
     const result = makeKeywordArgs(obj);
-    expect(result).toBe(obj);
+    expect(result as unknown as { a: number }).toBe(obj);
     expect(result.__keywords).toBe(true);
   });
 });

@@ -13,7 +13,7 @@ const createNode = (nodeType: string, lineno: number, colno: number, data: Recor
   if (!FIELDS_CACHE.has(nodeType)) {
     FIELDS_CACHE.set(nodeType, Object.freeze(Object.keys(data)));
   }
-  nodeObj.fields = FIELDS_CACHE.get(nodeType)!;
+  (nodeObj as { fields: readonly string[] }).fields = FIELDS_CACHE.get(nodeType)!;
 
   nodeObj.findAll = function (this: Node, findType: string | ((n: Node) => boolean)): Node[] {
     const results: Node[] = [];

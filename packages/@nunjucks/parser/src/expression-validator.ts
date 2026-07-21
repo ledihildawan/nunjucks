@@ -1,4 +1,5 @@
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
 
 export const ExpressionSecurityError = {
   DYNAMIC_PROPERTY_ACCESS: 'DYNAMIC_PROPERTY_ACCESS',
@@ -29,26 +30,34 @@ const DANGEROUS_PROPERTIES = new Set([
   'execScript',
 ]);
 
-export function validateExpression(ast, config = {}) {
-  const cfg = { ...DEFAULT_SECURITY_CONFIG, ...config };
-  const errors = [];
+interface ValidationError {
+  code: string;
+  message: string;
+  path: (string | number)[];
+  lineno: number;
+  colno: number;
+}
 
-  function walk(node, path = []) {
+export function validateExpression(ast: Node, config: Record<string, unknown> = {}): ValidationError[] {
+  const cfg = { ...DEFAULT_SECURITY_CONFIG, ...config };
+  const errors: ValidationError[] = [];
+
+  function walk(node: Node | null | undefined, path: (string | number)[] = []): void {
     if (!node) return;
 
     const nodeType = nodes.getNodeTypeName(node);
 
     switch (nodeType) {
       case 'lookupVal': {
-        const target = node.target;
-        const val = node.val;
+        const target = node.target as Node;
+        const val = node.val as Node;
 
         if (val) {
-          let propName = null;
+          let propName: string | null = null;
           const valType = nodes.getNodeTypeName(val);
-          
+
           if (valType === 'symbol') {
-            propName = val.value;
+            propName = val.value as string;
           } else if (valType === 'literal' && typeof val.value === 'string') {
             propName = val.value;
           }
@@ -64,7 +73,7 @@ export function validateExpression(ast, config = {}) {
               });
             }
 
-            if (cfg.blockedPropertyPatterns.some(pattern => pattern.test(propName))) {
+            if ((cfg.blockedPropertyPatterns as RegExp[]).some(pattern => pattern.test(propName))) {
               errors.push({
                 code: ExpressionSecurityError.UNSAFE_PROPERTY,
                 message: `Property '${propName}' matches blocked pattern`,
@@ -82,10 +91,10 @@ export function validateExpression(ast, config = {}) {
       }
 
       case 'symbol': {
-        if (DANGEROUS_PROPERTIES.has(node.value)) {
+        if (DANGEROUS_PROPERTIES.has(node.value as string)) {
           errors.push({
             code: ExpressionSecurityError.UNSAFE_PROPERTY,
-            message: `Dangerous symbol '${node.value}' is not allowed`,
+            message: `Dangerous symbol '${node.value as string}' is not allowed`,
             path: [...path, 'symbol'],
             lineno: node.lineno,
             colno: node.colno,
@@ -96,31 +105,32 @@ export function validateExpression(ast, config = {}) {
 
       case 'funCall':
       case 'pipe': {
-        if (node.name && nodes.getNodeTypeName(node.name) === 'symbol') {
-          const fnName = node.name.value;
+        const name = node.name as Node;
+        if (name && nodes.getNodeTypeName(name) === 'symbol') {
+          const fnName = name.value as string;
           if (fnName === 'eval' || fnName === 'Function' || fnName === 'execScript') {
             errors.push({
               code: ExpressionSecurityError.UNSAFE_PROPERTY,
               message: `Dangerous function call '${fnName}' is not allowed`,
-              path: [...path, nodeType],
+              path: [...path, nodeType ?? ''],
               lineno: node.lineno,
               colno: node.colno,
             });
           }
         }
-        walk(node.name, [...path, 'name']);
-        walk(node.args, [...path, 'args']);
+        walk(name, [...path, 'name']);
+        walk(node.args as Node, [...path, 'args']);
         break;
       }
 
       default: {
         for (const key of Object.keys(node)) {
           if (key === 'lineno' || key === 'colno' || key === 'fields') continue;
-          const child = node[key];
+          const child = (node as Record<string, unknown>)[key];
           if (Array.isArray(child)) {
-            child.forEach((c, i) => walk(c, [...path, key, i]));
+            child.forEach((c, i) => walk(c as Node, [...path, key, i]));
           } else if (child && typeof child === 'object') {
-            walk(child, [...path, key]);
+            walk(child as Node, [...path, key]);
           }
         }
       }
@@ -131,7 +141,7 @@ export function validateExpression(ast, config = {}) {
   return errors;
 }
 
-export function isExpressionSafe(ast, config = {}) {
+export function isExpressionSafe(ast: Node, config: Record<string, unknown> = {}): boolean {
   const errors = validateExpression(ast, config);
   return errors.length === 0;
 }

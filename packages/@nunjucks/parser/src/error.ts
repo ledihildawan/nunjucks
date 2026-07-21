@@ -1,7 +1,8 @@
 import { createLog } from '@nunjucks/log';
 import { peekToken } from "./cursor.ts";
+import type { ParserContext } from "./cursor.ts";
 
-const inferCauses = (msg) => {
+const inferCauses = (msg: string): string[] => {
   const lower = msg.toLowerCase();
   const causes = [];
 
@@ -31,7 +32,7 @@ const inferCauses = (msg) => {
   return causes;
 };
 
-const inferFix = (msg) => {
+const inferFix = (msg: string): string => {
   const lower = msg.toLowerCase();
 
   if (lower.includes('expected') && lower.includes('expression')) {
@@ -46,16 +47,18 @@ const inferFix = (msg) => {
   if (lower.includes('expected') && lower.includes(',')) {
     return '{{ [1, 2, 3] }} or {{ {a: 1, b: 2} }}';
   }
-  return 'Check template syntax around the error line';
+  return 'Check template syntax around the error location';
 };
 
-export const error = (ctx, msg, lineno, colno) => {
+export const EXPECTED_COLON_AFTER_DICT_KEY = 'EXPECTED_COLON_AFTER_DICT_KEY';
+
+export const error = (ctx: ParserContext, msg: string, lineno?: number, colno?: number, sentinel?: string) => {
   if (lineno === undefined || colno === undefined) {
     const tok = peekToken(ctx) || {};
     lineno = tok.lineno ?? ctx.tokens?.lineno;
     colno = tok.colno ?? ctx.tokens?.colno;
   }
-  return createLog('error', {
+  const err = createLog('error', {
     name: 'PARSER_ERROR',
     message: () => msg,
     pattern: /./,
@@ -63,9 +66,13 @@ export const error = (ctx, msg, lineno, colno) => {
     fixCode: inferFix(msg),
     fixComment: 'See the causes above for guidance',
     suggestion: 'Use the syntax highlighting in your IDE to spot issues quickly'
-  }, {}, null, { lineno, colno, phase: 'parse', lineBase: 'zero' });
+  } as Parameters<typeof createLog>[1], {}, null, { lineno, colno, phase: 'parse', lineBase: 'zero' });
+  if (sentinel) {
+    Object.assign(err, { sentinel });
+  }
+  return err;
 };
 
-export const fail = (ctx, msg, lineno, colno) => {
-  throw error(ctx, msg, lineno, colno);
+export const fail = (ctx: ParserContext, msg: string, lineno?: number, colno?: number, sentinel?: string): never => {
+  throw error(ctx, msg, lineno, colno, sentinel);
 };

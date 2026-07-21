@@ -1,13 +1,17 @@
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
+import type { Frame } from '@nunjucks/runtime';
 import { createFrame } from '@nunjucks/runtime';
+import type { Compiler } from '../index.ts';
 
-const compileMacro = (ctx, node, frame) => {
-  const args = [];
-  let kwargs = null;
+const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
+  const args: Node[] = [];
+  let kwargs: Node | null = null;
   const funcId = 'macro_' + ctx._tmpid();
   const keepFrame = (frame !== undefined);
 
-  node.args.children.forEach((arg, i, arr) => {
+  const argsChildren = (node.args as Node).children as Node[];
+  argsChildren.forEach((arg, i, arr) => {
     if (i === arr.length - 1 && (nodes.isDict(arg) || nodes.isKeywordArgs(arg))) {
       kwargs = arg;
     } else {
@@ -16,14 +20,16 @@ const compileMacro = (ctx, node, frame) => {
     }
   });
 
-  const realNames = [...args.map((n) => `l_${n.value}`), 'kwargs'];
+  kwargs = kwargs as Node | null;
 
-  const argNames = args.map((n) => `"${n.value}"`);
-  const kwargNames = ((kwargs && kwargs.children) || []).map((n) => `"${n.key.value}"`);
+  const realNames = [...args.map((n) => `l_${n.value as string}`), 'kwargs'];
 
-  let currFrame;
+  const argNames = args.map((n) => `"${n.value as string}"`);
+  const kwargNames = ((kwargs && (kwargs.children as Node[])) || []).map((n) => `"${((n.key as Node).value as string)}"`);
+
+  let currFrame: Frame;
   if (keepFrame) {
-    currFrame = frame.push(true);
+    currFrame = frame!.push(true);
   } else {
     currFrame = createFrame();
   }
@@ -39,17 +45,18 @@ const compileMacro = (ctx, node, frame) => {
     'frame.set("caller", kwargs.caller); }');
 
   args.forEach((arg) => {
-    ctx._emitLine(`frame.set("${arg.value}", l_${arg.value});`);
-    currFrame.set(arg.value, `l_${arg.value}`);
+    const argValue = arg.value as string;
+    ctx._emitLine(`frame.set("${argValue}", l_${argValue});`);
+    currFrame.set(argValue, `l_${argValue}`);
   });
 
   if (kwargs) {
-    kwargs.children.forEach((pair) => {
-      const name = pair.key.value;
+    (kwargs.children as Node[]).forEach((pair) => {
+      const name = (pair.key as Node).value as string;
       ctx._emit(`frame.set("${name}", `);
       ctx._emit(`Object.prototype.hasOwnProperty.call(kwargs, "${name}")`);
       ctx._emit(` ? kwargs["${name}"] : `);
-      ctx._compileExpression(pair.value, currFrame);
+      ctx._compileExpression(pair.value as Node, currFrame);
       ctx._emit(');');
     });
   }
@@ -57,7 +64,7 @@ const compileMacro = (ctx, node, frame) => {
   const bufferId = ctx._pushBuffer();
 
   ctx._withScopedSyntax(() => {
-    ctx.compile(node.body, currFrame);
+    ctx.compile(node.body as Node, currFrame);
   });
 
   ctx._emitLine('frame = ' + ((keepFrame) ? 'frame.pop();' : 'callerFrame;'));
@@ -68,23 +75,24 @@ const compileMacro = (ctx, node, frame) => {
   return funcId;
 };
 
-export const compileMacroPublic = (ctx, node, frame) => {
+export const compileMacroPublic = (ctx: Compiler, node: Node, frame: Frame): void => {
   const funcId = compileMacro(ctx, node);
 
-  const name = node.name.value;
+  const name = (node.name as Node).value as string;
   frame.set(name, funcId);
 
   if (frame.parent) {
     ctx._emitLine(`frame.set("${name}", ${funcId});`);
   } else {
-    if (node.name.value.charAt(0) !== '_') {
+    const nameValue = (node.name as Node).value as string;
+    if (nameValue.charAt(0) !== '_') {
       ctx._emitLine(`context.addExport("${name}");`);
     }
     ctx._emitLine(`context.setVariable("${name}", ${funcId});`);
   }
 };
 
-export const compileCaller = (ctx, node, frame) => {
+export const compileCaller = (ctx: Compiler, node: Node, frame: Frame): void => {
   ctx._emit('(function (){');
   const funcId = compileMacro(ctx, node, frame);
   ctx._emit(`return ${funcId};})()`);

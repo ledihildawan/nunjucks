@@ -1,8 +1,9 @@
 import type { LexerOptions } from './types';
 import type { Token } from './token-types';
-import { createState, advance } from './state';
+import { createState, advance, getChar } from './state';
 import { tokenizers } from './tokenizers';
 import { createDelimiters } from './delimiters';
+import { WHITESPACE_CHARS } from './constants';
 
 function* lexGenerator(src: string, opts: LexerOptions = {}): Generator<Token, void, unknown> {
   let state = createState(src, opts);
@@ -11,6 +12,10 @@ function* lexGenerator(src: string, opts: LexerOptions = {}): Generator<Token, v
     const result = tokenizers(state);
 
     if (!result) {
+      const char = getChar(state);
+      if (char && !WHITESPACE_CHARS.includes(char)) {
+        throw new Error(`Unexpected character '${char}' at line ${state.lineno}:${state.colno}`);
+      }
       state = advance(state);
       continue;
     }

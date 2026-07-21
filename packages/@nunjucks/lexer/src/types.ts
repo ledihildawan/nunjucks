@@ -1,5 +1,5 @@
 import type { Token, TokenType, TokenValue } from './token-types';
-import type { Delimiters } from './delimiters';
+import type { Delimiters, DelimiterTags } from './delimiters';
 
 export interface LexerState {
   str: string;
@@ -13,7 +13,7 @@ export interface LexerState {
 }
 
 export interface LexerOptions {
-  tags?: Partial<Delimiters>;
+  tags?: DelimiterTags;
   trimBlocks?: boolean;
   lstripBlocks?: boolean;
 }

@@ -89,7 +89,7 @@ describe('sum', () => {
 describe('random', () => {
   test('returns an element from the array', () => {
     const arr = [1, 2, 3];
-    const r = random(arr);
+    const r = random(arr) as number;
     expect(arr).toContain(r);
   });
 });

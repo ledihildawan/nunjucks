@@ -1,8 +1,23 @@
 import { isNonNullish } from 'remeda';
+import type { Node } from '@nunjucks/nodes';
+import type { SourceMap } from './source-map.ts';
 
-export const emit = (ctx, code) => ctx.codebuf.push(code);
+export interface EmitterCtx {
+  codebuf: string[];
+  lastId: number;
+  buffer: string | null;
+  bufferStack: Array<string | null>;
+  _scopeClosers: string;
+  templateName: string | null;
+  compiledLine: number;
+  sourceMap: SourceMap;
+}
 
-export const emitLine = (ctx, code, originalLine, colno = 0) => {
+export const emit = (ctx: EmitterCtx, code: string): void => {
+  ctx.codebuf.push(code);
+};
+
+export const emitLine = (ctx: EmitterCtx, code: string, originalLine?: number, colno: number = 0): void => {
   ctx.compiledLine++;
   if (originalLine !== undefined) {
     ctx.sourceMap.addMapping(ctx.compiledLine, originalLine, colno);
@@ -14,11 +29,11 @@ export const emitLineWithMapping = emitLine;
 
 export const emitLineWithLineno = emitLine;
 
-export const emitLines = (ctx, ...lines) => {
+export const emitLines = (ctx: EmitterCtx, ...lines: string[]): void => {
   lines.forEach((line) => emitLine(ctx, line));
 };
 
-export const pushBuffer = (ctx) => {
+export const pushBuffer = (ctx: EmitterCtx): string => {
   const id = tmpid(ctx);
   ctx.bufferStack.push(ctx.buffer);
   ctx.buffer = id;
@@ -26,27 +41,27 @@ export const pushBuffer = (ctx) => {
   return id;
 };
 
-export const popBuffer = (ctx) => {
-  ctx.buffer = ctx.bufferStack.pop();
+export const popBuffer = (ctx: EmitterCtx): void => {
+  ctx.buffer = ctx.bufferStack.pop() as string | null;
 };
 
-export const tmpid = (ctx) => {
+export const tmpid = (ctx: EmitterCtx): string => {
   ctx.lastId++;
   return 't_' + ctx.lastId;
 };
 
-export const addScopeLevel = (ctx) => {
+export const addScopeLevel = (ctx: EmitterCtx): void => {
   ctx._scopeClosers += '})';
 };
 
-export const closeScopeLevels = (ctx) => {
+export const closeScopeLevels = (ctx: EmitterCtx): void => {
   if (ctx._scopeClosers) {
     emitLine(ctx, ctx._scopeClosers + ';');
   }
   ctx._scopeClosers = '';
 };
 
-export const withScopedSyntax = (ctx, func) => {
+export const withScopedSyntax = (ctx: EmitterCtx, func: () => void): void => {
   const saved = ctx._scopeClosers;
   ctx._scopeClosers = '';
   func.call(ctx);
@@ -54,10 +69,10 @@ export const withScopedSyntax = (ctx, func) => {
   ctx._scopeClosers = saved;
 };
 
-export const templateNameStr = (ctx) =>
+export const templateNameStr = (ctx: { templateName: string | null }): string =>
   ctx.templateName === null || ctx.templateName === undefined ? 'undefined' : JSON.stringify(ctx.templateName);
 
-export const emitFuncBegin = (ctx, node, name) => {
+export const emitFuncBegin = (ctx: EmitterCtx, node: Node, name: string): void => {
   ctx.buffer = 'output';
   ctx._scopeClosers = '';
   emitLine(ctx, `async function ${name}(env, context, frame, runtime) {`);
@@ -67,7 +82,7 @@ export const emitFuncBegin = (ctx, node, name) => {
   emitLine(ctx, 'try {');
 };
 
-export const emitFuncEnd = (ctx, noReturn) => {
+export const emitFuncEnd = (ctx: EmitterCtx, noReturn?: boolean): void => {
   if (!noReturn) {
     emitLine(ctx, `return ${ctx.buffer};`);
   }

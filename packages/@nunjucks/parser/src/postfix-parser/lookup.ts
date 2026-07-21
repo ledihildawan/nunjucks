@@ -2,23 +2,27 @@ import {
   TOKEN_COLON,
   TOKEN_RIGHT_BRACKET,
 } from '@nunjucks/lexer';
+import type { Token } from '@nunjucks/lexer';
 import { nodes, BracketNotation } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
 import { peekToken, skip, expect } from "../cursor.ts";
+import type { ParserContext } from "../cursor.ts";
+import { parseExpression } from "../expression-parser/index.ts";
 
 export { BracketNotation };
 
-const buildSlice = (ctx, bracketTok, start) => {
-  let stop = null;
-  let step = null;
+const buildSlice = (ctx: ParserContext, bracketTok: Token, start: Node | null): Node => {
+  let stop: Node | null = null;
+  let step: Node | null = null;
 
   if (peekToken(ctx) && peekToken(ctx).type !== TOKEN_RIGHT_BRACKET &&
       peekToken(ctx).type !== TOKEN_COLON) {
-    stop = ctx.parseExpression();
+    stop = parseExpression(ctx);
   }
 
   if (skip(ctx, TOKEN_COLON)) {
     if (peekToken(ctx) && peekToken(ctx).type !== TOKEN_RIGHT_BRACKET) {
-      step = ctx.parseExpression();
+      step = parseExpression(ctx);
     }
   }
 
@@ -28,25 +32,25 @@ const buildSlice = (ctx, bracketTok, start) => {
   return slice;
 };
 
-export const parseBracketAccess = (ctx, bracketTok, target) => {
+export const parseBracketAccess = (ctx: ParserContext, bracketTok: Token, target: Node): Node => {
   if (skip(ctx, TOKEN_COLON)) {
     const slice = buildSlice(ctx, bracketTok, null);
     const node = nodes.lookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
-    node[BracketNotation] = true;
+    (node as Node & { [BracketNotation]?: boolean })[BracketNotation] = true;
     return node;
   }
 
-  const start = ctx.parseExpression();
+  const start = parseExpression(ctx);
 
   if (skip(ctx, TOKEN_COLON)) {
     const slice = buildSlice(ctx, bracketTok, start);
     const node = nodes.lookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
-    node[BracketNotation] = true;
+    (node as Node & { [BracketNotation]?: boolean })[BracketNotation] = true;
     return node;
   }
 
   expect(ctx, TOKEN_RIGHT_BRACKET);
   const node = nodes.lookupVal(bracketTok.lineno, bracketTok.colno, target, start);
-  node[BracketNotation] = true;
+  (node as Node & { [BracketNotation]?: boolean })[BracketNotation] = true;
   return node;
 };

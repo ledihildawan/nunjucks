@@ -12,12 +12,23 @@ export const HOOK_EVENTS = Object.freeze({
   RENDER_ERROR: 'render:error',
 });
 
+export type HookEvent = typeof HOOK_EVENTS[keyof typeof HOOK_EVENTS];
+
 export const globalHooks = new EventEmitter();
 
-export const createHookEmitter = (env, options = {}) => {
+interface HookEmitter {
+  emit(event: string, payload: Record<string, unknown>): boolean;
+}
+
+interface CreateHookEmitterOptions {
+  emitGlobal?: boolean;
+  envName?: string | null;
+}
+
+export const createHookEmitter = (env: HookEmitter, options: CreateHookEmitterOptions = {}) => {
   const { emitGlobal = true, envName = null } = options;
 
-  const emitHook = (event, data = {}) => {
+  const emitHook = (event: string, data: Record<string, unknown> = {}): void => {
     const payload = {
       ...data,
       timestamp: Date.now(),
@@ -34,6 +45,6 @@ export const createHookEmitter = (env, options = {}) => {
   return { emitHook };
 };
 
-export const hookable = (fn) => {
+export const hookable = <T extends (...args: unknown[]) => unknown>(fn: T): T => {
   return fn;
 };

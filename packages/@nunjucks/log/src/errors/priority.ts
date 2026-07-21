@@ -19,7 +19,7 @@ export interface ErrorCandidate {
 
 export function getMostHonestError(errors: ErrorCandidate[]): ErrorCandidate | null {
   if (!errors || errors.length === 0) return null;
-  return errors.sort((a, b) => a.priority - b.priority)[0];
+  return errors.sort((a, b) => a.priority - b.priority)[0] ?? null;
 }
 
 export function getPriority(type: string): number {

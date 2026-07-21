@@ -48,7 +48,7 @@ export function isPropertyNotFoundResult(val: unknown): boolean {
 }
 
 export function getNullParentName(val: unknown): string | null {
-  return (val && (val as { __nunjucks_parent__?: string }).__nunjucks_parent__) ?? null;
+  return ((val && (val as { __nunjucks_parent__?: string }).__nunjucks_parent__) ?? null) as string | null;
 }
 
 export function getAccessPath(val: unknown): string {
@@ -75,7 +75,7 @@ export function optionalMemberLookup(obj: unknown, val: string, parentName: stri
 
 export function slice(arr: unknown[] | string, start: number | null, stop: number | null, step: number | null): unknown[] | string {
   if (step === 0) {
-    throw createLog('error', ERROR_DEFINITIONS.SLICE_STEP, {}, 'step', { phase: 'render', lineBase: 'zero' });
+    throw createLog('error', ERROR_DEFINITIONS.SLICE_STEP!, {}, 'step', { phase: 'render', lineBase: 'zero' });
   }
 
   const len = (arr as { length: number }).length;

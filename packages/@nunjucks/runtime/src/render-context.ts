@@ -137,7 +137,7 @@ export const withValidation = (validators: Record<string, (v: unknown) => boolea
   const originalSet = newCtx.set;
   newCtx.set = (key: string, value: unknown): RenderContext => {
     if (validators[key] && !validators[key](value)) {
-      throw createLog('error', ERROR_DEFINITIONS.VALIDATION_ERROR, { key }, key, { phase: 'render' });
+      throw createLog('error', ERROR_DEFINITIONS.VALIDATION_ERROR!, { key }, key, { phase: 'render' });
     }
     return originalSet(key, value);
   };

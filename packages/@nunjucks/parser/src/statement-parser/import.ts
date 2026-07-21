@@ -1,8 +1,11 @@
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
+import type { ParserContext } from "../cursor.ts";
+import { parseExpression } from "../expression-parser/index.ts";
 import { parseWithContext } from "./with.ts";
 
-export const parseImport = (ctx) => {
+export const parseImport = (ctx: ParserContext): Node => {
   const importTok = peekToken(ctx);
   if (!skipSymbol(ctx, 'import')) {
     fail(ctx, 'parseImport: expected import',
@@ -10,7 +13,7 @@ export const parseImport = (ctx) => {
       importTok.colno);
   }
 
-  const template = ctx.parseExpression();
+  const template = parseExpression(ctx);
 
   if (!skipSymbol(ctx, 'as')) {
     fail(ctx, 'parseImport: expected "as" keyword',
@@ -18,15 +21,15 @@ export const parseImport = (ctx) => {
       importTok.colno);
   }
 
-  const target = ctx.parseExpression();
+  const target = parseExpression(ctx);
   const withContext = parseWithContext(ctx);
   const node = nodes.import(importTok.lineno,
     importTok.colno,
     template,
-    target,
-    withContext);
+    target as unknown as string,
+    withContext as boolean);
 
-  advanceAfterBlockEnd(ctx, importTok.value);
+  advanceAfterBlockEnd(ctx, importTok.value as string);
 
   return node;
 };

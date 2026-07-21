@@ -8,7 +8,9 @@ export const TIMEOUT_CLASSIFICATION: Classification = {
     'Possible infinite loop or large data processing'
   ],
   fixCode: 'Increase executionTimeout or optimize template',
-  fixComment: 'Set executionTimeout to a higher value or simplify template'
+  fixComment: 'Set executionTimeout to a higher value or simplify template',
+  documentationUrl: null,
+  severity: 'error'
 };
 
 export const timeoutClassifier = (input: ClassifyInput): Classification | null => {

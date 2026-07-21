@@ -70,7 +70,7 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
       let f: Frame = this;
 
       if (resolveUp) {
-        const resolved = f.resolve(parts[0], true);
+        const resolved = f.resolve(parts[0]!, true);
         if (resolved) {
           resolved.set(name, val);
           return;
@@ -78,14 +78,14 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
       }
 
       for (let i = 0; i < parts.length - 1; i++) {
-        const id = parts[i];
+        const id = parts[i]!;
         if (!obj[id]) {
           obj[id] = {};
         }
         obj = obj[id] as Record<string, unknown>;
       }
 
-      obj[parts.at(-1) as string] = val;
+      obj[parts[parts.length - 1]!] = val;
       state.rootState.revision++;
       state.resolveCache.clear();
       state.lookupCache.clear();

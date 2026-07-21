@@ -56,8 +56,7 @@ const buildProductionBody = (options: ToHtmlOptions): string => {
 
 const renderMarkdownToAnsi = (text: string): string => {
   if (!text) return '';
-  let s = text;
-  s = s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  let s = escapeHtml(text);
   s = s.replace(/`([^`]+)`/g, '<code class="md-code">$1</code>');
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   return s;

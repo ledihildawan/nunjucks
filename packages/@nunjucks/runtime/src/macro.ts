@@ -3,7 +3,7 @@
 
 type KeywordArgs = { __keywords?: boolean; [key: string]: unknown } & Record<string, unknown>;
 
-export function makeMacro(argNames: string[], kwargNames: string[], func: (...args: unknown[]) => unknown): (...macroArgs: unknown[]) => unknown {
+export function makeMacro(argNames: string[], kwargNames: string[], func: (...args: any[]) => unknown): (...macroArgs: unknown[]) => unknown {
   return function macro(this: unknown, ...macroArgs: unknown[]): unknown {
     const argCount = numArgs(macroArgs);
     let args: unknown[];
@@ -13,14 +13,15 @@ export function makeMacro(argNames: string[], kwargNames: string[], func: (...ar
       args = macroArgs.slice(0, argNames.length);
       macroArgs.slice(args.length, argCount).forEach((val, i) => {
         if (i < kwargNames.length) {
-          kwargs[kwargNames[i]] = val;
+          const kwName = kwargNames[i]!;
+          kwargs[kwName] = val;
         }
       });
       args.push(kwargs);
     } else if (argCount < argNames.length) {
       args = macroArgs.slice(0, argCount);
       for (let i = argCount; i < argNames.length; i++) {
-        const arg = argNames[i];
+        const arg = argNames[i]!;
         args.push(kwargs[arg]);
         delete kwargs[arg];
       }
@@ -33,7 +34,7 @@ export function makeMacro(argNames: string[], kwargNames: string[], func: (...ar
   };
 }
 
-export function makeKeywordArgs<T extends Record<string, unknown>>(obj: T): T & { __keywords: boolean } {
+export function makeKeywordArgs<T>(obj: T): T & { __keywords: boolean } {
   (obj as { __keywords?: boolean }).__keywords = true;
   return obj as T & { __keywords: boolean };
 }
@@ -67,7 +68,7 @@ export function numArgs(args: unknown[]): number {
   }
 }
 
-export function withKwargs<T extends (...args: unknown[]) => unknown>(func: T): T {
+export function withKwargs<T extends (...args: any[]) => unknown>(func: T): T {
   return function (this: unknown, ...args: unknown[]): unknown {
     const positionalArgs: unknown[] = [];
     const kwargs: Record<string, unknown> = {};

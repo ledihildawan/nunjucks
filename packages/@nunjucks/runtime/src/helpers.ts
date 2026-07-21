@@ -2,6 +2,8 @@
 // Import directly: import { suppressValue } from '@nunjucks/runtime/helpers'
 
 import { createLog, normalizeErrorMetadata, ERROR_DEFINITIONS } from '@nunjucks/log';
+import type { ErrorContext, ErrorDefinitionEntry, WarningContext } from '@nunjucks/log/create-log';
+import { escapeHtml } from '@nunjucks/shared';
 import {
   memberLookup,
   optionalMemberLookup,
@@ -42,6 +44,46 @@ const isPlainObject = (v: unknown): boolean => {
   return proto === Object.prototype || proto === null;
 };
 
+interface LogContextShape {
+  templateName: string | null;
+  phase: string;
+  renderContext: Record<string, unknown> | null;
+}
+
+const getLogContext = (self: unknown): LogContextShape =>
+  self && (self as { logContext?: LogContextShape }).logContext
+    ? (self as { logContext: LogContextShape }).logContext
+    : { templateName: null, phase: 'render', renderContext: null };
+
+interface ThrowRuntimeErrorOptions {
+  self: unknown;
+  lineno?: number | null;
+  colno?: number | null;
+  params?: Record<string, string>;
+  subject?: string | null;
+  templateName?: string | null;
+}
+
+const throwRuntimeError = (
+  def: ErrorDefinitionEntry,
+  { self, lineno, colno, params, subject, templateName }: ThrowRuntimeErrorOptions,
+): never => {
+  const ctx = getLogContext(self);
+  throw createLog(
+    'error',
+    def,
+    params ?? {},
+    subject ?? null,
+    {
+      lineno: lineno ?? null,
+      colno: colno ?? null,
+      phase: ctx.phase || 'render',
+      templateName: templateName ?? (ctx.templateName || 'inline'),
+      lineBase: 'zero',
+    } as ErrorContext,
+  );
+};
+
 export {
   createFrame,
   createSafeString,
@@ -78,16 +120,9 @@ export {
   createContext,
 };
 
-const escapeHtml = (val: unknown): string => {
+const escapeValue = (val: unknown): string => {
   if (!isNonNullish(val)) return '';
-  const str = String(val);
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/\\/g, '&#92;');
+  return escapeHtml(String(val));
 };
 
 export function suppressValue(val: unknown, autoescape?: boolean): unknown {
@@ -98,7 +133,7 @@ export function suppressValue(val: unknown, autoescape?: boolean): unknown {
   const normalized = isNonNullish(val) ? val : '';
 
   if (autoescape && !isSafeString(normalized)) {
-    return escapeHtml((normalized as { toString(): string }).toString());
+    return escapeValue((normalized as { toString(): string }).toString());
   }
 
   return normalized;
@@ -111,162 +146,205 @@ export function awaitValue(val: unknown): unknown {
   return val;
 }
 
+interface ResolveUndefinedOptions {
+  self: unknown;
+  val: unknown;
+  varName: string | null;
+  lineno?: number | null;
+  colno?: number | null;
+  mode: 'chainable' | 'strict' | 'debug';
+  phase: string;
+  templateName: string;
+}
+
+interface EmitUndefinedWarningOptions {
+  name: string;
+  message: () => string;
+  subject: string | null;
+  lineno?: number | null;
+  colno?: number | null;
+  phase: string;
+  templateName: string;
+  mode: 'chainable' | 'strict' | 'debug';
+  varName: string | null;
+}
+
+const emitUndefinedWarning = (self: unknown, opts: EmitUndefinedWarningOptions): void => {
+  const warning = createLog(
+    'warning',
+    {
+      name: opts.name,
+      message: opts.message,
+      pattern: /./,
+    },
+    {},
+    opts.subject,
+    {
+      lineno: opts.lineno ?? null,
+      colno: opts.colno ?? null,
+      phase: opts.phase,
+      templateName: opts.templateName,
+      undefinedMode: opts.mode,
+      varName: opts.varName,
+      lineBase: 'zero',
+    } as unknown as WarningContext,
+  );
+  if (self && (self as { __warnings__?: unknown[] }).__warnings__) {
+    (self as { __warnings__: unknown[] }).__warnings__.push(warning);
+  } else {
+    console.warn((warning as { output: (opts: unknown) => string }).output({ verbosity: 'medium', dev: true }));
+  }
+};
+
+const resolveUndefinedProperty = (opts: ResolveUndefinedOptions): 'undefined' => {
+  const { self, val, varName, lineno, colno, mode, phase, templateName } = opts;
+  const propResult = val as { __access_path__?: string; __nunjucks_parent__?: string };
+  const accessPath = propResult.__access_path__ || varName || 'unknown';
+  let parentName = propResult.__nunjucks_parent__;
+  if (!parentName && varName && varName.includes('.')) {
+    const lastDot = varName.lastIndexOf('.');
+    parentName = varName.substring(0, lastDot);
+  }
+
+  if (mode === 'strict') {
+    throwRuntimeError(ERROR_DEFINITIONS.UNDEFINED_PROPERTY!, {
+      self,
+      lineno,
+      colno,
+      params: { property: accessPath, parent: parentName || 'unknown' },
+      subject: accessPath,
+      templateName,
+    });
+  }
+
+  if (mode === 'debug') {
+    emitUndefinedWarning(self, {
+      name: 'UNDEFINED_PROPERTY',
+      message: () => `Property '${accessPath}' not found in '${parentName || 'unknown'}'`,
+      subject: accessPath,
+      lineno,
+      colno,
+      phase,
+      templateName,
+      mode,
+      varName: accessPath,
+    });
+  }
+
+  return 'undefined';
+};
+
+const resolveNullAccess = (opts: ResolveUndefinedOptions): 'undefined' => {
+  const { self, val, varName, lineno, colno, mode, phase, templateName } = opts;
+  const nullResult = val as { __access_path__?: string; __nunjucks_parent__?: string };
+  const accessPath = nullResult.__access_path__ || varName || 'unknown';
+  const parentName = nullResult.__nunjucks_parent__ || varName || 'unknown';
+
+  if (mode === 'strict') {
+    throwRuntimeError(ERROR_DEFINITIONS.NULL_VALUE!, {
+      self,
+      lineno,
+      colno,
+      params: { accessPath, state: 'null', parent: parentName },
+      subject: accessPath,
+      templateName,
+    });
+  }
+
+  if (mode === 'debug') {
+    emitUndefinedWarning(self, {
+      name: 'NULL_VALUE',
+      message: () => `Cannot access '${accessPath}' on null '${parentName}'`,
+      subject: accessPath,
+      lineno,
+      colno,
+      phase,
+      templateName,
+      mode,
+      varName: accessPath,
+    });
+  }
+
+  return 'undefined';
+};
+
+const resolveUndefinedValue = (opts: ResolveUndefinedOptions): 'undefined' => {
+  const { self, varName, lineno, colno, mode, phase, templateName } = opts;
+
+  if (mode === 'strict') {
+    const errorDef = varName
+      ? ERROR_DEFINITIONS.UNDEFINED_VARIABLE!
+      : ({ name: 'UNDEFINED_VALUE', message: () => 'Undefined value', pattern: /./ } as const);
+    throwRuntimeError(errorDef, {
+      self,
+      lineno,
+      colno,
+      params: { name: varName ?? '' },
+      subject: varName,
+      templateName,
+    });
+  }
+
+  if (mode === 'debug') {
+    emitUndefinedWarning(self, {
+      name: 'UNDEFINED_VARIABLE',
+      message: () => (varName ? `Variable '${varName}' is undefined or null` : 'Variable is undefined or null'),
+      subject: varName,
+      lineno,
+      colno,
+      phase,
+      templateName,
+      mode,
+      varName,
+    });
+  }
+
+  return 'undefined';
+};
+
 export function ensureDefined(
   this: unknown,
   val: unknown,
-  lineno: number,
-  colno: number,
+  lineno?: number | null,
+  colno?: number | null,
   varName: string | null = null,
   templateName: string | null = null,
   undefinedMode: 'chainable' | 'strict' | 'debug' = 'chainable',
 ): unknown {
   if (isPropertyNotFoundResult(val) || isNullAccessResult(val)) {
-    const ctx = (this && (this as { logContext?: unknown }).logContext)
-      ? ((this as { logContext: { templateName: string | null; phase: string } }).logContext)
-      : { templateName: null, phase: 'render' };
+    const ctx = getLogContext(this);
     const effectiveTemplateName = templateName || ctx.templateName || 'inline';
-
+    const opts: ResolveUndefinedOptions = {
+      self: this,
+      val,
+      varName,
+      lineno,
+      colno,
+      mode: undefinedMode,
+      phase: ctx.phase || 'render',
+      templateName: effectiveTemplateName,
+    };
     if (isPropertyNotFoundResult(val)) {
-      const propResult = val as { __access_path__?: string; __nunjucks_parent__?: string };
-      const accessPath = propResult.__access_path__ || varName || 'unknown';
-      let parentName = propResult.__nunjucks_parent__;
-      if (!parentName && varName && varName.includes('.')) {
-        const lastDot = varName.lastIndexOf('.');
-        parentName = varName.substring(0, lastDot);
-      }
-
-      if (undefinedMode === 'strict') {
-        throw createLog(
-          'error',
-          ERROR_DEFINITIONS.UNDEFINED_PROPERTY,
-          { property: accessPath, parent: parentName || 'unknown' },
-          accessPath,
-          { lineno, colno, phase: ctx.phase || 'render', templateName: effectiveTemplateName, lineBase: 'zero' },
-        );
-      }
-
-      if (undefinedMode === 'debug') {
-        const warning = createLog(
-          'warning',
-          {
-            name: 'UNDEFINED_PROPERTY',
-            message: () => `Property '${accessPath}' not found in '${parentName || 'unknown'}'`,
-            pattern: /./,
-          },
-          {},
-          accessPath,
-          {
-            lineno,
-            colno,
-            phase: ctx.phase || 'render',
-            templateName: effectiveTemplateName,
-            undefinedMode,
-            varName: accessPath,
-            lineBase: 'zero',
-          },
-        );
-        if (this && (this as { __warnings__?: unknown[] }).__warnings__) {
-          (this as { __warnings__: unknown[] }).__warnings__.push(warning);
-        } else {
-          console.warn((warning as { output: (opts: unknown) => string }).output({ verbosity: 'medium', dev: true }));
-        }
-      }
-
-      return 'undefined';
+      return resolveUndefinedProperty(opts);
     }
-
-    const nullResult = val as { __access_path__?: string; __nunjucks_parent__?: string };
-    const accessPath = nullResult.__access_path__ || varName || 'unknown';
-    const parentName = nullResult.__nunjucks_parent__ || varName || 'unknown';
-
-    if (undefinedMode === 'strict') {
-      throw createLog(
-        'error',
-        ERROR_DEFINITIONS.NULL_VALUE,
-        { accessPath, state: 'null', parent: parentName },
-        accessPath,
-        { lineno, colno, phase: ctx.phase || 'render', templateName: effectiveTemplateName, lineBase: 'zero' },
-      );
-    }
-
-    if (undefinedMode === 'debug') {
-      const warning = createLog(
-        'warning',
-        {
-          name: 'NULL_VALUE',
-          message: () => `Cannot access '${accessPath}' on null '${parentName}'`,
-          pattern: /./,
-        },
-        {},
-        accessPath,
-        {
-          lineno,
-          colno,
-          phase: ctx.phase || 'render',
-          templateName: effectiveTemplateName,
-          undefinedMode,
-          varName: accessPath,
-          lineBase: 'zero',
-        },
-      );
-      if (this && (this as { __warnings__?: unknown[] }).__warnings__) {
-        (this as { __warnings__: unknown[] }).__warnings__.push(warning);
-      } else {
-        console.warn((warning as { output: (opts: unknown) => string }).output({ verbosity: 'medium', dev: true }));
-      }
-    }
-
-    return 'undefined';
+    return resolveNullAccess(opts);
   }
 
   if (!isNonNullish(val)) {
-    const ctx = (this && (this as { logContext?: unknown }).logContext)
-      ? ((this as { logContext: { templateName: string | null; phase: string } }).logContext)
-      : { templateName: null, phase: 'render' };
+    const ctx = getLogContext(this);
     const effectiveTemplateName = templateName || ctx.templateName || 'inline';
-
-    if (undefinedMode === 'strict') {
-      const errorDef = varName
-        ? ERROR_DEFINITIONS.UNDEFINED_VARIABLE
-        : ({ name: 'UNDEFINED_VALUE', message: () => 'Undefined value', pattern: /./ } as const);
-      throw createLog('error', errorDef, { name: varName }, varName, {
-        lineno,
-        colno,
-        phase: ctx.phase || 'render',
-        templateName: effectiveTemplateName,
-        lineBase: 'zero',
-      });
-    }
-
-    if (undefinedMode === 'debug') {
-      const warning = createLog(
-        'warning',
-        {
-          name: 'UNDEFINED_VARIABLE',
-          message: () => (varName ? `Variable '${varName}' is undefined or null` : 'Variable is undefined or null'),
-          pattern: /./,
-        },
-        {},
-        varName,
-        {
-          lineno,
-          colno,
-          phase: ctx.phase || 'render',
-          templateName: effectiveTemplateName,
-          undefinedMode,
-          varName,
-          lineBase: 'zero',
-        },
-      );
-      if (this && (this as { __warnings__?: unknown[] }).__warnings__) {
-        (this as { __warnings__: unknown[] }).__warnings__.push(warning);
-      } else {
-        console.warn((warning as { output: (opts: unknown) => string }).output({ verbosity: 'medium', dev: true }));
-      }
-    }
-
-    return 'undefined';
+    return resolveUndefinedValue({
+      self: this,
+      val,
+      varName,
+      lineno,
+      colno,
+      mode: undefinedMode,
+      phase: ctx.phase || 'render',
+      templateName: effectiveTemplateName,
+    });
   }
+
   return val;
 }
 
@@ -280,50 +358,47 @@ export function callWrap(
   lineno?: number,
   colno?: number,
 ): unknown {
-  const ctx = (this && (this as { logContext?: unknown }).logContext)
-    ? ((this as { logContext: { templateName: string | null; phase: string } }).logContext)
-    : { templateName: null, phase: 'render' };
   const messageName = displayName || name;
   const reservedKeywordContexts: Record<string, string> = {
     caller: 'macro context ({% call %} block)',
     super: 'block that extends a parent template',
   };
   if (reservedKeywordContexts[name]) {
-    throw createLog('error', ERROR_DEFINITIONS.RESERVED_KEYWORD_CONTEXT, { name }, name, {
+    throwRuntimeError(ERROR_DEFINITIONS.RESERVED_KEYWORD_CONTEXT!, {
+      self: this,
       lineno,
       colno,
-      phase: ctx.phase || 'render',
-      templateName: ctx.templateName || 'inline',
-      lineBase: 'zero',
+      params: { name },
+      subject: name,
     });
   }
 
   if (isNullAccessResult(obj)) {
     const parentName = getNullParentName(obj) || name;
-    throw createLog('error', ERROR_DEFINITIONS.NULL_VALUE, { accessPath: name, state: 'null', parent: parentName }, name, {
+    throwRuntimeError(ERROR_DEFINITIONS.NULL_VALUE!, {
+      self: this,
       lineno,
       colno,
-      phase: ctx.phase || 'render',
-      templateName: ctx.templateName || 'inline',
-      lineBase: 'zero',
+      params: { accessPath: name, state: 'null', parent: parentName },
+      subject: name,
     });
   }
 
   if (!obj) {
-    throw createLog('error', ERROR_DEFINITIONS.NULL_VALUE, { accessPath: name, state: 'null', parent: name }, name, {
+    throwRuntimeError(ERROR_DEFINITIONS.NULL_VALUE!, {
+      self: this,
       lineno,
       colno,
-      phase: ctx.phase || 'render',
-      templateName: ctx.templateName || 'inline',
-      lineBase: 'zero',
+      params: { accessPath: name, state: 'null', parent: name },
+      subject: name,
     });
   } else if (!isFunction(obj)) {
-    throw createLog('error', ERROR_DEFINITIONS.NOT_A_FUNCTION, { name: messageName, type: typeof obj }, name, {
+    throwRuntimeError(ERROR_DEFINITIONS.NOT_A_FUNCTION!, {
+      self: this,
       lineno,
       colno,
-      phase: ctx.phase || 'render',
-      templateName: ctx.templateName || 'inline',
-      lineBase: 'zero',
+      params: { name: messageName, type: typeof obj },
+      subject: name,
     });
   }
 
@@ -350,9 +425,8 @@ export function lookup(ctx: { lookup?: (key: string) => unknown } | null, key: s
 }
 
 export function handleError(this: unknown, error: unknown, lineno: number | null, colno: number | null, runtime?: unknown): never {
-  const ctx = (this && (this as { logContext?: unknown }).logContext)
-    ? ((this as { logContext: { templateName: string | null; phase: string; renderContext: unknown } }).logContext)
-    : { templateName: null, phase: 'render', renderContext: null };
+  const ctx = getLogContext(this);
+  void runtime;
   const metadata = normalizeErrorMetadata(error, {
     lineno,
     colno,
@@ -387,7 +461,7 @@ export function handleError(this: unknown, error: unknown, lineno: number | null
       code: metadata.code,
       subject: metadata.subject,
       lineBase: metadata.lineBase,
-    },
+    } as ErrorContext,
   ) as Error & { templatePath?: unknown; sourceStartLine?: unknown };
 
   thrown.templatePath = metadata.templatePath;
@@ -410,22 +484,13 @@ export function inOperator(this: unknown, key: unknown, val: unknown, lineno: nu
     return (val as { includes: (k: unknown) => boolean }).includes(key);
   }
   if (isPlainObject(val)) {
-    return key in (val as object);
+    return (key as string | number | symbol) in (val as object);
   }
-  const ctx = (this && (this as { logContext?: unknown }).logContext)
-    ? ((this as { logContext: { templateName: string | null; phase: string; renderContext: unknown } }).logContext)
-    : { templateName: 'inline', phase: 'render', renderContext: null };
-  throw createLog(
-    'error',
-    ERROR_DEFINITIONS.IN_OPERATOR,
-    { key: String(key), type: typeof val },
-    String(key),
-    {
-      lineno,
-      colno,
-      phase: ctx.phase || 'render',
-      templateName: ctx.templateName || 'inline',
-      lineBase: 'zero',
-    },
-  );
+  return throwRuntimeError(ERROR_DEFINITIONS.IN_OPERATOR!, {
+    self: this,
+    lineno,
+    colno,
+    params: { key: String(key), type: typeof val },
+    subject: String(key),
+  });
 }

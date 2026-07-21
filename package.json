@@ -40,8 +40,9 @@
   "scripts": {
     "build": "bun run scripts/bundle.js",
     "lint": "eslint src/",
-    "test": "bun test src/",
-    "coverage": "bun test src/ --coverage",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "coverage": "bun test --coverage",
     "bench": "bun run bench/run.js"
   },
   "exports": {

@@ -36,13 +36,14 @@ export const liftSuper = (ast: Node): Node => {
 
     if (!hasSuper || !superLocation) return undefined;
 
+    const superLoc = superLocation as { lineno: number; colno: number };
     const bodyChildren = (newBody as unknown as { children?: Node[] }).children ?? [];
     const newChildren = [
       super_(
-        superLocation.lineno,
-        superLocation.colno,
+        superLoc.lineno,
+        superLoc.colno,
         (blockNode as unknown as { name: string }).name,
-        symbol(superLocation.lineno, superLocation.colno, sym),
+        symbol(superLoc.lineno, superLoc.colno, sym),
       ),
       ...bodyChildren,
     ];

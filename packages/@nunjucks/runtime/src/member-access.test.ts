@@ -9,7 +9,7 @@ import {
 
 describe('memberLookup', () => {
   test('returns null marker for null/undefined object', () => {
-    const result = memberLookup(null, 'key') as { __nunjucks_parent__: string; __access_path__: string };
+    const result = memberLookup(null, 'key') as { __nunjucks_parent__: string | null; __access_path__: string };
     expect(isNullAccessResult(result)).toBe(true);
     expect(result.__nunjucks_parent__).toBe(null);
     expect(result.__access_path__).toBe('key');

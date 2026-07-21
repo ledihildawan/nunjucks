@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { mapCOW, walk, depthWalk } from './walk.ts';
 import { literal, nodeList, templateData, output, funCall, symbol, keywordArgs, add, compare, callExtension } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
 import { getNodeTypeName } from '@nunjucks/nodes/traverse';
 import { isLiteral } from '@nunjucks/nodes/guards';
 
@@ -35,9 +36,9 @@ describe('mapCOW', () => {
 
 describe('walk', () => {
   test('returns non-Node input unchanged', () => {
-    expect(walk(null as never, () => {})).toBe(null);
-    expect(walk('string' as never, () => {})).toBe('string');
-    expect(walk(42 as never, () => {})).toBe(42);
+    expect(walk(null as never, () => {}) as unknown).toBe(null);
+    expect(walk('string' as never, () => {}) as unknown).toBe('string');
+    expect(walk(42 as never, () => {}) as unknown).toBe(42);
   });
 
   test('applies func to Literal node', () => {
@@ -78,7 +79,7 @@ describe('walk', () => {
       return undefined;
     });
     expect(getNodeTypeName(result)).toBe('nodeList');
-    expect((result as unknown as { children: { value: number }[] }).children[0].value).toBe(99);
+    expect((result as unknown as { children: { value: number }[] }).children[0]!.value).toBe(99);
   });
 
   test('walks Output with TemplateData', () => {
@@ -95,7 +96,7 @@ describe('walk', () => {
   test('walks FunCall with args', () => {
     const lit = literal(2, 0, 1);
     const args = keywordArgs(2, 0, [lit]);
-    const call = funCall(1, 0, symbol(1, 0, 'foo'), args);
+    const call = funCall(1, 0, symbol(1, 0, 'foo'), args as unknown as Node[]);
     const visited: string[] = [];
     walk(call, (node) => {
       visited.push(getNodeTypeName(node) as string);

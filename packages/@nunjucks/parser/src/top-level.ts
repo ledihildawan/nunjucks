@@ -6,33 +6,37 @@ import {
   TOKEN_RAW,
 } from '@nunjucks/lexer';
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
 import {
   nextToken,
   peekToken,
   advanceAfterVariableEnd,
   fail,
 } from "./cursor.ts";
+import type { ParserContext } from "./cursor.ts";
+import { parseStatement } from "./statement-parser/index.ts";
+import { parseExpression } from "./expression-parser/index.ts";
 import { parseRaw } from "./statement-parser/raw.ts";
 
-export const parseUntilBlocks = (ctx, ...blockNames) => {
+export const parseUntilBlocks = (ctx: ParserContext, ...blockNames: string[]): Node => {
   const prev = ctx.breakOnBlocks;
   ctx.breakOnBlocks = blockNames;
 
-  const ret = ctx.parse();
+  const ret = nodes.nodeList(0, 0, parseNodes(ctx));
 
   ctx.breakOnBlocks = prev;
   return ret;
 };
 
-export const parseNodes = (ctx) => {
+export const parseNodes = (ctx: ParserContext): Node[] => {
   let tok;
-  const buf = [];
+  const buf: Node[] = [];
 
   while ((tok = nextToken(ctx))) {
     if (tok.type === TOKEN_DATA) {
-      let data = tok.value;
+      let data: string = tok.value as string;
       const nextTok = peekToken(ctx);
-      const nextVal = nextTok && nextTok.value;
+      const nextVal = nextTok && (nextTok.value as string);
 
       if (ctx.dropLeadingWhitespace) {
         data = data.replace(/^\s*/, '');
@@ -56,19 +60,19 @@ export const parseNodes = (ctx) => {
       ));
     } else if (tok.type === TOKEN_BLOCK_START) {
       ctx.dropLeadingWhitespace = false;
-      const n = ctx.parseStatement();
+      const n = parseStatement(ctx);
       if (!n) {
         break;
       }
       buf.push(n);
     } else if (tok.type === TOKEN_VARIABLE_START) {
-      const e = ctx.parseExpression();
+      const e = parseExpression(ctx);
       ctx.dropLeadingWhitespace = false;
       advanceAfterVariableEnd(ctx);
       buf.push(nodes.output(tok.lineno, tok.colno, [e]));
     } else if (tok.type === TOKEN_COMMENT) {
-      ctx.dropLeadingWhitespace = tok.value.charAt(
-        tok.value.length - ctx.tokens.tags.COMMENT_END.length - 1
+      ctx.dropLeadingWhitespace = (tok.value as string).charAt(
+        (tok.value as string).length - ctx.tokens.tags.COMMENT_END.length - 1
       ) === '-';
     } else if (tok.type === TOKEN_RAW) {
       ctx.dropLeadingWhitespace = false;
@@ -81,7 +85,7 @@ export const parseNodes = (ctx) => {
       buf.push(nodes.output(
         tok.lineno,
         tok.colno,
-        [nodes.templateData(tok.lineno, tok.colno, rawContent)]
+        [nodes.templateData(tok.lineno, tok.colno, rawContent as string)]
       ));
     } else {
       fail(ctx, 'Unexpected token at top-level: ' +

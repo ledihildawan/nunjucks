@@ -3,16 +3,19 @@ import {
   TOKEN_COMMA,
 } from '@nunjucks/lexer';
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, skip, skipSymbol, fail } from "../cursor.ts";
+import type { ParserContext, MutableNode } from "../cursor.ts";
+import { parseExpression, parsePrimary } from "../expression-parser/index.ts";
 import { parseWithContext } from "./with.ts";
 
-export const parseFrom = (ctx) => {
+export const parseFrom = (ctx: ParserContext): Node => {
   const fromTok = peekToken(ctx);
   if (!skipSymbol(ctx, 'from')) {
     fail(ctx, 'parseFrom: expected from');
   }
 
-  const template = ctx.parseExpression();
+  const template = parseExpression(ctx);
 
   if (!skipSymbol(ctx, 'import')) {
     fail(ctx, 'parseFrom: expected import',
@@ -20,7 +23,7 @@ export const parseFrom = (ctx) => {
       fromTok.colno);
   }
 
-  const names = nodes.nodeList();
+  const names = (nodes.nodeList as () => Node)() as MutableNode;
   let withContext;
 
   while (true) {
@@ -32,7 +35,7 @@ export const parseFrom = (ctx) => {
           fromTok.colno);
       }
 
-      if (nextTok.value.charAt(0) === '-') {
+      if ((nextTok.value as string).charAt(0) === '-') {
         ctx.dropLeadingWhitespace = true;
       }
 
@@ -46,15 +49,15 @@ export const parseFrom = (ctx) => {
         fromTok.colno);
     }
 
-    const name = ctx.parsePrimary();
-    if (name.value.charAt(0) === '_') {
+    const name = parsePrimary(ctx);
+    if ((name.value as string).charAt(0) === '_') {
       fail(ctx, 'parseFrom: names starting with an underscore cannot be imported',
         name.lineno,
         name.colno);
     }
 
     if (skipSymbol(ctx, 'as')) {
-      const alias = ctx.parsePrimary();
+      const alias = parsePrimary(ctx);
       names.addChild(nodes.pair(name.lineno,
         name.colno,
         name,
@@ -70,5 +73,5 @@ export const parseFrom = (ctx) => {
     fromTok.colno,
     template,
     names,
-    withContext);
+    withContext as boolean);
 };

@@ -1,7 +1,10 @@
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
+import type { ParserContext } from "../cursor.ts";
+import { parseExpression } from "../expression-parser/index.ts";
 
-export const parseInclude = (ctx) => {
+export const parseInclude = (ctx: ParserContext): Node => {
   const tagName = 'include';
   const tag = peekToken(ctx);
   if (!skipSymbol(ctx, tagName)) {
@@ -9,18 +12,18 @@ export const parseInclude = (ctx) => {
   }
 
   const node = nodes.include(tag.lineno, tag.colno);
-  node.template = ctx.parseExpression();
+  node.template = parseExpression(ctx);
 
   if (skipSymbol(ctx, 'only')) {
     node.only = true;
   } else if (skipSymbol(ctx, 'with')) {
-    node.with = ctx.parseExpression();
+    node.with = parseExpression(ctx);
   }
 
   if (skipSymbol(ctx, 'ignore') && skipSymbol(ctx, 'missing')) {
     node.ignoreMissing = true;
   }
 
-  advanceAfterBlockEnd(ctx, tag.value);
+  advanceAfterBlockEnd(ctx, tag.value as string);
   return node;
 };

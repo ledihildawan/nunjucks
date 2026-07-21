@@ -1,13 +1,16 @@
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
 import { skipSymbol, nextToken } from "../cursor.ts";
+import type { ParserContext } from "../cursor.ts";
+import { parseExpression } from "../expression-parser/index.ts";
 
-export const parseDo = (ctx) => {
-  const tag = skipSymbol(ctx, 'do');
-  
-  const expr = ctx.parseExpression();
-  
+export const parseDo = (ctx: ParserContext): Node => {
+  const tag = skipSymbol(ctx, 'do') as unknown as { lineno: number; colno: number };
+
+  const expr = parseExpression(ctx);
+
   // Consume the block-end token
   nextToken(ctx);
-  
+
   return nodes.do(tag.lineno, tag.colno, expr);
 };

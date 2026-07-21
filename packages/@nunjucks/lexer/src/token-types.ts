@@ -60,7 +60,7 @@ export const TOKEN_TYPES = {
   TEMPLATE_LITERAL: TOKEN_TEMPLATE_LITERAL,
 } as const;
 
-export type TokenType = typeof TOKEN_TYPES.STRING;
+export type TokenType = (typeof TOKEN_TYPES)[keyof typeof TOKEN_TYPES];
 export type TokenValue = string | number | boolean | null | RegExp | object;
 
 export interface Token {

@@ -20,7 +20,7 @@ const _liftPipes = (node: Node, asyncPipes: string[], prop: string | null, gensy
           descNode.lineno,
           descNode.colno,
           name as Node,
-          (descNode as unknown as { args: Node }).args,
+          (descNode as unknown as { args: Node[] }).args,
           newSymbol,
         ),
       );

@@ -1,16 +1,19 @@
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
+import type { Frame } from '@nunjucks/runtime';
+import type { Compiler } from '../index.ts';
 
-const compileIncrementDecrement = (ctx, node, frame, op) => {
-  const target = node.target;
+const compileIncrementDecrement = (ctx: Compiler, node: Node, frame: Frame, op: string): void => {
+  const target = node.target as Node;
   const isSymbol = nodes.isSymbol(target);
-  
+
   if (isSymbol) {
-    const varName = target.value;
+    const varName = target.value as string;
     const id = ctx._tmpid();
-    
+
     ctx._emit('(lineno = ' + (node.lineno ?? 0) + ', colno = ' + (node.colno ?? 0) + ', (() => {');
     ctx._emit('let ' + id + ' = runtime.contextOrFrameLookup(context, frame, "' + varName + '");');
-    
+
     if (node.isPostfix) {
       ctx._emit('let result = ' + id + ';');
       ctx._emit(id + ' = ' + id + ' ' + op + ' 1;');
@@ -18,7 +21,7 @@ const compileIncrementDecrement = (ctx, node, frame, op) => {
       ctx._emit(id + ' = ' + id + ' ' + op + ' 1;');
       ctx._emit('let result = ' + id + ';');
     }
-    
+
     ctx._emit('frame.set("' + varName + '", ' + id + ', true);');
     ctx._emit('context.setVariable("' + varName + '", ' + id + ');');
     ctx._emit('return result;');
@@ -28,10 +31,10 @@ const compileIncrementDecrement = (ctx, node, frame, op) => {
   }
 };
 
-export const compileIncrement = (ctx, node, frame) => {
+export const compileIncrement = (ctx: Compiler, node: Node, frame: Frame): void => {
   compileIncrementDecrement(ctx, node, frame, '+');
 };
 
-export const compileDecrement = (ctx, node, frame) => {
+export const compileDecrement = (ctx: Compiler, node: Node, frame: Frame): void => {
   compileIncrementDecrement(ctx, node, frame, '-');
 };

@@ -7,7 +7,10 @@ export interface Node {
   readonly type: NodeType;
   readonly lineno: number;
   readonly colno: number;
-  readonly [key: string]: unknown;
+  fields?: readonly string[];
+  children?: Node[];
+  body?: Node | null;
+  [key: string]: unknown;
 }
 
 export const T = Object.freeze({

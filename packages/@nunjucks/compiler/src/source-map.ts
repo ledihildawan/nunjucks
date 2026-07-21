@@ -44,7 +44,7 @@ export const createSourceMap = (templateName: string | null): SourceMap => {
       }
 
       for (let i = state.mappings.length - 1; i >= 0; i--) {
-        const mapping = state.mappings[i];
+        const mapping = state.mappings[i]!;
         if (compiledLine >= mapping.compiledLine) {
           const offset = compiledLine - mapping.compiledLine;
           return createLocation(mapping.originalLine + offset, mapping.originalCol, state.templateName);

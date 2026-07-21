@@ -1,7 +1,11 @@
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
+import type { ParserContext } from "../cursor.ts";
+import { parseExpression } from "../expression-parser/index.ts";
+import { parseUntilBlocks } from "../top-level.ts";
 
-export const parseSwitch = (ctx) => {
+export const parseSwitch = (ctx: ParserContext): Node => {
   const switchStart = 'switch';
   const switchEnd = 'endswitch';
   const caseStart = 'case';
@@ -17,21 +21,21 @@ export const parseSwitch = (ctx) => {
     fail(ctx, 'parseSwitch: expected "switch," "case" or "default"', tag.lineno, tag.colno);
   }
 
-  const expr = ctx.parseExpression();
+  const expr = parseExpression(ctx);
 
   advanceAfterBlockEnd(ctx, switchStart);
-  ctx.parseUntilBlocks(caseStart, caseDefault, switchEnd);
+  parseUntilBlocks(ctx, caseStart, caseDefault, switchEnd);
 
   let tok = peekToken(ctx);
 
-  const cases = [];
-  let defaultCase;
+  const cases: Node[] = [];
+  let defaultCase: Node | undefined;
 
   do {
     skipSymbol(ctx, caseStart);
-    const cond = ctx.parseExpression();
+    const cond = parseExpression(ctx);
     advanceAfterBlockEnd(ctx, switchStart);
-    const body = ctx.parseUntilBlocks(caseStart, caseDefault, switchEnd);
+    const body = parseUntilBlocks(ctx, caseStart, caseDefault, switchEnd);
     cases.push(nodes.case(tok.lineno, tok.colno, cond, body));
     tok = peekToken(ctx);
   } while (tok && tok.value === caseStart);
@@ -39,7 +43,7 @@ export const parseSwitch = (ctx) => {
   switch (tok.value) {
     case caseDefault:
       advanceAfterBlockEnd(ctx);
-      defaultCase = ctx.parseUntilBlocks(switchEnd);
+      defaultCase = parseUntilBlocks(ctx, switchEnd);
       advanceAfterBlockEnd(ctx);
       break;
     case switchEnd:
@@ -49,5 +53,5 @@ export const parseSwitch = (ctx) => {
       fail(ctx, 'parseSwitch: expected "case," "default" or "endswitch," got EOF.');
   }
 
-  return nodes.switch(tag.lineno, tag.colno, expr, cases, defaultCase);
+  return nodes.switch(tag.lineno, tag.colno, expr, cases, defaultCase ?? null);
 };

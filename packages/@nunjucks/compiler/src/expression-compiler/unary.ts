@@ -1,13 +1,17 @@
-const compileUnary = (ctx, node, frame, operator) => {
+import type { Node } from '@nunjucks/nodes';
+import type { Frame } from '@nunjucks/runtime';
+import type { Compiler } from '../index.ts';
+
+const compileUnary = (ctx: Compiler, node: Node, frame: Frame, operator: string): void => {
   ctx._emit('(lineno = ' + (node.lineno ?? 0) + ', colno = ' + (node.colno ?? 0) + ', ' + operator);
-  ctx.compile(node.target, frame);
+  ctx.compile(node.target as Node, frame);
   ctx._emit(')');
 };
 
-export const compileNot = (ctx, node, frame) => compileUnary(ctx, node, frame, '!');
+export const compileNot = (ctx: Compiler, node: Node, frame: Frame): void => compileUnary(ctx, node, frame, '!');
 
-export const compileNeg = (ctx, node, frame) => compileUnary(ctx, node, frame, '-');
+export const compileNeg = (ctx: Compiler, node: Node, frame: Frame): void => compileUnary(ctx, node, frame, '-');
 
-export const compilePos = (ctx, node, frame) => compileUnary(ctx, node, frame, '+');
+export const compilePos = (ctx: Compiler, node: Node, frame: Frame): void => compileUnary(ctx, node, frame, '+');
 
-export const compileBitwiseNot = (ctx, node, frame) => compileUnary(ctx, node, frame, '~');
+export const compileBitwiseNot = (ctx: Compiler, node: Node, frame: Frame): void => compileUnary(ctx, node, frame, '~');

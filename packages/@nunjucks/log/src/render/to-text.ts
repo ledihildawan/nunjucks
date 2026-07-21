@@ -69,7 +69,7 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
     );
     const shortPath = shortenPath(path);
     locationStr = ` at ${shortPath}:${location.line}:${location.col}`;
-    const causeHint = causes.length > 0 ? stripMarkdown(causes[0]) : '';
+    const causeHint = causes.length > 0 ? stripMarkdown(causes[0] ?? '') : '';
     const docHint = documentationUrl ? documentationUrl : '';
     const extras = [causeHint, docHint].filter(Boolean).join(' | ');
     return `${severityLabel} ${message}${locationStr}${extras ? '\n' + extras : ''}`;

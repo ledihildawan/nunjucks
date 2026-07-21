@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import {
-  WhitelistError,
+  createWhitelistError,
   createWhitelistValidator,
   scanASTForTags,
   validateTemplateWhitelist,
@@ -8,7 +8,7 @@ import {
 
 describe('WhitelistError', () => {
   test('uses default code WHITELIST_VIOLATION', () => {
-    const err = new WhitelistError('nope');
+    const err = createWhitelistError('nope');
     expect(err.name).toBe('WhitelistError');
     expect(err.code).toBe('WHITELIST_VIOLATION');
     expect(err.message).toBe('nope');
@@ -16,7 +16,7 @@ describe('WhitelistError', () => {
   });
 
   test('accepts a custom code', () => {
-    const err = new WhitelistError('nope', 'CUSTOM');
+    const err = createWhitelistError('nope', 'CUSTOM');
     expect(err.code).toBe('CUSTOM');
   });
 });

@@ -1,23 +1,27 @@
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
+import type { Frame } from '@nunjucks/runtime';
+import type { Compiler } from '../index.ts';
 import { compileGetTemplate } from './import.ts';
 
-export const compileFromImport = (ctx, node, frame) => {
+export const compileFromImport = (ctx: Compiler, node: Node, frame: Frame): void => {
   const importedId = compileGetTemplate(ctx, node, frame, false, false);
 
   ctx._emitLine(`let ${importedId}_exported = await ${importedId}.getExported(` +
     (node.withContext ? 'context.getVariables(), frame' : '') +
     ');');
 
-  node.names.children.forEach((nameNode) => {
-    let name;
-    let alias;
+  const namesChildren = (node.names as Node).children as Node[];
+  namesChildren.forEach((nameNode) => {
+    let name: string;
+    let alias: string;
     const id = ctx._tmpid();
 
     if (nodes.isPair(nameNode)) {
-      name = nameNode.key.value;
-      alias = nameNode.value.value;
+      name = (nameNode.key as Node).value as string;
+      alias = (nameNode.value as Node).value as string;
     } else {
-      name = nameNode.value;
+      name = nameNode.value as string;
       alias = name;
     }
 

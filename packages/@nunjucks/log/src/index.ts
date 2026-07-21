@@ -1,4 +1,5 @@
 export { createLog, isTemplateError, prettifyError } from './create-log.ts';
+export type { TemplateError, TemplateWarning, ErrorInfo, WarningInfo, ErrorContext, WarningContext, OutputOptions, ErrorDefinitionEntry } from './create-log.ts';
 export { toHtml, toAnsi, toText, toConsoleString, CSS, PRODUCTION_BODY, TOGGLE_SCRIPT } from './render/index.ts';
 export { classify, classifyFromError } from './errors/classify.ts';
 export { injectWarningsScript } from './warning/collector.ts';

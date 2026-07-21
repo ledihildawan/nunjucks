@@ -9,6 +9,7 @@ import {
   isOutput,
 } from '@nunjucks/nodes';
 import { getType, getFields_, addChild } from '@nunjucks/nodes/traverse';
+import type { Node } from '@nunjucks/nodes';
 
 describe('Node', () => {
   test('init stores lineno and colno via Value', () => {
@@ -36,7 +37,7 @@ describe('Value', () => {
   });
 
   test('typename is value', () => {
-    expect(getType(value(0, 0))).toBe('value');
+    expect(getType(value(0, 0, undefined))).toBe('value');
   });
 });
 
@@ -44,19 +45,19 @@ describe('NodeList', () => {
   test('init stores children', () => {
     const child = value(1, 1, 'a');
     const nl = nodeList(0, 0, [child]);
-    expect([...nl.children]).toEqual([child]);
+    expect([...nl.children!]).toEqual([child]);
   });
 
   test('init defaults children to empty array', () => {
     const nl = nodeList(0, 0);
-    expect([...nl.children]).toEqual([]);
+    expect([...nl.children!]).toEqual([]);
   });
 
   test('addChild appends to children', () => {
     const nl = nodeList(0, 0);
     const c = value(1, 1, 'a');
     const result = addChild(nl, c);
-    expect([...(result as { children: unknown[] }).children]).toEqual([c]);
+    expect([...(result as { children: unknown[] }).children!]).toEqual([c]);
   });
 
   test('typename is nodeList', () => {
@@ -156,7 +157,7 @@ describe('InlineIf', () => {
   test('stores cond, body, else_', () => {
     const ii = inlineIf(0, 0, literal(1, 1, true), literal(2, 2, 'a'), literal(3, 3, 'b'));
     expect((ii.cond as { value: boolean }).value).toBe(true);
-    expect((ii.body as { value: string }).value).toBe('a');
+    expect((ii.body as unknown as { value: string }).value).toBe('a');
     expect((ii.else_ as { value: string }).value).toBe('b');
   });
 });
@@ -171,12 +172,12 @@ describe('For', () => {
 
 describe('Macro / Caller', () => {
   test('Macro stores name, args, body', () => {
-    const m = macro(0, 0, 'myMacro', [...nodeList(1, 1).children], nodeList(2, 2));
+    const m = macro(0, 0, 'myMacro', [...nodeList(1, 1).children!], nodeList(2, 2));
     expect(m.name).toBe('myMacro');
   });
 
   test('Caller has typename caller', () => {
-    expect(getType(caller(0, 0, [...nodeList(0, 0).children], nodeList(0, 0)))).toBe('caller');
+    expect(getType(caller(0, 0, [...nodeList(0, 0).children!], nodeList(0, 0)))).toBe('caller');
   });
 });
 
@@ -200,18 +201,18 @@ describe('FromImport', () => {
   test('defaults names to empty NodeList', () => {
     const fi = fromImport(0, 0, 'foo.njk', undefined, false);
     expect(getType(fi.names)).toBe('nodeList');
-    expect([...(fi.names as { children: unknown[] }).children]).toEqual([]);
+    expect([...(fi.names as { children: unknown[] }).children!]).toEqual([]);
   });
 });
 
 describe('FunCall / Pipe', () => {
   test('FunCall stores name and args', () => {
-    const fc = funCall(0, 0, symbol(1, 1, 'fn'), [...nodeList(2, 2).children]);
+    const fc = funCall(0, 0, symbol(1, 1, 'fn'), [...nodeList(2, 2).children!]);
     expect((fc.name as { value: string }).value).toBe('fn');
   });
 
   test('Pipe has typename pipe', () => {
-    expect(getType(pipe(0, 0, symbol(1, 1, 'f'), [...nodeList(0, 0).children]))).toBe('pipe');
+    expect(getType(pipe(0, 0, symbol(1, 1, 'f'), [...nodeList(0, 0).children!]))).toBe('pipe');
   });
 });
 
@@ -247,7 +248,7 @@ describe('Include', () => {
 
 describe('Set', () => {
   test('stores targets, value, operator', () => {
-    const s = set(0, 0, [...nodeList(1, 1).children], literal(2, 2, 5), '=');
+    const s = set(0, 0, [...nodeList(1, 1).children!], literal(2, 2, 5), '=');
     expect(s.targets).toBeDefined();
     expect((s.value as { value: number }).value).toBe(5);
     expect(s.operator).toBe('=');
@@ -258,7 +259,7 @@ describe('Switch / Case', () => {
   test('Switch stores expr, cases, default', () => {
     const sw = switch_(0, 0, symbol(1, 1, 'x'), [case_(2, 2, literal(3, 3, 1), nodeList(4, 4))], nodeList(5, 5));
     expect((sw.expr as { value: string }).value).toBe('x');
-    expect(sw.cases[0]).toBeDefined();
+    expect((sw.cases as unknown[])[0]).toBeDefined();
     expect(sw.default).toBeDefined();
   });
 
@@ -340,8 +341,9 @@ describe('Comparison nodes', () => {
   test('Compare stores expr and ops', () => {
     const c = compare(0, 0, symbol(1, 1, 'x'), [compareOperand(2, 2, literal(3, 3, 5), '==')]);
     expect((c.expr as { value: string }).value).toBe('x');
-    expect((c.ops[0].expr as { value: number }).value).toBe(5);
-    expect(c.ops[0].operator).toBe('==');
+    const ops = c.ops as { expr: Node; operator: string }[];
+    expect((ops[0]!.expr as unknown as { value: number }).value).toBe(5);
+    expect(ops[0]!.operator).toBe('==');
   });
 });
 
@@ -359,8 +361,8 @@ describe('CallExtension', () => {
   test('defaults args to NodeList', () => {
     const ce = callExtension({ __name: 'e' }, 'f');
     expect(ce.args).toBeDefined();
-    expect([...(ce.args as { children: unknown[] }).children]).toEqual([]);
-    expect([...ce.contentArgs]).toEqual([]);
+    expect([...(ce.args as { children: unknown[] }).children!]).toEqual([]);
+    expect([...(ce.contentArgs as unknown[])]).toEqual([]);
   });
 
   test('CallExtensionAsync has typename callExtensionAsync', () => {

@@ -81,7 +81,10 @@ export function createContext(
       this._parentContext = null;
 
       getKeys(blocksArg as Record<string, unknown>).forEach((name) => {
-        this.addBlock(name, blocksArg[name]);
+        const block = blocksArg[name];
+        if (block) {
+          this.addBlock(name, block);
+        }
       });
     },
     validateBlocks(this: Context): void {
@@ -92,11 +95,11 @@ export function createContext(
         const parentBlockNames = new Set(this._parentBlockNames);
         const childOnlyBlocks = getKeys(this.blocks || {}).filter((name) => !parentBlockNames.has(name));
         if (childOnlyBlocks.length > 0) {
-          const blockName = childOnlyBlocks[0];
+          const blockName = childOnlyBlocks[0]!;
           const location = this.blockLocations[blockName] || {};
           throw createLog(
             'error',
-            ERROR_DEFINITIONS.UNDEFINED_BLOCK,
+            ERROR_DEFINITIONS.UNDEFINED_BLOCK!,
             { name: blockName },
             blockName,
             {
@@ -132,7 +135,7 @@ export function createContext(
         const location = this.blockLocations[name] || {};
         throw createLog(
           'error',
-          ERROR_DEFINITIONS.UNDEFINED_BLOCK,
+          ERROR_DEFINITIONS.UNDEFINED_BLOCK!,
           { name },
           name,
           {
@@ -143,7 +146,7 @@ export function createContext(
           },
         );
       }
-      return this.blocks[name][0];
+      return this.blocks[name]![0]!;
     },
     getSuper(
       this: Context,
@@ -157,7 +160,7 @@ export function createContext(
     ): unknown {
       const blockList = this.blocks[name];
       if (!blockList) {
-        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, {
+        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK!, { name }, name, {
           lineno,
           colno,
           phase: 'render',
@@ -168,7 +171,7 @@ export function createContext(
       const blk = blockList[idx + 1];
 
       if (idx === -1 || !blk) {
-        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, {
+        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK!, { name }, name, {
           lineno,
           colno,
           phase: 'render',

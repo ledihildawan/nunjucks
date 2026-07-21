@@ -1,6 +1,4 @@
-import type { ErrorDefinition, SubjectExtractor, ExtraExtractor } from './types.ts';
-
-const firstCapture: SubjectExtractor = (groups) => groups[1] ?? null;
+import { type ErrorDefinition, firstCapture } from './types.ts';
 
 const DOCS_BASE = 'https://mozilla.github.io/nunjucks/templating.html';
 

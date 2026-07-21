@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { createObj, createEmitter, extendObj, isObj, isEmitter } from './object.ts';
+import { createObj, isObj } from './object.ts';
 
 describe('createObj', () => {
   test('creates an object with init', () => {
@@ -8,8 +8,8 @@ describe('createObj', () => {
       init: function (this: Record<string, unknown>) { this.value = 42; },
       getValue: function (this: Record<string, unknown>) { return this.value; },
     });
-    obj.init();
-    expect(obj.getValue()).toBe(42);
+    (obj.init as () => void)();
+    expect((obj.getValue as () => unknown)()).toBe(42);
   });
 
   test('isObj recognizes createObj result', () => {
@@ -27,59 +27,13 @@ describe('createObj', () => {
   test('default init is a no-op', () => {
     const obj = createObj({});
     expect(typeof obj.init).toBe('function');
-    expect(() => obj.init()).not.toThrow();
-  });
-});
-
-describe('createEmitter', () => {
-  test('creates an EventEmitter', () => {
-    const emitter = createEmitter({});
-    expect(isEmitter(emitter)).toBe(true);
-    expect(typeof emitter.on).toBe('function');
-    expect(typeof emitter.emit).toBe('function');
+    expect(() => (obj.init as () => void)()).not.toThrow();
   });
 
-  test('isEmitter rejects non-emitters', () => {
-    expect(isEmitter({})).toBe(false);
-    expect(isEmitter(null)).toBe(false);
-  });
-
-  test('supports event handling', () => {
-    const emitter = createEmitter({});
-    let called = false;
-    emitter.on('test', () => { called = true; });
-    emitter.emit('test');
-    expect(called).toBe(true);
-  });
-});
-
-describe('extendObj', () => {
-  test('creates a factory function from a base object', () => {
-    const base = { baseProp: 'inherited' };
-    const Factory = extendObj(base, 'MyType', {
-      fields: ['value'],
-      init: function (this: Record<string, unknown>, lineno: number, colno: number, val: unknown) {
-        this.lineno = lineno;
-        this.colno = colno;
-        this.value = val;
-      },
-    });
-    expect(typeof Factory).toBe('function');
-    expect(isObj(Factory)).toBe(true);
-  });
-
-  test('factory produces instances with fields', () => {
-    const base = {};
-    const Factory = extendObj(base, 'Node', {
-      fields: ['value'],
-      init: function (this: Record<string, unknown>, lineno: number, colno: number, val: unknown) {
-        this.lineno = lineno;
-        this.colno = colno;
-        this.value = val;
-      },
-    });
-    const instance = (Factory as unknown as (...args: unknown[]) => Record<string, unknown>)(0, 0, 'hello');
-    expect(instance.value).toBe('hello');
-    expect(instance.lineno).toBe(0);
+  test('stores function props as first-class values (no wrapping)', () => {
+    const fn = (x: number) => x + 1;
+    const obj = createObj({ add: fn });
+    expect(obj.add).toBe(fn);
+    expect((obj.add as (x: number) => number)(1)).toBe(2);
   });
 });

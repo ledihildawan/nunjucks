@@ -1,6 +1,8 @@
 import { describe, test, expect } from 'bun:test';
 import {
-  SecurityError,
+  createSecurityError,
+  isSecurityError,
+  type SecurityError,
   scanTemplateForDangerousCode,
   validateContextKeys,
   validateContext,
@@ -13,7 +15,7 @@ import {
 
 describe('SecurityError', () => {
   test('uses default code SECURITY_VIOLATION', () => {
-    const err = new SecurityError('boom');
+    const err = createSecurityError('boom');
     expect(err.name).toBe('SecurityError');
     expect(err.code).toBe('SECURITY_VIOLATION');
     expect(err.message).toBe('boom');
@@ -21,8 +23,14 @@ describe('SecurityError', () => {
   });
 
   test('accepts a custom code', () => {
-    const err = new SecurityError('boom', 'CUSTOM');
+    const err = createSecurityError('boom', 'CUSTOM');
     expect(err.code).toBe('CUSTOM');
+  });
+
+  test('isSecurityError recognises the factory output', () => {
+    expect(isSecurityError(createSecurityError('x'))).toBe(true);
+    expect(isSecurityError(new Error('x'))).toBe(false);
+    expect(isSecurityError(null)).toBe(false);
   });
 });
 
@@ -34,26 +42,26 @@ describe('scanTemplateForDangerousCode', () => {
   test('detects eval()', () => {
     const violations = scanTemplateForDangerousCode('{{ eval("x") }}');
     expect(violations).toHaveLength(1);
-    expect(violations[0].message).toBe('eval() is not allowed');
-    expect(violations[0].name).toBe('eval');
+    expect(violations[0]!.message).toBe('eval() is not allowed');
+    expect(violations[0]!.name).toBe('eval');
   });
 
   test('detects Function()', () => {
     const violations = scanTemplateForDangerousCode('{{ Function("x") }}');
     expect(violations).toHaveLength(1);
-    expect(violations[0].name).toBe('Function');
+    expect(violations[0]!.name).toBe('Function');
   });
 
   test('detects require()', () => {
     const violations = scanTemplateForDangerousCode('{{ require("fs") }}');
     expect(violations).toHaveLength(1);
-    expect(violations[0].name).toBe('require');
+    expect(violations[0]!.name).toBe('require');
   });
 
   test('detects dynamic import()', () => {
     const violations = scanTemplateForDangerousCode('{{ import ("fs") }}');
     expect(violations).toHaveLength(1);
-    expect(violations[0].name).toBe('import');
+    expect(violations[0]!.name).toBe('import');
   });
 
   test('reports multiple violations', () => {
@@ -63,8 +71,8 @@ describe('scanTemplateForDangerousCode', () => {
 
   test('reports 1-based line and 0-based column', () => {
     const violations = scanTemplateForDangerousCode('line1\neval()');
-    expect(violations[0].line).toBe(2);
-    expect(violations[0].col).toBe(0);
+    expect(violations[0]!.line).toBe(2);
+    expect(violations[0]!.col).toBe(0);
   });
 });
 
@@ -101,7 +109,7 @@ describe('validateContextKeys', () => {
   test('flags keys in blockedKeys list', () => {
     const result = validateContextKeys({ secret: 1 }, null, ['secret']);
     expect(result.valid).toBe(false);
-    expect(result.blocked[0].reason).toBe('in blocked keys list');
+    expect(result.blocked[0]!.reason).toBe('in blocked keys list');
   });
 
   test('clean context is valid', () => {
@@ -119,7 +127,7 @@ describe('validateContext', () => {
       validateContext({ process: 1 });
       throw new Error('expected validateContext to throw');
     } catch (e) {
-      expect(e).toBeInstanceOf(SecurityError);
+      expect(isSecurityError(e)).toBe(true);
       expect((e as SecurityError).code).toBe('BLOCKED_CONTEXT_KEYS');
       expect((e as SecurityError & { dangerousPaths: string[] }).dangerousPaths).toContain('process');
     }
@@ -144,7 +152,6 @@ describe('findDangerousValues', () => {
   test('returns empty for a safe object', () => {
     expect(findDangerousValues({ name: 'alice', age: 3 })).toEqual([]);
   });
-
   test('flags prototype-pollution keys at top level', () => {
     const protoObj = Object.create(null);
     protoObj.__proto__ = {};
@@ -240,7 +247,12 @@ describe('createSecurityValidator', () => {
   test('validateContext delegates to validateContext options', () => {
     const validator = createSecurityValidator({ blockedKeys: ['secret'] });
     expect(validator.validateContext({ name: 'x' })).toBe(true);
-    expect(() => validator.validateContext({ secret: 1 })).toThrow(SecurityError);
+    try {
+      validator.validateContext({ secret: 1 });
+      throw new Error('expected validateContext to throw');
+    } catch (e) {
+      expect(isSecurityError(e)).toBe(true);
+    }
   });
 
   test('scanTemplate returns violations without throwing in non-strict mode', () => {
@@ -251,7 +263,7 @@ describe('createSecurityValidator', () => {
 
   test('scanTemplate throws in strict mode when violations exist', () => {
     const validator = createSecurityValidator({ strictMode: true });
-    expect(() => validator.scanTemplate('eval()')).toThrow(SecurityError);
+    expect(() => validator.scanTemplate('eval()')).toThrow();
     try {
       validator.scanTemplate('eval()');
     } catch (e) {
@@ -261,7 +273,12 @@ describe('createSecurityValidator', () => {
 
   test('strict mode enables value scanning with no allowed globals', () => {
     const validator = createSecurityValidator({ strictMode: true });
-    expect(() => validator.validateContext({ myRef: globalThis })).toThrow(SecurityError);
+    try {
+      validator.validateContext({ myRef: globalThis });
+      throw new Error('expected validateContext to throw');
+    } catch (e) {
+      expect(isSecurityError(e)).toBe(true);
+    }
   });
 
   test('exposes options on the returned validator', () => {

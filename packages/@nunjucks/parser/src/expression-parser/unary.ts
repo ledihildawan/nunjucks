@@ -1,10 +1,14 @@
 import { TOKEN_OPERATOR } from '@nunjucks/lexer';
 import { nodes } from '@nunjucks/nodes';
-import { peekToken, skipValue, nextToken } from "../cursor.ts";
+import type { Node } from '@nunjucks/nodes';
+import { peekToken, skipValue } from "../cursor.ts";
+import type { ParserContext } from "../cursor.ts";
+import { parsePrimary } from "./primary.ts";
+import { parsePipe } from "../postfix-parser/index.ts";
 
-export const parseUnary = (ctx, noPipes) => {
+export const parseUnary = (ctx: ParserContext, noPipes?: boolean): Node => {
   const tok = peekToken(ctx);
-  let node;
+  let node: Node;
 
   if (skipValue(ctx, TOKEN_OPERATOR, '-')) {
     node = nodes.neg(tok.lineno, tok.colno, parseUnary(ctx, true));
@@ -17,11 +21,11 @@ export const parseUnary = (ctx, noPipes) => {
   } else if (skipValue(ctx, TOKEN_OPERATOR, '--')) {
     node = nodes.decrement(tok.lineno, tok.colno, parseUnary(ctx, true), false);
   } else {
-    node = ctx.parsePrimary();
+    node = parsePrimary(ctx);
   }
 
   if (!noPipes) {
-    node = ctx.parsePipe(node);
+    node = parsePipe(ctx, node);
   }
 
   return node;

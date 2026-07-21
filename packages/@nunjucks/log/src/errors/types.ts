@@ -7,7 +7,7 @@ export type ErrorSeverity = 'error' | 'warning' | 'info';
 
 export interface ErrorDefinition {
   name: string;
-  message: string | ((args?) => string);
+  message: string | ((args?: Record<string, string> | string[]) => string);
   pattern: RegExp;
   category: string;
   titleTemplate?: string;
@@ -34,8 +34,8 @@ export interface Classification {
 
 export interface ClassifyInput {
   message?: string;
-  code?: string;
-  subject?: string;
+  code?: string | null;
+  subject?: string | null;
   causes?: string[];
   fixCode?: string;
   fixComment?: string;

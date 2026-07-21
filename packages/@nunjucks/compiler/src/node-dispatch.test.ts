@@ -1,25 +1,27 @@
 import { describe, test, expect } from 'bun:test';
 import { compileDispatch, COMPILE_FUNCTIONS } from './node-dispatch.ts';
+import type { Compiler } from './index.ts';
+import type { Frame } from '@nunjucks/runtime';
 import { literal, symbol, add, nodeList, getNodeTypeName } from '@nunjucks/nodes';
 
-const makeCtx = () => {
+const makeCtx = (): Compiler & { emitted: string[] } => {
   const emitted: string[] = [];
-  const ctx: Record<string, unknown> = {
+  const ctx = {
     emitted,
     buffer: 'output',
     undefinedMode: 'chainable',
     _emit: (s: string) => { emitted.push(s); },
     _emitLine: (s: string) => { emitted.push(s + '\n'); },
-    _compileChildren: (node: { children?: unknown[] }, frame: unknown) =>
-      (node.children || []).forEach((c) => compileDispatch(ctx, c as never, frame)),
+    _compileChildren: (node: { children?: unknown[] }, frame?: unknown) =>
+      (node.children || []).forEach((c) => compileDispatch(ctx, c as never, frame as Frame)),
     fail: (msg: string) => { throw new Error(msg); },
-  };
-  ctx.compile = (node: never, frame: unknown) => compileDispatch(ctx, node, frame);
+  } as unknown as Compiler & { emitted: string[] };
+  ctx.compile = ((node: unknown, frame?: unknown) => compileDispatch(ctx, node as never, frame as Frame)) as Compiler['compile'];
   ctx._compileExpression = ctx.compile;
   return ctx;
 };
 
-const makeFrame = () => ({ lookup: () => null });
+const makeFrame = (): Frame => ({ lookup: () => null } as unknown as Frame);
 
 describe('COMPILE_FUNCTIONS', () => {
   const expectedTypes = [
@@ -67,13 +69,13 @@ describe('compileDispatch', () => {
 
   test('dispatches symbol via frame lookup when defined', () => {
     const ctx = makeCtx();
-    compileDispatch(ctx, symbol(1, 1, 'x'), { lookup: () => 't_var' });
+    compileDispatch(ctx, symbol(1, 1, 'x'), { lookup: () => 't_var' } as unknown as Frame);
     expect((ctx.emitted as string[]).join('')).toBe('t_var');
   });
 
   test('dispatches symbol to context lookup when not in frame', () => {
     const ctx = makeCtx();
-    compileDispatch(ctx, symbol(1, 1, 'x'), { lookup: () => null });
+    compileDispatch(ctx, symbol(1, 1, 'x'), { lookup: () => null } as unknown as Frame);
     const out = (ctx.emitted as string[]).join('');
     expect(out).toContain('contextOrFrameLookup');
     expect(out).toContain('"x"');
@@ -107,7 +109,7 @@ describe('compileDispatch', () => {
   test('returns the result of the compile function', () => {
     const ctx = makeCtx();
     const original = COMPILE_FUNCTIONS.literal;
-    (COMPILE_FUNCTIONS as Record<string, { (): number }>).literal = () => 123;
+    (COMPILE_FUNCTIONS as unknown as Record<string, () => number>).literal = () => 123;
     const result = compileDispatch(ctx, literal(1, 1, 1), makeFrame());
     (COMPILE_FUNCTIONS as Record<string, unknown>).literal = original;
     expect(result).toBe(123);

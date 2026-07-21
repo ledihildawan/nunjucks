@@ -8,9 +8,12 @@ import {
 import {
   nodes,
 } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, skip, skipValue, fail } from "../cursor.ts";
+import type { ParserContext, MutableNode } from "../cursor.ts";
+import { parseExpression } from "../expression-parser/index.ts";
 
-export const parseSignature = (ctx, tolerant, noParens) => {
+export const parseSignature = (ctx: ParserContext, tolerant?: boolean, noParens?: boolean): Node | null => {
   let tok = peekToken(ctx);
   if (!noParens && tok.type !== TOKEN_LEFT_PAREN) {
     if (tolerant) {
@@ -24,8 +27,8 @@ export const parseSignature = (ctx, tolerant, noParens) => {
     tok = nextToken(ctx);
   }
 
-  const args = nodes.nodeList(tok.lineno, tok.colno);
-  const kwargs = nodes.keywordArgs(tok.lineno, tok.colno);
+  const args = nodes.nodeList(tok.lineno, tok.colno) as MutableNode;
+  const kwargs = nodes.keywordArgs(tok.lineno, tok.colno) as MutableNode;
   let checkComma = false;
 
   while (true) {
@@ -42,18 +45,18 @@ export const parseSignature = (ctx, tolerant, noParens) => {
         tok.lineno,
         tok.colno);
     } else {
-      const arg = ctx.parseExpression();
+      const arg = parseExpression(ctx);
 
       if (nodes.isAssignmentPattern(arg) && peekToken(ctx)?.type === TOKEN_OPERATOR && peekToken(ctx)?.value === '=') {
         nextToken(ctx);
-        const value = ctx.parseExpression();
-        kwargs.addChild(nodes.pair(arg.lineno, arg.colno, arg.target, value));
+        const value = parseExpression(ctx);
+        kwargs.addChild(nodes.pair(arg.lineno, arg.colno, arg.target as Node, value));
       } else if (skipValue(ctx, TOKEN_OPERATOR, '=')) {
         kwargs.addChild(
           nodes.pair(arg.lineno,
             arg.colno,
             arg,
-            ctx.parseExpression())
+            parseExpression(ctx))
         );
       } else {
         args.addChild(arg);

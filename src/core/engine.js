@@ -15,20 +15,3 @@ export const getLoader = (config) => {
   cachedViewsPath = viewsPath;
   return cachedLoader;
 };
-
-export const buildRuntime = (config) => {
-  const filters = config.filters || {};
-  const globals = config.globals || {};
-
-  return {
-    ...globals,
-    ...Object.fromEntries(
-      Object.entries(filters).map(([name, fn]) => [
-        name,
-        function(...args) {
-          return fn(...args);
-        }
-      ])
-    )
-  };
-};

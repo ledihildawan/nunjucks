@@ -1,4 +1,7 @@
 import { nodes } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
+import type { Frame } from '@nunjucks/runtime';
+import type { Compiler } from './index.ts';
 import {
   compileLiteral,
   compileSymbol,
@@ -72,7 +75,9 @@ import {
   compileWith,
 } from './statement-compiler/index.ts';
 
-export const COMPILE_FUNCTIONS = {
+export type CompileFn = (ctx: Compiler, node: Node, frame: Frame) => unknown;
+
+export const COMPILE_FUNCTIONS: Record<string, CompileFn> = {
   node: compileLiteral,
   value: compileLiteral,
   literal: compileLiteral,
@@ -144,11 +149,11 @@ export const COMPILE_FUNCTIONS = {
   with: compileWith,
 };
 
-export const compileDispatch = (ctx, node, frame) => {
+export const compileDispatch = (ctx: Compiler, node: Node, frame?: Frame): unknown => {
   const typeName = nodes.getNodeTypeName(node);
-  const fn = COMPILE_FUNCTIONS[typeName];
+  const fn = typeName !== undefined ? COMPILE_FUNCTIONS[typeName] : undefined;
   if (fn) {
-    return fn(ctx, node, frame);
+    return fn(ctx, node, frame!);
   }
 
   ctx.fail(`compile: Cannot compile node: ${typeName}`, node.lineno, node.colno);

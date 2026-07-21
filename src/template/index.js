@@ -30,6 +30,7 @@ import {
   inOperator,
 } from '@nunjucks/runtime';
 import { createObj } from '@nunjucks/shared';
+import { createEnv, extractBlocks } from '../core/env.js';
 
 const Template = Symbol('Template');
 
@@ -106,11 +107,9 @@ const extractFrameDetails = (e, sourceLineno, sourceColno, sourceMap, currentPat
   return newError;
 };
 
-const createFallbackEnv = () => ({
+const createFallbackEnv = () => createEnv({
   opts: { dev: false, autoescape: true },
-  extensionsList: [],
   globals: {},
-  _renderingTemplates: new Set(),
   async getTemplate(name, eagerCompile, includeChain, ignoreMissing) {
     if (ignoreMissing) return null;
     throw createLog('error', ERROR_DEFINITIONS.FILE_NOT_FOUND, { path: name }, name, { phase: 'load' });
@@ -307,13 +306,7 @@ export function createTemplate(src, env, path, eagerCompile, includeChain) {
       }
     },
     _getBlocks: function(props) {
-      const blocks = {};
-      keys(props).forEach((k) => {
-        if (k.slice(0, 2) === 'b_') {
-          blocks[k.slice(2)] = props[k];
-        }
-      });
-      return blocks;
+      return extractBlocks(props);
     },
   });
   obj.init(src, env, path, eagerCompile);

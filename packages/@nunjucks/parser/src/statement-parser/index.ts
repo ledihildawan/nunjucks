@@ -29,6 +29,8 @@ import {
   TOKEN_REGEX,
 } from '@nunjucks/lexer';
 import { peekToken, fail } from "../cursor.ts";
+import type { ParserContext } from "../cursor.ts";
+import type { Node } from '@nunjucks/nodes';
 import { parseFor } from "./for.ts";
 import { parseMacro } from "./macro.ts";
 import { parseCall } from "./call.ts";
@@ -94,7 +96,7 @@ export {
   parseDefineBlock,
 };
 
-export const parseStatement = (ctx) => {
+export const parseStatement = (ctx: ParserContext): Node | null => {
   const tok = peekToken(ctx);
 
   if (tok.type !== lexer.TOKEN_SYMBOL) {
@@ -102,11 +104,11 @@ export const parseStatement = (ctx) => {
   }
 
   if (ctx.breakOnBlocks &&
-    (ctx.breakOnBlocks || []).includes(tok.value)) {
+    (ctx.breakOnBlocks || []).includes(tok.value as string)) {
     return null;
   }
 
-  switch (tok.value) {
+  switch (tok.value as string) {
     case 'raw':
       return parseRaw(ctx);
     case 'verbatim':
@@ -144,9 +146,9 @@ export const parseStatement = (ctx) => {
     default:
       if (ctx.extensions.length) {
         for (let i = 0; i < ctx.extensions.length; i++) {
-          const ext = ctx.extensions[i];
-          if ((ext.tags || []).includes(tok.value)) {
-            return ext.parse(ctx, nodes, lexer);
+          const ext = ctx.extensions[i]!;
+          if ((ext.tags || []).includes(tok.value as string)) {
+            return ext.parse!(ctx, nodes, lexer);
           }
         }
       }

@@ -1,6 +1,4 @@
-import type { ErrorDefinition, SubjectExtractor } from './types.ts';
-
-const firstCapture: SubjectExtractor = (groups) => groups[1] ?? null;
+import { type ErrorDefinition, firstCapture } from './types.ts';
 
 export const FILTER_ERRORS = {
   FILTER_ERROR: {
