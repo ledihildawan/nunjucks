@@ -10,7 +10,8 @@
     "packages/@nunjucks/lexer",
     "packages/@nunjucks/nodes",
     "packages/@nunjucks/parser",
-    "packages/@nunjucks/transformers"
+    "packages/@nunjucks/transformers",
+    "packages/@nunjucks/compiler"
   ],
   "dependencies": {
     "@nunjucks/lexer": "workspace:*",
@@ -18,6 +19,7 @@
     "@nunjucks/nodes": "workspace:*",
     "@nunjucks/shared": "workspace:*",
     "@nunjucks/transformers": "workspace:*",
+    "@nunjucks/compiler": "workspace:*",
     "express": "5",
     "picocolors": "^1.1.1",
     "remeda": "^2.39.0",

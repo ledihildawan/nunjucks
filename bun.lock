@@ -5,6 +5,7 @@
     "": {
       "name": "nunjucks",
       "dependencies": {
+        "@nunjucks/compiler": "workspace:*",
         "@nunjucks/lexer": "workspace:*",
         "@nunjucks/log": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
@@ -22,6 +23,15 @@
         "eslint": "^9.39.4",
         "eslint-plugin-import": "^2.32.0",
         "typescript": "^7.0.2",
+      },
+    },
+    "packages/@nunjucks/compiler": {
+      "name": "@nunjucks/compiler",
+      "version": "1.0.0",
+      "dependencies": {
+        "@nunjucks/lexer": "workspace:*",
+        "@nunjucks/nodes": "workspace:*",
+        "@nunjucks/transformers": "workspace:*",
       },
     },
     "packages/@nunjucks/lexer": {
@@ -89,6 +99,8 @@
     "@humanwhocodes/module-importer": ["@humanwhocodes/module-importer@1.0.1", "", {}, ""],
 
     "@humanwhocodes/retry": ["@humanwhocodes/retry@0.4.3", "", {}, ""],
+
+    "@nunjucks/compiler": ["@nunjucks/compiler@workspace:packages/@nunjucks/compiler"],
 
     "@nunjucks/lexer": ["@nunjucks/lexer@workspace:packages/@nunjucks/lexer"],
 
