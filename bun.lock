@@ -6,7 +6,6 @@
       "name": "nunjucks",
       "dependencies": {
         "@nunjucks/compiler": "workspace:*",
-        "@nunjucks/core": "workspace:*",
         "@nunjucks/lexer": "workspace:*",
         "@nunjucks/log": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
@@ -32,20 +31,13 @@
       "version": "1.0.0",
       "dependencies": {
         "@nunjucks/lexer": "workspace:*",
-        "@nunjucks/nodes": "workspace:*",
-        "@nunjucks/transformers": "workspace:*",
-      },
-    },
-    "packages/@nunjucks/core": {
-      "name": "@nunjucks/core",
-      "version": "1.0.0",
-      "dependencies": {
-        "@nunjucks/compiler": "workspace:*",
-        "@nunjucks/lexer": "workspace:*",
         "@nunjucks/log": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
+        "@nunjucks/parser": "workspace:*",
         "@nunjucks/runtime": "workspace:*",
+        "@nunjucks/shared": "workspace:*",
         "@nunjucks/transformers": "workspace:*",
+        "remeda": "*",
       },
     },
     "packages/@nunjucks/lexer": {
@@ -79,12 +71,17 @@
       "name": "@nunjucks/runtime",
       "version": "1.0.0",
       "dependencies": {
+        "@nunjucks/log": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
+        "@nunjucks/shared": "workspace:*",
       },
     },
     "packages/@nunjucks/shared": {
       "name": "@nunjucks/shared",
       "version": "1.0.0",
+      "dependencies": {
+        "remeda": "*",
+      },
     },
     "packages/@nunjucks/transformers": {
       "name": "@nunjucks/transformers",
@@ -122,8 +119,6 @@
     "@humanwhocodes/retry": ["@humanwhocodes/retry@0.4.3", "", {}, ""],
 
     "@nunjucks/compiler": ["@nunjucks/compiler@workspace:packages/@nunjucks/compiler"],
-
-    "@nunjucks/core": ["@nunjucks/core@workspace:packages/@nunjucks/core"],
 
     "@nunjucks/lexer": ["@nunjucks/lexer@workspace:packages/@nunjucks/lexer"],
 

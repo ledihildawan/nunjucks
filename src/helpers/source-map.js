@@ -1,41 +1,9 @@
 import { defaultTo, isArray } from 'remeda';
+import { createSourceMap } from '@nunjucks/compiler/source-map';
 
-const createLocation = (line, col, name) => ({ line, col, name });
+export { createSourceMap };
 
 const hasValue = (value) => value !== null && value !== undefined;
-
-export function createSourceMap(templateName) {
-  const state = {
-    templateName,
-    mappings: []
-  };
-
-  return {
-    get templateName() { return state.templateName; },
-    get mappings() { return state.mappings; },
-    set mappings(val) { state.mappings = val; },
-
-    addMapping(compiledLine, originalLine, originalCol = 0) {
-      state.mappings.push({ compiledLine, originalLine, originalCol });
-    },
-
-    getOriginalPosition(compiledLine) {
-      if (compiledLine <= 0) {
-        return createLocation(0, 0, state.templateName);
-      }
-
-      for (let i = state.mappings.length - 1; i >= 0; i--) {
-        const mapping = state.mappings[i];
-        if (compiledLine >= mapping.compiledLine) {
-          const offset = compiledLine - mapping.compiledLine;
-          return createLocation(mapping.originalLine + offset, mapping.originalCol, state.templateName);
-        }
-      }
-
-      return createLocation(compiledLine - 1, 0, state.templateName);
-    }
-  };
-}
 
 export function createSourceMapFromArray(templateName, mappingsArray) {
   const sm = createSourceMap(templateName);

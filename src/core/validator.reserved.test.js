@@ -1,5 +1,5 @@
 import { expect, describe, test } from 'bun:test';
-import { validateConfig } from './validator.js';
+import { validateConfig } from './validators/config.js';
 import { RESERVED_KEYWORDS, getReservedKeywords } from '../config/reserved.js';
 
 describe('validateConfig - reserved keyword validation', () => {

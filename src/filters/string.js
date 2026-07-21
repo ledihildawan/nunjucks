@@ -1,5 +1,5 @@
 import { isString, isArray, map, entries, defaultTo, isNonNullish, isNullish, isNumber, pipe, filter } from 'remeda';
-import { isSafeString, markSafe, copySafeness } from '../runtime/index.js';
+import { isSafeString, markSafe, copySafeness } from '@nunjucks/runtime';
 
 export function normalize(value, defaultValue) {
   if (isNullish(value) || value === false) {

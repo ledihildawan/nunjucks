@@ -1,0 +1,22 @@
+import { describe, test, expect } from 'bun:test';
+import { parse } from '../index.ts';
+import { getNodeTypeName } from '@nunjucks/nodes/traverse';
+
+describe('parse - bracket access', () => {
+  test('parses bracket property access', () => {
+    const ast = parse('{{ user["name"] }}');
+    const output = ast.children[0];
+    expect(getNodeTypeName(output)).toBe('output');
+  });
+
+  test('parses bracket access with variable', () => {
+    const ast = parse('{{ user[key] }}');
+    const output = ast.children[0];
+    expect(getNodeTypeName(output)).toBe('output');
+  });
+
+  test('parses nested bracket access', () => {
+    const ast = parse('{{ data["users"][0]["name"] }}');
+    expect(ast.children).toHaveLength(1);
+  });
+});

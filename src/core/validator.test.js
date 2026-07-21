@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { findContextDangerousValues, validateRenderContext } from './validator.js';
+import { findContextDangerousValues, validateRenderContext } from './validators/context.js';
 
 describe('findContextDangerousValues', () => {
   test('flags process inside nested values', () => {

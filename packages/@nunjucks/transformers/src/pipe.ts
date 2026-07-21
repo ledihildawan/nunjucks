@@ -1,50 +1,45 @@
 // PIPE - Transform pipes to async pipes
 // Import directly: import { liftPipes } from '@nunjucks/transformers/pipe'
 
-import { T, type Node } from '@nunjucks/nodes/types';
-import { literal, symbol, nodeList, pipeAsync, isPipe, isCallExtensionAsync } from '@nunjucks/nodes/factory';
-import { isOutput, isSet, isFor, isIf, isBlock } from '@nunjucks/nodes/guards';
-import { depthWalk, type walk } from './walk.ts';
+import { type Node } from '@nunjucks/nodes/types';
+import { symbol, nodeList, pipeAsync } from '@nunjucks/nodes/factory';
+import { isPipe, isCallExtensionAsync, isOutput, isSet, isFor, isIf, isBlock } from '@nunjucks/nodes/guards';
+import { depthWalk } from './walk.ts';
 
 const _liftPipes = (node: Node, asyncPipes: string[], prop: string | null, gensym: () => string): Node => {
-  let children: Node[] = [];
+  const collected: Node[] = [];
+  const target = (prop ? (node as unknown as Record<string, unknown>)[prop] : node) as Node;
 
-  const walked = depthWalk(prop ? (node as unknown as Record<string, unknown>)[prop] as Node : node, (descNode: Node) => {
-    let newSymbol: Node | undefined;
-    if (isBlock(descNode)) {
-      return descNode;
-    } else if ((isPipe(descNode) && asyncPipes.includes((descNode as unknown as { name: Node }).name.value)) ||
-      isCallExtensionAsync(descNode)) {
-      newSymbol = symbol(descNode.lineno, descNode.colno, gensym());
-      children.push(pipeAsync(
-        descNode.lineno,
-        descNode.colno,
-        (descNode as unknown as { name: Node }).name,
-        (descNode as unknown as { args: Node[] }).args,
-        newSymbol
-      ));
+  const walked = depthWalk(target, (descNode: Node): Node | undefined => {
+    if (isBlock(descNode)) return descNode;
+    const name = (descNode as unknown as { name?: { value?: string } }).name;
+    if ((isPipe(descNode) && name && asyncPipes.includes(name.value ?? '')) || isCallExtensionAsync(descNode)) {
+      const newSymbol = symbol(descNode.lineno, descNode.colno, gensym());
+      collected.push(
+        pipeAsync(
+          descNode.lineno,
+          descNode.colno,
+          name as Node,
+          (descNode as unknown as { args: Node }).args,
+          newSymbol,
+        ),
+      );
+      return newSymbol;
     }
-    return newSymbol;
+    return undefined;
   });
 
-  if (prop) {
-    (node as unknown as Record<string, unknown>)[prop] = walked;
-  } else {
-    node = walked;
+  if (collected.length === 0) {
+    return node;
   }
 
-  if (children.length) {
-    children.push(node);
-    return nodeList(node.lineno, node.colno, children);
-  }
-  return node;
+  const newRoot = prop ? ({ ...node, [prop]: walked } as Node) : walked;
+  return nodeList(newRoot.lineno, newRoot.colno, [...collected, newRoot]);
 };
 
 export const liftPipes = (ast: Node, asyncPipes: string[]): Node => {
-  const gensym = (() => {
-    let counter = 0;
-    return () => `pipe_${counter++}`;
-  })();
+  let counter = 0;
+  const gensym = () => `pipe_${counter++}`;
 
   return depthWalk(ast, (node: Node): Node | undefined => {
     if (isOutput(node)) {

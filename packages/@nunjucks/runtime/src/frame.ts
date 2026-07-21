@@ -1,38 +1,154 @@
 // FRAME - Execution frame with cached lookups
-// Import directly: import { createFrame, lookup } from '@nunjucks/runtime/frame'
-
-const lookupCache = new Map<string, unknown>();
+// Import directly: import { createFrame } from '@nunjucks/runtime/frame'
 
 export interface Frame {
-  readonly parent: Frame | null;
-  readonly bindings: Map<string, unknown>;
+  variables: Record<string, unknown>;
+  readonly _rootState: { revision: number };
+  parent: Frame | undefined;
+  topLevel: boolean;
+  readonly isolateWrites: boolean | undefined;
+  set: (name: string, val: unknown, resolveUp?: boolean) => void;
+  get: (name: string) => unknown;
   lookup: (name: string) => unknown;
-  set: (name: string, value: unknown) => void;
-  resolve: (name: string) => unknown;
+  resolve: (name: string, forWrite?: boolean) => Frame | undefined;
+  push: (writeIsolation?: boolean) => Frame;
+  pop: () => Frame | undefined;
 }
 
-export const createFrame = (parent: Frame | null = null): Frame => {
-  const bindings = new Map<string, unknown>();
-  
-  const resolve = (name: string): unknown => {
-    const cached = lookupCache.get(name);
-    if (cached !== undefined) return cached;
-    
-    if (bindings.has(name)) return bindings.get(name);
-    if (parent) return parent.resolve(name);
-    return undefined;
+export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Frame {
+  const rootState: { revision: number } = (parent?._rootState as { revision: number }) ?? { revision: 0 };
+  const state: {
+    variables: Record<string, unknown>;
+    parent: Frame | undefined;
+    topLevel: boolean;
+    isolateWrites: boolean | undefined;
+    rootState: { revision: number };
+    resolveCache: Map<string, { revision: number; frame: Frame | undefined }>;
+    lookupCache: Map<string, unknown>;
+  } = {
+    variables: Object.create(null),
+    parent: parent ?? undefined,
+    topLevel: false,
+    isolateWrites,
+    rootState,
+    resolveCache: new Map(),
+    lookupCache: new Map(),
   };
-  
-  return Object.freeze({
-    parent,
-    bindings,
-    lookup: resolve,
-    set: (name: string, value: unknown) => {
-      lookupCache.set(name, value);
-      bindings.set(name, value);
-    }
-  });
-};
+
+  const frame: Frame = {
+    get variables(): Record<string, unknown> {
+      return state.variables;
+    },
+    set variables(val: Record<string, unknown>) {
+      state.variables = val;
+      state.rootState.revision++;
+      state.resolveCache.clear();
+      state.lookupCache.clear();
+    },
+    get _rootState(): { revision: number } {
+      return state.rootState;
+    },
+    get parent(): Frame | undefined {
+      return state.parent;
+    },
+    set parent(val: Frame | undefined) {
+      state.parent = val;
+    },
+    get topLevel(): boolean {
+      return state.topLevel;
+    },
+    set topLevel(val: boolean) {
+      state.topLevel = val;
+    },
+    get isolateWrites(): boolean | undefined {
+      return state.isolateWrites;
+    },
+
+    set(name: string, val: unknown, resolveUp?: boolean): void {
+      const parts = name.split('.');
+      let obj: Record<string, unknown> = state.variables;
+      let f: Frame = this;
+
+      if (resolveUp) {
+        const resolved = f.resolve(parts[0], true);
+        if (resolved) {
+          resolved.set(name, val);
+          return;
+        }
+      }
+
+      for (let i = 0; i < parts.length - 1; i++) {
+        const id = parts[i];
+        if (!obj[id]) {
+          obj[id] = {};
+        }
+        obj = obj[id] as Record<string, unknown>;
+      }
+
+      obj[parts.at(-1) as string] = val;
+      state.rootState.revision++;
+      state.resolveCache.clear();
+      state.lookupCache.clear();
+    },
+
+    get(name: string): unknown {
+      const val = state.variables[name];
+      if (val !== undefined) {
+        return val;
+      }
+      return null;
+    },
+
+    lookup(name: string): unknown {
+      const cached = state.lookupCache.get(name);
+      if (cached !== undefined) {
+        return cached;
+      }
+
+      const p = state.parent;
+      const val = state.variables[name];
+      const result = val !== undefined ? val : p?.lookup(name);
+      state.lookupCache.set(name, result);
+      return result;
+    },
+
+    resolve(name: string, forWrite?: boolean): Frame | undefined {
+      const cacheKey = `${name}\u0000${forWrite ? 1 : 0}`;
+      const cached = state.resolveCache.get(cacheKey);
+      if (cached && cached.revision === state.rootState.revision) {
+        return cached.frame;
+      }
+
+      const val = state.variables[name];
+      if (val !== undefined) {
+        if (forWrite && state.isolateWrites) {
+          return undefined;
+        }
+        state.resolveCache.set(cacheKey, { revision: state.rootState.revision, frame: this });
+        return this;
+      }
+      if (forWrite && state.isolateWrites) {
+        return undefined;
+      }
+      const p = state.parent;
+      const f = p?.resolve(name);
+      state.resolveCache.set(cacheKey, { revision: state.rootState.revision, frame: f });
+      return f;
+    },
+
+    push(writeIsolation?: boolean): Frame {
+      return createFrame(this, writeIsolation);
+    },
+
+    pop(): Frame | undefined {
+      return state.parent;
+    },
+  };
+
+  return frame;
+}
 
 export const lookup = (frame: Frame, name: string): unknown => frame.lookup(name);
-export const set = (frame: Frame, name: string, value: unknown): void => frame.set(name, value);
+export const set = (frame: Frame, name: string, value: unknown): void => {
+  frame.set(name, value);
+};

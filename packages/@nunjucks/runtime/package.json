@@ -6,10 +6,23 @@
   "exports": {
     ".": "./src/index.ts",
     "./frame": "./src/frame.ts",
-    "./context": "./src/context.ts"
+    "./context": "./src/context.ts",
+    "./safe-string": "./src/safe-string.ts",
+    "./macro": "./src/macro.ts",
+    "./member-access": "./src/member-access.ts",
+    "./sandbox": "./src/sandbox.ts",
+    "./render-context": "./src/render-context.ts",
+    "./helpers": "./src/helpers.ts",
+    "./hooks": "./src/hooks.ts",
+    "./security": "./src/security.ts",
+    "./timeout": "./src/timeout.ts",
+    "./undefined": "./src/undefined.ts",
+    "./whitelist": "./src/whitelist.ts"
   },
   "dependencies": {
-    "@nunjucks/nodes": "workspace:*"
+    "@nunjucks/nodes": "workspace:*",
+    "@nunjucks/shared": "workspace:*",
+    "@nunjucks/log": "workspace:*"
   },
   "description": "Runtime for Nunjucks template engine"
 }

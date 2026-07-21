@@ -1,4 +1,4 @@
-import { makeMacro } from '../runtime/index.js';
+import { makeMacro } from '@nunjucks/runtime';
 
 export const abs = Math.abs;
 

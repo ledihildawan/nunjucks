@@ -154,7 +154,7 @@ src/
 ### Phase 4: Integration
 **Status**: ✅ COMPLETE
 
-- [x] Create `@nunjucks/core` meta-package
+- [~] ~~Create `@nunjucks/core` meta-package~~ (removed: dead code, never imported, broken re-exports)
 - [x] All packages integrated
 - [x] All 855 tests pass
 - [ ] Update documentation

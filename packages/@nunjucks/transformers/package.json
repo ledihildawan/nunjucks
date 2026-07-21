@@ -8,7 +8,8 @@
     "./walk": "./src/walk.ts",
     "./pipe": "./src/pipe.ts",
     "./super": "./src/super.ts",
-    "./statement": "./src/statement.ts"
+    "./statement": "./src/statement.ts",
+    "./symbol": "./src/symbol.ts"
   },
   "dependencies": {
     "@nunjucks/nodes": "workspace:*"

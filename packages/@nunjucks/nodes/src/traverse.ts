@@ -13,6 +13,16 @@ const getFields = (n: Node): string[] => {
 export const getType = (n: unknown): string | undefined => (n as Node)?.type;
 export const getFields_ = (n: Node): readonly string[] => getFields(n);
 
+// Alias for backward compatibility
+export const getNodeTypeName = getType;
+export const getNodeFields = getFields_;
+
+// Returns a new node with the child appended (immutable)
+export const addChild = (list: Node, child: Node): Node => {
+  const children = (list as unknown as { children: Node[] }).children;
+  return { ...list, children: [...children, child] } as Node;
+};
+
 export const walk = (node: Node, fn: (n: Node) => Node | void): Node => {
   const result = fn(node) ?? node;
   
@@ -89,7 +99,7 @@ export const count = (node: Node, predicate?: (n: Node) => boolean): number => {
   return n;
 };
 
-export function* nodes(node: Node): Generator<Node> {
+export function* iterateNodes(node: Node): Generator<Node> {
   yield node;
   
   if (CHILDREN_TYPES.has(node.type)) {
@@ -110,8 +120,8 @@ export function* nodes(node: Node): Generator<Node> {
   }
 }
 
-export const filterNodes = (node: Node, predicate: (n: Node) => boolean): Generator<Node> => {
-  for (const n of nodes(node)) {
+export function* filterNodes(node: Node, predicate: (n: Node) => boolean): Generator<Node> {
+  for (const n of iterateNodes(node)) {
     if (predicate(n)) yield n;
   }
-};
+}

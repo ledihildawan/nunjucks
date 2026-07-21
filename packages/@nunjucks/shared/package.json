@@ -5,8 +5,12 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./object": "./src/object.ts",
     "./caller-file": "./src/caller-file.ts",
     "./blocked-keys": "./src/blocked-keys.ts"
+  },
+  "dependencies": {
+    "remeda": "*"
   },
   "description": "Shared utilities for Nunjucks"
 }

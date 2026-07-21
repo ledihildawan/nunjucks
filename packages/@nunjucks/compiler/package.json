@@ -5,13 +5,23 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./expression": "./src/expression.ts",
-    "./statement": "./src/statement.ts"
+    "./emitters": "./src/emitters.ts",
+    "./source-map": "./src/source-map.ts",
+    "./node-dispatch": "./src/node-dispatch.ts",
+    "./context": "./src/context.ts",
+    "./expression-compiler": "./src/expression-compiler/index.ts",
+    "./statement-compiler": "./src/statement-compiler/index.ts",
+    "./statement-compiler/macro": "./src/statement-compiler/macro.ts"
   },
   "dependencies": {
     "@nunjucks/nodes": "workspace:*",
     "@nunjucks/transformers": "workspace:*",
-    "@nunjucks/lexer": "workspace:*"
+    "@nunjucks/parser": "workspace:*",
+    "@nunjucks/runtime": "workspace:*",
+    "@nunjucks/lexer": "workspace:*",
+    "@nunjucks/log": "workspace:*",
+    "@nunjucks/shared": "workspace:*",
+    "remeda": "*"
   },
   "description": "Compiler for Nunjucks template engine"
 }

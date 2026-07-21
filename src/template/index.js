@@ -1,13 +1,13 @@
-import { isString, isPlainObject, defaultTo } from 'remeda';
-import { createCompiler } from '../compiler/index.js';
-import { parse } from '../parser/index.js';
-import { transform } from '../transformers/index.js';
+import { isString, isPlainObject, defaultTo, isArray, keys } from 'remeda';
+import { createCompiler } from '@nunjucks/compiler';
+import { parse } from '@nunjucks/parser';
+import { transform } from '@nunjucks/transformers';
 import { prettifyError } from '@nunjucks/log';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
 import { createMappedError } from '../helpers/source-map.js';
-import { createContext } from '../runtime/context.js';
-import { HOOK_EVENTS } from '../runtime/hooks.js';
+import { createContext } from '@nunjucks/runtime/context';
+import { HOOK_EVENTS } from '@nunjucks/runtime/hooks';
 import { injectWarningsScript } from '@nunjucks/log';
 import {
   createFrame,
@@ -28,10 +28,8 @@ import {
   handleError,
   fromIterator,
   inOperator,
-  isArray,
-  keys,
-} from '../runtime/index.js';
-import { createObj } from '../object/index.js';
+} from '@nunjucks/runtime';
+import { createObj } from '@nunjucks/shared';
 
 const Template = Symbol('Template');
 

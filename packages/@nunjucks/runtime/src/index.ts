@@ -2,4 +2,71 @@
 // Tree-shakable: import only what you need
 
 export { createFrame, lookup, set, type Frame } from './frame.ts';
-export { createContext, type Context } from './context.ts';
+export { createContext, isContext, type Context } from './context.ts';
+export {
+  createSafeString,
+  isSafeString,
+  copySafeness,
+  markSafe,
+  type SafeString,
+} from './safe-string.ts';
+export {
+  makeMacro,
+  makeKeywordArgs,
+  isKeywordArgs,
+  getKeywordArgs,
+  numArgs,
+  withKwargs,
+} from './macro.ts';
+export {
+  memberLookup,
+  optionalMemberLookup,
+  slice,
+  nullishCoalesce,
+  isNullAccessResult,
+  isPropertyNotFoundResult,
+  getNullParentName,
+  getAccessPath,
+  type NullAccessResult,
+} from './member-access.ts';
+export {
+  createSandboxedObject,
+  createSandboxedContext,
+  wrapMemberAccess,
+  wrapFunctionWithBlocking,
+  resolveSandboxOptions,
+  isAllowedKey,
+  isBlockedKey,
+  isDangerousGlobal,
+  isCodeExecutionPattern,
+  getBlockedKeyCategory,
+  BLOCKED_KEYS_LIST,
+  DANGEROUS_GLOBALS_LIST,
+  type SandboxOptions,
+} from './sandbox.ts';
+export {
+  createRenderContext,
+  ctx,
+  withDefaults,
+  withComputed,
+  withValidation,
+  traceContext,
+  toContext,
+  createIsolatedContext,
+  createForkedContext,
+  type RenderContext,
+} from './render-context.ts';
+export {
+  suppressValue,
+  awaitValue,
+  ensureDefined,
+  callWrap,
+  contextOrFrameLookup,
+  handleError,
+  fromIterator,
+  inOperator,
+} from './helpers.ts';
+export { HOOK_EVENTS } from './hooks.ts';
+export { UNDEFINED_MODES, DEFAULT_UNDEFINED_MODE, getUndefinedMode, isValidUndefinedMode } from './undefined.ts';
+export { validateContext, findDangerousValues, scanTemplateForDangerousCode, scrubDangerousReferences } from './security.ts';
+export { withTimeout } from './timeout.ts';

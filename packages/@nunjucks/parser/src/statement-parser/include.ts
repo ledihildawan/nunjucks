@@ -1,0 +1,26 @@
+import { nodes } from '@nunjucks/nodes';
+import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
+
+export const parseInclude = (ctx) => {
+  const tagName = 'include';
+  const tag = peekToken(ctx);
+  if (!skipSymbol(ctx, tagName)) {
+    fail(ctx, 'parseInclude: expected ' + tagName);
+  }
+
+  const node = nodes.include(tag.lineno, tag.colno);
+  node.template = ctx.parseExpression();
+
+  if (skipSymbol(ctx, 'only')) {
+    node.only = true;
+  } else if (skipSymbol(ctx, 'with')) {
+    node.with = ctx.parseExpression();
+  }
+
+  if (skipSymbol(ctx, 'ignore') && skipSymbol(ctx, 'missing')) {
+    node.ignoreMissing = true;
+  }
+
+  advanceAfterBlockEnd(ctx, tag.value);
+  return node;
+};
