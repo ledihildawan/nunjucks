@@ -1,4 +1,4 @@
-import { TOKEN_OPERATOR } from '../../lexer/token-types.js';
+import { TOKEN_OPERATOR } from '@nunjucks/lexer';
 import { nodes } from '../../nodes/index.js';
 import { peekToken, skipValue, nextToken } from '../cursor.js';
 

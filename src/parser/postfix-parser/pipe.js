@@ -3,7 +3,7 @@ import {
   TOKEN_PIPEFORWARD,
   TOKEN_LEFT_PAREN,
   TOKEN_SYMBOL,
-} from '../../lexer/token-types.js';
+} from '@nunjucks/lexer';
 import { nodes } from '../../nodes/index.js';
 import { peekToken, skip, skipValue, expect } from '../cursor.js';
 

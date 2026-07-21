@@ -24,6 +24,7 @@ export const isFinished = (state: LexerState): boolean =>
 export const advance = (state: LexerState, n: number = 1): LexerState => {
   let { index, lineno, colno } = state;
   for (let i = 0; i < n && index < state.str.length; i++) {
+    index++;
     const prev = index > 0 ? state.str[index - 1] : '';
     if (prev === '\n') {
       lineno++;
@@ -31,7 +32,6 @@ export const advance = (state: LexerState, n: number = 1): LexerState => {
     } else {
       colno++;
     }
-    index++;
   }
   return { ...state, index, lineno, colno };
 };

@@ -10,6 +10,7 @@ const { isDigit } = validators;
 export const tokenizeNumber: Tokenizer = (state) => {
   let num = '';
   let hasDecimal = false;
+  const { lineno, colno } = state;
   let current = state;
 
   while (
@@ -33,11 +34,13 @@ export const tokenizeNumber: Tokenizer = (state) => {
     }
   }
 
-  if (!num || (num === '.' && !hasDecimal)) return null;
+  if (!num || num === '.') return null;
 
   const value = hasDecimal ? parseFloat(num) : parseInt(num, 10);
+  if (Number.isNaN(value)) return null;
+
   return {
-    token: createNumberToken(value, current.lineno, current.colno, hasDecimal),
+    token: createNumberToken(value, lineno, colno, hasDecimal),
     state: current,
   };
 };

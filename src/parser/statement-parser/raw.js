@@ -1,38 +1,30 @@
 import { nodes } from '../../nodes/index.js';
-import { advanceAfterBlockEnd } from '../cursor.js';
+import { nextToken } from '../cursor.js';
+import { TOKEN_RAW } from '@nunjucks/lexer';
 
 export const parseRaw = (ctx, tagName) => {
-  tagName = tagName || 'raw';
-  const endTagName = 'end' + tagName;
-  const rawBlockRegex = new RegExp('([\\s\\S]*?){%\\s*(' + tagName + '|' + endTagName + ')\\s*(?=%})%}');
-  let rawLevel = 1;
-  let str = '';
-  let matches = null;
+  const tok = nextToken(ctx);
 
-  const begun = advanceAfterBlockEnd(ctx);
+  if (!tok || tok.type !== TOKEN_RAW) {
+    return null;
+  }
 
-  while ((matches = ctx.tokens._extractRegex(rawBlockRegex)) && rawLevel > 0) {
-    const all = matches[0];
-    const pre = matches[1];
-    const blockName = matches[2];
+  const rawContent = tok.value;
+  const beginTag = tagName || 'raw';
+  const endTag = 'end' + beginTag;
 
-    if (blockName === tagName) {
-      rawLevel += 1;
-    } else if (blockName === endTagName) {
-      rawLevel -= 1;
-    }
+  let content = rawContent;
 
-    if (rawLevel === 0) {
-      str += pre;
-      ctx.tokens.backN(all.length - pre.length);
-    } else {
-      str += all;
-    }
+  if (typeof content === 'string') {
+    const startMarker = '{% ' + beginTag + ' %}';
+    const endMarker = '{% ' + endTag + ' %}';
+    content = content.replace(startMarker, '');
+    content = content.replace(endMarker, '');
   }
 
   return nodes.output(
-    begun.lineno,
-    begun.colno,
-    [nodes.templateData(begun.lineno, begun.colno, str)]
+    tok.lineno,
+    tok.colno,
+    [nodes.templateData(tok.lineno, tok.colno, content)]
   );
 };

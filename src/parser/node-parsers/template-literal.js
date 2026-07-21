@@ -1,4 +1,4 @@
-import { TOKEN_TEMPLATE_LITERAL } from '../../lexer/token-types.js';
+import { TOKEN_TEMPLATE_LITERAL } from '@nunjucks/lexer';
 import { nodes } from '../../nodes/index.js';
 import { nextToken, fail } from '../cursor.js';
 

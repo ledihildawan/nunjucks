@@ -4,7 +4,7 @@ import {
   TOKEN_OPERATOR,
   TOKEN_VARIABLE_END,
   TOKEN_WHITESPACE,
-} from '../lexer/token-types.js';
+} from '@nunjucks/lexer';
 import { error, fail } from './error.js';
 import { createLog } from '@nunjucks/log';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';

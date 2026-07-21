@@ -1,4 +1,4 @@
-import { TOKEN_SYMBOL } from '../../lexer/token-types.js';
+import { TOKEN_SYMBOL } from '@nunjucks/lexer';
 import { nodes } from '../../nodes/index.js';
 import { nextToken, pushToken } from '../cursor.js';
 import { parseBitwiseOr } from './bitwise.js';

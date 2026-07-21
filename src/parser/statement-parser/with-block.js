@@ -1,6 +1,6 @@
 import { nodes } from '../../nodes/index.js';
 import { peekToken, skipSymbol, skip, skipValue, nextToken, advanceAfterBlockEnd, fail } from '../cursor.js';
-import { TOKEN_BLOCK_END, TOKEN_COMMA, TOKEN_OPERATOR } from '../../lexer/token-types.js';
+import { TOKEN_BLOCK_END, TOKEN_COMMA, TOKEN_OPERATOR } from '@nunjucks/lexer';
 
 const isBlockEnd = (tok) => tok && tok.type === TOKEN_BLOCK_END;
 

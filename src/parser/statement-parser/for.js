@@ -1,4 +1,4 @@
-import { TOKEN_COMMA } from '../../lexer/token-types.js';
+import { TOKEN_COMMA } from '@nunjucks/lexer';
 import {
   nodes,
 } from '../../nodes/index.js';

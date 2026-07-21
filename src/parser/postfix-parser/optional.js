@@ -1,4 +1,4 @@
-import { TOKEN_SYMBOL, TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_COMMA, TOKEN_LEFT_BRACKET } from '../../lexer/token-types.js';
+import { TOKEN_SYMBOL, TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_COMMA, TOKEN_LEFT_BRACKET } from '@nunjucks/lexer';
 import { nodes } from '../../nodes/index.js';
 import { nextToken, peekToken, fail } from '../cursor.js';
 import { BracketNotation } from './lookup.js';

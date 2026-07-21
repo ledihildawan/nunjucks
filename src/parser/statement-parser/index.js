@@ -27,7 +27,7 @@ import {
   TOKEN_DATA,
   TOKEN_WHITESPACE,
   TOKEN_REGEX,
-} from '../../lexer/token-types.js';
+} from '@nunjucks/lexer';
 import { peekToken, fail } from '../cursor.js';
 import { parseFor } from './for.js';
 import { parseMacro } from './macro.js';

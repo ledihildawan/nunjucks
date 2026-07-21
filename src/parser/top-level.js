@@ -3,7 +3,8 @@ import {
   TOKEN_COMMENT,
   TOKEN_DATA,
   TOKEN_VARIABLE_START,
-} from '../lexer/token-types.js';
+  TOKEN_RAW,
+} from '@nunjucks/lexer';
 import { nodes } from '../nodes/index.js';
 import {
   nextToken,
@@ -11,6 +12,7 @@ import {
   advanceAfterVariableEnd,
   fail,
 } from './cursor.js';
+import { parseRaw } from './statement-parser/raw.js';
 
 export const parseUntilBlocks = (ctx, ...blockNames) => {
   const prev = ctx.breakOnBlocks;
@@ -68,6 +70,19 @@ export const parseNodes = (ctx) => {
       ctx.dropLeadingWhitespace = tok.value.charAt(
         tok.value.length - ctx.tokens.tags.COMMENT_END.length - 1
       ) === '-';
+    } else if (tok.type === TOKEN_RAW) {
+      ctx.dropLeadingWhitespace = false;
+      let rawContent = tok.value;
+      if (typeof rawContent === 'string') {
+        rawContent = rawContent
+          .replace(/^({%\s*raw\s*%})/, '')
+          .replace(/({%\s*endraw\s*%})$/, '');
+      }
+      buf.push(nodes.output(
+        tok.lineno,
+        tok.colno,
+        [nodes.templateData(tok.lineno, tok.colno, rawContent)]
+      ));
     } else {
       fail(ctx, 'Unexpected token at top-level: ' +
         tok.type, tok.lineno, tok.colno);

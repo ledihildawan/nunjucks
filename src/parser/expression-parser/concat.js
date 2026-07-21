@@ -1,5 +1,5 @@
 import { nodes } from '../../nodes/index.js';
-import { TOKEN_OPERATOR } from '../../lexer/token-types.js';
+import { TOKEN_OPERATOR } from '@nunjucks/lexer';
 import { peekToken, nextToken } from '../cursor.js';
 import { parseAdd } from './arithmetic.js';
 

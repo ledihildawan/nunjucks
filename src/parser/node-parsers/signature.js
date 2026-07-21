@@ -4,7 +4,7 @@ import {
   TOKEN_LEFT_PAREN,
   TOKEN_OPERATOR,
   TOKEN_RIGHT_PAREN,
-} from '../../lexer/token-types.js';
+} from '@nunjucks/lexer';
 import {
   nodes,
 } from '../../nodes/index.js';

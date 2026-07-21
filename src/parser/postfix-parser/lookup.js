@@ -1,7 +1,7 @@
 import {
   TOKEN_COLON,
   TOKEN_RIGHT_BRACKET,
-} from '../../lexer/token-types.js';
+} from '@nunjucks/lexer';
 import { nodes, BracketNotation } from '../../nodes/index.js';
 import { peekToken, skip, expect } from '../cursor.js';
 

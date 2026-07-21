@@ -1,4 +1,4 @@
-import { TOKEN_SYMBOL } from '../../lexer/token-types.js';
+import { TOKEN_SYMBOL } from '@nunjucks/lexer';
 import { nodes } from '../../nodes/index.js';
 import { nextToken, fail } from '../cursor.js';
 import { BracketNotation } from './lookup.js';

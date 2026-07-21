@@ -2,7 +2,7 @@ import {
   TOKEN_LEFT_BRACKET,
   TOKEN_LEFT_PAREN,
   TOKEN_OPERATOR,
-} from '../../lexer/token-types.js';
+} from '@nunjucks/lexer';
 import { nodes } from '../../nodes/index.js';
 import { nextToken, peekToken, fail } from '../cursor.js';
 import { parseFunCall } from './fun-call.js';

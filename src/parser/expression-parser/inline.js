@@ -1,7 +1,7 @@
 import { nodes } from '../../nodes/index.js';
 import { skipSymbol, skipValue, peekToken, nextToken } from '../cursor.js';
 import { parseOr } from './logical.js';
-import { TOKEN_OPERATOR, TOKEN_PIPEFORWARD, TOKEN_COLON, TOKEN_INT, TOKEN_FLOAT, TOKEN_STRING } from '../../lexer/token-types.js';
+import { TOKEN_OPERATOR, TOKEN_PIPEFORWARD, TOKEN_COLON, TOKEN_INT, TOKEN_FLOAT, TOKEN_STRING } from '@nunjucks/lexer';
 
 const tokenToLiteral = (tok) => {
   switch (tok.type) {

@@ -1,6 +1,6 @@
 import { nodes } from '../../nodes/index.js';
 import { peekToken, skipSymbol, skipOperator, nextToken } from '../cursor.js';
-import { TOKEN_OPERATOR } from '../../lexer/token-types.js';
+import { TOKEN_OPERATOR } from '@nunjucks/lexer';
 import { parseNullishCoalesce } from './nullish.js';
 import { parseIn } from './in.js';
 

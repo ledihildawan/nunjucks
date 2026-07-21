@@ -4,7 +4,7 @@ import {
   TOKEN_LEFT_PAREN,
   TOKEN_RIGHT_PAREN,
   TOKEN_OPERATOR,
-} from '../../lexer/token-types.js';
+} from '@nunjucks/lexer';
 import { nodes } from '../../nodes/index.js';
 import { peekToken, skipSymbol, skip, skipValue, nextToken, advanceAfterBlockEnd, fail } from '../cursor.js';
 import { tryParsePattern } from '../node-parsers/index.js';

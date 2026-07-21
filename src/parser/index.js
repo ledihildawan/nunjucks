@@ -1,4 +1,4 @@
-import { lex } from '../lexer/tokenizer.js';
+import { lex } from '@nunjucks/lexer';
 import {
   nodes,
 } from '../nodes/index.js';

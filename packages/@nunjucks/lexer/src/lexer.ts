@@ -2,8 +2,9 @@ import type { LexerOptions } from './types';
 import type { Token } from './token-types';
 import { createState, advance } from './state';
 import { tokenizers } from './tokenizers';
+import { createDelimiters } from './delimiters';
 
-export function* lex(src: string, opts: LexerOptions = {}): Generator<Token, void, unknown> {
+function* lexGenerator(src: string, opts: LexerOptions = {}): Generator<Token, void, unknown> {
   let state = createState(src, opts);
 
   while (state.index < state.str.length) {
@@ -26,8 +27,9 @@ export function* lex(src: string, opts: LexerOptions = {}): Generator<Token, voi
   }
 }
 
-export function createTokenizer(src: string, opts: LexerOptions = {}) {
-  const generator = lex(src, opts);
+export function lex(src: string, opts: LexerOptions = {}) {
+  const generator = lexGenerator(src, opts);
+  const tags = createDelimiters(opts.tags);
 
   return {
     nextToken: (): Token | null => {
@@ -35,5 +37,10 @@ export function createTokenizer(src: string, opts: LexerOptions = {}) {
       if (result.done) return null;
       return result.value;
     },
+    tags,
+    trimBlocks: Boolean(opts.trimBlocks),
+    lstripBlocks: Boolean(opts.lstripBlocks),
   };
 }
+
+export { lex as createTokenizer };

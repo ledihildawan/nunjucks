@@ -7,7 +7,7 @@ import {
   TOKEN_REGEX,
   TOKEN_SYMBOL,
   TOKEN_TEMPLATE_LITERAL,
-} from '../../lexer/token-types.js';
+} from '@nunjucks/lexer';
 import { nodes } from '../../nodes/index.js';
 import { nextToken, pushToken, fail } from '../cursor.js';
 import { tryParsePattern } from '../node-parsers/index.js';

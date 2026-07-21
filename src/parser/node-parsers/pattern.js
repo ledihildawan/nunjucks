@@ -9,7 +9,7 @@ import {
   TOKEN_OPERATOR,
   TOKEN_STRING,
   TOKEN_SYMBOL,
-} from '../../lexer/token-types.js';
+} from '@nunjucks/lexer';
 import { nodes } from '../../nodes/index.js';
 import { nextToken, peekToken, skip, fail } from '../cursor.js';
 

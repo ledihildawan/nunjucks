@@ -6,6 +6,7 @@ export const TOKEN_BLOCK_END = 'block-end';
 export const TOKEN_VARIABLE_START = 'variable-start';
 export const TOKEN_VARIABLE_END = 'variable-end';
 export const TOKEN_COMMENT = 'comment';
+export const TOKEN_RAW = 'raw';
 export const TOKEN_LEFT_PAREN = 'left-paren';
 export const TOKEN_RIGHT_PAREN = 'right-paren';
 export const TOKEN_LEFT_BRACKET = 'left-bracket';
@@ -36,6 +37,7 @@ export const TOKEN_TYPES = {
   VARIABLE_START: TOKEN_VARIABLE_START,
   VARIABLE_END: TOKEN_VARIABLE_END,
   COMMENT: TOKEN_COMMENT,
+  RAW: TOKEN_RAW,
   LEFT_PAREN: TOKEN_LEFT_PAREN,
   RIGHT_PAREN: TOKEN_RIGHT_PAREN,
   LEFT_BRACKET: TOKEN_LEFT_BRACKET,

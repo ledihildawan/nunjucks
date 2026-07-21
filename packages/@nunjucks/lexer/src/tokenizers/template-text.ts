@@ -7,6 +7,7 @@ export const tokenizeTemplateText: Tokenizer = (state) => {
   if (state.inCode) return null;
 
   let text = '';
+  const { lineno, colno } = state;
   let current = state;
 
   while (current.index < current.str.length) {
@@ -25,7 +26,7 @@ export const tokenizeTemplateText: Tokenizer = (state) => {
 
   if (!text) return null;
   return {
-    token: createToken('data' as TokenType, text, current.lineno, current.colno),
+    token: createToken('data' as TokenType, text, lineno, colno),
     state: current,
   };
 };

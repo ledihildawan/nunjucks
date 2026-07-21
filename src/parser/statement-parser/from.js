@@ -1,7 +1,7 @@
 import {
   TOKEN_BLOCK_END,
   TOKEN_COMMA,
-} from '../../lexer/token-types.js';
+} from '@nunjucks/lexer';
 import { nodes } from '../../nodes/index.js';
 import { nextToken, peekToken, skip, skipSymbol, fail } from '../cursor.js';
 import { parseWithContext } from './with.js';

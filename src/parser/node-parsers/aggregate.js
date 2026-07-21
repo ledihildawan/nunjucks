@@ -10,7 +10,7 @@ import {
   TOKEN_RIGHT_PAREN,
   TOKEN_SPREAD,
   TOKEN_SYMBOL,
-} from '../../lexer/token-types.js';
+} from '@nunjucks/lexer';
 import {
   nodes,
 } from '../../nodes/index.js';

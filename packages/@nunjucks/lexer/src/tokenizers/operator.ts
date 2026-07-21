@@ -6,28 +6,45 @@ import type { TokenType } from '../token-types';
 
 const { isComplexOperator } = validators;
 
+const matchTokenType = (char: string): TokenType => {
+  const map: Record<string, TokenType> = {
+    '(' : 'left-paren' as TokenType,
+    ')' : 'right-paren' as TokenType,
+    '[' : 'left-bracket' as TokenType,
+    ']' : 'right-bracket' as TokenType,
+    '{' : 'left-curly' as TokenType,
+    '}' : 'right-curly' as TokenType,
+    ',' : 'comma' as TokenType,
+    ':' : 'colon' as TokenType,
+    '|>' : 'pipe-forward' as TokenType,
+  };
+  return map[char] ?? 'operator' as TokenType;
+};
+
 export const tokenizeOperator: Tokenizer = (state) => {
   const char = getChar(state);
   if (!DELIM_CHARS.includes(char)) return null;
 
   let op = char;
-  let current = advance(state);
+  let numChars = 1;
 
-  const twoChar = char + getPeek(current);
+  const twoChar = char + getPeek(state);
   if (isComplexOperator(twoChar)) {
     op = twoChar;
-    current = advance(current);
+    numChars = 2;
 
-    const threeChar = twoChar + getPeek(current);
+    const threeCharState = advance(state, 2);
+    const threeChar = twoChar + getChar(threeCharState);
     if (isComplexOperator(threeChar)) {
       op = threeChar;
-      current = advance(current);
+      numChars = 3;
     }
   }
 
-  let type: TokenType = 'operator' as TokenType;
-  if (op === '|>') type = 'pipe-forward' as TokenType;
-  else if (op === '...') type = 'spread' as TokenType;
+  const current = advance(state, numChars);
+
+  let type: TokenType = matchTokenType(op);
+  if (op === '...') type = 'spread' as TokenType;
 
   return {
     token: createToken(type, op, state.lineno, state.colno),
