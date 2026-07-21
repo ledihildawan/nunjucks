@@ -1,0 +1,7 @@
+<h1>{{ title | upper }}</h1>
+<ul>
+{% for item in items %}
+  <li>{{ item.name | title }} - {{ item.price | round(2) }}</li>
+{% endfor %}
+</ul>
+<p>Total: {{ items | length }} items</p>

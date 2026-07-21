@@ -41,7 +41,8 @@
     "build": "bun run scripts/bundle.js",
     "lint": "eslint src/",
     "test": "bun test src/",
-    "coverage": "bun test src/ --coverage"
+    "coverage": "bun test src/ --coverage",
+    "bench": "bun run bench/run.js"
   },
   "exports": {
     ".": "./src/index.js",
