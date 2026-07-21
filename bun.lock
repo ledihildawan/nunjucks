@@ -9,6 +9,7 @@
         "@nunjucks/lexer": "workspace:*",
         "@nunjucks/log": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
+        "@nunjucks/runtime": "workspace:*",
         "@nunjucks/shared": "workspace:*",
         "@nunjucks/transformers": "workspace:*",
         "express": "5",
@@ -61,6 +62,13 @@
         "@nunjucks/nodes": "workspace:*",
       },
     },
+    "packages/@nunjucks/runtime": {
+      "name": "@nunjucks/runtime",
+      "version": "1.0.0",
+      "dependencies": {
+        "@nunjucks/nodes": "workspace:*",
+      },
+    },
     "packages/@nunjucks/shared": {
       "name": "@nunjucks/shared",
       "version": "1.0.0",
@@ -109,6 +117,8 @@
     "@nunjucks/nodes": ["@nunjucks/nodes@workspace:packages/@nunjucks/nodes"],
 
     "@nunjucks/parser": ["@nunjucks/parser@workspace:packages/@nunjucks/parser"],
+
+    "@nunjucks/runtime": ["@nunjucks/runtime@workspace:packages/@nunjucks/runtime"],
 
     "@nunjucks/shared": ["@nunjucks/shared@workspace:packages/@nunjucks/shared"],
 

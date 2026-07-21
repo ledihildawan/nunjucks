@@ -1,0 +1,15 @@
+{
+  "name": "@nunjucks/runtime",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./frame": "./src/frame.ts",
+    "./context": "./src/context.ts"
+  },
+  "dependencies": {
+    "@nunjucks/nodes": "workspace:*"
+  },
+  "description": "Runtime for Nunjucks template engine"
+}
