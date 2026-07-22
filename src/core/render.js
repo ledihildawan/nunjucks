@@ -12,39 +12,53 @@ import { createLog, injectWarningsScript, ERROR_DEFINITIONS } from '@nunjucks/lo
 import { findContextKeyPosition, wrapWithLog } from './diagnostics.js';
 import { getLoader } from './engine.js';
 import { createEnv } from './env.js';
+import { createTemplate } from '../template/index.js';
 
 const resolveTemplateSource = async (template, loader, config) => {
-  let templateSource = template;
-  let templatePath;
-
-  if (loader && !template.includes('{{') && !template.includes('{%') && !template.includes('{#')) {
-    try {
-      const source = await loader.getSource(template);
-      if (source && source.src) {
-        templateSource = source.src;
-        if (!config.templatePath) {
-          templatePath = source.path;
-        }
-      }
-    } catch (loaderErr) {
-      const code = loaderErr && loaderErr.code;
-      if (code === 'ENOENT' || code === 'MODULE_NOT_FOUND' || code === 'ERR_MODULE_NOT_FOUND') {
-        // Fall back to treating template as inline template string
-      } else {
-        throw loaderErr;
-      }
-    }
+  if (!loader || template.includes('{{') || template.includes('{%') || template.includes('{#')) {
+    return { templateSource: template, templatePath: null };
   }
 
-  return { templateSource, templatePath };
+  try {
+    const source = await loader.getSource(template);
+    if (source?.src) {
+      return {
+        templateSource: source.src,
+        templatePath: config.templatePath ? null : source.path
+      };
+    }
+  } catch (loaderErr) {
+    const code = loaderErr?.code;
+    if (code === 'ENOENT' || code === 'MODULE_NOT_FOUND' || code === 'ERR_MODULE_NOT_FOUND') {
+      return { templateSource: template, templatePath: null };
+    }
+    throw loaderErr;
+  }
+
+  return { templateSource: template, templatePath: null };
 };
 
-const buildValidationError = (validationError, stamps, config, templateSource, context) => {
+const createValidationError = (validationError, stamps, config, templateSource, context) => {
   const err = new Error(validationError.message);
-  for (const [key, value] of Object.entries(stamps)) {
-    err[key] = value;
-  }
+  Object.assign(err, stamps);
   throw wrapWithLog(err, config, templateSource, context);
+};
+
+const getDangerousValueStamps = (contextError, config) => {
+  const stamps = { code: contextError.code };
+  const dangerousPaths = contextError.dangerousPaths;
+  if (!dangerousPaths?.length) return stamps;
+
+  const callerLocation = config._callerLocation;
+  if (!callerLocation || callerLocation.fileName === 'unknown') return stamps;
+
+  const pos = findContextKeyPosition(callerLocation.fileName, callerLocation.lineNumber || 1, dangerousPaths[0]);
+  if (pos) {
+    stamps.lineno = pos.line;
+    stamps.colno = pos.col;
+    stamps.lineBase = 'one';
+  }
+  return stamps;
 };
 
 const prepareSandbox = (config, context) => {
@@ -57,13 +71,15 @@ const prepareSandbox = (config, context) => {
     blocklistMode: config.sandboxMode !== 'allowlist',
     environment: config.sandboxEnvironment || 'auto'
   };
+
   const sandboxedCtx = createSandboxedContext(context, config.sandbox, sandboxOptions);
   sandboxedCtx.__nunjucks_undefined_mode = config.undefined || 'default';
-  return { sandboxedCtx };
+  return sandboxedCtx;
 };
 
 const buildRenderEnv = (loader, config) => {
   if (!loader || config.env) return;
+
   const emitter = new EventEmitter();
   config.env = createEnv({
     opts: {
@@ -79,7 +95,6 @@ const buildRenderEnv = (loader, config) => {
         if (ignoreMissing) return null;
         throw createLog('error', ERROR_DEFINITIONS.FILE_NOT_FOUND, { path: name }, name, { phase: 'load' });
       }
-      const { createTemplate } = await import('../template/index.js');
       return createTemplate(source.src, this, source.path, eagerCompile, includeChain);
     }
   });
@@ -90,15 +105,42 @@ const compileTemplate = (templateSource, config, templateName) => {
   const ast = parse(templateSource, config, templateName);
   const transformedAst = transform(ast, [], templateName);
   c.compile(transformedAst);
-  const code = c.getCode();
-  const sourceMapData = c.getSourceMap().mappings;
-  return { code, sourceMapData };
+  return { code: c.getCode(), sourceMapData: c.getSourceMap().mappings };
 };
 
-export const render = async (template, context = {}, config = {}) => {
-  config._callerFile = config._callerFile || getCallerFile();
-  config._callerLocation = config._callerLocation || getCallerLocation();
+const handleContextStrictMode = (context, config) => {
+  const warningsCollector = [];
+  const contextStrict = config.contextStrict === true || (config.contextStrict !== false && config.dev === true);
+  const dangerousValuePaths = contextStrict ? findContextDangerousValues(context, config) : [];
 
+  if (!contextStrict || dangerousValuePaths.length === 0) {
+    return { warningsCollector, dangerousValuePaths };
+  }
+
+  const errorMessage = `Context contains unsafe values: ${dangerousValuePaths.join(', ')}`;
+
+  if (config.contextStrict === 'error' || config.production === true) {
+    const err = new Error(errorMessage);
+    err.code = 'DANGEROUS_CONTEXT_VALUES';
+    err.subject = dangerousValuePaths.join(', ');
+    throw wrapWithLog(err, config, null, context);
+  }
+
+  scrubDangerousReferences(context, config.allowedGlobals);
+  warningsCollector.push(createLog('warning', {
+    name: 'DANGEROUS_CONTEXT_VALUE_SCRUBBED',
+    message: () => `Scrubbed unsafe values from context: ${dangerousValuePaths.join(', ')}`,
+    pattern: /./
+  }, { values: dangerousValuePaths.join(', ') }, dangerousValuePaths.join(', '), {
+    phase: 'render',
+    lineBase: 'zero',
+    dev: config.dev ?? false
+  }));
+
+  return { warningsCollector, dangerousValuePaths };
+};
+
+const validateRenderInput = (template, config, context) => {
   if (typeof template !== 'string') {
     const err = createLog('error', ERROR_DEFINITIONS.TEMPLATE_MUST_BE_STRING, {}, null, { phase: 'render' });
     throw wrapWithLog(err, config, template, context);
@@ -106,40 +148,37 @@ export const render = async (template, context = {}, config = {}) => {
 
   const validation = validateConfig(config);
   if (!validation.valid) {
-    const validationError = validation.errors[0];
-    buildValidationError(validationError, { code: validationError.code, subject: validationError.subject }, config, template, context);
+    const ve = validation.errors[0];
+    createValidationError(ve, { code: ve.code, subject: ve.subject }, config, template, context);
   }
+
+  const templateValidation = validateTemplate(template, config);
+  if (!templateValidation.valid) {
+    const ve = templateValidation.errors[0];
+    createValidationError(ve, { lineno: ve.lineno, colno: ve.colno, code: ve.code, subject: ve.subject }, config, template, context);
+  }
+
+  const contextValidation = validateRenderContext(context, config);
+  if (!contextValidation.valid) {
+    const ce = contextValidation.errors[0];
+    const stamps = getDangerousValueStamps(ce, config);
+    createValidationError(ce, stamps, config, template, context);
+  }
+};
+
+export const render = async (template, context = {}, config = {}) => {
+  config._callerFile = config._callerFile || getCallerFile();
+  config._callerLocation = config._callerLocation || getCallerLocation();
+
+  validateRenderInput(template, config, context);
 
   const loader = getLoader(config);
   const { templateSource, templatePath } = await resolveTemplateSource(template, loader, config);
   if (templatePath) config.templatePath = templatePath;
 
-  const templateValidation = validateTemplate(template, config);
-  if (!templateValidation.valid) {
-    const validationError = templateValidation.errors[0];
-    buildValidationError(validationError, { lineno: validationError.lineno, colno: validationError.colno, code: validationError.code, subject: validationError.subject }, config, templateSource, context);
-  }
-
-  const contextValidation = validateRenderContext(context, config);
-  if (!contextValidation.valid) {
-    const contextError = contextValidation.errors[0];
-    const stamps = { code: contextError.code };
-    if (contextError.dangerousPaths && contextError.dangerousPaths.length > 0) {
-      const callerLocation = config._callerLocation;
-      if (callerLocation && callerLocation.fileName !== 'unknown') {
-        const pos = findContextKeyPosition(callerLocation.fileName, callerLocation.lineNumber || 1, contextError.dangerousPaths[0]);
-        if (pos) {
-          stamps.lineno = pos.line;
-          stamps.colno = pos.col;
-          stamps.lineBase = 'one';
-        }
-      }
-    }
-    buildValidationError(contextError, stamps, config, templateSource, context);
-  }
-
   const looksLikeFile = /\.(njk|js|html|htm|twig|ejs|eta)$/i.test(template);
   const templateName = config.templatePath || (looksLikeFile ? template : (config._callerFile || 'inline'));
+
   let code;
   let sourceMapData;
   try {
@@ -148,33 +187,8 @@ export const render = async (template, context = {}, config = {}) => {
     throw wrapWithLog(err, config, templateSource, context);
   }
 
-  const warningsCollector = [];
-
-  const contextStrict = config.contextStrict === true || (config.contextStrict !== false && config.dev === true);
-  const dangerousValuePaths = contextStrict ? findContextDangerousValues(context, config) : [];
-  if (contextStrict && dangerousValuePaths.length > 0) {
-    if (config.contextStrict === 'error' || config.production === true) {
-      const err = new Error(`Context contains unsafe values: ${dangerousValuePaths.join(', ')}`);
-      err.code = 'DANGEROUS_CONTEXT_VALUES';
-      err.subject = dangerousValuePaths.join(', ');
-      throw wrapWithLog(err, config, templateSource, context);
-    }
-    scrubDangerousReferences(context, config.allowedGlobals);
-    const warning = createLog('warning', {
-      name: 'DANGEROUS_CONTEXT_VALUE_SCRUBBED',
-      message: () => `Scrubbed unsafe values from context: ${dangerousValuePaths.join(', ')}`,
-      pattern: /./
-    }, { values: dangerousValuePaths.join(', ') }, dangerousValuePaths.join(', '), {
-      phase: 'render',
-      templateName: templateName,
-      lineBase: 'zero',
-      dev: config.dev ?? false
-    });
-    warningsCollector.push(warning);
-  }
-
-  const { sandboxedCtx } = prepareSandbox(config, context);
-
+  const { warningsCollector } = handleContextStrictMode(context, config);
+  const sandboxedCtx = prepareSandbox(config, context);
   buildRenderEnv(loader, config);
 
   let result;
@@ -187,16 +201,14 @@ export const render = async (template, context = {}, config = {}) => {
       renderContext: context
     });
 
-    if (config.executionTimeout > 0) {
-      result = await withTimeout(renderPromise, config.executionTimeout);
-    } else {
-      result = await renderPromise;
-    }
+    result = config.executionTimeout > 0
+      ? await withTimeout(renderPromise, config.executionTimeout)
+      : await renderPromise;
   } catch (err) {
     throw wrapWithLog(err, config, templateSource, context);
   }
 
-  if (warningsCollector.length > 0 && (config.dev ?? false)) {
+  if (warningsCollector.length > 0 && config.dev) {
     result = result + injectWarningsScript(warningsCollector, { dev: true, verbosity: 'medium' });
   }
 
@@ -204,45 +216,50 @@ export const render = async (template, context = {}, config = {}) => {
 };
 
 export const renderWithEnv = async (templateName, env, context = {}, config = {}) => {
+  const fullConfig = { ...config, templatePath: config.templatePath || templateName, env };
+
   const validation = validateConfig(config);
   if (!validation.valid) {
-    const validationError = validation.errors[0];
-    const err = new Error(validationError.message);
-    err.code = validationError.code;
-    err.subject = validationError.subject;
-    throw wrapWithLog(err, { ...config, templatePath: config.templatePath || templateName, env }, null, context);
+    const ve = validation.errors[0];
+    const err = createLog('error', {
+      name: ve.code || 'CONFIG_ERROR',
+      message: () => ve.message,
+      pattern: /./,
+    }, {}, ve.message, {
+      phase: 'render',
+      templateName: fullConfig.templatePath,
+      lineBase: 'zero'
+    });
+    throw wrapWithLog(err, fullConfig, null, context);
   }
 
   const contextValidation = validateRenderContext(context, config);
   if (!contextValidation.valid) {
-    const contextError = contextValidation.errors[0];
-    const err = new Error(contextError.message);
-    err.code = contextError.code;
-    if (contextError.dangerousPaths && contextError.dangerousPaths.length > 0) {
-      const callerLocation = config._callerLocation;
-      if (callerLocation && callerLocation.fileName !== 'unknown') {
-        const pos = findContextKeyPosition(callerLocation.fileName, callerLocation.lineNumber || 1, contextError.dangerousPaths[0]);
-        if (pos) {
-          err.lineno = pos.line;
-          err.colno = pos.col;
-          err.lineBase = 'one';
-        }
-      }
-    }
-    throw wrapWithLog(err, { ...config, templatePath: config.templatePath || templateName, env }, null, context);
+    const ce = contextValidation.errors[0];
+    const stamps = getDangerousValueStamps(ce, config);
+    const err = createLog('error', {
+      name: ce.code || 'CONTEXT_ERROR',
+      message: () => ce.message,
+      pattern: /./,
+    }, {}, ce.message, {
+      phase: 'render',
+      templateName: fullConfig.templatePath,
+      lineBase: 'zero',
+      ...stamps
+    });
+    throw wrapWithLog(err, fullConfig, null, context);
   }
 
   let template;
   try {
     template = await env.getTemplate(templateName, true, templateName, false);
-    
+
     if (typeof template.render === 'function') {
-      const result = await template.render(context);
-      return result;
+      return await template.render(context);
     }
-    
+
     throw createLog('error', ERROR_DEFINITIONS.TEMPLATE_NO_RENDER, {}, null, { phase: 'render' });
   } catch (err) {
-    throw wrapWithLog(err, { ...config, templatePath: config.templatePath || templateName, env }, template?.tmplStr ?? null, context);
+    throw wrapWithLog(err, fullConfig, template?.tmplStr ?? null, context);
   }
 };

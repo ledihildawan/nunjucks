@@ -1,7 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import nunjucks from '../../../src/index.js';
-import { createSandboxedContext } from '../../../src/runtime/sandbox.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -67,6 +66,7 @@ const errorRoutes = [
 ];
 
 import express from 'express';
+import { createSandboxedContext } from '@nunjucks/runtime';
 const router = express.Router();
 
 errorRoutes.forEach(({ path: routePath, template, context, filters }) => {

@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
 import EventEmitter from 'events';
-import nunjucks from '../index.js';
+import { renderWithEnv } from '../core/render.js';
 import { createFileSystemLoader } from '../loaders/index.js';
 import { createTemplate } from '../template/index.js';
 import { createEnv } from '../core/env.js';
@@ -12,7 +12,7 @@ export function createEngine(config = {}) {
   return function nunjucksExpressEngine(filePath, options, callback) {
     const viewsPath = path.dirname(filePath);
     const loader = createFileSystemLoader(viewsPath, { noCache: config.dev || false });
-    
+
     const emitter = new EventEmitter();
 
     const env = createEnv({
@@ -30,18 +30,17 @@ export function createEngine(config = {}) {
         return template;
       }
     });
-    
+
     const templateName = path.basename(filePath);
     const envWithPath = Object.create(env);
     envWithPath.templatePath = filePath;
     const renderConfig = { ...config, templatePath: filePath };
-    nunjucks.renderWithEnv(templateName, envWithPath, options, renderConfig)
+    renderWithEnv(templateName, envWithPath, options, renderConfig)
       .then(html => callback(null, html))
       .catch(async err => {
-        if (!err.sourceContent && err.templateName) {
+        if (!err.sourceContent && filePath) {
           try {
-            const templatePath = err.templateName.replace(/\//g, path.sep);
-            err.sourceContent = await readFile(templatePath, 'utf-8');
+            err.sourceContent = await readFile(filePath, 'utf-8');
           } catch (e) {
             err.sourceReadError = e;
           }

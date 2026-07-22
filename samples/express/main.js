@@ -1,6 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createEngine } from '../../src/index.js';
+import { createEngine } from '../../src/integrations/express.js';
 import nunjucks from '../../src/index.js';
 import express from 'express';
 
@@ -39,14 +39,6 @@ app.get('/file-error', (req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-  if (!err.sourceContent && err.templateName) {
-    try {
-      const fs = require('fs');
-      const templatePath = err.templateName.replace(/\//g, path.sep);
-      err.sourceContent = fs.readFileSync(templatePath, 'utf-8');
-    } catch (e) {
-    }
-  }
   console.log(err.output({ format: 'ansi' }));
   res.status(500).type('html').send(err.output());
 });
