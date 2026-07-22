@@ -29,41 +29,38 @@ import {
   fromIterator,
   inOperator,
 } from '@nunjucks/runtime';
-import { createObj } from '@nunjucks/shared';
 import { createEnv, extractBlocks } from '../core/env.js';
 
 const Template = Symbol('Template');
 
-const createRuntimeWithContext = (templatePath, envOpts, renderContext = null) => {
-  return {
-    createFrame,
-    createSafeString,
-    copySafeness,
-    markSafe,
-    makeMacro,
-    makeKeywordArgs,
-    memberLookup,
-    optionalMemberLookup,
-    slice,
-    nullishCoalesce,
-    suppressValue,
-    awaitValue,
-    ensureDefined,
-    callWrap,
-    contextOrFrameLookup,
-    handleError,
-    fromIterator,
-    inOperator,
-    isArray,
-    keys,
-    __warnings__: [],
-    logContext: {
-      templateName: templatePath || 'inline',
-      phase: 'render',
-      renderContext
-    }
-  };
-};
+const createRuntimeWithContext = (templatePath, envOpts, renderContext = null) => ({
+  createFrame,
+  createSafeString,
+  copySafeness,
+  markSafe,
+  makeMacro,
+  makeKeywordArgs,
+  memberLookup,
+  optionalMemberLookup,
+  slice,
+  nullishCoalesce,
+  suppressValue,
+  awaitValue,
+  ensureDefined,
+  callWrap,
+  contextOrFrameLookup,
+  handleError,
+  fromIterator,
+  inOperator,
+  isArray,
+  keys,
+  __warnings__: [],
+  logContext: {
+    templateName: templatePath || 'inline',
+    phase: 'render',
+    renderContext
+  }
+});
 
 const getLoaderSourceMap = (env, errorPath, currentPath) => {
   if (errorPath === currentPath || !env?.loaders) return null;
@@ -116,198 +113,219 @@ const createFallbackEnv = () => createEnv({
   }
 });
 
+const createTemplateErrorHandler = (state) => {
+  const enrichError = (e) => {
+    if (!e.path) e.path = state.path;
+
+    const sourceLineno = e.lineno;
+    const sourceColno = e.colno;
+    const errorPath = e.path;
+    const hasIncludeChain = e._includeChain || state._includeChain;
+    let sourceMap = state.tmplProps?.__sourceMap;
+
+    if (errorPath !== state.path && state.env && !hasIncludeChain) {
+      sourceMap = getLoaderSourceMap(state.env, errorPath, state.path) || sourceMap;
+    }
+
+    return extractFrameDetails(e, sourceLineno, sourceColno, sourceMap, state.path, hasIncludeChain) || e;
+  };
+
+  return { enrichError };
+};
+
+const createTemplateCompiler = (state) => {
+  const compile = () => {
+    const startTime = Date.now();
+    state.env.emit(HOOK_EVENTS.TEMPLATE_COMPILE_START, { template: state, path: state.path });
+
+    try {
+      let props;
+      if (state.tmplProps) {
+        props = state.tmplProps;
+      } else {
+        const c = createCompiler(state.path, state.env.opts.undefined, state.tmplStr);
+        const ast = parse(state.tmplStr, state.env.opts, state.path);
+        const transformedAst = transform(ast, state.env.extensionsList, state.path);
+        c.compile(transformedAst);
+        const code = c.getCode();
+        props = new Function(code)();
+      }
+
+      state.blocks = extractBlocks(props);
+      state.blockMeta = props.__blockMeta || {};
+      state.rootRenderFunc = props.root;
+      state.compiled = true;
+
+      state.env.emit(HOOK_EVENTS.TEMPLATE_COMPILE_COMPLETE, { template: state, path: state.path, duration: Date.now() - startTime });
+    } catch (error) {
+      state.env.emit(HOOK_EVENTS.TEMPLATE_COMPILE_ERROR, { template: state, path: state.path, error, duration: Date.now() - startTime });
+      throw error;
+    }
+  };
+
+  const safeCompile = async () => {
+    try {
+      compile();
+    } catch (e) {
+      throw prettifyError({ path: state.path, withInternals: state.env.opts.dev, err: e });
+    }
+  };
+
+  const safeCompileSync = () => {
+    if (!state.compiled) {
+      compile();
+    }
+  };
+
+  return { compile, safeCompile, safeCompileSync };
+};
+
+const createTemplateRenderer = (state, errorHandler) => {
+  const { enrichError } = errorHandler;
+
+  const render = async (ctx, parentFrame) => {
+    await state.compiler.safeCompile();
+
+    if (state.env._renderingTemplates.has(state.path)) {
+      throw createLog('error', ERROR_DEFINITIONS.CIRCULAR_INCLUDE, { path: state.path }, state.path, { phase: 'render' });
+    }
+
+    state.env._renderingTemplates.add(state.path);
+
+    const context = createContext(ctx || {}, state.blocks, state.env, { blockLocations: state.blockMeta });
+    const frame = parentFrame ? parentFrame.push(true) : createFrame();
+    frame.topLevel = true;
+
+    try {
+      const runtime = createRuntimeWithContext(state.path, state.env.opts, ctx || {});
+      const result = await state.rootRenderFunc(state.env, context, frame, runtime);
+      if (runtime.__warnings__?.length > 0 && state.env.opts.dev) {
+        return result + injectWarningsScript(runtime.__warnings__, { dev: true, verbosity: 'medium' });
+      }
+      return result;
+    } catch (e) {
+      throw prettifyError({
+        path: e.path || state.path,
+        withInternals: state.env.opts.dev,
+        err: enrichError(e),
+        includeChain: e._includeChain || state._includeChain
+      });
+    } finally {
+      state.env._renderingTemplates.delete(state.path);
+    }
+  };
+
+  const renderSync = (ctx, parentFrame) => {
+    state.compiler.safeCompileSync();
+
+    if (state.env._renderingTemplates.has(state.path)) {
+      throw createLog('error', ERROR_DEFINITIONS.CIRCULAR_INCLUDE, { path: state.path }, state.path, { phase: 'render' });
+    }
+
+    state.env._renderingTemplates.add(state.path);
+
+    const context = createContext(ctx || {}, state.blocks, state.env, { blockLocations: state.blockMeta });
+    const frame = parentFrame ? parentFrame.push(true) : createFrame();
+    frame.topLevel = true;
+
+    try {
+      const runtime = createRuntimeWithContext(state.path, state.env.opts, ctx || {});
+      const result = state.rootRenderFunc(state.env, context, frame, runtime);
+      if (runtime.__warnings__?.length > 0 && state.env.opts.dev) {
+        return result + injectWarningsScript(runtime.__warnings__, { dev: true, verbosity: 'medium' });
+      }
+      return result;
+    } catch (e) {
+      throw prettifyError({
+        path: e.path || state.path,
+        withInternals: state.env.opts.dev,
+        err: enrichError(e),
+        includeChain: e._includeChain || state._includeChain
+      });
+    } finally {
+      state.env._renderingTemplates.delete(state.path);
+    }
+  };
+
+  return { render, renderSync };
+};
+
 export function createTemplate(src, env, path, eagerCompile, includeChain) {
-  const obj = createObj({
-    name: 'Template',
+  const state = {
+    env: env || createFallbackEnv(),
+    path,
+    _includeChain: includeChain || null,
+    tmplStr: null,
+    tmplProps: null,
+    blocks: {},
+    blockMeta: {},
+    rootRenderFunc: null,
+    compiled: false,
+  };
+
+  if (isPlainObject(src)) {
+    switch (src.type) {
+      case 'code':
+        state.tmplProps = src.obj;
+        break;
+      case 'string':
+        state.tmplStr = src.obj;
+        break;
+      default:
+        throw createLog('error', ERROR_DEFINITIONS.TEMPLATE_INVALID_SOURCE, { type: src.type }, src.type, { phase: 'load' });
+    }
+  } else if (isString(src)) {
+    state.tmplStr = src;
+  } else {
+    throw createLog('error', ERROR_DEFINITIONS.TEMPLATE_SRC_STRING, {}, null, { phase: 'load' });
+  }
+
+  const errorHandler = createTemplateErrorHandler(state);
+  state.compiler = createTemplateCompiler(state);
+  const renderer = createTemplateRenderer(state, errorHandler);
+
+  if (eagerCompile) {
+    try {
+      state.compiler.compile();
+    } catch (err) {
+      throw prettifyError({ path: state.path, withInternals: state.env.opts.dev, err });
+    }
+  }
+
+  const template = {
     [Template]: true,
-    init: function(srcArg, envArg, pathArg, eagerCompileArg, includeChainArg) {
-      this.env = envArg || createFallbackEnv();
-      this.path = pathArg;
-      this._includeChain = includeChainArg || null;
-
-      if (isPlainObject(srcArg)) {
-        switch (srcArg.type) {
-          case 'code':
-            this.tmplProps = srcArg.obj;
-            break;
-          case 'string':
-            this.tmplStr = srcArg.obj;
-            break;
-          default: {
-            throw createLog('error', ERROR_DEFINITIONS.TEMPLATE_INVALID_SOURCE, { type: srcArg.type }, srcArg.type, { phase: 'load' });
-          }
-        }
-      } else if (isString(srcArg)) {
-        this.tmplStr = srcArg;
-      } else {
-        throw createLog('error', ERROR_DEFINITIONS.TEMPLATE_SRC_STRING, {}, null, { phase: 'load' });
-      }
-
-      if (eagerCompileArg) {
-        try {
-          this._compile();
-        } catch (err) {
-          throw prettifyError({ path: this.path, withInternals: this.env.opts.dev, err });
-        }
-      } else {
-        this.compiled = false;
-      }
-    },
-    render: async function(ctx, parentFrame) {
-      await this._safeCompile();
-
-      if (this.env._renderingTemplates.has(this.path)) {
-        throw createLog('error', ERROR_DEFINITIONS.CIRCULAR_INCLUDE, { path: this.path }, this.path, { phase: 'render' });
-      }
-
-      this.env._renderingTemplates.add(this.path);
-
-      const context = createContext(ctx || {}, this.blocks, this.env, { blockLocations: this.blockMeta });
-      const frame = parentFrame ? parentFrame.push(true) : createFrame();
-      frame.topLevel = true;
-
+    get env() { return state.env; },
+    get path() { return state.path; },
+    get compiled() { return state.compiled; },
+    get blocks() { return state.blocks; },
+    get blockMeta() { return state.blockMeta; },
+    get rootRenderFunc() { return state.rootRenderFunc; },
+    render: renderer.render,
+    renderSync: renderer.renderSync,
+    compile: () => state.compiler.compile(),
+    getExported: async (ctx, parentFrame) => {
       try {
-        const runtime = createRuntimeWithContext(this.path, this.env.opts, ctx || {});
-        const result = await this.rootRenderFunc(this.env, context, frame, runtime);
-        if (runtime.__warnings__ && runtime.__warnings__.length > 0 && this.env.opts.dev) {
-          const script = injectWarningsScript(runtime.__warnings__, { dev: true, verbosity: 'medium' });
-          return result + script;
-        }
-        return result;
+        await state.compiler.safeCompile();
       } catch (e) {
-        const errorWithPath = this._enrichError(e);
-        throw prettifyError({
-          path: e.path || this.path,
-          withInternals: this.env.opts.dev,
-          err: errorWithPath,
-          includeChain: e._includeChain || this._includeChain
-        });
-      } finally {
-        this.env._renderingTemplates.delete(this.path);
-      }
-    },
-    renderSync: function(ctx, parentFrame) {
-      this._safeCompileSync();
-
-      if (this.env._renderingTemplates.has(this.path)) {
-        throw createLog('error', ERROR_DEFINITIONS.CIRCULAR_INCLUDE, { path: this.path }, this.path, { phase: 'render' });
-      }
-
-      this.env._renderingTemplates.add(this.path);
-
-      const context = createContext(ctx || {}, this.blocks, this.env, { blockLocations: this.blockMeta });
-      const frame = parentFrame ? parentFrame.push(true) : createFrame();
-      frame.topLevel = true;
-
-      try {
-        const runtime = createRuntimeWithContext(this.path, this.env.opts, ctx || {});
-        const result = this.rootRenderFunc(this.env, context, frame, runtime);
-        if (runtime.__warnings__ && runtime.__warnings__.length > 0 && this.env.opts.dev) {
-          const script = injectWarningsScript(runtime.__warnings__, { dev: true, verbosity: 'medium' });
-          return result + script;
-        }
-        return result;
-      } catch (e) {
-        const errorWithPath = this._enrichError(e);
-        throw prettifyError({
-          path: e.path || this.path,
-          withInternals: this.env.opts.dev,
-          err: errorWithPath,
-          includeChain: e._includeChain || this._includeChain
-        });
-      } finally {
-        this.env._renderingTemplates.delete(this.path);
-      }
-    },
-    _safeCompileSync: function() {
-      if (!this.compiled) {
-        this.compile();
-      }
-    },
-    _safeCompile: async function() {
-      try {
-        await this.compile();
-      } catch (e) {
-        throw prettifyError({ path: this.path, withInternals: this.env.opts.dev, err: e });
-      }
-    },
-    _enrichError: function(e) {
-      if (!e.path) e.path = this.path;
-
-      const sourceLineno = e.lineno;
-      const sourceColno = e.colno;
-      const errorPath = e.path;
-      const hasIncludeChain = e._includeChain || this._includeChain;
-      let sourceMap = this.tmplProps?.__sourceMap;
-
-      if (errorPath !== this.path && this.env && !hasIncludeChain) {
-        sourceMap = getLoaderSourceMap(this.env, errorPath, this.path) || sourceMap;
-      }
-
-      const enriched = extractFrameDetails(e, sourceLineno, sourceColno, sourceMap, this.path, hasIncludeChain);
-      return enriched || e;
-    },
-    getExported: async function(ctx, parentFrame) {
-      try {
-        await this.compile();
-      } catch (e) {
-        throw prettifyError({ path: this.path, withInternals: this.env.opts.dev, err: e, includeChain: this._includeChain });
+        throw prettifyError({ path: state.path, withInternals: state.env.opts.dev, err: e, includeChain: state._includeChain });
       }
 
       const frame = parentFrame ? parentFrame.push() : createFrame();
       frame.topLevel = true;
 
-      const context = createContext(ctx || {}, this.blocks, this.env, { blockLocations: this.blockMeta });
+      const context = createContext(ctx || {}, state.blocks, state.env, { blockLocations: state.blockMeta });
       try {
-        const runtime = createRuntimeWithContext(this.path, this.env.opts, ctx || {});
-        await this.rootRenderFunc(this.env, context, frame, runtime);
+        const runtime = createRuntimeWithContext(state.path, state.env.opts, ctx || {});
+        await state.rootRenderFunc(state.env, context, frame, runtime);
         return context.getExported();
       } catch (e) {
-        if (!e.path) e.path = this.path;
-        throw prettifyError({ path: e.path, withInternals: this.env.opts.dev, err: e, includeChain: this._includeChain });
+        if (!e.path) e.path = state.path;
+        throw prettifyError({ path: e.path, withInternals: state.env.opts.dev, err: e, includeChain: state._includeChain });
       }
     },
-    compile: async function() {
-      if (!this.compiled) {
-        this._compile();
-      }
-    },
-    _compile: function() {
-      const startTime = Date.now();
-      this.env.emit(HOOK_EVENTS.TEMPLATE_COMPILE_START, { template: this, path: this.path });
+  };
 
-      let props;
-
-      try {
-        if (this.tmplProps) {
-          props = this.tmplProps;
-        } else {
-          const c = createCompiler(this.path, this.env.opts.undefined, this.tmplStr);
-          const ast = parse(this.tmplStr, this.env.opts, this.path);
-          const transformedAst = transform(ast, this.env.extensionsList, this.path);
-          c.compile(transformedAst);
-          const code = c.getCode();
-          const func = new Function(code);
-          props = func();
-        }
-
-        this.blocks = this._getBlocks(props);
-        this.blockMeta = props.__blockMeta || {};
-        this.rootRenderFunc = props.root;
-        this.compiled = true;
-
-        this.env.emit(HOOK_EVENTS.TEMPLATE_COMPILE_COMPLETE, { template: this, path: this.path, duration: Date.now() - startTime });
-      } catch (error) {
-        this.env.emit(HOOK_EVENTS.TEMPLATE_COMPILE_ERROR, { template: this, path: this.path, error, duration: Date.now() - startTime });
-        throw error;
-      }
-    },
-    _getBlocks: function(props) {
-      return extractBlocks(props);
-    },
-  });
-  obj.init(src, env, path, eagerCompile);
-  return obj;
+  return template;
 }
 
 export const isTemplate = (obj) => obj?.[Template] === true;

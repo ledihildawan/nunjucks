@@ -15,3 +15,23 @@ export const getLoader = (config) => {
   cachedViewsPath = viewsPath;
   return cachedLoader;
 };
+
+export const createEngine = (config = {}) => {
+  let engineCachedLoader = null;
+  let engineCachedViewsPath = null;
+
+  return {
+    getLoader: (cfg) => {
+      const viewsPath = cfg.views || cfg.root;
+      if (!viewsPath) return null;
+
+      if (engineCachedLoader && engineCachedViewsPath === viewsPath) {
+        return engineCachedLoader;
+      }
+
+      engineCachedLoader = createFileSystemLoader(viewsPath, { noCache: cfg.dev || false });
+      engineCachedViewsPath = viewsPath;
+      return engineCachedLoader;
+    }
+  };
+};

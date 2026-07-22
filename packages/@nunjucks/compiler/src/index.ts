@@ -5,7 +5,6 @@ import { add, and, array, bitwiseAnd, bitwiseLShift, bitwiseNot, bitwiseOr, bitw
 import type { Node } from '@nunjucks/nodes';
 import { createLog } from '@nunjucks/log';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
-import { createObj } from '@nunjucks/shared';
 import type { Frame } from '@nunjucks/runtime';
 import { createSourceMap } from './source-map.ts';
 import type { SourceMap } from './source-map.ts';
@@ -23,7 +22,6 @@ export interface Compiler {
   undefinedMode: UndefinedMode;
   compiledLine: number;
   sourceMap: SourceMap;
-  init: (tmplName: string | null, undefMode: UndefinedMode | undefined, src: string) => void;
   fail: (msg: string, lineno?: number, colno?: number) => void;
   pushBuffer: () => string;
   popBuffer: () => void;
@@ -53,206 +51,254 @@ export function createCompiler(
   undefinedMode: UndefinedMode | undefined,
   source: string
 ): Compiler {
-  const def: ThisType<Compiler> & Record<string, unknown> = {
-    name: 'Compiler',
-    init: function (tmplName: string | null, undefMode: UndefinedMode | undefined, src: string) {
-      this.templateName = tmplName;
-      this.codebuf = [];
-      this.lastId = 0;
-      this.buffer = null;
-      this.bufferStack = [];
-      this.scopeClosers = '';
-      this.inBlock = false;
-      this.undefinedMode = undefMode || DEFAULT_UNDEFINED_MODE;
-      this.compiledLine = 0;
-      this.sourceMap = createSourceMap(tmplName);
-    },
-    fail: function (msg: string, lineno?: number, colno?: number) {
-      const subject = typeof msg === 'string' ? (msg.split(':').pop() || 'compile').trim() : 'compile';
-      throw createLog('error',
-        ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE!,
-        { type: subject },
-        subject,
-        { lineno, colno, phase: 'compile', templateName: this.templateName, lineBase: 'zero' });
-    },
-    pushBuffer: function () {
-      const id = this.tmpid();
-      this.bufferStack.push(this.buffer);
-      this.buffer = id;
-      this.emit(`let ${this.buffer} = "";`);
-      return id;
-    },
-    popBuffer: function () {
-      this.buffer = this.bufferStack.pop() as string | null;
-    },
-    emit: function (code: string) {
-      this.codebuf.push(code);
-    },
-    emitLine: function (code: string, originalLine?: number) {
-      this.compiledLine++;
-      if (isNonNullish(originalLine)) {
-        this.sourceMap.addMapping(this.compiledLine, originalLine);
-      }
-      this.emit(code + '\n');
-    },
-    emitLineWithMapping: function (code: string, templateLine?: number, templateCol?: number) {
-      this.compiledLine++;
-      if (templateLine !== undefined) {
-        this.sourceMap.addMapping(this.compiledLine, templateLine, templateCol || 0);
-      }
-      this.emit(code + '\n');
-    },
-    trackMapping: function (templateLine?: number, templateCol?: number) {
-      if (templateLine !== undefined) {
-        this.sourceMap.addMapping(this.compiledLine, templateLine, templateCol || 0);
-      }
-    },
-    emitLineWithLineno: function (code: string, templateLine?: number, templateCol?: number) {
-      this.compiledLine++;
-      if (templateLine !== undefined) {
-        this.sourceMap.addMapping(this.compiledLine, templateLine, templateCol || 0);
-      }
-      this.emit(code + '\n');
-    },
-    emitLines: function (...lines: string[]) {
-      lines.forEach((line) => this.emitLine(line));
-    },
-    emitFuncBegin: function (node: Node, name: string) {
-      this.buffer = 'output';
-      this.scopeClosers = '';
-      this.emitLine(`async function ${name}(env, context, frame, runtime) {`);
-      this.emitLineWithMapping(`let lineno = ${node.lineno};`, node.lineno, node.colno);
-      this.emitLine(`let colno = ${node.colno != null ? node.colno : 0};`);
-      this.emitLine(`let ${this.buffer} = "";`);
-      this.emitLine('try {');
-    },
-    emitFuncEnd: function (noReturn?: boolean) {
-      if (!noReturn) {
-        this.emitLine(`return ${this.buffer};`);
-      }
+  let codebuf: string[] = [];
+  let lastId = 0;
+  let buffer: string | null = null;
+  let bufferStack: Array<string | null> = [];
+  let scopeClosers = '';
+  let inBlock = false;
+  let compiledLine = 0;
+  const sourceMap = createSourceMap(templateName);
 
-      this.closeScopeLevels();
-      this.emitLine('} catch (e) {');
-      this.emitLine('  throw runtime.handleError(e, lineno, colno, runtime);');
-      this.emitLine('}');
-      this.emitLine('}');
-      this.buffer = null;
-    },
-    addScopeLevel: function () {
-      this.scopeClosers += '})';
-    },
-    closeScopeLevels: function () {
-      if (this.scopeClosers) {
-        this.emitLine(this.scopeClosers + ';');
-      }
-      this.scopeClosers = '';
-    },
-    withScopedSyntax: function (func: () => void) {
-      const savedScopeClosers = this.scopeClosers;
-      this.scopeClosers = '';
-
-      func.call(this);
-
-      this.closeScopeLevels();
-      this.scopeClosers = savedScopeClosers;
-    },
-    tmpid: function () {
-      this.lastId++;
-      return 't_' + this.lastId;
-    },
-    getTemplateName: function () {
-      return this.templateName === null || this.templateName === undefined ? 'undefined' : JSON.stringify(this.templateName);
-    },
-    compileChildren: function (node: Node, frame?: Frame) {
-      node.children!.forEach((child) => {
-        this.compile(child, frame);
-      });
-    },
-    compileExpression: function (node: Node, frame?: Frame) {
-      this.assertType(
-        node,
-        literal,
-        symbol,
-        group,
-        array,
-        dict,
-        funCall,
-        caller,
-        pipeNode,
-        lookupVal,
-        compare,
-        inlineIf,
-        'in',
-        is,
-        and,
-        or,
-        not,
-        add,
-        concat,
-        sub,
-        mul,
-        div,
-        floorDiv,
-        mod,
-        pow,
-        neg,
-        pos,
-        compare,
-        optionalChain,
-        nullishCoalesce,
-        nodeList,
-        slice,
-        bitwiseOr,
-        bitwiseAnd,
-        bitwiseXor,
-        bitwiseLShift,
-        bitwiseRShift,
-        bitwiseNot,
-        increment,
-        decrement
-      );
-      this.compile(node, frame);
-    },
-    assertType: function (node: Node, ...types: Array<string | Function>) {
-      const typeName = getNodeTypeName(node);
-      const matches = types.some(t => {
-        if (typeof t === 'string') {
-          return typeName === t;
-        }
-        // Check by constructor name
-        if (t && t.name && typeName === t.name) {
-          return true;
-        }
-        // Check by type function - use lowercase type name
-        if (t && t.name) {
-          const tName = t.name.toLowerCase();
-          return typeName === tName;
-        }
-        return false;
-      });
-      if (!matches) {
-        const err = new Error(`assertType: invalid type: ${typeName}`) as Error & Record<string, unknown>;
-        err.code = 'ASSERT_TYPE_ERROR';
-        err.subject = typeName;
-        err.lineno = node.lineno ?? null;
-        err.colno = node.colno ?? null;
-        err.lineBase = 'zero';
-        throw err;
-      }
-    },
-    compile: function (node: Node, frame?: Frame) {
-      return compileDispatch(this, node, frame);
-    },
-    getCode: function () {
-      return this.codebuf.join('');
-    },
-    getSourceMap: function () {
-      return this.sourceMap;
-    },
+  const fail = (msg: string, lineno?: number, colno?: number) => {
+    const subject = typeof msg === 'string' ? (msg.split(':').pop() || 'compile').trim() : 'compile';
+    throw createLog('error',
+      ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE!,
+      { type: subject },
+      subject,
+      { lineno, colno, phase: 'compile', templateName, lineBase: 'zero' });
   };
-  const obj = createObj(def) as unknown as Compiler;
-  obj.init(templateName, undefinedMode, source);
-  return obj;
+
+  const pushBuffer = () => {
+    const id = tmpid();
+    bufferStack.push(buffer);
+    buffer = id;
+    emit(`let ${buffer} = "";`);
+    return id;
+  };
+
+  const popBuffer = () => {
+    buffer = bufferStack.pop() as string | null;
+  };
+
+  const emit = (code: string) => {
+    codebuf.push(code);
+  };
+
+  const emitLine = (code: string, originalLine?: number) => {
+    compiledLine++;
+    if (isNonNullish(originalLine)) {
+      sourceMap.addMapping(compiledLine, originalLine);
+    }
+    emit(code + '\n');
+  };
+
+  const emitLineWithMapping = (code: string, templateLine?: number, templateCol?: number) => {
+    compiledLine++;
+    if (templateLine !== undefined) {
+      sourceMap.addMapping(compiledLine, templateLine, templateCol || 0);
+    }
+    emit(code + '\n');
+  };
+
+  const trackMapping = (templateLine?: number, templateCol?: number) => {
+    if (templateLine !== undefined) {
+      sourceMap.addMapping(compiledLine, templateLine, templateCol || 0);
+    }
+  };
+
+  const emitLineWithLineno = (code: string, templateLine?: number, templateCol?: number) => {
+    compiledLine++;
+    if (templateLine !== undefined) {
+      sourceMap.addMapping(compiledLine, templateLine, templateCol || 0);
+    }
+    emit(code + '\n');
+  };
+
+  const emitLines = (...lines: string[]) => {
+    lines.forEach((line) => emitLine(line));
+  };
+
+  const emitFuncBegin = (node: Node, name: string) => {
+    buffer = 'output';
+    scopeClosers = '';
+    emitLine(`async function ${name}(env, context, frame, runtime) {`);
+    emitLineWithMapping(`let lineno = ${node.lineno};`, node.lineno, node.colno);
+    emitLine(`let colno = ${node.colno != null ? node.colno : 0};`);
+    emitLine(`let ${buffer} = "";`);
+    emitLine('try {');
+  };
+
+  const emitFuncEnd = (noReturn?: boolean) => {
+    if (!noReturn) {
+      emitLine(`return ${buffer};`);
+    }
+
+    closeScopeLevels();
+    emitLine('} catch (e) {');
+    emitLine('  throw runtime.handleError(e, lineno, colno, runtime);');
+    emitLine('}');
+    emitLine('}');
+    buffer = null;
+  };
+
+  const addScopeLevel = () => {
+    scopeClosers += '})';
+  };
+
+  const closeScopeLevels = () => {
+    if (scopeClosers) {
+      emitLine(scopeClosers + ';');
+    }
+    scopeClosers = '';
+  };
+
+  const withScopedSyntax = (func: () => void) => {
+    const savedScopeClosers = scopeClosers;
+    scopeClosers = '';
+
+    func();
+
+    closeScopeLevels();
+    scopeClosers = savedScopeClosers;
+  };
+
+  const tmpid = () => {
+    lastId++;
+    return 't_' + lastId;
+  };
+
+  const getTemplateName = () => {
+    return templateName === null || templateName === undefined ? 'undefined' : JSON.stringify(templateName);
+  };
+
+  const compileChildren = (node: Node, frame?: Frame) => {
+    node.children!.forEach((child) => {
+      compile(child, frame);
+    });
+  };
+
+  const compileExpression = (node: Node, frame?: Frame) => {
+    assertType(
+      node,
+      literal,
+      symbol,
+      group,
+      array,
+      dict,
+      funCall,
+      caller,
+      pipeNode,
+      lookupVal,
+      compare,
+      inlineIf,
+      'in',
+      is,
+      and,
+      or,
+      not,
+      add,
+      concat,
+      sub,
+      mul,
+      div,
+      floorDiv,
+      mod,
+      pow,
+      neg,
+      pos,
+      compare,
+      optionalChain,
+      nullishCoalesce,
+      nodeList,
+      slice,
+      bitwiseOr,
+      bitwiseAnd,
+      bitwiseXor,
+      bitwiseLShift,
+      bitwiseRShift,
+      bitwiseNot,
+      increment,
+      decrement
+    );
+    compile(node, frame);
+  };
+
+  const assertType = (node: Node, ...types: Array<string | Function>) => {
+    const typeName = getNodeTypeName(node);
+    const matches = types.some(t => {
+      if (typeof t === 'string') {
+        return typeName === t;
+      }
+      if (t && t.name && typeName === t.name) {
+        return true;
+      }
+      if (t && t.name) {
+        const tName = t.name.toLowerCase();
+        return typeName === tName;
+      }
+      return false;
+    });
+    if (!matches) {
+      const err = new Error(`assertType: invalid type: ${typeName}`) as Error & Record<string, unknown>;
+      err.code = 'ASSERT_TYPE_ERROR';
+      err.subject = typeName;
+      err.lineno = node.lineno ?? null;
+      err.colno = node.colno ?? null;
+      err.lineBase = 'zero';
+      throw err;
+    }
+  };
+
+  const compile = (node: Node, frame?: Frame) => {
+    return compileDispatch(compiler, node, frame);
+  };
+
+  const compiler: Compiler = {
+    get templateName() { return templateName; },
+    set templateName(v) { templateName = v; },
+    get codebuf() { return codebuf; },
+    set codebuf(v) { codebuf = v; },
+    get lastId() { return lastId; },
+    set lastId(v) { lastId = v; },
+    get buffer() { return buffer; },
+    set buffer(v) { buffer = v; },
+    get bufferStack() { return bufferStack; },
+    set bufferStack(v) { bufferStack = v; },
+    get scopeClosers() { return scopeClosers; },
+    set scopeClosers(v) { scopeClosers = v; },
+    get inBlock() { return inBlock; },
+    set inBlock(v) { inBlock = v; },
+    get undefinedMode() { return undefinedMode || DEFAULT_UNDEFINED_MODE; },
+    set undefinedMode(v) { undefinedMode = v; },
+    get compiledLine() { return compiledLine; },
+    set compiledLine(v) { compiledLine = v; },
+    get sourceMap() { return sourceMap; },
+    fail,
+    pushBuffer,
+    popBuffer,
+    emit,
+    emitLine,
+    emitLineWithMapping,
+    trackMapping,
+    emitLineWithLineno,
+    emitLines,
+    emitFuncBegin,
+    emitFuncEnd,
+    addScopeLevel,
+    closeScopeLevels,
+    withScopedSyntax,
+    tmpid,
+    getTemplateName,
+    compileChildren,
+    compileExpression,
+    assertType,
+    compile,
+    getCode: () => codebuf.join(''),
+    getSourceMap: () => sourceMap,
+  };
+
+  return compiler;
 }
 
 export function getSourceMap(compiler: Compiler): SourceMap {
