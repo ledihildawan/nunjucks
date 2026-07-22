@@ -1,4 +1,5 @@
 import EventEmitter from 'events';
+import { readFileSync } from 'node:fs';
 import { createCompiler } from '@nunjucks/compiler';
 import { parse } from '@nunjucks/parser';
 import { transform } from '@nunjucks/transformers';
@@ -172,6 +173,39 @@ export const render = async (template, context = {}, config = {}) => {
 
   validateRenderInput(template, config, context);
 
+  // Inline templates belong to the source file that called render(). Only
+  // infer caller metadata when the exact template exists in that file; this
+  // avoids treating a helper's own call site as the source of dynamic strings.
+  if (config._autoCallerLocation && !config.jsCaller && config._callerFile && config._callerFile !== 'unknown') {
+    try {
+      const callerLine = config._callerLocation?.lineNumber;
+      const source = readFileSync(config._callerFile, 'utf8');
+      let searchFrom = 0;
+      let foundNearCaller = false;
+      while (callerLine != null) {
+        const templateIndex = source.indexOf(template, searchFrom);
+        if (templateIndex === -1) break;
+        const occurrenceLine = source.slice(0, templateIndex).split('\n').length;
+        if (Math.abs(occurrenceLine - callerLine) <= 5) {
+          foundNearCaller = true;
+          break;
+        }
+        searchFrom = templateIndex + 1;
+      }
+      if (foundNearCaller) {
+        config.jsCaller = config._callerFile;
+      }
+    } catch {
+      // Diagnostics will fall back to the template source when the caller
+      // cannot be read.
+    }
+  }
+  if (config.jsCaller && config.jsCallerErrorLine == null) {
+    config.jsCallerErrorLine = config._callerLocation?.lineNumber ?? 1;
+  }
+  if (config.jsCaller && config.jsCallerErrorCol == null) {
+    config.jsCallerErrorCol = config._callerLocation?.columnNumber ?? 1;
+  }
   const loader = getLoader(config);
   const { templateSource, templatePath } = await resolveTemplateSource(template, loader, config);
   if (templatePath) config.templatePath = templatePath;

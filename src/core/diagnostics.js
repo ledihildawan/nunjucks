@@ -235,8 +235,16 @@ const resolveErrorLocation = (config, initialMetadata, errLineno, errColno, temp
       !hasCallerLocation
     );
     if (codeContext) {
-      sourceContent = codeContext.content;
-      sourceStartLine = codeContext.startLine;
+      // The caller file is the canonical source. Do not expose a synthetic
+      // snippet (or the inline template string) as sourceContent: consumers
+      // use sourceContent together with lineno/colno to render the location.
+      try {
+        sourceContent = readFileSync(config.jsCaller, 'utf8');
+        sourceStartLine = 1;
+      } catch {
+        sourceContent = codeContext.content;
+        sourceStartLine = codeContext.startLine;
+      }
       resolvedJsCallerLine = codeContext.errorLine ?? resolvedJsCallerLine;
       resolvedJsCallerCol = codeContext.errorCol ?? resolvedJsCallerCol;
     }

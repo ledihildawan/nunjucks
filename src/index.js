@@ -12,6 +12,7 @@ const nunjucks = (template, context, localConfig) => {
   }
 
   const config = mergeConfig(localConfig || {});
+  config._autoCallerLocation = true;
   if (localConfig?.filters) config._customFilters = localConfig.filters;
   if (localConfig?.globals) config._customGlobals = localConfig.globals;
 
@@ -31,6 +32,7 @@ const nunjucks = (template, context, localConfig) => {
 
 nunjucks.render = (template, context, localConfig) => {
   const config = mergeConfig(localConfig || {});
+  config._autoCallerLocation = true;
   if (localConfig?.filters) config._customFilters = localConfig.filters;
   if (localConfig?.globals) config._customGlobals = localConfig.globals;
   return render(template, context, config);

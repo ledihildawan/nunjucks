@@ -3,6 +3,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { render } from './render.js';
 import { mergeConfig } from '../config/global.js';
+import nunjucks from '../index.js';
 
 const renderTemplate = async (template, context = {}, config = {}) => {
   return await render(template, context, mergeConfig({
@@ -142,6 +143,24 @@ describe('inline template error locations', () => {
     expect(err.lineBase).toBe('one');
     expect(err.templateName).toBe(filePath);
     expect(err.colno).toBe(callerLine.indexOf('missingKey') + 1);
+  });
+
+  test('automatically uses the real caller file for inline template locations', async () => {
+    const filePath = fileURLToPath(import.meta.url);
+    const sourceContent = fs.readFileSync(filePath, 'utf8');
+    const source = sourceContent.split('\n');
+    const marker = 'AUTO_CALLER_LOCATION_' + 'MARKER';
+    const markerLine = source.findIndex(line => line.includes(marker)) + 1;
+    const err = await nunjucks('{{ product.name }}', { product: { test: 'test' } }, { dev: true, undefined: 'strict' }).catch(e => e); // AUTO_CALLER_LOCATION_MARKER
+    const callerLine = source[err.lineno - 1];
+
+    expect(err.lineBase).toBe('one');
+    expect(err.templatePath).toBe(filePath);
+    expect(err.templateName).toBe(filePath);
+    expect(err.lineno).toBe(markerLine);
+    expect(err.colno).toBe(callerLine.indexOf('product.name') + 'product.'.length + 1);
+    expect(err.sourceStartLine).toBe(1);
+    expect(err.sourceContent).toBe(sourceContent);
   });
 
   test('points at the failing template token inside a multiline caller template literal', async () => {
