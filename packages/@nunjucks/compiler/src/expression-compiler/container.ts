@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { isLiteral, isSpread, isSymbol, literal } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
@@ -70,9 +70,9 @@ export const compilePair = (ctx: Compiler, node: Node, frame: Frame): void => {
   let key = node.key as Node;
   const val = node.value as Node;
 
-  if (nodes.isSymbol(key)) {
-    key = nodes.literal(key.lineno, key.colno, key.value);
-  } else if (!(nodes.isLiteral(key) &&
+  if (isSymbol(key)) {
+    key = literal(key.lineno, key.colno, key.value);
+  } else if (!(isLiteral(key) &&
     typeof key.value === 'string')) {
     ctx.fail('compilePair: Dict keys must be strings or names',
       key.lineno,
@@ -111,9 +111,9 @@ export const compileTemplateLiteral = (ctx: Compiler, node: Node, frame: Frame):
 
   for (const quasi of quasis) {
     const q = quasi as Node & { value?: string };
-    if (q.type === 'template') {
+    if ((q.type as string) === 'template') {
       ctx._emit(escapeTemplateString(q.value as string));
-    } else if (q.type === 'expression') {
+    } else if ((q.type as string) === 'expression') {
       ctx._emit('${');
       ctx.compile(q.node as Node, frame);
       ctx._emit('}');
@@ -132,7 +132,7 @@ export const compileAggregate = (ctx: Compiler, node: Node, frame: Frame, startC
     if (i > 0) {
       ctx._emit(',');
     }
-    if (nodes.isSpread(child)) {
+    if (isSpread(child)) {
       ctx._emit('...');
       ctx.compile(child.argument as Node, frame);
     } else {

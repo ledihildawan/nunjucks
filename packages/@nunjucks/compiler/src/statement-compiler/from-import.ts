@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { isPair } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
@@ -17,7 +17,7 @@ export const compileFromImport = (ctx: Compiler, node: Node, frame: Frame): void
     let alias: string;
     const id = ctx._tmpid();
 
-    if (nodes.isPair(nameNode)) {
+    if (isPair(nameNode)) {
       name = (nameNode.key as Node).value as string;
       alias = (nameNode.value as Node).value as string;
     } else {

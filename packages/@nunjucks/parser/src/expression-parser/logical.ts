@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { and, not, or } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, skipOperator, nextToken } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -11,7 +11,7 @@ export const parseOr = (ctx: ParserContext): Node => {
   let tok = peekToken(ctx);
   while (skipSymbol(ctx, 'or') || skipOperator(ctx, '||')) {
     const node2 = parseNullishCoalesce(ctx);
-    node = nodes.or(tok.lineno, tok.colno, node, node2);
+    node = or(tok.lineno, tok.colno, node, node2);
     tok = peekToken(ctx);
   }
   return node;
@@ -22,7 +22,7 @@ export const parseAnd = (ctx: ParserContext): Node => {
   let tok = peekToken(ctx);
   while (skipSymbol(ctx, 'and') || skipOperator(ctx, '&&')) {
     const node2 = parseNot(ctx);
-    node = nodes.and(tok.lineno, tok.colno, node, node2);
+    node = and(tok.lineno, tok.colno, node, node2);
     tok = peekToken(ctx);
   }
   return node;
@@ -35,13 +35,13 @@ export const parseNot = (ctx: ParserContext): Node => {
   }
   if (tok.type === TOKEN_OPERATOR && tok.value === '!') {
     nextToken(ctx);
-    return nodes.not(tok.lineno, tok.colno, parseNot(ctx));
+    return not(tok.lineno, tok.colno, parseNot(ctx));
   }
   if (skipSymbol(ctx, 'not')) {
-    return nodes.not(tok.lineno, tok.colno, parseNot(ctx));
+    return not(tok.lineno, tok.colno, parseNot(ctx));
   }
   if (skipOperator(ctx, '!')) {
-    return nodes.not(tok.lineno, tok.colno, parseNot(ctx));
+    return not(tok.lineno, tok.colno, parseNot(ctx));
   }
   return parseIn(ctx);
 };

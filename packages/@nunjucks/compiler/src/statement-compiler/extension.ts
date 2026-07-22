@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { isNodeList } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
@@ -31,7 +31,7 @@ export const compileCallExtension = (ctx: Compiler, node: Node, frame: Frame, us
   }
 
   if (args) {
-    if (!nodes.isNodeList(args)) {
+    if (!isNodeList(args)) {
       ctx.fail('compileCallExtension: arguments must be a NodeList, ' +
         'use `parser.parseSignature`');
     }

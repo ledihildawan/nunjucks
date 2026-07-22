@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { getNodeTypeName } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from './index.ts';
@@ -150,7 +150,7 @@ export const COMPILE_FUNCTIONS: Record<string, CompileFn> = {
 };
 
 export const compileDispatch = (ctx: Compiler, node: Node, frame?: Frame): unknown => {
-  const typeName = nodes.getNodeTypeName(node);
+  const typeName = getNodeTypeName(node);
   const fn = typeName !== undefined ? COMPILE_FUNCTIONS[typeName] : undefined;
   if (fn) {
     return fn(ctx, node, frame!);

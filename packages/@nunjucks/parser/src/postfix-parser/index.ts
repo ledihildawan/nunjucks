@@ -3,7 +3,7 @@ import {
   TOKEN_LEFT_PAREN,
   TOKEN_OPERATOR,
 } from '@nunjucks/lexer';
-import { nodes } from '@nunjucks/nodes';
+import { decrement, increment } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -28,10 +28,10 @@ export const parsePostfix = (ctx: ParserContext, node: Node): Node => {
       node = parseOptionalChain(ctx, tok, node);
     } else if (tok.type === TOKEN_OPERATOR && tok.value === '++') {
       nextToken(ctx);
-      node = nodes.increment(tok.lineno, tok.colno, node, true);
+      node = increment(tok.lineno, tok.colno, node, true);
     } else if (tok.type === TOKEN_OPERATOR && tok.value === '--') {
       nextToken(ctx);
-      node = nodes.decrement(tok.lineno, tok.colno, node, true);
+      node = decrement(tok.lineno, tok.colno, node, true);
     } else {
       break;
     }

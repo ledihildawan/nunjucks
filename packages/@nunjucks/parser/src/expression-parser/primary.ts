@@ -8,7 +8,7 @@ import {
   TOKEN_SYMBOL,
   TOKEN_TEMPLATE_LITERAL,
 } from '@nunjucks/lexer';
-import { nodes } from '@nunjucks/nodes';
+import { literal, symbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { nextToken, pushToken, fail, EXPECTED_COLON_AFTER_DICT_KEY } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -45,9 +45,9 @@ export const parsePrimary = (ctx: ParserContext, noPostfix?: boolean): Node => {
   }
 
   if (val !== undefined) {
-    node = nodes.literal(tok.lineno, tok.colno, val);
+    node = literal(tok.lineno, tok.colno, val);
   } else if (tok.type === TOKEN_SYMBOL) {
-    node = nodes.symbol(tok.lineno, tok.colno, tok.value as string);
+    node = symbol(tok.lineno, tok.colno, tok.value as string);
   } else if (tok.type === TOKEN_TEMPLATE_LITERAL) {
     pushToken(ctx, tok);
     node = parseTemplateLiteral(ctx);

@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { pair, with_ } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, skip, skipValue, nextToken, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -36,7 +36,7 @@ export const parseWith = (ctx: ParserContext): Node => {
         fail(ctx, 'parseWith: expected expression after =', tag.lineno, tag.colno);
       }
 
-      assignments.push(nodes.pair(
+      assignments.push(pair(
         nameSymbol.lineno,
         nameSymbol.colno,
         nameSymbol.value as Node,
@@ -63,7 +63,7 @@ export const parseWith = (ctx: ParserContext): Node => {
           fail(ctx, 'parseWith: expected expression after =', tag.lineno, tag.colno);
         }
 
-        assignments.push(nodes.pair(
+        assignments.push(pair(
           nextName.lineno,
           nextName.colno,
           nextName.value as Node,
@@ -90,5 +90,5 @@ export const parseWith = (ctx: ParserContext): Node => {
 
   advanceAfterBlockEnd(ctx, 'endwith');
 
-  return nodes.with(tag.lineno, tag.colno, assignments, body);
+  return with_(tag.lineno, tag.colno, assignments, body);
 };

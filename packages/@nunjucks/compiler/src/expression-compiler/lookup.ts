@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { isLiteral, isLookupVal, isSlice, isSymbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
@@ -15,11 +15,11 @@ const emitLocationGuard = (ctx: Compiler, location: { lineno: number; colno: num
 
 const getTargetName = (node: Node | undefined): string | null => {
   if (!node) return null;
-  if (nodes.isSymbol(node)) return node.value as string;
-  if (nodes.isLookupVal(node)) {
+  if (isSymbol(node)) return node.value as string;
+  if (isLookupVal(node)) {
     const parentName = getTargetName(node.target as Node);
     const val = node.val as Node;
-    const propName = nodes.isLiteral(val) ? (val.value as unknown) : null;
+    const propName = isLiteral(val) ? (val.value as unknown) : null;
     if (parentName && propName) return `${parentName}.${propName}`;
   }
   return null;
@@ -30,7 +30,7 @@ export const compileLookupVal = (ctx: Compiler, node: Node, frame: Frame): void 
   const location = locationFor(val, node);
   emitLocationGuard(ctx, location);
 
-  if (nodes.isSlice(val)) {
+  if (isSlice(val)) {
     ctx._emit('runtime.slice((');
     ctx._compileExpression(node.target as Node, frame);
     ctx._emit('), ');

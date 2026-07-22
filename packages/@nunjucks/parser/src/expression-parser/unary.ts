@@ -1,5 +1,5 @@
 import { TOKEN_OPERATOR } from '@nunjucks/lexer';
-import { nodes } from '@nunjucks/nodes';
+import { bitwiseNot, decrement, increment, neg, pos } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipValue } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -11,15 +11,15 @@ export const parseUnary = (ctx: ParserContext, noPipes?: boolean): Node => {
   let node: Node;
 
   if (skipValue(ctx, TOKEN_OPERATOR, '-')) {
-    node = nodes.neg(tok.lineno, tok.colno, parseUnary(ctx, true));
+    node = neg(tok.lineno, tok.colno, parseUnary(ctx, true));
   } else if (skipValue(ctx, TOKEN_OPERATOR, '+')) {
-    node = nodes.pos(tok.lineno, tok.colno, parseUnary(ctx, true));
+    node = pos(tok.lineno, tok.colno, parseUnary(ctx, true));
   } else if (skipValue(ctx, TOKEN_OPERATOR, '~')) {
-    node = nodes.bitwiseNot(tok.lineno, tok.colno, parseUnary(ctx, true));
+    node = bitwiseNot(tok.lineno, tok.colno, parseUnary(ctx, true));
   } else if (skipValue(ctx, TOKEN_OPERATOR, '++')) {
-    node = nodes.increment(tok.lineno, tok.colno, parseUnary(ctx, true), false);
+    node = increment(tok.lineno, tok.colno, parseUnary(ctx, true), false);
   } else if (skipValue(ctx, TOKEN_OPERATOR, '--')) {
-    node = nodes.decrement(tok.lineno, tok.colno, parseUnary(ctx, true), false);
+    node = decrement(tok.lineno, tok.colno, parseUnary(ctx, true), false);
   } else {
     node = parsePrimary(ctx);
   }

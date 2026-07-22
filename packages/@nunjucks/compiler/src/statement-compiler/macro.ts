@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { isDict, isKeywordArgs } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { createFrame } from '@nunjucks/runtime';
@@ -12,7 +12,7 @@ const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
 
   const argsChildren = (node.args as Node).children as Node[];
   argsChildren.forEach((arg, i, arr) => {
-    if (i === arr.length - 1 && (nodes.isDict(arg) || nodes.isKeywordArgs(arg))) {
+    if (i === arr.length - 1 && (isDict(arg) || isKeywordArgs(arg))) {
       kwargs = arg;
     } else {
       ctx.assertType(arg, 'symbol');

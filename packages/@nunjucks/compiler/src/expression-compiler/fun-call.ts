@@ -1,4 +1,4 @@
-import { nodes, BracketNotation } from '@nunjucks/nodes';
+import { BracketNotation, getNodeTypeName, isLiteral, isLookupVal, isSymbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
@@ -7,7 +7,7 @@ import { compileAggregate } from './container.ts';
 const bracketFlag = (n: Node): unknown => (n as unknown as Record<symbol, unknown>)[BracketNotation];
 
 const getNodeName = (ctx: Compiler, node: Node, isBracketCall: boolean = false): string => {
-  const typeName = nodes.getNodeTypeName(node);
+  const typeName = getNodeTypeName(node);
   switch (typeName) {
     case 'symbol':
       return node.value as string;
@@ -17,10 +17,10 @@ const getNodeName = (ctx: Compiler, node: Node, isBracketCall: boolean = false):
       const target = getNodeName(ctx, node.target as Node);
       const isBracket = bracketFlag(node) === true;
       const val = node.val as Node;
-      if (nodes.isSymbol(val)) {
+      if (isSymbol(val)) {
         return target + (isBracket ? '[' + getNodeName(ctx, val) + ']' : '.' + getNodeName(ctx, val));
       }
-      if (nodes.isLiteral(val) && typeof val.value === 'string') {
+      if (isLiteral(val) && typeof val.value === 'string') {
         return target + (isBracket ? '["' + val.value + '"]' : '.' + val.value);
       }
       return target + '[' + getNodeName(ctx, val) + ']';
@@ -29,10 +29,10 @@ const getNodeName = (ctx: Compiler, node: Node, isBracketCall: boolean = false):
       const target = getNodeName(ctx, node.target as Node);
       const isBracket = bracketFlag(node) === true;
       const val = node.val as Node;
-      if (nodes.isSymbol(val)) {
+      if (isSymbol(val)) {
         return target + (isBracket ? '?.[' + getNodeName(ctx, val) + ']' : '?.' + getNodeName(ctx, val));
       }
-      if (nodes.isLiteral(val) && typeof val.value === 'string') {
+      if (isLiteral(val) && typeof val.value === 'string') {
         return target + (isBracket ? '?.["' + val.value + '"]' : '?.' + val.value);
       }
       return target + '?.[' + getNodeName(ctx, val) + ']';
@@ -46,10 +46,10 @@ const getNodeName = (ctx: Compiler, node: Node, isBracketCall: boolean = false):
 
 const getCallLocation = (node: Node): { lineno: number; colno: number } => {
   const name = node.name as Node;
-  if (nodes.isLookupVal(name) && (name.val as Node)?.lineno != null && (name.val as Node)?.colno != null) {
+  if (isLookupVal(name) && (name.val as Node)?.lineno != null && (name.val as Node)?.colno != null) {
     const nameVal = name.val as Node;
     const isQuotedBracketString = bracketFlag(name) === true &&
-      nodes.isLiteral(nameVal) &&
+      isLiteral(nameVal) &&
       typeof nameVal.value === 'string';
     return {
       lineno: nameVal.lineno,

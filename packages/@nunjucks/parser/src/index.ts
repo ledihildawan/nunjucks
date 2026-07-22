@@ -1,8 +1,6 @@
 import { lex } from '@nunjucks/lexer';
 import type { LexerOptions } from '@nunjucks/lexer';
-import {
-  nodes,
-} from '@nunjucks/nodes';
+import { root } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { fail } from "./cursor.ts";
 import type { ParserContext, ParserExtension, TokenStream } from "./cursor.ts";
@@ -31,7 +29,7 @@ export function parse(src: string, extensions?: ParserExtension[], opts?: ParseO
   if (extensions !== undefined) {
     p.extensions = extensions;
   }
-  const ast = nodes.root(0, 0, parseNodes(p));
+  const ast = root(0, 0, parseNodes(p));
 
   if (securityConfig !== null) {
     const errors = validateExpression(ast, securityConfig);

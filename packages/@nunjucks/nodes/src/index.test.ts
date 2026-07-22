@@ -164,9 +164,9 @@ describe('InlineIf', () => {
 
 describe('For', () => {
   test('stores arr, name, body, else_', () => {
-    const f = for_(0, 0, symbol(1, 1, 'items'), 'x', nodeList(3, 3), nodeList(4, 4));
+    const f = for_(0, 0, symbol(1, 1, 'items'), symbol(1, 1, 'x'), nodeList(3, 3), nodeList(4, 4));
     expect((f.arr as { value: string }).value).toBe('items');
-    expect(f.name).toBe('x');
+    expect((f.name as { value: string }).value).toBe('x');
   });
 });
 
@@ -350,7 +350,7 @@ describe('Comparison nodes', () => {
 describe('CallExtension', () => {
   test('stores extName, prop, args, contentArgs', () => {
     const ext = { __name: 'testExt', autoescape: true };
-    const ce = callExtension(ext, 'foo', nodeList(0, 0), [nodeList(0, 0)]);
+    const ce = callExtension(0, 0, ext, 'foo', nodeList(0, 0), [nodeList(0, 0)]);
     expect(ce.extName).toBe('testExt');
     expect(ce.prop).toBe('foo');
     expect(ce.args).toBeDefined();
@@ -359,14 +359,14 @@ describe('CallExtension', () => {
   });
 
   test('defaults args to NodeList', () => {
-    const ce = callExtension({ __name: 'e' }, 'f');
+    const ce = callExtension(0, 0, { __name: 'e' }, 'f');
     expect(ce.args).toBeDefined();
     expect([...(ce.args as { children: unknown[] }).children!]).toEqual([]);
     expect([...(ce.contentArgs as unknown[])]).toEqual([]);
   });
 
   test('CallExtensionAsync has typename callExtensionAsync', () => {
-    const ce = callExtensionAsync({ __name: 'e' }, 'f');
+    const ce = callExtensionAsync(0, 0, { __name: 'e' }, 'f');
     expect(getType(ce)).toBe('callExtensionAsync');
   });
 });

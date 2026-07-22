@@ -1,5 +1,5 @@
 import { TOKEN_OPERATOR } from '@nunjucks/lexer';
-import { nodes } from '@nunjucks/nodes';
+import { add, div, floorDiv, mod, mul, pow, sub } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipValue } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -18,10 +18,10 @@ const binaryOp = (ctx: ParserContext, NodeClass: BinNodeFn, operator: string, ne
   return node;
 };
 
-export const parseAdd = (ctx: ParserContext): Node => binaryOp(ctx, nodes.add, '+', parseSub);
-export const parseSub = (ctx: ParserContext): Node => binaryOp(ctx, nodes.sub, '-', parseMul);
-export const parseMul = (ctx: ParserContext): Node => binaryOp(ctx, nodes.mul, '*', parseDiv);
-export const parseDiv = (ctx: ParserContext): Node => binaryOp(ctx, nodes.div, '/', parseFloorDiv);
-export const parseFloorDiv = (ctx: ParserContext): Node => binaryOp(ctx, nodes.floorDiv, '//', parseMod);
-export const parseMod = (ctx: ParserContext): Node => binaryOp(ctx, nodes.mod, '%', parsePow);
-export const parsePow = (ctx: ParserContext): Node => binaryOp(ctx, nodes.pow, '**', parseUnary);
+export const parseAdd = (ctx: ParserContext): Node => binaryOp(ctx, add, '+', parseSub);
+export const parseSub = (ctx: ParserContext): Node => binaryOp(ctx, sub, '-', parseMul);
+export const parseMul = (ctx: ParserContext): Node => binaryOp(ctx, mul, '*', parseDiv);
+export const parseDiv = (ctx: ParserContext): Node => binaryOp(ctx, div, '/', parseFloorDiv);
+export const parseFloorDiv = (ctx: ParserContext): Node => binaryOp(ctx, floorDiv, '//', parseMod);
+export const parseMod = (ctx: ParserContext): Node => binaryOp(ctx, mod, '%', parsePow);
+export const parsePow = (ctx: ParserContext): Node => binaryOp(ctx, pow, '**', parseUnary);

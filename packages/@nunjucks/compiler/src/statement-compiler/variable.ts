@@ -1,11 +1,11 @@
-import { nodes } from '@nunjucks/nodes';
+import { isArrayPattern, isObjectPattern, isSymbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 import { compileDestructuring } from './pattern.ts';
 
 const getTargetName = (target: Node): string | null => {
-  if (nodes.isSymbol(target) || typeof target?.value === 'string') {
+  if (isSymbol(target) || typeof target?.value === 'string') {
     return target.value as string;
   }
   return null;
@@ -14,7 +14,7 @@ const getTargetName = (target: Node): string | null => {
 const hasPatternTarget = (node: Node): boolean => {
   const targets = node.targets as Node[];
   return !!targets && targets.some(t =>
-    nodes.isArrayPattern(t) || nodes.isObjectPattern(t)
+    isArrayPattern(t) || isObjectPattern(t)
   );
 };
 

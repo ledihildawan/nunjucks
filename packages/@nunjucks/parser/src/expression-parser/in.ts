@@ -1,5 +1,5 @@
 import { TOKEN_SYMBOL } from '@nunjucks/lexer';
-import { nodes } from '@nunjucks/nodes';
+import { in_, not } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { nextToken, pushToken } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -24,9 +24,9 @@ export const parseIn = (ctx: ParserContext): Node => {
     const inTok = invert ? nextToken(ctx) : tok;
     if (inTok && inTok.type === TOKEN_SYMBOL && inTok.value === 'in') {
       const node2 = parseIs(ctx);
-      node = nodes.in(inTok.lineno, inTok.colno, node, node2);
+      node = in_(inTok.lineno, inTok.colno, node, node2);
       if (invert) {
-        node = nodes.not(tok.lineno, tok.colno, node);
+        node = not(tok.lineno, tok.colno, node);
       }
     } else {
       if (inTok) pushToken(ctx, inTok);

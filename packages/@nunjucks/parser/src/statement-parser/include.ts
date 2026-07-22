@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { include } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -11,7 +11,7 @@ export const parseInclude = (ctx: ParserContext): Node => {
     fail(ctx, 'parseInclude: expected ' + tagName);
   }
 
-  const node = nodes.include(tag.lineno, tag.colno);
+  const node = include(tag.lineno, tag.colno);
   node.template = parseExpression(ctx);
 
   if (skipSymbol(ctx, 'only')) {

@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { arrayPattern, isArray, isArrayPattern, isAssignmentPattern, isDict, isHole, isObjectPattern, isPair, isPatternProperty, isRestPattern, isSymbol, objectPattern } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
@@ -41,35 +41,35 @@ const compileAssignToFrame = (ctx: Compiler, frame: Frame, name: string, source:
 };
 
 const compileDestructuring = (ctx: Compiler, frame: Frame, pattern: Node, source: string, registerFrame: boolean = true): void => {
-  if (nodes.isSymbol(pattern)) {
+  if (isSymbol(pattern)) {
     compileAssignToFrame(ctx, frame, pattern.value as string, source, registerFrame);
     return;
   }
 
-  if (nodes.isArrayPattern(pattern)) {
+  if (isArrayPattern(pattern)) {
     let i = 0;
     for (const child of pattern.children!) {
-      if (nodes.isHole(child)) {
+      if (isHole(child)) {
         i++;
         continue;
       }
-      if (nodes.isRestPattern(child)) {
+      if (isRestPattern(child)) {
         const childSource = arraySlice(source, i);
         compileDestructuring(ctx, frame, child.target as Node, childSource, registerFrame);
         break;
       }
       let childSource = safeArrayIndex(source, i);
-      if (nodes.isAssignmentPattern(child)) {
+      if (isAssignmentPattern(child)) {
         const defaultId = uniqueId('__dflt');
         ctx._emitLine(`let ${defaultId} = (${childSource}) === undefined ? (`);
         ctx._compileExpression(child.value as Node, frame);
         ctx._emitLine(`) : ${childSource};`);
         childSource = defaultId;
         compileDestructuring(ctx, frame, child.target as Node, childSource, registerFrame);
-      } else if (nodes.isObjectPattern(child) || nodes.isDict(child)) {
-        const nestedPattern = nodes.isObjectPattern(child)
+      } else if (isObjectPattern(child) || isDict(child)) {
+        const nestedPattern = isObjectPattern(child)
           ? child
-          : nodes.objectPattern(child.lineno, child.colno, child.children!);
+          : objectPattern(child.lineno, child.colno, child.children!);
         compileDestructuring(ctx, frame, nestedPattern, childSource, registerFrame);
       } else {
         compileDestructuring(ctx, frame, child, childSource, registerFrame);
@@ -79,17 +79,17 @@ const compileDestructuring = (ctx: Compiler, frame: Frame, pattern: Node, source
     return;
   }
 
-  if (nodes.isObjectPattern(pattern)) {
+  if (isObjectPattern(pattern)) {
     for (const child of pattern.children!) {
-      if (nodes.isRestPattern(child)) {
+      if (isRestPattern(child)) {
         const restId = uniqueId('__rest');
         const childSource = objectRest(source, restId);
         compileDestructuring(ctx, frame, child.target as Node, childSource, registerFrame);
         continue;
       }
-      if (nodes.isPatternProperty(child)) {
+      if (isPatternProperty(child)) {
         let propSource = safeMemberLookup(source, child.key as unknown as string);
-        if (nodes.isAssignmentPattern(child.value as Node)) {
+        if (isAssignmentPattern(child.value as Node)) {
           const valNode = child.value as Node;
           const defaultId = uniqueId('__dflt');
           ctx._emitLine(`let ${defaultId} = (${propSource}) === undefined ? (`);
@@ -100,11 +100,11 @@ const compileDestructuring = (ctx: Compiler, frame: Frame, pattern: Node, source
         } else {
           compileDestructuring(ctx, frame, child.value as Node, propSource, registerFrame);
         }
-      } else if (nodes.isPair(child) && nodes.isSymbol(child.key as Node)) {
+      } else if (isPair(child) && isSymbol(child.key as Node)) {
         const keyNode = child.key as Node;
         const propKey = keyNode.value as string;
         const propSource = safeMemberLookup(source, propKey);
-        if (nodes.isAssignmentPattern(child.value as Node)) {
+        if (isAssignmentPattern(child.value as Node)) {
           const valNode = child.value as Node;
           const defaultId = uniqueId('__dflt');
           ctx._emitLine(`let ${defaultId} = (${propSource}) === undefined ? (`);
@@ -112,19 +112,19 @@ const compileDestructuring = (ctx: Compiler, frame: Frame, pattern: Node, source
           ctx._emitLine(`) : ${propSource};`);
           const target = valNode.target as Node;
           compileAssignToFrame(ctx, frame, target.value as string, defaultId, registerFrame);
-        } else if (nodes.isArrayPattern(child.value as Node) || nodes.isArray(child.value as Node)) {
+        } else if (isArrayPattern(child.value as Node) || isArray(child.value as Node)) {
           const valNode = child.value as Node;
-          const nestedPattern = nodes.isArrayPattern(valNode)
+          const nestedPattern = isArrayPattern(valNode)
             ? valNode
-            : nodes.arrayPattern(valNode.lineno, valNode.colno, valNode.children!);
+            : arrayPattern(valNode.lineno, valNode.colno, valNode.children!);
           compileDestructuring(ctx, frame, nestedPattern, propSource, registerFrame);
-        } else if (nodes.isObjectPattern(child.value as Node) || nodes.isDict(child.value as Node)) {
+        } else if (isObjectPattern(child.value as Node) || isDict(child.value as Node)) {
           const valNode = child.value as Node;
-          const nestedPattern = nodes.isObjectPattern(valNode)
+          const nestedPattern = isObjectPattern(valNode)
             ? valNode
-            : nodes.objectPattern(valNode.lineno, valNode.colno, valNode.children!);
+            : objectPattern(valNode.lineno, valNode.colno, valNode.children!);
           compileDestructuring(ctx, frame, nestedPattern, propSource, registerFrame);
-        } else if (nodes.isSymbol(child.value as Node)) {
+        } else if (isSymbol(child.value as Node)) {
           const aliasName = (child.value as Node).value as string;
           compileAssignToFrame(ctx, frame, aliasName, propSource, registerFrame);
         }

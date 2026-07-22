@@ -5,9 +5,7 @@ import {
   TOKEN_OPERATOR,
   TOKEN_RIGHT_PAREN,
 } from '@nunjucks/lexer';
-import {
-  nodes,
-} from '@nunjucks/nodes';
+import { isAssignmentPattern, keywordArgs, nodeList, pair, pushChild } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, skip, skipValue, fail } from "../cursor.ts";
 import type { ParserContext, MutableNode } from "../cursor.ts";
@@ -27,8 +25,8 @@ export const parseSignature = (ctx: ParserContext, tolerant?: boolean, noParens?
     tok = nextToken(ctx);
   }
 
-  const args = nodes.nodeList(tok.lineno, tok.colno) as MutableNode;
-  const kwargs = nodes.keywordArgs(tok.lineno, tok.colno) as MutableNode;
+  const args = nodeList(tok.lineno, tok.colno) as MutableNode;
+  const kwargs = keywordArgs(tok.lineno, tok.colno) as MutableNode;
   let checkComma = false;
 
   while (true) {
@@ -47,19 +45,19 @@ export const parseSignature = (ctx: ParserContext, tolerant?: boolean, noParens?
     } else {
       const arg = parseExpression(ctx);
 
-      if (nodes.isAssignmentPattern(arg) && peekToken(ctx)?.type === TOKEN_OPERATOR && peekToken(ctx)?.value === '=') {
+      if (isAssignmentPattern(arg) && peekToken(ctx)?.type === TOKEN_OPERATOR && peekToken(ctx)?.value === '=') {
         nextToken(ctx);
         const value = parseExpression(ctx);
-        kwargs.addChild(nodes.pair(arg.lineno, arg.colno, arg.target as Node, value));
+        pushChild(kwargs, pair(arg.lineno, arg.colno, arg.target as Node, value));
       } else if (skipValue(ctx, TOKEN_OPERATOR, '=')) {
-        kwargs.addChild(
-          nodes.pair(arg.lineno,
+        pushChild(kwargs,
+          pair(arg.lineno,
             arg.colno,
             arg,
             parseExpression(ctx))
         );
       } else {
-        args.addChild(arg);
+        pushChild(args, arg);
       }
     }
 
@@ -67,7 +65,7 @@ export const parseSignature = (ctx: ParserContext, tolerant?: boolean, noParens?
   }
 
   if (kwargs.children.length) {
-    args.addChild(kwargs);
+    pushChild(args, kwargs);
   }
 
   return args;

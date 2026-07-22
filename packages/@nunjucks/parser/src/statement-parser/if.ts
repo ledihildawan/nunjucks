@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { if_ } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -10,7 +10,7 @@ export const parseIf = (ctx: ParserContext): Node => {
   let node: Node;
 
   if (skipSymbol(ctx, 'if') || skipSymbol(ctx, 'elif') || skipSymbol(ctx, 'elseif')) {
-    node = nodes.if(tag.lineno, tag.colno);
+    node = if_(tag.lineno, tag.colno);
   } else {
     return fail(ctx, 'parseIf: expected if, elif, or elseif',
       tag.lineno,

@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { tryCatch } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Token } from '@nunjucks/lexer';
 import { peekToken, skipValue, skipSymbol, nextToken, fail } from "../cursor.ts";
@@ -44,5 +44,5 @@ export const parseTry = (ctx: ParserContext): Node => {
     fail(ctx, 'expected endtry, got ' + peekToken(ctx).value);
   }
 
-  return nodes.tryCatch(tag.lineno, tag.colno, body, catchBody, errVar);
+  return tryCatch(tag.lineno, tag.colno, body, catchBody, errVar);
 };

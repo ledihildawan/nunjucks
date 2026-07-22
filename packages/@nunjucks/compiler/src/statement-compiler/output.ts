@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { isCompoundAssignment, isLookupVal, isOptionalCall, isOptionalChain, isPipe, isPipeAsync, isSymbol, isTemplateData, isVariableAssignment, isVariableDeclaration } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
@@ -25,11 +25,11 @@ export const compileCapture = (ctx: Compiler, node: Node, frame: Frame): void =>
 const extractVarName = (node: Node): string | null => {
   if (!node) return null;
 
-  if (nodes.isSymbol(node)) {
+  if (isSymbol(node)) {
     return node.value as string;
   }
 
-  if (nodes.isLookupVal(node)) {
+  if (isLookupVal(node)) {
     const base = extractVarName(node.target as Node);
     if (!base) return null;
     const val = node.val as Node;
@@ -43,7 +43,7 @@ const extractVarName = (node: Node): string | null => {
 const extractLocation = (node: Node): { lineno: number | null; colno: number | null } => {
   if (!node) return { lineno: null, colno: null };
 
-  if (nodes.isLookupVal(node) && (node.val as Node)?.lineno != null && (node.val as Node)?.colno != null) {
+  if (isLookupVal(node) && (node.val as Node)?.lineno != null && (node.val as Node)?.colno != null) {
     const val = node.val as Node;
     return { lineno: val.lineno, colno: val.colno };
   }
@@ -54,17 +54,17 @@ const extractLocation = (node: Node): { lineno: number | null; colno: number | n
 export const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => {
   const children = node.children!;
   children.forEach(child => {
-    if (nodes.isTemplateData(child)) {
+    if (isTemplateData(child)) {
       if (child.value) {
         ctx._emit(`${ctx.buffer} += `);
         ctx._emit(JSON.stringify(child.value));
         ctx._emit(';');
       }
-    } else if (nodes.isVariableDeclaration(child) || nodes.isVariableAssignment(child) || nodes.isCompoundAssignment(child)) {
+    } else if (isVariableDeclaration(child) || isVariableAssignment(child) || isCompoundAssignment(child)) {
       ctx.compile(child, frame);
     } else {
-      const isPipeType = nodes.isPipe(child) || nodes.isPipeAsync(child);
-      const isOptionalChainType = nodes.isOptionalChain(child) || nodes.isOptionalCall(child);
+      const isPipeType = isPipe(child) || isPipeAsync(child);
+      const isOptionalChainType = isOptionalChain(child) || isOptionalCall(child);
       const varName = extractVarName(child);
       const errorLocation = extractLocation(child);
       const undefinedMode = ctx.undefinedMode;

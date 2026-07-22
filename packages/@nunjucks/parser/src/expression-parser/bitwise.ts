@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { bitwiseAnd, bitwiseLShift, bitwiseOr, bitwiseRShift, bitwiseXor } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { nextToken, pushToken } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -7,11 +7,11 @@ import { parseIs } from "./is.ts";
 type BinNodeFn = (lineno: number, colno: number, left: Node, right: Node) => Node;
 
 const bitwiseNodeMap: Record<string, BinNodeFn> = {
-  '|': nodes.bitwiseOr,
-  '&': nodes.bitwiseAnd,
-  '^': nodes.bitwiseXor,
-  '<<': nodes.bitwiseLShift,
-  '>>': nodes.bitwiseRShift
+  '|': bitwiseOr,
+  '&': bitwiseAnd,
+  '^': bitwiseXor,
+  '<<': bitwiseLShift,
+  '>>': bitwiseRShift
 };
 
 export const parseBitwiseOr = (ctx: ParserContext): Node => {

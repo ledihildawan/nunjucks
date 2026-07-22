@@ -1,7 +1,7 @@
 import { pipe, filter, isDefined, isNonNullish, reduce } from 'remeda';
 import { parse } from '@nunjucks/parser';
 import { transform } from '@nunjucks/transformers';
-import { nodes } from '@nunjucks/nodes';
+import { add, and, array, bitwiseAnd, bitwiseLShift, bitwiseNot, bitwiseOr, bitwiseRShift, bitwiseXor, caller, compare, concat, decrement, dict, div, floorDiv, funCall, getNodeTypeName, group, increment, inlineIf, is, literal, lookupVal, mod, mul, neg, nodeList, not, nullishCoalesce, optionalChain, or, pipe as pipeNode, pos, pow, slice, sub, symbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { createLog } from '@nunjucks/log';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
@@ -171,50 +171,50 @@ export function createCompiler(
     _compileExpression: function (node: Node, frame?: Frame) {
       this.assertType(
         node,
-        nodes.literal,
-        nodes.symbol,
-        nodes.group,
-        nodes.array,
-        nodes.dict,
-        nodes.funCall,
-        nodes.caller,
-        nodes.pipe,
-        nodes.lookupVal,
-        nodes.compare,
-        nodes.inlineIf,
+        literal,
+        symbol,
+        group,
+        array,
+        dict,
+        funCall,
+        caller,
+        pipeNode,
+        lookupVal,
+        compare,
+        inlineIf,
         'in',
-        nodes.is,
-        nodes.and,
-        nodes.or,
-        nodes.not,
-        nodes.add,
-        nodes.concat,
-        nodes.sub,
-        nodes.mul,
-        nodes.div,
-        nodes.floorDiv,
-        nodes.mod,
-        nodes.pow,
-        nodes.neg,
-        nodes.pos,
-        nodes.compare,
-        nodes.optionalChain,
-        nodes.nullishCoalesce,
-        nodes.nodeList,
-        nodes.slice,
-        nodes.bitwiseOr,
-        nodes.bitwiseAnd,
-        nodes.bitwiseXor,
-        nodes.bitwiseLShift,
-        nodes.bitwiseRShift,
-        nodes.bitwiseNot,
-        nodes.increment,
-        nodes.decrement
+        is,
+        and,
+        or,
+        not,
+        add,
+        concat,
+        sub,
+        mul,
+        div,
+        floorDiv,
+        mod,
+        pow,
+        neg,
+        pos,
+        compare,
+        optionalChain,
+        nullishCoalesce,
+        nodeList,
+        slice,
+        bitwiseOr,
+        bitwiseAnd,
+        bitwiseXor,
+        bitwiseLShift,
+        bitwiseRShift,
+        bitwiseNot,
+        increment,
+        decrement
       );
       this.compile(node, frame);
     },
     assertType: function (node: Node, ...types: Array<string | Function>) {
-      const typeName = nodes.getNodeTypeName(node);
+      const typeName = getNodeTypeName(node);
       const matches = types.some(t => {
         if (typeof t === 'string') {
           return typeName === t;

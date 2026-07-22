@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { output, templateData } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { nextToken } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -24,9 +24,9 @@ export const parseRaw = (ctx: ParserContext, tagName?: string): Node | null => {
     content = content.replace(endMarker, '');
   }
 
-  return nodes.output(
+  return output(
     tok.lineno,
     tok.colno,
-    [nodes.templateData(tok.lineno, tok.colno, content as string)]
+    [templateData(tok.lineno, tok.colno, content as string)]
   );
 };

@@ -11,9 +11,7 @@ import {
   TOKEN_SPREAD,
   TOKEN_SYMBOL,
 } from '@nunjucks/lexer';
-import {
-  nodes,
-} from '@nunjucks/nodes';
+import { array, assignmentPattern, dict, group, hole, isDict, pair, pushChild, spread, symbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, skip, skipValue, fail, EXPECTED_COLON_AFTER_DICT_KEY } from "../cursor.ts";
 import type { ParserContext, MutableNode } from "../cursor.ts";
@@ -25,13 +23,13 @@ export const parseAggregate = (ctx: ParserContext): Node | null => {
 
   switch (tok.type) {
     case TOKEN_LEFT_PAREN:
-      node = nodes.group(tok.lineno, tok.colno) as MutableNode;
+      node = group(tok.lineno, tok.colno) as MutableNode;
       break;
     case TOKEN_LEFT_BRACKET:
-      node = nodes.array(tok.lineno, tok.colno) as MutableNode;
+      node = array(tok.lineno, tok.colno) as MutableNode;
       break;
     case TOKEN_LEFT_CURLY:
-      node = nodes.dict(tok.lineno, tok.colno) as MutableNode;
+      node = dict(tok.lineno, tok.colno) as MutableNode;
       break;
     default:
       return null;
@@ -58,7 +56,7 @@ export const parseAggregate = (ctx: ParserContext): Node | null => {
       } else {
         const afterComma = peekToken(ctx).type;
         if (afterComma === TOKEN_COMMA || afterComma === TOKEN_RIGHT_BRACKET || afterComma === TOKEN_RIGHT_PAREN) {
-          node.addChild(nodes.hole(tok.lineno, tok.colno));
+          pushChild(node, hole(tok.lineno, tok.colno));
           if (afterComma === TOKEN_RIGHT_BRACKET || afterComma === TOKEN_RIGHT_PAREN) {
             nextToken(ctx);
             break;
@@ -68,25 +66,25 @@ export const parseAggregate = (ctx: ParserContext): Node | null => {
       }
     }
 
-    if (nodes.isDict(node)) {
+    if (isDict(node)) {
       if (peekToken(ctx).type === TOKEN_SPREAD) {
         nextToken(ctx);
         const arg = parseExpression(ctx);
-        node.addChild(nodes.spread(tok.lineno, tok.colno, arg));
+        pushChild(node, spread(tok.lineno, tok.colno, arg));
       } else {
         const key = parsePrimary(ctx);
 
         if (!skip(ctx, TOKEN_COLON)) {
           const next = peekToken(ctx);
           if (next && (next.type === TOKEN_COMMA || next.type === TOKEN_RIGHT_CURLY)) {
-            const value = nodes.symbol(key.lineno, key.colno, key.value as string);
-            node.addChild(nodes.pair(key.lineno, key.colno, key, value));
+            const value = symbol(key.lineno, key.colno, key.value as string);
+            pushChild(node, pair(key.lineno, key.colno, key, value));
           } else if (next && next.type === TOKEN_OPERATOR && next.value === '=') {
             nextToken(ctx);
             const defaultVal = parseExpression(ctx);
-            const value = nodes.symbol(key.lineno, key.colno, key.value as string);
-            const defaultPattern = nodes.assignmentPattern(key.lineno, key.colno, value, defaultVal);
-            node.addChild(nodes.pair(key.lineno, key.colno, key, defaultPattern));
+            const value = symbol(key.lineno, key.colno, key.value as string);
+            const defaultPattern = assignmentPattern(key.lineno, key.colno, value, defaultVal);
+            pushChild(node, pair(key.lineno, key.colno, key, defaultPattern));
           } else {
             fail(ctx, 'parseAggregate: expected colon after dict key',
               next?.lineno ?? tok.lineno,
@@ -95,21 +93,21 @@ export const parseAggregate = (ctx: ParserContext): Node | null => {
           }
         } else {
           const value = parseExpression(ctx);
-          node.addChild(nodes.pair(key.lineno, key.colno, key, value));
+          pushChild(node, pair(key.lineno, key.colno, key, value));
         }
       }
     } else {
       if (peekToken(ctx).type === TOKEN_SPREAD) {
         nextToken(ctx);
         const arg = parseExpression(ctx);
-        node.addChild(nodes.spread(tok.lineno, tok.colno, arg));
+        pushChild(node, spread(tok.lineno, tok.colno, arg));
       } else {
         const expr = parseExpression(ctx);
         if (skipValue(ctx, TOKEN_OPERATOR, '=')) {
           const defaultVal = parseExpression(ctx);
-          node.addChild(nodes.assignmentPattern(expr.lineno, expr.colno, expr, defaultVal));
+          pushChild(node, assignmentPattern(expr.lineno, expr.colno, expr, defaultVal));
         } else {
-          node.addChild(expr);
+          pushChild(node, expr);
         }
       }
     }

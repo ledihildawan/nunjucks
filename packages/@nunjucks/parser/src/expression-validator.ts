@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { getNodeTypeName } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 
 export const ExpressionSecurityError = {
@@ -45,7 +45,7 @@ export function validateExpression(ast: Node, config: Record<string, unknown> = 
   function walk(node: Node | null | undefined, path: (string | number)[] = []): void {
     if (!node) return;
 
-    const nodeType = nodes.getNodeTypeName(node);
+    const nodeType = getNodeTypeName(node);
 
     switch (nodeType) {
       case 'lookupVal': {
@@ -54,7 +54,7 @@ export function validateExpression(ast: Node, config: Record<string, unknown> = 
 
         if (val) {
           let propName: string | null = null;
-          const valType = nodes.getNodeTypeName(val);
+          const valType = getNodeTypeName(val);
 
           if (valType === 'symbol') {
             propName = val.value as string;
@@ -106,7 +106,7 @@ export function validateExpression(ast: Node, config: Record<string, unknown> = 
       case 'funCall':
       case 'pipe': {
         const name = node.name as Node;
-        if (name && nodes.getNodeTypeName(name) === 'symbol') {
+        if (name && getNodeTypeName(name) === 'symbol') {
           const fnName = name.value as string;
           if (fnName === 'eval' || fnName === 'Function' || fnName === 'execScript') {
             errors.push({

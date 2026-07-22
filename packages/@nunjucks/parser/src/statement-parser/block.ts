@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { block, isSymbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -11,10 +11,10 @@ export const parseBlock = (ctx: ParserContext): Node => {
     fail(ctx, 'parseBlock: expected block', tag.lineno, tag.colno);
   }
 
-  const node = nodes.block(tag.lineno, tag.colno);
+  const node = block(tag.lineno, tag.colno);
 
   node.name = parsePrimary(ctx);
-  if (!nodes.isSymbol(node.name)) {
+  if (!isSymbol(node.name)) {
     fail(ctx, 'parseBlock: variable name expected',
       tag.lineno,
       tag.colno);

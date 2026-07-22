@@ -10,7 +10,7 @@ import {
   TOKEN_STRING,
   TOKEN_SYMBOL,
 } from '@nunjucks/lexer';
-import { nodes } from '@nunjucks/nodes';
+import { arrayPattern, assignmentPattern, hole, objectPattern, patternProperty, pushChild, restPattern, symbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, skip, fail } from "../cursor.ts";
 import type { ParserContext, MutableNode } from "../cursor.ts";
@@ -28,7 +28,7 @@ const parseInnerPattern = (ctx: ParserContext): Node => {
   const tok = peekToken(ctx);
   if (tok && tok.type === TOKEN_SYMBOL) {
     const t = nextToken(ctx);
-    return nodes.symbol(t.lineno, t.colno, t.value as string);
+    return symbol(t.lineno, t.colno, t.value as string);
   }
   return fail(ctx, 'parseInnerPattern: expected symbol or pattern',
     tok?.lineno ?? 0, tok?.colno ?? 0);
@@ -39,13 +39,13 @@ const parseAssignmentDefault = (ctx: ParserContext, target: Node): Node | null =
   if (peeked && peeked.type === TOKEN_OPERATOR && peeked.value === '=') {
     nextToken(ctx);
     const defaultExpr = parseExpression(ctx);
-    return nodes.assignmentPattern(target.lineno, target.colno, target, defaultExpr);
+    return assignmentPattern(target.lineno, target.colno, target, defaultExpr);
   }
   return null;
 };
 
 const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): Node => {
-  const node = nodes.arrayPattern(lineno, colno) as MutableNode;
+  const node = arrayPattern(lineno, colno) as MutableNode;
   const startTok = nextToken(ctx);
   if (startTok.type !== TOKEN_LEFT_BRACKET) {
     fail(ctx, 'parseArrayPattern: expected [', lineno, colno);
@@ -71,7 +71,7 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
         break;
       }
       if (after && after.type === TOKEN_COMMA) {
-        node.addChild(nodes.hole(after.lineno, after.colno));
+        pushChild(node, hole(after.lineno, after.colno));
         continue;
       }
     }
@@ -79,8 +79,8 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
     if (peekToken(ctx).type === TOKEN_SPREAD) {
       nextToken(ctx);
       const inner = parseInnerPattern(ctx);
-      const rp = nodes.restPattern(tok.lineno, tok.colno, inner);
-      node.addChild(rp);
+      const rp = restPattern(tok.lineno, tok.colno, inner);
+      pushChild(node, rp);
       sawRest = true;
       const after = peekToken(ctx);
       if (after && after.type === TOKEN_COMMA) {
@@ -93,7 +93,7 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
       const innerTok = peekToken(ctx);
       const inner = parseArrayPattern(ctx, innerTok.lineno, innerTok.colno);
       const withDefault = parseAssignmentDefault(ctx, inner);
-      node.addChild(withDefault ?? inner);
+      pushChild(node, withDefault ?? inner);
       continue;
     }
 
@@ -101,7 +101,7 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
       const innerTok = peekToken(ctx);
       const inner = parseObjectPattern(ctx, innerTok.lineno, innerTok.colno);
       const withDefault = parseAssignmentDefault(ctx, inner);
-      node.addChild(withDefault ?? inner);
+      pushChild(node, withDefault ?? inner);
       continue;
     }
 
@@ -110,16 +110,16 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
       fail(ctx, 'parseArrayPattern: expected symbol in pattern',
         symTok?.lineno ?? tok.lineno, symTok?.colno ?? tok.colno);
     }
-    const target = nodes.symbol(symTok!.lineno, symTok!.colno, symTok!.value as string);
+    const target = symbol(symTok!.lineno, symTok!.colno, symTok!.value as string);
     const withDefault = parseAssignmentDefault(ctx, target);
-    node.addChild(withDefault ?? target);
+    pushChild(node, withDefault ?? target);
   }
 
   return node;
 };
 
 const parseObjectPattern = (ctx: ParserContext, lineno: number, colno: number): Node => {
-  const node = nodes.objectPattern(lineno, colno) as MutableNode;
+  const node = objectPattern(lineno, colno) as MutableNode;
   const startTok = nextToken(ctx);
   if (startTok.type !== TOKEN_LEFT_CURLY) {
     fail(ctx, 'parseObjectPattern: expected {', lineno, colno);
@@ -152,7 +152,7 @@ const parseObjectPattern = (ctx: ParserContext, lineno: number, colno: number): 
     if (peekToken(ctx).type === TOKEN_SPREAD) {
       nextToken(ctx);
       const inner = parseInnerPattern(ctx);
-      node.addChild(nodes.restPattern(tok.lineno, tok.colno, inner));
+      pushChild(node, restPattern(tok.lineno, tok.colno, inner));
       sawRest = true;
       const after = peekToken(ctx);
       if (after && after.type === TOKEN_COMMA) {
@@ -185,17 +185,17 @@ const parseObjectPattern = (ctx: ParserContext, lineno: number, colno: number): 
         valueTarget = parseInnerPattern(ctx);
       }
     } else {
-      valueTarget = nodes.symbol(keyTok.lineno, keyTok.colno, keyName as string);
+      valueTarget = symbol(keyTok.lineno, keyTok.colno, keyName as string);
     }
 
     const withDefault = parseAssignmentDefault(ctx, valueTarget);
-    const propNode = nodes.patternProperty(
+    const propNode = patternProperty(
       keyTok.lineno,
       keyTok.colno,
       keyName as unknown as Node,
       withDefault ?? valueTarget
     );
-    node.addChild(propNode);
+    pushChild(node, propNode);
   }
 
   return node;

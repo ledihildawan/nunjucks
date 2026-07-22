@@ -38,7 +38,6 @@ export interface ParserContext {
 
 export type MutableNode = Node & {
   children: Node[];
-  addChild(child: Node): void;
 };
 
 export const createCursor = (tokens: TokenStream) => ({

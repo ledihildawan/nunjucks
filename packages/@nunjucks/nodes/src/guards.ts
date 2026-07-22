@@ -1,9 +1,11 @@
-// GUARDS - Type predicates
+// GUARDS - Type-narrowing predicates
 // Import directly: import { is, isNode } from '@nunjucks/nodes/guards'
 
-import { T, type Node } from './types.ts';
+import { T, type Node, type NodeType } from './types.ts';
 
-const is = (type: string) => (n: unknown): boolean => (n as Node)?.type === type;
+const is = <K extends NodeType>(type: K) =>
+  (n: unknown): n is Node & { readonly type: K } =>
+    n !== null && typeof n === 'object' && 'type' in n && (n as Node).type === type;
 
 export const isNode = (n: unknown): n is Node =>
   n !== null && typeof n === 'object' && 'type' in n && 'lineno' in n && 'colno' in n;
@@ -48,7 +50,8 @@ export const isIs = is(T.IS);
 export const isIn = is(T.IN);
 export const isSpread = is(T.SPREAD);
 export const isValue = is(T.VALUE);
-export const isFilter = (n: unknown): boolean => (n as Node)?.type === T.FILTER || (n as Node)?.type === T.PIPE;
+export const isFilter = (n: unknown): n is Node & { readonly type: typeof T.FILTER | typeof T.PIPE } =>
+  n !== null && typeof n === 'object' && 'type' in n && ((n as Node).type === T.FILTER || (n as Node).type === T.PIPE);
 export const isConcat = is(T.CONCAT);
 export const isNeg = is(T.NEG);
 export const isPos = is(T.POS);
@@ -79,7 +82,9 @@ export const isPatternProperty = is(T.PATTERN_PROPERTY);
 export const isRestPattern = is(T.REST_PATTERN);
 export const isAssignmentPattern = is(T.ASSIGNMENT_PATTERN);
 export const isHole = is(T.HOLE);
-export const isPattern = (n: unknown): boolean =>
+export const isPattern = (n: unknown): n is Node & {
+  readonly type: typeof T.ARRAY_PATTERN | typeof T.OBJECT_PATTERN | typeof T.REST_PATTERN | typeof T.ASSIGNMENT_PATTERN | typeof T.SYMBOL | typeof T.HOLE;
+} =>
   isArrayPattern(n) || isObjectPattern(n) || isRestPattern(n) ||
   isAssignmentPattern(n) || isSymbol(n) || isHole(n);
 export const isVariableDeclaration = is(T.VARIABLE_DECLARATION);

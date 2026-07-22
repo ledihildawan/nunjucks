@@ -1,13 +1,13 @@
-import { nodes } from '@nunjucks/nodes';
+import { isSymbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 
 const compileIncrementDecrement = (ctx: Compiler, node: Node, frame: Frame, op: string): void => {
   const target = node.target as Node;
-  const isSymbol = nodes.isSymbol(target);
+  const isSym = isSymbol(target);
 
-  if (isSymbol) {
+  if (isSym) {
     const varName = target.value as string;
     const id = ctx._tmpid();
 

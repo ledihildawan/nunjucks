@@ -5,7 +5,7 @@ import {
   TOKEN_RIGHT_PAREN,
   TOKEN_OPERATOR,
 } from '@nunjucks/lexer';
-import { nodes } from '@nunjucks/nodes';
+import { compoundAssignment, defineBlock, variableAssignment, variableDeclaration } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, skip, skipValue, nextToken, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -35,7 +35,7 @@ export const parseVariableDeclaration = (ctx: ParserContext): Node => {
 
   const value = parseExpression(ctx);
 
-  return nodes.variableDeclaration(tag.lineno, tag.colno, targets, value);
+  return variableDeclaration(tag.lineno, tag.colno, targets, value);
 };
 
 export const parseVariableAssignment = (ctx: ParserContext): Node => {
@@ -73,10 +73,10 @@ export const parseVariableAssignment = (ctx: ParserContext): Node => {
   const value = parseExpression(ctx);
 
   if (operator !== '=') {
-    return nodes.compoundAssignment(tag.lineno, tag.colno, targets, operator, value);
+    return compoundAssignment(tag.lineno, tag.colno, targets, operator, value);
   }
 
-  return nodes.variableAssignment(tag.lineno, tag.colno, targets, value);
+  return variableAssignment(tag.lineno, tag.colno, targets, value);
 };
 
 export const parseDefineBlock = (ctx: ParserContext): Node => {
@@ -134,5 +134,5 @@ export const parseDefineBlock = (ctx: ParserContext): Node => {
 
   advanceAfterBlockEnd(ctx, 'enddefine');
 
-  return nodes.defineBlock(tag.lineno, tag.colno, ((nameTok as Node).value || nameTok) as unknown as string, body, args as unknown as Node[]);
+  return defineBlock(tag.lineno, tag.colno, ((nameTok as Node).value || nameTok) as unknown as string, body, args as unknown as Node[]);
 };

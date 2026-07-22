@@ -1,6 +1,6 @@
 import { TOKEN_SYMBOL, TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_COMMA, TOKEN_LEFT_BRACKET } from '@nunjucks/lexer';
 import type { Token } from '@nunjucks/lexer';
-import { nodes } from '@nunjucks/nodes';
+import { literal, nodeList, optionalCall, optionalChain, pushChild } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, fail } from "../cursor.ts";
 import type { ParserContext, MutableNode } from "../cursor.ts";
@@ -8,7 +8,7 @@ import { parseExpression } from "../expression-parser/index.ts";
 import { BracketNotation } from "./lookup.ts";
 
 const parseOptionalCallArgs = (ctx: ParserContext, tok: Token): MutableNode => {
-  const args = nodes.nodeList(tok.lineno, tok.colno) as MutableNode;
+  const args = nodeList(tok.lineno, tok.colno) as MutableNode;
   let expectComma = false;
 
   while (true) {
@@ -28,7 +28,7 @@ const parseOptionalCallArgs = (ctx: ParserContext, tok: Token): MutableNode => {
     }
 
     const arg = parseExpression(ctx);
-    args.addChild(arg);
+    pushChild(args, arg);
     expectComma = true;
   }
 
@@ -42,7 +42,7 @@ export const parseOptionalChain = (ctx: ParserContext, tok: Token, target: Node)
   if (val && val.type === TOKEN_LEFT_PAREN) {
     nextToken(ctx);
     const args = parseOptionalCallArgs(ctx, tok);
-    return nodes.optionalCall(tok.lineno, tok.colno, target, args as unknown as Node[]);
+    return optionalCall(tok.lineno, tok.colno, target, args as unknown as Node[]);
   }
 
   // Check if next token is bracket or dot
@@ -58,7 +58,7 @@ export const parseOptionalChain = (ctx: ParserContext, tok: Token, target: Node)
       fail(ctx, 'expected right bracket', rightBracket.lineno, rightBracket.colno);
     }
 
-    const node = nodes.optionalChain(tok.lineno, tok.colno, target, start);
+    const node = optionalChain(tok.lineno, tok.colno, target, start);
     (node as Node & { [BracketNotation]?: boolean })[BracketNotation] = true;
     return node;
   }
@@ -73,8 +73,8 @@ export const parseOptionalChain = (ctx: ParserContext, tok: Token, target: Node)
       val2.colno);
   }
 
-  const lookup = nodes.literal(val2.lineno, val2.colno, val2.value);
-  const node = nodes.optionalChain(tok.lineno, tok.colno, target, lookup);
+  const lookup = literal(val2.lineno, val2.colno, val2.value);
+  const node = optionalChain(tok.lineno, tok.colno, target, lookup);
   (node as Node & { [BracketNotation]?: boolean })[BracketNotation] = false;
   return node;
 };

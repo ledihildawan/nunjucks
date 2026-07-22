@@ -4,7 +4,7 @@ import {
   TOKEN_LEFT_PAREN,
   TOKEN_SYMBOL,
 } from '@nunjucks/lexer';
-import { nodes } from '@nunjucks/nodes';
+import { nodeList, pipe, symbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skip, skipValue, expect } from "../cursor.ts";
 import type { ParserContext, MutableNode } from "../cursor.ts";
@@ -18,7 +18,7 @@ export const parseFilterName = (ctx: ParserContext): Node => {
     name += '.' + (expect(ctx, TOKEN_SYMBOL).value as string);
   }
 
-  return nodes.symbol(tok.lineno, tok.colno, name);
+  return symbol(tok.lineno, tok.colno, name);
 };
 
 export const parseFilterArgs = (ctx: ParserContext, node: Node): Node[] => {
@@ -33,11 +33,11 @@ export const parsePipe = (ctx: ParserContext, node: Node): Node => {
   while (skip(ctx, TOKEN_PIPEFORWARD)) {
     const name = parseFilterName(ctx);
 
-    node = nodes.pipe(
+    node = pipe(
       name.lineno,
       name.colno,
       name,
-      nodes.nodeList(
+      nodeList(
         name.lineno,
         name.colno,
         [node].concat(parseFilterArgs(ctx, node))

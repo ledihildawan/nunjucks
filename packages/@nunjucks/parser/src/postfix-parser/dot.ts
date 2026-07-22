@@ -1,6 +1,6 @@
 import { TOKEN_SYMBOL } from '@nunjucks/lexer';
 import type { Token } from '@nunjucks/lexer';
-import { nodes } from '@nunjucks/nodes';
+import { literal, lookupVal } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { nextToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -17,8 +17,8 @@ export const parseDotAccess = (ctx: ParserContext, tok: Token, target: Node): No
       val.colno);
   }
 
-  const lookup = nodes.literal(val.lineno, val.colno, val.value);
-  const node = nodes.lookupVal(tok.lineno, tok.colno, target, lookup);
+  const lookup = literal(val.lineno, val.colno, val.value);
+  const node = lookupVal(tok.lineno, tok.colno, target, lookup);
   (node as Node & { [BracketNotation]?: boolean })[BracketNotation] = false;
   return node;
 };

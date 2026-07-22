@@ -1,6 +1,4 @@
-import {
-  nodes,
-} from '@nunjucks/nodes';
+import { call, nodeList } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -14,14 +12,14 @@ export const parseCall = (ctx: ParserContext): Node => {
     fail(ctx, 'expected call');
   }
 
-  const callerArgs = parseSignature(ctx, true) || (nodes.nodeList as () => Node)();
+  const callerArgs = parseSignature(ctx, true) || (nodeList as () => Node)();
   const macroCall = parsePrimary(ctx);
 
   advanceAfterBlockEnd(ctx, callTok.value as string);
   const body = parseUntilBlocks(ctx, 'endcall');
   advanceAfterBlockEnd(ctx);
 
-  return nodes.call(callTok.lineno,
+  return call(callTok.lineno,
     callTok.colno,
     macroCall as unknown as string,
     callerArgs as unknown as Node[],

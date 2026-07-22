@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { capture, nodeList, output, pipe } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -15,25 +15,25 @@ export const parseFilterStatement = (ctx: ParserContext): Node => {
   const args = parseFilterArgs(ctx, name);
 
   advanceAfterBlockEnd(ctx, filterTok.value as string);
-  const body = nodes.capture(
+  const body = capture(
     name.lineno,
     name.colno,
     parseUntilBlocks(ctx, 'endfilter')
   );
   advanceAfterBlockEnd(ctx);
 
-  const node = nodes.pipe(
+  const node = pipe(
     name.lineno,
     name.colno,
     name,
-    nodes.nodeList(
+    nodeList(
       name.lineno,
       name.colno,
       [body].concat(args)
     ) as unknown as Node[]
   );
 
-  return nodes.output(
+  return output(
     name.lineno,
     name.colno,
     [node]

@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { extends_ } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -11,7 +11,7 @@ export const parseExtends = (ctx: ParserContext): Node => {
     fail(ctx, 'parseTemplateRef: expected ' + tagName);
   }
 
-  const node = nodes.extends(tag.lineno, tag.colno);
+  const node = extends_(tag.lineno, tag.colno);
   node.template = parseExpression(ctx);
 
   advanceAfterBlockEnd(ctx, tag.value as string);

@@ -1,5 +1,5 @@
 import { TOKEN_TEMPLATE_LITERAL } from '@nunjucks/lexer';
-import { nodes } from '@nunjucks/nodes';
+import { symbol, templateLiteral } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { nextToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -44,12 +44,12 @@ export const parseTemplateLiteral = (ctx: ParserContext): Node | null => {
           'Use filters or set statements for complex computations.',
           tok.lineno, tok.colno);
       }
-      const exprNode = nodes.symbol(tok.lineno, tok.colno, quasi.value);
+      const exprNode = symbol(tok.lineno, tok.colno, quasi.value);
       processedQuasis.push({ type: 'expression', node: exprNode });
     } else {
       processedQuasis.push({ type: 'template', value: quasi.value });
     }
   }
 
-  return nodes.templateLiteral(tok.lineno, tok.colno, processedQuasis);
+  return templateLiteral(tok.lineno, tok.colno, processedQuasis);
 };

@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { compare, compareOperand } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { nextToken, pushToken } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -15,7 +15,7 @@ export const parseCompare = (ctx: ParserContext): Node => {
     if (!tok) {
       break;
     } else if (compareOps.includes(tok.value as string)) {
-      ops.push(nodes.compareOperand(tok.lineno, tok.colno, parseConcat(ctx), tok.value as string));
+      ops.push(compareOperand(tok.lineno, tok.colno, parseConcat(ctx), tok.value as string));
     } else {
       pushToken(ctx, tok);
       break;
@@ -23,7 +23,7 @@ export const parseCompare = (ctx: ParserContext): Node => {
   }
 
   if (ops.length) {
-    return nodes.compare(ops[0]!.lineno, ops[0]!.colno, expr, ops);
+    return compare(ops[0]!.lineno, ops[0]!.colno, expr, ops);
   } else {
     return expr;
   }

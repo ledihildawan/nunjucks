@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { isArray, isArrayPattern, isObjectPattern } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
@@ -21,11 +21,11 @@ const emitLoopBindings = (ctx: Compiler, arr: string, i: string, len: string): v
 };
 
 const isArrayBinding = (n: Node): boolean =>
-  nodes.isArray(n) ||
-  nodes.isArrayPattern(n) ||
-  nodes.isObjectPattern(n);
+  isArray(n) ||
+  isArrayPattern(n) ||
+  isObjectPattern(n);
 
-const isFlatArrayBinding = (n: Node): boolean => nodes.isArray(n);
+const isFlatArrayBinding = (n: Node): boolean => isArray(n);
 
 export const compileFor = (ctx: Compiler, node: Node, frame: Frame): void => {
   const i = ctx._tmpid();

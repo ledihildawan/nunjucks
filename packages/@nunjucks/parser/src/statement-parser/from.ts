@@ -2,7 +2,7 @@ import {
   TOKEN_BLOCK_END,
   TOKEN_COMMA,
 } from '@nunjucks/lexer';
-import { nodes } from '@nunjucks/nodes';
+import { fromImport, nodeList, pair, pushChild } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, skip, skipSymbol, fail } from "../cursor.ts";
 import type { ParserContext, MutableNode } from "../cursor.ts";
@@ -23,7 +23,7 @@ export const parseFrom = (ctx: ParserContext): Node => {
       fromTok.colno);
   }
 
-  const names = (nodes.nodeList as () => Node)() as MutableNode;
+  const names = (nodeList as () => Node)() as MutableNode;
   let withContext;
 
   while (true) {
@@ -58,18 +58,18 @@ export const parseFrom = (ctx: ParserContext): Node => {
 
     if (skipSymbol(ctx, 'as')) {
       const alias = parsePrimary(ctx);
-      names.addChild(nodes.pair(name.lineno,
+      pushChild(names, pair(name.lineno,
         name.colno,
         name,
         alias));
     } else {
-      names.addChild(name);
+      pushChild(names, name);
     }
 
     withContext = parseWithContext(ctx);
   }
 
-  return nodes.fromImport(fromTok.lineno,
+  return fromImport(fromTok.lineno,
     fromTok.colno,
     template,
     names,

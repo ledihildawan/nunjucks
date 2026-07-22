@@ -1,7 +1,5 @@
 import { TOKEN_COMMA } from '@nunjucks/lexer';
-import {
-  nodes,
-} from '@nunjucks/nodes';
+import { array, for_, isSymbol, pushChild } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, skip, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext, MutableNode } from "../cursor.ts";
@@ -15,7 +13,7 @@ export const parseFor = (ctx: ParserContext): Node => {
   let endBlock: string;
 
   if (skipSymbol(ctx, 'for')) {
-    node = nodes.for(forTok.lineno, forTok.colno);
+    node = for_(forTok.lineno, forTok.colno);
     endBlock = 'endfor';
   } else {
     return fail(ctx, 'parseFor: expected for', forTok.lineno, forTok.colno);
@@ -27,19 +25,19 @@ export const parseFor = (ctx: ParserContext): Node => {
   } else {
     node.name = parsePrimary(ctx);
 
-    if (!nodes.isSymbol(node.name)) {
+    if (!isSymbol(node.name)) {
       fail(ctx, 'parseFor: variable name expected for loop');
     }
 
     const type = peekToken(ctx).type;
     if (type === TOKEN_COMMA) {
       const key = node.name as Node;
-      node.name = nodes.array(key.lineno, key.colno);
-      (node.name as MutableNode).addChild(key);
+      node.name = array(key.lineno, key.colno);
+      pushChild(node.name as MutableNode, key);
 
       while (skip(ctx, TOKEN_COMMA)) {
         const prim = parsePrimary(ctx);
-        (node.name as MutableNode).addChild(prim);
+        pushChild(node.name as MutableNode, prim);
       }
     }
   }

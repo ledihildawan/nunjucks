@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { do_ } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { skipSymbol, nextToken } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -12,5 +12,5 @@ export const parseDo = (ctx: ParserContext): Node => {
   // Consume the block-end token
   nextToken(ctx);
 
-  return nodes.do(tag.lineno, tag.colno, expr);
+  return do_(tag.lineno, tag.colno, expr);
 };

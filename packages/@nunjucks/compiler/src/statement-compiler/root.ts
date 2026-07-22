@@ -1,12 +1,10 @@
 import { createFrame } from '@nunjucks/runtime';
 import type { Frame } from '@nunjucks/runtime';
-import { nodes } from '@nunjucks/nodes';
+import { findAll, isBlock } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
 import type { Compiler } from '../index.ts';
-
-type NodeWithFindAll = Node & { findAll(type: string): Node[] };
 
 export const compileRoot = (ctx: Compiler, node: Node, frame: Frame): void => {
   if (frame) {
@@ -22,7 +20,7 @@ export const compileRoot = (ctx: Compiler, node: Node, frame: Frame): void => {
   const savedBuffer = ctx.buffer;
   ctx.buffer = childBuffer;
 
-  const blocks = (node as NodeWithFindAll).findAll('block');
+  const blocks = findAll(node, 'block');
 
   const blockLocation = (block: Node): { lineno: number; colno: number } => {
     const nameNode = block.name as Node | undefined;
@@ -32,7 +30,7 @@ export const compileRoot = (ctx: Compiler, node: Node, frame: Frame): void => {
     };
   };
 
-  const nonBlockChildren = node.children!.filter(child => !nodes.isBlock(child));
+  const nonBlockChildren = node.children!.filter(child => !isBlock(child));
   nonBlockChildren.forEach(child => {
     ctx.compile(child, frame);
   });

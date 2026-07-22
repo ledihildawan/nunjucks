@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { case_, switch_ } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -36,7 +36,7 @@ export const parseSwitch = (ctx: ParserContext): Node => {
     const cond = parseExpression(ctx);
     advanceAfterBlockEnd(ctx, switchStart);
     const body = parseUntilBlocks(ctx, caseStart, caseDefault, switchEnd);
-    cases.push(nodes.case(tok.lineno, tok.colno, cond, body));
+    cases.push(case_(tok.lineno, tok.colno, cond, body));
     tok = peekToken(ctx);
   } while (tok && tok.value === caseStart);
 
@@ -53,5 +53,5 @@ export const parseSwitch = (ctx: ParserContext): Node => {
       fail(ctx, 'parseSwitch: expected "case," "default" or "endswitch," got EOF.');
   }
 
-  return nodes.switch(tag.lineno, tag.colno, expr, cases, defaultCase ?? null);
+  return switch_(tag.lineno, tag.colno, expr, cases, defaultCase ?? null);
 };

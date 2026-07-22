@@ -3,7 +3,7 @@ import {
   TOKEN_RIGHT_BRACKET,
 } from '@nunjucks/lexer';
 import type { Token } from '@nunjucks/lexer';
-import { nodes, BracketNotation } from '@nunjucks/nodes';
+import { BracketNotation, lookupVal, slice } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skip, expect } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -28,14 +28,14 @@ const buildSlice = (ctx: ParserContext, bracketTok: Token, start: Node | null): 
 
   expect(ctx, TOKEN_RIGHT_BRACKET);
   const location = step || stop || start || bracketTok;
-  const slice = nodes.slice(location.lineno, location.colno, start, stop, step);
-  return slice;
+  const sliceNode = slice(location.lineno, location.colno, start, stop, step);
+  return sliceNode;
 };
 
 export const parseBracketAccess = (ctx: ParserContext, bracketTok: Token, target: Node): Node => {
   if (skip(ctx, TOKEN_COLON)) {
     const slice = buildSlice(ctx, bracketTok, null);
-    const node = nodes.lookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
+    const node = lookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
     (node as Node & { [BracketNotation]?: boolean })[BracketNotation] = true;
     return node;
   }
@@ -44,13 +44,13 @@ export const parseBracketAccess = (ctx: ParserContext, bracketTok: Token, target
 
   if (skip(ctx, TOKEN_COLON)) {
     const slice = buildSlice(ctx, bracketTok, start);
-    const node = nodes.lookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
+    const node = lookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
     (node as Node & { [BracketNotation]?: boolean })[BracketNotation] = true;
     return node;
   }
 
   expect(ctx, TOKEN_RIGHT_BRACKET);
-  const node = nodes.lookupVal(bracketTok.lineno, bracketTok.colno, target, start);
+  const node = lookupVal(bracketTok.lineno, bracketTok.colno, target, start);
   (node as Node & { [BracketNotation]?: boolean })[BracketNotation] = true;
   return node;
 };

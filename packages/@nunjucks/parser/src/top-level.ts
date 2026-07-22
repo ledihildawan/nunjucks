@@ -5,7 +5,7 @@ import {
   TOKEN_VARIABLE_START,
   TOKEN_RAW,
 } from '@nunjucks/lexer';
-import { nodes } from '@nunjucks/nodes';
+import { nodeList, output, templateData } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import {
   nextToken,
@@ -22,7 +22,7 @@ export const parseUntilBlocks = (ctx: ParserContext, ...blockNames: string[]): N
   const prev = ctx.breakOnBlocks;
   ctx.breakOnBlocks = blockNames;
 
-  const ret = nodes.nodeList(0, 0, parseNodes(ctx));
+  const ret = nodeList(0, 0, parseNodes(ctx));
 
   ctx.breakOnBlocks = prev;
   return ret;
@@ -53,10 +53,10 @@ export const parseNodes = (ctx: ParserContext): Node[] => {
         data = data.replace(/\s*$/, '');
       }
 
-      buf.push(nodes.output(
+      buf.push(output(
         tok.lineno,
         tok.colno,
-        [nodes.templateData(tok.lineno, tok.colno, data)]
+        [templateData(tok.lineno, tok.colno, data)]
       ));
     } else if (tok.type === TOKEN_BLOCK_START) {
       ctx.dropLeadingWhitespace = false;
@@ -69,7 +69,7 @@ export const parseNodes = (ctx: ParserContext): Node[] => {
       const e = parseExpression(ctx);
       ctx.dropLeadingWhitespace = false;
       advanceAfterVariableEnd(ctx);
-      buf.push(nodes.output(tok.lineno, tok.colno, [e]));
+      buf.push(output(tok.lineno, tok.colno, [e]));
     } else if (tok.type === TOKEN_COMMENT) {
       ctx.dropLeadingWhitespace = (tok.value as string).charAt(
         (tok.value as string).length - ctx.tokens.tags.COMMENT_END.length - 1
@@ -82,10 +82,10 @@ export const parseNodes = (ctx: ParserContext): Node[] => {
           .replace(/^({%\s*raw\s*%})/, '')
           .replace(/({%\s*endraw\s*%})$/, '');
       }
-      buf.push(nodes.output(
+      buf.push(output(
         tok.lineno,
         tok.colno,
-        [nodes.templateData(tok.lineno, tok.colno, rawContent as string)]
+        [templateData(tok.lineno, tok.colno, rawContent as string)]
       ));
     } else {
       fail(ctx, 'Unexpected token at top-level: ' +

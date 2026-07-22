@@ -1,4 +1,4 @@
-import { nodes } from '@nunjucks/nodes';
+import { isArrayPattern, isObjectPattern, isSymbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
@@ -19,7 +19,7 @@ export const compileInlineIf = (ctx: Compiler, node: Node, frame: Frame): void =
 };
 
 export const compileWalrus = (ctx: Compiler, node: Node, frame: Frame): void => {
-  if (nodes.isSymbol(node.target as Node)) {
+  if (isSymbol(node.target as Node)) {
     const target = node.target as Node;
     const valueId = ctx._tmpid();
     ctx._emit('(lineno = ' + (node.lineno ?? 0) + ', colno = ' + (node.colno ?? 0) + ', (() => {');
@@ -29,7 +29,7 @@ export const compileWalrus = (ctx: Compiler, node: Node, frame: Frame): void => 
     ctx._emit('frame.set(' + JSON.stringify(target.value) + ', ' + valueId + ', true);');
     ctx._emit('return ' + valueId + ';');
     ctx._emit('})())');
-  } else if (nodes.isArrayPattern(node.target as Node) || nodes.isObjectPattern(node.target as Node)) {
+  } else if (isArrayPattern(node.target as Node) || isObjectPattern(node.target as Node)) {
     const target = node.target as Node;
     const valueId = ctx._tmpid();
     ctx._emit('(lineno = ' + (node.lineno ?? 0) + ', colno = ' + (node.colno ?? 0) + ', (() => {');

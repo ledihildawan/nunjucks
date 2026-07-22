@@ -35,7 +35,7 @@ describe('findAll', () => {
   });
 
   test('returns empty array for no match', () => {
-    expect(findAll(ast, (n) => n.type === 'nonexistent')).toEqual([]);
+    expect(findAll(ast, (n) => (n.type as string) === 'nonexistent')).toEqual([]);
   });
 });
 
@@ -47,7 +47,7 @@ describe('findFirst', () => {
   });
 
   test('returns undefined for no match', () => {
-    expect(findFirst(ast, (n) => n.type === 'nonexistent')).toBeUndefined();
+    expect(findFirst(ast, (n) => (n.type as string) === 'nonexistent')).toBeUndefined();
   });
 });
 

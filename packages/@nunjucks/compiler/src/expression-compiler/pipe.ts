@@ -10,12 +10,12 @@ const getInputVarPath = (node: Node | undefined): string | null => {
     return node.value as string;
   }
 
-  if (node.type === 'getattr' || node.type === 'lookupVal') {
+  if ((node.type as string) === 'getattr' || node.type === 'lookupVal') {
     const parts: unknown[] = [];
     let curr: Node | undefined = node;
 
-    while (curr && (curr.type === 'getattr' || curr.type === 'lookupVal')) {
-      if (curr.type === 'getattr') {
+    while (curr && ((curr.type as string) === 'getattr' || curr.type === 'lookupVal')) {
+      if ((curr.type as string) === 'getattr') {
         parts.unshift(curr.attr);
       } else if (curr.type === 'lookupVal') {
         const val = curr.val as Node;
@@ -40,7 +40,7 @@ const getInputVarLocation = (node: Node | undefined): string | null => {
     return `${node.lineno ?? 0}, ${node.colno ?? 0}`;
   }
 
-  if (node.type === 'getattr') {
+  if ((node.type as string) === 'getattr') {
     return `${node.lineno ?? 0}, ${node.colno ?? 0}`;
   }
 
