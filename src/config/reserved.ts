@@ -35,7 +35,17 @@ export const RESERVED_KEYWORDS = new Set([
   'attr', 'dumpObj', 'copySafeness', 'markSafe'
 ]);
 
-export const validateReservedName = (name, type = 'name') => {
+interface ValidationResult {
+  valid: boolean;
+  error?: {
+    code: string;
+    subject: string;
+    type: string;
+    message: string;
+  };
+}
+
+const validateReservedName = (name: string, type: string = 'name'): ValidationResult => {
   if (RESERVED_KEYWORDS.has(name)) {
     return {
       valid: false,
@@ -50,10 +60,10 @@ export const validateReservedName = (name, type = 'name') => {
   return { valid: true };
 };
 
-export const validateFilterName = (name) => validateReservedName(name, 'filter');
+export const validateFilterName = (name: string): ValidationResult => validateReservedName(name, 'filter');
 
-export const validateGlobalName = (name) => validateReservedName(name, 'global');
+export const validateGlobalName = (name: string): ValidationResult => validateReservedName(name, 'global');
 
-export const validateContextKey = (key) => validateReservedName(key, 'context key');
+export const validateContextKey = (key: string): ValidationResult => validateReservedName(key, 'context key');
 
-export const getReservedKeywords = () => [...RESERVED_KEYWORDS];
+export const getReservedKeywords = (): string[] => [...RESERVED_KEYWORDS];

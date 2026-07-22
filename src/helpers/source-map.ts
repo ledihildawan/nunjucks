@@ -1,11 +1,13 @@
 import { defaultTo, isArray } from 'remeda';
 import { createSourceMap } from '@nunjucks/compiler/source-map';
+import type { SourceMap, SourceMapMapping } from '@nunjucks/compiler/source-map';
 
 export { createSourceMap };
+export type { SourceMap, SourceMapMapping };
 
-const hasValue = (value) => value !== null && value !== undefined;
+const hasValue = (value: unknown): boolean => value !== null && value !== undefined;
 
-export function createSourceMapFromArray(templateName, mappingsArray) {
+export function createSourceMapFromArray(templateName: string, mappingsArray: SourceMapMapping[] | null): SourceMap {
   const sm = createSourceMap(templateName);
   if (isArray(mappingsArray)) {
     sm.mappings = mappingsArray;
@@ -13,7 +15,20 @@ export function createSourceMapFromArray(templateName, mappingsArray) {
   return sm;
 }
 
-export function applySourceMapToError(error, lineno, sourceMapData, templateName) {
+interface SourceMapError extends Error {
+  lineno?: number;
+  colno?: number;
+  lineBase?: string;
+  _includeChain?: unknown;
+  getterName?: string;
+}
+
+export function applySourceMapToError(
+  error: SourceMapError,
+  lineno: number,
+  sourceMapData: SourceMapMapping[] | null,
+  templateName: string
+): SourceMapError | null {
   if (!sourceMapData || !isArray(sourceMapData)) {
     return null;
   }
@@ -32,7 +47,13 @@ export function applySourceMapToError(error, lineno, sourceMapData, templateName
   return error;
 }
 
-export function createMappedError(error, sourceMapData, lineno, colno, path) {
+export function createMappedError(
+  error: SourceMapError,
+  sourceMapData: SourceMapMapping[] | null,
+  lineno: number,
+  colno: number | undefined,
+  path: string
+): Error | null {
   if (!sourceMapData || !isArray(sourceMapData)) {
     return null;
   }
@@ -54,14 +75,12 @@ export function createMappedError(error, sourceMapData, lineno, colno, path) {
       msg += ` [Line ${displayLine}]`;
     }
   }
-  msg += `\n  ${defaultTo(error.message, '')}`;
+  const errorMessage = error.message ?? '';
+  msg += `\n  ${errorMessage}`;
 
   const newError = new Error(msg);
-  newError.name = defaultTo(error.name, 'Template render error');
-  newError.lineno = pos.line;
-  newError.colno = finalColno;
-  newError.lineBase = 'zero';
-  newError._includeChain = error._includeChain;
+  newError.name = error.name ?? 'Template render error';
+  Object.assign(newError, { lineno: pos.line, colno: finalColno, lineBase: 'zero', _includeChain: error._includeChain });
   const renderLine = `at ${defaultTo(error.getterName, 'root')} (${templateLocation})`;
   newError.stack = `${newError.message}\n    ${renderLine}\n    at Environment.render`;
 

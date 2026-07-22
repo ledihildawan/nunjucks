@@ -1,0 +1,137 @@
+interface SecurityError extends Error {
+  code: string;
+  dangerousPaths?: string[];
+}
+
+export interface ContextValidationError {
+  code: string;
+  message: string;
+  subject?: string;
+  dangerousPaths?: string[];
+}
+
+export interface ContextValidationResult {
+  valid: boolean;
+  errors: ContextValidationError[];
+}
+
+export interface ContextValidatorConfig {
+  strictMode?: boolean;
+  scanContextValues?: boolean;
+  allowedContextKeys?: readonly string[];
+  blockedContextKeys?: readonly string[];
+  allowedGlobals?: readonly string[];
+}
+
+const DANGEROUS_GLOBALS = new Set([
+  'process', 'global', 'globalThis', 'window', 'document', 'self', 'console',
+  'Buffer', 'exports', 'module', 'require', '__dirname', '__filename'
+]);
+
+const PROTOTYPE_POLLUTION_KEYS = new Set([
+  '__proto__', 'constructor', 'prototype', 'hasOwnProperty'
+]);
+
+const globalRecord = globalThis as Record<string, unknown>;
+
+const isDangerousValue = (value: unknown): boolean => {
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'object' || typeof value === 'function') {
+    if (typeof process !== 'undefined' && value === process) return true;
+    if (value === globalThis) return true;
+    if (globalRecord.window !== undefined && value === globalRecord.window) return true;
+    if (globalRecord.document !== undefined && value === globalRecord.document) return true;
+    if (globalRecord.self !== undefined && value === globalRecord.self) return true;
+    if (typeof Buffer !== 'undefined' && value instanceof Buffer) return true;
+    if (typeof global !== 'undefined' && value === global) return true;
+  }
+  return false;
+};
+
+const findDangerousValues = (
+  obj: unknown,
+  allowedGlobals?: readonly string[] | null,
+  path = '',
+  isTopLevel = true,
+  seen: WeakSet<object> = new WeakSet()
+): string[] => {
+  const dangerous: string[] = [];
+
+  if (!obj || typeof obj !== 'object' || seen.has(obj as object)) {
+    return dangerous;
+  }
+  seen.add(obj as object);
+
+  const record = obj as Record<string, unknown>;
+  for (const key of Object.keys(record)) {
+    const currentPath = path ? `${path}.${key}` : key;
+    const value = record[key];
+
+    if (PROTOTYPE_POLLUTION_KEYS.has(key)) {
+      dangerous.push(currentPath);
+      continue;
+    }
+
+    if (isTopLevel && DANGEROUS_GLOBALS.has(key) && !allowedGlobals?.includes(key)) {
+      dangerous.push(currentPath);
+    }
+
+    if (typeof value === 'function') {
+      const fnName = value.name || key;
+      if (isTopLevel && (fnName === 'eval' || fnName === 'Function')) {
+        dangerous.push(currentPath);
+      }
+      if (isTopLevel && DANGEROUS_GLOBALS.has(fnName) && !allowedGlobals?.includes(fnName)) {
+        dangerous.push(currentPath);
+      }
+    }
+
+    if (isDangerousValue(value)) {
+      dangerous.push(currentPath);
+    }
+
+    if (value && typeof value === 'object' && !isDangerousValue(value)) {
+      dangerous.push(...findDangerousValues(value, allowedGlobals, currentPath, false, seen));
+    }
+  }
+
+  return dangerous;
+};
+
+export const validateRenderContext = (context: unknown, config: ContextValidatorConfig): ContextValidationResult => {
+  if (!config.strictMode && !config.scanContextValues) {
+    return { valid: true, errors: [] };
+  }
+
+  try {
+    if (config.strictMode || config.scanContextValues) {
+      const dangerous = findDangerousValues(context, config.allowedGlobals);
+      if (dangerous.length > 0) {
+        const err: SecurityError = new Error(`Context contains unsafe values: ${dangerous.join(', ')}`) as SecurityError;
+        err.code = 'DANGEROUS_CONTEXT_VALUES';
+        err.dangerousPaths = dangerous;
+        throw err;
+      }
+    }
+    return { valid: true, errors: [] };
+  } catch (err) {
+    const securityError = err as SecurityError;
+    const errorObj: ContextValidationResult = {
+      valid: false,
+      errors: [{
+        code: securityError.code || 'SECURITY_VIOLATION',
+        message: securityError.message
+      }]
+    };
+    if (securityError.dangerousPaths) {
+      errorObj.errors[0]!.subject = securityError.dangerousPaths[0];
+      errorObj.errors[0]!.dangerousPaths = securityError.dangerousPaths;
+    }
+    return errorObj;
+  }
+};
+
+export const findContextDangerousValues = (context: unknown, config: { allowedGlobals?: readonly string[] } = {}): string[] => {
+  if (!context || typeof context !== 'object') return [];
+  return findDangerousValues(context, config.allowedGlobals);
+};

@@ -1,13 +1,32 @@
 import { validateFilterName, validateGlobalName } from '../../config/reserved.js';
 
-export const validateConfig = (config) => {
-  const errors = [];
+export interface ConfigValidationError {
+  code: string;
+  message: string;
+  subject: string;
+}
 
-  if (config.executionTimeout < 0) {
+export interface ConfigValidationResult {
+  valid: boolean;
+  errors: ConfigValidationError[];
+}
+
+export interface Config {
+  executionTimeout?: number;
+  maxTemplateSize?: number;
+  sandboxEnvironment?: string;
+  _customFilters?: Record<string, unknown>;
+  _customGlobals?: Record<string, unknown>;
+}
+
+export const validateConfig = (config: Config): ConfigValidationResult => {
+  const errors: ConfigValidationError[] = [];
+
+  if ((config.executionTimeout ?? 0) < 0) {
     errors.push({ code: 'INVALID_CONFIG', message: 'executionTimeout must be >= 0', subject: 'executionTimeout' });
   }
 
-  if (config.maxTemplateSize < 0) {
+  if ((config.maxTemplateSize ?? 0) < 0) {
     errors.push({ code: 'INVALID_CONFIG', message: 'maxTemplateSize must be >= 0', subject: 'maxTemplateSize' });
   }
 
@@ -18,8 +37,8 @@ export const validateConfig = (config) => {
   if (config._customFilters) {
     for (const [name] of Object.entries(config._customFilters)) {
       const validation = validateFilterName(name);
-      if (!validation.valid) {
-        errors.push({ ...validation.error });
+      if (!validation.valid && validation.error) {
+        errors.push(validation.error as ConfigValidationError);
       }
     }
   }
@@ -27,8 +46,8 @@ export const validateConfig = (config) => {
   if (config._customGlobals) {
     for (const [name] of Object.entries(config._customGlobals)) {
       const validation = validateGlobalName(name);
-      if (!validation.valid) {
-        errors.push({ ...validation.error });
+      if (!validation.valid && validation.error) {
+        errors.push(validation.error as ConfigValidationError);
       }
     }
   }

@@ -1,30 +1,82 @@
 import { readFileSync } from 'node:fs';
-import { createLog, normalizeErrorMetadata } from '@nunjucks/log';
+import { createLog, type TemplateError } from '@nunjucks/log';
+import { normalizeErrorMetadata, type NormalizedErrorMetadata } from '@nunjucks/log';
 
-const positionAtOffset = (text, offset) => {
+interface Position {
+  lineOffset: number;
+  col: number;
+}
+
+interface LinePosition {
+  line: number;
+  col: number;
+}
+
+interface SourcePosition {
+  line: number;
+  col: number;
+  name: string | null;
+}
+
+interface TemplateMatch {
+  index: number;
+  template: string;
+}
+
+interface CodeContext {
+  content: string;
+  startLine: number;
+  errorCol: number;
+  errorLine: number;
+}
+
+interface ResolveLocationResult {
+  lineno: number | null;
+  colno: number | null;
+  lineBase: 'zero' | 'one';
+  templatePath: string | null;
+  sourceContent: string | null;
+  sourceStartLine: number;
+  preferJsCallerLocation: boolean;
+}
+
+interface DiagnosticsConfig {
+  phase?: string | null;
+  templatePath?: string | null;
+  jsCaller?: string | null;
+  jsCallerErrorLine?: number | null;
+  jsCallerErrorCol?: number | null;
+  _callerFile?: string | null;
+  dev?: boolean;
+  ide?: string;
+  lineno?: number | null;
+  colno?: number | null;
+}
+
+const positionAtOffset = (text: string, offset: number): Position => {
   const before = text.slice(0, offset);
   const parts = before.split('\n');
   return {
     lineOffset: parts.length - 1,
-    col: parts[parts.length - 1].length + 1
+    col: parts[parts.length - 1]!.length + 1
   };
 };
 
-const templateLocationOffset = (template, templateErrorLine, templateErrorCol) => {
+const templateLocationOffset = (template: string, templateErrorLine: number | null, templateErrorCol: number | null): number => {
   const templateLines = template.split('\n');
-  const line = Number.isInteger(templateErrorLine) ? templateErrorLine : 0;
-  const col = Number.isInteger(templateErrorCol) ? templateErrorCol : 0;
+  const line = Number.isInteger(templateErrorLine) ? templateErrorLine! : 0;
+  const col = Number.isInteger(templateErrorCol) ? templateErrorCol! : 0;
   const clampedLine = Math.max(0, Math.min(line, templateLines.length - 1));
   let offset = 0;
 
   for (let i = 0; i < clampedLine; i++) {
-    offset += templateLines[i].length + 1;
+    offset += templateLines[i]!.length + 1;
   }
 
-  return offset + Math.max(0, Math.min(col, templateLines[clampedLine].length));
+  return offset + Math.max(0, Math.min(col, templateLines[clampedLine]!.length));
 };
 
-const findTemplateOccurrence = (content, templateHint, preferredLine) => {
+const findTemplateOccurrence = (content: string, templateHint: string, preferredLine: number | null): TemplateMatch | null => {
   let best = -1;
   let bestTemplate = templateHint;
   let bestDistance = Infinity;
@@ -41,7 +93,7 @@ const findTemplateOccurrence = (content, templateHint, preferredLine) => {
 
       const position = positionAtOffset(content, found);
       const line = position.lineOffset + 1;
-      const distance = preferredLine ? Math.abs(line - preferredLine) : 0;
+      const distance = preferredLine != null ? Math.abs(line - preferredLine) : 0;
       if (distance < bestDistance) {
         best = found;
         bestTemplate = candidate;
@@ -55,7 +107,7 @@ const findTemplateOccurrence = (content, templateHint, preferredLine) => {
   return best === -1 ? null : { index: best, template: bestTemplate };
 };
 
-export const findContextKeyPosition = (sourceFile, callLine, dangerousPath) => {
+export const findContextKeyPosition = (sourceFile: string, callLine: number, dangerousPath: string): LinePosition | null => {
   try {
     const content = readFileSync(sourceFile, 'utf-8');
     const lines = content.split('\n');
@@ -63,13 +115,13 @@ export const findContextKeyPosition = (sourceFile, callLine, dangerousPath) => {
     const searchLine = Math.max(0, callLine - 1);
     const searchRadius = 5;
 
-    let best = null;
+    let best: LinePosition | null = null;
     let bestDistance = Infinity;
 
     for (let i = Math.max(0, searchLine - searchRadius); i <= Math.min(lines.length - 1, searchLine + searchRadius); i++) {
-      const line = lines[i];
+      const line = lines[i]!;
       let col = 0;
-      while ((col = line.indexOf(keyName, col)) !== -1) {
+      while ((col = line.indexOf(keyName!, col)) !== -1) {
         const distance = Math.abs(i - searchLine);
         if (distance < bestDistance || (distance === bestDistance && col < (best?.col ?? Infinity))) {
           bestDistance = distance;
@@ -89,30 +141,30 @@ export const findContextKeyPosition = (sourceFile, callLine, dangerousPath) => {
   return null;
 };
 
-const findSubjectOccurrence = (content, subject, preferredLine) => {
+const findSubjectOccurrence = (content: string, subject: string | null, preferredLine: number | null): LinePosition | null => {
   if (!subject || typeof subject !== 'string') return null;
 
-  let best = null;
+  let best: LinePosition | null = null;
   let bestDistance = Infinity;
   const subjectColOffset = subject.includes('.') ? subject.lastIndexOf('.') + 1 : 0;
   const escaped = subject.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const patterns = [
+  const patterns: Array<{ re: RegExp; group: number }> = [
     { re: new RegExp(`'(${escaped})'`, 'g'), group: 1 },
     { re: new RegExp(`"(${escaped})"`, 'g'), group: 1 },
     { re: new RegExp(`\\b(${escaped})\\b`, 'g'), group: 1 }
   ];
 
   for (const { re, group } of patterns) {
-    let match;
+    let match: RegExpExecArray | null;
     while ((match = re.exec(content)) !== null) {
       const groupText = match[group];
       if (!groupText) continue;
 
-      const groupOffset = match[0].indexOf(groupText);
+      const groupOffset = match[0]!.indexOf(groupText);
       const offset = match.index + groupOffset + subjectColOffset;
       const position = positionAtOffset(content, offset);
       const line = position.lineOffset + 1;
-      const distance = preferredLine ? Math.abs(line - preferredLine) : 0;
+      const distance = preferredLine != null ? Math.abs(line - preferredLine) : 0;
       if (distance < bestDistance) {
         best = { line, col: position.col };
         bestDistance = distance;
@@ -123,15 +175,24 @@ const findSubjectOccurrence = (content, subject, preferredLine) => {
   return best;
 };
 
-const matchTemplateInContent = (content, templateHint, templateErrorLine, templateErrorCol, preferredLine) => {
+const matchTemplateInContent = (content: string, templateHint: string, templateErrorLine: number | null, templateErrorCol: number | null, preferredLine: number | null): SourcePosition | null => {
   const templateMatch = findTemplateOccurrence(content, templateHint, preferredLine);
   if (!templateMatch) return null;
   const targetOffset = templateMatch.index + templateLocationOffset(templateMatch.template, templateErrorLine, templateErrorCol);
   const position = positionAtOffset(content, targetOffset);
-  return { line: position.lineOffset + 1, col: position.col };
+  return { line: position.lineOffset + 1, col: position.col, name: null };
 };
 
-const resolveInlineCoordinates = (content, errorLine, errorCol, templateHint, templateErrorLine, templateErrorCol, subjectHint, resolveInlineLocation) => {
+const resolveInlineCoordinates = (
+  content: string,
+  errorLine: number,
+  errorCol: number,
+  templateHint: string | null,
+  templateErrorLine: number | null,
+  templateErrorCol: number | null,
+  subjectHint: string | null,
+  resolveInlineLocation: boolean
+): { resolvedLine: number; resolvedCol: number } => {
   let resolvedLine = errorLine;
   let resolvedCol = errorCol;
 
@@ -182,12 +243,30 @@ const resolveInlineCoordinates = (content, errorLine, errorCol, templateHint, te
   return { resolvedLine, resolvedCol };
 };
 
-const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, templateErrorLine = null, templateErrorCol = null, subjectHint = null, resolveInlineLocation = true) => {
+const extractCodeContext = (
+  filePath: string,
+  errorLine: number,
+  errorCol: number,
+  templateHint?: string | null,
+  templateErrorLine?: number | null,
+  templateErrorCol?: number | null,
+  subjectHint?: string | null,
+  resolveInlineLocation = true
+): CodeContext | null => {
   try {
     const content = readFileSync(filePath, 'utf8');
     const lines = content.split('\n');
 
-    const { resolvedLine, resolvedCol } = resolveInlineCoordinates(content, errorLine, errorCol, templateHint, templateErrorLine, templateErrorCol, subjectHint, resolveInlineLocation);
+    const { resolvedLine, resolvedCol } = resolveInlineCoordinates(
+      content,
+      errorLine,
+      errorCol,
+      templateHint ?? null,
+      templateErrorLine ?? null,
+      templateErrorCol ?? null,
+      subjectHint ?? null,
+      resolveInlineLocation
+    );
 
     if (resolvedLine < 1 || resolvedLine > lines.length) {
       return null;
@@ -208,7 +287,7 @@ const extractCodeContext = (filePath, errorLine, errorCol, templateHint = null, 
   }
 };
 
-const resolveErrorLocation = (config, initialMetadata, errLineno, errColno, template) => {
+const resolveErrorLocation = (config: DiagnosticsConfig, initialMetadata: NormalizedErrorMetadata, errLineno: number | null, errColno: number | null, template: string | null): ResolveLocationResult => {
   const useJsCaller = config.jsCallerErrorLine != null;
   const hasErrorLocation = errLineno !== undefined && errLineno !== null;
   const preferJsCallerLocation = !config.templatePath && useJsCaller;
@@ -218,16 +297,16 @@ const resolveErrorLocation = (config, initialMetadata, errLineno, errColno, temp
 
   let sourceContent = template;
   let sourceStartLine = 1;
-  let resolvedJsCallerLine = config.jsCallerErrorLine ?? null;
-  let resolvedJsCallerCol = config.jsCallerErrorCol ?? null;
+  let resolvedJsCallerLine: number | null = config.jsCallerErrorLine ?? null;
+  let resolvedJsCallerCol: number | null = config.jsCallerErrorCol ?? null;
 
   const hasCallerLocation = hasErrorLocation && initialMetadata.lineBase === 'one';
 
   if (preferJsCallerLocation && useJsCaller && config.jsCaller) {
     const codeContext = extractCodeContext(
       config.jsCaller,
-      hasCallerLocation ? errLineno : config.jsCallerErrorLine,
-      hasCallerLocation ? errColno : config.jsCallerErrorCol,
+      hasCallerLocation ? errLineno! : config.jsCallerErrorLine!,
+      hasCallerLocation ? errColno! : config.jsCallerErrorCol!,
       template,
       errLineno,
       errColno,
@@ -235,9 +314,6 @@ const resolveErrorLocation = (config, initialMetadata, errLineno, errColno, temp
       !hasCallerLocation
     );
     if (codeContext) {
-      // The caller file is the canonical source. Do not expose a synthetic
-      // snippet (or the inline template string) as sourceContent: consumers
-      // use sourceContent together with lineno/colno to render the location.
       try {
         sourceContent = readFileSync(config.jsCaller, 'utf8');
         sourceStartLine = 1;
@@ -263,12 +339,21 @@ const resolveErrorLocation = (config, initialMetadata, errLineno, errColno, temp
   return { lineno, colno, lineBase, templatePath, sourceContent, sourceStartLine, preferJsCallerLocation };
 };
 
-export const wrapWithLog = (err, config, template = null, renderContext = null) => {
+interface ErrorWithCauses extends Error {
+  causes?: string[];
+  fixCode?: string;
+  fixComment?: string;
+  suggestion?: string;
+  documentationUrl?: string;
+  severity?: 'error' | 'warning' | 'info';
+}
+
+export const wrapWithLog = (err: unknown, config: DiagnosticsConfig, template: string | null = null, renderContext: unknown = null): TemplateError => {
   const initialMetadata = normalizeErrorMetadata(err, {
     phase: config.phase || 'render',
     templatePath: config.templatePath || config._callerFile || null,
     sourceContent: typeof template === 'string' ? template : null,
-    renderContext
+    renderContext: renderContext as Record<string, unknown> | null
   });
   const errLineno = initialMetadata.lineno;
   const errColno = initialMetadata.colno;
@@ -288,25 +373,17 @@ export const wrapWithLog = (err, config, template = null, renderContext = null) 
     templatePath,
     sourceContent,
     sourceStartLine,
-    renderContext,
+    renderContext: renderContext as Record<string, unknown> | null,
     code: 'RENDER_ERROR'
   });
-  metadata.lineno = lineno;
-  metadata.colno = colno;
-  metadata.lineBase = lineBase;
-  metadata.templateName = templatePath;
-  metadata.templatePath = templatePath;
-  metadata.sourceContent = sourceContent;
-  metadata.sourceStartLine = sourceStartLine;
-  metadata.renderContext = renderContext;
 
-  const originalCauses = err.causes;
-  const originalFixCode = err.fixCode;
-  const originalFixComment = err.fixComment;
-  const originalSuggestion = err.suggestion;
-  const originalDocumentationUrl = err.documentationUrl;
-  const originalRelatedLinks = err.relatedLinks;
-  const originalSeverity = err.severity;
+  const errExt = err as ErrorWithCauses;
+  const originalCauses = errExt.causes;
+  const originalFixCode = errExt.fixCode;
+  const originalFixComment = errExt.fixComment;
+  const originalSuggestion = errExt.suggestion;
+  const originalDocumentationUrl = errExt.documentationUrl;
+  const originalSeverity = errExt.severity;
 
   const errorDef = {
     name: metadata.code || 'RENDER_ERROR',
@@ -317,29 +394,30 @@ export const wrapWithLog = (err, config, template = null, renderContext = null) 
     fixComment: typeof originalFixComment === 'string' ? originalFixComment : undefined,
     suggestion: typeof originalSuggestion === 'string' ? originalSuggestion : undefined,
     documentationUrl: typeof originalDocumentationUrl === 'string' ? originalDocumentationUrl : undefined,
-    relatedLinks: Array.isArray(originalRelatedLinks) ? originalRelatedLinks : undefined,
     severity: originalSeverity || 'error',
   };
-  const errorObj = createLog('error', errorDef, {}, metadata.subject, {
+
+  const contextObj: Record<string, unknown> = {
     lineno: metadata.lineno,
     colno: metadata.colno,
     phase: metadata.phase,
     templateName: metadata.templateName,
-    code: metadata.code,
     lineBase: metadata.lineBase,
     dev,
     ide,
-    templatePath,
-    sourceContent,
+    templatePath: templatePath ?? undefined,
+    sourceContent: sourceContent ?? undefined,
     sourceStartLine,
-    renderContext,
+    renderContext: renderContext as Record<string, unknown> | undefined,
     timestamp,
     verbosity: 'full',
     isJsCaller: preferJsCallerLocation,
-  });
+  };
+
+  const errorObj = createLog('error', errorDef, {}, metadata.subject, contextObj as Parameters<typeof createLog>[4]) as TemplateError;
   errorObj.templatePath = templatePath;
   errorObj.sourceStartLine = sourceStartLine;
-  errorObj.renderContext = metadata.renderContext;
+  errorObj.renderContext = metadata.renderContext ?? undefined;
 
   return errorObj;
 };
