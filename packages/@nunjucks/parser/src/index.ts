@@ -1,4 +1,4 @@
-import { lex } from '@nunjucks/lexer';
+import { createTokenizer } from '@nunjucks/lexer';
 import type { LexerOptions } from '@nunjucks/lexer';
 import { root } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
@@ -25,7 +25,7 @@ export function createParser(tokens: TokenStream, securityConfig: Record<string,
 
 export function parse(src: string, extensions?: ParserExtension[], opts?: ParseOptions): Node & { children: Node[] } {
   const securityConfig = opts?.security ?? null;
-  const p = createParser(lex(src, opts), securityConfig ?? {});
+  const p = createParser(createTokenizer(src, opts), securityConfig ?? {});
   if (extensions !== undefined) {
     p.extensions = extensions;
   }

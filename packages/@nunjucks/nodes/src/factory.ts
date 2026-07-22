@@ -1,6 +1,4 @@
 // FACTORY - Node creation (type-safe; expression creators return precise variants)
-// Import directly: import { node, literal, nodes } from '@nunjucks/nodes/factory'
-
 import { T, type Node, type NodeType, type NodeOf, FIELDS } from './types.ts';
 import type {
   ValueNode, ChildrenNode, BinaryOpNode, BinaryNode, UnaryOpNode, UnaryNode,
@@ -213,10 +211,7 @@ export const callExtensionAsync = (lineno: number, colno: number, ext: unknown, 
   });
 };
 
-// Aliases for backward compatibility naming
-export const Filter = pipe;
-export const FilterAsync = pipeAsync;
-export const LiteralNode = literal;
+
 
 // ============================================
 // AGGREGATE NAMESPACE (auto-generated; used by the extension API)
@@ -243,7 +238,6 @@ const creators = {
   group, array, dict, pair, spread, walrus, templateLiteral, keywordArgs,
   variableDeclaration, variableAssignment, compoundAssignment, defineBlock,
   callExtension, callExtensionAsync,
-  Filter, FilterAsync, LiteralNode,
 };
 
 export const nodes = Object.freeze({

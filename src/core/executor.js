@@ -196,7 +196,6 @@ export const execute = async (code, context = {}, config = {}) => {
     throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_TEST, { name }, name, { lineno: lineno ?? null, colno: colno ?? null, phase: 'render', lineBase: 'zero' });
   };
 
-  // Dev warning for unsandboxed rendering
   if (!sandbox && devWarningSandbox) {
     console.warn(
       `[Nunjucks] WARNING: Rendering template without sandbox enabled. ` +
@@ -207,7 +206,6 @@ export const execute = async (code, context = {}, config = {}) => {
   const strictPipeInput = config.strictPipeInput ?? false;
   const getFilter = createGetFilter(context, filters, config, strictPipeInput);
 
-  // Create runtime object for the new format
   const warningsCollector = config.warningsCollector || [];
   const logContext = {
     templateName: config.templateName || 'inline',
@@ -269,25 +267,20 @@ export const execute = async (code, context = {}, config = {}) => {
     };
   }
 
-  // Create a proper frame object
   const frame = createFrame();
 
-  // Handle sandbox mode
   if (sandbox) {
     const safeContext = createSandboxedContext(ctx, true, buildSandboxOptions(config));
     const safeRuntime = { ...runtime };
     const env = buildEnvObject(config, getFilter, getTest);
 
-    // Execute code - support both old and new format
     const { render } = getRenderFunction(code);
     
     return await render(env, safeContext, frame, safeRuntime);
   }
 
-  // Execute code - support both old and new format
   const { render, blocks, blockMeta } = getRenderFunction(code);
   
-  // Create env object for new format (matches new compiler expectations)
   const env = buildEnvObject(config, getFilter, getTest);
   
   if (config.env) {

@@ -3,7 +3,7 @@
 
 export interface Frame {
   variables: Record<string, unknown>;
-  readonly _rootState: { revision: number };
+  readonly rootState: { revision: number };
   parent: Frame | undefined;
   topLevel: boolean;
   readonly isolateWrites: boolean | undefined;
@@ -16,7 +16,7 @@ export interface Frame {
 }
 
 export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Frame {
-  const rootState: { revision: number } = (parent?._rootState as { revision: number }) ?? { revision: 0 };
+  const rootState: { revision: number } = (parent?.rootState as { revision: number }) ?? { revision: 0 };
   const state: {
     variables: Record<string, unknown>;
     parent: Frame | undefined;
@@ -45,7 +45,7 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
       state.resolveCache.clear();
       state.lookupCache.clear();
     },
-    get _rootState(): { revision: number } {
+    get rootState(): { revision: number } {
       return state.rootState;
     },
     get parent(): Frame | undefined {

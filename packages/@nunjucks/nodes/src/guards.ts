@@ -1,6 +1,4 @@
 // GUARDS - Type-narrowing predicates
-// Import directly: import { is, isNode } from '@nunjucks/nodes/guards'
-
 import { T, type Node, type NodeType } from './types.ts';
 
 const is = <K extends NodeType>(type: K) =>

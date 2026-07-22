@@ -33,9 +33,9 @@ export interface Context {
   metadata: Metadata;
   blockLocations: Record<string, BlockLocation>;
   exported: string[];
-  _parentBlockNames: string[] | null;
-  _validatedBlocks: boolean;
-  _parentContext: Context | null;
+  parentBlockNames: string[] | null;
+  validatedBlocks: boolean;
+  parentContext: Context | null;
   init: (ctxArg: Record<string, unknown>, blocksArg: Record<string, (...args: unknown[]) => unknown>, envArg: Env | null, metadataArg: Metadata) => void;
   validateBlocks: () => void;
   setParentBlockNames: (names: string[] | null) => void;
@@ -76,9 +76,9 @@ export function createContext(
       this.metadata = metadataArg || {};
       this.blockLocations = this.metadata.blockLocations || {};
       this.exported = [];
-      this._parentBlockNames = null;
-      this._validatedBlocks = false;
-      this._parentContext = null;
+      this.parentBlockNames = null;
+      this.validatedBlocks = false;
+      this.parentContext = null;
 
       getKeys(blocksArg as Record<string, unknown>).forEach((name) => {
         const block = blocksArg[name];
@@ -88,11 +88,11 @@ export function createContext(
       });
     },
     validateBlocks(this: Context): void {
-      if (this._validatedBlocks) return;
-      this._validatedBlocks = true;
+      if (this.validatedBlocks) return;
+      this.validatedBlocks = true;
 
-      if (this._parentBlockNames !== null) {
-        const parentBlockNames = new Set(this._parentBlockNames);
+      if (this.parentBlockNames !== null) {
+        const parentBlockNames = new Set(this.parentBlockNames);
         const childOnlyBlocks = getKeys(this.blocks || {}).filter((name) => !parentBlockNames.has(name));
         if (childOnlyBlocks.length > 0) {
           const blockName = childOnlyBlocks[0]!;
@@ -113,7 +113,7 @@ export function createContext(
       }
     },
     setParentBlockNames(this: Context, names: string[] | null): void {
-      this._parentBlockNames = names;
+      this.parentBlockNames = names;
     },
     lookup(this: Context, name: string): unknown {
       if (name in this.env.globals && !(name in this.ctx)) {
@@ -193,12 +193,12 @@ export function createContext(
     },
     fork(this: Context, data: Record<string, unknown> = {}): Context {
       const childCtx = createContext(data, {}, this.env);
-      childCtx._parentContext = this;
+      childCtx.parentContext = this;
       return childCtx;
     },
     getVariables(this: Context): Record<string, unknown> {
-      if (this._parentContext) {
-        const parentVars = this._parentContext.getVariables();
+      if (this.parentContext) {
+        const parentVars = this.parentContext.getVariables();
         return { ...parentVars, ...this.ctx };
       }
       return this.ctx;

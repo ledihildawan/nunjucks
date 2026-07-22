@@ -15,18 +15,18 @@ describe('Compiler', () => {
     expect(() => compiler.fail('msg', 1, 2)).toThrow('msg');
   });
 
-  test('_templateName returns JSON string', () => {
-    expect(compiler._templateName()).toBe('"test.njk"');
+  test('getTemplateName returns JSON string', () => {
+    expect(compiler.getTemplateName()).toBe('"test.njk"');
   });
 
-  test('_templateName returns undefined for null name', () => {
+  test('getTemplateName returns undefined for null name', () => {
     const c = createCompiler(null, undefined, '');
-    expect(c._templateName()).toBe('undefined');
+    expect(c.getTemplateName()).toBe('undefined');
   });
 
-  test('_compileExpression throws for invalid type', () => {
+  test('compileExpression throws for invalid type', () => {
     const invalidNode = { type: 'Unknown', lineno: 1, colno: 1 } as never;
-    expect(() => compiler._compileExpression(invalidNode, createFrame())).toThrow();
+    expect(() => compiler.compileExpression(invalidNode, createFrame())).toThrow();
   });
 
   test('assertType throws for non-matching type', () => {
@@ -34,8 +34,8 @@ describe('Compiler', () => {
   });
 
   test('getCode returns compiled code', () => {
-    compiler._emit('a');
-    compiler._emit('b');
+    compiler.emit('a');
+    compiler.emit('b');
     expect(compiler.getCode()).toBe('ab');
   });
 });

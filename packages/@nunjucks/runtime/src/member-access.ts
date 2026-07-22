@@ -1,6 +1,4 @@
 // MEMBER ACCESS - Property lookup, slicing, and nullish coalescing
-// Import directly: import { memberLookup } from '@nunjucks/runtime/member-access'
-
 import { createLog, ERROR_DEFINITIONS } from '@nunjucks/log';
 
 const isNonNullish = (v: unknown): boolean => v !== null && v !== undefined;

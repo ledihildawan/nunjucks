@@ -66,15 +66,15 @@ const getCallLocation = (node: Node): { lineno: number; colno: number } => {
 export const compileFunCall = (ctx: Compiler, node: Node, frame: Frame): void => {
   const { lineno, colno } = getCallLocation(node);
 
-  ctx._emit('(lineno = ' + lineno +
+  ctx.emit('(lineno = ' + lineno +
     ', colno = ' + colno + ', ');
 
-  ctx._emit('runtime.callWrap(');
-  ctx._compileExpression(node.name as Node, frame);
+  ctx.emit('runtime.callWrap(');
+  ctx.compileExpression(node.name as Node, frame);
 
   const funcName = getNodeName(ctx, node.name as Node);
   const displayName = funcName + '()';
-  ctx._emit(', "' + funcName.replace(/"/g, '\\"') + '", "' + displayName.replace(/"/g, '\\"') + '", context, ');
+  ctx.emit(', "' + funcName.replace(/"/g, '\\"') + '", "' + displayName.replace(/"/g, '\\"') + '", context, ');
 
   compileAggregate(ctx, node.args as Node, frame, '[', '], ' + lineno + ', ' + colno + '))');
 };

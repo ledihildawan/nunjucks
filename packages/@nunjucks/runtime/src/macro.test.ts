@@ -9,11 +9,11 @@ import {
 } from '@nunjucks/runtime/macro';
 
 describe('makeKeywordArgs', () => {
-  test('adds __keywords flag to object', () => {
+  test('adds keywords flag to object', () => {
     const obj = { a: 1 };
     const result = makeKeywordArgs(obj);
     expect(result as unknown as { a: number }).toBe(obj);
-    expect(result.__keywords).toBe(true);
+    expect(result.keywords).toBe(true);
   });
 });
 

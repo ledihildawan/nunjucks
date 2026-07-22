@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { lex, createTokenizer } from './lexer.ts';
+import { createTokenizer } from './lexer.ts';
 import {
   TOKEN_VARIABLE_START,
   TOKEN_VARIABLE_END,
@@ -18,8 +18,8 @@ import {
 } from './token-types.ts';
 import type { Token } from './token-types.ts';
 
-const collect = (src: string, opts?: Parameters<typeof lex>[1]): Token[] => {
-  const tokenizer = lex(src, opts);
+const collect = (src: string, opts?: Parameters<typeof createTokenizer>[1]): Token[] => {
+  const tokenizer = createTokenizer(src, opts);
   const tokens: Token[] = [];
   let token: Token | null;
   while ((token = tokenizer.nextToken()) !== null) tokens.push(token);
@@ -144,12 +144,12 @@ describe('lex - empty input', () => {
   });
 
   test('nextToken returns null immediately for empty string', () => {
-    const tokenizer = lex('');
+    const tokenizer = createTokenizer('');
     expect(tokenizer.nextToken()).toBeNull();
   });
 
   test('nextToken returns null after exhaustion', () => {
-    const tokenizer = lex('hi');
+    const tokenizer = createTokenizer('hi');
     expect(tokenizer.nextToken()).not.toBeNull();
     expect(tokenizer.nextToken()).toBeNull();
     expect(tokenizer.nextToken()).toBeNull();
@@ -258,7 +258,7 @@ describe('lex - custom delimiters', () => {
   });
 
   test('default delimiters are exposed via tags', () => {
-    const tokenizer = lex('');
+    const tokenizer = createTokenizer('');
     expect(tokenizer.tags.VARIABLE_START).toBe('{{');
     expect(tokenizer.tags.VARIABLE_END).toBe('}}');
     expect(tokenizer.tags.BLOCK_START).toBe('{%');
@@ -270,18 +270,15 @@ describe('lex - custom delimiters', () => {
 
 describe('lex - returned tokenizer object', () => {
   test('exposes trimBlocks and lstripBlocks options', () => {
-    const tokenizer = lex('x', { trimBlocks: true, lstripBlocks: true });
+    const tokenizer = createTokenizer('x', { trimBlocks: true, lstripBlocks: true });
     expect(tokenizer.trimBlocks).toBe(true);
     expect(tokenizer.lstripBlocks).toBe(true);
   });
 
   test('defaults trimBlocks and lstripBlocks to false', () => {
-    const tokenizer = lex('x');
+    const tokenizer = createTokenizer('x');
     expect(tokenizer.trimBlocks).toBe(false);
     expect(tokenizer.lstripBlocks).toBe(false);
   });
 
-  test('createTokenizer is an alias of lex', () => {
-    expect(createTokenizer).toBe(lex);
-  });
 });

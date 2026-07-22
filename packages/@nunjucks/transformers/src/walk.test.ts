@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { mapCOW, walk, depthWalk } from './walk.ts';
+import { mapCOW, walk, depthWalk } from '@nunjucks/nodes/traverse';
 import { literal, nodeList, templateData, output, funCall, symbol, keywordArgs, add, compare, callExtension } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { getNodeTypeName } from '@nunjucks/nodes/traverse';

@@ -3,15 +3,15 @@ import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 
 const emitLocation = (ctx: Compiler, node: Node): void => {
-  ctx._emit('(lineno = ' + (node.lineno ?? 0) + ', colno = ' + (node.colno ?? 0) + ', ');
+  ctx.emit('(lineno = ' + (node.lineno ?? 0) + ', colno = ' + (node.colno ?? 0) + ', ');
 };
 
 const binOpEmitter = (ctx: Compiler, node: Node, frame: Frame, str: string): void => {
   emitLocation(ctx, node);
   ctx.compile(node.left as Node, frame);
-  ctx._emit(str);
+  ctx.emit(str);
   ctx.compile(node.right as Node, frame);
-  ctx._emit(')');
+  ctx.emit(')');
 };
 
 export const compileOr = (ctx: Compiler, node: Node, frame: Frame): void => binOpEmitter(ctx, node, frame, ' || ');
@@ -33,35 +33,35 @@ export const compileMod = (ctx: Compiler, node: Node, frame: Frame): void => bin
 export const compileNullishCoalesce = (ctx: Compiler, node: Node, frame: Frame): void => {
   emitLocation(ctx, node);
   ctx.compile(node.left as Node, frame);
-  ctx._emit(' ?? ');
+  ctx.emit(' ?? ');
   ctx.compile(node.right as Node, frame);
-  ctx._emit(')');
+  ctx.emit(')');
 };
 
 export const compileIn = (ctx: Compiler, node: Node, frame: Frame): void => {
   const lineno = node.lineno ?? 0;
   const colno = node.colno ?? 0;
-  ctx._emit('(lineno = ' + lineno + ', colno = ' + colno + ', runtime.inOperator(');
+  ctx.emit('(lineno = ' + lineno + ', colno = ' + colno + ', runtime.inOperator(');
   ctx.compile(node.left as Node, frame);
-  ctx._emit(',');
+  ctx.emit(',');
   ctx.compile(node.right as Node, frame);
-  ctx._emit(', ' + lineno + ', ' + colno + '))');
+  ctx.emit(', ' + lineno + ', ' + colno + '))');
 };
 
 export const compileFloorDiv = (ctx: Compiler, node: Node, frame: Frame): void => {
   emitLocation(ctx, node);
-  ctx._emit('Math.floor(');
+  ctx.emit('Math.floor(');
   ctx.compile(node.left as Node, frame);
-  ctx._emit(' / ');
+  ctx.emit(' / ');
   ctx.compile(node.right as Node, frame);
-  ctx._emit('))');
+  ctx.emit('))');
 };
 
 export const compilePow = (ctx: Compiler, node: Node, frame: Frame): void => {
   emitLocation(ctx, node);
-  ctx._emit('Math.pow(');
+  ctx.emit('Math.pow(');
   ctx.compile(node.left as Node, frame);
-  ctx._emit(', ');
+  ctx.emit(', ');
   ctx.compile(node.right as Node, frame);
-  ctx._emit('))');
+  ctx.emit('))');
 };

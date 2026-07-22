@@ -18,30 +18,30 @@ export interface Compiler {
   lastId: number;
   buffer: string | null;
   bufferStack: Array<string | null>;
-  _scopeClosers: string;
+  scopeClosers: string;
   inBlock: boolean;
   undefinedMode: UndefinedMode;
   compiledLine: number;
   sourceMap: SourceMap;
   init: (tmplName: string | null, undefMode: UndefinedMode | undefined, src: string) => void;
   fail: (msg: string, lineno?: number, colno?: number) => void;
-  _pushBuffer: () => string;
-  _popBuffer: () => void;
-  _emit: (code: string) => void;
-  _emitLine: (code: string, originalLine?: number) => void;
-  _emitLineWithMapping: (code: string, templateLine?: number, templateCol?: number) => void;
-  _trackMapping: (templateLine?: number, templateCol?: number) => void;
-  _emitLineWithLineno: (code: string, templateLine?: number, templateCol?: number) => void;
-  _emitLines: (...lines: string[]) => void;
-  _emitFuncBegin: (node: Node, name: string) => void;
-  _emitFuncEnd: (noReturn?: boolean) => void;
-  _addScopeLevel: () => void;
-  _closeScopeLevels: () => void;
-  _withScopedSyntax: (func: () => void) => void;
-  _tmpid: () => string;
-  _templateName: () => string;
-  _compileChildren: (node: Node, frame?: Frame) => void;
-  _compileExpression: (node: Node, frame?: Frame) => void;
+  pushBuffer: () => string;
+  popBuffer: () => void;
+  emit: (code: string) => void;
+  emitLine: (code: string, originalLine?: number) => void;
+  emitLineWithMapping: (code: string, templateLine?: number, templateCol?: number) => void;
+  trackMapping: (templateLine?: number, templateCol?: number) => void;
+  emitLineWithLineno: (code: string, templateLine?: number, templateCol?: number) => void;
+  emitLines: (...lines: string[]) => void;
+  emitFuncBegin: (node: Node, name: string) => void;
+  emitFuncEnd: (noReturn?: boolean) => void;
+  addScopeLevel: () => void;
+  closeScopeLevels: () => void;
+  withScopedSyntax: (func: () => void) => void;
+  tmpid: () => string;
+  getTemplateName: () => string;
+  compileChildren: (node: Node, frame?: Frame) => void;
+  compileExpression: (node: Node, frame?: Frame) => void;
   assertType: (node: Node, ...types: Array<string | Function>) => void;
   compile: (node: Node, frame?: Frame) => unknown;
   getCode: () => string;
@@ -61,7 +61,7 @@ export function createCompiler(
       this.lastId = 0;
       this.buffer = null;
       this.bufferStack = [];
-      this._scopeClosers = '';
+      this.scopeClosers = '';
       this.inBlock = false;
       this.undefinedMode = undefMode || DEFAULT_UNDEFINED_MODE;
       this.compiledLine = 0;
@@ -75,100 +75,100 @@ export function createCompiler(
         subject,
         { lineno, colno, phase: 'compile', templateName: this.templateName, lineBase: 'zero' });
     },
-    _pushBuffer: function () {
-      const id = this._tmpid();
+    pushBuffer: function () {
+      const id = this.tmpid();
       this.bufferStack.push(this.buffer);
       this.buffer = id;
-      this._emit(`let ${this.buffer} = "";`);
+      this.emit(`let ${this.buffer} = "";`);
       return id;
     },
-    _popBuffer: function () {
+    popBuffer: function () {
       this.buffer = this.bufferStack.pop() as string | null;
     },
-    _emit: function (code: string) {
+    emit: function (code: string) {
       this.codebuf.push(code);
     },
-    _emitLine: function (code: string, originalLine?: number) {
+    emitLine: function (code: string, originalLine?: number) {
       this.compiledLine++;
       if (isNonNullish(originalLine)) {
         this.sourceMap.addMapping(this.compiledLine, originalLine);
       }
-      this._emit(code + '\n');
+      this.emit(code + '\n');
     },
-    _emitLineWithMapping: function (code: string, templateLine?: number, templateCol?: number) {
+    emitLineWithMapping: function (code: string, templateLine?: number, templateCol?: number) {
       this.compiledLine++;
       if (templateLine !== undefined) {
         this.sourceMap.addMapping(this.compiledLine, templateLine, templateCol || 0);
       }
-      this._emit(code + '\n');
+      this.emit(code + '\n');
     },
-    _trackMapping: function (templateLine?: number, templateCol?: number) {
+    trackMapping: function (templateLine?: number, templateCol?: number) {
       if (templateLine !== undefined) {
         this.sourceMap.addMapping(this.compiledLine, templateLine, templateCol || 0);
       }
     },
-    _emitLineWithLineno: function (code: string, templateLine?: number, templateCol?: number) {
+    emitLineWithLineno: function (code: string, templateLine?: number, templateCol?: number) {
       this.compiledLine++;
       if (templateLine !== undefined) {
         this.sourceMap.addMapping(this.compiledLine, templateLine, templateCol || 0);
       }
-      this._emit(code + '\n');
+      this.emit(code + '\n');
     },
-    _emitLines: function (...lines: string[]) {
-      lines.forEach((line) => this._emitLine(line));
+    emitLines: function (...lines: string[]) {
+      lines.forEach((line) => this.emitLine(line));
     },
-    _emitFuncBegin: function (node: Node, name: string) {
+    emitFuncBegin: function (node: Node, name: string) {
       this.buffer = 'output';
-      this._scopeClosers = '';
-      this._emitLine(`async function ${name}(env, context, frame, runtime) {`);
-      this._emitLineWithMapping(`let lineno = ${node.lineno};`, node.lineno, node.colno);
-      this._emitLine(`let colno = ${node.colno != null ? node.colno : 0};`);
-      this._emitLine(`let ${this.buffer} = "";`);
-      this._emitLine('try {');
+      this.scopeClosers = '';
+      this.emitLine(`async function ${name}(env, context, frame, runtime) {`);
+      this.emitLineWithMapping(`let lineno = ${node.lineno};`, node.lineno, node.colno);
+      this.emitLine(`let colno = ${node.colno != null ? node.colno : 0};`);
+      this.emitLine(`let ${this.buffer} = "";`);
+      this.emitLine('try {');
     },
-    _emitFuncEnd: function (noReturn?: boolean) {
+    emitFuncEnd: function (noReturn?: boolean) {
       if (!noReturn) {
-        this._emitLine(`return ${this.buffer};`);
+        this.emitLine(`return ${this.buffer};`);
       }
 
-      this._closeScopeLevels();
-      this._emitLine('} catch (e) {');
-      this._emitLine('  throw runtime.handleError(e, lineno, colno, runtime);');
-      this._emitLine('}');
-      this._emitLine('}');
+      this.closeScopeLevels();
+      this.emitLine('} catch (e) {');
+      this.emitLine('  throw runtime.handleError(e, lineno, colno, runtime);');
+      this.emitLine('}');
+      this.emitLine('}');
       this.buffer = null;
     },
-    _addScopeLevel: function () {
-      this._scopeClosers += '})';
+    addScopeLevel: function () {
+      this.scopeClosers += '})';
     },
-    _closeScopeLevels: function () {
-      if (this._scopeClosers) {
-        this._emitLine(this._scopeClosers + ';');
+    closeScopeLevels: function () {
+      if (this.scopeClosers) {
+        this.emitLine(this.scopeClosers + ';');
       }
-      this._scopeClosers = '';
+      this.scopeClosers = '';
     },
-    _withScopedSyntax: function (func: () => void) {
-      const _scopeClosers = this._scopeClosers;
-      this._scopeClosers = '';
+    withScopedSyntax: function (func: () => void) {
+      const savedScopeClosers = this.scopeClosers;
+      this.scopeClosers = '';
 
       func.call(this);
 
-      this._closeScopeLevels();
-      this._scopeClosers = _scopeClosers;
+      this.closeScopeLevels();
+      this.scopeClosers = savedScopeClosers;
     },
-    _tmpid: function () {
+    tmpid: function () {
       this.lastId++;
       return 't_' + this.lastId;
     },
-    _templateName: function () {
+    getTemplateName: function () {
       return this.templateName === null || this.templateName === undefined ? 'undefined' : JSON.stringify(this.templateName);
     },
-    _compileChildren: function (node: Node, frame?: Frame) {
+    compileChildren: function (node: Node, frame?: Frame) {
       node.children!.forEach((child) => {
         this.compile(child, frame);
       });
     },
-    _compileExpression: function (node: Node, frame?: Frame) {
+    compileExpression: function (node: Node, frame?: Frame) {
       this.assertType(
         node,
         literal,
@@ -219,7 +219,7 @@ export function createCompiler(
         if (typeof t === 'string') {
           return typeName === t;
         }
-        // Check by constructor name (for backward compat with old pattern)
+        // Check by constructor name
         if (t && t.name && typeName === t.name) {
           return true;
         }

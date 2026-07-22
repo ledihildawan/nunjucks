@@ -17,7 +17,7 @@ const makeCtx = (): Compiler & { emitted: string[] } => {
     fail: (msg: string) => { throw new Error(msg); },
   } as unknown as Compiler & { emitted: string[] };
   ctx.compile = ((node: unknown, frame?: unknown) => compileDispatch(ctx, node as never, frame as Frame)) as Compiler['compile'];
-  ctx._compileExpression = ctx.compile;
+  ctx.compileExpression = ctx.compile;
   return ctx;
 };
 

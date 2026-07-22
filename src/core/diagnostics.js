@@ -83,7 +83,7 @@ export const findContextKeyPosition = (sourceFile, callLine, dangerousPath) => {
       return best;
     }
   } catch {
-    // File read error, ignore
+    // Ignore file read errors - fall through to return null
   }
 
   return null;

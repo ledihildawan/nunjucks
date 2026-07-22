@@ -4,21 +4,21 @@ import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 
 export const compileTemplateData = (ctx: Compiler, node: Node, frame: Frame): void => {
-  ctx._emit(`${ctx.buffer} += `);
-  ctx._emit(JSON.stringify(node.value));
-  ctx._emit(';');
+  ctx.emit(`${ctx.buffer} += `);
+  ctx.emit(JSON.stringify(node.value));
+  ctx.emit(';');
 };
 
 export const compileCapture = (ctx: Compiler, node: Node, frame: Frame): void => {
   const buffer = ctx.buffer;
   ctx.buffer = 'output';
-  ctx._emitLine('(async () => {');
-  ctx._emitLine('let output = "";');
-  ctx._withScopedSyntax(() => {
+  ctx.emitLine('(async () => {');
+  ctx.emitLine('let output = "";');
+  ctx.withScopedSyntax(() => {
     ctx.compile(node.body as Node, frame);
   });
-  ctx._emitLine('return output;');
-  ctx._emitLine('})()');
+  ctx.emitLine('return output;');
+  ctx.emitLine('})()');
   ctx.buffer = buffer;
 };
 
@@ -56,9 +56,9 @@ export const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => 
   children.forEach(child => {
     if (isTemplateData(child)) {
       if (child.value) {
-        ctx._emit(`${ctx.buffer} += `);
-        ctx._emit(JSON.stringify(child.value));
-        ctx._emit(';');
+        ctx.emit(`${ctx.buffer} += `);
+        ctx.emit(JSON.stringify(child.value));
+        ctx.emit(';');
       }
     } else if (isVariableDeclaration(child) || isVariableAssignment(child) || isCompoundAssignment(child)) {
       ctx.compile(child, frame);
@@ -72,28 +72,28 @@ export const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => 
       const useEnsureDefined = !isOptionalChainType || undefinedMode === 'debug';
       const effectiveMode = undefinedMode;
 
-      ctx._emitLineWithLineno(
+      ctx.emitLineWithLineno(
         `lineno = ${errorLocation.lineno}; colno = ${errorLocation.colno}; ${ctx.buffer} += runtime.suppressValue(`,
         errorLocation.lineno!,
         errorLocation.colno!
       );
       if (!isPipeType) {
-        ctx._emit('await runtime.awaitValue(');
+        ctx.emit('await runtime.awaitValue(');
       }
       if (useEnsureDefined) {
-        ctx._emit('runtime.ensureDefined(');
+        ctx.emit('runtime.ensureDefined(');
       }
       ctx.compile(child, frame);
       if (useEnsureDefined) {
         const nameArg = varName ? `, "${varName}"` : ', null';
         const modeArg = effectiveMode ? `, "${effectiveMode}"` : '';
-        ctx._emit(`,${errorLocation.lineno},${errorLocation.colno}${nameArg}, null${modeArg})`);
+        ctx.emit(`,${errorLocation.lineno},${errorLocation.colno}${nameArg}, null${modeArg})`);
       }
       if (!isPipeType) {
-        ctx._emit(')');
+        ctx.emit(')');
       }
-      ctx._emit(', env.opts.autoescape);');
+      ctx.emit(', env.opts.autoescape);');
     }
   });
-  ctx._emit('\n');
+  ctx.emit('\n');
 };

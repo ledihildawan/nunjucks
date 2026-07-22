@@ -7,7 +7,7 @@ export interface EmitterCtx {
   lastId: number;
   buffer: string | null;
   bufferStack: Array<string | null>;
-  _scopeClosers: string;
+  scopeClosers: string;
   templateName: string | null;
   compiledLine: number;
   sourceMap: SourceMap;
@@ -51,22 +51,22 @@ export const tmpid = (ctx: EmitterCtx): string => {
 };
 
 export const addScopeLevel = (ctx: EmitterCtx): void => {
-  ctx._scopeClosers += '})';
+  ctx.scopeClosers += '})';
 };
 
 export const closeScopeLevels = (ctx: EmitterCtx): void => {
-  if (ctx._scopeClosers) {
-    emitLine(ctx, ctx._scopeClosers + ';');
+  if (ctx.scopeClosers) {
+    emitLine(ctx, ctx.scopeClosers + ';');
   }
-  ctx._scopeClosers = '';
+  ctx.scopeClosers = '';
 };
 
 export const withScopedSyntax = (ctx: EmitterCtx, func: () => void): void => {
-  const saved = ctx._scopeClosers;
-  ctx._scopeClosers = '';
+  const saved = ctx.scopeClosers;
+  ctx.scopeClosers = '';
   func.call(ctx);
   closeScopeLevels(ctx);
-  ctx._scopeClosers = saved;
+  ctx.scopeClosers = saved;
 };
 
 export const templateNameStr = (ctx: { templateName: string | null }): string =>
@@ -74,7 +74,7 @@ export const templateNameStr = (ctx: { templateName: string | null }): string =>
 
 export const emitFuncBegin = (ctx: EmitterCtx, node: Node, name: string): void => {
   ctx.buffer = 'output';
-  ctx._scopeClosers = '';
+  ctx.scopeClosers = '';
   emitLine(ctx, `async function ${name}(env, context, frame, runtime) {`);
   emitLineWithMapping(ctx, `let lineno = ${node.lineno};`, node.lineno, node.colno);
   emitLine(ctx, `let colno = ${node.colno};`);

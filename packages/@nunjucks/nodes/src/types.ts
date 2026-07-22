@@ -1,6 +1,4 @@
 // TYPES - Core type definitions and constants
-// Import directly: import { T, Node, NodeType } from '@nunjucks/nodes/types'
-
 export const T = Object.freeze({
   NODE: 'node',
   VALUE: 'value',

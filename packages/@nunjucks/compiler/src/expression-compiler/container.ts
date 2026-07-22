@@ -30,11 +30,11 @@ const escapeString = (str: string): string => {
 export const compileLiteral = (ctx: Compiler, node: Node): void => {
   if (typeof node.value === 'string') {
     const val = escapeString(node.value);
-    ctx._emit(`"${val}"`);
+    ctx.emit(`"${val}"`);
   } else if (node.value === null) {
-    ctx._emit('null');
+    ctx.emit('null');
   } else {
-    ctx._emit((node.value as { toString(): string }).toString());
+    ctx.emit((node.value as { toString(): string }).toString());
   }
 };
 
@@ -43,9 +43,9 @@ export const compileSymbol = (ctx: Compiler, node: Node, frame: Frame): void => 
   const v = frame.lookup(name);
 
   if (v) {
-    ctx._emit(v as string);
+    ctx.emit(v as string);
   } else {
-    ctx._emit('runtime.contextOrFrameLookup(' +
+    ctx.emit('runtime.contextOrFrameLookup(' +
       'context, frame, "' + name + '")');
   }
 };
@@ -63,7 +63,7 @@ export const compileDict = (ctx: Compiler, node: Node, frame: Frame): void => {
 };
 
 export const compileNodeList = (ctx: Compiler, node: Node, frame: Frame): void => {
-  ctx._compileChildren(node, frame);
+  ctx.compileChildren(node, frame);
 };
 
 export const compilePair = (ctx: Compiler, node: Node, frame: Frame): void => {
@@ -80,18 +80,18 @@ export const compilePair = (ctx: Compiler, node: Node, frame: Frame): void => {
   }
 
   ctx.compile(key, frame);
-  ctx._emit(': ');
-  ctx._compileExpression(val, frame);
+  ctx.emit(': ');
+  ctx.compileExpression(val, frame);
 };
 
 export const compileKeywordArgs = (ctx: Compiler, node: Node, frame: Frame): void => {
-  ctx._emit('runtime.makeKeywordArgs(');
+  ctx.emit('runtime.makeKeywordArgs(');
   compileDict(ctx, node, frame);
-  ctx._emit(')');
+  ctx.emit(')');
 };
 
 export const compileSpread = (ctx: Compiler, node: Node, frame: Frame): void => {
-  ctx._emit('...');
+  ctx.emit('...');
   ctx.compile(node.argument as Node, frame);
 };
 
@@ -107,33 +107,33 @@ const escapeTemplateString = (str: string): string => {
 export const compileTemplateLiteral = (ctx: Compiler, node: Node, frame: Frame): void => {
   const rawQuasis = (node.quasis as { quasis?: unknown[] } | unknown[] | undefined);
   const quasis = (Array.isArray(rawQuasis) ? rawQuasis : (rawQuasis && (rawQuasis as { quasis?: unknown[] }).quasis)) || [];
-  ctx._emit('`');
+  ctx.emit('`');
 
   for (const quasi of quasis) {
     const q = quasi as Node & { value?: string };
     if ((q.type as string) === 'template') {
-      ctx._emit(escapeTemplateString(q.value as string));
+      ctx.emit(escapeTemplateString(q.value as string));
     } else if ((q.type as string) === 'expression') {
-      ctx._emit('${');
+      ctx.emit('${');
       ctx.compile(q.node as Node, frame);
-      ctx._emit('}');
+      ctx.emit('}');
     }
   }
 
-  ctx._emit('`');
+  ctx.emit('`');
 };
 
 export const compileAggregate = (ctx: Compiler, node: Node, frame: Frame, startChar?: string, endChar?: string): void => {
   if (startChar) {
-    ctx._emit(startChar);
+    ctx.emit(startChar);
   }
 
   node.children!.forEach((child, i) => {
     if (i > 0) {
-      ctx._emit(',');
+      ctx.emit(',');
     }
     if (isSpread(child)) {
-      ctx._emit('...');
+      ctx.emit('...');
       ctx.compile(child.argument as Node, frame);
     } else {
       ctx.compile(child, frame);
@@ -141,6 +141,6 @@ export const compileAggregate = (ctx: Compiler, node: Node, frame: Frame, startC
   });
 
   if (endChar) {
-    ctx._emit(endChar);
+    ctx.emit(endChar);
   }
 };

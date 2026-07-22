@@ -7,7 +7,7 @@ import { compileGetTemplate } from './import.ts';
 export const compileFromImport = (ctx: Compiler, node: Node, frame: Frame): void => {
   const importedId = compileGetTemplate(ctx, node, frame, false, false);
 
-  ctx._emitLine(`let ${importedId}_exported = await ${importedId}.getExported(` +
+  ctx.emitLine(`let ${importedId}_exported = await ${importedId}.getExported(` +
     (node.withContext ? 'context.getVariables(), frame' : '') +
     ');');
 
@@ -15,7 +15,7 @@ export const compileFromImport = (ctx: Compiler, node: Node, frame: Frame): void
   namesChildren.forEach((nameNode) => {
     let name: string;
     let alias: string;
-    const id = ctx._tmpid();
+    const id = ctx.tmpid();
 
     if (isPair(nameNode)) {
       name = (nameNode.key as Node).value as string;
@@ -25,18 +25,18 @@ export const compileFromImport = (ctx: Compiler, node: Node, frame: Frame): void
       alias = name;
     }
 
-    ctx._emitLine(`if(Object.prototype.hasOwnProperty.call(${importedId}_exported, "${name}")) {`);
-    ctx._emitLine(`let ${id} = ${importedId}_exported["${name}"];`);
-    ctx._emitLine('} else {');
-    ctx._emitLine(`throw new Error("Cannot import '${name}' from module");`);
-    ctx._emitLine('}');
+    ctx.emitLine(`if(Object.prototype.hasOwnProperty.call(${importedId}_exported, "${name}")) {`);
+    ctx.emitLine(`let ${id} = ${importedId}_exported["${name}"];`);
+    ctx.emitLine('} else {');
+    ctx.emitLine(`throw new Error("Cannot import '${name}' from module");`);
+    ctx.emitLine('}');
 
     frame.set(alias, id);
 
     if (frame.parent) {
-      ctx._emitLine(`frame.set("${alias}", ${id});`);
+      ctx.emitLine(`frame.set("${alias}", ${id});`);
     } else {
-      ctx._emitLine(`context.setVariable("${alias}", ${id});`);
+      ctx.emitLine(`context.setVariable("${alias}", ${id});`);
     }
   });
 };

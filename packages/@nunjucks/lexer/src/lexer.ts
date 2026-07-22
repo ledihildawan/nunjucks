@@ -32,7 +32,7 @@ function* lexGenerator(src: string, opts: LexerOptions = {}): Generator<Token, v
   }
 }
 
-export function lex(src: string, opts: LexerOptions = {}) {
+export function createTokenizer(src: string, opts: LexerOptions = {}) {
   const generator = lexGenerator(src, opts);
   const tags = createDelimiters(opts.tags);
 
@@ -47,5 +47,3 @@ export function lex(src: string, opts: LexerOptions = {}) {
     lstripBlocks: Boolean(opts.lstripBlocks),
   };
 }
-
-export { lex as createTokenizer };

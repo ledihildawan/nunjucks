@@ -67,13 +67,13 @@ export const compilePipe = (ctx: Compiler, node: Node, frame: Frame): void => {
   const inputLocation = firstArg ? getInputVarLocation(firstArg) : null;
 
   if (inputVar && inputLocation) {
-    ctx._emit(`await runtime.awaitValue(env.getFilter("${filterName}", ${filterLocation}, ${inputLocation}, "${inputVar}").call(context, `);
+    ctx.emit(`await runtime.awaitValue(env.getFilter("${filterName}", ${filterLocation}, ${inputLocation}, "${inputVar}").call(context, `);
   } else {
-    ctx._emit(`await runtime.awaitValue(env.getFilter("${filterName}", ${filterLocation}).call(context, `);
+    ctx.emit(`await runtime.awaitValue(env.getFilter("${filterName}", ${filterLocation}).call(context, `);
   }
 
   compileAggregate(ctx, node.args as Node, frame);
-  ctx._emit('))');
+  ctx.emit('))');
 };
 
 export const compilePipeAsync = (ctx: Compiler, node: Node, frame: Frame): void => {
@@ -93,11 +93,11 @@ export const compilePipeAsync = (ctx: Compiler, node: Node, frame: Frame): void 
   const inputLocation = firstArg ? getInputVarLocation(firstArg) : null;
 
   if (inputVar && inputLocation) {
-    ctx._emit(symbol + ' = await runtime.awaitValue(env.getFilter("' + filterName + '", ' + filterLocation + ', ' + inputLocation + ', "' + inputVar + '").call(context, ');
+    ctx.emit(symbol + ' = await runtime.awaitValue(env.getFilter("' + filterName + '", ' + filterLocation + ', ' + inputLocation + ', "' + inputVar + '").call(context, ');
   } else {
-    ctx._emit(symbol + ' = await runtime.awaitValue(env.getFilter("' + filterName + '", ' + filterLocation + ').call(context, ');
+    ctx.emit(symbol + ' = await runtime.awaitValue(env.getFilter("' + filterName + '", ' + filterLocation + ').call(context, ');
   }
 
   compileAggregate(ctx, node.args as Node, frame);
-  ctx._emitLine('));');
+  ctx.emitLine('));');
 };

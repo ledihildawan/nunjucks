@@ -7,7 +7,7 @@ import type { Compiler } from '../index.ts';
 const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
   const args: Node[] = [];
   let kwargs: Node | null = null;
-  const funcId = 'macro_' + ctx._tmpid();
+  const funcId = 'macro_' + ctx.tmpid();
   const keepFrame = (frame !== undefined);
 
   const argsChildren = (node.args as Node).children as Node[];
@@ -33,7 +33,7 @@ const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
   } else {
     currFrame = createFrame();
   }
-  ctx._emitLines(
+  ctx.emitLines(
     `let ${funcId} = runtime.makeMacro(`,
     `[${argNames.join(', ')}], `,
     `[${kwargNames.join(', ')}], `,
@@ -46,31 +46,31 @@ const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
 
   args.forEach((arg) => {
     const argValue = arg.value as string;
-    ctx._emitLine(`frame.set("${argValue}", l_${argValue});`);
+    ctx.emitLine(`frame.set("${argValue}", l_${argValue});`);
     currFrame.set(argValue, `l_${argValue}`);
   });
 
   if (kwargs) {
     (kwargs.children as Node[]).forEach((pair) => {
       const name = (pair.key as Node).value as string;
-      ctx._emit(`frame.set("${name}", `);
-      ctx._emit(`Object.prototype.hasOwnProperty.call(kwargs, "${name}")`);
-      ctx._emit(` ? kwargs["${name}"] : `);
-      ctx._compileExpression(pair.value as Node, currFrame);
-      ctx._emit(');');
+      ctx.emit(`frame.set("${name}", `);
+      ctx.emit(`Object.prototype.hasOwnProperty.call(kwargs, "${name}")`);
+      ctx.emit(` ? kwargs["${name}"] : `);
+      ctx.compileExpression(pair.value as Node, currFrame);
+      ctx.emit(');');
     });
   }
 
-  const bufferId = ctx._pushBuffer();
+  const bufferId = ctx.pushBuffer();
 
-  ctx._withScopedSyntax(() => {
+  ctx.withScopedSyntax(() => {
     ctx.compile(node.body as Node, currFrame);
   });
 
-  ctx._emitLine('frame = ' + ((keepFrame) ? 'frame.pop();' : 'callerFrame;'));
-  ctx._emitLine(`return runtime.createSafeString(${bufferId});`);
-  ctx._emitLine('});');
-  ctx._popBuffer();
+  ctx.emitLine('frame = ' + ((keepFrame) ? 'frame.pop();' : 'callerFrame;'));
+  ctx.emitLine(`return runtime.createSafeString(${bufferId});`);
+  ctx.emitLine('});');
+  ctx.popBuffer();
 
   return funcId;
 };
@@ -82,18 +82,18 @@ export const compileMacroPublic = (ctx: Compiler, node: Node, frame: Frame): voi
   frame.set(name, funcId);
 
   if (frame.parent) {
-    ctx._emitLine(`frame.set("${name}", ${funcId});`);
+    ctx.emitLine(`frame.set("${name}", ${funcId});`);
   } else {
     const nameValue = (node.name as Node).value as string;
     if (nameValue.charAt(0) !== '_') {
-      ctx._emitLine(`context.addExport("${name}");`);
+      ctx.emitLine(`context.addExport("${name}");`);
     }
-    ctx._emitLine(`context.setVariable("${name}", ${funcId});`);
+    ctx.emitLine(`context.setVariable("${name}", ${funcId});`);
   }
 };
 
 export const compileCaller = (ctx: Compiler, node: Node, frame: Frame): void => {
-  ctx._emit('(function (){');
+  ctx.emit('(function (){');
   const funcId = compileMacro(ctx, node, frame);
-  ctx._emit(`return ${funcId};})()`);
+  ctx.emit(`return ${funcId};})()`);
 };

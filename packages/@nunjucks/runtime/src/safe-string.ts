@@ -1,6 +1,4 @@
 // SAFE STRING - Marks strings as already escaped for autoescape handling
-// Import directly: import { createSafeString } from '@nunjucks/runtime/safe-string'
-
 export interface SafeString extends String {
   val: string;
   length: number;

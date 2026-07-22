@@ -1,10 +1,8 @@
 // PIPE - Transform pipes to async pipes
-// Import directly: import { liftPipes } from '@nunjucks/transformers/pipe'
-
 import { type Node } from '@nunjucks/nodes/types';
 import { symbol, nodeList, pipeAsync } from '@nunjucks/nodes/factory';
 import { isPipe, isCallExtensionAsync, isOutput, isSet, isFor, isIf, isBlock } from '@nunjucks/nodes/guards';
-import { depthWalk } from './walk.ts';
+import { depthWalk } from '@nunjucks/nodes/traverse';
 
 const _liftPipes = (node: Node, asyncPipes: string[], prop: string | null, gensym: () => string): Node => {
   const collected: Node[] = [];

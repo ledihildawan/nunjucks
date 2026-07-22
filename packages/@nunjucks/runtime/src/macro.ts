@@ -1,7 +1,5 @@
 // MACRO - Macro/keyword-args handling for Nunjucks templates
-// Import directly: import { makeMacro } from '@nunjucks/runtime/macro'
-
-type KeywordArgs = { __keywords?: boolean; [key: string]: unknown } & Record<string, unknown>;
+type KeywordArgs = { keywords?: boolean; [key: string]: unknown } & Record<string, unknown>;
 
 export function makeMacro(argNames: string[], kwargNames: string[], func: (...args: any[]) => unknown): (...macroArgs: unknown[]) => unknown {
   return function macro(this: unknown, ...macroArgs: unknown[]): unknown {
@@ -34,13 +32,13 @@ export function makeMacro(argNames: string[], kwargNames: string[], func: (...ar
   };
 }
 
-export function makeKeywordArgs<T>(obj: T): T & { __keywords: boolean } {
-  (obj as { __keywords?: boolean }).__keywords = true;
-  return obj as T & { __keywords: boolean };
+export function makeKeywordArgs<T>(obj: T): T & { keywords: boolean } {
+  (obj as { keywords?: boolean }).keywords = true;
+  return obj as T & { keywords: boolean };
 }
 
 export function isKeywordArgs(obj: unknown): boolean | null {
-  return obj && Object.prototype.hasOwnProperty.call(obj, '__keywords') ? true : (obj ? false : null);
+  return obj && Object.prototype.hasOwnProperty.call(obj, 'keywords') ? true : (obj ? false : null);
 }
 
 export function getKeywordArgs(args: unknown[]): Record<string, unknown> {

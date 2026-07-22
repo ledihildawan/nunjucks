@@ -1,4 +1,4 @@
-export { lex, createTokenizer } from './lexer';
+export { createTokenizer } from './lexer';
 export { createToken } from './tokens';
 export type { Token } from './token-types';
 export type { LexerOptions } from './types';

@@ -22,21 +22,21 @@ const objectRest = (source: string, restId: string): string =>
 
 const compileAssignToFrame = (ctx: Compiler, frame: Frame, name: string, source: string, registerFrame: boolean): void => {
   const existingId = registerFrame ? (frame.lookup(name) as string) : null;
-  ctx._emitLine(`frame.set(${JSON.stringify(name)}, ${source}, true);`);
+  ctx.emitLine(`frame.set(${JSON.stringify(name)}, ${source}, true);`);
   if (name.charAt(0) !== '_') {
-    ctx._emitLine('if(frame.topLevel) {');
-    ctx._emitLine(`context.addExport(${JSON.stringify(name)}, ${source});`);
-    ctx._emitLine('}');
+    ctx.emitLine('if(frame.topLevel) {');
+    ctx.emitLine(`context.addExport(${JSON.stringify(name)}, ${source});`);
+    ctx.emitLine('}');
   }
   if (!registerFrame) {
     return;
   }
   if (existingId !== null && existingId !== undefined) {
-    ctx._emitLine(`let ${existingId} = ${source};`);
+    ctx.emitLine(`let ${existingId} = ${source};`);
   } else {
-    const id = ctx._tmpid();
+    const id = ctx.tmpid();
     frame.set(name, id);
-    ctx._emitLine(`let ${id} = ${source};`);
+    ctx.emitLine(`let ${id} = ${source};`);
   }
 };
 
@@ -61,9 +61,9 @@ const compileDestructuring = (ctx: Compiler, frame: Frame, pattern: Node, source
       let childSource = safeArrayIndex(source, i);
       if (isAssignmentPattern(child)) {
         const defaultId = uniqueId('__dflt');
-        ctx._emitLine(`let ${defaultId} = (${childSource}) === undefined ? (`);
-        ctx._compileExpression(child.value as Node, frame);
-        ctx._emitLine(`) : ${childSource};`);
+        ctx.emitLine(`let ${defaultId} = (${childSource}) === undefined ? (`);
+        ctx.compileExpression(child.value as Node, frame);
+        ctx.emitLine(`) : ${childSource};`);
         childSource = defaultId;
         compileDestructuring(ctx, frame, child.target as Node, childSource, registerFrame);
       } else if (isObjectPattern(child) || isDict(child)) {
@@ -92,9 +92,9 @@ const compileDestructuring = (ctx: Compiler, frame: Frame, pattern: Node, source
         if (isAssignmentPattern(child.value as Node)) {
           const valNode = child.value as Node;
           const defaultId = uniqueId('__dflt');
-          ctx._emitLine(`let ${defaultId} = (${propSource}) === undefined ? (`);
-          ctx._compileExpression(valNode.value as Node, frame);
-          ctx._emitLine(`) : ${propSource};`);
+          ctx.emitLine(`let ${defaultId} = (${propSource}) === undefined ? (`);
+          ctx.compileExpression(valNode.value as Node, frame);
+          ctx.emitLine(`) : ${propSource};`);
           propSource = defaultId;
           compileDestructuring(ctx, frame, valNode.target as Node, propSource, registerFrame);
         } else {
@@ -107,9 +107,9 @@ const compileDestructuring = (ctx: Compiler, frame: Frame, pattern: Node, source
         if (isAssignmentPattern(child.value as Node)) {
           const valNode = child.value as Node;
           const defaultId = uniqueId('__dflt');
-          ctx._emitLine(`let ${defaultId} = (${propSource}) === undefined ? (`);
-          ctx._compileExpression(valNode.value as Node, frame);
-          ctx._emitLine(`) : ${propSource};`);
+          ctx.emitLine(`let ${defaultId} = (${propSource}) === undefined ? (`);
+          ctx.compileExpression(valNode.value as Node, frame);
+          ctx.emitLine(`) : ${propSource};`);
           const target = valNode.target as Node;
           compileAssignToFrame(ctx, frame, target.value as string, defaultId, registerFrame);
         } else if (isArrayPattern(child.value as Node) || isArray(child.value as Node)) {

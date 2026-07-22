@@ -1,11 +1,9 @@
 // SUPER - Transform super() calls in blocks
-// Import directly: import { liftSuper } from '@nunjucks/transformers/super'
-
 import { type Node } from '@nunjucks/nodes/types';
 import { symbol, super_ } from '@nunjucks/nodes/factory';
 import { isBlock, isFunCall } from '@nunjucks/nodes/guards';
 import { createGensym } from './symbol.ts';
-import { walk } from './walk.ts';
+import { walk } from '@nunjucks/nodes/traverse';
 
 export const liftSuper = (ast: Node): Node => {
   return walk(ast, (blockNode: Node): Node | undefined => {

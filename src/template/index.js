@@ -186,9 +186,6 @@ export function createTemplate(src, env, path, eagerCompile, includeChain) {
         this.env._renderingTemplates.delete(this.path);
       }
     },
-    // ============================================
-    // MODERN API: Sync render
-    // ============================================
     renderSync: function(ctx, parentFrame) {
       this._safeCompileSync();
 

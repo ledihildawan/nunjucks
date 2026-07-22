@@ -10,7 +10,7 @@ const locationFor = (node: Node | undefined, fallback: Node = node as Node): { l
 });
 
 const emitLocationGuard = (ctx: Compiler, location: { lineno: number; colno: number }): void => {
-  ctx._emit('(lineno = ' + location.lineno + ', colno = ' + location.colno + ', ');
+  ctx.emit('(lineno = ' + location.lineno + ', colno = ' + location.colno + ', ');
 };
 
 const getTargetName = (node: Node | undefined): string | null => {
@@ -31,84 +31,84 @@ export const compileLookupVal = (ctx: Compiler, node: Node, frame: Frame): void 
   emitLocationGuard(ctx, location);
 
   if (isSlice(val)) {
-    ctx._emit('runtime.slice((');
-    ctx._compileExpression(node.target as Node, frame);
-    ctx._emit('), ');
+    ctx.emit('runtime.slice((');
+    ctx.compileExpression(node.target as Node, frame);
+    ctx.emit('), ');
     if (val.start) {
-      ctx._compileExpression(val.start as Node, frame);
+      ctx.compileExpression(val.start as Node, frame);
     } else {
-      ctx._emit('null');
+      ctx.emit('null');
     }
-    ctx._emit(', ');
+    ctx.emit(', ');
     if (val.stop) {
-      ctx._compileExpression(val.stop as Node, frame);
+      ctx.compileExpression(val.stop as Node, frame);
     } else {
-      ctx._emit('null');
+      ctx.emit('null');
     }
-    ctx._emit(', ');
+    ctx.emit(', ');
     if (val.step) {
-      ctx._compileExpression(val.step as Node, frame);
+      ctx.compileExpression(val.step as Node, frame);
     } else {
-      ctx._emit('null');
+      ctx.emit('null');
     }
-    ctx._emit(')');
+    ctx.emit(')');
   } else {
     const parentName = getTargetName(node.target as Node);
-    ctx._emit('runtime.memberLookup((');
-    ctx._compileExpression(node.target as Node, frame);
-    ctx._emit('),');
-    ctx._compileExpression(val, frame);
+    ctx.emit('runtime.memberLookup((');
+    ctx.compileExpression(node.target as Node, frame);
+    ctx.emit('),');
+    ctx.compileExpression(val, frame);
     if (parentName !== null) {
-      ctx._emit(`, ${JSON.stringify(parentName)}`);
+      ctx.emit(`, ${JSON.stringify(parentName)}`);
     } else {
-      ctx._emit(', null');
+      ctx.emit(', null');
     }
-    ctx._emit(')');
+    ctx.emit(')');
   }
 
-  ctx._emit(')');
+  ctx.emit(')');
 };
 
 export const compileOptionalChain = (ctx: Compiler, node: Node, frame: Frame): void => {
   emitLocationGuard(ctx, locationFor(node.val as Node, node));
-  ctx._emit('runtime.optionalMemberLookup((');
-  ctx._compileExpression(node.target as Node, frame);
-  ctx._emit('),');
-  ctx._compileExpression(node.val as Node, frame);
-  ctx._emit(')');
-  ctx._emit(')');
+  ctx.emit('runtime.optionalMemberLookup((');
+  ctx.compileExpression(node.target as Node, frame);
+  ctx.emit('),');
+  ctx.compileExpression(node.val as Node, frame);
+  ctx.emit(')');
+  ctx.emit(')');
 };
 
 export const compileOptionalCall = (ctx: Compiler, node: Node, frame: Frame): void => {
-  ctx._emit('((');
-  ctx._compileExpression(node.name as Node, frame);
-  ctx._emit(') == null ? undefined : ');
-  ctx._compileExpression(node.name as Node, frame);
-  ctx._emit('(');
+  ctx.emit('((');
+  ctx.compileExpression(node.name as Node, frame);
+  ctx.emit(') == null ? undefined : ');
+  ctx.compileExpression(node.name as Node, frame);
+  ctx.emit('(');
   compileAggregate(ctx, node.args as Node, frame, '', ')');
-  ctx._emit(')');
+  ctx.emit(')');
 };
 
 export const compileSlice = (ctx: Compiler, node: Node, frame: Frame): void => {
   emitLocationGuard(ctx, locationFor(node));
-  ctx._emit('runtime.slice((');
+  ctx.emit('runtime.slice((');
   if (node.start) {
-    ctx._compileExpression(node.start as Node, frame);
+    ctx.compileExpression(node.start as Node, frame);
   } else {
-    ctx._emit('null');
+    ctx.emit('null');
   }
-  ctx._emit('), (');
+  ctx.emit('), (');
   if (node.stop) {
-    ctx._compileExpression(node.stop as Node, frame);
+    ctx.compileExpression(node.stop as Node, frame);
   } else {
-    ctx._emit('null');
+    ctx.emit('null');
   }
-  ctx._emit('), (');
+  ctx.emit('), (');
   if (node.step) {
-    ctx._compileExpression(node.step as Node, frame);
+    ctx.compileExpression(node.step as Node, frame);
   } else {
-    ctx._emit('null');
+    ctx.emit('null');
   }
-  ctx._emit('))');
-  ctx._emit(')');
+  ctx.emit('))');
+  ctx.emit(')');
 };

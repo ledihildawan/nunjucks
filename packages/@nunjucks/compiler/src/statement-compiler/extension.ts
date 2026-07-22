@@ -12,22 +12,22 @@ export const compileCallExtension = (ctx: Compiler, node: Node, frame: Frame, us
     useAsync = true;
   }
 
-  const res = useAsync ? ctx._tmpid() : null;
+  const res = useAsync ? ctx.tmpid() : null;
 
   if (!useAsync) {
-    ctx._emit(`${ctx.buffer} += runtime.suppressValue(`);
+    ctx.emit(`${ctx.buffer} += runtime.suppressValue(`);
   }
 
   if (useAsync) {
-    ctx._emit(`let ${res} = await env.getExtension("${node.extName as string}")["${node.prop as string}"](`);
+    ctx.emit(`let ${res} = await env.getExtension("${node.extName as string}")["${node.prop as string}"](`);
   } else {
-    ctx._emit(`env.getExtension("${node.extName as string}")["${node.prop as string}"](`);
+    ctx.emit(`env.getExtension("${node.extName as string}")["${node.prop as string}"](`);
   }
 
-  ctx._emit('context');
+  ctx.emit('context');
 
   if (args || contentArgs) {
-    ctx._emit(',');
+    ctx.emit(',');
   }
 
   if (args) {
@@ -37,10 +37,10 @@ export const compileCallExtension = (ctx: Compiler, node: Node, frame: Frame, us
     }
 
     args.children!.forEach((arg, i, arr) => {
-      ctx._compileExpression(arg, frame);
+      ctx.compileExpression(arg, frame);
 
       if (i !== arr.length - 1 || contentArgs.length) {
-        ctx._emit(',');
+        ctx.emit(',');
       }
     });
   }
@@ -48,31 +48,31 @@ export const compileCallExtension = (ctx: Compiler, node: Node, frame: Frame, us
   if (contentArgs.length) {
     contentArgs.forEach((arg, i) => {
       if (i > 0) {
-        ctx._emit(',');
+        ctx.emit(',');
       }
 
       if (arg) {
-        ctx._emitLine('async function() {');
-        const id = ctx._pushBuffer();
+        ctx.emitLine('async function() {');
+        const id = ctx.pushBuffer();
 
         ctx.compile(arg, frame);
 
-        ctx._popBuffer();
-        ctx._emitLine('return ' + id + ';');
-        ctx._emitLine('}');
+        ctx.popBuffer();
+        ctx.emitLine('return ' + id + ';');
+        ctx.emitLine('}');
       } else {
-        ctx._emit('null');
+        ctx.emit('null');
       }
     });
   }
 
   if (useAsync) {
-    ctx._emit(')');
-    ctx._emitLine(
+    ctx.emit(')');
+    ctx.emitLine(
       `\n${ctx.buffer} += runtime.suppressValue(await ${res}, ${autoescape} && env.opts.autoescape);`);
   } else {
-    ctx._emit(')');
-    ctx._emit(`, ${autoescape} && env.opts.autoescape);\n`);
+    ctx.emit(')');
+    ctx.emit(`, ${autoescape} && env.opts.autoescape);\n`);
   }
 };
 

@@ -1,6 +1,4 @@
 // RENDER CONTEXT - Scoped render context with composables
-// Import directly: import { createRenderContext } from '@nunjucks/runtime/render-context'
-
 import { ERROR_DEFINITIONS, createLog } from '@nunjucks/log';
 
 const createScope = (data: Record<string, unknown> = {}, parent: Scope | null = null): Scope => ({

@@ -1,6 +1,4 @@
 // TRAVERSE - Canonical AST walk / search / transform utilities (copy-on-write).
-// Import directly: import { walk, findAll } from '@nunjucks/nodes/traverse'
-
 import { T, type Node } from './types.ts';
 import { isNode, isCallExtension, isCallExtensionAsync } from './guards.ts';
 
@@ -17,13 +15,11 @@ export const getFields_ = (n: Node): readonly string[] => getFields(n);
 export const getNodeTypeName = getType;
 export const getNodeFields = getFields_;
 
-// Returns a new node with the child appended (immutable)
 export const addChild = (list: Node, child: Node): Node => {
   const children = (list as unknown as { children: Node[] }).children;
   return { ...list, children: [...children, child] } as Node;
 };
 
-// Mutably pushes a child onto a node's `children` array (used by the parser)
 export const pushChild = (node: Node, child: Node): void => {
   const children = (node as { children?: Node[] }).children;
   if (children) children.push(child);
@@ -84,7 +80,6 @@ const walkChildren = (node: Node, walker: (n: Node) => Node): Node => {
   return node;
 };
 
-// Pre-order walk: fn is called on a node before its descendants.
 export const walk = (ast: Node, fn: (n: Node) => Node | void): Node => {
   if (!ast || typeof ast !== 'object') return ast as Node;
   if (!isNode(ast) && !isCallExtNode(ast)) return ast;
@@ -97,7 +92,6 @@ export const walk = (ast: Node, fn: (n: Node) => Node | void): Node => {
   return walkChildren(afterFn, c => walk(c, fn));
 };
 
-// Post-order walk: fn is called on a node after its descendants.
 export const depthWalk = (ast: Node, fn: (n: Node) => Node | void): Node => {
   if (!ast || typeof ast !== 'object') return ast as Node;
   if (!isNode(ast) && !isCallExtNode(ast)) return ast;

@@ -1,6 +1,4 @@
 // SANDBOX - Secure member access via Proxy wrapping
-// Import directly: import { createSandboxedContext } from '@nunjucks/runtime/sandbox'
-
 import {
   isBlockedKey,
   isDangerousGlobal,
