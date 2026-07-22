@@ -337,11 +337,17 @@ describe('inline template error locations', () => {
   });
 
   test('supports concat and is tests with custom tests', async () => {
+    const tests = {
+      odd: n => n % 2 !== 0,
+      even: n => n % 2 === 0,
+      divisibleby: (n, d) => n % d === 0,
+      custom: value => value === 3
+    };
     await expect(renderTemplate('{{ "a" + "2" }}')).resolves.toBe('a2');
-    await expect(renderTemplate('{{ 5 is odd }}')).resolves.toBe('true');
-    await expect(renderTemplate('{{ 4 is not odd }}')).resolves.toBe('true');
-    await expect(renderTemplate('{{ 6 is divisibleby(3) }}')).resolves.toBe('true');
-    await expect(renderTemplate('{{ 3 is custom }}', {}, { tests: { custom: value => value === 3 } })).resolves.toBe('true');
+    await expect(renderTemplate('{{ 5 is odd }}', {}, { tests })).resolves.toBe('true');
+    await expect(renderTemplate('{{ 4 is not odd }}', {}, { tests })).resolves.toBe('true');
+    await expect(renderTemplate('{{ 6 is divisibleby(3) }}', {}, { tests })).resolves.toBe('true');
+    await expect(renderTemplate('{{ 3 is custom }}', {}, { tests })).resolves.toBe('true');
   });
 
   test('reports unknown tests at the is operator', async () => {

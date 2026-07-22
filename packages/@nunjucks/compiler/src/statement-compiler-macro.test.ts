@@ -9,23 +9,23 @@ const makeCtx = () => {
   let buf = 'output';
   return {
     emitted,
-    _emit: (s: string) => emitted.push(s),
-    _emitLine: (s: string) => emitted.push(s + '\n'),
-    _emitLines: (...lines: string[]) => lines.forEach((l) => emitted.push(l + '\n')),
-    _tmpid: () => {
+    emit: (s: string) => emitted.push(s),
+    emitLine: (s: string) => emitted.push(s + '\n'),
+    emitLines: (...lines: string[]) => lines.forEach((l) => emitted.push(l + '\n')),
+    tmpid: () => {
       lastId++;
       return 't_' + lastId;
     },
-    _compileExpression: (node: { mock?: string }) => emitted.push(node.mock as string),
+    compileExpression: (node: { mock?: string }) => emitted.push(node.mock as string),
     compile: (node: { mock?: string }) => emitted.push(node.mock as string),
-    _withScopedSyntax: (func: () => void) => func(),
-    _pushBuffer: () => {
+    withScopedSyntax: (func: () => void) => func(),
+    pushBuffer: () => {
       bufStack.push(buf);
       buf = 't_' + ++lastId;
       emitted.push('let ' + buf + ' = ""\n');
       return buf;
     },
-    _popBuffer: () => {
+    popBuffer: () => {
       buf = bufStack.pop() ?? 'output';
     },
     get buffer(): string {

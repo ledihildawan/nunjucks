@@ -10,9 +10,9 @@ const makeCtx = (): Compiler & { emitted: string[] } => {
     emitted,
     buffer: 'output',
     undefinedMode: 'chainable',
-    _emit: (s: string) => { emitted.push(s); },
-    _emitLine: (s: string) => { emitted.push(s + '\n'); },
-    _compileChildren: (node: { children?: unknown[] }, frame?: unknown) =>
+    emit: (s: string) => { emitted.push(s); },
+    emitLine: (s: string) => { emitted.push(s + '\n'); },
+    compileChildren: (node: { children?: unknown[] }, frame?: unknown) =>
       (node.children || []).forEach((c) => compileDispatch(ctx, c as never, frame as Frame)),
     fail: (msg: string) => { throw new Error(msg); },
   } as unknown as Compiler & { emitted: string[] };
