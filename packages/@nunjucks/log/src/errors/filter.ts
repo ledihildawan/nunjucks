@@ -181,7 +181,7 @@ export const FILTER_ERRORS = {
     causes: [
       '`JSON.stringify()` output is being **HTML-escaped** by autoescape',
       'This produces **invalid JSON** (e.g., `&quot;` instead of `"`)',
-      'Use the `| tojson` filter for JavaScript context output'
+      'Use the `|> tojson` filter for JavaScript context output'
     ],
     fixCode: '{{ value |> tojson }}',
     fixComment: 'Use the tojson filter for JSON output in autoescape mode',

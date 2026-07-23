@@ -45,12 +45,19 @@ export const createEngine = (config: ExpressEngineConfig = {}): ExpressEngineFun
     renderWithEnv(templateName, env as Parameters<typeof renderWithEnv>[1], options as Record<string, unknown>, { ...config, templatePath: filePath })
       .then(html => callback(null, html))
       .catch(async (err: Error) => {
-        if (!(err as { sourceContent?: string }).sourceContent && filePath) {
+        const errorWithMeta = err as Error & { sourceContent?: string; templatePath?: string; templateName?: string };
+        if (!errorWithMeta.sourceContent && filePath) {
           try {
-            (err as { sourceContent?: string }).sourceContent = await readFile(filePath, 'utf-8');
+            errorWithMeta.sourceContent = await readFile(filePath, 'utf-8');
           } catch (e) {
             (err as { sourceReadError?: unknown }).sourceReadError = e;
           }
+        }
+        if (!errorWithMeta.templatePath) {
+          errorWithMeta.templatePath = filePath;
+        }
+        if (!errorWithMeta.templateName) {
+          errorWithMeta.templateName = path.basename(filePath);
         }
         callback(err);
       });

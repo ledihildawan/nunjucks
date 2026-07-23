@@ -125,9 +125,15 @@ const escapeValue = (val: unknown): string => {
   return escapeHtml(String(val));
 };
 
-export function suppressValue(val: unknown, autoescape?: boolean): unknown {
+export function suppressValue(
+  this: unknown,
+  val: unknown,
+  autoescape?: boolean,
+  lineno?: number | null,
+  colno?: number | null
+): unknown {
   if (val && typeof (val as { then?: unknown }).then === 'function') {
-    return (val as Promise<unknown>).then((v) => suppressValue(v, autoescape));
+    return (val as Promise<unknown>).then((v) => suppressValue.call(this, v, autoescape, lineno, colno));
   }
 
   const normalized = isNonNullish(val) ? val : '';
@@ -136,13 +142,24 @@ export function suppressValue(val: unknown, autoescape?: boolean): unknown {
     const strVal = (normalized as { toString(): string }).toString();
     const escaped = escapeValue(strVal);
 
-    if (/^[\[{]/.test(strVal) && /&[quot;<>]/.test(escaped)) {
+    const isArray = Array.isArray(normalized);
+    const isJsonValue = /^(?:true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')$/.test(strVal.trim());
+    const isJsonContainer = /^[\[{]/.test(strVal);
+
+    if ((isArray || isJsonValue || isJsonContainer) && /&[quot;<>]/.test(escaped)) {
+      const ctx = getLogContext(this);
       throw createLog(
         'error',
         ERROR_DEFINITIONS.JSON_ESCAPED_OUTPUT!,
         {},
         null,
-        { phase: 'render', templateName: 'inline', lineBase: 'zero' }
+        {
+          lineno: lineno ?? null,
+          colno: colno ?? null,
+          phase: ctx.phase || 'render',
+          templateName: ctx.templateName || 'inline',
+          lineBase: 'zero'
+        }
       );
     }
 

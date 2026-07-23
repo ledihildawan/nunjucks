@@ -92,7 +92,7 @@ export const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => 
       if (!isPipeType) {
         ctx.emit(')');
       }
-      ctx.emit(', env.opts.autoescape);');
+      ctx.emit(`, env.opts.autoescape, lineno, colno);`);
     }
   });
   ctx.emit('\n');

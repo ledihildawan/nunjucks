@@ -69,10 +69,10 @@ export const compileCallExtension = (ctx: Compiler, node: Node, frame: Frame, us
   if (useAsync) {
     ctx.emit(')');
     ctx.emitLine(
-      `\n${ctx.buffer} += runtime.suppressValue(await ${res}, ${autoescape} && env.opts.autoescape);`);
+      `\n${ctx.buffer} += runtime.suppressValue(await ${res}, ${autoescape} && env.opts.autoescape, lineno, colno);`);
   } else {
     ctx.emit(')');
-    ctx.emit(`, ${autoescape} && env.opts.autoescape);\n`);
+    ctx.emit(`, ${autoescape} && env.opts.autoescape, lineno, colno);\n`);
   }
 };
 

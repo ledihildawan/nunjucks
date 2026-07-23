@@ -236,6 +236,41 @@ describe('error messages - real scenarios', () => {
   });
 });
 
+describe('JSON_ESCAPED_OUTPUT detection', () => {
+  const renderWithAutoescape = async (template: string, context: Record<string, unknown> = {}) => {
+    return await render(template, context, mergeConfig({
+      autoescape: true,
+    }) as unknown as Record<string, unknown>);
+  };
+
+  test('array with quotes triggers JSON_ESCAPED_OUTPUT', async () => {
+    const err = await renderWithAutoescape('{{ data }}', { data: ['"test"'] }).catch(e => e) as Record<string, unknown>;
+    expect(err.code).toBe('JSON_ESCAPED_OUTPUT');
+  });
+
+  test('stringified JSON triggers JSON_ESCAPED_OUTPUT', async () => {
+    const err = await renderWithAutoescape('{{ data }}', { data: '{"name":"test"}' }).catch(e => e) as Record<string, unknown>;
+    expect(err.code).toBe('JSON_ESCAPED_OUTPUT');
+  });
+
+  test('tojson filter prevents JSON_ESCAPED_OUTPUT', async () => {
+    const result = await renderWithAutoescape('{{ data |> tojson }}', { data: ['"test"'] });
+    expect(result).toBe('["\\"test\\""]');
+  });
+
+  test('JSON_ESCAPED_OUTPUT has proper causes', async () => {
+    const err = await renderWithAutoescape('{{ data }}', { data: ['"x"'] }).catch(e => e) as Record<string, unknown>;
+    expect(err.code).toBe('JSON_ESCAPED_OUTPUT');
+    expect((err.causes as string[]).some((c: string) => c.includes('tojson'))).toBe(true);
+  });
+
+  test('fixCode suggests tojson filter', async () => {
+    const err = await renderWithAutoescape('{{ data }}', { data: ['"x"'] }).catch(e => e) as Record<string, unknown>;
+    expect(err.fixCode).toContain('tojson');
+    expect(err.fixCode).toContain('|>');
+  });
+});
+
 describe('error messages - quality checks', () => {
   test('every cause is not just internal jargon', async () => {
     const samples = [
