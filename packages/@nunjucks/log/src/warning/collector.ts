@@ -15,7 +15,7 @@ interface InjectWarningsOptions {
 const getFileName = (path: string | null | undefined): string => {
   if (!path) return 'unknown';
   const parts = path.replace(/\\/g, '/').split('/');
-  return parts[parts.length - 1] || 'unknown';
+  return parts.at(-1) || 'unknown';
 };
 
 const formatWarning = (w: Warning | string, options: { verbosity?: 'simple' | 'medium' | 'full' } = {}): string => {

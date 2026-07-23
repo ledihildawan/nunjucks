@@ -21,7 +21,7 @@ export function memberLookup(obj: unknown, val: string, parentName: string | nul
   }
 
   const target = obj as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(target, val) && !(val in target)) {
+  if (!Object.hasOwn(target, val) && !(val in target)) {
     const marker = { [PROP_NOT_FOUND]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
     const callable = (() => undefined) as unknown as Record<string, unknown>;
     Object.setPrototypeOf(callable, null);
@@ -59,7 +59,7 @@ export function optionalMemberLookup(obj: unknown, val: string, parentName: stri
   }
 
   const target = obj as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(target, val) && !(val in target)) {
+  if (!Object.hasOwn(target, val) && !(val in target)) {
     return undefined;
   }
 

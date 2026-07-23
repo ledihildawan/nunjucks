@@ -38,13 +38,12 @@ export function makeKeywordArgs<T>(obj: T): T & { keywords: boolean } {
 }
 
 export function isKeywordArgs(obj: unknown): boolean | null {
-  return obj && Object.prototype.hasOwnProperty.call(obj, 'keywords') ? true : (obj ? false : null);
+  return obj && Object.hasOwn(obj, 'keywords') ? true : (obj ? false : null);
 }
 
 export function getKeywordArgs(args: unknown[]): Record<string, unknown> {
-  const len = args.length;
-  if (len) {
-    const lastArg = args[len - 1] as Record<string, unknown>;
+  if (args.length) {
+    const lastArg = args.at(-1) as Record<string, unknown>;
     if (isKeywordArgs(lastArg)) {
       return lastArg;
     }

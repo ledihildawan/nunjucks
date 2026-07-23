@@ -100,7 +100,7 @@ const isBlockedAtScope = (key: string | symbol, options: ResolvedSandboxOptions,
   return topLevel || category === 'object_intrinsic';
 };
 
-const hasOwn = (target: object, key: string | symbol): boolean => Object.prototype.hasOwnProperty.call(target, key);
+const hasOwn = (target: object, key: string | symbol): boolean => Object.hasOwn(target, key);
 const isInternalKey = (key: string | symbol): boolean => {
   if (typeof key !== 'string') return false;
   return key === '__nunjucks' || key.startsWith('__nunjucks_');

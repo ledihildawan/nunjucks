@@ -85,7 +85,7 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
         obj = obj[id] as Record<string, unknown>;
       }
 
-      obj[parts[parts.length - 1]!] = val;
+      obj[parts.at(-1)!] = val;
       state.rootState.revision++;
       state.resolveCache.clear();
       state.lookupCache.clear();
