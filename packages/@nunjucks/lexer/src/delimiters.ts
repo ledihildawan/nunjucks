@@ -9,6 +9,11 @@ export const DEFAULT_VARIABLE_END = '}}';
 export const DEFAULT_COMMENT_START = '{#';
 export const DEFAULT_COMMENT_END = '#}';
 
+export const STRIP_BLOCK_START = '{%-';
+export const STRIP_BLOCK_END = '-%}';
+export const STRIP_VARIABLE_START = '{{-';
+export const STRIP_VARIABLE_END = '-}}';
+
 export const COMPLEX_OPERATORS = [
   '==', '===', '!=', '!==', '<=', '>=', '//', '**', '?.', '??', '.?', '||', '&&',
   '||=', '&&=', '??=', '|>', '..', '...', '**=', '//=', ':=', '<<', '>>', '++', '--'
@@ -25,6 +30,10 @@ export interface Delimiters {
   VARIABLE_END: string;
   COMMENT_START: string;
   COMMENT_END: string;
+  STRIP_BLOCK_START: string;
+  STRIP_BLOCK_END: string;
+  STRIP_VARIABLE_START: string;
+  STRIP_VARIABLE_END: string;
 }
 
 export interface DelimiterTags {
@@ -43,4 +52,8 @@ export const createDelimiters = (tags: DelimiterTags = {}): Delimiters => ({
   VARIABLE_END: tags.variableEnd || DEFAULT_VARIABLE_END,
   COMMENT_START: tags.commentStart || DEFAULT_COMMENT_START,
   COMMENT_END: tags.commentEnd || DEFAULT_COMMENT_END,
+  STRIP_BLOCK_START: STRIP_BLOCK_START,
+  STRIP_BLOCK_END: STRIP_BLOCK_END,
+  STRIP_VARIABLE_START: STRIP_VARIABLE_START,
+  STRIP_VARIABLE_END: STRIP_VARIABLE_END,
 });

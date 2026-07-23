@@ -4,12 +4,15 @@ export const createToken = (
   type: TokenType,
   value: TokenValue,
   lineno: number,
-  colno: number
+  colno: number,
+  strip?: { stripLeft?: boolean; stripRight?: boolean }
 ): Token => ({
   type,
   value,
   lineno,
   colno,
+  ...(strip?.stripLeft && { stripLeft: true }),
+  ...(strip?.stripRight && { stripRight: true }),
 });
 
 export const createOperatorToken = (

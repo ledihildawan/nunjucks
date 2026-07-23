@@ -265,6 +265,40 @@ describe('lex - custom delimiters', () => {
     expect(tokenizer.tags.BLOCK_END).toBe('%}');
     expect(tokenizer.tags.COMMENT_START).toBe('{#');
     expect(tokenizer.tags.COMMENT_END).toBe('#}');
+    expect(tokenizer.tags.STRIP_BLOCK_START).toBe('{%-');
+    expect(tokenizer.tags.STRIP_BLOCK_END).toBe('-%}');
+    expect(tokenizer.tags.STRIP_VARIABLE_START).toBe('{{-');
+    expect(tokenizer.tags.STRIP_VARIABLE_END).toBe('-}}');
+  });
+
+  test('lexes {%- block start with strip flag', () => {
+    const tokens = collect('{%- if x %}');
+    expect(tokens[0]!.type).toBe(TOKEN_BLOCK_START);
+    expect(tokens[0]!.value).toBe('{%-');
+    expect(tokens[0]!.stripLeft).toBe(true);
+  });
+
+  test('lexes -%} block end with strip flag', () => {
+    const tokens = collect('{% if -%}');
+    const blockEnd = tokens.find(t => t.type === TOKEN_BLOCK_END);
+    expect(blockEnd).toBeDefined();
+    expect(blockEnd!.value).toBe('-%}');
+    expect(blockEnd!.stripRight).toBe(true);
+  });
+
+  test('lexes {{- variable start with strip flag', () => {
+    const tokens = collect('{{- x }}');
+    expect(tokens[0]!.type).toBe(TOKEN_VARIABLE_START);
+    expect(tokens[0]!.value).toBe('{{-');
+    expect(tokens[0]!.stripLeft).toBe(true);
+  });
+
+  test('lexes -}} variable end with strip flag', () => {
+    const tokens = collect('{{ x -}}');
+    const varEnd = tokens.find(t => t.type === TOKEN_VARIABLE_END);
+    expect(varEnd).toBeDefined();
+    expect(varEnd!.value).toBe('-}}');
+    expect(varEnd!.stripRight).toBe(true);
   });
 });
 

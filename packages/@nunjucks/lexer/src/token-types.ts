@@ -68,4 +68,6 @@ export interface Token {
   value: TokenValue;
   lineno: number;
   colno: number;
+  stripLeft?: boolean;
+  stripRight?: boolean;
 }

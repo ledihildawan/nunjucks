@@ -4,6 +4,18 @@ import { createToken } from '../tokens';
 import type { TokenType } from '../token-types';
 
 export const tokenizeBlockStart: Tokenizer = (state) => {
+  if (matches(state, state.tags.STRIP_BLOCK_START)) {
+    return {
+      token: createToken(
+        'block-start' as TokenType,
+        state.tags.STRIP_BLOCK_START,
+        state.lineno,
+        state.colno,
+        { stripLeft: true }
+      ),
+      state: advance(state, state.tags.STRIP_BLOCK_START.length),
+    };
+  }
   if (!matches(state, state.tags.BLOCK_START)) return null;
   return {
     token: createToken(
@@ -17,6 +29,18 @@ export const tokenizeBlockStart: Tokenizer = (state) => {
 };
 
 export const tokenizeBlockEnd: Tokenizer = (state) => {
+  if (matches(state, state.tags.STRIP_BLOCK_END)) {
+    return {
+      token: createToken(
+        'block-end' as TokenType,
+        state.tags.STRIP_BLOCK_END,
+        state.lineno,
+        state.colno,
+        { stripRight: true }
+      ),
+      state: advance(state, state.tags.STRIP_BLOCK_END.length),
+    };
+  }
   if (!matches(state, state.tags.BLOCK_END)) return null;
   return {
     token: createToken(
