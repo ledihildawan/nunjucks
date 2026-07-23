@@ -23,6 +23,23 @@ export {
 const isNonNullish = (v: unknown): boolean => v !== null && v !== undefined;
 const isFunction = (v: unknown): boolean => typeof v === 'function';
 
+const UNSAFE_SYMBOL_DESCRIPTIONS = new Set([
+  'constructor',
+  'prototype',
+  '__proto__',
+  'toString',
+  'valueOf',
+  'hasOwnProperty',
+]);
+
+const isBlockedSymbol = (key: symbol): boolean => {
+  const desc = key.description;
+  if (!desc) return true;
+  if (UNSAFE_SYMBOL_DESCRIPTIONS.has(desc)) return true;
+  if (desc.startsWith('Symbol.')) return false;
+  return true;
+};
+
 const sandboxError = (errorDef: ErrorDefinitionEntry, key: string | symbol, options: SandboxOptions = {}): TemplateError | TemplateWarning => {
   const env = options.environment || 'auto';
   const category = getBlockedKeyCategory(String(key), env);
@@ -84,7 +101,12 @@ const isBlockedAtScope = (key: string | symbol, options: ResolvedSandboxOptions,
 };
 
 const hasOwn = (target: object, key: string | symbol): boolean => Object.prototype.hasOwnProperty.call(target, key);
-const isInternalKey = (key: string | symbol): boolean => typeof key === 'string' && key.startsWith('__nunjucks');
+const isInternalKey = (key: string | symbol): boolean => {
+  if (typeof key !== 'string') return false;
+  return key === '__nunjucks' || key.startsWith('__nunjucks_');
+};
+
+const DANGEROUS_OBJECT_INTRINSICS = new Set(['__proto__', 'constructor', 'prototype']);
 
 const makeSandboxTraps = (
   sandboxEnabled: boolean,
@@ -95,12 +117,18 @@ const makeSandboxTraps = (
   return {
     get(target, key): unknown {
       if (typeof key === 'symbol') {
+        if (isBlockedSymbol(key)) {
+          throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS!, key, sandboxOptions);
+        }
         return target[key];
       }
       if (topLevel && blockedContextKeys.includes(key)) {
         throw blockedKeysError(key, blockedContextKeys);
       }
       if (isBlockedAtScope(key, sandboxOptions, topLevel)) {
+        if (!hasOwn(target, key) && !DANGEROUS_OBJECT_INTRINSICS.has(key)) {
+          return undefined;
+        }
         throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS!, key, sandboxOptions);
       }
       if (!blocklistMode && !isAllowedKey(key, allowlist)) {
@@ -120,6 +148,9 @@ const makeSandboxTraps = (
     },
     set(target, key, value): boolean {
       if (typeof key === 'symbol') {
+        if (isBlockedSymbol(key)) {
+          throw sandboxError(ERROR_DEFINITIONS.SANDBOX_SET!, key, sandboxOptions);
+        }
         target[key] = value;
         return true;
       }
@@ -141,6 +172,9 @@ const makeSandboxTraps = (
     },
     has(target, key): boolean {
       if (typeof key === 'symbol') {
+        if (isBlockedSymbol(key)) {
+          return false;
+        }
         return key in target;
       }
       if (isBlockedAtScope(key, sandboxOptions, topLevel)) {
