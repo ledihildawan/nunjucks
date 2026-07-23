@@ -1,22 +1,16 @@
-const hasOwnProp = (obj: Record<string, unknown>, k: string): boolean => Object.hasOwn(obj, k);
+import { hasOwn } from '@nunjucks/shared/type-guards';
 
-export function _prepareAttributeParts(attr: string | number | null | undefined): (string | number)[] {
-  if (!attr) {
-    return [];
-  }
-  if (typeof attr === 'string') {
-    return attr.split('.');
-  }
-  return [attr];
-}
+export const _prepareAttributeParts = (attr: string | number | null | undefined): (string | number)[] => {
+  if (!attr) return [];
+  return typeof attr === 'string' ? attr.split('.') : [attr];
+};
 
-export function getAttrGetter(attribute: string | number): (item: Record<string, unknown>) => unknown {
+export const getAttrGetter = (attribute: string | number): ((item: Record<string, unknown>) => unknown) => {
   const parts = _prepareAttributeParts(attribute);
-  return function attrGetter(item: Record<string, unknown>): unknown {
-    let _item: Record<string, unknown> | unknown = item;
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      if (part !== undefined && _item !== null && _item !== undefined && typeof _item === 'object' && hasOwnProp(_item as Record<string, unknown>, String(part))) {
+  return (item: Record<string, unknown>): unknown => {
+    let _item: unknown = item;
+    for (const part of parts) {
+      if (_item != null && typeof _item === 'object' && hasOwn(_item as Record<string, unknown>, String(part))) {
         _item = (_item as Record<string, unknown>)[part];
       } else {
         return undefined;
@@ -24,4 +18,4 @@ export function getAttrGetter(attribute: string | number): (item: Record<string,
     }
     return _item;
   };
-}
+};

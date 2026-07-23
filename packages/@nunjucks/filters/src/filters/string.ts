@@ -57,19 +57,20 @@ export const replace = (str: unknown, old: unknown, new_: string, maxCount?: num
   else return str as string;
   const oldStr = old as string;
   if (oldStr === '') return preserveSafe(originalStr, new_ + s.split('').join(new_) + new_);
-  let nextIndex = s.indexOf(oldStr);
+  const nextIndex = s.indexOf(oldStr);
   if (max === 0 || nextIndex === -1) return s;
-  let res = '';
+  const parts: string[] = [];
   let pos = 0;
   let count = 0;
-  while (nextIndex > -1 && (max === -1 || count < max)) {
-    res += s.substring(pos, nextIndex) + new_;
-    pos = nextIndex + oldStr.length;
+  let currentIndex = nextIndex;
+  while (currentIndex > -1 && (max === -1 || count < max)) {
+    parts.push(s.substring(pos, currentIndex), new_);
+    pos = currentIndex + oldStr.length;
     count++;
-    nextIndex = s.indexOf(oldStr, pos);
+    currentIndex = s.indexOf(oldStr, pos);
   }
-  if (pos < s.length) res += s.substring(pos);
-  return preserveSafe(originalStr, res);
+  parts.push(s.substring(pos));
+  return preserveSafe(originalStr, parts.join(''));
 };
 
 export const title = createStringFilter((s: string): string => {

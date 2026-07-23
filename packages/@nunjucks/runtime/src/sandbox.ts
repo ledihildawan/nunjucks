@@ -8,6 +8,7 @@ import {
   DANGEROUS_GLOBALS_LIST,
   type Environment,
 } from '@nunjucks/shared/blocked-keys';
+import { isNonNullish, isFunction, hasOwn } from '@nunjucks/shared/type-guards';
 import { createLog, ERROR_DEFINITIONS } from '@nunjucks/log';
 import type { ErrorDefinitionEntry, TemplateError, TemplateWarning } from '@nunjucks/log/create-log';
 
@@ -19,9 +20,6 @@ export {
   BLOCKED_KEYS_LIST,
   DANGEROUS_GLOBALS_LIST,
 };
-
-const isNonNullish = (v: unknown): boolean => v !== null && v !== undefined;
-const isFunction = (v: unknown): boolean => typeof v === 'function';
 
 const UNSAFE_SYMBOL_DESCRIPTIONS = new Set([
   'constructor',
@@ -100,7 +98,6 @@ const isBlockedAtScope = (key: string | symbol, options: ResolvedSandboxOptions,
   return topLevel || category === 'object_intrinsic';
 };
 
-const hasOwn = (target: object, key: string | symbol): boolean => Object.hasOwn(target, key);
 const isInternalKey = (key: string | symbol): boolean => {
   if (typeof key !== 'string') return false;
   return key === '__nunjucks' || key.startsWith('__nunjucks_');

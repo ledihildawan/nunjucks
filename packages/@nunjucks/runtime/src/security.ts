@@ -57,21 +57,16 @@ const getLineColFromIndex = (content: string, index: number): { line: number; co
   return { line, col };
 };
 
-export const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeViolation[] => {
-  const violations: DangerousCodeViolation[] = [];
-
-  for (const { pattern, message } of DANGEROUS_PATTERNS) {
+export const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeViolation[] =>
+  DANGEROUS_PATTERNS.flatMap(({ pattern, message }) => {
     const regex = new RegExp(pattern.source, 'g');
-    let match: RegExpExecArray | null;
-    while ((match = regex.exec(templateContent)) !== null) {
-      const { line, col } = getLineColFromIndex(templateContent, match.index);
+    const matches = [...templateContent.matchAll(regex)];
+    return matches.map(match => {
+      const { line, col } = getLineColFromIndex(templateContent, match.index!);
       const nameMatch = match[0].match(/[a-zA-Z_$][\w$]*/);
-      violations.push({ message, pattern: pattern.source, line, col, name: nameMatch ? nameMatch[0] : null });
-    }
-  }
-
-  return violations;
-};
+      return { message, pattern: pattern.source, line, col, name: nameMatch ? nameMatch[0] : null };
+    });
+  });
 
 interface BlockedKeyResult {
   key: string;

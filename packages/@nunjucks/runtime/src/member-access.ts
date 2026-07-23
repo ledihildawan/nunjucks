@@ -1,8 +1,6 @@
 // MEMBER ACCESS - Property lookup, slicing, and nullish coalescing
+import { isNonNullish, isFunction, hasOwn } from '@nunjucks/shared/type-guards';
 import { createLog, ERROR_DEFINITIONS } from '@nunjucks/log';
-
-const isNonNullish = (v: unknown): boolean => v !== null && v !== undefined;
-const isFunction = (v: unknown): boolean => typeof v === 'function';
 
 const NULL_MARKER = '__nunjucks_null__';
 const PARENT_NAME = '__nunjucks_parent__';
@@ -15,13 +13,21 @@ export interface NullAccessResult {
   __access_path__: string;
 }
 
+export interface PropertyNotFoundResult {
+  __nunjucks_prop_not_found__: true;
+  __nunjucks_parent__: string | null;
+  __access_path__: string;
+}
+
+export type AccessResult = NullAccessResult | PropertyNotFoundResult | unknown;
+
 export function memberLookup(obj: unknown, val: string, parentName: string | null = null): unknown {
   if (obj == null) {
     return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
   }
 
   const target = obj as Record<string, unknown>;
-  if (!Object.hasOwn(target, val) && !(val in target)) {
+  if (!hasOwn(target, val) && !(val in target)) {
     const marker = { [PROP_NOT_FOUND]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
     const callable = (() => undefined) as unknown as Record<string, unknown>;
     Object.setPrototypeOf(callable, null);
@@ -37,20 +43,22 @@ export function memberLookup(obj: unknown, val: string, parentName: string | nul
   return target[val];
 }
 
-export function isNullAccessResult(val: unknown): boolean {
-  return !!val && typeof val === 'object' && (val as { __nunjucks_null__?: boolean }).__nunjucks_null__ === true;
+export function isNullAccessResult(val: unknown): val is NullAccessResult {
+  return isNonNullish(val) && typeof val === 'object' && (val as NullAccessResult).__nunjucks_null__ === true;
 }
 
-export function isPropertyNotFoundResult(val: unknown): boolean {
-  return !!val && (val as { __nunjucks_prop_not_found__?: boolean }).__nunjucks_prop_not_found__ === true;
+export function isPropertyNotFoundResult(val: unknown): val is PropertyNotFoundResult {
+  return isNonNullish(val) && (val as PropertyNotFoundResult).__nunjucks_prop_not_found__ === true;
 }
 
 export function getNullParentName(val: unknown): string | null {
-  return ((val && (val as { __nunjucks_parent__?: string }).__nunjucks_parent__) ?? null) as string | null;
+  if (!isNonNullish(val)) return null;
+  return (val as NullAccessResult).__nunjucks_parent__ ?? null;
 }
 
 export function getAccessPath(val: unknown): string {
-  return (val && (val as { __access_path__?: string }).__access_path__) as string;
+  if (!isNonNullish(val)) return '';
+  return (val as NullAccessResult).__access_path__ ?? '';
 }
 
 export function optionalMemberLookup(obj: unknown, val: string, parentName: string | null = null): unknown {
@@ -59,7 +67,7 @@ export function optionalMemberLookup(obj: unknown, val: string, parentName: stri
   }
 
   const target = obj as Record<string, unknown>;
-  if (!Object.hasOwn(target, val) && !(val in target)) {
+  if (!hasOwn(target, val) && !(val in target)) {
     return undefined;
   }
 

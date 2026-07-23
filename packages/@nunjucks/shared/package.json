@@ -8,7 +8,8 @@
     "./object": "./src/object.ts",
     "./caller-file": "./src/caller-file.ts",
     "./blocked-keys": "./src/blocked-keys.ts",
-    "./escape": "./src/escape.ts"
+    "./escape": "./src/escape.ts",
+    "./type-guards": "./src/type-guards.ts"
   },
   "dependencies": {
     "remeda": "*"

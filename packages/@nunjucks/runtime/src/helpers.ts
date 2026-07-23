@@ -4,6 +4,7 @@
 import { createLog, normalizeErrorMetadata, ERROR_DEFINITIONS } from '@nunjucks/log';
 import type { ErrorContext, ErrorDefinitionEntry, WarningContext } from '@nunjucks/log/create-log';
 import { escapeHtml } from '@nunjucks/shared';
+import { isNonNullish, isFunction, isString, isArray } from '@nunjucks/shared/type-guards';
 import {
   memberLookup,
   optionalMemberLookup,
@@ -34,10 +35,6 @@ import { createFrame } from './frame.ts';
 import { createContext } from './context.ts';
 import { toContext, createIsolatedContext, createForkedContext } from './render-context.ts';
 
-const isArray = (v: unknown): boolean => Array.isArray(v);
-const isNonNullish = (v: unknown): boolean => v !== null && v !== undefined;
-const isFunction = (v: unknown): boolean => typeof v === 'function';
-const isString = (v: unknown): boolean => typeof v === 'string';
 const isPlainObject = (v: unknown): boolean => {
   if (typeof v !== 'object' || v === null) return false;
   const proto = Object.getPrototypeOf(v);

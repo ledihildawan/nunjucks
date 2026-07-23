@@ -1,4 +1,6 @@
 // MACRO - Macro/keyword-args handling for Nunjucks templates
+import { hasOwn } from '@nunjucks/shared/type-guards';
+
 type KeywordArgs = { keywords?: boolean; [key: string]: unknown } & Record<string, unknown>;
 
 export function makeMacro(argNames: string[], kwargNames: string[], func: (...args: any[]) => unknown): (...macroArgs: unknown[]) => unknown {
@@ -38,7 +40,7 @@ export function makeKeywordArgs<T>(obj: T): T & { keywords: boolean } {
 }
 
 export function isKeywordArgs(obj: unknown): boolean | null {
-  return obj && Object.hasOwn(obj, 'keywords') ? true : (obj ? false : null);
+  return obj && hasOwn(obj as object, 'keywords') ? true : (obj ? false : null);
 }
 
 export function getKeywordArgs(args: unknown[]): Record<string, unknown> {
