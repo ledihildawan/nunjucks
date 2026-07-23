@@ -133,7 +133,20 @@ export function suppressValue(val: unknown, autoescape?: boolean): unknown {
   const normalized = isNonNullish(val) ? val : '';
 
   if (autoescape && !isSafeString(normalized)) {
-    return escapeValue((normalized as { toString(): string }).toString());
+    const strVal = (normalized as { toString(): string }).toString();
+    const escaped = escapeValue(strVal);
+
+    if (/^[\[{]/.test(strVal) && /&[quot;<>]/.test(escaped)) {
+      throw createLog(
+        'error',
+        ERROR_DEFINITIONS.JSON_ESCAPED_OUTPUT!,
+        {},
+        null,
+        { phase: 'render', templateName: 'inline', lineBase: 'zero' }
+      );
+    }
+
+    return escaped;
   }
 
   return normalized;

@@ -11,3 +11,6 @@ export {
   createMacroFilter,
   createConditionalMacro
 } from './creators.ts';
+
+export { createErrorDefinition, ERROR_TEMPLATES } from '@nunjucks/log';
+export type { ErrorDefinitionOptions } from '@nunjucks/log';

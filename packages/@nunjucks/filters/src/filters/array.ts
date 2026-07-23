@@ -1,15 +1,25 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { isString, isPlainObject, map, sum as sumValues } from 'remeda';
 import { isSafeString, makeMacro } from '@nunjucks/runtime';
-import { filterError, isArray, isNumber } from '../factory/index.ts';
+import { filterError, isArray } from '../factory/index.ts';
 import type { FilterContext } from '../factory/index.ts';
 
 export { filterError };
 export type { FilterContext };
 
-export const first = <T>(arr: T[]): T | undefined => arr[0];
+export const first = (arr: unknown): unknown => {
+  if (!isArray(arr)) {
+    throw filterError(undefined, ERROR_DEFINITIONS.FIRST_LAST_FILTER!, { type: typeof arr }, typeof arr);
+  }
+  return arr[0];
+};
 
-export const last = <T>(arr: T[]): T | undefined => arr.at(-1);
+export const last = (arr: unknown): unknown => {
+  if (!isArray(arr)) {
+    throw filterError(undefined, ERROR_DEFINITIONS.FIRST_LAST_FILTER!, { type: typeof arr }, typeof arr);
+  }
+  return arr.at(-1);
+};
 
 export const lengthFilter = (val: unknown): number => {
   const value: unknown = (val === null || val === undefined || val === false) ? '' : val;
@@ -39,9 +49,12 @@ export const reverse = (val: unknown): unknown[] | string => {
   return arr;
 };
 
-export const slice = (arr: unknown[], slices: number, fillWith?: unknown): unknown[][] => {
+export const slice = (arr: unknown, slices: number, fillWith?: unknown): unknown[][] => {
   if (!isArray(arr)) {
     throw filterError(undefined, ERROR_DEFINITIONS.LIST_FILTER!, { type: typeof arr }, typeof arr);
+  }
+  if (slices <= 0) {
+    throw filterError(undefined, ERROR_DEFINITIONS.SLICE_ZERO!, {}, '');
   }
   const sliceLength = Math.floor(arr.length / slices);
   const extra = arr.length % slices;
@@ -58,11 +71,21 @@ export const slice = (arr: unknown[], slices: number, fillWith?: unknown): unkno
   return res;
 };
 
-export const sum = (arr: unknown[], attr?: string, start: number = 0): number => {
+export const sum = (arr: unknown, attr?: string, start: number = 0): number => {
   if (!isArray(arr) && !isPlainObject(arr)) {
-    throw filterError(undefined, ERROR_DEFINITIONS.LIST_FILTER!, { type: typeof arr }, typeof arr);
+    throw filterError(undefined, ERROR_DEFINITIONS.SUM_FILTER!, { type: typeof arr }, typeof arr);
   }
-  if (attr) arr = map(arr as Record<string, unknown>[], (v) => (v as Record<string, unknown>)[attr]);
+  if (attr) {
+    if (!isArray(arr)) {
+      throw filterError(undefined, ERROR_DEFINITIONS.SUM_FILTER!, { type: typeof arr }, typeof arr);
+    }
+    for (const item of arr) {
+      if (item && typeof item === 'object' && !(attr in (item as object))) {
+        throw filterError(undefined, ERROR_DEFINITIONS.SUM_FILTER_ATTR!, { attr }, attr);
+      }
+    }
+    arr = map(arr as Record<string, unknown>[], (v) => (v as Record<string, unknown>)[attr]);
+  }
   return start + sumValues(arr as number[]);
 };
 

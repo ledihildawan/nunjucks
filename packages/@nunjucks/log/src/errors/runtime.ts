@@ -1,4 +1,5 @@
-import { type ErrorDefinition, firstCapture } from './types.ts';
+import { createErrorDefinition } from './factory.ts';
+import { firstCapture } from './types.ts';
 
 const DOCS_BASE = 'https://mozilla.github.io/nunjucks/templating.html';
 
@@ -16,15 +17,12 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: '{{ {parent}?.{accessPath} |> default("") }}',
     fixComment: 'Use optional chaining `?.` or `default()` filter to handle null safely',
-    subjectFrom: firstCapture,
-    extraFrom: (groups) => ({ accessPath: groups[1] || '', state: groups[2] || '', parent: groups[3] || '' })
+    extraFrom: (groups: RegExpMatchArray) => ({ accessPath: groups[1] || '', state: groups[2] || '', parent: groups[3] || '' })
   },
-  UNDEFINED_VARIABLE: {
+  UNDEFINED_VARIABLE: createErrorDefinition({
     name: 'UNDEFINED_VARIABLE',
     message: "Variable '{name}' is not defined",
-    pattern: /^Variable '([^']+)' is not defined$/i,
     category: 'undefined_variable',
-    titleTemplate: "Variable '{subject}' is not defined",
     causes: [
       'The variable `{subject}` was not passed in the `render()` context object',
       'A typo in the variable name (case-sensitive)',
@@ -33,9 +31,8 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: "{{ {subject} |> default('fallback') }}",
     fixComment: 'Add a default value with the `default` filter, or pass `{subject}` in the render context',
-    documentationUrl: `${DOCS_BASE}#variables`,
-    subjectFrom: firstCapture
-  },
+    documentationUrl: `${DOCS_BASE}#variables`
+  }),
   UNDEFINED_PROPERTY: {
     name: 'UNDEFINED_PROPERTY',
     message: "Property '{property}' not found in '{parent}'",
@@ -50,15 +47,12 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: '{{ {parent }?.{property} |> default("N/A") }}',
     fixComment: 'Use optional chaining `?.` or `default()` to handle missing properties gracefully',
-    subjectFrom: firstCapture,
-    extraFrom: (groups) => ({ property: groups[1] || '', parent: groups[2] || '' })
+    extraFrom: (groups: RegExpMatchArray) => ({ property: groups[1] || '', parent: groups[2] || '' })
   },
-  UNDEFINED_FUNCTION: {
+  UNDEFINED_FUNCTION: createErrorDefinition({
     name: 'UNDEFINED_FUNCTION',
     message: "Function '{name}' is not defined",
-    pattern: /^Function '([^']+)' is not defined$/i,
     category: 'undefined_function',
-    titleTemplate: "Function '{subject}' is not defined",
     causes: [
       'The function `{subject}` was not registered with `env.addGlobal()`',
       'You may have meant a filter - check if `{subject}` is registered with `env.addFilter()`',
@@ -66,30 +60,24 @@ export const RUNTIME_ERRORS = {
       'Missing import - the function may live in another module'
     ],
     fixCode: "env.addGlobal('{subject}', function() { /* ... */ })",
-    fixComment: 'Register the missing function globally on the environment before rendering',
-    subjectFrom: firstCapture
-  },
-  NOT_A_FUNCTION: {
+    fixComment: 'Register the missing function globally on the environment before rendering'
+  }),
+  NOT_A_FUNCTION: createErrorDefinition({
     name: 'NOT_A_FUNCTION',
     message: "'{name}' is not a function",
-    pattern: /^'([^']+)' is not a function$/i,
     category: 'sandbox_blocked',
-    titleTemplate: "'{subject}' is not a function",
     causes: [
       'Tried to call `{subject}` but it is not a function (e.g. string, number, undefined)',
       'The variable `{subject}` contains the wrong data type',
       'In sandbox mode, certain global functions are blocked (e.g. eval, Function)'
     ],
     fixCode: "{{ typeof {subject} === 'function' ? {subject}() : '' }}",
-    fixComment: 'Add a type check before calling, or use `if` to conditionally invoke',
-    subjectFrom: firstCapture
-  },
-  UNDEFINED_BLOCK: {
+    fixComment: 'Add a type check before calling, or use `if` to conditionally invoke'
+  }),
+  UNDEFINED_BLOCK: createErrorDefinition({
     name: 'UNDEFINED_BLOCK',
     message: 'Undefined block: {name}',
-    pattern: /^Undefined block: (.+)$/i,
     category: 'undefined_block',
-    titleTemplate: "Block '{subject}' does not exist in the parent template",
     causes: [
       'The child template overrides block `{subject}`, but the parent template never defines it',
       'The block name `{subject}` may be misspelled in either the child or parent template',
@@ -97,15 +85,12 @@ export const RUNTIME_ERRORS = {
       'The parent file failed to load and is empty'
     ],
     fixCode: '{% extends "base.njk" %}\n\n{% block content %}\n  Your content here\n{% endblock %}',
-    fixComment: 'Either rename the block or add the corresponding block to the parent template',
-    subjectFrom: firstCapture
-  },
-  UNDEFINED_FILTER: {
+    fixComment: 'Either rename the block or add the corresponding block to the parent template'
+  }),
+  UNDEFINED_FILTER: createErrorDefinition({
     name: 'UNDEFINED_FILTER',
     message: "Filter '{name}' is not defined",
-    pattern: /^Filter '([^']+)' is not defined$/i,
     category: 'undefined_filter',
-    titleTemplate: "Filter '{subject}' is not defined",
     causes: [
       'The filter `{subject}` was not registered with `env.addFilter()`',
       'A typo in the filter name (case-sensitive)',
@@ -114,24 +99,20 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: "env.addFilter('{subject}', function(value) { return value; })",
     fixComment: 'Register the missing filter on the environment before rendering',
-    documentationUrl: `${DOCS_BASE}#filters`,
-    subjectFrom: firstCapture
-  },
-  UNDEFINED_TEST: {
+    documentationUrl: `${DOCS_BASE}#filters`
+  }),
+  UNDEFINED_TEST: createErrorDefinition({
     name: 'UNDEFINED_TEST',
     message: "Test '{name}' is not defined",
-    pattern: /^Test '([^']+)' is not defined$/i,
     category: 'undefined_test',
-    titleTemplate: "Test '{subject}' is not defined",
     causes: [
       'The test `{subject}` was not registered with `env.addTest()`',
       'A typo in the test name (case-sensitive)',
       'Built-in tests like `defined`, `undefined`, `null` may be what you want'
     ],
     fixCode: "env.addTest('{subject}', function(value) { return /* boolean */ false; })",
-    fixComment: 'Register the missing test on the environment',
-    subjectFrom: firstCapture
-  },
+    fixComment: 'Register the missing test on the environment'
+  }),
   UNKNOWN_BLOCK_RUNTIME: {
     name: 'UNKNOWN_BLOCK_RUNTIME',
     message: 'unknown block "{name}"',
@@ -148,21 +129,18 @@ export const RUNTIME_ERRORS = {
     fixComment: 'Rename the child block or remove the `super()` call',
     subjectFrom: firstCapture
   },
-  DUPLICATE_BLOCK: {
+  DUPLICATE_BLOCK: createErrorDefinition({
     name: 'DUPLICATE_BLOCK',
     message: 'Block "{name}" defined more than once',
-    pattern: /^Block "([^"]+)" defined more than once$/i,
     category: 'duplicate_block',
-    titleTemplate: "Block '{subject}' is defined more than once",
     causes: [
       'The block `{subject}` is defined multiple times in the same template',
       'A copy-paste error left two block declarations with the same name',
       'The template is being compiled twice (e.g. included and extended simultaneously)'
     ],
     fixCode: "{% block content %}{% endblock %}",
-    fixComment: 'Remove or rename the duplicate block',
-    subjectFrom: firstCapture
-  },
+    fixComment: 'Remove or rename the duplicate block'
+  }),
   NO_SUPER_BLOCK: {
     name: 'NO_SUPER_BLOCK',
     message: 'No super block available',
@@ -175,8 +153,7 @@ export const RUNTIME_ERRORS = {
       'The parent block was removed or renamed in the parent file'
     ],
     fixCode: '{% block {subject} %}\n  {% if false %}{{ super() }}{% endif %}\n  Your content\n{% endblock %}',
-    fixComment: 'Guard the `super()` call with an `{% if %}` or remove it',
-    subjectFrom: firstCapture
+    fixComment: 'Guard the `super()` call with an `{% if %}` or remove it'
   },
   IN_OPERATOR: {
     name: 'IN_OPERATOR',
@@ -191,7 +168,7 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: '{{ ["a", "b", "c"] |> contains("a") }}',
     fixComment: 'Use the `contains` filter or check `is in array` for arrays',
-    subjectFrom: (groups) => `${groups[1]} in ${groups[2]}`
+    subjectFrom: (groups: RegExpMatchArray) => `${groups[1]} in ${groups[2]}`
   },
   TIMEOUT: {
     name: 'TIMEOUT',
@@ -209,21 +186,18 @@ export const RUNTIME_ERRORS = {
     fixComment: 'Increase the `executionTimeout` config or simplify the template',
     subjectFrom: null
   },
-  KEY_NOT_FOUND: {
+  KEY_NOT_FOUND: createErrorDefinition({
     name: 'KEY_NOT_FOUND',
     message: "Key '{key}' not found",
-    pattern: /^Key '([^']+)' not found$/i,
     category: 'key_not_found',
-    titleTemplate: "Key '{subject}' not found",
     causes: [
       'The key `{subject}` does not exist on the object',
       'A typo in the key name',
       'Using strict mode when the key is optional'
     ],
     fixCode: '{{ object?.{subject} |> default("missing") }}',
-    fixComment: 'Use optional chaining or provide a default value',
-    subjectFrom: firstCapture
-  },
+    fixComment: 'Use optional chaining or provide a default value'
+  }),
   INVALID_LOOKUP: {
     name: 'INVALID_LOOKUP',
     message: 'expected name as lookup value after {marker} on {target}, got {value}',
@@ -231,7 +205,7 @@ export const RUNTIME_ERRORS = {
     category: 'invalid_lookup',
     titleTemplate: "Invalid property access: {subject}",
     causes: [
-      'Invalid character `{subject}` used after a dot (e.g. `obj.[key]`)',
+      'Invalid character `{marker}` used after a dot (e.g. `obj.[key]`)',
       'Mixed bracket and dot notation in an invalid way',
       'The expression after the dot is not a valid identifier or string'
     ],
@@ -239,28 +213,23 @@ export const RUNTIME_ERRORS = {
     fixComment: 'Use either dot notation OR bracket notation, never mixed',
     subjectFrom: firstCapture
   },
-  UNDEFINED_VALUE_MATCH: {
+  UNDEFINED_VALUE_MATCH: createErrorDefinition({
     name: 'UNDEFINED_VALUE_MATCH',
     message: 'Attempted to output undefined value',
-    pattern: /attempted to output (?:null|undefined) value/i,
     category: 'undefined_value',
-    titleTemplate: "Cannot read property '{subject}' of undefined",
     causes: [
       'A nested property access returned `null` or `undefined`',
       'An array index is out of bounds',
       'An object property does not exist',
       'A function call returned nothing'
     ],
-    fixCode: "{{ object?.{subject} |> default('N/A') }}",
-    fixComment: 'Use optional chaining `?.` and the `default` filter to handle missing values',
-    subjectFrom: firstCapture
-  },
-  CALL_MATCH: {
+    fixCode: "{{ object?.prop |> default('N/A') }}",
+    fixComment: 'Use optional chaining `?.` and the `default` filter to handle missing values'
+  }),
+  CALL_MATCH: createErrorDefinition({
     name: 'CALL_MATCH',
     message: 'Unable to call',
-    pattern: /Unable to call `([^`]+)`/,
     category: 'undefined_function',
-    titleTemplate: 'Unable to call function',
     causes: [
       'The function does not exist in the current context',
       'The function name is misspelled',
@@ -268,24 +237,20 @@ export const RUNTIME_ERRORS = {
       'The value being called is not actually a function'
     ],
     fixCode: 'env.addGlobal("funcName", function(arg) { /* ... */ })',
-    fixComment: 'Register the function with `addGlobal` before rendering',
-    subjectFrom: firstCapture
-  },
-  OUTPUT_MATCH: {
+    fixComment: 'Register the function with `addGlobal` before rendering'
+  }),
+  OUTPUT_MATCH: createErrorDefinition({
     name: 'OUTPUT_MATCH',
     message: 'Attempted to output',
-    pattern: /attempted to output '([^']+)'/i,
     category: 'undefined_value',
-    titleTemplate: 'Attempted to output undefined value',
     causes: [
       'The template tried to output a value that was `undefined`',
       'A property access on a missing object returned `undefined`',
       'Using `undefined: "strict"` mode caught an undefined reference'
     ],
     fixCode: "{{ value |> default('No value') }}",
-    fixComment: 'Provide a default value with the `default` filter',
-    subjectFrom: firstCapture
-  },
+    fixComment: 'Provide a default value with the `default` filter'
+  }),
   RESERVED_KEYWORD: {
     name: 'RESERVED_KEYWORD',
     message: "Cannot use reserved {type} '{name}'",
@@ -315,12 +280,10 @@ export const RUNTIME_ERRORS = {
     fixComment: 'Review when {subject} can be used',
     subjectFrom: firstCapture
   },
-  ASSERT_TYPE_ERROR: {
+  ASSERT_TYPE_ERROR: createErrorDefinition({
     name: 'ASSERT_TYPE_ERROR',
     message: 'Invalid type assertion',
-    pattern: /^assertType: invalid type: /i,
     category: 'type_error',
-    titleTemplate: 'Internal type assertion failed',
     causes: [
       'An internal type assertion failed in the compiler',
       'The AST contains an unexpected node shape',
@@ -328,9 +291,8 @@ export const RUNTIME_ERRORS = {
     ],
     fixCode: '/* Please report this as a bug at https://github.com/mozilla/nunjucks/issues */',
     fixComment: 'This is a nunjucks internal error - not caused by your template',
-    documentationUrl: 'https://github.com/mozilla/nunjucks/issues',
-    subjectFrom: null
-  }
-} as const satisfies Record<string, ErrorDefinition>;
+    documentationUrl: 'https://github.com/mozilla/nunjucks/issues'
+  })
+} as const;
 
 export type RuntimeErrorName = keyof typeof RUNTIME_ERRORS;

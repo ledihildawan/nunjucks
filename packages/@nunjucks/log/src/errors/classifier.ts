@@ -11,7 +11,11 @@ const replacePlaceholders = (
   extra?: Record<string, string | null> | null
 ): string | null => {
   if (!str) return str ?? null;
-  let result = str.replaceAll('{subject}', undefinedName || '').replaceAll('{target}', undefinedName || '');
+  let result = str
+    .replaceAll('{subject}', undefinedName || '')
+    .replaceAll('{target}', undefinedName || '')
+    .replaceAll('{name}', undefinedName || '')
+    .replaceAll('{key}', undefinedName || '');
   if (extra) {
     for (const key of Object.keys(extra)) {
       const value = extra[key];

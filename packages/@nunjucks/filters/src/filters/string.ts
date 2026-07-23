@@ -1,7 +1,9 @@
 import { defaultTo } from 'remeda';
-import { normalize, safeString, safeHtml, preserveSafe, createStringFilter, createMacroFilter, isSafeString } from '../factory/index.ts';
+import { ERROR_DEFINITIONS } from '@nunjucks/log';
+import { normalize, safeString, safeHtml, preserveSafe, createStringFilter, createMacroFilter, isSafeString, isArray, filterError } from '../factory/index.ts';
+import type { SafeString } from '../factory/index.ts';
 
-export { normalize };
+export { normalize, filterError };
 
 export const capitalize = createStringFilter((s: string): string => {
   const ret = s.toLowerCase();
@@ -16,6 +18,10 @@ export const escape = safeHtml;
 
 export const safe = safeString;
 
+export const tojson = (value: unknown): SafeString => {
+  return safeString(JSON.stringify(value));
+};
+
 export const indent = (str: unknown, width?: number, indentfirst?: boolean): string => {
   const s = normalize(str, '');
   if (s === '') return '';
@@ -26,7 +32,10 @@ export const indent = (str: unknown, width?: number, indentfirst?: boolean): str
   return preserveSafe(str, res);
 };
 
-export const join = (arr: unknown[], del?: string, attr?: string): string => {
+export const join = (arr: unknown, del?: string, attr?: string): string => {
+  if (!isArray(arr)) {
+    throw filterError(undefined, ERROR_DEFINITIONS.JOIN_FILTER!, { type: typeof arr }, typeof arr);
+  }
   const d = defaultTo(del, '');
   if (attr) {
     arr = arr.map((v) => (v as Record<string, unknown>)[attr]);
