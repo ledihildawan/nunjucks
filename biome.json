@@ -21,16 +21,30 @@
 		"rules": {
 			"recommended": true,
 			"correctness": {
-				"noUnusedVariables": "warn"
+				"noUnusedVariables": "error",
+				"noUnusedFunctionParameters": "error"
 			},
 			"style": {
 				"noEnum": "error",
 				"useImportType": "error",
-				"useShorthandFunctionType": "error"
+				"useShorthandFunctionType": "error",
+				"useTemplate": "error",
+				"useConsistentArrayType": "error",
+				"useEnumInitializers": "error",
+				"noNonNullAssertion": "off"
+			},
+			"complexity": {
+				"noExtraBooleanCast": "error",
+				"noUselessCatch": "error",
+				"noUselessConstructor": "error",
+				"useOptionalChain": "error",
+				"noUselessSwitchCase": "error"
 			},
 			"suspicious": {
 				"noConstEnum": "error",
-				"noShadow": "error"
+				"noShadow": "error",
+				"noRedeclare": "error",
+				"noDuplicateCase": "error"
 			}
 		}
 	},

@@ -5,11 +5,12 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./string": "./src/string.ts",
-    "./array": "./src/array.ts",
-    "./object": "./src/object.ts",
-    "./math": "./src/math.ts",
-    "./attributes": "./src/attributes.ts"
+    "./string": "./src/filters/string.ts",
+    "./array": "./src/filters/array.ts",
+    "./object": "./src/filters/object.ts",
+    "./math": "./src/filters/math.ts",
+    "./attributes": "./src/attributes.ts",
+    "./factory": "./src/factory/index.ts"
   },
   "dependencies": {
     "@nunjucks/runtime": "workspace:*",

@@ -115,7 +115,6 @@ const getDangerousValueStamps = (contextError: ValidationError, config: RenderCo
   const callerLocation = config._callerLocation;
   if (!callerLocation || callerLocation.fileName === 'unknown') return stamps;
 
-  // biome-ignore lint/style/noNonNullAssertion: dangerousPaths is always non-empty at this point
   const pos = findContextKeyPosition(callerLocation.fileName, callerLocation.lineNumber || 1, dangerousPaths[0]!);
   if (pos) {
     stamps.lineno = pos.line;

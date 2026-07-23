@@ -282,12 +282,10 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<t
   const render = async (ctx: unknown, parentFrame?: unknown) => {
     await state.compiler?.safeCompile();
 
-    // biome-ignore lint/style/noNonNullAssertion: state.path is always set before render is called
     if (state.env._renderingTemplates.has(state.path!)) {
       throw createLog('error', getError('CIRCULAR_INCLUDE'), { path: state.path as string }, state.path as string, { phase: 'render' });
     }
 
-    // biome-ignore lint/style/noNonNullAssertion: state.path is always set before render is called
     state.env._renderingTemplates.add(state.path!);
 
     // biome-ignore lint/suspicious/noExplicitAny: Context creation requires Env type which has dynamic properties
@@ -313,7 +311,6 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<t
         includeChain: (e as Record<string, unknown>)._includeChain as any || state._includeChain
       });
     } finally {
-      // biome-ignore lint/style/noNonNullAssertion: state.path is always set before render is called
       state.env._renderingTemplates.delete(state.path!);
     }
   };
@@ -321,12 +318,10 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<t
   const renderSync = (ctx: unknown, parentFrame?: unknown) => {
     state.compiler?.safeCompileSync();
 
-    // biome-ignore lint/style/noNonNullAssertion: state.path is always set before render is called
     if (state.env._renderingTemplates.has(state.path!)) {
       throw createLog('error', getError('CIRCULAR_INCLUDE'), { path: state.path as string }, state.path as string, { phase: 'render' });
     }
 
-    // biome-ignore lint/style/noNonNullAssertion: state.path is always set before render is called
     state.env._renderingTemplates.add(state.path!);
 
     // biome-ignore lint/suspicious/noExplicitAny: Context creation requires Env type which has dynamic properties
@@ -352,7 +347,6 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<t
         includeChain: (e as Record<string, unknown>)._includeChain as any || state._includeChain
       });
     } finally {
-      // biome-ignore lint/style/noNonNullAssertion: state.path is always set before render is called
       state.env._renderingTemplates.delete(state.path!);
     }
   };

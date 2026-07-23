@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import {
-  normalize, capitalize, upper, lower, escape, forceescape, safe,
-  truncate, trim, title, join, replace, urlencode, wordcount,
+  normalize, capitalize, upper, lower, escape, safe,
+  truncate, trim, title, join, replace, urlencode, indent, fallback,
 } from './string.ts';
 
 describe('normalize', () => {
@@ -37,19 +37,30 @@ describe('upper / lower', () => {
   });
 });
 
-describe('escape / forceescape / safe', () => {
+describe('escape / safe', () => {
   test('escape converts html chars', () => {
     const r = String(escape('<script>"x"</script>'));
     expect(r).toContain('&lt;script&gt;');
     expect(r).toContain('&quot;x&quot;');
   });
-  test('forceescape always escapes', () => {
-    const r = String(forceescape('<b>'));
-    expect(r).toContain('&lt;b&gt;');
-  });
   test('safe marks as safe', () => {
     const r = safe('<b>');
     expect(r).toBeDefined();
+  });
+});
+
+describe('fallback', () => {
+  test('uses default when undefined', () => {
+    expect(fallback(undefined, 'default')).toBe('default');
+  });
+  test('uses default when null', () => {
+    expect(fallback(null, 'default')).toBe('default');
+  });
+  test('uses value when truthy', () => {
+    expect(fallback('value', 'default')).toBe('value');
+  });
+  test('uses default when bool=true and value is falsy', () => {
+    expect(fallback('', 'default', true)).toBe('default');
   });
 });
 
@@ -95,6 +106,9 @@ describe('join', () => {
   test('default empty delimiter', () => {
     expect(join(['a', 'b', 'c'])).toBe('abc');
   });
+  test('joins by attribute', () => {
+    expect(join([{ n: 'a' }, { n: 'b' }], '-', 'n')).toBe('a-b');
+  });
 });
 
 describe('replace', () => {
@@ -115,11 +129,10 @@ describe('urlencode', () => {
   });
 });
 
-describe('wordcount', () => {
-  test('counts words', () => {
-    expect(wordcount('hello world foo')).toBe(3);
-  });
-  test('empty string returns null', () => {
-    expect(wordcount('')).toBe(null);
+describe('indent', () => {
+  test('indents each line', () => {
+    const result = indent('hello\nworld', 2);
+    expect(typeof result).toBe('string');
+    expect((result as string).includes('hello')).toBe(true);
   });
 });

@@ -15,7 +15,6 @@ const builtInFilters: FilterObject = Object.freeze({
   d: stringFilters.fallback,
   e: stringFilters.escape,
   length: arrayFilters.lengthFilter,
-  int: mathFilters.intFilter,
 });
 
 export type SandboxEnvironment = 'auto' | 'node' | 'browser' | 'deno';
