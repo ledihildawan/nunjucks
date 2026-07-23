@@ -124,8 +124,9 @@ export const validateRenderContext = (context: unknown, config: ContextValidator
       }]
     };
     if (securityError.dangerousPaths) {
-      errorObj.errors[0]!.subject = securityError.dangerousPaths[0];
-      errorObj.errors[0]!.dangerousPaths = securityError.dangerousPaths;
+      const firstError = errorObj.errors[0] as NonNullable<typeof errorObj.errors[0]>;
+      firstError.subject = securityError.dangerousPaths[0];
+      firstError.dangerousPaths = securityError.dangerousPaths;
     }
     return errorObj;
   }

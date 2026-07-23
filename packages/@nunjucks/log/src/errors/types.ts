@@ -6,30 +6,30 @@ export type ExtraExtractor = (groups: RegExpMatchArray) => Record<string, string
 export type ErrorSeverity = 'error' | 'warning' | 'info';
 
 export interface ErrorDefinition {
-  name: string;
-  message: string | ((args?: Record<string, string> | string[]) => string);
-  pattern: RegExp;
-  category: string;
-  titleTemplate?: string;
-  causes: string[];
-  fixCode?: string;
-  fixComment?: string;
-  documentationUrl?: string;
-  severity?: 'error' | 'warning' | 'info';
-  subjectFrom?: SubjectExtractor | null;
-  extraFrom?: ExtraExtractor | null;
-  sourceFromStack?: boolean;
+  readonly name: string;
+  readonly message: string | ((args?: Record<string, string> | string[]) => string);
+  readonly pattern: RegExp;
+  readonly category: string;
+  readonly titleTemplate?: string;
+  readonly causes: string[];
+  readonly fixCode?: string;
+  readonly fixComment?: string;
+  readonly documentationUrl?: string;
+  readonly severity?: 'error' | 'warning' | 'info';
+  readonly subjectFrom?: SubjectExtractor | null;
+  readonly extraFrom?: ExtraExtractor | null;
+  readonly sourceFromStack?: boolean;
 }
 
 export interface Classification {
-  category: string;
-  undefinedName: string | null;
-  causes: string[];
-  fixCode: string | null;
-  fixComment: string | null;
-  documentationUrl: string | null;
-  severity: ErrorSeverity;
-  title?: string | null;
+  readonly category: string;
+  readonly undefinedName: string | null;
+  readonly causes: readonly string[];
+  readonly fixCode: string | null;
+  readonly fixComment: string | null;
+  readonly documentationUrl: string | null;
+  readonly severity: ErrorSeverity;
+  readonly title?: string | null;
 }
 
 export interface ClassifyInput {

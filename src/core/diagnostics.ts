@@ -58,22 +58,22 @@ const positionAtOffset = (text: string, offset: number): Position => {
   const parts = before.split('\n');
   return {
     lineOffset: parts.length - 1,
-    col: parts[parts.length - 1]!.length + 1
+    col: (parts.at(-1)?.length ?? 0) + 1
   };
 };
 
 const templateLocationOffset = (template: string, templateErrorLine: number | null, templateErrorCol: number | null): number => {
   const templateLines = template.split('\n');
-  const line = Number.isInteger(templateErrorLine) ? templateErrorLine! : 0;
-  const col = Number.isInteger(templateErrorCol) ? templateErrorCol! : 0;
+  const line = templateErrorLine ?? 0;
+  const col = templateErrorCol ?? 0;
   const clampedLine = Math.max(0, Math.min(line, templateLines.length - 1));
   let offset = 0;
 
   for (let i = 0; i < clampedLine; i++) {
-    offset += templateLines[i]!.length + 1;
+    offset += (templateLines[i]?.length ?? 0) + 1;
   }
 
-  return offset + Math.max(0, Math.min(col, templateLines[clampedLine]!.length));
+  return offset + Math.max(0, Math.min(col, templateLines[clampedLine]?.length ?? 0));
 };
 
 const findTemplateOccurrence = (content: string, templateHint: string, preferredLine: number | null): TemplateMatch | null => {
@@ -111,7 +111,7 @@ export const findContextKeyPosition = (sourceFile: string, callLine: number, dan
   try {
     const content = readFileSync(sourceFile, 'utf-8');
     const lines = content.split('\n');
-    const keyName = dangerousPath.split('.').pop();
+    const keyName = dangerousPath.split('.').pop() ?? '';
     const searchLine = Math.max(0, callLine - 1);
     const searchRadius = 5;
 
@@ -119,15 +119,17 @@ export const findContextKeyPosition = (sourceFile: string, callLine: number, dan
     let bestDistance = Infinity;
 
     for (let i = Math.max(0, searchLine - searchRadius); i <= Math.min(lines.length - 1, searchLine + searchRadius); i++) {
-      const line = lines[i]!;
+      const line = lines[i] ?? '';
       let col = 0;
-      while ((col = line.indexOf(keyName!, col)) !== -1) {
+      let found = line.indexOf(keyName, col);
+      while (found !== -1) {
         const distance = Math.abs(i - searchLine);
-        if (distance < bestDistance || (distance === bestDistance && col < (best?.col ?? Infinity))) {
+        if (distance < bestDistance || (distance === bestDistance && found < (best?.col ?? Infinity))) {
           bestDistance = distance;
-          best = { line: i + 1, col: col + 1 };
+          best = { line: i + 1, col: found + 1 };
         }
-        col++;
+        col = found + 1;
+        found = line.indexOf(keyName, col);
       }
     }
 
@@ -156,11 +158,13 @@ const findSubjectOccurrence = (content: string, subject: string | null, preferre
 
   for (const { re, group } of patterns) {
     let match: RegExpExecArray | null;
-    while ((match = re.exec(content)) !== null) {
+    while (true) {
+      match = re.exec(content);
+      if (match === null) break;
       const groupText = match[group];
       if (!groupText) continue;
 
-      const groupOffset = match[0]!.indexOf(groupText);
+      const groupOffset = match[0].indexOf(groupText);
       const offset = match.index + groupOffset + subjectColOffset;
       const position = positionAtOffset(content, offset);
       const line = position.lineOffset + 1;
@@ -305,8 +309,8 @@ const resolveErrorLocation = (config: DiagnosticsConfig, initialMetadata: Normal
   if (preferJsCallerLocation && useJsCaller && config.jsCaller) {
     const codeContext = extractCodeContext(
       config.jsCaller,
-      hasCallerLocation ? errLineno! : config.jsCallerErrorLine!,
-      hasCallerLocation ? errColno! : config.jsCallerErrorCol!,
+      hasCallerLocation ? (errLineno as number) : (config.jsCallerErrorLine as number),
+      hasCallerLocation ? (errColno as number) : (config.jsCallerErrorCol as number),
       template,
       errLineno,
       errColno,
@@ -365,9 +369,13 @@ export const wrapWithLog = (err: unknown, config: DiagnosticsConfig, template: s
   const { lineno, colno, lineBase, templatePath, sourceContent, sourceStartLine, preferJsCallerLocation } =
     resolveErrorLocation(config, initialMetadata, errLineno, errColno, template);
 
+  delete (err as Record<string, unknown>).lineBase;
+  delete (err as Record<string, unknown>).lineno;
+  delete (err as Record<string, unknown>).colno;
   const metadata = normalizeErrorMetadata(err, {
     lineno,
     colno,
+    lineBase,
     phase,
     templateName: templatePath,
     templatePath,

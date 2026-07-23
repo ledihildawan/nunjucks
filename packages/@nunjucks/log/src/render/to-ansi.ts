@@ -71,7 +71,7 @@ const stripMarkdown = (text: string): string => {
   return text.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1');
 };
 
-const formatCausesAnsi = (causes: string[]): string => {
+const formatCausesAnsi = (causes: readonly string[]): string => {
   if (!causes || causes.length === 0) return '';
   const items = causes.map(c => `  ${picocolors.yellow('•')} ${stripMarkdown(c)}`).join('\n');
   return `\n${picocolors.bold('Possible Causes:')}\n${items}`;

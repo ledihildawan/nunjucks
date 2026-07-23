@@ -9,7 +9,7 @@ import { FILTER_ERRORS } from './filter.ts';
 import { TEMPLATE_ERRORS } from './template.ts';
 import { META_ERRORS } from './meta.ts';
 
-export const ERROR_DEFINITIONS = {
+const _allErrors = {
   ...RUNTIME_ERRORS,
   ...PARSER_ERRORS,
   ...SANDBOX_ERRORS,
@@ -17,9 +17,15 @@ export const ERROR_DEFINITIONS = {
   ...FILTER_ERRORS,
   ...TEMPLATE_ERRORS,
   ...META_ERRORS
-} as unknown as Record<string, ErrorDefinition>;
+};
 
-export type ErrorName = keyof typeof ERROR_DEFINITIONS;
+export type ErrorName = keyof typeof _allErrors;
+
+export const ERROR_DEFINITIONS = _allErrors as unknown as Record<ErrorName, ErrorDefinition>;
+
+export function getError<T extends ErrorName>(name: T): ErrorDefinition {
+  return ERROR_DEFINITIONS[name];
+}
 
 type ErrorMessageFn = (args?: Record<string, string> | string[]) => string;
 

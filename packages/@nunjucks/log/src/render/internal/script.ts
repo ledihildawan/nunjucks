@@ -270,7 +270,7 @@ export const TOGGLE_SCRIPT = `<script>
     };
 
     const collapseAll = function(root) {
-      Array.from(root.querySelectorAll('.ctx-row.is-expandable')).reverse().forEach(function(row) {
+      Array.from(root.querySelectorAll('.ctx-row.is-expandable')).toReversed().forEach(function(row) {
         if (row.getAttribute('aria-expanded') === 'true') row.click();
       });
       updateContextActions();

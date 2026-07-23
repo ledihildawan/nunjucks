@@ -1,11 +1,11 @@
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
-import EventEmitter from 'events';
+import EventEmitter from 'node:events';
 import { renderWithEnv } from '../core/render.js';
 import { createFileSystemLoader } from '../loaders/index.js';
 import { createTemplate } from '../template/index.js';
-import { createEnv } from '../core/env.js';
-import { ERROR_DEFINITIONS } from '@nunjucks/log';
+import { createEnv, type Env } from '../core/env.js';
+import { getError } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
 
 export interface ExpressEngineConfig {
@@ -31,14 +31,13 @@ export const createEngine = (config: ExpressEngineConfig = {}): ExpressEngineFun
         const source = await loader.getSource(name);
         if (!source) {
           if (ignoreMissing) return null;
-          throw createLog('error', ERROR_DEFINITIONS.FILE_NOT_FOUND!, { path: name }, name, { phase: 'load' });
+          throw createLog('error', getError('FILE_NOT_FOUND'), { path: name }, name, { phase: 'load' });
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const template = createTemplate(source.src, this as any, source.path, eagerCompile ?? true, includeChain);
+        const template = createTemplate(source.src, this as unknown as Env, source.path, eagerCompile ?? true, includeChain);
         (template as { tmplStr?: string }).tmplStr = source.src;
         return template;
       }
-    }) as any;
+    });
 
     const templateName = path.basename(filePath);
     const envWithPath = Object.create(env) as Record<string, unknown>;

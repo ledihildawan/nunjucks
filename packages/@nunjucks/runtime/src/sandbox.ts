@@ -29,9 +29,14 @@ const sandboxError = (errorDef: ErrorDefinitionEntry, key: string | symbol, opti
   return createLog('error', errorDef, { key: String(key), category: category ?? '', environment: env }, String(key), { phase: 'render', lineBase: 'zero' });
 };
 
+const blockedKeysError = (key: string, blockedKeys: string[]): TemplateError | TemplateWarning => {
+  return createLog('error', ERROR_DEFINITIONS.BLOCKED_CONTEXT_KEYS!, { keys: blockedKeys.join(', ') }, key, { phase: 'render', lineBase: 'zero' });
+};
+
 export interface SandboxOptions {
   allowlist?: string[];
   blocklistMode?: boolean;
+  blockedContextKeys?: string[];
   environment?: Environment;
   env?: Environment;
   topLevel?: boolean;
@@ -42,6 +47,7 @@ export type ResolvedSandboxOptions = Required<Omit<SandboxOptions, 'topLevel' | 
 export const resolveSandboxOptions = (options: SandboxOptions = {}): ResolvedSandboxOptions => ({
   allowlist: options.allowlist || [],
   blocklistMode: options.blocklistMode ?? true,
+  blockedContextKeys: options.blockedContextKeys || [],
   environment: options.environment || options.env || 'auto',
 });
 
@@ -85,11 +91,14 @@ const makeSandboxTraps = (
   sandboxOptions: ResolvedSandboxOptions,
   topLevel: boolean,
 ): ProxyHandler<Record<string | symbol, unknown>> => {
-  const { allowlist, blocklistMode } = sandboxOptions;
+  const { allowlist, blocklistMode, blockedContextKeys } = sandboxOptions;
   return {
     get(target, key): unknown {
       if (typeof key === 'symbol') {
         return target[key];
+      }
+      if (topLevel && blockedContextKeys.includes(key)) {
+        throw blockedKeysError(key, blockedContextKeys);
       }
       if (isBlockedAtScope(key, sandboxOptions, topLevel)) {
         throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS!, key, sandboxOptions);

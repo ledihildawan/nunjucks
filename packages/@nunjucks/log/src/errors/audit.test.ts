@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { ERROR_DEFINITIONS } from '@nunjucks/log';
+import { ERROR_DEFINITIONS, getError } from '@nunjucks/log';
 
 const AUDIT_CONFIG = {
   minCauses: 1,
@@ -83,8 +83,8 @@ describe('error definitions audit', () => {
     const errsNeedingTemplate = ['SYNTAX_ERROR', 'PARSER_UNEXPECTED_TOKEN', 'UNKNOWN_BLOCK_TAG', 'EXPECTED_VARIABLE_END', 'PARSER_VARIABLE_NAME', 'PARSER_EXPRESSION', 'PARSER_TAG_NAME'];
     const missingTemplateSyntax = [];
     for (const name of errsNeedingTemplate) {
-      if (!ERROR_DEFINITIONS[name]) continue;
-      const fix = ERROR_DEFINITIONS[name].fixCode;
+      if (!ERROR_DEFINITIONS[name as keyof typeof ERROR_DEFINITIONS]) continue;
+      const fix = getError(name as any).fixCode;
       if (fix && !fix.includes('{') && !fix.includes('{%') && !fix.includes('{{') && !fix.includes('%}')) {
         missingTemplateSyntax.push(name);
       }

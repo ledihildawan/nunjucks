@@ -51,7 +51,7 @@ export function createMappedError(
   error: SourceMapError,
   sourceMapData: SourceMapMapping[] | null,
   lineno: number,
-  colno: number | undefined,
+  _colno: number | undefined,
   path: string
 ): Error | null {
   if (!sourceMapData || !isArray(sourceMapData)) {

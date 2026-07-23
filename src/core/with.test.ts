@@ -1,12 +1,12 @@
 import { describe, test, expect } from 'bun:test';
-import { render } from './render.js';
-import { mergeConfig } from '../config/global.js';
+import { render } from './render.ts';
+import { mergeConfig } from '../config/global.ts';
 
-const renderTemplate = async (template, context = {}, config = {}) => {
+const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
   return await render(template, context, mergeConfig({
     autoescape: false,
     ...config
-  }));
+  }) as unknown as Record<string, unknown>);
 };
 
 describe('with tag', () => {
@@ -87,7 +87,7 @@ describe('with tag', () => {
     test('inline assignment with function call', async () => {
       const result = await renderTemplate(
         '{% with greeting = greet("World") %}{{ greeting }}{% endwith %}',
-        { greet: (name) => `Hello ${name}` }
+        { greet: (name: string) => `Hello ${name}` }
       );
       expect(result).toBe('Hello World');
     });

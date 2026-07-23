@@ -2,8 +2,8 @@ import { entries, isArray } from 'remeda';
 import { readFileSync, statSync } from 'node:fs';
 import { watch, type FSWatcher } from 'node:fs';
 import path from 'node:path';
-import { createLoader, Loader } from './base.js';
-import { ERROR_DEFINITIONS } from '@nunjucks/log';
+import { createLoader, type Loader } from './base.js';
+import { getError } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
 
 const normalizeSearchPaths = (searchPaths: string | string[] | undefined): string[] =>
@@ -24,7 +24,7 @@ const existsAndWithinBase = (basePath: string) => ({ fullPath }: { fullPath: str
     if (stat.isDirectory()) {
       throw createLog(
         'error',
-        ERROR_DEFINITIONS.FILESYSTEM_ERROR!,
+        getError('FILESYSTEM_ERROR'),
         { msg: `EISDIR: illegal operation - path is a directory: ${fullPath}` },
         fullPath,
         { phase: 'load' }
@@ -43,7 +43,7 @@ const existsAndWithinBase = (basePath: string) => ({ fullPath }: { fullPath: str
             if (be.code === 'ENOENT') {
               throw createLog(
                 'error',
-                ERROR_DEFINITIONS.FILESYSTEM_ERROR!,
+                getError('FILESYSTEM_ERROR'),
                 { msg: `ENOENT: no such file or directory: ${basePath}` },
                 basePath,
                 { phase: 'load' }
@@ -52,7 +52,7 @@ const existsAndWithinBase = (basePath: string) => ({ fullPath }: { fullPath: str
           }
           throw createLog(
             'error',
-            ERROR_DEFINITIONS.FILESYSTEM_ERROR!,
+            getError('FILESYSTEM_ERROR'),
             { msg: String(baseErr) },
             basePath,
             { phase: 'load' }
@@ -63,7 +63,7 @@ const existsAndWithinBase = (basePath: string) => ({ fullPath }: { fullPath: str
       if (e.code === 'EISDIR') {
         throw createLog(
           'error',
-          ERROR_DEFINITIONS.FILESYSTEM_ERROR!,
+          getError('FILESYSTEM_ERROR'),
           { msg: String(err) },
           fullPath,
           { phase: 'load' }
@@ -72,7 +72,7 @@ const existsAndWithinBase = (basePath: string) => ({ fullPath }: { fullPath: str
     }
     throw createLog(
       'error',
-      ERROR_DEFINITIONS.FILESYSTEM_ERROR!,
+      getError('FILESYSTEM_ERROR'),
       { msg: String(err) },
       fullPath,
       { phase: 'load' }
@@ -100,7 +100,7 @@ const readFileSource = (fullpath: string) => {
     if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'ENOENT') return null;
     throw createLog(
       'error',
-      ERROR_DEFINITIONS.FILESYSTEM_ERROR!,
+      getError('FILESYSTEM_ERROR'),
       { msg: String(err) },
       fullpath,
       { phase: 'load' }
@@ -185,7 +185,7 @@ export function createFileSystemLoader(searchPaths: string | string[] | undefine
   loader.searchPaths = normalizeSearchPaths(searchPaths);
   loader.cache = {};
 
-  loader.getSource = async function(name: string): Promise<FileSystemLoaderSource | null> {
+  loader.getSource = async (name: string): Promise<FileSystemLoaderSource | null> => {
     const fullpath = findFileInSearchPaths(loader.searchPaths, name);
     if (!fullpath) return null;
 
@@ -197,14 +197,14 @@ export function createFileSystemLoader(searchPaths: string | string[] | undefine
     return source;
   };
 
-  loader.watchFile = function(filePath: string): void {
+  loader.watchFile = (filePath: string): void => {
     if (loader.watchedFiles.has(filePath)) return;
 
     const watcher = watch(filePath, createWatchHandler(loader, filePath));
     loader.watchedFiles.set(filePath, watcher);
   };
 
-  loader.unwatchFile = function(filePath: string): void {
+  loader.unwatchFile = (filePath: string): void => {
     const watcher = loader.watchedFiles.get(filePath);
     if (watcher) {
       watcher.close();
@@ -212,7 +212,7 @@ export function createFileSystemLoader(searchPaths: string | string[] | undefine
     }
   };
 
-  loader.unwatchAll = function(): void {
+  loader.unwatchAll = (): void => {
     for (const [, watcher] of loader.watchedFiles) watcher.close();
     loader.watchedFiles.clear();
   };

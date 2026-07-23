@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { createLoader } from './base.js';
+import { createLoader } from './base.ts';
 import { resolve, dirname, sep } from 'node:path';
 
 describe('createLoader', () => {

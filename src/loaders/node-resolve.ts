@@ -2,7 +2,7 @@ import { pipe } from 'remeda';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
-import { createLoader, Loader } from './base.js';
+import { createLoader, type Loader } from './base.js';
 
 const _require = createRequire(import.meta.url);
 

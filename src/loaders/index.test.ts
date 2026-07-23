@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import * as mod from './index.js';
+import * as mod from './index.ts';
 
 describe('loaders/index exports', () => {
   test('exports createFileSystemLoader', () => expect(mod.createFileSystemLoader).toBeFunction());

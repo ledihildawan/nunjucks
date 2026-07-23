@@ -1,17 +1,17 @@
-import EventEmitter from 'events';
+import EventEmitter from 'node:events';
 import path from 'node:path';
 
-export const Loader = Symbol('Loader');
+export const LoaderSymbol = Symbol('Loader');
 
 export interface LoaderOptions {
-  resolve?: (from: string, to: string) => string;
-  isRelative?: (filename: string) => boolean;
+  readonly resolve?: (from: string, to: string) => string;
+  readonly isRelative?: (filename: string) => boolean;
 }
 
 export interface Loader {
-  [Loader]: true;
-  resolve: (from: string, to: string) => string;
-  isRelative: (filename: string) => boolean;
+  readonly [LoaderSymbol]: true;
+  readonly resolve: (from: string, to: string) => string;
+  readonly isRelative: (filename: string) => boolean;
   on(event: string, handler: (...args: unknown[]) => void): void;
   emit(event: string, ...args: unknown[]): void;
   removeListener(event: string, handler: (...args: unknown[]) => void): void;
@@ -24,7 +24,7 @@ export function createLoader(opts: LoaderOptions = {}): Loader {
   let _isRelative = opts.isRelative ?? ((filename) => filename.startsWith('./') || filename.startsWith('../'));
 
   const loader: Loader = {
-    [Loader]: true,
+    [LoaderSymbol]: true,
     get resolve() { return _resolve; },
     set resolve(v) { _resolve = v; },
     get isRelative() { return _isRelative; },
@@ -44,4 +44,5 @@ export function createLoader(opts: LoaderOptions = {}): Loader {
   return loader;
 }
 
-export const isLoader = (obj: unknown): obj is Loader => Boolean(obj && typeof obj === 'object' && Loader in obj);
+export const isLoader = (obj: unknown): obj is Loader =>
+  Boolean(obj && typeof obj === 'object' && LoaderSymbol in obj);

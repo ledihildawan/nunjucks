@@ -15,9 +15,7 @@ export interface EnvOptions {
   [key: string]: unknown;
 }
 
-export interface GetTemplateFn {
-  (name: string, eagerCompile?: boolean, includeChain?: unknown[] | null, ignoreMissing?: boolean): unknown;
-}
+export type GetTemplateFn = (name: string, eagerCompile?: boolean, includeChain?: unknown[] | null, ignoreMissing?: boolean) => unknown;
 
 export interface Env {
   opts: EnvOptions;

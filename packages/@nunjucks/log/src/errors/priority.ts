@@ -13,13 +13,13 @@ export const ERROR_PRIORITY = {
 export type ErrorPriority = typeof ERROR_PRIORITY[keyof typeof ERROR_PRIORITY];
 
 export interface ErrorCandidate {
-  type: string;
-  priority: number;
+  readonly type: string;
+  readonly priority: number;
 }
 
-export function getMostHonestError(errors: ErrorCandidate[]): ErrorCandidate | null {
+export function getMostHonestError(errors: readonly ErrorCandidate[]): ErrorCandidate | null {
   if (!errors || errors.length === 0) return null;
-  return errors.sort((a, b) => a.priority - b.priority)[0] ?? null;
+  return errors.toSorted((a, b) => a.priority - b.priority)[0] ?? null;
 }
 
 export function getPriority(type: string): number {

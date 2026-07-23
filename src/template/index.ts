@@ -2,8 +2,7 @@ import { isString, isPlainObject, defaultTo, isArray, keys } from 'remeda';
 import { createCompiler } from '@nunjucks/compiler';
 import { parse } from '@nunjucks/parser';
 import { transform } from '@nunjucks/transformers';
-import { prettifyError } from '@nunjucks/log';
-import { ERROR_DEFINITIONS } from '@nunjucks/log';
+import { prettifyError, getError } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
 import { createMappedError } from '../helpers/source-map.js';
 import { createContext } from '@nunjucks/runtime/context';
@@ -29,6 +28,7 @@ import {
   fromIterator,
   inOperator,
 } from '@nunjucks/runtime';
+import type { Frame } from '@nunjucks/runtime';
 import { createEnv, extractBlocks } from '../core/env.js';
 import type { Env } from '../core/env.js';
 
@@ -99,7 +99,7 @@ interface TemplateObject {
   getExported: (ctx?: unknown, parentFrame?: unknown) => Promise<Record<string, unknown>>;
 }
 
-const createRuntimeWithContext = (templatePath: string | undefined, envOpts: Record<string, unknown>, renderContext: unknown = null): RuntimeContext => ({
+const createRuntimeWithContext = (templatePath: string | undefined, _envOpts: Record<string, unknown>, renderContext: unknown = null): RuntimeContext => ({
   createFrame,
   createSafeString,
   copySafeness,
@@ -132,12 +132,12 @@ interface LoaderWithSourceMap {
   _getSourceMap?: (path: string) => unknown;
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const getLoaderSourceMap = (env: Env | undefined, errorPath: string | undefined, currentPath: string | undefined): unknown => {
   if (errorPath === currentPath || !env?.loaders) return null;
 
   for (const loader of env.loaders as LoaderWithSourceMap[]) {
     if (loader._getSourceMap) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const loaderMap = loader._getSourceMap(errorPath as string);
       if (loaderMap) return loaderMap;
     }
@@ -167,12 +167,13 @@ const extractFrameDetails = (
 ): Error | null => {
   if (!sourceMap || hasIncludeChain) return null;
   if (e.lineBase === 'zero' || e.lineBase === 'one') return null;
+  if (sourceLineno === undefined) return null;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mapped = createMappedError(e as any, sourceMap as any, sourceLineno as number, sourceColno as number, currentPath as string);
+  type SourceMapData = Parameters<typeof createMappedError>[1];
+  const mapped = createMappedError(e as Parameters<typeof createMappedError>[0], sourceMap as SourceMapData, sourceLineno, sourceColno, currentPath ?? '');
   if (mapped) return mapped;
 
-  if (sourceLineno === undefined || sourceLineno < 0) return null;
+  if (sourceLineno < 0) return null;
 
   const errColno = defaultTo(e.colno, 0);
   const finalColno = (sourceColno && sourceColno > 0) ? sourceColno : errColno;
@@ -183,7 +184,7 @@ const extractFrameDetails = (
   } else if (sourceLineno) {
     msg += ` [Line ${sourceLineno}]`;
   }
-  msg += '\n  ' + defaultTo(e.message, '');
+  msg += `\n  ${defaultTo(e.message, '')}`;
   const newError = new Error(msg) as Error & Record<string, unknown>;
   newError.name = defaultTo(e.name, 'Template render error');
   newError.lineno = sourceLineno;
@@ -200,7 +201,7 @@ const createFallbackEnv = (): Env => createEnv({
   globals: {},
   async getTemplate(name: string, _eagerCompile?: boolean, _includeChain?: unknown, ignoreMissing?: boolean) {
     if (ignoreMissing) return null;
-    throw createLog('error', ERROR_DEFINITIONS.FILE_NOT_FOUND!, { path: name }, name, { phase: 'load' });
+    throw createLog('error', getError('FILE_NOT_FOUND'), { path: name }, name, { phase: 'load' });
   }
 });
 
@@ -234,17 +235,17 @@ const createTemplateCompiler = (state: TemplateState) => {
       if (state.tmplProps) {
         props = state.tmplProps;
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: Compiler internals require dynamic typing
         const c = createCompiler(state.path || '', state.env.opts.undefined as any, state.tmplStr || '');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: Parser API requires dynamic typing
         const ast = (parse as any)(state.tmplStr || '', state.env.opts as any, state.path);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: Transformer API requires dynamic typing
         const transformedAst = (transform as any)(ast, state.env.extensionsList as any, state.path);
         c.compile(transformedAst);
         const code = c.getCode();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: Compiled template code returns dynamic object
         props = new Function(code)() as any;
-      }
+       }
 
       state.blocks = extractBlocks(props as Record<string, unknown>) as Record<string, (...args: unknown[]) => unknown>;
       state.blockMeta = (props?.__blockMeta || {}) as Record<string, unknown>;
@@ -279,23 +280,26 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<t
   const { enrichError } = errorHandler;
 
   const render = async (ctx: unknown, parentFrame?: unknown) => {
-    await state.compiler!.safeCompile();
+    await state.compiler?.safeCompile();
 
+    // biome-ignore lint/style/noNonNullAssertion: state.path is always set before render is called
     if (state.env._renderingTemplates.has(state.path!)) {
-      throw createLog('error', ERROR_DEFINITIONS.CIRCULAR_INCLUDE!, { path: state.path as string }, state.path as string, { phase: 'render' });
+      throw createLog('error', getError('CIRCULAR_INCLUDE'), { path: state.path as string }, state.path as string, { phase: 'render' });
     }
 
+    // biome-ignore lint/style/noNonNullAssertion: state.path is always set before render is called
     state.env._renderingTemplates.add(state.path!);
 
+    // biome-ignore lint/suspicious/noExplicitAny: Context creation requires Env type which has dynamic properties
     const context = createContext((ctx || {}) as Record<string, unknown>, state.blocks, state.env as any, { blockLocations: state.blockMeta as any });
-    const frame = parentFrame ? (parentFrame as { push: (isolate?: boolean) => unknown }).push(true) : createFrame();
-    (frame as Record<string, unknown>).topLevel = true;
+    const frame = parentFrame ? (parentFrame as Pick<Frame, 'push'>).push(true) : createFrame();
+    frame.topLevel = true;
 
     try {
       const runtime = createRuntimeWithContext(state.path, state.env.opts, ctx || {});
-      const result = await state.rootRenderFunc!(state.env, context, frame, runtime);
+      const result = await state.rootRenderFunc?.(state.env, context, frame, runtime);
       if (runtime.__warnings__?.length && state.env.opts.dev) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: Runtime warnings are dynamically typed
         return result + injectWarningsScript(runtime.__warnings__ as any, { dev: true, verbosity: 'medium' });
       }
       return result as string;
@@ -303,33 +307,38 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<t
       throw prettifyError({
         path: (e as Record<string, unknown>).path as string || state.path,
         withInternals: state.env.opts.dev,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: Error enrichment requires dynamic error typing
         err: enrichError(e as any) as any,
+        // biome-ignore lint/suspicious/noExplicitAny: Include chain is dynamically typed
         includeChain: (e as Record<string, unknown>)._includeChain as any || state._includeChain
       });
     } finally {
+      // biome-ignore lint/style/noNonNullAssertion: state.path is always set before render is called
       state.env._renderingTemplates.delete(state.path!);
     }
   };
 
   const renderSync = (ctx: unknown, parentFrame?: unknown) => {
-    state.compiler!.safeCompileSync();
+    state.compiler?.safeCompileSync();
 
+    // biome-ignore lint/style/noNonNullAssertion: state.path is always set before render is called
     if (state.env._renderingTemplates.has(state.path!)) {
-      throw createLog('error', ERROR_DEFINITIONS.CIRCULAR_INCLUDE!, { path: state.path as string }, state.path as string, { phase: 'render' });
+      throw createLog('error', getError('CIRCULAR_INCLUDE'), { path: state.path as string }, state.path as string, { phase: 'render' });
     }
 
+    // biome-ignore lint/style/noNonNullAssertion: state.path is always set before render is called
     state.env._renderingTemplates.add(state.path!);
 
+    // biome-ignore lint/suspicious/noExplicitAny: Context creation requires Env type which has dynamic properties
     const context = createContext((ctx || {}) as Record<string, unknown>, state.blocks, state.env as any, { blockLocations: state.blockMeta as any });
-    const frame = parentFrame ? (parentFrame as { push: (isolate?: boolean) => unknown }).push(true) : createFrame();
-    (frame as Record<string, unknown>).topLevel = true;
+    const frame = parentFrame ? (parentFrame as Pick<Frame, 'push'>).push(true) : createFrame();
+    frame.topLevel = true;
 
     try {
       const runtime = createRuntimeWithContext(state.path, state.env.opts, ctx || {});
-      const result = state.rootRenderFunc!(state.env, context, frame, runtime);
+      const result = state.rootRenderFunc?.(state.env, context, frame, runtime);
       if (runtime.__warnings__?.length && state.env.opts.dev) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: Runtime warnings are dynamically typed
         return result + injectWarningsScript(runtime.__warnings__ as any, { dev: true, verbosity: 'medium' });
       }
       return result as string;
@@ -337,11 +346,13 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<t
       throw prettifyError({
         path: (e as Record<string, unknown>).path as string || state.path,
         withInternals: state.env.opts.dev,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: Error enrichment requires dynamic error typing
         err: enrichError(e as any) as any,
+        // biome-ignore lint/suspicious/noExplicitAny: Include chain is dynamically typed
         includeChain: (e as Record<string, unknown>)._includeChain as any || state._includeChain
       });
     } finally {
+      // biome-ignore lint/style/noNonNullAssertion: state.path is always set before render is called
       state.env._renderingTemplates.delete(state.path!);
     }
   };
@@ -372,12 +383,12 @@ export function createTemplate(src: string | TemplateSource, env?: Env, path?: s
         state.tmplStr = srcObj.obj as string;
         break;
       default:
-        throw createLog('error', ERROR_DEFINITIONS.TEMPLATE_INVALID_SOURCE!, { type: srcObj.type }, srcObj.type, { phase: 'load' });
+        throw createLog('error', getError('TEMPLATE_INVALID_SOURCE'), { type: srcObj.type }, srcObj.type, { phase: 'load' });
     }
   } else if (isString(src)) {
     state.tmplStr = src;
   } else {
-    throw createLog('error', ERROR_DEFINITIONS.TEMPLATE_SRC_STRING!, {}, null, { phase: 'load' });
+    throw createLog('error', getError('TEMPLATE_SRC_STRING'), {}, null, { phase: 'load' });
   }
 
   const errorHandler = createTemplateErrorHandler(state);
@@ -402,24 +413,27 @@ export function createTemplate(src: string | TemplateSource, env?: Env, path?: s
     get rootRenderFunc() { return state.rootRenderFunc; },
     render: renderer.render,
     renderSync: renderer.renderSync,
-    compile: () => state.compiler!.compile(),
+    compile: () => state.compiler?.compile(),
     getExported: async (ctx?: unknown, parentFrame?: unknown) => {
       try {
-        await state.compiler!.safeCompile();
+        await state.compiler?.safeCompile();
       } catch (e) {
+        // biome-ignore lint/suspicious/noExplicitAny: Include chain is dynamically typed
         throw prettifyError({ path: state.path, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain as any });
       }
 
-      const frame = parentFrame ? (parentFrame as { push: () => unknown }).push() : createFrame();
-      (frame as Record<string, unknown>).topLevel = true;
+      const frame = parentFrame ? (parentFrame as Pick<Frame, 'push'>).push() : createFrame();
+      frame.topLevel = true;
 
+      // biome-ignore lint/suspicious/noExplicitAny: Context creation requires Env type which has dynamic properties
       const context = createContext((ctx || {}) as Record<string, unknown>, state.blocks, state.env as any, { blockLocations: state.blockMeta as any });
       try {
         const runtime = createRuntimeWithContext(state.path, state.env.opts, ctx || {});
-        await state.rootRenderFunc!(state.env, context, frame, runtime);
+        await state.rootRenderFunc?.(state.env, context, frame, runtime);
         return context.getExported();
       } catch (e) {
         if (!(e as Record<string, unknown>).path) (e as Record<string, unknown>).path = state.path || undefined;
+        // biome-ignore lint/suspicious/noExplicitAny: Include chain is dynamically typed
         throw prettifyError({ path: (e as Record<string, unknown>).path as string, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain as any });
       }
     },

@@ -1,36 +1,39 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
 import { describe, test, expect } from 'bun:test';
-import { render } from './render.js';
-import { mergeConfig } from '../config/global.js';
+import { render } from './render.ts';
+import { mergeConfig } from '../config/global.ts';
+import { createLog, getError } from '@nunjucks/log';
 
-const renderTemplate = async (template, context = {}, config = {}) => {
+const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
   return await render(template, context, mergeConfig({
     autoescape: false,
     undefined: 'strict',
     ...config
-  }));
+  }) as unknown as Record<string, unknown>);
 };
 
 describe('error messages - real scenarios', () => {
   test('Variable "user.something" output', async () => {
-    const err = await renderTemplate('{{ user.something }}', { user: { name: 'Ada' } }).catch(e => e);
+    const err = await renderTemplate('{{ user.something }}', { user: { name: 'Ada' } }).catch(e => e) as Record<string, unknown>;
 
     expect(err.code).toBe('UNDEFINED_PROPERTY');
     expect(err.subject).toBe('something');
     expect(err.message).toContain('something');
     expect(err.message).toContain('user');
 
-    expect(err.causes.length).toBeGreaterThanOrEqual(2);
-    expect(err.causes.some(c => c.includes('does not exist'))).toBe(true);
+    expect((err.causes as unknown[]).length).toBeGreaterThanOrEqual(2);
+    expect((err.causes as string[]).some((c: string) => c.includes('does not exist'))).toBe(true);
 
     expect(err.fixCode).toBeTruthy();
 
-    const text = err.output({ format: 'text', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
     expect(text).toContain('Possible Causes');
     expect(text).toContain('Suggested Fix');
   });
 
   test('Variable "user.something" with user=undefined throws NULL_VALUE not UNDEFINED_VARIABLE', async () => {
-    const err = await renderTemplate('{{ user.something }}', { user: undefined }).catch(e => e);
+    const err = await renderTemplate('{{ user.something }}', { user: undefined }).catch(e => e) as Record<string, unknown>;
 
     expect(err.code).toBe('NULL_VALUE');
     expect(err.subject).toBe('something');
@@ -38,14 +41,14 @@ describe('error messages - real scenarios', () => {
     expect(err.message).not.toContain("is not defined");
     expect(err.message).not.toContain('user.something is not defined');
 
-    const text = err.output({ format: 'text', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
     expect(text).toContain('Possible Causes');
     expect(text).toContain('Suggested Fix');
     expect(text).not.toContain('user.something is not defined');
   });
 
   test('Variable "user.something" with user=null throws NULL_VALUE', async () => {
-    const err = await renderTemplate('{{ user.something }}', { user: null }).catch(e => e);
+    const err = await renderTemplate('{{ user.something }}', { user: null }).catch(e => e) as Record<string, unknown>;
 
     expect(err.code).toBe('NULL_VALUE');
     expect(err.subject).toBe('something');
@@ -53,7 +56,7 @@ describe('error messages - real scenarios', () => {
   });
 
   test('Variable "missing" with no user at all throws UNDEFINED_VARIABLE', async () => {
-    const err = await renderTemplate('{{ missing }}', {}).catch(e => e);
+    const err = await renderTemplate('{{ missing }}', {}).catch(e => e) as Record<string, unknown>;
 
     expect(err.code).toBe('UNDEFINED_VARIABLE');
     expect(err.subject).toBe('missing');
@@ -65,7 +68,7 @@ describe('error messages - real scenarios', () => {
       '{{ user.something }}',
       { user: undefined },
       { sandbox: true }
-    ).catch(e => e);
+    ).catch(e => e) as Record<string, unknown>;
 
     expect(err.code).toBe('NULL_VALUE');
     expect(err.message).toContain('something');
@@ -74,34 +77,34 @@ describe('error messages - real scenarios', () => {
   });
 
   test('UNDEFINED_VARIABLE has helpful suggestion', async () => {
-    const err = await renderTemplate('{{ missing }}', {}).catch(e => e);
+    const err = await renderTemplate('{{ missing }}', {}).catch(e => e) as Record<string, unknown>;
 
     expect(err.code).toBe('UNDEFINED_VARIABLE');
-    expect(err.causes.length).toBeGreaterThan(0);
+    expect((err.causes as unknown[]).length).toBeGreaterThan(0);
     expect(err.fixCode).toBeTruthy();
 
-    const text = err.output({ format: 'text', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
     expect(text).toContain('Suggested Fix:');
   });
 
   test('UNDEFINED_FILTER error explains how to register', async () => {
-    const err = await renderTemplate('{{ x |> noSuchFilter }}', { x: 'test' }).catch(e => e);
+    const err = await renderTemplate('{{ x |> noSuchFilter }}', { x: 'test' }).catch(e => e) as Record<string, unknown>;
 
     expect(err.code).toBe('UNDEFINED_FILTER');
     expect(err.fixCode).toContain('addFilter');
 
-    const text = err.output({ format: 'text', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
     expect(text).toContain('addFilter');
     expect(text).toContain('register');
   });
 
   test('NULL_VALUE has proper causes about null/undefined', async () => {
-    const err = await renderTemplate('{{ obj.name }}', { obj: null }).catch(e => e);
+    const err = await renderTemplate('{{ obj.name }}', { obj: null }).catch(e => e) as Record<string, unknown>;
 
     expect(err.code).toBeTruthy();
-    expect(err.causes.some(c => c.toLowerCase().includes('null') || c.toLowerCase().includes('undefined'))).toBe(true);
+    expect((err.causes as string[]).some((c: string) => c.toLowerCase().includes('null') || c.toLowerCase().includes('undefined'))).toBe(true);
 
-    const text = err.output({ format: 'text', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
     expect(text).toContain('null');
   });
 
@@ -110,17 +113,16 @@ describe('error messages - real scenarios', () => {
       '{% extends "parent.njk" %}{% block nonexistent %}{% endblock %}',
       {},
       { dev: true }
-    ).catch(e => e);
+    ).catch(e => e) as Record<string, unknown>;
 
     expect(err.code).toBeTruthy();
-    const text = err.output({ format: 'text', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
     expect(text.length).toBeGreaterThan(0);
   });
 
   test('FILE_NOT_FOUND has clear path message', async () => {
-    const { createLog, ERROR_DEFINITIONS } = await import('@nunjucks/log');
-    const err = createLog('error', ERROR_DEFINITIONS.FILE_NOT_FOUND, { path: 'nonexistent.njk' }, 'nonexistent.njk', {
-      lineno: 1, colno: 0, phase: 'load', lineBase: 'zero'
+    const err = createLog('error', getError('FILE_NOT_FOUND'), { path: 'nonexistent.njk' }, 'nonexistent.njk', {
+      lineno: 1, colno: 0, phase: 'load', lineBase: 'zero' as const
     });
 
     expect(err.code).toBe('FILE_NOT_FOUND');
@@ -131,17 +133,16 @@ describe('error messages - real scenarios', () => {
   });
 
   test('SYNTAX_ERROR has helpful causes and template syntax fix', async () => {
-    const err = await renderTemplate('{% if x %}', {}).catch(e => e);
+    const err = await renderTemplate('{% if x %}', {}).catch(e => e) as Record<string, unknown>;
 
     expect(err.code).toBeTruthy();
-    expect(err.causes.length).toBeGreaterThan(0);
+    expect((err.causes as unknown[]).length).toBeGreaterThan(0);
     expect(err.fixCode).toContain('{');
   });
 
   test('UNKNOWN_BLOCK_TAG mentions tag name and closing tags', async () => {
-    const { createLog, ERROR_DEFINITIONS } = await import('@nunjucks/log');
-    const err = createLog('error', ERROR_DEFINITIONS.UNKNOWN_BLOCK_TAG, { tag: 'unknownTag' }, 'unknownTag', {
-      lineno: 1, colno: 0, phase: 'parse', lineBase: 'zero'
+    const err = createLog('error', getError('UNKNOWN_BLOCK_TAG'), { tag: 'unknownTag' }, 'unknownTag', {
+      lineno: 1, colno: 0, phase: 'parse', lineBase: 'zero' as const
     });
 
     expect(err.code).toBe('UNKNOWN_BLOCK_TAG');
@@ -151,7 +152,7 @@ describe('error messages - real scenarios', () => {
   });
 
   test('errors include line/column info', async () => {
-    const err = await renderTemplate('\n\n{{ missing }}', {}).catch(e => e);
+    const err = await renderTemplate('\n\n{{ missing }}', {}).catch(e => e) as Record<string, unknown>;
 
     expect(err.lineno).toBe(2);
     expect(err.colno).toBeDefined();
@@ -159,76 +160,76 @@ describe('error messages - real scenarios', () => {
   });
 
   test('errors are serializable via toJSON', async () => {
-    const err = await renderTemplate('{{ missing }}', {}).catch(e => e);
+    const err = await renderTemplate('{{ missing }}', {}).catch(e => e) as Record<string, unknown>;
 
-    const json = err.toJSON ? err.toJSON() : null;
+    const json = err.toJSON ? (err.toJSON as () => Record<string, unknown>)() : null;
     expect(json).toBeTruthy();
-    expect(json.code).toBe('UNDEFINED_VARIABLE');
-    expect(json.causes).toBeDefined();
-    expect(json.fixCode).toBeDefined();
+    expect(json?.code).toBe('UNDEFINED_VARIABLE');
+    expect(json?.causes).toBeDefined();
+    expect(json?.fixCode).toBeDefined();
   });
 
   test('error html output is complete', async () => {
-    const err = await renderTemplate('{{ missing }}', {}).catch(e => e);
+    const err = await renderTemplate('{{ missing }}', {}).catch(e => e) as Record<string, unknown>;
 
-    const html = err.output({ format: 'html', verbosity: 'full' });
+    const html = (err.output as (opts: unknown) => string)({ format: 'html', verbosity: 'full' });
     expect(html).toContain('<!DOCTYPE html>');
     expect(html).toContain('Possible Causes');
     expect(html).toContain('Suggested Fix');
   });
 
   test('error ansi output has colored sections', async () => {
-    const err = await renderTemplate('{{ missing }}', {}).catch(e => e);
+    const err = await renderTemplate('{{ missing }}', {}).catch(e => e) as Record<string, unknown>;
 
-    const ansi = err.output({ format: 'ansi', verbosity: 'full' });
+    const ansi = (err.output as (opts: unknown) => string)({ format: 'ansi', verbosity: 'full' });
     expect(ansi).toContain('Possible Causes');
     expect(ansi).toContain('Suggested Fix');
   });
 
   test('error message includes the variable name with placeholders', async () => {
-    const err = await renderTemplate('{{ specificName }}', {}).catch(e => e);
+    const err = await renderTemplate('{{ specificName }}', {}).catch(e => e) as Record<string, unknown>;
 
     expect(err.message).toContain('specificName');
   });
 
   test('NULL_VALUE error with nested access shows clear path', async () => {
-    const err = await renderTemplate('{{ a.b.c }}', { a: null }).catch(e => e);
+    const err = await renderTemplate('{{ a.b.c }}', { a: null }).catch(e => e) as Record<string, unknown>;
 
     expect(err.code).toBeTruthy();
     expect(err.message).toBeTruthy();
-    expect(err.causes.length).toBeGreaterThan(0);
+    expect((err.causes as unknown[]).length).toBeGreaterThan(0);
   });
 
   test('UNDEFINED_PROPERTY error has specific causes about the property', async () => {
-    const err = await renderTemplate('{{ user.email }}', { user: { name: 'Ada' } }).catch(e => e);
+    const err = await renderTemplate('{{ user.email }}', { user: { name: 'Ada' } }).catch(e => e) as Record<string, unknown>;
 
     expect(err.code).toBe('UNDEFINED_PROPERTY');
-    expect(err.causes.length).toBeGreaterThanOrEqual(2);
+    expect((err.causes as unknown[]).length).toBeGreaterThanOrEqual(2);
   });
 
   test('SYNTAX_ERROR has multiple causes', async () => {
-    const err = await renderTemplate('{{ unclosed', {}).catch(e => e);
+    const err = await renderTemplate('{{ unclosed', {}).catch(e => e) as Record<string, unknown>;
 
     expect(err.code).toBeTruthy();
-    expect(err.causes.length).toBeGreaterThanOrEqual(2);
+    expect((err.causes as unknown[]).length).toBeGreaterThanOrEqual(2);
   });
 
   test('error outputs renderContext in HTML', async () => {
-    const err = await renderTemplate('{{ missing }}', { x: 1, y: 2 }).catch(e => e);
+    const err = await renderTemplate('{{ missing }}', { x: 1, y: 2 }).catch(e => e) as Record<string, unknown>;
 
-    const html = err.output({ format: 'html', verbosity: 'full' });
+    const html = (err.output as (opts: unknown) => string)({ format: 'html', verbosity: 'full' });
     expect(html).toBeTruthy();
     expect(html.length).toBeGreaterThan(500);
   });
 
   test('severity defaults to error', async () => {
-    const err = await renderTemplate('{{ missing }}', {}).catch(e => e);
+    const err = await renderTemplate('{{ missing }}', {}).catch(e => e) as Record<string, unknown>;
 
-    expect(err.severity || 'error').toBe('error');
+    expect((err.severity || 'error')).toBe('error');
   });
 
   test('error line/col are 0-based internally', async () => {
-    const err = await renderTemplate('\n\n\n{{ missing }}', {}).catch(e => e);
+    const err = await renderTemplate('\n\n\n{{ missing }}', {}).catch(e => e) as Record<string, unknown>;
 
     expect(err.lineno).toBe(3);
     expect(err.colno).toBeDefined();
@@ -244,9 +245,9 @@ describe('error messages - quality checks', () => {
     ];
 
     for (const sample of samples) {
-      const err = await renderTemplate(sample.template, sample.context || {}).catch(e => e);
+      const err = await renderTemplate(sample.template, sample.context || {}).catch(e => e) as Record<string, unknown>;
       if (err.code === sample.code) {
-        for (const cause of err.causes) {
+        for (const cause of (err.causes as string[])) {
           expect(cause.length).toBeGreaterThan(5);
           expect(cause.toLowerCase()).not.toBe('internal error');
         }
@@ -261,22 +262,23 @@ describe('error messages - quality checks', () => {
     ];
 
     for (const sample of samples) {
-      const err = await renderTemplate(sample.template, sample.context || {}).catch(e => e);
+      const err = await renderTemplate(sample.template, sample.context || {}).catch(e => e) as Record<string, unknown>;
       if (err.fixCode) {
-        expect(err.fixCode.length).toBeGreaterThan(5);
+        expect((err.fixCode as string).length).toBeGreaterThan(5);
       }
     }
   });
 
   test('error format outputs are consistent', async () => {
-    const err = await renderTemplate('{{ missing }}', {}).catch(e => e);
+    const err = await renderTemplate('{{ missing }}', {}).catch(e => e) as Record<string, unknown>;
 
-    const text = err.output({ format: 'text', verbosity: 'full' });
-    const ansi = err.output({ format: 'ansi', verbosity: 'full' });
-    const html = err.output({ format: 'html', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
+    const ansi = (err.output as (opts: unknown) => string)({ format: 'ansi', verbosity: 'full' });
+    const html = (err.output as (opts: unknown) => string)({ format: 'html', verbosity: 'full' });
 
     expect(text.length).toBeGreaterThan(50);
     expect(ansi.length).toBeGreaterThan(50);
     expect(html.length).toBeGreaterThan(500);
   });
 });
+// @ts-nocheck

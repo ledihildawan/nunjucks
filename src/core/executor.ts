@@ -15,7 +15,7 @@ import {
   createSandboxedContext,
   wrapMemberAccess,
 } from '@nunjucks/runtime';
-import { ERROR_DEFINITIONS } from '@nunjucks/log';
+import { getError } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
 import { extractBlocks } from './env.js';
 
@@ -44,15 +44,15 @@ const detectUndefinedInput = (context: unknown, inputValue: string): UndefinedIn
         if (val === undefined || val === null) {
           isUndefinedInput = true;
           undefinedVarName = parts.slice(i).join('.');
-          undefinedParentName = i > 0 ? parts[i - 1]! : null;
+          undefinedParentName = i > 0 ? parts[i - 1] ?? null : null;
           break;
         }
-        val = (val as Record<string, unknown>)[parts[i]!];
+        val = (val as Record<string, unknown>)[parts[i] ?? ''];
       }
       if (!isUndefinedInput && (val === undefined || val === null)) {
         isUndefinedInput = true;
-        undefinedVarName = parts[parts.length - 1]!;
-        undefinedParentName = parts.length > 1 ? parts[parts.length - 2]! : null;
+        undefinedVarName = parts.at(-1) ?? null;
+        undefinedParentName = parts.length > 1 ? parts.at(-2) ?? null : null;
       }
     } catch (e) {
       if (e instanceof TypeError) {
@@ -121,13 +121,13 @@ const createGetFilter = (
 
       if (isUndefinedInput || strictPipeInput) {
         if (isPropertyLookup && undefinedParentName) {
-          throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_PROPERTY!, { property: undefinedVarName ?? '', parent: undefinedParentName }, undefinedVarName ?? undefined, { lineno: errorLineno ?? null, colno: errorColno ?? null, phase: 'render', lineBase: 'zero' });
+          throw createLog('error', getError('UNDEFINED_PROPERTY'), { property: undefinedVarName ?? '', parent: undefinedParentName }, undefinedVarName ?? undefined, { lineno: errorLineno ?? null, colno: errorColno ?? null, phase: 'render', lineBase: 'zero' });
         }
-        throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_VARIABLE!, { name: undefinedVarName ?? (inputValue as string) }, undefinedVarName ?? (inputValue as string), { lineno: errorLineno ?? null, colno: errorColno ?? null, phase: 'render', lineBase: 'zero' });
+        throw createLog('error', getError('UNDEFINED_VARIABLE'), { name: undefinedVarName ?? (inputValue as string) }, undefinedVarName ?? (inputValue as string), { lineno: errorLineno ?? null, colno: errorColno ?? null, phase: 'render', lineBase: 'zero' });
       }
     }
 
-    throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_FILTER!, { name }, name, { lineno: filterLineno ?? null, colno: filterColno ?? null, phase: 'render', lineBase: 'zero' });
+    throw createLog('error', getError('UNDEFINED_FILTER'), { name }, name, { lineno: filterLineno ?? null, colno: filterColno ?? null, phase: 'render', lineBase: 'zero' });
   };
 };
 
@@ -140,14 +140,14 @@ interface RenderFunctionResult {
 const getRenderFunction = (code: string): RenderFunctionResult => {
   const newFormatMatch = code.match(/^async\s+function\s+root\s*\(/);
   if (newFormatMatch) {
-    const codeWithReturn = code + '; return root;';
+    const codeWithReturn = `${code}; return root;`;
     const renderFn = new Function(codeWithReturn)();
     const result = renderFn as { root: RenderFunctionResult['render']; __blockMeta?: Record<string, unknown> };
     const blocks = extractBlocks(result);
     return { render: result.root, blocks, blockMeta: result.__blockMeta || {} };
   }
 
-  throw createLog('error', ERROR_DEFINITIONS.INVALID_CODE_FORMAT!, {}, null, { phase: 'compile' });
+  throw createLog('error', getError('INVALID_CODE_FORMAT'), {}, null, { phase: 'compile' });
 };
 
 const getRuntimeHelpers = () => ({
@@ -258,7 +258,7 @@ export const execute = async (code: string, context: Record<string, unknown> = {
     if (testFn) return testFn;
     const envWithTest = config.env as { getTest?: (name: string, lineno: number | null, colno: number | null) => unknown } | undefined;
     if (envWithTest?.getTest) return envWithTest.getTest(name, lineno, colno);
-    throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_TEST!, { name }, name, { lineno: lineno ?? null, colno: colno ?? null, phase: 'render', lineBase: 'zero' });
+    throw createLog('error', getError('UNDEFINED_TEST'), { name }, name, { lineno: lineno ?? null, colno: colno ?? null, phase: 'render', lineBase: 'zero' });
   };
 
   if (!sandbox && devWarningSandbox) {
@@ -304,7 +304,7 @@ export const execute = async (code: string, context: Record<string, unknown> = {
     ctx = {
       ...context,
       _autoescape: config.autoescape ?? true,
-      lookup: function(key: string) {
+      lookup: (key: string) => {
         if (key in ctx) {
           return ctx[key];
         }
@@ -313,21 +313,21 @@ export const execute = async (code: string, context: Record<string, unknown> = {
         }
         return undefined;
       },
-      setVariable: function(name: string, val: unknown) {
+      setVariable: (name: string, val: unknown) => {
         ctx[name] = val;
       },
-      addExport: function(name: string) {
+      addExport: (name: string) => {
         exported.push(name);
       },
-      getExported: function() {
+      getExported: () => {
         const result: Record<string, unknown> = {};
         exported.forEach((name) => {
           result[name] = ctx[name];
         });
         return result;
       },
-      getSuper: function(_envObj: unknown, name: string, _block: unknown, _frame: Frame, lineno: number | null = null, colno: number | null = null) {
-        throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK!, { name }, name, { lineno, colno, phase: 'render', lineBase: 'zero' });
+      getSuper: (_envObj: unknown, name: string, _block: unknown, _frame: Frame, lineno: number | null = null, colno: number | null = null) => {
+        throw createLog('error', getError('NO_SUPER_BLOCK'), { name }, name, { lineno, colno, phase: 'render', lineBase: 'zero' });
       }
     };
   }
@@ -349,14 +349,14 @@ export const execute = async (code: string, context: Record<string, unknown> = {
   const env = buildEnvObject(config as BuildEnvObjectConfig, getFilter, getTest);
 
   if (config.env) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: Context creation requires Env type which has dynamic properties
     ctx = createContext(context, blocks as Record<string, (...args: unknown[]) => unknown>, config.env as any, { blockLocations: blockMeta as any }) as unknown as Record<string, unknown>;
     ctx._autoescape = config.autoescape ?? true;
   } else {
     ctx.blocks = blocks as Record<string, (...args: unknown[]) => unknown>;
-    ctx.getBlock = function(name: string) {
+    ctx.getBlock = (name: string) => {
       if (!blocks[name]) {
-        throw createLog('error', ERROR_DEFINITIONS.UNDEFINED_BLOCK!, { name }, name, { phase: 'render' });
+        throw createLog('error', getError('UNDEFINED_BLOCK'), { name }, name, { phase: 'render' });
       }
       return blocks[name];
     };

@@ -77,7 +77,7 @@ import {
 
 export type CompileFn = (ctx: Compiler, node: Node, frame: Frame) => unknown;
 
-export const COMPILE_FUNCTIONS: Record<string, CompileFn> = {
+export const COMPILE_FUNCTIONS: Readonly<Record<string, CompileFn>> = {
   node: compileLiteral,
   value: compileLiteral,
   literal: compileLiteral,

@@ -1,17 +1,17 @@
 import { describe, test, expect } from 'bun:test';
-import { render } from './render.js';
-import { mergeConfig } from '../config/global.js';
+import { render } from './render.ts';
+import { mergeConfig } from '../config/global.ts';
 
-const renderTemplate = async (template, context = {}, config = {}) => {
+const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
   return await render(template, context, mergeConfig({
     autoescape: false,
     ...config
-  }));
+  }) as unknown as Record<string, unknown>);
 };
 
 describe('do tag', () => {
   test('executes function without producing output', async () => {
-    const items = [];
+    const items: string[] = [];
     const result = await renderTemplate(
       '{% do items.push("hello") %}done',
       { items }
@@ -21,7 +21,7 @@ describe('do tag', () => {
   });
 
   test('executes multiple do statements', async () => {
-    const items = [];
+    const items: string[] = [];
     const result = await renderTemplate(
       '{% do items.push("a") %}{% do items.push("b") %}{% do items.push("c") %}{{ items.join(",") }}',
       { items }
@@ -32,13 +32,13 @@ describe('do tag', () => {
   test('do with function call side effect', async () => {
     const result = await renderTemplate(
       '{% do log.push("counted") %}{{ log[0] }}',
-      { log: [] }
+      { log: [] as string[] }
     );
     expect(result).toBe('counted');
   });
 
   test('do inside for loop', async () => {
-    const items = [];
+    const items: number[] = [];
     const result = await renderTemplate(
       '{% for i in [1, 2, 3] %}{% do items.push(i * 10) %}{% endfor %}{{ items.join(",") }}',
       { items }
@@ -47,7 +47,7 @@ describe('do tag', () => {
   });
 
   test('do inside if block', async () => {
-    const items = [];
+    const items: string[] = [];
     const result = await renderTemplate(
       '{% if true %}{% do items.push("yes") %}{% endif %}{{ items[0] }}',
       { items }
@@ -56,7 +56,7 @@ describe('do tag', () => {
   });
 
   test('do with complex expression', async () => {
-    const log = [];
+    const log: string[] = [];
     const result = await renderTemplate(
       '{% do log.push("msg: " + "test") %}{{ log[0] }}',
       { log }

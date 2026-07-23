@@ -19,11 +19,13 @@ const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeVio
   for (const { pattern, message } of DANGEROUS_PATTERNS) {
     const regex = new RegExp(pattern.source, 'g');
     let match: RegExpExecArray | null;
-    while ((match = regex.exec(templateContent)) !== null) {
+    while (true) {
+      match = regex.exec(templateContent);
+      if (match === null) break;
       const beforeMatch = templateContent.slice(0, match.index);
       const lines = beforeMatch.split('\n');
       const line = lines.length;
-      const col = lines[lines.length - 1]!.length;
+      const col = lines.at(-1)?.length ?? 0;
       const nameMatch = match[0].match(/[a-zA-Z_$][\w$]*/);
       violations.push({ message, pattern: pattern.source, line, col, name: nameMatch ? nameMatch[0] : null });
     }

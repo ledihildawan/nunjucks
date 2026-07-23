@@ -3,7 +3,7 @@ export type { TemplateError, TemplateWarning, ErrorInfo, WarningInfo, ErrorConte
 export { toHtml, toAnsi, toText, toConsoleString, CSS, PRODUCTION_BODY, TOGGLE_SCRIPT } from './render/index.ts';
 export { classify, classifyFromError } from './errors/classify.ts';
 export { injectWarningsScript } from './warning/collector.ts';
-export { ERROR_DEFINITIONS, ERRORS, PATTERNS, RULES, DEFAULT_CLASSIFICATION } from './errors/registry.ts';
+export { ERROR_DEFINITIONS, ERRORS, PATTERNS, RULES, DEFAULT_CLASSIFICATION, getError } from './errors/registry.ts';
 export { normalizeLogMetadata, createFormatterState } from './render/internal/metadata.ts';
 export { normalizeErrorMetadata } from './render/internal/normalize.ts';
 export { getErrorMetadata, formatSnippet } from './render/internal/metadata-extras.ts';

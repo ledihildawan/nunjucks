@@ -2,10 +2,11 @@ import * as stringFilters from '@nunjucks/filters/string';
 import * as arrayFilters from '@nunjucks/filters/array';
 import * as objectFilters from '@nunjucks/filters/object';
 import * as mathFilters from '@nunjucks/filters/math';
+import type { Result } from './result.js';
 
-type FilterObject = Record<string, unknown>;
+type FilterObject = Readonly<Record<string, unknown>>;
 
-const builtInFilters: Record<string, unknown> = {
+const builtInFilters: FilterObject = Object.freeze({
   ...stringFilters,
   ...arrayFilters,
   ...objectFilters,
@@ -15,39 +16,46 @@ const builtInFilters: Record<string, unknown> = {
   e: stringFilters.escape,
   length: arrayFilters.lengthFilter,
   int: mathFilters.intFilter,
-};
+});
 
-interface GlobalConfig {
-  sandbox: boolean;
-  sandboxAllowlist: string[];
-  sandboxEnvironment: string;
-  sandboxMode: string;
-  devWarningSandbox: boolean;
-  strictMode: boolean;
-  executionTimeout: number;
-  maxTemplateSize: number;
-  allowedContextKeys: string[] | null;
-  blockedContextKeys: string[] | null;
-  scanContextValues: boolean;
-  allowedTags: string[] | null;
-  allowedFilters: string[] | null;
-  blockedTags: string[] | null;
-  blockedFilters: string[] | null;
-  whitelistStrict: boolean;
-  autoescape: boolean;
-  trimBlocks: boolean;
-  lstripBlocks: boolean;
-  undefined: string;
-  filters: FilterObject;
-  globals: Record<string, unknown>;
-  extensions: Record<string, unknown>;
-  views: string | null;
-  [key: string]: unknown;
+export type SandboxEnvironment = 'auto' | 'node' | 'browser' | 'deno';
+export type SandboxMode = 'blocklist' | 'allowlist';
+export type UndefinedMode = 'default' | 'chainable' | 'strict' | 'debug';
+
+interface GlobalConfigBase {
+  readonly sandbox: boolean;
+  readonly sandboxAllowlist: readonly string[];
+  readonly sandboxEnvironment: SandboxEnvironment;
+  readonly sandboxMode: SandboxMode;
+  readonly devWarningSandbox: boolean;
+  readonly strictMode: boolean;
+  readonly executionTimeout: number;
+  readonly maxTemplateSize: number;
+  readonly allowedContextKeys: readonly string[] | null;
+  readonly blockedContextKeys: readonly string[] | null;
+  readonly scanContextValues: boolean;
+  readonly allowedTags: readonly string[] | null;
+  readonly allowedFilters: readonly string[] | null;
+  readonly blockedTags: readonly string[] | null;
+  readonly blockedFilters: readonly string[] | null;
+  readonly whitelistStrict: boolean;
+  readonly autoescape: boolean;
+  readonly trimBlocks: boolean;
+  readonly lstripBlocks: boolean;
+  readonly undefined: UndefinedMode;
+  readonly filters: FilterObject;
+  readonly globals: Readonly<Record<string, unknown>>;
+  readonly extensions: Readonly<Record<string, unknown>>;
+  readonly views: string | null;
+}
+
+export interface GlobalConfig extends GlobalConfigBase {
+  readonly [key: string]: unknown;
 }
 
 const DEFAULT_CONFIG: GlobalConfig = Object.freeze({
   sandbox: false,
-  sandboxAllowlist: [],
+  sandboxAllowlist: Object.freeze([]),
   sandboxEnvironment: 'auto',
   sandboxMode: 'blocklist',
   devWarningSandbox: true,
@@ -67,29 +75,33 @@ const DEFAULT_CONFIG: GlobalConfig = Object.freeze({
   lstripBlocks: false,
   undefined: 'default',
   filters: builtInFilters,
-  globals: {},
-  extensions: {},
+  globals: Object.freeze({}),
+  extensions: Object.freeze({}),
   views: null
-}) as GlobalConfig;
+});
 
 let _globalConfig: GlobalConfig = { ...DEFAULT_CONFIG };
 
 export const getGlobalConfig = (): GlobalConfig => ({ ..._globalConfig });
 
 export const setGlobalConfig = (config: Partial<GlobalConfig>): GlobalConfig => {
-  _globalConfig = { ...DEFAULT_CONFIG, ...config };
+  _globalConfig = {
+    ...DEFAULT_CONFIG,
+    ...config,
+    filters: { ...builtInFilters, ...(config.filters || {}) },
+    globals: { ...(config.globals || {}) },
+    extensions: { ...(config.extensions || {}) }
+  };
   return _globalConfig;
 };
 
-export const mergeConfig = (localConfig: Partial<GlobalConfig>): GlobalConfig => {
-  return {
-    ..._globalConfig,
-    ...localConfig,
-    filters: { ..._globalConfig.filters, ...(localConfig.filters || {}) },
-    globals: { ..._globalConfig.globals, ...(localConfig.globals || {}) },
-    extensions: { ..._globalConfig.extensions, ...(localConfig.extensions || {}) }
-  };
-};
+export const mergeConfig = (localConfig: Partial<GlobalConfig> = {}): GlobalConfig => ({
+  ..._globalConfig,
+  ...localConfig,
+  filters: { ..._globalConfig.filters as FilterObject, ...(localConfig.filters || {}) as FilterObject },
+  globals: { ..._globalConfig.globals as Readonly<Record<string, unknown>>, ...(localConfig.globals || {}) as Record<string, unknown> },
+  extensions: { ..._globalConfig.extensions as Readonly<Record<string, unknown>>, ...(localConfig.extensions || {}) as Record<string, unknown> }
+});
 
 export const getDefaultConfig = (): GlobalConfig => ({ ...DEFAULT_CONFIG });
 
@@ -98,10 +110,17 @@ export const resetConfig = (): GlobalConfig => {
   return _globalConfig;
 };
 
-export const isConfigured = (): boolean => {
-  return Object.keys(_globalConfig).some(key =>
+export const isConfigured = (): boolean =>
+  (Object.keys(_globalConfig) as Array<keyof GlobalConfig>).some(key =>
     key !== 'filters' && key !== 'globals' && key !== 'extensions'
-      ? _globalConfig[key as keyof GlobalConfig] !== DEFAULT_CONFIG[key as keyof GlobalConfig]
-      : Object.keys(_globalConfig[key as keyof GlobalConfig] as Record<string, unknown>).length > 0
+      ? _globalConfig[key] !== DEFAULT_CONFIG[key]
+      : Object.keys(_globalConfig[key] as Record<string, unknown>).length > 0
   );
+
+type ConfigValidationError = {
+  readonly field: string;
+  readonly message: string;
 };
+
+export type { ConfigValidationError };
+export type { Result };

@@ -10,7 +10,7 @@ export interface Engine {
   getLoader: (cfg: EngineConfig) => FileSystemLoader | null;
 }
 
-export const createEngine = (config: EngineConfig = {}): Engine => {
+export const createEngine = (): Engine => {
   let cachedLoader: FileSystemLoader | null = null;
   let cachedViewsPath: string | null = null;
 
@@ -30,6 +30,6 @@ export const createEngine = (config: EngineConfig = {}): Engine => {
   };
 };
 
-const defaultEngine = createEngine({});
+const defaultEngine = createEngine();
 
 export const getLoader = (config: EngineConfig): FileSystemLoader | null => defaultEngine.getLoader(config);

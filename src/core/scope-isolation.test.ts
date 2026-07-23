@@ -1,12 +1,12 @@
 import { describe, test, expect } from 'bun:test';
-import { render } from './render.js';
-import { mergeConfig } from '../config/global.js';
+import { render } from './render.ts';
+import { mergeConfig } from '../config/global.ts';
 
-const renderTemplate = async (template, context = {}, config = {}) => {
+const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
   return await render(template, context, mergeConfig({
     autoescape: false,
     ...config
-  }));
+  }) as unknown as Record<string, unknown>);
 };
 
 describe('scope isolation', () => {

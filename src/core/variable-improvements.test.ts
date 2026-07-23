@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test';
-import { render } from './render.js';
-import { mergeConfig } from '../config/global.js';
+import { render } from './render.ts';
+import { mergeConfig } from '../config/global.ts';
 
-const renderTemplate = (template, context = {}) => render(template, context, mergeConfig({
+const renderTemplate = (template: string, context: Record<string, unknown> = {}) => render(template, context, mergeConfig({
   autoescape: false,
   undefined: 'strict'
-}));
+}) as unknown as Record<string, unknown>);
 
 describe('variable expression edge cases', () => {
   test('supports array destructuring walrus targets', async () => {
