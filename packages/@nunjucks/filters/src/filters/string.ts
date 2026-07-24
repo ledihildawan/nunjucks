@@ -14,7 +14,7 @@ export const fallback = createMacroFilter(['val', 'def', 'bool'], (val: unknown,
   if (bool) {
     return val || def;
   }
-  if (val === null) {
+  if (val === null || val === undefined) {
     return def;
   }
   return val;

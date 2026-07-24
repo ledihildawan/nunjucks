@@ -62,8 +62,8 @@ export function getAccessPath(val: unknown): string {
 }
 
 export function optionalMemberLookup(obj: unknown, val: string, _parentName: string | null = null): unknown {
-  if (obj === null) {
-    return ;
+  if (obj === null || obj === undefined) {
+    return;
   }
 
   const target = obj as Record<string, unknown>;

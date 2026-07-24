@@ -158,9 +158,6 @@ export const compileDispatch = (ctx: Compiler, node: Node, frame?: Frame): unkno
     fn = COMPILE_FUNCTIONS[typeName];
   }
   if (fn) {
-    if (frame === undefined) {
-      ctx.fail(`compile: Cannot compile node: ${typeName}`, node.lineno, node.colno);
-    }
     return fn(ctx, node, frame);
   }
 

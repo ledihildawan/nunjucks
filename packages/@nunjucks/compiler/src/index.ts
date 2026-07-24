@@ -24,7 +24,7 @@ export interface Compiler {
   sourceMap: SourceMap;
   fail: (msg: string, lineno?: number, colno?: number) => void;
   pushBuffer: () => string;
-  popBuffer: () => void;
+  popBuffer: () => string;
   emit: (code: string) => void;
   emitLine: (code: string, originalLine?: number) => void;
   emitLineWithMapping: (code: string, templateLine?: number, templateCol?: number) => void;
@@ -44,6 +44,7 @@ export interface Compiler {
   compile: (node: Node, frame?: Frame) => unknown;
   getCode: () => string;
   getSourceMap: () => SourceMap;
+  emtest: (code: string) => void;
 }
 
 export function createCompiler(
@@ -92,6 +93,10 @@ export function createCompiler(
   };
 
   const emit = (code: string) => {
+    codebuf.push(code);
+  };
+
+  const emtest = (code: string) => {
     codebuf.push(code);
   };
 
@@ -288,6 +293,7 @@ export function createCompiler(
     pushBuffer,
     popBuffer,
     emit,
+    emtest,
     emitLine,
     emitLineWithMapping,
     trackMapping,

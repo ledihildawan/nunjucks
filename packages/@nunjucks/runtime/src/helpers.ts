@@ -220,6 +220,7 @@ const emitUndefinedWarning = (self: unknown, opts: EmitUndefinedWarningOptions):
   if (self && (self as { __warnings__?: unknown[] }).__warnings__) {
     (self as { __warnings__: unknown[] }).__warnings__.push(warning);
   } else {
+    console.warn((warning as unknown as { message: string }).message);
   }
 };
 
