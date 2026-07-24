@@ -81,21 +81,7 @@ const DANGEROUS_FILTERS = new Set([
   'compile'
 ]);
 
-/** Minimal structural shape scanASTForTags/validateTemplateWhitelist rely on. */
-interface AstNode {
-  type?: string;
-  lineno?: number;
-  colno?: number;
-  children?: unknown;
-  body?: unknown;
-  alternate?: unknown;
-  test?: unknown;
-  expr?: unknown;
-  name?: unknown;
-  args?: unknown;
-  target?: unknown;
-  [key: string]: unknown;
-}
+type AstNode = Record<string, unknown>;
 
 const validateTag = (allowedTagSet: Set<string>, blockedTagSet: Set<string>, strict: boolean, tagName: string): boolean => {
   if (allowedTagSet.has(tagName)) { return true; }
@@ -116,9 +102,8 @@ const traverseAST = (node: unknown, callback: (node: Node) => void): void => {
   if (!node || typeof node !== 'object') { return; }
 
   const nodeObj = node as AstNode;
-  if (nodeObj.type) {
-    callback(nodeObj as unknown as Node);
-  }
+  // Whitelist scanning intentionally supports legacy structural AST input.
+  if (typeof nodeObj.type === 'string') { callback(nodeObj as unknown as Node); }
 
   if (nodeObj.children && Array.isArray(nodeObj.children)) {
     (nodeObj.children as unknown[]).forEach((child) => traverseAST(child, callback));

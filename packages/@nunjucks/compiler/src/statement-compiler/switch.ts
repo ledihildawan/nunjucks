@@ -6,7 +6,7 @@ export const compileSwitch = (ctx: Compiler, node: Node, frame: Frame): void => 
   ctx.emit('switch (');
   ctx.compile(node.expr as Node, frame);
   ctx.emitLine(') {');
-  (node.cases as Node[]).forEach((c) => {
+  (node.cases as Node[] ?? []).forEach((c) => {
     ctx.emit('case ');
     ctx.compile(c.cond as Node, frame);
     ctx.emitLine(':');
@@ -15,7 +15,7 @@ export const compileSwitch = (ctx: Compiler, node: Node, frame: Frame): void => 
       ctx.compile(c.body as Node, frame);
       ctx.emitLine('frame = frame.pop();');
     });
-    if ((c.body as Node).children?.length > 0) {
+    if (((c.body as Node)?.children?.length ?? 0) > 0) {
       ctx.emitLine('break;');
     }
   });

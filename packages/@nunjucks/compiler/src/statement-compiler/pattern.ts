@@ -108,17 +108,20 @@ const compileDestructuring = (ctx: Compiler, frame: Frame, pattern: Node, source
         continue;
       }
       if (isPatternProperty(child)) {
-        let propSource = safeMemberLookup(source, child.key as unknown as string);
-        if (isAssignmentPattern(child.value as Node)) {
-          const valNode = child.value as Node;
+        if (!isSymbol(child.key) || typeof child.key.value !== 'string') {
+          continue;
+        }
+        let propSource = safeMemberLookup(source, child.key.value);
+        if (isAssignmentPattern(child.value)) {
+          const valNode = child.value;
           const defaultId = uniqueId('__dflt');
           ctx.emitLine(`let ${defaultId} = (${propSource}) === undefined ? (`);
-          ctx.compileExpression(valNode.value as Node, frame);
+          ctx.compileExpression(valNode.value, frame);
           ctx.emitLine(`) : ${propSource};`);
           propSource = defaultId;
-          compileDestructuring(ctx, frame, valNode.target as Node, propSource, registerFrame);
+          compileDestructuring(ctx, frame, valNode.target, propSource, registerFrame);
         } else {
-          compileDestructuring(ctx, frame, child.value as Node, propSource, registerFrame);
+          compileDestructuring(ctx, frame, child.value, propSource, registerFrame);
         }
       } else if (isPair(child) && isSymbol(child.key as Node)) {
         const keyNode = child.key as Node;

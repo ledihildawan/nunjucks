@@ -113,7 +113,8 @@ export const SANDBOX_ERRORS = {
       'Object was not properly sanitized before passing to render'
     ],
     fixCode: 'const safe = JSON.parse(JSON.stringify(context)); delete safe.__proto__;',
-    fixComment: 'Clean the context object before passing it to render'
+    fixComment: 'Clean the context object before passing it to render',
+    extraFrom: (groups: RegExpMatchArray) => ({ keys: groups[1] || '' })
   }),
   DANGEROUS_CONTEXT_VALUES: createErrorDefinition({
     name: 'DANGEROUS_CONTEXT_VALUES',
@@ -125,7 +126,8 @@ export const SANDBOX_ERRORS = {
       'A user-supplied object was not sanitized'
     ],
     fixCode: 'const safe = Object.assign({}, context, { eval: undefined, Function: undefined });',
-    fixComment: 'Remove dangerous functions from the context before rendering'
+    fixComment: 'Remove dangerous functions from the context before rendering',
+    extraFrom: (groups: RegExpMatchArray) => ({ values: groups[1] || '' })
   }),
   DANGEROUS_CONTEXT_VALUE_SCRUBBED: createErrorDefinition({
     name: 'DANGEROUS_CONTEXT_VALUE_SCRUBBED',
@@ -137,7 +139,8 @@ export const SANDBOX_ERRORS = {
       'The template may not behave as expected after scrubbing'
     ],
     fixCode: 'const safe = Object.assign({}, context, { eval: undefined, Function: undefined });',
-    fixComment: 'Clean the context yourself before passing to render'
+    fixComment: 'Clean the context yourself before passing to render',
+    extraFrom: (groups: RegExpMatchArray) => ({ values: groups[1] || '' })
   }),
   DANGEROUS_TEMPLATE_CODE: createErrorDefinition({
     name: 'DANGEROUS_TEMPLATE_CODE',
@@ -150,7 +153,8 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: '/* Refactor to use env globals or filters instead of direct code execution */',
     fixComment: 'Remove dangerous code from the template',
-    documentationUrl: 'https://mozilla.github.io/nunjucks/api.html#security'
+    documentationUrl: 'https://mozilla.github.io/nunjucks/api.html#security',
+    extraFrom: (groups: RegExpMatchArray) => ({ violations: groups[1] || '' })
   })
 } as const;
 

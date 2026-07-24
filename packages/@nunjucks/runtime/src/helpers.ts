@@ -131,7 +131,7 @@ export function suppressValue(
 
   let normalized: string;
   if (isNonNullish(val)) {
-    normalized = val;
+    normalized = val as string;
   } else {
     normalized = '';
   }
@@ -215,12 +215,16 @@ const emitUndefinedWarning = (self: unknown, opts: EmitUndefinedWarningOptions):
       undefinedMode: opts.mode,
       varName: opts.varName,
       lineBase: 'zero',
-    } as unknown as WarningContext,
+    } as WarningContext,
   );
-  if (self && (self as { __warnings__?: unknown[] }).__warnings__) {
-    (self as { __warnings__: unknown[] }).__warnings__.push(warning);
+  let collector: unknown[] | undefined;
+  if (self && typeof self === 'object') {
+    collector = (self as { __warnings__?: unknown[] }).__warnings__;
+  }
+  if (Array.isArray(collector)) {
+    collector.push(warning);
   } else {
-    console.warn((warning as unknown as { message: string }).message);
+    console.warn(warning.message);
   }
 };
 
@@ -453,7 +457,7 @@ export function contextOrFrameLookup(
   return val;
 }
 
-export function lookup(ctx: { lookup?: (key: string) => unknown } | null, key: string, defaultValue: unknown ): unknown {
+export function lookup(ctx: { lookup?: (key: string) => unknown } | null, key: string, defaultValue?: unknown): unknown {
   if (!ctx) { return defaultValue; }
   if (typeof ctx.lookup === 'function') {
     const val = ctx.lookup(key);

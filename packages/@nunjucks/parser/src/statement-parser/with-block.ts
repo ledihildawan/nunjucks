@@ -7,7 +7,7 @@ import type { Token } from '@nunjucks/lexer';
 import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
 import { parseUntilBlocks } from "../top-level.ts";
 
-const isBlockEnd = (tok: Token | null | undefined): boolean => Boolean(tok) && tok.type === TOKEN_BLOCK_END;
+const isBlockEnd = (tok: Token | null | undefined): boolean => tok !== null && tok !== undefined && tok.type === TOKEN_BLOCK_END;
 
 export const parseWith = (ctx: ParserContext): Node => {
   const tag = peekToken(ctx);

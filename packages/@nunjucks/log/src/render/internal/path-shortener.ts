@@ -25,7 +25,7 @@ export const shortenPath = (path: string) => {
     normalizedPath.split('/'),
     filter(Boolean)
   );
-  const rootDirName = normalizedRoot.split('/').pop();
+  const rootDirName = normalizedRoot.split('/').pop() ?? '';
 
   const privateIdx = parts.findIndex(p =>
     p.toLowerCase() === 'users' || p.toLowerCase() === 'home'

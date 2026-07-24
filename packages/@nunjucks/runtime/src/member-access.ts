@@ -29,9 +29,8 @@ export function memberLookup(obj: unknown, val: string, parentName: string | nul
   const target = obj as Record<string, unknown>;
   if (!(hasOwn(target, val) || (val in target))) {
     const marker = { [PROP_NOT_FOUND]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
-    const callable = (() => undefined) as unknown as Record<string, unknown>;
+    const callable = Object.assign(() => undefined, marker);
     Object.setPrototypeOf(callable, null);
-    Object.assign(callable, marker);
     return callable;
   }
 
@@ -84,7 +83,7 @@ export function slice(arr: unknown[] | string, start: number | null, stop: numbe
     throw createLog('error', ERROR_DEFINITIONS.SLICE_STEP!, {}, 'step', { phase: 'render', lineBase: 'zero' });
   }
 
-  const len = (arr as { length: number }).length;
+  const len = arr.length;
   let normalizedStart = start;
   let normalizedStop = stop;
 
@@ -112,19 +111,19 @@ export function slice(arr: unknown[] | string, start: number | null, stop: numbe
 
   if (!isNonNullish(step) || step === 1) {
     if (typeof arr === 'string') {
-      return (arr as unknown as { slice: (s: number, e: number) => string }).slice(normalizedStart, normalizedStop as number);
+      return arr.slice(normalizedStart, normalizedStop as number);
     }
-    return (arr as unknown as { slice: (s: number, e: number) => unknown[] }).slice(normalizedStart, normalizedStop as number);
+    return arr.slice(normalizedStart, normalizedStop as number);
   }
 
   const result: unknown[] = [];
   if (step! > 0) {
     for (let i = normalizedStart; i < (normalizedStop as number); i += step!) {
-      result.push((arr as unknown[])[i]);
+      result.push(arr[i]);
     }
   } else {
     for (let i = normalizedStart; i >= 0 && i > (normalizedStop as number); i += step!) {
-      result.push((arr as unknown[])[i]);
+      result.push(arr[i]);
     }
   }
   return result;

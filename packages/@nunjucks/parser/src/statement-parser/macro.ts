@@ -1,4 +1,4 @@
-import { macro } from '@nunjucks/nodes';
+import { isSymbol, macro } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -14,7 +14,10 @@ export const parseMacro = (ctx: ParserContext): Node => {
 
   const name = parsePrimary(ctx, true);
   const args = parseSignature(ctx);
-  const node = macro(macroTok.lineno, macroTok.colno, name as unknown as string, args as unknown as Node[]);
+  if (!isSymbol(name)) {
+    fail(ctx, 'expected macro name', macroTok.lineno, macroTok.colno);
+  }
+  const node = macro(macroTok.lineno, macroTok.colno, name.value as string, args?.children ?? []);
 
   advanceAfterBlockEnd(ctx, macroTok.value as string);
   node.body = parseUntilBlocks(ctx, 'endmacro');

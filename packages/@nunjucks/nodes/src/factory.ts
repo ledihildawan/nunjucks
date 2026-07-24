@@ -5,21 +5,22 @@ import type {
   IncDecNode, CallNode, PipeAsyncNode, LookupNode, SliceNode, CompareNode,
   CompareOperandNode, PairNode, SpreadNode, WalrusNode, RestPatternNode,
   AssignmentPatternNode, HoleNode, VariableDeclNode, CompoundAssignNode,
-  TemplateLiteralNode,
+  TemplateLiteralNode, MacroArgument, CallExtensionNode,
 } from './types.ts';
 
 const createNode = <K extends NodeType>(nodeType: K, lineno: number, colno: number, data: Record<string, unknown> = {}): NodeOf<K> => ({
     type: nodeType, lineno, colno, fields: FIELDS[nodeType], ...data,
   } as unknown as NodeOf<K>);
 
-const createNodeWithChildren = <K extends NodeType>(nodeType: K, lineno: number, colno: number, children: Node[] = []): NodeOf<K> => createNode(nodeType, lineno, colno, { children: children || [] });
+const createNodeWithChildren = <K extends NodeType>(nodeType: K, lineno: number, colno: number, children: readonly Node[] = []): NodeOf<K> =>
+  createNode(nodeType, lineno, colno, { children: [...children] });
 
 // Base creators
 export const node = (lineno: number, colno: number): Node => createNode(T.NODE, lineno, colno);
 export const value = (lineno: number, colno: number, val: unknown): ValueNode => createNode(T.VALUE, lineno, colno, { value: val });
-export const nodeList = (lineno: number, colno: number, children: Node[] = []): ChildrenNode => createNodeWithChildren(T.NODE_LIST, lineno, colno, children);
-export const output = (lineno: number, colno: number, children: Node[] = []): ChildrenNode => createNodeWithChildren(T.OUTPUT, lineno, colno, children);
-export const root = (lineno: number, colno: number, children: Node[] = []): ChildrenNode => createNodeWithChildren(T.ROOT, lineno, colno, children);
+export const nodeList = (lineno: number, colno: number, children: readonly Node[] = []): ChildrenNode => createNodeWithChildren(T.NODE_LIST, lineno, colno, children);
+export const output = (lineno: number, colno: number, children: readonly Node[] = []): ChildrenNode => createNodeWithChildren(T.OUTPUT, lineno, colno, children);
+export const root = (lineno: number, colno: number, children: readonly Node[] = []): ChildrenNode => createNodeWithChildren(T.ROOT, lineno, colno, children);
 
 // Expression nodes
 export const literal = (lineno: number, colno: number, val: unknown): ValueNode => createNode(T.LITERAL, lineno, colno, { value: val });
@@ -167,9 +168,9 @@ export const super_ = (lineno: number, colno: number, blockName: string, sym: No
   createNode(T.SUPER, lineno, colno, { blockName, symbol: sym });
 
 // Aggregate nodes
-export const group = (lineno: number, colno: number, children: Node[] = []): ChildrenNode => createNodeWithChildren(T.GROUP, lineno, colno, children);
-export const array = (lineno: number, colno: number, children: Node[] = []): ChildrenNode => createNodeWithChildren(T.ARRAY, lineno, colno, children);
-export const dict = (lineno: number, colno: number, children: Node[] = []): ChildrenNode => createNodeWithChildren(T.DICT, lineno, colno, children);
+export const group = (lineno: number, colno: number, children: readonly Node[] = []): ChildrenNode => createNodeWithChildren(T.GROUP, lineno, colno, children);
+export const array = (lineno: number, colno: number, children: readonly Node[] = []): ChildrenNode => createNodeWithChildren(T.ARRAY, lineno, colno, children);
+export const dict = (lineno: number, colno: number, children: readonly Node[] = []): ChildrenNode => createNodeWithChildren(T.DICT, lineno, colno, children);
 export const pair = (lineno: number, colno: number, key: Node, val: Node): PairNode => createNode(T.PAIR, lineno, colno, { key, value: val });
 
 export const spread = (lineno: number, colno: number, argument: Node): SpreadNode => createNode(T.SPREAD, lineno, colno, { argument });
@@ -178,17 +179,39 @@ export const walrus = (lineno: number, colno: number, target: Node, val: Node): 
 export const variableDeclaration = (lineno: number, colno: number, targets: Node[], value: Node): VariableDeclNode => createNode(T.VARIABLE_DECLARATION, lineno, colno, { targets: targets || [], value });
 export const variableAssignment = (lineno: number, colno: number, targets: Node[], value: Node): VariableDeclNode => createNode(T.VARIABLE_ASSIGNMENT, lineno, colno, { targets: targets || [], value });
 export const compoundAssignment = (lineno: number, colno: number, targets: Node[], operator: string, value: Node): CompoundAssignNode => createNode(T.COMPOUND_ASSIGNMENT, lineno, colno, { targets: targets || [], operator, value });
-export const defineBlock = (lineno: number, colno: number, name: string, body: Node, args: Node[] = []): Node => createNode(T.DEFINE_BLOCK, lineno, colno, { name, body, args });
+export const defineBlock = (lineno: number, colno: number, name: string, body: Node, args: MacroArgument[] = []): Node => createNode(T.DEFINE_BLOCK, lineno, colno, { name, body, args });
 
 export const templateLiteral = (lineno: number, colno: number, quasis: unknown[]): TemplateLiteralNode => createNode(T.TEMPLATE_LITERAL, lineno, colno, { quasis: quasis || [] });
 
-export const keywordArgs = (lineno: number, colno: number, children: Node[] = []): ChildrenNode => createNodeWithChildren(T.KEYWORD_ARGS, lineno, colno, children);
+export const keywordArgs = (lineno: number, colno: number, children: readonly Node[] = []): ChildrenNode => createNodeWithChildren(T.KEYWORD_ARGS, lineno, colno, children);
 
 // Extension nodes
-export const callExtension = (lineno: number, colno: number, ext: unknown, prop: string, args?: Node, contentArgs?: Node[]): Node => {
-  const extObj = ext as { __name?: string; autoescape?: boolean };
+interface ExtensionMetadata {
+  __name?: string;
+  autoescape?: boolean;
+}
+
+const extensionMetadata = (ext: unknown): ExtensionMetadata => {
+  if (ext !== null && typeof ext === 'object') {
+    return ext as ExtensionMetadata;
+  }
+  return {};
+};
+
+const extensionName = (ext: unknown, metadata: ExtensionMetadata): string => {
+  if (metadata.__name) {
+    return metadata.__name;
+  }
+  if (typeof ext === 'string') {
+    return ext;
+  }
+  return '';
+};
+
+export const callExtension = (lineno: number, colno: number, ext: unknown, prop: string, args?: Node, contentArgs?: Node[]): CallExtensionNode => {
+  const extObj = extensionMetadata(ext);
   return createNode(T.CALL_EXTENSION, lineno, colno, {
-    extName: extObj?.__name || (ext as string),
+    extName: extensionName(ext, extObj),
     prop,
     args: args ?? nodeList(0, 0),
     contentArgs: contentArgs ?? [],
@@ -196,10 +219,10 @@ export const callExtension = (lineno: number, colno: number, ext: unknown, prop:
   });
 };
 
-export const callExtensionAsync = (lineno: number, colno: number, ext: unknown, prop: string, args?: Node, contentArgs?: Node[]): Node => {
-  const extObj = ext as { __name?: string; autoescape?: boolean };
+export const callExtensionAsync = (lineno: number, colno: number, ext: unknown, prop: string, args?: Node, contentArgs?: Node[]): CallExtensionNode => {
+  const extObj = extensionMetadata(ext);
   return createNode(T.CALL_EXTENSION_ASYNC, lineno, colno, {
-    extName: extObj?.__name || (ext as string),
+    extName: extensionName(ext, extObj),
     prop,
     args: args ?? nodeList(0, 0),
     contentArgs: contentArgs ?? [],

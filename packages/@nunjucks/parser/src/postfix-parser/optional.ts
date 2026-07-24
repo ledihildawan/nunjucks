@@ -1,14 +1,14 @@
 import { TOKEN_SYMBOL, TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_COMMA, TOKEN_LEFT_BRACKET } from '@nunjucks/lexer';
 import type { Token } from '@nunjucks/lexer';
-import { literal, nodeList, optionalCall, optionalChain, pushChild } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
+import { appendChild, literal, nodeList, optionalCall, optionalChain } from '@nunjucks/nodes';
+import type { ChildrenNode, Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, fail } from "../cursor.ts";
-import type { ParserContext, MutableNode } from "../cursor.ts";
+import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/index.ts";
 import { BracketNotation } from "./lookup.ts";
 
-const parseOptionalCallArgs = (ctx: ParserContext, tok: Token): MutableNode => {
-  const args = nodeList(tok.lineno, tok.colno) as MutableNode;
+const parseOptionalCallArgs = (ctx: ParserContext, tok: Token): ChildrenNode => {
+  let args = nodeList(tok.lineno, tok.colno);
   let expectComma = false;
 
   while (true) {
@@ -28,7 +28,7 @@ const parseOptionalCallArgs = (ctx: ParserContext, tok: Token): MutableNode => {
     }
 
     const arg = parseExpression(ctx);
-    pushChild(args, arg);
+    args = appendChild(args, arg);
     expectComma = true;
   }
 
@@ -42,7 +42,7 @@ export const parseOptionalChain = (ctx: ParserContext, tok: Token, target: Node)
   if (val && val.type === TOKEN_LEFT_PAREN) {
     nextToken(ctx);
     const args = parseOptionalCallArgs(ctx, tok);
-    return optionalCall(tok.lineno, tok.colno, target, args as unknown as Node[]);
+    return optionalCall(tok.lineno, tok.colno, target, [...args.children]);
   }
 
   // Check if next token is bracket or dot

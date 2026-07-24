@@ -19,6 +19,10 @@ describe('isNode', () => {
     expect(isNode(42)).toBe(false);
     expect(isNode({})).toBe(false);
   });
+
+  test('rejects objects with an unknown node type', () => {
+    expect(isNode({ type: 'not-a-nunjucks-node', lineno: 0, colno: 0 })).toBe(false);
+  });
 });
 
 describe('type-specific guards', () => {

@@ -257,13 +257,12 @@ export const wrapMemberAccess = (obj: unknown, val: string | symbol, sandboxEnab
 
   const target = obj as Record<string, unknown>;
   if (!hasOwn(target, val as string)) {
-    const callable = (() => undefined) as unknown as Record<string, unknown>;
-    Object.setPrototypeOf(callable, null);
-    Object.assign(callable, {
+    const callable = Object.assign(() => undefined, {
       __nunjucks_prop_not_found__: true,
       __nunjucks_parent__: parentName,
       __access_path__: val,
     });
+    Object.setPrototypeOf(callable, null);
     return callable;
   }
 

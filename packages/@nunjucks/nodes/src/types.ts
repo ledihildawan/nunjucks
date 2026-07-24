@@ -88,6 +88,8 @@ export const T = Object.freeze({
 
 export type NodeType = typeof T[keyof typeof T];
 
+export const BracketNotation = Symbol('BracketNotation');
+
 interface NodeBase {
   readonly type: NodeType;
   readonly lineno: number;
@@ -95,6 +97,7 @@ interface NodeBase {
   fields?: readonly string[];
   children?: Node[];
   body?: Node | null;
+  [BracketNotation]?: boolean;
   [key: string]: unknown;
 }
 
@@ -108,6 +111,7 @@ export interface ChildrenNode extends NodeBase {
   | typeof T.NODE_LIST | typeof T.ROOT | typeof T.OUTPUT | typeof T.GROUP
   | typeof T.ARRAY | typeof T.DICT | typeof T.ARRAY_PATTERN
   | typeof T.OBJECT_PATTERN | typeof T.KEYWORD_ARGS;
+  children: Node[];
 }
 
 export interface BinaryOpNode extends NodeBase {
@@ -338,7 +342,12 @@ export interface CompoundAssignNode extends NodeBase {
 export interface DefineBlockNode extends NodeBase {
   readonly type: typeof T.DEFINE_BLOCK;
   name: string;
-  args: Node[];
+  args: MacroArgument[];
+}
+
+export interface MacroArgument {
+  name: string;
+  defaultVal: Node | null;
 }
 
 export interface TemplateLiteralNode extends NodeBase {
@@ -501,5 +510,3 @@ export const FIELDS: Readonly<Record<NodeType, readonly string[]>> = {
   [T.CALL_EXTENSION]: ['extName', 'prop', 'args', 'contentArgs', 'autoescape'],
   [T.CALL_EXTENSION_ASYNC]: ['extName', 'prop', 'args', 'contentArgs', 'autoescape'],
 };
-
-export const BracketNotation = Symbol('BracketNotation');

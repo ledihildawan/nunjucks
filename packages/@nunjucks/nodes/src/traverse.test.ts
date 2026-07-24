@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { parse } from '@nunjucks/parser';
-import { walk, findAll, findFirst, count, iterateNodes, filterNodes, addChild, getType, getFields_ } from './traverse.ts';
+import { walk, findAll, findFirst, count, iterateNodes, filterNodes, appendChild, getType, getFields_ } from './traverse.ts';
+import { literal, nodeList } from './factory.ts';
 
 // Use a real parsed AST for reliable structure
 const ast = parse('{{ x + 1 }}\n{% if x %}{{ y }}{% endif %}');
@@ -17,14 +18,14 @@ describe('getType / getFields_', () => {
   });
 });
 
-describe('addChild', () => {
-  test('appends child immutably', () => {
-    const list = ast;
-    const before = (list as unknown as { children: unknown[] }).children.length;
-    const child = { type: 'literal', lineno: 0, colno: 0, fields: ['value'], value: 'x' };
-    const result = addChild(list, child as never);
-    expect((result as unknown as { children: unknown[] }).children.length).toBe(before + 1);
-    expect((list as unknown as { children: unknown[] }).children.length).toBe(before);
+describe('appendChild', () => {
+  test('returns a new collection node without mutating its input', () => {
+    const original = nodeList(1, 0, [literal(1, 0, 'before')]);
+    const result = appendChild(original, literal(1, 7, 'after'));
+
+    expect(result).not.toBe(original);
+    expect(result.children).toHaveLength(2);
+    expect(original.children).toHaveLength(1);
   });
 });
 

@@ -1,20 +1,30 @@
 // GUARDS - Type-narrowing predicates
-import { T, type Node, type NodeType } from './types.ts';
+import { T, type CallExtensionNode, type CallNode, type ChildrenNode, type ForNode, type IfNode, type Node, type NodeType, type SetNode } from './types.ts';
+
+const nodeTypes: ReadonlySet<NodeType> = new Set(Object.values(T));
 
 const is = <K extends NodeType>(type: K) =>
   (n: unknown): n is Node & { readonly type: K } =>
     n !== null && typeof n === 'object' && 'type' in n && (n as Node).type === type;
 
 export const isNode = (n: unknown): n is Node =>
-  n !== null && typeof n === 'object' && 'type' in n && 'lineno' in n && 'colno' in n;
+  n !== null &&
+  typeof n === 'object' &&
+  'type' in n &&
+  typeof n.type === 'string' &&
+  nodeTypes.has(n.type as NodeType) &&
+  'lineno' in n &&
+  typeof n.lineno === 'number' &&
+  'colno' in n &&
+  typeof n.colno === 'number';
 
 export const isLiteral = is(T.LITERAL);
 export const isSymbol = is(T.SYMBOL);
 export const isNodeList = is(T.NODE_LIST);
-export const isOutput = is(T.OUTPUT);
+export const isOutput = (n: unknown): n is ChildrenNode & { readonly type: typeof T.OUTPUT } => is(T.OUTPUT)(n);
 export const isRoot = is(T.ROOT);
 export const isFunCall = is(T.FUN_CALL);
-export const isPipe = is(T.PIPE);
+export const isPipe = (n: unknown): n is CallNode & { readonly type: typeof T.PIPE } => is(T.PIPE)(n);
 export const isLookupVal = is(T.LOOKUP_VAL);
 export const isSlice = is(T.SLICE);
 export const isAdd = is(T.ADD);
@@ -29,10 +39,10 @@ export const isGroup = is(T.GROUP);
 export const isArray = is(T.ARRAY);
 export const isDict = is(T.DICT);
 export const isPair = is(T.PAIR);
-export const isFor = is(T.FOR);
-export const isIf = is(T.IF);
+export const isFor = (n: unknown): n is ForNode => is(T.FOR)(n);
+export const isIf = (n: unknown): n is IfNode & { readonly type: typeof T.IF } => is(T.IF)(n);
 export const isBlock = is(T.BLOCK);
-export const isSet = is(T.SET);
+export const isSet = (n: unknown): n is SetNode => is(T.SET)(n);
 export const isMacro = is(T.MACRO);
 export const isImport = is(T.IMPORT);
 export const isFromImport = is(T.FROM_IMPORT);
@@ -43,7 +53,7 @@ export const isTryCatch = is(T.TRY_CATCH);
 export const isDo = is(T.DO);
 export const isWith = is(T.WITH);
 export const isCallExtension = is(T.CALL_EXTENSION);
-export const isCallExtensionAsync = is(T.CALL_EXTENSION_ASYNC);
+export const isCallExtensionAsync = (n: unknown): n is CallExtensionNode & { readonly type: typeof T.CALL_EXTENSION_ASYNC } => is(T.CALL_EXTENSION_ASYNC)(n);
 export const isIs = is(T.IS);
 export const isIn = is(T.IN);
 export const isSpread = is(T.SPREAD);

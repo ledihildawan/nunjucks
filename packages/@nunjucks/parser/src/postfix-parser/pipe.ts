@@ -4,7 +4,7 @@ import {
   TOKEN_LEFT_PAREN,
   TOKEN_SYMBOL,
 } from '@nunjucks/lexer';
-import { nodeList, pipe, symbol } from '@nunjucks/nodes';
+import { isFunCall, nodeList, pipe, symbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skip, skipValue, expect } from "../cursor.ts";
 import type { ParserContext, MutableNode } from "../cursor.ts";
@@ -24,7 +24,9 @@ export const parseFilterName = (ctx: ParserContext): Node => {
 export const parseFilterArgs = (ctx: ParserContext, node: Node): Node[] => {
   if (peekToken(ctx).type === TOKEN_LEFT_PAREN) {
     const call = parsePostfix(ctx, node);
-    return (call as Node & { args: MutableNode }).args.children;
+    if (isFunCall(call)) {
+      return call.args;
+    }
   }
   return [];
 };
@@ -40,8 +42,8 @@ export const parsePipe = (ctx: ParserContext, node: Node): Node => {
       nodeList(
         name.lineno,
         name.colno,
-        [node].concat(parseFilterArgs(ctx, node))
-      ) as unknown as Node[]
+        [node, ...parseFilterArgs(ctx, node)]
+      ).children
     );
   }
 

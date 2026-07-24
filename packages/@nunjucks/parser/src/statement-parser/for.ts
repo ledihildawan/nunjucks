@@ -1,8 +1,8 @@
 import { TOKEN_COMMA } from '@nunjucks/lexer';
-import { array, for_, isSymbol, pushChild } from '@nunjucks/nodes';
+import { appendChild, array, for_, isSymbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, skip, advanceAfterBlockEnd, fail } from "../cursor.ts";
-import type { ParserContext, MutableNode } from "../cursor.ts";
+import type { ParserContext } from "../cursor.ts";
 import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
 import { parseUntilBlocks } from "../top-level.ts";
 import { tryParsePattern } from "../node-parsers/index.ts";
@@ -33,11 +33,11 @@ export const parseFor = (ctx: ParserContext): Node => {
     if (type === TOKEN_COMMA) {
       const key = node.name as Node;
       node.name = array(key.lineno, key.colno);
-      pushChild(node.name as MutableNode, key);
+      node.name = appendChild(node.name as ReturnType<typeof array>, key);
 
       while (skip(ctx, TOKEN_COMMA)) {
         const prim = parsePrimary(ctx);
-        pushChild(node.name as MutableNode, prim);
+        node.name = appendChild(node.name as ReturnType<typeof array>, prim);
       }
     }
   }

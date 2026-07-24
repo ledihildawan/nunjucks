@@ -4,4 +4,7 @@ import type { Token } from '@nunjucks/lexer';
 import type { ParserContext } from "../cursor.ts";
 import { parseSignature } from "../node-parsers/index.ts";
 
-export const parseFunCall = (ctx: ParserContext, tok: Token, target: Node): Node => funCall(tok.lineno, tok.colno, target, parseSignature(ctx) as unknown as Node[]);
+export const parseFunCall = (ctx: ParserContext, tok: Token, target: Node): Node => {
+  const signature = parseSignature(ctx);
+  return funCall(tok.lineno, tok.colno, target, signature?.children ?? []);
+};

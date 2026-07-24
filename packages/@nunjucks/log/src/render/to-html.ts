@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { classifyFromError } from '../errors/classify.ts';
@@ -110,7 +110,7 @@ const highlightSource = (code: string, filePath?: string | null): string => {
   return highlightHtml(code);
 };
 
-export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string => {
+export const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {}): Promise<string> => {
   const {
     templatePath = error?.templateName,
     lineno,
@@ -156,9 +156,9 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
 
   let possibleCauses: string[];
   if (classified?.causes && classified.causes.length > 0) {
-    possibleCauses = classified.causes;
+    possibleCauses = [...classified.causes];
   } else {
-    possibleCauses = errWithExtras.causes || [];
+    possibleCauses = [...(errWithExtras.causes || [])];
   }
   const fixCode = classified?.fixCode ?? errWithExtras.fixCode ?? '';
   const fixComment = classified?.fixComment ?? errWithExtras.fixComment ?? '';
@@ -229,7 +229,7 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
     const endLine = Math.min(lines.length, clampedLine + 2);
     codeSnippet = lines.slice(startLine, endLine).join('\n');
     snippetErrorIndex = clampedLine - startLine - 1;
-  } else if (!codeSnippet && templatePath && /\.(js|njk|tmpl|tpl|html|htm|ts|mjs|cjs)$/iu.test(templatePath)) {
+  } else if (!codeSnippet && templatePath && rawLineno !== null && /\.(js|njk|tmpl|tpl|html|htm|ts|mjs|cjs)$/iu.test(templatePath)) {
     try {
       let resolvedPath = templatePath;
       if (templatePath.startsWith('file://')) {
@@ -239,7 +239,7 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
       } else {
         resolvedPath = path.resolve(templatePath);
       }
-      const content = fs.readFileSync(resolvedPath, 'utf-8');
+      const content = await readFile(resolvedPath, 'utf-8');
       const lines = content.split('\n');
       const clampedLine = Math.max(1, Math.min(displayLine, lines.length));
       startLine = Math.max(0, clampedLine - 3);

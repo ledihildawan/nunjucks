@@ -1,11 +1,12 @@
 import { do_ } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { skipSymbol, nextToken } from "../cursor.ts";
+import { peekToken, skipSymbol, nextToken } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/index.ts";
 
 export const parseDo = (ctx: ParserContext): Node => {
-  const tag = skipSymbol(ctx, 'do') as unknown as { lineno: number; colno: number };
+  const tag = peekToken(ctx);
+  if (!skipSymbol(ctx, 'do')) { throw new Error('expected do'); }
 
   const expr = parseExpression(ctx);
 

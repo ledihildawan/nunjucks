@@ -1,4 +1,5 @@
 type SubjectExtractor = (groups: RegExpMatchArray) => string | null;
+type ExtraExtractor = (groups: RegExpMatchArray) => Record<string, string> | null;
 
 const firstCapture: SubjectExtractor = (groups) => groups[1] ?? null;
 
@@ -11,6 +12,7 @@ export interface ErrorDefinitionOptions {
   fixComment?: string;
   documentationUrl?: string;
   severity?: 'error' | 'warning' | 'info';
+  extraFrom?: ExtraExtractor;
 }
 
 const createPattern = (messageTemplate: string): RegExp => {
@@ -19,15 +21,18 @@ const createPattern = (messageTemplate: string): RegExp => {
     .replace(/\\{type\\}/g, '(.+)')
     .replace(/\\{name\\}/g, '([^"]+)')
     .replace(/\\{key\\}/g, '([^"]+)')
+    .replace(/\\{keys\\}/g, '(.+)')
+    .replace(/\\{values\\}/g, '(.+)')
+    .replace(/\\{violations\\}/g, '(.+)')
     .replace(/\\{subject\\}/g, '([^"]+)')
     .replace(/\\{attr\\}/g, '([^"]+)')
-    .replace(/\\{by\\}/g, '([^"]+)');
+    .replace(/\\{by\\}/g, '(.+)');
   return new RegExp(`^${pattern}$`, 'i');
 };
 
 export const createErrorDefinition = (options: ErrorDefinitionOptions) => {
-  const { name, message, category, causes, fixCode, fixComment, documentationUrl, severity } = options;
-  const hasVariable = message.includes('{type}') || message.includes('{name}') || message.includes('{key}') || message.includes('{subject}') || message.includes('{attr}') || message.includes('{by}');
+  const { name, message, category, causes, fixCode, fixComment, documentationUrl, severity, extraFrom } = options;
+  const hasVariable = message.includes('{type}') || message.includes('{name}') || message.includes('{key}') || message.includes('{keys}') || message.includes('{values}') || message.includes('{violations}') || message.includes('{subject}') || message.includes('{attr}') || message.includes('{by}');
 
   let subjectFrom: SubjectExtractor | null = null;
   if (hasVariable) {
@@ -45,7 +50,8 @@ export const createErrorDefinition = (options: ErrorDefinitionOptions) => {
     fixComment,
     documentationUrl,
     severity,
-    subjectFrom
+    subjectFrom,
+    extraFrom: extraFrom ?? null
   };
 };
 

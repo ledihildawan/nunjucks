@@ -31,7 +31,7 @@ export const compileRoot = (ctx: Compiler, node: Node, frame: Frame): void => {
   };
 
   const nonBlockChildren = node.children?.filter(child => !isBlock(child));
-  nonBlockChildren.forEach(child => {
+  nonBlockChildren?.forEach(child => {
     ctx.compile(child, frame);
   });
 

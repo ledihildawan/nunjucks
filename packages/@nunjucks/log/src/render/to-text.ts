@@ -43,9 +43,9 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
   const classification = classifyFromError(errObj);
   let causes: string[];
   if (classification.causes && classification.causes.length > 0) {
-    causes = classification.causes;
+    causes = [...classification.causes];
   } else {
-    causes = errObj.causes || [];
+    causes = [...(errObj.causes || [])];
   }
   const fixCode = classification.fixCode ?? errObj.fixCode ?? '';
   const fixComment = classification.fixComment ?? errObj.fixComment ?? '';

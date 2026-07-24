@@ -10,10 +10,10 @@ import {
   TOKEN_STRING,
   TOKEN_SYMBOL,
 } from '@nunjucks/lexer';
-import { arrayPattern, assignmentPattern, hole, objectPattern, patternProperty, pushChild, restPattern, symbol } from '@nunjucks/nodes';
+import { appendChild, arrayPattern, assignmentPattern, hole, objectPattern, patternProperty, restPattern, symbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, skip, fail } from "../cursor.ts";
-import type { ParserContext, MutableNode } from "../cursor.ts";
+import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/index.ts";
 
 const isDestructuringStart = (ctx: ParserContext): boolean => {
@@ -45,7 +45,7 @@ const parseAssignmentDefault = (ctx: ParserContext, target: Node): Node | null =
 };
 
 const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): Node => {
-  const node = arrayPattern(lineno, colno) as MutableNode;
+  let node = arrayPattern(lineno, colno);
   const startTok = nextToken(ctx);
   if (startTok.type !== TOKEN_LEFT_BRACKET) {
     fail(ctx, 'parseArrayPattern: expected [', lineno, colno);
@@ -71,7 +71,7 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
         break;
       }
       if (after && after.type === TOKEN_COMMA) {
-        pushChild(node, hole(after.lineno, after.colno));
+        node = appendChild(node, hole(after.lineno, after.colno));
         continue;
       }
     }
@@ -80,7 +80,7 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
       nextToken(ctx);
       const inner = parseInnerPattern(ctx);
       const rp = restPattern(tok.lineno, tok.colno, inner);
-      pushChild(node, rp);
+      node = appendChild(node, rp);
       sawRest = true;
       const after = peekToken(ctx);
       if (after && after.type === TOKEN_COMMA) {
@@ -93,7 +93,7 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
       const innerTok = peekToken(ctx);
       const inner = parseArrayPattern(ctx, innerTok.lineno, innerTok.colno);
       const withDefault = parseAssignmentDefault(ctx, inner);
-      pushChild(node, withDefault ?? inner);
+      node = appendChild(node, withDefault ?? inner);
       continue;
     }
 
@@ -101,7 +101,7 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
       const innerTok = peekToken(ctx);
       const inner = parseObjectPattern(ctx, innerTok.lineno, innerTok.colno);
       const withDefault = parseAssignmentDefault(ctx, inner);
-      pushChild(node, withDefault ?? inner);
+      node = appendChild(node, withDefault ?? inner);
       continue;
     }
 
@@ -112,14 +112,14 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
     }
     const target = symbol(symTok!.lineno, symTok!.colno, symTok!.value as string);
     const withDefault = parseAssignmentDefault(ctx, target);
-    pushChild(node, withDefault ?? target);
+    node = appendChild(node, withDefault ?? target);
   }
 
   return node;
 };
 
 const parseObjectPattern = (ctx: ParserContext, lineno: number, colno: number): Node => {
-  const node = objectPattern(lineno, colno) as MutableNode;
+  let node = objectPattern(lineno, colno);
   const startTok = nextToken(ctx);
   if (startTok.type !== TOKEN_LEFT_CURLY) {
     fail(ctx, 'parseObjectPattern: expected {', lineno, colno);
@@ -152,7 +152,7 @@ const parseObjectPattern = (ctx: ParserContext, lineno: number, colno: number): 
     if (peekToken(ctx).type === TOKEN_SPREAD) {
       nextToken(ctx);
       const inner = parseInnerPattern(ctx);
-      pushChild(node, restPattern(tok.lineno, tok.colno, inner));
+      node = appendChild(node, restPattern(tok.lineno, tok.colno, inner));
       sawRest = true;
       const after = peekToken(ctx);
       if (after && after.type === TOKEN_COMMA) {
@@ -192,10 +192,10 @@ const parseObjectPattern = (ctx: ParserContext, lineno: number, colno: number): 
     const propNode = patternProperty(
       keyTok.lineno,
       keyTok.colno,
-      keyName as unknown as Node,
+      symbol(keyTok.lineno, keyTok.colno, keyName ?? ''),
       withDefault ?? valueTarget
     );
-    pushChild(node, propNode);
+    node = appendChild(node, propNode);
   }
 
   return node;

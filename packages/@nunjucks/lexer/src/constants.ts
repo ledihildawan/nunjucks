@@ -42,7 +42,7 @@ const isDigit = (char: string): boolean => char >= '0' && char <= '9';
 const isNumericString = (str: string): boolean => {
   if (str.length === 0) { return false; }
   for (let i = 0; i < str.length; i++) {
-    const char = str[i];
+    const char = str[i]!;
     if (!isDigit(char)) { return false; }
   }
   return true;

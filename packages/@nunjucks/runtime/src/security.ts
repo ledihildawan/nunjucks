@@ -32,7 +32,7 @@ const getLineColFromIndex = (content: string, index: number): { line: number; co
   const beforeMatch = content.slice(0, index);
   const lines = beforeMatch.split('\n');
   const line = lines.length;
-  const col = lines.at(-1)?.length;
+  const col = lines.at(-1)?.length ?? 0;
   return { line, col };
 };
 

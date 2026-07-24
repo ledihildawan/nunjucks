@@ -24,7 +24,7 @@ export interface Compiler {
   sourceMap: SourceMap;
   fail: (msg: string, lineno?: number, colno?: number) => void;
   pushBuffer: () => string;
-  popBuffer: () => string;
+  popBuffer: () => string | null;
   emit: (code: string) => void;
   emitLine: (code: string, originalLine?: number) => void;
   emitLineWithMapping: (code: string, templateLine?: number, templateCol?: number) => void;
@@ -88,8 +88,9 @@ export function createCompiler(
     return id;
   };
 
-  const popBuffer = () => {
+  const popBuffer = (): string | null => {
     buffer = bufferStack.pop() as string | null;
+    return buffer;
   };
 
   const emit = (code: string) => {

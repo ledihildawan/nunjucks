@@ -1,5 +1,5 @@
 import { getNodeTypeName } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
+import type { Node, NodeType } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from './index.ts';
 import {
@@ -77,7 +77,7 @@ import {
 
 export type CompileFn = (ctx: Compiler, node: Node, frame: Frame) => unknown;
 
-export const COMPILE_FUNCTIONS: Readonly<Record<string, CompileFn>> = {
+export const COMPILE_FUNCTIONS: Readonly<Partial<Record<NodeType, CompileFn>>> = {
   node: compileLiteral,
   value: compileLiteral,
   literal: compileLiteral,
@@ -150,15 +150,10 @@ export const COMPILE_FUNCTIONS: Readonly<Record<string, CompileFn>> = {
 };
 
 export const compileDispatch = (ctx: Compiler, node: Node, frame?: Frame): unknown => {
-  const typeName = getNodeTypeName(node);
-  let fn: CompileFn | undefined;
-  if (typeName === undefined) {
-    fn = undefined;
-  } else {
-    fn = COMPILE_FUNCTIONS[typeName];
-  }
+  const typeName = node.type;
+  const fn = COMPILE_FUNCTIONS[typeName];
   if (fn) {
-    return fn(ctx, node, frame);
+    return fn(ctx, node, frame as Frame);
   }
 
   ctx.fail(`compile: Cannot compile node: ${typeName}`, node.lineno, node.colno);

@@ -4,7 +4,7 @@ import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 import { compileAggregate } from './container.ts';
 
-const bracketFlag = (n: Node): unknown => (n as unknown as Record<symbol, unknown>)[BracketNotation];
+const bracketFlag = (n: Node): boolean | undefined => n[BracketNotation];
 
 const getNodeName = (_ctx: Compiler, node: Node, _isBracketCall = false): string => {
   const typeName = getNodeTypeName(node);

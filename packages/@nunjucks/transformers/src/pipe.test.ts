@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { liftPipes } from './pipe.ts';
-import { output, literal, symbol, keywordArgs, pipe, root } from '@nunjucks/nodes';
+import { callExtensionAsync, isNodeList, isPipeAsync, isRoot, isSymbol, nodeList, output, literal, symbol, keywordArgs, pipe, root } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { getNodeTypeName } from '@nunjucks/nodes/traverse';
 
@@ -62,5 +62,23 @@ describe('liftPipes', () => {
     expect(getNodeTypeName(pipeAsyncNode)).toBe('pipeAsync');
     expect(pipeAsyncNode.name.value).toBe('myFilter');
     expect(getNodeTypeName(pipeAsyncNode.name)).toBe('symbol');
+  });
+
+  test('lifts async extensions using their extension name and argument children', () => {
+    const extension = callExtensionAsync(1, 0, 'fetchData', 'run', nodeList(1, 0, [literal(1, 0, 'url')]));
+    const ast = root(1, 0, [output(1, 0, [extension])]);
+
+    const result = liftPipes(ast, []);
+
+    expect(isRoot(result)).toBe(true);
+    if (!isRoot(result)) { throw new Error('Expected a root node'); }
+    expect(isNodeList(result.children[0])).toBe(true);
+    const wrapper = result.children[0]!;
+    if (!isNodeList(wrapper)) { throw new Error('Expected a node list'); }
+    const lifted = wrapper.children[0]!;
+    expect(isPipeAsync(lifted)).toBe(true);
+    if (!isPipeAsync(lifted)) { throw new Error('Expected pipeAsync'); }
+    expect(isSymbol(lifted.name) && lifted.name.value).toBe('fetchData');
+    expect(lifted.args).toHaveLength(1);
   });
 });

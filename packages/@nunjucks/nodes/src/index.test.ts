@@ -8,7 +8,7 @@ import {
   extends_, include, switch_, case_, capture, is, in_, super_, callExtension, callExtensionAsync,
   isOutput,
 } from '@nunjucks/nodes';
-import { getType, getFields_, addChild } from '@nunjucks/nodes/traverse';
+import { appendChild, getType, getFields_ } from '@nunjucks/nodes/traverse';
 import type { Node } from '@nunjucks/nodes';
 
 describe('Node', () => {
@@ -53,10 +53,10 @@ describe('NodeList', () => {
     expect([...nl.children!]).toEqual([]);
   });
 
-  test('addChild appends to children', () => {
+  test('appendChild appends to children', () => {
     const nl = nodeList(0, 0);
     const c = value(1, 1, 'a');
-    const result = addChild(nl, c);
+    const result = appendChild(nl, c);
     expect([...(result as { children: unknown[] }).children!]).toEqual([c]);
   });
 

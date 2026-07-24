@@ -29,8 +29,8 @@ export const parseFilterStatement = (ctx: ParserContext): Node => {
     nodeList(
       name.lineno,
       name.colno,
-      [body].concat(args)
-    ) as unknown as Node[]
+      [body, ...args]
+    ).children
   );
 
   return output(

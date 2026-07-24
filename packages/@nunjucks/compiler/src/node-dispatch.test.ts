@@ -3,6 +3,7 @@ import { compileDispatch, COMPILE_FUNCTIONS } from './node-dispatch.ts';
 import type { Compiler } from './index.ts';
 import type { Frame } from '@nunjucks/runtime';
 import { literal, symbol, add, nodeList, getNodeTypeName } from '@nunjucks/nodes';
+import type { NodeType } from '@nunjucks/nodes';
 
 const makeCtx = (): Compiler & { emitted: string[] } => {
   const emitted: string[] = [];
@@ -24,7 +25,7 @@ const makeCtx = (): Compiler & { emitted: string[] } => {
 const makeFrame = (): Frame => ({ lookup: () => null } as unknown as Frame);
 
 describe('COMPILE_FUNCTIONS', () => {
-  const expectedTypes = [
+  const expectedTypes: NodeType[] = [
     'node', 'value', 'literal', 'symbol', 'group', 'array', 'dict', 'nodeList',
     'pair', 'inlineIf', 'walrus', 'in', 'is', 'or', 'and', 'nullishCoalesce',
     'add', 'concat', 'sub', 'mul', 'div', 'mod', 'not', 'floorDiv', 'pow',
@@ -129,6 +130,6 @@ describe('compileDispatch', () => {
   test('uses getNodeTypeName to resolve the dispatch key', () => {
     const node = literal(1, 1, 'x');
     expect(getNodeTypeName(node)).toBe('literal');
-    expect(COMPILE_FUNCTIONS[getNodeTypeName(node) as string]).toBeFunction();
+    expect(COMPILE_FUNCTIONS[getNodeTypeName(node) as NodeType]).toBeFunction();
   });
 });

@@ -82,7 +82,7 @@ export interface TemplateError extends Error {
   path?: string | null;
   toJSON?: () => Record<string, unknown>;
   outputOptions?: Omit<OutputOptions, 'format'>;
-  output: (options?: OutputOptions) => { html: string; ansi: string; text: string } | string;
+  output: (options?: OutputOptions) => Promise<string>;
   applyLocation?: (path: string | undefined, includeChain?: IncludeChain) => TemplateError;
   _includeChain?: IncludeChain;
   [TEMPLATE_ERROR]?: boolean;
@@ -188,7 +188,7 @@ const createBaseMetadata = (message: string, data: LegacyLogData, info: ErrorInf
 
 const createOutputFn = (type: 'error' | 'warning') => {
   if (type === 'error') {
-    return function(this: TemplateError, options: OutputOptions = {}) {
+    return async function(this: TemplateError, options: OutputOptions = {}) {
       const opts = createFormatterState({
         metadata: {
           lineno: this.lineno,
@@ -205,7 +205,7 @@ const createOutputFn = (type: 'error' | 'warning') => {
 
       if (options.format === 'ansi') { return toAnsi(this, opts); }
       if (options.format === 'text') { return toText(this, opts); }
-      return toHtml(this, opts);
+      return await toHtml(this, opts);
     };
   }
   return function(this: TemplateWarning, options: Omit<OutputOptions, 'format' | 'isProduction'> = {}) {
@@ -284,8 +284,8 @@ export function createLog(
   if (type === 'error') {
     const err = new Error(resolveMessage(errorDef.message, paramsValue)) as TemplateError;
     Object.assign(err, { name: 'Template render error', code: errorDef.name, subject: subject ?? null, ...normalized, [TEMPLATE_ERROR]: true });
-    if (extra?.sourceContent) { err.sourceContent = extra.sourceContent; }
-    if (extra && Number.isInteger(extra.sourceStartLine)) { err.sourceStartLine = extra.sourceStartLine; }
+    if (extra?.sourceContent) { err.sourceContent = extra.sourceContent as string; }
+    if (extra && Number.isInteger(extra.sourceStartLine)) { err.sourceStartLine = extra.sourceStartLine as number; }
     err.templatePath = normalized.templateName;
     if (errorDef.causes && errorDef.causes.length > 0) { err.causes = errorDef.causes; }
     if (errorDef.fixCode) { err.fixCode = errorDef.fixCode; }
@@ -300,7 +300,7 @@ export function createLog(
   }
 
   const normalizedWarning = normalized as NormalizedWarningContext;
-  const warn = {
+  const warn: Record<string, unknown> = {
     message: resolveMessage(errorDef.message, paramsValue),
     code: errorDef.name,
     subject: subject ?? null,
@@ -311,7 +311,7 @@ export function createLog(
   if (errorDef.fixCode) { warn.fixCode = errorDef.fixCode; }
   if (errorDef.fixComment) { warn.fixComment = errorDef.fixComment; }
   warn.output = createOutputFn('warning');
-  return warn;
+  return warn as unknown as TemplateWarning;
 }
 
 export function isTemplateError(obj: unknown): obj is TemplateError {

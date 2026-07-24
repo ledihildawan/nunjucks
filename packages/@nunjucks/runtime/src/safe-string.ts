@@ -1,7 +1,6 @@
 // SAFE STRING - Marks strings as already escaped for autoescape handling
-export interface SafeString extends string {
+export interface SafeString extends String {
   val: string;
-  length: number;
   valueOf: () => string;
   toString: () => string;
 }

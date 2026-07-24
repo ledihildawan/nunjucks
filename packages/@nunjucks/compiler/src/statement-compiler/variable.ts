@@ -1,5 +1,5 @@
 import { isArrayPattern, isObjectPattern, isSymbol } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
+import type { MacroArgument, Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 import { compileDestructuring } from './pattern.ts';
@@ -159,11 +159,11 @@ export const compileCompoundAssignment = (ctx: Compiler, node: Node, frame: Fram
 export const compileDefineBlock = (ctx: Compiler, node: Node, frame: Frame): void => {
   const name = node.name as string;
   const funcId = ctx.tmpid();
-  const args = (node.args as Node[]) || [];
+  const args = node.args as MacroArgument[];
 
-  const argNames = args.map(a => `"${(a as unknown as { name: string }).name}"`);
-  const hasDefaults = args.some(a => (a as unknown as { defaultVal: unknown }).defaultVal !== null);
-  const paramNames = args.map((a, _i) => `l_${(a as unknown as { name: string }).name}`);
+  const argNames = args.map(a => `"${a.name}"`);
+  const hasDefaults = args.some(a => a.defaultVal !== null);
+  const paramNames = args.map(a => `l_${a.name}`);
   let realParams: string[];
   if (hasDefaults) {
     realParams = [...paramNames, 'kwargs'];
@@ -179,7 +179,7 @@ export const compileDefineBlock = (ctx: Compiler, node: Node, frame: Frame): voi
   if (hasDefaults) {
     ctx.emitLine('kwargs = kwargs || {};');
     args.forEach((arg, i) => {
-      const argObj = arg as unknown as { name: string; defaultVal: Node | null };
+      const argObj = arg;
       if (argObj.defaultVal) {
         const paramVal = paramNames[i];
         ctx.emit(`let ${argObj.name} = `);
@@ -198,7 +198,7 @@ export const compileDefineBlock = (ctx: Compiler, node: Node, frame: Frame): voi
     });
   } else {
     args.forEach((arg) => {
-      const argObj = arg as unknown as { name: string };
+      const argObj = arg;
       ctx.emitLine(`let ${argObj.name} = l_${argObj.name};`);
       ctx.emitLine(`frame.set("${argObj.name}", ${argObj.name});`);
     });

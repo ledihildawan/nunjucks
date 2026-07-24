@@ -6,7 +6,8 @@ import type { ParserContext } from "../cursor.ts";
 import { parseUntilBlocks } from "../top-level.ts";
 
 export const parseTry = (ctx: ParserContext): Node => {
-  const tag = skipSymbol(ctx, 'try') as unknown as { lineno: number; colno: number };
+  const tag = peekToken(ctx);
+  if (!skipSymbol(ctx, 'try')) { fail(ctx, 'expected try', tag.lineno, tag.colno); }
 
   const tok = nextToken(ctx);
   if (tok && tok.type === 'block-end') {
@@ -26,8 +27,11 @@ export const parseTry = (ctx: ParserContext): Node => {
       // consumed block end
     }
 
-    if (peekToken(ctx).type === ctx.TOKEN_SYMBOL) {
-      errVar = ((skipValue(ctx, ctx.TOKEN_SYMBOL as Token['type']) as unknown as Token).value) as string;
+    if (peekToken(ctx).type === 'symbol') {
+      const errToken = nextToken(ctx);
+      if (typeof errToken.value === 'string') {
+        errVar = errToken.value;
+      }
     }
 
     catchBody = parseUntilBlocks(ctx, 'endtry');

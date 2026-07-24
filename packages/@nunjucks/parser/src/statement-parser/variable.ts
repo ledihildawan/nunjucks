@@ -6,7 +6,7 @@ import {
   TOKEN_OPERATOR,
 } from '@nunjucks/lexer';
 import { compoundAssignment, defineBlock, variableAssignment, variableDeclaration } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
+import type { MacroArgument, Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, skip, skipValue, nextToken, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
@@ -91,7 +91,7 @@ export const parseDefineBlock = (ctx: ParserContext): Node => {
     fail(ctx, 'Expected block name', tag.lineno, tag.colno);
   }
 
-  const args: { name: unknown; defaultVal: Node | null }[] = [];
+  const args: MacroArgument[] = [];
   const tok = peekToken(ctx);
   if (tok && tok.type === TOKEN_LEFT_PAREN) {
     nextToken(ctx);
@@ -102,7 +102,7 @@ export const parseDefineBlock = (ctx: ParserContext): Node => {
         break;
       }
       if (argTok.type === 'symbol') {
-        const argName = nextToken(ctx).value;
+        const argName = nextToken(ctx).value as string;
         let defaultVal: Node | null = null;
         if (skipValue(ctx, TOKEN_OPERATOR, '=')) {
           defaultVal = parseExpression(ctx);
@@ -133,5 +133,5 @@ export const parseDefineBlock = (ctx: ParserContext): Node => {
 
   advanceAfterBlockEnd(ctx, 'enddefine');
 
-  return defineBlock(tag.lineno, tag.colno, ((nameTok as Node).value || nameTok) as unknown as string, body, args as unknown as Node[]);
+  return defineBlock(tag.lineno, tag.colno, nameTok.value as string, body, args);
 };

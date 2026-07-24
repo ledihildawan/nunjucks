@@ -1,13 +1,18 @@
 // MACRO - Macro/keyword-args handling for Nunjucks templates
 import { hasOwn } from '@nunjucks/shared/type-guards';
 
-type KeywordArgs = { keywords?: boolean; [key: string]: unknown } & Record<string, unknown>;
+type KeywordArgs = Record<string, unknown> & { keywords: boolean };
 
-export function makeMacro(argNames: string[], kwargNames: string[], func: (...args: any[]) => unknown): (...macroArgs: unknown[]) => unknown {
+type RuntimeFunction = (...args: never[]) => unknown;
+
+const isKeywordArgsObject = (value: unknown): value is KeywordArgs =>
+  typeof value === 'object' && value !== null && hasOwn(value, 'keywords');
+
+export function makeMacro(argNames: string[], kwargNames: string[], func: RuntimeFunction): (...macroArgs: unknown[]) => unknown {
   return function macro(this: unknown, ...macroArgs: unknown[]): unknown {
     const argCount = numArgs(macroArgs);
     let args: unknown[];
-    const kwargs = getKeywordArgs(macroArgs) as KeywordArgs;
+    const kwargs = getKeywordArgs(macroArgs);
 
     if (argCount > argNames.length) {
       args = macroArgs.slice(0, argNames.length);
@@ -40,19 +45,14 @@ export function makeKeywordArgs<T>(obj: T): T & { keywords: boolean } {
 }
 
 export function isKeywordArgs(obj: unknown): boolean | null {
-  if (obj && hasOwn(obj as object, 'keywords')) {
-    return true;
-  }
-  if (obj) {
-    return false;
-  }
-  return null;
+  if (obj === null || obj === undefined) { return null; }
+  return isKeywordArgsObject(obj);
 }
 
 export function getKeywordArgs(args: unknown[]): Record<string, unknown> {
   if (args.length > 0) {
-    const lastArg = args.at(-1) as Record<string, unknown>;
-    if (isKeywordArgs(lastArg)) {
+    const lastArg = args.at(-1);
+    if (isKeywordArgsObject(lastArg)) {
       return lastArg;
     }
   }
@@ -66,13 +66,13 @@ export function numArgs(args: unknown[]): number {
   }
 
   const lastArg = args[len - 1];
-  if (isKeywordArgs(lastArg)) {
+  if (isKeywordArgsObject(lastArg)) {
     return len - 1;
   }
     return len;
 }
 
-export function withKwargs<T extends (...args: any[]) => unknown>(func: T): T {
+export function withKwargs<T extends RuntimeFunction>(func: T): T {
   return function (this: unknown, ...args: unknown[]): unknown {
     const positionalArgs: unknown[] = [];
     const kwargs: Record<string, unknown> = {};
@@ -85,6 +85,6 @@ export function withKwargs<T extends (...args: any[]) => unknown>(func: T): T {
       }
     }
 
-    return (func as (...a: unknown[]) => unknown).apply(this, [...positionalArgs, kwargs]);
-  } as T;
+    return (func as unknown as (this: unknown, ...args: unknown[]) => unknown).apply(this, [...positionalArgs, kwargs]);
+  } as unknown as T;
 }
