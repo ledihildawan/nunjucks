@@ -36,7 +36,7 @@
   },
   "scripts": {
     "build": "bun run scripts/bundle.js",
-    "lint": "biome lint src/",
+    "lint": "biome lint packages/",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "coverage": "bun test --coverage",

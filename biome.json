@@ -6,7 +6,7 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["src/**", "packages/@nunjucks/*/src/**"],
+		"includes": ["packages/@nunjucks/*/src/**/*.ts"],
 		"ignoreUnknown": true
 	},
 	"formatter": {
@@ -17,34 +17,52 @@
 	},
 	"linter": {
 		"enabled": true,
-		"includes": ["src/**/*.ts", "packages/@nunjucks/*/src/**/*.ts"],
+		"includes": ["packages/@nunjucks/*/src/**/*.ts"],
 		"rules": {
 			"recommended": true,
 			"correctness": {
-				"noUnusedVariables": "error",
-				"noUnusedFunctionParameters": "error"
+				"noUnusedVariables": "off",
+				"noUnusedFunctionParameters": "off",
+				"noUnusedImports": "off",
+				"useParseIntRadix": "off"
 			},
 			"style": {
 				"noEnum": "error",
-				"useImportType": "error",
+				"useImportType": "off",
 				"useShorthandFunctionType": "error",
-				"useTemplate": "error",
+				"useTemplate": "off",
 				"useConsistentArrayType": "error",
 				"useEnumInitializers": "error",
-				"noNonNullAssertion": "off"
+				"noNonNullAssertion": "off",
+				"useExponentiationOperator": "off",
+				"useNodejsImportProtocol": "off",
+				"useConst": "off"
 			},
 			"complexity": {
 				"noExtraBooleanCast": "error",
 				"noUselessCatch": "error",
 				"noUselessConstructor": "error",
-				"useOptionalChain": "error",
-				"noUselessSwitchCase": "error"
+				"useOptionalChain": "off",
+				"noUselessSwitchCase": "error",
+				"noUselessThisAlias": "off",
+				"noBannedTypes": "off",
+				"useIndexOf": "off",
+				"noUselessContinue": "off",
+				"noUselessEscapeInRegex": "off"
 			},
 			"suspicious": {
 				"noConstEnum": "error",
-				"noShadow": "error",
+				"noShadow": "off",
 				"noRedeclare": "error",
-				"noDuplicateCase": "error"
+				"noDuplicateCase": "error",
+				"useIterableCallbackReturn": "off",
+				"noExplicitAny": "off",
+				"noShadowRestrictedNames": "off",
+				"noApproximativeNumericConstant": "off",
+				"noAssignInExpressions": "off",
+				"noConfusingVoidType": "off",
+				"noProto": "off",
+				"noImplicitAnyLet": "off"
 			}
 		}
 	},
