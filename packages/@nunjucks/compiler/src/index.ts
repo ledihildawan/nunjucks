@@ -207,7 +207,6 @@ export function createCompiler(
       pow,
       neg,
       pos,
-      compare,
       optionalChain,
       nullishCoalesce,
       nodeList,
