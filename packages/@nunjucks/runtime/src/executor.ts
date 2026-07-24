@@ -17,7 +17,7 @@ import {
 } from '@nunjucks/runtime';
 import { getError } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
-import { extractBlocks } from './env.js';
+import { extractBlocks } from '@nunjucks/shared';
 
 interface UndefinedInputResult {
   isUndefinedInput: boolean;

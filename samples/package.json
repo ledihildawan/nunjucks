@@ -1,0 +1,21 @@
+{
+  "name": "@nunjucks/samples",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": ["express/**"],
+  "dependencies": {
+    "@nunjucks/compiler": "workspace:*",
+    "@nunjucks/filters": "workspace:*",
+    "@nunjucks/lexer": "workspace:*",
+    "@nunjucks/log": "workspace:*",
+    "@nunjucks/nodes": "workspace:*",
+    "@nunjucks/parser": "workspace:*",
+    "@nunjucks/runtime": "workspace:*",
+    "@nunjucks/transformers": "workspace:*",
+    "express": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6"
+  }
+}

@@ -13,9 +13,12 @@
     "packages/@nunjucks/transformers",
     "packages/@nunjucks/compiler",
     "packages/@nunjucks/runtime",
-    "packages/@nunjucks/filters"
+    "packages/@nunjucks/filters",
+    "packages/@nunjucks/core",
+    "samples/express"
   ],
   "dependencies": {
+    "@nunjucks/core": "workspace:*",
     "@nunjucks/lexer": "workspace:*",
     "@nunjucks/log": "workspace:*",
     "@nunjucks/nodes": "workspace:*",
@@ -44,11 +47,12 @@
     "bench": "bun run bench/run.js"
   },
   "exports": {
-    ".": "./src/index.js",
+    ".": {
+      "import": "@nunjucks/core/src/index.js"
+    },
     "./bundle": "./dist/index.js"
   },
   "files": [
-    "src/**",
     "dist/**"
   ],
   "repository": {

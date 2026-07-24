@@ -29,7 +29,8 @@ import {
   inOperator,
 } from '@nunjucks/runtime';
 import type { Frame } from '@nunjucks/runtime';
-import { createEnv, extractBlocks } from '../core/env.js';
+import { createEnv } from '../core/env.js';
+import { extractBlocks } from '@nunjucks/shared';
 import type { Env } from '../core/env.js';
 
 const Template = Symbol('Template');

@@ -17,9 +17,11 @@
     "./security": "./src/security.ts",
     "./timeout": "./src/timeout.ts",
     "./undefined": "./src/undefined.ts",
-    "./whitelist": "./src/whitelist.ts"
+    "./whitelist": "./src/whitelist.ts",
+    "./executor": "./src/executor.ts"
   },
   "dependencies": {
+    "@nunjucks/core": "workspace:*",
     "@nunjucks/nodes": "workspace:*",
     "@nunjucks/shared": "workspace:*",
     "@nunjucks/log": "workspace:*"

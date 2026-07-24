@@ -1,0 +1,30 @@
+{
+  "name": "@nunjucks/core",
+  "version": "3.2.4",
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.js",
+    "./express": "./src/integrations/express.js",
+    "./loaders/*": "./src/loaders/*.js",
+    "./config/*": "./src/config/*.js",
+    "./env": "./src/core/env.js"
+  },
+  "dependencies": {
+    "@nunjucks/compiler": "workspace:*",
+    "@nunjucks/filters": "workspace:*",
+    "@nunjucks/lexer": "workspace:*",
+    "@nunjucks/log": "workspace:*",
+    "@nunjucks/nodes": "workspace:*",
+    "@nunjucks/parser": "workspace:*",
+    "@nunjucks/runtime": "workspace:*",
+    "@nunjucks/shared": "workspace:*",
+    "@nunjucks/transformers": "workspace:*",
+    "picocolors": "^1.1.1",
+    "remeda": "^2.39.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6"
+  }
+}

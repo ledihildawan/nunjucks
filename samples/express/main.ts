@@ -1,8 +1,8 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
-import { createEngine } from '../../src/integrations/express.js';
-import nunjucks from '../../src/index.js';
+import { createEngine } from '@nunjucks/core/express';
+import nunjucks from '@nunjucks/core';
 
 import { errorRouter, errorRoutes } from './routes/errors.ts';
 import { sandboxRouter } from './routes/sandbox.ts';

@@ -1,5 +1,5 @@
 const result = await Bun.build({
-  entrypoints: ["./src/index.js"],
+  entrypoints: ["./packages/@nunjucks/core/src/index.js"],
   outdir: "./dist",
   format: "esm",
   splitting: false,
