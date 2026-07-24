@@ -41,7 +41,7 @@ const DANGEROUS_PATTERNS = [
   { pattern: /\bimport\s+\(/, message: 'dynamic import() is not allowed' },
 ];
 
-interface DangerousCodeViolation {
+export interface DangerousCodeViolation {
   message: string;
   pattern: string;
   line: number;

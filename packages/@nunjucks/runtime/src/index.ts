@@ -25,6 +25,8 @@ export {
   getNullParentName,
   getAccessPath,
   type NullAccessResult,
+  type PropertyNotFoundResult,
+  type AccessResult,
 } from './member-access.ts';
 export {
   createSandboxedObject,
@@ -40,6 +42,7 @@ export {
   BLOCKED_KEYS_LIST,
   DANGEROUS_GLOBALS_LIST,
   type SandboxOptions,
+  type ResolvedSandboxOptions,
 } from './sandbox.ts';
 export {
   createRenderContext,
@@ -63,7 +66,46 @@ export {
   fromIterator,
   inOperator,
 } from './helpers.ts';
-export { HOOK_EVENTS } from './hooks.ts';
-export { UNDEFINED_MODES, DEFAULT_UNDEFINED_MODE, getUndefinedMode, isValidUndefinedMode } from './undefined.ts';
-export { validateContext, findDangerousValues, scanTemplateForDangerousCode, scrubDangerousReferences } from './security.ts';
-export { withTimeout } from './timeout.ts';
+export {
+  HOOK_EVENTS,
+  type HookEvent,
+  createHookEmitter,
+  hookable,
+} from './hooks.ts';
+export {
+  UNDEFINED_MODES,
+  DEFAULT_UNDEFINED_MODE,
+  getUndefinedMode,
+  isValidUndefinedMode,
+  type UndefinedMode,
+} from './undefined.ts';
+export {
+  validateContext,
+  findDangerousValues,
+  scanTemplateForDangerousCode,
+  scrubDangerousReferences,
+  createSecurityValidator,
+  validateContextKeys,
+  isDangerousReference,
+  restrictGlobals,
+  type SecurityError,
+  type DangerousCodeViolation,
+  type ValidateContextOptions,
+  type SecurityValidator,
+} from './security.ts';
+export {
+  withTimeout,
+  withTimeoutSync,
+  type TimeoutError,
+  isTimeoutError,
+} from './timeout.ts';
+export {
+  createWhitelistValidator,
+  scanASTForTags,
+  validateTemplateWhitelist,
+  type WhitelistError,
+  type WhitelistValidatorOptions,
+  type WhitelistValidator,
+  type TemplateWhitelistViolation,
+  type TemplateWhitelistResult,
+} from './whitelist.ts';

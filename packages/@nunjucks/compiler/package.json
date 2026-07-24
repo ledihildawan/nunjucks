@@ -8,7 +8,6 @@
     "./emitters": "./src/emitters.ts",
     "./source-map": "./src/source-map.ts",
     "./node-dispatch": "./src/node-dispatch.ts",
-    "./context": "./src/context.ts",
     "./expression-compiler": "./src/expression-compiler/index.ts",
     "./statement-compiler": "./src/statement-compiler/index.ts",
     "./statement-compiler/macro": "./src/statement-compiler/macro.ts"

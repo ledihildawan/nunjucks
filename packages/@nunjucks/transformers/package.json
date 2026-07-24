@@ -5,7 +5,6 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./walk": "./src/walk.ts",
     "./pipe": "./src/pipe.ts",
     "./super": "./src/super.ts",
     "./statement": "./src/statement.ts",

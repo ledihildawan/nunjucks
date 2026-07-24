@@ -4,7 +4,7 @@
 import { createLog, normalizeErrorMetadata, ERROR_DEFINITIONS } from '@nunjucks/log';
 import type { ErrorContext, ErrorDefinitionEntry, WarningContext } from '@nunjucks/log/create-log';
 import { escapeHtml } from '@nunjucks/shared';
-import { isNonNullish, isFunction, isString, isArray } from '@nunjucks/shared/type-guards';
+import { isNonNullish, isFunction, isString, isArray, isPlainObject } from '@nunjucks/shared/type-guards';
 import {
   memberLookup,
   optionalMemberLookup,
@@ -34,12 +34,6 @@ import {
 import { createFrame } from './frame.ts';
 import { createContext } from './context.ts';
 import { toContext, createIsolatedContext, createForkedContext } from './render-context.ts';
-
-const isPlainObject = (v: unknown): boolean => {
-  if (typeof v !== 'object' || v === null) return false;
-  const proto = Object.getPrototypeOf(v);
-  return proto === Object.prototype || proto === null;
-};
 
 interface LogContextShape {
   templateName: string | null;
