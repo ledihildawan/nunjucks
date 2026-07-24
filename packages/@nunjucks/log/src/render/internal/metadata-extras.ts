@@ -42,11 +42,19 @@ interface ErrorLike {
   renderContext?: Record<string, unknown>;
 }
 
-const readNumber = (value: unknown): number | null => Number.isInteger(value) ? (value as number) : null;
+const readNumber = (value: unknown): number | null => {
+  if (Number.isInteger(value)) {
+    return value as number;
+  }
+  return null;
+};
 
 const toDisplayCoordinate = (value: number | null, lineBase: LineBase | null): number | null => {
-  if (value === null) return null;
-  return lineBase === 'one' ? value : value + 1;
+  if (value === null) { return null; }
+  if (lineBase === 'one') {
+    return value;
+  }
+  return value + 1;
 };
 
 const buildSnippet = (
@@ -83,7 +91,12 @@ const buildSnippet = (
   const snippet = snippetLines
     .map(line => {
       const numberLabel = String(line.number).padStart(prefixWidth, ' ');
-      const marker = line.isError ? '>' : ' ';
+      let _marker: string;
+      if (line.isError) {
+        _marker = '>';
+      } else {
+        _marker = ' ';
+      }
       return ` ${numberLabel} | ${line.content}`;
     })
     .join('\n');
@@ -111,13 +124,22 @@ export const getErrorMetadata = (err: ErrorLike, options: GetErrorMetadataOption
     snippetContext = 2
   } = options;
 
-  const lineBase = (err.lineBase === 'one' ? 'one' : 'zero') as LineBase;
+  let lineBaseVal: 'one' | 'zero';
+  if (err.lineBase === 'one') {
+    lineBaseVal = 'one';
+  } else {
+    lineBaseVal = 'zero';
+  }
+  const lineBase = lineBaseVal as LineBase;
   const lineno = readNumber(err.lineno);
   const colno = readNumber(err.colno);
   const sourceStartLine = readNumber(err.sourceStartLine) ?? 1;
-  const sourceContent = includeSource && typeof err.sourceContent === 'string'
-    ? err.sourceContent
-    : null;
+  let sourceContent: string | null;
+  if (includeSource && typeof err.sourceContent === 'string') {
+    sourceContent = err.sourceContent;
+  } else {
+    sourceContent = null;
+  }
   const displayLine = toDisplayCoordinate(lineno, lineBase);
   const displayCol = toDisplayCoordinate(colno, lineBase);
 
@@ -147,9 +169,12 @@ export const getErrorMetadata = (err: ErrorLike, options: GetErrorMetadataOption
     snippet,
     snippetLines,
     caret,
-    renderContext: includeRenderContext && err.renderContext && typeof err.renderContext === 'object'
-      ? err.renderContext
-      : null
+    renderContext: (() => {
+      if (includeRenderContext && err.renderContext && typeof err.renderContext === 'object') {
+        return err.renderContext;
+      }
+      return null;
+    })()
   };
 };
 

@@ -1,4 +1,4 @@
-import { isFunction, isString, pipe, isNonNullish, pickBy } from 'remeda';
+import { isFunction, isString, pipe, pickBy } from 'remeda';
 import type { LineBase } from './render/internal/location.ts';
 import { normalizeLineBase, formatLocationAnnotation } from './render/internal/location.ts';
 import { createFormatterState } from './render/internal/metadata.ts';
@@ -21,8 +21,8 @@ export interface ErrorDefinitionEntry {
 }
 
 const resolveMessage = (message: ErrorDefinitionEntry['message'], params?: Record<string, string>): string => {
-  if (isFunction(message)) return message(params);
-  if (isString(message) && params) return message.replace(/\{(\w+)\}/g, (_, k) => params[k] ?? '');
+  if (isFunction(message)) { return message(params); }
+  if (isString(message) && params) { return message.replace(/\{(\w+)\}/gu, (_, k) => params[k] ?? ''); }
   return message;
 };
 
@@ -164,17 +164,27 @@ interface LegacyLogData {
 
 type LogType = 'error' | 'warning';
 
-const createBaseMetadata = (message: string, data: LegacyLogData, info: ErrorInfo | WarningInfo, type: LogType) => ({
-  message,
-  lineno: data.lineno ?? null,
-  colno: data.colno ?? null,
-  code: info.code ?? null,
-  subject: info.subject ?? null,
-  phase: info.phase ?? null,
-  templateName: info.templateName ?? null,
-  lineBase: info.lineBase ?? null,
-  ...(type === 'warning' ? { varName: (info as WarningInfo).varName ?? null, undefinedMode: (info as WarningInfo).undefinedMode ?? 'chainable' } : {})
-});
+const createBaseMetadata = (message: string, data: LegacyLogData, info: ErrorInfo | WarningInfo, type: LogType) => {
+  const base = {
+    message,
+    lineno: data.lineno ?? null,
+    colno: data.colno ?? null,
+    code: info.code ?? null,
+    subject: info.subject ?? null,
+    phase: info.phase ?? null,
+    templateName: info.templateName ?? null,
+    lineBase: info.lineBase ?? null,
+  };
+  if (type === 'warning') {
+    const warningInfo = info as WarningInfo;
+    return {
+      ...base,
+      varName: warningInfo.varName ?? null,
+      undefinedMode: warningInfo.undefinedMode ?? 'chainable'
+    };
+  }
+  return base;
+};
 
 const createOutputFn = (type: 'error' | 'warning') => {
   if (type === 'error') {
@@ -193,8 +203,8 @@ const createOutputFn = (type: 'error' | 'warning') => {
         options
       });
 
-      if (options.format === 'ansi') return toAnsi(this, opts);
-      if (options.format === 'text') return toText(this, opts);
+      if (options.format === 'ansi') { return toAnsi(this, opts); }
+      if (options.format === 'text') { return toText(this, opts); }
       return toHtml(this, opts);
     };
   }
@@ -224,7 +234,7 @@ export function createLog(
   context?: ErrorContext | null
 ): TemplateError | TemplateWarning {
   if (!isErrorDefinitionEntry(errorDefOrData)) {
-    if (type !== 'error' && type !== 'warning') throw new Error(`Unknown log type: ${type}`);
+    if (type !== 'error' && type !== 'warning') { throw new Error(`Unknown log type: ${type}`); }
     const info = (errorDefOrData.info ?? {}) as WarningInfo;
     const base = createBaseMetadata(errorDefOrData.message, errorDefOrData, info, type);
 
@@ -236,32 +246,52 @@ export function createLog(
       return err;
     }
 
-    const warn: TemplateWarning = { message: base.message, lineno: base.lineno, colno: base.colno, varName: info.varName ?? null, templateName: base.templateName, undefinedMode: info.undefinedMode ?? 'chainable', code: base.code, subject: base.subject, phase: base.phase, lineBase: base.lineBase, output: null! };
+    const warn = {
+      message: base.message,
+      lineno: base.lineno,
+      colno: base.colno,
+      varName: info.varName ?? null,
+      templateName: base.templateName,
+      undefinedMode: info.undefinedMode ?? 'chainable',
+      code: base.code,
+      subject: base.subject,
+      phase: base.phase,
+      lineBase: base.lineBase,
+      output: null as unknown as (options?: Omit<OutputOptions, 'format' | 'isProduction'>) => string
+    };
     warn.output = createOutputFn('warning');
     return warn;
   }
 
   const errorDef = errorDefOrData;
-  if (type !== 'error' && type !== 'warning') throw new Error(`Unknown log type: ${type}`);
+  if (type !== 'error' && type !== 'warning') { throw new Error(`Unknown log type: ${type}`); }
   const paramsValue = params as Record<string, string> | undefined;
-  const normalized = type === 'error'
-    ? normalizeContext<NormalizedErrorContext>(context as ErrorContext, () => ({}))
-    : normalizeContext<NormalizedWarningContext>(context as WarningContext, (c) => ({ varName: (c as WarningContext).varName ?? null, undefinedMode: (c as WarningContext).undefinedMode ?? 'chainable' }));
+  let normalized: NormalizedErrorContext | NormalizedWarningContext;
+  if (type === 'error') {
+    normalized = normalizeContext<NormalizedErrorContext>(context as ErrorContext, () => ({}));
+  } else {
+    normalized = normalizeContext<NormalizedWarningContext>(context as WarningContext, (c) => ({ varName: (c as WarningContext).varName ?? null, undefinedMode: (c as WarningContext).undefinedMode ?? 'chainable' }));
+  }
 
   const extraKeys = ['lineno', 'colno', 'phase', 'templateName', 'lineBase', 'varName', 'undefinedMode'];
-  const extra = context ? pickBy(context, (_, k) => !extraKeys.includes(k)) : undefined;
+  let extra: Record<string, unknown> | undefined;
+  if (context) {
+    extra = pickBy(context, (_, k) => !extraKeys.includes(k));
+  } else {
+    extra = undefined;
+  }
 
   if (type === 'error') {
     const err = new Error(resolveMessage(errorDef.message, paramsValue)) as TemplateError;
     Object.assign(err, { name: 'Template render error', code: errorDef.name, subject: subject ?? null, ...normalized, [TEMPLATE_ERROR]: true });
-    if (extra?.sourceContent) err.sourceContent = extra.sourceContent;
-    if (extra && Number.isInteger(extra.sourceStartLine)) err.sourceStartLine = extra.sourceStartLine;
+    if (extra?.sourceContent) { err.sourceContent = extra.sourceContent; }
+    if (extra && Number.isInteger(extra.sourceStartLine)) { err.sourceStartLine = extra.sourceStartLine; }
     err.templatePath = normalized.templateName;
-    if (errorDef.causes && errorDef.causes.length > 0) err.causes = errorDef.causes;
-    if (errorDef.fixCode) err.fixCode = errorDef.fixCode;
-    if (errorDef.fixComment) err.fixComment = errorDef.fixComment;
-    if (errorDef.documentationUrl) err.documentationUrl = errorDef.documentationUrl;
-    if (errorDef.severity) err.severity = errorDef.severity;
+    if (errorDef.causes && errorDef.causes.length > 0) { err.causes = errorDef.causes; }
+    if (errorDef.fixCode) { err.fixCode = errorDef.fixCode; }
+    if (errorDef.fixComment) { err.fixComment = errorDef.fixComment; }
+    if (errorDef.documentationUrl) { err.documentationUrl = errorDef.documentationUrl; }
+    if (errorDef.severity) { err.severity = errorDef.severity; }
     err.toJSON = function() {
       return { name: this.name, code: this.code, subject: this.subject, message: this.message, phase: this.phase, templateName: this.templateName, templatePath: this.templatePath, sourceStartLine: this.sourceStartLine, lineno: this.lineno, colno: this.colno, lineBase: this.lineBase, causes: this.causes, fixCode: this.fixCode, fixComment: this.fixComment, severity: this.severity, stack: this.stack };
     };
@@ -270,10 +300,16 @@ export function createLog(
   }
 
   const normalizedWarning = normalized as NormalizedWarningContext;
-  const warn: TemplateWarning = { message: resolveMessage(errorDef.message, paramsValue), code: errorDef.name, subject: subject ?? null, ...normalizedWarning, output: null! };
-  if (errorDef.causes && errorDef.causes.length > 0) warn.causes = errorDef.causes;
-  if (errorDef.fixCode) warn.fixCode = errorDef.fixCode;
-  if (errorDef.fixComment) warn.fixComment = errorDef.fixComment;
+  const warn = {
+    message: resolveMessage(errorDef.message, paramsValue),
+    code: errorDef.name,
+    subject: subject ?? null,
+    ...normalizedWarning,
+    output: null as unknown as (options?: Omit<OutputOptions, 'format' | 'isProduction'>) => string
+  };
+  if (errorDef.causes && errorDef.causes.length > 0) { warn.causes = errorDef.causes; }
+  if (errorDef.fixCode) { warn.fixCode = errorDef.fixCode; }
+  if (errorDef.fixComment) { warn.fixComment = errorDef.fixComment; }
   warn.output = createOutputFn('warning');
   return warn;
 }
@@ -296,7 +332,7 @@ interface PrettifyErrorOptions {
 }
 
 const asTemplateError = (err: Error | TemplateError): TemplateError => {
-  if (isTemplateError(err)) return err;
+  if (isTemplateError(err)) { return err; }
   const e = err as Partial<TemplateError>;
   return createLog('error', { name: e.code ?? 'ERROR', message: err.message }, undefined, e.subject ?? null, {
     lineno: e.lineno ?? null,
@@ -309,13 +345,19 @@ const asTemplateError = (err: Error | TemplateError): TemplateError => {
 
 const withLocation = ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) => (err: TemplateError): TemplateError => {
   err.applyLocation = function(path: string | undefined, includeChain?: IncludeChain): TemplateError {
-    let msg = '(' + (path || 'unknown path') + ')';
+    let msg = `(${path || 'unknown path'})`;
     if (this.firstUpdate) {
       const annotation = formatLocationAnnotation(this.lineno, this.colno, this.lineBase);
-      if (annotation) msg += ` ${annotation}`;
+      if (annotation) { msg += ` ${annotation}`; }
     }
     if (includeChain && this.firstUpdate) {
-      msg += `\n   (included from ${includeChain.parentTmpl}:${includeChain.parentLineno}${includeChain.parentColno ? ':' + includeChain.parentColno : ''})`;
+      let parentColnoPart: string;
+      if (includeChain.parentColno) {
+        parentColnoPart = `:${includeChain.parentColno}`;
+      } else {
+        parentColnoPart = '';
+      }
+      msg += `\n   (included from ${includeChain.parentTmpl}:${includeChain.parentLineno}${parentColnoPart})`;
     }
     msg += '\n ';
     if (this.firstUpdate) {

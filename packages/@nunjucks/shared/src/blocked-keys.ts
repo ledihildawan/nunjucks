@@ -1,12 +1,21 @@
-export const ENVIRONMENTS = {
-  NODE: 'node',
-  BROWSER: 'browser',
-  DENO: 'deno',
-} as const;
 
-export type Environment = 'auto' | 'node' | 'browser' | 'deno';
+type BlockedKeyCategory = 'object_intrinsic' | 'universal_global' | 'node_global' | 'browser_global' | 'deno_global' | null;
 
-export const BLOCKED_KEY_CATEGORIES = Object.freeze({
+const toSet = (...lists: readonly (readonly string[] | Set<string>)[]): Set<string> => {
+  const result: string[] = [];
+  for (const list of lists) {
+    if (list instanceof Set) {
+      result.push(...list);
+    } else {
+      result.push(...list);
+    }
+  }
+  return new Set<string>(result);
+};
+
+const hasKey = (arr: readonly string[], key: string): boolean => arr.includes(key);
+
+const BLOCKED_KEY_CATEGORIES = Object.freeze({
   OBJECT_INTRINSICS: [
     '__proto__',
     'constructor',
@@ -98,11 +107,6 @@ export const BLOCKED_KEY_CATEGORIES = Object.freeze({
   ] as const,
 });
 
-type BlockedKeyCategory = 'object_intrinsic' | 'universal_global' | 'node_global' | 'browser_global' | 'deno_global' | null;
-
-const toSet = (...lists: readonly (readonly string[] | Set<string>)[]): Set<string> =>
-  new Set<string>(lists.flatMap((list) => list instanceof Set ? [...list] : list));
-
 const BASE_BLOCKED_KEYS = toSet(
   BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS,
   BLOCKED_KEY_CATEGORIES.UNIVERSAL_GLOBALS,
@@ -127,16 +131,24 @@ const DANGEROUS_GLOBALS = toSet(
 
 const CODE_EXECUTION_PATTERNS = toSet(BLOCKED_KEY_CATEGORIES.CODE_EXECUTION);
 
+export const ENVIRONMENTS = {
+  NODE: 'node',
+  BROWSER: 'browser',
+  DENO: 'deno',
+} as const;
+
+export type Environment = 'auto' | 'node' | 'browser' | 'deno';
+
+export { BLOCKED_KEY_CATEGORIES };
+
 export const isCodeExecutionPattern = (key: string): boolean => CODE_EXECUTION_PATTERNS.has(key);
 
-const hasKey = (arr: readonly string[], key: string): boolean => arr.includes(key);
-
 export const getBlockedKeyCategory = (key: string, env: Environment = 'auto'): BlockedKeyCategory => {
-  if (hasKey(BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS, key)) return 'object_intrinsic';
-  if (hasKey(BLOCKED_KEY_CATEGORIES.UNIVERSAL_GLOBALS, key)) return 'universal_global';
-  if ((env === 'auto' || env === 'node') && hasKey(BLOCKED_KEY_CATEGORIES.NODE_GLOBALS, key)) return 'node_global';
-  if ((env === 'auto' || env === 'browser') && hasKey(BLOCKED_KEY_CATEGORIES.BROWSER_GLOBALS, key)) return 'browser_global';
-  if ((env === 'auto' || env === 'deno') && hasKey(BLOCKED_KEY_CATEGORIES.DENO_GLOBALS, key)) return 'deno_global';
+  if (hasKey(BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS, key)) { return 'object_intrinsic'; }
+  if (hasKey(BLOCKED_KEY_CATEGORIES.UNIVERSAL_GLOBALS, key)) { return 'universal_global'; }
+  if ((env === 'auto' || env === 'node') && hasKey(BLOCKED_KEY_CATEGORIES.NODE_GLOBALS, key)) { return 'node_global'; }
+  if ((env === 'auto' || env === 'browser') && hasKey(BLOCKED_KEY_CATEGORIES.BROWSER_GLOBALS, key)) { return 'browser_global'; }
+  if ((env === 'auto' || env === 'deno') && hasKey(BLOCKED_KEY_CATEGORIES.DENO_GLOBALS, key)) { return 'deno_global'; }
   return null;
 };
 

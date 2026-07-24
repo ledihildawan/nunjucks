@@ -58,7 +58,7 @@ export const IO_ERRORS = {
   IMPORT_ERROR: {
     name: 'IMPORT_ERROR',
     message: "Cannot import '{name}' from module",
-    pattern: /^Cannot import '([^']+)' from module$|^cannot find module.*\.njm/i,
+    pattern: /^Cannot import '([^']+)' from module$|^cannot find module.*\.njm/iu,
     category: 'import_error',
     titleTemplate: "Cannot import template - module not found",
     causes: [

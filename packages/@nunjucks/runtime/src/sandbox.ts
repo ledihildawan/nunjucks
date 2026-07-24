@@ -32,20 +32,31 @@ const UNSAFE_SYMBOL_DESCRIPTIONS = new Set([
 
 const isBlockedSymbol = (key: symbol): boolean => {
   const desc = key.description;
-  if (!desc) return true;
-  if (UNSAFE_SYMBOL_DESCRIPTIONS.has(desc)) return true;
-  if (desc.startsWith('Symbol.')) return false;
+  if (!desc) { return true; }
+  if (UNSAFE_SYMBOL_DESCRIPTIONS.has(desc)) { return true; }
+  if (desc.startsWith('Symbol.')) { return false; }
   return true;
 };
 
-const sandboxError = (errorDef: ErrorDefinitionEntry, key: string | symbol, options: SandboxOptions = {}): TemplateError | TemplateWarning => {
+const sandboxError = (errorDef: ErrorDefinitionEntry | undefined, key: string | symbol, options: SandboxOptions = {}): TemplateError | TemplateWarning => {
+  if (!errorDef) {
+    const err = new Error(`Sandbox error: ${String(key)}`) as TemplateError;
+    err.code = 'SANDBOX_ERROR';
+    return err;
+  }
   const env = options.environment || 'auto';
   const category = getBlockedKeyCategory(String(key), env);
   return createLog('error', errorDef, { key: String(key), category: category ?? '', environment: env }, String(key), { phase: 'render', lineBase: 'zero' });
 };
 
 const blockedKeysError = (key: string, blockedKeys: string[]): TemplateError | TemplateWarning => {
-  return createLog('error', ERROR_DEFINITIONS.BLOCKED_CONTEXT_KEYS!, { keys: blockedKeys.join(', ') }, key, { phase: 'render', lineBase: 'zero' });
+  const errorDef = ERROR_DEFINITIONS.BLOCKED_CONTEXT_KEYS;
+  if (!errorDef) {
+    const err = new Error(`Blocked context key: ${key}`) as TemplateError;
+    err.code = 'BLOCKED_CONTEXT_KEYS';
+    return err;
+  }
+  return createLog('error', errorDef, { keys: blockedKeys.join(', ') }, key, { phase: 'render', lineBase: 'zero' });
 };
 
 export interface SandboxOptions {
@@ -73,33 +84,33 @@ export const wrapFunctionWithBlocking = (
   options: ResolvedSandboxOptions,
   thisArg: unknown,
 ): ((...args: unknown[]) => unknown) => {
-  if (!sandboxEnabled || !isFunction(fn)) {
+  if (!(sandboxEnabled && isFunction(fn))) {
     return fn;
   }
   return (...args: unknown[]) => {
     if (key && isCodeExecutionPattern(String(key)) && typeof args[0] === 'string') {
-      throw sandboxError(ERROR_DEFINITIONS.SANDBOX_CODE_EXECUTION!, key, options);
+      throw sandboxError(ERROR_DEFINITIONS.SANDBOX_CODE_EXECUTION, key, options);
     }
     return fn.apply(thisArg, args);
   };
 };
 
 export const isAllowedKey = (key: string, allowlist: string[] | null | undefined): boolean => {
-  if (!allowlist || !Array.isArray(allowlist) || allowlist.length === 0) {
+  if (!(allowlist && Array.isArray(allowlist) ) || allowlist.length === 0) {
     return true;
   }
   return allowlist.includes(key);
 };
 
 const isBlockedAtScope = (key: string | symbol, options: ResolvedSandboxOptions, topLevel = false): boolean => {
-  if (typeof key === 'symbol') return false;
+  if (typeof key === 'symbol') { return false; }
   const category = getBlockedKeyCategory(key as string, options.environment);
-  if (!category) return false;
+  if (!category) { return false; }
   return topLevel || category === 'object_intrinsic';
 };
 
 const isInternalKey = (key: string | symbol): boolean => {
-  if (typeof key !== 'string') return false;
+  if (typeof key !== 'string') { return false; }
   return key === '__nunjucks' || key.startsWith('__nunjucks_');
 };
 
@@ -115,7 +126,7 @@ const makeSandboxTraps = (
     get(target, key): unknown {
       if (typeof key === 'symbol') {
         if (isBlockedSymbol(key)) {
-          throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS!, key, sandboxOptions);
+          throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS, key, sandboxOptions);
         }
         return target[key];
       }
@@ -123,16 +134,16 @@ const makeSandboxTraps = (
         throw blockedKeysError(key, blockedContextKeys);
       }
       if (isBlockedAtScope(key, sandboxOptions, topLevel)) {
-        if (!hasOwn(target, key) && !DANGEROUS_OBJECT_INTRINSICS.has(key)) {
-          return undefined;
+        if (!(hasOwn(target, key) || DANGEROUS_OBJECT_INTRINSICS.has(key))) {
+          return ;
         }
-        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS!, key, sandboxOptions);
+        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS, key, sandboxOptions);
       }
-      if (!blocklistMode && !isAllowedKey(key, allowlist)) {
-        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST!, key, sandboxOptions);
+      if (!(blocklistMode || isAllowedKey(key, allowlist))) {
+        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, key, sandboxOptions);
       }
       if (!hasOwn(target, key)) {
-        return undefined;
+        return ;
       }
       const value = target[key];
       if (isFunction(value)) {
@@ -146,7 +157,7 @@ const makeSandboxTraps = (
     set(target, key, value): boolean {
       if (typeof key === 'symbol') {
         if (isBlockedSymbol(key)) {
-          throw sandboxError(ERROR_DEFINITIONS.SANDBOX_SET!, key, sandboxOptions);
+          throw sandboxError(ERROR_DEFINITIONS.SANDBOX_SET, key, sandboxOptions);
         }
         target[key] = value;
         return true;
@@ -156,13 +167,13 @@ const makeSandboxTraps = (
         return true;
       }
       if (isBlockedAtScope(key, sandboxOptions, topLevel)) {
-        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_SET!, key, sandboxOptions);
+        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_SET, key, sandboxOptions);
       }
-      if (!blocklistMode && !isAllowedKey(key, allowlist)) {
-        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST!, key, sandboxOptions);
+      if (!(blocklistMode || isAllowedKey(key, allowlist))) {
+        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, key, sandboxOptions);
       }
       if (topLevel) {
-        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_CONTEXT_MODIFY!, key, sandboxOptions);
+        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_CONTEXT_MODIFY, key, sandboxOptions);
       }
       target[key] = value;
       return true;
@@ -188,7 +199,7 @@ const makeSandboxTraps = (
 export const createSandboxedObject = (obj: unknown, sandboxEnabled: boolean, options: SandboxOptions = {}): unknown => {
   const sandboxOptions = resolveSandboxOptions(options);
 
-  if (!sandboxEnabled || !isNonNullish(obj)) {
+  if (!(sandboxEnabled && isNonNullish(obj))) {
     return obj;
   }
 
@@ -233,11 +244,11 @@ export const wrapMemberAccess = (obj: unknown, val: string | symbol, sandboxEnab
   }
 
   if (isBlockedAtScope(val as string, sandboxOptions, topLevel)) {
-    throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS!, val, sandboxOptions);
+    throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS, val, sandboxOptions);
   }
 
-  if (!blocklistMode && !isAllowedKey(val as string, allowlist)) {
-    throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST!, val, sandboxOptions);
+  if (!(blocklistMode || isAllowedKey(val as string, allowlist))) {
+    throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, val, sandboxOptions);
   }
 
   if (!isNonNullish(obj)) {

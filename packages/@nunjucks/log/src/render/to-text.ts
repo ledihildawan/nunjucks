@@ -9,12 +9,10 @@ export interface ToTextOptions {
   colno?: number | null;
 }
 
-const stripMarkdown = (text: string): string => {
-  return text.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1');
-};
+const stripMarkdown = (text: string): string => text.replace(/\*\*([^*]+)\*\*/gu, '$1').replace(/`([^`]+)`/gu, '$1');
 
 export const toText = (error: unknown, options: ToTextOptions = {}): string => {
-  if (!error) return '';
+  if (!error) { return ''; }
 
   const { verbosity = 'full', templatePath, lineno, colno } = options;
 
@@ -43,14 +41,24 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
   };
 
   const classification = classifyFromError(errObj);
-  const causes = classification.causes && classification.causes.length > 0
-    ? classification.causes
-    : (errObj.causes || []);
+  let causes: string[];
+  if (classification.causes && classification.causes.length > 0) {
+    causes = classification.causes;
+  } else {
+    causes = errObj.causes || [];
+  }
   const fixCode = classification.fixCode ?? errObj.fixCode ?? '';
   const fixComment = classification.fixComment ?? errObj.fixComment ?? '';
   const documentationUrl = classification.documentationUrl ?? errObj.documentationUrl ?? null;
 
-  const severityLabel = errObj.severity === 'warning' ? 'Warning:' : errObj.severity === 'info' ? 'Info:' : 'Error:';
+  let severityLabel: string;
+  if (errObj.severity === 'warning') {
+    severityLabel = 'Warning:';
+  } else if (errObj.severity === 'info') {
+    severityLabel = 'Info:';
+  } else {
+    severityLabel = 'Error:';
+  }
 
   let locationStr = '';
   if (
@@ -69,10 +77,24 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
     );
     const shortPath = shortenPath(path);
     locationStr = ` at ${shortPath}:${location.line}:${location.col}`;
-    const causeHint = causes.length > 0 ? stripMarkdown(causes[0] ?? '') : '';
-    const docHint = documentationUrl ? documentationUrl : '';
+    let causeHint: string;
+    if (causes.length > 0) {
+      causeHint = stripMarkdown(causes[0] ?? '');
+    } else {
+      causeHint = '';
+    }
+    let docHint: string;
+    if (documentationUrl) {
+      docHint = documentationUrl;
+    } else {
+      docHint = '';
+    }
     const extras = [causeHint, docHint].filter(Boolean).join(' | ');
-    return `${severityLabel} ${message}${locationStr}${extras ? '\n' + extras : ''}`;
+    let extrasPart = '';
+    if (extras) {
+      extrasPart = `\n${extras}`;
+    }
+    return `${severityLabel} ${message}${locationStr}${extrasPart}`;
   }
 
   const stack = (error as Error).stack || '';
@@ -81,14 +103,17 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
   const formattedStack = stackLines
     .map(line => {
       const trimmed = line.trim();
-      const pathMatch = trimmed.match(/\(([^()]+):(\d+):(\d+)\)$/);
+      const pathMatch = trimmed.match(/\(([^()]+):(\d+):(\d+)\)$/u);
       if (pathMatch?.[1] && pathMatch[2]) {
         const fullPath = pathMatch[1];
         const lineNum = pathMatch[2];
         const shortPath = shortenPath(fullPath);
-        const fnMatch = trimmed.match(/^at\s+([^\s]+)/);
+        const fnMatch = trimmed.match(/^at\s+([^\s]+)/u);
         const fn = fnMatch?.[1] ?? '';
-        return fn ? `  at ${fn} (${shortPath}:${lineNum})` : `  at ${shortPath}:${lineNum}`;
+        if (fn) {
+          return `  at ${fn} (${shortPath}:${lineNum})`;
+        }
+        return `  at ${shortPath}:${lineNum}`;
       }
       return `  ${trimmed}`;
     })
@@ -105,9 +130,9 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
   if (fixCode) {
     parts.push('');
     parts.push('Suggested Fix:');
-    if (fixComment) parts.push(`  // ${stripMarkdown(fixComment)}`);
+    if (fixComment) { parts.push(`  // ${stripMarkdown(fixComment)}`); }
     parts.push(`  ${fixCode}`);
-    if (documentationUrl) parts.push(`  Learn more: ${documentationUrl}`);
+    if (documentationUrl) { parts.push(`  Learn more: ${documentationUrl}`); }
   }
 
   if (formattedStack) {

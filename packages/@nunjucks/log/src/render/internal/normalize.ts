@@ -31,25 +31,47 @@ export interface NormalizedErrorMetadata {
   subject: string | null;
 }
 
-const readObject = (value: unknown): Record<string, unknown> =>
-  value !== null && (typeof value === 'object' || typeof value === 'function')
-    ? value as Record<string, unknown>
-    : {};
+const readObject = (value: unknown): Record<string, unknown> => {
+  if (value !== null && (typeof value === 'object' || typeof value === 'function')) {
+    return value as Record<string, unknown>;
+  }
+  return {};
+};
 
-const readString = (value: unknown): string | null => typeof value === 'string' ? value : null;
-const readNumber = (value: unknown): number | null => Number.isInteger(value) ? value as number : null;
-const readContext = (value: unknown): Record<string, unknown> | null =>
-  value !== null && typeof value === 'object' ? value as Record<string, unknown> : null;
+const readString = (value: unknown): string | null => {
+  if (typeof value === 'string') {
+    return value;
+  }
+  return null;
+};
 
-const readLineBase = (value: unknown): LineBase | null =>
-  value === 'zero' || value === 'one' ? value : null;
+const readNumber = (value: unknown): number | null => {
+  if (Number.isInteger(value)) {
+    return value as number;
+  }
+  return null;
+};
+
+const readContext = (value: unknown): Record<string, unknown> | null => {
+  if (value !== null && typeof value === 'object') {
+    return value as Record<string, unknown>;
+  }
+  return null;
+};
+
+const readLineBase = (value: unknown): LineBase | null => {
+  if (value === 'zero' || value === 'one') {
+    return value;
+  }
+  return null;
+};
 
 const stringifyThrown = (thrown: unknown): string => {
-  if (typeof thrown === 'string') return thrown;
-  if (thrown === null || thrown === undefined) return String(thrown);
+  if (typeof thrown === 'string') { return thrown; }
+  if (thrown === null || thrown === undefined) { return String(thrown); }
   const object = readObject(thrown);
   const message = readString(object.message);
-  if (message !== null) return message;
+  if (message !== null) { return message; }
   try {
     const serialized = JSON.stringify(thrown);
     return serialized ?? String(thrown);
@@ -64,7 +86,12 @@ export const normalizeErrorMetadata = (
 ): NormalizedErrorMetadata => {
   const source = readObject(thrown);
   const message = stringifyThrown(thrown);
-  const error = thrown instanceof Error ? thrown : new Error(message);
+  let error: Error;
+  if (thrown instanceof Error) {
+    error = thrown;
+  } else {
+    error = new Error(message);
+  }
   const templateName = readString(source.templateName) ?? fallback.templateName ?? null;
 
   return {

@@ -12,6 +12,7 @@ import {
   restrictGlobals,
   createSecurityValidator,
 } from './security.ts';
+import process from "node:process";
 
 describe('SecurityError', () => {
   test('uses default code SECURITY_VIOLATION', () => {

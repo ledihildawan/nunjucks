@@ -1,5 +1,5 @@
-import type { Token, TokenType, TokenValue } from './token-types';
-import type { Delimiters, DelimiterTags } from './delimiters';
+import type { Token, } from './token-types.ts';
+import type { Delimiters, DelimiterTags } from './delimiters.ts';
 
 export interface LexerState {
   str: string;

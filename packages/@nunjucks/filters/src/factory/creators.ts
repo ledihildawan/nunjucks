@@ -1,6 +1,6 @@
 import { makeMacro } from '@nunjucks/runtime';
 import { normalize, preserveSafe } from './core.ts';
-import type { StringFn, FilterContext } from './types.ts';
+import type { StringFn, } from './types.ts';
 
 export const createStringFilter = (fn: StringFn) =>
   (value: unknown): unknown => {
@@ -14,7 +14,12 @@ export const createStringFilterWithArgs = <A extends unknown[]>(
 ) =>
   (value: unknown, ...args: A): unknown => {
     const s = normalize(value, '');
-    const mergedArgs = args.length > 0 ? args : defaultArgs;
+    let mergedArgs: A;
+    if (args.length > 0) {
+      mergedArgs = args;
+    } else {
+      mergedArgs = defaultArgs;
+    }
     return preserveSafe(value, fn(s, ...mergedArgs));
   };
 
@@ -32,6 +37,9 @@ export const createConditionalMacro = (
   truthyFn: (value: unknown) => unknown,
   falsyFn: (value: unknown) => unknown = (v) => v
 ) =>
-  createMacroFilter(['value'], (value: unknown) =>
-    condition(value) ? truthyFn(value) : falsyFn(value)
-  );
+  createMacroFilter(['value'], (value: unknown) => {
+    if (condition(value)) {
+      return truthyFn(value);
+    }
+    return falsyFn(value);
+  });

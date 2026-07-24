@@ -30,7 +30,7 @@ export const compileRoot = (ctx: Compiler, node: Node, frame: Frame): void => {
     };
   };
 
-  const nonBlockChildren = node.children!.filter(child => !isBlock(child));
+  const nonBlockChildren = node.children?.filter(child => !isBlock(child));
   nonBlockChildren.forEach(child => {
     ctx.compile(child, frame);
   });
@@ -43,7 +43,7 @@ export const compileRoot = (ctx: Compiler, node: Node, frame: Frame): void => {
   blocks.forEach((block) => {
     const nameNode = block.name as Node | undefined;
     const name = nameNode?.value as string | undefined;
-    if (!name) return;
+    if (!name) { return; }
 
     const { lineno, colno } = blockLocation(block);
     ctx.emitLine(`  lineno = ${lineno}; colno = ${colno};`);
@@ -62,10 +62,14 @@ export const compileRoot = (ctx: Compiler, node: Node, frame: Frame): void => {
     const name = nameNode?.value as string | undefined;
     const lineno = block.lineno;
 
-    if (!name) return;
+    if (!name) { return; }
 
     if (seenBlocks.includes(name)) {
-      throw createLog('error', ERROR_DEFINITIONS.DUPLICATE_BLOCK!, { name }, name, { lineno, colno: (nameNode?.colno as number) || 0, phase: 'compile' });
+      const errorDef = ERROR_DEFINITIONS.DUPLICATE_BLOCK;
+      if (errorDef) {
+        throw createLog('error', errorDef, { name }, name, { lineno, colno: (nameNode?.colno as number) || 0, phase: 'compile' });
+      }
+      throw new Error(`Duplicate block: ${name}`);
     }
     seenBlocks.push(name);
 

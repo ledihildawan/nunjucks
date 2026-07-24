@@ -1,16 +1,16 @@
-import type { Tokenizer, TokenizeResult } from '../types';
+import type { Tokenizer, TokenizeResult } from '../types.ts';
 
-import { tokenizeWhitespace } from './whitespace';
-import { tokenizeNumber } from './number';
-import { tokenizeString } from './string';
-import { tokenizeSymbol } from './symbol';
-import { tokenizeOperator } from './operator';
-import { tokenizeBlockStart, tokenizeBlockEnd } from './block';
-import { tokenizeVariableStart, tokenizeVariableEnd } from './variable';
-import { tokenizeTemplateText } from './template-text';
-import { tokenizeComment } from './comment';
-import { tokenizeTemplateLiteral } from './template-literal';
-import { tokenizeRaw } from './raw';
+import { tokenizeWhitespace } from './whitespace.ts';
+import { tokenizeNumber } from './number.ts';
+import { tokenizeString } from './string.ts';
+import { tokenizeSymbol } from './symbol.ts';
+import { tokenizeOperator } from './operator.ts';
+import { tokenizeBlockStart, tokenizeBlockEnd } from './block.ts';
+import { tokenizeVariableStart, tokenizeVariableEnd } from './variable.ts';
+import { tokenizeTemplateText } from './template-text.ts';
+import { tokenizeComment } from './comment.ts';
+import { tokenizeTemplateLiteral } from './template-literal.ts';
+import { tokenizeRaw } from './raw.ts';
 
 export {
   tokenizeWhitespace,
@@ -31,7 +31,7 @@ export {
 export const or = (...tokenizers: Tokenizer[]): Tokenizer => (state) => {
   for (const tokenizer of tokenizers) {
     const result = tokenizer(state);
-    if (result) return result;
+    if (result) { return result; }
   }
   return null;
 };

@@ -1,4 +1,4 @@
-import { mapValues, fromEntries, values } from 'remeda';
+import { mapValues, values } from 'remeda';
 import type { ErrorDefinition, Classification, SubjectExtractor, ExtraExtractor } from './types.ts';
 import { firstCapture } from './types.ts';
 import { RUNTIME_ERRORS } from './runtime.ts';

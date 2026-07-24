@@ -1,6 +1,6 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { classifyFromError } from '../errors/classify.ts';
 import { toText } from './to-text.ts';
 import { escapeHtml, highlightHtml, highlightJs } from './internal/highlight.ts';
@@ -19,7 +19,10 @@ interface Csp {
 }
 
 const document = (title: string, body: string, scripts = '', csp: Csp | null = null): string => {
-  const styleNonce = csp?.nonce ? ` nonce="${csp.nonce}"` : '';
+  let styleNonce = '';
+  if (csp?.nonce) {
+    styleNonce = ` nonce="${csp.nonce}"`;
+  }
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,7 +43,10 @@ ${scripts}
 };
 
 const buildProductionBody = (options: ToHtmlOptions): string => {
-  const ref = options.timestamp ? `<p class="prod-ref">${escapeHtml(options.timestamp)}</p>` : '';
+  let ref = '';
+  if (options.timestamp) {
+    ref = `<p class="prod-ref">${escapeHtml(options.timestamp)}</p>`;
+  }
   return `
 <main class="prod-main">
   <div class="prod-icon">
@@ -55,10 +61,10 @@ const buildProductionBody = (options: ToHtmlOptions): string => {
 };
 
 const renderMarkdownToAnsi = (text: string): string => {
-  if (!text) return '';
+  if (!text) { return ''; }
   let s = escapeHtml(text);
-  s = s.replace(/`([^`]+)`/g, '<code class="md-code">$1</code>');
-  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/`([^`]+)`/gu, '<code class="md-code">$1</code>');
+  s = s.replace(/\*\*([^*]+)\*\*/gu, '<strong>$1</strong>');
   return s;
 };
 
@@ -95,10 +101,14 @@ export interface ToHtmlOptions {
 }
 
 const isScriptPath = (filePath?: string | null): boolean =>
-  /\.(?:[cm]?[jt]sx?|mjs|cjs)$/i.test(filePath || '');
+  /\.(?:[cm]?[jt]sx?|mjs|cjs)$/iu.test(filePath || '');
 
-const highlightSource = (code: string, filePath?: string | null): string =>
-  isScriptPath(filePath) ? highlightJs(code) : highlightHtml(code);
+const highlightSource = (code: string, filePath?: string | null): string => {
+  if (isScriptPath(filePath)) {
+    return highlightJs(code);
+  }
+  return highlightHtml(code);
+};
 
 export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string => {
   const {
@@ -142,11 +152,14 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
   const plain = toText(error, { verbosity: 'simple' });
 
   const category = error.code || classified?.category?.toUpperCase() || 'UNKNOWN';
-  const undefinedName = classified?.undefinedName || plain.match(/attempted to output '([^']+)'/)?.[1] || null;
+  const undefinedName = classified?.undefinedName || plain.match(/attempted to output '([^']+)'/u)?.[1] || null;
 
-  const possibleCauses = (classified?.causes && classified.causes.length > 0)
-    ? classified.causes
-    : (errWithExtras.causes || []);
+  let possibleCauses: string[];
+  if (classified?.causes && classified.causes.length > 0) {
+    possibleCauses = classified.causes;
+  } else {
+    possibleCauses = errWithExtras.causes || [];
+  }
   const fixCode = classified?.fixCode ?? errWithExtras.fixCode ?? '';
   const fixComment = classified?.fixComment ?? errWithExtras.fixComment ?? '';
   const documentationUrl = classified?.documentationUrl ?? errWithExtras.documentationUrl ?? null;
@@ -172,15 +185,21 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
   } else if (category === 'RESERVED_KEYWORD_CONTEXT') {
     humanTitle = plain;
   } else if (category === 'RESERVED_KEYWORD') {
-    const match = plain.match(/Cannot use reserved (\w+) '([^']+)'/);
+    const match = plain.match(/Cannot use reserved (\w+) '([^']+)'/u);
     if (match) {
       humanTitle = `Cannot use reserved ${match[1]} '${match[2]}'`;
     }
   }
+  let lineBaseValue: 'one' | 'zero';
+  if (isJsCaller) {
+    lineBaseValue = 'one';
+  } else {
+    lineBaseValue = error?.lineBase ?? 'zero';
+  }
   const location = toDisplayLocation(
     lineno ?? error?.lineno ?? null,
     colno ?? error?.colno ?? null,
-    isJsCaller ? 'one' : (error?.lineBase ?? 'zero')
+    lineBaseValue
   );
   const displayLine = location.line;
   const displayCol = location.col;
@@ -191,23 +210,32 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
   let startLine = 0;
   let displayStartLine = 1;
   const rawLineno = lineno ?? error?.lineno ?? null;
-  const isInlineJsCaller = templatePath && /\.(js|mjs|cjs|ts|mts|cts)$/i.test(templatePath);
-  if (!codeSnippet && sourceContent && rawLineno != null && !isInlineJsCaller) {
+  const isInlineJsCaller = templatePath && /\.(js|mjs|cjs|ts|mts|cts)$/iu.test(templatePath);
+  if (!codeSnippet && sourceContent && rawLineno !== null && !isInlineJsCaller) {
     const lines = sourceContent.split('\n');
-    const relativeLine = sourceStartLine ? rawLineno - sourceStartLine + 1 : displayLine;
+    let relativeLine: number;
+    if (sourceStartLine) {
+      relativeLine = rawLineno - sourceStartLine + 1;
+    } else {
+      relativeLine = displayLine;
+    }
     const clampedLine = Math.max(1, Math.min(relativeLine, lines.length));
     startLine = Math.max(0, clampedLine - 3);
-    displayStartLine = sourceStartLine ? sourceStartLine + startLine : startLine + 1;
+    if (sourceStartLine) {
+      displayStartLine = sourceStartLine + startLine;
+    } else {
+      displayStartLine = startLine + 1;
+    }
     const endLine = Math.min(lines.length, clampedLine + 2);
     codeSnippet = lines.slice(startLine, endLine).join('\n');
     snippetErrorIndex = clampedLine - startLine - 1;
-  } else if (!codeSnippet && templatePath && /\.(js|njk|tmpl|tpl|html|htm|ts|mjs|cjs)$/i.test(templatePath)) {
+  } else if (!codeSnippet && templatePath && /\.(js|njk|tmpl|tpl|html|htm|ts|mjs|cjs)$/iu.test(templatePath)) {
     try {
       let resolvedPath = templatePath;
       if (templatePath.startsWith('file://')) {
         resolvedPath = fileURLToPath(templatePath);
-      } else if (/^[a-zA-Z]:[/\\]/.test(templatePath) || templatePath.startsWith('/')) {
-        resolvedPath = templatePath.replace(/\//g, path.sep);
+      } else if (/^[a-zA-Z]:[/\\]/u.test(templatePath) || templatePath.startsWith('/')) {
+        resolvedPath = templatePath.replace(/\//gu, path.sep);
       } else {
         resolvedPath = path.resolve(templatePath);
       }
@@ -224,12 +252,18 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
   }
 
   const badgeCode = category;
-  const codeBadge = badgeCode
-    ? `<span class="badge badge-error">${escapeHtml(badgeCode)}</span>`
-    : '';
-  const phaseBadge = phase
-    ? `<span class="badge badge-code">${escapeHtml(phase)}</span>`
-    : '';
+  let codeBadge: string;
+  if (badgeCode) {
+    codeBadge = `<span class="badge badge-error">${escapeHtml(badgeCode)}</span>`;
+  } else {
+    codeBadge = '';
+  }
+  let phaseBadge: string;
+  if (phase) {
+    phaseBadge = `<span class="badge badge-code">${escapeHtml(phase)}</span>`;
+  } else {
+    phaseBadge = '';
+  }
 
   const ideMeta = getIdeMeta(ide);
   const ideLabel = `Open in ${ideMeta.label}`;
@@ -240,6 +274,143 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
   const headerTitle = escapeHtml(humanTitle);
   const locationInfo = escapeHtml(`${displayPath}:${displayLine}:${displayCol}`);
 
+  let severityText: string;
+  if (severity === 'warning') {
+    severityText = 'Template Warning';
+  } else if (severity === 'info') {
+    severityText = 'Template Info';
+  } else {
+    severityText = 'Template Rendering Error';
+  }
+
+  let phaseBadgePart = '';
+  if (phaseBadge) {
+    phaseBadgePart = ` ${phaseBadge}`;
+  }
+
+  let devBadge = '';
+  if (verbosity === 'full') {
+    devBadge = '<span class="badge badge-dev">DEV</span>';
+  }
+
+  let errorLocationBlock = '';
+  if (verbosity !== 'simple') {
+    let locationLink: string;
+    if (canLinkLocation) {
+      locationLink = `<a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="loc-link error-location-link">${escapeHtml(locDisplay)}</a>`;
+    } else {
+      locationLink = `<span class="error-location-text">${locationInfo}</span>`;
+    }
+    errorLocationBlock = `
+    <p class="error-location">The error occurred in ${locationLink}</p>
+    `;
+  }
+
+  let errorBody = '';
+  if (verbosity === 'full') {
+    let codeSection = '';
+    if (codeSnippet) {
+      const codeLines = codeSnippet.split('\n').reduce<string[]>((acc, line, idx) => {
+        const isError = idx === snippetErrorIndex;
+        const lineNum = displayStartLine + idx;
+        let errorClass = '';
+        if (isError) {
+          errorClass = 'is-error';
+        }
+        acc.push(`<div class="code-line ${errorClass}"><span class="line-number">${lineNum}</span><span class="code-content">${highlightSource(line, displayPath)}</span></div>`);
+        if (isError && displayCol > 0 && line) {
+          const caret = calculateCaretPosition(line, displayCol);
+          if (caret) {
+            const spaces = ' '.repeat(caret.wordStart);
+            acc.push(`<div class="code-line error-marker"><span class="line-number"></span><span class="code-content error-marker-content">${spaces}${caret.carets}</span></div>`);
+          }
+        }
+        return acc;
+      }, []).join('\n');
+      codeSection = `
+    <section class="source-section" aria-labelledby="h-source">
+        <h2 id="h-source" class="text-label">Source Trace</h2>
+      <div class="code-block">
+        ${codeLines}
+      </div>
+    </section>
+    `;
+    }
+
+    let possibleCausesList: string;
+    if (possibleCauses.length > 0) {
+      possibleCausesList = possibleCauses.map(c => `<li>${renderMarkdownToAnsi(c)}</li>`).join('\n          ');
+    } else {
+      possibleCausesList = '<li>Check template syntax and context</li>';
+    }
+
+    let fixCommentSpan = '';
+    if (fixComment) {
+      fixCommentSpan = `<span class="syntax-comment">${escapeHtml(fixComment)}</span>\n`;
+    }
+    let fixCodeBlock: string;
+    if (fixCode) {
+      fixCodeBlock = highlightHtml(fixCode);
+    } else {
+      fixCodeBlock = '// No fix available';
+    }
+    let docsLink = '';
+    if (documentationUrl) {
+      docsLink = `\n<span class="docs-inline">Learn more: <a href="${escapeHtml(documentationUrl)}" target="_blank" rel="noopener noreferrer" class="docs-link">${escapeHtml(documentationUrl)}</a></span>`;
+    }
+
+    let renderContextSection = '';
+    if (renderContext) {
+      renderContextSection = renderContextHtml(renderContext);
+    }
+
+    let stackTraceSection = '';
+    if (error.stack) {
+      stackTraceSection = formatStackTraceHtml(error, false, ide);
+    }
+
+    errorBody = `
+  <div class="error-body">
+
+    ${codeSection}
+
+    <div class="causes-grid">
+      <section aria-labelledby="h-causes">
+        <h2 id="h-causes" class="text-label">Possible Causes</h2>
+        <ul class="causes-list">
+          ${possibleCausesList}
+        </ul>
+      </section>
+      <section aria-labelledby="h-fix">
+        <h2 id="h-fix" class="text-label">Suggested Fix</h2>
+        <pre class="fix-block"><code>${fixCommentSpan}${fixCodeBlock}${docsLink}</code></pre>
+      </section>
+    </div>
+
+    ${renderContextSection}
+
+    ${stackTraceSection}
+  </div>
+  `;
+  }
+
+  let footerActions = '';
+  if (verbosity === 'full' && canLinkLocation) {
+    footerActions = `
+    <div class="error-footer-actions">
+      <a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="btn btn-solid">
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">${ideMeta.icon}</svg>
+        ${ideLabel}
+      </a>
+    </div>
+  `;
+  }
+
+  let timestampPart = '';
+  if (timestamp) {
+    timestampPart = ` · ${escapeHtml(timestamp)}`;
+  }
+
   const body = `
 <main class="error-wrapper" aria-labelledby="err-title">
   <header class="error-header">
@@ -249,79 +420,29 @@ export const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): st
         <line x1="12" y1="8" x2="12" y2="12"></line>
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
       </svg>
-      ${severity === 'warning' ? 'Template Warning' : severity === 'info' ? 'Template Info' : 'Template Rendering Error'}
-      ${codeBadge}${phaseBadge ? ' ' + phaseBadge : ''}
-      ${verbosity === 'full' ? '<span class="badge badge-dev">DEV</span>' : ''}
+      ${severityText}
+      ${codeBadge}${phaseBadgePart}
+      ${devBadge}
     </div>
     <h1 id="err-title" class="error-title">${headerTitle}</h1>
-    ${verbosity !== 'simple' ? `
-    <p class="error-location">The error occurred in ${canLinkLocation
-      ? `<a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="loc-link error-location-link">${escapeHtml(locDisplay)}</a>`
-      : `<span class="error-location-text">${locationInfo}</span>`
-    }</p>
-    ` : ''}
+    ${errorLocationBlock}
   </header>
 
-  ${verbosity === 'full' ? `
-  <div class="error-body">
-
-    ${codeSnippet ? `
-    <section class="source-section" aria-labelledby="h-source">
-        <h2 id="h-source" class="text-label">Source Trace</h2>
-      <div class="code-block">
-        ${codeSnippet.split('\n').reduce<string[]>((acc, line, idx) => {
-          const isError = idx === snippetErrorIndex;
-          const lineNum = displayStartLine + idx;
-          acc.push(`<div class="code-line ${isError ? 'is-error' : ''}"><span class="line-number">${lineNum}</span><span class="code-content">${highlightSource(line, displayPath)}</span></div>`);
-          if (isError && displayCol > 0 && line) {
-            const caret = calculateCaretPosition(line, displayCol);
-            if (caret) {
-              const spaces = ' '.repeat(caret.wordStart);
-              acc.push(`<div class="code-line error-marker"><span class="line-number"></span><span class="code-content error-marker-content">${spaces}${caret.carets}</span></div>`);
-            }
-          }
-          return acc;
-        }, []).join('\n')}
-      </div>
-    </section>
-    ` : ''}
-
-    <div class="causes-grid">
-      <section aria-labelledby="h-causes">
-        <h2 id="h-causes" class="text-label">Possible Causes</h2>
-        <ul class="causes-list">
-          ${possibleCauses.length > 0
-            ? possibleCauses.map(c => `<li>${renderMarkdownToAnsi(c)}</li>`).join('\n          ')
-            : '<li>Check template syntax and context</li>'
-          }
-        </ul>
-      </section>
-      <section aria-labelledby="h-fix">
-        <h2 id="h-fix" class="text-label">Suggested Fix</h2>
-        <pre class="fix-block"><code>${fixComment ? `<span class="syntax-comment">${escapeHtml(fixComment)}</span>\n` : ''}${fixCode ? highlightHtml(fixCode) : '// No fix available'}${documentationUrl ? `\n<span class="docs-inline">Learn more: <a href="${escapeHtml(documentationUrl)}" target="_blank" rel="noopener noreferrer" class="docs-link">${escapeHtml(documentationUrl)}</a></span>` : ''}</code></pre>
-      </section>
-    </div>
-
-    ${renderContext ? renderContextHtml(renderContext) : ''}
-
-    ${error.stack ? formatStackTraceHtml(error, false, ide) : ''}
-  </div>
-  ` : ''}
+  ${errorBody}
 
   <footer class="error-footer">
     <p class="meta">
-      Nunjucks ${version}${timestamp ? ` · ${escapeHtml(timestamp)}` : ''}
+      Nunjucks ${version}${timestampPart}
     </p>
-    ${verbosity === 'full' && canLinkLocation ? `
-    <div class="error-footer-actions">
-      <a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="btn btn-solid">
-        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">${ideMeta.icon}</svg>
-        ${ideLabel}
-      </a>
-    </div>
-    ` : ''}
+    ${footerActions}
   </footer>
 </main>`;
 
-  return document(severity === 'warning' ? 'Template Warning' : 'Template Error', body, TOGGLE_SCRIPT, csp ?? null);
+  let docTitle: string;
+  if (severity === 'warning') {
+    docTitle = 'Template Warning';
+  } else {
+    docTitle = 'Template Error';
+  }
+  return document(docTitle, body, TOGGLE_SCRIPT, csp ?? null);
 };

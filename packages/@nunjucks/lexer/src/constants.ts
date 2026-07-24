@@ -13,7 +13,7 @@ import {
   createDelimiters,
   type Delimiters,
   type ComplexOperator,
-} from './delimiters';
+} from './delimiters.ts';
 
 export {
   WHITESPACE_CHARS,
@@ -40,9 +40,10 @@ const isComplexOperator = (str: string): boolean =>
 const isDigit = (char: string): boolean => char >= '0' && char <= '9';
 
 const isNumericString = (str: string): boolean => {
-  if (str.length === 0) return false;
+  if (str.length === 0) { return false; }
   for (let i = 0; i < str.length; i++) {
-    if (!isDigit(str[i]!)) return false;
+    const char = str[i];
+    if (!isDigit(char)) { return false; }
   }
   return true;
 };

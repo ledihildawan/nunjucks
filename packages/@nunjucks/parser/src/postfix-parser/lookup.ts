@@ -20,11 +20,9 @@ const buildSlice = (ctx: ParserContext, bracketTok: Token, start: Node | null): 
     stop = parseExpression(ctx);
   }
 
-  if (skip(ctx, TOKEN_COLON)) {
-    if (peekToken(ctx) && peekToken(ctx).type !== TOKEN_RIGHT_BRACKET) {
+  if (skip(ctx, TOKEN_COLON) && peekToken(ctx) && peekToken(ctx).type !== TOKEN_RIGHT_BRACKET) {
       step = parseExpression(ctx);
     }
-  }
 
   expect(ctx, TOKEN_RIGHT_BRACKET);
   const location = step || stop || start || bracketTok;

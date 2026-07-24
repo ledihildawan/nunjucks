@@ -18,7 +18,7 @@ import { parseExpression } from "../expression-parser/index.ts";
 
 const isDestructuringStart = (ctx: ParserContext): boolean => {
   const tok = peekToken(ctx);
-  return !!tok && (tok.type === TOKEN_LEFT_BRACKET || tok.type === TOKEN_LEFT_CURLY);
+  return Boolean(tok) && (tok.type === TOKEN_LEFT_BRACKET || tok.type === TOKEN_LEFT_CURLY);
 };
 
 const parseInnerPattern = (ctx: ParserContext): Node => {
@@ -161,7 +161,7 @@ const parseObjectPattern = (ctx: ParserContext, lineno: number, colno: number): 
       continue;
     }
 
-    let keyTok = nextToken(ctx);
+    const keyTok = nextToken(ctx);
     let keyName: string | null = null;
     if (keyTok.type === TOKEN_STRING) {
       keyName = String(keyTok.value);

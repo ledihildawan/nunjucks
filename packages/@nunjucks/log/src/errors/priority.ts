@@ -18,7 +18,7 @@ export interface ErrorCandidate {
 }
 
 export function getMostHonestError(errors: readonly ErrorCandidate[]): ErrorCandidate | null {
-  if (!errors || errors.length === 0) return null;
+  if (!errors || errors.length === 0) { return null; }
   return errors.toSorted((a, b) => a.priority - b.priority)[0] ?? null;
 }
 

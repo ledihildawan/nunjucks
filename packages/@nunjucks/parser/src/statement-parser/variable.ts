@@ -17,7 +17,7 @@ export const parseVariableDeclaration = (ctx: ParserContext): Node => {
   const tag = peekToken(ctx);
 
   const patternNode = tryParsePattern(ctx);
-  let targets: Node[] = [];
+  const targets: Node[] = [];
 
   if (patternNode) {
     targets.push(patternNode);
@@ -42,7 +42,7 @@ export const parseVariableAssignment = (ctx: ParserContext): Node => {
   const tag = peekToken(ctx);
 
   const patternNode = tryParsePattern(ctx);
-  let targets: Node[] = [];
+  const targets: Node[] = [];
 
   if (patternNode) {
     targets.push(patternNode);
@@ -111,7 +111,6 @@ export const parseDefineBlock = (ctx: ParserContext): Node => {
         const afterArg = peekToken(ctx);
         if (afterArg.type === TOKEN_COMMA) {
           nextToken(ctx);
-          continue;
         } else if (afterArg.type === TOKEN_RIGHT_PAREN) {
           nextToken(ctx);
           break;

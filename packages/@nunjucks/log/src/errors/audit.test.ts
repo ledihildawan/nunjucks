@@ -95,7 +95,12 @@ describe('error definitions audit', () => {
   test('all error messages are non-empty strings', () => {
     const emptyMessages = [];
     for (const [name, def] of errors) {
-      const msg = typeof def.message === 'function' ? def.message({}) : def.message;
+      let msg: string;
+      if (typeof def.message === 'function') {
+        msg = def.message({});
+      } else {
+        msg = def.message;
+      }
       if (!msg || msg.trim().length === 0) {
         emptyMessages.push(name);
       }
@@ -106,7 +111,7 @@ describe('error definitions audit', () => {
   test('all error definitions have patterns', () => {
     const noPattern = [];
     for (const [name, def] of errors) {
-      if (!def.pattern || !(def.pattern instanceof RegExp)) {
+      if (!(def.pattern && (def.pattern instanceof RegExp))) {
         noPattern.push(name);
       }
     }

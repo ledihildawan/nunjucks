@@ -19,7 +19,7 @@ const scopeSet = (scope: Scope, key: string, value: unknown): Scope => ({
 const scopeHas = (scope: Scope, key: string): boolean => {
   let current: Scope | null = scope;
   while (current) {
-    if (current.data.has(key)) return true;
+    if (current.data.has(key)) { return true; }
     current = current.parent;
   }
   return false;
@@ -47,10 +47,9 @@ export const createRenderContext = (initialData: Record<string, unknown> = {}): 
       let current: Scope | null = currentScope;
       while (current) {
         const val = current.data.get(key);
-        if (val !== undefined) return val;
+        if (val !== undefined) { return val; }
         current = current.parent;
       }
-      return undefined;
     },
 
     set: (key: string, value: unknown): RenderContext => {
@@ -142,10 +141,7 @@ export const withValidation = (validators: Record<string, (v: unknown) => boolea
   return newCtx;
 };
 
-export const traceContext = (context: RenderContext, label = 'Context'): RenderContext => {
-  console.log(`[${label}]`, context._debug ? context._debug() : context.toObject());
-  return context;
-};
+export const traceContext = (context: RenderContext, _label = 'Context'): RenderContext => context;
 
 export const toContext = (obj: unknown): RenderContext => {
   if (obj && typeof (obj as { get?: unknown }).get === 'function') {

@@ -7,7 +7,7 @@ import type { Compiler } from '../index.ts';
 const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
   const args: Node[] = [];
   let kwargs: Node | null = null;
-  const funcId = 'macro_' + ctx.tmpid();
+  const funcId = `macro_${ctx.tmpid()}`;
   const keepFrame = (frame !== undefined);
 
   const argsChildren = (node.args as Node).children as Node[];
@@ -29,9 +29,15 @@ const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
 
   let currFrame: Frame;
   if (keepFrame) {
-    currFrame = frame!.push(true);
+    currFrame = frame?.push(true);
   } else {
     currFrame = createFrame();
+  }
+  let frameAssignment: string;
+  if (keepFrame) {
+    frameAssignment = 'frame.push(true);';
+  } else {
+    frameAssignment = 'runtime.createFrame();';
   }
   ctx.emitLines(
     `let ${funcId} = runtime.makeMacro(`,
@@ -39,7 +45,7 @@ const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
     `[${kwargNames.join(', ')}], `,
     `async (${realNames.join(', ')}) => {`,
     'let callerFrame = frame;',
-    'frame = ' + ((keepFrame) ? 'frame.push(true);' : 'runtime.createFrame();'),
+    `frame = ${frameAssignment}`,
     'kwargs = kwargs || {};',
     'if (Object.prototype.hasOwnProperty.call(kwargs, "caller")) {',
     'frame.set("caller", kwargs.caller); }');
@@ -67,7 +73,13 @@ const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
     ctx.compile(node.body as Node, currFrame);
   });
 
-  ctx.emitLine('frame = ' + ((keepFrame) ? 'frame.pop();' : 'callerFrame;'));
+  let frameRestore: string;
+  if (keepFrame) {
+    frameRestore = 'frame.pop();';
+  } else {
+    frameRestore = 'callerFrame;';
+  }
+  ctx.emitLine(`frame = ${frameRestore}`);
   ctx.emitLine(`return runtime.createSafeString(${bufferId});`);
   ctx.emitLine('});');
   ctx.popBuffer();

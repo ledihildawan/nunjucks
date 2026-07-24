@@ -7,8 +7,14 @@ import { compileGetTemplate } from './import.ts';
 export const compileFromImport = (ctx: Compiler, node: Node, frame: Frame): void => {
   const importedId = compileGetTemplate(ctx, node, frame, false, false);
 
+  let withContextArg: string;
+  if (node.withContext) {
+    withContextArg = 'context.getVariables(), frame';
+  } else {
+    withContextArg = '';
+  }
   ctx.emitLine(`let ${importedId}_exported = await ${importedId}.getExported(` +
-    (node.withContext ? 'context.getVariables(), frame' : '') +
+    withContextArg +
     ');');
 
   const namesChildren = (node.names as Node).children as Node[];

@@ -78,7 +78,7 @@ describe('truncate', () => {
     expect(r).toContain('hello');
   });
   test('handles non-string input (number)', () => {
-    const r = truncate(123456789, 3, true) as string;
+    const r = truncate(123_456_789, 3, true) as string;
     expect(r).toContain('123');
   });
   test('handles SafeString input', () => {

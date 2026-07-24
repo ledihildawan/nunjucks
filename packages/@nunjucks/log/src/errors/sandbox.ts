@@ -64,7 +64,7 @@ export const SANDBOX_ERRORS = {
   SANDBOX_TIMEOUT_EXEC: {
     name: 'SANDBOX_TIMEOUT_EXEC',
     message: 'Sandbox timeout',
-    pattern: /frame\.push is not a function/i,
+    pattern: /frame\.push is not a function/iu,
     category: 'timeout_error',
     titleTemplate: 'Template execution timed out',
     causes: [
@@ -78,7 +78,7 @@ export const SANDBOX_ERRORS = {
   SANDBOX_CONTEXT_ERROR: {
     name: 'SANDBOX_CONTEXT_ERROR',
     message: 'Sandbox context error',
-    pattern: /Value is not a function/i,
+    pattern: /Value is not a function/iu,
     category: 'sandbox_blocked',
     titleTemplate: 'Cannot modify sandboxed context',
     causes: [
@@ -92,7 +92,7 @@ export const SANDBOX_ERRORS = {
   SANDBOX_PROTO_ACCESS: {
     name: 'SANDBOX_PROTO_ACCESS',
     message: 'Sandbox proto access',
-    pattern: /Cannot read properties of undefined \(reading 'charAt'\)/i,
+    pattern: /Cannot read properties of undefined \(reading 'charAt'\)/iu,
     category: 'sandbox_blocked',
     titleTemplate: 'Cannot access property in sandbox mode',
     causes: [

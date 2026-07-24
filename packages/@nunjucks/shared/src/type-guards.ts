@@ -51,7 +51,9 @@ export const omit = <O extends object, K extends keyof O>(
   keysToOmit: K[]
 ): Omit<O, K> => {
   const result = { ...obj } as Record<string, unknown>;
-  for (const key of keysToOmit) delete result[key as string];
+  for (const key of keysToOmit) {
+    delete result[key as string];
+  }
   return result as unknown as Omit<O, K>;
 };
 
@@ -60,7 +62,9 @@ export const pick = <O extends object, K extends keyof O>(
   keysToPick: K[]
 ): Pick<O, K> => {
   const result = {} as Pick<O, K>;
-  for (const key of keysToPick) result[key] = obj[key];
+  for (const key of keysToPick) {
+    result[key] = obj[key];
+  }
   return result;
 };
 
@@ -71,7 +75,10 @@ export const groupBy = <T>(
   const result: Record<string, T[]> = {};
   for (const item of arr) {
     const key = keyFn(item);
-    (result[key] ??= []).push(item);
+    if (!result[key]) {
+      result[key] = [];
+    }
+    result[key]?.push(item);
   }
   return result;
 };
@@ -80,7 +87,9 @@ export const uniqueBy = <T>(arr: T[], keyFn: (item: T) => unknown): T[] => {
   const seen = new Set<unknown>();
   return filterArray(arr, item => {
     const key = keyFn(item);
-    if (seen.has(key)) return false;
+    if (seen.has(key)) {
+      return false;
+    }
     seen.add(key);
     return true;
   });
@@ -96,7 +105,10 @@ export const memoize = <A extends unknown[], R>(
   const cache = new Map<string, R>();
   return (...args: A) => {
     const key = JSON.stringify(args);
-    if (cache.has(key)) return cache.get(key)!;
+    const cached = cache.get(key);
+    if (cached !== undefined) {
+      return cached;
+    }
     const result = fn(...args);
     cache.set(key, result);
     return result;
@@ -128,14 +140,16 @@ export const debounce = <A extends unknown[], R>(
 
 export const retry = async <T>(
   fn: () => Promise<T>,
-  attempts: number = 3,
-  delay: number = 100
+  attempts = 3,
+  delay = 100
 ): Promise<T> => {
-  for (let i = 0; i < attempts; i++) {
+  for (let i = 0; i < attempts; i += 1) {
     try {
       return await fn();
     } catch (error) {
-      if (i === attempts - 1) throw error;
+      if (i === attempts - 1) {
+        throw error;
+      }
       await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
     }
   }
@@ -159,24 +173,37 @@ export const filterObject = <K extends string, V>(
 ): Partial<Record<K, V>> => {
   const result: Partial<Record<K, V>> = {};
   for (const key of keys(obj) as K[]) {
-    if (fn(obj[key], key)) result[key] = obj[key];
+    if (fn(obj[key], key)) {
+      result[key] = obj[key];
+    }
   }
   return result;
 };
 
 export const flatten = <T>(arr: T[][]): T[] => arr.flat();
 
-export const zip = <T, U>(a: T[], b: U[]): [T, U][] =>
-  mapArray(
-    filterArray(a.slice(0, Math.min(a.length, b.length)), (_, i) => b[i] !== undefined),
-    (item, i) => [item, b[i]!] as [T, U]
-  );
+export const zip = <T, U>(a: T[], b: U[]): [T, U][] => {
+  const minLen = Math.min(a.length, b.length);
+  const result: [T, U][] = [];
+  for (let i = 0; i < minLen; i += 1) {
+    const aItem = a[i];
+    const bItem = b[i];
+    if (aItem !== undefined && bItem !== undefined) {
+      result.push([aItem, bItem]);
+    }
+  }
+  return result;
+};
 
 export const partition = <T>(arr: T[], fn: Predicate<T>): [T[], T[]] => {
   const pass: T[] = [];
   const fail: T[] = [];
   for (const item of arr) {
-    (fn(item) ? pass : fail).push(item);
+    if (fn(item)) {
+      pass.push(item);
+    } else {
+      fail.push(item);
+    }
   }
   return [pass, fail];
 };

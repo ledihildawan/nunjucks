@@ -14,7 +14,7 @@ export const parseCompare = (ctx: ParserContext): Node => {
 
     if (!tok) {
       break;
-    } else if (compareOps.includes(tok.value as string)) {
+    }if (compareOps.includes(tok.value as string)) {
       ops.push(compareOperand(tok.lineno, tok.colno, parseConcat(ctx), tok.value as string));
     } else {
       pushToken(ctx, tok);
@@ -22,9 +22,8 @@ export const parseCompare = (ctx: ParserContext): Node => {
     }
   }
 
-  if (ops.length) {
+  if (ops.length > 0) {
     return compare(ops[0]!.lineno, ops[0]!.colno, expr, ops);
-  } else {
-    return expr;
   }
+    return expr;
 };

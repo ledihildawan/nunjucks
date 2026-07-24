@@ -8,15 +8,11 @@ import type {
   TemplateLiteralNode,
 } from './types.ts';
 
-const createNode = <K extends NodeType>(nodeType: K, lineno: number, colno: number, data: Record<string, unknown> = {}): NodeOf<K> => {
-  return {
+const createNode = <K extends NodeType>(nodeType: K, lineno: number, colno: number, data: Record<string, unknown> = {}): NodeOf<K> => ({
     type: nodeType, lineno, colno, fields: FIELDS[nodeType], ...data,
-  } as unknown as NodeOf<K>;
-};
+  } as unknown as NodeOf<K>);
 
-const createNodeWithChildren = <K extends NodeType>(nodeType: K, lineno: number, colno: number, children: Node[] = []): NodeOf<K> => {
-  return createNode(nodeType, lineno, colno, { children: children || [] });
-};
+const createNodeWithChildren = <K extends NodeType>(nodeType: K, lineno: number, colno: number, children: Node[] = []): NodeOf<K> => createNode(nodeType, lineno, colno, { children: children || [] });
 
 // Base creators
 export const node = (lineno: number, colno: number): Node => createNode(T.NODE, lineno, colno);

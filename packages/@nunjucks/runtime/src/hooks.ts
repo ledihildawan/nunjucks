@@ -1,4 +1,4 @@
-import EventEmitter from 'events';
+import EventEmitter from 'node:events';
 
 export const HOOK_EVENTS = Object.freeze({
   TEMPLATE_LOADING: 'template:loading',
@@ -17,7 +17,7 @@ export type HookEvent = typeof HOOK_EVENTS[keyof typeof HOOK_EVENTS];
 export const globalHooks = new EventEmitter();
 
 interface HookEmitter {
-  emit(event: string, payload: Record<string, unknown>): boolean;
+  emit: (event: string, payload: Record<string, unknown>) => boolean;
 }
 
 interface CreateHookEmitterOptions {
@@ -38,13 +38,11 @@ export const createHookEmitter = (env: HookEmitter, options: CreateHookEmitterOp
     env.emit(event, payload);
 
     if (emitGlobal) {
-      globalHooks.emit(event, { ...payload, env: env });
+      globalHooks.emit(event, { ...payload, env });
     }
   };
 
   return { emitHook };
 };
 
-export const hookable = <T extends (...args: unknown[]) => unknown>(fn: T): T => {
-  return fn;
-};
+export const hookable = <T extends (...args: unknown[]) => unknown>(fn: T): T => fn;

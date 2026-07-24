@@ -1,83 +1,152 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.5.5/schema.json",
-	"vcs": {
-		"enabled": true,
-		"clientKind": "git",
-		"useIgnoreFile": true
-	},
-	"files": {
-		"includes": ["packages/@nunjucks/*/src/**/*.ts"],
-		"ignoreUnknown": true
-	},
-	"formatter": {
-		"enabled": true,
-		"indentStyle": "space",
-		"indentWidth": 2,
-		"lineWidth": 120
-	},
-	"linter": {
-		"enabled": true,
-		"includes": ["packages/@nunjucks/*/src/**/*.ts"],
-		"rules": {
-			"recommended": true,
-			"correctness": {
-				"noUnusedVariables": "off",
-				"noUnusedFunctionParameters": "off",
-				"noUnusedImports": "off",
-				"useParseIntRadix": "off"
-			},
-			"style": {
-				"noEnum": "error",
-				"useImportType": "off",
-				"useShorthandFunctionType": "error",
-				"useTemplate": "off",
-				"useConsistentArrayType": "error",
-				"useEnumInitializers": "error",
-				"noNonNullAssertion": "off",
-				"useExponentiationOperator": "off",
-				"useNodejsImportProtocol": "off",
-				"useConst": "off"
-			},
-			"complexity": {
-				"noExtraBooleanCast": "error",
-				"noUselessCatch": "error",
-				"noUselessConstructor": "error",
-				"useOptionalChain": "off",
-				"noUselessSwitchCase": "error",
-				"noUselessThisAlias": "off",
-				"noBannedTypes": "off",
-				"useIndexOf": "off",
-				"noUselessContinue": "off",
-				"noUselessEscapeInRegex": "off"
-			},
-			"suspicious": {
-				"noConstEnum": "error",
-				"noShadow": "off",
-				"noRedeclare": "error",
-				"noDuplicateCase": "error",
-				"useIterableCallbackReturn": "off",
-				"noExplicitAny": "off",
-				"noShadowRestrictedNames": "off",
-				"noApproximativeNumericConstant": "off",
-				"noAssignInExpressions": "off",
-				"noConfusingVoidType": "off",
-				"noProto": "off",
-				"noImplicitAnyLet": "off"
-			}
-		}
-	},
-	"javascript": {
-		"formatter": {
-			"quoteStyle": "single",
-			"trailingCommas": "es5"
-		}
-	},
-	"assist": {
-		"enabled": true,
-		"actions": {
-			"source": {
-				"organizeImports": "on"
-			}
-		}
-	}
+  "$schema": "https://biomejs.dev/schemas/2.5.5/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": ["packages/@nunjucks/*/src/**/*.ts"],
+    "ignoreUnknown": true
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "trailingCommas": "es5"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "domains": {
+      "project": "all",
+      "types": "all"
+    },
+    "rules": {
+      "preset": "all",
+      "a11y": "error",
+      "complexity": "error",
+      "correctness": "error",
+      "nursery": "error",
+      "performance": "error",
+      "security": "error",
+      "style": "error",
+      "suspicious": "error",
+      "nursery": {
+        "useExplicitType": "off",
+        "useExplicitReturnType": "off",
+        "useNamedCaptureGroup": "off"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["packages/@nunjucks/*/src/**/*.test.ts"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnresolvedImports": "off",
+            "noUndeclaredVariables": "off"
+          },
+          "style": {
+            "noMagicNumbers": "off",
+            "noTernary": "off",
+            "useDestructuring": "off",
+            "useBlockStatements": "off",
+            "noNonNullAssertion": "off",
+            "useNodejsImportProtocol": "off",
+            "useConsistentMethodSignatures": "off",
+            "useSymbolDescription": "off"
+          },
+          "complexity": {
+            "noExcessiveLinesPerFunction": "off"
+          },
+          "suspicious": {
+            "noEmptyBlockStatements": "off",
+            "noShadow": "off",
+            "noConsole": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/@nunjucks/*/src/**/*.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useNamingConvention": "off",
+            "noExportedImports": "off",
+            "noNonNullAssertion": "off",
+            "noIncrementDecrement": "off",
+            "useDestructuring": "off",
+            "useExportsLast": "off",
+            "noParameterAssign": "off",
+            "noContinue": "off",
+            "noSubstr": "off",
+            "useTemplate": "off",
+            "noExcessiveLinesPerFile": "off",
+            "noMagicNumbers": "off",
+            "useForOf": "off",
+            "useAtIndex": "off"
+          },
+          "complexity": {
+            "noExcessiveCognitiveComplexity": "off",
+            "noExcessiveLinesPerFunction": "off",
+            "noForEach": "off",
+            "useMaxParams": "off",
+            "noBannedTypes": "off"
+          },
+          "performance": {
+            "noBarrelFile": "off",
+            "noReExportAll": "off",
+            "noAwaitInLoops": "off",
+            "noNamespaceImport": "off",
+            "useTopLevelRegex": "off"
+          },
+          "suspicious": {
+            "noImportCycles": "off",
+            "noExplicitAny": "off",
+            "noShadow": "off",
+            "useIterableCallbackReturn": "off",
+            "noApproximativeNumericConstant": "off",
+            "noShadowRestrictedNames": "off",
+            "noAssignInExpressions": "off",
+            "noUnnecessaryConditions": "off",
+            "noProto": "off",
+            "useAwait": "off",
+            "noEvolvingTypes": "off",
+            "noEmptyBlockStatements": "off",
+            "noConsole": "off",
+            "noReturnAssign": "off",
+            "noImplicitAnyLet": "off",
+            "noNonNullAssertedOptionalChain": "off",
+            "noConfusingVoidType": "off"
+          },
+          "security": {
+            "noSecrets": "off"
+          },
+          "correctness": {
+            "noUndeclaredDependencies": "off",
+            "useQwikValidLexicalScope": "off",
+            "noNodejsModules": "off",
+            "noUnusedVariables": "off",
+            "noUnusedImports": "off"
+          }
+        }
+      }
+    }
+  ],
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  }
 }

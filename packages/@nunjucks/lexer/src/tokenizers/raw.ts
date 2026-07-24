@@ -1,10 +1,10 @@
-import type { Tokenizer } from '../types';
-import { getChar, matches, advance, isFinished } from '../state';
-import { createToken } from '../tokens';
-import type { TokenType } from '../token-types';
+import type { Tokenizer } from '../types.ts';
+import { getChar, matches, advance, isFinished } from '../state.ts';
+import { createToken } from '../tokens.ts';
+import type { TokenType } from '../token-types.ts';
 
 export const tokenizeRaw: Tokenizer = (state) => {
-  if (!matches(state, state.tags.BLOCK_START)) return null;
+  if (!matches(state, state.tags.BLOCK_START)) { return null; }
 
   const blockStartLen = state.tags.BLOCK_START.length;
   let current = advance(state, blockStartLen);
@@ -19,9 +19,14 @@ export const tokenizeRaw: Tokenizer = (state) => {
     current = advance(current);
   }
 
-  if (name !== 'raw' && name !== 'verbatim') return null;
+  if (name !== 'raw' && name !== 'verbatim') { return null; }
 
-  const endTagName = name === 'raw' ? 'endraw' : 'endverbatim';
+  let endTagName: string;
+  if (name === 'raw') {
+    endTagName = 'endraw';
+  } else {
+    endTagName = 'endverbatim';
+  }
   let content = state.tags.BLOCK_START + name;
   let depth = 1;
 
@@ -51,10 +56,9 @@ export const tokenizeRaw: Tokenizer = (state) => {
           content += state.tags.BLOCK_END + endTagName + state.tags.BLOCK_END;
           current = advance(afterBlockEnd, state.tags.BLOCK_END.length);
           break;
-        } else {
+        }
           content += state.tags.BLOCK_END + tagName;
           current = afterBlockEnd;
-        }
       } else {
         content += getChar(current);
         current = advance(current);

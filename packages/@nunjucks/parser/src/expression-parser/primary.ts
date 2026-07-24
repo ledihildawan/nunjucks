@@ -27,7 +27,7 @@ export const parsePrimary = (ctx: ParserContext, noPostfix?: boolean): Node => {
   } else if (tok.type === TOKEN_INT) {
     val = Number(tok.value);
   } else if (tok.type === TOKEN_FLOAT) {
-    val = parseFloat(tok.value as string);
+    val = Number.parseFloat(tok.value as string);
   } else if (tok.type === TOKEN_BOOLEAN) {
     if (tok.value === 'true') {
       val = true;

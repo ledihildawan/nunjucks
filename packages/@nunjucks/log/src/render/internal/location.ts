@@ -13,9 +13,15 @@ export const formatLocationAnnotation = (
 	const hasLine = lineno !== undefined && lineno !== null;
 	const hasCol = colno !== undefined && colno !== null;
 
-	if (!hasLine) return '';
+	if (!hasLine) { return ''; }
 
-	const location = toDisplayLocation(lineno, hasCol ? colno : null, lineBase);
+	let colnoArg: number | null;
+	if (hasCol) {
+		colnoArg = colno;
+	} else {
+		colnoArg = null;
+	}
+	const location = toDisplayLocation(lineno, colnoArg, lineBase);
 	if (hasCol) {
 		return `[Line ${location.line}, Column ${location.col}]`;
 	}
@@ -23,7 +29,10 @@ export const formatLocationAnnotation = (
 };
 
 export const normalizeLineBase = (lineBase?: LineBase | null): LineBase => {
-	return lineBase === 'one' ? 'one' : 'zero';
+	if (lineBase === 'one') {
+		return 'one';
+	}
+	return 'zero';
 };
 
 export const toDisplayLocation = (

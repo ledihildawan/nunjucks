@@ -1,4 +1,4 @@
-import type { Token, TokenType, TokenValue } from './token-types';
+import type { Token, TokenType, TokenValue } from './token-types.ts';
 
 export const createToken = (
   type: TokenType,
@@ -26,10 +26,12 @@ export const createNumberToken = (
   lineno: number,
   colno: number,
   hasDecimal: boolean
-): Token =>
-  createToken(
-    (hasDecimal ? 'float' : 'int') as TokenType,
-    value,
-    lineno,
-    colno
-  );
+): Token => {
+  let type: TokenType;
+  if (hasDecimal) {
+    type = 'float' as TokenType;
+  } else {
+    type = 'int' as TokenType;
+  }
+  return createToken(type, value, lineno, colno);
+};

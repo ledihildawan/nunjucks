@@ -19,8 +19,8 @@ describe('round', () => {
     expect(round(3.3)).toBe(3);
   });
   test('respects precision', () => {
-    expect(round(3.14159, 2)).toBe(3.14);
-    expect(round(3.14159, 4)).toBe(3.1416);
+    expect(round(3.141_59, 2)).toBe(3.14);
+    expect(round(3.141_59, 4)).toBe(3.1416);
   });
   test('supports ceil method', () => {
     expect(round(3.1, 0, 'ceil')).toBe(4);

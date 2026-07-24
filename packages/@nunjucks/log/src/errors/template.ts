@@ -6,7 +6,7 @@ export const TEMPLATE_ERRORS = {
   VALIDATION_ERROR: {
     name: 'VALIDATION_ERROR',
     message: "Invalid value for '{key}'",
-    pattern: /^Invalid value for '([^']+)'$/i,
+    pattern: /^Invalid value for '([^']+)'$/iu,
     category: 'validation_error',
     titleTemplate: "Invalid value for '{subject}'",
     causes: [
@@ -21,7 +21,7 @@ export const TEMPLATE_ERRORS = {
   CONTAINER_FACTORY: {
     name: 'CONTAINER_FACTORY',
     message: "Container: factory for '{name}' must be a function, got {type}",
-    pattern: /^Container: factory for '([^']+)' must be a function, got (.+)$/i,
+    pattern: /^Container: factory for '([^']+)' must be a function, got (.+)$/iu,
     category: 'config_error',
     titleTemplate: "Container factory '{subject}' is not a function",
     causes: [
@@ -36,7 +36,7 @@ export const TEMPLATE_ERRORS = {
   CONTAINER_NOT_REGISTERED: {
     name: 'CONTAINER_NOT_REGISTERED',
     message: "Container: '{name}' is not registered. Did you forget to register it?",
-    pattern: /^Container: '([^']+)' is not registered\. Did you forget to register it\?$/i,
+    pattern: /^Container: '([^']+)' is not registered\. Did you forget to register it\?$/iu,
     category: 'config_error',
     titleTemplate: "Container '{subject}' is not registered",
     causes: [
@@ -51,7 +51,7 @@ export const TEMPLATE_ERRORS = {
   CONTAINER_ERROR: {
     name: 'CONTAINER_ERROR',
     message: 'Container error',
-    pattern: /Container: (?:factory for '([^']+)'|'([^']+)' is not registered)/i,
+    pattern: /Container: (?:factory for '([^']+)'|'([^']+)' is not registered)/iu,
     category: 'config_error',
     titleTemplate: 'Container system error',
     causes: [
@@ -66,7 +66,7 @@ export const TEMPLATE_ERRORS = {
   TEMPLATE_INVALID_SOURCE: {
     name: 'TEMPLATE_INVALID_SOURCE',
     message: "Invalid template source: expected 'code' or 'string', got '{type}'",
-    pattern: /src must be a string or an object describing the source/i,
+    pattern: /src must be a string or an object describing the source/iu,
     category: 'invalid_template',
     titleTemplate: 'Invalid template source',
     causes: [
@@ -81,7 +81,7 @@ export const TEMPLATE_ERRORS = {
   TEMPLATE_SRC_STRING: {
     name: 'TEMPLATE_SRC_STRING',
     message: 'Template src must be a string or an object',
-    pattern: /^Template src must be a string or an object$/i,
+    pattern: /^Template src must be a string or an object$/iu,
     category: 'invalid_template',
     titleTemplate: 'Template src must be string or object',
     causes: [
@@ -96,7 +96,7 @@ export const TEMPLATE_ERRORS = {
   TEMPLATE_NO_RENDER: {
     name: 'TEMPLATE_NO_RENDER',
     message: 'Template object is invalid: missing render method',
-    pattern: /Unexpected template object type/i,
+    pattern: /Unexpected template object type/iu,
     category: 'invalid_template',
     titleTemplate: 'Invalid template object',
     causes: [
@@ -111,7 +111,7 @@ export const TEMPLATE_ERRORS = {
   INVALID_CODE_FORMAT: {
     name: 'INVALID_CODE_FORMAT',
     message: 'Invalid template: expected compiled template to start with "async function root"',
-    pattern: /Unrecognized code format/i,
+    pattern: /Unrecognized code format/iu,
     category: 'invalid_template',
     titleTemplate: 'Invalid compiled template format',
     causes: [
@@ -127,7 +127,7 @@ export const TEMPLATE_ERRORS = {
   WALK_UNKNOWN_TYPE: {
     name: 'WALK_UNKNOWN_TYPE',
     message: "walk: unknown node type '{type}'",
-    pattern: /walk: unknown (?:node type|typename)/i,
+    pattern: /walk: unknown (?:node type|typename)/iu,
     category: 'internal_error',
     titleTemplate: 'Unknown AST node type',
     causes: [
@@ -143,7 +143,7 @@ export const TEMPLATE_ERRORS = {
   TEMPLATE_SIZE_EXCEEDED: {
     name: 'TEMPLATE_SIZE_EXCEEDED',
     message: 'Template exceeds maximum size of {max} bytes',
-    pattern: /Template exceeds maximum size/i,
+    pattern: /Template exceeds maximum size/iu,
     category: 'validation_error',
     titleTemplate: 'Template size limit exceeded',
     causes: [
@@ -158,7 +158,7 @@ export const TEMPLATE_ERRORS = {
   INVALID_CONFIG: {
     name: 'INVALID_CONFIG',
     message: 'Invalid configuration: {key} must be >= 0',
-    pattern: /^Invalid configuration: (.+) must be >= 0$/i,
+    pattern: /^Invalid configuration: (.+) must be >= 0$/iu,
     category: 'validation_error',
     titleTemplate: "Invalid configuration value for '{subject}'",
     causes: [
@@ -173,7 +173,7 @@ export const TEMPLATE_ERRORS = {
   TEMPLATE_MUST_BE_STRING: {
     name: 'TEMPLATE_MUST_BE_STRING',
     message: 'Template must be a string',
-    pattern: /^Template must be a string$/i,
+    pattern: /^Template must be a string$/iu,
     category: 'validation_error',
     sourceFromStack: true,
     titleTemplate: 'Template must be a string',
@@ -189,7 +189,7 @@ export const TEMPLATE_ERRORS = {
   TEMPLATE_NULL: {
     name: 'TEMPLATE_NULL',
     message: 'Template is null',
-    pattern: /^Template is null$/i,
+    pattern: /^Template is null$/iu,
     category: 'invalid_template',
     titleTemplate: 'Template is null or undefined',
     causes: [
@@ -204,7 +204,7 @@ export const TEMPLATE_ERRORS = {
   JS_STACK_SOURCE: {
     name: 'JS_STACK_SOURCE',
     message: 'template is null',
-    pattern: /^template is null$/i,
+    pattern: /^template is null$/iu,
     category: 'js_stack_source',
     sourceFromStack: true,
     titleTemplate: 'Template parameter is null',

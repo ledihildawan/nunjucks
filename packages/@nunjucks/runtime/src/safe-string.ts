@@ -1,9 +1,9 @@
 // SAFE STRING - Marks strings as already escaped for autoescape handling
-export interface SafeString extends String {
+export interface SafeString extends string {
   val: string;
   length: number;
-  valueOf(): string;
-  toString(): string;
+  valueOf: () => string;
+  toString: () => string;
 }
 
 export function createSafeString(val: unknown): unknown {
@@ -20,10 +20,10 @@ export function createSafeString(val: unknown): unknown {
 }
 
 export function isSafeString(val: unknown): boolean {
-  return !!val && (val as { val?: unknown }).val !== undefined;
+  return Boolean(val) && (val as { val?: unknown }).val !== undefined;
 }
 
-export function copySafeness(dest: unknown, target: { toString(): string }): unknown {
+export function copySafeness(dest: unknown, target: { toString: () => string }): unknown {
   if (dest && (dest as { val?: unknown }).val !== undefined) {
     return createSafeString(target);
   }
@@ -35,9 +35,7 @@ export function markSafe(val: unknown): unknown {
 
   if (type === 'string') {
     return createSafeString(val);
-  } else if (type !== 'function') {
-    return val;
-  } else {
+  }if (type === 'function') {
     const fn = val as (...args: unknown[]) => unknown;
     return function wrapSafe(this: unknown, ...args: unknown[]): unknown {
       const ret = fn.apply(this, args);
@@ -46,5 +44,6 @@ export function markSafe(val: unknown): unknown {
       }
       return ret;
     };
-  }
+  } 
+    return val;
 }

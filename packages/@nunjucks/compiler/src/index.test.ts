@@ -34,8 +34,8 @@ describe('Compiler', () => {
   });
 
   test('getCode returns compiled code', () => {
-    compiler.emit('a');
-    compiler.emit('b');
+    compiler.emtest('a');
+    compiler.emtest('b');
     expect(compiler.getCode()).toBe('ab');
   });
 });

@@ -23,7 +23,7 @@ export const parseIf = (ctx: ParserContext): Node => {
   node.body = parseUntilBlocks(ctx, 'elif', 'elseif', 'else', 'endif');
   const tok = peekToken(ctx);
 
-  switch (tok && tok.value) {
+  switch (tok?.value) {
     case 'elseif':
     case 'elif':
       node.else_ = parseIf(ctx);

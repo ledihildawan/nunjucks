@@ -6,13 +6,23 @@ import type { Compiler } from '../index.ts';
 export const compileCallExtension = (ctx: Compiler, node: Node, frame: Frame, useAsync?: boolean): void => {
   const args = node.args as Node;
   const contentArgs = node.contentArgs as Node[];
-  const autoescape = typeof node.autoescape === 'boolean' ? node.autoescape : true;
+  let autoescape: boolean;
+  if (typeof node.autoescape === 'boolean') {
+    autoescape = node.autoescape;
+  } else {
+    autoescape = true;
+  }
 
   if (contentArgs.length > 0) {
     useAsync = true;
   }
 
-  const res = useAsync ? ctx.tmpid() : null;
+  let res: string | null;
+  if (useAsync) {
+    res = ctx.tmpid();
+  } else {
+    res = null;
+  }
 
   if (!useAsync) {
     ctx.emit(`${ctx.buffer} += runtime.suppressValue(`);
@@ -36,16 +46,16 @@ export const compileCallExtension = (ctx: Compiler, node: Node, frame: Frame, us
         'use `parser.parseSignature`');
     }
 
-    args.children!.forEach((arg, i, arr) => {
+    args.children?.forEach((arg, i, arr) => {
       ctx.compileExpression(arg, frame);
 
-      if (i !== arr.length - 1 || contentArgs.length) {
+      if (i !== arr.length - 1 || contentArgs.length > 0) {
         ctx.emit(',');
       }
     });
   }
 
-  if (contentArgs.length) {
+  if (contentArgs.length > 0) {
     contentArgs.forEach((arg, i) => {
       if (i > 0) {
         ctx.emit(',');
@@ -58,7 +68,7 @@ export const compileCallExtension = (ctx: Compiler, node: Node, frame: Frame, us
         ctx.compile(arg, frame);
 
         ctx.popBuffer();
-        ctx.emitLine('return ' + id + ';');
+        ctx.emitLine(`return ${id};`);
         ctx.emitLine('}');
       } else {
         ctx.emit('null');

@@ -49,7 +49,7 @@ export interface Compiler {
 export function createCompiler(
   templateName: string | null,
   undefinedMode: UndefinedMode | undefined,
-  source: string
+  _source: string
 ): Compiler {
   let codebuf: string[] = [];
   let lastId = 0;
@@ -61,12 +61,22 @@ export function createCompiler(
   const sourceMap = createSourceMap(templateName);
 
   const fail = (msg: string, lineno?: number, colno?: number) => {
-    const subject = typeof msg === 'string' ? (msg.split(':').pop() || 'compile').trim() : 'compile';
-    throw createLog('error',
-      ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE!,
-      { type: subject },
-      subject,
-      { lineno, colno, phase: 'compile', templateName, lineBase: 'zero' });
+    let subject: string;
+    if (typeof msg === 'string') {
+      const lastPart = msg.split(':').pop();
+      subject = (lastPart || 'compile').trim();
+    } else {
+      subject = 'compile';
+    }
+    const errorDef = ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE;
+    if (errorDef) {
+      throw createLog('error',
+        errorDef,
+        { type: subject },
+        subject,
+        { lineno, colno, phase: 'compile', templateName, lineBase: 'zero' });
+    }
+    throw new Error(`unknown type: ${subject}`);
   };
 
   const pushBuffer = () => {
@@ -90,7 +100,7 @@ export function createCompiler(
     if (isNonNullish(originalLine)) {
       sourceMap.addMapping(compiledLine, originalLine);
     }
-    emit(code + '\n');
+    emit(`${code}\n`);
   };
 
   const emitLineWithMapping = (code: string, templateLine?: number, templateCol?: number) => {
@@ -98,7 +108,7 @@ export function createCompiler(
     if (templateLine !== undefined) {
       sourceMap.addMapping(compiledLine, templateLine, templateCol || 0);
     }
-    emit(code + '\n');
+    emit(`${code}\n`);
   };
 
   const trackMapping = (templateLine?: number, templateCol?: number) => {
@@ -112,7 +122,7 @@ export function createCompiler(
     if (templateLine !== undefined) {
       sourceMap.addMapping(compiledLine, templateLine, templateCol || 0);
     }
-    emit(code + '\n');
+    emit(`${code}\n`);
   };
 
   const emitLines = (...lines: string[]) => {
@@ -124,7 +134,7 @@ export function createCompiler(
     scopeClosers = '';
     emitLine(`async function ${name}(env, context, frame, runtime) {`);
     emitLineWithMapping(`let lineno = ${node.lineno};`, node.lineno, node.colno);
-    emitLine(`let colno = ${node.colno != null ? node.colno : 0};`);
+    emitLine(`let colno = ${node.colno ?? 0};`);
     emitLine(`let ${buffer} = "";`);
     emitLine('try {');
   };
@@ -148,7 +158,7 @@ export function createCompiler(
 
   const closeScopeLevels = () => {
     if (scopeClosers) {
-      emitLine(scopeClosers + ';');
+      emitLine(`${scopeClosers};`);
     }
     scopeClosers = '';
   };
@@ -165,15 +175,18 @@ export function createCompiler(
 
   const tmpid = () => {
     lastId++;
-    return 't_' + lastId;
+    return `t_${lastId}`;
   };
 
   const getTemplateName = () => {
-    return templateName === null || templateName === undefined ? 'undefined' : JSON.stringify(templateName);
+    if (templateName === null || templateName === undefined) {
+      return 'undefined';
+    }
+    return JSON.stringify(templateName);
   };
 
   const compileChildren = (node: Node, frame?: Frame) => {
-    node.children!.forEach((child) => {
+    node.children?.forEach((child) => {
       compile(child, frame);
     });
   };
@@ -229,10 +242,10 @@ export function createCompiler(
       if (typeof t === 'string') {
         return typeName === t;
       }
-      if (t && t.name && typeName === t.name) {
+      if (t?.name && typeName === t.name) {
         return true;
       }
-      if (t && t.name) {
+      if (t?.name) {
         const tName = t.name.toLowerCase();
         return typeName === tName;
       }
@@ -249,9 +262,7 @@ export function createCompiler(
     }
   };
 
-  const compile = (node: Node, frame?: Frame) => {
-    return compileDispatch(compiler, node, frame);
-  };
+  const compile = (node: Node, frame?: Frame) => compileDispatch(compiler, node, frame);
 
   const compiler: Compiler = {
     get templateName() { return templateName; },

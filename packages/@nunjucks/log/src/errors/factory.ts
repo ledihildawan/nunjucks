@@ -29,6 +29,11 @@ export const createErrorDefinition = (options: ErrorDefinitionOptions) => {
   const { name, message, category, causes, fixCode, fixComment, documentationUrl, severity } = options;
   const hasVariable = message.includes('{type}') || message.includes('{name}') || message.includes('{key}') || message.includes('{subject}') || message.includes('{attr}') || message.includes('{by}');
 
+  let subjectFrom: SubjectExtractor | null = null;
+  if (hasVariable) {
+    subjectFrom = firstCapture;
+  }
+
   return {
     name,
     message,
@@ -40,7 +45,7 @@ export const createErrorDefinition = (options: ErrorDefinitionOptions) => {
     fixComment,
     documentationUrl,
     severity,
-    subjectFrom: hasVariable ? firstCapture : null
+    subjectFrom
   };
 };
 

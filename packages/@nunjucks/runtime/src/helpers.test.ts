@@ -248,7 +248,11 @@ describe('lookup', () => {
   });
 
   test('uses ctx.lookup function when present', () => {
-    const ctx = { lookup: (k: string) => (k === 'a' ? 1 : undefined) };
+    const ctx = { lookup: (k: string) => {
+      if (k === 'a') {
+        return 1;
+      }
+    } };
     expect(lookup(ctx, 'a')).toBe(1);
   });
 

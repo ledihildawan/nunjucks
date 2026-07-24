@@ -46,14 +46,7 @@ export const parseAggregate = (ctx: ParserContext): Node | null => {
 
     if (node.children.length > 0) {
       const next = peekToken(ctx) || tok;
-      if (!skip(ctx, TOKEN_COMMA)) {
-        if (next.type === TOKEN_SYMBOL || next.type === TOKEN_LEFT_BRACKET || next.type === TOKEN_LEFT_CURLY || next.type === TOKEN_LEFT_PAREN) {
-        } else {
-          fail(ctx, 'parseAggregate: expected comma after expression',
-            next.lineno,
-            next.colno);
-        }
-      } else {
+      if (skip(ctx, TOKEN_COMMA)) {
         const afterComma = peekToken(ctx).type;
         if (afterComma === TOKEN_COMMA || afterComma === TOKEN_RIGHT_BRACKET || afterComma === TOKEN_RIGHT_PAREN) {
           pushChild(node, hole(tok.lineno, tok.colno));
@@ -63,7 +56,12 @@ export const parseAggregate = (ctx: ParserContext): Node | null => {
           }
           continue;
         }
-      }
+      } else if (next.type === TOKEN_SYMBOL || next.type === TOKEN_LEFT_BRACKET || next.type === TOKEN_LEFT_CURLY || next.type === TOKEN_LEFT_PAREN) {
+        } else {
+          fail(ctx, 'parseAggregate: expected comma after expression',
+            next.lineno,
+            next.colno);
+        }
     }
 
     if (isDict(node)) {
@@ -74,7 +72,10 @@ export const parseAggregate = (ctx: ParserContext): Node | null => {
       } else {
         const key = parsePrimary(ctx);
 
-        if (!skip(ctx, TOKEN_COLON)) {
+        if (skip(ctx, TOKEN_COLON)) {
+          const value = parseExpression(ctx);
+          pushChild(node, pair(key.lineno, key.colno, key, value));
+        } else {
           const next = peekToken(ctx);
           if (next && (next.type === TOKEN_COMMA || next.type === TOKEN_RIGHT_CURLY)) {
             const value = symbol(key.lineno, key.colno, key.value as string);
@@ -91,13 +92,9 @@ export const parseAggregate = (ctx: ParserContext): Node | null => {
               next?.colno ?? tok.colno,
               EXPECTED_COLON_AFTER_DICT_KEY);
           }
-        } else {
-          const value = parseExpression(ctx);
-          pushChild(node, pair(key.lineno, key.colno, key, value));
         }
       }
-    } else {
-      if (peekToken(ctx).type === TOKEN_SPREAD) {
+    } else if (peekToken(ctx).type === TOKEN_SPREAD) {
         nextToken(ctx);
         const arg = parseExpression(ctx);
         pushChild(node, spread(tok.lineno, tok.colno, arg));
@@ -110,7 +107,6 @@ export const parseAggregate = (ctx: ParserContext): Node | null => {
           pushChild(node, expr);
         }
       }
-    }
   }
 
   return node;

@@ -40,11 +40,17 @@ export function makeKeywordArgs<T>(obj: T): T & { keywords: boolean } {
 }
 
 export function isKeywordArgs(obj: unknown): boolean | null {
-  return obj && hasOwn(obj as object, 'keywords') ? true : (obj ? false : null);
+  if (obj && hasOwn(obj as object, 'keywords')) {
+    return true;
+  }
+  if (obj) {
+    return false;
+  }
+  return null;
 }
 
 export function getKeywordArgs(args: unknown[]): Record<string, unknown> {
-  if (args.length) {
+  if (args.length > 0) {
     const lastArg = args.at(-1) as Record<string, unknown>;
     if (isKeywordArgs(lastArg)) {
       return lastArg;
@@ -62,9 +68,8 @@ export function numArgs(args: unknown[]): number {
   const lastArg = args[len - 1];
   if (isKeywordArgs(lastArg)) {
     return len - 1;
-  } else {
-    return len;
   }
+    return len;
 }
 
 export function withKwargs<T extends (...args: any[]) => unknown>(func: T): T {

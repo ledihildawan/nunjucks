@@ -103,7 +103,7 @@ describe('Sandbox Property-Based Tests', () => {
 
     test('nested prototype pollution is blocked', () => {
       const inner = { data: 'secret' };
-      const outer = { inner: inner };
+      const outer = { inner };
       const sandboxed = createSandboxedObject(outer, true) as Record<string, unknown>;
       const innerSandboxed = sandboxed.inner as Record<string, unknown>;
       expect(() => (innerSandboxed as any).__proto__).toThrow();
@@ -143,7 +143,7 @@ describe('Sandbox Property-Based Tests', () => {
   describe('Nested objects maintain isolation', () => {
     test('nested objects are also sandboxed', () => {
       const inner = { dangerous: 'hidden', safe: 'visible' };
-      const outer = { inner: inner, topLevelSafe: 'ok' };
+      const outer = { inner, topLevelSafe: 'ok' };
       const sandboxed = createSandboxedObject(outer, true) as Record<string, unknown>;
       const innerSandboxed = sandboxed.inner as Record<string, unknown>;
       expect(() => (innerSandboxed as any).__proto__).toThrow();
@@ -152,8 +152,8 @@ describe('Sandbox Property-Based Tests', () => {
 
     test('deeply nested objects maintain sandbox', () => {
       const level3 = { key: 'secret' };
-      const level2 = { level3: level3 };
-      const level1 = { level2: level2 };
+      const level2 = { level3 };
+      const level1 = { level2 };
       const sandboxed = createSandboxedObject(level1, true) as Record<string, unknown>;
       const l2 = (sandboxed.level2 as Record<string, unknown>);
       const l3 = (l2.level3 as Record<string, unknown>);
@@ -165,7 +165,7 @@ describe('Sandbox Property-Based Tests', () => {
         setTimeout: () => 'scheduled',
         safeFunc: () => 'safe'
       };
-      const outer = { inner: inner };
+      const outer = { inner };
       const sandboxed = createSandboxedObject(outer, true) as Record<string, unknown>;
       const innerSandboxed = sandboxed.inner as { setTimeout: (...args: unknown[]) => unknown };
       expect(() => innerSandboxed.setTimeout('alert(1)', 0)).toThrow();

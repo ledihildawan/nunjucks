@@ -20,8 +20,7 @@ const TEMPLATE_ESCAPE_MAP: Record<string, string> = {
 
 const escapeString = (str: string): string => {
   let result = '';
-  for (let i = 0; i < str.length; i++) {
-    const char = str[i]!;
+  for (const char of str) {
     result += STRING_ESCAPE_MAP[char] ?? char;
   }
   return result;
@@ -34,7 +33,7 @@ export const compileLiteral = (ctx: Compiler, node: Node): void => {
   } else if (node.value === null) {
     ctx.emit('null');
   } else {
-    ctx.emit((node.value as { toString(): string }).toString());
+    ctx.emit((node.value as { toString: () => string }).toString());
   }
 };
 
@@ -97,8 +96,7 @@ export const compileSpread = (ctx: Compiler, node: Node, frame: Frame): void => 
 
 const escapeTemplateString = (str: string): string => {
   let result = '';
-  for (let i = 0; i < str.length; i++) {
-    const char = str[i]!;
+  for (const char of str) {
     result += TEMPLATE_ESCAPE_MAP[char] ?? char;
   }
   return result;
@@ -106,7 +104,14 @@ const escapeTemplateString = (str: string): string => {
 
 export const compileTemplateLiteral = (ctx: Compiler, node: Node, frame: Frame): void => {
   const rawQuasis = (node.quasis as { quasis?: unknown[] } | unknown[] | undefined);
-  const quasis = (Array.isArray(rawQuasis) ? rawQuasis : (rawQuasis && (rawQuasis as { quasis?: unknown[] }).quasis)) || [];
+  let quasis: unknown[];
+  if (Array.isArray(rawQuasis)) {
+    quasis = rawQuasis;
+  } else if (rawQuasis && (rawQuasis as { quasis?: unknown[] }).quasis) {
+    quasis = (rawQuasis as { quasis?: unknown[] }).quasis || [];
+  } else {
+    quasis = [];
+  }
   ctx.emit('`');
 
   for (const quasi of quasis) {
@@ -128,7 +133,7 @@ export const compileAggregate = (ctx: Compiler, node: Node, frame: Frame, startC
     ctx.emit(startChar);
   }
 
-  node.children!.forEach((child, i) => {
+  node.children?.forEach((child, i) => {
     if (i > 0) {
       ctx.emit(',');
     }

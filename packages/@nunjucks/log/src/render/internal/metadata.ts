@@ -67,17 +67,25 @@ export interface FormatterState {
   isProduction?: boolean;
 }
 
-export const normalizeLogMetadata = (input: LogMetadataInput = {}): NormalizedLogMetadata => ({
-  lineno: input.lineno ?? null,
-  colno: input.colno ?? null,
-  code: input.code ?? null,
-  subject: input.subject ?? null,
-  phase: input.phase ?? null,
-  templateName: input.templateName ?? null,
-  templatePath: input.templatePath ?? input.templateName ?? null,
-  renderContext: input.renderContext,
-  lineBase: input.lineBase === 'one' ? 'one' : 'zero'
-});
+export const normalizeLogMetadata = (input: LogMetadataInput = {}): NormalizedLogMetadata => {
+  let lineBase: 'one' | 'zero';
+  if (input.lineBase === 'one') {
+    lineBase = 'one';
+  } else {
+    lineBase = 'zero';
+  }
+  return {
+    lineno: input.lineno ?? null,
+    colno: input.colno ?? null,
+    code: input.code ?? null,
+    subject: input.subject ?? null,
+    phase: input.phase ?? null,
+    templateName: input.templateName ?? null,
+    templatePath: input.templatePath ?? input.templateName ?? null,
+    renderContext: input.renderContext,
+    lineBase
+  };
+};
 
 export const createFormatterState = ({ metadata, options = {} }: FormatterStateInput): FormatterState => ({
   dev: options.dev ?? false,

@@ -67,10 +67,9 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
     set(name: string, val: unknown, resolveUp?: boolean): void {
       const parts = name.split('.');
       let obj: Record<string, unknown> = state.variables;
-      let f: Frame = this;
 
       if (resolveUp) {
-        const resolved = f.resolve(parts[0]!, true);
+        const resolved = this.resolve(parts[0]!, true);
         if (resolved) {
           resolved.set(name, val);
           return;
@@ -107,13 +106,24 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
 
       const p = state.parent;
       const val = state.variables[name];
-      const result = val !== undefined ? val : p?.lookup(name);
+      let result: unknown;
+      if (val === undefined) {
+        result = p?.lookup(name);
+      } else {
+        result = val;
+      }
       state.lookupCache.set(name, result);
       return result;
     },
 
     resolve(name: string, forWrite?: boolean): Frame | undefined {
-      const cacheKey = `${name}\u0000${forWrite ? 1 : 0}`;
+      let forWriteVal: number;
+      if (forWrite) {
+        forWriteVal = 1;
+      } else {
+        forWriteVal = 0;
+      }
+      const cacheKey = `${name}\u0000${forWriteVal}`;
       const cached = state.resolveCache.get(cacheKey);
       if (cached && cached.revision === state.rootState.revision) {
         return cached.frame;
@@ -122,13 +132,13 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
       const val = state.variables[name];
       if (val !== undefined) {
         if (forWrite && state.isolateWrites) {
-          return undefined;
+          return ;
         }
         state.resolveCache.set(cacheKey, { revision: state.rootState.revision, frame: this });
         return this;
       }
       if (forWrite && state.isolateWrites) {
-        return undefined;
+        return ;
       }
       const p = state.parent;
       const f = p?.resolve(name);

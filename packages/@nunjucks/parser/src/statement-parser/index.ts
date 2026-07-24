@@ -144,7 +144,7 @@ export const parseStatement = (ctx: ParserContext): Node | null => {
     case 'with':
       return parseWith(ctx);
     default:
-      if (ctx.extensions.length) {
+      if (ctx.extensions.length > 0) {
         for (let i = 0; i < ctx.extensions.length; i++) {
           const ext = ctx.extensions[i]!;
           if ((ext.tags || []).includes(tok.value as string)) {

@@ -1,5 +1,5 @@
 import picocolors from 'picocolors';
-import { keys, entries, forEachObj } from 'remeda';
+import { keys, forEachObj } from 'remeda';
 import { shortenPath } from './internal/path-shortener.ts';
 import { toDisplayLocation } from './internal/location.ts';
 import { isFilePath, resolveIdeLink } from './internal/ide-links.ts';
@@ -18,19 +18,19 @@ export interface AnsiOptions {
 }
 
 const sanitizeForAnsi = (value: unknown, seen?: WeakSet<object>): string => {
-  if (value === null) return 'null';
-  if (value === undefined) return 'undefined';
-  if (typeof value === 'function') return '[Function: ' + (value.name || 'anonymous') + ']';
+  if (value === null) { return 'null'; }
+  if (value === undefined) { return 'undefined'; }
+  if (typeof value === 'function') { return `[Function: ${value.name || 'anonymous'}]`; }
   if (typeof value === 'object') {
-    if (seen?.has(value as object)) return '[Circular]';
+    if (seen?.has(value as object)) { return '[Circular]'; }
     const newSeen = seen || new WeakSet();
     newSeen.add(value as object);
     if (Array.isArray(value)) {
-      return 'Array(' + value.length + ')';
+      return `Array(${value.length})`;
     }
-    return 'Object(' + keys(value).length + ')';
+    return `Object(${keys(value).length})`;
   }
-  if (typeof value === 'string') return '"' + value + '"';
+  if (typeof value === 'string') { return `"${value}"`; }
   return String(value);
 };
 
@@ -63,35 +63,31 @@ const renderContextAnsi = (context: Record<string, unknown>): string => {
   return lines.join('\n');
 };
 
-const makeHyperlink = (text: string, url: string): string => {
-  return `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
-};
+const makeHyperlink = (text: string, url: string): string => `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
 
-const stripMarkdown = (text: string): string => {
-  return text.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1');
-};
+const stripMarkdown = (text: string): string => text.replace(/\*\*([^*]+)\*\*/gu, '$1').replace(/`([^`]+)`/gu, '$1');
 
 const formatCausesAnsi = (causes: readonly string[]): string => {
-  if (!causes || causes.length === 0) return '';
+  if (!causes || causes.length === 0) { return ''; }
   const items = causes.map(c => `  ${picocolors.yellow('•')} ${stripMarkdown(c)}`).join('\n');
   return `\n${picocolors.bold('Possible Causes:')}\n${items}`;
 };
 
 const formatFixAnsi = (fixCode: string | null, fixComment: string | null, documentationUrl: string | null): string => {
-  if (!fixCode) return '';
+  if (!fixCode) { return ''; }
   let out = `\n${picocolors.bold('Suggested Fix:')}`;
   if (fixComment) {
-    out += `\n${picocolors.dim('// ' + stripMarkdown(fixComment))}`;
+    out += `\n${picocolors.dim(`// ${stripMarkdown(fixComment)}`)}`;
   }
   out += `\n${picocolors.green(fixCode)}`;
   if (documentationUrl) {
-    out += `\n${picocolors.dim('Learn more: ' + documentationUrl)}`;
+    out += `\n${picocolors.dim(`Learn more: ${documentationUrl}`)}`;
   }
   return out;
 };
 
 export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
-  if (!error) return '';
+  if (!error) { return ''; }
 
   const { verbosity = 'full', templatePath, lineno, colno, ide = 'vscode', sourceStartLine = 1 } = options;
 
@@ -120,9 +116,12 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   };
 
   const classification = classifyFromError(errObj);
-  const causes = classification.causes && classification.causes.length > 0
-    ? classification.causes
-    : (errObj.causes || []);
+  let causes: string[];
+  if (classification.causes && classification.causes.length > 0) {
+    causes = classification.causes;
+  } else {
+    causes = errObj.causes || [];
+  }
   const fixCode = classification.fixCode ?? errObj.fixCode ?? '';
   const fixComment = classification.fixComment ?? errObj.fixComment ?? '';
   const documentationUrl = classification.documentationUrl ?? errObj.documentationUrl ?? null;
@@ -135,18 +134,40 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   const location = toDisplayLocation(displayLineno, displayColno, lineBase);
 
   if (verbosity === 'medium') {
-    const causeHint = causes.length > 0 ? stripMarkdown(causes[0] ?? '') : '';
-    const docHint = documentationUrl ? documentationUrl : '';
+    let causeHint: string;
+    if (causes.length > 0) {
+      causeHint = stripMarkdown(causes[0] ?? '');
+    } else {
+      causeHint = '';
+    }
+    let docHint: string;
+    if (documentationUrl) {
+      docHint = documentationUrl;
+    } else {
+      docHint = '';
+    }
     const extras = [causeHint, docHint].filter(Boolean).join(' | ');
     if (path) {
       const shortPath = shortenPath(path);
       if (isFilePath(path)) {
         const url = makeHyperlink(`${shortPath}:${location.line}:${location.col}`, resolveIdeLink(ide, path, location.line, location.col));
-        return `${message} at ${url}${extras ? '\n' + extras : ''}`;
+        let extrasPart = '';
+        if (extras) {
+          extrasPart = `\n${extras}`;
+        }
+        return `${message} at ${url}${extrasPart}`;
       }
-      return `${message} at ${shortPath}:${location.line}:${location.col}${extras ? '\n' + extras : ''}`;
+      let extrasPart = '';
+      if (extras) {
+        extrasPart = `\n${extras}`;
+      }
+      return `${message} at ${shortPath}:${location.line}:${location.col}${extrasPart}`;
     }
-    return `${message} at line ${location.line}${extras ? '\n' + extras : ''}`;
+    let extrasPart = '';
+    if (extras) {
+      extrasPart = `\n${extras}`;
+    }
+    return `${message} at line ${location.line}${extrasPart}`;
   }
 
   const stack = (error as Error).stack || '';
@@ -155,19 +176,30 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   const formattedStack = stackLines
     .map(line => {
       const trimmed = line.trim();
-      const pathMatch = trimmed.match(/\(([^()]+):(\d+):(\d+)\)$/);
+      const pathMatch = trimmed.match(/\(([^()]+):(\d+):(\d+)\)$/u);
       if (pathMatch?.[1] && pathMatch[2]) {
         const fullPath = pathMatch[1];
-        const lineNum = parseInt(pathMatch[2], 10);
-        const colNum = pathMatch[3] ? parseInt(pathMatch[3], 10) : 1;
+        const lineNum = Number.parseInt(pathMatch[2], 10);
+        let colNum: number;
+        if (pathMatch[3]) {
+          colNum = Number.parseInt(pathMatch[3], 10);
+        } else {
+          colNum = 1;
+        }
         const shortPath = shortenPath(fullPath);
-        const fnMatch = trimmed.match(/^at\s+([^\s]+)/);
+        const fnMatch = trimmed.match(/^at\s+([^\s]+)/u);
         const fn = fnMatch?.[1] ?? '';
         if (isFilePath(fullPath)) {
           const url = makeHyperlink(`${shortPath}:${lineNum}`, resolveIdeLink(ide, fullPath, lineNum, colNum));
-          return fn ? `  at ${picocolors.cyan(fn)} (${url})` : `  at ${url}`;
+          if (fn) {
+            return `  at ${picocolors.cyan(fn)} (${url})`;
+          }
+          return `  at ${url}`;
         }
-        return fn ? `  at ${fn} (${shortPath}:${lineNum}:${colNum})` : `  at ${shortPath}:${lineNum}:${colNum}`;
+        if (fn) {
+          return `  at ${fn} (${shortPath}:${lineNum}:${colNum})`;
+        }
+        return `  at ${shortPath}:${lineNum}:${colNum}`;
       }
       return `  ${trimmed}`;
     })
@@ -184,11 +216,14 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
     }
   }
 
-  const severityLabel = errObj.severity === 'warning'
-    ? picocolors.bold(picocolors.yellow('Warning:'))
-    : errObj.severity === 'info'
-      ? picocolors.bold(picocolors.blue('Info:'))
-      : picocolors.bold(picocolors.red('Error:'));
+  let severityLabel: ReturnType<typeof picocolors.bold>;
+  if (errObj.severity === 'warning') {
+    severityLabel = picocolors.bold(picocolors.yellow('Warning:'));
+  } else if (errObj.severity === 'info') {
+    severityLabel = picocolors.bold(picocolors.blue('Info:'));
+  } else {
+    severityLabel = picocolors.bold(picocolors.red('Error:'));
+  }
 
   const header = `${severityLabel} ${message}${locationStr}`;
 
@@ -202,7 +237,12 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
     const snippetLines: string[] = [];
     for (let i = startLine; i < endLine; i++) {
       const lineNum = (options.sourceStartLine ?? 1) + i;
-      const marker = i === errorLineIndex ? '> ' : '  ';
+      let marker: string;
+      if (i === errorLineIndex) {
+        marker = '> ';
+      } else {
+        marker = '  ';
+      }
       snippetLines.push(`${marker}${lineNum} | ${lines[i]}`);
     }
     if (snippetLines.length > 0) {
@@ -214,10 +254,10 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   }
 
   const causesStr = formatCausesAnsi(causes);
-  if (causesStr) parts.push(causesStr);
+  if (causesStr) { parts.push(causesStr); }
 
   const fixStr = formatFixAnsi(fixCode, fixComment, documentationUrl);
-  if (fixStr) parts.push(fixStr);
+  if (fixStr) { parts.push(fixStr); }
 
   if (options.renderContext && verbosity === 'full') {
     parts.push(renderContextAnsi(options.renderContext));

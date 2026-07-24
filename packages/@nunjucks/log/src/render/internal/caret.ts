@@ -9,18 +9,18 @@ export function calculateCaretPosition(
   line: string,
   displayCol: number
 ): CaretResult | null {
-  if (displayCol <= 0 || !line) return null;
+  if (displayCol <= 0 || !line) { return null; }
 
-  const isWordChar = (char: string | undefined): boolean => /[\w./\\-]/.test(char ?? '');
+  const isWordChar = (char: string | undefined): boolean => /[\w./\\-]/u.test(char ?? '');
   const isPathLike = (word: string): boolean =>
-    /[\\/-]/.test(word) ||
-    /\.(?:njk|nunjucks|html?|tmpl|tpl|js|ts|mjs|cjs|jsx|tsx|json|ya?ml|css|scss|sass|less|md|txt)$/i.test(word);
+    /[\\/-]/u.test(word) ||
+    /\.(?:njk|nunjucks|html?|tmpl|tpl|js|ts|mjs|cjs|jsx|tsx|json|ya?ml|css|scss|sass|less|md|txt)$/iu.test(word);
 
   let pos = displayCol - 1;
   let charAtPos = line[pos];
 
   if (!isWordChar(charAtPos)) {
-    if (charAtPos && !/\s/.test(charAtPos)) {
+    if (charAtPos && !/\s/u.test(charAtPos)) {
       return {
         wordStart: pos,
         wordEnd: pos + 1,
@@ -70,7 +70,12 @@ export function calculateCaretPosition(
     }
   }
 
-  const carets = highlightWord ? '^'.repeat(highlightWord.length) : '^'.repeat(3);
+  let carets: string;
+  if (highlightWord) {
+    carets = '^'.repeat(highlightWord.length);
+  } else {
+    carets = '^'.repeat(3);
+  }
 
   return { wordStart, wordEnd, highlightWord, carets };
 }

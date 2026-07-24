@@ -1,7 +1,7 @@
-import type { Tokenizer } from '../types';
-import { matches, advance } from '../state';
-import { createToken } from '../tokens';
-import type { TokenType } from '../token-types';
+import type { Tokenizer } from '../types.ts';
+import { matches, advance } from '../state.ts';
+import { createToken } from '../tokens.ts';
+import type { TokenType } from '../token-types.ts';
 
 export const tokenizeBlockStart: Tokenizer = (state) => {
   if (matches(state, state.tags.STRIP_BLOCK_START)) {
@@ -16,7 +16,7 @@ export const tokenizeBlockStart: Tokenizer = (state) => {
       state: advance(state, state.tags.STRIP_BLOCK_START.length),
     };
   }
-  if (!matches(state, state.tags.BLOCK_START)) return null;
+  if (!matches(state, state.tags.BLOCK_START)) { return null; }
   return {
     token: createToken(
       'block-start' as TokenType,
@@ -41,7 +41,7 @@ export const tokenizeBlockEnd: Tokenizer = (state) => {
       state: advance(state, state.tags.STRIP_BLOCK_END.length),
     };
   }
-  if (!matches(state, state.tags.BLOCK_END)) return null;
+  if (!matches(state, state.tags.BLOCK_END)) { return null; }
   return {
     token: createToken(
       'block-end' as TokenType,

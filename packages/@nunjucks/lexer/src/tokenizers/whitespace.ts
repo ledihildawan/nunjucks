@@ -1,13 +1,13 @@
-import type { Tokenizer } from '../types';
-import { WHITESPACE_CHARS } from '../constants';
-import { extractWhile } from '../extract';
-import { advance } from '../state';
-import { createToken } from '../tokens';
-import type { TokenType } from '../token-types';
+import type { Tokenizer } from '../types.ts';
+import { WHITESPACE_CHARS } from '../constants.ts';
+import { extractWhile } from '../extract.ts';
+import { advance } from '../state.ts';
+import { createToken } from '../tokens.ts';
+import type { TokenType } from '../token-types.ts';
 
 export const tokenizeWhitespace: Tokenizer = (state) => {
   const ws = extractWhile(state.str, state.index, WHITESPACE_CHARS);
-  if (!ws) return null;
+  if (!ws) { return null; }
 
   const newState = advance(state, ws.length);
 

@@ -6,7 +6,7 @@ export const PARSER_ERRORS = {
   SYNTAX_ERROR: {
     name: 'SYNTAX_ERROR',
     message: 'Syntax error',
-    pattern: /^Unexpected token|unexpected end of file|unexpected end of template|unexpected token:|parse error|Parse error|Unexpected end of input|^expected arguments$|^expected (?:comma|right bracket|block end|endtry|elif|else|endif)|^tag name expected|^invalid boolean|^expected expression, got end of file|^expected [a-zA-Z]+(?:, got [a-zA-Z.]+)?$/i,
+    pattern: /^Unexpected token|unexpected end of file|unexpected end of template|unexpected token:|parse error|Parse error|Unexpected end of input|^expected arguments$|^expected (?:comma|right bracket|block end|endtry|elif|else|endif)|^tag name expected|^invalid boolean|^expected expression, got end of file|^expected [a-zA-Z]+(?:, got [a-zA-Z.]+)?$/iu,
     category: 'syntax_error',
     titleTemplate: "Template syntax error",
     causes: [
@@ -47,7 +47,7 @@ export const PARSER_ERRORS = {
   PARSER_EXPECTED_IN: {
     name: 'PARSER_EXPECTED_IN',
     message: 'expected "in" keyword for loop',
-    pattern: /parseFor: expected "in" keyword for loop|^expected "in" keyword for loop$/i,
+    pattern: /parseFor: expected "in" keyword for loop|^expected "in" keyword for loop$/iu,
     category: 'syntax_error',
     titleTemplate: 'For loop missing "in" keyword',
     causes: [
@@ -61,7 +61,7 @@ export const PARSER_ERRORS = {
   PARSER_VARIABLE_NAME: {
     name: 'PARSER_VARIABLE_NAME',
     message: 'variable name expected',
-    pattern: /(?:parseBlock|parseFor): variable name expected|^variable name expected$/i,
+    pattern: /(?:parseBlock|parseFor): variable name expected|^variable name expected$/iu,
     category: 'syntax_error',
     titleTemplate: 'Variable name expected',
     causes: [
@@ -75,7 +75,7 @@ export const PARSER_ERRORS = {
   PARSER_TAG_NAME: {
     name: 'PARSER_TAG_NAME',
     message: 'tag name expected',
-    pattern: /^tag name expected$|parse(?:Block|From|TemplateRef|FilterStatement|If|Import|Include): expected [a-zA-Z]+$/i,
+    pattern: /^tag name expected$|parse(?:Block|From|TemplateRef|FilterStatement|If|Import|Include): expected [a-zA-Z]+$/iu,
     category: 'syntax_error',
     titleTemplate: 'Tag name expected',
     causes: [
@@ -90,7 +90,7 @@ export const PARSER_ERRORS = {
   PARSER_EXPRESSION: {
     name: 'PARSER_EXPRESSION',
     message: 'expected expression',
-    pattern: /^expected expression, got end of file$|parseAggregate: expected (?:comma|colon)/i,
+    pattern: /^expected expression, got end of file$|parseAggregate: expected (?:comma|colon)/iu,
     category: 'syntax_error',
     titleTemplate: 'Expression expected',
     causes: [

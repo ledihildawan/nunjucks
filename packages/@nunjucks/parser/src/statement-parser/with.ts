@@ -12,13 +12,11 @@ export const parseWithContext = (ctx: ParserContext): boolean | null => {
     withContext = false;
   }
 
-  if (withContext !== null) {
-    if (!skipSymbol(ctx, 'context')) {
+  if (withContext !== null && !skipSymbol(ctx, 'context')) {
       fail(ctx, 'parseFrom: expected context after with/without',
         tok.lineno,
         tok.colno);
     }
-  }
 
   return withContext;
 };

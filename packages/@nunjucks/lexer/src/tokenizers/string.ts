@@ -1,13 +1,13 @@
-import type { Tokenizer } from '../types';
-import { getChar } from '../state';
-import { advance } from '../state';
-import { parseStringContent } from '../extract';
-import { createToken } from '../tokens';
-import type { TokenType } from '../token-types';
+import type { Tokenizer } from '../types.ts';
+import { getChar } from '../state.ts';
+import { advance } from '../state.ts';
+import { parseStringContent } from '../extract.ts';
+import { createToken } from '../tokens.ts';
+import type { TokenType } from '../token-types.ts';
 
 export const tokenizeString: Tokenizer = (state) => {
   const char = getChar(state);
-  if (char !== '"' && char !== "'") return null;
+  if (char !== '"' && char !== "'") { return null; }
 
   const { lineno, colno } = state;
   const quote = char;

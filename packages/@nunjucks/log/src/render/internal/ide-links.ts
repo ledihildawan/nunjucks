@@ -1,12 +1,12 @@
 import { normalizeDrivePath } from './path-shortener.ts';
 
-const FILE_PATH_PATTERN = /\.(njk|nunjucks|js|ts|mjs|cjs|jsx|tsx|html|htm|tmpl|tpl|pug|ejs|handlebars|hbs|erb|php|py|rb|go|java|c|cpp|h|cs|rs|swift|kt|scala|css|scss|sass|less|styl|json|yaml|yml|xml|md|txt)$/i;
+const FILE_PATH_PATTERN = /\.(njk|nunjucks|js|ts|mjs|cjs|jsx|tsx|html|htm|tmpl|tpl|pug|ejs|handlebars|hbs|erb|php|py|rb|go|java|c|cpp|h|cs|rs|swift|kt|scala|css|scss|sass|less|styl|json|yaml|yml|xml|md|txt)$/iu;
 
 export const isFilePath = (path?: string | null): boolean =>
   typeof path === 'string' &&
   path.trim() !== '' &&
-  !/^native$/i.test(path.trim()) &&
-  !/^</.test(path.trim()) &&
+  !/^native$/iu.test(path.trim()) &&
+  !/^</u.test(path.trim()) &&
   FILE_PATH_PATTERN.test(path);
 
 const GENERIC_ICON = '<path d="M14 3v2h3.59l-9.3 9.29 1.42 1.42L19 6.41V10h2V3m-2 16H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z"/>';
@@ -42,37 +42,37 @@ export const IDE_SCHEMES: Record<string, IdeScheme | IdeLinkFn> = {
   zed: {
     label: 'Zed',
     color: '#00C8C8',
-    link: (p, l, c) => `zed://file/${p}:${l}`,
+    link: (p, l, _c) => `zed://file/${p}:${l}`,
     icon: '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" fill="none"><g clip-path="url(#a)"><path fill="currentColor" fill-rule="evenodd" d="M9 6a3 3 0 0 0-3 3v66H0V9a9 9 0 0 1 9-9h80.379c4.009 0 6.016 4.847 3.182 7.682L43.055 57.187H57V51h6v7.688a4.5 4.5 0 0 1-4.5 4.5H37.055L26.743 73.5H73.5V36h6v37.5a6 6 0 0 1-6 6H20.743L10.243 90H87a3 3 0 0 0 3-3V21h6v66a9 9 0 0 1-9 9H6.621c-4.009 0-6.016-4.847-3.182-7.682L52.757 39H39v6h-6v-7.5a4.5 4.5 0 0 1 4.5-4.5h21.257l10.5-10.5H22.5V60h-6V22.5a6 6 0 0 1 6-6h52.757L85.757 6z" clip-rule="evenodd"/></g><defs><clipPath id="a"><path fill="#fff" d="M0 0h96v96H0z"/></clipPath></defs></svg>',
   },
   webstorm: {
     label: 'WebStorm',
     color: '#07C3F2',
-    link: (p, l, c) => `webstorm://open?path=${encodeURIComponent(p)}&line=${l}`,
+    link: (p, l, _c) => `webstorm://open?path=${encodeURIComponent(p)}&line=${l}`,
     icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><defs><linearGradient id="a" x1="43.896%" x2="66.16%" y1="1.951%" y2="95.244%"><stop offset="28%" stop-color="#07c3f2"/><stop offset="94%" stop-color="#087cfa"/></linearGradient><linearGradient id="b" x1="33.063%" x2="70.362%" y1="15.078%" y2="84.685%"><stop offset="14%" stop-color="#fcf84a"/><stop offset="37%" stop-color="#07c3f2"/></linearGradient><linearGradient id="c" x1="44.416%" x2="56.203%" y1="25.058%" y2="90.203%"><stop offset="28%" stop-color="#07c3f2"/><stop offset="94%" stop-color="#087cfa"/></linearGradient></defs><path fill="url(#a)" d="M34.507 231.36 0 26.827 63.813.347 104.56 24.56l37.333-20.133 77.787 29.866L176.053 256z"/><path fill="url(#b)" d="m256 86.693-33.04-81.6L163.013 0 70.48 88.907l24.907 114.586 46.506 32.614L256 168.4l-28-52.507z"/><path fill="url(#c)" d="m204.72 74.533 23.28 41.36 28-29.2-20.56-50.826z"/><path d="M48 48h160v160H48z"/><path fill="#fff" d="M67.947 177.76h60v10h-60zm56.8-109.84-8.934 35.013L105.6 67.92H95.44L85.2 102.933 76.293 67.92h-14l17.147 60.027h11.253l9.814-34.747 9.706 34.747H121.6l17.12-60.027zm16.48 51.707 7.813-9.6a27.57 27.57 0 0 0 17.973 7.306c5.334 0 8.694-2.133 8.694-5.68v-.16c0-1.899-.665-3.27-3.058-4.57l-.382-.2-.41-.198-.216-.1-.454-.198-.238-.1-.5-.198-.531-.2-.278-.1-.58-.2-.303-.102-.63-.204-.667-.206-.347-.104-.72-.21-.758-.214-.795-.216-.835-.221-1.605-.416-1.144-.307-.748-.207-.734-.21-.72-.215-.707-.217-.694-.222-.68-.227-.334-.115-.658-.235-.643-.241-.629-.248-.614-.255-.301-.13-.591-.267-.576-.275c-5.582-2.748-8.889-6.796-8.998-14.338l-.002-.574c0-10.792 8.59-17.98 20.68-18.13l.386-.003a34.67 34.67 0 0 1 22.347 7.653l-6.88 9.974a28.1 28.1 0 0 0-15.653-5.92c-5.067 0-7.734 2.32-7.734 5.333v.187c0 2.402.988 3.856 4.09 5.227l.456.196q.237.098.487.194l.518.195.548.196.58.196.611.199.646.2.679.203 1.083.312.767.213.803.217 1.719.452q.426.112.843.225l.826.23q.205.057.407.116l.8.236.781.242.765.247.746.252.728.26.357.131.7.27c7.724</svg>',
   },
   intellij: {
     label: 'IntelliJ IDEA',
     color: '#087CFA',
-    link: (p, l, c) => `idea://open?path=${encodeURIComponent(p)}&line=${l}`,
+    link: (p, l, _c) => `idea://open?path=${encodeURIComponent(p)}&line=${l}`,
     icon: '<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="0 0 70 70"><linearGradient id="a" x1=".79" x2="33.317" y1="40.089" y2="40.089" gradientUnits="userSpaceOnUse"><stop offset=".258" style="stop-color:#f97a12"/><stop offset=".459" style="stop-color:#b07b58"/><stop offset=".724" style="stop-color:#577bae"/><stop offset=".91" style="stop-color:#1e7ce5"/><stop offset="1" style="stop-color:#087cfa"/></linearGradient><path d="M17.7 54.6.8 41.2l8.4-15.6L33.3 35z" style="fill:url(#a)"/><linearGradient id="b" x1="25.767" x2="79.424" y1="24.88" y2="54.57" gradientUnits="userSpaceOnUse"><stop offset="0" style="stop-color:#f97a12"/><stop offset=".072" style="stop-color:#cb7a3e"/><stop offset=".154" style="stop-color:#9e7b6a"/><stop offset=".242" style="stop-color:#757b91"/><stop offset=".334" style="stop-color:#537bb1"/><stop offset=".432" style="stop-color:#386ddb"/><stop offset=".538" style="stop-color:#2374e9"/><stop offset=".655" style="stop-color:#147cef"/><stop offset=".792" style="stop-color:#0b7cf7"/><stop offset="1" style="stop-color:#087cfa"/></linearGradient><path d="m70 18.7-1.3 40.5L41.8 70 25.6 59.6 49.3 35 38.9 12.3l9.3-11.2z" style="fill:url(#b)"/><linearGradient id="c" x1="63.228" x2="48.29" y1="42.915" y2="-1.719" gradientUnits="userSpaceOnUse"><stop offset="0" style="stop-color:#fe315d"/><stop offset=".078" style="stop-color:#cb417e"/><stop offset=".16" style="stop-color:#9e4e9b"/><stop offset=".247" style="stop-color:#755bb4"/><stop offset=".339" style="stop-color="#5365ca"/><stop offset=".436" style="stop-color:#386ddb"/><stop offset=".541" style="stop-color:#2374e9"/><stop offset=".658" style="stop-color:#1478f3"/><stop offset=".794" style="stop-color:#0b7bf8"/><stop offset="1" style="stop-color:#087cfa"/></linearGradient><path d="M70 18.7 48.7 43.9l-9.8-31.6 9.3-11.2z" style="fill:url(#c)"/><linearGradient id="d" x1="10.72" x2="55.524" y1="16.473" y2="90.58" gradientUnits="userSpaceOnUse"><stop offset="0" style="stop-color:#fe</svg>',
   },
   phpstorm: {
     label: 'PhpStorm',
     color: '#B12E5A',
-    link: (p, l, c) => `phpstorm://open?path=${encodeURIComponent(p)}&line=${l}`,
+    link: (p, l, _c) => `phpstorm://open?path=${encodeURIComponent(p)}&line=${l}`,
     icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><defs><linearGradient id="a" x1="40.196%" x2="55.577%" y1="64.058%" y2="47.965%"><stop offset="0%" stop-color="#af1df5"/><stop offset="21%" stop-color="#bc20e4"/><stop offset="63%" stop-color="#dd29b8"/><stop offset="100%" stop-color="#ff318c"/></linearGradient><linearGradient id="b" x1="42.885%" x2="63.378%" y1="78.603%" y2="-4.057%"><stop offset="2%" stop-color="#6b57ff"/><stop offset="42%" stop-color="#b74af7"/><stop offset="75%" stop-color="#ff318c"/></linearGradient><linearGradient id="c" x1="73.258%" x2="32.049%" y1="102.209%" y2="-3.688%"><stop offset="0%" stop-color="#293896"/><stop offset="8%" style="stop-color:#3b3aa2"/><stop offset="29%" style="stop-color:#6740c0"/><stop offset="49%" style="stop-color:#8a44d8"/><stop offset="68%" style="stop-color="#a347e9"/><stop offset="86%" style="stop-color:#b249f3"/><stop offset="100%" style="stop-color="#b74af7"/></linearGradient><linearGradient id="d" x1="62.87%" x2="39.747%" y1="72.446%" y2="45.568%"><stop offset="2%" stop-color="#6b57ff"/><stop offset="78%" stop-color="#b74af7"/></linearGradient></defs><path fill="url(#a)" d="M141.307 45.013 132.773 19.2 43.68 0 0 49.413l48 24.56v-28.96z"/><path fill="url(#b)" d="m48 61.813-48-12.4 24.4 146.56 23.52-.186z"/><path fill="url(#c)" d="M208 45.013h-83.493L158.053 15.2l64.64 12L256 109.973l-47.973 47.654z"/><path fill="url(#d)" d="M208.053 108.88 208 205.013H70.56l3.547 20.907L160.4 256l95.6-57.227z"/><path d="M47 43.771h162v162H47z"/><path fill="#fff" d="M67.947 175.093h60v10h-60zm52.32-58.133 7.813-9.6a27.57 27.57 0 0 0 17.973 7.307c5.334 0 8.694-2.16 8.694-5.68v-.16c0-1.364-.343-2.46-1.422-3.451l-.242-.211a7 7 0 0 0-.557-.414l-.315-.204a11 11 0 0 0-.522-.302l-.382-.2-.201-.1-.425-.198a20 20 0 0 0-.454-.198l-.484-.199-.254-.1-.531-.198-.278-.1-.58-.201-.303-.101-.63-.203-.667-.205-.702-.208q-.18-.053-.365-.104l-.758-.212-.795-.215-2.44-.633-.766-.205-1.126-.31-.368-.105-.728-.212-.714-.215-.351-.1</svg>',
   },
   pycharm: {
     label: 'PyCharm',
     color: '#4CAF50',
-    link: (p, l, c) => `pycharm://open?path=${encodeURIComponent(p)}&line=${l}`,
+    link: (p, l, _c) => `pycharm://open?path=${encodeURIComponent(p)}&line=${l}`,
     icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><defs><linearGradient id="a" x1="-46.686%" x2="90.514%" y1="50%" y2="50%"><stop offset="0%" stop-color="#21d789"/><stop offset="100%" stop-color="#07c3f2"/></linearGradient><linearGradient id="b" x1="-19.16%" x2="105.922%" y1="105.481%" y2="-7.577%"><stop offset="1%" stop-color="#fcf84a"/><stop offset="11%" stop-color="#a7eb62"/><stop offset="21%" stop-color="#5fe077"/><stop offset="27%" stop-color="#32da84"/><stop offset="31%" stop-color="#21d789"/><stop offset="58%" stop-color="#21d789"/><stop offset="60%" stop-color="#21d789"/><stop offset="69%" stop-color="#20d68c"/><stop offset="76%" stop-color="#1ed497"/><stop offset="83%" stop-color="#19d1a9"/><stop offset="90%" stop-color="#13ccc2"/><stop offset="97%" stop-color="#0bc6e1"/><stop offset="100%" stop-color="#07c3f2"/></linearGradient><linearGradient id="c" x1="42.23%" x2="61.179%" y1="115.967%" y2="22.253%"><stop offset="0%" stop-color="#21d789"/><stop offset="16%" stop-color="#24d888"/><stop offset="30%" stop-color="#2fd985"/><stop offset="43%" stop-color="#41dc80"/><stop offset="55%" stop-color="#5ae079"/><stop offset="67%" stop-color="#7ae46f"/><stop offset="79%" stop-color="#a1ea64"/><stop offset="90%" stop-color="#cff157"/><stop offset="100%" stop-color="#fcf84a"/></linearGradient><linearGradient id="d" x1="-9.711%" x2="118.641%" y1="144.55%" y2="8.292%"><stop offset="0%" stop-color="#21d789"/><stop offset="9%" stop-color="#23d986"/><stop offset="17%" stop-color="#2ade7b"/><stop offset="25%" stop-color="#36e669"/><stop offset="27%" stop-color="#3bea62"/><stop offset="35%" stop-color="#47eb61"/><stop offset="49%" stop-color="#67ed5d"/><stop offset="69%" stop-color="#9af156"/><stop offset="92%" stop-color="#e0f64d"/><stop offset="100%" stop-color="#fcf84a"/></linearGradient><linearGradient id="e" x1="105.92%" x2="-8.04%" y1="50.481%" y2="49.366%"><stop offset="39%" stop-color="#fcf84a"/></svg>',
   },
   sublime: {
     label: 'Sublime Text',
     color: '#FF9800',
-    link: (p, l, c) => `subl://open?url=file://${p}&line=${l}`,
+    link: (p, l, _c) => `subl://open?url=file://${p}&line=${l}`,
     icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 332"><defs><linearGradient id="a" x1="55.117%" x2="63.68%" y1="58.68%" y2="39.597%"><stop offset="0%" stop-color="#ff9700"/><stop offset="53%" stop-color="#f48e00"/><stop offset="100%" stop-color="#d06f00"/></linearGradient></defs><path fill="url(#a)" d="M255.288 166.795c0-3.887-2.872-6.128-6.397-5.015L6.397 238.675C2.865 239.796 0 243.86 0 247.74v78.59c0 3.887 2.865 6.135 6.397 5.015l242.494-76.888c3.525-1.12 6.397-5.185 6.397-9.071z"/><path fill="#ff9800" d="M0 164.291c0 3.887 2.865 7.95 6.397 9.071l242.53 76.902c3.531 1.12 6.397-1.127 6.397-5.007V166.66c0-3.88-2.866-7.944-6.397-9.064L6.397 80.694C2.865 79.574 0 81.814 0 85.7z"/><path fill="#ff9800" d="M255.288 5.302c0-3.886-2.872-6.135-6.397-5.014L6.397 77.176C2.865 78.296 0 82.36 0 86.247v78.59c0 3.887 2.865 6.128 6.397 5.014l242.494-76.895c3.525-1.12 6.397-5.184 6.397-9.064z"/></svg>',
   },
 };
@@ -80,17 +80,17 @@ export const IDE_SCHEMES: Record<string, IdeScheme | IdeLinkFn> = {
 const DEFAULT_META = { label: 'IDE', color: null, icon: GENERIC_ICON };
 
 export const resolveIdeLink = (ide: string | IdeLinkFn, path: string, line: number, col: number): string => {
-  if (typeof ide === 'function') return ide(path, line, col);
+  if (typeof ide === 'function') { return ide(path, line, col); }
   const entry = IDE_SCHEMES[ide];
-  if (!entry) return (IDE_SCHEMES.vscode as IdeScheme).link(path, line, col);
-  if (typeof entry === 'function') return entry(path, line, col);
+  if (!entry) { return (IDE_SCHEMES.vscode as IdeScheme).link(path, line, col); }
+  if (typeof entry === 'function') { return entry(path, line, col); }
   const normalizedPath = normalizeDrivePath(path);
   return entry.link(normalizedPath, line, col);
 };
 
 export const getIdeMeta = (ide: string | IdeLinkFn): { label: string; color: string | null; icon: string } => {
-  if (typeof ide === 'function') return DEFAULT_META;
+  if (typeof ide === 'function') { return DEFAULT_META; }
   const entry = IDE_SCHEMES[ide];
-  if (!entry || typeof entry === 'function') return DEFAULT_META;
+  if (!entry || typeof entry === 'function') { return DEFAULT_META; }
   return entry;
 };

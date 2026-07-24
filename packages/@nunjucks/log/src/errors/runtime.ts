@@ -7,7 +7,7 @@ export const RUNTIME_ERRORS = {
   NULL_VALUE: {
     name: 'NULL_VALUE',
     message: "Cannot access '{accessPath}' on {state} '{parent}'",
-    pattern: /^Cannot access '([^']+)' on (null|undefined) '([^']+)'$/i,
+    pattern: /^Cannot access '([^']+)' on (null|undefined) '([^']+)'$/iu,
     category: 'null_value',
     titleTemplate: "Cannot access '{subject}'",
     causes: [
@@ -36,7 +36,7 @@ export const RUNTIME_ERRORS = {
   UNDEFINED_PROPERTY: {
     name: 'UNDEFINED_PROPERTY',
     message: "Property '{property}' not found in '{parent}'",
-    pattern: /^Property '([^']+)' not found in '([^']+)'$/i,
+    pattern: /^Property '([^']+)' not found in '([^']+)'$/iu,
     category: 'undefined_property',
     titleTemplate: "Property '{subject}' not found in '{parent}'",
     causes: [
@@ -116,7 +116,7 @@ export const RUNTIME_ERRORS = {
   UNKNOWN_BLOCK_RUNTIME: {
     name: 'UNKNOWN_BLOCK_RUNTIME',
     message: 'unknown block "{name}"',
-    pattern: /^unknown block "([^"]+)"$|parent has no block|called super\(\) in a block without parent/i,
+    pattern: /^unknown block "([^"]+)"$|parent has no block|called super\(\) in a block without parent/iu,
     category: 'undefined_block',
     titleTemplate: "Block '{subject}' does not exist in the parent template",
     causes: [
@@ -144,7 +144,7 @@ export const RUNTIME_ERRORS = {
   NO_SUPER_BLOCK: {
     name: 'NO_SUPER_BLOCK',
     message: 'No super block available',
-    pattern: /no super block available|called super\(\) in a block without parent/i,
+    pattern: /no super block available|called super\(\) in a block without parent/iu,
     category: 'no_super_block',
     titleTemplate: "Cannot call super() - parent has no block",
     causes: [
@@ -158,7 +158,7 @@ export const RUNTIME_ERRORS = {
   IN_OPERATOR: {
     name: 'IN_OPERATOR',
     message: "Cannot use 'in' operator to search for '{key}' in {type}",
-    pattern: /^Cannot use 'in' operator to search for '([^']+)' in (.+)$/i,
+    pattern: /^Cannot use 'in' operator to search for '([^']+)' in (.+)$/iu,
     category: 'operator_error',
     titleTemplate: "Cannot use 'in' operator to search for '{subject}'",
     causes: [
@@ -173,7 +173,7 @@ export const RUNTIME_ERRORS = {
   TIMEOUT: {
     name: 'TIMEOUT',
     message: 'Template rendering timed out after {ms}ms',
-    pattern: /^Template rendering timed out after (\d+)ms$/i,
+    pattern: /^Template rendering timed out after (\d+)ms$/iu,
     category: 'timeout_error',
     titleTemplate: 'Template rendering timed out',
     causes: [
@@ -201,7 +201,7 @@ export const RUNTIME_ERRORS = {
   INVALID_LOOKUP: {
     name: 'INVALID_LOOKUP',
     message: 'expected name as lookup value after {marker} on {target}, got {value}',
-    pattern: /expected name as lookup value after (dot|\?\.) on (.+), got (.+)$/i,
+    pattern: /expected name as lookup value after (dot|\?\.) on (.+), got (.+)$/iu,
     category: 'invalid_lookup',
     titleTemplate: "Invalid property access: {subject}",
     causes: [
@@ -254,7 +254,7 @@ export const RUNTIME_ERRORS = {
   RESERVED_KEYWORD: {
     name: 'RESERVED_KEYWORD',
     message: "Cannot use reserved {type} '{name}'",
-    pattern: /^Cannot use reserved (.+) '([^']+)'$/i,
+    pattern: /^Cannot use reserved (.+) '([^']+)'$/iu,
     category: 'reserved_keyword',
     titleTemplate: "Cannot use reserved keyword '{subject}'",
     causes: [
@@ -269,7 +269,7 @@ export const RUNTIME_ERRORS = {
   RESERVED_KEYWORD_CONTEXT: {
     name: 'RESERVED_KEYWORD_CONTEXT',
     message: "Cannot use reserved keyword '{name}' outside of its intended context",
-    pattern: /reserved keyword.*context|cannot use.*reserved keyword|caller.*only available|only available inside.*call/i,
+    pattern: /reserved keyword.*context|cannot use.*reserved keyword|caller.*only available|only available inside.*call/iu,
     category: 'reserved_keyword_context',
     titleTemplate: "Cannot use reserved keyword '{subject}' outside of its intended context",
     causes: [

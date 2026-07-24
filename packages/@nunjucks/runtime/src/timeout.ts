@@ -7,7 +7,7 @@ export interface TimeoutError extends Error {
 export const createTimeoutError = (message = 'Template execution timed out'): TimeoutError => {
   const err = new Error(message) as TimeoutError;
   err.name = 'TimeoutError';
-  err.code = ERROR_DEFINITIONS.TIMEOUT!.name;
+  err.code = ERROR_DEFINITIONS.TIMEOUT?.name;
   return err;
 };
 

@@ -94,30 +94,22 @@ describe('makeMacro', () => {
 
 describe('withKwargs', () => {
   test('wraps function to handle kwargs correctly', () => {
-    const greet = withKwargs(({ name = 'World', greeting = 'Hello' }: { name?: string; greeting?: string } = {}) => {
-      return `${greeting} ${name}!`;
-    });
+    const greet = withKwargs(({ name = 'World', greeting = 'Hello' }: { name?: string; greeting?: string } = {}) => `${greeting} ${name}!`);
     expect((greet as (kw: unknown) => string)(makeKeywordArgs({ name: 'John' }))).toBe('Hello John!');
   });
 
   test('handles kwargs in any order', () => {
-    const greet = withKwargs(({ name = 'World', greeting = 'Hello' }: { name?: string; greeting?: string } = {}) => {
-      return `${greeting} ${name}!`;
-    });
+    const greet = withKwargs(({ name = 'World', greeting = 'Hello' }: { name?: string; greeting?: string } = {}) => `${greeting} ${name}!`);
     expect((greet as (kw: unknown) => string)(makeKeywordArgs({ greeting: 'Hi', name: 'Alice' }))).toBe('Hi Alice!');
   });
 
   test('passes positional args before kwargs', () => {
-    const format = withKwargs((a: string, b: string, { sep = '-' }: { sep?: string } = {}) => {
-      return `${a}${sep}${b}`;
-    });
+    const format = withKwargs((a: string, b: string, { sep = '-' }: { sep?: string } = {}) => `${a}${sep}${b}`);
     expect((format as (a: string, b: string, kw: unknown) => string)('X', 'Y', makeKeywordArgs({ sep: '::' }))).toBe('X::Y');
   });
 
   test('uses defaults when kwargs not provided', () => {
-    const greet = withKwargs(({ name = 'World', greeting = 'Hello' }: { name?: string; greeting?: string } = {}) => {
-      return `${greeting} ${name}!`;
-    });
+    const greet = withKwargs(({ name = 'World', greeting = 'Hello' }: { name?: string; greeting?: string } = {}) => `${greeting} ${name}!`);
     expect((greet as (kw: unknown) => string)(makeKeywordArgs({}))).toBe('Hello World!');
   });
 
@@ -130,9 +122,7 @@ describe('withKwargs', () => {
   });
 
   test('handles only positional args', () => {
-    const add = withKwargs((a: number, b: number, { multiplier = 1 }: { multiplier?: number } = {}) => {
-      return (a + b) * multiplier;
-    });
+    const add = withKwargs((a: number, b: number, { multiplier = 1 }: { multiplier?: number } = {}) => (a + b) * multiplier);
     expect((add as (a: number, b: number, kw: unknown) => number)(1, 2, makeKeywordArgs({ multiplier: 10 }))).toBe(30);
   });
 });

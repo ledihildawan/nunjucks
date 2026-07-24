@@ -1,5 +1,5 @@
 import { expect, describe, test } from 'bun:test';
-import { _prepareAttributeParts, getAttrGetter } from './attributes.js';
+import { _prepareAttributeParts, getAttrGetter } from './attributes.ts';
 
 describe('_prepareAttributeParts', () => {
   test('returns empty array for falsy input', () => {

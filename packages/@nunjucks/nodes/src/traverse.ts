@@ -22,7 +22,7 @@ export const addChild = (list: Node, child: Node): Node => {
 
 export const pushChild = (node: Node, child: Node): void => {
   const children = (node as { children?: Node[] }).children;
-  if (children) children.push(child);
+  if (children) { children.push(child); }
 };
 
 export const mapCOW = <T>(arr: readonly T[], fn: (item: T) => T): T[] => {
@@ -40,11 +40,11 @@ export const mapCOW = <T>(arr: readonly T[], fn: (item: T) => T): T[] => {
 const walkValue = (val: unknown, walker: (n: Node) => Node): unknown => {
   if (Array.isArray(val)) {
     return mapCOW<unknown>(val as unknown[], item => {
-      if (item && typeof item === 'object' && 'type' in item) return walker(item as Node);
+      if (item && typeof item === 'object' && 'type' in item) { return walker(item as Node); }
       return item;
     });
   }
-  if (val && typeof val === 'object' && 'type' in val) return walker(val as Node);
+  if (val && typeof val === 'object' && 'type' in val) { return walker(val as Node); }
   return val;
 };
 
@@ -63,7 +63,12 @@ const walkChildren = (node: Node, walker: (n: Node) => Node): Node => {
     const args = (node as unknown as { args: Node }).args;
     const newArgs = walkValue(args, walker);
     const contentArgs = (node as unknown as { contentArgs: Node[] }).contentArgs;
-    const newContentArgs = contentArgs ? mapCOW(contentArgs, c => walker(c)) : contentArgs;
+    let newContentArgs: Node[] | null;
+    if (contentArgs) {
+      newContentArgs = mapCOW(contentArgs, c => walker(c));
+    } else {
+      newContentArgs = contentArgs;
+    }
     if (newArgs !== args || newContentArgs !== contentArgs) {
       return { ...node, args: newArgs, contentArgs: newContentArgs } as Node;
     }
@@ -80,9 +85,9 @@ const walkChildren = (node: Node, walker: (n: Node) => Node): Node => {
   return node;
 };
 
-export const walk = (ast: Node, fn: (n: Node) => Node | void): Node => {
-  if (!ast || typeof ast !== 'object') return ast as Node;
-  if (!isNode(ast) && !isCallExtNode(ast)) return ast;
+export const walk = (ast: Node, fn: (n: Node) => Node | undefined): Node => {
+  if (!ast || typeof ast !== 'object') { return ast as Node; }
+  if (!(isNode(ast) || isCallExtNode(ast))) { return ast; }
 
   const replaced = fn(ast);
   if (replaced && replaced !== ast) {
@@ -92,9 +97,9 @@ export const walk = (ast: Node, fn: (n: Node) => Node | void): Node => {
   return walkChildren(afterFn, c => walk(c, fn));
 };
 
-export const depthWalk = (ast: Node, fn: (n: Node) => Node | void): Node => {
-  if (!ast || typeof ast !== 'object') return ast as Node;
-  if (!isNode(ast) && !isCallExtNode(ast)) return ast;
+export const depthWalk = (ast: Node, fn: (n: Node) => Node | undefined): Node => {
+  if (!ast || typeof ast !== 'object') { return ast as Node; }
+  if (!(isNode(ast) || isCallExtNode(ast))) { return ast; }
 
   const walked = walkChildren(ast, c => depthWalk(c, fn));
   const replaced = fn(walked);
@@ -106,10 +111,16 @@ export const findAll = (node: Node, predicate: string | ((n: Node) => boolean)):
   const seen = new Set<Node>();
 
   const search = (n: Node | null | undefined): void => {
-    if (!n || seen.has(n)) return;
+    if (!n || seen.has(n)) { return; }
     seen.add(n);
 
-    if (typeof predicate === 'string' ? n.type === predicate : predicate(n)) {
+    let predicateResult: boolean;
+    if (typeof predicate === 'string') {
+      predicateResult = n.type === predicate;
+    } else {
+      predicateResult = predicate(n);
+    }
+    if (predicateResult) {
       results.push(n);
     }
 
@@ -119,16 +130,16 @@ export const findAll = (node: Node, predicate: string | ((n: Node) => boolean)):
 
     if (isCallExtNode(n)) {
       const args = (n as unknown as { args?: Node }).args;
-      if (args) search(args);
+      if (args) { search(args); }
       const contentArgs = (n as unknown as { contentArgs?: Node[] }).contentArgs;
-      if (contentArgs) contentArgs.forEach(search);
+      if (contentArgs) { contentArgs.forEach(search); }
     }
 
     for (const field of getFields(n)) {
       const val = (n as unknown as Record<string, unknown>)[field];
       if (val && typeof val === 'object') {
-        if (Array.isArray(val)) (val as Node[]).forEach(search);
-        else search(val as Node);
+        if (Array.isArray(val)) { (val as Node[]).forEach(search); }
+        else { search(val as Node); }
       }
     }
   };
@@ -141,21 +152,19 @@ export const findFirst = (node: Node, predicate: (n: Node) => boolean): Node | u
   const found = { result: undefined as Node | undefined };
 
   const search = (n: Node | null | undefined): boolean => {
-    if (!n || found.result) return true;
-    if (predicate(n)) found.result = n;
+    if (!n || found.result) { return true; }
+    if (predicate(n)) { found.result = n; }
     else {
-      if (CHILDREN_TYPES.has(n.type)) ((n as unknown as { children: Node[] }).children).some(search);
+      if (CHILDREN_TYPES.has(n.type)) { ((n as unknown as { children: Node[] }).children).some(search); }
       if (isCallExtNode(n)) {
         const args = (n as unknown as { args?: Node }).args;
-        if (args && search(args)) return true;
+        if (args && search(args)) { return true; }
         const contentArgs = (n as unknown as { contentArgs?: Node[] }).contentArgs;
-        if (contentArgs) for (const c of contentArgs) if (search(c)) return true;
+        if (contentArgs) { for (const c of contentArgs) { if (search(c)) { return true; } } }
       }
       for (const field of getFields(n)) {
         const val = (n as unknown as Record<string, unknown>)[field];
-        if (val && typeof val === 'object' && !Array.isArray(val)) {
-          if (search(val as Node)) return true;
-        }
+        if (val && typeof val === 'object' && !Array.isArray(val) && search(val as Node)) { return true; }
       }
     }
     return false;
@@ -167,7 +176,7 @@ export const findFirst = (node: Node, predicate: (n: Node) => boolean): Node | u
 
 export const count = (node: Node, predicate?: (n: Node) => boolean): number => {
   let n = 0;
-  findAll(node, (nd): boolean => { if (!predicate || predicate(nd)) n++; return true; });
+  findAll(node, (nd): boolean => { if (!predicate || predicate(nd)) { n++;  }return true; });
   return n;
 };
 
@@ -180,15 +189,15 @@ export function* iterateNodes(node: Node): Generator<Node> {
     }
   } else if (isCallExtNode(node)) {
     const args = (node as unknown as { args?: Node }).args;
-    if (args) yield* iterateNodes(args);
+    if (args) { yield* iterateNodes(args); }
     const contentArgs = (node as unknown as { contentArgs?: Node[] }).contentArgs;
-    if (contentArgs) for (const c of contentArgs) yield* iterateNodes(c);
+    if (contentArgs) { for (const c of contentArgs) { yield* iterateNodes(c); } }
   } else {
     for (const field of getFields(node)) {
       const val = (node as unknown as Record<string, unknown>)[field];
       if (val && typeof val === 'object') {
         if (Array.isArray(val)) {
-          for (const item of val) yield* iterateNodes(item as Node);
+          for (const item of val) { yield* iterateNodes(item as Node); }
         } else {
           yield* iterateNodes(val as Node);
         }
@@ -199,6 +208,6 @@ export function* iterateNodes(node: Node): Generator<Node> {
 
 export function* filterNodes(ast: Node, predicate: (n: Node) => boolean): Generator<Node> {
   for (const n of iterateNodes(ast)) {
-    if (predicate(n)) yield n;
+    if (predicate(n)) { yield n; }
   }
 }

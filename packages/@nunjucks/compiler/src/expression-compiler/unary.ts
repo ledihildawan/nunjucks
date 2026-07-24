@@ -3,7 +3,7 @@ import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 
 const compileUnary = (ctx: Compiler, node: Node, frame: Frame, operator: string): void => {
-  ctx.emit('(lineno = ' + (node.lineno ?? 0) + ', colno = ' + (node.colno ?? 0) + ', ' + operator);
+  ctx.emit(`(lineno = ${node.lineno ?? 0}, colno = ${node.colno ?? 0}, ${operator}`);
   ctx.compile(node.target as Node, frame);
   ctx.emit(')');
 };

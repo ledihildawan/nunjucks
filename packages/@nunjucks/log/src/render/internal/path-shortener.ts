@@ -1,4 +1,5 @@
 import { pipe, filter } from 'remeda';
+import process from "node:process";
 
 let _projectRoot: string | null = null;
 
@@ -10,9 +11,9 @@ const getProjectRoot = () => {
 };
 
 export const normalizeDrivePath = (p: string) => {
-  let path = p.replace(/^file:\/\//, '');
-  path = path.replace(/^[\\/]+([A-Za-z]):/, '$1:');
-  path = path.replace(/\\/g, '/');
+  let path = p.replace(/^file:\/\//u, '');
+  path = path.replace(/^[\\/]+([A-Za-z]):/u, '$1:');
+  path = path.replace(/\\/gu, '/');
   return path;
 };
 
@@ -31,7 +32,7 @@ export const shortenPath = (path: string) => {
   );
 
   if (privateIdx !== -1) {
-    const projectIdx = parts.findIndex(p => p === rootDirName);
+    const projectIdx = parts.indexOf(rootDirName);
 
     if (projectIdx !== -1) {
       const before = parts.slice(0, privateIdx + 1);

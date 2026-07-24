@@ -13,7 +13,7 @@ const tokenToLiteral = (tok: Token): Node => {
     case 'int':
       return literal(tok.lineno, tok.colno, Number(tok.value));
     case 'float':
-      return literal(tok.lineno, tok.colno, parseFloat(tok.value as string));
+      return literal(tok.lineno, tok.colno, Number.parseFloat(tok.value as string));
     case 'string':
       return literal(tok.lineno, tok.colno, tok.value);
     case 'boolean':
@@ -43,12 +43,12 @@ const parseTernary = (ctx: ParserContext, node: Node): Node => {
 const COMPOUND_OPS = ['||=', '&&=', '??=', '**=', '//=', '+=', '-=', '*=', '/=', '%=', '|> ='];
 
 const normalizePattern = (node: Node): Node => {
-  if (isArrayPattern(node) || isObjectPattern(node)) return node;
+  if (isArrayPattern(node) || isObjectPattern(node)) { return node; }
   if (isArray(node)) {
     return arrayPattern(node.lineno, node.colno, (node as MutableNode).children.map(c => {
       const p = c as PairNode;
-      if (isPair(c) && isSymbol(p.value) && p.key.value === p.value.value) return p.value;
-      if (isSpread(c)) return restPattern(c.lineno, c.colno, p.argument);
+      if (isPair(c) && isSymbol(p.value) && p.key.value === p.value.value) { return p.value; }
+      if (isSpread(c)) { return restPattern(c.lineno, c.colno, p.argument); }
       return c;
     }));
   }
@@ -57,7 +57,7 @@ const normalizePattern = (node: Node): Node => {
     if (isPair(c) && isSymbol(p.key) && isSymbol(p.value) && p.key.value === p.value.value) {
       return patternProperty(p.key.lineno, p.key.colno, p.key.value as Node, p.key);
     }
-    if (isSpread(c)) return restPattern(c.lineno, c.colno, p.argument);
+    if (isSpread(c)) { return restPattern(c.lineno, c.colno, p.argument); }
     return c;
   }));
 };

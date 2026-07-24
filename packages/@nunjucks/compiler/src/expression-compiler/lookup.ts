@@ -10,17 +10,22 @@ const locationFor = (node: Node | undefined, fallback: Node = node as Node): { l
 });
 
 const emitLocationGuard = (ctx: Compiler, location: { lineno: number; colno: number }): void => {
-  ctx.emit('(lineno = ' + location.lineno + ', colno = ' + location.colno + ', ');
+  ctx.emit(`(lineno = ${location.lineno}, colno = ${location.colno}, `);
 };
 
 const getTargetName = (node: Node | undefined): string | null => {
-  if (!node) return null;
-  if (isSymbol(node)) return node.value as string;
+  if (!node) { return null; }
+  if (isSymbol(node)) { return node.value as string; }
   if (isLookupVal(node)) {
     const parentName = getTargetName(node.target as Node);
     const val = node.val as Node;
-    const propName = isLiteral(val) ? (val.value as unknown) : null;
-    if (parentName && propName) return `${parentName}.${propName}`;
+    let propName: unknown;
+    if (isLiteral(val)) {
+      propName = val.value as unknown;
+    } else {
+      propName = null;
+    }
+    if (parentName && propName) { return `${parentName}.${propName}`; }
   }
   return null;
 };
@@ -58,10 +63,10 @@ export const compileLookupVal = (ctx: Compiler, node: Node, frame: Frame): void 
     ctx.compileExpression(node.target as Node, frame);
     ctx.emit('),');
     ctx.compileExpression(val, frame);
-    if (parentName !== null) {
-      ctx.emit(`, ${JSON.stringify(parentName)}`);
-    } else {
+    if (parentName === null) {
       ctx.emit(', null');
+    } else {
+      ctx.emit(`, ${JSON.stringify(parentName)}`);
     }
     ctx.emit(')');
   }

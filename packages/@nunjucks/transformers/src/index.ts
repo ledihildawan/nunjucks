@@ -1,4 +1,4 @@
-import { type Node } from '@nunjucks/nodes/types';
+import type { Node } from '@nunjucks/nodes/types';
 import { liftPipes } from './pipe.ts';
 import { liftSuper } from './super.ts';
 import { convertStatements } from './statement.ts';

@@ -1,9 +1,9 @@
-import type { LexerOptions } from './types';
-import type { Token } from './token-types';
-import { createState, advance, getChar } from './state';
-import { tokenizers } from './tokenizers';
-import { createDelimiters } from './delimiters';
-import { WHITESPACE_CHARS } from './constants';
+import type { LexerOptions } from './types.ts';
+import type { Token } from './token-types.ts';
+import { createState, advance, getChar } from './state.ts';
+import { tokenizers } from './tokenizers/index.ts';
+import { createDelimiters } from './delimiters.ts';
+import { WHITESPACE_CHARS } from './constants.ts';
 
 function* lexGenerator(src: string, opts: LexerOptions = {}): Generator<Token, void, unknown> {
   let state = createState(src, opts);
@@ -39,7 +39,7 @@ export function createTokenizer(src: string, opts: LexerOptions = {}) {
   return {
     nextToken: (): Token | null => {
       const result = generator.next();
-      if (result.done) return null;
+      if (result.done) { return null; }
       return result.value;
     },
     tags,

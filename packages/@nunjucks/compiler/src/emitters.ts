@@ -1,4 +1,4 @@
-import { isNonNullish } from 'remeda';
+
 import type { Node } from '@nunjucks/nodes';
 import type { SourceMap } from './source-map.ts';
 
@@ -17,20 +17,22 @@ export const emit = (ctx: EmitterCtx, code: string): void => {
   ctx.codebuf.push(code);
 };
 
-export const emitLine = (ctx: EmitterCtx, code: string, originalLine?: number, colno: number = 0): void => {
-  ctx.compiledLine++;
+export const emitLine = (ctx: EmitterCtx, code: string, originalLine?: number, colno = 0): void => {
+  ctx.compiledLine += 1;
   if (originalLine !== undefined) {
     ctx.sourceMap.addMapping(ctx.compiledLine, originalLine, colno);
   }
-  emit(ctx, code + '\n');
+  emit(ctx, `${code}\n`);
 };
 
-export const emitLineWithMapping = emitLine;
+export const emitLineWithMapping: typeof emitLine = emitLine;
 
-export const emitLineWithLineno = emitLine;
+export const emitLineWithLineno: typeof emitLine = emitLine;
 
 export const emitLines = (ctx: EmitterCtx, ...lines: string[]): void => {
-  lines.forEach((line) => emitLine(ctx, line));
+  for (const line of lines) {
+    emitLine(ctx, line);
+  }
 };
 
 export const pushBuffer = (ctx: EmitterCtx): string => {
@@ -46,8 +48,8 @@ export const popBuffer = (ctx: EmitterCtx): void => {
 };
 
 export const tmpid = (ctx: EmitterCtx): string => {
-  ctx.lastId++;
-  return 't_' + ctx.lastId;
+  ctx.lastId += 1;
+  return `t_${ctx.lastId}`;
 };
 
 export const addScopeLevel = (ctx: EmitterCtx): void => {
@@ -56,7 +58,7 @@ export const addScopeLevel = (ctx: EmitterCtx): void => {
 
 export const closeScopeLevels = (ctx: EmitterCtx): void => {
   if (ctx.scopeClosers) {
-    emitLine(ctx, ctx.scopeClosers + ';');
+    emitLine(ctx, `${ctx.scopeClosers};`);
   }
   ctx.scopeClosers = '';
 };
@@ -69,8 +71,12 @@ export const withScopedSyntax = (ctx: EmitterCtx, func: () => void): void => {
   ctx.scopeClosers = saved;
 };
 
-export const templateNameStr = (ctx: { templateName: string | null }): string =>
-  ctx.templateName === null || ctx.templateName === undefined ? 'undefined' : JSON.stringify(ctx.templateName);
+export const templateNameStr = (ctx: { templateName: string | null }): string => {
+  if (ctx.templateName === null || ctx.templateName === undefined) {
+    return 'undefined';
+  }
+  return JSON.stringify(ctx.templateName);
+};
 
 export const emitFuncBegin = (ctx: EmitterCtx, node: Node, name: string): void => {
   ctx.buffer = 'output';

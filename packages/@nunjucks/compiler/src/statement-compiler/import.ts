@@ -6,8 +6,18 @@ import { getTemplateLocation } from './extends.ts';
 const compileGetTemplate = (ctx: Compiler, node: Node, frame: Frame, eagerCompile: boolean, ignoreMissing: boolean): string => {
   const parentTemplateId = ctx.tmpid();
   const parentName = ctx.getTemplateName();
-  const eagerCompileArg = (eagerCompile) ? 'true' : 'false';
-  const ignoreMissingArg = (ignoreMissing) ? 'true' : 'false';
+  let eagerCompileArg: string;
+  if (eagerCompile) {
+    eagerCompileArg = 'true';
+  } else {
+    eagerCompileArg = 'false';
+  }
+  let ignoreMissingArg: string;
+  if (ignoreMissing) {
+    ignoreMissingArg = 'true';
+  } else {
+    ignoreMissingArg = 'false';
+  }
   const location = getTemplateLocation(node);
   ctx.emitLine(`lineno = ${location.lineno}; colno = ${location.colno};`);
   ctx.emit(`let ${parentTemplateId} = await env.getTemplate(`);
@@ -20,8 +30,14 @@ export const compileImport = (ctx: Compiler, node: Node, frame: Frame): void => 
   const target = (node.target as Node).value as string;
   const id = compileGetTemplate(ctx, node, frame, false, false);
 
+  let withContextArg: string;
+  if (node.withContext) {
+    withContextArg = 'context.getVariables(), frame';
+  } else {
+    withContextArg = '';
+  }
   ctx.emitLine(`let ${id}_exported = await ${id}.getExported(` +
-    (node.withContext ? 'context.getVariables(), frame' : '') +
+    withContextArg +
     ');');
 
   if (frame.parent) {

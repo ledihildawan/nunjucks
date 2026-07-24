@@ -16,7 +16,7 @@ const bitwiseNodeMap: Record<string, BinNodeFn> = {
 
 export const parseBitwiseOr = (ctx: ParserContext): Node => {
   let node = parseIs(ctx);
-  let tok = nextToken(ctx);
+  const tok = nextToken(ctx);
 
   if (!tok) {
     return node;

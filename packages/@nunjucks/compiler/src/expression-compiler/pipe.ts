@@ -4,7 +4,7 @@ import type { Compiler } from '../index.ts';
 import { compileAggregate } from './container.ts';
 
 const getInputVarPath = (node: Node | undefined): string | null => {
-  if (!node) return null;
+  if (!node) { return null; }
 
   if (node.type === 'symbol') {
     return node.value as string;
@@ -19,7 +19,13 @@ const getInputVarPath = (node: Node | undefined): string | null => {
         parts.unshift(curr.attr);
       } else if (curr.type === 'lookupVal') {
         const val = curr.val as Node;
-        parts.unshift(typeof val?.value === 'string' ? val.value : val);
+        let unshiftVal: unknown;
+        if (typeof val?.value === 'string') {
+          unshiftVal = val.value;
+        } else {
+          unshiftVal = val;
+        }
+        parts.unshift(unshiftVal);
       }
       curr = curr.target as Node;
     }
@@ -34,7 +40,7 @@ const getInputVarPath = (node: Node | undefined): string | null => {
 };
 
 const getInputVarLocation = (node: Node | undefined): string | null => {
-  if (!node) return null;
+  if (!node) { return null; }
 
   if (node.type === 'symbol') {
     return `${node.lineno ?? 0}, ${node.colno ?? 0}`;
@@ -59,12 +65,19 @@ export const compilePipe = (ctx: Compiler, node: Node, frame: Frame): void => {
   const name = node.name as Node;
   ctx.assertType(name, 'symbol');
   const filterName = String(name.value);
-  const filterLocation = `${node.lineno}, ${node.colno != null ? node.colno : 0}`;
+  const filterLocation = `${node.lineno}, ${node.colno ?? 0}`;
 
   const argsChildren = (node.args as Node | undefined)?.children || [];
-  const firstArg = argsChildren[0];
-  const inputVar = firstArg ? getInputVarPath(firstArg) : null;
-  const inputLocation = firstArg ? getInputVarLocation(firstArg) : null;
+  const [firstArg = null] = argsChildren;
+  let inputVar: string | null;
+  let inputLocation: string | null;
+  if (firstArg) {
+    inputVar = getInputVarPath(firstArg);
+    inputLocation = getInputVarLocation(firstArg);
+  } else {
+    inputVar = null;
+    inputLocation = null;
+  }
 
   if (inputVar && inputLocation) {
     ctx.emit(`await runtime.awaitValue(env.getFilter("${filterName}", ${filterLocation}, ${inputLocation}, "${inputVar}").call(context, `);
@@ -85,17 +98,24 @@ export const compilePipeAsync = (ctx: Compiler, node: Node, frame: Frame): void 
   frame.set(symbol, symbol);
 
   const filterName = String(name.value);
-  const filterLocation = `${node.lineno}, ${node.colno != null ? node.colno : 0}`;
+  const filterLocation = `${node.lineno}, ${node.colno ?? 0}`;
 
   const argsChildren = (node.args as Node | undefined)?.children || [];
-  const firstArg = argsChildren[0];
-  const inputVar = firstArg ? getInputVarPath(firstArg) : null;
-  const inputLocation = firstArg ? getInputVarLocation(firstArg) : null;
+  const [firstArg = null] = argsChildren;
+  let inputVar: string | null;
+  let inputLocation: string | null;
+  if (firstArg) {
+    inputVar = getInputVarPath(firstArg);
+    inputLocation = getInputVarLocation(firstArg);
+  } else {
+    inputVar = null;
+    inputLocation = null;
+  }
 
   if (inputVar && inputLocation) {
-    ctx.emit(symbol + ' = await runtime.awaitValue(env.getFilter("' + filterName + '", ' + filterLocation + ', ' + inputLocation + ', "' + inputVar + '").call(context, ');
+    ctx.emit(`${symbol} = await runtime.awaitValue(env.getFilter("${filterName}", ${filterLocation}, ${inputLocation}, "${inputVar}").call(context, `);
   } else {
-    ctx.emit(symbol + ' = await runtime.awaitValue(env.getFilter("' + filterName + '", ' + filterLocation + ').call(context, ');
+    ctx.emit(`${symbol} = await runtime.awaitValue(env.getFilter("${filterName}", ${filterLocation}).call(context, `);
   }
 
   compileAggregate(ctx, node.args as Node, frame);

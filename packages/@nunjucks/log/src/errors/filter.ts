@@ -4,7 +4,7 @@ export const FILTER_ERRORS = {
   FILTER_ERROR: {
     name: 'FILTER_ERROR',
     message: 'Filter failed',
-    pattern: /^Error: Filter .+? threw|filter threw|Filter .+? failed/i,
+    pattern: /^Error: Filter .+? threw|filter threw|Filter .+? failed/iu,
     category: 'filter_error',
     titleTemplate: 'A filter threw an error',
     causes: [
@@ -175,7 +175,7 @@ export const FILTER_ERRORS = {
   JSON_ESCAPED_OUTPUT: {
     name: 'JSON_ESCAPED_OUTPUT',
     message: "JSON output is HTML-escaped when autoescape is enabled",
-    pattern: /^\[|\{.*\]|\}$/,
+    pattern: /^\[|\{.*\]|\}$/u,
     category: 'json_error',
     titleTemplate: "JSON output is HTML-escaped",
     causes: [

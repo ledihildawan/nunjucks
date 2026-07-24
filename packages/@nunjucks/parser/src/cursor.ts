@@ -12,7 +12,7 @@ import { createLog } from '@nunjucks/log';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 
 export interface TokenStream {
-  nextToken(): Token | null;
+  nextToken: () => Token | null;
   tags: Delimiters;
   trimBlocks?: boolean;
   lstripBlocks?: boolean;
@@ -22,7 +22,7 @@ export interface TokenStream {
 
 export interface ParserExtension {
   tags?: string[];
-  parse?(ctx: ParserContext, nodes: unknown, lexer: unknown): Node | null;
+  parse?: (ctx: ParserContext, nodes: unknown, lexer: unknown) => Node | null;
   [key: string]: unknown;
 }
 
@@ -85,7 +85,7 @@ export const pushToken = (ctx: ParserContext, tok: Token | null): void => {
 };
 
 export const skip = (ctx: ParserContext, type: Token['type']): boolean => {
-  let tok = nextToken(ctx);
+  const tok = nextToken(ctx);
   if (!tok || tok.type !== type) {
     pushToken(ctx, tok);
     return false;
@@ -94,7 +94,7 @@ export const skip = (ctx: ParserContext, type: Token['type']): boolean => {
 };
 
 export const expect = (ctx: ParserContext, type: Token['type']): Token => {
-  let tok = nextToken(ctx);
+  const tok = nextToken(ctx);
   if (tok.type !== type) {
     fail(ctx, 'expected ' + type + ', got ' + tok.type, tok.lineno, tok.colno);
   }
@@ -102,7 +102,7 @@ export const expect = (ctx: ParserContext, type: Token['type']): Token => {
 };
 
 export const skipValue = (ctx: ParserContext, type: Token['type'], val?: Token['value']): boolean => {
-  let tok = nextToken(ctx);
+  const tok = nextToken(ctx);
   if (!tok || tok.type !== type || tok.value !== val) {
     pushToken(ctx, tok);
     return false;
@@ -152,7 +152,7 @@ export const advanceAfterBlockEnd = (ctx: ParserContext, name?: string): Token =
 };
 
 export const advanceAfterVariableEnd = (ctx: ParserContext): void => {
-  let tok = nextToken(ctx);
+  const tok = nextToken(ctx);
 
   if (tok && tok.type === TOKEN_VARIABLE_END) {
     ctx.dropLeadingWhitespace = (tok.value as string).charAt(

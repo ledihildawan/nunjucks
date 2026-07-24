@@ -7,7 +7,7 @@ import type { Token } from '@nunjucks/lexer';
 import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
 import { parseUntilBlocks } from "../top-level.ts";
 
-const isBlockEnd = (tok: Token | null | undefined): boolean => !!tok && tok.type === TOKEN_BLOCK_END;
+const isBlockEnd = (tok: Token | null | undefined): boolean => Boolean(tok) && tok.type === TOKEN_BLOCK_END;
 
 export const parseWith = (ctx: ParserContext): Node => {
   const tag = peekToken(ctx);
@@ -46,7 +46,7 @@ export const parseWith = (ctx: ParserContext): Node => {
       // Parse additional comma-separated assignments
       while (skip(ctx, TOKEN_COMMA)) {
         const nextNameTok = peekToken(ctx);
-        if (!nextNameTok || nextNameTok.type !== 'symbol') {
+        if (nextNameTok?.type !== 'symbol') {
           fail(ctx, 'parseWith: expected variable name after comma', tag.lineno, tag.colno);
         }
 

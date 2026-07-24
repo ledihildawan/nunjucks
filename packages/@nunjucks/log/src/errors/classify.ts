@@ -18,9 +18,7 @@ interface ErrorWithExtras {
   severity?: 'error' | 'warning' | 'info';
 }
 
-export const classify = (message: string): Classification => {
-  return classifyInput({ message });
-};
+export const classify = (message: string): Classification => classifyInput({ message });
 
 export const classifyFromError = (error: ErrorWithExtras | null): Classification => {
   if (!error) {

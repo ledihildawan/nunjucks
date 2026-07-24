@@ -4,7 +4,7 @@ import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 import { compileDestructuring } from './pattern.ts';
 
-const emitLoopBindings = (ctx: Compiler, arr: string, i: string, len: string): void => {
+const emitLoopBindings = (ctx: Compiler, _arr: string, i: string, len: string): void => {
   const bindings = [
     {name: 'index', val: `${i} + 1`},
     {name: 'index0', val: i},
@@ -40,7 +40,7 @@ export const compileFor = (ctx: Compiler, node: Node, frame: Frame): void => {
   ctx.emitLine(';');
 
   ctx.emit(`if(${arr}) {`);
-  ctx.emitLine(arr + ' = runtime.fromIterator(' + arr + ');');
+  ctx.emitLine(`${arr} = runtime.fromIterator(${arr});`);
 
   const nameNode = node.name as Node;
   if (isArrayBinding(nameNode)) {
@@ -54,7 +54,7 @@ export const compileFor = (ctx: Compiler, node: Node, frame: Frame): void => {
     ctx.emitLine(`let ${itemId} = ${arr}[${i}];`);
 
     if (isFlatArrayBinding(nameNode)) {
-      nameNode.children!.forEach((child, u) => {
+      nameNode.children?.forEach((child, u) => {
         const tid = ctx.tmpid();
         ctx.emitLine(`let ${tid} = ${itemId}[${u}];`);
         const childValue = child.value as string;
@@ -73,7 +73,11 @@ export const compileFor = (ctx: Compiler, node: Node, frame: Frame): void => {
 
     ctx.emitLine(`} else if (typeof ${arr} === "object") {`);
     if (isFlatArrayBinding(nameNode)) {
-      const [key, val] = nameNode.children!;
+      const children = nameNode.children;
+      if (!children || children.length < 2) {
+        return;
+      }
+      const [key, val] = children;
       const keyValue = (key as Node).value as string;
       const valValue = (val as Node).value as string;
       const k = ctx.tmpid();
@@ -133,7 +137,7 @@ export const compileFor = (ctx: Compiler, node: Node, frame: Frame): void => {
 
   ctx.emitLine('}');
   if (node.else_) {
-    ctx.emitLine('if (!' + len + ') {');
+    ctx.emitLine(`if (!${len}) {`);
     ctx.compile(node.else_ as Node, frame);
     ctx.emitLine('}');
   }

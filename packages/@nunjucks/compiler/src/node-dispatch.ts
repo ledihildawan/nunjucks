@@ -151,11 +151,18 @@ export const COMPILE_FUNCTIONS: Readonly<Record<string, CompileFn>> = {
 
 export const compileDispatch = (ctx: Compiler, node: Node, frame?: Frame): unknown => {
   const typeName = getNodeTypeName(node);
-  const fn = typeName !== undefined ? COMPILE_FUNCTIONS[typeName] : undefined;
+  let fn: CompileFn | undefined;
+  if (typeName === undefined) {
+    fn = undefined;
+  } else {
+    fn = COMPILE_FUNCTIONS[typeName];
+  }
   if (fn) {
-    return fn(ctx, node, frame!);
+    if (frame === undefined) {
+      ctx.fail(`compile: Cannot compile node: ${typeName}`, node.lineno, node.colno);
+    }
+    return fn(ctx, node, frame);
   }
 
   ctx.fail(`compile: Cannot compile node: ${typeName}`, node.lineno, node.colno);
-  return undefined;
 };

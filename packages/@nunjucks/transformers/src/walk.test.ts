@@ -21,13 +21,23 @@ describe('mapCOW', () => {
 
   test('keeps original unchanged on partial change', () => {
     const arr = [1, 2, 3];
-    mapCOW(arr, (x) => (x === 2 ? 99 : x));
+    mapCOW(arr, (x) => {
+      if (x === 2) {
+        return 99;
+      }
+      return x;
+    });
     expect(arr).toEqual([1, 2, 3]);
   });
 
   test('returns new array with only changed items different', () => {
     const arr = [1, 2, 3];
-    const result = mapCOW(arr, (x) => (x === 2 ? 99 : x));
+    const result = mapCOW(arr, (x) => {
+      if (x === 2) {
+        return 99;
+      }
+      return x;
+    });
     expect(result[0]).toBe(1);
     expect(result[1]).toBe(99);
     expect(result[2]).toBe(3);
@@ -76,7 +86,6 @@ describe('walk', () => {
       if (isLiteral(node)) {
         return literal(node.lineno, node.colno, 99);
       }
-      return undefined;
     });
     expect(getNodeTypeName(result)).toBe('nodeList');
     expect((result as unknown as { children: { value: number }[] }).children[0]!.value).toBe(99);

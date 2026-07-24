@@ -29,7 +29,7 @@ export const parseFrom = (ctx: ParserContext): Node => {
   while (true) {
     const nextTok = peekToken(ctx);
     if (nextTok.type === TOKEN_BLOCK_END) {
-      if (!names.children.length) {
+      if (names.children.length === 0) {
         fail(ctx, 'parseFrom: Expected at least one import name',
           fromTok.lineno,
           fromTok.colno);

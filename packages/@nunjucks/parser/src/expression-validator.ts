@@ -43,7 +43,7 @@ export function validateExpression(ast: Node, config: Record<string, unknown> = 
   const errors: ValidationError[] = [];
 
   function walk(node: Node | null | undefined, path: (string | number)[] = []): void {
-    if (!node) return;
+    if (!node) { return; }
 
     const nodeType = getNodeTypeName(node);
 
@@ -125,7 +125,7 @@ export function validateExpression(ast: Node, config: Record<string, unknown> = 
 
       default: {
         for (const key of Object.keys(node)) {
-          if (key === 'lineno' || key === 'colno' || key === 'fields') continue;
+          if (key === 'lineno' || key === 'colno' || key === 'fields') { continue; }
           const child = (node as Record<string, unknown>)[key];
           if (Array.isArray(child)) {
             child.forEach((c, i) => walk(c as Node, [...path, key, i]));

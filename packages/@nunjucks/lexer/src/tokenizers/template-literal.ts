@@ -1,7 +1,7 @@
-import type { Tokenizer } from '../types';
-import { getChar, getPeek, matches, advance, isFinished } from '../state';
-import { createToken } from '../tokens';
-import type { TokenType } from '../token-types';
+import type { Tokenizer } from '../types.ts';
+import { getChar, getPeek, advance, isFinished } from '../state.ts';
+import { createToken } from '../tokens.ts';
+import type { TokenType } from '../token-types.ts';
 
 export interface TemplateQuasi {
   type: 'template' | 'expression';
@@ -9,7 +9,7 @@ export interface TemplateQuasi {
 }
 
 export const tokenizeTemplateLiteral: Tokenizer = (state) => {
-  if (getChar(state) !== '`') return null;
+  if (getChar(state) !== '`') { return null; }
 
   let current = advance(state);
   let currentStr = '';

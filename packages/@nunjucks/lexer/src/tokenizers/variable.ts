@@ -1,7 +1,7 @@
-import type { Tokenizer } from '../types';
-import { matches, advance } from '../state';
-import { createToken } from '../tokens';
-import type { TokenType } from '../token-types';
+import type { Tokenizer } from '../types.ts';
+import { matches, advance } from '../state.ts';
+import { createToken } from '../tokens.ts';
+import type { TokenType } from '../token-types.ts';
 
 export const tokenizeVariableStart: Tokenizer = (state) => {
   if (matches(state, state.tags.STRIP_VARIABLE_START)) {
@@ -16,7 +16,7 @@ export const tokenizeVariableStart: Tokenizer = (state) => {
       state: advance(state, state.tags.STRIP_VARIABLE_START.length),
     };
   }
-  if (!matches(state, state.tags.VARIABLE_START)) return null;
+  if (!matches(state, state.tags.VARIABLE_START)) { return null; }
   return {
     token: createToken(
       'variable-start' as TokenType,
@@ -41,7 +41,7 @@ export const tokenizeVariableEnd: Tokenizer = (state) => {
       state: advance(state, state.tags.STRIP_VARIABLE_END.length),
     };
   }
-  if (!matches(state, state.tags.VARIABLE_END)) return null;
+  if (!matches(state, state.tags.VARIABLE_END)) { return null; }
   return {
     token: createToken(
       'variable-end' as TokenType,

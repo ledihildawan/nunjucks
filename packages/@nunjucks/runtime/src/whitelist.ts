@@ -1,15 +1,5 @@
 import type { Node } from '@nunjucks/nodes';
 
-export interface WhitelistError extends Error {
-  code: string;
-}
-
-export const createWhitelistError = (message: string, code = 'WHITELIST_VIOLATION'): WhitelistError => {
-  const err = new Error(message) as WhitelistError;
-  err.name = 'WhitelistError';
-  err.code = code;
-  return err;
-};
 const DEFAULT_ALLOWED_TAGS = [
   'for',
   'if',
@@ -91,6 +81,86 @@ const DANGEROUS_FILTERS = new Set([
   'compile'
 ]);
 
+/** Minimal structural shape scanASTForTags/validateTemplateWhitelist rely on. */
+interface AstNode {
+  type?: string;
+  lineno?: number;
+  colno?: number;
+  children?: unknown;
+  body?: unknown;
+  alternate?: unknown;
+  test?: unknown;
+  expr?: unknown;
+  name?: unknown;
+  args?: unknown;
+  target?: unknown;
+  [key: string]: unknown;
+}
+
+const validateTag = (allowedTagSet: Set<string>, blockedTagSet: Set<string>, strict: boolean, tagName: string): boolean => {
+  if (allowedTagSet.has(tagName)) { return true; }
+  if (blockedTagSet.has(tagName)) { return false; }
+  if (strict && !allowedTagSet.has(tagName)) { return false; }
+  return !strict;
+};
+
+const validateFilter = (dangerousFilters: Set<string>, allowedFilterSet: Set<string>, blockedFilterSet: Set<string>, strict: boolean, filterName: string): boolean => {
+  if (dangerousFilters.has(filterName)) { return false; }
+  if (allowedFilterSet.has(filterName)) { return true; }
+  if (blockedFilterSet.has(filterName)) { return false; }
+  if (strict && !allowedFilterSet.has(filterName)) { return false; }
+  return !strict;
+};
+
+const traverseAST = (node: unknown, callback: (node: Node) => void): void => {
+  if (!node || typeof node !== 'object') { return; }
+
+  const nodeObj = node as AstNode;
+  if (nodeObj.type) {
+    callback(nodeObj as unknown as Node);
+  }
+
+  if (nodeObj.children && Array.isArray(nodeObj.children)) {
+    (nodeObj.children as unknown[]).forEach((child) => traverseAST(child, callback));
+  }
+
+  if (nodeObj.body) {
+    if (Array.isArray(nodeObj.body)) {
+      (nodeObj.body as unknown[]).forEach((child) => traverseAST(child, callback));
+    } else {
+      traverseAST(nodeObj.body, callback);
+    }
+  }
+
+  if (nodeObj.alternate) {
+    traverseAST(nodeObj.alternate, callback);
+  }
+
+  if (nodeObj.test) {
+    traverseAST(nodeObj.test, callback);
+  }
+
+  if (nodeObj.expr) {
+    traverseAST(nodeObj.expr, callback);
+  }
+
+  if (nodeObj.name) {
+    traverseAST(nodeObj.name, callback);
+  }
+
+  if (nodeObj.args && Array.isArray(nodeObj.args)) {
+    (nodeObj.args as unknown[]).forEach((child) => traverseAST(child, callback));
+  }
+
+  if (nodeObj.target) {
+    traverseAST(nodeObj.target, callback);
+  }
+};
+
+export interface WhitelistError extends Error {
+  code: string;
+}
+
 export interface WhitelistValidatorOptions {
   allowedTags?: string[] | null;
   allowedFilters?: string[] | null;
@@ -109,6 +179,13 @@ export interface WhitelistValidator {
   options: { allowedTags: string[]; allowedFilters: string[]; strict: boolean };
 }
 
+export const createWhitelistError = (message: string, code = 'WHITELIST_VIOLATION'): WhitelistError => {
+  const err = new Error(message) as WhitelistError;
+  err.name = 'WhitelistError';
+  err.code = code;
+  return err;
+};
+
 export const createWhitelistValidator = (options: WhitelistValidatorOptions = {}): WhitelistValidator => {
   const {
     allowedTags = null,
@@ -123,100 +200,33 @@ export const createWhitelistValidator = (options: WhitelistValidatorOptions = {}
 
   const allowedTagSet = new Set(tags);
   const allowedFilterSet = new Set(filters);
-  const blockedTagSet = blockedTags ? new Set(blockedTags) : new Set<string>();
-  const blockedFilterSet = blockedFilters ? new Set(blockedFilters) : new Set<string>();
-
-  const validateTag = (tagName: string): boolean => {
-    if (allowedTagSet.has(tagName)) return true;
-    if (blockedTagSet.has(tagName)) return false;
-    if (strict && !allowedTagSet.has(tagName)) return false;
-    return !strict;
-  };
-
-  const validateFilter = (filterName: string): boolean => {
-    if (DANGEROUS_FILTERS.has(filterName)) return false;
-    if (allowedFilterSet.has(filterName)) return true;
-    if (blockedFilterSet.has(filterName)) return false;
-    if (strict && !allowedFilterSet.has(filterName)) return false;
-    return !strict;
-  };
+  let blockedTagSet: Set<string>;
+  if (blockedTags) {
+    blockedTagSet = new Set(blockedTags);
+  } else {
+    blockedTagSet = new Set<string>();
+  }
+  let blockedFilterSet: Set<string>;
+  if (blockedFilters) {
+    blockedFilterSet = new Set(blockedFilters);
+  } else {
+    blockedFilterSet = new Set<string>();
+  }
 
   return {
-    validateTag,
-    validateFilter,
-    isTagAllowed: (tagName: string): boolean => validateTag(tagName),
-    isFilterAllowed: (filterName: string): boolean => validateFilter(filterName),
+    validateTag: (tagName: string): boolean => validateTag(allowedTagSet, blockedTagSet, strict, tagName),
+    validateFilter: (filterName: string): boolean => validateFilter(DANGEROUS_FILTERS, allowedFilterSet, blockedFilterSet, strict, filterName),
+    isTagAllowed: (tagName: string): boolean => validateTag(allowedTagSet, blockedTagSet, strict, tagName),
+    isFilterAllowed: (filterName: string): boolean => validateFilter(DANGEROUS_FILTERS, allowedFilterSet, blockedFilterSet, strict, filterName),
     getAllowedTags: (): string[] => [...allowedTagSet],
     getAllowedFilters: (): string[] => [...allowedFilterSet],
     options: { allowedTags: tags, allowedFilters: filters, strict }
   };
 };
 
-/** Minimal structural shape scanASTForTags/validateTemplateWhitelist rely on. */
-interface AstNode {
-  type?: string;
-  lineno?: number;
-  colno?: number;
-  children?: unknown;
-  body?: unknown;
-  alternate?: unknown;
-  test?: unknown;
-  expr?: unknown;
-  name?: unknown;
-  args?: unknown;
-  target?: unknown;
-  [key: string]: unknown;
-}
-
 export const scanASTForTags = (ast: AstNode | Node | null | undefined, callback: (node: Node) => void): void => {
-  if (!ast) return;
-
-  const traverse = (node: unknown): void => {
-    if (!node || typeof node !== 'object') return;
-
-    const nodeObj = node as AstNode;
-    if (nodeObj.type) {
-      callback(nodeObj as unknown as Node);
-    }
-
-    if (nodeObj.children && Array.isArray(nodeObj.children)) {
-      (nodeObj.children as unknown[]).forEach(traverse);
-    }
-
-    if (nodeObj.body) {
-      if (Array.isArray(nodeObj.body)) {
-        (nodeObj.body as unknown[]).forEach(traverse);
-      } else {
-        traverse(nodeObj.body);
-      }
-    }
-
-    if (nodeObj.alternate) {
-      traverse(nodeObj.alternate);
-    }
-
-    if (nodeObj.test) {
-      traverse(nodeObj.test);
-    }
-
-    if (nodeObj.expr) {
-      traverse(nodeObj.expr);
-    }
-
-    if (nodeObj.name) {
-      traverse(nodeObj.name);
-    }
-
-    if (nodeObj.args && Array.isArray(nodeObj.args)) {
-      (nodeObj.args as unknown[]).forEach(traverse);
-    }
-
-    if (nodeObj.target) {
-      traverse(nodeObj.target);
-    }
-  };
-
-  traverse(ast);
+  if (!ast) { return; }
+  traverseAST(ast, callback);
 };
 
 export interface TemplateWhitelistViolation {
@@ -240,8 +250,7 @@ export const validateTemplateWhitelist = (
   scanASTForTags(ast, (node) => {
     const nodeType = node.type;
 
-    if (nodeType === 'block' || nodeType === 'extends' || nodeType === 'include' || nodeType === 'import') {
-      if (!validator.isTagAllowed(nodeType)) {
+    if ((nodeType === 'block' || nodeType === 'extends' || nodeType === 'include' || nodeType === 'import') && !validator.isTagAllowed(nodeType)) {
         violations.push({
           type: 'tag',
           name: nodeType,
@@ -249,7 +258,6 @@ export const validateTemplateWhitelist = (
           colno: node.colno
         });
       }
-    }
   });
 
   return {

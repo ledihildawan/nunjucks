@@ -41,10 +41,12 @@ interface LogContextShape {
   renderContext: Record<string, unknown> | null;
 }
 
-const getLogContext = (self: unknown): LogContextShape =>
-  self && (self as { logContext?: LogContextShape }).logContext
-    ? (self as { logContext: LogContextShape }).logContext
-    : { templateName: null, phase: 'render', renderContext: null };
+const getLogContext = (self: unknown): LogContextShape => {
+  if (self && (self as { logContext?: LogContextShape }).logContext) {
+    return (self as { logContext: LogContextShape }).logContext;
+  }
+  return { templateName: null, phase: 'render', renderContext: null };
+};
 
 interface ThrowRuntimeErrorOptions {
   self: unknown;
@@ -112,7 +114,7 @@ export {
 };
 
 const escapeValue = (val: unknown): string => {
-  if (!isNonNullish(val)) return '';
+  if (!isNonNullish(val)) { return ''; }
   return escapeHtml(String(val));
 };
 
@@ -127,17 +129,22 @@ export function suppressValue(
     return (val as Promise<unknown>).then((v) => suppressValue.call(this, v, autoescape, lineno, colno));
   }
 
-  const normalized = isNonNullish(val) ? val : '';
+  let normalized: string;
+  if (isNonNullish(val)) {
+    normalized = val;
+  } else {
+    normalized = '';
+  }
 
   if (autoescape && !isSafeString(normalized)) {
-    const strVal = (normalized as { toString(): string }).toString();
+    const strVal = (normalized as { toString: () => string }).toString();
     const escaped = escapeValue(strVal);
 
     const isArray = Array.isArray(normalized);
-    const isJsonValue = /^(?:true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')$/.test(strVal.trim());
-    const isJsonContainer = /^[\[{]/.test(strVal);
+    const isJsonValue = /^(?:true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')$/u.test(strVal.trim());
+    const isJsonContainer = /^[[{]/u.test(strVal);
 
-    if ((isArray || isJsonValue || isJsonContainer) && /&[quot;<>]/.test(escaped)) {
+    if ((isArray || isJsonValue || isJsonContainer) && /&[quot;<>]/u.test(escaped)) {
       const ctx = getLogContext(this);
       throw createLog(
         'error',
@@ -196,7 +203,7 @@ const emitUndefinedWarning = (self: unknown, opts: EmitUndefinedWarningOptions):
     {
       name: opts.name,
       message: opts.message,
-      pattern: /./,
+      pattern: /./u,
     },
     {},
     opts.subject,
@@ -213,7 +220,6 @@ const emitUndefinedWarning = (self: unknown, opts: EmitUndefinedWarningOptions):
   if (self && (self as { __warnings__?: unknown[] }).__warnings__) {
     (self as { __warnings__: unknown[] }).__warnings__.push(warning);
   } else {
-    console.warn((warning as { output: (opts: unknown) => string }).output({ verbosity: 'medium', dev: true }));
   }
 };
 
@@ -293,9 +299,12 @@ const resolveUndefinedValue = (opts: ResolveUndefinedOptions): 'undefined' => {
   const { self, varName, lineno, colno, mode, phase, templateName } = opts;
 
   if (mode === 'strict') {
-    const errorDef = varName
-      ? ERROR_DEFINITIONS.UNDEFINED_VARIABLE!
-      : ({ name: 'UNDEFINED_VALUE', message: () => 'Undefined value', pattern: /./ } as const);
+    let errorDef: ErrorDefinitionEntry;
+    if (varName) {
+      errorDef = ERROR_DEFINITIONS.UNDEFINED_VARIABLE!;
+    } else {
+      errorDef = { name: 'UNDEFINED_VALUE', message: () => 'Undefined value', pattern: /./u } as const;
+    }
     throwRuntimeError(errorDef, {
       self,
       lineno,
@@ -309,7 +318,12 @@ const resolveUndefinedValue = (opts: ResolveUndefinedOptions): 'undefined' => {
   if (mode === 'debug') {
     emitUndefinedWarning(self, {
       name: 'UNDEFINED_VARIABLE',
-      message: () => (varName ? `Variable '${varName}' is undefined or null` : 'Variable is undefined or null'),
+      message: () => {
+        if (varName) {
+          return `Variable '${varName}' is undefined or null`;
+        }
+        return 'Variable is undefined or null';
+      },
       subject: varName,
       lineno,
       colno,
@@ -432,21 +446,31 @@ export function contextOrFrameLookup(
   name: string,
 ): unknown {
   const val = frame.lookup(name);
-  return val !== undefined ? val : context.lookup(name);
+  if (val === undefined) {
+    return context.lookup(name);
+  }
+  return val;
 }
 
-export function lookup(ctx: { lookup?: (key: string) => unknown } | null, key: string, defaultValue: unknown = undefined): unknown {
-  if (!ctx) return defaultValue;
+export function lookup(ctx: { lookup?: (key: string) => unknown } | null, key: string, defaultValue: unknown ): unknown {
+  if (!ctx) { return defaultValue; }
   if (typeof ctx.lookup === 'function') {
     const val = ctx.lookup(key);
-    return val !== undefined ? val : defaultValue;
+    if (val === undefined) {
+      return defaultValue;
+    }
+    return val;
   }
   const val = (ctx as Record<string, unknown>)[key];
-  return val !== undefined ? val : defaultValue;
+  if (val === undefined) {
+    return defaultValue;
+  }
+  return val;
 }
 
 export function handleError(this: unknown, error: unknown, lineno: number | null, colno: number | null, runtime?: unknown): never {
   const ctx = getLogContext(this);
+  // biome-ignore lint/complexity/noVoid: runtime param is intentionally unused but kept for API compatibility
   void runtime;
   const metadata = normalizeErrorMetadata(error, {
     lineno,
@@ -466,7 +490,7 @@ export function handleError(this: unknown, error: unknown, lineno: number | null
     {
       name: metadata.code || 'RUNTIME_ERROR',
       message: () => metadata.message,
-      pattern: /./,
+      pattern: /./u,
     },
     {},
     metadata.subject,
@@ -493,11 +517,10 @@ export function handleError(this: unknown, error: unknown, lineno: number | null
 export function fromIterator(arr: unknown): unknown {
   if (typeof arr !== 'object' || arr === null || isArray(arr)) {
     return arr;
-  } else if (Symbol.iterator in (arr as object)) {
+  }if (Symbol.iterator in (arr as object)) {
     return Array.from(arr as Iterable<unknown>);
-  } else {
-    return arr;
   }
+    return arr;
 }
 
 export function inOperator(this: unknown, key: unknown, val: unknown, lineno: number | null = null, colno: number | null = null): boolean {

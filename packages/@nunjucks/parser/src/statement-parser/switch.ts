@@ -14,9 +14,9 @@ export const parseSwitch = (ctx: ParserContext): Node => {
   const tag = peekToken(ctx);
 
   if (
-    !skipSymbol(ctx, switchStart)
-    && !skipSymbol(ctx, caseStart)
-    && !skipSymbol(ctx, caseDefault)
+    !((skipSymbol(ctx, switchStart)
+    || skipSymbol(ctx, caseStart))
+    || skipSymbol(ctx, caseDefault))
   ) {
     fail(ctx, 'parseSwitch: expected "switch," "case" or "default"', tag.lineno, tag.colno);
   }

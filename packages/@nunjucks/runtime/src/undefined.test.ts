@@ -47,7 +47,7 @@ describe('getUndefinedMode', () => {
   test('returns default when opts.undefined is undefined', () => {
     expect(getUndefinedMode({})).toBe('chainable');
     expect(getUndefinedMode({ undefined: null })).toBe('chainable');
-    expect(getUndefinedMode({ undefined: undefined })).toBe('chainable');
+    expect(getUndefinedMode({ undefined })).toBe('chainable');
   });
 
   test('returns default when opts.undefined is invalid', () => {

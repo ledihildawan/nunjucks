@@ -1,10 +1,10 @@
-import type { Tokenizer } from '../types';
-import { getChar, matches, advance } from '../state';
-import { createToken } from '../tokens';
-import type { TokenType } from '../token-types';
+import type { Tokenizer } from '../types.ts';
+import { getChar, matches, advance } from '../state.ts';
+import { createToken } from '../tokens.ts';
+import type { TokenType } from '../token-types.ts';
 
 export const tokenizeTemplateText: Tokenizer = (state) => {
-  if (state.inCode) return null;
+  if (state.inCode) { return null; }
 
   let text = '';
   const { lineno, colno } = state;
@@ -24,7 +24,7 @@ export const tokenizeTemplateText: Tokenizer = (state) => {
     current = advance(current);
   }
 
-  if (!text) return null;
+  if (!text) { return null; }
   return {
     token: createToken('data' as TokenType, text, lineno, colno),
     state: current,

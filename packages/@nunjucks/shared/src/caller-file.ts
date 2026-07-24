@@ -1,3 +1,6 @@
+const CALLER_INDEX = 2;
+const MIN_STACK_LENGTH = 3;
+
 export interface CallerLocation {
   fileName: string;
   lineNumber: number | null;
@@ -6,12 +9,13 @@ export interface CallerLocation {
 
 export const getCallerFile = (): string => {
   const original = Error.prepareStackTrace;
-  Error.prepareStackTrace = (_, stack) => stack;
-  const stack = new Error().stack as unknown as NodeJS.CallSite[] | undefined;
+  Error.prepareStackTrace = (_, callsite) => callsite;
+  const error = new Error('getCallerFile');
+  const stack = error.stack as unknown as NodeJS.CallSite[] | undefined;
   Error.prepareStackTrace = original;
 
-  if (stack && stack.length >= 3) {
-    const caller = stack[2];
+  if (stack && stack.length >= MIN_STACK_LENGTH) {
+    const caller = stack[CALLER_INDEX];
     if (caller && typeof caller.getFileName === 'function') {
       const fileName = caller.getFileName();
       if (fileName) {
@@ -25,12 +29,13 @@ export const getCallerFile = (): string => {
 
 export const getCallerLocation = (): CallerLocation => {
   const original = Error.prepareStackTrace;
-  Error.prepareStackTrace = (_, stack) => stack;
-  const stack = new Error().stack as unknown as NodeJS.CallSite[] | undefined;
+  Error.prepareStackTrace = (_, callsite) => callsite;
+  const error = new Error('getCallerLocation');
+  const stack = error.stack as unknown as NodeJS.CallSite[] | undefined;
   Error.prepareStackTrace = original;
 
-  if (stack && stack.length >= 3) {
-    const caller = stack[2];
+  if (stack && stack.length >= MIN_STACK_LENGTH) {
+    const caller = stack[CALLER_INDEX];
     if (caller && typeof caller.getFileName === 'function') {
       const fileName = caller.getFileName();
       return {

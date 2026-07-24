@@ -13,14 +13,19 @@ interface InjectWarningsOptions {
 }
 
 const getFileName = (path: string | null | undefined): string => {
-  if (!path) return 'unknown';
-  const parts = path.replace(/\\/g, '/').split('/');
+  if (!path) { return 'unknown'; }
+  const parts = path.replace(/\\/gu, '/').split('/');
   return parts.at(-1) || 'unknown';
 };
 
 const formatWarning = (w: Warning | string, options: { verbosity?: 'simple' | 'medium' | 'full' } = {}): string => {
   const { verbosity = 'full' } = options;
-  const message = typeof w === 'string' ? w : w.message;
+  let message: string;
+  if (typeof w === 'string') {
+    message = w;
+  } else {
+    message = w.message;
+  }
 
   if (typeof w === 'string') {
     if (verbosity === 'simple') {
@@ -35,7 +40,12 @@ const formatWarning = (w: Warning | string, options: { verbosity?: 'simple' | 'm
   let locationStr = '';
   if (w.lineno !== undefined && w.lineno !== null) {
     const lineNum = w.lineno + 1;
-    const colNum = w.colno !== undefined && w.colno !== null ? `:${w.colno}` : '';
+    let colNum: string;
+    if (w.colno !== undefined && w.colno !== null) {
+      colNum = `:${w.colno}`;
+    } else {
+      colNum = '';
+    }
     const fileName = getFileName(w.templateName);
     locationStr = ` at ${fileName}:${lineNum}${colNum}`;
   }
@@ -46,7 +56,11 @@ const formatWarning = (w: Warning | string, options: { verbosity?: 'simple' | 'm
   } else if (verbosity === 'medium') {
     formatted = `[WARNING] ${message} (${undefinedMode})${locationStr}`;
   } else {
-    formatted = `[WARNING] ${message} (${undefinedMode})${locationStr}${code ? ` [${code}]` : ''}`;
+    let codePart = '';
+    if (code) {
+      codePart = ` [${code}]`;
+    }
+    formatted = `[WARNING] ${message} (${undefinedMode})${locationStr}${codePart}`;
   }
 
   return formatted;
@@ -55,7 +69,7 @@ const formatWarning = (w: Warning | string, options: { verbosity?: 'simple' | 'm
 export const injectWarningsScript = (warnings: Warning[], options: InjectWarningsOptions = {}): string => {
   const { dev = true, verbosity = 'full' } = options;
 
-  if (!warnings || warnings.length === 0) return '';
+  if (!warnings || warnings.length === 0) { return ''; }
 
   const consoleScripts = warnings.map(w => {
     const formatted = formatWarning(w, { verbosity });

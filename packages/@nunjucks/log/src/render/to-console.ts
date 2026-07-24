@@ -4,9 +4,7 @@ import { shortenPath } from './internal/path-shortener.ts';
 import { isFilePath, resolveIdeLink } from './internal/ide-links.ts';
 import { toDisplayLocation } from './internal/location.ts';
 
-const makeHyperlink = (text: string, url: string): string => {
-  return `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
-};
+const makeHyperlink = (text: string, url: string): string => `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
 
 export interface Warning {
   message?: string;
@@ -30,9 +28,12 @@ export interface ToConsoleOptions {
 }
 
 const formatSimple = (warning: Warning): string => {
-  const title = warning.varName
-    ? `Undefined variable '${warning.varName}'`
-    : 'Undefined variable';
+  let title: string;
+  if (warning.varName) {
+    title = `Undefined variable '${warning.varName}'`;
+  } else {
+    title = 'Undefined variable';
+  }
   return `${picocolors.bgYellow(picocolors.black('[WARNING]'))} ${picocolors.yellow(title)}`;
 };
 
@@ -40,9 +41,12 @@ const formatMedium = (warning: Warning, options: ToConsoleOptions): string => {
   const { templatePath, ide = 'vscode' } = options;
   const { lineno, templateName, varName } = warning;
 
-  const title = varName
-    ? `Undefined variable '${varName}'`
-    : 'Undefined variable';
+  let title: string;
+  if (varName) {
+    title = `Undefined variable '${varName}'`;
+  } else {
+    title = 'Undefined variable';
+  }
 
   const location = toDisplayLocation(lineno ?? null, 0, warning.lineBase ?? 'zero');
   const lineNum = location.line;
@@ -52,9 +56,12 @@ const formatMedium = (warning: Warning, options: ToConsoleOptions): string => {
   if (path) {
     const shortPath = shortenPath(path);
     const displayPath = `${shortPath}:${lineNum}`;
-    const location = isFilePath(path)
-      ? makeHyperlink(displayPath, resolveIdeLink(ide, path, lineNum, 1))
-      : displayPath;
+    let location: string;
+    if (isFilePath(path)) {
+      location = makeHyperlink(displayPath, resolveIdeLink(ide, path, lineNum, 1));
+    } else {
+      location = displayPath;
+    }
     locationStr = `${picocolors.dim('at')} ${location}`;
   } else {
     locationStr = `${picocolors.dim('at line')} ${picocolors.cyan(lineNum)}`;
@@ -78,7 +85,7 @@ const formatFull = (warning: Warning, options: ToConsoleOptions): string => {
 
   const parts: string[] = [];
 
-  parts.push(picocolors.bgYellow(picocolors.black('[WARNING]')) + ' ' + picocolors.bold('Template Warning'));
+  parts.push(`${picocolors.bgYellow(picocolors.black('[WARNING]'))} ${picocolors.bold('Template Warning')}`);
 
   if (code) {
     parts.push(picocolors.yellow(`[${code}]`));
@@ -90,10 +97,13 @@ const formatFull = (warning: Warning, options: ToConsoleOptions): string => {
 
   parts.push('');
 
-  const title = varName
-    ? `Undefined variable '${varName}'`
-    : 'Undefined variable';
-  parts.push(picocolors.bold('Message:') + ' ' + picocolors.yellow(title));
+  let title: string;
+  if (varName) {
+    title = `Undefined variable '${varName}'`;
+  } else {
+    title = 'Undefined variable';
+  }
+  parts.push(`${picocolors.bold('Message:')} ${picocolors.yellow(title)}`);
 
   const location = toDisplayLocation(lineno ?? null, 0, warning.lineBase ?? 'zero');
   const lineNum = location.line;
@@ -101,19 +111,23 @@ const formatFull = (warning: Warning, options: ToConsoleOptions): string => {
   if (templateName) {
     const shortPath = shortenPath(templateName);
     const displayPath = `${shortPath}:${lineNum}`;
-    locationStr = isFilePath(templateName)
-      ? makeHyperlink(displayPath, resolveIdeLink(ide, templateName, lineNum, 1))
-      : displayPath;
+    let location: string;
+    if (isFilePath(templateName)) {
+      location = makeHyperlink(displayPath, resolveIdeLink(ide, templateName, lineNum, 1));
+    } else {
+      location = displayPath;
+    }
+    locationStr = location;
   } else if (lineno !== undefined && lineno !== null) {
     locationStr = picocolors.dim(`line ${lineNum}`);
   } else {
     locationStr = picocolors.dim('unknown');
   }
-  parts.push(picocolors.bold('Location:') + ' ' + locationStr);
+  parts.push(`${picocolors.bold('Location:')} ${locationStr}`);
 
   if (dev && subject) {
     parts.push('');
-    parts.push(picocolors.bold('Subject:') + ' ' + picocolors.cyan(subject));
+    parts.push(`${picocolors.bold('Subject:')} ${picocolors.cyan(subject)}`);
   }
 
   const footer = [`Nunjucks ${version}`];

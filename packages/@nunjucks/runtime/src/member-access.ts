@@ -22,12 +22,12 @@ export interface PropertyNotFoundResult {
 export type AccessResult = NullAccessResult | PropertyNotFoundResult | unknown;
 
 export function memberLookup(obj: unknown, val: string, parentName: string | null = null): unknown {
-  if (obj == null) {
+  if (obj === null) {
     return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
   }
 
   const target = obj as Record<string, unknown>;
-  if (!hasOwn(target, val) && !(val in target)) {
+  if (!(hasOwn(target, val) || (val in target))) {
     const marker = { [PROP_NOT_FOUND]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
     const callable = (() => undefined) as unknown as Record<string, unknown>;
     Object.setPrototypeOf(callable, null);
@@ -52,23 +52,23 @@ export function isPropertyNotFoundResult(val: unknown): val is PropertyNotFoundR
 }
 
 export function getNullParentName(val: unknown): string | null {
-  if (!isNonNullish(val)) return null;
+  if (!isNonNullish(val)) { return null; }
   return (val as NullAccessResult).__nunjucks_parent__ ?? null;
 }
 
 export function getAccessPath(val: unknown): string {
-  if (!isNonNullish(val)) return '';
+  if (!isNonNullish(val)) { return ''; }
   return (val as NullAccessResult).__access_path__ ?? '';
 }
 
-export function optionalMemberLookup(obj: unknown, val: string, parentName: string | null = null): unknown {
-  if (obj == null) {
-    return undefined;
+export function optionalMemberLookup(obj: unknown, val: string, _parentName: string | null = null): unknown {
+  if (obj === null) {
+    return ;
   }
 
   const target = obj as Record<string, unknown>;
-  if (!hasOwn(target, val) && !(val in target)) {
-    return undefined;
+  if (!(hasOwn(target, val) || (val in target))) {
+    return ;
   }
 
   if (isFunction(target[val])) {
@@ -89,14 +89,22 @@ export function slice(arr: unknown[] | string, start: number | null, stop: numbe
   let normalizedStop = stop;
 
   if (!isNonNullish(normalizedStart)) {
-    normalizedStart = (step! < 0) ? len - 1 : 0;
+    if (step! < 0) {
+      normalizedStart = len - 1;
+    } else {
+      normalizedStart = 0;
+    }
   }
   if (!isNonNullish(normalizedStop)) {
-    normalizedStop = (step! < 0) ? -1 : len;
+    if (step! < 0) {
+      normalizedStop = -1;
+    } else {
+      normalizedStop = len;
+    }
   }
 
   const normalizeStart = (idx: number): number => {
-    if (idx < 0) return Math.max(0, len + idx);
+    if (idx < 0) { return Math.max(0, len + idx); }
     return Math.min(len, idx);
   };
 
@@ -104,9 +112,9 @@ export function slice(arr: unknown[] | string, start: number | null, stop: numbe
 
   if (!isNonNullish(step) || step === 1) {
     if (typeof arr === 'string') {
-      return (arr as unknown as { slice(s: number, e: number): string }).slice(normalizedStart, normalizedStop as number);
+      return (arr as unknown as { slice: (s: number, e: number) => string }).slice(normalizedStart, normalizedStop as number);
     }
-    return (arr as unknown as { slice(s: number, e: number): unknown[] }).slice(normalizedStart, normalizedStop as number);
+    return (arr as unknown as { slice: (s: number, e: number) => unknown[] }).slice(normalizedStart, normalizedStop as number);
   }
 
   const result: unknown[] = [];
@@ -123,5 +131,8 @@ export function slice(arr: unknown[] | string, start: number | null, stop: numbe
 }
 
 export function nullishCoalesce(left: unknown, right: unknown): unknown {
-  return isNonNullish(left) ? left : right;
+  if (isNonNullish(left)) {
+    return left;
+  }
+  return right;
 }

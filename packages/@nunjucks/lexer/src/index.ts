@@ -1,9 +1,9 @@
-export { createTokenizer } from './lexer';
-export { createToken } from './tokens';
-export type { Token } from './token-types';
-export type { LexerOptions } from './types';
-export { TOKEN_TYPES } from './token-types';
-export type { Delimiters } from './delimiters';
+export { createTokenizer } from './lexer.ts';
+export { createToken } from './tokens.ts';
+export type { Token } from './token-types.ts';
+export type { LexerOptions } from './types.ts';
+export { TOKEN_TYPES } from './token-types.ts';
+export type { Delimiters } from './delimiters.ts';
 
 export {
   TOKEN_STRING,
@@ -35,7 +35,7 @@ export {
   TOKEN_SPECIAL,
   TOKEN_REGEX,
   TOKEN_TEMPLATE_LITERAL,
-} from './token-types';
+} from './token-types.ts';
 
 export {
   COMPLEX_OPERATORS,
@@ -50,4 +50,4 @@ export {
   INT_CHARS,
   REGEX_FLAGS,
   WHITESPACE_CHARS,
-} from './delimiters';
+} from './delimiters.ts';

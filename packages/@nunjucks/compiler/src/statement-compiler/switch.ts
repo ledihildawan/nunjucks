@@ -15,7 +15,7 @@ export const compileSwitch = (ctx: Compiler, node: Node, frame: Frame): void => 
       ctx.compile(c.body as Node, frame);
       ctx.emitLine('frame = frame.pop();');
     });
-    if ((c.body as Node).children!.length) {
+    if ((c.body as Node).children?.length > 0) {
       ctx.emitLine('break;');
     }
   });

@@ -16,9 +16,8 @@ export const parseSignature = (ctx: ParserContext, tolerant?: boolean, noParens?
   if (!noParens && tok.type !== TOKEN_LEFT_PAREN) {
     if (tolerant) {
       return null;
-    } else {
-      fail(ctx, 'expected arguments', tok.lineno, tok.colno);
     }
+      fail(ctx, 'expected arguments', tok.lineno, tok.colno);
   }
 
   if (tok.type === TOKEN_LEFT_PAREN) {
@@ -34,7 +33,7 @@ export const parseSignature = (ctx: ParserContext, tolerant?: boolean, noParens?
     if (!noParens && tok.type === TOKEN_RIGHT_PAREN) {
       nextToken(ctx);
       break;
-    } else if (noParens && tok.type === TOKEN_BLOCK_END) {
+    }if (noParens && tok.type === TOKEN_BLOCK_END) {
       break;
     }
 
@@ -64,7 +63,7 @@ export const parseSignature = (ctx: ParserContext, tolerant?: boolean, noParens?
     checkComma = true;
   }
 
-  if (kwargs.children.length) {
+  if (kwargs.children.length > 0) {
     pushChild(args, kwargs);
   }
 

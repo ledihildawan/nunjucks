@@ -1,4 +1,4 @@
-import { entries } from 'remeda';
+
 import type { Classifier, ClassifyInput, Classification } from './types.ts';
 import { firstCapture } from './types.ts';
 import { RULES, ERROR_DEFINITIONS, DEFAULT_CLASSIFICATION } from './registry.ts';
@@ -10,7 +10,7 @@ const replacePlaceholders = (
   undefinedName: string | null,
   extra?: Record<string, string | null> | null
 ): string | null => {
-  if (!str) return str ?? null;
+  if (!str) { return str ?? null; }
   let result = str
     .replaceAll('{subject}', undefinedName || '')
     .replaceAll('{target}', undefinedName || '')
@@ -30,17 +30,43 @@ const deriveFromRule = (
   input: ClassifyInput
 ): Classification => {
   const match = input.message?.match(rule.pattern) ?? null;
-  const undefinedName = match != null && rule.subjectFrom ? rule.subjectFrom(match) : null;
-  const extra = rule.extraFrom ? (match ? rule.extraFrom(match) : null) : null;
+  let undefinedName: string | null;
+  if (match !== null && rule.subjectFrom) {
+    undefinedName = rule.subjectFrom(match);
+  } else {
+    undefinedName = null;
+  }
+  let extra: Record<string, string | null> | null;
+  if (rule.extraFrom) {
+    if (match) {
+      extra = rule.extraFrom(match);
+    } else {
+      extra = null;
+    }
+  } else {
+    extra = null;
+  }
 
-  const baseCauses = input.causes && input.causes.length > 0 ? input.causes : rule.causes;
+  let baseCauses: string[];
+  if (input.causes && input.causes.length > 0) {
+    baseCauses = input.causes;
+  } else {
+    baseCauses = rule.causes;
+  }
   const baseFixCode = input.fixCode ?? rule.fixCode;
   const baseFixComment = input.fixComment ?? rule.fixComment;
+
+  let title: string | null;
+  if (rule.titleTemplate) {
+    title = replacePlaceholders(rule.titleTemplate, undefinedName, extra);
+  } else {
+    title = null;
+  }
 
   return {
     category: rule.category,
     undefinedName,
-    title: rule.titleTemplate ? replacePlaceholders(rule.titleTemplate, undefinedName, extra) : null,
+    title,
     causes: baseCauses.map(c => replacePlaceholders(c, undefinedName, extra)).filter((cause): cause is string => cause !== null),
     fixCode: replacePlaceholders(baseFixCode, undefinedName, extra),
     fixComment: replacePlaceholders(baseFixComment, undefinedName, extra),
@@ -90,7 +116,7 @@ export const classifiers: Classifier[] = [
 export const classifyInput = (input: ClassifyInput): Classification => {
   for (const classifier of classifiers) {
     const result = classifier(input);
-    if (result) return result;
+    if (result) { return result; }
   }
   return DEFAULT_CLASSIFICATION;
 };

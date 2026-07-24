@@ -12,15 +12,15 @@ interface Quasi {
 }
 
 const isSafeTemplateExpression = (expr: string): boolean => {
-  if (!expr) return true;
+  if (!expr) { return true; }
   const trimmed = expr.trim();
-  if (!trimmed) return true;
-  if (SIMPLE_IDENTIFIER_PATTERN.test(trimmed)) return true;
-  if (trimmed.includes('(') || trimmed.includes('=>') || trimmed.includes('{')) return false;
-  if (trimmed.includes('+') || trimmed.includes('-') || trimmed.includes('*') || trimmed.includes('/')) return false;
-  if (trimmed.includes('||') || trimmed.includes('&&') || trimmed.includes('??')) return false;
-  if (trimmed.includes('=') || trimmed.includes(':')) return false;
-  if (trimmed.includes('.')) return false;
+  if (!trimmed) { return true; }
+  if (SIMPLE_IDENTIFIER_PATTERN.test(trimmed)) { return true; }
+  if (trimmed.includes('(') || trimmed.includes('=>') || trimmed.includes('{')) { return false; }
+  if (trimmed.includes('+') || trimmed.includes('-') || trimmed.includes('*') || trimmed.includes('/')) { return false; }
+  if (trimmed.includes('||') || trimmed.includes('&&') || trimmed.includes('??')) { return false; }
+  if (trimmed.includes('=') || trimmed.includes(':')) { return false; }
+  if (trimmed.includes('.')) { return false; }
   return true;
 };
 

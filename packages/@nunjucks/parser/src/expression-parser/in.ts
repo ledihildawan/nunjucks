@@ -14,14 +14,17 @@ export const parseIn = (ctx: ParserContext): Node => {
       break;
     }
     const invert = tok.type === TOKEN_SYMBOL && tok.value === 'not';
-    if (!invert) {
-      if (tok.type !== TOKEN_SYMBOL || tok.value !== 'in') {
+    if (!invert && (tok.type !== TOKEN_SYMBOL || tok.value !== 'in')) {
         pushToken(ctx, tok);
         break;
       }
-    }
 
-    const inTok = invert ? nextToken(ctx) : tok;
+    let inTok;
+    if (invert) {
+      inTok = nextToken(ctx);
+    } else {
+      inTok = tok;
+    }
     if (inTok && inTok.type === TOKEN_SYMBOL && inTok.value === 'in') {
       const node2 = parseIs(ctx);
       node = in_(inTok.lineno, inTok.colno, node, node2);
@@ -29,7 +32,7 @@ export const parseIn = (ctx: ParserContext): Node => {
         node = not(tok.lineno, tok.colno, node);
       }
     } else {
-      if (inTok) pushToken(ctx, inTok);
+      if (inTok) { pushToken(ctx, inTok); }
       break;
     }
   }

@@ -1,9 +1,7 @@
-import type { Tokenizer } from '../types';
-import { validators } from '../constants';
-import { getPeek } from '../state';
-import { advance } from '../state';
-import { createNumberToken } from '../tokens';
-import type { TokenType } from '../token-types';
+import type { Tokenizer } from '../types.ts';
+import { validators } from '../constants.ts';
+import { advance } from '../state.ts';
+import { createNumberToken } from '../tokens.ts';
 
 const { isDigit } = validators;
 
@@ -34,10 +32,15 @@ export const tokenizeNumber: Tokenizer = (state) => {
     }
   }
 
-  if (!num || num === '.') return null;
+  if (!num || num === '.') { return null; }
 
-  const value = hasDecimal ? parseFloat(num) : parseInt(num, 10);
-  if (Number.isNaN(value)) return null;
+  let value: number;
+  if (hasDecimal) {
+    value = Number.parseFloat(num);
+  } else {
+    value = Number.parseInt(num, 10);
+  }
+  if (Number.isNaN(value)) { return null; }
 
   return {
     token: createNumberToken(value, lineno, colno, hasDecimal),

@@ -1,10 +1,10 @@
-import { type ErrorDefinition, firstCapture } from './types.ts';
+import type { ErrorDefinition, } from './types.ts';
 
 export const META_ERRORS = {
   LINE_INFO_MATCH: {
     name: 'LINE_INFO_MATCH',
     message: 'Line info',
-    pattern: /\[Line (\d+)(?:, Column (\d+))?\]/i,
+    pattern: /\[Line (\d+)(?:, Column (\d+))?\]/iu,
     category: 'line_info',
     causes: [
       'Internal regex for extracting line info from error messages',
@@ -17,7 +17,7 @@ export const META_ERRORS = {
   COLUMN_INFO_MATCH: {
     name: 'COLUMN_INFO_MATCH',
     message: 'Column info',
-    pattern: /Column (\d+)/i,
+    pattern: /Column (\d+)/iu,
     category: 'column_info',
     causes: [
       'Internal regex for extracting column info from error messages',
@@ -30,7 +30,7 @@ export const META_ERRORS = {
   INCLUDED_FROM_MATCH: {
     name: 'INCLUDED_FROM_MATCH',
     message: 'Included from',
-    pattern: /\(included from ([^:)]+\.html)(?::\d+)?(?::\d+)?\)/,
+    pattern: /\(included from ([^:)]+\.html)(?::\d+)?(?::\d+)?\)/u,
     category: 'included_from',
     causes: [
       'Internal regex for extracting the include chain from error messages',
@@ -43,7 +43,7 @@ export const META_ERRORS = {
   INCLUDED_FROM_WITH_LINE_MATCH: {
     name: 'INCLUDED_FROM_WITH_LINE_MATCH',
     message: 'Included from with line',
-    pattern: /\(included from ([^:]+\.html):(\d+)(?::(\d+))?\)/,
+    pattern: /\(included from ([^:]+\.html):(\d+)(?::(\d+))?\)/u,
     category: 'included_from',
     causes: [
       'Internal regex for extracting the include chain with line info',

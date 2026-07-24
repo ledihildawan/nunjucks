@@ -77,7 +77,7 @@ export function createContext(
   let parentContextVar: Context | null = null;
 
   const validateBlocks = () => {
-    if (validatedBlocksVar) return;
+    if (validatedBlocksVar) { return; }
     validatedBlocksVar = true;
 
     if (parentBlockNamesVar !== null) {
@@ -136,7 +136,7 @@ export function createContext(
         },
       );
     }
-    return blocksVar[name]![0]!;
+    return blocksVar[name]?.[0]!;
   };
 
   const getSuper = (
@@ -241,4 +241,4 @@ export function createContext(
   return context;
 }
 
-export const isContext = (obj: unknown): boolean => !!obj && (obj as { [k: symbol]: unknown })[CONTEXT_KEY] === true;
+export const isContext = (obj: unknown): boolean => Boolean(obj) && (obj as { [k: symbol]: unknown })[CONTEXT_KEY] === true;
