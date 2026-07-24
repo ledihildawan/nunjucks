@@ -95,7 +95,6 @@ export {
 } from './security.ts';
 export {
   withTimeout,
-  withTimeoutSync,
   type TimeoutError,
   isTimeoutError,
 } from './timeout.ts';

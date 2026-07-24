@@ -76,7 +76,7 @@ interface TemplateState {
   compiler?: {
     compile: () => void;
     safeCompile: () => Promise<void>;
-    safeCompileSync: () => void;
+  
   };
 }
 
@@ -94,7 +94,7 @@ interface TemplateObject {
   blockMeta: Record<string, unknown>;
   rootRenderFunc: ((env: Env, context: unknown, frame: unknown, runtime: RuntimeContext) => unknown) | null;
   render: (ctx: unknown, parentFrame?: unknown) => Promise<string>;
-  renderSync: (ctx: unknown, parentFrame?: unknown) => string;
+
   compile: () => void;
   getExported: (ctx?: unknown, parentFrame?: unknown) => Promise<Record<string, unknown>>;
 }
@@ -267,13 +267,7 @@ const createTemplateCompiler = (state: TemplateState) => {
     }
   };
 
-  const safeCompileSync = () => {
-    if (!state.compiled) {
-      compile();
-    }
-  };
-
-  return { compile, safeCompile, safeCompileSync };
+  return { compile, safeCompile };
 };
 
 const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<typeof createTemplateErrorHandler>) => {
@@ -315,43 +309,7 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<t
     }
   };
 
-  const renderSync = (ctx: unknown, parentFrame?: unknown) => {
-    state.compiler?.safeCompileSync();
-
-    if (state.env._renderingTemplates.has(state.path!)) {
-      throw createLog('error', getError('CIRCULAR_INCLUDE'), { path: state.path as string }, state.path as string, { phase: 'render' });
-    }
-
-    state.env._renderingTemplates.add(state.path!);
-
-    // biome-ignore lint/suspicious/noExplicitAny: Context creation requires Env type which has dynamic properties
-    const context = createContext((ctx || {}) as Record<string, unknown>, state.blocks, state.env as any, { blockLocations: state.blockMeta as any });
-    const frame = parentFrame ? (parentFrame as Pick<Frame, 'push'>).push(true) : createFrame();
-    frame.topLevel = true;
-
-    try {
-      const runtime = createRuntimeWithContext(state.path, state.env.opts, ctx || {});
-      const result = state.rootRenderFunc?.(state.env, context, frame, runtime);
-      if (runtime.__warnings__?.length && state.env.opts.dev) {
-        // biome-ignore lint/suspicious/noExplicitAny: Runtime warnings are dynamically typed
-        return result + injectWarningsScript(runtime.__warnings__ as any, { dev: true, verbosity: 'medium' });
-      }
-      return result as string;
-    } catch (e) {
-      throw prettifyError({
-        path: (e as Record<string, unknown>).path as string || state.path,
-        withInternals: state.env.opts.dev,
-        // biome-ignore lint/suspicious/noExplicitAny: Error enrichment requires dynamic error typing
-        err: enrichError(e as any) as any,
-        // biome-ignore lint/suspicious/noExplicitAny: Include chain is dynamically typed
-        includeChain: (e as Record<string, unknown>)._includeChain as any || state._includeChain
-      });
-    } finally {
-      state.env._renderingTemplates.delete(state.path!);
-    }
-  };
-
-  return { render, renderSync };
+  return { render };
 };
 
 export function createTemplate(src: string | TemplateSource, env?: Env, path?: string | null, eagerCompile?: boolean, includeChain?: unknown[] | null): TemplateObject {
@@ -406,7 +364,6 @@ export function createTemplate(src: string | TemplateSource, env?: Env, path?: s
     get blockMeta() { return state.blockMeta; },
     get rootRenderFunc() { return state.rootRenderFunc; },
     render: renderer.render,
-    renderSync: renderer.renderSync,
     compile: () => state.compiler?.compile(),
     getExported: async (ctx?: unknown, parentFrame?: unknown) => {
       try {

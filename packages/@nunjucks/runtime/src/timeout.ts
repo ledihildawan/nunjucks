@@ -38,30 +38,3 @@ export const withTimeout = <T>(promise: Promise<T>, ms: number, onTimeout?: () =
       });
   });
 };
-
-export const withTimeoutSync = <T>(fn: () => T, ms: number, onTimeout?: () => void): T => {
-  if (!ms || ms <= 0) {
-    return fn();
-  }
-
-  let finished = false;
-  let result: T;
-
-  const timer = setTimeout(() => {
-    if (!finished && onTimeout) {
-      onTimeout();
-    }
-    throw createTimeoutError(`Template rendering timed out after ${ms}ms`);
-  }, ms);
-
-  try {
-    result = fn();
-    finished = true;
-    clearTimeout(timer);
-    return result;
-  } catch (err) {
-    finished = true;
-    clearTimeout(timer);
-    throw err;
-  }
-};

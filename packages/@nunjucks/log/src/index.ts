@@ -12,3 +12,18 @@ export type { ErrorMetadata, GetErrorMetadataOptions } from './render/internal/m
 export type { ErrorMetadataFallback, NormalizedErrorMetadata } from './render/internal/normalize.ts';
 export type { ErrorName } from './errors/registry.ts';
 export type { ErrorDefinitionOptions } from './errors/factory.ts';
+export {
+  NunjucksError,
+  ValidationError,
+  TemplateSyntaxError,
+  RenderError,
+  LoaderError,
+  SecurityError,
+  TimeoutError,
+  isNunjucksError,
+  isValidationError,
+  isRenderError,
+  isSecurityError,
+  isTimeoutError
+} from './errors/errors/index.ts';
+export type { NunjucksErrorMetadata } from './errors/errors/index.ts';

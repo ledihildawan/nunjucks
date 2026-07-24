@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { createTimeoutError, isTimeoutError, withTimeout, withTimeoutSync } from './timeout.ts';
+import { createTimeoutError, isTimeoutError, withTimeout } from './timeout.ts';
 
 describe('TimeoutError', () => {
   test('uses default message and TIMEOUT code', () => {
@@ -61,24 +61,5 @@ describe('withTimeout', () => {
     let called = false;
     await withTimeout(Promise.resolve(1), 1000, () => { called = true; });
     expect(called).toBe(false);
-  });
-});
-
-describe('withTimeoutSync', () => {
-  test('runs fn directly when ms is not positive', () => {
-    expect(withTimeoutSync(() => 7, 0)).toBe(7);
-    expect(withTimeoutSync(() => 7, -1)).toBe(7);
-  });
-
-  test('runs fn directly when ms is undefined', () => {
-    expect(withTimeoutSync(() => 7, undefined as unknown as number)).toBe(7);
-  });
-
-  test('returns the function result', () => {
-    expect(withTimeoutSync(() => 'done', 1000)).toBe('done');
-  });
-
-  test('propagates errors thrown by fn', () => {
-    expect(() => withTimeoutSync(() => { throw new Error('sync boom'); }, 1000)).toThrow('sync boom');
   });
 });

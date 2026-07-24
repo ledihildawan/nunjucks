@@ -13,21 +13,13 @@ afterEach(async () => {
 });
 
 describe('Express integration', () => {
-  test('renders a fixture template through the Express callback', async () => {
+  test('renders a fixture template with Promise API', async () => {
     const viewsDirectory = await mkdtemp(join(tmpdir(), 'nunjucks-express-'));
     temporaryDirectories.push(viewsDirectory);
     const templatePath = join(viewsDirectory, 'greeting.njk');
     await writeFile(templatePath, '<h1>Hello {{ name }}</h1>');
 
-    const html = await new Promise<string>((resolve, reject) => {
-      createEngine()(templatePath, { name: 'Ada' }, (error, renderedHtml) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve(renderedHtml ?? '');
-      });
-    });
+    const html = await createEngine()(templatePath, { name: 'Ada' });
 
     expect(html).toContain('Hello Ada');
   });
