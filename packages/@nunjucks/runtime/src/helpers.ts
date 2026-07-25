@@ -3,7 +3,7 @@
 
 import { createLog, normalizeErrorMetadata, ERROR_DEFINITIONS } from '@nunjucks/log';
 import type { ErrorContext, ErrorDefinitionEntry, WarningContext } from '@nunjucks/log/create-log';
-import { escapeHtml } from '@nunjucks/shared';
+import { escapeHtml, escapeForContext, type HtmlContext } from '@nunjucks/shared';
 import { isNonNullish, isFunction, isString, isArray, isPlainObject } from '@nunjucks/shared/type-guards';
 import {
   memberLookup,
@@ -113,9 +113,9 @@ export {
   createContext,
 };
 
-const escapeValue = (val: unknown): string => {
+const escapeValue = (val: unknown, context: HtmlContext = 'html'): string => {
   if (!isNonNullish(val)) { return ''; }
-  return escapeHtml(String(val));
+  return escapeForContext(String(val), context);
 };
 
 export function suppressValue(
@@ -123,10 +123,11 @@ export function suppressValue(
   val: unknown,
   autoescape?: boolean,
   lineno?: number | null,
-  colno?: number | null
+  colno?: number | null,
+  context: HtmlContext = 'html'
 ): unknown {
   if (val && typeof (val as { then?: unknown }).then === 'function') {
-    return (val as Promise<unknown>).then((v) => suppressValue.call(this, v, autoescape, lineno, colno));
+    return (val as Promise<unknown>).then((v) => suppressValue.call(this, v, autoescape, lineno, colno, context));
   }
 
   let normalized: string;
@@ -138,7 +139,7 @@ export function suppressValue(
 
   if (autoescape && !isSafeString(normalized)) {
     const strVal = (normalized as { toString: () => string }).toString();
-    const escaped = escapeValue(strVal);
+    const escaped = escapeValue(strVal, context);
 
     const isArray = Array.isArray(normalized);
     const isJsonValue = /^(?:true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')$/u.test(strVal.trim());

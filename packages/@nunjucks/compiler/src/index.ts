@@ -10,6 +10,7 @@ import { createSourceMap } from './source-map.ts';
 import type { SourceMap } from './source-map.ts';
 import { compileDispatch } from './node-dispatch.ts';
 import { DEFAULT_UNDEFINED_MODE, getUndefinedMode, type UndefinedMode } from '@nunjucks/runtime/undefined';
+import { HtmlContextTracker, type HtmlContext } from '@nunjucks/shared';
 
 export interface Compiler {
   templateName: string | null;
@@ -45,12 +46,13 @@ export interface Compiler {
   getCode: () => string;
   getSourceMap: () => SourceMap;
   emtest: (code: string) => void;
+  getHtmlContext: (lineno: number, colno: number) => HtmlContext;
 }
 
 export function createCompiler(
   templateName: string | null,
   undefinedMode: UndefinedMode | undefined,
-  _source: string
+  source: string
 ): Compiler {
   let codebuf: string[] = [];
   let lastId = 0;
@@ -60,6 +62,7 @@ export function createCompiler(
   let inBlock = false;
   let compiledLine = 0;
   const sourceMap = createSourceMap(templateName);
+  const contextTracker = new HtmlContextTracker(source);
 
   const fail = (msg: string, lineno?: number, colno?: number) => {
     let subject: string;
@@ -313,6 +316,7 @@ export function createCompiler(
     compile,
     getCode: () => codebuf.join(''),
     getSourceMap: () => sourceMap,
+    getHtmlContext: (lineno: number, colno: number) => contextTracker.getContextAtLineCol(lineno, colno, source.split('\n')),
   };
 
   return compiler;

@@ -77,6 +77,7 @@ export const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => 
 
       const lineno = errorLocation.lineno ?? 0;
       const colno = errorLocation.colno ?? 0;
+      const htmlContext = ctx.getHtmlContext(lineno, colno);
       ctx.emitLineWithLineno(
         `lineno = ${lineno}; colno = ${colno}; ${ctx.buffer} += runtime.suppressValue(`,
         lineno,
@@ -107,7 +108,7 @@ export const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => 
       if (!isPipeType) {
         ctx.emit(')');
       }
-      ctx.emit(', env.opts.autoescape, lineno, colno);');
+      ctx.emit(`, env.opts.autoescape, lineno, colno, "${htmlContext}");`);
     }
   });
   ctx.emit('\n');
