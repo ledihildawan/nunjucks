@@ -27,8 +27,6 @@ export const emitLine = (ctx: EmitterCtx, code: string, originalLine?: number, c
 
 export const emitLineWithMapping: typeof emitLine = emitLine;
 
-export const emitLineWithLineno: typeof emitLine = emitLine;
-
 export const emitLines = (ctx: EmitterCtx, ...lines: string[]): void => {
   for (const line of lines) {
     emitLine(ctx, line);

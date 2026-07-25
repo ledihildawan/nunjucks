@@ -30,7 +30,6 @@ export interface Compiler {
   emitLine: (code: string, originalLine?: number) => void;
   emitLineWithMapping: (code: string, templateLine?: number, templateCol?: number) => void;
   trackMapping: (templateLine?: number, templateCol?: number) => void;
-  emitLineWithLineno: (code: string, templateLine?: number, templateCol?: number) => void;
   emitLines: (...lines: string[]) => void;
   emitFuncBegin: (node: Node, name: string) => void;
   emitFuncEnd: (noReturn?: boolean) => void;
@@ -126,14 +125,6 @@ export function createCompiler(
     }
   };
 
-  const emitLineWithLineno = (code: string, templateLine?: number, templateCol?: number) => {
-    compiledLine++;
-    if (templateLine !== undefined) {
-      sourceMap.addMapping(compiledLine, templateLine, templateCol || 0);
-    }
-    emit(`${code}\n`);
-  };
-
   const emitLines = (...lines: string[]) => {
     lines.forEach((line) => emitLine(line));
   };
@@ -141,7 +132,7 @@ export function createCompiler(
   const emitFuncBegin = (node: Node, name: string) => {
     buffer = 'output';
     scopeClosers = '';
-    emitLine(`async function ${name}(env, context, frame, runtime) {`);
+    emitLineWithMapping(`async function ${name}(env, context, frame, runtime) {`, node.lineno, node.colno);
     emitLineWithMapping(`let lineno = ${node.lineno};`, node.lineno, node.colno);
     emitLine(`let colno = ${node.colno ?? 0};`);
     emitLine(`let ${buffer} = "";`);
@@ -301,7 +292,6 @@ export function createCompiler(
     emitLine,
     emitLineWithMapping,
     trackMapping,
-    emitLineWithLineno,
     emitLines,
     emitFuncBegin,
     emitFuncEnd,

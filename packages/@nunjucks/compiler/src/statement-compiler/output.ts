@@ -78,7 +78,7 @@ export const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => 
       const lineno = errorLocation.lineno ?? 0;
       const colno = errorLocation.colno ?? 0;
       const htmlContext = ctx.getHtmlContext(lineno, colno);
-      ctx.emitLineWithLineno(
+      ctx.emitLineWithMapping(
         `lineno = ${lineno}; colno = ${colno}; ${ctx.buffer} += runtime.suppressValue(`,
         lineno,
         colno
