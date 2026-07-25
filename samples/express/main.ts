@@ -1,7 +1,7 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
-import { createEngine } from '@nunjucks/core/express';
+import { createEngine } from '@nunjucks/integrations/express';
 import { render } from '@nunjucks/core';
 
 const __filename = fileURLToPath(import.meta.url);
