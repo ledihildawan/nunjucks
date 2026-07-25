@@ -1,9 +1,9 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import express, { type Router } from 'express';
-import nunjucks from '../../../src/index.js';
+import { render } from '@nunjucks/core';
 import { createSandboxedContext } from '@nunjucks/runtime';
-import type { ErrorRoute, ErrorGroup } from './types.js';
+import type { ErrorRoute, ErrorGroup } from './types.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -77,7 +77,7 @@ errorRoutes.forEach(({ path: routePath, template, context, filters }) => {
       if (filters) {
         options.filters = filters;
       }
-      const html = await nunjucks.render(template, context, options as Parameters<typeof nunjucks.render>[2]);
+      const html = await render(template, context, options as Parameters<typeof render>[2]);
       res.type('html').send(html);
     } catch (err) {
       next(err);
@@ -88,7 +88,7 @@ errorRoutes.forEach(({ path: routePath, template, context, filters }) => {
 router.get('/inline-filter-error', async (req, res, next) => {
   try {
     const template = '{{ "test" |> nonexistentFilter }}';
-    await nunjucks(template, {}, { dev: true });
+    await render(template, {}, { dev: true });
     res.send('Should have thrown');
   } catch (err) {
     next(err);
@@ -98,7 +98,7 @@ router.get('/inline-filter-error', async (req, res, next) => {
 router.get('/inline-syntax-error', async (req, res, next) => {
   try {
     const template = '{% if true %} {% endif %} {{ invalid';
-    await nunjucks(template, {}, { dev: true });
+    await render(template, {}, { dev: true });
     res.send('Should have thrown');
   } catch (err) {
     next(err);
@@ -107,7 +107,7 @@ router.get('/inline-syntax-error', async (req, res, next) => {
 
 router.get('/undefined-block', async (req, res, next) => {
   try {
-    const html = await nunjucks.render('errors/undefined-block.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
+    const html = await render('errors/undefined-block.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -116,7 +116,7 @@ router.get('/undefined-block', async (req, res, next) => {
 
 router.get('/no-super-block', async (req, res, next) => {
   try {
-    const html = await nunjucks('{% block content %}{{ super() }}{% endblock %}', {}, { dev: true });
+    const html = await render('{% block content %}{{ super() }}{% endblock %}', {}, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -125,7 +125,7 @@ router.get('/no-super-block', async (req, res, next) => {
 
 router.get('/caller-outside-call', async (req, res, next) => {
   try {
-    const html = await nunjucks('{% macro foo() %}{{ caller() }}{% endmacro %}{{ foo() }}', {}, { dev: true });
+    const html = await render('{% macro foo() %}{{ caller() }}{% endmacro %}{{ foo() }}', {}, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -134,7 +134,7 @@ router.get('/caller-outside-call', async (req, res, next) => {
 
 router.get('/no-super-block-template', async (req, res, next) => {
   try {
-    const html = await nunjucks.render('errors/no-super-block.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
+    const html = await render('errors/no-super-block.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -143,7 +143,7 @@ router.get('/no-super-block-template', async (req, res, next) => {
 
 router.get('/invalid-include', async (req, res, next) => {
   try {
-    const html = await nunjucks.render('errors/invalid-include.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
+    const html = await render('errors/invalid-include.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -152,7 +152,7 @@ router.get('/invalid-include', async (req, res, next) => {
 
 router.get('/circular-include', async (req, res, next) => {
   try {
-    const html = await nunjucks.render('errors/circular-include.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
+    const html = await render('errors/circular-include.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -161,7 +161,7 @@ router.get('/circular-include', async (req, res, next) => {
 
 router.get('/file-not-found', async (req, res, next) => {
   try {
-    const html = await nunjucks.render('errors/file-not-found.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
+    const html = await render('errors/file-not-found.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -170,7 +170,7 @@ router.get('/file-not-found', async (req, res, next) => {
 
 router.get('/filesystem-error', async (req, res, next) => {
   try {
-    const html = await nunjucks.render('errors/filesystem-error.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
+    const html = await render('errors/filesystem-error.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -179,7 +179,7 @@ router.get('/filesystem-error', async (req, res, next) => {
 
 router.get('/inline-error', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ undefinedVar }}', {}, { dev: true, undefined: 'strict' });
+    const html = await render('{{ undefinedVar }}', {}, { dev: true, undefined: 'strict' });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -188,7 +188,7 @@ router.get('/inline-error', async (req, res, next) => {
 
 router.get('/sandbox-proto', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ user.__proto__ }}', { user: {} }, { dev: true, sandbox: true });
+    const html = await render('{{ user.__proto__ }}', { user: {} }, { dev: true, sandbox: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -197,7 +197,7 @@ router.get('/sandbox-proto', async (req, res, next) => {
 
 router.get('/sandbox-constructor', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ user.constructor }}', { user: {} }, { dev: true, sandbox: true });
+    const html = await render('{{ user.constructor }}', { user: {} }, { dev: true, sandbox: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -206,7 +206,7 @@ router.get('/sandbox-constructor', async (req, res, next) => {
 
 router.get('/sandbox-process', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ user.global }}', { user: { global: process } }, { dev: true, sandbox: true, contextStrict: 'error' });
+    const html = await render('{{ user.global }}', { user: { global: process } }, { dev: true, sandbox: true, contextStrict: 'error' });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -215,7 +215,7 @@ router.get('/sandbox-process', async (req, res, next) => {
 
 router.get('/sandbox-set', async (req, res, next) => {
   try {
-    const html = await nunjucks('{% set user.__proto__ = {} %}', {}, { dev: true, sandbox: true });
+    const html = await render('{% set user.__proto__ = {} %}', {}, { dev: true, sandbox: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -224,7 +224,7 @@ router.get('/sandbox-set', async (req, res, next) => {
 
 router.get('/slice-error', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ [1,2,3][::0] }}', {}, { dev: true });
+    const html = await render('{{ [1,2,3][::0] }}', {}, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -233,7 +233,7 @@ router.get('/slice-error', async (req, res, next) => {
 
 router.get('/list-filter-error', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ 42 |> list }}', {}, { dev: true });
+    const html = await render('{{ 42 |> list }}', {}, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -242,7 +242,7 @@ router.get('/list-filter-error', async (req, res, next) => {
 
 router.get('/in-operator-error', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ key in value }}', { key: 'test', value: 123 }, { dev: true });
+    const html = await render('{{ key in value }}', { key: 'test', value: 123 }, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -251,7 +251,7 @@ router.get('/in-operator-error', async (req, res, next) => {
 
 router.get('/filter-throw', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ "test" |> throwingFilter }}', {}, {
+    const html = await render('{{ "test" |> throwingFilter }}', {}, {
       dev: true,
       filters: {
         throwingFilter: () => {
@@ -274,7 +274,7 @@ router.get('/filter-throw', async (req, res, next) => {
 
 router.get('/sandbox-timeout', async (req, res, next) => {
   try {
-    const html = await nunjucks('{% for i in range(0, 100000) %}{{ i }}{% endfor %}', {}, { dev: true, sandbox: true, executionTimeout: 1 });
+    const html = await render('{% for i in range(0, 100000) %}{{ i }}{% endfor %}', {}, { dev: true, sandbox: true, executionTimeout: 1 });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -283,7 +283,7 @@ router.get('/sandbox-timeout', async (req, res, next) => {
 
 router.get('/sandbox-context-modify', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ modifyContext() }}', {
+    const html = await render('{{ modifyContext() }}', {
       modifyContext: () => {
         const context = createSandboxedContext({ user: 'alice' }, true);
         (context as { user?: string }).user = 'bob';
@@ -297,7 +297,7 @@ router.get('/sandbox-context-modify', async (req, res, next) => {
 
 router.get('/blocked-context-keys', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ password }}', { password: 'secret123' }, { dev: true, strictMode: true, blockedContextKeys: ['password'] });
+    const html = await render('{{ password }}', { password: 'secret123' }, { dev: true, strictMode: true, blockedContextKeys: ['password'] });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -306,7 +306,7 @@ router.get('/blocked-context-keys', async (req, res, next) => {
 
 router.get('/dangerous-context', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ user.name }}', { user: { name: 'test', eval: 'profile label' }, globalThis }, { dev: true, strictMode: true, scanContextValues: true });
+    const html = await render('{{ user.name }}', { user: { name: 'test', eval: 'profile label' }, globalThis }, { dev: true, strictMode: true, scanContextValues: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -315,7 +315,7 @@ router.get('/dangerous-context', async (req, res, next) => {
 
 router.get('/dangerous-template', async (req, res, next) => {
   try {
-    const html = await nunjucks('{% set x = eval("1+1") %}{{ x }}', {}, { dev: true, strictMode: true });
+    const html = await render('{% set x = eval("1+1") %}{{ x }}', {}, { dev: true, strictMode: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -325,7 +325,7 @@ router.get('/dangerous-template', async (req, res, next) => {
 router.get('/template-size', async (req, res, next) => {
   try {
     const largeTemplate = 'x'.repeat(10000);
-    const html = await nunjucks(largeTemplate, {}, { dev: true, maxTemplateSize: 1000 });
+    const html = await render(largeTemplate, {}, { dev: true, maxTemplateSize: 1000 });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -334,7 +334,7 @@ router.get('/template-size', async (req, res, next) => {
 
 router.get('/invalid-config', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ test }}', { test: 'value' }, { dev: true, executionTimeout: -1 });
+    const html = await render('{{ test }}', { test: 'value' }, { dev: true, executionTimeout: -1 });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -343,12 +343,11 @@ router.get('/invalid-config', async (req, res, next) => {
 
 router.get('/key-not-found', async (req, res, next) => {
   try {
-    const nunjucksInstance = nunjucks.configure({ undefined: 'strict' });
-    const html = await nunjucksInstance(`
+    const html = await render(`
 
       {{ missingKey }}
 
-       `, {}, { dev: true });
+       `, {}, { dev: true, undefined: 'strict' });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -357,7 +356,7 @@ router.get('/key-not-found', async (req, res, next) => {
 
 router.get('/import-error', async (req, res, next) => {
   try {
-    const html = await nunjucks.render('errors/import-error.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
+    const html = await render('errors/import-error.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -366,7 +365,7 @@ router.get('/import-error', async (req, res, next) => {
 
 router.get('/container-error', async (req, res, next) => {
   try {
-    const html = await nunjucks('{% set x = container.get("missing") %}', { container: { get: undefined } }, { dev: true });
+    const html = await render('{% set x = container.get("missing") %}', { container: { get: undefined } }, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -375,7 +374,7 @@ router.get('/container-error', async (req, res, next) => {
 
 router.get('/reserved-keyword-filter', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ value }}', { value: 'test' }, { dev: true, filters: { 'if': (v: unknown) => v } });
+    const html = await render('{{ value }}', { value: 'test' }, { dev: true, filters: { 'if': (v: unknown) => v } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -384,7 +383,7 @@ router.get('/reserved-keyword-filter', async (req, res, next) => {
 
 router.get('/reserved-keyword-global', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ myArray }}', { myArray: [1, 2, 3] }, { dev: true, globals: { Array: {} } });
+    const html = await render('{{ myArray }}', { myArray: [1, 2, 3] }, { dev: true, globals: { Array: {} } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -393,7 +392,7 @@ router.get('/reserved-keyword-global', async (req, res, next) => {
 
 router.get('/groupby-type-error', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ items |> groupby("missing") }}', { items: [{ name: 'test' }] }, { dev: true, undefined: 'strict' });
+    const html = await render('{{ items |> groupby("missing") }}', { items: [{ name: 'test' }] }, { dev: true, undefined: 'strict' });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -402,7 +401,7 @@ router.get('/groupby-type-error', async (req, res, next) => {
 
 router.get('/sort-type-error', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ items |> sort("missing") }}', { items: [{ name: 'test' }] }, { dev: true, undefined: 'strict' });
+    const html = await render('{{ items |> sort("missing") }}', { items: [{ name: 'test' }] }, { dev: true, undefined: 'strict' });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -411,7 +410,7 @@ router.get('/sort-type-error', async (req, res, next) => {
 
 router.get('/dictsort-value-error', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ data |> dictsort }}', { data: 'not an object' }, { dev: true });
+    const html = await render('{{ data |> dictsort }}', { data: 'not an object' }, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -420,7 +419,7 @@ router.get('/dictsort-value-error', async (req, res, next) => {
 
 router.get('/dictsort-by-error', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ data |> dictsort(false, "invalid") }}', { data: { a: 1, b: 2 } }, { dev: true });
+    const html = await render('{{ data |> dictsort(false, "invalid") }}', { data: { a: 1, b: 2 } }, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -429,7 +428,7 @@ router.get('/dictsort-by-error', async (req, res, next) => {
 
 router.get('/unknown-block-runtime', async (req, res, next) => {
   try {
-    const html = await nunjucks('{% extends "base.njk" %}{% block nonexistent %}{{ super() }}{% endblock %}', {}, { dev: true, views: VIEWS });
+    const html = await render('{% extends "base.njk" %}{% block nonexistent %}{{ super() }}{% endblock %}', {}, { dev: true, views: VIEWS });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -438,7 +437,7 @@ router.get('/unknown-block-runtime', async (req, res, next) => {
 
 router.get('/expected-variable-end', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ user.name ', { user: { name: 'test' } }, { dev: true });
+    const html = await render('{{ user.name ', { user: { name: 'test' } }, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -447,7 +446,7 @@ router.get('/expected-variable-end', async (req, res, next) => {
 
 router.get('/parser-unexpected-token', async (req, res, next) => {
   try {
-    const html = await nunjucks('{% if true %}{% endif %}{{ ', {}, { dev: true });
+    const html = await render('{% if true %}{% endif %}{{ ', {}, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -456,7 +455,7 @@ router.get('/parser-unexpected-token', async (req, res, next) => {
 
 router.get('/sandbox-access', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ global }}', { global: process }, { dev: true, sandbox: true });
+    const html = await render('{{ global }}', { global: process }, { dev: true, sandbox: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -465,7 +464,7 @@ router.get('/sandbox-access', async (req, res, next) => {
 
 router.get('/sandbox-allowlist', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ customVar }}', { customVar: 'test' }, { dev: true, sandbox: true, sandboxAllowlist: ['allowedVar'], sandboxMode: 'allowlist' });
+    const html = await render('{{ customVar }}', { customVar: 'test' }, { dev: true, sandbox: true, sandboxAllowlist: ['allowedVar'], sandboxMode: 'allowlist' });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -474,7 +473,7 @@ router.get('/sandbox-allowlist', async (req, res, next) => {
 
 router.get('/sandbox-code-execution', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ setTimeout("alert(1)", 0) }}', { setTimeout }, { dev: true, sandbox: true });
+    const html = await render('{{ setTimeout("alert(1)", 0) }}', { setTimeout }, { dev: true, sandbox: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -483,7 +482,7 @@ router.get('/sandbox-code-execution', async (req, res, next) => {
 
 router.get('/sandbox-context-error', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ user.something }}', { user: undefined }, { dev: true, sandbox: true });
+    const html = await render('{{ user.something }}', { user: undefined }, { dev: true, sandbox: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -492,7 +491,7 @@ router.get('/sandbox-context-error', async (req, res, next) => {
 
 router.get('/container-factory', async (req, res, next) => {
   try {
-    const html = await nunjucks('{% set x = container.get("test") %}', { container: { get: 'not a function' } }, { dev: true });
+    const html = await render('{% set x = container.get("test") %}', { container: { get: 'not a function' } }, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -501,7 +500,7 @@ router.get('/container-factory', async (req, res, next) => {
 
 router.get('/container-not-registered', async (req, res, next) => {
   try {
-    const html = await nunjucks('{% set x = myContainer.get("test") %}', {}, { dev: true });
+    const html = await render('{% set x = myContainer.get("test") %}', {}, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -510,7 +509,7 @@ router.get('/container-not-registered', async (req, res, next) => {
 
 router.get('/template-must-be-string', async (req, res, next) => {
   try {
-    const html = await nunjucks(123 as unknown as string, {}, { dev: true });
+    const html = await render(123 as unknown as string, {}, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -519,7 +518,7 @@ router.get('/template-must-be-string', async (req, res, next) => {
 
 router.get('/template-null', async (req, res, next) => {
   try {
-    const html = await nunjucks(null as unknown as string, {}, { dev: true });
+    const html = await render(null as unknown as string, {}, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -528,7 +527,7 @@ router.get('/template-null', async (req, res, next) => {
 
 router.get('/undefined-value-match', async (req, res, next) => {
   try {
-    const html = await nunjucks('{{ product.name }}', { product: { test: 'test' } }, { dev: true, undefined: 'strict' });
+    const html = await render('{{ product.name }}', { product: { test: 'test' } }, { dev: true, undefined: 'strict' });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -695,7 +694,7 @@ router.get('/', async (req, res, next) => {
     ];
 
     const total = groups.reduce((sum, g) => sum + g.items.length, 0);
-    const html = await nunjucks.render('errors/index.njk', { groups, total }, { dev: true, views: VIEWS });
+    const html = await render('errors/index.njk', { groups, total }, { dev: true, views: VIEWS });
     res.type('html').send(html);
   } catch (err) {
     next(err);

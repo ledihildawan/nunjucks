@@ -1,5 +1,5 @@
 import express, { type Router, type Request, type Response } from 'express';
-import nunjucks from '../../../src/index.js';
+import { render } from '@nunjucks/core';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 const VIEWS = path.join(__dirname, '..', 'views');
 
 const renderTemplate = async (template: string, context: Record<string, unknown>, config: Record<string, unknown> = {}): Promise<string> => {
-  return await nunjucks(template, context, {
+  return await render(template, context, {
     autoescape: true,
     dev: true,
     ide: 'vscode',

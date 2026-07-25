@@ -3,6 +3,8 @@ import { fileURLToPath } from 'url';
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import { createEngine } from '@nunjucks/integrations/express';
 import { render } from '@nunjucks/core';
+import { demoRouter } from './routes/demo.ts';
+import { errorRouter } from './routes/errors.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -88,10 +90,16 @@ app.get('/security', async (req: Request, res: Response) => {
   res.type('html').send(html);
 });
 
+app.use('/demo', demoRouter);
+app.use('/errors', errorRouter);
+
 app.listen(4000, () => {
   console.log('Server running at http://localhost:4000');
-  console.log('Demo routes:');
-  console.log('  /         - Home');
-  console.log('  /home     - Inline template with pipe syntax');
-  console.log('  /security - Security features (sanitize, auto-tojson, context-aware escaping)');
+  console.log('\nDemo routes:');
+  console.log('  /              - Home');
+  console.log('  /home          - Inline template with pipe syntax');
+  console.log('  /security      - Security features (sanitize, auto-tojson)');
+  console.log('  /demo/*        - Demo routes (pipe, with, switch, call, etc)');
+  console.log('  /errors        - Error scenarios index');
+  console.log('  /errors/*      - Individual error scenarios');
 });

@@ -1,7 +1,7 @@
 import express, { type Router, type Request, type Response, type NextFunction } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import nunjucks from '../../../src/index.js';
+import { render } from '@nunjucks/core';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,7 +11,7 @@ const router: Router = express.Router();
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const html = await nunjucks.render('warnings.njk', {
+    const html = await render('warnings.njk', {
       pageTitle: 'Warnings Demo',
       availableValue: 'This value is defined',
       user: undefined,

@@ -1,5 +1,5 @@
 import express, { type Router, type Request, type Response } from 'express';
-import nunjucks from '../../../src/index.js';
+import { render } from '@nunjucks/core';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -10,7 +10,7 @@ const VIEWS = path.join(__dirname, '..', 'views');
 const router: Router = express.Router();
 
 router.get('/try-catch', async (req: Request, res: Response) => {
-  const html = await nunjucks.render('demo-try-catch.njk', {
+  const html = await render('demo-try-catch.njk', {
     arr: [],
     name: { append: function(this: { value: string }, x: string) { return this.value + x; }, value: "Hello" },
     items: []
@@ -19,12 +19,12 @@ router.get('/try-catch', async (req: Request, res: Response) => {
 });
 
 router.get('/with', async (req: Request, res: Response) => {
-  const html = await nunjucks.render('demo-with.njk', {}, { views: VIEWS });
+  const html = await render('demo-with.njk', {}, { views: VIEWS });
   res.type('html').send(html);
 });
 
 router.get('/do', async (req: Request, res: Response) => {
-  const html = await nunjucks.render('demo-do.njk', {
+  const html = await render('demo-do.njk', {
     arr: [],
     name: { append: function(this: { value: string }, x: string) { return this.value + x; }, value: "Hello" },
     items: []
@@ -33,7 +33,7 @@ router.get('/do', async (req: Request, res: Response) => {
 });
 
 router.get('/switch', async (req: Request, res: Response) => {
-  const html = await nunjucks.render('demo-switch.njk', {
+  const html = await render('demo-switch.njk', {
     status: "active",
     priority: 2
   }, { views: VIEWS });
@@ -41,19 +41,19 @@ router.get('/switch', async (req: Request, res: Response) => {
 });
 
 router.get('/call', async (req: Request, res: Response) => {
-  const html = await nunjucks.render('demo-call.njk', {}, { views: VIEWS });
+  const html = await render('demo-call.njk', {}, { views: VIEWS });
   res.type('html').send(html);
 });
 
 router.get('/pipe', async (req: Request, res: Response) => {
-  const html = await nunjucks.render('demo-pipe.njk', {
+  const html = await render('demo-pipe.njk', {
     items: ["one", "two", "three"]
   }, { views: VIEWS });
   res.type('html').send(html);
 });
 
 router.get('/security', async (req: Request, res: Response) => {
-  const html = await nunjucks.render('demo-security.njk', {
+  const html = await render('demo-security.njk', {
     userInput: '<script>alert("XSS attack!")</script><p>Hello World</p>',
     dangerousHtml: '<img src=x onerror="alert(1)"><script>document.location="http://evil.com"</script>',
     configData: { theme: 'dark', debug: true, count: 42 },
