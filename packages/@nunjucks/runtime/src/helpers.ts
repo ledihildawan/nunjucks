@@ -130,6 +130,33 @@ export function suppressValue(
     return (val as Promise<unknown>).then((v) => suppressValue.call(this, v, autoescape, lineno, colno, context));
   }
 
+  if (autoescape && context === 'script' && !isSafeString(val)) {
+    const strVal = (val as { toString: () => string }).toString();
+    const isJsonValue = /^(?:true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')$/u.test(strVal.trim());
+    const isJsonContainer = /^[[{]/u.test(strVal);
+
+    if (isJsonValue || isJsonContainer || Array.isArray(val) || typeof val === 'object') {
+      const encoded = JSON.stringify(val);
+      if (/<|&lt;/u.test(encoded)) {
+        const ctx = getLogContext(this);
+        throw createLog(
+          'error',
+          ERROR_DEFINITIONS.JSON_ESCAPED_OUTPUT!,
+          {},
+          null,
+          {
+            lineno: lineno ?? null,
+            colno: colno ?? null,
+            phase: ctx.phase || 'render',
+            templateName: ctx.templateName || 'inline',
+            lineBase: 'zero'
+          }
+        );
+      }
+      return encoded;
+    }
+  }
+
   let normalized: string;
   if (isNonNullish(val)) {
     normalized = val as string;

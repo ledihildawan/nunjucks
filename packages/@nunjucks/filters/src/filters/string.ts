@@ -22,8 +22,6 @@ export const fallback = createMacroFilter(['val', 'def', 'bool'], (val: unknown,
 
 export const escape = safeHtml;
 
-export const safe = safeString;
-
 export const tojson = (value: unknown): SafeString => safeString(JSON.stringify(value));
 
 export const indent = (str: unknown, width?: number, indentfirst?: boolean): string => {

@@ -2,6 +2,7 @@ import * as stringFilters from '@nunjucks/filters/string';
 import * as arrayFilters from '@nunjucks/filters/array';
 import * as objectFilters from '@nunjucks/filters/object';
 import * as mathFilters from '@nunjucks/filters/math';
+import { sanitize, setDefaultDomPurifyConfig, type DomPurifyConfig } from '@nunjucks/filters';
 import type { Result } from './result.ts';
 
 type FilterObject = Readonly<Record<string, unknown>>;
@@ -131,6 +132,7 @@ const builtInFilters: FilterObject = Object.freeze({
   e: stringFilters.escape,
   length: arrayFilters.lengthFilter,
   tojson: stringFilters.tojson,
+  sanitize: sanitize as unknown as (...args: unknown[]) => unknown,
 });
 
 export type SandboxEnvironment = 'auto' | 'node' | 'browser' | 'deno';
@@ -162,7 +164,10 @@ interface GlobalConfigBase {
   readonly globals: Readonly<Record<string, unknown>>;
   readonly extensions: Readonly<Record<string, unknown>>;
   readonly views: string | null;
+  readonly dompurify: DomPurifyConfig;
 }
+
+export type { DomPurifyConfig };
 
 export interface GlobalConfig extends GlobalConfigBase {
   readonly [key: string]: unknown;
@@ -192,10 +197,12 @@ const DEFAULT_CONFIG: GlobalConfig = Object.freeze({
   filters: builtInFilters,
   globals: SAFE_BUILTINS,
   extensions: Object.freeze({}),
-  views: null
+  views: null,
+  dompurify: Object.freeze({})
 });
 
 export const getDefaultConfig = (): GlobalConfig => ({ ...DEFAULT_CONFIG });
+export { setDefaultDomPurifyConfig };
 
 interface ConfigValidationError {
   readonly field: string;

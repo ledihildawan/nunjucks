@@ -23,6 +23,7 @@
     "@nunjucks/transformers": "workspace:*",
     "@nunjucks/loaders": "workspace:*",
     "@nunjucks/validators": "workspace:*",
+    "isomorphic-dompurify": "^2.14.0",
     "picocolors": "^1.1.1",
     "remeda": "^2.39.0"
   },

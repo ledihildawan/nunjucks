@@ -1,8 +1,9 @@
 import { describe, test, expect } from 'bun:test';
 import {
-  normalize, capitalize, upper, lower, escape, safe,
+  normalize, capitalize, upper, lower, escape,
   truncate, trim, title, join, replace, urlencode, indent, fallback,
 } from './string.ts';
+import { sanitize } from './sanitize.ts';
 
 describe('normalize', () => {
   test('returns default for null', () => {
@@ -37,15 +38,15 @@ describe('upper / lower', () => {
   });
 });
 
-describe('escape / safe', () => {
+describe('escape / sanitize', () => {
   test('escape converts html chars', () => {
     const r = String(escape('<script>"x"</script>'));
     expect(r).toContain('&lt;script&gt;');
     expect(r).toContain('&quot;x&quot;');
   });
-  test('safe marks as safe', () => {
-    const r = safe('<b>');
-    expect(r).toBeDefined();
+  test('sanitize removes dangerous tags', () => {
+    const r = sanitize('<script>alert("xss")</script>');
+    expect(r).not.toContain('<script>');
   });
 });
 

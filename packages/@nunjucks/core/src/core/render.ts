@@ -15,7 +15,7 @@ import { getLoader } from './engine.ts';
 import { createEnv, type Env } from './env.ts';
 import { createTemplate } from '../template/index.ts';
 import type { SourceMapMapping } from '@nunjucks/compiler/source-map';
-import { getDefaultConfig, type GlobalConfig } from '../config/global.ts';
+import { getDefaultConfig, setDefaultDomPurifyConfig, type GlobalConfig } from '../config/global.ts';
 
 interface LoaderSource {
   src: string;
@@ -268,6 +268,10 @@ const validateRenderInput = async (template: unknown, config: RenderConfig, cont
 };
 
 export const render = async (template: string, context: Record<string, unknown> = {}, options: Partial<GlobalConfig> = {}): Promise<string> => {
+  if (options.dompurify) {
+    setDefaultDomPurifyConfig(options.dompurify);
+  }
+
   const defaults = getDefaultConfig();
   const config: RenderConfig = {
     ...defaults,

@@ -16,6 +16,7 @@
     "@nunjucks/runtime": "workspace:*",
     "@nunjucks/log": "workspace:*",
     "@nunjucks/shared": "workspace:*",
+    "isomorphic-dompurify": "^2.14.0",
     "remeda": "*"
   },
   "description": "Built-in filters for Nunjucks template engine"
