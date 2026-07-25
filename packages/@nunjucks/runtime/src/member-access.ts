@@ -22,7 +22,7 @@ export interface PropertyNotFoundResult {
 export type AccessResult = NullAccessResult | PropertyNotFoundResult | unknown;
 
 export function memberLookup(obj: unknown, val: string, parentName: string | null = null): unknown {
-  if (obj === null) {
+  if (obj === null || obj === undefined) {
     return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
   }
 

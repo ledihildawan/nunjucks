@@ -43,7 +43,13 @@ export const compileIs = (ctx: Compiler, node: Node, frame: Frame): void => {
   ctx.compile(node.left as Node, frame);
   if (rightNode.args) {
     ctx.emit(',');
-    ctx.compile(rightNode.args as Node, frame);
+    const args = rightNode.args as Node[];
+    args.forEach((arg, i) => {
+      if (i > 0) {
+        ctx.emit(',');
+      }
+      ctx.compile(arg, frame);
+    });
   }
   ctx.emit(') === true)');
 };

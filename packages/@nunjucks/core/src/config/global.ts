@@ -2,7 +2,7 @@ import * as stringFilters from '@nunjucks/filters/string';
 import * as arrayFilters from '@nunjucks/filters/array';
 import * as objectFilters from '@nunjucks/filters/object';
 import * as mathFilters from '@nunjucks/filters/math';
-import type { Result } from './result.js';
+import type { Result } from './result.ts';
 
 type FilterObject = Readonly<Record<string, unknown>>;
 
@@ -195,47 +195,12 @@ const DEFAULT_CONFIG: GlobalConfig = Object.freeze({
   views: null
 });
 
-let _globalConfig: GlobalConfig = { ...DEFAULT_CONFIG };
-
-export const getGlobalConfig = (): GlobalConfig => ({ ..._globalConfig });
-
-export const setGlobalConfig = (config: Partial<GlobalConfig>): GlobalConfig => {
-  _globalConfig = {
-    ...DEFAULT_CONFIG,
-    ...config,
-    filters: { ...builtInFilters, ...(config.filters || {}) },
-    globals: { ...(config.globals || {}) },
-    extensions: { ...(config.extensions || {}) }
-  };
-  return _globalConfig;
-};
-
-export const mergeConfig = (localConfig: Partial<GlobalConfig> = {}): GlobalConfig => ({
-  ..._globalConfig,
-  ...localConfig,
-  filters: { ..._globalConfig.filters as FilterObject, ...(localConfig.filters || {}) as FilterObject },
-  globals: { ..._globalConfig.globals as Readonly<Record<string, unknown>>, ...(localConfig.globals || {}) as Record<string, unknown> },
-  extensions: { ..._globalConfig.extensions as Readonly<Record<string, unknown>>, ...(localConfig.extensions || {}) as Record<string, unknown> }
-});
-
 export const getDefaultConfig = (): GlobalConfig => ({ ...DEFAULT_CONFIG });
 
-export const resetConfig = (): GlobalConfig => {
-  _globalConfig = { ...DEFAULT_CONFIG };
-  return _globalConfig;
-};
-
-export const isConfigured = (): boolean =>
-  (Object.keys(_globalConfig) as Array<keyof GlobalConfig>).some(key =>
-    key !== 'filters' && key !== 'globals' && key !== 'extensions'
-      ? _globalConfig[key] !== DEFAULT_CONFIG[key]
-      : Object.keys(_globalConfig[key] as Record<string, unknown>).length > 0
-  );
-
-type ConfigValidationError = {
+interface ConfigValidationError {
   readonly field: string;
   readonly message: string;
-};
+}
 
 export type { ConfigValidationError };
 export type { Result };

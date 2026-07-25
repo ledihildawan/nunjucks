@@ -13,7 +13,7 @@ export {
 } from './container.ts';
 
 export { compileFunCall } from './fun-call.ts';
-export { compilePipe, compilePipeAsync } from './pipe.ts';
+export { compilePipeForward } from './pipe-forward.ts';
 export { compileLookupVal, compileOptionalChain, compileOptionalCall, compileSlice } from './lookup.ts';
 export { compileCompare, compileIs } from './compare.ts';
 export { compileBitwiseOr, compileBitwiseAnd, compileBitwiseXor, compileBitwiseLShift, compileBitwiseRShift, compileBitwiseNot } from './bitwise.ts';

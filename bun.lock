@@ -8,12 +8,15 @@
         "@nunjucks/compiler": "workspace:*",
         "@nunjucks/core": "workspace:*",
         "@nunjucks/filters": "workspace:*",
+        "@nunjucks/integrations": "workspace:*",
         "@nunjucks/lexer": "workspace:*",
+        "@nunjucks/loaders": "workspace:*",
         "@nunjucks/log": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
         "@nunjucks/runtime": "workspace:*",
         "@nunjucks/shared": "workspace:*",
         "@nunjucks/transformers": "workspace:*",
+        "@nunjucks/validators": "workspace:*",
         "express": "5",
         "picocolors": "^1.1.1",
         "remeda": "^2.39.0",
@@ -47,12 +50,14 @@
         "@nunjucks/compiler": "workspace:*",
         "@nunjucks/filters": "workspace:*",
         "@nunjucks/lexer": "workspace:*",
+        "@nunjucks/loaders": "workspace:*",
         "@nunjucks/log": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
         "@nunjucks/parser": "workspace:*",
         "@nunjucks/runtime": "workspace:*",
         "@nunjucks/shared": "workspace:*",
         "@nunjucks/transformers": "workspace:*",
+        "@nunjucks/validators": "workspace:*",
         "picocolors": "^1.1.1",
         "remeda": "^2.39.0",
       },
@@ -70,8 +75,24 @@
         "remeda": "*",
       },
     },
+    "packages/@nunjucks/integrations": {
+      "name": "@nunjucks/integrations",
+      "version": "1.0.0",
+      "dependencies": {
+        "@nunjucks/core": "workspace:*",
+        "@nunjucks/loaders": "workspace:*",
+        "@nunjucks/log": "workspace:*",
+      },
+    },
     "packages/@nunjucks/lexer": {
       "name": "@nunjucks/lexer",
+      "version": "1.0.0",
+      "dependencies": {
+        "@nunjucks/shared": "workspace:*",
+      },
+    },
+    "packages/@nunjucks/loaders": {
+      "name": "@nunjucks/loaders",
       "version": "1.0.0",
       "dependencies": {
         "@nunjucks/shared": "workspace:*",
@@ -121,6 +142,13 @@
         "@nunjucks/nodes": "workspace:*",
       },
     },
+    "packages/@nunjucks/validators": {
+      "name": "@nunjucks/validators",
+      "version": "1.0.0",
+      "dependencies": {
+        "@nunjucks/shared": "workspace:*",
+      },
+    },
     "samples/express": {
       "name": "@nunjucks/samples-express",
       "version": "1.0.0",
@@ -166,7 +194,11 @@
 
     "@nunjucks/filters": ["@nunjucks/filters@workspace:packages/@nunjucks/filters"],
 
+    "@nunjucks/integrations": ["@nunjucks/integrations@workspace:packages/@nunjucks/integrations"],
+
     "@nunjucks/lexer": ["@nunjucks/lexer@workspace:packages/@nunjucks/lexer"],
+
+    "@nunjucks/loaders": ["@nunjucks/loaders@workspace:packages/@nunjucks/loaders"],
 
     "@nunjucks/log": ["@nunjucks/log@workspace:packages/@nunjucks/log"],
 
@@ -181,6 +213,8 @@
     "@nunjucks/shared": ["@nunjucks/shared@workspace:packages/@nunjucks/shared"],
 
     "@nunjucks/transformers": ["@nunjucks/transformers@workspace:packages/@nunjucks/transformers"],
+
+    "@nunjucks/validators": ["@nunjucks/validators@workspace:packages/@nunjucks/validators"],
 
     "@types/body-parser": ["@types/body-parser@1.19.6", "", { "dependencies": { "@types/connect": "*", "@types/node": "*" } }, "sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g=="],
 

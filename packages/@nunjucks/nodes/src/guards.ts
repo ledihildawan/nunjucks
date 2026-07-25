@@ -74,7 +74,6 @@ export const isCaller = is(T.CALLER);
 export const isCall = is(T.CALL);
 export const isOptionalChain = is(T.OPTIONAL_CHAIN);
 export const isOptionalCall = is(T.OPTIONAL_CALL);
-export const isPipeAsync = is(T.PIPE_ASYNC);
 export const isFloorDiv = is(T.FLOOR_DIV);
 export const isMod = is(T.MOD);
 export const isPow = is(T.POW);

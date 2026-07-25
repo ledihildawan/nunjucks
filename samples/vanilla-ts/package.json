@@ -1,0 +1,21 @@
+{
+  "name": "@nunjucks/samples-vanilla-ts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "main.ts",
+  "scripts": {
+    "start": "bun run main.ts"
+  },
+  "dependencies": {
+    "@nunjucks/core": "workspace:*",
+    "@nunjucks/compiler": "workspace:*",
+    "@nunjucks/filters": "workspace:*",
+    "@nunjucks/lexer": "workspace:*",
+    "@nunjucks/log": "workspace:*",
+    "@nunjucks/nodes": "workspace:*",
+    "@nunjucks/parser": "workspace:*",
+    "@nunjucks/runtime": "workspace:*",
+    "@nunjucks/transformers": "workspace:*"
+  }
+}

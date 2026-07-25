@@ -64,8 +64,12 @@ export const flatMap = <T, E, U>(
 };
 
 // Unwrap with default
-export const unwrapOr = <T>(result: Result<T, unknown>, defaultValue: T): T =>
-  isOk(result) ? (result as OkResult<T, unknown>).value : defaultValue;
+export const unwrapOr = <T>(result: Result<T, unknown>, defaultValue: T): T => {
+  if (isOk(result)) {
+    return (result as OkResult<T, unknown>).value;
+  }
+  return defaultValue;
+};
 
 // Unwrap - throws on error
 export const unwrap = <T>(result: Result<T, unknown>): T => {
@@ -78,7 +82,12 @@ export const unwrap = <T>(result: Result<T, unknown>): T => {
 // From throwing function
 export const fromThrowable = <T>(
   fn: () => T,
-  errorMapper: (e: unknown) => unknown = (e) => (e instanceof Error ? e : new Error(String(e)))
+  errorMapper: (e: unknown) => unknown = (e) => {
+    if (e instanceof Error) {
+      return e;
+    }
+    return new Error(String(e));
+  }
 ): Result<T, unknown> => {
   try {
     return ok(fn());
@@ -90,7 +99,12 @@ export const fromThrowable = <T>(
 // Async version
 export const fromThrowableAsync = <T>(
   fn: () => Promise<T>,
-  errorMapper: (e: unknown) => unknown = (e) => (e instanceof Error ? e : new Error(String(e)))
+  errorMapper: (e: unknown) => unknown = (e) => {
+    if (e instanceof Error) {
+      return e;
+    }
+    return new Error(String(e));
+  }
 ): Promise<Result<T, unknown>> =>
   fn()
     .then(ok)

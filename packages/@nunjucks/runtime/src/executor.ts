@@ -44,7 +44,11 @@ const detectUndefinedInput = (context: unknown, inputValue: string): UndefinedIn
         if (val === undefined || val === null) {
           isUndefinedInput = true;
           undefinedVarName = parts.slice(i).join('.');
-          undefinedParentName = i > 0 ? parts[i - 1] ?? null : null;
+          if (i > 0) {
+            undefinedParentName = parts[i - 1] ?? null;
+          } else {
+            undefinedParentName = null;
+          }
           break;
         }
         val = (val as Record<string, unknown>)[parts[i] ?? ''];
@@ -52,7 +56,11 @@ const detectUndefinedInput = (context: unknown, inputValue: string): UndefinedIn
       if (!isUndefinedInput && (val === undefined || val === null)) {
         isUndefinedInput = true;
         undefinedVarName = parts.at(-1) ?? null;
-        undefinedParentName = parts.length > 1 ? parts.at(-2) ?? null : null;
+        if (parts.length > 1) {
+          undefinedParentName = parts.at(-2) ?? null;
+        } else {
+          undefinedParentName = null;
+        }
       }
     } catch (e) {
       if (e instanceof TypeError) {
@@ -92,8 +100,7 @@ const createGetFilter = (
   filters: Record<string, FilterFunction>,
   config: GetFilterConfig,
   strictPipeInput: boolean
-) => {
-  return function getFilter(
+) => function getFilter(
     name: string,
     filterLineno: number | null,
     filterColno: number | null,
@@ -102,19 +109,29 @@ const createGetFilter = (
     inputValue: unknown
   ): FilterFunction | undefined {
     const filterFn = filters[name];
-    if (filterFn) return filterFn;
+    if (filterFn) { return filterFn; }
 
-    const ctxFn = context[name] && typeof context[name] === 'function' ? context[name] as FilterFunction : null;
-    if (ctxFn) return ctxFn;
+    let ctxFn: FilterFunction | null = null;
+    if (context[name] && typeof context[name] === 'function') {
+      ctxFn = context[name] as FilterFunction;
+    }
+    if (ctxFn) { return ctxFn; }
 
     if (config.env?.getFilter) {
       const envFilter = config.env.getFilter(name, filterLineno, filterColno);
-      if (envFilter) return envFilter as FilterFunction;
+      if (envFilter) { return envFilter as FilterFunction; }
     }
 
     const useInputLocation = inputLineno !== undefined && inputColno !== undefined;
-    const errorLineno = useInputLocation ? inputLineno : filterLineno;
-    const errorColno = useInputLocation ? inputColno : filterColno;
+    let errorLineno: number | null | undefined;
+    let errorColno: number | null | undefined;
+    if (useInputLocation) {
+      errorLineno = inputLineno;
+      errorColno = inputColno;
+    } else {
+      errorLineno = filterLineno;
+      errorColno = filterColno;
+    }
 
     if (inputValue !== undefined) {
       const { isUndefinedInput, undefinedVarName, undefinedParentName, isPropertyLookup } = detectUndefinedInput(context, inputValue as string);
@@ -129,7 +146,6 @@ const createGetFilter = (
 
     throw createLog('error', getError('UNDEFINED_FILTER'), { name }, name, { lineno: filterLineno ?? null, colno: filterColno ?? null, phase: 'render', lineBase: 'zero' });
   };
-};
 
 interface RenderFunctionResult {
   render: (env: unknown, context: unknown, frame: Frame, runtime: unknown) => Promise<unknown>;
@@ -175,10 +191,10 @@ const getRuntimeHelpers = () => ({
   numArgs,
   makeMacro,
   escape: (str: unknown, autoescape = true): string => {
-    if (!autoescape) return String(str);
-    if (str && typeof str === 'object' && isSafeString(str as { val?: unknown })) return String((str as { val: unknown }).val);
-    if (Array.isArray(str)) return str.join(',');
-    if (str && typeof str === 'object') return JSON.stringify(str);
+    if (!autoescape) { return String(str); }
+    if (str && typeof str === 'object' && isSafeString(str as { val?: unknown })) { return String((str as { val: unknown }).val); }
+    if (Array.isArray(str)) { return str.join(','); }
+    if (str && typeof str === 'object') { return JSON.stringify(str); }
     return String(str).replace(/[&<>"']/g, char => ({
       '&': '&amp;',
       '<': '&lt;',
@@ -216,17 +232,22 @@ interface BuildEnvObjectConfig {
   env?: { opts?: Record<string, unknown>; getFilter?: (name: string, lineno: number | null, colno: number | null) => unknown; getTest?: (name: string, lineno: number | null, colno: number | null) => unknown; getTemplate?: unknown };
 }
 
-const buildEnvObject = (config: BuildEnvObjectConfig, getFilter: ReturnType<typeof createGetFilter>, getTest: (name: string, lineno: number | null, colno: number | null) => unknown) => ({
-  opts: {
-    dev: config.dev ?? false,
-    autoescape: config.autoescape ?? true,
-    undefined: config.undefined ?? 'default',
-    ...(config.env?.opts || {})
-  },
-  getFilter,
-  getTest,
-  ...(config.env?.getTemplate ? { getTemplate: config.env.getTemplate } : {})
-});
+const buildEnvObject = (config: BuildEnvObjectConfig, getFilter: ReturnType<typeof createGetFilter>, getTest: (name: string, lineno: number | null, colno: number | null) => unknown) => {
+  const envObj: Record<string, unknown> = {
+    opts: {
+      dev: config.dev ?? false,
+      autoescape: config.autoescape ?? true,
+      undefined: config.undefined ?? 'default',
+      ...(config.env?.opts || {})
+    },
+    getFilter,
+    getTest,
+  };
+  if (config.env?.getTemplate) {
+    envObj.getTemplate = config.env.getTemplate;
+  }
+  return envObj;
+};
 
 export interface ExecuteConfig {
   sandbox?: boolean;
@@ -255,16 +276,16 @@ export const execute = async (code: string, context: Record<string, unknown> = {
 
   const getTest = (name: string, lineno: number | null, colno: number | null) => {
     const testFn = tests[name];
-    if (testFn) return testFn;
+    if (testFn) { return testFn; }
     const envWithTest = config.env as { getTest?: (name: string, lineno: number | null, colno: number | null) => unknown } | undefined;
-    if (envWithTest?.getTest) return envWithTest.getTest(name, lineno, colno);
+    if (envWithTest?.getTest) { return envWithTest.getTest(name, lineno, colno); }
     throw createLog('error', getError('UNDEFINED_TEST'), { name }, name, { lineno: lineno ?? null, colno: colno ?? null, phase: 'render', lineBase: 'zero' });
   };
 
   if (!sandbox && devWarningSandbox) {
     console.warn(
-      `[Nunjucks] WARNING: Rendering template without sandbox enabled. ` +
-      `For user-provided templates, enable sandbox: { sandbox: true } to prevent security issues.`
+      '[Nunjucks] WARNING: Rendering template without sandbox enabled. ' +
+      'For user-provided templates, enable sandbox: { sandbox: true } to prevent security issues.'
     );
   }
 
@@ -311,7 +332,6 @@ export const execute = async (code: string, context: Record<string, unknown> = {
         if (key in runtime) {
           return runtime[key];
         }
-        return undefined;
       },
       setVariable: (name: string, val: unknown) => {
         ctx[name] = val;
@@ -349,7 +369,6 @@ export const execute = async (code: string, context: Record<string, unknown> = {
   const env = buildEnvObject(config as BuildEnvObjectConfig, getFilter, getTest);
 
   if (config.env) {
-    // biome-ignore lint/suspicious/noExplicitAny: Context creation requires Env type which has dynamic properties
     ctx = createContext(context, blocks as Record<string, (...args: unknown[]) => unknown>, config.env as any, { blockLocations: blockMeta as any }) as unknown as Record<string, unknown>;
     ctx._autoescape = config.autoescape ?? true;
   } else {

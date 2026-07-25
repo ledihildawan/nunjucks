@@ -242,7 +242,7 @@ export function createLog(
       const err = new Error(base.message) as TemplateError;
       const props = { name: 'Template render error', code: base.code, subject: base.subject, lineno: base.lineno, colno: base.colno, phase: base.phase, templateName: base.templateName, lineBase: base.lineBase, templatePath: base.templateName, [TEMPLATE_ERROR]: true as const };
       Object.assign(err, props);
-      err.output = createOutputFn('error');
+      err.output = createOutputFn('error') as (options?: OutputOptions) => Promise<string>;
       return err;
     }
 
@@ -259,7 +259,7 @@ export function createLog(
       lineBase: base.lineBase,
       output: null as unknown as (options?: Omit<OutputOptions, 'format' | 'isProduction'>) => string
     };
-    warn.output = createOutputFn('warning');
+    warn.output = createOutputFn('warning') as (options?: Omit<OutputOptions, 'format' | 'isProduction'>) => string;
     return warn;
   }
 
@@ -295,7 +295,7 @@ export function createLog(
     err.toJSON = function() {
       return { name: this.name, code: this.code, subject: this.subject, message: this.message, phase: this.phase, templateName: this.templateName, templatePath: this.templatePath, sourceStartLine: this.sourceStartLine, lineno: this.lineno, colno: this.colno, lineBase: this.lineBase, causes: this.causes, fixCode: this.fixCode, fixComment: this.fixComment, severity: this.severity, stack: this.stack };
     };
-    err.output = createOutputFn('error');
+    err.output = createOutputFn('error') as (options?: OutputOptions) => Promise<string>;
     return err;
   }
 

@@ -29,7 +29,7 @@ export function applySourceMapToError(
   sourceMapData: SourceMapMapping[] | null,
   templateName: string
 ): SourceMapError | null {
-  if (!sourceMapData || !isArray(sourceMapData)) {
+  if (!(sourceMapData && isArray(sourceMapData))) {
     return null;
   }
 
@@ -54,7 +54,7 @@ export function createMappedError(
   _colno: number | undefined,
   path: string
 ): Error | null {
-  if (!sourceMapData || !isArray(sourceMapData)) {
+  if (!(sourceMapData && isArray(sourceMapData))) {
     return null;
   }
 
@@ -62,7 +62,12 @@ export function createMappedError(
   const pos = sm.getOriginalPosition(lineno);
 
   const errColno = defaultTo(error.colno, 0);
-  const finalColno = pos.col > 0 ? pos.col : errColno;
+  let finalColno: number;
+  if (pos.col > 0) {
+    finalColno = pos.col;
+  } else {
+    finalColno = errColno;
+  }
   const displayLine = pos.line + 1;
   const displayCol = finalColno + 1;
   const templateLocation = `${path}:${displayLine}:${displayCol}`;

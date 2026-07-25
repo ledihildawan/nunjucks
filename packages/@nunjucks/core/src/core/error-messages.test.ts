@@ -1,13 +1,10 @@
 import { describe, test, expect } from 'bun:test';
 import { render } from './render.ts';
-import { mergeConfig } from '../config/global.ts';
 
-const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
-  return await render(template, context, mergeConfig({
-    autoescape: false,
-    ...config
-  }) as unknown as Record<string, unknown>);
-};
+const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => await render(template, context, {
+  autoescape: false,
+  ...config
+} as Record<string, unknown>);
 
 describe('error messages - causes and fix', () => {
   test('undefined variable error includes causes', async () => {

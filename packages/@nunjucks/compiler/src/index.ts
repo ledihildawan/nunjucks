@@ -324,7 +324,6 @@ export function getSourceMap(compiler: Compiler): SourceMap {
 
 export function getSourceMapFromCompile(
   src: string,
-  asyncPipes: string[],
   extensions: Parameters<typeof parse>[1],
   name: string | null,
   opts: Parameters<typeof parse>[2] = {}
@@ -339,13 +338,7 @@ export function getSourceMapFromCompile(
     processors => reduce(processors as Array<(src: string) => string>, (s, processor) => processor(s), src)
   );
 
-  c.compile(
-    (transform as (ast: Node, asyncPipes: string[], templateName?: string | null) => Node)(
-      parse(processedSrc, extensions, opts),
-      asyncPipes,
-      name,
-    ),
-  );
+  c.compile(transform(parse(processedSrc, extensions, opts)));
 
   return c.getSourceMap();
 }

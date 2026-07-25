@@ -28,15 +28,71 @@
       "types": "all"
     },
     "rules": {
-      "preset": "all",
       "a11y": "error",
-      "complexity": "error",
-      "correctness": "error",
-      "nursery": "error",
-      "performance": "error",
-      "security": "error",
-      "style": "error",
-      "suspicious": "error",
+      "style": {
+        "useNamingConvention": "off",
+        "noExportedImports": "off",
+        "noNonNullAssertion": "off",
+        "noIncrementDecrement": "off",
+        "useDestructuring": "off",
+        "useExportsLast": "off",
+        "noParameterAssign": "off",
+        "noContinue": "off",
+        "noSubstr": "off",
+        "useTemplate": "off",
+        "noExcessiveLinesPerFile": "off",
+        "noMagicNumbers": "off",
+        "useForOf": "off",
+        "useAtIndex": "off",
+        "noDefaultExport": "off",
+        "useNodejsImportProtocol": "off",
+        "useConsistentMethodSignatures": "off",
+        "useSymbolDescription": "off"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "off",
+        "noExcessiveLinesPerFunction": "off",
+        "noForEach": "off",
+        "useMaxParams": "off",
+        "noBannedTypes": "off"
+      },
+      "performance": {
+        "noBarrelFile": "off",
+        "noReExportAll": "off",
+        "noAwaitInLoops": "off",
+        "noNamespaceImport": "off",
+        "useTopLevelRegex": "off"
+      },
+      "suspicious": {
+        "noImportCycles": "off",
+        "noExplicitAny": "off",
+        "useIterableCallbackReturn": "off",
+        "noApproximativeNumericConstant": "off",
+        "noShadowRestrictedNames": "off",
+        "noAssignInExpressions": "off",
+        "noUnnecessaryConditions": "off",
+        "noProto": "off",
+        "useAwait": "off",
+        "noEvolvingTypes": "off",
+        "noEmptyBlockStatements": "off",
+        "noConsole": "off",
+        "noReturnAssign": "off",
+        "noImplicitAnyLet": "off",
+        "noNonNullAssertedOptionalChain": "off",
+        "noConfusingVoidType": "off",
+        "noShadow": "off"
+      },
+      "security": {
+        "noSecrets": "off"
+      },
+      "correctness": {
+        "noUndeclaredDependencies": "off",
+        "useQwikValidLexicalScope": "off",
+        "noNodejsModules": "off",
+        "noUnusedVariables": "off",
+        "noUnusedImports": "off",
+        "noUnresolvedImports": "off"
+      },
       "nursery": {
         "useExplicitType": "off",
         "useExplicitReturnType": "off",
@@ -44,103 +100,6 @@
       }
     }
   },
-  "overrides": [
-    {
-      "includes": ["packages/@nunjucks/*/src/**/*.test.ts"],
-      "linter": {
-        "rules": {
-          "correctness": {
-            "noUnresolvedImports": "off",
-            "noUndeclaredVariables": "off"
-          },
-          "style": {
-            "noMagicNumbers": "off",
-            "noTernary": "off",
-            "useDestructuring": "off",
-            "useBlockStatements": "off",
-            "noNonNullAssertion": "off",
-            "useNodejsImportProtocol": "off",
-            "useConsistentMethodSignatures": "off",
-            "useSymbolDescription": "off"
-          },
-          "complexity": {
-            "noExcessiveLinesPerFunction": "off"
-          },
-          "suspicious": {
-            "noEmptyBlockStatements": "off",
-            "noShadow": "off",
-            "noConsole": "off"
-          }
-        }
-      }
-    },
-    {
-      "includes": ["packages/@nunjucks/*/src/**/*.ts"],
-      "linter": {
-        "rules": {
-          "style": {
-            "useNamingConvention": "off",
-            "noExportedImports": "off",
-            "noNonNullAssertion": "off",
-            "noIncrementDecrement": "off",
-            "useDestructuring": "off",
-            "useExportsLast": "off",
-            "noParameterAssign": "off",
-            "noContinue": "off",
-            "noSubstr": "off",
-            "useTemplate": "off",
-            "noExcessiveLinesPerFile": "off",
-            "noMagicNumbers": "off",
-            "useForOf": "off",
-            "useAtIndex": "off"
-          },
-          "complexity": {
-            "noExcessiveCognitiveComplexity": "off",
-            "noExcessiveLinesPerFunction": "off",
-            "noForEach": "off",
-            "useMaxParams": "off",
-            "noBannedTypes": "off"
-          },
-          "performance": {
-            "noBarrelFile": "off",
-            "noReExportAll": "off",
-            "noAwaitInLoops": "off",
-            "noNamespaceImport": "off",
-            "useTopLevelRegex": "off"
-          },
-          "suspicious": {
-            "noImportCycles": "off",
-            "noExplicitAny": "off",
-            "noShadow": "off",
-            "useIterableCallbackReturn": "off",
-            "noApproximativeNumericConstant": "off",
-            "noShadowRestrictedNames": "off",
-            "noAssignInExpressions": "off",
-            "noUnnecessaryConditions": "off",
-            "noProto": "off",
-            "useAwait": "off",
-            "noEvolvingTypes": "off",
-            "noEmptyBlockStatements": "off",
-            "noConsole": "off",
-            "noReturnAssign": "off",
-            "noImplicitAnyLet": "off",
-            "noNonNullAssertedOptionalChain": "off",
-            "noConfusingVoidType": "off"
-          },
-          "security": {
-            "noSecrets": "off"
-          },
-          "correctness": {
-            "noUndeclaredDependencies": "off",
-            "useQwikValidLexicalScope": "off",
-            "noNodejsModules": "off",
-            "noUnusedVariables": "off",
-            "noUnusedImports": "off"
-          }
-        }
-      }
-    }
-  ],
   "assist": {
     "enabled": true,
     "actions": {

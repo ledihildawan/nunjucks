@@ -2,7 +2,7 @@ import { capture, nodeList, output, pipe } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { parseFilterName, parseFilterArgs } from "../postfix-parser/index.ts";
+import { parseFilterCallName, parseFilterCallArgs } from "../postfix-parser/index.ts";
 import { parseUntilBlocks } from "../top-level.ts";
 
 export const parseFilterStatement = (ctx: ParserContext): Node => {
@@ -11,8 +11,8 @@ export const parseFilterStatement = (ctx: ParserContext): Node => {
     fail(ctx, 'parseFilterStatement: expected filter');
   }
 
-  const name = parseFilterName(ctx);
-  const args = parseFilterArgs(ctx, name);
+  const name = parseFilterCallName(ctx);
+  const args = parseFilterCallArgs(ctx, name);
 
   advanceAfterBlockEnd(ctx, filterTok.value as string);
   const body = capture(

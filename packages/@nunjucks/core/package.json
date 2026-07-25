@@ -5,11 +5,11 @@
   "main": "./src/index.js",
   "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.js",
-    "./express": "./src/integrations/express.js",
-    "./loaders/*": "./src/loaders/*.js",
-    "./config/*": "./src/config/*.js",
-    "./env": "./src/core/env.js"
+    ".": "./src/index.ts",
+    "./config/*": "./src/config/*.ts",
+    "./env": "./src/core/env.ts",
+    "./template": "./src/template/index.ts",
+    "./core/render": "./src/core/render.ts"
   },
   "dependencies": {
     "@nunjucks/compiler": "workspace:*",
@@ -21,6 +21,8 @@
     "@nunjucks/runtime": "workspace:*",
     "@nunjucks/shared": "workspace:*",
     "@nunjucks/transformers": "workspace:*",
+    "@nunjucks/loaders": "workspace:*",
+    "@nunjucks/validators": "workspace:*",
     "picocolors": "^1.1.1",
     "remeda": "^2.39.0"
   },

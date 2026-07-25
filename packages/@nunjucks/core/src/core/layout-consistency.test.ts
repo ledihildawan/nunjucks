@@ -1,15 +1,12 @@
 import { describe, test, expect } from 'bun:test';
 import { render } from './render.ts';
-import { mergeConfig } from '../config/global.ts';
 import { createLog, getError } from '@nunjucks/log';
 
-const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
-  return await render(template, context, mergeConfig({
-    autoescape: false,
-    undefined: 'strict',
-    ...config
-  }) as unknown as Record<string, unknown>);
-};
+const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => await render(template, context, {
+  autoescape: false,
+  undefined: 'strict',
+  ...config
+} as Record<string, unknown>);
 
 describe('error layout consistency', () => {
   test('all sections use text-label class for consistency', async () => {

@@ -47,7 +47,7 @@ describe('getSourceMapFromCompile', () => {
     // still returns a properly-shaped SourceMap so consumers can rely on
     // the result. Once `parse` is migrated, this should compile 'Hello'
     // and produce real mappings.
-    const sm = getSourceMapFromCompile('Hello', [], [], 'test.njk');
+    const sm = getSourceMapFromCompile('Hello', [], 'test.njk');
     expect(sm).toBeDefined();
     expect(sm.templateName).toBe('test.njk');
     expect(sm.mappings).toBeArray();

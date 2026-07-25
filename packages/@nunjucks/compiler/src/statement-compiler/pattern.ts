@@ -108,10 +108,11 @@ const compileDestructuring = (ctx: Compiler, frame: Frame, pattern: Node, source
         continue;
       }
       if (isPatternProperty(child)) {
-        if (!isSymbol(child.key) || typeof child.key.value !== 'string') {
+        const propKey = typeof child.key === 'string' ? child.key : (isSymbol(child.key) ? child.key.value as string : null);
+        if (propKey === null) {
           continue;
         }
-        let propSource = safeMemberLookup(source, child.key.value);
+        let propSource = safeMemberLookup(source, propKey);
         if (isAssignmentPattern(child.value)) {
           const valNode = child.value;
           const defaultId = uniqueId('__dflt');

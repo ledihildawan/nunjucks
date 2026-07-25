@@ -2,7 +2,7 @@
 import { T, type Node, type NodeType, type NodeOf, FIELDS } from './types.ts';
 import type {
   ValueNode, ChildrenNode, BinaryOpNode, BinaryNode, UnaryOpNode, UnaryNode,
-  IncDecNode, CallNode, PipeAsyncNode, LookupNode, SliceNode, CompareNode,
+  IncDecNode, CallNode, LookupNode, SliceNode, CompareNode,
   CompareOperandNode, PairNode, SpreadNode, WalrusNode, RestPatternNode,
   AssignmentPatternNode, HoleNode, VariableDeclNode, CompoundAssignNode,
   TemplateLiteralNode, MacroArgument, CallExtensionNode,
@@ -33,9 +33,6 @@ export const funCall = (lineno: number, colno: number, name: Node | string, args
 
 export const pipe = (lineno: number, colno: number, name: Node | string, args: Node[] = []): CallNode =>
   createNode(T.PIPE, lineno, colno, { name, args: args || [] });
-
-export const pipeAsync = (lineno: number, colno: number, name: Node | string, args: Node[] = [], symbol_?: Node): PipeAsyncNode =>
-  createNode(T.PIPE_ASYNC, lineno, colno, { name, args: args || [], symbol: symbol_ });
 
 // Lookup nodes
 export const lookupVal = (lineno: number, colno: number, target: Node, val: Node): LookupNode =>
@@ -241,7 +238,7 @@ import * as traverse from './traverse.ts';
 const creators = {
   node, value, nodeList, output, root,
   literal, symbol, templateData,
-  funCall, pipe, pipeAsync,
+  funCall, pipe,
   lookupVal, slice, optionalChain, optionalCall,
   add, sub, mul, div, floorDiv, mod, pow, concat, binOp,
   unaryOp, not, neg, pos,

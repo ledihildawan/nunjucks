@@ -1,4 +1,4 @@
-import { createFileSystemLoader, type FileSystemLoader } from '../loaders/index.js';
+import { createFileSystemLoader, type FileSystemLoader } from '@nunjucks/loaders';
 
 export interface EngineConfig {
   dev?: boolean;
@@ -17,13 +17,13 @@ export const createEngine = (): Engine => {
   return {
     getLoader: (cfg: EngineConfig) => {
       const viewsPath = cfg.views || cfg.root;
-      if (!viewsPath) return null;
+      if (!viewsPath) { return null; }
 
       if (cachedLoader && cachedViewsPath === viewsPath) {
         return cachedLoader;
       }
 
-      cachedLoader = createFileSystemLoader(viewsPath, { noCache: cfg.dev || false });
+      cachedLoader = createFileSystemLoader(viewsPath, { noCache: cfg.dev });
       cachedViewsPath = viewsPath;
       return cachedLoader;
     }

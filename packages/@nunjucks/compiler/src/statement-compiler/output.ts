@@ -1,4 +1,4 @@
-import { isCompoundAssignment, isLookupVal, isOptionalCall, isOptionalChain, isPipe, isPipeAsync, isSymbol, isTemplateData, isVariableAssignment, isVariableDeclaration } from '@nunjucks/nodes';
+import { isCompoundAssignment, isLookupVal, isOptionalCall, isOptionalChain, isPipe, isSymbol, isTemplateData, isVariableAssignment, isVariableDeclaration } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
@@ -66,7 +66,7 @@ export const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => 
     } else if (isVariableDeclaration(child) || isVariableAssignment(child) || isCompoundAssignment(child)) {
       ctx.compile(child, frame);
     } else {
-      const isPipeType = isPipe(child) || isPipeAsync(child);
+      const isPipeType = isPipe(child);
       const isOptionalChainType = isOptionalChain(child) || isOptionalCall(child);
       const varName = extractVarName(child);
       const errorLocation = extractLocation(child);

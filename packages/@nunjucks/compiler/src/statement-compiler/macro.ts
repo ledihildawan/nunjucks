@@ -10,8 +10,8 @@ const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
   const funcId = `macro_${ctx.tmpid()}`;
   const keepFrame = (frame !== undefined);
 
-  const argsChildren = (node.args as Node).children as Node[];
-  argsChildren.forEach((arg, i, arr) => {
+  const argsChildren = (node.args?.children ?? node.args) as Node[];
+  argsChildren?.forEach((arg, i, arr) => {
     if (i === arr.length - 1 && (isDict(arg) || isKeywordArgs(arg))) {
       kwargs = arg;
     } else {
@@ -90,13 +90,13 @@ const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
 export const compileMacroPublic = (ctx: Compiler, node: Node, frame: Frame): void => {
   const funcId = compileMacro(ctx, node);
 
-  const name = (node.name as Node).value as string;
+  const name = node.name as string;
   frame.set(name, funcId);
 
   if (frame.parent) {
     ctx.emitLine(`frame.set("${name}", ${funcId});`);
   } else {
-    const nameValue = (node.name as Node).value as string;
+    const nameValue = node.name as string;
     if (nameValue.charAt(0) !== '_') {
       ctx.emitLine(`context.addExport("${name}");`);
     }

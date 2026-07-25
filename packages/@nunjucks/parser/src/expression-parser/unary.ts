@@ -4,7 +4,7 @@ import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipValue } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parsePrimary } from "./primary.ts";
-import { parsePipe } from "../postfix-parser/index.ts";
+import { parsePipeForward } from "../postfix-parser/index.ts";
 
 export const parseUnary = (ctx: ParserContext, noPipes?: boolean): Node => {
   const tok = peekToken(ctx);
@@ -25,7 +25,7 @@ export const parseUnary = (ctx: ParserContext, noPipes?: boolean): Node => {
   }
 
   if (!noPipes) {
-    node = parsePipe(ctx, node);
+    node = parsePipeForward(ctx, node);
   }
 
   return node;

@@ -32,7 +32,7 @@ describe('COMPILE_FUNCTIONS', () => {
     'neg', 'pos', 'spread', 'templateLiteral', 'compare', 'bitwiseOr', 'bitwiseAnd',
     'bitwiseXor', 'bitwiseLShift', 'bitwiseRShift', 'bitwiseNot', 'increment',
     'decrement', 'lookupVal', 'optionalChain', 'optionalCall', 'slice', 'funCall',
-    'pipe', 'pipeAsync', 'keywordArgs', 'variableDeclaration', 'variableAssignment',
+    'pipe', 'keywordArgs', 'variableDeclaration', 'variableAssignment',
     'compoundAssignment', 'defineBlock', 'switch', 'if', 'for', 'macro', 'caller',
     'import', 'fromImport', 'block', 'super', 'extends', 'include', 'templateData',
     'capture', 'output', 'callExtension', 'callExtensionAsync', 'root', 'do', 'with',

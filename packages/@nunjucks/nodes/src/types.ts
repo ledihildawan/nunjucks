@@ -56,7 +56,6 @@ export const T = Object.freeze({
   CALL: 'call',
   OPTIONAL_CHAIN: 'optionalChain',
   OPTIONAL_CALL: 'optionalCall',
-  PIPE_ASYNC: 'pipeAsync',
   NULLISH_COALESCE: 'nullishCoalesce',
   IN: 'in',
   TRY_CATCH: 'tryCatch',
@@ -154,13 +153,6 @@ export interface CallNode extends NodeBase {
   readonly type: typeof T.FUN_CALL | typeof T.PIPE | typeof T.OPTIONAL_CALL;
   name: Node | string;
   args: Node[];
-}
-
-export interface PipeAsyncNode extends NodeBase {
-  readonly type: typeof T.PIPE_ASYNC;
-  name: Node | string;
-  args: Node[];
-  symbol?: Node;
 }
 
 export interface LookupNode extends NodeBase {
@@ -370,7 +362,7 @@ export interface GenericNode extends NodeBase {
 
 export type Node =
 | ValueNode | ChildrenNode | BinaryOpNode | BinaryNode | UnaryOpNode | UnaryNode
-| IncDecNode | CallNode | PipeAsyncNode | LookupNode | SliceNode | CompareNode
+| IncDecNode | CallNode | LookupNode | SliceNode | CompareNode
 | CompareOperandNode | PairNode | SpreadNode | WalrusNode | RestPatternNode
 | AssignmentPatternNode | BlockNode | IfNode | ForNode | MacroNode | CallerNode
 | CallStmtNode | SetNode | TryCatchNode | DoNode | WithNode | SwitchNode | CaseNode
@@ -387,7 +379,6 @@ export type NodeOf<K extends NodeType> =
 : K extends typeof T.BITWISE_NOT ? UnaryNode
 : K extends typeof T.INCREMENT | typeof T.DECREMENT ? IncDecNode
 : K extends typeof T.FUN_CALL | typeof T.PIPE | typeof T.OPTIONAL_CALL ? CallNode
-: K extends typeof T.PIPE_ASYNC ? PipeAsyncNode
 : K extends typeof T.LOOKUP_VAL | typeof T.OPTIONAL_CHAIN ? LookupNode
 : K extends typeof T.SLICE ? SliceNode
 : K extends typeof T.COMPARE ? CompareNode
@@ -443,7 +434,6 @@ export const FIELDS: Readonly<Record<NodeType, readonly string[]>> = {
   [T.PIPE]: ['name', 'args'],
   [T.FILTER]: [],
   [T.OPTIONAL_CALL]: ['name', 'args'],
-  [T.PIPE_ASYNC]: ['name', 'args', 'symbol'],
   [T.LOOKUP_VAL]: ['target', 'val'],
   [T.OPTIONAL_CHAIN]: ['target', 'val'],
   [T.SLICE]: ['start', 'stop', 'step'],

@@ -3,3 +3,4 @@ export * from './caller-file.ts';
 export * from './escape.ts';
 export * from './type-guards.ts';
 export * from './extract-blocks.ts';
+export * from './reserved.ts';

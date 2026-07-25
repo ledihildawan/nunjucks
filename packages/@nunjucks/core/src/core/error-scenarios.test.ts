@@ -2,16 +2,13 @@
 // @ts-nocheck
 import { describe, test, expect } from 'bun:test';
 import { render } from './render.ts';
-import { mergeConfig } from '../config/global.ts';
 import { createLog, getError } from '@nunjucks/log';
 
-const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
-  return await render(template, context, mergeConfig({
-    autoescape: false,
-    undefined: 'strict',
-    ...config
-  }) as unknown as Record<string, unknown>);
-};
+const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => await render(template, context, {
+  autoescape: false,
+  undefined: 'strict',
+  ...config
+} as Record<string, unknown>);
 
 describe('error messages - real scenarios', () => {
   test('Variable "user.something" output', async () => {
@@ -237,11 +234,9 @@ describe('error messages - real scenarios', () => {
 });
 
 describe('JSON_ESCAPED_OUTPUT detection', () => {
-  const renderWithAutoescape = async (template: string, context: Record<string, unknown> = {}) => {
-    return await render(template, context, mergeConfig({
-      autoescape: true,
-    }) as unknown as Record<string, unknown>);
-  };
+  const renderWithAutoescape = async (template: string, context: Record<string, unknown> = {}) => await render(template, context, {
+    autoescape: true,
+  } as Record<string, unknown>);
 
   test('array with quotes triggers JSON_ESCAPED_OUTPUT', async () => {
     const err = await renderWithAutoescape('{{ data }}', { data: ['"test"'] }).catch(e => e) as Record<string, unknown>;

@@ -1,7 +1,8 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import { describe, test, expect } from 'bun:test';
-import { findContextDangerousValues, validateRenderContext } from './validators/context.ts';
+import { findContextDangerousValues, validateRenderContext } from '@nunjucks/validators';
+import process from "node:process";
 
 describe('findContextDangerousValues', () => {
   test('flags process inside nested values', () => {

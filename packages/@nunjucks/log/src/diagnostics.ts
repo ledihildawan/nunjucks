@@ -77,7 +77,7 @@ const templateLocationOffset = (template: string, templateErrorLine: number | nu
 };
 
 const isTemplateCoordinateWithinHint = (template: string, templateErrorLine: number | null, templateErrorCol: number | null): boolean => {
-  if (!Number.isInteger(templateErrorLine) || !Number.isInteger(templateErrorCol)) {
+  if (!(Number.isInteger(templateErrorLine) && Number.isInteger(templateErrorCol))) {
     return false;
   }
 
@@ -95,21 +95,29 @@ const isTemplateCoordinateWithinHint = (template: string, templateErrorLine: num
 const findTemplateOccurrence = (content: string, templateHint: string, preferredLine: number | null): TemplateMatch | null => {
   let best = -1;
   let bestTemplate = templateHint;
-  let bestDistance = Infinity;
-  const candidates = templateHint.includes('\n')
-    ? [templateHint, templateHint.replace(/\n/g, '\r\n')]
-    : [templateHint];
+  let bestDistance = Number.POSITIVE_INFINITY;
+  let candidates: string[];
+  if (templateHint.includes('\n')) {
+    candidates = [templateHint, templateHint.replace(/\n/g, '\r\n')];
+  } else {
+    candidates = [templateHint];
+  }
 
   for (const candidate of candidates) {
     let searchFrom = 0;
 
     while (true) {
       const found = content.indexOf(candidate, searchFrom);
-      if (found === -1) break;
+      if (found === -1) { break; }
 
       const position = positionAtOffset(content, found);
       const line = position.lineOffset + 1;
-      const distance = preferredLine != null ? Math.abs(line - preferredLine) : 0;
+      let distance: number;
+      if (preferredLine === null || preferredLine === undefined) {
+        distance = 0;
+      } else {
+        distance = Math.abs(line - preferredLine);
+      }
       if (distance < bestDistance) {
         best = found;
         bestTemplate = candidate;
@@ -120,7 +128,10 @@ const findTemplateOccurrence = (content: string, templateHint: string, preferred
     }
   }
 
-  return best === -1 ? null : { index: best, template: bestTemplate };
+  if (best === -1) {
+    return null;
+  }
+  return { index: best, template: bestTemplate };
 };
 
 export const findContextKeyPosition = async (sourceFile: string, callLine: number, dangerousPath: string): Promise<LinePosition | null> => {
@@ -132,7 +143,7 @@ export const findContextKeyPosition = async (sourceFile: string, callLine: numbe
     const searchRadius = 5;
 
     let best: LinePosition | null = null;
-    let bestDistance = Infinity;
+    let bestDistance = Number.POSITIVE_INFINITY;
 
     for (let i = Math.max(0, searchLine - searchRadius); i <= Math.min(lines.length - 1, searchLine + searchRadius); i++) {
       const line = lines[i] ?? '';
@@ -140,7 +151,7 @@ export const findContextKeyPosition = async (sourceFile: string, callLine: numbe
       let found = line.indexOf(keyName, col);
       while (found !== -1) {
         const distance = Math.abs(i - searchLine);
-        if (distance < bestDistance || (distance === bestDistance && found < (best?.col ?? Infinity))) {
+        if (distance < bestDistance || (distance === bestDistance && found < (best?.col ?? Number.POSITIVE_INFINITY))) {
           bestDistance = distance;
           best = { line: i + 1, col: found + 1 };
         }
@@ -160,11 +171,16 @@ export const findContextKeyPosition = async (sourceFile: string, callLine: numbe
 };
 
 const findSubjectOccurrence = (content: string, subject: string | null, preferredLine: number | null): LinePosition | null => {
-  if (!subject || typeof subject !== 'string') return null;
+  if (!subject || typeof subject !== 'string') { return null; }
 
   let best: LinePosition | null = null;
-  let bestDistance = Infinity;
-  const subjectColOffset = subject.includes('.') ? subject.lastIndexOf('.') + 1 : 0;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  let subjectColOffset: number;
+  if (subject.includes('.')) {
+    subjectColOffset = subject.lastIndexOf('.') + 1;
+  } else {
+    subjectColOffset = 0;
+  }
   const escaped = subject.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const patterns: Array<{ re: RegExp; group: number }> = [
     { re: new RegExp(`'(${escaped})'`, 'g'), group: 1 },
@@ -176,15 +192,20 @@ const findSubjectOccurrence = (content: string, subject: string | null, preferre
     let match: RegExpExecArray | null;
     while (true) {
       match = re.exec(content);
-      if (match === null) break;
+      if (match === null) { break; }
       const groupText = match[group];
-      if (!groupText) continue;
+      if (!groupText) { continue; }
 
       const groupOffset = match[0].indexOf(groupText);
       const offset = match.index + groupOffset + subjectColOffset;
       const position = positionAtOffset(content, offset);
       const line = position.lineOffset + 1;
-      const distance = preferredLine != null ? Math.abs(line - preferredLine) : 0;
+      let distance: number;
+      if (preferredLine === null || preferredLine === undefined) {
+        distance = 0;
+      } else {
+        distance = Math.abs(line - preferredLine);
+      }
       if (distance < bestDistance) {
         best = { line, col: position.col };
         bestDistance = distance;
@@ -200,7 +221,7 @@ const matchTemplateInContent = (content: string, templateHint: string, templateE
     return null;
   }
   const templateMatch = findTemplateOccurrence(content, templateHint, preferredLine);
-  if (!templateMatch) return null;
+  if (!templateMatch) { return null; }
   const targetOffset = templateMatch.index + templateLocationOffset(templateMatch.template, templateErrorLine, templateErrorCol);
   const position = positionAtOffset(content, targetOffset);
   return { line: position.lineOffset + 1, col: position.col, name: null };
@@ -311,12 +332,15 @@ const extractCodeContext = async (
 };
 
 const resolveErrorLocation = async (config: DiagnosticsConfig, initialMetadata: NormalizedErrorMetadata, errLineno: number | null, errColno: number | null, template: string | null): Promise<ResolveLocationResult> => {
-  const useJsCaller = config.jsCallerErrorLine != null;
+  const useJsCaller = config.jsCallerErrorLine !== null;
   const hasErrorLocation = errLineno !== undefined && errLineno !== null;
   const preferJsCallerLocation = !config.templatePath && useJsCaller;
-  const templatePath = preferJsCallerLocation
-    ? (config.jsCaller || config._callerFile || initialMetadata.templateName || null)
-    : (config.templatePath || initialMetadata.templatePath || initialMetadata.templateName || config._callerFile || null);
+  let templatePath: string | null;
+  if (preferJsCallerLocation) {
+    templatePath = config.jsCaller || config._callerFile || initialMetadata.templateName || null;
+  } else {
+    templatePath = config.templatePath || initialMetadata.templatePath || initialMetadata.templateName || config._callerFile || null;
+  }
 
   let sourceContent = template;
   let sourceStartLine = 1;
@@ -326,10 +350,19 @@ const resolveErrorLocation = async (config: DiagnosticsConfig, initialMetadata: 
   const hasCallerLocation = hasErrorLocation && initialMetadata.lineBase === 'one';
 
   if (preferJsCallerLocation && useJsCaller && config.jsCaller) {
+    let extractedLineno: number;
+    let extractedColno: number;
+    if (hasCallerLocation) {
+      extractedLineno = errLineno as number;
+      extractedColno = errColno as number;
+    } else {
+      extractedLineno = config.jsCallerErrorLine as number;
+      extractedColno = config.jsCallerErrorCol as number;
+    }
     const codeContext = await extractCodeContext(
       config.jsCaller,
-      hasCallerLocation ? (errLineno as number) : (config.jsCallerErrorLine as number),
-      hasCallerLocation ? (errColno as number) : (config.jsCallerErrorCol as number),
+      extractedLineno,
+      extractedColno,
       template,
       errLineno,
       errColno,
@@ -349,15 +382,32 @@ const resolveErrorLocation = async (config: DiagnosticsConfig, initialMetadata: 
     }
   }
 
-  const lineno = preferJsCallerLocation
-    ? (resolvedJsCallerLine ?? config.lineno ?? errLineno ?? null)
-    : (hasErrorLocation && errLineno != null ? errLineno : (resolvedJsCallerLine ?? config.lineno ?? null));
-  const colno = preferJsCallerLocation
-    ? (resolvedJsCallerCol ?? config.colno ?? errColno ?? null)
-    : (hasErrorLocation && errColno != null ? errColno : (resolvedJsCallerCol ?? config.colno ?? null));
-  const lineBase = preferJsCallerLocation
-    ? 'one'
-    : (hasErrorLocation ? initialMetadata.lineBase : (!hasErrorLocation && useJsCaller ? 'one' : initialMetadata.lineBase));
+  let lineno: number | null;
+  if (preferJsCallerLocation) {
+    lineno = resolvedJsCallerLine ?? config.lineno ?? errLineno ?? null;
+  } else if (hasErrorLocation && errLineno !== null) {
+    lineno = errLineno;
+  } else {
+    lineno = resolvedJsCallerLine ?? config.lineno ?? null;
+  }
+  let colno: number | null;
+  if (preferJsCallerLocation) {
+    colno = resolvedJsCallerCol ?? config.colno ?? errColno ?? null;
+  } else if (hasErrorLocation && errColno !== null) {
+    colno = errColno;
+  } else {
+    colno = resolvedJsCallerCol ?? config.colno ?? null;
+  }
+  let lineBase: 'zero' | 'one';
+  if (preferJsCallerLocation) {
+    lineBase = 'one';
+  } else if (hasErrorLocation) {
+    lineBase = initialMetadata.lineBase;
+  } else if (!hasErrorLocation && useJsCaller) {
+    lineBase = 'one';
+  } else {
+    lineBase = initialMetadata.lineBase;
+  }
 
   return { lineno, colno, lineBase, templatePath, sourceContent, sourceStartLine, preferJsCallerLocation };
 };
@@ -372,10 +422,14 @@ interface ErrorWithCauses extends Error {
 }
 
 export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, template: string | null = null, renderContext: unknown = null): Promise<TemplateError> => {
+  let resolvedSourceContent: string | null = null;
+  if (typeof template === 'string') {
+    resolvedSourceContent = template;
+  }
   const initialMetadata = normalizeErrorMetadata(err, {
     phase: config.phase || 'render',
     templatePath: config.templatePath || config._callerFile || null,
-    sourceContent: typeof template === 'string' ? template : null,
+    sourceContent: resolvedSourceContent,
     renderContext: renderContext as Record<string, unknown> | null
   });
   const errLineno = initialMetadata.lineno;
@@ -388,9 +442,9 @@ export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, templ
   const { lineno, colno, lineBase, templatePath, sourceContent, sourceStartLine, preferJsCallerLocation } =
     await resolveErrorLocation(config, initialMetadata, errLineno, errColno, template);
 
-  delete (err as Record<string, unknown>).lineBase;
-  delete (err as Record<string, unknown>).lineno;
-  delete (err as Record<string, unknown>).colno;
+  (err as Record<string, unknown>).lineBase = undefined;
+  (err as Record<string, unknown>).lineno = undefined;
+  (err as Record<string, unknown>).colno = undefined;
   const metadata = normalizeErrorMetadata(err, {
     lineno,
     colno,
@@ -412,15 +466,35 @@ export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, templ
   const originalDocumentationUrl = errExt.documentationUrl;
   const originalSeverity = errExt.severity;
 
+  let resolvedCauses: string[] | undefined;
+  if (Array.isArray(originalCauses) && originalCauses.length > 0) {
+    resolvedCauses = originalCauses;
+  }
+  let resolvedFixCode: string | undefined;
+  if (typeof originalFixCode === 'string') {
+    resolvedFixCode = originalFixCode;
+  }
+  let resolvedFixComment: string | undefined;
+  if (typeof originalFixComment === 'string') {
+    resolvedFixComment = originalFixComment;
+  }
+  let resolvedSuggestion: string | undefined;
+  if (typeof originalSuggestion === 'string') {
+    resolvedSuggestion = originalSuggestion;
+  }
+  let resolvedDocumentationUrl: string | undefined;
+  if (typeof originalDocumentationUrl === 'string') {
+    resolvedDocumentationUrl = originalDocumentationUrl;
+  }
   const errorDef = {
     name: metadata.code || 'RENDER_ERROR',
     message: () => metadata.message,
     pattern: /./,
-    causes: Array.isArray(originalCauses) && originalCauses.length > 0 ? originalCauses : undefined,
-    fixCode: typeof originalFixCode === 'string' ? originalFixCode : undefined,
-    fixComment: typeof originalFixComment === 'string' ? originalFixComment : undefined,
-    suggestion: typeof originalSuggestion === 'string' ? originalSuggestion : undefined,
-    documentationUrl: typeof originalDocumentationUrl === 'string' ? originalDocumentationUrl : undefined,
+    causes: resolvedCauses,
+    fixCode: resolvedFixCode,
+    fixComment: resolvedFixComment,
+    suggestion: resolvedSuggestion,
+    documentationUrl: resolvedDocumentationUrl,
     severity: originalSeverity || 'error',
   };
 

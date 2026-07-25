@@ -1,0 +1,16 @@
+{
+  "name": "@nunjucks/validators",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/config.ts",
+    "./context": "./src/context.ts",
+    "./template": "./src/template.ts"
+  },
+  "dependencies": {
+    "@nunjucks/shared": "workspace:*"
+  },
+  "description": "Validation utilities for Nunjucks"
+}

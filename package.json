@@ -15,6 +15,9 @@
     "packages/@nunjucks/runtime",
     "packages/@nunjucks/filters",
     "packages/@nunjucks/core",
+    "packages/@nunjucks/loaders",
+    "packages/@nunjucks/integrations",
+    "packages/@nunjucks/validators",
     "samples/express"
   ],
   "dependencies": {
@@ -27,6 +30,9 @@
     "@nunjucks/compiler": "workspace:*",
     "@nunjucks/runtime": "workspace:*",
     "@nunjucks/filters": "workspace:*",
+    "@nunjucks/loaders": "workspace:*",
+    "@nunjucks/integrations": "workspace:*",
+    "@nunjucks/validators": "workspace:*",
     "express": "5",
     "picocolors": "^1.1.1",
     "remeda": "^2.39.0",

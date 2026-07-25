@@ -4,17 +4,18 @@ import { createCompiler } from '@nunjucks/compiler';
 import { parse } from '@nunjucks/parser';
 import { transform } from '@nunjucks/transformers';
 import { execute, type ExecuteConfig } from '@nunjucks/runtime/executor';
-import { validateTemplate, validateConfig, validateRenderContext, findContextDangerousValues } from './validators/index.js';
+import { validateTemplate, validateConfig, validateRenderContext, findContextDangerousValues } from '@nunjucks/validators';
 import { withTimeout } from '@nunjucks/runtime/timeout';
 import { createSandboxedContext } from '@nunjucks/runtime/sandbox';
 import { scrubDangerousReferences } from '@nunjucks/runtime/security';
 import { getCallerFile, getCallerLocation } from '@nunjucks/shared/caller-file';
 import { createLog, injectWarningsScript, getError } from '@nunjucks/log';
 import { findContextKeyPosition, wrapWithLog } from '@nunjucks/log/diagnostics';
-import { getLoader } from './engine.js';
-import { createEnv, type Env } from './env.js';
-import { createTemplate } from '../template/index.js';
+import { getLoader } from './engine.ts';
+import { createEnv, type Env } from './env.ts';
+import { createTemplate } from '../template/index.ts';
 import type { SourceMapMapping } from '@nunjucks/compiler/source-map';
+import { getDefaultConfig, type GlobalConfig } from '../config/global.ts';
 
 interface LoaderSource {
   src: string;
@@ -85,9 +86,15 @@ const resolveTemplateSource = async (template: string, loader: unknown, config: 
   try {
     const source = await (loader as { getSource: (name: string) => Promise<LoaderSource | null> }).getSource(template);
     if (source?.src) {
+      let resolvedPath: string | null;
+      if (config.templatePath) {
+        resolvedPath = null;
+      } else {
+        resolvedPath = source.path;
+      }
       return {
         templateSource: source.src,
-        templatePath: config.templatePath ? null : source.path
+        templatePath: resolvedPath
       };
     }
   } catch (loaderErr) {
@@ -110,10 +117,10 @@ const createValidationError = async (validationError: ValidationError, stamps: R
 const getDangerousValueStamps = async (contextError: ValidationError, config: RenderConfig): Promise<Record<string, unknown>> => {
   const stamps: Record<string, unknown> = { code: contextError.code };
   const dangerousPaths = contextError.dangerousPaths;
-  if (!dangerousPaths?.length) return stamps;
+  if (!dangerousPaths || dangerousPaths.length === 0) { return stamps; }
 
   const callerLocation = config._callerLocation;
-  if (!callerLocation || callerLocation.fileName === 'unknown') return stamps;
+  if (!callerLocation || callerLocation.fileName === 'unknown') { return stamps; }
 
   const pos = await findContextKeyPosition(callerLocation.fileName, callerLocation.lineNumber || 1, dangerousPaths[0]!);
   if (pos) {
@@ -130,21 +137,27 @@ const prepareSandbox = (config: RenderConfig, context: unknown): Record<string, 
   const mergedAllowlist = [...new Set([...internalKeys, ...userAllowlist])];
 
   const blockedKeys = config.blockedContextKeys as readonly string[] | null | undefined;
+  let resolvedBlockedKeys: string[] | undefined;
+  if (blockedKeys !== null && blockedKeys !== undefined) {
+    resolvedBlockedKeys = [...blockedKeys];
+  } else {
+    resolvedBlockedKeys = undefined;
+  }
   const sandboxOptions: SandboxOptions = {
     allowlist: mergedAllowlist,
     blocklistMode: config.sandboxMode !== 'allowlist',
-    blockedContextKeys: blockedKeys ? [...blockedKeys] : undefined,
+    blockedContextKeys: resolvedBlockedKeys,
     environment: (config.sandboxEnvironment || 'auto') as Environment,
   };
 
-  const sandboxEnabled = (config.sandbox ?? false) || (blockedKeys != null && blockedKeys.length > 0);
+  const sandboxEnabled = (config.sandbox ?? false) || (blockedKeys !== null && blockedKeys !== undefined && blockedKeys.length > 0);
   const sandboxedCtx = createSandboxedContext(context, sandboxEnabled, sandboxOptions) as Record<string, unknown>;
   sandboxedCtx.__nunjucks_undefined_mode = config.undefined || 'default';
   return sandboxedCtx;
 };
 
 const buildRenderEnv = (loader: unknown, config: RenderConfig): void => {
-  if (!loader || config.env) return;
+  if (!loader || config.env) { return; }
 
   const emitter = new EventEmitter();
   config.env = createEnv({
@@ -158,7 +171,7 @@ const buildRenderEnv = (loader: unknown, config: RenderConfig): void => {
     async getTemplate(name: string, eagerCompile?: boolean, includeChain?: unknown[] | null, ignoreMissing?: boolean) {
       const source = await (loader as { getSource: (name: string) => Promise<LoaderSource | null> }).getSource(name);
       if (!source) {
-        if (ignoreMissing) return null;
+        if (ignoreMissing) { return null; }
         throw createLog('error', getError('FILE_NOT_FOUND'), { path: name }, name, { phase: 'load' });
       }
       return createTemplate(source.src, this as unknown as Env, source.path, eagerCompile ?? true, includeChain);
@@ -173,9 +186,9 @@ interface CompileResult {
 
 const compileTemplate = (templateSource: string, config: RenderConfig, templateName: string): CompileResult => {
   const c = createCompiler(templateName, (config.undefined || 'chainable') as 'chainable' | 'strict' | 'debug', templateSource);
-  // biome-ignore lint/suspicious/noExplicitAny: Parser API requires dynamic typing
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const ast = (parse as any)(templateSource, [], { undefined: config.undefined });
-  // biome-ignore lint/suspicious/noExplicitAny: Transformer API requires dynamic typing
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const transformedAst = (transform as any)(ast, [], templateName);
   c.compile(transformedAst);
   return { code: c.getCode(), sourceMapData: c.getSourceMap().mappings };
@@ -184,7 +197,12 @@ const compileTemplate = (templateSource: string, config: RenderConfig, templateN
 const handleContextStrictMode = async (context: unknown, config: RenderConfig): Promise<{ warningsCollector: unknown[]; dangerousValuePaths: string[] }> => {
   const warningsCollector: unknown[] = [];
   const contextStrict = config.contextStrict === true || (config.contextStrict !== false && config.dev === true);
-  const dangerousValuePaths = contextStrict ? findContextDangerousValues(context, config) : [];
+  let dangerousValuePaths: string[];
+  if (contextStrict) {
+    dangerousValuePaths = findContextDangerousValues(context, config);
+  } else {
+    dangerousValuePaths = [];
+  }
 
   if (!contextStrict || dangerousValuePaths.length === 0) {
     return { warningsCollector, dangerousValuePaths };
@@ -223,10 +241,14 @@ const validateRenderInput = async (template: unknown, config: RenderConfig, cont
     const ve = validation.errors[0] as NonNullable<typeof validation.errors[0]>;
     const callerLineno = config._callerLocation?.lineNumber;
     const callerColno = config._callerLocation?.columnNumber;
+    let resolvedLineno: number | null | undefined = callerLineno;
+    if (callerLineno && callerLineno > 1) {
+      resolvedLineno = callerLineno - 1;
+    }
     await createValidationError(ve, {
       code: ve.code,
       subject: ve.subject,
-      lineno: callerLineno && callerLineno > 1 ? callerLineno - 1 : callerLineno,
+      lineno: resolvedLineno,
       colno: callerColno
     }, config, template, context);
   }
@@ -245,7 +267,15 @@ const validateRenderInput = async (template: unknown, config: RenderConfig, cont
   }
 };
 
-export const render = async (template: string, context: Record<string, unknown> = {}, config: RenderConfig = {}): Promise<string> => {
+export const render = async (template: string, context: Record<string, unknown> = {}, options: Partial<GlobalConfig> = {}): Promise<string> => {
+  const defaults = getDefaultConfig();
+  const config: RenderConfig = {
+    ...defaults,
+    ...options,
+    filters: { ...defaults.filters, ...(options.filters || {}) },
+    globals: { ...defaults.globals, ...(options.globals || {}) },
+    extensions: { ...defaults.extensions, ...(options.extensions || {}) },
+  } as RenderConfig;
   config._callerFile = config._callerFile || getCallerFile();
   config._callerLocation = config._callerLocation || getCallerLocation();
 
@@ -256,9 +286,9 @@ export const render = async (template: string, context: Record<string, unknown> 
         const source = await readFile(config._callerFile, 'utf8');
         let searchFrom = 0;
         let foundNearCaller = false;
-        while (callerLine != null) {
+        while (callerLine !== null && callerLine !== undefined) {
           const templateIndex = source.indexOf(template, searchFrom);
-          if (templateIndex === -1) break;
+          if (templateIndex === -1) { break; }
           const occurrenceLine = source.slice(0, templateIndex).split('\n').length;
           if (Math.abs(occurrenceLine - callerLine) <= 5) {
             foundNearCaller = true;
@@ -275,10 +305,10 @@ export const render = async (template: string, context: Record<string, unknown> 
       // cannot be read.
     }
   }
-  if (config.jsCaller && config.jsCallerErrorLine == null) {
+  if (config.jsCaller && config.jsCallerErrorLine === null) {
     config.jsCallerErrorLine = config._callerLocation?.lineNumber ?? 1;
   }
-  if (config.jsCaller && config.jsCallerErrorCol == null) {
+  if (config.jsCaller && config.jsCallerErrorCol === null) {
     config.jsCallerErrorCol = config._callerLocation?.columnNumber ?? 1;
   }
 
@@ -286,10 +316,17 @@ export const render = async (template: string, context: Record<string, unknown> 
 
   const loader = getLoader(config as Parameters<typeof getLoader>[0]);
   const { templateSource, templatePath } = await resolveTemplateSource(template, loader, config);
-  if (templatePath) config.templatePath = templatePath;
+  if (templatePath) { config.templatePath = templatePath; }
 
   const looksLikeFile = /\.(njk|js|html|htm|twig|ejs|eta)$/i.test(template);
-  const templateName = config.templatePath || (looksLikeFile ? template : (config._callerFile || 'inline'));
+  let templateName: string;
+  if (config.templatePath) {
+    templateName = config.templatePath;
+  } else if (looksLikeFile) {
+    templateName = template;
+  } else {
+    templateName = config._callerFile || 'inline';
+  }
 
   let code: string;
   let sourceMapData: SourceMapMapping[];
@@ -313,15 +350,19 @@ export const render = async (template: string, context: Record<string, unknown> 
       renderContext: context
     } as ExecuteConfig);
 
-    result = (config.executionTimeout ?? 0) > 0
-      ? await withTimeout(renderPromise, config.executionTimeout ?? 0)
-      : await renderPromise;
+    let renderResult: string;
+    if ((config.executionTimeout ?? 0) > 0) {
+      renderResult = await withTimeout(renderPromise, config.executionTimeout ?? 0) as string;
+    } else {
+      renderResult = await renderPromise as string;
+    }
+    result = renderResult;
   } catch (err) {
     throw await wrapWithLog(err as Error, config, templateSource, context);
   }
 
   if (warningsCollector.length > 0 && config.dev) {
-    result = result + injectWarningsScript(warningsCollector as Parameters<typeof injectWarningsScript>[0], { dev: true, verbosity: 'medium' });
+    result += injectWarningsScript(warningsCollector as Parameters<typeof injectWarningsScript>[0], { dev: true, verbosity: 'medium' });
   }
 
   return result as string;

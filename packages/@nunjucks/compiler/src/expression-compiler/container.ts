@@ -133,7 +133,8 @@ export const compileAggregate = (ctx: Compiler, node: Node, frame: Frame, startC
     ctx.emit(startChar);
   }
 
-  node.children?.forEach((child, i) => {
+  const children = node.children ?? (node as unknown as Node[]);
+  children.forEach((child: Node, i: number) => {
     if (i > 0) {
       ctx.emit(',');
     }

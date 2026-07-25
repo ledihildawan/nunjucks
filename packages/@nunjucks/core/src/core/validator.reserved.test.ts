@@ -1,8 +1,8 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import { expect, describe, test } from 'bun:test';
-import { validateConfig } from './validators/config.ts';
-import { RESERVED_KEYWORDS, getReservedKeywords } from '../config/reserved.ts';
+import { validateConfig } from '@nunjucks/validators';
+import { RESERVED_KEYWORDS, getReservedKeywords } from '@nunjucks/shared';
 
 describe('validateConfig - reserved keyword validation', () => {
   describe('filters', () => {
