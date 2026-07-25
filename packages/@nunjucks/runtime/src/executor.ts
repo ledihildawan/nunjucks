@@ -258,7 +258,6 @@ export interface ExecuteConfig {
   env?: unknown;
   templateName?: string;
   renderContext?: unknown;
-  sourceMapData?: unknown[] | null;
   sandboxAllowlist?: string[];
   sandboxMode?: string;
   sandboxEnvironment?: string;
@@ -305,7 +304,6 @@ export const execute = async (code: string, context: Record<string, unknown> = {
     getFilter,
     __warnings__: warningsCollector,
     logContext,
-    sourceMapData: config.sourceMapData || null
   };
 
   if (config.sandbox) {

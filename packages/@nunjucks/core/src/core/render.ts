@@ -14,7 +14,6 @@ import { findContextKeyPosition, wrapWithLog } from '@nunjucks/log/diagnostics';
 import { getLoader } from './engine.ts';
 import { createEnv, type Env } from './env.ts';
 import { createTemplate } from '../template/index.ts';
-import type { SourceMapMapping } from '@nunjucks/compiler/source-map';
 import { getDefaultConfig, setDefaultDomPurifyConfig, type GlobalConfig } from '../config/global.ts';
 
 interface LoaderSource {
@@ -181,7 +180,6 @@ const buildRenderEnv = (loader: unknown, config: RenderConfig): void => {
 
 interface CompileResult {
   code: string;
-  sourceMapData: SourceMapMapping[];
 }
 
 const compileTemplate = (templateSource: string, config: RenderConfig, templateName: string): CompileResult => {
@@ -191,7 +189,7 @@ const compileTemplate = (templateSource: string, config: RenderConfig, templateN
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const transformedAst = (transform as any)(ast, [], templateName);
   c.compile(transformedAst);
-  return { code: c.getCode(), sourceMapData: c.getSourceMap().mappings };
+  return { code: c.getCode() };
 };
 
 const handleContextStrictMode = async (context: unknown, config: RenderConfig): Promise<{ warningsCollector: unknown[]; dangerousValuePaths: string[] }> => {
@@ -333,9 +331,8 @@ export const render = async (template: string, context: Record<string, unknown> 
   }
 
   let code: string;
-  let sourceMapData: SourceMapMapping[];
   try {
-    ({ code, sourceMapData } = compileTemplate(templateSource, config, templateName));
+    ({ code } = compileTemplate(templateSource, config, templateName));
   } catch (err) {
     throw await wrapWithLog(err as Error, config, templateSource, context);
   }
@@ -350,7 +347,6 @@ export const render = async (template: string, context: Record<string, unknown> 
       ...config,
       warningsCollector,
       templateName,
-      sourceMapData,
       renderContext: context
     } as ExecuteConfig);
 

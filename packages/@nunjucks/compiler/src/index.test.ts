@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from 'bun:test';
-import { createCompiler, getSourceMapFromCompile } from '@nunjucks/compiler';
+import { createCompiler } from '@nunjucks/compiler';
 import { symbol } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime/frame';
 
@@ -37,19 +37,5 @@ describe('Compiler', () => {
     compiler.emtest('a');
     compiler.emtest('b');
     expect(compiler.getCode()).toBe('ab');
-  });
-});
-
-describe('getSourceMapFromCompile', () => {
-  test('returns source map with template name', () => {
-    // NOTE: Full compile pipeline (parse + transform) is not yet available
-    // in the migrated packages (@nunjucks/parser is empty). The function
-    // still returns a properly-shaped SourceMap so consumers can rely on
-    // the result. Once `parse` is migrated, this should compile 'Hello'
-    // and produce real mappings.
-    const sm = getSourceMapFromCompile('Hello', [], 'test.njk');
-    expect(sm).toBeDefined();
-    expect(sm.templateName).toBe('test.njk');
-    expect(sm.mappings).toBeArray();
   });
 });

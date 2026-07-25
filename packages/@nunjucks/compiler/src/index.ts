@@ -315,24 +315,3 @@ export function createCompiler(
 export function getSourceMap(compiler: Compiler): SourceMap {
   return compiler.sourceMap;
 }
-
-export function getSourceMapFromCompile(
-  src: string,
-  extensions: Parameters<typeof parse>[1],
-  name: string | null,
-  opts: Parameters<typeof parse>[2] = {}
-): SourceMap {
-  const undefinedMode = getUndefinedMode(opts as { undefined?: unknown });
-  const c = createCompiler(name, undefinedMode, src);
-
-  const processedSrc = pipe(
-    extensions || [],
-    exts => exts.map(ext => ext.preprocess),
-    comps => filter(comps, isDefined),
-    processors => reduce(processors as Array<(src: string) => string>, (s, processor) => processor(s), src)
-  );
-
-  c.compile(transform(parse(processedSrc, extensions, opts)));
-
-  return c.getSourceMap();
-}

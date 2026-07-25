@@ -4,7 +4,6 @@ import { parse } from '@nunjucks/parser';
 import { transform } from '@nunjucks/transformers';
 import { prettifyError, getError } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
-import { createMappedError } from '../helpers/source-map.ts';
 import { createContext } from '@nunjucks/runtime/context';
 import { HOOK_EVENTS } from '@nunjucks/runtime/hooks';
 import { injectWarningsScript } from '@nunjucks/log';
@@ -129,23 +128,6 @@ const createRuntimeWithContext = (templatePath: string | undefined, _envOpts: Re
   }
 });
 
-interface LoaderWithSourceMap {
-  _getSourceMap?: (path: string) => unknown;
-}
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-const getLoaderSourceMap = (env: Env | undefined, errorPath: string | undefined, currentPath: string | undefined): unknown => {
-  if (errorPath === currentPath || !env?.loaders) { return null; }
-
-  for (const loader of env.loaders as LoaderWithSourceMap[]) {
-    if (loader._getSourceMap) {
-      const loaderMap = loader._getSourceMap(errorPath as string);
-      if (loaderMap) { return loaderMap; }
-    }
-  }
-  return null;
-};
-
 interface ErrorWithLineInfo {
   lineBase?: string;
   colno?: number;
@@ -162,18 +144,12 @@ const extractFrameDetails = (
   e: ErrorWithLineInfo,
   sourceLineno: number | undefined,
   sourceColno: number | undefined,
-  sourceMap: unknown,
   currentPath: string | undefined,
   hasIncludeChain: unknown
 ): Error | null => {
-  if (!sourceMap || hasIncludeChain) { return null; }
+  if (hasIncludeChain) { return null; }
   if (e.lineBase === 'zero' || e.lineBase === 'one') { return null; }
   if (sourceLineno === undefined) { return null; }
-
-  type SourceMapData = Parameters<typeof createMappedError>[1];
-  const mapped = createMappedError(e as Parameters<typeof createMappedError>[0], sourceMap as SourceMapData, sourceLineno, sourceColno, currentPath ?? '');
-  if (mapped) { return mapped; }
-
   if (sourceLineno < 0) { return null; }
 
   const errColno = defaultTo(e.colno, 0);
@@ -217,15 +193,9 @@ const createTemplateErrorHandler = (state: TemplateState) => {
 
     const sourceLineno = e.lineno;
     const sourceColno = e.colno;
-    const errorPath = e.path;
     const hasIncludeChain = e._includeChain || state._includeChain;
-    let sourceMap = state.tmplProps?.__sourceMap;
 
-    if (errorPath !== state.path && state.env && !hasIncludeChain) {
-      sourceMap = getLoaderSourceMap(state.env, errorPath, state.path || undefined) || sourceMap;
-    }
-
-    return extractFrameDetails(e, sourceLineno, sourceColno, sourceMap, state.path, hasIncludeChain) || e;
+    return extractFrameDetails(e, sourceLineno, sourceColno, state.path, hasIncludeChain) || e;
   };
 
   return { enrichError };
