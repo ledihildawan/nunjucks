@@ -54,6 +54,44 @@ app.get('/home', async (req: Request, res: Response) => {
   res.type('html').send(html);
 });
 
+app.get('/security', async (req: Request, res: Response) => {
+  const html = await render(
+    `<!DOCTYPE html>
+<html>
+<head><title>Security Features Demo</title></head>
+<body>
+  <h1>Security Features Demo</h1>
+
+  <h2>1. Sanitize Filter (DOMPurify)</h2>
+  <p>Raw user input (XSS risk): <code>{{ userInput }}</code></p>
+  <p>Sanitized: <code>{{ userInput |> sanitize }}</code></p>
+
+  <h2>2. Auto-toJSON in Script Context</h2>
+  <script>
+    const config = {{ configData }};
+    console.log('Config loaded:', config);
+  </script>
+
+  <h2>3. Context-Aware Escaping</h2>
+  <p>HTML: <code>{{ htmlContent }}</code></p>
+  <p>Attribute: <code>&lt;div data-value="{{ attrContent }}"&gt;&lt;/div&gt;</code></p>
+</body>
+</html>`,
+    {
+      userInput: '<script>alert("XSS")</script><p>Safe content</p>',
+      configData: { theme: 'dark', debug: true },
+      htmlContent: '<b>Bold</b> & "quoted"',
+      attrContent: 'value="with quotes"'
+    },
+    engineConfig
+  );
+  res.type('html').send(html);
+});
+
 app.listen(4000, () => {
   console.log('Server running at http://localhost:4000');
+  console.log('Demo routes:');
+  console.log('  /         - Home');
+  console.log('  /home     - Inline template with pipe syntax');
+  console.log('  /security - Security features (sanitize, auto-tojson, context-aware escaping)');
 });

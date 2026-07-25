@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Security Features Demo</title>
+  <style>
+    body { font-family: sans-serif; margin: 40px; }
+    h1 { color: #333; }
+    h2 { color: #666; margin-top: 30px; }
+    .demo { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0; }
+    .demo strong { color: #0066cc; }
+    pre { background: #eee; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    .safe { color: green; }
+    .unsafe { color: red; }
+  </style>
+</head>
+<body>
+  <h1>Security Features Demo</h1>
+
+  <h2>1. Sanitize Filter (DOMPurify)</h2>
+  <p>The sanitize filter removes dangerous HTML tags using DOMPurify.</p>
+
+  <div class="demo">
+    <h3>Raw User Input (XSS Risk)</h3>
+    <p><strong>Input:</strong> <code>{{ userInput }}</code></p>
+    <p class="unsafe">⚠️ Never render raw user input without sanitization!</p>
+  </div>
+
+  <div class="demo">
+    <h3>Sanitized Output</h3>
+    <p><strong>Input:</strong> <code>{{ userInput |> sanitize }}</code></p>
+    <p class="safe">✓ Script tags removed by DOMPurify!</p>
+  </div>
+
+  <div class="demo">
+    <h3>More Examples</h3>
+    <table>
+      <tr><th>Raw</th><th>Sanitized</th></tr>
+      <tr><td><code>{{ dangerousHtml }}</code></td><td><code>{{ dangerousHtml |> sanitize }}</code></td></tr>
+    </table>
+  </div>
+
+  <h2>2. Auto-toJSON in Script Context</h2>
+  <p>When outputting values inside &lt;script&gt; tags with autoescape enabled, objects are automatically JSON-encoded.</p>
+
+  <div class="demo">
+    <h3>Object in Script Tag</h3>
+    <pre><code>&lt;script&gt;
+  const config = {{ configData }};
+  const user = {{ userData }};
+&lt;/script&gt;</code></pre>
+    <p class="safe">✓ Objects are automatically JSON-encoded (no need for manual tojson filter)</p>
+  </div>
+
+  <h2>3. Context-Aware Escaping</h2>
+  <p>The escaping is context-aware. Different contexts require different escaping:</p>
+
+  <div class="demo">
+    <h3>HTML Context</h3>
+    <p><code>{{ htmlContent }}</code> - Escaped for HTML</p>
+  </div>
+
+  <div class="demo">
+    <h3>Attribute Context</h3>
+    <p><code>&lt;div data-value="{{ attrContent }}"&gt;{{ htmlContent }}&lt;/div&gt;</code></p>
+  </div>
+
+  <h2>4. dompurify Config Option</h2>
+  <p>You can customize DOMPurify behavior via the dompurify config option:</p>
+  <pre><code>const engineConfig = {
+  autoescape: true,
+  dompurify: {
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong'],
+    ALLOWED_ATTR: ['href']
+  }
+};</code></pre>
+</body>
+</html>

@@ -52,4 +52,16 @@ router.get('/pipe', async (req: Request, res: Response) => {
   res.type('html').send(html);
 });
 
+router.get('/security', async (req: Request, res: Response) => {
+  const html = await nunjucks.render('demo-security.njk', {
+    userInput: '<script>alert("XSS attack!")</script><p>Hello World</p>',
+    dangerousHtml: '<img src=x onerror="alert(1)"><script>document.location="http://evil.com"</script>',
+    configData: { theme: 'dark', debug: true, count: 42 },
+    userData: { name: 'John', role: 'admin', id: 123 },
+    htmlContent: '<b>Bold</b> & "quoted"',
+    attrContent: 'value="with quotes"\'s and stuff'
+  }, { views: VIEWS, autoescape: true });
+  res.type('html').send(html);
+});
+
 export { router as demoRouter };

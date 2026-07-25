@@ -15,6 +15,7 @@ export interface ExpressEngineConfig {
   globals?: Record<string, unknown>;
   filters?: Record<string, (...args: unknown[]) => unknown>;
   extensions?: Record<string, unknown>;
+  dompurify?: Record<string, unknown>;
 }
 
 export interface ExpressEngineOptions {
@@ -64,6 +65,7 @@ const renderTemplate = async (
     filters: config.filters,
     extensions: config.extensions,
     templatePath: filePath,
+    dompurify: config.dompurify,
   };
 
   try {

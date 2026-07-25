@@ -5,12 +5,17 @@
   <style>
     body { font-family: sans-serif; margin: 40px; }
     h1 { color: #333; }
+    .demo-link { background: #0066cc; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 5px; }
+    .demo-link:hover { background: #0055aa; }
   </style>
 </head>
 <body>
   <h1>Welcome to {{ appName }}!</h1>
   <p>Version: {{ version }} ({{ getYear() }})</p>
   <p>Hello, {{ userName }}!</p>
-  <p>Try the /home route to see inline template rendering.</p>
+
+  <h2>Demo Routes</h2>
+  <p><a href="/home" class="demo-link">/home</a> Inline template with pipe syntax (|>)</p>
+  <p><a href="/security" class="demo-link">/security</a> Security features: sanitize filter, auto-toJSON in script context</p>
 </body>
 </html>
