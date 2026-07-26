@@ -69,9 +69,9 @@ export const parseFrom = (ctx: ParserContext): Node => {
     withContext = parseWithContext(ctx);
   }
 
-  return fromImport(fromTok.lineno,
-    fromTok.colno,
+  return fromImport(fromTok.lineno, fromTok.colno, {
     template,
     names,
-    withContext as boolean);
+    withContext: withContext as boolean,
+  });
 };

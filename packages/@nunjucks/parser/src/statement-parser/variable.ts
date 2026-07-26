@@ -72,7 +72,7 @@ export const parseVariableAssignment = (ctx: ParserContext): Node => {
   const value = parseExpression(ctx);
 
   if (operator !== '=') {
-    return compoundAssignment(tag.lineno, tag.colno, targets, operator, value);
+    return compoundAssignment(tag.lineno, tag.colno, { targets, operator, value });
   }
 
   return variableAssignment(tag.lineno, tag.colno, targets, value);
@@ -132,5 +132,5 @@ export const parseDefineBlock = (ctx: ParserContext): Node => {
 
   advanceAfterBlockEnd(ctx, 'enddefine');
 
-  return defineBlock(tag.lineno, tag.colno, nameTok.value as string, body, args);
+  return defineBlock(tag.lineno, tag.colno, { name: nameTok.value as string, body, args });
 };

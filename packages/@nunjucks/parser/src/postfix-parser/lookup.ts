@@ -26,7 +26,7 @@ const buildSlice = (ctx: ParserContext, bracketTok: Token, start: Node | null): 
 
   expect(ctx, TOKEN_RIGHT_BRACKET);
   const location = step || stop || start || bracketTok;
-  const sliceNode = slice(location.lineno, location.colno, start, stop, step);
+  const sliceNode = slice(location.lineno, location.colno, { start, stop, step });
   return sliceNode;
 };
 

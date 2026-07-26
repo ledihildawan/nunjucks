@@ -138,7 +138,7 @@ describe('walk', () => {
   });
 
   test('walks CallExtension', () => {
-    const ext = callExtension(0, 0, { __name: 'myExt' }, 'method');
+    const ext = callExtension(0, 0, { ext: { __name: 'myExt' }, prop: 'method' });
     const visited: string[] = [];
     walk(ext, (node) => {
       visited.push(getNodeTypeName(node) as string);

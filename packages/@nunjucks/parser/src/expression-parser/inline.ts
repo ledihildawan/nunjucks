@@ -123,7 +123,7 @@ const parseWalrus = (ctx: ParserContext, node: Node): Node => {
       nextToken(ctx);
       const valueNode = parseOr(ctx);
       if (isSymbol(node)) {
-        return compoundAssignment(node.lineno, node.colno, [node], operator, valueNode);
+        return compoundAssignment(node.lineno, node.colno, { targets: [node], operator, value: valueNode });
       }
       throw new Error('Assignment target must be a symbol');
     }
@@ -133,7 +133,7 @@ const parseWalrus = (ctx: ParserContext, node: Node): Node => {
       nextToken(ctx);
       const valueNode = parseOr(ctx);
       if (isSymbol(node)) {
-        return compoundAssignment(node.lineno, node.colno, [node], operator, valueNode);
+        return compoundAssignment(node.lineno, node.colno, { targets: [node], operator, value: valueNode });
       }
       throw new Error('Assignment target must be a symbol');
     }

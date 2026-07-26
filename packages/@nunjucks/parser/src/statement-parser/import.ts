@@ -24,11 +24,11 @@ export const parseImport = (ctx: ParserContext): Node => {
   const target = parseExpression(ctx);
   const withContext = parseWithContext(ctx);
   if (!isSymbol(target)) { fail(ctx, 'parseImport: expected import target', target.lineno, target.colno); }
-  const node = import_(importTok.lineno,
-    importTok.colno,
+  const node = import_(importTok.lineno, importTok.colno, {
     template,
-    target.value as string,
-    withContext as boolean);
+    target: target.value as string,
+    withContext: withContext as boolean,
+  });
 
   advanceAfterBlockEnd(ctx, importTok.value as string);
 

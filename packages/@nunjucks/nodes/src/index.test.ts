@@ -137,7 +137,7 @@ describe('OptionalChain', () => {
 
 describe('Slice', () => {
   test('stores start, stop, step', () => {
-    const s = slice(0, 0, literal(0, 0, 1), literal(0, 0, 10), literal(0, 0, 2));
+    const s = slice(0, 0, { start: literal(0, 0, 1), stop: literal(0, 0, 10), step: literal(0, 0, 2) });
     expect((s.start as { value: number }).value).toBe(1);
     expect((s.stop as { value: number }).value).toBe(10);
     expect((s.step as { value: number }).value).toBe(2);
@@ -155,7 +155,7 @@ describe('If', () => {
 
 describe('InlineIf', () => {
   test('stores cond, body, else_', () => {
-    const ii = inlineIf(0, 0, literal(1, 1, true), literal(2, 2, 'a'), literal(3, 3, 'b'));
+    const ii = inlineIf(0, 0, { cond: literal(1, 1, true), body: literal(2, 2, 'a'), else_: literal(3, 3, 'b') });
     expect((ii.cond as { value: boolean }).value).toBe(true);
     expect((ii.body as unknown as { value: string }).value).toBe('a');
     expect((ii.else_ as { value: string }).value).toBe('b');
@@ -183,7 +183,7 @@ describe('Macro / Caller', () => {
 
 describe('Import', () => {
   test('stores template, target, withContext', () => {
-    const im = import_(0, 0, 'foo.njk', 'bar', true);
+    const im = import_(0, 0, { template: 'foo.njk', target: 'bar', withContext: true });
     expect(im.template).toBe('foo.njk');
     expect(im.target).toBe('bar');
     expect(im.withContext).toBe(true);
@@ -192,14 +192,14 @@ describe('Import', () => {
 
 describe('FromImport', () => {
   test('stores template, names, withContext', () => {
-    const fi = fromImport(0, 0, 'foo.njk', nodeList(2, 2), true);
+    const fi = fromImport(0, 0, { template: 'foo.njk', names: nodeList(2, 2), withContext: true });
     expect(fi.template).toBe('foo.njk');
     expect(getType(fi.names)).toBe('nodeList');
     expect(fi.withContext).toBe(true);
   });
 
   test('defaults names to empty NodeList', () => {
-    const fi = fromImport(0, 0, 'foo.njk', undefined, false);
+    const fi = fromImport(0, 0, { template: 'foo.njk', withContext: false });
     expect(getType(fi.names)).toBe('nodeList');
     expect([...(fi.names as { children: unknown[] }).children!]).toEqual([]);
   });
@@ -248,7 +248,7 @@ describe('Include', () => {
 
 describe('Set', () => {
   test('stores targets, value, operator', () => {
-    const s = set(0, 0, [...nodeList(1, 1).children!], literal(2, 2, 5), '=');
+    const s = set(0, 0, { targets: [...nodeList(1, 1).children!], value: literal(2, 2, 5), operator: '=' });
     expect(s.targets).toBeDefined();
     expect((s.value as { value: number }).value).toBe(5);
     expect(s.operator).toBe('=');
@@ -257,7 +257,7 @@ describe('Set', () => {
 
 describe('Switch / Case', () => {
   test('Switch stores expr, cases, default', () => {
-    const sw = switch_(0, 0, symbol(1, 1, 'x'), [case_(2, 2, literal(3, 3, 1), nodeList(4, 4))], nodeList(5, 5));
+    const sw = switch_(0, 0, { expr: symbol(1, 1, 'x'), cases: [case_(2, 2, literal(3, 3, 1), nodeList(4, 4))], default_: nodeList(5, 5) });
     expect((sw.expr as { value: string }).value).toBe('x');
     expect((sw.cases as unknown[])[0]).toBeDefined();
     expect(sw.default).toBeDefined();
@@ -350,7 +350,7 @@ describe('Comparison nodes', () => {
 describe('CallExtension', () => {
   test('stores extName, prop, args, contentArgs', () => {
     const ext = { __name: 'testExt', autoescape: true };
-    const ce = callExtension(0, 0, ext, 'foo', nodeList(0, 0), [nodeList(0, 0)]);
+    const ce = callExtension(0, 0, { ext, prop: 'foo', args: nodeList(0, 0), contentArgs: [nodeList(0, 0)] });
     expect(ce.extName).toBe('testExt');
     expect(ce.prop).toBe('foo');
     expect(ce.args).toBeDefined();
@@ -359,14 +359,14 @@ describe('CallExtension', () => {
   });
 
   test('defaults args to NodeList', () => {
-    const ce = callExtension(0, 0, { __name: 'e' }, 'f');
+    const ce = callExtension(0, 0, { ext: { __name: 'e' }, prop: 'f' });
     expect(ce.args).toBeDefined();
     expect([...(ce.args as { children: unknown[] }).children!]).toEqual([]);
     expect([...(ce.contentArgs as unknown[])]).toEqual([]);
   });
 
   test('CallExtensionAsync has typename callExtensionAsync', () => {
-    const ce = callExtensionAsync(0, 0, { __name: 'e' }, 'f');
+    const ce = callExtensionAsync(0, 0, { ext: { __name: 'e' }, prop: 'f' });
     expect(getType(ce)).toBe('callExtensionAsync');
   });
 });

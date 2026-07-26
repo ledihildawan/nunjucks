@@ -47,5 +47,5 @@ export const parseTry = (ctx: ParserContext): Node => {
     fail(ctx, `expected endtry, got ${peekToken(ctx).value}`);
   }
 
-  return tryCatch(tag.lineno, tag.colno, body, catchBody, errVar);
+  return tryCatch(tag.lineno, tag.colno, { body, catchBody, errVar });
 };

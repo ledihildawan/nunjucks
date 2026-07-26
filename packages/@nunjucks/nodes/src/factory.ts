@@ -38,8 +38,18 @@ export const pipe = (lineno: number, colno: number, name: Node | string, args: N
 export const lookupVal = (lineno: number, colno: number, target: Node, val: Node): LookupNode =>
   createNode(T.LOOKUP_VAL, lineno, colno, { target, val });
 
-export const slice = (lineno: number, colno: number, start: Node | null, stop: Node | null, step: Node | null): SliceNode =>
-  createNode(T.SLICE, lineno, colno, { start, stop, step });
+// CONVENTION: every factory takes (lineno, colno) first. Factories with more
+// than two remaining fields take them as one named object, so call sites read
+// as field names rather than as an argument order to memorise.
+
+export interface SliceFields {
+  start: Node | null;
+  stop: Node | null;
+  step: Node | null;
+}
+
+export const slice = (lineno: number, colno: number, fields: SliceFields): SliceNode =>
+  createNode(T.SLICE, lineno, colno, { ...fields });
 
 export const optionalChain = (lineno: number, colno: number, target: Node, val: Node): LookupNode =>
   createNode(T.OPTIONAL_CHAIN, lineno, colno, { target, val });
@@ -109,8 +119,14 @@ export const block = (lineno: number, colno: number, name?: string, body?: Node)
 export const if_ = (lineno: number, colno: number, cond?: Node, body?: Node, else_: Node | null = null): Node =>
   createNode(T.IF, lineno, colno, { cond, body, else_ });
 
-export const inlineIf = (lineno: number, colno: number, cond?: Node, body?: Node, else_: Node | null = null): Node =>
-  createNode(T.INLINE_IF, lineno, colno, { cond, body, else_ });
+export interface InlineIfFields {
+  cond?: Node;
+  body?: Node;
+  else_?: Node | null;
+}
+
+export const inlineIf = (lineno: number, colno: number, fields: InlineIfFields = {}): Node =>
+  createNode(T.INLINE_IF, lineno, colno, { else_: null, ...fields });
 
 export const for_ = (lineno: number, colno: number, arr?: Node, name?: Node, body?: Node, else_: Node | null = null): Node =>
   createNode(T.FOR, lineno, colno, { arr, name, body, else_ });
@@ -124,20 +140,52 @@ export const caller = (lineno: number, colno: number, args: Node[] = [], body?: 
 export const call = (lineno: number, colno: number, name: string, args: Node[] = [], body?: Node): Node =>
   createNode(T.CALL, lineno, colno, { name, args, body });
 
-export const import_ = (lineno: number, colno: number, template: Node | string, target: string, withContext = false): Node =>
-  createNode(T.IMPORT, lineno, colno, { template, target, withContext });
+export interface ImportFields {
+  template: Node | string;
+  target: string;
+  withContext?: boolean;
+}
 
-export const fromImport = (lineno: number, colno: number, template: Node | string, names?: Node, withContext = false): Node =>
-  createNode(T.FROM_IMPORT, lineno, colno, { template, names: names ?? nodeList(0, 0), withContext });
+export const import_ = (lineno: number, colno: number, fields: ImportFields): Node =>
+  createNode(T.IMPORT, lineno, colno, { withContext: false, ...fields });
 
-export const set = (lineno: number, colno: number, targets: Node[] = [], value?: Node, operator: string | null = null): Node =>
-  createNode(T.SET, lineno, colno, { targets, value, operator });
+export interface FromImportFields {
+  template: Node | string;
+  names?: Node;
+  withContext?: boolean;
+}
+
+export const fromImport = (lineno: number, colno: number, fields: FromImportFields): Node =>
+  createNode(T.FROM_IMPORT, lineno, colno, {
+    withContext: false,
+    ...fields,
+    names: fields.names ?? nodeList(0, 0),
+  });
+
+export interface SetFields {
+  targets?: Node[];
+  value?: Node;
+  operator?: string | null;
+}
+
+export const set = (lineno: number, colno: number, fields: SetFields = {}): Node =>
+  createNode(T.SET, lineno, colno, { targets: [], operator: null, ...fields });
 
 export const capture = (lineno: number, colno: number, body: Node): Node =>
   createNode(T.CAPTURE, lineno, colno, { body });
 
-export const tryCatch = (lineno: number, colno: number, body: Node, catchBody: Node | null = null, errVar: string | null = null): Node =>
-  createNode(T.TRY_CATCH, lineno, colno, { body, catch: catchBody, errVar });
+export interface TryCatchFields {
+  body: Node;
+  catchBody?: Node | null;
+  errVar?: string | null;
+}
+
+export const tryCatch = (lineno: number, colno: number, fields: TryCatchFields): Node =>
+  createNode(T.TRY_CATCH, lineno, colno, {
+    body: fields.body,
+    catch: fields.catchBody ?? null,
+    errVar: fields.errVar ?? null,
+  });
 
 export const do_ = (lineno: number, colno: number, expr: Node): Node =>
   createNode(T.DO, lineno, colno, { expr });
@@ -145,8 +193,18 @@ export const do_ = (lineno: number, colno: number, expr: Node): Node =>
 export const with_ = (lineno: number, colno: number, assignments: Node[] = [], body: Node | null = null): Node =>
   createNode(T.WITH, lineno, colno, { assignments, body });
 
-export const switch_ = (lineno: number, colno: number, expr: Node, cases: Node[] = [], default_: Node | null = null): Node =>
-  createNode(T.SWITCH, lineno, colno, { expr, cases, default: default_ });
+export interface SwitchFields {
+  expr: Node;
+  cases?: Node[];
+  default_?: Node | null;
+}
+
+export const switch_ = (lineno: number, colno: number, fields: SwitchFields): Node =>
+  createNode(T.SWITCH, lineno, colno, {
+    expr: fields.expr,
+    cases: fields.cases ?? [],
+    default: fields.default_ ?? null,
+  });
 
 export const case_ = (lineno: number, colno: number, cond: Node, body: Node): Node =>
   createNode(T.CASE, lineno, colno, { cond, body });
@@ -175,8 +233,23 @@ export const walrus = (lineno: number, colno: number, target: Node, val: Node): 
 
 export const variableDeclaration = (lineno: number, colno: number, targets: Node[], value: Node): VariableDeclNode => createNode(T.VARIABLE_DECLARATION, lineno, colno, { targets, value });
 export const variableAssignment = (lineno: number, colno: number, targets: Node[], value: Node): VariableDeclNode => createNode(T.VARIABLE_ASSIGNMENT, lineno, colno, { targets, value });
-export const compoundAssignment = (lineno: number, colno: number, targets: Node[], operator: string, value: Node): CompoundAssignNode => createNode(T.COMPOUND_ASSIGNMENT, lineno, colno, { targets, operator, value });
-export const defineBlock = (lineno: number, colno: number, name: string, body: Node, args: MacroArgument[] = []): Node => createNode(T.DEFINE_BLOCK, lineno, colno, { name, body, args });
+export interface CompoundAssignmentFields {
+  targets: Node[];
+  operator: string;
+  value: Node;
+}
+
+export const compoundAssignment = (lineno: number, colno: number, fields: CompoundAssignmentFields): CompoundAssignNode =>
+  createNode(T.COMPOUND_ASSIGNMENT, lineno, colno, { ...fields });
+
+export interface DefineBlockFields {
+  name: string;
+  body: Node;
+  args?: MacroArgument[];
+}
+
+export const defineBlock = (lineno: number, colno: number, fields: DefineBlockFields): Node =>
+  createNode(T.DEFINE_BLOCK, lineno, colno, { args: [], ...fields });
 
 export const templateLiteral = (lineno: number, colno: number, quasis: unknown[] = []): TemplateLiteralNode => createNode(T.TEMPLATE_LITERAL, lineno, colno, { quasis });
 
@@ -205,9 +278,21 @@ const extensionName = (ext: unknown, metadata: ExtensionMetadata): string => {
   return '';
 };
 
-export const callExtension = (lineno: number, colno: number, ext: unknown, prop: string, args?: Node, contentArgs?: Node[]): CallExtensionNode => {
+export interface CallExtensionFields {
+  ext: unknown;
+  prop: string;
+  args?: Node;
+  contentArgs?: Node[];
+}
+
+const buildCallExtension = (
+  type: typeof T.CALL_EXTENSION | typeof T.CALL_EXTENSION_ASYNC,
+  lineno: number,
+  colno: number,
+  { ext, prop, args, contentArgs }: CallExtensionFields
+): CallExtensionNode => {
   const extObj = extensionMetadata(ext);
-  return createNode(T.CALL_EXTENSION, lineno, colno, {
+  return createNode(type, lineno, colno, {
     extName: extensionName(ext, extObj),
     prop,
     args: args ?? nodeList(0, 0),
@@ -216,16 +301,11 @@ export const callExtension = (lineno: number, colno: number, ext: unknown, prop:
   });
 };
 
-export const callExtensionAsync = (lineno: number, colno: number, ext: unknown, prop: string, args?: Node, contentArgs?: Node[]): CallExtensionNode => {
-  const extObj = extensionMetadata(ext);
-  return createNode(T.CALL_EXTENSION_ASYNC, lineno, colno, {
-    extName: extensionName(ext, extObj),
-    prop,
-    args: args ?? nodeList(0, 0),
-    contentArgs: contentArgs ?? [],
-    autoescape: extObj.autoescape ?? true,
-  });
-};
+export const callExtension = (lineno: number, colno: number, fields: CallExtensionFields): CallExtensionNode =>
+  buildCallExtension(T.CALL_EXTENSION, lineno, colno, fields);
+
+export const callExtensionAsync = (lineno: number, colno: number, fields: CallExtensionFields): CallExtensionNode =>
+  buildCallExtension(T.CALL_EXTENSION_ASYNC, lineno, colno, fields);
 
 
 

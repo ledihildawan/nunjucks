@@ -53,5 +53,5 @@ export const parseSwitch = (ctx: ParserContext): Node => {
       fail(ctx, 'parseSwitch: expected "case," "default" or "endswitch," got EOF.');
   }
 
-  return switch_(tag.lineno, tag.colno, expr, cases, defaultCase ?? null);
+  return switch_(tag.lineno, tag.colno, { expr, cases, default_: defaultCase ?? null });
 };
