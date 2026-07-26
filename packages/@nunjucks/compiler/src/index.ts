@@ -1,14 +1,20 @@
-import { pipe, filter, isDefined, isNonNullish, reduce } from 'remeda';
-import { parse } from '@nunjucks/parser';
-import { transform } from '@nunjucks/transformers';
+
 import { add, and, array, bitwiseAnd, bitwiseLShift, bitwiseNot, bitwiseOr, bitwiseRShift, bitwiseXor, caller, compare, concat, decrement, dict, div, floorDiv, funCall, getNodeTypeName, group, increment, inlineIf, is, literal, lookupVal, mod, mul, neg, nodeList, not, nullishCoalesce, optionalChain, or, pipe as pipeNode, pos, pow, slice, sub, symbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { createLog } from '@nunjucks/log';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import type { Frame } from '@nunjucks/runtime';
 import { compileDispatch } from './node-dispatch.ts';
-import { DEFAULT_UNDEFINED_MODE, getUndefinedMode, type UndefinedMode } from '@nunjucks/runtime/undefined';
+import { DEFAULT_UNDEFINED_MODE, type UndefinedMode } from '@nunjucks/runtime/undefined';
 import { createHtmlContextTracker, type HtmlContext } from '@nunjucks/shared';
+
+/**
+ * How `assertType` identifies an acceptable node kind: either the node type
+ * name directly, or a node factory from `@nunjucks/nodes` matched by its
+ * function name. Named here so the interface and the implementation share one
+ * definition instead of restating `string | Function` at each site.
+ */
+export type NodeTypeMatcher = string | { readonly name: string };
 
 export interface Compiler {
   templateName: string | null;
@@ -36,7 +42,7 @@ export interface Compiler {
   getTemplateName: () => string;
   compileChildren: (node: Node, frame?: Frame) => void;
   compileExpression: (node: Node, frame?: Frame) => void;
-  assertType: (node: Node, ...types: Array<string | Function>) => void;
+  assertType: (node: Node, ...types: NodeTypeMatcher[]) => void;
   compile: (node: Node, frame?: Frame) => unknown;
   getCode: () => string;
   emtest: (code: string) => void;
@@ -111,7 +117,9 @@ export function createCompiler(
   };
 
   const emitLines = (...lines: string[]) => {
-    lines.forEach((line) => emitLine(line));
+    lines.forEach((line) => {
+      emitLine(line);
+    });
   };
 
   const emitFuncBegin = (node: Node, name: string) => {
@@ -221,7 +229,7 @@ export function createCompiler(
     compile(node, frame);
   };
 
-  const assertType = (node: Node, ...types: Array<string | Function>) => {
+  const assertType = (node: Node, ...types: NodeTypeMatcher[]) => {
     const typeName = getNodeTypeName(node);
     const matches = types.some(t => {
       if (typeof t === 'string') {

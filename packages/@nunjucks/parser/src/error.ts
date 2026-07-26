@@ -4,7 +4,7 @@ import type { ParserContext } from "./cursor.ts";
 
 const inferCauses = (msg: string): string[] => {
   const lower = msg.toLowerCase();
-  const causes = [];
+  const causes: string[] = [];
 
   if (lower.includes('expected') && lower.includes('expression')) {
     causes.push('Missing expression where one is required');

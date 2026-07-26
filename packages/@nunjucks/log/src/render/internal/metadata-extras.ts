@@ -95,7 +95,7 @@ const buildSnippet = (
     return { snippet: null, snippetLines: [], caret };
   }
 
-  const lastLine = trace.lines[trace.lines.length - 1];
+  const lastLine = trace.lines.at(-1);
   const prefixWidth = String(lastLine?.number ?? 0).length;
   const snippet = trace.lines
     .map(line => ` ${String(line.number).padStart(prefixWidth, ' ')} | ${line.content}`)

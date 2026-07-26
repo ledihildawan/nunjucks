@@ -13,13 +13,13 @@ export const parseRaw = (ctx: ParserContext, tagName?: string): Node | null => {
 
   const rawContent = tok.value;
   const beginTag = tagName || 'raw';
-  const endTag = 'end' + beginTag;
+  const endTag = `end${beginTag}`;
 
   let content = rawContent;
 
   if (typeof content === 'string') {
-    const startMarker = '{% ' + beginTag + ' %}';
-    const endMarker = '{% ' + endTag + ' %}';
+    const startMarker = `{% ${beginTag} %}`;
+    const endMarker = `{% ${endTag} %}`;
     content = content.replace(startMarker, '');
     content = content.replace(endMarker, '');
   }

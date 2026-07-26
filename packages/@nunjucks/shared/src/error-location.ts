@@ -192,7 +192,7 @@ const isCoordinateWithinTemplate = (
   templateErrorLine: number | null,
   templateErrorCol: number | null
 ): boolean => {
-  if (!Number.isInteger(templateErrorLine) || !Number.isInteger(templateErrorCol)) {
+  if (!(Number.isInteger(templateErrorLine) && Number.isInteger(templateErrorCol))) {
     return false;
   }
   const templateLines = template.split('\n');
@@ -248,8 +248,7 @@ const findSubjectOccurrence = (
   ];
 
   for (const { re, group } of patterns) {
-    let match: RegExpExecArray | null;
-    while ((match = re.exec(content)) !== null) {
+    for (let match = re.exec(content); match !== null; match = re.exec(content)) {
       const groupText = match[group];
       if (!groupText) { continue; }
       const groupOffset = match[0].indexOf(groupText);

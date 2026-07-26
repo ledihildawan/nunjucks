@@ -34,7 +34,7 @@ export const parsePrimary = (ctx: ParserContext, noPostfix?: boolean): Node => {
     } else if (tok.value === 'false') {
       val = false;
     } else {
-      fail(ctx, 'invalid boolean: ' + tok.value,
+      fail(ctx, `invalid boolean: ${tok.value}`,
         tok.lineno,
         tok.colno);
     }

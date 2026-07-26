@@ -84,7 +84,9 @@ const walkChildren = (node: Node, walker: (n: Node) => Node): Node => {
   const newProps = mapCOW<unknown>(props, p => walkValue(p, walker));
   if (newProps !== props) {
     const newNode: Record<string, unknown> = { ...node };
-    fieldsList.forEach((f, i) => (newNode[f] = newProps[i]));
+    fieldsList.forEach((f, i) => {
+      newNode[f] = newProps[i];
+    });
     return newNode as Node;
   }
   return node;

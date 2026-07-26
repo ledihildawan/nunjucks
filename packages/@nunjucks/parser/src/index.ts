@@ -7,7 +7,7 @@ import type { ParserContext, ParserExtension, TokenStream } from "./cursor.ts";
 import { parseNodes } from "./top-level.ts";
 import { validateExpression, DEFAULT_SECURITY_CONFIG } from './expression-validator.ts';
 
-interface ParseOptions extends LexerOptions {
+export interface ParseOptions extends LexerOptions {
   security?: Record<string, unknown> | null;
   autoescape?: boolean;
 }

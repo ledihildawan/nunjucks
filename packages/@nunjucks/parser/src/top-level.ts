@@ -16,7 +16,6 @@ import {
 import type { ParserContext } from "./cursor.ts";
 import { parseStatement } from "./statement-parser/index.ts";
 import { parseExpression } from "./expression-parser/index.ts";
-import { parseRaw } from "./statement-parser/raw.ts";
 
 export const parseUntilBlocks = (ctx: ParserContext, ...blockNames: string[]): Node => {
   const prev = ctx.breakOnBlocks;
@@ -29,10 +28,9 @@ export const parseUntilBlocks = (ctx: ParserContext, ...blockNames: string[]): N
 };
 
 export const parseNodes = (ctx: ParserContext): Node[] => {
-  let tok;
   const buf: Node[] = [];
 
-  while ((tok = nextToken(ctx))) {
+  for (let tok = nextToken(ctx); tok; tok = nextToken(ctx)) {
     if (tok.type === TOKEN_DATA) {
       let data: string = tok.value as string;
       const nextTok = peekToken(ctx);
@@ -45,7 +43,7 @@ export const parseNodes = (ctx: ParserContext): Node[] => {
 
       if (nextTok &&
         ((nextTok.type === TOKEN_BLOCK_START &&
-        nextVal.charAt(nextVal.length - 1) === '-') ||
+        nextVal.at(-1) === '-') ||
         (nextTok.type === TOKEN_VARIABLE_START &&
         nextVal.charAt(ctx.tokens.tags.VARIABLE_START.length) === '-') ||
         (nextTok.type === TOKEN_COMMENT &&

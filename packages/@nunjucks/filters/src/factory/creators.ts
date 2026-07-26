@@ -23,7 +23,14 @@ export const createStringFilterWithArgs = <A extends unknown[]>(
     return preserveSafe(value, fn(s, ...mergedArgs));
   };
 
-export const createFilter = <T extends (...args: any[]) => any>(fn: T) =>
+/**
+ * A curried filter implementation: takes the filter's own arguments and
+ * returns the function that finally receives the piped value.
+ * `never[]` in parameter position accepts any concrete argument list.
+ */
+type CurriedFilter = (...args: never[]) => (value: unknown) => unknown;
+
+export const createFilter = <T extends CurriedFilter>(fn: T) =>
   (value: unknown, ...args: Parameters<T>) => fn(...args)(value);
 
 export const createMacroFilter = <T extends unknown[]>(

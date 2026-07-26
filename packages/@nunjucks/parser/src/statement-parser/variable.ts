@@ -1,5 +1,4 @@
 import {
-  TOKEN_BLOCK_END,
   TOKEN_COMMA,
   TOKEN_LEFT_PAREN,
   TOKEN_RIGHT_PAREN,
@@ -7,7 +6,7 @@ import {
 } from '@nunjucks/lexer';
 import { compoundAssignment, defineBlock, variableAssignment, variableDeclaration } from '@nunjucks/nodes';
 import type { MacroArgument, Node } from '@nunjucks/nodes';
-import { peekToken, skipSymbol, skip, skipValue, nextToken, advanceAfterBlockEnd, fail } from "../cursor.ts";
+import { peekToken, skipSymbol, skipValue, nextToken, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
 import { parseUntilBlocks } from "../top-level.ts";

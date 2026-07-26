@@ -14,12 +14,12 @@ describe('createSafeString', () => {
   });
 
   test('valueOf returns stored value', () => {
-    const s = createSafeString('test') as { valueOf(): string };
+    const s = createSafeString('test') as { valueOf: () => string };
     expect(s.valueOf()).toBe('test');
   });
 
   test('toString returns stored value', () => {
-    const s = createSafeString('test') as { toString(): string };
+    const s = createSafeString('test') as { toString: () => string };
     expect(s.toString()).toBe('test');
   });
 
@@ -47,7 +47,7 @@ describe('copySafeness', () => {
   });
 
   test('throws for null target (target.toString fails)', () => {
-    expect(() => copySafeness('plain', null as unknown as { toString(): string })).toThrow();
+    expect(() => copySafeness('plain', null as unknown as { toString: () => string })).toThrow();
   });
 });
 

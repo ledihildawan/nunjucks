@@ -93,7 +93,7 @@ const normalizeValue = (value: unknown, state: NormalizeState, depth: number, se
     if (value instanceof ArrayBuffer) { return `[Binary: ${value.byteLength} bytes]`; }
     if (ArrayBuffer.isView(value)) { return `[Binary: ${value.byteLength} bytes]`; }
     if (value instanceof Map) {
-      const entries = [];
+      const entries: unknown[][] = [];
       let index = 0;
       for (const [key, item] of value) {
         if (index++ >= state.maxEntries) { break; }
@@ -103,7 +103,7 @@ const normalizeValue = (value: unknown, state: NormalizeState, depth: number, se
       return { '[Map]': entries };
     }
     if (value instanceof Set) {
-      const entries = [];
+      const entries: unknown[] = [];
       let index = 0;
       for (const item of value) {
         if (index++ >= state.maxEntries) { break; }

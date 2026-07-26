@@ -1,6 +1,6 @@
 import { pair, with_ } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { peekToken, skipSymbol, skip, skipValue, nextToken, advanceAfterBlockEnd, fail } from "../cursor.ts";
+import { peekToken, skipSymbol, skip, nextToken, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { TOKEN_BLOCK_END, TOKEN_COMMA, TOKEN_OPERATOR } from '@nunjucks/lexer';
 import type { Token } from '@nunjucks/lexer';

@@ -1,12 +1,16 @@
 import { isString, isPlainObject, defaultTo, isArray, keys } from 'remeda';
 import { createCompiler } from '@nunjucks/compiler';
 import { parse } from '@nunjucks/parser';
+import type { ParseOptions } from '@nunjucks/parser';
+import type { UndefinedMode } from '@nunjucks/runtime/undefined';
 import { transform } from '@nunjucks/transformers';
 import { prettifyError, getError } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
 import { createContext } from '@nunjucks/runtime/context';
+import type { ContextEnv, BlockLocation } from '@nunjucks/runtime/context';
 import { HOOK_EVENTS } from '@nunjucks/runtime/hooks';
 import { injectWarningsScript } from '@nunjucks/log';
+import type { Warning, IncludeChain } from '@nunjucks/log';
 import {
   createFrame,
   createSafeString,
@@ -211,16 +215,16 @@ const createTemplateCompiler = (state: TemplateState) => {
       if (state.tmplProps) {
         props = state.tmplProps;
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const c = createCompiler(state.path || '', state.env.opts.undefined as any, state.tmplStr || '');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const ast = (parse as any)(state.tmplStr || '', state.env.opts as any, state.path);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const transformedAst = (transform as any)(ast, state.env.extensionsList as any, state.path);
+        const c = createCompiler(state.path || '', state.env.opts.undefined as UndefinedMode | undefined, state.tmplStr || '');
+        // NOTE: `parse` is (src, extensions, opts) and `transform` is (ast).
+        // Both were previously called through `as any` with the arguments in
+        // the wrong slots -- env.opts landed on `extensions` and the path on
+        // `opts` -- which silently disabled parser extensions and lexer options.
+        const ast = parse(state.tmplStr || '', [], state.env.opts as ParseOptions);
+        const transformedAst = transform(ast);
         c.compile(transformedAst);
         const code = c.getCode();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        props = new Function(code)() as any;
+        props = new Function(code)() as Record<string, unknown> | null;
        }
 
       state.blocks = extractBlocks(props as Record<string, unknown>) as Record<string, (...args: unknown[]) => unknown>;
@@ -258,7 +262,12 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<t
 
     state.env._renderingTemplates.add(state.path!);
 
-    const context = createContext((ctx || {}) as Record<string, unknown>, state.blocks, state.env as any, { blockLocations: state.blockMeta as any });
+    const context = createContext(
+      (ctx || {}) as Record<string, unknown>,
+      state.blocks,
+      state.env as unknown as ContextEnv,
+      { blockLocations: state.blockMeta as Record<string, BlockLocation> }
+    );
     let frame: ReturnType<Frame['push']>;
     if (parentFrame) {
       frame = (parentFrame as Pick<Frame, 'push'>).push(true);
@@ -271,15 +280,15 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<t
       const runtime = createRuntimeWithContext(state.path, state.env.opts, ctx || {});
       const result = await state.rootRenderFunc?.(state.env, context, frame, runtime);
       if (runtime.__warnings__?.length !== undefined && runtime.__warnings__.length > 0 && state.env.opts.dev) {
-        return result + injectWarningsScript(runtime.__warnings__ as any, { dev: true, verbosity: 'medium' });
+        return result + injectWarningsScript(runtime.__warnings__ as Warning[], { dev: true, verbosity: 'medium' });
       }
       return result as string;
     } catch (e) {
       throw prettifyError({
         path: (e as Record<string, unknown>).path as string || state.path,
         withInternals: state.env.opts.dev,
-        err: enrichError(e as any) as any,
-        includeChain: (e as Record<string, unknown>)._includeChain as any || state._includeChain
+        err: enrichError(e as ErrorWithLineInfo) as unknown as Error,
+        includeChain: ((e as Record<string, unknown>)._includeChain as IncludeChain | undefined) || (state._includeChain as unknown as IncludeChain | undefined)
       });
     } finally {
       state.env._renderingTemplates.delete(state.path!);
@@ -346,7 +355,7 @@ export function createTemplate(src: string | TemplateSource, env?: Env, path?: s
       try {
         await state.compiler?.safeCompile();
       } catch (e) {
-        throw prettifyError({ path: state.path, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain as any });
+        throw prettifyError({ path: state.path, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain as unknown as IncludeChain | undefined });
       }
 
       let frame: ReturnType<Frame['push']>;
@@ -357,14 +366,19 @@ export function createTemplate(src: string | TemplateSource, env?: Env, path?: s
       }
       frame.topLevel = true;
 
-      const context = createContext((ctx || {}) as Record<string, unknown>, state.blocks, state.env as any, { blockLocations: state.blockMeta as any });
+      const context = createContext(
+      (ctx || {}) as Record<string, unknown>,
+      state.blocks,
+      state.env as unknown as ContextEnv,
+      { blockLocations: state.blockMeta as Record<string, BlockLocation> }
+    );
       try {
         const runtime = createRuntimeWithContext(state.path, state.env.opts, ctx || {});
         await state.rootRenderFunc?.(state.env, context, frame, runtime);
         return context.getExported();
       } catch (e) {
         if (!(e as Record<string, unknown>).path) { (e as Record<string, unknown>).path = state.path || undefined; }
-        throw prettifyError({ path: (e as Record<string, unknown>).path as string, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain as any });
+        throw prettifyError({ path: (e as Record<string, unknown>).path as string, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain as unknown as IncludeChain | undefined });
       }
     },
   };

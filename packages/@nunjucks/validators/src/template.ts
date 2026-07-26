@@ -7,7 +7,7 @@ interface DangerousCodeViolation {
 }
 
 const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeViolation[] => {
-  const DANGEROUS_PATTERNS = [
+  const DangerousPatterns = [
     { pattern: /\beval\s*\(/, message: 'eval() is not allowed' },
     { pattern: /\bFunction\s*\(/, message: 'Function constructor is not allowed' },
     { pattern: /\brequire\s*\(/, message: 'require() is not allowed' },
@@ -16,7 +16,7 @@ const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeVio
 
   const violations: DangerousCodeViolation[] = [];
 
-  for (const { pattern, message } of DANGEROUS_PATTERNS) {
+  for (const { pattern, message } of DangerousPatterns) {
     const regex = new RegExp(pattern.source, 'g');
     let match: RegExpExecArray | null;
     while (true) {

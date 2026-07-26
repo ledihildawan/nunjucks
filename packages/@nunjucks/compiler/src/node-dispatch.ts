@@ -1,4 +1,4 @@
-import { getNodeTypeName } from '@nunjucks/nodes';
+
 import type { Node, NodeType } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from './index.ts';

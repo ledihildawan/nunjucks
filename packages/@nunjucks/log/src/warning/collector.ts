@@ -1,4 +1,6 @@
-interface Warning {
+/** A collected render-time warning. Exported: it is the element type of
+ * `injectWarningsScript`'s first parameter. */
+export interface Warning {
   message: string;
   undefinedMode?: string;
   code?: string | null;
@@ -7,7 +9,7 @@ interface Warning {
   templateName?: string | null;
 }
 
-interface InjectWarningsOptions {
+export interface InjectWarningsOptions {
   dev?: boolean;
   verbosity?: 'simple' | 'medium' | 'full';
 }
@@ -67,7 +69,7 @@ const formatWarning = (w: Warning | string, options: { verbosity?: 'simple' | 'm
 };
 
 export const injectWarningsScript = (warnings: Warning[], options: InjectWarningsOptions = {}): string => {
-  const { dev = true, verbosity = 'full' } = options;
+  const { verbosity = 'full' } = options;
 
   if (!warnings || warnings.length === 0) { return ''; }
 

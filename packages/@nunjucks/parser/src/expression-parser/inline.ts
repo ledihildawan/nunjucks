@@ -8,7 +8,7 @@ import type { Token } from '@nunjucks/lexer';
 
 type PairNode = Node & { key: Node; value: Node; argument: Node };
 
-const tokenToLiteral = (tok: Token): Node => {
+const _tokenToLiteral = (tok: Token): Node => {
   switch (tok.type) {
     case 'int':
       return literal(tok.lineno, tok.colno, Number(tok.value));

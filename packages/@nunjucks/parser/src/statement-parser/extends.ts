@@ -8,7 +8,7 @@ export const parseExtends = (ctx: ParserContext): Node => {
   const tagName = 'extends';
   const tag = peekToken(ctx);
   if (!skipSymbol(ctx, tagName)) {
-    fail(ctx, 'parseTemplateRef: expected ' + tagName);
+    fail(ctx, `parseTemplateRef: expected ${tagName}`);
   }
 
   const node = extends_(tag.lineno, tag.colno);

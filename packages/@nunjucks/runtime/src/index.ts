@@ -1,5 +1,5 @@
 export { createFrame, lookup, set, type Frame } from './frame.ts';
-export { createContext, isContext, type Context } from './context.ts';
+export { createContext, isContext, type Context, type ContextEnv, type ContextMetadata, type BlockLocation } from './context.ts';
 export {
   createSafeString,
   isSafeString,

@@ -3,7 +3,7 @@
 
 import { createLog, normalizeErrorMetadata, ERROR_DEFINITIONS } from '@nunjucks/log';
 import type { ErrorContext, ErrorDefinitionEntry, WarningContext } from '@nunjucks/log/create-log';
-import { escapeHtml, escapeForContext, type HtmlContext } from '@nunjucks/shared';
+import { escapeForContext, type HtmlContext } from '@nunjucks/shared';
 import { isNonNullish, isFunction, isString, isArray, isPlainObject } from '@nunjucks/shared/type-guards';
 import {
   memberLookup,
@@ -501,9 +501,9 @@ export function lookup(ctx: { lookup?: (key: string) => unknown } | null, key: s
   return val;
 }
 
-export function handleError(this: unknown, error: unknown, lineno: number | null, colno: number | null, runtime?: unknown): never {
+// `_runtime` is passed positionally by generated template code but unused here.
+export function handleError(this: unknown, error: unknown, lineno: number | null, colno: number | null, _runtime?: unknown): never {
   const ctx = getLogContext(this);
-  void runtime;
   const metadata = normalizeErrorMetadata(error, {
     lineno,
     colno,

@@ -1,7 +1,6 @@
 import { tryCatch } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import type { Token } from '@nunjucks/lexer';
-import { peekToken, skipValue, skipSymbol, nextToken, fail } from "../cursor.ts";
+import { peekToken, skipSymbol, nextToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parseUntilBlocks } from "../top-level.ts";
 
@@ -45,7 +44,7 @@ export const parseTry = (ctx: ParserContext): Node => {
       // consumed block end
     }
   } else {
-    fail(ctx, 'expected endtry, got ' + peekToken(ctx).value);
+    fail(ctx, `expected endtry, got ${peekToken(ctx).value}`);
   }
 
   return tryCatch(tag.lineno, tag.colno, body, catchBody, errVar);

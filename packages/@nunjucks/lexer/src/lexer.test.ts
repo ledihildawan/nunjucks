@@ -22,7 +22,7 @@ const collect = (src: string, opts?: Parameters<typeof createTokenizer>[1]): Tok
   const tokenizer = createTokenizer(src, opts);
   const tokens: Token[] = [];
   let token: Token | null;
-  while ((token = tokenizer.nextToken()) !== null) tokens.push(token);
+  while ((token = tokenizer.nextToken()) !== null) { tokens.push(token); }
   return tokens;
 };
 
@@ -133,8 +133,8 @@ describe('lex - raw text', () => {
     const tokens = collect('Hello {{ name }}!');
     expect(tokens[0]!.type).toBe(TOKEN_DATA);
     expect(tokens[0]!.value).toBe('Hello ');
-    expect(tokens[tokens.length - 1]!.type).toBe(TOKEN_DATA);
-    expect(tokens[tokens.length - 1]!.value).toBe('!');
+    expect(tokens.at(-1)!.type).toBe(TOKEN_DATA);
+    expect(tokens.at(-1)!.value).toBe('!');
   });
 });
 
@@ -253,8 +253,8 @@ describe('lex - custom delimiters', () => {
     });
     expect(tokens[0]!.type).toBe(TOKEN_BLOCK_START);
     expect(tokens[0]!.value).toBe('<%');
-    expect(tokens[tokens.length - 1]!.type).toBe(TOKEN_BLOCK_END);
-    expect(tokens[tokens.length - 1]!.value).toBe('%>');
+    expect(tokens.at(-1)!.type).toBe(TOKEN_BLOCK_END);
+    expect(tokens.at(-1)!.value).toBe('%>');
   });
 
   test('default delimiters are exposed via tags', () => {

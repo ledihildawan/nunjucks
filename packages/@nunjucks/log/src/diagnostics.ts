@@ -59,10 +59,12 @@ export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, templ
   const { lineno, colno, lineBase, templatePath, sourceContent, sourceStartLine, preferCallerLocation } = resolved;
 
   // IMPORTANT: do NOT mutate `err` — copy fields off it before re-normalizing.
-  const errSnapshot = { ...(err as Record<string, unknown>) };
-  delete errSnapshot.lineBase;
-  delete errSnapshot.lineno;
-  delete errSnapshot.colno;
+  const {
+    lineBase: _droppedLineBase,
+    lineno: _droppedLineno,
+    colno: _droppedColno,
+    ...errSnapshot
+  } = err as Record<string, unknown>;
   Object.assign(errSnapshot, { name: (err as Error).name, message: (err as Error).message });
 
   const phase = initialMetadata.phase || config.phase || 'render';

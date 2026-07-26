@@ -1,4 +1,7 @@
 // SAFE STRING - Marks strings as already escaped for autoescape handling
+// Extends the String object type (not the `string` primitive): a SafeString is
+// an object built on String.prototype, so String's generic methods apply to it.
+// biome-ignore lint/complexity/noBannedTypes: String is the object type here, and `string` is not a legal interface parent.
 export interface SafeString extends String {
   val: string;
   valueOf: () => string;

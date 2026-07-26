@@ -1,5 +1,3 @@
-type CaptureGroup = string;
-
 export type SubjectExtractor = (groups: RegExpMatchArray) => string | null;
 export type ExtraExtractor = (groups: RegExpMatchArray) => Record<string, string> | null;
 

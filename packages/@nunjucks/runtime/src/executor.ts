@@ -5,6 +5,8 @@ import {
   ensureDefined, isSafeString, markSafe, copySafeness,
   lookup,
   createContext,
+  type ContextEnv,
+  type BlockLocation,
   createFrame, type Frame,
   makeKeywordArgs,
   isKeywordArgs,
@@ -47,7 +49,7 @@ const detectUndefinedInput = (context: unknown, inputValue: string): UndefinedIn
 
   try {
     let val: unknown = context;
-    let undefinedAt: number = -1;
+    let undefinedAt = -1;
     for (let i = 0; i < parts.length; i++) {
       if (val === undefined || val === null) {
         undefinedAt = i;
@@ -365,7 +367,12 @@ export const execute = async (code: string, context: Record<string, unknown> = {
   const env = buildEnvObject(config as BuildEnvObjectConfig, getFilter, getTest);
 
   if (config.env) {
-    ctx = createContext(context, blocks as Record<string, (...args: unknown[]) => unknown>, config.env as any, { blockLocations: blockMeta as any }) as unknown as Record<string, unknown>;
+    ctx = createContext(
+      context,
+      blocks as Record<string, (...args: unknown[]) => unknown>,
+      config.env as unknown as ContextEnv,
+      { blockLocations: blockMeta as Record<string, BlockLocation> }
+    ) as unknown as Record<string, unknown>;
     ctx._autoescape = config.autoescape ?? true;
   } else {
     ctx.blocks = blocks as Record<string, (...args: unknown[]) => unknown>;

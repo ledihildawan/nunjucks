@@ -12,7 +12,7 @@ const makeCtx = (): Compiler & { emitted: string[] } => {
     buffer: 'output',
     undefinedMode: 'chainable',
     emit: (s: string) => { emitted.push(s); },
-    emitLine: (s: string) => { emitted.push(s + '\n'); },
+    emitLine: (s: string) => { emitted.push(`${s}\n`); },
     compileChildren: (node: { children?: unknown[] }, frame?: unknown) =>
       (node.children ?? []).forEach((c) => compileDispatch(ctx, c as never, frame as Frame)),
     fail: (msg: string) => { throw new Error(msg); },

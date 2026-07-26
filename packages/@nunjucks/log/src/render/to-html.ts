@@ -115,8 +115,6 @@ export const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {
     version = '3.2.4',
     timestamp,
     csp,
-    jsCaller,
-    jsCallerErrorLine,
     sourceTrace,
     ide = 'vscode',
     verbosity = 'full',

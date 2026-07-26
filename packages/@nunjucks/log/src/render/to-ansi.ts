@@ -69,7 +69,7 @@ const formatSourceTrace = (
 
   return lines.flatMap((line) => {
     const codeLine = formatCodeLine(line.number, line.content, line.isError, lineNumWidth);
-    if (!line.isError || !caret) {
+    if (!(line.isError && caret)) {
       return [codeLine];
     }
     return [codeLine, formatCaretLine(lineNumWidth, caret.charStart, caret.carets)];
@@ -150,7 +150,7 @@ const formatStackLine = (
 ): string => {
   const trimmed = line.trim();
   const pathMatch = trimmed.match(/\(([^()]+):(\d+):(\d+)\)$/u);
-  if (!pathMatch?.[1] || !pathMatch[2]) {
+  if (!(pathMatch?.[1] && pathMatch[2])) {
     return `  ${trimmed}`;
   }
 

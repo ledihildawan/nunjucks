@@ -12,7 +12,7 @@ export const parseDotAccess = (ctx: ParserContext, tok: Token, target: Node): No
 
   if (val.type !== TOKEN_SYMBOL) {
     const targetName = (target?.name as string) || 'expression';
-    fail(ctx, 'expected name as lookup value after dot on ' + targetName + ', got ' + val.value,
+    fail(ctx, `expected name as lookup value after dot on ${targetName}, got ${val.value}`,
       val.lineno,
       val.colno);
   }

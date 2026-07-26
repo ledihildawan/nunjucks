@@ -11,20 +11,30 @@ const createDefaultEnv = (): Env => ({
   opts: {},
 });
 
-interface Env {
+/**
+ * The minimal environment shape the runtime context needs. Exported because it
+ * is a parameter type of `createContext`: callers cannot type their argument
+ * without it.
+ */
+export interface ContextEnv {
   globals: Record<string, unknown>;
   getFilter: (name: string) => unknown;
   opts: Record<string, unknown>;
 }
 
-interface BlockLocation {
+/** Backwards-compatible alias for the environment shape used by this module. */
+type Env = ContextEnv;
+
+export interface BlockLocation {
   lineno?: number | null;
   colno?: number | null;
 }
 
-interface Metadata {
+export interface ContextMetadata {
   blockLocations?: Record<string, BlockLocation>;
 }
+
+type Metadata = ContextMetadata;
 
 export interface Context {
   env: Env;
@@ -121,7 +131,8 @@ export function createContext(
 
   const getBlock = (name: string, lineno: number | null = null, colno: number | null = null): (...args: unknown[]) => unknown => {
     validateBlocks();
-    if (!blocksVar[name]) {
+    const firstBlock = blocksVar[name]?.[0];
+    if (!firstBlock) {
       const location = blockLocationsVar[name] || {};
       throw createLog(
         'error',
@@ -136,7 +147,7 @@ export function createContext(
         },
       );
     }
-    return blocksVar[name]?.[0]!;
+    return firstBlock;
   };
 
   const getSuper = (

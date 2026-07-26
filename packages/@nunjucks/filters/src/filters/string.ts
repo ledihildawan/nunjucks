@@ -20,6 +20,8 @@ export const fallback = createMacroFilter(['val', 'def', 'bool'], (val: unknown,
   return val;
 });
 
+// biome-ignore lint/suspicious/noShadowRestrictedNames: `escape` is the public
+// name of this Nunjucks filter; renaming it would break templates.
 export const escape = safeHtml;
 
 export const tojson = (value: unknown): SafeString => safeString(JSON.stringify(value));

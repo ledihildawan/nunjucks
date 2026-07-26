@@ -68,7 +68,7 @@ export const parseOptionalChain = (ctx: ParserContext, tok: Token, target: Node)
 
   if (val2.type !== TOKEN_SYMBOL) {
     const targetName = (target?.name as string) || 'expression';
-    fail(ctx, 'expected name as lookup value after ?. on ' + targetName + ', got ' + val2.value,
+    fail(ctx, `expected name as lookup value after ?. on ${targetName}, got ${val2.value}`,
       val2.lineno,
       val2.colno);
   }

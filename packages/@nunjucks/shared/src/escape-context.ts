@@ -87,9 +87,10 @@ interface ScriptStyleScan {
 // lastIndex is belt-and-braces rather than load-bearing.
 const lastMatchEnd = (re: RegExp, text: string): number => {
   let last = -1;
-  let match;
-  while ((match = re.exec(text)) !== null) {
+  let match: RegExpExecArray | null = re.exec(text);
+  while (match !== null) {
     last = match.index + match[0]!.length;
+    match = re.exec(text);
   }
   re.lastIndex = 0;
   return last;
@@ -97,9 +98,10 @@ const lastMatchEnd = (re: RegExp, text: string): number => {
 
 const lastMatchStart = (re: RegExp, text: string): number => {
   let last = -1;
-  let match;
-  while ((match = re.exec(text)) !== null) {
+  let match: RegExpExecArray | null = re.exec(text);
+  while (match !== null) {
     last = match.index;
+    match = re.exec(text);
   }
   re.lastIndex = 0;
   return last;
@@ -126,14 +128,14 @@ const detectAttributeContext = (before: string, scriptStyleResult: ScriptStyleSc
   }
 
   const openTagMatch = /<[a-zA-Z][a-zA-Z0-9]*(?:\s+[^>]*)?$/i.exec(before);
-  if (!openTagMatch) return 'html';
+  if (!openTagMatch) { return 'html'; }
 
   const openTagContent = before.slice(openTagMatch.index);
 
-  if (!openTagContent.includes('=')) return 'html';
+  if (!openTagContent.includes('=')) { return 'html'; }
 
-  const equalsMatch = /=[\s]*["']?/.exec(openTagContent);
-  if (!equalsMatch) return 'html';
+  const equalsMatch = /[=][\s]*["']?/.exec(openTagContent);
+  if (!equalsMatch) { return 'html'; }
 
   const afterEquals = openTagContent.slice(equalsMatch.index + equalsMatch[0]!.length);
 

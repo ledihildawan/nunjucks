@@ -81,7 +81,7 @@ describe('resolveLocation', () => {
 
   describe('template-in-caller matching', () => {
     test('finds template in caller file and remaps col from template-relative to caller-relative', async () => {
-      const fakeCallerContent = [
+      const _fakeCallerContent = [
         '// some header',
         'const x = 1;',
         'function helper() {}',

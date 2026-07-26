@@ -98,7 +98,7 @@ const validateFilter = (dangerousFilters: Set<string>, allowedFilterSet: Set<str
   return !strict;
 };
 
-const traverseAST = (node: unknown, callback: (node: Node) => void): void => {
+const traverseAst = (node: unknown, callback: (node: Node) => void): void => {
   if (!node || typeof node !== 'object') { return; }
 
   const nodeObj = node as AstNode;
@@ -106,39 +106,39 @@ const traverseAST = (node: unknown, callback: (node: Node) => void): void => {
   if (typeof nodeObj.type === 'string') { callback(nodeObj as unknown as Node); }
 
   if (nodeObj.children && Array.isArray(nodeObj.children)) {
-    (nodeObj.children as unknown[]).forEach((child) => traverseAST(child, callback));
+    (nodeObj.children as unknown[]).forEach((child) => traverseAst(child, callback));
   }
 
   if (nodeObj.body) {
     if (Array.isArray(nodeObj.body)) {
-      (nodeObj.body as unknown[]).forEach((child) => traverseAST(child, callback));
+      (nodeObj.body as unknown[]).forEach((child) => traverseAst(child, callback));
     } else {
-      traverseAST(nodeObj.body, callback);
+      traverseAst(nodeObj.body, callback);
     }
   }
 
   if (nodeObj.alternate) {
-    traverseAST(nodeObj.alternate, callback);
+    traverseAst(nodeObj.alternate, callback);
   }
 
   if (nodeObj.test) {
-    traverseAST(nodeObj.test, callback);
+    traverseAst(nodeObj.test, callback);
   }
 
   if (nodeObj.expr) {
-    traverseAST(nodeObj.expr, callback);
+    traverseAst(nodeObj.expr, callback);
   }
 
   if (nodeObj.name) {
-    traverseAST(nodeObj.name, callback);
+    traverseAst(nodeObj.name, callback);
   }
 
   if (nodeObj.args && Array.isArray(nodeObj.args)) {
-    (nodeObj.args as unknown[]).forEach((child) => traverseAST(child, callback));
+    (nodeObj.args as unknown[]).forEach((child) => traverseAst(child, callback));
   }
 
   if (nodeObj.target) {
-    traverseAST(nodeObj.target, callback);
+    traverseAst(nodeObj.target, callback);
   }
 };
 
@@ -211,7 +211,7 @@ export const createWhitelistValidator = (options: WhitelistValidatorOptions = {}
 
 export const scanASTForTags = (ast: AstNode | Node | null | undefined, callback: (node: Node) => void): void => {
   if (!ast) { return; }
-  traverseAST(ast, callback);
+  traverseAst(ast, callback);
 };
 
 export interface TemplateWhitelistViolation {

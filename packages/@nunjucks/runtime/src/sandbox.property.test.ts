@@ -1,11 +1,9 @@
 import { describe, test, expect } from 'bun:test';
-import * as fc from 'fast-check';
 import {
   createSandboxedObject,
   createSandboxedContext,
   wrapMemberAccess,
   isCodeExecutionPattern,
-  BLOCKED_KEYS_LIST,
 } from '@nunjucks/runtime/sandbox';
 import { validateContextKeys } from '@nunjucks/runtime/security';
 

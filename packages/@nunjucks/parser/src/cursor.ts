@@ -96,7 +96,7 @@ export const skip = (ctx: ParserContext, type: Token['type']): boolean => {
 export const expect = (ctx: ParserContext, type: Token['type']): Token => {
   const tok = nextToken(ctx);
   if (tok.type !== type) {
-    fail(ctx, 'expected ' + type + ', got ' + tok.type, tok.lineno, tok.colno);
+    fail(ctx, `expected ${type}, got ${tok.type}`, tok.lineno, tok.colno);
   }
   return tok;
 };
@@ -145,7 +145,7 @@ export const advanceAfterBlockEnd = (ctx: ParserContext, name?: string): Token =
       ctx.dropLeadingWhitespace = true;
     }
   } else {
-    fail(ctx, 'expected block end in ' + name + ' statement');
+    fail(ctx, `expected block end in ${name} statement`);
   }
 
   return tok;

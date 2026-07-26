@@ -22,7 +22,7 @@ describe('findContextDangerousValues', () => {
   });
 
   test('flags Buffer instances', () => {
-    if (typeof Buffer === 'undefined') return;
+    if (typeof Buffer === 'undefined') { return; }
     const paths = findContextDangerousValues({ token: Buffer.from('secret') });
     expect(paths).toContain('token');
   });

@@ -41,9 +41,7 @@ const extractVarName = (node: Node): string | null => {
   return null;
 };
 
-const extractLocation = (node: Node): { lineno: number | null; colno: number | null } => {
-  return extractPropertyLocation(node);
-};
+const extractLocation = (node: Node): { lineno: number | null; colno: number | null } => extractPropertyLocation(node);
 
 export const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => {
   const children = node.children;

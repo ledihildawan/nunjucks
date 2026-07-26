@@ -1,33 +1,33 @@
 import { describe, test, expect } from 'bun:test';
 import { ERROR_DEFINITIONS, getError } from '@nunjucks/log';
 
-const AUDIT_CONFIG = {
+const _AUDIT_CONFIG = {
   minCauses: 1,
   minFixQuality: 'ok',
 };
 
 const isLowQualityFix = (fix: unknown): boolean => {
-  if (!fix) return true;
-  if (typeof fix !== 'string') return true;
+  if (!fix) { return true; }
+  if (typeof fix !== 'string') { return true; }
   const trimmed = fix.trim();
-  if (trimmed.length < 5) return true;
-  if (trimmed.toLowerCase().includes('this is likely')) return true;
-  if (trimmed.toLowerCase().includes('check template syntax')) return true;
-  if (trimmed.toLowerCase().includes('check that the')) return true;
-  if (trimmed.toLowerCase() === 'check template syntax') return true;
-  if (trimmed.toLowerCase() === 'ensure the value is defined') return true;
-  if (trimmed.toLowerCase() === 'check that the function exists') return true;
+  if (trimmed.length < 5) { return true; }
+  if (trimmed.toLowerCase().includes('this is likely')) { return true; }
+  if (trimmed.toLowerCase().includes('check template syntax')) { return true; }
+  if (trimmed.toLowerCase().includes('check that the')) { return true; }
+  if (trimmed.toLowerCase() === 'check template syntax') { return true; }
+  if (trimmed.toLowerCase() === 'ensure the value is defined') { return true; }
+  if (trimmed.toLowerCase() === 'check that the function exists') { return true; }
   return false;
 };
 
 const isLowQualityCauses = (causes: unknown): boolean => {
-  if (!Array.isArray(causes) || causes.length === 0) return true;
+  if (!Array.isArray(causes) || causes.length === 0) { return true; }
   return causes.every((c: unknown) => typeof c === 'string' && c.toLowerCase().includes('internal'));
 };
 
 describe('error definitions audit', () => {
-  const META_ERROR_NAMES = ['LINE_INFO_MATCH', 'COLUMN_INFO_MATCH', 'INCLUDED_FROM_MATCH', 'INCLUDED_FROM_WITH_LINE_MATCH'];
-  const errors = Object.entries(ERROR_DEFINITIONS).filter(([name]) => !META_ERROR_NAMES.includes(name));
+  const MetaErrorNames = ['LINE_INFO_MATCH', 'COLUMN_INFO_MATCH', 'INCLUDED_FROM_MATCH', 'INCLUDED_FROM_WITH_LINE_MATCH'];
+  const errors = Object.entries(ERROR_DEFINITIONS).filter(([name]) => !MetaErrorNames.includes(name));
 
   test('all error definitions have causes', () => {
     const missingCauses = [];
@@ -83,7 +83,7 @@ describe('error definitions audit', () => {
     const errsNeedingTemplate = ['SYNTAX_ERROR', 'PARSER_UNEXPECTED_TOKEN', 'UNKNOWN_BLOCK_TAG', 'EXPECTED_VARIABLE_END', 'PARSER_VARIABLE_NAME', 'PARSER_EXPRESSION', 'PARSER_TAG_NAME'];
     const missingTemplateSyntax = [];
     for (const name of errsNeedingTemplate) {
-      if (!ERROR_DEFINITIONS[name as keyof typeof ERROR_DEFINITIONS]) continue;
+      if (!ERROR_DEFINITIONS[name as keyof typeof ERROR_DEFINITIONS]) { continue; }
       const fix = getError(name as any).fixCode;
       if (fix && !fix.includes('{') && !fix.includes('{%') && !fix.includes('{{') && !fix.includes('%}')) {
         missingTemplateSyntax.push(name);

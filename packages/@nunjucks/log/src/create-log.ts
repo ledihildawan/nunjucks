@@ -149,12 +149,11 @@ const normalizeContext = <T extends BaseContext>(
   ...extra(context ?? {})
 } as T);
 
-const isErrorDefinitionEntry = (data: any): data is ErrorDefinitionEntry =>
-  typeof data === 'object' &&
-  data !== null &&
-  'message' in data &&
-  (typeof data.message === 'function' || typeof data.message === 'string') &&
-  !('lineno' in data);
+const isErrorDefinitionEntry = (data: unknown): data is ErrorDefinitionEntry => {
+  if (typeof data !== 'object' || data === null || !('message' in data)) { return false; }
+  const { message } = data as { message: unknown };
+  return (typeof message === 'function' || typeof message === 'string') && !('lineno' in data);
+};
 
 interface LegacyLogData {
   message: string;
@@ -206,16 +205,16 @@ const buildErrorOutput = (err: TemplateError) => async (options: OutputOptions =
   // Compute the source trace ONCE and share it with every presenter, so the
   // line-math / windowing / caret logic lives in exactly one place. Skipped
   // for 'simple' verbosity, which shows only the message and never a trace.
-  const sourceTrace = verbosity !== 'simple'
-    ? await buildSourceTrace({
+  const sourceTrace = verbosity === 'simple'
+    ? null
+    : await buildSourceTrace({
         sourceContent: err.sourceContent ?? null,
         templatePath: options.templatePath ?? err.templatePath ?? err.templateName ?? null,
         lineno: err.lineno,
         colno: err.colno,
         lineBase: normalizeLineBase(options.isJsCaller ? 'one' : err.lineBase),
         sourceStartLine: err.sourceStartLine ?? 1
-      })
-    : null;
+      });
 
   const opts = createFormatterState({
     metadata: toFormatterMetadata(err, err.renderContext),
@@ -337,7 +336,9 @@ export function isTemplateError(obj: unknown): obj is TemplateError {
   return (obj as TemplateError)?.[TEMPLATE_ERROR] === true;
 }
 
-interface IncludeChain {
+/** Where an included/extended template was pulled in from. Exported: it is a
+ * field type of `prettifyError`'s options and of `TemplateError`. */
+export interface IncludeChain {
   parentTmpl: string;
   parentLineno: number;
   parentColno?: number | null;

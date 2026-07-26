@@ -8,7 +8,7 @@ export const parseInclude = (ctx: ParserContext): Node => {
   const tagName = 'include';
   const tag = peekToken(ctx);
   if (!skipSymbol(ctx, tagName)) {
-    fail(ctx, 'parseInclude: expected ' + tagName);
+    fail(ctx, `parseInclude: expected ${tagName}`);
   }
 
   const node = include(tag.lineno, tag.colno);

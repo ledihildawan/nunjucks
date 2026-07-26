@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 import { HOOK_EVENTS, globalHooks, createHookEmitter, hookable } from './hooks.ts';
 
 describe('HOOK_EVENTS', () => {

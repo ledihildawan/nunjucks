@@ -7,7 +7,7 @@ import {
 import { isFunCall, nodeList, pipe, symbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skip, skipValue, expect } from "../cursor.ts";
-import type { ParserContext, MutableNode } from "../cursor.ts";
+import type { ParserContext, } from "../cursor.ts";
 import { parsePostfix } from "./index.ts";
 
 export const parseFilterCallName = (ctx: ParserContext): Node => {
@@ -15,7 +15,7 @@ export const parseFilterCallName = (ctx: ParserContext): Node => {
   let name = tok.value as string;
 
   while (skipValue(ctx, TOKEN_OPERATOR, '.')) {
-    name += '.' + (expect(ctx, TOKEN_SYMBOL).value as string);
+    name += `.${expect(ctx, TOKEN_SYMBOL).value as string}`;
   }
 
   return symbol(tok.lineno, tok.colno, name);

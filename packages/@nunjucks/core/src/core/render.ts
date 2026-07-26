@@ -1,6 +1,7 @@
 import EventEmitter from 'node:events';
 import { createCompiler } from '@nunjucks/compiler';
 import { parse } from '@nunjucks/parser';
+import type { ParseOptions } from '@nunjucks/parser';
 import { transform } from '@nunjucks/transformers';
 import { execute, type ExecuteConfig } from '@nunjucks/runtime/executor';
 import { validateTemplate, validateConfig, validateRenderContext, findContextDangerousValues } from '@nunjucks/validators';
@@ -196,10 +197,8 @@ interface CompileResult {
 
 const compileTemplate = (templateSource: string, config: RenderConfig, templateName: string): CompileResult => {
   const c = createCompiler(templateName, (config.undefined || 'chainable') as 'chainable' | 'strict' | 'debug', templateSource);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ast = (parse as any)(templateSource, [], { undefined: config.undefined });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const transformedAst = (transform as any)(ast, [], templateName);
+  const ast = parse(templateSource, [], { undefined: config.undefined } as ParseOptions);
+  const transformedAst = transform(ast);
   c.compile(transformedAst);
   return { code: c.getCode() };
 };

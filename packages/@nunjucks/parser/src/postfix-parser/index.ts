@@ -5,7 +5,7 @@ import {
 } from '@nunjucks/lexer';
 import { decrement, increment } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { nextToken, peekToken, fail } from "../cursor.ts";
+import { nextToken, peekToken, } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parseFunCall } from "./fun-call.ts";
 import { parseBracketAccess } from "./lookup.ts";

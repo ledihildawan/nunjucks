@@ -1,8 +1,9 @@
 export { createLog, isTemplateError, prettifyError } from './create-log.ts';
-export type { TemplateError, TemplateWarning, ErrorInfo, WarningInfo, ErrorContext, WarningContext, OutputOptions, ErrorDefinitionEntry } from './create-log.ts';
+export type { TemplateError, TemplateWarning, ErrorInfo, WarningInfo, ErrorContext, WarningContext, OutputOptions, ErrorDefinitionEntry, IncludeChain } from './create-log.ts';
 export { toHtml, toAnsi, toText, toConsoleString, CSS, PRODUCTION_BODY, TOGGLE_SCRIPT } from './render/index.ts';
 export { classify, classifyFromError } from './errors/classify.ts';
 export { injectWarningsScript } from './warning/collector.ts';
+export type { Warning, InjectWarningsOptions } from './warning/collector.ts';
 export { ERROR_DEFINITIONS, ERRORS, PATTERNS, RULES, DEFAULT_CLASSIFICATION, getError } from './errors/registry.ts';
 export { createErrorDefinition, ERROR_TEMPLATES } from './errors/factory.ts';
 export { normalizeLogMetadata, createFormatterState } from './render/internal/metadata.ts';

@@ -1,4 +1,4 @@
-import DOMPurify from 'isomorphic-dompurify';
+import DomPurify from 'isomorphic-dompurify';
 import { safeString } from '../factory/index.ts';
 
 export interface DomPurifyConfig {
@@ -25,6 +25,6 @@ export const getDefaultDomPurifyConfig = (): DomPurifyConfig => ({ ...defaultCon
 export const sanitize = (str: unknown, config?: DomPurifyConfig): string => {
   const input = String(str);
   const mergedConfig = { ...defaultConfig, ...config };
-  const clean = DOMPurify.sanitize(input, mergedConfig);
+  const clean = DomPurify.sanitize(input, mergedConfig);
   return safeString(clean) as unknown as string;
 };
