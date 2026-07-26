@@ -56,6 +56,16 @@
             "noReExportAll": "off",
             "noNamespaceImport": "off"
           },
+          "complexity": {
+            "noExcessiveLinesPerFunction": {
+              "level": "error",
+              "options": { "maxLines": 100 }
+            },
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": { "maxAllowedComplexity": 35 }
+            }
+          },
           "style": {
             "useNamingConvention": {
               "level": "error",
@@ -103,7 +113,11 @@
           },
           "style": {
             "noMagicNumbers": "off",
-            "noNonNullAssertion": "off"
+            "noNonNullAssertion": "off",
+            "noExcessiveLinesPerFile": "off"
+          },
+          "complexity": {
+            "noExcessiveLinesPerFunction": "off"
           },
           "performance": {
             "useTopLevelRegex": "off"

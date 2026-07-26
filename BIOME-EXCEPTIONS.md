@@ -20,6 +20,34 @@ Anything that *can* be fixed stays on. Local, one-off exceptions use a
 
 | `correctness/noUnresolvedImports` | Two unrelated causes, both outside our control. In tests, every finding is `import { ... } from 'bun:test'`, a module namespace Biome does not know. In production source, the findings are `escapeHtml`, which reaches its importers through a two-hop re-export (`shared/index.ts` → `escape-context.ts` → `escape.ts`) that Biome's resolver does not follow. TypeScript resolves all of them, and the build and tests pass. Note the second cause is a direct consequence of `noExportedImports`, which is on and requires exactly that re-export form. |
 
+## Size and complexity thresholds
+
+These are raised from Biome's defaults rather than disabled. The defaults
+(50 lines per function, complexity 15) flagged 130 findings with a median
+function length of 89 lines, so they were not identifying outliers — they were
+describing the codebase.
+
+The numbers below were chosen from what the code looks like *after* the
+functions that genuinely needed splitting were split:
+
+| Rule | Default | Here | Why |
+|---|---|---|---|
+| `noExcessiveCognitiveComplexity` | 15 | 35 | The six functions worth splitting all measured 47 or above (compileDestructuring 82, toHtml 68, the expression validator 55, findFirst 49, normalizeValue 47, createLog 38). After splitting they sit between 17 and 31. 35 is above the settled band and below the "this needs work" band. |
+| `noExcessiveLinesPerFunction` | 50 | 100 | Same reasoning. Well-structured functions here land at 50–90 lines; the ones that needed splitting were 210 and up. |
+
+A caveat worth stating: splitting a function creates new function boundaries,
+and each new boundary is measured independently. Six substantial refactors
+reduced the total finding count by four, because the extracted functions
+picked up findings of their own. Chasing zero on these rules does not converge.
+
+## Test files only, for the size rules
+
+`noExcessiveLinesPerFunction` and `noExcessiveLinesPerFile` are off for
+`*.test.ts`. 27 of the 55 function-length findings were `describe()`
+callbacks — a whole test suite measured as if it were one function. That is a
+category error, not a finding. The complexity rule stays on for tests, where it
+reported nothing anyway.
+
 ## Parser package only (`packages/@nunjucks/parser/src/**`)
 
 | Rule | Why it is off |
