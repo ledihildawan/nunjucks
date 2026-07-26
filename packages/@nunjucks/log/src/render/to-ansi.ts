@@ -1,4 +1,6 @@
 import picocolors from 'picocolors';
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import { keys } from 'remeda';
 import { shortenPath } from './internal/path-shortener.ts';
 import { toDisplayLocation } from './internal/location.ts';
@@ -212,20 +214,21 @@ const buildSourceTrace = (
   const sourceLines = sourceContent.split('\n');
   const startLine = Math.max(0, displayLineno - 2);
   const endLine = Math.min(sourceLines.length, displayLineno + 3);
+  const errorIndex = displayLineno - 1;
 
   const traceLines: SourceTraceLine[] = Array.from(
     { length: endLine - startLine },
     (_, i) => ({
       lineNum: sourceStartLine + startLine + i,
       content: sourceLines[startLine + i] || '',
-      isError: startLine + i === displayLineno
+      isError: startLine + i === errorIndex
     })
   );
 
   return formatSourceTrace(traceLines, displayColno);
 };
 
-export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
+export const toAnsi = async (error: unknown, options: AnsiOptions = {}): Promise<string> => {
   if (!error) { return ''; }
 
   const { verbosity = 'full', templatePath, lineno, colno, ide = 'vscode', sourceStartLine = 1 } = options;
@@ -292,11 +295,30 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   const resolvedPath = path || (error as { templateName?: string }).templateName || '';
   const isInlineJsCaller = resolvedPath && /\.(js|mjs|cjs|ts|mts|cts)$/iu.test(resolvedPath);
   const isInlineTemplate = options.sourceContent && options.sourceContent.split('\n').length <= 2;
-  const shouldShowSourceTrace = options.sourceContent && displayLineno !== null && !(isInlineJsCaller && isInlineTemplate);
+
+  let sourceContent = options.sourceContent;
+  let srcStartLine = options.sourceStartLine ?? 1;
+
+  if (isInlineJsCaller && isInlineTemplate && resolvedPath && displayLineno !== null) {
+    try {
+      let filePath = resolvedPath;
+      if (/^[a-zA-Z]:[/\\]/u.test(filePath) || filePath.startsWith('/')) {
+        filePath = filePath.replace(/\//gu, '\\');
+      } else {
+        filePath = resolve(filePath);
+      }
+      sourceContent = await readFile(filePath, 'utf-8');
+      srcStartLine = 1;
+    } catch {
+      sourceContent = options.sourceContent;
+    }
+  }
+
+  const shouldShowSourceTrace = sourceContent && displayLineno !== null;
 
   if (shouldShowSourceTrace) {
     parts.push(picocolors.bold('Source Trace:'));
-    parts.push(buildSourceTrace(options.sourceContent, displayLineno, displayColno, options.sourceStartLine ?? 1).join('\n'));
+    parts.push(buildSourceTrace(sourceContent, displayLineno, displayColno, srcStartLine).join('\n'));
   }
 
   const causesStr = formatCausesAnsi(causes);

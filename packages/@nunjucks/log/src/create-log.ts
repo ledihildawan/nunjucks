@@ -207,7 +207,7 @@ const createOutputFn = (type: 'error' | 'warning') => {
         }
       });
 
-      if (options.format === 'ansi') { return toAnsi(this, opts); }
+      if (options.format === 'ansi') { return await toAnsi(this, opts); }
       if (options.format === 'text') { return toText(this, opts); }
       return await toHtml(this, opts);
     };
