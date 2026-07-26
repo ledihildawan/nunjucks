@@ -162,9 +162,8 @@ const formatStackLine = (
     return `  ${trimmed}`;
   }
 
-  const fullPath = pathMatch[1];
-  const lineNum = Number.parseInt(pathMatch[2], 10);
-  const colGroup = pathMatch[3];
+  const [, fullPath, lineNumRaw, colGroup] = pathMatch;
+  const lineNum = Number.parseInt(lineNumRaw, 10);
   let colNum = 1;
   if (colGroup) { colNum = Number.parseInt(colGroup, 10); }
   const shortPath = shortenPath(fullPath);
@@ -217,7 +216,7 @@ const toAnsi = async (error: unknown, options: AnsiOptions = {}): Promise<string
 
   const { verbosity = 'full', templatePath, lineno, colno, ide = 'vscode', sourceTrace } = options;
 
-  let message = (error as Error).message;
+  let { message } = error as Error;
   if (!message) {
     message = String(error);
   }

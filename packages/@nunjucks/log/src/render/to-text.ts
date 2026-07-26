@@ -21,7 +21,7 @@ const toText = (error: unknown, options: ToTextOptions = {}): string => {
 
   const { verbosity = 'full', templatePath, lineno, colno } = options;
 
-  let message = (error as Error).message;
+  let { message } = error as Error;
   if (!message || typeof message !== 'string') {
     message = String(error);
   }
@@ -110,8 +110,7 @@ const toText = (error: unknown, options: ToTextOptions = {}): string => {
       const trimmed = line.trim();
       const pathMatch = trimmed.match(STACK_LOCATION_RE);
       if (pathMatch?.[1] && pathMatch[2]) {
-        const fullPath = pathMatch[1];
-        const lineNum = pathMatch[2];
+        const [, fullPath, lineNum] = pathMatch;
         const shortPath = shortenPath(fullPath);
         const fnMatch = trimmed.match(STACK_FUNCTION_RE);
         const fn = fnMatch?.[1] ?? '';

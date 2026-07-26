@@ -135,10 +135,7 @@ const linkifyFrame = (frame: string, ide: string): string => {
   });
   const lcMatch = s.match(FILE_URL_LOCATION_RE);
   if (lcMatch) {
-    const prefix = lcMatch[1];
-    const p = lcMatch[2];
-    const l = lcMatch[3];
-    const c = lcMatch[4];
+    const [, prefix, p, l, c] = lcMatch;
     if (prefix && p && l && c && PATH_SEPARATOR_RE.test(p) && !NATIVE_FRAME_RE.test(p.trim()) && isFilePath(p)) {
       const norm = normalizePath(p);
       const display = shortenPath(norm);

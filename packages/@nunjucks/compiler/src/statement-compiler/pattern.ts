@@ -87,14 +87,14 @@ const emitDefaultBinding = ({ ctx, frame }: DestructuringContext, source: string
  */
 const asObjectPattern = (node: Node): Node | null => {
   if (isObjectPattern(node)) { return node; }
-  const children = node.children;
+  const { children } = node;
   if (!children) { return null; }
   return objectPattern(node.lineno, node.colno, children);
 };
 
 const asArrayPattern = (node: Node): Node | null => {
   if (isArrayPattern(node)) { return node; }
-  const children = node.children;
+  const { children } = node;
   if (!children) { return null; }
   return arrayPattern(node.lineno, node.colno, children);
 };
