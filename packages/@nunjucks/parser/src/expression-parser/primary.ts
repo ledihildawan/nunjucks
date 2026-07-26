@@ -17,7 +17,7 @@ import { parsePostfix } from "../postfix-parser/index.ts";
 
 export const parsePrimary = (ctx: ParserContext, noPostfix?: boolean): Node => {
   const tok = nextToken(ctx);
-  let val;
+  let val: unknown;
   let node: Node | null = null;
 
   if (!tok) {

@@ -45,6 +45,7 @@
           "correctness": {
             "noUndeclaredDependencies": "off",
             "noNodejsModules": "off",
+            "noUnresolvedImports": "off",
             "useQwikValidLexicalScope": "off"
           },
           "security": {

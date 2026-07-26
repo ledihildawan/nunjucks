@@ -208,7 +208,7 @@ const buildErrorOutput = (err: TemplateError) => async (options: OutputOptions =
   let traceLineBase = err.lineBase;
   if (options.isJsCaller) { traceLineBase = 'one'; }
 
-  let sourceTrace = null;
+  let sourceTrace: Awaited<ReturnType<typeof buildSourceTrace>> | null = null;
   if (verbosity !== 'simple') {
     sourceTrace = await buildSourceTrace({
       sourceContent: err.sourceContent ?? null,

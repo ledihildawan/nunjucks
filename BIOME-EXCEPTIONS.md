@@ -18,11 +18,12 @@ Anything that *can* be fixed stays on. Local, one-off exceptions use a
 | `performance/noNamespaceImport` | Every finding is the aggregate pattern the syntax exists for: `import * as stringFilters from '@nunjucks/filters/string'` in the global config, and `import * as guards` / `import * as traverse` behind the node extension API. Listing each filter and guard by name instead would have to be updated by hand every time one is added, and silently go stale when it is not. |
 | `correctness/useQwikValidLexicalScope` | A Qwik framework rule that enforces Qwik's `$`-boundary serialization constraints. This repository is a templating engine and does not use Qwik. |
 
+| `correctness/noUnresolvedImports` | Two unrelated causes, both outside our control. In tests, every finding is `import { ... } from 'bun:test'`, a module namespace Biome does not know. In production source, the findings are `escapeHtml`, which reaches its importers through a two-hop re-export (`shared/index.ts` → `escape-context.ts` → `escape.ts`) that Biome's resolver does not follow. TypeScript resolves all of them, and the build and tests pass. Note the second cause is a direct consequence of `noExportedImports`, which is on and requires exactly that re-export form. |
+
 ## Test files only (`**/*.test.ts`)
 
 | Rule | Why it is off |
 |---|---|
-| `correctness/noUnresolvedImports` | Every finding is `import { ... } from 'bun:test'`. Biome does not know Bun's built-in module namespace. Production sources are still checked by this rule. |
 | `suspicious/noProto` | Every finding is in `sandbox.test.ts`, `sandbox.property.test.ts` or `security.test.ts`, which exist specifically to prove that `__proto__` access is blocked. The tests have to name the thing they are defending against. |
 | `suspicious/noEmptyBlockStatements` | Test doubles such as `filters: { 'if': () => {} }`, registered only to assert that a reserved name is rejected. The body is empty because the filter is never meant to run. Both findings in production source were fixed rather than suppressed. |
 | `suspicious/noExplicitAny` | Prototype-pollution payloads in the sandbox tests, which are deliberately ill-typed values. Production source is free of `any` and the rule stays on there. |

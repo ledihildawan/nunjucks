@@ -19,7 +19,7 @@ export const parseIn = (ctx: ParserContext): Node => {
         break;
       }
 
-    let inTok;
+    let inTok: ReturnType<typeof nextToken>;
     if (invert) {
       inTok = nextToken(ctx);
     } else {

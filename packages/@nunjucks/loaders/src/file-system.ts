@@ -175,6 +175,7 @@ export interface FileSystemLoader extends Loader {
 
 export function createFileSystemLoader(searchPaths: string | string[] | undefined, opts: FileSystemLoaderOptions = {}): FileSystemLoader {
   if (typeof opts === 'boolean') {
+    // biome-ignore lint/suspicious/noConsole: deprecation notice for a legacy call shape; there is no logger at this layer.
     console.warn(
       '[nunjucks] Warning: boolean options are deprecated. ' +
       'Use an options object. ' +

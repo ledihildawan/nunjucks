@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import {
+  // biome-ignore lint/suspicious/noShadowRestrictedNames: `escape` is the public name of the Nunjucks filter under test.
   normalize, capitalize, upper, lower, escape,
   truncate, trim, title, join, replace, urlencode, indent, fallback,
 } from './string.ts';

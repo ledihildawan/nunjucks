@@ -30,7 +30,7 @@ describe('error definitions audit', () => {
   const errors = Object.entries(ERROR_DEFINITIONS).filter(([name]) => !MetaErrorNames.includes(name));
 
   test('all error definitions have causes', () => {
-    const missingCauses = [];
+    const missingCauses: string[] = [];
     for (const [name, def] of errors) {
       if (!def.causes || def.causes.length === 0) {
         missingCauses.push(name);
@@ -40,7 +40,7 @@ describe('error definitions audit', () => {
   });
 
   test('all error definitions have fixCode', () => {
-    const missingFix = [];
+    const missingFix: string[] = [];
     for (const [name, def] of errors) {
       if (!def.fixCode) {
         missingFix.push(name);
@@ -50,7 +50,7 @@ describe('error definitions audit', () => {
   });
 
   test('fixCodes are not low quality placeholders', () => {
-    const lowQuality = [];
+    const lowQuality: string[] = [];
     for (const [name, def] of errors) {
       if (def.fixCode && isLowQualityFix(def.fixCode)) {
         lowQuality.push(name);
@@ -60,7 +60,7 @@ describe('error definitions audit', () => {
   });
 
   test('causes are not low quality placeholders', () => {
-    const lowQuality = [];
+    const lowQuality: string[] = [];
     for (const [name, def] of errors) {
       if (def.causes && isLowQualityCauses(def.causes)) {
         lowQuality.push(name);
@@ -70,7 +70,7 @@ describe('error definitions audit', () => {
   });
 
   test('each cause has at least 2 items', () => {
-    const tooFewCauses = [];
+    const tooFewCauses: string[] = [];
     for (const [name, def] of errors) {
       if (def.causes && def.causes.length < 2) {
         tooFewCauses.push(name);
@@ -81,7 +81,7 @@ describe('error definitions audit', () => {
 
   test('fixCode references template syntax when appropriate', () => {
     const errsNeedingTemplate = ['SYNTAX_ERROR', 'PARSER_UNEXPECTED_TOKEN', 'UNKNOWN_BLOCK_TAG', 'EXPECTED_VARIABLE_END', 'PARSER_VARIABLE_NAME', 'PARSER_EXPRESSION', 'PARSER_TAG_NAME'];
-    const missingTemplateSyntax = [];
+    const missingTemplateSyntax: string[] = [];
     for (const name of errsNeedingTemplate) {
       if (!ERROR_DEFINITIONS[name as keyof typeof ERROR_DEFINITIONS]) { continue; }
       const fix = getError(name as any).fixCode;
@@ -93,7 +93,7 @@ describe('error definitions audit', () => {
   });
 
   test('all error messages are non-empty strings', () => {
-    const emptyMessages = [];
+    const emptyMessages: string[] = [];
     for (const [name, def] of errors) {
       let msg: string;
       if (typeof def.message === 'function') {
@@ -109,7 +109,7 @@ describe('error definitions audit', () => {
   });
 
   test('all error definitions have patterns', () => {
-    const noPattern = [];
+    const noPattern: string[] = [];
     for (const [name, def] of errors) {
       if (!(def.pattern && (def.pattern instanceof RegExp))) {
         noPattern.push(name);

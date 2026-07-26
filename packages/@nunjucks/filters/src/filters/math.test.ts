@@ -19,6 +19,7 @@ describe('round', () => {
     expect(round(3.3)).toBe(3);
   });
   test('respects precision', () => {
+    // biome-ignore-all lint/suspicious/noApproximativeNumericConstant: this asserts rounding behaviour at a given precision; the value happens to resemble PI but Math.PI would change what is being tested.
     expect(round(3.141_59, 2)).toBe(3.14);
     expect(round(3.141_59, 4)).toBe(3.1416);
   });

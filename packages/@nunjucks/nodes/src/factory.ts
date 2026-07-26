@@ -173,9 +173,9 @@ export const pair = (lineno: number, colno: number, key: Node, val: Node): PairN
 export const spread = (lineno: number, colno: number, argument: Node): SpreadNode => createNode(T.SPREAD, lineno, colno, { argument });
 export const walrus = (lineno: number, colno: number, target: Node, val: Node): WalrusNode => createNode(T.WALRUS, lineno, colno, { target, value: val });
 
-export const variableDeclaration = (lineno: number, colno: number, targets: Node[] = [], value: Node): VariableDeclNode => createNode(T.VARIABLE_DECLARATION, lineno, colno, { targets, value });
-export const variableAssignment = (lineno: number, colno: number, targets: Node[] = [], value: Node): VariableDeclNode => createNode(T.VARIABLE_ASSIGNMENT, lineno, colno, { targets, value });
-export const compoundAssignment = (lineno: number, colno: number, targets: Node[] = [], operator: string, value: Node): CompoundAssignNode => createNode(T.COMPOUND_ASSIGNMENT, lineno, colno, { targets, operator, value });
+export const variableDeclaration = (lineno: number, colno: number, targets: Node[], value: Node): VariableDeclNode => createNode(T.VARIABLE_DECLARATION, lineno, colno, { targets, value });
+export const variableAssignment = (lineno: number, colno: number, targets: Node[], value: Node): VariableDeclNode => createNode(T.VARIABLE_ASSIGNMENT, lineno, colno, { targets, value });
+export const compoundAssignment = (lineno: number, colno: number, targets: Node[], operator: string, value: Node): CompoundAssignNode => createNode(T.COMPOUND_ASSIGNMENT, lineno, colno, { targets, operator, value });
 export const defineBlock = (lineno: number, colno: number, name: string, body: Node, args: MacroArgument[] = []): Node => createNode(T.DEFINE_BLOCK, lineno, colno, { name, body, args });
 
 export const templateLiteral = (lineno: number, colno: number, quasis: unknown[] = []): TemplateLiteralNode => createNode(T.TEMPLATE_LITERAL, lineno, colno, { quasis });

@@ -21,8 +21,9 @@ import type { Token } from './token-types.ts';
 const collect = (src: string, opts?: Parameters<typeof createTokenizer>[1]): Token[] => {
   const tokenizer = createTokenizer(src, opts);
   const tokens: Token[] = [];
-  let token: Token | null;
-  while ((token = tokenizer.nextToken()) !== null) { tokens.push(token); }
+  for (let token = tokenizer.nextToken(); token !== null; token = tokenizer.nextToken()) {
+    tokens.push(token);
+  }
   return tokens;
 };
 
