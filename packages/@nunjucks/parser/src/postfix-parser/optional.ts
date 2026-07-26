@@ -4,7 +4,7 @@ import { appendChild, literal, nodeList, optionalCall, optionalChain } from '@nu
 import type { ChildrenNode, Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { parseExpression } from "../expression-parser/index.ts";
+import { parseExpression } from "../expression-parser/inline.ts";
 import { BracketNotation } from "./lookup.ts";
 
 const parseOptionalCallArgs = (ctx: ParserContext, tok: Token): ChildrenNode => {

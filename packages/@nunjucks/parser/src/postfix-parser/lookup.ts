@@ -7,7 +7,7 @@ import { BracketNotation, lookupVal, slice } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skip, expect } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { parseExpression } from "../expression-parser/index.ts";
+import { parseExpression } from "../expression-parser/inline.ts";
 
 export { BracketNotation } from '@nunjucks/nodes';
 

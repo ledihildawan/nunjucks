@@ -4,7 +4,8 @@ import { peekToken, skipSymbol, skip, nextToken, advanceAfterBlockEnd, fail } fr
 import type { ParserContext } from "../cursor.ts";
 import { TOKEN_BLOCK_END, TOKEN_COMMA, TOKEN_OPERATOR } from '@nunjucks/lexer';
 import type { Token } from '@nunjucks/lexer';
-import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
+import { parsePrimary } from "../expression-parser/primary.ts";
+import { parseExpression } from "../expression-parser/inline.ts";
 import { parseUntilBlocks } from "../top-level.ts";
 
 const isBlockEnd = (tok: Token | null | undefined): boolean => tok !== null && tok !== undefined && tok.type === TOKEN_BLOCK_END;

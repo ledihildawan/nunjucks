@@ -15,7 +15,7 @@ import {
 } from "./cursor.ts";
 import type { ParserContext } from "./cursor.ts";
 import { parseStatement } from "./statement-parser/index.ts";
-import { parseExpression } from "./expression-parser/index.ts";
+import { parseExpression } from "./expression-parser/inline.ts";
 
 export const parseUntilBlocks = (ctx: ParserContext, ...blockNames: string[]): Node => {
   const prev = ctx.breakOnBlocks;

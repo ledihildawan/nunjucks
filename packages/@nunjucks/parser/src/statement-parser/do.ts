@@ -2,7 +2,7 @@ import { do_ } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, nextToken } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { parseExpression } from "../expression-parser/index.ts";
+import { parseExpression } from "../expression-parser/inline.ts";
 
 export const parseDo = (ctx: ParserContext): Node => {
   const tag = peekToken(ctx);

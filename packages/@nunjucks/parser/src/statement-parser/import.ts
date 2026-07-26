@@ -2,7 +2,7 @@ import { import_, isSymbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { parseExpression } from "../expression-parser/index.ts";
+import { parseExpression } from "../expression-parser/inline.ts";
 import { parseWithContext } from "./with.ts";
 
 export const parseImport = (ctx: ParserContext): Node => {

@@ -8,9 +8,10 @@ import { compoundAssignment, defineBlock, variableAssignment, variableDeclaratio
 import type { MacroArgument, Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, skipValue, nextToken, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
+import { parsePrimary } from "../expression-parser/primary.ts";
+import { parseExpression } from "../expression-parser/inline.ts";
 import { parseUntilBlocks } from "../top-level.ts";
-import { tryParsePattern } from "../node-parsers/index.ts";
+import { tryParsePattern } from "../node-parsers/pattern.ts";
 
 export const parseVariableDeclaration = (ctx: ParserContext): Node => {
   const tag = peekToken(ctx);

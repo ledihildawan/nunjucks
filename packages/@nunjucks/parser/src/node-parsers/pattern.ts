@@ -14,7 +14,7 @@ import { appendChild, arrayPattern, assignmentPattern, hole, objectPattern, patt
 import type { Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, skip, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { parseExpression } from "../expression-parser/index.ts";
+import { parseExpression } from "../expression-parser/inline.ts";
 
 const isDestructuringStart = (ctx: ParserContext): boolean => {
   const tok = peekToken(ctx);

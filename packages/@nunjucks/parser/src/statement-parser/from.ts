@@ -6,7 +6,8 @@ import { appendChild, fromImport, nodeList, pair } from '@nunjucks/nodes';
 import type { ChildrenNode, Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, skip, skipSymbol, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { parseExpression, parsePrimary } from "../expression-parser/index.ts";
+import { parseExpression } from "../expression-parser/inline.ts";
+import { parsePrimary } from "../expression-parser/primary.ts";
 import { parseWithContext } from "./with.ts";
 
 export const parseFrom = (ctx: ParserContext): Node => {

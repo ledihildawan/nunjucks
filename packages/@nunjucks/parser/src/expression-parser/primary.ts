@@ -12,7 +12,9 @@ import { literal, symbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { nextToken, pushToken, fail, EXPECTED_COLON_AFTER_DICT_KEY } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { tryParsePattern, parseAggregate, parseTemplateLiteral } from "../node-parsers/index.ts";
+import { tryParsePattern } from "../node-parsers/pattern.ts";
+import { parseAggregate } from "../node-parsers/aggregate.ts";
+import { parseTemplateLiteral } from "../node-parsers/template-literal.ts";
 import { parsePostfix } from "../postfix-parser/index.ts";
 
 export const parsePrimary = (ctx: ParserContext, noPostfix?: boolean): Node => {
