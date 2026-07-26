@@ -1,39 +1,35 @@
-import {
-  isNonNullish as remedaIsNonNullish,
-  isFunction as remedaIsFunction,
-  isString as remedaIsString,
-  isNumber as remedaIsNumber,
-  isBoolean as remedaIsBoolean,
-  isArray as remedaIsArray,
-  isPlainObject as remedaIsPlainObject,
-  pipe as remedaPipe,
+// Imported for use inside this module.
+import { isNonNullish, isFunction, isArray, keys, filter as filterArray } from 'remeda';
+
+// Re-exported straight through, so consumers get remeda's own bindings rather
+// than a local alias that hides where they came from.
+export {
+  isNonNullish,
+  isFunction,
+  isString,
+  isNumber,
+  isBoolean,
+  isArray,
+  isPlainObject,
+  isNullish,
+  pipe,
   mapValues,
   fromEntries,
   keys,
   values,
   entries,
   forEachObj,
+  unique,
+  chunk,
   filter as filterArray,
   map as mapArray,
   reduce as reduceArray,
-  chunk as chunkArray,
-  unique as uniqueArray,
-  isNullish,
 } from 'remeda';
 
 type Predicate<T> = (value: T) => boolean;
 
-export const isNonNullish = remedaIsNonNullish;
-export const isFunction = remedaIsFunction;
-export const isString = remedaIsString;
-export const isNumber = remedaIsNumber;
-export const isBoolean = remedaIsBoolean;
-export const isArray = remedaIsArray;
-
 export const isRecord = (val: unknown): val is Record<string, unknown> =>
   isNonNullish(val) && typeof val === 'object' && !isArray(val);
-
-export const isPlainObject = remedaIsPlainObject;
 
 export const isPromise = <T>(val: unknown): val is Promise<T> =>
   isNonNullish(val) && isFunction((val as Promise<T>).then);
@@ -95,10 +91,6 @@ export const uniqueBy = <T>(arr: T[], keyFn: (item: T) => unknown): T[] => {
   });
 };
 
-export const unique = uniqueArray;
-
-export const chunk = chunkArray;
-
 export const memoize = <A extends unknown[], R>(
   fn: (...args: A) => R
 ): ((...args: A) => R) => {
@@ -114,8 +106,6 @@ export const memoize = <A extends unknown[], R>(
     return result;
   };
 };
-
-export const pipe = remedaPipe;
 
 export const compose = <A, B, C>(
   fn2: (b: B) => C,
@@ -207,5 +197,3 @@ export const partition = <T>(arr: T[], fn: Predicate<T>): [T[], T[]] => {
   }
   return [pass, fail];
 };
-
-export { isNullish, mapValues, fromEntries, keys, values, entries, forEachObj, filterArray, mapArray, reduceArray };

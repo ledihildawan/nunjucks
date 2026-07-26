@@ -4,8 +4,15 @@
 import { createLog, normalizeErrorMetadata, ERROR_DEFINITIONS } from '@nunjucks/log';
 import type { ErrorContext, ErrorDefinitionEntry, WarningContext } from '@nunjucks/log/create-log';
 import { escapeForContext, type HtmlContext } from '@nunjucks/shared';
+// Imported for use inside this module.
 import { isNonNullish, isFunction, isString, isArray, isPlainObject } from '@nunjucks/shared/type-guards';
-import {
+import { isNullAccessResult, isPropertyNotFoundResult, getNullParentName } from './member-access.ts';
+import { isSafeString } from './safe-string.ts';
+
+// This module doubles as the runtime's public surface, so it re-exports the
+// sibling modules directly rather than importing and re-listing their bindings.
+export { isNonNullish, isFunction, isString, isArray, isPlainObject } from '@nunjucks/shared/type-guards';
+export {
   memberLookup,
   optionalMemberLookup,
   slice,
@@ -14,8 +21,8 @@ import {
   isPropertyNotFoundResult,
   getNullParentName,
 } from './member-access.ts';
-import { createSafeString, isSafeString, copySafeness, markSafe } from './safe-string.ts';
-import {
+export { createSafeString, isSafeString, copySafeness, markSafe } from './safe-string.ts';
+export {
   makeMacro,
   makeKeywordArgs,
   isKeywordArgs,
@@ -23,7 +30,7 @@ import {
   numArgs,
   withKwargs,
 } from './macro.ts';
-import {
+export {
   createSandboxedContext,
   wrapMemberAccess,
   isBlockedKey,
@@ -31,9 +38,9 @@ import {
   BLOCKED_KEYS_LIST,
   DANGEROUS_GLOBALS_LIST,
 } from './sandbox.ts';
-import { createFrame } from './frame.ts';
-import { createContext } from './context.ts';
-import { toContext, createIsolatedContext, createForkedContext } from './render-context.ts';
+export { createFrame } from './frame.ts';
+export { createContext } from './context.ts';
+export { toContext, createIsolatedContext, createForkedContext } from './render-context.ts';
 
 interface LogContextShape {
   templateName: string | null;
@@ -77,41 +84,6 @@ const throwRuntimeError = (
   );
 };
 
-export {
-  createFrame,
-  createSafeString,
-  isSafeString,
-  copySafeness,
-  markSafe,
-  makeMacro,
-  makeKeywordArgs,
-  isKeywordArgs,
-  getKeywordArgs,
-  numArgs,
-  withKwargs,
-  memberLookup,
-  optionalMemberLookup,
-  slice,
-  nullishCoalesce,
-  isNullAccessResult,
-  isPropertyNotFoundResult,
-  getNullParentName,
-  isArray,
-  isNonNullish,
-  isFunction,
-  isString,
-  isPlainObject,
-  createSandboxedContext,
-  wrapMemberAccess,
-  isBlockedKey,
-  isDangerousGlobal,
-  BLOCKED_KEYS_LIST,
-  DANGEROUS_GLOBALS_LIST,
-  toContext,
-  createIsolatedContext,
-  createForkedContext,
-  createContext,
-};
 
 const escapeValue = (val: unknown, context: HtmlContext = 'html'): string => {
   if (!isNonNullish(val)) { return ''; }
