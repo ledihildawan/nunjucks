@@ -1,3 +1,6 @@
+/** Width of the caret run when no word could be identified to underline. */
+const FALLBACK_CARET_WIDTH = 3;
+
 export interface CaretResult {
   wordStart: number;
   wordEnd: number;
@@ -74,7 +77,7 @@ export function calculateCaretPosition(
   if (highlightWord) {
     carets = '^'.repeat(highlightWord.length);
   } else {
-    carets = '^'.repeat(3);
+    carets = '^'.repeat(FALLBACK_CARET_WIDTH);
   }
 
   return { wordStart, wordEnd, highlightWord, carets };

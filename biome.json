@@ -49,6 +49,26 @@
           },
           "security": {
             "noSecrets": "off"
+          },
+          "style": {
+            "useNamingConvention": {
+              "level": "error",
+              "options": {
+                "strictCase": false,
+                "conventions": [
+                  {
+                    "selector": { "kind": "objectLiteralProperty" },
+                    "match": "_*(.+?)_*",
+                    "formats": ["camelCase", "CONSTANT_CASE", "PascalCase", "snake_case"]
+                  },
+                  {
+                    "selector": { "kind": "typeProperty" },
+                    "match": "_*(.+?)_*",
+                    "formats": ["camelCase", "CONSTANT_CASE", "PascalCase", "snake_case"]
+                  }
+                ]
+              }
+            }
           }
         }
       }
@@ -59,6 +79,9 @@
         "rules": {
           "correctness": {
             "noUnresolvedImports": "off"
+          },
+          "style": {
+            "noMagicNumbers": "off"
           }
         }
       }

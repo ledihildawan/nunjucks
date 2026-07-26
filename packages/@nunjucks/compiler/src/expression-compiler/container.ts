@@ -15,6 +15,7 @@ const STRING_ESCAPE_MAP: Record<string, string> = {
 const TEMPLATE_ESCAPE_MAP: Record<string, string> = {
   '\\': '\\\\',
   '`': '\\`',
+  // biome-ignore lint/style/useNamingConvention: this key is the literal `$` character being escaped, not an identifier.
   '$': '\\$',
 };
 

@@ -15,13 +15,16 @@ interface NormalizeState extends TruncateState {
   maxEntries: number;
 }
 
+/** Characters reserved for the `...[Truncated]` marker appended after a cut. */
+const TRUNCATION_SUFFIX_BUDGET = 15;
+
 const truncate = (value: string, state: TruncateState): string => {
   const remaining = state.maxTotalLength - state.totalLength;
   if (remaining <= 0) { return '[Total size limit reached]'; }
   const max = Math.min(state.maxStringLength, remaining);
   let result: string;
   if (value.length > max) {
-    result = `${value.slice(0, Math.max(0, max - 15))}...[Truncated]`;
+    result = `${value.slice(0, Math.max(0, max - TRUNCATION_SUFFIX_BUDGET))}...[Truncated]`;
   } else {
     result = value;
   }

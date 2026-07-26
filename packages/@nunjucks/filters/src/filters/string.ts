@@ -25,10 +25,13 @@ export const escape = safeHtml;
 
 export const tojson = (value: unknown): SafeString => safeString(JSON.stringify(value));
 
+/** Jinja2's `indent` filter defaults to four spaces. */
+const DEFAULT_INDENT_WIDTH = 4;
+
 export const indent = (str: unknown, width?: number, indentfirst?: boolean): string => {
   const s = normalize(str, '');
   if (s === '') { return ''; }
-  const w = defaultTo(width, 4);
+  const w = defaultTo(width, DEFAULT_INDENT_WIDTH);
   const sp = ' '.repeat(Math.round(w));
   const lines = s.split('\n');
   const res = lines.map((l: string, i: number) => {
@@ -97,11 +100,14 @@ export const title = createStringFilter((s: string): string => {
 
 export const trim = createStringFilter((s: string): string => s.replace(/^\s*|\s*$/gu, ''));
 
+/** Jinja2's `truncate` filter defaults to 255 characters. */
+const DEFAULT_TRUNCATE_LENGTH = 255;
+
 export const truncate = (input: unknown, length?: number, killwords?: boolean, end?: string): string => {
   const orig = input;
   let inp = normalize(input, '');
   if (typeof inp !== 'string') { inp = String(inp); }
-  const len = defaultTo(length, 255);
+  const len = defaultTo(length, DEFAULT_TRUNCATE_LENGTH);
   if (inp.length <= len) { return inp; }
   if (killwords) {
     inp = inp.substring(0, len);

@@ -22,6 +22,9 @@ export function getMostHonestError(errors: readonly ErrorCandidate[]): ErrorCand
   return errors.toSorted((a, b) => a.priority - b.priority)[0] ?? null;
 }
 
+/** Sorts after every known priority, so unclassified errors rank last. */
+const UNKNOWN_ERROR_PRIORITY = 999;
+
 export function getPriority(type: string): number {
-  return ERROR_PRIORITY[type as keyof typeof ERROR_PRIORITY] ?? 999;
+  return ERROR_PRIORITY[type as keyof typeof ERROR_PRIORITY] ?? UNKNOWN_ERROR_PRIORITY;
 }

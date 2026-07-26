@@ -6,6 +6,9 @@ import type { TokenType } from '../token-types.ts';
 
 const { isComplexOperator } = validators;
 
+/** Longest operator the lexer recognises, e.g. `**=` or `>>>`. */
+const MAX_OPERATOR_CHARS = 3;
+
 const TOKEN_TYPES: Record<string, TokenType> = {
   '(' : 'left-paren' as TokenType,
   ')' : 'right-paren' as TokenType,
@@ -36,7 +39,7 @@ export const tokenizeOperator: Tokenizer = (state) => {
     const threeChar = twoChar + getChar(threeCharState);
     if (isComplexOperator(threeChar)) {
       op = threeChar;
-      numChars = 3;
+      numChars = MAX_OPERATOR_CHARS;
     }
   }
 
