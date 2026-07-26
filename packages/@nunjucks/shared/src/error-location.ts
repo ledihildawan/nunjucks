@@ -132,7 +132,7 @@ const findTemplateOccurrence = (
 
   for (const candidate of candidates) {
     let searchFrom = 0;
-    while (true) {
+    for (;;) {
       const found = content.indexOf(candidate, searchFrom);
       if (found === -1) { break; }
       const line = positionAtOffset(content, found).lineOffset + 1;

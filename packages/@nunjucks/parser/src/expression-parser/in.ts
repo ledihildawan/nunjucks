@@ -8,7 +8,7 @@ import { parseIs } from "./is.ts";
 
 export const parseIn = (ctx: ParserContext): Node => {
   let node = parseBitwiseOr(ctx);
-  while (true) {
+  for (;;) {
     const tok = nextToken(ctx);
     if (!tok) {
       break;

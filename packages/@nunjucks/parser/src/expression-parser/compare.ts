@@ -9,7 +9,7 @@ export const parseCompare = (ctx: ParserContext): Node => {
   const expr = parseConcat(ctx);
   const ops: Node[] = [];
 
-  while (true) {
+  for (;;) {
     const tok = nextToken(ctx);
 
     if (!tok) {

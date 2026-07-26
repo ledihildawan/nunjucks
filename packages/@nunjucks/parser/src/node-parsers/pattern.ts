@@ -52,7 +52,7 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
   }
 
   let sawRest = false;
-  while (true) {
+  for (;;) {
     const tok = peekToken(ctx);
     if (tok.type === TOKEN_RIGHT_BRACKET) {
       nextToken(ctx);
@@ -126,7 +126,7 @@ const parseObjectPattern = (ctx: ParserContext, lineno: number, colno: number): 
   }
 
   let sawRest = false;
-  while (true) {
+  for (;;) {
     const tok = peekToken(ctx);
     if (tok.type === TOKEN_RIGHT_CURLY) {
       nextToken(ctx);

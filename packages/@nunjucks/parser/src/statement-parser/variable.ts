@@ -94,7 +94,7 @@ export const parseDefineBlock = (ctx: ParserContext): Node => {
   const tok = peekToken(ctx);
   if (tok && tok.type === TOKEN_LEFT_PAREN) {
     nextToken(ctx);
-    while (true) {
+    for (;;) {
       const argTok = peekToken(ctx);
       if (argTok.type === TOKEN_RIGHT_PAREN) {
         nextToken(ctx);

@@ -110,7 +110,7 @@ const resolveTemplateSource = async (template: string, loader: unknown, config: 
       };
     }
   } catch (loaderErr) {
-    const code = (loaderErr as { code?: string })?.code;
+    const code = (loaderErr as { code?: string }).code;
     if (code === 'ENOENT' || code === 'MODULE_NOT_FOUND' || code === 'ERR_MODULE_NOT_FOUND') {
       return { templateSource: template, templatePath: null };
     }
@@ -388,12 +388,15 @@ export const renderWithEnv = async (templateName: string, env: unknown, context:
   try {
     template = await (env as { getTemplate?: (name: string, eagerCompile: boolean, includeChain: unknown, ignoreMissing: boolean) => Promise<unknown> }).getTemplate?.(templateName, true, templateName, false);
 
-    if (typeof (template as { render?: unknown })?.render === 'function') {
+    // `template` really can be undefined here: getTemplate is optional-called.
+    // The cast must admit that, or the optional chain below looks redundant
+    // while actually being the thing preventing a TypeError.
+    if (typeof (template as { render?: unknown } | undefined)?.render === 'function') {
       return await (template as { render: (ctx: unknown) => Promise<string> }).render(context);
     }
 
     throw createLog('error', getError('TEMPLATE_NO_RENDER'), {}, null, { phase: 'render' });
   } catch (err) {
-    throw await wrapWithLog(err as Error, fullConfig, (template as { tmplStr?: string })?.tmplStr ?? null, context);
+    throw await wrapWithLog(err as Error, fullConfig, (template as { tmplStr?: string } | undefined)?.tmplStr ?? null, context);
   }
 };

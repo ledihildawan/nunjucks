@@ -20,12 +20,13 @@ export const extractPropertyLocation = (
 ): NodeLocation => {
   if (!node) { return { lineno: null, colno: null }; }
   if (isLookupVal(node)) {
+    // `Node` types lineno/colno as required numbers, but this value comes off a
+    // dynamic AST field, so verify rather than trust -- otherwise a missing
+    // colno would silently produce NaN once the offset is added.
     const val = node.val as Node | undefined;
-    if (val && val.lineno !== null && val.lineno !== undefined &&
-        val.colno !== null && val.colno !== undefined) {
+    if (val && Number.isInteger(val.lineno) && Number.isInteger(val.colno)) {
       return { lineno: val.lineno, colno: val.colno + colnoOffset };
     }
-    return { lineno: node.lineno ?? null, colno: node.colno ?? null };
   }
-  return { lineno: node.lineno ?? null, colno: node.colno ?? null };
+  return { lineno: node.lineno, colno: node.colno };
 };

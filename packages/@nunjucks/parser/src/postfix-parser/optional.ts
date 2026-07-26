@@ -11,7 +11,7 @@ const parseOptionalCallArgs = (ctx: ParserContext, tok: Token): ChildrenNode => 
   let args = nodeList(tok.lineno, tok.colno);
   let expectComma = false;
 
-  while (true) {
+  for (;;) {
     const next = peekToken(ctx);
     if (!next || next.type === TOKEN_RIGHT_PAREN) {
       if (next) {

@@ -29,10 +29,10 @@ export const templateData = (lineno: number, colno: number, val: string): ValueN
 
 // Function call nodes
 export const funCall = (lineno: number, colno: number, name: Node | string, args: Node[] = []): CallNode =>
-  createNode(T.FUN_CALL, lineno, colno, { name, args: args || [] });
+  createNode(T.FUN_CALL, lineno, colno, { name, args });
 
 export const pipe = (lineno: number, colno: number, name: Node | string, args: Node[] = []): CallNode =>
-  createNode(T.PIPE, lineno, colno, { name, args: args || [] });
+  createNode(T.PIPE, lineno, colno, { name, args });
 
 // Lookup nodes
 export const lookupVal = (lineno: number, colno: number, target: Node, val: Node): LookupNode =>
@@ -45,7 +45,7 @@ export const optionalChain = (lineno: number, colno: number, target: Node, val: 
   createNode(T.OPTIONAL_CHAIN, lineno, colno, { target, val });
 
 export const optionalCall = (lineno: number, colno: number, name: Node | string, args: Node[] = []): CallNode =>
-  createNode(T.OPTIONAL_CALL, lineno, colno, { name, args: args || [] });
+  createNode(T.OPTIONAL_CALL, lineno, colno, { name, args });
 
 // Binary operations
 export const add = (lineno: number, colno: number, left: Node, right: Node): BinaryOpNode => createNode(T.ADD, lineno, colno, { left, right, operator: '+' });
@@ -75,7 +75,7 @@ export const nullishCoalesce = (lineno: number, colno: number, left: Node, right
 
 // Comparison operations
 export const compare = (lineno: number, colno: number, expr: Node, ops: Node[] = []): CompareNode =>
-  createNode(T.COMPARE, lineno, colno, { expr, ops: ops || [] });
+  createNode(T.COMPARE, lineno, colno, { expr, ops });
 
 export const compareOperand = (lineno: number, colno: number, expr: Node, operator: string): CompareOperandNode =>
   createNode(T.COMPARE_OPERAND, lineno, colno, { expr, operator });
@@ -115,23 +115,23 @@ export const inlineIf = (lineno: number, colno: number, cond?: Node, body?: Node
 export const for_ = (lineno: number, colno: number, arr?: Node, name?: Node, body?: Node, else_: Node | null = null): Node =>
   createNode(T.FOR, lineno, colno, { arr, name, body, else_ });
 
-export const macro = (lineno: number, colno: number, name: string, args: Node[], body?: Node): Node =>
-  createNode(T.MACRO, lineno, colno, { name, args: args || [], body });
+export const macro = (lineno: number, colno: number, name: string, args: Node[] = [], body?: Node): Node =>
+  createNode(T.MACRO, lineno, colno, { name, args, body });
 
-export const caller = (lineno: number, colno: number, args: Node[], body?: Node): Node =>
-  createNode(T.CALLER, lineno, colno, { args: args || [], body });
+export const caller = (lineno: number, colno: number, args: Node[] = [], body?: Node): Node =>
+  createNode(T.CALLER, lineno, colno, { args, body });
 
-export const call = (lineno: number, colno: number, name: string, args: Node[], body?: Node): Node =>
-  createNode(T.CALL, lineno, colno, { name, args: args || [], body });
+export const call = (lineno: number, colno: number, name: string, args: Node[] = [], body?: Node): Node =>
+  createNode(T.CALL, lineno, colno, { name, args, body });
 
 export const import_ = (lineno: number, colno: number, template: Node | string, target: string, withContext = false): Node =>
   createNode(T.IMPORT, lineno, colno, { template, target, withContext });
 
 export const fromImport = (lineno: number, colno: number, template: Node | string, names?: Node, withContext = false): Node =>
-  createNode(T.FROM_IMPORT, lineno, colno, { template, names: names || nodeList(0, 0), withContext });
+  createNode(T.FROM_IMPORT, lineno, colno, { template, names: names ?? nodeList(0, 0), withContext });
 
 export const set = (lineno: number, colno: number, targets: Node[] = [], value?: Node, operator: string | null = null): Node =>
-  createNode(T.SET, lineno, colno, { targets: targets || [], value, operator });
+  createNode(T.SET, lineno, colno, { targets, value, operator });
 
 export const capture = (lineno: number, colno: number, body: Node): Node =>
   createNode(T.CAPTURE, lineno, colno, { body });
@@ -146,7 +146,7 @@ export const with_ = (lineno: number, colno: number, assignments: Node[] = [], b
   createNode(T.WITH, lineno, colno, { assignments, body });
 
 export const switch_ = (lineno: number, colno: number, expr: Node, cases: Node[] = [], default_: Node | null = null): Node =>
-  createNode(T.SWITCH, lineno, colno, { expr, cases: cases || [], default: default_ });
+  createNode(T.SWITCH, lineno, colno, { expr, cases, default: default_ });
 
 export const case_ = (lineno: number, colno: number, cond: Node, body: Node): Node =>
   createNode(T.CASE, lineno, colno, { cond, body });
@@ -173,12 +173,12 @@ export const pair = (lineno: number, colno: number, key: Node, val: Node): PairN
 export const spread = (lineno: number, colno: number, argument: Node): SpreadNode => createNode(T.SPREAD, lineno, colno, { argument });
 export const walrus = (lineno: number, colno: number, target: Node, val: Node): WalrusNode => createNode(T.WALRUS, lineno, colno, { target, value: val });
 
-export const variableDeclaration = (lineno: number, colno: number, targets: Node[], value: Node): VariableDeclNode => createNode(T.VARIABLE_DECLARATION, lineno, colno, { targets: targets || [], value });
-export const variableAssignment = (lineno: number, colno: number, targets: Node[], value: Node): VariableDeclNode => createNode(T.VARIABLE_ASSIGNMENT, lineno, colno, { targets: targets || [], value });
-export const compoundAssignment = (lineno: number, colno: number, targets: Node[], operator: string, value: Node): CompoundAssignNode => createNode(T.COMPOUND_ASSIGNMENT, lineno, colno, { targets: targets || [], operator, value });
+export const variableDeclaration = (lineno: number, colno: number, targets: Node[] = [], value: Node): VariableDeclNode => createNode(T.VARIABLE_DECLARATION, lineno, colno, { targets, value });
+export const variableAssignment = (lineno: number, colno: number, targets: Node[] = [], value: Node): VariableDeclNode => createNode(T.VARIABLE_ASSIGNMENT, lineno, colno, { targets, value });
+export const compoundAssignment = (lineno: number, colno: number, targets: Node[] = [], operator: string, value: Node): CompoundAssignNode => createNode(T.COMPOUND_ASSIGNMENT, lineno, colno, { targets, operator, value });
 export const defineBlock = (lineno: number, colno: number, name: string, body: Node, args: MacroArgument[] = []): Node => createNode(T.DEFINE_BLOCK, lineno, colno, { name, body, args });
 
-export const templateLiteral = (lineno: number, colno: number, quasis: unknown[]): TemplateLiteralNode => createNode(T.TEMPLATE_LITERAL, lineno, colno, { quasis: quasis || [] });
+export const templateLiteral = (lineno: number, colno: number, quasis: unknown[] = []): TemplateLiteralNode => createNode(T.TEMPLATE_LITERAL, lineno, colno, { quasis });
 
 export const keywordArgs = (lineno: number, colno: number, children: readonly Node[] = []): ChildrenNode => createNodeWithChildren(T.KEYWORD_ARGS, lineno, colno, children);
 

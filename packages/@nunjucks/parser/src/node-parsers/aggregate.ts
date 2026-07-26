@@ -35,7 +35,7 @@ export const parseAggregate = (ctx: ParserContext): Node | null => {
       return null;
   }
 
-  while (true) {
+  for (;;) {
     const type = peekToken(ctx).type;
     if (type === TOKEN_RIGHT_PAREN ||
       type === TOKEN_RIGHT_BRACKET ||

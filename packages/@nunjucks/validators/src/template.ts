@@ -19,7 +19,7 @@ const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeVio
   for (const { pattern, message } of DangerousPatterns) {
     const regex = new RegExp(pattern.source, 'g');
     let match: RegExpExecArray | null;
-    while (true) {
+    for (;;) {
       match = regex.exec(templateContent);
       if (match === null) { break; }
       const beforeMatch = templateContent.slice(0, match.index);
