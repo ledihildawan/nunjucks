@@ -218,8 +218,6 @@ const createOutputFn = (type: 'error' | 'warning') => {
         },
         options: {
           ...options,
-          sourceContent: this.sourceContent,
-          sourceStartLine: this.sourceStartLine,
           sourceTrace
         }
       });

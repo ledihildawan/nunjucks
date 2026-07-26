@@ -163,8 +163,3 @@ export const getErrorMetadata = (err: ErrorLike, options: GetErrorMetadataOption
     })()
   };
 };
-
-export const formatSnippet = (err: ErrorLike, options: Omit<GetErrorMetadataOptions, 'includeRenderContext'> = {}): string | null => {
-  const meta = getErrorMetadata(err, { ...options, includeRenderContext: false });
-  return meta.snippet;
-};

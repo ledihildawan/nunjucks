@@ -114,7 +114,13 @@ const formatContextValue = (value: unknown): string => {
 const renderContextAnsi = (context: Record<string, unknown>): string => {
   const normalized = normalizeRenderContext(context);
   const header = `\n${picocolors.bold('Render Context:')}\n`;
-  const entries = keys(normalized).map(key => `${INDENT}${key} ${formatContextValue(normalized[key])}`);
+  // normalizeRenderContext is typed to return unknown (it can yield a primitive
+  // or the string '[Unavailable]' from its catch block), so guard before keys().
+  if (typeof normalized !== 'object' || normalized === null) {
+    return header;
+  }
+  const record = normalized as Record<string, unknown>;
+  const entries = keys(record).map(key => `${INDENT}${key} ${formatContextValue(record[key])}`);
   return header + entries.join('\n');
 };
 
