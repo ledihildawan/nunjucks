@@ -65,7 +65,11 @@ const readOwnValue = (value: object, key: string | symbol): unknown => {
   }
 };
 
-const normalizeValue = (value: unknown, state: NormalizeState, depth: number, seen: WeakSet<object>): unknown => {
+/** Returned when a specialised normaliser does not apply to the value. */
+const NOT_HANDLED = Symbol('not-handled');
+
+/** Everything that is not an object, rendered as a display string or as itself. */
+const normalizePrimitive = (value: unknown, state: NormalizeState): unknown => {
   if (value === undefined) { return '[Undefined]'; }
   if (value === null) { return null; }
   if (typeof value === 'string') { return truncate(value, state); }
@@ -74,70 +78,116 @@ const normalizeValue = (value: unknown, state: NormalizeState, depth: number, se
   if (typeof value === 'symbol') { return truncate(String(value), state); }
   if (typeof value === 'function') {
     let namePart = '';
-    if (value.name) {
-      namePart = `: ${value.name}`;
-    }
+    if (value.name) { namePart = `: ${value.name}`; }
     return `[Function${namePart}]`;
   }
   if (typeof value !== 'object') { return truncate(String(value), state); }
-  if (seen.has(value)) { return '[Circular]'; }
+  return NOT_HANDLED;
+};
+
+/** Built-ins that have a better one-line rendering than their enumerable keys. */
+const normalizeBuiltin = (value: object, state: NormalizeState): unknown => {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) { return '[Invalid Date]'; }
+    return value.toISOString();
+  }
+  if (value instanceof RegExp) { return String(value); }
+  if (value instanceof Error) { return { name: value.name, message: truncate(value.message, state) }; }
+  if (value instanceof ArrayBuffer) { return `[Binary: ${value.byteLength} bytes]`; }
+  if (ArrayBuffer.isView(value)) { return `[Binary: ${value.byteLength} bytes]`; }
+  return NOT_HANDLED;
+};
+
+/** How many entries were dropped, phrased for display. */
+const overflowNote = (total: number, shown: number, unit: string): string =>
+  `[... ${total - shown} more ${unit}]`;
+
+const normalizeCollection = (
+  value: object,
+  state: NormalizeState,
+  depth: number,
+  seen: WeakSet<object>
+): unknown => {
+  const normalizeChild = (item: unknown): unknown => normalizeValue(item, state, depth + 1, seen);
+
+  if (value instanceof Map) {
+    const entries: unknown[][] = [];
+    for (const [key, item] of value) {
+      if (entries.length >= state.maxEntries) { break; }
+      entries.push([normalizeChild(key), normalizeChild(item)]);
+    }
+    if (value.size > state.maxEntries) {
+      entries.push([`... ${value.size - state.maxEntries} more entries`, '[Truncated]']);
+    }
+    return { '[Map]': entries };
+  }
+
+  if (value instanceof Set) {
+    const entries: unknown[] = [];
+    for (const item of value) {
+      if (entries.length >= state.maxEntries) { break; }
+      entries.push(normalizeChild(item));
+    }
+    if (value.size > state.maxEntries) {
+      entries.push(overflowNote(value.size, state.maxEntries, 'items'));
+    }
+    return { '[Set]': entries };
+  }
+
+  if (Array.isArray(value)) {
+    const entries = value.slice(0, state.maxEntries).map(normalizeChild);
+    if (value.length > state.maxEntries) {
+      entries.push(overflowNote(value.length, state.maxEntries, 'items'));
+    }
+    return entries;
+  }
+
+  return NOT_HANDLED;
+};
+
+/** A plain object: visible own keys, with secret-looking ones redacted. */
+const normalizePlainObject = (
+  value: object,
+  state: NormalizeState,
+  depth: number,
+  seen: WeakSet<object>
+): Record<string, unknown> => {
+  const result: Record<string, unknown> = {};
+  const keys = ownEnumerableKeys(value).filter(key => visibleKey(key, depth));
+  for (const key of keys.slice(0, state.maxEntries)) {
+    if (SECRET_KEY_PATTERN.test(key) || DANGEROUS_KEY_PATTERN.test(key)) {
+      result[key] = '[Redacted]';
+    } else {
+      result[key] = normalizeValue(readOwnValue(value, key), state, depth + 1, seen);
+    }
+  }
+  if (keys.length > state.maxEntries) {
+    result['...'] = `${keys.length - state.maxEntries} more keys`;
+  }
+  return result;
+};
+
+const normalizeValue = (value: unknown, state: NormalizeState, depth: number, seen: WeakSet<object>): unknown => {
+  const primitive = normalizePrimitive(value, state);
+  if (primitive !== NOT_HANDLED) { return primitive; }
+
+  const obj = value as object;
+  if (seen.has(obj)) { return '[Circular]'; }
   if (depth >= state.maxDepth) { return '[Max depth reached]'; }
 
-  seen.add(value);
+  seen.add(obj);
   try {
-    if (value instanceof Date) {
-      if (Number.isNaN(value.getTime())) {
-        return '[Invalid Date]';
-      }
-      return value.toISOString();
-    }
-    if (value instanceof RegExp) { return String(value); }
-    if (value instanceof Error) { return { name: value.name, message: truncate(value.message, state) }; }
-    if (value instanceof ArrayBuffer) { return `[Binary: ${value.byteLength} bytes]`; }
-    if (ArrayBuffer.isView(value)) { return `[Binary: ${value.byteLength} bytes]`; }
-    if (value instanceof Map) {
-      const entries: unknown[][] = [];
-      let index = 0;
-      for (const [key, item] of value) {
-        if (index >= state.maxEntries) { break; }
-        index += 1;
-        entries.push([normalizeValue(key, state, depth + 1, seen), normalizeValue(item, state, depth + 1, seen)]);
-      }
-      if (value.size > state.maxEntries) { entries.push([`... ${value.size - state.maxEntries} more entries`, '[Truncated]']); }
-      return { '[Map]': entries };
-    }
-    if (value instanceof Set) {
-      const entries: unknown[] = [];
-      let index = 0;
-      for (const item of value) {
-        if (index >= state.maxEntries) { break; }
-        index += 1;
-        entries.push(normalizeValue(item, state, depth + 1, seen));
-      }
-      if (value.size > state.maxEntries) { entries.push(`[... ${value.size - state.maxEntries} more items]`); }
-      return { '[Set]': entries };
-    }
-    if (Array.isArray(value)) {
-      const entries = value.slice(0, state.maxEntries).map(item => normalizeValue(item, state, depth + 1, seen));
-      if (value.length > state.maxEntries) { entries.push(`[... ${value.length - state.maxEntries} more items]`); }
-      return entries;
-    }
+    const builtin = normalizeBuiltin(obj, state);
+    if (builtin !== NOT_HANDLED) { return builtin; }
 
-    const result: Record<string, unknown> = {};
-    const keys = ownEnumerableKeys(value).filter(key => visibleKey(key, depth));
-    for (const key of keys.slice(0, state.maxEntries)) {
-      if (SECRET_KEY_PATTERN.test(key) || DANGEROUS_KEY_PATTERN.test(key)) {
-        result[key] = '[Redacted]';
-      } else {
-        result[key] = normalizeValue(readOwnValue(value, key), state, depth + 1, seen);
-      }
-    }
-    if (keys.length > state.maxEntries) { result['...'] = `${keys.length - state.maxEntries} more keys`; }
-    return result;
+    const collection = normalizeCollection(obj, state, depth, seen);
+    if (collection !== NOT_HANDLED) { return collection; }
+
+    return normalizePlainObject(obj, state, depth, seen);
   } catch {
     return '[Unavailable]';
   } finally {
-    seen.delete(value);
+    seen.delete(obj);
   }
 };
 

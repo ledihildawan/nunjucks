@@ -252,6 +252,54 @@ const buildErrorJson = (err: TemplateError) => (): Record<string, unknown> => ({
   stack: err.stack
 });
 
+function assertLogType(type: string): asserts type is LogType {
+  if (type !== 'error' && type !== 'warning') {
+    throw new Error(`Unknown log type: ${type}`);
+  }
+}
+
+/**
+ * The pre-registry call shape: a bare message plus an `info` bag, rather than
+ * an entry from ERROR_DEFINITIONS.
+ */
+const createFromLegacyData = (type: LogType, data: LegacyLogData): TemplateError | TemplateWarning => {
+  const info = (data.info ?? {}) as WarningInfo;
+  const base = createBaseMetadata(data.message, data, info, type);
+
+  if (type === 'error') {
+    const err = new Error(base.message) as TemplateError;
+    Object.assign(err, {
+      name: 'Template render error',
+      code: base.code,
+      subject: base.subject,
+      lineno: base.lineno,
+      colno: base.colno,
+      phase: base.phase,
+      templateName: base.templateName,
+      lineBase: base.lineBase,
+      templatePath: base.templateName,
+      [TEMPLATE_ERROR]: true as const,
+    });
+    err.output = buildErrorOutput(err);
+    return err;
+  }
+
+  const warn = {
+    message: base.message,
+    lineno: base.lineno,
+    colno: base.colno,
+    varName: info.varName ?? null,
+    templateName: base.templateName,
+    undefinedMode: info.undefinedMode ?? 'chainable',
+    code: base.code,
+    subject: base.subject,
+    phase: base.phase,
+    lineBase: base.lineBase,
+  } as TemplateWarning;
+  warn.output = buildWarningOutput(warn);
+  return warn;
+};
+
 export function createLog(
   type: string,
   errorDefOrData: ErrorDefinitionEntry | LegacyLogData,
@@ -259,37 +307,13 @@ export function createLog(
   subject?: string | null,
   context?: ErrorContext | null
 ): TemplateError | TemplateWarning {
+  assertLogType(type);
+
   if (!isErrorDefinitionEntry(errorDefOrData)) {
-    if (type !== 'error' && type !== 'warning') { throw new Error(`Unknown log type: ${type}`); }
-    const info = (errorDefOrData.info ?? {}) as WarningInfo;
-    const base = createBaseMetadata(errorDefOrData.message, errorDefOrData, info, type);
-
-    if (type === 'error') {
-      const err = new Error(base.message) as TemplateError;
-      const props = { name: 'Template render error', code: base.code, subject: base.subject, lineno: base.lineno, colno: base.colno, phase: base.phase, templateName: base.templateName, lineBase: base.lineBase, templatePath: base.templateName, [TEMPLATE_ERROR]: true as const };
-      Object.assign(err, props);
-      err.output = buildErrorOutput(err);
-      return err;
-    }
-
-    const warn = {
-      message: base.message,
-      lineno: base.lineno,
-      colno: base.colno,
-      varName: info.varName ?? null,
-      templateName: base.templateName,
-      undefinedMode: info.undefinedMode ?? 'chainable',
-      code: base.code,
-      subject: base.subject,
-      phase: base.phase,
-      lineBase: base.lineBase
-    } as TemplateWarning;
-    warn.output = buildWarningOutput(warn);
-    return warn;
+    return createFromLegacyData(type, errorDefOrData);
   }
 
   const errorDef = errorDefOrData;
-  if (type !== 'error' && type !== 'warning') { throw new Error(`Unknown log type: ${type}`); }
   const paramsValue = params as Record<string, string> | undefined;
   let normalized: NormalizedErrorContext | NormalizedWarningContext;
   if (type === 'error') {
