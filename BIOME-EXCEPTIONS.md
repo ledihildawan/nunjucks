@@ -20,6 +20,47 @@ Anything that *can* be fixed stays on. Local, one-off exceptions use a
 
 | `correctness/noUnresolvedImports` | Two unrelated causes, both outside our control. In tests, every finding is `import { ... } from 'bun:test'`, a module namespace Biome does not know. In production source, the findings are `escapeHtml`, which reaches its importers through a two-hop re-export (`shared/index.ts` → `escape-context.ts` → `escape.ts`) that Biome's resolver does not follow. TypeScript resolves all of them, and the build and tests pass. Note the second cause is a direct consequence of `noExportedImports`, which is on and requires exactly that re-export form. |
 
+## Parser package only (`packages/@nunjucks/parser/src/**`)
+
+| Rule | Why it is off |
+|---|---|
+| `suspicious/noImportCycles` | The remaining cycles are the grammar's own recursion, and they cannot be removed without violating a rule that is also on. See below. |
+
+This one is worth spelling out, because it was not obvious until measured.
+
+75 findings were reported. 12 of them were real and are fixed: parser modules
+were reaching `parseExpression`, `parsePrimary` and friends through
+`expression-parser/index.ts` and `node-parsers/index.ts`. A barrel re-exports
+everything, so importing one symbol from it creates an edge to every module
+behind it, inflating two-node recursions into cycles spanning a dozen files.
+Every import now names the module that defines the symbol.
+
+What is left is the grammar:
+
+```
+primary -> aggregate -> primary                     // [a, b] contains expressions
+arithmetic -> unary -> primary -> ... -> arithmetic // the precedence ladder
+top-level -> statement-parser/for -> top-level      // {% for %} contains statements
+```
+
+A recursive-descent parser for a language with nested expressions and nested
+blocks cannot have an acyclic module graph when it is split one function per
+file. ES modules resolve these correctly: every binding involved is called
+after module initialisation completes, never during it.
+
+Removing them means merging each recursive group into a single module. Measured:
+
+| Merged group | Lines | `noExcessiveLinesPerFile` limit |
+|---|---|---|
+| Expression precedence chain | 853 | 300 |
+| Statement chain | 1254 | 300 |
+
+So satisfying `noImportCycles` here forces a 2.8x and a 4.2x violation of
+`noExcessiveLinesPerFile`, which is also on. The two rules cannot both hold in
+this package. The rule stays on everywhere else, and the one genuine cycle
+outside the parser -- `log/src/diagnostics.ts` importing from its own package
+entry point -- was fixed rather than suppressed.
+
 ## Test files only (`**/*.test.ts`)
 
 | Rule | Why it is off |

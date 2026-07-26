@@ -80,6 +80,16 @@
       }
     },
     {
+      "includes": ["packages/@nunjucks/parser/src/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noImportCycles": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": ["**/*.test.ts"],
       "linter": {
         "rules": {

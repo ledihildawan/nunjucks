@@ -1,5 +1,7 @@
-import { createLog, type TemplateError } from '@nunjucks/log';
-import { normalizeErrorMetadata } from '@nunjucks/log';
+// Import from the defining modules, not from '@nunjucks/log': this file is
+// itself re-exported by that entry point, so going through it is a cycle.
+import { createLog, type TemplateError } from './create-log.ts';
+import { normalizeErrorMetadata } from './render/internal/normalize.ts';
 import { resolveLocation } from '@nunjucks/shared/error-location';
 
 /** Placeholder pattern for synthesised error definitions, which are never matched against. */
