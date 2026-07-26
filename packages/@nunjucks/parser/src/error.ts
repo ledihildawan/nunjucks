@@ -56,10 +56,12 @@ const inferFix = (msg: string): string => {
 export const EXPECTED_COLON_AFTER_DICT_KEY = 'EXPECTED_COLON_AFTER_DICT_KEY';
 
 export const error = (ctx: ParserContext, msg: string, lineno?: number, colno?: number, sentinel?: string) => {
-  if (lineno === undefined || colno === undefined) {
+  let resolvedLineno = lineno;
+  let resolvedColno = colno;
+  if (resolvedLineno === undefined || resolvedColno === undefined) {
     const tok = peekToken(ctx) || {};
-    lineno = tok.lineno ?? ctx.tokens?.lineno;
-    colno = tok.colno ?? ctx.tokens?.colno;
+    resolvedLineno = tok.lineno ?? ctx.tokens?.lineno;
+    resolvedColno = tok.colno ?? ctx.tokens?.colno;
   }
   const err = createLog('error', {
     name: 'PARSER_ERROR',
@@ -69,7 +71,7 @@ export const error = (ctx: ParserContext, msg: string, lineno?: number, colno?: 
     fixCode: inferFix(msg),
     fixComment: 'See the causes above for guidance',
     suggestion: 'Use the syntax highlighting in your IDE to spot issues quickly'
-  } as Parameters<typeof createLog>[1], {}, null, { lineno, colno, phase: 'parse', lineBase: 'zero' });
+  } as Parameters<typeof createLog>[1], {}, null, { lineno: resolvedLineno, colno: resolvedColno, phase: 'parse', lineBase: 'zero' });
   if (sentinel) {
     Object.assign(err, { sentinel });
   }

@@ -14,23 +14,25 @@ import { parseOptionalChain } from "./optional.ts";
 
 export const parsePostfix = (ctx: ParserContext, node: Node): Node => {
   let tok = peekToken(ctx);
+  // The parameter stays untouched; `current` carries the growing expression.
+  let current = node;
 
   while (tok) {
     if (tok.type === TOKEN_LEFT_PAREN) {
-      node = parseFunCall(ctx, tok, node);
+      current = parseFunCall(ctx, tok, current);
     } else if (tok.type === TOKEN_LEFT_BRACKET) {
       const bracketTok = nextToken(ctx);
-      node = parseBracketAccess(ctx, bracketTok, node);
+      current = parseBracketAccess(ctx, bracketTok, current);
     } else if (tok.type === TOKEN_OPERATOR && tok.value === '.') {
-      node = parseDotAccess(ctx, tok, node);
+      current = parseDotAccess(ctx, tok, current);
     } else if (tok.type === TOKEN_OPERATOR && tok.value === '?.') {
-      node = parseOptionalChain(ctx, tok, node);
+      current = parseOptionalChain(ctx, tok, current);
     } else if (tok.type === TOKEN_OPERATOR && tok.value === '++') {
       nextToken(ctx);
-      node = increment(tok.lineno, tok.colno, node, true);
+      current = increment(tok.lineno, tok.colno, current, true);
     } else if (tok.type === TOKEN_OPERATOR && tok.value === '--') {
       nextToken(ctx);
-      node = decrement(tok.lineno, tok.colno, node, true);
+      current = decrement(tok.lineno, tok.colno, current, true);
     } else {
       break;
     }
@@ -38,7 +40,7 @@ export const parsePostfix = (ctx: ParserContext, node: Node): Node => {
     tok = peekToken(ctx);
   }
 
-  return node;
+  return current;
 };
 
 export { parsePipeForward, parseFilterCallName, parseFilterCallArgs } from './pipe-forward.ts';

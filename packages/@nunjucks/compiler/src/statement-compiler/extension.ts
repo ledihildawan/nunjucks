@@ -13,22 +13,21 @@ export const compileCallExtension = (ctx: Compiler, node: Node, frame: Frame, us
     autoescape = true;
   }
 
-  if (contentArgs.length > 0) {
-    useAsync = true;
-  }
+  // Content args force the async form regardless of what the caller asked for.
+  const emitAsync = useAsync || contentArgs.length > 0;
 
   let res: string | null;
-  if (useAsync) {
+  if (emitAsync) {
     res = ctx.tmpid();
   } else {
     res = null;
   }
 
-  if (!useAsync) {
+  if (!emitAsync) {
     ctx.emit(`${ctx.buffer} += runtime.suppressValue(`);
   }
 
-  if (useAsync) {
+  if (emitAsync) {
     ctx.emit(`let ${res} = await env.getExtension("${node.extName as string}")["${node.prop as string}"](`);
   } else {
     ctx.emit(`env.getExtension("${node.extName as string}")["${node.prop as string}"](`);
@@ -76,7 +75,7 @@ export const compileCallExtension = (ctx: Compiler, node: Node, frame: Frame, us
     });
   }
 
-  if (useAsync) {
+  if (emitAsync) {
     ctx.emit(')');
     ctx.emitLine(
       `\n${ctx.buffer} += runtime.suppressValue(await ${res}, ${autoescape} && env.opts.autoescape, lineno, colno);`);

@@ -123,7 +123,8 @@ export const skipOperator = (ctx: ParserContext, ...vals: string[]): boolean => 
 
 export const advanceAfterBlockEnd = (ctx: ParserContext, name?: string): Token => {
   let tok: Token;
-  if (!name) {
+  let blockName = name;
+  if (!blockName) {
     tok = peekToken(ctx);
 
     if (!tok) {
@@ -135,7 +136,7 @@ export const advanceAfterBlockEnd = (ctx: ParserContext, name?: string): Token =
         'explicit name to be passed');
     }
 
-    name = nextToken(ctx).value as string;
+    blockName = nextToken(ctx).value as string;
   }
 
   tok = nextToken(ctx);
@@ -145,7 +146,7 @@ export const advanceAfterBlockEnd = (ctx: ParserContext, name?: string): Token =
       ctx.dropLeadingWhitespace = true;
     }
   } else {
-    fail(ctx, `expected block end in ${name} statement`);
+    fail(ctx, `expected block end in ${blockName} statement`);
   }
 
   return tok;

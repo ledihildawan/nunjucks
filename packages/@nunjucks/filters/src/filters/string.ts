@@ -52,10 +52,8 @@ export const join = (arr: unknown, del?: string, attr?: string): string => {
     throw new Error(`Expected array but got ${typeof arr}`);
   }
   const d = defaultTo(del, '');
-  if (attr) {
-    arr = arr.map((v) => (v as Record<string, unknown>)[attr]);
-  }
-  return (arr as unknown[]).join(d);
+  const values = attr ? arr.map((v) => (v as Record<string, unknown>)[attr]) : arr;
+  return (values as unknown[]).join(d);
 };
 
 export const lower = createStringFilter((s: string): string => s.toLowerCase());
@@ -69,13 +67,14 @@ export const replace = (str: unknown, old: unknown, new_: string, maxCount?: num
   } else {
     max = maxCount;
   }
-  if (typeof old === 'number') { old = String(old); }
-  else if (typeof old !== 'string') { return str as string; }
+  let oldStr: string;
+  if (typeof old === 'number') { oldStr = String(old); }
+  else if (typeof old === 'string') { oldStr = old; }
+  else { return str as string; }
   let s: string;
   if (typeof str === 'number') { s = String(str); }
   else if (typeof str === 'string' || isSafeString(str)) { s = str as string; }
   else { return str as string; }
-  const oldStr = old as string;
   if (oldStr === '') { return preserveSafe(originalStr, new_ + s.split('').join(new_) + new_); }
   const nextIndex = s.indexOf(oldStr);
   if (max === 0 || nextIndex === -1) { return s; }

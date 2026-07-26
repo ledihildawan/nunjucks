@@ -27,11 +27,11 @@ const isArrayBinding = (n: Node): boolean =>
 
 const isFlatArrayBinding = (n: Node): boolean => isArray(n);
 
-export const compileFor = (ctx: Compiler, node: Node, frame: Frame): void => {
+export const compileFor = (ctx: Compiler, node: Node, parentFrame: Frame): void => {
   const i = ctx.tmpid();
   const len = ctx.tmpid();
   const arr = ctx.tmpid();
-  frame = frame.push(true);
+  const frame = parentFrame.push(true);
 
   ctx.emitLine('frame = frame.push(true);');
 

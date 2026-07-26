@@ -32,20 +32,23 @@ export const parseFilterCallArgs = (ctx: ParserContext, node: Node): Node[] => {
 };
 
 export const parsePipeForward = (ctx: ParserContext, node: Node): Node => {
+  // The parameter stays untouched; `current` carries the growing pipe chain.
+  let current = node;
+
   while (skip(ctx, TOKEN_PIPEFORWARD)) {
     const name = parseFilterCallName(ctx);
 
-    node = pipe(
+    current = pipe(
       name.lineno,
       name.colno,
       name,
       nodeList(
         name.lineno,
         name.colno,
-        [node, ...parseFilterCallArgs(ctx, node)]
+        [current, ...parseFilterCallArgs(ctx, current)]
       ).children
     );
   }
 
-  return node;
+  return current;
 };

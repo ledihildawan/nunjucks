@@ -6,12 +6,12 @@ import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
 import type { Compiler } from '../index.ts';
 
-export const compileRoot = (ctx: Compiler, node: Node, frame: Frame): void => {
-  if (frame) {
+export const compileRoot = (ctx: Compiler, node: Node, incomingFrame: Frame): void => {
+  if (incomingFrame) {
     ctx.fail('compileRoot: root node can\'t have frame');
   }
 
-  frame = createFrame();
+  const frame = createFrame();
 
   ctx.emitFuncBegin(node, 'root');
   ctx.emitLine('let parentTemplate = null;');

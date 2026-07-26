@@ -121,7 +121,7 @@ export const sum = (arr: unknown, attr?: string, start = 0): number => {
         throw new Error(`Attribute "${attr}" not found in item`);
       }
     }
-    arr = map(arr as Record<string, unknown>[], (v) => (v as Record<string, unknown>)[attr]);
+    return start + sumValues(map(arr as Record<string, unknown>[], (v) => (v as Record<string, unknown>)[attr]) as number[]);
   }
   return start + sumValues(arr as number[]);
 };
