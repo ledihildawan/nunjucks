@@ -61,13 +61,27 @@ const toDisplayCoordinate = (value: number | null, lineBase: LineBase | null): n
 // shared source-trace windowing core, so getErrorMetadata can never drift from
 // what the renderers produce. Synchronous — it only consumes inline
 // sourceContent and never reads from disk.
-const buildSnippet = (
-  sourceContent: string | null,
-  displayLine: number | null,
-  displayCol: number | null,
-  sourceStartLine: number,
-  context: number
-): { snippet: string | null; snippetLines: ErrorMetadata['snippetLines']; caret: ErrorMetadata['caret'] } => {
+interface SnippetRequest {
+  sourceContent: string | null;
+  displayLine: number | null;
+  displayCol: number | null;
+  sourceStartLine: number;
+  context: number;
+}
+
+interface SnippetResult {
+  snippet: string | null;
+  snippetLines: ErrorMetadata['snippetLines'];
+  caret: ErrorMetadata['caret'];
+}
+
+const buildSnippet = ({
+  sourceContent,
+  displayLine,
+  displayCol,
+  sourceStartLine,
+  context,
+}: SnippetRequest): SnippetResult => {
   if (!sourceContent || displayLine === null) {
     return { snippet: null, snippetLines: [], caret: null };
   }
@@ -130,13 +144,13 @@ export const getErrorMetadata = (err: ErrorLike, options: GetErrorMetadataOption
   const displayLine = toDisplayCoordinate(lineno, lineBase);
   const displayCol = toDisplayCoordinate(colno, lineBase);
 
-  const { snippet, snippetLines, caret } = buildSnippet(
+  const { snippet, snippetLines, caret } = buildSnippet({
     sourceContent,
     displayLine,
     displayCol,
     sourceStartLine,
-    Math.max(0, snippetContext)
-  );
+    context: Math.max(0, snippetContext),
+  });
 
   return {
     code: err.code ?? null,

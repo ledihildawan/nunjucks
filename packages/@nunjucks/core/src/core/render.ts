@@ -120,7 +120,21 @@ const resolveTemplateSource = async (template: string, loader: unknown, config: 
   return { templateSource: template, templatePath: null };
 };
 
-const createValidationError = async (validationError: ValidationError, stamps: Record<string, unknown>, config: RenderConfig, templateSource: string | null, context: unknown): Promise<never> => {
+interface ValidationErrorRequest {
+  validationError: ValidationError;
+  stamps: Record<string, unknown>;
+  config: RenderConfig;
+  templateSource: string | null;
+  context: unknown;
+}
+
+const createValidationError = async ({
+  validationError,
+  stamps,
+  config,
+  templateSource,
+  context,
+}: ValidationErrorRequest): Promise<never> => {
   const err = new Error(validationError.message);
   Object.assign(err, stamps);
   throw await wrapWithLog(err, config, templateSource, context);
@@ -258,25 +272,37 @@ const validateRenderInput = async (template: unknown, config: RenderConfig, cont
     if (callerLineno && callerLineno > 1) {
       resolvedLineno = callerLineno - 1;
     }
-    await createValidationError(ve, {
-      code: ve.code,
-      subject: ve.subject,
-      lineno: resolvedLineno,
-      colno: callerColno
-    }, config, template, context);
+    await createValidationError({
+      validationError: ve,
+      stamps: {
+        code: ve.code,
+        subject: ve.subject,
+        lineno: resolvedLineno,
+        colno: callerColno
+      },
+      config,
+      templateSource: template,
+      context
+    });
   }
 
   const templateValidation = validateTemplate(template, config as unknown as Parameters<typeof validateTemplate>[1]);
   if (!templateValidation.valid) {
     const ve = templateValidation.errors[0] as NonNullable<typeof templateValidation.errors[0]>;
-    await createValidationError(ve, { lineno: ve.lineno, colno: ve.colno, code: ve.code, subject: ve.subject }, config, template, context);
+    await createValidationError({
+      validationError: ve,
+      stamps: { lineno: ve.lineno, colno: ve.colno, code: ve.code, subject: ve.subject },
+      config,
+      templateSource: template,
+      context
+    });
   }
 
   const contextValidation = validateRenderContext(context, config as unknown as Parameters<typeof validateRenderContext>[1]);
   if (!contextValidation.valid) {
     const ce = contextValidation.errors[0] as NonNullable<typeof contextValidation.errors[0]>;
     const stamps = await getDangerousValueStamps(ce, config);
-    await createValidationError(ce, stamps, config, template, context);
+    await createValidationError({ validationError: ce, stamps, config, templateSource: template, context });
   }
 };
 
