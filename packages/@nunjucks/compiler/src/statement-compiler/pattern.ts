@@ -5,7 +5,10 @@ import type { Compiler } from '../index.ts';
 
 const uniqueId = (() => {
   let n = 0;
-  return (prefix: string): string => `${prefix}_${++n}`;
+  return (prefix: string): string => {
+    n += 1;
+    return `${prefix}_${n}`;
+  };
 })();
 
 const safeMemberLookup = (source: string, key: string): string =>
@@ -59,7 +62,7 @@ const compileDestructuring = (ctx: Compiler, frame: Frame, pattern: Node, source
     }
     for (const child of patternChildren) {
       if (isHole(child)) {
-        i++;
+        i += 1;
         continue;
       }
       if (isRestPattern(child)) {
@@ -90,7 +93,7 @@ const compileDestructuring = (ctx: Compiler, frame: Frame, pattern: Node, source
       } else {
         compileDestructuring(ctx, frame, child, childSource, registerFrame);
       }
-      i++;
+      i += 1;
     }
     return;
   }

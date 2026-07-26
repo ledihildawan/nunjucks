@@ -179,7 +179,7 @@ export const findFirst = (node: Node, predicate: (n: Node) => boolean): Node | u
 
 export const count = (node: Node, predicate?: (n: Node) => boolean): number => {
   let n = 0;
-  findAll(node, (nd): boolean => { if (!predicate || predicate(nd)) { n++;  }return true; });
+  findAll(node, (nd): boolean => { if (!predicate || predicate(nd)) { n += 1; } return true; });
   return n;
 };
 

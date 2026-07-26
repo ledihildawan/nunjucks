@@ -35,6 +35,8 @@ const findInSearchPaths = async (searchPaths: string[], name: string): Promise<s
       await access(fullPath);
       return fullPath;
     } catch {
+      // Not present at this base path; try the next one.
+      continue;
     }
   }
   return null;

@@ -13,7 +13,7 @@ const makeCtx = () => {
     emitLine: (s: string) => emitted.push(`${s}\n`),
     emitLines: (...lines: string[]) => lines.forEach((l) => emitted.push(`${l}\n`)),
     tmpid: () => {
-      lastId++;
+      lastId += 1;
       return `t_${lastId}`;
     },
     compileExpression: (node: { mock?: string }) => emitted.push(node.mock as string),
@@ -21,7 +21,8 @@ const makeCtx = () => {
     withScopedSyntax: (func: () => void) => func(),
     pushBuffer: () => {
       bufStack.push(buf);
-      buf = `t_${++lastId}`;
+      lastId += 1;
+      buf = `t_${lastId}`;
       emitted.push(`let ${buf} = ""\n`);
       return buf;
     },

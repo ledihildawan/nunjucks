@@ -53,7 +53,7 @@ const detectUndefinedInput = (context: unknown, inputValue: unknown): UndefinedI
   try {
     let val: unknown = context;
     let undefinedAt = -1;
-    for (let i = 0; i < parts.length; i++) {
+    for (let i = 0; i < parts.length; i += 1) {
       if (val === undefined || val === null) {
         undefinedAt = i;
         break;

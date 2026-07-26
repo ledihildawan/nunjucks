@@ -104,12 +104,12 @@ export function createCompiler(
   };
 
   const emitLine = (code: string, _originalLine?: number) => {
-    compiledLine++;
+    compiledLine += 1;
     emit(`${code}\n`);
   };
 
   const emitLineWithMapping = (code: string, templateLine?: number, _templateCol?: number) => {
-    compiledLine++;
+    compiledLine += 1;
     if (templateLine !== undefined) {
       // Mapping tracked via templateLine but no longer maintained as a source map.
     }
@@ -167,7 +167,7 @@ export function createCompiler(
   };
 
   const tmpid = () => {
-    lastId++;
+    lastId += 1;
     return `t_${lastId}`;
   };
 

@@ -85,9 +85,9 @@ export const slice = (arr: unknown, slices: number, fillWith?: unknown): unknown
   const extra = arr.length % slices;
   const res: unknown[][] = [];
   let offset = 0;
-  for (let i = 0; i < slices; i++) {
+  for (let i = 0; i < slices; i += 1) {
     const start = offset + (i * sliceLength);
-    if (i < extra) { offset++; }
+    if (i < extra) { offset += 1; }
     const end = offset + ((i + 1) * sliceLength);
     const currSlice = arr.slice(start, end);
     if (fillWith !== undefined && i >= extra) { currSlice.push(fillWith); }

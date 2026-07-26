@@ -86,7 +86,7 @@ export const replace = (str: unknown, old: unknown, new_: string, maxCount?: num
   while (currentIndex > -1 && (max === -1 || count < max)) {
     parts.push(s.substring(pos, currentIndex), new_);
     pos = currentIndex + oldStr.length;
-    count++;
+    count += 1;
     currentIndex = s.indexOf(oldStr, pos);
   }
   parts.push(s.substring(pos));

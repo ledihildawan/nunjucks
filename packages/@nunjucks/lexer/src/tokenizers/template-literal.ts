@@ -32,10 +32,10 @@ export const tokenizeTemplateLiteral: Tokenizer = (state) => {
         const exprChar = getChar(current);
 
         if (exprChar === '{') {
-          exprDepth++;
+          exprDepth += 1;
           exprContent += exprChar;
         } else if (exprChar === '}') {
-          exprDepth--;
+          exprDepth -= 1;
           if (exprDepth > 0) {
             exprContent += exprChar;
           }

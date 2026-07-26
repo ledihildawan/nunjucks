@@ -40,7 +40,7 @@ export function calculateCaretPosition(
 
     let searchLeft = pos - 1;
     while (searchLeft >= 0 && !isWordChar(line[searchLeft])) {
-      searchLeft--;
+      searchLeft -= 1;
     }
     if (searchLeft >= 0 && isWordChar(line[searchLeft])) {
       pos = searchLeft;
@@ -53,11 +53,11 @@ export function calculateCaretPosition(
   if (isWordChar(charAtPos)) {
     wordEnd = pos;
     while (wordEnd < line.length && isWordChar(line[wordEnd])) {
-      wordEnd++;
+      wordEnd += 1;
     }
     wordStart = wordEnd - 1;
     while (wordStart > 0 && isWordChar(line[wordStart - 1])) {
-      wordStart--;
+      wordStart -= 1;
     }
   }
 

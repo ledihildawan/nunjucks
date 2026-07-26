@@ -20,7 +20,7 @@ export const findContextKeyPosition = async (
     let best: LinePosition | null = null;
     let bestDistance = Number.POSITIVE_INFINITY;
 
-    for (let i = Math.max(0, searchLine - searchRadius); i <= Math.min(lines.length - 1, searchLine + searchRadius); i++) {
+    for (let i = Math.max(0, searchLine - searchRadius); i <= Math.min(lines.length - 1, searchLine + searchRadius); i += 1) {
       const line = lines[i] ?? '';
       let col = 0;
       let found = line.indexOf(keyName, col);

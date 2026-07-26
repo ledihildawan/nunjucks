@@ -176,7 +176,7 @@ export const windowSourceTrace = (params: {
   const end = Math.min(lines.length, errorIndex + ctx + 1);
 
   const traceLines: SourceTraceLine[] = [];
-  for (let i = start; i < end; i++) {
+  for (let i = start; i < end; i += 1) {
     traceLines.push({
       number: sourceStartLine + i,
       content: lines[i] ?? '',

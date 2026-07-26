@@ -44,7 +44,7 @@ describe('or combinator', () => {
   test('does not invoke tokenizers after the first match', () => {
     let calls = 0;
     const counting: Tokenizer = (state) => {
-      calls++;
+      calls += 1;
       return matchSymbol(state);
     };
     const combined = or(counting, counting, counting);

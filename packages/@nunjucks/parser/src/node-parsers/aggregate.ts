@@ -56,12 +56,17 @@ export const parseAggregate = (ctx: ParserContext): Node | null => {
           }
           continue;
         }
-      } else if (next.type === TOKEN_SYMBOL || next.type === TOKEN_LEFT_BRACKET || next.type === TOKEN_LEFT_CURLY || next.type === TOKEN_LEFT_PAREN) {
-        } else {
-          fail(ctx, 'parseAggregate: expected comma after expression',
-            next.lineno,
-            next.colno);
-        }
+      } else if (
+        // These token types may legitimately follow an element without a comma.
+        next.type !== TOKEN_SYMBOL &&
+        next.type !== TOKEN_LEFT_BRACKET &&
+        next.type !== TOKEN_LEFT_CURLY &&
+        next.type !== TOKEN_LEFT_PAREN
+      ) {
+        fail(ctx, 'parseAggregate: expected comma after expression',
+          next.lineno,
+          next.colno);
+      }
     }
 
     if (isDict(node)) {

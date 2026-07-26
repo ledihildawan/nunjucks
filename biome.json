@@ -84,6 +84,11 @@
           "correctness": {
             "noUnresolvedImports": "off"
           },
+          "suspicious": {
+            "noEmptyBlockStatements": "off",
+            "noProto": "off",
+            "noExplicitAny": "off"
+          },
           "style": {
             "noMagicNumbers": "off",
             "noNonNullAssertion": "off"

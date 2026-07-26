@@ -179,7 +179,7 @@ const templateLocationOffset = (
   const col = templateErrorCol ?? 0;
   const clampedLine = Math.max(0, Math.min(line, templateLines.length - 1));
   let offset = 0;
-  for (let i = 0; i < clampedLine; i++) {
+  for (let i = 0; i < clampedLine; i += 1) {
     offset += (templateLines[i]?.length ?? 0) + 1;
   }
   return offset + Math.max(0, Math.min(col, templateLines[clampedLine]?.length ?? 0));

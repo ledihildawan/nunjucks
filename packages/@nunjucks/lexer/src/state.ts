@@ -36,14 +36,14 @@ export const advance = (state: LexerState, n = 1): LexerState => {
   let { index, lineno, colno } = state;
   const maxIndex = str.length;
   
-  for (let i = 0; i < n && index < maxIndex; i++) {
+  for (let i = 0; i < n && index < maxIndex; i += 1) {
     const prev = str[index];
-    index++;
+    index += 1;
     if (prev === '\n') {
-      lineno++;
+      lineno += 1;
       colno = 0;
     } else {
-      colno++;
+      colno += 1;
     }
   }
   
@@ -58,7 +58,7 @@ export const matches = (state: LexerState, text: string): boolean => {
   const textLen = text.length;
   if (index + textLen > str.length) { return false; }
   
-  for (let i = 0; i < textLen; i++) {
+  for (let i = 0; i < textLen; i += 1) {
     if (str[index + i] !== text[i]) { return false; }
   }
   return true;

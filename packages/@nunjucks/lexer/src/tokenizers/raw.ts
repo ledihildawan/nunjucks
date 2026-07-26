@@ -47,11 +47,11 @@ export const tokenizeRaw: Tokenizer = (state) => {
       }
 
       if (tagName === name) {
-        depth++;
+        depth += 1;
         content += state.tags.BLOCK_END + tagName;
         current = afterBlockEnd;
       } else if (tagName === endTagName) {
-        depth--;
+        depth -= 1;
         if (depth === 0) {
           content += state.tags.BLOCK_END + endTagName + state.tags.BLOCK_END;
           current = advance(afterBlockEnd, state.tags.BLOCK_END.length);

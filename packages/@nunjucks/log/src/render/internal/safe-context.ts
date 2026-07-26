@@ -99,7 +99,8 @@ const normalizeValue = (value: unknown, state: NormalizeState, depth: number, se
       const entries: unknown[][] = [];
       let index = 0;
       for (const [key, item] of value) {
-        if (index++ >= state.maxEntries) { break; }
+        if (index >= state.maxEntries) { break; }
+        index += 1;
         entries.push([normalizeValue(key, state, depth + 1, seen), normalizeValue(item, state, depth + 1, seen)]);
       }
       if (value.size > state.maxEntries) { entries.push([`... ${value.size - state.maxEntries} more entries`, '[Truncated]']); }
@@ -109,7 +110,8 @@ const normalizeValue = (value: unknown, state: NormalizeState, depth: number, se
       const entries: unknown[] = [];
       let index = 0;
       for (const item of value) {
-        if (index++ >= state.maxEntries) { break; }
+        if (index >= state.maxEntries) { break; }
+        index += 1;
         entries.push(normalizeValue(item, state, depth + 1, seen));
       }
       if (value.size > state.maxEntries) { entries.push(`[... ${value.size - state.maxEntries} more items]`); }

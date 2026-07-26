@@ -43,7 +43,7 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
     },
     set variables(val: Record<string, unknown>) {
       state.variables = val;
-      state.rootState.revision++;
+      state.rootState.revision += 1;
       state.resolveCache.clear();
       state.lookupCache.clear();
     },
@@ -90,7 +90,7 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
       }
 
       obj[lastPart] = val;
-      state.rootState.revision++;
+      state.rootState.revision += 1;
       state.resolveCache.clear();
       state.lookupCache.clear();
     },

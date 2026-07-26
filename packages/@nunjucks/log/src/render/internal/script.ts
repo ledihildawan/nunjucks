@@ -72,7 +72,7 @@ export const TOGGLE_SCRIPT = `<script>
     const end = Math.min(index + BATCH_SIZE, nodes.length);
     const fragment = document.createDocumentFragment();
 
-    for (let i = index; i < end; i++) fragment.appendChild(nodes[i]);
+    for (let i = index; i < end; i += 1) fragment.appendChild(nodes[i]);
     parent.appendChild(fragment);
 
     if (end < nodes.length) {
