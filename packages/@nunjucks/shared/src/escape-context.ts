@@ -33,32 +33,17 @@ const ESCAPE_STYLE: ReadonlyMap<string, string> = Object.freeze(new Map([
 
 export { escapeHtml } from './escape.ts';
 
-export const escapeAttribute = (str: string): string => {
+const escapeWith = (map: ReadonlyMap<string, string>) => (str: string): string => {
   let result = '';
-  for (let i = 0; i < str.length; i++) {
-    const char = str[i]!;
-    result += ESCAPE_ATTRIBUTE.get(char) ?? char;
+  for (const char of str) {
+    result += map.get(char) ?? char;
   }
   return result;
 };
 
-export const escapeScriptString = (str: string): string => {
-  let result = '';
-  for (let i = 0; i < str.length; i++) {
-    const char = str[i]!;
-    result += ESCAPE_SCRIPT_STRING.get(char) ?? char;
-  }
-  return result;
-};
-
-export const escapeStyle = (str: string): string => {
-  let result = '';
-  for (let i = 0; i < str.length; i++) {
-    const char = str[i]!;
-    result += ESCAPE_STYLE.get(char) ?? char;
-  }
-  return result;
-};
+export const escapeAttribute = escapeWith(ESCAPE_ATTRIBUTE);
+export const escapeScriptString = escapeWith(ESCAPE_SCRIPT_STRING);
+export const escapeStyle = escapeWith(ESCAPE_STYLE);
 
 export const escapeForContext = (str: string, context: HtmlContext): string => {
   switch (context) {
@@ -94,7 +79,7 @@ const lastMatchEnd = (re: RegExp, text: string): number => {
   let last = -1;
   let match: RegExpExecArray | null = re.exec(text);
   while (match !== null) {
-    last = match.index + match[0]!.length;
+    last = match.index + (match[0]?.length ?? 0);
     match = re.exec(text);
   }
   re.lastIndex = 0;
@@ -142,7 +127,7 @@ const detectAttributeContext = (before: string, scriptStyleResult: ScriptStyleSc
   const equalsMatch = ATTRIBUTE_EQUALS_RE.exec(openTagContent);
   if (!equalsMatch) { return 'html'; }
 
-  const afterEquals = openTagContent.slice(equalsMatch.index + equalsMatch[0]!.length);
+  const afterEquals = openTagContent.slice(equalsMatch.index + (equalsMatch[0]?.length ?? 0));
 
   if (QUOTED_ATTRIBUTE_VALUE_RE.test(afterEquals)) {
     return 'attribute';
@@ -166,16 +151,19 @@ export interface HtmlContextTracker {
 
 export const createHtmlContextTracker = (source: string): HtmlContextTracker => {
   const lines = source.split('\n');
-  const lineOffsets = [0];
-  for (let i = 0; i < lines.length - 1; i++) {
-    lineOffsets.push(lineOffsets[i]! + lines[i]!.length + 1);
+  const lineOffsets: number[] = [0];
+  let offset = 0;
+  for (const line of lines.slice(0, -1)) {
+    offset += line.length + 1;
+    lineOffsets.push(offset);
   }
 
   const offsetOf = (lineno: number, colno: number): number => {
-    if (lineno < 0 || lineno >= lineOffsets.length) {
+    const lineStart = lineOffsets[lineno];
+    if (lineStart === undefined) {
       return 0;
     }
-    return lineOffsets[lineno]! + colno;
+    return lineStart + colno;
   };
 
   return {

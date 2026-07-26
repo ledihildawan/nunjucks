@@ -50,6 +50,10 @@
           "security": {
             "noSecrets": "off"
           },
+          "performance": {
+            "noBarrelFile": "off",
+            "noReExportAll": "off"
+          },
           "style": {
             "useNamingConvention": {
               "level": "error",
@@ -81,7 +85,8 @@
             "noUnresolvedImports": "off"
           },
           "style": {
-            "noMagicNumbers": "off"
+            "noMagicNumbers": "off",
+            "noNonNullAssertion": "off"
           },
           "performance": {
             "useTopLevelRegex": "off"
