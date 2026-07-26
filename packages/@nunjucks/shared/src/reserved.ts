@@ -1,4 +1,4 @@
-export const RESERVED_KEYWORDS = new Set([
+const RESERVED_KEYWORDS = new Set([
   'if', 'elif', 'else', 'endif',
   'for', 'endfor', 'in',
   'block', 'endblock', 'extends', 'super',
@@ -60,10 +60,12 @@ const validateReservedName = (name: string, type = 'name'): ValidationResult => 
   return { valid: true };
 };
 
-export const validateFilterName = (name: string): ValidationResult => validateReservedName(name, 'filter');
+const validateFilterName = (name: string): ValidationResult => validateReservedName(name, 'filter');
 
-export const validateGlobalName = (name: string): ValidationResult => validateReservedName(name, 'global');
+const validateGlobalName = (name: string): ValidationResult => validateReservedName(name, 'global');
 
-export const validateContextKey = (key: string): ValidationResult => validateReservedName(key, 'context key');
+const validateContextKey = (key: string): ValidationResult => validateReservedName(key, 'context key');
 
-export const getReservedKeywords = (): string[] => [...RESERVED_KEYWORDS];
+const getReservedKeywords = (): string[] => [...RESERVED_KEYWORDS];
+
+export { RESERVED_KEYWORDS, validateFilterName, validateGlobalName, validateContextKey, getReservedKeywords };

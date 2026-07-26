@@ -2,7 +2,7 @@ import { shortenPath } from './internal/path-shortener.ts';
 import { toDisplayLocation } from './internal/location.ts';
 import { classifyFromError } from '../errors/classify.ts';
 
-export interface ToTextOptions {
+interface ToTextOptions {
   verbosity?: 'simple' | 'medium' | 'full';
   templatePath?: string;
   lineno?: number | null;
@@ -16,7 +16,7 @@ const STACK_FUNCTION_RE = /^at\s+([^\s]+)/u;
 
 const stripMarkdown = (text: string): string => text.replace(BOLD_MARKDOWN_RE, '$1').replace(CODE_MARKDOWN_RE, '$1');
 
-export const toText = (error: unknown, options: ToTextOptions = {}): string => {
+const toText = (error: unknown, options: ToTextOptions = {}): string => {
   if (!error) { return ''; }
 
   const { verbosity = 'full', templatePath, lineno, colno } = options;
@@ -147,3 +147,6 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
 
   return parts.filter(Boolean).join('\n');
 };
+
+export { toText };
+export type { ToTextOptions };

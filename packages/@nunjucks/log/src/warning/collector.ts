@@ -1,6 +1,6 @@
 /** A collected render-time warning. Exported: it is the element type of
  * `injectWarningsScript`'s first parameter. */
-export interface Warning {
+interface Warning {
   message: string;
   undefinedMode?: string;
   code?: string | null;
@@ -9,7 +9,7 @@ export interface Warning {
   templateName?: string | null;
 }
 
-export interface InjectWarningsOptions {
+interface InjectWarningsOptions {
   dev?: boolean;
   verbosity?: 'simple' | 'medium' | 'full';
 }
@@ -70,7 +70,7 @@ const formatWarning = (w: Warning | string, options: { verbosity?: 'simple' | 'm
 
 // `warnings` is nullable in the signature because this is a package entry
 // point reached from untyped callers; the guard below is real, not decorative.
-export const injectWarningsScript = (warnings: Warning[] | null | undefined, options: InjectWarningsOptions = {}): string => {
+const injectWarningsScript = (warnings: Warning[] | null | undefined, options: InjectWarningsOptions = {}): string => {
   const { verbosity = 'full' } = options;
 
   if (!warnings || warnings.length === 0) { return ''; }
@@ -82,3 +82,6 @@ export const injectWarningsScript = (warnings: Warning[] | null | undefined, opt
 
   return `<script>window.__nunjucks_warnings__=window.__nunjucks_warnings__||[];${consoleScripts.join('')}</script>`;
 };
+
+export { injectWarningsScript };
+export type { Warning, InjectWarningsOptions };

@@ -3,14 +3,12 @@ import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { normalize, safeString, safeHtml, preserveSafe, createStringFilter, createMacroFilter, isSafeString, isArray, filterError } from '../factory/index.ts';
 import type { SafeString } from '../factory/index.ts';
 
-export { normalize, filterError } from '../factory/index.ts';
-
-export const capitalize = createStringFilter((s: string): string => {
+const capitalize = createStringFilter((s: string): string => {
   const ret = s.toLowerCase();
   return `${ret.charAt(0).toUpperCase()}${ret.slice(1)}`;
 });
 
-export const fallback = createMacroFilter(['val', 'def', 'bool'], (val: unknown, def: unknown, bool?: boolean): unknown => {
+const fallback = createMacroFilter(['val', 'def', 'bool'], (val: unknown, def: unknown, bool?: boolean): unknown => {
   if (bool) {
     return val || def;
   }
@@ -21,14 +19,14 @@ export const fallback = createMacroFilter(['val', 'def', 'bool'], (val: unknown,
 });
 
 // biome-ignore lint/suspicious/noShadowRestrictedNames: `escape` is the public name of this Nunjucks filter; renaming it would break every template that uses it.
-export const escape = safeHtml;
+const escape = safeHtml;
 
-export const tojson = (value: unknown): SafeString => safeString(JSON.stringify(value));
+const tojson = (value: unknown): SafeString => safeString(JSON.stringify(value));
 
 /** Jinja2's `indent` filter defaults to four spaces. */
 const DEFAULT_INDENT_WIDTH = 4;
 
-export const indent = (str: unknown, width?: number, indentfirst?: boolean): string => {
+const indent = (str: unknown, width?: number, indentfirst?: boolean): string => {
   const s = normalize(str, '');
   if (s === '') { return ''; }
   const w = defaultTo(width, DEFAULT_INDENT_WIDTH);
@@ -43,7 +41,7 @@ export const indent = (str: unknown, width?: number, indentfirst?: boolean): str
   return preserveSafe(str, res);
 };
 
-export const join = (arr: unknown, del?: string, attr?: string): string => {
+const join = (arr: unknown, del?: string, attr?: string): string => {
   if (!isArray(arr)) {
     const errorDef = ERROR_DEFINITIONS.JOIN_FILTER;
     if (errorDef) {
@@ -57,9 +55,9 @@ export const join = (arr: unknown, del?: string, attr?: string): string => {
   return (values as unknown[]).join(d);
 };
 
-export const lower = createStringFilter((s: string): string => s.toLowerCase());
+const lower = createStringFilter((s: string): string => s.toLowerCase());
 
-export const replace = (str: unknown, old: unknown, new_: string, maxCount?: number): string => {
+const replace = (str: unknown, old: unknown, new_: string, maxCount?: number): string => {
   const originalStr = str;
   if (old instanceof RegExp) { return (str as string).replace(old, new_); }
   let max: number;
@@ -93,17 +91,17 @@ export const replace = (str: unknown, old: unknown, new_: string, maxCount?: num
   return preserveSafe(originalStr, parts.join(''));
 };
 
-export const title = createStringFilter((s: string): string => {
+const title = createStringFilter((s: string): string => {
   const words = s.split(' ').map((word: string) => capitalize(word));
   return (words as string[]).join(' ');
 });
 
-export const trim = createStringFilter((s: string): string => s.replace(/^\s*|\s*$/gu, ''));
+const trim = createStringFilter((s: string): string => s.replace(/^\s*|\s*$/gu, ''));
 
 /** Jinja2's `truncate` filter defaults to 255 characters. */
 const DEFAULT_TRUNCATE_LENGTH = 255;
 
-export const truncate = (input: unknown, length?: number, killwords?: boolean, end?: string): string => {
+const truncate = (input: unknown, length?: number, killwords?: boolean, end?: string): string => {
   const orig = input;
   let inp = normalize(input, '');
   if (typeof inp !== 'string') { inp = String(inp); }
@@ -120,9 +118,9 @@ export const truncate = (input: unknown, length?: number, killwords?: boolean, e
   return preserveSafe(orig, inp);
 };
 
-export const upper = createStringFilter((s: string): string => s.toUpperCase());
+const upper = createStringFilter((s: string): string => s.toUpperCase());
 
-export const urlencode = (obj: unknown): string => {
+const urlencode = (obj: unknown): string => {
   const enc = encodeURIComponent;
   if (typeof obj === 'string') { return enc(obj); }
   let keyvals: [string, unknown][];
@@ -133,3 +131,7 @@ export const urlencode = (obj: unknown): string => {
   }
   return keyvals.map(([k, v]) => `${enc(k)}=${enc(String(v))}`).join('&');
 };
+
+export { capitalize, fallback, escape, tojson, indent, join, lower, replace, title, trim, truncate, upper, urlencode };
+
+export { normalize, filterError } from '../factory/index.ts';

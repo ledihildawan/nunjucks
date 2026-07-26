@@ -5,7 +5,7 @@ const FILE_PATH_PATTERN = /\.(njk|nunjucks|js|ts|mjs|cjs|jsx|tsx|html|htm|tmpl|t
 const NATIVE_FRAME_RE = /^native$/iu;
 const ANGLE_PREFIX_RE = /^</u;
 
-export const isFilePath = (path?: string | null): boolean =>
+const isFilePath = (path?: string | null): boolean =>
   typeof path === 'string' &&
   path.trim() !== '' &&
   !NATIVE_FRAME_RE.test(path.trim()) &&
@@ -23,7 +23,7 @@ interface IdeScheme {
   icon: string;
 }
 
-export const IDE_SCHEMES: Record<string, IdeScheme | IdeLinkFn> = {
+const IDE_SCHEMES: Record<string, IdeScheme | IdeLinkFn> = {
   vscode: {
     label: 'VS Code',
     color: '#007ACC',
@@ -82,7 +82,7 @@ export const IDE_SCHEMES: Record<string, IdeScheme | IdeLinkFn> = {
 
 const DEFAULT_META = { label: 'IDE', color: null, icon: GENERIC_ICON };
 
-export const resolveIdeLink = (ide: string | IdeLinkFn, path: string, line: number, col: number): string => {
+const resolveIdeLink = (ide: string | IdeLinkFn, path: string, line: number, col: number): string => {
   if (typeof ide === 'function') { return ide(path, line, col); }
   const entry = IDE_SCHEMES[ide];
   if (!entry) { return (IDE_SCHEMES.vscode as IdeScheme).link(path, line, col); }
@@ -91,9 +91,11 @@ export const resolveIdeLink = (ide: string | IdeLinkFn, path: string, line: numb
   return entry.link(normalizedPath, line, col);
 };
 
-export const getIdeMeta = (ide: string | IdeLinkFn): { label: string; color: string | null; icon: string } => {
+const getIdeMeta = (ide: string | IdeLinkFn): { label: string; color: string | null; icon: string } => {
   if (typeof ide === 'function') { return DEFAULT_META; }
   const entry = IDE_SCHEMES[ide];
   if (!entry || typeof entry === 'function') { return DEFAULT_META; }
   return entry;
 };
+
+export { isFilePath, IDE_SCHEMES, resolveIdeLink, getIdeMeta };

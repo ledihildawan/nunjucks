@@ -8,7 +8,7 @@ import type { Compiler } from '../index.ts';
  * pattern node and its source expression change as the recursion descends,
  * so these three travel together instead of being re-threaded at every call.
  */
-export interface DestructuringContext {
+interface DestructuringContext {
   ctx: Compiler;
   frame: Frame;
   /** False when compiling a macro signature, where frame slots already exist. */
@@ -199,3 +199,5 @@ const compileDestructuring = (dc: DestructuringContext, pattern: Node, source: s
 };
 
 export { compileDestructuring };
+
+export type { DestructuringContext };

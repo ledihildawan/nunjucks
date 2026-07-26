@@ -71,7 +71,7 @@ const subjectColumnOffset = (subject: string): number => {
  * Each field is optional; the resolver merges them according to the
  * precedence rules documented at the top of this file.
  */
-export interface LocationInputs {
+interface LocationInputs {
   /** Template source (for inline templates), used to find it in caller. */
   template?: string | null;
   /** Path to the template file (if loaded from disk). */
@@ -109,7 +109,7 @@ export interface LocationInputs {
  * Every field is meaningful and the caller can use it directly without
  * needing to know which precedence tier produced it.
  */
-export interface ResolvedLocation {
+interface ResolvedLocation {
   /** Final line to report (1-based when preferCallerLocation, else 0-based). */
   lineno: number | null;
   /** Final column to report (1-based when preferCallerLocation, else 0-based). */
@@ -392,7 +392,7 @@ const extractCallerPosition = (
  * Returns a fully-populated `ResolvedLocation` so the caller never has to
  * re-derive precedence. See the precedence table at the top of this file.
  */
-export const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedLocation> => {
+const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedLocation> => {
   const {
     template = null,
     templatePath = null,
@@ -511,3 +511,6 @@ const tryReadFile = async (path: string): Promise<string | null> => {
     return null;
   }
 };
+
+export { resolveLocation };
+export type { LocationInputs, ResolvedLocation };

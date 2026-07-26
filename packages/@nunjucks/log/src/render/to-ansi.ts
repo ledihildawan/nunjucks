@@ -7,7 +7,7 @@ import { normalizeRenderContext } from './internal/safe-context.ts';
 import type { SourceTrace, SourceTraceLine, SourceTraceCaret } from './internal/source-trace.ts';
 import { classifyFromError } from '../errors/classify.ts';
 
-export interface AnsiOptions {
+interface AnsiOptions {
   verbosity?: 'simple' | 'medium' | 'full';
   templatePath?: string;
   lineno?: number | null;
@@ -212,7 +212,7 @@ const formatFixAnsi = (fixCode: string | null, fixComment: string | null, docume
   return parts.join('\n');
 };
 
-export const toAnsi = async (error: unknown, options: AnsiOptions = {}): Promise<string> => {
+const toAnsi = async (error: unknown, options: AnsiOptions = {}): Promise<string> => {
   if (!error) { return ''; }
 
   const { verbosity = 'full', templatePath, lineno, colno, ide = 'vscode', sourceTrace } = options;
@@ -298,3 +298,6 @@ export const toAnsi = async (error: unknown, options: AnsiOptions = {}): Promise
 
   return parts.filter(Boolean).join('\n');
 };
+
+export { toAnsi };
+export type { AnsiOptions };

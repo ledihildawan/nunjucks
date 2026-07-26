@@ -1,5 +1,5 @@
 // TYPES - Core type definitions and constants
-export const T = Object.freeze({
+const T = Object.freeze({
   NODE: 'node',
   VALUE: 'value',
   LITERAL: 'literal',
@@ -85,9 +85,9 @@ export const T = Object.freeze({
   HOLE: 'hole',
 } as const);
 
-export type NodeType = typeof T[keyof typeof T];
+type NodeType = typeof T[keyof typeof T];
 
-export const BracketNotation = Symbol('BracketNotation');
+const BracketNotation = Symbol('BracketNotation');
 
 interface NodeBase {
   readonly type: NodeType;
@@ -100,12 +100,12 @@ interface NodeBase {
   [key: string]: unknown;
 }
 
-export interface ValueNode extends NodeBase {
+interface ValueNode extends NodeBase {
   readonly type: typeof T.VALUE | typeof T.LITERAL | typeof T.SYMBOL | typeof T.TEMPLATE_DATA;
   value: unknown;
 }
 
-export interface ChildrenNode extends NodeBase {
+interface ChildrenNode extends NodeBase {
   readonly type:
   | typeof T.NODE_LIST | typeof T.ROOT | typeof T.OUTPUT | typeof T.GROUP
   | typeof T.ARRAY | typeof T.DICT | typeof T.ARRAY_PATTERN
@@ -113,7 +113,7 @@ export interface ChildrenNode extends NodeBase {
   children: Node[];
 }
 
-export interface BinaryOpNode extends NodeBase {
+interface BinaryOpNode extends NodeBase {
   readonly type:
   | typeof T.ADD | typeof T.SUB | typeof T.MUL | typeof T.DIV
   | typeof T.FLOOR_DIV | typeof T.MOD | typeof T.POW;
@@ -122,7 +122,7 @@ export interface BinaryOpNode extends NodeBase {
   operator: string;
 }
 
-export interface BinaryNode extends NodeBase {
+interface BinaryNode extends NodeBase {
   readonly type:
   | typeof T.CONCAT | typeof T.AND | typeof T.OR | typeof T.NULLISH_COALESCE
   | typeof T.BITWISE_OR | typeof T.BITWISE_AND | typeof T.BITWISE_XOR
@@ -132,222 +132,222 @@ export interface BinaryNode extends NodeBase {
   right: Node;
 }
 
-export interface UnaryOpNode extends NodeBase {
+interface UnaryOpNode extends NodeBase {
   readonly type: typeof T.NOT | typeof T.NEG | typeof T.POS;
   target: Node;
   operator: string;
 }
 
-export interface UnaryNode extends NodeBase {
+interface UnaryNode extends NodeBase {
   readonly type: typeof T.BITWISE_NOT;
   target: Node;
 }
 
-export interface IncDecNode extends NodeBase {
+interface IncDecNode extends NodeBase {
   readonly type: typeof T.INCREMENT | typeof T.DECREMENT;
   target: Node;
   isPostfix: boolean;
 }
 
-export interface CallNode extends NodeBase {
+interface CallNode extends NodeBase {
   readonly type: typeof T.FUN_CALL | typeof T.PIPE | typeof T.OPTIONAL_CALL;
   name: Node | string;
   args: Node[];
 }
 
-export interface LookupNode extends NodeBase {
+interface LookupNode extends NodeBase {
   readonly type: typeof T.LOOKUP_VAL | typeof T.OPTIONAL_CHAIN;
   target: Node;
   val: Node;
 }
 
-export interface SliceNode extends NodeBase {
+interface SliceNode extends NodeBase {
   readonly type: typeof T.SLICE;
   start: Node | null;
   stop: Node | null;
   step: Node | null;
 }
 
-export interface CompareNode extends NodeBase {
+interface CompareNode extends NodeBase {
   readonly type: typeof T.COMPARE;
   expr: Node;
   ops: Node[];
 }
 
-export interface CompareOperandNode extends NodeBase {
+interface CompareOperandNode extends NodeBase {
   readonly type: typeof T.COMPARE_OPERAND;
   expr: Node;
   operator: string;
 }
 
-export interface PairNode extends NodeBase {
+interface PairNode extends NodeBase {
   readonly type: typeof T.PAIR | typeof T.PATTERN_PROPERTY;
   key: Node;
   value: Node;
 }
 
-export interface SpreadNode extends NodeBase {
+interface SpreadNode extends NodeBase {
   readonly type: typeof T.SPREAD;
   argument: Node;
 }
 
-export interface WalrusNode extends NodeBase {
+interface WalrusNode extends NodeBase {
   readonly type: typeof T.WALRUS;
   target: Node;
   value: Node;
 }
 
-export interface RestPatternNode extends NodeBase {
+interface RestPatternNode extends NodeBase {
   readonly type: typeof T.REST_PATTERN;
   target: Node;
 }
 
-export interface AssignmentPatternNode extends NodeBase {
+interface AssignmentPatternNode extends NodeBase {
   readonly type: typeof T.ASSIGNMENT_PATTERN;
   target: Node;
   value: Node;
 }
 
-export interface BlockNode extends NodeBase {
+interface BlockNode extends NodeBase {
   readonly type: typeof T.BLOCK;
   name?: string;
 }
 
-export interface IfNode extends NodeBase {
+interface IfNode extends NodeBase {
   readonly type: typeof T.IF | typeof T.INLINE_IF;
   cond?: Node;
   else_: Node | null;
 }
 
-export interface ForNode extends NodeBase {
+interface ForNode extends NodeBase {
   readonly type: typeof T.FOR;
   arr?: Node;
   name?: Node;
   else_: Node | null;
 }
 
-export interface MacroNode extends NodeBase {
+interface MacroNode extends NodeBase {
   readonly type: typeof T.MACRO;
   name: string;
   args: Node[];
 }
 
-export interface CallerNode extends NodeBase {
+interface CallerNode extends NodeBase {
   readonly type: typeof T.CALLER;
   args: Node[];
 }
 
-export interface CallStmtNode extends NodeBase {
+interface CallStmtNode extends NodeBase {
   readonly type: typeof T.CALL;
   name: string;
   args: Node[];
 }
 
-export interface SetNode extends NodeBase {
+interface SetNode extends NodeBase {
   readonly type: typeof T.SET;
   targets: Node[];
   value?: Node;
   operator?: string | null;
 }
 
-export interface TryCatchNode extends NodeBase {
+interface TryCatchNode extends NodeBase {
   readonly type: typeof T.TRY_CATCH;
   catch: Node | null;
   errVar: string | null;
 }
 
-export interface DoNode extends NodeBase {
+interface DoNode extends NodeBase {
   readonly type: typeof T.DO;
   expr: Node;
 }
 
-export interface WithNode extends NodeBase {
+interface WithNode extends NodeBase {
   readonly type: typeof T.WITH;
   assignments: Node[];
 }
 
-export interface SwitchNode extends NodeBase {
+interface SwitchNode extends NodeBase {
   readonly type: typeof T.SWITCH;
   expr: Node;
   cases: Node[];
   default: Node | null;
 }
 
-export interface CaseNode extends NodeBase {
+interface CaseNode extends NodeBase {
   readonly type: typeof T.CASE;
   cond: Node;
 }
 
-export interface TemplateRefNode extends NodeBase {
+interface TemplateRefNode extends NodeBase {
   readonly type: typeof T.TEMPLATE_REF;
   template: string;
 }
 
-export interface ExtendsNode extends NodeBase {
+interface ExtendsNode extends NodeBase {
   readonly type: typeof T.EXTENDS;
   template?: Node;
 }
 
-export interface IncludeNode extends NodeBase {
+interface IncludeNode extends NodeBase {
   readonly type: typeof T.INCLUDE;
   template?: Node;
   ignoreMissing: boolean | null;
 }
 
-export interface SuperNode extends NodeBase {
+interface SuperNode extends NodeBase {
   readonly type: typeof T.SUPER;
   blockName: string;
   symbol: Node | null;
 }
 
-export interface ImportNode extends NodeBase {
+interface ImportNode extends NodeBase {
   readonly type: typeof T.IMPORT;
   template: Node | string;
   target: string;
   withContext: boolean;
 }
 
-export interface FromImportNode extends NodeBase {
+interface FromImportNode extends NodeBase {
   readonly type: typeof T.FROM_IMPORT;
   template: Node | string;
   names: Node;
   withContext: boolean;
 }
 
-export interface HoleNode extends NodeBase {
+interface HoleNode extends NodeBase {
   readonly type: typeof T.HOLE;
 }
 
-export interface VariableDeclNode extends NodeBase {
+interface VariableDeclNode extends NodeBase {
   readonly type: typeof T.VARIABLE_DECLARATION | typeof T.VARIABLE_ASSIGNMENT;
   targets: Node[];
   value: Node;
 }
 
-export interface CompoundAssignNode extends NodeBase {
+interface CompoundAssignNode extends NodeBase {
   readonly type: typeof T.COMPOUND_ASSIGNMENT;
   targets: Node[];
   operator: string;
   value: Node;
 }
 
-export interface DefineBlockNode extends NodeBase {
+interface DefineBlockNode extends NodeBase {
   readonly type: typeof T.DEFINE_BLOCK;
   name: string;
   args: MacroArgument[];
 }
 
-export interface MacroArgument {
+interface MacroArgument {
   name: string;
   defaultVal: Node | null;
 }
 
-export interface TemplateLiteralNode extends NodeBase {
+interface TemplateLiteralNode extends NodeBase {
   readonly type: typeof T.TEMPLATE_LITERAL;
   quasis: unknown[];
 }
 
-export interface CallExtensionNode extends NodeBase {
+interface CallExtensionNode extends NodeBase {
   readonly type: typeof T.CALL_EXTENSION | typeof T.CALL_EXTENSION_ASYNC;
   extName: string;
   prop: string;
@@ -356,11 +356,11 @@ export interface CallExtensionNode extends NodeBase {
   autoescape: boolean;
 }
 
-export interface GenericNode extends NodeBase {
+interface GenericNode extends NodeBase {
   readonly type: typeof T.NODE | typeof T.FILTER | typeof T.BIN_OP | typeof T.UNARY_OP;
 }
 
-export type Node =
+type Node =
 | ValueNode | ChildrenNode | BinaryOpNode | BinaryNode | UnaryOpNode | UnaryNode
 | IncDecNode | CallNode | LookupNode | SliceNode | CompareNode
 | CompareOperandNode | PairNode | SpreadNode | WalrusNode | RestPatternNode
@@ -370,7 +370,7 @@ export type Node =
 | HoleNode | VariableDeclNode | CompoundAssignNode | DefineBlockNode | TemplateLiteralNode
 | CallExtensionNode | GenericNode;
 
-export type NodeOf<K extends NodeType> =
+type NodeOf<K extends NodeType> =
   K extends typeof T.VALUE | typeof T.LITERAL | typeof T.SYMBOL | typeof T.TEMPLATE_DATA ? ValueNode
 : K extends typeof T.NODE_LIST | typeof T.ROOT | typeof T.OUTPUT | typeof T.GROUP | typeof T.ARRAY | typeof T.DICT | typeof T.ARRAY_PATTERN | typeof T.OBJECT_PATTERN | typeof T.KEYWORD_ARGS ? ChildrenNode
 : K extends typeof T.ADD | typeof T.SUB | typeof T.MUL | typeof T.DIV | typeof T.FLOOR_DIV | typeof T.MOD | typeof T.POW ? BinaryOpNode
@@ -415,7 +415,7 @@ export type NodeOf<K extends NodeType> =
 : K extends typeof T.NODE | typeof T.FILTER | typeof T.BIN_OP | typeof T.UNARY_OP ? GenericNode
 : Node;
 
-export const FIELDS: Readonly<Record<NodeType, readonly string[]>> = {
+const FIELDS: Readonly<Record<NodeType, readonly string[]>> = {
   [T.NODE]: [],
   [T.VALUE]: ['value'],
   [T.LITERAL]: ['value'],
@@ -500,3 +500,6 @@ export const FIELDS: Readonly<Record<NodeType, readonly string[]>> = {
   [T.CALL_EXTENSION]: ['extName', 'prop', 'args', 'contentArgs', 'autoescape'],
   [T.CALL_EXTENSION_ASYNC]: ['extName', 'prop', 'args', 'contentArgs', 'autoescape'],
 };
+
+export { T, BracketNotation, FIELDS };
+export type { NodeType, ValueNode, ChildrenNode, BinaryOpNode, BinaryNode, UnaryOpNode, UnaryNode, IncDecNode, CallNode, LookupNode, SliceNode, CompareNode, CompareOperandNode, PairNode, SpreadNode, WalrusNode, RestPatternNode, AssignmentPatternNode, BlockNode, IfNode, ForNode, MacroNode, CallerNode, CallStmtNode, SetNode, TryCatchNode, DoNode, WithNode, SwitchNode, CaseNode, TemplateRefNode, ExtendsNode, IncludeNode, SuperNode, ImportNode, FromImportNode, HoleNode, VariableDeclNode, CompoundAssignNode, DefineBlockNode, MacroArgument, TemplateLiteralNode, CallExtensionNode, GenericNode, Node, NodeOf };

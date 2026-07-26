@@ -9,9 +9,6 @@ import { toDisplayLocation } from './internal/location.ts';
 import type { SourceTrace } from './internal/source-trace.ts';
 import { shortenPath } from './internal/path-shortener.ts';
 
-export { CSS, PRODUCTION_BODY } from './internal/styles.ts';
-export { TOGGLE_SCRIPT } from './internal/script.ts';
-
 interface Csp {
   nonce?: string;
 }
@@ -78,7 +75,7 @@ interface ErrorLike {
   lineBase?: 'zero' | 'one' | null;
 }
 
-export interface ToHtmlOptions {
+interface ToHtmlOptions {
   templatePath?: string;
   lineno?: number | null;
   colno?: number | null;
@@ -195,7 +192,7 @@ const highlightSource = (code: string, filePath?: string | null): string => {
   return highlightHtml(code);
 };
 
-export const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {}): Promise<string> => {
+const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {}): Promise<string> => {
   const {
     templatePath = error?.templateName,
     lineno,
@@ -414,3 +411,9 @@ export const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {
   }
   return document(docTitle, body, TOGGLE_SCRIPT, csp ?? null);
 };
+
+export { toHtml };
+export type { ToHtmlOptions };
+
+export { CSS, PRODUCTION_BODY } from './internal/styles.ts';
+export { TOGGLE_SCRIPT } from './internal/script.ts';

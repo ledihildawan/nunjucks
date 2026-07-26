@@ -1,6 +1,6 @@
 import EventEmitter from 'node:events';
 
-export const HOOK_EVENTS = Object.freeze({
+const HOOK_EVENTS = Object.freeze({
   TEMPLATE_LOADING: 'template:loading',
   TEMPLATE_LOADED: 'template:loaded',
   TEMPLATE_LOAD_ERROR: 'template:load:error',
@@ -12,9 +12,9 @@ export const HOOK_EVENTS = Object.freeze({
   RENDER_ERROR: 'render:error',
 });
 
-export type HookEvent = typeof HOOK_EVENTS[keyof typeof HOOK_EVENTS];
+type HookEvent = typeof HOOK_EVENTS[keyof typeof HOOK_EVENTS];
 
-export const globalHooks = new EventEmitter();
+const globalHooks = new EventEmitter();
 
 interface HookEmitter {
   emit: (event: string, payload: Record<string, unknown>) => boolean;
@@ -25,7 +25,7 @@ interface CreateHookEmitterOptions {
   envName?: string | null;
 }
 
-export const createHookEmitter = (env: HookEmitter, options: CreateHookEmitterOptions = {}) => {
+const createHookEmitter = (env: HookEmitter, options: CreateHookEmitterOptions = {}) => {
   const { emitGlobal = true, envName = null } = options;
 
   const emitHook = (event: string, data: Record<string, unknown> = {}): void => {
@@ -45,4 +45,7 @@ export const createHookEmitter = (env: HookEmitter, options: CreateHookEmitterOp
   return { emitHook };
 };
 
-export const hookable = <T extends (...args: unknown[]) => unknown>(fn: T): T => fn;
+const hookable = <T extends (...args: unknown[]) => unknown>(fn: T): T => fn;
+
+export { HOOK_EVENTS, globalHooks, createHookEmitter, hookable };
+export type { HookEvent };

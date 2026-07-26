@@ -134,9 +134,9 @@ const builtInFilters: FilterObject = Object.freeze({
   sanitize: sanitize as unknown as (...args: unknown[]) => unknown,
 });
 
-export type SandboxEnvironment = 'auto' | 'node' | 'browser' | 'deno';
-export type SandboxMode = 'blocklist' | 'allowlist';
-export type UndefinedMode = 'default' | 'chainable' | 'strict' | 'debug';
+type SandboxEnvironment = 'auto' | 'node' | 'browser' | 'deno';
+type SandboxMode = 'blocklist' | 'allowlist';
+type UndefinedMode = 'default' | 'chainable' | 'strict' | 'debug';
 
 interface GlobalConfigBase {
   readonly sandbox: boolean;
@@ -166,9 +166,7 @@ interface GlobalConfigBase {
   readonly dompurify: DomPurifyConfig;
 }
 
-export type { DomPurifyConfig } from '@nunjucks/filters';
-
-export interface GlobalConfig extends GlobalConfigBase {
+interface GlobalConfig extends GlobalConfigBase {
   readonly [key: string]: unknown;
 }
 
@@ -200,13 +198,16 @@ const DEFAULT_CONFIG: GlobalConfig = Object.freeze({
   dompurify: Object.freeze({})
 });
 
-export const getDefaultConfig = (): GlobalConfig => ({ ...DEFAULT_CONFIG });
-export { setDefaultDomPurifyConfig } from '@nunjucks/filters';
-
+const getDefaultConfig = (): GlobalConfig => ({ ...DEFAULT_CONFIG });
 interface ConfigValidationError {
   readonly field: string;
   readonly message: string;
 }
 
+export { getDefaultConfig };
+export type { SandboxEnvironment, SandboxMode, UndefinedMode, GlobalConfig };
+
+export type { DomPurifyConfig } from '@nunjucks/filters';
+export { setDefaultDomPurifyConfig } from '@nunjucks/filters';
 export type { ConfigValidationError };
 export type { Result } from './result.ts';

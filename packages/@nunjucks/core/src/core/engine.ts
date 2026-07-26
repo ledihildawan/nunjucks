@@ -1,16 +1,16 @@
 import { createFileSystemLoader, type FileSystemLoader } from '@nunjucks/loaders';
 
-export interface EngineConfig {
+interface EngineConfig {
   dev?: boolean;
   views?: string;
   root?: string;
 }
 
-export interface Engine {
+interface Engine {
   getLoader: (cfg: EngineConfig) => FileSystemLoader | null;
 }
 
-export const createEngine = (): Engine => {
+const createEngine = (): Engine => {
   let cachedLoader: FileSystemLoader | null = null;
   let cachedViewsPath: string | null = null;
 
@@ -32,4 +32,7 @@ export const createEngine = (): Engine => {
 
 const defaultEngine = createEngine();
 
-export const getLoader = (config: EngineConfig): FileSystemLoader | null => defaultEngine.getLoader(config);
+const getLoader = (config: EngineConfig): FileSystemLoader | null => defaultEngine.getLoader(config);
+
+export { createEngine, getLoader };
+export type { EngineConfig, Engine };

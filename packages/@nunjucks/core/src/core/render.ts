@@ -51,7 +51,7 @@ interface SandboxOptions {
   environment?: Environment;
 }
 
-export interface RenderConfig {
+interface RenderConfig {
   dev?: boolean;
   autoescape?: boolean;
   undefined?: string;
@@ -306,7 +306,7 @@ const validateRenderInput = async (template: unknown, config: RenderConfig, cont
   }
 };
 
-export const render = async (template: string, context: Record<string, unknown> = {}, options: Partial<GlobalConfig> = {}): Promise<string> => {
+const render = async (template: string, context: Record<string, unknown> = {}, options: Partial<GlobalConfig> = {}): Promise<string> => {
   if (options.dompurify) {
     setDefaultDomPurifyConfig(options.dompurify);
   }
@@ -379,7 +379,7 @@ export const render = async (template: string, context: Record<string, unknown> 
   return result as string;
 };
 
-export const renderWithEnv = async (templateName: string, env: unknown, context: Record<string, unknown> = {}, config: RenderConfig = {}): Promise<string> => {
+const renderWithEnv = async (templateName: string, env: unknown, context: Record<string, unknown> = {}, config: RenderConfig = {}): Promise<string> => {
   const fullConfig: RenderConfig = { ...config, templatePath: config.templatePath || templateName, env };
 
   const validation = validateConfig(config as Parameters<typeof validateConfig>[0]);
@@ -430,3 +430,6 @@ export const renderWithEnv = async (templateName: string, env: unknown, context:
     throw await wrapWithLog(err as Error, fullConfig, (template as { tmplStr?: string } | undefined)?.tmplStr ?? null, context);
   }
 };
+
+export { render, renderWithEnv };
+export type { RenderConfig };

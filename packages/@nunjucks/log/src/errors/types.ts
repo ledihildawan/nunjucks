@@ -1,9 +1,9 @@
-export type SubjectExtractor = (groups: RegExpMatchArray) => string | null;
-export type ExtraExtractor = (groups: RegExpMatchArray) => Record<string, string> | null;
+type SubjectExtractor = (groups: RegExpMatchArray) => string | null;
+type ExtraExtractor = (groups: RegExpMatchArray) => Record<string, string> | null;
 
-export type ErrorSeverity = 'error' | 'warning' | 'info';
+type ErrorSeverity = 'error' | 'warning' | 'info';
 
-export interface ErrorDefinition {
+interface ErrorDefinition {
   readonly name: string;
   readonly message: string | ((args?: Record<string, string> | string[]) => string);
   readonly pattern: RegExp;
@@ -19,7 +19,7 @@ export interface ErrorDefinition {
   readonly sourceFromStack?: boolean;
 }
 
-export interface Classification {
+interface Classification {
   readonly category: string;
   readonly undefinedName: string | null;
   readonly causes: readonly string[];
@@ -30,7 +30,7 @@ export interface Classification {
   readonly title?: string | null;
 }
 
-export interface ClassifyInput {
+interface ClassifyInput {
   message?: string;
   code?: string | null;
   subject?: string | null;
@@ -39,9 +39,10 @@ export interface ClassifyInput {
   fixComment?: string;
 }
 
-export type Classifier = (input: ClassifyInput) => Classification | null;
+type Classifier = (input: ClassifyInput) => Classification | null;
 
 const firstCapture: SubjectExtractor = (groups) => groups[1] ?? null;
 
 export { firstCapture };
 
+export type { SubjectExtractor, ExtraExtractor, ErrorSeverity, ErrorDefinition, Classification, ClassifyInput, Classifier };

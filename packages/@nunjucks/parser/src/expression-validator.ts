@@ -1,13 +1,13 @@
 import { getNodeTypeName } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 
-export const ExpressionSecurityError = {
+const ExpressionSecurityError = {
   DYNAMIC_PROPERTY_ACCESS: 'DYNAMIC_PROPERTY_ACCESS',
   DANGEROUS_BRACKET_ACCESS: 'DANGEROUS_BRACKET_ACCESS',
   UNSAFE_PROPERTY: 'UNSAFE_PROPERTY',
 };
 
-export const DEFAULT_SECURITY_CONFIG = {
+const DEFAULT_SECURITY_CONFIG = {
   allowDynamicPropertyAccess: false,
   allowConstructorAccess: false,
   allowPrototypeAccess: false,
@@ -95,7 +95,7 @@ const checkCall = (node: Node, nodeType: string, path: (string | number)[]): Val
   return [unsafeProperty(`Dangerous function call '${fnName}' is not allowed`, node, [...path, nodeType])];
 };
 
-export function validateExpression(ast: Node, config: Record<string, unknown> = {}): ValidationError[] {
+function validateExpression(ast: Node, config: Record<string, unknown> = {}): ValidationError[] {
   const cfg = { ...DEFAULT_SECURITY_CONFIG, ...config };
   const errors: ValidationError[] = [];
 
@@ -142,7 +142,9 @@ export function validateExpression(ast: Node, config: Record<string, unknown> = 
   return errors;
 }
 
-export function isExpressionSafe(ast: Node, config: Record<string, unknown> = {}): boolean {
+function isExpressionSafe(ast: Node, config: Record<string, unknown> = {}): boolean {
   const errors = validateExpression(ast, config);
   return errors.length === 0;
 }
+
+export { ExpressionSecurityError, DEFAULT_SECURITY_CONFIG, validateExpression, isExpressionSafe };

@@ -1,6 +1,6 @@
 import { escapeHtml } from './escape.ts';
 
-export type HtmlContext = 'html' | 'attribute' | 'script' | 'style' | 'comment';
+type HtmlContext = 'html' | 'attribute' | 'script' | 'style' | 'comment';
 
 const ESCAPE_ATTRIBUTE: ReadonlyMap<string, string> = Object.freeze(new Map([
   ['&', '&amp;'],
@@ -31,8 +31,6 @@ const ESCAPE_STYLE: ReadonlyMap<string, string> = Object.freeze(new Map([
   ["'", '&#39;'],
 ]));
 
-export { escapeHtml } from './escape.ts';
-
 const escapeWith = (map: ReadonlyMap<string, string>) => (str: string): string => {
   let result = '';
   for (const char of str) {
@@ -41,11 +39,11 @@ const escapeWith = (map: ReadonlyMap<string, string>) => (str: string): string =
   return result;
 };
 
-export const escapeAttribute = escapeWith(ESCAPE_ATTRIBUTE);
-export const escapeScriptString = escapeWith(ESCAPE_SCRIPT_STRING);
-export const escapeStyle = escapeWith(ESCAPE_STYLE);
+const escapeAttribute = escapeWith(ESCAPE_ATTRIBUTE);
+const escapeScriptString = escapeWith(ESCAPE_SCRIPT_STRING);
+const escapeStyle = escapeWith(ESCAPE_STYLE);
 
-export const escapeForContext = (str: string, context: HtmlContext): string => {
+const escapeForContext = (str: string, context: HtmlContext): string => {
   switch (context) {
     case 'html':
       return escapeHtml(str);
@@ -144,12 +142,12 @@ const detectAttributeContext = (before: string, scriptStyleResult: ScriptStyleSc
 const contextBefore = (before: string): HtmlContext =>
   detectAttributeContext(before, scanScriptStyleContext(before));
 
-export interface HtmlContextTracker {
+interface HtmlContextTracker {
   getContextAtLineCol: (lineno: number, colno: number) => HtmlContext;
   getContextAt: (offset: number) => HtmlContext;
 }
 
-export const createHtmlContextTracker = (source: string): HtmlContextTracker => {
+const createHtmlContextTracker = (source: string): HtmlContextTracker => {
   const lines = source.split('\n');
   const lineOffsets: number[] = [0];
   let offset = 0;
@@ -172,10 +170,15 @@ export const createHtmlContextTracker = (source: string): HtmlContextTracker => 
   };
 };
 
-export function detectHtmlContext(source: string, position: number): HtmlContext {
+function detectHtmlContext(source: string, position: number): HtmlContext {
   return createHtmlContextTracker(source).getContextAt(position);
 }
 
-export function getContextAtLineCol(source: string, lineno: number, colno: number): HtmlContext {
+function getContextAtLineCol(source: string, lineno: number, colno: number): HtmlContext {
   return createHtmlContextTracker(source).getContextAtLineCol(lineno, colno);
 }
+
+export { escapeAttribute, escapeScriptString, escapeStyle, escapeForContext, createHtmlContextTracker, detectHtmlContext, getContextAtLineCol };
+export type { HtmlContext, HtmlContextTracker };
+
+export { escapeHtml } from './escape.ts';

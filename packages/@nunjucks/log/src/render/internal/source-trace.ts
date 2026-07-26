@@ -6,7 +6,7 @@ import { toDisplayLocation } from './location.ts';
 import { calculateCaretPosition } from './caret.ts';
 
 // A single line in the Source Trace window.
-export interface SourceTraceLine {
+interface SourceTraceLine {
   // 1-based absolute line number, as shown in the gutter.
   number: number;
   // Raw source text of the line.
@@ -16,7 +16,7 @@ export interface SourceTraceLine {
 }
 
 // The caret that highlights the offending token on the error line.
-export interface SourceTraceCaret {
+interface SourceTraceCaret {
   // 1-based absolute line the caret sits on (== the error line).
   line: number;
   // 0-based column where the caret run begins (the token start).
@@ -30,7 +30,7 @@ export interface SourceTraceCaret {
 // The fully-resolved source trace — the single source of truth that the HTML
 // and ANSI presenters render from. Carries the windowed lines, the caret, and
 // the 1-based display coordinates (for the location link).
-export interface SourceTrace {
+interface SourceTrace {
   lines: SourceTraceLine[];
   caret: SourceTraceCaret | null;
   // 1-based display line (resolved from lineno + lineBase).
@@ -41,7 +41,7 @@ export interface SourceTrace {
   resolvedPath: string | null;
 }
 
-export interface BuildSourceTraceInput {
+interface BuildSourceTraceInput {
   sourceContent?: string | null;
   templatePath?: string | null;
   lineno?: number | null;
@@ -84,7 +84,7 @@ const resolveFilePath = (templatePath: string): string | null => {
   return null;
 };
 
-export interface ResolvedSource {
+interface ResolvedSource {
   content: string | null;
   resolvedPath: string | null;
 }
@@ -102,7 +102,7 @@ export interface ResolvedSource {
 //   2. Else if sourceContent is present -> use it verbatim (template body).
 //   3. Else if templatePath is a readable file -> read it from disk.
 //   4. Else -> no source available.
-export const resolveSourceContent = async (
+const resolveSourceContent = async (
   sourceContent: string | null,
   templatePath: string | null,
   lineBase: LineBase | null
@@ -151,7 +151,7 @@ export const resolveSourceContent = async (
 // and 1-based display coordinates, build the trace window and anchor the caret.
 // Shared by the async buildSourceTrace (after it resolves content from disk)
 // and the synchronous getErrorMetadata (which only ever has inline content).
-export const windowSourceTrace = (params: {
+const windowSourceTrace = (params: {
   content: string;
   displayLine: number;
   displayCol: number;
@@ -204,7 +204,7 @@ export const windowSourceTrace = (params: {
 // The canonical "resolved location -> debug trace" computation. Called once per
 // error render and shared by every presenter (HTML, ANSI, text metadata), so
 // the line-math / windowing / caret logic lives in exactly one place.
-export const buildSourceTrace = async (input: BuildSourceTraceInput): Promise<SourceTrace> => {
+const buildSourceTrace = async (input: BuildSourceTraceInput): Promise<SourceTrace> => {
   const {
     sourceContent = null,
     templatePath = null,
@@ -237,3 +237,6 @@ export const buildSourceTrace = async (input: BuildSourceTraceInput): Promise<So
     resolvedPath
   });
 };
+
+export { resolveSourceContent, windowSourceTrace, buildSourceTrace };
+export type { SourceTraceLine, SourceTraceCaret, SourceTrace, BuildSourceTraceInput, ResolvedSource };

@@ -6,7 +6,7 @@ import { toDisplayLocation } from './internal/location.ts';
 
 const makeHyperlink = (text: string, url: string): string => `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
 
-export interface Warning {
+interface Warning {
   message?: string;
   lineno?: number | null;
   colno?: number | null;
@@ -18,7 +18,7 @@ export interface Warning {
   lineBase?: 'zero' | 'one' | null;
 }
 
-export interface ToConsoleOptions {
+interface ToConsoleOptions {
   verbosity?: 'simple' | 'medium' | 'full';
   dev?: boolean;
   ide?: string;
@@ -140,7 +140,7 @@ const formatFull = (warning: Warning, options: ToConsoleOptions): string => {
   return parts.join('\n');
 };
 
-export const toConsoleString = (warning: Warning, options: ToConsoleOptions = {}): string => {
+const toConsoleString = (warning: Warning, options: ToConsoleOptions = {}): string => {
   const { verbosity = 'full' } = options;
 
   if (verbosity === 'simple') {
@@ -153,3 +153,6 @@ export const toConsoleString = (warning: Warning, options: ToConsoleOptions = {}
 
   return formatFull(warning, options);
 };
+
+export { toConsoleString };
+export type { Warning, ToConsoleOptions };

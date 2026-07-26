@@ -4,19 +4,19 @@ interface SecurityError extends Error {
   dangerousPaths?: string[];
 }
 
-export interface ContextValidationError {
+interface ContextValidationError {
   code: string;
   message: string;
   subject?: string;
   dangerousPaths?: string[];
 }
 
-export interface ContextValidationResult {
+interface ContextValidationResult {
   valid: boolean;
   errors: ContextValidationError[];
 }
 
-export interface ContextValidatorConfig {
+interface ContextValidatorConfig {
   strictMode?: boolean;
   scanContextValues?: boolean;
   allowedContextKeys?: readonly string[];
@@ -118,7 +118,7 @@ const findDangerousValues = (
   return dangerous;
 };
 
-export const validateRenderContext = (context: unknown, config: ContextValidatorConfig): ContextValidationResult => {
+const validateRenderContext = (context: unknown, config: ContextValidatorConfig): ContextValidationResult => {
   if (!(config.strictMode || config.scanContextValues)) {
     return { valid: true, errors: [] };
   }
@@ -152,7 +152,10 @@ export const validateRenderContext = (context: unknown, config: ContextValidator
   }
 };
 
-export const findContextDangerousValues = (context: unknown, config: { allowedGlobals?: readonly string[] } = {}): string[] => {
+const findContextDangerousValues = (context: unknown, config: { allowedGlobals?: readonly string[] } = {}): string[] => {
   if (!context || typeof context !== 'object') { return []; }
   return findDangerousValues(context, config.allowedGlobals);
 };
+
+export { validateRenderContext, findContextDangerousValues };
+export type { ContextValidationError, ContextValidationResult, ContextValidatorConfig };

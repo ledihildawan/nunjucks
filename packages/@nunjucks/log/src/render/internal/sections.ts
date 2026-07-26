@@ -21,7 +21,7 @@ const AMP_RE = /&/gu;
 
 const normalizePath = (p: string): string => p.replace(FILE_URL_PREFIX_RE, '');
 
-export const formatCodeTraceHtml = (snippet: string): string => {
+const formatCodeTraceHtml = (snippet: string): string => {
   if (!snippet) { return '<div class="code-line"><span class="line-number">&nbsp;</span><span class="code-content">Source not available</span></div>'; }
 
   const lines = snippet.split('\n');
@@ -68,7 +68,7 @@ interface JsCallerLine {
   isError: boolean;
 }
 
-export const formatJsTraceHtml = (jsCallerLines: JsCallerLine[]): string => {
+const formatJsTraceHtml = (jsCallerLines: JsCallerLine[]): string => {
   if (jsCallerLines.length === 0) { return ''; }
 
   return jsCallerLines.map(({ lineNum, code, isError }) => {
@@ -91,7 +91,7 @@ type SerializableContext =
 const safeJson = (value: SerializableContext): string =>
   JSON.stringify(value).replace(LT_RE, '\\u003c').replace(GT_RE, '\\u003e').replace(AMP_RE, '\\u0026');
 
-export const renderContextHtml = (ctx: unknown): string => {
+const renderContextHtml = (ctx: unknown): string => {
   if (!ctx || typeof ctx !== 'object') { return ''; }
   const serialized = normalizeRenderContext(ctx) as Record<string, SerializableContext>;
   const filteredKeys = keys(serialized);
@@ -156,7 +156,7 @@ interface ErrorWithStack {
   stack?: string;
 }
 
-export const formatStackTraceHtml = (originalError: ErrorWithStack | null, isProduction = false, ide = 'vscode'): string => {
+const formatStackTraceHtml = (originalError: ErrorWithStack | null, isProduction = false, ide = 'vscode'): string => {
   if (!originalError?.stack) { return ''; }
 
   const stackLines = originalError.stack.split('\n').slice(1);
@@ -204,3 +204,5 @@ export const formatStackTraceHtml = (originalError: ErrorWithStack | null, isPro
 </div>
 </section>`;
 };
+
+export { formatCodeTraceHtml, formatJsTraceHtml, renderContextHtml, formatStackTraceHtml };

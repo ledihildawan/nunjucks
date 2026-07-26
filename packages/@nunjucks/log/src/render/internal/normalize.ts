@@ -1,7 +1,7 @@
 import type { LineBase } from './location.ts';
 import { normalizeLineBase } from './location.ts';
 
-export interface ErrorMetadataFallback {
+interface ErrorMetadataFallback {
   lineno?: number | null;
   colno?: number | null;
   lineBase?: LineBase | null;
@@ -15,7 +15,7 @@ export interface ErrorMetadataFallback {
   subject?: string | null;
 }
 
-export interface NormalizedErrorMetadata {
+interface NormalizedErrorMetadata {
   error: Error;
   message: string;
   lineno: number | null;
@@ -80,7 +80,7 @@ const stringifyThrown = (thrown: unknown): string => {
   }
 };
 
-export const normalizeErrorMetadata = (
+const normalizeErrorMetadata = (
   thrown: unknown,
   fallback: ErrorMetadataFallback = {}
 ): NormalizedErrorMetadata => {
@@ -110,3 +110,6 @@ export const normalizeErrorMetadata = (
     subject: readString(source.subject) ?? fallback.subject ?? null,
   };
 };
+
+export { normalizeErrorMetadata };
+export type { ErrorMetadataFallback, NormalizedErrorMetadata };

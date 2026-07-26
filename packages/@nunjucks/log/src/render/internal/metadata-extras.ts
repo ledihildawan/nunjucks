@@ -1,7 +1,7 @@
 import type { LineBase } from './location.ts';
 import { windowSourceTrace } from './source-trace.ts';
 
-export interface ErrorMetadata {
+interface ErrorMetadata {
   code: string | null;
   subject: string | null;
   message: string;
@@ -21,7 +21,7 @@ export interface ErrorMetadata {
   renderContext: Record<string, unknown> | null;
 }
 
-export interface GetErrorMetadataOptions {
+interface GetErrorMetadataOptions {
   includeSource?: boolean;
   includeRenderContext?: boolean;
   snippetContext?: number;
@@ -118,7 +118,7 @@ const buildSnippet = ({
   return { snippet, snippetLines: trace.lines, caret };
 };
 
-export const getErrorMetadata = (err: ErrorLike, options: GetErrorMetadataOptions = {}): ErrorMetadata => {
+const getErrorMetadata = (err: ErrorLike, options: GetErrorMetadataOptions = {}): ErrorMetadata => {
   const {
     includeSource = true,
     includeRenderContext = true,
@@ -177,3 +177,6 @@ export const getErrorMetadata = (err: ErrorLike, options: GetErrorMetadataOption
     })()
   };
 };
+
+export { getErrorMetadata };
+export type { ErrorMetadata, GetErrorMetadataOptions };

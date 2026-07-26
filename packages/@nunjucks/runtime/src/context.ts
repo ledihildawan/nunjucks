@@ -16,7 +16,7 @@ const createDefaultEnv = (): Env => ({
  * is a parameter type of `createContext`: callers cannot type their argument
  * without it.
  */
-export interface ContextEnv {
+interface ContextEnv {
   globals: Record<string, unknown>;
   getFilter: (name: string) => unknown;
   opts: Record<string, unknown>;
@@ -25,18 +25,18 @@ export interface ContextEnv {
 /** Backwards-compatible alias for the environment shape used by this module. */
 type Env = ContextEnv;
 
-export interface BlockLocation {
+interface BlockLocation {
   lineno?: number | null;
   colno?: number | null;
 }
 
-export interface ContextMetadata {
+interface ContextMetadata {
   blockLocations?: Record<string, BlockLocation>;
 }
 
 type Metadata = ContextMetadata;
 
-export interface Context {
+interface Context {
   env: Env;
   ctx: Record<string, unknown>;
   blocks: Record<string, Array<(...args: unknown[]) => unknown>>;
@@ -70,7 +70,7 @@ export interface Context {
 
 const getKeys = (obj: Record<string, unknown>): string[] => Object.keys(obj);
 
-export function createContext(
+function createContext(
   ctx: Record<string, unknown> = {},
   blocks: Record<string, (...args: unknown[]) => unknown> = {},
   env: Env | null = null,
@@ -251,4 +251,7 @@ export function createContext(
   return context;
 }
 
-export const isContext = (obj: unknown): boolean => Boolean(obj) && (obj as { [k: symbol]: unknown })[CONTEXT_KEY] === true;
+const isContext = (obj: unknown): boolean => Boolean(obj) && (obj as { [k: symbol]: unknown })[CONTEXT_KEY] === true;
+
+export { createContext, isContext };
+export type { ContextEnv, BlockLocation, ContextMetadata, Context };

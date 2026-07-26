@@ -1,4 +1,4 @@
-export const ERROR_PRIORITY = {
+const ERROR_PRIORITY = {
   NULL_VALUE: 1,
   UNDEFINED_PROPERTY: 2,
   UNDEFINED_VARIABLE: 3,
@@ -10,14 +10,14 @@ export const ERROR_PRIORITY = {
   UNDEFINED_BLOCK: 9,
 } as const;
 
-export type ErrorPriority = typeof ERROR_PRIORITY[keyof typeof ERROR_PRIORITY];
+type ErrorPriority = typeof ERROR_PRIORITY[keyof typeof ERROR_PRIORITY];
 
-export interface ErrorCandidate {
+interface ErrorCandidate {
   readonly type: string;
   readonly priority: number;
 }
 
-export function getMostHonestError(errors: readonly ErrorCandidate[]): ErrorCandidate | null {
+function getMostHonestError(errors: readonly ErrorCandidate[]): ErrorCandidate | null {
   if (!errors || errors.length === 0) { return null; }
   return errors.toSorted((a, b) => a.priority - b.priority)[0] ?? null;
 }
@@ -25,6 +25,9 @@ export function getMostHonestError(errors: readonly ErrorCandidate[]): ErrorCand
 /** Sorts after every known priority, so unclassified errors rank last. */
 const UNKNOWN_ERROR_PRIORITY = 999;
 
-export function getPriority(type: string): number {
+function getPriority(type: string): number {
   return ERROR_PRIORITY[type as keyof typeof ERROR_PRIORITY] ?? UNKNOWN_ERROR_PRIORITY;
 }
+
+export { ERROR_PRIORITY, getMostHonestError, getPriority };
+export type { ErrorPriority, ErrorCandidate };

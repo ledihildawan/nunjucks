@@ -27,7 +27,7 @@ const escapeString = (str: string): string => {
   return result;
 };
 
-export const compileLiteral = (ctx: Compiler, node: Node): void => {
+const compileLiteral = (ctx: Compiler, node: Node): void => {
   if (typeof node.value === 'string') {
     const val = escapeString(node.value);
     ctx.emit(`"${val}"`);
@@ -38,7 +38,7 @@ export const compileLiteral = (ctx: Compiler, node: Node): void => {
   }
 };
 
-export const compileSymbol = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileSymbol = (ctx: Compiler, node: Node, frame: Frame): void => {
   const name = node.value as string;
   const v = frame.lookup(name);
 
@@ -50,23 +50,23 @@ export const compileSymbol = (ctx: Compiler, node: Node, frame: Frame): void => 
   }
 };
 
-export const compileGroup = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileGroup = (ctx: Compiler, node: Node, frame: Frame): void => {
   compileAggregate(ctx, node, frame, '(', ')');
 };
 
-export const compileArray = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileArray = (ctx: Compiler, node: Node, frame: Frame): void => {
   compileAggregate(ctx, node, frame, '[', ']');
 };
 
-export const compileDict = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileDict = (ctx: Compiler, node: Node, frame: Frame): void => {
   compileAggregate(ctx, node, frame, '{', '}');
 };
 
-export const compileNodeList = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileNodeList = (ctx: Compiler, node: Node, frame: Frame): void => {
   ctx.compileChildren(node, frame);
 };
 
-export const compilePair = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compilePair = (ctx: Compiler, node: Node, frame: Frame): void => {
   let key = node.key as Node;
   const val = node.value as Node;
 
@@ -84,13 +84,13 @@ export const compilePair = (ctx: Compiler, node: Node, frame: Frame): void => {
   ctx.compileExpression(val, frame);
 };
 
-export const compileKeywordArgs = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileKeywordArgs = (ctx: Compiler, node: Node, frame: Frame): void => {
   ctx.emit('runtime.makeKeywordArgs(');
   compileDict(ctx, node, frame);
   ctx.emit(')');
 };
 
-export const compileSpread = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileSpread = (ctx: Compiler, node: Node, frame: Frame): void => {
   ctx.emit('...');
   ctx.compile(node.argument as Node, frame);
 };
@@ -103,7 +103,7 @@ const escapeTemplateString = (str: string): string => {
   return result;
 };
 
-export const compileTemplateLiteral = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileTemplateLiteral = (ctx: Compiler, node: Node, frame: Frame): void => {
   const rawQuasis = (node.quasis as { quasis?: unknown[] } | unknown[] | undefined);
   let quasis: unknown[];
   if (Array.isArray(rawQuasis)) {
@@ -129,7 +129,7 @@ export const compileTemplateLiteral = (ctx: Compiler, node: Node, frame: Frame):
   ctx.emit('`');
 };
 
-export const compileAggregate = (ctx: Compiler, node: Node, frame: Frame, startChar?: string, endChar?: string): void => {
+const compileAggregate = (ctx: Compiler, node: Node, frame: Frame, startChar?: string, endChar?: string): void => {
   if (startChar) {
     ctx.emit(startChar);
   }
@@ -151,3 +151,5 @@ export const compileAggregate = (ctx: Compiler, node: Node, frame: Frame, startC
     ctx.emit(endChar);
   }
 };
+
+export { compileLiteral, compileSymbol, compileGroup, compileArray, compileDict, compileNodeList, compilePair, compileKeywordArgs, compileSpread, compileTemplateLiteral, compileAggregate };

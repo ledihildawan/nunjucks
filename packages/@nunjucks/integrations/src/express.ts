@@ -8,7 +8,7 @@ import { createEnv, type Env } from '@nunjucks/core/env';
 import { getError } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
 
-export interface ExpressEngineConfig {
+interface ExpressEngineConfig {
   dev?: boolean;
   autoescape?: boolean;
   undefined?: 'default' | 'chainable' | 'strict' | 'debug';
@@ -18,12 +18,12 @@ export interface ExpressEngineConfig {
   dompurify?: Record<string, unknown>;
 }
 
-export interface ExpressEngineOptions {
+interface ExpressEngineOptions {
   filePath: string;
   options: Record<string, unknown>;
 }
 
-export type ExpressEngineFunction = (filePath: string, options: Record<string, unknown>) => Promise<string>;
+type ExpressEngineFunction = (filePath: string, options: Record<string, unknown>) => Promise<string>;
 
 const renderTemplate = async (
   filePath: string,
@@ -90,9 +90,12 @@ const renderTemplate = async (
   }
 };
 
-export const createEngine = (config: ExpressEngineConfig = {}): ExpressEngineFunction => async function nunjucksExpressEngine(
+const createEngine = (config: ExpressEngineConfig = {}): ExpressEngineFunction => async function nunjucksExpressEngine(
   filePath: string,
   options: Record<string, unknown>
 ): Promise<string> {
   return renderTemplate(filePath, options, config);
 };
+
+export { createEngine };
+export type { ExpressEngineConfig, ExpressEngineOptions, ExpressEngineFunction };

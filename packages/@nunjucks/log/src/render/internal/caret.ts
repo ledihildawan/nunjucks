@@ -1,7 +1,7 @@
 /** Width of the caret run when no word could be identified to underline. */
 const FALLBACK_CARET_WIDTH = 3;
 
-export interface CaretResult {
+interface CaretResult {
   wordStart: number;
   wordEnd: number;
   highlightWord: string;
@@ -19,7 +19,7 @@ const isWordChar = (char: string | undefined): boolean => WORD_CHAR_RE.test(char
 const isPathLike = (word: string): boolean =>
   PATH_SEPARATOR_RE.test(word) || FILE_EXTENSION_RE.test(word);
 
-export function calculateCaretPosition(
+function calculateCaretPosition(
   line: string,
   displayCol: number
 ): CaretResult | null {
@@ -88,3 +88,6 @@ export function calculateCaretPosition(
 
   return { wordStart, wordEnd, highlightWord, carets };
 }
+
+export { calculateCaretPosition };
+export type { CaretResult };

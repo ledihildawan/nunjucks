@@ -1,7 +1,7 @@
 import type { Classification } from './types.ts';
 import { classifyInput } from './classifier.ts';
 
-export interface ClassifyInput {
+interface ClassifyInput {
   message?: string;
   code?: string;
   subject?: string;
@@ -18,9 +18,9 @@ interface ErrorWithExtras {
   severity?: 'error' | 'warning' | 'info';
 }
 
-export const classify = (message: string): Classification => classifyInput({ message });
+const classify = (message: string): Classification => classifyInput({ message });
 
-export const classifyFromError = (error: ErrorWithExtras | null): Classification => {
+const classifyFromError = (error: ErrorWithExtras | null): Classification => {
   if (!error) {
     return {
       category: 'unknown',
@@ -43,3 +43,6 @@ export const classifyFromError = (error: ErrorWithExtras | null): Classification
 };
 
 export { classifyInput } from './classifier.ts';
+
+export { classify, classifyFromError };
+export type { ClassifyInput };

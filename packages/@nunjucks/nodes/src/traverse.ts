@@ -7,20 +7,20 @@ const getFields = (n: Node): string[] => {
   return (n.fields ?? []).filter(f => !excluded.has(f));
 };
 
-export const getType = (n: unknown): string | undefined => {
+const getType = (n: unknown): string | undefined => {
   if (isNode(n)) {
     return n.type;
   }
 };
-export const getFields_ = (n: Node): readonly string[] => getFields(n);
+const getFields_ = (n: Node): readonly string[] => getFields(n);
 
-export const getNodeTypeName = getType;
-export const getNodeFields = getFields_;
+const getNodeTypeName = getType;
+const getNodeFields = getFields_;
 
-export const appendChild = <K extends ChildrenNode>(node: K, child: Node): K =>
+const appendChild = <K extends ChildrenNode>(node: K, child: Node): K =>
   ({ ...node, children: [...node.children, child] });
 
-export const mapCOW = <T>(arr: readonly T[], fn: (item: T) => T): T[] => {
+const mapCOW = <T>(arr: readonly T[], fn: (item: T) => T): T[] => {
   let res: T[] | null = null;
   arr.forEach((original, i) => {
     const item = fn(original);
@@ -92,7 +92,7 @@ const walkChildren = (node: Node, walker: (n: Node) => Node): Node => {
   return node;
 };
 
-export const walk = (ast: Node, fn: (n: Node) => Node | undefined): Node => {
+const walk = (ast: Node, fn: (n: Node) => Node | undefined): Node => {
   if (!ast || typeof ast !== 'object') { return ast as Node; }
   if (!(isNode(ast) || isCallExtNode(ast))) { return ast; }
 
@@ -104,7 +104,7 @@ export const walk = (ast: Node, fn: (n: Node) => Node | undefined): Node => {
   return walkChildren(afterFn, c => walk(c, fn));
 };
 
-export const depthWalk = (ast: Node, fn: (n: Node) => Node | undefined): Node => {
+const depthWalk = (ast: Node, fn: (n: Node) => Node | undefined): Node => {
   if (!ast || typeof ast !== 'object') { return ast as Node; }
   if (!(isNode(ast) || isCallExtNode(ast))) { return ast; }
 
@@ -113,7 +113,7 @@ export const depthWalk = (ast: Node, fn: (n: Node) => Node | undefined): Node =>
   return (replaced ?? walked) as Node;
 };
 
-export const findAll = (node: Node, predicate: string | ((n: Node) => boolean)): Node[] => {
+const findAll = (node: Node, predicate: string | ((n: Node) => boolean)): Node[] => {
   const results: Node[] = [];
   const seen = new Set<Node>();
 
@@ -159,14 +159,14 @@ export const findAll = (node: Node, predicate: string | ((n: Node) => boolean)):
  * exactly that order and stops as soon as the consumer does, so the search is
  * just a loop over it.
  */
-export const findFirst = (node: Node, predicate: (n: Node) => boolean): Node | undefined => {
+const findFirst = (node: Node, predicate: (n: Node) => boolean): Node | undefined => {
   for (const n of iterateNodes(node)) {
     if (predicate(n)) { return n; }
   }
   return undefined;
 };
 
-export const count = (node: Node, predicate?: (n: Node) => boolean): number => {
+const count = (node: Node, predicate?: (n: Node) => boolean): number => {
   let n = 0;
   findAll(node, (nd): boolean => { if (!predicate || predicate(nd)) { n += 1; } return true; });
   return n;
@@ -199,3 +199,5 @@ export function* filterNodes(ast: Node, predicate: (n: Node) => boolean): Genera
     if (predicate(n)) { yield n; }
   }
 }
+
+export { getType, getFields_, getNodeTypeName, getNodeFields, appendChild, mapCOW, walk, depthWalk, findAll, findFirst, count };

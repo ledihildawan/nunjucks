@@ -19,19 +19,19 @@ const _allErrors = {
   ...META_ERRORS
 };
 
-export type ErrorName = keyof typeof _allErrors;
+type ErrorName = keyof typeof _allErrors;
 
-export const ERROR_DEFINITIONS = _allErrors as unknown as Record<ErrorName, ErrorDefinition>;
+const ERROR_DEFINITIONS = _allErrors as unknown as Record<ErrorName, ErrorDefinition>;
 
-export function getError<T extends ErrorName>(name: T): ErrorDefinition {
+function getError<T extends ErrorName>(name: T): ErrorDefinition {
   return ERROR_DEFINITIONS[name];
 }
 
 type ErrorMessageFn = (args?: Record<string, string> | string[]) => string;
 
-export const ERRORS: Record<ErrorName, ErrorMessageFn> = mapValues(ERROR_DEFINITIONS, (def) => def.message) as Record<ErrorName, ErrorMessageFn>;
+const ERRORS: Record<ErrorName, ErrorMessageFn> = mapValues(ERROR_DEFINITIONS, (def) => def.message) as Record<ErrorName, ErrorMessageFn>;
 
-export const PATTERNS: Record<ErrorName, RegExp> = mapValues(ERROR_DEFINITIONS, (def) => def.pattern) as Record<ErrorName, RegExp>;
+const PATTERNS: Record<ErrorName, RegExp> = mapValues(ERROR_DEFINITIONS, (def) => def.pattern) as Record<ErrorName, RegExp>;
 
 interface Rule {
   pattern: RegExp;
@@ -47,7 +47,7 @@ interface Rule {
   sourceFromStack?: boolean;
 }
 
-export const RULES: Rule[] = values(ERROR_DEFINITIONS).map((def) => ({
+const RULES: Rule[] = values(ERROR_DEFINITIONS).map((def) => ({
   pattern: def.pattern,
   category: def.category,
   subjectFrom: def.subjectFrom ?? firstCapture,
@@ -61,7 +61,7 @@ export const RULES: Rule[] = values(ERROR_DEFINITIONS).map((def) => ({
   sourceFromStack: def.sourceFromStack
 }));
 
-export const DEFAULT_CLASSIFICATION: Classification = {
+const DEFAULT_CLASSIFICATION: Classification = {
   category: 'unknown',
   undefinedName: null,
   causes: [
@@ -74,3 +74,6 @@ export const DEFAULT_CLASSIFICATION: Classification = {
   documentationUrl: null,
   severity: 'error'
 };
+
+export { ERROR_DEFINITIONS, getError, ERRORS, PATTERNS, RULES, DEFAULT_CLASSIFICATION };
+export type { ErrorName };

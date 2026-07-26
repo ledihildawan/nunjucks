@@ -9,8 +9,6 @@ import { peekToken, skip, expect } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/inline.ts";
 
-export { BracketNotation } from '@nunjucks/nodes';
-
 const buildSlice = (ctx: ParserContext, bracketTok: Token, start: Node | null): Node => {
   let stop: Node | null = null;
   let step: Node | null = null;
@@ -30,7 +28,7 @@ const buildSlice = (ctx: ParserContext, bracketTok: Token, start: Node | null): 
   return sliceNode;
 };
 
-export const parseBracketAccess = (ctx: ParserContext, bracketTok: Token, target: Node): Node => {
+const parseBracketAccess = (ctx: ParserContext, bracketTok: Token, target: Node): Node => {
   if (skip(ctx, TOKEN_COLON)) {
     const slice = buildSlice(ctx, bracketTok, null);
     const node = lookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
@@ -52,3 +50,7 @@ export const parseBracketAccess = (ctx: ParserContext, bracketTok: Token, target
   (node as Node & { [BracketNotation]?: boolean })[BracketNotation] = true;
   return node;
 };
+
+export { parseBracketAccess };
+
+export { BracketNotation } from '@nunjucks/nodes';

@@ -17,7 +17,7 @@ import type { ParserContext } from "./cursor.ts";
 import { parseStatement } from "./statement-parser/index.ts";
 import { parseExpression } from "./expression-parser/inline.ts";
 
-export const parseUntilBlocks = (ctx: ParserContext, ...blockNames: string[]): Node => {
+const parseUntilBlocks = (ctx: ParserContext, ...blockNames: string[]): Node => {
   const prev = ctx.breakOnBlocks;
   ctx.breakOnBlocks = blockNames;
 
@@ -33,7 +33,7 @@ const TRAILING_WHITESPACE_RE = /\s*$/;
 const RAW_OPEN_TAG_RE = /^({%\s*raw\s*%})/;
 const RAW_CLOSE_TAG_RE = /({%\s*endraw\s*%})$/;
 
-export const parseNodes = (ctx: ParserContext): Node[] => {
+const parseNodes = (ctx: ParserContext): Node[] => {
   const buf: Node[] = [];
 
   for (let tok = nextToken(ctx); tok; tok = nextToken(ctx)) {
@@ -99,3 +99,5 @@ export const parseNodes = (ctx: ParserContext): Node[] => {
 
   return buf;
 };
+
+export { parseUntilBlocks, parseNodes };

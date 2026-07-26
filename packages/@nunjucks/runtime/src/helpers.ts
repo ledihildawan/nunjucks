@@ -11,37 +11,6 @@ import { isSafeString } from './safe-string.ts';
 
 // This module doubles as the runtime's public surface, so it re-exports the
 // sibling modules directly rather than importing and re-listing their bindings.
-export { isNonNullish, isFunction, isString, isArray, isPlainObject } from '@nunjucks/shared/type-guards';
-export {
-  memberLookup,
-  optionalMemberLookup,
-  slice,
-  nullishCoalesce,
-  isNullAccessResult,
-  isPropertyNotFoundResult,
-  getNullParentName,
-} from './member-access.ts';
-export { createSafeString, isSafeString, copySafeness, markSafe } from './safe-string.ts';
-export {
-  makeMacro,
-  makeKeywordArgs,
-  isKeywordArgs,
-  getKeywordArgs,
-  numArgs,
-  withKwargs,
-} from './macro.ts';
-export {
-  createSandboxedContext,
-  wrapMemberAccess,
-  isBlockedKey,
-  isDangerousGlobal,
-  BLOCKED_KEYS_LIST,
-  DANGEROUS_GLOBALS_LIST,
-} from './sandbox.ts';
-export { createFrame } from './frame.ts';
-export { createContext } from './context.ts';
-export { toContext, createIsolatedContext, createForkedContext } from './render-context.ts';
-
 // Hoisted so each pattern is compiled once rather than on every value render.
 const JSON_SCALAR_RE = /^(?:true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')$/u;
 const JSON_CONTAINER_RE = /^[[{]/u;
@@ -98,7 +67,7 @@ const escapeValue = (val: unknown, context: HtmlContext = 'html'): string => {
   return escapeForContext(String(val), context);
 };
 
-export function suppressValue(
+function suppressValue(
   this: unknown,
   val: unknown,
   autoescape?: boolean,
@@ -175,7 +144,7 @@ export function suppressValue(
   return normalized;
 }
 
-export function awaitValue(val: unknown): unknown {
+function awaitValue(val: unknown): unknown {
   if (val && typeof (val as { then?: unknown }).then === 'function') {
     return (val as Promise<unknown>).then((v) => v);
   }
@@ -350,7 +319,7 @@ const resolveUndefinedValue = (opts: ResolveUndefinedOptions): 'undefined' => {
   return 'undefined';
 };
 
-export function ensureDefined(
+function ensureDefined(
   this: unknown,
   val: unknown,
   lineno?: number | null,
@@ -397,7 +366,7 @@ export function ensureDefined(
 }
 
 // biome-ignore lint/complexity/useMaxParams: the compiler emits this call positionally in generated template code, so the signature is a codegen contract, not a local choice.
-export function callWrap(
+function callWrap(
   this: unknown,
   obj: unknown,
   name: string,
@@ -454,7 +423,7 @@ export function callWrap(
   return (obj as (...a: unknown[]) => unknown).apply(context, args);
 }
 
-export function contextOrFrameLookup(
+function contextOrFrameLookup(
   context: { lookup: (name: string) => unknown },
   frame: { lookup: (name: string) => unknown },
   name: string,
@@ -466,7 +435,7 @@ export function contextOrFrameLookup(
   return val;
 }
 
-export function lookup(ctx: { lookup?: (key: string) => unknown } | null, key: string, defaultValue?: unknown): unknown {
+function lookup(ctx: { lookup?: (key: string) => unknown } | null, key: string, defaultValue?: unknown): unknown {
   if (!ctx) { return defaultValue; }
   if (typeof ctx.lookup === 'function') {
     const val = ctx.lookup(key);
@@ -484,7 +453,7 @@ export function lookup(ctx: { lookup?: (key: string) => unknown } | null, key: s
 
 // `_runtime` is passed positionally by generated template code but unused here.
 // biome-ignore lint/complexity/useMaxParams: the compiler emits this call positionally in generated template code, so the signature is a codegen contract, not a local choice.
-export function handleError(this: unknown, error: unknown, lineno: number | null, colno: number | null, _runtime?: unknown): never {
+function handleError(this: unknown, error: unknown, lineno: number | null, colno: number | null, _runtime?: unknown): never {
   const ctx = getLogContext(this);
   const metadata = normalizeErrorMetadata(error, {
     lineno,
@@ -528,7 +497,7 @@ export function handleError(this: unknown, error: unknown, lineno: number | null
   throw thrown;
 }
 
-export function fromIterator(arr: unknown): unknown {
+function fromIterator(arr: unknown): unknown {
   if (typeof arr !== 'object' || arr === null || isArray(arr)) {
     return arr;
   }if (Symbol.iterator in (arr as object)) {
@@ -538,7 +507,7 @@ export function fromIterator(arr: unknown): unknown {
 }
 
 // biome-ignore lint/complexity/useMaxParams: the compiler emits this call positionally in generated template code, so the signature is a codegen contract, not a local choice.
-export function inOperator(this: unknown, key: unknown, val: unknown, lineno: number | null = null, colno: number | null = null): boolean {
+function inOperator(this: unknown, key: unknown, val: unknown, lineno: number | null = null, colno: number | null = null): boolean {
   if (isArray(val) || isString(val)) {
     return (val as { includes: (k: unknown) => boolean }).includes(key);
   }
@@ -553,3 +522,36 @@ export function inOperator(this: unknown, key: unknown, val: unknown, lineno: nu
     subject: String(key),
   });
 }
+
+export { suppressValue, awaitValue, ensureDefined, callWrap, contextOrFrameLookup, lookup, handleError, fromIterator, inOperator };
+
+export { isNonNullish, isFunction, isString, isArray, isPlainObject } from '@nunjucks/shared/type-guards';
+export {
+  memberLookup,
+  optionalMemberLookup,
+  slice,
+  nullishCoalesce,
+  isNullAccessResult,
+  isPropertyNotFoundResult,
+  getNullParentName,
+} from './member-access.ts';
+export { createSafeString, isSafeString, copySafeness, markSafe } from './safe-string.ts';
+export {
+  makeMacro,
+  makeKeywordArgs,
+  isKeywordArgs,
+  getKeywordArgs,
+  numArgs,
+  withKwargs,
+} from './macro.ts';
+export {
+  createSandboxedContext,
+  wrapMemberAccess,
+  isBlockedKey,
+  isDangerousGlobal,
+  BLOCKED_KEYS_LIST,
+  DANGEROUS_GLOBALS_LIST,
+} from './sandbox.ts';
+export { createFrame } from './frame.ts';
+export { createContext } from './context.ts';
+export { toContext, createIsolatedContext, createForkedContext } from './render-context.ts';

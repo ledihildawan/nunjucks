@@ -4,13 +4,13 @@ import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 import { extractPropertyLocation } from '../location-utils.ts';
 
-export const compileTemplateData = (ctx: Compiler, node: Node, _frame: Frame): void => {
+const compileTemplateData = (ctx: Compiler, node: Node, _frame: Frame): void => {
   ctx.emit(`${ctx.buffer} += `);
   ctx.emit(JSON.stringify(node.value));
   ctx.emit(';');
 };
 
-export const compileCapture = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileCapture = (ctx: Compiler, node: Node, frame: Frame): void => {
   const { buffer } = ctx;
   ctx.buffer = 'output';
   ctx.emitLine('(async () => {');
@@ -43,7 +43,7 @@ const extractVarName = (node: Node): string | null => {
 
 const extractLocation = (node: Node): { lineno: number | null; colno: number | null } => extractPropertyLocation(node);
 
-export const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => {
   const { children } = node;
   if (!children) {
     return;
@@ -105,3 +105,5 @@ export const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => 
   }
   ctx.emit('\n');
 };
+
+export { compileTemplateData, compileCapture, compileOutput };

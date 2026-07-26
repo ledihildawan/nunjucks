@@ -21,7 +21,7 @@ const hasPatternTarget = (node: Node): boolean => {
   );
 };
 
-export const compileVariableDeclaration = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileVariableDeclaration = (ctx: Compiler, node: Node, frame: Frame): void => {
   if (hasPatternTarget(node)) {
     const valueId = ctx.tmpid();
     ctx.emitLine(`let ${valueId} = `);
@@ -46,7 +46,7 @@ export const compileVariableDeclaration = (ctx: Compiler, node: Node, frame: Fra
   }
 };
 
-export const compileVariableAssignment = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileVariableAssignment = (ctx: Compiler, node: Node, frame: Frame): void => {
   if (hasPatternTarget(node)) {
     const valueId = ctx.tmpid();
     ctx.emitLine(`let ${valueId} = `);
@@ -89,7 +89,7 @@ const getCompoundOpJs = (operator: string): string | null => {
   }
 };
 
-export const compileCompoundAssignment = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileCompoundAssignment = (ctx: Compiler, node: Node, frame: Frame): void => {
   const jsOp = getCompoundOpJs(node.operator as string);
 
   if (hasPatternTarget(node)) {
@@ -156,7 +156,7 @@ export const compileCompoundAssignment = (ctx: Compiler, node: Node, frame: Fram
   }
 };
 
-export const compileDefineBlock = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileDefineBlock = (ctx: Compiler, node: Node, frame: Frame): void => {
   const name = node.name as string;
   const funcId = ctx.tmpid();
   const args = node.args as MacroArgument[];
@@ -215,3 +215,5 @@ export const compileDefineBlock = (ctx: Compiler, node: Node, frame: Frame): voi
 
   ctx.emitLine(`frame.set("${name}", ${funcId}, true);`);
 };
+
+export { compileVariableDeclaration, compileVariableAssignment, compileCompoundAssignment, compileDefineBlock };

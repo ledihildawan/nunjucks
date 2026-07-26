@@ -19,9 +19,10 @@ describe('round', () => {
     expect(round(3.3)).toBe(3);
   });
   test('respects precision', () => {
-    // biome-ignore-all lint/suspicious/noApproximativeNumericConstant: this asserts rounding behaviour at a given precision; the value happens to resemble PI but Math.PI would change what is being tested.
-    expect(round(3.141_59, 2)).toBe(3.14);
-    expect(round(3.141_59, 4)).toBe(3.1416);
+    // Deliberately not a PI-like value: what is under test is rounding at a
+    // given precision, and the digits only need to force a round-up at 4dp.
+    expect(round(1.234_56, 2)).toBe(1.23);
+    expect(round(1.234_56, 4)).toBe(1.2346);
   });
   test('supports ceil method', () => {
     expect(round(3.1, 0, 'ceil')).toBe(4);

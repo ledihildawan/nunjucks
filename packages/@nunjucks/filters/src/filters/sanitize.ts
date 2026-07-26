@@ -1,7 +1,7 @@
 import DomPurify from 'isomorphic-dompurify';
 import { safeString } from '../factory/index.ts';
 
-export interface DomPurifyConfig {
+interface DomPurifyConfig {
   ALLOWED_TAGS?: string[];
   ALLOWED_ATTR?: string[];
   ALLOWED_DATA_ATTR?: boolean;
@@ -16,15 +16,18 @@ export interface DomPurifyConfig {
 
 let defaultConfig: DomPurifyConfig = {};
 
-export const setDefaultDomPurifyConfig = (config: DomPurifyConfig): void => {
+const setDefaultDomPurifyConfig = (config: DomPurifyConfig): void => {
   defaultConfig = config;
 };
 
-export const getDefaultDomPurifyConfig = (): DomPurifyConfig => ({ ...defaultConfig });
+const getDefaultDomPurifyConfig = (): DomPurifyConfig => ({ ...defaultConfig });
 
-export const sanitize = (str: unknown, config?: DomPurifyConfig): string => {
+const sanitize = (str: unknown, config?: DomPurifyConfig): string => {
   const input = String(str);
   const mergedConfig = { ...defaultConfig, ...config };
   const clean = DomPurify.sanitize(input, mergedConfig);
   return safeString(clean) as unknown as string;
 };
+
+export { setDefaultDomPurifyConfig, getDefaultDomPurifyConfig, sanitize };
+export type { DomPurifyConfig };

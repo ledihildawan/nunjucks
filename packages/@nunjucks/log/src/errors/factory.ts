@@ -3,7 +3,7 @@ type ExtraExtractor = (groups: RegExpMatchArray) => Record<string, string> | nul
 
 const firstCapture: SubjectExtractor = (groups) => groups[1] ?? null;
 
-export interface ErrorDefinitionOptions {
+interface ErrorDefinitionOptions {
   name: string;
   message: string;
   category: string;
@@ -30,7 +30,7 @@ const createPattern = (messageTemplate: string): RegExp => {
   return new RegExp(`^${pattern}$`, 'i');
 };
 
-export const createErrorDefinition = (options: ErrorDefinitionOptions) => {
+const createErrorDefinition = (options: ErrorDefinitionOptions) => {
   const { name, message, category, causes, fixCode, fixComment, documentationUrl, severity, extraFrom } = options;
   const hasVariable = message.includes('{type}') || message.includes('{name}') || message.includes('{key}') || message.includes('{keys}') || message.includes('{values}') || message.includes('{violations}') || message.includes('{subject}') || message.includes('{attr}') || message.includes('{by}');
 
@@ -55,7 +55,7 @@ export const createErrorDefinition = (options: ErrorDefinitionOptions) => {
   };
 };
 
-export const ERROR_TEMPLATES = {
+const ERROR_TEMPLATES = {
   ARRAY_EXPECTED: (filterName: string) => createErrorDefinition({
     name: `${filterName.toUpperCase()}_FILTER`,
     message: `${filterName}: expected array, got {type}`,
@@ -134,3 +134,6 @@ export const ERROR_TEMPLATES = {
     fixComment: `Use one of the valid values: ${validValues.join(', ')}`
   })
 } as const;
+
+export { createErrorDefinition, ERROR_TEMPLATES };
+export type { ErrorDefinitionOptions };

@@ -8,15 +8,6 @@ import { isNonNullish, isFunction, hasOwn } from '@nunjucks/shared/type-guards';
 import { createLog, ERROR_DEFINITIONS } from '@nunjucks/log';
 import type { ErrorDefinitionEntry, TemplateError, TemplateWarning } from '@nunjucks/log/create-log';
 
-export {
-  isBlockedKey,
-  isDangerousGlobal,
-  isCodeExecutionPattern,
-  getBlockedKeyCategory,
-  BLOCKED_KEYS_LIST,
-  DANGEROUS_GLOBALS_LIST,
-} from '@nunjucks/shared/blocked-keys';
-
 const UNSAFE_SYMBOL_DESCRIPTIONS = new Set([
   'constructor',
   'prototype',
@@ -55,7 +46,7 @@ const blockedKeysError = (key: string, blockedKeys: string[]): TemplateError | T
   return createLog('error', errorDef, { keys: blockedKeys.join(', ') }, key, { phase: 'render', lineBase: 'zero' });
 };
 
-export interface SandboxOptions {
+interface SandboxOptions {
   allowlist?: string[];
   blocklistMode?: boolean;
   blockedContextKeys?: string[];
@@ -64,16 +55,16 @@ export interface SandboxOptions {
   topLevel?: boolean;
 }
 
-export type ResolvedSandboxOptions = Required<Omit<SandboxOptions, 'topLevel' | 'env'>>;
+type ResolvedSandboxOptions = Required<Omit<SandboxOptions, 'topLevel' | 'env'>>;
 
-export const resolveSandboxOptions = (options: SandboxOptions = {}): ResolvedSandboxOptions => ({
+const resolveSandboxOptions = (options: SandboxOptions = {}): ResolvedSandboxOptions => ({
   allowlist: options.allowlist || [],
   blocklistMode: options.blocklistMode ?? true,
   blockedContextKeys: options.blockedContextKeys || [],
   environment: options.environment || options.env || 'auto',
 });
 
-export const wrapFunctionWithBlocking = (
+const wrapFunctionWithBlocking = (
   fn: (...args: unknown[]) => unknown,
   sandboxEnabled: boolean,
   key: string | null,
@@ -91,7 +82,7 @@ export const wrapFunctionWithBlocking = (
   };
 };
 
-export const isAllowedKey = (key: string, allowlist: string[] | null | undefined): boolean => {
+const isAllowedKey = (key: string, allowlist: string[] | null | undefined): boolean => {
   if (!(allowlist && Array.isArray(allowlist) ) || allowlist.length === 0) {
     return true;
   }
@@ -192,7 +183,7 @@ const makeSandboxTraps = (
   };
 };
 
-export const createSandboxedObject = (obj: unknown, sandboxEnabled: boolean, options: SandboxOptions = {}): unknown => {
+const createSandboxedObject = (obj: unknown, sandboxEnabled: boolean, options: SandboxOptions = {}): unknown => {
   const sandboxOptions = resolveSandboxOptions(options);
 
   if (!(sandboxEnabled && isNonNullish(obj))) {
@@ -210,7 +201,7 @@ export const createSandboxedObject = (obj: unknown, sandboxEnabled: boolean, opt
   return new Proxy(obj as object, makeSandboxTraps(sandboxEnabled, sandboxOptions, false));
 };
 
-export const createSandboxedContext = (context: unknown, sandboxEnabled: boolean, options: SandboxOptions = {}): unknown => {
+const createSandboxedContext = (context: unknown, sandboxEnabled: boolean, options: SandboxOptions = {}): unknown => {
   const sandboxOptions = resolveSandboxOptions(options);
 
   if (!sandboxEnabled) {
@@ -224,7 +215,7 @@ export const createSandboxedContext = (context: unknown, sandboxEnabled: boolean
   return new Proxy(context as object, makeSandboxTraps(sandboxEnabled, sandboxOptions, true));
 };
 
-export const wrapMemberAccess = (obj: unknown, val: string | symbol, sandboxEnabled: boolean, options: SandboxOptions = {}, parentName: string | null = null): unknown => {
+const wrapMemberAccess = (obj: unknown, val: string | symbol, sandboxEnabled: boolean, options: SandboxOptions = {}, parentName: string | null = null): unknown => {
   const sandboxOptions = resolveSandboxOptions(options);
   const { allowlist, blocklistMode, topLevel = options.topLevel ?? false } = { ...sandboxOptions, topLevel: options.topLevel ?? false };
 
@@ -277,3 +268,15 @@ export const wrapMemberAccess = (obj: unknown, val: string | symbol, sandboxEnab
 
   return value;
 };
+
+export { resolveSandboxOptions, wrapFunctionWithBlocking, isAllowedKey, createSandboxedObject, createSandboxedContext, wrapMemberAccess };
+export type { SandboxOptions, ResolvedSandboxOptions };
+
+export {
+  isBlockedKey,
+  isDangerousGlobal,
+  isCodeExecutionPattern,
+  getBlockedKeyCategory,
+  BLOCKED_KEYS_LIST,
+  DANGEROUS_GLOBALS_LIST,
+} from '@nunjucks/shared/blocked-keys';

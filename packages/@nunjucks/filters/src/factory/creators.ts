@@ -2,13 +2,13 @@ import { makeMacro } from '@nunjucks/runtime';
 import { normalize, preserveSafe } from './core.ts';
 import type { StringFn, } from './types.ts';
 
-export const createStringFilter = (fn: StringFn) =>
+const createStringFilter = (fn: StringFn) =>
   (value: unknown): unknown => {
     const s = normalize(value, '');
     return preserveSafe(value, fn(s));
   };
 
-export const createStringFilterWithArgs = <A extends unknown[]>(
+const createStringFilterWithArgs = <A extends unknown[]>(
   fn: (s: string, ...args: A) => string,
   defaultArgs: A
 ) =>
@@ -30,16 +30,16 @@ export const createStringFilterWithArgs = <A extends unknown[]>(
  */
 type CurriedFilter = (...args: never[]) => (value: unknown) => unknown;
 
-export const createFilter = <T extends CurriedFilter>(fn: T) =>
+const createFilter = <T extends CurriedFilter>(fn: T) =>
   (value: unknown, ...args: Parameters<T>) => fn(...args)(value);
 
-export const createMacroFilter = <T extends unknown[]>(
+const createMacroFilter = <T extends unknown[]>(
   argNames: string[],
   fn: (...args: T) => unknown
 ) =>
   makeMacro(argNames, [], fn as (...args: T) => unknown);
 
-export const createConditionalMacro = (
+const createConditionalMacro = (
   condition: (value: unknown) => boolean,
   truthyFn: (value: unknown) => unknown,
   falsyFn: (value: unknown) => unknown = (v) => v
@@ -50,3 +50,5 @@ export const createConditionalMacro = (
     }
     return falsyFn(value);
   });
+
+export { createStringFilter, createStringFilterWithArgs, createFilter, createMacroFilter, createConditionalMacro };

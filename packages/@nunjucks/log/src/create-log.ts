@@ -10,7 +10,7 @@ import { toConsoleString } from './render/to-console.ts';
 
 const TEMPLATE_ERROR = Symbol('TemplateError');
 
-export interface ErrorDefinitionEntry {
+interface ErrorDefinitionEntry {
   name: string;
   message: ((args?: Record<string, string> | string[]) => string) | string;
   pattern: RegExp;
@@ -27,7 +27,7 @@ const resolveMessage = (message: ErrorDefinitionEntry['message'], params?: Recor
   return message;
 };
 
-export interface ErrorInfo {
+interface ErrorInfo {
   code?: string | null;
   subject?: string | null;
   phase?: string | null;
@@ -37,12 +37,12 @@ export interface ErrorInfo {
   dev?: boolean;
 }
 
-export interface WarningInfo extends ErrorInfo {
+interface WarningInfo extends ErrorInfo {
   varName?: string | null;
   undefinedMode?: string;
 }
 
-export interface OutputOptions {
+interface OutputOptions {
   format?: 'html' | 'ansi' | 'text';
   verbosity?: 'simple' | 'medium' | 'full';
   dev?: boolean;
@@ -61,7 +61,7 @@ export interface OutputOptions {
   isJsCaller?: boolean;
 }
 
-export interface TemplateError extends Error {
+interface TemplateError extends Error {
   name: 'Template render error';
   lineno: number | null;
   colno: number | null;
@@ -89,7 +89,7 @@ export interface TemplateError extends Error {
   [TEMPLATE_ERROR]?: boolean;
 }
 
-export interface TemplateWarning {
+interface TemplateWarning {
   message: string;
   lineno: number | null;
   colno: number | null;
@@ -106,7 +106,7 @@ export interface TemplateWarning {
   output: (options?: Omit<OutputOptions, 'format' | 'isProduction'>) => string;
 }
 
-export interface ErrorContext {
+interface ErrorContext {
   lineno?: number | null;
   colno?: number | null;
   phase?: string | null;
@@ -117,7 +117,7 @@ export interface ErrorContext {
   sourceStartLine?: number;
 }
 
-export interface WarningContext extends ErrorContext {
+interface WarningContext extends ErrorContext {
   varName?: string | null;
   undefinedMode?: string | null;
 }
@@ -300,7 +300,7 @@ const createFromLegacyData = (type: LogType, data: LegacyLogData): TemplateError
   return warn;
 };
 
-export function createLog(
+function createLog(
   type: string,
   errorDefOrData: ErrorDefinitionEntry | LegacyLogData,
   params?: Record<string, string>,
@@ -360,7 +360,7 @@ export function createLog(
   return warn;
 }
 
-export function isTemplateError(obj: unknown): obj is TemplateError {
+function isTemplateError(obj: unknown): obj is TemplateError {
   // The cast must admit null/undefined: this guard is called with arbitrary
   // values, and the optional chain is what stops it throwing on them.
   return (obj as TemplateError | null | undefined)?.[TEMPLATE_ERROR] === true;
@@ -368,7 +368,7 @@ export function isTemplateError(obj: unknown): obj is TemplateError {
 
 /** Where an included/extended template was pulled in from. Exported: it is a
  * field type of `prettifyError`'s options and of `TemplateError`. */
-export interface IncludeChain {
+interface IncludeChain {
   parentTmpl: string;
   parentLineno: number;
   parentColno?: number | null;
@@ -441,10 +441,13 @@ const stripInternals = (path?: string) => (err: TemplateError): TemplateError =>
   return clean;
 };
 
-export function prettifyError(options: PrettifyErrorOptions): TemplateError {
+function prettifyError(options: PrettifyErrorOptions): TemplateError {
   const { path, withInternals, err, includeChain } = options;
   if (withInternals) {
     return pipe(err, asTemplateError, withLocation({ path, includeChain })) as TemplateError;
   }
   return pipe(err, asTemplateError, withLocation({ path, includeChain }), stripInternals(path)) as TemplateError;
 }
+
+export { createLog, isTemplateError, prettifyError };
+export type { ErrorDefinitionEntry, ErrorInfo, WarningInfo, OutputOptions, TemplateError, TemplateWarning, ErrorContext, WarningContext, IncludeChain };
