@@ -49,6 +49,38 @@ const isDangerousValue = (value: unknown): boolean => {
   return false;
 };
 
+/**
+ * Paths contributed by a single key. A prototype-pollution key is reported on
+ * its own and short-circuits the remaining checks.
+ */
+const dangerousPathsForKey = (
+  key: string,
+  value: unknown,
+  currentPath: string,
+  allowedGlobals: readonly string[] | null | undefined,
+  isTopLevel: boolean
+): string[] => {
+  if (PROTOTYPE_POLLUTION_KEYS.has(key)) { return [currentPath]; }
+
+  const found: string[] = [];
+  if (isTopLevel && DANGEROUS_GLOBALS.has(key) && !allowedGlobals?.includes(key)) {
+    found.push(currentPath);
+  }
+  if (typeof value === 'function') {
+    const fnName = value.name || key;
+    if (isTopLevel && (fnName === 'eval' || fnName === 'Function')) {
+      found.push(currentPath);
+    }
+    if (isTopLevel && DANGEROUS_GLOBALS.has(fnName) && !allowedGlobals?.includes(fnName)) {
+      found.push(currentPath);
+    }
+  }
+  if (isDangerousValue(value)) {
+    found.push(currentPath);
+  }
+  return found;
+};
+
 const findDangerousValues = (
   obj: unknown,
   allowedGlobals?: readonly string[] | null,
@@ -73,30 +105,12 @@ const findDangerousValues = (
     }
     const value = record[key];
 
-    if (PROTOTYPE_POLLUTION_KEYS.has(key)) {
-      dangerous.push(currentPath);
-      continue;
-    }
+    dangerous.push(...dangerousPathsForKey(key, value, currentPath, allowedGlobals, isTopLevel));
 
-    if (isTopLevel && DANGEROUS_GLOBALS.has(key) && !allowedGlobals?.includes(key)) {
-      dangerous.push(currentPath);
-    }
-
-    if (typeof value === 'function') {
-      const fnName = value.name || key;
-      if (isTopLevel && (fnName === 'eval' || fnName === 'Function')) {
-        dangerous.push(currentPath);
-      }
-      if (isTopLevel && DANGEROUS_GLOBALS.has(fnName) && !allowedGlobals?.includes(fnName)) {
-        dangerous.push(currentPath);
-      }
-    }
-
-    if (isDangerousValue(value)) {
-      dangerous.push(currentPath);
-    }
-
-    if (value && typeof value === 'object' && !isDangerousValue(value)) {
+    // Never descend into a prototype-pollution key.
+    const descend = !PROTOTYPE_POLLUTION_KEYS.has(key) &&
+      value && typeof value === 'object' && !isDangerousValue(value);
+    if (descend) {
       dangerous.push(...findDangerousValues(value, allowedGlobals, currentPath, false, seen));
     }
   }

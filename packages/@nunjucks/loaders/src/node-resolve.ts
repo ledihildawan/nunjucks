@@ -28,16 +28,15 @@ const tryRequireResolve = (name: string): string | null => {
   }
 };
 
+const exists = async (fullPath: string): Promise<boolean> =>
+  access(fullPath).then(() => true, () => false);
+
 const findInSearchPaths = async (searchPaths: string[], name: string): Promise<string | null> => {
   for (const basePath of searchPaths) {
     const fullPath = path.resolve(basePath, name);
-    try {
-      await access(fullPath);
-      return fullPath;
-    } catch {
-      // Not present at this base path; try the next one.
-      continue;
-    }
+    // Sequential on purpose: the first search path that has the file wins.
+    // biome-ignore lint/performance/noAwaitInLoops: search order is significant, so these cannot be parallelised.
+    if (await exists(fullPath)) { return fullPath; }
   }
   return null;
 };

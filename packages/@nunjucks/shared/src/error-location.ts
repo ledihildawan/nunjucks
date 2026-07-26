@@ -179,6 +179,24 @@ const findTemplateOccurrence = (
 };
 
 /**
+ * 1-based position of a match's capture group within `content`, or null when
+ * the group did not participate or cannot be located inside the whole match.
+ */
+const positionOfCaptureGroup = (
+  content: string,
+  match: RegExpExecArray,
+  group: number,
+  subjectColOffset: number
+): SourcePosition | null => {
+  const groupText = match[group];
+  if (!groupText) { return null; }
+  const groupOffset = match[0].indexOf(groupText);
+  if (groupOffset < 0) { return null; }
+  const pos = positionAtOffset(content, match.index + groupOffset + subjectColOffset);
+  return { line: pos.lineOffset + 1, col: pos.col + 1 };
+};
+
+/**
  * Convert a byte offset into `{lineOffset, col}`, both 0-based.
  */
 const positionAtOffset = (text: string, offset: number): { lineOffset: number; col: number } => {
@@ -277,18 +295,13 @@ const findSubjectOccurrence = (
   for (const { re, group } of patterns) {
     // biome-ignore lint/suspicious/noUnnecessaryConditions: RegExp.exec returns RegExpExecArray | null, so this null check terminates the loop and is not statically known.
     for (let match = re.exec(content); match !== null; match = re.exec(content)) {
-      const groupText = match[group];
-      if (!groupText) { continue; }
-      const groupOffset = match[0].indexOf(groupText);
-      if (groupOffset < 0) { continue; }
-      const offset = match.index + groupOffset + subjectColOffset;
-      const pos = positionAtOffset(content, offset);
-      const line = pos.lineOffset + 1;
-      const col = pos.col + 1;
-      const distance = lineDistance(line, preferredLine);
-      if (distance < bestDistance) {
-        best = { line, col };
-        bestDistance = distance;
+      const hit = positionOfCaptureGroup(content, match, group, subjectColOffset);
+      if (hit) {
+        const distance = lineDistance(hit.line, preferredLine);
+        if (distance < bestDistance) {
+          best = hit;
+          bestDistance = distance;
+        }
       }
     }
   }

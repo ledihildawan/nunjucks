@@ -76,7 +76,10 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
       }
     }
 
-    if (peekToken(ctx).type === TOKEN_SPREAD) {
+    // One element per iteration; the branches below are mutually exclusive.
+    const elementType = peekToken(ctx).type;
+
+    if (elementType === TOKEN_SPREAD) {
       nextToken(ctx);
       const inner = parseInnerPattern(ctx);
       const rp = restPattern(tok.lineno, tok.colno, inner);
@@ -86,34 +89,27 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
       if (after && after.type === TOKEN_COMMA) {
         nextToken(ctx);
       }
-      continue;
-    }
-
-    if (peekToken(ctx).type === TOKEN_LEFT_BRACKET) {
+    } else if (elementType === TOKEN_LEFT_BRACKET) {
       const innerTok = peekToken(ctx);
       const inner = parseArrayPattern(ctx, innerTok.lineno, innerTok.colno);
       const withDefault = parseAssignmentDefault(ctx, inner);
       node = appendChild(node, withDefault ?? inner);
-      continue;
-    }
-
-    if (peekToken(ctx).type === TOKEN_LEFT_CURLY) {
+    } else if (elementType === TOKEN_LEFT_CURLY) {
       const innerTok = peekToken(ctx);
       const inner = parseObjectPattern(ctx, innerTok.lineno, innerTok.colno);
       const withDefault = parseAssignmentDefault(ctx, inner);
       node = appendChild(node, withDefault ?? inner);
-      continue;
+    } else {
+      const symTok = nextToken(ctx);
+      if (!symTok || symTok.type !== TOKEN_SYMBOL) {
+        // `return` so the never-returning fail() narrows symTok for the line below.
+        return fail(ctx, 'parseArrayPattern: expected symbol in pattern',
+          symTok?.lineno ?? tok.lineno, symTok?.colno ?? tok.colno);
+      }
+      const target = symbol(symTok.lineno, symTok.colno, symTok.value as string);
+      const withDefault = parseAssignmentDefault(ctx, target);
+      node = appendChild(node, withDefault ?? target);
     }
-
-    const symTok = nextToken(ctx);
-    if (!symTok || symTok.type !== TOKEN_SYMBOL) {
-      // `return` so the never-returning fail() narrows symTok for the line below.
-      return fail(ctx, 'parseArrayPattern: expected symbol in pattern',
-        symTok?.lineno ?? tok.lineno, symTok?.colno ?? tok.colno);
-    }
-    const target = symbol(symTok.lineno, symTok.colno, symTok.value as string);
-    const withDefault = parseAssignmentDefault(ctx, target);
-    node = appendChild(node, withDefault ?? target);
   }
 
   return node;

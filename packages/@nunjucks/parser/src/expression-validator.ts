@@ -18,6 +18,9 @@ export const DEFAULT_SECURITY_CONFIG = {
   ],
 };
 
+/** Node bookkeeping fields, not child nodes to walk into. */
+const NON_CHILD_KEYS = new Set(['lineno', 'colno', 'fields']);
+
 const DANGEROUS_PROPERTIES = new Set([
   '__proto__',
   'constructor',
@@ -124,8 +127,7 @@ export function validateExpression(ast: Node, config: Record<string, unknown> = 
       }
 
       default: {
-        for (const key of Object.keys(node)) {
-          if (key === 'lineno' || key === 'colno' || key === 'fields') { continue; }
+        for (const key of Object.keys(node).filter(k => !NON_CHILD_KEYS.has(k))) {
           const child = (node as Record<string, unknown>)[key];
           if (Array.isArray(child)) {
             child.forEach((c, i) => walk(c as Node, [...path, key, i]));
