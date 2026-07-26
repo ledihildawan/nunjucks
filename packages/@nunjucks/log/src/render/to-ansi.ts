@@ -1,5 +1,5 @@
 import picocolors from 'picocolors';
-import { keys, forEachObj } from 'remeda';
+import { keys } from 'remeda';
 import { shortenPath } from './internal/path-shortener.ts';
 import { toDisplayLocation } from './internal/location.ts';
 import { isFilePath, resolveIdeLink } from './internal/ide-links.ts';
@@ -72,18 +72,15 @@ const formatSourceTrace = (lines: SourceTraceLine[], errorColno: number | null):
   if (lines.length === 0) { return []; }
 
   const lineNumWidth = getLineNumWidth(lines);
-  const result: string[] = [];
 
-  for (const line of lines) {
-    result.push(formatCodeLine(line.lineNum, line.content, line.isError, lineNumWidth));
-
-    if (line.isError && errorColno !== null && errorColno > 0) {
-      const caretLength = calculateCaretLength(line.content, errorColno);
-      result.push(formatCaretLine(lineNumWidth, errorColno, caretLength));
+  return lines.flatMap((line) => {
+    const codeLine = formatCodeLine(line.lineNum, line.content, line.isError, lineNumWidth);
+    if (!line.isError || errorColno === null || errorColno <= 0) {
+      return [codeLine];
     }
-  }
-
-  return result;
+    const caretLength = calculateCaretLength(line.content, errorColno);
+    return [codeLine, formatCaretLine(lineNumWidth, errorColno, caretLength)];
+  });
 };
 
 const sanitizeForAnsi = (value: unknown, seen?: WeakSet<object>): string => {
@@ -103,42 +100,29 @@ const sanitizeForAnsi = (value: unknown, seen?: WeakSet<object>): string => {
   return String(value);
 };
 
+const INDENT = '  ';
+
+const formatContextValue = (value: unknown): string => {
+  if (typeof value !== 'object' || value === null) {
+    return sanitizeForAnsi(value);
+  }
+  if (Array.isArray(value)) {
+    return sanitizeForAnsi(value);
+  }
+  const obj = value as Record<string, unknown>;
+  const k = keys(obj);
+  if (k.length === 0) {
+    return '(empty)';
+  }
+  const entries = k.map(key => `${INDENT}${key}: ${sanitizeForAnsi(obj[key])}`).join('\n');
+  return `:\n${entries}`;
+};
+
 const renderContextAnsi = (context: Record<string, unknown>): string => {
   const normalized = normalizeRenderContext(context);
-  const lines: string[] = [];
-  lines.push(`\n${picocolors.bold('Render Context:')}\n`);
-
-  const renderValue = (key: string, value: unknown, indent = 0): string => {
-    const prefix = '  '.repeat(indent);
-
-    if (value === null || value === undefined) {
-      return `${prefix}${key}: ${sanitizeForAnsi(value)}`;
-    }
-
-    if (typeof value === 'object') {
-      if (Array.isArray(value)) {
-        return `${prefix}${key}: ${sanitizeForAnsi(value)}`;
-      }
-
-      const obj = value as Record<string, unknown>;
-      const k = keys(obj);
-
-      if (k.length === 0) {
-        return `${prefix}${key}: (empty)`;
-      }
-
-      const entries = k.map(key => `${prefix}  ${key}: ${sanitizeForAnsi(obj[key])}`).join('\n');
-      return `${prefix}${key}:\n${entries}`;
-    }
-
-    return `${prefix}${key}: ${sanitizeForAnsi(value)}`;
-  };
-
-  forEachObj(normalized as Record<string, unknown>, (value, key) => {
-    lines.push(renderValue(key, value));
-  });
-
-  return lines.join('\n');
+  const header = `\n${picocolors.bold('Render Context:')}\n`;
+  const entries = keys(normalized).map(key => `${INDENT}${key} ${formatContextValue(normalized[key])}`);
+  return header + entries.join('\n');
 };
 
 const makeHyperlink = (text: string, url: string): string => `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
@@ -147,11 +131,14 @@ const stripMarkdown = (text: string): string => text.replace(/\*\*([^*]+)\*\*/gu
 
 const BULLET = `${picocolors.yellow('•')} `;
 
-const getSeverityLabel = (severity?: string): ReturnType<typeof picocolors.bold> => {
-  if (severity === 'warning') { return picocolors.bold(picocolors.yellow('Warning:')); }
-  if (severity === 'info') { return picocolors.bold(picocolors.blue('Info:')); }
-  return picocolors.bold(picocolors.red('Error:'));
+const getSeverityColor = (severity?: string): ((text: string) => string) => {
+  if (severity === 'warning') { return picocolors.yellow; }
+  if (severity === 'info') { return picocolors.blue; }
+  return picocolors.red;
 };
+
+const getSeverityLabel = (severity?: string): ReturnType<typeof picocolors.bold> =>
+  picocolors.bold(getSeverityColor(severity)('Error:'));
 
 const getExtrasPart = (causeHint: string, docHint: string): string => {
   const extras = [causeHint, docHint].filter(Boolean).join(' | ');
@@ -205,15 +192,37 @@ const formatCausesAnsi = (causes: readonly string[]): string => {
 
 const formatFixAnsi = (fixCode: string | null, fixComment: string | null, documentationUrl: string | null): string => {
   if (!fixCode) { return ''; }
-  let out = `\n${picocolors.bold('Suggested Fix:')}`;
-  if (fixComment) {
-    out += `\n${picocolors.dim(`// ${stripMarkdown(fixComment)}`)}`;
-  }
-  out += `\n${picocolors.green(fixCode)}`;
-  if (documentationUrl) {
-    out += `\n${picocolors.dim(`Learn more: ${documentationUrl}`)}`;
-  }
-  return out + '\n';
+
+  const parts = [
+    `${picocolors.bold('Suggested Fix:')}`,
+    fixComment ? picocolors.dim(`// ${stripMarkdown(fixComment)}`) : null,
+    picocolors.green(fixCode),
+    documentationUrl ? `\n${picocolors.dim(`Learn more: ${documentationUrl}`)}` : null
+  ].filter(Boolean);
+
+  return parts.join('\n');
+};
+
+const buildSourceTrace = (
+  sourceContent: string,
+  displayLineno: number,
+  displayColno: number | null,
+  sourceStartLine: number
+): string[] => {
+  const sourceLines = sourceContent.split('\n');
+  const startLine = Math.max(0, displayLineno - 2);
+  const endLine = Math.min(sourceLines.length, displayLineno + 3);
+
+  const traceLines: SourceTraceLine[] = Array.from(
+    { length: endLine - startLine },
+    (_, i) => ({
+      lineNum: sourceStartLine + startLine + i,
+      content: sourceLines[startLine + i] || '',
+      isError: startLine + i === displayLineno
+    })
+  );
+
+  return formatSourceTrace(traceLines, displayColno);
 };
 
 export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
@@ -222,7 +231,7 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   const { verbosity = 'full', templatePath, lineno, colno, ide = 'vscode', sourceStartLine = 1 } = options;
 
   let message = (error as Error).message;
-  if (!message || typeof message !== 'string') {
+  if (!message) {
     message = String(error);
   }
 
@@ -264,19 +273,11 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   const location = toDisplayLocation(displayLineno, displayColno, lineBase);
 
   if (verbosity === 'medium') {
-    const causeHint = causes.length > 0 ? stripMarkdown(causes[0] ?? '') : '';
-    const docHint = documentationUrl || '';
-    const extrasPart = getExtrasPart(causeHint, docHint);
+    const causeHint = causes[0] ? stripMarkdown(causes[0]) : '';
+    const extrasPart = getExtrasPart(causeHint, documentationUrl || '');
+    const locationPart = path ? formatLocationString(path, location, ide).replace(/^ at /, '') : ` at line ${location.line}`;
 
-    if (path) {
-      const shortPath = shortenPath(path);
-      if (isFilePath(path)) {
-        const url = makeHyperlink(`${shortPath}:${location.line}:${location.col}`, resolveIdeLink(ide, path, location.line, location.col));
-        return `${message} at ${url}${extrasPart}`;
-      }
-      return `${message} at ${shortPath}:${location.line}:${location.col}${extrasPart}`;
-    }
-    return `${message} at line ${location.line}${extrasPart}`;
+    return `${message}${locationPart}${extrasPart}`;
   }
 
   const stack = (error as Error).stack || '';
@@ -288,24 +289,14 @@ export const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
 
   const parts: string[] = [header];
 
-  if (options.sourceContent && displayLineno !== null) {
-    const sourceLines = options.sourceContent.split('\n');
-    const errorLineIndex = displayLineno;
-    const startLine = Math.max(0, errorLineIndex - 2);
-    const endLine = Math.min(sourceLines.length, errorLineIndex + 3);
+  const resolvedPath = path || (error as { templateName?: string }).templateName || '';
+  const isInlineJsCaller = resolvedPath && /\.(js|mjs|cjs|ts|mts|cts)$/iu.test(resolvedPath);
+  const isInlineTemplate = options.sourceContent && options.sourceContent.split('\n').length <= 2;
+  const shouldShowSourceTrace = options.sourceContent && displayLineno !== null && !(isInlineJsCaller && isInlineTemplate);
 
-    const traceLines: SourceTraceLine[] = [];
-    for (let i = startLine; i < endLine; i++) {
-      const lineNum = (options.sourceStartLine ?? 1) + i;
-      traceLines.push({
-        lineNum,
-        content: sourceLines[i] || '',
-        isError: i === errorLineIndex
-      });
-    }
-
+  if (shouldShowSourceTrace) {
     parts.push(picocolors.bold('Source Trace:'));
-    parts.push(formatSourceTrace(traceLines, displayColno).join('\n'));
+    parts.push(buildSourceTrace(options.sourceContent, displayLineno, displayColno, options.sourceStartLine ?? 1).join('\n'));
   }
 
   const causesStr = formatCausesAnsi(causes);
