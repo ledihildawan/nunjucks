@@ -374,7 +374,7 @@ router.get('/container-error', async (req, res, next) => {
 
 router.get('/reserved-keyword-filter', async (req, res, next) => {
   try {
-    const html = await render('{{ value }}', { value: 'test' }, { dev: true, filters: { 'if': (v: unknown) => v } });
+    const html = await render('{{ value }}', { value: 'test' }, { dev: true, _customFilters: { 'if': (v: unknown) => v } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -383,7 +383,7 @@ router.get('/reserved-keyword-filter', async (req, res, next) => {
 
 router.get('/reserved-keyword-global', async (req, res, next) => {
   try {
-    const html = await render('{{ myArray }}', { myArray: [1, 2, 3] }, { dev: true, globals: { Array: {} } });
+    const html = await render('{{ myArray }}', { myArray: [1, 2, 3] }, { dev: true, globals: { Array: {} }, _customGlobals: { Array: {} } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -455,7 +455,7 @@ router.get('/parser-unexpected-token', async (req, res, next) => {
 
 router.get('/sandbox-access', async (req, res, next) => {
   try {
-    const html = await render('{{ global }}', { global: process }, { dev: true, sandbox: true });
+    const html = await render('{{ global }}', { global: process }, { dev: true, sandbox: true, contextStrict: false });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -482,7 +482,7 @@ router.get('/sandbox-code-execution', async (req, res, next) => {
 
 router.get('/sandbox-context-error', async (req, res, next) => {
   try {
-    const html = await render('{{ user.something }}', { user: undefined }, { dev: true, sandbox: true });
+    const html = await render('{{ user.something }}', { user: undefined }, { dev: true, sandbox: true, undefined: 'strict' });
     res.type('html').send(html);
   } catch (err) {
     next(err);
