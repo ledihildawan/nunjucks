@@ -333,7 +333,9 @@ export function createLog(
 }
 
 export function isTemplateError(obj: unknown): obj is TemplateError {
-  return (obj as TemplateError)?.[TEMPLATE_ERROR] === true;
+  // The cast must admit null/undefined: this guard is called with arbitrary
+  // values, and the optional chain is what stops it throwing on them.
+  return (obj as TemplateError | null | undefined)?.[TEMPLATE_ERROR] === true;
 }
 
 /** Where an included/extended template was pulled in from. Exported: it is a

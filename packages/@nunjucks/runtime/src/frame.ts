@@ -16,7 +16,9 @@ export interface Frame {
 }
 
 export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Frame {
-  const rootState: { revision: number } = (parent?.rootState as { revision: number }) ?? { revision: 0 };
+  // The cast has to keep `undefined`: with no parent there is no rootState,
+  // and the `??` below is what supplies the initial one.
+  const rootState: { revision: number } = (parent?.rootState as { revision: number } | undefined) ?? { revision: 0 };
   const state: {
     variables: Record<string, unknown>;
     parent: Frame | undefined;

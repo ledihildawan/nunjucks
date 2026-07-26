@@ -279,7 +279,7 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<t
     try {
       const runtime = createRuntimeWithContext(state.path, state.env.opts, ctx || {});
       const result = await state.rootRenderFunc?.(state.env, context, frame, runtime);
-      if (runtime.__warnings__?.length !== undefined && runtime.__warnings__.length > 0 && state.env.opts.dev) {
+      if (runtime.__warnings__.length > 0 && state.env.opts.dev) {
         return result + injectWarningsScript(runtime.__warnings__ as Warning[], { dev: true, verbosity: 'medium' });
       }
       return result as string;

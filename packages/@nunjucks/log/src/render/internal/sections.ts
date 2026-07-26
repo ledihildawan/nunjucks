@@ -54,7 +54,7 @@ interface JsCallerLine {
 }
 
 export const formatJsTraceHtml = (jsCallerLines: JsCallerLine[]): string => {
-  if (!jsCallerLines || jsCallerLines.length === 0) { return ''; }
+  if (jsCallerLines.length === 0) { return ''; }
 
   return jsCallerLines.map(({ lineNum, code, isError }) => {
     let errorClass = '';

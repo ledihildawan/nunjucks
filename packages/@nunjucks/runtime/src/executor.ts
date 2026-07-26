@@ -28,7 +28,10 @@ interface UndefinedInputResult {
   isPropertyLookup: boolean;
 }
 
-const detectUndefinedInput = (context: unknown, inputValue: string): UndefinedInputResult => {
+// `inputValue` is declared `unknown`, not `string`: the body deliberately
+// handles null and non-string inputs, and typing it as `string` made those
+// guards look dead while they are the function's actual contract.
+const detectUndefinedInput = (context: unknown, inputValue: unknown): UndefinedInputResult => {
   let isUndefinedInput = false;
   let undefinedVarName: string | null = null;
   let undefinedParentName: string | null = null;

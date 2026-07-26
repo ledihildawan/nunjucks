@@ -142,7 +142,7 @@ export const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {
   const classified = classifyFromError(errWithExtras);
   const plain = toText(error, { verbosity: 'simple' });
 
-  const category = error.code || classified.category?.toUpperCase() || 'UNKNOWN';
+  const category = error.code || classified.category.toUpperCase() || 'UNKNOWN';
   const undefinedName = classified.undefinedName || plain.match(/attempted to output '([^']+)'/u)?.[1] || null;
 
   let possibleCauses: string[];
@@ -154,7 +154,8 @@ export const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {
   const fixCode = classified.fixCode ?? errWithExtras.fixCode ?? '';
   const fixComment = classified.fixComment ?? errWithExtras.fixComment ?? '';
   const documentationUrl = classified.documentationUrl ?? errWithExtras.documentationUrl ?? null;
-  const severity = classified.severity ?? errWithExtras.severity ?? 'error';
+  // Classification.severity is always populated, so it wins outright.
+  const severity = classified.severity;
 
   let humanTitle = classified.title || plain;
   if (category === 'UNDEFINED_VARIABLE' && undefinedName) {

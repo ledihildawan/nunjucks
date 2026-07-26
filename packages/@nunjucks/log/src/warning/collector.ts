@@ -68,7 +68,9 @@ const formatWarning = (w: Warning | string, options: { verbosity?: 'simple' | 'm
   return formatted;
 };
 
-export const injectWarningsScript = (warnings: Warning[], options: InjectWarningsOptions = {}): string => {
+// `warnings` is nullable in the signature because this is a package entry
+// point reached from untyped callers; the guard below is real, not decorative.
+export const injectWarningsScript = (warnings: Warning[] | null | undefined, options: InjectWarningsOptions = {}): string => {
   const { verbosity = 'full' } = options;
 
   if (!warnings || warnings.length === 0) { return ''; }

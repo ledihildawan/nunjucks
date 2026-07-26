@@ -212,7 +212,7 @@ export const callExtension = (lineno: number, colno: number, ext: unknown, prop:
     prop,
     args: args ?? nodeList(0, 0),
     contentArgs: contentArgs ?? [],
-    autoescape: extObj?.autoescape ?? true,
+    autoescape: extObj.autoescape ?? true,
   });
 };
 
@@ -223,7 +223,7 @@ export const callExtensionAsync = (lineno: number, colno: number, ext: unknown, 
     prop,
     args: args ?? nodeList(0, 0),
     contentArgs: contentArgs ?? [],
-    autoescape: extObj?.autoescape ?? true,
+    autoescape: extObj.autoescape ?? true,
   });
 };
 

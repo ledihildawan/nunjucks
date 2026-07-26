@@ -143,7 +143,6 @@ const createWatchHandler = (loader: FileSystemLoaderExtended, filePath: string) 
   if (!isFileChangeEvent(eventType)) { return; }
 
   const name = filename || filePath;
-  loader.cache = loader.cache || {};
   createFileCacheInvalidator(loader.cache)(normalizeFilePath(filePath));
   loader.emit('update', name, filePath);
 

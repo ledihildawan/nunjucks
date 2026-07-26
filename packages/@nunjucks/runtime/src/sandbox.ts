@@ -236,11 +236,14 @@ export const wrapMemberAccess = (obj: unknown, val: string | symbol, sandboxEnab
     if (!isNonNullish(obj)) {
       return { __nunjucks_null__: true, __nunjucks_parent__: parentName, __access_path__: val };
     }
-    return (obj as Record<string | symbol, unknown>)?.[val];
+    // Guarded directly above, so no optional chain needed here.
+    return (obj as Record<string | symbol, unknown>)[val];
   }
 
   if (typeof val === 'symbol') {
-    return (obj as Record<string | symbol, unknown>)?.[val];
+    // Not guarded on this path: `obj` is still unknown and may be nullish, so
+    // the cast keeps `undefined` and the optional chain stays load-bearing.
+    return (obj as Record<string | symbol, unknown> | undefined)?.[val];
   }
 
   if (isBlockedAtScope(val as string, sandboxOptions, topLevel)) {

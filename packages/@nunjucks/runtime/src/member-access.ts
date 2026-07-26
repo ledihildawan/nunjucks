@@ -57,7 +57,9 @@ export function getNullParentName(val: unknown): string | null {
 
 export function getAccessPath(val: unknown): string {
   if (!isNonNullish(val)) { return ''; }
-  return (val as NullAccessResult).__access_path__ ?? '';
+  // `val` is only *maybe* a NullAccessResult, so the cast is partial and the
+  // `??` is what covers everything else that reaches this function.
+  return (val as Partial<NullAccessResult>).__access_path__ ?? '';
 }
 
 export function optionalMemberLookup(obj: unknown, val: string, _parentName: string | null = null): unknown {
