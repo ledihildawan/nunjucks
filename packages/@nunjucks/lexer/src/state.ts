@@ -32,7 +32,7 @@ export const isFinished = (state: LexerState): boolean =>
   state.index >= state.str.length;
 
 export const advance = (state: LexerState, n = 1): LexerState => {
-  const str = state.str;
+  const { str } = state;
   let { index, lineno, colno } = state;
   const maxIndex = str.length;
   

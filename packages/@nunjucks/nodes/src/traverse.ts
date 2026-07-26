@@ -56,7 +56,7 @@ const getTraversalFields = (node: Node): string[] =>
   );
 
 const walkChildren = (node: Node, walker: (n: Node) => Node): Node => {
-  const children = node.children;
+  const { children } = node;
   if (Array.isArray(children)) {
     const newChildren = mapCOW(children, c => walker(c));
     if (newChildren !== children) {
@@ -65,9 +65,9 @@ const walkChildren = (node: Node, walker: (n: Node) => Node): Node => {
     return node;
   }
   if (isCallExtNode(node)) {
-    const args = node.args;
+    const { args } = node;
     const newArgs = walkValue(args, walker);
-    const contentArgs = node.contentArgs;
+    const { contentArgs } = node;
     let newContentArgs: Node[] | null;
     if (contentArgs) {
       newContentArgs = mapCOW(contentArgs, c => walker(c));

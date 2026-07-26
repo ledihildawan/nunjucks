@@ -73,7 +73,7 @@ export const compileFor = (ctx: Compiler, node: Node, frame: Frame): void => {
 
     ctx.emitLine(`} else if (typeof ${arr} === "object") {`);
     if (isFlatArrayBinding(nameNode)) {
-      const children = nameNode.children;
+      const { children } = nameNode;
       if (!children || children.length < 2) {
         return;
       }

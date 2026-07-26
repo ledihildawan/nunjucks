@@ -160,7 +160,7 @@ export const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {
   const fixComment = classified.fixComment ?? errWithExtras.fixComment ?? '';
   const documentationUrl = classified.documentationUrl ?? errWithExtras.documentationUrl ?? null;
   // Classification.severity is always populated, so it wins outright.
-  const severity = classified.severity;
+  const { severity } = classified;
 
   let humanTitle = classified.title || plain;
   if (category === 'UNDEFINED_VARIABLE' && undefinedName) {

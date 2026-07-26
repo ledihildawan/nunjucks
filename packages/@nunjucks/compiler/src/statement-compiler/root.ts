@@ -60,7 +60,7 @@ export const compileRoot = (ctx: Compiler, node: Node, frame: Frame): void => {
   blocks.forEach((block) => {
     const nameNode = block.name as Node | undefined;
     const name = nameNode?.value as string | undefined;
-    const lineno = block.lineno;
+    const { lineno } = block;
 
     if (!name) { return; }
 

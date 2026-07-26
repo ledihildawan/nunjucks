@@ -11,7 +11,7 @@ export const compileTemplateData = (ctx: Compiler, node: Node, _frame: Frame): v
 };
 
 export const compileCapture = (ctx: Compiler, node: Node, frame: Frame): void => {
-  const buffer = ctx.buffer;
+  const { buffer } = ctx;
   ctx.buffer = 'output';
   ctx.emitLine('(async () => {');
   ctx.emitLine('let output = "";');
@@ -44,7 +44,7 @@ const extractVarName = (node: Node): string | null => {
 const extractLocation = (node: Node): { lineno: number | null; colno: number | null } => extractPropertyLocation(node);
 
 export const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => {
-  const children = node.children;
+  const { children } = node;
   if (!children) {
     return;
   }
@@ -62,7 +62,7 @@ export const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => 
       const isOptionalChainType = isOptionalChain(child) || isOptionalCall(child);
       const varName = extractVarName(child);
       const errorLocation = extractLocation(child);
-      const undefinedMode = ctx.undefinedMode;
+      const { undefinedMode } = ctx;
 
       const useEnsureDefined = !isOptionalChainType || undefinedMode === 'debug';
       const effectiveMode = undefinedMode;

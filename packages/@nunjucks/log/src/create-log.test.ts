@@ -2,8 +2,8 @@ import { describe, test, expect } from 'bun:test';
 import { createLog } from './create-log.ts';
 import { ERROR_DEFINITIONS } from './errors/registry.ts';
 
-const UNDEFINED_VARIABLE = ERROR_DEFINITIONS.UNDEFINED_VARIABLE;
-const FILE_NOT_FOUND = ERROR_DEFINITIONS.FILE_NOT_FOUND;
+const { UNDEFINED_VARIABLE } = ERROR_DEFINITIONS;
+const { FILE_NOT_FOUND } = ERROR_DEFINITIONS;
 
 describe('createLog', () => {
   test('outputs formatted error message', async () => {
