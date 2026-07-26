@@ -182,7 +182,7 @@ export const TEMPLATE_ERRORS = {
       'A file path was passed without a loader',
       'The render function received the wrong argument'
     ],
-    fixCode: 'render("Hello {{ name }}", { name: "World" })\nrender("./template.njk", context, { loader: new FileSystemLoader(".") })',
+    fixCode: 'render("Hello {{ name }}", { name: "World" })\nrender("./template.njk", context, { loader: createFileSystemLoader(".") })',
     fixComment: 'Pass a string template or configure a loader for file paths',
     subjectFrom: null
   },

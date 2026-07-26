@@ -239,7 +239,7 @@ const findSubjectOccurrence = (
   if (!subject || typeof subject !== 'string') { return null; }
   let best: SourcePosition | null = null;
   let bestDistance = Number.POSITIVE_INFINITY;
-  let subjectColOffset = subject.includes('.') ? subject.lastIndexOf('.') + 1 : 0;
+  const subjectColOffset = subject.includes('.') ? subject.lastIndexOf('.') + 1 : 0;
   const escaped = subject.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const patterns: Array<{ re: RegExp; group: number }> = [
     { re: new RegExp(`'(${escaped})'`, 'g'), group: 1 },

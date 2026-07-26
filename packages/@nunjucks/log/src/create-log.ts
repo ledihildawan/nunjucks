@@ -187,63 +187,67 @@ const createBaseMetadata = (message: string, data: LegacyLogData, info: ErrorInf
   return base;
 };
 
-const createOutputFn = (type: 'error' | 'warning') => {
-  if (type === 'error') {
-    return async function(this: TemplateError, options: OutputOptions = {}) {
-      const verbosity = options.verbosity ?? 'full';
-      // Compute the source trace ONCE and share it with every presenter, so the
-      // line-math / windowing / caret logic lives in exactly one place. Skipped
-      // for 'simple' verbosity, which shows only the message and never a trace.
-      const sourceTrace = verbosity !== 'simple'
-        ? await buildSourceTrace({
-            sourceContent: this.sourceContent ?? null,
-            templatePath: options.templatePath ?? this.templatePath ?? this.templateName ?? null,
-            lineno: this.lineno,
-            colno: this.colno,
-            lineBase: normalizeLineBase(options.isJsCaller ? 'one' : this.lineBase),
-            sourceStartLine: this.sourceStartLine ?? 1
-          })
-        : null;
+// The six location/identity fields every presenter needs, read off whichever
+// log object owns them. Errors additionally carry a render context; warnings
+// never do.
+const toFormatterMetadata = (log: TemplateError | TemplateWarning, renderContext?: Record<string, unknown>) => ({
+  lineno: log.lineno,
+  colno: log.colno,
+  phase: log.phase,
+  templateName: log.templateName,
+  code: log.code,
+  subject: log.subject,
+  renderContext,
+  lineBase: normalizeLineBase(log.lineBase)
+});
 
-      const opts = createFormatterState({
-        metadata: {
-          lineno: this.lineno,
-          colno: this.colno,
-          phase: this.phase,
-          templateName: this.templateName,
-          code: this.code,
-          subject: this.subject,
-          renderContext: this.renderContext,
-          lineBase: normalizeLineBase(this.lineBase)
-        },
-        options: {
-          ...options,
-          sourceTrace
-        }
-      });
+const buildErrorOutput = (err: TemplateError) => async (options: OutputOptions = {}): Promise<string> => {
+  const verbosity = options.verbosity ?? 'full';
+  // Compute the source trace ONCE and share it with every presenter, so the
+  // line-math / windowing / caret logic lives in exactly one place. Skipped
+  // for 'simple' verbosity, which shows only the message and never a trace.
+  const sourceTrace = verbosity !== 'simple'
+    ? await buildSourceTrace({
+        sourceContent: err.sourceContent ?? null,
+        templatePath: options.templatePath ?? err.templatePath ?? err.templateName ?? null,
+        lineno: err.lineno,
+        colno: err.colno,
+        lineBase: normalizeLineBase(options.isJsCaller ? 'one' : err.lineBase),
+        sourceStartLine: err.sourceStartLine ?? 1
+      })
+    : null;
 
-      if (options.format === 'ansi') { return await toAnsi(this, opts); }
-      if (options.format === 'text') { return toText(this, opts); }
-      return await toHtml(this, opts);
-    };
-  }
-  return function(this: TemplateWarning, options: Omit<OutputOptions, 'format' | 'isProduction'> = {}) {
-    const state = createFormatterState({
-      metadata: {
-        lineno: this.lineno,
-        colno: this.colno,
-        phase: this.phase,
-        templateName: this.templateName,
-        code: this.code,
-        subject: this.subject,
-        renderContext: undefined,
-        lineBase: normalizeLineBase(this.lineBase)
-      },
-      options
-    });
-    return toConsoleString(this, state);
-  };
+  const opts = createFormatterState({
+    metadata: toFormatterMetadata(err, err.renderContext),
+    options: { ...options, sourceTrace }
+  });
+
+  if (options.format === 'ansi') { return await toAnsi(err, opts); }
+  if (options.format === 'text') { return toText(err, opts); }
+  return await toHtml(err, opts);
 };
+
+const buildWarningOutput = (warn: TemplateWarning) => (options: Omit<OutputOptions, 'format' | 'isProduction'> = {}): string =>
+  toConsoleString(warn, createFormatterState({ metadata: toFormatterMetadata(warn), options }));
+
+const buildErrorJson = (err: TemplateError) => (): Record<string, unknown> => ({
+  name: err.name,
+  code: err.code,
+  subject: err.subject,
+  message: err.message,
+  phase: err.phase,
+  templateName: err.templateName,
+  templatePath: err.templatePath,
+  sourceStartLine: err.sourceStartLine,
+  lineno: err.lineno,
+  colno: err.colno,
+  lineBase: err.lineBase,
+  causes: err.causes,
+  fixCode: err.fixCode,
+  fixComment: err.fixComment,
+  severity: err.severity,
+  stack: err.stack
+});
 
 export function createLog(
   type: string,
@@ -261,7 +265,7 @@ export function createLog(
       const err = new Error(base.message) as TemplateError;
       const props = { name: 'Template render error', code: base.code, subject: base.subject, lineno: base.lineno, colno: base.colno, phase: base.phase, templateName: base.templateName, lineBase: base.lineBase, templatePath: base.templateName, [TEMPLATE_ERROR]: true as const };
       Object.assign(err, props);
-      err.output = createOutputFn('error') as (options?: OutputOptions) => Promise<string>;
+      err.output = buildErrorOutput(err);
       return err;
     }
 
@@ -275,10 +279,9 @@ export function createLog(
       code: base.code,
       subject: base.subject,
       phase: base.phase,
-      lineBase: base.lineBase,
-      output: null as unknown as (options?: Omit<OutputOptions, 'format' | 'isProduction'>) => string
-    };
-    warn.output = createOutputFn('warning') as (options?: Omit<OutputOptions, 'format' | 'isProduction'>) => string;
+      lineBase: base.lineBase
+    } as TemplateWarning;
+    warn.output = buildWarningOutput(warn);
     return warn;
   }
 
@@ -311,26 +314,23 @@ export function createLog(
     if (errorDef.fixComment) { err.fixComment = errorDef.fixComment; }
     if (errorDef.documentationUrl) { err.documentationUrl = errorDef.documentationUrl; }
     if (errorDef.severity) { err.severity = errorDef.severity; }
-    err.toJSON = function() {
-      return { name: this.name, code: this.code, subject: this.subject, message: this.message, phase: this.phase, templateName: this.templateName, templatePath: this.templatePath, sourceStartLine: this.sourceStartLine, lineno: this.lineno, colno: this.colno, lineBase: this.lineBase, causes: this.causes, fixCode: this.fixCode, fixComment: this.fixComment, severity: this.severity, stack: this.stack };
-    };
-    err.output = createOutputFn('error') as (options?: OutputOptions) => Promise<string>;
+    err.toJSON = buildErrorJson(err);
+    err.output = buildErrorOutput(err);
     return err;
   }
 
   const normalizedWarning = normalized as NormalizedWarningContext;
-  const warn: Record<string, unknown> = {
+  const warn = {
     message: resolveMessage(errorDef.message, paramsValue),
     code: errorDef.name,
     subject: subject ?? null,
-    ...normalizedWarning,
-    output: null as unknown as (options?: Omit<OutputOptions, 'format' | 'isProduction'>) => string
-  };
+    ...normalizedWarning
+  } as TemplateWarning;
   if (errorDef.causes && errorDef.causes.length > 0) { warn.causes = errorDef.causes; }
   if (errorDef.fixCode) { warn.fixCode = errorDef.fixCode; }
   if (errorDef.fixComment) { warn.fixComment = errorDef.fixComment; }
-  warn.output = createOutputFn('warning');
-  return warn as unknown as TemplateWarning;
+  warn.output = buildWarningOutput(warn);
+  return warn;
 }
 
 export function isTemplateError(obj: unknown): obj is TemplateError {
@@ -363,28 +363,28 @@ const asTemplateError = (err: Error | TemplateError): TemplateError => {
 };
 
 const withLocation = ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) => (err: TemplateError): TemplateError => {
-  err.applyLocation = function(path: string | undefined, includeChain?: IncludeChain): TemplateError {
-    let msg = `(${path || 'unknown path'})`;
-    if (this.firstUpdate) {
-      const annotation = formatLocationAnnotation(this.lineno, this.colno, this.lineBase);
+  err.applyLocation = (locationPath: string | undefined, chain?: IncludeChain): TemplateError => {
+    let msg = `(${locationPath || 'unknown path'})`;
+    if (err.firstUpdate) {
+      const annotation = formatLocationAnnotation(err.lineno, err.colno, err.lineBase);
       if (annotation) { msg += ` ${annotation}`; }
     }
-    if (includeChain && this.firstUpdate) {
+    if (chain && err.firstUpdate) {
       let parentColnoPart: string;
-      if (includeChain.parentColno) {
-        parentColnoPart = `:${includeChain.parentColno}`;
+      if (chain.parentColno) {
+        parentColnoPart = `:${chain.parentColno}`;
       } else {
         parentColnoPart = '';
       }
-      msg += `\n   (included from ${includeChain.parentTmpl}:${includeChain.parentLineno}${parentColnoPart})`;
+      msg += `\n   (included from ${chain.parentTmpl}:${chain.parentLineno}${parentColnoPart})`;
     }
     msg += '\n ';
-    if (this.firstUpdate) {
+    if (err.firstUpdate) {
       msg += ' ';
     }
-    this.message = msg + (this.message || '');
-    this.firstUpdate = false;
-    return this;
+    err.message = msg + (err.message || '');
+    err.firstUpdate = false;
+    return err;
   };
   err.templateName = err.templateName ?? (path ?? null);
   if (includeChain) {

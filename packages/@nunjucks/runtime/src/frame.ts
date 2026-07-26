@@ -69,7 +69,7 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
       let obj: Record<string, unknown> = state.variables;
 
       if (resolveUp) {
-        const resolved = this.resolve(parts[0]!, true);
+        const resolved = frame.resolve(parts[0]!, true);
         if (resolved) {
           resolved.set(name, val);
           return;
@@ -134,8 +134,8 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
         if (forWrite && state.isolateWrites) {
           return ;
         }
-        state.resolveCache.set(cacheKey, { revision: state.rootState.revision, frame: this });
-        return this;
+        state.resolveCache.set(cacheKey, { revision: state.rootState.revision, frame });
+        return frame;
       }
       if (forWrite && state.isolateWrites) {
         return ;
@@ -147,7 +147,7 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
     },
 
     push(writeIsolation?: boolean): Frame {
-      return createFrame(this, writeIsolation);
+      return createFrame(frame, writeIsolation);
     },
 
     pop(): Frame | undefined {

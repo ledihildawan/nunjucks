@@ -13,18 +13,3 @@ export type { ErrorMetadataFallback, NormalizedErrorMetadata } from './render/in
 export type { ErrorName } from './errors/registry.ts';
 export type { ErrorDefinitionOptions } from './errors/factory.ts';
 export { findContextKeyPosition, wrapWithLog } from './diagnostics.ts';
-export {
-  NunjucksError,
-  ValidationError,
-  TemplateSyntaxError,
-  RenderError,
-  LoaderError,
-  SecurityError,
-  TimeoutError,
-  isNunjucksError,
-  isValidationError,
-  isRenderError,
-  isSecurityError,
-  isTimeoutError
-} from './errors/errors/index.ts';
-export type { NunjucksErrorMetadata } from './errors/errors/index.ts';

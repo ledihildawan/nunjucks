@@ -8,7 +8,7 @@ import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import type { Frame } from '@nunjucks/runtime';
 import { compileDispatch } from './node-dispatch.ts';
 import { DEFAULT_UNDEFINED_MODE, getUndefinedMode, type UndefinedMode } from '@nunjucks/runtime/undefined';
-import { HtmlContextTracker, type HtmlContext } from '@nunjucks/shared';
+import { createHtmlContextTracker, type HtmlContext } from '@nunjucks/shared';
 
 export interface Compiler {
   templateName: string | null;
@@ -55,7 +55,7 @@ export function createCompiler(
   let scopeClosers = '';
   let inBlock = false;
   let compiledLine = 0;
-  const contextTracker = new HtmlContextTracker(source);
+  const contextTracker = createHtmlContextTracker(source);
 
   const fail = (msg: string, lineno?: number, colno?: number) => {
     let subject: string;
@@ -288,7 +288,7 @@ export function createCompiler(
     assertType,
     compile,
     getCode: () => codebuf.join(''),
-    getHtmlContext: (lineno: number, colno: number) => contextTracker.getContextAtLineCol(lineno, colno, source.split('\n')),
+    getHtmlContext: (lineno: number, colno: number) => contextTracker.getContextAtLineCol(lineno, colno),
   };
 
   return compiler;
