@@ -200,7 +200,11 @@ const createOutputFn = (type: 'error' | 'warning') => {
           renderContext: this.renderContext,
           lineBase: normalizeLineBase(this.lineBase)
         },
-        options
+        options: {
+          ...options,
+          sourceContent: this.sourceContent,
+          sourceStartLine: this.sourceStartLine
+        }
       });
 
       if (options.format === 'ansi') { return toAnsi(this, opts); }

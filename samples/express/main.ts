@@ -1,7 +1,7 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
-import { createEngine } from '@nunjucks/integrations/express';
+import { createEngine, type ExpressEngineConfig } from '@nunjucks/integrations/express';
 import { render } from '@nunjucks/core';
 import { demoRouter } from './routes/demo.ts';
 import { errorRouter } from './routes/errors.ts';
@@ -12,7 +12,7 @@ const VIEWS = path.join(__dirname, 'views');
 
 const app: Express = express();
 
-const engineConfig = {
+const engineConfig: ExpressEngineConfig = {
   dev: true,
   autoescape: true,
   globals: {
@@ -28,11 +28,6 @@ const engineConfig = {
 app.set('views', VIEWS);
 app.engine('.njk', createEngine(engineConfig));
 app.set('view engine', 'njk');
-
-app.use(async (err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.log(await (err as { output?: (opts: { format: string }) => Promise<string> }).output?.({ format: 'ansi' }));
-  res.status(500).type('html').send(await (err as { output?: () => Promise<string> }).output?.());
-});
 
 app.get('/', (req: Request, res: Response) => {
   res.render('index', { userName: 'Guest' });
@@ -92,6 +87,13 @@ app.get('/security', async (req: Request, res: Response) => {
 
 app.use('/demo', demoRouter);
 app.use('/errors', errorRouter);
+
+// Error handler - must be after all routes
+app.use(async (err: Error, req: Request, res: Response, next: NextFunction) => {
+  const errorOutput = err as { output?: (opts: { format: string; dev?: boolean }) => Promise<string> };
+  console.log(await errorOutput.output?.({ format: 'ansi', dev: true }));
+  res.status(500).type('html').send(await errorOutput.output?.({ format: 'html', dev: true }));
+});
 
 app.listen(4000, () => {
   console.log('Server running at http://localhost:4000');
