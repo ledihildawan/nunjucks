@@ -151,30 +151,19 @@ export const findAll = (node: Node, predicate: string | ((n: Node) => boolean)):
   return results;
 };
 
+/**
+ * First node in pre-order that satisfies `predicate`.
+ *
+ * This used to carry its own copy of the traversal (children, then call
+ * extension args, then the remaining fields). `iterateNodes` already walks in
+ * exactly that order and stops as soon as the consumer does, so the search is
+ * just a loop over it.
+ */
 export const findFirst = (node: Node, predicate: (n: Node) => boolean): Node | undefined => {
-  const found = { result: undefined as Node | undefined };
-
-  const search = (n: Node | null | undefined): boolean => {
-    if (!n || found.result) { return true; }
-    if (predicate(n)) { found.result = n; }
-    else {
-      if (Array.isArray(n.children)) { n.children.some(search); }
-      if (isCallExtNode(n)) {
-        if (search(n.args)) { return true; }
-        for (const child of n.contentArgs) { if (search(child)) { return true; } }
-      }
-      for (const field of getTraversalFields(n)) {
-        const val = n[field];
-        if (Array.isArray(val)) {
-          for (const child of val) { if (isNode(child) && search(child)) { return true; } }
-        } else if (isNode(val) && search(val)) { return true; }
-      }
-    }
-    return false;
-  };
-
-  search(node);
-  return found.result;
+  for (const n of iterateNodes(node)) {
+    if (predicate(n)) { return n; }
+  }
+  return undefined;
 };
 
 export const count = (node: Node, predicate?: (n: Node) => boolean): number => {

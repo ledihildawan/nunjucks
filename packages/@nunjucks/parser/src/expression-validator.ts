@@ -41,6 +41,60 @@ interface ValidationError {
   colno: number;
 }
 
+const DANGEROUS_CALLEES = new Set(['eval', 'Function', 'execScript']);
+
+/** The property being looked up, when it is written as a symbol or a string literal. */
+const staticPropertyName = (val: Node | null | undefined): string | null => {
+  if (!val) { return null; }
+  const valType = getNodeTypeName(val);
+  if (valType === 'symbol') { return val.value as string; }
+  if (valType === 'literal' && typeof val.value === 'string') { return val.value; }
+  return null;
+};
+
+const unsafeProperty = (
+  message: string,
+  node: Node,
+  path: (string | number)[]
+): ValidationError => ({
+  code: ExpressionSecurityError.UNSAFE_PROPERTY,
+  message,
+  path,
+  lineno: node.lineno,
+  colno: node.colno,
+});
+
+/** `a.b` / `a['b']` where the property is one we refuse to let templates reach. */
+const checkLookupVal = (node: Node, path: (string | number)[], blocked: RegExp[]): ValidationError[] => {
+  const propName = staticPropertyName(node.val as Node);
+  if (!propName) { return []; }
+
+  const found: ValidationError[] = [];
+  const where = [...path, 'lookupVal'];
+  if (DANGEROUS_PROPERTIES.has(propName)) {
+    found.push(unsafeProperty(`Access to dangerous property '${propName}' is not allowed`, node, where));
+  }
+  if (blocked.some(pattern => pattern.test(propName))) {
+    found.push(unsafeProperty(`Property '${propName}' matches blocked pattern`, node, where));
+  }
+  return found;
+};
+
+const checkSymbol = (node: Node, path: (string | number)[]): ValidationError[] => {
+  const name = node.value as string;
+  if (!DANGEROUS_PROPERTIES.has(name)) { return []; }
+  return [unsafeProperty(`Dangerous symbol '${name}' is not allowed`, node, [...path, 'symbol'])];
+};
+
+/** A direct call to eval and friends, written as `eval(...)` or `x | eval`. */
+const checkCall = (node: Node, nodeType: string, path: (string | number)[]): ValidationError[] => {
+  const name = node.name as Node;
+  if (!name || getNodeTypeName(name) !== 'symbol') { return []; }
+  const fnName = name.value as string;
+  if (!DANGEROUS_CALLEES.has(fnName)) { return []; }
+  return [unsafeProperty(`Dangerous function call '${fnName}' is not allowed`, node, [...path, nodeType])];
+};
+
 export function validateExpression(ast: Node, config: Record<string, unknown> = {}): ValidationError[] {
   const cfg = { ...DEFAULT_SECURITY_CONFIG, ...config };
   const errors: ValidationError[] = [];
@@ -52,76 +106,21 @@ export function validateExpression(ast: Node, config: Record<string, unknown> = 
 
     switch (nodeType) {
       case 'lookupVal': {
-        const target = node.target as Node;
-        const val = node.val as Node;
-
-        if (val) {
-          let propName: string | null = null;
-          const valType = getNodeTypeName(val);
-
-          if (valType === 'symbol') {
-            propName = val.value as string;
-          } else if (valType === 'literal' && typeof val.value === 'string') {
-            propName = val.value;
-          }
-
-          if (propName) {
-            if (DANGEROUS_PROPERTIES.has(propName)) {
-              errors.push({
-                code: ExpressionSecurityError.UNSAFE_PROPERTY,
-                message: `Access to dangerous property '${propName}' is not allowed`,
-                path: [...path, 'lookupVal'],
-                lineno: node.lineno,
-                colno: node.colno,
-              });
-            }
-
-            if ((cfg.blockedPropertyPatterns as RegExp[]).some(pattern => pattern.test(propName))) {
-              errors.push({
-                code: ExpressionSecurityError.UNSAFE_PROPERTY,
-                message: `Property '${propName}' matches blocked pattern`,
-                path: [...path, 'lookupVal'],
-                lineno: node.lineno,
-                colno: node.colno,
-              });
-            }
-          }
-        }
-
-        walk(target, [...path, 'target']);
-        walk(val, [...path, 'val']);
+        errors.push(...checkLookupVal(node, path, cfg.blockedPropertyPatterns as RegExp[]));
+        walk(node.target as Node, [...path, 'target']);
+        walk(node.val as Node, [...path, 'val']);
         break;
       }
 
       case 'symbol': {
-        if (DANGEROUS_PROPERTIES.has(node.value as string)) {
-          errors.push({
-            code: ExpressionSecurityError.UNSAFE_PROPERTY,
-            message: `Dangerous symbol '${node.value as string}' is not allowed`,
-            path: [...path, 'symbol'],
-            lineno: node.lineno,
-            colno: node.colno,
-          });
-        }
+        errors.push(...checkSymbol(node, path));
         break;
       }
 
       case 'funCall':
       case 'pipe': {
-        const name = node.name as Node;
-        if (name && getNodeTypeName(name) === 'symbol') {
-          const fnName = name.value as string;
-          if (fnName === 'eval' || fnName === 'Function' || fnName === 'execScript') {
-            errors.push({
-              code: ExpressionSecurityError.UNSAFE_PROPERTY,
-              message: `Dangerous function call '${fnName}' is not allowed`,
-              path: [...path, nodeType ?? ''],
-              lineno: node.lineno,
-              colno: node.colno,
-            });
-          }
-        }
-        walk(name, [...path, 'name']);
+        errors.push(...checkCall(node, nodeType ?? '', path));
+        walk(node.name as Node, [...path, 'name']);
         walk(node.args as Node, [...path, 'args']);
         break;
       }
