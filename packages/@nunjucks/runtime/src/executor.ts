@@ -35,54 +35,52 @@ const detectUndefinedInput = (context: unknown, inputValue: string): UndefinedIn
   if (inputValue === null) {
     isUndefinedInput = true;
     undefinedVarName = '<null>';
-  } else if (typeof inputValue === 'string' && inputValue.includes('.')) {
-    isPropertyLookup = true;
-    const parts = inputValue.split('.');
-    try {
-      let val: unknown = context;
-      for (let i = 0; i < parts.length; i++) {
-        if (val === undefined || val === null) {
-          isUndefinedInput = true;
-          undefinedVarName = parts.slice(i).join('.');
-          if (i > 0) {
-            undefinedParentName = parts[i - 1] ?? null;
-          } else {
-            undefinedParentName = null;
-          }
+    return { isUndefinedInput, undefinedVarName, undefinedParentName, isPropertyLookup };
+  }
+
+  if (typeof inputValue !== 'string') {
+    return { isUndefinedInput, undefinedVarName, undefinedParentName, isPropertyLookup };
+  }
+
+  const parts = inputValue.split('.');
+  isPropertyLookup = parts.length > 1;
+
+  try {
+    let val: unknown = context;
+    let undefinedAt: number = -1;
+    for (let i = 0; i < parts.length; i++) {
+      if (val === undefined || val === null) {
+        undefinedAt = i;
+        break;
+      }
+      try {
+        val = (val as Record<string, unknown>)[parts[i] ?? ''];
+      } catch (e) {
+        if (e instanceof TypeError) {
+          undefinedAt = i;
           break;
         }
-        val = (val as Record<string, unknown>)[parts[i] ?? ''];
-      }
-      if (!isUndefinedInput && (val === undefined || val === null)) {
-        isUndefinedInput = true;
-        undefinedVarName = parts.at(-1) ?? null;
-        if (parts.length > 1) {
-          undefinedParentName = parts.at(-2) ?? null;
-        } else {
-          undefinedParentName = null;
-        }
-      }
-    } catch (e) {
-      if (e instanceof TypeError) {
-        isUndefinedInput = true;
-        undefinedVarName = inputValue;
-      } else {
         throw e;
       }
     }
-  } else if (typeof inputValue === 'string') {
-    try {
-      if ((context as Record<string, unknown>)[inputValue] === undefined) {
-        isUndefinedInput = true;
-        undefinedVarName = inputValue;
-      }
-    } catch (e) {
-      if (e instanceof TypeError) {
-        isUndefinedInput = true;
-        undefinedVarName = inputValue;
+    if (undefinedAt === -1 && (val === undefined || val === null)) {
+      undefinedAt = parts.length - 1;
+    }
+    if (undefinedAt >= 0) {
+      isUndefinedInput = true;
+      undefinedVarName = parts.slice(undefinedAt).join('.');
+      if (undefinedAt > 0) {
+        undefinedParentName = parts[undefinedAt - 1] ?? null;
       } else {
-        throw e;
+        undefinedParentName = null;
       }
+    }
+  } catch (e) {
+    if (e instanceof TypeError) {
+      isUndefinedInput = true;
+      undefinedVarName = inputValue;
+    } else {
+      throw e;
     }
   }
 

@@ -1,4 +1,5 @@
 import type { LineBase } from './location.ts';
+import type { SourceTrace } from './source-trace.ts';
 
 export interface LogMetadataInput {
   lineno?: number | null;
@@ -36,6 +37,7 @@ export interface FormatterStateInput {
     sourceContent?: string;
     sourceStartLine?: number;
     snippet?: string;
+    sourceTrace?: SourceTrace | null;
     csp?: { nonce?: string };
     jsCaller?: string;
     jsCallerErrorLine?: number;
@@ -60,6 +62,7 @@ export interface FormatterState {
   sourceContent?: string;
   sourceStartLine?: number;
   snippet?: string;
+  sourceTrace?: SourceTrace | null;
   csp?: { nonce?: string };
   jsCaller?: string;
   jsCallerErrorLine?: number;
@@ -102,6 +105,7 @@ export const createFormatterState = ({ metadata, options = {} }: FormatterStateI
   sourceContent: options.sourceContent,
   sourceStartLine: options.sourceStartLine,
   snippet: options.snippet,
+  sourceTrace: options.sourceTrace,
   csp: options.csp,
   jsCaller: options.jsCaller,
   jsCallerErrorLine: options.jsCallerErrorLine,

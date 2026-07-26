@@ -6,8 +6,6 @@ import type { Node } from '@nunjucks/nodes';
 import { createLog } from '@nunjucks/log';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import type { Frame } from '@nunjucks/runtime';
-import { createSourceMap } from './source-map.ts';
-import type { SourceMap } from './source-map.ts';
 import { compileDispatch } from './node-dispatch.ts';
 import { DEFAULT_UNDEFINED_MODE, getUndefinedMode, type UndefinedMode } from '@nunjucks/runtime/undefined';
 import { HtmlContextTracker, type HtmlContext } from '@nunjucks/shared';
@@ -22,14 +20,12 @@ export interface Compiler {
   inBlock: boolean;
   undefinedMode: UndefinedMode;
   compiledLine: number;
-  sourceMap: SourceMap;
   fail: (msg: string, lineno?: number, colno?: number) => void;
   pushBuffer: () => string;
   popBuffer: () => string | null;
   emit: (code: string) => void;
   emitLine: (code: string, originalLine?: number) => void;
   emitLineWithMapping: (code: string, templateLine?: number, templateCol?: number) => void;
-  trackMapping: (templateLine?: number, templateCol?: number) => void;
   emitLines: (...lines: string[]) => void;
   emitFuncBegin: (node: Node, name: string) => void;
   emitFuncEnd: (noReturn?: boolean) => void;
@@ -43,7 +39,6 @@ export interface Compiler {
   assertType: (node: Node, ...types: Array<string | Function>) => void;
   compile: (node: Node, frame?: Frame) => unknown;
   getCode: () => string;
-  getSourceMap: () => SourceMap;
   emtest: (code: string) => void;
   getHtmlContext: (lineno: number, colno: number) => HtmlContext;
 }
@@ -60,7 +55,6 @@ export function createCompiler(
   let scopeClosers = '';
   let inBlock = false;
   let compiledLine = 0;
-  const sourceMap = createSourceMap(templateName);
   const contextTracker = new HtmlContextTracker(source);
 
   const fail = (msg: string, lineno?: number, colno?: number) => {
@@ -92,7 +86,7 @@ export function createCompiler(
 
   const popBuffer = (): string | null => {
     buffer = bufferStack.pop() as string | null;
-    return buffer;
+    return null;
   };
 
   const emit = (code: string) => {
@@ -103,26 +97,17 @@ export function createCompiler(
     codebuf.push(code);
   };
 
-  const emitLine = (code: string, originalLine?: number) => {
+  const emitLine = (code: string, _originalLine?: number) => {
     compiledLine++;
-    if (isNonNullish(originalLine)) {
-      sourceMap.addMapping(compiledLine, originalLine);
-    }
     emit(`${code}\n`);
   };
 
-  const emitLineWithMapping = (code: string, templateLine?: number, templateCol?: number) => {
+  const emitLineWithMapping = (code: string, templateLine?: number, _templateCol?: number) => {
     compiledLine++;
     if (templateLine !== undefined) {
-      sourceMap.addMapping(compiledLine, templateLine, templateCol || 0);
+      // Mapping tracked via templateLine but no longer maintained as a source map.
     }
     emit(`${code}\n`);
-  };
-
-  const trackMapping = (templateLine?: number, templateCol?: number) => {
-    if (templateLine !== undefined) {
-      sourceMap.addMapping(compiledLine, templateLine, templateCol || 0);
-    }
   };
 
   const emitLines = (...lines: string[]) => {
@@ -283,7 +268,6 @@ export function createCompiler(
     set undefinedMode(v) { undefinedMode = v; },
     get compiledLine() { return compiledLine; },
     set compiledLine(v) { compiledLine = v; },
-    get sourceMap() { return sourceMap; },
     fail,
     pushBuffer,
     popBuffer,
@@ -291,7 +275,6 @@ export function createCompiler(
     emtest,
     emitLine,
     emitLineWithMapping,
-    trackMapping,
     emitLines,
     emitFuncBegin,
     emitFuncEnd,
@@ -305,13 +288,8 @@ export function createCompiler(
     assertType,
     compile,
     getCode: () => codebuf.join(''),
-    getSourceMap: () => sourceMap,
     getHtmlContext: (lineno: number, colno: number) => contextTracker.getContextAtLineCol(lineno, colno, source.split('\n')),
   };
 
   return compiler;
-}
-
-export function getSourceMap(compiler: Compiler): SourceMap {
-  return compiler.sourceMap;
 }

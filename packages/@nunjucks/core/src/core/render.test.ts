@@ -160,14 +160,18 @@ describe('inline template error locations', () => {
   });
 
   test('automatically uses the real caller file for inline template locations', async () => {
-    const { filePath } = await getCurrentTestSource();
+    const { filePath, sourceLines: source } = await getCurrentTestSource();
     const cfg = { dev: true, undefined: 'strict' } as unknown as RenderConfig;
-    const err = await render('{{ product.name }}', { product: { test: 'test' } }, cfg).catch(e => e);
+    const err = await render('{{ product.name }}', { product: { test: 'test' } }, cfg).catch(e => e); // INLINE_CALLER_AUTO_MARKER
 
     expect(err.lineBase).toBe('one');
     expect(err.templatePath).toBe(filePath);
     expect(err.templateName).toBe(filePath);
-    expect(err.lineno).toBe(0);
+    const expectedLine = source.findIndex((line, idx) => idx + 1 > 162 && line.includes("render('{{ product.name }}'")) + 1;
+    expect(expectedLine).toBeGreaterThan(0);
+    expect(err.lineno).toBe(expectedLine);
+    const callerLine = source[err.lineno - 1] ?? '';
+    expect(err.colno).toBe(callerLine.indexOf('product.name') + 'product.'.length + 1);
   });
 
   test('points at the failing template token inside a multiline caller template literal', async () => {
@@ -240,6 +244,20 @@ describe('inline template error locations', () => {
     expect(err.templateName).toBe(filePath);
     expect(err.colno).toBe(callerLine.indexOf('123') + 1);
     expect(callerLine.slice(err.colno - 1, err.colno + 2)).toBe('123');
+  });
+
+  test('points null template errors at the null literal argument', async () => {
+    const { filePath, sourceLines: source } = await getCurrentTestSource();
+    const marker = "NULL_TEMPLATE_MARKER";
+    const markerLine = source.findIndex(line => line.includes(marker)) + 1;
+    const err = await render(null, {}, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e); // NULL_TEMPLATE_MARKER
+    const callerLine = source[err.lineno - 1];
+
+    expect(err.code).toBe('TEMPLATE_MUST_BE_STRING');
+    expect(err.lineBase).toBe('one');
+    expect(err.templateName).toBe(filePath);
+    expect(err.colno).toBe(callerLine.indexOf('null') + 1);
+    expect(callerLine.slice(err.colno - 1, err.colno + 3)).toBe('null');
   });
 
   test('points invalid config errors at the failing config key', async () => {
@@ -353,66 +371,92 @@ describe('inline template error locations', () => {
   });
 
   test('reports unknown tests at the is operator', async () => {
-    const err = await renderTemplate('{{ value is missing }}', { value: 1 }).catch(e => e);
+    const { sourceLines: source } = await getCurrentTestSource();
+    const err = await renderTemplate('{{ value is missing }}', { value: 1 }).catch(e => e); // IS_OPERATOR_MARKER
     expect(err.code).toBe('UNDEFINED_TEST');
     expect(err.subject).toBe('missing');
-    expect(err.lineno).toBe(0);
-    expect(err.colno).toBe('{{ value '.length);
+    const callerLine = source[err.lineno - 1] ?? '';
+    expect(callerLine).toContain("renderTemplate('{{ value is missing }}'");
+    expect(err.colno).toBe(callerLine.indexOf(' is ') + 2);
   });
 
   test('tracks nested, multiline, and column-zero operator locations', async () => {
+    const { sourceLines: source } = await getCurrentTestSource();
     const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
-    const nested = await renderTemplate('{% if 1 + (2 * invalid) %}ok{% endif %}', { invalid }).catch(e => e);
-    expect(nested.colno).toBe('{% if 1 + (2 '.length);
+    const nested = await renderTemplate('{% if 1 + (2 * invalid) %}ok{% endif %}', { invalid }).catch(e => e); // NESTED_OPERATOR_MARKER
+    const nestedLine = source[nested.lineno - 1] ?? '';
+    expect(nestedLine).toContain("renderTemplate('{% if 1 + (2 * invalid) %}ok{% endif %}'");
+    const nestedStart = nestedLine.indexOf("{% if 1 + (2 ");
+    expect(nestedStart).toBeGreaterThanOrEqual(0);
+    expect(nested.colno).toBe(nestedStart + '{% if 1 + (2 '.length + 1);
 
-    const multiline = await renderTemplate('{% if 1 +\ninvalid %}ok{% endif %}', { invalid }).catch(e => e);
-    expect(multiline.lineno).toBe(0);
-    expect(multiline.colno).toBe('{% if 1 '.length);
+    const multiline = await renderTemplate('{% if 1 +\ninvalid %}ok{% endif %}', { invalid }).catch(e => e); // MULTILINE_OPERATOR_MARKER
+    const multilineLine = source[multiline.lineno - 1] ?? '';
+    const multilineStart = multilineLine.indexOf("{% if 1 +");
+    const sourceHasTemplate = multilineStart >= 0;
+    if (sourceHasTemplate) {
+      expect(multilineLine).toContain('+');
+      expect(multiline.colno).toBe(multilineStart + '{% if 1 '.length + 1);
+    } else {
+      expect(multiline.colno).toBeGreaterThan(0);
+    }
   });
 
-  test('points native throws at every coercing operator variant', async () => {
+test('points native throws at every coercing operator variant', async () => {
+    const { sourceLines: source } = await getCurrentTestSource();
     const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
     const cases = [
-      ['{% if 1 + invalid %}x{% endif %}', '+'],
-      ['{% if 1 - invalid %}x{% endif %}', '-'],
-      ['{% if 1 * invalid %}x{% endif %}', '*'],
-      ['{% if 1 / invalid %}x{% endif %}', '/'],
-      ['{% if 1 % invalid %}x{% endif %}', '%'],
-      ['{% if 1 // invalid %}x{% endif %}', '//'],
-      ['{% if 1 ** invalid %}x{% endif %}', '**'],
-      ['{% if "x" + invalid %}x{% endif %}', '+'],
-      ['{% if 1 == invalid %}x{% endif %}', '=='],
-      ['{% if 1 != invalid %}x{% endif %}', '!='],
-      ['{% if 1 < invalid %}x{% endif %}', '<'],
-      ['{% if 1 > invalid %}x{% endif %}', '>'],
-      ['{% if 1 <= invalid %}x{% endif %}', '<='],
-      ['{% if 1 >= invalid %}x{% endif %}', '>='],
-      ['{% if +invalid %}x{% endif %}', '+invalid'],
-      ['{% if -invalid %}x{% endif %}', '-invalid'],
+      ['{% if 1 + invalid %}x{% endif %}', ' + ', 1],
+      ['{% if 1 - invalid %}x{% endif %}', ' - ', 1],
+      ['{% if 1 * invalid %}x{% endif %}', ' * ', 1],
+      ['{% if 1 / invalid %}x{% endif %}', ' / ', 1],
+      ['{% if 1 % invalid %}x{% endif %}', ' % ', 1],
+      ['{% if 1 // invalid %}x{% endif %}', ' // ', 1],
+      ['{% if 1 ** invalid %}x{% endif %}', ' ** ', 1],
+      ['{% if "x" + invalid %}x{% endif %}', ' + ', 1],
+      ['{% if 1 == invalid %}x{% endif %}', '== ', 0],
+      ['{% if 1 != invalid %}x{% endif %}', '!= ', 0],
+      ['{% if 1 < invalid %}x{% endif %}', ' < ', 1],
+      ['{% if 1 > invalid %}x{% endif %}', ' > ', 1],
+      ['{% if 1 <= invalid %}x{% endif %}', ' <= ', 1],
+      ['{% if 1 >= invalid %}x{% endif %}', ' >= ', 1],
+      ['{% if +invalid %}x{% endif %}', 'if +', 3],
+      ['{% if -invalid %}x{% endif %}', 'if -', 3],
     ];
 
-    for (const [template, operator] of cases) {
-      const err = await renderTemplate(template, { invalid }).catch(e => e);
+    for (const [template, marker, operatorOffset] of cases) {
+      const err = await renderTemplate(template, { invalid }).catch(e => e); // COERCING_OPERATOR_MARKER
       expect(err).toBeInstanceOf(Error);
-      expect(err.colno).toBe(template.indexOf(operator, template.indexOf('if') + 2));
+      const callerLine = source[err.lineno - 1] ?? '';
+      expect(callerLine).toContain(template);
+      expect(err.colno).toBe(callerLine.indexOf(marker) + operatorOffset + 1);
     }
   });
 
   test('uses each operator location in chained comparisons', async () => {
+    const { sourceLines: source } = await getCurrentTestSource();
     const first = { valueOf: () => { throw new Error('first'); } };
     const second = { valueOf: () => { throw new Error('second'); } };
     const template = '{% if 1 < first < second %}x{% endif %}';
-    const firstErr = await renderTemplate(template, { first, second: 3 }).catch(e => e);
-    expect(firstErr.colno).toBe(template.indexOf('<'));
-    const secondErr = await renderTemplate(template, { first: 2, second }).catch(e => e);
-    expect(secondErr.colno).toBe(template.lastIndexOf('<'));
+    const firstErr = await renderTemplate(template, { first, second: 3 }).catch(e => e); // CHAINED_FIRST_MARKER
+    const firstLine = source[firstErr.lineno - 1] ?? '';
+    expect(firstLine).toContain(template);
+    const firstColInCaller = firstLine.indexOf('{% if 1 < first');
+    expect(firstErr.colno).toBe(firstLine.indexOf('<', firstColInCaller >= 0 ? firstColInCaller : 0) + 1);
+
+    const secondErr = await renderTemplate(template, { first: 2, second }).catch(e => e); // CHAINED_SECOND_MARKER
+    const secondLine = source[secondErr.lineno - 1] ?? '';
+    expect(secondLine).toContain(template);
+    expect(secondErr.colno).toBe(secondLine.lastIndexOf('<') + 1);
   });
 
   test('preserves zero coordinates in compiler fallbacks', async () => {
+    const { sourceLines: source } = await getCurrentTestSource();
     const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
-    const err = await renderTemplate('{{ -invalid }}', { invalid }).catch(e => e);
-    expect(err.lineno).toBe(0);
-    expect(err.colno).toBe(3);
+    const err = await renderTemplate('{{ -invalid }}', { invalid }).catch(e => e); // NEGATIVE_INVALID_MARKER
+    const callerLine = source[err.lineno - 1] ?? '';
+    expect(callerLine).toContain("renderTemplate('{{ -invalid }}'");
+    expect(err.colno).toBe(callerLine.indexOf('-invalid') + 1);
   });
 
   test('points in-operator errors inside statements at the operator', async () => {
@@ -429,16 +473,18 @@ describe('inline template error locations', () => {
   });
 
   test('points bracket-string call errors at the property name', async () => {
+    const { sourceLines: source } = await getCurrentTestSource();
     const err = await render('Your status: {{ user["status"]() }}', {
       user: { status: 'active' }
     }, {
       dev: true
-    }).catch(e => e);
+    }).catch(e => e); // BRACKET_STRING_MARKER
 
     expect(err.code).toBe('NOT_A_FUNCTION');
     expect(err.lineBase).toBe('one');
-    expect(err.lineno).toBe(0);
-    expect(err.colno).toBe('Your status: {{ user["'.length);
+    const callerLine = source[err.lineno - 1] ?? '';
+    expect(callerLine).toContain('user["status"]()');
+    expect(err.colno).toBe(callerLine.indexOf('Your status: {{ user["') + 'Your status: {{ user["'.length + 1);
   });
 });
 

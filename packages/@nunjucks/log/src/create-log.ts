@@ -1,6 +1,7 @@
 import { isFunction, isString, pipe, pickBy } from 'remeda';
 import type { LineBase } from './render/internal/location.ts';
 import { normalizeLineBase, formatLocationAnnotation } from './render/internal/location.ts';
+import { buildSourceTrace } from './render/internal/source-trace.ts';
 import { createFormatterState } from './render/internal/metadata.ts';
 import { toAnsi } from './render/to-ansi.ts';
 import { toText } from './render/to-text.ts';
@@ -189,6 +190,21 @@ const createBaseMetadata = (message: string, data: LegacyLogData, info: ErrorInf
 const createOutputFn = (type: 'error' | 'warning') => {
   if (type === 'error') {
     return async function(this: TemplateError, options: OutputOptions = {}) {
+      const verbosity = options.verbosity ?? 'full';
+      // Compute the source trace ONCE and share it with every presenter, so the
+      // line-math / windowing / caret logic lives in exactly one place. Skipped
+      // for 'simple' verbosity, which shows only the message and never a trace.
+      const sourceTrace = verbosity !== 'simple'
+        ? await buildSourceTrace({
+            sourceContent: this.sourceContent ?? null,
+            templatePath: options.templatePath ?? this.templatePath ?? this.templateName ?? null,
+            lineno: this.lineno,
+            colno: this.colno,
+            lineBase: normalizeLineBase(options.isJsCaller ? 'one' : this.lineBase),
+            sourceStartLine: this.sourceStartLine ?? 1
+          })
+        : null;
+
       const opts = createFormatterState({
         metadata: {
           lineno: this.lineno,
@@ -203,7 +219,8 @@ const createOutputFn = (type: 'error' | 'warning') => {
         options: {
           ...options,
           sourceContent: this.sourceContent,
-          sourceStartLine: this.sourceStartLine
+          sourceStartLine: this.sourceStartLine,
+          sourceTrace
         }
       });
 

@@ -1,5 +1,5 @@
 import type { LineBase } from './location.ts';
-import { calculateCaretPosition } from './caret.ts';
+import { windowSourceTrace } from './source-trace.ts';
 
 export interface ErrorMetadata {
   code: string | null;
@@ -57,64 +57,51 @@ const toDisplayCoordinate = (value: number | null, lineBase: LineBase | null): n
   return value + 1;
 };
 
+// Build the public ErrorMetadata shape (snippet text + lines + caret) from the
+// shared source-trace windowing core, so getErrorMetadata can never drift from
+// what the renderers produce. Synchronous — it only consumes inline
+// sourceContent and never reads from disk.
 const buildSnippet = (
   sourceContent: string | null,
-  lineno: number | null,
-  displayCol: number | null,
   displayLine: number | null,
+  displayCol: number | null,
   sourceStartLine: number,
   context: number
-): { snippet: string | null; snippetLines: Array<{ number: number; content: string; isError: boolean }>; caret: ErrorMetadata['caret'] } => {
-  if (!sourceContent || lineno === null) {
+): { snippet: string | null; snippetLines: ErrorMetadata['snippetLines']; caret: ErrorMetadata['caret'] } => {
+  if (!sourceContent || displayLine === null) {
     return { snippet: null, snippetLines: [], caret: null };
   }
 
-  const lines = sourceContent.split('\n');
-  const errorIndex = lineno - sourceStartLine;
-  if (errorIndex < 0 || errorIndex >= lines.length) {
-    return { snippet: null, snippetLines: [], caret: null };
-  }
-
-  const start = Math.max(0, errorIndex - context);
-  const end = Math.min(lines.length, errorIndex + context + 1);
-
-  const snippetLines: ErrorMetadata['snippetLines'] = [];
-  for (let i = start; i < end; i++) {
-    snippetLines.push({
-      number: sourceStartLine + i,
-      content: lines[i] ?? '',
-      isError: i === errorIndex
-    });
-  }
-
-  const prefixWidth = String(sourceStartLine + end - 1).length;
-  const snippet = snippetLines
-    .map(line => {
-      const numberLabel = String(line.number).padStart(prefixWidth, ' ');
-      let _marker: string;
-      if (line.isError) {
-        _marker = '>';
-      } else {
-        _marker = ' ';
-      }
-      return ` ${numberLabel} | ${line.content}`;
-    })
-    .join('\n');
+  const trace = windowSourceTrace({
+    content: sourceContent,
+    displayLine,
+    displayCol: displayCol ?? 0,
+    sourceStartLine,
+    context,
+    resolvedPath: null
+  });
 
   let caret: ErrorMetadata['caret'] = null;
-  if (displayCol !== null && displayCol > 0) {
-    const caretInfo = calculateCaretPosition(lines[errorIndex] ?? '', displayCol);
-    if (caretInfo) {
-      caret = {
-        line: displayLine ?? lineno,
-        col: displayCol,
-        charStart: caretInfo.wordStart,
-        charEnd: caretInfo.wordEnd
-      };
-    }
+  if (trace.caret) {
+    caret = {
+      line: trace.caret.line,
+      col: displayCol ?? 0,
+      charStart: trace.caret.charStart,
+      charEnd: trace.caret.charEnd
+    };
   }
 
-  return { snippet, snippetLines, caret };
+  if (trace.lines.length === 0) {
+    return { snippet: null, snippetLines: [], caret };
+  }
+
+  const lastLine = trace.lines[trace.lines.length - 1];
+  const prefixWidth = String(lastLine?.number ?? 0).length;
+  const snippet = trace.lines
+    .map(line => ` ${String(line.number).padStart(prefixWidth, ' ')} | ${line.content}`)
+    .join('\n');
+
+  return { snippet, snippetLines: trace.lines, caret };
 };
 
 export const getErrorMetadata = (err: ErrorLike, options: GetErrorMetadataOptions = {}): ErrorMetadata => {
@@ -145,9 +132,8 @@ export const getErrorMetadata = (err: ErrorLike, options: GetErrorMetadataOption
 
   const { snippet, snippetLines, caret } = buildSnippet(
     sourceContent,
-    lineno,
-    displayCol,
     displayLine,
+    displayCol,
     sourceStartLine,
     Math.max(0, snippetContext)
   );

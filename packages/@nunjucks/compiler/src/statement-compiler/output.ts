@@ -2,6 +2,7 @@ import { isCompoundAssignment, isLookupVal, isOptionalCall, isOptionalChain, isP
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import { extractPropertyLocation } from '../location-utils.ts';
 
 export const compileTemplateData = (ctx: Compiler, node: Node, _frame: Frame): void => {
   ctx.emit(`${ctx.buffer} += `);
@@ -41,14 +42,7 @@ const extractVarName = (node: Node): string | null => {
 };
 
 const extractLocation = (node: Node): { lineno: number | null; colno: number | null } => {
-  if (!node) { return { lineno: null, colno: null }; }
-
-  if (isLookupVal(node) && (node.val as Node)?.lineno !== null && (node.val as Node)?.colno !== null) {
-    const val = node.val as Node;
-    return { lineno: val.lineno, colno: val.colno };
-  }
-
-  return { lineno: node.lineno, colno: node.colno };
+  return extractPropertyLocation(node);
 };
 
 export const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => {

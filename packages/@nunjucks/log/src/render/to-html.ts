@@ -1,6 +1,3 @@
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { classifyFromError } from '../errors/classify.ts';
 import { toText } from './to-text.ts';
 import { escapeHtml, highlightHtml, highlightJs } from './internal/highlight.ts';
@@ -9,7 +6,7 @@ import { CSS, PRODUCTION_BODY } from './internal/styles.ts';
 import { TOGGLE_SCRIPT } from './internal/script.ts';
 import { isFilePath, resolveIdeLink, getIdeMeta } from './internal/ide-links.ts';
 import { toDisplayLocation } from './internal/location.ts';
-import { calculateCaretPosition } from './internal/caret.ts';
+import type { SourceTrace } from './internal/source-trace.ts';
 import { shortenPath } from './internal/path-shortener.ts';
 
 export { CSS, PRODUCTION_BODY, TOGGLE_SCRIPT };
@@ -91,9 +88,7 @@ export interface ToHtmlOptions {
   csp?: Csp;
   jsCaller?: string;
   jsCallerErrorLine?: number;
-  sourceContent?: string;
-  sourceStartLine?: number;
-  snippet?: string;
+  sourceTrace?: SourceTrace | null;
   ide?: string;
   verbosity?: 'simple' | 'medium' | 'full';
   isJsCaller?: boolean;
@@ -122,9 +117,7 @@ export const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {
     csp,
     jsCaller,
     jsCallerErrorLine,
-    sourceContent = error?.sourceContent,
-    sourceStartLine,
-    snippet,
+    sourceTrace,
     ide = 'vscode',
     verbosity = 'full',
     isJsCaller = false
@@ -205,52 +198,6 @@ export const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {
   const displayCol = location.col;
   const displayPath = templatePath || 'unknown';
 
-  let codeSnippet = snippet;
-  let snippetErrorIndex = -1;
-  let startLine = 0;
-  let displayStartLine = 1;
-  const rawLineno = lineno ?? error?.lineno ?? null;
-  const isInlineJsCaller = templatePath && /\.(js|mjs|cjs|ts|mts|cts)$/iu.test(templatePath);
-  if (!codeSnippet && sourceContent && rawLineno !== null && !isInlineJsCaller) {
-    const lines = sourceContent.split('\n');
-    let relativeLine: number;
-    if (sourceStartLine) {
-      relativeLine = rawLineno - sourceStartLine + 1;
-    } else {
-      relativeLine = displayLine;
-    }
-    const clampedLine = Math.max(1, Math.min(relativeLine, lines.length));
-    startLine = Math.max(0, clampedLine - 3);
-    if (sourceStartLine) {
-      displayStartLine = sourceStartLine + startLine;
-    } else {
-      displayStartLine = startLine + 1;
-    }
-    const endLine = Math.min(lines.length, clampedLine + 2);
-    codeSnippet = lines.slice(startLine, endLine).join('\n');
-    snippetErrorIndex = clampedLine - startLine - 1;
-  } else if (!codeSnippet && templatePath && rawLineno !== null && /\.(js|njk|tmpl|tpl|html|htm|ts|mjs|cjs)$/iu.test(templatePath)) {
-    try {
-      let resolvedPath = templatePath;
-      if (templatePath.startsWith('file://')) {
-        resolvedPath = fileURLToPath(templatePath);
-      } else if (/^[a-zA-Z]:[/\\]/u.test(templatePath) || templatePath.startsWith('/')) {
-        resolvedPath = templatePath.replace(/\//gu, path.sep);
-      } else {
-        resolvedPath = path.resolve(templatePath);
-      }
-      const content = await readFile(resolvedPath, 'utf-8');
-      const lines = content.split('\n');
-      const clampedLine = Math.max(1, Math.min(displayLine, lines.length));
-      startLine = Math.max(0, clampedLine - 3);
-      displayStartLine = startLine + 1;
-      const endLine = Math.min(lines.length, clampedLine + 2);
-      codeSnippet = lines.slice(startLine, endLine).join('\n');
-      snippetErrorIndex = clampedLine - startLine - 1;
-    } catch {
-    }
-  }
-
   const badgeCode = category;
   let codeBadge: string;
   if (badgeCode) {
@@ -309,21 +256,13 @@ export const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {
   let errorBody = '';
   if (verbosity === 'full') {
     let codeSection = '';
-    if (codeSnippet) {
-      const codeLines = codeSnippet.split('\n').reduce<string[]>((acc, line, idx) => {
-        const isError = idx === snippetErrorIndex;
-        const lineNum = displayStartLine + idx;
-        let errorClass = '';
-        if (isError) {
-          errorClass = 'is-error';
-        }
-        acc.push(`<div class="code-line ${errorClass}"><span class="line-number">${lineNum}</span><span class="code-content">${highlightSource(line, displayPath)}</span></div>`);
-        if (isError && displayCol > 0 && line) {
-          const caret = calculateCaretPosition(line, displayCol);
-          if (caret) {
-            const spaces = ' '.repeat(caret.wordStart);
-            acc.push(`<div class="code-line error-marker"><span class="line-number"></span><span class="code-content error-marker-content">${spaces}${caret.carets}</span></div>`);
-          }
+    if (sourceTrace && sourceTrace.lines.length > 0) {
+      const codeLines = sourceTrace.lines.reduce<string[]>((acc, line) => {
+        const errorClass = line.isError ? 'is-error' : '';
+        acc.push(`<div class="code-line ${errorClass}"><span class="line-number">${line.number}</span><span class="code-content">${highlightSource(line.content, displayPath)}</span></div>`);
+        if (line.isError && sourceTrace.caret) {
+          const spaces = ' '.repeat(sourceTrace.caret.charStart);
+          acc.push(`<div class="code-line error-marker"><span class="line-number"></span><span class="code-content error-marker-content">${spaces}${sourceTrace.caret.carets}</span></div>`);
         }
         return acc;
       }, []).join('\n');

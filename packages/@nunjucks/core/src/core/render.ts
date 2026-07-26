@@ -1,5 +1,4 @@
 import EventEmitter from 'node:events';
-import { readFile } from 'node:fs/promises';
 import { createCompiler } from '@nunjucks/compiler';
 import { parse } from '@nunjucks/parser';
 import { transform } from '@nunjucks/transformers';
@@ -69,10 +68,23 @@ export interface RenderConfig {
   jsCaller?: string | null;
   jsCallerErrorLine?: number | null;
   jsCallerErrorCol?: number | null;
+  /**
+   * @internal — populated automatically by `render()` from the V8 call
+   * stack. Public for type compatibility but should not be set by callers.
+   */
   _callerFile?: string | null;
+  /**
+   * @internal — populated automatically by `render()` from the V8 call
+   * stack. Public for type compatibility but should not be set by callers.
+   */
   _callerLocation?: CallerLocation | null;
-  _autoCallerLocation?: boolean;
+  /**
+   * @internal — populated automatically by the template pipeline.
+   */
   _customFilters?: Record<string, unknown>;
+  /**
+   * @internal — populated automatically by the template pipeline.
+   */
   _customGlobals?: Record<string, unknown>;
   [key: string]: unknown;
 }
@@ -278,41 +290,11 @@ export const render = async (template: string, context: Record<string, unknown> 
     globals: { ...defaults.globals, ...(options.globals || {}) },
     extensions: { ...defaults.extensions, ...(options.extensions || {}) },
   } as RenderConfig;
+  // Populate the internal caller fields from the V8 stack so error
+  // diagnostics can point at the user code instead of the template source.
+  // These are read by `resolveLocation` (in @nunjucks/shared/error-location).
   config._callerFile = config._callerFile || getCallerFile();
   config._callerLocation = config._callerLocation || getCallerLocation();
-
-  if (config._autoCallerLocation && !config.jsCaller && config._callerFile && config._callerFile !== 'unknown') {
-    try {
-      if (typeof template === 'string') {
-        const callerLine = config._callerLocation?.lineNumber;
-        const source = await readFile(config._callerFile, 'utf8');
-        let searchFrom = 0;
-        let foundNearCaller = false;
-        while (callerLine !== null && callerLine !== undefined) {
-          const templateIndex = source.indexOf(template, searchFrom);
-          if (templateIndex === -1) { break; }
-          const occurrenceLine = source.slice(0, templateIndex).split('\n').length;
-          if (Math.abs(occurrenceLine - callerLine) <= 5) {
-            foundNearCaller = true;
-            break;
-          }
-          searchFrom = templateIndex + 1;
-        }
-        if (foundNearCaller) {
-          config.jsCaller = config._callerFile;
-        }
-      }
-    } catch {
-      // Diagnostics will fall back to the template source when the caller
-      // cannot be read.
-    }
-  }
-  if (config.jsCaller && config.jsCallerErrorLine === null) {
-    config.jsCallerErrorLine = config._callerLocation?.lineNumber ?? 1;
-  }
-  if (config.jsCaller && config.jsCallerErrorCol === null) {
-    config.jsCallerErrorCol = config._callerLocation?.columnNumber ?? 1;
-  }
 
   await validateRenderInput(template, config, context);
 

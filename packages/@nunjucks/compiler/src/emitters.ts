@@ -1,6 +1,4 @@
-
 import type { Node } from '@nunjucks/nodes';
-import type { SourceMap } from './source-map.ts';
 
 export interface EmitterCtx {
   codebuf: string[];
@@ -10,18 +8,14 @@ export interface EmitterCtx {
   scopeClosers: string;
   templateName: string | null;
   compiledLine: number;
-  sourceMap: SourceMap;
 }
 
 export const emit = (ctx: EmitterCtx, code: string): void => {
   ctx.codebuf.push(code);
 };
 
-export const emitLine = (ctx: EmitterCtx, code: string, originalLine?: number, colno = 0): void => {
+export const emitLine = (ctx: EmitterCtx, code: string, _originalLine?: number, _colno = 0): void => {
   ctx.compiledLine += 1;
-  if (originalLine !== undefined) {
-    ctx.sourceMap.addMapping(ctx.compiledLine, originalLine, colno);
-  }
   emit(ctx, `${code}\n`);
 };
 

@@ -1,11 +1,10 @@
 import picocolors from 'picocolors';
-import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
 import { keys } from 'remeda';
 import { shortenPath } from './internal/path-shortener.ts';
 import { toDisplayLocation } from './internal/location.ts';
 import { isFilePath, resolveIdeLink } from './internal/ide-links.ts';
 import { normalizeRenderContext } from './internal/safe-context.ts';
+import type { SourceTrace, SourceTraceLine, SourceTraceCaret } from './internal/source-trace.ts';
 import { classifyFromError } from '../errors/classify.ts';
 
 export interface AnsiOptions {
@@ -14,36 +13,21 @@ export interface AnsiOptions {
   lineno?: number | null;
   colno?: number | null;
   ide?: string;
-  sourceContent?: string;
-  sourceStartLine?: number;
+  sourceTrace?: SourceTrace | null;
   renderContext?: Record<string, unknown>;
-}
-
-interface SourceTraceLine {
-  lineNum: number;
-  content: string;
-  isError: boolean;
 }
 
 const SEPARATOR = ' │ ';
 const ERROR_MARKER = '> ';
 const NORMAL_MARKER = '  ';
 const MIN_LINE_NUM_WIDTH = 2;
-const MAX_CARET_LENGTH = 15;
 
 const getMarker = (isError: boolean): string =>
   isError ? ERROR_MARKER : NORMAL_MARKER;
 
 const getLineNumWidth = (lines: SourceTraceLine[]): number => {
-  const maxLineNum = Math.max(...lines.map(l => l.lineNum));
+  const maxLineNum = Math.max(...lines.map(l => l.number));
   return Math.max(MIN_LINE_NUM_WIDTH, String(maxLineNum).length);
-};
-
-const calculateCaretLength = (content: string, colno: number): number => {
-  const remaining = content.slice(colno);
-  const nextSpace = remaining.search(/[\s,;)\]}]/);
-  const tokenEnd = nextSpace > 0 ? nextSpace : remaining.length;
-  return Math.max(1, Math.min(tokenEnd, MAX_CARET_LENGTH));
 };
 
 const formatCodeLine = (
@@ -60,28 +44,35 @@ const formatCodeLine = (
 const getLinePrefix = (lineNumWidth: number): string =>
   picocolors.dim(`${NORMAL_MARKER}${' '.repeat(lineNumWidth)}${SEPARATOR}`);
 
+// Render the caret line for the error line. charStart is the 0-based column the
+// caret run begins at (the offending token start, shared with the HTML renderer
+// via calculateCaretPosition) and carets is the pre-built '^' run.
 const formatCaretLine = (
   lineNumWidth: number,
-  errorColno: number,
-  caretLength: number
+  charStart: number,
+  carets: string
 ): string => {
   const prefix = getLinePrefix(lineNumWidth);
-  const carets = picocolors.red('^'.repeat(caretLength));
-  return `${prefix}${' '.repeat(errorColno)}${carets}`;
+  return `${prefix}${' '.repeat(charStart)}${picocolors.red(carets)}`;
 };
 
-const formatSourceTrace = (lines: SourceTraceLine[], errorColno: number | null): string[] => {
+// Pure presenter: turn a resolved SourceTrace (windowed lines + caret) into ANSI
+// text. The trace is built once upstream (buildSourceTrace), so this holds no
+// line-math, no file reading, and no caret-length computation.
+const formatSourceTrace = (
+  lines: SourceTraceLine[],
+  caret: SourceTraceCaret | null
+): string[] => {
   if (lines.length === 0) { return []; }
 
   const lineNumWidth = getLineNumWidth(lines);
 
   return lines.flatMap((line) => {
-    const codeLine = formatCodeLine(line.lineNum, line.content, line.isError, lineNumWidth);
-    if (!line.isError || errorColno === null || errorColno <= 0) {
+    const codeLine = formatCodeLine(line.number, line.content, line.isError, lineNumWidth);
+    if (!line.isError || !caret) {
       return [codeLine];
     }
-    const caretLength = calculateCaretLength(line.content, errorColno);
-    return [codeLine, formatCaretLine(lineNumWidth, errorColno, caretLength)];
+    return [codeLine, formatCaretLine(lineNumWidth, caret.charStart, caret.carets)];
   });
 };
 
@@ -174,13 +165,13 @@ const formatStackLine = (
 
 const formatLocationString = (
   path: string,
-  location: { line: string; col: string },
+  location: { line: number; col: number },
   ide: string
 ): string => {
   if (!path) { return ''; }
   const shortPath = shortenPath(path);
   if (isFilePath(path)) {
-    const url = makeHyperlink(`${shortPath}:${location.line}:${location.col}`, resolveIdeLink(ide, path, Number(location.line), Number(location.col)));
+    const url = makeHyperlink(`${shortPath}:${location.line}:${location.col}`, resolveIdeLink(ide, path, location.line, location.col));
     return ` at ${url}`;
   }
   return ` at ${shortPath}:${location.line}:${location.col}`;
@@ -205,33 +196,10 @@ const formatFixAnsi = (fixCode: string | null, fixComment: string | null, docume
   return parts.join('\n');
 };
 
-const buildSourceTrace = (
-  sourceContent: string,
-  displayLineno: number,
-  displayColno: number | null,
-  sourceStartLine: number
-): string[] => {
-  const sourceLines = sourceContent.split('\n');
-  const startLine = Math.max(0, displayLineno - 2);
-  const endLine = Math.min(sourceLines.length, displayLineno + 3);
-  const errorIndex = displayLineno - 1;
-
-  const traceLines: SourceTraceLine[] = Array.from(
-    { length: endLine - startLine },
-    (_, i) => ({
-      lineNum: sourceStartLine + startLine + i,
-      content: sourceLines[startLine + i] || '',
-      isError: startLine + i === errorIndex
-    })
-  );
-
-  return formatSourceTrace(traceLines, displayColno);
-};
-
 export const toAnsi = async (error: unknown, options: AnsiOptions = {}): Promise<string> => {
   if (!error) { return ''; }
 
-  const { verbosity = 'full', templatePath, lineno, colno, ide = 'vscode', sourceStartLine = 1 } = options;
+  const { verbosity = 'full', templatePath, lineno, colno, ide = 'vscode', sourceTrace } = options;
 
   let message = (error as Error).message;
   if (!message) {
@@ -292,33 +260,9 @@ export const toAnsi = async (error: unknown, options: AnsiOptions = {}): Promise
 
   const parts: string[] = [header];
 
-  const resolvedPath = path || (error as { templateName?: string }).templateName || '';
-  const isInlineJsCaller = resolvedPath && /\.(js|mjs|cjs|ts|mts|cts)$/iu.test(resolvedPath);
-  const isInlineTemplate = options.sourceContent && options.sourceContent.split('\n').length <= 2;
-
-  let sourceContent = options.sourceContent;
-  let srcStartLine = options.sourceStartLine ?? 1;
-
-  if (isInlineJsCaller && isInlineTemplate && resolvedPath && displayLineno !== null) {
-    try {
-      let filePath = resolvedPath;
-      if (/^[a-zA-Z]:[/\\]/u.test(filePath) || filePath.startsWith('/')) {
-        filePath = filePath.replace(/\//gu, '\\');
-      } else {
-        filePath = resolve(filePath);
-      }
-      sourceContent = await readFile(filePath, 'utf-8');
-      srcStartLine = 1;
-    } catch {
-      sourceContent = options.sourceContent;
-    }
-  }
-
-  const shouldShowSourceTrace = sourceContent && displayLineno !== null;
-
-  if (shouldShowSourceTrace) {
+  if (sourceTrace && sourceTrace.lines.length > 0) {
     parts.push(picocolors.bold('Source Trace:'));
-    parts.push(buildSourceTrace(sourceContent, displayLineno, displayColno, srcStartLine).join('\n'));
+    parts.push(formatSourceTrace(sourceTrace.lines, sourceTrace.caret).join('\n'));
   }
 
   const causesStr = formatCausesAnsi(causes);

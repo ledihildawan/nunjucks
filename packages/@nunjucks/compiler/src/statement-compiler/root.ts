@@ -96,7 +96,6 @@ export const compileRoot = (ctx: Compiler, node: Node, frame: Frame): void => {
     ctx.emitLine(`${JSON.stringify(name)}: { lineno: ${lineno}, colno: ${colno} },`);
   });
   ctx.emitLine('},');
-  ctx.emitLine(`__sourceMap: ${JSON.stringify(ctx.sourceMap.toJSON())},`);
 
   ctx.emitLine('root: root\n};');
 };

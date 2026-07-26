@@ -6,7 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./emitters": "./src/emitters.ts",
-    "./source-map": "./src/source-map.ts",
+    "./location-utils": "./src/location-utils.ts",
     "./node-dispatch": "./src/node-dispatch.ts",
     "./expression-compiler": "./src/expression-compiler/index.ts",
     "./statement-compiler": "./src/statement-compiler/index.ts",

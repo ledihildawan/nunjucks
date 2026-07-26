@@ -1,8 +1,9 @@
-import { BracketNotation, getNodeTypeName, isLiteral, isLookupVal, isSymbol } from '@nunjucks/nodes';
+import { BracketNotation, getNodeTypeName, isLiteral, isSymbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 import { compileAggregate } from './container.ts';
+import { extractPropertyLocation } from '../location-utils.ts';
 
 const bracketFlag = (n: Node): boolean | undefined => n[BracketNotation];
 
@@ -70,26 +71,14 @@ const getNodeName = (_ctx: Compiler, node: Node, _isBracketCall = false): string
 
 const getCallLocation = (node: Node): { lineno: number; colno: number } => {
   const name = node.name as Node;
-  if (isLookupVal(name) && (name.val as Node)?.lineno !== null && (name.val as Node)?.colno !== null) {
-    const nameVal = name.val as Node;
-    const isQuotedBracketString = bracketFlag(name) === true &&
-      isLiteral(nameVal) &&
-      typeof nameVal.value === 'string';
-    let extraColno: number;
-    if (isQuotedBracketString) {
-      extraColno = 1;
-    } else {
-      extraColno = 0;
-    }
-    return {
-      lineno: nameVal.lineno,
-      colno: nameVal.colno + extraColno
-    };
-  }
-
+  const isQuotedBracketString = bracketFlag(name) === true &&
+    isLiteral(name?.val as Node) &&
+    typeof (name?.val as { value?: unknown })?.value === 'string';
+  const extraColno = isQuotedBracketString ? 1 : 0;
+  const loc = extractPropertyLocation(name, extraColno);
   return {
-    lineno: name?.lineno ?? node.lineno,
-    colno: name?.colno ?? node.colno
+    lineno: loc.lineno ?? node.lineno,
+    colno: loc.colno ?? node.colno
   };
 };
 

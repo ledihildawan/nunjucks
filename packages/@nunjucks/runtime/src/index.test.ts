@@ -231,18 +231,6 @@ describe('handleError', () => {
       expect((normalized as { colno: number }).colno).toBe(4);
     }
   });
-  test('keeps canonical template location even when sourceMapData is present', () => {
-    const err = new Error('test');
-    const sourceMapData = [{ compiledLine: 5, originalLine: 2, originalCol: 1 }];
-    const runtime = { sourceMapData };
-    try {
-      handleError(err, 5, 0, runtime);
-    } catch (e) {
-      expect((e as { lineno: number }).lineno).toBe(5);
-      expect((e as { colno: number }).colno).toBe(0);
-      expect((e as { lineBase: string }).lineBase).toBe('zero');
-    }
-  });
 });
 
 describe('fromIterator', () => {

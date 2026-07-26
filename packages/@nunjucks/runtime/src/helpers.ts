@@ -503,7 +503,6 @@ export function lookup(ctx: { lookup?: (key: string) => unknown } | null, key: s
 
 export function handleError(this: unknown, error: unknown, lineno: number | null, colno: number | null, runtime?: unknown): never {
   const ctx = getLogContext(this);
-  // biome-ignore lint/complexity/noVoid: runtime param is intentionally unused but kept for API compatibility
   void runtime;
   const metadata = normalizeErrorMetadata(error, {
     lineno,
