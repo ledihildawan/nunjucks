@@ -219,7 +219,7 @@ export const toAnsi = async (error: unknown, options: AnsiOptions = {}): Promise
 
   const firstStackLine = message.indexOf('\n    at ');
   if (firstStackLine !== -1) {
-    message = message.substring(0, firstStackLine);
+    message = message.slice(0, firstStackLine);
   }
 
   if (verbosity === 'simple') {

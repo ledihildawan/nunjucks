@@ -50,21 +50,21 @@ const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
     'if (Object.prototype.hasOwnProperty.call(kwargs, "caller")) {',
     'frame.set("caller", kwargs.caller); }');
 
-  args.forEach((arg) => {
+  for (const arg of args) {
     const argValue = arg.value as string;
     ctx.emitLine(`frame.set("${argValue}", l_${argValue});`);
     currFrame.set(argValue, `l_${argValue}`);
-  });
+  }
 
   if (kwargs) {
-    (kwargs.children as Node[]).forEach((pair) => {
+    for (const pair of (kwargs.children as Node[])) {
       const name = (pair.key as Node).value as string;
       ctx.emit(`frame.set("${name}", `);
       ctx.emit(`Object.prototype.hasOwnProperty.call(kwargs, "${name}")`);
       ctx.emit(` ? kwargs["${name}"] : `);
       ctx.compileExpression(pair.value as Node, currFrame);
       ctx.emit(');');
-    });
+    }
   }
 
   const bufferId = ctx.pushBuffer();

@@ -232,10 +232,10 @@ export const TOGGLE_SCRIPT = `<script>
 
     const container = document.createElement('div');
     container.className = 'ctx-children';
-    Object.entries(data).forEach((entry) => {
+    for (const entry of Object.entries(data)) {
       const node = createNode(entry[0], entry[1]);
       container.appendChild(node);
-    });
+    }
     viewer.appendChild(container);
 
     const closing = document.createElement('div');

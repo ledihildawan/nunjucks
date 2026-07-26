@@ -39,9 +39,9 @@ describe('COMPILE_FUNCTIONS', () => {
   ];
 
   test('has an entry for every major node type', () => {
-    expectedTypes.forEach((t) => {
+    for (const t of expectedTypes) {
       expect(COMPILE_FUNCTIONS[t]).toBeFunction();
-    });
+    }
   });
 
   test('entry count matches expected set', () => {

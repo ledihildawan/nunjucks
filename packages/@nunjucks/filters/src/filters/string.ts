@@ -84,12 +84,12 @@ export const replace = (str: unknown, old: unknown, new_: string, maxCount?: num
   let count = 0;
   let currentIndex = nextIndex;
   while (currentIndex > -1 && (max === -1 || count < max)) {
-    parts.push(s.substring(pos, currentIndex), new_);
+    parts.push(s.slice(pos, currentIndex), new_);
     pos = currentIndex + oldStr.length;
     count += 1;
     currentIndex = s.indexOf(oldStr, pos);
   }
-  parts.push(s.substring(pos));
+  parts.push(s.slice(pos));
   return preserveSafe(originalStr, parts.join(''));
 };
 
@@ -110,11 +110,11 @@ export const truncate = (input: unknown, length?: number, killwords?: boolean, e
   const len = defaultTo(length, DEFAULT_TRUNCATE_LENGTH);
   if (inp.length <= len) { return inp; }
   if (killwords) {
-    inp = inp.substring(0, len);
+    inp = inp.slice(0, len);
   } else {
     let idx = inp.lastIndexOf(' ', len);
     if (idx === -1) { idx = len; }
-    inp = inp.substring(0, idx);
+    inp = inp.slice(0, idx);
   }
   inp += defaultTo(end, '...');
   return preserveSafe(orig, inp);

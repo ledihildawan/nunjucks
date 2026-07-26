@@ -117,9 +117,9 @@ export function createCompiler(
   };
 
   const emitLines = (...lines: string[]) => {
-    lines.forEach((line) => {
+    for (const line of lines) {
       emitLine(line);
-    });
+    }
   };
 
   const emitFuncBegin = (node: Node, name: string) => {
@@ -179,9 +179,9 @@ export function createCompiler(
   };
 
   const compileChildren = (node: Node, frame?: Frame) => {
-    node.children?.forEach((child) => {
+    for (const child of node.children ?? []) {
       compile(child, frame);
-    });
+    }
   };
 
   const compileExpression = (node: Node, frame?: Frame) => {

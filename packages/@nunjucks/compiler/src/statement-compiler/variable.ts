@@ -28,9 +28,9 @@ export const compileVariableDeclaration = (ctx: Compiler, node: Node, frame: Fra
     ctx.compileExpression(node.value as Node, frame);
     ctx.emitLine(';');
 
-    (node.targets as Node[]).forEach(pattern => {
+    for (const pattern of (node.targets as Node[])) {
       compileDestructuring(ctx, frame, pattern, valueId);
-    });
+    }
   } else {
     const targets = node.targets as Node[];
     const name = getTargetName(targets[0]);
@@ -53,9 +53,9 @@ export const compileVariableAssignment = (ctx: Compiler, node: Node, frame: Fram
     ctx.compileExpression(node.value as Node, frame);
     ctx.emitLine(';');
 
-    (node.targets as Node[]).forEach(pattern => {
+    for (const pattern of (node.targets as Node[])) {
       compileDestructuring(ctx, frame, pattern, valueId);
-    });
+    }
   } else {
     const targets = node.targets as Node[];
     const name = getTargetName(targets[0]);
@@ -108,9 +108,9 @@ export const compileCompoundAssignment = (ctx: Compiler, node: Node, frame: Fram
       ctx.emitLine(';');
     }
 
-    (node.targets as Node[]).forEach(pattern => {
+    for (const pattern of (node.targets as Node[])) {
       compileDestructuring(ctx, frame, pattern, valueId);
-    });
+    }
   } else {
     const targets = node.targets as Node[];
     const name = getTargetName(targets[0]);
@@ -197,11 +197,11 @@ export const compileDefineBlock = (ctx: Compiler, node: Node, frame: Frame): voi
       ctx.emitLine(`frame.set("${argObj.name}", ${argObj.name});`);
     });
   } else {
-    args.forEach((arg) => {
+    for (const arg of args) {
       const argObj = arg;
       ctx.emitLine(`let ${argObj.name} = l_${argObj.name};`);
       ctx.emitLine(`frame.set("${argObj.name}", ${argObj.name});`);
-    });
+    }
   }
 
   const bufferId = ctx.pushBuffer();

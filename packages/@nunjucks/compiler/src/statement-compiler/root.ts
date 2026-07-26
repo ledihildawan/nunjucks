@@ -31,9 +31,9 @@ export const compileRoot = (ctx: Compiler, node: Node, frame: Frame): void => {
   };
 
   const nonBlockChildren = node.children?.filter(child => !isBlock(child));
-  nonBlockChildren?.forEach(child => {
+  for (const child of nonBlockChildren ?? []) {
     ctx.compile(child, frame);
-  });
+  }
 
   ctx.buffer = savedBuffer;
 
@@ -83,18 +83,18 @@ export const compileRoot = (ctx: Compiler, node: Node, frame: Frame): void => {
 
   ctx.emitLine('return {');
 
-  blocks.forEach((block) => {
+  for (const block of blocks) {
     const nameNode = block.name as Node;
     const blockName = `b_${nameNode.value as string}`;
     ctx.emitLine(`${blockName}: ${blockName},`);
-  });
+  }
   ctx.emitLine('__blockMeta: {');
-  blocks.forEach((block) => {
+  for (const block of blocks) {
     const nameNode = block.name as Node;
     const name = nameNode.value as string;
     const { lineno, colno } = blockLocation(block);
     ctx.emitLine(`${JSON.stringify(name)}: { lineno: ${lineno}, colno: ${colno} },`);
-  });
+  }
   ctx.emitLine('},');
 
   ctx.emitLine('root: root\n};');

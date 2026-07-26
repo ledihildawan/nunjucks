@@ -18,7 +18,7 @@ export const compileFromImport = (ctx: Compiler, node: Node, frame: Frame): void
     ');');
 
   const namesChildren = (node.names as Node).children as Node[];
-  namesChildren.forEach((nameNode) => {
+  for (const nameNode of namesChildren) {
     let name: string;
     let alias: string;
     const id = ctx.tmpid();
@@ -44,5 +44,5 @@ export const compileFromImport = (ctx: Compiler, node: Node, frame: Frame): void
     } else {
       ctx.emitLine(`context.setVariable("${alias}", ${id});`);
     }
-  });
+  }
 };

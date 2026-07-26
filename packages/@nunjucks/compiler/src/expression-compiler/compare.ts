@@ -19,12 +19,12 @@ export const compileCompare = (ctx: Compiler, node: Node, frame: Frame): void =>
   ctx.emit(`(lineno = ${first.lineno ?? node.lineno ?? 0}, colno = ${first.colno ?? node.colno ?? 0}, `);
   ctx.compile(node.expr as Node, frame);
 
-  ops.forEach((op) => {
+  for (const op of ops) {
     const operator = op.operator as string;
     ctx.emit(` ${compareOps[operator]} (lineno = ${op.lineno ?? node.lineno ?? 0}, colno = ${op.colno ?? node.colno ?? 0}, `);
     ctx.compile(op.expr as Node, frame);
     ctx.emit(')');
-  });
+  }
   ctx.emit(')');
 };
 

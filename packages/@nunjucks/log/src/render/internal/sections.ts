@@ -37,13 +37,13 @@ export const formatCodeTraceHtml = (snippet: string): string => {
     const colonIdx = content.indexOf(':');
     let lineNum: string;
     if (colonIdx > 0) {
-      lineNum = content.substring(0, colonIdx);
+      lineNum = content.slice(0, colonIdx);
     } else {
       lineNum = '';
     }
     let code: string;
     if (colonIdx > 0) {
-      code = content.substring(colonIdx + 1);
+      code = content.slice(colonIdx + 1);
     } else {
       code = content;
     }

@@ -15,9 +15,9 @@ const emitLoopBindings = (ctx: Compiler, _arr: string, i: string, len: string): 
     {name: 'length', val: len},
   ];
 
-  bindings.forEach((b) => {
+  for (const b of bindings) {
     ctx.emitLine(`frame.set("loop.${b.name}", ${b.val});`);
-  });
+  }
 };
 
 const isArrayBinding = (n: Node): boolean =>

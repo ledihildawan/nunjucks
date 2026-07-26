@@ -188,9 +188,9 @@ export function createContext(
 
   const getExported = (): Record<string, unknown> => {
     const exported: Record<string, unknown> = {};
-    exportedVar.forEach((name) => {
+    for (const name of exportedVar) {
       exported[name] = ctxVar[name];
-    });
+    }
     return exported;
   };
 
@@ -240,12 +240,12 @@ export function createContext(
     getVariables,
   };
 
-  getKeys(blocks).forEach((name) => {
+  for (const name of getKeys(blocks)) {
     const block = blocks[name];
     if (block) {
       context.addBlock(name, block);
     }
-  });
+  }
 
   context[CONTEXT_KEY] = true;
   return context;

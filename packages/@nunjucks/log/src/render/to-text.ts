@@ -28,7 +28,7 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
 
   const firstStackLine = message.indexOf('\n    at ');
   if (firstStackLine !== -1) {
-    message = message.substring(0, firstStackLine);
+    message = message.slice(0, firstStackLine);
   }
 
   if (verbosity === 'simple') {

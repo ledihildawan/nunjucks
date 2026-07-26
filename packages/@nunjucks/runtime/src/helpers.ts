@@ -243,7 +243,7 @@ const resolveUndefinedProperty = (opts: ResolveUndefinedOptions): 'undefined' =>
   let parentName = propResult.__nunjucks_parent__;
   if (!parentName && varName && varName.includes('.')) {
     const lastDot = varName.lastIndexOf('.');
-    parentName = varName.substring(0, lastDot);
+    parentName = varName.slice(0, lastDot);
   }
 
   if (mode === 'strict') {

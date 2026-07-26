@@ -48,7 +48,7 @@ export const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => 
   if (!children) {
     return;
   }
-  children.forEach(child => {
+  for (const child of children) {
     if (isTemplateData(child)) {
       if (child.value) {
         ctx.emit(`${ctx.buffer} += `);
@@ -102,6 +102,6 @@ export const compileOutput = (ctx: Compiler, node: Node, frame: Frame): void => 
       }
       ctx.emit(`, env.opts.autoescape, lineno, colno, "${htmlContext}");`);
     }
-  });
+  }
   ctx.emit('\n');
 };

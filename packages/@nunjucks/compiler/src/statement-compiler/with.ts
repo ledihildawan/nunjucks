@@ -7,14 +7,14 @@ export const compileWith = (ctx: Compiler, node: Node, frame: Frame): void => {
 
   // Set inline assignments in the isolated frame
   if (node.assignments && (node.assignments as Node[]).length > 0) {
-    (node.assignments as Node[]).forEach((pair) => {
+    for (const pair of (node.assignments as Node[])) {
       const name = pair.key as string;
       const valueId = ctx.tmpid();
       ctx.emitLine(`let ${valueId} = `);
       ctx.compileExpression(pair.value as Node, frame);
       ctx.emitLine(';');
       ctx.emitLine(`frame.set("${name}", ${valueId}, true);`);
-    });
+    }
   }
 
   ctx.withScopedSyntax(() => {
