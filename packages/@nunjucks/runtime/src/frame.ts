@@ -68,25 +68,28 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
 
     set(name: string, val: unknown, resolveUp?: boolean): void {
       const parts = name.split('.');
-      let obj: Record<string, unknown> = state.variables;
+      const [firstPart] = parts;
+      const lastPart = parts.at(-1);
+      // split() always yields at least one element, but say so rather than assert it.
+      if (firstPart === undefined || lastPart === undefined) { return; }
 
       if (resolveUp) {
-        const resolved = frame.resolve(parts[0]!, true);
+        const resolved = frame.resolve(firstPart, true);
         if (resolved) {
           resolved.set(name, val);
           return;
         }
       }
 
-      for (let i = 0; i < parts.length - 1; i++) {
-        const id = parts[i]!;
+      let obj: Record<string, unknown> = state.variables;
+      for (const id of parts.slice(0, -1)) {
         if (!obj[id]) {
           obj[id] = {};
         }
         obj = obj[id] as Record<string, unknown>;
       }
 
-      obj[parts.at(-1)!] = val;
+      obj[lastPart] = val;
       state.rootState.revision++;
       state.resolveCache.clear();
       state.lookupCache.clear();

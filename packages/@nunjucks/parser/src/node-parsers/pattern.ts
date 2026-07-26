@@ -107,10 +107,11 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
 
     const symTok = nextToken(ctx);
     if (!symTok || symTok.type !== TOKEN_SYMBOL) {
-      fail(ctx, 'parseArrayPattern: expected symbol in pattern',
+      // `return` so the never-returning fail() narrows symTok for the line below.
+      return fail(ctx, 'parseArrayPattern: expected symbol in pattern',
         symTok?.lineno ?? tok.lineno, symTok?.colno ?? tok.colno);
     }
-    const target = symbol(symTok!.lineno, symTok!.colno, symTok!.value as string);
+    const target = symbol(symTok.lineno, symTok.colno, symTok.value as string);
     const withDefault = parseAssignmentDefault(ctx, target);
     node = appendChild(node, withDefault ?? target);
   }

@@ -92,13 +92,12 @@ export function createContext(
 
     if (parentBlockNamesVar !== null) {
       const parentBlockNames = new Set(parentBlockNamesVar);
-      const childOnlyBlocks = getKeys(blocksVar).filter((name) => !parentBlockNames.has(name));
-      if (childOnlyBlocks.length > 0) {
-        const blockName = childOnlyBlocks[0]!;
+      const [blockName] = getKeys(blocksVar).filter((name) => !parentBlockNames.has(name));
+      if (blockName) {
         const location = blockLocationsVar[blockName] || {};
         throw createLog(
           'error',
-          ERROR_DEFINITIONS.UNDEFINED_BLOCK!,
+          ERROR_DEFINITIONS.UNDEFINED_BLOCK,
           { name: blockName },
           blockName,
           {
@@ -136,7 +135,7 @@ export function createContext(
       const location = blockLocationsVar[name] || {};
       throw createLog(
         'error',
-        ERROR_DEFINITIONS.UNDEFINED_BLOCK!,
+        ERROR_DEFINITIONS.UNDEFINED_BLOCK,
         { name },
         name,
         {
@@ -161,7 +160,7 @@ export function createContext(
   ): unknown => {
     const blockList = blocksVar[name];
     if (!blockList) {
-      throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK!, { name }, name, {
+      throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, {
         lineno,
         colno,
         phase: 'render',
@@ -172,7 +171,7 @@ export function createContext(
     const blk = blockList[idx + 1];
 
     if (idx === -1 || !blk) {
-      throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK!, { name }, name, {
+      throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, {
         lineno,
         colno,
         phase: 'render',

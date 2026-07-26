@@ -67,8 +67,8 @@ export const parsePrimary = (ctx: ParserContext, noPostfix?: boolean): Node => {
     }
   }
 
-  if (!noPostfix) {
-    node = parsePostfix(ctx, node!);
+  if (!noPostfix && node) {
+    node = parsePostfix(ctx, node);
   }
 
   if (node) {

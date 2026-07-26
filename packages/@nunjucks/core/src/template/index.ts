@@ -256,11 +256,11 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<t
   const render = async (ctx: unknown, parentFrame?: unknown) => {
     await state.compiler?.safeCompile();
 
-    if (state.env._renderingTemplates.has(state.path!)) {
+    if (state.env._renderingTemplates.has(state.path)) {
       throw createLog('error', getError('CIRCULAR_INCLUDE'), { path: state.path as string }, state.path as string, { phase: 'render' });
     }
 
-    state.env._renderingTemplates.add(state.path!);
+    state.env._renderingTemplates.add(state.path);
 
     const context = createContext(
       (ctx || {}) as Record<string, unknown>,
@@ -291,7 +291,7 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<t
         includeChain: ((e as Record<string, unknown>)._includeChain as IncludeChain | undefined) || (state._includeChain as unknown as IncludeChain | undefined)
       });
     } finally {
-      state.env._renderingTemplates.delete(state.path!);
+      state.env._renderingTemplates.delete(state.path);
     }
   };
 

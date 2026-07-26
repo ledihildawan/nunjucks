@@ -128,13 +128,13 @@ const createValidationError = async (validationError: ValidationError, stamps: R
 
 const getDangerousValueStamps = async (contextError: ValidationError, config: RenderConfig): Promise<Record<string, unknown>> => {
   const stamps: Record<string, unknown> = { code: contextError.code };
-  const dangerousPaths = contextError.dangerousPaths;
-  if (!dangerousPaths || dangerousPaths.length === 0) { return stamps; }
+  const firstDangerousPath = contextError.dangerousPaths?.[0];
+  if (!firstDangerousPath) { return stamps; }
 
   const callerLocation = config._callerLocation;
   if (!callerLocation || callerLocation.fileName === 'unknown') { return stamps; }
 
-  const pos = await findContextKeyPosition(callerLocation.fileName, callerLocation.lineNumber || 1, dangerousPaths[0]!);
+  const pos = await findContextKeyPosition(callerLocation.fileName, callerLocation.lineNumber || 1, firstDangerousPath);
   if (pos) {
     stamps.lineno = pos.line;
     stamps.colno = pos.col;

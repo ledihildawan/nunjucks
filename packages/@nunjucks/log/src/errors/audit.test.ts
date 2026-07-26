@@ -122,7 +122,7 @@ describe('error definitions audit', () => {
 describe('error messages - sample output', () => {
   test('UNDEFINED_VARIABLE message includes subject', async () => {
     const { createLog } = await import('@nunjucks/log');
-    const err = createLog('error', ERROR_DEFINITIONS.UNDEFINED_VARIABLE!, { name: 'user.something' }, 'user.something', {
+    const err = createLog('error', ERROR_DEFINITIONS.UNDEFINED_VARIABLE, { name: 'user.something' }, 'user.something', {
       lineno: 1, colno: 0, phase: 'render', lineBase: 'zero'
     }) as import('@nunjucks/log').TemplateError;
     expect(err.subject).toBe('user.something');
@@ -133,7 +133,7 @@ describe('error messages - sample output', () => {
 
   test('NULL_VALUE error handles nested access', async () => {
     const { createLog } = await import('@nunjucks/log');
-    const err = createLog('error', ERROR_DEFINITIONS.NULL_VALUE!, { accessPath: 'name', parent: 'user', state: 'null' }, 'name', {
+    const err = createLog('error', ERROR_DEFINITIONS.NULL_VALUE, { accessPath: 'name', parent: 'user', state: 'null' }, 'name', {
       lineno: 1, colno: 0, phase: 'render', lineBase: 'zero'
     });
     expect(err.message).toContain('name');
@@ -142,7 +142,7 @@ describe('error messages - sample output', () => {
 
   test('FILE_NOT_FOUND has helpful message', async () => {
     const { createLog } = await import('@nunjucks/log');
-    const err = createLog('error', ERROR_DEFINITIONS.FILE_NOT_FOUND!, { path: 'missing.njk' }, 'missing.njk', {
+    const err = createLog('error', ERROR_DEFINITIONS.FILE_NOT_FOUND, { path: 'missing.njk' }, 'missing.njk', {
       lineno: 1, colno: 0, phase: 'render', lineBase: 'zero'
     }) as import('@nunjucks/log').TemplateError;
     expect(err.message).toContain('missing.njk');
@@ -151,7 +151,7 @@ describe('error messages - sample output', () => {
 
   test('UNDEFINED_FILTER has helpful fix', async () => {
     const { createLog } = await import('@nunjucks/log');
-    const err = createLog('error', ERROR_DEFINITIONS.UNDEFINED_FILTER!, { name: 'myFilter' }, 'myFilter', {
+    const err = createLog('error', ERROR_DEFINITIONS.UNDEFINED_FILTER, { name: 'myFilter' }, 'myFilter', {
       lineno: 1, colno: 0, phase: 'render', lineBase: 'zero'
     }) as import('@nunjucks/log').TemplateError;
     expect(err.message).toContain('myFilter');

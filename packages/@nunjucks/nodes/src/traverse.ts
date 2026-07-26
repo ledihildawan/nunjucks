@@ -22,13 +22,13 @@ export const appendChild = <K extends ChildrenNode>(node: K, child: Node): K =>
 
 export const mapCOW = <T>(arr: readonly T[], fn: (item: T) => T): T[] => {
   let res: T[] | null = null;
-  for (let i = 0; i < arr.length; i++) {
-    const item = fn(arr[i]!);
-    if (item !== arr[i]) {
+  arr.forEach((original, i) => {
+    const item = fn(original);
+    if (item !== original) {
       res ??= Array.from(arr);
       res[i] = item;
     }
-  }
+  });
   return res ?? (arr as T[]);
 };
 

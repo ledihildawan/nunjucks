@@ -141,12 +141,9 @@ export const parseStatement = (ctx: ParserContext): Node | null => {
     case 'with':
       return parseWith(ctx);
     default:
-      if (ctx.extensions.length > 0) {
-        for (let i = 0; i < ctx.extensions.length; i++) {
-          const ext = ctx.extensions[i]!;
-          if ((ext.tags || []).includes(tok.value as string)) {
-            return ext.parse!(ctx, nodes, lexer);
-          }
+      for (const ext of ctx.extensions) {
+        if ((ext.tags || []).includes(tok.value as string) && ext.parse) {
+          return ext.parse(ctx, nodes, lexer);
         }
       }
       return fail(ctx, `unknown block tag: ${tok.value}`, tok.lineno, tok.colno);

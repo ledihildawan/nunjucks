@@ -17,16 +17,15 @@ export function makeMacro(argNames: string[], kwargNames: string[], func: Runtim
     if (argCount > argNames.length) {
       args = macroArgs.slice(0, argNames.length);
       macroArgs.slice(args.length, argCount).forEach((val, i) => {
-        if (i < kwargNames.length) {
-          const kwName = kwargNames[i]!;
+        const kwName = kwargNames[i];
+        if (kwName !== undefined) {
           kwargs[kwName] = val;
         }
       });
       args.push(kwargs);
     } else if (argCount < argNames.length) {
       args = macroArgs.slice(0, argCount);
-      for (let i = argCount; i < argNames.length; i++) {
-        const arg = argNames[i]!;
+      for (const arg of argNames.slice(argCount)) {
         args.push(kwargs[arg]);
         delete kwargs[arg];
       }

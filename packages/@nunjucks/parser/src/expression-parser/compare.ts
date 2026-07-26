@@ -22,8 +22,9 @@ export const parseCompare = (ctx: ParserContext): Node => {
     }
   }
 
-  if (ops.length > 0) {
-    return compare(ops[0]!.lineno, ops[0]!.colno, expr, ops);
+  const [firstOp] = ops;
+  if (firstOp) {
+    return compare(firstOp.lineno, firstOp.colno, expr, ops);
   }
     return expr;
 };

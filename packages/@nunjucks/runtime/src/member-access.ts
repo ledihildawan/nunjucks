@@ -82,22 +82,25 @@ export function optionalMemberLookup(obj: unknown, val: string, _parentName: str
 
 export function slice(arr: unknown[] | string, start: number | null, stop: number | null, step: number | null): unknown[] | string {
   if (step === 0) {
-    throw createLog('error', ERROR_DEFINITIONS.SLICE_STEP!, {}, 'step', { phase: 'render', lineBase: 'zero' });
+    throw createLog('error', ERROR_DEFINITIONS.SLICE_STEP, {}, 'step', { phase: 'render', lineBase: 'zero' });
   }
 
   const len = arr.length;
+  // An omitted step means 1. Naming it once removes five assertions that were
+  // each claiming `step` is non-null while the parameter genuinely allows null.
+  const stepValue = step ?? 1;
   let normalizedStart = start;
   let normalizedStop = stop;
 
   if (!isNonNullish(normalizedStart)) {
-    if (step! < 0) {
+    if (stepValue < 0) {
       normalizedStart = len - 1;
     } else {
       normalizedStart = 0;
     }
   }
   if (!isNonNullish(normalizedStop)) {
-    if (step! < 0) {
+    if (stepValue < 0) {
       normalizedStop = -1;
     } else {
       normalizedStop = len;
@@ -111,7 +114,7 @@ export function slice(arr: unknown[] | string, start: number | null, stop: numbe
 
   normalizedStart = normalizeStart(normalizedStart as number);
 
-  if (!isNonNullish(step) || step === 1) {
+  if (stepValue === 1) {
     if (typeof arr === 'string') {
       return arr.slice(normalizedStart, normalizedStop as number);
     }
@@ -119,12 +122,12 @@ export function slice(arr: unknown[] | string, start: number | null, stop: numbe
   }
 
   const result: unknown[] = [];
-  if (step! > 0) {
-    for (let i = normalizedStart; i < (normalizedStop as number); i += step!) {
+  if (stepValue > 0) {
+    for (let i = normalizedStart; i < (normalizedStop as number); i += stepValue) {
       result.push(arr[i]);
     }
   } else {
-    for (let i = normalizedStart; i >= 0 && i > (normalizedStop as number); i += step!) {
+    for (let i = normalizedStart; i >= 0 && i > (normalizedStop as number); i += stepValue) {
       result.push(arr[i]);
     }
   }

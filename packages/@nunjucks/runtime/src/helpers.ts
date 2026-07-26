@@ -121,7 +121,7 @@ export function suppressValue(
         const ctx = getLogContext(this);
         throw createLog(
           'error',
-          ERROR_DEFINITIONS.JSON_ESCAPED_OUTPUT!,
+          ERROR_DEFINITIONS.JSON_ESCAPED_OUTPUT,
           {},
           null,
           {
@@ -156,7 +156,7 @@ export function suppressValue(
       const ctx = getLogContext(this);
       throw createLog(
         'error',
-        ERROR_DEFINITIONS.JSON_ESCAPED_OUTPUT!,
+        ERROR_DEFINITIONS.JSON_ESCAPED_OUTPUT,
         {},
         null,
         {
@@ -247,7 +247,7 @@ const resolveUndefinedProperty = (opts: ResolveUndefinedOptions): 'undefined' =>
   }
 
   if (mode === 'strict') {
-    throwRuntimeError(ERROR_DEFINITIONS.UNDEFINED_PROPERTY!, {
+    throwRuntimeError(ERROR_DEFINITIONS.UNDEFINED_PROPERTY, {
       self,
       lineno,
       colno,
@@ -281,7 +281,7 @@ const resolveNullAccess = (opts: ResolveUndefinedOptions): 'undefined' => {
   const parentName = nullResult.__nunjucks_parent__ || varName || 'unknown';
 
   if (mode === 'strict') {
-    throwRuntimeError(ERROR_DEFINITIONS.NULL_VALUE!, {
+    throwRuntimeError(ERROR_DEFINITIONS.NULL_VALUE, {
       self,
       lineno,
       colno,
@@ -314,7 +314,7 @@ const resolveUndefinedValue = (opts: ResolveUndefinedOptions): 'undefined' => {
   if (mode === 'strict') {
     let errorDef: ErrorDefinitionEntry;
     if (varName) {
-      errorDef = ERROR_DEFINITIONS.UNDEFINED_VARIABLE!;
+      errorDef = ERROR_DEFINITIONS.UNDEFINED_VARIABLE;
     } else {
       errorDef = { name: 'UNDEFINED_VALUE', message: () => 'Undefined value', pattern: MATCH_ANY_RE } as const;
     }
@@ -412,7 +412,7 @@ export function callWrap(
     super: 'block that extends a parent template',
   };
   if (reservedKeywordContexts[name]) {
-    throwRuntimeError(ERROR_DEFINITIONS.RESERVED_KEYWORD_CONTEXT!, {
+    throwRuntimeError(ERROR_DEFINITIONS.RESERVED_KEYWORD_CONTEXT, {
       self: this,
       lineno,
       colno,
@@ -423,7 +423,7 @@ export function callWrap(
 
   if (isNullAccessResult(obj)) {
     const parentName = getNullParentName(obj) || name;
-    throwRuntimeError(ERROR_DEFINITIONS.NULL_VALUE!, {
+    throwRuntimeError(ERROR_DEFINITIONS.NULL_VALUE, {
       self: this,
       lineno,
       colno,
@@ -433,7 +433,7 @@ export function callWrap(
   }
 
   if (!obj) {
-    throwRuntimeError(ERROR_DEFINITIONS.NULL_VALUE!, {
+    throwRuntimeError(ERROR_DEFINITIONS.NULL_VALUE, {
       self: this,
       lineno,
       colno,
@@ -441,7 +441,7 @@ export function callWrap(
       subject: name,
     });
   } else if (!isFunction(obj)) {
-    throwRuntimeError(ERROR_DEFINITIONS.NOT_A_FUNCTION!, {
+    throwRuntimeError(ERROR_DEFINITIONS.NOT_A_FUNCTION, {
       self: this,
       lineno,
       colno,
@@ -542,7 +542,7 @@ export function inOperator(this: unknown, key: unknown, val: unknown, lineno: nu
   if (isPlainObject(val)) {
     return (key as string | number | symbol) in (val as object);
   }
-  return throwRuntimeError(ERROR_DEFINITIONS.IN_OPERATOR!, {
+  return throwRuntimeError(ERROR_DEFINITIONS.IN_OPERATOR, {
     self: this,
     lineno,
     colno,

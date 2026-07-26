@@ -13,7 +13,9 @@ export interface Env {
   opts: EnvOptions;
   extensionsList: unknown[];
   globals: Record<string, unknown>;
-  _renderingTemplates: Set<string>;
+  /** Guards against circular includes. Path-less (inline) templates share the
+   *  single `undefined` key, which is why the element type admits it. */
+  _renderingTemplates: Set<string | undefined>;
   loaders?: unknown[];
   on?: (event: string, handler: (...args: unknown[]) => void) => void;
   emit?: (event: string, ...args: unknown[]) => void;

@@ -32,9 +32,8 @@ export function parse(src: string, extensions?: ParserExtension[], opts?: ParseO
   const ast = root(0, 0, parseNodes(p));
 
   if (securityConfig !== null) {
-    const errors = validateExpression(ast, securityConfig);
-    if (errors.length > 0) {
-      const firstError = errors[0]!;
+    const [firstError] = validateExpression(ast, securityConfig);
+    if (firstError) {
       fail(p, firstError.message, firstError.lineno, firstError.colno);
     }
   }
