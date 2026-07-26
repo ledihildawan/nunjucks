@@ -4,7 +4,22 @@ import { isFilePath, resolveIdeLink } from './ide-links.ts';
 import { shortenPath } from './path-shortener.ts';
 import { normalizeRenderContext } from './safe-context.ts';
 
-const normalizePath = (p: string): string => p.replace(/^file:\/\/+/u, '');
+// Hoisted so each pattern is compiled once rather than on every call.
+const FILE_URL_PREFIX_RE = /^file:\/\/+/u;
+const LEADING_WHITESPACE_RE = /^\s*/u;
+const PATH_SEPARATOR_RE = /[\\/:]/u;
+const STACK_AT_PREFIX_RE = /^at\s+/u;
+const NATIVE_FRAME_RE = /^native$/u;
+const ESCAPED_ANGLE_RE = /^&lt;/u;
+const PARENTHESISED_LOCATION_RE = /\(([^()]+):(\d+):(\d+)\)/gu;
+const FILE_URL_LOCATION_RE = /(.*?)(file:\/\/+.*?):(\d+):(\d+)$/u;
+const ERROR_MARKER_PREFIX_RE = /^>>>\s*/u;
+const STACK_FRAME_FUNCTION_RE = /^(at\s+)([^\s(]+)/u;
+const LT_RE = /</gu;
+const GT_RE = />/gu;
+const AMP_RE = /&/gu;
+
+const normalizePath = (p: string): string => p.replace(FILE_URL_PREFIX_RE, '');
 
 export const formatCodeTraceHtml = (snippet: string): string => {
   if (!snippet) { return '<div class="code-line"><span class="line-number">&nbsp;</span><span class="code-content">Source not available</span></div>'; }
@@ -15,7 +30,7 @@ export const formatCodeTraceHtml = (snippet: string): string => {
     const isError = trimmed.startsWith('>>>');
     let content: string;
     if (isError) {
-      content = trimmed.replace(/^>>>\s*/u, '');
+      content = trimmed.replace(ERROR_MARKER_PREFIX_RE, '');
     } else {
       content = trimmed;
     }
@@ -36,7 +51,7 @@ export const formatCodeTraceHtml = (snippet: string): string => {
     if (code.length === code.trimStart().length) {
       leadingSpace = '';
     } else {
-      leadingSpace = code.match(/^\s*/u)?.[0] ?? '';
+      leadingSpace = code.match(LEADING_WHITESPACE_RE)?.[0] ?? '';
     }
     const trimmedCode = code.trimStart();
     let errorClass = '';
@@ -74,7 +89,7 @@ type SerializableContext =
   | { [key: string]: SerializableContext };
 
 const safeJson = (value: SerializableContext): string =>
-  JSON.stringify(value).replace(/</gu, '\\u003c').replace(/>/gu, '\\u003e').replace(/&/gu, '\\u0026');
+  JSON.stringify(value).replace(LT_RE, '\\u003c').replace(GT_RE, '\\u003e').replace(AMP_RE, '\\u0026');
 
 export const renderContextHtml = (ctx: unknown): string => {
   if (!ctx || typeof ctx !== 'object') { return ''; }
@@ -108,23 +123,23 @@ export const renderContextHtml = (ctx: unknown): string => {
 
 const linkifyFrame = (frame: string, ide: string): string => {
   let s = escapeHtml(frame);
-  if (!/[\\/:]/u.test(s)) {
-    s = s.replace(/^at\s+/u, '<span class="stack-at">at</span> ');
+  if (!PATH_SEPARATOR_RE.test(s)) {
+    s = s.replace(STACK_AT_PREFIX_RE, '<span class="stack-at">at</span> ');
     return s;
   }
-  s = s.replace(/\(([^()]+):(\d+):(\d+)\)/gu, (match: string, p: string, l: string, c: string) => {
-    if (/^native$/u.test(p.trim()) || /^&lt;/u.test(p) || !/[\\/:]/u.test(p) || !isFilePath(p)) { return match; }
+  s = s.replace(PARENTHESISED_LOCATION_RE, (match: string, p: string, l: string, c: string) => {
+    if (NATIVE_FRAME_RE.test(p.trim()) || ESCAPED_ANGLE_RE.test(p) || !PATH_SEPARATOR_RE.test(p) || !isFilePath(p)) { return match; }
     const norm = normalizePath(p);
     const display = shortenPath(norm);
     return `(<a href="${resolveIdeLink(ide, norm, Number.parseInt(l, 10), Number.parseInt(c, 10))}" class="stack-link">${display}:${l}:${c}</a>)`;
   });
-  const lcMatch = s.match(/(.*?)(file:\/\/+.*?):(\d+):(\d+)$/u);
+  const lcMatch = s.match(FILE_URL_LOCATION_RE);
   if (lcMatch) {
     const prefix = lcMatch[1];
     const p = lcMatch[2];
     const l = lcMatch[3];
     const c = lcMatch[4];
-    if (prefix && p && l && c && /[\\/:]/u.test(p) && !/^native$/u.test(p.trim()) && isFilePath(p)) {
+    if (prefix && p && l && c && PATH_SEPARATOR_RE.test(p) && !NATIVE_FRAME_RE.test(p.trim()) && isFilePath(p)) {
       const norm = normalizePath(p);
       const display = shortenPath(norm);
       const link = `<a href="${resolveIdeLink(ide, norm, Number.parseInt(l, 10), Number.parseInt(c, 10))}" class="stack-link">${display}:${l}:${c}</a>`;
@@ -132,8 +147,8 @@ const linkifyFrame = (frame: string, ide: string): string => {
       return s;
     }
   }
-  s = s.replace(/^at\s+/u, '<span class="stack-at">at</span> ');
-  s = s.replace(/^(at\s+)([^\s(]+)/u, (_m: string, prefix: string, fn: string) => `${prefix}<span class="stack-fn">${fn}</span>`);
+  s = s.replace(STACK_AT_PREFIX_RE, '<span class="stack-at">at</span> ');
+  s = s.replace(STACK_FRAME_FUNCTION_RE, (_m: string, prefix: string, fn: string) => `${prefix}<span class="stack-fn">${fn}</span>`);
   return s;
 };
 

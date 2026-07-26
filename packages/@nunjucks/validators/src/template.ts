@@ -6,17 +6,20 @@ interface DangerousCodeViolation {
   name: string | null;
 }
 
-const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeViolation[] => {
-  const DangerousPatterns = [
-    { pattern: /\beval\s*\(/, message: 'eval() is not allowed' },
-    { pattern: /\bFunction\s*\(/, message: 'Function constructor is not allowed' },
-    { pattern: /\brequire\s*\(/, message: 'require() is not allowed' },
-    { pattern: /\bimport\s+\(/, message: 'dynamic import() is not allowed' },
-  ];
+// Hoisted so each pattern is compiled once rather than on every scan.
+const DANGEROUS_PATTERNS: ReadonlyArray<{ pattern: RegExp; message: string }> = [
+  { pattern: /\beval\s*\(/, message: 'eval() is not allowed' },
+  { pattern: /\bFunction\s*\(/, message: 'Function constructor is not allowed' },
+  { pattern: /\brequire\s*\(/, message: 'require() is not allowed' },
+  { pattern: /\bimport\s+\(/, message: 'dynamic import() is not allowed' },
+];
 
+const IDENTIFIER_RE = /[a-zA-Z_$][\w$]*/;
+
+const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeViolation[] => {
   const violations: DangerousCodeViolation[] = [];
 
-  for (const { pattern, message } of DangerousPatterns) {
+  for (const { pattern, message } of DANGEROUS_PATTERNS) {
     const regex = new RegExp(pattern.source, 'g');
     let match: RegExpExecArray | null;
     for (;;) {
@@ -26,7 +29,7 @@ const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeVio
       const lines = beforeMatch.split('\n');
       const line = lines.length;
       const col = lines.at(-1)?.length ?? 0;
-      const nameMatch = match[0].match(/[a-zA-Z_$][\w$]*/);
+      const nameMatch = match[0].match(IDENTIFIER_RE);
       let name: string | null = null;
       if (nameMatch) {
         name = nameMatch[0];

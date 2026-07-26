@@ -42,6 +42,14 @@ export { createFrame } from './frame.ts';
 export { createContext } from './context.ts';
 export { toContext, createIsolatedContext, createForkedContext } from './render-context.ts';
 
+// Hoisted so each pattern is compiled once rather than on every value render.
+const JSON_SCALAR_RE = /^(?:true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')$/u;
+const JSON_CONTAINER_RE = /^[[{]/u;
+const RAW_OR_ESCAPED_LT_RE = /<|&lt;/u;
+const ESCAPED_HTML_ENTITY_RE = /&[quot;<>]/u;
+/** Placeholder pattern for synthesised error definitions, which are never matched against. */
+const MATCH_ANY_RE = /./u;
+
 interface LogContextShape {
   templateName: string | null;
   phase: string;
@@ -104,12 +112,12 @@ export function suppressValue(
 
   if (autoescape && context === 'script' && !isSafeString(val)) {
     const strVal = (val as { toString: () => string }).toString();
-    const isJsonValue = /^(?:true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')$/u.test(strVal.trim());
-    const isJsonContainer = /^[[{]/u.test(strVal);
+    const isJsonValue = JSON_SCALAR_RE.test(strVal.trim());
+    const isJsonContainer = JSON_CONTAINER_RE.test(strVal);
 
     if (isJsonValue || isJsonContainer || Array.isArray(val) || typeof val === 'object') {
       const encoded = JSON.stringify(val);
-      if (/<|&lt;/u.test(encoded)) {
+      if (RAW_OR_ESCAPED_LT_RE.test(encoded)) {
         const ctx = getLogContext(this);
         throw createLog(
           'error',
@@ -141,10 +149,10 @@ export function suppressValue(
     const escaped = escapeValue(strVal, context);
 
     const isArray = Array.isArray(normalized);
-    const isJsonValue = /^(?:true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')$/u.test(strVal.trim());
-    const isJsonContainer = /^[[{]/u.test(strVal);
+    const isJsonValue = JSON_SCALAR_RE.test(strVal.trim());
+    const isJsonContainer = JSON_CONTAINER_RE.test(strVal);
 
-    if ((isArray || isJsonValue || isJsonContainer) && /&[quot;<>]/u.test(escaped)) {
+    if ((isArray || isJsonValue || isJsonContainer) && ESCAPED_HTML_ENTITY_RE.test(escaped)) {
       const ctx = getLogContext(this);
       throw createLog(
         'error',
@@ -203,7 +211,7 @@ const emitUndefinedWarning = (self: unknown, opts: EmitUndefinedWarningOptions):
     {
       name: opts.name,
       message: opts.message,
-      pattern: /./u,
+      pattern: MATCH_ANY_RE,
     },
     {},
     opts.subject,
@@ -308,7 +316,7 @@ const resolveUndefinedValue = (opts: ResolveUndefinedOptions): 'undefined' => {
     if (varName) {
       errorDef = ERROR_DEFINITIONS.UNDEFINED_VARIABLE!;
     } else {
-      errorDef = { name: 'UNDEFINED_VALUE', message: () => 'Undefined value', pattern: /./u } as const;
+      errorDef = { name: 'UNDEFINED_VALUE', message: () => 'Undefined value', pattern: MATCH_ANY_RE } as const;
     }
     throwRuntimeError(errorDef, {
       self,
@@ -494,7 +502,7 @@ export function handleError(this: unknown, error: unknown, lineno: number | null
     {
       name: metadata.code || 'RUNTIME_ERROR',
       message: () => metadata.message,
-      pattern: /./u,
+      pattern: MATCH_ANY_RE,
     },
     {},
     metadata.subject,
