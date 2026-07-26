@@ -3,7 +3,7 @@ import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { normalize, safeString, safeHtml, preserveSafe, createStringFilter, createMacroFilter, isSafeString, isArray, filterError } from '../factory/index.ts';
 import type { SafeString } from '../factory/index.ts';
 
-export { normalize, filterError };
+export { normalize, filterError } from '../factory/index.ts';
 
 export const capitalize = createStringFilter((s: string): string => {
   const ret = s.toLowerCase();

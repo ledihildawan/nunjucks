@@ -100,4 +100,5 @@ const highlightJs = (code: string): string => {
   return out;
 };
 
-export { escapeHtml, renderInlineMarkdown, highlightHtml, highlightJs };
+export { escapeHtml } from '@nunjucks/shared';
+export { renderInlineMarkdown, highlightHtml, highlightJs };

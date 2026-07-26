@@ -1,19 +1,5 @@
-import {
-  WHITESPACE_CHARS,
-  DELIM_CHARS,
-  INT_CHARS,
-  DEFAULT_BLOCK_START,
-  DEFAULT_BLOCK_END,
-  DEFAULT_VARIABLE_START,
-  DEFAULT_VARIABLE_END,
-  DEFAULT_COMMENT_START,
-  DEFAULT_COMMENT_END,
-  COMPLEX_OPERATORS,
-  REGEX_FLAGS,
-  createDelimiters,
-  type Delimiters,
-  type ComplexOperator,
-} from './delimiters.ts';
+// Needed locally to build the operator lookup set below.
+import { COMPLEX_OPERATORS } from './delimiters.ts';
 
 export {
   WHITESPACE_CHARS,
@@ -28,9 +14,9 @@ export {
   COMPLEX_OPERATORS,
   REGEX_FLAGS,
   createDelimiters,
-};
+} from './delimiters.ts';
 
-export type { Delimiters, ComplexOperator };
+export type { Delimiters, ComplexOperator } from './delimiters.ts';
 
 const COMPLEX_OPERATOR_SET = new Set<string>(COMPLEX_OPERATORS);
 

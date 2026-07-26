@@ -9,7 +9,7 @@ import { peekToken, skip, expect } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/index.ts";
 
-export { BracketNotation };
+export { BracketNotation } from '@nunjucks/nodes';
 
 const buildSlice = (ctx: ParserContext, bracketTok: Token, start: Node | null): Node => {
   let stop: Node | null = null;

@@ -11,7 +11,6 @@ import { parseFunCall } from "./fun-call.ts";
 import { parseBracketAccess } from "./lookup.ts";
 import { parseDotAccess } from "./dot.ts";
 import { parseOptionalChain } from "./optional.ts";
-import { parsePipeForward, parseFilterCallName, parseFilterCallArgs } from "./pipe-forward.ts";
 
 export const parsePostfix = (ctx: ParserContext, node: Node): Node => {
   let tok = peekToken(ctx);
@@ -42,4 +41,4 @@ export const parsePostfix = (ctx: ParserContext, node: Node): Node => {
   return node;
 };
 
-export { parsePipeForward, parseFilterCallName, parseFilterCallArgs };
+export { parsePipeForward, parseFilterCallName, parseFilterCallArgs } from './pipe-forward.ts';

@@ -4,8 +4,8 @@ import { isSafeString, makeMacro } from '@nunjucks/runtime';
 import { filterError, isArray } from '../factory/index.ts';
 import type { FilterContext } from '../factory/index.ts';
 
-export { filterError };
-export type { FilterContext };
+export { filterError } from '../factory/index.ts';
+export type { FilterContext } from '../factory/index.ts';
 
 export const first = (arr: unknown): unknown => {
   if (!isArray(arr)) {

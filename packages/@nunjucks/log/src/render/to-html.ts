@@ -2,14 +2,15 @@ import { classifyFromError } from '../errors/classify.ts';
 import { toText } from './to-text.ts';
 import { escapeHtml, highlightHtml, highlightJs } from './internal/highlight.ts';
 import { renderContextHtml, formatStackTraceHtml } from './internal/sections.ts';
-import { CSS, PRODUCTION_BODY } from './internal/styles.ts';
+import { CSS, } from './internal/styles.ts';
 import { TOGGLE_SCRIPT } from './internal/script.ts';
 import { isFilePath, resolveIdeLink, getIdeMeta } from './internal/ide-links.ts';
 import { toDisplayLocation } from './internal/location.ts';
 import type { SourceTrace } from './internal/source-trace.ts';
 import { shortenPath } from './internal/path-shortener.ts';
 
-export { CSS, PRODUCTION_BODY, TOGGLE_SCRIPT };
+export { CSS, PRODUCTION_BODY } from './internal/styles.ts';
+export { TOGGLE_SCRIPT } from './internal/script.ts';
 
 interface Csp {
   nonce?: string;

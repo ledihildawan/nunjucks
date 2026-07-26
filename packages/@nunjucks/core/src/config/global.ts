@@ -2,8 +2,7 @@ import * as stringFilters from '@nunjucks/filters/string';
 import * as arrayFilters from '@nunjucks/filters/array';
 import * as objectFilters from '@nunjucks/filters/object';
 import * as mathFilters from '@nunjucks/filters/math';
-import { sanitize, setDefaultDomPurifyConfig, type DomPurifyConfig } from '@nunjucks/filters';
-import type { Result } from './result.ts';
+import { sanitize, type DomPurifyConfig } from '@nunjucks/filters';
 
 type FilterObject = Readonly<Record<string, unknown>>;
 
@@ -167,7 +166,7 @@ interface GlobalConfigBase {
   readonly dompurify: DomPurifyConfig;
 }
 
-export type { DomPurifyConfig };
+export type { DomPurifyConfig } from '@nunjucks/filters';
 
 export interface GlobalConfig extends GlobalConfigBase {
   readonly [key: string]: unknown;
@@ -202,7 +201,7 @@ const DEFAULT_CONFIG: GlobalConfig = Object.freeze({
 });
 
 export const getDefaultConfig = (): GlobalConfig => ({ ...DEFAULT_CONFIG });
-export { setDefaultDomPurifyConfig };
+export { setDefaultDomPurifyConfig } from '@nunjucks/filters';
 
 interface ConfigValidationError {
   readonly field: string;
@@ -210,4 +209,4 @@ interface ConfigValidationError {
 }
 
 export type { ConfigValidationError };
-export type { Result };
+export type { Result } from './result.ts';

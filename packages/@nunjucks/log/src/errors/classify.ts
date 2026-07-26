@@ -42,4 +42,4 @@ export const classifyFromError = (error: ErrorWithExtras | null): Classification
   });
 };
 
-export { classifyInput };
+export { classifyInput } from './classifier.ts';

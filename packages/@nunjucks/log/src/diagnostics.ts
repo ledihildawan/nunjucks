@@ -1,7 +1,6 @@
 import { createLog, type TemplateError } from '@nunjucks/log';
 import { normalizeErrorMetadata } from '@nunjucks/log';
 import { resolveLocation } from '@nunjucks/shared/error-location';
-import { findContextKeyPosition } from './find-context-key-position.ts';
 
 interface DiagnosticsConfig {
   phase?: string | null;
@@ -26,7 +25,7 @@ interface ErrorWithCauses extends Error {
   severity?: 'error' | 'warning' | 'info';
 }
 
-export { findContextKeyPosition };
+export { findContextKeyPosition } from './find-context-key-position.ts';
 
 export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, template: string | null = null, renderContext: unknown = null): Promise<TemplateError> => {
   let resolvedSourceContent: string | null = null;

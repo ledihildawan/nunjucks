@@ -40,11 +40,10 @@ import { parseBlock } from "./block.ts";
 import { parseExtends } from "./extends.ts";
 import { parseInclude } from "./include.ts";
 import { parseIf } from "./if.ts";
-import { parseVariableDeclaration, parseVariableAssignment, parseDefineBlock } from "./variable.ts";
+import { parseDefineBlock } from "./variable.ts";
 import { parseSwitch } from "./switch.ts";
 import { parseRaw } from "./raw.ts";
 import { parseFilterStatement } from "./filter.ts";
-import { parseWithContext } from "./with.ts";
 import { parseTry } from "./try-catch.ts";
 import { parseDo } from "./do.ts";
 import { parseWith } from "./with-block.ts";
@@ -77,24 +76,22 @@ const lexer = {
   TOKEN_REGEX,
 };
 
-export {
-  parseFor,
-  parseMacro,
-  parseCall,
-  parseImport,
-  parseFrom,
-  parseBlock,
-  parseExtends,
-  parseInclude,
-  parseIf,
-  parseSwitch,
-  parseRaw,
-  parseFilterStatement,
-  parseWithContext,
-  parseVariableDeclaration,
-  parseVariableAssignment,
-  parseDefineBlock,
-};
+// Public surface of the statement parsers. Re-exported from their own modules
+// rather than re-listing the imports above, which exist for parseStatement.
+export { parseFor } from './for.ts';
+export { parseMacro } from './macro.ts';
+export { parseCall } from './call.ts';
+export { parseImport } from './import.ts';
+export { parseFrom } from './from.ts';
+export { parseBlock } from './block.ts';
+export { parseExtends } from './extends.ts';
+export { parseInclude } from './include.ts';
+export { parseIf } from './if.ts';
+export { parseSwitch } from './switch.ts';
+export { parseRaw } from './raw.ts';
+export { parseFilterStatement } from './filter.ts';
+export { parseWithContext } from './with.ts';
+export { parseVariableDeclaration, parseVariableAssignment, parseDefineBlock } from './variable.ts';
 
 export const parseStatement = (ctx: ParserContext): Node | null => {
   const tok = peekToken(ctx);

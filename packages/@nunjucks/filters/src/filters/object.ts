@@ -1,11 +1,10 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { makeMacro } from '@nunjucks/runtime';
 import { filterError, isArray } from '../factory/index.ts';
-import type { FilterContext } from '../factory/index.ts';
 import { getAttrGetter } from '../attributes.ts';
 
-export { filterError };
-export type { FilterContext };
+export { filterError } from '../factory/index.ts';
+export type { FilterContext } from '../factory/index.ts';
 
 export const groupby = makeMacro(
   ['arr', 'attr'],

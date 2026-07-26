@@ -1,11 +1,7 @@
 // SANDBOX - Secure member access via Proxy wrapping
 import {
-  isBlockedKey,
-  isDangerousGlobal,
   isCodeExecutionPattern,
   getBlockedKeyCategory,
-  BLOCKED_KEYS_LIST,
-  DANGEROUS_GLOBALS_LIST,
   type Environment,
 } from '@nunjucks/shared/blocked-keys';
 import { isNonNullish, isFunction, hasOwn } from '@nunjucks/shared/type-guards';
@@ -19,7 +15,7 @@ export {
   getBlockedKeyCategory,
   BLOCKED_KEYS_LIST,
   DANGEROUS_GLOBALS_LIST,
-};
+} from '@nunjucks/shared/blocked-keys';
 
 const UNSAFE_SYMBOL_DESCRIPTIONS = new Set([
   'constructor',

@@ -7,7 +7,7 @@ import {
 } from '@nunjucks/lexer';
 import type { Token, Delimiters } from '@nunjucks/lexer';
 import type { Node } from '@nunjucks/nodes';
-import { error, fail, EXPECTED_COLON_AFTER_DICT_KEY } from "./error.ts";
+import { fail, } from "./error.ts";
 import { createLog } from '@nunjucks/log';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 
@@ -164,4 +164,4 @@ export const advanceAfterVariableEnd = (ctx: ParserContext): void => {
   }
 };
 
-export { error, fail, EXPECTED_COLON_AFTER_DICT_KEY };
+export { error, fail, EXPECTED_COLON_AFTER_DICT_KEY } from './error.ts';

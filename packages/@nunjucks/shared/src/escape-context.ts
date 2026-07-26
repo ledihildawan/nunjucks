@@ -31,7 +31,7 @@ const ESCAPE_STYLE: ReadonlyMap<string, string> = Object.freeze(new Map([
   ["'", '&#39;'],
 ]));
 
-export { escapeHtml };
+export { escapeHtml } from './escape.ts';
 
 export const escapeAttribute = (str: string): string => {
   let result = '';

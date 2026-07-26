@@ -12,21 +12,19 @@ import { tokenizeComment } from './comment.ts';
 import { tokenizeTemplateLiteral } from './template-literal.ts';
 import { tokenizeRaw } from './raw.ts';
 
-export {
-  tokenizeWhitespace,
-  tokenizeNumber,
-  tokenizeString,
-  tokenizeSymbol,
-  tokenizeOperator,
-  tokenizeBlockStart,
-  tokenizeBlockEnd,
-  tokenizeVariableStart,
-  tokenizeVariableEnd,
-  tokenizeTemplateText,
-  tokenizeComment,
-  tokenizeTemplateLiteral,
-  tokenizeRaw,
-};
+// Re-exported from their own modules; the imports above feed the combinators
+// defined below in this file.
+export { tokenizeWhitespace } from './whitespace.ts';
+export { tokenizeNumber } from './number.ts';
+export { tokenizeString } from './string.ts';
+export { tokenizeSymbol } from './symbol.ts';
+export { tokenizeOperator } from './operator.ts';
+export { tokenizeBlockStart, tokenizeBlockEnd } from './block.ts';
+export { tokenizeVariableStart, tokenizeVariableEnd } from './variable.ts';
+export { tokenizeTemplateText } from './template-text.ts';
+export { tokenizeComment } from './comment.ts';
+export { tokenizeTemplateLiteral } from './template-literal.ts';
+export { tokenizeRaw } from './raw.ts';
 
 export const or = (...tokenizers: Tokenizer[]): Tokenizer => (state) => {
   for (const tokenizer of tokenizers) {
