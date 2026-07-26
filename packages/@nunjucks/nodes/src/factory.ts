@@ -67,8 +67,14 @@ export const mod = (lineno: number, colno: number, left: Node, right: Node): Bin
 export const pow = (lineno: number, colno: number, left: Node, right: Node): BinaryOpNode => createNode(T.POW, lineno, colno, { left, right, operator: '**' });
 export const concat = (lineno: number, colno: number, left: Node, right: Node): BinaryNode => createNode(T.CONCAT, lineno, colno, { left, right });
 
-export const binOp = (type: NodeType) => (lineno: number, colno: number, left: Node, right: Node, operator: string): Node =>
-  createNode(type, lineno, colno, { left, right, operator });
+export interface BinaryOpFields {
+  left: Node;
+  right: Node;
+  operator: string;
+}
+
+export const binOp = (type: NodeType) => (lineno: number, colno: number, fields: BinaryOpFields): Node =>
+  createNode(type, lineno, colno, { ...fields });
 
 export const unaryOp = (type: NodeType) => (lineno: number, colno: number, target: Node, operator: string): Node =>
   createNode(type, lineno, colno, { target, operator });
@@ -116,8 +122,9 @@ export const in_ = (lineno: number, colno: number, left: Node, right: Node): Bin
 export const block = (lineno: number, colno: number, name?: string, body?: Node): Node =>
   createNode(T.BLOCK, lineno, colno, { name, body });
 
-export const if_ = (lineno: number, colno: number, cond?: Node, body?: Node, else_: Node | null = null): Node =>
-  createNode(T.IF, lineno, colno, { cond, body, else_ });
+/** `if_` and `inlineIf` carry the same fields; the node type is what differs. */
+export const if_ = (lineno: number, colno: number, fields: InlineIfFields = {}): Node =>
+  createNode(T.IF, lineno, colno, { else_: null, ...fields });
 
 export interface InlineIfFields {
   cond?: Node;
@@ -128,17 +135,31 @@ export interface InlineIfFields {
 export const inlineIf = (lineno: number, colno: number, fields: InlineIfFields = {}): Node =>
   createNode(T.INLINE_IF, lineno, colno, { else_: null, ...fields });
 
-export const for_ = (lineno: number, colno: number, arr?: Node, name?: Node, body?: Node, else_: Node | null = null): Node =>
-  createNode(T.FOR, lineno, colno, { arr, name, body, else_ });
+export interface ForFields {
+  arr?: Node;
+  name?: Node;
+  body?: Node;
+  else_?: Node | null;
+}
 
-export const macro = (lineno: number, colno: number, name: string, args: Node[] = [], body?: Node): Node =>
-  createNode(T.MACRO, lineno, colno, { name, args, body });
+export const for_ = (lineno: number, colno: number, fields: ForFields = {}): Node =>
+  createNode(T.FOR, lineno, colno, { else_: null, ...fields });
+
+/** Shared by `macro` and `call`, which differ only in node type. */
+export interface NamedBodyFields {
+  name: string;
+  args?: Node[];
+  body?: Node;
+}
+
+export const macro = (lineno: number, colno: number, fields: NamedBodyFields): Node =>
+  createNode(T.MACRO, lineno, colno, { args: [], ...fields });
 
 export const caller = (lineno: number, colno: number, args: Node[] = [], body?: Node): Node =>
   createNode(T.CALLER, lineno, colno, { args, body });
 
-export const call = (lineno: number, colno: number, name: string, args: Node[] = [], body?: Node): Node =>
-  createNode(T.CALL, lineno, colno, { name, args, body });
+export const call = (lineno: number, colno: number, fields: NamedBodyFields): Node =>
+  createNode(T.CALL, lineno, colno, { args: [], ...fields });
 
 export interface ImportFields {
   template: Node | string;

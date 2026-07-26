@@ -17,7 +17,7 @@ export const parseMacro = (ctx: ParserContext): Node => {
   if (!isSymbol(name)) {
     fail(ctx, 'expected macro name', macroTok.lineno, macroTok.colno);
   }
-  const node = macro(macroTok.lineno, macroTok.colno, name.value as string, args?.children ?? []);
+  const node = macro(macroTok.lineno, macroTok.colno, { name: name.value as string, args: args?.children ?? [] });
 
   advanceAfterBlockEnd(ctx, macroTok.value as string);
   node.body = parseUntilBlocks(ctx, 'endmacro');

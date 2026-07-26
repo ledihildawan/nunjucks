@@ -66,12 +66,12 @@ describe('type-specific guards', () => {
   });
 
   test('isIf', () => {
-    const n = if_(0, 0, literal(0, 0, true), nodeList(0, 0), null);
+    const n = if_(0, 0, { cond: literal(0, 0, true), body: nodeList(0, 0), else_: null });
     expect(isIf(n)).toBe(true);
   });
 
   test('isFor', () => {
-    const n = for_(0, 0, symbol(0, 0, 'i'), symbol(0, 0, 'items'), nodeList(0, 0), nodeList(0, 0));
+    const n = for_(0, 0, { arr: symbol(0, 0, 'i'), name: symbol(0, 0, 'items'), body: nodeList(0, 0), else_: nodeList(0, 0) });
     expect(isFor(n)).toBe(true);
   });
 });

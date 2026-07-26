@@ -20,9 +20,9 @@ export const parseCall = (ctx: ParserContext): Node => {
   const body = parseUntilBlocks(ctx, 'endcall');
   advanceAfterBlockEnd(ctx);
 
-  return call(callTok.lineno,
-    callTok.colno,
-    macroCall.value as string,
-    callerArgs.children ?? [],
-    body);
+  return call(callTok.lineno, callTok.colno, {
+    name: macroCall.value as string,
+    args: callerArgs.children ?? [],
+    body,
+  });
 };

@@ -396,6 +396,7 @@ export function ensureDefined(
   return val;
 }
 
+// biome-ignore lint/complexity/useMaxParams: the compiler emits this call positionally in generated template code, so the signature is a codegen contract, not a local choice.
 export function callWrap(
   this: unknown,
   obj: unknown,
@@ -482,6 +483,7 @@ export function lookup(ctx: { lookup?: (key: string) => unknown } | null, key: s
 }
 
 // `_runtime` is passed positionally by generated template code but unused here.
+// biome-ignore lint/complexity/useMaxParams: the compiler emits this call positionally in generated template code, so the signature is a codegen contract, not a local choice.
 export function handleError(this: unknown, error: unknown, lineno: number | null, colno: number | null, _runtime?: unknown): never {
   const ctx = getLogContext(this);
   const metadata = normalizeErrorMetadata(error, {
@@ -535,6 +537,7 @@ export function fromIterator(arr: unknown): unknown {
     return arr;
 }
 
+// biome-ignore lint/complexity/useMaxParams: the compiler emits this call positionally in generated template code, so the signature is a codegen contract, not a local choice.
 export function inOperator(this: unknown, key: unknown, val: unknown, lineno: number | null = null, colno: number | null = null): boolean {
   if (isArray(val) || isString(val)) {
     return (val as { includes: (k: unknown) => boolean }).includes(key);

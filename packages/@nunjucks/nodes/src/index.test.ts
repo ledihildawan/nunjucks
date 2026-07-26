@@ -146,7 +146,7 @@ describe('Slice', () => {
 
 describe('If', () => {
   test('stores cond, body, else_', () => {
-    const i = if_(0, 0, literal(1, 1, true), nodeList(2, 2), nodeList(3, 3));
+    const i = if_(0, 0, { cond: literal(1, 1, true), body: nodeList(2, 2), else_: nodeList(3, 3) });
     expect((i.cond as { value: boolean }).value).toBe(true);
     expect(getType(i.body)).toBe('nodeList');
     expect(getType(i.else_)).toBe('nodeList');
@@ -164,7 +164,7 @@ describe('InlineIf', () => {
 
 describe('For', () => {
   test('stores arr, name, body, else_', () => {
-    const f = for_(0, 0, symbol(1, 1, 'items'), symbol(1, 1, 'x'), nodeList(3, 3), nodeList(4, 4));
+    const f = for_(0, 0, { arr: symbol(1, 1, 'items'), name: symbol(1, 1, 'x'), body: nodeList(3, 3), else_: nodeList(4, 4) });
     expect((f.arr as { value: string }).value).toBe('items');
     expect((f.name as { value: string }).value).toBe('x');
   });
@@ -172,7 +172,7 @@ describe('For', () => {
 
 describe('Macro / Caller', () => {
   test('Macro stores name, args, body', () => {
-    const m = macro(0, 0, 'myMacro', [...nodeList(1, 1).children!], nodeList(2, 2));
+    const m = macro(0, 0, { name: 'myMacro', args: [...nodeList(1, 1).children!], body: nodeList(2, 2) });
     expect(m.name).toBe('myMacro');
   });
 
