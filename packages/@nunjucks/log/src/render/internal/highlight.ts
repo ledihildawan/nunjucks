@@ -1,5 +1,9 @@
 import { escapeHtml } from '@nunjucks/shared';
 
+// Hoisted so each pattern is compiled once rather than on every token.
+const LEADING_WHITESPACE_RE = /^\s+/u;
+const PLAIN_RUN_RE = /^[^<{}"'|\s]+/u;
+
 const renderInlineMarkdown = (text: string): string => {
   if (!text) { return ''; }
   let s = escapeHtml(text);
@@ -40,7 +44,7 @@ const highlightHtml = (code: string): string => {
   const span = (type: string, text: string) => `<span class="syntax-${type}">${escapeHtml(text)}</span>`;
   while (i < code.length) {
     const rest = code.slice(i);
-    const ws = rest.match(/^\s+/u);
+    const ws = rest.match(LEADING_WHITESPACE_RE);
     if (ws) { out += ws[0]; i += ws[0].length; continue; }
     let matched = false;
     for (const rule of SYNTAX_RULES) {
@@ -55,7 +59,7 @@ const highlightHtml = (code: string): string => {
       }
     }
     if (!matched) {
-      const plain = rest.match(/^[^<{}"'|\s]+/u);
+      const plain = rest.match(PLAIN_RUN_RE);
       if (plain?.[0]) { out += escapeHtml(plain[0]); i += plain[0].length; }
       else { out += escapeHtml(code[i] ?? ''); i += 1; }
     }
@@ -83,7 +87,7 @@ const highlightJs = (code: string): string => {
   const span = (type: string, text: string) => `<span class="syntax-${type}">${escapeHtml(text)}</span>`;
   while (i < code.length) {
     const rest = code.slice(i);
-    const ws = rest.match(/^\s+/u);
+    const ws = rest.match(LEADING_WHITESPACE_RE);
     if (ws) { out += ws[0]; i += ws[0].length; continue; }
     let matched = false;
     for (const rule of JS_RULES) {

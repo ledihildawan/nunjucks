@@ -191,6 +191,10 @@ const buildRenderEnv = (loader: unknown, config: RenderConfig): void => {
   });
 };
 
+/** Placeholder pattern for synthesised error definitions, which are never matched against. */
+const MATCH_ANY_RE = /./;
+const TEMPLATE_FILE_EXTENSION_RE = /\.(njk|js|html|htm|twig|ejs|eta)$/i;
+
 interface CompileResult {
   code: string;
 }
@@ -230,7 +234,7 @@ const handleContextStrictMode = async (context: unknown, config: RenderConfig): 
   warningsCollector.push(createLog('warning', {
     name: 'DANGEROUS_CONTEXT_VALUE_SCRUBBED',
     message: () => `Scrubbed unsafe values from context: ${dangerousValuePaths.join(', ')}`,
-    pattern: /./
+    pattern: MATCH_ANY_RE
   } as Parameters<typeof createLog>[1], { values: dangerousValuePaths.join(', ') }, dangerousValuePaths.join(', '), {
     phase: 'render',
     lineBase: 'zero'
@@ -301,7 +305,7 @@ export const render = async (template: string, context: Record<string, unknown> 
   const { templateSource, templatePath } = await resolveTemplateSource(template, loader, config);
   if (templatePath) { config.templatePath = templatePath; }
 
-  const looksLikeFile = /\.(njk|js|html|htm|twig|ejs|eta)$/i.test(template);
+  const looksLikeFile = TEMPLATE_FILE_EXTENSION_RE.test(template);
   let templateName: string;
   if (config.templatePath) {
     templateName = config.templatePath;
@@ -358,7 +362,7 @@ export const renderWithEnv = async (templateName: string, env: unknown, context:
     const err = createLog('error', {
       name: ve.code || 'CONFIG_ERROR',
       message: () => ve.message,
-      pattern: /./,
+      pattern: MATCH_ANY_RE,
     } as Parameters<typeof createLog>[1], {}, ve.message, {
       phase: 'render',
       templateName: fullConfig.templatePath || templateName,
@@ -374,7 +378,7 @@ export const renderWithEnv = async (templateName: string, env: unknown, context:
     const err = createLog('error', {
       name: ce.code || 'CONTEXT_ERROR',
       message: () => ce.message,
-      pattern: /./,
+      pattern: MATCH_ANY_RE,
     } as Parameters<typeof createLog>[1], {}, ce.message, {
       phase: 'render',
       templateName: fullConfig.templatePath || templateName,

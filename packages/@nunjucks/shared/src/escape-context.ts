@@ -83,6 +83,11 @@ interface ScriptStyleScan {
   lastClose: number;
 }
 
+// Hoisted so each pattern is compiled once rather than on every lookup.
+const UNCLOSED_OPEN_TAG_RE = /<[a-zA-Z][a-zA-Z0-9]*(?:\s+[^>]*)?$/i;
+const ATTRIBUTE_EQUALS_RE = /[=][\s]*["']?/;
+const QUOTED_ATTRIBUTE_VALUE_RE = /^["'`][^"'`]*["'`]/;
+
 // Both helpers take a fresh /g/ literal from the call site, so resetting
 // lastIndex is belt-and-braces rather than load-bearing.
 const lastMatchEnd = (re: RegExp, text: string): number => {
@@ -127,19 +132,19 @@ const detectAttributeContext = (before: string, scriptStyleResult: ScriptStyleSc
     return scriptStyleResult.context;
   }
 
-  const openTagMatch = /<[a-zA-Z][a-zA-Z0-9]*(?:\s+[^>]*)?$/i.exec(before);
+  const openTagMatch = UNCLOSED_OPEN_TAG_RE.exec(before);
   if (!openTagMatch) { return 'html'; }
 
   const openTagContent = before.slice(openTagMatch.index);
 
   if (!openTagContent.includes('=')) { return 'html'; }
 
-  const equalsMatch = /[=][\s]*["']?/.exec(openTagContent);
+  const equalsMatch = ATTRIBUTE_EQUALS_RE.exec(openTagContent);
   if (!equalsMatch) { return 'html'; }
 
   const afterEquals = openTagContent.slice(equalsMatch.index + equalsMatch[0]!.length);
 
-  if (/^["'`][^"'`]*["'`]/.test(afterEquals)) {
+  if (QUOTED_ATTRIBUTE_VALUE_RE.test(afterEquals)) {
     return 'attribute';
   }
 

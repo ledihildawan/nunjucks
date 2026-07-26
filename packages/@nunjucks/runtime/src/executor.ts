@@ -150,6 +150,8 @@ const createGetFilter = (
     throw createLog('error', getError('UNDEFINED_FILTER'), { name }, name, { lineno: filterLineno ?? null, colno: filterColno ?? null, phase: 'render', lineBase: 'zero' });
   };
 
+const ROOT_FUNCTION_RE = /^async\s+function\s+root\s*\(/;
+
 interface RenderFunctionResult {
   render: (env: unknown, context: unknown, frame: Frame, runtime: unknown) => Promise<unknown>;
   blocks: Record<string, unknown>;
@@ -157,7 +159,7 @@ interface RenderFunctionResult {
 }
 
 const getRenderFunction = (code: string): RenderFunctionResult => {
-  const newFormatMatch = code.match(/^async\s+function\s+root\s*\(/);
+  const newFormatMatch = code.match(ROOT_FUNCTION_RE);
   if (newFormatMatch) {
     const codeWithReturn = `${code}; return root;`;
     const renderFn = new Function(codeWithReturn)();

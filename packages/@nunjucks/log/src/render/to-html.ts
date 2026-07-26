@@ -96,8 +96,12 @@ export interface ToHtmlOptions {
   isProduction?: boolean;
 }
 
+const SCRIPT_EXTENSION_RE = /\.(?:[cm]?[jt]sx?|mjs|cjs)$/iu;
+const UNDEFINED_OUTPUT_RE = /attempted to output '([^']+)'/u;
+const RESERVED_KEYWORD_RE = /Cannot use reserved (\w+) '([^']+)'/u;
+
 const isScriptPath = (filePath?: string | null): boolean =>
-  /\.(?:[cm]?[jt]sx?|mjs|cjs)$/iu.test(filePath || '');
+  SCRIPT_EXTENSION_RE.test(filePath || '');
 
 const highlightSource = (code: string, filePath?: string | null): string => {
   if (isScriptPath(filePath)) {
@@ -144,7 +148,7 @@ export const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {
   const plain = toText(error, { verbosity: 'simple' });
 
   const category = error.code || classified.category.toUpperCase() || 'UNKNOWN';
-  const undefinedName = classified.undefinedName || plain.match(/attempted to output '([^']+)'/u)?.[1] || null;
+  const undefinedName = classified.undefinedName || plain.match(UNDEFINED_OUTPUT_RE)?.[1] || null;
 
   let possibleCauses: string[];
   if (classified.causes && classified.causes.length > 0) {
@@ -178,7 +182,7 @@ export const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {
   } else if (category === 'RESERVED_KEYWORD_CONTEXT') {
     humanTitle = plain;
   } else if (category === 'RESERVED_KEYWORD') {
-    const match = plain.match(/Cannot use reserved (\w+) '([^']+)'/u);
+    const match = plain.match(RESERVED_KEYWORD_RE);
     if (match) {
       humanTitle = `Cannot use reserved ${match[1]} '${match[2]}'`;
     }

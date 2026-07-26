@@ -2,6 +2,9 @@ import { createLog } from '@nunjucks/log';
 import { peekToken } from "./cursor.ts";
 import type { ParserContext } from "./cursor.ts";
 
+/** Placeholder pattern for synthesised error definitions, which are never matched against. */
+const MATCH_ANY_RE = /./;
+
 const inferCauses = (msg: string): string[] => {
   const lower = msg.toLowerCase();
   const causes: string[] = [];
@@ -61,7 +64,7 @@ export const error = (ctx: ParserContext, msg: string, lineno?: number, colno?: 
   const err = createLog('error', {
     name: 'PARSER_ERROR',
     message: () => msg,
-    pattern: /./,
+    pattern: MATCH_ANY_RE,
     causes: inferCauses(msg),
     fixCode: inferFix(msg),
     fixComment: 'See the causes above for guidance',

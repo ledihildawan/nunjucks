@@ -55,13 +55,19 @@ export interface BuildSourceTraceInput {
 
 const DEFAULT_CONTEXT = 2;
 
+const SCRIPT_EXTENSION_RE = /\.(?:[cm]?[jt]sx?|mjs|cjs)$/iu;
+const READABLE_EXTENSION_RE = /\.(?:[cm]?[jt]sx?|mjs|cjs|njk|nunjucks|html?|tmpl|tpl)$/iu;
+const WINDOWS_DRIVE_RE = /^[a-zA-Z]:[/\\]/u;
+const FORWARD_SLASH_RE = /\//gu;
+const RELATIVE_PREFIX_RE = /^\.\.?[/\\]/u;
+
 // Paths we treat as JS/TS callers (inline render() calls).
 const isScriptPath = (filePath?: string | null): boolean =>
-  /\.(?:[cm]?[jt]sx?|mjs|cjs)$/iu.test(filePath || '');
+  SCRIPT_EXTENSION_RE.test(filePath || '');
 
 // Paths whose contents we are willing to read from disk for the trace.
 const isReadablePath = (filePath?: string | null): boolean =>
-  /\.(?:[cm]?[jt]sx?|mjs|cjs|njk|nunjucks|html?|tmpl|tpl)$/iu.test(filePath || '');
+  READABLE_EXTENSION_RE.test(filePath || '');
 
 // Normalize a templatePath into an absolute filesystem path, or null when it
 // does not look like a real file location (e.g. 'inline' or a bare name).
@@ -69,10 +75,10 @@ const resolveFilePath = (templatePath: string): string | null => {
   if (templatePath.startsWith('file://')) {
     return fileURLToPath(templatePath);
   }
-  if (/^[a-zA-Z]:[/\\]/u.test(templatePath) || templatePath.startsWith('/')) {
-    return templatePath.replace(/\//gu, '\\');
+  if (WINDOWS_DRIVE_RE.test(templatePath) || templatePath.startsWith('/')) {
+    return templatePath.replace(FORWARD_SLASH_RE, '\\');
   }
-  if (/^\.\.?[/\\]/u.test(templatePath) || isReadablePath(templatePath)) {
+  if (RELATIVE_PREFIX_RE.test(templatePath) || isReadablePath(templatePath)) {
     return resolve(templatePath);
   }
   return null;

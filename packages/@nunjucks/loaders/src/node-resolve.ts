@@ -6,12 +6,15 @@ import { createLoader, type Loader } from './base.ts';
 
 const _require = createRequire(import.meta.url);
 
+const RELATIVE_PATH_RE = /^\.?\.?(\/|\\)/;
+const WINDOWS_ABSOLUTE_PATH_RE = /^[A-Z]:/;
+
 const isRelativePath = pipe(
-  (name: string) => (/^\.?\.?(\/|\\)/).test(name)
+  (name: string) => RELATIVE_PATH_RE.test(name)
 );
 
 const isWindowsAbsolutePath = pipe(
-  (name: string) => (/^[A-Z]:/).test(name)
+  (name: string) => WINDOWS_ABSOLUTE_PATH_RE.test(name)
 );
 
 const isExternalModule = (name: string) => !(isRelativePath(name) || isWindowsAbsolutePath(name));

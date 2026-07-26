@@ -95,6 +95,11 @@ const sanitizeForAnsi = (value: unknown, seen?: WeakSet<object>): string => {
 
 const INDENT = '  ';
 
+// Hoisted so each pattern is compiled once rather than on every stack frame.
+const STACK_LOCATION_RE = /\(([^()]+):(\d+):(\d+)\)$/u;
+const STACK_FUNCTION_RE = /^at\s+([^\s]+)/u;
+const LEADING_AT_RE = /^ at /;
+
 const formatContextValue = (value: unknown): string => {
   if (typeof value !== 'object' || value === null) {
     return sanitizeForAnsi(value);
@@ -149,7 +154,7 @@ const formatStackLine = (
   ide: string
 ): string => {
   const trimmed = line.trim();
-  const pathMatch = trimmed.match(/\(([^()]+):(\d+):(\d+)\)$/u);
+  const pathMatch = trimmed.match(STACK_LOCATION_RE);
   if (!(pathMatch?.[1] && pathMatch[2])) {
     return `  ${trimmed}`;
   }
@@ -158,7 +163,7 @@ const formatStackLine = (
   const lineNum = Number.parseInt(pathMatch[2], 10);
   const colNum = pathMatch[3] ? Number.parseInt(pathMatch[3], 10) : 1;
   const shortPath = shortenPath(fullPath);
-  const fnMatch = trimmed.match(/^at\s+([^\s]+)/u);
+  const fnMatch = trimmed.match(STACK_FUNCTION_RE);
   const fn = fnMatch?.[1] ?? '';
   const location = `${shortPath}:${lineNum}:${colNum}`;
 
@@ -252,7 +257,7 @@ export const toAnsi = async (error: unknown, options: AnsiOptions = {}): Promise
   if (verbosity === 'medium') {
     const causeHint = causes[0] ? stripMarkdown(causes[0]) : '';
     const extrasPart = getExtrasPart(causeHint, documentationUrl || '');
-    const locationPart = path ? formatLocationString(path, location, ide).replace(/^ at /, '') : ` at line ${location.line}`;
+    const locationPart = path ? formatLocationString(path, location, ide).replace(LEADING_AT_RE, '') : ` at line ${location.line}`;
 
     return `${message}${locationPart}${extrasPart}`;
   }

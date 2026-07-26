@@ -21,6 +21,7 @@ Anything that *can* be fixed stays on. Local, one-off exceptions use a
 | Rule | Why it is off |
 |---|---|
 | `correctness/noUnresolvedImports` | Every finding is `import { ... } from 'bun:test'`. Biome does not know Bun's built-in module namespace. Production sources are still checked by this rule. |
+| `performance/useTopLevelRegex` | A performance rule: it exists so a hot path does not recompile a pattern per call. Test bodies run once, and `expect(x).toMatch(/caller-file\.test\.ts$/)` is clearer inline than as a module-level constant. All 70 findings in production source were hoisted; only the 3 in assertions are exempt. |
 | `style/noMagicNumbers` | 335 of the 341 findings were in tests. Concrete literal values are the point of a test: `literal(1, 1, 42)` and `expect(x).toBe(3)` say more than named constants would. The 6 findings in production source were fixed with named constants rather than suppressed, and the rule stays on there. |
 
 ## Re-checking these

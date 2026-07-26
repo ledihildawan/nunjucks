@@ -2,6 +2,9 @@ import { createLog, type TemplateError } from '@nunjucks/log';
 import { normalizeErrorMetadata } from '@nunjucks/log';
 import { resolveLocation } from '@nunjucks/shared/error-location';
 
+/** Placeholder pattern for synthesised error definitions, which are never matched against. */
+const MATCH_ANY_RE = /./;
+
 interface DiagnosticsConfig {
   phase?: string | null;
   templatePath?: string | null;
@@ -115,7 +118,7 @@ export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, templ
   const errorDef = {
     name: metadata.code || 'RENDER_ERROR',
     message: () => metadata.message,
-    pattern: /./,
+    pattern: MATCH_ANY_RE,
     causes: resolvedCauses,
     fixCode: resolvedFixCode,
     fixComment: resolvedFixComment,

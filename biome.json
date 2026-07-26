@@ -82,6 +82,9 @@
           },
           "style": {
             "noMagicNumbers": "off"
+          },
+          "performance": {
+            "useTopLevelRegex": "off"
           }
         }
       }

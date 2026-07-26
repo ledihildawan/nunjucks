@@ -27,6 +27,12 @@ export const parseUntilBlocks = (ctx: ParserContext, ...blockNames: string[]): N
   return ret;
 };
 
+// Hoisted so each pattern is compiled once rather than on every data token.
+const LEADING_WHITESPACE_RE = /^\s*/;
+const TRAILING_WHITESPACE_RE = /\s*$/;
+const RAW_OPEN_TAG_RE = /^({%\s*raw\s*%})/;
+const RAW_CLOSE_TAG_RE = /({%\s*endraw\s*%})$/;
+
 export const parseNodes = (ctx: ParserContext): Node[] => {
   const buf: Node[] = [];
 
@@ -37,7 +43,7 @@ export const parseNodes = (ctx: ParserContext): Node[] => {
       const nextVal = nextTok && (nextTok.value as string);
 
       if (ctx.dropLeadingWhitespace) {
-        data = data.replace(/^\s*/, '');
+        data = data.replace(LEADING_WHITESPACE_RE, '');
         ctx.dropLeadingWhitespace = false;
       }
 
@@ -48,7 +54,7 @@ export const parseNodes = (ctx: ParserContext): Node[] => {
         nextVal.charAt(ctx.tokens.tags.VARIABLE_START.length) === '-') ||
         (nextTok.type === TOKEN_COMMENT &&
         nextVal.charAt(ctx.tokens.tags.COMMENT_START.length) === '-'))) {
-        data = data.replace(/\s*$/, '');
+        data = data.replace(TRAILING_WHITESPACE_RE, '');
       }
 
       buf.push(output(
@@ -77,8 +83,8 @@ export const parseNodes = (ctx: ParserContext): Node[] => {
       let rawContent = tok.value;
       if (typeof rawContent === 'string') {
         rawContent = rawContent
-          .replace(/^({%\s*raw\s*%})/, '')
-          .replace(/({%\s*endraw\s*%})$/, '');
+          .replace(RAW_OPEN_TAG_RE, '')
+          .replace(RAW_CLOSE_TAG_RE, '');
       }
       buf.push(output(
         tok.lineno,

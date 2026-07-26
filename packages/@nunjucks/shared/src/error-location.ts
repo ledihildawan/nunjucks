@@ -35,6 +35,8 @@
 
 import { readFile } from 'node:fs/promises';
 
+const TRAILING_WHITESPACE_RE = /\s+$/u;
+
 /**
  * Inputs that influence error location resolution.
  *
@@ -279,7 +281,7 @@ const findSubjectOccurrence = (
  * call site. Both returned values are 0-based.
  */
 const templateEndPosition = (template: string): SourcePosition => {
-  const trimmed = template.replace(/\s+$/u, '');
+  const trimmed = template.replace(TRAILING_WHITESPACE_RE, '');
   const lines = trimmed.split('\n');
   const line = Math.max(0, lines.length - 1);
   const lastLine = lines[line] ?? '';

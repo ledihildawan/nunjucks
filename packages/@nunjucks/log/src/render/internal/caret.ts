@@ -8,22 +8,28 @@ export interface CaretResult {
   carets: string;
 }
 
+// Hoisted so each pattern is compiled once rather than on every caret render.
+const WORD_CHAR_RE = /[\w./\\-]/u;
+const PATH_SEPARATOR_RE = /[\\/-]/u;
+const FILE_EXTENSION_RE = /\.(?:njk|nunjucks|html?|tmpl|tpl|js|ts|mjs|cjs|jsx|tsx|json|ya?ml|css|scss|sass|less|md|txt)$/iu;
+const WHITESPACE_RE = /\s/u;
+
+const isWordChar = (char: string | undefined): boolean => WORD_CHAR_RE.test(char ?? '');
+
+const isPathLike = (word: string): boolean =>
+  PATH_SEPARATOR_RE.test(word) || FILE_EXTENSION_RE.test(word);
+
 export function calculateCaretPosition(
   line: string,
   displayCol: number
 ): CaretResult | null {
   if (displayCol <= 0 || !line) { return null; }
 
-  const isWordChar = (char: string | undefined): boolean => /[\w./\\-]/u.test(char ?? '');
-  const isPathLike = (word: string): boolean =>
-    /[\\/-]/u.test(word) ||
-    /\.(?:njk|nunjucks|html?|tmpl|tpl|js|ts|mjs|cjs|jsx|tsx|json|ya?ml|css|scss|sass|less|md|txt)$/iu.test(word);
-
   let pos = displayCol - 1;
   let charAtPos = line[pos];
 
   if (!isWordChar(charAtPos)) {
-    if (charAtPos && !/\s/u.test(charAtPos)) {
+    if (charAtPos && !WHITESPACE_RE.test(charAtPos)) {
       return {
         wordStart: pos,
         wordEnd: pos + 1,

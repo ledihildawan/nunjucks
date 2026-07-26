@@ -9,7 +9,12 @@ export interface ToTextOptions {
   colno?: number | null;
 }
 
-const stripMarkdown = (text: string): string => text.replace(/\*\*([^*]+)\*\*/gu, '$1').replace(/`([^`]+)`/gu, '$1');
+const BOLD_MARKDOWN_RE = /\*\*([^*]+)\*\*/gu;
+const CODE_MARKDOWN_RE = /`([^`]+)`/gu;
+const STACK_LOCATION_RE = /\(([^()]+):(\d+):(\d+)\)$/u;
+const STACK_FUNCTION_RE = /^at\s+([^\s]+)/u;
+
+const stripMarkdown = (text: string): string => text.replace(BOLD_MARKDOWN_RE, '$1').replace(CODE_MARKDOWN_RE, '$1');
 
 export const toText = (error: unknown, options: ToTextOptions = {}): string => {
   if (!error) { return ''; }
@@ -103,12 +108,12 @@ export const toText = (error: unknown, options: ToTextOptions = {}): string => {
   const formattedStack = stackLines
     .map(line => {
       const trimmed = line.trim();
-      const pathMatch = trimmed.match(/\(([^()]+):(\d+):(\d+)\)$/u);
+      const pathMatch = trimmed.match(STACK_LOCATION_RE);
       if (pathMatch?.[1] && pathMatch[2]) {
         const fullPath = pathMatch[1];
         const lineNum = pathMatch[2];
         const shortPath = shortenPath(fullPath);
-        const fnMatch = trimmed.match(/^at\s+([^\s]+)/u);
+        const fnMatch = trimmed.match(STACK_FUNCTION_RE);
         const fn = fnMatch?.[1] ?? '';
         if (fn) {
           return `  at ${fn} (${shortPath}:${lineNum})`;
