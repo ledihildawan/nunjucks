@@ -103,6 +103,91 @@ const RESERVED_KEYWORD_RE = /Cannot use reserved (\w+) '([^']+)'/u;
 const isScriptPath = (filePath?: string | null): boolean =>
   SCRIPT_EXTENSION_RE.test(filePath || '');
 
+const SEVERITY_HEADINGS: Record<string, string> = {
+  warning: 'Template Warning',
+  info: 'Template Info',
+  error: 'Template Rendering Error',
+};
+
+/** A pill badge, or '' when there is nothing to show. */
+const renderBadge = (variant: string, text?: string | null): string => {
+  if (!text) { return ''; }
+  return `<span class="badge ${variant}">${escapeHtml(text)}</span>`;
+};
+
+/**
+ * The windowed source lines plus the caret row, or '' when there is no trace.
+ * The trace itself is built upstream by buildSourceTrace; this only presents it.
+ */
+const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined, displayPath: string): string => {
+  if (!sourceTrace || sourceTrace.lines.length === 0) { return ''; }
+
+  const rows: string[] = [];
+  for (const line of sourceTrace.lines) {
+    let errorClass = '';
+    if (line.isError) { errorClass = 'is-error'; }
+    rows.push(`<div class="code-line ${errorClass}"><span class="line-number">${line.number}</span><span class="code-content">${highlightSource(line.content, displayPath)}</span></div>`);
+    if (line.isError && sourceTrace.caret) {
+      const spaces = ' '.repeat(sourceTrace.caret.charStart);
+      rows.push(`<div class="code-line error-marker"><span class="line-number"></span><span class="code-content error-marker-content">${spaces}${sourceTrace.caret.carets}</span></div>`);
+    }
+  }
+
+  return `
+    <section class="source-section" aria-labelledby="h-source">
+        <h2 id="h-source" class="text-label">Source Trace</h2>
+      <div class="code-block">
+        ${rows.join('\n')}
+      </div>
+    </section>
+    `;
+};
+
+interface HumanTitleInput {
+  category: string;
+  undefinedName: string | null;
+  /** The plain-text rendering of the error, used verbatim by some categories. */
+  plain: string;
+  /** Used when the category has no dedicated phrasing. */
+  fallback: string;
+}
+
+/**
+ * The headline shown at the top of the error page. Each category that has a
+ * better phrasing than the raw message gets one; everything else falls back.
+ */
+const resolveHumanTitle = ({ category, undefinedName, plain, fallback }: HumanTitleInput): string => {
+  const named = undefinedName || 'unknown';
+
+  switch (category) {
+    case 'UNDEFINED_VARIABLE':
+      if (!undefinedName) { return fallback; }
+      return `Variable '${undefinedName}' is not defined`;
+    case 'UNDEFINED_FUNCTION':
+      return `Function '${named}' is not defined`;
+    case 'UNDEFINED_FILTER':
+      return `Filter '${named}' is not defined`;
+    case 'IMPORT_ERROR':
+      return 'Cannot import template - module not found';
+    case 'FILE_NOT_FOUND':
+      return `Template file not found: ${named}`;
+    case 'SYNTAX_ERROR':
+      return 'Template syntax error';
+    case 'VALIDATION_ERROR':
+      return 'Template must be a string';
+    case 'DICTSDICT_FILTER_BY':
+    case 'RESERVED_KEYWORD_CONTEXT':
+      return plain;
+    case 'RESERVED_KEYWORD': {
+      const match = plain.match(RESERVED_KEYWORD_RE);
+      if (!match) { return fallback; }
+      return `Cannot use reserved ${match[1]} '${match[2]}'`;
+    }
+    default:
+      return fallback;
+  }
+};
+
 const highlightSource = (code: string, filePath?: string | null): string => {
   if (isScriptPath(filePath)) {
     return highlightJs(code);
@@ -162,31 +247,8 @@ export const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {
   // Classification.severity is always populated, so it wins outright.
   const { severity } = classified;
 
-  let humanTitle = classified.title || plain;
-  if (category === 'UNDEFINED_VARIABLE' && undefinedName) {
-    humanTitle = `Variable '${undefinedName}' is not defined`;
-  } else if (category === 'UNDEFINED_FUNCTION') {
-    humanTitle = `Function '${undefinedName || 'unknown'}' is not defined`;
-  } else if (category === 'UNDEFINED_FILTER') {
-    humanTitle = `Filter '${undefinedName || 'unknown'}' is not defined`;
-  } else if (category === 'IMPORT_ERROR') {
-    humanTitle = 'Cannot import template - module not found';
-  } else if (category === 'FILE_NOT_FOUND') {
-    humanTitle = `Template file not found: ${undefinedName || 'unknown'}`;
-  } else if (category === 'DICTSDICT_FILTER_BY') {
-    humanTitle = plain;
-  } else if (category === 'SYNTAX_ERROR') {
-    humanTitle = 'Template syntax error';
-  } else if (category === 'VALIDATION_ERROR') {
-    humanTitle = 'Template must be a string';
-  } else if (category === 'RESERVED_KEYWORD_CONTEXT') {
-    humanTitle = plain;
-  } else if (category === 'RESERVED_KEYWORD') {
-    const match = plain.match(RESERVED_KEYWORD_RE);
-    if (match) {
-      humanTitle = `Cannot use reserved ${match[1]} '${match[2]}'`;
-    }
-  }
+  const humanTitle = resolveHumanTitle({ category, undefinedName, plain, fallback: classified.title || plain });
+
   let lineBaseValue: 'one' | 'zero';
   if (isJsCaller) {
     lineBaseValue = 'one';
@@ -202,19 +264,8 @@ export const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {
   const displayCol = location.col;
   const displayPath = templatePath || 'unknown';
 
-  const badgeCode = category;
-  let codeBadge: string;
-  if (badgeCode) {
-    codeBadge = `<span class="badge badge-error">${escapeHtml(badgeCode)}</span>`;
-  } else {
-    codeBadge = '';
-  }
-  let phaseBadge: string;
-  if (phase) {
-    phaseBadge = `<span class="badge badge-code">${escapeHtml(phase)}</span>`;
-  } else {
-    phaseBadge = '';
-  }
+  const codeBadge = renderBadge('badge-error', category);
+  const phaseBadge = renderBadge('badge-code', phase);
 
   const ideMeta = getIdeMeta(ide);
   const ideLabel = `Open in ${ideMeta.label}`;
@@ -225,14 +276,7 @@ export const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {
   const headerTitle = escapeHtml(humanTitle);
   const locationInfo = escapeHtml(`${displayPath}:${displayLine}:${displayCol}`);
 
-  let severityText: string;
-  if (severity === 'warning') {
-    severityText = 'Template Warning';
-  } else if (severity === 'info') {
-    severityText = 'Template Info';
-  } else {
-    severityText = 'Template Rendering Error';
-  }
+  const severityText = SEVERITY_HEADINGS[severity] ?? SEVERITY_HEADINGS.error;
 
   let phaseBadgePart = '';
   if (phaseBadge) {
@@ -259,27 +303,7 @@ export const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {
 
   let errorBody = '';
   if (verbosity === 'full') {
-    let codeSection = '';
-    if (sourceTrace && sourceTrace.lines.length > 0) {
-      const codeLines = sourceTrace.lines.reduce<string[]>((acc, line) => {
-        let errorClass = '';
-        if (line.isError) { errorClass = 'is-error'; }
-        acc.push(`<div class="code-line ${errorClass}"><span class="line-number">${line.number}</span><span class="code-content">${highlightSource(line.content, displayPath)}</span></div>`);
-        if (line.isError && sourceTrace.caret) {
-          const spaces = ' '.repeat(sourceTrace.caret.charStart);
-          acc.push(`<div class="code-line error-marker"><span class="line-number"></span><span class="code-content error-marker-content">${spaces}${sourceTrace.caret.carets}</span></div>`);
-        }
-        return acc;
-      }, []).join('\n');
-      codeSection = `
-    <section class="source-section" aria-labelledby="h-source">
-        <h2 id="h-source" class="text-label">Source Trace</h2>
-      <div class="code-block">
-        ${codeLines}
-      </div>
-    </section>
-    `;
-    }
+    const codeSection = renderSourceTraceSection(sourceTrace, displayPath);
 
     let possibleCausesList: string;
     if (possibleCauses.length > 0) {
