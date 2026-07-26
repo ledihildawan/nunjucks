@@ -36,7 +36,7 @@ export const compileWalrus = (ctx: Compiler, node: Node, frame: Frame): void => 
     ctx.emit(`let ${valueId} = `);
     ctx.compile(node.value as Node, frame);
     ctx.emit(';');
-    compileDestructuring(ctx, frame, target, valueId, false);
+    compileDestructuring({ ctx, frame, registerFrame: false }, target, valueId);
     ctx.emit(`return ${valueId};`);
     ctx.emit('})())');
   } else {

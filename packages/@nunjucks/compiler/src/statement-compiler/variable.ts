@@ -29,7 +29,7 @@ export const compileVariableDeclaration = (ctx: Compiler, node: Node, frame: Fra
     ctx.emitLine(';');
 
     for (const pattern of (node.targets as Node[])) {
-      compileDestructuring(ctx, frame, pattern, valueId);
+      compileDestructuring({ ctx, frame, registerFrame: true }, pattern, valueId);
     }
   } else {
     const targets = node.targets as Node[];
@@ -54,7 +54,7 @@ export const compileVariableAssignment = (ctx: Compiler, node: Node, frame: Fram
     ctx.emitLine(';');
 
     for (const pattern of (node.targets as Node[])) {
-      compileDestructuring(ctx, frame, pattern, valueId);
+      compileDestructuring({ ctx, frame, registerFrame: true }, pattern, valueId);
     }
   } else {
     const targets = node.targets as Node[];
@@ -109,7 +109,7 @@ export const compileCompoundAssignment = (ctx: Compiler, node: Node, frame: Fram
     }
 
     for (const pattern of (node.targets as Node[])) {
-      compileDestructuring(ctx, frame, pattern, valueId);
+      compileDestructuring({ ctx, frame, registerFrame: true }, pattern, valueId);
     }
   } else {
     const targets = node.targets as Node[];

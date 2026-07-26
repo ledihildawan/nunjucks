@@ -62,7 +62,7 @@ export const compileFor = (ctx: Compiler, node: Node, parentFrame: Frame): void 
         frame.set(childValue, tid);
       });
     } else {
-      compileDestructuring(ctx, frame, nameNode, itemId);
+      compileDestructuring({ ctx, frame, registerFrame: true }, nameNode, itemId);
     }
 
     emitLoopBindings(ctx, arr, i, len);
@@ -106,7 +106,7 @@ export const compileFor = (ctx: Compiler, node: Node, parentFrame: Frame): void 
       ctx.emitLine(`${i}++;`);
       const itemId = ctx.tmpid();
       ctx.emitLine(`let ${itemId} = ${arr}[${k}];`);
-      compileDestructuring(ctx, frame, nameNode, itemId);
+      compileDestructuring({ ctx, frame, registerFrame: true }, nameNode, itemId);
 
       emitLoopBindings(ctx, arr, i, len);
       ctx.withScopedSyntax(() => {
