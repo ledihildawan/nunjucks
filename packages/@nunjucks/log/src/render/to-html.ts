@@ -262,7 +262,8 @@ export const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {
     let codeSection = '';
     if (sourceTrace && sourceTrace.lines.length > 0) {
       const codeLines = sourceTrace.lines.reduce<string[]>((acc, line) => {
-        const errorClass = line.isError ? 'is-error' : '';
+        let errorClass = '';
+        if (line.isError) { errorClass = 'is-error'; }
         acc.push(`<div class="code-line ${errorClass}"><span class="line-number">${line.number}</span><span class="code-content">${highlightSource(line.content, displayPath)}</span></div>`);
         if (line.isError && sourceTrace.caret) {
           const spaces = ' '.repeat(sourceTrace.caret.charStart);

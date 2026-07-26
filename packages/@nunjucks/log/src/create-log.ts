@@ -205,16 +205,20 @@ const buildErrorOutput = (err: TemplateError) => async (options: OutputOptions =
   // Compute the source trace ONCE and share it with every presenter, so the
   // line-math / windowing / caret logic lives in exactly one place. Skipped
   // for 'simple' verbosity, which shows only the message and never a trace.
-  const sourceTrace = verbosity === 'simple'
-    ? null
-    : await buildSourceTrace({
-        sourceContent: err.sourceContent ?? null,
-        templatePath: options.templatePath ?? err.templatePath ?? err.templateName ?? null,
-        lineno: err.lineno,
-        colno: err.colno,
-        lineBase: normalizeLineBase(options.isJsCaller ? 'one' : err.lineBase),
-        sourceStartLine: err.sourceStartLine ?? 1
-      });
+  let traceLineBase = err.lineBase;
+  if (options.isJsCaller) { traceLineBase = 'one'; }
+
+  let sourceTrace = null;
+  if (verbosity !== 'simple') {
+    sourceTrace = await buildSourceTrace({
+      sourceContent: err.sourceContent ?? null,
+      templatePath: options.templatePath ?? err.templatePath ?? err.templateName ?? null,
+      lineno: err.lineno,
+      colno: err.colno,
+      lineBase: normalizeLineBase(traceLineBase),
+      sourceStartLine: err.sourceStartLine ?? 1
+    });
+  }
 
   const opts = createFormatterState({
     metadata: toFormatterMetadata(err, err.renderContext),

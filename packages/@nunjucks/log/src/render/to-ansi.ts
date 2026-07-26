@@ -22,8 +22,10 @@ const ERROR_MARKER = '> ';
 const NORMAL_MARKER = '  ';
 const MIN_LINE_NUM_WIDTH = 2;
 
-const getMarker = (isError: boolean): string =>
-  isError ? ERROR_MARKER : NORMAL_MARKER;
+const getMarker = (isError: boolean): string => {
+  if (isError) { return ERROR_MARKER; }
+  return NORMAL_MARKER;
+};
 
 const getLineNumWidth = (lines: SourceTraceLine[]): number => {
   const maxLineNum = Math.max(...lines.map(l => l.number));
@@ -146,7 +148,8 @@ const getSeverityLabel = (severity?: string): ReturnType<typeof picocolors.bold>
 
 const getExtrasPart = (causeHint: string, docHint: string): string => {
   const extras = [causeHint, docHint].filter(Boolean).join(' | ');
-  return extras ? `\n${extras}` : '';
+  if (!extras) { return ''; }
+  return `\n${extras}`;
 };
 
 const formatStackLine = (
@@ -161,7 +164,9 @@ const formatStackLine = (
 
   const fullPath = pathMatch[1];
   const lineNum = Number.parseInt(pathMatch[2], 10);
-  const colNum = pathMatch[3] ? Number.parseInt(pathMatch[3], 10) : 1;
+  const colGroup = pathMatch[3];
+  let colNum = 1;
+  if (colGroup) { colNum = Number.parseInt(colGroup, 10); }
   const shortPath = shortenPath(fullPath);
   const fnMatch = trimmed.match(STACK_FUNCTION_RE);
   const fn = fnMatch?.[1] ?? '';
@@ -169,9 +174,11 @@ const formatStackLine = (
 
   if (isFilePath(fullPath)) {
     const url = makeHyperlink(location, resolveIdeLink(ide, fullPath, lineNum, colNum));
-    return fn ? `  at ${picocolors.cyan(fn)} (${url})` : `  at ${url}`;
+    if (fn) { return `  at ${picocolors.cyan(fn)} (${url})`; }
+    return `  at ${url}`;
   }
-  return fn ? `  at ${fn} (${location})` : `  at ${location}`;
+  if (fn) { return `  at ${fn} (${location})`; }
+  return `  at ${location}`;
 };
 
 const formatLocationString = (
@@ -197,12 +204,10 @@ const formatCausesAnsi = (causes: readonly string[]): string => {
 const formatFixAnsi = (fixCode: string | null, fixComment: string | null, documentationUrl: string | null): string => {
   if (!fixCode) { return ''; }
 
-  const parts = [
-    `${picocolors.bold('Suggested Fix:')}`,
-    fixComment ? picocolors.dim(`// ${stripMarkdown(fixComment)}`) : null,
-    picocolors.green(fixCode),
-    documentationUrl ? `\n${picocolors.dim(`Learn more: ${documentationUrl}`)}` : null
-  ].filter(Boolean);
+  const parts: string[] = [`${picocolors.bold('Suggested Fix:')}`];
+  if (fixComment) { parts.push(picocolors.dim(`// ${stripMarkdown(fixComment)}`)); }
+  parts.push(picocolors.green(fixCode));
+  if (documentationUrl) { parts.push(`\n${picocolors.dim(`Learn more: ${documentationUrl}`)}`); }
 
   return parts.join('\n');
 };
@@ -255,9 +260,12 @@ export const toAnsi = async (error: unknown, options: AnsiOptions = {}): Promise
   const location = toDisplayLocation(displayLineno, displayColno, lineBase);
 
   if (verbosity === 'medium') {
-    const causeHint = causes[0] ? stripMarkdown(causes[0]) : '';
+    const firstCause = causes[0];
+    let causeHint = '';
+    if (firstCause) { causeHint = stripMarkdown(firstCause); }
     const extrasPart = getExtrasPart(causeHint, documentationUrl || '');
-    const locationPart = path ? formatLocationString(path, location, ide).replace(LEADING_AT_RE, '') : ` at line ${location.line}`;
+    let locationPart = ` at line ${location.line}`;
+    if (path) { locationPart = formatLocationString(path, location, ide).replace(LEADING_AT_RE, ''); }
 
     return `${message}${locationPart}${extrasPart}`;
   }

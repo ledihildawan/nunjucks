@@ -138,7 +138,8 @@ describe('error - sandbox', () => {
 describe('error - toJSON serialization', () => {
   test('error can be serialized to JSON', async () => {
     const err = await renderTemplate('{{ noSuch }}', {}, { undefined: 'strict' }).catch(e => e) as Record<string, unknown>;
-    const json = err.toJSON ? (err.toJSON as () => Record<string, unknown>)() : null;
+    let json: Record<string, unknown> | null = null;
+    if (err.toJSON) { json = (err.toJSON as () => Record<string, unknown>)(); }
     expect(json).toBeTruthy();
     expect(json?.code).toBeTruthy();
     expect(json?.message).toBeTruthy();

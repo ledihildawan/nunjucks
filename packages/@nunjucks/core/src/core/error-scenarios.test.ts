@@ -159,7 +159,8 @@ describe('error messages - real scenarios', () => {
   test('errors are serializable via toJSON', async () => {
     const err = await renderTemplate('{{ missing }}', {}).catch(e => e) as Record<string, unknown>;
 
-    const json = err.toJSON ? (err.toJSON as () => Record<string, unknown>)() : null;
+    let json: Record<string, unknown> | null = null;
+    if (err.toJSON) { json = (err.toJSON as () => Record<string, unknown>)(); }
     expect(json).toBeTruthy();
     expect(json?.code).toBe('UNDEFINED_VARIABLE');
     expect(json?.causes).toBeDefined();

@@ -74,7 +74,9 @@ const getCallLocation = (node: Node): { lineno: number; colno: number } => {
   const isQuotedBracketString = bracketFlag(name) === true &&
     isLiteral(name?.val as Node) &&
     typeof (name?.val as { value?: unknown })?.value === 'string';
-  const extraColno = isQuotedBracketString ? 1 : 0;
+  // A quoted bracket access like obj['foo'] reports at the string, one past `[`.
+  let extraColno = 0;
+  if (isQuotedBracketString) { extraColno = 1; }
   const loc = extractPropertyLocation(name, extraColno);
   return {
     lineno: loc.lineno ?? node.lineno,

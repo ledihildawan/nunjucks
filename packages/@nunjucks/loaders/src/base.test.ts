@@ -15,7 +15,8 @@ describe('createLoader', () => {
 
   test('isRelative returns false for absolute paths', () => {
     const loader = createLoader();
-    const abs = sep === '/' ? '/foo.njk' : 'C:\\foo.njk';
+    let abs = 'C:\\foo.njk';
+    if (sep === '/') { abs = '/foo.njk'; }
     expect(loader.isRelative(abs)).toBe(false);
   });
 

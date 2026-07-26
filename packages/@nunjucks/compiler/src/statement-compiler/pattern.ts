@@ -3,6 +3,13 @@ import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 
+/** An object-pattern key is either written literally or carried by a symbol node. */
+const patternPropertyKey = (key: unknown): string | null => {
+  if (typeof key === 'string') { return key; }
+  if (isSymbol(key as Node)) { return (key as Node).value as string; }
+  return null;
+};
+
 const uniqueId = (() => {
   let n = 0;
   return (prefix: string): string => {
@@ -111,7 +118,7 @@ const compileDestructuring = (ctx: Compiler, frame: Frame, pattern: Node, source
         continue;
       }
       if (isPatternProperty(child)) {
-        const propKey = typeof child.key === 'string' ? child.key : (isSymbol(child.key) ? child.key.value as string : null);
+        const propKey = patternPropertyKey(child.key);
         if (propKey === null) {
           continue;
         }

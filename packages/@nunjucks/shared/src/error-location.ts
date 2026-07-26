@@ -37,6 +37,34 @@ import { readFile } from 'node:fs/promises';
 
 const TRAILING_WHITESPACE_RE = /\s+$/u;
 
+/** Distance from `preferredLine`, or 0 when there is no preference to score against. */
+const lineDistance = (line: number, preferredLine: number | null | undefined): number => {
+  if (preferredLine === null || preferredLine === undefined) { return 0; }
+  return Math.abs(line - preferredLine);
+};
+
+/** Candidate spellings of an inline template: literal, plus the CRLF variant. */
+const templateCandidates = (templateHint: string): string[] => {
+  if (!templateHint.includes('\n')) { return [templateHint]; }
+  return [templateHint, templateHint.replace(/\n/g, '\r\n')];
+};
+
+/** How a non-string template value is spelled when searching the caller source. */
+const templateLiteralText = (template: unknown): string => {
+  if (template === null) { return 'null'; }
+  if (template === undefined) { return 'undefined'; }
+  return String(template);
+};
+
+/**
+ * A dotted subject like `user.name` is reported at the last segment, so the
+ * caret starts after the final dot.
+ */
+const subjectColumnOffset = (subject: string): number => {
+  if (!subject.includes('.')) { return 0; }
+  return subject.lastIndexOf('.') + 1;
+};
+
 /**
  * Inputs that influence error location resolution.
  *
@@ -128,9 +156,7 @@ const findTemplateOccurrence = (
   let best = -1;
   let bestTemplate = templateHint;
   let bestDistance = Number.POSITIVE_INFINITY;
-  const candidates: string[] = templateHint.includes('\n')
-    ? [templateHint, templateHint.replace(/\n/g, '\r\n')]
-    : [templateHint];
+  const candidates = templateCandidates(templateHint);
 
   for (const candidate of candidates) {
     let searchFrom = 0;
@@ -138,9 +164,7 @@ const findTemplateOccurrence = (
       const found = content.indexOf(candidate, searchFrom);
       if (found === -1) { break; }
       const line = positionAtOffset(content, found).lineOffset + 1;
-      const distance = preferredLine === null || preferredLine === undefined
-        ? 0
-        : Math.abs(line - preferredLine);
+      const distance = lineDistance(line, preferredLine);
       if (distance < bestDistance) {
         best = found;
         bestTemplate = candidate;
@@ -150,7 +174,8 @@ const findTemplateOccurrence = (
     }
   }
 
-  return best === -1 ? null : { index: best, template: bestTemplate };
+  if (best === -1) { return null; }
+  return { index: best, template: bestTemplate };
 };
 
 /**
@@ -241,7 +266,7 @@ const findSubjectOccurrence = (
   if (!subject || typeof subject !== 'string') { return null; }
   let best: SourcePosition | null = null;
   let bestDistance = Number.POSITIVE_INFINITY;
-  const subjectColOffset = subject.includes('.') ? subject.lastIndexOf('.') + 1 : 0;
+  const subjectColOffset = subjectColumnOffset(subject);
   const escaped = subject.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const patterns: Array<{ re: RegExp; group: number }> = [
     { re: new RegExp(`'(${escaped})'`, 'g'), group: 1 },
@@ -260,9 +285,7 @@ const findSubjectOccurrence = (
       const pos = positionAtOffset(content, offset);
       const line = pos.lineOffset + 1;
       const col = pos.col + 1;
-      const distance = preferredLine === null || preferredLine === undefined
-        ? 0
-        : Math.abs(line - preferredLine);
+      const distance = lineDistance(line, preferredLine);
       if (distance < bestDistance) {
         best = { line, col };
         bestDistance = distance;
@@ -343,7 +366,7 @@ const extractCallerPosition = (
   // line/col and point at the `render(` call site (often whitespace) instead of
   // the offending `null` argument.
   if (typeof template !== 'string') {
-    const literal = template === null ? 'null' : template === undefined ? 'undefined' : String(template);
+    const literal = templateLiteralText(template);
     const byValue = findSubjectOccurrence(content, literal, preferredLine);
     if (byValue) { return byValue; }
   }
@@ -389,17 +412,17 @@ export const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedL
     _callerLocation !== null &&
     _callerLocation !== undefined;
   const preferCallerLocation = !templatePath && (useExplicitCaller || useAutoCaller);
-  const activeCaller = jsCaller ?? (useAutoCaller ? _callerFile ?? null : null);
-  const activeCallerLine = useExplicitCaller
-    ? jsCallerErrorLine
-    : useAutoCaller
-      ? _callerLocation?.lineNumber ?? null
-      : null;
-  const activeCallerCol = useExplicitCaller
-    ? jsCallerErrorCol
-    : useAutoCaller
-      ? _callerLocation?.columnNumber ?? null
-      : null;
+  // Explicit jsCaller* inputs win; otherwise fall back to the auto-detected
+  // V8 caller location, and to nothing when neither applies.
+  const pickCaller = <T>(explicit: T, auto: T): T | null => {
+    if (useExplicitCaller) { return explicit; }
+    if (useAutoCaller) { return auto; }
+    return null;
+  };
+
+  const activeCaller = jsCaller ?? pickCaller<string | null>(null, _callerFile ?? null);
+  const activeCallerLine = pickCaller<number | null>(jsCallerErrorLine ?? null, _callerLocation?.lineNumber ?? null);
+  const activeCallerCol = pickCaller<number | null>(jsCallerErrorCol ?? null, _callerLocation?.columnNumber ?? null);
 
   let finalPath: string | null;
   if (preferCallerLocation) {
@@ -412,8 +435,12 @@ export const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedL
   let sourceStartLine = 1;
   // Start with the raw caller coordinates. If `hasCallerLocation`, the
   // errLineno/errColno (already caller-derived) take precedence over V8.
-  let resolvedCallerLine: number | null = hasCallerLocation ? errLineno : activeCallerLine;
-  let resolvedCallerCol: number | null = hasCallerLocation ? errColno : activeCallerCol;
+  let resolvedCallerLine: number | null = activeCallerLine;
+  let resolvedCallerCol: number | null = activeCallerCol;
+  if (hasCallerLocation) {
+    resolvedCallerLine = errLineno ?? null;
+    resolvedCallerCol = errColno ?? null;
+  }
 
   if (preferCallerLocation && activeCaller && !hasCallerLocation) {
     const fileContent = await tryReadFile(activeCaller);

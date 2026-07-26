@@ -52,7 +52,8 @@ export const join = (arr: unknown, del?: string, attr?: string): string => {
     throw new Error(`Expected array but got ${typeof arr}`);
   }
   const d = defaultTo(del, '');
-  const values = attr ? arr.map((v) => (v as Record<string, unknown>)[attr]) : arr;
+  let values: unknown[] = arr;
+  if (attr) { values = arr.map((v) => (v as Record<string, unknown>)[attr]); }
   return (values as unknown[]).join(d);
 };
 

@@ -442,7 +442,8 @@ test('points native throws at every coercing operator variant', async () => {
     const firstLine = source[firstErr.lineno - 1] ?? '';
     expect(firstLine).toContain(template);
     const firstColInCaller = firstLine.indexOf('{% if 1 < first');
-    expect(firstErr.colno).toBe(firstLine.indexOf('<', firstColInCaller >= 0 ? firstColInCaller : 0) + 1);
+    const searchFrom = Math.max(0, firstColInCaller);
+    expect(firstErr.colno).toBe(firstLine.indexOf('<', searchFrom) + 1);
 
     const secondErr = await renderTemplate(template, { first: 2, second }).catch(e => e); // CHAINED_SECOND_MARKER
     const secondLine = source[secondErr.lineno - 1] ?? '';
