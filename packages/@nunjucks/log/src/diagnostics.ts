@@ -32,11 +32,77 @@ interface ErrorWithCauses extends Error {
 
 export { findContextKeyPosition } from './find-context-key-position.ts';
 
+const extractErrorSnapshot = (err: unknown): Record<string, unknown> => {
+  const {
+    lineBase: _droppedLineBase,
+    lineno: _droppedLineno,
+    colno: _droppedColno,
+    ...errSnapshot
+  } = err as Record<string, unknown>;
+  Object.assign(errSnapshot, { name: (err as Error).name, message: (err as Error).message });
+  return errSnapshot;
+};
+
+const resolveErrorProps = (err: unknown): {
+  resolvedCauses: string[] | undefined;
+  resolvedFixCode: string | undefined;
+  resolvedFixComment: string | undefined;
+  resolvedSuggestion: string | undefined;
+  resolvedDocumentationUrl: string | undefined;
+  originalSeverity: 'error' | 'warning' | 'info' | undefined;
+} => {
+  const errExt = err as ErrorWithCauses;
+  return {
+    resolvedCauses: Array.isArray(errExt.causes) && errExt.causes.length > 0 ? errExt.causes : undefined,
+    resolvedFixCode: typeof errExt.fixCode === 'string' ? errExt.fixCode : undefined,
+    resolvedFixComment: typeof errExt.fixComment === 'string' ? errExt.fixComment : undefined,
+    resolvedSuggestion: typeof errExt.suggestion === 'string' ? errExt.suggestion : undefined,
+    resolvedDocumentationUrl: typeof errExt.documentationUrl === 'string' ? errExt.documentationUrl : undefined,
+    originalSeverity: errExt.severity,
+  };
+};
+
+const buildErrorDef = (metadata: ReturnType<typeof normalizeErrorMetadata>, resolved: ReturnType<typeof resolveErrorProps>) => ({
+  name: metadata.code || 'RENDER_ERROR',
+  message: () => metadata.message,
+  pattern: MATCH_ANY_RE,
+  causes: resolved.resolvedCauses,
+  fixCode: resolved.resolvedFixCode,
+  fixComment: resolved.resolvedFixComment,
+  suggestion: resolved.resolvedSuggestion,
+  documentationUrl: resolved.resolvedDocumentationUrl,
+  severity: resolved.originalSeverity || 'error',
+});
+
+const buildContextObj = (
+  metadata: ReturnType<typeof normalizeErrorMetadata>,
+  templatePath: string | null,
+  sourceContent: string | null,
+  sourceStartLine: number,
+  renderContext: unknown,
+  preferCallerLocation: boolean,
+  dev: boolean,
+  ide: string,
+  timestamp: string
+): Record<string, unknown> => ({
+  lineno: metadata.lineno,
+  colno: metadata.colno,
+  phase: metadata.phase,
+  templateName: metadata.templateName,
+  lineBase: metadata.lineBase,
+  dev,
+  ide,
+  templatePath: templatePath ?? undefined,
+  sourceContent: sourceContent ?? undefined,
+  sourceStartLine,
+  renderContext: renderContext as Record<string, unknown> | undefined,
+  timestamp,
+  verbosity: 'full',
+  isJsCaller: preferCallerLocation,
+});
+
 export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, template: string | null = null, renderContext: unknown = null): Promise<TemplateError> => {
-  let resolvedSourceContent: string | null = null;
-  if (typeof template === 'string') {
-    resolvedSourceContent = template;
-  }
+  const resolvedSourceContent = typeof template === 'string' ? template : null;
   const initialMetadata = normalizeErrorMetadata(err, {
     phase: config.phase || 'render',
     templatePath: config.templatePath || config._callerFile || null,
@@ -61,16 +127,7 @@ export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, templ
   });
 
   const { lineno, colno, lineBase, templatePath, sourceContent, sourceStartLine, preferCallerLocation } = resolved;
-
-  // IMPORTANT: do NOT mutate `err` — copy fields off it before re-normalizing.
-  const {
-    lineBase: _droppedLineBase,
-    lineno: _droppedLineno,
-    colno: _droppedColno,
-    ...errSnapshot
-  } = err as Record<string, unknown>;
-  Object.assign(errSnapshot, { name: (err as Error).name, message: (err as Error).message });
-
+  const errSnapshot = extractErrorSnapshot(err);
   const phase = initialMetadata.phase || config.phase || 'render';
   const dev = config.dev ?? false;
   const ide = config.ide ?? 'vscode';
@@ -89,62 +146,9 @@ export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, templ
     code: 'RENDER_ERROR'
   });
 
-  const errExt = err as ErrorWithCauses;
-  const originalCauses = errExt.causes;
-  const originalFixCode = errExt.fixCode;
-  const originalFixComment = errExt.fixComment;
-  const originalSuggestion = errExt.suggestion;
-  const originalDocumentationUrl = errExt.documentationUrl;
-  const originalSeverity = errExt.severity;
-
-  let resolvedCauses: string[] | undefined;
-  if (Array.isArray(originalCauses) && originalCauses.length > 0) {
-    resolvedCauses = originalCauses;
-  }
-  let resolvedFixCode: string | undefined;
-  if (typeof originalFixCode === 'string') {
-    resolvedFixCode = originalFixCode;
-  }
-  let resolvedFixComment: string | undefined;
-  if (typeof originalFixComment === 'string') {
-    resolvedFixComment = originalFixComment;
-  }
-  let resolvedSuggestion: string | undefined;
-  if (typeof originalSuggestion === 'string') {
-    resolvedSuggestion = originalSuggestion;
-  }
-  let resolvedDocumentationUrl: string | undefined;
-  if (typeof originalDocumentationUrl === 'string') {
-    resolvedDocumentationUrl = originalDocumentationUrl;
-  }
-  const errorDef = {
-    name: metadata.code || 'RENDER_ERROR',
-    message: () => metadata.message,
-    pattern: MATCH_ANY_RE,
-    causes: resolvedCauses,
-    fixCode: resolvedFixCode,
-    fixComment: resolvedFixComment,
-    suggestion: resolvedSuggestion,
-    documentationUrl: resolvedDocumentationUrl,
-    severity: originalSeverity || 'error',
-  };
-
-  const contextObj: Record<string, unknown> = {
-    lineno: metadata.lineno,
-    colno: metadata.colno,
-    phase: metadata.phase,
-    templateName: metadata.templateName,
-    lineBase: metadata.lineBase,
-    dev,
-    ide,
-    templatePath: templatePath ?? undefined,
-    sourceContent: sourceContent ?? undefined,
-    sourceStartLine,
-    renderContext: renderContext as Record<string, unknown> | undefined,
-    timestamp,
-    verbosity: 'full',
-    isJsCaller: preferCallerLocation,
-  };
+  const resolvedProps = resolveErrorProps(err);
+  const errorDef = buildErrorDef(metadata, resolvedProps);
+  const contextObj = buildContextObj(metadata, templatePath, sourceContent, sourceStartLine, renderContext, preferCallerLocation, dev, ide, timestamp);
 
   const errorObj = createLog('error', errorDef, {}, metadata.subject, contextObj as Parameters<typeof createLog>[4]) as TemplateError;
   errorObj.templatePath = templatePath;

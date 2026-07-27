@@ -24,66 +24,89 @@ const resolveFromSearchPath = (name: string) => (searchPath: string) => {
   return { basePath, fullPath };
 };
 
-const existsAndWithinBase = (basePath: string) => async ({ fullPath }: { fullPath: string }): Promise<boolean> => {
-  if (!isPathWithinBase(basePath)(fullPath)) { return false; }
-  try {
-    const fileStat = await stat(fullPath);
-    if (fileStat.isDirectory()) {
-      throw createLog(
-        'error',
-        getError('FILESYSTEM_ERROR'),
-        { msg: `EISDIR: illegal operation - path is a directory: ${fullPath}` },
-        fullPath,
-        { phase: 'load' }
-      );
-    }
-    return true;
-  } catch (err: unknown) {
-    if (err && typeof err === 'object' && 'code' in err) {
-      const e = err as { code: string };
-      if (e.code === 'ENOENT') {
-        try {
-          await stat(basePath);
-        } catch (baseErr: unknown) {
-          if (baseErr && typeof baseErr === 'object' && 'code' in baseErr) {
-            const be = baseErr as { code: string };
-            if (be.code === 'ENOENT') {
-              throw createLog(
-                'error',
-                getError('FILESYSTEM_ERROR'),
-                { msg: `ENOENT: no such file or directory: ${basePath}` },
-                basePath,
-                { phase: 'load' }
-              );
-            }
-          }
-          throw createLog(
-            'error',
-            getError('FILESYSTEM_ERROR'),
-            { msg: String(baseErr) },
-            basePath,
-            { phase: 'load' }
-          );
-        }
-        return false;
-      }
-      if (e.code === 'EISDIR') {
-        throw createLog(
-          'error',
-          getError('FILESYSTEM_ERROR'),
-          { msg: String(err) },
-          fullPath,
-          { phase: 'load' }
-        );
-      }
-    }
+const throwDirectoryError = (fullPath: string): never => {
+  throw createLog(
+    'error',
+    getError('FILESYSTEM_ERROR'),
+    { msg: `EISDIR: illegal operation - path is a directory: ${fullPath}` },
+    fullPath,
+    { phase: 'load' }
+  );
+};
+
+const throwBasePathNotFoundError = (basePath: string, baseErr: unknown): never => {
+  const errObj = baseErr as { code: string } | undefined;
+  if (errObj?.code === 'ENOENT') {
     throw createLog(
       'error',
       getError('FILESYSTEM_ERROR'),
-      { msg: String(err) },
-      fullPath,
+      { msg: `ENOENT: no such file or directory: ${basePath}` },
+      basePath,
       { phase: 'load' }
     );
+  }
+  throw createLog(
+    'error',
+    getError('FILESYSTEM_ERROR'),
+    { msg: String(baseErr) },
+    basePath,
+    { phase: 'load' }
+  );
+};
+
+const handleFileNotFound = async (basePath: string): Promise<boolean> => {
+  try {
+    await stat(basePath);
+    return false;
+  } catch (baseErr: unknown) {
+    throwBasePathNotFoundError(basePath, baseErr);
+  }
+};
+
+const hasErrorCode = (err: unknown): err is { code: string } =>
+  err !== null && typeof err === 'object' && 'code' in err;
+
+const isFileNotFoundError = (err: unknown): boolean =>
+  hasErrorCode(err) && (err as { code: string }).code === 'ENOENT';
+
+const isDirectoryError = (err: unknown): boolean =>
+  hasErrorCode(err) && (err as { code: string }).code === 'EISDIR';
+
+const throwFilesystemError = (fullPath: string, err: unknown): never => {
+  throw createLog(
+    'error',
+    getError('FILESYSTEM_ERROR'),
+    { msg: String(err) },
+    fullPath,
+    { phase: 'load' }
+  );
+};
+
+const checkFileExists = async (fullPath: string): Promise<void> => {
+  const fileStat = await stat(fullPath);
+  if (fileStat.isDirectory()) {
+    throwDirectoryError(fullPath);
+  }
+};
+
+const handleExistsError = (basePath: string, fullPath: string, err: unknown): boolean => {
+  if (isFileNotFoundError(err)) {
+    return handleFileNotFound(basePath);
+  }
+  if (isDirectoryError(err)) {
+    throwFilesystemError(fullPath, err);
+  }
+  throwFilesystemError(fullPath, err);
+};
+
+const existsAndWithinBase = (basePath: string) => async ({ fullPath }: { fullPath: string }): Promise<boolean> => {
+  if (!isPathWithinBase(basePath)(fullPath)) { return false; }
+
+  try {
+    await checkFileExists(fullPath);
+    return true;
+  } catch (err: unknown) {
+    return handleExistsError(basePath, fullPath, err);
   }
 };
 
@@ -173,25 +196,7 @@ export interface FileSystemLoader extends Loader {
   unwatchAll: () => void;
 }
 
-export function createFileSystemLoader(searchPaths: string | string[] | undefined, opts: FileSystemLoaderOptions = {}): FileSystemLoader {
-  if (typeof opts === 'boolean') {
-    // biome-ignore lint/suspicious/noConsole: deprecation notice for a legacy call shape; there is no logger at this layer.
-    console.warn(
-      '[nunjucks] Warning: boolean options are deprecated. ' +
-      'Use an options object. ' +
-      'See http://mozilla.github.io/nunjucks/api.html#filesystemloader'
-    );
-  }
-
-  const loader = createLoader() as FileSystemLoader;
-  loader.pathsToNames = {};
-  loader.noCache = Boolean(opts.noCache);
-  loader.watchEnabled = Boolean(opts.watch);
-  loader.async = true;
-  loader.watchedFiles = new Map();
-  loader.searchPaths = normalizeSearchPaths(searchPaths);
-  loader.cache = {};
-
+const setupLoaderGetSource = (loader: FileSystemLoader) => {
   loader.getSource = async (name: string): Promise<FileSystemLoaderSource | null> => {
     const fullpath = await findFileInSearchPaths(loader.searchPaths, name);
     if (!fullpath) { return null; }
@@ -203,7 +208,9 @@ export function createFileSystemLoader(searchPaths: string | string[] | undefine
     loader.emit('load', name, source);
     return source;
   };
+};
 
+const setupLoaderWatch = (loader: FileSystemLoader) => {
   loader.watchFile = (filePath: string): void => {
     if (loader.watchedFiles.has(filePath)) { return; }
 
@@ -223,6 +230,29 @@ export function createFileSystemLoader(searchPaths: string | string[] | undefine
     for (const [, watcher] of loader.watchedFiles) { watcher.close(); }
     loader.watchedFiles.clear();
   };
+};
+
+export function createFileSystemLoader(searchPaths: string | string[] | undefined, opts: FileSystemLoaderOptions = {}): FileSystemLoader {
+  if (typeof opts === 'boolean') {
+    // biome-ignore lint/suspicious/noConsole: deprecation notice for a legacy call shape; there is no logger at this layer.
+    console.warn(
+      '[nunjucks] Warning: boolean options are deprecated. ' +
+      'Use an options object. ' +
+      'See http://mozilla.github.io/nunjucks/api.html#filesystemloader'
+    );
+  }
+
+  const loader = createLoader() as FileSystemLoader;
+  loader.pathsToNames = {};
+  loader.noCache = Boolean(opts.noCache);
+  loader.watchEnabled = Boolean(opts.watch);
+  loader.async = true;
+  loader.watchedFiles = new Map();
+  loader.searchPaths = normalizeSearchPaths(searchPaths);
+  loader.cache = {};
+
+  setupLoaderGetSource(loader);
+  setupLoaderWatch(loader);
 
   return loader;
 }

@@ -60,27 +60,34 @@ const lower = createStringFilter((s: string): string => s.toLowerCase());
 const replace = (str: unknown, old: unknown, new_: string, maxCount?: number): string => {
   const originalStr = str;
   if (old instanceof RegExp) { return (str as string).replace(old, new_); }
-  let max: number;
-  if (maxCount === undefined) {
-    max = -1;
-  } else {
-    max = maxCount;
-  }
-  let oldStr: string;
-  if (typeof old === 'number') { oldStr = String(old); }
-  else if (typeof old === 'string') { oldStr = old; }
-  else { return str as string; }
-  let s: string;
-  if (typeof str === 'number') { s = String(str); }
-  else if (typeof str === 'string' || isSafeString(str)) { s = str as string; }
-  else { return str as string; }
+  const max = maxCount ?? -1;
+  const oldStr = resolveOldString(old);
+  if (oldStr === null) { return str as string; }
+  const s = resolveString(str);
+  if (s === null) { return str as string; }
   if (oldStr === '') { return preserveSafe(originalStr, new_ + s.split('').join(new_) + new_); }
   const nextIndex = s.indexOf(oldStr);
   if (max === 0 || nextIndex === -1) { return s; }
+  return preserveSafe(originalStr, performReplace(s, oldStr, new_, max));
+};
+
+const resolveOldString = (old: unknown): string | null => {
+  if (typeof old === 'number') { return String(old); }
+  if (typeof old === 'string') { return old; }
+  return null;
+};
+
+const resolveString = (str: unknown): string | null => {
+  if (typeof str === 'number') { return String(str); }
+  if (typeof str === 'string' || isSafeString(str)) { return str as string; }
+  return null;
+};
+
+const performReplace = (s: string, oldStr: string, new_: string, max: number): string => {
   const parts: string[] = [];
   let pos = 0;
   let count = 0;
-  let currentIndex = nextIndex;
+  let currentIndex = s.indexOf(oldStr);
   while (currentIndex > -1 && (max === -1 || count < max)) {
     parts.push(s.slice(pos, currentIndex), new_);
     pos = currentIndex + oldStr.length;
@@ -88,7 +95,7 @@ const replace = (str: unknown, old: unknown, new_: string, maxCount?: number): s
     currentIndex = s.indexOf(oldStr, pos);
   }
   parts.push(s.slice(pos));
-  return preserveSafe(originalStr, parts.join(''));
+  return parts.join('');
 };
 
 const title = createStringFilter((s: string): string => {

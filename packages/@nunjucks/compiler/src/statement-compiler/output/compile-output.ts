@@ -24,6 +24,19 @@ const emitEnsureDefinedClose = (
   ctx.emit(`,${lineno},${colno}${nameArg}, null${modeArg})`);
 };
 
+const isVariableLike = (child: Node): boolean =>
+  isVariableDeclaration(child) ||
+  isVariableAssignment(child) ||
+  isCompoundAssignment(child);
+
+const compileTemplateDataChild = (ctx: Compiler, child: Node): void => {
+  if (child.value) {
+    ctx.emit(`${ctx.buffer} += `);
+    ctx.emit(JSON.stringify(child.value));
+    ctx.emit(';');
+  }
+};
+
 const compileOutputChild = (
   ctx: Compiler,
   child: Node,
@@ -58,31 +71,29 @@ const compileOutputChild = (
   ctx.emit(`, env.opts.autoescape, lineno, colno, "${htmlContext}");`);
 };
 
+const processOutputChild = (
+  ctx: Compiler,
+  child: Node,
+  frame: Frame
+): void => {
+  if (isTemplateData(child)) {
+    compileTemplateDataChild(ctx, child);
+    return;
+  }
+  if (isVariableLike(child)) {
+    ctx.compile(child, frame);
+    return;
+  }
+  compileOutputChild(ctx, child, frame);
+};
+
 export const compileOutput = (
   ctx: Compiler,
   node: Node,
   frame: Frame
 ): void => {
   for (const child of node.children ?? []) {
-    if (isTemplateData(child)) {
-      if (child.value) {
-        ctx.emit(`${ctx.buffer} += `);
-        ctx.emit(JSON.stringify(child.value));
-        ctx.emit(';');
-      }
-      continue;
-    }
-
-    if (
-      isVariableDeclaration(child) ||
-      isVariableAssignment(child) ||
-      isCompoundAssignment(child)
-    ) {
-      ctx.compile(child, frame);
-      continue;
-    }
-
-    compileOutputChild(ctx, child, frame);
+    processOutputChild(ctx, child, frame);
   }
   ctx.emit('\n');
 };

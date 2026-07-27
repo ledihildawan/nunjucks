@@ -25,6 +25,23 @@ interface ExpressEngineOptions {
 
 type ExpressEngineFunction = (filePath: string, options: Record<string, unknown>) => Promise<string>;
 
+const enrichErrorWithTemplateInfo = async (err: unknown, filePath: string): Promise<void> => {
+  const errorWithMeta = err as Error & { sourceContent?: string; templatePath?: string; templateName?: string };
+  if (!errorWithMeta.sourceContent && filePath) {
+    try {
+      errorWithMeta.sourceContent = await readFile(filePath, 'utf-8');
+    } catch (e) {
+      (err as { sourceReadError?: unknown }).sourceReadError = e;
+    }
+  }
+  if (!errorWithMeta.templatePath) {
+    errorWithMeta.templatePath = filePath;
+  }
+  if (!errorWithMeta.templateName) {
+    errorWithMeta.templateName = path.basename(filePath);
+  }
+};
+
 const renderTemplate = async (
   filePath: string,
   options: Record<string, unknown>,
@@ -72,20 +89,7 @@ const renderTemplate = async (
     const html = await renderWithEnv(templateName, env as Parameters<typeof renderWithEnv>[1], options, renderConfig);
     return html;
   } catch (err: unknown) {
-    const errorWithMeta = err as Error & { sourceContent?: string; templatePath?: string; templateName?: string };
-    if (!errorWithMeta.sourceContent && filePath) {
-      try {
-        errorWithMeta.sourceContent = await readFile(filePath, 'utf-8');
-      } catch (e) {
-        (err as { sourceReadError?: unknown }).sourceReadError = e;
-      }
-    }
-    if (!errorWithMeta.templatePath) {
-      errorWithMeta.templatePath = filePath;
-    }
-    if (!errorWithMeta.templateName) {
-      errorWithMeta.templateName = path.basename(filePath);
-    }
+    await enrichErrorWithTemplateInfo(err, filePath);
     throw err;
   }
 };

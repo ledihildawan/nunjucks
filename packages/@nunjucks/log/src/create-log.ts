@@ -200,34 +200,44 @@ const toFormatterMetadata = (log: TemplateError | TemplateWarning, renderContext
   lineBase: normalizeLineBase(log.lineBase)
 });
 
+const resolveTraceLineBase = (err: TemplateError, isJsCaller: boolean | undefined): string => {
+  if (isJsCaller) { return 'one'; }
+  return err.lineBase;
+};
+
+const buildSourceTraceIfNeeded = async (
+  err: TemplateError,
+  verbosity: string,
+  options: OutputOptions
+): Promise<Awaited<ReturnType<typeof buildSourceTrace>> | null> => {
+  if (verbosity === 'simple') { return null; }
+  const traceLineBase = resolveTraceLineBase(err, options.isJsCaller);
+  return await buildSourceTrace({
+    sourceContent: err.sourceContent ?? null,
+    templatePath: options.templatePath ?? err.templatePath ?? err.templateName ?? null,
+    lineno: err.lineno,
+    colno: err.colno,
+    lineBase: normalizeLineBase(traceLineBase),
+    sourceStartLine: err.sourceStartLine ?? 1
+  });
+};
+
+const formatErrorOutput = (err: TemplateError, opts: ReturnType<typeof createFormatterState>, format: string | undefined): string => {
+  if (format === 'ansi') { return toAnsi(err, opts); }
+  if (format === 'text') { return toText(err, opts); }
+  return toHtml(err, opts);
+};
+
 const buildErrorOutput = (err: TemplateError) => async (options: OutputOptions = {}): Promise<string> => {
   const verbosity = options.verbosity ?? 'full';
-  // Compute the source trace ONCE and share it with every presenter, so the
-  // line-math / windowing / caret logic lives in exactly one place. Skipped
-  // for 'simple' verbosity, which shows only the message and never a trace.
-  let traceLineBase = err.lineBase;
-  if (options.isJsCaller) { traceLineBase = 'one'; }
-
-  let sourceTrace: Awaited<ReturnType<typeof buildSourceTrace>> | null = null;
-  if (verbosity !== 'simple') {
-    sourceTrace = await buildSourceTrace({
-      sourceContent: err.sourceContent ?? null,
-      templatePath: options.templatePath ?? err.templatePath ?? err.templateName ?? null,
-      lineno: err.lineno,
-      colno: err.colno,
-      lineBase: normalizeLineBase(traceLineBase),
-      sourceStartLine: err.sourceStartLine ?? 1
-    });
-  }
+  const sourceTrace = await buildSourceTraceIfNeeded(err, verbosity, options);
 
   const opts = createFormatterState({
     metadata: toFormatterMetadata(err, err.renderContext),
     options: { ...options, sourceTrace }
   });
 
-  if (options.format === 'ansi') { return toAnsi(err, opts); }
-  if (options.format === 'text') { return toText(err, opts); }
-  return toHtml(err, opts);
+  return formatErrorOutput(err, opts, options.format);
 };
 
 const buildWarningOutput = (warn: TemplateWarning) => (options: Omit<OutputOptions, 'format' | 'isProduction'> = {}): string =>
@@ -300,6 +310,53 @@ const createFromLegacyData = (type: LogType, data: LegacyLogData): TemplateError
   return warn;
 };
 
+const extractExtraFromContext = (context: ErrorContext | null | undefined): Record<string, unknown> | undefined => {
+  const extraKeys = ['lineno', 'colno', 'phase', 'templateName', 'lineBase', 'varName', 'undefinedMode'];
+  if (!context) { return undefined; }
+  return pickBy(context, (_, k) => !extraKeys.includes(k));
+};
+
+const createErrorFromDef = (
+  errorDef: ErrorDefinitionEntry,
+  paramsValue: Record<string, string> | undefined,
+  normalized: NormalizedErrorContext,
+  extra: Record<string, unknown> | undefined,
+  subject: string | null
+): TemplateError => {
+  const err = new Error(resolveMessage(errorDef.message, paramsValue)) as TemplateError;
+  Object.assign(err, { name: 'Template render error', code: errorDef.name, subject, ...normalized, [TEMPLATE_ERROR]: true });
+  if (extra?.sourceContent) { err.sourceContent = extra.sourceContent as string; }
+  if (extra && Number.isInteger(extra.sourceStartLine)) { err.sourceStartLine = extra.sourceStartLine as number; }
+  err.templatePath = normalized.templateName;
+  if (errorDef.causes && errorDef.causes.length > 0) { err.causes = errorDef.causes; }
+  if (errorDef.fixCode) { err.fixCode = errorDef.fixCode; }
+  if (errorDef.fixComment) { err.fixComment = errorDef.fixComment; }
+  if (errorDef.documentationUrl) { err.documentationUrl = errorDef.documentationUrl; }
+  if (errorDef.severity) { err.severity = errorDef.severity; }
+  err.toJSON = buildErrorJson(err);
+  err.output = buildErrorOutput(err);
+  return err;
+};
+
+const createWarningFromDef = (
+  errorDef: ErrorDefinitionEntry,
+  paramsValue: Record<string, string> | undefined,
+  normalizedWarning: NormalizedWarningContext,
+  subject: string | null
+): TemplateWarning => {
+  const warn = {
+    message: resolveMessage(errorDef.message, paramsValue),
+    code: errorDef.name,
+    subject,
+    ...normalizedWarning
+  } as TemplateWarning;
+  if (errorDef.causes && errorDef.causes.length > 0) { warn.causes = errorDef.causes; }
+  if (errorDef.fixCode) { warn.fixCode = errorDef.fixCode; }
+  if (errorDef.fixComment) { warn.fixComment = errorDef.fixComment; }
+  warn.output = buildWarningOutput(warn);
+  return warn;
+};
+
 function createLog(
   type: string,
   errorDefOrData: ErrorDefinitionEntry | LegacyLogData,
@@ -322,42 +379,13 @@ function createLog(
     normalized = normalizeContext<NormalizedWarningContext>(context as WarningContext, (c) => ({ varName: (c as WarningContext).varName ?? null, undefinedMode: (c as WarningContext).undefinedMode ?? 'chainable' }));
   }
 
-  const extraKeys = ['lineno', 'colno', 'phase', 'templateName', 'lineBase', 'varName', 'undefinedMode'];
-  let extra: Record<string, unknown> | undefined;
-  if (context) {
-    extra = pickBy(context, (_, k) => !extraKeys.includes(k));
-  } else {
-    extra = undefined;
-  }
+  const extra = extractExtraFromContext(context);
 
   if (type === 'error') {
-    const err = new Error(resolveMessage(errorDef.message, paramsValue)) as TemplateError;
-    Object.assign(err, { name: 'Template render error', code: errorDef.name, subject: subject ?? null, ...normalized, [TEMPLATE_ERROR]: true });
-    if (extra?.sourceContent) { err.sourceContent = extra.sourceContent as string; }
-    if (extra && Number.isInteger(extra.sourceStartLine)) { err.sourceStartLine = extra.sourceStartLine as number; }
-    err.templatePath = normalized.templateName;
-    if (errorDef.causes && errorDef.causes.length > 0) { err.causes = errorDef.causes; }
-    if (errorDef.fixCode) { err.fixCode = errorDef.fixCode; }
-    if (errorDef.fixComment) { err.fixComment = errorDef.fixComment; }
-    if (errorDef.documentationUrl) { err.documentationUrl = errorDef.documentationUrl; }
-    if (errorDef.severity) { err.severity = errorDef.severity; }
-    err.toJSON = buildErrorJson(err);
-    err.output = buildErrorOutput(err);
-    return err;
+    return createErrorFromDef(errorDef, paramsValue, normalized as NormalizedErrorContext, extra, subject ?? null);
   }
 
-  const normalizedWarning = normalized as NormalizedWarningContext;
-  const warn = {
-    message: resolveMessage(errorDef.message, paramsValue),
-    code: errorDef.name,
-    subject: subject ?? null,
-    ...normalizedWarning
-  } as TemplateWarning;
-  if (errorDef.causes && errorDef.causes.length > 0) { warn.causes = errorDef.causes; }
-  if (errorDef.fixCode) { warn.fixCode = errorDef.fixCode; }
-  if (errorDef.fixComment) { warn.fixComment = errorDef.fixComment; }
-  warn.output = buildWarningOutput(warn);
-  return warn;
+  return createWarningFromDef(errorDef, paramsValue, normalized as NormalizedWarningContext, subject ?? null);
 }
 
 function isTemplateError(obj: unknown): obj is TemplateError {
@@ -393,27 +421,34 @@ const asTemplateError = (err: Error | TemplateError): TemplateError => {
   }) as TemplateError;
 };
 
+const formatParentLocation = (chain: IncludeChain): string => {
+  const parentColnoPart = chain.parentColno ? `:${chain.parentColno}` : '';
+  return `\n   (included from ${chain.parentTmpl}:${chain.parentLineno}${parentColnoPart})`;
+};
+
+const buildLocationMessage = (
+  locationPath: string | undefined,
+  err: TemplateError,
+  chain?: IncludeChain
+): string => {
+  let msg = `(${locationPath || 'unknown path'})`;
+  if (err.firstUpdate) {
+    const annotation = formatLocationAnnotation(err.lineno, err.colno, err.lineBase);
+    if (annotation) { msg += ` ${annotation}`; }
+  }
+  if (chain && err.firstUpdate) {
+    msg += formatParentLocation(chain);
+  }
+  msg += '\n ';
+  if (err.firstUpdate) {
+    msg += ' ';
+  }
+  return msg;
+};
+
 const withLocation = ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) => (err: TemplateError): TemplateError => {
   err.applyLocation = (locationPath: string | undefined, chain?: IncludeChain): TemplateError => {
-    let msg = `(${locationPath || 'unknown path'})`;
-    if (err.firstUpdate) {
-      const annotation = formatLocationAnnotation(err.lineno, err.colno, err.lineBase);
-      if (annotation) { msg += ` ${annotation}`; }
-    }
-    if (chain && err.firstUpdate) {
-      let parentColnoPart: string;
-      if (chain.parentColno) {
-        parentColnoPart = `:${chain.parentColno}`;
-      } else {
-        parentColnoPart = '';
-      }
-      msg += `\n   (included from ${chain.parentTmpl}:${chain.parentLineno}${parentColnoPart})`;
-    }
-    msg += '\n ';
-    if (err.firstUpdate) {
-      msg += ' ';
-    }
-    err.message = msg + (err.message || '');
+    err.message = buildLocationMessage(locationPath, err, chain) + (err.message || '');
     err.firstUpdate = false;
     return err;
   };

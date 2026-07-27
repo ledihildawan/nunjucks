@@ -29,6 +29,28 @@ export const last = (arr: unknown): unknown => {
   return arr.at(-1);
 };
 
+const isMapOrSet = (value: unknown): boolean =>
+  typeof Map === 'function' && (value instanceof Map || value instanceof Set);
+
+const getCollectionSize = (value: unknown): number =>
+  (value as Map<unknown, unknown> | Set<unknown>).size;
+
+const getObjectLength = (value: unknown): number =>
+  Object.keys(value as Record<string, unknown>).length;
+
+const getValueLength = (value: unknown): number =>
+  (value as { length: number }).length;
+
+const getLengthFromValue = (value: unknown): number => {
+  if (isMapOrSet(value)) {
+    return getCollectionSize(value);
+  }
+  if (isPlainObject(value) && !isSafeString(value)) {
+    return getObjectLength(value);
+  }
+  return getValueLength(value);
+};
+
 export const lengthFilter = (val: unknown): number => {
   let value: unknown;
   if (val === null || val === undefined || val === false) {
@@ -37,13 +59,7 @@ export const lengthFilter = (val: unknown): number => {
     value = val;
   }
   if (value !== undefined && value !== null) {
-    if (typeof value === 'object' && ((typeof Map === 'function' && value instanceof Map) || (typeof Set === 'function' && value instanceof Set))) {
-      return (value as Map<unknown, unknown> | Set<unknown>).size;
-    }
-    if (isPlainObject(value) && !isSafeString(value)) {
-      return Object.keys(value as Record<string, unknown>).length;
-    }
-    return (value as { length: number }).length;
+    return getLengthFromValue(value);
   }
   return 0;
 };
@@ -66,6 +82,28 @@ export const reverse = (val: unknown): unknown[] | string => {
   return arr;
 };
 
+const computeSliceParams = (arrLength: number, slices: number): { sliceLength: number; extra: number } => {
+  const sliceLength = Math.floor(arrLength / slices);
+  const extra = arrLength % slices;
+  return { sliceLength, extra };
+};
+
+const buildSingleSlice = (
+  arr: unknown[],
+  i: number,
+  offset: number,
+  sliceLength: number,
+  extra: number,
+  fillWith: unknown | undefined
+): { slice: unknown[]; newOffset: number } => {
+  const start = offset + (i * sliceLength);
+  const newOffset = i < extra ? offset + 1 : offset;
+  const end = newOffset + ((i + 1) * sliceLength);
+  const currSlice = arr.slice(start, end);
+  if (fillWith !== undefined && i >= extra) { currSlice.push(fillWith); }
+  return { slice: currSlice, newOffset };
+};
+
 export const slice = (arr: unknown, slices: number, fillWith?: unknown): unknown[][] => {
   if (!isArray(arr)) {
     const errorDef = ERROR_DEFINITIONS.LIST_FILTER;
@@ -81,20 +119,36 @@ export const slice = (arr: unknown, slices: number, fillWith?: unknown): unknown
     }
     throw new Error('slices must be positive');
   }
-  const sliceLength = Math.floor(arr.length / slices);
-  const extra = arr.length % slices;
+  const { sliceLength, extra } = computeSliceParams(arr.length, slices);
   const res: unknown[][] = [];
   let offset = 0;
   for (let i = 0; i < slices; i += 1) {
-    const start = offset + (i * sliceLength);
-    if (i < extra) { offset += 1; }
-    const end = offset + ((i + 1) * sliceLength);
-    const currSlice = arr.slice(start, end);
-    if (fillWith !== undefined && i >= extra) { currSlice.push(fillWith); }
+    const { slice: currSlice, newOffset } = buildSingleSlice(arr, i, offset, sliceLength, extra, fillWith);
+    offset = newOffset;
     res.push(currSlice);
   }
   return res;
 };
+
+const validateSumAttribute = (arr: unknown[], attr: string): void => {
+  for (const item of arr) {
+    if (item && typeof item === 'object' && !(attr in (item as object))) {
+      const errorDef = ERROR_DEFINITIONS.SUM_FILTER_ATTR;
+      if (errorDef) {
+        throw filterError(undefined, errorDef, { attr }, attr);
+      }
+      throw new Error(`Attribute "${attr}" not found in item`);
+    }
+  }
+};
+
+const sumWithAttribute = (arr: unknown[], attr: string, start: number): number => {
+  validateSumAttribute(arr, attr);
+  return start + sumValues(map(arr as Record<string, unknown>[], (v) => (v as Record<string, unknown>)[attr]) as number[]);
+};
+
+const sumWithoutAttribute = (arr: unknown[], start: number): number =>
+  start + sumValues(arr as number[]);
 
 export const sum = (arr: unknown, attr?: string, start = 0): number => {
   if (!(isArray(arr) || isPlainObject(arr))) {
@@ -112,18 +166,76 @@ export const sum = (arr: unknown, attr?: string, start = 0): number => {
       }
       throw new Error(`Expected array but got ${typeof arr}`);
     }
-    for (const item of arr) {
-      if (item && typeof item === 'object' && !(attr in (item as object))) {
-        const errorDef = ERROR_DEFINITIONS.SUM_FILTER_ATTR;
-        if (errorDef) {
-          throw filterError(undefined, errorDef, { attr }, attr);
-        }
-        throw new Error(`Attribute "${attr}" not found in item`);
-      }
-    }
-    return start + sumValues(map(arr as Record<string, unknown>[], (v) => (v as Record<string, unknown>)[attr]) as number[]);
+    return sumWithAttribute(arr, attr, start);
   }
-  return start + sumValues(arr as number[]);
+  return sumWithoutAttribute(arr, start);
+};
+
+const getNestedAttribute = (obj: Record<string, unknown>, attr: string): unknown => {
+  const keys = attr.split('.');
+  let val: unknown = obj;
+  for (const k of keys) {
+    val = (val as Record<string, unknown>)[k];
+  }
+  return val;
+};
+
+const getCompareValue = (item: unknown, sortAttr: string | undefined): unknown => {
+  if (!sortAttr) { return item; }
+  return getNestedAttribute(item as Record<string, unknown>, sortAttr);
+};
+
+const toComparable = (val: unknown): string | number => {
+  if (typeof val === 'string' || typeof val === 'number') {
+    return val as string | number;
+  }
+  return String(val) as string | number;
+};
+
+const compareValues = (xVal: unknown, yVal: unknown, caseSens: boolean | string | undefined, sortReverse: boolean | string | undefined): number => {
+  let x = toComparable(xVal);
+  let y = toComparable(yVal);
+  if (!caseSens && isString(x) && isString(y)) {
+    x = (x as string).toLowerCase();
+    y = (y as string).toLowerCase();
+  }
+  if (x < y) { return sortReverse ? 1 : -1; }
+  if (x > y) { return sortReverse ? -1 : 1; }
+  return 0;
+};
+
+const validateSortAttribute = (arr: unknown[], sortAttr: string): void => {
+  for (const item of arr) {
+    if (item && typeof item === 'object' && !(sortAttr in (item as object))) {
+      const errorDef = ERROR_DEFINITIONS.SORT_FILTER_ATTR;
+      if (errorDef) {
+        throw filterError(undefined, errorDef, { attr: sortAttr }, sortAttr);
+      }
+      throw new Error(`Attribute "${sortAttr}" not found in item`);
+    }
+  }
+};
+
+const createSortComparator = (sortAttr: string | undefined, sortReverse: boolean | string | undefined, caseSens: boolean | string | undefined) => {
+  return (a: unknown, b: unknown): number => {
+    const xVal = getCompareValue(a, sortAttr);
+    const yVal = getCompareValue(b, sortAttr);
+    return compareValues(xVal, yVal, caseSens, sortReverse);
+  };
+};
+
+const sortArray = (
+  arr: unknown[],
+  sortAttr: string | undefined,
+  sortReverse: boolean | string | undefined,
+  caseSens: boolean | string | undefined
+): unknown[] => {
+  if (sortAttr) {
+    validateSortAttribute(arr, sortAttr);
+  }
+  const array = map(arr, (v) => v);
+  const comparator = createSortComparator(sortAttr, sortReverse, caseSens);
+  return array.toSorted(comparator);
 };
 
 export const sort = makeMacro(
@@ -143,71 +255,7 @@ export const sort = makeMacro(
       sortAttr = reversed;
       sortReverse = caseSens;
     }
-    if (sortAttr) {
-      for (const item of arr) {
-        if (item && typeof item === 'object' && !(sortAttr in (item as object))) {
-          const errorDef = ERROR_DEFINITIONS.SORT_FILTER_ATTR;
-          if (errorDef) {
-            throw filterError(undefined, errorDef, { attr: sortAttr }, sortAttr);
-          }
-          throw new Error(`Attribute "${sortAttr}" not found in item`);
-        }
-      }
-    }
-    let array = map(arr, (v) => v);
-    array = array.toSorted((a, b) => {
-      const getAttribute = (obj: Record<string, unknown>): unknown => {
-        if (!sortAttr) { return obj; }
-        const keys = sortAttr.split('.');
-        let val: unknown = obj;
-        for (const k of keys) {
-          val = (val as Record<string, unknown>)[k];
-        }
-        return val;
-      };
-      let xVal: unknown;
-      if (sortAttr) {
-        xVal = getAttribute(a as Record<string, unknown>);
-      } else {
-        xVal = a;
-      }
-      let yVal: unknown;
-      if (sortAttr) {
-        yVal = getAttribute(b as Record<string, unknown>);
-      } else {
-        yVal = b;
-      }
-      let x: string | number;
-      let y: string | number;
-      if (typeof xVal === 'string' || typeof xVal === 'number') {
-        x = xVal as string | number;
-      } else {
-        x = String(xVal) as string | number;
-      }
-      if (typeof yVal === 'string' || typeof yVal === 'number') {
-        y = yVal as string | number;
-      } else {
-        y = String(yVal) as string | number;
-      }
-      if (!caseSens && isString(x) && isString(y)) {
-        x = (x as string).toLowerCase();
-        y = (y as string).toLowerCase();
-      }
-      if (x < y) {
-        if (sortReverse) {
-          return 1;
-        }
-        return -1;
-      }
-      if (x > y) {
-        if (sortReverse) {
-          return -1;
-        }
-        return 1;
-      }
-      return 0;
-    });
-    return array;
+    return sortArray(arr, sortAttr, sortReverse, caseSens);
   }
 );
 

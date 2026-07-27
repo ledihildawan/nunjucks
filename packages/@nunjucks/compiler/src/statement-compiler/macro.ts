@@ -6,13 +6,10 @@ import type { Compiler } from '../index.ts';
 
 type MacroLikeNode = MacroNode | CallerNode;
 
-const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
+const extractMacroArgs = (ctx: Compiler, node: MacroLikeNode): { args: Node[]; kwargs: Node | null } => {
   const args: Node[] = [];
   let kwargs: Node | null = null;
-  const funcId = `macro_${ctx.tmpid()}`;
-  const keepFrame = (frame !== undefined);
-
-  const argsChildren = (node as MacroLikeNode).args;
+  const argsChildren = node.args;
   argsChildren?.forEach((arg, i, arr) => {
     if (i === arr.length - 1 && (isDict(arg) || isKeywordArgs(arg))) {
       kwargs = arg;
@@ -21,37 +18,17 @@ const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
       args.push(arg);
     }
   });
+  return { args, kwargs };
+};
 
-  kwargs = kwargs as Node | null;
-
-  const realNames = [...args.map((n) => `l_${n.value as string}`), 'kwargs'];
-
+const buildMacroArgNames = (args: Node[], kwargs: Node | null): { argNames: string[]; kwargNames: string[]; realNames: string[] } => {
   const argNames = args.map((n) => `"${n.value as string}"`);
   const kwargNames = ((kwargs && (kwargs.children as Node[])) || []).map((n) => `"${((n.key as Node).value as string)}"`);
+  const realNames = [...args.map((n) => `l_${n.value as string}`), 'kwargs'];
+  return { argNames, kwargNames, realNames };
+};
 
-  let currFrame: Frame;
-  if (keepFrame) {
-    currFrame = frame?.push(true);
-  } else {
-    currFrame = createFrame();
-  }
-  let frameAssignment: string;
-  if (keepFrame) {
-    frameAssignment = 'frame.push(true);';
-  } else {
-    frameAssignment = 'runtime.createFrame();';
-  }
-  ctx.emitLines(
-    `let ${funcId} = runtime.makeMacro(`,
-    `[${argNames.join(', ')}], `,
-    `[${kwargNames.join(', ')}], `,
-    `async (${realNames.join(', ')}) => {`,
-    'let callerFrame = frame;',
-    `frame = ${frameAssignment}`,
-    'kwargs = kwargs || {};',
-    'if (Object.prototype.hasOwnProperty.call(kwargs, "caller")) {',
-    'frame.set("caller", kwargs.caller); }');
-
+const emitMacroArgBindings = (ctx: Compiler, args: Node[], kwargs: Node | null, currFrame: Frame): void => {
   for (const arg of args) {
     const argValue = arg.value as string;
     ctx.emitLine(`frame.set("${argValue}", l_${argValue});`);
@@ -68,6 +45,29 @@ const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
       ctx.emit(');');
     }
   }
+};
+
+const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
+  const { args, kwargs } = extractMacroArgs(ctx, node as MacroLikeNode);
+  const funcId = `macro_${ctx.tmpid()}`;
+  const keepFrame = (frame !== undefined);
+  const { argNames, kwargNames, realNames } = buildMacroArgNames(args, kwargs);
+
+  const currFrame = keepFrame ? frame?.push(true) : createFrame();
+  const frameAssignment = keepFrame ? 'frame.push(true);' : 'runtime.createFrame();';
+
+  ctx.emitLines(
+    `let ${funcId} = runtime.makeMacro(`,
+    `[${argNames.join(', ')}], `,
+    `[${kwargNames.join(', ')}], `,
+    `async (${realNames.join(', ')}) => {`,
+    'let callerFrame = frame;',
+    `frame = ${frameAssignment}`,
+    'kwargs = kwargs || {};',
+    'if (Object.prototype.hasOwnProperty.call(kwargs, "caller")) {',
+    'frame.set("caller", kwargs.caller); }');
+
+  emitMacroArgBindings(ctx, args, kwargs, currFrame);
 
   const bufferId = ctx.pushBuffer();
 
@@ -75,12 +75,7 @@ const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
     ctx.compile(node.body as Node, currFrame);
   });
 
-  let frameRestore: string;
-  if (keepFrame) {
-    frameRestore = 'frame.pop();';
-  } else {
-    frameRestore = 'callerFrame;';
-  }
+  const frameRestore = keepFrame ? 'frame.pop();' : 'callerFrame;';
   ctx.emitLine(`frame = ${frameRestore}`);
   ctx.emitLine(`return runtime.createSafeString(${bufferId});`);
   ctx.emitLine('});');

@@ -192,6 +192,193 @@ const highlightSource = (code: string, filePath?: string | null): string => {
   return highlightHtml(code);
 };
 
+interface ClassifiedError {
+  category: string;
+  undefinedName: string | null;
+  title: string;
+  causes: string[];
+  fixCode: string;
+  fixComment: string;
+  documentationUrl: string | null;
+  severity: 'error' | 'warning' | 'info';
+}
+
+const classifyError = (error: ErrorLike): ClassifiedError => {
+  const errWithExtras = error as {
+    code?: string | null;
+    causes?: string[];
+    fixCode?: string | null;
+    fixComment?: string | null;
+    documentationUrl?: string | null;
+    severity?: 'error' | 'warning' | 'info';
+  };
+  const classified = classifyFromError(errWithExtras);
+  const possibleCauses = classified.causes && classified.causes.length > 0
+    ? [...classified.causes]
+    : [...(errWithExtras.causes || [])];
+  return {
+    category: error.code || classified.category.toUpperCase() || 'UNKNOWN',
+    undefinedName: classified.undefinedName || null,
+    title: classified.title || '',
+    causes: possibleCauses,
+    fixCode: classified.fixCode ?? errWithExtras.fixCode ?? '',
+    fixComment: classified.fixComment ?? errWithExtras.fixComment ?? '',
+    documentationUrl: classified.documentationUrl ?? errWithExtras.documentationUrl ?? null,
+    severity: classified.severity,
+  };
+};
+
+interface LocationInfo {
+  displayLine: number;
+  displayCol: number;
+  displayPath: string;
+  lineBaseValue: 'one' | 'zero';
+}
+
+const resolveErrorLocation = (
+  error: ErrorLike | null,
+  lineno: number | null | undefined,
+  colno: number | null | undefined,
+  templatePath: string | undefined,
+  isJsCaller: boolean
+): LocationInfo => {
+  const lineBaseValue: 'one' | 'zero' = isJsCaller ? 'one' : (error?.lineBase ?? 'zero');
+  const location = toDisplayLocation(
+    lineno ?? error?.lineno ?? null,
+    colno ?? error?.colno ?? null,
+    lineBaseValue
+  );
+  return {
+    displayLine: location.line,
+    displayCol: location.col,
+    displayPath: templatePath || 'unknown',
+    lineBaseValue,
+  };
+};
+
+const buildErrorHeader = (
+  humanTitle: string,
+  category: string,
+  severity: 'error' | 'warning' | 'info',
+  phase: string | null | undefined,
+  verbosity: 'simple' | 'medium' | 'full',
+  displayPath: string,
+  displayLine: number,
+  displayCol: number,
+  ide: string,
+  canLinkLocation: boolean,
+  locDisplay: string
+): string => {
+  const codeBadge = renderBadge('badge-error', category);
+  const phaseBadge = renderBadge('badge-code', phase);
+  const ideMeta = getIdeMeta(ide);
+  const ideLabel = `Open in ${ideMeta.label}`;
+  const headerTitle = escapeHtml(humanTitle);
+  const locationInfo = escapeHtml(`${displayPath}:${displayLine}:${displayCol}`);
+  const severityText = SEVERITY_HEADINGS[severity] ?? SEVERITY_HEADINGS.error;
+  const phaseBadgePart = phaseBadge ? ` ${phaseBadge}` : '';
+  const devBadge = verbosity === 'full' ? '<span class="badge badge-dev">DEV</span>' : '';
+
+  let errorLocationBlock = '';
+  if (verbosity !== 'simple') {
+    const locationLink = canLinkLocation
+      ? `<a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="loc-link error-location-link">${escapeHtml(locDisplay)}</a>`
+      : `<span class="error-location-text">${locationInfo}</span>`;
+    errorLocationBlock = `<p class="error-location">The error occurred in ${locationLink}</p>`;
+  }
+
+  return `
+  <header class="error-header">
+    <div class="error-header-title">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      ${severityText}
+      ${codeBadge}${phaseBadgePart}
+      ${devBadge}
+    </div>
+    <h1 id="err-title" class="error-title">${headerTitle}</h1>
+    ${errorLocationBlock}
+  </header>`;
+};
+
+const buildFullErrorBody = (
+  sourceTrace: SourceTrace | null | undefined,
+  possibleCauses: string[],
+  fixCode: string,
+  fixComment: string,
+  documentationUrl: string | null,
+  renderContext: object | undefined,
+  error: ErrorLike,
+  ide: string,
+  displayPath: string
+): string => {
+  const codeSection = renderSourceTraceSection(sourceTrace, displayPath);
+  const possibleCausesList = possibleCauses.length > 0
+    ? possibleCauses.map(c => `<li>${renderMarkdownToAnsi(c)}</li>`).join('\n          ')
+    : '<li>Check template syntax and context</li>';
+  const fixCommentSpan = fixComment ? `<span class="syntax-comment">${escapeHtml(fixComment)}</span>\n` : '';
+  const fixCodeBlock = fixCode ? highlightHtml(fixCode) : '// No fix available';
+  const docsLink = documentationUrl
+    ? `\n<span class="docs-inline">Learn more: <a href="${escapeHtml(documentationUrl)}" target="_blank" rel="noopener noreferrer" class="docs-link">${escapeHtml(documentationUrl)}</a></span>`
+    : '';
+  const renderContextSection = renderContext ? renderContextHtml(renderContext) : '';
+  const stackTraceSection = error.stack ? formatStackTraceHtml(error, false, ide) : '';
+
+  return `
+  <div class="error-body">
+    ${codeSection}
+    <div class="causes-grid">
+      <section aria-labelledby="h-causes">
+        <h2 id="h-causes" class="text-label">Possible Causes</h2>
+        <ul class="causes-list">
+          ${possibleCausesList}
+        </ul>
+      </section>
+      <section aria-labelledby="h-fix">
+        <h2 id="h-fix" class="text-label">Suggested Fix</h2>
+        <pre class="fix-block"><code>${fixCommentSpan}${fixCodeBlock}${docsLink}</code></pre>
+      </section>
+    </div>
+    ${renderContextSection}
+    ${stackTraceSection}
+  </div>`;
+};
+
+const buildErrorFooter = (
+  version: string,
+  timestamp: string | undefined,
+  verbosity: 'simple' | 'medium' | 'full',
+  canLinkLocation: boolean,
+  ide: string,
+  displayPath: string,
+  displayLine: number,
+  displayCol: number
+): string => {
+  const timestampPart = timestamp ? ` · ${escapeHtml(timestamp)}` : '';
+  let footerActions = '';
+  if (verbosity === 'full' && canLinkLocation) {
+    const ideMeta = getIdeMeta(ide);
+    const ideLabel = `Open in ${ideMeta.label}`;
+    footerActions = `
+    <div class="error-footer-actions">
+      <a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="btn btn-solid">
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">${ideMeta.icon}</svg>
+        ${ideLabel}
+      </a>
+    </div>`;
+  }
+  return `
+  <footer class="error-footer">
+    <p class="meta">
+      Nunjucks ${version}${timestampPart}
+    </p>
+    ${footerActions}
+  </footer>`;
+};
+
 const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string => {
   const {
     templatePath = error?.templateName,
@@ -216,199 +403,60 @@ const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string =>
     return document('Rendering Interrupted', buildProductionBody(options), '', csp ?? null);
   }
 
-  const errWithExtras = error as {
-    message?: string;
-    code?: string | null;
-    subject?: string | null;
-    causes?: string[];
-    fixCode?: string | null;
-    fixComment?: string | null;
-    documentationUrl?: string | null;
-    severity?: 'error' | 'warning' | 'info';
-  };
-  const classified = classifyFromError(errWithExtras);
+  const classified = classifyError(error);
   const plain = toText(error, { verbosity: 'simple' });
-
-  const category = error.code || classified.category.toUpperCase() || 'UNKNOWN';
   const undefinedName = classified.undefinedName || plain.match(UNDEFINED_OUTPUT_RE)?.[1] || null;
-
-  let possibleCauses: string[];
-  if (classified.causes && classified.causes.length > 0) {
-    possibleCauses = [...classified.causes];
-  } else {
-    possibleCauses = [...(errWithExtras.causes || [])];
-  }
-  const fixCode = classified.fixCode ?? errWithExtras.fixCode ?? '';
-  const fixComment = classified.fixComment ?? errWithExtras.fixComment ?? '';
-  const documentationUrl = classified.documentationUrl ?? errWithExtras.documentationUrl ?? null;
-  // Classification.severity is always populated, so it wins outright.
-  const { severity } = classified;
-
-  const humanTitle = resolveHumanTitle({ category, undefinedName, plain, fallback: classified.title || plain });
-
-  let lineBaseValue: 'one' | 'zero';
-  if (isJsCaller) {
-    lineBaseValue = 'one';
-  } else {
-    lineBaseValue = error?.lineBase ?? 'zero';
-  }
-  const location = toDisplayLocation(
-    lineno ?? error?.lineno ?? null,
-    colno ?? error?.colno ?? null,
-    lineBaseValue
+  const humanTitle = resolveHumanTitle({
+    category: classified.category,
+    undefinedName,
+    plain,
+    fallback: classified.title || plain
+  });
+  const { displayLine, displayCol, displayPath } = resolveErrorLocation(
+    error, lineno, colno, templatePath, isJsCaller
   );
-  const displayLine = location.line;
-  const displayCol = location.col;
-  const displayPath = templatePath || 'unknown';
-
-  const codeBadge = renderBadge('badge-error', category);
-  const phaseBadge = renderBadge('badge-code', phase);
-
-  const ideMeta = getIdeMeta(ide);
-  const ideLabel = `Open in ${ideMeta.label}`;
-
   const locDisplay = `${shortenPath(displayPath)}:${displayLine}:${displayCol}`;
   const canLinkLocation = isFilePath(displayPath);
 
-  const headerTitle = escapeHtml(humanTitle);
-  const locationInfo = escapeHtml(`${displayPath}:${displayLine}:${displayCol}`);
-
-  const severityText = SEVERITY_HEADINGS[severity] ?? SEVERITY_HEADINGS.error;
-
-  let phaseBadgePart = '';
-  if (phaseBadge) {
-    phaseBadgePart = ` ${phaseBadge}`;
-  }
-
-  let devBadge = '';
-  if (verbosity === 'full') {
-    devBadge = '<span class="badge badge-dev">DEV</span>';
-  }
-
-  let errorLocationBlock = '';
-  if (verbosity !== 'simple') {
-    let locationLink: string;
-    if (canLinkLocation) {
-      locationLink = `<a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="loc-link error-location-link">${escapeHtml(locDisplay)}</a>`;
-    } else {
-      locationLink = `<span class="error-location-text">${locationInfo}</span>`;
-    }
-    errorLocationBlock = `
-    <p class="error-location">The error occurred in ${locationLink}</p>
-    `;
-  }
+  const header = buildErrorHeader(
+    humanTitle,
+    classified.category,
+    classified.severity,
+    phase,
+    verbosity,
+    displayPath,
+    displayLine,
+    displayCol,
+    ide,
+    canLinkLocation,
+    locDisplay
+  );
 
   let errorBody = '';
   if (verbosity === 'full') {
-    const codeSection = renderSourceTraceSection(sourceTrace, displayPath);
-
-    let possibleCausesList: string;
-    if (possibleCauses.length > 0) {
-      possibleCausesList = possibleCauses.map(c => `<li>${renderMarkdownToAnsi(c)}</li>`).join('\n          ');
-    } else {
-      possibleCausesList = '<li>Check template syntax and context</li>';
-    }
-
-    let fixCommentSpan = '';
-    if (fixComment) {
-      fixCommentSpan = `<span class="syntax-comment">${escapeHtml(fixComment)}</span>\n`;
-    }
-    let fixCodeBlock: string;
-    if (fixCode) {
-      fixCodeBlock = highlightHtml(fixCode);
-    } else {
-      fixCodeBlock = '// No fix available';
-    }
-    let docsLink = '';
-    if (documentationUrl) {
-      docsLink = `\n<span class="docs-inline">Learn more: <a href="${escapeHtml(documentationUrl)}" target="_blank" rel="noopener noreferrer" class="docs-link">${escapeHtml(documentationUrl)}</a></span>`;
-    }
-
-    let renderContextSection = '';
-    if (renderContext) {
-      renderContextSection = renderContextHtml(renderContext);
-    }
-
-    let stackTraceSection = '';
-    if (error.stack) {
-      stackTraceSection = formatStackTraceHtml(error, false, ide);
-    }
-
-    errorBody = `
-  <div class="error-body">
-
-    ${codeSection}
-
-    <div class="causes-grid">
-      <section aria-labelledby="h-causes">
-        <h2 id="h-causes" class="text-label">Possible Causes</h2>
-        <ul class="causes-list">
-          ${possibleCausesList}
-        </ul>
-      </section>
-      <section aria-labelledby="h-fix">
-        <h2 id="h-fix" class="text-label">Suggested Fix</h2>
-        <pre class="fix-block"><code>${fixCommentSpan}${fixCodeBlock}${docsLink}</code></pre>
-      </section>
-    </div>
-
-    ${renderContextSection}
-
-    ${stackTraceSection}
-  </div>
-  `;
+    errorBody = buildFullErrorBody(
+      sourceTrace,
+      classified.causes,
+      classified.fixCode,
+      classified.fixComment,
+      classified.documentationUrl,
+      renderContext,
+      error,
+      ide,
+      displayPath
+    );
   }
 
-  let footerActions = '';
-  if (verbosity === 'full' && canLinkLocation) {
-    footerActions = `
-    <div class="error-footer-actions">
-      <a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="btn btn-solid">
-        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">${ideMeta.icon}</svg>
-        ${ideLabel}
-      </a>
-    </div>
-  `;
-  }
-
-  let timestampPart = '';
-  if (timestamp) {
-    timestampPart = ` · ${escapeHtml(timestamp)}`;
-  }
+  const footer = buildErrorFooter(version, timestamp, verbosity, canLinkLocation, ide, displayPath, displayLine, displayCol);
 
   const body = `
 <main class="error-wrapper" aria-labelledby="err-title">
-  <header class="error-header">
-    <div class="error-header-title">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="8" x2="12" y2="12"></line>
-        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-      </svg>
-      ${severityText}
-      ${codeBadge}${phaseBadgePart}
-      ${devBadge}
-    </div>
-    <h1 id="err-title" class="error-title">${headerTitle}</h1>
-    ${errorLocationBlock}
-  </header>
-
+  ${header}
   ${errorBody}
-
-  <footer class="error-footer">
-    <p class="meta">
-      Nunjucks ${version}${timestampPart}
-    </p>
-    ${footerActions}
-  </footer>
+  ${footer}
 </main>`;
 
-  let docTitle: string;
-  if (severity === 'warning') {
-    docTitle = 'Template Warning';
-  } else {
-    docTitle = 'Template Error';
-  }
+  const docTitle = classified.severity === 'warning' ? 'Template Warning' : 'Template Error';
   return document(docTitle, body, TOGGLE_SCRIPT, csp ?? null);
 };
 

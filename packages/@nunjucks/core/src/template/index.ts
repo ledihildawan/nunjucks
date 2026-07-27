@@ -144,6 +144,24 @@ interface ErrorWithLineInfo {
   [key: string]: unknown;
 }
 
+const resolveColno = (sourceColno: number | undefined, errColno: number): number => {
+  if (sourceColno && sourceColno > 0) {
+    return sourceColno;
+  }
+  return errColno;
+};
+
+const buildErrorMessage = (currentPath: string | undefined, sourceLineno: number | undefined, finalColno: number, e: ErrorWithLineInfo): string => {
+  let msg = `(${currentPath})`;
+  if (sourceLineno && finalColno > 0) {
+    msg += ` [Line ${sourceLineno}, Column ${finalColno}]`;
+  } else if (sourceLineno) {
+    msg += ` [Line ${sourceLineno}]`;
+  }
+  msg += `\n  ${defaultTo(e.message, '')}`;
+  return msg;
+};
+
 const extractFrameDetails = (
   e: ErrorWithLineInfo,
   sourceLineno: number | undefined,
@@ -157,20 +175,9 @@ const extractFrameDetails = (
   if (sourceLineno < 0) { return null; }
 
   const errColno = defaultTo(e.colno, 0);
-  let finalColno: number;
-  if (sourceColno && sourceColno > 0) {
-    finalColno = sourceColno;
-  } else {
-    finalColno = errColno;
-  }
+  const finalColno = resolveColno(sourceColno, errColno);
   const templateLocation = `${currentPath}:${sourceLineno}:${finalColno}`;
-  let msg = `(${currentPath})`;
-  if (sourceLineno && finalColno > 0) {
-    msg += ` [Line ${sourceLineno}, Column ${finalColno}]`;
-  } else if (sourceLineno) {
-    msg += ` [Line ${sourceLineno}]`;
-  }
-  msg += `\n  ${defaultTo(e.message, '')}`;
+  const msg = buildErrorMessage(currentPath, sourceLineno, finalColno, e);
   const newError = new Error(msg) as Error & Record<string, unknown>;
   newError.name = defaultTo(e.name, 'Template render error');
   newError.lineno = sourceLineno;

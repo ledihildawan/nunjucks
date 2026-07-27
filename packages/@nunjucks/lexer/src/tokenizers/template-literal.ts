@@ -8,10 +8,89 @@ export interface TemplateQuasi {
   value: string;
 }
 
-export const tokenizeTemplateLiteral: Tokenizer = (state) => {
-  if (getChar(state) !== '`') { return null; }
+type ParseInterpolationResult = {
+  exprContent: string;
+  current: ReturnType<typeof advance>;
+};
 
-  let current = advance(state);
+const isBacktickInExpression = (exprChar: string, exprDepth: number): boolean =>
+  exprChar === '`' && exprDepth === 1;
+
+const processInterpolationChar = (exprChar: string, exprDepth: number): { depthDelta: number; charToAdd: string } | null => {
+  if (exprChar === '{') {
+    return { depthDelta: 1, charToAdd: exprChar };
+  }
+  if (exprChar === '}') {
+    return { depthDelta: -1, charToAdd: exprChar };
+  }
+  if (isBacktickInExpression(exprChar, exprDepth)) {
+    throw new Error('Unexpected backtick in template expression');
+  }
+  return { depthDelta: 0, charToAdd: exprChar };
+};
+
+const parseInterpolation = (current: ReturnType<typeof advance>): ParseInterpolationResult => {
+  let exprDepth = 1;
+  let exprContent = '';
+
+  while (!isFinished(current) && exprDepth > 0) {
+    const exprChar = getChar(current);
+    const result = processInterpolationChar(exprChar, exprDepth);
+    if (result) {
+      exprDepth += result.depthDelta;
+      if (result.depthDelta === 0 || exprDepth > 0) {
+        exprContent += result.charToAdd;
+      }
+    }
+    current = advance(current);
+  }
+
+  return { exprContent, current };
+};
+
+const pushTemplateQuasi = (
+  quasis: TemplateQuasi[],
+  currentStr: string
+): void => {
+  if (currentStr) {
+    quasis.push({ type: 'template', value: currentStr });
+  }
+};
+
+const handleInterpolationStart = (
+  current: ReturnType<typeof advance>,
+  currentStr: string,
+  quasis: TemplateQuasi[]
+): { newCurrent: ReturnType<typeof advance>; newStr: string } => {
+  pushTemplateQuasi(quasis, currentStr);
+  const newCurrent = advance(current, 2);
+  return { newCurrent, newStr: '' };
+};
+
+const finalizeTemplateLiteral = (
+  current: ReturnType<typeof advance>,
+  currentStr: string,
+  quasis: TemplateQuasi[]
+): ReturnType<typeof advance> => {
+  pushTemplateQuasi(quasis, currentStr);
+  return advance(current);
+};
+
+const consumeTemplateContent = (
+  current: ReturnType<typeof advance>,
+  currentStr: string
+): { newCurrent: ReturnType<typeof advance>; newStr: string } => {
+  const char = getChar(current);
+  return {
+    newCurrent: advance(current),
+    newStr: currentStr + char,
+  };
+};
+
+const consumeTemplateLoop = (
+  initialCurrent: ReturnType<typeof advance>
+): { quasis: TemplateQuasi[]; finalCurrent: ReturnType<typeof advance> } => {
+  let current = initialCurrent;
   let currentStr = '';
   const quasis: TemplateQuasi[] = [];
 
@@ -19,49 +98,34 @@ export const tokenizeTemplateLiteral: Tokenizer = (state) => {
     const char = getChar(current);
 
     if (char === '$' && getPeek(current) === '{') {
-      if (currentStr) {
-        quasis.push({ type: 'template', value: currentStr });
-        currentStr = '';
-      }
-      current = advance(current, 2);
+      const { newCurrent, newStr } = handleInterpolationStart(current, currentStr, quasis);
+      current = newCurrent;
+      currentStr = newStr;
 
-      let exprDepth = 1;
-      let exprContent = '';
-
-      while (!isFinished(current) && exprDepth > 0) {
-        const exprChar = getChar(current);
-
-        if (exprChar === '{') {
-          exprDepth += 1;
-          exprContent += exprChar;
-        } else if (exprChar === '}') {
-          exprDepth -= 1;
-          if (exprDepth > 0) {
-            exprContent += exprChar;
-          }
-        } else if (exprChar === '`' && exprDepth === 1) {
-          throw new Error('Unexpected backtick in template expression');
-        } else {
-          exprContent += exprChar;
-        }
-        current = advance(current);
-      }
-
+      const { exprContent, current: afterExpr } = parseInterpolation(current);
       quasis.push({ type: 'expression', value: exprContent.trim() });
+      current = afterExpr;
       continue;
     }
 
     if (char === '`') {
-      if (currentStr) {
-        quasis.push({ type: 'template', value: currentStr });
-      }
-      current = advance(current);
+      current = finalizeTemplateLiteral(current, currentStr, quasis);
       break;
     }
 
-    currentStr += char;
-    current = advance(current);
+    const { newCurrent, newStr } = consumeTemplateContent(current, currentStr);
+    current = newCurrent;
+    currentStr = newStr;
   }
+
+  return { quasis, finalCurrent: current };
+};
+
+export const tokenizeTemplateLiteral: Tokenizer = (state) => {
+  if (getChar(state) !== '`') { return null; }
+
+  const initialCurrent = advance(state);
+  const { quasis, finalCurrent } = consumeTemplateLoop(initialCurrent);
 
   return {
     token: createToken(
@@ -70,6 +134,6 @@ export const tokenizeTemplateLiteral: Tokenizer = (state) => {
       state.lineno,
       state.colno
     ),
-    state: current,
+    state: finalCurrent,
   };
 };

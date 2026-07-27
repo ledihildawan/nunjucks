@@ -3,79 +3,85 @@ import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 
-export const compileCallExtension = (ctx: Compiler, node: Node, frame: Frame, useAsync?: boolean): void => {
-  const args = node.args as Node;
-  const contentArgs = node.contentArgs as Node[];
+const resolveAutoescape = (node: Node): boolean => {
   const { autoescape: nodeAutoescape } = node;
-  let autoescape: boolean;
-  if (typeof nodeAutoescape === 'boolean') {
-    autoescape = nodeAutoescape;
-  } else {
-    autoescape = true;
-  }
+  return typeof nodeAutoescape === 'boolean' ? nodeAutoescape : true;
+};
 
-  // Content args force the async form regardless of what the caller asked for.
-  const emitAsync = useAsync || contentArgs.length > 0;
-
-  let res: string | null;
-  if (emitAsync) {
-    res = ctx.tmpid();
-  } else {
-    res = null;
-  }
-
+const emitExtensionCallBegin = (
+  ctx: Compiler,
+  node: Node,
+  emitAsync: boolean,
+  res: string | null
+): void => {
   if (!emitAsync) {
     ctx.emit(`${ctx.buffer} += runtime.suppressValue(`);
   }
-
   if (emitAsync) {
     ctx.emit(`let ${res} = await env.getExtension("${node.extName as string}")["${node.prop as string}"](`);
   } else {
     ctx.emit(`env.getExtension("${node.extName as string}")["${node.prop as string}"](`);
   }
-
   ctx.emit('context');
+};
 
-  if (args || contentArgs) {
-    ctx.emit(',');
+const emitExtensionArgs = (
+  ctx: Compiler,
+  args: Node | null,
+  contentArgs: Node[],
+  frame: Frame
+): void => {
+  if (!args && contentArgs.length === 0) {
+    return;
   }
+  ctx.emit(',');
 
   if (args) {
     if (!isNodeList(args)) {
       ctx.fail('compileCallExtension: arguments must be a NodeList, ' +
         'use `parser.parseSignature`');
     }
-
     args.children?.forEach((arg, i, arr) => {
       ctx.compileExpression(arg, frame);
-
       if (i !== arr.length - 1 || contentArgs.length > 0) {
         ctx.emit(',');
       }
     });
   }
+};
 
-  if (contentArgs.length > 0) {
-    contentArgs.forEach((arg, i) => {
-      if (i > 0) {
-        ctx.emit(',');
-      }
-
-      if (arg) {
-        ctx.emitLine('async function() {');
-        const id = ctx.pushBuffer();
-
-        ctx.compile(arg, frame);
-
-        ctx.popBuffer();
-        ctx.emitLine(`return ${id};`);
-        ctx.emitLine('}');
-      } else {
-        ctx.emit('null');
-      }
-    });
+const emitContentArg = (ctx: Compiler, arg: Node | null, frame: Frame): void => {
+  if (arg) {
+    ctx.emitLine('async function() {');
+    const id = ctx.pushBuffer();
+    ctx.compile(arg, frame);
+    ctx.popBuffer();
+    ctx.emitLine(`return ${id};`);
+    ctx.emitLine('}');
+  } else {
+    ctx.emit('null');
   }
+};
 
+const emitContentArgs = (
+  ctx: Compiler,
+  contentArgs: Node[],
+  frame: Frame
+): void => {
+  contentArgs.forEach((arg, i) => {
+    if (i > 0) {
+      ctx.emit(',');
+    }
+    emitContentArg(ctx, arg, frame);
+  });
+};
+
+const emitExtensionCallEnd = (
+  ctx: Compiler,
+  emitAsync: boolean,
+  res: string | null,
+  autoescape: boolean
+): void => {
   if (emitAsync) {
     ctx.emit(')');
     ctx.emitLine(
@@ -84,6 +90,19 @@ export const compileCallExtension = (ctx: Compiler, node: Node, frame: Frame, us
     ctx.emit(')');
     ctx.emit(`, ${autoescape} && env.opts.autoescape, lineno, colno);\n`);
   }
+};
+
+export const compileCallExtension = (ctx: Compiler, node: Node, frame: Frame, useAsync?: boolean): void => {
+  const args = node.args as Node;
+  const contentArgs = node.contentArgs as Node[];
+  const autoescape = resolveAutoescape(node);
+  const emitAsync = useAsync || contentArgs.length > 0;
+  const res = emitAsync ? ctx.tmpid() : null;
+
+  emitExtensionCallBegin(ctx, node, emitAsync, res);
+  emitExtensionArgs(ctx, args, contentArgs, frame);
+  emitContentArgs(ctx, contentArgs, frame);
+  emitExtensionCallEnd(ctx, emitAsync, res, autoescape);
 };
 
 export const compileCallExtensionAsync = (ctx: Compiler, node: Node, frame: Frame): void => {

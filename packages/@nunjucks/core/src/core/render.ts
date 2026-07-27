@@ -1,387 +1,71 @@
-import EventEmitter from 'node:events';
-import { createCompiler } from '@nunjucks/compiler';
-import { parse } from '@nunjucks/parser';
-import type { ParseOptions } from '@nunjucks/parser';
-import { transform } from '@nunjucks/transformers';
+import { resolveTemplateSource, prepareSandbox, buildRenderEnv, compileTemplate, handleContextStrictMode, validateRenderInput, getDangerousValueStamps, MATCH_ANY_RE, TEMPLATE_FILE_EXTENSION_RE } from './render-helpers.ts';
+import { getLoader } from './engine.ts';
+import type { RenderConfig } from './render-types.ts';
 import { execute, type ExecuteConfig } from '@nunjucks/runtime/executor';
-import { validateTemplate, validateConfig, validateRenderContext, findContextDangerousValues } from '@nunjucks/validators';
 import { withTimeout } from '@nunjucks/runtime/timeout';
-import { createSandboxedContext } from '@nunjucks/runtime/sandbox';
-import { scrubDangerousReferences } from '@nunjucks/runtime/security';
 import { getCallerFile, getCallerLocation } from '@nunjucks/shared/caller-file';
 import { createLog, injectWarningsScript, getError } from '@nunjucks/log';
-import { findContextKeyPosition, wrapWithLog } from '@nunjucks/log/diagnostics';
-import { getLoader } from './engine.ts';
-import { createEnv, type Env } from './env.ts';
-import { createTemplate } from '../template/index.ts';
-import { getDefaultConfig, setDefaultDomPurifyConfig, type GlobalConfig } from '../config/global.ts';
+import { wrapWithLog } from '@nunjucks/log/diagnostics';
+import type { GlobalConfig } from '../config/global.ts';
 
-interface LoaderSource {
-  src: string;
-  path: string;
-  noCache?: boolean;
-}
-
-interface ResolveResult {
-  templateSource: string;
-  templatePath: string | null;
-}
-
-interface ValidationError {
-  message: string;
-  code?: string;
-  subject?: string;
-  lineno?: number;
-  colno?: number;
-  dangerousPaths?: string[];
-}
-
-interface CallerLocation {
-  fileName: string;
-  lineNumber?: number | null;
-  columnNumber?: number | null;
-}
-
-type Environment = 'auto' | 'node' | 'browser' | 'deno';
-
-interface SandboxOptions {
-  allowlist?: string[];
-  blocklistMode?: boolean;
-  blockedContextKeys?: string[];
-  environment?: Environment;
-}
-
-interface RenderConfig {
-  dev?: boolean;
-  autoescape?: boolean;
-  undefined?: string;
-  globals?: Record<string, unknown>;
-  sandbox?: boolean;
-  sandboxAllowlist?: readonly string[];
-  sandboxMode?: string;
-  sandboxEnvironment?: string;
-  contextStrict?: boolean | 'error';
-  production?: boolean;
-  allowedGlobals?: readonly string[];
-  executionTimeout?: number;
-  env?: unknown;
-  templatePath?: string | null;
-  jsCaller?: string | null;
-  jsCallerErrorLine?: number | null;
-  jsCallerErrorCol?: number | null;
-  /**
-   * @internal — populated automatically by `render()` from the V8 call
-   * stack. Public for type compatibility but should not be set by callers.
-   */
-  _callerFile?: string | null;
-  /**
-   * @internal — populated automatically by `render()` from the V8 call
-   * stack. Public for type compatibility but should not be set by callers.
-   */
-  _callerLocation?: CallerLocation | null;
-  /**
-   * @internal — populated automatically by the template pipeline.
-   */
-  _customFilters?: Record<string, unknown>;
-  /**
-   * @internal — populated automatically by the template pipeline.
-   */
-  _customGlobals?: Record<string, unknown>;
-  [key: string]: unknown;
-}
-
-const resolveTemplateSource = async (template: string, loader: unknown, config: RenderConfig): Promise<ResolveResult> => {
-  if (!loader || template.includes('{{') || template.includes('{%') || template.includes('{#')) {
-    return { templateSource: template, templatePath: null };
-  }
-
-  try {
-    const source = await (loader as { getSource: (name: string) => Promise<LoaderSource | null> }).getSource(template);
-    if (source?.src) {
-      let resolvedPath: string | null;
-      if (config.templatePath) {
-        resolvedPath = null;
-      } else {
-        resolvedPath = source.path;
-      }
-      return {
-        templateSource: source.src,
-        templatePath: resolvedPath
-      };
-    }
-  } catch (loaderErr) {
-    const { code } = loaderErr as { code?: string };
-    if (code === 'ENOENT' || code === 'MODULE_NOT_FOUND' || code === 'ERR_MODULE_NOT_FOUND') {
-      return { templateSource: template, templatePath: null };
-    }
-    throw loaderErr;
-  }
-
-  return { templateSource: template, templatePath: null };
-};
-
-interface ValidationErrorRequest {
-  validationError: ValidationError;
-  stamps: Record<string, unknown>;
-  config: RenderConfig;
-  templateSource: string | null;
-  context: unknown;
-}
-
-const createValidationError = async ({
-  validationError,
-  stamps,
-  config,
-  templateSource,
-  context,
-}: ValidationErrorRequest): Promise<never> => {
-  const err = new Error(validationError.message);
-  Object.assign(err, stamps);
-  throw await wrapWithLog(err, config, templateSource, context);
-};
-
-const getDangerousValueStamps = async (contextError: ValidationError, config: RenderConfig): Promise<Record<string, unknown>> => {
-  const stamps: Record<string, unknown> = { code: contextError.code };
-  const firstDangerousPath = contextError.dangerousPaths?.[0];
-  if (!firstDangerousPath) { return stamps; }
-
-  const callerLocation = config._callerLocation;
-  if (!callerLocation || callerLocation.fileName === 'unknown') { return stamps; }
-
-  const pos = await findContextKeyPosition(callerLocation.fileName, callerLocation.lineNumber || 1, firstDangerousPath);
-  if (pos) {
-    stamps.lineno = pos.line;
-    stamps.colno = pos.col;
-    stamps.lineBase = 'one';
-  }
-  return stamps;
-};
-
-const prepareSandbox = (config: RenderConfig, context: unknown): Record<string, unknown> => {
-  const internalKeys = ['__nunjucks_undefined_mode', 'exports', 'module', 'require', '__dirname', '__filename', 'global', 'globalThis', 'process'];
-  const userAllowlist = config.sandboxAllowlist || [];
-  const mergedAllowlist = [...new Set([...internalKeys, ...userAllowlist])];
-
-  const blockedKeys = config.blockedContextKeys as readonly string[] | null | undefined;
-  let resolvedBlockedKeys: string[] | undefined;
-  if (blockedKeys !== null && blockedKeys !== undefined) {
-    resolvedBlockedKeys = [...blockedKeys];
-  } else {
-    resolvedBlockedKeys = undefined;
-  }
-  const sandboxOptions: SandboxOptions = {
-    allowlist: mergedAllowlist,
-    blocklistMode: config.sandboxMode !== 'allowlist',
-    blockedContextKeys: resolvedBlockedKeys,
-    environment: (config.sandboxEnvironment || 'auto') as Environment,
-  };
-
-  const sandboxEnabled = (config.sandbox ?? false) || (blockedKeys !== null && blockedKeys !== undefined && blockedKeys.length > 0);
-  const sandboxedCtx = createSandboxedContext(context, sandboxEnabled, sandboxOptions) as Record<string, unknown>;
-  sandboxedCtx.__nunjucks_undefined_mode = config.undefined || 'default';
-  return sandboxedCtx;
-};
-
-const buildRenderEnv = (loader: unknown, config: RenderConfig): void => {
-  if (!loader || config.env) { return; }
-
-  const emitter = new EventEmitter();
-  config.env = createEnv({
-    opts: {
-      dev: config.dev ?? false,
-      autoescape: config.autoescape ?? true,
-      undefined: config.undefined ?? 'default'
-    },
-    globals: config.globals || {},
-    emitter,
-    async getTemplate(name: string, eagerCompile?: boolean, includeChain?: unknown[] | null, ignoreMissing?: boolean) {
-      const source = await (loader as { getSource: (name: string) => Promise<LoaderSource | null> }).getSource(name);
-      if (!source) {
-        if (ignoreMissing) { return null; }
-        throw createLog('error', getError('FILE_NOT_FOUND'), { path: name }, name, { phase: 'load' });
-      }
-      return createTemplate(source.src, this as unknown as Env, source.path, eagerCompile ?? true, includeChain);
-    }
-  });
-};
-
-/** Placeholder pattern for synthesised error definitions, which are never matched against. */
-const MATCH_ANY_RE = /./;
-const TEMPLATE_FILE_EXTENSION_RE = /\.(njk|js|html|htm|twig|ejs|eta)$/i;
-
-interface CompileResult {
-  code: string;
-}
-
-const compileTemplate = (templateSource: string, config: RenderConfig, templateName: string): CompileResult => {
-  const c = createCompiler(templateName, (config.undefined || 'chainable') as 'chainable' | 'strict' | 'debug', templateSource);
-  const ast = parse(templateSource, [], { undefined: config.undefined } as ParseOptions);
-  const transformedAst = transform(ast);
-  c.compile(transformedAst);
-  return { code: c.getCode() };
-};
-
-const handleContextStrictMode = async (context: unknown, config: RenderConfig): Promise<{ warningsCollector: unknown[]; dangerousValuePaths: string[] }> => {
-  const warningsCollector: unknown[] = [];
-  const contextStrict = config.contextStrict === true || (config.contextStrict !== false && config.dev === true);
-  let dangerousValuePaths: string[];
-  if (contextStrict) {
-    dangerousValuePaths = findContextDangerousValues(context, config);
-  } else {
-    dangerousValuePaths = [];
-  }
-
-  if (!contextStrict || dangerousValuePaths.length === 0) {
-    return { warningsCollector, dangerousValuePaths };
-  }
-
-  const errorMessage = `Context contains unsafe values: ${dangerousValuePaths.join(', ')}`;
-
-  if (config.contextStrict === 'error' || config.production === true) {
-    const err = new Error(errorMessage);
-    (err as Error & { code: string }).code = 'DANGEROUS_CONTEXT_VALUES';
-    (err as Error & { subject: string }).subject = dangerousValuePaths.join(', ');
-    throw await wrapWithLog(err as Error, config, null, context);
-  }
-
-  scrubDangerousReferences(context, config.allowedGlobals ?? null);
-  warningsCollector.push(createLog('warning', {
-    name: 'DANGEROUS_CONTEXT_VALUE_SCRUBBED',
-    message: () => `Scrubbed unsafe values from context: ${dangerousValuePaths.join(', ')}`,
-    pattern: MATCH_ANY_RE
-  } as Parameters<typeof createLog>[1], { values: dangerousValuePaths.join(', ') }, dangerousValuePaths.join(', '), {
-    phase: 'render',
-    lineBase: 'zero'
-  } as Parameters<typeof createLog>[4]));
-
-  return { warningsCollector, dangerousValuePaths };
-};
-
-const validateRenderInput = async (template: unknown, config: RenderConfig, context: unknown): Promise<void> => {
-  if (typeof template !== 'string') {
-    const err = createLog('error', getError('TEMPLATE_MUST_BE_STRING'), {}, null, { phase: 'render' });
-    throw await wrapWithLog(err as Error, config, template as string | null, context);
-  }
-
-  const validation = validateConfig(config as Parameters<typeof validateConfig>[0]);
-  if (!validation.valid) {
-    const ve = validation.errors[0] as NonNullable<typeof validation.errors[0]>;
-    const callerLineno = config._callerLocation?.lineNumber;
-    const callerColno = config._callerLocation?.columnNumber;
-    let resolvedLineno: number | null | undefined = callerLineno;
-    if (callerLineno && callerLineno > 1) {
-      resolvedLineno = callerLineno - 1;
-    }
-    await createValidationError({
-      validationError: ve,
-      stamps: {
-        code: ve.code,
-        subject: ve.subject,
-        lineno: resolvedLineno,
-        colno: callerColno
-      },
-      config,
-      templateSource: template,
-      context
-    });
-  }
-
-  const templateValidation = validateTemplate(template, config as unknown as Parameters<typeof validateTemplate>[1]);
-  if (!templateValidation.valid) {
-    const ve = templateValidation.errors[0] as NonNullable<typeof templateValidation.errors[0]>;
-    await createValidationError({
-      validationError: ve,
-      stamps: { lineno: ve.lineno, colno: ve.colno, code: ve.code, subject: ve.subject },
-      config,
-      templateSource: template,
-      context
-    });
-  }
-
-  const contextValidation = validateRenderContext(context, config as unknown as Parameters<typeof validateRenderContext>[1]);
-  if (!contextValidation.valid) {
-    const ce = contextValidation.errors[0] as NonNullable<typeof contextValidation.errors[0]>;
-    const stamps = await getDangerousValueStamps(ce, config);
-    await createValidationError({ validationError: ce, stamps, config, templateSource: template, context });
-  }
-};
-
-const render = async (template: string, context: Record<string, unknown> = {}, options: Partial<GlobalConfig> = {}): Promise<string> => {
+const setupRenderConfig = (options: Partial<GlobalConfig>): RenderConfig => {
   if (options.dompurify) {
+    const { setDefaultDomPurifyConfig } = require('../config/global.ts');
     setDefaultDomPurifyConfig(options.dompurify);
   }
 
+  const { getDefaultConfig } = require('../config/global.ts');
   const defaults = getDefaultConfig();
-  const config: RenderConfig = {
+  return {
     ...defaults,
     ...options,
     filters: { ...defaults.filters, ...(options.filters || {}) },
     globals: { ...defaults.globals, ...(options.globals || {}) },
     extensions: { ...defaults.extensions, ...(options.extensions || {}) },
   } as RenderConfig;
-  // Populate the internal caller fields from the V8 stack so error
-  // diagnostics can point at the user code instead of the template source.
-  // These are read by `resolveLocation` (in @nunjucks/shared/error-location).
-  config._callerFile = config._callerFile || getCallerFile();
-  config._callerLocation = config._callerLocation || getCallerLocation();
+};
 
-  await validateRenderInput(template, config, context);
-
-  const loader = getLoader(config as Parameters<typeof getLoader>[0]);
-  const { templateSource, templatePath } = await resolveTemplateSource(template, loader, config);
-  if (templatePath) { config.templatePath = templatePath; }
-
+const resolveTemplateName = (template: string, config: RenderConfig): string => {
   const looksLikeFile = TEMPLATE_FILE_EXTENSION_RE.test(template);
-  let templateName: string;
   if (config.templatePath) {
-    templateName = config.templatePath;
-  } else if (looksLikeFile) {
-    templateName = template;
-  } else {
-    templateName = config._callerFile || 'inline';
+    return config.templatePath;
   }
-
-  let code: string;
-  try {
-    ({ code } = compileTemplate(templateSource, config, templateName));
-  } catch (err) {
-    throw await wrapWithLog(err as Error, config, templateSource, context);
+  if (looksLikeFile) {
+    return template;
   }
+  return config._callerFile || 'inline';
+};
 
-  const { warningsCollector } = await handleContextStrictMode(context, config);
-  const sandboxedCtx = prepareSandbox(config, context);
-  buildRenderEnv(loader, config);
+const executeCompiledTemplate = async (
+  code: string,
+  sandboxedCtx: Record<string, unknown>,
+  config: RenderConfig,
+  context: Record<string, unknown>,
+  warningsCollector: unknown[],
+  templateName: string
+): Promise<unknown> => {
+  const renderPromise = execute(code, sandboxedCtx, {
+    ...config,
+    warningsCollector,
+    templateName,
+    renderContext: context
+  } as ExecuteConfig);
 
-  let result: unknown;
-  try {
-    const renderPromise = execute(code, sandboxedCtx, {
-      ...config,
-      warningsCollector,
-      templateName,
-      renderContext: context
-    } as ExecuteConfig);
-
-    let renderResult: string;
-    if ((config.executionTimeout ?? 0) > 0) {
-      renderResult = await withTimeout(renderPromise, config.executionTimeout ?? 0) as string;
-    } else {
-      renderResult = await renderPromise as string;
-    }
-    result = renderResult;
-  } catch (err) {
-    throw await wrapWithLog(err as Error, config, templateSource, context);
+  if ((config.executionTimeout ?? 0) > 0) {
+    return await withTimeout(renderPromise, config.executionTimeout ?? 0) as string;
   }
+  return await renderPromise as string;
+};
 
-  if (warningsCollector.length > 0 && config.dev) {
-    result += injectWarningsScript(warningsCollector as Parameters<typeof injectWarningsScript>[0], { dev: true, verbosity: 'medium' });
+const injectWarningsIfNeeded = (result: unknown, warningsCollector: unknown[], dev: boolean | undefined): string => {
+  if (warningsCollector.length > 0 && dev) {
+    return (result as string) + injectWarningsScript(warningsCollector as Parameters<typeof injectWarningsScript>[0], { dev: true, verbosity: 'medium' });
   }
-
   return result as string;
 };
 
-const renderWithEnv = async (templateName: string, env: unknown, context: Record<string, unknown> = {}, config: RenderConfig = {}): Promise<string> => {
-  const fullConfig: RenderConfig = { ...config, templatePath: config.templatePath || templateName, env };
-
+const validateRenderWithEnvConfig = async (config: RenderConfig, templateName: string, context: Record<string, unknown>, fullConfig: RenderConfig): Promise<void> => {
+  const { validateConfig, validateRenderContext } = require('@nunjucks/validators');
   const validation = validateConfig(config as Parameters<typeof validateConfig>[0]);
   if (!validation.valid) {
     const ve = validation.errors[0] as NonNullable<typeof validation.errors[0]>;
@@ -413,14 +97,13 @@ const renderWithEnv = async (templateName: string, env: unknown, context: Record
     } as Parameters<typeof createLog>[4]);
     throw await wrapWithLog(err as Error, fullConfig, null, context);
   }
+};
 
+const renderFromEnvTemplate = async (env: unknown, templateName: string, context: Record<string, unknown>, fullConfig: RenderConfig): Promise<string> => {
   let template: unknown;
   try {
     template = await (env as { getTemplate?: (name: string, eagerCompile: boolean, includeChain: unknown, ignoreMissing: boolean) => Promise<unknown> }).getTemplate?.(templateName, true, templateName, false);
 
-    // `template` really can be undefined here: getTemplate is optional-called.
-    // The cast must admit that, or the optional chain below looks redundant
-    // while actually being the thing preventing a TypeError.
     if (typeof (template as { render?: unknown } | undefined)?.render === 'function') {
       return await (template as { render: (ctx: unknown) => Promise<string> }).render(context);
     }
@@ -429,6 +112,47 @@ const renderWithEnv = async (templateName: string, env: unknown, context: Record
   } catch (err) {
     throw await wrapWithLog(err as Error, fullConfig, (template as { tmplStr?: string } | undefined)?.tmplStr ?? null, context);
   }
+};
+
+const render = async (template: string, context: Record<string, unknown> = {}, options: Partial<GlobalConfig> = {}): Promise<string> => {
+  const config = setupRenderConfig(options);
+  config._callerFile = config._callerFile || getCallerFile();
+  config._callerLocation = config._callerLocation || getCallerLocation();
+
+  await validateRenderInput(template, config, context);
+
+  const loader = getLoader(config as Parameters<typeof getLoader>[0]);
+  const { templateSource, templatePath } = await resolveTemplateSource(template, loader, config);
+  if (templatePath) { config.templatePath = templatePath; }
+
+  const templateName = resolveTemplateName(template, config);
+
+  let code: string;
+  try {
+    ({ code } = compileTemplate(templateSource, config, templateName));
+  } catch (err) {
+    throw await wrapWithLog(err as Error, config, templateSource, context);
+  }
+
+  const { warningsCollector } = await handleContextStrictMode(context, config);
+  const sandboxedCtx = prepareSandbox(config, context);
+  buildRenderEnv(loader, config);
+
+  let result: unknown;
+  try {
+    result = await executeCompiledTemplate(code, sandboxedCtx as Record<string, unknown>, config, context, warningsCollector, templateName);
+  } catch (err) {
+    throw await wrapWithLog(err as Error, config, templateSource, context);
+  }
+
+  return injectWarningsIfNeeded(result, warningsCollector, config.dev);
+};
+
+const renderWithEnv = async (templateName: string, env: unknown, context: Record<string, unknown> = {}, config: RenderConfig = {}): Promise<string> => {
+  const fullConfig: RenderConfig = { ...config, templatePath: config.templatePath || templateName, env };
+
+  await validateRenderWithEnvConfig(config, templateName, context, fullConfig);
+  return await renderFromEnvTemplate(env, templateName, context, fullConfig);
 };
 
 export { render, renderWithEnv };

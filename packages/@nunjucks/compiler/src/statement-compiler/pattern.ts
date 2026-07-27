@@ -107,29 +107,153 @@ const compileArrayPattern = (dc: DestructuringContext, pattern: Node, source: st
     return;
   }
   for (const child of patternChildren) {
-    if (isHole(child)) {
-      i += 1;
-      continue;
-    }
-    if (isRestPattern(child)) {
-      const childSource = arraySlice(source, i);
-      compileDestructuring(dc, child.target as Node, childSource);
+    const result = handleArrayPatternChild(dc, child, source, i);
+    i = result.newIndex;
+    if (result.shouldBreak) {
       break;
     }
-    const childSource = safeArrayIndex(source, i);
-    if (isAssignmentPattern(child)) {
-      const defaultId = emitDefaultBinding(dc, childSource, child.value as Node);
-      compileDestructuring(dc, child.target as Node, defaultId);
-    } else if (isObjectPattern(child) || isDict(child)) {
-      const nestedPattern = asObjectPattern(child);
-      // A childless literal binds nothing and, as before, does not consume
-      // an array position.
-      if (!nestedPattern) { continue; }
-      compileDestructuring(dc, nestedPattern, childSource);
-    } else {
-      compileDestructuring(dc, child, childSource);
+  }
+};
+
+const handleArrayPatternChild = (
+  dc: DestructuringContext,
+  child: Node,
+  source: string,
+  i: number
+): { newIndex: number; shouldBreak: boolean } => {
+  if (isHole(child)) {
+    return { newIndex: i + 1, shouldBreak: false };
+  }
+  if (isRestPattern(child)) {
+    const childSource = arraySlice(source, i);
+    compileDestructuring(dc, child.target as Node, childSource);
+    return { newIndex: i, shouldBreak: true };
+  }
+  const childSource = safeArrayIndex(source, i);
+  if (isAssignmentPattern(child)) {
+    const defaultId = emitDefaultBinding(dc, childSource, child.value as Node);
+    compileDestructuring(dc, child.target as Node, defaultId);
+  } else if (isObjectPattern(child) || isDict(child)) {
+    const nestedPattern = asObjectPattern(child);
+    if (!nestedPattern) { return { newIndex: i + 1, shouldBreak: false }; }
+    compileDestructuring(dc, nestedPattern, childSource);
+  } else {
+    compileDestructuring(dc, child, childSource);
+  }
+  return { newIndex: i + 1, shouldBreak: false };
+};
+
+const handlePatternPropertyValue = (
+  dc: DestructuringContext,
+  child: Node,
+  propSource: string
+): void => {
+  if (isAssignmentPattern(child.value)) {
+    const valNode = child.value;
+    const defaultId = emitDefaultBinding(dc, propSource, valNode.value);
+    compileDestructuring(dc, valNode.target, defaultId);
+  } else {
+    compileDestructuring(dc, child.value, propSource);
+  }
+};
+
+const handleRestProperty = (
+  dc: DestructuringContext,
+  child: Node,
+  source: string
+): void => {
+  const restId = uniqueId('__rest');
+  const childSource = objectRest(source, restId);
+  compileDestructuring(dc, child.target as Node, childSource);
+};
+
+const handlePairSymbolAlias = (
+  dc: DestructuringContext,
+  child: Node,
+  propSource: string
+): boolean => {
+  if (isSymbol(child.value as Node)) {
+    const aliasName = (child.value as Node).value as string;
+    compileAssignToFrame(dc, aliasName, propSource);
+    return true;
+  }
+  return false;
+};
+
+const handlePairArrayOrObjectPattern = (
+  dc: DestructuringContext,
+  child: Node,
+  propSource: string
+): boolean => {
+  if (isArrayPattern(child.value as Node) || isArray(child.value as Node)) {
+    const nestedPattern = asArrayPattern(child.value as Node);
+    if (!nestedPattern) { return true; }
+    compileDestructuring(dc, nestedPattern, propSource);
+    return true;
+  }
+  if (isObjectPattern(child.value as Node) || isDict(child.value as Node)) {
+    const nestedPattern = asObjectPattern(child.value as Node);
+    if (!nestedPattern) { return true; }
+    compileDestructuring(dc, nestedPattern, propSource);
+    return true;
+  }
+  return false;
+};
+
+const handlePairAssignmentWithDefault = (
+  dc: DestructuringContext,
+  child: Node,
+  propSource: string
+): boolean => {
+  if (isAssignmentPattern(child.value as Node)) {
+    const valNode = child.value as Node;
+    const defaultId = emitDefaultBinding(dc, propSource, valNode.value as Node);
+    const target = valNode.target as Node;
+    compileAssignToFrame(dc, target.value as string, defaultId);
+    return true;
+  }
+  return false;
+};
+
+const handlePairProperty = (
+  dc: DestructuringContext,
+  child: Node,
+  propSource: string
+): void => {
+  if (handlePairAssignmentWithDefault(dc, child, propSource)) {
+    return;
+  }
+  if (handlePairArrayOrObjectPattern(dc, child, propSource)) {
+    return;
+  }
+  if (handlePairSymbolAlias(dc, child, propSource)) {
+    return;
+  }
+};
+
+const processObjectPatternChild = (
+  dc: DestructuringContext,
+  child: Node,
+  source: string
+): void => {
+  if (isRestPattern(child)) {
+    handleRestProperty(dc, child, source);
+    return;
+  }
+  if (isPatternProperty(child)) {
+    const propKey = patternPropertyKey(child.key);
+    if (propKey === null) {
+      return;
     }
-    i += 1;
+    const propSource = safeMemberLookup(source, propKey);
+    handlePatternPropertyValue(dc, child, propSource);
+    return;
+  }
+  if (isPair(child) && isSymbol(child.key as Node)) {
+    const keyNode = child.key as Node;
+    const propKey = keyNode.value as string;
+    const propSource = safeMemberLookup(source, propKey);
+    handlePairProperty(dc, child, propSource);
   }
 };
 
@@ -140,47 +264,7 @@ const compileObjectPattern = (dc: DestructuringContext, pattern: Node, source: s
     return;
   }
   for (const child of patternChildren) {
-    if (isRestPattern(child)) {
-      const restId = uniqueId('__rest');
-      const childSource = objectRest(source, restId);
-      compileDestructuring(dc, child.target as Node, childSource);
-      continue;
-    }
-    if (isPatternProperty(child)) {
-      const propKey = patternPropertyKey(child.key);
-      if (propKey === null) {
-        continue;
-      }
-      const propSource = safeMemberLookup(source, propKey);
-      if (isAssignmentPattern(child.value)) {
-        const valNode = child.value;
-        const defaultId = emitDefaultBinding(dc, propSource, valNode.value);
-        compileDestructuring(dc, valNode.target, defaultId);
-      } else {
-        compileDestructuring(dc, child.value, propSource);
-      }
-    } else if (isPair(child) && isSymbol(child.key as Node)) {
-      const keyNode = child.key as Node;
-      const propKey = keyNode.value as string;
-      const propSource = safeMemberLookup(source, propKey);
-      if (isAssignmentPattern(child.value as Node)) {
-        const valNode = child.value as Node;
-        const defaultId = emitDefaultBinding(dc, propSource, valNode.value as Node);
-        const target = valNode.target as Node;
-        compileAssignToFrame(dc, target.value as string, defaultId);
-      } else if (isArrayPattern(child.value as Node) || isArray(child.value as Node)) {
-        const nestedPattern = asArrayPattern(child.value as Node);
-        if (!nestedPattern) { continue; }
-        compileDestructuring(dc, nestedPattern, propSource);
-      } else if (isObjectPattern(child.value as Node) || isDict(child.value as Node)) {
-        const nestedPattern = asObjectPattern(child.value as Node);
-        if (!nestedPattern) { continue; }
-        compileDestructuring(dc, nestedPattern, propSource);
-      } else if (isSymbol(child.value as Node)) {
-        const aliasName = (child.value as Node).value as string;
-        compileAssignToFrame(dc, aliasName, propSource);
-      }
-    }
+    processObjectPatternChild(dc, child, source);
   }
 };
 

@@ -89,6 +89,37 @@ const getCompoundOpJs = (operator: string): string | null => {
   }
 };
 
+const emitCompoundValue = (
+  ctx: Compiler,
+  node: Node,
+  name: string,
+  valueId: string,
+  jsOp: string | null
+): void => {
+  if (node.operator === '//=') {
+    ctx.emit(`let ${valueId} = Math.floor(frame.lookup("${name}") / `);
+    ctx.compileExpression(node.value as Node, ctx as unknown as Frame);
+    ctx.emitLine(');');
+  } else if (node.operator === '|>=') {
+    const valueNode = node.value as Node;
+    const filterName = valueNode.type === 'symbol' ? valueNode.value as string : null;
+    const inputLocation = `${node.lineno ?? 0}, ${node.colno ?? 0}`;
+    if (filterName) {
+      ctx.emit(`let ${valueId} = await runtime.awaitValue(env.getFilter("${filterName}", ${inputLocation}, ${inputLocation}, "${name}").call(context, `);
+      ctx.emit(`frame.lookup("${name}")`);
+      ctx.emitLine('))');
+    } else {
+      ctx.emit(`let ${valueId} = await runtime.awaitValue(`);
+      ctx.compileExpression(valueNode, ctx as unknown as Frame);
+      ctx.emit(`, frame.lookup("${name}"))`);
+    }
+  } else {
+    ctx.emit(`let ${valueId} = frame.lookup("${name}") ${jsOp} `);
+    ctx.compileExpression(node.value as Node, ctx as unknown as Frame);
+    ctx.emitLine(';');
+  }
+};
+
 const compileCompoundAssignment = (ctx: Compiler, node: Node, frame: Frame): void => {
   const jsOp = getCompoundOpJs(node.operator as string);
 
@@ -123,56 +154,28 @@ const compileCompoundAssignment = (ctx: Compiler, node: Node, frame: Frame): voi
     ctx.emitLine(`if (frame.lookup("${name}") === undefined) { throw new ReferenceError("Variable '${name}' is not defined. Use ${name} := value to declare it."); }`);
 
     const valueId = ctx.tmpid();
-    if (node.operator === '//=') {
-      ctx.emit(`let ${valueId} = Math.floor(frame.lookup("${name}") / `);
-      ctx.compileExpression(node.value as Node, frame);
-      ctx.emitLine(');');
-    } else if (node.operator === '|>=') {
-      const valueNode = node.value as Node;
-      let filterName: string | null;
-      if (valueNode.type === 'symbol') {
-        filterName = valueNode.value as string;
-      } else {
-        filterName = null;
-      }
-      const inputLocation = `${node.lineno ?? 0}, ${node.colno ?? 0}`;
-      if (filterName) {
-        ctx.emit(`let ${valueId} = await runtime.awaitValue(env.getFilter("${filterName}", ${inputLocation}, ${inputLocation}, "${name}").call(context, `);
-        ctx.emit(`frame.lookup("${name}")`);
-        ctx.emitLine('))');
-      } else {
-        ctx.emit(`let ${valueId} = await runtime.awaitValue(`);
-        ctx.compileExpression(valueNode, frame);
-        ctx.emit(`, frame.lookup("${name}"))`);
-      }
-    } else {
-      ctx.emit(`let ${valueId} = frame.lookup("${name}") ${jsOp} `);
-      ctx.compileExpression(node.value as Node, frame);
-      ctx.emitLine(';');
-    }
-
+    emitCompoundValue(ctx, node, name, valueId, jsOp);
     ctx.emitLine(`frame.set("${name}", ${valueId}, true);`);
     ctx.emitLine('}');
   }
 };
 
-const compileDefineBlock = (ctx: Compiler, node: Node, frame: Frame): void => {
-  const name = node.name as string;
-  const funcId = ctx.tmpid();
-  const args = node.args as MacroArgument[];
-
+const buildMacroParams = (args: MacroArgument[]): { argNames: string[]; hasDefaults: boolean; paramNames: string[]; realParams: string[] } => {
   const argNames = args.map(a => `"${a.name}"`);
   const hasDefaults = args.some(a => a.defaultVal !== null);
   const paramNames = args.map(a => `l_${a.name}`);
-  let realParams: string[];
-  if (hasDefaults) {
-    realParams = [...paramNames, 'kwargs'];
-  } else {
-    realParams = paramNames;
-  }
+  const realParams = hasDefaults ? [...paramNames, 'kwargs'] : paramNames;
+  return { argNames, hasDefaults, paramNames, realParams };
+};
 
-  ctx.emitLine(`let ${funcId} = runtime.makeMacro([${argNames.join(', ')}], [], async (${realParams.join(', ')}) => {`);
-
+const emitMacroBody = (
+  ctx: Compiler,
+  args: MacroArgument[],
+  hasDefaults: boolean,
+  paramNames: string[],
+  node: Node,
+  frame: Frame
+): void => {
   ctx.emitLine('let callerFrame = frame;');
   ctx.emitLine('frame = frame.push(true);');
 
@@ -212,7 +215,16 @@ const compileDefineBlock = (ctx: Compiler, node: Node, frame: Frame): void => {
   ctx.emitLine(`return runtime.createSafeString(${bufferId});`);
   ctx.emitLine('});');
   ctx.popBuffer();
+};
 
+const compileDefineBlock = (ctx: Compiler, node: Node, frame: Frame): void => {
+  const name = node.name as string;
+  const funcId = ctx.tmpid();
+  const args = node.args as MacroArgument[];
+  const { argNames, hasDefaults, paramNames, realParams } = buildMacroParams(args);
+
+  ctx.emitLine(`let ${funcId} = runtime.makeMacro([${argNames.join(', ')}], [], async (${realParams.join(', ')}) => {`);
+  emitMacroBody(ctx, args, hasDefaults, paramNames, node, frame);
   ctx.emitLine(`frame.set("${name}", ${funcId}, true);`);
 };
 
