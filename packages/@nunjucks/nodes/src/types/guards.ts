@@ -1,5 +1,5 @@
 // GUARDS - Type-narrowing predicates
-import { T, type CallExtensionNode, type CallNode, type ChildrenNode, type ForNode, type IfNode, type Node, type NodeType, type SetNode } from './types.ts';
+import { T, type CallExtensionNode, type CallNode, type ChildrenNode, type ForNode, type IfNode, type Node, type NodeType, type SetNode } from './index.ts';
 
 const nodeTypes: ReadonlySet<NodeType> = new Set(Object.values(T));
 

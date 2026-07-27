@@ -7,7 +7,7 @@ export { compileBlock, compileSuper } from './block.ts';
 export { compileImport } from './import.ts';
 export { compileFromImport } from './from-import.ts';
 export { compileExtends, compileInclude } from './extends.ts';
-export { compileTemplateData, compileCapture, compileOutput } from './output.ts';
+export { compileTemplateData, compileCapture, compileOutput } from './output/index.ts';
 export { compileRoot } from './root.ts';
 export { compileCallExtension, compileCallExtensionAsync } from './extension.ts';
 export { compileDo } from './do.ts';

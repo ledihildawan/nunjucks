@@ -1,12 +1,12 @@
 // FACTORY - Node creation (type-safe; expression creators return precise variants)
-import { T, type Node, type NodeType, type NodeOf, FIELDS } from './types.ts';
+import { T, type Node, type NodeType, type NodeOf, FIELDS } from './types/index.ts';
 import type {
   ValueNode, ChildrenNode, BinaryOpNode, BinaryNode, UnaryOpNode, UnaryNode,
   IncDecNode, CallNode, LookupNode, SliceNode, CompareNode,
   CompareOperandNode, PairNode, SpreadNode, WalrusNode, RestPatternNode,
   AssignmentPatternNode, HoleNode, VariableDeclNode, CompoundAssignNode,
   TemplateLiteralNode, MacroArgument, CallExtensionNode,
-} from './types.ts';
+} from './types/index.ts';
 
 const createNode = <K extends NodeType>(nodeType: K, lineno: number, colno: number, data: Record<string, unknown> = {}): NodeOf<K> => ({
     type: nodeType, lineno, colno, fields: FIELDS[nodeType], ...data,
@@ -333,7 +333,7 @@ const callExtensionAsync = (lineno: number, colno: number, fields: CallExtension
 // ============================================
 // AGGREGATE NAMESPACE (auto-generated; used by the extension API)
 // ============================================
-import * as guards from './guards.ts';
+import * as guards from './types/guards.ts';
 import * as traverse from './traverse.ts';
 
 const creators = {

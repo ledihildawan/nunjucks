@@ -9,7 +9,7 @@ import {
   handleError,
   fromIterator,
   inOperator,
-} from './helpers.ts';
+} from './helpers/index.ts';
 import { createSafeString } from './safe-string.ts';
 
 const propNotFound = (path = 'x', parent = 'obj') => ({

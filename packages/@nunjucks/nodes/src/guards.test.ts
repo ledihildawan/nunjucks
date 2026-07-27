@@ -3,7 +3,7 @@ import { value, literal, symbol, nodeList, root, funCall, lookupVal, add, if_, f
 import {
   isNode, isLiteral, isSymbol, isNodeList, isRoot, isFunCall, isLookupVal,
   isAdd, isIf, isFor, isValue, isFilter, isPipe,
-} from './guards.ts';
+} from './types/guards.ts';
 import { pipe } from '@nunjucks/nodes/factory';
 
 describe('isNode', () => {

@@ -65,7 +65,7 @@ export {
   handleError,
   fromIterator,
   inOperator,
-} from './helpers.ts';
+} from './helpers/index.ts';
 export {
   HOOK_EVENTS,
   type HookEvent,

@@ -1,6 +1,6 @@
 // TRAVERSE - Canonical AST walk / search / transform utilities (copy-on-write).
-import type { CallExtensionNode, ChildrenNode, Node } from './types.ts';
-import { isNode, isCallExtension, isCallExtensionAsync } from './guards.ts';
+import type { CallExtensionNode, ChildrenNode, Node } from './types/index.ts';
+import { isNode, isCallExtension, isCallExtensionAsync } from './types/guards.ts';
 
 const getFields = (n: Node): string[] => {
   const excluded = new Set(['type', 'lineno', 'colno', 'fields']);

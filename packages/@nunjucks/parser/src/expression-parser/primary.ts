@@ -13,7 +13,7 @@ import type { Node } from '@nunjucks/nodes';
 import { nextToken, pushToken, fail, EXPECTED_COLON_AFTER_DICT_KEY } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { tryParsePattern } from "../node-parsers/pattern.ts";
-import { parseAggregate } from "../node-parsers/aggregate.ts";
+import { parseAggregate } from "../node-parsers/aggregate/index.ts";
 import { parseTemplateLiteral } from "../node-parsers/template-literal.ts";
 import { parsePostfix } from "../postfix-parser/index.ts";
 

@@ -12,7 +12,7 @@
     "./member-access": "./src/member-access.ts",
     "./sandbox": "./src/sandbox.ts",
     "./render-context": "./src/render-context.ts",
-    "./helpers": "./src/helpers.ts",
+    "./helpers": "./src/helpers/index.ts",
     "./hooks": "./src/hooks.ts",
     "./security": "./src/security.ts",
     "./timeout": "./src/timeout.ts",
