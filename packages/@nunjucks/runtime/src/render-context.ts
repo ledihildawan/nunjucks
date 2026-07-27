@@ -25,6 +25,15 @@ const scopeHas = (scope: Scope, key: string): boolean => {
   return false;
 };
 
+const mergeScopeData = (scope: Scope, seen: Set<string>, result: Record<string, unknown>): void => {
+  for (const [k, v] of scope.data) {
+    if (!seen.has(k)) {
+      seen.add(k);
+      result[k] = v;
+    }
+  }
+};
+
 export interface RenderContext {
   get: (key: string) => unknown;
   set: (key: string, value: unknown) => RenderContext;
@@ -42,6 +51,11 @@ export const createRenderContext = (initialData: Record<string, unknown> = {}): 
   let cachedToObject: Record<string, unknown> | null = null;
   let cachedToObjectScope: Scope | null = null;
 
+  const invalidateCache = () => {
+    cachedToObject = null;
+    cachedToObjectScope = null;
+  };
+
   const context: RenderContext = {
     get: (key: string): unknown => {
       let current: Scope | null = currentScope;
@@ -54,7 +68,7 @@ export const createRenderContext = (initialData: Record<string, unknown> = {}): 
 
     set: (key: string, value: unknown): RenderContext => {
       currentScope = scopeSet(currentScope, key, value);
-      cachedToObject = null;
+      invalidateCache();
       return context;
     },
 
@@ -64,13 +78,13 @@ export const createRenderContext = (initialData: Record<string, unknown> = {}): 
       const newData = new Map(currentScope.data);
       newData.delete(key);
       currentScope = { ...currentScope, data: newData };
-      cachedToObject = null;
+      invalidateCache();
       return context;
     },
 
     fork: (data: Record<string, unknown> = {}): RenderContext => {
       currentScope = createScope(data, currentScope);
-      cachedToObject = null;
+      invalidateCache();
       return context;
     },
 
@@ -78,7 +92,7 @@ export const createRenderContext = (initialData: Record<string, unknown> = {}): 
       for (const [k, v] of Object.entries(data)) {
         currentScope = scopeSet(currentScope, k, v);
       }
-      cachedToObject = null;
+      invalidateCache();
       return context;
     },
 
@@ -87,15 +101,10 @@ export const createRenderContext = (initialData: Record<string, unknown> = {}): 
         return cachedToObject;
       }
       const result: Record<string, unknown> = {};
-      let current: Scope | null = currentScope;
       const seen = new Set<string>();
+      let current: Scope | null = currentScope;
       while (current) {
-        for (const [k, v] of current.data) {
-          if (!seen.has(k)) {
-            seen.add(k);
-            result[k] = v;
-          }
-        }
+        mergeScopeData(current, seen, result);
         current = current.parent;
       }
       cachedToObject = result;

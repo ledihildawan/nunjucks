@@ -272,7 +272,7 @@ const buildErrorHeader = (
   const codeBadge = renderBadge('badge-error', category);
   const phaseBadge = renderBadge('badge-code', phase);
   const ideMeta = getIdeMeta(ide);
-  const ideLabel = `Open in ${ideMeta.label}`;
+  const _ideLabel = `Open in ${ideMeta.label}`;
   const headerTitle = escapeHtml(humanTitle);
   const locationInfo = escapeHtml(`${displayPath}:${displayLine}:${displayCol}`);
   const severityText = SEVERITY_HEADINGS[severity] ?? SEVERITY_HEADINGS.error;
@@ -361,12 +361,12 @@ const buildErrorFooter = (
   let footerActions = '';
   if (verbosity === 'full' && canLinkLocation) {
     const ideMeta = getIdeMeta(ide);
-    const ideLabel = `Open in ${ideMeta.label}`;
+  const _ideLabel = `Open in ${ideMeta.label}`;
     footerActions = `
     <div class="error-footer-actions">
       <a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="btn btn-solid">
         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">${ideMeta.icon}</svg>
-        ${ideLabel}
+        ${_ideLabel}
       </a>
     </div>`;
   }

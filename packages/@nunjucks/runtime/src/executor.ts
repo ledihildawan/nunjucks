@@ -332,20 +332,39 @@ export interface ExecuteConfig {
   autoescape?: boolean;
 }
 
-export const execute = async (code: string, context: Record<string, unknown> = {}, config: ExecuteConfig = {}): Promise<unknown> => {
-  const sandbox = config.sandbox ?? false;
-  const devWarningSandbox = config.devWarningSandbox ?? true;
-  const globals = config.globals ?? {};
-  const filters = config.filters ?? {};
+const buildGetTest = (config: ExecuteConfig) => {
   const tests = config.tests ?? {};
-
-  const getTest = (name: string, lineno: number | null, colno: number | null) => {
+  return (name: string, lineno: number | null, colno: number | null) => {
     const testFn = tests[name];
     if (testFn) { return testFn; }
     const envWithTest = config.env as { getTest?: (name: string, lineno: number | null, colno: number | null) => unknown } | undefined;
     if (envWithTest?.getTest) { return envWithTest.getTest(name, lineno, colno); }
     throw createLog('error', getError('UNDEFINED_TEST'), { name }, name, { lineno: lineno ?? null, colno: colno ?? null, phase: 'render', lineBase: 'zero' });
   };
+};
+
+const buildRuntime = (config: ExecuteConfig, getFilter: ReturnType<typeof createGetFilter>): Record<string, unknown> => {
+  const globals = config.globals ?? {};
+  const filters = config.filters ?? {};
+  const warningsCollector = config.warningsCollector || [];
+  const logContext = {
+    templateName: config.templateName || 'inline',
+    phase: 'render',
+    renderContext: config.renderContext
+  };
+  return {
+    ...globals,
+    ...filters,
+    ...getRuntimeHelpers(),
+    getFilter,
+    __warnings__: warningsCollector,
+    logContext,
+  };
+};
+
+export const execute = async (code: string, context: Record<string, unknown> = {}, config: ExecuteConfig = {}): Promise<unknown> => {
+  const sandbox = config.sandbox ?? false;
+  const devWarningSandbox = config.devWarningSandbox ?? true;
 
   if (!sandbox && devWarningSandbox) {
     // biome-ignore lint/suspicious/noConsole: documented fallback when no warning collector is attached to the render.
@@ -355,23 +374,11 @@ export const execute = async (code: string, context: Record<string, unknown> = {
     );
   }
 
+  const getTest = buildGetTest(config);
   const strictPipeInput = config.strictPipeInput ?? false;
+  const filters = config.filters ?? {};
   const getFilter = createGetFilter(context, filters, { env: config.env as GetFilterConfig['env'] }, strictPipeInput);
-
-  const warningsCollector = config.warningsCollector || [];
-  const logContext = {
-    templateName: config.templateName || 'inline',
-    phase: 'render',
-    renderContext: config.renderContext
-  };
-  const runtime: Record<string, unknown> = {
-    ...globals,
-    ...filters,
-    ...getRuntimeHelpers(),
-    getFilter,
-    __warnings__: warningsCollector,
-    logContext,
-  };
+  const runtime = buildRuntime(config, getFilter);
 
   if (config.sandbox) {
     buildSandboxedRuntime(runtime, buildSandboxOptions(config));
@@ -382,7 +389,6 @@ export const execute = async (code: string, context: Record<string, unknown> = {
   }
 
   const ctx = buildContextObject(context, config, runtime);
-
   const frame = createFrame();
   const env = buildEnvObject(config as BuildEnvObjectConfig, getFilter, getTest);
 

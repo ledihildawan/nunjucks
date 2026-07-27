@@ -70,6 +70,30 @@ interface Context {
 
 const getKeys = (obj: Record<string, unknown>): string[] => Object.keys(obj);
 
+const throwBlockNotFoundError = (name: string, location: BlockLocation | undefined, lineno: number | null, colno: number | null): never => {
+  throw createLog(
+    'error',
+    ERROR_DEFINITIONS.UNDEFINED_BLOCK,
+    { name },
+    name,
+    {
+      lineno: lineno ?? location?.lineno ?? null,
+      colno: colno ?? location?.colno ?? null,
+      phase: 'render',
+      lineBase: 'zero',
+    },
+  );
+};
+
+const throwNoSuperBlockError = (name: string, lineno: number | null, colno: number | null): never => {
+  throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, {
+    lineno,
+    colno,
+    phase: 'render',
+    lineBase: 'zero',
+  });
+};
+
 function createContext(
   ctx: Record<string, unknown> = {},
   blocks: Record<string, (...args: unknown[]) => unknown> = {},
@@ -94,19 +118,7 @@ function createContext(
       const parentBlockNames = new Set(parentBlockNamesVar);
       const [blockName] = getKeys(blocksVar).filter((name) => !parentBlockNames.has(name));
       if (blockName) {
-        const location = blockLocationsVar[blockName] || {};
-        throw createLog(
-          'error',
-          ERROR_DEFINITIONS.UNDEFINED_BLOCK,
-          { name: blockName },
-          blockName,
-          {
-            lineno: location.lineno ?? null,
-            colno: location.colno ?? null,
-            lineBase: 'zero',
-            phase: 'render',
-          },
-        );
+        throwBlockNotFoundError(blockName, blockLocationsVar[blockName], null, null);
       }
     }
   };
@@ -132,19 +144,7 @@ function createContext(
     validateBlocks();
     const firstBlock = blocksVar[name]?.[0];
     if (!firstBlock) {
-      const location = blockLocationsVar[name] || {};
-      throw createLog(
-        'error',
-        ERROR_DEFINITIONS.UNDEFINED_BLOCK,
-        { name },
-        name,
-        {
-          lineno: lineno ?? location.lineno ?? null,
-          colno: colno ?? location.colno ?? null,
-          phase: 'render',
-          lineBase: 'zero',
-        },
-      );
+      throwBlockNotFoundError(name, blockLocationsVar[name], lineno, colno);
     }
     return firstBlock;
   };
@@ -160,23 +160,13 @@ function createContext(
   ): unknown => {
     const blockList = blocksVar[name];
     if (!blockList) {
-      throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, {
-        lineno,
-        colno,
-        phase: 'render',
-        lineBase: 'zero',
-      });
+      throwNoSuperBlockError(name, lineno, colno);
     }
     const idx = blockList.indexOf(block);
     const blk = blockList[idx + 1];
 
     if (idx === -1 || !blk) {
-      throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, {
-        lineno,
-        colno,
-        phase: 'render',
-        lineBase: 'zero',
-      });
+      throwNoSuperBlockError(name, lineno, colno);
     }
 
     return blk(envObj, context, frame, runtime);

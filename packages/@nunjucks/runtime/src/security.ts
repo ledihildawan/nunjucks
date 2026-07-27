@@ -73,52 +73,63 @@ interface ScanContext {
   seen: WeakSet<object>;
 }
 
+const checkKeyDangerous = (
+  key: string,
+  value: unknown,
+  isTopLevel: boolean,
+  scan: ScanContext,
+  currentPath: string
+): string[] => {
+  if (isPrototypePollutionKey(key) || isBlockedNestedContextKey(key)) {
+    return [currentPath];
+  }
+  if (isTopLevel && isDangerousGlobal(key)) {
+    return [currentPath];
+  }
+  return [];
+};
+
+const checkValueDangerous = (
+  value: unknown,
+  key: string,
+  isTopLevel: boolean,
+  scan: ScanContext,
+  currentPath: string
+): string[] => {
+  if (!isFunction(value)) { return []; }
+  const fnName = value.name || key;
+  const dangerous: string[] = [];
+
+  if (isTopLevel && (fnName === 'eval' || fnName === 'Function')) {
+    dangerous.push(currentPath);
+  }
+  if (isTopLevel && isDangerousGlobal(fnName)) {
+    dangerous.push(currentPath);
+  }
+  if (isTopLevel && scan.allowedGlobals && !scan.allowedGlobals.includes(fnName) && !isBuiltIn(fnName)) {
+    dangerous.push(currentPath);
+  }
+  return dangerous;
+};
+
 const scanForDangerousValues = (
   obj: unknown,
   scan: ScanContext,
   path = '',
   isTopLevel = true
 ): string[] => {
-  const dangerous: string[] = [];
-
   if (!obj || typeof obj !== 'object' || scan.seen.has(obj as object)) {
-    return dangerous;
+    return [];
   }
   scan.seen.add(obj as object);
 
+  const dangerous: string[] = [];
   for (const key of keys(obj as Record<string, unknown>)) {
-    let currentPath: string;
-    if (path) {
-      currentPath = `${path}.${key}`;
-    } else {
-      currentPath = key;
-    }
+    const currentPath = path ? `${path}.${key}` : key;
     const value = (obj as Record<string, unknown>)[key];
 
-    // Prototype pollution keys - check at ALL levels (nested + top-level)
-    if (isPrototypePollutionKey(key) || isBlockedNestedContextKey(key)) {
-      dangerous.push(currentPath);
-    }
-    // Dangerous globals - check ONLY at top-level
-    else if (isTopLevel && isDangerousGlobal(key)) {
-      dangerous.push(currentPath);
-    }
-
-    if (isFunction(value)) {
-      const fnName = value.name || key;
-      // eval/Function - only dangerous at top-level (nested user.eval is not the global eval)
-      if (isTopLevel && (fnName === 'eval' || fnName === 'Function')) {
-        dangerous.push(currentPath);
-      }
-      // Other dangerous globals - only dangerous at top-level
-      if (isTopLevel && isDangerousGlobal(fnName)) {
-        dangerous.push(currentPath);
-      }
-      // Non-builtin non-global functions at top-level
-      if (isTopLevel && scan.allowedGlobals && !scan.allowedGlobals.includes(fnName) && !isBuiltIn(fnName)) {
-        dangerous.push(currentPath);
-      }
-    }
+    dangerous.push(...checkKeyDangerous(key, value, isTopLevel, scan, currentPath));
+    dangerous.push(...checkValueDangerous(value, key, isTopLevel, scan, currentPath));
 
     if (isDangerousReference(value)) {
       dangerous.push(currentPath);

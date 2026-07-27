@@ -80,6 +80,13 @@ export function optionalMemberLookup(obj: unknown, val: string, _parentName: str
   return target[val];
 }
 
+const normalizeIndex = (idx: number | null, len: number, defaultVal: number, stepValue: number): number => {
+  if (!isNonNullish(idx)) {
+    return stepValue < 0 ? len - 1 : defaultVal;
+  }
+  return Math.max(0, Math.min(len, idx < 0 ? len + idx : idx));
+};
+
 export function slice(arr: unknown[] | string, start: number | null, stop: number | null, step: number | null): unknown[] | string {
   if (step === 0) {
     throw createLog('error', ERROR_DEFINITIONS.SLICE_STEP, {}, 'step', { phase: 'render', lineBase: 'zero' });
@@ -87,12 +94,8 @@ export function slice(arr: unknown[] | string, start: number | null, stop: numbe
 
   const len = arr.length;
   const stepValue = step ?? 1;
-  const normalizedStart = !isNonNullish(start)
-    ? (stepValue < 0 ? len - 1 : 0)
-    : Math.max(0, Math.min(len, start < 0 ? len + start : start));
-  const normalizedStop = !isNonNullish(stop)
-    ? (stepValue < 0 ? -1 : len)
-    : Math.max(0, Math.min(len, stop < 0 ? len + stop : stop));
+  const normalizedStart = normalizeIndex(start, len, 0, stepValue);
+  const normalizedStop = normalizeIndex(stop, len, len, stepValue);
 
   if (stepValue === 1) {
     return arr.slice(normalizedStart, normalizedStop);

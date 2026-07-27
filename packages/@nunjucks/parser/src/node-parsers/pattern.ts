@@ -229,21 +229,18 @@ const parseObjectPatternLoop = (
     if (!commaResult.continueLoop) {
       return { node: commaResult.node, sawRest: commaResult.sawRest };
     }
-    const newNode1 = commaResult.node;
-    const newSawRest1 = commaResult.sawRest;
 
-    const spreadResult = handleObjectSpread(ctx, newNode1, newSawRest1);
-    const newNode2 = spreadResult.node;
+    const spreadResult = handleObjectSpread(ctx, commaResult.node, commaResult.sawRest);
     if (spreadResult.sawRest) {
       const after = peekToken(ctx);
       if (after && after.type === TOKEN_COMMA) {
         nextToken(ctx);
       }
-      return { node: newNode2, sawRest: true };
+      return { node: spreadResult.node, sawRest: true };
     }
 
-    node = parseObjectPatternProperty(ctx, newNode2);
-    sawRest = newSawRest1;
+    node = parseObjectPatternProperty(ctx, spreadResult.node);
+    sawRest = commaResult.sawRest;
   }
 };
 
