@@ -7,16 +7,18 @@ const isObject = (val: unknown): val is Record<string, unknown> =>
 
 const globalRecord = globalThis as Record<string, unknown>;
 
+const isPrimitive = (value: unknown): boolean => value === null || value === undefined || (typeof value !== 'object' && typeof value !== 'function');
+
+const checkGlobalThis = (value: unknown): boolean => typeof globalThis !== 'undefined' && value === globalThis;
+const checkProcess = (value: unknown): boolean => typeof process !== 'undefined' && value === process;
+const checkWindow = (value: unknown): boolean => globalRecord.window !== undefined && value === globalRecord.window;
+const checkDocument = (value: unknown): boolean => globalRecord.document !== undefined && value === globalRecord.document;
+const checkSelf = (value: unknown): boolean => globalRecord.self !== undefined && value === globalRecord.self;
+const checkBuffer = (value: unknown): boolean => typeof Buffer !== 'undefined' && value instanceof Buffer;
+
 const isDangerousReference = (value: unknown): boolean => {
-  if (value === null || value === undefined) { return false; }
-  if (typeof value !== 'object' && typeof value !== 'function') { return false; }
-  if (typeof globalThis !== 'undefined' && value === globalThis) { return true; }
-  if (typeof process !== 'undefined' && value === process) { return true; }
-  if (globalRecord.window !== undefined && value === globalRecord.window) { return true; }
-  if (globalRecord.document !== undefined && value === globalRecord.document) { return true; }
-  if (globalRecord.self !== undefined && value === globalRecord.self) { return true; }
-  if (typeof Buffer !== 'undefined' && value instanceof Buffer) { return true; }
-  return false;
+  if (isPrimitive(value)) { return false; }
+  return checkGlobalThis(value) || checkProcess(value) || checkWindow(value) || checkDocument(value) || checkSelf(value) || checkBuffer(value);
 };
 
 const DANGEROUS_PATTERNS = [
@@ -75,9 +77,9 @@ interface ScanContext {
 
 const checkKeyDangerous = (
   key: string,
-  value: unknown,
+  _value: unknown,
   isTopLevel: boolean,
-  scan: ScanContext,
+  _scan: ScanContext,
   currentPath: string
 ): string[] => {
   if (isPrototypePollutionKey(key) || isBlockedNestedContextKey(key)) {

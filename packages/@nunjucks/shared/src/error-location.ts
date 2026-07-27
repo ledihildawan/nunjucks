@@ -340,6 +340,51 @@ const templateEndPosition = (template: string): SourcePosition => {
  *      want to point at that literal in the caller.
  *   4. If all fail, return null and let the caller fall back to raw line/col.
  */
+const tryMatchTemplate = (
+  content: string,
+  template: string,
+  errLineno: number | null,
+  errColno: number | null,
+  preferredLine: number | null
+): SourcePosition | null => {
+  const matched = matchTemplateInCaller(content, template, errLineno, errColno, preferredLine);
+  if (matched) { return matched; }
+  return null;
+};
+
+const tryMatchSubject = (
+  content: string,
+  subject: string,
+  preferredLine: number | null
+): SourcePosition | null => {
+  const bySubject = findSubjectOccurrence(content, subject, preferredLine);
+  if (bySubject) { return bySubject; }
+  return null;
+};
+
+const tryMatchTemplateEnd = (
+  content: string,
+  template: string,
+  errLineno: number | null,
+  errColno: number | null,
+  preferredLine: number | null
+): SourcePosition | null => {
+  if (template.length > 0 && !isCoordinateWithinTemplate(template, errLineno, errColno)) {
+    const end = templateEndPosition(template);
+    return matchTemplateInCaller(content, template, end.line, end.col, preferredLine);
+  }
+  return null;
+};
+
+const tryMatchNonStringTemplate = (
+  content: string,
+  template: unknown,
+  preferredLine: number | null
+): SourcePosition | null => {
+  const literal = templateLiteralText(template);
+  return findSubjectOccurrence(content, literal, preferredLine);
+};
+
 const extractCallerPosition = (
   content: string,
   template: string | null,
@@ -349,25 +394,23 @@ const extractCallerPosition = (
   preferredLine: number | null
 ): SourcePosition | null => {
   if (typeof template === 'string') {
-    const matched = matchTemplateInCaller(content, template, errLineno, errColno, preferredLine);
+    const matched = tryMatchTemplate(content, template, errLineno, errColno, preferredLine);
     if (matched) { return matched; }
   }
 
   if (subject) {
-    const bySubject = findSubjectOccurrence(content, subject, preferredLine);
-    if (bySubject) { return bySubject; }
+    const matched = tryMatchSubject(content, subject, preferredLine);
+    if (matched) { return matched; }
   }
 
-  if (typeof template === 'string' && template.length > 0 && !isCoordinateWithinTemplate(template, errLineno, errColno)) {
-    const end = templateEndPosition(template);
-    const atEnd = matchTemplateInCaller(content, template, end.line, end.col, preferredLine);
-    if (atEnd) { return atEnd; }
+  if (typeof template === 'string') {
+    const matched = tryMatchTemplateEnd(content, template, errLineno, errColno, preferredLine);
+    if (matched) { return matched; }
   }
 
   if (typeof template !== 'string') {
-    const literal = templateLiteralText(template);
-    const byValue = findSubjectOccurrence(content, literal, preferredLine);
-    if (byValue) { return byValue; }
+    const matched = tryMatchNonStringTemplate(content, template, preferredLine);
+    if (matched) { return matched; }
   }
   return null;
 };

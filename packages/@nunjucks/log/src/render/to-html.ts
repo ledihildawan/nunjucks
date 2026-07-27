@@ -391,6 +391,36 @@ const classifyAndBuildTitle = (error: ErrorLike) => {
   });
 };
 
+const buildErrorBodyContent = (
+  verbosity: string,
+  error: ErrorLike,
+  classified: ReturnType<typeof classifyError>,
+  sourceTrace: unknown,
+  renderContext: unknown,
+  ide: string,
+  displayPath: string
+): string => {
+  if (verbosity !== 'full') { return ''; }
+  return buildFullErrorBody(
+    sourceTrace,
+    classified.causes,
+    classified.fixCode,
+    classified.fixComment,
+    classified.documentationUrl,
+    renderContext,
+    error,
+    ide,
+    displayPath
+  );
+};
+
+const buildHtmlWrapper = (header: string, errorBody: string, footer: string): string => `
+<main class="error-wrapper" aria-labelledby="err-title">
+  ${header}
+  ${errorBody}
+  ${footer}
+</main>`;
+
 const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string => {
   const {
     templatePath = error?.templateName,
@@ -437,29 +467,11 @@ const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string =>
     locDisplay
   );
 
-  let errorBody = '';
-  if (verbosity === 'full') {
-    errorBody = buildFullErrorBody(
-      sourceTrace,
-      classified.causes,
-      classified.fixCode,
-      classified.fixComment,
-      classified.documentationUrl,
-      renderContext,
-      error,
-      ide,
-      displayPath
-    );
-  }
+  const errorBody = buildErrorBodyContent(verbosity, error, classified, sourceTrace, renderContext, ide, displayPath);
 
   const footer = buildErrorFooter(version, timestamp, verbosity, canLinkLocation, ide, displayPath, displayLine, displayCol);
 
-  const body = `
-<main class="error-wrapper" aria-labelledby="err-title">
-  ${header}
-  ${errorBody}
-  ${footer}
-</main>`;
+  const body = buildHtmlWrapper(header, errorBody, footer);
 
   const docTitle = classified.severity === 'warning' ? 'Template Warning' : 'Template Error';
   return document(docTitle, body, TOGGLE_SCRIPT, csp ?? null);

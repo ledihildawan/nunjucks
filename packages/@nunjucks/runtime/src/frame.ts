@@ -132,16 +132,15 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
         return cached.frame;
       }
 
-      const val = state.variables[name];
       const shouldBailOut = forWrite && state.isolateWrites;
+      const val = state.variables[name];
       if (val !== undefined) {
         if (shouldBailOut) { return; }
         state.resolveCache.set(cacheKey, { revision: state.rootState.revision, frame });
         return frame;
       }
       if (shouldBailOut) { return; }
-      const parentFrame = state.parent;
-      const resolvedFrame = parentFrame?.resolve(name);
+      const resolvedFrame = state.parent?.resolve(name);
       state.resolveCache.set(cacheKey, { revision: state.rootState.revision, frame: resolvedFrame });
       return resolvedFrame;
     },
