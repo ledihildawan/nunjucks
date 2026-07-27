@@ -86,52 +86,33 @@ export function slice(arr: unknown[] | string, start: number | null, stop: numbe
   }
 
   const len = arr.length;
-  // An omitted step means 1. Naming it once removes five assertions that were
-  // each claiming `step` is non-null while the parameter genuinely allows null.
   const stepValue = step ?? 1;
-  let normalizedStart = start;
-  let normalizedStop = stop;
-
-  if (!isNonNullish(normalizedStart)) {
-    if (stepValue < 0) {
-      normalizedStart = len - 1;
-    } else {
-      normalizedStart = 0;
-    }
-  }
-  if (!isNonNullish(normalizedStop)) {
-    if (stepValue < 0) {
-      normalizedStop = -1;
-    } else {
-      normalizedStop = len;
-    }
-  }
-
-  const normalizeStart = (idx: number): number => {
-    if (idx < 0) { return Math.max(0, len + idx); }
-    return Math.min(len, idx);
-  };
-
-  normalizedStart = normalizeStart(normalizedStart as number);
+  const normalizedStart = !isNonNullish(start)
+    ? (stepValue < 0 ? len - 1 : 0)
+    : Math.max(0, Math.min(len, start < 0 ? len + start : start));
+  const normalizedStop = !isNonNullish(stop)
+    ? (stepValue < 0 ? -1 : len)
+    : Math.max(0, Math.min(len, stop < 0 ? len + stop : stop));
 
   if (stepValue === 1) {
-    if (typeof arr === 'string') {
-      return arr.slice(normalizedStart, normalizedStop as number);
-    }
-    return arr.slice(normalizedStart, normalizedStop as number);
+    return arr.slice(normalizedStart, normalizedStop);
   }
 
-  const result: unknown[] = [];
-  if (stepValue > 0) {
-    for (let i = normalizedStart; i < (normalizedStop as number); i += stepValue) {
-      result.push(arr[i]);
+  const buildResult = (): unknown[] => {
+    const result: unknown[] = [];
+    if (stepValue > 0) {
+      for (let i = normalizedStart; i < normalizedStop; i += stepValue) {
+        result.push(arr[i]);
+      }
+    } else {
+      for (let i = normalizedStart; i >= 0 && i > normalizedStop; i += stepValue) {
+        result.push(arr[i]);
+      }
     }
-  } else {
-    for (let i = normalizedStart; i >= 0 && i > (normalizedStop as number); i += stepValue) {
-      result.push(arr[i]);
-    }
-  }
-  return result;
+    return result;
+  };
+
+  return buildResult();
 }
 
 export function nullishCoalesce(left: unknown, right: unknown): unknown {

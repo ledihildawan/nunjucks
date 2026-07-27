@@ -260,6 +260,12 @@ const createTemplateCompiler = (state: TemplateState) => {
 const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<typeof createTemplateErrorHandler>) => {
   const { enrichError } = errorHandler;
 
+  const createRenderFrame = (parentFrame: unknown): Frame => {
+    const frame = parentFrame ? (parentFrame as Pick<Frame, 'push'>).push(true) : createFrame();
+    frame.topLevel = true;
+    return frame;
+  };
+
   const render = async (ctx: unknown, parentFrame?: unknown) => {
     await state.compiler?.safeCompile();
 
@@ -275,13 +281,7 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<t
       state.env as unknown as ContextEnv,
       { blockLocations: state.blockMeta as Record<string, BlockLocation> }
     );
-    let frame: ReturnType<Frame['push']>;
-    if (parentFrame) {
-      frame = (parentFrame as Pick<Frame, 'push'>).push(true);
-    } else {
-      frame = createFrame();
-    }
-    frame.topLevel = true;
+    const frame = createRenderFrame(parentFrame);
 
     try {
       const runtime = createRuntimeWithContext(state.path, state.env.opts, ctx || {});
@@ -305,19 +305,19 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<t
   return { render };
 };
 
-export function createTemplate(src: string | TemplateSource, env?: Env, path?: string | null, eagerCompile?: boolean, includeChain?: unknown[] | null): TemplateObject {
-  const state: TemplateState = {
-    env: env || createFallbackEnv(),
-    path: path ?? undefined,
-    _includeChain: includeChain ?? null,
-    tmplStr: null,
-    tmplProps: null,
-    blocks: {},
-    blockMeta: {},
-    rootRenderFunc: null,
-    compiled: false,
-  };
+const initTemplateState = (_src: string | TemplateSource, env: Env | undefined, path: string | null | undefined, includeChain: unknown[] | null | undefined): TemplateState => ({
+  env: env || createFallbackEnv(),
+  path: path ?? undefined,
+  _includeChain: includeChain ?? null,
+  tmplStr: null,
+  tmplProps: null,
+  blocks: {},
+  blockMeta: {},
+  rootRenderFunc: null,
+  compiled: false,
+});
 
+const loadSource = (state: TemplateState, src: string | TemplateSource): void => {
   if (isPlainObject(src)) {
     const srcObj = src as TemplateSource;
     switch (srcObj.type) {
@@ -335,6 +335,42 @@ export function createTemplate(src: string | TemplateSource, env?: Env, path?: s
   } else {
     throw createLog('error', getError('TEMPLATE_SRC_STRING'), {}, null, { phase: 'load' });
   }
+};
+
+const createGetExported = (state: TemplateState) => async (ctx?: unknown, parentFrame?: unknown): Promise<Record<string, unknown>> => {
+  try {
+    await state.compiler?.safeCompile();
+  } catch (e) {
+    throw prettifyError({ path: state.path, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain as unknown as IncludeChain | undefined });
+  }
+
+  let frame: ReturnType<Frame['push']>;
+  if (parentFrame) {
+    frame = (parentFrame as Pick<Frame, 'push'>).push();
+  } else {
+    frame = createFrame();
+  }
+  frame.topLevel = true;
+
+  const context = createContext(
+    (ctx || {}) as Record<string, unknown>,
+    state.blocks,
+    state.env as unknown as ContextEnv,
+    { blockLocations: state.blockMeta as Record<string, BlockLocation> }
+  );
+  try {
+    const runtime = createRuntimeWithContext(state.path, state.env.opts, ctx || {});
+    await state.rootRenderFunc?.(state.env, context, frame, runtime);
+    return context.getExported();
+  } catch (e) {
+    if (!(e as Record<string, unknown>).path) { (e as Record<string, unknown>).path = state.path || undefined; }
+    throw prettifyError({ path: (e as Record<string, unknown>).path as string, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain as unknown as IncludeChain | undefined });
+  }
+};
+
+export function createTemplate(src: string | TemplateSource, env?: Env, path?: string | null, eagerCompile?: boolean, includeChain?: unknown[] | null): TemplateObject {
+  const state = initTemplateState(src, env, path, includeChain);
+  loadSource(state, src);
 
   const errorHandler = createTemplateErrorHandler(state);
   state.compiler = createTemplateCompiler(state);
@@ -358,36 +394,7 @@ export function createTemplate(src: string | TemplateSource, env?: Env, path?: s
     get rootRenderFunc() { return state.rootRenderFunc; },
     render: renderer.render,
     compile: () => state.compiler?.compile(),
-    getExported: async (ctx?: unknown, parentFrame?: unknown) => {
-      try {
-        await state.compiler?.safeCompile();
-      } catch (e) {
-        throw prettifyError({ path: state.path, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain as unknown as IncludeChain | undefined });
-      }
-
-      let frame: ReturnType<Frame['push']>;
-      if (parentFrame) {
-        frame = (parentFrame as Pick<Frame, 'push'>).push();
-      } else {
-        frame = createFrame();
-      }
-      frame.topLevel = true;
-
-      const context = createContext(
-      (ctx || {}) as Record<string, unknown>,
-      state.blocks,
-      state.env as unknown as ContextEnv,
-      { blockLocations: state.blockMeta as Record<string, BlockLocation> }
-    );
-      try {
-        const runtime = createRuntimeWithContext(state.path, state.env.opts, ctx || {});
-        await state.rootRenderFunc?.(state.env, context, frame, runtime);
-        return context.getExported();
-      } catch (e) {
-        if (!(e as Record<string, unknown>).path) { (e as Record<string, unknown>).path = state.path || undefined; }
-        throw prettifyError({ path: (e as Record<string, unknown>).path as string, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain as unknown as IncludeChain | undefined });
-      }
-    },
+    getExported: createGetExported(state),
   };
 
   return template;

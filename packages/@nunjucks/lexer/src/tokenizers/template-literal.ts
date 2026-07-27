@@ -32,9 +32,10 @@ const processInterpolationChar = (exprChar: string, exprDepth: number): { depthD
 const parseInterpolation = (current: ReturnType<typeof advance>): ParseInterpolationResult => {
   let exprDepth = 1;
   let exprContent = '';
+  let pos = current;
 
-  while (!isFinished(current) && exprDepth > 0) {
-    const exprChar = getChar(current);
+  while (!isFinished(pos) && exprDepth > 0) {
+    const exprChar = getChar(pos);
     const result = processInterpolationChar(exprChar, exprDepth);
     if (result) {
       exprDepth += result.depthDelta;
@@ -42,10 +43,10 @@ const parseInterpolation = (current: ReturnType<typeof advance>): ParseInterpola
         exprContent += result.charToAdd;
       }
     }
-    current = advance(current);
+    pos = advance(pos);
   }
 
-  return { exprContent, current };
+  return { exprContent, current: pos };
 };
 
 const pushTemplateQuasi = (

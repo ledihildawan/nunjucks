@@ -35,16 +35,19 @@ const PROTOTYPE_POLLUTION_KEYS = new Set([
 
 const globalRecord = globalThis as Record<string, unknown>;
 
+const DANGEROUS_GLOBAL_VALUES = new WeakSet([
+  typeof process !== 'undefined' ? process : null,
+  globalThis,
+  globalRecord.window,
+  globalRecord.document,
+  globalRecord.self,
+  typeof Buffer !== 'undefined' ? Buffer : null
+].filter(Boolean) as unknown[]);
+
 const isDangerousValue = (value: unknown): boolean => {
   if (value === null || value === undefined) { return false; }
   if (typeof value === 'object' || typeof value === 'function') {
-    if (typeof process !== 'undefined' && value === process) { return true; }
-    if (value === globalThis) { return true; }
-    if (globalRecord.window !== undefined && value === globalRecord.window) { return true; }
-    if (globalRecord.document !== undefined && value === globalRecord.document) { return true; }
-    if (globalRecord.self !== undefined && value === globalRecord.self) { return true; }
-    if (typeof Buffer !== 'undefined' && value instanceof Buffer) { return true; }
-    if (typeof globalThis !== 'undefined' && value === globalThis) { return true; }
+    if (DANGEROUS_GLOBAL_VALUES.has(value as object)) { return true; }
   }
   return false;
 };
@@ -60,6 +63,15 @@ interface ContextEntry {
   path: string;
 }
 
+const isAllowedGlobal = (key: string, scan: ScanContext): boolean =>
+  scan.allowedGlobals?.includes(key) ?? false;
+
+const isDangerousFunction = (value: unknown, key: string, scan: ScanContext): boolean => {
+  if (typeof value !== 'function') { return false; }
+  const fnName = value.name || key;
+  return (fnName === 'eval' || fnName === 'Function' || DANGEROUS_GLOBALS.has(fnName)) && !isAllowedGlobal(fnName, scan);
+};
+
 const dangerousPathsForKey = (
   { key, value, path: currentPath }: ContextEntry,
   scan: ScanContext,
@@ -68,17 +80,11 @@ const dangerousPathsForKey = (
   if (PROTOTYPE_POLLUTION_KEYS.has(key)) { return [currentPath]; }
 
   const found: string[] = [];
-  if (isTopLevel && DANGEROUS_GLOBALS.has(key) && !scan.allowedGlobals?.includes(key)) {
+  if (isTopLevel && DANGEROUS_GLOBALS.has(key) && !isAllowedGlobal(key, scan)) {
     found.push(currentPath);
   }
-  if (typeof value === 'function') {
-    const fnName = value.name || key;
-    if (isTopLevel && (fnName === 'eval' || fnName === 'Function')) {
-      found.push(currentPath);
-    }
-    if (isTopLevel && DANGEROUS_GLOBALS.has(fnName) && !scan.allowedGlobals?.includes(fnName)) {
-      found.push(currentPath);
-    }
+  if (isDangerousFunction(value, key, scan)) {
+    found.push(currentPath);
   }
   if (isDangerousValue(value)) {
     found.push(currentPath);

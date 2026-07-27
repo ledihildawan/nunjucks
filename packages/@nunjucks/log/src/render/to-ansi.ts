@@ -78,21 +78,25 @@ const formatSourceTrace = (
   });
 };
 
-const sanitizeForAnsi = (value: unknown, seen?: WeakSet<object>): string => {
+const sanitizePrimitive = (value: unknown): string => {
   if (value === null) { return 'null'; }
   if (value === undefined) { return 'undefined'; }
   if (typeof value === 'function') { return `[Function: ${value.name || 'anonymous'}]`; }
-  if (typeof value === 'object') {
-    if (seen?.has(value as object)) { return '[Circular]'; }
-    const newSeen = seen || new WeakSet();
-    newSeen.add(value as object);
-    if (Array.isArray(value)) {
-      return `Array(${value.length})`;
-    }
-    return `Object(${keys(value).length})`;
-  }
   if (typeof value === 'string') { return `"${value}"`; }
   return String(value);
+};
+
+const sanitizeForAnsi = (value: unknown, seen?: WeakSet<object>): string => {
+  if (typeof value !== 'object' || value === null) {
+    return sanitizePrimitive(value);
+  }
+  if (seen?.has(value)) { return '[Circular]'; }
+  const newSeen = seen || new WeakSet();
+  newSeen.add(value);
+  if (Array.isArray(value)) {
+    return `Array(${value.length})`;
+  }
+  return `Object(${keys(value).length})`;
 };
 
 const INDENT = '  ';
@@ -211,91 +215,122 @@ const formatFixAnsi = (fixCode: string | null, fixComment: string | null, docume
   return parts.join('\n');
 };
 
-const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
-  if (!error) { return ''; }
-
-  const { verbosity = 'full', templatePath, lineno, colno, ide = 'vscode', sourceTrace } = options;
-
+const getErrorMessage = (error: unknown): string => {
   let { message } = error as Error;
   if (!message) {
     message = String(error);
   }
-
   const firstStackLine = message.indexOf('\n    at ');
   if (firstStackLine !== -1) {
     message = message.slice(0, firstStackLine);
   }
+  return message;
+};
 
-  if (verbosity === 'simple') {
-    return message;
-  }
+const formatMediumAnsi = (message: string, path: string, location: ReturnType<typeof toDisplayLocation>, causes: string[], documentationUrl: string | null, ide: string): string => {
+  const [firstCause] = causes;
+  const causeHint = firstCause ? stripMarkdown(firstCause) : '';
+  const extrasPart = getExtrasPart(causeHint, documentationUrl || '');
+  const locationPart = path
+    ? formatLocationString(path, location, ide).replace(LEADING_AT_RE, '')
+    : ` at line ${location.line}`;
+  return `${message}${locationPart}${extrasPart}`;
+};
 
+interface AnsiErrorParts {
+  causes: string[];
+  fixCode: string;
+  fixComment: string;
+  documentationUrl: string | null;
+  severity: 'error' | 'warning' | 'info' | undefined;
+  path: string;
+  displayLineno: number | null;
+  displayColno: number | null;
+  lineBase: 'zero' | 'one' | null;
+}
+
+const extractAnsiErrorParts = (error: unknown, templatePath?: string, lineno?: number | null, colno?: number | null): AnsiErrorParts => {
   const errObj = error as {
-    code?: string | null;
-    subject?: string | null;
+    templateName?: string;
+    lineno?: number | null;
+    colno?: number | null;
+    lineBase?: 'zero' | 'one' | null;
     causes?: string[];
     fixCode?: string | null;
     fixComment?: string | null;
     documentationUrl?: string | null;
     severity?: 'error' | 'warning' | 'info';
   };
-
   const classification = classifyFromError(errObj);
-  let causes: string[];
-  if (classification.causes && classification.causes.length > 0) {
-    causes = [...classification.causes];
-  } else {
-    causes = [...(errObj.causes || [])];
-  }
-  const fixCode = classification.fixCode ?? errObj.fixCode ?? '';
-  const fixComment = classification.fixComment ?? errObj.fixComment ?? '';
-  const documentationUrl = classification.documentationUrl ?? errObj.documentationUrl ?? null;
+  return {
+    causes: classification.causes?.length ? [...classification.causes] : [...(errObj.causes || [])],
+    fixCode: classification.fixCode ?? errObj.fixCode ?? '',
+    fixComment: classification.fixComment ?? errObj.fixComment ?? '',
+    documentationUrl: classification.documentationUrl ?? errObj.documentationUrl ?? null,
+    severity: errObj.severity,
+    path: templatePath || errObj.templateName || '',
+    displayLineno: lineno ?? errObj.lineno ?? null,
+    displayColno: colno ?? errObj.colno ?? null,
+    lineBase: errObj.lineBase ?? 'zero',
+  };
+};
 
-  const path = templatePath || (error as { templateName?: string }).templateName || '';
-  const displayLineno = lineno ?? (error as { lineno?: number | null }).lineno ?? null;
-  const displayColno = colno ?? (error as { colno?: number | null }).colno ?? null;
-  const lineBase = (error as { lineBase?: 'zero' | 'one' | null }).lineBase ?? 'zero';
-
-  const location = toDisplayLocation(displayLineno, displayColno, lineBase);
-
-  if (verbosity === 'medium') {
-    const [firstCause] = causes;
-    let causeHint = '';
-    if (firstCause) { causeHint = stripMarkdown(firstCause); }
-    const extrasPart = getExtrasPart(causeHint, documentationUrl || '');
-    let locationPart = ` at line ${location.line}`;
-    if (path) { locationPart = formatLocationString(path, location, ide).replace(LEADING_AT_RE, ''); }
-
-    return `${message}${locationPart}${extrasPart}`;
-  }
-
-  const stack = (error as Error).stack || '';
+const formatFullAnsi = (
+  message: string,
+  parts: AnsiErrorParts,
+  ide: string,
+  sourceTrace: SourceTrace | null | undefined,
+  renderContext: Record<string, unknown> | undefined
+): string => {
+  const { causes, fixCode, fixComment, documentationUrl, severity, path } = parts;
+  const location = toDisplayLocation(parts.displayLineno, parts.displayColno, parts.lineBase);
+  const stack = (sourceTrace as unknown as Error).stack || '';
   const stackLines = stack.split('\n').slice(1);
   const formattedStack = stackLines.map(line => formatStackLine(line, ide)).join('\n');
   const locationStr = formatLocationString(path, location, ide);
-  const severityLabel = getSeverityLabel(errObj.severity);
+  const severityLabel = getSeverityLabel(severity);
   const header = `${severityLabel} ${message}${locationStr}\n`;
 
-  const parts: string[] = [header];
+  const outputParts: string[] = [header];
 
   if (sourceTrace && sourceTrace.lines.length > 0) {
-    parts.push(picocolors.bold('Source Trace:'));
-    parts.push(formatSourceTrace(sourceTrace.lines, sourceTrace.caret).join('\n'));
+    outputParts.push(picocolors.bold('Source Trace:'));
+    outputParts.push(formatSourceTrace(sourceTrace.lines, sourceTrace.caret).join('\n'));
   }
 
   const causesStr = formatCausesAnsi(causes);
-  if (causesStr) { parts.push(causesStr); }
+  if (causesStr) { outputParts.push(causesStr); }
 
   const fixStr = formatFixAnsi(fixCode, fixComment, documentationUrl);
-  if (fixStr) { parts.push(fixStr); }
+  if (fixStr) { outputParts.push(fixStr); }
 
-  if (options.renderContext && verbosity === 'full') {
-    parts.push(renderContextAnsi(options.renderContext));
+  if (renderContext) {
+    outputParts.push(renderContextAnsi(renderContext));
   }
 
-  parts.push(`\n${picocolors.bold('Stack Trace:')}\n${formattedStack}`);
+  outputParts.push(`\n${picocolors.bold('Stack Trace:')}\n${formattedStack}`);
 
-  return parts.filter(Boolean).join('\n');
+  return outputParts.filter(Boolean).join('\n');
+};
+
+const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
+  if (!error) { return ''; }
+
+  const { verbosity = 'full', templatePath, lineno, colno, ide = 'vscode', sourceTrace } = options;
+  const message = getErrorMessage(error);
+
+  if (verbosity === 'simple') {
+    return message;
+  }
+
+  const parts = extractAnsiErrorParts(error, templatePath, lineno, colno);
+
+  if (verbosity === 'medium') {
+    const location = toDisplayLocation(parts.displayLineno, parts.displayColno, parts.lineBase);
+    return formatMediumAnsi(message, parts.path, location, parts.causes, parts.documentationUrl, ide);
+  }
+
+  return formatFullAnsi(message, parts, ide, sourceTrace, options.renderContext);
 };
 
 export { toAnsi };

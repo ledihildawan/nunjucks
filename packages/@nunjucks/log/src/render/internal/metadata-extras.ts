@@ -118,65 +118,59 @@ const buildSnippet = ({
   return { snippet, snippetLines: trace.lines, caret };
 };
 
-const getErrorMetadata = (err: ErrorLike, options: GetErrorMetadataOptions = {}): ErrorMetadata => {
-  const {
-    includeSource = true,
-    includeRenderContext = true,
-    snippetContext = 2
-  } = options;
+const buildErrorMetadataResult = (
+  err: ErrorLike,
+  lineBase: LineBase,
+  lineno: number | null,
+  colno: number | null,
+  sourceContent: string | null,
+  sourceStartLine: number,
+  snippet: string | null,
+  snippetLines: ErrorMetadata['snippetLines'],
+  caret: ErrorMetadata['caret'],
+  renderContext: Record<string, unknown> | null
+): ErrorMetadata => ({
+  code: err.code ?? null,
+  subject: err.subject ?? null,
+  message: err.message ?? '',
+  phase: err.phase ?? null,
+  templateName: err.templateName ?? null,
+  templatePath: err.templatePath ?? null,
+  sourceContent,
+  sourceStartLine,
+  lineno,
+  colno,
+  displayLine: toDisplayCoordinate(lineno, lineBase),
+  displayCol: toDisplayCoordinate(colno, lineBase),
+  lineBase,
+  snippet,
+  snippetLines,
+  caret,
+  renderContext,
+});
 
-  let lineBaseVal: 'one' | 'zero';
-  if (err.lineBase === 'one') {
-    lineBaseVal = 'one';
-  } else {
-    lineBaseVal = 'zero';
-  }
-  const lineBase = lineBaseVal as LineBase;
+const getErrorMetadata = (err: ErrorLike, options: GetErrorMetadataOptions = {}): ErrorMetadata => {
+  const { includeSource = true, includeRenderContext = true, snippetContext = 2 } = options;
+  const lineBase = (err.lineBase === 'one' ? 'one' : 'zero') as LineBase;
   const lineno = readNumber(err.lineno);
   const colno = readNumber(err.colno);
   const sourceStartLine = readNumber(err.sourceStartLine) ?? 1;
-  const { sourceContent: rawSource } = err;
-  let sourceContent: string | null;
-  if (includeSource && typeof rawSource === 'string') {
-    sourceContent = rawSource;
-  } else {
-    sourceContent = null;
-  }
-  const displayLine = toDisplayCoordinate(lineno, lineBase);
-  const displayCol = toDisplayCoordinate(colno, lineBase);
+  const rawSource = err.sourceContent;
+  const sourceContent = includeSource && typeof rawSource === 'string' ? rawSource : null;
 
   const { snippet, snippetLines, caret } = buildSnippet({
     sourceContent,
-    displayLine,
-    displayCol,
+    displayLine: toDisplayCoordinate(lineno, lineBase),
+    displayCol: toDisplayCoordinate(colno, lineBase),
     sourceStartLine,
     context: Math.max(0, snippetContext),
   });
 
-  return {
-    code: err.code ?? null,
-    subject: err.subject ?? null,
-    message: err.message ?? '',
-    phase: err.phase ?? null,
-    templateName: err.templateName ?? null,
-    templatePath: err.templatePath ?? null,
-    sourceContent,
-    sourceStartLine,
-    lineno,
-    colno,
-    displayLine,
-    displayCol,
-    lineBase,
-    snippet,
-    snippetLines,
-    caret,
-    renderContext: (() => {
-      if (includeRenderContext && err.renderContext && typeof err.renderContext === 'object') {
-        return err.renderContext;
-      }
-      return null;
-    })()
-  };
+  const renderContext = includeRenderContext && err.renderContext && typeof err.renderContext === 'object'
+    ? err.renderContext
+    : null;
+
+  return buildErrorMetadataResult(err, lineBase, lineno, colno, sourceContent, sourceStartLine, snippet, snippetLines, caret, renderContext);
 };
 
 export { getErrorMetadata };

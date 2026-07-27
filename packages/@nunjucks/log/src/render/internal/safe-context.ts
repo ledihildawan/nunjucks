@@ -68,21 +68,25 @@ const readOwnValue = (value: object, key: string | symbol): unknown => {
 /** Returned when a specialised normaliser does not apply to the value. */
 const NOT_HANDLED = Symbol('not-handled');
 
+const formatFunction = (value: { name?: string }): string => {
+  const namePart = value.name ? `: ${value.name}` : '';
+  return `[Function${namePart}]`;
+};
+
+const truncateNonString = (value: unknown, state: NormalizeState): unknown =>
+  typeof value === 'object' ? NOT_HANDLED : truncate(String(value), state);
+
 /** Everything that is not an object, rendered as a display string or as itself. */
 const normalizePrimitive = (value: unknown, state: NormalizeState): unknown => {
   if (value === undefined) { return '[Undefined]'; }
   if (value === null) { return null; }
   if (typeof value === 'string') { return truncate(value, state); }
-  if (typeof value === 'number' || typeof value === 'boolean') { return value; }
+  if (typeof value === 'number') { return value; }
+  if (typeof value === 'boolean') { return value; }
   if (typeof value === 'bigint') { return `${value}n`; }
   if (typeof value === 'symbol') { return truncate(String(value), state); }
-  if (typeof value === 'function') {
-    let namePart = '';
-    if (value.name) { namePart = `: ${value.name}`; }
-    return `[Function${namePart}]`;
-  }
-  if (typeof value !== 'object') { return truncate(String(value), state); }
-  return NOT_HANDLED;
+  if (typeof value === 'function') { return formatFunction(value); }
+  return truncateNonString(value, state);
 };
 
 /** Built-ins that have a better one-line rendering than their enumerable keys. */
@@ -102,46 +106,50 @@ const normalizeBuiltin = (value: object, state: NormalizeState): unknown => {
 const overflowNote = (total: number, shown: number, unit: string): string =>
   `[... ${total - shown} more ${unit}]`;
 
+const normalizeChildValue = (item: unknown, state: NormalizeState, depth: number, seen: WeakSet<object>): unknown =>
+  normalizeValue(item, state, depth + 1, seen);
+
+const normalizeMap = (value: Map<unknown, unknown>, state: NormalizeState, depth: number, seen: WeakSet<object>): unknown => {
+  const entries: unknown[][] = [];
+  for (const [key, item] of value) {
+    if (entries.length >= state.maxEntries) { break; }
+    entries.push([normalizeChildValue(key, state, depth, seen), normalizeChildValue(item, state, depth, seen)]);
+  }
+  if (value.size > state.maxEntries) {
+    entries.push([`... ${value.size - state.maxEntries} more entries`, '[Truncated]']);
+  }
+  return { '[Map]': entries };
+};
+
+const normalizeSet = (value: Set<unknown>, state: NormalizeState, depth: number, seen: WeakSet<object>): unknown => {
+  const entries: unknown[] = [];
+  for (const item of value) {
+    if (entries.length >= state.maxEntries) { break; }
+    entries.push(normalizeChildValue(item, state, depth, seen));
+  }
+  if (value.size > state.maxEntries) {
+    entries.push(overflowNote(value.size, state.maxEntries, 'items'));
+  }
+  return { '[Set]': entries };
+};
+
+const normalizeArray = (value: unknown[], state: NormalizeState, depth: number, seen: WeakSet<object>): unknown => {
+  const entries = value.slice(0, state.maxEntries).map(item => normalizeChildValue(item, state, depth, seen));
+  if (value.length > state.maxEntries) {
+    entries.push(overflowNote(value.length, state.maxEntries, 'items'));
+  }
+  return entries;
+};
+
 const normalizeCollection = (
   value: object,
   state: NormalizeState,
   depth: number,
   seen: WeakSet<object>
 ): unknown => {
-  const normalizeChild = (item: unknown): unknown => normalizeValue(item, state, depth + 1, seen);
-
-  if (value instanceof Map) {
-    const entries: unknown[][] = [];
-    for (const [key, item] of value) {
-      if (entries.length >= state.maxEntries) { break; }
-      entries.push([normalizeChild(key), normalizeChild(item)]);
-    }
-    if (value.size > state.maxEntries) {
-      entries.push([`... ${value.size - state.maxEntries} more entries`, '[Truncated]']);
-    }
-    return { '[Map]': entries };
-  }
-
-  if (value instanceof Set) {
-    const entries: unknown[] = [];
-    for (const item of value) {
-      if (entries.length >= state.maxEntries) { break; }
-      entries.push(normalizeChild(item));
-    }
-    if (value.size > state.maxEntries) {
-      entries.push(overflowNote(value.size, state.maxEntries, 'items'));
-    }
-    return { '[Set]': entries };
-  }
-
-  if (Array.isArray(value)) {
-    const entries = value.slice(0, state.maxEntries).map(normalizeChild);
-    if (value.length > state.maxEntries) {
-      entries.push(overflowNote(value.length, state.maxEntries, 'items'));
-    }
-    return entries;
-  }
-
+  if (value instanceof Map) { return normalizeMap(value, state, depth, seen); }
+  if (value instanceof Set) { return normalizeSet(value, state, depth, seen); }
+  if (Array.isArray(value)) { return normalizeArray(value, state, depth, seen); }
   return NOT_HANDLED;
 };
 

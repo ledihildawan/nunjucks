@@ -10,6 +10,51 @@ import { parseExpression } from "../expression-parser/inline.ts";
 import { parsePrimary } from "../expression-parser/primary.ts";
 import { parseWithContext } from "./with.ts";
 
+const isUnderscore = (name: Node): boolean =>
+  (name.value as string).charAt(0) === '_';
+
+const parseImportName = (
+  ctx: ParserContext,
+  names: ChildrenNode
+): { names: ChildrenNode; withContext: boolean | null | undefined } => {
+  const name = parsePrimary(ctx);
+  if (isUnderscore(name)) {
+    fail(ctx, 'parseFrom: names starting with an underscore cannot be imported',
+      name.lineno,
+      name.colno);
+  }
+
+  let newNames = names;
+  if (skipSymbol(ctx, 'as')) {
+    const alias = parsePrimary(ctx);
+    newNames = appendChild(names, pair(name.lineno, name.colno, name, alias));
+  } else {
+    newNames = appendChild(names, name);
+  }
+
+  const withContext = parseWithContext(ctx);
+  return { names: newNames, withContext };
+};
+
+const handleBlockEnd = (
+  ctx: ParserContext,
+  names: ChildrenNode,
+  fromTok: ReturnType<typeof peekToken>
+): void => {
+  if (names.children.length === 0) {
+    fail(ctx, 'parseFrom: Expected at least one import name',
+      fromTok.lineno,
+      fromTok.colno);
+  }
+
+  const nextTok = peekToken(ctx);
+  if ((nextTok.value as string).charAt(0) === '-') {
+    ctx.dropLeadingWhitespace = true;
+  }
+
+  nextToken(ctx);
+};
+
 export const parseFrom = (ctx: ParserContext): Node => {
   const fromTok = peekToken(ctx);
   if (!skipSymbol(ctx, 'from')) {
@@ -30,17 +75,7 @@ export const parseFrom = (ctx: ParserContext): Node => {
   for (;;) {
     const nextTok = peekToken(ctx);
     if (nextTok.type === TOKEN_BLOCK_END) {
-      if (names.children.length === 0) {
-        fail(ctx, 'parseFrom: Expected at least one import name',
-          fromTok.lineno,
-          fromTok.colno);
-      }
-
-      if ((nextTok.value as string).charAt(0) === '-') {
-        ctx.dropLeadingWhitespace = true;
-      }
-
-      nextToken(ctx);
+      handleBlockEnd(ctx, names, fromTok);
       break;
     }
 
@@ -50,24 +85,9 @@ export const parseFrom = (ctx: ParserContext): Node => {
         fromTok.colno);
     }
 
-    const name = parsePrimary(ctx);
-    if ((name.value as string).charAt(0) === '_') {
-      fail(ctx, 'parseFrom: names starting with an underscore cannot be imported',
-        name.lineno,
-        name.colno);
-    }
-
-    if (skipSymbol(ctx, 'as')) {
-      const alias = parsePrimary(ctx);
-      names = appendChild(names, pair(name.lineno,
-        name.colno,
-        name,
-        alias));
-    } else {
-      names = appendChild(names, name);
-    }
-
-    withContext = parseWithContext(ctx);
+    const result = parseImportName(ctx, names);
+    names = result.names;
+    withContext = result.withContext;
   }
 
   return fromImport(fromTok.lineno, fromTok.colno, {

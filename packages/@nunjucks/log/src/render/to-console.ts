@@ -79,51 +79,42 @@ const formatMedium = (warning: Warning, options: ToConsoleOptions): string => {
   return parts.join(' ');
 };
 
+const getWarningTitle = (varName: string | undefined): string =>
+  varName ? `Undefined variable '${varName}'` : 'Undefined variable';
+
+const getLocationString = (lineno: number | null | undefined, templateName: string | null | undefined, lineBase: 'zero' | 'one' | null | undefined, ide: string): string => {
+  const location = toDisplayLocation(lineno ?? null, 0, lineBase ?? 'zero');
+  const lineNum = location.line;
+  if (templateName) {
+    const shortPath = shortenPath(templateName);
+    const displayPath = `${shortPath}:${lineNum}`;
+    const locationText = isFilePath(templateName)
+      ? makeHyperlink(displayPath, resolveIdeLink(ide, templateName, lineNum, 1))
+      : displayPath;
+    return locationText;
+  }
+  if (lineno !== undefined && lineno !== null) {
+    return picocolors.dim(`line ${lineNum}`);
+  }
+  return picocolors.dim('unknown');
+};
+
 const formatFull = (warning: Warning, options: ToConsoleOptions): string => {
   const { dev = false, version = '3.2.4', timestamp, ide = 'vscode' } = options;
   const { lineno, templateName, varName, undefinedMode, code, subject } = warning;
 
   const parts: string[] = [];
-
   parts.push(`${picocolors.bgYellow(picocolors.black('[WARNING]'))} ${picocolors.bold('Template Warning')}`);
 
   if (code) {
     parts.push(picocolors.yellow(`[${code}]`));
   }
-
   if (undefinedMode && dev) {
     parts.push(picocolors.dim(`(${undefinedMode})`));
   }
-
   parts.push('');
-
-  let title: string;
-  if (varName) {
-    title = `Undefined variable '${varName}'`;
-  } else {
-    title = 'Undefined variable';
-  }
-  parts.push(`${picocolors.bold('Message:')} ${picocolors.yellow(title)}`);
-
-  const location = toDisplayLocation(lineno ?? null, 0, warning.lineBase ?? 'zero');
-  const lineNum = location.line;
-  let locationStr: string;
-  if (templateName) {
-    const shortPath = shortenPath(templateName);
-    const displayPath = `${shortPath}:${lineNum}`;
-    let locationText: string;
-    if (isFilePath(templateName)) {
-      locationText = makeHyperlink(displayPath, resolveIdeLink(ide, templateName, lineNum, 1));
-    } else {
-      locationText = displayPath;
-    }
-    locationStr = locationText;
-  } else if (lineno !== undefined && lineno !== null) {
-    locationStr = picocolors.dim(`line ${lineNum}`);
-  } else {
-    locationStr = picocolors.dim('unknown');
-  }
-  parts.push(`${picocolors.bold('Location:')} ${locationStr}`);
+  parts.push(`${picocolors.bold('Message:')} ${picocolors.yellow(getWarningTitle(varName))}`);
+  parts.push(`${picocolors.bold('Location:')} ${getLocationString(lineno, templateName, warning.lineBase, ide)}`);
 
   if (dev && subject) {
     parts.push('');

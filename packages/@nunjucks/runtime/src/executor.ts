@@ -31,65 +31,80 @@ interface UndefinedInputResult {
 // `inputValue` is declared `unknown`, not `string`: the body deliberately
 // handles null and non-string inputs, and typing it as `string` made those
 // guards look dead while they are the function's actual contract.
-const detectUndefinedInput = (context: unknown, inputValue: unknown): UndefinedInputResult => {
-  let isUndefinedInput = false;
-  let undefinedVarName: string | null = null;
-  let undefinedParentName: string | null = null;
-  let isPropertyLookup = false;
+const detectNullInput = (_inputValue: unknown): UndefinedInputResult => ({
+  isUndefinedInput: true,
+  undefinedVarName: '<null>',
+  undefinedParentName: null,
+  isPropertyLookup: false,
+});
 
-  if (inputValue === null) {
-    isUndefinedInput = true;
-    undefinedVarName = '<null>';
-    return { isUndefinedInput, undefinedVarName, undefinedParentName, isPropertyLookup };
-  }
+const detectNonStringInput = (): UndefinedInputResult => ({
+  isUndefinedInput: false,
+  undefinedVarName: null,
+  undefinedParentName: null,
+  isPropertyLookup: false,
+});
 
-  if (typeof inputValue !== 'string') {
-    return { isUndefinedInput, undefinedVarName, undefinedParentName, isPropertyLookup };
-  }
+const isUndefinedOrNull = (val: unknown): boolean => val === undefined || val === null;
 
-  const parts = inputValue.split('.');
-  isPropertyLookup = parts.length > 1;
-
-  try {
-    let val: unknown = context;
-    let undefinedAt = -1;
-    for (let i = 0; i < parts.length; i += 1) {
-      if (val === undefined || val === null) {
-        undefinedAt = i;
-        break;
-      }
-      try {
-        val = (val as Record<string, unknown>)[parts[i] ?? ''];
-      } catch (e) {
-        if (e instanceof TypeError) {
-          undefinedAt = i;
-          break;
-        }
-        throw e;
-      }
+const findUndefinedAt = (context: unknown, parts: string[]): number => {
+  let val: unknown = context;
+  for (let i = 0; i < parts.length; i += 1) {
+    if (isUndefinedOrNull(val)) {
+      return i;
     }
-    if (undefinedAt === -1 && (val === undefined || val === null)) {
-      undefinedAt = parts.length - 1;
-    }
-    if (undefinedAt >= 0) {
-      isUndefinedInput = true;
-      undefinedVarName = parts.slice(undefinedAt).join('.');
-      if (undefinedAt > 0) {
-        undefinedParentName = parts[undefinedAt - 1] ?? null;
-      } else {
-        undefinedParentName = null;
+    try {
+      val = (val as Record<string, unknown>)[parts[i] ?? ''];
+    } catch (e) {
+      if (e instanceof TypeError) {
+        return i;
       }
-    }
-  } catch (e) {
-    if (e instanceof TypeError) {
-      isUndefinedInput = true;
-      undefinedVarName = inputValue;
-    } else {
       throw e;
     }
   }
+  return isUndefinedOrNull(val) ? parts.length - 1 : -1;
+};
 
-  return { isUndefinedInput, undefinedVarName, undefinedParentName, isPropertyLookup };
+const detectUndefinedInput = (context: unknown, inputValue: unknown): UndefinedInputResult => {
+  if (inputValue === null) {
+    return detectNullInput(inputValue);
+  }
+
+  if (typeof inputValue !== 'string') {
+    return detectNonStringInput();
+  }
+
+  const parts = inputValue.split('.');
+  const isPropertyLookup = parts.length > 1;
+
+  try {
+    const undefinedAt = findUndefinedAt(context, parts);
+    if (undefinedAt >= 0) {
+      return {
+        isUndefinedInput: true,
+        undefinedVarName: parts.slice(undefinedAt).join('.'),
+        undefinedParentName: undefinedAt > 0 ? parts[undefinedAt - 1] ?? null : null,
+        isPropertyLookup,
+      };
+    }
+  } catch (e) {
+    if (e instanceof TypeError) {
+      return {
+        isUndefinedInput: true,
+        undefinedVarName: inputValue,
+        undefinedParentName: null,
+        isPropertyLookup,
+      };
+    }
+    throw e;
+  }
+
+  return {
+    isUndefinedInput: false,
+    undefinedVarName: null,
+    undefinedParentName: null,
+    isPropertyLookup,
+  };
 };
 
 interface GetFilterConfig {
@@ -97,6 +112,86 @@ interface GetFilterConfig {
 }
 
 type FilterFunction = (...args: unknown[]) => unknown;
+
+const lookupFilter = (
+  name: string,
+  filters: Record<string, FilterFunction>,
+  context: Record<string, unknown>,
+  config: GetFilterConfig
+): FilterFunction | undefined => {
+  const filterFn = filters[name];
+  if (filterFn) { return filterFn; }
+
+  let ctxFn: FilterFunction | null = null;
+  if (context[name] && typeof context[name] === 'function') {
+    ctxFn = context[name] as FilterFunction;
+  }
+  if (ctxFn) { return ctxFn; }
+
+  if (config.env?.getFilter) {
+    const envFilter = config.env.getFilter(name, null, null);
+    if (envFilter) { return envFilter as FilterFunction; }
+  }
+
+  return undefined;
+};
+
+const getErrorLocation = (
+  inputLineno: number | undefined,
+  inputColno: number | undefined,
+  filterLineno: number | null,
+  filterColno: number | null
+): { lineno: number | null; colno: number | null } => {
+  const useInputLocation = inputLineno !== undefined && inputColno !== undefined;
+  return {
+    lineno: useInputLocation ? inputLineno ?? null : filterLineno,
+    colno: useInputLocation ? inputColno ?? null : filterColno,
+  };
+};
+
+const throwUndefinedPropertyError = (
+  undefinedVarName: string | null,
+  undefinedParentName: string,
+  lineno: number | null,
+  colno: number | null
+): never => {
+  throw createLog('error', getError('UNDEFINED_PROPERTY'), { property: undefinedVarName ?? '', parent: undefinedParentName }, undefinedVarName ?? undefined, { lineno, colno, phase: 'render', lineBase: 'zero' });
+};
+
+const throwUndefinedVariableError = (
+  undefinedVarName: string | null,
+  inputValue: unknown,
+  lineno: number | null,
+  colno: number | null
+): never => {
+  throw createLog('error', getError('UNDEFINED_VARIABLE'), { name: undefinedVarName ?? (inputValue as string) }, undefinedVarName ?? (inputValue as string), { lineno, colno, phase: 'render', lineBase: 'zero' });
+};
+
+const createUndefinedFilterError = (
+  name: string,
+  inputValue: unknown,
+  strictPipeInput: boolean,
+  inputLineno: number | undefined,
+  inputColno: number | undefined,
+  filterLineno: number | null,
+  filterColno: number | null,
+  context: Record<string, unknown>
+): never => {
+  const { lineno, colno } = getErrorLocation(inputLineno, inputColno, filterLineno, filterColno);
+
+  if (inputValue !== undefined) {
+    const { isUndefinedInput, undefinedVarName, undefinedParentName, isPropertyLookup } = detectUndefinedInput(context, inputValue as string);
+
+    if (isUndefinedInput || strictPipeInput) {
+      if (isPropertyLookup && undefinedParentName) {
+        throwUndefinedPropertyError(undefinedVarName, undefinedParentName, lineno, colno);
+      }
+      throwUndefinedVariableError(undefinedVarName, inputValue, lineno, colno);
+    }
+  }
+
+  throw createLog('error', getError('UNDEFINED_FILTER'), { name }, name, { lineno: filterLineno ?? null, colno: filterColno ?? null, phase: 'render', lineBase: 'zero' });
+};
 
 const createGetFilter = (
   context: Record<string, unknown>,
@@ -111,43 +206,9 @@ const createGetFilter = (
     inputColno: number | undefined,
     inputValue: unknown
   ): FilterFunction | undefined {
-    const filterFn = filters[name];
-    if (filterFn) { return filterFn; }
-
-    let ctxFn: FilterFunction | null = null;
-    if (context[name] && typeof context[name] === 'function') {
-      ctxFn = context[name] as FilterFunction;
-    }
-    if (ctxFn) { return ctxFn; }
-
-    if (config.env?.getFilter) {
-      const envFilter = config.env.getFilter(name, filterLineno, filterColno);
-      if (envFilter) { return envFilter as FilterFunction; }
-    }
-
-    const useInputLocation = inputLineno !== undefined && inputColno !== undefined;
-    let errorLineno: number | null | undefined;
-    let errorColno: number | null | undefined;
-    if (useInputLocation) {
-      errorLineno = inputLineno;
-      errorColno = inputColno;
-    } else {
-      errorLineno = filterLineno;
-      errorColno = filterColno;
-    }
-
-    if (inputValue !== undefined) {
-      const { isUndefinedInput, undefinedVarName, undefinedParentName, isPropertyLookup } = detectUndefinedInput(context, inputValue as string);
-
-      if (isUndefinedInput || strictPipeInput) {
-        if (isPropertyLookup && undefinedParentName) {
-          throw createLog('error', getError('UNDEFINED_PROPERTY'), { property: undefinedVarName ?? '', parent: undefinedParentName }, undefinedVarName ?? undefined, { lineno: errorLineno ?? null, colno: errorColno ?? null, phase: 'render', lineBase: 'zero' });
-        }
-        throw createLog('error', getError('UNDEFINED_VARIABLE'), { name: undefinedVarName ?? (inputValue as string) }, undefinedVarName ?? (inputValue as string), { lineno: errorLineno ?? null, colno: errorColno ?? null, phase: 'render', lineBase: 'zero' });
-      }
-    }
-
-    throw createLog('error', getError('UNDEFINED_FILTER'), { name }, name, { lineno: filterLineno ?? null, colno: filterColno ?? null, phase: 'render', lineBase: 'zero' });
+    const filter = lookupFilter(name, filters, context, config);
+    if (filter) { return filter; }
+    throw createUndefinedFilterError(name, inputValue, strictPipeInput, inputLineno, inputColno, filterLineno, filterColno, context);
   };
 
 const ROOT_FUNCTION_RE = /^async\s+function\s+root\s*\(/;
@@ -320,75 +381,91 @@ export const execute = async (code: string, context: Record<string, unknown> = {
     runtime.env = config.env;
   }
 
-  let ctx: Record<string, unknown>;
-  if (config.env) {
-    ctx = createContext(context, {}, config.env as Parameters<typeof createContext>[2]) as unknown as Record<string, unknown>;
-    ctx._autoescape = config.autoescape ?? true;
-  } else {
-    const exported: string[] = [];
-    ctx = {
-      ...context,
-      _autoescape: config.autoescape ?? true,
-      lookup: (key: string) => {
-        if (key in ctx) {
-          return ctx[key];
-        }
-        if (key in runtime) {
-          return runtime[key];
-        }
-      },
-      setVariable: (name: string, val: unknown) => {
-        ctx[name] = val;
-      },
-      addExport: (name: string) => {
-        exported.push(name);
-      },
-      getExported: () => {
-        const result: Record<string, unknown> = {};
-        for (const name of exported) {
-          result[name] = ctx[name];
-        }
-        return result;
-      },
-      getSuper: (_envObj: unknown, name: string, _block: unknown, _frame: Frame, lineno: number | null = null, colno: number | null = null) => {
-        throw createLog('error', getError('NO_SUPER_BLOCK'), { name }, name, { lineno, colno, phase: 'render', lineBase: 'zero' });
-      }
-    };
-  }
+  const ctx = buildContextObject(context, config, runtime);
 
   const frame = createFrame();
+  const env = buildEnvObject(config as BuildEnvObjectConfig, getFilter, getTest);
 
   if (sandbox) {
     const safeContext = createSandboxedContext(ctx, true, buildSandboxOptions(config));
     const safeRuntime = { ...runtime };
-    const env = buildEnvObject(config as BuildEnvObjectConfig, getFilter, getTest);
-
     const { render } = getRenderFunction(code);
-
     return await render(env, safeContext, frame, safeRuntime);
   }
 
+  return await executeNonSandbox(code, ctx, frame, env, runtime);
+};
+
+const buildContextObject = (
+  context: Record<string, unknown>,
+  config: ExecuteConfig,
+  runtime: Record<string, unknown>
+): Record<string, unknown> => {
+  if (config.env) {
+    const ctx = createContext(context, {}, config.env as Parameters<typeof createContext>[2]) as unknown as Record<string, unknown>;
+    ctx._autoescape = config.autoescape ?? true;
+    return ctx;
+  }
+
+  const exported: string[] = [];
+  const ctx: Record<string, unknown> = {
+    ...context,
+    _autoescape: config.autoescape ?? true,
+    lookup: (key: string) => {
+      if (key in ctx) {
+        return ctx[key];
+      }
+      if (key in runtime) {
+        return runtime[key];
+      }
+    },
+    setVariable: (name: string, val: unknown) => {
+      ctx[name] = val;
+    },
+    addExport: (name: string) => {
+      exported.push(name);
+    },
+    getExported: () => {
+      const result: Record<string, unknown> = {};
+      for (const name of exported) {
+        result[name] = ctx[name];
+      }
+      return result;
+    },
+    getSuper: (_envObj: unknown, name: string, _block: unknown, _frame: Frame, lineno: number | null = null, colno: number | null = null) => {
+      throw createLog('error', getError('NO_SUPER_BLOCK'), { name }, name, { lineno, colno, phase: 'render', lineBase: 'zero' });
+    }
+  };
+  return ctx;
+};
+
+const executeNonSandbox = async (
+  code: string,
+  ctx: Record<string, unknown>,
+  frame: Frame,
+  env: unknown,
+  runtime: Record<string, unknown>
+): Promise<unknown> => {
   const { render, blocks, blockMeta } = getRenderFunction(code);
 
-  const env = buildEnvObject(config as BuildEnvObjectConfig, getFilter, getTest);
-
-  if (config.env) {
-    ctx = createContext(
-      context,
+  if (ctx.env) {
+    const newCtx = createContext(
+      {},
       blocks as Record<string, (...args: unknown[]) => unknown>,
-      config.env as unknown as ContextEnv,
+      ctx.env as unknown as ContextEnv,
       { blockLocations: blockMeta as Record<string, BlockLocation> }
     ) as unknown as Record<string, unknown>;
-    ctx._autoescape = config.autoescape ?? true;
-  } else {
-    ctx.blocks = blocks as Record<string, (...args: unknown[]) => unknown>;
-    ctx.getBlock = (name: string) => {
-      if (!blocks[name]) {
-        throw createLog('error', getError('UNDEFINED_BLOCK'), { name }, name, { phase: 'render' });
-      }
-      return blocks[name];
-    };
+    newCtx._autoescape = true;
+    return await render(env, newCtx, frame, runtime);
   }
+
+  ctx.blocks = blocks as Record<string, (...args: unknown[]) => unknown>;
+  ctx.getBlock = (name: string) => {
+    if (!blocks[name]) {
+      throw createLog('error', getError('UNDEFINED_BLOCK'), { name }, name, { phase: 'render' });
+    }
+    return blocks[name];
+  };
 
   return await render(env, ctx, frame, runtime);
 };

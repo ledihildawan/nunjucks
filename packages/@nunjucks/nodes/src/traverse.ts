@@ -113,6 +113,31 @@ const depthWalk = (ast: Node, fn: (n: Node) => Node | undefined): Node => {
   return (replaced ?? walked) as Node;
 };
 
+const matchPredicate = (n: Node, predicate: string | ((n: Node) => boolean)): boolean =>
+  typeof predicate === 'string' ? n.type === predicate : predicate(n);
+
+const searchFieldValue = (n: Node, field: string, search: (n: Node | null | undefined) => void): void => {
+  const val = n[field];
+  if (Array.isArray(val)) {
+    for (const item of val) { if (isNode(item)) { search(item); } }
+  } else if (isNode(val)) {
+    search(val);
+  }
+};
+
+const searchChildren = (n: Node, search: (n: Node | null | undefined) => void): void => {
+  if (Array.isArray(n.children)) {
+    n.children.forEach(search);
+  }
+  if (isCallExtNode(n)) {
+    search(n.args);
+    n.contentArgs.forEach(search);
+  }
+  for (const field of getTraversalFields(n)) {
+    searchFieldValue(n, field, search);
+  }
+};
+
 const findAll = (node: Node, predicate: string | ((n: Node) => boolean)): Node[] => {
   const results: Node[] = [];
   const seen = new Set<Node>();
@@ -121,30 +146,10 @@ const findAll = (node: Node, predicate: string | ((n: Node) => boolean)): Node[]
     if (!n || seen.has(n)) { return; }
     seen.add(n);
 
-    let predicateResult: boolean;
-    if (typeof predicate === 'string') {
-      predicateResult = n.type === predicate;
-    } else {
-      predicateResult = predicate(n);
-    }
-    if (predicateResult) {
+    if (matchPredicate(n, predicate)) {
       results.push(n);
     }
-
-    if (Array.isArray(n.children)) {
-      n.children.forEach(search);
-    }
-
-    if (isCallExtNode(n)) {
-      search(n.args);
-      n.contentArgs.forEach(search);
-    }
-
-    for (const field of getTraversalFields(n)) {
-      const val = n[field];
-      if (Array.isArray(val)) { for (const item of val) { if (isNode(item)) { search(item); } } }
-      else if (isNode(val)) { search(val); }
-    }
+    searchChildren(n, search);
   };
 
   search(node);
@@ -171,26 +176,37 @@ const count = (node: Node, predicate?: (n: Node) => boolean): number => {
   return n;
 };
 
-export function* iterateNodes(node: Node): Generator<Node> {
-  yield node;
-
-  if (Array.isArray(node.children)) {
-    for (const child of node.children) {
-      yield* iterateNodes(child);
-    }
+const yieldFromField = function* (node: Node, field: string): Generator<Node> {
+  const val = node[field];
+  if (Array.isArray(val)) {
+    for (const item of val) { if (isNode(item)) { yield* iterateNodes(item); } }
+  } else if (isNode(val)) {
+    yield* iterateNodes(val);
   }
+};
+
+const yieldNodeChildren = function* (node: Node): Generator<Node> {
   if (isCallExtNode(node)) {
     yield* iterateNodes(node.args);
     for (const child of node.contentArgs) { yield* iterateNodes(child); }
   }
   for (const field of getTraversalFields(node)) {
-    const val = node[field];
-    if (Array.isArray(val)) {
-      for (const item of val) { if (isNode(item)) { yield* iterateNodes(item); } }
-    } else if (isNode(val)) {
-      yield* iterateNodes(val);
+    yieldFromField(node, field);
+  }
+};
+
+const iterateNodeChildren = function* (node: Node): Generator<Node> {
+  if (Array.isArray(node.children)) {
+    for (const child of node.children) {
+      yield* iterateNodes(child);
     }
   }
+  yield* yieldNodeChildren(node);
+};
+
+export function* iterateNodes(node: Node): Generator<Node> {
+  yield node;
+  yield* iterateNodeChildren(node);
 }
 
 export function* filterNodes(ast: Node, predicate: (n: Node) => boolean): Generator<Node> {

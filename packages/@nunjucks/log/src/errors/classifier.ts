@@ -25,54 +25,48 @@ const replacePlaceholders = (
   return result;
 };
 
-const deriveFromRule = (
+const mapCauses = (
+  causes: readonly string[],
+  undefinedName: string | null,
+  extra: Record<string, string | null> | null
+): string[] =>
+  causes.map(c => replacePlaceholders(c, undefinedName, extra)).filter((cause): cause is string => cause !== null);
+
+const extractRuleData = (rule: typeof RULES[0], match: RegExpMatchArray | null) => ({
+  undefinedName: match !== null && rule.subjectFrom ? rule.subjectFrom(match) : null,
+  extra: rule.extraFrom && match ? rule.extraFrom(match) : null,
+});
+
+const buildClassification = (
   rule: typeof RULES[0],
+  undefinedName: string | null,
+  extra: Record<string, string | null> | null,
   input: ClassifyInput
 ): Classification => {
-  const match = input.message?.match(rule.pattern) ?? null;
-  let undefinedName: string | null;
-  if (match !== null && rule.subjectFrom) {
-    undefinedName = rule.subjectFrom(match);
-  } else {
-    undefinedName = null;
-  }
-  let extra: Record<string, string | null> | null;
-  if (rule.extraFrom) {
-    if (match) {
-      extra = rule.extraFrom(match);
-    } else {
-      extra = null;
-    }
-  } else {
-    extra = null;
-  }
-
-  let baseCauses: string[];
-  if (input.causes && input.causes.length > 0) {
-    baseCauses = input.causes;
-  } else {
-    baseCauses = rule.causes;
-  }
+  const baseCauses = input.causes?.length ? input.causes : rule.causes;
   const baseFixCode = input.fixCode ?? rule.fixCode;
   const baseFixComment = input.fixComment ?? rule.fixComment;
-
-  let title: string | null;
-  if (rule.titleTemplate) {
-    title = replacePlaceholders(rule.titleTemplate, undefinedName, extra);
-  } else {
-    title = null;
-  }
+  const title = rule.titleTemplate ? replacePlaceholders(rule.titleTemplate, undefinedName, extra) : null;
 
   return {
     category: rule.category,
     undefinedName,
     title,
-    causes: baseCauses.map(c => replacePlaceholders(c, undefinedName, extra)).filter((cause): cause is string => cause !== null),
+    causes: mapCauses(baseCauses, undefinedName, extra),
     fixCode: replacePlaceholders(baseFixCode, undefinedName, extra),
     fixComment: replacePlaceholders(baseFixComment, undefinedName, extra),
     documentationUrl: rule.documentationUrl ?? null,
     severity: rule.severity ?? 'error'
   };
+};
+
+const deriveFromRule = (
+  rule: typeof RULES[0],
+  input: ClassifyInput
+): Classification => {
+  const match = input.message?.match(rule.pattern) ?? null;
+  const { undefinedName, extra } = extractRuleData(rule, match);
+  return buildClassification(rule, undefinedName, extra, input);
 };
 
 const codeClassifier: Classifier = (input) => {

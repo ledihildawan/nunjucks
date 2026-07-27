@@ -102,48 +102,39 @@ interface ResolvedSource {
 //   2. Else if sourceContent is present -> use it verbatim (template body).
 //   3. Else if templatePath is a readable file -> read it from disk.
 //   4. Else -> no source available.
+const tryReadFile = async (filePath: string | null): Promise<{ content: string | null; resolvedPath: string | null }> => {
+  if (!filePath) { return { content: null, resolvedPath: null }; }
+  const resolved = resolveFilePath(filePath);
+  if (!resolved) { return { content: null, resolvedPath: null }; }
+  try {
+    const content = await readFile(resolved, 'utf-8');
+    return { content, resolvedPath: resolved };
+  } catch {
+    return { content: null, resolvedPath: null };
+  }
+};
+
 const resolveSourceContent = async (
   sourceContent: string | null,
   templatePath: string | null,
   lineBase: LineBase | null
 ): Promise<ResolvedSource> => {
-  const isCallerCoord = lineBase === 'one';
-  const isScript = templatePath !== null && isScriptPath(templatePath);
-
-  // 1. Caller-coord error: the lineno refers to the caller file, so the inline
-  //    template string cannot be windowed by it — read the full caller file.
-  if (isCallerCoord && isScript && templatePath !== null) {
-    const filePath = resolveFilePath(templatePath);
-    if (filePath) {
-      try {
-        const full = await readFile(filePath, 'utf-8');
-        return { content: full, resolvedPath: filePath };
-      } catch {
-        // Fall through to sourceContent / file-read below.
-      }
-    }
-  }
-
-  // 2. Caller-supplied content (the normal case for template-coord errors, or
-  //    caller-coord errors whose caller file could not be read).
   if (sourceContent) {
     return { content: sourceContent, resolvedPath: templatePath };
   }
 
-  // 3. No content but a readable file path -> read it.
-  if (templatePath && isReadablePath(templatePath)) {
-    const filePath = resolveFilePath(templatePath);
-    if (filePath) {
-      try {
-        const full = await readFile(filePath, 'utf-8');
-        return { content: full, resolvedPath: filePath };
-      } catch {
-        return { content: null, resolvedPath: null };
-      }
-    }
+  const isCallerCoord = lineBase === 'one';
+  const isScript = templatePath !== null && isScriptPath(templatePath);
+
+  if (isCallerCoord && isScript) {
+    const result = await tryReadFile(templatePath);
+    if (result.content) { return result; }
   }
 
-  // 4. Nothing to trace.
+  if (templatePath && isReadablePath(templatePath)) {
+    return await tryReadFile(templatePath);
+  }
+
   return { content: null, resolvedPath: null };
 };
 

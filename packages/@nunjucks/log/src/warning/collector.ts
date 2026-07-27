@@ -20,53 +20,36 @@ const getFileName = (path: string | null | undefined): string => {
   return parts.at(-1) || 'unknown';
 };
 
+const getLocationString = (w: Warning): string => {
+  if (w.lineno === undefined || w.lineno === null) {
+    return '';
+  }
+  const lineNum = w.lineno + 1;
+  const colNum = w.colno !== undefined && w.colno !== null ? `:${w.colno}` : '';
+  const fileName = getFileName(w.templateName);
+  return ` at ${fileName}:${lineNum}${colNum}`;
+};
+
 const formatWarning = (w: Warning | string, options: { verbosity?: 'simple' | 'medium' | 'full' } = {}): string => {
   const { verbosity = 'full' } = options;
-  let message: string;
-  if (typeof w === 'string') {
-    message = w;
-  } else {
-    const { message: wMessage } = w;
-    message = wMessage;
-  }
+  const message = typeof w === 'string' ? w : w.message;
 
   if (typeof w === 'string') {
-    if (verbosity === 'simple') {
-      return `[WARNING] ${message}`;
-    }
     return `[WARNING] ${message}`;
   }
 
   const undefinedMode = w.undefinedMode || 'chainable';
   const code = w.code || null;
+  const locationStr = getLocationString(w);
 
-  let locationStr = '';
-  if (w.lineno !== undefined && w.lineno !== null) {
-    const lineNum = w.lineno + 1;
-    let colNum: string;
-    if (w.colno !== undefined && w.colno !== null) {
-      colNum = `:${w.colno}`;
-    } else {
-      colNum = '';
-    }
-    const fileName = getFileName(w.templateName);
-    locationStr = ` at ${fileName}:${lineNum}${colNum}`;
-  }
-
-  let formatted: string;
   if (verbosity === 'simple') {
-    formatted = `[WARNING] ${message}`;
-  } else if (verbosity === 'medium') {
-    formatted = `[WARNING] ${message} (${undefinedMode})${locationStr}`;
-  } else {
-    let codePart = '';
-    if (code) {
-      codePart = ` [${code}]`;
-    }
-    formatted = `[WARNING] ${message} (${undefinedMode})${locationStr}${codePart}`;
+    return `[WARNING] ${message}`;
   }
-
-  return formatted;
+  if (verbosity === 'medium') {
+    return `[WARNING] ${message} (${undefinedMode})${locationStr}`;
+  }
+  const codePart = code ? ` [${code}]` : '';
+  return `[WARNING] ${message} (${undefinedMode})${locationStr}${codePart}`;
 };
 
 // `warnings` is nullable in the signature because this is a package entry

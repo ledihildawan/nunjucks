@@ -25,41 +25,20 @@ const formatCodeTraceHtml = (snippet: string): string => {
   if (!snippet) { return '<div class="code-line"><span class="line-number">&nbsp;</span><span class="code-content">Source not available</span></div>'; }
 
   const lines = snippet.split('\n');
-  return lines.map(line => {
-    const trimmed = line.trim();
-    const isError = trimmed.startsWith('>>>');
-    let content: string;
-    if (isError) {
-      content = trimmed.replace(ERROR_MARKER_PREFIX_RE, '');
-    } else {
-      content = trimmed;
-    }
-    const colonIdx = content.indexOf(':');
-    let lineNum: string;
-    if (colonIdx > 0) {
-      lineNum = content.slice(0, colonIdx);
-    } else {
-      lineNum = '';
-    }
-    let code: string;
-    if (colonIdx > 0) {
-      code = content.slice(colonIdx + 1);
-    } else {
-      code = content;
-    }
-    let leadingSpace: string;
-    if (code.length === code.trimStart().length) {
-      leadingSpace = '';
-    } else {
-      leadingSpace = code.match(LEADING_WHITESPACE_RE)?.[0] ?? '';
-    }
-    const trimmedCode = code.trimStart();
-    let errorClass = '';
-    if (isError) {
-      errorClass = ' is-error';
-    }
-    return `<div class="code-line${errorClass}"><span class="line-number">${lineNum || '&nbsp;'}</span><span class="code-content">${leadingSpace}${highlightHtml(trimmedCode)}</span></div>`;
-  }).join('');
+  return lines.map(formatCodeLine).join('');
+};
+
+const formatCodeLine = (line: string): string => {
+  const trimmed = line.trim();
+  const isError = trimmed.startsWith('>>>');
+  const content = isError ? trimmed.replace(ERROR_MARKER_PREFIX_RE, '') : trimmed;
+  const colonIdx = content.indexOf(':');
+  const lineNum = colonIdx > 0 ? content.slice(0, colonIdx) : '';
+  const code = colonIdx > 0 ? content.slice(colonIdx + 1) : content;
+  const leadingSpace = code.length === code.trimStart().length ? '' : code.match(LEADING_WHITESPACE_RE)?.[0] ?? '';
+  const trimmedCode = code.trimStart();
+  const errorClass = isError ? ' is-error' : '';
+  return `<div class="code-line${errorClass}"><span class="line-number">${lineNum || '&nbsp;'}</span><span class="code-content">${leadingSpace}${highlightHtml(trimmedCode)}</span></div>`;
 };
 
 interface JsCallerLine {

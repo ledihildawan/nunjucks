@@ -80,34 +80,36 @@ const stringifyThrown = (thrown: unknown): string => {
   }
 };
 
+const getError = (thrown: unknown, message: string): Error =>
+  thrown instanceof Error ? thrown : new Error(message);
+
+const normalizeFallbacks = (source: Record<string, unknown>, fallback: ErrorMetadataFallback, templateName: string | null) => ({
+  lineno: readNumber(source.lineno) ?? fallback.lineno ?? null,
+  colno: readNumber(source.colno) ?? fallback.colno ?? null,
+  lineBase: normalizeLineBase(readLineBase(source.lineBase) ?? fallback.lineBase),
+  phase: readString(source.phase) ?? fallback.phase ?? null,
+  templateName,
+  templatePath: readString(source.templatePath) ?? fallback.templatePath ?? templateName,
+  sourceContent: readString(source.sourceContent) ?? fallback.sourceContent ?? null,
+  sourceStartLine: readNumber(source.sourceStartLine) ?? fallback.sourceStartLine ?? 1,
+  renderContext: readContext(source.renderContext) ?? fallback.renderContext ?? null,
+  code: readString(source.code) ?? fallback.code ?? null,
+  subject: readString(source.subject) ?? fallback.subject ?? null,
+});
+
 const normalizeErrorMetadata = (
   thrown: unknown,
   fallback: ErrorMetadataFallback = {}
 ): NormalizedErrorMetadata => {
   const source = readObject(thrown);
   const message = stringifyThrown(thrown);
-  let error: Error;
-  if (thrown instanceof Error) {
-    error = thrown;
-  } else {
-    error = new Error(message);
-  }
+  const error = getError(thrown, message);
   const templateName = readString(source.templateName) ?? fallback.templateName ?? null;
 
   return {
     error,
     message,
-    lineno: readNumber(source.lineno) ?? fallback.lineno ?? null,
-    colno: readNumber(source.colno) ?? fallback.colno ?? null,
-    lineBase: normalizeLineBase(readLineBase(source.lineBase) ?? fallback.lineBase),
-    phase: readString(source.phase) ?? fallback.phase ?? null,
-    templateName,
-    templatePath: readString(source.templatePath) ?? fallback.templatePath ?? templateName,
-    sourceContent: readString(source.sourceContent) ?? fallback.sourceContent ?? null,
-    sourceStartLine: readNumber(source.sourceStartLine) ?? fallback.sourceStartLine ?? 1,
-    renderContext: readContext(source.renderContext) ?? fallback.renderContext ?? null,
-    code: readString(source.code) ?? fallback.code ?? null,
-    subject: readString(source.subject) ?? fallback.subject ?? null,
+    ...normalizeFallbacks(source, fallback, templateName),
   };
 };
 

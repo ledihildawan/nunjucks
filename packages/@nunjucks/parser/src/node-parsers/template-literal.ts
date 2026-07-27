@@ -11,16 +11,16 @@ interface Quasi {
   value: string;
 }
 
+const UNSAFE_CHARS = ['(', ')', '=>', '{', '+', '-', '*', '/', '||', '&&', '??', '=', ':', '.'] as const;
+const UNSAFE_PATTERNS = [/^\d/, /\s/];
+
 const isSafeTemplateExpression = (expr: string): boolean => {
   if (!expr) { return true; }
   const trimmed = expr.trim();
   if (!trimmed) { return true; }
   if (SIMPLE_IDENTIFIER_PATTERN.test(trimmed)) { return true; }
-  if (trimmed.includes('(') || trimmed.includes('=>') || trimmed.includes('{')) { return false; }
-  if (trimmed.includes('+') || trimmed.includes('-') || trimmed.includes('*') || trimmed.includes('/')) { return false; }
-  if (trimmed.includes('||') || trimmed.includes('&&') || trimmed.includes('??')) { return false; }
-  if (trimmed.includes('=') || trimmed.includes(':')) { return false; }
-  if (trimmed.includes('.')) { return false; }
+  if (UNSAFE_PATTERNS.some(p => p.test(trimmed))) { return false; }
+  if (UNSAFE_CHARS.some(c => trimmed.includes(c))) { return false; }
   return true;
 };
 

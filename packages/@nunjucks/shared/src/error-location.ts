@@ -282,8 +282,6 @@ const findSubjectOccurrence = (
   preferredLine: number | null
 ): SourcePosition | null => {
   if (!subject || typeof subject !== 'string') { return null; }
-  let best: SourcePosition | null = null;
-  let bestDistance = Number.POSITIVE_INFINITY;
   const subjectColOffset = subjectColumnOffset(subject);
   const escaped = subject.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const patterns: Array<{ re: RegExp; group: number }> = [
@@ -292,16 +290,23 @@ const findSubjectOccurrence = (
     { re: new RegExp(`\\b(${escaped})\\b`, 'g'), group: 1 }
   ];
 
+  let best: SourcePosition | null = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  const evaluateMatch = (match: RegExpExecArray, group: number): void => {
+    const hit = positionOfCaptureGroup(content, match, group, subjectColOffset);
+    if (hit) {
+      const distance = lineDistance(hit.line, preferredLine);
+      if (distance < bestDistance) {
+        best = hit;
+        bestDistance = distance;
+      }
+    }
+  };
+
   for (const { re, group } of patterns) {
     for (let match = re.exec(content); match !== null; match = re.exec(content)) {
-      const hit = positionOfCaptureGroup(content, match, group, subjectColOffset);
-      if (hit) {
-        const distance = lineDistance(hit.line, preferredLine);
-        if (distance < bestDistance) {
-          best = hit;
-          bestDistance = distance;
-        }
-      }
+      evaluateMatch(match, group);
     }
   }
   return best;
@@ -343,40 +348,22 @@ const extractCallerPosition = (
   subject: string | null,
   preferredLine: number | null
 ): SourcePosition | null => {
-  // 1. Exact match: the error carries a valid coordinate inside the template,
-  //    so map that coordinate into the caller source.
   if (typeof template === 'string') {
     const matched = matchTemplateInCaller(content, template, errLineno, errColno, preferredLine);
     if (matched) { return matched; }
   }
-  // 2. Subject wins for positionless errors that name one — a reserved filter
-  //    name ('if'), a config key ('executionTimeout'), etc. These have no
-  //    in-template coordinate, and the subject token in the caller is far more
-  //    useful than the template body. Tried before the template-end anchor so
-  //    it is not preempted by it.
+
   if (subject) {
     const bySubject = findSubjectOccurrence(content, subject, preferredLine);
     if (bySubject) { return bySubject; }
   }
-  // 3. Parser end-of-input and other positionless, subject-less errors carry
-  //    no valid coordinate within the template. Rather than falling through to
-  //    the raw `render(` call site, anchor at the end of the template literal
-  //    itself, which is where "unexpected end of input" logically occurred.
-  if (
-    typeof template === 'string' &&
-    template.length > 0 &&
-    !isCoordinateWithinTemplate(template, errLineno, errColno)
-  ) {
+
+  if (typeof template === 'string' && template.length > 0 && !isCoordinateWithinTemplate(template, errLineno, errColno)) {
     const end = templateEndPosition(template);
     const atEnd = matchTemplateInCaller(content, template, end.line, end.col, preferredLine);
     if (atEnd) { return atEnd; }
   }
-  // Legacy fallback: non-string template arguments — numbers (render(123)),
-  // booleans, and null/undefined (render(null), render(undefined)). Locate the
-  // literal token in the caller source via its string form. null/undefined were
-  // previously excluded, which made render(null) fall back to the raw V8 caller
-  // line/col and point at the `render(` call site (often whitespace) instead of
-  // the offending `null` argument.
+
   if (typeof template !== 'string') {
     const literal = templateLiteralText(template);
     const byValue = findSubjectOccurrence(content, literal, preferredLine);

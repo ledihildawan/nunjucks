@@ -28,10 +28,11 @@ const findWordStart = (line: string, wordEnd: number): number => {
 };
 
 const findWordEnd = (line: string, pos: number): number => {
-  while (pos < line.length && isWordChar(line[pos])) {
-    pos += 1;
+  let currentPos = pos;
+  while (currentPos < line.length && isWordChar(line[currentPos])) {
+    currentPos += 1;
   }
-  return pos;
+  return currentPos;
 };
 
 const findNonWordLeft = (line: string, pos: number): number => {
@@ -55,7 +56,7 @@ const findWordBoundaries = (line: string, pos: number, charAtPos: string): { wor
 const findSegmentInDotPath = (
   highlightWord: string,
   wordStart: number,
-  wordEnd: number,
+  _wordEnd: number,
   relativePos: number
 ): { wordStart: number; wordEnd: number; highlightWord: string } | null => {
   let segmentStart = wordStart;

@@ -5,52 +5,44 @@ import type { ParserContext } from "./cursor.ts";
 /** Placeholder pattern for synthesised error definitions, which are never matched against. */
 const MATCH_ANY_RE = /./;
 
+const CAUSE_PATTERNS: Array<{ check: (lower: string) => boolean; causes: string[] }> = [
+  { check: lower => lower.includes('expected') && lower.includes('expression'), causes: ['Missing expression where one is required', 'Check for empty `{{ }}` or `{% %}` blocks'] },
+  { check: lower => lower.includes('expected') && lower.includes('end'), causes: ['**Unclosed tag** - missing `{% end... %}`', 'Check that all block tags have matching closing tags'] },
+  { check: lower => lower.includes('expected') && lower.includes(','), causes: ['**Missing comma** between values', 'Array/object literals require commas between elements'] },
+  { check: lower => lower.includes('unknown block'), causes: ['**Typo** in block tag name', 'Block tag is not registered or not yet supported'] },
+  { check: lower => lower.includes('expected') && lower.includes('in'), causes: ['**For loop** missing `in` keyword', 'Use correct syntax: `{% for item in items %}`'] },
+  { check: lower => lower.includes('variable name'), causes: ['**Invalid identifier** used as variable name', 'Variable names must start with letter/underscore'] },
+];
+
+const DEFAULT_CAUSES = ['Check **template syntax** at the error location', 'Compare with the **documentation** examples'];
+
 const inferCauses = (msg: string): string[] => {
   const lower = msg.toLowerCase();
-  const causes: string[] = [];
-
-  if (lower.includes('expected') && lower.includes('expression')) {
-    causes.push('Missing expression where one is required');
-    causes.push('Check for empty `{{ }}` or `{% %}` blocks');
-  } else if (lower.includes('expected') && lower.includes('end')) {
-    causes.push('**Unclosed tag** - missing `{% end... %}`');
-    causes.push('Check that all block tags have matching closing tags');
-  } else if (lower.includes('expected') && lower.includes(',')) {
-    causes.push('**Missing comma** between values');
-    causes.push('Array/object literals require commas between elements');
-  } else if (lower.includes('unknown block')) {
-    causes.push('**Typo** in block tag name');
-    causes.push('Block tag is not registered or not yet supported');
-  } else if (lower.includes('expected') && lower.includes('in')) {
-    causes.push('**For loop** missing `in` keyword');
-    causes.push('Use correct syntax: `{% for item in items %}`');
-  } else if (lower.includes('variable name')) {
-    causes.push('**Invalid identifier** used as variable name');
-    causes.push('Variable names must start with letter/underscore');
-  } else {
-    causes.push('Check **template syntax** at the error location');
-    causes.push('Compare with the **documentation** examples');
+  for (const pattern of CAUSE_PATTERNS) {
+    if (pattern.check(lower)) {
+      return pattern.causes;
+    }
   }
-
-  return causes;
+  return DEFAULT_CAUSES;
 };
+
+const FIX_PATTERNS: Array<{ check: (lower: string) => boolean; fix: string }> = [
+  { check: lower => lower.includes('expected') && lower.includes('expression'), fix: '{{ someExpression }}' },
+  { check: lower => lower.includes('unknown block'), fix: '{% if condition %}...{% endif %}' },
+  { check: lower => lower.includes('expected') && lower.includes('in'), fix: '{% for item in items %}...{% endfor %}' },
+  { check: lower => lower.includes('expected') && lower.includes(','), fix: '{{ [1, 2, 3] }} or {{ {a: 1, b: 2} }}' },
+];
+
+const DEFAULT_FIX = 'Check template syntax around the error location';
 
 const inferFix = (msg: string): string => {
   const lower = msg.toLowerCase();
-
-  if (lower.includes('expected') && lower.includes('expression')) {
-    return '{{ someExpression }}';
+  for (const pattern of FIX_PATTERNS) {
+    if (pattern.check(lower)) {
+      return pattern.fix;
+    }
   }
-  if (lower.includes('unknown block')) {
-    return '{% if condition %}...{% endif %}';
-  }
-  if (lower.includes('expected') && lower.includes('in')) {
-    return '{% for item in items %}...{% endfor %}';
-  }
-  if (lower.includes('expected') && lower.includes(',')) {
-    return '{{ [1, 2, 3] }} or {{ {a: 1, b: 2} }}';
-  }
-  return 'Check template syntax around the error location';
+  return DEFAULT_FIX;
 };
 
 export const EXPECTED_COLON_AFTER_DICT_KEY = 'EXPECTED_COLON_AFTER_DICT_KEY';

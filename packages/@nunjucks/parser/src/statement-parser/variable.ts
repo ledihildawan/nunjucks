@@ -38,6 +38,23 @@ export const parseVariableDeclaration = (ctx: ParserContext): Node => {
   return variableDeclaration(tag.lineno, tag.colno, targets, value);
 };
 
+const COMPOUND_OPS = ['||=', '&&=', '??=', '**=', '//='] as const;
+
+const parseOperator = (ctx: ParserContext, tag: ReturnType<typeof peekToken>): string => {
+  const tok = peekToken(ctx);
+  if (tok && tok.type === TOKEN_OPERATOR) {
+    if (COMPOUND_OPS.includes(tok.value as typeof COMPOUND_OPS[number])) {
+      return nextToken(ctx).value as string;
+    }
+    if (tok.value === '=') {
+      nextToken(ctx);
+      return '=';
+    }
+    fail(ctx, 'Expected =, ||= , &&=, ??=, **=, //=', tag.lineno, tag.colno);
+  }
+  fail(ctx, 'Expected =', tag.lineno, tag.colno);
+};
+
 export const parseVariableAssignment = (ctx: ParserContext): Node => {
   const tag = peekToken(ctx);
 
@@ -54,22 +71,7 @@ export const parseVariableAssignment = (ctx: ParserContext): Node => {
     targets.push(target);
   }
 
-  const compoundOps = ['||=', '&&=', '??=', '**=', '//='];
-  let operator = '=';
-
-  const tok = peekToken(ctx);
-  if (tok && tok.type === TOKEN_OPERATOR) {
-    if (compoundOps.includes(tok.value as string)) {
-      operator = nextToken(ctx).value as string;
-    } else if (tok.value === '=') {
-      nextToken(ctx);
-    } else {
-      fail(ctx, 'Expected =, ||= , &&=, ??=, **=, //=', tag.lineno, tag.colno);
-    }
-  } else {
-    fail(ctx, 'Expected =', tag.lineno, tag.colno);
-  }
-
+  const operator = parseOperator(ctx, tag);
   const value = parseExpression(ctx);
 
   if (operator !== '=') {
@@ -77,6 +79,46 @@ export const parseVariableAssignment = (ctx: ParserContext): Node => {
   }
 
   return variableAssignment(tag.lineno, tag.colno, targets, value);
+};
+
+const isEndOfArgs = (tok: ReturnType<typeof peekToken>): boolean =>
+  tok.type === TOKEN_RIGHT_PAREN;
+
+const parseDefineArg = (ctx: ParserContext): { name: string; defaultVal: Node | null } => {
+  const argTok = peekToken(ctx);
+  if (argTok.type !== 'symbol') {
+    fail(ctx, 'Expected argument name', argTok.lineno, argTok.colno);
+  }
+  const argName = nextToken(ctx).value as string;
+  let defaultVal: Node | null = null;
+  if (skipValue(ctx, TOKEN_OPERATOR, '=')) {
+    defaultVal = parseExpression(ctx);
+  }
+  return { name: argName, defaultVal };
+};
+
+const parseDefineArgs = (ctx: ParserContext): MacroArgument[] => {
+  const args: MacroArgument[] = [];
+  nextToken(ctx);
+  for (;;) {
+    const argTok = peekToken(ctx);
+    if (isEndOfArgs(argTok)) {
+      nextToken(ctx);
+      break;
+    }
+    const { name, defaultVal } = parseDefineArg(ctx);
+    args.push({ name, defaultVal });
+    const afterArg = peekToken(ctx);
+    if (afterArg.type === TOKEN_COMMA) {
+      nextToken(ctx);
+    } else if (afterArg.type === TOKEN_RIGHT_PAREN) {
+      nextToken(ctx);
+      break;
+    } else {
+      fail(ctx, 'Expected , or ) after argument', afterArg.lineno, afterArg.colno);
+    }
+  }
+  return args;
 };
 
 export const parseDefineBlock = (ctx: ParserContext): Node => {
@@ -94,33 +136,7 @@ export const parseDefineBlock = (ctx: ParserContext): Node => {
   const args: MacroArgument[] = [];
   const tok = peekToken(ctx);
   if (tok && tok.type === TOKEN_LEFT_PAREN) {
-    nextToken(ctx);
-    for (;;) {
-      const argTok = peekToken(ctx);
-      if (argTok.type === TOKEN_RIGHT_PAREN) {
-        nextToken(ctx);
-        break;
-      }
-      if (argTok.type === 'symbol') {
-        const argName = nextToken(ctx).value as string;
-        let defaultVal: Node | null = null;
-        if (skipValue(ctx, TOKEN_OPERATOR, '=')) {
-          defaultVal = parseExpression(ctx);
-        }
-        args.push({ name: argName, defaultVal });
-        const afterArg = peekToken(ctx);
-        if (afterArg.type === TOKEN_COMMA) {
-          nextToken(ctx);
-        } else if (afterArg.type === TOKEN_RIGHT_PAREN) {
-          nextToken(ctx);
-          break;
-        } else {
-          fail(ctx, 'Expected , or ) after argument', afterArg.lineno, afterArg.colno);
-        }
-      } else {
-        fail(ctx, 'Expected argument name', argTok.lineno, argTok.colno);
-      }
-    }
+    args.push(...parseDefineArgs(ctx));
   }
 
   advanceAfterBlockEnd(ctx, 'define');

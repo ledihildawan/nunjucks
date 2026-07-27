@@ -93,59 +93,50 @@ export { parseFilterStatement } from './filter.ts';
 export { parseWithContext } from './with.ts';
 export { parseVariableDeclaration, parseVariableAssignment, parseDefineBlock } from './variable.ts';
 
-export const parseStatement = (ctx: ParserContext): Node | null => {
+type StatementParser = (ctx: ParserContext) => Node;
+type TaggedParser = (ctx: ParserContext, ...args: unknown[]) => Node;
+
+const STATEMENT_PARSERS: Record<string, StatementParser | TaggedParser> = {
+  raw: parseRaw,
+  verbatim: (ctx) => parseRaw(ctx, 'verbatim'),
+  if: parseIf,
+  for: parseFor,
+  block: parseBlock,
+  extends: parseExtends,
+  include: parseInclude,
+  define: parseDefineBlock,
+  macro: parseMacro,
+  call: parseCall,
+  import: parseImport,
+  from: parseFrom,
+  filter: parseFilterStatement,
+  switch: parseSwitch,
+  try: parseTry,
+  do: parseDo,
+  with: parseWith,
+};
+
+const _parseStatement = (ctx: ParserContext): Node | null => {
   const tok = peekToken(ctx);
 
   if (tok.type !== lexer.TOKEN_SYMBOL) {
     fail(ctx, 'tag name expected', tok.lineno, tok.colno);
   }
 
-  if (ctx.breakOnBlocks &&
-    (ctx.breakOnBlocks || []).includes(tok.value as string)) {
+  if (ctx.breakOnBlocks && (ctx.breakOnBlocks || []).includes(tok.value as string)) {
     return null;
   }
 
-  switch (tok.value as string) {
-    case 'raw':
-      return parseRaw(ctx);
-    case 'verbatim':
-      return parseRaw(ctx, 'verbatim');
-    case 'if':
-      return parseIf(ctx);
-    case 'for':
-      return parseFor(ctx);
-    case 'block':
-      return parseBlock(ctx);
-    case 'extends':
-      return parseExtends(ctx);
-    case 'include':
-      return parseInclude(ctx);
-    case 'define':
-      return parseDefineBlock(ctx);
-    case 'macro':
-      return parseMacro(ctx);
-    case 'call':
-      return parseCall(ctx);
-    case 'import':
-      return parseImport(ctx);
-    case 'from':
-      return parseFrom(ctx);
-    case 'filter':
-      return parseFilterStatement(ctx);
-    case 'switch':
-      return parseSwitch(ctx);
-    case 'try':
-      return parseTry(ctx);
-    case 'do':
-      return parseDo(ctx);
-    case 'with':
-      return parseWith(ctx);
-    default:
-      for (const ext of ctx.extensions) {
-        if ((ext.tags || []).includes(tok.value as string) && ext.parse) {
-          return ext.parse(ctx, nodes, lexer);
-        }
-      }
-      return fail(ctx, `unknown block tag: ${tok.value}`, tok.lineno, tok.colno);
+  const tagName = tok.value as string;
+  const parser = STATEMENT_PARSERS[tagName];
+  if (parser) {
+    return parser(ctx) as Node;
   }
+
+  for (const ext of ctx.extensions) {
+    if ((ext.tags || []).includes(tagName) && ext.parse) {
+      return ext.parse(ctx, nodes, lexer);
+    }
+  }
+  return fail(ctx, `unknown block tag: ${tok.value}`, tok.lineno, tok.colno);
 };

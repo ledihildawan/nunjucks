@@ -7,25 +7,33 @@ import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/inline.ts";
 import { BracketNotation } from "./lookup.ts";
 
+const isEndOfArgs = (next: ReturnType<typeof peekToken>): boolean =>
+  !next || next.type === TOKEN_RIGHT_PAREN;
+
+const handleComma = (ctx: ParserContext, expectComma: boolean): boolean => {
+  if (!expectComma) { return true; }
+  const next = peekToken(ctx);
+  if (next?.type !== TOKEN_COMMA) {
+    fail(ctx, 'expected comma after expression', next?.lineno ?? 0, next?.colno ?? 0);
+  }
+  nextToken(ctx);
+  return true;
+};
+
 const parseOptionalCallArgs = (ctx: ParserContext, tok: Token): ChildrenNode => {
   let args = nodeList(tok.lineno, tok.colno);
   let expectComma = false;
 
   for (;;) {
     const next = peekToken(ctx);
-    if (!next || next.type === TOKEN_RIGHT_PAREN) {
+    if (isEndOfArgs(next)) {
       if (next) {
         nextToken(ctx);
       }
       break;
     }
 
-    if (expectComma) {
-      if (next.type !== TOKEN_COMMA) {
-        fail(ctx, 'expected comma after expression', next.lineno, next.colno);
-      }
-      nextToken(ctx);
-    }
+    if (!handleComma(ctx, expectComma)) { break; }
 
     const arg = parseExpression(ctx);
     args = appendChild(args, arg);

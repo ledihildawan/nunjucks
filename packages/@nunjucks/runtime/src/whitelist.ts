@@ -110,44 +110,26 @@ const traverseAst = (node: unknown, callback: (node: Node) => void): void => {
   if (!node || typeof node !== 'object') { return; }
 
   const nodeObj = node as AstNode;
-  // Whitelist scanning intentionally supports legacy structural AST input.
   if (typeof nodeObj.type === 'string') { callback(nodeObj as unknown as Node); }
 
-  if (nodeObj.children && Array.isArray(nodeObj.children)) {
-    for (const child of nodeObj.children as unknown[]) { traverseAst(child, callback); }
-  }
-
-  if (nodeObj.body) {
-    if (Array.isArray(nodeObj.body)) {
-      for (const child of nodeObj.body as unknown[]) { traverseAst(child, callback); }
-    } else {
-      traverseAst(nodeObj.body, callback);
+  const traverseArrayField = (field: unknown): void => {
+    if (field && Array.isArray(field)) {
+      for (const child of field as unknown[]) { traverseAst(child, callback); }
     }
-  }
+  };
 
-  if (nodeObj.alternate) {
-    traverseAst(nodeObj.alternate, callback);
-  }
+  const traverseSingleField = (field: unknown): void => {
+    if (field) { traverseAst(field, callback); }
+  };
 
-  if (nodeObj.test) {
-    traverseAst(nodeObj.test, callback);
-  }
-
-  if (nodeObj.expr) {
-    traverseAst(nodeObj.expr, callback);
-  }
-
-  if (nodeObj.name) {
-    traverseAst(nodeObj.name, callback);
-  }
-
-  if (nodeObj.args && Array.isArray(nodeObj.args)) {
-    for (const child of nodeObj.args as unknown[]) { traverseAst(child, callback); }
-  }
-
-  if (nodeObj.target) {
-    traverseAst(nodeObj.target, callback);
-  }
+  traverseArrayField(nodeObj.children);
+  traverseSingleField(nodeObj.body);
+  traverseSingleField(nodeObj.alternate);
+  traverseSingleField(nodeObj.test);
+  traverseSingleField(nodeObj.expr);
+  traverseSingleField(nodeObj.name);
+  traverseArrayField(nodeObj.args);
+  traverseSingleField(nodeObj.target);
 };
 
 export interface WhitelistError extends Error {

@@ -62,38 +62,51 @@ export interface TemplateValidatorConfig {
   whitelistStrict?: boolean;
 }
 
+const checkTemplateSize = (template: string, config: TemplateValidatorConfig): TemplateValidationError | null => {
+  if (!config.maxTemplateSize || config.maxTemplateSize <= 0) {
+    return null;
+  }
+  const size = typeof template === 'string' ? template.length : 0;
+  if (size > config.maxTemplateSize) {
+    return {
+      code: 'TEMPLATE_SIZE_EXCEEDED',
+      message: `Template exceeds maximum size of ${config.maxTemplateSize} bytes`,
+      subject: 'maxTemplateSize'
+    };
+  }
+  return null;
+};
+
+const checkDangerousCode = (template: string, config: TemplateValidatorConfig): TemplateValidationError | null => {
+  if (!config.strictMode && !config.whitelistStrict) {
+    return null;
+  }
+  const violations = scanTemplateForDangerousCode(template);
+  if (violations.length === 0) {
+    return null;
+  }
+  const [first] = violations;
+  return {
+    code: 'DANGEROUS_TEMPLATE_CODE',
+    subject: first?.name ?? 'template',
+    message: `Template contains dangerous code: ${violations.map(v => v.message).join('; ')}`,
+    violations,
+    lineno: first?.line,
+    colno: first?.col
+  };
+};
+
 export const validateTemplate = (template: string, config: TemplateValidatorConfig): TemplateValidationResult => {
   const errors: TemplateValidationError[] = [];
 
-  if (config.maxTemplateSize && config.maxTemplateSize > 0) {
-    let size: number;
-    if (typeof template === 'string') {
-      size = template.length;
-    } else {
-      size = 0;
-    }
-    if (size > config.maxTemplateSize) {
-      errors.push({
-        code: 'TEMPLATE_SIZE_EXCEEDED',
-        message: `Template exceeds maximum size of ${config.maxTemplateSize} bytes`,
-        subject: 'maxTemplateSize'
-      });
-    }
+  const sizeError = checkTemplateSize(template, config);
+  if (sizeError) {
+    errors.push(sizeError);
   }
 
-  if (config.strictMode || config.whitelistStrict) {
-    const violations = scanTemplateForDangerousCode(template);
-    if (violations.length > 0) {
-      const [first] = violations;
-      errors.push({
-        code: 'DANGEROUS_TEMPLATE_CODE',
-        subject: first?.name ?? 'template',
-        message: `Template contains dangerous code: ${violations.map(v => v.message).join('; ')}`,
-        violations,
-        lineno: first?.line,
-        colno: first?.col
-      });
-    }
+  const dangerousError = checkDangerousCode(template, config);
+  if (dangerousError) {
+    errors.push(dangerousError);
   }
 
   return {

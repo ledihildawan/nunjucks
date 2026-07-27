@@ -143,13 +143,27 @@ export { BLOCKED_KEY_CATEGORIES };
 
 export const isCodeExecutionPattern = (key: string): boolean => CODE_EXECUTION_PATTERNS.has(key);
 
+const checkEnvGlobals = (key: string, env: Environment): BlockedKeyCategory | null => {
+  if ((env === 'auto' || env === 'node') && hasKey(BLOCKED_KEY_CATEGORIES.NODE_GLOBALS, key)) {
+    return 'node_global';
+  }
+  if ((env === 'auto' || env === 'browser') && hasKey(BLOCKED_KEY_CATEGORIES.BROWSER_GLOBALS, key)) {
+    return 'browser_global';
+  }
+  if ((env === 'auto' || env === 'deno') && hasKey(BLOCKED_KEY_CATEGORIES.DENO_GLOBALS, key)) {
+    return 'deno_global';
+  }
+  return null;
+};
+
+const getEnvCategory = (key: string, env: Environment): BlockedKeyCategory | null => {
+  return checkEnvGlobals(key, env);
+};
+
 export const getBlockedKeyCategory = (key: string, env: Environment = 'auto'): BlockedKeyCategory => {
   if (hasKey(BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS, key)) { return 'object_intrinsic'; }
   if (hasKey(BLOCKED_KEY_CATEGORIES.UNIVERSAL_GLOBALS, key)) { return 'universal_global'; }
-  if ((env === 'auto' || env === 'node') && hasKey(BLOCKED_KEY_CATEGORIES.NODE_GLOBALS, key)) { return 'node_global'; }
-  if ((env === 'auto' || env === 'browser') && hasKey(BLOCKED_KEY_CATEGORIES.BROWSER_GLOBALS, key)) { return 'browser_global'; }
-  if ((env === 'auto' || env === 'deno') && hasKey(BLOCKED_KEY_CATEGORIES.DENO_GLOBALS, key)) { return 'deno_global'; }
-  return null;
+  return getEnvCategory(key, env);
 };
 
 export const isBlockedKey = (key: string, env: Environment = 'auto'): boolean => {

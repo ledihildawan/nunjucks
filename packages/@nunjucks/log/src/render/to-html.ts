@@ -379,6 +379,18 @@ const buildErrorFooter = (
   </footer>`;
 };
 
+const classifyAndBuildTitle = (error: ErrorLike) => {
+  const classified = classifyError(error);
+  const plain = toText(error, { verbosity: 'simple' });
+  const undefinedName = classified.undefinedName || plain.match(UNDEFINED_OUTPUT_RE)?.[1] || null;
+  return resolveHumanTitle({
+    category: classified.category,
+    undefinedName,
+    plain,
+    fallback: classified.title || plain
+  });
+};
+
 const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string => {
   const {
     templatePath = error?.templateName,
@@ -403,15 +415,8 @@ const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string =>
     return document('Rendering Interrupted', buildProductionBody(options), '', csp ?? null);
   }
 
+  const humanTitle = classifyAndBuildTitle(error);
   const classified = classifyError(error);
-  const plain = toText(error, { verbosity: 'simple' });
-  const undefinedName = classified.undefinedName || plain.match(UNDEFINED_OUTPUT_RE)?.[1] || null;
-  const humanTitle = resolveHumanTitle({
-    category: classified.category,
-    undefinedName,
-    plain,
-    fallback: classified.title || plain
-  });
   const { displayLine, displayCol, displayPath } = resolveErrorLocation(
     error, lineno, colno, templatePath, isJsCaller
   );

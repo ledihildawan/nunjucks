@@ -33,67 +33,108 @@ const TRAILING_WHITESPACE_RE = /\s*$/;
 const RAW_OPEN_TAG_RE = /^({%\s*raw\s*%})/;
 const RAW_CLOSE_TAG_RE = /({%\s*endraw\s*%})$/;
 
+const shouldStripTrailingWhitespace = (
+  nextTok: ReturnType<typeof peekToken>,
+  ctx: ParserContext
+): boolean => {
+  if (!nextTok) { return false; }
+  const nextVal = nextTok.value as string;
+  if (nextTok.type === TOKEN_BLOCK_START) {
+    return nextVal.at(-1) === '-';
+  }
+  if (nextTok.type === TOKEN_VARIABLE_START) {
+    return nextVal.charAt(ctx.tokens.tags.VARIABLE_START.length) === '-';
+  }
+  if (nextTok.type === TOKEN_COMMENT) {
+    return nextVal.charAt(ctx.tokens.tags.COMMENT_START.length) === '-';
+  }
+  return false;
+};
+
+const parseDataToken = (ctx: ParserContext, tok: ReturnType<typeof nextToken>, buf: Node[]): void => {
+  let data: string = tok.value as string;
+  const nextTok = peekToken(ctx);
+
+  if (ctx.dropLeadingWhitespace) {
+    data = data.replace(LEADING_WHITESPACE_RE, '');
+    ctx.dropLeadingWhitespace = false;
+  }
+
+  if (nextTok && shouldStripTrailingWhitespace(nextTok, ctx)) {
+    data = data.replace(TRAILING_WHITESPACE_RE, '');
+  }
+
+  buf.push(output(
+    tok.lineno,
+    tok.colno,
+    [templateData(tok.lineno, tok.colno, data)]
+  ));
+};
+
+const parseRawToken = (tok: ReturnType<typeof nextToken>, buf: Node[]): void => {
+  let rawContent = tok.value;
+  if (typeof rawContent === 'string') {
+    rawContent = rawContent
+      .replace(RAW_OPEN_TAG_RE, '')
+      .replace(RAW_CLOSE_TAG_RE, '');
+  }
+  buf.push(output(
+    tok.lineno,
+    tok.colno,
+    [templateData(tok.lineno, tok.colno, rawContent as string)]
+  ));
+};
+
+const parseVariableToken = (ctx: ParserContext, tok: ReturnType<typeof nextToken>, buf: Node[]): void => {
+  const e = parseExpression(ctx);
+  ctx.dropLeadingWhitespace = false;
+  advanceAfterVariableEnd(ctx);
+  buf.push(output(tok.lineno, tok.colno, [e]));
+};
+
+const parseCommentToken = (ctx: ParserContext, tok: ReturnType<typeof nextToken>): void => {
+  ctx.dropLeadingWhitespace = (tok.value as string).charAt(
+    (tok.value as string).length - ctx.tokens.tags.COMMENT_END.length - 1
+  ) === '-';
+};
+
+const handleToken = (ctx: ParserContext, tok: ReturnType<typeof nextToken>, buf: Node[]): boolean => {
+  if (tok.type === TOKEN_DATA) {
+    parseDataToken(ctx, tok, buf);
+    return true;
+  }
+  if (tok.type === TOKEN_BLOCK_START) {
+    ctx.dropLeadingWhitespace = false;
+    const n = parseStatement(ctx);
+    if (!n) {
+      return false;
+    }
+    buf.push(n);
+    return true;
+  }
+  if (tok.type === TOKEN_VARIABLE_START) {
+    parseVariableToken(ctx, tok, buf);
+    return true;
+  }
+  if (tok.type === TOKEN_COMMENT) {
+    parseCommentToken(ctx, tok);
+    return true;
+  }
+  if (tok.type === TOKEN_RAW) {
+    ctx.dropLeadingWhitespace = false;
+    parseRawToken(tok, buf);
+    return true;
+  }
+  fail(ctx, `Unexpected token at top-level: ${tok.type}`, tok.lineno, tok.colno);
+  return true;
+};
+
 const parseNodes = (ctx: ParserContext): Node[] => {
   const buf: Node[] = [];
 
   for (let tok = nextToken(ctx); tok; tok = nextToken(ctx)) {
-    if (tok.type === TOKEN_DATA) {
-      let data: string = tok.value as string;
-      const nextTok = peekToken(ctx);
-      const nextVal = nextTok && (nextTok.value as string);
-
-      if (ctx.dropLeadingWhitespace) {
-        data = data.replace(LEADING_WHITESPACE_RE, '');
-        ctx.dropLeadingWhitespace = false;
-      }
-
-      if (nextTok &&
-        ((nextTok.type === TOKEN_BLOCK_START &&
-        nextVal.at(-1) === '-') ||
-        (nextTok.type === TOKEN_VARIABLE_START &&
-        nextVal.charAt(ctx.tokens.tags.VARIABLE_START.length) === '-') ||
-        (nextTok.type === TOKEN_COMMENT &&
-        nextVal.charAt(ctx.tokens.tags.COMMENT_START.length) === '-'))) {
-        data = data.replace(TRAILING_WHITESPACE_RE, '');
-      }
-
-      buf.push(output(
-        tok.lineno,
-        tok.colno,
-        [templateData(tok.lineno, tok.colno, data)]
-      ));
-    } else if (tok.type === TOKEN_BLOCK_START) {
-      ctx.dropLeadingWhitespace = false;
-      const n = parseStatement(ctx);
-      if (!n) {
-        break;
-      }
-      buf.push(n);
-    } else if (tok.type === TOKEN_VARIABLE_START) {
-      const e = parseExpression(ctx);
-      ctx.dropLeadingWhitespace = false;
-      advanceAfterVariableEnd(ctx);
-      buf.push(output(tok.lineno, tok.colno, [e]));
-    } else if (tok.type === TOKEN_COMMENT) {
-      ctx.dropLeadingWhitespace = (tok.value as string).charAt(
-        (tok.value as string).length - ctx.tokens.tags.COMMENT_END.length - 1
-      ) === '-';
-    } else if (tok.type === TOKEN_RAW) {
-      ctx.dropLeadingWhitespace = false;
-      let rawContent = tok.value;
-      if (typeof rawContent === 'string') {
-        rawContent = rawContent
-          .replace(RAW_OPEN_TAG_RE, '')
-          .replace(RAW_CLOSE_TAG_RE, '');
-      }
-      buf.push(output(
-        tok.lineno,
-        tok.colno,
-        [templateData(tok.lineno, tok.colno, rawContent as string)]
-      ));
-    } else {
-      fail(ctx, 'Unexpected token at top-level: ' +
-        tok.type, tok.lineno, tok.colno);
+    if (!handleToken(ctx, tok, buf)) {
+      break;
     }
   }
 

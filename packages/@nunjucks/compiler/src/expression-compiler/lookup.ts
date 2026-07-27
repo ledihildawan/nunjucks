@@ -30,45 +30,53 @@ const getTargetName = (node: Node | undefined): string | null => {
   return null;
 };
 
+const emitSlice = (ctx: Compiler, val: Node, node: Node, frame: Frame): void => {
+  ctx.emit('runtime.slice((');
+  ctx.compileExpression(node.target as Node, frame);
+  ctx.emit('), ');
+  if (val.start) {
+    ctx.compileExpression(val.start as Node, frame);
+  } else {
+    ctx.emit('null');
+  }
+  ctx.emit(', ');
+  if (val.stop) {
+    ctx.compileExpression(val.stop as Node, frame);
+  } else {
+    ctx.emit('null');
+  }
+  ctx.emit(', ');
+  if (val.step) {
+    ctx.compileExpression(val.step as Node, frame);
+  } else {
+    ctx.emit('null');
+  }
+  ctx.emit(')');
+};
+
+const emitMemberLookup = (ctx: Compiler, node: Node, val: Node, frame: Frame): void => {
+  const parentName = getTargetName(node.target as Node);
+  ctx.emit('runtime.memberLookup((');
+  ctx.compileExpression(node.target as Node, frame);
+  ctx.emit('),');
+  ctx.compileExpression(val, frame);
+  if (parentName === null) {
+    ctx.emit(', null');
+  } else {
+    ctx.emit(`, ${JSON.stringify(parentName)}`);
+  }
+  ctx.emit(')');
+};
+
 export const compileLookupVal = (ctx: Compiler, node: Node, frame: Frame): void => {
   const val = node.val as Node;
   const location = locationFor(val, node);
   emitLocationGuard(ctx, location);
 
   if (isSlice(val)) {
-    ctx.emit('runtime.slice((');
-    ctx.compileExpression(node.target as Node, frame);
-    ctx.emit('), ');
-    if (val.start) {
-      ctx.compileExpression(val.start as Node, frame);
-    } else {
-      ctx.emit('null');
-    }
-    ctx.emit(', ');
-    if (val.stop) {
-      ctx.compileExpression(val.stop as Node, frame);
-    } else {
-      ctx.emit('null');
-    }
-    ctx.emit(', ');
-    if (val.step) {
-      ctx.compileExpression(val.step as Node, frame);
-    } else {
-      ctx.emit('null');
-    }
-    ctx.emit(')');
+    emitSlice(ctx, val, node, frame);
   } else {
-    const parentName = getTargetName(node.target as Node);
-    ctx.emit('runtime.memberLookup((');
-    ctx.compileExpression(node.target as Node, frame);
-    ctx.emit('),');
-    ctx.compileExpression(val, frame);
-    if (parentName === null) {
-      ctx.emit(', null');
-    } else {
-      ctx.emit(`, ${JSON.stringify(parentName)}`);
-    }
-    ctx.emit(')');
+    emitMemberLookup(ctx, node, val, frame);
   }
 
   ctx.emit(')');

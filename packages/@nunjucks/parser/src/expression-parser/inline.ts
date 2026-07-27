@@ -62,6 +62,30 @@ const normalizePattern = (node: Node): Node => {
   }));
 };
 
+const isExpressionContext = (tok: ReturnType<typeof peekToken>): boolean =>
+  tok && (tok.type === 'operator' || tok.type === 'right-paren' || tok.type === 'comma');
+
+const handleWalrusAssignment = (node: Node, valueNode: Node, isExprCtx: boolean): Node => {
+  if (isSymbol(node)) {
+    return isExprCtx
+      ? walrus(node.lineno, node.colno, node, valueNode)
+      : variableDeclaration(node.lineno, node.colno, [node], valueNode);
+  }
+  if (isArrayPattern(node) || isArray(node) || isObjectPattern(node) || isDict(node)) {
+    const pattern = isExprCtx ? normalizePattern(node) : node;
+    return variableDeclaration(node.lineno, node.colno, [pattern], valueNode);
+  }
+  throw new Error('Walrus operator target must be a symbol or pattern');
+};
+
+const handleCompoundAssignment = (ctx: ParserContext, node: Node, operator: string): Node => {
+  const valueNode = parseOr(ctx);
+  if (isSymbol(node)) {
+    return compoundAssignment(node.lineno, node.colno, { targets: [node], operator, value: valueNode });
+  }
+  throw new Error('Assignment target must be a symbol');
+};
+
 const parseWalrus = (ctx: ParserContext, node: Node): Node => {
   const tok = peekToken(ctx);
   if (tok && (tok.type === TOKEN_OPERATOR || tok.type === TOKEN_PIPEFORWARD)) {
@@ -69,73 +93,16 @@ const parseWalrus = (ctx: ParserContext, node: Node): Node => {
       nextToken(ctx);
       const valueNode = parseOr(ctx);
       const afterTok = peekToken(ctx);
-      const isExpressionContext = afterTok && (
-        afterTok.type === 'operator' ||
-        afterTok.type === 'right-paren' ||
-        afterTok.type === 'comma'
-      );
-      let resultNode: Node;
-      if (isSymbol(node)) {
-        if (isExpressionContext) {
-          resultNode = walrus(node.lineno, node.colno, node, valueNode);
-        } else {
-          resultNode = variableDeclaration(node.lineno, node.colno, [node], valueNode);
-        }
-      } else if (isArrayPattern(node) || isArray(node) || isObjectPattern(node) || isDict(node)) {
-        if (isExpressionContext) {
-          resultNode = walrus(node.lineno, node.colno, normalizePattern(node), valueNode);
-        } else {
-          let pattern: Node = node;
-          if (isArray(node)) {
-            pattern = arrayPattern(node.lineno, node.colno, (node as MutableNode).children.map(c => {
-              const p = c as PairNode;
-              if (isPair(c) && isSymbol(p.value) && p.key.value === p.value.value) {
-                return p.value;
-              }
-              if (isSpread(c)) {
-                return restPattern(c.lineno, c.colno, p.argument);
-              }
-              return c;
-            }));
-          } else if (isDict(node)) {
-            pattern = objectPattern(node.lineno, node.colno, (node as MutableNode).children.map(c => {
-              const p = c as PairNode;
-              if (isPair(c)) {
-                if (isSymbol(p.key) && isSymbol(p.value) && p.key.value === p.value.value) {
-                  return patternProperty(p.key.lineno, p.key.colno, p.key.value as Node, p.key);
-                }
-              } else if (isSpread(c)) {
-                return restPattern(c.lineno, c.colno, p.argument);
-              }
-              return c;
-            }));
-          }
-          resultNode = variableDeclaration(node.lineno, node.colno, [pattern], valueNode);
-        }
-      } else {
-        throw new Error('Walrus operator target must be a symbol or pattern');
-      }
+      const resultNode = handleWalrusAssignment(node, valueNode, isExpressionContext(afterTok));
       return parseWalrus(ctx, resultNode);
     }
 
     if (tok.type === TOKEN_OPERATOR && tok.value === '|>=') {
-      const operator = tok.value as string;
-      nextToken(ctx);
-      const valueNode = parseOr(ctx);
-      if (isSymbol(node)) {
-        return compoundAssignment(node.lineno, node.colno, { targets: [node], operator, value: valueNode });
-      }
-      throw new Error('Assignment target must be a symbol');
+      return handleCompoundAssignment(ctx, node, tok.value);
     }
 
     if (COMPOUND_OPS.includes(tok.value as string)) {
-      const operator = tok.value as string;
-      nextToken(ctx);
-      const valueNode = parseOr(ctx);
-      if (isSymbol(node)) {
-        return compoundAssignment(node.lineno, node.colno, { targets: [node], operator, value: valueNode });
-      }
-      throw new Error('Assignment target must be a symbol');
+      return handleCompoundAssignment(ctx, node, tok.value as string);
     }
   }
 

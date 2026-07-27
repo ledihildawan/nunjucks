@@ -101,15 +101,49 @@ const buildContextObj = (
   isJsCaller: preferCallerLocation,
 });
 
-export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, template: string | null = null, renderContext: unknown = null): Promise<TemplateError> => {
-  const resolvedSourceContent = typeof template === 'string' ? template : null;
-  const initialMetadata = normalizeErrorMetadata(err, {
-    phase: config.phase || 'render',
-    templatePath: config.templatePath || config._callerFile || null,
-    sourceContent: resolvedSourceContent,
-    renderContext: renderContext as Record<string, unknown> | null
-  });
+const buildMetadata = (
+  errSnapshot: Record<string, unknown>,
+  lineno: number | null,
+  colno: number | null,
+  lineBase: string,
+  phase: string,
+  templatePath: string | null,
+  sourceContent: string | null,
+  sourceStartLine: number,
+  renderContext: unknown
+) => normalizeErrorMetadata(errSnapshot, {
+  lineno,
+  colno,
+  lineBase,
+  phase,
+  templateName: templatePath,
+  templatePath,
+  sourceContent,
+  sourceStartLine,
+  renderContext: renderContext as Record<string, unknown> | null,
+  code: 'RENDER_ERROR'
+});
 
+const createErrorObject = (
+  metadata: ReturnType<typeof normalizeErrorMetadata>,
+  resolvedProps: ReturnType<typeof resolveErrorProps>,
+  contextObj: ReturnType<typeof buildContextObj>,
+  templatePath: string | null,
+  sourceStartLine: number
+): TemplateError => {
+  const errorDef = buildErrorDef(metadata, resolvedProps);
+  const errorObj = createLog('error', errorDef, {}, metadata.subject, contextObj as Parameters<typeof createLog>[4]) as TemplateError;
+  errorObj.templatePath = templatePath;
+  errorObj.sourceStartLine = sourceStartLine;
+  errorObj.renderContext = metadata.renderContext ?? undefined;
+  return errorObj;
+};
+
+const resolveErrorMetadata = async (
+  config: DiagnosticsConfig,
+  template: string | null,
+  initialMetadata: ReturnType<typeof normalizeErrorMetadata>
+) => {
   const resolved = await resolveLocation({
     template,
     templatePath: config.templatePath ?? null,
@@ -125,6 +159,19 @@ export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, templ
     colno: config.colno ?? null,
     subject: initialMetadata.subject
   });
+  return resolved;
+};
+
+export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, template: string | null = null, renderContext: unknown = null): Promise<TemplateError> => {
+  const resolvedSourceContent = typeof template === 'string' ? template : null;
+  const initialMetadata = normalizeErrorMetadata(err, {
+    phase: config.phase || 'render',
+    templatePath: config.templatePath || config._callerFile || null,
+    sourceContent: resolvedSourceContent,
+    renderContext: renderContext as Record<string, unknown> | null
+  });
+
+  const resolved = await resolveErrorMetadata(config, template, initialMetadata);
 
   const { lineno, colno, lineBase, templatePath, sourceContent, sourceStartLine, preferCallerLocation } = resolved;
   const errSnapshot = extractErrorSnapshot(err);
@@ -133,27 +180,9 @@ export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, templ
   const ide = config.ide ?? 'vscode';
   const timestamp = new Date().toISOString();
 
-  const metadata = normalizeErrorMetadata(errSnapshot, {
-    lineno,
-    colno,
-    lineBase,
-    phase,
-    templateName: templatePath,
-    templatePath,
-    sourceContent,
-    sourceStartLine,
-    renderContext: renderContext as Record<string, unknown> | null,
-    code: 'RENDER_ERROR'
-  });
-
+  const metadata = buildMetadata(errSnapshot, lineno, colno, lineBase, phase, templatePath, sourceContent, sourceStartLine, renderContext);
   const resolvedProps = resolveErrorProps(err);
-  const errorDef = buildErrorDef(metadata, resolvedProps);
   const contextObj = buildContextObj(metadata, templatePath, sourceContent, sourceStartLine, renderContext, preferCallerLocation, dev, ide, timestamp);
 
-  const errorObj = createLog('error', errorDef, {}, metadata.subject, contextObj as Parameters<typeof createLog>[4]) as TemplateError;
-  errorObj.templatePath = templatePath;
-  errorObj.sourceStartLine = sourceStartLine;
-  errorObj.renderContext = metadata.renderContext ?? undefined;
-
-  return errorObj;
+  return createErrorObject(metadata, resolvedProps, contextObj, templatePath, sourceStartLine);
 };

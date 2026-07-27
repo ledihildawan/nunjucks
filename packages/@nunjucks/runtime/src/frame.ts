@@ -81,15 +81,18 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
         }
       }
 
-      let obj: Record<string, unknown> = state.variables;
-      for (const id of parts.slice(0, -1)) {
-        if (!obj[id]) {
-          obj[id] = {};
+      const traverseAndSet = (target: Record<string, unknown>, path: string[]): void => {
+        let current = target;
+        for (const id of path) {
+          if (!current[id]) {
+            current[id] = {};
+          }
+          current = current[id] as Record<string, unknown>;
         }
-        obj = obj[id] as Record<string, unknown>;
-      }
+        current[lastPart] = val;
+      };
 
-      obj[lastPart] = val;
+      traverseAndSet(state.variables, parts.slice(0, -1));
       state.rootState.revision += 1;
       state.resolveCache.clear();
       state.lookupCache.clear();
@@ -122,12 +125,7 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
     },
 
     resolve(name: string, forWrite?: boolean): Frame | undefined {
-      let forWriteVal: number;
-      if (forWrite) {
-        forWriteVal = 1;
-      } else {
-        forWriteVal = 0;
-      }
+      const forWriteVal = forWrite ? 1 : 0;
       const cacheKey = `${name}\u0000${forWriteVal}`;
       const cached = state.resolveCache.get(cacheKey);
       if (cached && cached.revision === state.rootState.revision) {
@@ -135,20 +133,17 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
       }
 
       const val = state.variables[name];
+      const shouldBailOut = forWrite && state.isolateWrites;
       if (val !== undefined) {
-        if (forWrite && state.isolateWrites) {
-          return ;
-        }
+        if (shouldBailOut) { return; }
         state.resolveCache.set(cacheKey, { revision: state.rootState.revision, frame });
         return frame;
       }
-      if (forWrite && state.isolateWrites) {
-        return ;
-      }
-      const p = state.parent;
-      const f = p?.resolve(name);
-      state.resolveCache.set(cacheKey, { revision: state.rootState.revision, frame: f });
-      return f;
+      if (shouldBailOut) { return; }
+      const parentFrame = state.parent;
+      const resolvedFrame = parentFrame?.resolve(name);
+      state.resolveCache.set(cacheKey, { revision: state.rootState.revision, frame: resolvedFrame });
+      return resolvedFrame;
     },
 
     push(writeIsolation?: boolean): Frame {

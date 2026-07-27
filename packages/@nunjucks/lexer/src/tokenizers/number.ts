@@ -7,21 +7,22 @@ const { isDigit } = validators;
 
 const parseDigits = (current: ReturnType<typeof advance>): { num: string; current: ReturnType<typeof advance> } => {
   let num = '';
+  let pos = current;
   while (
-    current.index < current.str.length &&
-    isDigit(current.str[current.index] ?? '')
+    pos.index < pos.str.length &&
+    isDigit(pos.str[pos.index] ?? '')
   ) {
-    num += current.str[current.index] ?? '';
-    current = advance(current);
+    num += pos.str[pos.index] ?? '';
+    pos = advance(pos);
   }
-  return { num, current };
+  return { num, current: pos };
 };
 
 const parseDecimalPart = (current: ReturnType<typeof advance>): { hasDecimal: boolean; num: string; current: ReturnType<typeof advance> } => {
   if (current.index < current.str.length && (current.str[current.index] ?? '') === '.') {
     const afterDot = advance(current);
     const { num: decimalDigits, current: newCurrent } = parseDigits(afterDot);
-    const num = '.' + decimalDigits;
+    const num = `.${decimalDigits}`;
     return { hasDecimal: true, num, current: newCurrent };
   }
   return { hasDecimal: false, num: '', current };

@@ -95,50 +95,63 @@ const checkCall = (node: Node, nodeType: string, path: (string | number)[]): Val
   return [unsafeProperty(`Dangerous function call '${fnName}' is not allowed`, node, [...path, nodeType])];
 };
 
+const walkChildNodes = (
+  node: Record<string, unknown>,
+  errors: ValidationError[],
+  cfg: Record<string, unknown>,
+  path: (string | number)[]
+): void => {
+  for (const key of Object.keys(node).filter(k => !NON_CHILD_KEYS.has(k))) {
+    const child = node[key];
+    if (Array.isArray(child)) {
+      child.forEach((c, i) => { walk(c as Node, errors, cfg, [...path, key, i]); });
+    } else if (child && typeof child === 'object') {
+      walk(child as Node, errors, cfg, [...path, key]);
+    }
+  }
+};
+
+const walk = (
+  node: Node | null | undefined,
+  errors: ValidationError[],
+  cfg: Record<string, unknown>,
+  path: (string | number)[] = []
+): void => {
+  if (!node) { return; }
+
+  const nodeType = getNodeTypeName(node);
+
+  switch (nodeType) {
+    case 'lookupVal': {
+      errors.push(...checkLookupVal(node, path, cfg.blockedPropertyPatterns as RegExp[]));
+      walk(node.target as Node, errors, cfg, [...path, 'target']);
+      walk(node.val as Node, errors, cfg, [...path, 'val']);
+      break;
+    }
+
+    case 'symbol': {
+      errors.push(...checkSymbol(node, path));
+      break;
+    }
+
+    case 'funCall':
+    case 'pipe': {
+      errors.push(...checkCall(node, nodeType ?? '', path));
+      walk(node.name as Node, errors, cfg, [...path, 'name']);
+      walk(node.args as Node, errors, cfg, [...path, 'args']);
+      break;
+    }
+
+    default: {
+      walkChildNodes(node as Record<string, unknown>, errors, cfg, path);
+    }
+  }
+};
+
 function validateExpression(ast: Node, config: Record<string, unknown> = {}): ValidationError[] {
   const cfg = { ...DEFAULT_SECURITY_CONFIG, ...config };
   const errors: ValidationError[] = [];
-
-  function walk(node: Node | null | undefined, path: (string | number)[] = []): void {
-    if (!node) { return; }
-
-    const nodeType = getNodeTypeName(node);
-
-    switch (nodeType) {
-      case 'lookupVal': {
-        errors.push(...checkLookupVal(node, path, cfg.blockedPropertyPatterns as RegExp[]));
-        walk(node.target as Node, [...path, 'target']);
-        walk(node.val as Node, [...path, 'val']);
-        break;
-      }
-
-      case 'symbol': {
-        errors.push(...checkSymbol(node, path));
-        break;
-      }
-
-      case 'funCall':
-      case 'pipe': {
-        errors.push(...checkCall(node, nodeType ?? '', path));
-        walk(node.name as Node, [...path, 'name']);
-        walk(node.args as Node, [...path, 'args']);
-        break;
-      }
-
-      default: {
-        for (const key of Object.keys(node).filter(k => !NON_CHILD_KEYS.has(k))) {
-          const child = (node as Record<string, unknown>)[key];
-          if (Array.isArray(child)) {
-            child.forEach((c, i) => { walk(c as Node, [...path, key, i]); });
-          } else if (child && typeof child === 'object') {
-            walk(child as Node, [...path, key]);
-          }
-        }
-      }
-    }
-  }
-
-  walk(ast);
+  walk(ast, errors, cfg);
   return errors;
 }
 
