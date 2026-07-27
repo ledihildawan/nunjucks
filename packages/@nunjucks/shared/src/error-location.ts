@@ -293,7 +293,6 @@ const findSubjectOccurrence = (
   ];
 
   for (const { re, group } of patterns) {
-    // biome-ignore lint/suspicious/noUnnecessaryConditions: RegExp.exec returns RegExpExecArray | null, so this null check terminates the loop and is not statically known.
     for (let match = re.exec(content); match !== null; match = re.exec(content)) {
       const hit = positionOfCaptureGroup(content, match, group, subjectColOffset);
       if (hit) {

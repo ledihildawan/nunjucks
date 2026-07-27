@@ -1,0 +1,39 @@
+{
+	"$schema": "https://biomejs.dev/schemas/latest/schema.json",
+	"overrides": [
+		{
+			"includes": [
+				"**/*.test.{js,ts}",
+				"**/*.spec.{js,ts}",
+				"**/__tests__/**",
+				"**/test/**",
+				"**/tests/**"
+			],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noUnresolvedImports": "off"
+					},
+					"suspicious": {
+						"noConsole": "off",
+						"noEmptyBlockStatements": "off",
+						"noProto": "off",
+						"noExplicitAny": "off"
+					},
+					"style": {
+						"noImplicitBoolean": "off",
+						"noMagicNumbers": "off",
+						"noNonNullAssertion": "off",
+						"noExcessiveLinesPerFile": "off"
+					},
+					"complexity": {
+						"noExcessiveLinesPerFunction": "off"
+					},
+					"performance": {
+						"useTopLevelRegex": "off"
+					}
+				}
+			}
+		}
+	]
+}

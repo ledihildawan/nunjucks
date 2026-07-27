@@ -1,6 +1,5 @@
 import type { Token, TokenType, TokenValue } from './token-types.ts';
 
-// biome-ignore lint/complexity/useMaxParams: bundling lineno/colno into an object would allocate one throwaway object per token in the tokenizer's hot path, across 24 call sites, to satisfy a parameter count.
 export const createToken = (
   type: TokenType,
   value: TokenValue,

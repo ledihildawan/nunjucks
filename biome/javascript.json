@@ -1,0 +1,11 @@
+{
+	"$schema": "https://biomejs.dev/schemas/latest/schema.json",
+	"javascript": {
+		"globals": ["console", "process", "Buffer", "__dirname", "__filename", "Bun"],
+		"formatter": {
+			"quoteStyle": "single",
+			"trailingCommas": "es5",
+			"semicolons": "always"
+		}
+	}
+}

@@ -79,7 +79,6 @@ describe('ensureDefined', () => {
 
   test('collects debug warnings without duplicate console output', () => {
     const warnings: unknown[] = [];
-    // biome-ignore lint/suspicious/noConsole: the test stubs console.warn to assert the fallback path, so it has to reference it.
     const originalWarn = console.warn;
     let calls = 0;
     console.warn = () => {
@@ -97,7 +96,6 @@ describe('ensureDefined', () => {
   });
 
   test('prints debug warnings when no collector exists', () => {
-    // biome-ignore lint/suspicious/noConsole: the test stubs console.warn to assert the fallback path, so it has to reference it.
     const originalWarn = console.warn;
     let calls = 0;
     console.warn = () => {

@@ -35,7 +35,6 @@ const findInSearchPaths = async (searchPaths: string[], name: string): Promise<s
   for (const basePath of searchPaths) {
     const fullPath = path.resolve(basePath, name);
     // Sequential on purpose: the first search path that has the file wins.
-    // biome-ignore lint/performance/noAwaitInLoops: search order is significant, so these cannot be parallelised.
     if (await exists(fullPath)) { return fullPath; }
   }
   return null;

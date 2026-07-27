@@ -131,7 +131,6 @@ describe('Sandbox Property-Based Tests', () => {
     });
 
     test('anonymous symbols are blocked', () => {
-      // biome-ignore lint/style/useSymbolDescription: the symbol being anonymous is precisely what this test exercises.
       const anonSym = Symbol();
       const obj = { [anonSym]: 'dangerous' };
       const sandboxed = createSandboxedObject(obj, true) as Record<string | symbol, unknown>;

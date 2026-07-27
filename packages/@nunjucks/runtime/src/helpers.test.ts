@@ -125,7 +125,6 @@ describe('ensureDefined', () => {
   });
 
   test('prints to console.warn in debug mode when no collector exists', () => {
-    // biome-ignore lint/suspicious/noConsole: the test stubs console.warn to assert the fallback path, so it has to reference it.
     const original = console.warn;
     let calls = 0;
     console.warn = () => { calls += 1; };

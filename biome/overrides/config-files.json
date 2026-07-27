@@ -1,0 +1,34 @@
+{
+	"$schema": "https://biomejs.dev/schemas/latest/schema.json",
+	"overrides": [
+		{
+			"includes": [
+				"*.config.{js,ts,mjs}",
+				"*.setup.{js,ts}",
+				"vite.config.*",
+				"vitest.config.*",
+				"playwright.config.*",
+				"scripts/**/*.js",
+				"samples/**/*.{js,ts,mjs}"
+			],
+			"linter": {
+				"rules": {
+					"style": {
+						"noDefaultExport": "off"
+					},
+					"suspicious": {
+						"noConsole": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["package.json"],
+			"json": {
+				"parser": {
+					"allowComments": false
+				}
+			}
+		}
+	]
+}
