@@ -129,7 +129,7 @@ function validateExpression(ast: Node, config: Record<string, unknown> = {}): Va
         for (const key of Object.keys(node).filter(k => !NON_CHILD_KEYS.has(k))) {
           const child = (node as Record<string, unknown>)[key];
           if (Array.isArray(child)) {
-            child.forEach((c, i) => walk(c as Node, [...path, key, i]));
+            child.forEach((c, i) => { walk(c as Node, [...path, key, i]); });
           } else if (child && typeof child === 'object') {
             walk(child as Node, [...path, key]);
           }

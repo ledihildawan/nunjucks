@@ -128,7 +128,7 @@ const toText = (error: unknown, options: ToTextOptions = {}): string => {
   if (causes.length > 0) {
     parts.push('');
     parts.push('Possible Causes:');
-    causes.forEach(c => parts.push(`  • ${stripMarkdown(c)}`));
+    for (const c of causes) { parts.push(`  • ${stripMarkdown(c)}`); }
   }
 
   if (fixCode) {

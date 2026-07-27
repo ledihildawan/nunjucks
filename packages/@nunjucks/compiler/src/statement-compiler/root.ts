@@ -40,15 +40,16 @@ export const compileRoot = (ctx: Compiler, node: Node, incomingFrame: Frame): vo
   ctx.emitLine('if(parentTemplate) {');
   ctx.emitLine('  return await parentTemplate.rootRenderFunc(env, context, frame, runtime);');
   ctx.emitLine('} else {');
-  blocks.forEach((block) => {
+  for (const block of blocks) {
     const nameNode = block.name as Node | undefined;
     const name = nameNode?.value as string | undefined;
-    if (!name) { return; }
+    // A nameless block contributes nothing; skip it rather than abandoning the loop.
+    if (!name) { continue; }
 
     const { lineno, colno } = blockLocation(block);
     ctx.emitLine(`  lineno = ${lineno}; colno = ${colno};`);
     ctx.emitLine(`  ${childBuffer} += await context.getBlock("${name}", ${lineno}, ${colno})(env, context, frame, runtime);`);
-  });
+  }
   ctx.emitLine('}');
   ctx.emitLine(`return ${childBuffer};`);
   ctx.emitFuncEnd(true);
@@ -57,12 +58,12 @@ export const compileRoot = (ctx: Compiler, node: Node, incomingFrame: Frame): vo
 
   const seenBlocks: string[] = [];
 
-  blocks.forEach((block) => {
+  for (const block of blocks) {
     const nameNode = block.name as Node | undefined;
     const name = nameNode?.value as string | undefined;
     const { lineno } = block;
 
-    if (!name) { return; }
+    if (!name) { continue; }
 
     if (seenBlocks.includes(name)) {
       const errorDef = ERROR_DEFINITIONS.DUPLICATE_BLOCK;
@@ -79,7 +80,7 @@ export const compileRoot = (ctx: Compiler, node: Node, incomingFrame: Frame): vo
     ctx.emitLine('frame = frame.push(true);');
     ctx.compile(block.body as Node, tmpFrame);
     ctx.emitFuncEnd();
-  });
+  }
 
   ctx.emitLine('return {');
 

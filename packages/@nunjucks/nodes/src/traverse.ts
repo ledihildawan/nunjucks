@@ -142,7 +142,7 @@ const findAll = (node: Node, predicate: string | ((n: Node) => boolean)): Node[]
 
     for (const field of getTraversalFields(n)) {
       const val = n[field];
-      if (Array.isArray(val)) { val.forEach(item => { if (isNode(item)) { search(item); } }); }
+      if (Array.isArray(val)) { for (const item of val) { if (isNode(item)) { search(item); } } }
       else if (isNode(val)) { search(val); }
     }
   };

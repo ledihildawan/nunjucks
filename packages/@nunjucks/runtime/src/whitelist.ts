@@ -106,12 +106,12 @@ const traverseAst = (node: unknown, callback: (node: Node) => void): void => {
   if (typeof nodeObj.type === 'string') { callback(nodeObj as unknown as Node); }
 
   if (nodeObj.children && Array.isArray(nodeObj.children)) {
-    (nodeObj.children as unknown[]).forEach((child) => traverseAst(child, callback));
+    for (const child of nodeObj.children as unknown[]) { traverseAst(child, callback); }
   }
 
   if (nodeObj.body) {
     if (Array.isArray(nodeObj.body)) {
-      (nodeObj.body as unknown[]).forEach((child) => traverseAst(child, callback));
+      for (const child of nodeObj.body as unknown[]) { traverseAst(child, callback); }
     } else {
       traverseAst(nodeObj.body, callback);
     }
@@ -134,7 +134,7 @@ const traverseAst = (node: unknown, callback: (node: Node) => void): void => {
   }
 
   if (nodeObj.args && Array.isArray(nodeObj.args)) {
-    (nodeObj.args as unknown[]).forEach((child) => traverseAst(child, callback));
+    for (const child of nodeObj.args as unknown[]) { traverseAst(child, callback); }
   }
 
   if (nodeObj.target) {
