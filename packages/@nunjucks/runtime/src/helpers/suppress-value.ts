@@ -18,6 +18,7 @@ const RAW_OR_ESCAPED_LT_RE = /<|&lt;/u;
 const ESCAPED_HTML_ENTITY_RE = /&[quot;<>]/u;
 /** Placeholder pattern for synthesised error definitions, which are never matched against. */
 export const MATCH_ANY_RE = /./u;
+const SCRIPT_VALUE_NOT_HANDLED = Symbol('scriptValueNotHandled');
 
 interface LogContextShape {
   templateName: string | null;
@@ -67,6 +68,75 @@ const escapeValue = (val: unknown, context: HtmlContext = 'html'): string => {
   return escapeForContext(String(val), context);
 };
 
+const throwEscapedJsonError = (
+  self: unknown,
+  lineno?: number | null,
+  colno?: number | null
+): never => {
+  const ctx = getLogContext(self);
+  throw createLog(
+    'error',
+    ERROR_DEFINITIONS.JSON_ESCAPED_OUTPUT,
+    {},
+    null,
+    {
+      lineno: lineno ?? null,
+      colno: colno ?? null,
+      phase: ctx.phase || 'render',
+      templateName: ctx.templateName || 'inline',
+      lineBase: 'zero',
+    }
+  );
+};
+
+const isScriptJsonLike = (val: unknown, stringValue: string): boolean =>
+  JSON_SCALAR_RE.test(stringValue.trim()) ||
+  JSON_CONTAINER_RE.test(stringValue) ||
+  Array.isArray(val) ||
+  typeof val === 'object';
+
+const isEscapedJsonLike = (val: unknown, stringValue: string): boolean =>
+  Array.isArray(val) ||
+  JSON_SCALAR_RE.test(stringValue.trim()) ||
+  JSON_CONTAINER_RE.test(stringValue);
+
+const suppressScriptValue = (
+  self: unknown,
+  val: unknown,
+  lineno?: number | null,
+  colno?: number | null
+): unknown => {
+  const stringValue = (val as { toString: () => string }).toString();
+  if (!isScriptJsonLike(val, stringValue)) {
+    return SCRIPT_VALUE_NOT_HANDLED;
+  }
+  const encoded = JSON.stringify(val);
+  if (RAW_OR_ESCAPED_LT_RE.test(encoded)) {
+    throwEscapedJsonError(self, lineno, colno);
+  }
+  return encoded;
+};
+
+const suppressEscapedValue = (
+  self: unknown,
+  normalized: string,
+  context: HtmlContext,
+  lineno?: number | null,
+  colno?: number | null
+): string => {
+  const stringValue = (
+    normalized as { toString: () => string }
+  ).toString();
+  const escaped = escapeValue(stringValue, context);
+  if (
+    isEscapedJsonLike(normalized, stringValue) &&
+    ESCAPED_HTML_ENTITY_RE.test(escaped)
+  ) {
+    throwEscapedJsonError(self, lineno, colno);
+  }
+  return escaped;
+};
+
 function suppressValue(
   this: unknown,
   val: unknown,
@@ -80,65 +150,22 @@ function suppressValue(
   }
 
   if (autoescape && context === 'script' && !isSafeString(val)) {
-    const strVal = (val as { toString: () => string }).toString();
-    const isJsonValue = JSON_SCALAR_RE.test(strVal.trim());
-    const isJsonContainer = JSON_CONTAINER_RE.test(strVal);
-
-    if (isJsonValue || isJsonContainer || Array.isArray(val) || typeof val === 'object') {
-      const encoded = JSON.stringify(val);
-      if (RAW_OR_ESCAPED_LT_RE.test(encoded)) {
-        const ctx = getLogContext(this);
-        throw createLog(
-          'error',
-          ERROR_DEFINITIONS.JSON_ESCAPED_OUTPUT,
-          {},
-          null,
-          {
-            lineno: lineno ?? null,
-            colno: colno ?? null,
-            phase: ctx.phase || 'render',
-            templateName: ctx.templateName || 'inline',
-            lineBase: 'zero'
-          }
-        );
-      }
-      return encoded;
+    const scriptValue = suppressScriptValue(this, val, lineno, colno);
+    if (scriptValue !== SCRIPT_VALUE_NOT_HANDLED) {
+      return scriptValue;
     }
   }
 
-  let normalized: string;
-  if (isNonNullish(val)) {
-    normalized = val as string;
-  } else {
-    normalized = '';
-  }
+  const normalized = isNonNullish(val) ? val as string : '';
 
   if (autoescape && !isSafeString(normalized)) {
-    const strVal = (normalized as { toString: () => string }).toString();
-    const escaped = escapeValue(strVal, context);
-
-    const normalizedIsArray = Array.isArray(normalized);
-    const isJsonValue = JSON_SCALAR_RE.test(strVal.trim());
-    const isJsonContainer = JSON_CONTAINER_RE.test(strVal);
-
-    if ((normalizedIsArray || isJsonValue || isJsonContainer) && ESCAPED_HTML_ENTITY_RE.test(escaped)) {
-      const ctx = getLogContext(this);
-      throw createLog(
-        'error',
-        ERROR_DEFINITIONS.JSON_ESCAPED_OUTPUT,
-        {},
-        null,
-        {
-          lineno: lineno ?? null,
-          colno: colno ?? null,
-          phase: ctx.phase || 'render',
-          templateName: ctx.templateName || 'inline',
-          lineBase: 'zero'
-        }
-      );
-    }
-
-    return escaped;
+    return suppressEscapedValue(
+      this,
+      normalized,
+      context,
+      lineno,
+      colno
+    );
   }
 
   return normalized;
@@ -360,31 +387,3 @@ function ensureDefined(
 }
 
 export { suppressValue, ensureDefined };
-
-export { isNonNullish, isFunction, isString, isArray, isPlainObject } from '@nunjucks/shared/type-guards';
-export {
-  memberLookup,
-  optionalMemberLookup,
-  slice,
-  nullishCoalesce,
-  isNullAccessResult,
-  isPropertyNotFoundResult,
-  getNullParentName,
-} from '../member-access.ts';
-export { createSafeString, isSafeString, copySafeness, markSafe } from '../safe-string.ts';
-export {
-  makeMacro,
-  makeKeywordArgs,
-  isKeywordArgs,
-  getKeywordArgs,
-  numArgs,
-  withKwargs,
-} from '../macro.ts';
-export {
-  createSandboxedContext,
-  wrapMemberAccess,
-  isBlockedKey,
-  isDangerousGlobal,
-  BLOCKED_KEYS_LIST,
-  DANGEROUS_GLOBALS_LIST,
-} from '../sandbox.ts';

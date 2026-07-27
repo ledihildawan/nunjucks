@@ -1,28 +1,36 @@
 export {
   suppressValue,
   ensureDefined,
+} from './suppress-value.ts';
+export {
   isNonNullish,
   isFunction,
   isString,
   isArray,
   isPlainObject,
+} from '@nunjucks/shared/type-guards';
+export {
   createSafeString,
   isSafeString,
   copySafeness,
   markSafe,
+} from '../safe-string.ts';
+export {
   makeMacro,
   makeKeywordArgs,
   isKeywordArgs,
   getKeywordArgs,
   numArgs,
   withKwargs,
+} from '../macro.ts';
+export {
   createSandboxedContext,
   wrapMemberAccess,
   isBlockedKey,
   isDangerousGlobal,
   BLOCKED_KEYS_LIST,
   DANGEROUS_GLOBALS_LIST,
-} from './suppress-value.ts';
+} from '../sandbox.ts';
 export { awaitValue } from './await-value.ts';
 export {
   callWrap,
