@@ -421,6 +421,26 @@ const extractCallerPosition = (
  * Returns a fully-populated `ResolvedLocation` so the caller never has to
  * re-derive precedence. See the precedence table at the top of this file.
  */
+const determineCallerPreference = (inputs: {
+  templatePath: unknown;
+  jsCaller: unknown;
+  jsCallerErrorLine: unknown;
+  _callerFile: unknown;
+  _callerLocation: unknown;
+}) => {
+  const { templatePath, jsCaller, jsCallerErrorLine, _callerFile, _callerLocation } = inputs;
+  const useExplicitCaller = jsCaller !== null && jsCaller !== undefined && jsCallerErrorLine !== null && jsCallerErrorLine !== undefined;
+  const useAutoCaller =
+    !templatePath &&
+    jsCaller === null &&
+    _callerFile !== null &&
+    _callerFile !== undefined &&
+    _callerFile !== 'unknown' &&
+    _callerLocation !== null &&
+    _callerLocation !== undefined;
+  return { preferCallerLocation: !templatePath && (useExplicitCaller || useAutoCaller), useExplicitCaller, useAutoCaller };
+};
+
 const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedLocation> => {
   const {
     template = null,
@@ -439,23 +459,12 @@ const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedLocation
   } = inputs;
 
   const hasErrorLocation = errLineno !== undefined && errLineno !== null;
-  // When `errLineBase === 'one'`, the errLineno/errColno already point at
-  // the caller (1-based). We must NOT re-derive them from V8 stack or the
-  // template literal — they are authoritative.
   const hasCallerLocation = hasErrorLocation && errLineBase === 'one';
 
-  const useExplicitCaller = jsCaller !== null && jsCaller !== undefined && jsCallerErrorLine !== null && jsCallerErrorLine !== undefined;
-  const useAutoCaller =
-    !templatePath &&
-    jsCaller === null &&
-    _callerFile !== null &&
-    _callerFile !== undefined &&
-    _callerFile !== 'unknown' &&
-    _callerLocation !== null &&
-    _callerLocation !== undefined;
-  const preferCallerLocation = !templatePath && (useExplicitCaller || useAutoCaller);
-  // Explicit jsCaller* inputs win; otherwise fall back to the auto-detected
-  // V8 caller location, and to nothing when neither applies.
+  const { preferCallerLocation, useExplicitCaller, useAutoCaller } = determineCallerPreference({
+    templatePath, jsCaller, jsCallerErrorLine, _callerFile, _callerLocation
+  });
+
   const pickCaller = <T>(explicit: T, auto: T): T | null => {
     if (useExplicitCaller) { return explicit; }
     if (useAutoCaller) { return auto; }
@@ -475,8 +484,6 @@ const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedLocation
 
   let sourceContent: string | null = template;
   let sourceStartLine = 1;
-  // Start with the raw caller coordinates. If `hasCallerLocation`, the
-  // errLineno/errColno (already caller-derived) take precedence over V8.
   let resolvedCallerLine: number | null = activeCallerLine;
   let resolvedCallerCol: number | null = activeCallerCol;
   if (hasCallerLocation) {

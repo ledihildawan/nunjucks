@@ -421,6 +421,20 @@ const buildHtmlWrapper = (header: string, errorBody: string, footer: string): st
   ${footer}
 </main>`;
 
+const buildErrorDisplay = (
+  error: ErrorLike,
+  templatePath: string | undefined,
+  lineno: number | undefined,
+  colno: number | undefined,
+  isJsCaller: boolean
+) => {
+  const classified = classifyError(error);
+  const { displayLine, displayCol, displayPath } = resolveErrorLocation(
+    error, lineno, colno, templatePath, isJsCaller
+  );
+  return { classified, displayLine, displayCol, displayPath };
+};
+
 const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string => {
   const {
     templatePath = error?.templateName,
@@ -446,10 +460,7 @@ const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string =>
   }
 
   const humanTitle = classifyAndBuildTitle(error);
-  const classified = classifyError(error);
-  const { displayLine, displayCol, displayPath } = resolveErrorLocation(
-    error, lineno, colno, templatePath, isJsCaller
-  );
+  const { classified, displayLine, displayCol, displayPath } = buildErrorDisplay(error, templatePath, lineno, colno, isJsCaller);
   const locDisplay = `${shortenPath(displayPath)}:${displayLine}:${displayCol}`;
   const canLinkLocation = isFilePath(displayPath);
 

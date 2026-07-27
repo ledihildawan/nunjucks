@@ -149,23 +149,24 @@ const scanForDangerousValues = (
 const findDangerousValues = (obj: unknown, allowedGlobals?: readonly string[] | null): string[] =>
   scanForDangerousValues(obj, { allowedGlobals, seen: new WeakSet() });
 
+const visitAndScrub = <V>(value: V, seen: WeakSet<object>): V => {
+  if (!value || typeof value !== 'object' || seen.has(value as object)) { return value; }
+  seen.add(value as object);
+  const record = value as Record<string, unknown>;
+  for (const key of keys(record)) {
+    const child = record[key];
+    if (isDangerousReference(child)) {
+      delete record[key];
+    } else if (child && typeof child === 'object') {
+      visitAndScrub(child, seen);
+    }
+  }
+  return value;
+};
+
 const scrubDangerousReferences = <T>(context: T, _allowedGlobals: readonly string[] | null): T => {
   const seen = new WeakSet<object>();
-  const visit = <V>(value: V): V => {
-    if (!value || typeof value !== 'object' || seen.has(value as object)) { return value; }
-    seen.add(value as object);
-    const record = value as Record<string, unknown>;
-    for (const key of keys(record)) {
-      const child = record[key];
-      if (isDangerousReference(child)) {
-        delete record[key];
-      } else if (child && typeof child === 'object') {
-        visit(child);
-      }
-    }
-    return value;
-  };
-  return visit(context);
+  return visitAndScrub(context, seen);
 };
 
 export interface SecurityError extends Error {

@@ -266,6 +266,15 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<t
     return frame;
   };
 
+  const wrapRenderError = (e: unknown): never => {
+    throw prettifyError({
+      path: (e as Record<string, unknown>).path as string || state.path,
+      withInternals: state.env.opts.dev,
+      err: enrichError(e as ErrorWithLineInfo) as unknown as Error,
+      includeChain: ((e as Record<string, unknown>)._includeChain as IncludeChain | undefined) || (state._includeChain as unknown as IncludeChain | undefined)
+    });
+  };
+
   const render = async (ctx: unknown, parentFrame?: unknown) => {
     await state.compiler?.safeCompile();
 
@@ -291,12 +300,7 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: ReturnType<t
       }
       return result as string;
     } catch (e) {
-      throw prettifyError({
-        path: (e as Record<string, unknown>).path as string || state.path,
-        withInternals: state.env.opts.dev,
-        err: enrichError(e as ErrorWithLineInfo) as unknown as Error,
-        includeChain: ((e as Record<string, unknown>)._includeChain as IncludeChain | undefined) || (state._includeChain as unknown as IncludeChain | undefined)
-      });
+      wrapRenderError(e);
     } finally {
       state.env._renderingTemplates.delete(state.path);
     }
@@ -338,19 +342,24 @@ const loadSource = (state: TemplateState, src: string | TemplateSource): void =>
 };
 
 const createGetExported = (state: TemplateState) => async (ctx?: unknown, parentFrame?: unknown): Promise<Record<string, unknown>> => {
+  const createExportedFrame = (parentFrame: unknown): Frame => {
+    const frame = parentFrame ? (parentFrame as Pick<Frame, 'push'>).push() : createFrame();
+    frame.topLevel = true;
+    return frame;
+  };
+
+  const wrapExportedError = (e: unknown): never => {
+    if (!(e as Record<string, unknown>).path) { (e as Record<string, unknown>).path = state.path || undefined; }
+    throw prettifyError({ path: (e as Record<string, unknown>).path as string, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain as unknown as IncludeChain | undefined });
+  };
+
   try {
     await state.compiler?.safeCompile();
   } catch (e) {
     throw prettifyError({ path: state.path, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain as unknown as IncludeChain | undefined });
   }
 
-  let frame: ReturnType<Frame['push']>;
-  if (parentFrame) {
-    frame = (parentFrame as Pick<Frame, 'push'>).push();
-  } else {
-    frame = createFrame();
-  }
-  frame.topLevel = true;
+  const frame = createExportedFrame(parentFrame);
 
   const context = createContext(
     (ctx || {}) as Record<string, unknown>,
@@ -363,8 +372,7 @@ const createGetExported = (state: TemplateState) => async (ctx?: unknown, parent
     await state.rootRenderFunc?.(state.env, context, frame, runtime);
     return context.getExported();
   } catch (e) {
-    if (!(e as Record<string, unknown>).path) { (e as Record<string, unknown>).path = state.path || undefined; }
-    throw prettifyError({ path: (e as Record<string, unknown>).path as string, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain as unknown as IncludeChain | undefined });
+    wrapExportedError(e);
   }
 };
 
