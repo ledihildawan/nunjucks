@@ -90,6 +90,7 @@ const existsAndWithinBase = (basePath: string) => async ({ fullPath }: { fullPat
 const findFileInSearchPaths = async (searchPaths: string[], name: string): Promise<string | null> => {
   for (const searchPath of searchPaths) {
     const { basePath, fullPath } = resolveFromSearchPath(name)(searchPath);
+    // biome-ignore lint/performance/noAwaitInLoops: search paths are ordered and the first match wins, so these lookups cannot be run in parallel.
     if (await existsAndWithinBase(basePath)({ fullPath })) {
       return fullPath;
     }

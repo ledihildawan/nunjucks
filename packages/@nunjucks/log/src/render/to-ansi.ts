@@ -211,7 +211,7 @@ const formatFixAnsi = (fixCode: string | null, fixComment: string | null, docume
   return parts.join('\n');
 };
 
-const toAnsi = async (error: unknown, options: AnsiOptions = {}): Promise<string> => {
+const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   if (!error) { return ''; }
 
   const { verbosity = 'full', templatePath, lineno, colno, ide = 'vscode', sourceTrace } = options;

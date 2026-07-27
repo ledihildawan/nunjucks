@@ -192,7 +192,7 @@ const highlightSource = (code: string, filePath?: string | null): string => {
   return highlightHtml(code);
 };
 
-const toHtml = async (error: ErrorLike | null, options: ToHtmlOptions = {}): Promise<string> => {
+const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string => {
   const {
     templatePath = error?.templateName,
     lineno,

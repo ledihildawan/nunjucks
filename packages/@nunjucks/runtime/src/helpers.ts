@@ -201,6 +201,7 @@ const emitUndefinedWarning = (self: unknown, opts: EmitUndefinedWarningOptions):
   if (Array.isArray(collector)) {
     collector.push(warning);
   } else {
+    // biome-ignore lint/suspicious/noConsole: documented fallback when no warning collector is attached to the render.
     console.warn(warning.message);
   }
 };

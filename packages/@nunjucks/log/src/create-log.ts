@@ -225,9 +225,9 @@ const buildErrorOutput = (err: TemplateError) => async (options: OutputOptions =
     options: { ...options, sourceTrace }
   });
 
-  if (options.format === 'ansi') { return await toAnsi(err, opts); }
+  if (options.format === 'ansi') { return toAnsi(err, opts); }
   if (options.format === 'text') { return toText(err, opts); }
-  return await toHtml(err, opts);
+  return toHtml(err, opts);
 };
 
 const buildWarningOutput = (warn: TemplateWarning) => (options: Omit<OutputOptions, 'format' | 'isProduction'> = {}): string =>

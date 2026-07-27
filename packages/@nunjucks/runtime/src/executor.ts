@@ -287,6 +287,7 @@ export const execute = async (code: string, context: Record<string, unknown> = {
   };
 
   if (!sandbox && devWarningSandbox) {
+    // biome-ignore lint/suspicious/noConsole: documented fallback when no warning collector is attached to the render.
     console.warn(
       '[Nunjucks] WARNING: Rendering template without sandbox enabled. ' +
       'For user-provided templates, enable sandbox: { sandbox: true } to prevent security issues.'
