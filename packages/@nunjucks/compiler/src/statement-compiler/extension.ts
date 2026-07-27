@@ -6,9 +6,10 @@ import type { Compiler } from '../index.ts';
 export const compileCallExtension = (ctx: Compiler, node: Node, frame: Frame, useAsync?: boolean): void => {
   const args = node.args as Node;
   const contentArgs = node.contentArgs as Node[];
+  const { autoescape: nodeAutoescape } = node;
   let autoescape: boolean;
-  if (typeof node.autoescape === 'boolean') {
-    autoescape = node.autoescape;
+  if (typeof nodeAutoescape === 'boolean') {
+    autoescape = nodeAutoescape;
   } else {
     autoescape = true;
   }

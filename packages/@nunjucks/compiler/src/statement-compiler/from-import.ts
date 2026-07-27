@@ -5,7 +5,7 @@ import type { Compiler } from '../index.ts';
 import { compileGetTemplate } from './import.ts';
 
 export const compileFromImport = (ctx: Compiler, node: Node, frame: Frame): void => {
-  const importedId = compileGetTemplate(ctx, node, frame, false, false);
+  const importedId = compileGetTemplate(ctx, node, frame, { eagerCompile: false, ignoreMissing: false });
 
   let withContextArg: string;
   if (node.withContext) {

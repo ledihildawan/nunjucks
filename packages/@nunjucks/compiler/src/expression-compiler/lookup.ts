@@ -90,7 +90,7 @@ export const compileOptionalCall = (ctx: Compiler, node: Node, frame: Frame): vo
   ctx.emit(') == null ? undefined : ');
   ctx.compileExpression(node.name as Node, frame);
   ctx.emit('(');
-  compileAggregate(ctx, node.args as Node, frame, '', ')');
+  compileAggregate(ctx, node.args as Node, frame, { startChar: '', endChar: ')' });
   ctx.emit(')');
 };
 

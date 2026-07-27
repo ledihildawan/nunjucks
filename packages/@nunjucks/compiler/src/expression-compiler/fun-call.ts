@@ -97,5 +97,5 @@ export const compileFunCall = (ctx: Compiler, node: Node, frame: Frame): void =>
   const displayName = `${funcName}()`;
   ctx.emit(`, "${funcName.replace(/"/gu, '\\"')}", "${displayName.replace(/"/gu, '\\"')}", context, `);
 
-  compileAggregate(ctx, node.args as Node, frame, '[', `], ${lineno}, ${colno}))`);
+  compileAggregate(ctx, node.args as Node, frame, { startChar: '[', endChar: `], ${lineno}, ${colno}))` });
 };

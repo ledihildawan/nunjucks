@@ -51,15 +51,15 @@ const compileSymbol = (ctx: Compiler, node: Node, frame: Frame): void => {
 };
 
 const compileGroup = (ctx: Compiler, node: Node, frame: Frame): void => {
-  compileAggregate(ctx, node, frame, '(', ')');
+  compileAggregate(ctx, node, frame, { startChar: '(', endChar: ')' });
 };
 
 const compileArray = (ctx: Compiler, node: Node, frame: Frame): void => {
-  compileAggregate(ctx, node, frame, '[', ']');
+  compileAggregate(ctx, node, frame, { startChar: '[', endChar: ']' });
 };
 
 const compileDict = (ctx: Compiler, node: Node, frame: Frame): void => {
-  compileAggregate(ctx, node, frame, '{', '}');
+  compileAggregate(ctx, node, frame, { startChar: '{', endChar: '}' });
 };
 
 const compileNodeList = (ctx: Compiler, node: Node, frame: Frame): void => {
@@ -129,7 +129,13 @@ const compileTemplateLiteral = (ctx: Compiler, node: Node, frame: Frame): void =
   ctx.emit('`');
 };
 
-const compileAggregate = (ctx: Compiler, node: Node, frame: Frame, startChar?: string, endChar?: string): void => {
+interface CompileAggregateOptions {
+  startChar?: string;
+  endChar?: string;
+}
+
+const compileAggregate = (ctx: Compiler, node: Node, frame: Frame, options?: CompileAggregateOptions): void => {
+  const { startChar, endChar } = options ?? {};
   if (startChar) {
     ctx.emit(startChar);
   }

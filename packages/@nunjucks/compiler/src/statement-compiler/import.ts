@@ -3,7 +3,13 @@ import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 import { getTemplateLocation } from './extends.ts';
 
-const compileGetTemplate = (ctx: Compiler, node: Node, frame: Frame, eagerCompile: boolean, ignoreMissing: boolean): string => {
+interface GetTemplateOptions {
+  eagerCompile: boolean;
+  ignoreMissing: boolean;
+}
+
+const compileGetTemplate = (ctx: Compiler, node: Node, frame: Frame, options: GetTemplateOptions): string => {
+  const { eagerCompile, ignoreMissing } = options;
   const parentTemplateId = ctx.tmpid();
   const parentName = ctx.getTemplateName();
   let eagerCompileArg: string;
@@ -28,7 +34,7 @@ const compileGetTemplate = (ctx: Compiler, node: Node, frame: Frame, eagerCompil
 
 export const compileImport = (ctx: Compiler, node: Node, frame: Frame): void => {
   const target = (node.target as Node).value as string;
-  const id = compileGetTemplate(ctx, node, frame, false, false);
+  const id = compileGetTemplate(ctx, node, frame, { eagerCompile: false, ignoreMissing: false });
 
   let withContextArg: string;
   if (node.withContext) {
