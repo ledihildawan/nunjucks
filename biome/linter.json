@@ -13,13 +13,13 @@
 				"noExcessiveLinesPerFunction": {
 					"level": "error",
 					"options": {
-						"maxLines": 250
+						"maxLines": 40
 					}
 				},
 				"noExcessiveCognitiveComplexity": {
 					"level": "error",
 					"options": {
-						"maxAllowedComplexity": 60
+						"maxAllowedComplexity": 10
 					}
 				}
 			},
@@ -78,7 +78,13 @@
 				"useConsistentArrayType": "error",
 				"useForOf": "error",
 				"useImportType": "error",
-				"useNamingConvention": "off"
+				"useNamingConvention": "off",
+				"noExcessiveLinesPerFile": {
+					"level": "error",
+					"options": {
+						"maxLines": 400
+					}
+				}
 			},
 			"suspicious": {
 				"noAssignInExpressions": "error",
