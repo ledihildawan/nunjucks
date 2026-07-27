@@ -11,24 +11,23 @@ function* lexGenerator(src: string, opts: LexerOptions = {}): Generator<Token, v
   while (state.index < state.str.length) {
     const result = tokenizers(state);
 
-    if (!result) {
+    if (result) {
+      yield result.token;
+      const { state: newState } = result;
+      state = newState;
+
+      const tokenType = result.token.type as string;
+      if (tokenType === 'block-start' || tokenType === 'variable-start') {
+        state = { ...state, inCode: true };
+      } else if (tokenType === 'block-end' || tokenType === 'variable-end') {
+        state = { ...state, inCode: false };
+      }
+    } else {
       const char = getChar(state);
       if (char && !WHITESPACE_CHARS.includes(char)) {
         throw new Error(`Unexpected character '${char}' at line ${state.lineno}:${state.colno}`);
       }
       state = advance(state);
-      continue;
-    }
-
-    yield result.token;
-    const { state: newState } = result;
-    state = newState;
-
-    const tokenType = result.token.type as string;
-    if (tokenType === 'block-start' || tokenType === 'variable-start') {
-      state = { ...state, inCode: true };
-    } else if (tokenType === 'block-end' || tokenType === 'variable-end') {
-      state = { ...state, inCode: false };
     }
   }
 }

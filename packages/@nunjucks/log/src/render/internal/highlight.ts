@@ -60,10 +60,11 @@ const nextHtmlChunk = (rest: string, inTag: boolean): HighlightChunk => {
   // equivalent to testing it per rule.
   for (const rule of SYNTAX_RULES.filter(r => !r.tagOnly || inTag)) {
     const matched = rest.match(rule.re)?.[0];
-    if (!matched) { continue; }
-    let nextInTag = inTag;
-    if (rule.toggle) { nextInTag = matched === '{{' || matched === '{%'; }
-    return { html: span(rule.type, matched), length: matched.length, inTag: nextInTag };
+    if (matched) {
+      let nextInTag = inTag;
+      if (rule.toggle) { nextInTag = matched === '{{' || matched === '{%'; }
+      return { html: span(rule.type, matched), length: matched.length, inTag: nextInTag };
+    }
   }
 
   const plain = rest.match(PLAIN_RUN_RE)?.[0];
