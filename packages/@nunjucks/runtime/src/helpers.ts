@@ -117,11 +117,11 @@ function suppressValue(
     const strVal = (normalized as { toString: () => string }).toString();
     const escaped = escapeValue(strVal, context);
 
-    const isArray = Array.isArray(normalized);
+    const normalizedIsArray = Array.isArray(normalized);
     const isJsonValue = JSON_SCALAR_RE.test(strVal.trim());
     const isJsonContainer = JSON_CONTAINER_RE.test(strVal);
 
-    if ((isArray || isJsonValue || isJsonContainer) && ESCAPED_HTML_ENTITY_RE.test(escaped)) {
+    if ((normalizedIsArray || isJsonValue || isJsonContainer) && ESCAPED_HTML_ENTITY_RE.test(escaped)) {
       const ctx = getLogContext(this);
       throw createLog(
         'error',

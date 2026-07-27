@@ -26,9 +26,9 @@ export { tokenizeComment } from './comment.ts';
 export { tokenizeTemplateLiteral } from './template-literal.ts';
 export { tokenizeRaw } from './raw.ts';
 
-export const or = (...tokenizers: Tokenizer[]): Tokenizer => (state) => {
-  for (const tokenizer of tokenizers) {
-    const result = tokenizer(state);
+export const or = (...candidates: Tokenizer[]): Tokenizer => (state) => {
+  for (const candidate of candidates) {
+    const result = candidate(state);
     if (result) { return result; }
   }
   return null;

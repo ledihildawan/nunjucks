@@ -174,7 +174,7 @@ describe('lex - token positions', () => {
     const tokens = collect('a\n{{ x }}');
     expect(tokens[0]!.type).toBe(TOKEN_DATA);
     expect(tokens[0]!.value).toBe('a\n');
-    const varStart = tokens[1];
+    const [, varStart] = tokens;
     expect(varStart!.type).toBe(TOKEN_VARIABLE_START);
     expect(varStart!.lineno).toBe(1);
   });

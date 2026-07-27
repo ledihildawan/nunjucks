@@ -259,7 +259,7 @@ const toAnsi = async (error: unknown, options: AnsiOptions = {}): Promise<string
   const location = toDisplayLocation(displayLineno, displayColno, lineBase);
 
   if (verbosity === 'medium') {
-    const firstCause = causes[0];
+    const [firstCause] = causes;
     let causeHint = '';
     if (firstCause) { causeHint = stripMarkdown(firstCause); }
     const extrasPart = getExtrasPart(causeHint, documentationUrl || '');

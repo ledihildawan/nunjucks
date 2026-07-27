@@ -18,7 +18,7 @@ describe('liftSuper', () => {
     const result = liftSuper(ast);
     const resultBlock = (result as unknown as { children: unknown[] }).children[0];
     const resultBody = (resultBlock as unknown as { body: { children: unknown[] } }).body;
-    const secondChild = resultBody.children[1];
+    const [, secondChild] = resultBody.children;
     expect(getNodeTypeName(secondChild)).toBe('symbol');
   });
 

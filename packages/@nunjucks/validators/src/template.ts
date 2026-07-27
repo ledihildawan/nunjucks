@@ -83,7 +83,7 @@ export const validateTemplate = (template: string, config: TemplateValidatorConf
   if (config.strictMode || config.whitelistStrict) {
     const violations = scanTemplateForDangerousCode(template);
     if (violations.length > 0) {
-      const first = violations[0];
+      const [first] = violations;
       errors.push({
         code: 'DANGEROUS_TEMPLATE_CODE',
         subject: first?.name ?? 'template',

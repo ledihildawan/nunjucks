@@ -5,13 +5,13 @@ import { getNodeTypeName } from '@nunjucks/nodes/traverse';
 describe('parse - bracket access', () => {
   test('parses bracket property access', () => {
     const ast = parse('{{ user["name"] }}');
-    const output = ast.children[0];
+    const [output] = ast.children;
     expect(getNodeTypeName(output)).toBe('output');
   });
 
   test('parses bracket access with variable', () => {
     const ast = parse('{{ user[key] }}');
-    const output = ast.children[0];
+    const [output] = ast.children;
     expect(getNodeTypeName(output)).toBe('output');
   });
 

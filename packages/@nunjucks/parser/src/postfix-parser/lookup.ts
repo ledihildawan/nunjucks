@@ -30,8 +30,8 @@ const buildSlice = (ctx: ParserContext, bracketTok: Token, start: Node | null): 
 
 const parseBracketAccess = (ctx: ParserContext, bracketTok: Token, target: Node): Node => {
   if (skip(ctx, TOKEN_COLON)) {
-    const slice = buildSlice(ctx, bracketTok, null);
-    const node = lookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
+    const sliceNode = buildSlice(ctx, bracketTok, null);
+    const node = lookupVal(bracketTok.lineno, bracketTok.colno, target, sliceNode);
     (node as Node & { [BracketNotation]?: boolean })[BracketNotation] = true;
     return node;
   }
@@ -39,8 +39,8 @@ const parseBracketAccess = (ctx: ParserContext, bracketTok: Token, target: Node)
   const start = parseExpression(ctx);
 
   if (skip(ctx, TOKEN_COLON)) {
-    const slice = buildSlice(ctx, bracketTok, start);
-    const node = lookupVal(bracketTok.lineno, bracketTok.colno, target, slice);
+    const sliceNode = buildSlice(ctx, bracketTok, start);
+    const node = lookupVal(bracketTok.lineno, bracketTok.colno, target, sliceNode);
     (node as Node & { [BracketNotation]?: boolean })[BracketNotation] = true;
     return node;
   }
