@@ -163,7 +163,6 @@ const findFirst = (node: Node, predicate: (n: Node) => boolean): Node | undefine
   for (const n of iterateNodes(node)) {
     if (predicate(n)) { return n; }
   }
-  return ;
 };
 
 const count = (node: Node, predicate?: (n: Node) => boolean): number => {

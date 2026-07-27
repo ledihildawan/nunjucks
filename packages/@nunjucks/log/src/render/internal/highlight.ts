@@ -81,7 +81,8 @@ const highlightHtml = (code: string): string => {
     const chunk = nextHtmlChunk(code.slice(i), inTag);
     out += chunk.html;
     i += chunk.length;
-    inTag = chunk.inTag;
+    const { inTag: newInTag } = chunk;
+    inTag = newInTag;
   }
   return out;
 };

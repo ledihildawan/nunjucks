@@ -21,7 +21,8 @@ function* lexGenerator(src: string, opts: LexerOptions = {}): Generator<Token, v
     }
 
     yield result.token;
-    state = result.state;
+    const { state: newState } = result;
+    state = newState;
 
     const tokenType = result.token.type as string;
     if (tokenType === 'block-start' || tokenType === 'variable-start') {

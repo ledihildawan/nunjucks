@@ -131,7 +131,7 @@ const detectAttributeContext = (before: string, scriptStyleResult: ScriptStyleSc
     return 'attribute';
   }
 
-  const firstCharAfterEquals = afterEquals.trimStart()[0];
+  const [firstCharAfterEquals] = afterEquals.trimStart();
   if (firstCharAfterEquals && !['<', '>', '/'].includes(firstCharAfterEquals)) {
     return 'attribute';
   }

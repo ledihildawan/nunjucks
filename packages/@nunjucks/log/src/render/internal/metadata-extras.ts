@@ -135,9 +135,10 @@ const getErrorMetadata = (err: ErrorLike, options: GetErrorMetadataOptions = {})
   const lineno = readNumber(err.lineno);
   const colno = readNumber(err.colno);
   const sourceStartLine = readNumber(err.sourceStartLine) ?? 1;
+  const { sourceContent: rawSource } = err;
   let sourceContent: string | null;
-  if (includeSource && typeof err.sourceContent === 'string') {
-    sourceContent = err.sourceContent;
+  if (includeSource && typeof rawSource === 'string') {
+    sourceContent = rawSource;
   } else {
     sourceContent = null;
   }

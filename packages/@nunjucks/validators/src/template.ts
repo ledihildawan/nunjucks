@@ -32,7 +32,8 @@ const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeVio
       const nameMatch = match[0].match(IDENTIFIER_RE);
       let name: string | null = null;
       if (nameMatch) {
-        name = nameMatch[0];
+        const [firstMatch] = nameMatch;
+        name = firstMatch;
       }
       violations.push({ message, pattern: pattern.source, line, col, name });
     }

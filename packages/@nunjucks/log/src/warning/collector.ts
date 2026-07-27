@@ -26,7 +26,8 @@ const formatWarning = (w: Warning | string, options: { verbosity?: 'simple' | 'm
   if (typeof w === 'string') {
     message = w;
   } else {
-    message = w.message;
+    const { message: wMessage } = w;
+    message = wMessage;
   }
 
   if (typeof w === 'string') {

@@ -30,7 +30,7 @@ export const parseFor = (ctx: ParserContext): Node => {
       fail(ctx, 'parseFor: variable name expected for loop');
     }
 
-    const type = peekToken(ctx).type;
+    const { type } = peekToken(ctx);
     if (type === TOKEN_COMMA) {
       const key = node.name as Node;
       node.name = array(key.lineno, key.colno);

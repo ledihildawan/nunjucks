@@ -16,8 +16,9 @@ describe('liftSuper', () => {
     const blk = block(1, 0, 'content', body);
     const ast = root(1, 0, [blk]);
     const result = liftSuper(ast);
-    const resultBlock = (result as unknown as { children: unknown[] }).children[0];
-    const resultBody = (resultBlock as unknown as { body: { children: unknown[] } }).body;
+    const { children: [firstBlock] } = result as unknown as { children: unknown[] };
+    const resultBlock = firstBlock;
+    const { body: resultBody } = resultBlock as unknown as { body: { children: unknown[] } };
     const [, secondChild] = resultBody.children;
     expect(getNodeTypeName(secondChild)).toBe('symbol');
   });
@@ -36,8 +37,9 @@ describe('liftSuper', () => {
     const blk = block(1, 0, 'content', body);
     const ast = root(1, 0, [blk]);
     const result = liftSuper(ast);
-    const resultBlock = (result as unknown as { children: unknown[] }).children[0];
-    const resultBody = (resultBlock as unknown as { body: { children: unknown[]; } }).body;
+    const { children: [firstBlock] } = result as unknown as { children: unknown[] };
+    const resultBlock = firstBlock;
+    const { body: resultBody } = resultBlock as unknown as { body: { children: unknown[] } };
     const firstChild = resultBody.children[0] as { lineno: number; colno: number };
     expect(isSuper(firstChild)).toBe(true);
     expect(firstChild.lineno).toBe(1);
@@ -50,8 +52,9 @@ describe('liftSuper', () => {
     const blk = block(1, 0, 'content', body);
     const ast = root(1, 0, [blk]);
     const result = liftSuper(ast);
-    const resultBlock = (result as unknown as { children: unknown[] }).children[0];
-    const resultBody = (resultBlock as unknown as { body: { children: unknown[] } }).body;
+    const { children: [firstBlock] } = result as unknown as { children: unknown[] };
+    const resultBlock = firstBlock;
+    const { body: resultBody } = resultBlock as unknown as { body: { children: unknown[] } };
     expect(resultBody.children.length).toBe(1);
     expect(isLiteral(resultBody.children[0])).toBe(true);
   });
