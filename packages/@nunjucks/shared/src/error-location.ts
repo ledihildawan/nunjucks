@@ -385,6 +385,8 @@ const tryMatchNonStringTemplate = (
   return findSubjectOccurrence(content, literal, preferredLine);
 };
 
+const tryExtractWithMatcher = <T>(matcher: () => T | null): T | null => matcher();
+
 const extractCallerPosition = (
   content: string,
   template: string | null,
@@ -394,23 +396,26 @@ const extractCallerPosition = (
   preferredLine: number | null
 ): SourcePosition | null => {
   if (typeof template === 'string') {
-    const matched = tryMatchTemplate(content, template, errLineno, errColno, preferredLine);
+    const matched = tryExtractWithMatcher(
+      () => tryMatchTemplate(content, template, errLineno, errColno, preferredLine)
+    );
     if (matched) { return matched; }
+
+    return tryExtractWithMatcher(
+      () => tryMatchTemplateEnd(content, template, errLineno, errColno, preferredLine)
+    );
   }
 
   if (subject) {
-    const matched = tryMatchSubject(content, subject, preferredLine);
-    if (matched) { return matched; }
-  }
-
-  if (typeof template === 'string') {
-    const matched = tryMatchTemplateEnd(content, template, errLineno, errColno, preferredLine);
-    if (matched) { return matched; }
+    return tryExtractWithMatcher(
+      () => tryMatchSubject(content, subject, preferredLine)
+    );
   }
 
   if (typeof template !== 'string') {
-    const matched = tryMatchNonStringTemplate(content, template, preferredLine);
-    if (matched) { return matched; }
+    return tryExtractWithMatcher(
+      () => tryMatchNonStringTemplate(content, template, preferredLine)
+    );
   }
   return null;
 };
@@ -441,6 +446,77 @@ const determineCallerPreference = (inputs: {
   return { preferCallerLocation: !templatePath && (useExplicitCaller || useAutoCaller), useExplicitCaller, useAutoCaller };
 };
 
+const resolveFinalCoordinates = (
+  preferCallerLocation: boolean,
+  hasErrorLocation: boolean,
+  errLineno: number | null,
+  errColno: number | null,
+  resolvedCallerLine: number | null,
+  resolvedCallerCol: number | null,
+  configLineno: number | null,
+  configColno: number | null
+): { lineno: number | null; colno: number | null; lineBase: 'zero' | 'one' } => {
+  if (preferCallerLocation) {
+    return {
+      lineno: resolvedCallerLine ?? configLineno ?? errLineno ?? null,
+      colno: resolvedCallerCol ?? configColno ?? errColno ?? null,
+      lineBase: 'one'
+    };
+  }
+  if (hasErrorLocation && errLineno !== null) {
+    return { lineno: errLineno, colno: errColno, lineBase: 'zero' };
+  }
+  return { lineno: configLineno, colno: configColno, lineBase: 'zero' };
+};
+
+const resolveCallerFilePosition = async (
+  activeCaller: string,
+  template: string | null,
+  errLineno: number | null,
+  errColno: number | null,
+  subject: string | null,
+  activeCallerLine: number | null
+): Promise<{ source: string | null; line: number | null; col: number | null }> => {
+  const fileContent = await tryReadFile(activeCaller);
+  if (fileContent === null) {
+    return { source: null, line: null, col: null };
+  }
+  const position = extractCallerPosition(
+    fileContent,
+    template,
+    errLineno,
+    errColno,
+    subject,
+    activeCallerLine
+  );
+  if (!position) {
+    return { source: null, line: null, col: null };
+  }
+  return { source: fileContent, line: position.line, col: position.col };
+};
+
+const resolveActiveCaller = (
+  useExplicitCaller: boolean,
+  useAutoCaller: boolean,
+  jsCaller: string | null,
+  jsCallerErrorLine: number | null,
+  jsCallerErrorCol: number | null,
+  _callerFile: string | null,
+  _callerLocation: { lineNumber: number; columnNumber: number } | null
+): { caller: string | null; line: number | null; col: number | null } => {
+  const pickCaller = <T>(explicit: T, auto: T): T | null => {
+    if (useExplicitCaller) { return explicit; }
+    if (useAutoCaller) { return auto; }
+    return null;
+  };
+
+  return {
+    caller: jsCaller ?? pickCaller<string | null>(null, _callerFile ?? null),
+    line: pickCaller<number | null>(jsCallerErrorLine ?? null, _callerLocation?.lineNumber ?? null),
+    col: pickCaller<number | null>(jsCallerErrorCol ?? null, _callerLocation?.columnNumber ?? null)
+  };
+};
+
 const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedLocation> => {
   const {
     template = null,
@@ -465,22 +541,19 @@ const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedLocation
     templatePath, jsCaller, jsCallerErrorLine, _callerFile, _callerLocation
   });
 
-  const pickCaller = <T>(explicit: T, auto: T): T | null => {
-    if (useExplicitCaller) { return explicit; }
-    if (useAutoCaller) { return auto; }
-    return null;
-  };
+  const { caller: activeCaller, line: activeCallerLine, col: activeCallerCol } = resolveActiveCaller(
+    useExplicitCaller,
+    useAutoCaller,
+    jsCaller,
+    jsCallerErrorLine,
+    jsCallerErrorCol,
+    _callerFile,
+    _callerLocation
+  );
 
-  const activeCaller = jsCaller ?? pickCaller<string | null>(null, _callerFile ?? null);
-  const activeCallerLine = pickCaller<number | null>(jsCallerErrorLine ?? null, _callerLocation?.lineNumber ?? null);
-  const activeCallerCol = pickCaller<number | null>(jsCallerErrorCol ?? null, _callerLocation?.columnNumber ?? null);
-
-  let finalPath: string | null;
-  if (preferCallerLocation) {
-    finalPath = activeCaller ?? templatePath ?? null;
-  } else {
-    finalPath = templatePath ?? _callerFile ?? null;
-  }
+  const finalPath = preferCallerLocation
+    ? activeCaller ?? templatePath ?? null
+    : templatePath ?? _callerFile ?? null;
 
   let sourceContent: string | null = template;
   let sourceStartLine = 1;
@@ -492,42 +565,32 @@ const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedLocation
   }
 
   if (preferCallerLocation && activeCaller && !hasCallerLocation) {
-    const fileContent = await tryReadFile(activeCaller);
-    if (fileContent !== null) {
-      const position = extractCallerPosition(
-        fileContent,
-        template,
-        errLineno,
-        errColno,
-        subject,
-        activeCallerLine
-      );
-      if (position) {
-        sourceContent = fileContent;
-        sourceStartLine = 1;
-        resolvedCallerLine = position.line;
-        resolvedCallerCol = position.col;
-      }
+    const { source: updatedSource, line: updatedLine, col: updatedCol } = await resolveCallerFilePosition(
+      activeCaller,
+      template,
+      errLineno,
+      errColno,
+      subject,
+      activeCallerLine
+    );
+    if (updatedSource !== null) {
+      sourceContent = updatedSource;
+      sourceStartLine = 1;
+      resolvedCallerLine = updatedLine;
+      resolvedCallerCol = updatedCol;
     }
   }
 
-  let lineno: number | null;
-  let colno: number | null;
-  let lineBase: 'zero' | 'one';
-
-  if (preferCallerLocation) {
-    lineno = resolvedCallerLine ?? configLineno ?? errLineno ?? null;
-    colno = resolvedCallerCol ?? configColno ?? errColno ?? null;
-    lineBase = 'one';
-  } else if (hasErrorLocation && errLineno !== null) {
-    lineno = errLineno;
-    colno = errColno;
-    lineBase = 'zero';
-  } else {
-    lineno = configLineno;
-    colno = configColno;
-    lineBase = 'zero';
-  }
+  const { lineno, colno, lineBase } = resolveFinalCoordinates(
+    preferCallerLocation,
+    hasErrorLocation,
+    errLineno,
+    errColno,
+    resolvedCallerLine,
+    resolvedCallerCol,
+    configLineno,
+    configColno
+  );
 
   return {
     lineno,

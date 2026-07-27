@@ -435,30 +435,21 @@ const buildErrorDisplay = (
   return { classified, displayLine, displayCol, displayPath };
 };
 
-const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string => {
-  const {
-    templatePath = error?.templateName,
-    lineno,
-    colno,
-    renderContext,
-    phase,
-    version = '3.2.4',
-    timestamp,
-    csp,
-    sourceTrace,
-    ide = 'vscode',
-    verbosity = 'full',
-    isJsCaller = false
-  } = options;
-
-  if (!error) {
-    return document('Error', buildProductionBody(options), '', csp ?? null);
-  }
-
-  if (options.isProduction) {
-    return document('Rendering Interrupted', buildProductionBody(options), '', csp ?? null);
-  }
-
+const buildErrorDocument = (
+  error: ErrorLike,
+  templatePath: string | undefined,
+  lineno: number | undefined,
+  colno: number | undefined,
+  renderContext: unknown,
+  phase: string,
+  version: string,
+  timestamp: number | undefined,
+  csp: string | null,
+  sourceTrace: unknown,
+  ide: string,
+  verbosity: string,
+  isJsCaller: boolean
+): string => {
   const humanTitle = classifyAndBuildTitle(error);
   const { classified, displayLine, displayCol, displayPath } = buildErrorDisplay(error, templatePath, lineno, colno, isJsCaller);
   const locDisplay = `${shortenPath(displayPath)}:${displayLine}:${displayCol}`;
@@ -485,7 +476,48 @@ const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string =>
   const body = buildHtmlWrapper(header, errorBody, footer);
 
   const docTitle = classified.severity === 'warning' ? 'Template Warning' : 'Template Error';
-  return document(docTitle, body, TOGGLE_SCRIPT, csp ?? null);
+  return document(docTitle, body, TOGGLE_SCRIPT, csp);
+};
+
+const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string => {
+  const {
+    templatePath = error?.templateName,
+    lineno,
+    colno,
+    renderContext,
+    phase,
+    version = '3.2.4',
+    timestamp,
+    csp,
+    sourceTrace,
+    ide = 'vscode',
+    verbosity = 'full',
+    isJsCaller = false
+  } = options;
+
+  if (!error) {
+    return document('Error', buildProductionBody(options), '', csp ?? null);
+  }
+
+  if (options.isProduction) {
+    return document('Rendering Interrupted', buildProductionBody(options), '', csp ?? null);
+  }
+
+  return buildErrorDocument(
+    error,
+    templatePath,
+    lineno,
+    colno,
+    renderContext,
+    phase,
+    version,
+    timestamp,
+    csp ?? null,
+    sourceTrace,
+    ide,
+    verbosity,
+    isJsCaller
+  );
 };
 
 export { toHtml };

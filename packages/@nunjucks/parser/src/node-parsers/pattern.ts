@@ -233,7 +233,7 @@ const parseObjectPatternLoop = (
     const spreadResult = handleObjectSpread(ctx, commaResult.node, commaResult.sawRest);
     if (spreadResult.sawRest) {
       const after = peekToken(ctx);
-      if (after && after.type === TOKEN_COMMA) {
+      if (after?.type === TOKEN_COMMA) {
         nextToken(ctx);
       }
       return { node: spreadResult.node, sawRest: true };
