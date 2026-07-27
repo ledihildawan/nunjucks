@@ -90,12 +90,20 @@ const validateTag = (allowedTagSet: Set<string>, blockedTagSet: Set<string>, str
   return !strict;
 };
 
-const validateFilter = (dangerousFilters: Set<string>, allowedFilterSet: Set<string>, blockedFilterSet: Set<string>, strict: boolean, filterName: string): boolean => {
-  if (dangerousFilters.has(filterName)) { return false; }
-  if (allowedFilterSet.has(filterName)) { return true; }
-  if (blockedFilterSet.has(filterName)) { return false; }
-  if (strict && !allowedFilterSet.has(filterName)) { return false; }
-  return !strict;
+/** The filter policy: fixed for the lifetime of a whitelist, unlike the name being checked. */
+interface FilterPolicy {
+  dangerous: Set<string>;
+  allowed: Set<string>;
+  blocked: Set<string>;
+  strict: boolean;
+}
+
+const validateFilter = (policy: FilterPolicy, filterName: string): boolean => {
+  if (policy.dangerous.has(filterName)) { return false; }
+  if (policy.allowed.has(filterName)) { return true; }
+  if (policy.blocked.has(filterName)) { return false; }
+  if (policy.strict && !policy.allowed.has(filterName)) { return false; }
+  return !policy.strict;
 };
 
 const traverseAst = (node: unknown, callback: (node: Node) => void): void => {
@@ -200,9 +208,9 @@ export const createWhitelistValidator = (options: WhitelistValidatorOptions = {}
 
   return {
     validateTag: (tagName: string): boolean => validateTag(allowedTagSet, blockedTagSet, strict, tagName),
-    validateFilter: (filterName: string): boolean => validateFilter(DANGEROUS_FILTERS, allowedFilterSet, blockedFilterSet, strict, filterName),
+    validateFilter: (filterName: string): boolean => validateFilter({ dangerous: DANGEROUS_FILTERS, allowed: allowedFilterSet, blocked: blockedFilterSet, strict }, filterName),
     isTagAllowed: (tagName: string): boolean => validateTag(allowedTagSet, blockedTagSet, strict, tagName),
-    isFilterAllowed: (filterName: string): boolean => validateFilter(DANGEROUS_FILTERS, allowedFilterSet, blockedFilterSet, strict, filterName),
+    isFilterAllowed: (filterName: string): boolean => validateFilter({ dangerous: DANGEROUS_FILTERS, allowed: allowedFilterSet, blocked: blockedFilterSet, strict }, filterName),
     getAllowedTags: (): string[] => [...allowedTagSet],
     getAllowedFilters: (): string[] => [...allowedFilterSet],
     options: { allowedTags: tags, allowedFilters: filters, strict }

@@ -53,17 +53,22 @@ const isDangerousValue = (value: unknown): boolean => {
  * Paths contributed by a single key. A prototype-pollution key is reported on
  * its own and short-circuits the remaining checks.
  */
+/** One key/value pair and where it sits in the context tree. */
+interface ContextEntry {
+  key: string;
+  value: unknown;
+  path: string;
+}
+
 const dangerousPathsForKey = (
-  key: string,
-  value: unknown,
-  currentPath: string,
-  allowedGlobals: readonly string[] | null | undefined,
+  { key, value, path: currentPath }: ContextEntry,
+  scan: ScanContext,
   isTopLevel: boolean
 ): string[] => {
   if (PROTOTYPE_POLLUTION_KEYS.has(key)) { return [currentPath]; }
 
   const found: string[] = [];
-  if (isTopLevel && DANGEROUS_GLOBALS.has(key) && !allowedGlobals?.includes(key)) {
+  if (isTopLevel && DANGEROUS_GLOBALS.has(key) && !scan.allowedGlobals?.includes(key)) {
     found.push(currentPath);
   }
   if (typeof value === 'function') {
@@ -71,7 +76,7 @@ const dangerousPathsForKey = (
     if (isTopLevel && (fnName === 'eval' || fnName === 'Function')) {
       found.push(currentPath);
     }
-    if (isTopLevel && DANGEROUS_GLOBALS.has(fnName) && !allowedGlobals?.includes(fnName)) {
+    if (isTopLevel && DANGEROUS_GLOBALS.has(fnName) && !scan.allowedGlobals?.includes(fnName)) {
       found.push(currentPath);
     }
   }
@@ -81,19 +86,24 @@ const dangerousPathsForKey = (
   return found;
 };
 
-const findDangerousValues = (
+/** What stays fixed for one whole scan; only the value and its path change. */
+interface ScanContext {
+  allowedGlobals?: readonly string[] | null;
+  seen: WeakSet<object>;
+}
+
+const scanForDangerousValues = (
   obj: unknown,
-  allowedGlobals?: readonly string[] | null,
+  scan: ScanContext,
   path = '',
-  isTopLevel = true,
-  seen: WeakSet<object> = new WeakSet()
+  isTopLevel = true
 ): string[] => {
   const dangerous: string[] = [];
 
-  if (!obj || typeof obj !== 'object' || seen.has(obj as object)) {
+  if (!obj || typeof obj !== 'object' || scan.seen.has(obj as object)) {
     return dangerous;
   }
-  seen.add(obj as object);
+  scan.seen.add(obj as object);
 
   const record = obj as Record<string, unknown>;
   for (const key of Object.keys(record)) {
@@ -105,18 +115,22 @@ const findDangerousValues = (
     }
     const value = record[key];
 
-    dangerous.push(...dangerousPathsForKey(key, value, currentPath, allowedGlobals, isTopLevel));
+    dangerous.push(...dangerousPathsForKey({ key, value, path: currentPath }, scan, isTopLevel));
 
     // Never descend into a prototype-pollution key.
     const descend = !PROTOTYPE_POLLUTION_KEYS.has(key) &&
       value && typeof value === 'object' && !isDangerousValue(value);
     if (descend) {
-      dangerous.push(...findDangerousValues(value, allowedGlobals, currentPath, false, seen));
+      dangerous.push(...scanForDangerousValues(value, scan, currentPath, false));
     }
   }
 
   return dangerous;
 };
+
+/** Public entry: starts a fresh scan with its own cycle-tracking set. */
+const findDangerousValues = (obj: unknown, allowedGlobals?: readonly string[] | null): string[] =>
+  scanForDangerousValues(obj, { allowedGlobals, seen: new WeakSet() });
 
 const validateRenderContext = (context: unknown, config: ContextValidatorConfig): ContextValidationResult => {
   if (!(config.strictMode || config.scanContextValues)) {

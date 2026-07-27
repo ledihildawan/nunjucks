@@ -67,19 +67,24 @@ const BUILTIN_GLOBALS = new Set([
 
 const isBuiltIn = (name: string): boolean => BUILTIN_GLOBALS.has(name);
 
-const findDangerousValues = (
+/** What stays fixed for one whole scan; only the value and its path change. */
+interface ScanContext {
+  allowedGlobals?: readonly string[] | null;
+  seen: WeakSet<object>;
+}
+
+const scanForDangerousValues = (
   obj: unknown,
-  allowedGlobals?: readonly string[] | null,
+  scan: ScanContext,
   path = '',
-  isTopLevel = true,
-  seen: WeakSet<object> = new WeakSet()
+  isTopLevel = true
 ): string[] => {
   const dangerous: string[] = [];
 
-  if (!obj || typeof obj !== 'object' || seen.has(obj as object)) {
+  if (!obj || typeof obj !== 'object' || scan.seen.has(obj as object)) {
     return dangerous;
   }
-  seen.add(obj as object);
+  scan.seen.add(obj as object);
 
   for (const key of keys(obj as Record<string, unknown>)) {
     let currentPath: string;
@@ -110,7 +115,7 @@ const findDangerousValues = (
         dangerous.push(currentPath);
       }
       // Non-builtin non-global functions at top-level
-      if (isTopLevel && allowedGlobals && !allowedGlobals.includes(fnName) && !isBuiltIn(fnName)) {
+      if (isTopLevel && scan.allowedGlobals && !scan.allowedGlobals.includes(fnName) && !isBuiltIn(fnName)) {
         dangerous.push(currentPath);
       }
     }
@@ -120,12 +125,16 @@ const findDangerousValues = (
     }
 
     if (value && typeof value === 'object' && !isDangerousReference(value)) {
-      dangerous.push(...findDangerousValues(value, allowedGlobals, currentPath, false, seen));
+      dangerous.push(...scanForDangerousValues(value, scan, currentPath, false));
     }
   }
 
   return dangerous;
 };
+
+/** Public entry: starts a fresh scan with its own cycle-tracking set. */
+const findDangerousValues = (obj: unknown, allowedGlobals?: readonly string[] | null): string[] =>
+  scanForDangerousValues(obj, { allowedGlobals, seen: new WeakSet() });
 
 const scrubDangerousReferences = <T>(context: T, _allowedGlobals: readonly string[] | null): T => {
   const seen = new WeakSet<object>();
