@@ -133,13 +133,14 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
       }
 
       const shouldBailOut = forWrite && state.isolateWrites;
+      if (shouldBailOut) { return; }
+
       const val = state.variables[name];
       if (val !== undefined) {
-        if (shouldBailOut) { return; }
         state.resolveCache.set(cacheKey, { revision: state.rootState.revision, frame });
         return frame;
       }
-      if (shouldBailOut) { return; }
+
       const resolvedFrame = state.parent?.resolve(name);
       state.resolveCache.set(cacheKey, { revision: state.rootState.revision, frame: resolvedFrame });
       return resolvedFrame;

@@ -109,6 +109,61 @@ const makeSandboxTraps = (
   topLevel: boolean,
 ): ProxyHandler<Record<string | symbol, unknown>> => {
   const { allowlist, blocklistMode, blockedContextKeys } = sandboxOptions;
+
+  const validateStringKey = (target: Record<string | symbol, unknown>, key: string): unknown => {
+    if (topLevel && blockedContextKeys.includes(key)) {
+      throw blockedKeysError(key, blockedContextKeys);
+    }
+    if (isBlockedAtScope(key, sandboxOptions, topLevel)) {
+      if (hasOwn(target, key) || DANGEROUS_OBJECT_INTRINSICS.has(key)) {
+        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS, key, sandboxOptions);
+      }
+      return;
+    }
+    if (!(blocklistMode || isAllowedKey(key, allowlist))) {
+      throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, key, sandboxOptions);
+    }
+    if (!hasOwn(target, key)) {
+      return;
+    }
+    const value = target[key];
+    if (isFunction(value)) {
+      return wrapFunctionWithBlocking(value as (...args: unknown[]) => unknown, sandboxEnabled, key, sandboxOptions, target);
+    }
+    if (typeof value === 'object' && isNonNullish(value)) {
+      return createSandboxedObject(value, sandboxEnabled, sandboxOptions);
+    }
+    return value;
+  };
+
+  const validateSetKey = (target: Record<string | symbol, unknown>, key: string, value: unknown): boolean => {
+    if (topLevel && isInternalKey(key)) {
+      target[key] = value;
+      return true;
+    }
+    if (isBlockedAtScope(key, sandboxOptions, topLevel)) {
+      throw sandboxError(ERROR_DEFINITIONS.SANDBOX_SET, key, sandboxOptions);
+    }
+    if (!(blocklistMode || isAllowedKey(key, allowlist))) {
+      throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, key, sandboxOptions);
+    }
+    if (topLevel) {
+      throw sandboxError(ERROR_DEFINITIONS.SANDBOX_CONTEXT_MODIFY, key, sandboxOptions);
+    }
+    target[key] = value;
+    return true;
+  };
+
+  const validateHasKey = (target: Record<string | symbol, unknown>, key: string): boolean => {
+    if (isBlockedAtScope(key, sandboxOptions, topLevel)) {
+      return false;
+    }
+    if (topLevel && !blocklistMode && !isAllowedKey(key, allowlist)) {
+      return false;
+    }
+    return hasOwn(target, key);
+  };
+
   return {
     get(target, key): unknown {
       if (typeof key === 'symbol') {
@@ -117,29 +172,7 @@ const makeSandboxTraps = (
         }
         return target[key];
       }
-      if (topLevel && blockedContextKeys.includes(key)) {
-        throw blockedKeysError(key, blockedContextKeys);
-      }
-      if (isBlockedAtScope(key, sandboxOptions, topLevel)) {
-        if (!(hasOwn(target, key) || DANGEROUS_OBJECT_INTRINSICS.has(key))) {
-          return ;
-        }
-        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS, key, sandboxOptions);
-      }
-      if (!(blocklistMode || isAllowedKey(key, allowlist))) {
-        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, key, sandboxOptions);
-      }
-      if (!hasOwn(target, key)) {
-        return ;
-      }
-      const value = target[key];
-      if (isFunction(value)) {
-        return wrapFunctionWithBlocking(value as (...args: unknown[]) => unknown, sandboxEnabled, key, sandboxOptions, target);
-      }
-      if (typeof value === 'object' && isNonNullish(value)) {
-        return createSandboxedObject(value, sandboxEnabled, sandboxOptions);
-      }
-      return value;
+      return validateStringKey(target, key);
     },
     set(target, key, value): boolean {
       if (typeof key === 'symbol') {
@@ -149,21 +182,7 @@ const makeSandboxTraps = (
         target[key] = value;
         return true;
       }
-      if (topLevel && isInternalKey(key)) {
-        target[key] = value;
-        return true;
-      }
-      if (isBlockedAtScope(key, sandboxOptions, topLevel)) {
-        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_SET, key, sandboxOptions);
-      }
-      if (!(blocklistMode || isAllowedKey(key, allowlist))) {
-        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, key, sandboxOptions);
-      }
-      if (topLevel) {
-        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_CONTEXT_MODIFY, key, sandboxOptions);
-      }
-      target[key] = value;
-      return true;
+      return validateSetKey(target, key, value);
     },
     has(target, key): boolean {
       if (typeof key === 'symbol') {
@@ -172,13 +191,7 @@ const makeSandboxTraps = (
         }
         return key in target;
       }
-      if (isBlockedAtScope(key, sandboxOptions, topLevel)) {
-        return false;
-      }
-      if (topLevel && !blocklistMode && !isAllowedKey(key, allowlist)) {
-        return false;
-      }
-      return hasOwn(target, key);
+      return validateHasKey(target, key);
     },
   };
 };
@@ -215,6 +228,25 @@ const createSandboxedContext = (context: unknown, sandboxEnabled: boolean, optio
   return new Proxy(context as object, makeSandboxTraps(sandboxEnabled, sandboxOptions, true));
 };
 
+const createPropertyNotFoundCallable = (val: string | symbol, parentName: string | null) => {
+  const callable = Object.assign(() => undefined, {
+    __nunjucks_prop_not_found__: true,
+    __nunjucks_parent__: parentName,
+    __access_path__: val,
+  });
+  Object.setPrototypeOf(callable, null);
+  return callable;
+};
+
+const validateStringAccess = (val: string, sandboxOptions: ResolvedSandboxOptions, allowlist: Set<string>, blocklistMode: boolean, topLevel: boolean): void => {
+  if (isBlockedAtScope(val, sandboxOptions, topLevel)) {
+    throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS, val, sandboxOptions);
+  }
+  if (!(blocklistMode || isAllowedKey(val, allowlist))) {
+    throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, val, sandboxOptions);
+  }
+};
+
 const wrapMemberAccess = (obj: unknown, val: string | symbol, sandboxEnabled: boolean, options: SandboxOptions = {}, parentName: string | null = null): unknown => {
   const sandboxOptions = resolveSandboxOptions(options);
   const { allowlist, blocklistMode, topLevel = options.topLevel ?? false } = { ...sandboxOptions, topLevel: options.topLevel ?? false };
@@ -233,33 +265,21 @@ const wrapMemberAccess = (obj: unknown, val: string | symbol, sandboxEnabled: bo
     return (obj as Record<string | symbol, unknown> | undefined)?.[val];
   }
 
-  if (isBlockedAtScope(val as string, sandboxOptions, topLevel)) {
-    throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS, val, sandboxOptions);
-  }
-
-  if (!(blocklistMode || isAllowedKey(val as string, allowlist))) {
-    throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, val, sandboxOptions);
-  }
+  validateStringAccess(val, sandboxOptions, allowlist, blocklistMode, topLevel);
 
   if (!isNonNullish(obj)) {
     return { __nunjucks_null__: true, __nunjucks_parent__: parentName, __access_path__: val };
   }
 
   const target = obj as Record<string, unknown>;
-  if (!hasOwn(target, val as string)) {
-    const callable = Object.assign(() => undefined, {
-      __nunjucks_prop_not_found__: true,
-      __nunjucks_parent__: parentName,
-      __access_path__: val,
-    });
-    Object.setPrototypeOf(callable, null);
-    return callable;
+  if (!hasOwn(target, val)) {
+    return createPropertyNotFoundCallable(val, parentName);
   }
 
-  const value = target[val as string];
+  const value = target[val];
 
   if (isFunction(value)) {
-    return wrapFunctionWithBlocking(value as (...args: unknown[]) => unknown, sandboxEnabled, val as string, sandboxOptions, target);
+    return wrapFunctionWithBlocking(value as (...args: unknown[]) => unknown, sandboxEnabled, val, sandboxOptions, target);
   }
 
   if (typeof value === 'object' && isNonNullish(value)) {
