@@ -50,10 +50,12 @@ export interface Compiler {
 }
 
 export function createCompiler(
-  templateName: string | null,
-  undefinedMode: UndefinedMode | undefined,
+  _templateName: string | null,
+  _undefinedMode: UndefinedMode | undefined,
   source: string
 ): Compiler {
+  let templateName: string | null = _templateName;
+  let undefinedMode: UndefinedMode | undefined = _undefinedMode;
   let codebuf: string[] = [];
   let lastId = 0;
   let buffer: string | null = null;

@@ -1,8 +1,10 @@
 import { isDict, isKeywordArgs } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
+import type { MacroNode, CallerNode, Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { createFrame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+
+type MacroLikeNode = MacroNode | CallerNode;
 
 const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
   const args: Node[] = [];
@@ -10,7 +12,7 @@ const compileMacro = (ctx: Compiler, node: Node, frame?: Frame): string => {
   const funcId = `macro_${ctx.tmpid()}`;
   const keepFrame = (frame !== undefined);
 
-  const argsChildren = (node.args?.children ?? node.args) as Node[];
+  const argsChildren = (node as MacroLikeNode).args;
   argsChildren?.forEach((arg, i, arr) => {
     if (i === arr.length - 1 && (isDict(arg) || isKeywordArgs(arg))) {
       kwargs = arg;

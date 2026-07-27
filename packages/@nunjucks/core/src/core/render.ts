@@ -57,7 +57,7 @@ interface RenderConfig {
   undefined?: string;
   globals?: Record<string, unknown>;
   sandbox?: boolean;
-  sandboxAllowlist?: string[];
+  sandboxAllowlist?: readonly string[];
   sandboxMode?: string;
   sandboxEnvironment?: string;
   contextStrict?: boolean | 'error';
@@ -110,7 +110,7 @@ const resolveTemplateSource = async (template: string, loader: unknown, config: 
       };
     }
   } catch (loaderErr) {
-    const code = (loaderErr as { code?: string }).code;
+    const { code } = loaderErr as { code?: string };
     if (code === 'ENOENT' || code === 'MODULE_NOT_FOUND' || code === 'ERR_MODULE_NOT_FOUND') {
       return { templateSource: template, templatePath: null };
     }
