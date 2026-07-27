@@ -36,33 +36,52 @@ const SYNTAX_RULES: SyntaxRule[] = [
   { type: 'operator', re: /^(?:\||=|==|!=|<=|>=|<|>|\+|-|\*|\/|%|&|\[|\]|\(|\)|\.|,|:|\?)/u },
 ];
 
+const span = (type: string, text: string): string =>
+  `<span class="syntax-${type}">${escapeHtml(text)}</span>`;
+
+/** One highlighted chunk, plus how far it advances and the tag state after it. */
+interface HighlightChunk {
+  html: string;
+  length: number;
+  inTag: boolean;
+}
+
+/**
+ * Consume one chunk from the start of `rest`: leading whitespace, then the
+ * first matching syntax rule, then a plain run, then a single character. The
+ * cases are returns rather than a loop with guards, so the scanner below is a
+ * plain accumulate.
+ */
+const nextHtmlChunk = (rest: string, inTag: boolean): HighlightChunk => {
+  const ws = rest.match(LEADING_WHITESPACE_RE)?.[0];
+  if (ws) { return { html: ws, length: ws.length, inTag }; }
+
+  // `inTag` only changes on the chunk that returns, so filtering on it once is
+  // equivalent to testing it per rule.
+  for (const rule of SYNTAX_RULES.filter(r => !r.tagOnly || inTag)) {
+    const matched = rest.match(rule.re)?.[0];
+    if (!matched) { continue; }
+    let nextInTag = inTag;
+    if (rule.toggle) { nextInTag = matched === '{{' || matched === '{%'; }
+    return { html: span(rule.type, matched), length: matched.length, inTag: nextInTag };
+  }
+
+  const plain = rest.match(PLAIN_RUN_RE)?.[0];
+  if (plain) { return { html: escapeHtml(plain), length: plain.length, inTag }; }
+
+  return { html: escapeHtml(rest[0] ?? ''), length: 1, inTag };
+};
+
 const highlightHtml = (code: string): string => {
   if (!code) { return ''; }
   let out = '';
   let i = 0;
   let inTag = false;
-  const span = (type: string, text: string) => `<span class="syntax-${type}">${escapeHtml(text)}</span>`;
   while (i < code.length) {
-    const rest = code.slice(i);
-    const ws = rest.match(LEADING_WHITESPACE_RE);
-    if (ws) { out += ws[0]; i += ws[0].length; continue; }
-    let matched = false;
-    for (const rule of SYNTAX_RULES) {
-      if (rule.tagOnly && !inTag) { continue; }
-      const m = rest.match(rule.re);
-      if (m?.[0]) {
-        if (rule.toggle) { inTag = (m[0] === '{{' || m[0] === '{%'); }
-        out += span(rule.type, m[0]);
-        i += m[0].length;
-        matched = true;
-        break;
-      }
-    }
-    if (!matched) {
-      const plain = rest.match(PLAIN_RUN_RE);
-      if (plain?.[0]) { out += escapeHtml(plain[0]); i += plain[0].length; }
-      else { out += escapeHtml(code[i] ?? ''); i += 1; }
-    }
+    const chunk = nextHtmlChunk(code.slice(i), inTag);
+    out += chunk.html;
+    i += chunk.length;
+    inTag = chunk.inTag;
   }
   return out;
 };
