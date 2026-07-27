@@ -117,7 +117,7 @@ describe('error messages - real scenarios', () => {
     expect(text.length).toBeGreaterThan(0);
   });
 
-  test('FILE_NOT_FOUND has clear path message', async () => {
+  test('FILE_NOT_FOUND has clear path message', () => {
     const err = createLog('error', getError('FILE_NOT_FOUND'), { path: 'nonexistent.njk' }, 'nonexistent.njk', {
       lineno: 1, colno: 0, phase: 'load', lineBase: 'zero' as const
     });
@@ -137,7 +137,7 @@ describe('error messages - real scenarios', () => {
     expect(err.fixCode).toContain('{');
   });
 
-  test('UNKNOWN_BLOCK_TAG mentions tag name and closing tags', async () => {
+  test('UNKNOWN_BLOCK_TAG mentions tag name and closing tags', () => {
     const err = createLog('error', getError('UNKNOWN_BLOCK_TAG'), { tag: 'unknownTag' }, 'unknownTag', {
       lineno: 1, colno: 0, phase: 'parse', lineBase: 'zero' as const
     });

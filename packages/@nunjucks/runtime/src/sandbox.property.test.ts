@@ -84,19 +84,19 @@ describe('Sandbox Property-Based Tests', () => {
     test('__proto__ setting throws', () => {
       const obj = { safe: 'value' };
       const sandboxed = createSandboxedObject(obj, true) as Record<string, unknown>;
-      expect(() => (sandboxed as any).__proto__ = {}).toThrow();
+      expect(() => { (sandboxed as any).__proto__ = {}; }).toThrow();
     });
 
     test('constructor setting throws', () => {
       const obj = { safe: 'value' };
       const sandboxed = createSandboxedObject(obj, true) as Record<string, unknown>;
-      expect(() => (sandboxed as any).constructor = {}).toThrow();
+      expect(() => { (sandboxed as any).constructor = {}; }).toThrow();
     });
 
     test('prototype setting throws', () => {
       const obj = { safe: 'value' };
       const sandboxed = createSandboxedObject(obj, true) as Record<string, unknown>;
-      expect(() => (sandboxed as any).prototype = {}).toThrow();
+      expect(() => { (sandboxed as any).prototype = {}; }).toThrow();
     });
 
     test('nested prototype pollution is blocked', () => {

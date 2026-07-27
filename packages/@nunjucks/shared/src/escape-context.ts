@@ -165,8 +165,8 @@ const createHtmlContextTracker = (source: string): HtmlContextTracker => {
   };
 
   return {
-    getContextAtLineCol: (lineno, colno) => contextBefore(source.slice(0, offsetOf(lineno, colno))),
-    getContextAt: offset => contextBefore(source.slice(0, offset)),
+    getContextAtLineCol: (line, col) => contextBefore(source.slice(0, offsetOf(line, col))),
+    getContextAt: at => contextBefore(source.slice(0, at)),
   };
 };
 

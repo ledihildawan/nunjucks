@@ -25,7 +25,7 @@ export const parseFrom = (ctx: ParserContext): Node => {
   }
 
   let names: ChildrenNode = nodeList(fromTok.lineno, fromTok.colno);
-  let withContext;
+  let withContext: boolean | null | undefined;
 
   for (;;) {
     const nextTok = peekToken(ctx);

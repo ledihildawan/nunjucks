@@ -56,13 +56,13 @@ const formatMedium = (warning: Warning, options: ToConsoleOptions): string => {
   if (path) {
     const shortPath = shortenPath(path);
     const displayPath = `${shortPath}:${lineNum}`;
-    let location: string;
+    let locationText: string;
     if (isFilePath(path)) {
-      location = makeHyperlink(displayPath, resolveIdeLink(ide, path, lineNum, 1));
+      locationText = makeHyperlink(displayPath, resolveIdeLink(ide, path, lineNum, 1));
     } else {
-      location = displayPath;
+      locationText = displayPath;
     }
-    locationStr = `${picocolors.dim('at')} ${location}`;
+    locationStr = `${picocolors.dim('at')} ${locationText}`;
   } else {
     locationStr = `${picocolors.dim('at line')} ${picocolors.cyan(lineNum)}`;
   }
@@ -111,13 +111,13 @@ const formatFull = (warning: Warning, options: ToConsoleOptions): string => {
   if (templateName) {
     const shortPath = shortenPath(templateName);
     const displayPath = `${shortPath}:${lineNum}`;
-    let location: string;
+    let locationText: string;
     if (isFilePath(templateName)) {
-      location = makeHyperlink(displayPath, resolveIdeLink(ide, templateName, lineNum, 1));
+      locationText = makeHyperlink(displayPath, resolveIdeLink(ide, templateName, lineNum, 1));
     } else {
-      location = displayPath;
+      locationText = displayPath;
     }
-    locationStr = location;
+    locationStr = locationText;
   } else if (lineno !== undefined && lineno !== null) {
     locationStr = picocolors.dim(`line ${lineNum}`);
   } else {

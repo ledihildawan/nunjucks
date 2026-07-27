@@ -252,8 +252,8 @@ const pair = (lineno: number, colno: number, key: Node, val: Node): PairNode => 
 const spread = (lineno: number, colno: number, argument: Node): SpreadNode => createNode(T.SPREAD, lineno, colno, { argument });
 const walrus = (lineno: number, colno: number, target: Node, val: Node): WalrusNode => createNode(T.WALRUS, lineno, colno, { target, value: val });
 
-const variableDeclaration = (lineno: number, colno: number, targets: Node[], value: Node): VariableDeclNode => createNode(T.VARIABLE_DECLARATION, lineno, colno, { targets, value });
-const variableAssignment = (lineno: number, colno: number, targets: Node[], value: Node): VariableDeclNode => createNode(T.VARIABLE_ASSIGNMENT, lineno, colno, { targets, value });
+const variableDeclaration = (lineno: number, colno: number, targets: Node[], val: Node): VariableDeclNode => createNode(T.VARIABLE_DECLARATION, lineno, colno, { targets, value: val });
+const variableAssignment = (lineno: number, colno: number, targets: Node[], val: Node): VariableDeclNode => createNode(T.VARIABLE_ASSIGNMENT, lineno, colno, { targets, value: val });
 interface CompoundAssignmentFields {
   targets: Node[];
   operator: string;

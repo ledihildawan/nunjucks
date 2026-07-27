@@ -11,7 +11,7 @@ const makeCtx = () => {
     emitted,
     emit: (s: string) => emitted.push(s),
     emitLine: (s: string) => emitted.push(`${s}\n`),
-    emitLines: (...lines: string[]) => lines.forEach((l) => emitted.push(`${l}\n`)),
+    emitLines: (...lines: string[]) => { for (const l of lines) { emitted.push(`${l}\n`); } },
     tmpid: () => {
       lastId += 1;
       return `t_${lastId}`;

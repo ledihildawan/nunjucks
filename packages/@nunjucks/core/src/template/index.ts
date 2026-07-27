@@ -185,6 +185,7 @@ const extractFrameDetails = (
 const createFallbackEnv = (): Env => createEnv({
   opts: { dev: false, autoescape: true },
   globals: {},
+  // biome-ignore lint/suspicious/useAwait: must satisfy GetTemplateFn, which returns a promise; this fallback only ever throws.
   async getTemplate(name: string, _eagerCompile?: boolean, _includeChain?: unknown, ignoreMissing?: boolean) {
     if (ignoreMissing) { return null; }
     throw createLog('error', getError('FILE_NOT_FOUND'), { path: name }, name, { phase: 'load' });
@@ -239,6 +240,7 @@ const createTemplateCompiler = (state: TemplateState) => {
     }
   };
 
+  // biome-ignore lint/suspicious/useAwait: the compiler interface declares safeCompile as returning a promise, and callers await it.
   const safeCompile = async () => {
     try {
       compile();

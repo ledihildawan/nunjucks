@@ -104,9 +104,9 @@ export const compileFor = (ctx: Compiler, node: Node, parentFrame: Frame): void 
       const k = ctx.tmpid();
       ctx.emitLine(`for(const ${k} in ${arr}) {`);
       ctx.emitLine(`${i}++;`);
-      const itemId = ctx.tmpid();
-      ctx.emitLine(`let ${itemId} = ${arr}[${k}];`);
-      compileDestructuring({ ctx, frame, registerFrame: true }, nameNode, itemId);
+      const entryId = ctx.tmpid();
+      ctx.emitLine(`let ${entryId} = ${arr}[${k}];`);
+      compileDestructuring({ ctx, frame, registerFrame: true }, nameNode, entryId);
 
       emitLoopBindings(ctx, arr, i, len);
       ctx.withScopedSyntax(() => {

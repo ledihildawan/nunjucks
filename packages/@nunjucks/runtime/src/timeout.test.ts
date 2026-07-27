@@ -23,13 +23,13 @@ describe('TimeoutError', () => {
 });
 
 describe('withTimeout', () => {
-  test('returns the original promise when ms is not positive', async () => {
+  test('returns the original promise when ms is not positive', () => {
     const p = Promise.resolve(1);
     expect(withTimeout(p, 0)).toBe(p);
     expect(withTimeout(p, -5)).toBe(p);
   });
 
-  test('returns the original promise when ms is undefined', async () => {
+  test('returns the original promise when ms is undefined', () => {
     const p = Promise.resolve(1);
     expect(withTimeout(p, undefined as unknown as number)).toBe(p);
   });

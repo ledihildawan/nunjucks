@@ -90,6 +90,7 @@ const renderTemplate = async (
   }
 };
 
+// biome-ignore lint/suspicious/useAwait: Express expects an engine returning a promise; the signature is fixed by ExpressEngineFunction.
 const createEngine = (config: ExpressEngineConfig = {}): ExpressEngineFunction => async function nunjucksExpressEngine(
   filePath: string,
   options: Record<string, unknown>

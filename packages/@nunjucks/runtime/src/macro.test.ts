@@ -74,9 +74,9 @@ describe('makeMacro', () => {
   });
 
   test('fills missing args from kwargs', () => {
-    const macro = makeMacro(['a', 'b'], [], (a: number, b: number, kwargs: { c?: number }) => a + b + (kwargs.c || 0));
+    const fn = makeMacro(['a', 'b'], [], (a: number, b: number, extra: { c?: number }) => a + b + (extra.c || 0));
     const kwargs = makeKeywordArgs({ b: 10 });
-    expect((macro as (a: number, kwargs: { b: number }) => number)(5, kwargs)).toBe(15);
+    expect((fn as (a: number, kwargs: { b: number }) => number)(5, kwargs)).toBe(15);
   });
 
   test('extra positional args fill kwarg names', () => {

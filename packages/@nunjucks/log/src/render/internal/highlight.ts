@@ -99,26 +99,30 @@ const JS_RULES: SyntaxRule[] = [
   { type: 'operator', re: /^(?:=>|==|!=|<=|>=|&&|\|\||<|>|\+|-|\*|\/|%|&|\||\^|!|=|\?|:|;|,|\.|\(|\)|\[|\]|\{|\})/u },
 ];
 
+/**
+ * JS has no tag state and no plain-run fallback, so its chunker is the same
+ * shape minus those two cases.
+ */
+const nextJsChunk = (rest: string): HighlightChunk => {
+  const ws = rest.match(LEADING_WHITESPACE_RE)?.[0];
+  if (ws) { return { html: ws, length: ws.length, inTag: false }; }
+
+  for (const rule of JS_RULES) {
+    const matched = rest.match(rule.re)?.[0];
+    if (matched) { return { html: span(rule.type, matched), length: matched.length, inTag: false }; }
+  }
+
+  return { html: escapeHtml(rest[0] ?? ''), length: 1, inTag: false };
+};
+
 const highlightJs = (code: string): string => {
   if (!code) { return ''; }
   let out = '';
   let i = 0;
-  const span = (type: string, text: string) => `<span class="syntax-${type}">${escapeHtml(text)}</span>`;
   while (i < code.length) {
-    const rest = code.slice(i);
-    const ws = rest.match(LEADING_WHITESPACE_RE);
-    if (ws) { out += ws[0]; i += ws[0].length; continue; }
-    let matched = false;
-    for (const rule of JS_RULES) {
-      const m = rest.match(rule.re);
-      if (m?.[0]) {
-        out += span(rule.type, m[0]);
-        i += m[0].length;
-        matched = true;
-        break;
-      }
-    }
-    if (!matched) { out += escapeHtml(code[i] ?? ''); i += 1; }
+    const chunk = nextJsChunk(code.slice(i));
+    out += chunk.html;
+    i += chunk.length;
   }
   return out;
 };
