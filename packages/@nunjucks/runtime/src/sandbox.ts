@@ -103,11 +103,11 @@ const isInternalKey = (key: string | symbol): boolean => {
 
 const DANGEROUS_OBJECT_INTRINSICS = new Set(['__proto__', 'constructor', 'prototype']);
 
-const makeSandboxTraps = (
+const createValidateGet = (
   sandboxEnabled: boolean,
   sandboxOptions: ResolvedSandboxOptions,
   topLevel: boolean,
-): ProxyHandler<Record<string | symbol, unknown>> => {
+) => {
   const { allowlist, blocklistMode, blockedContextKeys } = sandboxOptions;
 
   const checkBlockedContextKey = (key: string): void => {
@@ -148,7 +148,36 @@ const makeSandboxTraps = (
     return value;
   };
 
-  const validateSetKey = (target: Record<string | symbol, unknown>, key: string, value: unknown): boolean => {
+  return (target: Record<string | symbol, unknown>, key: string | symbol): unknown => {
+    if (typeof key === 'symbol') {
+      if (isBlockedSymbol(key)) {
+        throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS, key, sandboxOptions);
+      }
+      return target[key];
+    }
+    return validateStringKey(target, key);
+  };
+};
+
+const createValidateSet = (
+  sandboxOptions: ResolvedSandboxOptions,
+  topLevel: boolean,
+) => {
+  const { allowlist, blocklistMode } = sandboxOptions;
+
+  const isKeyAllowed = (key: string): boolean => {
+    return blocklistMode || isAllowedKey(key, allowlist);
+  };
+
+  const handleSymbolSet = (target: Record<string | symbol, unknown>, key: symbol, value: unknown): boolean => {
+    if (isBlockedSymbol(key)) {
+      throw sandboxError(ERROR_DEFINITIONS.SANDBOX_SET, key, sandboxOptions);
+    }
+    target[key] = value;
+    return true;
+  };
+
+  const handleStringSet = (target: Record<string | symbol, unknown>, key: string, value: unknown): boolean => {
     if (topLevel && isInternalKey(key)) {
       target[key] = value;
       return true;
@@ -156,7 +185,7 @@ const makeSandboxTraps = (
     if (isBlockedAtScope(key, sandboxOptions, topLevel)) {
       throw sandboxError(ERROR_DEFINITIONS.SANDBOX_SET, key, sandboxOptions);
     }
-    if (!(blocklistMode || isAllowedKey(key, allowlist))) {
+    if (!isKeyAllowed(key)) {
       throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, key, sandboxOptions);
     }
     if (topLevel) {
@@ -166,7 +195,27 @@ const makeSandboxTraps = (
     return true;
   };
 
-  const validateHasKey = (target: Record<string | symbol, unknown>, key: string): boolean => {
+  return (target: Record<string | symbol, unknown>, key: string | symbol, value: unknown): boolean => {
+    if (typeof key === 'symbol') {
+      return handleSymbolSet(target, key, value);
+    }
+    return handleStringSet(target, key, value);
+  };
+};
+
+const createValidateHas = (
+  sandboxOptions: ResolvedSandboxOptions,
+  topLevel: boolean,
+) => {
+  const { allowlist, blocklistMode } = sandboxOptions;
+
+  return (target: Record<string | symbol, unknown>, key: string | symbol): boolean => {
+    if (typeof key === 'symbol') {
+      if (isBlockedSymbol(key)) {
+        return false;
+      }
+      return key in target;
+    }
     if (isBlockedAtScope(key, sandboxOptions, topLevel)) {
       return false;
     }
@@ -175,36 +224,21 @@ const makeSandboxTraps = (
     }
     return hasOwn(target, key);
   };
+};
+
+const makeSandboxTraps = (
+  sandboxEnabled: boolean,
+  sandboxOptions: ResolvedSandboxOptions,
+  topLevel: boolean,
+): ProxyHandler<Record<string | symbol, unknown>> => {
+  const validateGet = createValidateGet(sandboxEnabled, sandboxOptions, topLevel);
+  const validateSet = createValidateSet(sandboxOptions, topLevel);
+  const validateHas = createValidateHas(sandboxOptions, topLevel);
 
   return {
-    get(target, key): unknown {
-      if (typeof key === 'symbol') {
-        if (isBlockedSymbol(key)) {
-          throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS, key, sandboxOptions);
-        }
-        return target[key];
-      }
-      return validateStringKey(target, key);
-    },
-    set(target, key, value): boolean {
-      if (typeof key === 'symbol') {
-        if (isBlockedSymbol(key)) {
-          throw sandboxError(ERROR_DEFINITIONS.SANDBOX_SET, key, sandboxOptions);
-        }
-        target[key] = value;
-        return true;
-      }
-      return validateSetKey(target, key, value);
-    },
-    has(target, key): boolean {
-      if (typeof key === 'symbol') {
-        if (isBlockedSymbol(key)) {
-          return false;
-        }
-        return key in target;
-      }
-      return validateHasKey(target, key);
-    },
+    get: validateGet,
+    set: validateSet,
+    has: validateHas,
   };
 };
 

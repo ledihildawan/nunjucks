@@ -15,6 +15,17 @@ export interface Frame {
   pop: () => Frame | undefined;
 }
 
+const setNestedValue = (target: Record<string, unknown>, path: string[], lastPart: string, val: unknown): void => {
+  let current = target;
+  for (const id of path) {
+    if (!current[id]) {
+      current[id] = {};
+    }
+    current = current[id] as Record<string, unknown>;
+  }
+  current[lastPart] = val;
+};
+
 export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Frame {
   // The cast has to keep `undefined`: with no parent there is no rootState,
   // and the `??` below is what supplies the initial one.
@@ -81,18 +92,7 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
         }
       }
 
-      const traverseAndSet = (target: Record<string, unknown>, path: string[]): void => {
-        let current = target;
-        for (const id of path) {
-          if (!current[id]) {
-            current[id] = {};
-          }
-          current = current[id] as Record<string, unknown>;
-        }
-        current[lastPart] = val;
-      };
-
-      traverseAndSet(state.variables, parts.slice(0, -1));
+      setNestedValue(state.variables, parts.slice(0, -1), lastPart, val);
       state.rootState.revision += 1;
       state.resolveCache.clear();
       state.lookupCache.clear();

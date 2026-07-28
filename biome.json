@@ -6,5 +6,22 @@
 		"./biome/javascript.json",
 		"./biome/overrides/test.json",
 		"./biome/overrides/config-files.json"
+	],
+	"overrides": [
+		{
+			"includes": ["packages/@nunjucks/runtime/src/context.ts", "packages/@nunjucks/runtime/src/frame.ts", "packages/@nunjucks/runtime/src/render-context.ts"],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noExcessiveLinesPerFunction": {
+							"level": "error",
+							"options": {
+								"maxLines": 160
+							}
+						}
+					}
+				}
+			}
+		}
 	]
 }

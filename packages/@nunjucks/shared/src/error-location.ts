@@ -155,48 +155,22 @@ const buildResolvedLocation = (
   preferCallerLocation
 });
 
-const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedLocation> => {
-  const {
-    template = null,
-    templatePath = null,
-    jsCaller = null,
-    jsCallerErrorLine = null,
-    jsCallerErrorCol = null,
-    _callerFile = null,
-    _callerLocation = null,
-    errLineno = null,
-    errColno = null,
-    lineno: configLineno = null,
-    colno: configColno = null,
-    subject = null,
-    errLineBase = null
-  } = inputs;
-
-  const hasErrorLocation = errLineno !== undefined && errLineno !== null;
-  const hasCallerLocation = hasErrorLocation && errLineBase === 'one';
-
-  const { preferCallerLocation, useExplicitCaller, useAutoCaller } = determineCallerPreference({
-    templatePath, jsCaller, jsCallerErrorLine, _callerFile, _callerLocation
-  });
-
-  const { caller: activeCaller, line: activeCallerLine, col: activeCallerCol } = resolveActiveCaller(
-    useExplicitCaller,
-    useAutoCaller,
-    jsCaller,
-    jsCallerErrorLine,
-    jsCallerErrorCol,
-    _callerFile,
-    _callerLocation
-  );
-
-  const finalPath = preferCallerLocation
-    ? activeCaller ?? templatePath ?? null
-    : templatePath ?? _callerFile ?? null;
-
+const resolveSourceContent = async (
+  preferCallerLocation: boolean,
+  hasCallerLocation: boolean,
+  activeCaller: string | null,
+  activeCallerLine: number | null,
+  activeCallerCol: number | null,
+  template: string | null,
+  errLineno: number | null,
+  errColno: number | null,
+  subject: string | null,
+): Promise<{ sourceContent: string | null; sourceStartLine: number; resolvedCallerLine: number | null; resolvedCallerCol: number | null }> => {
   let sourceContent: string | null = template;
   let sourceStartLine = 1;
   let resolvedCallerLine: number | null = activeCallerLine;
   let resolvedCallerCol: number | null = activeCallerCol;
+
   if (hasCallerLocation) {
     resolvedCallerLine = errLineno ?? null;
     resolvedCallerCol = errColno ?? null;
@@ -218,6 +192,168 @@ const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedLocation
       resolvedCallerCol = updatedCol;
     }
   }
+
+  return { sourceContent, sourceStartLine, resolvedCallerLine, resolvedCallerCol };
+};
+
+const extractCallerPreference = (
+  templatePath: string | null,
+  jsCaller: string | null,
+  jsCallerErrorLine: string | null,
+  _callerFile: string | null,
+  _callerLocation: string | null,
+) => {
+  return determineCallerPreference({
+    templatePath, jsCaller, jsCallerErrorLine, _callerFile, _callerLocation
+  });
+};
+
+const extractActiveCaller = (
+  useExplicitCaller: boolean,
+  useAutoCaller: boolean,
+  jsCaller: string | null,
+  jsCallerErrorLine: string | null,
+  jsCallerErrorCol: string | null,
+  _callerFile: string | null,
+  _callerLocation: string | null,
+) => {
+  return resolveActiveCaller(
+    useExplicitCaller,
+    useAutoCaller,
+    jsCaller,
+    jsCallerErrorLine,
+    jsCallerErrorCol,
+    _callerFile,
+    _callerLocation
+  );
+};
+
+const computeFinalPath = (
+  preferCallerLocation: boolean,
+  activeCaller: string | null,
+  templatePath: string | null,
+  _callerFile: string | null,
+): string | null => {
+  return preferCallerLocation
+    ? activeCaller ?? templatePath ?? null
+    : templatePath ?? _callerFile ?? null;
+};
+
+const resolveCallerInfo = (
+  templatePath: string | null,
+  jsCaller: string | null,
+  jsCallerErrorLine: string | null,
+  _callerFile: string | null,
+  _callerLocation: string | null,
+  jsCallerErrorCol: string | null,
+) => {
+  const { preferCallerLocation, useExplicitCaller, useAutoCaller } = extractCallerPreference(
+    templatePath,
+    jsCaller,
+    jsCallerErrorLine,
+    _callerFile,
+    _callerLocation
+  );
+
+  const { caller: activeCaller, line: activeCallerLine, col: activeCallerCol } = extractActiveCaller(
+    useExplicitCaller,
+    useAutoCaller,
+    jsCaller,
+    jsCallerErrorLine,
+    jsCallerErrorCol,
+    _callerFile,
+    _callerLocation
+  );
+
+  return { preferCallerLocation, activeCaller, activeCallerLine, activeCallerCol };
+};
+
+const parseLocationInputs = (inputs: LocationInputs) => {
+  const {
+    template = null,
+    templatePath = null,
+    jsCaller = null,
+    jsCallerErrorLine = null,
+    jsCallerErrorCol = null,
+    _callerFile = null,
+    _callerLocation = null,
+    errLineno = null,
+    errColno = null,
+    lineno: configLineno = null,
+    colno: configColno = null,
+    subject = null,
+    errLineBase = null
+  } = inputs;
+
+  return { template, templatePath, jsCaller, jsCallerErrorLine, jsCallerErrorCol, _callerFile, _callerLocation, errLineno, errColno, configLineno, configColno, subject, errLineBase };
+};
+
+const computeHasCallerLocation = (errLineno: number | null, errLineBase: string | null): { hasErrorLocation: boolean; hasCallerLocation: boolean } => {
+  const hasErrorLocation = errLineno !== undefined && errLineno !== null;
+  const hasCallerLocation = hasErrorLocation && errLineBase === 'one';
+  return { hasErrorLocation, hasCallerLocation };
+};
+
+const resolveActiveLocationData = (inputs: LocationInputs) => {
+  const { template, templatePath, jsCaller, jsCallerErrorLine, jsCallerErrorCol, _callerFile, _callerLocation, errLineno, errColno, configLineno, configColno, subject, errLineBase } = parseLocationInputs(inputs);
+  const { hasErrorLocation, hasCallerLocation } = computeHasCallerLocation(errLineno, errLineBase);
+
+  const { preferCallerLocation, activeCaller, activeCallerLine, activeCallerCol } = resolveCallerInfo(
+    templatePath,
+    jsCaller,
+    jsCallerErrorLine,
+    _callerFile,
+    _callerLocation,
+    jsCallerErrorCol
+  );
+
+  const finalPath = computeFinalPath(preferCallerLocation, activeCaller, templatePath, _callerFile);
+
+  return {
+    template,
+    configLineno,
+    configColno,
+    hasErrorLocation,
+    hasCallerLocation,
+    preferCallerLocation,
+    activeCaller,
+    activeCallerLine,
+    activeCallerCol,
+    finalPath,
+    errLineno,
+    errColno,
+    subject,
+  };
+};
+
+const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedLocation> => {
+  const {
+    template,
+    configLineno,
+    configColno,
+    hasErrorLocation,
+    hasCallerLocation,
+    preferCallerLocation,
+    activeCaller,
+    activeCallerLine,
+    activeCallerCol,
+    finalPath,
+    errLineno,
+    errColno,
+    subject,
+  } = resolveActiveLocationData(inputs);
+
+  const { sourceContent, sourceStartLine, resolvedCallerLine, resolvedCallerCol } = await resolveSourceContent(
+    preferCallerLocation,
+    hasCallerLocation,
+    activeCaller,
+    activeCallerLine,
+    activeCallerCol,
+    template,
+    errLineno,
+    errColno,
+    subject,
+  );
 
   const { lineno, colno, lineBase } = resolveFinalCoordinates(
     preferCallerLocation,

@@ -198,46 +198,52 @@ function createContext(
     return ctxVar;
   };
 
-  const context: Context = {
-    get env() { return envVar; },
-    set env(v) { envVar = v; },
-    get ctx() { return ctxVar; },
-    set ctx(v) { ctxVar = v; },
-    get blocks() { return blocksVar; },
-    set blocks(v) { blocksVar = v; },
-    get metadata() { return metadataVar; },
-    set metadata(v) { metadataVar = v; },
-    get blockLocations() { return blockLocationsVar; },
-    set blockLocations(v) { blockLocationsVar = v; },
-    get exported() { return exportedVar; },
-    set exported(v) { exportedVar = v; },
-    get parentBlockNames() { return parentBlockNamesVar; },
-    set parentBlockNames(v) { parentBlockNamesVar = v; },
-    get validatedBlocks() { return validatedBlocksVar; },
-    set validatedBlocks(v) { validatedBlocksVar = v; },
-    get parentContext() { return parentContextVar; },
-    set parentContext(v) { parentContextVar = v; },
-    validateBlocks,
-    setParentBlockNames: (names: string[] | null) => { parentBlockNamesVar = names; },
-    lookup,
-    setVariable,
-    addBlock,
-    getBlock,
-    getSuper,
-    addExport,
-    getExported,
-    fork,
-    getVariables,
+  const registerBlocks = (context: Context, blocks: Record<string, (...args: unknown[]) => unknown>): void => {
+    for (const name of getKeys(blocks)) {
+      const block = blocks[name];
+      if (block) {
+        context.addBlock(name, block);
+      }
+    }
   };
 
-  for (const name of getKeys(blocks)) {
-    const block = blocks[name];
-    if (block) {
-      context.addBlock(name, block);
-    }
-  }
+  const createContextObject = (): Context => {
+    return {
+      get env() { return envVar; },
+      set env(v) { envVar = v; },
+      get ctx() { return ctxVar; },
+      set ctx(v) { ctxVar = v; },
+      get blocks() { return blocksVar; },
+      set blocks(v) { blocksVar = v; },
+      get metadata() { return metadataVar; },
+      set metadata(v) { metadataVar = v; },
+      get blockLocations() { return blockLocationsVar; },
+      set blockLocations(v) { blockLocationsVar = v; },
+      get exported() { return exportedVar; },
+      set exported(v) { exportedVar = v; },
+      get parentBlockNames() { return parentBlockNamesVar; },
+      set parentBlockNames(v) { parentBlockNamesVar = v; },
+      get validatedBlocks() { return validatedBlocksVar; },
+      set validatedBlocks(v) { validatedBlocksVar = v; },
+      get parentContext() { return parentContextVar; },
+      set parentContext(v) { parentContextVar = v; },
+      validateBlocks,
+      setParentBlockNames: (names: string[] | null) => { parentBlockNamesVar = names; },
+      lookup,
+      setVariable,
+      addBlock,
+      getBlock,
+      getSuper,
+      addExport,
+      getExported,
+      fork,
+      getVariables,
+    };
+  };
 
+  const context = createContextObject();
   context[CONTEXT_KEY] = true;
+  registerBlocks(context, blocks);
   return context;
 }
 
