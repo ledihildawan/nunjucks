@@ -105,7 +105,7 @@ const buildMetadata = (
   errSnapshot: Record<string, unknown>,
   lineno: number | null,
   colno: number | null,
-  lineBase: string,
+  lineBase: 'zero' | 'one',
   phase: string,
   templatePath: string | null,
   sourceContent: string | null,

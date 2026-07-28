@@ -164,7 +164,7 @@ const buildErrorBodyContent = (
   verbosity: string,
   error: ErrorLike,
   classified: ReturnType<typeof import('./to-html-helpers.ts').classifyError>,
-  sourceTrace: unknown,
+  sourceTrace: SourceTrace | null | undefined,
   renderContext: unknown,
   ide: string,
   displayPath: string
@@ -176,7 +176,7 @@ const buildErrorBodyContent = (
     classified.fixCode,
     classified.fixComment,
     classified.documentationUrl,
-    renderContext,
+    renderContext as object | undefined,
     error,
     ide,
     displayPath

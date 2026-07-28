@@ -79,7 +79,7 @@ const formatMedium = (warning: Warning, options: ToConsoleOptions): string => {
   return parts.join(' ');
 };
 
-const getWarningTitle = (varName: string | undefined): string =>
+const getWarningTitle = (varName: string | null | undefined): string =>
   varName ? `Undefined variable '${varName}'` : 'Undefined variable';
 
 const getLocationString = (lineno: number | null | undefined, templateName: string | null | undefined, lineBase: 'zero' | 'one' | null | undefined, ide: string): string => {

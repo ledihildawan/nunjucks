@@ -1,7 +1,5 @@
 import type { SourcePosition, TemplateMatch } from './error-location-types.ts';
 
-const TRAILING_WHITESPACE_RE = /\s+$/gu;
-
 const lineDistance = (line: number, preferredLine: number | null | undefined): number => {
   if (preferredLine === null || preferredLine === undefined) { return 0; }
   return Math.abs(line - preferredLine);
@@ -161,15 +159,6 @@ const findSubjectOccurrence = (
     }
   }
   return best;
-};
-
-const templateEndPosition = (template: string): SourcePosition => {
-  const trimmed = template.replace(TRAILING_WHITESPACE_RE, '');
-  const lines = trimmed.split('\n');
-  const line = Math.max(0, lines.length - 1);
-  const lastLine = lines[line] ?? '';
-  const col = Math.max(0, lastLine.length - 1);
-  return { line, col };
 };
 
 const tryMatchTemplate = (

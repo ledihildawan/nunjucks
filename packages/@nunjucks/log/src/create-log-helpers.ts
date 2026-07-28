@@ -1,6 +1,6 @@
 import { isFunction, isString, pickBy } from 'remeda';
 import { formatLocationAnnotation } from './render/internal/location.ts';
-import type { TemplateError, ErrorContext, WarningContext, BaseContext, ErrorDefinitionEntry, LegacyLogData, LogType, WarningInfo, IncludeChain } from './create-log-types.ts';
+import type { TemplateError, ErrorContext, WarningContext, BaseContext, ErrorDefinitionEntry, LegacyLogData, LogType, WarningInfo, IncludeChain, ErrorInfo } from './create-log-types.ts';
 
 const resolveMessage = (message: ErrorDefinitionEntry['message'], params?: Record<string, string>): string => {
   if (isFunction(message)) { return message(params); }

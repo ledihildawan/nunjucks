@@ -4,6 +4,7 @@ import { CSS, } from './internal/styles.ts';
 import { TOGGLE_SCRIPT } from './internal/script.ts';
 import { shortenPath } from './internal/path-shortener.ts';
 import type { Csp, ErrorLike, ToHtmlOptions } from './to-html-types.ts';
+import type { SourceTrace } from './internal/source-trace.ts';
 
 const document = (title: string, body: string, scripts = '', csp: Csp | null = null): string => {
   let styleNonce = '';
@@ -55,11 +56,11 @@ const buildErrorDocument = (
   renderContext: unknown,
   phase: string,
   version: string,
-  timestamp: number | undefined,
-  csp: string | null,
-  sourceTrace: unknown,
+  timestamp: string | undefined,
+  csp: Csp | null,
+  sourceTrace: SourceTrace | null | undefined,
   ide: string,
-  verbosity: string,
+  verbosity: 'simple' | 'medium' | 'full',
   isJsCaller: boolean
 ): string => {
   const humanTitle = classifyAndBuildTitle(error);
@@ -93,7 +94,7 @@ const buildErrorDocument = (
 
 const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string => {
   const {
-    templatePath = error?.templateName,
+    templatePath = error?.templateName ?? undefined,
     lineno,
     colno,
     renderContext,
@@ -118,10 +119,10 @@ const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string =>
   return buildErrorDocument(
     error,
     templatePath,
-    lineno,
-    colno,
+    lineno ?? undefined,
+    colno ?? undefined,
     renderContext,
-    phase,
+    phase ?? '',
     version,
     timestamp,
     csp ?? null,

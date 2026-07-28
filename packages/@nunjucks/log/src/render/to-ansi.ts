@@ -3,7 +3,7 @@ import { toDisplayLocation } from './internal/location.ts';
 import { extractAnsiErrorParts, formatMediumAnsi, formatFullAnsi, getErrorMessage } from './ansi/format-helpers';
 
 export { toAnsi };
-export type { AnsiOptions } from './ansi/format-helpers';
+export type { AnsiOptions };
 
 interface AnsiOptions {
   verbosity?: 'simple' | 'medium' | 'full';

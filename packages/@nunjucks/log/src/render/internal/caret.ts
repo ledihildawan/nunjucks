@@ -122,7 +122,7 @@ function calculateCaretPosition(
     }
   }
 
-  const { wordStart: initialStart, wordEnd: initialEnd } = findWordBoundaries(line, pos, charAtPos);
+  const { wordStart: initialStart, wordEnd: initialEnd } = findWordBoundaries(line, pos, charAtPos ?? '');
   const { wordStart, wordEnd, highlightWord } = resolveHighlightWord(line, pos, initialStart, initialEnd);
   const carets = buildCarets(highlightWord);
 

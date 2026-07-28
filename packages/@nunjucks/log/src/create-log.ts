@@ -1,9 +1,8 @@
 import { pipe } from 'remeda';
-import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, LegacyLogData, LogType, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, NormalizedErrorContext, NormalizedWarningContext } from './create-log-types.ts';
+import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, LegacyLogData, LogType, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, NormalizedErrorContext, NormalizedWarningContext, ErrorInfo, WarningInfo, OutputOptions } from './create-log-types.ts';
+import { TEMPLATE_ERROR } from './create-log-types.ts';
 import { normalizeContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, buildLocationMessage } from './create-log-helpers.ts';
 import { createErrorFromDef, createWarningFromDef, buildErrorOutput, buildWarningOutput } from './create-log-error.ts';
-
-const TEMPLATE_ERROR = Symbol('TemplateError');
 
 function createLog(
   type: string,

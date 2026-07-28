@@ -3,7 +3,7 @@ import { toAnsi } from './render/to-ansi.ts';
 import { toText } from './render/to-text.ts';
 import { toHtml } from './render/to-html.ts';
 import { toConsoleString } from './render/to-console.ts';
-import { normalizeLineBase } from './render/internal/location.ts';
+import { normalizeLineBase, type LineBase } from './render/internal/location.ts';
 import { buildSourceTrace } from './render/internal/source-trace.ts';
 import { TEMPLATE_ERROR } from './create-log-types.ts';
 import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, OutputOptions, NormalizedErrorContext, NormalizedWarningContext } from './create-log-types.ts';
@@ -20,9 +20,9 @@ const toFormatterMetadata = (log: TemplateError | TemplateWarning, renderContext
   lineBase: normalizeLineBase(log.lineBase)
 });
 
-const resolveTraceLineBase = (err: TemplateError, isJsCaller: boolean | undefined): string => {
+const resolveTraceLineBase = (err: TemplateError, isJsCaller: boolean | undefined): LineBase => {
   if (isJsCaller) { return 'one'; }
-  return err.lineBase;
+  return normalizeLineBase(err.lineBase);
 };
 
 const buildSourceTraceIfNeeded = async (

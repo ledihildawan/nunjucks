@@ -122,7 +122,7 @@ const resolveActiveCaller = (
   jsCallerErrorLine: number | null,
   jsCallerErrorCol: number | null,
   _callerFile: string | null,
-  _callerLocation: { lineNumber: number; columnNumber: number } | null
+  _callerLocation: { lineNumber?: number | null; columnNumber?: number | null } | null
 ): { caller: string | null; line: number | null; col: number | null } => {
   const pickCaller = <T>(explicit: T, auto: T): T | null => {
     if (useExplicitCaller) { return explicit; }
@@ -199,9 +199,9 @@ const resolveSourceContent = async (
 const extractCallerPreference = (
   templatePath: string | null,
   jsCaller: string | null,
-  jsCallerErrorLine: string | null,
+  jsCallerErrorLine: number | null,
   _callerFile: string | null,
-  _callerLocation: string | null,
+  _callerLocation: { lineNumber?: number | null; columnNumber?: number | null } | null,
 ) => {
   return determineCallerPreference({
     templatePath, jsCaller, jsCallerErrorLine, _callerFile, _callerLocation
@@ -212,10 +212,10 @@ const extractActiveCaller = (
   useExplicitCaller: boolean,
   useAutoCaller: boolean,
   jsCaller: string | null,
-  jsCallerErrorLine: string | null,
-  jsCallerErrorCol: string | null,
+  jsCallerErrorLine: number | null,
+  jsCallerErrorCol: number | null,
   _callerFile: string | null,
-  _callerLocation: string | null,
+  _callerLocation: { lineNumber?: number | null; columnNumber?: number | null } | null,
 ) => {
   return resolveActiveCaller(
     useExplicitCaller,
@@ -242,10 +242,10 @@ const computeFinalPath = (
 const resolveCallerInfo = (
   templatePath: string | null,
   jsCaller: string | null,
-  jsCallerErrorLine: string | null,
+  jsCallerErrorLine: number | null,
   _callerFile: string | null,
-  _callerLocation: string | null,
-  jsCallerErrorCol: string | null,
+  _callerLocation: { lineNumber?: number | null; columnNumber?: number | null } | null,
+  jsCallerErrorCol: number | null,
 ) => {
   const { preferCallerLocation, useExplicitCaller, useAutoCaller } = extractCallerPreference(
     templatePath,
