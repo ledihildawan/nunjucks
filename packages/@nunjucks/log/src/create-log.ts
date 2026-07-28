@@ -1,361 +1,9 @@
-import { isFunction, isString, pipe, pickBy } from 'remeda';
-import type { LineBase } from './render/internal/location.ts';
-import { normalizeLineBase, formatLocationAnnotation } from './render/internal/location.ts';
-import { buildSourceTrace } from './render/internal/source-trace.ts';
-import { createFormatterState } from './render/internal/metadata.ts';
-import { toAnsi } from './render/to-ansi.ts';
-import { toText } from './render/to-text.ts';
-import { toHtml } from './render/to-html.ts';
-import { toConsoleString } from './render/to-console.ts';
+import { pipe } from 'remeda';
+import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, LegacyLogData, LogType, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, NormalizedErrorContext, NormalizedWarningContext } from './create-log-types.ts';
+import { normalizeContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, buildLocationMessage } from './create-log-helpers.ts';
+import { createErrorFromDef, createWarningFromDef, buildErrorOutput, buildWarningOutput } from './create-log-error.ts';
 
 const TEMPLATE_ERROR = Symbol('TemplateError');
-
-interface ErrorDefinitionEntry {
-  name: string;
-  message: ((args?: Record<string, string> | string[]) => string) | string;
-  pattern: RegExp;
-  causes?: string[];
-  fixCode?: string;
-  fixComment?: string;
-  documentationUrl?: string;
-  severity?: 'error' | 'warning' | 'info';
-}
-
-const resolveMessage = (message: ErrorDefinitionEntry['message'], params?: Record<string, string>): string => {
-  if (isFunction(message)) { return message(params); }
-  if (isString(message) && params) { return message.replace(/\{(\w+)\}/gu, (_, k) => params[k] ?? ''); }
-  return message;
-};
-
-interface ErrorInfo {
-  code?: string | null;
-  subject?: string | null;
-  phase?: string | null;
-  templateName?: string | null;
-  renderContext?: Record<string, unknown>;
-  lineBase?: LineBase | null;
-  dev?: boolean;
-}
-
-interface WarningInfo extends ErrorInfo {
-  varName?: string | null;
-  undefinedMode?: string;
-}
-
-interface OutputOptions {
-  format?: 'html' | 'ansi' | 'text';
-  verbosity?: 'simple' | 'medium' | 'full';
-  dev?: boolean;
-  ide?: string;
-  isProduction?: boolean;
-  templatePath?: string;
-  renderContext?: Record<string, unknown>;
-  version?: string;
-  timestamp?: string;
-  sourceContent?: string;
-  sourceStartLine?: number;
-  snippet?: string;
-  csp?: { nonce?: string };
-  jsCaller?: string;
-  jsCallerErrorLine?: number;
-  isJsCaller?: boolean;
-}
-
-interface TemplateError extends Error {
-  name: 'Template render error';
-  lineno: number | null;
-  colno: number | null;
-  code: string | null;
-  subject: string | null;
-  phase: string | null;
-  templateName: string | null;
-  templatePath: string | null;
-  renderContext?: Record<string, unknown>;
-  lineBase?: LineBase | null;
-  sourceContent?: string;
-  sourceStartLine?: number;
-  firstUpdate?: boolean;
-  causes?: string[];
-  fixCode?: string | null;
-  fixComment?: string | null;
-  documentationUrl?: string | null;
-  severity?: 'error' | 'warning' | 'info';
-  path?: string | null;
-  toJSON?: () => Record<string, unknown>;
-  outputOptions?: Omit<OutputOptions, 'format'>;
-  output: (options?: OutputOptions) => Promise<string>;
-  applyLocation?: (path: string | undefined, includeChain?: IncludeChain) => TemplateError;
-  _includeChain?: IncludeChain;
-  [TEMPLATE_ERROR]?: boolean;
-}
-
-interface TemplateWarning {
-  message: string;
-  lineno: number | null;
-  colno: number | null;
-  varName: string | null;
-  templateName: string | null;
-  undefinedMode: string;
-  code: string | null;
-  subject: string | null;
-  phase: string | null;
-  lineBase?: LineBase | null;
-  causes?: string[];
-  fixCode?: string | null;
-  fixComment?: string | null;
-  output: (options?: Omit<OutputOptions, 'format' | 'isProduction'>) => string;
-}
-
-interface ErrorContext {
-  lineno?: number | null;
-  colno?: number | null;
-  phase?: string | null;
-  templateName?: string | null;
-  templatePath?: string | null;
-  lineBase?: LineBase | null;
-  sourceContent?: string;
-  sourceStartLine?: number;
-}
-
-interface WarningContext extends ErrorContext {
-  varName?: string | null;
-  undefinedMode?: string | null;
-}
-
-interface BaseContext {
-  lineno: number | null;
-  colno: number | null;
-  phase: string | null;
-  templateName: string | null;
-  lineBase: LineBase | null;
-}
-
-interface NormalizedErrorContext extends BaseContext {}
-
-interface NormalizedWarningContext extends BaseContext {
-  varName: string | null;
-  undefinedMode: string;
-}
-
-const normalizeContext = <T extends BaseContext>(
-  context: ErrorContext | WarningContext | undefined | null,
-  extra: (c: ErrorContext | WarningContext) => Partial<T>
-): T => ({
-  lineno: context?.lineno ?? null,
-  colno: context?.colno ?? null,
-  phase: context?.phase ?? null,
-  templateName: context?.templateName ?? null,
-  lineBase: context?.lineBase ?? null,
-  ...extra(context ?? {})
-} as T);
-
-const isErrorDefinitionEntry = (data: unknown): data is ErrorDefinitionEntry => {
-  if (typeof data !== 'object' || data === null || !('message' in data)) { return false; }
-  const { message } = data as { message: unknown };
-  return (typeof message === 'function' || typeof message === 'string') && !('lineno' in data);
-};
-
-interface LegacyLogData {
-  message: string;
-  lineno?: number | null;
-  colno?: number | null;
-  info?: ErrorInfo | WarningInfo;
-}
-
-type LogType = 'error' | 'warning';
-
-const createBaseMetadata = (message: string, data: LegacyLogData, info: ErrorInfo | WarningInfo, type: LogType) => {
-  const base = {
-    message,
-    lineno: data.lineno ?? null,
-    colno: data.colno ?? null,
-    code: info.code ?? null,
-    subject: info.subject ?? null,
-    phase: info.phase ?? null,
-    templateName: info.templateName ?? null,
-    lineBase: info.lineBase ?? null,
-  };
-  if (type === 'warning') {
-    const warningInfo = info as WarningInfo;
-    return {
-      ...base,
-      varName: warningInfo.varName ?? null,
-      undefinedMode: warningInfo.undefinedMode ?? 'chainable'
-    };
-  }
-  return base;
-};
-
-// The six location/identity fields every presenter needs, read off whichever
-// log object owns them. Errors additionally carry a render context; warnings
-// never do.
-const toFormatterMetadata = (log: TemplateError | TemplateWarning, renderContext?: Record<string, unknown>) => ({
-  lineno: log.lineno,
-  colno: log.colno,
-  phase: log.phase,
-  templateName: log.templateName,
-  code: log.code,
-  subject: log.subject,
-  renderContext,
-  lineBase: normalizeLineBase(log.lineBase)
-});
-
-const resolveTraceLineBase = (err: TemplateError, isJsCaller: boolean | undefined): string => {
-  if (isJsCaller) { return 'one'; }
-  return err.lineBase;
-};
-
-const buildSourceTraceIfNeeded = async (
-  err: TemplateError,
-  verbosity: string,
-  options: OutputOptions
-): Promise<Awaited<ReturnType<typeof buildSourceTrace>> | null> => {
-  if (verbosity === 'simple') { return null; }
-  const traceLineBase = resolveTraceLineBase(err, options.isJsCaller);
-  return await buildSourceTrace({
-    sourceContent: err.sourceContent ?? null,
-    templatePath: options.templatePath ?? err.templatePath ?? err.templateName ?? null,
-    lineno: err.lineno,
-    colno: err.colno,
-    lineBase: normalizeLineBase(traceLineBase),
-    sourceStartLine: err.sourceStartLine ?? 1
-  });
-};
-
-const formatErrorOutput = (err: TemplateError, opts: ReturnType<typeof createFormatterState>, format: string | undefined): string => {
-  if (format === 'ansi') { return toAnsi(err, opts); }
-  if (format === 'text') { return toText(err, opts); }
-  return toHtml(err, opts);
-};
-
-const buildErrorOutput = (err: TemplateError) => async (options: OutputOptions = {}): Promise<string> => {
-  const verbosity = options.verbosity ?? 'full';
-  const sourceTrace = await buildSourceTraceIfNeeded(err, verbosity, options);
-
-  const opts = createFormatterState({
-    metadata: toFormatterMetadata(err, err.renderContext),
-    options: { ...options, sourceTrace }
-  });
-
-  return formatErrorOutput(err, opts, options.format);
-};
-
-const buildWarningOutput = (warn: TemplateWarning) => (options: Omit<OutputOptions, 'format' | 'isProduction'> = {}): string =>
-  toConsoleString(warn, createFormatterState({ metadata: toFormatterMetadata(warn), options }));
-
-const buildErrorJson = (err: TemplateError) => (): Record<string, unknown> => ({
-  name: err.name,
-  code: err.code,
-  subject: err.subject,
-  message: err.message,
-  phase: err.phase,
-  templateName: err.templateName,
-  templatePath: err.templatePath,
-  sourceStartLine: err.sourceStartLine,
-  lineno: err.lineno,
-  colno: err.colno,
-  lineBase: err.lineBase,
-  causes: err.causes,
-  fixCode: err.fixCode,
-  fixComment: err.fixComment,
-  severity: err.severity,
-  stack: err.stack
-});
-
-function assertLogType(type: string): asserts type is LogType {
-  if (type !== 'error' && type !== 'warning') {
-    throw new Error(`Unknown log type: ${type}`);
-  }
-}
-
-/**
- * The pre-registry call shape: a bare message plus an `info` bag, rather than
- * an entry from ERROR_DEFINITIONS.
- */
-const createFromLegacyData = (type: LogType, data: LegacyLogData): TemplateError | TemplateWarning => {
-  const info = (data.info ?? {}) as WarningInfo;
-  const base = createBaseMetadata(data.message, data, info, type);
-
-  if (type === 'error') {
-    const err = new Error(base.message) as TemplateError;
-    Object.assign(err, {
-      name: 'Template render error',
-      code: base.code,
-      subject: base.subject,
-      lineno: base.lineno,
-      colno: base.colno,
-      phase: base.phase,
-      templateName: base.templateName,
-      lineBase: base.lineBase,
-      templatePath: base.templateName,
-      [TEMPLATE_ERROR]: true as const,
-    });
-    err.output = buildErrorOutput(err);
-    return err;
-  }
-
-  const warn = {
-    message: base.message,
-    lineno: base.lineno,
-    colno: base.colno,
-    varName: info.varName ?? null,
-    templateName: base.templateName,
-    undefinedMode: info.undefinedMode ?? 'chainable',
-    code: base.code,
-    subject: base.subject,
-    phase: base.phase,
-    lineBase: base.lineBase,
-  } as TemplateWarning;
-  warn.output = buildWarningOutput(warn);
-  return warn;
-};
-
-const extractExtraFromContext = (context: ErrorContext | null | undefined): Record<string, unknown> | undefined => {
-  const extraKeys = ['lineno', 'colno', 'phase', 'templateName', 'lineBase', 'varName', 'undefinedMode'];
-  if (!context) { return undefined; }
-  return pickBy(context, (_, k) => !extraKeys.includes(k));
-};
-
-const createErrorFromDef = (
-  errorDef: ErrorDefinitionEntry,
-  paramsValue: Record<string, string> | undefined,
-  normalized: NormalizedErrorContext,
-  extra: Record<string, unknown> | undefined,
-  subject: string | null
-): TemplateError => {
-  const err = new Error(resolveMessage(errorDef.message, paramsValue)) as TemplateError;
-  Object.assign(err, { name: 'Template render error', code: errorDef.name, subject, ...normalized, [TEMPLATE_ERROR]: true });
-  if (extra?.sourceContent) { err.sourceContent = extra.sourceContent as string; }
-  if (extra && Number.isInteger(extra.sourceStartLine)) { err.sourceStartLine = extra.sourceStartLine as number; }
-  err.templatePath = normalized.templateName;
-  if (errorDef.causes && errorDef.causes.length > 0) { err.causes = errorDef.causes; }
-  if (errorDef.fixCode) { err.fixCode = errorDef.fixCode; }
-  if (errorDef.fixComment) { err.fixComment = errorDef.fixComment; }
-  if (errorDef.documentationUrl) { err.documentationUrl = errorDef.documentationUrl; }
-  if (errorDef.severity) { err.severity = errorDef.severity; }
-  err.toJSON = buildErrorJson(err);
-  err.output = buildErrorOutput(err);
-  return err;
-};
-
-const createWarningFromDef = (
-  errorDef: ErrorDefinitionEntry,
-  paramsValue: Record<string, string> | undefined,
-  normalizedWarning: NormalizedWarningContext,
-  subject: string | null
-): TemplateWarning => {
-  const warn = {
-    message: resolveMessage(errorDef.message, paramsValue),
-    code: errorDef.name,
-    subject,
-    ...normalizedWarning
-  } as TemplateWarning;
-  if (errorDef.causes && errorDef.causes.length > 0) { warn.causes = errorDef.causes; }
-  if (errorDef.fixCode) { warn.fixCode = errorDef.fixCode; }
-  if (errorDef.fixComment) { warn.fixComment = errorDef.fixComment; }
-  warn.output = buildWarningOutput(warn);
-  return warn;
-};
 
 function createLog(
   type: string,
@@ -389,24 +37,7 @@ function createLog(
 }
 
 function isTemplateError(obj: unknown): obj is TemplateError {
-  // The cast must admit null/undefined: this guard is called with arbitrary
-  // values, and the optional chain is what stops it throwing on them.
   return (obj as TemplateError | null | undefined)?.[TEMPLATE_ERROR] === true;
-}
-
-/** Where an included/extended template was pulled in from. Exported: it is a
- * field type of `prettifyError`'s options and of `TemplateError`. */
-interface IncludeChain {
-  parentTmpl: string;
-  parentLineno: number;
-  parentColno?: number | null;
-}
-
-interface PrettifyErrorOptions {
-  path?: string;
-  withInternals?: boolean;
-  err: Error | TemplateError;
-  includeChain?: IncludeChain;
 }
 
 const asTemplateError = (err: Error | TemplateError): TemplateError => {
@@ -419,31 +50,6 @@ const asTemplateError = (err: Error | TemplateError): TemplateError => {
     templateName: e.templateName ?? null,
     lineBase: e.lineBase ?? 'zero'
   }) as TemplateError;
-};
-
-const formatParentLocation = (chain: IncludeChain): string => {
-  const parentColnoPart = chain.parentColno ? `:${chain.parentColno}` : '';
-  return `\n   (included from ${chain.parentTmpl}:${chain.parentLineno}${parentColnoPart})`;
-};
-
-const buildLocationMessage = (
-  locationPath: string | undefined,
-  err: TemplateError,
-  chain?: IncludeChain
-): string => {
-  let msg = `(${locationPath || 'unknown path'})`;
-  if (err.firstUpdate) {
-    const annotation = formatLocationAnnotation(err.lineno, err.colno, err.lineBase);
-    if (annotation) { msg += ` ${annotation}`; }
-  }
-  if (chain && err.firstUpdate) {
-    msg += formatParentLocation(chain);
-  }
-  msg += '\n ';
-  if (err.firstUpdate) {
-    msg += ' ';
-  }
-  return msg;
 };
 
 const withLocation = ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) => (err: TemplateError): TemplateError => {
@@ -482,6 +88,50 @@ function prettifyError(options: PrettifyErrorOptions): TemplateError {
     return pipe(err, asTemplateError, withLocation({ path, includeChain })) as TemplateError;
   }
   return pipe(err, asTemplateError, withLocation({ path, includeChain }), stripInternals(path)) as TemplateError;
+}
+
+const createFromLegacyData = (type: LogType, data: LegacyLogData): TemplateError | TemplateWarning => {
+  const info = (data.info ?? {}) as WarningInfo;
+  const base = createBaseMetadata(data.message, data, info, type);
+
+  if (type === 'error') {
+    const err = new Error(base.message) as TemplateError;
+    Object.assign(err, {
+      name: 'Template render error',
+      code: base.code,
+      subject: base.subject,
+      lineno: base.lineno,
+      colno: base.colno,
+      phase: base.phase,
+      templateName: base.templateName,
+      lineBase: base.lineBase,
+      templatePath: base.templateName,
+      [TEMPLATE_ERROR]: true as const,
+    });
+    err.output = buildErrorOutput(err);
+    return err;
+  }
+
+  const warn = {
+    message: base.message,
+    lineno: base.lineno,
+    colno: base.colno,
+    varName: info.varName ?? null,
+    templateName: base.templateName,
+    undefinedMode: info.undefinedMode ?? 'chainable',
+    code: base.code,
+    subject: base.subject,
+    phase: base.phase,
+    lineBase: base.lineBase,
+  } as TemplateWarning;
+  warn.output = buildWarningOutput(warn);
+  return warn;
+};
+
+function assertLogType(type: string): asserts type is LogType {
+  if (type !== 'error' && type !== 'warning') {
+    throw new Error(`Unknown log type: ${type}`);
+  }
 }
 
 export { createLog, isTemplateError, prettifyError };
