@@ -54,24 +54,11 @@ const throwBasePathNotFoundError = (basePath: string, baseErr: unknown): never =
   );
 };
 
-const handleFileNotFound = async (basePath: string): Promise<boolean> => {
-  try {
-    await stat(basePath);
-    return false;
-  } catch (baseErr: unknown) {
-    throwBasePathNotFoundError(basePath, baseErr);
-    return false;
-  }
-};
-
 const hasErrorCode = (err: unknown): err is { code: string } =>
   err !== null && typeof err === 'object' && 'code' in err;
 
 const isFileNotFoundError = (err: unknown): boolean =>
   hasErrorCode(err) && (err as { code: string }).code === 'ENOENT';
-
-const isDirectoryError = (err: unknown): boolean =>
-  hasErrorCode(err) && (err as { code: string }).code === 'EISDIR';
 
 const throwFilesystemError = (fullPath: string, err: unknown): never => {
   throw createLog(
@@ -90,17 +77,6 @@ const checkFileExists = async (fullPath: string): Promise<void> => {
   }
 };
 
-const handleExistsError = async (basePath: string, fullPath: string, err: unknown): Promise<boolean> => {
-  if (isFileNotFoundError(err)) {
-    return await handleFileNotFound(basePath);
-  }
-  if (isDirectoryError(err)) {
-    throwFilesystemError(fullPath, err);
-  }
-  throwFilesystemError(fullPath, err);
-  return false;
-};
-
 const existsAndWithinBase = (basePath: string) => async ({ fullPath }: { fullPath: string }): Promise<boolean> => {
   if (!isPathWithinBase(basePath)(fullPath)) { return false; }
 
@@ -108,7 +84,16 @@ const existsAndWithinBase = (basePath: string) => async ({ fullPath }: { fullPat
     await checkFileExists(fullPath);
     return true;
   } catch (err: unknown) {
-    return await handleExistsError(basePath, fullPath, err);
+    if (isFileNotFoundError(err)) {
+      try {
+        await stat(basePath);
+        return false;
+      } catch {
+        throwBasePathNotFoundError(basePath, err);
+      }
+    }
+    throwFilesystemError(fullPath, err);
+    return false;
   }
 };
 
