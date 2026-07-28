@@ -285,7 +285,7 @@ const createPropertyNotFoundCallable = (val: string | symbol, parentName: string
   return callable;
 };
 
-const validateStringAccess = (val: string, sandboxOptions: ResolvedSandboxOptions, allowlist: Set<string>, blocklistMode: boolean, topLevel: boolean): void => {
+const validateStringAccess = (val: string, sandboxOptions: ResolvedSandboxOptions, allowlist: string[], blocklistMode: boolean, topLevel: boolean): void => {
   if (isBlockedAtScope(val, sandboxOptions, topLevel)) {
     throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS, val, sandboxOptions);
   }

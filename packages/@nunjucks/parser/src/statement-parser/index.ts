@@ -97,8 +97,8 @@ type StatementParser = (ctx: ParserContext) => Node;
 type TaggedParser = (ctx: ParserContext, ...args: unknown[]) => Node;
 
 const STATEMENT_PARSERS: Record<string, StatementParser | TaggedParser> = {
-  raw: parseRaw,
-  verbatim: (ctx) => parseRaw(ctx, 'verbatim'),
+  raw: parseRaw as StatementParser,
+  verbatim: (ctx: ParserContext) => parseRaw(ctx, 'verbatim') as Node,
   if: parseIf,
   for: parseFor,
   block: parseBlock,

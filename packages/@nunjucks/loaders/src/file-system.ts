@@ -60,6 +60,7 @@ const handleFileNotFound = async (basePath: string): Promise<boolean> => {
     return false;
   } catch (baseErr: unknown) {
     throwBasePathNotFoundError(basePath, baseErr);
+    return false;
   }
 };
 
@@ -89,14 +90,15 @@ const checkFileExists = async (fullPath: string): Promise<void> => {
   }
 };
 
-const handleExistsError = (basePath: string, fullPath: string, err: unknown): boolean => {
+const handleExistsError = async (basePath: string, fullPath: string, err: unknown): Promise<boolean> => {
   if (isFileNotFoundError(err)) {
-    return handleFileNotFound(basePath);
+    return await handleFileNotFound(basePath);
   }
   if (isDirectoryError(err)) {
     throwFilesystemError(fullPath, err);
   }
   throwFilesystemError(fullPath, err);
+  return false;
 };
 
 const existsAndWithinBase = (basePath: string) => async ({ fullPath }: { fullPath: string }): Promise<boolean> => {
@@ -106,7 +108,7 @@ const existsAndWithinBase = (basePath: string) => async ({ fullPath }: { fullPat
     await checkFileExists(fullPath);
     return true;
   } catch (err: unknown) {
-    return handleExistsError(basePath, fullPath, err);
+    return await handleExistsError(basePath, fullPath, err);
   }
 };
 

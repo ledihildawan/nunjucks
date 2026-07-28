@@ -20,7 +20,7 @@ const setupRootFunction = (ctx: Compiler, node: Node): { frame: Frame; childBuff
   ctx.emitLine('let parentTemplate = null;');
   const childBuffer = 'childOutput';
   ctx.emitLine(`let ${childBuffer} = "";`);
-  const savedBuffer = ctx.buffer;
+  const savedBuffer = ctx.buffer ?? '';
   ctx.buffer = childBuffer;
   return { frame, childBuffer, savedBuffer };
 };

@@ -53,6 +53,7 @@ const parseOperator = (ctx: ParserContext, tag: ReturnType<typeof peekToken>): s
     fail(ctx, 'Expected =, ||= , &&=, ??=, **=, //=', tag.lineno, tag.colno);
   }
   fail(ctx, 'Expected =', tag.lineno, tag.colno);
+  return '';
 };
 
 export const parseVariableAssignment = (ctx: ParserContext): Node => {

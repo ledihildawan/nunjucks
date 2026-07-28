@@ -9,9 +9,10 @@ import {
   TOKEN_OPERATOR,
   TOKEN_STRING,
   TOKEN_SYMBOL,
+  type Token,
 } from '@nunjucks/lexer';
 import { appendChild, arrayPattern, assignmentPattern, hole, objectPattern, patternProperty, restPattern, symbol } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
+import type { ChildrenNode, Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, skip, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/inline.ts";
@@ -56,19 +57,19 @@ const handleArrayElement = (
     nextToken(ctx);
     const inner = parseInnerPattern(ctx);
     const rp = restPattern(tok.lineno, tok.colno, inner);
-    return { node: appendChild(node, rp), sawRest: true };
+    return { node: appendChild(node as ChildrenNode, rp), sawRest: true };
   }
   if (elementType === TOKEN_LEFT_BRACKET) {
     const innerTok = peekToken(ctx);
     const inner = parseArrayPattern(ctx, innerTok.lineno, innerTok.colno);
     const withDefault = parseAssignmentDefault(ctx, inner);
-    return { node: appendChild(node, withDefault ?? inner), sawRest };
+    return { node: appendChild(node as ChildrenNode, withDefault ?? inner), sawRest };
   }
   if (elementType === TOKEN_LEFT_CURLY) {
     const innerTok = peekToken(ctx);
     const inner = parseObjectPattern(ctx, innerTok.lineno, innerTok.colno);
     const withDefault = parseAssignmentDefault(ctx, inner);
-    return { node: appendChild(node, withDefault ?? inner), sawRest };
+    return { node: appendChild(node as ChildrenNode, withDefault ?? inner), sawRest };
   }
   const symTok = nextToken(ctx);
   if (!symTok || symTok.type !== TOKEN_SYMBOL) {
@@ -78,7 +79,7 @@ const handleArrayElement = (
   }
   const target = symbol(symTok.lineno, symTok.colno, symTok.value as string);
   const withDefault = parseAssignmentDefault(ctx, target);
-  return { node: appendChild(node, withDefault ?? target), sawRest };
+  return { node: appendChild(node as ChildrenNode, withDefault ?? target), sawRest };
 };
 
 const handleArrayTrailingComma = (
@@ -87,7 +88,7 @@ const handleArrayTrailingComma = (
   node: Node,
   sawRest: boolean
 ): { node: Node; sawRest: boolean; continueLoop: boolean } => {
-  if (node.children.length > 0 && !sawRest) {
+  if ((node.children?.length ?? 0) > 0 && !sawRest) {
     if (!skip(ctx, TOKEN_COMMA)) {
       fail(ctx, 'parseArrayPattern: expected comma',
         tok.lineno,
@@ -99,7 +100,7 @@ const handleArrayTrailingComma = (
       return { node, sawRest, continueLoop: false };
     }
     if (after && after.type === TOKEN_COMMA) {
-      return { node: appendChild(node, hole(after.lineno, after.colno)), sawRest, continueLoop: true };
+      return { node: appendChild(node as ChildrenNode, hole(after.lineno, after.colno)), sawRest, continueLoop: true };
     }
   }
   return { node, sawRest, continueLoop: true };
@@ -128,12 +129,12 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
       if (!commaResult.continueLoop) {
         break;
       }
-      node = commaResult.node;
+      node = commaResult.node as ChildrenNode;
       sawRest = commaResult.sawRest;
     }
 
     const result = handleArrayElement(ctx, node, tok, sawRest);
-    node = result.node;
+    node = result.node as ChildrenNode;
     sawRest = result.sawRest;
     const after = peekToken(ctx);
     if (after && after.type === TOKEN_COMMA) {
@@ -176,7 +177,7 @@ const parseObjectPropertyValue = (ctx: ParserContext, keyTok: Token, keyName: st
 };
 
 const handleObjectTrailingComma = (ctx: ParserContext, tok: Token, node: Node, sawRest: boolean): { node: Node; sawRest: boolean; continueLoop: boolean } => {
-  if (node.children.length > 0 && !sawRest) {
+  if ((node.children?.length ?? 0) > 0 && !sawRest) {
     if (!skip(ctx, TOKEN_COMMA)) {
       fail(ctx, 'parseObjectPattern: expected comma',
         tok.lineno,
@@ -188,7 +189,7 @@ const handleObjectTrailingComma = (ctx: ParserContext, tok: Token, node: Node, s
       return { node, sawRest, continueLoop: false };
     }
     if (after && after.type === TOKEN_COMMA) {
-      return { node: appendChild(node, hole(after.lineno, after.colno)), sawRest, continueLoop: true };
+      return { node: appendChild(node as ChildrenNode, hole(after.lineno, after.colno)), sawRest, continueLoop: true };
     }
   }
   return { node, sawRest, continueLoop: true };
@@ -199,7 +200,7 @@ const handleObjectSpread = (ctx: ParserContext, node: Node, sawRest: boolean): {
     nextToken(ctx);
     const tok = peekToken(ctx);
     const inner = parseInnerPattern(ctx);
-    return { node: appendChild(node, restPattern(tok.lineno, tok.colno, inner)), sawRest: true };
+    return { node: appendChild(node as ChildrenNode, restPattern(tok.lineno, tok.colno, inner)), sawRest: true };
   }
   return { node, sawRest };
 };
@@ -208,7 +209,7 @@ const parseObjectPatternProperty = (ctx: ParserContext, node: Node): Node => {
   const { keyTok, keyName } = parseObjectPropertyKey(ctx);
   const valueTarget = parseObjectPropertyValue(ctx, keyTok, keyName as string);
   const withDefault = parseAssignmentDefault(ctx, valueTarget);
-  return appendChild(node, patternProperty(
+  return appendChild(node as ChildrenNode, patternProperty(
     keyTok.lineno,
     keyTok.colno,
     symbol(keyTok.lineno, keyTok.colno, keyName ?? ''),

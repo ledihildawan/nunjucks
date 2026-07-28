@@ -153,7 +153,7 @@ const handlePatternPropertyValue = (
     const defaultId = emitDefaultBinding(dc, propSource, valNode.value);
     compileDestructuring(dc, valNode.target, defaultId);
   } else {
-    compileDestructuring(dc, child.value, propSource);
+    compileDestructuring(dc, child.value as Node, propSource);
   }
 };
 

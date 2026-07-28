@@ -55,6 +55,7 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: { enrichErro
       return result as string;
     } catch (e) {
       wrapRenderError(e);
+      throw e;
     } finally {
       state.env._renderingTemplates.delete(state.path);
     }

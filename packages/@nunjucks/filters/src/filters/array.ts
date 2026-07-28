@@ -168,7 +168,7 @@ export const sum = (arr: unknown, attr?: string, start = 0): number => {
     }
     return sumWithAttribute(arr, attr, start);
   }
-  return sumWithoutAttribute(arr, start);
+  return sumWithoutAttribute(arr as unknown[], start);
 };
 
 const getNestedAttribute = (obj: Record<string, unknown>, attr: string): unknown => {

@@ -61,7 +61,7 @@ const handleSymbolOrTemplate = (tok: ReturnType<typeof nextToken>, ctx: ParserCo
 
 const parseAggregateOrPattern = (ctx: ParserContext): Node => {
   try {
-    return parseAggregate(ctx);
+    return parseAggregate(ctx) as Node;
   } catch (e) {
     if (e !== null && typeof e === 'object' && (e as { sentinel?: unknown }).sentinel === EXPECTED_COLON_AFTER_DICT_KEY) {
       const node = tryParsePattern(ctx);

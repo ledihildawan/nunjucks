@@ -145,6 +145,7 @@ function createContext(
     const firstBlock = blocksVar[name]?.[0];
     if (!firstBlock) {
       throwBlockNotFoundError(name, blockLocationsVar[name], lineno, colno);
+      throw new Error('unreachable');
     }
     return firstBlock;
   };
@@ -161,12 +162,14 @@ function createContext(
     const blockList = blocksVar[name];
     if (!blockList) {
       throwNoSuperBlockError(name, lineno, colno);
+      throw new Error('unreachable');
     }
     const idx = blockList.indexOf(block);
     const blk = blockList[idx + 1];
 
     if (idx === -1 || !blk) {
       throwNoSuperBlockError(name, lineno, colno);
+      throw new Error('unreachable');
     }
 
     return blk(envObj, context, frame, runtime);
