@@ -59,7 +59,6 @@ export const parseSwitch = (ctx: ParserContext): Node => {
 
   let defaultCase: Node | undefined;
   if (peekToken(ctx).value === SWITCH_TOKENS.caseDefault) {
-    advanceAfterBlockEnd(ctx);
     defaultCase = handleSwitchEnd(ctx);
     advanceAfterBlockEnd(ctx);
   } else {

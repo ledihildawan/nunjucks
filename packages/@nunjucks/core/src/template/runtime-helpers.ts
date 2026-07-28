@@ -22,7 +22,9 @@ import { isArray, keys } from 'remeda';
 
 export { createRuntimeWithContext };
 
-const createRuntimeWithContext = (templatePath: string | undefined, _envOpts: Record<string, unknown>, renderContext: unknown = null): typeof import('@nunjucks/core/src/template/runtime-context.js') => ({
+import type { RuntimeContext } from './runtime-context.js';
+
+const createRuntimeWithContext = (templatePath: string | undefined, _envOpts: Record<string, unknown>, renderContext: unknown = null): RuntimeContext => ({
   createFrame,
   createSafeString,
   copySafeness,

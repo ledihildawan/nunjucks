@@ -55,6 +55,8 @@ interface RenderConfig {
   _callerLocation?: CallerLocation | null;
   _customFilters?: Record<string, unknown>;
   _customGlobals?: Record<string, unknown>;
+  filters?: Record<string, (...args: unknown[]) => unknown>;
+  tests?: Record<string, (...args: unknown[]) => unknown>;
   [key: string]: unknown;
 }
 

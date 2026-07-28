@@ -1,6 +1,7 @@
 import { createCompiler } from '@nunjucks/compiler';
 import { parse } from '@nunjucks/parser';
-import type { ParseOptions, UndefinedMode } from '@nunjucks/parser';
+import type { ParseOptions } from '@nunjucks/parser';
+import type { UndefinedMode } from '@nunjucks/runtime';
 import { transform } from '@nunjucks/transformers';
 import { extractBlocks } from '@nunjucks/shared';
 import { HOOK_EVENTS } from '@nunjucks/runtime/hooks';

@@ -82,7 +82,10 @@ export function optionalMemberLookup(obj: unknown, val: string, _parentName: str
 
 const normalizeIndex = (idx: number | null, len: number, defaultVal: number, stepValue: number): number => {
   if (!isNonNullish(idx)) {
-    return stepValue < 0 ? len - 1 : defaultVal;
+    if (stepValue < 0) {
+      return defaultVal === 0 ? len - 1 : -1;
+    }
+    return defaultVal;
   }
   return Math.max(0, Math.min(len, idx < 0 ? len + idx : idx));
 };
@@ -95,7 +98,7 @@ export function slice(arr: unknown[] | string, start: number | null, stop: numbe
   const len = arr.length;
   const stepValue = step ?? 1;
   const normalizedStart = normalizeIndex(start, len, 0, stepValue);
-  const normalizedStop = normalizeIndex(stop, len, len, stepValue);
+  const normalizedStop = normalizeIndex(stop, len, stepValue < 0 ? -1 : len, stepValue);
 
   if (stepValue === 1) {
     return arr.slice(normalizedStart, normalizedStop);

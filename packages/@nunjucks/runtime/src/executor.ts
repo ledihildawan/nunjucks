@@ -1,4 +1,4 @@
-import { createContext, createSandboxedContext, type ContextEnv, type BlockLocation, type Frame } from '@nunjucks/runtime';
+import { createContext, createSandboxedContext, type ContextEnv, type Frame } from '@nunjucks/runtime';
 import { createLog } from '@nunjucks/log';
 import { getError } from '@nunjucks/log';
 import { makeGetFilter } from './executor-filters.ts';
@@ -10,6 +10,7 @@ interface ExecuteConfig {
   filters?: Record<string, (...args: unknown[]) => unknown>;
   tests?: Record<string, (...args: unknown[]) => unknown>;
   dev?: boolean;
+  sandbox?: boolean;
   sandboxAllowlist?: string[];
   sandboxMode?: string;
   sandboxEnvironment?: string;
@@ -18,7 +19,7 @@ interface ExecuteConfig {
 const buildRuntime = (config: ExecuteConfig): Record<string, unknown> => {
   const runtime = getRuntimeHelpers();
 
-  if (config.sandboxAllowlist || config.sandboxMode) {
+  if (config.sandbox) {
     const sandboxOptions = buildSandboxOptions(config);
     return buildSandboxedRuntime(runtime, sandboxOptions);
   }
@@ -86,17 +87,17 @@ const executeNonSandbox = async (
   env: unknown,
   runtime: Record<string, unknown>
 ): Promise<unknown> => {
-  const { render, blocks, blockMeta } = getRenderFunction(code);
+  const { render, blocks } = getRenderFunction(code);
 
   if (ctx.env) {
-    const newCtx = createContext(
-      {},
-      blocks as Record<string, (...args: unknown[]) => unknown>,
-      ctx.env as unknown as ContextEnv,
-      { blockLocations: blockMeta as Record<string, BlockLocation> }
-    ) as unknown as Record<string, unknown>;
-    newCtx._autoescape = true;
-    return await render(env, newCtx, frame, runtime);
+    ctx.blocks = blocks as Record<string, (...args: unknown[]) => unknown>;
+    ctx.getBlock = (name: string) => {
+      if (!blocks[name]) {
+        throw createLog('error', getError('UNDEFINED_BLOCK'), { name }, name, { phase: 'render' });
+      }
+      return blocks[name];
+    };
+    return await render(env, ctx, frame, runtime);
   }
 
   ctx.blocks = blocks as Record<string, (...args: unknown[]) => unknown>;
@@ -127,7 +128,7 @@ const execute = async (
     runtime.getTest = buildGetTest(config.tests);
   }
 
-  if (config.env) {
+  if (config.sandbox && config.env) {
     runtime.context = createSandboxedContext(context, true, buildSandboxOptions(config));
   } else {
     runtime.context = context;

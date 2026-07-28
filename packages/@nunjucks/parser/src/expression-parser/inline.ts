@@ -72,8 +72,10 @@ const handleWalrusAssignment = (node: Node, valueNode: Node, isExprCtx: boolean)
       : variableDeclaration(node.lineno, node.colno, [node], valueNode);
   }
   if (isArrayPattern(node) || isArray(node) || isObjectPattern(node) || isDict(node)) {
-    const pattern = isExprCtx ? normalizePattern(node) : node;
-    return variableDeclaration(node.lineno, node.colno, [pattern], valueNode);
+    const pattern = normalizePattern(node);
+    return isExprCtx
+      ? walrus(pattern.lineno, pattern.colno, pattern, valueNode)
+      : variableDeclaration(pattern.lineno, pattern.colno, [pattern], valueNode);
   }
   throw new Error('Walrus operator target must be a symbol or pattern');
 };

@@ -140,3 +140,5 @@ const _parseStatement = (ctx: ParserContext): Node | null => {
   }
   return fail(ctx, `unknown block tag: ${tok.value}`, tok.lineno, tok.colno);
 };
+
+export const parseStatement = _parseStatement;

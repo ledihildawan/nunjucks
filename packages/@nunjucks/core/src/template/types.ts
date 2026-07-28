@@ -27,7 +27,7 @@ export interface TemplateSource {
 }
 
 export interface TemplateObject {
-  [Template]: true;
+  readonly [key: symbol]: true;
   env: Env;
   path: string | undefined;
   compiled: boolean;

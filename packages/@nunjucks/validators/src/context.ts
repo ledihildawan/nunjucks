@@ -35,20 +35,14 @@ const PROTOTYPE_POLLUTION_KEYS = new Set([
 
 const globalRecord = globalThis as Record<string, unknown>;
 
-const DANGEROUS_GLOBAL_VALUES = new WeakSet([
-  typeof process !== 'undefined' ? process : null,
-  globalThis,
-  globalRecord.window,
-  globalRecord.document,
-  globalRecord.self,
-  typeof Buffer !== 'undefined' ? Buffer : null
-].filter(Boolean) as unknown[]);
-
 const isDangerousValue = (value: unknown): boolean => {
   if (value === null || value === undefined) { return false; }
-  if (typeof value === 'object' || typeof value === 'function') {
-    if (DANGEROUS_GLOBAL_VALUES.has(value as object)) { return true; }
-  }
+  if (value === process) { return true; }
+  if (value === globalThis) { return true; }
+  if (globalRecord.window !== undefined && value === globalRecord.window) { return true; }
+  if (globalRecord.document !== undefined && value === globalRecord.document) { return true; }
+  if (globalRecord.self !== undefined && value === globalRecord.self) { return true; }
+  if (typeof Buffer !== 'undefined' && value instanceof Buffer) { return true; }
   return false;
 };
 

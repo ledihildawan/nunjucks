@@ -17,7 +17,7 @@ const createRenderFrame = (parentFrame: unknown): Frame => {
   return frame;
 };
 
-const createTemplateRenderer = (state: TemplateState, errorHandler: { enrichError: (e: unknown) => unknown }) => {
+const createTemplateRenderer = (state: TemplateState, errorHandler: { enrichError: (e: { lineno?: number; colno?: number; message?: string; name?: string; path?: string; _includeChain?: unknown[]; getterName?: string; [key: string]: unknown }) => unknown }) => {
   const { enrichError } = errorHandler;
 
   const wrapRenderError = (e: unknown): never => {
@@ -29,7 +29,7 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: { enrichErro
     });
   };
 
-  const render = async (ctx: unknown, parentFrame?: unknown) => {
+  const render = async (ctx: unknown, parentFrame?: unknown): Promise<string> => {
     await state.compiler?.safeCompile();
 
     if (state.env._renderingTemplates.has(state.path)) {

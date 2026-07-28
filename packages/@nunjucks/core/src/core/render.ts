@@ -2,6 +2,7 @@ import { resolveTemplateSource, prepareSandbox, buildRenderEnv, compileTemplate,
 import { getLoader } from './engine.ts';
 import type { RenderConfig } from './render-types.ts';
 import { execute, type ExecuteConfig } from '@nunjucks/runtime/executor';
+import { createFrame } from '@nunjucks/runtime';
 import { withTimeout } from '@nunjucks/runtime/timeout';
 import { getCallerFile, getCallerLocation } from '@nunjucks/shared/caller-file';
 import { createLog, injectWarningsScript, getError } from '@nunjucks/log';
@@ -44,7 +45,25 @@ const executeCompiledTemplate = async (
   warningsCollector: unknown[],
   templateName: string
 ): Promise<unknown> => {
-  const renderPromise = execute(code, sandboxedCtx, {
+  const frame = createFrame();
+  const env = config.env ?? {
+    opts: {
+      dev: config.dev ?? false,
+      autoescape: config.autoescape ?? true,
+      undefined: config.undefined ?? 'default',
+    },
+    getFilter: (name: string, lineno: number | null, colno: number | null) => {
+      const filter = config.filters?.[name];
+      if (filter) { return filter; }
+      throw createLog('error', getError('UNDEFINED_FILTER'), { name }, name, { lineno, colno, phase: 'render', lineBase: 'zero' });
+    },
+    getTest: (name: string, lineno: number | null, colno: number | null) => {
+      const test = config.tests?.[name];
+      if (test) { return test; }
+      throw createLog('error', getError('UNDEFINED_TEST'), { name }, name, { lineno, colno, phase: 'render', lineBase: 'zero' });
+    },
+  };
+  const renderPromise = execute(code, sandboxedCtx, frame, env, {
     ...config,
     warningsCollector,
     templateName,

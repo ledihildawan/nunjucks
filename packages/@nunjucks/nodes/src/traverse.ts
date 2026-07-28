@@ -191,7 +191,7 @@ const yieldNodeChildren = function* (node: Node): Generator<Node> {
     for (const child of node.contentArgs) { yield* iterateNodes(child); }
   }
   for (const field of getTraversalFields(node)) {
-    yieldFromField(node, field);
+    yield* yieldFromField(node, field);
   }
 };
 

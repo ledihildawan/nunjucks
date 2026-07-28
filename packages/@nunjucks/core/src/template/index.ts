@@ -1,14 +1,13 @@
 import { prettifyError } from '@nunjucks/log';
-import type { TemplateObject } from './types';
+import type { TemplateObject, TemplateSource } from './types';
+import { Template } from './types';
 import { createTemplateErrorHandler } from './error-helpers';
 import { createTemplateCompiler } from './compiler-helpers';
 import { createTemplateRenderer } from './renderer-helpers';
 import { initTemplateState, loadSource } from './source-helpers';
 import { createGetExported } from './export-helpers';
 
-const Template = Symbol('Template');
-
-export { createTemplate, isTemplate, Template };
+export { Template };
 
 export function createTemplate(src: string | TemplateSource, env?: import('../core/env.ts').Env, path?: string | null, eagerCompile?: boolean, includeChain?: unknown[] | null): TemplateObject {
   const state = initTemplateState(src, env, path, includeChain);

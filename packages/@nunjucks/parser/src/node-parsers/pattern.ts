@@ -113,6 +113,7 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
   }
 
   let sawRest = false;
+  let skipTrailingCommaCheck = false;
   for (;;) {
     const tok = peekToken(ctx);
     if (tok.type === TOKEN_RIGHT_BRACKET) {
@@ -120,12 +121,16 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
       break;
     }
 
-    const commaResult = handleArrayTrailingComma(ctx, tok, node, sawRest);
-    if (!commaResult.continueLoop) {
-      break;
+    if (skipTrailingCommaCheck) {
+      skipTrailingCommaCheck = false;
+    } else {
+      const commaResult = handleArrayTrailingComma(ctx, tok, node, sawRest);
+      if (!commaResult.continueLoop) {
+        break;
+      }
+      node = commaResult.node;
+      sawRest = commaResult.sawRest;
     }
-    node = commaResult.node;
-    sawRest = commaResult.sawRest;
 
     const result = handleArrayElement(ctx, node, tok, sawRest);
     node = result.node;
@@ -133,6 +138,7 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
     const after = peekToken(ctx);
     if (after && after.type === TOKEN_COMMA) {
       nextToken(ctx);
+      skipTrailingCommaCheck = true;
     }
   }
 

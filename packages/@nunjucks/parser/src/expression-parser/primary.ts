@@ -93,5 +93,8 @@ export const parsePrimary = (ctx: ParserContext, noPostfix?: boolean): Node => {
 
   pushToken(ctx, tok);
   const aggregateNode = parseAggregateOrPattern(ctx);
+  if (!aggregateNode) {
+    fail(ctx, `expected expression, got ${tok.type}`, tok.lineno, tok.colno);
+  }
   return noPostfix ? aggregateNode : parsePostfix(ctx, aggregateNode);
 };

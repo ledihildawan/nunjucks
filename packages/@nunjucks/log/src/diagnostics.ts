@@ -88,7 +88,7 @@ const buildContextObj = (
   lineno: metadata.lineno,
   colno: metadata.colno,
   phase: metadata.phase,
-  templateName: metadata.templateName,
+  templateName: preferCallerLocation ? templatePath ?? metadata.templateName : metadata.templateName,
   lineBase: metadata.lineBase,
   dev,
   ide,

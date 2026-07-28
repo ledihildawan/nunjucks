@@ -123,7 +123,11 @@ const traverseAst = (node: unknown, callback: (node: Node) => void): void => {
   };
 
   traverseArrayField(nodeObj.children);
-  traverseSingleField(nodeObj.body);
+  if (Array.isArray(nodeObj.body)) {
+    traverseArrayField(nodeObj.body);
+  } else {
+    traverseSingleField(nodeObj.body);
+  }
   traverseSingleField(nodeObj.alternate);
   traverseSingleField(nodeObj.test);
   traverseSingleField(nodeObj.expr);

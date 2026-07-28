@@ -1,4 +1,4 @@
-import { classifyFromError } from './errors/classify.ts';
+import { classifyFromError } from '../errors/classify.ts';
 import { toText } from './to-text.ts';
 import { escapeHtml, highlightHtml, highlightJs } from './internal/highlight.ts';
 import { toDisplayLocation } from './internal/location.ts';

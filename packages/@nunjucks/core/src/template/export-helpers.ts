@@ -40,6 +40,6 @@ const createGetExported = (state: TemplateState) => async (ctx?: unknown, parent
     await state.rootRenderFunc?.(state.env, context, frame, runtime);
     return context.getExported();
   } catch (e) {
-    wrapExportedError(e);
+    return wrapExportedError(e);
   }
 };

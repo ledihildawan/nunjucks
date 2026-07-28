@@ -94,7 +94,8 @@ const prepareSandbox = (config: RenderConfig, context: unknown): Record<string, 
   };
 
   const sandboxEnabled = (config.sandbox ?? false) || (blockedKeys !== null && blockedKeys !== undefined && blockedKeys.length > 0);
-  const sandboxedCtx = createSandboxedContext(context, sandboxEnabled, sandboxOptions) as Record<string, unknown>;
+  const mergedContext = { ...(context as Record<string, unknown>), ...config.globals };
+  const sandboxedCtx = createSandboxedContext(mergedContext, sandboxEnabled, sandboxOptions) as Record<string, unknown>;
   sandboxedCtx.__nunjucks_undefined_mode = config.undefined || 'default';
   return sandboxedCtx;
 };
