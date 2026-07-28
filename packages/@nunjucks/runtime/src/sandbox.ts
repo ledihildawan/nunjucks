@@ -110,19 +110,31 @@ const makeSandboxTraps = (
 ): ProxyHandler<Record<string | symbol, unknown>> => {
   const { allowlist, blocklistMode, blockedContextKeys } = sandboxOptions;
 
-  const validateStringKey = (target: Record<string | symbol, unknown>, key: string): unknown => {
+  const checkBlockedContextKey = (key: string): void => {
     if (topLevel && blockedContextKeys.includes(key)) {
       throw blockedKeysError(key, blockedContextKeys);
     }
+  };
+
+  const checkBlockedAtScope = (key: string, target: Record<string | symbol, unknown>): void => {
     if (isBlockedAtScope(key, sandboxOptions, topLevel)) {
       if (hasOwn(target, key) || DANGEROUS_OBJECT_INTRINSICS.has(key)) {
         throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS, key, sandboxOptions);
       }
-      return;
     }
+  };
+
+  const checkAllowlist = (key: string): void => {
     if (!(blocklistMode || isAllowedKey(key, allowlist))) {
       throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, key, sandboxOptions);
     }
+  };
+
+  const validateStringKey = (target: Record<string | symbol, unknown>, key: string): unknown => {
+    checkBlockedContextKey(key);
+    checkBlockedAtScope(key, target);
+    checkAllowlist(key);
+
     if (!hasOwn(target, key)) {
       return;
     }
@@ -247,22 +259,31 @@ const validateStringAccess = (val: string, sandboxOptions: ResolvedSandboxOption
   }
 };
 
+const handleSandboxDisabled = (obj: unknown, val: string | symbol, parentName: string | null): unknown => {
+  if (!isNonNullish(obj)) {
+    return { __nunjucks_null__: true, __nunjucks_parent__: parentName, __access_path__: val };
+  }
+  return (obj as Record<string | symbol, unknown>)[val];
+};
+
+const handleSymbolAccess = (obj: unknown, val: symbol): unknown => {
+  return (obj as Record<string | symbol, unknown> | undefined)?.[val];
+};
+
+const handlePropertyNotFound = (val: string | symbol, parentName: string | null): unknown => {
+  return createPropertyNotFoundCallable(val, parentName);
+};
+
 const wrapMemberAccess = (obj: unknown, val: string | symbol, sandboxEnabled: boolean, options: SandboxOptions = {}, parentName: string | null = null): unknown => {
   const sandboxOptions = resolveSandboxOptions(options);
   const { allowlist, blocklistMode, topLevel = options.topLevel ?? false } = { ...sandboxOptions, topLevel: options.topLevel ?? false };
 
   if (!sandboxEnabled) {
-    if (!isNonNullish(obj)) {
-      return { __nunjucks_null__: true, __nunjucks_parent__: parentName, __access_path__: val };
-    }
-    // Guarded directly above, so no optional chain needed here.
-    return (obj as Record<string | symbol, unknown>)[val];
+    return handleSandboxDisabled(obj, val, parentName);
   }
 
   if (typeof val === 'symbol') {
-    // Not guarded on this path: `obj` is still unknown and may be nullish, so
-    // the cast keeps `undefined` and the optional chain stays load-bearing.
-    return (obj as Record<string | symbol, unknown> | undefined)?.[val];
+    return handleSymbolAccess(obj, val);
   }
 
   validateStringAccess(val, sandboxOptions, allowlist, blocklistMode, topLevel);
@@ -273,7 +294,7 @@ const wrapMemberAccess = (obj: unknown, val: string | symbol, sandboxEnabled: bo
 
   const target = obj as Record<string, unknown>;
   if (!hasOwn(target, val)) {
-    return createPropertyNotFoundCallable(val, parentName);
+    return handlePropertyNotFound(val, parentName);
   }
 
   const value = target[val];

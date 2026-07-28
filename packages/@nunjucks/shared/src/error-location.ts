@@ -517,6 +517,24 @@ const resolveActiveCaller = (
   };
 };
 
+const buildResolvedLocation = (
+  lineno: number | null,
+  colno: number | null,
+  lineBase: 'zero' | 'one',
+  finalPath: string | null,
+  sourceContent: string | null,
+  sourceStartLine: number,
+  preferCallerLocation: boolean
+): ResolvedLocation => ({
+  lineno,
+  colno,
+  lineBase,
+  templatePath: finalPath,
+  sourceContent,
+  sourceStartLine,
+  preferCallerLocation
+});
+
 const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedLocation> => {
   const {
     template = null,
@@ -592,15 +610,7 @@ const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedLocation
     configColno
   );
 
-  return {
-    lineno,
-    colno,
-    lineBase,
-    templatePath: finalPath,
-    sourceContent,
-    sourceStartLine,
-    preferCallerLocation
-  };
+  return buildResolvedLocation(lineno, colno, lineBase, finalPath, sourceContent, sourceStartLine, preferCallerLocation);
 };
 
 const tryReadFile = async (path: string): Promise<string | null> => {
