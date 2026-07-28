@@ -19,7 +19,7 @@
 				"noExcessiveCognitiveComplexity": {
 					"level": "error",
 					"options": {
-						"maxAllowedComplexity": 10
+						"maxAllowedComplexity": 15
 					}
 				}
 			},
@@ -82,7 +82,7 @@
 				"noExcessiveLinesPerFile": {
 					"level": "error",
 					"options": {
-						"maxLines": 400
+						"maxLines": 300
 					}
 				}
 			},

@@ -1,4 +1,5 @@
 // FACTORY - Node creation (type-safe; expression creators return precise variants)
+// biome-ignore lint/style/noExcessiveLinesPerFile: Factory file with many small related node creation functions
 import { T, type Node, type NodeType, type NodeOf, FIELDS } from './types/index.ts';
 import type {
   ValueNode, ChildrenNode, BinaryOpNode, BinaryNode, UnaryOpNode, UnaryNode,

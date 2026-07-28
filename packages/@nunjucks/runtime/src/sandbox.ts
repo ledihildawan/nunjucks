@@ -1,4 +1,5 @@
 // SANDBOX - Secure member access via Proxy wrapping
+
 import {
   isCodeExecutionPattern,
   getBlockedKeyCategory,

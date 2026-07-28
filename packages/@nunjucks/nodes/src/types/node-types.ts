@@ -1,3 +1,4 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: Node type definitions file with many related interfaces
 import { BracketNotation, type T } from './constants.ts';
 import type { NodeType } from './constants.ts';
 
