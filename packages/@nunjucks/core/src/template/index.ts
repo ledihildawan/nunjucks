@@ -35,37 +35,9 @@ import type { Frame } from '@nunjucks/runtime';
 import { createEnv } from '../core/env.ts';
 import { extractBlocks } from '@nunjucks/shared';
 import type { Env } from '../core/env.ts';
+import type { RuntimeContext } from './runtime-context.ts';
 
 const Template = Symbol('Template');
-
-interface RuntimeContext {
-  createFrame: typeof createFrame;
-  createSafeString: typeof createSafeString;
-  copySafeness: typeof copySafeness;
-  markSafe: typeof markSafe;
-  makeMacro: typeof makeMacro;
-  makeKeywordArgs: typeof makeKeywordArgs;
-  memberLookup: typeof memberLookup;
-  optionalMemberLookup: typeof optionalMemberLookup;
-  slice: typeof slice;
-  nullishCoalesce: typeof nullishCoalesce;
-  suppressValue: typeof suppressValue;
-  awaitValue: typeof awaitValue;
-  ensureDefined: typeof ensureDefined;
-  callWrap: typeof callWrap;
-  contextOrFrameLookup: typeof contextOrFrameLookup;
-  handleError: typeof handleError;
-  fromIterator: typeof fromIterator;
-  inOperator: typeof inOperator;
-  isArray: typeof isArray;
-  keys: typeof keys;
-  __warnings__: unknown[];
-  logContext: {
-    templateName: string;
-    phase: string;
-    renderContext: unknown;
-  };
-}
 
 interface TemplateState {
   env: Env;
