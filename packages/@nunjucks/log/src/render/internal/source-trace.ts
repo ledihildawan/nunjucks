@@ -119,16 +119,16 @@ const resolveSourceContent = async (
   templatePath: string | null,
   lineBase: LineBase | null
 ): Promise<ResolvedSource> => {
-  if (sourceContent) {
-    return { content: sourceContent, resolvedPath: templatePath };
-  }
-
   const isCallerCoord = lineBase === 'one';
   const isScript = templatePath !== null && isScriptPath(templatePath);
 
   if (isCallerCoord && isScript) {
     const result = await tryReadFile(templatePath);
     if (result.content) { return result; }
+  }
+
+  if (sourceContent) {
+    return { content: sourceContent, resolvedPath: templatePath };
   }
 
   if (templatePath && isReadablePath(templatePath)) {

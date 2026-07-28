@@ -198,10 +198,9 @@ const tryMatchTemplateEnd = (
   preferredLine: number | null
 ): SourcePosition | null => {
   if (template.length > 0 && !isCoordinateWithinTemplate(template, errLineno, errColno)) {
-    const end = templateEndPosition(template);
-    return matchTemplateInCaller(content, template, end.line, end.col, preferredLine);
+    return null;
   }
-  return null;
+  return matchTemplateInCaller(content, template, errLineno, errColno, preferredLine);
 };
 
 const tryMatchNonStringTemplate = (
@@ -229,9 +228,17 @@ const extractCallerPosition = (
     );
     if (matched) { return matched; }
 
-    return tryExtractWithMatcher(
+    const templateEndMatched = tryExtractWithMatcher(
       () => tryMatchTemplateEnd(content, template, errLineno, errColno, preferredLine)
     );
+    if (templateEndMatched) { return templateEndMatched; }
+
+    if (subject) {
+      return tryExtractWithMatcher(
+        () => tryMatchSubject(content, subject, preferredLine)
+      );
+    }
+    return null;
   }
 
   if (subject) {
