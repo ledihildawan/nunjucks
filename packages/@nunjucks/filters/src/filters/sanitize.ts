@@ -20,8 +20,6 @@ const setDefaultDomPurifyConfig = (config: DomPurifyConfig): void => {
   defaultConfig = config;
 };
 
-const getDefaultDomPurifyConfig = (): DomPurifyConfig => ({ ...defaultConfig });
-
 const sanitize = (str: unknown, config?: DomPurifyConfig): string => {
   const input = String(str);
   const mergedConfig = { ...defaultConfig, ...config };
@@ -29,5 +27,5 @@ const sanitize = (str: unknown, config?: DomPurifyConfig): string => {
   return safeString(clean) as unknown as string;
 };
 
-export { setDefaultDomPurifyConfig, getDefaultDomPurifyConfig, sanitize };
+export { setDefaultDomPurifyConfig, sanitize };
 export type { DomPurifyConfig };

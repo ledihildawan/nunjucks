@@ -36,14 +36,9 @@ const safeHtml = (str: unknown): SafeString => {
   return markSafe(escapeHtml(s)) as SafeString;
 };
 
-const forceHtml = (str: unknown): SafeString => {
-  const s = isNonNullish(str) ? String(str) : '';
-  return markSafe(escapeHtml(s)) as SafeString;
-};
-
 const preserveSafe = (original: unknown, result: string): string =>
   copySafeness(original as object, result) as string;
 
-export { filterError, normalize, safeString, safeHtml, forceHtml, preserveSafe };
+export { filterError, normalize, safeString, safeHtml, preserveSafe };
 
 export { isSafeString } from './types.ts';
