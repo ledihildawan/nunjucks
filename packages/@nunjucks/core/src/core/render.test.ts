@@ -219,7 +219,7 @@ describe('inline template error locations', () => {
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
     const err = await render('{{ value }}', { value: 'test' }, { dev: true, filters: { 'if': (v) => v }, _customFilters: { 'if': (v) => v }, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e); // RESERVED_FILTER_HTML_MARKER
     const callerLine = source[err.lineno - 1];
-    const html = await err.output({ format: 'html', verbosity: 'full' });
+    const html = err.output({ format: 'html', verbosity: 'full' });
     const markerMatch = html.match(/error-marker-content">([^<]*\^+)<\/span>/u);
 
     expect(markerMatch).not.toBeNull();

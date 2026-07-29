@@ -86,7 +86,7 @@ router.get('/strict', async (req: Request, res: Response) => {
     await renderTemplate(template, context, { undefined: 'strict' });
     res.send('Should have thrown error');
   } catch (e) {
-    res.status(500).type('html').send(await (e as { output?: () => Promise<string> }).output?.());
+    res.status(500).type('html').send((e as { output?: () => string }).output?.());
   }
 });
 
@@ -118,7 +118,7 @@ router.get('/debug', async (req: Request, res: Response) => {
 </body>
 </html>`);
   } catch (e) {
-    res.status(500).type('html').send(await (e as { output?: () => Promise<string> }).output?.());
+    res.status(500).type('html').send((e as { output?: () => string }).output?.());
   }
 });
 
@@ -166,7 +166,7 @@ router.get('/strict-nested', async (req: Request, res: Response) => {
     await renderTemplate(template, context, { undefined: 'strict' });
     res.send('Should have thrown error');
   } catch (e) {
-    res.status(500).type('html').send(await (e as { output?: () => Promise<string> }).output?.());
+    res.status(500).type('html').send((e as { output?: () => string }).output?.());
   }
 });
 
@@ -178,7 +178,7 @@ router.get('/strict-array', async (req: Request, res: Response) => {
     await renderTemplate(template, context, { undefined: 'strict' });
     res.send('Should have thrown error');
   } catch (e) {
-    res.status(500).type('html').send(await (e as { output?: () => Promise<string> }).output?.());
+    res.status(500).type('html').send((e as { output?: () => string }).output?.());
   }
 });
 

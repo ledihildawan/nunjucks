@@ -24,7 +24,7 @@ describe('error messages - real scenarios', () => {
 
     expect(err.fixCode).toBeTruthy();
 
-    const text = await (err.output as (opts: unknown) => Promise<string>)({ format: 'text', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
     expect(text).toContain('Possible Causes');
     expect(text).toContain('Suggested Fix');
   });
@@ -38,7 +38,7 @@ describe('error messages - real scenarios', () => {
     expect(err.message).not.toContain("is not defined");
     expect(err.message).not.toContain('user.something is not defined');
 
-    const text = await (err.output as (opts: unknown) => Promise<string>)({ format: 'text', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
     expect(text).toContain('Possible Causes');
     expect(text).toContain('Suggested Fix');
     expect(text).not.toContain('user.something is not defined');
@@ -80,7 +80,7 @@ describe('error messages - real scenarios', () => {
     expect((err.causes as unknown[]).length).toBeGreaterThan(0);
     expect(err.fixCode).toBeTruthy();
 
-    const text = await (err.output as (opts: unknown) => Promise<string>)({ format: 'text', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
     expect(text).toContain('Suggested Fix:');
   });
 
@@ -90,7 +90,7 @@ describe('error messages - real scenarios', () => {
     expect(err.code).toBe('UNDEFINED_FILTER');
     expect(err.fixCode).toContain('addFilter');
 
-    const text = await (err.output as (opts: unknown) => Promise<string>)({ format: 'text', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
     expect(text).toContain('addFilter');
     expect(text).toContain('register');
   });
@@ -101,7 +101,7 @@ describe('error messages - real scenarios', () => {
     expect(err.code).toBeTruthy();
     expect((err.causes as string[]).some((c: string) => c.toLowerCase().includes('null') || c.toLowerCase().includes('undefined'))).toBe(true);
 
-    const text = await (err.output as (opts: unknown) => Promise<string>)({ format: 'text', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
     expect(text).toContain('null');
   });
 
@@ -113,7 +113,7 @@ describe('error messages - real scenarios', () => {
     ).catch(e => e) as Record<string, unknown>;
 
     expect(err.code).toBeTruthy();
-    const text = await (err.output as (opts: unknown) => Promise<string>)({ format: 'text', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
     expect(text.length).toBeGreaterThan(0);
   });
 
@@ -170,7 +170,7 @@ describe('error messages - real scenarios', () => {
   test('error html output is complete', async () => {
     const err = await renderTemplate('{{ missing }}', {}).catch(e => e) as Record<string, unknown>;
 
-    const html = await (err.output as (opts: unknown) => Promise<string>)({ format: 'html', verbosity: 'full' });
+    const html = (err.output as (opts: unknown) => string)({ format: 'html', verbosity: 'full' });
     expect(html).toContain('<!DOCTYPE html>');
     expect(html).toContain('Possible Causes');
     expect(html).toContain('Suggested Fix');
@@ -179,7 +179,7 @@ describe('error messages - real scenarios', () => {
   test('error ansi output has colored sections', async () => {
     const err = await renderTemplate('{{ missing }}', {}).catch(e => e) as Record<string, unknown>;
 
-    const ansi = await (err.output as (opts: unknown) => Promise<string>)({ format: 'ansi', verbosity: 'full' });
+    const ansi = (err.output as (opts: unknown) => string)({ format: 'ansi', verbosity: 'full' });
     expect(ansi).toContain('Possible Causes');
     expect(ansi).toContain('Suggested Fix');
   });
@@ -215,7 +215,7 @@ describe('error messages - real scenarios', () => {
   test('error outputs renderContext in HTML', async () => {
     const err = await renderTemplate('{{ missing }}', { x: 1, y: 2 }).catch(e => e) as Record<string, unknown>;
 
-    const html = await (err.output as (opts: unknown) => Promise<string>)({ format: 'html', verbosity: 'full' });
+    const html = (err.output as (opts: unknown) => string)({ format: 'html', verbosity: 'full' });
     expect(html).toBeTruthy();
     expect(html.length).toBeGreaterThan(500);
   });
@@ -303,9 +303,9 @@ describe('error messages - quality checks', () => {
   test('error format outputs are consistent', async () => {
     const err = await renderTemplate('{{ missing }}', {}).catch(e => e) as Record<string, unknown>;
 
-    const text = await (err.output as (opts: unknown) => Promise<string>)({ format: 'text', verbosity: 'full' });
-    const ansi = await (err.output as (opts: unknown) => Promise<string>)({ format: 'ansi', verbosity: 'full' });
-    const html = await (err.output as (opts: unknown) => Promise<string>)({ format: 'html', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
+    const ansi = (err.output as (opts: unknown) => string)({ format: 'ansi', verbosity: 'full' });
+    const html = (err.output as (opts: unknown) => string)({ format: 'html', verbosity: 'full' });
 
     expect(text.length).toBeGreaterThan(50);
     expect(ansi.length).toBeGreaterThan(50);

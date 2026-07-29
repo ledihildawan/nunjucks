@@ -1,6 +1,3 @@
-import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import type { LineBase } from './location.ts';
 import { toDisplayLocation } from './location.ts';
 import { calculateCaretPosition } from './caret.ts';
@@ -55,93 +52,10 @@ interface BuildSourceTraceInput {
 
 const DEFAULT_CONTEXT = 2;
 
-const SCRIPT_EXTENSION_RE = /\.(?:[cm]?[jt]sx?|mjs|cjs)$/iu;
-const READABLE_EXTENSION_RE = /\.(?:[cm]?[jt]sx?|mjs|cjs|njk|nunjucks|html?|tmpl|tpl)$/iu;
-const WINDOWS_DRIVE_RE = /^[a-zA-Z]:[/\\]/u;
-const FORWARD_SLASH_RE = /\//gu;
-const RELATIVE_PREFIX_RE = /^\.\.?[/\\]/u;
-
-// Paths we treat as JS/TS callers (inline render() calls).
-const isScriptPath = (filePath?: string | null): boolean =>
-  SCRIPT_EXTENSION_RE.test(filePath || '');
-
-// Paths whose contents we are willing to read from disk for the trace.
-const isReadablePath = (filePath?: string | null): boolean =>
-  READABLE_EXTENSION_RE.test(filePath || '');
-
-// Normalize a templatePath into an absolute filesystem path, or null when it
-// does not look like a real file location (e.g. 'inline' or a bare name).
-const resolveFilePath = (templatePath: string): string | null => {
-  if (templatePath.startsWith('file://')) {
-    return fileURLToPath(templatePath);
-  }
-  if (WINDOWS_DRIVE_RE.test(templatePath) || templatePath.startsWith('/')) {
-    return templatePath.replace(FORWARD_SLASH_RE, '\\');
-  }
-  if (RELATIVE_PREFIX_RE.test(templatePath) || isReadablePath(templatePath)) {
-    return resolve(templatePath);
-  }
-  return null;
-};
-
-interface ResolvedSource {
-  content: string | null;
-  resolvedPath: string | null;
-}
-
-// Consolidated source-content resolution. Merges the former to-html and to-ansi
-// file-read branches into one place. The deciding signal is lineBase:
-//   - 'one'  => the lineno is a CALLER coordinate (an inline render() call in a
-//               script). sourceContent is then the inline template string,
-//               which the caller lineno does NOT index into — so we must read
-//               the caller file to window around the error.
-//   - 'zero' => the lineno is a TEMPLATE coordinate. sourceContent is the
-//               template body (or templatePath is the .njk file); window that.
-// Rules:
-//   1. Caller-coord error pointing at a script file -> read the full caller file.
-//   2. Else if sourceContent is present -> use it verbatim (template body).
-//   3. Else if templatePath is a readable file -> read it from disk.
-//   4. Else -> no source available.
-const tryReadFile = async (filePath: string | null): Promise<{ content: string | null; resolvedPath: string | null }> => {
-  if (!filePath) { return { content: null, resolvedPath: null }; }
-  const resolved = resolveFilePath(filePath);
-  if (!resolved) { return { content: null, resolvedPath: null }; }
-  try {
-    const content = await readFile(resolved, 'utf-8');
-    return { content, resolvedPath: resolved };
-  } catch {
-    return { content: null, resolvedPath: null };
-  }
-};
-
-const resolveSourceContent = async (
-  sourceContent: string | null,
-  templatePath: string | null,
-  lineBase: LineBase | null
-): Promise<ResolvedSource> => {
-  const isCallerCoord = lineBase === 'one';
-  const isScript = templatePath !== null && isScriptPath(templatePath);
-
-  if (isCallerCoord && isScript) {
-    const result = await tryReadFile(templatePath);
-    if (result.content) { return result; }
-  }
-
-  if (sourceContent) {
-    return { content: sourceContent, resolvedPath: templatePath };
-  }
-
-  if (templatePath && isReadablePath(templatePath)) {
-    return await tryReadFile(templatePath);
-  }
-
-  return { content: null, resolvedPath: null };
-};
-
 // Pure windowing + caret core — no I/O. Given already-resolved source content
 // and 1-based display coordinates, build the trace window and anchor the caret.
-// Shared by the async buildSourceTrace (after it resolves content from disk)
-// and the synchronous getErrorMetadata (which only ever has inline content).
+// Shared by buildSourceTrace (the caller resolves content upstream) and the
+// synchronous getErrorMetadata (which only ever has inline content).
 const windowSourceTrace = (params: {
   content: string;
   displayLine: number;
@@ -191,7 +105,12 @@ const windowSourceTrace = (params: {
 // The canonical "resolved location -> debug trace" computation. Called once per
 // error render and shared by every presenter (HTML, ANSI, text metadata), so
 // the line-math / windowing / caret logic lives in exactly one place.
-const buildSourceTrace = async (input: BuildSourceTraceInput): Promise<SourceTrace> => {
+//
+// Synchronous by design: the source content is resolved upstream by the async
+// error-creation pipeline (wrapWithLog -> resolveLocation reads from disk), so
+// by the time the trace is built the content is already in hand and no I/O is
+// needed here.
+const buildSourceTrace = (input: BuildSourceTraceInput): SourceTrace => {
   const {
     sourceContent = null,
     templatePath = null,
@@ -208,22 +127,22 @@ const buildSourceTrace = async (input: BuildSourceTraceInput): Promise<SourceTra
   const displayLine = location.line;
   const displayCol = location.col;
 
-  // 2. Resolve the source content to window around (may read from disk).
-  const { content, resolvedPath } = await resolveSourceContent(sourceContent, templatePath, lineBase);
-  if (!content) {
-    return { lines: [], caret: null, displayLine, displayCol, resolvedPath };
+  // 2. No source content -> no window. Callers that need a file read must
+  //    populate sourceContent before calling (done in wrapWithLog).
+  if (!sourceContent) {
+    return { lines: [], caret: null, displayLine, displayCol, resolvedPath: templatePath };
   }
 
   // 3. Window + caret (shared pure core).
   return windowSourceTrace({
-    content,
+    content: sourceContent,
     displayLine,
     displayCol,
     sourceStartLine,
     context,
-    resolvedPath
+    resolvedPath: templatePath
   });
 };
 
-export { resolveSourceContent, windowSourceTrace, buildSourceTrace };
-export type { SourceTraceLine, SourceTraceCaret, SourceTrace, BuildSourceTraceInput, ResolvedSource };
+export { windowSourceTrace, buildSourceTrace };
+export type { SourceTraceLine, SourceTraceCaret, SourceTrace, BuildSourceTraceInput };

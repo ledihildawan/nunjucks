@@ -11,7 +11,7 @@ describe('error messages - causes and fix', () => {
     const err = await renderTemplate('{{ undefinedVar }}', {}, { undefined: 'strict' }).catch(e => e) as Record<string, unknown>;
 
     expect(err.code).toBeTruthy();
-    const classification = await (err.output as (opts: unknown) => Promise<string>)({ format: 'text', verbosity: 'full' });
+    const classification = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
 
     expect(classification).toContain('Possible Causes');
     expect(classification).toContain('undefined');
@@ -20,35 +20,35 @@ describe('error messages - causes and fix', () => {
   test('undefined filter error includes causes', async () => {
     const err = await renderTemplate('{{ value |> noSuchFilter }}', { value: 'hello' }, { undefined: 'strict' }).catch(e => e) as Record<string, unknown>;
 
-    const text = await (err.output as (opts: unknown) => Promise<string>)({ format: 'text', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
     expect(text).toContain('Possible Causes');
     expect(text).toContain('Suggested Fix');
   });
 
   test('error output text includes humanized message', async () => {
     const err = await renderTemplate('{{ noSuch }}', {}, { undefined: 'strict' }).catch(e => e) as Record<string, unknown>;
-    const text = await (err.output as (opts: unknown) => Promise<string>)({ format: 'text', verbosity: 'simple' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'simple' });
 
     expect(text.length).toBeGreaterThan(0);
   });
 
   test('ansi output includes causes with bullets', async () => {
     const err = await renderTemplate('{{ x.y }}', { x: null }, { undefined: 'strict' }).catch(e => e) as Record<string, unknown>;
-    const ansi = await (err.output as (opts: unknown) => Promise<string>)({ format: 'ansi', verbosity: 'full' });
+    const ansi = (err.output as (opts: unknown) => string)({ format: 'ansi', verbosity: 'full' });
 
     expect(ansi).toContain('Possible Causes');
   });
 
   test('medium verbosity shows cause hint', async () => {
     const err = await renderTemplate('{{ x.y }}', { x: null }, { undefined: 'strict' }).catch(e => e) as Record<string, unknown>;
-    const text = await (err.output as (opts: unknown) => Promise<string>)({ format: 'text', verbosity: 'medium' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'medium' });
 
     expect(text).toContain('Error:');
   });
 
   test('html output includes suggestion section', async () => {
     const err = await renderTemplate('{{ x.y }}', { x: null }, { undefined: 'strict' }).catch(e => e) as Record<string, unknown>;
-    const html = await (err.output as (opts: unknown) => Promise<string>)({ format: 'html', verbosity: 'full' });
+    const html = (err.output as (opts: unknown) => string)({ format: 'html', verbosity: 'full' });
 
     expect(html).toContain('<!DOCTYPE html>');
   });
@@ -70,7 +70,7 @@ describe('error messages - causes and fix', () => {
 describe('error - causes in code from registry', () => {
   test('UNDEFINED_VARIABLE has causes', async () => {
     const err = await renderTemplate('{{ noSuch }}', {}, { undefined: 'strict' }).catch(e => e) as Record<string, unknown>;
-    const text = await (err.output as (opts: unknown) => Promise<string>)({ format: 'text', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
 
     expect(text).toMatch(/variable|Variable|undefined|context/i);
   });
@@ -82,7 +82,7 @@ describe('error - causes in code from registry', () => {
 
   test('syntax error produces humanized output', async () => {
     const err = await renderTemplate('{% unknownTag %}', {}).catch(e => e) as Record<string, unknown>;
-    const text = await (err.output as (opts: unknown) => Promise<string>)({ format: 'text', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
     expect(text).toBeDefined();
   });
 });
@@ -97,7 +97,7 @@ describe('error - severity', () => {
 describe('error - fix code suggestion', () => {
   test('undefined variable error has fix suggestion', async () => {
     const err = await renderTemplate('{{ missing }}', {}, { undefined: 'strict' }).catch(e => e) as Record<string, unknown>;
-    const text = await (err.output as (opts: unknown) => Promise<string>)({ format: 'text', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
 
     expect(text).toContain('Suggested Fix');
   });
@@ -106,7 +106,7 @@ describe('error - fix code suggestion', () => {
 describe('error - documentation links', () => {
   test('html output can include docs section', async () => {
     const err = await renderTemplate('{{ missing }}', {}, { undefined: 'strict' }).catch(e => e) as Record<string, unknown>;
-    const html = await (err.output as (opts: unknown) => Promise<string>)({ format: 'html', verbosity: 'full' });
+    const html = (err.output as (opts: unknown) => string)({ format: 'html', verbosity: 'full' });
 
     expect(typeof html).toBe('string');
     expect(html.length).toBeGreaterThan(100);
@@ -130,7 +130,7 @@ describe('error - sandbox', () => {
 
     expect(err).toBeDefined();
     expect(typeof err.output).toBe('function');
-    const text = await (err.output as (opts: unknown) => Promise<string>)({ format: 'text', verbosity: 'full' });
+    const text = (err.output as (opts: unknown) => string)({ format: 'text', verbosity: 'full' });
     expect(text).toBeDefined();
   });
 });

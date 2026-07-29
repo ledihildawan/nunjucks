@@ -6,40 +6,40 @@ const { UNDEFINED_VARIABLE } = ERROR_DEFINITIONS;
 const { FILE_NOT_FOUND } = ERROR_DEFINITIONS;
 
 describe('createLog', () => {
-  test('outputs formatted error message', async () => {
+  test('outputs formatted error message', () => {
     const err = createLog('error', { message: 'Something went wrong', lineno: 1, colno: 0 });
-    expect(await err.output()).toContain('Something went wrong');
+    expect(err.output()).toContain('Something went wrong');
   });
 
-  test('simple text output is just the message', async () => {
+  test('simple text output is just the message', () => {
     const err = createLog('error', { message: 'Just message', lineno: 1, colno: 0 });
-    expect(await err.output({ format: 'text', verbosity: 'simple' })).toBe('Just message');
+    expect(err.output({ format: 'text', verbosity: 'simple' })).toBe('Just message');
   });
 
-  test('displays one-based location', async () => {
+  test('displays one-based location', () => {
     const err = createLog('error', {
       message: 'Error',
       lineno: 5,
       colno: 10,
       info: { lineBase: 'one', templateName: 'test.njk' }
     });
-    expect(await err.output({ format: 'text', verbosity: 'medium' })).toContain('test.njk:5:10');
+    expect(err.output({ format: 'text', verbosity: 'medium' })).toContain('test.njk:5:10');
   });
 
-  test('zero-based lineBase displays as one-based', async () => {
+  test('zero-based lineBase displays as one-based', () => {
     const err = createLog('error', {
       message: 'Error',
       lineno: 1,
       colno: 2,
       info: { templateName: 'a.njk', lineBase: 'zero' }
     });
-    expect(await err.output({ format: 'text', verbosity: 'medium' })).toContain('a.njk:2:3');
+    expect(err.output({ format: 'text', verbosity: 'medium' })).toContain('a.njk:2:3');
   });
 
-  test('redacts sensitive data in render context', async () => {
+  test('redacts sensitive data in render context', () => {
     const err = createLog('error', UNDEFINED_VARIABLE, { name: 'x' }, 'x', { templateName: 't.njk', lineno: 1 });
-    const html = await err.output({ format: 'html', renderContext: { password: 'secret', apiKey: 'token123' } });
-    const ansi = await err.output({ format: 'ansi', renderContext: { password: 'secret', apiKey: 'token123' } });
+    const html = err.output({ format: 'html', renderContext: { password: 'secret', apiKey: 'token123' } });
+    const ansi = err.output({ format: 'ansi', renderContext: { password: 'secret', apiKey: 'token123' } });
     for (const output of [html, ansi]) {
       expect(output).toContain('[Redacted]');
       expect(output).not.toContain('secret');
@@ -47,11 +47,11 @@ describe('createLog', () => {
     }
   });
 
-  test('links file paths but not inline locations', async () => {
+  test('links file paths but not inline locations', () => {
     const inline = createLog('error', UNDEFINED_VARIABLE, { name: 'x' }, 'x', { templateName: 'inline', lineno: 0, colno: 3 });
     const file = createLog('error', UNDEFINED_VARIABLE, { name: 'x' }, 'x', { templateName: '/path/page.njk', lineno: 0, colno: 3 });
-    const inlineHtml = await inline.output({ format: 'html', verbosity: 'full' });
-    const fileHtml = await file.output({ format: 'html', verbosity: 'full', ide: 'vscode' });
+    const inlineHtml = inline.output({ format: 'html', verbosity: 'full' });
+    const fileHtml = file.output({ format: 'html', verbosity: 'full', ide: 'vscode' });
     expect(inlineHtml).toContain('inline:1:4');
     expect(inlineHtml).not.toContain('vscode://file/inline');
     expect(fileHtml).toContain('vscode://file/');

@@ -5,6 +5,7 @@ import { toHtml } from './render/to-html.ts';
 import { toConsoleString } from './render/to-console.ts';
 import { normalizeLineBase, type LineBase } from './render/internal/location.ts';
 import { buildSourceTrace } from './render/internal/source-trace.ts';
+import type { SourceTrace } from './render/internal/source-trace.ts';
 import { TEMPLATE_ERROR } from './create-log-types.ts';
 import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, OutputOptions, NormalizedErrorContext, NormalizedWarningContext } from './create-log-types.ts';
 import { resolveMessage } from './create-log-helpers.ts';
@@ -25,14 +26,14 @@ const resolveTraceLineBase = (err: TemplateError, isJsCaller: boolean | undefine
   return normalizeLineBase(err.lineBase);
 };
 
-const buildSourceTraceIfNeeded = async (
+const buildSourceTraceIfNeeded = (
   err: TemplateError,
   verbosity: string,
   options: OutputOptions
-): Promise<Awaited<ReturnType<typeof buildSourceTrace>> | null> => {
+): SourceTrace | null => {
   if (verbosity === 'simple') { return null; }
   const traceLineBase = resolveTraceLineBase(err, options.isJsCaller);
-  return await buildSourceTrace({
+  return buildSourceTrace({
     sourceContent: err.sourceContent ?? null,
     templatePath: options.templatePath ?? err.templatePath ?? err.templateName ?? null,
     lineno: err.lineno,
@@ -48,9 +49,9 @@ const formatErrorOutput = (err: TemplateError, opts: ReturnType<typeof createFor
   return toHtml(err, opts);
 };
 
-const buildErrorOutput = (err: TemplateError) => async (options: OutputOptions = {}): Promise<string> => {
+const buildErrorOutput = (err: TemplateError) => (options: OutputOptions = {}): string => {
   const verbosity = options.verbosity ?? 'full';
-  const sourceTrace = await buildSourceTraceIfNeeded(err, verbosity, options);
+  const sourceTrace = buildSourceTraceIfNeeded(err, verbosity, options);
 
   const opts = createFormatterState({
     metadata: toFormatterMetadata(err, err.renderContext),

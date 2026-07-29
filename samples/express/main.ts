@@ -90,9 +90,9 @@ app.use('/errors', errorRouter);
 
 // Error handler - must be after all routes
 app.use(async (err: Error, req: Request, res: Response, next: NextFunction) => {
-  const errorOutput = err as { output?: (opts: { format: string; dev?: boolean }) => Promise<string> };
-  console.log(await errorOutput.output?.({ format: 'ansi', dev: true }));
-  res.status(500).type('html').send(await errorOutput.output?.({ format: 'html', dev: true }));
+  const errorOutput = err as { output?: (opts: { format: string; dev?: boolean }) => string };
+  console.log(errorOutput.output?.({ format: 'ansi', dev: true }));
+  res.status(500).type('html').send(errorOutput.output?.({ format: 'html', dev: true }));
 });
 
 app.listen(4000, () => {
