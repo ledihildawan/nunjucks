@@ -44,17 +44,6 @@ export {
   type ResolvedSandboxOptions,
 } from './sandbox.ts';
 export {
-  createRenderContext,
-  ctx,
-  withDefaults,
-  withComputed,
-  withValidation,
-  toContext,
-  createIsolatedContext,
-  createForkedContext,
-  type RenderContext,
-} from './render-context.ts';
-export {
   suppressValue,
   awaitValue,
   ensureDefined,
@@ -94,13 +83,3 @@ export {
   type TimeoutError,
   isTimeoutError,
 } from './timeout.ts';
-export {
-  createWhitelistValidator,
-  scanASTForTags,
-  validateTemplateWhitelist,
-  type WhitelistError,
-  type WhitelistValidatorOptions,
-  type WhitelistValidator,
-  type TemplateWhitelistViolation,
-  type TemplateWhitelistResult,
-} from './whitelist.ts';
