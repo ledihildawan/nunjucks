@@ -163,15 +163,7 @@ const createHtmlContextTracker = (source: string): HtmlContextTracker => {
   };
 };
 
-function detectHtmlContext(source: string, position: number): HtmlContext {
-  return createHtmlContextTracker(source).getContextAt(position);
-}
-
-function getContextAtLineCol(source: string, lineno: number, colno: number): HtmlContext {
-  return createHtmlContextTracker(source).getContextAtLineCol(lineno, colno);
-}
-
-export { escapeAttribute, escapeScriptString, escapeStyle, escapeForContext, createHtmlContextTracker, detectHtmlContext, getContextAtLineCol };
+export { escapeAttribute, escapeScriptString, escapeStyle, escapeForContext, createHtmlContextTracker };
 export type { HtmlContext, HtmlContextTracker };
 
 export { escapeHtml } from './escape.ts';
