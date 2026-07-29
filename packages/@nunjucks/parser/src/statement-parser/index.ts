@@ -117,7 +117,7 @@ const STATEMENT_PARSERS: Record<string, StatementParser | TaggedParser> = {
   with: parseWith,
 };
 
-const _parseStatement = (ctx: ParserContext): Node | null => {
+export const parseStatement = (ctx: ParserContext): Node | null => {
   const tok = peekToken(ctx);
 
   if (tok.type !== lexer.TOKEN_SYMBOL) {
@@ -140,5 +140,3 @@ const _parseStatement = (ctx: ParserContext): Node | null => {
   }
   return fail(ctx, `unknown block tag: ${tok.value}`, tok.lineno, tok.colno);
 };
-
-export const parseStatement = _parseStatement;
