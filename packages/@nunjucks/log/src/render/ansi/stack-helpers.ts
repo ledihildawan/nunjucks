@@ -2,12 +2,11 @@ import { pipe, filter, join } from 'remeda';
 import picocolors from 'picocolors';
 import { shortenPath } from '../internal/path-shortener.ts';
 import { isFilePath, resolveIdeLink } from '../internal/ide-links.ts';
+import { stripMarkdown } from '../internal/markdown.ts';
 
 export { makeHyperlink, stripMarkdown, getSeverityColor, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString };
 
 const makeHyperlink = (text: string, url: string): string => `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
-
-const stripMarkdown = (text: string): string => text.replace(/\*\*([^*]+)\*\*/gu, '$1').replace(/`([^`]+)`/gu, '$1');
 
 const getSeverityColor = (severity?: string): ((text: string) => string) => {
   if (severity === 'warning') { return picocolors.yellow; }

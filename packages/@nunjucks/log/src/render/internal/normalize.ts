@@ -113,5 +113,5 @@ const normalizeErrorMetadata = (
   };
 };
 
-export { normalizeErrorMetadata };
+export { normalizeErrorMetadata, readNumber };
 export type { ErrorMetadataFallback, NormalizedErrorMetadata };

@@ -1,16 +1,9 @@
-import { escapeHtml, highlightHtml } from './internal/highlight.ts';
+import { escapeHtml, highlightHtml, renderInlineMarkdown } from './internal/highlight.ts';
 import { renderContextHtml, formatStackTraceHtml } from './internal/sections.ts';
 import { resolveIdeLink, getIdeMeta } from './internal/ide-links.ts';
 import type { SourceTrace } from './internal/source-trace.ts';
 import type { ErrorLike } from './to-html-types.ts';
 import { renderBadge, highlightSource, SEVERITY_HEADINGS } from './to-html-helpers.ts';
-
-const renderMarkdownToAnsi = (text: string): string => {
-  if (!text) { return ''; }
-  return escapeHtml(text)
-    .replace(/`([^`]+)`/gu, '<code class="md-code">$1</code>')
-    .replace(/\*\*([^*]+)\*\*/gu, '<strong>$1</strong>');
-};
 
 const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined, displayPath: string): string => {
   if (!sourceTrace || sourceTrace.lines.length === 0) { return ''; }
@@ -95,7 +88,7 @@ const buildFullErrorBody = (
 ): string => {
   const codeSection = renderSourceTraceSection(sourceTrace, displayPath);
   const possibleCausesList = possibleCauses.length > 0
-    ? possibleCauses.map(c => `<li>${renderMarkdownToAnsi(c)}</li>`).join('\n          ')
+    ? possibleCauses.map(c => `<li>${renderInlineMarkdown(c)}</li>`).join('\n          ')
     : '<li>Check template syntax and context</li>';
   const fixCommentSpan = fixComment ? `<span class="syntax-comment">${escapeHtml(fixComment)}</span>\n` : '';
   const fixCodeBlock = fixCode ? highlightHtml(fixCode) : '// No fix available';

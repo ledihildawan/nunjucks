@@ -7,6 +7,7 @@ import { stripMarkdown, getSeverityLabel, getExtrasPart, formatStackLine, format
 import { renderContextAnsi } from './context-helpers';
 import { formatSourceTrace } from './source-helpers';
 import { slice } from '@nunjucks/shared';
+import { getErrorMessage } from '../internal/message.ts';
 
 export { formatCausesAnsi, formatFixAnsi, getErrorMessage, formatMediumAnsi, extractAnsiErrorParts, formatFullAnsi, BULLET };
 
@@ -29,13 +30,6 @@ const formatFixAnsi = (fixCode: string | null, fixComment: string | null, docume
   ];
 
   return parts.join('\n');
-};
-
-const getErrorMessage = (error: unknown): string => {
-  const rawMessage = (error as Error).message;
-  const baseMessage = rawMessage || String(error);
-  const firstStackLine = baseMessage.indexOf('\n    at ');
-  return firstStackLine !== -1 ? baseMessage.slice(0, firstStackLine) : baseMessage;
 };
 
 const LEADING_AT_RE = /^ at /;

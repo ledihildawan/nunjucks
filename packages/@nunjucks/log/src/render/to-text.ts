@@ -2,7 +2,9 @@ import { pipe, filter, join, map, split } from 'remeda';
 import { shortenPath } from './internal/path-shortener.ts';
 import { toDisplayLocation } from './internal/location.ts';
 import { classifyFromError } from '../errors/classify.ts';
-import { replace, slice } from '@nunjucks/shared';
+import { slice } from '@nunjucks/shared';
+import { stripMarkdown } from './internal/markdown.ts';
+import { getErrorMessage } from './internal/message.ts';
 
 interface ToTextOptions {
   verbosity?: 'simple' | 'medium' | 'full';
@@ -11,19 +13,8 @@ interface ToTextOptions {
   colno?: number | null;
 }
 
-const BOLD_MARKDOWN_RE = /\*\*([^*]+)\*\*/gu;
-const CODE_MARKDOWN_RE = /`([^`]+)`/gu;
 const STACK_LOCATION_RE = /\(([^()]+):(\d+):(\d+)\)$/u;
 const STACK_FUNCTION_RE = /^at\s+([^\s]+)/u;
-
-const stripMarkdown = (text: string): string => pipe(text, replace(BOLD_MARKDOWN_RE, '$1'), replace(CODE_MARKDOWN_RE, '$1'));
-
-const getErrorMessage = (error: unknown): string => {
-  const rawMessage = (error as Error).message;
-  const baseMessage = (!rawMessage || typeof rawMessage !== 'string') ? String(error) : rawMessage;
-  const firstStackLine = baseMessage.indexOf('\n    at ');
-  return firstStackLine !== -1 ? baseMessage.slice(0, firstStackLine) : baseMessage;
-};
 
 const getSeverityLabel = (severity: 'error' | 'warning' | 'info' | undefined): string => {
   if (severity === 'warning') { return 'Warning:'; }

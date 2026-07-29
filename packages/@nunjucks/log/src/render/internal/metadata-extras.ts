@@ -1,5 +1,6 @@
 import type { LineBase } from './location.ts';
 import { windowSourceTrace } from './source-trace.ts';
+import { readNumber } from './normalize.ts';
 import { pipe, map, join } from 'remeda';
 
 interface ErrorMetadata {
@@ -42,13 +43,6 @@ interface ErrorLike {
   lineBase?: LineBase | null;
   renderContext?: Record<string, unknown>;
 }
-
-const readNumber = (value: unknown): number | null => {
-  if (Number.isInteger(value)) {
-    return value as number;
-  }
-  return null;
-};
 
 const toDisplayCoordinate = (value: number | null, lineBase: LineBase | null): number | null => {
   if (value === null) { return null; }

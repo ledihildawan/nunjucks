@@ -3,8 +3,7 @@ import { pipe, filter } from 'remeda';
 import { shortenPath } from './internal/path-shortener.ts';
 import { isFilePath, resolveIdeLink } from './internal/ide-links.ts';
 import { toDisplayLocation } from './internal/location.ts';
-
-const makeHyperlink = (text: string, url: string): string => `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
+import { makeHyperlink } from './ansi/stack-helpers.ts';
 
 interface Warning {
   message?: string;
