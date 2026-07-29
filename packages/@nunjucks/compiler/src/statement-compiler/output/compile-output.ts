@@ -11,7 +11,8 @@ import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import type { Compiler } from '../../index.ts';
-import { extractLocation, extractVarName } from './extract-location.ts';
+import { extractPropertyLocation } from '../../location-utils.ts';
+import { extractVarName } from './extract-location.ts';
 
 const emitEnsureDefinedClose = (
   ctx: Compiler,
@@ -45,7 +46,7 @@ const compileOutputChild = (
 ): void => {
   const isPipeType = isPipe(child);
   const isOptional = isOptionalChain(child) || isOptionalCall(child);
-  const { lineno: rawLine, colno: rawColumn } = extractLocation(child);
+  const { lineno: rawLine, colno: rawColumn } = extractPropertyLocation(child);
   const lineno = rawLine ?? 0;
   const colno = rawColumn ?? 0;
   const useEnsureDefined = !isOptional || ctx.undefinedMode === 'debug';

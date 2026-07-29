@@ -1,12 +1,6 @@
 import type { Classification } from './types.ts';
 import { classifyInput } from './classifier.ts';
 
-interface ClassifyInput {
-  message?: string;
-  code?: string;
-  subject?: string;
-}
-
 interface ErrorWithExtras {
   message?: string;
   code?: string | null;
@@ -17,8 +11,6 @@ interface ErrorWithExtras {
   documentationUrl?: string | null;
   severity?: 'error' | 'warning' | 'info';
 }
-
-const classify = (message: string): Classification => classifyInput({ message });
 
 const classifyFromError = (error: ErrorWithExtras | null): Classification => {
   if (!error) {
@@ -44,5 +36,4 @@ const classifyFromError = (error: ErrorWithExtras | null): Classification => {
 
 export { classifyInput } from './classifier.ts';
 
-export { classify, classifyFromError };
-export type { ClassifyInput };
+export { classifyFromError };

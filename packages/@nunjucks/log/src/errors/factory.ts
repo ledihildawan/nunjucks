@@ -1,7 +1,5 @@
-type SubjectExtractor = (groups: RegExpMatchArray) => string | null;
-type ExtraExtractor = (groups: RegExpMatchArray) => Record<string, string> | null;
-
-const firstCapture: SubjectExtractor = (groups) => groups[1] ?? null;
+import type { SubjectExtractor, ExtraExtractor } from './types.ts';
+import { firstCapture } from './types.ts';
 
 interface ErrorDefinitionOptions {
   name: string;

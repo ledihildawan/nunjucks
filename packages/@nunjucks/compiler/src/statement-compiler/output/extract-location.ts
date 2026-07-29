@@ -1,6 +1,5 @@
 import { isLookupVal, isSymbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { extractPropertyLocation } from '../../location-utils.ts';
 
 export const extractVarName = (node: Node): string | null => {
   if (isSymbol(node)) {
@@ -19,8 +18,3 @@ export const extractVarName = (node: Node): string | null => {
 
   return null;
 };
-
-export const extractLocation = (
-  node: Node
-): { lineno: number | null; colno: number | null } =>
-  extractPropertyLocation(node);
