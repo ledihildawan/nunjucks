@@ -6,3 +6,4 @@ export * from './escape-context.ts';
 export * from './type-guards.ts';
 export * from './extract-blocks.ts';
 export * from './reserved.ts';
+export * from './pipe-helpers.ts';

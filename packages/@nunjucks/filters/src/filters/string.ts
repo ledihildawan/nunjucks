@@ -1,4 +1,4 @@
-import { defaultTo, join, map, pipe, split } from 'remeda';
+import { defaultTo, entries, join, map, pipe, split } from 'remeda';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { normalize, safeString, safeHtml, preserveSafe, createStringFilter, createMacroFilter, isSafeString, isArray, filterError } from '../factory/index.ts';
 import type { SafeString } from '../factory/index.ts';
@@ -123,7 +123,7 @@ const urlencode = (obj: unknown): string => {
   if (typeof obj === 'string') { return enc(obj); }
   const keyvals = Array.isArray(obj)
     ? (obj as [string, unknown][])
-    : Object.entries(obj as Record<string, unknown>);
+    : entries(obj as Record<string, unknown>);
   return pipe(keyvals, map(([k, v]) => `${enc(k)}=${enc(String(v))}`), join('&'));
 };
 

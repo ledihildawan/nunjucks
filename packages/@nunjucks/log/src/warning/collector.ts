@@ -1,5 +1,5 @@
 import { pipe, split } from 'remeda';
-import { replace } from '../render/internal/pipe-helpers.ts';
+import { replace } from '@nunjucks/shared';
 
 /** A collected render-time warning. Exported: it is the element type of
  * `injectWarningsScript`'s first parameter. */

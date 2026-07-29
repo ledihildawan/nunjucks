@@ -1,6 +1,6 @@
 import { getNodeTypeName } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { filter, forEach, pipe } from 'remeda';
+import { filter, forEach, keys, pipe } from 'remeda';
 
 const ExpressionSecurityError = {
   DYNAMIC_PROPERTY_ACCESS: 'DYNAMIC_PROPERTY_ACCESS',
@@ -103,7 +103,7 @@ const walkChildNodes = (
   path: (string | number)[]
 ): void => {
   pipe(
-    Object.keys(node),
+    keys(node),
     filter(k => !NON_CHILD_KEYS.has(k)),
     forEach(key => {
       const child = node[key];

@@ -8,6 +8,7 @@ import {
 import { nodeList, output, templateData } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { pipe } from 'remeda';
+import { replace } from '@nunjucks/shared';
 import {
   nextToken,
   peekToken,
@@ -75,7 +76,7 @@ const parseDataToken = (ctx: ParserContext, tok: ReturnType<typeof nextToken>, b
 const parseRawToken = (tok: ReturnType<typeof nextToken>, buf: Node[]): void => {
   const rawContent = tok.value;
   const content = typeof rawContent === 'string'
-    ? pipe(rawContent, s => s.replace(RAW_OPEN_TAG_RE, ''), s => s.replace(RAW_CLOSE_TAG_RE, ''))
+    ? pipe(rawContent, replace(RAW_OPEN_TAG_RE, ''), replace(RAW_CLOSE_TAG_RE, ''))
     : rawContent;
   buf.push(output(
     tok.lineno,

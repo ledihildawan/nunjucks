@@ -6,7 +6,7 @@ import type { SourceTrace } from '../internal/source-trace.ts';
 import { stripMarkdown, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString } from './stack-helpers';
 import { renderContextAnsi } from './context-helpers';
 import { formatSourceTrace } from './source-helpers';
-import { slice } from '../internal/pipe-helpers.ts';
+import { slice } from '@nunjucks/shared';
 
 export { formatCausesAnsi, formatFixAnsi, getErrorMessage, formatMediumAnsi, extractAnsiErrorParts, formatFullAnsi, BULLET };
 

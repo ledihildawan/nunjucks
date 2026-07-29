@@ -1,4 +1,4 @@
-import { flatMap, pipe } from 'remeda';
+import { flatMap, keys, pipe } from 'remeda';
 import { validateFilterName, validateGlobalName } from '@nunjucks/shared';
 
 export interface ConfigValidationError {
@@ -37,7 +37,7 @@ const validateSandboxEnv = (config: Config): ConfigValidationError[] =>
 const validateCustomFilters = (config: Config): ConfigValidationError[] => {
   if (!config._customFilters) { return []; }
   return pipe(
-    Object.keys(config._customFilters),
+    keys(config._customFilters),
     flatMap((name) => {
       const validation = validateFilterName(name);
       return !validation.valid && validation.error
@@ -50,7 +50,7 @@ const validateCustomFilters = (config: Config): ConfigValidationError[] => {
 const validateCustomGlobals = (config: Config): ConfigValidationError[] => {
   if (!config._customGlobals) { return []; }
   return pipe(
-    Object.keys(config._customGlobals),
+    keys(config._customGlobals),
     flatMap((name) => {
       const validation = validateGlobalName(name);
       return !validation.valid && validation.error

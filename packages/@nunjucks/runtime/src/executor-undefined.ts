@@ -1,4 +1,5 @@
 import { pipe, join } from 'remeda';
+import { slice } from '@nunjucks/shared';
 
 interface UndefinedInputResult {
   isUndefinedInput: boolean;
@@ -59,7 +60,7 @@ const detectUndefinedInput = (context: unknown, inputValue: unknown): UndefinedI
     if (undefinedAt >= 0) {
       return {
         isUndefinedInput: true,
-        undefinedVarName: pipe(parts, (arr: string[]) => arr.slice(undefinedAt), join('.')),
+        undefinedVarName: pipe(parts, slice(undefinedAt), join('.')),
         undefinedParentName: undefinedAt > 0 ? parts[undefinedAt - 1] ?? null : null,
         isPropertyLookup,
       };

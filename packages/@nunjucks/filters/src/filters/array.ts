@@ -1,5 +1,5 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
-import { forEach, isPlainObject, isString, map, pipe, range, reduce, split, sum as sumValues } from 'remeda';
+import { filter, forEach, isPlainObject, isString, keys, map, pipe, range, reduce, split, sum as sumValues } from 'remeda';
 import { isSafeString, makeMacro } from '@nunjucks/runtime';
 import { filterError, isArray } from '../factory/index.ts';
 import type { FilterContext } from '../factory/index.ts';
@@ -36,7 +36,7 @@ const getCollectionSize = (value: unknown): number =>
   (value as Map<unknown, unknown> | Set<unknown>).size;
 
 const getObjectLength = (value: unknown): number =>
-  Object.keys(value as Record<string, unknown>).length;
+  keys(value as Record<string, unknown>).length;
 
 const getValueLength = (value: unknown): number =>
   (value as { length: number }).length;
@@ -257,7 +257,7 @@ export const getSelectOrReject = (expectedTestResult: boolean) =>
       throw new Error(`Expected array but got ${typeof arr}`);
     }
     const test = (this as { env: { getTest: (name: string) => (this: unknown, ...args: unknown[]) => boolean } }).env.getTest(testName);
-    return Array.from(arr).filter((item) => test.call(this, item, secondArg) === expectedTestResult);
+    return pipe(Array.from(arr), filter((item) => test.call(this, item, secondArg) === expectedTestResult));
   };
 
 export const reject = getSelectOrReject(false);

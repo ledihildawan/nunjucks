@@ -2,7 +2,7 @@ import { pipe, filter, join, map, split } from 'remeda';
 import { shortenPath } from './internal/path-shortener.ts';
 import { toDisplayLocation } from './internal/location.ts';
 import { classifyFromError } from '../errors/classify.ts';
-import { replace, slice } from './internal/pipe-helpers.ts';
+import { replace, slice } from '@nunjucks/shared';
 
 interface ToTextOptions {
   verbosity?: 'simple' | 'medium' | 'full';

@@ -1,6 +1,6 @@
 import { getBlockedKeyCategory, isBlockedKey } from '@nunjucks/shared/blocked-keys';
-import { pipe, map } from 'remeda';
-import { slice } from './pipe-helpers.ts';
+import { pipe, map, filter } from 'remeda';
+import { slice } from '@nunjucks/shared';
 
 const SECRET_KEY_PATTERN = /(?:password|passwd|pwd|secret|token|api[_-]?key|access[_-]?token|authorization|cookie|session(?:[_-]?id)?|private[_-]?key)/iu;
 const DANGEROUS_KEY_PATTERN = /^(?:globalThis|process|window|parent|top|frames|opener)$/iu;
@@ -40,14 +40,17 @@ const visibleKey = (key: string, depth: number): boolean => {
 const ownEnumerableKeys = (value: unknown): string[] => {
   if (typeof value !== 'object' || value === null) { return []; }
   try {
-    return Reflect.ownKeys(value).filter((key): key is string => {
-      if (typeof key !== 'string') { return false; }
-      try {
-        return Object.getOwnPropertyDescriptor(value, key)?.enumerable === true;
-      } catch {
-        return false;
-      }
-    });
+    return pipe(
+      Reflect.ownKeys(value),
+      filter((key): key is string => {
+        if (typeof key !== 'string') { return false; }
+        try {
+          return Object.getOwnPropertyDescriptor(value, key)?.enumerable === true;
+        } catch {
+          return false;
+        }
+      })
+    ) as string[];
   } catch {
     return [];
   }

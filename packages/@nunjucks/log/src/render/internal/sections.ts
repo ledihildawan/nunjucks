@@ -3,7 +3,7 @@ import { escapeHtml, highlightHtml, highlightJs } from './highlight.ts';
 import { isFilePath, resolveIdeLink } from './ide-links.ts';
 import { shortenPath } from './path-shortener.ts';
 import { normalizeRenderContext } from './safe-context.ts';
-import { replace, slice } from './pipe-helpers.ts';
+import { replace, slice } from '@nunjucks/shared';
 
 // Hoisted so each pattern is compiled once rather than on every call.
 const FILE_URL_PREFIX_RE = /^file:\/\/+/u;

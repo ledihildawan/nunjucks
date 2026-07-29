@@ -1,5 +1,6 @@
 import type { LineBase } from './location.ts';
 import { windowSourceTrace } from './source-trace.ts';
+import { pipe, map, join } from 'remeda';
 
 interface ErrorMetadata {
   code: string | null;
@@ -111,9 +112,11 @@ const buildSnippet = ({
 
   const lastLine = trace.lines.at(-1);
   const prefixWidth = String(lastLine?.number ?? 0).length;
-  const snippet = trace.lines
-    .map(line => ` ${String(line.number).padStart(prefixWidth, ' ')} | ${line.content}`)
-    .join('\n');
+  const snippet = pipe(
+    trace.lines,
+    map(line => ` ${String(line.number).padStart(prefixWidth, ' ')} | ${line.content}`),
+    join('\n')
+  );
 
   return { snippet, snippetLines: trace.lines, caret };
 };

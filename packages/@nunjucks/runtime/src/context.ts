@@ -2,6 +2,7 @@
 // Import directly: import { createContext } from '@nunjucks/runtime/context'
 
 import { ERROR_DEFINITIONS, createLog } from '@nunjucks/log';
+import { keys } from 'remeda';
 
 const CONTEXT_KEY = Symbol('Context');
 
@@ -68,7 +69,7 @@ interface Context {
   [key: symbol]: unknown;
 }
 
-const getKeys = (obj: Record<string, unknown>): string[] => Object.keys(obj);
+const getKeys = (obj: Record<string, unknown>): string[] => keys(obj);
 
 const throwBlockNotFoundError = (name: string, location: BlockLocation | undefined, lineno: number | null, colno: number | null): never => {
   throw createLog(
