@@ -12,6 +12,8 @@ import {
   makeMacro,
   createSafeString,
   wrapMemberAccess,
+  isNullAccessResult,
+  isPropertyNotFoundResult,
   type Frame,
 } from '@nunjucks/runtime';
 import { createLog } from '@nunjucks/log';
@@ -92,9 +94,14 @@ const buildSandboxOptions = (config: { sandboxAllowlist?: string[]; sandboxMode?
   environment: (config.sandboxEnvironment || 'auto') as Environment,
 });
 
+const toOptionalResult = (result: unknown): unknown => {
+  if (isNullAccessResult(result) || isPropertyNotFoundResult(result)) { return undefined; }
+  return result;
+};
+
 const buildSandboxedRuntime = (runtime: Record<string, unknown>, sandboxOptions: SandboxOptions): Record<string, unknown> => {
   runtime.memberLookup = (obj: unknown, val: string | symbol, parentName: string | null = null) => wrapMemberAccess(obj, val, true, sandboxOptions, parentName);
-  runtime.optionalMemberLookup = (obj: unknown, val: string | symbol, parentName: string | null = null) => wrapMemberAccess(obj, val, true, sandboxOptions, parentName);
+  runtime.optionalMemberLookup = (obj: unknown, val: string | symbol, parentName: string | null = null) => toOptionalResult(wrapMemberAccess(obj, val, true, sandboxOptions, parentName));
   return runtime;
 };
 
