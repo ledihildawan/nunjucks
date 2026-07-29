@@ -75,11 +75,8 @@ export function createNodeResolveLoader(opts: NodeResolveLoaderOptions = {}): No
   loader.getSource = async (name: string): Promise<NodeResolveLoaderSource | null> => {
     if (!isExternalModule(name)) { return null; }
 
-    let fullpath = tryRequireResolve(name);
-    if (!fullpath) {
-      fullpath = await findInSearchPaths(loader.paths, name);
-      if (!fullpath) { return null; }
-    }
+    const fullpath = tryRequireResolve(name) ?? await findInSearchPaths(loader.paths, name);
+    if (!fullpath) { return null; }
 
     loader.pathsToNames[fullpath] = name;
     const source = await readSource(fullpath, loader.noCache);

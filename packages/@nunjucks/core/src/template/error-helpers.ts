@@ -22,14 +22,12 @@ const resolveColno = (sourceColno: number | undefined, errColno: number): number
 };
 
 const buildErrorMessage = (currentPath: string | undefined, sourceLineno: number | undefined, finalColno: number, e: ErrorWithLineInfo): string => {
-  let msg = `(${currentPath})`;
-  if (sourceLineno && finalColno > 0) {
-    msg += ` [Line ${sourceLineno}, Column ${finalColno}]`;
-  } else if (sourceLineno) {
-    msg += ` [Line ${sourceLineno}]`;
-  }
-  msg += `\n  ${defaultTo(e.message, '')}`;
-  return msg;
+  const locationPart = sourceLineno && finalColno > 0
+    ? ` [Line ${sourceLineno}, Column ${finalColno}]`
+    : sourceLineno
+      ? ` [Line ${sourceLineno}]`
+      : '';
+  return `(${currentPath})${locationPart}\n  ${defaultTo(e.message, '')}`;
 };
 
 const extractFrameDetails = (

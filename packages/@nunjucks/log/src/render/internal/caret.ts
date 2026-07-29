@@ -59,17 +59,21 @@ const findSegmentInDotPath = (
   _wordEnd: number,
   relativePos: number
 ): { wordStart: number; wordEnd: number; highlightWord: string } | null => {
-  let segmentStart = wordStart;
-  let segmentEnd = wordStart;
-
-  for (const segment of highlightWord.split('.')) {
-    segmentEnd = segmentStart + segment.length;
-    if (relativePos >= segmentStart - wordStart && relativePos <= segmentEnd - wordStart) {
-      return { wordStart: segmentStart, wordEnd: segmentEnd, highlightWord: segment };
-    }
-    segmentStart = segmentEnd + 1;
-  }
-  return null;
+  const segments = highlightWord.split('.');
+  const { found } = segments.reduce<{ found: { wordStart: number; wordEnd: number; highlightWord: string } | null; offset: number }>(
+    (acc, segment) => {
+      if (acc.found) { return acc; }
+      const segmentStart = wordStart + acc.offset;
+      const segmentEnd = segmentStart + segment.length;
+      const matched = relativePos >= acc.offset && relativePos <= acc.offset + segment.length;
+      return {
+        found: matched ? { wordStart: segmentStart, wordEnd: segmentEnd, highlightWord: segment } : null,
+        offset: acc.offset + segment.length + 1
+      };
+    },
+    { found: null, offset: 0 }
+  );
+  return found;
 };
 
 const resolveHighlightWord = (
@@ -102,25 +106,21 @@ function calculateCaretPosition(
 ): CaretResult | null {
   if (displayCol <= 0 || !line) { return null; }
 
-  let pos = displayCol - 1;
-  let charAtPos = line[pos];
+  const rawPos = displayCol - 1;
+  const rawCharAtPos = line[rawPos];
 
-  if (!isWordChar(charAtPos)) {
-    if (charAtPos && !WHITESPACE_RE.test(charAtPos)) {
-      return {
-        wordStart: pos,
-        wordEnd: pos + 1,
-        highlightWord: charAtPos,
-        carets: '^'
-      };
-    }
-
-    const searchLeft = findNonWordLeft(line, pos);
-    if (searchLeft >= 0 && isWordChar(line[searchLeft])) {
-      pos = searchLeft;
-      charAtPos = line[pos];
-    }
+  if (!isWordChar(rawCharAtPos) && rawCharAtPos && !WHITESPACE_RE.test(rawCharAtPos)) {
+    return {
+      wordStart: rawPos,
+      wordEnd: rawPos + 1,
+      highlightWord: rawCharAtPos,
+      carets: '^'
+    };
   }
+
+  const searchLeft = !isWordChar(rawCharAtPos) ? findNonWordLeft(line, rawPos) : rawPos;
+  const pos = (!isWordChar(rawCharAtPos) && searchLeft >= 0 && isWordChar(line[searchLeft])) ? searchLeft : rawPos;
+  const charAtPos = line[pos];
 
   const { wordStart: initialStart, wordEnd: initialEnd } = findWordBoundaries(line, pos, charAtPos ?? '');
   const { wordStart, wordEnd, highlightWord } = resolveHighlightWord(line, pos, initialStart, initialEnd);

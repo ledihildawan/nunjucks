@@ -33,20 +33,15 @@ const parseSignatureArg = (
 
   const arg = parseExpression(ctx);
 
-  let newArgs = args;
-  let newKwargs = kwargs;
-
   if (isAssignmentPatternWithEquals(arg, ctx)) {
     nextToken(ctx);
     const value = parseExpression(ctx);
-    newKwargs = appendChild(kwargs, pair(arg.lineno, arg.colno, arg.target as Node, value));
-  } else if (skipValue(ctx, TOKEN_OPERATOR, '=')) {
-    newKwargs = appendChild(kwargs, pair(arg.lineno, arg.colno, arg, parseExpression(ctx)));
-  } else {
-    newArgs = appendChild(args, arg);
+    return { args, kwargs: appendChild(kwargs, pair(arg.lineno, arg.colno, arg.target as Node, value)), checkComma: true };
   }
-
-  return { args: newArgs, kwargs: newKwargs, checkComma: true };
+  if (skipValue(ctx, TOKEN_OPERATOR, '=')) {
+    return { args, kwargs: appendChild(kwargs, pair(arg.lineno, arg.colno, arg, parseExpression(ctx))), checkComma: true };
+  }
+  return { args: appendChild(args, arg), kwargs, checkComma: true };
 };
 
 const isNoParensEnd = (tok: ReturnType<typeof peekToken>): boolean =>
@@ -94,28 +89,20 @@ const parseSignatureLoop = (
 };
 
 export const parseSignature = (ctx: ParserContext, tolerant?: boolean, noParens?: boolean): Node | null => {
-  let tok = peekToken(ctx);
-  if (!noParens && tok.type !== TOKEN_LEFT_PAREN) {
+  const initialTok = peekToken(ctx);
+  if (!noParens && initialTok.type !== TOKEN_LEFT_PAREN) {
     if (tolerant) {
       return null;
     }
-      fail(ctx, 'expected arguments', tok.lineno, tok.colno);
+    fail(ctx, 'expected arguments', initialTok.lineno, initialTok.colno);
   }
 
-  if (tok.type === TOKEN_LEFT_PAREN) {
-    tok = nextToken(ctx);
-  }
+  const tok = initialTok.type === TOKEN_LEFT_PAREN ? nextToken(ctx) : initialTok;
 
-  let args: ChildrenNode = nodeList(tok.lineno, tok.colno);
-  let kwargs: ChildrenNode = keywordArgs(tok.lineno, tok.colno);
-
-  const result = parseSignatureLoop(ctx, args, kwargs, noParens);
-  args = result.args;
-  kwargs = result.kwargs;
-
-  if (kwargs.children.length > 0) {
-    args = appendChild(args, kwargs);
-  }
+  const loopResult = parseSignatureLoop(ctx, nodeList(tok.lineno, tok.colno), keywordArgs(tok.lineno, tok.colno), noParens);
+  const args = loopResult.kwargs.children.length > 0
+    ? appendChild(loopResult.args, loopResult.kwargs)
+    : loopResult.args;
 
   return args;
 };

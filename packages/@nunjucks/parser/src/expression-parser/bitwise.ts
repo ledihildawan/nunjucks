@@ -15,20 +15,19 @@ const bitwiseNodeMap: Record<string, BinNodeFn> = {
 };
 
 export const parseBitwiseOr = (ctx: ParserContext): Node => {
-  let node = parseIs(ctx);
+  const initialNode = parseIs(ctx);
   const tok = nextToken(ctx);
 
   if (!tok) {
-    return node;
+    return initialNode;
   }
 
   const createNode = bitwiseNodeMap[tok.value as string];
-  if (createNode) {
-    const right = parseIs(ctx);
-    node = createNode(tok.lineno, tok.colno, node, right);
-  } else {
+  if (!createNode) {
     pushToken(ctx, tok);
+    return initialNode;
   }
 
-  return node;
+  const right = parseIs(ctx);
+  return createNode(tok.lineno, tok.colno, initialNode, right);
 };

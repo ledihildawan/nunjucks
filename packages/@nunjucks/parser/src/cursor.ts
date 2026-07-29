@@ -112,14 +112,8 @@ export const skipValue = (ctx: ParserContext, type: Token['type'], val?: Token['
 
 export const skipSymbol = (ctx: ParserContext, val: string): boolean => skipValue(ctx, TOKEN_SYMBOL, val);
 
-export const skipOperator = (ctx: ParserContext, ...vals: string[]): boolean => {
-  for (const val of vals) {
-    if (skipValue(ctx, TOKEN_OPERATOR, val)) {
-      return true;
-    }
-  }
-  return false;
-};
+export const skipOperator = (ctx: ParserContext, ...vals: string[]): boolean =>
+  vals.some(val => skipValue(ctx, TOKEN_OPERATOR, val));
 
 export const advanceAfterBlockEnd = (ctx: ParserContext, name?: string): Token => {
   let tok: Token;

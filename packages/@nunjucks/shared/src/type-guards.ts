@@ -1,5 +1,5 @@
 // Imported for use inside this module.
-import { isNonNullish, isFunction, isArray, keys, filter as filterArray } from 'remeda';
+import { isNonNullish, isFunction, isArray, filter as filterArray, map as mapArray, reduce as reduceArray, pipe, entries, fromEntries } from 'remeda';
 
 // Re-exported straight through, so consumers get remeda's own bindings rather
 // than a local alias that hides where they came from.
@@ -23,38 +23,32 @@ const omit = <O extends object, K extends keyof O>(
   obj: O,
   keysToOmit: K[]
 ): Omit<O, K> => {
-  const result = { ...obj } as Record<string, unknown>;
-  for (const key of keysToOmit) {
-    delete result[key as string];
-  }
-  return result as unknown as Omit<O, K>;
+  const omitSet = new Set(keysToOmit as string[]);
+  return fromEntries(
+    filterArray(entries(obj), ([key]) => !omitSet.has(key))
+  ) as unknown as Omit<O, K>;
 };
 
 const pick = <O extends object, K extends keyof O>(
   obj: O,
   keysToPick: K[]
-): Pick<O, K> => {
-  const result = {} as Pick<O, K>;
-  for (const key of keysToPick) {
-    result[key] = obj[key];
-  }
-  return result;
-};
+): Pick<O, K> =>
+  fromEntries(
+    mapArray(keysToPick, key => [key, obj[key]] as [K, O[K]])
+  ) as unknown as Pick<O, K>;
 
 const groupBy = <T>(
   arr: T[],
   keyFn: (item: T) => string
-): Record<string, T[]> => {
-  const result: Record<string, T[]> = {};
-  for (const item of arr) {
-    const key = keyFn(item);
-    if (!result[key]) {
-      result[key] = [];
-    }
-    result[key]?.push(item);
-  }
-  return result;
-};
+): Record<string, T[]> =>
+  reduceArray(
+    arr,
+    (acc, item) => {
+      const key = keyFn(item);
+      return { ...acc, [key]: [...(acc[key] ?? []), item] };
+    },
+    {} as Record<string, T[]>
+  );
 
 const uniqueBy = <T>(arr: T[], keyFn: (item: T) => unknown): T[] => {
   const seen = new Set<unknown>();
@@ -126,54 +120,38 @@ const retry = async <T>(
 const mapObject = <K extends string, V, R>(
   obj: Record<K, V>,
   fn: (value: V, key: K) => R
-): Record<K, R> => {
-  const result = {} as Record<K, R>;
-  for (const key of keys(obj) as K[]) {
-    result[key] = fn(obj[key], key);
-  }
-  return result;
-};
+): Record<K, R> =>
+  fromEntries(
+    mapArray(entries(obj), ([key, value]) => [key, fn(value, key as K)] as [K, R])
+  ) as unknown as Record<K, R>;
 
 const filterObject = <K extends string, V>(
   obj: Record<K, V>,
   fn: (value: V, key: K) => boolean
-): Partial<Record<K, V>> => {
-  const result: Partial<Record<K, V>> = {};
-  for (const key of keys(obj) as K[]) {
-    if (fn(obj[key], key)) {
-      result[key] = obj[key];
-    }
-  }
-  return result;
-};
+): Partial<Record<K, V>> =>
+  fromEntries(
+    filterArray(entries(obj), ([key, value]) => fn(value, key as K))
+  ) as unknown as Partial<Record<K, V>>;
 
 const flatten = <T>(arr: T[][]): T[] => arr.flat();
 
 const zip = <T, U>(a: T[], b: U[]): [T, U][] => {
   const minLen = Math.min(a.length, b.length);
-  const result: [T, U][] = [];
-  for (let i = 0; i < minLen; i += 1) {
-    const aItem = a[i];
-    const bItem = b[i];
-    if (aItem !== undefined && bItem !== undefined) {
-      result.push([aItem, bItem]);
-    }
-  }
-  return result;
+  return pipe(
+    Array.from({ length: minLen }, (_, i) => i),
+    filterArray(i => a[i] !== undefined && b[i] !== undefined),
+    mapArray(i => [a[i], b[i]] as [T, U])
+  );
 };
 
-const partition = <T>(arr: T[], fn: Predicate<T>): [T[], T[]] => {
-  const pass: T[] = [];
-  const fail: T[] = [];
-  for (const item of arr) {
-    if (fn(item)) {
-      pass.push(item);
-    } else {
-      fail.push(item);
-    }
-  }
-  return [pass, fail];
-};
+const partition = <T>(arr: T[], fn: Predicate<T>): [T[], T[]] =>
+  reduceArray(
+    arr,
+    ([pass, fail], item) => fn(item)
+      ? [[...pass, item], fail]
+      : [pass, [...fail, item]],
+    [[] as T[], [] as T[]] as [T[], T[]]
+  );
 
 export { isRecord, isPromise, hasOwn, clamp, omit, pick, groupBy, uniqueBy, memoize, compose, tap, debounce, retry, mapObject, filterObject, flatten, zip, partition };
 

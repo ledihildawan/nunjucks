@@ -179,13 +179,11 @@ function createContext(
     exportedVar.push(name);
   };
 
-  const getExported = (): Record<string, unknown> => {
-    const exported: Record<string, unknown> = {};
-    for (const name of exportedVar) {
+  const getExported = (): Record<string, unknown> =>
+    exportedVar.reduce<Record<string, unknown>>((exported, name) => {
       exported[name] = ctxVar[name];
-    }
-    return exported;
-  };
+      return exported;
+    }, {});
 
   const fork = (data: Record<string, unknown> = {}): Context => {
     const childCtx = createContext(data, {}, envVar);
@@ -202,12 +200,12 @@ function createContext(
   };
 
   const registerBlocks = (context: Context, blocks: Record<string, (...args: unknown[]) => unknown>): void => {
-    for (const name of getKeys(blocks)) {
+    getKeys(blocks).forEach(name => {
       const block = blocks[name];
       if (block) {
         context.addBlock(name, block);
       }
-    }
+    });
   };
 
   const createContextObject = (): Context => {

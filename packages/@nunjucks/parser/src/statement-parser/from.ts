@@ -24,13 +24,10 @@ const parseImportName = (
       name.colno);
   }
 
-  let newNames = names;
-  if (skipSymbol(ctx, 'as')) {
-    const alias = parsePrimary(ctx);
-    newNames = appendChild(names, pair(name.lineno, name.colno, name, alias));
-  } else {
-    newNames = appendChild(names, name);
-  }
+  const hasAlias = skipSymbol(ctx, 'as');
+  const newNames = hasAlias
+    ? appendChild(names, pair(name.lineno, name.colno, name, parsePrimary(ctx)))
+    : appendChild(names, name);
 
   const withContext = parseWithContext(ctx);
   return { names: newNames, withContext };

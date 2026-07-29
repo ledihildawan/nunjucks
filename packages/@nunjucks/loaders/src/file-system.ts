@@ -1,4 +1,4 @@
-import { entries, isArray } from 'remeda';
+import { entries, filter, forEach, isArray } from 'remeda';
 import { readFile, stat } from 'node:fs/promises';
 import { watch, type FSWatcher } from 'node:fs';
 import path from 'node:path';
@@ -130,11 +130,13 @@ const normalizeFilePath = (p: string) => path.resolve(path.normalize(p));
 const isFileChangeEvent = (eventType: string) => eventType === 'change' || eventType === 'rename';
 
 const createFileCacheInvalidator = (cache: Record<string, unknown>) => (normalizedPath: string) => {
-  for (const [key, tmpl] of entries(cache)) {
-    if (tmpl && typeof tmpl === 'object' && 'path' in tmpl && normalizeFilePath((tmpl as { path: string }).path) === normalizedPath) {
-      cache[key] = null;
-    }
-  }
+  forEach(
+    filter(
+      entries(cache),
+      ([, tmpl]) => Boolean(tmpl && typeof tmpl === 'object' && 'path' in tmpl && normalizeFilePath((tmpl as { path: string }).path) === normalizedPath),
+    ),
+    ([key]) => { cache[key] = null; }
+  );
 };
 
 interface FileSystemLoaderExtended {
@@ -214,7 +216,9 @@ const setupLoaderWatch = (loader: FileSystemLoader) => {
   };
 
   loader.unwatchAll = (): void => {
-    for (const [, watcher] of loader.watchedFiles) { watcher.close(); }
+    for (const watcher of loader.watchedFiles.values()) {
+      watcher.close();
+    }
     loader.watchedFiles.clear();
   };
 };

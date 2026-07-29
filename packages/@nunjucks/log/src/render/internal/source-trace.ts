@@ -166,28 +166,24 @@ const windowSourceTrace = (params: {
   const start = Math.max(0, errorIndex - ctx);
   const end = Math.min(lines.length, errorIndex + ctx + 1);
 
-  const traceLines: SourceTraceLine[] = [];
-  for (let i = start; i < end; i += 1) {
-    traceLines.push({
+  const traceLines: SourceTraceLine[] = Array.from({ length: end - start }, (_, offset) => {
+    const i = start + offset;
+    return {
       number: sourceStartLine + i,
       content: lines[i] ?? '',
       isError: i === errorIndex
-    });
-  }
+    };
+  });
 
-  // Anchor the caret on the offending token (word-snap, shared with HTML).
-  let caret: SourceTraceCaret | null = null;
-  if (displayCol > 0) {
-    const caretInfo = calculateCaretPosition(lines[errorIndex] ?? '', displayCol);
-    if (caretInfo) {
-      caret = {
-        line: displayLine,
-        charStart: caretInfo.wordStart,
-        charEnd: caretInfo.wordEnd,
-        carets: caretInfo.carets
-      };
+  const caretInfo = displayCol > 0 ? calculateCaretPosition(lines[errorIndex] ?? '', displayCol) : null;
+  const caret: SourceTraceCaret | null = caretInfo
+    ? {
+      line: displayLine,
+      charStart: caretInfo.wordStart,
+      charEnd: caretInfo.wordEnd,
+      carets: caretInfo.carets
     }
-  }
+    : null;
 
   return { lines: traceLines, caret, displayLine, displayCol, resolvedPath };
 };

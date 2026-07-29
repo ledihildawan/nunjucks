@@ -21,9 +21,6 @@ export const round = (val: unknown, precision = 0, method?: 'ceil' | 'floor' | '
     throw new Error(`Expected number but got ${typeof val}`);
   }
   const factor = 10 ** precision;
-  let rounder: (x: number) => number;
-  if (method === 'ceil') { rounder = Math.ceil; }
-  else if (method === 'floor') { rounder = Math.floor; }
-  else { rounder = Math.round; }
+  const rounder = method === 'ceil' ? Math.ceil : method === 'floor' ? Math.floor : Math.round;
   return rounder(val * factor) / factor;
 };

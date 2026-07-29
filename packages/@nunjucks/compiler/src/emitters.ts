@@ -1,4 +1,5 @@
 import type { Node } from '@nunjucks/nodes';
+import { forEach } from 'remeda';
 
 export interface EmitterCtx {
   codebuf: string[];
@@ -22,9 +23,7 @@ export const emitLine = (ctx: EmitterCtx, code: string, _originalLine?: number, 
 export const emitLineWithMapping: typeof emitLine = emitLine;
 
 export const emitLines = (ctx: EmitterCtx, ...lines: string[]): void => {
-  for (const line of lines) {
-    emitLine(ctx, line);
-  }
+  forEach(lines, line => emitLine(ctx, line));
 };
 
 export const pushBuffer = (ctx: EmitterCtx): string => {

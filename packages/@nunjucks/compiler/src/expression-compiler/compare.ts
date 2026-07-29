@@ -1,5 +1,6 @@
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
+import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
 
 const compareOps: Record<string, string> = {
@@ -19,24 +20,19 @@ export const compileCompare = (ctx: Compiler, node: Node, frame: Frame): void =>
   ctx.emit(`(lineno = ${first.lineno ?? node.lineno ?? 0}, colno = ${first.colno ?? node.colno ?? 0}, `);
   ctx.compile(node.expr as Node, frame);
 
-  for (const op of ops) {
+  forEach(ops, op => {
     const operator = op.operator as string;
     ctx.emit(` ${compareOps[operator]} (lineno = ${op.lineno ?? node.lineno ?? 0}, colno = ${op.colno ?? node.colno ?? 0}, `);
     ctx.compile(op.expr as Node, frame);
     ctx.emit(')');
-  }
+  });
   ctx.emit(')');
 };
 
 export const compileIs = (ctx: Compiler, node: Node, frame: Frame): void => {
   const rightNode = node.right as Node;
   const rightName = rightNode.name as Node | undefined;
-  let right: unknown;
-  if (rightName) {
-    right = rightName.value as unknown;
-  } else {
-    right = rightNode.value as unknown;
-  }
+  const right = (rightName ? rightName.value : rightNode.value) as unknown;
   const lineno = node.lineno ?? 0;
   const colno = node.colno ?? 0;
   ctx.emit(`(lineno = ${lineno}, colno = ${colno}, env.getTest(${JSON.stringify(String(right))}, ${lineno}, ${colno}).call(context, `);

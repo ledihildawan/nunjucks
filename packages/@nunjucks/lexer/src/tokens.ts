@@ -27,11 +27,6 @@ export const createNumberToken = (
   colno: number,
   hasDecimal: boolean
 ): Token => {
-  let type: TokenType;
-  if (hasDecimal) {
-    type = 'float' as TokenType;
-  } else {
-    type = 'int' as TokenType;
-  }
+  const type: TokenType = hasDecimal ? ('float' as TokenType) : ('int' as TokenType);
   return createToken(type, value, lineno, colno);
 };

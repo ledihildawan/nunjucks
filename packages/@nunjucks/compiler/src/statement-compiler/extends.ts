@@ -5,12 +5,7 @@ import type { Compiler } from '../index.ts';
 const getLocationFromNode = (node: Node): { lineno: number; colno: number } => {
   const locationNode = (node.template as Node) || node;
   const isStringLiteral = locationNode.type === 'literal' && typeof locationNode.value === 'string';
-  let extraColno: number;
-  if (isStringLiteral) {
-    extraColno = 1;
-  } else {
-    extraColno = 0;
-  }
+  const extraColno = isStringLiteral ? 1 : 0;
   return {
     lineno: locationNode.lineno,
     colno: (locationNode.colno ?? 0) + extraColno
@@ -64,12 +59,7 @@ export const compileInclude = (ctx: Compiler, node: Node, frame: Frame): void =>
   ctx.emitLine(';');
   ctx.emitLine(`if(typeof ${tmplVar} !== 'string') { const err = new Error('template names must be a string'); err.code = 'INVALID_INCLUDE'; err.subject = ${tmplVar}; throw err; }`);
   ctx.emit(`let ${tmplVar}_template = await env.getTemplate(${tmplVar}, false, `);
-  let ignoreMissing: string;
-  if (node.ignoreMissing) {
-    ignoreMissing = 'true';
-  } else {
-    ignoreMissing = 'false';
-  }
+  const ignoreMissing = node.ignoreMissing ? 'true' : 'false';
   const includeChain = `{parentTmpl: ${ctx.getTemplateName()}, parentLineno: ${location.lineno + 1}, parentColno: ${location.colno + 1}}`;
   ctx.emitLine(`${includeChain}, ${ignoreMissing});`);
 

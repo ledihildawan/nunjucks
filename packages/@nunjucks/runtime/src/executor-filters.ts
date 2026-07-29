@@ -17,10 +17,9 @@ const lookupFilter = (
   const filterFn = filters[name];
   if (filterFn) { return filterFn; }
 
-  let ctxFn: FilterFunction | null = null;
-  if (context[name] && typeof context[name] === 'function') {
-    ctxFn = context[name] as FilterFunction;
-  }
+  const ctxFn = context[name] && typeof context[name] === 'function'
+    ? context[name] as FilterFunction
+    : null;
   if (ctxFn) { return ctxFn; }
 
   if (config.env?.getFilter) {

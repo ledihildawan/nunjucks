@@ -51,10 +51,7 @@ const formatJsTraceHtml = (jsCallerLines: JsCallerLine[]): string => {
   if (jsCallerLines.length === 0) { return ''; }
 
   return jsCallerLines.map(({ lineNum, code, isError }) => {
-    let errorClass = '';
-    if (isError) {
-      errorClass = ' is-error';
-    }
+    const errorClass = isError ? ' is-error' : '';
     return `<div class="code-line${errorClass}"><span class="line-number">${lineNum || '&nbsp;'}</span><span class="code-content">${highlightJs(code)}</span></div>`;
   }).join('');
 };
@@ -79,14 +76,8 @@ const renderContextHtml = (ctx: unknown): string => {
   const hasExpandableValues = values(serialized).some(value => value !== null && typeof value === 'object');
   const dataScript = `<script type="application/json" id="ctx-data">${safeJson(serialized)}</script>`;
 
-  let expandButton = '';
-  if (hasExpandableValues) {
-    expandButton = '<button type="button" class="ctx-action" data-ctx-action="expand">Expand all</button>';
-  }
-  let collapseButton = '';
-  if (hasExpandableValues) {
-    collapseButton = '<button type="button" class="ctx-action" data-ctx-action="collapse" disabled>Collapse all</button>';
-  }
+  const expandButton = hasExpandableValues ? '<button type="button" class="ctx-action" data-ctx-action="expand">Expand all</button>' : '';
+  const collapseButton = hasExpandableValues ? '<button type="button" class="ctx-action" data-ctx-action="collapse" disabled>Collapse all</button>' : '';
   return `<section class="render-context" aria-labelledby="h-ctx">
 <div class="section-heading">
   <h2 id="h-ctx" class="text-label">Render Context</h2>
@@ -141,15 +132,12 @@ const formatStackTraceHtml = (originalError: ErrorWithStack | null, isProduction
   const jsStackLines = stackLines.filter(line => line.trim().startsWith('at '));
   if (jsStackLines.length === 0) { return ''; }
 
-  let linesToShow: string[];
-  if (isProduction) {
-    linesToShow = jsStackLines.filter(line => {
+  const linesToShow = isProduction
+    ? jsStackLines.filter(line => {
       const path = line.toLowerCase();
       return !(path.includes('nunjucks/nunjucks/src/') || path.includes('nunjucks\\nunjucks\\src\\'));
-    });
-  } else {
-    linesToShow = jsStackLines;
-  }
+    })
+    : jsStackLines;
 
   if (linesToShow.length === 0) { return ''; }
 
@@ -158,19 +146,13 @@ const formatStackTraceHtml = (originalError: ErrorWithStack | null, isProduction
 
   const allRows = linesToShow.map((line, index) => {
     const isHidden = index >= VisibleCount;
-    let hiddenClass = '';
-    if (isHidden) {
-      hiddenClass = ' is-collapsed';
-    }
+    const hiddenClass = isHidden ? ' is-collapsed' : '';
     return `<div class="stack-row${hiddenClass}"><code class="stack-code">${linkifyFrame(line.trim(), ide)}</code></div>`;
   }).join('');
 
-  let toggleBtn: string;
-  if (totalHidden > 0) {
-    toggleBtn = `<button class="stack-toggle-btn" id="btn-toggle-stack">Show ${totalHidden} more lines...</button>`;
-  } else {
-    toggleBtn = '';
-  }
+  const toggleBtn = totalHidden > 0
+    ? `<button class="stack-toggle-btn" id="btn-toggle-stack">Show ${totalHidden} more lines...</button>`
+    : '';
 
   return `<section class="stack-trace" aria-labelledby="h-stack">
 <h2 id="h-stack" class="text-label">Stack Trace</h2>

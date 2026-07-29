@@ -6,25 +6,36 @@ interface LinePosition {
 }
 
 const findBestMatch = (lines: string[], keyName: string, searchLine: number, searchRadius: number): LinePosition | null => {
-  let best: LinePosition | null = null;
-  let bestDistance = Number.POSITIVE_INFINITY;
+  const start = Math.max(0, searchLine - searchRadius);
+  const end = Math.min(lines.length - 1, searchLine + searchRadius);
 
-  for (let i = Math.max(0, searchLine - searchRadius); i <= Math.min(lines.length - 1, searchLine + searchRadius); i += 1) {
-    const line = lines[i] ?? '';
+  const findOccurrencesInLine = (lineIndex: number): LinePosition[] => {
+    const line = lines[lineIndex] ?? '';
+    const positions: number[] = [];
     let col = 0;
     let found = line.indexOf(keyName, col);
     while (found !== -1) {
-      const distance = Math.abs(i - searchLine);
-      if (distance < bestDistance || (distance === bestDistance && found < (best?.col ?? Number.POSITIVE_INFINITY))) {
-        bestDistance = distance;
-        best = { line: i + 1, col: found + 1 };
-      }
+      positions.push(found);
       col = found + 1;
       found = line.indexOf(keyName, col);
     }
-  }
+    return positions.map(position => ({ line: lineIndex + 1, col: position + 1 }));
+  };
 
-  return best;
+  const candidates = Array.from({ length: end - start + 1 }, (_, offset) => start + offset).flatMap(findOccurrencesInLine);
+
+  return candidates.reduce<{ best: LinePosition | null; bestDistance: number }>(
+    (acc, candidate) => {
+      const i = candidate.line - 1;
+      const found = candidate.col - 1;
+      const distance = Math.abs(i - searchLine);
+      if (distance < acc.bestDistance || (distance === acc.bestDistance && found < (acc.best?.col ?? Number.POSITIVE_INFINITY))) {
+        return { best: candidate, bestDistance: distance };
+      }
+      return acc;
+    },
+    { best: null, bestDistance: Number.POSITIVE_INFINITY }
+  ).best;
 };
 
 export const findContextKeyPosition = async (

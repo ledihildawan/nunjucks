@@ -15,13 +15,9 @@ const parseCatchBlock = (ctx: ParserContext): { catchBody: Node | null; errVar: 
   skipSymbol(ctx, 'catch');
   skipBlockEnd(ctx);
 
-  let errVar: string | null = null;
-  if (peekToken(ctx).type === 'symbol') {
-    const errToken = nextToken(ctx);
-    if (typeof errToken.value === 'string') {
-      errVar = errToken.value;
-    }
-  }
+  const isErrSymbol = peekToken(ctx).type === 'symbol';
+  const errToken = isErrSymbol ? nextToken(ctx) : null;
+  const errVar = errToken && typeof errToken.value === 'string' ? errToken.value : null;
 
   const catchBody = parseUntilBlocks(ctx, 'endtry');
   return { catchBody, errVar };
@@ -35,14 +31,9 @@ export const parseTry = (ctx: ParserContext): Node => {
 
   const body = parseUntilBlocks(ctx, 'catch', 'endtry');
 
-  let catchBody: Node | null = null;
-  let errVar: string | null = null;
-
-  if (peekToken(ctx).value === 'catch') {
-    const result = parseCatchBlock(ctx);
-    catchBody = result.catchBody;
-    errVar = result.errVar;
-  }
+  const catchResult = peekToken(ctx).value === 'catch' ? parseCatchBlock(ctx) : null;
+  const catchBody = catchResult?.catchBody ?? null;
+  const errVar = catchResult?.errVar ?? null;
 
   if (peekToken(ctx).value === 'endtry') {
     skipSymbol(ctx, 'endtry');

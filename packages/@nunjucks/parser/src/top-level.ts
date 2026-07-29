@@ -7,6 +7,7 @@ import {
 } from '@nunjucks/lexer';
 import { nodeList, output, templateData } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import { pipe } from 'remeda';
 import {
   nextToken,
   peekToken,
@@ -52,17 +53,17 @@ const shouldStripTrailingWhitespace = (
 };
 
 const parseDataToken = (ctx: ParserContext, tok: ReturnType<typeof nextToken>, buf: Node[]): void => {
-  let data: string = tok.value as string;
   const nextTok = peekToken(ctx);
-
-  if (ctx.dropLeadingWhitespace) {
-    data = data.replace(LEADING_WHITESPACE_RE, '');
+  const stripLeading = ctx.dropLeadingWhitespace;
+  const stripTrailing = Boolean(nextTok && shouldStripTrailingWhitespace(nextTok, ctx));
+  if (stripLeading) {
     ctx.dropLeadingWhitespace = false;
   }
-
-  if (nextTok && shouldStripTrailingWhitespace(nextTok, ctx)) {
-    data = data.replace(TRAILING_WHITESPACE_RE, '');
-  }
+  const data = pipe(
+    tok.value as string,
+    s => (stripLeading ? s.replace(LEADING_WHITESPACE_RE, '') : s),
+    s => (stripTrailing ? s.replace(TRAILING_WHITESPACE_RE, '') : s),
+  );
 
   buf.push(output(
     tok.lineno,
@@ -72,16 +73,14 @@ const parseDataToken = (ctx: ParserContext, tok: ReturnType<typeof nextToken>, b
 };
 
 const parseRawToken = (tok: ReturnType<typeof nextToken>, buf: Node[]): void => {
-  let rawContent = tok.value;
-  if (typeof rawContent === 'string') {
-    rawContent = rawContent
-      .replace(RAW_OPEN_TAG_RE, '')
-      .replace(RAW_CLOSE_TAG_RE, '');
-  }
+  const rawContent = tok.value;
+  const content = typeof rawContent === 'string'
+    ? rawContent.replace(RAW_OPEN_TAG_RE, '').replace(RAW_CLOSE_TAG_RE, '')
+    : rawContent;
   buf.push(output(
     tok.lineno,
     tok.colno,
-    [templateData(tok.lineno, tok.colno, rawContent as string)]
+    [templateData(tok.lineno, tok.colno, content as string)]
   ));
 };
 

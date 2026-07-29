@@ -1,35 +1,24 @@
 import { isPair } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
+import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
 import { compileGetTemplate } from './import.ts';
 
 export const compileFromImport = (ctx: Compiler, node: Node, frame: Frame): void => {
   const importedId = compileGetTemplate(ctx, node, frame, { eagerCompile: false, ignoreMissing: false });
 
-  let withContextArg: string;
-  if (node.withContext) {
-    withContextArg = 'context.getVariables(), frame';
-  } else {
-    withContextArg = '';
-  }
+  const withContextArg = node.withContext ? 'context.getVariables(), frame' : '';
   ctx.emitLine(`let ${importedId}_exported = await ${importedId}.getExported(` +
     withContextArg +
     ');');
 
   const namesChildren = (node.names as Node).children as Node[];
-  for (const nameNode of namesChildren) {
-    let name: string;
-    let alias: string;
+  forEach(namesChildren, nameNode => {
+    const isPairNode = isPair(nameNode);
+    const name = (isPairNode ? (nameNode.key as Node).value : nameNode.value) as string;
+    const alias = isPairNode ? (nameNode.value as Node).value as string : name;
     const id = ctx.tmpid();
-
-    if (isPair(nameNode)) {
-      name = (nameNode.key as Node).value as string;
-      alias = (nameNode.value as Node).value as string;
-    } else {
-      name = nameNode.value as string;
-      alias = name;
-    }
 
     ctx.emitLine(`if(Object.prototype.hasOwnProperty.call(${importedId}_exported, "${name}")) {`);
     ctx.emitLine(`let ${id} = ${importedId}_exported["${name}"];`);
@@ -44,5 +33,5 @@ export const compileFromImport = (ctx: Compiler, node: Node, frame: Frame): void
     } else {
       ctx.emitLine(`context.setVariable("${alias}", ${id});`);
     }
-  }
+  });
 };

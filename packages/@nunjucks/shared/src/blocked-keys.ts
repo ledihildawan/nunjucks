@@ -1,17 +1,8 @@
 
 type BlockedKeyCategory = 'object_intrinsic' | 'universal_global' | 'node_global' | 'browser_global' | 'deno_global' | null;
 
-const toSet = (...lists: readonly (readonly string[] | Set<string>)[]): Set<string> => {
-  const result: string[] = [];
-  for (const list of lists) {
-    if (list instanceof Set) {
-      result.push(...list);
-    } else {
-      result.push(...list);
-    }
-  }
-  return new Set<string>(result);
-};
+const toSet = (...lists: readonly (readonly string[] | Set<string>)[]): Set<string> =>
+  new Set<string>(lists.flatMap(list => [...list]));
 
 const hasKey = (arr: readonly string[], key: string): boolean => arr.includes(key);
 

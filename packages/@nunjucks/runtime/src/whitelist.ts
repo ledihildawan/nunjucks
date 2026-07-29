@@ -114,7 +114,9 @@ const traverseAst = (node: unknown, callback: (node: Node) => void): void => {
 
   const traverseArrayField = (field: unknown): void => {
     if (field && Array.isArray(field)) {
-      for (const child of field as unknown[]) { traverseAst(child, callback); }
+      for (const child of field as unknown[]) {
+        traverseAst(child, callback);
+      }
     }
   };
 
@@ -179,18 +181,8 @@ export const createWhitelistValidator = (options: WhitelistValidatorOptions = {}
 
   const allowedTagSet = new Set(tags);
   const allowedFilterSet = new Set(filters);
-  let blockedTagSet: Set<string>;
-  if (blockedTags) {
-    blockedTagSet = new Set(blockedTags);
-  } else {
-    blockedTagSet = new Set<string>();
-  }
-  let blockedFilterSet: Set<string>;
-  if (blockedFilters) {
-    blockedFilterSet = new Set(blockedFilters);
-  } else {
-    blockedFilterSet = new Set<string>();
-  }
+  const blockedTagSet = blockedTags ? new Set(blockedTags) : new Set<string>();
+  const blockedFilterSet = blockedFilters ? new Set(blockedFilters) : new Set<string>();
 
   return {
     validateTag: (tagName: string): boolean => validateTag(allowedTagSet, blockedTagSet, strict, tagName),

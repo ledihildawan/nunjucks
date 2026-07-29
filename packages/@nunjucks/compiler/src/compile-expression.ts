@@ -40,6 +40,7 @@ import {
 } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
+import { forEach } from 'remeda';
 import type { Compiler, NodeTypeMatcher } from './index.ts';
 
 const EXPRESSION_TYPES: NodeTypeMatcher[] = [
@@ -55,9 +56,7 @@ export const compileChildren = (
   node: Node,
   frame?: Frame
 ): void => {
-  for (const child of node.children ?? []) {
-    ctx.compile(child, frame);
-  }
+  forEach(node.children ?? [], child => ctx.compile(child, frame));
 };
 
 export const compileExpression = (

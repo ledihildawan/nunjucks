@@ -17,17 +17,11 @@ export const parseVariableDeclaration = (ctx: ParserContext): Node => {
   const tag = peekToken(ctx);
 
   const patternNode = tryParsePattern(ctx);
-  const targets: Node[] = [];
-
-  if (patternNode) {
-    targets.push(patternNode);
-  } else {
-    const target = parsePrimary(ctx);
-    if (!target || (target.type !== 'symbol' && !target.value)) {
-      fail(ctx, 'Expected variable name or pattern', tag.lineno, tag.colno);
-    }
-    targets.push(target);
+  const target = patternNode ?? parsePrimary(ctx);
+  if (!patternNode && (!target || (target.type !== 'symbol' && !target.value))) {
+    fail(ctx, 'Expected variable name or pattern', tag.lineno, tag.colno);
   }
+  const targets: Node[] = [target];
 
   if (!skipValue(ctx, TOKEN_OPERATOR, ':=')) {
     fail(ctx, 'Expected :=', tag.lineno, tag.colno);
@@ -60,17 +54,11 @@ export const parseVariableAssignment = (ctx: ParserContext): Node => {
   const tag = peekToken(ctx);
 
   const patternNode = tryParsePattern(ctx);
-  const targets: Node[] = [];
-
-  if (patternNode) {
-    targets.push(patternNode);
-  } else {
-    const target = parsePrimary(ctx);
-    if (!target || (target.type !== 'symbol' && !target.value)) {
-      fail(ctx, 'Expected variable name or pattern', tag.lineno, tag.colno);
-    }
-    targets.push(target);
+  const target = patternNode ?? parsePrimary(ctx);
+  if (!patternNode && (!target || (target.type !== 'symbol' && !target.value))) {
+    fail(ctx, 'Expected variable name or pattern', tag.lineno, tag.colno);
   }
+  const targets: Node[] = [target];
 
   const operator = parseOperator(ctx, tag);
   const value = parseExpression(ctx);
@@ -91,10 +79,7 @@ const parseDefineArg = (ctx: ParserContext): { name: string; defaultVal: Node | 
     fail(ctx, 'Expected argument name', argTok.lineno, argTok.colno);
   }
   const argName = nextToken(ctx).value as string;
-  let defaultVal: Node | null = null;
-  if (skipValue(ctx, TOKEN_OPERATOR, '=')) {
-    defaultVal = parseExpression(ctx);
-  }
+  const defaultVal = skipValue(ctx, TOKEN_OPERATOR, '=') ? parseExpression(ctx) : null;
   return { name: argName, defaultVal };
 };
 
@@ -134,11 +119,8 @@ export const parseDefineBlock = (ctx: ParserContext): Node => {
     fail(ctx, 'Expected block name', tag.lineno, tag.colno);
   }
 
-  const args: MacroArgument[] = [];
   const tok = peekToken(ctx);
-  if (tok && tok.type === TOKEN_LEFT_PAREN) {
-    args.push(...parseDefineArgs(ctx));
-  }
+  const args: MacroArgument[] = tok && tok.type === TOKEN_LEFT_PAREN ? parseDefineArgs(ctx) : [];
 
   advanceAfterBlockEnd(ctx, 'define');
 

@@ -2,6 +2,7 @@ import { isDict, isKeywordArgs } from '@nunjucks/nodes';
 import type { MacroNode, CallerNode, Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { createFrame } from '@nunjucks/runtime';
+import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
 
 type MacroLikeNode = MacroNode | CallerNode;
@@ -29,21 +30,21 @@ const buildMacroArgNames = (args: Node[], kwargs: Node | null): { argNames: stri
 };
 
 const emitMacroArgBindings = (ctx: Compiler, args: Node[], kwargs: Node | null, currFrame: Frame): void => {
-  for (const arg of args) {
+  forEach(args, arg => {
     const argValue = arg.value as string;
     ctx.emitLine(`frame.set("${argValue}", l_${argValue});`);
     currFrame.set(argValue, `l_${argValue}`);
-  }
+  });
 
   if (kwargs) {
-    for (const pair of (kwargs.children as Node[])) {
+    forEach(kwargs.children as Node[], pair => {
       const name = (pair.key as Node).value as string;
       ctx.emit(`frame.set("${name}", `);
       ctx.emit(`Object.prototype.hasOwnProperty.call(kwargs, "${name}")`);
       ctx.emit(` ? kwargs["${name}"] : `);
       ctx.compileExpression(pair.value as Node, currFrame);
       ctx.emit(');');
-    }
+    });
   }
 };
 

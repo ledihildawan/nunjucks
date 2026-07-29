@@ -37,15 +37,12 @@ const parseForName = (ctx: ParserContext, node: Node): void => {
 
 export const parseFor = (ctx: ParserContext): Node => {
   const forTok = peekToken(ctx);
-  let node: Node;
-  let endBlock: string;
 
-  if (skipSymbol(ctx, 'for')) {
-    node = for_(forTok.lineno, forTok.colno);
-    endBlock = 'endfor';
-  } else {
+  if (!skipSymbol(ctx, 'for')) {
     return fail(ctx, 'parseFor: expected for', forTok.lineno, forTok.colno);
   }
+  const node = for_(forTok.lineno, forTok.colno);
+  const endBlock = 'endfor';
 
   parseForName(ctx, node);
 

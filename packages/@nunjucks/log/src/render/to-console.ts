@@ -28,12 +28,7 @@ interface ToConsoleOptions {
 }
 
 const formatSimple = (warning: Warning): string => {
-  let title: string;
-  if (warning.varName) {
-    title = `Undefined variable '${warning.varName}'`;
-  } else {
-    title = 'Undefined variable';
-  }
+  const title = warning.varName ? `Undefined variable '${warning.varName}'` : 'Undefined variable';
   return `${picocolors.bgYellow(picocolors.black('[WARNING]'))} ${picocolors.yellow(title)}`;
 };
 
@@ -41,31 +36,19 @@ const formatMedium = (warning: Warning, options: ToConsoleOptions): string => {
   const { templatePath, ide = 'vscode' } = options;
   const { lineno, templateName, varName } = warning;
 
-  let title: string;
-  if (varName) {
-    title = `Undefined variable '${varName}'`;
-  } else {
-    title = 'Undefined variable';
-  }
+  const title = varName ? `Undefined variable '${varName}'` : 'Undefined variable';
 
   const location = toDisplayLocation(lineno ?? null, 0, warning.lineBase ?? 'zero');
   const lineNum = location.line;
 
-  let locationStr: string;
   const path = templateName || templatePath;
-  if (path) {
-    const shortPath = shortenPath(path);
-    const displayPath = `${shortPath}:${lineNum}`;
-    let locationText: string;
-    if (isFilePath(path)) {
-      locationText = makeHyperlink(displayPath, resolveIdeLink(ide, path, lineNum, 1));
-    } else {
-      locationText = displayPath;
-    }
-    locationStr = `${picocolors.dim('at')} ${locationText}`;
-  } else {
-    locationStr = `${picocolors.dim('at line')} ${picocolors.cyan(lineNum)}`;
-  }
+  const displayPath = path ? `${shortenPath(path)}:${lineNum}` : '';
+  const locationText = path && isFilePath(path)
+    ? makeHyperlink(displayPath, resolveIdeLink(ide, path, lineNum, 1))
+    : displayPath;
+  const locationStr = path
+    ? `${picocolors.dim('at')} ${locationText}`
+    : `${picocolors.dim('at line')} ${picocolors.cyan(lineNum)}`;
 
   const parts = pipe(
     [
@@ -103,30 +86,18 @@ const formatFull = (warning: Warning, options: ToConsoleOptions): string => {
   const { dev = false, version = '3.2.4', timestamp, ide = 'vscode' } = options;
   const { lineno, templateName, varName, undefinedMode, code, subject } = warning;
 
-  const parts: string[] = [];
-  parts.push(`${picocolors.bgYellow(picocolors.black('[WARNING]'))} ${picocolors.bold('Template Warning')}`);
-
-  if (code) {
-    parts.push(picocolors.yellow(`[${code}]`));
-  }
-  if (undefinedMode && dev) {
-    parts.push(picocolors.dim(`(${undefinedMode})`));
-  }
-  parts.push('');
-  parts.push(`${picocolors.bold('Message:')} ${picocolors.yellow(getWarningTitle(varName))}`);
-  parts.push(`${picocolors.bold('Location:')} ${getLocationString(lineno, templateName, warning.lineBase, ide)}`);
-
-  if (dev && subject) {
-    parts.push('');
-    parts.push(`${picocolors.bold('Subject:')} ${picocolors.cyan(subject)}`);
-  }
-
-  const footer = [`Nunjucks ${version}`];
-  if (timestamp) {
-    footer.push(timestamp);
-  }
-  parts.push('');
-  parts.push(picocolors.dim(footer.join(' · ')));
+  const footer = [`Nunjucks ${version}`, ...(timestamp ? [timestamp] : [])];
+  const parts: string[] = [
+    `${picocolors.bgYellow(picocolors.black('[WARNING]'))} ${picocolors.bold('Template Warning')}`,
+    ...(code ? [picocolors.yellow(`[${code}]`)] : []),
+    ...(undefinedMode && dev ? [picocolors.dim(`(${undefinedMode})`)] : []),
+    '',
+    `${picocolors.bold('Message:')} ${picocolors.yellow(getWarningTitle(varName))}`,
+    `${picocolors.bold('Location:')} ${getLocationString(lineno, templateName, warning.lineBase, ide)}`,
+    ...(dev && subject ? ['', `${picocolors.bold('Subject:')} ${picocolors.cyan(subject)}`] : []),
+    '',
+    picocolors.dim(footer.join(' · '))
+  ];
 
   return parts.join('\n');
 };

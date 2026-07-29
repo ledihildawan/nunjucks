@@ -19,12 +19,7 @@ const getTargetName = (node: Node | undefined): string | null => {
   if (isLookupVal(node)) {
     const parentName = getTargetName(node.target as Node);
     const val = node.val as Node;
-    let propName: unknown;
-    if (isLiteral(val)) {
-      propName = val.value as unknown;
-    } else {
-      propName = null;
-    }
+    const propName: unknown = isLiteral(val) ? (val.value as unknown) : null;
     if (parentName && propName) { return `${parentName}.${propName}`; }
   }
   return null;

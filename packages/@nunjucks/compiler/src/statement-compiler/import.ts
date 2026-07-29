@@ -12,18 +12,8 @@ const compileGetTemplate = (ctx: Compiler, node: Node, frame: Frame, options: Ge
   const { eagerCompile, ignoreMissing } = options;
   const parentTemplateId = ctx.tmpid();
   const parentName = ctx.getTemplateName();
-  let eagerCompileArg: string;
-  if (eagerCompile) {
-    eagerCompileArg = 'true';
-  } else {
-    eagerCompileArg = 'false';
-  }
-  let ignoreMissingArg: string;
-  if (ignoreMissing) {
-    ignoreMissingArg = 'true';
-  } else {
-    ignoreMissingArg = 'false';
-  }
+  const eagerCompileArg = eagerCompile ? 'true' : 'false';
+  const ignoreMissingArg = ignoreMissing ? 'true' : 'false';
   const location = getTemplateLocation(node);
   ctx.emitLine(`lineno = ${location.lineno}; colno = ${location.colno};`);
   ctx.emit(`let ${parentTemplateId} = await env.getTemplate(`);
@@ -36,12 +26,7 @@ export const compileImport = (ctx: Compiler, node: Node, frame: Frame): void => 
   const target = (node.target as Node).value as string;
   const id = compileGetTemplate(ctx, node, frame, { eagerCompile: false, ignoreMissing: false });
 
-  let withContextArg: string;
-  if (node.withContext) {
-    withContextArg = 'context.getVariables(), frame';
-  } else {
-    withContextArg = '';
-  }
+  const withContextArg = node.withContext ? 'context.getVariables(), frame' : '';
   ctx.emitLine(`let ${id}_exported = await ${id}.getExported(` +
     withContextArg +
     ');');

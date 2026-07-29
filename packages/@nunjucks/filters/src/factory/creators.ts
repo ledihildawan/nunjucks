@@ -14,12 +14,7 @@ const createStringFilterWithArgs = <A extends unknown[]>(
 ) =>
   (value: unknown, ...args: A): unknown => {
     const s = normalize(value, '');
-    let mergedArgs: A;
-    if (args.length > 0) {
-      mergedArgs = args;
-    } else {
-      mergedArgs = defaultArgs;
-    }
+    const mergedArgs = args.length > 0 ? args : defaultArgs;
     return preserveSafe(value, fn(s, ...mergedArgs));
   };
 

@@ -17,15 +17,10 @@ const STACK_FUNCTION_RE = /^at\s+([^\s]+)/u;
 const stripMarkdown = (text: string): string => text.replace(BOLD_MARKDOWN_RE, '$1').replace(CODE_MARKDOWN_RE, '$1');
 
 const getErrorMessage = (error: unknown): string => {
-  let { message } = error as Error;
-  if (!message || typeof message !== 'string') {
-    message = String(error);
-  }
-  const firstStackLine = message.indexOf('\n    at ');
-  if (firstStackLine !== -1) {
-    message = message.slice(0, firstStackLine);
-  }
-  return message;
+  const rawMessage = (error as Error).message;
+  const baseMessage = (!rawMessage || typeof rawMessage !== 'string') ? String(error) : rawMessage;
+  const firstStackLine = baseMessage.indexOf('\n    at ');
+  return firstStackLine !== -1 ? baseMessage.slice(0, firstStackLine) : baseMessage;
 };
 
 const getSeverityLabel = (severity: 'error' | 'warning' | 'info' | undefined): string => {
@@ -102,18 +97,17 @@ const extractErrorParts = (error: unknown, classification: ReturnType<typeof cla
 
 const formatCauses = (causes: string[]): string[] => {
   if (causes.length === 0) { return []; }
-  const parts: string[] = ['', 'Possible Causes:'];
-  for (const c of causes) { parts.push(`  • ${stripMarkdown(c)}`); }
-  return parts;
+  return ['', 'Possible Causes:', ...causes.map(c => `  • ${stripMarkdown(c)}`)];
 };
 
 const formatFix = (fixCode: string, fixComment: string, documentationUrl: string | null): string[] => {
   if (!fixCode) { return []; }
-  const parts: string[] = ['', 'Suggested Fix:'];
-  if (fixComment) { parts.push(`  // ${stripMarkdown(fixComment)}`); }
-  parts.push(`  ${fixCode}`);
-  if (documentationUrl) { parts.push(`  Learn more: ${documentationUrl}`); }
-  return parts;
+  return [
+    '', 'Suggested Fix:',
+    ...(fixComment ? [`  // ${stripMarkdown(fixComment)}`] : []),
+    `  ${fixCode}`,
+    ...(documentationUrl ? [`  Learn more: ${documentationUrl}`] : [])
+  ];
 };
 
 const formatStack = (error: unknown): string => {
@@ -151,15 +145,12 @@ const toText = (error: unknown, options: ToTextOptions = {}): string => {
   }
 
   const formattedStack = formatStack(error);
-  const parts: string[] = [`${severityLabel} ${message}`];
-
-  parts.push(...formatCauses(causes));
-  parts.push(...formatFix(fixCode, fixComment, documentationUrl));
-
-  if (formattedStack) {
-    parts.push('');
-    parts.push(formattedStack);
-  }
+  const parts: string[] = [
+    `${severityLabel} ${message}`,
+    ...formatCauses(causes),
+    ...formatFix(fixCode, fixComment, documentationUrl),
+    ...(formattedStack ? ['', formattedStack] : [])
+  ];
 
   return parts.filter(Boolean).join('\n');
 };

@@ -10,17 +10,17 @@ import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/inline.ts";
 
 const buildSlice = (ctx: ParserContext, bracketTok: Token, start: Node | null): Node => {
-  let stop: Node | null = null;
-  let step: Node | null = null;
+  const peekedForStop = peekToken(ctx);
+  const stop = peekedForStop && peekedForStop.type !== TOKEN_RIGHT_BRACKET &&
+      peekedForStop.type !== TOKEN_COLON
+    ? parseExpression(ctx)
+    : null;
 
-  if (peekToken(ctx) && peekToken(ctx).type !== TOKEN_RIGHT_BRACKET &&
-      peekToken(ctx).type !== TOKEN_COLON) {
-    stop = parseExpression(ctx);
-  }
-
-  if (skip(ctx, TOKEN_COLON) && peekToken(ctx) && peekToken(ctx).type !== TOKEN_RIGHT_BRACKET) {
-      step = parseExpression(ctx);
-    }
+  const hasColon = skip(ctx, TOKEN_COLON);
+  const peekedForStep = hasColon ? peekToken(ctx) : undefined;
+  const step = hasColon && peekedForStep && peekedForStep.type !== TOKEN_RIGHT_BRACKET
+    ? parseExpression(ctx)
+    : null;
 
   expect(ctx, TOKEN_RIGHT_BRACKET);
   const location = step || stop || start || bracketTok;

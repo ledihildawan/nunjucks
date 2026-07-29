@@ -1,5 +1,6 @@
 import { getNodeTypeName } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import { filter, forEach, pipe } from 'remeda';
 
 const ExpressionSecurityError = {
   DYNAMIC_PROPERTY_ACCESS: 'DYNAMIC_PROPERTY_ACCESS',
@@ -69,15 +70,15 @@ const checkLookupVal = (node: Node, path: (string | number)[], blocked: RegExp[]
   const propName = staticPropertyName(node.val as Node);
   if (!propName) { return []; }
 
-  const found: ValidationError[] = [];
   const where = [...path, 'lookupVal'];
-  if (DANGEROUS_PROPERTIES.has(propName)) {
-    found.push(unsafeProperty(`Access to dangerous property '${propName}' is not allowed`, node, where));
-  }
-  if (blocked.some(pattern => pattern.test(propName))) {
-    found.push(unsafeProperty(`Property '${propName}' matches blocked pattern`, node, where));
-  }
-  return found;
+  return [
+    ...(DANGEROUS_PROPERTIES.has(propName)
+      ? [unsafeProperty(`Access to dangerous property '${propName}' is not allowed`, node, where)]
+      : []),
+    ...(blocked.some(pattern => pattern.test(propName))
+      ? [unsafeProperty(`Property '${propName}' matches blocked pattern`, node, where)]
+      : []),
+  ];
 };
 
 const checkSymbol = (node: Node, path: (string | number)[]): ValidationError[] => {
@@ -101,14 +102,18 @@ const walkChildNodes = (
   cfg: Record<string, unknown>,
   path: (string | number)[]
 ): void => {
-  for (const key of Object.keys(node).filter(k => !NON_CHILD_KEYS.has(k))) {
-    const child = node[key];
-    if (Array.isArray(child)) {
-      child.forEach((c, i) => { walk(c as Node, errors, cfg, [...path, key, i]); });
-    } else if (child && typeof child === 'object') {
-      walk(child as Node, errors, cfg, [...path, key]);
-    }
-  }
+  pipe(
+    Object.keys(node),
+    filter(k => !NON_CHILD_KEYS.has(k)),
+    forEach(key => {
+      const child = node[key];
+      if (Array.isArray(child)) {
+        child.forEach((c, i) => { walk(c as Node, errors, cfg, [...path, key, i]); });
+      } else if (child && typeof child === 'object') {
+        walk(child as Node, errors, cfg, [...path, key]);
+      }
+    })
+  );
 };
 
 const walk = (

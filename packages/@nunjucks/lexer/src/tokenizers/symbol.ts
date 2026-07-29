@@ -21,9 +21,11 @@ export const tokenizeSymbol: Tokenizer = (state) => {
     };
   }
 
-  let type: TokenType = 'symbol' as TokenType;
-  if (isBooleanString(sym)) { type = 'boolean' as TokenType; }
-  else if (isNullString(sym)) { type = 'none' as TokenType; }
+  const type: TokenType = isBooleanString(sym)
+    ? ('boolean' as TokenType)
+    : isNullString(sym)
+      ? ('none' as TokenType)
+      : ('symbol' as TokenType);
 
   return {
     token: createToken(type, sym, lineno, colno),

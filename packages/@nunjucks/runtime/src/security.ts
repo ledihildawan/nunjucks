@@ -101,18 +101,11 @@ const checkValueDangerous = (
 ): string[] => {
   if (!isFunction(value)) { return []; }
   const fnName = value.name || key;
-  const dangerous: string[] = [];
-
-  if (isTopLevel && (fnName === 'eval' || fnName === 'Function')) {
-    dangerous.push(currentPath);
-  }
-  if (isTopLevel && isDangerousGlobal(fnName)) {
-    dangerous.push(currentPath);
-  }
-  if (isTopLevel && scan.allowedGlobals && !scan.allowedGlobals.includes(fnName) && !isBuiltIn(fnName)) {
-    dangerous.push(currentPath);
-  }
-  return dangerous;
+  return [
+    ...(isTopLevel && (fnName === 'eval' || fnName === 'Function') ? [currentPath] : []),
+    ...(isTopLevel && isDangerousGlobal(fnName) ? [currentPath] : []),
+    ...(isTopLevel && scan.allowedGlobals && !scan.allowedGlobals.includes(fnName) && !isBuiltIn(fnName) ? [currentPath] : []),
+  ];
 };
 
 const scanForDangerousValues = (
@@ -126,24 +119,20 @@ const scanForDangerousValues = (
   }
   scan.seen.add(obj as object);
 
-  const dangerous: string[] = [];
-  for (const key of keys(obj as Record<string, unknown>)) {
+  return keys(obj as Record<string, unknown>).flatMap(key => {
     const currentPath = path ? `${path}.${key}` : key;
     const value = (obj as Record<string, unknown>)[key];
+    const nested = value && typeof value === 'object' && !isDangerousReference(value)
+      ? scanForDangerousValues(value, scan, currentPath, false)
+      : [];
 
-    dangerous.push(...checkKeyDangerous(key, value, isTopLevel, scan, currentPath));
-    dangerous.push(...checkValueDangerous(value, key, isTopLevel, scan, currentPath));
-
-    if (isDangerousReference(value)) {
-      dangerous.push(currentPath);
-    }
-
-    if (value && typeof value === 'object' && !isDangerousReference(value)) {
-      dangerous.push(...scanForDangerousValues(value, scan, currentPath, false));
-    }
-  }
-
-  return dangerous;
+    return [
+      ...checkKeyDangerous(key, value, isTopLevel, scan, currentPath),
+      ...checkValueDangerous(value, key, isTopLevel, scan, currentPath),
+      ...(isDangerousReference(value) ? [currentPath] : []),
+      ...nested,
+    ];
+  });
 };
 
 /** Public entry: starts a fresh scan with its own cycle-tracking set. */
@@ -154,14 +143,14 @@ const visitAndScrub = <V>(value: V, seen: WeakSet<object>): V => {
   if (!value || typeof value !== 'object' || seen.has(value as object)) { return value; }
   seen.add(value as object);
   const record = value as Record<string, unknown>;
-  for (const key of keys(record)) {
+  keys(record).forEach(key => {
     const child = record[key];
     if (isDangerousReference(child)) {
       delete record[key];
     } else if (child && typeof child === 'object') {
       visitAndScrub(child, seen);
     }
-  }
+  });
   return value;
 };
 
@@ -216,17 +205,18 @@ export const validateContextKeys = (
   }
 
   const contextKeys = keys(context);
-  const blocked: BlockedKeyResult[] = [];
-
-  for (const key of contextKeys) {
+  const blocked = contextKeys.flatMap((key): BlockedKeyResult[] => {
     if (isBlockedKey(key)) {
-      blocked.push({ key, reason: 'blocked key' });
-    } else if (allowedKeys && !allowedKeys.includes(key)) {
-      blocked.push({ key, reason: 'not in allowed keys' });
-    } else if (blockedKeys?.includes(key)) {
-      blocked.push({ key, reason: 'in blocked keys list' });
+      return [{ key, reason: 'blocked key' }];
     }
-  }
+    if (allowedKeys && !allowedKeys.includes(key)) {
+      return [{ key, reason: 'not in allowed keys' }];
+    }
+    if (blockedKeys?.includes(key)) {
+      return [{ key, reason: 'in blocked keys list' }];
+    }
+    return [];
+  });
 
   return {
     valid: blocked.length === 0,
@@ -281,17 +271,12 @@ export const restrictGlobals = (
   allowedGlobals: readonly string[] = []
 ): Record<string, unknown> => {
   const allowed = new Set(allowedGlobals);
-  const restricted: Record<string, unknown> = {};
-
-  for (const key of keys(context)) {
-    if (isDangerousGlobal(key) && !allowed.has(key)) {
-      // skip blocked globals unless explicitly allowed
-    } else {
+  return keys(context).reduce<Record<string, unknown>>((restricted, key) => {
+    if (!(isDangerousGlobal(key) && !allowed.has(key))) {
       restricted[key] = context[key];
     }
-  }
-
-  return restricted;
+    return restricted;
+  }, {});
 };
 
 export interface CreateSecurityValidatorOptions extends ValidateContextOptions {
@@ -315,12 +300,7 @@ export const createSecurityValidator = (options: CreateSecurityValidatorOptions 
 
   return {
     validateContext: (context: unknown): true => {
-      let effectiveAllowedGlobals: readonly string[] | null;
-      if (strictMode) {
-        effectiveAllowedGlobals = [];
-      } else {
-        effectiveAllowedGlobals = allowedGlobals;
-      }
+      const effectiveAllowedGlobals: readonly string[] | null = strictMode ? [] : allowedGlobals;
       return validateContext(context, {
         allowedKeys,
         blockedKeys,

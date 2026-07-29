@@ -27,26 +27,24 @@ export const tokenizeOperator: Tokenizer = (state) => {
   const char = getChar(state);
   if (!DELIM_CHARS.includes(char)) { return null; }
 
-  let op = char;
-  let numChars = 1;
-
   const twoChar = char + getPeek(state);
-  if (isComplexOperator(twoChar)) {
-    op = twoChar;
-    numChars = 2;
+  const threeChar = twoChar + getChar(advance(state, 2));
 
-    const threeCharState = advance(state, 2);
-    const threeChar = twoChar + getChar(threeCharState);
-    if (isComplexOperator(threeChar)) {
-      op = threeChar;
-      numChars = MAX_OPERATOR_CHARS;
-    }
-  }
+  const op = isComplexOperator(threeChar)
+    ? threeChar
+    : isComplexOperator(twoChar)
+      ? twoChar
+      : char;
+
+  const numChars = isComplexOperator(threeChar)
+    ? MAX_OPERATOR_CHARS
+    : isComplexOperator(twoChar)
+      ? 2
+      : 1;
 
   const current = advance(state, numChars);
 
-  let type: TokenType = matchTokenType(op);
-  if (op === '...') { type = 'spread' as TokenType; }
+  const type: TokenType = op === '...' ? ('spread' as TokenType) : matchTokenType(op);
 
   return {
     token: createToken(type, op, state.lineno, state.colno),

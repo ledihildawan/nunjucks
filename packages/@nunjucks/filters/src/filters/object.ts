@@ -1,5 +1,6 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { makeMacro } from '@nunjucks/runtime';
+import { forEach } from 'remeda';
 import { filterError, isArray } from '../factory/index.ts';
 import { getAttrGetter } from '../attributes.ts';
 
@@ -17,7 +18,7 @@ export const groupby = makeMacro(
       }
       throw new Error(`Expected array but got ${typeof arr}`);
     }
-    for (const item of arr) {
+    forEach(arr as object[], (item) => {
       if (item && typeof item === 'object' && !(attr in (item as object))) {
         const errorDef = ERROR_DEFINITIONS.GROUPBY_FILTER_ATTR;
         if (errorDef) {
@@ -25,7 +26,7 @@ export const groupby = makeMacro(
         }
         throw new Error(`Attribute "${attr}" not found in item`);
       }
-    }
+    });
     const getAttr = getAttrGetter(attr);
     return Object.groupBy(arr as object[], (item) => {
       const key = getAttr(item as Record<string, unknown>);

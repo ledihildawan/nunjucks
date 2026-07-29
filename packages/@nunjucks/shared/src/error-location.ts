@@ -166,15 +166,8 @@ const resolveSourceContent = async (
   errColno: number | null,
   subject: string | null,
 ): Promise<{ sourceContent: string | null; sourceStartLine: number; resolvedCallerLine: number | null; resolvedCallerCol: number | null }> => {
-  let sourceContent: string | null = template;
-  let sourceStartLine = 1;
-  let resolvedCallerLine: number | null = activeCallerLine;
-  let resolvedCallerCol: number | null = activeCallerCol;
-
-  if (hasCallerLocation) {
-    resolvedCallerLine = errLineno ?? null;
-    resolvedCallerCol = errColno ?? null;
-  }
+  const baseResolvedCallerLine = hasCallerLocation ? (errLineno ?? null) : activeCallerLine;
+  const baseResolvedCallerCol = hasCallerLocation ? (errColno ?? null) : activeCallerCol;
 
   if (preferCallerLocation && activeCaller && !hasCallerLocation) {
     const { source: updatedSource, line: updatedLine, col: updatedCol } = await resolveCallerFilePosition(
@@ -186,14 +179,11 @@ const resolveSourceContent = async (
       activeCallerLine
     );
     if (updatedSource !== null) {
-      sourceContent = updatedSource;
-      sourceStartLine = 1;
-      resolvedCallerLine = updatedLine;
-      resolvedCallerCol = updatedCol;
+      return { sourceContent: updatedSource, sourceStartLine: 1, resolvedCallerLine: updatedLine, resolvedCallerCol: updatedCol };
     }
   }
 
-  return { sourceContent, sourceStartLine, resolvedCallerLine, resolvedCallerCol };
+  return { sourceContent: template, sourceStartLine: 1, resolvedCallerLine: baseResolvedCallerLine, resolvedCallerCol: baseResolvedCallerCol };
 };
 
 const extractCallerPreference = (

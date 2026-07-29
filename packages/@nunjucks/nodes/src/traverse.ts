@@ -1,4 +1,5 @@
 // TRAVERSE - Canonical AST walk / search / transform utilities (copy-on-write).
+import { filter, forEach, map, reduce } from 'remeda';
 import type { CallExtensionNode, ChildrenNode, Node } from './types/index.ts';
 import { isNode, isCallExtension, isCallExtensionAsync } from './types/guards.ts';
 
@@ -21,15 +22,8 @@ const appendChild = <K extends ChildrenNode>(node: K, child: Node): K =>
   ({ ...node, children: [...node.children, child] });
 
 const mapCOW = <T>(arr: readonly T[], fn: (item: T) => T): T[] => {
-  let res: T[] | null = null;
-  arr.forEach((original, i) => {
-    const item = fn(original);
-    if (item !== original) {
-      res ??= Array.from(arr);
-      res[i] = item;
-    }
-  });
-  return res ?? (arr as T[]);
+  const mapped = map(arr, fn);
+  return mapped.every((item, i) => item === arr[i]) ? (arr as T[]) : mapped;
 };
 
 const walkValue = (val: unknown, walker: (n: Node) => Node): unknown => {
@@ -68,12 +62,7 @@ const walkChildren = (node: Node, walker: (n: Node) => Node): Node => {
     const { args } = node;
     const newArgs = walkValue(args, walker);
     const { contentArgs } = node;
-    let newContentArgs: Node[] | null;
-    if (contentArgs) {
-      newContentArgs = mapCOW(contentArgs, c => walker(c));
-    } else {
-      newContentArgs = contentArgs;
-    }
+    const newContentArgs = contentArgs ? mapCOW(contentArgs, c => walker(c)) : contentArgs;
     if (newArgs !== args || newContentArgs !== contentArgs) {
       return { ...node, args: newArgs, contentArgs: newContentArgs } as Node;
     }
@@ -83,10 +72,11 @@ const walkChildren = (node: Node, walker: (n: Node) => Node): Node => {
   const props = fieldsList.map(f => node[f]);
   const newProps = mapCOW<unknown>(props, p => walkValue(p, walker));
   if (newProps !== props) {
-    const newNode: Record<string, unknown> = { ...node };
-    fieldsList.forEach((f, i) => {
-      newNode[f] = newProps[i];
-    });
+    const newNode = reduce(
+      fieldsList,
+      (acc, f, i) => { acc[f] = newProps[i]; return acc; },
+      { ...node } as Record<string, unknown>,
+    );
     return newNode as Node;
   }
   return node;
@@ -119,7 +109,7 @@ const matchPredicate = (n: Node, predicate: string | ((n: Node) => boolean)): bo
 const searchFieldValue = (n: Node, field: string, search: (n: Node | null | undefined) => void): void => {
   const val = n[field];
   if (Array.isArray(val)) {
-    for (const item of val) { if (isNode(item)) { search(item); } }
+    forEach(val, item => { if (isNode(item)) { search(item); } });
   } else if (isNode(val)) {
     search(val);
   }
@@ -133,9 +123,9 @@ const searchChildren = (n: Node, search: (n: Node | null | undefined) => void): 
     search(n.args);
     n.contentArgs.forEach(search);
   }
-  for (const field of getTraversalFields(n)) {
+  forEach(getTraversalFields(n), field => {
     searchFieldValue(n, field, search);
-  }
+  });
 };
 
 const findAll = (node: Node, predicate: string | ((n: Node) => boolean)): Node[] => {
@@ -171,9 +161,8 @@ const findFirst = (node: Node, predicate: (n: Node) => boolean): Node | undefine
 };
 
 const count = (node: Node, predicate?: (n: Node) => boolean): number => {
-  let n = 0;
-  findAll(node, (nd): boolean => { if (!predicate || predicate(nd)) { n += 1; } return true; });
-  return n;
+  const all = findAll(node, () => true);
+  return predicate ? filter(all, predicate).length : all.length;
 };
 
 const yieldFromField = function* (node: Node, field: string): Generator<Node> {

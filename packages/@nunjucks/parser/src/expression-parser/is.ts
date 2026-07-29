@@ -5,15 +5,13 @@ import type { ParserContext } from "../cursor.ts";
 import { parseCompare } from "./compare.ts";
 
 export const parseIs = (ctx: ParserContext): Node => {
-  let node = parseCompare(ctx);
+  const initialNode = parseCompare(ctx);
   const tok = peekToken(ctx);
-  if (skipSymbol(ctx, 'is')) {
-    const negate = skipSymbol(ctx, 'not');
-    const node2 = parseCompare(ctx);
-    node = is(tok.lineno, tok.colno, node, node2);
-    if (negate) {
-      node = not(tok.lineno, tok.colno, node);
-    }
+  if (!skipSymbol(ctx, 'is')) {
+    return initialNode;
   }
-  return node;
+  const negate = skipSymbol(ctx, 'not');
+  const node2 = parseCompare(ctx);
+  const isNode = is(tok.lineno, tok.colno, initialNode, node2);
+  return negate ? not(tok.lineno, tok.colno, isNode) : isNode;
 };

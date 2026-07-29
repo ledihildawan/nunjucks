@@ -38,8 +38,7 @@ const formatStackLine = (
 
   const [, fullPath, lineNumRaw, colGroup] = pathMatch;
   const lineNum = Number.parseInt(lineNumRaw, 10);
-  let colNum = 1;
-  if (colGroup) { colNum = Number.parseInt(colGroup, 10); }
+  const colNum = colGroup ? Number.parseInt(colGroup, 10) : 1;
   const shortPath = shortenPath(fullPath);
   const fnMatch = trimmed.match(STACK_FUNCTION_RE);
   const fn = fnMatch?.[1] ?? '';

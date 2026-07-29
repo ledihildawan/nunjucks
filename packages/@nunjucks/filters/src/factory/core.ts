@@ -26,33 +26,18 @@ const normalize = (value: unknown, defaultValue: string): string => {
 
 const safeString = (str: unknown): SafeString => {
   if (runtimeIsSafeString(str)) { return str as SafeString; }
-  let s: string;
-  if (isNonNullish(str)) {
-    s = String(str);
-  } else {
-    s = '';
-  }
+  const s = isNonNullish(str) ? String(str) : '';
   return markSafe(s) as SafeString;
 };
 
 const safeHtml = (str: unknown): SafeString => {
   if (runtimeIsSafeString(str)) { return str as SafeString; }
-  let s: string;
-  if (isNonNullish(str)) {
-    s = String(str);
-  } else {
-    s = '';
-  }
+  const s = isNonNullish(str) ? String(str) : '';
   return markSafe(escapeHtml(s)) as SafeString;
 };
 
 const forceHtml = (str: unknown): SafeString => {
-  let s: string;
-  if (isNonNullish(str)) {
-    s = String(str);
-  } else {
-    s = '';
-  }
+  const s = isNonNullish(str) ? String(str) : '';
   return markSafe(escapeHtml(s)) as SafeString;
 };
 

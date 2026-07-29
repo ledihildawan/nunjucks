@@ -16,13 +16,12 @@ export interface Frame {
 }
 
 const setNestedValue = (target: Record<string, unknown>, path: string[], lastPart: string, val: unknown): void => {
-  let current = target;
-  for (const id of path) {
-    if (!current[id]) {
-      current[id] = {};
+  const current = path.reduce<Record<string, unknown>>((acc, id) => {
+    if (!acc[id]) {
+      acc[id] = {};
     }
-    current = current[id] as Record<string, unknown>;
-  }
+    return acc[id] as Record<string, unknown>;
+  }, target);
   current[lastPart] = val;
 };
 
@@ -114,12 +113,7 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
 
       const p = state.parent;
       const val = state.variables[name];
-      let result: unknown;
-      if (val === undefined) {
-        result = p?.lookup(name);
-      } else {
-        result = val;
-      }
+      const result = val === undefined ? p?.lookup(name) : val;
       state.lookupCache.set(name, result);
       return result;
     },

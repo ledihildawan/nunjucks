@@ -31,13 +31,8 @@ const ESCAPE_STYLE: ReadonlyMap<string, string> = Object.freeze(new Map([
   ["'", '&#39;'],
 ]));
 
-const escapeWith = (map: ReadonlyMap<string, string>) => (str: string): string => {
-  let result = '';
-  for (const char of str) {
-    result += map.get(char) ?? char;
-  }
-  return result;
-};
+const escapeWith = (map: ReadonlyMap<string, string>) => (str: string): string =>
+  Array.from(str, char => map.get(char) ?? char).join('');
 
 const escapeAttribute = escapeWith(ESCAPE_ATTRIBUTE);
 const escapeScriptString = escapeWith(ESCAPE_SCRIPT_STRING);
@@ -149,12 +144,10 @@ interface HtmlContextTracker {
 
 const createHtmlContextTracker = (source: string): HtmlContextTracker => {
   const lines = source.split('\n');
-  const lineOffsets: number[] = [0];
-  let offset = 0;
-  for (const line of lines.slice(0, -1)) {
-    offset += line.length + 1;
-    lineOffsets.push(offset);
-  }
+  const lineOffsets: number[] = lines.slice(0, -1).reduce<number[]>(
+    (acc, line) => { acc.push((acc[acc.length - 1] ?? 0) + line.length + 1); return acc; },
+    [0]
+  );
 
   const offsetOf = (lineno: number, colno: number): number => {
     const lineStart = lineOffsets[lineno];

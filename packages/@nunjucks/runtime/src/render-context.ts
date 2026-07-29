@@ -16,22 +16,22 @@ const scopeSet = (scope: Scope, key: string, value: unknown): Scope => ({
   data: new Map(scope.data).set(key, value),
 });
 
-const scopeHas = (scope: Scope, key: string): boolean => {
-  let current: Scope | null = scope;
-  while (current) {
-    if (current.data.has(key)) { return true; }
-    current = current.parent;
-  }
-  return false;
+const scopeHas = (scope: Scope, key: string): boolean =>
+  scope.data.has(key) || (scope.parent !== null && scopeHas(scope.parent, key));
+
+const scopeGet = (scope: Scope | null, key: string): unknown => {
+  if (!scope) { return undefined; }
+  const val = scope.data.get(key);
+  return val !== undefined ? val : scopeGet(scope.parent, key);
 };
 
 const mergeScopeData = (scope: Scope, seen: Set<string>, result: Record<string, unknown>): void => {
-  for (const [k, v] of scope.data) {
+  scope.data.forEach((v, k) => {
     if (!seen.has(k)) {
       seen.add(k);
       result[k] = v;
     }
-  }
+  });
 };
 
 export interface RenderContext {
@@ -57,14 +57,7 @@ export const createRenderContext = (initialData: Record<string, unknown> = {}): 
   };
 
   const context: RenderContext = {
-    get: (key: string): unknown => {
-      let current: Scope | null = currentScope;
-      while (current) {
-        const val = current.data.get(key);
-        if (val !== undefined) { return val; }
-        current = current.parent;
-      }
-    },
+    get: (key: string): unknown => scopeGet(currentScope, key),
 
     set: (key: string, value: unknown): RenderContext => {
       currentScope = scopeSet(currentScope, key, value);
@@ -89,9 +82,10 @@ export const createRenderContext = (initialData: Record<string, unknown> = {}): 
     },
 
     merge: (data: Record<string, unknown> = {}): RenderContext => {
-      for (const [k, v] of Object.entries(data)) {
-        currentScope = scopeSet(currentScope, k, v);
-      }
+      currentScope = Object.entries(data).reduce(
+        (scope, [k, v]) => scopeSet(scope, k, v),
+        currentScope
+      );
       invalidateCache();
       return context;
     },
@@ -122,19 +116,19 @@ export const ctx = createRenderContext;
 
 export const withDefaults = (defaults: Record<string, unknown>) => (context: RenderContext): RenderContext => {
   const newCtx = context.clone();
-  for (const [k, v] of Object.entries(defaults)) {
+  Object.entries(defaults).forEach(([k, v]) => {
     if (newCtx.get(k) === undefined) {
       newCtx.set(k, v);
     }
-  }
+  });
   return newCtx;
 };
 
 export const withComputed = (computations: Record<string, (c: RenderContext) => unknown>) => (context: RenderContext): RenderContext => {
   const newCtx = context.clone();
-  for (const [k, computeFn] of Object.entries(computations)) {
+  Object.entries(computations).forEach(([k, computeFn]) => {
     newCtx.set(k, computeFn(newCtx));
-  }
+  });
   return newCtx;
 };
 

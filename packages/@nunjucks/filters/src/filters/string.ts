@@ -50,8 +50,7 @@ const join = (arr: unknown, del?: string, attr?: string): string => {
     throw new Error(`Expected array but got ${typeof arr}`);
   }
   const d = defaultTo(del, '');
-  let values: unknown[] = arr;
-  if (attr) { values = arr.map((v) => (v as Record<string, unknown>)[attr]); }
+  const values = attr ? arr.map((v) => (v as Record<string, unknown>)[attr]) : arr;
   return (values as unknown[]).join(d);
 };
 
@@ -110,19 +109,14 @@ const DEFAULT_TRUNCATE_LENGTH = 255;
 
 const truncate = (input: unknown, length?: number, killwords?: boolean, end?: string): string => {
   const orig = input;
-  let inp = normalize(input, '');
-  if (typeof inp !== 'string') { inp = String(inp); }
+  const normalized = normalize(input, '');
+  const initial = typeof normalized === 'string' ? normalized : String(normalized);
   const len = defaultTo(length, DEFAULT_TRUNCATE_LENGTH);
-  if (inp.length <= len) { return inp; }
-  if (killwords) {
-    inp = inp.slice(0, len);
-  } else {
-    let idx = inp.lastIndexOf(' ', len);
-    if (idx === -1) { idx = len; }
-    inp = inp.slice(0, idx);
-  }
-  inp += defaultTo(end, '...');
-  return preserveSafe(orig, inp);
+  if (initial.length <= len) { return initial; }
+  const spaceIdx = initial.lastIndexOf(' ', len);
+  const cutIdx = killwords ? len : spaceIdx === -1 ? len : spaceIdx;
+  const result = initial.slice(0, cutIdx) + defaultTo(end, '...');
+  return preserveSafe(orig, result);
 };
 
 const upper = createStringFilter((s: string): string => s.toUpperCase());
@@ -130,12 +124,9 @@ const upper = createStringFilter((s: string): string => s.toUpperCase());
 const urlencode = (obj: unknown): string => {
   const enc = encodeURIComponent;
   if (typeof obj === 'string') { return enc(obj); }
-  let keyvals: [string, unknown][];
-  if (Array.isArray(obj)) {
-    keyvals = obj as [string, unknown][];
-  } else {
-    keyvals = Object.entries(obj as Record<string, unknown>);
-  }
+  const keyvals = Array.isArray(obj)
+    ? (obj as [string, unknown][])
+    : Object.entries(obj as Record<string, unknown>);
   return keyvals.map(([k, v]) => `${enc(k)}=${enc(String(v))}`).join('&');
 };
 

@@ -10,7 +10,8 @@
     "./template": "./src/template.ts"
   },
   "dependencies": {
-    "@nunjucks/shared": "workspace:*"
+    "@nunjucks/shared": "workspace:*",
+    "remeda": "*"
   },
   "description": "Validation utilities for Nunjucks"
 }

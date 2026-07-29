@@ -23,12 +23,7 @@ const resolveTemplateSource = async (template: string, loader: unknown, config: 
   try {
     const source = await (loader as { getSource: (name: string) => Promise<LoaderSource | null> }).getSource(template);
     if (source?.src) {
-      let resolvedPath: string | null;
-      if (config.templatePath) {
-        resolvedPath = null;
-      } else {
-        resolvedPath = source.path;
-      }
+      const resolvedPath: string | null = config.templatePath ? null : source.path;
       return {
         templateSource: source.src,
         templatePath: resolvedPath
@@ -80,12 +75,7 @@ const prepareSandbox = (config: RenderConfig, context: unknown): Record<string, 
   const mergedAllowlist = [...new Set([...internalKeys, ...userAllowlist])];
 
   const blockedKeys = config.blockedContextKeys as readonly string[] | null | undefined;
-  let resolvedBlockedKeys: string[] | undefined;
-  if (blockedKeys !== null && blockedKeys !== undefined) {
-    resolvedBlockedKeys = [...blockedKeys];
-  } else {
-    resolvedBlockedKeys = undefined;
-  }
+  const resolvedBlockedKeys: string[] | undefined = (blockedKeys !== null && blockedKeys !== undefined) ? [...blockedKeys] : undefined;
   const sandboxOptions: SandboxOptions = {
     allowlist: mergedAllowlist,
     blocklistMode: config.sandboxMode !== 'allowlist',
@@ -134,12 +124,7 @@ const compileTemplate = (templateSource: string, config: RenderConfig, templateN
 const handleContextStrictMode = async (context: unknown, config: RenderConfig): Promise<{ warningsCollector: unknown[]; dangerousValuePaths: string[] }> => {
   const warningsCollector: unknown[] = [];
   const contextStrict = config.contextStrict === true || (config.contextStrict !== false && config.dev === true);
-  let dangerousValuePaths: string[];
-  if (contextStrict) {
-    dangerousValuePaths = findContextDangerousValues(context, config);
-  } else {
-    dangerousValuePaths = [];
-  }
+  const dangerousValuePaths: string[] = contextStrict ? findContextDangerousValues(context, config) : [];
 
   if (!contextStrict || dangerousValuePaths.length === 0) {
     return { warningsCollector, dangerousValuePaths };
@@ -178,10 +163,7 @@ const validateRenderInput = async (template: unknown, config: RenderConfig, cont
     const ve = validation.errors[0] as NonNullable<typeof validation.errors[0]>;
     const callerLineno = config._callerLocation?.lineNumber;
     const callerColno = config._callerLocation?.columnNumber;
-    let resolvedLineno: number | null | undefined = callerLineno;
-    if (callerLineno && callerLineno > 1) {
-      resolvedLineno = callerLineno - 1;
-    }
+    const resolvedLineno: number | null | undefined = (callerLineno && callerLineno > 1) ? callerLineno - 1 : callerLineno;
     await createValidationError({
       validationError: ve,
       stamps: {

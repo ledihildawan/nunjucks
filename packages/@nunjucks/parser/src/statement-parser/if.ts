@@ -7,15 +7,13 @@ import { parseUntilBlocks } from "../top-level.ts";
 
 export const parseIf = (ctx: ParserContext): Node => {
   const tag = peekToken(ctx);
-  let node: Node;
 
-  if (skipSymbol(ctx, 'if') || skipSymbol(ctx, 'elif') || skipSymbol(ctx, 'elseif')) {
-    node = if_(tag.lineno, tag.colno);
-  } else {
+  if (!(skipSymbol(ctx, 'if') || skipSymbol(ctx, 'elif') || skipSymbol(ctx, 'elseif'))) {
     return fail(ctx, 'parseIf: expected if, elif, or elseif',
       tag.lineno,
       tag.colno);
   }
+  const node = if_(tag.lineno, tag.colno);
 
   node.cond = parseExpression(ctx);
   advanceAfterBlockEnd(ctx, tag.value as string);

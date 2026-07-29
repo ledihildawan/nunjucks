@@ -31,6 +31,7 @@ import {
 import { peekToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import type { Node } from '@nunjucks/nodes';
+import { find } from 'remeda';
 import { parseFor } from "./for.ts";
 import { parseMacro } from "./macro.ts";
 import { parseCall } from "./call.ts";
@@ -133,10 +134,9 @@ const _parseStatement = (ctx: ParserContext): Node | null => {
     return parser(ctx) as Node;
   }
 
-  for (const ext of ctx.extensions) {
-    if ((ext.tags || []).includes(tagName) && ext.parse) {
-      return ext.parse(ctx, nodes, lexer);
-    }
+  const ext = find(ctx.extensions, e => (e.tags || []).includes(tagName) && Boolean(e.parse));
+  if (ext?.parse) {
+    return ext.parse(ctx, nodes, lexer) as Node;
   }
   return fail(ctx, `unknown block tag: ${tok.value}`, tok.lineno, tok.colno);
 };

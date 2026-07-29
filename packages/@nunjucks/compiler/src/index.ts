@@ -1,6 +1,7 @@
 
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
+import { forEach } from 'remeda';
 import { compileDispatch } from './node-dispatch.ts';
 import { DEFAULT_UNDEFINED_MODE, type UndefinedMode } from '@nunjucks/runtime/undefined';
 import { createHtmlContextTracker, type HtmlContext } from '@nunjucks/shared';
@@ -85,9 +86,7 @@ const createCompilerMethods = (
       compiler.emit(`${code}\n`);
     },
     emitLines: (...lines: string[]) => {
-      for (const line of lines) {
-        compiler.emitLine(line);
-      }
+      forEach(lines, line => compiler.emitLine(line));
     },
     emitFuncBegin: (node, name) => emitCompilerFuncBegin(compiler, node, name),
     emitFuncEnd: noReturn => emitCompilerFuncEnd(compiler, noReturn),

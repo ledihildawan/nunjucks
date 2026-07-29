@@ -1,6 +1,7 @@
 import { isArrayPattern, isObjectPattern, isSymbol } from '@nunjucks/nodes';
 import type { MacroArgument, Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
+import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
 import { compileDestructuring } from './pattern.ts';
 
@@ -28,9 +29,9 @@ const compileVariableDeclaration = (ctx: Compiler, node: Node, frame: Frame): vo
     ctx.compileExpression(node.value as Node, frame);
     ctx.emitLine(';');
 
-    for (const pattern of (node.targets as Node[])) {
+    forEach(node.targets as Node[], pattern => {
       compileDestructuring({ ctx, frame, registerFrame: true }, pattern, valueId);
-    }
+    });
   } else {
     const targets = node.targets as Node[];
     const name = getTargetName(targets[0]);
@@ -53,9 +54,9 @@ const compileVariableAssignment = (ctx: Compiler, node: Node, frame: Frame): voi
     ctx.compileExpression(node.value as Node, frame);
     ctx.emitLine(';');
 
-    for (const pattern of (node.targets as Node[])) {
+    forEach(node.targets as Node[], pattern => {
       compileDestructuring({ ctx, frame, registerFrame: true }, pattern, valueId);
-    }
+    });
   } else {
     const targets = node.targets as Node[];
     const name = getTargetName(targets[0]);
@@ -139,9 +140,9 @@ const compileCompoundAssignment = (ctx: Compiler, node: Node, frame: Frame): voi
       ctx.emitLine(';');
     }
 
-    for (const pattern of (node.targets as Node[])) {
+    forEach(node.targets as Node[], pattern => {
       compileDestructuring({ ctx, frame, registerFrame: true }, pattern, valueId);
-    }
+    });
   } else {
     const targets = node.targets as Node[];
     const name = getTargetName(targets[0]);
@@ -200,11 +201,11 @@ const emitMacroBody = (
       ctx.emitLine(`frame.set("${argObj.name}", ${argObj.name});`);
     });
   } else {
-    for (const arg of args) {
+    forEach(args, arg => {
       const argObj = arg;
       ctx.emitLine(`let ${argObj.name} = l_${argObj.name};`);
       ctx.emitLine(`frame.set("${argObj.name}", ${argObj.name});`);
-    }
+    });
   }
 
   const bufferId = ctx.pushBuffer();

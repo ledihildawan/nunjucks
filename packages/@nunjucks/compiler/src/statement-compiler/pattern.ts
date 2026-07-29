@@ -1,6 +1,7 @@
 import { arrayPattern, isArray, isArrayPattern, isAssignmentPattern, isDict, isHole, isObjectPattern, isPair, isPatternProperty, isRestPattern, isSymbol, objectPattern } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
+import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
 
 /**
@@ -43,12 +44,7 @@ const objectRest = (source: string, restId: string): string =>
   `(() => { const ${restId} = {}; if (${source} != null && typeof ${source} === 'object') { for (const __k in ${source}) { ${restId}[__k] = ${source}[__k]; } } return ${restId}; })()`;
 
 const compileAssignToFrame = ({ ctx, frame, registerFrame }: DestructuringContext, name: string, source: string): void => {
-  let existingId: string | null;
-  if (registerFrame) {
-    existingId = frame.lookup(name) as string;
-  } else {
-    existingId = null;
-  }
+  const existingId = registerFrame ? (frame.lookup(name) as string) : null;
   ctx.emitLine(`frame.set(${JSON.stringify(name)}, ${source}, true);`);
   if (name.charAt(0) !== '_') {
     ctx.emitLine('if(frame.topLevel) {');
@@ -263,9 +259,7 @@ const compileObjectPattern = (dc: DestructuringContext, pattern: Node, source: s
   if (!patternChildren) {
     return;
   }
-  for (const child of patternChildren) {
-    processObjectPatternChild(dc, child, source);
-  }
+  forEach(patternChildren, child => processObjectPatternChild(dc, child, source));
 };
 
 const compileDestructuring = (dc: DestructuringContext, pattern: Node, source: string): void => {

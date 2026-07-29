@@ -22,12 +22,9 @@ const truncate = (value: string, state: TruncateState): string => {
   const remaining = state.maxTotalLength - state.totalLength;
   if (remaining <= 0) { return '[Total size limit reached]'; }
   const max = Math.min(state.maxStringLength, remaining);
-  let result: string;
-  if (value.length > max) {
-    result = `${value.slice(0, Math.max(0, max - TRUNCATION_SUFFIX_BUDGET))}...[Truncated]`;
-  } else {
-    result = value;
-  }
+  const result = value.length > max
+    ? `${value.slice(0, Math.max(0, max - TRUNCATION_SUFFIX_BUDGET))}...[Truncated]`
+    : value;
   state.totalLength += result.length;
   return result;
 };

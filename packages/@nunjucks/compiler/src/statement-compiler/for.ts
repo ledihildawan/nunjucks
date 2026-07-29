@@ -1,6 +1,7 @@
 import { isArray, isArrayPattern, isObjectPattern } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
+import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
 import { compileDestructuring } from './pattern.ts';
 
@@ -15,9 +16,9 @@ const emitLoopBindings = (ctx: Compiler, _arr: string, i: string, len: string): 
     {name: 'length', val: len},
   ];
 
-  for (const b of bindings) {
+  forEach(bindings, b => {
     ctx.emitLine(`frame.set("loop.${b.name}", ${b.val});`);
-  }
+  });
 };
 
 const isArrayBinding = (n: Node): boolean =>

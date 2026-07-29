@@ -148,16 +148,12 @@ const parseArrayPattern = (ctx: ParserContext, lineno: number, colno: number): N
 
 const parseObjectPropertyKey = (ctx: ParserContext): { keyTok: Token; keyName: string | null } => {
   const keyTok = nextToken(ctx);
-  let keyName: string | null = null;
-  if (keyTok.type === TOKEN_STRING) {
-    keyName = String(keyTok.value);
-  } else if (keyTok.type === TOKEN_SYMBOL) {
-    keyName = keyTok.value as string;
-  } else {
+  if (keyTok.type !== TOKEN_STRING && keyTok.type !== TOKEN_SYMBOL) {
     fail(ctx, 'parseObjectPattern: expected property name',
       keyTok.lineno,
       keyTok.colno);
   }
+  const keyName = keyTok.type === TOKEN_STRING ? String(keyTok.value) : keyTok.value as string;
   return { keyTok, keyName };
 };
 

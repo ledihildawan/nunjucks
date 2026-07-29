@@ -7,25 +7,23 @@ import { renderBadge, highlightSource, SEVERITY_HEADINGS } from './to-html-helpe
 
 const renderMarkdownToAnsi = (text: string): string => {
   if (!text) { return ''; }
-  let s = escapeHtml(text);
-  s = s.replace(/`([^`]+)`/gu, '<code class="md-code">$1</code>');
-  s = s.replace(/\*\*([^*]+)\*\*/gu, '<strong>$1</strong>');
-  return s;
+  return escapeHtml(text)
+    .replace(/`([^`]+)`/gu, '<code class="md-code">$1</code>')
+    .replace(/\*\*([^*]+)\*\*/gu, '<strong>$1</strong>');
 };
 
 const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined, displayPath: string): string => {
   if (!sourceTrace || sourceTrace.lines.length === 0) { return ''; }
 
-  const rows: string[] = [];
-  for (const line of sourceTrace.lines) {
-    let errorClass = '';
-    if (line.isError) { errorClass = 'is-error'; }
-    rows.push(`<div class="code-line ${errorClass}"><span class="line-number">${line.number}</span><span class="code-content">${highlightSource(line.content, displayPath)}</span></div>`);
+  const rows = sourceTrace.lines.flatMap(line => {
+    const errorClass = line.isError ? 'is-error' : '';
+    const row = `<div class="code-line ${errorClass}"><span class="line-number">${line.number}</span><span class="code-content">${highlightSource(line.content, displayPath)}</span></div>`;
     if (line.isError && sourceTrace.caret) {
       const spaces = ' '.repeat(sourceTrace.caret.charStart);
-      rows.push(`<div class="code-line error-marker"><span class="line-number"></span><span class="code-content error-marker-content">${spaces}${sourceTrace.caret.carets}</span></div>`);
+      return [row, `<div class="code-line error-marker"><span class="line-number"></span><span class="code-content error-marker-content">${spaces}${sourceTrace.caret.carets}</span></div>`];
     }
-  }
+    return [row];
+  });
 
   return `
     <section class="source-section" aria-labelledby="h-source">
@@ -60,13 +58,12 @@ const buildErrorHeader = (
   const phaseBadgePart = phaseBadge ? ` ${phaseBadge}` : '';
   const devBadge = verbosity === 'full' ? '<span class="badge badge-dev">DEV</span>' : '';
 
-  let errorLocationBlock = '';
-  if (verbosity !== 'simple') {
-    const locationLink = canLinkLocation
-      ? `<a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="loc-link error-location-link">${escapeHtml(locDisplay)}</a>`
-      : `<span class="error-location-text">${locationInfo}</span>`;
-    errorLocationBlock = `<p class="error-location">The error occurred in ${locationLink}</p>`;
-  }
+  const locationLink = canLinkLocation
+    ? `<a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="loc-link error-location-link">${escapeHtml(locDisplay)}</a>`
+    : `<span class="error-location-text">${locationInfo}</span>`;
+  const errorLocationBlock = verbosity !== 'simple'
+    ? `<p class="error-location">The error occurred in ${locationLink}</p>`
+    : '';
 
   return `
   <header class="error-header">
@@ -139,18 +136,19 @@ const buildErrorFooter = (
   displayCol: number
 ): string => {
   const timestampPart = timestamp ? ` · ${escapeHtml(timestamp)}` : '';
-  let footerActions = '';
-  if (verbosity === 'full' && canLinkLocation) {
-    const ideMeta = getIdeMeta(ide);
-  const _ideLabel = `Open in ${ideMeta.label}`;
-    footerActions = `
+  const footerActions = verbosity === 'full' && canLinkLocation
+    ? (() => {
+      const ideMeta = getIdeMeta(ide);
+      const _ideLabel = `Open in ${ideMeta.label}`;
+      return `
     <div class="error-footer-actions">
       <a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="btn btn-solid">
         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">${ideMeta.icon}</svg>
         ${_ideLabel}
       </a>
     </div>`;
-  }
+    })()
+    : '';
   return `
   <footer class="error-footer">
     <p class="meta">

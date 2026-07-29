@@ -1,3 +1,5 @@
+import { filter, flatMap } from 'remeda';
+
 interface DangerousCodeViolation {
   message: string;
   pattern: string;
@@ -16,11 +18,10 @@ const DANGEROUS_PATTERNS: ReadonlyArray<{ pattern: RegExp; message: string }> = 
 
 const IDENTIFIER_RE = /[a-zA-Z_$][\w$]*/;
 
-const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeViolation[] => {
-  const violations: DangerousCodeViolation[] = [];
-
-  for (const { pattern, message } of DANGEROUS_PATTERNS) {
+const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeViolation[] =>
+  flatMap(DANGEROUS_PATTERNS, ({ pattern, message }) => {
     const regex = new RegExp(pattern.source, 'g');
+    const matches: DangerousCodeViolation[] = [];
     let match: RegExpExecArray | null;
     for (;;) {
       match = regex.exec(templateContent);
@@ -30,17 +31,11 @@ const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeVio
       const line = lines.length;
       const col = lines.at(-1)?.length ?? 0;
       const nameMatch = match[0].match(IDENTIFIER_RE);
-      let name: string | null = null;
-      if (nameMatch) {
-        const [firstMatch] = nameMatch;
-        name = firstMatch;
-      }
-      violations.push({ message, pattern: pattern.source, line, col, name });
+      const name: string | null = nameMatch ? nameMatch[0] : null;
+      matches.push({ message, pattern: pattern.source, line, col, name });
     }
-  }
-
-  return violations;
-};
+    return matches;
+  });
 
 export interface TemplateValidationError {
   code: string;
@@ -97,17 +92,10 @@ const checkDangerousCode = (template: string, config: TemplateValidatorConfig): 
 };
 
 export const validateTemplate = (template: string, config: TemplateValidatorConfig): TemplateValidationResult => {
-  const errors: TemplateValidationError[] = [];
-
-  const sizeError = checkTemplateSize(template, config);
-  if (sizeError) {
-    errors.push(sizeError);
-  }
-
-  const dangerousError = checkDangerousCode(template, config);
-  if (dangerousError) {
-    errors.push(dangerousError);
-  }
+  const errors = filter(
+    [checkTemplateSize(template, config), checkDangerousCode(template, config)],
+    (error): error is TemplateValidationError => error !== null
+  );
 
   return {
     valid: errors.length === 0,

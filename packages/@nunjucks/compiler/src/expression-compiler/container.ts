@@ -1,6 +1,7 @@
 import { isLiteral, isSpread, isSymbol, literal } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
+import { forEach, reduce } from 'remeda';
 import type { Compiler } from '../index.ts';
 
 const STRING_ESCAPE_MAP: Record<string, string> = {
@@ -18,13 +19,8 @@ const TEMPLATE_ESCAPE_MAP: Record<string, string> = {
   '$': '\\$',
 };
 
-const escapeString = (str: string): string => {
-  let result = '';
-  for (const char of str) {
-    result += STRING_ESCAPE_MAP[char] ?? char;
-  }
-  return result;
-};
+const escapeString = (str: string): string =>
+  reduce([...str], (result, char) => result + (STRING_ESCAPE_MAP[char] ?? char), '');
 
 const compileLiteral = (ctx: Compiler, node: Node): void => {
   if (typeof node.value === 'string') {
@@ -66,16 +62,17 @@ const compileNodeList = (ctx: Compiler, node: Node, frame: Frame): void => {
 };
 
 const compilePair = (ctx: Compiler, node: Node, frame: Frame): void => {
-  let key = node.key as Node;
+  const rawKey = node.key as Node;
   const val = node.value as Node;
+  const key = isSymbol(rawKey)
+    ? literal(rawKey.lineno, rawKey.colno, rawKey.value)
+    : rawKey;
 
-  if (isSymbol(key)) {
-    key = literal(key.lineno, key.colno, key.value);
-  } else if (!(isLiteral(key) &&
-    typeof key.value === 'string')) {
+  if (!isSymbol(rawKey) && !(isLiteral(rawKey) &&
+    typeof rawKey.value === 'string')) {
     ctx.fail('compilePair: Dict keys must be strings or names',
-      key.lineno,
-      key.colno);
+      rawKey.lineno,
+      rawKey.colno);
   }
 
   ctx.compile(key, frame);
@@ -94,27 +91,17 @@ const compileSpread = (ctx: Compiler, node: Node, frame: Frame): void => {
   ctx.compile(node.argument as Node, frame);
 };
 
-const escapeTemplateString = (str: string): string => {
-  let result = '';
-  for (const char of str) {
-    result += TEMPLATE_ESCAPE_MAP[char] ?? char;
-  }
-  return result;
-};
+const escapeTemplateString = (str: string): string =>
+  reduce([...str], (result, char) => result + (TEMPLATE_ESCAPE_MAP[char] ?? char), '');
 
 const compileTemplateLiteral = (ctx: Compiler, node: Node, frame: Frame): void => {
   const rawQuasis = (node.quasis as { quasis?: unknown[] } | unknown[] | undefined);
-  let quasis: unknown[];
-  if (Array.isArray(rawQuasis)) {
-    quasis = rawQuasis;
-  } else if (rawQuasis && (rawQuasis as { quasis?: unknown[] }).quasis) {
-    quasis = (rawQuasis as { quasis?: unknown[] }).quasis || [];
-  } else {
-    quasis = [];
-  }
+  const quasis: unknown[] = Array.isArray(rawQuasis)
+    ? rawQuasis
+    : (rawQuasis as { quasis?: unknown[] })?.quasis || [];
   ctx.emit('`');
 
-  for (const quasi of quasis) {
+  forEach(quasis, quasi => {
     const q = quasi as Node & { value?: string };
     if ((q.type as string) === 'template') {
       ctx.emit(escapeTemplateString(q.value as string));
@@ -123,7 +110,7 @@ const compileTemplateLiteral = (ctx: Compiler, node: Node, frame: Frame): void =
       ctx.compile(q.node as Node, frame);
       ctx.emit('}');
     }
-  }
+  });
 
   ctx.emit('`');
 };

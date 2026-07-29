@@ -214,10 +214,9 @@ const emitUndefinedWarning = (self: unknown, opts: EmitUndefinedWarningOptions):
       lineBase: 'zero',
     } as WarningContext,
   );
-  let collector: unknown[] | undefined;
-  if (self && typeof self === 'object') {
-    collector = (self as { __warnings__?: unknown[] }).__warnings__;
-  }
+  const collector = self && typeof self === 'object'
+    ? (self as { __warnings__?: unknown[] }).__warnings__
+    : undefined;
   if (Array.isArray(collector)) {
     collector.push(warning);
   } else {
@@ -230,11 +229,9 @@ const resolveUndefinedProperty = (opts: ResolveUndefinedOptions): 'undefined' =>
   const { self, val, varName, lineno, colno, mode, phase, templateName } = opts;
   const propResult = val as { __access_path__?: string; __nunjucks_parent__?: string };
   const accessPath = propResult.__access_path__ || varName || 'unknown';
-  let parentName = propResult.__nunjucks_parent__;
-  if (!parentName && varName && varName.includes('.')) {
-    const lastDot = varName.lastIndexOf('.');
-    parentName = varName.slice(0, lastDot);
-  }
+  const parentName = (!propResult.__nunjucks_parent__ && varName && varName.includes('.'))
+    ? varName.slice(0, varName.lastIndexOf('.'))
+    : propResult.__nunjucks_parent__;
 
   if (mode === 'strict') {
     throwRuntimeError(ERROR_DEFINITIONS.UNDEFINED_PROPERTY, {
@@ -302,12 +299,9 @@ const resolveUndefinedValue = (opts: ResolveUndefinedOptions): 'undefined' => {
   const { self, varName, lineno, colno, mode, phase, templateName } = opts;
 
   if (mode === 'strict') {
-    let errorDef: ErrorDefinitionEntry;
-    if (varName) {
-      errorDef = ERROR_DEFINITIONS.UNDEFINED_VARIABLE;
-    } else {
-      errorDef = { name: 'UNDEFINED_VALUE', message: () => 'Undefined value', pattern: MATCH_ANY_RE } as const;
-    }
+    const errorDef: ErrorDefinitionEntry = varName
+      ? ERROR_DEFINITIONS.UNDEFINED_VARIABLE
+      : { name: 'UNDEFINED_VALUE', message: () => 'Undefined value', pattern: MATCH_ANY_RE } as const;
     throwRuntimeError(errorDef, {
       self,
       lineno,

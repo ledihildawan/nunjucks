@@ -112,24 +112,18 @@ const parseWalrus = (ctx: ParserContext, node: Node): Node => {
 };
 
 export const parseInlineIf = (ctx: ParserContext): Node => {
-  let node = parseOr(ctx);
+  const node = parseOr(ctx);
 
   if (skipSymbol(ctx, 'if')) {
     const condNode = parseOr(ctx);
-    const bodyNode = node;
-    node = inlineIf(node.lineno, node.colno);
-    node.body = bodyNode;
-    node.cond = condNode;
-    if (skipSymbol(ctx, 'else')) {
-      node.else_ = parseOr(ctx);
-    } else {
-      node.else_ = null;
-    }
-    return node;
+    const ifNode = inlineIf(node.lineno, node.colno);
+    ifNode.body = node;
+    ifNode.cond = condNode;
+    ifNode.else_ = skipSymbol(ctx, 'else') ? parseOr(ctx) : null;
+    return ifNode;
   }
 
-  node = parseTernary(ctx, node);
-  return parseWalrus(ctx, node);
+  return parseWalrus(ctx, parseTernary(ctx, node));
 };
 
 export const parseExpression = (ctx: ParserContext): Node => parseInlineIf(ctx);

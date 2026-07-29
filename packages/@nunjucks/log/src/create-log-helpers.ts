@@ -64,19 +64,14 @@ const buildLocationMessage = (
   err: TemplateError,
   chain?: IncludeChain
 ): string => {
-  let msg = `(${locationPath || 'unknown path'})`;
-  if (err.firstUpdate) {
-    const annotation = formatLocationAnnotation(err.lineno, err.colno, err.lineBase);
-    if (annotation) { msg += ` ${annotation}`; }
-  }
-  if (chain && err.firstUpdate) {
-    msg += formatParentLocation(chain);
-  }
-  msg += '\n ';
-  if (err.firstUpdate) {
-    msg += ' ';
-  }
-  return msg;
+  const annotation = err.firstUpdate ? formatLocationAnnotation(err.lineno, err.colno, err.lineBase) : null;
+  return [
+    `(${locationPath || 'unknown path'})`,
+    annotation ? ` ${annotation}` : null,
+    chain && err.firstUpdate ? formatParentLocation(chain) : null,
+    '\n ',
+    err.firstUpdate ? ' ' : null
+  ].filter((part): part is string => part !== null).join('');
 };
 
 export { resolveMessage, normalizeContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, formatParentLocation, buildLocationMessage };

@@ -1,4 +1,5 @@
 import { createLog } from '@nunjucks/log';
+import { find } from 'remeda';
 import { peekToken } from "./cursor.ts";
 import type { ParserContext } from "./cursor.ts";
 
@@ -18,12 +19,7 @@ const DEFAULT_CAUSES = ['Check **template syntax** at the error location', 'Comp
 
 const inferCauses = (msg: string): string[] => {
   const lower = msg.toLowerCase();
-  for (const pattern of CAUSE_PATTERNS) {
-    if (pattern.check(lower)) {
-      return pattern.causes;
-    }
-  }
-  return DEFAULT_CAUSES;
+  return find(CAUSE_PATTERNS, pattern => pattern.check(lower))?.causes ?? DEFAULT_CAUSES;
 };
 
 const FIX_PATTERNS: Array<{ check: (lower: string) => boolean; fix: string }> = [
@@ -37,24 +33,16 @@ const DEFAULT_FIX = 'Check template syntax around the error location';
 
 const inferFix = (msg: string): string => {
   const lower = msg.toLowerCase();
-  for (const pattern of FIX_PATTERNS) {
-    if (pattern.check(lower)) {
-      return pattern.fix;
-    }
-  }
-  return DEFAULT_FIX;
+  return find(FIX_PATTERNS, pattern => pattern.check(lower))?.fix ?? DEFAULT_FIX;
 };
 
 export const EXPECTED_COLON_AFTER_DICT_KEY = 'EXPECTED_COLON_AFTER_DICT_KEY';
 
 export const error = (ctx: ParserContext, msg: string, lineno?: number, colno?: number, sentinel?: string) => {
-  let resolvedLineno = lineno;
-  let resolvedColno = colno;
-  if (resolvedLineno === undefined || resolvedColno === undefined) {
-    const tok = peekToken(ctx) || {};
-    resolvedLineno = tok.lineno ?? ctx.tokens?.lineno;
-    resolvedColno = tok.colno ?? ctx.tokens?.colno;
-  }
+  const needsResolve = lineno === undefined || colno === undefined;
+  const peeked = needsResolve ? peekToken(ctx) : undefined;
+  const resolvedLineno = needsResolve ? (peeked?.lineno ?? ctx.tokens?.lineno) : lineno;
+  const resolvedColno = needsResolve ? (peeked?.colno ?? ctx.tokens?.colno) : colno;
   const err = createLog('error', {
     name: 'PARSER_ERROR',
     message: () => msg,

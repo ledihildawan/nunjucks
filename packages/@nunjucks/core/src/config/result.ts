@@ -114,12 +114,9 @@ export const fromThrowableAsync = <T>(
 export const combine = <T>(
   results: readonly Result<T, unknown>[]
 ): Result<readonly T[], unknown> => {
-  const values: T[] = [];
-  for (const result of results) {
-    if (isErr(result)) {
-      return err((result as ErrResult<T, unknown>).error);
-    }
-    values.push((result as OkResult<T, unknown>).value);
+  const firstError = results.find((r) => isErr(r));
+  if (firstError) {
+    return err((firstError as ErrResult<T, unknown>).error);
   }
-  return ok(values);
+  return ok(results.map((r) => (r as OkResult<T, unknown>).value));
 };

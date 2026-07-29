@@ -1,6 +1,7 @@
 import { TOKEN_TEMPLATE_LITERAL } from '@nunjucks/lexer';
 import { symbol, templateLiteral } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import { map } from 'remeda';
 import { nextToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 
@@ -34,9 +35,7 @@ export const parseTemplateLiteral = (ctx: ParserContext): Node | null => {
   const templateData = tok.value as { quasis?: Quasi[] };
   const quasis = templateData.quasis || [];
 
-  const processedQuasis: { type: string; node?: Node; value?: string }[] = [];
-
-  for (const quasi of quasis) {
+  const processedQuasis = map(quasis, quasi => {
     if (quasi.type === 'expression' && quasi.value) {
       if (!isSafeTemplateExpression(quasi.value)) {
         fail(ctx, 'Template literal expressions must be simple identifiers only. ' +
@@ -45,11 +44,10 @@ export const parseTemplateLiteral = (ctx: ParserContext): Node | null => {
           tok.lineno, tok.colno);
       }
       const exprNode = symbol(tok.lineno, tok.colno, quasi.value);
-      processedQuasis.push({ type: 'expression', node: exprNode });
-    } else {
-      processedQuasis.push({ type: 'template', value: quasi.value });
+      return { type: 'expression', node: exprNode };
     }
-  }
+    return { type: 'template', value: quasi.value };
+  });
 
   return templateLiteral(tok.lineno, tok.colno, processedQuasis);
 };

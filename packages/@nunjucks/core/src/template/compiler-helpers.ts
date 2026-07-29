@@ -15,17 +15,18 @@ const createTemplateCompiler = (state: TemplateState) => {
     state.env.emit?.(HOOK_EVENTS.TEMPLATE_COMPILE_START, { template: state, path: state.path });
 
     try {
-      let props: Record<string, unknown> | null;
-      if (state.tmplProps) {
-        props = state.tmplProps;
-      } else {
+      const compileToProps = (): Record<string, unknown> | null => {
+        if (state.tmplProps) {
+          return state.tmplProps;
+        }
         const c = createCompiler(state.path || '', state.env.opts.undefined as UndefinedMode | undefined, state.tmplStr || '');
         const ast = parse(state.tmplStr || '', [], state.env.opts as ParseOptions);
         const transformedAst = transform(ast);
         c.compile(transformedAst);
         const code = c.getCode();
-        props = new Function(code)() as Record<string, unknown> | null;
-       }
+        return new Function(code)() as Record<string, unknown> | null;
+      };
+      const props: Record<string, unknown> | null = compileToProps();
 
       state.blocks = extractBlocks(props as Record<string, unknown>) as Record<string, (...args: unknown[]) => unknown>;
       state.blockMeta = (props?.__blockMeta || {}) as Record<string, unknown>;

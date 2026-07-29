@@ -7,10 +7,7 @@ import type { Csp, ErrorLike, ToHtmlOptions } from './to-html-types.ts';
 import type { SourceTrace } from './internal/source-trace.ts';
 
 const document = (title: string, body: string, scripts = '', csp: Csp | null = null): string => {
-  let styleNonce = '';
-  if (csp?.nonce) {
-    styleNonce = ` nonce="${csp.nonce}"`;
-  }
+  const styleNonce = csp?.nonce ? ` nonce="${csp.nonce}"` : '';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,10 +28,7 @@ ${scripts}
 };
 
 const buildProductionBody = (options: ToHtmlOptions): string => {
-  let ref = '';
-  if (options.timestamp) {
-    ref = `<p class="prod-ref">${options.timestamp}</p>`;
-  }
+  const ref = options.timestamp ? `<p class="prod-ref">${options.timestamp}</p>` : '';
   return `
 <main class="prod-main">
   <div class="prod-icon">

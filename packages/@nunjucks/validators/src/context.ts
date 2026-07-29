@@ -1,4 +1,5 @@
 import process from "node:process";
+import { flatMap } from 'remeda';
 interface SecurityError extends Error {
   code: string;
   dangerousPaths?: string[];
@@ -73,17 +74,11 @@ const dangerousPathsForKey = (
 ): string[] => {
   if (PROTOTYPE_POLLUTION_KEYS.has(key)) { return [currentPath]; }
 
-  const found: string[] = [];
-  if (isTopLevel && DANGEROUS_GLOBALS.has(key) && !isAllowedGlobal(key, scan)) {
-    found.push(currentPath);
-  }
-  if (isDangerousFunction(value, key, scan)) {
-    found.push(currentPath);
-  }
-  if (isDangerousValue(value)) {
-    found.push(currentPath);
-  }
-  return found;
+  return [
+    ...(isTopLevel && DANGEROUS_GLOBALS.has(key) && !isAllowedGlobal(key, scan) ? [currentPath] : []),
+    ...(isDangerousFunction(value, key, scan) ? [currentPath] : []),
+    ...(isDangerousValue(value) ? [currentPath] : []),
+  ];
 };
 
 /** What stays fixed for one whole scan; only the value and its path change. */
@@ -98,34 +93,25 @@ const scanForDangerousValues = (
   path = '',
   isTopLevel = true
 ): string[] => {
-  const dangerous: string[] = [];
-
   if (!obj || typeof obj !== 'object' || scan.seen.has(obj as object)) {
-    return dangerous;
+    return [];
   }
   scan.seen.add(obj as object);
 
   const record = obj as Record<string, unknown>;
-  for (const key of Object.keys(record)) {
-    let currentPath: string;
-    if (path) {
-      currentPath = `${path}.${key}`;
-    } else {
-      currentPath = key;
-    }
+  return flatMap(Object.keys(record), (key) => {
+    const currentPath = path ? `${path}.${key}` : key;
     const value = record[key];
 
-    dangerous.push(...dangerousPathsForKey({ key, value, path: currentPath }, scan, isTopLevel));
+    const dangerousForKey = dangerousPathsForKey({ key, value, path: currentPath }, scan, isTopLevel);
 
     // Never descend into a prototype-pollution key.
     const descend = !PROTOTYPE_POLLUTION_KEYS.has(key) &&
       value && typeof value === 'object' && !isDangerousValue(value);
-    if (descend) {
-      dangerous.push(...scanForDangerousValues(value, scan, currentPath, false));
-    }
-  }
-
-  return dangerous;
+    return descend
+      ? [...dangerousForKey, ...scanForDangerousValues(value, scan, currentPath, false)]
+      : dangerousForKey;
+  });
 };
 
 /** Public entry: starts a fresh scan with its own cycle-tracking set. */
@@ -150,19 +136,15 @@ const validateRenderContext = (context: unknown, config: ContextValidatorConfig)
     return { valid: true, errors: [] };
   } catch (err) {
     const securityError = err as SecurityError;
-    const errorObj: ContextValidationResult = {
+    const dangerousPaths = securityError.dangerousPaths;
+    return {
       valid: false,
       errors: [{
         code: securityError.code || 'SECURITY_VIOLATION',
-        message: securityError.message
+        message: securityError.message,
+        ...(dangerousPaths ? { subject: dangerousPaths[0], dangerousPaths } : {})
       }]
     };
-    if (securityError.dangerousPaths) {
-      const firstError = errorObj.errors[0] as NonNullable<typeof errorObj.errors[0]>;
-      firstError.subject = securityError.dangerousPaths[0];
-      firstError.dangerousPaths = securityError.dangerousPaths;
-    }
-    return errorObj;
   }
 };
 

@@ -68,9 +68,9 @@ const buildContextObject = (
     },
     getExported: () => {
       const result: Record<string, unknown> = {};
-      for (const name of exported) {
+      exported.forEach(name => {
         result[name] = ctx[name];
-      }
+      });
       return result;
     },
     getSuper: (_envObj: unknown, name: string, _block: unknown, _frame: Frame, lineno: number | null = null, colno: number | null = null) => {

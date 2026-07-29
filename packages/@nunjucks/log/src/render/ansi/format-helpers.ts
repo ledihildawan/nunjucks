@@ -19,24 +19,21 @@ const formatCausesAnsi = (causes: readonly string[]): string => {
 const formatFixAnsi = (fixCode: string | null, fixComment: string | null, documentationUrl: string | null): string => {
   if (!fixCode) { return ''; }
 
-  const parts: string[] = [`${picocolors.bold('Suggested Fix:')}`];
-  if (fixComment) { parts.push(picocolors.dim(`// ${stripMarkdown(fixComment)}`)); }
-  parts.push(picocolors.green(fixCode));
-  if (documentationUrl) { parts.push(`\n${picocolors.dim(`Learn more: ${documentationUrl}`)}`); }
+  const parts: string[] = [
+    `${picocolors.bold('Suggested Fix:')}`,
+    ...(fixComment ? [picocolors.dim(`// ${stripMarkdown(fixComment)}`)] : []),
+    picocolors.green(fixCode),
+    ...(documentationUrl ? [`\n${picocolors.dim(`Learn more: ${documentationUrl}`)}`] : [])
+  ];
 
   return parts.join('\n');
 };
 
 const getErrorMessage = (error: unknown): string => {
-  let { message } = error as Error;
-  if (!message) {
-    message = String(error);
-  }
-  const firstStackLine = message.indexOf('\n    at ');
-  if (firstStackLine !== -1) {
-    message = message.slice(0, firstStackLine);
-  }
-  return message;
+  const rawMessage = (error as Error).message;
+  const baseMessage = rawMessage || String(error);
+  const firstStackLine = baseMessage.indexOf('\n    at ');
+  return firstStackLine !== -1 ? baseMessage.slice(0, firstStackLine) : baseMessage;
 };
 
 const LEADING_AT_RE = /^ at /;
@@ -105,24 +102,18 @@ const formatFullAnsi = (
   const severityLabel = getSeverityLabel(severity);
   const header = `${severityLabel} ${message}${locationStr}\n`;
 
-  const outputParts: string[] = [header];
-
-  if (sourceTrace && sourceTrace.lines.length > 0) {
-    outputParts.push(picocolors.bold('Source Trace:'));
-    outputParts.push(formatSourceTrace(sourceTrace.lines, sourceTrace.caret).join('\n'));
-  }
-
   const causesStr = formatCausesAnsi(causes);
-  if (causesStr) { outputParts.push(causesStr); }
-
   const fixStr = formatFixAnsi(fixCode, fixComment, documentationUrl);
-  if (fixStr) { outputParts.push(fixStr); }
-
-  if (renderContext) {
-    outputParts.push(renderContextAnsi(renderContext));
-  }
-
-  outputParts.push(`\n${picocolors.bold('Stack Trace:')}\n${formattedStack}`);
+  const outputParts: string[] = [
+    header,
+    ...((sourceTrace && sourceTrace.lines.length > 0)
+      ? [picocolors.bold('Source Trace:'), formatSourceTrace(sourceTrace.lines, sourceTrace.caret).join('\n')]
+      : []),
+    ...(causesStr ? [causesStr] : []),
+    ...(fixStr ? [fixStr] : []),
+    ...(renderContext ? [renderContextAnsi(renderContext)] : []),
+    `\n${picocolors.bold('Stack Trace:')}\n${formattedStack}`
+  ];
 
   return outputParts.filter(Boolean).join('\n');
 };

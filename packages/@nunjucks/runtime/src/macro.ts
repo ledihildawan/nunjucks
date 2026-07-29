@@ -24,12 +24,9 @@ export function makeMacro(argNames: string[], kwargNames: string[], func: Runtim
       });
       args.push(kwargs);
     } else if (argCount < argNames.length) {
-      args = macroArgs.slice(0, argCount);
-      for (const arg of argNames.slice(argCount)) {
-        args.push(kwargs[arg]);
-        delete kwargs[arg];
-      }
-      args.push(kwargs);
+      const missingNames = argNames.slice(argCount);
+      args = [...macroArgs.slice(0, argCount), ...missingNames.map(arg => kwargs[arg]), kwargs];
+      missingNames.forEach(arg => { delete kwargs[arg]; });
     } else {
       args = macroArgs;
     }
@@ -73,16 +70,20 @@ export function numArgs(args: unknown[]): number {
 
 export function withKwargs<T extends RuntimeFunction>(func: T): T {
   return function (this: unknown, ...args: unknown[]): unknown {
-    const positionalArgs: unknown[] = [];
-    const kwargs: Record<string, unknown> = {};
-
-    for (const arg of args) {
-      if (isKeywordArgs(arg)) {
-        Object.assign(kwargs, arg);
-      } else {
-        positionalArgs.push(arg);
-      }
-    }
+    const { positionalArgs, kwargs } = args.reduce<{
+      positionalArgs: unknown[];
+      kwargs: Record<string, unknown>;
+    }>(
+      (acc, arg) => {
+        if (isKeywordArgs(arg)) {
+          Object.assign(acc.kwargs, arg as Record<string, unknown>);
+        } else {
+          acc.positionalArgs.push(arg);
+        }
+        return acc;
+      },
+      { positionalArgs: [], kwargs: {} },
+    );
 
     return (func as unknown as (this: unknown, ...args: unknown[]) => unknown).apply(this, [...positionalArgs, kwargs]);
   } as unknown as T;

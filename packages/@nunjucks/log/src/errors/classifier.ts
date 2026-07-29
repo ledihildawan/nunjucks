@@ -11,18 +11,16 @@ const replacePlaceholders = (
   extra?: Record<string, string | null> | null
 ): string | null => {
   if (!str) { return str ?? null; }
-  let result = str
+  const baseResult = str
     .replaceAll('{subject}', undefinedName || '')
     .replaceAll('{target}', undefinedName || '')
     .replaceAll('{name}', undefinedName || '')
     .replaceAll('{key}', undefinedName || '');
-  if (extra) {
-    for (const key of Object.keys(extra)) {
-      const value = extra[key];
-      result = result.replaceAll(`{${key}}`, value || '');
-    }
-  }
-  return result;
+  if (!extra) { return baseResult; }
+  return Object.keys(extra).reduce(
+    (acc, key) => acc.replaceAll(`{${key}}`, extra[key] || ''),
+    baseResult
+  );
 };
 
 const mapCauses = (
@@ -92,12 +90,8 @@ const codeClassifier: Classifier = (input) => {
 };
 
 const patternClassifier: Classifier = (input) => {
-  for (const rule of RULES) {
-    if (rule.pattern.test(input.message || '')) {
-      return deriveFromRule(rule, input);
-    }
-  }
-  return null;
+  const rule = RULES.find(r => r.pattern.test(input.message || ''));
+  return rule ? deriveFromRule(rule, input) : null;
 };
 
 export const classifiers: Classifier[] = [
