@@ -1,5 +1,6 @@
 export * from './blocked-keys.ts';
 export * from './caller-file.ts';
+export * from './constants.ts';
 export * from './error-location.ts';
 export * from './escape.ts';
 export * from './escape-context.ts';

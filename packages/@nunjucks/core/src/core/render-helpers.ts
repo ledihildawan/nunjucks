@@ -8,11 +8,11 @@ import { createSandboxedContext } from '@nunjucks/runtime/sandbox';
 import { scrubDangerousReferences } from '@nunjucks/runtime/security';
 import { createLog, getError } from '@nunjucks/log';
 import { findContextKeyPosition, wrapWithLog } from '@nunjucks/log/diagnostics';
+import { MATCH_ANY_RE } from '@nunjucks/shared';
 import { createEnv, type Env } from './env.ts';
 import { createTemplate } from '../template/index.ts';
 import type { RenderConfig, ValidationError, LoaderSource, CompileResult, Environment, SandboxOptions, ValidationErrorRequest } from './render-types.ts';
 
-const MATCH_ANY_RE = /./;
 const TEMPLATE_FILE_EXTENSION_RE = /\.(njk|js|html|htm|twig|ejs|eta)$/i;
 
 const resolveTemplateSource = async (template: string, loader: unknown, config: RenderConfig): Promise<{ templateSource: string; templatePath: string | null }> => {

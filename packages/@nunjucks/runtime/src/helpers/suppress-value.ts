@@ -17,7 +17,8 @@ const JSON_CONTAINER_RE = /^[[{]/u;
 const RAW_OR_ESCAPED_LT_RE = /<|&lt;/u;
 const ESCAPED_HTML_ENTITY_RE = /&[quot;<>]/u;
 /** Placeholder pattern for synthesised error definitions, which are never matched against. */
-export const MATCH_ANY_RE = /./u;
+import { MATCH_ANY_RE } from '@nunjucks/shared';
+export { MATCH_ANY_RE };
 const SCRIPT_VALUE_NOT_HANDLED = Symbol('scriptValueNotHandled');
 
 interface LogContextShape {

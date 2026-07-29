@@ -3,9 +3,7 @@
 import { createLog, type TemplateError } from './create-log.ts';
 import { normalizeErrorMetadata } from './render/internal/normalize.ts';
 import { resolveLocation } from '@nunjucks/shared/error-location';
-
-/** Placeholder pattern for synthesised error definitions, which are never matched against. */
-const MATCH_ANY_RE = /./;
+import { MATCH_ANY_RE } from '@nunjucks/shared';
 
 interface DiagnosticsConfig {
   phase?: string | null;
