@@ -18,7 +18,7 @@ import {
 } from '@nunjucks/runtime';
 import { createLog } from '@nunjucks/log';
 import { getError } from '@nunjucks/log';
-import { extractBlocks } from '@nunjucks/shared';
+import { extractBlocks, type Environment } from '@nunjucks/shared';
 
 const ROOT_FUNCTION_RE = /^async\s+function\s+root\s*\(/;
 
@@ -79,8 +79,6 @@ const getRuntimeHelpers = () => ({
     }[char] as string));
   },
 });
-
-type Environment = 'auto' | 'node' | 'browser' | 'deno';
 
 interface SandboxOptions {
   allowlist?: string[];

@@ -1,4 +1,7 @@
 import { isLookupVal, type Node } from '@nunjucks/nodes';
+import type { NodeLocation } from '@nunjucks/shared';
+
+export type { NodeLocation };
 
 /**
  * For a node, return the location of its "property name" — i.e., for
@@ -9,11 +12,6 @@ import { isLookupVal, type Node } from '@nunjucks/nodes';
  * Use the optional `colnoOffset` parameter to shift the column (e.g.,
  * to skip a leading `[` in a bracket-string access like `obj['foo']`).
  */
-export interface NodeLocation {
-  lineno: number | null;
-  colno: number | null;
-}
-
 export const extractPropertyLocation = (
   node: Node | null | undefined,
   colnoOffset = 0

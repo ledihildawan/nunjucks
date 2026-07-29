@@ -1,3 +1,5 @@
+import type { Environment } from '@nunjucks/shared';
+
 interface LoaderSource {
   src: string;
   path: string;
@@ -23,8 +25,6 @@ interface CallerLocation {
   lineNumber?: number | null;
   columnNumber?: number | null;
 }
-
-type Environment = 'auto' | 'node' | 'browser' | 'deno';
 
 interface SandboxOptions {
   allowlist?: string[];
