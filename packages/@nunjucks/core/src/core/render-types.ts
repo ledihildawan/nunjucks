@@ -1,4 +1,4 @@
-import type { Environment } from '@nunjucks/shared';
+import type { Environment, CallerLocation } from '@nunjucks/shared';
 import type { SandboxOptions } from '@nunjucks/runtime';
 
 interface LoaderSource {
@@ -19,12 +19,6 @@ interface ValidationError {
   lineno?: number;
   colno?: number;
   dangerousPaths?: string[];
-}
-
-interface CallerLocation {
-  fileName: string;
-  lineNumber?: number | null;
-  columnNumber?: number | null;
 }
 
 interface RenderConfig {
