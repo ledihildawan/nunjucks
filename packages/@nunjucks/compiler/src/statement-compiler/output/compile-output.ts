@@ -51,11 +51,7 @@ const compileOutputChild = (
   const useEnsureDefined = !isOptional || ctx.undefinedMode === 'debug';
   const htmlContext = ctx.getHtmlContext(lineno, colno);
 
-  ctx.emitLineWithMapping(
-    `lineno = ${lineno}; colno = ${colno}; ${ctx.buffer} += runtime.suppressValue(`,
-    lineno,
-    colno
-  );
+  ctx.emitLine(`lineno = ${lineno}; colno = ${colno}; ${ctx.buffer} += runtime.suppressValue(`);
   if (!isPipeType) {
     ctx.emit('await runtime.awaitValue(');
   }

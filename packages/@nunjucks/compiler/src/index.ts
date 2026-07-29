@@ -47,7 +47,6 @@ export interface Compiler {
   popBuffer: () => string | null;
   emit: (code: string) => void;
   emitLine: (code: string, originalLine?: number) => void;
-  emitLineWithMapping: (code: string, templateLine?: number, templateCol?: number) => void;
   emitLines: (...lines: string[]) => void;
   emitFuncBegin: (node: Node, name: string) => void;
   emitFuncEnd: (noReturn?: boolean) => void;
@@ -61,7 +60,6 @@ export interface Compiler {
   assertType: (node: Node, ...types: NodeTypeMatcher[]) => void;
   compile: (node: Node, frame?: Frame) => unknown;
   getCode: () => string;
-  emtest: (code: string) => void;
   getHtmlContext: (lineno: number, colno: number) => HtmlContext;
 }
 
@@ -76,12 +74,7 @@ const createCompilerMethods = (
       return null;
     },
     emit: (code: string) => compiler.codebuf.push(code),
-    emtest: (code: string) => compiler.codebuf.push(code),
     emitLine: (code: string) => {
-      compiler.compiledLine += 1;
-      compiler.emit(`${code}\n`);
-    },
-    emitLineWithMapping: (code: string) => {
       compiler.compiledLine += 1;
       compiler.emit(`${code}\n`);
     },

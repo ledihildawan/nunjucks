@@ -8,16 +8,8 @@ export const emitFuncBegin = (
 ): void => {
   ctx.buffer = 'output';
   ctx.scopeClosers = '';
-  ctx.emitLineWithMapping(
-    `async function ${name}(env, context, frame, runtime) {`,
-    node.lineno,
-    node.colno
-  );
-  ctx.emitLineWithMapping(
-    `let lineno = ${node.lineno};`,
-    node.lineno,
-    node.colno
-  );
+  ctx.emitLine(`async function ${name}(env, context, frame, runtime) {`);
+  ctx.emitLine(`let lineno = ${node.lineno};`);
   ctx.emitLine(`let colno = ${node.colno ?? 0};`);
   ctx.emitLine(`let ${ctx.buffer} = "";`);
   ctx.emitLine('try {');

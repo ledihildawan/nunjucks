@@ -24,7 +24,6 @@ export const TOKEN_FLOAT = 'float';
 export const TOKEN_BOOLEAN = 'boolean';
 export const TOKEN_NONE = 'none';
 export const TOKEN_SYMBOL = 'symbol';
-export const TOKEN_SPECIAL = 'special';
 export const TOKEN_REGEX = 'regex';
 export const TOKEN_TEMPLATE_LITERAL = 'template-literal';
 
@@ -55,7 +54,6 @@ export const TOKEN_TYPES = {
   BOOLEAN: TOKEN_BOOLEAN,
   NONE: TOKEN_NONE,
   SYMBOL: TOKEN_SYMBOL,
-  SPECIAL: TOKEN_SPECIAL,
   REGEX: TOKEN_REGEX,
   TEMPLATE_LITERAL: TOKEN_TEMPLATE_LITERAL,
 } as const;

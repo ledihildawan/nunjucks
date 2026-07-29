@@ -32,7 +32,6 @@ export {
   TOKEN_BOOLEAN,
   TOKEN_NONE,
   TOKEN_SYMBOL,
-  TOKEN_SPECIAL,
   TOKEN_REGEX,
   TOKEN_TEMPLATE_LITERAL,
 } from './token-types.ts';
