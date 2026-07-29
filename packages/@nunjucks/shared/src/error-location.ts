@@ -186,38 +186,6 @@ const resolveSourceContent = async (
   return { sourceContent: template, sourceStartLine: 1, resolvedCallerLine: baseResolvedCallerLine, resolvedCallerCol: baseResolvedCallerCol };
 };
 
-const extractCallerPreference = (
-  templatePath: string | null,
-  jsCaller: string | null,
-  jsCallerErrorLine: number | null,
-  _callerFile: string | null,
-  _callerLocation: { lineNumber?: number | null; columnNumber?: number | null } | null,
-) => {
-  return determineCallerPreference({
-    templatePath, jsCaller, jsCallerErrorLine, _callerFile, _callerLocation
-  });
-};
-
-const extractActiveCaller = (
-  useExplicitCaller: boolean,
-  useAutoCaller: boolean,
-  jsCaller: string | null,
-  jsCallerErrorLine: number | null,
-  jsCallerErrorCol: number | null,
-  _callerFile: string | null,
-  _callerLocation: { lineNumber?: number | null; columnNumber?: number | null } | null,
-) => {
-  return resolveActiveCaller(
-    useExplicitCaller,
-    useAutoCaller,
-    jsCaller,
-    jsCallerErrorLine,
-    jsCallerErrorCol,
-    _callerFile,
-    _callerLocation
-  );
-};
-
 const computeFinalPath = (
   preferCallerLocation: boolean,
   activeCaller: string | null,
@@ -237,15 +205,11 @@ const resolveCallerInfo = (
   _callerLocation: { lineNumber?: number | null; columnNumber?: number | null } | null,
   jsCallerErrorCol: number | null,
 ) => {
-  const { preferCallerLocation, useExplicitCaller, useAutoCaller } = extractCallerPreference(
-    templatePath,
-    jsCaller,
-    jsCallerErrorLine,
-    _callerFile,
-    _callerLocation
-  );
+  const { preferCallerLocation, useExplicitCaller, useAutoCaller } = determineCallerPreference({
+    templatePath, jsCaller, jsCallerErrorLine, _callerFile, _callerLocation
+  });
 
-  const { caller: activeCaller, line: activeCallerLine, col: activeCallerCol } = extractActiveCaller(
+  const { caller: activeCaller, line: activeCallerLine, col: activeCallerCol } = resolveActiveCaller(
     useExplicitCaller,
     useAutoCaller,
     jsCaller,
