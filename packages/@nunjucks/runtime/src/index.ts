@@ -1,4 +1,4 @@
-export { createFrame, lookup, set, type Frame } from './frame.ts';
+export { createFrame, lookup, type Frame } from './frame.ts';
 export { createContext, isContext, type Context, type ContextEnv, type ContextMetadata, type BlockLocation } from './context.ts';
 export {
   createSafeString,
@@ -23,7 +23,6 @@ export {
   isNullAccessResult,
   isPropertyNotFoundResult,
   getNullParentName,
-  getAccessPath,
   type NullAccessResult,
   type PropertyNotFoundResult,
   type AccessResult,
@@ -50,7 +49,6 @@ export {
   withDefaults,
   withComputed,
   withValidation,
-  traceContext,
   toContext,
   createIsolatedContext,
   createForkedContext,
@@ -69,8 +67,6 @@ export {
 export {
   HOOK_EVENTS,
   type HookEvent,
-  createHookEmitter,
-  hookable,
 } from './hooks.ts';
 export {
   UNDEFINED_MODES,

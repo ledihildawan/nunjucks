@@ -1,4 +1,4 @@
-import { pipe, mapValues, values, map } from 'remeda';
+import { pipe, values, map } from 'remeda';
 import type { ErrorDefinition, Classification, SubjectExtractor, ExtraExtractor } from './types.ts';
 import { firstCapture } from './types.ts';
 import { RUNTIME_ERRORS } from './runtime.ts';
@@ -26,12 +26,6 @@ const ERROR_DEFINITIONS = _allErrors as unknown as Record<ErrorName, ErrorDefini
 function getError<T extends ErrorName>(name: T): ErrorDefinition {
   return ERROR_DEFINITIONS[name];
 }
-
-type ErrorMessageFn = (args?: Record<string, string> | string[]) => string;
-
-const ERRORS: Record<ErrorName, ErrorMessageFn> = mapValues(ERROR_DEFINITIONS, (def) => def.message) as Record<ErrorName, ErrorMessageFn>;
-
-const PATTERNS: Record<ErrorName, RegExp> = mapValues(ERROR_DEFINITIONS, (def) => def.pattern) as Record<ErrorName, RegExp>;
 
 interface Rule {
   pattern: RegExp;
@@ -79,5 +73,5 @@ const DEFAULT_CLASSIFICATION: Classification = {
   severity: 'error'
 };
 
-export { ERROR_DEFINITIONS, getError, ERRORS, PATTERNS, RULES, DEFAULT_CLASSIFICATION };
+export { ERROR_DEFINITIONS, getError, RULES, DEFAULT_CLASSIFICATION };
 export type { ErrorName };
