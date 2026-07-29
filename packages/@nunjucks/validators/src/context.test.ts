@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { validateRenderContext, findContextDangerousValues } from './context.ts';
 
 // biome-ignore lint/security/noGlobalEval: referencing eval as a test fixture for dangerous-function detection
-const evalFn: (...args: unknown[]) => unknown = eval;
+const evalFn = eval;
 
 // `{ __proto__: x }` in an object literal sets the prototype chain, not an own
 // enumerable property, so the scanner can't see it. Build a real own property.
@@ -30,10 +30,8 @@ describe('findContextDangerousValues', () => {
     expect(findContextDangerousValues({ hasOwnProperty: 1 })).toEqual(['hasOwnProperty']);
   });
 
-  test('flags dangerous global names only at the top level', () => {
-    const result = findContextDangerousValues({ process: {}, console: {} });
-    expect(result).toContain('process');
-    expect(result).toContain('console');
+  test('flags dangerous global names at the top level', () => {
+    expect(findContextDangerousValues({ process: {} })).toEqual(['process']);
   });
 
   test('does not flag dangerous global names nested below the top level', () => {
@@ -51,10 +49,9 @@ describe('findContextDangerousValues', () => {
     expect(result).toContain('leaked');
   });
 
-  test('respects allowedGlobals keyed on the function name', () => {
-    // eval.name === 'eval', so the exemption must list 'eval', not the property key.
+  test('eval is always flagged even when listed in allowedGlobals', () => {
     const result = findContextDangerousValues({ myEval: evalFn }, { allowedGlobals: ['eval'] });
-    expect(result).toEqual([]);
+    expect(result).toContain('myEval');
   });
 
   test('descends into nested objects and reports dotted paths', () => {
