@@ -137,11 +137,15 @@ const createErrorObject = (
   return errorObj;
 };
 
-const resolveErrorMetadata = async (
-  config: DiagnosticsConfig,
-  template: string | null,
-  initialMetadata: ReturnType<typeof normalizeErrorMetadata>
-) => {
+export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, template: string | null = null, renderContext: unknown = null): Promise<TemplateError> => {
+  const resolvedSourceContent = typeof template === 'string' ? template : null;
+  const initialMetadata = normalizeErrorMetadata(err, {
+    phase: config.phase || 'render',
+    templatePath: config.templatePath || config._callerFile || null,
+    sourceContent: resolvedSourceContent,
+    renderContext: renderContext as Record<string, unknown> | null
+  });
+
   const resolved = await resolveLocation({
     template,
     templatePath: config.templatePath ?? null,
@@ -157,19 +161,6 @@ const resolveErrorMetadata = async (
     colno: config.colno ?? null,
     subject: initialMetadata.subject
   });
-  return resolved;
-};
-
-export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, template: string | null = null, renderContext: unknown = null): Promise<TemplateError> => {
-  const resolvedSourceContent = typeof template === 'string' ? template : null;
-  const initialMetadata = normalizeErrorMetadata(err, {
-    phase: config.phase || 'render',
-    templatePath: config.templatePath || config._callerFile || null,
-    sourceContent: resolvedSourceContent,
-    renderContext: renderContext as Record<string, unknown> | null
-  });
-
-  const resolved = await resolveErrorMetadata(config, template, initialMetadata);
 
   const { lineno, colno, lineBase, templatePath, sourceContent, sourceStartLine, preferCallerLocation } = resolved;
   const errSnapshot = extractErrorSnapshot(err);

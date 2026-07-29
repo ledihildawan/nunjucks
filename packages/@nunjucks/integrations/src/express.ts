@@ -70,12 +70,13 @@ const renderTemplate = async (
   return await renderWithEnv(templateName, env as Parameters<typeof renderWithEnv>[1], options, renderConfig);
 };
 
-const createEngine = (config: ExpressEngineConfig = {}): ExpressEngineFunction => async function nunjucksExpressEngine(
-  filePath: string,
-  options: Record<string, unknown>
-): Promise<string> {
-  return renderTemplate(filePath, options, config);
-};
+const createEngine = (config: ExpressEngineConfig = {}): ExpressEngineFunction =>
+  function nunjucksExpressEngine(
+    filePath: string,
+    options: Record<string, unknown>
+  ): Promise<string> {
+    return renderTemplate(filePath, options, config);
+  };
 
 export { createEngine };
 export type { ExpressEngineConfig, ExpressEngineOptions, ExpressEngineFunction };

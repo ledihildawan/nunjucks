@@ -38,7 +38,7 @@ const buildSourceTraceIfNeeded = (
     templatePath: options.templatePath ?? err.templatePath ?? err.templateName ?? null,
     lineno: err.lineno,
     colno: err.colno,
-    lineBase: normalizeLineBase(traceLineBase),
+    lineBase: traceLineBase,
     sourceStartLine: err.sourceStartLine ?? 1
   });
 };

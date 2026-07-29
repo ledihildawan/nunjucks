@@ -10,7 +10,7 @@ export { initTemplateState, loadSource, createFallbackEnv };
 const createFallbackEnv = (): Env => createEnv({
   opts: { dev: false, autoescape: true },
   globals: {},
-  async getTemplate(name: string, _eagerCompile?: boolean, _includeChain?: unknown, ignoreMissing?: boolean) {
+  getTemplate(name: string, _eagerCompile?: boolean, _includeChain?: unknown, ignoreMissing?: boolean) {
     if (ignoreMissing) { return null; }
     throw createLog('error', getError('FILE_NOT_FOUND'), { path: name }, name, { phase: 'load' });
   }

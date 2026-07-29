@@ -1,9 +1,5 @@
 import process from "node:process";
 import { flatMap, keys, pipe } from 'remeda';
-interface SecurityError extends Error {
-  code: string;
-  dangerousPaths?: string[];
-}
 
 interface ContextValidationError {
   code: string;
@@ -127,29 +123,20 @@ const validateRenderContext = (context: unknown, config: ContextValidatorConfig)
     return { valid: true, errors: [] };
   }
 
-  try {
-    if (config.strictMode || config.scanContextValues) {
-      const dangerous = findDangerousValues(context, config.allowedGlobals);
-      if (dangerous.length > 0) {
-        const err: SecurityError = new Error(`Context contains unsafe values: ${dangerous.join(', ')}`) as SecurityError;
-        err.code = 'DANGEROUS_CONTEXT_VALUES';
-        err.dangerousPaths = dangerous;
-        throw err;
-      }
-    }
+  const dangerous = findDangerousValues(context, config.allowedGlobals);
+  if (dangerous.length === 0) {
     return { valid: true, errors: [] };
-  } catch (err) {
-    const securityError = err as SecurityError;
-    const dangerousPaths = securityError.dangerousPaths;
-    return {
-      valid: false,
-      errors: [{
-        code: securityError.code || 'SECURITY_VIOLATION',
-        message: securityError.message,
-        ...(dangerousPaths ? { subject: dangerousPaths[0], dangerousPaths } : {})
-      }]
-    };
   }
+
+  return {
+    valid: false,
+    errors: [{
+      code: 'DANGEROUS_CONTEXT_VALUES',
+      message: `Context contains unsafe values: ${dangerous.join(', ')}`,
+      subject: dangerous[0],
+      dangerousPaths: dangerous
+    }]
+  };
 };
 
 const findContextDangerousValues = (context: unknown, config: { allowedGlobals?: readonly string[] } = {}): string[] => {
