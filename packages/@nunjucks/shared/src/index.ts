@@ -9,3 +9,4 @@ export * from './extract-blocks.ts';
 export * from './reserved.ts';
 export * from './pipe-helpers.ts';
 export * from './types.ts';
+export * from './template-security.ts';
