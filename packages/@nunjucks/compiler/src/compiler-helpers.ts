@@ -1,4 +1,5 @@
 import { createLog, ERROR_DEFINITIONS } from '@nunjucks/log';
+import { last, pipe, split } from 'remeda';
 import type { Compiler } from './index.ts';
 
 export const fail = (
@@ -7,7 +8,7 @@ export const fail = (
   lineno?: number,
   colno?: number
 ): never => {
-  const lastPart = msg.split(':').pop();
+  const lastPart = pipe(msg, split(':'), last());
   const subject = (lastPart || 'compile').trim();
   const errorDef = ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE;
 

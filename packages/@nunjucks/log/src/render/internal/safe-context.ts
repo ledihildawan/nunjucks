@@ -1,4 +1,6 @@
 import { getBlockedKeyCategory, isBlockedKey } from '@nunjucks/shared/blocked-keys';
+import { pipe, map } from 'remeda';
+import { slice } from './pipe-helpers.ts';
 
 const SECRET_KEY_PATTERN = /(?:password|passwd|pwd|secret|token|api[_-]?key|access[_-]?token|authorization|cookie|session(?:[_-]?id)?|private[_-]?key)/iu;
 const DANGEROUS_KEY_PATTERN = /^(?:globalThis|process|window|parent|top|frames|opener)$/iu;
@@ -131,7 +133,7 @@ const normalizeSet = (value: Set<unknown>, state: NormalizeState, depth: number,
 };
 
 const normalizeArray = (value: unknown[], state: NormalizeState, depth: number, seen: WeakSet<object>): unknown => {
-  const entries = value.slice(0, state.maxEntries).map(item => normalizeChildValue(item, state, depth, seen));
+  const entries = pipe(value, slice(0, state.maxEntries), map(item => normalizeChildValue(item, state, depth, seen)));
   if (value.length > state.maxEntries) {
     entries.push(overflowNote(value.length, state.maxEntries, 'items'));
   }

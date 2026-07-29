@@ -1,4 +1,5 @@
 // RENDER CONTEXT - Scoped render context with composables
+import { pipe, entries, reduce, forEach } from 'remeda';
 import { ERROR_DEFINITIONS, createLog } from '@nunjucks/log';
 
 const createScope = (data: Record<string, unknown> = {}, parent: Scope | null = null): Scope => ({
@@ -82,9 +83,10 @@ export const createRenderContext = (initialData: Record<string, unknown> = {}): 
     },
 
     merge: (data: Record<string, unknown> = {}): RenderContext => {
-      currentScope = Object.entries(data).reduce(
-        (scope, [k, v]) => scopeSet(scope, k, v),
-        currentScope
+      currentScope = pipe(
+        data,
+        entries(),
+        reduce((scope, [k, v]) => scopeSet(scope, k, v), currentScope)
       );
       invalidateCache();
       return context;
@@ -116,19 +118,19 @@ export const ctx = createRenderContext;
 
 export const withDefaults = (defaults: Record<string, unknown>) => (context: RenderContext): RenderContext => {
   const newCtx = context.clone();
-  Object.entries(defaults).forEach(([k, v]) => {
+  pipe(defaults, entries(), forEach(([k, v]) => {
     if (newCtx.get(k) === undefined) {
       newCtx.set(k, v);
     }
-  });
+  }));
   return newCtx;
 };
 
 export const withComputed = (computations: Record<string, (c: RenderContext) => unknown>) => (context: RenderContext): RenderContext => {
   const newCtx = context.clone();
-  Object.entries(computations).forEach(([k, computeFn]) => {
+  pipe(computations, entries(), forEach(([k, computeFn]) => {
     newCtx.set(k, computeFn(newCtx));
-  });
+  }));
   return newCtx;
 };
 

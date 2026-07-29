@@ -1,3 +1,4 @@
+import { pipe, filter, join, split } from 'remeda';
 import picocolors from 'picocolors';
 import { toDisplayLocation } from '../internal/location.ts';
 import { classifyFromError } from '../../errors/classify.ts';
@@ -5,6 +6,7 @@ import type { SourceTrace } from '../internal/source-trace.ts';
 import { stripMarkdown, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString } from './stack-helpers';
 import { renderContextAnsi } from './context-helpers';
 import { formatSourceTrace } from './source-helpers';
+import { slice } from '../internal/pipe-helpers.ts';
 
 export { formatCausesAnsi, formatFixAnsi, getErrorMessage, formatMediumAnsi, extractAnsiErrorParts, formatFullAnsi, BULLET };
 
@@ -96,7 +98,7 @@ const formatFullAnsi = (
   const { causes, fixCode, fixComment, documentationUrl, severity, path } = parts;
   const location = toDisplayLocation(parts.displayLineno, parts.displayColno, parts.lineBase);
   const stack = (sourceTrace as unknown as Error).stack || '';
-  const stackLines = stack.split('\n').slice(1);
+  const stackLines = pipe(stack, split('\n'), slice(1));
   const formattedStack = stackLines.map(line => formatStackLine(line, ide)).join('\n');
   const locationStr = formatLocationString(path, location, ide);
   const severityLabel = getSeverityLabel(severity);
@@ -115,5 +117,5 @@ const formatFullAnsi = (
     `\n${picocolors.bold('Stack Trace:')}\n${formattedStack}`
   ];
 
-  return outputParts.filter(Boolean).join('\n');
+  return pipe(outputParts, filter(Boolean), join('\n'));
 };

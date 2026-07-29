@@ -1,3 +1,4 @@
+import { pipe, filter, join } from 'remeda';
 import picocolors from 'picocolors';
 import { shortenPath } from '../internal/path-shortener.ts';
 import { isFilePath, resolveIdeLink } from '../internal/ide-links.ts';
@@ -18,7 +19,7 @@ const getSeverityLabel = (severity?: string): ReturnType<typeof picocolors.bold>
   picocolors.bold(getSeverityColor(severity)('Error:'));
 
 const getExtrasPart = (causeHint: string, docHint: string): string => {
-  const extras = [causeHint, docHint].filter(Boolean).join(' | ');
+  const extras = pipe([causeHint, docHint], filter(Boolean), join(' | '));
   if (!extras) { return ''; }
   return `\n${extras}`;
 };

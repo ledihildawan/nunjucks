@@ -1,9 +1,12 @@
+import { pipe, join } from 'remeda';
+
 interface UndefinedInputResult {
   isUndefinedInput: boolean;
   undefinedVarName: string | null;
   undefinedParentName: string | null;
   isPropertyLookup: boolean;
 }
+
 
 const detectNullInput = (_inputValue: unknown): UndefinedInputResult => ({
   isUndefinedInput: true,
@@ -56,7 +59,7 @@ const detectUndefinedInput = (context: unknown, inputValue: unknown): UndefinedI
     if (undefinedAt >= 0) {
       return {
         isUndefinedInput: true,
-        undefinedVarName: parts.slice(undefinedAt).join('.'),
+        undefinedVarName: pipe(parts, (arr: string[]) => arr.slice(undefinedAt), join('.')),
         undefinedParentName: undefinedAt > 0 ? parts[undefinedAt - 1] ?? null : null,
         isPropertyLookup,
       };

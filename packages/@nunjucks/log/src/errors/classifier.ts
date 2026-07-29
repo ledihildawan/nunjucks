@@ -1,4 +1,5 @@
 
+import { pipe, keys, reduce } from 'remeda';
 import type { Classifier, ClassifyInput, Classification } from './types.ts';
 import { firstCapture } from './types.ts';
 import { RULES, ERROR_DEFINITIONS, DEFAULT_CLASSIFICATION } from './registry.ts';
@@ -17,9 +18,13 @@ const replacePlaceholders = (
     .replaceAll('{name}', undefinedName || '')
     .replaceAll('{key}', undefinedName || '');
   if (!extra) { return baseResult; }
-  return Object.keys(extra).reduce(
-    (acc, key) => acc.replaceAll(`{${key}}`, extra[key] || ''),
-    baseResult
+  return pipe(
+    extra,
+    keys(),
+    reduce(
+      (acc, key) => acc.replaceAll(`{${key}}`, extra[key] || ''),
+      baseResult
+    )
   );
 };
 

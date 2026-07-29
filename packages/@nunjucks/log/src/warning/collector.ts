@@ -1,3 +1,6 @@
+import { pipe, split } from 'remeda';
+import { replace } from '../render/internal/pipe-helpers.ts';
+
 /** A collected render-time warning. Exported: it is the element type of
  * `injectWarningsScript`'s first parameter. */
 interface Warning {
@@ -16,7 +19,7 @@ interface InjectWarningsOptions {
 
 const getFileName = (path: string | null | undefined): string => {
   if (!path) { return 'unknown'; }
-  const parts = path.replace(/\\/gu, '/').split('/');
+  const parts = pipe(path, replace(/\\/gu, '/'), split('/'));
   return parts.at(-1) || 'unknown';
 };
 

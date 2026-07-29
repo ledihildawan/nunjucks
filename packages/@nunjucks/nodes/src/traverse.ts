@@ -1,5 +1,5 @@
 // TRAVERSE - Canonical AST walk / search / transform utilities (copy-on-write).
-import { filter, forEach, map, reduce } from 'remeda';
+import { filter, forEach, map, pipe, reduce } from 'remeda';
 import type { CallExtensionNode, ChildrenNode, Node } from './types/index.ts';
 import { isNode, isCallExtension, isCallExtensionAsync } from './types/guards.ts';
 
@@ -22,7 +22,7 @@ const appendChild = <K extends ChildrenNode>(node: K, child: Node): K =>
   ({ ...node, children: [...node.children, child] });
 
 const mapCOW = <T>(arr: readonly T[], fn: (item: T) => T): T[] => {
-  const mapped = map(arr, fn);
+  const mapped = pipe(arr, map(fn));
   return mapped.every((item, i) => item === arr[i]) ? (arr as T[]) : mapped;
 };
 
@@ -72,10 +72,12 @@ const walkChildren = (node: Node, walker: (n: Node) => Node): Node => {
   const props = fieldsList.map(f => node[f]);
   const newProps = mapCOW<unknown>(props, p => walkValue(p, walker));
   if (newProps !== props) {
-    const newNode = reduce(
+    const newNode = pipe(
       fieldsList,
-      (acc, f, i) => { acc[f] = newProps[i]; return acc; },
-      { ...node } as Record<string, unknown>,
+      reduce(
+        (acc, f, i) => { acc[f] = newProps[i]; return acc; },
+        { ...node } as Record<string, unknown>,
+      ),
     );
     return newNode as Node;
   }

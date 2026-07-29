@@ -1,4 +1,4 @@
-import { keys } from 'remeda';
+import { pipe, keys, map } from 'remeda';
 import { normalizeRenderContext } from '../internal/safe-context.ts';
 import { sanitizeForAnsi } from './sanitize-helpers';
 
@@ -14,7 +14,7 @@ const formatContextValue = (value: unknown): string => {
     return sanitizeForAnsi(value);
   }
   const obj = value as Record<string, unknown>;
-  const k = keys(obj);
+  const k = pipe(obj, keys());
   if (k.length === 0) {
     return '(empty)';
   }
@@ -29,7 +29,7 @@ const renderContextAnsi = (context: Record<string, unknown>): string => {
     return header;
   }
   const record = normalized as Record<string, unknown>;
-  const entries = keys(record).map(key => `${INDENT}${key} ${formatContextValue(record[key])}`);
+  const entries = pipe(record, keys(), map(key => `${INDENT}${key} ${formatContextValue(record[key])}`));
   return header + entries.join('\n');
 };
 

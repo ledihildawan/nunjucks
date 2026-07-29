@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { pipe, split, last } from 'remeda';
 
 interface LinePosition {
   line: number;
@@ -46,7 +47,7 @@ export const findContextKeyPosition = async (
   try {
     const content = await readFile(sourceFile, 'utf-8');
     const lines = content.split('\n');
-    const keyName = dangerousPath.split('.').pop() ?? '';
+    const keyName = pipe(dangerousPath, split('.'), last()) ?? '';
     const searchLine = Math.max(0, callLine - 1);
     const searchRadius = 5;
 

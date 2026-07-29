@@ -1,4 +1,5 @@
 // MACRO - Macro/keyword-args handling for Nunjucks templates
+import { pipe, forEach } from 'remeda';
 import { hasOwn } from '@nunjucks/shared/type-guards';
 
 type KeywordArgs = Record<string, unknown> & { keywords: boolean };
@@ -16,12 +17,12 @@ export function makeMacro(argNames: string[], kwargNames: string[], func: Runtim
 
     if (argCount > argNames.length) {
       args = macroArgs.slice(0, argNames.length);
-      macroArgs.slice(args.length, argCount).forEach((val, i) => {
+      pipe(macroArgs, (arr: unknown[]) => arr.slice(args.length, argCount), forEach((val, i) => {
         const kwName = kwargNames[i];
         if (kwName !== undefined) {
           kwargs[kwName] = val;
         }
-      });
+      }));
       args.push(kwargs);
     } else if (argCount < argNames.length) {
       const missingNames = argNames.slice(argCount);

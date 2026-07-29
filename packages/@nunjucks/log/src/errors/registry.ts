@@ -1,4 +1,4 @@
-import { mapValues, values } from 'remeda';
+import { pipe, mapValues, values, map } from 'remeda';
 import type { ErrorDefinition, Classification, SubjectExtractor, ExtraExtractor } from './types.ts';
 import { firstCapture } from './types.ts';
 import { RUNTIME_ERRORS } from './runtime.ts';
@@ -47,19 +47,23 @@ interface Rule {
   sourceFromStack?: boolean;
 }
 
-const RULES: Rule[] = values(ERROR_DEFINITIONS).map((def) => ({
-  pattern: def.pattern,
-  category: def.category,
-  subjectFrom: def.subjectFrom ?? firstCapture,
-  extraFrom: def.extraFrom ?? null,
-  titleTemplate: def.titleTemplate,
-  causes: def.causes,
-  fixCode: def.fixCode,
-  fixComment: def.fixComment,
-  documentationUrl: def.documentationUrl,
-  severity: def.severity,
-  sourceFromStack: def.sourceFromStack
-}));
+const RULES: Rule[] = pipe(
+  ERROR_DEFINITIONS,
+  values(),
+  map((def) => ({
+    pattern: def.pattern,
+    category: def.category,
+    subjectFrom: def.subjectFrom ?? firstCapture,
+    extraFrom: def.extraFrom ?? null,
+    titleTemplate: def.titleTemplate,
+    causes: def.causes,
+    fixCode: def.fixCode,
+    fixComment: def.fixComment,
+    documentationUrl: def.documentationUrl,
+    severity: def.severity,
+    sourceFromStack: def.sourceFromStack
+  }))
+);
 
 const DEFAULT_CLASSIFICATION: Classification = {
   category: 'unknown',

@@ -1,5 +1,5 @@
 // biome-ignore lint/style/noExcessiveLinesPerFile: Security module with security-related utility functions
-import { keys, isFunction } from 'remeda';
+import { keys, isFunction, pipe, map, join } from 'remeda';
 import { getBlockedKeyCategory, isBlockedKey, isDangerousGlobal } from '@nunjucks/shared/blocked-keys';
 import process from "node:process";
 
@@ -204,7 +204,7 @@ export const validateContextKeys = (
     return { valid: true, blocked: [] };
   }
 
-  const contextKeys = keys(context);
+  const contextKeys = pipe(context, keys());
   const blocked = contextKeys.flatMap((key): BlockedKeyResult[] => {
     if (isBlockedKey(key)) {
       return [{ key, reason: 'blocked key' }];
@@ -242,7 +242,7 @@ export const validateContext = (context: unknown, options: ValidateContextOption
   const keyValidation = validateContextKeys(context, allowedKeys, blockedKeys);
   if (!keyValidation.valid) {
     const err = createSecurityError(
-      `Cannot use blocked keys in context: ${keyValidation.blocked.map(b => b.key).join(', ')}`,
+      `Cannot use blocked keys in context: ${pipe(keyValidation.blocked, map(b => b.key), join(', '))}`,
       'BLOCKED_CONTEXT_KEYS'
     );
     err.dangerousPaths = keyValidation.blocked.map(b => b.key);
@@ -313,7 +313,7 @@ export const createSecurityValidator = (options: CreateSecurityValidatorOptions 
       const violations = scanTemplateForDangerousCode(content);
       if (violations.length > 0 && strictMode) {
         throw createSecurityError(
-          `Template contains unsafe code: ${violations.map(v => v.message).join('; ')}`,
+          `Template contains unsafe code: ${pipe(violations, map(v => v.message), join('; '))}`,
           'DANGEROUS_TEMPLATE_CODE'
         );
       }

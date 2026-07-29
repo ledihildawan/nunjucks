@@ -1,5 +1,5 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
-import { forEach, isPlainObject, isString, map, range, reduce, sum as sumValues } from 'remeda';
+import { forEach, isPlainObject, isString, map, pipe, range, reduce, split, sum as sumValues } from 'remeda';
 import { isSafeString, makeMacro } from '@nunjucks/runtime';
 import { filterError, isArray } from '../factory/index.ts';
 import type { FilterContext } from '../factory/index.ts';
@@ -115,13 +115,15 @@ export const slice = (arr: unknown, slices: number, fillWith?: unknown): unknown
     throw new Error('slices must be positive');
   }
   const { sliceLength, extra } = computeSliceParams(arr.length, slices);
-  const { res } = reduce(
+  const { res } = pipe(
     range(0, slices),
-    (acc, i) => {
-      const { slice: currSlice, newOffset } = buildSingleSlice(arr, i, acc.offset, sliceLength, extra, fillWith);
-      return { res: [...acc.res, currSlice], offset: newOffset };
-    },
-    { res: [] as unknown[][], offset: 0 },
+    reduce(
+      (acc, i) => {
+        const { slice: currSlice, newOffset } = buildSingleSlice(arr, i, acc.offset, sliceLength, extra, fillWith);
+        return { res: [...acc.res, currSlice], offset: newOffset };
+      },
+      { res: [] as unknown[][], offset: 0 },
+    ),
   );
   return res;
 };
@@ -168,7 +170,7 @@ export const sum = (arr: unknown, attr?: string, start = 0): number => {
 };
 
 const getNestedAttribute = (obj: Record<string, unknown>, attr: string): unknown =>
-  reduce(attr.split('.'), (val, k) => (val as Record<string, unknown>)[k], obj as unknown);
+  pipe(attr, split('.'), reduce((val, k) => (val as Record<string, unknown>)[k], obj as unknown));
 
 const getCompareValue = (item: unknown, sortAttr: string | undefined): unknown => {
   if (!sortAttr) { return item; }
@@ -222,7 +224,7 @@ const sortArray = (
   if (sortAttr) {
     validateSortAttribute(arr, sortAttr);
   }
-  const array = map(arr, (v) => v);
+  const array = pipe(arr, map((v) => v));
   const comparator = createSortComparator(sortAttr, sortReverse, caseSens);
   return array.toSorted(comparator);
 };

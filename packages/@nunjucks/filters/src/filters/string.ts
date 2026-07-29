@@ -1,4 +1,4 @@
-import { defaultTo } from 'remeda';
+import { defaultTo, join, map, pipe, split } from 'remeda';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { normalize, safeString, safeHtml, preserveSafe, createStringFilter, createMacroFilter, isSafeString, isArray, filterError } from '../factory/index.ts';
 import type { SafeString } from '../factory/index.ts';
@@ -41,7 +41,7 @@ const indent = (str: unknown, width?: number, indentfirst?: boolean): string => 
   return preserveSafe(str, res);
 };
 
-const join = (arr: unknown, del?: string, attr?: string): string => {
+const joinFilter = (arr: unknown, del?: string, attr?: string): string => {
   if (!isArray(arr)) {
     const errorDef = ERROR_DEFINITIONS.JOIN_FILTER;
     if (errorDef) {
@@ -64,7 +64,7 @@ const replace = (str: unknown, old: unknown, new_: string, maxCount?: number): s
   if (oldStr === null) { return str as string; }
   const s = resolveString(str);
   if (s === null) { return str as string; }
-  if (oldStr === '') { return preserveSafe(originalStr, new_ + s.split('').join(new_) + new_); }
+  if (oldStr === '') { return preserveSafe(originalStr, new_ + pipe(s, split(''), join(new_)) + new_); }
   const nextIndex = s.indexOf(oldStr);
   if (max === 0 || nextIndex === -1) { return s; }
   return preserveSafe(originalStr, performReplace(s, oldStr, new_, max));
@@ -97,10 +97,7 @@ const performReplace = (s: string, oldStr: string, new_: string, max: number): s
   return parts.join('');
 };
 
-const title = createStringFilter((s: string): string => {
-  const words = s.split(' ').map((word: string) => capitalize(word));
-  return (words as string[]).join(' ');
-});
+const title = createStringFilter((s: string): string => pipe(s, split(' '), map((word: string) => capitalize(word) as string), join(' ')));
 
 const trim = createStringFilter((s: string): string => s.replace(/^\s*|\s*$/gu, ''));
 
@@ -127,9 +124,9 @@ const urlencode = (obj: unknown): string => {
   const keyvals = Array.isArray(obj)
     ? (obj as [string, unknown][])
     : Object.entries(obj as Record<string, unknown>);
-  return keyvals.map(([k, v]) => `${enc(k)}=${enc(String(v))}`).join('&');
+  return pipe(keyvals, map(([k, v]) => `${enc(k)}=${enc(String(v))}`), join('&'));
 };
 
-export { capitalize, fallback, escape, tojson, indent, join, lower, replace, title, trim, truncate, upper, urlencode };
+export { capitalize, fallback, escape, tojson, indent, joinFilter as join, lower, replace, title, trim, truncate, upper, urlencode };
 
 export { normalize, filterError } from '../factory/index.ts';

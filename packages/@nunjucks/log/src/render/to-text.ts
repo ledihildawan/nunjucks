@@ -1,6 +1,8 @@
+import { pipe, filter, join, map, split } from 'remeda';
 import { shortenPath } from './internal/path-shortener.ts';
 import { toDisplayLocation } from './internal/location.ts';
 import { classifyFromError } from '../errors/classify.ts';
+import { replace, slice } from './internal/pipe-helpers.ts';
 
 interface ToTextOptions {
   verbosity?: 'simple' | 'medium' | 'full';
@@ -14,7 +16,7 @@ const CODE_MARKDOWN_RE = /`([^`]+)`/gu;
 const STACK_LOCATION_RE = /\(([^()]+):(\d+):(\d+)\)$/u;
 const STACK_FUNCTION_RE = /^at\s+([^\s]+)/u;
 
-const stripMarkdown = (text: string): string => text.replace(BOLD_MARKDOWN_RE, '$1').replace(CODE_MARKDOWN_RE, '$1');
+const stripMarkdown = (text: string): string => pipe(text, replace(BOLD_MARKDOWN_RE, '$1'), replace(CODE_MARKDOWN_RE, '$1'));
 
 const getErrorMessage = (error: unknown): string => {
   const rawMessage = (error as Error).message;
@@ -65,7 +67,7 @@ const formatMediumText = (
   const locationStr = ` at ${shortPath}:${location.line}:${location.col}`;
   const causeHint = causes.length > 0 ? stripMarkdown(causes[0] ?? '') : '';
   const docHint = documentationUrl || '';
-  const extras = [causeHint, docHint].filter(Boolean).join(' | ');
+  const extras = pipe([causeHint, docHint], filter(Boolean), join(' | '));
   const extrasPart = extras ? `\n${extras}` : '';
   return `${severityLabel} ${message}${locationStr}${extrasPart}`;
 };
@@ -112,8 +114,7 @@ const formatFix = (fixCode: string, fixComment: string, documentationUrl: string
 
 const formatStack = (error: unknown): string => {
   const stack = (error as Error).stack || '';
-  const stackLines = stack.split('\n').slice(1);
-  return stackLines.map(formatStackLine).join('\n');
+  return pipe(stack, split('\n'), slice(1), map(formatStackLine), join('\n'));
 };
 
 const toText = (error: unknown, options: ToTextOptions = {}): string => {
@@ -152,7 +153,7 @@ const toText = (error: unknown, options: ToTextOptions = {}): string => {
     ...(formattedStack ? ['', formattedStack] : [])
   ];
 
-  return parts.filter(Boolean).join('\n');
+  return pipe(parts, filter(Boolean), join('\n'));
 };
 
 export { toText };

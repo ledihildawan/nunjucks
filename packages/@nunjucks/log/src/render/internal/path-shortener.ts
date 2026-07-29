@@ -1,4 +1,4 @@
-import { pipe, filter } from 'remeda';
+import { pipe, filter, split, last } from 'remeda';
 import process from "node:process";
 
 let _projectRoot: string | null = null;
@@ -27,7 +27,7 @@ export const shortenPath = (path: string) => {
     normalizedPath.split('/'),
     filter(Boolean)
   );
-  const rootDirName = normalizedRoot.split('/').pop() ?? '';
+  const rootDirName = pipe(normalizedRoot, split('/'), last()) ?? '';
 
   const privateIdx = parts.findIndex(p =>
     p.toLowerCase() === 'users' || p.toLowerCase() === 'home'

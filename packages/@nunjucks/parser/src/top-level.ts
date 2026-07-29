@@ -75,7 +75,7 @@ const parseDataToken = (ctx: ParserContext, tok: ReturnType<typeof nextToken>, b
 const parseRawToken = (tok: ReturnType<typeof nextToken>, buf: Node[]): void => {
   const rawContent = tok.value;
   const content = typeof rawContent === 'string'
-    ? rawContent.replace(RAW_OPEN_TAG_RE, '').replace(RAW_CLOSE_TAG_RE, '')
+    ? pipe(rawContent, s => s.replace(RAW_OPEN_TAG_RE, ''), s => s.replace(RAW_CLOSE_TAG_RE, ''))
     : rawContent;
   buf.push(output(
     tok.lineno,

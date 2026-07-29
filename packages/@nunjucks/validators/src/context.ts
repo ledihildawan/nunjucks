@@ -1,5 +1,5 @@
 import process from "node:process";
-import { flatMap } from 'remeda';
+import { flatMap, keys, pipe } from 'remeda';
 interface SecurityError extends Error {
   code: string;
   dangerousPaths?: string[];
@@ -99,19 +99,23 @@ const scanForDangerousValues = (
   scan.seen.add(obj as object);
 
   const record = obj as Record<string, unknown>;
-  return flatMap(Object.keys(record), (key) => {
-    const currentPath = path ? `${path}.${key}` : key;
-    const value = record[key];
+  return pipe(
+    record,
+    keys(),
+    flatMap((key) => {
+      const currentPath = path ? `${path}.${key}` : key;
+      const value = record[key];
 
-    const dangerousForKey = dangerousPathsForKey({ key, value, path: currentPath }, scan, isTopLevel);
+      const dangerousForKey = dangerousPathsForKey({ key, value, path: currentPath }, scan, isTopLevel);
 
-    // Never descend into a prototype-pollution key.
-    const descend = !PROTOTYPE_POLLUTION_KEYS.has(key) &&
-      value && typeof value === 'object' && !isDangerousValue(value);
-    return descend
-      ? [...dangerousForKey, ...scanForDangerousValues(value, scan, currentPath, false)]
-      : dangerousForKey;
-  });
+      // Never descend into a prototype-pollution key.
+      const descend = !PROTOTYPE_POLLUTION_KEYS.has(key) &&
+        value && typeof value === 'object' && !isDangerousValue(value);
+      return descend
+        ? [...dangerousForKey, ...scanForDangerousValues(value, scan, currentPath, false)]
+        : dangerousForKey;
+    })
+  );
 };
 
 /** Public entry: starts a fresh scan with its own cycle-tracking set. */

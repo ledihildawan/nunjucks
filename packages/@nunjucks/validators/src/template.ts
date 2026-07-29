@@ -1,4 +1,4 @@
-import { filter, flatMap } from 'remeda';
+import { filter, flatMap, join, map, pipe } from 'remeda';
 
 interface DangerousCodeViolation {
   message: string;
@@ -84,7 +84,7 @@ const checkDangerousCode = (template: string, config: TemplateValidatorConfig): 
   return {
     code: 'DANGEROUS_TEMPLATE_CODE',
     subject: first?.name ?? 'template',
-    message: `Template contains dangerous code: ${violations.map(v => v.message).join('; ')}`,
+    message: `Template contains dangerous code: ${pipe(violations, map(v => v.message), join('; '))}`,
     violations,
     lineno: first?.line,
     colno: first?.col
@@ -92,9 +92,9 @@ const checkDangerousCode = (template: string, config: TemplateValidatorConfig): 
 };
 
 export const validateTemplate = (template: string, config: TemplateValidatorConfig): TemplateValidationResult => {
-  const errors = filter(
+  const errors = pipe(
     [checkTemplateSize(template, config), checkDangerousCode(template, config)],
-    (error): error is TemplateValidationError => error !== null
+    filter((error): error is TemplateValidationError => error !== null)
   );
 
   return {

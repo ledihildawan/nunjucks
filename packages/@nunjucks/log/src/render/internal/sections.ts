@@ -1,8 +1,9 @@
-import { keys, values } from 'remeda';
+import { pipe, keys, values, filter, join, map, split } from 'remeda';
 import { escapeHtml, highlightHtml, highlightJs } from './highlight.ts';
 import { isFilePath, resolveIdeLink } from './ide-links.ts';
 import { shortenPath } from './path-shortener.ts';
 import { normalizeRenderContext } from './safe-context.ts';
+import { replace, slice } from './pipe-helpers.ts';
 
 // Hoisted so each pattern is compiled once rather than on every call.
 const FILE_URL_PREFIX_RE = /^file:\/\/+/u;
@@ -25,7 +26,7 @@ const formatCodeTraceHtml = (snippet: string): string => {
   if (!snippet) { return '<div class="code-line"><span class="line-number">&nbsp;</span><span class="code-content">Source not available</span></div>'; }
 
   const lines = snippet.split('\n');
-  return lines.map(formatCodeLine).join('');
+  return pipe(lines, map(formatCodeLine), join(''));
 };
 
 const formatCodeLine = (line: string): string => {
@@ -65,12 +66,12 @@ type SerializableContext =
   | { [key: string]: SerializableContext };
 
 const safeJson = (value: SerializableContext): string =>
-  JSON.stringify(value).replace(LT_RE, '\\u003c').replace(GT_RE, '\\u003e').replace(AMP_RE, '\\u0026');
+  pipe(JSON.stringify(value), replace(LT_RE, '\\u003c'), replace(GT_RE, '\\u003e'), replace(AMP_RE, '\\u0026'));
 
 const renderContextHtml = (ctx: unknown): string => {
   if (!ctx || typeof ctx !== 'object') { return ''; }
   const serialized = normalizeRenderContext(ctx) as Record<string, SerializableContext>;
-  const filteredKeys = keys(serialized);
+  const filteredKeys = pipe(serialized, keys());
   if (filteredKeys.length === 0) { return ''; }
 
   const hasExpandableValues = values(serialized).some(value => value !== null && typeof value === 'object');
@@ -126,10 +127,7 @@ interface ErrorWithStack {
 const formatStackTraceHtml = (originalError: ErrorWithStack | null, isProduction = false, ide = 'vscode'): string => {
   if (!originalError?.stack) { return ''; }
 
-  const stackLines = originalError.stack.split('\n').slice(1);
-  if (stackLines.length === 0) { return ''; }
-
-  const jsStackLines = stackLines.filter(line => line.trim().startsWith('at '));
+  const jsStackLines = pipe(originalError.stack, split('\n'), slice(1), filter(line => line.trim().startsWith('at ')));
   if (jsStackLines.length === 0) { return ''; }
 
   const linesToShow = isProduction
