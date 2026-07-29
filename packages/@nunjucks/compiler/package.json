@@ -5,7 +5,6 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./emitters": "./src/emitters.ts",
     "./location-utils": "./src/location-utils.ts",
     "./node-dispatch": "./src/node-dispatch.ts",
     "./expression-compiler": "./src/expression-compiler/index.ts",
