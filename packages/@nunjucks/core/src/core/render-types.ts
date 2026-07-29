@@ -1,4 +1,5 @@
 import type { Environment } from '@nunjucks/shared';
+import type { SandboxOptions } from '@nunjucks/runtime';
 
 interface LoaderSource {
   src: string;
@@ -24,13 +25,6 @@ interface CallerLocation {
   fileName: string;
   lineNumber?: number | null;
   columnNumber?: number | null;
-}
-
-interface SandboxOptions {
-  allowlist?: string[];
-  blocklistMode?: boolean;
-  blockedContextKeys?: string[];
-  environment?: Environment;
 }
 
 interface RenderConfig {

@@ -19,6 +19,7 @@ import {
 import { createLog } from '@nunjucks/log';
 import { getError } from '@nunjucks/log';
 import { extractBlocks, type Environment } from '@nunjucks/shared';
+import type { SandboxOptions } from './sandbox.ts';
 
 const ROOT_FUNCTION_RE = /^async\s+function\s+root\s*\(/;
 
@@ -79,12 +80,6 @@ const getRuntimeHelpers = () => ({
     }[char] as string));
   },
 });
-
-interface SandboxOptions {
-  allowlist?: string[];
-  blocklistMode?: boolean;
-  environment?: Environment;
-}
 
 const buildSandboxOptions = (config: { sandboxAllowlist?: string[]; sandboxMode?: string; sandboxEnvironment?: string }): SandboxOptions => ({
   allowlist: config.sandboxAllowlist || [],
