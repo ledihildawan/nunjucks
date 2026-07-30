@@ -1,5 +1,6 @@
 import type { LineBase } from './location.ts';
 import type { SourceTrace } from './source-trace.ts';
+import { DEFAULT_IDE } from './defaults.ts';
 
 export interface LogMetadataInput {
   lineno?: number | null;
@@ -65,7 +66,7 @@ export interface FormatterState {
 }
 
 export const normalizeLogMetadata = (input: LogMetadataInput = {}): NormalizedLogMetadata => {
-  let lineBase: 'one' | 'zero';
+  let lineBase: LineBase;
   if (input.lineBase === 'one') {
     lineBase = 'one';
   } else {
@@ -86,7 +87,7 @@ export const normalizeLogMetadata = (input: LogMetadataInput = {}): NormalizedLo
 
 export const createFormatterState = ({ metadata, options = {} }: FormatterStateInput): FormatterState => ({
   dev: options.dev ?? false,
-  ide: options.ide ?? 'vscode',
+  ide: options.ide ?? DEFAULT_IDE,
   verbosity: options.verbosity ?? 'full',
   phase: metadata.phase,
   templateName: metadata.templateName,

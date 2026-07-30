@@ -1,6 +1,7 @@
 import type { SourceTrace } from './internal/source-trace.ts';
 import { toDisplayLocation } from './internal/location.ts';
 import { extractAnsiErrorParts, formatMediumAnsi, formatFullAnsi, getErrorMessage } from './ansi/format-helpers';
+import { DEFAULT_IDE } from './internal/defaults.ts';
 
 export { toAnsi };
 export type { AnsiOptions };
@@ -18,7 +19,7 @@ interface AnsiOptions {
 const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   if (!error) { return ''; }
 
-  const { verbosity = 'full', templatePath, lineno, colno, ide = 'vscode', sourceTrace } = options;
+  const { verbosity = 'full', templatePath, lineno, colno, ide = DEFAULT_IDE, sourceTrace } = options;
   const message = getErrorMessage(error);
 
   if (verbosity === 'simple') {

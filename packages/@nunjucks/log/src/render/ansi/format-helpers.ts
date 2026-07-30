@@ -1,6 +1,6 @@
 import { pipe, filter, join, split } from 'remeda';
 import picocolors from 'picocolors';
-import { toDisplayLocation } from '../internal/location.ts';
+import { toDisplayLocation, type LineBase } from '../internal/location.ts';
 import { classifyFromError } from '../../errors/classify.ts';
 import type { SourceTrace } from '../internal/source-trace.ts';
 import { stripMarkdown, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString } from './stack-helpers';
@@ -53,7 +53,7 @@ interface AnsiErrorParts {
   path: string;
   displayLineno: number | null;
   displayColno: number | null;
-  lineBase: 'zero' | 'one' | null;
+  lineBase: LineBase | null;
 }
 
 const extractAnsiErrorParts = (error: unknown, templatePath?: string, lineno?: number | null, colno?: number | null): AnsiErrorParts => {
@@ -61,7 +61,7 @@ const extractAnsiErrorParts = (error: unknown, templatePath?: string, lineno?: n
     templateName?: string;
     lineno?: number | null;
     colno?: number | null;
-    lineBase?: 'zero' | 'one' | null;
+    lineBase?: LineBase | null;
     causes?: string[];
     fixCode?: string | null;
     fixComment?: string | null;

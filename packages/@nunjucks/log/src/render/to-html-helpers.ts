@@ -1,7 +1,7 @@
 import { classifyFromError } from '../errors/classify.ts';
 import { toText } from './to-text.ts';
 import { escapeHtml, highlightHtml, highlightJs } from './internal/highlight.ts';
-import { toDisplayLocation } from './internal/location.ts';
+import { toDisplayLocation, type LineBase } from './internal/location.ts';
 import type { ClassifiedError, ErrorLike, HumanTitleInput, LocationInfo } from './to-html-types.ts';
 
 const SCRIPT_EXTENSION_RE = /\.(?:[cm]?[jt]sx?|mjs|cjs)$/iu;
@@ -93,7 +93,7 @@ const resolveErrorLocation = (
   templatePath: string | undefined,
   isJsCaller: boolean
 ): LocationInfo => {
-  const lineBaseValue: 'one' | 'zero' = isJsCaller ? 'one' : (error?.lineBase ?? 'zero');
+  const lineBaseValue: LineBase = isJsCaller ? 'one' : (error?.lineBase ?? 'zero');
   const location = toDisplayLocation(
     lineno ?? error?.lineno ?? null,
     colno ?? error?.colno ?? null,

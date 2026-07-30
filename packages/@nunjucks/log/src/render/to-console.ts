@@ -2,8 +2,9 @@ import picocolors from 'picocolors';
 import { pipe, filter } from 'remeda';
 import { shortenPath } from './internal/path-shortener.ts';
 import { isFilePath, resolveIdeLink } from './internal/ide-links.ts';
-import { toDisplayLocation } from './internal/location.ts';
+import { toDisplayLocation, type LineBase } from './internal/location.ts';
 import { makeHyperlink } from './ansi/stack-helpers.ts';
+import { DEFAULT_IDE, DEFAULT_VERSION } from './internal/defaults.ts';
 
 interface Warning {
   message?: string;
@@ -14,7 +15,7 @@ interface Warning {
   undefinedMode?: string;
   code?: string | null;
   subject?: string | null;
-  lineBase?: 'zero' | 'one' | null;
+  lineBase?: LineBase | null;
 }
 
 interface ToConsoleOptions {
@@ -32,7 +33,7 @@ const formatSimple = (warning: Warning): string => {
 };
 
 const formatMedium = (warning: Warning, options: ToConsoleOptions): string => {
-  const { templatePath, ide = 'vscode' } = options;
+  const { templatePath, ide = DEFAULT_IDE } = options;
   const { lineno, templateName, varName } = warning;
 
   const title = varName ? `Undefined variable '${varName}'` : 'Undefined variable';
@@ -64,7 +65,7 @@ const formatMedium = (warning: Warning, options: ToConsoleOptions): string => {
 const getWarningTitle = (varName: string | null | undefined): string =>
   varName ? `Undefined variable '${varName}'` : 'Undefined variable';
 
-const getLocationString = (lineno: number | null | undefined, templateName: string | null | undefined, lineBase: 'zero' | 'one' | null | undefined, ide: string): string => {
+const getLocationString = (lineno: number | null | undefined, templateName: string | null | undefined, lineBase: LineBase | null | undefined, ide: string): string => {
   const location = toDisplayLocation(lineno ?? null, 0, lineBase ?? 'zero');
   const lineNum = location.line;
   if (templateName) {
@@ -82,7 +83,7 @@ const getLocationString = (lineno: number | null | undefined, templateName: stri
 };
 
 const formatFull = (warning: Warning, options: ToConsoleOptions): string => {
-  const { dev = false, version = '3.2.4', timestamp, ide = 'vscode' } = options;
+  const { dev = false, version = DEFAULT_VERSION, timestamp, ide = DEFAULT_IDE } = options;
   const { lineno, templateName, varName, undefinedMode, code, subject } = warning;
 
   const footer = [`Nunjucks ${version}`, ...(timestamp ? [timestamp] : [])];

@@ -1,6 +1,6 @@
 import { pipe, filter, join, map, split } from 'remeda';
 import { shortenPath } from './internal/path-shortener.ts';
-import { toDisplayLocation } from './internal/location.ts';
+import { toDisplayLocation, type LineBase } from './internal/location.ts';
 import { classifyFromError } from '../errors/classify.ts';
 import { slice } from '@nunjucks/shared';
 import { stripMarkdown } from './internal/markdown.ts';
@@ -52,7 +52,7 @@ const formatMediumText = (
   const location = toDisplayLocation(
     lineno ?? (error as { lineno?: number | null }).lineno ?? null,
     colno ?? (error as { colno?: number | null }).colno ?? null,
-    (error as { lineBase?: 'zero' | 'one' | null }).lineBase ?? 'zero'
+    (error as { lineBase?: LineBase | null }).lineBase ?? 'zero'
   );
   const shortPath = shortenPath(path);
   const locationStr = ` at ${shortPath}:${location.line}:${location.col}`;

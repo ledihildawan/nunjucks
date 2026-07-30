@@ -23,17 +23,6 @@ export const isDangerousReference = (value: unknown): boolean => {
   return checkGlobalThis(value) || checkProcess(value) || checkWindow(value) || checkDocument(value) || checkSelf(value) || checkBuffer(value);
 };
 
-const PROTOTYPE_POLLUTION_KEYS = new Set([
-  '__proto__',
-  'constructor',
-  'prototype',
-  'hasOwnProperty',
-  'toString',
-  'valueOf'
-]);
-
-const isPrototypePollutionKey = (key: string): boolean => PROTOTYPE_POLLUTION_KEYS.has(key);
-
 const isBlockedNestedContextKey = (key: string): boolean => getBlockedKeyCategory(key, 'auto') === 'object_intrinsic';
 
 const BUILTIN_GLOBALS = new Set([
@@ -57,7 +46,7 @@ const checkKeyDangerous = (
   _scan: ScanContext,
   currentPath: string
 ): string[] => {
-  if (isPrototypePollutionKey(key) || isBlockedNestedContextKey(key)) {
+  if (isBlockedNestedContextKey(key)) {
     return [currentPath];
   }
   if (isTopLevel && isDangerousGlobal(key)) {

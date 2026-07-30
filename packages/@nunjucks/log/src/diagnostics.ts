@@ -4,6 +4,8 @@ import { createLog, type TemplateError } from './create-log.ts';
 import { normalizeErrorMetadata } from './render/internal/normalize.ts';
 import { resolveLocation } from '@nunjucks/shared/error-location';
 import { MATCH_ANY_RE } from '@nunjucks/shared';
+import { DEFAULT_IDE } from './render/internal/defaults.ts';
+import type { LineBase } from './render/internal/location.ts';
 
 interface DiagnosticsConfig {
   phase?: string | null;
@@ -103,7 +105,7 @@ const buildMetadata = (
   errSnapshot: Record<string, unknown>,
   lineno: number | null,
   colno: number | null,
-  lineBase: 'zero' | 'one',
+  lineBase: LineBase,
   phase: string,
   templatePath: string | null,
   sourceContent: string | null,
@@ -166,7 +168,7 @@ export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, templ
   const errSnapshot = extractErrorSnapshot(err);
   const phase = initialMetadata.phase || config.phase || 'render';
   const dev = config.dev ?? false;
-  const ide = config.ide ?? 'vscode';
+  const ide = config.ide ?? DEFAULT_IDE;
   const timestamp = new Date().toISOString();
 
   const metadata = buildMetadata(errSnapshot, lineno, colno, lineBase, phase, templatePath, sourceContent, sourceStartLine, renderContext);

@@ -2,6 +2,7 @@ import { pipe, keys, values, filter, join, map, split } from 'remeda';
 import { escapeHtml, highlightHtml, highlightJs } from './highlight.ts';
 import { isFilePath, resolveIdeLink } from './ide-links.ts';
 import { shortenPath } from './path-shortener.ts';
+import { DEFAULT_IDE } from './defaults.ts';
 import { normalizeRenderContext } from './safe-context.ts';
 import { replace, slice } from '@nunjucks/shared';
 
@@ -156,7 +157,7 @@ interface ErrorWithStack {
   stack?: string;
 }
 
-const formatStackTraceHtml = (originalError: ErrorWithStack | null, isProduction = false, ide = 'vscode'): string => {
+const formatStackTraceHtml = (originalError: ErrorWithStack | null, isProduction = false, ide = DEFAULT_IDE): string => {
   if (!originalError?.stack) { return ''; }
 
   const jsStackLines = pipe(originalError.stack, split('\n'), slice(1), filter(line => line.trim().startsWith('at ')));

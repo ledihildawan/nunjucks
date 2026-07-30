@@ -1,3 +1,5 @@
+import type { LineBase } from './internal/location.ts';
+
 interface Csp {
   nonce?: string;
 }
@@ -24,7 +26,7 @@ interface LocationInfo {
   displayLine: number;
   displayCol: number;
   displayPath: string;
-  lineBaseValue: 'one' | 'zero';
+  lineBaseValue: LineBase;
 }
 
 interface ErrorLike {
@@ -36,7 +38,7 @@ interface ErrorLike {
   sourceContent?: string;
   phase?: string | null;
   code?: string | null;
-  lineBase?: 'zero' | 'one' | null;
+  lineBase?: LineBase | null;
 }
 
 interface ToHtmlOptions {

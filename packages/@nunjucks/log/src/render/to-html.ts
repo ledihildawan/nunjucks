@@ -4,6 +4,7 @@ import { isFilePath } from './internal/ide-links.ts';
 import { CSS, } from './internal/styles.ts';
 import { TOGGLE_SCRIPT } from './internal/script.ts';
 import { shortenPath } from './internal/path-shortener.ts';
+import { DEFAULT_IDE, DEFAULT_VERSION } from './internal/defaults.ts';
 import type { Csp, ErrorLike, ToHtmlOptions } from './to-html-types.ts';
 import type { SourceTrace } from './internal/source-trace.ts';
 
@@ -94,11 +95,11 @@ const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string =>
     colno,
     renderContext,
     phase,
-    version = '3.2.4',
+    version = DEFAULT_VERSION,
     timestamp,
     csp,
     sourceTrace,
-    ide = 'vscode',
+    ide = DEFAULT_IDE,
     verbosity = 'full',
     isJsCaller = false
   } = options;
