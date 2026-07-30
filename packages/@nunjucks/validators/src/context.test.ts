@@ -65,6 +65,13 @@ describe('findContextDangerousValues', () => {
     a.b = b;
     expect(findContextDangerousValues(a)).toEqual([]);
   });
+
+  test('reports each dangerous path once (no duplicates)', () => {
+    // eval trips both the dangerous-global key check and the eval/Function
+    // value check — it must be reported a single time.
+    expect(findContextDangerousValues({ eval: evalFn })).toEqual(['eval']);
+    expect(findContextDangerousValues({ process: evalFn })).toEqual(['process']);
+  });
 });
 
 describe('validateRenderContext', () => {

@@ -1,4 +1,3 @@
-// biome-ignore lint/style/noExcessiveLinesPerFile: Security module with security-related utility functions
 import { keys, isFunction, pipe, map, join } from 'remeda';
 import { isBlockedKey, isDangerousGlobal } from '@nunjucks/shared/blocked-keys';
 import { scanTemplateForDangerousCode, type DangerousCodeViolation, isDangerousReference, findDangerousValues } from '@nunjucks/shared';

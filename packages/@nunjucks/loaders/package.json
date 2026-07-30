@@ -5,8 +5,7 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./file-system": "./src/file-system.ts",
-    "./node-resolve": "./src/node-resolve.ts"
+    "./file-system": "./src/file-system.ts"
   },
   "dependencies": {
     "@nunjucks/shared": "workspace:*"

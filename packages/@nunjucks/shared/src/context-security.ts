@@ -73,13 +73,15 @@ const checkValueDangerous = (
   scan: ScanContext,
   currentPath: string
 ): string[] => {
-  if (!isFunction(value)) { return []; }
+  if (!isFunction(value) || !isTopLevel) { return []; }
   const fnName = value.name || key;
-  return [
-    ...(isTopLevel && (fnName === 'eval' || fnName === 'Function') ? [currentPath] : []),
-    ...(isTopLevel && isDangerousGlobal(fnName) ? [currentPath] : []),
-    ...(isTopLevel && scan.allowedGlobals && !scan.allowedGlobals.includes(fnName) && !isBuiltIn(fnName) ? [currentPath] : []),
-  ];
+  // A single dangerous function is reported once — the conditions are combined
+  // (not concatenated) so eval/Function and dangerous globals don't produce
+  // duplicate paths for the same key.
+  const dangerous = (fnName === 'eval' || fnName === 'Function')
+    || isDangerousGlobal(fnName)
+    || (!!scan.allowedGlobals && !scan.allowedGlobals.includes(fnName) && !isBuiltIn(fnName));
+  return dangerous ? [currentPath] : [];
 };
 
 export const scanForDangerousValues = (
@@ -109,6 +111,10 @@ export const scanForDangerousValues = (
   });
 };
 
-/** Public entry: starts a fresh scan with its own cycle-tracking set. */
-export const findDangerousValues = (obj: unknown, allowedGlobals?: readonly string[] | null): string[] =>
-  scanForDangerousValues(obj, { allowedGlobals, seen: new WeakSet() });
+/** Public entry: starts a fresh scan with its own cycle-tracking set. The
+ *  result is de-duplicated (preserving first-seen order) so a key that trips
+ *  both the key check and the value check is reported once. */
+export const findDangerousValues = (obj: unknown, allowedGlobals?: readonly string[] | null): string[] => {
+  const paths = scanForDangerousValues(obj, { allowedGlobals, seen: new WeakSet() });
+  return [...new Set(paths)];
+};
