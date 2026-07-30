@@ -24,34 +24,11 @@ const resolveFromSearchPath = (name: string) => (searchPath: string) => {
   return { basePath, fullPath };
 };
 
-const throwDirectoryError = (fullPath: string): never => {
-  throw createLog(
-    'error',
-    getError('FILESYSTEM_ERROR'),
-    { msg: `EISDIR: illegal operation - path is a directory: ${fullPath}` },
-    fullPath,
-    { phase: 'load' }
-  );
-};
+const makeFilesystemError = (targetPath: string, message: string) =>
+  createLog('error', getError('FILESYSTEM_ERROR'), { msg: message }, targetPath, { phase: 'load' });
 
-const throwBasePathNotFoundError = (basePath: string, baseErr: unknown): never => {
-  const errObj = baseErr as { code: string } | undefined;
-  if (errObj?.code === 'ENOENT') {
-    throw createLog(
-      'error',
-      getError('FILESYSTEM_ERROR'),
-      { msg: `ENOENT: no such file or directory: ${basePath}` },
-      basePath,
-      { phase: 'load' }
-    );
-  }
-  throw createLog(
-    'error',
-    getError('FILESYSTEM_ERROR'),
-    { msg: String(baseErr) },
-    basePath,
-    { phase: 'load' }
-  );
+const throwDirectoryError = (fullPath: string): never => {
+  throw makeFilesystemError(fullPath, `EISDIR: illegal operation - path is a directory: ${fullPath}`);
 };
 
 const hasErrorCode = (err: unknown): err is { code: string } =>
@@ -60,14 +37,11 @@ const hasErrorCode = (err: unknown): err is { code: string } =>
 const isFileNotFoundError = (err: unknown): boolean =>
   hasErrorCode(err) && (err as { code: string }).code === 'ENOENT';
 
-const throwFilesystemError = (fullPath: string, err: unknown): never => {
-  throw createLog(
-    'error',
-    getError('FILESYSTEM_ERROR'),
-    { msg: String(err) },
-    fullPath,
-    { phase: 'load' }
-  );
+const throwBasePathNotFoundError = (basePath: string, baseErr: unknown): never => {
+  const message = isFileNotFoundError(baseErr)
+    ? `ENOENT: no such file or directory: ${basePath}`
+    : String(baseErr);
+  throw makeFilesystemError(basePath, message);
 };
 
 const checkFileExists = async (fullPath: string): Promise<void> => {
@@ -92,8 +66,7 @@ const existsAndWithinBase = (basePath: string) => async ({ fullPath }: { fullPat
         throwBasePathNotFoundError(basePath, err);
       }
     }
-    throwFilesystemError(fullPath, err);
-    return false;
+    throw makeFilesystemError(fullPath, String(err));
   }
 };
 
@@ -107,21 +80,15 @@ const findFileInSearchPaths = async (searchPaths: string[], name: string): Promi
   return null;
 };
 
-const readFileSource = async (fullpath: string): Promise<FileSystemLoaderSource | null> => {
+const readFileSource = async (fullPath: string): Promise<FileSystemLoaderSource | null> => {
   try {
     return {
-      src: await readFile(fullpath, 'utf-8'),
-      path: fullpath
+      src: await readFile(fullPath, 'utf-8'),
+      path: fullPath
     };
   } catch (err: unknown) {
-    if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'ENOENT') { return null; }
-    throw createLog(
-      'error',
-      getError('FILESYSTEM_ERROR'),
-      { msg: String(err) },
-      fullpath,
-      { phase: 'load' }
-    );
+    if (isFileNotFoundError(err)) { return null; }
+    throw makeFilesystemError(fullPath, String(err));
   }
 };
 
@@ -187,13 +154,13 @@ export interface FileSystemLoader extends Loader {
 
 const setupLoaderGetSource = (loader: FileSystemLoader) => {
   loader.getSource = async (name: string): Promise<FileSystemLoaderSource | null> => {
-    const fullpath = await findFileInSearchPaths(loader.searchPaths, name);
-    if (!fullpath) { return null; }
+    const fullPath = await findFileInSearchPaths(loader.searchPaths, name);
+    if (!fullPath) { return null; }
 
-    loader.pathsToNames[fullpath] = name;
-    if (loader.watchEnabled) { loader.watchFile(fullpath); }
+    loader.pathsToNames[fullPath] = name;
+    if (loader.watchEnabled) { loader.watchFile(fullPath); }
 
-    const source = await readFileSource(fullpath);
+    const source = await readFileSource(fullPath);
     loader.emit('load', name, source);
     return source;
   };

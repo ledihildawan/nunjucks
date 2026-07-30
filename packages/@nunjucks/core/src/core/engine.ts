@@ -34,5 +34,5 @@ const defaultEngine = createEngine();
 
 const getLoader = (config: EngineConfig): FileSystemLoader | null => defaultEngine.getLoader(config);
 
-export { createEngine, getLoader };
+export { getLoader };
 export type { EngineConfig, Engine };

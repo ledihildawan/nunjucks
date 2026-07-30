@@ -16,10 +16,19 @@ export const STRIP_VARIABLE_END = '-}}';
 
 export const COMPLEX_OPERATORS = [
   '==', '===', '!=', '!==', '<=', '>=', '//', '**', '?.', '??', '.?', '||', '&&',
-  '||=', '&&=', '??=', '|>', '..', '...', '**=', '//=', ':=', '<<', '>>', '++', '--'
+  '||=', '&&=', '??=', '|>', '..', '...', '**=', '//=', ':=', '<<', '>>', '++', '--',
+  '+=', '-=', '*=', '/=', '%=', '|>='
 ] as const;
 
 export type ComplexOperator = typeof COMPLEX_OPERATORS[number];
+
+// Compound-assignment operators (arithmetic + logical). Single source of truth
+// shared by the parser (statement + expression contexts) and aligned with the
+// compiler. `|>=` (pipe-forward assign) is intentionally excluded: it is handled
+// as a distinct case by the parser/compiler.
+export const COMPOUND_ASSIGNMENT_OPS: readonly string[] = [
+  '||=', '&&=', '??=', '**=', '//=', '+=', '-=', '*=', '/=', '%=',
+];
 
 export const REGEX_FLAGS = ['g', 'i', 'm', 'y'] as const;
 

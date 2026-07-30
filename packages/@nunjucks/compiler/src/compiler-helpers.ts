@@ -16,7 +16,7 @@ export const fail = (
     throw createLog(
       'error',
       errorDef,
-      { type: subject },
+      { type: subject, detail: msg },
       subject,
       {
         lineno,
@@ -28,7 +28,7 @@ export const fail = (
     );
   }
 
-  throw new Error(`unknown type: ${subject}`);
+  throw new Error(`${msg}: ${subject}`);
 };
 
 export const tmpid = (ctx: Pick<Compiler, 'lastId'>): string => {

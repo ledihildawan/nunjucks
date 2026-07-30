@@ -89,17 +89,6 @@ const executeNonSandbox = async (
 ): Promise<unknown> => {
   const { render, blocks } = getRenderFunction(code);
 
-  if (ctx.env) {
-    ctx.blocks = blocks as Record<string, (...args: unknown[]) => unknown>;
-    ctx.getBlock = (name: string) => {
-      if (!blocks[name]) {
-        throw createLog('error', getError('UNDEFINED_BLOCK'), { name }, name, { phase: 'render' });
-      }
-      return blocks[name];
-    };
-    return await render(env, ctx, frame, runtime);
-  }
-
   ctx.blocks = blocks as Record<string, (...args: unknown[]) => unknown>;
   ctx.getBlock = (name: string) => {
     if (!blocks[name]) {

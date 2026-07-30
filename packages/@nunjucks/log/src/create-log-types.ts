@@ -145,5 +145,5 @@ interface LegacyLogData {
 
 type LogType = 'error' | 'warning';
 
-export type { ErrorDefinitionEntry, ErrorInfo, WarningInfo, OutputOptions, TemplateError, TemplateWarning, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, LegacyLogData, LogType, BaseContext, NormalizedErrorContext, NormalizedWarningContext, TemplateError as TEMPLATE_ERROR_KEY };
+export type { ErrorDefinitionEntry, ErrorInfo, WarningInfo, OutputOptions, TemplateError, TemplateWarning, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, LegacyLogData, LogType, BaseContext, NormalizedErrorContext, NormalizedWarningContext };
 export { TEMPLATE_ERROR };

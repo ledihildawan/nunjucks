@@ -160,9 +160,4 @@ function validateExpression(ast: Node, config: Record<string, unknown> = {}): Va
   return errors;
 }
 
-function isExpressionSafe(ast: Node, config: Record<string, unknown> = {}): boolean {
-  const errors = validateExpression(ast, config);
-  return errors.length === 0;
-}
-
-export { ExpressionSecurityError, DEFAULT_SECURITY_CONFIG, validateExpression, isExpressionSafe };
+export { ExpressionSecurityError, DEFAULT_SECURITY_CONFIG, validateExpression };

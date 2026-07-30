@@ -47,7 +47,7 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: { enrichErro
     const frame = createRenderFrame(parentFrame);
 
     try {
-      const runtime = createRuntimeWithContext(state.path, state.env.opts, ctx || {});
+      const runtime = createRuntimeWithContext(state.path, ctx || {});
       const result = await state.rootRenderFunc?.(state.env, context, frame, runtime);
       if (runtime.__warnings__.length > 0 && state.env.opts.dev) {
         return result + injectWarningsScript(runtime.__warnings__ as Warning[], { dev: true, verbosity: 'medium' });

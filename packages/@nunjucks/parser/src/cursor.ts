@@ -40,14 +40,6 @@ export type MutableNode = Node & {
   children: Node[];
 };
 
-export const createCursor = (tokens: TokenStream) => ({
-  tokens,
-  peeked: null,
-  breakOnBlocks: null,
-  dropLeadingWhitespace: false,
-  extensions: []
-});
-
 export const nextToken = (ctx: ParserContext, withWhitespace?: boolean): Token => {
   let tok: Token | null;
 

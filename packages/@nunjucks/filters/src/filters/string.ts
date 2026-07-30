@@ -1,6 +1,6 @@
 import { defaultTo, entries, join, map, pipe, split } from 'remeda';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
-import { normalize, safeString, safeHtml, preserveSafe, createStringFilter, createMacroFilter, isSafeString, isArray, filterError } from '../factory/index.ts';
+import { normalize, safeString, safeHtml, preserveSafe, createStringFilter, createMacroFilter, isSafeString, isArray, makeFilterError } from '../factory/index.ts';
 import type { SafeString } from '../factory/index.ts';
 
 const capitalize = createStringFilter((s: string): string => {
@@ -43,11 +43,7 @@ const indent = (str: unknown, width?: number, indentfirst?: boolean): string => 
 
 const joinFilter = (arr: unknown, del?: string, attr?: string): string => {
   if (!isArray(arr)) {
-    const errorDef = ERROR_DEFINITIONS.JOIN_FILTER;
-    if (errorDef) {
-      throw filterError(undefined, errorDef, { type: typeof arr }, typeof arr);
-    }
-    throw new Error(`Expected array but got ${typeof arr}`);
+    throw makeFilterError(ERROR_DEFINITIONS.JOIN_FILTER, { type: typeof arr }, typeof arr, `Expected array but got ${typeof arr}`);
   }
   const d = defaultTo(del, '');
   const values = attr ? arr.map((v) => (v as Record<string, unknown>)[attr]) : arr;

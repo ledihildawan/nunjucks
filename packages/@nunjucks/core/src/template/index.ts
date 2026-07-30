@@ -40,5 +40,3 @@ export function createTemplate(src: string | TemplateSource, env?: import('../co
 
   return template;
 }
-
-export const isTemplate = (obj: unknown): obj is TemplateObject => Boolean(obj && typeof obj === 'object' && (obj as Record<string, unknown>)[Template as unknown as string] === true);

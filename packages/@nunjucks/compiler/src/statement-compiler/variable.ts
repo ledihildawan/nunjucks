@@ -95,11 +95,12 @@ const emitCompoundValue = (
   node: Node,
   name: string,
   valueId: string,
-  jsOp: string | null
+  jsOp: string | null,
+  frame: Frame,
 ): void => {
   if (node.operator === '//=') {
     ctx.emit(`let ${valueId} = Math.floor(frame.lookup("${name}") / `);
-    ctx.compileExpression(node.value as Node, ctx as unknown as Frame);
+    ctx.compileExpression(node.value as Node, frame);
     ctx.emitLine(');');
   } else if (node.operator === '|>=') {
     const valueNode = node.value as Node;
@@ -111,12 +112,12 @@ const emitCompoundValue = (
       ctx.emitLine('))');
     } else {
       ctx.emit(`let ${valueId} = await runtime.awaitValue(`);
-      ctx.compileExpression(valueNode, ctx as unknown as Frame);
+      ctx.compileExpression(valueNode, frame);
       ctx.emit(`, frame.lookup("${name}"))`);
     }
   } else {
     ctx.emit(`let ${valueId} = frame.lookup("${name}") ${jsOp} `);
-    ctx.compileExpression(node.value as Node, ctx as unknown as Frame);
+    ctx.compileExpression(node.value as Node, frame);
     ctx.emitLine(';');
   }
 };
@@ -155,7 +156,7 @@ const compileCompoundAssignment = (ctx: Compiler, node: Node, frame: Frame): voi
     ctx.emitLine(`if (frame.lookup("${name}") === undefined) { throw new ReferenceError("Variable '${name}' is not defined. Use ${name} := value to declare it."); }`);
 
     const valueId = ctx.tmpid();
-    emitCompoundValue(ctx, node, name, valueId, jsOp);
+    emitCompoundValue(ctx, node, name, valueId, jsOp, frame);
     ctx.emitLine(`frame.set("${name}", ${valueId}, true);`);
     ctx.emitLine('}');
   }

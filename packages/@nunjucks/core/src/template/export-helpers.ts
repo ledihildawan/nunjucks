@@ -36,7 +36,7 @@ const createGetExported = (state: TemplateState) => async (ctx?: unknown, parent
     { blockLocations: state.blockMeta as Record<string, BlockLocation> }
   );
   try {
-    const runtime = createRuntimeWithContext(state.path, state.env.opts, ctx || {});
+    const runtime = createRuntimeWithContext(state.path, ctx || {});
     await state.rootRenderFunc?.(state.env, context, frame, runtime);
     return context.getExported();
   } catch (e) {

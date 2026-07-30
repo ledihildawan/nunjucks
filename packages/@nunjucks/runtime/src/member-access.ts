@@ -55,29 +55,12 @@ export function getNullParentName(val: unknown): string | null {
   return (val as NullAccessResult).__nunjucks_parent__ ?? null;
 }
 
-export function getAccessPath(val: unknown): string {
-  if (!isNonNullish(val)) { return ''; }
-  // `val` is only *maybe* a NullAccessResult, so the cast is partial and the
-  // `??` is what covers everything else that reaches this function.
-  return (val as Partial<NullAccessResult>).__access_path__ ?? '';
-}
-
-export function optionalMemberLookup(obj: unknown, val: string, _parentName: string | null = null): unknown {
-  if (obj === null || obj === undefined) {
+export function optionalMemberLookup(obj: unknown, val: string, parentName: string | null = null): unknown {
+  const result = memberLookup(obj, val, parentName);
+  if (isNullAccessResult(result) || isPropertyNotFoundResult(result)) {
     return;
   }
-
-  const target = obj as Record<string, unknown>;
-  if (!(hasOwn(target, val) || (val in target))) {
-    return ;
-  }
-
-  if (isFunction(target[val])) {
-    const fn = target[val] as (...args: unknown[]) => unknown;
-    return (...args: unknown[]) => fn.apply(target, args);
-  }
-
-  return target[val];
+  return result;
 }
 
 const normalizeIndex = (idx: number | null, len: number, defaultVal: number, stepValue: number): number => {

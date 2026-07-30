@@ -2,7 +2,7 @@
   "name": "@nunjucks/core",
   "version": "3.2.4",
   "type": "module",
-  "main": "./src/index.js",
+  "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
@@ -14,9 +14,7 @@
   "dependencies": {
     "@nunjucks/compiler": "workspace:*",
     "@nunjucks/filters": "workspace:*",
-    "@nunjucks/lexer": "workspace:*",
     "@nunjucks/log": "workspace:*",
-    "@nunjucks/nodes": "workspace:*",
     "@nunjucks/parser": "workspace:*",
     "@nunjucks/runtime": "workspace:*",
     "@nunjucks/shared": "workspace:*",

@@ -38,6 +38,7 @@ export {
 
 export {
   COMPLEX_OPERATORS,
+  COMPOUND_ASSIGNMENT_OPS,
   createDelimiters,
   DEFAULT_BLOCK_END,
   DEFAULT_BLOCK_START,

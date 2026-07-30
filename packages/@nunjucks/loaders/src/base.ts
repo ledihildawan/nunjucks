@@ -20,15 +20,13 @@ export interface Loader {
 export function createLoader(opts: LoaderOptions = {}): Loader {
   const emitter = new EventEmitter();
 
-  let _resolve = opts.resolve ?? ((from, to) => path.resolve(path.dirname(from), to));
-  let _isRelative = opts.isRelative ?? ((filename) => filename.startsWith('./') || filename.startsWith('../'));
+  const resolve = opts.resolve ?? ((from: string, to: string) => path.resolve(path.dirname(from), to));
+  const isRelative = opts.isRelative ?? ((filename: string) => filename.startsWith('./') || filename.startsWith('../'));
 
   const loader: Loader = {
     [LoaderSymbol]: true,
-    get resolve() { return _resolve; },
-    set resolve(v) { _resolve = v; },
-    get isRelative() { return _isRelative; },
-    set isRelative(v) { _isRelative = v; },
+    resolve,
+    isRelative,
 
     on(event: string, handler: (...args: unknown[]) => void) {
       emitter.on(event, handler);

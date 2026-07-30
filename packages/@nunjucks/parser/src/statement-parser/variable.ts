@@ -3,6 +3,7 @@ import {
   TOKEN_LEFT_PAREN,
   TOKEN_RIGHT_PAREN,
   TOKEN_OPERATOR,
+  COMPOUND_ASSIGNMENT_OPS,
 } from '@nunjucks/lexer';
 import { compoundAssignment, defineBlock, variableAssignment, variableDeclaration } from '@nunjucks/nodes';
 import type { MacroArgument, Node } from '@nunjucks/nodes';
@@ -32,12 +33,10 @@ export const parseVariableDeclaration = (ctx: ParserContext): Node => {
   return variableDeclaration(tag.lineno, tag.colno, targets, value);
 };
 
-const COMPOUND_OPS = ['||=', '&&=', '??=', '**=', '//='] as const;
-
 const parseOperator = (ctx: ParserContext, tag: ReturnType<typeof peekToken>): string => {
   const tok = peekToken(ctx);
   if (tok && tok.type === TOKEN_OPERATOR) {
-    if (COMPOUND_OPS.includes(tok.value as typeof COMPOUND_OPS[number])) {
+    if (COMPOUND_ASSIGNMENT_OPS.includes(tok.value as string)) {
       return nextToken(ctx).value as string;
     }
     if (tok.value === '=') {

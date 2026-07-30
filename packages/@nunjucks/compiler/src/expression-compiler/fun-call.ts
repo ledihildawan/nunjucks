@@ -1,4 +1,4 @@
-import { BracketNotation, getNodeTypeName, isLiteral, isSymbol } from '@nunjucks/nodes';
+import { BracketNotation, T, getNodeTypeName, isLiteral, isSymbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
@@ -51,15 +51,15 @@ const handleOptionalChain = (_ctx: Compiler, node: Node): string => {
 const getNodeName = (_ctx: Compiler, node: Node, _isBracketCall = false): string => {
   const typeName = getNodeTypeName(node);
   switch (typeName) {
-    case 'symbol':
+    case T.SYMBOL:
       return node.value as string;
-    case 'funCall':
+    case T.FUN_CALL:
       return `the return value of (${getNodeName(_ctx, node.name as Node)})`;
-    case 'lookupVal':
+    case T.LOOKUP_VAL:
       return handleLookupVal(_ctx, node);
-    case 'optionalChain':
+    case T.OPTIONAL_CHAIN:
       return handleOptionalChain(_ctx, node);
-    case 'literal':
+    case T.LITERAL:
       return (node.value as { toString: () => string }).toString();
     default:
       return '--expression--';

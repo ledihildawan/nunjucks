@@ -1,29 +1,11 @@
-import { arrayPattern, compoundAssignment, inlineIf, isArray, isArrayPattern, isDict, isObjectPattern, isPair, isSpread, isSymbol, literal, objectPattern, patternProperty, restPattern, symbol, variableDeclaration, walrus } from '@nunjucks/nodes';
+import { arrayPattern, compoundAssignment, inlineIf, isArray, isArrayPattern, isDict, isObjectPattern, isPair, isSpread, isSymbol, objectPattern, patternProperty, restPattern, variableDeclaration, walrus } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { skipSymbol, skipValue, peekToken, nextToken } from "../cursor.ts";
 import type { ParserContext, MutableNode } from "../cursor.ts";
 import { parseOr } from "./logical.ts";
-import { TOKEN_OPERATOR, TOKEN_PIPEFORWARD, TOKEN_COLON } from '@nunjucks/lexer';
-import type { Token } from '@nunjucks/lexer';
+import { TOKEN_OPERATOR, TOKEN_PIPEFORWARD, TOKEN_COLON, COMPOUND_ASSIGNMENT_OPS } from '@nunjucks/lexer';
 
 type PairNode = Node & { key: Node; value: Node; argument: Node };
-
-const _tokenToLiteral = (tok: Token): Node => {
-  switch (tok.type) {
-    case 'int':
-      return literal(tok.lineno, tok.colno, Number(tok.value));
-    case 'float':
-      return literal(tok.lineno, tok.colno, Number.parseFloat(tok.value as string));
-    case 'string':
-      return literal(tok.lineno, tok.colno, tok.value);
-    case 'boolean':
-      return literal(tok.lineno, tok.colno, tok.value === 'true');
-    case 'none':
-      return literal(tok.lineno, tok.colno, null);
-    default:
-      return symbol(tok.lineno, tok.colno, tok.value as string);
-  }
-};
 
 const parseTernary = (ctx: ParserContext, node: Node): Node => {
   if (skipValue(ctx, TOKEN_OPERATOR, '?')) {
@@ -39,8 +21,6 @@ const parseTernary = (ctx: ParserContext, node: Node): Node => {
   }
   return node;
 };
-
-const COMPOUND_OPS = ['||=', '&&=', '??=', '**=', '//=', '+=', '-=', '*=', '/=', '%=', '|> ='];
 
 const normalizePattern = (node: Node): Node => {
   if (isArrayPattern(node) || isObjectPattern(node)) { return node; }
@@ -100,10 +80,12 @@ const parseWalrus = (ctx: ParserContext, node: Node): Node => {
     }
 
     if (tok.type === TOKEN_OPERATOR && tok.value === '|>=') {
+      nextToken(ctx);
       return handleCompoundAssignment(ctx, node, tok.value);
     }
 
-    if (COMPOUND_OPS.includes(tok.value as string)) {
+    if (COMPOUND_ASSIGNMENT_OPS.includes(tok.value as string)) {
+      nextToken(ctx);
       return handleCompoundAssignment(ctx, node, tok.value as string);
     }
   }

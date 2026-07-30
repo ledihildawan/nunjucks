@@ -53,8 +53,7 @@ const processBlockEndTag = (
   tags: { BLOCK_START: string; BLOCK_END: string }
 ): RawState | null => {
   const afterBlockEnd = advance(current, tags.BLOCK_END.length);
-  const beforeEnd = advance(current, tags.BLOCK_END.length);
-  const { tagName } = extractTagNameAfterBlockEnd(beforeEnd);
+  const { tagName } = extractTagNameAfterBlockEnd(afterBlockEnd);
 
   if (tagName === name) {
     return {

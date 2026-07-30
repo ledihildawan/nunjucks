@@ -3,17 +3,6 @@ import type { Frame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
 
-const compareOps: Record<string, string> = {
-  '==': '==',
-  '===': '===',
-  '!=': '!=',
-  '!==': '!==',
-  '<': '<',
-  '>': '>',
-  '<=': '<=',
-  '>=': '>='
-};
-
 export const compileCompare = (ctx: Compiler, node: Node, frame: Frame): void => {
   const ops = node.ops as Node[];
   const first = ops[0] ?? node;
@@ -22,7 +11,7 @@ export const compileCompare = (ctx: Compiler, node: Node, frame: Frame): void =>
 
   forEach(ops, op => {
     const operator = op.operator as string;
-    ctx.emit(` ${compareOps[operator]} (lineno = ${op.lineno ?? node.lineno ?? 0}, colno = ${op.colno ?? node.colno ?? 0}, `);
+    ctx.emit(` ${operator} (lineno = ${op.lineno ?? node.lineno ?? 0}, colno = ${op.colno ?? node.colno ?? 0}, `);
     ctx.compile(op.expr as Node, frame);
     ctx.emit(')');
   });

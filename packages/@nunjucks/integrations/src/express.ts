@@ -6,20 +6,16 @@ import { createTemplate } from '@nunjucks/core/template';
 import { createEnv, type Env } from '@nunjucks/core/env';
 import { getError } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
+import type { UndefinedMode } from '@nunjucks/runtime';
 
 interface ExpressEngineConfig {
   dev?: boolean;
   autoescape?: boolean;
-  undefined?: 'default' | 'chainable' | 'strict' | 'debug';
+  undefined?: UndefinedMode;
   globals?: Record<string, unknown>;
   filters?: Record<string, (...args: unknown[]) => unknown>;
   extensions?: Record<string, unknown>;
   dompurify?: Record<string, unknown>;
-}
-
-interface ExpressEngineOptions {
-  filePath: string;
-  options: Record<string, unknown>;
 }
 
 type ExpressEngineFunction = (filePath: string, options: Record<string, unknown>) => Promise<string>;
@@ -79,4 +75,4 @@ const createEngine = (config: ExpressEngineConfig = {}): ExpressEngineFunction =
   };
 
 export { createEngine };
-export type { ExpressEngineConfig, ExpressEngineOptions, ExpressEngineFunction };
+export type { ExpressEngineConfig, ExpressEngineFunction };

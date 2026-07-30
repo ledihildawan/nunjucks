@@ -8,14 +8,14 @@ import { getCallerFile, getCallerLocation } from '@nunjucks/shared/caller-file';
 import { createLog, injectWarningsScript, getError } from '@nunjucks/log';
 import { wrapWithLog } from '@nunjucks/log/diagnostics';
 import type { GlobalConfig } from '../config/global.ts';
+import { getDefaultConfig, setDefaultDomPurifyConfig } from '../config/global.ts';
+import { validateConfig, validateRenderContext } from '@nunjucks/validators';
 
 const setupRenderConfig = (options: Partial<GlobalConfig>): RenderConfig => {
   if (options.dompurify) {
-    const { setDefaultDomPurifyConfig } = require('../config/global.ts');
     setDefaultDomPurifyConfig(options.dompurify);
   }
 
-  const { getDefaultConfig } = require('../config/global.ts');
   const defaults = getDefaultConfig();
   return {
     ...defaults,
@@ -84,7 +84,6 @@ const injectWarningsIfNeeded = (result: unknown, warningsCollector: unknown[], d
 };
 
 const validateRenderWithEnvConfig = async (config: RenderConfig, templateName: string, context: Record<string, unknown>, fullConfig: RenderConfig): Promise<void> => {
-  const { validateConfig, validateRenderContext } = require('@nunjucks/validators');
   const validation = validateConfig(config as Parameters<typeof validateConfig>[0]);
   if (!validation.valid) {
     const ve = validation.errors[0] as NonNullable<typeof validation.errors[0]>;

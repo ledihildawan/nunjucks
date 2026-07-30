@@ -64,8 +64,6 @@ const validateFilterName = (name: string): ValidationResult => validateReservedN
 
 const validateGlobalName = (name: string): ValidationResult => validateReservedName(name, 'global');
 
-const validateContextKey = (key: string): ValidationResult => validateReservedName(key, 'context key');
-
 const getReservedKeywords = (): string[] => [...RESERVED_KEYWORDS];
 
-export { RESERVED_KEYWORDS, validateFilterName, validateGlobalName, validateContextKey, getReservedKeywords };
+export { RESERVED_KEYWORDS, validateFilterName, validateGlobalName, getReservedKeywords };

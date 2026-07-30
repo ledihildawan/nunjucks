@@ -16,7 +16,6 @@ const getType = (n: unknown): string | undefined => {
 const getFields_ = (n: Node): readonly string[] => getFields(n);
 
 const getNodeTypeName = getType;
-const getNodeFields = getFields_;
 
 const appendChild = <K extends ChildrenNode>(node: K, child: Node): K =>
   ({ ...node, children: [...node.children, child] });
@@ -206,4 +205,4 @@ export function* filterNodes(ast: Node, predicate: (n: Node) => boolean): Genera
   }
 }
 
-export { getType, getFields_, getNodeTypeName, getNodeFields, appendChild, mapCOW, walk, depthWalk, findAll, findFirst, count };
+export { getType, getFields_, getNodeTypeName, appendChild, mapCOW, walk, depthWalk, findAll, findFirst, count };

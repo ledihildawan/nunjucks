@@ -147,14 +147,10 @@ const checkEnvGlobals = (key: string, env: Environment): BlockedKeyCategory | nu
   return null;
 };
 
-const getEnvCategory = (key: string, env: Environment): BlockedKeyCategory | null => {
-  return checkEnvGlobals(key, env);
-};
-
 export const getBlockedKeyCategory = (key: string, env: Environment = 'auto'): BlockedKeyCategory => {
   if (hasKey(BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS, key)) { return 'object_intrinsic'; }
   if (hasKey(BLOCKED_KEY_CATEGORIES.UNIVERSAL_GLOBALS, key)) { return 'universal_global'; }
-  return getEnvCategory(key, env);
+  return checkEnvGlobals(key, env);
 };
 
 export const isBlockedKey = (key: string, env: Environment = 'auto'): boolean => {

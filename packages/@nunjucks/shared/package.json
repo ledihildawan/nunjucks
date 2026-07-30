@@ -15,7 +15,7 @@
     "./type-guards": "./src/type-guards.ts"
   },
   "dependencies": {
-    "remeda": "*"
+    "remeda": "^2.39.0"
   },
   "description": "Shared utilities for Nunjucks"
 }

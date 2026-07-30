@@ -18,7 +18,7 @@ import {
 } from '@nunjucks/runtime';
 import { createLog } from '@nunjucks/log';
 import { getError } from '@nunjucks/log';
-import { extractBlocks, type Environment } from '@nunjucks/shared';
+import { extractBlocks, escapeHtml, type Environment } from '@nunjucks/shared';
 import type { SandboxOptions } from './sandbox.ts';
 
 const ROOT_FUNCTION_RE = /^async\s+function\s+root\s*\(/;
@@ -71,13 +71,7 @@ const getRuntimeHelpers = () => ({
     if (str && typeof str === 'object' && isSafeString(str as { val?: unknown })) { return String((str as { val: unknown }).val); }
     if (Array.isArray(str)) { return str.join(','); }
     if (str && typeof str === 'object') { return JSON.stringify(str); }
-    return String(str).replace(/[&<>"']/g, char => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    }[char] as string));
+    return escapeHtml(String(str));
   },
 });
 

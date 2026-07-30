@@ -17,6 +17,18 @@ const filterError = (ctx: FilterContext, errorDef: ErrorDefinitionEntry, params:
   return createLog('error', errorDef, params, subject, { phase: logContext.phase, templateName: logContext.templateName, lineBase: 'zero' });
 };
 
+const makeFilterError = (
+  errorDef: ErrorDefinitionEntry | undefined,
+  params: Record<string, string>,
+  subject: string,
+  fallbackMessage: string,
+) => {
+  if (errorDef) {
+    return filterError(undefined, errorDef, params, subject);
+  }
+  return new Error(fallbackMessage);
+};
+
 const normalize = (value: unknown, defaultValue: string): string => {
   if (isNullish(value) || value === false) {
     return defaultValue;
@@ -39,6 +51,6 @@ const safeHtml = (str: unknown): SafeString => {
 const preserveSafe = (original: unknown, result: string): string =>
   copySafeness(original as object, result) as string;
 
-export { filterError, normalize, safeString, safeHtml, preserveSafe };
+export { filterError, makeFilterError, normalize, safeString, safeHtml, preserveSafe };
 
 export { isSafeString } from './types.ts';

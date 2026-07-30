@@ -1,13 +1,14 @@
 import { tryCatch } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { peekToken, skipSymbol, nextToken, fail } from "../cursor.ts";
+import { TOKEN_BLOCK_END } from '@nunjucks/lexer';
+import { peekToken, skipSymbol, nextToken, pushToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parseUntilBlocks } from "../top-level.ts";
 
 const skipBlockEnd = (ctx: ParserContext): void => {
   const tok = nextToken(ctx);
-  if (tok && tok.type !== 'block-end') {
-    // put it back if not a block-end
+  if (tok && tok.type !== TOKEN_BLOCK_END) {
+    pushToken(ctx, tok);
   }
 };
 

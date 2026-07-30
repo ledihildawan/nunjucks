@@ -8,7 +8,9 @@
   },
   "dependencies": {
     "@nunjucks/lexer": "workspace:*",
-    "@nunjucks/nodes": "workspace:*"
+    "@nunjucks/nodes": "workspace:*",
+    "@nunjucks/log": "workspace:*",
+    "@nunjucks/shared": "workspace:*"
   },
   "description": "Parser for Nunjucks template engine",
   "keywords": ["nunjucks", "parser", "ast"],

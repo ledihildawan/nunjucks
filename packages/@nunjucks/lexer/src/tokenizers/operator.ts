@@ -6,7 +6,7 @@ import type { TokenType } from '../token-types.ts';
 
 const { isComplexOperator } = validators;
 
-/** Longest operator the lexer recognises, e.g. `**=` or `>>>`. */
+/** Longest operator the lexer recognises, e.g. `**=` or `//=`. */
 const MAX_OPERATOR_CHARS = 3;
 
 const TOKEN_TYPES: Record<string, TokenType> = {
@@ -30,19 +30,14 @@ export const tokenizeOperator: Tokenizer = (state) => {
   const twoChar = char + getPeek(state);
   const threeChar = twoChar + getChar(advance(state, 2));
 
-  const op = isComplexOperator(threeChar)
-    ? threeChar
-    : isComplexOperator(twoChar)
-      ? twoChar
-      : char;
-
-  const numChars = isComplexOperator(threeChar)
+  const opLen = isComplexOperator(threeChar)
     ? MAX_OPERATOR_CHARS
     : isComplexOperator(twoChar)
       ? 2
       : 1;
 
-  const current = advance(state, numChars);
+  const op = opLen === MAX_OPERATOR_CHARS ? threeChar : opLen === 2 ? twoChar : char;
+  const current = advance(state, opLen);
 
   const type: TokenType = op === '...' ? ('spread' as TokenType) : matchTokenType(op);
 

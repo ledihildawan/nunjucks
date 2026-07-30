@@ -47,5 +47,5 @@ export {
   isPropertyNotFoundResult,
   getNullParentName,
 } from './member-access.ts';
-export { createFrame } from './frame.ts';
-export { createContext } from './context.ts';
+export { createFrame } from '../frame.ts';
+export { createContext } from '../context.ts';

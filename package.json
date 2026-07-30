@@ -49,8 +49,7 @@
     "lint": "biome lint packages/",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "coverage": "bun test --coverage",
-    "bench": "bun run bench/run.js"
+    "coverage": "bun test --coverage"
   },
   "exports": {
     ".": {

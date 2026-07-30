@@ -19,8 +19,6 @@
     "./executor": "./src/executor.ts"
   },
   "dependencies": {
-    "@nunjucks/core": "workspace:*",
-    "@nunjucks/nodes": "workspace:*",
     "@nunjucks/shared": "workspace:*",
     "@nunjucks/log": "workspace:*"
   },

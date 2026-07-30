@@ -1,5 +1,5 @@
-const CALLER_INDEX = 2;
-const MIN_STACK_LENGTH = 3;
+const CALLER_INDEX = 3;
+const MIN_STACK_LENGTH = 4;
 
 export interface CallerLocation {
   fileName: string;
@@ -7,20 +7,25 @@ export interface CallerLocation {
   columnNumber: number | null;
 }
 
-export const getCallerFile = (): string => {
+const captureCaller = (): NodeJS.CallSite | null => {
   const original = Error.prepareStackTrace;
   Error.prepareStackTrace = (_, callsite) => callsite;
-  const error = new Error('getCallerFile');
+  const error = new Error('caller');
   const stack = error.stack as unknown as NodeJS.CallSite[] | undefined;
   Error.prepareStackTrace = original;
 
   if (stack && stack.length >= MIN_STACK_LENGTH) {
-    const caller = stack[CALLER_INDEX];
-    if (caller && typeof caller.getFileName === 'function') {
-      const fileName = caller.getFileName();
-      if (fileName) {
-        return fileName;
-      }
+    return stack[CALLER_INDEX] ?? null;
+  }
+  return null;
+};
+
+export const getCallerFile = (): string => {
+  const caller = captureCaller();
+  if (caller && typeof caller.getFileName === 'function') {
+    const fileName = caller.getFileName();
+    if (fileName) {
+      return fileName;
     }
   }
 
@@ -28,22 +33,13 @@ export const getCallerFile = (): string => {
 };
 
 export const getCallerLocation = (): CallerLocation => {
-  const original = Error.prepareStackTrace;
-  Error.prepareStackTrace = (_, callsite) => callsite;
-  const error = new Error('getCallerLocation');
-  const stack = error.stack as unknown as NodeJS.CallSite[] | undefined;
-  Error.prepareStackTrace = original;
-
-  if (stack && stack.length >= MIN_STACK_LENGTH) {
-    const caller = stack[CALLER_INDEX];
-    if (caller && typeof caller.getFileName === 'function') {
-      const fileName = caller.getFileName();
-      return {
-        fileName: fileName || 'unknown',
-        lineNumber: caller.getLineNumber?.() || null,
-        columnNumber: caller.getColumnNumber?.() || null
-      };
-    }
+  const caller = captureCaller();
+  if (caller && typeof caller.getFileName === 'function') {
+    return {
+      fileName: caller.getFileName() || 'unknown',
+      lineNumber: caller.getLineNumber?.() || null,
+      columnNumber: caller.getColumnNumber?.() || null
+    };
   }
 
   return { fileName: 'unknown', lineNumber: null, columnNumber: null };

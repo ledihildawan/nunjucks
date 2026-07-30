@@ -226,113 +226,89 @@ const emitUndefinedWarning = (self: unknown, opts: EmitUndefinedWarningOptions):
   }
 };
 
+interface UndefinedResolution {
+  errorDef: ErrorDefinitionEntry;
+  params: Record<string, string>;
+  subject: string | null;
+  warningName: string;
+  warningMessage: () => string;
+}
+
+const resolveUndefined = (opts: ResolveUndefinedOptions, r: UndefinedResolution): 'undefined' => {
+  const { self, lineno, colno, mode, phase, templateName } = opts;
+
+  if (mode === 'strict') {
+    throwRuntimeError(r.errorDef, {
+      self,
+      lineno,
+      colno,
+      params: r.params,
+      subject: r.subject,
+      templateName,
+    });
+  }
+
+  if (mode === 'debug') {
+    emitUndefinedWarning(self, {
+      name: r.warningName,
+      message: r.warningMessage,
+      subject: r.subject,
+      lineno,
+      colno,
+      phase,
+      templateName,
+      mode,
+      varName: r.subject,
+    });
+  }
+
+  return 'undefined';
+};
+
 const resolveUndefinedProperty = (opts: ResolveUndefinedOptions): 'undefined' => {
-  const { self, val, varName, lineno, colno, mode, phase, templateName } = opts;
+  const { val, varName } = opts;
   const propResult = val as { __access_path__?: string; __nunjucks_parent__?: string };
   const accessPath = propResult.__access_path__ || varName || 'unknown';
   const parentName = (!propResult.__nunjucks_parent__ && varName && varName.includes('.'))
     ? varName.slice(0, varName.lastIndexOf('.'))
     : propResult.__nunjucks_parent__;
-
-  if (mode === 'strict') {
-    throwRuntimeError(ERROR_DEFINITIONS.UNDEFINED_PROPERTY, {
-      self,
-      lineno,
-      colno,
-      params: { property: accessPath, parent: parentName || 'unknown' },
-      subject: accessPath,
-      templateName,
-    });
-  }
-
-  if (mode === 'debug') {
-    emitUndefinedWarning(self, {
-      name: 'UNDEFINED_PROPERTY',
-      message: () => `Property '${accessPath}' not found in '${parentName || 'unknown'}'`,
-      subject: accessPath,
-      lineno,
-      colno,
-      phase,
-      templateName,
-      mode,
-      varName: accessPath,
-    });
-  }
-
-  return 'undefined';
+  return resolveUndefined(opts, {
+    errorDef: ERROR_DEFINITIONS.UNDEFINED_PROPERTY,
+    params: { property: accessPath, parent: parentName || 'unknown' },
+    subject: accessPath,
+    warningName: 'UNDEFINED_PROPERTY',
+    warningMessage: () => `Property '${accessPath}' not found in '${parentName || 'unknown'}'`,
+  });
 };
 
 const resolveNullAccess = (opts: ResolveUndefinedOptions): 'undefined' => {
-  const { self, val, varName, lineno, colno, mode, phase, templateName } = opts;
+  const { val, varName } = opts;
   const nullResult = val as { __access_path__?: string; __nunjucks_parent__?: string };
   const accessPath = nullResult.__access_path__ || varName || 'unknown';
   const parentName = nullResult.__nunjucks_parent__ || varName || 'unknown';
-
-  if (mode === 'strict') {
-    throwRuntimeError(ERROR_DEFINITIONS.NULL_VALUE, {
-      self,
-      lineno,
-      colno,
-      params: { accessPath, state: 'null', parent: parentName },
-      subject: accessPath,
-      templateName,
-    });
-  }
-
-  if (mode === 'debug') {
-    emitUndefinedWarning(self, {
-      name: 'NULL_VALUE',
-      message: () => `Cannot access '${accessPath}' on null '${parentName}'`,
-      subject: accessPath,
-      lineno,
-      colno,
-      phase,
-      templateName,
-      mode,
-      varName: accessPath,
-    });
-  }
-
-  return 'undefined';
+  return resolveUndefined(opts, {
+    errorDef: ERROR_DEFINITIONS.NULL_VALUE,
+    params: { accessPath, state: 'null', parent: parentName },
+    subject: accessPath,
+    warningName: 'NULL_VALUE',
+    warningMessage: () => `Cannot access '${accessPath}' on null '${parentName}'`,
+  });
 };
 
 const resolveUndefinedValue = (opts: ResolveUndefinedOptions): 'undefined' => {
-  const { self, varName, lineno, colno, mode, phase, templateName } = opts;
-
-  if (mode === 'strict') {
-    const errorDef: ErrorDefinitionEntry = varName
-      ? ERROR_DEFINITIONS.UNDEFINED_VARIABLE
-      : { name: 'UNDEFINED_VALUE', message: () => 'Undefined value', pattern: MATCH_ANY_RE } as const;
-    throwRuntimeError(errorDef, {
-      self,
-      lineno,
-      colno,
-      params: { name: varName ?? '' },
-      subject: varName,
-      templateName,
-    });
-  }
-
-  if (mode === 'debug') {
-    emitUndefinedWarning(self, {
-      name: 'UNDEFINED_VARIABLE',
-      message: () => {
-        if (varName) {
-          return `Variable '${varName}' is undefined or null`;
-        }
-        return 'Variable is undefined or null';
-      },
-      subject: varName,
-      lineno,
-      colno,
-      phase,
-      templateName,
-      mode,
-      varName,
-    });
-  }
-
-  return 'undefined';
+  const { varName } = opts;
+  const errorDef: ErrorDefinitionEntry = varName
+    ? ERROR_DEFINITIONS.UNDEFINED_VARIABLE
+    : { name: 'UNDEFINED_VALUE', message: () => 'Undefined value', pattern: MATCH_ANY_RE } as const;
+  return resolveUndefined(opts, {
+    errorDef,
+    params: { name: varName ?? '' },
+    subject: varName,
+    warningName: 'UNDEFINED_VARIABLE',
+    warningMessage: () => varName
+      ? `Variable '${varName}' is undefined or null`
+      : 'Variable is undefined or null',
+  });
 };
 
 function ensureDefined(

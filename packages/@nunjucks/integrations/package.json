@@ -10,7 +10,8 @@
   "dependencies": {
     "@nunjucks/core": "workspace:*",
     "@nunjucks/loaders": "workspace:*",
-    "@nunjucks/log": "workspace:*"
+    "@nunjucks/log": "workspace:*",
+    "@nunjucks/runtime": "workspace:*"
   },
   "description": "Integration adapters for Nunjucks"
 }

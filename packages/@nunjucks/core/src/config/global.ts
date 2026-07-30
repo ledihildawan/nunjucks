@@ -3,6 +3,7 @@ import * as arrayFilters from '@nunjucks/filters/array';
 import * as objectFilters from '@nunjucks/filters/object';
 import * as mathFilters from '@nunjucks/filters/math';
 import { sanitize, type DomPurifyConfig } from '@nunjucks/filters';
+import type { UndefinedMode } from '@nunjucks/runtime';
 
 type FilterObject = Readonly<Record<string, unknown>>;
 
@@ -136,7 +137,6 @@ const builtInFilters: FilterObject = Object.freeze({
 
 type SandboxEnvironment = 'auto' | 'node' | 'browser' | 'deno';
 type SandboxMode = 'blocklist' | 'allowlist';
-type UndefinedMode = 'default' | 'chainable' | 'strict' | 'debug';
 
 interface GlobalConfigBase {
   readonly sandbox: boolean;
@@ -210,4 +210,3 @@ export type { SandboxEnvironment, SandboxMode, UndefinedMode, GlobalConfig };
 export type { DomPurifyConfig } from '@nunjucks/filters';
 export { setDefaultDomPurifyConfig } from '@nunjucks/filters';
 export type { ConfigValidationError };
-export type { Result } from './result.ts';

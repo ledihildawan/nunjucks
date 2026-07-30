@@ -1,10 +1,8 @@
 import { createLog } from '@nunjucks/log';
 import { find } from 'remeda';
+import { MATCH_ANY_RE } from '@nunjucks/shared';
 import { peekToken } from "./cursor.ts";
 import type { ParserContext } from "./cursor.ts";
-
-/** Placeholder pattern for synthesised error definitions, which are never matched against. */
-const MATCH_ANY_RE = /./;
 
 const CAUSE_PATTERNS: Array<{ check: (lower: string) => boolean; causes: string[] }> = [
   { check: lower => lower.includes('expected') && lower.includes('expression'), causes: ['Missing expression where one is required', 'Check for empty `{{ }}` or `{% %}` blocks'] },

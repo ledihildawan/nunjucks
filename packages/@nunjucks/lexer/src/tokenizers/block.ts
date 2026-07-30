@@ -1,54 +1,9 @@
-import type { Tokenizer } from '../types.ts';
-import { matches, advance } from '../state.ts';
-import { createToken } from '../tokens.ts';
 import type { TokenType } from '../token-types.ts';
+import { createDelimiterTokenizer } from './delimiter.ts';
 
-export const tokenizeBlockStart: Tokenizer = (state) => {
-  if (matches(state, state.tags.STRIP_BLOCK_START)) {
-    return {
-      token: createToken(
-        'block-start' as TokenType,
-        state.tags.STRIP_BLOCK_START,
-        state.lineno,
-        state.colno,
-        { stripLeft: true }
-      ),
-      state: advance(state, state.tags.STRIP_BLOCK_START.length),
-    };
-  }
-  if (!matches(state, state.tags.BLOCK_START)) { return null; }
-  return {
-    token: createToken(
-      'block-start' as TokenType,
-      state.tags.BLOCK_START,
-      state.lineno,
-      state.colno
-    ),
-    state: advance(state, state.tags.BLOCK_START.length),
-  };
-};
-
-export const tokenizeBlockEnd: Tokenizer = (state) => {
-  if (matches(state, state.tags.STRIP_BLOCK_END)) {
-    return {
-      token: createToken(
-        'block-end' as TokenType,
-        state.tags.STRIP_BLOCK_END,
-        state.lineno,
-        state.colno,
-        { stripRight: true }
-      ),
-      state: advance(state, state.tags.STRIP_BLOCK_END.length),
-    };
-  }
-  if (!matches(state, state.tags.BLOCK_END)) { return null; }
-  return {
-    token: createToken(
-      'block-end' as TokenType,
-      state.tags.BLOCK_END,
-      state.lineno,
-      state.colno
-    ),
-    state: advance(state, state.tags.BLOCK_END.length),
-  };
-};
+export const tokenizeBlockStart = createDelimiterTokenizer(
+  'block-start' as TokenType, 'STRIP_BLOCK_START', 'BLOCK_START', { stripLeft: true },
+);
+export const tokenizeBlockEnd = createDelimiterTokenizer(
+  'block-end' as TokenType, 'STRIP_BLOCK_END', 'BLOCK_END', { stripRight: true },
+);

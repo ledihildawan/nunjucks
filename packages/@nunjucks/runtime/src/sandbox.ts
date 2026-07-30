@@ -90,6 +90,12 @@ const isAllowedKey = (key: string, allowlist: string[] | null | undefined): bool
   return allowlist.includes(key);
 };
 
+const assertAllowed = (key: string, sandboxOptions: ResolvedSandboxOptions): void => {
+  if (!(sandboxOptions.blocklistMode || isAllowedKey(key, sandboxOptions.allowlist))) {
+    throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, key, sandboxOptions);
+  }
+};
+
 const isBlockedAtScope = (key: string | symbol, options: ResolvedSandboxOptions, topLevel = false): boolean => {
   if (typeof key === 'symbol') { return false; }
   const category = getBlockedKeyCategory(key as string, options.environment);
@@ -109,7 +115,7 @@ const createValidateGet = (
   sandboxOptions: ResolvedSandboxOptions,
   topLevel: boolean,
 ) => {
-  const { allowlist, blocklistMode, blockedContextKeys } = sandboxOptions;
+  const { blockedContextKeys } = sandboxOptions;
 
   const checkBlockedContextKey = (key: string): void => {
     if (topLevel && blockedContextKeys.includes(key)) {
@@ -125,11 +131,7 @@ const createValidateGet = (
     }
   };
 
-  const checkAllowlist = (key: string): void => {
-    if (!(blocklistMode || isAllowedKey(key, allowlist))) {
-      throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, key, sandboxOptions);
-    }
-  };
+  const checkAllowlist = (key: string): void => assertAllowed(key, sandboxOptions);
 
   const validateStringKey = (target: Record<string | symbol, unknown>, key: string): unknown => {
     checkBlockedContextKey(key);
@@ -285,13 +287,11 @@ const createPropertyNotFoundCallable = (val: string | symbol, parentName: string
   return callable;
 };
 
-const validateStringAccess = (val: string, sandboxOptions: ResolvedSandboxOptions, allowlist: string[], blocklistMode: boolean, topLevel: boolean): void => {
+const validateStringAccess = (val: string, sandboxOptions: ResolvedSandboxOptions, topLevel: boolean): void => {
   if (isBlockedAtScope(val, sandboxOptions, topLevel)) {
     throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS, val, sandboxOptions);
   }
-  if (!(blocklistMode || isAllowedKey(val, allowlist))) {
-    throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, val, sandboxOptions);
-  }
+  assertAllowed(val, sandboxOptions);
 };
 
 const handleSandboxDisabled = (obj: unknown, val: string | symbol, parentName: string | null): unknown => {
@@ -311,7 +311,7 @@ const handlePropertyNotFound = (val: string | symbol, parentName: string | null)
 
 const wrapMemberAccess = (obj: unknown, val: string | symbol, sandboxEnabled: boolean, options: SandboxOptions = {}, parentName: string | null = null): unknown => {
   const sandboxOptions = resolveSandboxOptions(options);
-  const { allowlist, blocklistMode, topLevel = options.topLevel ?? false } = { ...sandboxOptions, topLevel: options.topLevel ?? false };
+  const topLevel = options.topLevel ?? false;
 
   if (!sandboxEnabled) {
     return handleSandboxDisabled(obj, val, parentName);
@@ -321,7 +321,7 @@ const wrapMemberAccess = (obj: unknown, val: string | symbol, sandboxEnabled: bo
     return handleSymbolAccess(obj, val);
   }
 
-  validateStringAccess(val, sandboxOptions, allowlist, blocklistMode, topLevel);
+  validateStringAccess(val, sandboxOptions, topLevel);
 
   if (!isNonNullish(obj)) {
     return { __nunjucks_null__: true, __nunjucks_parent__: parentName, __access_path__: val };

@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@nunjucks/shared": "workspace:*",
-    "remeda": "*"
+    "remeda": "^2.39.0"
   },
   "description": "Validation utilities for Nunjucks"
 }

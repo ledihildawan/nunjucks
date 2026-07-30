@@ -24,7 +24,7 @@ export { createRuntimeWithContext };
 
 import type { RuntimeContext } from './runtime-context.js';
 
-const createRuntimeWithContext = (templatePath: string | undefined, _envOpts: Record<string, unknown>, renderContext: unknown = null): RuntimeContext => ({
+const createRuntimeWithContext = (templatePath: string | undefined, renderContext: unknown = null): RuntimeContext => ({
   createFrame,
   createSafeString: createSafeString as RuntimeContext['createSafeString'],
   copySafeness: copySafeness as RuntimeContext['copySafeness'],

@@ -13,13 +13,10 @@
   },
   "dependencies": {
     "@nunjucks/nodes": "workspace:*",
-    "@nunjucks/transformers": "workspace:*",
-    "@nunjucks/parser": "workspace:*",
     "@nunjucks/runtime": "workspace:*",
-    "@nunjucks/lexer": "workspace:*",
     "@nunjucks/log": "workspace:*",
     "@nunjucks/shared": "workspace:*",
-    "remeda": "*"
+    "remeda": "^2.39.0"
   },
   "description": "Compiler for Nunjucks template engine"
 }

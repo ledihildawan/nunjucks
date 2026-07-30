@@ -227,3 +227,41 @@ describe('parse function', () => {
     expect(getNodeTypeName(result)).toBe('root');
   });
 });
+
+describe('parse - compound assignment', () => {
+  // Compound-assignment operators parse to a `compoundAssignment` node whose
+  // inner expression carries the operator. These cover the parser bug where the
+  // operator token was not consumed before parsing the RHS.
+  const expectCompoundOperator = (template: string, expectedOp: string) => {
+    const ast = parse(template);
+    const outputNode = ast.children[0] as unknown as { children: unknown[] };
+    const inner = (outputNode.children[0] as { children?: unknown[] })?.children?.[0] as
+      | { operator?: string }
+      | undefined;
+    expect(inner?.operator).toBe(expectedOp);
+  };
+
+  test('parses += compound assignment', () => {
+    expectCompoundOperator('{{ (x += 3) }}', '+=');
+  });
+
+  test('parses -= compound assignment', () => {
+    expectCompoundOperator('{{ (x -= 3) }}', '-=');
+  });
+
+  test('parses *= compound assignment', () => {
+    expectCompoundOperator('{{ (x *= 3) }}', '*=');
+  });
+
+  test('parses /= compound assignment', () => {
+    expectCompoundOperator('{{ (x /= 3) }}', '/=');
+  });
+
+  test('parses %= compound assignment', () => {
+    expectCompoundOperator('{{ (x %= 3) }}', '%=');
+  });
+
+  test('parses ||= compound assignment', () => {
+    expectCompoundOperator('{{ (x ||= 3) }}', '||=');
+  });
+});

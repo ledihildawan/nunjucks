@@ -1,4 +1,5 @@
-import type { Tokenizer, TokenizeResult } from '../types.ts';
+import type { TokenizeResult } from '../types.ts';
+import { or } from '../combinators.ts';
 
 import { tokenizeWhitespace } from './whitespace.ts';
 import { tokenizeNumber } from './number.ts';
@@ -25,14 +26,6 @@ export { tokenizeTemplateText } from './template-text.ts';
 export { tokenizeComment } from './comment.ts';
 export { tokenizeTemplateLiteral } from './template-literal.ts';
 export { tokenizeRaw } from './raw.ts';
-
-export const or = (...candidates: Tokenizer[]): Tokenizer => (state) => {
-  for (const candidate of candidates) {
-    const result = candidate(state);
-    if (result) { return result; }
-  }
-  return null;
-};
 
 export const templateTokenizers = or(
   tokenizeRaw,
