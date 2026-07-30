@@ -15,6 +15,7 @@ const toFormatterMetadata = (log: TemplateError | TemplateWarning, renderContext
   colno: log.colno,
   phase: log.phase,
   templateName: log.templateName,
+  templatePath: (log as { templatePath?: string | null }).templatePath,
   code: log.code,
   subject: log.subject,
   renderContext,
