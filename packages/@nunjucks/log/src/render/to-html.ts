@@ -1,5 +1,6 @@
 import { buildErrorHeader, buildErrorFooter, buildErrorBodyContent, buildHtmlWrapper } from './to-html-builder.ts';
-import { classifyAndBuildTitle, buildErrorDisplay, isScriptPath } from './to-html-helpers.ts';
+import { classifyAndBuildTitle, buildErrorDisplay } from './to-html-helpers.ts';
+import { isFilePath } from './internal/ide-links.ts';
 import { CSS, } from './internal/styles.ts';
 import { TOGGLE_SCRIPT } from './internal/script.ts';
 import { shortenPath } from './internal/path-shortener.ts';
@@ -60,7 +61,7 @@ const buildErrorDocument = (
   const humanTitle = classifyAndBuildTitle(error);
   const { classified, displayLine, displayCol, displayPath } = buildErrorDisplay(error, templatePath, lineno, colno, isJsCaller);
   const locDisplay = `${shortenPath(displayPath)}:${displayLine}:${displayCol}`;
-  const canLinkLocation = isScriptPath(displayPath);
+  const canLinkLocation = isFilePath(displayPath);
 
   const header = buildErrorHeader(
     humanTitle,
