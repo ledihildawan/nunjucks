@@ -11,11 +11,10 @@ const LEADING_WHITESPACE_RE = /^\s*/u;
 const PATH_SEPARATOR_RE = /[\\/:]/u;
 const STACK_AT_PREFIX_RE = /^at\s+/u;
 const NATIVE_FRAME_RE = /^native$/u;
-const ESCAPED_ANGLE_RE = /^&lt;/u;
+const LEADING_ANGLE_RE = /^</u;
 const PARENTHESISED_LOCATION_RE = /\(([^()]+):(\d+):(\d+)\)/gu;
 const FILE_URL_LOCATION_RE = /(.*?)(file:\/\/+.*?):(\d+):(\d+)$/u;
 const ERROR_MARKER_PREFIX_RE = /^>>>\s*/u;
-const STACK_FRAME_FUNCTION_RE = /^(at\s+)([^\s(]+)/u;
 const LT_RE = /</gu;
 const GT_RE = />/gu;
 const AMP_RE = /&/gu;
@@ -92,32 +91,65 @@ const renderContextHtml = (ctx: unknown): string => {
 </section>${dataScript}`;
 };
 
+const isLinkablePath = (rawPath: string): boolean =>
+  !NATIVE_FRAME_RE.test(rawPath.trim())
+  && !LEADING_ANGLE_RE.test(rawPath)
+  && PATH_SEPARATOR_RE.test(rawPath)
+  && isFilePath(rawPath);
+
+const buildLocationLink = (ide: string, rawPath: string, line: string, col: string): string => {
+  const norm = normalizePath(rawPath);
+  const display = shortenPath(norm);
+  return `<a href="${resolveIdeLink(ide, norm, Number.parseInt(line, 10), Number.parseInt(col, 10))}" class="stack-link">${escapeHtml(display)}:${line}:${col}</a>`;
+};
+
+const functionSpan = (fnRaw: string): string =>
+  fnRaw ? `<span class="stack-fn">${escapeHtml(fnRaw)}</span> ` : '';
+
+// "at fn (path:line:col)" — path detection runs on the RAW frame so shortenPath
+// and resolveIdeLink see real separators (escapeHtml turns backslashes into
+// &#92;, which would break the shortened display and the IDE link href).
+const renderParenFrame = (body: string, ide: string): string | null => {
+  const paren = [...body.matchAll(PARENTHESISED_LOCATION_RE)][0];
+  if (!paren) { return null; }
+  const rawPath = paren[1] ?? '';
+  const line = paren[2] ?? '';
+  const col = paren[3] ?? '';
+  const fnRaw = body.slice(0, paren.index ?? 0).trim();
+  const inner = isLinkablePath(rawPath)
+    ? buildLocationLink(ide, rawPath, line, col)
+    : `${escapeHtml(rawPath)}:${line}:${col}`;
+  return `${functionSpan(fnRaw)}(${inner})`;
+};
+
+// "at [fn] file://path:line:col"
+const renderFileUrlFrame = (body: string, ide: string): string | null => {
+  const m = body.match(FILE_URL_LOCATION_RE);
+  if (!m) { return null; }
+  const rawPath = m[2] ?? '';
+  if (!isLinkablePath(rawPath)) { return null; }
+  return `${functionSpan((m[1] ?? '').trim())}${buildLocationLink(ide, rawPath, m[3] ?? '', m[4] ?? '')}`;
+};
+
+const renderFallbackFrame = (body: string): string => {
+  const fnToken = body.match(/^[^\s(]+/);
+  return fnToken
+    ? `<span class="stack-fn">${escapeHtml(fnToken[0])}</span>${escapeHtml(body.slice(fnToken[0].length))}`
+    : escapeHtml(body);
+};
+
 const linkifyFrame = (frame: string, ide: string): string => {
-  let s = escapeHtml(frame);
-  if (!PATH_SEPARATOR_RE.test(s)) {
-    s = s.replace(STACK_AT_PREFIX_RE, '<span class="stack-at">at</span> ');
-    return s;
+  const trimmed = frame.trim();
+
+  if (!PATH_SEPARATOR_RE.test(trimmed)) {
+    return escapeHtml(trimmed).replace(STACK_AT_PREFIX_RE, '<span class="stack-at">at</span> ');
   }
-  s = s.replace(PARENTHESISED_LOCATION_RE, (match: string, p: string, l: string, c: string) => {
-    if (NATIVE_FRAME_RE.test(p.trim()) || ESCAPED_ANGLE_RE.test(p) || !PATH_SEPARATOR_RE.test(p) || !isFilePath(p)) { return match; }
-    const norm = normalizePath(p);
-    const display = shortenPath(norm);
-    return `(<a href="${resolveIdeLink(ide, norm, Number.parseInt(l, 10), Number.parseInt(c, 10))}" class="stack-link">${display}:${l}:${c}</a>)`;
-  });
-  const lcMatch = s.match(FILE_URL_LOCATION_RE);
-  if (lcMatch) {
-    const [, prefix, p, l, c] = lcMatch;
-    if (prefix && p && l && c && PATH_SEPARATOR_RE.test(p) && !NATIVE_FRAME_RE.test(p.trim()) && isFilePath(p)) {
-      const norm = normalizePath(p);
-      const display = shortenPath(norm);
-      const link = `<a href="${resolveIdeLink(ide, norm, Number.parseInt(l, 10), Number.parseInt(c, 10))}" class="stack-link">${display}:${l}:${c}</a>`;
-      s = prefix + link;
-      return s;
-    }
-  }
-  s = s.replace(STACK_AT_PREFIX_RE, '<span class="stack-at">at</span> ');
-  s = s.replace(STACK_FRAME_FUNCTION_RE, (_m: string, prefix: string, fn: string) => `${prefix}<span class="stack-fn">${fn}</span>`);
-  return s;
+
+  const atMatch = trimmed.match(STACK_AT_PREFIX_RE);
+  const atSpan = atMatch ? '<span class="stack-at">at</span> ' : '';
+  const body = atMatch ? trimmed.slice(atMatch[0].length) : trimmed;
+
+  return `${atSpan}${renderParenFrame(body, ide) ?? renderFileUrlFrame(body, ide) ?? renderFallbackFrame(body)}`;
 };
 
 interface ErrorWithStack {

@@ -46,14 +46,13 @@ const buildErrorHeader = (
   const ideMeta = getIdeMeta(ide);
   const _ideLabel = `Open in ${ideMeta.label}`;
   const headerTitle = escapeHtml(humanTitle);
-  const locationInfo = escapeHtml(`${displayPath}:${displayLine}:${displayCol}`);
   const severityText = SEVERITY_HEADINGS[severity] ?? SEVERITY_HEADINGS.error;
   const phaseBadgePart = phaseBadge ? ` ${phaseBadge}` : '';
   const devBadge = verbosity === 'full' ? '<span class="badge badge-dev">DEV</span>' : '';
 
   const locationLink = canLinkLocation
     ? `<a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="loc-link error-location-link">${escapeHtml(locDisplay)}</a>`
-    : `<span class="error-location-text">${locationInfo}</span>`;
+    : `<span class="error-location-text">${escapeHtml(locDisplay)}</span>`;
   const errorLocationBlock = verbosity !== 'simple'
     ? `<p class="error-location">The error occurred in ${locationLink}</p>`
     : '';
