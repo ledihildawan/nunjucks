@@ -18,7 +18,6 @@ const ESCAPE_SCRIPT_STRING: ReadonlyMap<string, string> = Object.freeze(new Map(
   ['\n', '\\n'],
   ['\r', '\\r'],
   ['\t', '\\t'],
-  ['</', '<\\/'],
   ['<', '\\u003c'],
   ['>', '\\u003e'],
 ]));
