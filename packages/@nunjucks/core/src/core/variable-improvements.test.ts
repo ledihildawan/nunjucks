@@ -34,3 +34,54 @@ describe('variable expression edge cases', () => {
       .resolves.toBe('3-3-3-3');
   });
 });
+
+describe('compound assignment operators', () => {
+  test('+= adds, reassigns, and outputs the new value', async () => {
+    await expect(renderTemplate('{{ x += 3 }}', { x: 5 })).resolves.toBe('8');
+  });
+
+  test('-= subtracts and outputs the new value', async () => {
+    await expect(renderTemplate('{{ x -= 2 }}', { x: 10 })).resolves.toBe('8');
+  });
+
+  test('*= multiplies and outputs the new value', async () => {
+    await expect(renderTemplate('{{ x *= 3 }}', { x: 4 })).resolves.toBe('12');
+  });
+
+  test('/= divides and outputs the new value', async () => {
+    await expect(renderTemplate('{{ x /= 2 }}', { x: 8 })).resolves.toBe('4');
+  });
+
+  test('%= modulos and outputs the new value', async () => {
+    await expect(renderTemplate('{{ x %= 3 }}', { x: 7 })).resolves.toBe('1');
+  });
+
+  test('**= exponentiates and outputs the new value', async () => {
+    await expect(renderTemplate('{{ x **= 3 }}', { x: 2 })).resolves.toBe('8');
+  });
+
+  test('//= floor-divides and outputs the new value', async () => {
+    await expect(renderTemplate('{{ x //= 2 }}', { x: 7 })).resolves.toBe('3');
+  });
+
+  test('||= keeps a truthy value unchanged', async () => {
+    await expect(renderTemplate('{{ x ||= 9 }}', { x: 5 })).resolves.toBe('5');
+  });
+
+  test('||= assigns when falsy', async () => {
+    await expect(renderTemplate('{{ x ||= 9 }}', { x: 0 })).resolves.toBe('9');
+  });
+
+  test('&&= assigns the RHS when truthy', async () => {
+    await expect(renderTemplate('{{ x &&= 9 }}', { x: 5 })).resolves.toBe('9');
+  });
+
+  test('??= assigns when nullish', async () => {
+    await expect(renderTemplate('{{ x ??= 9 }}', { x: null })).resolves.toBe('9');
+  });
+
+  test('side effects persist across subsequent outputs', async () => {
+    await expect(renderTemplate('{{ (x := 5) }}{{ (x += 3) }}{{ (x *= 2) }}{{ x }}'))
+      .resolves.toBe('581616');
+  });
+});

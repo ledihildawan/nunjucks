@@ -90,76 +90,49 @@ const getCompoundOpJs = (operator: string): string | null => {
   }
 };
 
-const emitCompoundValue = (
-  ctx: Compiler,
-  node: Node,
-  name: string,
-  valueId: string,
-  jsOp: string | null,
-  frame: Frame,
-): void => {
-  if (node.operator === '//=') {
-    ctx.emit(`let ${valueId} = Math.floor(frame.lookup("${name}") / `);
+const compileCompoundAssignment = (ctx: Compiler, node: Node, frame: Frame): void => {
+  const targets = node.targets as Node[];
+  const name = getTargetName(targets[0]);
+  if (name === null) {
+    ctx.fail('Compound assignment requires a named target', node.lineno, node.colno);
+    return;
+  }
+
+  const operator = node.operator as string;
+  const key = JSON.stringify(name);
+  const currentId = ctx.tmpid();
+  const valueId = ctx.tmpid();
+
+  // IIFE so the read-modify-write side effect is a valid expression value
+  // (mirrors compileWalrus / compileIncrementDecrement).
+  ctx.emit(`(lineno = ${node.lineno ?? 0}, colno = ${node.colno ?? 0}, (() => {`);
+  ctx.emit(`let ${currentId} = runtime.contextOrFrameLookup(context, frame, ${key});`);
+
+  if (operator === '//=') {
+    ctx.emit(`let ${valueId} = Math.floor(${currentId} / `);
     ctx.compileExpression(node.value as Node, frame);
-    ctx.emitLine(');');
-  } else if (node.operator === '|>=') {
+    ctx.emit(');');
+  } else if (operator === '|>=') {
     const valueNode = node.value as Node;
     const filterName = valueNode.type === 'symbol' ? valueNode.value as string : null;
     const inputLocation = `${node.lineno ?? 0}, ${node.colno ?? 0}`;
     if (filterName) {
-      ctx.emit(`let ${valueId} = await runtime.awaitValue(env.getFilter("${filterName}", ${inputLocation}, ${inputLocation}, "${name}").call(context, `);
-      ctx.emit(`frame.lookup("${name}")`);
-      ctx.emitLine('))');
+      ctx.emit(`let ${valueId} = await runtime.awaitValue(env.getFilter(${JSON.stringify(filterName)}, ${inputLocation}, ${inputLocation}, ${key}).call(context, ${currentId}));`);
     } else {
       ctx.emit(`let ${valueId} = await runtime.awaitValue(`);
       ctx.compileExpression(valueNode, frame);
-      ctx.emit(`, frame.lookup("${name}"))`);
+      ctx.emit(`, ${currentId});`);
     }
   } else {
-    ctx.emit(`let ${valueId} = frame.lookup("${name}") ${jsOp} `);
+    ctx.emit(`let ${valueId} = ${currentId} ${getCompoundOpJs(operator)} `);
     ctx.compileExpression(node.value as Node, frame);
-    ctx.emitLine(';');
+    ctx.emit(';');
   }
-};
 
-const compileCompoundAssignment = (ctx: Compiler, node: Node, frame: Frame): void => {
-  const jsOp = getCompoundOpJs(node.operator as string);
-
-  if (hasPatternTarget(node)) {
-    const valueId = ctx.tmpid();
-    const targets = node.targets as Node[];
-    const targetName = getTargetName(targets[0]);
-
-    if (node.operator === '//=') {
-      ctx.emitLine(`let ${valueId} = Math.floor(frame.lookup("${targetName}") / `);
-      ctx.compileExpression(node.value as Node, frame);
-      ctx.emitLine('));');
-    } else {
-      ctx.emitLine(`let ${valueId} = `);
-      ctx.emit(`frame.lookup("${targetName}") ${jsOp} `);
-      ctx.compileExpression(node.value as Node, frame);
-      ctx.emitLine(';');
-    }
-
-    forEach(node.targets as Node[], pattern => {
-      compileDestructuring({ ctx, frame, registerFrame: true }, pattern, valueId);
-    });
-  } else {
-    const targets = node.targets as Node[];
-    const name = getTargetName(targets[0]);
-
-    if (name === null) {
-      return;
-    }
-
-    ctx.emitLine('{');
-    ctx.emitLine(`if (frame.lookup("${name}") === undefined) { throw new ReferenceError("Variable '${name}' is not defined. Use ${name} := value to declare it."); }`);
-
-    const valueId = ctx.tmpid();
-    emitCompoundValue(ctx, node, name, valueId, jsOp, frame);
-    ctx.emitLine(`frame.set("${name}", ${valueId}, true);`);
-    ctx.emitLine('}');
-  }
+  ctx.emit(`frame.set(${key}, ${valueId}, true);`);
+  ctx.emit(`context.setVariable(${key}, ${valueId});`);
+  ctx.emit(`return ${valueId};`);
+  ctx.emit('})())');
 };
 
 const buildMacroParams = (args: MacroArgument[]): { argNames: string[]; hasDefaults: boolean; paramNames: string[]; realParams: string[] } => {

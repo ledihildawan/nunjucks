@@ -1,5 +1,4 @@
 import {
-  isCompoundAssignment,
   isOptionalCall,
   isOptionalChain,
   isPipe,
@@ -28,8 +27,7 @@ const emitEnsureDefinedClose = (
 
 const isVariableLike = (child: Node): boolean =>
   isVariableDeclaration(child) ||
-  isVariableAssignment(child) ||
-  isCompoundAssignment(child);
+  isVariableAssignment(child);
 
 const compileTemplateDataChild = (ctx: Compiler, child: Node): void => {
   if (child.value) {
