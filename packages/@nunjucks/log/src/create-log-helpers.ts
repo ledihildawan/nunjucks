@@ -1,6 +1,13 @@
 import { isFunction, isString, pickBy } from 'remeda';
 import { formatLocationAnnotation } from './render/internal/location.ts';
+import { TEMPLATE_ERROR } from './create-log-types.ts';
 import type { TemplateError, ErrorContext, WarningContext, NormalizedErrorContext, NormalizedWarningContext, ErrorDefinitionEntry, LegacyLogData, LogType, WarningInfo, IncludeChain, ErrorInfo } from './create-log-types.ts';
+
+const createErrorEnvelope = (message: string, cause?: Error): TemplateError => {
+  const err = new Error(message, cause ? { cause } : undefined) as TemplateError;
+  err[TEMPLATE_ERROR] = true;
+  return err;
+};
 
 const resolveMessage = (message: ErrorDefinitionEntry['message'], params?: Record<string, string>): string => {
   if (isFunction(message)) { return message(params); }
@@ -80,4 +87,4 @@ const buildLocationMessage = (
   ].filter((part): part is string => part !== null).join('');
 };
 
-export { resolveMessage, normalizeErrorContext, normalizeWarningContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, formatParentLocation, buildLocationMessage };
+export { resolveMessage, normalizeErrorContext, normalizeWarningContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, formatParentLocation, buildLocationMessage, createErrorEnvelope };

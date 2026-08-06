@@ -1,7 +1,7 @@
 import { pipe } from 'remeda';
 import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, LegacyLogData, LogType, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, ErrorInfo, WarningInfo, OutputOptions } from './create-log-types.ts';
 import { TEMPLATE_ERROR } from './create-log-types.ts';
-import { normalizeErrorContext, normalizeWarningContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, buildLocationMessage } from './create-log-helpers.ts';
+import { normalizeErrorContext, normalizeWarningContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, buildLocationMessage, createErrorEnvelope } from './create-log-helpers.ts';
 import { createErrorFromDef, createWarningFromDef } from './create-log-error.ts';
 import { isKeyedObject } from '@nunjucks/shared';
 
@@ -58,12 +58,6 @@ const asTemplateError = (err: Error | TemplateError): TemplateError => {
     templateName: e.templateName ?? null,
     lineBase: e.lineBase ?? 'zero'
   });
-};
-
-const createErrorEnvelope = (message: string, cause?: Error): TemplateError => {
-  const err = new Error(message, cause ? { cause } : undefined) as TemplateError;
-  err[TEMPLATE_ERROR] = true;
-  return err;
 };
 
 const withLocation = ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) => (err: TemplateError): TemplateError => {

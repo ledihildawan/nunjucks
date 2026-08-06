@@ -6,9 +6,8 @@ import { toConsoleString } from './render/to-console.ts';
 import { normalizeLineBase, type LineBase } from './line-base.ts';
 import { buildSourceTrace } from './render/internal/source-trace.ts';
 import type { SourceTrace } from './render/internal/source-trace.ts';
-import { TEMPLATE_ERROR } from './create-log-types.ts';
 import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, OutputOptions, NormalizedErrorContext, NormalizedWarningContext } from './create-log-types.ts';
-import { resolveMessage } from './create-log-helpers.ts';
+import { resolveMessage, createErrorEnvelope } from './create-log-helpers.ts';
 
 const isTemplateError = (log: TemplateError | TemplateWarning): log is TemplateError =>
   (log as TemplateError).templatePath !== undefined;
@@ -103,8 +102,8 @@ const createErrorFromDef = (
   extra: Record<string, unknown> | undefined,
   subject: string | null
 ): TemplateError => {
-  const err = new Error(resolveMessage(errorDef.message, paramsValue)) as TemplateError;
-  Object.assign(err, { name: 'Template render error', code: errorDef.name, subject, ...normalized, [TEMPLATE_ERROR]: true });
+  const err = createErrorEnvelope(resolveMessage(errorDef.message, paramsValue));
+  Object.assign(err, { name: 'Template render error', code: errorDef.name, subject, ...normalized });
   if (extra?.sourceContent) { err.sourceContent = extra.sourceContent as string; }
   if (Number.isInteger(extra?.sourceStartLine)) { err.sourceStartLine = extra?.sourceStartLine as number; }
   err.templatePath = normalized.templateName;
