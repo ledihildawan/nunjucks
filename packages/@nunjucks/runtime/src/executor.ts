@@ -1,7 +1,8 @@
 import { createContext, type ContextEnv, type Context } from './context.ts';
 import type { Frame } from './frame.ts';
-import { createRenderRuntime } from './render-runtime.ts';
+import { createRenderRuntime, type RenderRuntime } from './render-runtime.ts';
 import { getRenderFunction, buildSandboxOptions, buildSandboxedRuntime } from './executor-runtime.ts';
+import type { Environment } from '@nunjucks/shared';
 
 interface ExecuteConfig {
   autoescape?: boolean;
@@ -9,11 +10,11 @@ interface ExecuteConfig {
   sandbox?: boolean;
   sandboxAllowlist?: readonly string[];
   sandboxMode?: string;
-  sandboxEnvironment?: string;
+  sandboxEnvironment?: Environment;
 }
 
-const buildRuntime = (config: ExecuteConfig): Record<string, unknown> => {
-  const runtime = createRenderRuntime() as Record<string, unknown>;
+const buildRuntime = (config: ExecuteConfig): RenderRuntime => {
+  const runtime = createRenderRuntime();
 
   if (config.sandbox) {
     const sandboxOptions = buildSandboxOptions(config);
@@ -38,7 +39,7 @@ const executeNonSandbox = async (
   ctx: Context,
   frame: Frame,
   env: unknown,
-  runtime: Record<string, unknown>
+  runtime: RenderRuntime
 ): Promise<string> => {
   const { render, blocks } = getRenderFunction(code);
 

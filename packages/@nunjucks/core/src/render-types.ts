@@ -29,7 +29,7 @@ interface RenderConfig {
   sandbox?: boolean;
   sandboxAllowlist?: readonly string[];
   sandboxMode?: string;
-  sandboxEnvironment?: string;
+  sandboxEnvironment?: Environment;
   contextStrict?: boolean | 'error';
   allowedGlobals?: readonly string[];
   executionTimeout?: number;

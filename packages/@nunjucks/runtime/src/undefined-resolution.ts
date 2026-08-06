@@ -1,6 +1,6 @@
 import { createLog, ERROR_DEFINITIONS, type ErrorDefinitionEntry, type WarningContext } from '@nunjucks/log';
 import { isNonNullish, MATCH_ANY_RE } from '@nunjucks/shared';
-import { isNullAccessResult, isPropertyNotFoundResult } from './member-access.ts';
+import { isNullAccessResult, isPropertyNotFoundResult, type PropertyNotFoundResult, type NullAccessResult } from './member-access.ts';
 import { getLogContext, throwRuntimeError } from './log-context.ts';
 
 interface ResolveUndefinedOptions {
@@ -98,7 +98,7 @@ const resolveUndefined = (opts: ResolveUndefinedOptions, r: UndefinedResolution)
 
 const resolveUndefinedProperty = (opts: ResolveUndefinedOptions): 'undefined' => {
   const { val, varName } = opts;
-  const propResult = val as { __access_path__?: string; __nunjucks_parent__?: string };
+  const propResult = val as PropertyNotFoundResult;
   const accessPath = propResult.__access_path__ || varName || 'unknown';
   const parentName = (!propResult.__nunjucks_parent__ && varName?.includes('.'))
     ? varName.slice(0, varName.lastIndexOf('.'))
@@ -114,7 +114,7 @@ const resolveUndefinedProperty = (opts: ResolveUndefinedOptions): 'undefined' =>
 
 const resolveNullAccess = (opts: ResolveUndefinedOptions): 'undefined' => {
   const { val, varName } = opts;
-  const nullResult = val as { __access_path__?: string; __nunjucks_parent__?: string };
+  const nullResult = val as NullAccessResult;
   const accessPath = nullResult.__access_path__ || varName || 'unknown';
   const parentName = nullResult.__nunjucks_parent__ || varName || 'unknown';
   return resolveUndefined(opts, {

@@ -66,3 +66,5 @@ const createRenderRuntime = (options?: RenderRuntimeOptions) => ({
 
 export { createRenderRuntime };
 export type { RenderRuntimeOptions };
+
+export type RenderRuntime = ReturnType<typeof createRenderRuntime>;
