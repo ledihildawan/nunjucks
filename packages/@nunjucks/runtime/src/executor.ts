@@ -7,7 +7,7 @@ interface ExecuteConfig {
   autoescape?: boolean;
   dev?: boolean;
   sandbox?: boolean;
-  sandboxAllowlist?: string[];
+  sandboxAllowlist?: readonly string[];
   sandboxMode?: string;
   sandboxEnvironment?: string;
 }
@@ -44,7 +44,7 @@ const executeNonSandbox = async (
 
   ctx.blocks = blocks;
 
-  return String(await render(env, ctx, frame, runtime));
+  return await render(env, ctx, frame, runtime);
 };
 
 const execute = async (

@@ -8,7 +8,7 @@ const capitalize = createStringFilter((s: string): string => {
   return `${ret.charAt(0).toUpperCase()}${ret.slice(1)}`;
 });
 
-const fallback = createMacroFilter(['val', 'def', 'bool'], <T>(val: T | null | undefined, def: T, bool?: boolean) => {
+const fallback = createMacroFilter(['val', 'def', 'bool'], (val: unknown, def: unknown, bool?: boolean) => {
   if (bool) {
     return val || def;
   }

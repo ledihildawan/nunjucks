@@ -14,7 +14,7 @@ const sandboxError = (errorDef: ErrorDefinitionEntry | undefined, key: string | 
   return createLog('error', errorDef, { key: String(key), category: category ?? '', environment: env }, String(key), { phase: 'render', lineBase: 'zero' });
 };
 
-const blockedKeysError = (key: string, blockedKeys: string[]): TemplateError | TemplateWarning => {
+const blockedKeysError = (key: string, blockedKeys: readonly string[]): TemplateError | TemplateWarning => {
   const errorDef = ERROR_DEFINITIONS.BLOCKED_CONTEXT_KEYS;
   if (!errorDef) {
     const err = createLog('error', { name: 'BLOCKED_CONTEXT_KEYS', message: `Blocked context key: ${key}` }, undefined, key, { phase: 'render', lineBase: 'zero' });

@@ -2,9 +2,9 @@ import { resolveTemplateSource, prepareSandbox, buildRenderEnv, compileTemplate,
 import { validateRender, validateTemplateSource } from './render-validation.ts';
 import { getLoader } from './engine.ts';
 import type { RenderConfig } from './render-types.ts';
-import { execute, createFrame, withTimeout, type ExecuteConfig } from '@nunjucks/runtime';
+import { execute, createFrame, withTimeout } from '@nunjucks/runtime';
 import { getCallerFile, getCallerLocation } from '@nunjucks/shared';
-import { injectWarningsScript, wrapWithLog } from '@nunjucks/log';
+import { injectWarningsScript, wrapWithLog, type TemplateWarning } from '@nunjucks/log';
 import type { GlobalConfig } from './config/global.ts';
 import { getDefaultConfig } from './config/global.ts';
 import { defaultFilterBundle } from './filter-bundle.ts';
@@ -12,7 +12,7 @@ import { defaultFilterBundle } from './filter-bundle.ts';
 interface ExecutionContext {
   code: string;
   sandboxedCtx: Record<string, unknown>;
-  warningsCollector: Error[];
+  warningsCollector: TemplateWarning[];
   templateName: string | null;
 }
 
@@ -49,7 +49,7 @@ const resolveTemplateName = (template: string, config: RenderConfig): string => 
   return config._callerFile || 'inline';
 };
 
-const executeCompiledTemplate = async (ctx: ExecutionContext, config: RenderConfig, context: Record<string, unknown>): Promise<string> => {
+const executeCompiledTemplate = async (ctx: ExecutionContext, config: RenderConfig): Promise<string> => {
   const frame = createFrame();
   const env = config.env ?? {
     opts: {
@@ -59,12 +59,7 @@ const executeCompiledTemplate = async (ctx: ExecutionContext, config: RenderConf
     },
     ...createEnvLookups(config),
   };
-  const renderPromise = execute(ctx.code, ctx.sandboxedCtx, frame, env, {
-    ...config,
-    warningsCollector: ctx.warningsCollector,
-    templateName: ctx.templateName,
-    renderContext: context
-  } as ExecuteConfig);
+  const renderPromise = execute(ctx.code, ctx.sandboxedCtx, frame, env, { ...config });
 
   if ((config.executionTimeout ?? 0) > 0) {
     return await withTimeout(renderPromise, config.executionTimeout ?? 0);
@@ -72,9 +67,9 @@ const executeCompiledTemplate = async (ctx: ExecutionContext, config: RenderConf
   return await renderPromise;
 };
 
-const injectWarningsIfNeeded = (result: string, warningsCollector: unknown[], dev: boolean | undefined): string => {
+const injectWarningsIfNeeded = (result: string, warningsCollector: TemplateWarning[], dev: boolean | undefined): string => {
   if (warningsCollector.length > 0 && dev) {
-    return result + injectWarningsScript(warningsCollector as Parameters<typeof injectWarningsScript>[0], { dev: true, verbosity: 'medium' });
+    return result + injectWarningsScript(warningsCollector, { dev: true, verbosity: 'medium' });
   }
   return result;
 };
@@ -105,7 +100,7 @@ const render = async (template: string, context: Record<string, unknown> = {}, o
   }
 
   const { warningsCollector, context: safeContext } = await handleContextStrictMode(context, configWithPath);
-  const sandboxedCtx = prepareSandbox(configWithPath, safeContext as Record<string, unknown>);
+  const sandboxedCtx = prepareSandbox(configWithPath, safeContext);
   const envOverride = buildRenderEnv(loader, configWithPath);
   const resolvedConfig: RenderConfig = envOverride ? { ...configWithPath, env: envOverride } : configWithPath;
 
@@ -114,9 +109,9 @@ const render = async (template: string, context: Record<string, unknown> = {}, o
     result = await executeCompiledTemplate({
       code,
       sandboxedCtx,
-      warningsCollector: warningsCollector as Error[],
+      warningsCollector,
       templateName,
-    }, resolvedConfig, safeContext as Record<string, unknown>);
+    }, resolvedConfig);
   } catch (err) {
     throw await wrapWithLog(err, resolvedConfig, templateSource, context);
   }

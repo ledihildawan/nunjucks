@@ -3,7 +3,7 @@ import { findContextDangerousValues } from '@nunjucks/validators';
 import type { ParseOptions } from '@nunjucks/parser';
 import type { Env } from '@nunjucks/runtime';
 import { createSandboxedContext, scrubDangerousReferences } from '@nunjucks/runtime';
-import { createLog, getError, wrapWithLog, type IncludeChain } from '@nunjucks/log';
+import { createLog, getError, wrapWithLog, type IncludeChain, type TemplateWarning } from '@nunjucks/log';
 import { MATCH_ANY_RE } from '@nunjucks/shared';
 import { createTemplate } from './template/index.ts';
 import { compileToCode } from './compile-pipeline.ts';
@@ -101,8 +101,8 @@ const compileTemplate = (templateSource: string, config: RenderConfig, templateN
   return { code };
 };
 
-const handleContextStrictMode = async (context: unknown, config: RenderConfig): Promise<{ warningsCollector: unknown[]; dangerousValuePaths: string[]; context: unknown }> => {
-  const warningsCollector: unknown[] = [];
+const handleContextStrictMode = async (context: Record<string, unknown>, config: RenderConfig): Promise<{ warningsCollector: TemplateWarning[]; dangerousValuePaths: string[]; context: Record<string, unknown> }> => {
+  const warningsCollector: TemplateWarning[] = [];
   const contextStrict = config.contextStrict === true || (config.contextStrict !== false && config.dev === true);
   const dangerousValuePaths: string[] = contextStrict ? findContextDangerousValues(context, config) : [];
 
@@ -123,9 +123,10 @@ const handleContextStrictMode = async (context: unknown, config: RenderConfig): 
   }
 
   // Pure scrub: scrubDangerousReferences returns a deep-cloned, scrubbed copy
-  // so the caller's context object is never mutated. The scrubbed copy flows
-  // downstream to the sandbox/executor.
-  const scrubbedContext = scrubDangerousReferences(context, null);
+  // so the caller's context object is never mutated. The scrubber's return is
+  // `unknown` (it accepts arbitrary input); here the input is a Record so the
+  // scrubbed copy is Record-shaped.
+  const scrubbedContext = scrubDangerousReferences(context, null) as Record<string, unknown>;
   warningsCollector.push(createLog('warning', {
     name: 'DANGEROUS_CONTEXT_VALUE_SCRUBBED',
     message: () => `Scrubbed unsafe values from context: ${dangerousValuePaths.join(', ')}`,

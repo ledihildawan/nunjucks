@@ -1,6 +1,6 @@
 import { isFunction, isString, pickBy } from 'remeda';
 import { formatLocationAnnotation } from './render/internal/location.ts';
-import type { TemplateError, ErrorContext, WarningContext, BaseContext, ErrorDefinitionEntry, LegacyLogData, LogType, WarningInfo, IncludeChain, ErrorInfo } from './create-log-types.ts';
+import type { TemplateError, ErrorContext, WarningContext, NormalizedErrorContext, NormalizedWarningContext, ErrorDefinitionEntry, LegacyLogData, LogType, WarningInfo, IncludeChain, ErrorInfo } from './create-log-types.ts';
 
 const resolveMessage = (message: ErrorDefinitionEntry['message'], params?: Record<string, string>): string => {
   if (isFunction(message)) { return message(params); }
@@ -8,17 +8,23 @@ const resolveMessage = (message: ErrorDefinitionEntry['message'], params?: Recor
   return message;
 };
 
-const normalizeContext = <T extends BaseContext>(
-  context: ErrorContext | WarningContext | undefined | null,
-  extra: (c: ErrorContext | WarningContext) => Partial<T>
-): T => ({
+const normalizeErrorContext = (context: ErrorContext | null | undefined): NormalizedErrorContext => ({
   lineno: context?.lineno ?? null,
   colno: context?.colno ?? null,
   phase: context?.phase ?? null,
   templateName: context?.templateName ?? null,
   lineBase: context?.lineBase ?? null,
-  ...extra(context ?? {})
-} as T);
+});
+
+const normalizeWarningContext = (context: WarningContext | null | undefined): NormalizedWarningContext => ({
+  lineno: context?.lineno ?? null,
+  colno: context?.colno ?? null,
+  phase: context?.phase ?? null,
+  templateName: context?.templateName ?? null,
+  lineBase: context?.lineBase ?? null,
+  varName: context?.varName ?? null,
+  undefinedMode: context?.undefinedMode ?? 'chainable',
+});
 
 const isErrorDefinitionEntry = (data: unknown): data is ErrorDefinitionEntry => {
   if (typeof data !== 'object' || data === null || !('message' in data)) { return false; }
@@ -74,4 +80,4 @@ const buildLocationMessage = (
   ].filter((part): part is string => part !== null).join('');
 };
 
-export { resolveMessage, normalizeContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, formatParentLocation, buildLocationMessage };
+export { resolveMessage, normalizeErrorContext, normalizeWarningContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, formatParentLocation, buildLocationMessage };

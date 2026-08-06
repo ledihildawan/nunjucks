@@ -27,7 +27,7 @@ const getRenderFunction = (code: string): RenderFunctionResult => {
   throw createLog('error', getError('INVALID_CODE_FORMAT'), {}, null, { phase: 'compile' });
 };
 
-const buildSandboxOptions = (config: { sandboxAllowlist?: string[]; sandboxMode?: string; sandboxEnvironment?: string }): SandboxOptions => ({
+const buildSandboxOptions = (config: { sandboxAllowlist?: readonly string[]; sandboxMode?: string; sandboxEnvironment?: string }): SandboxOptions => ({
   allowlist: config.sandboxAllowlist || [],
   blocklistMode: config.sandboxMode !== 'allowlist',
   environment: (config.sandboxEnvironment || 'auto') as Environment,

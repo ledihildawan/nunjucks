@@ -10,7 +10,7 @@ const isBlockedSymbol = (key: symbol): boolean => {
   return true;
 };
 
-const isAllowedKey = (key: string, allowlist: string[] | null | undefined): boolean => {
+const isAllowedKey = (key: string, allowlist: readonly string[] | null | undefined): boolean => {
   if (!(allowlist && Array.isArray(allowlist)) || allowlist.length === 0) {
     return true;
   }

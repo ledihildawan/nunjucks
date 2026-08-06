@@ -9,11 +9,11 @@ export const _prepareAttributeParts = (attr: string | number | null | undefined)
   return [attr];
 };
 
-export const getAttrGetter = <T extends Record<string, unknown>>(
+export const getAttrGetter = (
   attribute: string | number,
-): ((item: T) => unknown) => {
+): ((item: Record<string, unknown>) => unknown) => {
   const parts = _prepareAttributeParts(attribute);
-  return (item: T): unknown =>
+  return (item: Record<string, unknown>): unknown =>
     reduce(
       parts,
       (_item, part) => {

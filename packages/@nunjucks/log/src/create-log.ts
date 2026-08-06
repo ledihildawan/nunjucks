@@ -1,7 +1,7 @@
 import { pipe } from 'remeda';
-import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, LegacyLogData, LogType, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, NormalizedErrorContext, NormalizedWarningContext, ErrorInfo, WarningInfo, OutputOptions } from './create-log-types.ts';
+import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, LegacyLogData, LogType, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, ErrorInfo, WarningInfo, OutputOptions } from './create-log-types.ts';
 import { TEMPLATE_ERROR } from './create-log-types.ts';
-import { normalizeContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, buildLocationMessage } from './create-log-helpers.ts';
+import { normalizeErrorContext, normalizeWarningContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, buildLocationMessage } from './create-log-helpers.ts';
 import { createErrorFromDef, createWarningFromDef } from './create-log-error.ts';
 import { isKeyedObject } from '@nunjucks/shared';
 
@@ -36,11 +36,11 @@ function createLog(
   const extra = extractExtraFromContext(context);
 
   if (type === 'error') {
-    const normalized = normalizeContext<NormalizedErrorContext>(context, () => ({}));
+    const normalized = normalizeErrorContext(context);
     return createErrorFromDef(errorDef, params, normalized, extra, subject ?? null);
   }
 
-  const normalized = normalizeContext<NormalizedWarningContext>(context, (c) => ({ varName: (c as WarningContext).varName ?? null, undefinedMode: (c as WarningContext).undefinedMode ?? 'chainable' }));
+  const normalized = normalizeWarningContext(context);
   return createWarningFromDef(errorDef, params, normalized, subject ?? null);
 }
 

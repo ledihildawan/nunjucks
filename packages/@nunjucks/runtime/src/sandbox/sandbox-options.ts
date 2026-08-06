@@ -1,9 +1,9 @@
 import type { Environment } from '@nunjucks/shared';
 
 interface SandboxOptions {
-  allowlist?: string[];
+  allowlist?: readonly string[];
   blocklistMode?: boolean;
-  blockedContextKeys?: string[];
+  blockedContextKeys?: readonly string[];
   environment?: Environment;
   env?: Environment;
   topLevel?: boolean;

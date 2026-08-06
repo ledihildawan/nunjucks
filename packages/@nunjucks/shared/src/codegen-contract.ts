@@ -31,7 +31,7 @@ export type CompiledRenderSignature = (
   context: unknown,
   frame: unknown,
   runtime: unknown,
-) => Promise<unknown> | unknown;
+) => Promise<string> | string;
 
 /**
  * Shape of the object a compiled template returns. The compiler emits
