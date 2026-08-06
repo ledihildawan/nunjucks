@@ -163,13 +163,13 @@ const normalizePlainObject = (
 ): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
   const keys = ownEnumerableKeys(value).filter(key => visibleKey(key, depth));
-  for (const key of keys.slice(0, state.maxEntries)) {
+  keys.slice(0, state.maxEntries).forEach((key) => {
     if (state.blockedKeys.has(key) || DANGEROUS_KEY_PATTERN.test(key)) {
       result[key] = '[Redacted]';
     } else {
       result[key] = normalizeValue(readOwnValue(value, key), state, depth + 1, seen);
     }
-  }
+  });
   if (keys.length > state.maxEntries) {
     result['...'] = `${keys.length - state.maxEntries} more keys`;
   }

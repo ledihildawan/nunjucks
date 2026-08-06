@@ -59,8 +59,7 @@ const nextHtmlChunk = (rest: string, inTag: boolean): HighlightChunk => {
   for (const rule of SYNTAX_RULES.filter(r => !r.tagOnly || inTag)) {
     const matched = rest.match(rule.re)?.[0];
     if (matched) {
-      let nextInTag = inTag;
-      if (rule.toggle) { nextInTag = matched === '{{' || matched === '{%'; }
+      const nextInTag = rule.toggle ? (matched === '{{' || matched === '{%') : inTag;
       return { html: span(rule.type, matched), length: matched.length, inTag: nextInTag };
     }
   }

@@ -10,7 +10,7 @@ const resolveAutoescape = (node: CallExtensionNode): boolean => {
 
 const emitExtensionCallBegin = (
   ctx: Compiler,
-  node: Node,
+  node: CallExtensionNode,
   emitAsync: boolean,
   res: string | null
 ): void => {
@@ -18,9 +18,9 @@ const emitExtensionCallBegin = (
     ctx.emit(`${ctx.buffer} += runtime.suppressValue(`);
   }
   if (emitAsync) {
-    ctx.emit(`let ${res} = await env.getExtension("${(node as CallExtensionNode).extName as string}")["${(node as CallExtensionNode).prop as string}"](`);
+    ctx.emit(`let ${res} = await env.getExtension("${node.extName}")["${node.prop}"](`);
   } else {
-    ctx.emit(`env.getExtension("${(node as CallExtensionNode).extName as string}")["${(node as CallExtensionNode).prop as string}"](`);
+    ctx.emit(`env.getExtension("${node.extName}")["${node.prop}"](`);
   }
   ctx.emit('context');
 };

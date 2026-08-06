@@ -133,9 +133,8 @@ const compileAggregate = (ctx: Compiler, node: ChildrenNode | CallNode | readonl
   }
 
   const children: readonly Node[] = Array.isArray(node) ? node : ((node as ChildrenNode).children ?? []);
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i];
-    if (!child) { continue; }
+  children.forEach((child, i) => {
+    if (!child) { return; }
     if (i > 0) {
       ctx.emit(',');
     }
@@ -145,7 +144,7 @@ const compileAggregate = (ctx: Compiler, node: ChildrenNode | CallNode | readonl
     } else {
       ctx.compile(child, frame);
     }
-  }
+  });
 
   if (endChar) {
     ctx.emit(endChar);
