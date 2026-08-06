@@ -61,15 +61,14 @@ const compileFlatArrayBinding = ({ ctx, nameNode, frame, arr, i, len, node }: Lo
   const itemId = ctx.tmpid();
   ctx.emitLine(`let ${itemId} = ${arr}[${i}];`);
   if (nameNode.children) {
-    for (let u = 0; u < nameNode.children.length; u++) {
-      const child = nameNode.children[u];
-      if (!child) { continue; }
+    nameNode.children.forEach((child, u) => {
+      if (!child) { return; }
       const tid = ctx.tmpid();
       ctx.emitLine(`let ${tid} = ${itemId}[${u}];`);
       const childValue = child.value as string;
       ctx.emitLine(`frame.set("${childValue}", ${tid});`);
       frame.set(childValue, tid);
-    }
+    });
   }
   emitLoopBody(ctx, node, frame, i, len);
 };

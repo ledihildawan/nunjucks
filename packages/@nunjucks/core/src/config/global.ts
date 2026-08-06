@@ -72,26 +72,8 @@ const SAFE_BUILTINS: Readonly<Record<string, unknown>> = Object.freeze({
     fromCodePoint: String.fromCodePoint,
     raw: String.raw,
   }),
-  Boolean: Object.freeze({
-  }),
   Date: Object.freeze({
     now: Date.now,
-  }),
-  Map: Object.freeze({
-  }),
-  Set: Object.freeze({
-  }),
-  RegExp: Object.freeze({
-  }),
-  Error: Object.freeze({
-  }),
-  TypeError: Object.freeze({
-  }),
-  RangeError: Object.freeze({
-  }),
-  SyntaxError: Object.freeze({
-  }),
-  Symbol: Object.freeze({
   }),
   Promise: Object.freeze({
     resolve: Promise.resolve,
@@ -103,8 +85,6 @@ const SAFE_BUILTINS: Readonly<Record<string, unknown>> = Object.freeze({
   }),
   ArrayBuffer: Object.freeze({
     isView: ArrayBuffer.isView,
-  }),
-  DataView: Object.freeze({
   }),
 });
 

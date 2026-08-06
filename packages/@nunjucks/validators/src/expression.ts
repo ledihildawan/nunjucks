@@ -100,17 +100,17 @@ const walkChildNodes = (
   cfg: ExpressionSecurityConfig,
   path: readonly (string | number)[]
 ): void => {
-  for (const key of Object.keys(node)) {
-    if (NON_CHILD_KEYS.has(key)) { continue; }
-    const child = Reflect.get(node, key);
-    if (Array.isArray(child)) {
-      child.forEach((c, i) => {
-        if (isNode(c)) { walk(c, errors, cfg, [...path, key, i]); }
-      });
-    } else if (isNode(child)) {
-      walk(child, errors, cfg, [...path, key]);
-    }
-  }
+  Object.entries(node)
+    .filter(([key]) => !NON_CHILD_KEYS.has(key))
+    .forEach(([key, child]) => {
+      if (Array.isArray(child)) {
+        child.forEach((c, i) => {
+          if (isNode(c)) { walk(c, errors, cfg, [...path, key, i]); }
+        });
+      } else if (isNode(child)) {
+        walk(child, errors, cfg, [...path, key]);
+      }
+    });
 };
 
 const walk = (
@@ -138,9 +138,8 @@ const walk = (
     case 'pipe': {
       errors.push(...checkCall(node, node.type, path));
       walk(node.name, errors, cfg, [...path, 'name']);
-      for (const [i, a] of node.args.entries()) {
-        walk(a, errors, cfg, [...path, 'args', i]);
-      }
+      // biome-ignore lint/suspicious/useIterableCallbackReturn: walk returns void, biome false positive
+      node.args.forEach((a, i) => walk(a, errors, cfg, [...path, 'args', i]));
       break;
     }
 

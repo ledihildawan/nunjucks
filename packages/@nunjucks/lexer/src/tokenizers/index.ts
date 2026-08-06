@@ -1,5 +1,5 @@
 import type { TokenizeResult } from '../types.ts';
-import { or } from '../combinators.ts';
+import { firstMatch } from '../combinators.ts';
 
 import { tokenizeWhitespace } from './whitespace.ts';
 import { tokenizeNumber } from './number.ts';
@@ -25,7 +25,7 @@ export { tokenizeComment } from './comment.ts';
 export { tokenizeTemplateLiteral } from './template-literal.ts';
 export { tokenizeRaw } from './raw.ts';
 
-export const templateTokenizers = or(
+export const templateTokenizers = firstMatch(
   tokenizeRaw,
   tokenizeBlockStart,
   tokenizeVariableStart,
@@ -33,7 +33,7 @@ export const templateTokenizers = or(
   tokenizeTemplateText,
 );
 
-export const codeTokenizers = or(
+export const codeTokenizers = firstMatch(
   tokenizeString,
   tokenizeTemplateLiteral,
   tokenizeWhitespace,

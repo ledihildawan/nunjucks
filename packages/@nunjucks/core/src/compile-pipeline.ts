@@ -20,11 +20,11 @@ const compileToCode = (
   undefinedMode: UndefinedMode | undefined,
   parseOpts?: ParseOptions,
 ): string => {
-  const c = createCompiler(templateName, undefinedMode, source);
+  const compiler = createCompiler(templateName, undefinedMode, source);
   const ast = parse(source, [], parseOpts);
   const transformedAst = transform(ast);
-  c.compile(transformedAst, createFrame());
-  return c.getCode();
+  compiler.compile(transformedAst, createFrame());
+  return compiler.getCode();
 };
 
 export { compileToCode };

@@ -41,14 +41,15 @@ const emitExtensionArgs = (
       'use `parser.parseSignature`');
   }
   if (!args.children) { return; }
-  for (let i = 0; i < args.children.length; i++) {
-    const arg = args.children[i];
-    if (!arg) { continue; }
+  const children = args.children;
+  const lastIndex = children.length - 1;
+  children.forEach((arg, i) => {
+    if (!arg) { return; }
     ctx.compileExpression(arg, frame);
-    if (i !== args.children.length - 1 || contentArgs.length > 0) {
+    if (i !== lastIndex || contentArgs.length > 0) {
       ctx.emit(',');
     }
-  }
+  });
 };
 
 const emitContentArg = (ctx: Compiler, arg: Node | null, frame: Frame): void => {
@@ -69,15 +70,14 @@ const emitContentArgs = (
   contentArgs: Node[],
   frame: Frame
 ): void => {
-  for (let i = 0; i < contentArgs.length; i++) {
+  contentArgs.forEach((arg, i) => {
     if (i > 0) {
       ctx.emit(',');
     }
-    const arg = contentArgs[i];
     if (arg) {
       emitContentArg(ctx, arg, frame);
     }
-  }
+  });
 };
 
 const emitExtensionCallEnd = (

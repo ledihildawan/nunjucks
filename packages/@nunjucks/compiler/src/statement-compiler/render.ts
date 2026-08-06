@@ -6,7 +6,6 @@ import type { Compiler } from '../index.ts';
 import { emitLocationGuard } from '../compiler-helpers.ts';
 import { compileSlotFunction } from './slot.ts';
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: multi-slot compilation is inherently multi-step
 export const compileRenderBlock = (ctx: Compiler, node: RenderNode, parentFrame: Frame): void => {
   const frame = parentFrame.push(true);
   ctx.emitLine('frame = frame.push(true);');
@@ -32,11 +31,10 @@ export const compileRenderBlock = (ctx: Compiler, node: RenderNode, parentFrame:
     const nameStr = fnName.type === 'symbol' ? String(fnName.value) : 'render';
     ctx.emit(`, ${JSON.stringify(nameStr)}, null, context, [`);
     const args = callExpr.args;
-    for (let i = 0; i < args.length; i++) {
+    args.forEach((arg, i) => {
       if (i > 0) { ctx.emit(', '); }
-      const arg = args[i];
       if (arg) { ctx.compile(arg, frame); }
-    }
+    });
     if (args.length > 0) { ctx.emit(', '); }
 
     const kwargsParts: string[] = [];

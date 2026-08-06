@@ -1,4 +1,4 @@
-export const extractBlocks = (obj: Record<string, unknown> | object): Record<string, unknown> =>
+export const extractBlocks = <T extends Record<string, unknown> | object>(obj: T): Partial<Record<string, unknown>> =>
   Object.fromEntries(
     Object.entries(obj as Record<string, unknown>)
       .filter(([key]) => key.startsWith('b_'))

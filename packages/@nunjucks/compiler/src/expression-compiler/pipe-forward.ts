@@ -12,17 +12,16 @@ export const compilePipeForward = (ctx: Compiler, node: CallNode, frame: Frame):
 
   ctx.emit(`await runtime.awaitValue(env.getFilter("${filterName}", ${filterLocation}).call(context, `);
 
-  for (let i = 0; i < args.length; i++) {
+  args.forEach((arg, i) => {
     if (i > 0) {
       ctx.emit(', ');
     }
-    const arg = args[i];
     if (arg) {
       ctx.emit('await runtime.awaitValue(');
       ctx.compile(arg, frame);
       ctx.emit(')');
     }
-  }
+  });
 
   ctx.emit('))');
 };

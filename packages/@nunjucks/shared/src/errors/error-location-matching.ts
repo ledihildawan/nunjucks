@@ -1,4 +1,4 @@
-import { pipe, reduce } from 'remeda';
+import { flatMap, pipe, reduce } from 'remeda';
 import { slice } from '../pipe-helpers.ts';
 import type { SourcePosition, TemplateMatch } from './error-location-types.ts';
 
@@ -59,34 +59,44 @@ const isCoordinateWithinTemplate = (
   return col >= 0 && col <= targetLine.length;
 };
 
+const findAllOccurrences = (content: string, candidate: string): number[] => {
+  const results: number[] = [];
+  let searchFrom = 0;
+  while (true) {
+    const found = content.indexOf(candidate, searchFrom);
+    if (found === -1) { break; }
+    results.push(found);
+    searchFrom = found + 1;
+  }
+  return results;
+};
+
 const findTemplateOccurrence = (
   content: string,
   templateHint: string,
   preferredLine: number | null
 ): TemplateMatch | null => {
-  let best = -1;
-  let bestTemplate = templateHint;
-  let bestDistance = Number.POSITIVE_INFINITY;
   const candidates = templateCandidates(templateHint);
-
-  for (const candidate of candidates) {
-    let searchFrom = 0;
-    for (;;) {
-      const found = content.indexOf(candidate, searchFrom);
-      if (found === -1) { break; }
-      const line = positionAtOffset(content, found).lineOffset + 1;
-      const distance = lineDistance(line, preferredLine);
-      if (distance < bestDistance) {
-        best = found;
-        bestTemplate = candidate;
-        bestDistance = distance;
+  const allMatches = pipe(
+    candidates,
+    flatMap((candidate) =>
+      findAllOccurrences(content, candidate).map((index) => ({
+        index,
+        candidate,
+        line: positionAtOffset(content, index).lineOffset + 1
+      }))
+    ),
+    reduce((best, match) => {
+      const distance = lineDistance(match.line, preferredLine);
+      if (distance < best.distance) {
+        return { index: match.index, template: match.candidate, distance };
       }
-      searchFrom = found + 1;
-    }
-  }
+      return best;
+    }, { index: -1, template: templateHint, distance: Number.POSITIVE_INFINITY })
+  );
 
-  if (best === -1) { return null; }
-  return { index: best, template: bestTemplate };
+  if (allMatches.index === -1) { return null; }
+  return { index: allMatches.index, template: allMatches.template };
 };
 
 const positionOfCaptureGroup = (
@@ -120,6 +130,14 @@ const matchTemplateInCaller = (
   return { line: pos.lineOffset + 1, col: pos.col + 1 };
 };
 
+const collectRegexMatches = (content: string, re: RegExp): RegExpExecArray[] => {
+  const results: RegExpExecArray[] = [];
+  for (let match = re.exec(content); match !== null; match = re.exec(content)) {
+    results.push(match);
+  }
+  return results;
+};
+
 const findSubjectOccurrence = (
   content: string,
   subject: string | null,
@@ -134,26 +152,20 @@ const findSubjectOccurrence = (
     { re: new RegExp(`\\b(${escaped})\\b`, 'g'), group: 1 }
   ];
 
-  let best: SourcePosition | null = null;
-  let bestDistance = Number.POSITIVE_INFINITY;
-
-  const evaluateMatch = (match: RegExpExecArray, group: number): void => {
-    const hit = positionOfCaptureGroup(content, match, group, colOffset);
-    if (hit) {
+  return pipe(
+    patterns,
+    flatMap(({ re, group }) =>
+      collectRegexMatches(content, re).map((match) => positionOfCaptureGroup(content, match, group, colOffset))
+    ),
+    reduce((best, hit) => {
+      if (!hit) { return best; }
       const distance = lineDistance(hit.line, preferredLine);
-      if (distance < bestDistance) {
-        best = hit;
-        bestDistance = distance;
+      if (distance < best.distance) {
+        return { position: hit, distance };
       }
-    }
-  };
-
-  for (const { re, group } of patterns) {
-    for (let match = re.exec(content); match !== null; match = re.exec(content)) {
-      evaluateMatch(match, group);
-    }
-  }
-  return best;
+      return best;
+    }, { position: null as SourcePosition | null, distance: Number.POSITIVE_INFINITY })
+  ).position;
 };
 
 const findTemplatePattern = (

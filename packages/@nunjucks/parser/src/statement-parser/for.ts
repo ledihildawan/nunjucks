@@ -7,7 +7,7 @@ import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
 import { tryParsePattern } from "../node-parser/pattern.ts";
 
-const parseForName = (ctx: ParserContext): Node => {
+const parseForTarget = (ctx: ParserContext): Node => {
   const patternNode = tryParsePattern(ctx);
   if (patternNode) {
     return patternNode;
@@ -39,7 +39,7 @@ export const parseFor = (ctx: ParserContext): Node => {
   }
   const endBlock = 'endfor';
 
-  const name = parseForName(ctx);
+  const name = parseForTarget(ctx);
 
   if (!skipSymbol(ctx, 'in')) {
     fail(ctx, 'parseFor: expected "in" keyword for loop',

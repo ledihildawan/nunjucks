@@ -50,18 +50,18 @@ const joinFilter = (arr: unknown, del?: string, attr?: string): string => {
 
 const lower = createStringFilter((s: string): string => s.toLowerCase());
 
-const replace = (str: unknown, old: unknown, new_: string, maxCount?: number): string => {
+const replace = (str: unknown, old: unknown, newValue: string, maxCount?: number): string => {
   const originalStr = str;
-  if (old instanceof RegExp) { return (str as string).replace(old, new_); }
+  if (old instanceof RegExp) { return (str as string).replace(old, newValue); }
   const max = maxCount ?? -1;
   const oldStr = resolveOldString(old);
   if (oldStr === null) { return str as string; }
   const s = resolveString(str);
   if (s === null) { return str as string; }
-  if (oldStr === '') { return preserveSafe(originalStr, new_ + pipe(s, split(''), joinRemeda(new_)) + new_); }
+  if (oldStr === '') { return preserveSafe(originalStr, newValue + pipe(s, split(''), joinRemeda(newValue)) + newValue); }
   const nextIndex = s.indexOf(oldStr);
   if (max === 0 || nextIndex === -1) { return s; }
-  return preserveSafe(originalStr, performReplace(s, oldStr, new_, max));
+  return preserveSafe(originalStr, performReplace(s, oldStr, newValue, max));
 };
 
 const resolveOldString = (old: unknown): string | null => {
@@ -76,13 +76,13 @@ const resolveString = (str: unknown): string | null => {
   return null;
 };
 
-const performReplace = (s: string, oldStr: string, new_: string, max: number): string => {
+const performReplace = (s: string, oldStr: string, newValue: string, max: number): string => {
   if (oldStr === '') { return s; }
   const segments = s.split(oldStr);
   if (max === -1 || segments.length - 1 <= max) {
-    return segments.join(new_);
+    return segments.join(newValue);
   }
-  const head = segments.slice(0, max + 1).join(new_);
+  const head = segments.slice(0, max + 1).join(newValue);
   const tail = segments.slice(max + 1).join(oldStr);
   return head + oldStr + tail;
 };

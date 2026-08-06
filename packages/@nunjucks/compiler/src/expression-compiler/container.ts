@@ -1,7 +1,7 @@
 import { isLiteral, isSpread, isSymbol, literal } from '@nunjucks/nodes';
 import type { Node, SymbolNode, ChildrenNode, PairNode, SpreadNode, TemplateLiteralNode, CallNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
-import { forEach } from 'remeda';
+import { forEach, join, map, pipe } from 'remeda';
 import type { Compiler } from '../index.ts';
 
 const STRING_ESCAPE_MAP: Record<string, string> = {
@@ -19,13 +19,8 @@ const TEMPLATE_ESCAPE_MAP: Record<string, string> = {
   '$': '\\$',
 };
 
-const escapeString = (str: string): string => {
-  let result = '';
-  for (const char of str) {
-    result += STRING_ESCAPE_MAP[char] ?? char;
-  }
-  return result;
-};
+const escapeString = (str: string): string =>
+  join('')(pipe(str.split(''), map((char) => STRING_ESCAPE_MAP[char] ?? char)));
 
 const compileLiteral = (ctx: Compiler, node: { value?: unknown; lineno: number; colno: number }): void => {
   if (typeof node.value === 'string') {
@@ -97,13 +92,8 @@ const compileSpread = (ctx: Compiler, node: SpreadNode, frame: Frame): void => {
   ctx.compile(node.argument, frame);
 };
 
-const escapeTemplateString = (str: string): string => {
-  let result = '';
-  for (const char of str) {
-    result += TEMPLATE_ESCAPE_MAP[char] ?? char;
-  }
-  return result;
-};
+const escapeTemplateString = (str: string): string =>
+  join('')(pipe(str.split(''), map((char) => TEMPLATE_ESCAPE_MAP[char] ?? char)));
 
 interface TemplateQuasi {
   type: 'template' | 'expression';

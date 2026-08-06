@@ -37,16 +37,14 @@ export const compileIs = (ctx: Compiler, node: BinaryNode, frame: Frame): void =
   ctx.emit(`env.getTest(${JSON.stringify(String(right))}, ${lineno}, ${colno}).call(context, `);
   ctx.compile(node.left, frame);
   if (args) {
-    ctx.emit(',');
-    for (let i = 0; i < args.length; i++) {
+    args.forEach((arg, i) => {
       if (i > 0) {
         ctx.emit(',');
       }
-      const arg = args[i];
       if (arg) {
         ctx.compile(arg, frame);
       }
-    }
+    });
   }
   ctx.emit(') === true)');
 };
