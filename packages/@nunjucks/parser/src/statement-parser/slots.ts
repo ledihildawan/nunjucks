@@ -1,5 +1,3 @@
-// Shared parsing for `{% slot %}` blocks used by both component definitions
-// (fallback slots) and render invocations (provided slots).
 import type { Node, SlotBlock } from '@nunjucks/nodes';
 import { nodeList, output, templateData } from '@nunjucks/nodes';
 import {
@@ -69,7 +67,6 @@ export const parseSlottedBody = (ctx: ParserContext, endTag: string): SlottedBod
       if (val === 'slot') {
         const parsed = parseSlotBlock(ctx);
         if (parsed.name === 'default') {
-          // Unnamed `{% slot %}` block — the default-slot declaration
           implicitSlots.push(parsed);
         } else {
           namedSlots.push(parsed);

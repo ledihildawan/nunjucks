@@ -10,7 +10,6 @@ export interface SecurityError extends Error {
   name: 'SecurityError';
   code: string;
   dangerousPaths?: string[];
-  // TemplateError structural fields (defaults applied by `createSecurityError`).
   lineno: number | null;
   colno: number | null;
   subject: string | null;

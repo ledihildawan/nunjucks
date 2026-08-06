@@ -1,5 +1,3 @@
-// Extract the human-readable message from an error, trimming any V8 stack
-// tail ("\\n    at ..."). Shared by the text and ANSI renderers.
 const getErrorMessage = (error: unknown): string => {
   const rawMessage = (error as Error).message;
   const baseMessage = (!rawMessage || typeof rawMessage !== 'string') ? String(error) : rawMessage;

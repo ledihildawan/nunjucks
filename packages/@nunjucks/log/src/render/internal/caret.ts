@@ -8,7 +8,6 @@ interface CaretResult {
   carets: string;
 }
 
-// Hoisted so each pattern is compiled once rather than on every caret render.
 const WORD_CHAR_RE = /[\w./\\-]/u;
 const PATH_SEPARATOR_RE = /[\\/-]/u;
 const FILE_EXTENSION_RE = /\.(?:njk|nunjucks|html?|tmpl|tpl|js|ts|mjs|cjs|jsx|tsx|json|ya?ml|css|scss|sass|less|md|txt)$/iu;

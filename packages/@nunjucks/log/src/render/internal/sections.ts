@@ -6,7 +6,6 @@ import { DEFAULT_IDE } from './defaults.ts';
 import { normalizeRenderContext } from './safe-context.ts';
 import { replace, slice } from '@nunjucks/shared';
 
-// Hoisted so each pattern is compiled once rather than on every call.
 const FILE_URL_PREFIX_RE = /^file:\/\/+/u;
 const LEADING_WHITESPACE_RE = /^\s*/u;
 const PATH_SEPARATOR_RE = /[\\/:]/u;
@@ -123,7 +122,6 @@ const renderParenFrame = (body: string, ide: string): string | null => {
   return `${functionSpan(fnRaw)}(${inner})`;
 };
 
-// "at [fn] file://path:line:col"
 const renderFileUrlFrame = (body: string, ide: string): string | null => {
   const m = body.match(FILE_URL_LOCATION_RE);
   if (!m) { return null; }

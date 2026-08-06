@@ -27,7 +27,6 @@ const redactSecretValues = (line: string, blockedKeys: readonly string[] | null)
   return line.replace(pattern, (_match, key, sep, quote) => `${key}${sep}${quote}[Redacted]${quote}`);
 };
 
-// A single line in the Source Trace window.
 interface SourceTraceLine {
   // 1-based absolute line number, as shown in the gutter.
   number: number;
@@ -35,7 +34,6 @@ interface SourceTraceLine {
   isError: boolean;
 }
 
-// The caret that highlights the offending token on the error line.
 interface SourceTraceCaret {
   // 1-based absolute line the caret sits on (== the error line).
   line: number;
@@ -43,13 +41,9 @@ interface SourceTraceCaret {
   charStart: number;
   // 0-based column where the caret run ends (exclusive).
   charEnd: number;
-  // Pre-built run of '^' characters.
   carets: string;
 }
 
-// The fully-resolved source trace — the single source of truth that the HTML
-// and ANSI presenters render from. Carries the windowed lines, the caret, and
-// the 1-based display coordinates (for the location link).
 interface SourceTrace {
   lines: SourceTraceLine[];
   caret: SourceTraceCaret | null;
@@ -57,7 +51,6 @@ interface SourceTrace {
   displayLine: number;
   // 1-based display column.
   displayCol: number;
-  // The file whose content was traced, if any (informational).
   resolvedPath: string | null;
 }
 
@@ -71,7 +64,6 @@ interface BuildSourceTraceInput {
   sourceStartLine?: number;
   // Number of context lines on each side of the error line.
   context?: number;
-  // Dynamic per-error blocked-keys list.
   blockedKeys?: readonly string[] | null;
 }
 
@@ -130,10 +122,6 @@ const windowSourceTrace = (params: {
   return { lines: traceLines, caret, displayLine, displayCol, resolvedPath };
 };
 
-// The canonical "resolved location -> debug trace" computation. Called once per
-// error render and shared by every presenter (HTML, ANSI, text metadata), so
-// the line-math / windowing / caret logic lives in exactly one place.
-//
 // Synchronous by design: the source content is resolved upstream by the async
 // error-creation pipeline (wrapWithLog -> resolveLocation reads from disk), so
 // by the time the trace is built the content is already in hand and no I/O is
@@ -150,19 +138,14 @@ const buildSourceTrace = (input: BuildSourceTraceInput): SourceTrace => {
     blockedKeys = null
   } = input;
 
-  // 1. Resolve 1-based display coordinates (always, even without source — the
-  //    renderers use these for the location link).
   const location = toDisplayLocation(lineno, colno, lineBase);
   const displayLine = location.line;
   const displayCol = location.col;
 
-  // 2. No source content -> no window. Callers that need a file read must
-  //    populate sourceContent before calling (done in wrapWithLog).
   if (!sourceContent) {
     return { lines: [], caret: null, displayLine, displayCol, resolvedPath: templatePath };
   }
 
-  // 3. Window + caret (shared pure core).
   return windowSourceTrace({
     content: sourceContent,
     displayLine,

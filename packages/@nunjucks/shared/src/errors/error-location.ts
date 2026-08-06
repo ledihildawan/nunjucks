@@ -53,7 +53,6 @@ const getActiveCallerInfo = (
   return { activeCaller, activeCallerLine, activeCallerCol };
 };
 
-// Stage 1: parse inputs and decide which caller (if any) owns the location.
 const resolveCallerInfo = (inputs: LocationInputs): CallerInfo => {
   const {
     template = null,
@@ -91,8 +90,6 @@ const resolveCallerInfo = (inputs: LocationInputs): CallerInfo => {
   };
 };
 
-// Reads the caller source file and, if the error's template literal is found
-// inside it, translates the template-internal (line, col) into the caller's.
 const resolveCallerFilePosition = async (
   activeCaller: string,
   template: string | null,
@@ -117,8 +114,6 @@ const resolveCallerFilePosition = async (
   return { source: fileContent, line: position.line, col: position.col };
 };
 
-// Stage 2: resolve the source content (reading the caller file if needed) and
-// the final (lineno, colno, lineBase) triple that won the precedence chain.
 const resolveSourceAndCoords = async (
   info: CallerInfo
 ): Promise<{ sourceContent: string | null; sourceStartLine: number; lineno: number | null; colno: number | null; lineBase: 'zero' | 'one' }> => {

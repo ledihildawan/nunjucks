@@ -1,5 +1,3 @@
-// Component function factory, keyword-args handling, and the
-// internal component context (props + slots).
 import { hasOwn } from '@nunjucks/shared';
 import type { SlotContext } from './slots.ts';
 
@@ -58,8 +56,6 @@ export const getKeywordArgs = (args: unknown[]): Record<string, unknown> => {
   if (kwargObjs.length === 0) {
     return {};
   }
-  // Multiple kwargs objects (e.g. `{% render %}` props + slots) merge,
-  // later entries win, and the `keywords` flag survives the merge.
   return Object.assign({}, ...kwargObjs);
 };
 

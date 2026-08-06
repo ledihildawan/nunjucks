@@ -1,8 +1,7 @@
 import { BLOCKED_KEYS_LIST } from './security/blocked-keys.ts';
 
-// Template keywords, JS builtins, filter names, and literals that users must
-// not shadow. All security-blocked names (from blocked-keys) are auto-included
-// so the two registries can never drift.
+// All security-blocked names (from blocked-keys) are auto-included so the two
+// registries can never drift.
 const RESERVED_KEYWORDS = new Set<string>([
   'if', 'elif', 'else', 'endif',
   'for', 'endfor', 'in',

@@ -11,8 +11,6 @@ export const compileRenderBlock = (ctx: Compiler, node: RenderNode, parentFrame:
   const frame = parentFrame.push(true);
   ctx.emitLine('frame = frame.push(true);');
 
-  // Build provided slot functions (default + named), passed to the component
-  // as kwargs.slots. Only slots actually provided end up in the record.
   const slots = node.providedSlots ?? [];
   const slotEntries: string[] = [];
   forEach(slots, slot => {

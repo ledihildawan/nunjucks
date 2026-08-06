@@ -9,8 +9,6 @@ import { peekToken, skip, expect } from "../../cursor.ts";
 import type { ParserContext } from "../../cursor.ts";
 import { parseExpression } from "../index.ts";
 
-// Stamp the bracket-notation flag on a lookup node in one place, so the symbol
-// cast stays centralized instead of being repeated at every postfix site.
 export const markBracketNotation = (node: Node, isBracket: boolean): void => {
   node[BracketNotation] = isBracket;
 };

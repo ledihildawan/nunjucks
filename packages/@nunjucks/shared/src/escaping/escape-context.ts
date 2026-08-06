@@ -50,7 +50,6 @@ interface ScriptStyleScan {
   lastClose: number;
 }
 
-// Hoisted so each pattern is compiled once rather than on every lookup.
 const UNCLOSED_OPEN_TAG_RE = /<[a-zA-Z][a-zA-Z0-9]*(?:\s+[^>]*)?$/i;
 const ATTRIBUTE_EQUALS_RE = /[=][\s]*["']?/;
 const QUOTED_ATTRIBUTE_VALUE_RE = /^["'`][^"'`]*["'`]/;

@@ -1,7 +1,5 @@
-// Template source-code security scanning. Shared by the runtime and validators
-// packages so the dangerous-code patterns and line/column math live in one
-// place. (Context-value scanning — findDangerousValues — is NOT consolidated
-// here: the runtime and validators implementations have meaningfully diverged.)
+// Context-value scanning (findDangerousValues) is deliberately NOT consolidated
+// here: the runtime and validators implementations have meaningfully diverged.
 
 export interface DangerousCodeViolation {
   message: string;
@@ -11,7 +9,6 @@ export interface DangerousCodeViolation {
   name: string | null;
 }
 
-// Hoisted so each pattern is compiled once rather than on every scan.
 const DANGEROUS_PATTERNS: ReadonlyArray<{ pattern: RegExp; message: string }> = [
   { pattern: /\beval\s*\(/u, message: 'eval() is not allowed' },
   { pattern: /\bFunction\s*\(/u, message: 'Function constructor is not allowed' },

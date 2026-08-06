@@ -34,7 +34,6 @@ export const parseFilterCallArgs = (ctx: ParserContext, node: Node): readonly No
 };
 
 export const parsePipeForward = (ctx: ParserContext, node: Node): Node => {
-  // The parameter stays untouched; `current` carries the growing pipe chain.
   let current = node;
 
   while (skip(ctx, TOKEN_PIPEFORWARD)) {

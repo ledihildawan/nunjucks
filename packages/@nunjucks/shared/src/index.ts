@@ -1,6 +1,3 @@
-// Cohesive domain clusters live in sub-folders (security/escaping/errors);
-// general cross-cutting utilities stay at the root.
-
 export {
   ENVIRONMENTS, isCodeExecutionPattern, getBlockedKeyCategory, isBlockedKey,
   isDangerousGlobal, BLOCKED_KEYS_LIST, DANGEROUS_GLOBALS_LIST,

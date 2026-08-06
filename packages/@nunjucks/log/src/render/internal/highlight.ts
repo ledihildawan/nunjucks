@@ -1,6 +1,5 @@
 import { escapeHtml } from '@nunjucks/shared';
 
-// Hoisted so each pattern is compiled once rather than on every token.
 const LEADING_WHITESPACE_RE = /^\s+/u;
 const PLAIN_RUN_RE = /^[^<{}"'|\s]+/u;
 

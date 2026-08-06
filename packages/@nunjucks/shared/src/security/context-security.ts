@@ -1,5 +1,3 @@
-// Canonical recursive context scanner (prototype-pollution keys, dangerous
-// globals, dangerous references), shared by runtime scrubbing and validators.
 import { keys, isFunction } from 'remeda';
 import { getBlockedKeyCategory, isDangerousGlobal } from './blocked-keys.ts';
 import process from 'node:process';
@@ -61,9 +59,6 @@ const checkValueDangerous = (
 ): string[] => {
   if (!isFunction(value) || !isTopLevel) { return []; }
   const fnName = value.name || key;
-  // A single dangerous function is reported once — the conditions are combined
-  // (not concatenated) so eval/Function and dangerous globals don't produce
-  // duplicate paths for the same key.
   const dangerous = (fnName === 'eval' || fnName === 'Function')
     || isDangerousGlobal(fnName)
     || (!!scan.allowedGlobals && !scan.allowedGlobals.includes(fnName) && !isBuiltIn(fnName));

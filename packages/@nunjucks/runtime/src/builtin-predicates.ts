@@ -1,6 +1,7 @@
 // Compiler emits `runtime.runTest(env, "name", target, ...args)` uniformly;
-// this map provides the implementation. User-registered tests via `config.tests`
-// take precedence over these built-ins.
+// this map provides the implementation. Built-in tests take precedence over
+// user-registered ones (a `name` that matches a built-in is never delegated
+// to `env.getTest`), so core tests like `defined`/`odd` cannot be shadowed.
 
 const isTypedArray = (val: unknown): boolean =>
   val instanceof Int8Array || val instanceof Uint8Array || val instanceof Uint8ClampedArray ||

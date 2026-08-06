@@ -26,9 +26,6 @@ interface EmitUndefinedWarningOptions {
   varName: string | null;
 }
 
-// NOTE: This function emits undefined variable warnings through two mechanisms:
-// 1. If the render context has a __warnings__ collector, append to it (preferred)
-// 2. Otherwise, fall back to console.warn (acceptable for debugging)
 const emitUndefinedWarning = (self: unknown, opts: EmitUndefinedWarningOptions): void => {
   const warning = createLog(
     'warning',

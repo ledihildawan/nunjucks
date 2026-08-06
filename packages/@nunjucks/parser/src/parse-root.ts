@@ -25,7 +25,6 @@ const parseUntilBlocks = (ctx: ParserContext, ...blockNames: string[]): Node => 
   return nodeList(0, 0, parseNodes(ctx, blockNames));
 };
 
-// Hoisted so each pattern is compiled once rather than on every data token.
 const LEADING_WHITESPACE_RE = /^\s*/;
 const TRAILING_WHITESPACE_RE = /\s*$/;
 const RAW_OPEN_TAG_RE = /^({%\s*raw\s*%})/;
