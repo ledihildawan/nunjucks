@@ -1,4 +1,4 @@
-import type { Tokenizer } from '../types.ts';
+import type { Tokenizer, LexerState } from '../types.ts';
 import { getChar, matches, advance, isFinished } from '../state.ts';
 import { createToken } from '../tokens.ts';
 import type { TokenType } from '../token-types.ts';
@@ -6,10 +6,10 @@ import type { TokenType } from '../token-types.ts';
 type RawState = {
   content: string;
   depth: number;
-  current: ReturnType<typeof advance>;
+  current: LexerState;
 };
 
-const skipWhitespaceAfterBlockStart = (state: ReturnType<typeof advance>): ReturnType<typeof advance> => {
+const skipWhitespaceAfterBlockStart = (state: LexerState): LexerState => {
   let current = state;
   while (!isFinished(current) && getChar(current) === ' ') {
     current = advance(current);
@@ -17,7 +17,7 @@ const skipWhitespaceAfterBlockStart = (state: ReturnType<typeof advance>): Retur
   return current;
 };
 
-const extractTagName = (state: ReturnType<typeof advance>): { name: string; current: ReturnType<typeof advance> } => {
+const extractTagName = (state: LexerState): { name: string; current: LexerState } => {
   let name = '';
   let current = state;
   while (!isFinished(current) && getChar(current) !== ' ' && getChar(current) !== '%' && getChar(current) !== '}') {
@@ -32,7 +32,7 @@ const getEndTagName = (name: string): string => (name === 'raw' ? 'endraw' : 'en
 const isWhitespaceChar = (char: string): boolean =>
   char === ' ' || char === '\n' || char === '\t' || char === '\r';
 
-const extractTagNameAfterBlockEnd = (beforeEnd: ReturnType<typeof advance>): { tagName: string; current: ReturnType<typeof advance> } => {
+const extractTagNameAfterBlockEnd = (beforeEnd: LexerState): { tagName: string; current: LexerState } => {
   let tagName = '';
   let current = beforeEnd;
   while (!isFinished(current) && getChar(current) !== '%' && getChar(current) !== '}') {
@@ -46,7 +46,7 @@ const extractTagNameAfterBlockEnd = (beforeEnd: ReturnType<typeof advance>): { t
 };
 
 const processBlockEndTag = (
-  current: ReturnType<typeof advance>,
+  current: LexerState,
   name: string,
   endTagName: string,
   depth: number,
@@ -82,7 +82,7 @@ const processBlockEndTag = (
 };
 
 const processRawContent = (
-  current: ReturnType<typeof advance>,
+  current: LexerState,
   name: string,
   endTagName: string,
   tags: { BLOCK_START: string; BLOCK_END: string }

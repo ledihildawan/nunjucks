@@ -1,6 +1,11 @@
+export { ERROR_DEFINITIONS, getError } from './registry.ts';
+export { createErrorDefinition } from './factory.ts';
+export { firstCapture } from './types.ts';
+export type { ErrorDefinition, SubjectExtractor, ExtraExtractor, ErrorSeverity, Classification, ClassifyInput, Classifier } from './types.ts';
+export { RUNTIME_ERRORS } from './runtime.ts';
+export { PARSER_ERRORS } from './parser.ts';
+export { SANDBOX_ERRORS } from './sandbox.ts';
+export { IO_ERRORS } from './io.ts';
+export { FILTER_ERRORS } from './filter.ts';
+export { TEMPLATE_ERRORS } from './template.ts';
 export { classifyFromError } from './classify.ts';
-export type { ClassifyInput } from './types.ts';
-export { ERROR_DEFINITIONS, RULES, DEFAULT_CLASSIFICATION } from './registry.ts';
-export type { ErrorName } from './registry.ts';
-export { createErrorDefinition, ERROR_TEMPLATES } from './factory.ts';
-export type { ErrorDefinitionOptions } from './factory.ts';

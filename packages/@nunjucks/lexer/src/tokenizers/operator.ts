@@ -1,27 +1,25 @@
 import type { Tokenizer } from '../types.ts';
-import { DELIM_CHARS, validators } from '../constants.ts';
+import { DELIM_CHARS, isComplexOperator } from '../constants.ts';
 import { getChar, getPeek, advance } from '../state.ts';
 import { createToken } from '../tokens.ts';
 import type { TokenType } from '../token-types.ts';
-
-const { isComplexOperator } = validators;
 
 /** Longest operator the lexer recognises, e.g. `**=` or `//=`. */
 const MAX_OPERATOR_CHARS = 3;
 
 const TOKEN_TYPES: Record<string, TokenType> = {
-  '(' : 'left-paren' as TokenType,
-  ')' : 'right-paren' as TokenType,
-  '[' : 'left-bracket' as TokenType,
-  ']' : 'right-bracket' as TokenType,
-  '{' : 'left-curly' as TokenType,
-  '}' : 'right-curly' as TokenType,
-  ',' : 'comma' as TokenType,
-  ':' : 'colon' as TokenType,
-  '|>' : 'pipe-forward' as TokenType,
+  '(' : 'left-paren',
+  ')' : 'right-paren',
+  '[' : 'left-bracket',
+  ']' : 'right-bracket',
+  '{' : 'left-curly',
+  '}' : 'right-curly',
+  ',' : 'comma',
+  ':' : 'colon',
+  '|>' : 'pipe-forward',
 };
 
-const matchTokenType = (char: string): TokenType => TOKEN_TYPES[char] ?? 'operator' as TokenType;
+const matchTokenType = (char: string): TokenType => TOKEN_TYPES[char] ?? 'operator';
 
 export const tokenizeOperator: Tokenizer = (state) => {
   const char = getChar(state);
@@ -39,7 +37,7 @@ export const tokenizeOperator: Tokenizer = (state) => {
   const op = opLen === MAX_OPERATOR_CHARS ? threeChar : opLen === 2 ? twoChar : char;
   const current = advance(state, opLen);
 
-  const type: TokenType = op === '...' ? ('spread' as TokenType) : matchTokenType(op);
+  const type: TokenType = op === '...' ? 'spread' : matchTokenType(op);
 
   return {
     token: createToken(type, op, state.lineno, state.colno),

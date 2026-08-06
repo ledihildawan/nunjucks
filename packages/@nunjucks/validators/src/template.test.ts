@@ -1,42 +1,47 @@
-import { describe, expect, test } from 'bun:test';
-import { validateTemplate } from './template.ts';
+import { describe, test, expect } from 'bun:test';
+import { validateTemplate, type TemplateValidatorConfig } from './template.ts';
 
 describe('validateTemplate', () => {
-  test('is valid for a clean template with no config', () => {
-    expect(validateTemplate('Hello {{ name }}', {}).valid).toBe(true);
-  });
+  const safeConfig: TemplateValidatorConfig = {};
 
-  test('does not scan for dangerous code unless strict', () => {
-    const result = validateTemplate('{{ eval("x") }}', {});
+  test('valid template passes', () => {
+    const result = validateTemplate('{{ name }}', safeConfig);
     expect(result.valid).toBe(true);
   });
 
-  test('flags eval under strictMode', () => {
+  test('maxTemplateSize rejects oversized template', () => {
+    const result = validateTemplate('x'.repeat(100), { maxTemplateSize: 50 });
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.errors[0].code).toBe('TEMPLATE_SIZE_EXCEEDED');
+    }
+  });
+
+  test('maxTemplateSize = 0 skips check', () => {
+    const result = validateTemplate('x'.repeat(100), { maxTemplateSize: 0 });
+    expect(result.valid).toBe(true);
+  });
+
+  test('strictMode detects dangerous code', () => {
     const result = validateTemplate('{{ eval("x") }}', { strictMode: true });
     expect(result.valid).toBe(false);
-    expect(result.errors[0]?.code).toBe('DANGEROUS_TEMPLATE_CODE');
-    expect(result.errors[0]?.violations?.[0]?.name).toBe('eval');
+    if (!result.valid) {
+      expect(result.errors[0].code).toBe('DANGEROUS_TEMPLATE_CODE');
+    }
   });
 
-  test('flags Function constructor under strictMode', () => {
-    const result = validateTemplate('{{ Function("return 1") }}', { strictMode: true });
+  test('whitelistStrict detects dangerous code', () => {
+    const result = validateTemplate('{{ require("fs") }}', { whitelistStrict: true });
     expect(result.valid).toBe(false);
   });
 
-  test('reports the first violation line/col', () => {
-    const result = validateTemplate('line1\n{{ eval("x") }}', { strictMode: true });
-    const violation = result.errors[0]?.violations?.[0];
-    expect(violation?.line).toBe(2);
-    expect(typeof violation?.col).toBe('number');
+  test('non-strict mode skips dangerous code check', () => {
+    const result = validateTemplate('{{ eval("x") }}', safeConfig);
+    expect(result.valid).toBe(true);
   });
 
-  test('enforces maxTemplateSize', () => {
-    const result = validateTemplate('abc', { maxTemplateSize: 2 });
-    expect(result.valid).toBe(false);
-    expect(result.errors[0]?.code).toBe('TEMPLATE_SIZE_EXCEEDED');
-  });
-
-  test('maxTemplateSize of 0 disables the size check', () => {
-    expect(validateTemplate('abc', { maxTemplateSize: 0 }).valid).toBe(true);
+  test('clean template passes strict mode', () => {
+    const result = validateTemplate('{{ name | upper }}', { strictMode: true });
+    expect(result.valid).toBe(true);
   });
 });

@@ -57,7 +57,6 @@ const errorRoutes: ErrorRoute[] = [
   { path: 'undefined-value', template: 'errors/undefined-value.njk', context: { product: null }, category: 'undefined_value', desc: 'Nested property is null' },
   { path: 'syntax-error', template: 'errors/syntax-error.njk', context: {}, category: 'syntax_error', desc: 'Invalid template syntax' },
   { path: 'parser-expected', template: 'errors/parser-expected.njk', context: {}, category: 'syntax_error', desc: 'Parser expected token ?' },
-  { path: 'no-caller-macro', template: 'errors/no-caller-macro.njk', context: {}, category: 'no_caller', desc: 'caller outside macro' },
   { path: 'invalid-lookup', template: 'errors/invalid-lookup.njk', context: {}, category: 'invalid_lookup', desc: 'Invalid bracket notation' },
   { path: 'duplicate-block', template: 'errors/duplicate-block.njk', context: {}, category: 'duplicate_block', desc: 'Duplicate block definition' },
   { path: 'unknown-block-tag', template: 'errors/unknown-block-tag.njk', context: {}, category: 'unknown_block_tag', desc: 'Unmatched closing tag' },
@@ -87,8 +86,7 @@ errorRoutes.forEach(({ path: routePath, template, context, filters }) => {
 
 router.get('/inline-filter-error', async (req, res, next) => {
   try {
-    const template = '{{ "test" |> nonexistentFilter }}';
-    await render(template, {}, { dev: true });
+    await render('{{ "test" |> nonexistentFilter }}', {}, { dev: true });
     res.send('Should have thrown');
   } catch (err) {
     next(err);
@@ -97,8 +95,7 @@ router.get('/inline-filter-error', async (req, res, next) => {
 
 router.get('/inline-syntax-error', async (req, res, next) => {
   try {
-    const template = '{% if true %} {% endif %} {{ invalid';
-    await render(template, {}, { dev: true });
+    await render('{% if true %} {% endif %} {{ invalid', {}, { dev: true });
     res.send('Should have thrown');
   } catch (err) {
     next(err);
@@ -123,9 +120,11 @@ router.get('/no-super-block', async (req, res, next) => {
   }
 });
 
-router.get('/caller-outside-call', async (req, res, next) => {
+router.get('/reserved-keyword', async (req, res, next) => {
   try {
-    const html = await render('{% macro foo() %}{{ caller() }}{% endmacro %}{{ foo() }}', {}, { dev: true });
+    // `super` is reserved — calling it outside a block context is a
+    // reserved-keyword error.
+    const html = await render('{{ super() }}', {}, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -207,15 +206,6 @@ router.get('/sandbox-constructor', async (req, res, next) => {
 router.get('/sandbox-process', async (req, res, next) => {
   try {
     const html = await render('{{ user.global }}', { user: { global: process } }, { dev: true, sandbox: true, contextStrict: 'error' });
-    res.type('html').send(html);
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get('/sandbox-set', async (req, res, next) => {
-  try {
-    const html = await render('{% set user.__proto__ = {} %}', {}, { dev: true, sandbox: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -304,7 +294,37 @@ router.get('/blocked-context-keys', async (req, res, next) => {
   }
 });
 
+router.get('/blocked-custom-key', async (req, res, next) => {
+  try {
+    const html = await render('{{ creditCard }}', { creditCard: '4111-1111-1111-1111' }, { dev: true, strictMode: true, blockedContextKeys: ['creditCard'] });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Demonstrates that without `blockedContextKeys`, sensitive-looking keys are
+// NOT auto-redacted. We trigger a deliberate error so the render context
+// shows up in the error page.
+router.get('/no-blocked-context-keys', async (req, res, next) => {
+  try {
+    const html = await render('{{ password.upper() }}', { password: 'mySecretValue123', apiKey: 'abc-def-ghi' }, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/dangerous-context', async (req, res, next) => {
+  try {
+    const html = await render('{{ env.NODE_ENV }}', {}, { dev: true });
+    res.type('html').send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/dangerous-context-values', async (req, res, next) => {
   try {
     const html = await render('{{ user.name }}', { user: { name: 'test', eval: 'profile label' }, globalThis }, { dev: true, strictMode: true, scanContextValues: true });
     res.type('html').send(html);
@@ -315,7 +335,7 @@ router.get('/dangerous-context', async (req, res, next) => {
 
 router.get('/dangerous-template', async (req, res, next) => {
   try {
-    const html = await render('{% set x = eval("1+1") %}{{ x }}', {}, { dev: true, strictMode: true });
+    const html = await render('{{ eval("1+1") }}', {}, { dev: true, strictMode: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -343,11 +363,7 @@ router.get('/invalid-config', async (req, res, next) => {
 
 router.get('/key-not-found', async (req, res, next) => {
   try {
-    const html = await render(`
-
-      {{ missingKey }}
-
-       `, {}, { dev: true, undefined: 'strict' });
+    const html = await render('{{ missingKey }}', {}, { dev: true, undefined: 'strict' });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -365,7 +381,7 @@ router.get('/import-error', async (req, res, next) => {
 
 router.get('/container-error', async (req, res, next) => {
   try {
-    const html = await render('{% set x = container.get("missing") %}', { container: { get: undefined } }, { dev: true });
+    const html = await render('{{ container.get("missing") }}', { container: { get: undefined } }, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -491,7 +507,7 @@ router.get('/sandbox-context-error', async (req, res, next) => {
 
 router.get('/container-factory', async (req, res, next) => {
   try {
-    const html = await render('{% set x = container.get("test") %}', { container: { get: 'not a function' } }, { dev: true });
+    const html = await render('{{ container.get("test") }}', { container: { get: 'not a function' } }, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -500,7 +516,7 @@ router.get('/container-factory', async (req, res, next) => {
 
 router.get('/container-not-registered', async (req, res, next) => {
   try {
-    const html = await render('{% set x = myContainer.get("test") %}', {}, { dev: true });
+    const html = await render('{{ myContainer.get("test") }}', {}, { dev: true });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -626,8 +642,7 @@ router.get('/', async (req, res, next) => {
       {
         name: 'RESERVED_KEYWORD_CONTEXT',
         items: [
-          { path: 'no-caller-macro', desc: 'caller outside macro context' },
-          { path: 'caller-outside-call', desc: 'caller() used outside call block' },
+          { path: 'reserved-keyword', desc: 'Reserved keyword used as a function call' },
         ]
       },
       {
@@ -657,14 +672,15 @@ router.get('/', async (req, res, next) => {
       {
         name: 'RENDER_ERROR',
         items: [
-          { path: 'sandbox-set', desc: 'Sandbox blocks setting __proto__' },
           { path: 'sandbox-context-modify', desc: 'Cannot modify sandboxed context' },
           { path: 'sandbox-allowlist', desc: 'Variable not in sandbox allowlist' },
           { path: 'reserved-keyword-filter', desc: 'Using reserved word as filter' },
           { path: 'reserved-keyword-global', desc: 'Using reserved word as global' },
           { path: 'template-size', desc: 'Template exceeds maximum size' },
           { path: 'invalid-config', desc: 'Invalid config (negative timeout)' },
-          { path: 'blocked-context-keys', desc: 'Context contains blocked keys' },
+          { path: 'blocked-context-keys', desc: 'Context contains blocked keys (dynamic redaction)' },
+          { path: 'blocked-custom-key', desc: 'Custom blocked key (no heuristic)' },
+          { path: 'no-blocked-context-keys', desc: 'No blocked keys: library does not assume' },
           { path: 'dangerous-context', desc: 'Context contains dangerous values' },
           { path: 'dangerous-template', desc: 'Template contains dangerous code' },
         ]

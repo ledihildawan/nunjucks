@@ -14,16 +14,15 @@ const formatContextValue = (value: unknown): string => {
     return sanitizeForAnsi(value);
   }
   const obj = value as Record<string, unknown>;
-  const k = pipe(obj, keys());
-  if (k.length === 0) {
+  const entries = pipe(obj, keys(), map(key => `${INDENT}${key}: ${sanitizeForAnsi(obj[key])}`));
+  if (entries.length === 0) {
     return '(empty)';
   }
-  const entries = k.map(key => `${INDENT}${key}: ${sanitizeForAnsi(obj[key])}`).join('\n');
-  return `:\n${entries}`;
+  return `:\n${entries.join('\n')}`;
 };
 
-const renderContextAnsi = (context: Record<string, unknown>): string => {
-  const normalized = normalizeRenderContext(context);
+const renderContextAnsi = (context: Record<string, unknown>, blockedKeys?: readonly string[] | null): string => {
+  const normalized = normalizeRenderContext(context, { blockedKeys });
   const header = `\n${picocolors.bold('Render Context:')}\n`;
   if (typeof normalized !== 'object' || normalized === null) {
     return header;

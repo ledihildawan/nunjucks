@@ -1,10 +1,6 @@
-
-// SUPER - Transform super() calls in blocks
-import type { Node } from '@nunjucks/nodes/types';
-import { symbol, super_ } from '@nunjucks/nodes/factory';
-import { isBlock, isFunCall } from '@nunjucks/nodes/guards';
-import { createGensym } from './symbol.ts';
-import { walk } from '@nunjucks/nodes/traverse';
+import type { Node, NodeLocation } from '@nunjucks/nodes';
+import { symbol, super_, isBlock, isFunCall, walk } from '@nunjucks/nodes';
+import { createGensym } from '@nunjucks/runtime';
 
 export const liftSuper = (ast: Node): Node => walk(ast, (blockNode: Node): Node | undefined => {
     if (!isBlock(blockNode)) { return; }
@@ -13,7 +9,7 @@ export const liftSuper = (ast: Node): Node => walk(ast, (blockNode: Node): Node 
     if (!body) { return; }
 
     let hasSuper = false;
-    let superLocation: { lineno: number; colno: number } | null = null;
+    let superLocation: NodeLocation | null = null;
     const gensym = createGensym();
     const sym = gensym();
 
@@ -33,9 +29,9 @@ export const liftSuper = (ast: Node): Node => walk(ast, (blockNode: Node): Node 
 
     if (!(hasSuper && superLocation)) { return; }
 
-    const superLoc = superLocation as { lineno: number; colno: number };
+    const superLoc = superLocation as NodeLocation;
     const bodyChildren = newBody.children ?? [];
-    const blockName = blockNode.name ?? '';
+    const blockName = typeof blockNode.name === 'string' ? blockNode.name : String(blockNode.name?.value ?? '');
     const newChildren = [
       super_(
         superLoc.lineno,
@@ -45,6 +41,6 @@ export const liftSuper = (ast: Node): Node => walk(ast, (blockNode: Node): Node 
       ),
       ...bodyChildren,
     ];
-    const replacedBody = { ...newBody, children: newChildren } as Node;
-    return { ...blockNode, body: replacedBody } as Node;
+    const replacedBody = { ...newBody, children: newChildren };
+    return { ...blockNode, body: replacedBody };
   });

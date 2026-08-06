@@ -1,4 +1,6 @@
-import type { Env } from '../core/env.ts';
+import type { Env, BlockLocation } from '@nunjucks/runtime';
+import type { IncludeChain } from '@nunjucks/log';
+import type { CompiledTemplateExports } from '@nunjucks/shared';
 import type { RuntimeContext } from './runtime-context.ts';
 
 export { Template };
@@ -8,11 +10,11 @@ const Template = Symbol('Template');
 export interface TemplateState {
   env: Env;
   path: string | undefined;
-  _includeChain: unknown[] | null;
+  _includeChain: IncludeChain | null;
   tmplStr: string | null;
-  tmplProps: Record<string, unknown> | null;
+  tmplProps: CompiledTemplateExports | null;
   blocks: Record<string, (...args: unknown[]) => unknown>;
-  blockMeta: Record<string, unknown>;
+  blockMeta: Record<string, BlockLocation>;
   rootRenderFunc: ((env: Env, context: unknown, frame: unknown, runtime: RuntimeContext) => unknown) | null;
   compiled: boolean;
   compiler?: {
@@ -32,9 +34,9 @@ export interface TemplateObject {
   path: string | undefined;
   compiled: boolean;
   blocks: Record<string, (...args: unknown[]) => unknown>;
-  blockMeta: Record<string, unknown>;
+  blockMeta: Record<string, BlockLocation>;
   rootRenderFunc: ((env: Env, context: unknown, frame: unknown, runtime: RuntimeContext) => unknown) | null;
-  render: (ctx: unknown, parentFrame?: unknown) => Promise<string>;
+  render: (ctx: Record<string, unknown>, parentFrame?: unknown) => Promise<string>;
   compile: () => void;
-  getExported: (ctx?: unknown, parentFrame?: unknown) => Promise<Record<string, unknown>>;
+  getExported: (ctx?: Record<string, unknown>, parentFrame?: unknown) => Promise<Record<string, unknown>>;
 }

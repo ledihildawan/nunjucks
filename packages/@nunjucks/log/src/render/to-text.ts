@@ -1,10 +1,12 @@
 import { pipe, filter, join, map, split } from 'remeda';
 import { shortenPath } from './internal/path-shortener.ts';
-import { toDisplayLocation, type LineBase } from './internal/location.ts';
-import { classifyFromError } from '../errors/classify.ts';
+import { toDisplayLocation } from './internal/location.ts';
+import { mergeErrorParts } from './internal/error-parts.ts';
+import { parseStackFrame } from './internal/stack-parse.ts';
 import { slice } from '@nunjucks/shared';
 import { stripMarkdown } from './internal/markdown.ts';
 import { getErrorMessage } from './internal/message.ts';
+import type { ErrorLike } from '../types.ts';
 
 interface ToTextOptions {
   verbosity?: 'simple' | 'medium' | 'full';
@@ -13,9 +15,6 @@ interface ToTextOptions {
   colno?: number | null;
 }
 
-const STACK_LOCATION_RE = /\(([^()]+):(\d+):(\d+)\)$/u;
-const STACK_FUNCTION_RE = /^at\s+([^\s]+)/u;
-
 const getSeverityLabel = (severity: 'error' | 'warning' | 'info' | undefined): string => {
   if (severity === 'warning') { return 'Warning:'; }
   if (severity === 'info') { return 'Info:'; }
@@ -23,19 +22,15 @@ const getSeverityLabel = (severity: 'error' | 'warning' | 'info' | undefined): s
 };
 
 const formatStackLine = (line: string): string => {
-  const trimmed = line.trim();
-  const pathMatch = trimmed.match(STACK_LOCATION_RE);
-  if (pathMatch?.[1] && pathMatch[2]) {
-    const [, fullPath, lineNum] = pathMatch;
-    const shortPath = shortenPath(fullPath);
-    const fnMatch = trimmed.match(STACK_FUNCTION_RE);
-    const fn = fnMatch?.[1] ?? '';
-    if (fn) {
-      return `  at ${fn} (${shortPath}:${lineNum})`;
+  const frame = parseStackFrame(line);
+  if (frame.path && frame.line !== null) {
+    const shortPath = shortenPath(frame.path);
+    if (frame.fn) {
+      return `  at ${frame.fn} (${shortPath}:${frame.line})`;
     }
-    return `  at ${shortPath}:${lineNum}`;
+    return `  at ${shortPath}:${frame.line}`;
   }
-  return `  ${trimmed}`;
+  return `  ${frame.raw}`;
 };
 
 const formatMediumText = (
@@ -48,11 +43,12 @@ const formatMediumText = (
   causes: string[],
   documentationUrl: string | null
 ): string => {
-  const path = templatePath || (error as { templateName?: string }).templateName || 'unknown';
+  const err = error as ErrorLike;
+  const path = templatePath || err.templateName || 'unknown';
   const location = toDisplayLocation(
-    lineno ?? (error as { lineno?: number | null }).lineno ?? null,
-    colno ?? (error as { colno?: number | null }).colno ?? null,
-    (error as { lineBase?: LineBase | null }).lineBase ?? 'zero'
+    lineno ?? err.lineno ?? null,
+    colno ?? err.colno ?? null,
+    err.lineBase ?? 'zero'
   );
   const shortPath = shortenPath(path);
   const locationStr = ` at ${shortPath}:${location.line}:${location.col}`;
@@ -71,21 +67,10 @@ interface ErrorParts {
   severity: 'error' | 'warning' | 'info' | undefined;
 }
 
-const extractErrorParts = (error: unknown, classification: ReturnType<typeof classifyFromError>): ErrorParts => {
-  const errObj = error as {
-    causes?: string[];
-    fixCode?: string | null;
-    fixComment?: string | null;
-    documentationUrl?: string | null;
-    severity?: 'error' | 'warning' | 'info';
-  };
-  return {
-    causes: classification.causes?.length ? [...classification.causes] : [...(errObj.causes || [])],
-    fixCode: classification.fixCode ?? errObj.fixCode ?? '',
-    fixComment: classification.fixComment ?? errObj.fixComment ?? '',
-    documentationUrl: classification.documentationUrl ?? errObj.documentationUrl ?? null,
-    severity: errObj.severity,
-  };
+const extractErrorParts = (error: unknown): ErrorParts => {
+  const parts = mergeErrorParts(error);
+  const errObj = error as { severity?: 'error' | 'warning' | 'info' };
+  return { ...parts, severity: errObj.severity };
 };
 
 const formatCauses = (causes: string[]): string[] => {
@@ -118,18 +103,7 @@ const toText = (error: unknown, options: ToTextOptions = {}): string => {
     return message;
   }
 
-  const errObj = error as {
-    code?: string | null;
-    subject?: string | null;
-    causes?: string[];
-    fixCode?: string | null;
-    fixComment?: string | null;
-    documentationUrl?: string | null;
-    severity?: 'error' | 'warning' | 'info';
-  };
-
-  const classification = classifyFromError(errObj);
-  const { causes, fixCode, fixComment, documentationUrl, severity } = extractErrorParts(error, classification);
+  const { causes, fixCode, fixComment, documentationUrl, severity } = extractErrorParts(error);
   const severityLabel = getSeverityLabel(severity);
 
   if (verbosity === 'medium' && (templatePath || lineno !== undefined || colno !== undefined)) {

@@ -1,17 +1,19 @@
 import { reduce } from 'remeda';
-import { hasOwn } from '@nunjucks/shared/type-guards';
+import { hasOwn } from '@nunjucks/shared';
 
 export const _prepareAttributeParts = (attr: string | number | null | undefined): (string | number)[] => {
-  if (!attr) { return []; }
+  if (attr == null) { return []; }
   if (typeof attr === 'string') {
     return attr.split('.');
   }
   return [attr];
 };
 
-export const getAttrGetter = (attribute: string | number): ((item: Record<string, unknown>) => unknown) => {
+export const getAttrGetter = <T extends Record<string, unknown>>(
+  attribute: string | number,
+): ((item: T) => unknown) => {
   const parts = _prepareAttributeParts(attribute);
-  return (item: Record<string, unknown>): unknown =>
+  return (item: T): unknown =>
     reduce(
       parts,
       (_item, part) => {

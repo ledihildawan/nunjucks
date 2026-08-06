@@ -1,58 +1,43 @@
 import { isLiteral, isLookupVal, isSlice, isSymbol } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
+import type { Node, LookupNode, SliceNode, CallNode, NodeLocation } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import { emitLocationGuard } from '../compiler-helpers.ts';
 import { compileAggregate } from './container.ts';
 
-const locationFor = (node: Node | undefined, fallback: Node = node as Node): { lineno: number; colno: number } => ({
-  lineno: node?.lineno ?? fallback?.lineno ?? 0,
-  colno: node?.colno ?? fallback?.colno ?? 0
+const locationFor = (node: Node | undefined, fallback: Node): NodeLocation => ({
+  lineno: node?.lineno ?? fallback.lineno,
+  colno: node?.colno ?? fallback.colno
 });
-
-const emitLocationGuard = (ctx: Compiler, location: { lineno: number; colno: number }): void => {
-  ctx.emit(`(lineno = ${location.lineno}, colno = ${location.colno}, `);
-};
 
 const getTargetName = (node: Node | undefined): string | null => {
   if (!node) { return null; }
-  if (isSymbol(node)) { return node.value as string; }
+  if (isSymbol(node)) { return node.value; }
   if (isLookupVal(node)) {
-    const parentName = getTargetName(node.target as Node);
-    const val = node.val as Node;
-    const propName: unknown = isLiteral(val) ? (val.value as unknown) : null;
+    const parentName = getTargetName(node.target);
+    const val = node.val;
+    const propName: unknown = isLiteral(val) ? val.value : null;
     if (parentName && propName) { return `${parentName}.${propName}`; }
   }
   return null;
 };
 
-const emitSlice = (ctx: Compiler, val: Node, node: Node, frame: Frame): void => {
+const emitSlice = (ctx: Compiler, val: SliceNode, node: LookupNode, frame: Frame): void => {
   ctx.emit('runtime.slice((');
-  ctx.compileExpression(node.target as Node, frame);
+  ctx.compileExpression(node.target, frame);
   ctx.emit('), ');
-  if (val.start) {
-    ctx.compileExpression(val.start as Node, frame);
-  } else {
-    ctx.emit('null');
-  }
+  if (val.start) { ctx.compileExpression(val.start, frame); } else { ctx.emit('null'); }
   ctx.emit(', ');
-  if (val.stop) {
-    ctx.compileExpression(val.stop as Node, frame);
-  } else {
-    ctx.emit('null');
-  }
+  if (val.stop) { ctx.compileExpression(val.stop, frame); } else { ctx.emit('null'); }
   ctx.emit(', ');
-  if (val.step) {
-    ctx.compileExpression(val.step as Node, frame);
-  } else {
-    ctx.emit('null');
-  }
+  if (val.step) { ctx.compileExpression(val.step, frame); } else { ctx.emit('null'); }
   ctx.emit(')');
 };
 
-const emitMemberLookup = (ctx: Compiler, node: Node, val: Node, frame: Frame): void => {
-  const parentName = getTargetName(node.target as Node);
+const emitMemberLookup = (ctx: Compiler, node: LookupNode, val: Node, frame: Frame): void => {
+  const parentName = getTargetName(node.target);
   ctx.emit('runtime.memberLookup((');
-  ctx.compileExpression(node.target as Node, frame);
+  ctx.compileExpression(node.target, frame);
   ctx.emit('),');
   ctx.compileExpression(val, frame);
   if (parentName === null) {
@@ -63,10 +48,10 @@ const emitMemberLookup = (ctx: Compiler, node: Node, val: Node, frame: Frame): v
   ctx.emit(')');
 };
 
-export const compileLookupVal = (ctx: Compiler, node: Node, frame: Frame): void => {
-  const val = node.val as Node;
+export const compileLookupVal = (ctx: Compiler, node: LookupNode, frame: Frame): void => {
+  const val = node.val;
   const location = locationFor(val, node);
-  emitLocationGuard(ctx, location);
+  emitLocationGuard(ctx, location.lineno, location.colno);
 
   if (isSlice(val)) {
     emitSlice(ctx, val, node, frame);
@@ -77,46 +62,36 @@ export const compileLookupVal = (ctx: Compiler, node: Node, frame: Frame): void 
   ctx.emit(')');
 };
 
-export const compileOptionalChain = (ctx: Compiler, node: Node, frame: Frame): void => {
-  emitLocationGuard(ctx, locationFor(node.val as Node, node));
+export const compileOptionalChain = (ctx: Compiler, node: LookupNode, frame: Frame): void => {
+  const loc = locationFor(node.val, node);
+  emitLocationGuard(ctx, loc.lineno, loc.colno);
   ctx.emit('runtime.optionalMemberLookup((');
-  ctx.compileExpression(node.target as Node, frame);
+  ctx.compileExpression(node.target, frame);
   ctx.emit('),');
-  ctx.compileExpression(node.val as Node, frame);
+  ctx.compileExpression(node.val, frame);
   ctx.emit(')');
   ctx.emit(')');
 };
 
-export const compileOptionalCall = (ctx: Compiler, node: Node, frame: Frame): void => {
+export const compileOptionalCall = (ctx: Compiler, node: CallNode, frame: Frame): void => {
   ctx.emit('((');
-  ctx.compileExpression(node.name as Node, frame);
+  ctx.compileExpression(node.name, frame);
   ctx.emit(') == null ? undefined : ');
-  ctx.compileExpression(node.name as Node, frame);
+  ctx.compileExpression(node.name, frame);
   ctx.emit('(');
-  compileAggregate(ctx, node.args as Node, frame, { startChar: '', endChar: ')' });
+  compileAggregate(ctx, node, frame, { startChar: '', endChar: ')' });
   ctx.emit(')');
 };
 
-export const compileSlice = (ctx: Compiler, node: Node, frame: Frame): void => {
-  emitLocationGuard(ctx, locationFor(node));
+export const compileSlice = (ctx: Compiler, node: SliceNode, frame: Frame): void => {
+  const loc = locationFor(node, node);
+  emitLocationGuard(ctx, loc.lineno, loc.colno);
   ctx.emit('runtime.slice((');
-  if (node.start) {
-    ctx.compileExpression(node.start as Node, frame);
-  } else {
-    ctx.emit('null');
-  }
+  if (node.start) { ctx.compileExpression(node.start, frame); } else { ctx.emit('null'); }
   ctx.emit('), (');
-  if (node.stop) {
-    ctx.compileExpression(node.stop as Node, frame);
-  } else {
-    ctx.emit('null');
-  }
+  if (node.stop) { ctx.compileExpression(node.stop, frame); } else { ctx.emit('null'); }
   ctx.emit('), (');
-  if (node.step) {
-    ctx.compileExpression(node.step as Node, frame);
-  } else {
-    ctx.emit('null');
-  }
+  if (node.step) { ctx.compileExpression(node.step, frame); } else { ctx.emit('null'); }
   ctx.emit('))');
   ctx.emit(')');
 };

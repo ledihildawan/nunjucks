@@ -1,8 +1,7 @@
 export { createTokenizer } from './lexer.ts';
-export { createToken } from './tokens.ts';
+export { createToken, isStringToken, isSymbolToken, isBlockEndToken, isVariableEndToken, isOperatorToken } from './tokens.ts';
 export type { Token } from './token-types.ts';
 export type { LexerOptions } from './types.ts';
-export { TOKEN_TYPES } from './token-types.ts';
 export type { Delimiters } from './delimiters.ts';
 
 export {
@@ -51,3 +50,5 @@ export {
   REGEX_FLAGS,
   WHITESPACE_CHARS,
 } from './delimiters.ts';
+
+export { isTestKeyword } from './predicate-definitions.ts';

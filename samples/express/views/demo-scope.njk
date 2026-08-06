@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head><title>Scope Block Demo</title></head>
+<body>
+  <h1>Scope Block Demo</h1>
+  
+  <h2>Scoped Variables via walrus :=</h2>
+  {% scope %}
+    {{ x := 42 }}{{ name := "World" }}
+    <p>Inside scope: x = {{ x }}, name = {{ name }}</p>
+  {% endscope %}
+  
+  <h2>Inline Bindings</h2>
+  {% scope foo="hello", bar="world" %}
+    <p>foo = {{ foo }}, bar = {{ bar }}</p>
+  {% endscope %}
+</body>
+</html>

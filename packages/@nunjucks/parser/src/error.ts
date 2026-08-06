@@ -3,6 +3,7 @@ import { find } from 'remeda';
 import { MATCH_ANY_RE } from '@nunjucks/shared';
 import { peekToken } from "./cursor.ts";
 import type { ParserContext } from "./cursor.ts";
+import type { ErrorDefinitionEntry } from '@nunjucks/log';
 
 const CAUSE_PATTERNS: Array<{ check: (lower: string) => boolean; causes: string[] }> = [
   { check: lower => lower.includes('expected') && lower.includes('expression'), causes: ['Missing expression where one is required', 'Check for empty `{{ }}` or `{% %}` blocks'] },
@@ -39,8 +40,8 @@ export const EXPECTED_COLON_AFTER_DICT_KEY = 'EXPECTED_COLON_AFTER_DICT_KEY';
 export const error = (ctx: ParserContext, msg: string, lineno?: number, colno?: number, sentinel?: string) => {
   const needsResolve = lineno === undefined || colno === undefined;
   const peeked = needsResolve ? peekToken(ctx) : undefined;
-  const resolvedLineno = needsResolve ? (peeked?.lineno ?? ctx.tokens?.lineno) : lineno;
-  const resolvedColno = needsResolve ? (peeked?.colno ?? ctx.tokens?.colno) : colno;
+  const resolvedLineno = needsResolve ? (peeked?.lineno ?? 0) : lineno;
+  const resolvedColno = needsResolve ? (peeked?.colno ?? 0) : colno;
   const err = createLog('error', {
     name: 'PARSER_ERROR',
     message: () => msg,
@@ -58,4 +59,14 @@ export const error = (ctx: ParserContext, msg: string, lineno?: number, colno?: 
 
 export const fail = (ctx: ParserContext, msg: string, lineno?: number, colno?: number, sentinel?: string): never => {
   throw error(ctx, msg, lineno, colno, sentinel);
+};
+
+export const errorAt = (
+  lineno: number,
+  colno: number,
+  errorDef: ErrorDefinitionEntry,
+  subject?: string,
+  extra?: Record<string, string>
+): never => {
+  throw createLog('error', errorDef, extra ?? {}, subject ?? null, { lineno, colno, phase: 'parse', lineBase: 'zero' });
 };

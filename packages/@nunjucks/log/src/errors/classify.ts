@@ -34,6 +34,4 @@ const classifyFromError = (error: ErrorWithExtras | null): Classification => {
   });
 };
 
-export { classifyInput } from './classifier.ts';
-
 export { classifyFromError };

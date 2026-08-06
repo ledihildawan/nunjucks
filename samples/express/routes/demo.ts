@@ -9,22 +9,13 @@ const VIEWS = path.join(__dirname, '..', 'views');
 
 const router: Router = express.Router();
 
-router.get('/try-catch', async (req: Request, res: Response) => {
-  const html = await render('demo-try-catch.njk', {
-    arr: [],
-    name: { append: function(this: { value: string }, x: string) { return this.value + x; }, value: "Hello" },
-    items: []
-  }, { views: VIEWS });
+router.get('/scope', async (req: Request, res: Response) => {
+  const html = await render('demo-scope.njk', {}, { views: VIEWS });
   res.type('html').send(html);
 });
 
-router.get('/with', async (req: Request, res: Response) => {
-  const html = await render('demo-with.njk', {}, { views: VIEWS });
-  res.type('html').send(html);
-});
-
-router.get('/do', async (req: Request, res: Response) => {
-  const html = await render('demo-do.njk', {
+router.get('/exec', async (req: Request, res: Response) => {
+  const html = await render('demo-exec.njk', {
     arr: [],
     name: { append: function(this: { value: string }, x: string) { return this.value + x; }, value: "Hello" },
     items: []
@@ -40,8 +31,13 @@ router.get('/switch', async (req: Request, res: Response) => {
   res.type('html').send(html);
 });
 
-router.get('/call', async (req: Request, res: Response) => {
-  const html = await render('demo-call.njk', {}, { views: VIEWS });
+router.get('/slot', async (req: Request, res: Response) => {
+  const html = await render('demo-slot.njk', {}, { views: VIEWS });
+  res.type('html').send(html);
+});
+
+router.get('/component', async (req: Request, res: Response) => {
+  const html = await render('component-demo.njk', { username: 'John Doe' }, { views: VIEWS });
   res.type('html').send(html);
 });
 

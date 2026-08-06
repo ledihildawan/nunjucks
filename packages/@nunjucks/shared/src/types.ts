@@ -1,10 +1,19 @@
-/**
- * AST node location with optional (nullable) line/column.
- * Used where the parser may not have resolved a position.
- */
 interface NodeLocation {
   lineno: number | null;
   colno: number | null;
 }
 
-export type { NodeLocation };
+interface DomPurifyConfig {
+  ALLOWED_TAGS?: string[];
+  ALLOWED_ATTR?: string[];
+  ALLOWED_DATA_ATTR?: boolean;
+  KEEP_CONTENT?: boolean;
+  RETURN_DOM?: boolean;
+  RETURN_DOM_FRAGMENT?: boolean;
+  FORBID_TAGS?: string[];
+  FORBID_ATTR?: string[];
+  ALLOW_ARIA_ATTR?: boolean;
+  ALLOW_DATA_ATTR?: boolean;
+}
+
+export type { NodeLocation, DomPurifyConfig };

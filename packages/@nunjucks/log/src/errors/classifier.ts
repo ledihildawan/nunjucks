@@ -1,9 +1,7 @@
 
 import { pipe, keys, reduce } from 'remeda';
 import type { Classifier, ClassifyInput, Classification } from './types.ts';
-import { firstCapture } from './types.ts';
-import { RULES, ERROR_DEFINITIONS, DEFAULT_CLASSIFICATION } from './registry.ts';
-import { timeoutClassifier } from './timeout.ts';
+import { RULES, ERROR_DEFINITIONS, DEFAULT_CLASSIFICATION, toRule } from './registry.ts';
 import { reservedKeywordClassifier } from './reserved-keyword.ts';
 
 const replacePlaceholders = (
@@ -78,18 +76,7 @@ const codeClassifier: Classifier = (input) => {
   }
   const errorDef = ERROR_DEFINITIONS[input.code as keyof typeof ERROR_DEFINITIONS];
   if (errorDef) {
-    return deriveFromRule({
-      pattern: errorDef.pattern,
-      category: errorDef.category,
-      subjectFrom: errorDef.subjectFrom ?? firstCapture,
-      extraFrom: errorDef.extraFrom ?? null,
-      titleTemplate: errorDef.titleTemplate,
-      causes: errorDef.causes,
-      fixCode: errorDef.fixCode,
-      fixComment: errorDef.fixComment,
-      documentationUrl: errorDef.documentationUrl,
-      severity: errorDef.severity
-    }, input);
+    return deriveFromRule(toRule(errorDef), input);
   }
   return null;
 };
@@ -100,7 +87,6 @@ const patternClassifier: Classifier = (input) => {
 };
 
 export const classifiers: Classifier[] = [
-  timeoutClassifier,
   reservedKeywordClassifier,
   codeClassifier,
   patternClassifier

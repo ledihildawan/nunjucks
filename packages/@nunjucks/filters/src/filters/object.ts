@@ -1,24 +1,14 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
-import { makeMacro } from '@nunjucks/runtime';
-import { forEach } from 'remeda';
-import { makeFilterError, isArray } from '../factory/index.ts';
+import { makeComponent } from '@nunjucks/runtime';
+import { makeFilterError, isArray, requireArrayError, assertItemsHaveAttr } from '../factory/index.ts';
 import { getAttrGetter } from '../attributes.ts';
 
-export { filterError } from '../factory/index.ts';
-export type { FilterContext } from '../factory/index.ts';
-
-export const groupby = makeMacro(
+export const groupby = makeComponent(
   ['arr', 'attr'],
   [],
   (arr: unknown, attr: string): Record<string, unknown[]> => {
-    if (!isArray(arr)) {
-      throw makeFilterError(ERROR_DEFINITIONS.GROUPBY_FILTER, { type: typeof arr }, typeof arr, `Expected array but got ${typeof arr}`);
-    }
-    forEach(arr as object[], (item) => {
-      if (item && typeof item === 'object' && !(attr in (item as object))) {
-        throw makeFilterError(ERROR_DEFINITIONS.GROUPBY_FILTER_ATTR, { attr }, attr, `Attribute "${attr}" not found in item`);
-      }
-    });
+    if (!isArray(arr)) { throw requireArrayError(arr, ERROR_DEFINITIONS.GROUPBY_FILTER); }
+    assertItemsHaveAttr(arr, attr, ERROR_DEFINITIONS.GROUPBY_FILTER_ATTR);
     const getAttr = getAttrGetter(attr);
     return Object.groupBy(arr as object[], (item) => {
       const key = getAttr(item as Record<string, unknown>);

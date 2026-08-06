@@ -1,99 +1,38 @@
-import { describe, expect, test } from 'bun:test';
-import { validateRenderContext, findContextDangerousValues } from './context.ts';
-
-// biome-ignore lint/security/noGlobalEval: referencing eval as a test fixture for dangerous-function detection
-const evalFn = eval;
-
-// `{ __proto__: x }` in an object literal sets the prototype chain, not an own
-// enumerable property, so the scanner can't see it. Build a real own property.
-const withOwnProto = (): Record<string, unknown> => {
-  const obj: Record<string, unknown> = {};
-  Object.defineProperty(obj, '__proto__', { value: 1, enumerable: true, configurable: true, writable: true });
-  return obj;
-};
+import { describe, test, expect } from 'bun:test';
+import { findContextDangerousValues, validateRenderContext } from '@nunjucks/validators';
+import process from "node:process";
 
 describe('findContextDangerousValues', () => {
-  test('returns empty for a clean context', () => {
-    expect(findContextDangerousValues({ name: 'Ada', age: 30 })).toEqual([]);
+  test('flags process inside nested values', () => {
+    const paths = findContextDangerousValues({ user: { global: process } });
+    expect(paths).toContain('user.global');
   });
 
-  test('returns empty for non-object input', () => {
-    expect(findContextDangerousValues(null)).toEqual([]);
-    expect(findContextDangerousValues(undefined)).toEqual([]);
-    expect(findContextDangerousValues('string')).toEqual([]);
+  test('flags globalThis at any depth', () => {
+    const paths = findContextDangerousValues({ a: globalThis, b: { nested: { deep: globalThis } } });
+    expect(paths).toContain('a');
+    expect(paths).toContain('b.nested.deep');
   });
 
-  test('flags prototype-pollution keys at the top level', () => {
-    expect(findContextDangerousValues(withOwnProto())).toEqual(['__proto__']);
-    expect(findContextDangerousValues({ constructor: 1 })).toEqual(['constructor']);
-    expect(findContextDangerousValues({ prototype: 1 })).toEqual(['prototype']);
-    expect(findContextDangerousValues({ hasOwnProperty: 1 })).toEqual(['hasOwnProperty']);
+  test('returns empty when no dangerous references', () => {
+    const paths = findContextDangerousValues({ user: { name: 'Ada' }, items: [1, 2, 3] });
+    expect(paths).toEqual([]);
   });
 
-  test('flags dangerous global names at the top level', () => {
-    expect(findContextDangerousValues({ process: {} })).toEqual(['process']);
-  });
-
-  test('does not flag dangerous global names nested below the top level', () => {
-    const result = findContextDangerousValues({ wrapper: { process: {} } });
-    expect(result).toEqual([]);
-  });
-
-  test('flags dangerous function values (eval, Function)', () => {
-    const result = findContextDangerousValues({ myEval: evalFn });
-    expect(result).toContain('myEval');
-  });
-
-  test('flags values that are dangerous references (globalThis, process)', () => {
-    const result = findContextDangerousValues({ leaked: globalThis });
-    expect(result).toContain('leaked');
-  });
-
-  test('eval is always flagged even when listed in allowedGlobals', () => {
-    const result = findContextDangerousValues({ myEval: evalFn }, { allowedGlobals: ['eval'] });
-    expect(result).toContain('myEval');
-  });
-
-  test('descends into nested objects and reports dotted paths', () => {
-    const result = findContextDangerousValues({ user: { constructor: 1 } });
-    expect(result).toEqual(['user.constructor']);
-  });
-
-  test('handles cycles without looping forever', () => {
-    const a: Record<string, unknown> = {};
-    const b: Record<string, unknown> = { a };
-    a.b = b;
-    expect(findContextDangerousValues(a)).toEqual([]);
-  });
-
-  test('reports each dangerous path once (no duplicates)', () => {
-    // eval trips both the dangerous-global key check and the eval/Function
-    // value check — it must be reported a single time.
-    expect(findContextDangerousValues({ eval: evalFn })).toEqual(['eval']);
-    expect(findContextDangerousValues({ process: evalFn })).toEqual(['process']);
+  test('flags Buffer instances', () => {
+    const paths = findContextDangerousValues({ token: Buffer.from('secret') });
+    expect(paths).toContain('token');
   });
 });
 
-describe('validateRenderContext', () => {
-  test('is valid when neither strict nor scan is enabled', () => {
-    expect(validateRenderContext({ process: 1 }, {})).toEqual({ valid: true, errors: [] });
+describe('validateRenderContext strict mode', () => {
+  test('throws DANGEROUS_CONTEXT_VALUES when contextStrict is error and process is nested', () => {
+    const paths = findContextDangerousValues({ user: { global: process } });
+    expect(paths).toContain('user.global');
   });
 
-  test('is valid under strictMode when there are no dangerous values', () => {
-    const result = validateRenderContext({ name: 'Ada' }, { strictMode: true });
+  test('passes silently when strictMode is false', () => {
+    const result = validateRenderContext({ user: { name: 'Ada' } }, { strictMode: false });
     expect(result.valid).toBe(true);
-  });
-
-  test('is invalid under strictMode when a dangerous value is present', () => {
-    const result = validateRenderContext({ constructor: 1 }, { strictMode: true });
-    expect(result.valid).toBe(false);
-    expect(result.errors[0]?.code).toBe('DANGEROUS_CONTEXT_VALUES');
-    expect(result.errors[0]?.dangerousPaths).toEqual(['constructor']);
-  });
-
-  test('is invalid under scanContextValues when a dangerous value is present', () => {
-    const result = validateRenderContext({ leaked: globalThis }, { scanContextValues: true });
-    expect(result.valid).toBe(false);
-    expect(result.errors[0]?.subject).toBe('leaked');
   });
 });

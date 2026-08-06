@@ -1,12 +1,19 @@
 import { buildErrorHeader, buildErrorFooter, buildErrorBodyContent, buildHtmlWrapper } from './to-html-builder.ts';
 import { classifyAndBuildTitle, buildErrorDisplay } from './to-html-helpers.ts';
 import { isFilePath } from './internal/ide-links.ts';
-import { CSS, } from './internal/styles.ts';
-import { TOGGLE_SCRIPT } from './internal/script.ts';
 import { shortenPath } from './internal/path-shortener.ts';
 import { DEFAULT_IDE, DEFAULT_VERSION } from './internal/defaults.ts';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import scriptContent from './internal/error-script.js' with { type: 'text' };
 import type { Csp, ErrorLike, ToHtmlOptions } from './to-html-types.ts';
 import type { SourceTrace } from './internal/source-trace.ts';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const CSS = readFileSync(resolve(__dirname, './internal/error-page.css'), 'utf-8');
+
+const TOGGLE_SCRIPT = `<script>\n${scriptContent}\n</script>`;
 
 const document = (title: string, body: string, scripts = '', csp: Csp | null = null): string => {
   const styleNonce = csp?.nonce ? ` nonce="${csp.nonce}"` : '';
@@ -50,7 +57,7 @@ const buildErrorDocument = (
   lineno: number | undefined,
   colno: number | undefined,
   renderContext: unknown,
-  phase: string,
+  _phase: string,
   version: string,
   timestamp: string | undefined,
   csp: Csp | null,
@@ -68,9 +75,9 @@ const buildErrorDocument = (
     humanTitle,
     classified.category,
     classified.severity,
-    phase,
+    error.code ?? null,
     verbosity,
-    displayPath,
+    locDisplay,
     displayLine,
     displayCol,
     ide,
@@ -131,6 +138,3 @@ const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string =>
 
 export { toHtml };
 export type { ToHtmlOptions };
-
-export { CSS, PRODUCTION_BODY } from './internal/styles.ts';
-export { TOGGLE_SCRIPT } from './internal/script.ts';

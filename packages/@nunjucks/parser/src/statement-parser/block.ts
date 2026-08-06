@@ -2,8 +2,8 @@ import { block, isSymbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { parsePrimary } from "../expression-parser/primary.ts";
-import { parseUntilBlocks } from "../top-level.ts";
+import { parsePrimary } from "../expression-parser/index.ts";
+import { parseUntilBlocks } from "../parse-root.ts";
 
 export const parseBlock = (ctx: ParserContext): Node => {
   const tag = peekToken(ctx);
@@ -11,27 +11,25 @@ export const parseBlock = (ctx: ParserContext): Node => {
     fail(ctx, 'parseBlock: expected block', tag.lineno, tag.colno);
   }
 
-  const node = block(tag.lineno, tag.colno);
-
-  node.name = parsePrimary(ctx);
-  if (!isSymbol(node.name)) {
+  const name = parsePrimary(ctx);
+  if (!isSymbol(name)) {
     fail(ctx, 'parseBlock: variable name expected',
       tag.lineno,
       tag.colno);
   }
 
-  advanceAfterBlockEnd(ctx, tag.value as string);
+  advanceAfterBlockEnd(ctx, 'block');
 
-  node.body = parseUntilBlocks(ctx, 'endblock');
+  const body = parseUntilBlocks(ctx, 'endblock');
   skipSymbol(ctx, 'endblock');
-  skipSymbol(ctx, (node.name as { value: string }).value);
+  skipSymbol(ctx, String(name.value));
 
   const tok = peekToken(ctx);
   if (!tok) {
     fail(ctx, 'parseBlock: expected endblock, got end of file');
   }
 
-  advanceAfterBlockEnd(ctx, tok.value as string);
+  advanceAfterBlockEnd(ctx, String(tok.value));
 
-  return node;
+  return block(tag.lineno, tag.colno, String(name.value), body);
 };

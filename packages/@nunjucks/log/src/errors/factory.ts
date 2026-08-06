@@ -16,15 +16,15 @@ interface ErrorDefinitionOptions {
 const createPattern = (messageTemplate: string): RegExp => {
   const pattern = messageTemplate
     .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    .replace(/\\{type\\}/g, '(.+)')
-    .replace(/\\{name\\}/g, '([^"]+)')
-    .replace(/\\{key\\}/g, '([^"]+)')
-    .replace(/\\{keys\\}/g, '(.+)')
-    .replace(/\\{values\\}/g, '(.+)')
-    .replace(/\\{violations\\}/g, '(.+)')
-    .replace(/\\{subject\\}/g, '([^"]+)')
-    .replace(/\\{attr\\}/g, '([^"]+)')
-    .replace(/\\{by\\}/g, '(.+)');
+    .replaceAll('\\{type\\}', '(.+)')
+    .replaceAll('\\{name\\}', '([^"]+)')
+    .replaceAll('\\{key\\}', '([^"]+)')
+    .replaceAll('\\{keys\\}', '(.+)')
+    .replaceAll('\\{values\\}', '(.+)')
+    .replaceAll('\\{violations\\}', '(.+)')
+    .replaceAll('\\{subject\\}', '([^"]+)')
+    .replaceAll('\\{attr\\}', '([^"]+)')
+    .replaceAll('\\{by\\}', '(.+)');
   return new RegExp(`^${pattern}$`, 'i');
 };
 
@@ -53,85 +53,5 @@ const createErrorDefinition = (options: ErrorDefinitionOptions) => {
   };
 };
 
-const ERROR_TEMPLATES = {
-  ARRAY_EXPECTED: (filterName: string) => createErrorDefinition({
-    name: `${filterName.toUpperCase()}_FILTER`,
-    message: `${filterName}: expected array, got {type}`,
-    category: 'array_error',
-    causes: [
-      `The \`${filterName}\` filter requires an **array** input`,
-      'A string, number, or null was passed instead of an array',
-      'The variable might not be an array in the render context'
-    ],
-    fixCode: `{{ items |> ${filterName} }}`,
-    fixComment: `Ensure the value passed to ${filterName} is an array`
-  }),
-
-  NUMBER_EXPECTED: (filterName: string) => createErrorDefinition({
-    name: `${filterName.toUpperCase()}_FILTER`,
-    message: `${filterName}: expected number, got {type}`,
-    category: 'math_error',
-    causes: [
-      `The \`${filterName}\` filter requires a **number** input`,
-      'A string, array, or null was passed instead of a number',
-      'The variable might not be a number in the render context'
-    ],
-    fixCode: `{{ value |> ${filterName} }}`,
-    fixComment: `Ensure the value passed to ${filterName} is a number`
-  }),
-
-  STRING_EXPECTED: (filterName: string) => createErrorDefinition({
-    name: `${filterName.toUpperCase()}_FILTER`,
-    message: `${filterName}: expected string, got {type}`,
-    category: 'string_error',
-    causes: [
-      `The \`${filterName}\` filter requires a **string** input`,
-      'A number, array, or null was passed instead of a string',
-      'The variable might not be a string in the render context'
-    ],
-    fixCode: `{{ value |> ${filterName} }}`,
-    fixComment: `Ensure the value passed to ${filterName} is a string`
-  }),
-
-  OBJECT_EXPECTED: (filterName: string) => createErrorDefinition({
-    name: `${filterName.toUpperCase()}_FILTER`,
-    message: `${filterName}: expected object, got {type}`,
-    category: 'object_error',
-    causes: [
-      `The \`${filterName}\` filter requires an **object** input`,
-      'An array, string, or primitive was passed instead of an object',
-      'The variable might not be an object in the render context'
-    ],
-    fixCode: `{{ data |> ${filterName} }}`,
-    fixComment: `Ensure the value passed to ${filterName} is an object`
-  }),
-
-  ATTRIBUTE_MISSING: (filterName: string) => createErrorDefinition({
-    name: `${filterName.toUpperCase()}_ATTR`,
-    message: `${filterName}: attribute '{attr}' does not exist`,
-    category: 'attribute_error',
-    causes: [
-      `The \`${filterName}\` filter requires the attribute to exist on items`,
-      'Some items do not have the requested attribute',
-      'The attribute name is misspelled'
-    ],
-    fixCode: `{{ items |> ${filterName}("existingAttr") }}`,
-    fixComment: 'Use an attribute that exists on all items'
-  }),
-
-  INVALID_VALUE: (filterName: string, validValues: string[]) => createErrorDefinition({
-    name: `${filterName.toUpperCase()}_INVALID`,
-    message: `${filterName}: invalid value '{attr}'. Must be one of: ${validValues.join(', ')}`,
-    category: 'value_error',
-    causes: [
-      `The \`${filterName}\` filter received an invalid value`,
-      `Valid values are: ${validValues.join(', ')}`,
-      'A typo or incorrect value was passed'
-    ],
-    fixCode: `{{ value |> ${filterName}("${validValues[0]}") }}`,
-    fixComment: `Use one of the valid values: ${validValues.join(', ')}`
-  })
-} as const;
-
-export { createErrorDefinition, ERROR_TEMPLATES };
+export { createErrorDefinition };
 export type { ErrorDefinitionOptions };

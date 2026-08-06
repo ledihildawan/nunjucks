@@ -1,15 +1,20 @@
 import { pipe, split } from 'remeda';
 import { replace } from '@nunjucks/shared';
 
+import type { LineBase } from '../line-base.ts';
+
 /** A collected render-time warning. Exported: it is the element type of
  * `injectWarningsScript`'s first parameter. */
 interface Warning {
   message: string;
-  undefinedMode?: string;
   code?: string | null;
   lineno?: number | null;
   colno?: number | null;
   templateName?: string | null;
+  undefinedMode?: string;
+  varName?: string | null;
+  subject?: string | null;
+  lineBase?: LineBase | null;
 }
 
 interface InjectWarningsOptions {
@@ -28,7 +33,7 @@ const getLocationString = (w: Warning): string => {
     return '';
   }
   const lineNum = w.lineno + 1;
-  const colNum = w.colno !== undefined && w.colno !== null ? `:${w.colno}` : '';
+  const colNum = w.colno != null ? `:${w.colno}` : '';
   const fileName = getFileName(w.templateName);
   return ` at ${fileName}:${lineNum}${colNum}`;
 };

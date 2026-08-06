@@ -1,4 +1,5 @@
-export type LineBase = 'zero' | 'one';
+import { normalizeLineBase } from '../../line-base.ts';
+import type { LineBase } from '../../line-base.ts';
 
 export interface DisplayLocation {
 	line: number;
@@ -15,24 +16,12 @@ export const formatLocationAnnotation = (
 
 	if (!hasLine) { return ''; }
 
-	let colnoArg: number | null;
-	if (hasCol) {
-		colnoArg = colno;
-	} else {
-		colnoArg = null;
-	}
+	const colnoArg = hasCol ? colno : null;
 	const location = toDisplayLocation(lineno, colnoArg, lineBase);
 	if (hasCol) {
 		return `[Line ${location.line}, Column ${location.col}]`;
 	}
 	return `[Line ${location.line}]`;
-};
-
-export const normalizeLineBase = (lineBase?: LineBase | null): LineBase => {
-	if (lineBase === 'one') {
-		return 'one';
-	}
-	return 'zero';
 };
 
 export const toDisplayLocation = (

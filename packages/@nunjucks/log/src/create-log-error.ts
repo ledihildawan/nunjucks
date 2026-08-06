@@ -3,19 +3,22 @@ import { toAnsi } from './render/to-ansi.ts';
 import { toText } from './render/to-text.ts';
 import { toHtml } from './render/to-html.ts';
 import { toConsoleString } from './render/to-console.ts';
-import { normalizeLineBase, type LineBase } from './render/internal/location.ts';
+import { normalizeLineBase, type LineBase } from './line-base.ts';
 import { buildSourceTrace } from './render/internal/source-trace.ts';
 import type { SourceTrace } from './render/internal/source-trace.ts';
 import { TEMPLATE_ERROR } from './create-log-types.ts';
 import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, OutputOptions, NormalizedErrorContext, NormalizedWarningContext } from './create-log-types.ts';
 import { resolveMessage } from './create-log-helpers.ts';
 
+const isTemplateError = (log: TemplateError | TemplateWarning): log is TemplateError =>
+  (log as TemplateError).templatePath !== undefined;
+
 const toFormatterMetadata = (log: TemplateError | TemplateWarning, renderContext?: Record<string, unknown>) => ({
   lineno: log.lineno,
   colno: log.colno,
   phase: log.phase,
   templateName: log.templateName,
-  templatePath: (log as { templatePath?: string | null }).templatePath,
+  templatePath: isTemplateError(log) ? log.templatePath : null,
   code: log.code,
   subject: log.subject,
   renderContext,
@@ -40,8 +43,17 @@ const buildSourceTraceIfNeeded = (
     lineno: err.lineno,
     colno: err.colno,
     lineBase: traceLineBase,
-    sourceStartLine: err.sourceStartLine ?? 1
+    sourceStartLine: err.sourceStartLine ?? 1,
+    blockedKeys: collectBlockedKeys(err)
   });
+};
+
+const collectBlockedKeys = (err: TemplateError): readonly string[] | null => {
+  const fromError = err.blockedKeys;
+  if (fromError && fromError.length > 0) { return fromError; }
+  const subject = err.subject;
+  if (subject && subject.length > 0) { return [subject]; }
+  return null;
 };
 
 const formatErrorOutput = (err: TemplateError, opts: ReturnType<typeof createFormatterState>, format: string | undefined): string => {
@@ -50,7 +62,7 @@ const formatErrorOutput = (err: TemplateError, opts: ReturnType<typeof createFor
   return toHtml(err, opts);
 };
 
-const buildErrorOutput = (err: TemplateError) => (options: OutputOptions = {}): string => {
+const formatError = (err: TemplateError, options: OutputOptions = {}): string => {
   const verbosity = options.verbosity ?? 'full';
   const sourceTrace = buildSourceTraceIfNeeded(err, verbosity, options);
 
@@ -62,7 +74,7 @@ const buildErrorOutput = (err: TemplateError) => (options: OutputOptions = {}): 
   return formatErrorOutput(err, opts, options.format);
 };
 
-const buildWarningOutput = (warn: TemplateWarning) => (options: Omit<OutputOptions, 'format' | 'isProduction'> = {}): string =>
+const formatWarning = (warn: TemplateWarning, options: Omit<OutputOptions, 'format' | 'isProduction'> = {}): string =>
   toConsoleString(warn, createFormatterState({ metadata: toFormatterMetadata(warn), options }));
 
 const buildErrorJson = (err: TemplateError) => (): Record<string, unknown> => ({
@@ -94,15 +106,14 @@ const createErrorFromDef = (
   const err = new Error(resolveMessage(errorDef.message, paramsValue)) as TemplateError;
   Object.assign(err, { name: 'Template render error', code: errorDef.name, subject, ...normalized, [TEMPLATE_ERROR]: true });
   if (extra?.sourceContent) { err.sourceContent = extra.sourceContent as string; }
-  if (extra && Number.isInteger(extra.sourceStartLine)) { err.sourceStartLine = extra.sourceStartLine as number; }
+  if (Number.isInteger(extra?.sourceStartLine)) { err.sourceStartLine = extra?.sourceStartLine as number; }
   err.templatePath = normalized.templateName;
-  if (errorDef.causes && errorDef.causes.length > 0) { err.causes = errorDef.causes; }
+  if (errorDef.causes?.length) { err.causes = [...(errorDef.causes ?? [])]; }
   if (errorDef.fixCode) { err.fixCode = errorDef.fixCode; }
   if (errorDef.fixComment) { err.fixComment = errorDef.fixComment; }
   if (errorDef.documentationUrl) { err.documentationUrl = errorDef.documentationUrl; }
   if (errorDef.severity) { err.severity = errorDef.severity; }
   err.toJSON = buildErrorJson(err);
-  err.output = buildErrorOutput(err);
   return err;
 };
 
@@ -118,11 +129,10 @@ const createWarningFromDef = (
     subject,
     ...normalizedWarning
   } as TemplateWarning;
-  if (errorDef.causes && errorDef.causes.length > 0) { warn.causes = errorDef.causes; }
+  if (errorDef.causes?.length) { warn.causes = [...(errorDef.causes ?? [])]; }
   if (errorDef.fixCode) { warn.fixCode = errorDef.fixCode; }
   if (errorDef.fixComment) { warn.fixComment = errorDef.fixComment; }
-  warn.output = buildWarningOutput(warn);
   return warn;
 };
 
-export { buildErrorOutput, buildWarningOutput, createErrorFromDef, createWarningFromDef, toFormatterMetadata };
+export { formatError, formatWarning, createErrorFromDef, createWarningFromDef };

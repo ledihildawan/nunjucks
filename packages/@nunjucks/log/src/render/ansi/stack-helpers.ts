@@ -3,6 +3,7 @@ import picocolors from 'picocolors';
 import { shortenPath } from '../internal/path-shortener.ts';
 import { isFilePath, resolveIdeLink } from '../internal/ide-links.ts';
 import { stripMarkdown } from '../internal/markdown.ts';
+import { parseStackFrame } from '../internal/stack-parse.ts';
 
 export { makeHyperlink, stripMarkdown, getSeverityColor, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString };
 
@@ -23,29 +24,23 @@ const getExtrasPart = (causeHint: string, docHint: string): string => {
   return `\n${extras}`;
 };
 
-const STACK_LOCATION_RE = /\(([^()]+):(\d+):(\d+)\)$/u;
-const STACK_FUNCTION_RE = /^at\s+([^\s]+)/u;
-
 const formatStackLine = (
   line: string,
   ide: string
 ): string => {
-  const trimmed = line.trim();
-  const pathMatch = trimmed.match(STACK_LOCATION_RE);
-  if (!(pathMatch?.[1] && pathMatch[2])) {
-    return `  ${trimmed}`;
+  const frame = parseStackFrame(line);
+  if (!(frame.path && frame.line !== null)) {
+    return `  ${frame.raw}`;
   }
 
-  const [, fullPath, lineNumRaw, colGroup] = pathMatch;
-  const lineNum = Number.parseInt(lineNumRaw, 10);
-  const colNum = colGroup ? Number.parseInt(colGroup, 10) : 1;
-  const shortPath = shortenPath(fullPath);
-  const fnMatch = trimmed.match(STACK_FUNCTION_RE);
-  const fn = fnMatch?.[1] ?? '';
+  const lineNum = frame.line;
+  const colNum = frame.col ?? 1;
+  const shortPath = shortenPath(frame.path);
+  const fn = frame.fn;
   const location = `${shortPath}:${lineNum}:${colNum}`;
 
-  if (isFilePath(fullPath)) {
-    const url = makeHyperlink(location, resolveIdeLink(ide, fullPath, lineNum, colNum));
+  if (isFilePath(frame.path)) {
+    const url = makeHyperlink(location, resolveIdeLink(ide, frame.path, lineNum, colNum));
     if (fn) { return `  at ${picocolors.cyan(fn)} (${url})`; }
     return `  at ${url}`;
   }

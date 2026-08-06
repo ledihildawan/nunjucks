@@ -12,15 +12,8 @@ const findBestMatch = (lines: string[], keyName: string, searchLine: number, sea
 
   const findOccurrencesInLine = (lineIndex: number): LinePosition[] => {
     const line = lines[lineIndex] ?? '';
-    const positions: number[] = [];
-    let col = 0;
-    let found = line.indexOf(keyName, col);
-    while (found !== -1) {
-      positions.push(found);
-      col = found + 1;
-      found = line.indexOf(keyName, col);
-    }
-    return positions.map(position => ({ line: lineIndex + 1, col: position + 1 }));
+    const pattern = new RegExp(keyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+    return [...line.matchAll(pattern)].map(match => ({ line: lineIndex + 1, col: (match.index ?? 0) + 1 }));
   };
 
   const candidates = Array.from({ length: end - start + 1 }, (_, offset) => start + offset).flatMap(findOccurrencesInLine);

@@ -1,15 +1,6 @@
 import { pipe, filter, split, last } from 'remeda';
 import process from "node:process";
 
-let _projectRoot: string | null = null;
-
-const getProjectRoot = () => {
-  if (_projectRoot === null) {
-    _projectRoot = process.cwd();
-  }
-  return _projectRoot;
-};
-
 const FILE_URL_PREFIX_RE = /^file:\/\//u;
 const LEADING_SLASH_DRIVE_RE = /^[\\/]+([A-Za-z]):/u;
 const BACKSLASH_RE = /\\/gu;
@@ -19,9 +10,9 @@ export const normalizeDrivePath = (p: string) =>
     .replace(LEADING_SLASH_DRIVE_RE, '$1:')
     .replace(BACKSLASH_RE, '/');
 
-export const shortenPath = (path: string) => {
+export const shortenPath = (path: string, projectRoot: string = process.cwd()): string => {
   const normalizedPath = normalizeDrivePath(path);
-  const normalizedRoot = normalizeDrivePath(getProjectRoot());
+  const normalizedRoot = normalizeDrivePath(projectRoot);
 
   const parts = pipe(
     normalizedPath.split('/'),

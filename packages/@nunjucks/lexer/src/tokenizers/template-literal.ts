@@ -1,4 +1,4 @@
-import type { Tokenizer } from '../types.ts';
+import type { Tokenizer, LexerState } from '../types.ts';
 import { getChar, getPeek, advance, isFinished } from '../state.ts';
 import { createToken } from '../tokens.ts';
 import type { TokenType } from '../token-types.ts';
@@ -10,7 +10,7 @@ export interface TemplateQuasi {
 
 type ParseInterpolationResult = {
   exprContent: string;
-  current: ReturnType<typeof advance>;
+  current: LexerState;
 };
 
 const isBacktickInExpression = (exprChar: string, exprDepth: number): boolean =>
@@ -29,7 +29,7 @@ const processInterpolationChar = (exprChar: string, exprDepth: number): { depthD
   return { depthDelta: 0, charToAdd: exprChar };
 };
 
-const parseInterpolation = (current: ReturnType<typeof advance>): ParseInterpolationResult => {
+const parseInterpolation = (current: LexerState): ParseInterpolationResult => {
   let exprDepth = 1;
   let exprContent = '';
   let pos = current;
@@ -59,28 +59,28 @@ const pushTemplateQuasi = (
 };
 
 const handleInterpolationStart = (
-  current: ReturnType<typeof advance>,
+  current: LexerState,
   currentStr: string,
   quasis: TemplateQuasi[]
-): { newCurrent: ReturnType<typeof advance>; newStr: string } => {
+): { newCurrent: LexerState; newStr: string } => {
   pushTemplateQuasi(quasis, currentStr);
   const newCurrent = advance(current, 2);
   return { newCurrent, newStr: '' };
 };
 
 const finalizeTemplateLiteral = (
-  current: ReturnType<typeof advance>,
+  current: LexerState,
   currentStr: string,
   quasis: TemplateQuasi[]
-): ReturnType<typeof advance> => {
+): LexerState => {
   pushTemplateQuasi(quasis, currentStr);
   return advance(current);
 };
 
 const consumeTemplateContent = (
-  current: ReturnType<typeof advance>,
+  current: LexerState,
   currentStr: string
-): { newCurrent: ReturnType<typeof advance>; newStr: string } => {
+): { newCurrent: LexerState; newStr: string } => {
   const char = getChar(current);
   return {
     newCurrent: advance(current),
@@ -89,8 +89,8 @@ const consumeTemplateContent = (
 };
 
 const consumeTemplateLoop = (
-  initialCurrent: ReturnType<typeof advance>
-): { quasis: TemplateQuasi[]; finalCurrent: ReturnType<typeof advance> } => {
+  initialCurrent: LexerState
+): { quasis: TemplateQuasi[]; finalCurrent: LexerState } => {
   let current = initialCurrent;
   let currentStr = '';
   const quasis: TemplateQuasi[] = [];

@@ -40,7 +40,7 @@ const discoverRoutes = async (base) => {
 };
 
 const decode = (s) =>
-  s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+  s.replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&quot;', '"').replaceAll('&#39;', "'").replaceAll('&amp;', '&');
 
 const parse = (html) => {
   const link = html.match(/The error occurred in <a href="[a-z]+:\/\/file\/([^"]+)"/u)
@@ -55,7 +55,7 @@ const parse = (html) => {
   const caretMatch = html.match(/error-marker-content">([^<]*)</u);
   let caret = null;
   if (caretMatch) {
-    const text = caretMatch[1].replace(/&nbsp;/g, ' ');
+    const text = caretMatch[1].replaceAll('&nbsp;', ' ');
     const carets = text.replace(/[^^]/g, '');
     caret = { spaces: text.length - carets.length, carets: carets.length };
   }
@@ -110,7 +110,7 @@ const validate = (r, info) => {
 
   // For inline pseudo-paths we can only trust the caret against the snippet.
   if (isInline) {
-    if (caret && caret.carets > 0) return { status: 'OK', reason: '' };
+    if (caret?.carets > 0) return { status: 'OK', reason: '' };
     return { status: 'SUSPECT', reason: 'inline location without a caret' };
   }
 
@@ -146,7 +146,7 @@ const validate = (r, info) => {
   // Caret alignment: the drawn caret word-snaps to the token beginning at/near
   // the reported column, so it may start slightly before col. Require only that
   // the caret span overlaps the reported column.
-  if (caret && caret.carets > 0) {
+  if (caret?.carets > 0) {
     const lo = caret.spaces;
     const hi = caret.spaces + caret.carets;
     const target = loc.col - 1;

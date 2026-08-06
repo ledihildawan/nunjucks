@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url';
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import { createEngine, type ExpressEngineConfig } from '@nunjucks/integrations/express';
 import { render } from '@nunjucks/core';
+import { formatError } from '@nunjucks/log';
 import { demoRouter } from './routes/demo.ts';
 import { errorRouter } from './routes/errors.ts';
 
@@ -90,9 +91,8 @@ app.use('/errors', errorRouter);
 
 // Error handler - must be after all routes
 app.use(async (err: Error, req: Request, res: Response, next: NextFunction) => {
-  const errorOutput = err as { output?: (opts: { format: string; dev?: boolean }) => string };
-  console.log(errorOutput.output?.({ format: 'ansi', dev: true }));
-  res.status(500).type('html').send(errorOutput.output?.({ format: 'html', dev: true }));
+  console.log(formatError(err as any, { format: 'ansi', dev: true }));
+  res.status(500).type('html').send(formatError(err as any, { format: 'html', dev: true }));
 });
 
 app.listen(4000, () => {
@@ -101,7 +101,7 @@ app.listen(4000, () => {
   console.log('  /              - Home');
   console.log('  /home          - Inline template with pipe syntax');
   console.log('  /security      - Security features (sanitize, auto-tojson)');
-  console.log('  /demo/*        - Demo routes (pipe, with, switch, call, etc)');
+  console.log('  /demo/*        - Demo routes (pipe, scope, switch, slot, component, etc)');
   console.log('  /errors        - Error scenarios index');
   console.log('  /errors/*      - Individual error scenarios');
 });

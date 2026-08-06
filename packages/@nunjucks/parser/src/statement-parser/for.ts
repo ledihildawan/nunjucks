@@ -3,36 +3,32 @@ import { appendChild, array, for_, isSymbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, skip, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { parsePrimary } from "../expression-parser/primary.ts";
-import { parseExpression } from "../expression-parser/inline.ts";
-import { parseUntilBlocks } from "../top-level.ts";
-import { tryParsePattern } from "../node-parsers/pattern.ts";
+import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
+import { parseUntilBlocks } from "../parse-root.ts";
+import { tryParsePattern } from "../node-parser/pattern.ts";
 
-const parseForName = (ctx: ParserContext, node: Node): void => {
+const parseForName = (ctx: ParserContext): Node => {
   const patternNode = tryParsePattern(ctx);
   if (patternNode) {
-    node.name = patternNode;
-    return;
+    return patternNode;
   }
 
-  node.name = parsePrimary(ctx);
-
-  if (!isSymbol(node.name)) {
+  const name = parsePrimary(ctx);
+  if (!isSymbol(name)) {
     fail(ctx, 'parseFor: variable name expected for loop');
-    return;
   }
 
   const { type } = peekToken(ctx);
-  if (type !== TOKEN_COMMA) { return; }
+  if (type !== TOKEN_COMMA) { return name; }
 
-  const key = node.name as Node;
-  node.name = array(key.lineno, key.colno);
-  node.name = appendChild(node.name as ReturnType<typeof array>, key);
-
+  const key = name;
+  const arrNode = array(key.lineno, key.colno);
+  let result = appendChild(arrNode, key);
   while (skip(ctx, TOKEN_COMMA)) {
     const prim = parsePrimary(ctx);
-    node.name = appendChild(node.name as ReturnType<typeof array>, prim);
+    result = appendChild(result, prim);
   }
+  return result;
 };
 
 export const parseFor = (ctx: ParserContext): Node => {
@@ -41,10 +37,9 @@ export const parseFor = (ctx: ParserContext): Node => {
   if (!skipSymbol(ctx, 'for')) {
     return fail(ctx, 'parseFor: expected for', forTok.lineno, forTok.colno);
   }
-  const node = for_(forTok.lineno, forTok.colno);
   const endBlock = 'endfor';
 
-  parseForName(ctx, node);
+  const name = parseForName(ctx);
 
   if (!skipSymbol(ctx, 'in')) {
     fail(ctx, 'parseFor: expected "in" keyword for loop',
@@ -52,17 +47,18 @@ export const parseFor = (ctx: ParserContext): Node => {
       forTok.colno);
   }
 
-  node.arr = parseExpression(ctx);
-  advanceAfterBlockEnd(ctx, forTok.value as string);
+  const arr = parseExpression(ctx);
+  advanceAfterBlockEnd(ctx, String(forTok.value));
 
-  node.body = parseUntilBlocks(ctx, endBlock, 'else');
+  const body = parseUntilBlocks(ctx, endBlock, 'else');
 
+  let else_: Node | null = null;
   if (skipSymbol(ctx, 'else')) {
     advanceAfterBlockEnd(ctx, 'else');
-    node.else_ = parseUntilBlocks(ctx, endBlock);
+    else_ = parseUntilBlocks(ctx, endBlock);
   }
 
   advanceAfterBlockEnd(ctx);
 
-  return node;
+  return for_(forTok.lineno, forTok.colno, { name, arr, body, else_ });
 };

@@ -1,11 +1,9 @@
-import type { Tokenizer } from '../types.ts';
-import { validators } from '../constants.ts';
+import type { Tokenizer, LexerState } from '../types.ts';
+import { isDigit } from '../constants.ts';
 import { advance } from '../state.ts';
 import { createNumberToken } from '../tokens.ts';
 
-const { isDigit } = validators;
-
-const parseDigits = (current: ReturnType<typeof advance>): { num: string; current: ReturnType<typeof advance> } => {
+const parseDigits = (current: LexerState): { num: string; current: LexerState } => {
   let num = '';
   let pos = current;
   while (
@@ -18,8 +16,11 @@ const parseDigits = (current: ReturnType<typeof advance>): { num: string; curren
   return { num, current: pos };
 };
 
-const parseDecimalPart = (current: ReturnType<typeof advance>): { hasDecimal: boolean; num: string; current: ReturnType<typeof advance> } => {
+const parseDecimalPart = (current: LexerState): { hasDecimal: boolean; num: string; current: LexerState } => {
   if (current.index < current.str.length && (current.str[current.index] ?? '') === '.') {
+    // Don't consume `.` if it's part of `..` (range operator) or `...` (spread)
+    const nextChar = current.str[current.index + 1] ?? '';
+    if (nextChar === '.') { return { hasDecimal: false, num: '', current }; }
     const afterDot = advance(current);
     const { num: decimalDigits, current: newCurrent } = parseDigits(afterDot);
     const num = `.${decimalDigits}`;

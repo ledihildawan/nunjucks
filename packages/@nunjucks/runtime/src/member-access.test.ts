@@ -5,7 +5,8 @@ import {
   slice,
   nullishCoalesce,
   isNullAccessResult,
-} from '@nunjucks/runtime/member-access';
+  isPropertyNotFoundResult,
+} from '@nunjucks/runtime';
 
 describe('memberLookup', () => {
   test('returns null marker for null/undefined object', () => {
@@ -127,5 +128,34 @@ describe('nullishCoalesce', () => {
 
   test('returns right when left is undefined', () => {
     expect(nullishCoalesce(undefined, 42)).toBe(42);
+  });
+});
+
+describe('memberLookup: primitive methods', () => {
+  test('string method accessible', () => {
+    const result = memberLookup('hello', 'toUpperCase', null);
+    expect(typeof result).toBe('function');
+    const fn = result as (...args: unknown[]) => unknown;
+    expect(fn()).toBe('HELLO');
+  });
+
+  test('number method accessible', () => {
+    const result = memberLookup(3.14, 'toFixed', null);
+    expect(typeof result).toBe('function');
+    const fn = result as (...args: unknown[]) => unknown;
+    expect(fn(1)).toBe('3.1');
+  });
+
+  test('string length property', () => {
+    expect(memberLookup('hello', 'length', null)).toBe(5);
+  });
+
+  test('array length property', () => {
+    expect(memberLookup([1, 2, 3], 'length', null)).toBe(3);
+  });
+
+  test('non-existent property on primitive', () => {
+    const result = memberLookup('hello', 'nonExistent', null);
+    expect(isPropertyNotFoundResult(result)).toBe(true);
   });
 });

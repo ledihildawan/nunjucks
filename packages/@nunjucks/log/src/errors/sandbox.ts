@@ -22,7 +22,7 @@ export const SANDBOX_ERRORS = {
       'Trying to modify `__proto__`, `constructor`, or other reserved names',
       'Prototype pollution attempt was blocked'
     ],
-    fixCode: '{% set safeVar = value %}',
+    fixCode: '{{ safeVar := value }}',
     fixComment: 'Use a regular variable instead of mutating an object property'
   }),
   SANDBOX_ALLOWLIST: createErrorDefinition({
@@ -44,9 +44,9 @@ export const SANDBOX_ERRORS = {
     causes: [
       'Attempted to modify the **sandboxed render context**',
       'Tried to set globals or protected keys from inside the template',
-      '`{% set %}` was used with a reserved context key'
+      'A `:=` declaration was used with a reserved context key'
     ],
-    fixCode: '{% set localVar = value %}',
+    fixCode: '{{ localVar := value }}',
     fixComment: 'Set local template variables instead of modifying the context'
   }),
   SANDBOX_CODE_EXECUTION: createErrorDefinition({
@@ -61,12 +61,10 @@ export const SANDBOX_ERRORS = {
     fixCode: '{{ setTimeout(callback, 0) }}',
     fixComment: 'Pass a function reference instead of a string of code'
   }),
-  SANDBOX_TIMEOUT_EXEC: {
+  SANDBOX_TIMEOUT_EXEC: createErrorDefinition({
     name: 'SANDBOX_TIMEOUT_EXEC',
     message: 'Sandbox timeout',
-    pattern: /frame\.push is not a function/iu,
     category: 'timeout_error',
-    titleTemplate: 'Template execution timed out',
     causes: [
       'Template execution **timed out** before completion',
       'An infinite loop or unbounded recursion',
@@ -74,13 +72,11 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: 'env.opts.executionTimeout = 60000',
     fixComment: 'Increase `executionTimeout` or refactor to break long work into smaller chunks'
-  },
-  SANDBOX_CONTEXT_ERROR: {
+  }),
+  SANDBOX_CONTEXT_ERROR: createErrorDefinition({
     name: 'SANDBOX_CONTEXT_ERROR',
     message: 'Sandbox context error',
-    pattern: /Value is not a function/iu,
     category: 'sandbox_blocked',
-    titleTemplate: 'Cannot modify sandboxed context',
     causes: [
       'Attempted to access or modify **sandboxed context**',
       'Template tried to use restricted functionality',
@@ -88,13 +84,11 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: '{{ value }}',
     fixComment: 'Use only allowed operations in sandbox mode'
-  },
-  SANDBOX_PROTO_ACCESS: {
+  }),
+  SANDBOX_PROTO_ACCESS: createErrorDefinition({
     name: 'SANDBOX_PROTO_ACCESS',
     message: 'Sandbox proto access',
-    pattern: /Cannot read properties of undefined \(reading 'charAt'\)/iu,
     category: 'sandbox_blocked',
-    titleTemplate: 'Cannot access property in sandbox mode',
     causes: [
       'Attempted to access **undefined variable** in sandbox mode',
       'Accessing properties on undefined in sandboxed template',
@@ -102,18 +96,18 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: '{{ value |> default("") }}',
     fixComment: 'Use `default()` filter or check for undefined before accessing properties'
-  },
+  }),
   BLOCKED_CONTEXT_KEYS: createErrorDefinition({
     name: 'BLOCKED_CONTEXT_KEYS',
     message: 'Cannot use blocked keys in context: {keys}',
     category: 'security_error',
     causes: [
-      'Context contains **blocked keys** like `__proto__`, `constructor`, or `prototype`',
-      'Dangerous keys detected in the render context',
-      'Object was not properly sanitized before passing to render'
+      '**Render context** contains keys listed in `blockedContextKeys` (e.g. `{keys}`)',
+      'Template tried to access `{keys}` which you have explicitly blocked',
+      'Either remove the key from `blockedContextKeys`, or stop referencing it in the template'
     ],
-    fixCode: 'const safe = JSON.parse(JSON.stringify(context)); delete safe.__proto__;',
-    fixComment: 'Clean the context object before passing it to render',
+    fixCode: "render(template, ctx, { blockedContextKeys: ['{keys}'] })",
+    fixComment: 'Pass the value via a non-blocked name, or remove it from `blockedContextKeys`',
     extraFrom: (groups: RegExpMatchArray) => ({ keys: groups[1] || '' })
   }),
   DANGEROUS_CONTEXT_VALUES: createErrorDefinition({

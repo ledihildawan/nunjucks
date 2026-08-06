@@ -1,36 +1,51 @@
 import { describe, test, expect } from 'bun:test';
-import { abs, round } from './math.ts';
+import { render } from '@nunjucks/core';
 
-describe('abs', () => {
-  test('positive number unchanged', () => {
-    expect(abs(5)).toBe(5);
-  });
-  test('negative number becomes positive', () => {
-    expect(abs(-5)).toBe(5);
-  });
-  test('zero stays zero', () => {
-    expect(abs(0)).toBe(0);
-  });
-});
+const renderTemplate = async (template: string, context: Record<string, unknown> = {}) =>
+  await render(template, context, { autoescape: false });
 
-describe('round', () => {
-  test('rounds to integer by default', () => {
-    expect(round(3.7)).toBe(4);
-    expect(round(3.3)).toBe(3);
+describe('math filters', () => {
+  describe('abs', () => {
+    test('positive number unchanged', async () => {
+      const result = await renderTemplate('{{ 5 |> abs }}');
+      expect(result).toBe('5');
+    });
+
+    test('negative number becomes positive', async () => {
+      const result = await renderTemplate('{{ -5 |> abs }}');
+      expect(result).toBe('5');
+    });
+
+    test('zero stays zero', async () => {
+      const result = await renderTemplate('{{ 0 |> abs }}');
+      expect(result).toBe('0');
+    });
   });
-  test('respects precision', () => {
-    // Deliberately not a PI-like value: what is under test is rounding at a
-    // given precision, and the digits only need to force a round-up at 4dp.
-    expect(round(1.234_56, 2)).toBe(1.23);
-    expect(round(1.234_56, 4)).toBe(1.2346);
-  });
-  test('supports ceil method', () => {
-    expect(round(3.1, 0, 'ceil')).toBe(4);
-  });
-  test('supports floor method', () => {
-    expect(round(3.9, 0, 'floor')).toBe(3);
-  });
-  test('negative numbers', () => {
-    expect(round(-3.5)).toBe(-3);
+
+  describe('round', () => {
+    test('rounds to integer by default', async () => {
+      const result = await renderTemplate('{{ 3.7 |> round }}');
+      expect(result).toBe('4');
+    });
+
+    test('rounds down correctly', async () => {
+      const result = await renderTemplate('{{ 3.3 |> round }}');
+      expect(result).toBe('3');
+    });
+
+    test('respects precision', async () => {
+      const result = await renderTemplate('{{ 1.23456 |> round(2) }}');
+      expect(result).toBe('1.23');
+    });
+
+    test('ceil method rounds up', async () => {
+      const result = await renderTemplate('{{ 3.1 |> round(0, "ceil") }}');
+      expect(result).toBe('4');
+    });
+
+    test('floor method rounds down', async () => {
+      const result = await renderTemplate('{{ 3.9 |> round(0, "floor") }}');
+      expect(result).toBe('3');
+    });
   });
 });

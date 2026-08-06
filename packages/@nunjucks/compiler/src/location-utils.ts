@@ -21,7 +21,7 @@ export const extractPropertyLocation = (
     // `Node` types lineno/colno as required numbers, but this value comes off a
     // dynamic AST field, so verify rather than trust -- otherwise a missing
     // colno would silently produce NaN once the offset is added.
-    const val = node.val as Node | undefined;
+    const val = node.val;
     if (val && Number.isInteger(val.lineno) && Number.isInteger(val.colno)) {
       return { lineno: val.lineno, colno: val.colno + colnoOffset };
     }

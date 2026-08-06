@@ -1,4 +1,3 @@
-// Needed locally to build the operator lookup set below.
 import { COMPLEX_OPERATORS } from './delimiters.ts';
 
 const COMPLEX_OPERATOR_SET = new Set<string>(COMPLEX_OPERATORS);
@@ -8,24 +7,13 @@ const isComplexOperator = (str: string): boolean =>
 
 const isDigit = (char: string): boolean => char >= '0' && char <= '9';
 
-const isNumericString = (str: string): boolean =>
-  str.length > 0 && Array.from(str).every(isDigit);
-
 const isBooleanString = (str: string): boolean =>
   str === 'true' || str === 'false';
 
 const isNullString = (str: string): boolean =>
   str === 'none' || str === 'null';
 
-const validators = {
-  isComplexOperator,
-  isDigit,
-  isNumericString,
-  isBooleanString,
-  isNullString,
-};
-
-export { validators };
+export { isComplexOperator, isDigit, isBooleanString, isNullString };
 
 export {
   WHITESPACE_CHARS,

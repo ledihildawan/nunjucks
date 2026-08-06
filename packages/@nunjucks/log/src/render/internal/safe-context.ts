@@ -1,8 +1,6 @@
-import { getBlockedKeyCategory, isBlockedKey } from '@nunjucks/shared/blocked-keys';
 import { pipe, map, filter } from 'remeda';
-import { slice } from '@nunjucks/shared';
+import { getBlockedKeyCategory, isBlockedKey, slice } from '@nunjucks/shared';
 
-const SECRET_KEY_PATTERN = /(?:password|passwd|pwd|secret|token|api[_-]?key|access[_-]?token|authorization|cookie|session(?:[_-]?id)?|private[_-]?key)/iu;
 const DANGEROUS_KEY_PATTERN = /^(?:globalThis|process|window|parent|top|frames|opener)$/iu;
 const DEFAULT_OPTIONS = Object.freeze({ maxDepth: 8, maxEntries: 50, maxStringLength: 1024, maxTotalLength: 65_536 });
 
@@ -15,6 +13,7 @@ interface TruncateState {
 interface NormalizeState extends TruncateState {
   maxDepth: number;
   maxEntries: number;
+  blockedKeys: Set<string>;
 }
 
 /** Characters reserved for the `...[Truncated]` marker appended after a cut. */
@@ -155,7 +154,7 @@ const normalizeCollection = (
   return NOT_HANDLED;
 };
 
-/** A plain object: visible own keys, with secret-looking ones redacted. */
+/** A plain object: visible own keys, with caller-blocked keys redacted. */
 const normalizePlainObject = (
   value: object,
   state: NormalizeState,
@@ -165,7 +164,7 @@ const normalizePlainObject = (
   const result: Record<string, unknown> = {};
   const keys = ownEnumerableKeys(value).filter(key => visibleKey(key, depth));
   for (const key of keys.slice(0, state.maxEntries)) {
-    if (SECRET_KEY_PATTERN.test(key) || DANGEROUS_KEY_PATTERN.test(key)) {
+    if (state.blockedKeys.has(key) || DANGEROUS_KEY_PATTERN.test(key)) {
       result[key] = '[Redacted]';
     } else {
       result[key] = normalizeValue(readOwnValue(value, key), state, depth + 1, seen);
@@ -201,12 +200,14 @@ const normalizeValue = (value: unknown, state: NormalizeState, depth: number, se
   }
 };
 
-export const normalizeRenderContext = (context: unknown, options: Partial<NormalizeState> = {}): unknown => {
-  const state = { ...DEFAULT_OPTIONS, ...options, totalLength: 0 };
+export const normalizeRenderContext = (
+  context: unknown,
+  options: Partial<Omit<NormalizeState, 'blockedKeys'>> & { blockedKeys?: readonly string[] | null } = {}
+): unknown => {
+  const blockedKeys = new Set<string>(
+    (options.blockedKeys ?? []).filter((k): k is string => typeof k === 'string' && k.length > 0)
+  );
+  const { blockedKeys: _ignored, ...rest } = options;
+  const state = { ...DEFAULT_OPTIONS, ...rest, totalLength: 0, blockedKeys };
   return normalizeValue(context, state, 0, new WeakSet());
-};
-
-export const stringifyRenderContextValue = (value: unknown): string => {
-  if (typeof value === 'string') { return value; }
-  return JSON.stringify(value);
 };

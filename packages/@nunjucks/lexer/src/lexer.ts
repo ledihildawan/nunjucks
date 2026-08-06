@@ -1,11 +1,11 @@
-import type { LexerOptions } from './types.ts';
+import type { LexerOptions, LexerState } from './types.ts';
 import type { Token } from './token-types.ts';
 import { createState, advance, getChar } from './state.ts';
 import { tokenizers } from './tokenizers/index.ts';
 import { createDelimiters } from './delimiters.ts';
 import { WHITESPACE_CHARS } from './constants.ts';
 
-const updateCodeState = (tokenType: string, state: ReturnType<typeof createState>): ReturnType<typeof createState> => {
+const updateCodeState = (tokenType: string, state: LexerState): LexerState => {
   if (tokenType === 'block-start' || tokenType === 'variable-start') {
     return { ...state, inCode: true };
   }
@@ -15,13 +15,13 @@ const updateCodeState = (tokenType: string, state: ReturnType<typeof createState
   return state;
 };
 
-const processTokenizerResult = (result: { token: Token; state: ReturnType<typeof createState> }): ReturnType<typeof createState> => {
+const processTokenizerResult = (result: { token: Token; state: LexerState }): LexerState => {
   const state = result.state;
   const tokenType = result.token.type as string;
   return updateCodeState(tokenType, state);
 };
 
-const handleUnexpectedChar = (state: ReturnType<typeof createState>): never => {
+const handleUnexpectedChar = (state: LexerState): never => {
   const char = getChar(state);
   throw new Error(`Unexpected character '${char}' at line ${state.lineno}:${state.colno}`);
 };
@@ -48,7 +48,12 @@ function* lexGenerator(src: string, opts: LexerOptions = {}): Generator<Token, v
   }
 }
 
-export function createTokenizer(src: string, opts: LexerOptions = {}) {
+export const createTokenizer = (src: string, opts: LexerOptions = {}): {
+  nextToken: () => Token | null;
+  tags: ReturnType<typeof createDelimiters>;
+  trimBlocks: boolean;
+  lstripBlocks: boolean;
+} => {
   const generator = lexGenerator(src, opts);
   const tags = createDelimiters(opts.tags);
 
@@ -62,4 +67,4 @@ export function createTokenizer(src: string, opts: LexerOptions = {}) {
     trimBlocks: Boolean(opts.trimBlocks),
     lstripBlocks: Boolean(opts.lstripBlocks),
   };
-}
+};

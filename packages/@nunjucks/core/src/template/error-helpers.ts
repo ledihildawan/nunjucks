@@ -1,15 +1,14 @@
 import { defaultTo } from 'remeda';
+import type { IncludeChain } from '@nunjucks/log';
 
 export { createTemplateErrorHandler, buildErrorMessage, extractFrameDetails };
 
-interface ErrorWithLineInfo {
+export interface ErrorWithLineInfo extends Error {
   lineBase?: string;
   colno?: number;
   lineno?: number;
-  message?: string;
-  name?: string;
   path?: string;
-  _includeChain?: unknown[];
+  _includeChain?: IncludeChain | null;
   getterName?: string;
   [key: string]: unknown;
 }
@@ -27,7 +26,7 @@ const buildErrorMessage = (currentPath: string | undefined, sourceLineno: number
     : sourceLineno
       ? ` [Line ${sourceLineno}]`
       : '';
-  return `(${currentPath})${locationPart}\n  ${defaultTo(e.message, '')}`;
+  return `(${currentPath})${locationPart}\n  ${e.message}`;
 };
 
 const extractFrameDetails = (
@@ -46,26 +45,29 @@ const extractFrameDetails = (
   const finalColno = resolveColno(sourceColno, errColno);
   const templateLocation = `${currentPath}:${sourceLineno}:${finalColno}`;
   const msg = buildErrorMessage(currentPath, sourceLineno, finalColno, e);
-  const newError = new Error(msg) as Error & Record<string, unknown>;
-  newError.name = defaultTo(e.name, 'Template render error');
-  newError.lineno = sourceLineno;
-  newError.colno = finalColno;
-  newError.lineBase = 'zero';
-  newError._includeChain = e._includeChain || null;
   const renderLine = `at ${e.getterName || 'root'} (${templateLocation})`;
-  newError.stack = `${newError.message}\n    ${renderLine}\n    at Environment.render`;
+  const newError = Object.assign(new Error(msg), {
+    name: e.name || 'Template render error',
+    lineno: sourceLineno,
+    colno: finalColno,
+    lineBase: 'zero',
+    _includeChain: e._includeChain || null,
+    stack: `${msg}\n    ${renderLine}\n    at Environment.render`,
+  }) as ErrorWithLineInfo;
   return newError;
 };
 
-const createTemplateErrorHandler = (state: { path: string | undefined; _includeChain: unknown[] | null }) => {
-  const enrichError = (e: ErrorWithLineInfo) => {
-    if (!e.path) { e.path = state.path; }
-
+const createTemplateErrorHandler = (state: { path: string | undefined; _includeChain: IncludeChain | null }) => {
+  const enrichError = (e: ErrorWithLineInfo): Error => {
     const sourceLineno = e.lineno;
     const sourceColno = e.colno;
     const hasIncludeChain = e._includeChain || state._includeChain;
 
-    return extractFrameDetails(e, sourceLineno, sourceColno, state.path, hasIncludeChain) || e;
+    const extracted = extractFrameDetails(e, sourceLineno, sourceColno, state.path, hasIncludeChain);
+    if (extracted) { return extracted; }
+    // Fallback: return a shallow clone with path set so the caller's error is never mutated.
+    if (e.path) { return e; }
+    return Object.assign(Object.create(Object.getPrototypeOf(e) ?? Error.prototype), e, { path: state.path }) as ErrorWithLineInfo;
   };
 
   return { enrichError };

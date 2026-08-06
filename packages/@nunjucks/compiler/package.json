@@ -9,7 +9,9 @@
     "./node-dispatch": "./src/node-dispatch.ts",
     "./expression-compiler": "./src/expression-compiler/index.ts",
     "./statement-compiler": "./src/statement-compiler/index.ts",
-    "./statement-compiler/macro": "./src/statement-compiler/macro.ts"
+    "./statement-compiler/component": "./src/statement-compiler/component.ts",
+    "./statement-compiler/render": "./src/statement-compiler/render.ts",
+    "./statement-compiler/slot": "./src/statement-compiler/slot.ts"
   },
   "dependencies": {
     "@nunjucks/nodes": "workspace:*",

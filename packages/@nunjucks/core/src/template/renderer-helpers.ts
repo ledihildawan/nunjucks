@@ -1,50 +1,47 @@
-import { createContext } from '@nunjucks/runtime/context';
-import type { ContextEnv, BlockLocation } from '@nunjucks/runtime/context';
-import { createFrame } from '@nunjucks/runtime';
-import type { Frame } from '@nunjucks/runtime';
+import { createContext, createFrame, type BlockLocation, type Frame } from '@nunjucks/runtime';
 import { injectWarningsScript } from '@nunjucks/log';
 import type { Warning, IncludeChain } from '@nunjucks/log';
 import { prettifyError, getError } from '@nunjucks/log';
 import { createLog } from '@nunjucks/log';
 import type { TemplateState } from './types';
-import { createRuntimeWithContext } from './runtime-helpers';
+import type { ErrorWithLineInfo } from './error-helpers';
+import { createRuntimeWithContext } from './runtime-factory';
 
 export { createTemplateRenderer, createRenderFrame };
 
-const createRenderFrame = (parentFrame: unknown): Frame => {
-  const frame = parentFrame ? (parentFrame as Pick<Frame, 'push'>).push(true) : createFrame();
+const createRenderFrame = (parentFrame: Frame | undefined): Frame => {
+  const frame = parentFrame ? parentFrame.push(true) : createFrame();
   frame.topLevel = true;
   return frame;
 };
 
-const createTemplateRenderer = (state: TemplateState, errorHandler: { enrichError: (e: { lineno?: number; colno?: number; message?: string; name?: string; path?: string; _includeChain?: unknown[]; getterName?: string; [key: string]: unknown }) => unknown }) => {
+const createTemplateRenderer = (state: TemplateState, errorHandler: { enrichError: (e: ErrorWithLineInfo) => Error }) => {
   const { enrichError } = errorHandler;
 
-  const wrapRenderError = (e: unknown): never => {
-    throw prettifyError({
-      path: (e as Record<string, unknown>).path as string || state.path,
-      withInternals: state.env.opts.dev,
-      err: enrichError(e as Record<string, unknown>) as unknown as Error,
-      includeChain: ((e as Record<string, unknown>)._includeChain as IncludeChain | undefined) || (state._includeChain as unknown as IncludeChain | undefined)
-    });
-  };
+  const wrapRenderError = (e: unknown): Error => prettifyError({
+    path: (e as { path?: string }).path ?? state.path,
+    withInternals: state.env.opts.dev,
+    err: enrichError(e as ErrorWithLineInfo),
+    includeChain: (e as { _includeChain?: IncludeChain })._includeChain ?? state._includeChain ?? undefined
+  });
 
-  const render = async (ctx: unknown, parentFrame?: unknown): Promise<string> => {
+  const render = async (ctx: Record<string, unknown>, parentFrame?: unknown): Promise<string> => {
     await state.compiler?.safeCompile();
 
-    if (state.env._renderingTemplates.has(state.path)) {
+    const renderingTemplates = state.env._renderingTemplates;
+    if (renderingTemplates?.has(state.path)) {
       throw createLog('error', getError('CIRCULAR_INCLUDE'), { path: state.path as string }, state.path as string, { phase: 'render' });
     }
 
-    state.env._renderingTemplates.add(state.path);
+    renderingTemplates?.add(state.path);
 
     const context = createContext(
-      (ctx || {}) as Record<string, unknown>,
+      ctx || {},
       state.blocks,
-      state.env as unknown as ContextEnv,
+      state.env,
       { blockLocations: state.blockMeta as Record<string, BlockLocation> }
     );
-    const frame = createRenderFrame(parentFrame);
+    const frame = createRenderFrame(parentFrame as Frame | undefined);
 
     try {
       const runtime = createRuntimeWithContext(state.path, ctx || {});
@@ -54,10 +51,9 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: { enrichErro
       }
       return result as string;
     } catch (e) {
-      wrapRenderError(e);
-      throw e;
+      throw wrapRenderError(e);
     } finally {
-      state.env._renderingTemplates.delete(state.path);
+      renderingTemplates?.delete(state.path);
     }
   };
 

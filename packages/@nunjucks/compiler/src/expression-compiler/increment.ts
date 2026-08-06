@@ -1,17 +1,19 @@
 import { isSymbol } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
+import type { IncDecNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import { emitLocationGuard } from '../compiler-helpers.ts';
 
-const compileIncrementDecrement = (ctx: Compiler, node: Node, _frame: Frame, op: string): void => {
-  const target = node.target as Node;
+const compileIncrementDecrement = (ctx: Compiler, node: IncDecNode, _frame: Frame, op: string): void => {
+  const target = node.target;
   const isSym = isSymbol(target);
 
   if (isSym) {
     const varName = target.value as string;
     const id = ctx.tmpid();
 
-    ctx.emit(`(lineno = ${node.lineno ?? 0}, colno = ${node.colno ?? 0}, (() => {`);
+    emitLocationGuard(ctx, node.lineno, node.colno);
+    ctx.emit('(() => {');
     ctx.emit(`let ${id} = runtime.contextOrFrameLookup(context, frame, "${varName}");`);
 
     if (node.isPostfix) {
@@ -27,14 +29,15 @@ const compileIncrementDecrement = (ctx: Compiler, node: Node, _frame: Frame, op:
     ctx.emit('return result;');
     ctx.emit('})())');
   } else {
-    ctx.emit(`(lineno = ${node.lineno ?? 0}, colno = ${node.colno ?? 0}, (() => { throw new Error("Invalid left-hand side expression"); })())`);
+    emitLocationGuard(ctx, node.lineno, node.colno);
+    ctx.emit('(() => { throw new Error("Invalid left-hand side expression"); })())');
   }
 };
 
-export const compileIncrement = (ctx: Compiler, node: Node, frame: Frame): void => {
+export const compileIncrement = (ctx: Compiler, node: IncDecNode, frame: Frame): void => {
   compileIncrementDecrement(ctx, node, frame, '+');
 };
 
-export const compileDecrement = (ctx: Compiler, node: Node, frame: Frame): void => {
+export const compileDecrement = (ctx: Compiler, node: IncDecNode, frame: Frame): void => {
   compileIncrementDecrement(ctx, node, frame, '-');
 };

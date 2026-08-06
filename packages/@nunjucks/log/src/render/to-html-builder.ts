@@ -1,9 +1,10 @@
 import { escapeHtml, highlightHtml, renderInlineMarkdown } from './internal/highlight.ts';
+import { join, map, pipe } from 'remeda';
 import { renderContextHtml, formatStackTraceHtml } from './internal/sections.ts';
 import { resolveIdeLink, getIdeMeta } from './internal/ide-links.ts';
 import type { SourceTrace } from './internal/source-trace.ts';
 import type { ErrorLike } from './to-html-types.ts';
-import { renderBadge, highlightSource, SEVERITY_HEADINGS } from './to-html-helpers.ts';
+import { renderBadge, highlightSource, SEVERITY_HEADINGS, type classifyError } from './to-html-helpers.ts';
 
 const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined, displayPath: string): string => {
   if (!sourceTrace || sourceTrace.lines.length === 0) { return ''; }
@@ -43,8 +44,6 @@ const buildErrorHeader = (
 ): string => {
   const codeBadge = renderBadge('badge-error', category);
   const phaseBadge = renderBadge('badge-code', phase);
-  const ideMeta = getIdeMeta(ide);
-  const _ideLabel = `Open in ${ideMeta.label}`;
   const headerTitle = escapeHtml(humanTitle);
   const severityText = SEVERITY_HEADINGS[severity] ?? SEVERITY_HEADINGS.error;
   const phaseBadgePart = phaseBadge ? ` ${phaseBadge}` : '';
@@ -87,14 +86,14 @@ const buildFullErrorBody = (
 ): string => {
   const codeSection = renderSourceTraceSection(sourceTrace, displayPath);
   const possibleCausesList = possibleCauses.length > 0
-    ? possibleCauses.map(c => `<li>${renderInlineMarkdown(c)}</li>`).join('\n          ')
+    ? pipe(possibleCauses, map(c => `<li>${renderInlineMarkdown(c)}</li>`), join('\n          '))
     : '<li>Check template syntax and context</li>';
   const fixCommentSpan = fixComment ? `<span class="syntax-comment">${escapeHtml(fixComment)}</span>\n` : '';
   const fixCodeBlock = fixCode ? highlightHtml(fixCode) : '// No fix available';
   const docsLink = documentationUrl
-    ? `\n<span class="docs-inline">Learn more: <a href="${escapeHtml(documentationUrl)}" target="_blank" rel="noopener noreferrer" class="docs-link">${escapeHtml(documentationUrl)}</a></span>`
+    ? `\n<span class="docs-inline">Learn more: <a href="${escapeHtml(documentationUrl)}" target="_blank" rel="noopener" class="docs-link">${escapeHtml(documentationUrl)}</a></span>`
     : '';
-  const renderContextSection = renderContext ? renderContextHtml(renderContext) : '';
+  const renderContextSection = renderContext ? renderContextHtml(renderContext, error.blockedKeys) : '';
   const stackTraceSection = error.stack ? formatStackTraceHtml(error, false, ide) : '';
 
   return `
@@ -131,12 +130,12 @@ const buildErrorFooter = (
   const footerActions = verbosity === 'full' && canLinkLocation
     ? (() => {
       const ideMeta = getIdeMeta(ide);
-      const _ideLabel = `Open in ${ideMeta.label}`;
+      const ideLabel = `Open in ${ideMeta.label}`;
       return `
     <div class="error-footer-actions">
       <a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="btn btn-solid">
         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">${ideMeta.icon}</svg>
-        ${_ideLabel}
+        ${ideLabel}
       </a>
     </div>`;
     })()
@@ -153,7 +152,7 @@ const buildErrorFooter = (
 const buildErrorBodyContent = (
   verbosity: string,
   error: ErrorLike,
-  classified: ReturnType<typeof import('./to-html-helpers.ts').classifyError>,
+  classified: ReturnType<typeof classifyError>,
   sourceTrace: SourceTrace | null | undefined,
   renderContext: unknown,
   ide: string,
@@ -180,4 +179,4 @@ const buildHtmlWrapper = (header: string, errorBody: string, footer: string): st
   ${footer}
 </main>`;
 
-export { buildErrorHeader, buildFullErrorBody, buildErrorFooter, buildErrorBodyContent, buildHtmlWrapper };
+export { buildErrorHeader, buildErrorFooter, buildErrorBodyContent, buildHtmlWrapper };

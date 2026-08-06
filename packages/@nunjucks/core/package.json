@@ -7,9 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./config/*": "./src/config/*.ts",
-    "./env": "./src/core/env.ts",
-    "./template": "./src/template/index.ts",
-    "./core/render": "./src/core/render.ts"
+    "./template": "./src/template/index.ts"
   },
   "dependencies": {
     "@nunjucks/compiler": "workspace:*",
@@ -21,8 +19,6 @@
     "@nunjucks/transformers": "workspace:*",
     "@nunjucks/loaders": "workspace:*",
     "@nunjucks/validators": "workspace:*",
-    "isomorphic-dompurify": "^2.14.0",
-    "picocolors": "^1.1.1",
     "remeda": "^2.39.0"
   },
   "devDependencies": {

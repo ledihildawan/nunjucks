@@ -1,0 +1,15 @@
+{% extends "base.njk" %}
+{% import "components.njk" as components %}
+
+{% block content %}
+<h2>Component Demo</h2>
+<p>Welcome, {{ username }}!</p>
+
+<h3>User Cards (using component):</h3>
+{{ components.user_card(username, "Active") }}
+{{ components.user_card("Jane", "Inactive") }}
+{{ components.user_card("Bob", "Active") }}
+
+<h3>Simple List:</h3>
+{{ components.simple_list(["One", "Two", "Three"]) }}
+{% endblock %}

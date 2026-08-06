@@ -1,7 +1,7 @@
-import { isNonNullish, isNullish } from 'remeda';
+import { isNonNullish, isNullish, forEach } from 'remeda';
 import { isSafeString as runtimeIsSafeString, markSafe, copySafeness } from '@nunjucks/runtime';
 import { escapeHtml } from '@nunjucks/shared';
-import { createLog, } from '@nunjucks/log';
+import { createLog } from '@nunjucks/log';
 import type { ErrorDefinitionEntry } from '@nunjucks/log';
 import type { FilterContext, SafeString } from './types.ts';
 
@@ -51,6 +51,20 @@ const safeHtml = (str: unknown): SafeString => {
 const preserveSafe = (original: unknown, result: string): string =>
   copySafeness(original as object, result) as string;
 
-export { filterError, makeFilterError, normalize, safeString, safeHtml, preserveSafe };
+const requireArrayError = (value: unknown, errorDef: ErrorDefinitionEntry | undefined) =>
+  makeFilterError(errorDef, { type: typeof value }, typeof value, `Expected array but got ${typeof value}`);
+
+const requireNumberError = (value: unknown, errorDef: ErrorDefinitionEntry | undefined) =>
+  makeFilterError(errorDef, { type: typeof value }, typeof value, `Expected number but got ${typeof value}`);
+
+const assertItemsHaveAttr = (arr: unknown[], attr: string, errorDef: ErrorDefinitionEntry | undefined): void => {
+  forEach(arr, (item) => {
+    if (item && typeof item === 'object' && !(attr in (item as object))) {
+      throw makeFilterError(errorDef, { attr }, attr, `Attribute "${attr}" not found in item`);
+    }
+  });
+};
+
+export { filterError, makeFilterError, normalize, safeString, safeHtml, preserveSafe, requireArrayError, requireNumberError, assertItemsHaveAttr };
 
 export { isSafeString } from './types.ts';

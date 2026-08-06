@@ -7,27 +7,25 @@ interface ContextValidationError {
   dangerousPaths?: string[];
 }
 
-interface ContextValidationResult {
-  valid: boolean;
-  errors: ContextValidationError[];
-}
+type ContextValidationResult =
+  | { valid: true; errors: readonly [] }
+  | { valid: false; errors: readonly [ContextValidationError, ...ContextValidationError[]] };
 
 interface ContextValidatorConfig {
   strictMode?: boolean;
   scanContextValues?: boolean;
-  allowedContextKeys?: readonly string[];
   blockedContextKeys?: readonly string[];
   allowedGlobals?: readonly string[];
 }
 
 const validateRenderContext = (context: unknown, config: ContextValidatorConfig): ContextValidationResult => {
   if (!(config.strictMode || config.scanContextValues)) {
-    return { valid: true, errors: [] };
+    return { valid: true, errors: [] as const };
   }
 
   const dangerous = findDangerousValues(context, config.allowedGlobals);
   if (dangerous.length === 0) {
-    return { valid: true, errors: [] };
+    return { valid: true, errors: [] as const };
   }
 
   return {

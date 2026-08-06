@@ -1,6 +1,5 @@
 import type { LexerState, LexerOptions } from './types.ts';
 import { createDelimiters } from './delimiters.ts';
-import { reduce, pipe } from 'remeda';
 
 export const createState = (str: string, opts: LexerOptions = {}): LexerState => ({
   str,
@@ -39,18 +38,18 @@ export const advance = (state: LexerState, n = 1): LexerState => {
     return state;
   }
 
-  const stepped = pipe(
-    Array.from(str.slice(index, newIndex)),
-    reduce(
-      (acc, ch) =>
-        ch === '\n'
-          ? { lineno: acc.lineno + 1, colno: 0 }
-          : { lineno: acc.lineno, colno: acc.colno + 1 },
-      { lineno, colno }
-    )
-  );
+  let newLineno = lineno;
+  let newColno = colno;
+  for (let i = index; i < newIndex; i++) {
+    if (str[i] === '\n') {
+      newLineno++;
+      newColno = 0;
+    } else {
+      newColno++;
+    }
+  }
 
-  return { ...state, index: newIndex, lineno: stepped.lineno, colno: stepped.colno };
+  return { ...state, index: newIndex, lineno: newLineno, colno: newColno };
 };
 
 export const matches = (state: LexerState, text: string): boolean => {

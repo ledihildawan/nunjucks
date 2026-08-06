@@ -1,7 +1,7 @@
 import { isLiteral, isSpread, isSymbol, literal } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
+import type { Node, SymbolNode, ChildrenNode, PairNode, SpreadNode, TemplateLiteralNode, CallNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
-import { forEach, reduce } from 'remeda';
+import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
 
 const STRING_ESCAPE_MAP: Record<string, string> = {
@@ -19,95 +19,111 @@ const TEMPLATE_ESCAPE_MAP: Record<string, string> = {
   '$': '\\$',
 };
 
-const escapeString = (str: string): string =>
-  reduce([...str], (result, char) => result + (STRING_ESCAPE_MAP[char] ?? char), '');
+const escapeString = (str: string): string => {
+  let result = '';
+  for (const char of str) {
+    result += STRING_ESCAPE_MAP[char] ?? char;
+  }
+  return result;
+};
 
-const compileLiteral = (ctx: Compiler, node: Node): void => {
+const compileLiteral = (ctx: Compiler, node: { value?: unknown; lineno: number; colno: number }): void => {
   if (typeof node.value === 'string') {
     const val = escapeString(node.value);
     ctx.emit(`"${val}"`);
   } else if (node.value === null) {
     ctx.emit('null');
   } else {
-    ctx.emit((node.value as { toString: () => string }).toString());
+    ctx.emit(String(node.value));
   }
 };
 
-const compileSymbol = (ctx: Compiler, node: Node, frame: Frame): void => {
-  const name = node.value as string;
+const compileSymbol = (ctx: Compiler, node: SymbolNode, frame: Frame): void => {
+  const name = node.value;
   const v = frame.lookup(name);
 
   if (v) {
-    ctx.emit(v as string);
+    ctx.emit(String(v));
   } else {
     ctx.emit('runtime.contextOrFrameLookup(' +
       'context, frame, "' + name + '")');
   }
 };
 
-const compileGroup = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileGroup = (ctx: Compiler, node: ChildrenNode, frame: Frame): void => {
   compileAggregate(ctx, node, frame, { startChar: '(', endChar: ')' });
 };
 
-const compileArray = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileArray = (ctx: Compiler, node: ChildrenNode, frame: Frame): void => {
   compileAggregate(ctx, node, frame, { startChar: '[', endChar: ']' });
 };
 
-const compileDict = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileDict = (ctx: Compiler, node: ChildrenNode, frame: Frame): void => {
   compileAggregate(ctx, node, frame, { startChar: '{', endChar: '}' });
 };
 
-const compileNodeList = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileNodeList = (ctx: Compiler, node: ChildrenNode, frame: Frame): void => {
   ctx.compileChildren(node, frame);
 };
 
-const compilePair = (ctx: Compiler, node: Node, frame: Frame): void => {
-  const rawKey = node.key as Node;
-  const val = node.value as Node;
+const compilePair = (ctx: Compiler, node: PairNode, frame: Frame): void => {
+  const rawKey = node.key;
+  const val = node.value;
   const key = isSymbol(rawKey)
     ? literal(rawKey.lineno, rawKey.colno, rawKey.value)
     : rawKey;
 
-  if (!isSymbol(rawKey) && !(isLiteral(rawKey) &&
+  if (typeof rawKey !== 'string' && !isSymbol(rawKey) && !(isLiteral(rawKey) &&
     typeof rawKey.value === 'string')) {
     ctx.fail('compilePair: Dict keys must be strings or names',
-      rawKey.lineno,
-      rawKey.colno);
+      typeof rawKey !== 'string' ? rawKey.lineno : node.lineno,
+      typeof rawKey !== 'string' ? rawKey.colno : node.colno);
   }
 
-  ctx.compile(key, frame);
+  const keyNode = typeof key === 'string' ? literal(node.lineno, node.colno, key) : key;
+  ctx.compile(keyNode, frame);
   ctx.emit(': ');
   ctx.compileExpression(val, frame);
 };
 
-const compileKeywordArgs = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileKeywordArgs = (ctx: Compiler, node: ChildrenNode, frame: Frame): void => {
   ctx.emit('runtime.makeKeywordArgs(');
   compileDict(ctx, node, frame);
   ctx.emit(')');
 };
 
-const compileSpread = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileSpread = (ctx: Compiler, node: SpreadNode, frame: Frame): void => {
   ctx.emit('...');
-  ctx.compile(node.argument as Node, frame);
+  ctx.compile(node.argument, frame);
 };
 
-const escapeTemplateString = (str: string): string =>
-  reduce([...str], (result, char) => result + (TEMPLATE_ESCAPE_MAP[char] ?? char), '');
+const escapeTemplateString = (str: string): string => {
+  let result = '';
+  for (const char of str) {
+    result += TEMPLATE_ESCAPE_MAP[char] ?? char;
+  }
+  return result;
+};
 
-const compileTemplateLiteral = (ctx: Compiler, node: Node, frame: Frame): void => {
-  const rawQuasis = (node.quasis as { quasis?: unknown[] } | unknown[] | undefined);
-  const quasis: unknown[] = Array.isArray(rawQuasis)
-    ? rawQuasis
-    : (rawQuasis as { quasis?: unknown[] })?.quasis || [];
+interface TemplateQuasi {
+  type: 'template' | 'expression';
+  value?: unknown;
+  node?: Node;
+}
+
+const compileTemplateLiteral = (ctx: Compiler, node: TemplateLiteralNode, frame: Frame): void => {
+  const quasis = node.quasis ?? [];
   ctx.emit('`');
 
-  forEach(quasis, quasi => {
-    const q = quasi as Node & { value?: string };
-    if ((q.type as string) === 'template') {
-      ctx.emit(escapeTemplateString(q.value as string));
-    } else if ((q.type as string) === 'expression') {
+  forEach(quasis, (quasi) => {
+    const q = quasi as TemplateQuasi;
+    if (q.type === 'template') {
+      ctx.emit(escapeTemplateString(String(q.value ?? '')));
+    } else if (q.type === 'expression') {
       ctx.emit('${');
-      ctx.compile(q.node as Node, frame);
+      if (q.node) {
+        ctx.compile(q.node, frame);
+      }
       ctx.emit('}');
     }
   });
@@ -120,24 +136,26 @@ interface CompileAggregateOptions {
   endChar?: string;
 }
 
-const compileAggregate = (ctx: Compiler, node: Node, frame: Frame, options?: CompileAggregateOptions): void => {
+const compileAggregate = (ctx: Compiler, node: ChildrenNode | CallNode | readonly Node[], frame: Frame, options?: CompileAggregateOptions): void => {
   const { startChar, endChar } = options ?? {};
   if (startChar) {
     ctx.emit(startChar);
   }
 
-  const children = node.children ?? (node as unknown as Node[]);
-  children.forEach((child: Node, i: number) => {
+  const children: readonly Node[] = Array.isArray(node) ? node : ((node as ChildrenNode).children ?? []);
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    if (!child) { continue; }
     if (i > 0) {
       ctx.emit(',');
     }
     if (isSpread(child)) {
       ctx.emit('...');
-      ctx.compile(child.argument as Node, frame);
+      ctx.compile(child.argument, frame);
     } else {
       ctx.compile(child, frame);
     }
-  });
+  }
 
   if (endChar) {
     ctx.emit(endChar);

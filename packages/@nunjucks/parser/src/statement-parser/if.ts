@@ -2,8 +2,8 @@ import { if_ } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { parseExpression } from "../expression-parser/inline.ts";
-import { parseUntilBlocks } from "../top-level.ts";
+import { parseExpression } from "../expression-parser/index.ts";
+import { parseUntilBlocks } from "../parse-root.ts";
 
 export const parseIf = (ctx: ParserContext): Node => {
   const tag = peekToken(ctx);
@@ -13,31 +13,31 @@ export const parseIf = (ctx: ParserContext): Node => {
       tag.lineno,
       tag.colno);
   }
-  const node = if_(tag.lineno, tag.colno);
 
-  node.cond = parseExpression(ctx);
-  advanceAfterBlockEnd(ctx, tag.value as string);
+  const cond = parseExpression(ctx);
+  advanceAfterBlockEnd(ctx, String(tag.value));
 
-  node.body = parseUntilBlocks(ctx, 'elif', 'elseif', 'else', 'endif');
+  const body = parseUntilBlocks(ctx, 'elif', 'elseif', 'else', 'endif');
   const tok = peekToken(ctx);
 
+  let else_: Node | null = null;
   switch (tok?.value) {
     case 'elseif':
     case 'elif':
-      node.else_ = parseIf(ctx);
+      else_ = parseIf(ctx);
       break;
     case 'else':
       advanceAfterBlockEnd(ctx);
-      node.else_ = parseUntilBlocks(ctx, 'endif');
+      else_ = parseUntilBlocks(ctx, 'endif');
       advanceAfterBlockEnd(ctx);
       break;
     case 'endif':
-      node.else_ = null;
+      else_ = null;
       advanceAfterBlockEnd(ctx);
       break;
     default:
       fail(ctx, 'parseIf: expected elif, else, or endif, got end of file');
   }
 
-  return node;
+  return if_(tag.lineno, tag.colno, { cond, body, else_ });
 };

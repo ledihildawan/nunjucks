@@ -1,75 +1,71 @@
 import { describe, test, expect } from 'bun:test';
-import { createLog } from './create-log.ts';
-import { ERROR_DEFINITIONS } from './errors/registry.ts';
+import { createLog, isTemplateError, prettifyError } from './create-log.ts';
+import type { ErrorDefinitionEntry, ErrorContext, WarningContext } from './create-log.ts';
 
-const { UNDEFINED_VARIABLE } = ERROR_DEFINITIONS;
-const { FILE_NOT_FOUND } = ERROR_DEFINITIONS;
+const def: ErrorDefinitionEntry = { name: 'TEST_ERR', message: 'something failed', pattern: /test/ };
+const errContext: ErrorContext = { lineno: 5, colno: 10, phase: 'render', templateName: 'foo.njk', lineBase: 'zero' };
+const noNameCtx: ErrorContext = { lineno: 1, colno: 1, phase: 'render', templateName: null, lineBase: 'zero' };
+const warnContext: WarningContext = { varName: 'x', lineno: 1, colno: 1, phase: 'render', templateName: null, lineBase: 'zero' };
 
 describe('createLog', () => {
-  test('outputs formatted error message', () => {
-    const err = createLog('error', { message: 'Something went wrong', lineno: 1, colno: 0 });
-    expect(err.output()).toContain('Something went wrong');
+  test('creates a TemplateError from a definition', () => {
+    const err = createLog('error', def, undefined, 'mysubject', errContext);
+    expect(isTemplateError(err)).toBe(true);
+    expect(err.name).toBe('Template render error');
+    expect(err.code).toBe('TEST_ERR');
+    expect(err.message).toBe('something failed');
+    expect(err.subject).toBe('mysubject');
+    expect(err.lineno).toBe(5);
+    expect(err.colno).toBe(10);
   });
 
-  test('simple text output is just the message', () => {
-    const err = createLog('error', { message: 'Just message', lineno: 1, colno: 0 });
-    expect(err.output({ format: 'text', verbosity: 'simple' })).toBe('Just message');
+  test('renders message function with params', () => {
+    const fnDef: ErrorDefinitionEntry = {
+      name: 'PARAM_ERR',
+      message: (args) => `got ${(args as Record<string, string> | undefined)?.name ?? ''}`,
+      pattern: /x/,
+    };
+    const err = createLog('error', fnDef, { name: 'foo' }, null, noNameCtx);
+    expect(err.message).toBe('got foo');
   });
 
-  test('displays one-based location', () => {
-    const err = createLog('error', {
-      message: 'Error',
-      lineno: 5,
-      colno: 10,
-      info: { lineBase: 'one', templateName: 'test.njk' }
-    });
-    expect(err.output({ format: 'text', verbosity: 'medium' })).toContain('test.njk:5:10');
+  test('creates a TemplateWarning from a definition', () => {
+    const warn = createLog('warning', def, undefined, null, warnContext);
+    expect(isTemplateError(warn)).toBe(false);
   });
 
-  test('zero-based lineBase displays as one-based', () => {
-    const err = createLog('error', {
-      message: 'Error',
-      lineno: 1,
-      colno: 2,
-      info: { templateName: 'a.njk', lineBase: 'zero' }
-    });
-    expect(err.output({ format: 'text', verbosity: 'medium' })).toContain('a.njk:2:3');
+  test('throws on an unknown log type', () => {
+    expect(() => createLog('bad' as never, def)).toThrow('Unknown log type');
   });
 
-  test('redacts sensitive data in render context', () => {
-    const err = createLog('error', UNDEFINED_VARIABLE, { name: 'x' }, 'x', { templateName: 't.njk', lineno: 1 });
-    const html = err.output({ format: 'html', renderContext: { password: 'secret', apiKey: 'token123' } });
-    const ansi = err.output({ format: 'ansi', renderContext: { password: 'secret', apiKey: 'token123' } });
-    for (const output of [html, ansi]) {
-      expect(output).toContain('[Redacted]');
-      expect(output).not.toContain('secret');
-      expect(output).not.toContain('token123');
-    }
+  test('falls back to legacy data when the input is not a definition', () => {
+    const legacy = createLog('error', { message: 'legacy fail' } as never);
+    expect(isTemplateError(legacy)).toBe(true);
+    expect(legacy.message).toBe('legacy fail');
+  });
+});
+
+describe('isTemplateError', () => {
+  test('true for createLog error output, false for plain Error and warnings', () => {
+    expect(isTemplateError(createLog('error', def, undefined, null, errContext))).toBe(true);
+    expect(isTemplateError(new Error('plain'))).toBe(false);
+    expect(isTemplateError(null)).toBe(false);
+    expect(isTemplateError(createLog('warning', def, undefined, null, warnContext))).toBe(false);
+  });
+});
+
+describe('prettifyError', () => {
+  test('applies the path as templateName when none is set (with internals)', () => {
+    const source = createLog('error', def, undefined, null, noNameCtx);
+    const pretty = prettifyError({ err: source, path: 'template.njk', withInternals: true });
+    expect(isTemplateError(pretty)).toBe(true);
+    expect(pretty.templateName).toBe('template.njk');
   });
 
-  test('links file paths but not inline locations', () => {
-    const inline = createLog('error', UNDEFINED_VARIABLE, { name: 'x' }, 'x', { templateName: 'inline', lineno: 0, colno: 3 });
-    const file = createLog('error', UNDEFINED_VARIABLE, { name: 'x' }, 'x', { templateName: '/path/page.njk', lineno: 0, colno: 3 });
-    const inlineHtml = inline.output({ format: 'html', verbosity: 'full' });
-    const fileHtml = file.output({ format: 'html', verbosity: 'full', ide: 'vscode' });
-    expect(inlineHtml).toContain('inline:1:4');
-    expect(inlineHtml).not.toContain('vscode://file/inline');
-    expect(fileHtml).toContain('vscode://file/');
-  });
-
-  test('warning output shows warning label', () => {
-    const warn = createLog('warning', { message: 'Warn', lineno: 1, colno: 0 });
-    expect(warn.output()).toContain('[WARNING]');
-  });
-
-  test('warning includes version and timestamp', () => {
-    const warn = createLog('warning', { message: 'Warn', lineno: 1, colno: 0 });
-    const output = warn.output({ verbosity: 'full', version: '1.0.0', timestamp: '2026-01-01' });
-    expect(output).toContain('Nunjucks 1.0.0');
-    expect(output).toContain('2026-01-01');
-  });
-
-  test('throws for unknown log type', () => {
-    expect(() => createLog('unknown' as any, FILE_NOT_FOUND, {})).toThrow('Unknown log type: unknown');
+  test('strips internals but preserves the code and message', () => {
+    const source = createLog('error', def, undefined, null, noNameCtx);
+    const pretty = prettifyError({ err: source, path: 'template.njk', withInternals: false });
+    expect(pretty.code).toBe('TEST_ERR');
+    expect(pretty.message).toBe('something failed');
   });
 });

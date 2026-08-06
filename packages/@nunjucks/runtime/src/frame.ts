@@ -1,9 +1,5 @@
-// FRAME - Execution frame with cached lookups
-// Import directly: import { createFrame } from '@nunjucks/runtime/frame'
-
 export interface Frame {
   variables: Record<string, unknown>;
-  readonly rootState: { revision: number };
   parent: Frame | undefined;
   topLevel: boolean;
   readonly isolateWrites: boolean | undefined;
@@ -25,26 +21,17 @@ const setNestedValue = (target: Record<string, unknown>, path: string[], lastPar
   current[lastPart] = val;
 };
 
-export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Frame {
-  // The cast has to keep `undefined`: with no parent there is no rootState,
-  // and the `??` below is what supplies the initial one.
-  const rootState: { revision: number } = (parent?.rootState as { revision: number } | undefined) ?? { revision: 0 };
+export const createFrame = (parent?: Frame | null, isolateWrites?: boolean): Frame => {
   const state: {
     variables: Record<string, unknown>;
     parent: Frame | undefined;
     topLevel: boolean;
     isolateWrites: boolean | undefined;
-    rootState: { revision: number };
-    resolveCache: Map<string, { revision: number; frame: Frame | undefined }>;
-    lookupCache: Map<string, unknown>;
   } = {
     variables: Object.create(null),
     parent: parent ?? undefined,
     topLevel: false,
     isolateWrites,
-    rootState,
-    resolveCache: new Map(),
-    lookupCache: new Map(),
   };
 
   const frame: Frame = {
@@ -53,12 +40,6 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
     },
     set variables(val: Record<string, unknown>) {
       state.variables = val;
-      state.rootState.revision += 1;
-      state.resolveCache.clear();
-      state.lookupCache.clear();
-    },
-    get rootState(): { revision: number } {
-      return state.rootState;
     },
     get parent(): Frame | undefined {
       return state.parent;
@@ -80,7 +61,6 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
       const parts = name.split('.');
       const [firstPart] = parts;
       const lastPart = parts.at(-1);
-      // split() always yields at least one element, but say so rather than assert it.
       if (firstPart === undefined || lastPart === undefined) { return; }
 
       if (resolveUp) {
@@ -92,9 +72,6 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
       }
 
       setNestedValue(state.variables, parts.slice(0, -1), lastPart, val);
-      state.rootState.revision += 1;
-      state.resolveCache.clear();
-      state.lookupCache.clear();
     },
 
     get(name: string): unknown {
@@ -106,38 +83,21 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
     },
 
     lookup(name: string): unknown {
-      const cached = state.lookupCache.get(name);
-      if (cached !== undefined) {
-        return cached;
-      }
-
-      const p = state.parent;
       const val = state.variables[name];
-      const result = val === undefined ? p?.lookup(name) : val;
-      state.lookupCache.set(name, result);
-      return result;
+      if (val !== undefined) {
+        return val;
+      }
+      return state.parent?.lookup(name);
     },
 
     resolve(name: string, forWrite?: boolean): Frame | undefined {
-      const forWriteVal = forWrite ? 1 : 0;
-      const cacheKey = `${name}\u0000${forWriteVal}`;
-      const cached = state.resolveCache.get(cacheKey);
-      if (cached && cached.revision === state.rootState.revision) {
-        return cached.frame;
-      }
-
-      const shouldBailOut = forWrite && state.isolateWrites;
-      if (shouldBailOut) { return; }
+      if (forWrite && state.isolateWrites) { return; }
 
       const val = state.variables[name];
       if (val !== undefined) {
-        state.resolveCache.set(cacheKey, { revision: state.rootState.revision, frame });
         return frame;
       }
-
-      const resolvedFrame = state.parent?.resolve(name);
-      state.resolveCache.set(cacheKey, { revision: state.rootState.revision, frame: resolvedFrame });
-      return resolvedFrame;
+      return state.parent?.resolve(name);
     },
 
     push(writeIsolation?: boolean): Frame {
@@ -150,9 +110,6 @@ export function createFrame(parent?: Frame | null, isolateWrites?: boolean): Fra
   };
 
   return frame;
-}
+};
 
 export const lookup = (frame: Frame, name: string): unknown => frame.lookup(name);
-export const set = (frame: Frame, name: string, value: unknown): void => {
-  frame.set(name, value);
-};

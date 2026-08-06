@@ -1,23 +1,16 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
-import { filter, forEach, isPlainObject, isString, keys, map, pipe, range, reduce, split, sum as sumValues } from 'remeda';
-import { isSafeString, makeMacro } from '@nunjucks/runtime';
-import { makeFilterError, isArray } from '../factory/index.ts';
-import type { FilterContext } from '../factory/index.ts';
-
-export { filterError } from '../factory/index.ts';
-export type { FilterContext } from '../factory/index.ts';
+import { isPlainObject, isString, keys, map, pipe, range, reduce, sum as sumValues } from 'remeda';
+import { isSafeString, makeComponent } from '@nunjucks/runtime';
+import { makeFilterError, isArray, requireArrayError, assertItemsHaveAttr } from '../factory/index.ts';
+import { getAttrGetter } from '../attributes.ts';
 
 export const first = (arr: unknown): unknown => {
-  if (!isArray(arr)) {
-    throw makeFilterError(ERROR_DEFINITIONS.FIRST_LAST_FILTER, { type: typeof arr }, typeof arr, `Expected array but got ${typeof arr}`);
-  }
+  if (!isArray(arr)) { throw requireArrayError(arr, ERROR_DEFINITIONS.FIRST_LAST_FILTER); }
   return arr[0];
 };
 
 export const last = (arr: unknown): unknown => {
-  if (!isArray(arr)) {
-    throw makeFilterError(ERROR_DEFINITIONS.FIRST_LAST_FILTER, { type: typeof arr }, typeof arr, `Expected array but got ${typeof arr}`);
-  }
+  if (!isArray(arr)) { throw requireArrayError(arr, ERROR_DEFINITIONS.FIRST_LAST_FILTER); }
   return arr.at(-1);
 };
 
@@ -53,7 +46,7 @@ export const reverse = (val: unknown): unknown[] | string => {
     return val.split('').toReversed().join('');
   }
   if (isArray(val)) {
-    return map(val, (v) => v).toReversed();
+    return [...val].toReversed();
   }
   throw makeFilterError(ERROR_DEFINITIONS.LIST_FILTER, { type: typeof val }, typeof val, `Expected string or array but got ${typeof val}`);
 };
@@ -81,9 +74,7 @@ const buildSingleSlice = (
 };
 
 export const slice = (arr: unknown, slices: number, fillWith?: unknown): unknown[][] => {
-  if (!isArray(arr)) {
-    throw makeFilterError(ERROR_DEFINITIONS.LIST_FILTER, { type: typeof arr }, typeof arr, `Expected array but got ${typeof arr}`);
-  }
+  if (!isArray(arr)) { throw requireArrayError(arr, ERROR_DEFINITIONS.LIST_FILTER); }
   if (slices <= 0) {
     throw makeFilterError(ERROR_DEFINITIONS.SLICE_ZERO, {}, '', 'slices must be positive');
   }
@@ -101,16 +92,8 @@ export const slice = (arr: unknown, slices: number, fillWith?: unknown): unknown
   return res;
 };
 
-const validateSumAttribute = (arr: unknown[], attr: string): void => {
-  forEach(arr, (item) => {
-    if (item && typeof item === 'object' && !(attr in (item as object))) {
-      throw makeFilterError(ERROR_DEFINITIONS.SUM_FILTER_ATTR, { attr }, attr, `Attribute "${attr}" not found in item`);
-    }
-  });
-};
-
 const sumWithAttribute = (arr: unknown[], attr: string, start: number): number => {
-  validateSumAttribute(arr, attr);
+  assertItemsHaveAttr(arr, attr, ERROR_DEFINITIONS.SUM_FILTER_ATTR);
   return start + sumValues(map(arr as Record<string, unknown>[], (v) => (v as Record<string, unknown>)[attr]) as number[]);
 };
 
@@ -122,20 +105,15 @@ export const sum = (arr: unknown, attr?: string, start = 0): number => {
     throw makeFilterError(ERROR_DEFINITIONS.SUM_FILTER, { type: typeof arr }, typeof arr, `Expected array or plain object but got ${typeof arr}`);
   }
   if (attr) {
-    if (!isArray(arr)) {
-      throw makeFilterError(ERROR_DEFINITIONS.SUM_FILTER, { type: typeof arr }, typeof arr, `Expected array but got ${typeof arr}`);
-    }
+    if (!isArray(arr)) { throw requireArrayError(arr, ERROR_DEFINITIONS.SUM_FILTER); }
     return sumWithAttribute(arr, attr, start);
   }
   return sumWithoutAttribute(arr as unknown[], start);
 };
 
-const getNestedAttribute = (obj: Record<string, unknown>, attr: string): unknown =>
-  pipe(attr, split('.'), reduce((val, k) => (val as Record<string, unknown>)[k], obj as unknown));
-
 const getCompareValue = (item: unknown, sortAttr: string | undefined): unknown => {
   if (!sortAttr) { return item; }
-  return getNestedAttribute(item as Record<string, unknown>, sortAttr);
+  return getAttrGetter(sortAttr)(item as Record<string, unknown>);
 };
 
 const toComparable = (val: unknown): string | number => {
@@ -156,14 +134,6 @@ const compareValues = (xVal: unknown, yVal: unknown, caseSens: boolean | string 
   return 0;
 };
 
-const validateSortAttribute = (arr: unknown[], sortAttr: string): void => {
-  forEach(arr, (item) => {
-    if (item && typeof item === 'object' && !(sortAttr in (item as object))) {
-      throw makeFilterError(ERROR_DEFINITIONS.SORT_FILTER_ATTR, { attr: sortAttr }, sortAttr, `Attribute "${sortAttr}" not found in item`);
-    }
-  });
-};
-
 const createSortComparator = (sortAttr: string | undefined, sortReverse: boolean | string | undefined, caseSens: boolean | string | undefined) => {
   return (a: unknown, b: unknown): number => {
     const xVal = getCompareValue(a, sortAttr);
@@ -179,36 +149,21 @@ const sortArray = (
   caseSens: boolean | string | undefined
 ): unknown[] => {
   if (sortAttr) {
-    validateSortAttribute(arr, sortAttr);
+    assertItemsHaveAttr(arr, sortAttr, ERROR_DEFINITIONS.SORT_FILTER_ATTR);
   }
-  const array = pipe(arr, map((v) => v));
+  const array = [...arr];
   const comparator = createSortComparator(sortAttr, sortReverse, caseSens);
   return array.toSorted(comparator);
 };
 
-export const sort = makeMacro(
+export const sort = makeComponent(
   ['value', 'reverse', 'case_sensitive', 'attribute'],
   [],
   (arr: unknown[], reversed?: boolean | string, caseSens?: boolean | string, attr?: string): unknown[] => {
-    if (!isArray(arr)) {
-      throw makeFilterError(ERROR_DEFINITIONS.SORT_FILTER, { type: typeof arr }, typeof arr, `Expected array but got ${typeof arr}`);
-    }
+    if (!isArray(arr)) { throw requireArrayError(arr, ERROR_DEFINITIONS.SORT_FILTER); }
     const reversedIsString = typeof reversed === 'string';
     const sortAttr = reversedIsString ? reversed : attr;
     const sortReverse = reversedIsString ? caseSens : reversed;
     return sortArray(arr, sortAttr, sortReverse, caseSens);
   }
 );
-
-export const getSelectOrReject = (expectedTestResult: boolean) =>
-  function (this: FilterContext, arr: unknown[], testName = 'truthy', secondArg?: unknown): unknown[] {
-    if (!isArray(arr)) {
-      throw makeFilterError(ERROR_DEFINITIONS.LIST_FILTER, { type: typeof arr }, typeof arr, `Expected array but got ${typeof arr}`);
-    }
-    const test = (this as { env: { getTest: (name: string) => (this: unknown, ...args: unknown[]) => boolean } }).env.getTest(testName);
-    return pipe(Array.from(arr), filter((item) => test.call(this, item, secondArg) === expectedTestResult));
-  };
-
-export const reject = getSelectOrReject(false);
-
-export const select = getSelectOrReject(true);

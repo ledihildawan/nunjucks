@@ -1,4 +1,8 @@
-import type { LineBase } from './internal/location.ts';
+import type { LineBase } from '../line-base.ts';
+import type { SourceTrace } from './internal/source-trace.ts';
+import type { ErrorLike } from '../types.ts';
+
+export type { ErrorLike };
 
 interface Csp {
   nonce?: string;
@@ -29,18 +33,6 @@ interface LocationInfo {
   lineBaseValue: LineBase;
 }
 
-interface ErrorLike {
-  message?: string;
-  stack?: string;
-  lineno?: number | null;
-  colno?: number | null;
-  templateName?: string | null;
-  sourceContent?: string;
-  phase?: string | null;
-  code?: string | null;
-  lineBase?: LineBase | null;
-}
-
 interface ToHtmlOptions {
   templatePath?: string;
   lineno?: number | null;
@@ -52,11 +44,11 @@ interface ToHtmlOptions {
   csp?: Csp;
   jsCaller?: string;
   jsCallerErrorLine?: number;
-  sourceTrace?: import('./internal/source-trace.ts').SourceTrace | null;
+  sourceTrace?: SourceTrace | null;
   ide?: string;
   verbosity?: 'simple' | 'medium' | 'full';
   isJsCaller?: boolean;
   isProduction?: boolean;
 }
 
-export type { Csp, HumanTitleInput, ClassifiedError, LocationInfo, ErrorLike, ToHtmlOptions };
+export type { Csp, HumanTitleInput, ClassifiedError, LocationInfo, ToHtmlOptions };

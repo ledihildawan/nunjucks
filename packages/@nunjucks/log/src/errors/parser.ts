@@ -67,9 +67,9 @@ export const PARSER_ERRORS = {
     causes: [
       'A variable name is missing where one is required',
       'The identifier starts with a digit or contains invalid characters',
-      'Missing identifier after a `set` or `for` keyword'
+      'Missing identifier after `for`, or missing target before `:=`'
     ],
-    fixCode: '{% set validName = value %}',
+    fixCode: '{{ validName := value }}',
     fixComment: 'Use a valid identifier: letters, digits, underscores (not starting with digit)'
   },
   PARSER_TAG_NAME: {
@@ -79,12 +79,12 @@ export const PARSER_ERRORS = {
     category: 'syntax_error',
     titleTemplate: 'Tag name expected',
     causes: [
-      'A tag (e.g. `if`, `for`, `set`) is missing its name',
+      'A tag (e.g. `if`, `for`, `block`) is missing its name',
       'A keyword was used where a tag was expected',
       'The tag is malformed'
     ],
     fixCode: '{% if condition %}...{% endif %}',
-    fixComment: 'Make sure the tag has a valid name like `if`, `for`, `block`, `set`, etc.',
+    fixComment: 'Make sure the tag has a valid name like `if`, `for`, `block`, etc.',
     documentationUrl: `${DOCS_BASE}#tags`
   },
   PARSER_EXPRESSION: {
@@ -161,6 +161,28 @@ export const PARSER_ERRORS = {
     ],
     fixCode: '{{ true }} or {{ false }}',
     fixComment: 'Use the literals `true` or `false` (lowercase)'
+  }),
+  WALRUS_TARGET_INVALID: createErrorDefinition({
+    name: 'WALRUS_TARGET_INVALID',
+    message: 'Walrus operator target must be a symbol or pattern',
+    category: 'syntax_error',
+    causes: [
+      'The target of `:=` must be a variable name',
+      'The left-hand side of `:=` must be a variable name or a destructuring pattern'
+    ],
+    fixCode: '{{ x := value }}',
+    fixComment: 'Use a variable name or a destructuring pattern (`[a, b]`, `{x, y}`) as the walrus target'
+  }),
+  ASSIGNMENT_TARGET_INVALID: createErrorDefinition({
+    name: 'ASSIGNMENT_TARGET_INVALID',
+    message: 'Assignment target must be a symbol',
+    category: 'syntax_error',
+    causes: [
+      'Compound assignment (`+=`, `-=`, etc.) requires a simple variable name as the target',
+      'Object property assignment is not supported in nunjucks templates'
+    ],
+    fixCode: '{{ x += 1 }}',
+    fixComment: 'Use `:=` to declare a variable, `=` to reassign, or compound operators like `+=`'
   })
 } as const;
 

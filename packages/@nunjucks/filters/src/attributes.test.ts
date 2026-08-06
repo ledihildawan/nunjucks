@@ -1,59 +1,64 @@
-import { expect, describe, test } from 'bun:test';
+import { describe, test, expect } from 'bun:test';
 import { _prepareAttributeParts, getAttrGetter } from './attributes.ts';
 
-describe('_prepareAttributeParts', () => {
-  test('returns empty array for falsy input', () => {
-    expect(_prepareAttributeParts(null)).toEqual([]);
-    expect(_prepareAttributeParts(undefined)).toEqual([]);
-    expect(_prepareAttributeParts('')).toEqual([]);
+describe('filters/attributes', () => {
+  describe('_prepareAttributeParts', () => {
+    test('returns empty array for null', () => {
+      expect(_prepareAttributeParts(null)).toEqual([]);
+    });
+
+    test('returns empty array for undefined', () => {
+      expect(_prepareAttributeParts(undefined)).toEqual([]);
+    });
+
+    test('returns array with number as-is', () => {
+      expect(_prepareAttributeParts(0)).toEqual([0]);
+      expect(_prepareAttributeParts(42)).toEqual([42]);
+    });
+
+    test('splits dot-separated string', () => {
+      expect(_prepareAttributeParts('a.b.c')).toEqual(['a', 'b', 'c']);
+    });
+
+    test('returns single part for plain string', () => {
+      expect(_prepareAttributeParts('foo')).toEqual(['foo']);
+    });
+
+    test('handles empty string', () => {
+      expect(_prepareAttributeParts('')).toEqual(['']);
+    });
   });
 
-  test('splits dot-separated string', () => {
-    expect(_prepareAttributeParts('a.b.c')).toEqual(['a', 'b', 'c']);
-  });
+  describe('getAttrGetter', () => {
+    test('returns accessor for top-level key', () => {
+      const getter = getAttrGetter('name');
+      expect(getter({ name: 'Alice' })).toBe('Alice');
+      expect(getter({ name: 'Bob' })).toBe('Bob');
+    });
 
-  test('returns single-element array for string without dots', () => {
-    expect(_prepareAttributeParts('foo')).toEqual(['foo']);
-  });
+    test('returns undefined for missing top-level key', () => {
+      const getter = getAttrGetter('name');
+      expect(getter({})).toBe(undefined);
+      expect(getter({ age: 30 })).toBe(undefined);
+    });
 
-  test('wraps non-string value in array', () => {
-    expect(_prepareAttributeParts(42)).toEqual([42]);
-  });
-});
+    test('returns accessor for nested key', () => {
+      const getter = getAttrGetter('user.address.city');
+      const item = { user: { address: { city: 'NYC' } } };
+      expect(getter(item)).toBe('NYC');
+    });
 
-describe('getAttrGetter', () => {
-  test('gets simple key from object', () => {
-    const getter = getAttrGetter('name');
-    expect(getter({ name: 'Alice' })).toBe('Alice');
-  });
+    test('returns undefined when nested path is broken', () => {
+      const getter = getAttrGetter('user.address.city');
+      expect(getter({ user: { city: 'NYC' } })).toBe(undefined);
+      expect(getter({ user: null })).toBe(undefined);
+      expect(getter({})).toBe(undefined);
+    });
 
-  test('gets nested key from object', () => {
-    const getter = getAttrGetter('user.name');
-    expect(getter({ user: { name: 'Bob' } })).toBe('Bob');
-  });
-
-  test('returns undefined for missing key', () => {
-    const getter = getAttrGetter('missing');
-    expect(getter({})).toBeUndefined();
-  });
-
-  test('returns undefined for missing nested key', () => {
-    const getter = getAttrGetter('a.b.c');
-    expect(getter({ a: {} })).toBeUndefined();
-  });
-
-  test('works with string key', () => {
-    const getter = getAttrGetter('0');
-    expect(getter(['x', 'y'] as unknown as Record<string, unknown>)).toBe('x');
-  });
-
-  test('falsy numeric key returns item itself (attr is falsy, parts empty)', () => {
-    const getter = getAttrGetter(0);
-    expect(getter(['x', 'y'] as unknown as Record<string, unknown>)).toEqual(['x', 'y']);
-  });
-
-  test('uses hasOwnProperty check', () => {
-    const getter = getAttrGetter('toString');
-    expect(getter({})).toBeUndefined();
+    test('handles numeric key via dot notation', () => {
+      const getter = getAttrGetter('0.name');
+      expect(getter(['Alice', 'Bob'] as unknown as Record<string, unknown>)).toBe(undefined);
+      expect(getter([{ name: 'Carol' }] as unknown as Record<string, unknown>)).toBe('Carol');
+    });
   });
 });

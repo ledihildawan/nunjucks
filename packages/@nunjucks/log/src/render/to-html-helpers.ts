@@ -1,7 +1,9 @@
 import { classifyFromError } from '../errors/classify.ts';
+import { mergeErrorParts } from './internal/error-parts.ts';
 import { toText } from './to-text.ts';
 import { escapeHtml, highlightHtml, highlightJs } from './internal/highlight.ts';
-import { toDisplayLocation, type LineBase } from './internal/location.ts';
+import { toDisplayLocation } from './internal/location.ts';
+import type { LineBase } from '../line-base.ts';
 import type { ClassifiedError, ErrorLike, HumanTitleInput, LocationInfo } from './to-html-types.ts';
 
 const SCRIPT_EXTENSION_RE = /\.(?:[cm]?[jt]sx?|mjs|cjs)$/iu;
@@ -62,26 +64,16 @@ const highlightSource = (code: string, filePath?: string | null): string => {
 };
 
 const classifyError = (error: ErrorLike): ClassifiedError => {
-  const errWithExtras = error as {
-    code?: string | null;
-    causes?: string[];
-    fixCode?: string | null;
-    fixComment?: string | null;
-    documentationUrl?: string | null;
-    severity?: 'error' | 'warning' | 'info';
-  };
-  const classified = classifyFromError(errWithExtras);
-  const possibleCauses = classified.causes && classified.causes.length > 0
-    ? [...classified.causes]
-    : [...(errWithExtras.causes || [])];
+  const parts = mergeErrorParts(error);
+  const classified = classifyFromError(error);
   return {
     category: error.code || classified.category.toUpperCase() || 'UNKNOWN',
     undefinedName: classified.undefinedName || null,
     title: classified.title || '',
-    causes: possibleCauses,
-    fixCode: classified.fixCode ?? errWithExtras.fixCode ?? '',
-    fixComment: classified.fixComment ?? errWithExtras.fixComment ?? '',
-    documentationUrl: classified.documentationUrl ?? errWithExtras.documentationUrl ?? null,
+    causes: parts.causes,
+    fixCode: parts.fixCode,
+    fixComment: parts.fixComment,
+    documentationUrl: parts.documentationUrl,
     severity: classified.severity,
   };
 };

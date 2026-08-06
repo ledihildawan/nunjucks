@@ -1,6 +1,6 @@
-import { defaultTo, entries, join, map, pipe, split } from 'remeda';
+import { defaultTo, entries, join as joinRemeda, map, pipe, split } from 'remeda';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
-import { normalize, safeString, safeHtml, preserveSafe, createStringFilter, createMacroFilter, isSafeString, isArray, makeFilterError } from '../factory/index.ts';
+import { normalize, safeString, safeHtml, preserveSafe, createStringFilter, createMacroFilter, isSafeString, isArray, requireArrayError } from '../factory/index.ts';
 import type { SafeString } from '../factory/index.ts';
 
 const capitalize = createStringFilter((s: string): string => {
@@ -8,7 +8,7 @@ const capitalize = createStringFilter((s: string): string => {
   return `${ret.charAt(0).toUpperCase()}${ret.slice(1)}`;
 });
 
-const fallback = createMacroFilter(['val', 'def', 'bool'], (val: unknown, def: unknown, bool?: boolean): unknown => {
+const fallback = createMacroFilter(['val', 'def', 'bool'], <T>(val: T | null | undefined, def: T, bool?: boolean) => {
   if (bool) {
     return val || def;
   }
@@ -42,9 +42,7 @@ const indent = (str: unknown, width?: number, indentfirst?: boolean): string => 
 };
 
 const joinFilter = (arr: unknown, del?: string, attr?: string): string => {
-  if (!isArray(arr)) {
-    throw makeFilterError(ERROR_DEFINITIONS.JOIN_FILTER, { type: typeof arr }, typeof arr, `Expected array but got ${typeof arr}`);
-  }
+  if (!isArray(arr)) { throw requireArrayError(arr, ERROR_DEFINITIONS.JOIN_FILTER); }
   const d = defaultTo(del, '');
   const values = attr ? arr.map((v) => (v as Record<string, unknown>)[attr]) : arr;
   return (values as unknown[]).join(d);
@@ -60,7 +58,7 @@ const replace = (str: unknown, old: unknown, new_: string, maxCount?: number): s
   if (oldStr === null) { return str as string; }
   const s = resolveString(str);
   if (s === null) { return str as string; }
-  if (oldStr === '') { return preserveSafe(originalStr, new_ + pipe(s, split(''), join(new_)) + new_); }
+  if (oldStr === '') { return preserveSafe(originalStr, new_ + pipe(s, split(''), joinRemeda(new_)) + new_); }
   const nextIndex = s.indexOf(oldStr);
   if (max === 0 || nextIndex === -1) { return s; }
   return preserveSafe(originalStr, performReplace(s, oldStr, new_, max));
@@ -79,21 +77,17 @@ const resolveString = (str: unknown): string | null => {
 };
 
 const performReplace = (s: string, oldStr: string, new_: string, max: number): string => {
-  const parts: string[] = [];
-  let pos = 0;
-  let count = 0;
-  let currentIndex = s.indexOf(oldStr);
-  while (currentIndex > -1 && (max === -1 || count < max)) {
-    parts.push(s.slice(pos, currentIndex), new_);
-    pos = currentIndex + oldStr.length;
-    count += 1;
-    currentIndex = s.indexOf(oldStr, pos);
+  if (oldStr === '') { return s; }
+  const segments = s.split(oldStr);
+  if (max === -1 || segments.length - 1 <= max) {
+    return segments.join(new_);
   }
-  parts.push(s.slice(pos));
-  return parts.join('');
+  const head = segments.slice(0, max + 1).join(new_);
+  const tail = segments.slice(max + 1).join(oldStr);
+  return head + oldStr + tail;
 };
 
-const title = createStringFilter((s: string): string => pipe(s, split(' '), map((word: string) => capitalize(word) as string), join(' ')));
+const title = createStringFilter((s: string): string => pipe(s, split(' '), map((word: string) => capitalize(word) as string), joinRemeda(' ')));
 
 const trim = createStringFilter((s: string): string => s.replace(/^\s*|\s*$/gu, ''));
 
@@ -120,9 +114,7 @@ const urlencode = (obj: unknown): string => {
   const keyvals = Array.isArray(obj)
     ? (obj as [string, unknown][])
     : entries(obj as Record<string, unknown>);
-  return pipe(keyvals, map(([k, v]) => `${enc(k)}=${enc(String(v))}`), join('&'));
+  return pipe(keyvals, map(([k, v]) => `${enc(k)}=${enc(String(v))}`), joinRemeda('&'));
 };
 
 export { capitalize, fallback, escape, tojson, indent, joinFilter as join, lower, replace, title, trim, truncate, upper, urlencode };
-
-export { normalize, filterError } from '../factory/index.ts';

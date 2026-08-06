@@ -1,32 +1,17 @@
-import {
-  suppressValue, awaitValue, handleError, contextOrFrameLookup,
-  memberLookup, optionalMemberLookup, slice, nullishCoalesce,
-  inOperator, fromIterator, callWrap,
-  ensureDefined, isSafeString, markSafe, copySafeness,
-  lookup,
-  createFrame,
-  makeKeywordArgs,
-  isKeywordArgs,
-  getKeywordArgs,
-  numArgs,
-  makeMacro,
-  createSafeString,
-  wrapMemberAccess,
-  isNullAccessResult,
-  isPropertyNotFoundResult,
-  type Frame,
-} from '@nunjucks/runtime';
 import { createLog } from '@nunjucks/log';
 import { getError } from '@nunjucks/log';
-import { extractBlocks, escapeHtml, type Environment } from '@nunjucks/shared';
-import type { SandboxOptions } from './sandbox.ts';
+import { extractBlocks, BLOCK_META_KEY, type Environment, type CompiledTemplateExports, type CompiledRenderSignature } from '@nunjucks/shared';
+import { wrapMemberAccess } from './sandbox/index.ts';
+import { isNullAccessResult, isPropertyNotFoundResult } from './member-access.ts';
+import type { SandboxOptions } from './sandbox/index.ts';
+import type { BlockLocation } from './context.ts';
 
 const ROOT_FUNCTION_RE = /^async\s+function\s+root\s*\(/;
 
 interface RenderFunctionResult {
-  render: (env: unknown, context: unknown, frame: Frame, runtime: unknown) => Promise<unknown>;
+  render: CompiledRenderSignature;
   blocks: Record<string, unknown>;
-  blockMeta: Record<string, unknown>;
+  blockMeta: Record<string, BlockLocation>;
 }
 
 const getRenderFunction = (code: string): RenderFunctionResult => {
@@ -34,46 +19,13 @@ const getRenderFunction = (code: string): RenderFunctionResult => {
   if (newFormatMatch) {
     const codeWithReturn = `${code}; return root;`;
     const renderFn = new Function(codeWithReturn)();
-    const result = renderFn as { root: RenderFunctionResult['render']; __blockMeta?: Record<string, unknown> };
+    const result = renderFn as CompiledTemplateExports;
     const blocks = extractBlocks(result);
-    return { render: result.root, blocks, blockMeta: result.__blockMeta || {} };
+    return { render: result.root as RenderFunctionResult['render'], blocks, blockMeta: (result[BLOCK_META_KEY] as Record<string, BlockLocation>) || {} };
   }
 
   throw createLog('error', getError('INVALID_CODE_FORMAT'), {}, null, { phase: 'compile' });
 };
-
-const getRuntimeHelpers = () => ({
-  suppressValue,
-  awaitValue,
-  handleError,
-  contextOrFrameLookup,
-  memberLookup,
-  optionalMemberLookup,
-  slice,
-  nullishCoalesce,
-  inOperator,
-  fromIterator,
-  callWrap,
-  ensureDefined,
-  isSafeString,
-  markSafe,
-  copySafeness,
-  lookup,
-  createFrame,
-  createSafeString,
-  makeKeywordArgs,
-  isKeywordArgs,
-  getKeywordArgs,
-  numArgs,
-  makeMacro,
-  escape: (str: unknown, autoescape = true): string => {
-    if (!autoescape) { return String(str); }
-    if (str && typeof str === 'object' && isSafeString(str as { val?: unknown })) { return String((str as { val: unknown }).val); }
-    if (Array.isArray(str)) { return str.join(','); }
-    if (str && typeof str === 'object') { return JSON.stringify(str); }
-    return escapeHtml(String(str));
-  },
-});
 
 const buildSandboxOptions = (config: { sandboxAllowlist?: string[]; sandboxMode?: string; sandboxEnvironment?: string }): SandboxOptions => ({
   allowlist: config.sandboxAllowlist || [],
@@ -86,11 +38,11 @@ const toOptionalResult = (result: unknown): unknown => {
   return result;
 };
 
-const buildSandboxedRuntime = (runtime: Record<string, unknown>, sandboxOptions: SandboxOptions): Record<string, unknown> => {
-  runtime.memberLookup = (obj: unknown, val: string | symbol, parentName: string | null = null) => wrapMemberAccess(obj, val, true, sandboxOptions, parentName);
-  runtime.optionalMemberLookup = (obj: unknown, val: string | symbol, parentName: string | null = null) => toOptionalResult(wrapMemberAccess(obj, val, true, sandboxOptions, parentName));
-  return runtime;
-};
+const buildSandboxedRuntime = (runtime: Record<string, unknown>, sandboxOptions: SandboxOptions): Record<string, unknown> => ({
+  ...runtime,
+  memberLookup: (obj: unknown, val: string | symbol, parentName: string | null = null) => wrapMemberAccess(obj, val, true, sandboxOptions, parentName),
+  optionalMemberLookup: (obj: unknown, val: string | symbol, parentName: string | null = null) => toOptionalResult(wrapMemberAccess(obj, val, true, sandboxOptions, parentName)),
+});
 
-export { getRenderFunction, getRuntimeHelpers, buildSandboxOptions, buildSandboxedRuntime };
+export { getRenderFunction, buildSandboxOptions, buildSandboxedRuntime };
 export type { RenderFunctionResult, SandboxOptions, Environment };

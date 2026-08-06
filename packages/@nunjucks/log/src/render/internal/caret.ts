@@ -100,10 +100,10 @@ const buildCarets = (highlightWord: string): string => {
   return '^'.repeat(FALLBACK_CARET_WIDTH);
 };
 
-function calculateCaretPosition(
+const calculateCaretPosition = (
   line: string,
   displayCol: number
-): CaretResult | null {
+): CaretResult | null => {
   if (displayCol <= 0 || !line) { return null; }
 
   const rawPos = displayCol - 1;
@@ -127,7 +127,7 @@ function calculateCaretPosition(
   const carets = buildCarets(highlightWord);
 
   return { wordStart, wordEnd, highlightWord, carets };
-}
+};
 
 export { calculateCaretPosition };
 export type { CaretResult };

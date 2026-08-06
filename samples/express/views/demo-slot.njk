@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head><title>Component/Slot Demo</title></head>
+<body>
+  <h1>Component &amp; Slot Demo</h1>
+
+  <h2>Component with children</h2>
+  {% component wrapper() %}
+    <div class="wrapper">
+      {{ children }}
+    </div>
+  {% endcomponent %}
+
+  {% render wrapper() %}
+    <strong>This content is passed to the component via children</strong>
+  {% endrender %}
+
+  <h2>Component with args and named slots</h2>
+  {% component box(title) %}
+    <div class="box">
+      <h3>{{ title }}</h3>
+      <div class="content">
+        {{ children }}
+      </div>
+    </div>
+  {% endcomponent %}
+
+  {% render box("My Box Title") %}
+    <p>This is the content inside the box.</p>
+  {% endrender %}
+
+  <h2>Named slots with fallback</h2>
+  {% component card() %}
+    <article>
+      <header>{{ slot("header") }}</header>
+      <section>{{ children }}</section>
+      <footer>{{ slot("footer") }}</footer>
+    </article>
+  {% endcomponent %}
+
+  {% render card() %}
+    Main body goes here.
+    {% slot header %}Default header{% endslot %}
+    {% slot footer %}Default footer{% endslot %}
+  {% endrender %}
+</body>
+</html>

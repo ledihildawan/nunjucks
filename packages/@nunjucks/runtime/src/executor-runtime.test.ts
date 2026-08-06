@@ -8,9 +8,8 @@ import { buildSandboxedRuntime, buildSandboxOptions } from './executor-runtime.t
 // error reporting.
 describe('buildSandboxedRuntime', () => {
   const makeRuntime = (): Record<string, unknown> => {
-    const runtime: Record<string, unknown> = {};
-    buildSandboxedRuntime(runtime, buildSandboxOptions({}));
-    return runtime;
+    const base: Record<string, unknown> = {};
+    return buildSandboxedRuntime(base, buildSandboxOptions({}));
   };
 
   test('optionalMemberLookup returns undefined for null/undefined target', () => {

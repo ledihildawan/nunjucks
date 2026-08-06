@@ -2,7 +2,7 @@ import { include } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { parseExpression } from "../expression-parser/inline.ts";
+import { parseExpression } from "../expression-parser/index.ts";
 
 export const parseInclude = (ctx: ParserContext): Node => {
   const tagName = 'include';
@@ -24,6 +24,6 @@ export const parseInclude = (ctx: ParserContext): Node => {
     node.ignoreMissing = true;
   }
 
-  advanceAfterBlockEnd(ctx, tag.value as string);
+  advanceAfterBlockEnd(ctx, String(tag.value));
   return node;
 };

@@ -1,4 +1,4 @@
-import { entries, filter, forEach, isArray } from 'remeda';
+import { isArray } from 'remeda';
 import { readFile, stat } from 'node:fs/promises';
 import { watch, type FSWatcher } from 'node:fs';
 import path from 'node:path';
@@ -92,28 +92,14 @@ const readFileSource = async (fullPath: string): Promise<FileSystemLoaderSource 
   }
 };
 
-const normalizeFilePath = (p: string) => path.resolve(path.normalize(p));
-
 const isFileChangeEvent = (eventType: string) => eventType === 'change' || eventType === 'rename';
-
-const createFileCacheInvalidator = (cache: Record<string, unknown>) => (normalizedPath: string) => {
-  forEach(
-    filter(
-      entries(cache),
-      ([, tmpl]) => Boolean(tmpl && typeof tmpl === 'object' && 'path' in tmpl && normalizeFilePath((tmpl as { path: string }).path) === normalizedPath),
-    ),
-    ([key]) => { cache[key] = null; }
-  );
-};
 
 interface FileSystemLoaderExtended {
   pathsToNames: Record<string, string>;
-  noCache: boolean;
   watchEnabled: boolean;
   async: true;
   watchedFiles: Map<string, FSWatcher>;
   searchPaths: string[];
-  cache: Record<string, unknown>;
   emit: (event: string, ...args: unknown[]) => void;
   unwatchFile: (filePath: string) => void;
 }
@@ -122,7 +108,6 @@ const createWatchHandler = (loader: FileSystemLoaderExtended, filePath: string) 
   if (!isFileChangeEvent(eventType)) { return; }
 
   const name = filename || filePath;
-  createFileCacheInvalidator(loader.cache)(normalizeFilePath(filePath));
   loader.emit('update', name, filePath);
 
   if (eventType === 'rename') { loader.unwatchFile(filePath); }
@@ -134,18 +119,15 @@ export interface FileSystemLoaderSource {
 }
 
 export interface FileSystemLoaderOptions {
-  noCache?: boolean;
   watch?: boolean;
 }
 
 export interface FileSystemLoader extends Loader {
   pathsToNames: Record<string, string>;
-  noCache: boolean;
   watchEnabled: boolean;
   async: true;
   watchedFiles: Map<string, FSWatcher>;
   searchPaths: string[];
-  cache: Record<string, unknown>;
   getSource: (name: string) => Promise<FileSystemLoaderSource | null>;
   watchFile: (filePath: string) => void;
   unwatchFile: (filePath: string) => void;
@@ -190,27 +172,16 @@ const setupLoaderWatch = (loader: FileSystemLoader) => {
   };
 };
 
-export function createFileSystemLoader(searchPaths: string | string[] | undefined, opts: FileSystemLoaderOptions = {}): FileSystemLoader {
-  if (typeof opts === 'boolean') {
-    // biome-ignore lint/suspicious/noConsole: deprecation notice for a legacy call shape; there is no logger at this layer.
-    console.warn(
-      '[nunjucks] Warning: boolean options are deprecated. ' +
-      'Use an options object. ' +
-      'See http://mozilla.github.io/nunjucks/api.html#filesystemloader'
-    );
-  }
-
+export const createFileSystemLoader = (searchPaths: string | string[] | undefined, opts: FileSystemLoaderOptions = {}): FileSystemLoader => {
   const loader = createLoader() as FileSystemLoader;
   loader.pathsToNames = {};
-  loader.noCache = Boolean(opts.noCache);
   loader.watchEnabled = Boolean(opts.watch);
   loader.async = true;
   loader.watchedFiles = new Map();
   loader.searchPaths = normalizeSearchPaths(searchPaths);
-  loader.cache = {};
 
   setupLoaderGetSource(loader);
   setupLoaderWatch(loader);
 
   return loader;
-}
+};

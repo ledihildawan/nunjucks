@@ -4,28 +4,29 @@ import { root } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { fail } from "./cursor.ts";
 import type { ParserContext, ParserExtension, TokenStream } from "./cursor.ts";
-import { parseNodes } from "./top-level.ts";
-import { validateExpression, DEFAULT_SECURITY_CONFIG } from './expression-validator.ts';
+import { parseNodes } from "./parse-root.ts";
+import { validateExpression } from '@nunjucks/validators';
+import type { ExpressionSecurityConfig } from '@nunjucks/validators';
+
+export { EXPECTED_COLON_AFTER_DICT_KEY } from "./error.ts";
 
 export interface ParseOptions extends LexerOptions {
-  security?: Record<string, unknown> | null;
+  security?: ExpressionSecurityConfig | null;
   autoescape?: boolean;
 }
 
-export function createParser(tokens: TokenStream, securityConfig: Record<string, unknown> = {}): ParserContext {
+export const createParser = (tokens: TokenStream): ParserContext => {
   return {
     tokens,
     peeked: null,
-    breakOnBlocks: null,
     dropLeadingWhitespace: false,
     extensions: [],
-    securityConfig: { ...DEFAULT_SECURITY_CONFIG, ...securityConfig },
   };
-}
+};
 
-export function parse(src: string, extensions?: ParserExtension[], opts?: ParseOptions): Node & { children: Node[] } {
+export const parse = (src: string, extensions?: ParserExtension[], opts?: ParseOptions): Node & { children: readonly Node[] } => {
   const securityConfig = opts?.security ?? null;
-  const p = createParser(createTokenizer(src, opts), securityConfig ?? {});
+  const p = createParser(createTokenizer(src, opts));
   if (extensions !== undefined) {
     p.extensions = extensions;
   }
@@ -38,5 +39,5 @@ export function parse(src: string, extensions?: ParserExtension[], opts?: ParseO
     }
   }
 
-  return ast as Node & { children: Node[] };
-}
+  return ast;
+};

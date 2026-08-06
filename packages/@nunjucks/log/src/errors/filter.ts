@@ -175,7 +175,7 @@ export const FILTER_ERRORS = {
   JSON_ESCAPED_OUTPUT: {
     name: 'JSON_ESCAPED_OUTPUT',
     message: "JSON output is HTML-escaped when autoescape is enabled",
-    pattern: /^\[|\{.*\]|\}$/u,
+    pattern: /JSON output is HTML-escaped/iu,
     category: 'json_error',
     titleTemplate: "JSON output is HTML-escaped",
     causes: [

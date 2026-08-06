@@ -1,0 +1,14 @@
+{% component user_card(name, status) %}
+<div class="user-card" style="border: 1px solid #ccc; padding: 10px; margin: 5px;">
+  <strong>{{ name }}</strong>
+  <span class="status">Status: {{ status }}</span>
+</div>
+{% endcomponent %}
+
+{% component simple_list(items) %}
+<ul>
+  {% for item in items %}
+  <li>{{ item }}</li>
+  {% endfor %}
+</ul>
+{% endcomponent %}

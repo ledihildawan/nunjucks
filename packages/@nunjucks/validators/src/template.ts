@@ -1,5 +1,5 @@
-import { filter, join, map, pipe } from 'remeda';
 import { scanTemplateForDangerousCode, type DangerousCodeViolation } from '@nunjucks/shared';
+import { join, map, pipe } from 'remeda';
 
 export interface TemplateValidationError {
   code: string;
@@ -10,10 +10,9 @@ export interface TemplateValidationError {
   colno?: number;
 }
 
-export interface TemplateValidationResult {
-  valid: boolean;
-  errors: TemplateValidationError[];
-}
+export type TemplateValidationResult =
+  | { valid: true; errors: readonly [] }
+  | { valid: false; errors: readonly [TemplateValidationError, ...TemplateValidationError[]] };
 
 export interface TemplateValidatorConfig {
   maxTemplateSize?: number;
@@ -56,13 +55,13 @@ const checkDangerousCode = (template: string, config: TemplateValidatorConfig): 
 };
 
 export const validateTemplate = (template: string, config: TemplateValidatorConfig): TemplateValidationResult => {
-  const errors = pipe(
-    [checkTemplateSize(template, config), checkDangerousCode(template, config)],
-    filter((error): error is TemplateValidationError => error !== null)
-  );
+  const errors = [checkTemplateSize(template, config), checkDangerousCode(template, config)]
+    .filter((e): e is TemplateValidationError => e !== null);
 
-  return {
-    valid: errors.length === 0,
-    errors
-  };
+  if (errors.length === 0) {
+    return { valid: true, errors: [] as const };
+  }
+  const first = errors[0] as TemplateValidationError;
+  const rest = errors.slice(1);
+  return { valid: false, errors: [first, ...rest] as const };
 };

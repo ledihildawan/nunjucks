@@ -1,5 +1,5 @@
 import { arrayPattern, isArray, isArrayPattern, isAssignmentPattern, isDict, isHole, isObjectPattern, isPair, isPatternProperty, isRestPattern, isSymbol, objectPattern } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
+import type { Node, PairNode, RestPatternNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
@@ -12,24 +12,15 @@ import type { Compiler } from '../index.ts';
 interface DestructuringContext {
   ctx: Compiler;
   frame: Frame;
-  /** False when compiling a macro signature, where frame slots already exist. */
+  /** False when compiling a component signature, where frame slots already exist. */
   registerFrame: boolean;
 }
 
-/** An object-pattern key is either written literally or carried by a symbol node. */
 const patternPropertyKey = (key: unknown): string | null => {
   if (typeof key === 'string') { return key; }
-  if (isSymbol(key as Node)) { return (key as Node).value as string; }
+  if (isSymbol(key)) { return key.value; }
   return null;
 };
-
-const uniqueId = (() => {
-  let n = 0;
-  return (prefix: string): string => {
-    n += 1;
-    return `${prefix}_${n}`;
-  };
-})();
 
 const safeMemberLookup = (source: string, key: string): string =>
   `runtime.optionalMemberLookup(${source}, ${JSON.stringify(key)})`;
@@ -48,7 +39,7 @@ const compileAssignToFrame = ({ ctx, frame, registerFrame }: DestructuringContex
   ctx.emitLine(`frame.set(${JSON.stringify(name)}, ${source}, true);`);
   if (name.charAt(0) !== '_') {
     ctx.emitLine('if(frame.topLevel) {');
-    ctx.emitLine(`context.addExport(${JSON.stringify(name)}, ${source});`);
+    ctx.emitLine(`context.addExport(${JSON.stringify(name)});`);
     ctx.emitLine('}');
   }
   if (!registerFrame) {
@@ -69,7 +60,7 @@ const compileAssignToFrame = ({ ctx, frame, registerFrame }: DestructuringContex
  * honour a destructuring default.
  */
 const emitDefaultBinding = ({ ctx, frame }: DestructuringContext, source: string, defaultExpr: Node): string => {
-  const defaultId = uniqueId('__dflt');
+  const defaultId = ctx.tmpid();
   ctx.emitLine(`let ${defaultId} = (${source}) === undefined ? (`);
   ctx.compileExpression(defaultExpr, frame);
   ctx.emitLine(`) : ${source};`);
@@ -95,7 +86,6 @@ const asArrayPattern = (node: Node): Node | null => {
   return arrayPattern(node.lineno, node.colno, children);
 };
 
-/** Bind each element of an array pattern, honouring holes, rest and defaults. */
 const compileArrayPattern = (dc: DestructuringContext, pattern: Node, source: string): void => {
   let i = 0;
   const patternChildren = pattern.children;
@@ -122,13 +112,13 @@ const handleArrayPatternChild = (
   }
   if (isRestPattern(child)) {
     const childSource = arraySlice(source, i);
-    compileDestructuring(dc, child.target as Node, childSource);
+    compileDestructuring(dc, child.target, childSource);
     return { newIndex: i, shouldBreak: true };
   }
   const childSource = safeArrayIndex(source, i);
   if (isAssignmentPattern(child)) {
-    const defaultId = emitDefaultBinding(dc, childSource, child.value as Node);
-    compileDestructuring(dc, child.target as Node, defaultId);
+    const defaultId = emitDefaultBinding(dc, childSource, child.value);
+    compileDestructuring(dc, child.target, defaultId);
   } else if (isObjectPattern(child) || isDict(child)) {
     const nestedPattern = asObjectPattern(child);
     if (!nestedPattern) { return { newIndex: i + 1, shouldBreak: false }; }
@@ -141,7 +131,7 @@ const handleArrayPatternChild = (
 
 const handlePatternPropertyValue = (
   dc: DestructuringContext,
-  child: Node,
+  child: PairNode,
   propSource: string
 ): void => {
   if (isAssignmentPattern(child.value)) {
@@ -149,27 +139,27 @@ const handlePatternPropertyValue = (
     const defaultId = emitDefaultBinding(dc, propSource, valNode.value);
     compileDestructuring(dc, valNode.target, defaultId);
   } else {
-    compileDestructuring(dc, child.value as Node, propSource);
+    compileDestructuring(dc, child.value, propSource);
   }
 };
 
 const handleRestProperty = (
   dc: DestructuringContext,
-  child: Node,
+  child: RestPatternNode,
   source: string
 ): void => {
-  const restId = uniqueId('__rest');
+  const restId = dc.ctx.tmpid();
   const childSource = objectRest(source, restId);
-  compileDestructuring(dc, child.target as Node, childSource);
+  compileDestructuring(dc, child.target, childSource);
 };
 
 const handlePairSymbolAlias = (
   dc: DestructuringContext,
-  child: Node,
+  child: PairNode,
   propSource: string
 ): boolean => {
-  if (isSymbol(child.value as Node)) {
-    const aliasName = (child.value as Node).value as string;
+  if (isSymbol(child.value)) {
+    const aliasName = child.value.value;
     compileAssignToFrame(dc, aliasName, propSource);
     return true;
   }
@@ -178,17 +168,17 @@ const handlePairSymbolAlias = (
 
 const handlePairArrayOrObjectPattern = (
   dc: DestructuringContext,
-  child: Node,
+  child: PairNode,
   propSource: string
 ): boolean => {
-  if (isArrayPattern(child.value as Node) || isArray(child.value as Node)) {
-    const nestedPattern = asArrayPattern(child.value as Node);
+  if (isArrayPattern(child.value) || isArray(child.value)) {
+    const nestedPattern = asArrayPattern(child.value);
     if (!nestedPattern) { return true; }
     compileDestructuring(dc, nestedPattern, propSource);
     return true;
   }
-  if (isObjectPattern(child.value as Node) || isDict(child.value as Node)) {
-    const nestedPattern = asObjectPattern(child.value as Node);
+  if (isObjectPattern(child.value) || isDict(child.value)) {
+    const nestedPattern = asObjectPattern(child.value);
     if (!nestedPattern) { return true; }
     compileDestructuring(dc, nestedPattern, propSource);
     return true;
@@ -198,13 +188,13 @@ const handlePairArrayOrObjectPattern = (
 
 const handlePairAssignmentWithDefault = (
   dc: DestructuringContext,
-  child: Node,
+  child: PairNode,
   propSource: string
 ): boolean => {
-  if (isAssignmentPattern(child.value as Node)) {
-    const valNode = child.value as Node;
-    const defaultId = emitDefaultBinding(dc, propSource, valNode.value as Node);
-    const target = valNode.target as Node;
+  if (isAssignmentPattern(child.value)) {
+    const valNode = child.value;
+    const defaultId = emitDefaultBinding(dc, propSource, valNode.value);
+    const target = valNode.target;
     compileAssignToFrame(dc, target.value as string, defaultId);
     return true;
   }
@@ -213,7 +203,7 @@ const handlePairAssignmentWithDefault = (
 
 const handlePairProperty = (
   dc: DestructuringContext,
-  child: Node,
+  child: PairNode,
   propSource: string
 ): void => {
   if (handlePairAssignmentWithDefault(dc, child, propSource)) {
@@ -245,15 +235,13 @@ const processObjectPatternChild = (
     handlePatternPropertyValue(dc, child, propSource);
     return;
   }
-  if (isPair(child) && isSymbol(child.key as Node)) {
-    const keyNode = child.key as Node;
-    const propKey = keyNode.value as string;
+  if (isPair(child) && isSymbol(child.key)) {
+    const propKey = child.key.value as string;
     const propSource = safeMemberLookup(source, propKey);
     handlePairProperty(dc, child, propSource);
   }
 };
 
-/** Bind each property of an object pattern, honouring rest, aliases and defaults. */
 const compileObjectPattern = (dc: DestructuringContext, pattern: Node, source: string): void => {
   const patternChildren = pattern.children;
   if (!patternChildren) {

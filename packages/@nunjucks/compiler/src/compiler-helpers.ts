@@ -6,34 +6,47 @@ export const fail = (
   ctx: Pick<Compiler, 'templateName'>,
   msg: string,
   lineno?: number,
-  colno?: number
+  colno?: number,
+  errorName: string = 'WALK_UNKNOWN_TYPE'
 ): never => {
   const lastPart = pipe(msg, split(':'), last());
   const subject = (lastPart || 'compile').trim();
-  const errorDef = ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE;
+  const errorDef = ERROR_DEFINITIONS[errorName as keyof typeof ERROR_DEFINITIONS] ?? ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE;
 
-  if (errorDef) {
-    throw createLog(
-      'error',
-      errorDef,
-      { type: subject, detail: msg },
-      subject,
-      {
-        lineno,
-        colno,
-        phase: 'compile',
-        templateName: ctx.templateName,
-        lineBase: 'zero',
-      }
-    );
-  }
-
-  throw new Error(`${msg}: ${subject}`);
+  throw createLog(
+    'error',
+    errorDef,
+    { type: subject, detail: msg },
+    subject,
+    {
+      lineno,
+      colno,
+      phase: 'compile',
+      templateName: ctx.templateName,
+      lineBase: 'zero',
+    }
+  );
 };
 
 export const tmpid = (ctx: Pick<Compiler, 'lastId'>): string => {
   ctx.lastId += 1;
   return `t_${ctx.lastId}`;
+};
+
+export const emitLocationGuard = (
+  ctx: Pick<Compiler, 'emit'>,
+  lineno: number,
+  colno: number
+): void => {
+  ctx.emit(`(lineno = ${lineno}, colno = ${colno}, `);
+};
+
+export const emitLineLocation = (
+  ctx: Pick<Compiler, 'emitLine'>,
+  lineno: number,
+  colno: number
+): void => {
+  ctx.emitLine(`lineno = ${lineno}; colno = ${colno};`);
 };
 
 export const pushBuffer = (

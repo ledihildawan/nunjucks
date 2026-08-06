@@ -1,5 +1,5 @@
 export { createFrame, lookup, type Frame } from './frame.ts';
-export { createContext, isContext, type Context, type ContextEnv, type ContextMetadata, type BlockLocation } from './context.ts';
+export { createContext, type Env, type Context, type ContextEnv, type ContextMetadata, type BlockLocation } from './context.ts';
 export {
   createSafeString,
   isSafeString,
@@ -8,13 +8,14 @@ export {
   type SafeString,
 } from './safe-string.ts';
 export {
-  makeMacro,
+  makeComponent,
   makeKeywordArgs,
-  isKeywordArgs,
   getKeywordArgs,
   numArgs,
-  withKwargs,
-} from './macro.ts';
+  createComponentContext,
+  type ComponentContext,
+} from './component.ts';
+export { createSlotContext, type SlotFn, type SlotContext } from './slots.ts';
 export {
   memberLookup,
   optionalMemberLookup,
@@ -34,25 +35,19 @@ export {
   wrapFunctionWithBlocking,
   resolveSandboxOptions,
   isAllowedKey,
-  isBlockedKey,
-  isDangerousGlobal,
-  isCodeExecutionPattern,
-  getBlockedKeyCategory,
-  BLOCKED_KEYS_LIST,
-  DANGEROUS_GLOBALS_LIST,
   type SandboxOptions,
   type ResolvedSandboxOptions,
-} from './sandbox.ts';
+} from './sandbox/index.ts';
+export { suppressValue } from './suppress-value.ts';
+export { awaitValue } from './await-value.ts';
+export { ensureDefined } from './undefined-resolution.ts';
 export {
-  suppressValue,
-  awaitValue,
-  ensureDefined,
   callWrap,
   contextOrFrameLookup,
   handleError,
   fromIterator,
   inOperator,
-} from './helpers/index.ts';
+} from './runtime-helpers.ts';
 export {
   HOOK_EVENTS,
   type HookEvent,
@@ -65,21 +60,19 @@ export {
   type UndefinedMode,
 } from './undefined.ts';
 export {
-  validateContext,
   findDangerousValues,
   scanTemplateForDangerousCode,
   scrubDangerousReferences,
-  createSecurityValidator,
-  validateContextKeys,
   isDangerousReference,
-  restrictGlobals,
-  type SecurityError,
   type DangerousCodeViolation,
-  type ValidateContextOptions,
-  type SecurityValidator,
-} from './security.ts';
+} from './security/index.ts';
+export { runTest } from './builtin-predicates.ts';
+export { createRenderRuntime } from './render-runtime.ts';
+export type { RenderRuntimeOptions } from './render-runtime.ts';
+export { createGensym } from './symbol-generator.ts';
 export {
   withTimeout,
   type TimeoutError,
   isTimeoutError,
 } from './timeout.ts';
+export { execute, type ExecuteConfig } from './executor.ts';

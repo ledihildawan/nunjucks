@@ -1,14 +1,37 @@
-import type { LineBase } from './location.ts';
+import type { LineBase } from '../../line-base.ts';
 import { toDisplayLocation } from './location.ts';
 import { calculateCaretPosition } from './caret.ts';
+
+const escapeForAlternation = (key: string): string => key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Build a single regex that matches `key<sep><quote>...<value>...<quote>` for
+// any of the supplied blocked keys. The value capture group is reused via
+// backreference to require matched quotes.
+//
+// Note: redaction is purely dynamic — it only redacts keys the caller explicitly
+// listed in `config.blockedContextKeys` (propagated via `err.blockedKeys`).
+// We do NOT maintain a hardcoded list of "common sensitive names": that would
+// be the library making assumptions about the user's data, which can either
+// hide non-sensitive values or fail to catch unconventional key names.
+const buildSecretValuePattern = (blockedKeys: readonly string[] | null): RegExp | null => {
+  if (!blockedKeys || blockedKeys.length === 0) { return null; }
+  const cleaned = blockedKeys.filter((k): k is string => typeof k === 'string' && k.length > 0);
+  if (cleaned.length === 0) { return null; }
+  const alternation = cleaned.map(escapeForAlternation).join('|');
+  return new RegExp(`\\b(${alternation})(\\s*[:=]\\s*)(['"])([^'"\\\\]*(?:\\\\.[^'"\\\\]*)*)\\3`, 'giu');
+};
+
+const redactSecretValues = (line: string, blockedKeys: readonly string[] | null): string => {
+  const pattern = buildSecretValuePattern(blockedKeys);
+  if (!pattern) { return line; }
+  return line.replace(pattern, (_match, key, sep, quote) => `${key}${sep}${quote}[Redacted]${quote}`);
+};
 
 // A single line in the Source Trace window.
 interface SourceTraceLine {
   // 1-based absolute line number, as shown in the gutter.
   number: number;
-  // Raw source text of the line.
   content: string;
-  // Whether this is the line the error points at.
   isError: boolean;
 }
 
@@ -48,6 +71,8 @@ interface BuildSourceTraceInput {
   sourceStartLine?: number;
   // Number of context lines on each side of the error line.
   context?: number;
+  // Dynamic per-error blocked-keys list.
+  blockedKeys?: readonly string[] | null;
 }
 
 const DEFAULT_CONTEXT = 2;
@@ -63,8 +88,9 @@ const windowSourceTrace = (params: {
   sourceStartLine: number;
   context: number;
   resolvedPath: string | null;
+  blockedKeys: readonly string[] | null;
 }): SourceTrace => {
-  const { content, displayLine, displayCol, sourceStartLine, context, resolvedPath } = params;
+  const { content, displayLine, displayCol, sourceStartLine, context, resolvedPath, blockedKeys } = params;
 
   const lines = content.split('\n');
   // displayLine is the absolute 1-based line and sourceStartLine is the 1-based
@@ -82,14 +108,16 @@ const windowSourceTrace = (params: {
 
   const traceLines: SourceTraceLine[] = Array.from({ length: end - start }, (_, offset) => {
     const i = start + offset;
+    const rawLine = lines[i] ?? '';
     return {
       number: sourceStartLine + i,
-      content: lines[i] ?? '',
+      content: redactSecretValues(rawLine, blockedKeys),
       isError: i === errorIndex
     };
   });
 
-  const caretInfo = displayCol > 0 ? calculateCaretPosition(lines[errorIndex] ?? '', displayCol) : null;
+  const errorLineContent = redactSecretValues(lines[errorIndex] ?? '', blockedKeys);
+  const caretInfo = displayCol > 0 ? calculateCaretPosition(errorLineContent, displayCol) : null;
   const caret: SourceTraceCaret | null = caretInfo
     ? {
       line: displayLine,
@@ -118,7 +146,8 @@ const buildSourceTrace = (input: BuildSourceTraceInput): SourceTrace => {
     colno = null,
     lineBase = null,
     sourceStartLine = 1,
-    context = DEFAULT_CONTEXT
+    context = DEFAULT_CONTEXT,
+    blockedKeys = null
   } = input;
 
   // 1. Resolve 1-based display coordinates (always, even without source — the
@@ -140,7 +169,8 @@ const buildSourceTrace = (input: BuildSourceTraceInput): SourceTrace => {
     displayCol,
     sourceStartLine,
     context,
-    resolvedPath: templatePath
+    resolvedPath: templatePath,
+    blockedKeys
   });
 };
 

@@ -1,9 +1,5 @@
-import * as stringFilters from '@nunjucks/filters/string';
-import * as arrayFilters from '@nunjucks/filters/array';
-import * as objectFilters from '@nunjucks/filters/object';
-import * as mathFilters from '@nunjucks/filters/math';
-import { sanitize, type DomPurifyConfig } from '@nunjucks/filters';
 import type { UndefinedMode } from '@nunjucks/runtime';
+import type { DomPurifyConfig } from '@nunjucks/shared';
 
 type FilterObject = Readonly<Record<string, unknown>>;
 
@@ -77,34 +73,25 @@ const SAFE_BUILTINS: Readonly<Record<string, unknown>> = Object.freeze({
     raw: String.raw,
   }),
   Boolean: Object.freeze({
-    // No static methods besides the constructor
   }),
   Date: Object.freeze({
     now: Date.now,
   }),
   Map: Object.freeze({
-    // Safe Map constructor not exposed to prevent arbitrary map creation
   }),
   Set: Object.freeze({
-    // Safe Set constructor not exposed to prevent arbitrary set creation
   }),
   RegExp: Object.freeze({
-    // RegExp constructor not exposed for security
   }),
   Error: Object.freeze({
-    // Error constructor not exposed
   }),
   TypeError: Object.freeze({
-    // TypeError constructor not exposed
   }),
   RangeError: Object.freeze({
-    // RangeError constructor not exposed
   }),
   SyntaxError: Object.freeze({
-    // SyntaxError constructor not exposed
   }),
   Symbol: Object.freeze({
-    // Symbol not exposed as it could be used dangerously
   }),
   Promise: Object.freeze({
     resolve: Promise.resolve,
@@ -118,21 +105,7 @@ const SAFE_BUILTINS: Readonly<Record<string, unknown>> = Object.freeze({
     isView: ArrayBuffer.isView,
   }),
   DataView: Object.freeze({
-    // DataView constructor not exposed
   }),
-});
-
-const builtInFilters: FilterObject = Object.freeze({
-  ...stringFilters,
-  ...arrayFilters,
-  ...objectFilters,
-  ...mathFilters,
-  default: stringFilters.fallback,
-  d: stringFilters.fallback,
-  e: stringFilters.escape,
-  length: arrayFilters.lengthFilter,
-  tojson: stringFilters.tojson,
-  sanitize: sanitize as unknown as (...args: unknown[]) => unknown,
 });
 
 type SandboxEnvironment = 'auto' | 'node' | 'browser' | 'deno';
@@ -143,17 +116,11 @@ interface GlobalConfigBase {
   readonly sandboxAllowlist: readonly string[];
   readonly sandboxEnvironment: SandboxEnvironment;
   readonly sandboxMode: SandboxMode;
-  readonly devWarningSandbox: boolean;
   readonly strictMode: boolean;
   readonly executionTimeout: number;
   readonly maxTemplateSize: number;
-  readonly allowedContextKeys: readonly string[] | null;
   readonly blockedContextKeys: readonly string[] | null;
   readonly scanContextValues: boolean;
-  readonly allowedTags: readonly string[] | null;
-  readonly allowedFilters: readonly string[] | null;
-  readonly blockedTags: readonly string[] | null;
-  readonly blockedFilters: readonly string[] | null;
   readonly whitelistStrict: boolean;
   readonly autoescape: boolean;
   readonly trimBlocks: boolean;
@@ -170,43 +137,41 @@ interface GlobalConfig extends GlobalConfigBase {
   readonly [key: string]: unknown;
 }
 
-const DEFAULT_CONFIG: GlobalConfig = Object.freeze({
+interface FilterBundle {
+  readonly filters: FilterObject;
+  readonly dompurify: DomPurifyConfig;
+}
+
+const DEFAULT_CONFIG: Omit<GlobalConfig, 'filters' | 'dompurify'> = Object.freeze({
   sandbox: false,
   sandboxAllowlist: Object.freeze([]),
   sandboxEnvironment: 'auto',
   sandboxMode: 'blocklist',
-  devWarningSandbox: true,
   strictMode: false,
   executionTimeout: 0,
   maxTemplateSize: 0,
-  allowedContextKeys: null,
   blockedContextKeys: null,
   scanContextValues: false,
-  allowedTags: null,
-  allowedFilters: null,
-  blockedTags: null,
-  blockedFilters: null,
   whitelistStrict: false,
   autoescape: true,
   trimBlocks: false,
   lstripBlocks: false,
   undefined: 'default',
-  filters: builtInFilters,
   globals: SAFE_BUILTINS,
   extensions: Object.freeze({}),
   views: null,
-  dompurify: Object.freeze({})
 });
 
-const getDefaultConfig = (): GlobalConfig => ({ ...DEFAULT_CONFIG });
+const getDefaultConfig = (bundle?: FilterBundle): GlobalConfig => ({
+  ...DEFAULT_CONFIG,
+  filters: bundle?.filters ?? Object.freeze({}),
+  dompurify: bundle?.dompurify ?? Object.freeze({}),
+} as GlobalConfig);
+
 interface ConfigValidationError {
   readonly field: string;
   readonly message: string;
 }
 
 export { getDefaultConfig };
-export type { SandboxEnvironment, SandboxMode, UndefinedMode, GlobalConfig };
-
-export type { DomPurifyConfig } from '@nunjucks/filters';
-export { setDefaultDomPurifyConfig } from '@nunjucks/filters';
-export type { ConfigValidationError };
+export type { SandboxEnvironment, SandboxMode, UndefinedMode, GlobalConfig, FilterBundle, ConfigValidationError, DomPurifyConfig };

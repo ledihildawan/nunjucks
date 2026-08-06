@@ -1,18 +1,15 @@
+import type { Token } from '@nunjucks/lexer';
 import {
-  TOKEN_COMMA,
-  TOKEN_LEFT_PAREN,
-  TOKEN_RIGHT_PAREN,
   TOKEN_OPERATOR,
   COMPOUND_ASSIGNMENT_OPS,
+  isSymbolToken,
 } from '@nunjucks/lexer';
-import { compoundAssignment, defineBlock, variableAssignment, variableDeclaration } from '@nunjucks/nodes';
-import type { MacroArgument, Node } from '@nunjucks/nodes';
-import { peekToken, skipSymbol, skipValue, nextToken, advanceAfterBlockEnd, fail } from "../cursor.ts";
+import { compoundAssignment, variableAssignment, variableDeclaration } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
+import { peekToken, skipValue, nextToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { parsePrimary } from "../expression-parser/primary.ts";
-import { parseExpression } from "../expression-parser/inline.ts";
-import { parseUntilBlocks } from "../top-level.ts";
-import { tryParsePattern } from "../node-parsers/pattern.ts";
+import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
+import { tryParsePattern } from "../node-parser/pattern.ts";
 
 export const parseVariableDeclaration = (ctx: ParserContext): Node => {
   const tag = peekToken(ctx);
@@ -33,11 +30,12 @@ export const parseVariableDeclaration = (ctx: ParserContext): Node => {
   return variableDeclaration(tag.lineno, tag.colno, targets, value);
 };
 
-const parseOperator = (ctx: ParserContext, tag: ReturnType<typeof peekToken>): string => {
+const parseOperator = (ctx: ParserContext, tag: Token): string => {
   const tok = peekToken(ctx);
-  if (tok && tok.type === TOKEN_OPERATOR) {
-    if (COMPOUND_ASSIGNMENT_OPS.includes(tok.value as string)) {
-      return nextToken(ctx).value as string;
+  if (tok?.type === TOKEN_OPERATOR) {
+    if (COMPOUND_ASSIGNMENT_OPS.includes(String(tok.value))) {
+      const next = nextToken(ctx);
+      return isSymbolToken(next) ? next.value : String(next.value);
     }
     if (tok.value === '=') {
       nextToken(ctx);
@@ -67,69 +65,4 @@ export const parseVariableAssignment = (ctx: ParserContext): Node => {
   }
 
   return variableAssignment(tag.lineno, tag.colno, targets, value);
-};
-
-const isEndOfArgs = (tok: ReturnType<typeof peekToken>): boolean =>
-  tok.type === TOKEN_RIGHT_PAREN;
-
-const parseDefineArg = (ctx: ParserContext): { name: string; defaultVal: Node | null } => {
-  const argTok = peekToken(ctx);
-  if (argTok.type !== 'symbol') {
-    fail(ctx, 'Expected argument name', argTok.lineno, argTok.colno);
-  }
-  const argName = nextToken(ctx).value as string;
-  const defaultVal = skipValue(ctx, TOKEN_OPERATOR, '=') ? parseExpression(ctx) : null;
-  return { name: argName, defaultVal };
-};
-
-const parseDefineArgs = (ctx: ParserContext): MacroArgument[] => {
-  const args: MacroArgument[] = [];
-  nextToken(ctx);
-  for (;;) {
-    const argTok = peekToken(ctx);
-    if (isEndOfArgs(argTok)) {
-      nextToken(ctx);
-      break;
-    }
-    const { name, defaultVal } = parseDefineArg(ctx);
-    args.push({ name, defaultVal });
-    const afterArg = peekToken(ctx);
-    if (afterArg.type === TOKEN_COMMA) {
-      nextToken(ctx);
-    } else if (afterArg.type === TOKEN_RIGHT_PAREN) {
-      nextToken(ctx);
-      break;
-    } else {
-      fail(ctx, 'Expected , or ) after argument', afterArg.lineno, afterArg.colno);
-    }
-  }
-  return args;
-};
-
-export const parseDefineBlock = (ctx: ParserContext): Node => {
-  const tag = peekToken(ctx);
-
-  if (!skipSymbol(ctx, 'define')) {
-    fail(ctx, 'Expected define', tag.lineno, tag.colno);
-  }
-
-  const nameTok = parsePrimary(ctx, true);
-  if (!nameTok || (nameTok.type !== 'symbol' && !nameTok.value)) {
-    fail(ctx, 'Expected block name', tag.lineno, tag.colno);
-  }
-
-  const tok = peekToken(ctx);
-  const args: MacroArgument[] = tok && tok.type === TOKEN_LEFT_PAREN ? parseDefineArgs(ctx) : [];
-
-  advanceAfterBlockEnd(ctx, 'define');
-
-  const body = parseUntilBlocks(ctx, 'enddefine');
-
-  if (!skipSymbol(ctx, 'enddefine')) {
-    fail(ctx, 'Expected enddefine', tag.lineno, tag.colno);
-  }
-
-  advanceAfterBlockEnd(ctx, 'enddefine');
-
-  return defineBlock(tag.lineno, tag.colno, { name: nameTok.value as string, body, args });
 };

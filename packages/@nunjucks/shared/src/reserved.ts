@@ -1,13 +1,19 @@
-const RESERVED_KEYWORDS = new Set([
+import { BLOCKED_KEYS_LIST } from './security/blocked-keys.ts';
+
+// Template keywords, JS builtins, filter names, and literals that users must
+// not shadow. All security-blocked names (from blocked-keys) are auto-included
+// so the two registries can never drift.
+const RESERVED_KEYWORDS = new Set<string>([
   'if', 'elif', 'else', 'endif',
   'for', 'endfor', 'in',
   'block', 'endblock', 'extends', 'super',
   'include', 'import', 'from', 'as',
-  'macro', 'endmacro', 'call', 'endcall',
-  'set', 'endset',
+  'component', 'endcomponent', 'render', 'endrender', 'slot', 'endslot',
   'filter', 'endfilter',
   'raw', 'endraw', 'verbatim', 'endverbatim',
   'switch', 'case', 'default', 'endswitch',
+  'scope', 'endscope',
+  'exec',
   'break', 'continue',
   'Array', 'Object', 'String', 'Number', 'Boolean', 'Date', 'RegExp',
   'Math', 'JSON', 'Map', 'Set', 'WeakMap', 'WeakSet', 'Promise',
@@ -16,14 +22,14 @@ const RESERVED_KEYWORDS = new Set([
   'undefined', 'null', 'true', 'false',
   'range', 'cycler', 'joiner', 'namespace', 'log', 'debug',
   'tuple', 'async', 'await', 'var', 'let', 'const',
-  'loop', 'super', 'caller', 'include', 'import',
+  'loop',
   'safe', 'new', 'delete', 'typeof', 'instanceof',
   'this', 'self', 'window', 'global', 'globalThis', 'process',
   'console', 'exports', 'module', 'require', '__dirname', '__filename',
   'constructor', 'prototype', '__proto__', 'hasOwnProperty',
   'toString', 'valueOf', 'toJSON',
-  'dump', 'inspect', 'toJson', 'safe', 'escape', 'Markup',
-  'default', 'defaultFilter', 'first', 'last', 'batch',
+  'dump', 'inspect', 'toJson', 'escape', 'Markup',
+  'defaultFilter', 'first', 'last', 'batch',
   'list', 'join', 'sort', 'reverse', 'length', 'items',
   'keys', 'values', 'replace', 'truncate', 'wordwrap', 'striptags',
   'title', 'upper', 'lower', 'center', 'format',
@@ -31,8 +37,9 @@ const RESERVED_KEYWORDS = new Set([
   'truncatewords', 'strip', 'urlize', 'wordcount', 'string',
   'stringify', 'slice',
   'concat', 'merge', 'pick', 'omit', 'groupBy', 'sortBy',
-  'where', 'reject', 'map', 'pluck', 'invoke', 'call',
-  'attr', 'dumpObj', 'copySafeness', 'markSafe'
+  'where', 'reject', 'map', 'pluck', 'invoke',
+  'attr', 'dumpObj', 'copySafeness', 'markSafe',
+  ...BLOCKED_KEYS_LIST,
 ]);
 
 interface ValidationResult {

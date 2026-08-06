@@ -7,10 +7,12 @@
     ".": "./src/index.ts",
     "./config": "./src/config.ts",
     "./context": "./src/context.ts",
-    "./template": "./src/template.ts"
+    "./template": "./src/template.ts",
+    "./expression": "./src/expression.ts"
   },
   "dependencies": {
     "@nunjucks/shared": "workspace:*",
+    "@nunjucks/nodes": "workspace:*",
     "remeda": "^2.39.0"
   },
   "description": "Validation utilities for Nunjucks"

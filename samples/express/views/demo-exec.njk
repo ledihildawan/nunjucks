@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><title>Exec Statement Demo</title></head>
+<body>
+  <h1>Exec Statement Demo</h1>
+
+  <h2>Exec with array push</h2>
+  {% exec arr.push(1) %}
+  {% exec arr.push(2) %}
+  {% exec arr.push(3) %}
+  <p>Array: {{ arr }}</p>
+
+  <h2>Exec with string operation</h2>
+  {% exec name.append("!") %}
+  <p>Name: {{ name }}</p>
+
+  <h2>Exec with logging</h2>
+  {% exec items.push("item1") %}
+  {% exec items.push("item2") %}
+  <p>Items: {{ items }}</p>
+</body>
+</html>

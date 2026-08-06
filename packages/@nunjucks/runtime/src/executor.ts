@@ -1,14 +1,10 @@
-import { createContext, createSandboxedContext, type ContextEnv, type Frame } from '@nunjucks/runtime';
-import { createLog } from '@nunjucks/log';
-import { getError } from '@nunjucks/log';
-import { makeGetFilter } from './executor-filters.ts';
-import { getRenderFunction, getRuntimeHelpers, buildSandboxOptions, buildSandboxedRuntime } from './executor-runtime.ts';
+import { createContext, type ContextEnv, type Context } from './context.ts';
+import type { Frame } from './frame.ts';
+import { createRenderRuntime } from './render-runtime.ts';
+import { getRenderFunction, buildSandboxOptions, buildSandboxedRuntime } from './executor-runtime.ts';
 
 interface ExecuteConfig {
-  env?: ContextEnv;
   autoescape?: boolean;
-  filters?: Record<string, (...args: unknown[]) => unknown>;
-  tests?: Record<string, (...args: unknown[]) => unknown>;
   dev?: boolean;
   sandbox?: boolean;
   sandboxAllowlist?: string[];
@@ -17,7 +13,7 @@ interface ExecuteConfig {
 }
 
 const buildRuntime = (config: ExecuteConfig): Record<string, unknown> => {
-  const runtime = getRuntimeHelpers();
+  const runtime = createRenderRuntime() as Record<string, unknown>;
 
   if (config.sandbox) {
     const sandboxOptions = buildSandboxOptions(config);
@@ -27,77 +23,28 @@ const buildRuntime = (config: ExecuteConfig): Record<string, unknown> => {
   return runtime;
 };
 
-const buildGetTest = (tests: Record<string, (...args: unknown[]) => unknown>) => (
-  name: string,
-  lineno: number | null,
-  colno: number | null
-) => {
-  const test = tests[name];
-  if (test) { return test; }
-  throw createLog('error', getError('UNDEFINED_TEST'), { name }, name, { lineno, colno, phase: 'render', lineBase: 'zero' });
-};
-
 const buildContextObject = (
   context: Record<string, unknown>,
-  config: ExecuteConfig,
-  runtime: Record<string, unknown>
-): Record<string, unknown> => {
-  if (config.env) {
-    const ctx = createContext(context, {}, config.env as Parameters<typeof createContext>[2]) as unknown as Record<string, unknown>;
-    ctx._autoescape = config.autoescape ?? true;
-    return ctx;
-  }
-
-  const exported: string[] = [];
-  const ctx: Record<string, unknown> = {
-    ...context,
-    _autoescape: config.autoescape ?? true,
-    lookup: (key: string) => {
-      if (key in ctx) {
-        return ctx[key];
-      }
-      if (key in runtime) {
-        return runtime[key];
-      }
-    },
-    setVariable: (name: string, val: unknown) => {
-      ctx[name] = val;
-    },
-    addExport: (name: string) => {
-      exported.push(name);
-    },
-    getExported: () => {
-      const result: Record<string, unknown> = {};
-      exported.forEach(name => {
-        result[name] = ctx[name];
-      });
-      return result;
-    },
-    getSuper: (_envObj: unknown, name: string, _block: unknown, _frame: Frame, lineno: number | null = null, colno: number | null = null) => {
-      throw createLog('error', getError('NO_SUPER_BLOCK'), { name }, name, { lineno, colno, phase: 'render', lineBase: 'zero' });
-    }
-  };
+  env: ContextEnv,
+  autoescape: boolean | undefined
+): Context => {
+  const ctx = createContext(context, {}, env);
+  ctx._autoescape = autoescape ?? true;
   return ctx;
 };
 
 const executeNonSandbox = async (
   code: string,
-  ctx: Record<string, unknown>,
+  ctx: Context,
   frame: Frame,
   env: unknown,
   runtime: Record<string, unknown>
-): Promise<unknown> => {
+): Promise<string> => {
   const { render, blocks } = getRenderFunction(code);
 
-  ctx.blocks = blocks as Record<string, (...args: unknown[]) => unknown>;
-  ctx.getBlock = (name: string) => {
-    if (!blocks[name]) {
-      throw createLog('error', getError('UNDEFINED_BLOCK'), { name }, name, { phase: 'render' });
-    }
-    return blocks[name];
-  };
+  ctx.blocks = blocks;
 
-  return await render(env, ctx, frame, runtime);
+  return String(await render(env, ctx, frame, runtime));
 };
 
 const execute = async (
@@ -106,24 +53,10 @@ const execute = async (
   frame: Frame,
   env: unknown,
   config: ExecuteConfig = {}
-): Promise<unknown> => {
+): Promise<string> => {
+  const resolvedEnv = (env ?? { opts: { dev: false, autoescape: true, undefined: 'default' }, getFilter: () => null, getTest: () => null }) as ContextEnv;
   const runtime = buildRuntime(config);
-
-  if (config.filters) {
-    runtime.getFilter = makeGetFilter(config.filters, context, { env: config.env as { getFilter: (name: string, lineno: number | null, colno: number | null) => unknown } }, Boolean(config.env));
-  }
-
-  if (config.tests) {
-    runtime.getTest = buildGetTest(config.tests);
-  }
-
-  if (config.sandbox && config.env) {
-    runtime.context = createSandboxedContext(context, true, buildSandboxOptions(config));
-  } else {
-    runtime.context = context;
-  }
-
-  const ctx = buildContextObject(context, config, runtime);
+  const ctx = buildContextObject(context, resolvedEnv, config.autoescape);
 
   return await executeNonSandbox(code, ctx, frame, env, runtime);
 };

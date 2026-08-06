@@ -1,11 +1,21 @@
 import { isArray, isArrayPattern, isObjectPattern } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
+import type { Node, ForNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
 import { compileDestructuring } from './pattern.ts';
 
-const emitLoopBindings = (ctx: Compiler, _arr: string, i: string, len: string): void => {
+interface LoopContext {
+  ctx: Compiler;
+  nameNode: Node;
+  frame: Frame;
+  arr: string;
+  i: string;
+  len: string;
+  node: ForNode;
+}
+
+const emitLoopBindings = (ctx: Compiler, i: string, len: string): void => {
   const bindings = [
     {name: 'index', val: `${i} + 1`},
     {name: 'index0', val: i},
@@ -21,6 +31,13 @@ const emitLoopBindings = (ctx: Compiler, _arr: string, i: string, len: string): 
   });
 };
 
+const emitLoopBody = (ctx: Compiler, node: ForNode, frame: Frame, i: string, len: string): void => {
+  emitLoopBindings(ctx, i, len);
+  ctx.withScopedSyntax(() => {
+    ctx.compile(node.body, frame);
+  });
+};
+
 const isArrayBinding = (n: Node): boolean =>
   isArray(n) ||
   isArrayPattern(n) ||
@@ -28,89 +45,64 @@ const isArrayBinding = (n: Node): boolean =>
 
 const isFlatArrayBinding = (n: Node): boolean => isArray(n);
 
-const setupForLoop = (ctx: Compiler, node: Node, parentFrame: Frame): { frame: Frame; arr: string } => {
+const setupForLoop = (ctx: Compiler, node: ForNode, parentFrame: Frame): { frame: Frame; arr: string } => {
   const arr = ctx.tmpid();
   const frame = parentFrame.push(true);
   ctx.emitLine('frame = frame.push(true);');
   ctx.emit(`let ${arr} = `);
-  ctx.compileExpression(node.arr as Node, frame);
+  ctx.compileExpression(node.arr, frame);
   ctx.emitLine(';');
   ctx.emit(`if(${arr}) {`);
   ctx.emitLine(`${arr} = runtime.fromIterator(${arr});`);
   return { frame, arr };
 };
 
-const compileFlatArrayBinding = (
-  ctx: Compiler,
-  nameNode: Node,
-  frame: Frame,
-  arr: string,
-  i: string,
-  len: string,
-  node: Node
-): void => {
+const compileFlatArrayBinding = ({ ctx, nameNode, frame, arr, i, len, node }: LoopContext): void => {
   const itemId = ctx.tmpid();
   ctx.emitLine(`let ${itemId} = ${arr}[${i}];`);
-  nameNode.children?.forEach((child, u) => {
-    const tid = ctx.tmpid();
-    ctx.emitLine(`let ${tid} = ${itemId}[${u}];`);
-    const childValue = child.value as string;
-    ctx.emitLine(`frame.set("${childValue}", ${tid});`);
-    frame.set(childValue, tid);
-  });
-  emitLoopBindings(ctx, arr, i, len);
-  ctx.withScopedSyntax(() => {
-    ctx.compile(node.body as Node, frame);
-  });
+  if (nameNode.children) {
+    for (let u = 0; u < nameNode.children.length; u++) {
+      const child = nameNode.children[u];
+      if (!child) { continue; }
+      const tid = ctx.tmpid();
+      ctx.emitLine(`let ${tid} = ${itemId}[${u}];`);
+      const childValue = child.value as string;
+      ctx.emitLine(`frame.set("${childValue}", ${tid});`);
+      frame.set(childValue, tid);
+    }
+  }
+  emitLoopBody(ctx, node, frame, i, len);
 };
 
-const compileFlatObjectBinding = (
-  ctx: Compiler,
-  nameNode: Node,
-  frame: Frame,
-  arr: string,
-  i: string,
-  len: string,
-  node: Node
-): void => {
+const compileFlatObjectBinding = ({ ctx, nameNode, frame, arr, i, len, node }: LoopContext): void => {
   const { children } = nameNode;
-  if (!children || children.length < 2) {
+  const key = children?.[0];
+  const val = children?.[1];
+  if (!key || !val) {
     return;
   }
-  const [key, val] = children;
-  const keyValue = (key as Node).value as string;
-  const valValue = (val as Node).value as string;
+  const keyValue = key.value as string;
+  const valValue = val.value as string;
   const k = ctx.tmpid();
   const v = ctx.tmpid();
   frame.set(keyValue, k);
   frame.set(valValue, v);
 
   ctx.emitLine(`${i} = -1;`);
-  ctx.emitLine(`let ${len} = runtime.keys(${arr}).length;`);
+  ctx.emitLine(`${len} = runtime.keys(${arr}).length;`);
   ctx.emitLine(`for(let ${k} in ${arr}) {`);
   ctx.emitLine(`${i}++;`);
   ctx.emitLine(`let ${v} = ${arr}[${k}];`);
   ctx.emitLine(`frame.set("${keyValue}", ${k});`);
   ctx.emitLine(`frame.set("${valValue}", ${v});`);
 
-  emitLoopBindings(ctx, arr, i, len);
-  ctx.withScopedSyntax(() => {
-    ctx.compile(node.body as Node, frame);
-  });
+  emitLoopBody(ctx, node, frame, i, len);
   ctx.emitLine('}');
 };
 
-const compileDestructuredObjectBinding = (
-  ctx: Compiler,
-  nameNode: Node,
-  frame: Frame,
-  arr: string,
-  i: string,
-  len: string,
-  node: Node
-): void => {
+const compileDestructuredObjectBinding = ({ ctx, nameNode, frame, arr, i, len, node }: LoopContext): void => {
   ctx.emitLine(`${i} = -1;`);
-  ctx.emitLine(`let ${len} = runtime.keys(${arr}).length;`);
+  ctx.emitLine(`${len} = runtime.keys(${arr}).length;`);
   const k = ctx.tmpid();
   ctx.emitLine(`for(const ${k} in ${arr}) {`);
   ctx.emitLine(`${i}++;`);
@@ -118,99 +110,72 @@ const compileDestructuredObjectBinding = (
   ctx.emitLine(`let ${entryId} = ${arr}[${k}];`);
   compileDestructuring({ ctx, frame, registerFrame: true }, nameNode, entryId);
 
-  emitLoopBindings(ctx, arr, i, len);
-  ctx.withScopedSyntax(() => {
-    ctx.compile(node.body as Node, frame);
-  });
+  emitLoopBody(ctx, node, frame, i, len);
   ctx.emitLine('}');
 };
 
-const compileArrayBindingCase = (
-  ctx: Compiler,
-  node: Node,
-  nameNode: Node,
-  frame: Frame,
-  arr: string,
-  i: string,
-  len: string
-): void => {
+const compileArrayBindingCase = ({ ctx, nameNode, frame, arr, i, len, node }: LoopContext): void => {
   ctx.emitLine(`let ${i};`);
   ctx.emitLine(`if(Array.isArray(${arr})) {`);
-  ctx.emitLine(`let ${len} = ${arr}.length;`);
+  ctx.emitLine(`${len} = ${arr}.length;`);
   ctx.emitLine(`for(${i}=0; ${i} < ${arr}.length; ${i}++) {`);
 
   if (isFlatArrayBinding(nameNode)) {
-    compileFlatArrayBinding(ctx, nameNode, frame, arr, i, len, node);
+    compileFlatArrayBinding({ ctx, nameNode, frame, arr, i, len, node });
   } else {
     const itemId = ctx.tmpid();
     ctx.emitLine(`let ${itemId} = ${arr}[${i}];`);
     compileDestructuring({ ctx, frame, registerFrame: true }, nameNode, itemId);
-    emitLoopBindings(ctx, arr, i, len);
-    ctx.withScopedSyntax(() => {
-      ctx.compile(node.body as Node, frame);
-    });
+    emitLoopBody(ctx, node, frame, i, len);
   }
   ctx.emitLine('}');
 
   ctx.emitLine(`} else if (typeof ${arr} === "object") {`);
   if (isFlatArrayBinding(nameNode)) {
-    compileFlatObjectBinding(ctx, nameNode, frame, arr, i, len, node);
+    compileFlatObjectBinding({ ctx, nameNode, frame, arr, i, len, node });
   } else {
-    compileDestructuredObjectBinding(ctx, nameNode, frame, arr, i, len, node);
+    compileDestructuredObjectBinding({ ctx, nameNode, frame, arr, i, len, node });
   }
   ctx.emitLine('}');
 };
 
-const compileSimpleBinding = (
-  ctx: Compiler,
-  node: Node,
-  nameNode: Node,
-  frame: Frame,
-  arr: string,
-  i: string,
-  len: string
-): void => {
+const compileSimpleBinding = ({ ctx, nameNode, frame, arr, i, len, node }: LoopContext): void => {
   const v = ctx.tmpid();
   const nameValue = nameNode.value as string;
   frame.set(nameValue, v);
 
-  ctx.emitLine(`let ${len} = ${arr}.length;`);
+  ctx.emitLine(`${len} = ${arr}.length;`);
   ctx.emitLine(`for(let ${i}=0; ${i} < ${arr}.length; ${i}++) {`);
   ctx.emitLine(`let ${v} = ${arr}[${i}];`);
   ctx.emitLine(`frame.set("${nameValue}", ${v});`);
 
-  emitLoopBindings(ctx, arr, i, len);
-
-  ctx.withScopedSyntax(() => {
-    ctx.compile(node.body as Node, frame);
-  });
+  emitLoopBody(ctx, node, frame, i, len);
 
   ctx.emitLine('}');
 };
 
-const emitForElse = (ctx: Compiler, node: Node, len: string, frame: Frame): void => {
+const emitForElse = (ctx: Compiler, node: ForNode, len: string, frame: Frame): void => {
   if (node.else_) {
     ctx.emitLine(`if (!${len}) {`);
-    ctx.compile(node.else_ as Node, frame);
+    ctx.compile(node.else_, frame);
     ctx.emitLine('}');
   }
 };
 
-export const compileFor = (ctx: Compiler, node: Node, parentFrame: Frame): void => {
+export const compileFor = (ctx: Compiler, node: ForNode, parentFrame: Frame): void => {
   const i = ctx.tmpid();
   const len = ctx.tmpid();
+  ctx.emitLine(`let ${len} = 0;`);
   const { frame, arr } = setupForLoop(ctx, node, parentFrame);
-  const nameNode = node.name as Node;
+  const nameNode = node.name;
 
   if (isArrayBinding(nameNode)) {
-    compileArrayBindingCase(ctx, node, nameNode, frame, arr, i, len);
+    compileArrayBindingCase({ ctx, nameNode, frame, arr, i, len, node });
   } else {
-    compileSimpleBinding(ctx, node, nameNode, frame, arr, i, len);
+    compileSimpleBinding({ ctx, nameNode, frame, arr, i, len, node });
   }
 
   ctx.emitLine('}');
   emitForElse(ctx, node, len, frame);
   ctx.emitLine('frame = frame.pop();');
 };
-
-export { emitLoopBindings };

@@ -1,5 +1,6 @@
 import express, { type Router, type Request, type Response } from 'express';
 import { render } from '@nunjucks/core';
+import { formatError } from '@nunjucks/log';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -86,7 +87,7 @@ router.get('/strict', async (req: Request, res: Response) => {
     await renderTemplate(template, context, { undefined: 'strict' });
     res.send('Should have thrown error');
   } catch (e) {
-    res.status(500).type('html').send((e as { output?: () => string }).output?.());
+    res.status(500).type('html').send(formatError(e as any, { format: 'html' }));
   }
 });
 
@@ -118,7 +119,7 @@ router.get('/debug', async (req: Request, res: Response) => {
 </body>
 </html>`);
   } catch (e) {
-    res.status(500).type('html').send((e as { output?: () => string }).output?.());
+    res.status(500).type('html').send(formatError(e as any, { format: 'html' }));
   }
 });
 
@@ -166,7 +167,7 @@ router.get('/strict-nested', async (req: Request, res: Response) => {
     await renderTemplate(template, context, { undefined: 'strict' });
     res.send('Should have thrown error');
   } catch (e) {
-    res.status(500).type('html').send((e as { output?: () => string }).output?.());
+    res.status(500).type('html').send(formatError(e as any, { format: 'html' }));
   }
 });
 
@@ -178,7 +179,7 @@ router.get('/strict-array', async (req: Request, res: Response) => {
     await renderTemplate(template, context, { undefined: 'strict' });
     res.send('Should have thrown error');
   } catch (e) {
-    res.status(500).type('html').send((e as { output?: () => string }).output?.());
+    res.status(500).type('html').send(formatError(e as any, { format: 'html' }));
   }
 });
 

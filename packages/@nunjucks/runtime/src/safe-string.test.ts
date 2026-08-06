@@ -32,17 +32,17 @@ describe('createSafeString', () => {
 
 describe('copySafeness', () => {
   test('wraps target in SafeString when dest is SafeString', () => {
-    const result = copySafeness(createSafeString('original'), 'newval') as { val: string };
-    expect(result.val).toBe('newval');
+    const result = copySafeness(createSafeString('original'), { toString: () => 'newval' });
+    expect((result as { val: string }).val).toBe('newval');
   });
 
   test('returns target.toString() when dest is not SafeString', () => {
-    const result = copySafeness('plain', 42);
+    const result = copySafeness('plain', { toString: () => '42' });
     expect(result).toBe('42');
   });
 
   test('handles boolean target', () => {
-    const result = copySafeness('plain', true);
+    const result = copySafeness('plain', { toString: () => 'true' });
     expect(result).toBe('true');
   });
 
@@ -66,7 +66,7 @@ describe('markSafe', () => {
   });
 
   test('wraps function return values in SafeString', () => {
-    const wrapped = markSafe(() => 'result') as () => { val: string };
+    const wrapped = markSafe(() => 'result') as unknown as () => { val: string };
     expect(wrapped()).toBeInstanceOf(String);
     expect(wrapped().val).toBe('result');
   });

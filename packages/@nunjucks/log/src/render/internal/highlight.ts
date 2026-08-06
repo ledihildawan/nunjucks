@@ -28,7 +28,7 @@ const SYNTAX_RULES: SyntaxRule[] = [
   { type: 'attr', re: /^[a-zA-Z_][\w-]*(?=\s*=)/u },
   {
     type: 'keyword',
-    re: /^(?:endraw|raw|endfilter|filter|endcall|call|endmacro|macro|endblock|block|endfor|for|endif|elif|else|if|extends|include|import|from|set|with|without|context|as|not|and|or|in|is|true|false|none|null)(?![\w-])/u,
+    re: /^(?:endraw|raw|endfilter|filter|endcomponent|component|endrender|render|endslot|slot|endblock|block|endfor|for|endif|elif|else|if|extends|include|import|from|set|with|without|context|as|not|and|or|in|is|true|false|none|null)(?![\w-])/u,
     tagOnly: true,
   },
   { type: 'variable', re: /^[a-zA-Z_]\w*/u, tagOnly: true },

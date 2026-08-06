@@ -33,5 +33,5 @@ const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
     return formatMediumAnsi(message, parts.path, location, parts.causes, parts.documentationUrl, ide);
   }
 
-  return formatFullAnsi(message, parts, ide, sourceTrace, options.renderContext);
+  return formatFullAnsi(message, parts, ide, sourceTrace, options.renderContext, error);
 };

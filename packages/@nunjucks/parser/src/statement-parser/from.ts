@@ -1,17 +1,22 @@
+import type { Token } from '@nunjucks/lexer';
 import {
   TOKEN_BLOCK_END,
   TOKEN_COMMA,
+  isSymbolToken,
 } from '@nunjucks/lexer';
 import { appendChild, fromImport, nodeList, pair } from '@nunjucks/nodes';
 import type { ChildrenNode, Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, skip, skipSymbol, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { parseExpression } from "../expression-parser/inline.ts";
-import { parsePrimary } from "../expression-parser/primary.ts";
-import { parseWithContext } from "./with.ts";
+import { parseExpression, parsePrimary } from "../expression-parser/index.ts";
+import { parseWithContext } from "./import-context.ts";
 
-const isUnderscore = (name: Node): boolean =>
-  (name.value as string).charAt(0) === '_';
+const isUnderscore = (name: Node): boolean => {
+  if (typeof name.value === 'string' && name.value.charAt(0) === '_') {
+    return true;
+  }
+  return false;
+};
 
 const parseImportName = (
   ctx: ParserContext,
@@ -36,7 +41,7 @@ const parseImportName = (
 const handleBlockEnd = (
   ctx: ParserContext,
   names: ChildrenNode,
-  fromTok: ReturnType<typeof peekToken>
+  fromTok: Token
 ): void => {
   if (names.children.length === 0) {
     fail(ctx, 'parseFrom: Expected at least one import name',
@@ -45,7 +50,7 @@ const handleBlockEnd = (
   }
 
   const nextTok = peekToken(ctx);
-  if ((nextTok.value as string).charAt(0) === '-') {
+  if (isSymbolToken(nextTok) && nextTok.value.charAt(0) === '-') {
     ctx.dropLeadingWhitespace = true;
   }
 
@@ -90,6 +95,6 @@ export const parseFrom = (ctx: ParserContext): Node => {
   return fromImport(fromTok.lineno, fromTok.colno, {
     template,
     names,
-    withContext: withContext as boolean,
+    withContext: withContext ?? false,
   });
 };

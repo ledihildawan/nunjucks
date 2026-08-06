@@ -2,14 +2,29 @@ import { pipe } from 'remeda';
 import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, LegacyLogData, LogType, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, NormalizedErrorContext, NormalizedWarningContext, ErrorInfo, WarningInfo, OutputOptions } from './create-log-types.ts';
 import { TEMPLATE_ERROR } from './create-log-types.ts';
 import { normalizeContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, buildLocationMessage } from './create-log-helpers.ts';
-import { createErrorFromDef, createWarningFromDef, buildErrorOutput, buildWarningOutput } from './create-log-error.ts';
+import { createErrorFromDef, createWarningFromDef } from './create-log-error.ts';
+import { isKeyedObject } from '@nunjucks/shared';
 
+function createLog(
+  type: 'error',
+  errorDefOrData: ErrorDefinitionEntry | LegacyLogData,
+  params?: Record<string, string>,
+  subject?: string | null,
+  context?: ErrorContext | null
+): TemplateError;
+function createLog(
+  type: 'warning',
+  errorDefOrData: ErrorDefinitionEntry | LegacyLogData,
+  params?: Record<string, string>,
+  subject?: string | null,
+  context?: WarningContext | null
+): TemplateWarning;
 function createLog(
   type: string,
   errorDefOrData: ErrorDefinitionEntry | LegacyLogData,
   params?: Record<string, string>,
   subject?: string | null,
-  context?: ErrorContext | null
+  context?: ErrorContext | WarningContext | null
 ): TemplateError | TemplateWarning {
   assertLogType(type);
 
@@ -18,25 +33,19 @@ function createLog(
   }
 
   const errorDef = errorDefOrData;
-  const paramsValue = params as Record<string, string> | undefined;
-  let normalized: NormalizedErrorContext | NormalizedWarningContext;
-  if (type === 'error') {
-    normalized = normalizeContext<NormalizedErrorContext>(context as ErrorContext, () => ({}));
-  } else {
-    normalized = normalizeContext<NormalizedWarningContext>(context as WarningContext, (c) => ({ varName: (c as WarningContext).varName ?? null, undefinedMode: (c as WarningContext).undefinedMode ?? 'chainable' }));
-  }
-
   const extra = extractExtraFromContext(context);
 
   if (type === 'error') {
-    return createErrorFromDef(errorDef, paramsValue, normalized as NormalizedErrorContext, extra, subject ?? null);
+    const normalized = normalizeContext<NormalizedErrorContext>(context, () => ({}));
+    return createErrorFromDef(errorDef, params, normalized, extra, subject ?? null);
   }
 
-  return createWarningFromDef(errorDef, paramsValue, normalized as NormalizedWarningContext, subject ?? null);
+  const normalized = normalizeContext<NormalizedWarningContext>(context, (c) => ({ varName: (c as WarningContext).varName ?? null, undefinedMode: (c as WarningContext).undefinedMode ?? 'chainable' }));
+  return createWarningFromDef(errorDef, params, normalized, subject ?? null);
 }
 
 function isTemplateError(obj: unknown): obj is TemplateError {
-  return (obj as TemplateError | null | undefined)?.[TEMPLATE_ERROR] === true;
+  return isKeyedObject(obj) && obj[TEMPLATE_ERROR] === true;
 }
 
 const asTemplateError = (err: Error | TemplateError): TemplateError => {
@@ -48,24 +57,34 @@ const asTemplateError = (err: Error | TemplateError): TemplateError => {
     phase: e.phase ?? 'render',
     templateName: e.templateName ?? null,
     lineBase: e.lineBase ?? 'zero'
-  }) as TemplateError;
+  });
 };
 
-const withLocation = ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) => (err: TemplateError): TemplateError => {
-  err.applyLocation = (locationPath: string | undefined, chain?: IncludeChain): TemplateError => {
-    err.message = buildLocationMessage(locationPath, err, chain) + (err.message || '');
-    err.firstUpdate = false;
-    return err;
-  };
-  err.templateName = err.templateName ?? (path ?? null);
-  if (includeChain) {
-    err._includeChain = includeChain;
-  }
+const createErrorEnvelope = (message: string, cause?: Error): TemplateError => {
+  const err = new Error(message, cause ? { cause } : undefined) as TemplateError;
+  err[TEMPLATE_ERROR] = true;
   return err;
 };
 
+const withLocation = ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) => (err: TemplateError): TemplateError => {
+  // Clone so the caller's error object is never mutated. The applyLocation
+  // closure captures the clone; calling it later mutates the returned error
+  // (which the caller owns), never the original input.
+  const result = Object.assign(createErrorEnvelope(err.message, err), err);
+  result.applyLocation = (locationPath: string | undefined, chain?: IncludeChain): TemplateError => {
+    result.message = buildLocationMessage(locationPath, result, chain) + (result.message || '');
+    result.firstUpdate = false;
+    return result;
+  };
+  result.templateName = result.templateName ?? (path ?? null);
+  if (includeChain) {
+    result._includeChain = includeChain;
+  }
+  return result;
+};
+
 const stripInternals = (path?: string) => (err: TemplateError): TemplateError => {
-  const clean = new Error(err.message, { cause: err }) as TemplateError;
+  const clean = createErrorEnvelope(err.message, err);
   clean.name = err.name;
   clean.lineno = err.lineno;
   clean.colno = err.colno;
@@ -81,20 +100,20 @@ const stripInternals = (path?: string) => (err: TemplateError): TemplateError =>
   return clean;
 };
 
-function prettifyError(options: PrettifyErrorOptions): TemplateError {
+const prettifyError = (options: PrettifyErrorOptions): TemplateError => {
   const { path, withInternals, err, includeChain } = options;
   if (withInternals) {
-    return pipe(err, asTemplateError, withLocation({ path, includeChain })) as TemplateError;
+    return pipe(err, asTemplateError, withLocation({ path, includeChain }));
   }
-  return pipe(err, asTemplateError, withLocation({ path, includeChain }), stripInternals(path)) as TemplateError;
-}
+  return pipe(err, asTemplateError, withLocation({ path, includeChain }), stripInternals(path));
+};
 
 const createFromLegacyData = (type: LogType, data: LegacyLogData): TemplateError | TemplateWarning => {
   const info = (data.info ?? {}) as WarningInfo;
   const base = createBaseMetadata(data.message, data, info, type);
 
   if (type === 'error') {
-    const err = new Error(base.message) as TemplateError;
+    const err = createErrorEnvelope(base.message);
     Object.assign(err, {
       name: 'Template render error',
       code: base.code,
@@ -105,13 +124,11 @@ const createFromLegacyData = (type: LogType, data: LegacyLogData): TemplateError
       templateName: base.templateName,
       lineBase: base.lineBase,
       templatePath: base.templateName,
-      [TEMPLATE_ERROR]: true as const,
     });
-    err.output = buildErrorOutput(err);
     return err;
   }
 
-  const warn = {
+  const warn: TemplateWarning = {
     message: base.message,
     lineno: base.lineno,
     colno: base.colno,
@@ -122,8 +139,7 @@ const createFromLegacyData = (type: LogType, data: LegacyLogData): TemplateError
     subject: base.subject,
     phase: base.phase,
     lineBase: base.lineBase,
-  } as TemplateWarning;
-  warn.output = buildWarningOutput(warn);
+  };
   return warn;
 };
 

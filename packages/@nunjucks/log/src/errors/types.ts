@@ -9,14 +9,13 @@ interface ErrorDefinition {
   readonly pattern: RegExp;
   readonly category: string;
   readonly titleTemplate?: string;
-  readonly causes: string[];
+  readonly causes: readonly string[];
   readonly fixCode?: string;
   readonly fixComment?: string;
   readonly documentationUrl?: string;
   readonly severity?: 'error' | 'warning' | 'info';
   readonly subjectFrom?: SubjectExtractor | null;
   readonly extraFrom?: ExtraExtractor | null;
-  readonly sourceFromStack?: boolean;
 }
 
 interface Classification {

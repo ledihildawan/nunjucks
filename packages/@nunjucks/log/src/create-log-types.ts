@@ -1,4 +1,4 @@
-import type { LineBase } from './render/internal/location.ts';
+import type { LineBase } from './line-base.ts';
 
 const TEMPLATE_ERROR = Symbol('TemplateError');
 
@@ -6,7 +6,7 @@ interface ErrorDefinitionEntry {
   name: string;
   message: ((args?: Record<string, string> | string[]) => string) | string;
   pattern: RegExp;
-  causes?: string[];
+  causes?: readonly string[];
   fixCode?: string;
   fixComment?: string;
   documentationUrl?: string;
@@ -19,6 +19,7 @@ interface ErrorInfo {
   phase?: string | null;
   templateName?: string | null;
   renderContext?: Record<string, unknown>;
+  blockedKeys?: readonly string[];
   lineBase?: LineBase | null;
   dev?: boolean;
 }
@@ -47,6 +48,17 @@ interface OutputOptions {
   isJsCaller?: boolean;
 }
 
+/**
+ * A template error carrying diagnostic metadata.
+ *
+ * **Data fields** are read by all consumers for display, logging, and classification.
+ *
+ * **Rendering** is done via standalone `formatError(err, options)` function.
+ *
+ * **Internal fields** (`firstUpdate`, `outputOptions`, `_includeChain`) are
+ * renderer-internal state; the underscore prefix and optional-ness signal that
+ * external code should not depend on them.
+ */
 interface TemplateError extends Error {
   name: 'Template render error';
   lineno: number | null;
@@ -57,6 +69,7 @@ interface TemplateError extends Error {
   templateName: string | null;
   templatePath: string | null;
   renderContext?: Record<string, unknown>;
+  blockedKeys?: readonly string[];
   lineBase?: LineBase | null;
   sourceContent?: string;
   sourceStartLine?: number;
@@ -69,7 +82,6 @@ interface TemplateError extends Error {
   path?: string | null;
   toJSON?: () => Record<string, unknown>;
   outputOptions?: Omit<OutputOptions, 'format'>;
-  output: (options?: OutputOptions) => string;
   applyLocation?: (path: string | undefined, includeChain?: IncludeChain) => TemplateError;
   _includeChain?: IncludeChain;
   [TEMPLATE_ERROR]?: boolean;
@@ -89,7 +101,6 @@ interface TemplateWarning {
   causes?: string[];
   fixCode?: string | null;
   fixComment?: string | null;
-  output: (options?: Omit<OutputOptions, 'format' | 'isProduction'>) => string;
 }
 
 interface ErrorContext {

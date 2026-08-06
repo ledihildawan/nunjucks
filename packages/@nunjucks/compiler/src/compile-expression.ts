@@ -8,7 +8,6 @@ import {
   bitwiseOr,
   bitwiseRShift,
   bitwiseXor,
-  caller,
   compare,
   concat,
   decrement,
@@ -37,24 +36,27 @@ import {
   slice,
   sub,
   symbol,
+  test,
+  testCall,
 } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
+import { createLog } from '@nunjucks/log';
 import { forEach } from 'remeda';
 import type { Compiler, NodeTypeMatcher } from './index.ts';
 
 const EXPRESSION_TYPES: NodeTypeMatcher[] = [
-  literal, symbol, group, array, dict, funCall, caller, pipeNode, lookupVal,
-  compare, inlineIf, 'in', is, and, or, not, add, concat, sub, mul, div,
+  literal, symbol, group, array, dict, funCall, pipeNode, lookupVal,
+  compare, inlineIf, 'in', is, and, or, not, add, concat, 'range', sub, mul, div,
   floorDiv, mod, pow, neg, pos, optionalChain, nullishCoalesce, nodeList,
   slice, bitwiseOr, bitwiseAnd, bitwiseXor, bitwiseLShift, bitwiseRShift,
-  bitwiseNot, increment, decrement,
+  bitwiseNot, increment, decrement, test, testCall,
 ];
 
 export const compileChildren = (
   ctx: Pick<Compiler, 'compile'>,
   node: Node,
-  frame?: Frame
+  frame: Frame
 ): void => {
   forEach(node.children ?? [], child => ctx.compile(child, frame));
 };
@@ -62,7 +64,7 @@ export const compileChildren = (
 export const compileExpression = (
   ctx: Pick<Compiler, 'assertType' | 'compile'>,
   node: Node,
-  frame?: Frame
+  frame: Frame
 ): void => {
   ctx.assertType(node, ...EXPRESSION_TYPES);
   ctx.compile(node, frame);
@@ -84,14 +86,12 @@ export const assertType = (
   });
 
   if (!matches) {
-    const error = new Error(
-      `assertType: invalid type: ${typeName}`
-    ) as Error & Record<string, unknown>;
-    error.code = 'ASSERT_TYPE_ERROR';
-    error.subject = typeName;
-    error.lineno = node.lineno ?? null;
-    error.colno = node.colno ?? null;
-    error.lineBase = 'zero';
-    throw error;
+    throw createLog(
+      'error',
+      { name: 'ASSERT_TYPE_ERROR', message: `assertType: invalid type: ${typeName}` },
+      undefined,
+      typeName,
+      { phase: 'compile', lineno: node.lineno ?? null, colno: node.colno ?? null, lineBase: 'zero' },
+    );
   }
 };

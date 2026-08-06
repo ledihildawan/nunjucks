@@ -1,11 +1,10 @@
 // Import from the defining modules, not from '@nunjucks/log': this file is
 // itself re-exported by that entry point, so going through it is a cycle.
 import { createLog, type TemplateError } from './create-log.ts';
-import { normalizeErrorMetadata } from './render/internal/normalize.ts';
-import { resolveLocation } from '@nunjucks/shared/error-location';
-import { MATCH_ANY_RE } from '@nunjucks/shared';
+import { normalizeErrorMetadata } from './normalize.ts';
+import { resolveLocation, MATCH_ANY_RE, isKeyedObject } from '@nunjucks/shared';
 import { DEFAULT_IDE } from './render/internal/defaults.ts';
-import type { LineBase } from './render/internal/location.ts';
+import type { LineBase } from './line-base.ts';
 
 interface DiagnosticsConfig {
   phase?: string | null;
@@ -19,6 +18,7 @@ interface DiagnosticsConfig {
   ide?: string;
   lineno?: number | null;
   colno?: number | null;
+  blockedContextKeys?: readonly string[] | null;
 }
 
 interface ErrorWithCauses extends Error {
@@ -30,17 +30,32 @@ interface ErrorWithCauses extends Error {
   severity?: 'error' | 'warning' | 'info';
 }
 
+interface DiagnosticsBuildInput {
+  metadata: ReturnType<typeof normalizeErrorMetadata>;
+  templatePath: string | null;
+  sourceContent: string | null;
+  sourceStartLine: number;
+  renderContext: Record<string, unknown> | null;
+  preferCallerLocation: boolean;
+  dev: boolean | null;
+  ide: string | null;
+  timestamp: string | null;
+}
+
 export { findContextKeyPosition } from './find-context-key-position.ts';
 
+const readStringProp = (obj: unknown, key: string): string | undefined => {
+  if (!isKeyedObject(obj)) { return undefined; }
+  const value = obj[key];
+  return typeof value === 'string' ? value : undefined;
+};
+
 const extractErrorSnapshot = (err: unknown): Record<string, unknown> => {
-  const {
-    lineBase: _droppedLineBase,
-    lineno: _droppedLineno,
-    colno: _droppedColno,
-    ...errSnapshot
-  } = err as Record<string, unknown>;
-  Object.assign(errSnapshot, { name: (err as Error).name, message: (err as Error).message });
-  return errSnapshot;
+  if (!isKeyedObject(err)) { return {}; }
+  const { lineBase, lineno, colno, ...rest } = err;
+  const name = readStringProp(err, 'name');
+  const message = readStringProp(err, 'message');
+  return { ...rest, ...(name !== undefined && { name }), ...(message !== undefined && { message }) };
 };
 
 const resolveErrorProps = (err: unknown): {
@@ -74,31 +89,21 @@ const buildErrorDef = (metadata: ReturnType<typeof normalizeErrorMetadata>, reso
   severity: resolved.originalSeverity || 'error',
 });
 
-const buildContextObj = (
-  metadata: ReturnType<typeof normalizeErrorMetadata>,
-  templatePath: string | null,
-  sourceContent: string | null,
-  sourceStartLine: number,
-  renderContext: unknown,
-  preferCallerLocation: boolean,
-  dev: boolean,
-  ide: string,
-  timestamp: string
-): Record<string, unknown> => ({
-  lineno: metadata.lineno,
-  colno: metadata.colno,
-  phase: metadata.phase,
-  templateName: preferCallerLocation ? templatePath ?? metadata.templateName : metadata.templateName,
-  lineBase: metadata.lineBase,
-  dev,
-  ide,
-  templatePath: templatePath ?? undefined,
-  sourceContent: sourceContent ?? undefined,
-  sourceStartLine,
-  renderContext: renderContext as Record<string, unknown> | undefined,
-  timestamp,
+const buildContextObj = (input: DiagnosticsBuildInput): Record<string, unknown> => ({
+  lineno: input.metadata.lineno,
+  colno: input.metadata.colno,
+  phase: input.metadata.phase,
+  templateName: input.preferCallerLocation ? input.templatePath ?? input.metadata.templateName : input.metadata.templateName,
+  lineBase: input.metadata.lineBase,
+  dev: input.dev,
+  ide: input.ide,
+  templatePath: input.templatePath ?? undefined,
+  sourceContent: input.sourceContent ?? undefined,
+  sourceStartLine: input.sourceStartLine,
+  renderContext: input.renderContext ?? undefined,
+  timestamp: input.timestamp,
   verbosity: 'full',
-  isJsCaller: preferCallerLocation,
+  isJsCaller: input.preferCallerLocation,
 });
 
 const buildMetadata = (
@@ -129,14 +134,24 @@ const createErrorObject = (
   resolvedProps: ReturnType<typeof resolveErrorProps>,
   contextObj: ReturnType<typeof buildContextObj>,
   templatePath: string | null,
-  sourceStartLine: number
+  sourceStartLine: number,
+  blockedKeys?: readonly string[] | null
 ): TemplateError => {
   const errorDef = buildErrorDef(metadata, resolvedProps);
-  const errorObj = createLog('error', errorDef, {}, metadata.subject, contextObj as Parameters<typeof createLog>[4]) as TemplateError;
-  errorObj.templatePath = templatePath;
-  errorObj.sourceStartLine = sourceStartLine;
-  errorObj.renderContext = metadata.renderContext ?? undefined;
-  return errorObj;
+  const errorObj = createLog('error', errorDef, {}, metadata.subject, contextObj as Parameters<typeof createLog>[4]);
+  return Object.assign(errorObj, {
+    templatePath,
+    sourceStartLine,
+    renderContext: metadata.renderContext ?? undefined,
+    ...(blockedKeys && blockedKeys.length > 0 ? { blockedKeys } : {}),
+  });
+};
+
+const resolveEffectiveBlockedKeys = (err: unknown, config: DiagnosticsConfig): readonly string[] | null => {
+  const errRecord = isKeyedObject(err) ? err : null;
+  const incoming = errRecord?.blockedKeys;
+  if (Array.isArray(incoming) && incoming.length > 0) { return incoming as readonly string[]; }
+  return config.blockedContextKeys ?? null;
 };
 
 export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, template: string | null = null, renderContext: unknown = null): Promise<TemplateError> => {
@@ -173,7 +188,18 @@ export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, templ
 
   const metadata = buildMetadata(errSnapshot, lineno, colno, lineBase, phase, templatePath, sourceContent, sourceStartLine, renderContext);
   const resolvedProps = resolveErrorProps(err);
-  const contextObj = buildContextObj(metadata, templatePath, sourceContent, sourceStartLine, renderContext, preferCallerLocation, dev, ide, timestamp);
+  const contextObj = buildContextObj({
+    metadata,
+    templatePath,
+    sourceContent,
+    sourceStartLine,
+    renderContext: renderContext as Record<string, unknown> | null,
+    preferCallerLocation,
+    dev: dev ?? null,
+    ide,
+    timestamp,
+  });
 
-  return createErrorObject(metadata, resolvedProps, contextObj, templatePath, sourceStartLine);
+  const effectiveBlockedKeys = resolveEffectiveBlockedKeys(err, config);
+  return createErrorObject(metadata, resolvedProps, contextObj, templatePath, sourceStartLine, effectiveBlockedKeys);
 };

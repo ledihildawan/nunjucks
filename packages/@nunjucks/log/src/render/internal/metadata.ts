@@ -1,18 +1,6 @@
-import type { LineBase } from './location.ts';
+import type { LineBase } from '../../line-base.ts';
 import type { SourceTrace } from './source-trace.ts';
 import { DEFAULT_IDE } from './defaults.ts';
-
-export interface LogMetadataInput {
-  lineno?: number | null;
-  colno?: number | null;
-  code?: string | null;
-  subject?: string | null;
-  phase?: string | null;
-  templateName?: string | null;
-  templatePath?: string | null;
-  renderContext?: Record<string, unknown>;
-  lineBase?: LineBase | null;
-}
 
 export interface NormalizedLogMetadata {
   lineno: number | null;
@@ -64,26 +52,6 @@ export interface FormatterState {
   isJsCaller?: boolean;
   isProduction?: boolean;
 }
-
-export const normalizeLogMetadata = (input: LogMetadataInput = {}): NormalizedLogMetadata => {
-  let lineBase: LineBase;
-  if (input.lineBase === 'one') {
-    lineBase = 'one';
-  } else {
-    lineBase = 'zero';
-  }
-  return {
-    lineno: input.lineno ?? null,
-    colno: input.colno ?? null,
-    code: input.code ?? null,
-    subject: input.subject ?? null,
-    phase: input.phase ?? null,
-    templateName: input.templateName ?? null,
-    templatePath: input.templatePath ?? input.templateName ?? null,
-    renderContext: input.renderContext,
-    lineBase
-  };
-};
 
 export const createFormatterState = ({ metadata, options = {} }: FormatterStateInput): FormatterState => ({
   dev: options.dev ?? false,

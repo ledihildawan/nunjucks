@@ -68,9 +68,9 @@ type SerializableContext =
 const safeJson = (value: SerializableContext): string =>
   pipe(JSON.stringify(value), replace(LT_RE, '\\u003c'), replace(GT_RE, '\\u003e'), replace(AMP_RE, '\\u0026'));
 
-const renderContextHtml = (ctx: unknown): string => {
+const renderContextHtml = (ctx: unknown, blockedKeys?: readonly string[] | null): string => {
   if (!ctx || typeof ctx !== 'object') { return ''; }
-  const serialized = normalizeRenderContext(ctx) as Record<string, SerializableContext>;
+  const serialized = normalizeRenderContext(ctx, { blockedKeys }) as Record<string, SerializableContext>;
   const filteredKeys = pipe(serialized, keys());
   if (filteredKeys.length === 0) { return ''; }
 

@@ -1,125 +1,149 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { describe, test, expect, afterEach } from 'bun:test';
 import { mkdtemp, writeFile, mkdir, rm } from 'node:fs/promises';
-import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createFileSystemLoader } from './file-system.ts';
-import { isLoader } from './base.ts';
 
-let tmpDir: string;
-
-beforeEach(async () => {
-  tmpDir = await mkdtemp(join(tmpdir(), 'njk-test-'));
-  await writeFile(join(tmpDir, 'hello.njk'), 'Hello {{ name }}');
-  await writeFile(join(tmpDir, 'world.njk'), 'World');
-  await mkdir(join(tmpDir, 'sub'));
-  await writeFile(join(tmpDir, 'sub', 'nested.njk'), 'Nested');
-});
+const tempDirs: string[] = [];
 
 afterEach(async () => {
-  if (tmpDir) {
-    await rm(tmpDir, { recursive: true, force: true });
+  while (tempDirs.length > 0) {
+    const dir = tempDirs.pop()!;
+    await rm(dir, { recursive: true, force: true }).catch(() => {});
   }
 });
 
-describe('FileSystemLoader', () => {
-  test('creates loader with symbol marker', () => {
-    const loader = createFileSystemLoader(tmpDir);
-    expect(isLoader(loader)).toBe(true);
-  });
+const makeDir = async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'nj-loader-'));
+  tempDirs.push(dir);
+  return dir;
+};
 
-  test('constructor normalizes search paths', () => {
-    const loader = createFileSystemLoader(tmpDir);
-    expect(loader.searchPaths).toEqual([tmpDir.replace(/\//g, '\\')]);
-  });
-
-  test('constructor defaults searchPaths to ["."]', () => {
-    const loader = createFileSystemLoader();
+describe('createFileSystemLoader', () => {
+  test('creates loader with default search path "."', () => {
+    const loader = createFileSystemLoader(undefined);
     expect(loader.searchPaths).toEqual(['.']);
+    expect(loader.async).toBe(true);
+    expect(loader.watchEnabled).toBe(false);
+    expect(loader.pathsToNames).toEqual({});
   });
 
-  test('constructor sets noCache from opts', () => {
-    const loader = createFileSystemLoader(tmpDir, { noCache: true });
-    expect(loader.noCache).toBe(true);
+  test('creates loader with single search path', () => {
+    const loader = createFileSystemLoader('/tmp/templates');
+    expect(loader.searchPaths).toEqual([expect.stringContaining('tmp')]);
   });
 
-  test('constructor sets watch from opts', () => {
-    const loader = createFileSystemLoader(tmpDir, { watch: true });
+  test('creates loader with multiple search paths', () => {
+    const loader = createFileSystemLoader(['/a', '/b']);
+    expect(loader.searchPaths.length).toBe(2);
+  });
+
+  test('creates loader with watch enabled', () => {
+    const loader = createFileSystemLoader('.', { watch: true });
     expect(loader.watchEnabled).toBe(true);
   });
+});
 
-  test('getSource returns source for existing file', async () => {
-    const loader = createFileSystemLoader(tmpDir);
-    const result = await loader.getSource('hello.njk');
-    expect(result.src).toBe('Hello {{ name }}');
-    expect(result.path).toBe(join(tmpDir, 'hello.njk'));
+describe('getSource', () => {
+  test('loads existing template file', async () => {
+    const dir = await makeDir();
+    await writeFile(join(dir, 'hello.njk'), 'Hello {{ name }}');
+    const loader = createFileSystemLoader(dir);
+    const source = await loader.getSource('hello.njk');
+    expect(source).not.toBeNull();
+    expect(source!.src).toBe('Hello {{ name }}');
+    expect(source!.path).toContain('hello.njk');
   });
 
-  test('getSource returns null for missing file', async () => {
-    const loader = createFileSystemLoader(tmpDir);
-    const result = await loader.getSource('missing.njk');
-    expect(result).toBeNull();
+  test('returns null for non-existent file', async () => {
+    const dir = await makeDir();
+    const loader = createFileSystemLoader(dir);
+    const source = await loader.getSource('missing.njk');
+    expect(source).toBeNull();
   });
 
-  test('getSource finds file in subdirectory', async () => {
-    const loader = createFileSystemLoader(tmpDir);
-    const result = await loader.getSource('sub/nested.njk');
-    expect(result.src).toBe('Nested');
+  test('searches multiple paths in order', async () => {
+    const dir1 = await makeDir();
+    const dir2 = await makeDir();
+    await writeFile(join(dir2, 'shared.njk'), 'from dir2');
+    const loader = createFileSystemLoader([dir1, dir2]);
+    const source = await loader.getSource('shared.njk');
+    expect(source!.src).toBe('from dir2');
   });
 
-  test('getSource emits load event', async () => {
-    const loader = createFileSystemLoader(tmpDir);
-    let emitted: { name: string; source: unknown } | null = null;
-    loader.on('load', (name, source) => { emitted = { name, source }; });
-
-    await loader.getSource('hello.njk');
-
-    expect(emitted).not.toBeNull();
-    expect(emitted?.name).toBe('hello.njk');
+  test('prefers first path when file exists in both', async () => {
+    const dir1 = await makeDir();
+    const dir2 = await makeDir();
+    await writeFile(join(dir1, 'both.njk'), 'from dir1');
+    await writeFile(join(dir2, 'both.njk'), 'from dir2');
+    const loader = createFileSystemLoader([dir1, dir2]);
+    const source = await loader.getSource('both.njk');
+    expect(source!.src).toBe('from dir1');
   });
 
-  test('watches file when watchEnabled is true', async () => {
-    const loader = createFileSystemLoader(tmpDir, { watch: true });
-    await loader.getSource('hello.njk');
-
-    expect(loader.watchedFiles.size).toBe(1);
-    const watcher = loader.watchedFiles.get(join(tmpDir, 'hello.njk'));
-    expect(watcher).toBeDefined();
+  test('throws on directory path', async () => {
+    const dir = await makeDir();
+    await mkdir(join(dir, 'subdir'));
+    const loader = createFileSystemLoader(dir);
+    await expect(loader.getSource('subdir')).rejects.toThrow();
   });
 
-  test('unwatchFile removes watcher', () => {
-    const loader = createFileSystemLoader(tmpDir, { watch: true });
-    const filePath = join(tmpDir, 'hello.njk');
+  test('records loaded file in pathsToNames', async () => {
+    const dir = await makeDir();
+    await writeFile(join(dir, 'tracked.njk'), 'content');
+    const loader = createFileSystemLoader(dir);
+    await loader.getSource('tracked.njk');
+    const keys = Object.keys(loader.pathsToNames);
+    expect(keys.length).toBe(1);
+    expect(keys[0]).toContain('tracked.njk');
+  });
+});
 
-    loader.watchFile(filePath);
-    expect(loader.watchedFiles.size).toBe(1);
+describe('path traversal protection', () => {
+  test('blocks access outside search path via ..', async () => {
+    const dir = await makeDir();
+    await writeFile(join(dir, 'secret.njk'), 'secret');
+    const subdir = join(dir, 'templates');
+    await mkdir(subdir);
+    const loader = createFileSystemLoader(subdir);
+    const source = await loader.getSource('../secret.njk');
+    expect(source).toBeNull();
+  });
+});
 
-    loader.unwatchFile(filePath);
-    expect(loader.watchedFiles.size).toBe(0);
+describe('watch', () => {
+  test('watchFile adds watcher and unwatchFile removes it', async () => {
+    const dir = await makeDir();
+    const file = join(dir, 'watched.njk');
+    await writeFile(file, 'content');
+    const loader = createFileSystemLoader(dir, { watch: true });
+    loader.watchFile(file);
+    expect(loader.watchedFiles.has(file)).toBe(true);
+    loader.unwatchFile(file);
+    expect(loader.watchedFiles.has(file)).toBe(false);
   });
 
-  test('unwatchAll removes all watchers', () => {
-    const loader = createFileSystemLoader(tmpDir, { watch: true });
-    loader.watchFile(join(tmpDir, 'hello.njk'));
-    loader.watchFile(join(tmpDir, 'world.njk'));
-
+  test('unwatchAll clears all watchers', async () => {
+    const dir = await makeDir();
+    const f1 = join(dir, 'a.njk');
+    const f2 = join(dir, 'b.njk');
+    await writeFile(f1, 'a');
+    await writeFile(f2, 'b');
+    const loader = createFileSystemLoader(dir, { watch: true });
+    loader.watchFile(f1);
+    loader.watchFile(f2);
     expect(loader.watchedFiles.size).toBe(2);
-
     loader.unwatchAll();
     expect(loader.watchedFiles.size).toBe(0);
   });
 
-  test('multiple search paths', async () => {
-    const otherDir = await mkdtemp(join(tmpdir(), 'njk-other-'));
-    try {
-      await writeFile(join(otherDir, 'other.njk'), 'Other');
-      const loader = createFileSystemLoader([tmpDir, otherDir]);
-      const result = await loader.getSource('other.njk');
-      expect(result.src).toBe('Other');
-    } finally {
-      await rm(otherDir, { recursive: true, force: true });
-    }
+  test('does not double-watch same file', async () => {
+    const dir = await makeDir();
+    const file = join(dir, 'once.njk');
+    await writeFile(file, 'x');
+    const loader = createFileSystemLoader(dir, { watch: true });
+    loader.watchFile(file);
+    loader.watchFile(file);
+    expect(loader.watchedFiles.size).toBe(1);
   });
 });
-// @ts-nocheck

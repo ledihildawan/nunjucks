@@ -1,3 +1,4 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: Error registry grows as new error definitions are added
 import { createErrorDefinition } from './factory.ts';
 import { firstCapture } from './types.ts';
 
@@ -26,7 +27,7 @@ export const RUNTIME_ERRORS = {
     causes: [
       'The variable `{subject}` was not passed in the `render()` context object',
       'A typo in the variable name (case-sensitive)',
-      'The variable is defined inside a `{% set %}` block but referenced outside its scope',
+      'The variable is declared with `:=` inside a `{% scope %}` (or `{% for %}`/`{% component %}`) block but referenced outside its scope',
       'Using strict undefined mode but the value was not provided'
     ],
     fixCode: "{{ {subject} |> default('fallback') }}",
@@ -116,7 +117,7 @@ export const RUNTIME_ERRORS = {
   UNKNOWN_BLOCK_RUNTIME: {
     name: 'UNKNOWN_BLOCK_RUNTIME',
     message: 'unknown block "{name}"',
-    pattern: /^unknown block "([^"]+)"$|parent has no block|called super\(\) in a block without parent/iu,
+    pattern: /^unknown block "([^"]+)"$|parent has no block/iu,
     category: 'undefined_block',
     titleTemplate: "Block '{subject}' does not exist in the parent template",
     causes: [
@@ -259,7 +260,7 @@ export const RUNTIME_ERRORS = {
     titleTemplate: "Cannot use reserved keyword '{subject}'",
     causes: [
       'Used a **reserved JavaScript or nunjucks keyword** as a custom name',
-      'Trying to override built-in names like `if`, `for`, `set`, `block`',
+      'Trying to override built-in names like `if`, `for`, `block`, `component`',
       'The reserved keyword conflicts with parser internals'
     ],
     fixCode: "env.addFilter('my{subject}', function(value) { /* ... */ })",
@@ -269,7 +270,7 @@ export const RUNTIME_ERRORS = {
   RESERVED_KEYWORD_CONTEXT: {
     name: 'RESERVED_KEYWORD_CONTEXT',
     message: "Cannot use reserved keyword '{name}' outside of its intended context",
-    pattern: /reserved keyword.*context|cannot use.*reserved keyword|caller.*only available|only available inside.*call/iu,
+    pattern: /reserved keyword.*context|cannot use.*reserved keyword|slot.*only available|only available inside.*component/iu,
     category: 'reserved_keyword_context',
     titleTemplate: "Cannot use reserved keyword '{subject}' outside of its intended context",
     causes: [
@@ -292,6 +293,30 @@ export const RUNTIME_ERRORS = {
     fixCode: '/* Please report this as a bug at https://github.com/mozilla/nunjucks/issues */',
     fixComment: 'This is a nunjucks internal error - not caused by your template',
     documentationUrl: 'https://github.com/mozilla/nunjucks/issues'
+  }),
+  UNAVAILABLE_IN_ENV: createErrorDefinition({
+    name: 'UNAVAILABLE_IN_ENV',
+    message: 'not available in this environment',
+    category: 'unavailable',
+    causes: [
+      'The environment was created without registering this filter or test',
+      'A custom environment is missing the filter/test handler'
+    ],
+    fixCode: 'env.addFilter(\'{name}\', function(value) { return value; })',
+    fixComment: 'Register the missing filter with `env.addFilter()` or test with `env.addTest()`'
+  }),
+  EXEC_EXPRESSION_ERROR: createErrorDefinition({
+    name: 'EXEC_EXPRESSION_ERROR',
+    message: 'Exec expression failed: {detail}',
+    category: 'runtime_error',
+    causes: [
+      'Variable referenced in `{% exec %}` was not passed to the render context',
+      'The expression calls a method on a value that does not support it',
+      'Data preparation should happen in your **controller** before render'
+    ],
+    fixCode: '// Controller — before render():\nconst items = prepareItems();\nrender(template, { items })',
+    fixComment: 'Use {% exec %} only for rendering state. Move data logic to your controller.',
+    extraFrom: (groups: RegExpMatchArray) => ({ detail: groups[1] || '' })
   })
 } as const;
 

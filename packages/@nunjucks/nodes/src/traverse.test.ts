@@ -1,88 +1,83 @@
 import { describe, test, expect } from 'bun:test';
-import { parse } from '@nunjucks/parser';
-import { walk, findAll, findFirst, count, iterateNodes, filterNodes, appendChild, getType, getFields_ } from './traverse.ts';
-import { literal, nodeList } from './factory.ts';
+import { root, output, templateData, block } from './index.ts';
+import type { Node, ChildrenNode } from './index.ts';
+import { walk, findAll, appendChild } from './traverse.ts';
 
-// Use a real parsed AST for reliable structure
-const ast = parse('{{ x + 1 }}\n{% if x %}{{ y }}{% endif %}');
-
-describe('getType / getFields_', () => {
-  test('getType returns node type string', () => {
-    expect(getType(ast)).toBeTruthy();
-    expect(typeof getType(ast)).toBe('string');
+describe('walk', () => {
+  test('visits all nodes in AST', () => {
+    const ast = root(0, 0, [
+      output(0, 0, [templateData(0, 0, 'a')]),
+      output(0, 0, [templateData(0, 0, 'b')]),
+    ]) as Node;
+    const visited: string[] = [];
+    walk(ast, (n: Node) => {
+      visited.push(n.type);
+      return undefined;
+    });
+    expect(visited).toContain('root');
+    expect(visited).toContain('output');
+    expect(visited).toContain('templateData');
   });
 
-  test('getFields_ returns field names', () => {
-    const fields = getFields_(ast);
-    expect([...fields]).toContain('children');
+  test('replaces node when fn returns new node', () => {
+    const ast = root(0, 0, [
+      output(0, 0, [templateData(0, 0, 'a')]),
+    ]) as Node;
+    const transformed = walk(ast, (n: Node) => {
+      if (n.type === 'templateData') {
+        return { ...n, value: 'REPLACED' } as Node;
+      }
+      return undefined;
+    }) as Node & { children: Node[] };
+    expect(transformed).not.toBe(ast);
   });
-});
 
-describe('appendChild', () => {
-  test('returns a new collection node without mutating its input', () => {
-    const original = nodeList(1, 0, [literal(1, 0, 'before')]);
-    const result = appendChild(original, literal(1, 7, 'after'));
-
-    expect(result).not.toBe(original);
-    expect(result.children).toHaveLength(2);
-    expect(original.children).toHaveLength(1);
+  test('returns same reference when no changes', () => {
+    const ast = root(0, 0, [output(0, 0, [])]) as Node;
+    const result = walk(ast, () => undefined);
+    expect(result).toBe(ast);
   });
 });
 
 describe('findAll', () => {
-  test('finds all nodes of a type', () => {
-    const symbols = findAll(ast, (n) => n.type === 'symbol');
-    expect(symbols.length).toBeGreaterThan(0);
+  test('finds nodes by type string', () => {
+    const ast = root(0, 0, [
+      output(0, 0, [templateData(0, 0, 'a')]),
+      output(0, 0, [templateData(0, 0, 'b')]),
+    ]) as Node;
+    const results = findAll(ast, 'output');
+    expect(results.length).toBe(2);
   });
 
-  test('returns empty array for no match', () => {
-    expect(findAll(ast, (n) => (n.type as string) === 'nonexistent')).toEqual([]);
-  });
-});
-
-describe('findFirst', () => {
-  test('finds first match', () => {
-    const first = findFirst(ast, (n) => n.type === 'literal');
-    expect(first).toBeDefined();
-    expect(first?.type).toBe('literal');
+  test('finds nodes by predicate', () => {
+    const ast = root(0, 0, [
+      block(0, 0, 'x', output(0, 0, [])),
+      block(0, 0, 'y', output(0, 0, [])),
+    ]) as Node;
+    const results = findAll(ast, (n: Node) => n.type === 'block');
+    expect(results.length).toBe(2);
   });
 
-  test('returns undefined for no match', () => {
-    expect(findFirst(ast, (n) => (n.type as string) === 'nonexistent')).toBeUndefined();
-  });
-});
-
-describe('count', () => {
-  test('counts all nodes (at least 3)', () => {
-    expect(count(ast)).toBeGreaterThan(2);
-  });
-
-  test('counts with predicate', () => {
-    const symbolCount = count(ast, (n) => n.type === 'symbol');
-    expect(symbolCount).toBeGreaterThan(0);
+  test('returns empty for non-existent type', () => {
+    const ast = root(0, 0, []) as Node;
+    const results = findAll(ast, 'nonexistent');
+    expect(results).toEqual([]);
   });
 });
 
-describe('iterateNodes', () => {
-  test('yields all nodes as generator', () => {
-    const all = [...iterateNodes(ast)];
-    expect(all.length).toBeGreaterThan(2);
-    expect(all[0]).toBeDefined();
+describe('appendChild', () => {
+  test('appends child to node with children array', () => {
+    const node = output(0, 0, []) as ChildrenNode;
+    const child = templateData(0, 0, 'x');
+    const result = appendChild(node, child);
+    expect(result.children.length).toBe(1);
+    expect(result.children[0]).toBe(child);
   });
-});
 
-describe('filterNodes', () => {
-  test('filters nodes by predicate', () => {
-    const literals = [...filterNodes(ast, (n) => n.type === 'literal')];
-    expect(literals.length).toBeGreaterThan(0);
-    expect(literals.every((n) => n.type === 'literal')).toBe(true);
-  });
-});
-
-describe('walk', () => {
-  test('visits and returns root node', () => {
-    const result = walk(ast, () => {});
-    expect(result).toBeDefined();
-    expect(getType(result)).toBeTruthy();
+  test('does not mutate original node', () => {
+    const node = output(0, 0, []) as ChildrenNode;
+    const originalLen = node.children.length;
+    appendChild(node, templateData(0, 0, 'x'));
+    expect(node.children.length).toBe(originalLen);
   });
 });

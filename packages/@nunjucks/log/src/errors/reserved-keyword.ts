@@ -1,20 +1,20 @@
 import type { Classification, ClassifyInput } from './types.ts';
 
 const RESERVED_KEYWORD_CONTEXT: Record<string, { causes: string[]; fixCode: string; fixComment: string }> = {
-  caller: {
+  slot: {
     causes: [
-      '`caller` is a **special macro variable** - only available inside a `call` block',
-      'Used to access content from `{% call %}` blocks',
-      'Cannot be used outside of macro context'
+      '`slot` is a **tag** used to declare slot content inside `{% component %}` and `{% render %}` blocks',
+      'Used to declare fallback slots in a component definition',
+      'Used to provide named slots in a render invocation'
     ],
-    fixCode: `{% macro render(content) %}
-  {{ caller() }}
-{% endmacro %}
+    fixCode: `{% component Card %}
+  {% slot title %}Default title{% endslot %}
+{% endcomponent %}
 
-{% call render() %}
-  This content will be passed to caller
-{% endcall %}`,
-    fixComment: 'caller is only available inside macros called with {% call %}'
+{% render Card %}
+  {% slot title %}Custom title{% endslot %}
+{% endrender %}`,
+    fixComment: 'slot is only available as a block inside component and render bodies'
   },
   super: {
     causes: [

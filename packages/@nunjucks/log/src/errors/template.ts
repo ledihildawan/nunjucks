@@ -18,51 +18,6 @@ export const TEMPLATE_ERRORS = {
     fixComment: 'Provide a valid value for the `{subject}` option',
     subjectFrom: firstCapture
   },
-  CONTAINER_FACTORY: {
-    name: 'CONTAINER_FACTORY',
-    message: "Container: factory for '{name}' must be a function, got {type}",
-    pattern: /^Container: factory for '([^']+)' must be a function, got (.+)$/iu,
-    category: 'config_error',
-    titleTemplate: "Container factory '{subject}' is not a function",
-    causes: [
-      'A **non-function** value was registered as a container factory',
-      'A typo: you registered the class itself instead of `() => new Class()`',
-      'Missing parentheses: `MyClass` should be `() => new MyClass()`'
-    ],
-    fixCode: 'container.register("{subject}", () => new MyClass())',
-    fixComment: 'Register a factory function that returns an instance, not the instance itself',
-    subjectFrom: firstCapture
-  },
-  CONTAINER_NOT_REGISTERED: {
-    name: 'CONTAINER_NOT_REGISTERED',
-    message: "Container: '{name}' is not registered. Did you forget to register it?",
-    pattern: /^Container: '([^']+)' is not registered\. Did you forget to register it\?$/iu,
-    category: 'config_error',
-    titleTemplate: "Container '{subject}' is not registered",
-    causes: [
-      'The container `{subject}` was **never registered**',
-      'The registration order is wrong (registered after the resolve call)',
-      'A typo in the container name when registering'
-    ],
-    fixCode: 'container.register("{subject}", () => new MyClass());\nconst instance = container.resolve("{subject}");',
-    fixComment: 'Call `container.register()` before resolving',
-    subjectFrom: firstCapture
-  },
-  CONTAINER_ERROR: {
-    name: 'CONTAINER_ERROR',
-    message: 'Container error',
-    pattern: /Container: (?:factory for '([^']+)'|'([^']+)' is not registered)/iu,
-    category: 'config_error',
-    titleTemplate: 'Container system error',
-    causes: [
-      'A **container operation failed** (resolve, register, or factory invocation)',
-      'The factory function threw an error',
-      'Container configuration is inconsistent'
-    ],
-    fixCode: 'try {\n  const instance = container.resolve("name");\n} catch (e) {\n  console.error("Container failed:", e);\n}',
-    fixComment: 'Wrap container operations in try/catch to see the actual error',
-    subjectFrom: null
-  },
   TEMPLATE_INVALID_SOURCE: {
     name: 'TEMPLATE_INVALID_SOURCE',
     message: "Invalid template source: expected 'code' or 'string', got '{type}'",
@@ -175,7 +130,6 @@ export const TEMPLATE_ERRORS = {
     message: 'Template must be a string',
     pattern: /^Template must be a string$/iu,
     category: 'validation_error',
-    sourceFromStack: true,
     titleTemplate: 'Template must be a string',
     causes: [
       'The template parameter is **not a string** (got `null`, `undefined`, object, etc.)',
@@ -184,37 +138,6 @@ export const TEMPLATE_ERRORS = {
     ],
     fixCode: 'render("Hello {{ name }}", { name: "World" })\nrender("./template.njk", context, { loader: createFileSystemLoader(".") })',
     fixComment: 'Pass a string template or configure a loader for file paths',
-    subjectFrom: null
-  },
-  TEMPLATE_NULL: {
-    name: 'TEMPLATE_NULL',
-    message: 'Template is null',
-    pattern: /^Template is null$/iu,
-    category: 'invalid_template',
-    titleTemplate: 'Template is null or undefined',
-    causes: [
-      'The template parameter is **`null`** or **`undefined`**',
-      'A variable was not set when it should have been',
-      'A loader returned `null` for a missing template (use `getSource` instead)'
-    ],
-    fixCode: 'render("Hello {{ name }}", { name: "World" })',
-    fixComment: 'Provide a non-null template string',
-    subjectFrom: null
-  },
-  JS_STACK_SOURCE: {
-    name: 'JS_STACK_SOURCE',
-    message: 'template is null',
-    pattern: /^template is null$/iu,
-    category: 'js_stack_source',
-    sourceFromStack: true,
-    titleTemplate: 'Template parameter is null',
-    causes: [
-      'The template parameter was passed as **`null`** from JavaScript code',
-      'A function returned null instead of a template string',
-      'A conditional render was triggered without a template'
-    ],
-    fixCode: 'const template = isValid ? "Hello" : "Default";\nrender(template, context);',
-    fixComment: 'Ensure the template string is not null before passing to render',
     subjectFrom: null
   }
 } as const satisfies Record<string, ErrorDefinition>;

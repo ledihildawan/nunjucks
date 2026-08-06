@@ -8,10 +8,7 @@
     "./express": "./src/express.ts"
   },
   "dependencies": {
-    "@nunjucks/core": "workspace:*",
-    "@nunjucks/loaders": "workspace:*",
-    "@nunjucks/log": "workspace:*",
-    "@nunjucks/runtime": "workspace:*"
+    "@nunjucks/core": "workspace:*"
   },
   "description": "Integration adapters for Nunjucks"
 }

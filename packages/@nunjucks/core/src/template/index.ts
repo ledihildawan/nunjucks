@@ -1,15 +1,17 @@
 import { prettifyError } from '@nunjucks/log';
+import type { IncludeChain } from '@nunjucks/log';
+import type { Env } from '@nunjucks/runtime';
 import type { TemplateObject, TemplateSource } from './types';
 import { Template } from './types';
 import { createTemplateErrorHandler } from './error-helpers';
-import { createTemplateCompiler } from './compiler-helpers';
+import { createTemplateCompiler } from './template-compiler';
 import { createTemplateRenderer } from './renderer-helpers';
 import { initTemplateState, loadSource } from './source-helpers';
 import { createGetExported } from './export-helpers';
 
 export { Template };
 
-export function createTemplate(src: string | TemplateSource, env?: import('../core/env.ts').Env, path?: string | null, eagerCompile?: boolean, includeChain?: unknown[] | null): TemplateObject {
+export const createTemplate = (src: string | TemplateSource, env?: Env, path?: string | null, eagerCompile?: boolean, includeChain?: IncludeChain | null): TemplateObject => {
   const state = initTemplateState(src, env, path, includeChain);
   loadSource(state, src);
 
@@ -39,4 +41,4 @@ export function createTemplate(src: string | TemplateSource, env?: import('../co
   };
 
   return template;
-}
+};

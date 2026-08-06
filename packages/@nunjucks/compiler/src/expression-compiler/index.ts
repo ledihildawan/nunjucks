@@ -25,6 +25,7 @@ export {
   compileAnd,
   compileAdd,
   compileConcat,
+  compileRange,
   compileSub,
   compileMul,
   compileDiv,
@@ -36,3 +37,4 @@ export {
 } from './binary.ts';
 
 export { compileNot, compileNeg, compilePos } from './unary.ts';
+export { compileTest, compileTestCall } from './test-expr.ts';

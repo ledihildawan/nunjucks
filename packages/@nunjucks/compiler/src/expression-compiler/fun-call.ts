@@ -1,14 +1,15 @@
 import { BracketNotation, T, getNodeTypeName, isLiteral, isSymbol } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
+import type { Node, CallNode, LookupNode, NodeLocation } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 import { compileAggregate } from './container.ts';
 import { extractPropertyLocation } from '../location-utils.ts';
+import { emitLocationGuard } from '../compiler-helpers.ts';
 
 const bracketFlag = (n: Node): boolean | undefined => n[BracketNotation];
 
 const buildSymbolSuffix = (val: Node, isBracket: boolean, prefix: string): string => {
-  const suffix = isBracket ? `[${getNodeName(undefined as unknown as Compiler, val)}]` : `.${getNodeName(undefined as unknown as Compiler, val)}`;
+  const suffix = isBracket ? `[${getNodeName(val)}]` : `.${getNodeName(val)}`;
   return prefix + suffix;
 };
 
@@ -18,12 +19,12 @@ const buildLiteralSuffix = (val: Node, isBracket: boolean, prefix: string): stri
 };
 
 const buildBracketAccessSuffix = (target: string, val: Node): string =>
-  `${target}[${getNodeName(undefined as unknown as Compiler, val)}]`;
+  `${target}[${getNodeName(val)}]`;
 
-const handleLookupVal = (_ctx: Compiler, node: Node): string => {
-  const target = getNodeName(_ctx, node.target as Node);
+const handleLookupVal = (node: LookupNode): string => {
+  const target = getNodeName(node.target);
   const isBracket = bracketFlag(node) === true;
-  const val = node.val as Node;
+  const val = node.val;
   if (isSymbol(val)) {
     return buildSymbolSuffix(val, isBracket, target);
   }
@@ -33,32 +34,32 @@ const handleLookupVal = (_ctx: Compiler, node: Node): string => {
   return buildBracketAccessSuffix(target, val);
 };
 
-const handleOptionalChain = (_ctx: Compiler, node: Node): string => {
-  const target = getNodeName(_ctx, node.target as Node);
+const handleOptionalChain = (node: LookupNode): string => {
+  const target = getNodeName(node.target);
   const isBracket = bracketFlag(node) === true;
-  const val = node.val as Node;
+  const val = node.val;
   if (isSymbol(val)) {
-    const suffix = isBracket ? `?.[${getNodeName(_ctx, val)}]` : `?.${getNodeName(_ctx, val)}`;
+    const suffix = isBracket ? `?.[${getNodeName(val)}]` : `?.${getNodeName(val)}`;
     return target + suffix;
   }
   if (isLiteral(val) && typeof val.value === 'string') {
     const suffix = isBracket ? `?.["${val.value}"]` : `?.${val.value}`;
     return target + suffix;
   }
-  return `${target}?.[${getNodeName(_ctx, val)}]`;
+  return `${target}?.[${getNodeName(val)}]`;
 };
 
-const getNodeName = (_ctx: Compiler, node: Node, _isBracketCall = false): string => {
+const getNodeName = (node: Node): string => {
   const typeName = getNodeTypeName(node);
   switch (typeName) {
     case T.SYMBOL:
       return node.value as string;
     case T.FUN_CALL:
-      return `the return value of (${getNodeName(_ctx, node.name as Node)})`;
+      return `the return value of (${getNodeName((node as CallNode).name)})`;
     case T.LOOKUP_VAL:
-      return handleLookupVal(_ctx, node);
+      return handleLookupVal(node as LookupNode);
     case T.OPTIONAL_CHAIN:
-      return handleOptionalChain(_ctx, node);
+      return handleOptionalChain(node as LookupNode);
     case T.LITERAL:
       return (node.value as { toString: () => string }).toString();
     default:
@@ -66,11 +67,12 @@ const getNodeName = (_ctx: Compiler, node: Node, _isBracketCall = false): string
   }
 };
 
-const getCallLocation = (node: Node): { lineno: number; colno: number } => {
-  const name = node.name as Node;
+const getCallLocation = (node: CallNode): NodeLocation => {
+  const name = node.name;
+  const lookupName = name as LookupNode;
   const isQuotedBracketString = bracketFlag(name) === true &&
-    isLiteral(name?.val as Node) &&
-    typeof (name?.val as { value?: unknown })?.value === 'string';
+    isLiteral(lookupName.val) &&
+    typeof lookupName.val?.value === 'string';
   // A quoted bracket access like obj['foo'] reports at the string, one past `[`.
   const extraColno = isQuotedBracketString ? 1 : 0;
   const loc = extractPropertyLocation(name, extraColno);
@@ -80,18 +82,17 @@ const getCallLocation = (node: Node): { lineno: number; colno: number } => {
   };
 };
 
-export const compileFunCall = (ctx: Compiler, node: Node, frame: Frame): void => {
+export const compileFunCall = (ctx: Compiler, node: CallNode, frame: Frame): void => {
   const { lineno, colno } = getCallLocation(node);
 
-  ctx.emit('(lineno = ' + lineno +
-    ', colno = ' + colno + ', ');
+  emitLocationGuard(ctx, lineno, colno);
 
   ctx.emit('runtime.callWrap(');
-  ctx.compileExpression(node.name as Node, frame);
+  ctx.compileExpression(node.name, frame);
 
-  const funcName = getNodeName(ctx, node.name as Node);
+  const funcName = getNodeName(node.name);
   const displayName = `${funcName}()`;
   ctx.emit(`, "${funcName.replace(/"/gu, '\\"')}", "${displayName.replace(/"/gu, '\\"')}", context, `);
 
-  compileAggregate(ctx, node.args as Node, frame, { startChar: '[', endChar: `], ${lineno}, ${colno}))` });
+  compileAggregate(ctx, node.args, frame, { startChar: '[', endChar: `], ${lineno}, ${colno}))` });
 };

@@ -1,34 +1,15 @@
-import { and, not, or } from '@nunjucks/nodes';
+import { TOKEN_OPERATOR, TOKEN_COLON } from '@nunjucks/lexer';
+import { nullishCoalesce, and, or, not, inlineIf } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { peekToken, skipSymbol, skipOperator, nextToken } from "../cursor.ts";
-import type { ParserContext } from "../cursor.ts";
-import { TOKEN_OPERATOR } from '@nunjucks/lexer';
-import { parseNullishCoalesce } from "./nullish.ts";
-import { parseIn } from "./in.ts";
+import { peekToken, nextToken, skipSymbol, skipOperator, skipValue } from '../cursor.ts';
+import type { ParserContext } from '../cursor.ts';
+import { binaryOp } from './internal.ts';
+import { parseIn } from './comparison.ts';
 
-export const parseOr = (ctx: ParserContext): Node => {
-  let node = parseNullishCoalesce(ctx);
-  let tok = peekToken(ctx);
-  while (skipSymbol(ctx, 'or') || skipOperator(ctx, '||')) {
-    const node2 = parseNullishCoalesce(ctx);
-    node = or(tok.lineno, tok.colno, node, node2);
-    tok = peekToken(ctx);
-  }
-  return node;
-};
+const parseNullishCoalesce = (ctx: ParserContext): Node =>
+  binaryOp(ctx, nullishCoalesce, (c) => skipValue(c, TOKEN_OPERATOR, '??'), parseAnd);
 
-export const parseAnd = (ctx: ParserContext): Node => {
-  let node = parseNot(ctx);
-  let tok = peekToken(ctx);
-  while (skipSymbol(ctx, 'and') || skipOperator(ctx, '&&')) {
-    const node2 = parseNot(ctx);
-    node = and(tok.lineno, tok.colno, node, node2);
-    tok = peekToken(ctx);
-  }
-  return node;
-};
-
-export const parseNot = (ctx: ParserContext): Node => {
+const parseNot = (ctx: ParserContext): Node => {
   const tok = peekToken(ctx);
   if (!tok) {
     return parseIn(ctx);
@@ -45,3 +26,23 @@ export const parseNot = (ctx: ParserContext): Node => {
   }
   return parseIn(ctx);
 };
+
+const parseAnd = (ctx: ParserContext): Node =>
+  binaryOp(ctx, and, (c) => skipSymbol(c, 'and') || skipOperator(c, '&&'), parseNot);
+
+const parseOr = (ctx: ParserContext): Node =>
+  binaryOp(ctx, or, (c) => skipSymbol(c, 'or') || skipOperator(c, '||'), parseNullishCoalesce);
+
+const parseTernary = (ctx: ParserContext, node: Node): Node => {
+  if (skipValue(ctx, TOKEN_OPERATOR, '?')) {
+    const thenNode = parseOr(ctx);
+    if (skipValue(ctx, TOKEN_COLON, ':')) {
+      const elseNode = parseOr(ctx);
+      const newNode = inlineIf(node.lineno, node.colno, { cond: node, body: thenNode, else_: elseNode });
+      return parseTernary(ctx, newNode);
+    }
+  }
+  return node;
+};
+
+export { parseOr, parseTernary };

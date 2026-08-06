@@ -1,22 +1,24 @@
 import { isString, isPlainObject } from 'remeda';
 import { createLog } from '@nunjucks/log';
 import { getError } from '@nunjucks/log';
-import { createEnv } from '../core/env.ts';
-import type { Env } from '../core/env.ts';
+import type { Env } from '@nunjucks/runtime';
+import type { IncludeChain } from '@nunjucks/log';
+import type { CompiledTemplateExports } from '@nunjucks/shared';
 import type { TemplateSource, TemplateState } from './types';
 
 export { initTemplateState, loadSource, createFallbackEnv };
 
-const createFallbackEnv = (): Env => createEnv({
-  opts: { dev: false, autoescape: true },
-  globals: {},
+const createFallbackEnv = (): Env => ({
+  opts: { dev: false, autoescape: true, undefined: 'default' },
+  getFilter: () => null,
+  getTest: () => null,
   getTemplate(name: string, _eagerCompile?: boolean, _includeChain?: unknown, ignoreMissing?: boolean) {
     if (ignoreMissing) { return null; }
     throw createLog('error', getError('FILE_NOT_FOUND'), { path: name }, name, { phase: 'load' });
-  }
+  },
 });
 
-const initTemplateState = (_src: string | TemplateSource, env: Env | undefined, path: string | null | undefined, includeChain: unknown[] | null | undefined): TemplateState => ({
+const initTemplateState = (_src: string | TemplateSource, env: Env | undefined, path: string | null | undefined, includeChain: IncludeChain | null | undefined): TemplateState => ({
   env: env || createFallbackEnv(),
   path: path ?? undefined,
   _includeChain: includeChain ?? null,
@@ -33,7 +35,7 @@ const loadSource = (state: TemplateState, src: string | TemplateSource): void =>
     const srcObj = src as TemplateSource;
     switch (srcObj.type) {
       case 'code':
-        state.tmplProps = srcObj.obj as Record<string, unknown>;
+        state.tmplProps = srcObj.obj as CompiledTemplateExports;
         break;
       case 'string':
         state.tmplStr = srcObj.obj as string;

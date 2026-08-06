@@ -13,8 +13,6 @@ import { tokenizeComment } from './comment.ts';
 import { tokenizeTemplateLiteral } from './template-literal.ts';
 import { tokenizeRaw } from './raw.ts';
 
-// Re-exported from their own modules; the imports above feed the combinators
-// defined below in this file.
 export { tokenizeWhitespace } from './whitespace.ts';
 export { tokenizeNumber } from './number.ts';
 export { tokenizeString } from './string.ts';

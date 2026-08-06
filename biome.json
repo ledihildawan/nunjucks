@@ -10,19 +10,11 @@
 	"overrides": [
 		{
 			"includes": [
-				"packages/@nunjucks/runtime/src/helpers/suppress-value.ts",
-				"packages/@nunjucks/runtime/src/sandbox.ts",
-				"packages/@nunjucks/shared/src/error-location.ts"
+				"**/error-script.js",
+				"**/error-page.css"
 			],
 			"linter": {
-				"rules": {
-					"style": {
-						"noExcessiveLinesPerFile": {
-							"level": "off",
-							"options": {}
-						}
-					}
-				}
+				"enabled": false
 			}
 		}
 	]

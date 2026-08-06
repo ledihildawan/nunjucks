@@ -1,37 +1,10 @@
-import type { Node } from '@nunjucks/nodes';
+import type { ExtendsNode, IncludeNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import { emitLineLocation } from '../compiler-helpers.ts';
+import { compileGetTemplate, getTemplateLocation } from './template-helpers.ts';
 
-const getLocationFromNode = (node: Node): { lineno: number; colno: number } => {
-  const locationNode = (node.template as Node) || node;
-  const isStringLiteral = locationNode.type === 'literal' && typeof locationNode.value === 'string';
-  const extraColno = isStringLiteral ? 1 : 0;
-  return {
-    lineno: locationNode.lineno,
-    colno: (locationNode.colno ?? 0) + extraColno
-  };
-};
-
-interface CompileGetTemplateOptions {
-  eagerCompile: boolean;
-  ignoreMissing: boolean;
-}
-
-const compileGetTemplate = (ctx: Compiler, node: Node, frame: Frame, options: CompileGetTemplateOptions): string => {
-  const { eagerCompile, ignoreMissing } = options;
-  const parentTemplateId = ctx.tmpid();
-  const parentName = ctx.getTemplateName();
-  const location = getLocationFromNode(node);
-  ctx.emitLine(`lineno = ${location.lineno}; colno = ${location.colno};`);
-  ctx.emit(`let ${parentTemplateId} = await env.getTemplate(`);
-  ctx.compileExpression(node.template as Node, frame);
-  ctx.emitLine(`, ${eagerCompile}, ${parentName}, ${ignoreMissing});`);
-  return parentTemplateId;
-};
-
-export const getTemplateLocation = (node: Node): { lineno: number; colno: number } => getLocationFromNode(node);
-
-export const compileExtends = (ctx: Compiler, node: Node, frame: Frame): void => {
+export const compileExtends = (ctx: Compiler, node: ExtendsNode, frame: Frame): void => {
   const k = ctx.tmpid();
 
   const parentTemplateId = compileGetTemplate(ctx, node, frame, { eagerCompile: true, ignoreMissing: false });
@@ -48,14 +21,14 @@ export const compileExtends = (ctx: Compiler, node: Node, frame: Frame): void =>
   ctx.emitLine('context.validateBlocks();');
 };
 
-export const compileInclude = (ctx: Compiler, node: Node, frame: Frame): void => {
+export const compileInclude = (ctx: Compiler, node: IncludeNode, frame: Frame): void => {
   const tmplVar = ctx.tmpid();
   const resultVar = ctx.tmpid();
   const location = getTemplateLocation(node);
 
-  ctx.emitLine(`lineno = ${location.lineno}; colno = ${location.colno};`);
+  emitLineLocation(ctx, location.lineno, location.colno);
   ctx.emit(`let ${tmplVar} = `);
-  ctx.compileExpression(node.template as Node, frame);
+  ctx.compileExpression(node.template, frame);
   ctx.emitLine(';');
   ctx.emitLine(`if(typeof ${tmplVar} !== 'string') { const err = new Error('template names must be a string'); err.code = 'INVALID_INCLUDE'; err.subject = ${tmplVar}; throw err; }`);
   ctx.emit(`let ${tmplVar}_template = await env.getTemplate(${tmplVar}, false, `);
@@ -68,7 +41,7 @@ export const compileInclude = (ctx: Compiler, node: Node, frame: Frame): void =>
   } else if (node.with) {
     ctx.emit('let __forkedCtx = context.fork();');
     ctx.emit('let __withData = ');
-    ctx.compileExpression(node.with as Node, frame);
+    ctx.compileExpression(node.with, frame);
     ctx.emitLine(';');
     ctx.emit('Object.assign(__forkedCtx.ctx, __withData);');
     ctx.emit(`let ${resultVar} = await ${tmplVar}_template.render(__forkedCtx.getVariables(), frame);`);

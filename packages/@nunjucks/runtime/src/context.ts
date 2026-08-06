@@ -1,30 +1,34 @@
-// CONTEXT - Runtime context management with blocks and exports
-// Import directly: import { createContext } from '@nunjucks/runtime/context'
-
 import { ERROR_DEFINITIONS, createLog } from '@nunjucks/log';
+import type { IncludeChain } from '@nunjucks/log';
 import { keys } from 'remeda';
 
 const CONTEXT_KEY = Symbol('Context');
 
-const createDefaultEnv = (): Env => ({
-  globals: {},
-  getFilter: () => null,
-  opts: {},
-});
-
-/**
- * The minimal environment shape the runtime context needs. Exported because it
- * is a parameter type of `createContext`: callers cannot type their argument
- * without it.
- */
-interface ContextEnv {
-  globals: Record<string, unknown>;
-  getFilter: (name: string) => unknown;
-  opts: Record<string, unknown>;
+interface Env {
+  opts: {
+    dev: boolean;
+    autoescape: boolean;
+    undefined: string;
+  };
+  getFilter: (name: string, lineno: number | null, colno: number | null) => unknown;
+  getTest: (name: string, lineno: number | null, colno: number | null) => unknown;
+  getTemplate?: (name: string, eagerCompile?: boolean, includeChain?: IncludeChain | null, ignoreMissing?: boolean) => unknown;
+  emit?: (event: string, ...args: unknown[]) => void;
+  _renderingTemplates?: Set<string | undefined>;
+  emitter?: unknown;
 }
 
-/** Backwards-compatible alias for the environment shape used by this module. */
-type Env = ContextEnv;
+const createDefaultEnv = (): Env => ({
+  opts: {
+    dev: false,
+    autoescape: true,
+    undefined: 'default',
+  },
+  getFilter: () => null,
+  getTest: () => null,
+});
+
+type ContextEnv = Env;
 
 interface BlockLocation {
   lineno?: number | null;
@@ -40,13 +44,14 @@ type Metadata = ContextMetadata;
 interface Context {
   env: Env;
   ctx: Record<string, unknown>;
-  blocks: Record<string, Array<(...args: unknown[]) => unknown>>;
+  blocks: Record<string, unknown>;
   metadata: Metadata;
   blockLocations: Record<string, BlockLocation>;
   exported: string[];
   parentBlockNames: string[] | null;
   validatedBlocks: boolean;
   parentContext: Context | null;
+  _autoescape: boolean;
   validateBlocks: () => void;
   setParentBlockNames: (names: string[] | null) => void;
   lookup: (name: string) => unknown;
@@ -101,52 +106,54 @@ function createContext(
   env: Env | null = null,
   metadata: Metadata = {},
 ): Context {
-  let envVar: Env = env || createDefaultEnv();
-  let ctxVar: Record<string, unknown> = { ...ctx };
-  let blocksVar: Record<string, Array<(...args: unknown[]) => unknown>> = {};
-  let metadataVar: Metadata = metadata || {};
-  let blockLocationsVar: Record<string, BlockLocation> = metadataVar.blockLocations || {};
-  let exportedVar: string[] = [];
-  let parentBlockNamesVar: string[] | null = null;
-  let validatedBlocksVar = false;
-  let parentContextVar: Context | null = null;
+  const state = {
+    env: env || createDefaultEnv(),
+    ctx: { ...ctx },
+    blocks: {} as Record<string, unknown>,
+    metadata: metadata ?? {},
+    blockLocations: (metadata?.blockLocations ?? {}) as Record<string, BlockLocation>,
+    exported: [] as string[],
+    parentBlockNames: null as string[] | null,
+    validatedBlocks: false,
+    parentContext: null as Context | null,
+    _autoescape: true,
+  };
 
   const validateBlocks = () => {
-    if (validatedBlocksVar) { return; }
-    validatedBlocksVar = true;
+    if (state.validatedBlocks) { return; }
+    state.validatedBlocks = true;
 
-    if (parentBlockNamesVar !== null) {
-      const parentBlockNames = new Set(parentBlockNamesVar);
-      const [blockName] = getKeys(blocksVar).filter((name) => !parentBlockNames.has(name));
+    if (state.parentBlockNames !== null) {
+      const parentBlockNames = new Set(state.parentBlockNames);
+      const [blockName] = getKeys(state.blocks).filter((name) => !parentBlockNames.has(name));
       if (blockName) {
-        throwBlockNotFoundError(blockName, blockLocationsVar[blockName], null, null);
+        throwBlockNotFoundError(blockName, state.blockLocations[blockName], null, null);
       }
     }
   };
 
-  const lookup = (name: string): unknown => {
-    if (name in envVar.globals && !(name in ctxVar)) {
-      return envVar.globals[name];
-    }
-    return ctxVar[name];
-  };
-
-  const setVariable = (name: string, val: unknown): void => {
-    ctxVar[name] = val;
-  };
+  const lookup = (name: string): unknown => state.ctx[name];
+  const setVariable = (name: string, val: unknown): void => { state.ctx[name] = val; };
 
   const addBlock = (name: string, block: (...args: unknown[]) => unknown): Context => {
-    blocksVar[name] = blocksVar[name] || [];
-    blocksVar[name].push(block);
+    const existing = state.blocks[name];
+    if (Array.isArray(existing)) {
+      existing.push(block);
+    } else {
+      state.blocks[name] = existing ? [existing, block] : [block];
+    }
     return context;
   };
 
   const getBlock = (name: string, lineno: number | null = null, colno: number | null = null): (...args: unknown[]) => unknown => {
     validateBlocks();
-    const firstBlock = blocksVar[name]?.[0];
+    const block = state.blocks[name];
+    if (!block) {
+      return throwBlockNotFoundError(name, state.blockLocations[name], lineno, colno);
+    }
+    const firstBlock = Array.isArray(block) ? block[0] : block;
     if (!firstBlock) {
-      throwBlockNotFoundError(name, blockLocationsVar[name], lineno, colno);
-      throw new Error('unreachable');
+      return throwBlockNotFoundError(name, state.blockLocations[name], lineno, colno);
     }
     return firstBlock;
   };
@@ -160,96 +167,88 @@ function createContext(
     lineno: number | null = null,
     colno: number | null = null,
   ): unknown => {
-    const blockList = blocksVar[name];
-    if (!blockList) {
-      throwNoSuperBlockError(name, lineno, colno);
-      throw new Error('unreachable');
+    const blockList = state.blocks[name];
+    if (!blockList || !Array.isArray(blockList)) {
+      return throwNoSuperBlockError(name, lineno, colno);
     }
     const idx = blockList.indexOf(block);
     const blk = blockList[idx + 1];
 
     if (idx === -1 || !blk) {
-      throwNoSuperBlockError(name, lineno, colno);
-      throw new Error('unreachable');
+      return throwNoSuperBlockError(name, lineno, colno);
     }
 
     return blk(envObj, context, frame, runtime);
   };
 
-  const addExport = (name: string): void => {
-    exportedVar.push(name);
-  };
+  const addExport = (name: string): void => { state.exported.push(name); };
 
   const getExported = (): Record<string, unknown> =>
-    exportedVar.reduce<Record<string, unknown>>((exported, name) => {
-      exported[name] = ctxVar[name];
-      return exported;
-    }, {});
+    Object.fromEntries(state.exported.map(name => [name, state.ctx[name]]));
 
   const fork = (data: Record<string, unknown> = {}): Context => {
-    const childCtx = createContext(data, {}, envVar);
+    const childCtx = createContext(data, {}, state.env);
     childCtx.parentContext = context;
     return childCtx;
   };
 
   const getVariables = (): Record<string, unknown> => {
-    if (parentContextVar) {
-      const parentVars = parentContextVar.getVariables();
-      return { ...parentVars, ...ctxVar };
+    if (state.parentContext) {
+      const parentVars = state.parentContext.getVariables();
+      return { ...parentVars, ...state.ctx };
     }
-    return ctxVar;
+    return state.ctx;
   };
 
-  const registerBlocks = (context: Context, blocks: Record<string, (...args: unknown[]) => unknown>): void => {
-    getKeys(blocks).forEach(name => {
-      const block = blocks[name];
+  const registerBlocks = (ctxObj: Context, blocksInput: Record<string, (...args: unknown[]) => unknown>): void => {
+    getKeys(blocksInput).forEach(name => {
+      const block = blocksInput[name];
       if (block) {
-        context.addBlock(name, block);
+        ctxObj.addBlock(name, block);
       }
     });
   };
 
-  const createContextObject = (): Context => {
-    return {
-      get env() { return envVar; },
-      set env(v) { envVar = v; },
-      get ctx() { return ctxVar; },
-      set ctx(v) { ctxVar = v; },
-      get blocks() { return blocksVar; },
-      set blocks(v) { blocksVar = v; },
-      get metadata() { return metadataVar; },
-      set metadata(v) { metadataVar = v; },
-      get blockLocations() { return blockLocationsVar; },
-      set blockLocations(v) { blockLocationsVar = v; },
-      get exported() { return exportedVar; },
-      set exported(v) { exportedVar = v; },
-      get parentBlockNames() { return parentBlockNamesVar; },
-      set parentBlockNames(v) { parentBlockNamesVar = v; },
-      get validatedBlocks() { return validatedBlocksVar; },
-      set validatedBlocks(v) { validatedBlocksVar = v; },
-      get parentContext() { return parentContextVar; },
-      set parentContext(v) { parentContextVar = v; },
-      validateBlocks,
-      setParentBlockNames: (names: string[] | null) => { parentBlockNamesVar = names; },
-      lookup,
-      setVariable,
-      addBlock,
-      getBlock,
-      getSuper,
-      addExport,
-      getExported,
-      fork,
-      getVariables,
-    };
+  const context: Context = {
+    get env() { return state.env; },
+    set env(v) { state.env = v; },
+    get ctx() { return state.ctx; },
+    set ctx(v) { state.ctx = v; },
+    get blocks() { return state.blocks; },
+    set blocks(v) { state.blocks = v; },
+    get metadata() { return state.metadata; },
+    set metadata(v) { state.metadata = v; },
+    get blockLocations() { return state.blockLocations; },
+    set blockLocations(v) { state.blockLocations = v; },
+    get exported() { return state.exported; },
+    set exported(v) { state.exported = v; },
+    get parentBlockNames() { return state.parentBlockNames; },
+    set parentBlockNames(v) { state.parentBlockNames = v; },
+    get validatedBlocks() { return state.validatedBlocks; },
+    set validatedBlocks(v) { state.validatedBlocks = v; },
+    get parentContext() { return state.parentContext; },
+    set parentContext(v) { state.parentContext = v; },
+    get _autoescape() { return state._autoescape; },
+    set _autoescape(v) { state._autoescape = v; },
+    validateBlocks,
+    setParentBlockNames: (names: string[] | null) => { state.parentBlockNames = names; },
+    lookup,
+    setVariable,
+    addBlock,
+    getBlock,
+    getSuper,
+    addExport,
+    getExported,
+    fork,
+    getVariables,
+    [CONTEXT_KEY]: true,
   };
 
-  const context = createContextObject();
-  context[CONTEXT_KEY] = true;
   registerBlocks(context, blocks);
   return context;
 }
 
-const isContext = (obj: unknown): boolean => Boolean(obj) && (obj as { [k: symbol]: unknown })[CONTEXT_KEY] === true;
+const isContext = (obj: unknown): obj is Context => Boolean(obj) && (obj as { [k: symbol]: unknown })[CONTEXT_KEY] === true;
 
 export { createContext, isContext };
-export type { ContextEnv, BlockLocation, ContextMetadata, Context };
+export type { Env, ContextEnv, BlockLocation, ContextMetadata, Context };

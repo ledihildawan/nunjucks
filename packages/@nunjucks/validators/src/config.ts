@@ -5,6 +5,7 @@ export interface ConfigValidationError {
   code: string;
   message: string;
   subject: string;
+  type: string;
 }
 
 export interface ConfigValidationResult {
@@ -22,16 +23,16 @@ export interface Config {
 
 const validateNumericConfig = (config: Config): ConfigValidationError[] => [
   ...((config.executionTimeout ?? 0) < 0
-    ? [{ code: 'INVALID_CONFIG', message: 'Invalid configuration: executionTimeout must be >= 0', subject: 'executionTimeout' }]
+    ? [{ code: 'INVALID_CONFIG', message: 'Invalid configuration: executionTimeout must be >= 0', subject: 'executionTimeout', type: 'numeric' }]
     : []),
   ...((config.maxTemplateSize ?? 0) < 0
-    ? [{ code: 'INVALID_CONFIG', message: 'Invalid configuration: maxTemplateSize must be >= 0', subject: 'maxTemplateSize' }]
+    ? [{ code: 'INVALID_CONFIG', message: 'Invalid configuration: maxTemplateSize must be >= 0', subject: 'maxTemplateSize', type: 'numeric' }]
     : []),
 ];
 
 const validateSandboxEnv = (config: Config): ConfigValidationError[] =>
   config.sandboxEnvironment && !['auto', 'node', 'browser', 'deno'].includes(config.sandboxEnvironment)
-    ? [{ code: 'INVALID_CONFIG', message: 'Invalid configuration: sandboxEnvironment must be auto, node, browser, or deno', subject: 'sandboxEnvironment' }]
+    ? [{ code: 'INVALID_CONFIG', message: 'Invalid configuration: sandboxEnvironment must be auto, node, browser, or deno', subject: 'sandboxEnvironment', type: 'sandbox' }]
     : [];
 
 const validateCustomFilters = (config: Config): ConfigValidationError[] => {
@@ -40,9 +41,11 @@ const validateCustomFilters = (config: Config): ConfigValidationError[] => {
     keys(config._customFilters),
     flatMap((name) => {
       const validation = validateFilterName(name);
-      return !validation.valid && validation.error
-        ? [validation.error as ConfigValidationError]
-        : [];
+      if (!validation.valid && validation.error) {
+        const { code, message, subject, type } = validation.error;
+        return [{ code, message, subject, type }];
+      }
+      return [];
     })
   );
 };
@@ -53,9 +56,11 @@ const validateCustomGlobals = (config: Config): ConfigValidationError[] => {
     keys(config._customGlobals),
     flatMap((name) => {
       const validation = validateGlobalName(name);
-      return !validation.valid && validation.error
-        ? [validation.error as ConfigValidationError]
-        : [];
+      if (!validation.valid && validation.error) {
+        const { code, message, subject, type } = validation.error;
+        return [{ code, message, subject, type }];
+      }
+      return [];
     })
   );
 };
