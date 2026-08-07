@@ -1,9 +1,8 @@
 import { findDangerousValues } from '@nunjucks/shared';
+import type { BaseValidationError } from '@nunjucks/shared';
 
-interface ContextValidationError {
+interface ContextValidationError extends BaseValidationError {
   code: string;
-  message: string;
-  subject?: string;
   dangerousPaths?: string[];
 }
 

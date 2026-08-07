@@ -170,7 +170,5 @@ export const isDangerousGlobal = (key: string): boolean => DANGEROUS_GLOBALS.has
 export const BLOCKED_KEYS_LIST: readonly string[] = [...AUTO_BLOCKED_KEYS];
 export const DANGEROUS_GLOBALS_LIST: readonly string[] = [...DANGEROUS_GLOBALS];
 
-/** Object intrinsic names that templates must never reach via property access (`a.constructor`, `b.__proto__`, ...). */
 export const OBJECT_INTRINSICS: readonly string[] = [...BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS];
-/** Callee names that execute arbitrary code (`eval(...)`, `Function(...)`, ...). */
 export const CODE_EXECUTION_KEYS: readonly string[] = [...BLOCKED_KEY_CATEGORIES.CODE_EXECUTION];

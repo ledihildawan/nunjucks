@@ -56,16 +56,16 @@ describe('createTokenizer', () => {
 
   test('returns null at end of stream', () => {
     const tk = createTokenizer('x');
-    while (tk.nextToken()) { /* consume */ }
+    while (tk.nextToken()) {  }
     expect(tk.nextToken()).toBeNull();
   });
 
   test('tags property returns delimiters', () => {
     const tk = createTokenizer('x');
-    expect(tk.tags.BLOCK_START).toBe('{%');
-    expect(tk.tags.BLOCK_END).toBe('%}');
-    expect(tk.tags.VARIABLE_START).toBe('{{');
-    expect(tk.tags.VARIABLE_END).toBe('}}');
+    expect(tk.tags.blockStart).toBe('{%');
+    expect(tk.tags.blockEnd).toBe('%}');
+    expect(tk.tags.variableStart).toBe('{{');
+    expect(tk.tags.variableEnd).toBe('}}');
   });
 
   test('trimBlocks and lstripBlocks are booleans', () => {

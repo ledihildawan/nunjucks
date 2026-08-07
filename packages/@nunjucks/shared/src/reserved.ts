@@ -1,7 +1,5 @@
 import { BLOCKED_KEYS_LIST } from './security/blocked-keys.ts';
 
-// All security-blocked names (from blocked-keys) are auto-included so the two
-// registries can never drift.
 const RESERVED_KEYWORDS = new Set<string>([
   'if', 'elif', 'else', 'endif',
   'for', 'endfor', 'in',

@@ -1,7 +1,7 @@
 import type { Tokenizer, LexerState } from '../types.ts';
 import { getChar, getPeek, advance, isFinished } from '../state.ts';
 import { createToken } from '../tokens.ts';
-import type { TokenType } from '../token-types.ts';
+import { TOKEN_TEMPLATE_LITERAL } from '../token-types.ts';
 
 export interface TemplateQuasi {
   type: 'template' | 'expression';
@@ -130,7 +130,7 @@ export const tokenizeTemplateLiteral: Tokenizer = (state) => {
 
   return {
     token: createToken(
-      'template-literal' as TokenType,
+      TOKEN_TEMPLATE_LITERAL,
       { quasis, expressions: [] },
       state.lineno,
       state.colno

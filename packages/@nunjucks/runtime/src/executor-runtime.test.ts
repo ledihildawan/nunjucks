@@ -3,10 +3,6 @@ import { isNullAccessResult, isPropertyNotFoundResult } from '@nunjucks/runtime'
 import { buildSandboxedRuntime, buildSandboxOptions } from './executor-runtime.ts';
 import { createRenderRuntime } from './render-runtime.ts';
 
-// Regression guard for the sandboxed optional-access bug: optionalMemberLookup
-// must short-circuit to `undefined` (mirroring the non-sandboxed variant), not
-// leak the internal null/property-not-found markers that memberLookup uses for
-// error reporting.
 describe('buildSandboxedRuntime', () => {
   const makeRuntime = () => buildSandboxedRuntime(createRenderRuntime(), buildSandboxOptions({}));
 

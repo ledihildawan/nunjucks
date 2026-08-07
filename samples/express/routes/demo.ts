@@ -1,7 +1,7 @@
 import express, { type Router, type Request, type Response } from 'express';
 import { render } from '@nunjucks/core';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,12 +9,12 @@ const VIEWS = path.join(__dirname, '..', 'views');
 
 const router: Router = express.Router();
 
-router.get('/scope', async (req: Request, res: Response) => {
+router.get('/scope', async (_req: Request, res: Response) => {
   const html = await render('demo-scope.njk', {}, { views: VIEWS });
   res.type('html').send(html);
 });
 
-router.get('/exec', async (req: Request, res: Response) => {
+router.get('/exec', async (_req: Request, res: Response) => {
   const html = await render('demo-exec.njk', {
     arr: [],
     name: { append: function(this: { value: string }, x: string) { return this.value + x; }, value: "Hello" },
@@ -23,7 +23,7 @@ router.get('/exec', async (req: Request, res: Response) => {
   res.type('html').send(html);
 });
 
-router.get('/switch', async (req: Request, res: Response) => {
+router.get('/switch', async (_req: Request, res: Response) => {
   const html = await render('demo-switch.njk', {
     status: "active",
     priority: 2
@@ -31,24 +31,24 @@ router.get('/switch', async (req: Request, res: Response) => {
   res.type('html').send(html);
 });
 
-router.get('/slot', async (req: Request, res: Response) => {
+router.get('/slot', async (_req: Request, res: Response) => {
   const html = await render('demo-slot.njk', {}, { views: VIEWS });
   res.type('html').send(html);
 });
 
-router.get('/component', async (req: Request, res: Response) => {
+router.get('/component', async (_req: Request, res: Response) => {
   const html = await render('component-demo.njk', { username: 'John Doe' }, { views: VIEWS });
   res.type('html').send(html);
 });
 
-router.get('/pipe', async (req: Request, res: Response) => {
+router.get('/pipe', async (_req: Request, res: Response) => {
   const html = await render('demo-pipe.njk', {
     items: ["one", "two", "three"]
   }, { views: VIEWS });
   res.type('html').send(html);
 });
 
-router.get('/security', async (req: Request, res: Response) => {
+router.get('/security', async (_req: Request, res: Response) => {
   const html = await render('demo-security.njk', {
     userInput: '<script>alert("XSS attack!")</script><p>Hello World</p>',
     dangerousHtml: '<img src=x onerror="alert(1)"><script>document.location="http://evil.com"</script>',

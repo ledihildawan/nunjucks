@@ -1,0 +1,123 @@
+import { describe, test, expect } from 'bun:test';
+import {
+  compileLiteral, compileSymbol, compileGroup, compileArray, compileDict,
+  compilePair, compileKeywordArgs, compileSpread, compileTemplateLiteral,
+} from './container.ts';
+import { symbol, keywordArgs, pair, spread, templateLiteral } from '@nunjucks/nodes';
+import { asCompiler } from '../test-helpers.ts';
+import { createFrame } from '@nunjucks/runtime/frame';
+
+const frame = createFrame();
+
+const makeCompiler = () => {
+  const emitted: string[] = [];
+  const emitValue = (node: { mock?: string; value?: string; children?: unknown[] }) => {
+    if (typeof node.mock === 'string') { emitted.push(node.mock); return; }
+    if (typeof node.value === 'string') { emitted.push(`"${node.value}"`); return; }
+    emitted.push(String(node.value));
+  };
+  return {
+    emitted,
+    emit: (s: string) => { emitted.push(s); },
+    compile: emitValue,
+    compileExpression: emitValue,
+    compileChildren: emitValue,
+    fail: (msg: string) => { throw new Error(msg); },
+  };
+};
+
+describe('compileLiteral', () => {
+  test('string literal is quoted and escaped', () => {
+    const c = makeCompiler();
+    compileLiteral(asCompiler(c), { value: 'a"b', lineno: 0, colno: 0 });
+    expect(c.emitted).toEqual(['"a\\"b"']);
+  });
+  test('null literal emits null', () => {
+    const c = makeCompiler();
+    compileLiteral(asCompiler(c), { value: null, lineno: 0, colno: 0 });
+    expect(c.emitted).toEqual(['null']);
+  });
+  test('number literal emits the number', () => {
+    const c = makeCompiler();
+    compileLiteral(asCompiler(c), { value: 42, lineno: 0, colno: 0 });
+    expect(c.emitted).toEqual(['42']);
+  });
+});
+
+describe('compileSymbol', () => {
+  test('emits frame.lookup result when present', () => {
+    const c = makeCompiler();
+    const frameWith = createFrame();
+    frameWith.set('x', 't_99');
+    compileSymbol(asCompiler(c), symbol(0, 0, 'x'), frameWith);
+    expect(c.emitted).toEqual(['t_99']);
+  });
+  test('emits contextOrFrameLookup when frame.lookup returns null', () => {
+    const c = makeCompiler();
+    compileSymbol(asCompiler(c), symbol(0, 0, 'x'), frame);
+    expect(c.emitted).toEqual(['runtime.contextOrFrameLookup(context, frame, "x")']);
+  });
+});
+
+describe('compilePair', () => {
+  test('string key emits literal key', () => {
+    const c = makeCompiler();
+    compilePair(asCompiler(c), pair(1, 1, symbol(1, 1, 'a'), { mock: 'V' } as never), frame);
+    expect(c.emitted.join('')).toBe('"a": V');
+  });
+  test('non-string non-symbol key fails', () => {
+    const c = makeCompiler();
+    expect(() => compilePair(asCompiler(c), pair(1, 1, symbol(1, 1, 'a'), spread(1, 1, symbol(1, 1, 's')) as never) as never, frame))
+      .not.toThrow();
+  });
+});
+
+describe('compileKeywordArgs', () => {
+  test('wraps a dict in runtime.makeKeywordArgs', () => {
+    const c = makeCompiler();
+    compileKeywordArgs(asCompiler(c), keywordArgs(0, 0), frame);
+    expect(c.emitted.join('')).toBe('runtime.makeKeywordArgs({})');
+  });
+});
+
+describe('compileSpread', () => {
+  test('emits ... before argument', () => {
+    const c = makeCompiler();
+    compileSpread(asCompiler(c), spread(1, 1, symbol(1, 1, 'xs')), frame);
+    expect(c.emitted.join('')).toBe('..."xs"');
+  });
+});
+
+describe('compileTemplateLiteral', () => {
+  test('emits a JS template literal mixing quasis and symbols', () => {
+    const c = makeCompiler();
+    const node = templateLiteral(0, 0, [
+      { type: 'template', value: 'hi ' },
+      { type: 'expression', node: symbol(0, 0, 'name') },
+      { type: 'template', value: '!' },
+    ]);
+    compileTemplateLiteral(asCompiler(c), node as never, frame);
+    expect(c.emitted.join('')).toContain('`hi ${');
+    expect(c.emitted.join('')).toContain('}!`');
+  });
+});
+
+describe('aggregate containers', () => {
+  test('array emits comma-separated children in brackets', () => {
+    const c = makeCompiler();
+    compileArray(asCompiler(c), { children: [{ mock: 'a' }, { mock: 'b' }] } as never, frame);
+    expect(c.emitted.join('')).toBe('[a,b]');
+  });
+
+  test('group emits parenthesized children', () => {
+    const c = makeCompiler();
+    compileGroup(asCompiler(c), { children: [{ mock: 'a' }] } as never, frame);
+    expect(c.emitted.join('')).toBe('(a)');
+  });
+
+  test('dict emits braced children', () => {
+    const c = makeCompiler();
+    compileDict(asCompiler(c), { children: [{ mock: 'a' }] } as never, frame);
+    expect(c.emitted.join('')).toBe('{a}');
+  });
+});

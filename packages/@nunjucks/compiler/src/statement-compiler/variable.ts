@@ -2,7 +2,7 @@ import { isArrayPattern, isObjectPattern, isSymbol } from '@nunjucks/nodes';
 import type { Node, VariableDeclNode, CompoundAssignNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
-import { emitLocationGuard } from '../compiler-helpers.ts';
+import { emitLocationGuard } from '../codegen.ts';
 import { compileDestructuring } from './pattern.ts';
 
 const getTargetName = (target: Node | undefined): string | null => {
@@ -22,54 +22,54 @@ const hasPatternTarget = (node: VariableDeclNode): boolean => {
   );
 };
 
-const compileVariableDeclaration = (ctx: Compiler, node: VariableDeclNode, frame: Frame): void => {
+const compileVariableDeclaration = (compiler: Compiler, node: VariableDeclNode, frame: Frame): void => {
   if (hasPatternTarget(node)) {
-    const valueId = ctx.tmpid();
-    ctx.emitLine(`let ${valueId} = `);
-    ctx.compileExpression(node.value, frame);
-    ctx.emitLine(';');
+    const valueId = compiler.tmpid();
+    compiler.emitLine(`let ${valueId} = `);
+    compiler.compileExpression(node.value, frame);
+    compiler.emitLine(';');
 
     for (const pattern of node.targets) {
-      compileDestructuring({ ctx, frame, registerFrame: true }, pattern, valueId);
+      compileDestructuring({ ctx: compiler, frame, registerFrame: true }, pattern, valueId);
     }
   } else {
     const targets = node.targets;
     const name = getTargetName(targets[0]);
-    const valueId = ctx.tmpid();
+    const valueId = compiler.tmpid();
 
-    ctx.emitLine(`let ${valueId} = `);
-    ctx.compileExpression(node.value, frame);
-    ctx.emitLine(';');
+    compiler.emitLine(`let ${valueId} = `);
+    compiler.compileExpression(node.value, frame);
+    compiler.emitLine(';');
 
     if (name !== null) {
-      ctx.emitLine(`frame.set("${name}", ${valueId}, true);`);
+      compiler.emitLine(`frame.set("${name}", ${valueId}, true);`);
     }
   }
 };
 
-const compileVariableAssignment = (ctx: Compiler, node: VariableDeclNode, frame: Frame): void => {
+const compileVariableAssignment = (compiler: Compiler, node: VariableDeclNode, frame: Frame): void => {
   if (hasPatternTarget(node)) {
-    const valueId = ctx.tmpid();
-    ctx.emitLine(`let ${valueId} = `);
-    ctx.compileExpression(node.value, frame);
-    ctx.emitLine(';');
+    const valueId = compiler.tmpid();
+    compiler.emitLine(`let ${valueId} = `);
+    compiler.compileExpression(node.value, frame);
+    compiler.emitLine(';');
 
     for (const pattern of node.targets) {
-      compileDestructuring({ ctx, frame, registerFrame: true }, pattern, valueId);
+      compileDestructuring({ ctx: compiler, frame, registerFrame: true }, pattern, valueId);
     }
   } else {
     const targets = node.targets;
     const name = getTargetName(targets[0]);
 
     if (name !== null) {
-      ctx.emitLine(`if (frame.lookup("${name}") === undefined) { throw new ReferenceError("Variable '${name}' is not defined. Use ${name} := value to declare it."); }`);
+      compiler.emitLine(`if (frame.lookup("${name}") === undefined) { throw new ReferenceError("Variable '${name}' is not defined. Use ${name} := value to declare it."); }`);
 
-      const valueId = ctx.tmpid();
-      ctx.emitLine(`let ${valueId} = `);
-      ctx.compileExpression(node.value, frame);
-      ctx.emitLine(';');
+      const valueId = compiler.tmpid();
+      compiler.emitLine(`let ${valueId} = `);
+      compiler.compileExpression(node.value, frame);
+      compiler.emitLine(';');
 
-      ctx.emitLine(`frame.set("${name}", ${valueId}, true);`);
+      compiler.emitLine(`frame.set("${name}", ${valueId}, true);`);
     }
   }
 };
@@ -80,7 +80,6 @@ const getCompoundOpJs = (operator: string): string | null => {
     case '&&=': return '&&';
     case '??=': return '??';
     case '**=': return '**';
-    case '//=': return null;
     case '+=': return '+';
     case '-=': return '-';
     case '*=': return '*';
@@ -90,54 +89,52 @@ const getCompoundOpJs = (operator: string): string | null => {
   }
 };
 
-const compileCompoundAssignment = (ctx: Compiler, node: CompoundAssignNode, frame: Frame): void => {
+const compileCompoundAssignment = (compiler: Compiler, node: CompoundAssignNode, frame: Frame): void => {
   const targets = node.targets;
   const name = getTargetName(targets[0]);
   if (name === null) {
-    ctx.fail('Compound assignment requires a named target', node.lineno, node.colno);
+    compiler.fail('Compound assignment requires a named target', node.lineno, node.colno);
     return;
   }
 
-  const operator = node.operator as string;
+  const operator = node.operator;
   const key = JSON.stringify(name);
-  const currentId = ctx.tmpid();
-  const valueId = ctx.tmpid();
+  const currentId = compiler.tmpid();
+  const valueId = compiler.tmpid();
 
-  // IIFE so the read-modify-write side effect is a valid expression value
-  // (mirrors compileWalrus / compileIncrementDecrement).
-  emitLocationGuard(ctx, node.lineno ?? 0, node.colno ?? 0);
-  ctx.emit('(() => {');
-  ctx.emit(`let ${currentId} = runtime.contextOrFrameLookup(context, frame, ${key});`);
+  emitLocationGuard(compiler, node.lineno ?? 0, node.colno ?? 0);
+  compiler.emit('(() => {');
+  compiler.emit(`let ${currentId} = runtime.contextOrFrameLookup(context, frame, ${key});`);
 
   if (operator === '//=') {
-    ctx.emit(`let ${valueId} = Math.floor(${currentId} / `);
-    ctx.compileExpression(node.value, frame);
-    ctx.emit(');');
+    compiler.emit(`let ${valueId} = Math.floor(${currentId} / `);
+    compiler.compileExpression(node.value, frame);
+    compiler.emit(');');
   } else if (operator === '|>=') {
     const valueNode = node.value;
     const filterName = valueNode.type === 'symbol' ? valueNode.value as string : null;
     const inputLocation = `${node.lineno ?? 0}, ${node.colno ?? 0}`;
     if (filterName) {
-      ctx.emit(`let ${valueId} = await runtime.awaitValue(env.getFilter(${JSON.stringify(filterName)}, ${inputLocation}, ${inputLocation}, ${key}).call(context, ${currentId}));`);
+      compiler.emit(`let ${valueId} = await runtime.awaitValue(env.getFilter(${JSON.stringify(filterName)}, ${inputLocation}, ${inputLocation}, ${key}).call(context, ${currentId}));`);
     } else {
-      ctx.emit(`let ${valueId} = await runtime.awaitValue(`);
-      ctx.compileExpression(valueNode, frame);
-      ctx.emit(`, ${currentId});`);
+      compiler.emit(`let ${valueId} = await runtime.awaitValue(`);
+      compiler.compileExpression(valueNode, frame);
+      compiler.emit(`, ${currentId});`);
     }
   } else {
     const compoundOp = getCompoundOpJs(operator);
     if (compoundOp === null) {
-      ctx.fail(`Unsupported compound operator: ${operator}`, node.lineno, node.colno);
+      compiler.fail(`Unsupported compound operator: ${operator}`, node.lineno, node.colno);
     }
-    ctx.emit(`let ${valueId} = ${currentId} ${compoundOp} `);
-    ctx.compileExpression(node.value, frame);
-    ctx.emit(';');
+    compiler.emit(`let ${valueId} = ${currentId} ${compoundOp} `);
+    compiler.compileExpression(node.value, frame);
+    compiler.emit(';');
   }
 
-  ctx.emit(`frame.set(${key}, ${valueId}, true);`);
-  ctx.emit(`context.setVariable(${key}, ${valueId});`);
-  ctx.emit(`return ${valueId};`);
-  ctx.emit('})())');
+  compiler.emit(`frame.set(${key}, ${valueId}, true);`);
+  compiler.emit(`context.setVariable(${key}, ${valueId});`);
+  compiler.emit(`return ${valueId};`);
+  compiler.emit('})())');
 };
 
 export { compileVariableDeclaration, compileVariableAssignment, compileCompoundAssignment };

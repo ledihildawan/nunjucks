@@ -5,11 +5,11 @@ import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
 import { compileGetTemplate } from './import.ts';
 
-export const compileFromImport = (ctx: Compiler, node: FromImportNode, frame: Frame): void => {
-  const importedId = compileGetTemplate(ctx, node, frame, { eagerCompile: false, ignoreMissing: false });
+export const compileFromImport = (compiler: Compiler, node: FromImportNode, frame: Frame): void => {
+  const importedId = compileGetTemplate(compiler, node, frame, { eagerCompile: false, ignoreMissing: false });
 
   const withContextArg = node.withContext ? 'context.getVariables(), frame' : '';
-  ctx.emitLine(`let ${importedId}_exported = await ${importedId}.getExported(` +
+  compiler.emitLine(`let ${importedId}_exported = await ${importedId}.getExported(` +
     withContextArg +
     ');');
 
@@ -25,21 +25,21 @@ export const compileFromImport = (ctx: Compiler, node: FromImportNode, frame: Fr
       name = nameNode.value as string;
       alias = name;
     }
-    const id = ctx.tmpid();
+    const id = compiler.tmpid();
 
-    ctx.emitLine(`let ${id};`);
-    ctx.emitLine(`if(Object.hasOwn(${importedId}_exported, "${name}")) {`);
-    ctx.emitLine(`${id} = ${importedId}_exported["${name}"];`);
-    ctx.emitLine('} else {');
-    ctx.emitLine(`throw new Error("Cannot import '${name}' from module");`);
-    ctx.emitLine('}');
+    compiler.emitLine(`let ${id};`);
+    compiler.emitLine(`if(Object.hasOwn(${importedId}_exported, "${name}")) {`);
+    compiler.emitLine(`${id} = ${importedId}_exported["${name}"];`);
+    compiler.emitLine('} else {');
+    compiler.emitLine(`throw new Error("Cannot import '${name}' from module");`);
+    compiler.emitLine('}');
 
     frame.set(alias, id);
 
     if (frame.parent) {
-      ctx.emitLine(`frame.set("${alias}", ${id});`);
+      compiler.emitLine(`frame.set("${alias}", ${id});`);
     } else {
-      ctx.emitLine(`context.setVariable("${alias}", ${id});`);
+      compiler.emitLine(`context.setVariable("${alias}", ${id});`);
     }
   });
 };

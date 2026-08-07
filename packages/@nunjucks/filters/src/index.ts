@@ -1,6 +1,5 @@
 export type { FilterContext } from './factory/index.ts';
-export { filterError } from './factory/index.ts';
-export { getAttrGetter } from './attributes.ts';
+export { getAttrGetter } from './filters/attributes.ts';
 export * from './filters/string.ts';
 export * from './filters/array.ts';
 export * from './filters/object.ts';

@@ -1,13 +1,13 @@
 import { pipe, filter, join, map, split } from 'remeda';
 import picocolors from 'picocolors';
-import { toDisplayLocation } from '../internal/location.ts';
+import { toDisplayLocation } from '../internal/location/location.ts';
 import type { LineBase } from '../../line-base.ts';
-import { mergeErrorParts } from '../internal/error-parts.ts';
-import type { SourceTrace } from '../internal/source-trace.ts';
+import { mergeErrorParts } from '../internal/formatting/error-parts.ts';
+import type { SourceTrace } from '../internal/location/source-trace.ts';
 import { stripMarkdown, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString } from './stack-helpers';
 import { renderContextAnsi } from './context-helpers';
 import { formatSourceTrace } from './source-helpers';
-import { getErrorMessage } from '../internal/message.ts';
+import { getErrorMessage } from '../internal/formatting/message.ts';
 import { isErrorLike } from '../../types.ts';
 
 export { formatCausesAnsi, formatFixAnsi, getErrorMessage, formatMediumAnsi, extractAnsiErrorParts, formatFullAnsi, BULLET };

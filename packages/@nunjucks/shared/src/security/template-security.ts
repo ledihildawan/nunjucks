@@ -1,5 +1,3 @@
-// Context-value scanning (findDangerousValues) is deliberately NOT consolidated
-// here: the runtime and validators implementations have meaningfully diverged.
 
 export interface DangerousCodeViolation {
   message: string;

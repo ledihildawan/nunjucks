@@ -4,26 +4,26 @@ import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts"
 import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/index.ts";
 
-export const parseInclude = (ctx: ParserContext): Node => {
+export const parseInclude = (parserContext: ParserContext): Node => {
   const tagName = 'include';
-  const tag = peekToken(ctx);
-  if (!skipSymbol(ctx, tagName)) {
-    fail(ctx, `parseInclude: expected ${tagName}`);
+  const tag = peekToken(parserContext);
+  if (!skipSymbol(parserContext, tagName)) {
+    fail(parserContext, `parseInclude: expected ${tagName}`);
   }
 
   const node = include(tag.lineno, tag.colno);
-  node.template = parseExpression(ctx);
+  node.template = parseExpression(parserContext);
 
-  if (skipSymbol(ctx, 'only')) {
+  if (skipSymbol(parserContext, 'only')) {
     node.only = true;
-  } else if (skipSymbol(ctx, 'with')) {
-    node.with = parseExpression(ctx);
+  } else if (skipSymbol(parserContext, 'with')) {
+    node.with = parseExpression(parserContext);
   }
 
-  if (skipSymbol(ctx, 'ignore') && skipSymbol(ctx, 'missing')) {
+  if (skipSymbol(parserContext, 'ignore') && skipSymbol(parserContext, 'missing')) {
     node.ignoreMissing = true;
   }
 
-  advanceAfterBlockEnd(ctx, String(tag.value));
+  advanceAfterBlockEnd(parserContext, String(tag.value));
   return node;
 };

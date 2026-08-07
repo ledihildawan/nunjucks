@@ -39,7 +39,6 @@ describe('findDangerousValues', () => {
     expect(findDangerousValues({ process })).toContain('process');
   });
   test('flags process via isDangerousReference at nested level', () => {
-    // process is a dangerous reference — detected at ANY depth via isDangerousReference
     const result = findDangerousValues({ nested: { process } });
     expect(result.length).toBeGreaterThan(0);
   });

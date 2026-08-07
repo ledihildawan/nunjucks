@@ -3,8 +3,6 @@ import { replace } from '@nunjucks/shared';
 
 import type { LineBase } from '../line-base.ts';
 
-/** A collected render-time warning. Exported: it is the element type of
- * `injectWarningsScript`'s first parameter. */
 interface Warning {
   message: string;
   code?: string | null;
@@ -60,8 +58,6 @@ const formatWarning = (w: Warning | string, options: { verbosity?: 'simple' | 'm
   return `[WARNING] ${message} (${undefinedMode})${locationStr}${codePart}`;
 };
 
-// `warnings` is nullable in the signature because this is a package entry
-// point reached from untyped callers; the guard below is real, not decorative.
 const injectWarningsScript = (warnings: Warning[] | null | undefined, options: InjectWarningsOptions = {}): string => {
   const { verbosity = 'full' } = options;
 

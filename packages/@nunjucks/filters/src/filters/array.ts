@@ -2,7 +2,7 @@ import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { isPlainObject, isString, keys, map, pipe, range, reduce, sum as sumValues } from 'remeda';
 import { isSafeString, makeComponent } from '@nunjucks/runtime';
 import { makeFilterError, isArray, requireArrayError, assertItemsHaveAttr } from '../factory/index.ts';
-import { getAttrGetter } from '../attributes.ts';
+import { getAttrGetter } from './attributes.ts';
 
 export const first = (arr: unknown): unknown => {
   if (!isArray(arr)) { throw requireArrayError(arr, ERROR_DEFINITIONS.FIRST_LAST_FILTER); }
@@ -41,14 +41,14 @@ export const lengthFilter = (val: unknown): number => {
   return getLengthFromValue(value);
 };
 
-export const reverse = (val: unknown): unknown[] | string => {
-  if (typeof val === 'string') {
-    return val.split('').toReversed().join('');
+export const reverse = (value: unknown): unknown[] | string => {
+  if (typeof value === 'string') {
+    return value.split('').toReversed().join('');
   }
-  if (isArray(val)) {
-    return [...val].toReversed();
+  if (isArray(value)) {
+    return [...value].toReversed();
   }
-  throw makeFilterError(ERROR_DEFINITIONS.LIST_FILTER, { type: typeof val }, typeof val, `Expected string or array but got ${typeof val}`);
+  throw makeFilterError(ERROR_DEFINITIONS.LIST_FILTER, { type: typeof value }, typeof value, `Expected string or array but got ${typeof value}`);
 };
 
 const computeSliceParams = (arrLength: number, slices: number): { sliceLength: number; extra: number } => {
@@ -108,7 +108,8 @@ export const sum = (arr: unknown, attr?: string, start = 0): number => {
     if (!isArray(arr)) { throw requireArrayError(arr, ERROR_DEFINITIONS.SUM_FILTER); }
     return sumWithAttribute(arr, attr, start);
   }
-  return sumWithoutAttribute(arr as unknown[], start);
+  if (!isArray(arr)) { throw requireArrayError(arr, ERROR_DEFINITIONS.SUM_FILTER); }
+  return sumWithoutAttribute(arr, start);
 };
 
 const getCompareValue = (item: unknown, sortAttr: string | undefined): unknown => {
@@ -116,19 +117,19 @@ const getCompareValue = (item: unknown, sortAttr: string | undefined): unknown =
   return getAttrGetter(sortAttr)(item as Record<string, unknown>);
 };
 
-const toComparable = (val: unknown): string | number => {
-  if (typeof val === 'string' || typeof val === 'number') {
-    return val as string | number;
+const toComparable = (value: unknown): string | number => {
+  if (typeof value === 'string' || typeof value === 'number') {
+    return value;
   }
-  return String(val) as string | number;
+  return String(value);
 };
 
 const compareValues = (xVal: unknown, yVal: unknown, caseSens: boolean | string | undefined, sortReverse: boolean | string | undefined): number => {
   const xRaw = toComparable(xVal);
   const yRaw = toComparable(yVal);
   const lower = !caseSens && isString(xRaw) && isString(yRaw);
-  const x = lower ? (xRaw as string).toLowerCase() : xRaw;
-  const y = lower ? (yRaw as string).toLowerCase() : yRaw;
+  const x = lower ? xRaw.toLowerCase() : xRaw;
+  const y = lower ? yRaw.toLowerCase() : yRaw;
   if (x < y) { return sortReverse ? 1 : -1; }
   if (x > y) { return sortReverse ? -1 : 1; }
   return 0;

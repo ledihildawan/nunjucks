@@ -21,8 +21,8 @@ import type { ParserContext } from "./cursor.ts";
 import { parseStatement } from "./statement-parser/index.ts";
 import { parseExpression } from "./expression-parser/index.ts";
 
-const parseUntilBlocks = (ctx: ParserContext, ...blockNames: string[]): Node => {
-  return nodeList(0, 0, parseNodes(ctx, blockNames));
+const parseUntilBlocks = (parserContext: ParserContext, ...blockNames: string[]): Node => {
+  return nodeList(0, 0, parseNodes(parserContext, blockNames));
 };
 
 const LEADING_WHITESPACE_RE = /^\s*/;
@@ -32,7 +32,7 @@ const RAW_CLOSE_TAG_RE = /({%\s*endraw\s*%})$/;
 
 const shouldStripTrailingWhitespace = (
   nextTok: Token,
-  ctx: ParserContext
+  parserContext: ParserContext
 ): boolean => {
   if (!nextTok) { return false; }
   const nextVal = String(nextTok.value);
@@ -40,17 +40,17 @@ const shouldStripTrailingWhitespace = (
     return nextVal.at(-1) === '-';
   }
   if (nextTok.type === TOKEN_VARIABLE_START) {
-    return nextVal.charAt(ctx.tokens.tags.VARIABLE_START.length) === '-';
+    return nextVal.charAt(parserContext.tokens.tags.variableStart.length) === '-';
   }
   if (nextTok.type === TOKEN_COMMENT) {
-    return nextVal.charAt(ctx.tokens.tags.COMMENT_START.length) === '-';
+    return nextVal.charAt(parserContext.tokens.tags.commentStart.length) === '-';
   }
   return false;
 };
 
-const parseDataToken = (ctx: ParserContext, tok: Token, buf: Node[], stripLeading: boolean): void => {
-  const nextTok = peekTokenOrNull(ctx);
-  const stripTrailing = Boolean(nextTok && shouldStripTrailingWhitespace(nextTok, ctx));
+const parseDataToken = (parserContext: ParserContext, tok: Token, buf: Node[], stripLeading: boolean): void => {
+  const nextTok = peekTokenOrNull(parserContext);
+  const stripTrailing = Boolean(nextTok && shouldStripTrailingWhitespace(nextTok, parserContext));
   const data = pipe(
     String(tok.value),
     s => (stripLeading ? s.replace(LEADING_WHITESPACE_RE, '') : s),
@@ -64,40 +64,37 @@ const parseDataToken = (ctx: ParserContext, tok: Token, buf: Node[], stripLeadin
   ));
 };
 
-const parseRawToken = (tok: Token, buf: Node[]): void => {
-  const rawContent = tok.value;
-  const content = typeof rawContent === 'string'
-    ? pipe(rawContent, replace(RAW_OPEN_TAG_RE, ''), replace(RAW_CLOSE_TAG_RE, ''))
-    : rawContent;
+const parseRawToken = (tok: Token & { type: 'raw' }, buf: Node[]): void => {
+  const content = pipe(tok.value, replace(RAW_OPEN_TAG_RE, ''), replace(RAW_CLOSE_TAG_RE, ''));
   buf.push(output(
     tok.lineno,
     tok.colno,
-    [templateData(tok.lineno, tok.colno, content as string)]
+    [templateData(tok.lineno, tok.colno, content)]
   ));
 };
 
-const parseVariableToken = (ctx: ParserContext, tok: Token, buf: Node[]): void => {
-  const e = parseExpression(ctx);
-  advanceAfterVariableEnd(ctx);
+const parseVariableToken = (parserContext: ParserContext, tok: Token, buf: Node[]): void => {
+  const e = parseExpression(parserContext);
+  advanceAfterVariableEnd(parserContext);
   buf.push(output(tok.lineno, tok.colno, [e]));
 };
 
-const parseCommentToken = (ctx: ParserContext, tok: Token): void => {
+const parseCommentToken = (parserContext: ParserContext, tok: Token): void => {
   const tokVal = String(tok.value);
-  ctx.dropLeadingWhitespace = tokVal.charAt(
-    tokVal.length - ctx.tokens.tags.COMMENT_END.length - 1
+  parserContext.dropLeadingWhitespace = tokVal.charAt(
+    tokVal.length - parserContext.tokens.tags.commentEnd.length - 1
   ) === '-';
 };
 
-const handleToken = (ctx: ParserContext, tok: Token, buf: Node[], breakOn: readonly string[] | null = null): boolean => {
-  const wsDrop = consumeWhitespaceDrop(ctx);
+const handleToken = (parserContext: ParserContext, tok: Token, buf: Node[], breakOn: readonly string[] | null = null): boolean => {
+  const wsDrop = consumeWhitespaceDrop(parserContext);
 
   if (tok.type === TOKEN_DATA) {
-    parseDataToken(ctx, tok, buf, wsDrop);
+    parseDataToken(parserContext, tok, buf, wsDrop);
     return true;
   }
   if (tok.type === TOKEN_BLOCK_START) {
-    const n = parseStatement(ctx, breakOn);
+    const n = parseStatement(parserContext, breakOn);
     if (!n) {
       return false;
     }
@@ -105,26 +102,26 @@ const handleToken = (ctx: ParserContext, tok: Token, buf: Node[], breakOn: reado
     return true;
   }
   if (tok.type === TOKEN_VARIABLE_START) {
-    parseVariableToken(ctx, tok, buf);
+    parseVariableToken(parserContext, tok, buf);
     return true;
   }
   if (tok.type === TOKEN_COMMENT) {
-    parseCommentToken(ctx, tok);
+    parseCommentToken(parserContext, tok);
     return true;
   }
   if (tok.type === TOKEN_RAW) {
     parseRawToken(tok, buf);
     return true;
   }
-  fail(ctx, `Unexpected token at top-level: ${tok.type}`, tok.lineno, tok.colno);
+  fail(parserContext, `Unexpected token at top-level: ${tok.type}`, tok.lineno, tok.colno);
   return true;
 };
 
-const parseNodes = (ctx: ParserContext, breakOn: readonly string[] | null = null): Node[] => {
+const parseNodes = (parserContext: ParserContext, breakOn: readonly string[] | null = null): Node[] => {
   const buf: Node[] = [];
 
-  for (let tok = nextTokenOrNull(ctx); tok; tok = nextTokenOrNull(ctx)) {
-    if (!handleToken(ctx, tok, buf, breakOn)) {
+  for (let tok = nextTokenOrNull(parserContext); tok; tok = nextTokenOrNull(parserContext)) {
+    if (!handleToken(parserContext, tok, buf, breakOn)) {
       break;
     }
   }

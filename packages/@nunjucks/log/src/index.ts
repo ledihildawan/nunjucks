@@ -1,14 +1,8 @@
-export { createLog, isTemplateError, prettifyError } from './create-log.ts';
-export type { TemplateError, TemplateWarning, ErrorContext, WarningContext, ErrorDefinitionEntry, IncludeChain } from './create-log.ts';
-export { TEMPLATE_ERROR } from './create-log-types.ts';
-export { formatError, formatWarning } from './create-log-error.ts';
+export { createLog, prettifyError } from './create-log/create-log.ts';
+export type { TemplateError, TemplateWarning, ErrorContext, WarningContext, ErrorDefinitionEntry, IncludeChain } from './create-log/create-log.ts';
+export { formatError } from './create-log/create-log-error.ts';
 export { injectWarningsScript } from './warning/collector.ts';
 export type { Warning } from './warning/collector.ts';
 export { ERROR_DEFINITIONS, getError } from './errors/registry.ts';
-export type { ErrorName } from './errors/registry.ts';
 export { normalizeErrorMetadata } from './normalize.ts';
 export { findContextKeyPosition, wrapWithLog } from './diagnostics.ts';
-export { toHtml, type ToHtmlOptions } from './render/to-html.ts';
-export { toText, type ToTextOptions } from './render/to-text.ts';
-export { toAnsi, type AnsiOptions } from './render/to-ansi.ts';
-export { toConsoleString, type ToConsoleOptions } from './render/to-console.ts';

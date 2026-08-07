@@ -4,13 +4,13 @@ import { parseAggregateExpression } from './parse-expressions.ts';
 import { prepareListItem } from './parse-list.ts';
 
 export const parseContent = (
-  ctx: ParserContext,
+  parserContext: ParserContext,
   initialNode: ChildrenNode,
   origin: NodeLocation
 ): ChildrenNode => {
   let node = initialNode;
   for (;;) {
-    const listState = prepareListItem(ctx, node, origin);
+    const listState = prepareListItem(parserContext, node, origin);
     node = listState.node;
     if (listState.done) {
       return node;
@@ -18,6 +18,6 @@ export const parseContent = (
     if (listState.skipExpression) {
       continue;
     }
-    node = parseAggregateExpression(ctx, node, origin);
+    node = parseAggregateExpression(parserContext, node, origin);
   }
 };

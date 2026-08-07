@@ -3,13 +3,13 @@ import { createTokenizer } from '@nunjucks/lexer';
 import { parseUntilBlocks, parseNodes } from './parse-root.ts';
 import { createParser } from './index.ts';
 import { peekTokenOrNull } from './cursor.ts';
-import type { TokenStream } from './cursor.ts';
 import { getNodeTypeName, isNodeList, isOutput, isTemplateData } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import { asTokenStream } from './test-helpers.ts';
 
 const makeCtx = (src: string) => {
   const tk = createTokenizer(src);
-  return createParser(tk as unknown as TokenStream);
+  return createParser(asTokenStream(tk));
 };
 
 const parse = (src: string, ...blocks: string[]) => parseUntilBlocks(makeCtx(src), ...blocks);

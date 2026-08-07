@@ -5,8 +5,7 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./super": "./src/super.ts",
-    "./symbol": "./src/symbol.ts"
+    "./super": "./src/super.ts"
   },
   "dependencies": {
     "@nunjucks/nodes": "workspace:*"

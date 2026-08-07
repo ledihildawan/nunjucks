@@ -1,5 +1,5 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import { createEngine, type ExpressEngineConfig } from '@nunjucks/integrations/express';
 import { render } from '@nunjucks/core';
@@ -22,7 +22,7 @@ const engineConfig: ExpressEngineConfig = {
     getYear: () => new Date().getFullYear(),
   },
   filters: {
-    shout: (v: string) => String(v).toUpperCase() + '!!!',
+    shout: (v: string) => `${String(v).toUpperCase()}!!!`,
   },
 };
 
@@ -30,11 +30,11 @@ app.set('views', VIEWS);
 app.engine('.njk', createEngine(engineConfig));
 app.set('view engine', 'njk');
 
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (_req: Request, res: Response) => {
   res.render('index', { userName: 'Guest' });
 });
 
-app.get('/home', async (req: Request, res: Response) => {
+app.get('/home', async (_req: Request, res: Response) => {
   const html = await render(
     `<!DOCTYPE html>
 <html>
@@ -52,7 +52,7 @@ app.get('/home', async (req: Request, res: Response) => {
   res.type('html').send(html);
 });
 
-app.get('/security', async (req: Request, res: Response) => {
+app.get('/security', async (_req: Request, res: Response) => {
   const html = await render(
     `<!DOCTYPE html>
 <html>
@@ -89,10 +89,9 @@ app.get('/security', async (req: Request, res: Response) => {
 app.use('/demo', demoRouter);
 app.use('/errors', errorRouter);
 
-// Error handler - must be after all routes
-app.use(async (err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.log(formatError(err as any, { format: 'ansi', dev: true }));
-  res.status(500).type('html').send(formatError(err as any, { format: 'html', dev: true }));
+app.use(async (err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.log(formatError(err, { format: 'ansi', dev: true }));
+  res.status(500).type('html').send(formatError(err, { format: 'html', dev: true }));
 });
 
 app.listen(4000, () => {

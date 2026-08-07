@@ -25,11 +25,11 @@ const canFollowWithoutComma = (type: string): boolean =>
   type === TOKEN_LEFT_PAREN;
 
 const prepareAfterComma = (
-  ctx: ParserContext,
+  parserContext: ParserContext,
   node: ChildrenNode,
   origin: NodeLocation
 ): { node: ChildrenNode; done: boolean; skipExpression: boolean } => {
-  const afterComma = peekToken(ctx).type;
+  const afterComma = peekToken(parserContext).type;
   const followedByHole = afterComma === TOKEN_COMMA;
   const followedByClose =
     afterComma === TOKEN_RIGHT_BRACKET ||
@@ -39,10 +39,10 @@ const prepareAfterComma = (
   }
   const nextNode = appendChild(
     node,
-    hole(origin.lineno, origin.colno)
+    hole(origin.lineno ?? 0, origin.colno ?? 0)
   ) as ChildrenNode;
   if (followedByClose) {
-    nextToken(ctx);
+    nextToken(parserContext);
   }
   return {
     node: nextNode,
@@ -52,13 +52,13 @@ const prepareAfterComma = (
 };
 
 export const prepareListItem = (
-  ctx: ParserContext,
+  parserContext: ParserContext,
   node: ChildrenNode,
   origin: NodeLocation
 ): { node: ChildrenNode; done: boolean; skipExpression: boolean } => {
-  const current = peekToken(ctx);
+  const current = peekToken(parserContext);
   if (isClosingToken(current.type)) {
-    nextToken(ctx);
+    nextToken(parserContext);
     return { node, done: true, skipExpression: false };
   }
 
@@ -66,13 +66,13 @@ export const prepareListItem = (
     return { node, done: false, skipExpression: false };
   }
 
-  if (skip(ctx, TOKEN_COMMA)) {
-    return prepareAfterComma(ctx, node, origin);
+  if (skip(parserContext, TOKEN_COMMA)) {
+    return prepareAfterComma(parserContext, node, origin);
   }
 
   if (!canFollowWithoutComma(current.type)) {
     fail(
-      ctx,
+      parserContext,
       'parseAggregate: expected comma after expression',
       current.lineno,
       current.colno

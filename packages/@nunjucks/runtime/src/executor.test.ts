@@ -8,7 +8,7 @@ const compileBody = (body: string): string =>
 const outputVariable = (name: string): string =>
   compileBody([
     'let output = "";',
-    `output += runtime.suppressValue(runtime.contextOrFrameLookup(context, frame, ${JSON.stringify(name)}), context._autoescape, 0, 0);`,
+    `output += runtime.suppressValue(runtime.contextOrFrameLookup(context, frame, ${JSON.stringify(name)}), env.opts.autoescape, 0, 0);`,
     'return output;',
   ].join('\n'));
 

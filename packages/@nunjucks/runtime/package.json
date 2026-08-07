@@ -12,9 +12,7 @@
     "./slots": "./src/slots.ts",
     "./member-access": "./src/member-access.ts",
     "./sandbox": "./src/sandbox/index.ts",
-    "./helpers": "./src/helpers/index.ts",
     "./hooks": "./src/hooks.ts",
-    "./security": "./src/security/index.ts",
     "./timeout": "./src/timeout.ts",
     "./undefined": "./src/undefined.ts",
     "./executor": "./src/executor.ts"

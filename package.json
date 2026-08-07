@@ -46,14 +46,14 @@
   },
   "scripts": {
     "build": "bun run scripts/bundle.js",
-    "lint": "biome lint packages/",
+    "lint": "biome lint packages samples",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "coverage": "bun test --coverage"
   },
   "exports": {
     ".": {
-      "import": "@nunjucks/core/src/index.js"
+      "import": "@nunjucks/core/src/index.ts"
     },
     "./bundle": "./dist/index.js"
   },

@@ -3,20 +3,20 @@ const hasOwn = <O extends object, K extends PropertyKey>(
   key: K
 ): obj is O & Record<K, unknown> => Object.hasOwn(obj, key);
 
-const isObject = (val: unknown): val is Record<string, unknown> =>
-  val !== null && typeof val === 'object' && !Array.isArray(val);
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
 
-const isRecord = (val: unknown): val is Record<string, unknown> =>
-  isObject(val);
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  isObject(value);
 
-const isKeyedObject = (val: unknown): val is Record<PropertyKey, unknown> =>
-  val !== null && typeof val === 'object';
+const isKeyedObject = (value: unknown): value is Record<PropertyKey, unknown> =>
+  value !== null && typeof value === 'object';
 
-const isIterable = (val: unknown): val is Iterable<unknown> =>
-  val != null && typeof val === 'object' && Symbol.iterator in val;
+const isIterable = (value: unknown): value is Iterable<unknown> =>
+  value != null && typeof value === 'object' && Symbol.iterator in value;
 
-const isThenable = (val: unknown): val is Promise<unknown> =>
-  isKeyedObject(val) && typeof val.then === 'function';
+const isThenable = (value: unknown): value is Promise<unknown> =>
+  isKeyedObject(value) && typeof value.then === 'function';
 
 const isArrayOf = <T>(guard: (x: unknown) => x is T) => (arr: unknown): arr is T[] =>
   Array.isArray(arr) && arr.every(guard);

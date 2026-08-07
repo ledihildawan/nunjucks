@@ -1,9 +1,7 @@
-// Import from the defining modules, not from '@nunjucks/log': this file is
-// itself re-exported by that entry point, so going through it is a cycle.
-import { createLog, type TemplateError } from './create-log.ts';
+import { createLog, type TemplateError } from './create-log/create-log.ts';
 import { normalizeErrorMetadata } from './normalize.ts';
 import { resolveLocation, MATCH_ANY_RE, isKeyedObject } from '@nunjucks/shared';
-import { DEFAULT_IDE } from './render/internal/defaults.ts';
+import { DEFAULT_IDE } from './render/internal/config/defaults.ts';
 import type { LineBase } from './line-base.ts';
 
 interface DiagnosticsConfig {

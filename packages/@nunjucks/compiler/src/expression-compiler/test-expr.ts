@@ -1,40 +1,40 @@
 import type { TestNode, TestCallNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
-import { emitLocationGuard } from '../compiler-helpers.ts';
+import { emitLocationGuard } from '../codegen.ts';
 
-export const compileTest = (ctx: Compiler, node: TestNode, frame: Frame): void => {
+export const compileTest = (compiler: Compiler, node: TestNode, frame: Frame): void => {
   const lineno = node.lineno;
   const colno = node.colno;
-  const targetTmp = ctx.tmpid();
-  ctx.emit(`((${targetTmp} = `);
-  ctx.compile(node.target, frame);
-  ctx.emit('), ');
-  emitLocationGuard(ctx, lineno, colno);
-  ctx.emit(`runtime.runTest(env, ${JSON.stringify(node.name)}, ${targetTmp}))`);
-  ctx.emit(')');
+  const targetTmp = compiler.tmpid();
+  compiler.emit(`((${targetTmp} = `);
+  compiler.compile(node.target, frame);
+  compiler.emit('), ');
+  emitLocationGuard(compiler, lineno, colno);
+  compiler.emit(`runtime.runTest(env, ${JSON.stringify(node.name)}, ${targetTmp}))`);
+  compiler.emit(')');
 };
 
-export const compileTestCall = (ctx: Compiler, node: TestCallNode, frame: Frame): void => {
+export const compileTestCall = (compiler: Compiler, node: TestCallNode, frame: Frame): void => {
   const lineno = node.lineno;
   const colno = node.colno;
-  const targetTmp = ctx.tmpid();
-  ctx.emit(`(${targetTmp} = `);
-  ctx.compile(node.target, frame);
-  ctx.emit(', ');
+  const targetTmp = compiler.tmpid();
+  compiler.emit(`(${targetTmp} = `);
+  compiler.compile(node.target, frame);
+  compiler.emit(', ');
 
   const args: string[] = [];
   for (const argNode of node.args) {
     if (!argNode) { continue; }
-    const argTmp = ctx.tmpid();
-    ctx.emit(`${argTmp} = `);
-    ctx.compile(argNode, frame);
-    ctx.emit(', ');
+    const argTmp = compiler.tmpid();
+    compiler.emit(`${argTmp} = `);
+    compiler.compile(argNode, frame);
+    compiler.emit(', ');
     args.push(argTmp);
   }
 
-  emitLocationGuard(ctx, lineno, colno);
+  emitLocationGuard(compiler, lineno, colno);
   const argsPart = args.length > 0 ? `, ${args.join(', ')}` : '';
-  ctx.emit(`runtime.runTest(env, ${JSON.stringify(node.name)}, ${targetTmp}${argsPart}))`);
-  ctx.emit(')');
+  compiler.emit(`runtime.runTest(env, ${JSON.stringify(node.name)}, ${targetTmp}${argsPart}))`);
+  compiler.emit(')');
 };

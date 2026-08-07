@@ -20,15 +20,16 @@
 						"noProto": "off",
 						"noExplicitAny": "off"
 					},
-					"style": {
-						"noImplicitBoolean": "off",
-						"noMagicNumbers": "off",
-						"noNonNullAssertion": "off",
-						"noExcessiveLinesPerFile": "off"
-					},
-					"complexity": {
-						"noExcessiveLinesPerFunction": "off"
-					},
+				"style": {
+					"noImplicitBoolean": "off",
+					"noMagicNumbers": "off",
+					"noNonNullAssertion": "off",
+					"noExcessiveLinesPerFile": "off"
+				},
+				"complexity": {
+					"noExcessiveLinesPerFunction": "off",
+					"useLiteralKeys": "off"
+				},
 					"performance": {
 						"useTopLevelRegex": "off"
 					}

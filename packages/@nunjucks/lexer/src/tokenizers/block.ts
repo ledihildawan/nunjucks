@@ -1,9 +1,9 @@
-import type { TokenType } from '../token-types.ts';
+import { TOKEN_BLOCK_START, TOKEN_BLOCK_END } from '../token-types.ts';
 import { createDelimiterTokenizer } from './delimiter.ts';
 
 export const tokenizeBlockStart = createDelimiterTokenizer(
-  'block-start' as TokenType, 'STRIP_BLOCK_START', 'BLOCK_START', { stripLeft: true },
+  TOKEN_BLOCK_START, 'stripBlockStart', 'blockStart', { stripLeft: true },
 );
 export const tokenizeBlockEnd = createDelimiterTokenizer(
-  'block-end' as TokenType, 'STRIP_BLOCK_END', 'BLOCK_END', { stripRight: true },
+  TOKEN_BLOCK_END, 'stripBlockEnd', 'blockEnd', { stripRight: true },
 );

@@ -3,7 +3,7 @@ import type { Node } from '@nunjucks/nodes';
 
 export const extractVarName = (node: Node): string | null => {
   if (isSymbol(node)) {
-    return node.value as string;
+    return node.value;
   }
 
   if (isLookupVal(node)) {

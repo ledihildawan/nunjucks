@@ -1,11 +1,11 @@
 import { pipe, filter, join, map, split } from 'remeda';
-import { shortenPath } from './internal/path-shortener.ts';
-import { toDisplayLocation } from './internal/location.ts';
-import { mergeErrorParts } from './internal/error-parts.ts';
-import { parseStackFrame } from './internal/stack-parse.ts';
+import { shortenPath } from './internal/location/path-shortener.ts';
+import { toDisplayLocation } from './internal/location/location.ts';
+import { mergeErrorParts } from './internal/formatting/error-parts.ts';
+import { parseStackFrame } from './internal/location/stack-parse.ts';
 import { slice } from '@nunjucks/shared';
-import { stripMarkdown } from './internal/markdown.ts';
-import { getErrorMessage } from './internal/message.ts';
+import { stripMarkdown } from './internal/formatting/markdown.ts';
+import { getErrorMessage } from './internal/formatting/message.ts';
 import type { ErrorLike } from '../types.ts';
 
 interface ToTextOptions {

@@ -18,7 +18,6 @@ const parseDigits = (current: LexerState): { num: string; current: LexerState } 
 
 const parseDecimalPart = (current: LexerState): { hasDecimal: boolean; num: string; current: LexerState } => {
   if (current.index < current.str.length && (current.str[current.index] ?? '') === '.') {
-    // Don't consume `.` if it's part of `..` (range operator) or `...` (spread)
     const nextChar = current.str[current.index + 1] ?? '';
     if (nextChar === '.') { return { hasDecimal: false, num: '', current }; }
     const afterDot = advance(current);

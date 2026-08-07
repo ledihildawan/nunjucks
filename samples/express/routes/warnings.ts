@@ -1,6 +1,6 @@
 import express, { type Router, type Request, type Response, type NextFunction } from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { render } from '@nunjucks/core';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -9,7 +9,7 @@ const VIEWS = path.join(__dirname, '..', 'views');
 
 const router: Router = express.Router();
 
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const html = await render('warnings.njk', {
       pageTitle: 'Warnings Demo',

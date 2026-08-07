@@ -1,19 +1,19 @@
-import { extends_ } from '@nunjucks/nodes';
+import { extendsNode } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/index.ts";
 
-export const parseExtends = (ctx: ParserContext): Node => {
+export const parseExtends = (parserContext: ParserContext): Node => {
   const tagName = 'extends';
-  const tag = peekToken(ctx);
-  if (!skipSymbol(ctx, tagName)) {
-    fail(ctx, `parseExtends: expected ${tagName}`);
+  const tag = peekToken(parserContext);
+  if (!skipSymbol(parserContext, tagName)) {
+    fail(parserContext, `parseExtends: expected ${tagName}`);
   }
 
-  const node = extends_(tag.lineno, tag.colno);
-  node.template = parseExpression(ctx);
+  const node = extendsNode(tag.lineno, tag.colno);
+  node.template = parseExpression(parserContext);
 
-  advanceAfterBlockEnd(ctx, String(tag.value));
+  advanceAfterBlockEnd(parserContext, String(tag.value));
   return node;
 };

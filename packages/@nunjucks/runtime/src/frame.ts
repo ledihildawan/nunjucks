@@ -3,7 +3,7 @@ export interface Frame {
   parent: Frame | undefined;
   topLevel: boolean;
   readonly isolateWrites: boolean | undefined;
-  set: (name: string, val: unknown, resolveUp?: boolean) => void;
+  set: (name: string, value: unknown, resolveUp?: boolean) => void;
   get: (name: string) => unknown;
   lookup: (name: string) => unknown;
   resolve: (name: string, forWrite?: boolean) => Frame | undefined;
@@ -11,14 +11,14 @@ export interface Frame {
   pop: () => Frame | undefined;
 }
 
-const setNestedValue = (target: Record<string, unknown>, path: string[], lastPart: string, val: unknown): void => {
+const setNestedValue = (target: Record<string, unknown>, path: string[], lastPart: string, value: unknown): void => {
   const current = path.reduce<Record<string, unknown>>((acc, id) => {
     if (!acc[id]) {
       acc[id] = {};
     }
     return acc[id] as Record<string, unknown>;
   }, target);
-  current[lastPart] = val;
+  current[lastPart] = value;
 };
 
 export const createFrame = (parent?: Frame | null, isolateWrites?: boolean): Frame => {
@@ -38,26 +38,26 @@ export const createFrame = (parent?: Frame | null, isolateWrites?: boolean): Fra
     get variables(): Record<string, unknown> {
       return state.variables;
     },
-    set variables(val: Record<string, unknown>) {
-      state.variables = val;
+    set variables(value: Record<string, unknown>) {
+      state.variables = value;
     },
     get parent(): Frame | undefined {
       return state.parent;
     },
-    set parent(val: Frame | undefined) {
-      state.parent = val;
+    set parent(value: Frame | undefined) {
+      state.parent = value;
     },
     get topLevel(): boolean {
       return state.topLevel;
     },
-    set topLevel(val: boolean) {
-      state.topLevel = val;
+    set topLevel(value: boolean) {
+      state.topLevel = value;
     },
     get isolateWrites(): boolean | undefined {
       return state.isolateWrites;
     },
 
-    set(name: string, val: unknown, resolveUp?: boolean): void {
+    set(name: string, value: unknown, resolveUp?: boolean): void {
       const parts = name.split('.');
       const [firstPart] = parts;
       const lastPart = parts.at(-1);
@@ -66,26 +66,26 @@ export const createFrame = (parent?: Frame | null, isolateWrites?: boolean): Fra
       if (resolveUp) {
         const resolved = frame.resolve(firstPart, true);
         if (resolved) {
-          resolved.set(name, val);
+          resolved.set(name, value);
           return;
         }
       }
 
-      setNestedValue(state.variables, parts.slice(0, -1), lastPart, val);
+      setNestedValue(state.variables, parts.slice(0, -1), lastPart, value);
     },
 
     get(name: string): unknown {
-      const val = state.variables[name];
-      if (val !== undefined) {
-        return val;
+      const value = state.variables[name];
+      if (value !== undefined) {
+        return value;
       }
       return null;
     },
 
     lookup(name: string): unknown {
-      const val = state.variables[name];
-      if (val !== undefined) {
-        return val;
+      const value = state.variables[name];
+      if (value !== undefined) {
+        return value;
       }
       return state.parent?.lookup(name);
     },
@@ -93,8 +93,8 @@ export const createFrame = (parent?: Frame | null, isolateWrites?: boolean): Fra
     resolve(name: string, forWrite?: boolean): Frame | undefined {
       if (forWrite && state.isolateWrites) { return; }
 
-      const val = state.variables[name];
-      if (val !== undefined) {
+      const value = state.variables[name];
+      if (value !== undefined) {
         return frame;
       }
       return state.parent?.resolve(name);

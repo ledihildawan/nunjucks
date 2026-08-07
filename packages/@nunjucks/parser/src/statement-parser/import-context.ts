@@ -1,17 +1,17 @@
 import { peekToken, skipSymbol, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 
-export const parseWithContext = (ctx: ParserContext): boolean | null => {
-  const tok = peekToken(ctx);
+export const parseWithContext = (parserContext: ParserContext): boolean | null => {
+  const tok = peekToken(parserContext);
 
-  const withContext: boolean | null = skipSymbol(ctx, 'with')
+  const withContext: boolean | null = skipSymbol(parserContext, 'with')
     ? true
-    : skipSymbol(ctx, 'without')
+    : skipSymbol(parserContext, 'without')
       ? false
       : null;
 
-  if (withContext !== null && !skipSymbol(ctx, 'context')) {
-    fail(ctx, 'parseFrom: expected context after with/without',
+  if (withContext !== null && !skipSymbol(parserContext, 'context')) {
+    fail(parserContext, 'parseFrom: expected context after with/without',
       tok.lineno,
       tok.colno);
   }

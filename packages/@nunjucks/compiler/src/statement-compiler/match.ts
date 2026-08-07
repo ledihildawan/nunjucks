@@ -4,15 +4,15 @@ import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 import { compileDestructuring } from './pattern.ts';
 
-export const compileMatch = (ctx: Compiler, node: MatchNode, parentFrame: Frame): void => {
-  const targetVar = ctx.tmpid();
-  const matchedVar = ctx.tmpid();
+export const compileMatch = (compiler: Compiler, node: MatchNode, parentFrame: Frame): void => {
+  const targetVar = compiler.tmpid();
+  const matchedVar = compiler.tmpid();
   const frame = parentFrame.push(true);
-  ctx.emitLine('frame = frame.push(true);');
-  ctx.emitLine(`let ${targetVar} = `);
-  ctx.compileExpression(node.expr, frame);
-  ctx.emitLine(';');
-  ctx.emitLine(`let ${matchedVar} = false;`);
+  compiler.emitLine('frame = frame.push(true);');
+  compiler.emitLine(`let ${targetVar} = `);
+  compiler.compileExpression(node.expr, frame);
+  compiler.emitLine(';');
+  compiler.emitLine(`let ${matchedVar} = false;`);
 
   for (const caseNode of node.cases) {
     const pattern = caseNode.pattern;
@@ -21,46 +21,46 @@ export const compileMatch = (ctx: Compiler, node: MatchNode, parentFrame: Frame)
     if (isLiteral(pattern)) {
       condParts.push(`${targetVar} === ${JSON.stringify(pattern.value)}`);
     } else if (isSymbol(pattern)) {
-      const name = pattern.value as string;
+      const name = pattern.value;
       if (name !== '_') {
-        ctx.emitLine(`frame.set("${name}", ${targetVar});`);
+        compiler.emitLine(`frame.set("${name}", ${targetVar});`);
         frame.set(name, targetVar);
       }
     } else if (isArray(pattern) || isDict(pattern)) {
       condParts.push(`${targetVar} != null`);
-      compileDestructuring({ ctx, frame, registerFrame: true }, pattern, targetVar);
+      compileDestructuring({ ctx: compiler, frame, registerFrame: true }, pattern, targetVar);
     } else {
-      const exprId = ctx.tmpid();
-      ctx.emitLine(`let ${exprId} = `);
-      ctx.compile(pattern, frame);
-      ctx.emitLine(';');
+      const exprId = compiler.tmpid();
+      compiler.emitLine(`let ${exprId} = `);
+      compiler.compile(pattern, frame);
+      compiler.emitLine(';');
       condParts.push(`${targetVar} === ${exprId}`);
     }
 
     if (caseNode.guard) {
-      const guardId = ctx.tmpid();
-      ctx.emitLine(`let ${guardId} = `);
-      ctx.compile(caseNode.guard, frame);
-      ctx.emitLine(';');
+      const guardId = compiler.tmpid();
+      compiler.emitLine(`let ${guardId} = `);
+      compiler.compile(caseNode.guard, frame);
+      compiler.emitLine(';');
       condParts.push(guardId);
     }
 
     const cond = condParts.length > 0 ? condParts.join(' && ') : 'true';
-    ctx.emitLine(`if (!${matchedVar} && (${cond})) {`);
-    ctx.emitLine(`${matchedVar} = true;`);
-    ctx.compile(caseNode.body, frame);
-    ctx.emitLine('}');
+    compiler.emitLine(`if (!${matchedVar} && (${cond})) {`);
+    compiler.emitLine(`${matchedVar} = true;`);
+    compiler.compile(caseNode.body, frame);
+    compiler.emitLine('}');
   }
 
   if (node.default) {
-    ctx.emitLine(`if (!${matchedVar}) {`);
-    ctx.compile(node.default, frame);
-    ctx.emitLine('}');
+    compiler.emitLine(`if (!${matchedVar}) {`);
+    compiler.compile(node.default, frame);
+    compiler.emitLine('}');
   }
 
-  ctx.emitLine('frame = frame.pop();');
+  compiler.emitLine('frame = frame.pop();');
 };
 
-export const compileWhen = (ctx: Compiler, _node: WhenNode, _frame: Frame): void => {
-  ctx.fail('when: WhenNode should be compiled by compileMatch, not dispatched directly', 0, 0);
+export const compileWhen = (compiler: Compiler, _node: WhenNode, _frame: Frame): void => {
+  compiler.fail('when: WhenNode should be compiled by compileMatch, not dispatched directly', 0, 0);
 };

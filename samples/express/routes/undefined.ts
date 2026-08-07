@@ -1,12 +1,11 @@
 import express, { type Router, type Request, type Response } from 'express';
 import { render } from '@nunjucks/core';
 import { formatError } from '@nunjucks/log';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const VIEWS = path.join(__dirname, '..', 'views');
 
 const router: Router = express.Router();
 
@@ -19,7 +18,7 @@ const renderTemplate = async (template: string, context: Record<string, unknown>
   });
 };
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (_req: Request, res: Response) => {
   res.type('html').send(`
 <!DOCTYPE html>
 <html>
@@ -79,19 +78,20 @@ const html = await nunjucks(template, context, { undefined: 'strict' });</pre>
   `);
 });
 
-router.get('/strict', async (req: Request, res: Response) => {
+router.get('/strict', async (_req: Request, res: Response) => {
   const template = '{{ user.name }}';
   const context: Record<string, unknown> = { user: undefined };
 
   try {
     await renderTemplate(template, context, { undefined: 'strict' });
     res.send('Should have thrown error');
-  } catch (e) {
-    res.status(500).type('html').send(formatError(e as any, { format: 'html' }));
+  } catch (e: unknown) {
+    const error = e instanceof Error ? e : new Error(String(e));
+    res.status(500).type('html').send(formatError(error, { format: 'html' }));
   }
 });
 
-router.get('/debug', async (req: Request, res: Response) => {
+router.get('/debug', async (_req: Request, res: Response) => {
   const template = '{{ user.testing }}';
   const context: Record<string, unknown> = { user: undefined };
 
@@ -118,12 +118,13 @@ router.get('/debug', async (req: Request, res: Response) => {
   <p><a href="/undefined">Back to Undefined Types Demo</a></p>
 </body>
 </html>`);
-  } catch (e) {
-    res.status(500).type('html').send(formatError(e as any, { format: 'html' }));
+  } catch (e: unknown) {
+    const error = e instanceof Error ? e : new Error(String(e));
+    res.status(500).type('html').send(formatError(error, { format: 'html' }));
   }
 });
 
-router.get('/chainable', async (req: Request, res: Response) => {
+router.get('/chainable', async (_req: Request, res: Response) => {
   const template = '{{ user.name }}';
   const context: Record<string, unknown> = { user: undefined };
 
@@ -159,27 +160,29 @@ router.get('/chainable', async (req: Request, res: Response) => {
   `);
 });
 
-router.get('/strict-nested', async (req: Request, res: Response) => {
+router.get('/strict-nested', async (_req: Request, res: Response) => {
   const template = '{{ user.profile.name }}';
   const context: Record<string, unknown> = { user: undefined };
 
   try {
     await renderTemplate(template, context, { undefined: 'strict' });
     res.send('Should have thrown error');
-  } catch (e) {
-    res.status(500).type('html').send(formatError(e as any, { format: 'html' }));
+  } catch (e: unknown) {
+    const error = e instanceof Error ? e : new Error(String(e));
+    res.status(500).type('html').send(formatError(error, { format: 'html' }));
   }
 });
 
-router.get('/strict-array', async (req: Request, res: Response) => {
+router.get('/strict-array', async (_req: Request, res: Response) => {
   const template = '{{ items }}';
   const context: Record<string, unknown> = { items: undefined };
 
   try {
     await renderTemplate(template, context, { undefined: 'strict' });
     res.send('Should have thrown error');
-  } catch (e) {
-    res.status(500).type('html').send(formatError(e as any, { format: 'html' }));
+  } catch (e: unknown) {
+    const error = e instanceof Error ? e : new Error(String(e));
+    res.status(500).type('html').send(formatError(error, { format: 'html' }));
   }
 });
 

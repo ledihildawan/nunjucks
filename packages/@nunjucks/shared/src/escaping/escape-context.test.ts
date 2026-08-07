@@ -11,8 +11,6 @@ describe('escapeForContext', () => {
   });
 
   test('script context escapes < > and quotes (per-char)', () => {
-    // escapeWith is per-character, so < and > become \u003c/\u003e and the </
-    // break-out is neutralised via the < escape.
     expect(escapeForContext('</script>', 'script')).toBe('\\u003c/script\\u003e');
     expect(escapeForContext('a"b\'c', 'script')).toBe('a\\"b\\\'c');
   });
@@ -52,8 +50,6 @@ describe('createHtmlContextTracker', () => {
   });
 
   test('detects attribute context for a bare attribute name following a quoted value', () => {
-    // The heuristic recognises an attribute context once a complete quoted
-    // value precedes the cursor inside an open tag.
     const src = '<a href="x" V>';
     const tracker = createHtmlContextTracker(src);
     expect(tracker.getContextAt(src.indexOf('V'))).toBe('attribute');

@@ -1,7 +1,7 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { makeComponent } from '@nunjucks/runtime';
 import { makeFilterError, isArray, requireArrayError, assertItemsHaveAttr } from '../factory/index.ts';
-import { getAttrGetter } from '../attributes.ts';
+import { getAttrGetter } from './attributes.ts';
 
 export const groupby = makeComponent(
   ['arr', 'attr'],

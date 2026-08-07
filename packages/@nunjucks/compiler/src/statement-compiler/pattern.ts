@@ -4,15 +4,9 @@ import type { Frame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
 
-/**
- * What stays fixed for the whole of one destructuring compilation. Only the
- * pattern node and its source expression change as the recursion descends,
- * so these three travel together instead of being re-threaded at every call.
- */
 interface DestructuringContext {
   ctx: Compiler;
   frame: Frame;
-  /** False when compiling a component signature, where frame slots already exist. */
   registerFrame: boolean;
 }
 
@@ -34,44 +28,34 @@ const arraySlice = (source: string, start: number): string =>
 const objectRest = (source: string, restId: string): string =>
   `(() => { const ${restId} = {}; if (${source} != null && typeof ${source} === 'object') { for (const __k in ${source}) { ${restId}[__k] = ${source}[__k]; } } return ${restId}; })()`;
 
-const compileAssignToFrame = ({ ctx, frame, registerFrame }: DestructuringContext, name: string, source: string): void => {
-  const existingId = registerFrame ? (frame.lookup(name) as string) : null;
-  ctx.emitLine(`frame.set(${JSON.stringify(name)}, ${source}, true);`);
+const compileAssignToFrame = ({ ctx: compiler, frame, registerFrame }: DestructuringContext, name: string, source: string): void => {
+  const existingId = registerFrame ? frame.lookup(name) : null;
+  compiler.emitLine(`frame.set(${JSON.stringify(name)}, ${source}, true);`);
   if (name.charAt(0) !== '_') {
-    ctx.emitLine('if(frame.topLevel) {');
-    ctx.emitLine(`context.addExport(${JSON.stringify(name)});`);
-    ctx.emitLine('}');
+    compiler.emitLine('if(frame.topLevel) {');
+    compiler.emitLine(`context.addExport(${JSON.stringify(name)});`);
+    compiler.emitLine('}');
   }
   if (!registerFrame) {
     return;
   }
   if (existingId !== null && existingId !== undefined) {
-    ctx.emitLine(`let ${existingId} = ${source};`);
+    compiler.emitLine(`let ${existingId} = ${source};`);
   } else {
-    const id = ctx.tmpid();
+    const id = compiler.tmpid();
     frame.set(name, id);
-    ctx.emitLine(`let ${id} = ${source};`);
+    compiler.emitLine(`let ${id} = ${source};`);
   }
 };
 
-/**
- * Emit `let __dflt_n = (source) === undefined ? (<expr>) : source;` and return
- * the temporary's name. The same four lines appeared at every site that has to
- * honour a destructuring default.
- */
-const emitDefaultBinding = ({ ctx, frame }: DestructuringContext, source: string, defaultExpr: Node): string => {
-  const defaultId = ctx.tmpid();
-  ctx.emitLine(`let ${defaultId} = (${source}) === undefined ? (`);
-  ctx.compileExpression(defaultExpr, frame);
-  ctx.emitLine(`) : ${source};`);
+const emitDefaultBinding = ({ ctx: compiler, frame }: DestructuringContext, source: string, defaultExpr: Node): string => {
+  const defaultId = compiler.tmpid();
+  compiler.emitLine(`let ${defaultId} = (${source}) === undefined ? (`);
+  compiler.compileExpression(defaultExpr, frame);
+  compiler.emitLine(`) : ${source};`);
   return defaultId;
 };
 
-/**
- * A dict or array literal in target position means the same thing as the
- * corresponding pattern node. Returns null when the literal has no children,
- * which the callers treat as "nothing to bind".
- */
 const asObjectPattern = (node: Node): Node | null => {
   if (isObjectPattern(node)) { return node; }
   const { children } = node;
@@ -206,15 +190,9 @@ const handlePairProperty = (
   child: PairNode,
   propSource: string
 ): void => {
-  if (handlePairAssignmentWithDefault(dc, child, propSource)) {
-    return;
-  }
-  if (handlePairArrayOrObjectPattern(dc, child, propSource)) {
-    return;
-  }
-  if (handlePairSymbolAlias(dc, child, propSource)) {
-    return;
-  }
+  handlePairAssignmentWithDefault(dc, child, propSource) ||
+    handlePairArrayOrObjectPattern(dc, child, propSource) ||
+    handlePairSymbolAlias(dc, child, propSource);
 };
 
 const processObjectPatternChild = (
@@ -236,7 +214,7 @@ const processObjectPatternChild = (
     return;
   }
   if (isPair(child) && isSymbol(child.key)) {
-    const propKey = child.key.value as string;
+    const propKey = child.key.value;
     const propSource = safeMemberLookup(source, propKey);
     handlePairProperty(dc, child, propSource);
   }
@@ -252,7 +230,7 @@ const compileObjectPattern = (dc: DestructuringContext, pattern: Node, source: s
 
 const compileDestructuring = (dc: DestructuringContext, pattern: Node, source: string): void => {
   if (isSymbol(pattern)) {
-    compileAssignToFrame(dc, pattern.value as string, source);
+    compileAssignToFrame(dc, pattern.value, source);
     return;
   }
   if (isArrayPattern(pattern)) {

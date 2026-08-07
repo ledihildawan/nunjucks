@@ -3,11 +3,11 @@ import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../../index.ts';
 
 export const compileTemplateData = (
-  ctx: Compiler,
+  compiler: Compiler,
   node: Node,
   _frame: Frame
 ): void => {
-  ctx.emit(`${ctx.buffer} += `);
-  ctx.emit(JSON.stringify(node.value));
-  ctx.emit(';');
+  compiler.emit(`${compiler.buffer} += `);
+  compiler.emit(JSON.stringify(node.value));
+  compiler.emit(';');
 };

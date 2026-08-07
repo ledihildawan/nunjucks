@@ -9,11 +9,11 @@ import {
 import {
   compare,
   compareOperand,
-  in_,
-  is,
+  inNode,
+  isOp,
   not,
-  test,
-  testCall,
+  testNode,
+  testCallNode,
   bitwiseOr,
   bitwiseAnd,
   bitwiseXor,
@@ -24,25 +24,25 @@ import type { Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, pushToken, skipSymbol } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
 import { parseSignature } from '../node-parser/signature.ts';
-import type { BinNodeFn } from './internal.ts';
+import type { BinNodeFn } from './binary-helpers.ts';
 import { parseConcat } from './arithmetic.ts';
 
 const COMPARE_OPS = ['==', '===', '!=', '!==', '<', '>', '<=', '>='];
 
-const parseCompare = (ctx: ParserContext): Node => {
-  const expr = parseConcat(ctx);
+const parseCompare = (parserContext: ParserContext): Node => {
+  const expr = parseConcat(parserContext);
   const ops: Node[] = [];
 
   for (;;) {
-    const tok = nextToken(ctx);
+    const tok = nextToken(parserContext);
 
     if (!tok) {
       break;
     }
     if (COMPARE_OPS.includes(String(tok.value))) {
-      ops.push(compareOperand(tok.lineno, tok.colno, parseConcat(ctx), String(tok.value)));
+      ops.push(compareOperand(tok.lineno, tok.colno, parseConcat(parserContext), String(tok.value)));
     } else {
-      pushToken(ctx, tok);
+      pushToken(parserContext, tok);
       break;
     }
   }
@@ -67,44 +67,44 @@ const detectTestName = (testTok: Token): string | null => {
   return null;
 };
 
-const parseTestArgs = (ctx: ParserContext): readonly Node[] => {
-  if (peekToken(ctx).type !== TOKEN_LEFT_PAREN) {
+const parseTestArgs = (parserContext: ParserContext): readonly Node[] => {
+  if (peekToken(parserContext).type !== TOKEN_LEFT_PAREN) {
     return [];
   }
-  const sig = parseSignature(ctx);
+  const sig = parseSignature(parserContext);
   if (sig && 'children' in sig) {
     return (sig as { children: readonly Node[] }).children;
   }
   return [];
 };
 
-const parseIs = (ctx: ParserContext): Node => {
-  const initialNode = parseCompare(ctx);
-  const tok = peekToken(ctx);
-  if (!skipSymbol(ctx, 'is')) {
+const parseIs = (parserContext: ParserContext): Node => {
+  const initialNode = parseCompare(parserContext);
+  const tok = peekToken(parserContext);
+  if (!skipSymbol(parserContext, 'is')) {
     return initialNode;
   }
-  const negate = skipSymbol(ctx, 'not');
+  const negate = skipSymbol(parserContext, 'not');
 
-  const testTok = peekToken(ctx);
+  const testTok = peekToken(parserContext);
   const testName = detectTestName(testTok);
 
   if (testName) {
-    nextToken(ctx);
-    const testArgs = parseTestArgs(ctx);
+    nextToken(parserContext);
+    const testArgs = parseTestArgs(parserContext);
     const lineno = tok.lineno;
     const colno = tok.colno;
 
-    const testNode = testArgs.length > 0
-      ? testCall(lineno, colno, { target: initialNode, name: testName, args: testArgs })
-      : test(lineno, colno, initialNode, testName);
+    const builtTest = testArgs.length > 0
+      ? testCallNode(lineno, colno, { target: initialNode, name: testName, args: testArgs })
+      : testNode(lineno, colno, initialNode, testName);
 
-    return negate ? not(tok.lineno, tok.colno, testNode) : testNode;
+    return negate ? not(tok.lineno, tok.colno, builtTest) : builtTest;
   }
 
-  const node2 = parseCompare(ctx);
-  const isNode = is(tok.lineno, tok.colno, initialNode, node2);
-  return negate ? not(tok.lineno, tok.colno, isNode) : isNode;
+  const node2 = parseCompare(parserContext);
+  const builtIs = isOp(tok.lineno, tok.colno, initialNode, node2);
+  return negate ? not(tok.lineno, tok.colno, builtIs) : builtIs;
 };
 
 const bitwiseNodeMap: Record<string, BinNodeFn> = {
@@ -115,9 +115,9 @@ const bitwiseNodeMap: Record<string, BinNodeFn> = {
   '>>': bitwiseRShift
 };
 
-const parseBitwiseOr = (ctx: ParserContext): Node => {
-  const initialNode = parseIs(ctx);
-  const tok = nextToken(ctx);
+const parseBitwiseOr = (parserContext: ParserContext): Node => {
+  const initialNode = parseIs(parserContext);
+  const tok = nextToken(parserContext);
 
   if (!tok) {
     return initialNode;
@@ -125,11 +125,11 @@ const parseBitwiseOr = (ctx: ParserContext): Node => {
 
   const createNode = bitwiseNodeMap[String(tok.value)];
   if (!createNode) {
-    pushToken(ctx, tok);
+    pushToken(parserContext, tok);
     return initialNode;
   }
 
-  const right = parseIs(ctx);
+  const right = parseIs(parserContext);
   return createNode(tok.lineno, tok.colno, initialNode, right);
 };
 
@@ -139,38 +139,38 @@ const isInToken = (tok: Token): boolean =>
 const isNotInversion = (tok: Token): boolean =>
   tok?.type === TOKEN_SYMBOL && tok?.value === 'not';
 
-const handleInExpression = (ctx: ParserContext, node: Node, invert: boolean, inTok: Token): Node => {
-  const node2 = parseIs(ctx);
-  const newNode = in_(inTok.lineno, inTok.colno, node, node2);
+const handleInExpression = (parserContext: ParserContext, node: Node, invert: boolean, inTok: Token): Node => {
+  const node2 = parseIs(parserContext);
+  const newNode = inNode(inTok.lineno, inTok.colno, node, node2);
   return invert ? not(inTok.lineno, inTok.colno, newNode) : newNode;
 };
 
-const processInToken = (ctx: ParserContext, node: Node, invert: boolean, inTok: Token): Node | null => {
+const processInToken = (parserContext: ParserContext, node: Node, invert: boolean, inTok: Token): Node | null => {
   if (isInToken(inTok)) {
-    return parseInLoop(ctx, handleInExpression(ctx, node, invert, inTok));
+    return parseInLoop(parserContext, handleInExpression(parserContext, node, invert, inTok));
   }
-  if (inTok) { pushToken(ctx, inTok); }
+  if (inTok) { pushToken(parserContext, inTok); }
   return null;
 };
 
-const parseInLoop = (ctx: ParserContext, node: Node): Node => {
-  const tok = nextToken(ctx);
+const parseInLoop = (parserContext: ParserContext, node: Node): Node => {
+  const tok = nextToken(parserContext);
   if (!tok) { return node; }
 
   const invert = isNotInversion(tok);
   if (!invert && !isInToken(tok)) {
-    pushToken(ctx, tok);
+    pushToken(parserContext, tok);
     return node;
   }
 
-  const inTok = invert ? nextToken(ctx) : tok;
-  const result = processInToken(ctx, node, invert, inTok);
+  const inTok = invert ? nextToken(parserContext) : tok;
+  const result = processInToken(parserContext, node, invert, inTok);
   return result ?? node;
 };
 
-const parseIn = (ctx: ParserContext): Node => {
-  const node = parseBitwiseOr(ctx);
-  return parseInLoop(ctx, node);
+const parseIn = (parserContext: ParserContext): Node => {
+  const node = parseBitwiseOr(parserContext);
+  return parseInLoop(parserContext, node);
 };
 
 export { parseIn };

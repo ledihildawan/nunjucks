@@ -10,5 +10,5 @@ export type FilterContext = {
 
 export type StringFn = (s: string) => string;
 
-export const isArray = (val: unknown): val is unknown[] =>
-  Array.isArray(val);
+export const isArray = (value: unknown): value is unknown[] =>
+  Array.isArray(value);

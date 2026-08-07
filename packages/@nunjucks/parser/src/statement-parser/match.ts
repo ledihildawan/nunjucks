@@ -7,49 +7,49 @@ import { parseExpression, parsePrimary } from "../expression-parser/index.ts";
 import { tryParsePattern } from "../node-parser/pattern.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
 
-export const parseMatch = (ctx: ParserContext): Node => {
-  const tag = peekToken(ctx);
-  if (!skipSymbol(ctx, 'match')) {
-    fail(ctx, 'Expected match', tag.lineno, tag.colno);
+export const parseMatch = (parserContext: ParserContext): Node => {
+  const tag = peekToken(parserContext);
+  if (!skipSymbol(parserContext, 'match')) {
+    fail(parserContext, 'Expected match', tag.lineno, tag.colno);
   }
 
-  const expr = parseExpression(ctx);
-  advanceAfterBlockEnd(ctx, 'match');
+  const expr = parseExpression(parserContext);
+  advanceAfterBlockEnd(parserContext, 'match');
 
-  parseUntilBlocks(ctx, 'when', 'endmatch');
+  parseUntilBlocks(parserContext, 'when', 'endmatch');
 
   const cases: WhenNode[] = [];
   let defaultCase: Node | null = null;
 
-  let tok = peekToken(ctx);
+  let tok = peekToken(parserContext);
   while (tok.type === TOKEN_SYMBOL && tok.value === 'when') {
-    skipSymbol(ctx, 'when');
-    const whenTok = peekToken(ctx);
+    skipSymbol(parserContext, 'when');
+    const whenTok = peekToken(parserContext);
 
     if (whenTok.type === TOKEN_SYMBOL && whenTok.value === '_') {
-      skipSymbol(ctx, '_');
-      advanceAfterBlockEnd(ctx, 'when');
-      defaultCase = parseUntilBlocks(ctx, 'endmatch');
+      skipSymbol(parserContext, '_');
+      advanceAfterBlockEnd(parserContext, 'when');
+      defaultCase = parseUntilBlocks(parserContext, 'endmatch');
       break;
     }
 
-    const patternNode = tryParsePattern(ctx);
-    const pattern = patternNode ?? parsePrimary(ctx);
+    const patternNode = tryParsePattern(parserContext);
+    const pattern = patternNode ?? parsePrimary(parserContext);
 
-    const afterPattern = peekToken(ctx);
+    const afterPattern = peekToken(parserContext);
     const guard = (afterPattern.type === TOKEN_SYMBOL && afterPattern.value === 'if')
-      ? ((): Node => { skipSymbol(ctx, 'if'); return parseExpression(ctx); })()
+      ? ((): Node => { skipSymbol(parserContext, 'if'); return parseExpression(parserContext); })()
       : null;
 
-    advanceAfterBlockEnd(ctx, 'when');
-    const body = parseUntilBlocks(ctx, 'when', 'endmatch');
+    advanceAfterBlockEnd(parserContext, 'when');
+    const body = parseUntilBlocks(parserContext, 'when', 'endmatch');
 
     cases.push(when(tag.lineno, tag.colno, pattern, body, guard));
-    tok = peekToken(ctx);
+    tok = peekToken(parserContext);
   }
 
-  skipSymbol(ctx, 'endmatch');
-  advanceAfterBlockEnd(ctx, 'endmatch');
+  skipSymbol(parserContext, 'endmatch');
+  advanceAfterBlockEnd(parserContext, 'endmatch');
 
   return match(tag.lineno, tag.colno, { expr, cases, default: defaultCase });
 };

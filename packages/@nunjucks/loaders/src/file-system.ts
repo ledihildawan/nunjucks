@@ -35,7 +35,7 @@ const hasErrorCode = (err: unknown): err is { code: string } =>
   err !== null && typeof err === 'object' && 'code' in err;
 
 const isFileNotFoundError = (err: unknown): boolean =>
-  hasErrorCode(err) && (err as { code: string }).code === 'ENOENT';
+  hasErrorCode(err) && err.code === 'ENOENT';
 
 const throwBasePathNotFoundError = (basePath: string, baseErr: unknown): never => {
   const message = isFileNotFoundError(baseErr)
@@ -172,10 +172,10 @@ const setupLoaderWatch = (loader: FileSystemLoader) => {
   };
 };
 
-export const createFileSystemLoader = (searchPaths: string | string[] | undefined, opts: FileSystemLoaderOptions = {}): FileSystemLoader => {
+export const createFileSystemLoader = (searchPaths: string | string[] | undefined, options: FileSystemLoaderOptions = {}): FileSystemLoader => {
   const loader = createLoader() as FileSystemLoader;
   loader.pathsToNames = {};
-  loader.watchEnabled = Boolean(opts.watch);
+  loader.watchEnabled = Boolean(options.watch);
   loader.async = true;
   loader.watchedFiles = new Map();
   loader.searchPaths = normalizeSearchPaths(searchPaths);

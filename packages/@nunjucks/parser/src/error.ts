@@ -37,9 +37,9 @@ const inferFix = (msg: string): string => {
 
 export const EXPECTED_COLON_AFTER_DICT_KEY = 'EXPECTED_COLON_AFTER_DICT_KEY';
 
-export const error = (ctx: ParserContext, msg: string, lineno?: number, colno?: number, sentinel?: string) => {
+export const error = (parserContext: ParserContext, msg: string, lineno?: number, colno?: number, sentinel?: string) => {
   const needsResolve = lineno === undefined || colno === undefined;
-  const peeked = needsResolve ? peekToken(ctx) : undefined;
+  const peeked = needsResolve ? peekToken(parserContext) : undefined;
   const resolvedLineno = needsResolve ? (peeked?.lineno ?? 0) : lineno;
   const resolvedColno = needsResolve ? (peeked?.colno ?? 0) : colno;
   const err = createLog('error', {
@@ -49,16 +49,15 @@ export const error = (ctx: ParserContext, msg: string, lineno?: number, colno?: 
     causes: inferCauses(msg),
     fixCode: inferFix(msg),
     fixComment: 'See the causes above for guidance',
-    suggestion: 'Use the syntax highlighting in your IDE to spot issues quickly'
-  } as Parameters<typeof createLog>[1], {}, null, { lineno: resolvedLineno, colno: resolvedColno, phase: 'parse', lineBase: 'zero' });
+  }, {}, null, { lineno: resolvedLineno, colno: resolvedColno, phase: 'parse', lineBase: 'zero' });
   if (sentinel) {
     Object.assign(err, { sentinel });
   }
   return err;
 };
 
-export const fail = (ctx: ParserContext, msg: string, lineno?: number, colno?: number, sentinel?: string): never => {
-  throw error(ctx, msg, lineno, colno, sentinel);
+export const fail = (parserContext: ParserContext, msg: string, lineno?: number, colno?: number, sentinel?: string): never => {
+  throw error(parserContext, msg, lineno, colno, sentinel);
 };
 
 export const errorAt = (

@@ -1,5 +1,5 @@
 import picocolors from 'picocolors';
-import type { SourceTraceLine, SourceTraceCaret } from '../internal/source-trace.ts';
+import type { SourceTraceLine, SourceTraceCaret } from '../internal/location/source-trace.ts';
 
 export { formatSourceTrace, formatCodeLine, getLinePrefix, formatCaretLine, getMarker, getLineNumWidth };
 

@@ -6,12 +6,6 @@ interface EngineConfig {
   root?: string;
 }
 
-/**
- * Loader cache keyed by views path. Module-level state is acceptable here
- * because the cache is keyed (not a single mutable slot): two concurrent
- * renders with different `views` paths no longer clobber each other, and
- * loaders are immutable once created for a given path.
- */
 const loaderCache = new Map<string, FileSystemLoader>();
 
 const getLoader = (config: EngineConfig): FileSystemLoader | null => {

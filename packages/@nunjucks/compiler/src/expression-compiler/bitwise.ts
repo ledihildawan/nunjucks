@@ -2,25 +2,25 @@ import type { BinaryNode } from '@nunjucks/nodes';
 import type { UnaryNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
-import { emitLocationGuard } from '../compiler-helpers.ts';
+import { emitLocationGuard } from '../codegen.ts';
 
-const compileBinaryBitwise = (ctx: Compiler, node: BinaryNode, frame: Frame, operator: string): void => {
-  emitLocationGuard(ctx, node.lineno, node.colno);
-  ctx.compile(node.left, frame);
-  ctx.emit(` ${operator} `);
-  ctx.compile(node.right, frame);
-  ctx.emit(')');
+const compileBinaryBitwise = (compiler: Compiler, node: BinaryNode, frame: Frame, operator: string): void => {
+  emitLocationGuard(compiler, node.lineno, node.colno);
+  compiler.compile(node.left, frame);
+  compiler.emit(` ${operator} `);
+  compiler.compile(node.right, frame);
+  compiler.emit(')');
 };
 
-export const compileBitwiseOr = (ctx: Compiler, node: BinaryNode, frame: Frame): void => compileBinaryBitwise(ctx, node, frame, '|');
-export const compileBitwiseAnd = (ctx: Compiler, node: BinaryNode, frame: Frame): void => compileBinaryBitwise(ctx, node, frame, '&');
-export const compileBitwiseXor = (ctx: Compiler, node: BinaryNode, frame: Frame): void => compileBinaryBitwise(ctx, node, frame, '^');
-export const compileBitwiseLShift = (ctx: Compiler, node: BinaryNode, frame: Frame): void => compileBinaryBitwise(ctx, node, frame, '<<');
-export const compileBitwiseRShift = (ctx: Compiler, node: BinaryNode, frame: Frame): void => compileBinaryBitwise(ctx, node, frame, '>>');
+export const compileBitwiseOr = (compiler: Compiler, node: BinaryNode, frame: Frame): void => compileBinaryBitwise(compiler, node, frame, '|');
+export const compileBitwiseAnd = (compiler: Compiler, node: BinaryNode, frame: Frame): void => compileBinaryBitwise(compiler, node, frame, '&');
+export const compileBitwiseXor = (compiler: Compiler, node: BinaryNode, frame: Frame): void => compileBinaryBitwise(compiler, node, frame, '^');
+export const compileBitwiseLShift = (compiler: Compiler, node: BinaryNode, frame: Frame): void => compileBinaryBitwise(compiler, node, frame, '<<');
+export const compileBitwiseRShift = (compiler: Compiler, node: BinaryNode, frame: Frame): void => compileBinaryBitwise(compiler, node, frame, '>>');
 
-export const compileBitwiseNot = (ctx: Compiler, node: UnaryNode, frame: Frame): void => {
-  emitLocationGuard(ctx, node.lineno, node.colno);
-  ctx.emit('~');
-  ctx.compile(node.target, frame);
-  ctx.emit(')');
+export const compileBitwiseNot = (compiler: Compiler, node: UnaryNode, frame: Frame): void => {
+  emitLocationGuard(compiler, node.lineno, node.colno);
+  compiler.emit('~');
+  compiler.compile(node.target, frame);
+  compiler.emit(')');
 };

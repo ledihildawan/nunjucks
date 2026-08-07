@@ -1,5 +1,3 @@
-// Extends the String object type (not the `string` primitive): a SafeString is
-// an object built on String.prototype, so String's generic methods apply to it.
 // biome-ignore lint/complexity/noBannedTypes: String is the object type here, and `string` is not a legal interface parent.
 export interface SafeString extends String {
   val: string;
@@ -7,20 +5,20 @@ export interface SafeString extends String {
   toString: () => string;
 }
 
-export const createSafeString = <T>(val: T): T extends string ? SafeString : T => {
-  if (typeof val !== 'string') {
-    return val as T extends string ? SafeString : T;
+export const createSafeString = <T>(value: T): T extends string ? SafeString : T => {
+  if (typeof value !== 'string') {
+    return value as T extends string ? SafeString : T;
   }
   return Object.create(String.prototype, {
-    val: { value: val },
-    length: { value: val.length },
-    valueOf: { value: () => val },
-    toString: { value: () => val },
+    val: { value: value },
+    length: { value: value.length },
+    valueOf: { value: () => value },
+    toString: { value: () => value },
   }) as T extends string ? SafeString : T;
 };
 
-export const isSafeString = (val: unknown): val is SafeString => {
-  return Boolean(val) && (val as { val?: unknown }).val !== undefined;
+export const isSafeString = (value: unknown): value is SafeString => {
+  return Boolean(value) && (value as { val?: unknown }).val !== undefined;
 };
 
 export const copySafeness = <T extends { toString: () => string }>(dest: unknown, target: T): SafeString | string => {
@@ -30,21 +28,21 @@ export const copySafeness = <T extends { toString: () => string }>(dest: unknown
   return target.toString();
 };
 
-export const markSafe = <T>(val: T): T extends string ? SafeString : T => {
-  const type = typeof val;
+export const markSafe = <T>(value: T): T extends string ? SafeString : T => {
+  const type = typeof value;
 
   if (type === 'string') {
-    return createSafeString(val);
+    return createSafeString(value);
   }
   if (type === 'function') {
-    const fn = val as (...args: unknown[]) => unknown;
+    const fn = value as (...args: unknown[]) => unknown;
     return function wrapSafe(this: unknown, ...args: unknown[]): unknown {
-      const ret = fn.apply(this, args);
-      if (typeof ret === 'string') {
-        return createSafeString(ret);
+      const returnValue = fn.apply(this, args);
+      if (typeof returnValue === 'string') {
+        return createSafeString(returnValue);
       }
-      return ret;
+      return returnValue;
     } as T extends string ? SafeString : T;
   }
-  return val as T extends string ? SafeString : T;
+  return value as T extends string ? SafeString : T;
 };

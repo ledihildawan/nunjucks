@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { transform } from './index.ts';
-import { root, block, super_, output, templateData, literal } from '@nunjucks/nodes';
+import { root, block, superNode, output, templateData, literal } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 
 describe('transform (liftSuper)', () => {
@@ -17,7 +17,7 @@ describe('transform (liftSuper)', () => {
     const ast = root(0, 0, [
       block(0, 0, 'content',
         output(0, 0, [
-          super_(0, 0, 'content', literal(0, 0, 'super')),
+          superNode(0, 0, 'content', literal(0, 0, 'super')),
         ]),
       ),
     ]) as Node & { children: Node[] };

@@ -1,5 +1,5 @@
 import { makeComponent } from '@nunjucks/runtime';
-import { normalize, preserveSafe } from './core.ts';
+import { normalize, preserveSafe } from './helpers.ts';
 import type { StringFn, } from './types.ts';
 
 const createStringFilter = (fn: StringFn) =>
@@ -12,6 +12,6 @@ const createMacroFilter = <T extends unknown[]>(
   argNames: string[],
   fn: (...args: T) => unknown
 ) =>
-  makeComponent(argNames, [], fn as (...args: T) => unknown);
+  makeComponent(argNames, [], fn);
 
 export { createStringFilter, createMacroFilter };

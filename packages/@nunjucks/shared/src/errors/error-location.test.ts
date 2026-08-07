@@ -81,16 +81,6 @@ describe('resolveLocation', () => {
 
   describe('template-in-caller matching', () => {
     test('finds template in caller file and remaps col from template-relative to caller-relative', async () => {
-      const _fakeCallerContent = [
-        '// some header',
-        'const x = 1;',
-        'function helper() {}',
-        'async function callerCode() {',
-        '  const html = await render(\'{{ user.name }}\', { user: { name: \'ada\' } });',
-        '  return html;',
-        '}'
-      ].join('\n');
-
       const result = await resolveLocation({
         template: '{{ user.name }}',
         _callerFile: '/virtual/path',
@@ -99,8 +89,6 @@ describe('resolveLocation', () => {
         errColno: 10
       });
 
-      // Manual: extractCallerPosition needs the file content but we can't
-      // easily mock fs. Instead, verify the high-level shape.
       expect(result.preferCallerLocation).toBe(true);
       expect(result.lineBase).toBe('one');
       expect(result.lineno).toBe(4);
@@ -135,9 +123,6 @@ describe('resolveLocation', () => {
         errLineno: 0,
         errColno: 3
       });
-      // jsCaller is non-null but jsCallerErrorLine is null, so explicit caller fails.
-      // auto-caller requires jsCaller === null, which is not the case.
-      // Result: fall through to template coords.
       expect(result.preferCallerLocation).toBe(false);
       expect(result.lineBase).toBe('zero');
       expect(result.lineno).toBe(0);

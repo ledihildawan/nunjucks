@@ -1,12 +1,10 @@
 import express, { type Router, type Request, type Response } from 'express';
 import { render } from '@nunjucks/core';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const VIEWS = path.join(__dirname, '..', 'views');
-
 const renderTemplate = async (template: string, context: Record<string, unknown>, config: Record<string, unknown> = {}): Promise<string> => {
   return await render(template, context, {
     autoescape: true,
@@ -34,7 +32,7 @@ interface TestResult {
   passed?: boolean;
 }
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (_req: Request, res: Response) => {
   res.type('html').send(`
 <!DOCTYPE html>
 <html>
@@ -126,7 +124,7 @@ const html2 = await nunjucks(template, context, {
   `);
 });
 
-router.get('/test', async (req: Request, res: Response) => {
+router.get('/test', async (_req: Request, res: Response) => {
   const context: Record<string, unknown> = {
     user: {
       name: 'John',
@@ -194,7 +192,7 @@ router.get('/test', async (req: Request, res: Response) => {
   `);
 });
 
-router.get('/normal', async (req: Request, res: Response) => {
+router.get('/normal', async (_req: Request, res: Response) => {
   const context: Record<string, unknown> = {
     user: {
       name: 'John',
@@ -261,7 +259,7 @@ router.get('/normal', async (req: Request, res: Response) => {
   `);
 });
 
-router.get('/allowlist', async (req: Request, res: Response) => {
+router.get('/allowlist', async (_req: Request, res: Response) => {
   const context: Record<string, unknown> = {
     user: { name: 'John', password: 'secret123', admin: true, data: { secret: 'API_KEY' } }
   };
@@ -338,20 +336,16 @@ router.get('/allowlist', async (req: Request, res: Response) => {
   <p>In blocklist mode (default), dangerous keys are blocked but everything else is allowed.<br/>
   In allowlist mode, only explicitly whitelisted keys are allowed.</p>
 
-  <pre>// Blocklist mode (default)
+  <pre>
 { sandbox: true }
-// Allows: user.name, user.password, user.anything
 
-// Allowlist mode
 { sandbox: true, sandboxAllowlist: ['user', 'name'], sandboxMode: 'allowlist' }
-// Allows ONLY: user.name
-// Blocks: user.password, user.anything</pre>
 </body>
 </html>
   `);
 });
 
-router.get('/code-execution', async (req: Request, res: Response) => {
+router.get('/code-execution', async (_req: Request, res: Response) => {
   const context: Record<string, unknown> = {
     user: {
       setTimeout: () => 'setTimeout',

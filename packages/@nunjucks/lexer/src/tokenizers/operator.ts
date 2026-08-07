@@ -4,7 +4,6 @@ import { getChar, getPeek, advance } from '../state.ts';
 import { createToken } from '../tokens.ts';
 import type { TokenType } from '../token-types.ts';
 
-/** Longest operator the lexer recognises, e.g. `**=` or `//=`. */
 const MAX_OPERATOR_CHARS = 3;
 
 const TOKEN_TYPES: Record<string, TokenType> = {

@@ -19,7 +19,6 @@ import {
   group,
   increment,
   inlineIf,
-  is,
   literal,
   lookupVal,
   mod,
@@ -36,8 +35,6 @@ import {
   slice,
   sub,
   symbol,
-  test,
-  testCall,
 } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
@@ -47,27 +44,27 @@ import type { Compiler, NodeTypeMatcher } from './index.ts';
 
 const EXPRESSION_TYPES: NodeTypeMatcher[] = [
   literal, symbol, group, array, dict, funCall, pipeNode, lookupVal,
-  compare, inlineIf, 'in', is, and, or, not, add, concat, 'range', sub, mul, div,
+  compare, inlineIf, 'in', 'is', and, or, not, add, concat, 'range', sub, mul, div,
   floorDiv, mod, pow, neg, pos, optionalChain, nullishCoalesce, nodeList,
   slice, bitwiseOr, bitwiseAnd, bitwiseXor, bitwiseLShift, bitwiseRShift,
-  bitwiseNot, increment, decrement, test, testCall,
+  bitwiseNot, increment, decrement, 'test', 'testCall',
 ];
 
 export const compileChildren = (
-  ctx: Pick<Compiler, 'compile'>,
+  compiler: Pick<Compiler, 'compile'>,
   node: Node,
   frame: Frame
 ): void => {
-  forEach(node.children ?? [], child => ctx.compile(child, frame));
+  forEach(node.children ?? [], child => compiler.compile(child, frame));
 };
 
 export const compileExpression = (
-  ctx: Pick<Compiler, 'assertType' | 'compile'>,
+  compiler: Pick<Compiler, 'assertType' | 'compile'>,
   node: Node,
   frame: Frame
 ): void => {
-  ctx.assertType(node, ...EXPRESSION_TYPES);
-  ctx.compile(node, frame);
+  compiler.assertType(node, ...EXPRESSION_TYPES);
+  compiler.compile(node, frame);
 };
 
 export const assertType = (

@@ -2,7 +2,7 @@ import express, { type Router, type Request, type Response } from 'express';
 
 export const remoteRouter: Router = express.Router();
 
-remoteRouter.get('/', (req: Request, res: Response) => {
+remoteRouter.get('/', (_req: Request, res: Response) => {
   res.send(`
 <!DOCTYPE html>
 <html>
@@ -57,20 +57,20 @@ remoteRouter.get('/', (req: Request, res: Response) => {
   `);
 });
 
-remoteRouter.get('/api/hello', (req: Request, res: Response) => {
+remoteRouter.get('/api/hello', (_req: Request, res: Response) => {
   res.send('<strong>Hello from remote API!</strong>');
 });
 
-remoteRouter.get('/api/time', (req: Request, res: Response) => {
+remoteRouter.get('/api/time', (_req: Request, res: Response) => {
   res.send(`Current time: <strong>${new Date().toLocaleTimeString()}</strong>`);
 });
 
-remoteRouter.get('/api/slow', (req: Request, res: Response) => {
+remoteRouter.get('/api/slow', (_req: Request, res: Response) => {
   setTimeout(() => {
     res.send('<strong>Slow content loaded!</strong>');
   }, 2000);
 });
 
-remoteRouter.get('/api/error', (req: Request, res: Response) => {
+remoteRouter.get('/api/error', (_req: Request, res: Response) => {
   res.status(500).send('Server error');
 });

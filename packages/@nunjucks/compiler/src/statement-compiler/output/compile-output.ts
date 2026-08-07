@@ -14,31 +14,31 @@ import { extractPropertyLocation } from '../../location-utils.ts';
 import { extractVarName } from './extract-location.ts';
 
 const emitEnsureDefinedClose = (
-  ctx: Compiler,
+  compiler: Compiler,
   child: Node,
   lineno: number,
   colno: number
 ): void => {
   const name = extractVarName(child);
   const nameArg = name ? `, "${name}"` : ', null';
-  const modeArg = ctx.undefinedMode ? `, "${ctx.undefinedMode}"` : '';
-  ctx.emit(`,${lineno},${colno}${nameArg}, null${modeArg})`);
+  const modeArg = compiler.undefinedMode ? `, "${compiler.undefinedMode}"` : '';
+  compiler.emit(`,${lineno},${colno}${nameArg}, null${modeArg})`);
 };
 
 const isVariableLike = (child: Node): boolean =>
   isVariableDeclaration(child) ||
   isVariableAssignment(child);
 
-const compileTemplateDataChild = (ctx: Compiler, child: Node): void => {
+const compileTemplateDataChild = (compiler: Compiler, child: Node): void => {
   if (child.value) {
-    ctx.emit(`${ctx.buffer} += `);
-    ctx.emit(JSON.stringify(child.value));
-    ctx.emit(';');
+    compiler.emit(`${compiler.buffer} += `);
+    compiler.emit(JSON.stringify(child.value));
+    compiler.emit(';');
   }
 };
 
 const compileOutputChild = (
-  ctx: Compiler,
+  compiler: Compiler,
   child: Node,
   frame: Frame
 ): void => {
@@ -47,47 +47,47 @@ const compileOutputChild = (
   const { lineno: rawLine, colno: rawColumn } = extractPropertyLocation(child);
   const lineno = rawLine ?? 0;
   const colno = rawColumn ?? 0;
-  const useEnsureDefined = !isOptional || ctx.undefinedMode === 'debug';
-  const htmlContext = ctx.getHtmlContext(lineno, colno);
+  const useEnsureDefined = !isOptional || compiler.undefinedMode === 'debug';
+  const htmlContext = compiler.getHtmlContext(lineno, colno);
 
-  ctx.emitLine(`lineno = ${lineno}; colno = ${colno}; ${ctx.buffer} += runtime.suppressValue(`);
+  compiler.emitLine(`lineno = ${lineno}; colno = ${colno}; ${compiler.buffer} += runtime.suppressValue(`);
   if (!isPipeType) {
-    ctx.emit('await runtime.awaitValue(');
+    compiler.emit('await runtime.awaitValue(');
   }
   if (useEnsureDefined) {
-    ctx.emit('runtime.ensureDefined(');
+    compiler.emit('runtime.ensureDefined(');
   }
-  ctx.compile(child, frame);
+  compiler.compile(child, frame);
   if (useEnsureDefined) {
-    emitEnsureDefinedClose(ctx, child, lineno, colno);
+    emitEnsureDefinedClose(compiler, child, lineno, colno);
   }
   if (!isPipeType) {
-    ctx.emit(')');
+    compiler.emit(')');
   }
-  ctx.emit(`, env.opts.autoescape, lineno, colno, "${htmlContext}");`);
+  compiler.emit(`, env.opts.autoescape, lineno, colno, "${htmlContext}");`);
 };
 
 const processOutputChild = (
-  ctx: Compiler,
+  compiler: Compiler,
   child: Node,
   frame: Frame
 ): void => {
   if (isTemplateData(child)) {
-    compileTemplateDataChild(ctx, child);
+    compileTemplateDataChild(compiler, child);
     return;
   }
   if (isVariableLike(child)) {
-    ctx.compile(child, frame);
+    compiler.compile(child, frame);
     return;
   }
-  compileOutputChild(ctx, child, frame);
+  compileOutputChild(compiler, child, frame);
 };
 
 export const compileOutput = (
-  ctx: Compiler,
+  compiler: Compiler,
   node: Node,
   frame: Frame
 ): void => {
-  forEach(node.children ?? [], child => processOutputChild(ctx, child, frame));
-  ctx.emit('\n');
+  forEach(node.children ?? [], child => processOutputChild(compiler, child, frame));
+  compiler.emit('\n');
 };

@@ -1,58 +1,55 @@
 import type { Node } from '@nunjucks/nodes';
-import type { Compiler } from './index.ts';
+import type { Emitter, ScopeManager } from './index.ts';
 
 export const emitFuncBegin = (
-  ctx: Compiler,
+  compiler: Emitter & ScopeManager,
   node: Node,
   name: string
 ): void => {
-  ctx.buffer = 'output';
-  ctx.scopeStack = [];
-  ctx.emitLine(`async function ${name}(env, context, frame, runtime) {`);
-  ctx.emitLine(`let lineno = ${node.lineno};`);
-  ctx.emitLine(`let colno = ${node.colno ?? 0};`);
-  ctx.emitLine(`let ${ctx.buffer} = "";`);
-  ctx.emitLine('try {');
+  compiler.buffer = 'output';
+  compiler.scopeStack = [];
+  compiler.emitLine(`async function ${name}(env, context, frame, runtime) {`);
+  compiler.emitLine(`let lineno = ${node.lineno};`);
+  compiler.emitLine(`let colno = ${node.colno ?? 0};`);
+  compiler.emitLine(`let ${compiler.buffer} = "";`);
+  compiler.emitLine('try {');
 };
 
-export const emitFuncEnd = (ctx: Compiler, noReturn?: boolean): void => {
+export const emitFuncEnd = (compiler: Emitter & ScopeManager, noReturn?: boolean): void => {
   if (!noReturn) {
-    ctx.emitLine(`return ${ctx.buffer};`);
+    compiler.emitLine(`return ${compiler.buffer};`);
   }
 
-  ctx.closeScopeLevels();
-  ctx.emitLine('} catch (e) {');
-  ctx.emitLine('  throw runtime.handleError(e, lineno, colno);');
-  ctx.emitLine('}');
-  ctx.emitLine('}');
-  ctx.buffer = null;
+  compiler.closeScopeLevels();
+  compiler.emitLine('} catch (e) {');
+  compiler.emitLine('  throw runtime.handleError(e, lineno, colno);');
+  compiler.emitLine('}');
+  compiler.emitLine('}');
+  compiler.buffer = null;
 };
 
 export const addScopeLevel = (
-  ctx: Pick<Compiler, 'scopeStack'>
+  compiler: Pick<ScopeManager, 'scopeStack'>
 ): void => {
-  ctx.scopeStack.push('})');
+  compiler.scopeStack.push('})');
 };
 
 export const closeScopeLevels = (
-  ctx: Pick<Compiler, 'scopeStack' | 'emitLine'>
+  compiler: Pick<ScopeManager, 'scopeStack'> & Pick<Emitter, 'emitLine'>
 ): void => {
-  if (ctx.scopeStack.length > 0) {
-    ctx.emitLine(`${ctx.scopeStack.join('')};`);
-    ctx.scopeStack = [];
+  if (compiler.scopeStack.length > 0) {
+    compiler.emitLine(`${compiler.scopeStack.join('')};`);
+    compiler.scopeStack = [];
   }
 };
 
 export const withScopedSyntax = (
-  ctx: Pick<
-    Compiler,
-    'scopeStack' | 'closeScopeLevels'
-  >,
+  compiler: Pick<ScopeManager, 'scopeStack' | 'closeScopeLevels'>,
   func: () => void
 ): void => {
-  const savedScope = ctx.scopeStack;
-  ctx.scopeStack = [];
+  const savedScope = compiler.scopeStack;
+  compiler.scopeStack = [];
   func();
-  ctx.closeScopeLevels();
-  ctx.scopeStack = savedScope;
+  compiler.closeScopeLevels();
+  compiler.scopeStack = savedScope;
 };

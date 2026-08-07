@@ -1,20 +1,20 @@
 import type { Tokenizer } from '../types.ts';
 import { getChar, matches, advance, isFinished } from '../state.ts';
 import { createToken } from '../tokens.ts';
-import type { TokenType } from '../token-types.ts';
+import { TOKEN_COMMENT } from '../token-types.ts';
 
 export const tokenizeComment: Tokenizer = (state) => {
-  if (!matches(state, state.tags.COMMENT_START)) { return null; }
+  if (!matches(state, state.tags.commentStart)) { return null; }
 
-  let current = advance(state, state.tags.COMMENT_START.length);
-  let comment = state.tags.COMMENT_START;
+  let current = advance(state, state.tags.commentStart.length);
+  let comment = state.tags.commentStart;
 
   while (!isFinished(current)) {
     const char = getChar(current);
 
-    if (matches(current, state.tags.COMMENT_END)) {
-      comment += state.tags.COMMENT_END;
-      current = advance(current, state.tags.COMMENT_END.length);
+    if (matches(current, state.tags.commentEnd)) {
+      comment += state.tags.commentEnd;
+      current = advance(current, state.tags.commentEnd.length);
       break;
     }
 
@@ -23,7 +23,7 @@ export const tokenizeComment: Tokenizer = (state) => {
   }
 
   return {
-    token: createToken('comment' as TokenType, comment, state.lineno, state.colno),
+    token: createToken(TOKEN_COMMENT, comment, state.lineno, state.colno),
     state: current,
   };
 };

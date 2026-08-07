@@ -1,13 +1,11 @@
 import { scanTemplateForDangerousCode, type DangerousCodeViolation } from '@nunjucks/shared';
+import type { BaseValidationError } from '@nunjucks/shared';
 import { join, map, pipe } from 'remeda';
 
-export interface TemplateValidationError {
+export interface TemplateValidationError extends BaseValidationError {
   code: string;
-  message: string;
   subject: string;
   violations?: DangerousCodeViolation[];
-  lineno?: number;
-  colno?: number;
 }
 
 export type TemplateValidationResult =
@@ -17,14 +15,13 @@ export type TemplateValidationResult =
 export interface TemplateValidatorConfig {
   maxTemplateSize?: number;
   strictMode?: boolean;
-  whitelistStrict?: boolean;
 }
 
 const checkTemplateSize = (template: string, config: TemplateValidatorConfig): TemplateValidationError | null => {
   if (!config.maxTemplateSize || config.maxTemplateSize <= 0) {
     return null;
   }
-  const size = typeof template === 'string' ? template.length : 0;
+  const size = template.length;
   if (size > config.maxTemplateSize) {
     return {
       code: 'TEMPLATE_SIZE_EXCEEDED',
@@ -36,7 +33,7 @@ const checkTemplateSize = (template: string, config: TemplateValidatorConfig): T
 };
 
 const checkDangerousCode = (template: string, config: TemplateValidatorConfig): TemplateValidationError | null => {
-  if (!config.strictMode && !config.whitelistStrict) {
+  if (!config.strictMode) {
     return null;
   }
   const violations = scanTemplateForDangerousCode(template);

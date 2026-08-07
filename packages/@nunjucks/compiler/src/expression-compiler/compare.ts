@@ -3,25 +3,25 @@ import type { Node, CompareNode, CompareOperandNode, BinaryNode } from '@nunjuck
 import type { Frame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
-import { emitLocationGuard } from '../compiler-helpers.ts';
+import { emitLocationGuard } from '../codegen.ts';
 
-export const compileCompare = (ctx: Compiler, node: CompareNode, frame: Frame): void => {
+export const compileCompare = (compiler: Compiler, node: CompareNode, frame: Frame): void => {
   const ops = node.ops;
   const first = ops[0] ?? node;
-  emitLocationGuard(ctx, first.lineno, first.colno);
-  ctx.compile(node.expr, frame);
+  emitLocationGuard(compiler, first.lineno, first.colno);
+  compiler.compile(node.expr, frame);
 
   forEach(ops, (op) => {
     const operand = op as CompareOperandNode;
-    ctx.emit(` ${operand.operator} `);
-    emitLocationGuard(ctx, operand.lineno, operand.colno);
-    ctx.compile(operand.expr, frame);
-    ctx.emit(')');
+    compiler.emit(` ${operand.operator} `);
+    emitLocationGuard(compiler, operand.lineno, operand.colno);
+    compiler.compile(operand.expr, frame);
+    compiler.emit(')');
   });
-  ctx.emit(')');
+  compiler.emit(')');
 };
 
-export const compileIs = (ctx: Compiler, node: BinaryNode, frame: Frame): void => {
+export const compileIs = (compiler: Compiler, node: BinaryNode, frame: Frame): void => {
   const rightNode = node.right;
   let right: unknown;
   let args: readonly Node[] | undefined;
@@ -33,18 +33,18 @@ export const compileIs = (ctx: Compiler, node: BinaryNode, frame: Frame): void =
   }
   const lineno = node.lineno;
   const colno = node.colno;
-  emitLocationGuard(ctx, lineno, colno);
-  ctx.emit(`env.getTest(${JSON.stringify(String(right))}, ${lineno}, ${colno}).call(context, `);
-  ctx.compile(node.left, frame);
+  emitLocationGuard(compiler, lineno, colno);
+  compiler.emit(`env.getTest(${JSON.stringify(String(right))}, ${lineno}, ${colno}).call(context, `);
+  compiler.compile(node.left, frame);
   if (args) {
-    args.forEach((arg, i) => {
+    args.forEach((argument, i) => {
       if (i > 0) {
-        ctx.emit(',');
+        compiler.emit(',');
       }
-      if (arg) {
-        ctx.compile(arg, frame);
+      if (argument) {
+        compiler.compile(argument, frame);
       }
     });
   }
-  ctx.emit(') === true)');
+  compiler.emit(') === true)');
 };

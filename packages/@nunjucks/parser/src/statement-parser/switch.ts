@@ -1,4 +1,4 @@
-import { case_, switch_ } from '@nunjucks/nodes';
+import { caseNode, switchNode } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -12,63 +12,61 @@ const SWITCH_TOKENS = {
   caseDefault: 'default',
 } as const;
 
-const parseSwitchCases = (ctx: ParserContext, cases: Node[]): void => {
-  let tok = peekToken(ctx);
+const parseSwitchCases = (parserContext: ParserContext, cases: Node[]): void => {
+  let tok = peekToken(parserContext);
   while (tok?.value === SWITCH_TOKENS.caseStart) {
-    skipSymbol(ctx, SWITCH_TOKENS.caseStart);
-    const cond = parseExpression(ctx);
-    advanceAfterBlockEnd(ctx, SWITCH_TOKENS.switchStart);
-    const body = parseUntilBlocks(ctx, SWITCH_TOKENS.caseStart, SWITCH_TOKENS.caseDefault, SWITCH_TOKENS.switchEnd);
-    cases.push(case_(tok.lineno, tok.colno, cond, body));
-    tok = peekToken(ctx);
+    skipSymbol(parserContext, SWITCH_TOKENS.caseStart);
+    const cond = parseExpression(parserContext);
+    advanceAfterBlockEnd(parserContext, SWITCH_TOKENS.switchStart);
+    const body = parseUntilBlocks(parserContext, SWITCH_TOKENS.caseStart, SWITCH_TOKENS.caseDefault, SWITCH_TOKENS.switchEnd);
+    cases.push(caseNode(tok.lineno, tok.colno, cond, body));
+    tok = peekToken(parserContext);
   }
 };
 
-const handleSwitchEnd = (ctx: ParserContext): Node | undefined => {
-  const tok = peekToken(ctx);
+const handleSwitchEnd = (parserContext: ParserContext): Node | undefined => {
+  const tok = peekToken(parserContext);
   switch (tok.value) {
     case SWITCH_TOKENS.caseDefault:
-      advanceAfterBlockEnd(ctx);
-      return parseUntilBlocks(ctx, SWITCH_TOKENS.switchEnd);
+      advanceAfterBlockEnd(parserContext);
+      return parseUntilBlocks(parserContext, SWITCH_TOKENS.switchEnd);
     case SWITCH_TOKENS.switchEnd:
-      advanceAfterBlockEnd(ctx);
+      advanceAfterBlockEnd(parserContext);
       return undefined;
     default:
-      fail(ctx, 'parseSwitch: expected "case," "default" or "endswitch," got EOF.');
+      fail(parserContext, 'parseSwitch: expected "case," "default" or "endswitch," got EOF.');
   }
 };
 
-export const parseSwitch = (ctx: ParserContext): Node => {
-  const tag = peekToken(ctx);
+export const parseSwitch = (parserContext: ParserContext): Node => {
+  const tag = peekToken(parserContext);
 
   if (
-    !((skipSymbol(ctx, SWITCH_TOKENS.switchStart)
-    || skipSymbol(ctx, SWITCH_TOKENS.caseStart))
-    || skipSymbol(ctx, SWITCH_TOKENS.caseDefault))
+    !((skipSymbol(parserContext, SWITCH_TOKENS.switchStart)
+    || skipSymbol(parserContext, SWITCH_TOKENS.caseStart))
+    || skipSymbol(parserContext, SWITCH_TOKENS.caseDefault))
   ) {
-    fail(ctx, 'parseSwitch: expected "switch," "case" or "default"', tag.lineno, tag.colno);
+    fail(parserContext, 'parseSwitch: expected "switch," "case" or "default"', tag.lineno, tag.colno);
   }
 
-  const expr = parseExpression(ctx);
+  const expr = parseExpression(parserContext);
 
-  advanceAfterBlockEnd(ctx, SWITCH_TOKENS.switchStart);
-  // Consume any whitespace between {% switch %} and the first {% case %}/{% default %}/{% endswitch %}.
-  // The switch grammar forbids content here; the return is intentionally discarded (whitespace only).
-  parseUntilBlocks(ctx, SWITCH_TOKENS.caseStart, SWITCH_TOKENS.caseDefault, SWITCH_TOKENS.switchEnd);
+  advanceAfterBlockEnd(parserContext, SWITCH_TOKENS.switchStart);
+  parseUntilBlocks(parserContext, SWITCH_TOKENS.caseStart, SWITCH_TOKENS.caseDefault, SWITCH_TOKENS.switchEnd);
 
   const cases: Node[] = [];
-  parseSwitchCases(ctx, cases);
+  parseSwitchCases(parserContext, cases);
 
   const defaultCase = ((): Node | undefined => {
-    if (peekToken(ctx).value === SWITCH_TOKENS.caseDefault) {
-      const result = handleSwitchEnd(ctx);
-      advanceAfterBlockEnd(ctx);
+    if (peekToken(parserContext).value === SWITCH_TOKENS.caseDefault) {
+      const result = handleSwitchEnd(parserContext);
+      advanceAfterBlockEnd(parserContext);
       return result;
     } else {
-      handleSwitchEnd(ctx);
+      handleSwitchEnd(parserContext);
       return undefined;
     }
   })();
 
-  return switch_(tag.lineno, tag.colno, { expr, cases, default_: defaultCase ?? null });
+  return switchNode(tag.lineno, tag.colno, { expr, cases, default_: defaultCase ?? null });
 };

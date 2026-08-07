@@ -26,23 +26,23 @@ interface EmitUndefinedWarningOptions {
   varName: string | null;
 }
 
-const emitUndefinedWarning = (self: unknown, opts: EmitUndefinedWarningOptions): void => {
+const emitUndefinedWarning = (self: unknown, options: EmitUndefinedWarningOptions): void => {
   const warning = createLog(
     'warning',
     {
-      name: opts.name,
-      message: opts.message,
+      name: options.name,
+      message: options.message,
       pattern: MATCH_ANY_RE,
     },
     {},
-    opts.subject,
+    options.subject,
     {
-      lineno: opts.lineno ?? null,
-      colno: opts.colno ?? null,
-      phase: opts.phase,
-      templateName: opts.templateName,
-      undefinedMode: opts.mode,
-      varName: opts.varName,
+      lineno: options.lineno ?? null,
+      colno: options.colno ?? null,
+      phase: options.phase,
+      templateName: options.templateName,
+      undefinedMode: options.mode,
+      varName: options.varName,
       lineBase: 'zero',
     } as WarningContext,
   );
@@ -65,8 +65,8 @@ interface UndefinedResolution {
   warningMessage: () => string;
 }
 
-const resolveUndefined = (opts: ResolveUndefinedOptions, r: UndefinedResolution): 'undefined' => {
-  const { self, lineno, colno, mode, phase, templateName } = opts;
+const resolveUndefined = (options: ResolveUndefinedOptions, r: UndefinedResolution): 'undefined' => {
+  const { self, lineno, colno, mode, phase, templateName } = options;
 
   if (mode === 'strict') {
     throwRuntimeError(r.errorDef, {
@@ -96,14 +96,14 @@ const resolveUndefined = (opts: ResolveUndefinedOptions, r: UndefinedResolution)
   return 'undefined';
 };
 
-const resolveUndefinedProperty = (opts: ResolveUndefinedOptions): 'undefined' => {
-  const { val, varName } = opts;
-  const propResult = val as PropertyNotFoundResult;
+const resolveUndefinedProperty = (options: ResolveUndefinedOptions): 'undefined' => {
+  const { val: value, varName } = options;
+  const propResult = value as PropertyNotFoundResult;
   const accessPath = propResult.__access_path__ || varName || 'unknown';
   const parentName = (!propResult.__nunjucks_parent__ && varName?.includes('.'))
     ? varName.slice(0, varName.lastIndexOf('.'))
     : propResult.__nunjucks_parent__;
-  return resolveUndefined(opts, {
+  return resolveUndefined(options, {
     errorDef: ERROR_DEFINITIONS.UNDEFINED_PROPERTY,
     params: { property: accessPath, parent: parentName || 'unknown' },
     subject: accessPath,
@@ -112,12 +112,12 @@ const resolveUndefinedProperty = (opts: ResolveUndefinedOptions): 'undefined' =>
   });
 };
 
-const resolveNullAccess = (opts: ResolveUndefinedOptions): 'undefined' => {
-  const { val, varName } = opts;
-  const nullResult = val as NullAccessResult;
+const resolveNullAccess = (options: ResolveUndefinedOptions): 'undefined' => {
+  const { val: value, varName } = options;
+  const nullResult = value as NullAccessResult;
   const accessPath = nullResult.__access_path__ || varName || 'unknown';
   const parentName = nullResult.__nunjucks_parent__ || varName || 'unknown';
-  return resolveUndefined(opts, {
+  return resolveUndefined(options, {
     errorDef: ERROR_DEFINITIONS.NULL_VALUE,
     params: { accessPath, state: 'null', parent: parentName },
     subject: accessPath,
@@ -126,12 +126,12 @@ const resolveNullAccess = (opts: ResolveUndefinedOptions): 'undefined' => {
   });
 };
 
-const resolveUndefinedValue = (opts: ResolveUndefinedOptions): 'undefined' => {
-  const { varName } = opts;
+const resolveUndefinedValue = (options: ResolveUndefinedOptions): 'undefined' => {
+  const { varName } = options;
   const errorDef: ErrorDefinitionEntry = varName
     ? ERROR_DEFINITIONS.UNDEFINED_VARIABLE
     : { name: 'UNDEFINED_VALUE', message: () => 'Undefined value', pattern: MATCH_ANY_RE } as const;
-  return resolveUndefined(opts, {
+  return resolveUndefined(options, {
     errorDef,
     params: { name: varName ?? '' },
     subject: varName,
@@ -144,19 +144,19 @@ const resolveUndefinedValue = (opts: ResolveUndefinedOptions): 'undefined' => {
 
 export function ensureDefined(
   this: unknown,
-  val: unknown,
+  value: unknown,
   lineno?: number | null,
   colno?: number | null,
   varName: string | null = null,
   templateName: string | null = null,
   undefinedMode: 'chainable' | 'strict' | 'debug' = 'chainable',
 ): unknown {
-  if (isPropertyNotFoundResult(val) || isNullAccessResult(val)) {
+  if (isPropertyNotFoundResult(value) || isNullAccessResult(value)) {
     const ctx = getLogContext(this);
     const effectiveTemplateName = templateName || ctx.templateName || 'inline';
-    const opts: ResolveUndefinedOptions = {
+    const options: ResolveUndefinedOptions = {
       self: this,
-      val,
+      val: value,
       varName,
       lineno,
       colno,
@@ -164,18 +164,18 @@ export function ensureDefined(
       phase: ctx.phase || 'render',
       templateName: effectiveTemplateName,
     };
-    if (isPropertyNotFoundResult(val)) {
-      return resolveUndefinedProperty(opts);
+    if (isPropertyNotFoundResult(value)) {
+      return resolveUndefinedProperty(options);
     }
-    return resolveNullAccess(opts);
+    return resolveNullAccess(options);
   }
 
-  if (!isNonNullish(val)) {
+  if (!isNonNullish(value)) {
     const ctx = getLogContext(this);
     const effectiveTemplateName = templateName || ctx.templateName || 'inline';
     return resolveUndefinedValue({
       self: this,
-      val,
+      val: value,
       varName,
       lineno,
       colno,
@@ -185,5 +185,5 @@ export function ensureDefined(
     });
   }
 
-  return val;
+  return value;
 }

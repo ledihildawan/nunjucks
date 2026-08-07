@@ -2,26 +2,26 @@ import type { CallNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 
-export const compilePipeForward = (ctx: Compiler, node: CallNode, frame: Frame): void => {
+export const compilePipeForward = (compiler: Compiler, node: CallNode, frame: Frame): void => {
   const name = node.name;
-  ctx.assertType(name, 'symbol');
+  compiler.assertType(name, 'symbol');
   const filterName = String(name.value);
   const filterLocation = `${node.lineno}, ${node.colno ?? 0}`;
 
   const args = node.args;
 
-  ctx.emit(`await runtime.awaitValue(env.getFilter("${filterName}", ${filterLocation}).call(context, `);
+  compiler.emit(`await runtime.awaitValue(env.getFilter("${filterName}", ${filterLocation}).call(context, `);
 
-  args.forEach((arg, i) => {
+  args.forEach((argument, i) => {
     if (i > 0) {
-      ctx.emit(', ');
+      compiler.emit(', ');
     }
-    if (arg) {
-      ctx.emit('await runtime.awaitValue(');
-      ctx.compile(arg, frame);
-      ctx.emit(')');
+    if (argument) {
+      compiler.emit('await runtime.awaitValue(');
+      compiler.compile(argument, frame);
+      compiler.emit(')');
     }
   });
 
-  ctx.emit('))');
+  compiler.emit('))');
 };

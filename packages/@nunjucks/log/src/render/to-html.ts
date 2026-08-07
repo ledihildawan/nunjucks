@@ -1,21 +1,21 @@
 import { buildErrorHeader, buildErrorFooter, buildErrorBodyContent, buildHtmlWrapper } from './to-html-builder.ts';
-import { classifyAndBuildTitle, buildErrorDisplay } from './to-html-helpers.ts';
-import { isFilePath } from './internal/ide-links.ts';
-import { shortenPath } from './internal/path-shortener.ts';
-import { DEFAULT_IDE, DEFAULT_VERSION } from './internal/defaults.ts';
+import { classifyAndBuildTitle, buildErrorDisplay } from './to-html-display.ts';
+import { isFilePath } from './internal/config/ide-links.ts';
+import { shortenPath } from './internal/location/path-shortener.ts';
+import { DEFAULT_IDE, DEFAULT_VERSION } from './internal/config/defaults.ts';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import scriptContent from './internal/error-script.js' with { type: 'text' };
+import scriptContent from './assets/error-script.js' with { type: 'text' };
 import type { Csp, ErrorLike, ToHtmlOptions } from './to-html-types.ts';
-import type { SourceTrace } from './internal/source-trace.ts';
+import type { SourceTrace } from './internal/location/source-trace.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const CSS = readFileSync(resolve(__dirname, './internal/error-page.css'), 'utf-8');
+const CSS = readFileSync(resolve(__dirname, './assets/error-page.css'), 'utf-8');
 
 const TOGGLE_SCRIPT = `<script>\n${scriptContent}\n</script>`;
 
-const document = (title: string, body: string, scripts = '', csp: Csp | null = null): string => {
+const buildDocument = (title: string, body: string, scripts = '', csp: Csp | null = null): string => {
   const styleNonce = csp?.nonce ? ` nonce="${csp.nonce}"` : '';
   return `<!DOCTYPE html>
 <html lang="en">
@@ -92,7 +92,7 @@ const buildErrorDocument = (
   const body = buildHtmlWrapper(header, errorBody, footer);
 
   const docTitle = classified.severity === 'warning' ? 'Template Warning' : 'Template Error';
-  return document(docTitle, body, TOGGLE_SCRIPT, csp);
+  return buildDocument(docTitle, body, TOGGLE_SCRIPT, csp);
 };
 
 const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string => {
@@ -112,11 +112,11 @@ const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string =>
   } = options;
 
   if (!error) {
-    return document('Error', buildProductionBody(options), '', csp ?? null);
+    return buildDocument('Error', buildProductionBody(options), '', csp ?? null);
   }
 
   if (options.isProduction) {
-    return document('Rendering Interrupted', buildProductionBody(options), '', csp ?? null);
+    return buildDocument('Rendering Interrupted', buildProductionBody(options), '', csp ?? null);
   }
 
   return buildErrorDocument(

@@ -13,11 +13,16 @@
 			],
 			"linter": {
 				"rules": {
-					"style": {
-						"noDefaultExport": "off"
+				"style": {
+					"noDefaultExport": "off",
+					"noExcessiveLinesPerFile": "off"
+				},
+					"complexity": {
+						"noExcessiveCognitiveComplexity": "off"
 					},
 					"suspicious": {
-						"noConsole": "off"
+						"noConsole": "off",
+						"noEmptyBlockStatements": "off"
 					}
 				}
 			}

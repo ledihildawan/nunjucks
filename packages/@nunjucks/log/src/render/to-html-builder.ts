@@ -1,10 +1,10 @@
-import { escapeHtml, highlightHtml, renderInlineMarkdown } from './internal/highlight.ts';
+import { escapeHtml, highlightHtml, renderInlineMarkdown } from './internal/highlight/highlight.ts';
 import { join, map, pipe } from 'remeda';
-import { renderContextHtml, formatStackTraceHtml } from './internal/sections.ts';
-import { resolveIdeLink, getIdeMeta } from './internal/ide-links.ts';
-import type { SourceTrace } from './internal/source-trace.ts';
+import { renderContextHtml, formatStackTraceHtml } from './internal/formatting/sections.ts';
+import { resolveIdeLink, getIdeMeta } from './internal/config/ide-links.ts';
+import type { SourceTrace } from './internal/location/source-trace.ts';
 import type { ErrorLike } from './to-html-types.ts';
-import { renderBadge, highlightSource, SEVERITY_HEADINGS, type classifyError } from './to-html-helpers.ts';
+import { renderBadge, highlightSource, SEVERITY_HEADINGS, type classifyError } from './to-html-display.ts';
 
 const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined, displayPath: string): string => {
   if (!sourceTrace || sourceTrace.lines.length === 0) { return ''; }

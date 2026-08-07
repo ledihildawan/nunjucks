@@ -30,11 +30,6 @@ describe('validateTemplate', () => {
     }
   });
 
-  test('whitelistStrict detects dangerous code', () => {
-    const result = validateTemplate('{{ require("fs") }}', { whitelistStrict: true });
-    expect(result.valid).toBe(false);
-  });
-
   test('non-strict mode skips dangerous code check', () => {
     const result = validateTemplate('{{ eval("x") }}', safeConfig);
     expect(result.valid).toBe(true);

@@ -2,12 +2,13 @@ import { describe, test, expect } from 'bun:test';
 import { createTokenizer } from '@nunjucks/lexer';
 import { createParser } from './index.ts';
 import { nextTokenOrNull, peekTokenOrNull, skip, expect as expectToken, skipValue, skipSymbol, consumeWhitespaceDrop, nextToken } from './cursor.ts';
-import type { ParserContext, TokenStream } from './cursor.ts';
+import type { ParserContext } from './cursor.ts';
+import { asTokenStream } from './test-helpers.ts';
 
 const makeCtx = (src: string): ParserContext => {
   const tk = createTokenizer(src);
   return {
-    tokens: tk as unknown as TokenStream,
+    tokens: asTokenStream(tk),
     peeked: null,
     dropLeadingWhitespace: false,
     extensions: [],
@@ -19,7 +20,7 @@ describe('cursor: token navigation', () => {
     const ctx = makeCtx('{{ x }}');
     const t1 = nextTokenOrNull(ctx);
     expect(t1).toBeTruthy();
-    while (nextTokenOrNull(ctx)) { /* consume */ }
+    while (nextTokenOrNull(ctx)) {  }
     expect(nextTokenOrNull(ctx)).toBeNull();
   });
 
@@ -33,34 +34,33 @@ describe('cursor: token navigation', () => {
 
   test('nextToken throws on EOF', () => {
     const ctx = makeCtx('');
-    while (nextTokenOrNull(ctx)) { /* consume */ }
+    while (nextTokenOrNull(ctx)) {  }
     expect(() => nextToken(ctx)).toThrow();
   });
 
   test('skip returns true for matching type', () => {
     const ctx = makeCtx('{{ x }}');
-    nextTokenOrNull(ctx); // consume variable-start
-    // next should be symbol 'x'
+    nextTokenOrNull(ctx); 
     const result = skip(ctx, 'symbol' as never);
     expect(result).toBe(true);
   });
 
   test('skipSymbol matches symbol value', () => {
     const ctx = makeCtx('{% if true %}');
-    nextTokenOrNull(ctx); // block-start
+    nextTokenOrNull(ctx); 
     expect(skipSymbol(ctx, 'if')).toBe(true);
   });
 
   test('skipValue matches type and value', () => {
     const ctx = makeCtx('{{ x }}');
-    nextTokenOrNull(ctx); // variable-start
+    nextTokenOrNull(ctx); 
     expect(skipValue(ctx, 'symbol' as never, 'x')).toBe(true);
     expect(skipValue(ctx, 'symbol' as never, 'y')).toBe(false);
   });
 
   test('expect throws on wrong type', () => {
     const ctx = makeCtx('{{ x }}');
-    nextTokenOrNull(ctx); // variable-start
+    nextTokenOrNull(ctx); 
     expect(() => expectToken(ctx, 'block-end' as never)).toThrow();
   });
 });
@@ -83,7 +83,7 @@ describe('cursor: whitespace drop', () => {
 describe('cursor: ParserContext', () => {
   test('createParser returns minimal context', () => {
     const tk = createTokenizer('x');
-    const ctx = createParser(tk as unknown as TokenStream);
+    const ctx = createParser(asTokenStream(tk));
     expect(ctx.peeked).toBeNull();
     expect(ctx.dropLeadingWhitespace).toBe(false);
     expect(ctx.extensions).toEqual([]);

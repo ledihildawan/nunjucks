@@ -17,8 +17,7 @@ const updateCodeState = (tokenType: string, state: LexerState): LexerState => {
 
 const processTokenizerResult = (result: { token: Token; state: LexerState }): LexerState => {
   const state = result.state;
-  const tokenType = result.token.type as string;
-  return updateCodeState(tokenType, state);
+  return updateCodeState(result.token.type, state);
 };
 
 const handleUnexpectedChar = (state: LexerState): never => {
@@ -29,8 +28,8 @@ const handleUnexpectedChar = (state: LexerState): never => {
 const isWhitespace = (char: string | null): boolean =>
   char !== null && WHITESPACE_CHARS.includes(char);
 
-function* lexGenerator(src: string, opts: LexerOptions = {}): Generator<Token, void, unknown> {
-  let state = createState(src, opts);
+function* lexGenerator(src: string, options: LexerOptions = {}): Generator<Token, void, unknown> {
+  let state = createState(src, options);
 
   while (state.index < state.str.length) {
     const result = tokenizers(state);
@@ -48,14 +47,14 @@ function* lexGenerator(src: string, opts: LexerOptions = {}): Generator<Token, v
   }
 }
 
-export const createTokenizer = (src: string, opts: LexerOptions = {}): {
+export const createTokenizer = (src: string, options: LexerOptions = {}): {
   nextToken: () => Token | null;
   tags: ReturnType<typeof createDelimiters>;
   trimBlocks: boolean;
   lstripBlocks: boolean;
 } => {
-  const generator = lexGenerator(src, opts);
-  const tags = createDelimiters(opts.tags);
+  const generator = lexGenerator(src, options);
+  const tags = createDelimiters(options.tags);
 
   return {
     nextToken: (): Token | null => {
@@ -64,7 +63,7 @@ export const createTokenizer = (src: string, opts: LexerOptions = {}): {
       return result.value;
     },
     tags,
-    trimBlocks: Boolean(opts.trimBlocks),
-    lstripBlocks: Boolean(opts.lstripBlocks),
+    trimBlocks: Boolean(options.trimBlocks),
+    lstripBlocks: Boolean(options.lstripBlocks),
   };
 };

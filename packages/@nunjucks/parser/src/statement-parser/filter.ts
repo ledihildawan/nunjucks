@@ -5,22 +5,22 @@ import type { ParserContext } from "../cursor.ts";
 import { parseFilterCallName, parseFilterCallArgs } from "../expression-parser/postfix/index.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
 
-export const parseFilterStatement = (ctx: ParserContext): Node => {
-  const filterTok = peekToken(ctx);
-  if (!skipSymbol(ctx, 'filter')) {
-    fail(ctx, 'parseFilterStatement: expected filter');
+export const parseFilterStatement = (parserContext: ParserContext): Node => {
+  const filterTok = peekToken(parserContext);
+  if (!skipSymbol(parserContext, 'filter')) {
+    fail(parserContext, 'parseFilterStatement: expected filter');
   }
 
-  const name = parseFilterCallName(ctx);
-  const args = parseFilterCallArgs(ctx, name);
+  const name = parseFilterCallName(parserContext);
+  const args = parseFilterCallArgs(parserContext, name);
 
-  advanceAfterBlockEnd(ctx, String(filterTok.value));
+  advanceAfterBlockEnd(parserContext, String(filterTok.value));
   const body = capture(
     name.lineno,
     name.colno,
-    parseUntilBlocks(ctx, 'endfilter')
+    parseUntilBlocks(parserContext, 'endfilter')
   );
-  advanceAfterBlockEnd(ctx);
+  advanceAfterBlockEnd(parserContext);
 
   const node = pipe(
     name.lineno,

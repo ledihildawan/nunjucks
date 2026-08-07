@@ -18,99 +18,99 @@ const getBlockLocation = (block: BlockNode): NodeLocation => ({
   colno: block.colno ?? 0,
 });
 
-const setupRootFunction = (ctx: Compiler, node: Node): { frame: Frame; childBuffer: string; savedBuffer: string } => {
+const setupRootFunction = (compiler: Compiler, node: Node): { frame: Frame; childBuffer: string; savedBuffer: string } => {
   const frame = createFrame();
-  ctx.emitFuncBegin(node, 'root');
-  ctx.emitLine('let parentTemplate = null;');
+  compiler.emitFuncBegin(node, 'root');
+  compiler.emitLine('let parentTemplate = null;');
   const childBuffer = 'childOutput';
-  ctx.emitLine(`let ${childBuffer} = "";`);
-  const savedBuffer = ctx.buffer ?? '';
-  ctx.buffer = childBuffer;
+  compiler.emitLine(`let ${childBuffer} = "";`);
+  const savedBuffer = compiler.buffer ?? '';
+  compiler.buffer = childBuffer;
   return { frame, childBuffer, savedBuffer };
 };
 
-const compileNonBlockChildren = (ctx: Compiler, node: Node, frame: Frame): void => {
+const compileNonBlockChildren = (compiler: Compiler, node: Node, frame: Frame): void => {
   const nonBlockChildren = node.children?.filter(child => !isBlock(child)) ?? [];
-  for (const child of nonBlockChildren) { ctx.compile(child, frame); }
+  for (const child of nonBlockChildren) { compiler.compile(child, frame); }
 };
 
 const emitParentTemplateBlockHandling = (
-  ctx: Compiler,
+  compiler: Compiler,
   blocks: BlockNode[],
   childBuffer: string
 ): void => {
-  ctx.emitLine('if(parentTemplate) {');
-  ctx.emitLine('  return await parentTemplate.rootRenderFunc(env, context, frame, runtime);');
-  ctx.emitLine('} else {');
+  compiler.emitLine('if(parentTemplate) {');
+  compiler.emitLine('  return await parentTemplate.rootRenderFunc(env, context, frame, runtime);');
+  compiler.emitLine('} else {');
   for (const block of blocks) {
     const name = blockName(block);
     if (!name) { continue; }
     const { lineno, colno } = getBlockLocation(block);
-    ctx.emitLine(`  lineno = ${lineno}; colno = ${colno};`);
-    ctx.emitLine(`  ${childBuffer} += await context.getBlock("${name}", ${lineno}, ${colno})(env, context, frame, runtime);`);
+    compiler.emitLine(`  lineno = ${lineno}; colno = ${colno};`);
+    compiler.emitLine(`  ${childBuffer} += await context.getBlock("${name}", ${lineno}, ${colno})(env, context, frame, runtime);`);
   }
-  ctx.emitLine('}');
-  ctx.emitLine(`return ${childBuffer};`);
-  ctx.emitFuncEnd(true);
+  compiler.emitLine('}');
+  compiler.emitLine(`return ${childBuffer};`);
+  compiler.emitFuncEnd(true);
 };
 
 const validateUniqueBlockNames = (blocks: BlockNode[]): void => {
-  const seenBlocks: string[] = [];
+  const seenBlocks = new Set<string>();
   for (const block of blocks) {
     const name = blockName(block);
-    const { lineno } = block;
+    const { lineno, colno } = block;
     if (!name) { continue; }
-    if (seenBlocks.includes(name)) {
-      throw createLog('error', ERROR_DEFINITIONS.DUPLICATE_BLOCK, { name }, name, { lineno, colno: (block.colno as number) || 0, phase: 'compile' });
+    if (seenBlocks.has(name)) {
+      throw createLog('error', ERROR_DEFINITIONS.DUPLICATE_BLOCK, { name }, name, { lineno, colno: colno || 0, phase: 'compile' });
     }
-    seenBlocks.push(name);
+    seenBlocks.add(name);
   }
 };
 
-const emitBlockFunctions = (ctx: Compiler, blocks: BlockNode[]): void => {
+const emitBlockFunctions = (compiler: Compiler, blocks: BlockNode[]): void => {
   for (const block of blocks) {
     const name = blockName(block);
     if (!name) { continue; }
-    ctx.emitFuncBegin(block, `b_${name}`);
+    compiler.emitFuncBegin(block, `b_${name}`);
     const tmpFrame = createFrame();
-    ctx.emitLine('frame = frame.push(true);');
-    ctx.compile(block.body, tmpFrame);
-    ctx.emitFuncEnd();
+    compiler.emitLine('frame = frame.push(true);');
+    compiler.compile(block.body, tmpFrame);
+    compiler.emitFuncEnd();
   }
 };
 
-const emitBlockReturnObject = (ctx: Compiler, blocks: BlockNode[]): void => {
-  ctx.emitLine('return {');
+const emitBlockReturnObject = (compiler: Compiler, blocks: BlockNode[]): void => {
+  compiler.emitLine('return {');
   for (const block of blocks) {
     const name = blockName(block);
     if (name === undefined) { continue; }
     const blockNameId = `b_${name}`;
-    ctx.emitLine(`${blockNameId}: ${blockNameId},`);
+    compiler.emitLine(`${blockNameId}: ${blockNameId},`);
   }
-  ctx.emitLine(`${BLOCK_META_KEY}: {`);
+  compiler.emitLine(`${BLOCK_META_KEY}: {`);
   for (const block of blocks) {
     const name = blockName(block);
     if (name === undefined) { continue; }
     const { lineno, colno } = getBlockLocation(block);
-    ctx.emitLine(`${JSON.stringify(name)}: { lineno: ${lineno}, colno: ${colno} },`);
+    compiler.emitLine(`${JSON.stringify(name)}: { lineno: ${lineno}, colno: ${colno} },`);
   }
-  ctx.emitLine('},');
-  ctx.emitLine('root: root\n};');
+  compiler.emitLine('},');
+  compiler.emitLine('root: root\n};');
 };
 
-export const compileRoot = (ctx: Compiler, node: ChildrenNode): void => {
+export const compileRoot = (compiler: Compiler, node: ChildrenNode): void => {
   const blocks = findAll(node, 'block').filter(isBlock);
-  const { frame, childBuffer, savedBuffer } = setupRootFunction(ctx, node);
+  const { frame, childBuffer, savedBuffer } = setupRootFunction(compiler, node);
 
-  compileNonBlockChildren(ctx, node, frame);
+  compileNonBlockChildren(compiler, node, frame);
 
-  ctx.buffer = savedBuffer;
+  compiler.buffer = savedBuffer;
 
-  emitParentTemplateBlockHandling(ctx, blocks, childBuffer);
+  emitParentTemplateBlockHandling(compiler, blocks, childBuffer);
 
-  ctx.inBlock = true;
+  compiler.inBlock = true;
 
   validateUniqueBlockNames(blocks);
-  emitBlockFunctions(ctx, blocks);
-  emitBlockReturnObject(ctx, blocks);
+  emitBlockFunctions(compiler, blocks);
+  emitBlockReturnObject(compiler, blocks);
 };

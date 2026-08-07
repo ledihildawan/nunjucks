@@ -7,8 +7,6 @@ const getFields = (n: Node): string[] => {
   return (n.fields ?? []).filter(f => !excluded.has(f));
 };
 
-/** Dynamic field read for generic traversal — the field name comes from the
- *  node's `fields` list, so TS can't correlate it to a specific property. */
 const getNodeField = (node: Node, field: string): unknown => Reflect.get(node, field);
 
 const getNodeTypeName = (n: unknown): string | undefined => {
@@ -25,21 +23,21 @@ const mapCOW = <T>(arr: readonly T[], fn: (item: T) => T): T[] => {
   return mapped.every((item, i) => item === arr[i]) ? (arr as T[]) : mapped;
 };
 
-function walkValue(val: Node, walker: (n: Node) => Node): Node;
-function walkValue(val: unknown, walker: (n: Node) => Node): unknown;
-function walkValue(val: unknown, walker: (n: Node) => Node): unknown {
-  if (Array.isArray(val)) {
-    return mapCOW(val, item => {
+function walkValue(value: Node, walker: (n: Node) => Node): Node;
+function walkValue(value: unknown, walker: (n: Node) => Node): unknown;
+function walkValue(value: unknown, walker: (n: Node) => Node): unknown {
+  if (Array.isArray(value)) {
+    return mapCOW(value, item => {
       if (isNode(item)) {
         return walker(item);
       }
       return item;
     });
   }
-  if (isNode(val)) {
-    return walker(val);
+  if (isNode(value)) {
+    return walker(value);
   }
-  return val;
+  return value;
 }
 
 const isCallExtNode = (n: Node): n is CallExtensionNode => isCallExtension(n) || isCallExtensionAsync(n);
@@ -76,7 +74,7 @@ const walkChildren = (node: Node, walker: (n: Node) => Node): Node => {
     const newNode = pipe(
       fieldsList,
       reduce(
-        (acc, f, i) => Object.assign(acc, { [f]: newProps[i] }),
+        (acc, f, i) => ({ ...acc, [f]: newProps[i] }),
         { ...node },
       ),
     );
@@ -101,11 +99,11 @@ const matchPredicate = (n: Node, predicate: string | ((n: Node) => boolean)): bo
   typeof predicate === 'string' ? n.type === predicate : predicate(n);
 
 const searchFieldValue = (n: Node, field: string, search: (n: Node | null | undefined) => void): void => {
-  const val = getNodeField(n, field);
-  if (Array.isArray(val)) {
-    for (const item of val) { if (isNode(item)) { search(item); } }
-  } else if (isNode(val)) {
-    search(val);
+  const value = getNodeField(n, field);
+  if (Array.isArray(value)) {
+    for (const item of value) { if (isNode(item)) { search(item); } }
+  } else if (isNode(value)) {
+    search(value);
   }
 };
 
@@ -115,7 +113,7 @@ const searchChildren = (n: Node, search: (n: Node | null | undefined) => void): 
   }
   if (isCallExtNode(n)) {
     search(n.args);
-    for (const arg of n.contentArgs) { search(arg); }
+    for (const argument of n.contentArgs) { search(argument); }
   }
   for (const field of getTraversalFields(n)) {
     searchFieldValue(n, field, search);

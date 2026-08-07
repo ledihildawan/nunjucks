@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import {
   root, output, literal, symbol, templateData,
-  add, if_, funCall, lookupVal, block,
+  add, ifNode, funCall, lookupVal, block,
   isBlock, isFunCall, isLookupVal, isSymbol,
 } from './index.ts';
 
@@ -48,10 +48,10 @@ describe('factory: node creation', () => {
     expect(n.type).toBe('lookupVal');
   });
 
-  test('if_ creates if node with named fields', () => {
+  test('ifNode creates if node with named fields', () => {
     const cond = literal(0, 0, true);
     const body = output(0, 0, []);
-    const n = if_(0, 0, { cond, body, else_: null });
+    const n = ifNode(0, 0, { cond, body, else_: null });
     expect(n.type).toBe('if');
     expect(n.cond).toBe(cond);
     expect(n.else_).toBeNull();

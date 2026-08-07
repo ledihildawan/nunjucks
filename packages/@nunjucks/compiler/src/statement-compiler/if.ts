@@ -2,27 +2,27 @@ import type { IfNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 
-export const compileIf = (ctx: Compiler, node: IfNode, frame: Frame): void => {
-  ctx.emit('if(');
-  ctx.compileExpression(node.cond, frame);
-  ctx.emitLine(') {');
+export const compileIf = (compiler: Compiler, node: IfNode, frame: Frame): void => {
+  compiler.emit('if(');
+  compiler.compileExpression(node.cond, frame);
+  compiler.emitLine(') {');
 
-  ctx.withScopedSyntax(() => {
-    ctx.emitLine('frame = frame.push(true);');
-    ctx.compile(node.body, frame);
-    ctx.emitLine('frame = frame.pop();');
+  compiler.withScopedSyntax(() => {
+    compiler.emitLine('frame = frame.push(true);');
+    compiler.compile(node.body, frame);
+    compiler.emitLine('frame = frame.pop();');
   });
 
   const elseNode = node.else_;
   if (elseNode) {
-    ctx.emitLine('}\nelse {');
+    compiler.emitLine('}\nelse {');
 
-    ctx.withScopedSyntax(() => {
-      ctx.emitLine('frame = frame.push(true);');
-      ctx.compile(elseNode, frame);
-      ctx.emitLine('frame = frame.pop();');
+    compiler.withScopedSyntax(() => {
+      compiler.emitLine('frame = frame.push(true);');
+      compiler.compile(elseNode, frame);
+      compiler.emitLine('frame = frame.pop();');
     });
   }
 
-  ctx.emitLine('}');
+  compiler.emitLine('}');
 };

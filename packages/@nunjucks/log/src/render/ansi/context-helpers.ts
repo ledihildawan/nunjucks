@@ -1,5 +1,5 @@
 import { pipe, keys, map } from 'remeda';
-import { normalizeRenderContext } from '../internal/safe-context.ts';
+import { normalizeRenderContext } from '../internal/formatting/safe-context.ts';
 import { sanitizeForAnsi } from './sanitize-helpers';
 
 export { formatContextValue, renderContextAnsi };

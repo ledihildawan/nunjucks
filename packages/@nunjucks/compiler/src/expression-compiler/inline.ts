@@ -2,47 +2,47 @@ import { isArrayPattern, isObjectPattern, isSymbol } from '@nunjucks/nodes';
 import type { IfNode, WalrusNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
-import { emitLocationGuard } from '../compiler-helpers.ts';
+import { emitLocationGuard } from '../codegen.ts';
 import { compileDestructuring } from '../statement-compiler/pattern.ts';
 
-export const compileInlineIf = (ctx: Compiler, node: IfNode, frame: Frame): void => {
-  ctx.emit('(');
-  ctx.compile(node.cond, frame);
-  ctx.emit('?');
-  ctx.compile(node.body, frame);
-  ctx.emit(':');
+export const compileInlineIf = (compiler: Compiler, node: IfNode, frame: Frame): void => {
+  compiler.emit('(');
+  compiler.compile(node.cond, frame);
+  compiler.emit('?');
+  compiler.compile(node.body, frame);
+  compiler.emit(':');
   if (node.else_ === null) {
-    ctx.emit('""');
+    compiler.emit('""');
   } else {
-    ctx.compile(node.else_, frame);
+    compiler.compile(node.else_, frame);
   }
-  ctx.emit(')');
+  compiler.emit(')');
 };
 
-export const compileWalrus = (ctx: Compiler, node: WalrusNode, frame: Frame): void => {
+export const compileWalrus = (compiler: Compiler, node: WalrusNode, frame: Frame): void => {
   if (isSymbol(node.target)) {
     const target = node.target;
-    const valueId = ctx.tmpid();
-    emitLocationGuard(ctx, node.lineno, node.colno);
-    ctx.emit('(() => {');
-    ctx.emit(`let ${valueId} = `);
-    ctx.compile(node.value, frame);
-    ctx.emit(';');
-    ctx.emit(`frame.set(${JSON.stringify(target.value)}, ${valueId}, true);`);
-    ctx.emit(`return ${valueId};`);
-    ctx.emit('})())');
+    const valueId = compiler.tmpid();
+    emitLocationGuard(compiler, node.lineno, node.colno);
+    compiler.emit('(() => {');
+    compiler.emit(`let ${valueId} = `);
+    compiler.compile(node.value, frame);
+    compiler.emit(';');
+    compiler.emit(`frame.set(${JSON.stringify(target.value)}, ${valueId}, true);`);
+    compiler.emit(`return ${valueId};`);
+    compiler.emit('})())');
   } else if (isArrayPattern(node.target) || isObjectPattern(node.target)) {
     const target = node.target;
-    const valueId = ctx.tmpid();
-    emitLocationGuard(ctx, node.lineno, node.colno);
-    ctx.emit('(() => {');
-    ctx.emit(`let ${valueId} = `);
-    ctx.compile(node.value, frame);
-    ctx.emit(';');
-    compileDestructuring({ ctx, frame, registerFrame: false }, target, valueId);
-    ctx.emit(`return ${valueId};`);
-    ctx.emit('})())');
+    const valueId = compiler.tmpid();
+    emitLocationGuard(compiler, node.lineno, node.colno);
+    compiler.emit('(() => {');
+    compiler.emit(`let ${valueId} = `);
+    compiler.compile(node.value, frame);
+    compiler.emit(';');
+    compileDestructuring({ ctx: compiler, frame, registerFrame: false }, target, valueId);
+    compiler.emit(`return ${valueId};`);
+    compiler.emit('})())');
   } else {
-    ctx.fail('Walrus target must be a symbol or destructuring pattern', node.lineno, node.colno);
+    compiler.fail('Walrus target must be a symbol or destructuring pattern', node.lineno, node.colno);
   }
 };

@@ -1,6 +1,6 @@
 export type { FilterContext, StringFn, SafeString } from './types.ts';
 
-export { filterError, makeFilterError, normalize, safeString, safeHtml, preserveSafe, requireArrayError, requireNumberError, assertItemsHaveAttr } from './core.ts';
+export { makeFilterError, normalize, safeString, safeHtml, preserveSafe, requireArrayError, requireNumberError, assertItemsHaveAttr } from './helpers.ts';
 
 export { isSafeString, isArray } from './types.ts';
 

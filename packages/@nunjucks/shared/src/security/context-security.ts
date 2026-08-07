@@ -28,8 +28,7 @@ const BUILTIN_GLOBALS = new Set([
 
 const isBuiltIn = (name: string): boolean => BUILTIN_GLOBALS.has(name);
 
-/** What stays fixed for one whole scan; only the value and its path change. */
-export interface ScanContext {
+interface ScanContext {
   allowedGlobals?: readonly string[] | null;
   seen: WeakSet<object>;
 }
@@ -92,9 +91,6 @@ export const scanForDangerousValues = (
   });
 };
 
-/** Public entry: starts a fresh scan with its own cycle-tracking set. The
- *  result is de-duplicated (preserving first-seen order) so a key that trips
- *  both the key check and the value check is reported once. */
 export const findDangerousValues = (obj: unknown, allowedGlobals?: readonly string[] | null): string[] => {
   const paths = scanForDangerousValues(obj, { allowedGlobals, seen: new WeakSet() });
   return [...new Set(paths)];

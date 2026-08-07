@@ -5,22 +5,22 @@ import type { ParserContext } from "../cursor.ts";
 import { isSymbolToken } from '@nunjucks/lexer';
 import { parseUntilBlocks } from "../parse-root.ts";
 
-export const parseCapture = (ctx: ParserContext): Node => {
-  const tag = peekToken(ctx);
-  if (!skipSymbol(ctx, 'capture')) {
-    fail(ctx, 'Expected capture', tag.lineno, tag.colno);
+export const parseCapture = (parserContext: ParserContext): Node => {
+  const tag = peekToken(parserContext);
+  if (!skipSymbol(parserContext, 'capture')) {
+    fail(parserContext, 'Expected capture', tag.lineno, tag.colno);
   }
 
-  const nameTok = nextTokenOrNull(ctx);
+  const nameTok = nextTokenOrNull(parserContext);
   let varName: string | null = null;
   if (nameTok && isSymbolToken(nameTok)) {
     varName = nameTok.value;
   }
 
-  advanceAfterBlockEnd(ctx, 'capture');
-  const body = parseUntilBlocks(ctx, 'endcapture');
-  skipSymbol(ctx, 'endcapture');
-  advanceAfterBlockEnd(ctx, 'endcapture');
+  advanceAfterBlockEnd(parserContext, 'capture');
+  const body = parseUntilBlocks(parserContext, 'endcapture');
+  skipSymbol(parserContext, 'endcapture');
+  advanceAfterBlockEnd(parserContext, 'endcapture');
 
   return capture(tag.lineno, tag.colno, body, varName);
 };

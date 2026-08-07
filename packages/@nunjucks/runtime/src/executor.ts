@@ -1,4 +1,4 @@
-import { createContext, type ContextEnv, type Context } from './context.ts';
+import { createContext, type Env, type Context } from './context.ts';
 import type { Frame } from './frame.ts';
 import { createRenderRuntime, type RenderRuntime } from './render-runtime.ts';
 import { getRenderFunction, buildSandboxOptions, buildSandboxedRuntime } from './executor-runtime.ts';
@@ -26,12 +26,9 @@ const buildRuntime = (config: ExecuteConfig): RenderRuntime => {
 
 const buildContextObject = (
   context: Record<string, unknown>,
-  env: ContextEnv,
-  autoescape: boolean | undefined
+  env: Env,
 ): Context => {
-  const ctx = createContext(context, {}, env);
-  ctx._autoescape = autoescape ?? true;
-  return ctx;
+  return createContext(context, {}, env);
 };
 
 const executeNonSandbox = async (
@@ -55,11 +52,11 @@ const execute = async (
   env: unknown,
   config: ExecuteConfig = {}
 ): Promise<string> => {
-  const resolvedEnv = (env ?? { opts: { dev: false, autoescape: true, undefined: 'default' }, getFilter: () => null, getTest: () => null }) as ContextEnv;
+  const resolvedEnv = (env ?? { opts: { dev: false, autoescape: config.autoescape ?? true, undefined: 'default' }, getFilter: () => null, getTest: () => null }) as Env;
   const runtime = buildRuntime(config);
-  const ctx = buildContextObject(context, resolvedEnv, config.autoescape);
+  const ctx = buildContextObject(context, resolvedEnv);
 
-  return await executeNonSandbox(code, ctx, frame, env, runtime);
+  return await executeNonSandbox(code, ctx, frame, resolvedEnv, runtime);
 };
 
 export { execute };

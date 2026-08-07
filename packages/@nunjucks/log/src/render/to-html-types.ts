@@ -1,5 +1,5 @@
 import type { LineBase } from '../line-base.ts';
-import type { SourceTrace } from './internal/source-trace.ts';
+import type { SourceTrace } from './internal/location/source-trace.ts';
 import type { ErrorLike } from '../types.ts';
 
 export type { ErrorLike };

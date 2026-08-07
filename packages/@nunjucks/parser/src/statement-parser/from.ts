@@ -4,7 +4,7 @@ import {
   TOKEN_COMMA,
   isSymbolToken,
 } from '@nunjucks/lexer';
-import { appendChild, fromImport, nodeList, pair } from '@nunjucks/nodes';
+import { appendChild, fromImportNode, nodeList, pair } from '@nunjucks/nodes';
 import type { ChildrenNode, Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, skip, skipSymbol, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -19,54 +19,54 @@ const isUnderscore = (name: Node): boolean => {
 };
 
 const parseImportName = (
-  ctx: ParserContext,
+  parserContext: ParserContext,
   names: ChildrenNode
 ): { names: ChildrenNode; withContext: boolean | null | undefined } => {
-  const name = parsePrimary(ctx);
+  const name = parsePrimary(parserContext);
   if (isUnderscore(name)) {
-    fail(ctx, 'parseFrom: names starting with an underscore cannot be imported',
+    fail(parserContext, 'parseFrom: names starting with an underscore cannot be imported',
       name.lineno,
       name.colno);
   }
 
-  const hasAlias = skipSymbol(ctx, 'as');
+  const hasAlias = skipSymbol(parserContext, 'as');
   const newNames = hasAlias
-    ? appendChild(names, pair(name.lineno, name.colno, name, parsePrimary(ctx)))
+    ? appendChild(names, pair(name.lineno, name.colno, name, parsePrimary(parserContext)))
     : appendChild(names, name);
 
-  const withContext = parseWithContext(ctx);
+  const withContext = parseWithContext(parserContext);
   return { names: newNames, withContext };
 };
 
 const handleBlockEnd = (
-  ctx: ParserContext,
+  parserContext: ParserContext,
   names: ChildrenNode,
   fromTok: Token
 ): void => {
   if (names.children.length === 0) {
-    fail(ctx, 'parseFrom: Expected at least one import name',
+    fail(parserContext, 'parseFrom: Expected at least one import name',
       fromTok.lineno,
       fromTok.colno);
   }
 
-  const nextTok = peekToken(ctx);
+  const nextTok = peekToken(parserContext);
   if (isSymbolToken(nextTok) && nextTok.value.charAt(0) === '-') {
-    ctx.dropLeadingWhitespace = true;
+    parserContext.dropLeadingWhitespace = true;
   }
 
-  nextToken(ctx);
+  nextToken(parserContext);
 };
 
-export const parseFrom = (ctx: ParserContext): Node => {
-  const fromTok = peekToken(ctx);
-  if (!skipSymbol(ctx, 'from')) {
-    fail(ctx, 'parseFrom: expected from');
+export const parseFrom = (parserContext: ParserContext): Node => {
+  const fromTok = peekToken(parserContext);
+  if (!skipSymbol(parserContext, 'from')) {
+    fail(parserContext, 'parseFrom: expected from');
   }
 
-  const template = parseExpression(ctx);
+  const template = parseExpression(parserContext);
 
-  if (!skipSymbol(ctx, 'import')) {
-    fail(ctx, 'parseFrom: expected import',
+  if (!skipSymbol(parserContext, 'import')) {
+    fail(parserContext, 'parseFrom: expected import',
       fromTok.lineno,
       fromTok.colno);
   }
@@ -75,24 +75,24 @@ export const parseFrom = (ctx: ParserContext): Node => {
   let withContext: boolean | null | undefined;
 
   for (;;) {
-    const nextTok = peekToken(ctx);
+    const nextTok = peekToken(parserContext);
     if (nextTok.type === TOKEN_BLOCK_END) {
-      handleBlockEnd(ctx, names, fromTok);
+      handleBlockEnd(parserContext, names, fromTok);
       break;
     }
 
-    if (names.children.length > 0 && !skip(ctx, TOKEN_COMMA)) {
-      fail(ctx, 'parseFrom: expected comma',
+    if (names.children.length > 0 && !skip(parserContext, TOKEN_COMMA)) {
+      fail(parserContext, 'parseFrom: expected comma',
         fromTok.lineno,
         fromTok.colno);
     }
 
-    const result = parseImportName(ctx, names);
+    const result = parseImportName(parserContext, names);
     names = result.names;
     withContext = result.withContext;
   }
 
-  return fromImport(fromTok.lineno, fromTok.colno, {
+  return fromImportNode(fromTok.lineno, fromTok.colno, {
     template,
     names,
     withContext: withContext ?? false,

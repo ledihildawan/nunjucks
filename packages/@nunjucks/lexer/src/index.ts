@@ -1,5 +1,5 @@
 export { createTokenizer } from './lexer.ts';
-export { createToken, isStringToken, isSymbolToken, isBlockEndToken, isVariableEndToken, isOperatorToken } from './tokens.ts';
+export { isSymbolToken, isBlockEndToken, isVariableEndToken } from './tokens.ts';
 export type { Token } from './token-types.ts';
 export type { LexerOptions } from './types.ts';
 export type { Delimiters } from './delimiters.ts';
@@ -35,20 +35,6 @@ export {
   TOKEN_TEMPLATE_LITERAL,
 } from './token-types.ts';
 
-export {
-  COMPLEX_OPERATORS,
-  COMPOUND_ASSIGNMENT_OPS,
-  createDelimiters,
-  DEFAULT_BLOCK_END,
-  DEFAULT_BLOCK_START,
-  DEFAULT_COMMENT_END,
-  DEFAULT_COMMENT_START,
-  DEFAULT_VARIABLE_END,
-  DEFAULT_VARIABLE_START,
-  DELIM_CHARS,
-  INT_CHARS,
-  REGEX_FLAGS,
-  WHITESPACE_CHARS,
-} from './delimiters.ts';
+export { COMPOUND_ASSIGNMENT_OPS } from './delimiters.ts';
 
 export { isTestKeyword } from './predicate-definitions.ts';

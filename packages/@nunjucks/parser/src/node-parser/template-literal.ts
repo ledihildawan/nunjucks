@@ -7,11 +7,6 @@ import type { ParserContext } from "../cursor.ts";
 
 const SIMPLE_IDENTIFIER_PATTERN = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
 
-interface Quasi {
-  type: string;
-  value: string;
-}
-
 const UNSAFE_CHARS = ['(', ')', '=>', '{', '+', '-', '*', '/', '||', '&&', '??', '=', ':', '.'] as const;
 const UNSAFE_PATTERNS = [/^\d/, /\s/];
 
@@ -25,20 +20,19 @@ const isSafeTemplateExpression = (expr: string): boolean => {
   return true;
 };
 
-export const parseTemplateLiteral = (ctx: ParserContext): Node | null => {
-  const tok = nextToken(ctx);
+export const parseTemplateLiteral = (parserContext: ParserContext): Node | null => {
+  const tok = nextToken(parserContext);
 
   if (tok.type !== TOKEN_TEMPLATE_LITERAL) {
     return null;
   }
 
-  const templateData = tok.value as { quasis?: Quasi[] };
-  const quasis = templateData.quasis || [];
+  const quasis = tok.value.quasis || [];
 
   const processedQuasis = pipe(quasis, map(quasi => {
     if (quasi.type === 'expression' && quasi.value) {
       if (!isSafeTemplateExpression(quasi.value)) {
-        fail(ctx, 'Template literal expressions must be simple identifiers only. ' +
+        fail(parserContext, 'Template literal expressions must be simple identifiers only. ' +
           'Complex expressions like "${' + quasi.value + '}" are not allowed. ' +
           'Use filters or `:=` declarations for complex computations.',
           tok.lineno, tok.colno);

@@ -11,54 +11,54 @@ import type { ParserContext } from "../cursor.ts";
 import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
 import { tryParsePattern } from "../node-parser/pattern.ts";
 
-export const parseVariableDeclaration = (ctx: ParserContext): Node => {
-  const tag = peekToken(ctx);
+export const parseVariableDeclaration = (parserContext: ParserContext): Node => {
+  const tag = peekToken(parserContext);
 
-  const patternNode = tryParsePattern(ctx);
-  const target = patternNode ?? parsePrimary(ctx);
+  const patternNode = tryParsePattern(parserContext);
+  const target = patternNode ?? parsePrimary(parserContext);
   if (!patternNode && (!target || (target.type !== 'symbol' && !target.value))) {
-    fail(ctx, 'Expected variable name or pattern', tag.lineno, tag.colno);
+    fail(parserContext, 'Expected variable name or pattern', tag.lineno, tag.colno);
   }
   const targets: Node[] = [target];
 
-  if (!skipValue(ctx, TOKEN_OPERATOR, ':=')) {
-    fail(ctx, 'Expected :=', tag.lineno, tag.colno);
+  if (!skipValue(parserContext, TOKEN_OPERATOR, ':=')) {
+    fail(parserContext, 'Expected :=', tag.lineno, tag.colno);
   }
 
-  const value = parseExpression(ctx);
+  const value = parseExpression(parserContext);
 
   return variableDeclaration(tag.lineno, tag.colno, targets, value);
 };
 
-const parseOperator = (ctx: ParserContext, tag: Token): string => {
-  const tok = peekToken(ctx);
+const parseOperator = (parserContext: ParserContext, tag: Token): string => {
+  const tok = peekToken(parserContext);
   if (tok?.type === TOKEN_OPERATOR) {
     if (COMPOUND_ASSIGNMENT_OPS.includes(String(tok.value))) {
-      const next = nextToken(ctx);
+      const next = nextToken(parserContext);
       return isSymbolToken(next) ? next.value : String(next.value);
     }
     if (tok.value === '=') {
-      nextToken(ctx);
+      nextToken(parserContext);
       return '=';
     }
-    fail(ctx, 'Expected =, ||= , &&=, ??=, **=, //=', tag.lineno, tag.colno);
+    fail(parserContext, 'Expected =, ||= , &&=, ??=, **=, //=', tag.lineno, tag.colno);
   }
-  fail(ctx, 'Expected =', tag.lineno, tag.colno);
+  fail(parserContext, 'Expected =', tag.lineno, tag.colno);
   return '';
 };
 
-export const parseVariableAssignment = (ctx: ParserContext): Node => {
-  const tag = peekToken(ctx);
+export const parseVariableAssignment = (parserContext: ParserContext): Node => {
+  const tag = peekToken(parserContext);
 
-  const patternNode = tryParsePattern(ctx);
-  const target = patternNode ?? parsePrimary(ctx);
+  const patternNode = tryParsePattern(parserContext);
+  const target = patternNode ?? parsePrimary(parserContext);
   if (!patternNode && (!target || (target.type !== 'symbol' && !target.value))) {
-    fail(ctx, 'Expected variable name or pattern', tag.lineno, tag.colno);
+    fail(parserContext, 'Expected variable name or pattern', tag.lineno, tag.colno);
   }
   const targets: Node[] = [target];
 
-  const operator = parseOperator(ctx, tag);
-  const value = parseExpression(ctx);
+  const operator = parseOperator(parserContext, tag);
+  const value = parseExpression(parserContext);
 
   if (operator !== '=') {
     return compoundAssignment(tag.lineno, tag.colno, { targets, operator, value });

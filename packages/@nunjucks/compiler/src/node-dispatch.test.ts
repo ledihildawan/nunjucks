@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { createCompiler } from './index.ts';
+import { createCompiler } from './create-compiler.ts';
 import {
   literal, symbol, add, funCall, lookupVal,
   block, output, templateData,

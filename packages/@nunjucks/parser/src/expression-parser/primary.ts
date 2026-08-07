@@ -8,7 +8,6 @@ import {
   TOKEN_REGEX,
   TOKEN_OPERATOR,
   TOKEN_TEMPLATE_LITERAL,
-  isStringToken,
   isSymbolToken,
 } from '@nunjucks/lexer';
 import { literal, symbol, neg, pos, bitwiseNot, increment, decrement } from '@nunjucks/nodes';
@@ -27,48 +26,47 @@ const parseBooleanValue = (tok: Token): unknown => {
   return undefined;
 };
 
-const handleLiteralToken = (tok: Token, ctx: ParserContext): Node | undefined => {
+const handleLiteralToken = (tok: Token, parserContext: ParserContext): Node | undefined => {
   switch (tok.type) {
     case TOKEN_STRING:
       return literal(tok.lineno, tok.colno, tok.value);
     case TOKEN_INT:
-      return literal(tok.lineno, tok.colno, Number(tok.value));
     case TOKEN_FLOAT:
-      return literal(tok.lineno, tok.colno, Number.parseFloat(isStringToken(tok) ? tok.value : String(tok.value)));
+      return literal(tok.lineno, tok.colno, tok.value);
     case TOKEN_BOOLEAN: {
-      const val = parseBooleanValue(tok);
-      if (val === undefined) {
-        fail(ctx, `invalid boolean: ${tok.value}`, tok.lineno, tok.colno);
+      const value = parseBooleanValue(tok);
+      if (value === undefined) {
+        fail(parserContext, `invalid boolean: ${tok.value}`, tok.lineno, tok.colno);
       }
-      return literal(tok.lineno, tok.colno, val);
+      return literal(tok.lineno, tok.colno, value);
     }
     case TOKEN_NONE:
       return literal(tok.lineno, tok.colno, null);
     case TOKEN_REGEX: {
-      const { body, flags } = tok.value as { body: string; flags: string };
+      const { body, flags } = tok.value;
       return literal(tok.lineno, tok.colno, new RegExp(body, flags));
     }
   }
   return undefined;
 };
 
-const handleSymbolOrTemplate = (tok: Token, ctx: ParserContext): Node | null => {
+const handleSymbolOrTemplate = (tok: Token, parserContext: ParserContext): Node | null => {
   if (isSymbolToken(tok)) {
     return symbol(tok.lineno, tok.colno, tok.value);
   }
   if (tok.type === TOKEN_TEMPLATE_LITERAL) {
-    pushToken(ctx, tok);
-    return parseTemplateLiteral(ctx);
+    pushToken(parserContext, tok);
+    return parseTemplateLiteral(parserContext);
   }
   return null;
 };
 
-const parseAggregateOrPattern = (ctx: ParserContext): Node | null => {
+const parseAggregateOrPattern = (parserContext: ParserContext): Node | null => {
   try {
-    return parseAggregate(ctx);
+    return parseAggregate(parserContext);
   } catch (e) {
     if (e !== null && typeof e === 'object' && (e as { sentinel?: unknown }).sentinel === EXPECTED_COLON_AFTER_DICT_KEY) {
-      const node = tryParsePattern(ctx);
+      const node = tryParsePattern(parserContext);
       if (!node) {
         throw e;
       }
@@ -78,51 +76,51 @@ const parseAggregateOrPattern = (ctx: ParserContext): Node | null => {
   }
 };
 
-const parsePrimary = (ctx: ParserContext, noPostfix?: boolean): Node => {
-  const tok = nextToken(ctx);
+const parsePrimary = (parserContext: ParserContext, noPostfix?: boolean): Node => {
+  const tok = nextToken(parserContext);
 
   if (!tok) {
-    fail(ctx, 'expected expression, got end of file');
+    fail(parserContext, 'expected expression, got end of file');
   }
 
-  const literalNode = handleLiteralToken(tok, ctx);
+  const literalNode = handleLiteralToken(tok, parserContext);
   if (literalNode) {
-    return noPostfix ? literalNode : parsePostfix(ctx, literalNode);
+    return noPostfix ? literalNode : parsePostfix(parserContext, literalNode);
   }
 
-  const symbolNode = handleSymbolOrTemplate(tok, ctx);
+  const symbolNode = handleSymbolOrTemplate(tok, parserContext);
   if (symbolNode) {
-    return noPostfix ? symbolNode : parsePostfix(ctx, symbolNode);
+    return noPostfix ? symbolNode : parsePostfix(parserContext, symbolNode);
   }
 
-  pushToken(ctx, tok);
-  const aggregateNode = parseAggregateOrPattern(ctx);
+  pushToken(parserContext, tok);
+  const aggregateNode = parseAggregateOrPattern(parserContext);
   if (!aggregateNode) {
-    return fail(ctx, `expected expression, got ${tok.type}`, tok.lineno, tok.colno);
+    return fail(parserContext, `expected expression, got ${tok.type}`, tok.lineno, tok.colno);
   }
-  return noPostfix ? aggregateNode : parsePostfix(ctx, aggregateNode);
+  return noPostfix ? aggregateNode : parsePostfix(parserContext, aggregateNode);
 };
 
-const parseUnary = (ctx: ParserContext, noPipes?: boolean): Node => {
-  const tok = peekToken(ctx);
+const parseUnary = (parserContext: ParserContext, noPipes?: boolean): Node => {
+  const tok = peekToken(parserContext);
   let node: Node;
 
-  if (skipValue(ctx, TOKEN_OPERATOR, '-')) {
-    node = neg(tok.lineno, tok.colno, parseUnary(ctx, true));
-  } else if (skipValue(ctx, TOKEN_OPERATOR, '+')) {
-    node = pos(tok.lineno, tok.colno, parseUnary(ctx, true));
-  } else if (skipValue(ctx, TOKEN_OPERATOR, '~')) {
-    node = bitwiseNot(tok.lineno, tok.colno, parseUnary(ctx, true));
-  } else if (skipValue(ctx, TOKEN_OPERATOR, '++')) {
-    node = increment(tok.lineno, tok.colno, parseUnary(ctx, true), false);
-  } else if (skipValue(ctx, TOKEN_OPERATOR, '--')) {
-    node = decrement(tok.lineno, tok.colno, parseUnary(ctx, true), false);
+  if (skipValue(parserContext, TOKEN_OPERATOR, '-')) {
+    node = neg(tok.lineno, tok.colno, parseUnary(parserContext, true));
+  } else if (skipValue(parserContext, TOKEN_OPERATOR, '+')) {
+    node = pos(tok.lineno, tok.colno, parseUnary(parserContext, true));
+  } else if (skipValue(parserContext, TOKEN_OPERATOR, '~')) {
+    node = bitwiseNot(tok.lineno, tok.colno, parseUnary(parserContext, true));
+  } else if (skipValue(parserContext, TOKEN_OPERATOR, '++')) {
+    node = increment(tok.lineno, tok.colno, parseUnary(parserContext, true), false);
+  } else if (skipValue(parserContext, TOKEN_OPERATOR, '--')) {
+    node = decrement(tok.lineno, tok.colno, parseUnary(parserContext, true), false);
   } else {
-    node = parsePrimary(ctx);
+    node = parsePrimary(parserContext);
   }
 
   if (!noPipes) {
-    node = parsePipeForward(ctx, node);
+    node = parsePipeForward(parserContext, node);
   }
 
   return node;

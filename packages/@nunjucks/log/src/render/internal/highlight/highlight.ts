@@ -1,0 +1,117 @@
+import { escapeHtml } from '@nunjucks/shared';
+
+const LEADING_WHITESPACE_RE = /^\s+/u;
+const PLAIN_RUN_RE = /^[^<{}"'|\s]+/u;
+
+const renderInlineMarkdown = (text: string): string => {
+  if (!text) { return ''; }
+  return escapeHtml(text)
+    .replace(/`([^`]+)`/gu, '<code class="md-code">$1</code>')
+    .replace(/\*\*([^*]+)\*\*/gu, '<strong>$1</strong>');
+};
+
+interface SyntaxRule {
+  type: string;
+  re: RegExp;
+  tagOnly?: boolean;
+  toggle?: boolean;
+}
+
+const SYNTAX_RULES: SyntaxRule[] = [
+  { type: 'comment', re: /^\{#[\s\S]*?#\}/u },
+  { type: 'tag', re: /^<\/?[a-zA-Z][\w-]*/u },
+  { type: 'delimiter', re: /^(?:\{\{|\}\}|\{%|%\})/u, toggle: true },
+  { type: 'pipe', re: /^\|>/u },
+  { type: 'string', re: /^(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/u },
+  { type: 'number', re: /^\d+(?:\.\d+)?/u },
+  { type: 'attr', re: /^[a-zA-Z_][\w-]*(?=\s*=)/u },
+  {
+    type: 'keyword',
+    re: /^(?:endraw|raw|endfilter|filter|endcomponent|component|endrender|render|endslot|slot|endblock|block|endfor|for|endif|elif|else|if|extends|include|import|from|set|with|without|context|as|not|and|or|in|is|true|false|none|null)(?![\w-])/u,
+    tagOnly: true,
+  },
+  { type: 'variable', re: /^[a-zA-Z_]\w*/u, tagOnly: true },
+  { type: 'operator', re: /^(?:\||=|==|!=|<=|>=|<|>|\+|-|\*|\/|%|&|\[|\]|\(|\)|\.|,|:|\?)/u },
+];
+
+const span = (type: string, text: string): string =>
+  `<span class="syntax-${type}">${escapeHtml(text)}</span>`;
+
+interface HighlightChunk {
+  html: string;
+  length: number;
+  inTag: boolean;
+}
+
+const nextHtmlChunk = (rest: string, inTag: boolean): HighlightChunk => {
+  const ws = rest.match(LEADING_WHITESPACE_RE)?.[0];
+  if (ws) { return { html: ws, length: ws.length, inTag }; }
+
+  for (const rule of SYNTAX_RULES.filter(r => !r.tagOnly || inTag)) {
+    const matched = rest.match(rule.re)?.[0];
+    if (matched) {
+      const nextInTag = rule.toggle ? (matched === '{{' || matched === '{%') : inTag;
+      return { html: span(rule.type, matched), length: matched.length, inTag: nextInTag };
+    }
+  }
+
+  const plain = rest.match(PLAIN_RUN_RE)?.[0];
+  if (plain) { return { html: escapeHtml(plain), length: plain.length, inTag }; }
+
+  return { html: escapeHtml(rest[0] ?? ''), length: 1, inTag };
+};
+
+const highlightHtml = (code: string): string => {
+  if (!code) { return ''; }
+  let out = '';
+  let i = 0;
+  let inTag = false;
+  while (i < code.length) {
+    const chunk = nextHtmlChunk(code.slice(i), inTag);
+    out += chunk.html;
+    i += chunk.length;
+    const { inTag: newInTag } = chunk;
+    inTag = newInTag;
+  }
+  return out;
+};
+
+const JS_RULES: SyntaxRule[] = [
+  { type: 'comment', re: /^\/\/[^\n]*/u },
+  { type: 'comment', re: /^\/\*[\s\S]*?\*\//u },
+  { type: 'string', re: /^(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/u },
+  { type: 'number', re: /^\d+(?:\.\d+)?/u },
+  {
+    type: 'keyword',
+    re: /^(?:function|async|await|try|catch|finally|return|const|let|var|new|throw|typeof|void|delete|class|extends|super|import|export|default|yield|if|else|for|while|do|switch|case|break|continue|this|of|in|instanceof)(?![\w$])/u,
+  },
+  { type: 'variable', re: /^[a-zA-Z_$][\w$]*/u },
+  { type: 'operator', re: /^(?:=>|==|!=|<=|>=|&&|\|\||<|>|\+|-|\*|\/|%|&|\||\^|!|=|\?|:|;|,|\.|\(|\)|\[|\]|\{|\})/u },
+];
+
+const nextJsChunk = (rest: string): HighlightChunk => {
+  const ws = rest.match(LEADING_WHITESPACE_RE)?.[0];
+  if (ws) { return { html: ws, length: ws.length, inTag: false }; }
+
+  for (const rule of JS_RULES) {
+    const matched = rest.match(rule.re)?.[0];
+    if (matched) { return { html: span(rule.type, matched), length: matched.length, inTag: false }; }
+  }
+
+  return { html: escapeHtml(rest[0] ?? ''), length: 1, inTag: false };
+};
+
+const highlightJs = (code: string): string => {
+  if (!code) { return ''; }
+  let out = '';
+  let i = 0;
+  while (i < code.length) {
+    const chunk = nextJsChunk(code.slice(i));
+    out += chunk.html;
+    i += chunk.length;
+  }
+  return out;
+};
+
+export { escapeHtml } from '@nunjucks/shared';
+export { renderInlineMarkdown, highlightHtml, highlightJs };

@@ -1,5 +1,5 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express, { type Router } from 'express';
 import { render } from '@nunjucks/core';
 import { createSandboxedContext } from '@nunjucks/runtime';
@@ -70,7 +70,7 @@ const errorRoutes: ErrorRoute[] = [
 const router: Router = express.Router();
 
 errorRoutes.forEach(({ path: routePath, template, context, filters }) => {
-  router.get('/' + routePath, async (req, res, next) => {
+  router.get(`/${routePath}`, async (_req, res, next) => {
     try {
       const options: Record<string, unknown> = { dev: true, undefined: 'strict', views: VIEWS };
       if (filters) {
@@ -84,7 +84,7 @@ errorRoutes.forEach(({ path: routePath, template, context, filters }) => {
   });
 });
 
-router.get('/inline-filter-error', async (req, res, next) => {
+router.get('/inline-filter-error', async (_req, res, next) => {
   try {
     await render('{{ "test" |> nonexistentFilter }}', {}, { dev: true });
     res.send('Should have thrown');
@@ -93,7 +93,7 @@ router.get('/inline-filter-error', async (req, res, next) => {
   }
 });
 
-router.get('/inline-syntax-error', async (req, res, next) => {
+router.get('/inline-syntax-error', async (_req, res, next) => {
   try {
     await render('{% if true %} {% endif %} {{ invalid', {}, { dev: true });
     res.send('Should have thrown');
@@ -102,7 +102,7 @@ router.get('/inline-syntax-error', async (req, res, next) => {
   }
 });
 
-router.get('/undefined-block', async (req, res, next) => {
+router.get('/undefined-block', async (_req, res, next) => {
   try {
     const html = await render('errors/undefined-block.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
     res.type('html').send(html);
@@ -111,7 +111,7 @@ router.get('/undefined-block', async (req, res, next) => {
   }
 });
 
-router.get('/no-super-block', async (req, res, next) => {
+router.get('/no-super-block', async (_req, res, next) => {
   try {
     const html = await render('{% block content %}{{ super() }}{% endblock %}', {}, { dev: true });
     res.type('html').send(html);
@@ -120,10 +120,8 @@ router.get('/no-super-block', async (req, res, next) => {
   }
 });
 
-router.get('/reserved-keyword', async (req, res, next) => {
+router.get('/reserved-keyword', async (_req, res, next) => {
   try {
-    // `super` is reserved — calling it outside a block context is a
-    // reserved-keyword error.
     const html = await render('{{ super() }}', {}, { dev: true });
     res.type('html').send(html);
   } catch (err) {
@@ -131,7 +129,7 @@ router.get('/reserved-keyword', async (req, res, next) => {
   }
 });
 
-router.get('/no-super-block-template', async (req, res, next) => {
+router.get('/no-super-block-template', async (_req, res, next) => {
   try {
     const html = await render('errors/no-super-block.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
     res.type('html').send(html);
@@ -140,7 +138,7 @@ router.get('/no-super-block-template', async (req, res, next) => {
   }
 });
 
-router.get('/invalid-include', async (req, res, next) => {
+router.get('/invalid-include', async (_req, res, next) => {
   try {
     const html = await render('errors/invalid-include.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
     res.type('html').send(html);
@@ -149,7 +147,7 @@ router.get('/invalid-include', async (req, res, next) => {
   }
 });
 
-router.get('/circular-include', async (req, res, next) => {
+router.get('/circular-include', async (_req, res, next) => {
   try {
     const html = await render('errors/circular-include.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
     res.type('html').send(html);
@@ -158,7 +156,7 @@ router.get('/circular-include', async (req, res, next) => {
   }
 });
 
-router.get('/file-not-found', async (req, res, next) => {
+router.get('/file-not-found', async (_req, res, next) => {
   try {
     const html = await render('errors/file-not-found.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
     res.type('html').send(html);
@@ -167,7 +165,7 @@ router.get('/file-not-found', async (req, res, next) => {
   }
 });
 
-router.get('/filesystem-error', async (req, res, next) => {
+router.get('/filesystem-error', async (_req, res, next) => {
   try {
     const html = await render('errors/filesystem-error.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
     res.type('html').send(html);
@@ -176,7 +174,7 @@ router.get('/filesystem-error', async (req, res, next) => {
   }
 });
 
-router.get('/inline-error', async (req, res, next) => {
+router.get('/inline-error', async (_req, res, next) => {
   try {
     const html = await render('{{ undefinedVar }}', {}, { dev: true, undefined: 'strict' });
     res.type('html').send(html);
@@ -185,7 +183,7 @@ router.get('/inline-error', async (req, res, next) => {
   }
 });
 
-router.get('/sandbox-proto', async (req, res, next) => {
+router.get('/sandbox-proto', async (_req, res, next) => {
   try {
     const html = await render('{{ user.__proto__ }}', { user: {} }, { dev: true, sandbox: true });
     res.type('html').send(html);
@@ -194,7 +192,7 @@ router.get('/sandbox-proto', async (req, res, next) => {
   }
 });
 
-router.get('/sandbox-constructor', async (req, res, next) => {
+router.get('/sandbox-constructor', async (_req, res, next) => {
   try {
     const html = await render('{{ user.constructor }}', { user: {} }, { dev: true, sandbox: true });
     res.type('html').send(html);
@@ -203,7 +201,7 @@ router.get('/sandbox-constructor', async (req, res, next) => {
   }
 });
 
-router.get('/sandbox-process', async (req, res, next) => {
+router.get('/sandbox-process', async (_req, res, next) => {
   try {
     const html = await render('{{ user.global }}', { user: { global: process } }, { dev: true, sandbox: true, contextStrict: 'error' });
     res.type('html').send(html);
@@ -212,7 +210,7 @@ router.get('/sandbox-process', async (req, res, next) => {
   }
 });
 
-router.get('/slice-error', async (req, res, next) => {
+router.get('/slice-error', async (_req, res, next) => {
   try {
     const html = await render('{{ [1,2,3][::0] }}', {}, { dev: true });
     res.type('html').send(html);
@@ -221,7 +219,7 @@ router.get('/slice-error', async (req, res, next) => {
   }
 });
 
-router.get('/list-filter-error', async (req, res, next) => {
+router.get('/list-filter-error', async (_req, res, next) => {
   try {
     const html = await render('{{ 42 |> list }}', {}, { dev: true });
     res.type('html').send(html);
@@ -230,7 +228,7 @@ router.get('/list-filter-error', async (req, res, next) => {
   }
 });
 
-router.get('/in-operator-error', async (req, res, next) => {
+router.get('/in-operator-error', async (_req, res, next) => {
   try {
     const html = await render('{{ key in value }}', { key: 'test', value: 123 }, { dev: true });
     res.type('html').send(html);
@@ -239,7 +237,7 @@ router.get('/in-operator-error', async (req, res, next) => {
   }
 });
 
-router.get('/filter-throw', async (req, res, next) => {
+router.get('/filter-throw', async (_req, res, next) => {
   try {
     const html = await render('{{ "test" |> throwingFilter }}', {}, {
       dev: true,
@@ -248,7 +246,7 @@ router.get('/filter-throw', async (req, res, next) => {
           try {
             throw new Error('Filter intentionally threw');
           } catch (e) {
-            const err = new Error('Filter throwingFilter threw: ' + (e as Error).message);
+            const err = new Error(`Filter throwingFilter threw: ${(e as Error).message}`);
             err.code = 'FILTER_ERROR';
             (err as Record<string, unknown>).subject = 'throwingFilter';
             throw err;
@@ -262,7 +260,7 @@ router.get('/filter-throw', async (req, res, next) => {
   }
 });
 
-router.get('/sandbox-timeout', async (req, res, next) => {
+router.get('/sandbox-timeout', async (_req, res, next) => {
   try {
     const html = await render('{% for i in range(0, 100000) %}{{ i }}{% endfor %}', {}, { dev: true, sandbox: true, executionTimeout: 1 });
     res.type('html').send(html);
@@ -271,7 +269,7 @@ router.get('/sandbox-timeout', async (req, res, next) => {
   }
 });
 
-router.get('/sandbox-context-modify', async (req, res, next) => {
+router.get('/sandbox-context-modify', async (_req, res, next) => {
   try {
     const html = await render('{{ modifyContext() }}', {
       modifyContext: () => {
@@ -285,7 +283,7 @@ router.get('/sandbox-context-modify', async (req, res, next) => {
   }
 });
 
-router.get('/blocked-context-keys', async (req, res, next) => {
+router.get('/blocked-context-keys', async (_req, res, next) => {
   try {
     const html = await render('{{ password }}', { password: 'secret123' }, { dev: true, strictMode: true, blockedContextKeys: ['password'] });
     res.type('html').send(html);
@@ -294,7 +292,7 @@ router.get('/blocked-context-keys', async (req, res, next) => {
   }
 });
 
-router.get('/blocked-custom-key', async (req, res, next) => {
+router.get('/blocked-custom-key', async (_req, res, next) => {
   try {
     const html = await render('{{ creditCard }}', { creditCard: '4111-1111-1111-1111' }, { dev: true, strictMode: true, blockedContextKeys: ['creditCard'] });
     res.type('html').send(html);
@@ -303,10 +301,7 @@ router.get('/blocked-custom-key', async (req, res, next) => {
   }
 });
 
-// Demonstrates that without `blockedContextKeys`, sensitive-looking keys are
-// NOT auto-redacted. We trigger a deliberate error so the render context
-// shows up in the error page.
-router.get('/no-blocked-context-keys', async (req, res, next) => {
+router.get('/no-blocked-context-keys', async (_req, res, next) => {
   try {
     const html = await render('{{ password.upper() }}', { password: 'mySecretValue123', apiKey: 'abc-def-ghi' }, { dev: true });
     res.type('html').send(html);
@@ -315,7 +310,7 @@ router.get('/no-blocked-context-keys', async (req, res, next) => {
   }
 });
 
-router.get('/dangerous-context', async (req, res, next) => {
+router.get('/dangerous-context', async (_req, res, next) => {
   try {
     const html = await render('{{ env.NODE_ENV }}', {}, { dev: true });
     res.type('html').send(html);
@@ -324,7 +319,7 @@ router.get('/dangerous-context', async (req, res, next) => {
   }
 });
 
-router.get('/dangerous-context-values', async (req, res, next) => {
+router.get('/dangerous-context-values', async (_req, res, next) => {
   try {
     const html = await render('{{ user.name }}', { user: { name: 'test', eval: 'profile label' }, globalThis }, { dev: true, strictMode: true, scanContextValues: true });
     res.type('html').send(html);
@@ -333,7 +328,7 @@ router.get('/dangerous-context-values', async (req, res, next) => {
   }
 });
 
-router.get('/dangerous-template', async (req, res, next) => {
+router.get('/dangerous-template', async (_req, res, next) => {
   try {
     const html = await render('{{ eval("1+1") }}', {}, { dev: true, strictMode: true });
     res.type('html').send(html);
@@ -342,7 +337,7 @@ router.get('/dangerous-template', async (req, res, next) => {
   }
 });
 
-router.get('/template-size', async (req, res, next) => {
+router.get('/template-size', async (_req, res, next) => {
   try {
     const largeTemplate = 'x'.repeat(10000);
     const html = await render(largeTemplate, {}, { dev: true, maxTemplateSize: 1000 });
@@ -352,7 +347,7 @@ router.get('/template-size', async (req, res, next) => {
   }
 });
 
-router.get('/invalid-config', async (req, res, next) => {
+router.get('/invalid-config', async (_req, res, next) => {
   try {
     const html = await render('{{ test }}', { test: 'value' }, { dev: true, executionTimeout: -1 });
     res.type('html').send(html);
@@ -361,7 +356,7 @@ router.get('/invalid-config', async (req, res, next) => {
   }
 });
 
-router.get('/key-not-found', async (req, res, next) => {
+router.get('/key-not-found', async (_req, res, next) => {
   try {
     const html = await render('{{ missingKey }}', {}, { dev: true, undefined: 'strict' });
     res.type('html').send(html);
@@ -370,7 +365,7 @@ router.get('/key-not-found', async (req, res, next) => {
   }
 });
 
-router.get('/import-error', async (req, res, next) => {
+router.get('/import-error', async (_req, res, next) => {
   try {
     const html = await render('errors/import-error.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
     res.type('html').send(html);
@@ -379,7 +374,7 @@ router.get('/import-error', async (req, res, next) => {
   }
 });
 
-router.get('/container-error', async (req, res, next) => {
+router.get('/container-error', async (_req, res, next) => {
   try {
     const html = await render('{{ container.get("missing") }}', { container: { get: undefined } }, { dev: true });
     res.type('html').send(html);
@@ -388,7 +383,7 @@ router.get('/container-error', async (req, res, next) => {
   }
 });
 
-router.get('/reserved-keyword-filter', async (req, res, next) => {
+router.get('/reserved-keyword-filter', async (_req, res, next) => {
   try {
     const html = await render('{{ value }}', { value: 'test' }, { dev: true, _customFilters: { 'if': (v: unknown) => v } });
     res.type('html').send(html);
@@ -397,7 +392,7 @@ router.get('/reserved-keyword-filter', async (req, res, next) => {
   }
 });
 
-router.get('/reserved-keyword-global', async (req, res, next) => {
+router.get('/reserved-keyword-global', async (_req, res, next) => {
   try {
     const html = await render('{{ myArray }}', { myArray: [1, 2, 3] }, { dev: true, globals: { Array: {} }, _customGlobals: { Array: {} } });
     res.type('html').send(html);
@@ -406,7 +401,7 @@ router.get('/reserved-keyword-global', async (req, res, next) => {
   }
 });
 
-router.get('/groupby-type-error', async (req, res, next) => {
+router.get('/groupby-type-error', async (_req, res, next) => {
   try {
     const html = await render('{{ items |> groupby("missing") }}', { items: [{ name: 'test' }] }, { dev: true, undefined: 'strict' });
     res.type('html').send(html);
@@ -415,7 +410,7 @@ router.get('/groupby-type-error', async (req, res, next) => {
   }
 });
 
-router.get('/sort-type-error', async (req, res, next) => {
+router.get('/sort-type-error', async (_req, res, next) => {
   try {
     const html = await render('{{ items |> sort("missing") }}', { items: [{ name: 'test' }] }, { dev: true, undefined: 'strict' });
     res.type('html').send(html);
@@ -424,7 +419,7 @@ router.get('/sort-type-error', async (req, res, next) => {
   }
 });
 
-router.get('/dictsort-value-error', async (req, res, next) => {
+router.get('/dictsort-value-error', async (_req, res, next) => {
   try {
     const html = await render('{{ data |> dictsort }}', { data: 'not an object' }, { dev: true });
     res.type('html').send(html);
@@ -433,7 +428,7 @@ router.get('/dictsort-value-error', async (req, res, next) => {
   }
 });
 
-router.get('/dictsort-by-error', async (req, res, next) => {
+router.get('/dictsort-by-error', async (_req, res, next) => {
   try {
     const html = await render('{{ data |> dictsort(false, "invalid") }}', { data: { a: 1, b: 2 } }, { dev: true });
     res.type('html').send(html);
@@ -442,7 +437,7 @@ router.get('/dictsort-by-error', async (req, res, next) => {
   }
 });
 
-router.get('/unknown-block-runtime', async (req, res, next) => {
+router.get('/unknown-block-runtime', async (_req, res, next) => {
   try {
     const html = await render('{% extends "base.njk" %}{% block nonexistent %}{{ super() }}{% endblock %}', {}, { dev: true, views: VIEWS });
     res.type('html').send(html);
@@ -451,7 +446,7 @@ router.get('/unknown-block-runtime', async (req, res, next) => {
   }
 });
 
-router.get('/expected-variable-end', async (req, res, next) => {
+router.get('/expected-variable-end', async (_req, res, next) => {
   try {
     const html = await render('{{ user.name ', { user: { name: 'test' } }, { dev: true });
     res.type('html').send(html);
@@ -460,7 +455,7 @@ router.get('/expected-variable-end', async (req, res, next) => {
   }
 });
 
-router.get('/parser-unexpected-token', async (req, res, next) => {
+router.get('/parser-unexpected-token', async (_req, res, next) => {
   try {
     const html = await render('{% if true %}{% endif %}{{ ', {}, { dev: true });
     res.type('html').send(html);
@@ -469,7 +464,7 @@ router.get('/parser-unexpected-token', async (req, res, next) => {
   }
 });
 
-router.get('/sandbox-access', async (req, res, next) => {
+router.get('/sandbox-access', async (_req, res, next) => {
   try {
     const html = await render('{{ global }}', { global: process }, { dev: true, sandbox: true, contextStrict: false });
     res.type('html').send(html);
@@ -478,7 +473,7 @@ router.get('/sandbox-access', async (req, res, next) => {
   }
 });
 
-router.get('/sandbox-allowlist', async (req, res, next) => {
+router.get('/sandbox-allowlist', async (_req, res, next) => {
   try {
     const html = await render('{{ customVar }}', { customVar: 'test' }, { dev: true, sandbox: true, sandboxAllowlist: ['allowedVar'], sandboxMode: 'allowlist' });
     res.type('html').send(html);
@@ -487,7 +482,7 @@ router.get('/sandbox-allowlist', async (req, res, next) => {
   }
 });
 
-router.get('/sandbox-code-execution', async (req, res, next) => {
+router.get('/sandbox-code-execution', async (_req, res, next) => {
   try {
     const html = await render('{{ setTimeout("alert(1)", 0) }}', { setTimeout }, { dev: true, sandbox: true });
     res.type('html').send(html);
@@ -496,7 +491,7 @@ router.get('/sandbox-code-execution', async (req, res, next) => {
   }
 });
 
-router.get('/sandbox-context-error', async (req, res, next) => {
+router.get('/sandbox-context-error', async (_req, res, next) => {
   try {
     const html = await render('{{ user.something }}', { user: undefined }, { dev: true, sandbox: true, undefined: 'strict' });
     res.type('html').send(html);
@@ -505,7 +500,7 @@ router.get('/sandbox-context-error', async (req, res, next) => {
   }
 });
 
-router.get('/container-factory', async (req, res, next) => {
+router.get('/container-factory', async (_req, res, next) => {
   try {
     const html = await render('{{ container.get("test") }}', { container: { get: 'not a function' } }, { dev: true });
     res.type('html').send(html);
@@ -514,7 +509,7 @@ router.get('/container-factory', async (req, res, next) => {
   }
 });
 
-router.get('/container-not-registered', async (req, res, next) => {
+router.get('/container-not-registered', async (_req, res, next) => {
   try {
     const html = await render('{{ myContainer.get("test") }}', {}, { dev: true });
     res.type('html').send(html);
@@ -523,7 +518,7 @@ router.get('/container-not-registered', async (req, res, next) => {
   }
 });
 
-router.get('/template-must-be-string', async (req, res, next) => {
+router.get('/template-must-be-string', async (_req, res, next) => {
   try {
     const html = await render(123 as unknown as string, {}, { dev: true });
     res.type('html').send(html);
@@ -532,7 +527,7 @@ router.get('/template-must-be-string', async (req, res, next) => {
   }
 });
 
-router.get('/template-null', async (req, res, next) => {
+router.get('/template-null', async (_req, res, next) => {
   try {
     const html = await render(null as unknown as string, {}, { dev: true });
     res.type('html').send(html);
@@ -541,7 +536,7 @@ router.get('/template-null', async (req, res, next) => {
   }
 });
 
-router.get('/undefined-value-match', async (req, res, next) => {
+router.get('/undefined-value-match', async (_req, res, next) => {
   try {
     const html = await render('{{ product.name }}', { product: { test: 'test' } }, { dev: true, undefined: 'strict' });
     res.type('html').send(html);
@@ -550,7 +545,7 @@ router.get('/undefined-value-match', async (req, res, next) => {
   }
 });
 
-router.get('/', async (req, res, next) => {
+router.get('/', async (_req, res, next) => {
   try {
     const groups: ErrorGroup[] = [
       {

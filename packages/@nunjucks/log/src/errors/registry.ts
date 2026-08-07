@@ -1,7 +1,7 @@
 import { pipe, values, map } from 'remeda';
 import type { ErrorDefinition, Classification, SubjectExtractor, ExtraExtractor } from './types.ts';
 import { firstCapture } from './types.ts';
-import { RUNTIME_ERRORS } from './runtime.ts';
+import { RUNTIME_ERRORS } from './runtime/index.ts';
 import { PARSER_ERRORS } from './parser.ts';
 import { SANDBOX_ERRORS } from './sandbox.ts';
 import { IO_ERRORS } from './io.ts';
@@ -72,4 +72,3 @@ const DEFAULT_CLASSIFICATION: Classification = {
 };
 
 export { ERROR_DEFINITIONS, getError, RULES, DEFAULT_CLASSIFICATION, toRule };
-export type { ErrorName };

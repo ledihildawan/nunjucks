@@ -1,9 +1,9 @@
 import { flatMap, keys, pipe } from 'remeda';
 import { validateFilterName, validateGlobalName } from '@nunjucks/shared';
+import type { BaseValidationError } from '@nunjucks/shared';
 
-export interface ConfigValidationError {
+export interface ConfigValidationError extends BaseValidationError {
   code: string;
-  message: string;
   subject: string;
   type: string;
 }

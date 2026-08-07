@@ -18,53 +18,46 @@ export interface PropertyNotFoundResult {
   __access_path__: string;
 }
 
-/**
- * Union of the two "marker" objects that `memberLookup` may return to signal
- * an access that should be treated as undefined-ish (null intermediate, or
- * missing property). `memberLookup` itself returns `unknown` (marker OR real
- * value); use the `isNullAccessResult` / `isPropertyNotFoundResult` type guards
- * to narrow at the call site.
- */
 export type AccessResult = NullAccessResult | PropertyNotFoundResult;
 
-export const memberLookup = (obj: unknown, val: string, parentName: string | null = null): unknown => {
+export const memberLookup = (obj: unknown, value: string, parentName: string | null = null): unknown => {
   if (obj === null || obj === undefined) {
-    return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
+    return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: value };
   }
 
   const target = obj as Record<string, unknown>;
-  const hasProperty = hasOwn(target, val) || (typeof obj === 'object' || typeof obj === 'function' ? (val in target) : (val in Object(obj)));
+  const hasProperty = hasOwn(target, value) || (typeof obj === 'object' || typeof obj === 'function' ? (value in target) : (value in Object(obj)));
 
   if (!hasProperty) {
-    const marker = { [PROP_NOT_FOUND]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val };
+    const marker = { [PROP_NOT_FOUND]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: value };
     const callable = Object.assign(() => undefined, marker);
     Object.setPrototypeOf(callable, null);
     return callable;
   }
 
-  if (isFunction(target[val])) {
-    const fn = target[val];
+  if (isFunction(target[value])) {
+    const fn = target[value];
     return (...args: unknown[]) => Reflect.apply(fn, target, args);
   }
 
-  return target[val];
+  return target[value];
 };
 
-export const isNullAccessResult = (val: unknown): val is NullAccessResult => {
-  return isNonNullish(val) && typeof val === 'object' && (val as NullAccessResult).__nunjucks_null__ === true;
+export const isNullAccessResult = (value: unknown): value is NullAccessResult => {
+  return isNonNullish(value) && typeof value === 'object' && (value as NullAccessResult).__nunjucks_null__ === true;
 };
 
-export const isPropertyNotFoundResult = (val: unknown): val is PropertyNotFoundResult => {
-  return isNonNullish(val) && (val as PropertyNotFoundResult).__nunjucks_prop_not_found__ === true;
+export const isPropertyNotFoundResult = (value: unknown): value is PropertyNotFoundResult => {
+  return isNonNullish(value) && (value as PropertyNotFoundResult).__nunjucks_prop_not_found__ === true;
 };
 
-export const getNullParentName = (val: unknown): string | null => {
-  if (!isNonNullish(val)) { return null; }
-  return (val as NullAccessResult).__nunjucks_parent__ ?? null;
+export const getNullParentName = (value: unknown): string | null => {
+  if (!isNonNullish(value)) { return null; }
+  return (value as NullAccessResult).__nunjucks_parent__ ?? null;
 };
 
-export const optionalMemberLookup = (obj: unknown, val: string, parentName: string | null = null): unknown => {
-  const result = memberLookup(obj, val, parentName);
+export const optionalMemberLookup = (obj: unknown, value: string, parentName: string | null = null): unknown => {
+  const result = memberLookup(obj, value, parentName);
   if (isNullAccessResult(result) || isPropertyNotFoundResult(result)) {
     return;
   }
@@ -95,22 +88,18 @@ export const slice = <T>(arr: readonly T[] | string, start: number | null, stop:
     return arr.slice(normalizedStart, normalizedStop);
   }
 
-  const buildResult = (): T[] => {
-    const result: T[] = [];
-    if (stepValue > 0) {
-      for (let i = normalizedStart; i < normalizedStop; i += stepValue) {
-        result.push(arr[i] as T);
-      }
-    } else {
-      for (let i = normalizedStart; i >= 0 && i > normalizedStop; i += stepValue) {
-        result.push(arr[i] as T);
-      }
+  const result: T[] = [];
+  if (stepValue > 0) {
+    for (let i = normalizedStart; i < normalizedStop; i += stepValue) {
+      result.push(arr[i] as T);
     }
-    return result;
-  };
-
-  return buildResult();
-};
+  } else {
+    for (let i = normalizedStart; i >= 0 && i > normalizedStop; i += stepValue) {
+      result.push(arr[i] as T);
+    }
+  }
+  return result;
+};;
 
 export const nullishCoalesce = <T>(left: T | null | undefined, right: T): T => {
   if (isNonNullish(left)) {

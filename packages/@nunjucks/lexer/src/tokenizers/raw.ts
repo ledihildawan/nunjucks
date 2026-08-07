@@ -1,7 +1,7 @@
 import type { Tokenizer, LexerState } from '../types.ts';
 import { getChar, matches, advance, isFinished } from '../state.ts';
 import { createToken } from '../tokens.ts';
-import type { TokenType } from '../token-types.ts';
+import { TOKEN_RAW } from '../token-types.ts';
 
 type RawState = {
   content: string;
@@ -50,14 +50,14 @@ const processBlockEndTag = (
   name: string,
   endTagName: string,
   depth: number,
-  tags: { BLOCK_START: string; BLOCK_END: string }
+  tags: { blockStart: string; blockEnd: string }
 ): RawState | null => {
-  const afterBlockEnd = advance(current, tags.BLOCK_END.length);
+  const afterBlockEnd = advance(current, tags.blockEnd.length);
   const { tagName } = extractTagNameAfterBlockEnd(afterBlockEnd);
 
   if (tagName === name) {
     return {
-      content: tags.BLOCK_END + tagName,
+      content: tags.blockEnd + tagName,
       depth: depth + 1,
       current: afterBlockEnd,
     };
@@ -66,13 +66,13 @@ const processBlockEndTag = (
   if (tagName === endTagName) {
     if (depth === 1) {
       return {
-        content: tags.BLOCK_END + endTagName + tags.BLOCK_END,
+        content: tags.blockEnd + endTagName + tags.blockEnd,
         depth: 0,
-        current: advance(afterBlockEnd, tags.BLOCK_END.length),
+        current: advance(afterBlockEnd, tags.blockEnd.length),
       };
     }
     return {
-      content: tags.BLOCK_END + tagName,
+      content: tags.blockEnd + tagName,
       depth: depth - 1,
       current: afterBlockEnd,
     };
@@ -85,14 +85,14 @@ const processRawContent = (
   current: LexerState,
   name: string,
   endTagName: string,
-  tags: { BLOCK_START: string; BLOCK_END: string }
+  tags: { blockStart: string; blockEnd: string }
 ): RawState => {
-  let content = tags.BLOCK_START + name;
+  let content = tags.blockStart + name;
   let depth = 1;
   let state = current;
 
   while (!isFinished(state) && depth > 0) {
-    if (matches(state, tags.BLOCK_END)) {
+    if (matches(state, tags.blockEnd)) {
       const result = processBlockEndTag(state, name, endTagName, depth, tags);
       if (result === null) {
         content += getChar(state);
@@ -112,9 +112,9 @@ const processRawContent = (
 };
 
 export const tokenizeRaw: Tokenizer = (state) => {
-  if (!matches(state, state.tags.BLOCK_START)) { return null; }
+  if (!matches(state, state.tags.blockStart)) { return null; }
 
-  const blockStartLen = state.tags.BLOCK_START.length;
+  const blockStartLen = state.tags.blockStart.length;
   let current = advance(state, blockStartLen);
 
   current = skipWhitespaceAfterBlockStart(current);
@@ -126,7 +126,7 @@ export const tokenizeRaw: Tokenizer = (state) => {
   const { content, current: finalState } = processRawContent(afterName, name, endTagName, state.tags);
 
   return {
-    token: createToken('raw' as TokenType, content, state.lineno, state.colno),
+    token: createToken(TOKEN_RAW, content, state.lineno, state.colno),
     state: finalState,
   };
 };

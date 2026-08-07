@@ -1,4 +1,4 @@
-import { TOKEN_SYMBOL, TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_COMMA, TOKEN_LEFT_BRACKET } from '@nunjucks/lexer';
+import { TOKEN_SYMBOL, TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_COMMA, TOKEN_LEFT_BRACKET, type TOKEN_OPERATOR } from '@nunjucks/lexer';
 import type { Token } from '@nunjucks/lexer';
 import { appendChild, literal, nodeList, optionalCall, optionalChain } from '@nunjucks/nodes';
 import type { ChildrenNode, Node } from '@nunjucks/nodes';
@@ -7,60 +7,62 @@ import type { ParserContext } from "../../cursor.ts";
 import { parseExpression } from "../index.ts";
 import { markBracketNotation } from "./lookup.ts";
 
+type OptionalChainOperatorToken = Token & { type: typeof TOKEN_OPERATOR };
+
 const isEndOfArgs = (next: Token): boolean =>
   !next || next.type === TOKEN_RIGHT_PAREN;
 
-const handleComma = (ctx: ParserContext, expectComma: boolean): boolean => {
+const handleComma = (parserContext: ParserContext, expectComma: boolean): boolean => {
   if (!expectComma) { return true; }
-  const next = peekToken(ctx);
+  const next = peekToken(parserContext);
   if (next?.type !== TOKEN_COMMA) {
-    fail(ctx, 'expected comma after expression', next?.lineno ?? 0, next?.colno ?? 0);
+    fail(parserContext, 'expected comma after expression', next?.lineno ?? 0, next?.colno ?? 0);
   }
-  nextToken(ctx);
+  nextToken(parserContext);
   return true;
 };
 
-const parseOptionalCallArgs = (ctx: ParserContext, tok: Token): ChildrenNode => {
+const parseOptionalCallArgs = (parserContext: ParserContext, tok: Token): ChildrenNode => {
   let args = nodeList(tok.lineno, tok.colno);
   let expectComma = false;
 
   for (;;) {
-    const next = peekToken(ctx);
+    const next = peekToken(parserContext);
     if (isEndOfArgs(next)) {
       if (next) {
-        nextToken(ctx);
+        nextToken(parserContext);
       }
       break;
     }
 
-    if (!handleComma(ctx, expectComma)) { break; }
+    if (!handleComma(parserContext, expectComma)) { break; }
 
-    const arg = parseExpression(ctx);
-    args = appendChild(args, arg);
+    const argument = parseExpression(parserContext);
+    args = appendChild(args, argument);
     expectComma = true;
   }
 
   return args;
 };
 
-export const parseOptionalChain = (ctx: ParserContext, tok: Token, target: Node): Node => {
-  nextToken(ctx);
-  const val = peekToken(ctx);
+export const parseOptionalChain = (parserContext: ParserContext, tok: OptionalChainOperatorToken, target: Node): Node => {
+  nextToken(parserContext);
+  const value = peekToken(parserContext);
 
-  if (val?.type === TOKEN_LEFT_PAREN) {
-    nextToken(ctx);
-    const args = parseOptionalCallArgs(ctx, tok);
+  if (value?.type === TOKEN_LEFT_PAREN) {
+    nextToken(parserContext);
+    const args = parseOptionalCallArgs(parserContext, tok);
     return optionalCall(tok.lineno, tok.colno, target, [...args.children]);
   }
 
-    const nextTok = peekToken(ctx);
+    const nextTok = peekToken(parserContext);
   if (nextTok?.type === TOKEN_LEFT_BRACKET) {
-    nextToken(ctx);
-    const start = parseExpression(ctx);
+    nextToken(parserContext);
+    const start = parseExpression(parserContext);
 
-    const rightBracket = nextToken(ctx);
+    const rightBracket = nextToken(parserContext);
     if (rightBracket.type !== 'right-bracket') {
-      fail(ctx, 'expected right bracket', rightBracket.lineno, rightBracket.colno);
+      fail(parserContext, 'expected right bracket', rightBracket.lineno, rightBracket.colno);
     }
 
     const node = optionalChain(tok.lineno, tok.colno, target, start);
@@ -68,11 +70,11 @@ export const parseOptionalChain = (ctx: ParserContext, tok: Token, target: Node)
     return node;
   }
 
-  const val2 = nextToken(ctx);
+  const val2 = nextToken(parserContext);
 
   if (val2.type !== TOKEN_SYMBOL) {
     const targetName = (target ? String(target.value ?? 'expression') : 'expression');
-    fail(ctx, `expected name as lookup value after ?. on ${targetName}, got ${val2.value}`,
+    fail(parserContext, `expected name as lookup value after ?. on ${targetName}, got ${val2.value}`,
       val2.lineno,
       val2.colno);
   }

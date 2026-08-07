@@ -5,17 +5,16 @@ interface SandboxOptions {
   blocklistMode?: boolean;
   blockedContextKeys?: readonly string[];
   environment?: Environment;
-  env?: Environment;
   topLevel?: boolean;
 }
 
-type ResolvedSandboxOptions = Required<Omit<SandboxOptions, 'topLevel' | 'env'>>;
+type ResolvedSandboxOptions = Required<Omit<SandboxOptions, 'topLevel'>>;
 
 const resolveSandboxOptions = (options: SandboxOptions = {}): ResolvedSandboxOptions => ({
   allowlist: options.allowlist || [],
   blocklistMode: options.blocklistMode ?? true,
   blockedContextKeys: options.blockedContextKeys || [],
-  environment: options.environment || options.env || 'auto',
+  environment: options.environment || 'auto',
 });
 
 export { resolveSandboxOptions };

@@ -60,15 +60,8 @@ const isCoordinateWithinTemplate = (
 };
 
 const findAllOccurrences = (content: string, candidate: string): number[] => {
-  const results: number[] = [];
-  let searchFrom = 0;
-  while (true) {
-    const found = content.indexOf(candidate, searchFrom);
-    if (found === -1) { break; }
-    results.push(found);
-    searchFrom = found + 1;
-  }
-  return results;
+  const escaped = candidate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return [...content.matchAll(new RegExp(escaped, 'g'))].map((match) => match.index ?? 0);
 };
 
 const findTemplateOccurrence = (
@@ -101,15 +94,15 @@ const findTemplateOccurrence = (
 
 const positionOfCaptureGroup = (
   content: string,
-  match: RegExpExecArray,
+  match: RegExpMatchArray,
   group: number,
   subjectColOffset: number
 ): SourcePosition | null => {
   const groupText = match[group];
   if (!groupText) { return null; }
-  const groupOffset = match[0].indexOf(groupText);
+  const groupOffset = match[0]?.indexOf(groupText) ?? -1;
   if (groupOffset < 0) { return null; }
-  const pos = positionAtOffset(content, match.index + groupOffset + subjectColOffset);
+  const pos = positionAtOffset(content, (match.index ?? 0) + groupOffset + subjectColOffset);
   return { line: pos.lineOffset + 1, col: pos.col + 1 };
 };
 
@@ -130,13 +123,7 @@ const matchTemplateInCaller = (
   return { line: pos.lineOffset + 1, col: pos.col + 1 };
 };
 
-const collectRegexMatches = (content: string, re: RegExp): RegExpExecArray[] => {
-  const results: RegExpExecArray[] = [];
-  for (let match = re.exec(content); match !== null; match = re.exec(content)) {
-    results.push(match);
-  }
-  return results;
-};
+const collectRegexMatches = (content: string, re: RegExp): RegExpMatchArray[] => [...content.matchAll(re)];
 
 const findSubjectOccurrence = (
   content: string,

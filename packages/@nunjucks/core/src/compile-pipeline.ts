@@ -5,15 +5,6 @@ import { transform } from '@nunjucks/transformers';
 import { createFrame } from '@nunjucks/runtime';
 import type { UndefinedMode } from '@nunjucks/runtime';
 
-/**
- * Shared compile pipeline: source → parse → transform → compile → JS code string.
- *
- * Both render paths use this:
- * - Direct `render()` path (`render-helpers.ts`) — gets code string, passes to
- *   executor which does `new Function(code)()`.
- * - Template object path (`template-compiler.ts`) — gets code string, does
- *   `new Function(code)()` immediately to extract render functions.
- */
 const compileToCode = (
   source: string,
   templateName: string,

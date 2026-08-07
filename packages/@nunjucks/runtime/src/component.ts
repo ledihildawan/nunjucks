@@ -16,8 +16,8 @@ const createComponentContext = (
   slots: SlotContext,
 ): ComponentContext => ({ props, slots });
 
-export function makeComponent(argNames: string[], kwargNames: string[], func: (...args: never[]) => unknown): (...componentArgs: unknown[]) => unknown {
-  return function component(this: unknown, ...componentArgs: unknown[]): unknown {
+export function makeComponent<A extends unknown[], R>(argNames: string[], kwargNames: string[], func: (...args: A) => R): (...componentArgs: unknown[]) => R {
+  return function component(this: unknown, ...componentArgs: unknown[]): R {
     const argCount = numArgs(componentArgs);
     const kwargs = { ...getKeywordArgs(componentArgs) };
 
@@ -26,7 +26,7 @@ export function makeComponent(argNames: string[], kwargNames: string[], func: (.
           const extraArgs = componentArgs.slice(argNames.length, argCount);
           const extraKwargs = Object.fromEntries(
             extraArgs
-              .map((val, i) => [kwargNames[i], val] as [string | undefined, unknown])
+              .map((value, i) => [kwargNames[i], value] as [string | undefined, unknown])
               .filter((entry): entry is [string, unknown] => entry[0] !== undefined)
           );
           return [...componentArgs.slice(0, argNames.length), { ...kwargs, ...extraKwargs }];
@@ -38,11 +38,11 @@ export function makeComponent(argNames: string[], kwargNames: string[], func: (.
             const remainingKwargs = makeKeywordArgs(
               Object.fromEntries(Object.entries(kwargs).filter(([k]) => !consumedSet.has(k)))
             );
-            return [...componentArgs.slice(0, argCount), ...missingNames.map(arg => kwargs[arg]), remainingKwargs];
+            return [...componentArgs.slice(0, argCount), ...missingNames.map(argument => kwargs[argument]), remainingKwargs];
           })()
         : componentArgs;
 
-    return Reflect.apply(func, this, args);
+    return Reflect.apply(func, this, args) as R;
   };
 }
 

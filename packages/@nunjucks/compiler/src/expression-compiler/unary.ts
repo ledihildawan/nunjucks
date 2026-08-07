@@ -1,17 +1,17 @@
 import type { UnaryOpNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
-import { emitLocationGuard } from '../compiler-helpers.ts';
+import { emitLocationGuard } from '../codegen.ts';
 
-const compileUnary = (ctx: Compiler, node: UnaryOpNode, frame: Frame, operator: string): void => {
-  emitLocationGuard(ctx, node.lineno, node.colno);
-  ctx.emit(operator);
-  ctx.compile(node.target, frame);
-  ctx.emit(')');
+const compileUnary = (compiler: Compiler, node: UnaryOpNode, frame: Frame, operator: string): void => {
+  emitLocationGuard(compiler, node.lineno, node.colno);
+  compiler.emit(operator);
+  compiler.compile(node.target, frame);
+  compiler.emit(')');
 };
 
-export const compileNot = (ctx: Compiler, node: UnaryOpNode, frame: Frame): void => compileUnary(ctx, node, frame, '!');
+export const compileNot = (compiler: Compiler, node: UnaryOpNode, frame: Frame): void => compileUnary(compiler, node, frame, '!');
 
-export const compileNeg = (ctx: Compiler, node: UnaryOpNode, frame: Frame): void => compileUnary(ctx, node, frame, '-');
+export const compileNeg = (compiler: Compiler, node: UnaryOpNode, frame: Frame): void => compileUnary(compiler, node, frame, '-');
 
-export const compilePos = (ctx: Compiler, node: UnaryOpNode, frame: Frame): void => compileUnary(ctx, node, frame, '+');
+export const compilePos = (compiler: Compiler, node: UnaryOpNode, frame: Frame): void => compileUnary(compiler, node, frame, '+');

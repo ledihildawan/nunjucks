@@ -63,33 +63,33 @@ const handleWalrusAssignment = (node: Node, valueNode: Node, isExprCtx: boolean)
   throw errorAt(node.lineno, node.colno, ERROR_DEFINITIONS.WALRUS_TARGET_INVALID);
 };
 
-const handleCompoundAssignment = (ctx: ParserContext, node: Node, operator: string): Node => {
-  const valueNode = parseOr(ctx);
+const handleCompoundAssignment = (parserContext: ParserContext, node: Node, operator: string): Node => {
+  const valueNode = parseOr(parserContext);
   if (isSymbol(node)) {
     return compoundAssignment(node.lineno, node.colno, { targets: [node], operator, value: valueNode });
   }
   throw errorAt(node.lineno, node.colno, ERROR_DEFINITIONS.ASSIGNMENT_TARGET_INVALID);
 };
 
-const parseWalrus = (ctx: ParserContext, node: Node): Node => {
-  const tok = peekToken(ctx);
+const parseWalrus = (parserContext: ParserContext, node: Node): Node => {
+  const tok = peekToken(parserContext);
   if (tok && (tok.type === TOKEN_OPERATOR || tok.type === TOKEN_PIPEFORWARD)) {
     if (tok.value === ':=') {
-      nextToken(ctx);
-      const valueNode = parseOr(ctx);
-      const afterTok = peekToken(ctx);
+      nextToken(parserContext);
+      const valueNode = parseOr(parserContext);
+      const afterTok = peekToken(parserContext);
       const resultNode = handleWalrusAssignment(node, valueNode, isExpressionContext(afterTok));
-      return parseWalrus(ctx, resultNode);
+      return parseWalrus(parserContext, resultNode);
     }
 
     if (tok.type === TOKEN_OPERATOR && tok.value === '|>=') {
-      nextToken(ctx);
-      return handleCompoundAssignment(ctx, node, tok.value);
+      nextToken(parserContext);
+      return handleCompoundAssignment(parserContext, node, tok.value);
     }
 
     if (COMPOUND_ASSIGNMENT_OPS.includes(String(tok.value))) {
-      nextToken(ctx);
-      return handleCompoundAssignment(ctx, node, String(tok.value));
+      nextToken(parserContext);
+      return handleCompoundAssignment(parserContext, node, String(tok.value));
     }
   }
 

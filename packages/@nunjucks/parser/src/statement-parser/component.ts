@@ -6,24 +6,22 @@ import { parsePrimary } from "../expression-parser/index.ts";
 import { parseSignature } from "../node-parser/signature.ts";
 import { parseSlottedBody, buildDefaultBody, advanceAfterTags } from "./slots.ts";
 
-export const parseComponent = (ctx: ParserContext): Node => {
-  const compTok = peekToken(ctx);
-  if (!skipSymbol(ctx, 'component')) {
-    fail(ctx, 'expected component');
+export const parseComponent = (parserContext: ParserContext): Node => {
+  const compTok = peekToken(parserContext);
+  if (!skipSymbol(parserContext, 'component')) {
+    fail(parserContext, 'expected component');
   }
 
-  const name = parsePrimary(ctx, true);
-  const args = parseSignature(ctx, true);
+  const name = parsePrimary(parserContext, true);
+  const args = parseSignature(parserContext, true);
   if (!isSymbol(name)) {
-    fail(ctx, 'expected component name', compTok.lineno, compTok.colno);
+    fail(parserContext, 'expected component name', compTok.lineno, compTok.colno);
   }
 
-  advanceAfterBlockEnd(ctx, String(compTok.value));
-  const { defaultParts, namedSlots, implicitSlots } = parseSlottedBody(ctx, 'endcomponent');
-  advanceAfterTags(ctx, 'endcomponent');
+  advanceAfterBlockEnd(parserContext, String(compTok.value));
+  const { defaultParts, namedSlots, implicitSlots } = parseSlottedBody(parserContext, 'endcomponent');
+  advanceAfterTags(parserContext, 'endcomponent');
 
-  // The component body is definition markup, always rendered. Unnamed
-  // `{% slot %}...{% endslot %}` blocks are the default-children fallback.
   const body = buildDefaultBody(defaultParts, compTok.lineno, compTok.colno);
   const fallbackSlots: SlotBlock[] = [
     ...implicitSlots.map(s => ({ ...s, name: 'default' })),

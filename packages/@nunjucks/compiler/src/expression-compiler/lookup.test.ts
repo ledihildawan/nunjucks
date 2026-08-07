@@ -1,0 +1,72 @@
+import { describe, test, expect } from 'bun:test';
+import { compileLookupVal, compileOptionalChain, compileOptionalCall, compileSlice } from './lookup.ts';
+import { symbol, lookupVal, optionalChain, slice, funCall } from '@nunjucks/nodes';
+import { asCompiler } from '../test-helpers.ts';
+import { createFrame } from '@nunjucks/runtime/frame';
+
+const frame = createFrame();
+
+const makeCompiler = () => {
+  const emitted: string[] = [];
+  const emitNode = (node: { mock?: string; value?: string }) => {
+    if (typeof node.mock === 'string') { emitted.push(node.mock); return; }
+    if (typeof node.value === 'string') { emitted.push(`"${node.value}"`); return; }
+  };
+  return {
+    emitted,
+    emit: (s: string) => { emitted.push(s); },
+    compile: emitNode,
+    compileExpression: emitNode,
+  };
+};
+
+describe('compileLookupVal', () => {
+  test('member lookup emits runtime.memberLookup with parent name', () => {
+    const c = makeCompiler();
+    const node = lookupVal(1, 1, { mock: 'OBJ' } as never, symbol(2, 2, 'key'));
+    compileLookupVal(asCompiler(c), node as never, frame);
+    const joined = c.emitted.join('');
+    expect(joined).toContain('runtime.memberLookup((OBJ),');
+    expect(joined).toContain('"key"');
+  });
+
+  test('slice value emits runtime.slice with null bounds', () => {
+    const c = makeCompiler();
+    const node = lookupVal(1, 1, { mock: 'ARR' } as never, slice(2, 2, { start: null, stop: null, step: null }));
+    compileLookupVal(asCompiler(c), node as never, frame);
+    const joined = c.emitted.join('');
+    expect(joined).toContain('runtime.slice((ARR), null, null, null)');
+  });
+});
+
+describe('compileOptionalChain', () => {
+  test('emits runtime.optionalMemberLookup', () => {
+    const c = makeCompiler();
+    const node = optionalChain(1, 1, { mock: 'OBJ' } as never, symbol(2, 2, 'key'));
+    compileOptionalChain(asCompiler(c), node as never, frame);
+    const joined = c.emitted.join('');
+    expect(joined).toContain('runtime.optionalMemberLookup((OBJ),');
+  });
+});
+
+describe('compileOptionalCall', () => {
+  test('emits a null check around the callable', () => {
+    const c = makeCompiler();
+    const node = funCall(1, 1, { mock: 'FN' } as never, [{ mock: 'A' } as never]);
+    compileOptionalCall(asCompiler(c), node as never, frame);
+    const joined = c.emitted.join('');
+    expect(joined).toContain('== null ? undefined :');
+    expect(joined).toContain('FN()');
+  });
+});
+
+describe('compileSlice', () => {
+  test('emits runtime.slice with the three bounds', () => {
+    const c = makeCompiler();
+    const node = slice(1, 1, { start: { mock: 'S' } as never, stop: null, step: { mock: 'P' } as never });
+    compileSlice(asCompiler(c), node as never, frame);
+    const joined = c.emitted.join('');
+    expect(joined).toContain('runtime.slice((');
+    expect(joined).toContain('null), (');
+  });
+});

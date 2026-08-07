@@ -4,11 +4,11 @@ import { createParser } from '../index.ts';
 import { nextTokenOrNull } from '../cursor.ts';
 import { tryParsePattern, parsePattern } from './pattern.ts';
 import { getNodeTypeName } from '@nunjucks/nodes';
-import type { TokenStream } from '../cursor.ts';
+import { asTokenStream } from '../test-helpers.ts';
 
 const ctxFor = (src: string) => {
   const tk = createTokenizer(`{{ ${src} }}`);
-  const ctx = createParser(tk as unknown as TokenStream);
+  const ctx = createParser(asTokenStream(tk));
   nextTokenOrNull(ctx);
   return ctx;
 };

@@ -3,29 +3,29 @@ import { escapeHtml } from './escape.ts';
 type HtmlContext = 'html' | 'attribute' | 'script' | 'style' | 'comment';
 
 const escapeAttribute = (str: string): string => str
-  .replace(/&/gu, '&amp;')
-  .replace(/</gu, '&lt;')
-  .replace(/>/gu, '&gt;')
-  .replace(/"/gu, '&quot;')
-  .replace(/'/gu, '&#39;')
-  .replace(/`/gu, '&#96;');
+  .replaceAll('&', '&amp;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;')
+  .replaceAll('\'', '&#39;')
+  .replaceAll('`', '&#96;');
 
 const escapeScriptString = (str: string): string => str
-  .replace(/\\/gu, '\\\\')
-  .replace(/"/gu, '\\"')
-  .replace(/'/gu, "\\'")
-  .replace(/\n/gu, '\\n')
-  .replace(/\r/gu, '\\r')
-  .replace(/\t/gu, '\\t')
-  .replace(/</gu, '\\u003c')
-  .replace(/>/gu, '\\u003e');
+  .replaceAll('\\', '\\\\')
+  .replaceAll('"', '\\"')
+  .replaceAll('\'', "\\'")
+  .replaceAll('\n', '\\n')
+  .replaceAll('\r', '\\r')
+  .replaceAll('\t', '\\t')
+  .replaceAll('<', '\\u003c')
+  .replaceAll('>', '\\u003e');
 
 const escapeStyle = (str: string): string => str
-  .replace(/&/gu, '&amp;')
-  .replace(/</gu, '&lt;')
-  .replace(/>/gu, '&gt;')
-  .replace(/"/gu, '&quot;')
-  .replace(/'/gu, '&#39;');
+  .replaceAll('&', '&amp;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;')
+  .replaceAll('\'', '&#39;');
 
 const escapeForContext = (str: string, context: HtmlContext): string => {
   switch (context) {
@@ -143,4 +143,4 @@ const createHtmlContextTracker = (source: string): HtmlContextTracker => {
 };
 
 export { escapeAttribute, escapeScriptString, escapeStyle, escapeForContext, createHtmlContextTracker };
-export type { HtmlContext, HtmlContextTracker };
+export type { HtmlContext };

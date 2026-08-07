@@ -22,103 +22,96 @@ const TEMPLATE_ESCAPE_MAP: Record<string, string> = {
 const escapeString = (str: string): string =>
   join('')(pipe(str.split(''), map((char) => STRING_ESCAPE_MAP[char] ?? char)));
 
-const compileLiteral = (ctx: Compiler, node: { value?: unknown; lineno: number; colno: number }): void => {
+const compileLiteral = (compiler: Compiler, node: { value?: unknown; lineno: number; colno: number }): void => {
   if (typeof node.value === 'string') {
-    const val = escapeString(node.value);
-    ctx.emit(`"${val}"`);
+    const value = escapeString(node.value);
+    compiler.emit(`"${value}"`);
   } else if (node.value === null) {
-    ctx.emit('null');
+    compiler.emit('null');
   } else {
-    ctx.emit(String(node.value));
+    compiler.emit(String(node.value));
   }
 };
 
-const compileSymbol = (ctx: Compiler, node: SymbolNode, frame: Frame): void => {
+const compileSymbol = (compiler: Compiler, node: SymbolNode, frame: Frame): void => {
   const name = node.value;
   const v = frame.lookup(name);
 
   if (v) {
-    ctx.emit(String(v));
+    compiler.emit(String(v));
   } else {
-    ctx.emit('runtime.contextOrFrameLookup(' +
+    compiler.emit('runtime.contextOrFrameLookup(' +
       'context, frame, "' + name + '")');
   }
 };
 
-const compileGroup = (ctx: Compiler, node: ChildrenNode, frame: Frame): void => {
-  compileAggregate(ctx, node, frame, { startChar: '(', endChar: ')' });
+const compileGroup = (compiler: Compiler, node: ChildrenNode, frame: Frame): void => {
+  compileAggregate(compiler, node, frame, { startChar: '(', endChar: ')' });
 };
 
-const compileArray = (ctx: Compiler, node: ChildrenNode, frame: Frame): void => {
-  compileAggregate(ctx, node, frame, { startChar: '[', endChar: ']' });
+const compileArray = (compiler: Compiler, node: ChildrenNode, frame: Frame): void => {
+  compileAggregate(compiler, node, frame, { startChar: '[', endChar: ']' });
 };
 
-const compileDict = (ctx: Compiler, node: ChildrenNode, frame: Frame): void => {
-  compileAggregate(ctx, node, frame, { startChar: '{', endChar: '}' });
+const compileDict = (compiler: Compiler, node: ChildrenNode, frame: Frame): void => {
+  compileAggregate(compiler, node, frame, { startChar: '{', endChar: '}' });
 };
 
-const compileNodeList = (ctx: Compiler, node: ChildrenNode, frame: Frame): void => {
-  ctx.compileChildren(node, frame);
+const compileNodeList = (compiler: Compiler, node: ChildrenNode, frame: Frame): void => {
+  compiler.compileChildren(node, frame);
 };
 
-const compilePair = (ctx: Compiler, node: PairNode, frame: Frame): void => {
+const compilePair = (compiler: Compiler, node: PairNode, frame: Frame): void => {
   const rawKey = node.key;
-  const val = node.value;
+  const value = node.value;
   const key = isSymbol(rawKey)
     ? literal(rawKey.lineno, rawKey.colno, rawKey.value)
     : rawKey;
 
   if (typeof rawKey !== 'string' && !isSymbol(rawKey) && !(isLiteral(rawKey) &&
     typeof rawKey.value === 'string')) {
-    ctx.fail('compilePair: Dict keys must be strings or names',
+    compiler.fail('compilePair: Dict keys must be strings or names',
       typeof rawKey !== 'string' ? rawKey.lineno : node.lineno,
       typeof rawKey !== 'string' ? rawKey.colno : node.colno);
   }
 
   const keyNode = typeof key === 'string' ? literal(node.lineno, node.colno, key) : key;
-  ctx.compile(keyNode, frame);
-  ctx.emit(': ');
-  ctx.compileExpression(val, frame);
+  compiler.compile(keyNode, frame);
+  compiler.emit(': ');
+  compiler.compileExpression(value, frame);
 };
 
-const compileKeywordArgs = (ctx: Compiler, node: ChildrenNode, frame: Frame): void => {
-  ctx.emit('runtime.makeKeywordArgs(');
-  compileDict(ctx, node, frame);
-  ctx.emit(')');
+const compileKeywordArgs = (compiler: Compiler, node: ChildrenNode, frame: Frame): void => {
+  compiler.emit('runtime.makeKeywordArgs(');
+  compileDict(compiler, node, frame);
+  compiler.emit(')');
 };
 
-const compileSpread = (ctx: Compiler, node: SpreadNode, frame: Frame): void => {
-  ctx.emit('...');
-  ctx.compile(node.argument, frame);
+const compileSpread = (compiler: Compiler, node: SpreadNode, frame: Frame): void => {
+  compiler.emit('...');
+  compiler.compile(node.argument, frame);
 };
 
 const escapeTemplateString = (str: string): string =>
   join('')(pipe(str.split(''), map((char) => TEMPLATE_ESCAPE_MAP[char] ?? char)));
 
-interface TemplateQuasi {
-  type: 'template' | 'expression';
-  value?: unknown;
-  node?: Node;
-}
-
-const compileTemplateLiteral = (ctx: Compiler, node: TemplateLiteralNode, frame: Frame): void => {
+const compileTemplateLiteral = (compiler: Compiler, node: TemplateLiteralNode, frame: Frame): void => {
   const quasis = node.quasis ?? [];
-  ctx.emit('`');
+  compiler.emit('`');
 
   forEach(quasis, (quasi) => {
-    const q = quasi as TemplateQuasi;
-    if (q.type === 'template') {
-      ctx.emit(escapeTemplateString(String(q.value ?? '')));
-    } else if (q.type === 'expression') {
-      ctx.emit('${');
-      if (q.node) {
-        ctx.compile(q.node, frame);
+    if (quasi.type === 'template') {
+      compiler.emit(escapeTemplateString(String(quasi.value ?? '')));
+    } else if (quasi.type === 'expression') {
+      compiler.emit('${');
+      if (quasi.node) {
+        compiler.compile(quasi.node, frame);
       }
-      ctx.emit('}');
+      compiler.emit('}');
     }
   });
 
-  ctx.emit('`');
+  compiler.emit('`');
 };
 
 interface CompileAggregateOptions {
@@ -126,28 +119,28 @@ interface CompileAggregateOptions {
   endChar?: string;
 }
 
-const compileAggregate = (ctx: Compiler, node: ChildrenNode | CallNode | readonly Node[], frame: Frame, options?: CompileAggregateOptions): void => {
+const compileAggregate = (compiler: Compiler, node: ChildrenNode | CallNode | readonly Node[], frame: Frame, options?: CompileAggregateOptions): void => {
   const { startChar, endChar } = options ?? {};
   if (startChar) {
-    ctx.emit(startChar);
+    compiler.emit(startChar);
   }
 
   const children: readonly Node[] = Array.isArray(node) ? node : ((node as ChildrenNode).children ?? []);
   children.forEach((child, i) => {
     if (!child) { return; }
     if (i > 0) {
-      ctx.emit(',');
+      compiler.emit(',');
     }
     if (isSpread(child)) {
-      ctx.emit('...');
-      ctx.compile(child.argument, frame);
+      compiler.emit('...');
+      compiler.compile(child.argument, frame);
     } else {
-      ctx.compile(child, frame);
+      compiler.compile(child, frame);
     }
   });
 
   if (endChar) {
-    ctx.emit(endChar);
+    compiler.emit(endChar);
   }
 };
 

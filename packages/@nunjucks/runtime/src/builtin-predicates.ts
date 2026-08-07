@@ -1,13 +1,9 @@
-// Compiler emits `runtime.runTest(env, "name", target, ...args)` uniformly;
-// this map provides the implementation. Built-in tests take precedence over
-// user-registered ones (a `name` that matches a built-in is never delegated
-// to `env.getTest`), so core tests like `defined`/`odd` cannot be shadowed.
 
-const isTypedArray = (val: unknown): boolean =>
-  val instanceof Int8Array || val instanceof Uint8Array || val instanceof Uint8ClampedArray ||
-  val instanceof Int16Array || val instanceof Uint16Array || val instanceof Int32Array ||
-  val instanceof Uint32Array || val instanceof Float32Array || val instanceof Float64Array ||
-  val instanceof BigInt64Array || val instanceof BigUint64Array;
+const isTypedArray = (value: unknown): boolean =>
+  value instanceof Int8Array || value instanceof Uint8Array || value instanceof Uint8ClampedArray ||
+  value instanceof Int16Array || value instanceof Uint16Array || value instanceof Int32Array ||
+  value instanceof Uint32Array || value instanceof Float32Array || value instanceof Float64Array ||
+  value instanceof BigInt64Array || value instanceof BigUint64Array;
 
 import { isSafeString } from './safe-string.ts';
 import { isKeyedObject } from '@nunjucks/shared';
@@ -86,7 +82,7 @@ const runTest = (
 ): boolean => {
   const builtin = BUILTIN_TESTS[name];
   if (builtin) { return builtin(target, ...args); }
-  const envObj = env as { getTest?: (name: string) => ((target: unknown, ...args: unknown[]) => boolean) | undefined } | null;
+  const envObj = env as { getTest?: (name: string) => TestFn | undefined } | null;
   const custom = envObj?.getTest?.(name);
   if (typeof custom === 'function') { return custom(target, ...args); }
   return false;

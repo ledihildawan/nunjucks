@@ -1,6 +1,8 @@
 import { getNodeTypeName, isNode, isSymbol } from '@nunjucks/nodes';
 import type { Node, LookupNode, CallNode, SymbolNode } from '@nunjucks/nodes';
 import { OBJECT_INTRINSICS, CODE_EXECUTION_KEYS } from '@nunjucks/shared';
+import type { BaseValidationError } from '@nunjucks/shared';
+import { flatMap } from 'remeda';
 
 const ExpressionSecurityError = {
   DYNAMIC_PROPERTY_ACCESS: 'DYNAMIC_PROPERTY_ACCESS',
@@ -26,28 +28,23 @@ export type ExpressionSecurityConfig = {
   blockedPropertyPatterns?: readonly RegExp[];
 };
 
-/** Node bookkeeping fields, not child nodes to walk into. */
 const NON_CHILD_KEYS = new Set(['lineno', 'colno', 'fields']);
 
-/** Single source of truth: object intrinsics (constructor, __proto__, ...) shared with the runtime sandbox. */
 const DANGEROUS_PROPERTIES: ReadonlySet<string> = new Set(OBJECT_INTRINSICS);
 
-interface ValidationError {
+interface ExpressionValidationError extends BaseValidationError {
   code: string;
-  message: string;
   path: readonly (string | number)[];
   lineno: number;
   colno: number;
 }
 
-/** Single source of truth: code-execution callees (eval, Function, ...) shared with the runtime sandbox. */
 const DANGEROUS_CALLEES: ReadonlySet<string> = new Set(CODE_EXECUTION_KEYS);
 
-/** The property being looked up, when it is written as a symbol or a string literal. */
-const staticPropertyName = (val: Node | null | undefined): string | null => {
-  if (!val) { return null; }
-  if (isSymbol(val)) { return val.value; }
-  if (getNodeTypeName(val) === 'literal' && typeof val.value === 'string') { return val.value; }
+const staticPropertyName = (value: Node | null | undefined): string | null => {
+  if (!value) { return null; }
+  if (isSymbol(value)) { return value.value; }
+  if (getNodeTypeName(value) === 'literal' && typeof value.value === 'string') { return value.value; }
   return null;
 };
 
@@ -55,7 +52,7 @@ const unsafeProperty = (
   message: string,
   node: Node,
   path: readonly (string | number)[]
-): ValidationError => ({
+): ExpressionValidationError => ({
   code: ExpressionSecurityError.UNSAFE_PROPERTY,
   message,
   path,
@@ -63,8 +60,7 @@ const unsafeProperty = (
   colno: node.colno,
 });
 
-/** `a.b` / `a['b']` where the property is one we refuse to let templates reach. */
-const checkLookupVal = (node: LookupNode, path: readonly (string | number)[], blocked: readonly RegExp[]): ValidationError[] => {
+const checkLookupVal = (node: LookupNode, path: readonly (string | number)[], blocked: readonly RegExp[]): ExpressionValidationError[] => {
   const propName = staticPropertyName(node.val);
   if (!propName) { return []; }
 
@@ -79,14 +75,13 @@ const checkLookupVal = (node: LookupNode, path: readonly (string | number)[], bl
   ];
 };
 
-const checkSymbol = (node: SymbolNode, path: readonly (string | number)[]): ValidationError[] => {
+const checkSymbol = (node: SymbolNode, path: readonly (string | number)[]): ExpressionValidationError[] => {
   const name = node.value;
   if (!DANGEROUS_PROPERTIES.has(name)) { return []; }
   return [unsafeProperty(`Dangerous symbol '${name}' is not allowed`, node, [...path, 'symbol'])];
 };
 
-/** A direct call to eval and friends, written as `eval(...)` or `x | eval`. */
-const checkCall = (node: CallNode, nodeType: string, path: readonly (string | number)[]): ValidationError[] => {
+const checkCall = (node: CallNode, nodeType: string, path: readonly (string | number)[]): ExpressionValidationError[] => {
   const name = node.name;
   if (!isSymbol(name)) { return []; }
   const fnName = name.value;
@@ -96,65 +91,57 @@ const checkCall = (node: CallNode, nodeType: string, path: readonly (string | nu
 
 const walkChildNodes = (
   node: Node,
-  errors: ValidationError[],
-  cfg: ExpressionSecurityConfig,
+  config: ExpressionSecurityConfig,
   path: readonly (string | number)[]
-): void => {
-  Object.entries(node)
-    .filter(([key]) => !NON_CHILD_KEYS.has(key))
-    .forEach(([key, child]) => {
+): ExpressionValidationError[] =>
+  flatMap(
+    Object.entries(node).filter(([key]) => !NON_CHILD_KEYS.has(key)),
+    ([key, child]) => {
       if (Array.isArray(child)) {
-        child.forEach((c, i) => {
-          if (isNode(c)) { walk(c, errors, cfg, [...path, key, i]); }
-        });
-      } else if (isNode(child)) {
-        walk(child, errors, cfg, [...path, key]);
+        return flatMap(child, (c, i) => isNode(c) ? walk(c, config, [...path, key, i]) : []);
       }
-    });
-};
+      if (isNode(child)) {
+        return walk(child, config, [...path, key]);
+      }
+      return [];
+    }
+  );
 
 const walk = (
   node: Node | null | undefined,
-  errors: ValidationError[],
-  cfg: ExpressionSecurityConfig,
+  config: ExpressionSecurityConfig,
   path: readonly (string | number)[]
-): void => {
-  if (!node) { return; }
+): ExpressionValidationError[] => {
+  if (!node) { return []; }
 
   switch (node.type) {
-    case 'lookupVal': {
-      errors.push(...checkLookupVal(node, path, cfg.blockedPropertyPatterns ?? []));
-      walk(node.target, errors, cfg, [...path, 'target']);
-      walk(node.val, errors, cfg, [...path, 'val']);
-      break;
-    }
+    case 'lookupVal':
+      return [
+        ...checkLookupVal(node, path, config.blockedPropertyPatterns ?? []),
+        ...walk(node.target, config, [...path, 'target']),
+        ...walk(node.val, config, [...path, 'val']),
+      ];
 
-    case 'symbol': {
-      errors.push(...checkSymbol(node, path));
-      break;
-    }
+    case 'symbol':
+      return checkSymbol(node, path);
 
     case 'funCall':
-    case 'pipe': {
-      errors.push(...checkCall(node, node.type, path));
-      walk(node.name, errors, cfg, [...path, 'name']);
-      // biome-ignore lint/suspicious/useIterableCallbackReturn: walk returns void, biome false positive
-      node.args.forEach((a, i) => walk(a, errors, cfg, [...path, 'args', i]));
-      break;
-    }
+    case 'pipe':
+      return [
+        ...checkCall(node, node.type, path),
+        ...walk(node.name, config, [...path, 'name']),
+        ...flatMap(node.args, (a, i) => walk(a, config, [...path, 'args', i])),
+      ];
 
-    default: {
-      walkChildNodes(node, errors, cfg, path);
-    }
+    default:
+      return walkChildNodes(node, config, path);
   }
 };
 
-const validateExpression = (ast: Node, config: ExpressionSecurityConfig = {}): ValidationError[] => {
+const validateExpression = (ast: Node, config: ExpressionSecurityConfig = {}): ExpressionValidationError[] => {
   const cfg = { ...DEFAULT_SECURITY_CONFIG, ...config };
-  const errors: ValidationError[] = [];
-  walk(ast, errors, cfg, []);
-  return errors;
+  return walk(ast, cfg, []);
 };
 
-export { ExpressionSecurityError, DEFAULT_SECURITY_CONFIG, validateExpression };
-export type { ValidationError };
+export { ExpressionSecurityError, validateExpression };
+export type { ExpressionValidationError };

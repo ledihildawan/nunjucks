@@ -1,11 +1,11 @@
 import picocolors from 'picocolors';
 import { pipe, filter } from 'remeda';
-import { shortenPath } from './internal/path-shortener.ts';
-import { isFilePath, resolveIdeLink } from './internal/ide-links.ts';
-import { toDisplayLocation } from './internal/location.ts';
+import { shortenPath } from './internal/location/path-shortener.ts';
+import { isFilePath, resolveIdeLink } from './internal/config/ide-links.ts';
+import { toDisplayLocation } from './internal/location/location.ts';
 import type { LineBase } from '../line-base.ts';
 import { makeHyperlink } from './ansi/stack-helpers.ts';
-import { DEFAULT_IDE, DEFAULT_VERSION } from './internal/defaults.ts';
+import { DEFAULT_IDE, DEFAULT_VERSION } from './internal/config/defaults.ts';
 import type { Warning } from '../warning/collector.ts';
 
 interface ToConsoleOptions {

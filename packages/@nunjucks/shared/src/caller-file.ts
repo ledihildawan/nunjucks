@@ -7,9 +7,6 @@ export interface CallerLocation {
   columnNumber: number | null;
 }
 
-// NOTE: This module manipulates Error.prepareStackTrace for stack introspection.
-// This is a V8-specific side effect that should only be called at initialization time.
-// The side effect is isolated to these functions and does not persist beyond the call.
 
 const captureCaller = (): NodeJS.CallSite | null => {
   const original = Error.prepareStackTrace;

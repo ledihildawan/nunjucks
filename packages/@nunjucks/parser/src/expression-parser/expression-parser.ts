@@ -5,19 +5,19 @@ import type { ParserContext } from '../cursor.ts';
 import { parseOr, parseTernary } from './logical.ts';
 import { parseWalrus } from './assignment.ts';
 
-const parseTernaryExpression = (ctx: ParserContext): Node => {
-  const node = parseOr(ctx);
+const parseTernaryExpression = (parserContext: ParserContext): Node => {
+  const node = parseOr(parserContext);
 
-  if (skipSymbol(ctx, 'if')) {
-    const condNode = parseOr(ctx);
-    const else_ = skipSymbol(ctx, 'else') ? parseOr(ctx) : null;
+  if (skipSymbol(parserContext, 'if')) {
+    const condNode = parseOr(parserContext);
+    const else_ = skipSymbol(parserContext, 'else') ? parseOr(parserContext) : null;
     return inlineIf(node.lineno, node.colno, { body: node, cond: condNode, else_ });
   }
 
-  return parseWalrus(ctx, parseTernary(ctx, node));
+  return parseWalrus(parserContext, parseTernary(parserContext, node));
 };
 
-const parseExpression = (ctx: ParserContext): Node => parseTernaryExpression(ctx);
+const parseExpression = (parserContext: ParserContext): Node => parseTernaryExpression(parserContext);
 
 export { parseExpression };
 export { parsePrimary } from './primary.ts';

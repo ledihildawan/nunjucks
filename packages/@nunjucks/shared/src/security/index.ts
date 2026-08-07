@@ -11,6 +11,6 @@ export {
 } from './blocked-keys.ts';
 export type { Environment } from './blocked-keys.ts';
 export { isDangerousReference, findDangerousValues } from './context-security.ts';
-export type { ScanContext } from './context-security.ts';
 export { scanTemplateForDangerousCode } from './template-security.ts';
 export type { DangerousCodeViolation } from './template-security.ts';
+export { scrubDangerousReferences, visitAndScrub } from './scrubber.ts';

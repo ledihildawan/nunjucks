@@ -1,4 +1,4 @@
-import { createLog, type ErrorContext, type ErrorDefinitionEntry } from '@nunjucks/log';
+import { createLog, type ErrorDefinitionEntry } from '@nunjucks/log';
 
 interface LogContextShape {
   templateName: string | null;
@@ -41,7 +41,7 @@ export const throwRuntimeError = (
       phase: ctx.phase || 'render',
       templateName: templateName ?? (ctx.templateName || 'inline'),
       lineBase: 'zero',
-    } as ErrorContext,
+    },
   );
 };
 

@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import {
   literal, symbol, templateData, funCall, lookupVal, block,
-  array, dict, pair, for_, if_,
+  array, dict, pair, forNode, ifNode,
 } from '@nunjucks/nodes';
 import {
   isNode, isLiteral, isSymbol,
@@ -108,7 +108,7 @@ describe('nodes/types/guards', () => {
 
   describe('isFor', () => {
     test('returns true for for node', () => {
-      expect(isFor(for_(0, 0, {
+      expect(isFor(forNode(0, 0, {
         name: symbol(0, 0, 'x'),
         arr: array(0, 0, []),
         body: templateData(0, 0, ''),
@@ -116,20 +116,20 @@ describe('nodes/types/guards', () => {
     });
 
     test('returns false for if node', () => {
-      expect(isFor(if_(0, 0, { cond: literal(0, 0, true), body: templateData(0, 0, '') }))).toBe(false);
+      expect(isFor(ifNode(0, 0, { cond: literal(0, 0, true), body: templateData(0, 0, '') }))).toBe(false);
     });
   });
 
   describe('isIf', () => {
     test('returns true for if node', () => {
-      expect(isIf(if_(0, 0, {
+      expect(isIf(ifNode(0, 0, {
         cond: literal(0, 0, true),
         body: templateData(0, 0, ''),
       }))).toBe(true);
     });
 
     test('returns false for for node', () => {
-      expect(isIf(for_(0, 0, {
+      expect(isIf(forNode(0, 0, {
         name: symbol(0, 0, 'x'),
         arr: array(0, 0, []),
         body: templateData(0, 0, ''),

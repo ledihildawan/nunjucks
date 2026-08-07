@@ -1,9 +1,9 @@
 import { pipe, filter, join } from 'remeda';
 import picocolors from 'picocolors';
-import { shortenPath } from '../internal/path-shortener.ts';
-import { isFilePath, resolveIdeLink } from '../internal/ide-links.ts';
-import { stripMarkdown } from '../internal/markdown.ts';
-import { parseStackFrame } from '../internal/stack-parse.ts';
+import { shortenPath } from '../internal/location/path-shortener.ts';
+import { isFilePath, resolveIdeLink } from '../internal/config/ide-links.ts';
+import { stripMarkdown } from '../internal/formatting/markdown.ts';
+import { parseStackFrame } from '../internal/location/stack-parse.ts';
 
 export { makeHyperlink, stripMarkdown, getSeverityColor, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString };
 

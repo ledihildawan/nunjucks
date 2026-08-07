@@ -12,34 +12,34 @@ import { nextToken, peekToken, skip, skipValue, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/index.ts";
 
-const isEqualsToken = (ctx: ParserContext): boolean => {
-  const tok = peekToken(ctx);
+const isEqualsToken = (parserContext: ParserContext): boolean => {
+  const tok = peekToken(parserContext);
   return tok?.type === TOKEN_OPERATOR && tok.value === '=';
 };
 
 const parseSignatureArg = (
-  ctx: ParserContext,
+  parserContext: ParserContext,
   args: ChildrenNode,
   kwargs: ChildrenNode,
   checkComma: boolean
 ): { args: ChildrenNode; kwargs: ChildrenNode; checkComma: boolean } | null => {
-  const tok = peekToken(ctx);
-  if (checkComma && !skip(ctx, TOKEN_COMMA)) {
-    fail(ctx, 'parseSignature: expected comma after expression', tok.lineno, tok.colno);
+  const tok = peekToken(parserContext);
+  if (checkComma && !skip(parserContext, TOKEN_COMMA)) {
+    fail(parserContext, 'parseSignature: expected comma after expression', tok.lineno, tok.colno);
     return null;
   }
 
-  const arg = parseExpression(ctx);
+  const argument = parseExpression(parserContext);
 
-  if (isAssignmentPattern(arg) && isEqualsToken(ctx)) {
-    nextToken(ctx);
-    const value = parseExpression(ctx);
-    return { args, kwargs: appendChild(kwargs, pair(arg.lineno, arg.colno, arg.target, value)), checkComma: true };
+  if (isAssignmentPattern(argument) && isEqualsToken(parserContext)) {
+    nextToken(parserContext);
+    const value = parseExpression(parserContext);
+    return { args, kwargs: appendChild(kwargs, pair(argument.lineno, argument.colno, argument.target, value)), checkComma: true };
   }
-  if (skipValue(ctx, TOKEN_OPERATOR, '=')) {
-    return { args, kwargs: appendChild(kwargs, pair(arg.lineno, arg.colno, arg, parseExpression(ctx))), checkComma: true };
+  if (skipValue(parserContext, TOKEN_OPERATOR, '=')) {
+    return { args, kwargs: appendChild(kwargs, pair(argument.lineno, argument.colno, argument, parseExpression(parserContext))), checkComma: true };
   }
-  return { args: appendChild(args, arg), kwargs, checkComma: true };
+  return { args: appendChild(args, argument), kwargs, checkComma: true };
 };
 
 const isNoParensEnd = (tok: Token): boolean =>
@@ -53,14 +53,14 @@ const shouldContinueParsing = (tok: Token, noParens: boolean | undefined): boole
   return !isParensEnd(tok);
 };
 
-const handleSignatureLoopEnd = (ctx: ParserContext, tok: Token, noParens: boolean | undefined): void => {
+const handleSignatureLoopEnd = (parserContext: ParserContext, tok: Token, noParens: boolean | undefined): void => {
   if (!noParens && tok?.type === TOKEN_RIGHT_PAREN) {
-    nextToken(ctx);
+    nextToken(parserContext);
   }
 };
 
 const parseSignatureLoop = (
-  ctx: ParserContext,
+  parserContext: ParserContext,
   args: ChildrenNode,
   kwargs: ChildrenNode,
   noParens: boolean | undefined
@@ -70,13 +70,13 @@ const parseSignatureLoop = (
   let currentKwargs = kwargs;
 
   for (;;) {
-    const tok = peekToken(ctx);
+    const tok = peekToken(parserContext);
     if (!shouldContinueParsing(tok, noParens)) {
-      handleSignatureLoopEnd(ctx, tok, noParens);
+      handleSignatureLoopEnd(parserContext, tok, noParens);
       break;
     }
 
-    const result = parseSignatureArg(ctx, currentArgs, currentKwargs, checkComma);
+    const result = parseSignatureArg(parserContext, currentArgs, currentKwargs, checkComma);
     if (!result) { break; }
     currentArgs = result.args;
     currentKwargs = result.kwargs;
@@ -86,18 +86,18 @@ const parseSignatureLoop = (
   return { args: currentArgs, kwargs: currentKwargs };
 };
 
-export const parseSignature = (ctx: ParserContext, tolerant?: boolean, noParens?: boolean): Node | null => {
-  const initialTok = peekToken(ctx);
+export const parseSignature = (parserContext: ParserContext, tolerant?: boolean, noParens?: boolean): Node | null => {
+  const initialTok = peekToken(parserContext);
   if (!noParens && initialTok.type !== TOKEN_LEFT_PAREN) {
     if (tolerant) {
       return null;
     }
-    fail(ctx, 'expected arguments', initialTok.lineno, initialTok.colno);
+    fail(parserContext, 'expected arguments', initialTok.lineno, initialTok.colno);
   }
 
-  const tok = initialTok.type === TOKEN_LEFT_PAREN ? nextToken(ctx) : initialTok;
+  const tok = initialTok.type === TOKEN_LEFT_PAREN ? nextToken(parserContext) : initialTok;
 
-  const loopResult = parseSignatureLoop(ctx, nodeList(tok.lineno, tok.colno), keywordArgs(tok.lineno, tok.colno), noParens);
+  const loopResult = parseSignatureLoop(parserContext, nodeList(tok.lineno, tok.colno), keywordArgs(tok.lineno, tok.colno), noParens);
   const args = loopResult.kwargs.children.length > 0
     ? appendChild(loopResult.args, loopResult.kwargs)
     : loopResult.args;

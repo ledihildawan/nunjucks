@@ -3,7 +3,7 @@ import { WHITESPACE_CHARS, DELIM_CHARS, isBooleanString, isNullString } from '..
 import { advance } from '../state.ts';
 import { extractUntil } from '../extract.ts';
 import { createToken } from '../tokens.ts';
-import type { TokenType } from '../token-types.ts';
+import { TOKEN_BOOLEAN, TOKEN_NONE, TOKEN_SYMBOL } from '../token-types.ts';
 
 export const tokenizeSymbol: Tokenizer = (state) => {
   const sym = extractUntil(state.str, state.index, WHITESPACE_CHARS + DELIM_CHARS);
@@ -12,11 +12,11 @@ export const tokenizeSymbol: Tokenizer = (state) => {
   const { lineno, colno } = state;
   const current = advance(state, sym.length);
 
-  const type: TokenType = isBooleanString(sym)
-    ? ('boolean' as TokenType)
+  const type = isBooleanString(sym)
+    ? TOKEN_BOOLEAN
     : isNullString(sym)
-      ? ('none' as TokenType)
-      : ('symbol' as TokenType);
+      ? TOKEN_NONE
+      : TOKEN_SYMBOL;
 
   return {
     token: createToken(type, sym, lineno, colno),

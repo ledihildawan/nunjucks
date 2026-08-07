@@ -1,4 +1,3 @@
-// Precedence: caller file location → caller line fallback → template coords → explicit config → null fallback.
 
 import { readFile } from 'node:fs/promises';
 

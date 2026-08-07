@@ -101,7 +101,6 @@ interface GlobalConfigBase {
   readonly maxTemplateSize: number;
   readonly blockedContextKeys: readonly string[] | null;
   readonly scanContextValues: boolean;
-  readonly whitelistStrict: boolean;
   readonly autoescape: boolean;
   readonly trimBlocks: boolean;
   readonly lstripBlocks: boolean;
@@ -132,7 +131,6 @@ const DEFAULT_CONFIG: Omit<GlobalConfig, 'filters' | 'dompurify'> = Object.freez
   maxTemplateSize: 0,
   blockedContextKeys: null,
   scanContextValues: false,
-  whitelistStrict: false,
   autoescape: true,
   trimBlocks: false,
   lstripBlocks: false,
@@ -148,10 +146,5 @@ const getDefaultConfig = (bundle?: FilterBundle): GlobalConfig => ({
   dompurify: bundle?.dompurify ?? Object.freeze({}),
 } as GlobalConfig);
 
-interface ConfigValidationError {
-  readonly field: string;
-  readonly message: string;
-}
-
 export { getDefaultConfig };
-export type { SandboxEnvironment, SandboxMode, UndefinedMode, GlobalConfig, FilterBundle, ConfigValidationError, DomPurifyConfig };
+export type { SandboxEnvironment, SandboxMode, UndefinedMode, GlobalConfig, FilterBundle, DomPurifyConfig };

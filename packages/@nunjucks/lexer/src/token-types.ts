@@ -59,13 +59,50 @@ export const TOKEN_TYPES = {
 } as const;
 
 export type TokenType = (typeof TOKEN_TYPES)[keyof typeof TOKEN_TYPES];
-export type TokenValue = string | number | boolean | null | RegExp | object;
 
-export interface Token {
-  type: TokenType;
-  value: TokenValue;
+export interface TemplateQuasi {
+  type: 'template' | 'expression';
+  value: string;
+}
+
+export interface TokenBase {
   lineno: number;
   colno: number;
   stripLeft?: boolean;
   stripRight?: boolean;
 }
+
+export type TokenValueByType = {
+  [TOKEN_STRING]: string;
+  [TOKEN_WHITESPACE]: string;
+  [TOKEN_DATA]: string;
+  [TOKEN_BLOCK_START]: string;
+  [TOKEN_BLOCK_END]: string;
+  [TOKEN_VARIABLE_START]: string;
+  [TOKEN_VARIABLE_END]: string;
+  [TOKEN_COMMENT]: string;
+  [TOKEN_RAW]: string;
+  [TOKEN_LEFT_PAREN]: string;
+  [TOKEN_RIGHT_PAREN]: string;
+  [TOKEN_LEFT_BRACKET]: string;
+  [TOKEN_RIGHT_BRACKET]: string;
+  [TOKEN_LEFT_CURLY]: string;
+  [TOKEN_RIGHT_CURLY]: string;
+  [TOKEN_OPERATOR]: string;
+  [TOKEN_SPREAD]: string;
+  [TOKEN_COMMA]: string;
+  [TOKEN_COLON]: string;
+  [TOKEN_TILDE]: string;
+  [TOKEN_PIPEFORWARD]: string;
+  [TOKEN_INT]: number;
+  [TOKEN_FLOAT]: number;
+  [TOKEN_BOOLEAN]: string;
+  [TOKEN_NONE]: string;
+  [TOKEN_SYMBOL]: string;
+  [TOKEN_REGEX]: { body: string; flags: string };
+  [TOKEN_TEMPLATE_LITERAL]: { quasis: TemplateQuasi[]; expressions: [] };
+};
+
+export type Token = TokenBase & {
+  [K in TokenType]: { type: K; value: TokenValueByType[K] };
+}[TokenType];

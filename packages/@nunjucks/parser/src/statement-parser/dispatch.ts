@@ -35,26 +35,26 @@ import type { Node } from '@nunjucks/nodes';
 import { find } from 'remeda';
 import { STATEMENT_PARSERS } from './registry.ts';
 
-export const parseStatement = (ctx: ParserContext, breakOn: readonly string[] | null = null): Node | null => {
-  const tok = peekToken(ctx);
+export const parseStatement = (parserContext: ParserContext, breakOn: readonly string[] | null = null): Node | null => {
+  const tok = peekToken(parserContext);
 
   if (tok.type !== TOKEN_SYMBOL) {
-    fail(ctx, 'tag name expected', tok.lineno, tok.colno);
+    fail(parserContext, 'tag name expected', tok.lineno, tok.colno);
   }
 
   if (breakOn?.includes(String(tok.value))) {
     return null;
   }
 
-  const tagName = isSymbolToken(tok) ? tok.value : fail(ctx, 'tag name expected', tok.lineno, tok.colno);
+  const tagName = isSymbolToken(tok) ? tok.value : fail(parserContext, 'tag name expected', tok.lineno, tok.colno);
   const parser = STATEMENT_PARSERS[tagName];
   if (parser) {
-    return parser(ctx);
+    return parser(parserContext);
   }
 
-  const ext = find(ctx.extensions, e => (e.tags || []).includes(tagName) && Boolean(e.parse));
+  const ext = find(parserContext.extensions, e => (e.tags || []).includes(tagName) && Boolean(e.parse));
   if (ext?.parse) {
-    return ext.parse(ctx, nodes, {
+    return ext.parse(parserContext, nodes, {
       TOKEN_SYMBOL,
       TOKEN_BLOCK_END,
       TOKEN_BLOCK_START,
@@ -82,5 +82,5 @@ export const parseStatement = (ctx: ParserContext, breakOn: readonly string[] | 
       TOKEN_REGEX,
     });
   }
-  return fail(ctx, `unknown block tag: ${tok.value}`, tok.lineno, tok.colno);
+  return fail(parserContext, `unknown block tag: ${tok.value}`, tok.lineno, tok.colno);
 };

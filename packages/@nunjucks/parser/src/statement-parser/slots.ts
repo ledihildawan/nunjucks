@@ -4,6 +4,7 @@ import {
   TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_COMMA,
   isSymbolToken,
 } from '@nunjucks/lexer';
+import type { Token } from '@nunjucks/lexer';
 import {
   peekToken, skipSymbol, advanceAfterBlockEnd, nextTokenOrNull, nextToken,
 } from "../cursor.ts";
@@ -17,26 +18,41 @@ export interface ParsedSlot {
 }
 
 export interface SlottedBody {
-  /** Content outside any `{% slot %}` block — definition markup (component) or provided default (render). */
   defaultParts: Node[];
-  /** Named `{% slot name %}` blocks, hoisted out of the body. */
   namedSlots: SlotBlock[];
-  /** Unnamed `{% slot %}` blocks — default-slot declarations, kept separate so component/render interpret them differently. */
   implicitSlots: SlotBlock[];
 }
 
-const parseSlotBlock = (ctx: ParserContext): ParsedSlot => {
-  skipSymbol(ctx, 'slot');
+const categorizeSlot = (
+  parsed: ParsedSlot,
+  namedSlots: SlotBlock[],
+  implicitSlots: SlotBlock[]
+): void => {
+  if (parsed.name === 'default') {
+    implicitSlots.push(parsed);
+  } else {
+    namedSlots.push(parsed);
+  }
+};
 
-  const nameTok = nextTokenOrNull(ctx);
+const isTerminatorSymbol = (peeked: Token, endTag: string): boolean =>
+  isSymbolToken(peeked) && peeked.value === endTag;
+
+const isSlotSymbol = (peeked: Token): boolean =>
+  isSymbolToken(peeked) && peeked.value === 'slot';
+
+const parseSlotBlock = (parserContext: ParserContext): ParsedSlot => {
+  skipSymbol(parserContext, 'slot');
+
+  const nameTok = nextTokenOrNull(parserContext);
   const name = nameTok && isSymbolToken(nameTok) ? nameTok.value : 'default';
 
   const params: string[] = [];
-  const afterName = peekToken(ctx);
+  const afterName = peekToken(parserContext);
   if (afterName.type === TOKEN_LEFT_PAREN) {
-    nextToken(ctx);
+    nextToken(parserContext);
     while (true) {
-      const inner = nextTokenOrNull(ctx);
+      const inner = nextTokenOrNull(parserContext);
       if (!inner || inner.type === TOKEN_RIGHT_PAREN) { break; }
       if (inner.type === TOKEN_COMMA) { continue; }
       if (isSymbolToken(inner)) {
@@ -45,40 +61,33 @@ const parseSlotBlock = (ctx: ParserContext): ParsedSlot => {
     }
   }
 
-  advanceAfterBlockEnd(ctx, 'slot');
-  const body = parseUntilBlocks(ctx, 'endslot');
-  skipSymbol(ctx, 'endslot');
-  advanceAfterBlockEnd(ctx, 'endslot');
+  advanceAfterBlockEnd(parserContext, 'slot');
+  const body = parseUntilBlocks(parserContext, 'endslot');
+  skipSymbol(parserContext, 'endslot');
+  advanceAfterBlockEnd(parserContext, 'endslot');
 
   return { name, params, body };
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: body splitting has natural branching
-export const parseSlottedBody = (ctx: ParserContext, endTag: string): SlottedBody => {
+const appendDefaultChunk = (defaultParts: Node[], chunk: Node): void => {
+  if ((chunk.children?.length ?? 0) > 0) {
+    defaultParts.push(chunk);
+  }
+};
+
+export const parseSlottedBody = (parserContext: ParserContext, endTag: string): SlottedBody => {
   const namedSlots: SlotBlock[] = [];
   const implicitSlots: SlotBlock[] = [];
   const defaultParts: Node[] = [];
 
   while (true) {
-    const peeked = peekToken(ctx);
-    if (isSymbolToken(peeked)) {
-      const val = peeked.value;
-      if (val === endTag) { break; }
-      if (val === 'slot') {
-        const parsed = parseSlotBlock(ctx);
-        if (parsed.name === 'default') {
-          implicitSlots.push(parsed);
-        } else {
-          namedSlots.push(parsed);
-        }
-        continue;
-      }
+    const peeked = peekToken(parserContext);
+    if (isTerminatorSymbol(peeked, endTag)) { break; }
+    if (isSlotSymbol(peeked)) {
+      categorizeSlot(parseSlotBlock(parserContext), namedSlots, implicitSlots);
+      continue;
     }
-
-    const chunk = parseUntilBlocks(ctx, 'slot', endTag);
-    if ((chunk.children?.length ?? 0) > 0) {
-      defaultParts.push(chunk);
-    }
+    appendDefaultChunk(defaultParts, parseUntilBlocks(parserContext, 'slot', endTag));
   }
 
   return { defaultParts, namedSlots, implicitSlots };
@@ -91,10 +100,10 @@ export const buildDefaultBody = (parts: Node[], lineno: number, colno: number): 
   if (parts.length === 1) {
     return parts[0] as Node;
   }
-  return nodeList(lineno, colno, parts as Node[]);
+  return nodeList(lineno, colno, parts);
 };
 
-export const advanceAfterTags = (ctx: ParserContext, tag: string): void => {
-  skipSymbol(ctx, tag);
-  advanceAfterBlockEnd(ctx, tag);
+export const advanceAfterTags = (parserContext: ParserContext, tag: string): void => {
+  skipSymbol(parserContext, tag);
+  advanceAfterBlockEnd(parserContext, tag);
 };

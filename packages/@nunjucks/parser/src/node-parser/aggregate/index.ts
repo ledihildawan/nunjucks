@@ -26,11 +26,11 @@ const createAggregateNode = (
   }
 };
 
-export const parseAggregate = (ctx: ParserContext): Node | null => {
-  const token = nextToken(ctx);
+export const parseAggregate = (parserContext: ParserContext): Node | null => {
+  const token = nextToken(parserContext);
   const node = createAggregateNode(token.type, token.lineno, token.colno);
   if (!node) {
     return null;
   }
-  return parseContent(ctx, node, token);
+  return parseContent(parserContext, node, token);
 };

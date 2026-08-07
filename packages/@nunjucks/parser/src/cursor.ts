@@ -4,6 +4,7 @@ import {
   TOKEN_WHITESPACE,
   isBlockEndToken,
   isVariableEndToken,
+  isSymbolToken,
 } from '@nunjucks/lexer';
 import type { Token, Delimiters } from '@nunjucks/lexer';
 import type { Node } from '@nunjucks/nodes';
@@ -18,7 +19,7 @@ export interface TokenStream {
 
 export interface ParserExtension {
   tags?: string[];
-  parse?: (ctx: ParserContext, nodes: unknown, lexer: unknown) => Node | null;
+  parse?: (parserContext: ParserContext, nodes: unknown, lexer: unknown) => Node | null;
   [key: string]: unknown;
 }
 
@@ -29,29 +30,24 @@ export interface ParserContext {
   extensions: ParserExtension[];
 }
 
-/**
- * Internal: advance the cursor by one token, returning `null` at EOF.
- * Used by helpers that legitimately treat EOF as "no match" (e.g. `skip`)
- * and by the main parse loop to detect end-of-stream.
- */
-export const nextTokenOrNull = (ctx: ParserContext, withWhitespace?: boolean): Token | null => {
+export const nextTokenOrNull = (parserContext: ParserContext, withWhitespace?: boolean): Token | null => {
   let tok: Token | null;
 
-  if (ctx.peeked) {
-    if (!withWhitespace && ctx.peeked.type === TOKEN_WHITESPACE) {
-      ctx.peeked = null;
+  if (parserContext.peeked) {
+    if (!withWhitespace && parserContext.peeked.type === TOKEN_WHITESPACE) {
+      parserContext.peeked = null;
     } else {
-      tok = ctx.peeked;
-      ctx.peeked = null;
+      tok = parserContext.peeked;
+      parserContext.peeked = null;
       return tok;
     }
   }
 
-  tok = ctx.tokens.nextToken();
+  tok = parserContext.tokens.nextToken();
 
   if (!withWhitespace) {
     while (tok?.type === TOKEN_WHITESPACE) {
-      tok = ctx.tokens.nextToken();
+      tok = parserContext.tokens.nextToken();
     }
   }
 
@@ -60,125 +56,110 @@ export const nextTokenOrNull = (ctx: ParserContext, withWhitespace?: boolean): T
 
 const EOF_LOCATION = { lineno: 0, colno: 0 } as const;
 
-/**
- * Advance the cursor by one token. Throws a parse error if the stream is
- * exhausted (unexpected EOF is always a syntax error in a well-formed parse
- * loop, so callers receive a non-null `Token` and never need to null-check).
- * Use `nextTokenOrNull` for optional-consume helpers.
- */
-export const nextToken = (ctx: ParserContext, withWhitespace?: boolean): Token => {
-  const tok = nextTokenOrNull(ctx, withWhitespace);
+export const nextToken = (parserContext: ParserContext, withWhitespace?: boolean): Token => {
+  const tok = nextTokenOrNull(parserContext, withWhitespace);
   if (tok === null) {
-    return fail(ctx, 'unexpected end of input', EOF_LOCATION.lineno, EOF_LOCATION.colno);
+    return fail(parserContext, 'unexpected end of input', EOF_LOCATION.lineno, EOF_LOCATION.colno);
   }
   return tok;
 };
 
-export const peekToken = (ctx: ParserContext): Token => {
-  if (ctx.peeked === null) {
-    ctx.peeked = nextTokenOrNull(ctx);
+export const peekToken = (parserContext: ParserContext): Token => {
+  if (parserContext.peeked === null) {
+    parserContext.peeked = nextTokenOrNull(parserContext);
   }
-  if (ctx.peeked === null) {
-    return fail(ctx, 'unexpected end of input', EOF_LOCATION.lineno, EOF_LOCATION.colno);
+  if (parserContext.peeked === null) {
+    return fail(parserContext, 'unexpected end of input', EOF_LOCATION.lineno, EOF_LOCATION.colno);
   }
-  return ctx.peeked;
+  return parserContext.peeked;
 };
 
-/** Like `peekToken` but returns `null` at EOF instead of throwing. For optional-lookahead call sites. */
-export const peekTokenOrNull = (ctx: ParserContext): Token | null => {
-  if (ctx.peeked === null) {
-    ctx.peeked = nextTokenOrNull(ctx);
+export const peekTokenOrNull = (parserContext: ParserContext): Token | null => {
+  if (parserContext.peeked === null) {
+    parserContext.peeked = nextTokenOrNull(parserContext);
   }
-  return ctx.peeked;
+  return parserContext.peeked;
 };
 
-export const pushToken = (ctx: ParserContext, tok: Token | null): void => {
-  if (ctx.peeked) {
+export const pushToken = (parserContext: ParserContext, tok: Token | null): void => {
+  if (parserContext.peeked) {
     throw createLog('error', ERROR_DEFINITIONS.PARSER_PUSH_TOKEN, {}, null, { phase: 'parse', lineBase: 'zero' });
   }
-  ctx.peeked = tok;
+  parserContext.peeked = tok;
 };
 
-export const skip = (ctx: ParserContext, type: Token['type']): boolean => {
-  const tok = nextTokenOrNull(ctx);
+export const skip = (parserContext: ParserContext, type: Token['type']): boolean => {
+  const tok = nextTokenOrNull(parserContext);
   if (!tok || tok.type !== type) {
-    pushToken(ctx, tok);
+    pushToken(parserContext, tok);
     return false;
   }
   return true;
 };
 
-export const expect = (ctx: ParserContext, type: Token['type']): Token => {
-  const tok = nextToken(ctx);
+export const expect = (parserContext: ParserContext, type: Token['type']): Token => {
+  const tok = nextToken(parserContext);
   if (tok.type !== type) {
-    fail(ctx, `expected ${type}, got ${tok.type}`, tok.lineno, tok.colno);
+    fail(parserContext, `expected ${type}, got ${tok.type}`, tok.lineno, tok.colno);
   }
   return tok;
 };
 
-export const skipValue = (ctx: ParserContext, type: Token['type'], val?: Token['value']): boolean => {
-  const tok = nextTokenOrNull(ctx);
-  if (!tok || tok.type !== type || tok.value !== val) {
-    pushToken(ctx, tok);
+export const skipValue = (parserContext: ParserContext, type: Token['type'], value?: Token['value']): boolean => {
+  const tok = nextTokenOrNull(parserContext);
+  if (!tok || tok.type !== type || tok.value !== value) {
+    pushToken(parserContext, tok);
     return false;
   }
   return true;
 };
 
-export const skipSymbol = (ctx: ParserContext, val: string): boolean => skipValue(ctx, TOKEN_SYMBOL, val);
+export const skipSymbol = (parserContext: ParserContext, value: string): boolean => skipValue(parserContext, TOKEN_SYMBOL, value);
 
-/** Read and auto-reset the leading-whitespace-drop flag. Each token handler
- *  should call this (or set it explicitly) — never read the flag directly. */
-export const consumeWhitespaceDrop = (ctx: ParserContext): boolean => {
-  const drop = ctx.dropLeadingWhitespace;
-  ctx.dropLeadingWhitespace = false;
+export const consumeWhitespaceDrop = (parserContext: ParserContext): boolean => {
+  const drop = parserContext.dropLeadingWhitespace;
+  parserContext.dropLeadingWhitespace = false;
   return drop;
 };
 
-export const skipOperator = (ctx: ParserContext, ...vals: string[]): boolean =>
-  vals.some(val => skipValue(ctx, TOKEN_OPERATOR, val));
+export const skipOperator = (parserContext: ParserContext, ...vals: string[]): boolean =>
+  vals.some(value => skipValue(parserContext, TOKEN_OPERATOR, value));
 
-export const advanceAfterBlockEnd = (ctx: ParserContext, name?: string): Token => {
+export const advanceAfterBlockEnd = (parserContext: ParserContext, name?: string): Token => {
   let tok: Token;
   let blockName = name;
   if (!blockName) {
-    tok = peekToken(ctx);
+    const nameTok = nextToken(parserContext);
 
-    if (!tok) {
-      fail(ctx, 'unexpected end of file');
-    }
-
-    if (tok.type !== TOKEN_SYMBOL) {
-      fail(ctx, 'advanceAfterBlockEnd: expected symbol token or ' +
-        'explicit name to be passed');
-    }
-
-    blockName = nextToken(ctx).value as string;
+    blockName = isSymbolToken(nameTok)
+      ? nameTok.value
+      : fail(parserContext, 'advanceAfterBlockEnd: expected symbol token or ' +
+          'explicit name to be passed', nameTok.lineno, nameTok.colno);
   }
 
-  tok = nextToken(ctx);
+  tok = nextToken(parserContext);
 
   if (isBlockEndToken(tok)) {
     if (tok.value.charAt(0) === '-') {
-      ctx.dropLeadingWhitespace = true;
+      parserContext.dropLeadingWhitespace = true;
     }
   } else {
-    fail(ctx, `expected block end in ${blockName} statement`);
+    fail(parserContext, `expected block end in ${blockName} statement`);
   }
 
   return tok;
 };
 
-export const advanceAfterVariableEnd = (ctx: ParserContext): void => {
-  const tok = nextToken(ctx);
+export const advanceAfterVariableEnd = (parserContext: ParserContext): void => {
+  const tok = nextToken(parserContext);
 
   if (isVariableEndToken(tok)) {
-    ctx.dropLeadingWhitespace = tok.value.charAt(
-      tok.value.length - ctx.tokens.tags.VARIABLE_END.length - 1
+    parserContext.dropLeadingWhitespace = tok.value.charAt(
+      tok.value.length - parserContext.tokens.tags.variableEnd.length - 1
     ) === '-';
   } else {
-    pushToken(ctx, tok);
-    fail(ctx, 'expected variable end');
+    pushToken(parserContext, tok);
+    fail(parserContext, 'expected variable end');
   }
 };
 

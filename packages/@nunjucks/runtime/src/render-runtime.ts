@@ -1,12 +1,9 @@
-// Single source of truth for the `runtime.X(...)` helpers called by compiled
-// template code. Imports sibling modules directly (not via ./index.ts) to avoid
-// a barrel self-cycle.
 import { suppressValue } from './suppress-value.ts';
 import { ensureDefined } from './undefined-resolution.ts';
 import { awaitValue } from './await-value.ts';
-import {
-  callWrap, contextOrFrameLookup, handleError, fromIterator, inOperator,
-} from './runtime-helpers.ts';
+import { callWrap, inOperator } from './call-wrap.ts';
+import { contextOrFrameLookup, fromIterator } from './lookups.ts';
+import { handleError } from './handle-error.ts';
 import {
   memberLookup, optionalMemberLookup, slice, nullishCoalesce,
 } from './member-access.ts';
@@ -22,14 +19,6 @@ interface RenderRuntimeOptions {
   renderContext?: unknown;
 }
 
-/**
- * Build the runtime helper object that compiled template code receives as
- * its 4th parameter: `root(env, context, frame, runtime)`.
- *
- * When `options.templateName` is provided, `__warnings__` and `logContext`
- * are included (for dev-mode warning collection). Without options, the
- * object is still fully functional — just without debug metadata.
- */
 const createRenderRuntime = (options?: RenderRuntimeOptions) => ({
   suppressValue,
   awaitValue,
@@ -65,6 +54,5 @@ const createRenderRuntime = (options?: RenderRuntimeOptions) => ({
 });
 
 export { createRenderRuntime };
-export type { RenderRuntimeOptions };
 
 export type RenderRuntime = ReturnType<typeof createRenderRuntime>;

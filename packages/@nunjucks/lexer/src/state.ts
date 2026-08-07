@@ -1,15 +1,15 @@
 import type { LexerState, LexerOptions } from './types.ts';
 import { createDelimiters } from './delimiters.ts';
 
-export const createState = (str: string, opts: LexerOptions = {}): LexerState => ({
+export const createState = (str: string, options: LexerOptions = {}): LexerState => ({
   str,
   index: 0,
   lineno: 0,
   colno: 0,
   inCode: false,
-  tags: createDelimiters(opts.tags),
-  trimBlocks: Boolean(opts.trimBlocks),
-  lstripBlocks: Boolean(opts.lstripBlocks),
+  tags: createDelimiters(options.tags),
+  trimBlocks: Boolean(options.trimBlocks),
+  lstripBlocks: Boolean(options.lstripBlocks),
 });
 
 export const getChar = (state: LexerState): string => {

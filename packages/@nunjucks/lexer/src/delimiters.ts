@@ -22,10 +22,6 @@ export const COMPLEX_OPERATORS = [
 
 export type ComplexOperator = typeof COMPLEX_OPERATORS[number];
 
-// Compound-assignment operators (arithmetic + logical). Single source of truth
-// shared by the parser (statement + expression contexts) and aligned with the
-// compiler. `|>=` (pipe-forward assign) is intentionally excluded: it is handled
-// as a distinct case by the parser/compiler.
 export const COMPOUND_ASSIGNMENT_OPS: readonly string[] = [
   '||=', '&&=', '??=', '**=', '//=', '+=', '-=', '*=', '/=', '%=',
 ];
@@ -33,16 +29,16 @@ export const COMPOUND_ASSIGNMENT_OPS: readonly string[] = [
 export const REGEX_FLAGS = ['g', 'i', 'm', 'y'] as const;
 
 export interface Delimiters {
-  BLOCK_START: string;
-  BLOCK_END: string;
-  VARIABLE_START: string;
-  VARIABLE_END: string;
-  COMMENT_START: string;
-  COMMENT_END: string;
-  STRIP_BLOCK_START: string;
-  STRIP_BLOCK_END: string;
-  STRIP_VARIABLE_START: string;
-  STRIP_VARIABLE_END: string;
+  blockStart: string;
+  blockEnd: string;
+  variableStart: string;
+  variableEnd: string;
+  commentStart: string;
+  commentEnd: string;
+  stripBlockStart: string;
+  stripBlockEnd: string;
+  stripVariableStart: string;
+  stripVariableEnd: string;
 }
 
 export interface DelimiterTags {
@@ -55,14 +51,14 @@ export interface DelimiterTags {
 }
 
 export const createDelimiters = (tags: DelimiterTags = {}): Delimiters => ({
-  BLOCK_START: tags.blockStart || DEFAULT_BLOCK_START,
-  BLOCK_END: tags.blockEnd || DEFAULT_BLOCK_END,
-  VARIABLE_START: tags.variableStart || DEFAULT_VARIABLE_START,
-  VARIABLE_END: tags.variableEnd || DEFAULT_VARIABLE_END,
-  COMMENT_START: tags.commentStart || DEFAULT_COMMENT_START,
-  COMMENT_END: tags.commentEnd || DEFAULT_COMMENT_END,
-  STRIP_BLOCK_START,
-  STRIP_BLOCK_END,
-  STRIP_VARIABLE_START,
-  STRIP_VARIABLE_END,
+  blockStart: tags.blockStart || DEFAULT_BLOCK_START,
+  blockEnd: tags.blockEnd || DEFAULT_BLOCK_END,
+  variableStart: tags.variableStart || DEFAULT_VARIABLE_START,
+  variableEnd: tags.variableEnd || DEFAULT_VARIABLE_END,
+  commentStart: tags.commentStart || DEFAULT_COMMENT_START,
+  commentEnd: tags.commentEnd || DEFAULT_COMMENT_END,
+  stripBlockStart: STRIP_BLOCK_START,
+  stripBlockEnd: STRIP_BLOCK_END,
+  stripVariableStart: STRIP_VARIABLE_START,
+  stripVariableEnd: STRIP_VARIABLE_END,
 });

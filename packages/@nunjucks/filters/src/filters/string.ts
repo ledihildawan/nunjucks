@@ -4,18 +4,18 @@ import { normalize, safeString, safeHtml, preserveSafe, createStringFilter, crea
 import type { SafeString } from '../factory/index.ts';
 
 const capitalize = createStringFilter((s: string): string => {
-  const ret = s.toLowerCase();
-  return `${ret.charAt(0).toUpperCase()}${ret.slice(1)}`;
+  const returnValue = s.toLowerCase();
+  return `${returnValue.charAt(0).toUpperCase()}${returnValue.slice(1)}`;
 });
 
-const fallback = createMacroFilter(['val', 'def', 'bool'], (val: unknown, def: unknown, bool?: boolean) => {
+const fallback = createMacroFilter(['val', 'def', 'bool'], (value: unknown, def: unknown, bool?: boolean) => {
   if (bool) {
-    return val || def;
+    return value || def;
   }
-  if (val === null || val === undefined) {
+  if (value === null || value === undefined) {
     return def;
   }
-  return val;
+  return value;
 });
 
 // biome-ignore lint/suspicious/noShadowRestrictedNames: `escape` is the public name of this Nunjucks filter; renaming it would break every template that uses it.
@@ -23,7 +23,6 @@ const escape = safeHtml;
 
 const tojson = (value: unknown): SafeString => safeString(JSON.stringify(value));
 
-/** Jinja2's `indent` filter defaults to four spaces. */
 const DEFAULT_INDENT_WIDTH = 4;
 
 const indent = (str: unknown, width?: number, indentfirst?: boolean): string => {
@@ -91,7 +90,6 @@ const title = createStringFilter((s: string): string => pipe(s, split(' '), map(
 
 const trim = createStringFilter((s: string): string => s.replace(/^\s*|\s*$/gu, ''));
 
-/** Jinja2's `truncate` filter defaults to 255 characters. */
 const DEFAULT_TRUNCATE_LENGTH = 255;
 
 const truncate = (input: unknown, length?: number, killwords?: boolean, end?: string): string => {

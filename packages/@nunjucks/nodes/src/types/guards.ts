@@ -1,4 +1,4 @@
-import { T, type CallExtensionNode, type CallNode, type ChildrenNode, type ForNode, type IfNode, type LiteralNode, type Node, type NodeType, type SymbolNode, type TemplateDataNode, type TestNode, type TestCallNode } from './index.ts';
+import { T, type CallExtensionNode, type CallNode, type ChildrenNode, type ForNode, type IfNode, type LiteralNode, type MatchNode, type Node, type NodeType, type RenderNode, type SwitchNode, type SymbolNode, type TemplateDataNode, type TemplateLiteralNode, type TestNode, type TestCallNode } from './index.ts';
 
 const nodeTypes: ReadonlySet<NodeType> = new Set(Object.values(T));
 
@@ -48,3 +48,8 @@ export const isVariableDeclaration = is(T.VARIABLE_DECLARATION);
 export const isVariableAssignment = is(T.VARIABLE_ASSIGNMENT);
 export const isTest = (n: unknown): n is TestNode => is(T.TEST)(n);
 export const isTestCall = (n: unknown): n is TestCallNode => is(T.TEST_CALL)(n);
+export const isMatch = (n: unknown): n is MatchNode => is(T.MATCH)(n);
+export const isSwitch = (n: unknown): n is SwitchNode => is(T.SWITCH)(n);
+export const isRender = (n: unknown): n is RenderNode => is(T.RENDER)(n);
+export const isTemplateLiteral = (n: unknown): n is TemplateLiteralNode => is(T.TEMPLATE_LITERAL)(n);
+export const isChildrenNode = (n: unknown): n is ChildrenNode => is(T.NODE_LIST)(n) || is(T.ROOT)(n) || is(T.OUTPUT)(n) || is(T.GROUP)(n) || is(T.ARRAY)(n) || is(T.DICT)(n) || is(T.ARRAY_PATTERN)(n) || is(T.OBJECT_PATTERN)(n) || is(T.KEYWORD_ARGS)(n);

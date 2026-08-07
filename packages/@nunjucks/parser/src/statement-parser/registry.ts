@@ -16,8 +16,8 @@ import { parseMatch } from "./match.ts";
 import { parseCapture } from "./capture.ts";
 import { parseRenderBlock } from "./render.ts";
 
-type StatementParser = (ctx: ParserContext) => Node;
-type TaggedParser = (ctx: ParserContext, ...args: unknown[]) => Node;
+type StatementParser = (parserContext: ParserContext) => Node;
+type TaggedParser = (parserContext: ParserContext, ...args: unknown[]) => Node;
 
 const STATEMENT_PARSERS: Record<string, StatementParser | TaggedParser> = {
   if: parseIf,

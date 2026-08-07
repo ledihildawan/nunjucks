@@ -1,12 +1,12 @@
 import { describe, test, expect } from 'bun:test';
-import { createCompiler } from './index.ts';
+import { createCompiler } from './create-compiler.ts';
 import { createFrame } from '@nunjucks/runtime';
 import {
   root, output, templateData, literal, symbol,
   add, sub, mul, compare, compareOperand,
-  if_, for_, funCall, lookupVal, block,
+  ifNode, forNode, funCall, lookupVal, block,
   not, and, or, nullishCoalesce,
-  component, exec_, scope_, match, when, renderBlock,
+  component, execNode, scopeNode, match, when, renderNode,
 } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 
@@ -101,7 +101,7 @@ describe('codegen: member lookup', () => {
 describe('codegen: if statement', () => {
   test('if/else emits conditional branching', () => {
     const code = compileRoot([
-      if_(0, 0, {
+      ifNode(0, 0, {
         cond: literal(0, 0, true),
         body: output(0, 0, [templateData(0, 0, 'yes')]),
         else_: output(0, 0, [templateData(0, 0, 'no')]),
@@ -114,7 +114,7 @@ describe('codegen: if statement', () => {
 describe('codegen: for loop', () => {
   test('for emits loop with runtime.fromIterator', () => {
     const code = compileRoot([
-      for_(0, 0, {
+      forNode(0, 0, {
         arr: symbol(0, 0, 'items'),
         name: symbol(0, 0, 'x'),
         body: output(0, 0, [templateData(0, 0, '.')]),
@@ -127,14 +127,13 @@ describe('codegen: for loop', () => {
 
   test('for-else pre-declares len=0 before if block', () => {
     const code = compileRoot([
-      for_(0, 0, {
+      forNode(0, 0, {
         arr: symbol(0, 0, 'items'),
         name: symbol(0, 0, 'x'),
         body: output(0, 0, [templateData(0, 0, '.')]),
         else_: output(0, 0, [templateData(0, 0, 'empty')]),
       }),
     ]);
-    // len must be declared before the if(arr) block for for-else to work
     const lenInitPos = code.indexOf('= 0;');
     const ifPos = code.indexOf('if(');
     expect(lenInitPos).toBeGreaterThan(-1);
@@ -144,7 +143,7 @@ describe('codegen: for loop', () => {
 
   test('for emits loop bindings (index, first, last)', () => {
     const code = compileRoot([
-      for_(0, 0, {
+      forNode(0, 0, {
         arr: symbol(0, 0, 'items'),
         name: symbol(0, 0, 'x'),
         body: output(0, 0, [templateData(0, 0, '.')]),
@@ -200,7 +199,7 @@ describe('codegen: component', () => {
 describe('codegen: exec', () => {
   test('exec emits try/catch around expression', () => {
     const code = compileRoot([
-      exec_(0, 0, funCall(0, 0, symbol(0, 0, 'someFn'), [])),
+      execNode(0, 0, funCall(0, 0, symbol(0, 0, 'someFn'), [])),
     ]);
     expect(code).toContain('try');
     expect(code).toContain('catch');
@@ -226,7 +225,7 @@ describe('codegen: match', () => {
 describe('codegen: render', () => {
   test('render emits async component invocation', () => {
     const code = compileRoot([
-      renderBlock(0, 0, {
+      renderNode(0, 0, {
         callExpr: funCall(0, 0, symbol(0, 0, 'MyComponent'), []),
         body: output(0, 0, [templateData(0, 0, 'body')]),
         providedSlots: [],
@@ -239,7 +238,7 @@ describe('codegen: render', () => {
 describe('codegen: scope', () => {
   test('scope emits frame operations', () => {
     const code = compileRoot([
-      scope_(0, 0, [], output(0, 0, [templateData(0, 0, 'scoped')])),
+      scopeNode(0, 0, [], output(0, 0, [templateData(0, 0, 'scoped')])),
     ]);
     expect(code).toContain('frame');
   });

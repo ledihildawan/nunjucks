@@ -1,5 +1,5 @@
 import type { Node, NodeLocation } from '@nunjucks/nodes';
-import { symbol, super_, isBlock, isFunCall, walk } from '@nunjucks/nodes';
+import { symbol, superNode, isBlock, isFunCall, walk } from '@nunjucks/nodes';
 import { createGensym } from '@nunjucks/runtime';
 
 export const liftSuper = (ast: Node): Node => walk(ast, (blockNode: Node): Node | undefined => {
@@ -8,8 +8,7 @@ export const liftSuper = (ast: Node): Node => walk(ast, (blockNode: Node): Node 
     const { body } = blockNode;
     if (!body) { return; }
 
-    let hasSuper = false;
-    let superLocation: NodeLocation | null = null;
+    const holder: { location: NodeLocation | null } = { location: null };
     const gensym = createGensym();
     const sym = gensym();
 
@@ -17,27 +16,23 @@ export const liftSuper = (ast: Node): Node => walk(ast, (blockNode: Node): Node 
       if (isFunCall(node)) {
         const { name } = node;
         if (typeof name !== 'string' && name?.value === 'super') {
-          hasSuper = true;
-          superLocation = {
-            lineno: name.lineno,
-            colno: name.colno,
-          };
-          return symbol(superLocation.lineno, superLocation.colno, sym);
+          const superLoc = { lineno: name.lineno, colno: name.colno };
+          holder.location = superLoc;
+          return symbol(superLoc.lineno, superLoc.colno, sym);
         }
       }
     });
 
-    if (!(hasSuper && superLocation)) { return; }
-
-    const superLoc = superLocation as NodeLocation;
+    const superLoc = holder.location;
+    if (superLoc === null) { return; }
     const bodyChildren = newBody.children ?? [];
     const blockName = typeof blockNode.name === 'string' ? blockNode.name : String(blockNode.name?.value ?? '');
     const newChildren = [
-      super_(
-        superLoc.lineno,
-        superLoc.colno,
+      superNode(
+        superLoc.lineno ?? 0,
+        superLoc.colno ?? 0,
         blockName,
-        symbol(superLoc.lineno, superLoc.colno, sym),
+        symbol(superLoc.lineno ?? 0, superLoc.colno ?? 0, sym),
       ),
       ...bodyChildren,
     ];

@@ -1,4 +1,4 @@
-import { createLog, ERROR_DEFINITIONS, type ErrorContext } from '@nunjucks/log';
+import { createLog, ERROR_DEFINITIONS } from '@nunjucks/log';
 import { escapeForContext, isNonNullish, isThenable, type HtmlContext } from '@nunjucks/shared';
 import { isSafeString } from './safe-string.ts';
 import { getLogContext } from './log-context.ts';
@@ -9,9 +9,9 @@ const RAW_OR_ESCAPED_LT_RE = /<|&lt;/u;
 const ESCAPED_HTML_ENTITY_RE = /&[quot;<>]/u;
 const SCRIPT_VALUE_NOT_HANDLED = Symbol('scriptValueNotHandled');
 
-const escapeValue = (val: unknown, context: HtmlContext = 'html'): string => {
-  if (!isNonNullish(val)) { return ''; }
-  return escapeForContext(String(val), context);
+const escapeValue = (value: unknown, context: HtmlContext = 'html'): string => {
+  if (!isNonNullish(value)) { return ''; }
+  return escapeForContext(String(value), context);
 };
 
 const throwEscapedJsonError = (
@@ -31,32 +31,32 @@ const throwEscapedJsonError = (
       phase: ctx.phase || 'render',
       templateName: ctx.templateName || 'inline',
       lineBase: 'zero',
-    } as ErrorContext,
+    },
   );
 };
 
-const isScriptJsonLike = (val: unknown, stringValue: string): boolean =>
+const isScriptJsonLike = (value: unknown, stringValue: string): boolean =>
   JSON_SCALAR_RE.test(stringValue.trim()) ||
   JSON_CONTAINER_RE.test(stringValue) ||
-  Array.isArray(val) ||
-  typeof val === 'object';
+  Array.isArray(value) ||
+  typeof value === 'object';
 
-const isEscapedJsonLike = (val: unknown, stringValue: string): boolean =>
-  Array.isArray(val) ||
+const isEscapedJsonLike = (value: unknown, stringValue: string): boolean =>
+  Array.isArray(value) ||
   JSON_SCALAR_RE.test(stringValue.trim()) ||
   JSON_CONTAINER_RE.test(stringValue);
 
 const suppressScriptValue = (
   self: unknown,
-  val: unknown,
+  value: unknown,
   lineno?: number | null,
   colno?: number | null
 ): unknown => {
-  const stringValue = (val as { toString: () => string }).toString();
-  if (!isScriptJsonLike(val, stringValue)) {
+  const stringValue = String(value);
+  if (!isScriptJsonLike(value, stringValue)) {
     return SCRIPT_VALUE_NOT_HANDLED;
   }
-  const encoded = JSON.stringify(val);
+  const encoded = JSON.stringify(value);
   if (RAW_OR_ESCAPED_LT_RE.test(encoded)) {
     throwEscapedJsonError(self, lineno, colno);
   }
@@ -70,9 +70,7 @@ const suppressEscapedValue = (
   lineno?: number | null,
   colno?: number | null
 ): string => {
-  const stringValue = (
-    normalized as { toString: () => string }
-  ).toString();
+  const stringValue = String(normalized);
   const escaped = escapeValue(stringValue, context);
   if (
     isEscapedJsonLike(normalized, stringValue) &&
@@ -85,24 +83,24 @@ const suppressEscapedValue = (
 
 export function suppressValue(
   this: unknown,
-  val: unknown,
+  value: unknown,
   autoescape?: boolean,
   lineno?: number | null,
   colno?: number | null,
   context: HtmlContext = 'html'
 ): unknown {
-  if (isThenable(val)) {
-    return val.then((v) => suppressValue.call(this, v, autoescape, lineno, colno, context));
+  if (isThenable(value)) {
+    return value.then((v) => suppressValue.call(this, v, autoescape, lineno, colno, context));
   }
 
-  if (autoescape && context === 'script' && !isSafeString(val)) {
-    const scriptValue = suppressScriptValue(this, val, lineno, colno);
+  if (autoescape && context === 'script' && !isSafeString(value)) {
+    const scriptValue = suppressScriptValue(this, value, lineno, colno);
     if (scriptValue !== SCRIPT_VALUE_NOT_HANDLED) {
       return scriptValue;
     }
   }
 
-  const normalized: unknown = isNonNullish(val) ? val : '';
+  const normalized: unknown = isNonNullish(value) ? value : '';
 
   if (autoescape && !isSafeString(normalized)) {
     return suppressEscapedValue(

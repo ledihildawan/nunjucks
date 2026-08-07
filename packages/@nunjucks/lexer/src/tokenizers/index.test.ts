@@ -87,7 +87,6 @@ describe('number tokenizer', () => {
   });
   test('negative number in expression', () => {
     const tks = tokens('{{ -5 }}');
-    // -5 is tokenized as operator '-' then int '5'
     expect(tks.some(t => t.type === 'int' && t.value === 5)).toBe(true);
   });
 });
@@ -137,7 +136,6 @@ describe('operator tokenizer', () => {
 describe('whitespace tokenizer', () => {
   test('whitespace between tokens', () => {
     const t = types('{{ x }}');
-    // whitespace tokens may or may not appear depending on consumption
     expect(t).toContain('variable-start');
   });
 });

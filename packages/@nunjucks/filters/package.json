@@ -9,7 +9,7 @@
     "./array": "./src/filters/array.ts",
     "./object": "./src/filters/object.ts",
     "./math": "./src/filters/math.ts",
-    "./attributes": "./src/attributes.ts",
+    "./attributes": "./src/filters/attributes.ts",
     "./factory": "./src/factory/index.ts"
   },
   "dependencies": {

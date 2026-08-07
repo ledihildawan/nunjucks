@@ -26,36 +26,36 @@ import type { ParserContext } from '../../cursor.ts';
 import { parseExpression, parsePrimary } from '../../expression-parser/index.ts';
 
 const parseSpread = (
-  ctx: ParserContext,
+  parserContext: ParserContext,
   node: ChildrenNode,
   origin: NodeLocation
 ): ChildrenNode => {
-  nextToken(ctx);
-  const argument = parseExpression(ctx);
+  nextToken(parserContext);
+  const argument = parseExpression(parserContext);
   return appendChild(
     node,
-    spread(origin.lineno, origin.colno, argument)
+    spread(origin.lineno ?? 0, origin.colno ?? 0, argument)
   );
 };
 
 const parseDictItem = (
-  ctx: ParserContext,
+  parserContext: ParserContext,
   node: ChildrenNode,
   origin: NodeLocation
 ): ChildrenNode => {
-  if (peekToken(ctx).type === TOKEN_SPREAD) {
-    return parseSpread(ctx, node, origin);
+  if (peekToken(parserContext).type === TOKEN_SPREAD) {
+    return parseSpread(parserContext, node, origin);
   }
-  const key = parsePrimary(ctx);
-  if (skip(ctx, TOKEN_COLON)) {
-    const value = parseExpression(ctx);
+  const key = parsePrimary(parserContext);
+  if (skip(parserContext, TOKEN_COLON)) {
+    const value = parseExpression(parserContext);
     return appendChild(
       node,
       pair(key.lineno, key.colno, key, value)
     );
   }
 
-  const next = peekToken(ctx);
+  const next = peekToken(parserContext);
   const value = symbol(key.lineno, key.colno, String(key.value));
   if (next && (next.type === TOKEN_COMMA || next.type === TOKEN_RIGHT_CURLY)) {
     return appendChild(
@@ -65,8 +65,8 @@ const parseDictItem = (
   }
 
   if (next?.type === TOKEN_OPERATOR && next.value === '=') {
-    nextToken(ctx);
-    const defaultValue = parseExpression(ctx);
+    nextToken(parserContext);
+    const defaultValue = parseExpression(parserContext);
     const pattern = assignmentPattern(
       key.lineno,
       key.colno,
@@ -80,7 +80,7 @@ const parseDictItem = (
   }
 
   fail(
-    ctx,
+    parserContext,
     'parseAggregate: expected colon after dict key',
     next?.lineno ?? origin.lineno,
     next?.colno ?? origin.colno,
@@ -90,20 +90,20 @@ const parseDictItem = (
 };
 
 export const parseAggregateExpression = (
-  ctx: ParserContext,
+  parserContext: ParserContext,
   node: ChildrenNode,
   origin: NodeLocation
 ): ChildrenNode => {
   if (isDict(node)) {
-    return parseDictItem(ctx, node, origin);
+    return parseDictItem(parserContext, node, origin);
   }
-  if (peekToken(ctx).type === TOKEN_SPREAD) {
-    return parseSpread(ctx, node, origin);
+  if (peekToken(parserContext).type === TOKEN_SPREAD) {
+    return parseSpread(parserContext, node, origin);
   }
 
-  const expression = parseExpression(ctx);
-  if (skipValue(ctx, TOKEN_OPERATOR, '=')) {
-    const defaultValue = parseExpression(ctx);
+  const expression = parseExpression(parserContext);
+  if (skipValue(parserContext, TOKEN_OPERATOR, '=')) {
+    const defaultValue = parseExpression(parserContext);
     return appendChild(
       node,
       assignmentPattern(
