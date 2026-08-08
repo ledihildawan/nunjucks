@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// WHY: dev-only untyped audit tooling, excluded from the typed package
 
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

@@ -14,7 +14,8 @@
     "@nunjucks/parser": "workspace:*",
     "@nunjucks/runtime": "workspace:*",
     "@nunjucks/transformers": "workspace:*",
-    "express": "^5.0.0"
+    "express": "^5.0.0",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.6"

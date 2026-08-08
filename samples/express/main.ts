@@ -6,6 +6,7 @@ import { renderTemplate } from './lib/render-template.ts';
 import { formatError } from '@nunjucks/log';
 import { demoRouter } from './routes/demo.ts';
 import { errorRouter } from './routes/errors.ts';
+import { boundaryRouter } from './routes/boundaries.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -88,6 +89,7 @@ app.get('/security', async (_req: Request, res: Response) => {
 
 app.use('/demo', demoRouter);
 app.use('/errors', errorRouter);
+app.use('/boundary', boundaryRouter);
 
 app.use(async (err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.log(formatError(err, { format: 'ansi', dev: true }));
@@ -103,4 +105,5 @@ app.listen(4000, () => {
   console.log('  /demo/*        - Demo routes (pipe, scope, switch, slot, component, etc)');
   console.log('  /errors        - Error scenarios index');
   console.log('  /errors/*      - Individual error scenarios');
+  console.log('  /boundary      - Boundary validation (zod schema on req.query)');
 });

@@ -129,8 +129,6 @@ router.get('/test', async (_req: Request, res: Response) => {
     }
   };
 
-  const results: TestResult[] = [];
-
   const tests: TestCase[] = [
     { name: 'Normal property', template: '{{ user.name }}', sandbox: false },
     { name: 'Access __proto__ (blocked)', template: '{{ user.__proto__ }}', sandbox: true, expectError: true },
@@ -140,15 +138,16 @@ router.get('/test', async (_req: Request, res: Response) => {
     { name: 'Access prototype (blocked)', template: '{{ user.prototype }}', sandbox: true, expectError: true },
   ];
 
-  for (const test of tests) {
+  const results = await Promise.all(tests.map(async (test): Promise<TestResult> => {
     try {
       const result = await renderTemplate({ template: test.template, context, config: { sandbox: test.sandbox } });
-      results.push({ name: test.name, result, error: null, blocked: false });
+      return { name: test.name, result, error: null, blocked: false };
     } catch (e) {
-      results.push({ name: test.name, result: null, error: (e as Error).message, blocked: true });
+      return { name: test.name, result: null, error: (e as Error).message, blocked: true };
     }
-  }
+  }));
 
+  // WHY: inline HTML for demo brevity; production should use .njk templates with autoescape
   res.type('html').send(`
 <!DOCTYPE html>
 <html>
@@ -196,22 +195,20 @@ router.get('/normal', async (_req: Request, res: Response) => {
     }
   };
 
-  const results: TestResult[] = [];
-
   const tests: TestCase[] = [
     { name: 'Normal property', template: '{{ user.name }}' },
     { name: 'Access __proto__ (DANGEROUS!)', template: '{{ user.__proto__ }}' },
     { name: 'Access constructor', template: '{{ user.constructor }}' },
   ];
 
-  for (const test of tests) {
+  const results = await Promise.all(tests.map(async (test): Promise<TestResult> => {
     try {
       const result = await renderTemplate({ template: test.template, context });
-      results.push({ name: test.name, result, error: null });
+      return { name: test.name, result, error: null };
     } catch (e) {
-      results.push({ name: test.name, result: null, error: (e as Error).message });
+      return { name: test.name, result: null, error: (e as Error).message };
     }
-  }
+  }));
 
   res.type('html').send(`
 <!DOCTYPE html>
@@ -260,7 +257,6 @@ router.get('/allowlist', async (_req: Request, res: Response) => {
     user: { name: 'John', password: 'secret123', admin: true, data: { secret: 'API_KEY' } }
   };
 
-  const results: TestResult[] = [];
   const allowlist = ['user', 'name'];
 
   const tests: TestCase[] = [
@@ -270,18 +266,18 @@ router.get('/allowlist', async (_req: Request, res: Response) => {
     { name: 'user.data (blocked)', template: '{{ user.data }}', shouldPass: false },
   ];
 
-  for (const test of tests) {
+  const results = await Promise.all(tests.map(async (test): Promise<TestResult> => {
     try {
       const result = await renderTemplate({ template: test.template, context, config: {
         sandbox: true,
         sandboxAllowlist: allowlist,
         sandboxMode: 'allowlist'
       } });
-      results.push({ name: test.name, result, error: null, passed: test.shouldPass });
+      return { name: test.name, result, error: null, passed: test.shouldPass };
     } catch (e) {
-      results.push({ name: test.name, result: null, error: (e as Error).message, passed: !test.shouldPass });
+      return { name: test.name, result: null, error: (e as Error).message, passed: !test.shouldPass };
     }
-  }
+  }));
 
   res.type('html').send(`
 <!DOCTYPE html>
@@ -352,8 +348,6 @@ router.get('/code-execution', async (_req: Request, res: Response) => {
     }
   };
 
-  const results: TestResult[] = [];
-
   const tests: TestCase[] = [
     { name: 'Access setTimeout (blocked)', template: '{{ user.setTimeout }}', expectError: true },
     { name: 'Access setInterval (blocked)', template: '{{ user.setInterval }}', expectError: true },
@@ -361,14 +355,14 @@ router.get('/code-execution', async (_req: Request, res: Response) => {
     { name: 'Access fetch (blocked)', template: '{{ user.fetch }}', expectError: true },
   ];
 
-  for (const test of tests) {
+  const results = await Promise.all(tests.map(async (test): Promise<TestResult> => {
     try {
       const result = await renderTemplate({ template: test.template, context, config: { sandbox: true } });
-      results.push({ name: test.name, result, error: null, blocked: false });
+      return { name: test.name, result, error: null, blocked: false };
     } catch (e) {
-      results.push({ name: test.name, result: null, error: (e as Error).message, blocked: true });
+      return { name: test.name, result: null, error: (e as Error).message, blocked: true };
     }
-  }
+  }));
 
   res.type('html').send(`
 <!DOCTYPE html>

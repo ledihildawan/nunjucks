@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Boundary Validation Demo</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; }
+    h1 { color: #2c3e50; }
+    h2 { color: #3498db; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
+    .result { background: #d4edda; border: 1px solid #27ae60; padding: 16px; border-radius: 8px; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; }
+    a { color: #3498db; }
+  </style>
+</head>
+<body>
+  <h1>Boundary Validation Demo</h1>
+  <p>This route parses <code>req.query</code> through a zod schema before it reaches any template.
+     Untrusted input arrives as <code>unknown</code> and is narrowed to a typed domain value:
+     the <code>unknown</code> &rarr; schema-parse &rarr; domain pattern.</p>
+
+  <section class="result">
+    <h2>Parsed &amp; validated values</h2>
+    <p><strong>name:</strong> {{ name }}</p>
+    <p><strong>count:</strong> {{ count }}</p>
+  </section>
+
+  <p>Try invalid input:</p>
+  <ul>
+    <li><a href="/boundary?name=Alice&count=5">/boundary?name=Alice&amp;count=5</a> (valid)</li>
+    <li><a href="/boundary?name=&count=0">/boundary?name=&amp;count=0</a> (empty name, non-positive count &rarr; 400)</li>
+    <li><a href="/boundary?name=Alice">/boundary?name=Alice</a> (missing count &rarr; 400)</li>
+  </ul>
+
+  <p><a href="/">Back to Index</a></p>
+</body>
+</html>

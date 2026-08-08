@@ -1,6 +1,5 @@
-import express, { type Router, type Request, type Response } from 'express';
+import express, { type Router, type Request, type Response, type NextFunction } from 'express';
 import { renderTemplate as renderResult } from '../lib/render-template.ts';
-import { formatError } from '@nunjucks/log';
 
 const router: Router = express.Router();
 
@@ -79,25 +78,25 @@ const html = await nunjucks(template, context, { undefined: 'strict' });</pre>
   `);
 });
 
-router.get('/strict', async (_req: Request, res: Response) => {
+router.get('/strict', async (_req: Request, res: Response, next: NextFunction) => {
   const template = '{{ user.name }}';
   const context: Record<string, unknown> = { user: undefined };
 
   try {
     await renderTemplate({ template, context, config: { undefined: 'strict' } });
     res.send('Should have thrown error');
-  } catch (e: unknown) {
-    const error = e instanceof Error ? e : new Error(String(e));
-    res.status(500).type('html').send(formatError(error, { format: 'html' }));
+  } catch (e) {
+    next(e);
   }
 });
 
-router.get('/debug', async (_req: Request, res: Response) => {
+router.get('/debug', async (_req: Request, res: Response, next: NextFunction) => {
   const template = '{{ user.testing }}';
   const context: Record<string, unknown> = { user: undefined };
 
   try {
     const result = await renderTemplate({ template, context, config: { undefined: 'debug' } });
+    // WHY: inline HTML for demo brevity; production should use .njk templates with autoescape
     res.type('html').send(`
 <!DOCTYPE html>
 <html>
@@ -119,19 +118,20 @@ router.get('/debug', async (_req: Request, res: Response) => {
   <p><a href="/undefined">Back to Undefined Types Demo</a></p>
 </body>
 </html>`);
-  } catch (e: unknown) {
-    const error = e instanceof Error ? e : new Error(String(e));
-    res.status(500).type('html').send(formatError(error, { format: 'html' }));
+  } catch (e) {
+    next(e);
   }
 });
 
-router.get('/chainable', async (_req: Request, res: Response) => {
+router.get('/chainable', async (_req: Request, res: Response, next: NextFunction) => {
   const template = '{{ user.name }}';
   const context: Record<string, unknown> = { user: undefined };
 
-  const result = await renderTemplate({ template, context, config: { undefined: 'chainable' } });
+  try {
+    const result = await renderTemplate({ template, context, config: { undefined: 'chainable' } });
 
-  res.type('html').send(`
+    // WHY: inline HTML for demo brevity; production should use .njk templates with autoescape
+    res.type('html').send(`
 <!DOCTYPE html>
 <html>
 <head>
@@ -159,31 +159,32 @@ router.get('/chainable', async (_req: Request, res: Response) => {
 </body>
 </html>
   `);
+  } catch (e) {
+    next(e);
+  }
 });
 
-router.get('/strict-nested', async (_req: Request, res: Response) => {
+router.get('/strict-nested', async (_req: Request, res: Response, next: NextFunction) => {
   const template = '{{ user.profile.name }}';
   const context: Record<string, unknown> = { user: undefined };
 
   try {
     await renderTemplate({ template, context, config: { undefined: 'strict' } });
     res.send('Should have thrown error');
-  } catch (e: unknown) {
-    const error = e instanceof Error ? e : new Error(String(e));
-    res.status(500).type('html').send(formatError(error, { format: 'html' }));
+  } catch (e) {
+    next(e);
   }
 });
 
-router.get('/strict-array', async (_req: Request, res: Response) => {
+router.get('/strict-array', async (_req: Request, res: Response, next: NextFunction) => {
   const template = '{{ items }}';
   const context: Record<string, unknown> = { items: undefined };
 
   try {
     await renderTemplate({ template, context, config: { undefined: 'strict' } });
     res.send('Should have thrown error');
-  } catch (e: unknown) {
-    const error = e instanceof Error ? e : new Error(String(e));
-    res.status(500).type('html').send(formatError(error, { format: 'html' }));
+  } catch (e) {
+    next(e);
   }
 });
 
