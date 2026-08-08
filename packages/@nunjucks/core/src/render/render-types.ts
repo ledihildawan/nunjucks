@@ -1,4 +1,5 @@
-import type { Environment, CallerLocation, BaseValidationError } from '@nunjucks/shared';
+import type { Environment, BaseValidationError } from '@nunjucks/shared';
+import type { CallerLocation } from './caller-file.ts';
 import type { SandboxOptions, Env, UndefinedMode } from '@nunjucks/runtime';
 import type { SandboxMode } from '../config/global.ts';
 

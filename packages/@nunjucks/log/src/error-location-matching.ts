@@ -1,6 +1,5 @@
 import { flatMap, pipe, reduce } from 'remeda';
-import { slice } from '../pipe-helpers.ts';
-import { escapeRegex } from '../escape-regex.ts';
+import { slice, escapeRegex } from '@nunjucks/shared';
 import type { SourcePosition, TemplateMatch } from './error-location-types.ts';
 
 const lineDistance = (line: number, preferredLine: number | null | undefined): number => {

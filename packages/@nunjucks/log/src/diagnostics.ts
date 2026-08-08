@@ -1,6 +1,7 @@
 import { createLog, type TemplateError } from './create-log/create-log.ts';
 import { normalizeErrorMetadata } from './normalize.ts';
-import { resolveLocation, MATCH_ANY_RE, isKeyedObject } from '@nunjucks/shared';
+import { resolveLocation } from './error-location.ts';
+import { MATCH_ANY_RE, isKeyedObject } from '@nunjucks/shared';
 import { DEFAULT_IDE } from './render/internal/config/defaults.ts';
 import type { LineBase } from './line-base.ts';
 
