@@ -57,16 +57,17 @@ const extractFrameDetails = (
   return newError;
 };
 
-const createTemplateErrorHandler = (state: { path: string | undefined; _includeChain: IncludeChain | null }) => {
+const createTemplateErrorHandler = (getState: () => { path: string | undefined; _includeChain: IncludeChain | null }) => {
   const enrichError = (e: ErrorWithLineInfo): Error => {
+    const { path, _includeChain } = getState();
     const sourceLineno = e.lineno;
     const sourceColno = e.colno;
-    const hasIncludeChain = e._includeChain ?? state._includeChain;
+    const hasIncludeChain = e._includeChain ?? _includeChain;
 
-    const extracted = extractFrameDetails(e, sourceLineno, sourceColno, state.path, hasIncludeChain);
+    const extracted = extractFrameDetails(e, sourceLineno, sourceColno, path, hasIncludeChain);
     if (extracted) { return extracted; }
     if (e.path) { return e; }
-    return Object.assign(Object.create(Object.getPrototypeOf(e) ?? Error.prototype), e, { path: state.path }) as ErrorWithLineInfo;
+    return Object.assign(Object.create(Object.getPrototypeOf(e) ?? Error.prototype), e, { path }) as ErrorWithLineInfo;
   };
 
   return { enrichError };

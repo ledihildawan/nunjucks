@@ -17,10 +17,6 @@ export interface TemplateState {
   blockMeta: Record<string, BlockLocation>;
   rootRenderFunc: ((env: Env, context: unknown, frame: unknown, runtime: RuntimeContext) => unknown) | null;
   compiled: boolean;
-  compiler?: {
-    compile: () => void;
-    safeCompile: () => Promise<void>;
-  };
 }
 
 export interface TemplateSource {

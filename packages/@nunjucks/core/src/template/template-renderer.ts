@@ -15,10 +15,14 @@ const createRenderFrame = (parentFrame: Frame | undefined): Frame => {
   return frame;
 };
 
-const createTemplateRenderer = (state: TemplateState, errorHandler: { enrichError: (e: ErrorWithLineInfo) => Error }) => {
+const createTemplateRenderer = (
+  getState: () => TemplateState,
+  compiler: { safeCompile: () => Promise<void> },
+  errorHandler: { enrichError: (e: ErrorWithLineInfo) => Error },
+) => {
   const { enrichError } = errorHandler;
 
-  const wrapRenderError = (e: unknown): Error => prettifyError({
+  const wrapRenderError = (state: TemplateState, e: unknown): Error => prettifyError({
     path: (e as { path?: string }).path ?? state.path,
     withInternals: state.env.opts.dev,
     err: enrichError(e as ErrorWithLineInfo),
@@ -26,7 +30,8 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: { enrichErro
   });
 
   const render = async (ctx: Record<string, unknown>, parentFrame?: unknown): Promise<string> => {
-    await state.compiler?.safeCompile();
+    await compiler.safeCompile();
+    const state = getState();
 
     const renderingTemplates = state.env._renderingTemplates;
     if (renderingTemplates?.has(state.path)) {
@@ -51,7 +56,7 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: { enrichErro
       }
       return result as string;
     } catch (e) {
-      throw wrapRenderError(e);
+      throw wrapRenderError(state, e);
     } finally {
       renderingTemplates?.delete(state.path);
     }

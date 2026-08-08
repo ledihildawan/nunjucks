@@ -37,22 +37,20 @@ const initTemplateState = ({ src: _src, env, path, includeChain }: InitTemplateS
   compiled: false,
 });
 
-const loadSource = (state: TemplateState, src: string | TemplateSource): void => {
+const loadSource = (state: TemplateState, src: string | TemplateSource): TemplateState => {
   if (isPlainObject(src)) {
     const srcObj = src as TemplateSource;
     switch (srcObj.type) {
       case 'code':
-        state.tmplProps = srcObj.value as CompiledTemplateExports;
-        break;
+        return { ...state, tmplProps: srcObj.value as CompiledTemplateExports };
       case 'string':
-        state.tmplStr = srcObj.value as string;
-        break;
+        return { ...state, tmplStr: srcObj.value as string };
       default:
         throw createLog('error', { def: getError('TEMPLATE_INVALID_SOURCE'), params: { type: srcObj.type }, subject: srcObj.type, context: { phase: 'load' } });
     }
-  } else if (isString(src)) {
-    state.tmplStr = src;
-  } else {
-    throw createLog('error', { def: getError('TEMPLATE_SRC_STRING'), params: {}, subject: null, context: { phase: 'load' } });
   }
+  if (isString(src)) {
+    return { ...state, tmplStr: src };
+  }
+  throw createLog('error', { def: getError('TEMPLATE_SRC_STRING'), params: {}, subject: null, context: { phase: 'load' } });
 };

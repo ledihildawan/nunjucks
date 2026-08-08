@@ -9,30 +9,39 @@ import type { TemplateState } from './types';
 
 export { createTemplateCompiler };
 
-const createTemplateCompiler = (state: TemplateState) => {
+interface TemplateStateCell {
+  getState: () => TemplateState;
+  commit: (next: TemplateState) => void;
+}
+
+const createTemplateCompiler = ({ getState, commit }: TemplateStateCell) => {
+  const compileToProps = (state: TemplateState): CompiledTemplateExports | null => {
+    if (state.tmplProps) {
+      return state.tmplProps;
+    }
+    const codeResult = compileToCode({ source: state.tmplStr ?? '', templateName: state.path ?? '', undefinedMode: state.env.opts.undefined as UndefinedMode | undefined, parseOpts: state.env.opts as ParseOptions });
+    if (isErr(codeResult)) { throw codeResult.error; }
+    const compiled = new Function(codeResult.value)();
+    if (!isCompiledTemplateExports(compiled)) {
+      return null;
+    }
+    return compiled;
+  };
+
   const compile = () => {
+    const state = getState();
     const startTime = Date.now();
     state.env.emit?.(HOOK_EVENTS.TEMPLATE_COMPILE_START, { template: state, path: state.path });
 
     try {
-      const compileToProps = (): CompiledTemplateExports | null => {
-        if (state.tmplProps) {
-          return state.tmplProps;
-        }
-        const codeResult = compileToCode({ source: state.tmplStr ?? '', templateName: state.path ?? '', undefinedMode: state.env.opts.undefined as UndefinedMode | undefined, parseOpts: state.env.opts as ParseOptions });
-        if (isErr(codeResult)) { throw codeResult.error; }
-        const compiled = new Function(codeResult.value)();
-        if (!isCompiledTemplateExports(compiled)) {
-          return null;
-        }
-        return compiled;
-      };
-      const props: CompiledTemplateExports | null = compileToProps();
-
-      state.blocks = extractBlocks(props ?? {}) as Record<string, (...args: unknown[]) => unknown>;
-      state.blockMeta = ((props?.[BLOCK_META_KEY] as Record<string, BlockLocation>) ?? {});
-      state.rootRenderFunc = props?.root as typeof state.rootRenderFunc;
-      state.compiled = true;
+      const props = compileToProps(state);
+      commit({
+        ...state,
+        blocks: extractBlocks(props ?? {}) as Record<string, (...args: unknown[]) => unknown>,
+        blockMeta: (props?.[BLOCK_META_KEY] as Record<string, BlockLocation>) ?? {},
+        rootRenderFunc: props?.root as TemplateState['rootRenderFunc'],
+        compiled: true,
+      });
 
       state.env.emit?.(HOOK_EVENTS.TEMPLATE_COMPILE_COMPLETE, { template: state, path: state.path, duration: Date.now() - startTime });
     } catch (error) {
@@ -45,7 +54,7 @@ const createTemplateCompiler = (state: TemplateState) => {
     try {
       compile();
     } catch (e) {
-      throw prettifyError({ path: state.path, withInternals: state.env.opts.dev, err: e as Error });
+      throw prettifyError({ path: getState().path, withInternals: getState().env.opts.dev, err: e as Error });
     }
   };
 

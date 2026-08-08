@@ -5,23 +5,29 @@ import { createRuntimeWithContext } from './runtime-factory';
 
 export { createGetExported };
 
-const createGetExported = (state: TemplateState) => async (ctx?: Record<string, unknown>, parentFrame?: unknown): Promise<Record<string, unknown>> => {
+const createGetExported = (
+  getState: () => TemplateState,
+  compiler: { safeCompile: () => Promise<void> },
+) => async (ctx?: Record<string, unknown>, parentFrame?: unknown): Promise<Record<string, unknown>> => {
   const createExportedFrame = (inputParentFrame: Frame | undefined): Frame => {
     const exportFrame = inputParentFrame ? inputParentFrame.push() : createFrame();
     exportFrame.topLevel = true;
     return exportFrame;
   };
 
+  try {
+    await compiler.safeCompile();
+  } catch (e) {
+    const state = getState();
+    throw prettifyError({ path: state.path, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain ?? undefined });
+  }
+
+  const state = getState();
+
   const wrapExportedError = (e: unknown): never => {
     const path = (e as { path?: string }).path ?? state.path;
     throw prettifyError({ path, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain ?? undefined });
   };
-
-  try {
-    await state.compiler?.safeCompile();
-  } catch (e) {
-    throw prettifyError({ path: state.path, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain ?? undefined });
-  }
 
   const renderFrame = createExportedFrame(parentFrame as Frame | undefined);
 
