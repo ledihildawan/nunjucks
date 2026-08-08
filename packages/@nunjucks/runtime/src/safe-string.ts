@@ -36,7 +36,7 @@ export const markSafe = <T>(value: T): T extends string ? SafeString : T => {
   }
   if (type === 'function') {
     const fn = value as (...args: unknown[]) => unknown;
-    return function wrapSafe(this: unknown, ...args: unknown[]): unknown {
+    return function wrapSafe<A extends unknown[]>(this: unknown, ...args: A): unknown {
       const returnValue = fn.apply(this, args);
       if (typeof returnValue === 'string') {
         return createSafeString(returnValue);

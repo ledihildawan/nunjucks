@@ -14,6 +14,7 @@
     "./escape-context": "./src/escaping/escape-context.ts",
     "./escaping": "./src/escaping/index.ts",
     "./extract-blocks": "./src/extract-blocks.ts",
+    "./escape-regex": "./src/escape-regex.ts",
     "./reserved": "./src/reserved.ts",
     "./type-guards": "./src/type-guards.ts"
   },

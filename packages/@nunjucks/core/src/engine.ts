@@ -9,7 +9,7 @@ interface EngineConfig {
 const loaderCache = new Map<string, FileSystemLoader>();
 
 const getLoader = (config: EngineConfig): FileSystemLoader | null => {
-  const viewsPath = config.views || config.root;
+  const viewsPath = config.views ?? config.root;
   if (!viewsPath) { return null; }
 
   const cached = loaderCache.get(viewsPath);

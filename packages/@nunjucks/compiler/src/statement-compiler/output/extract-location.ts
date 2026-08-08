@@ -12,7 +12,7 @@ export const extractVarName = (node: Node): string | null => {
       return null;
     }
     const value = node.val;
-    const property = value?.value || String((value as { name?: unknown })?.name ?? '') || '';
+    const property = value?.value ?? String((value as { name?: unknown })?.name ?? '') ?? '';
     return `${base}.${property}`;
   }
 

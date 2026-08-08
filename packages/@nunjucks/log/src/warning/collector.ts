@@ -23,7 +23,7 @@ interface InjectWarningsOptions {
 const getFileName = (path: string | null | undefined): string => {
   if (!path) { return 'unknown'; }
   const parts = pipe(path, replace(/\\/gu, '/'), split('/'));
-  return parts.at(-1) || 'unknown';
+  return parts.at(-1) ?? 'unknown';
 };
 
 const getLocationString = (w: Warning): string => {
@@ -44,8 +44,8 @@ const formatWarning = (w: Warning | string, options: { verbosity?: 'simple' | 'm
     return `[WARNING] ${message}`;
   }
 
-  const undefinedMode = w.undefinedMode || 'chainable';
-  const code = w.code || null;
+  const undefinedMode = w.undefinedMode ?? 'chainable';
+  const code = w.code ?? null;
   const locationStr = getLocationString(w);
 
   if (verbosity === 'simple') {

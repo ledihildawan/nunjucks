@@ -16,33 +16,35 @@ import {
   isSpread,
   isSymbol,
 } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
+import type { Node, SpreadNode } from '@nunjucks/nodes';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { peekToken, nextToken } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
 import { errorAt } from '../error.ts';
 import { parseOr } from './logical.ts';
 
-type PairNode = Node & { key: Node; value: Node; argument: Node };
+const mapArrayPatternChild = (c: Node): Node => {
+  if (isPair(c) && isSymbol(c.value) && typeof c.key !== 'string' && c.key.value === c.value.value) {
+    return c.value;
+  }
+  if (isSpread(c)) { return restPattern(c.lineno, c.colno, (c as SpreadNode).argument); }
+  return c;
+};
+
+const mapObjectPatternChild = (c: Node): Node => {
+  if (isPair(c) && typeof c.key !== 'string' && isSymbol(c.key) && isSymbol(c.value) && c.key.value === c.value.value) {
+    return patternProperty(c.key.lineno, c.key.colno, String(c.key.value), c.key);
+  }
+  if (isSpread(c)) { return restPattern(c.lineno, c.colno, (c as SpreadNode).argument); }
+  return c;
+};
 
 const normalizePattern = (node: Node): Node => {
   if (isArrayPattern(node) || isObjectPattern(node)) { return node; }
   if (isArray(node)) {
-    return arrayPattern(node.lineno, node.colno, (node as { children: readonly Node[] }).children.map((c: Node) => {
-      const p = c as PairNode;
-      if (isPair(c) && isSymbol(p.value) && p.key.value === p.value.value) { return p.value; }
-      if (isSpread(c)) { return restPattern(c.lineno, c.colno, p.argument); }
-      return c;
-    }));
+    return arrayPattern(node.lineno, node.colno, (node as { children: readonly Node[] }).children.map(mapArrayPatternChild));
   }
-  return objectPattern(node.lineno, node.colno, (node as { children: readonly Node[] }).children.map((c: Node) => {
-    const p = c as PairNode;
-    if (isPair(c) && isSymbol(p.key) && isSymbol(p.value) && p.key.value === p.value.value) {
-      return patternProperty(p.key.lineno, p.key.colno, String(p.key.value), p.key);
-    }
-    if (isSpread(c)) { return restPattern(p.lineno, p.colno, p.argument); }
-    return c;
-  }));
+  return objectPattern(node.lineno, node.colno, (node as { children: readonly Node[] }).children.map(mapObjectPatternChild));
 };
 
 const isExpressionContext = (tok: Token): boolean =>

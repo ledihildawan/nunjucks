@@ -108,7 +108,7 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: "render(template, ctx, { blockedContextKeys: ['{keys}'] })",
     fixComment: 'Pass the value via a non-blocked name, or remove it from `blockedContextKeys`',
-    extraFrom: (groups: RegExpMatchArray) => ({ keys: groups[1] || '' })
+    extraFrom: (groups: RegExpMatchArray) => ({ keys: groups[1] ?? '' })
   }),
   DANGEROUS_CONTEXT_VALUES: createErrorDefinition({
     name: 'DANGEROUS_CONTEXT_VALUES',
@@ -134,7 +134,7 @@ export const SANDBOX_ERRORS = {
     ],
     fixCode: 'const safe = Object.assign({}, context, { eval: undefined, Function: undefined });',
     fixComment: 'Clean the context yourself before passing to render',
-    extraFrom: (groups: RegExpMatchArray) => ({ values: groups[1] || '' })
+    extraFrom: (groups: RegExpMatchArray) => ({ values: groups[1] ?? '' })
   }),
   DANGEROUS_TEMPLATE_CODE: createErrorDefinition({
     name: 'DANGEROUS_TEMPLATE_CODE',
@@ -148,7 +148,7 @@ export const SANDBOX_ERRORS = {
     fixCode: '/* Refactor to use env globals or filters instead of direct code execution */',
     fixComment: 'Remove dangerous code from the template',
     documentationUrl: 'https://mozilla.github.io/nunjucks/api.html#security',
-    extraFrom: (groups: RegExpMatchArray) => ({ violations: groups[1] || '' })
+    extraFrom: (groups: RegExpMatchArray) => ({ violations: groups[1] ?? '' })
   })
 } as const;
 

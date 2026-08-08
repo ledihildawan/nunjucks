@@ -25,7 +25,7 @@ export interface TemplateState {
 
 export interface TemplateSource {
   type: 'code' | 'string';
-  obj: unknown;
+  value: unknown;
 }
 
 export interface TemplateObject {

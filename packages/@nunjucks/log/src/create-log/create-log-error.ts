@@ -60,16 +60,26 @@ const formatErrorOutput = (err: TemplateError, options: ReturnType<typeof create
   return toHtml(err, options);
 };
 
-const formatError = (err: TemplateError, options: OutputOptions = {}): string => {
+const formatError = (err: Error | TemplateError, options: OutputOptions = {}): string => {
+  const templateError = isTemplateErrorLog(err) ? err : toTemplateError(err);
   const verbosity = options.verbosity ?? 'full';
-  const sourceTrace = buildSourceTraceIfNeeded(err, verbosity, options);
+  const sourceTrace = buildSourceTraceIfNeeded(templateError, verbosity, options);
 
   const opts = createFormatterState({
-    metadata: toFormatterMetadata(err, err.renderContext),
+    metadata: toFormatterMetadata(templateError, templateError.renderContext),
     options: { ...options, sourceTrace }
   });
 
-  return formatErrorOutput(err, opts, options.format);
+  return formatErrorOutput(templateError, opts, options.format);
+};
+
+const isTemplateErrorLog = (err: Error | TemplateError): err is TemplateError =>
+  (err as TemplateError).templatePath !== undefined || err.name === 'Template render error';
+
+const toTemplateError = (err: Error): TemplateError => {
+  const wrapped = new Error(err.message) as TemplateError;
+  if (err.stack) { wrapped.stack = err.stack; }
+  return wrapped;
 };
 
 const buildErrorJson = (err: TemplateError) => (): Record<string, unknown> => ({

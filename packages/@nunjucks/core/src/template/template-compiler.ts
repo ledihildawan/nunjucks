@@ -19,7 +19,7 @@ const createTemplateCompiler = (state: TemplateState) => {
         if (state.tmplProps) {
           return state.tmplProps;
         }
-        const code = compileToCode(state.tmplStr || '', state.path || '', state.env.opts.undefined as UndefinedMode | undefined, state.env.opts as ParseOptions);
+        const code = compileToCode({ source: state.tmplStr ?? '', templateName: state.path ?? '', undefinedMode: state.env.opts.undefined as UndefinedMode | undefined, parseOpts: state.env.opts as ParseOptions });
         const compiled = new Function(code)();
         if (!isCompiledTemplateExports(compiled)) {
           return null;
@@ -29,7 +29,7 @@ const createTemplateCompiler = (state: TemplateState) => {
       const props: CompiledTemplateExports | null = compileToProps();
 
       state.blocks = extractBlocks(props ?? {}) as Record<string, (...args: unknown[]) => unknown>;
-      state.blockMeta = ((props?.[BLOCK_META_KEY] as Record<string, BlockLocation>) || {});
+      state.blockMeta = ((props?.[BLOCK_META_KEY] as Record<string, BlockLocation>) ?? {});
       state.rootRenderFunc = props?.root as typeof state.rootRenderFunc;
       state.compiled = true;
 

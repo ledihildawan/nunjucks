@@ -14,7 +14,7 @@ const NULL_VALUE = {
   ],
   fixCode: '{{ {parent}?.{accessPath} |> default("") }}',
   fixComment: 'Use optional chaining `?.` or `default()` filter to handle null safely',
-  extraFrom: (groups: RegExpMatchArray) => ({ accessPath: groups[1] || '', state: groups[2] || '', parent: groups[3] || '' })
+  extraFrom: (groups: RegExpMatchArray) => ({ accessPath: groups[1] ?? '', state: groups[2] ?? '', parent: groups[3] ?? '' })
 };
 
 const UNDEFINED_VARIABLE = createErrorDefinition({
@@ -46,7 +46,7 @@ const UNDEFINED_PROPERTY = {
   ],
   fixCode: '{{ {parent }?.{property} |> default("N/A") }}',
   fixComment: 'Use optional chaining `?.` or `default()` to handle missing properties gracefully',
-  extraFrom: (groups: RegExpMatchArray) => ({ property: groups[1] || '', parent: groups[2] || '' })
+  extraFrom: (groups: RegExpMatchArray) => ({ property: groups[1] ?? '', parent: groups[2] ?? '' })
 };
 
 const UNDEFINED_VALUE_MATCH = createErrorDefinition({

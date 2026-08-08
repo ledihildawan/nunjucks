@@ -22,16 +22,25 @@ const getLineColFromIndex = (content: string, index: number): { line: number; co
   return { line: lines.length, col: lines.at(-1)?.length ?? 0 };
 };
 
+interface ViolationInput {
+  match: RegExpMatchArray;
+  pattern: RegExp;
+  message: string;
+  source: string;
+}
+
+const toViolation = ({ match, pattern, message, source }: ViolationInput): DangerousCodeViolation => {
+  const { line, col } = getLineColFromIndex(source, match.index ?? 0);
+  const nameMatch = match[0].match(IDENTIFIER_PATTERN);
+  const [name = null] = nameMatch ?? [];
+  return { message, pattern: pattern.source, line, col, name };
+};
+
 const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeViolation[] =>
   DANGEROUS_PATTERNS.flatMap(({ pattern, message }) => {
     const regex = new RegExp(pattern.source, 'gu');
     const matches = [...templateContent.matchAll(regex)];
-    return matches.map(match => {
-      const { line, col } = getLineColFromIndex(templateContent, match.index);
-      const nameMatch = match[0].match(IDENTIFIER_PATTERN);
-      const [name = null] = nameMatch ?? [];
-      return { message, pattern: pattern.source, line, col, name };
-    });
+    return matches.map(match => toViolation({ match, pattern, message, source: templateContent }));
   });
 
 export { scanTemplateForDangerousCode };

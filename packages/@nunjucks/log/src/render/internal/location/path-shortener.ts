@@ -5,8 +5,8 @@ const FILE_URL_PREFIX_RE = /^file:\/\//u;
 const LEADING_SLASH_DRIVE_RE = /^[\\/]+([A-Za-z]):/u;
 const BACKSLASH_RE = /\\/gu;
 
-export const normalizeDrivePath = (p: string) =>
-  p.replace(FILE_URL_PREFIX_RE, '')
+export const normalizeDrivePath = (path: string) =>
+  path.replace(FILE_URL_PREFIX_RE, '')
     .replace(LEADING_SLASH_DRIVE_RE, '$1:')
     .replace(BACKSLASH_RE, '/');
 
@@ -20,8 +20,8 @@ export const shortenPath = (path: string, projectRoot: string = process.cwd()): 
   );
   const rootDirName = pipe(normalizedRoot, split('/'), last()) ?? '';
 
-  const privateIdx = parts.findIndex(p =>
-    p.toLowerCase() === 'users' || p.toLowerCase() === 'home'
+  const privateIdx = parts.findIndex(part =>
+    part.toLowerCase() === 'users' || part.toLowerCase() === 'home'
   );
 
   if (privateIdx !== -1) {

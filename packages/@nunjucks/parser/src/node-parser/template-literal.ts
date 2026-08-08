@@ -27,7 +27,7 @@ export const parseTemplateLiteral = (parserContext: ParserContext): Node | null 
     return null;
   }
 
-  const quasis = tok.value.quasis || [];
+  const quasis = tok.value.quasis ?? [];
 
   const processedQuasis = pipe(quasis, map(quasi => {
     if (quasi.type === 'expression' && quasi.value) {

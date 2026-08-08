@@ -13,8 +13,8 @@ const formatContextValue = (value: unknown): string => {
   if (Array.isArray(value)) {
     return sanitizeForAnsi(value);
   }
-  const obj = value as Record<string, unknown>;
-  const entries = pipe(obj, keys(), map(key => `${INDENT}${key}: ${sanitizeForAnsi(obj[key])}`));
+  const record = value as Record<string, unknown>;
+  const entries = pipe(record, keys(), map(key => `${INDENT}${key}: ${sanitizeForAnsi(record[key])}`));
   if (entries.length === 0) {
     return '(empty)';
   }

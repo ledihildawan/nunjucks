@@ -45,13 +45,13 @@ const extractFrameDetails = (
   const finalColno = resolveColno(sourceColno, errColno);
   const templateLocation = `${currentPath}:${sourceLineno}:${finalColno}`;
   const msg = buildErrorMessage(currentPath, sourceLineno, finalColno, e);
-  const renderLine = `at ${e.getterName || 'root'} (${templateLocation})`;
+  const renderLine = `at ${e.getterName ?? 'root'} (${templateLocation})`;
   const newError = Object.assign(new Error(msg), {
-    name: e.name || 'Template render error',
+    name: e.name ?? 'Template render error',
     lineno: sourceLineno,
     colno: finalColno,
     lineBase: 'zero',
-    _includeChain: e._includeChain || null,
+    _includeChain: e._includeChain ?? null,
     stack: `${msg}\n    ${renderLine}\n    at Environment.render`,
   }) as ErrorWithLineInfo;
   return newError;
@@ -61,7 +61,7 @@ const createTemplateErrorHandler = (state: { path: string | undefined; _includeC
   const enrichError = (e: ErrorWithLineInfo): Error => {
     const sourceLineno = e.lineno;
     const sourceColno = e.colno;
-    const hasIncludeChain = e._includeChain || state._includeChain;
+    const hasIncludeChain = e._includeChain ?? state._includeChain;
 
     const extracted = extractFrameDetails(e, sourceLineno, sourceColno, state.path, hasIncludeChain);
     if (extracted) { return extracted; }

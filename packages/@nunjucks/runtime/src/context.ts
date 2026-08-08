@@ -71,9 +71,9 @@ interface MutableContext extends ReadOnlyContext {
 
 type Context = MutableContext;
 
-const getKeys = (obj: Record<string, unknown>): string[] => keys(obj);
+const getKeys = (record: Record<string, unknown>): string[] => keys(record);
 
-const throwBlockNotFoundError = (name: string, location: BlockLocation | undefined, lineno: number | null, colno: number | null): never => {
+const throwBlockNotFoundError = ({ name, location, lineno, colno }: { name: string; location: BlockLocation | undefined; lineno: number | null; colno: number | null }): never => {
   throw createLog(
     'error',
     ERROR_DEFINITIONS.UNDEFINED_BLOCK,
@@ -107,12 +107,19 @@ const createDefaultEnv = (): Env => ({
   getTest: () => null,
 });
 
-const createContext = (
-  ctx: Record<string, unknown> = {},
-  blocks: Record<string, unknown> = {},
-  env: Env | null = null,
-  metadata: ContextMetadata = {},
-): Context => {
+interface CreateContextOptions {
+  ctx?: Record<string, unknown>;
+  blocks?: Record<string, unknown>;
+  env?: Env | null;
+  metadata?: ContextMetadata;
+}
+
+const createContext = ({
+  ctx = {},
+  blocks = {},
+  env = null,
+  metadata = {},
+}: CreateContextOptions = {}): Context => {
   const context: Context = {
     env: env ?? createDefaultEnv(),
     ctx: { ...ctx },
@@ -133,7 +140,7 @@ const createContext = (
           name => !parentBlockNames.has(name),
         );
         if (blockName) {
-          throwBlockNotFoundError(blockName, context.metadata.blockLocations?.[blockName], null, null);
+          throwBlockNotFoundError({ name: blockName, location: context.metadata.blockLocations?.[blockName], lineno: null, colno: null });
         }
       }
     },
@@ -151,11 +158,11 @@ const createContext = (
       const block = context.blocks[name];
       const location = context.metadata.blockLocations?.[name];
       if (!block) {
-        return throwBlockNotFoundError(name, location, lineno, colno);
+        return throwBlockNotFoundError({ name, location, lineno, colno });
       }
       const firstBlock = Array.isArray(block) ? block[0] : block;
       if (!firstBlock) {
-        return throwBlockNotFoundError(name, location, lineno, colno);
+        return throwBlockNotFoundError({ name, location, lineno, colno });
       }
       return firstBlock;
     },
@@ -177,7 +184,7 @@ const createContext = (
     getExported: () =>
       Object.fromEntries(context.exported.map(name => [name, context.ctx[name]])),
     fork: (data = {}) => {
-      const childCtx = createContext(data, {}, context.env);
+      const childCtx = createContext({ ctx: data, env: context.env });
       childCtx.parentContext = context;
       return childCtx;
     },
@@ -204,7 +211,8 @@ const registerBlocks = (ctxObj: Context, blocksInput: Record<string, unknown>): 
   }
 };
 
-const isContext = (obj: unknown): obj is Context => Boolean(obj) && (obj as { [k: symbol]: unknown })[CONTEXT_KEY] === true;
+const isContext = (value: unknown): value is Context =>
+  Boolean(value) && (value as { [k: symbol]: unknown })[CONTEXT_KEY] === true;
 
 export { createContext, isContext };
 export type { BlockLocation, Context, BlockFn };

@@ -1,5 +1,6 @@
 import { flatMap, pipe, reduce } from 'remeda';
 import { slice } from '../pipe-helpers.ts';
+import { escapeRegex } from '../escape-regex.ts';
 import type { SourcePosition, TemplateMatch } from './error-location-types.ts';
 
 const lineDistance = (line: number, preferredLine: number | null | undefined): number => {
@@ -60,7 +61,7 @@ const isCoordinateWithinTemplate = (
 };
 
 const findAllOccurrences = (content: string, candidate: string): number[] => {
-  const escaped = candidate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escaped = escapeRegex(candidate);
   return [...content.matchAll(new RegExp(escaped, 'g'))].map((match) => match.index ?? 0);
 };
 
@@ -92,12 +93,14 @@ const findTemplateOccurrence = (
   return { index: allMatches.index, template: allMatches.template };
 };
 
-const positionOfCaptureGroup = (
-  content: string,
-  match: RegExpMatchArray,
-  group: number,
-  subjectColOffset: number
-): SourcePosition | null => {
+interface CaptureGroupInput {
+  content: string;
+  match: RegExpMatchArray;
+  group: number;
+  subjectColOffset: number;
+}
+
+const positionOfCaptureGroup = ({ content, match, group, subjectColOffset }: CaptureGroupInput): SourcePosition | null => {
   const groupText = match[group];
   if (!groupText) { return null; }
   const groupOffset = match[0]?.indexOf(groupText) ?? -1;
@@ -106,19 +109,21 @@ const positionOfCaptureGroup = (
   return { line: pos.lineOffset + 1, col: pos.col + 1 };
 };
 
-const matchTemplateInCaller = (
-  content: string,
-  templateHint: string,
-  templateErrorLine: number | null,
-  templateErrorCol: number | null,
-  preferredLine: number | null
-): SourcePosition | null => {
-  if (!isCoordinateWithinTemplate(templateHint, templateErrorLine, templateErrorCol)) {
+interface TemplateMatchInput {
+  content: string;
+  templateHint: string;
+  errLineno: number | null;
+  errColno: number | null;
+  preferredLine: number | null;
+}
+
+const matchTemplateInCaller = ({ content, templateHint, errLineno, errColno, preferredLine }: TemplateMatchInput): SourcePosition | null => {
+  if (!isCoordinateWithinTemplate(templateHint, errLineno, errColno)) {
     return null;
   }
   const match = findTemplateOccurrence(content, templateHint, preferredLine);
   if (!match) { return null; }
-  const targetOffset = match.index + templateLocationOffset(match.template, templateErrorLine, templateErrorCol);
+  const targetOffset = match.index + templateLocationOffset(match.template, errLineno, errColno);
   const pos = positionAtOffset(content, targetOffset);
   return { line: pos.lineOffset + 1, col: pos.col + 1 };
 };
@@ -132,7 +137,7 @@ const findSubjectOccurrence = (
 ): SourcePosition | null => {
   if (!subject || typeof subject !== 'string') { return null; }
   const colOffset = subjectColumnOffset(subject);
-  const escaped = subject.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escaped = escapeRegex(subject);
   const patterns: Array<{ re: RegExp; group: number }> = [
     { re: new RegExp(`'(${escaped})'`, 'g'), group: 1 },
     { re: new RegExp(`"(${escaped})"`, 'g'), group: 1 },
@@ -142,7 +147,7 @@ const findSubjectOccurrence = (
   return pipe(
     patterns,
     flatMap(({ re, group }) =>
-      collectRegexMatches(content, re).map((match) => positionOfCaptureGroup(content, match, group, colOffset))
+      collectRegexMatches(content, re).map((match) => positionOfCaptureGroup({ content, match, group, subjectColOffset: colOffset }))
     ),
     reduce((best, hit) => {
       if (!hit) { return best; }
@@ -167,18 +172,22 @@ const findTemplatePattern = (
   return { line: pos.lineOffset + 1, col: pos.col + 1 };
 };
 
-const matchStringTemplate = (
-  content: string,
-  template: string,
-  errLineno: number | null,
-  errColno: number | null,
-  subject: string | null,
-  preferredLine: number | null
-): SourcePosition | null => {
-  const matched = matchTemplateInCaller(content, template, errLineno, errColno, preferredLine);
+interface CallerPositionInput {
+  content: string;
+  template: string | null;
+  errLineno: number | null;
+  errColno: number | null;
+  subject: string | null;
+  preferredLine: number | null;
+}
+
+const matchStringTemplate = (input: CallerPositionInput): SourcePosition | null => {
+  const { content, template, errLineno, errColno, subject, preferredLine } = input;
+  if (typeof template !== 'string') { return null; }
+  const matched = matchTemplateInCaller({ content, templateHint: template, errLineno, errColno, preferredLine });
   if (matched) { return matched; }
   if (subject && template === 'inline') {
-    return matchTemplateInCaller(content, `{{ ${subject} }}`, errLineno, errColno, preferredLine);
+    return matchTemplateInCaller({ content, templateHint: `{{ ${subject} }}`, errLineno, errColno, preferredLine });
   }
   if (subject && template.trim() === `{{ ${subject} }}`) {
     return findTemplatePattern(content, subject, preferredLine);
@@ -212,16 +221,10 @@ const matchNullTemplate = (
   return findTemplatePattern(content, subject, preferredLine);
 };
 
-const extractCallerPosition = (
-  content: string,
-  template: string | null,
-  errLineno: number | null,
-  errColno: number | null,
-  subject: string | null,
-  preferredLine: number | null
-): SourcePosition | null => {
+const extractCallerPosition = (input: CallerPositionInput): SourcePosition | null => {
+  const { content, template, errLineno, errColno, subject, preferredLine } = input;
   if (typeof template === 'string') {
-    const matched = matchStringTemplate(content, template, errLineno, errColno, subject, preferredLine);
+    const matched = matchStringTemplate(input);
     if (matched) { return matched; }
     if (subject) { return findSubjectOccurrence(content, subject, preferredLine); }
     return null;

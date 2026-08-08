@@ -1,5 +1,5 @@
 import { flatMap, keys, pipe } from 'remeda';
-import { validateFilterName, validateGlobalName } from '@nunjucks/shared';
+import { validateFilterName, validateGlobalName, type Environment } from '@nunjucks/shared';
 import type { BaseValidationError } from '@nunjucks/shared';
 
 export interface ConfigValidationError extends BaseValidationError {
@@ -16,10 +16,12 @@ export interface ConfigValidationResult {
 export interface Config {
   executionTimeout?: number;
   maxTemplateSize?: number;
-  sandboxEnvironment?: string;
+  sandboxEnvironment?: Environment;
   _customFilters?: Record<string, unknown>;
   _customGlobals?: Record<string, unknown>;
 }
+
+const VALID_ENVIRONMENTS: ReadonlySet<Environment> = new Set(['auto', 'node', 'browser', 'deno']);
 
 const validateNumericConfig = (config: Config): ConfigValidationError[] => [
   ...((config.executionTimeout ?? 0) < 0
@@ -31,8 +33,8 @@ const validateNumericConfig = (config: Config): ConfigValidationError[] => [
 ];
 
 const validateSandboxEnv = (config: Config): ConfigValidationError[] =>
-  config.sandboxEnvironment && !['auto', 'node', 'browser', 'deno'].includes(config.sandboxEnvironment)
-    ? [{ code: 'INVALID_CONFIG', message: 'Invalid configuration: sandboxEnvironment must be auto, node, browser, or deno', subject: 'sandboxEnvironment', type: 'sandbox' }]
+  config.sandboxEnvironment !== undefined && !VALID_ENVIRONMENTS.has(config.sandboxEnvironment)
+    ? [{ code: 'INVALID_CONFIG', message: `Invalid configuration: sandboxEnvironment must be one of ${[...VALID_ENVIRONMENTS].join(', ')}`, subject: 'sandboxEnvironment', type: 'sandbox' }]
     : [];
 
 const validateCustomFilters = (config: Config): ConfigValidationError[] => {

@@ -12,7 +12,7 @@ export const createTimeoutError = (message = 'Template execution timed out'): Ti
 };
 
 export const isTimeoutError = (e: unknown): e is TimeoutError =>
-  e instanceof Error && (e as Error).name === 'TimeoutError';
+  e instanceof Error && e.name === 'TimeoutError';
 
 export const withTimeout = <T>(promise: Promise<T>, ms: number, onTimeout?: () => void): Promise<T> => {
   if (!ms || ms <= 0) {

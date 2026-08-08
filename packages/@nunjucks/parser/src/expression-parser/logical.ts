@@ -7,7 +7,7 @@ import { binaryOp } from './binary-helpers.ts';
 import { parseIn } from './comparison.ts';
 
 const parseNullishCoalesce = (parserContext: ParserContext): Node =>
-  binaryOp(parserContext, nullishCoalesce, (c) => skipValue(c, TOKEN_OPERATOR, '??'), parseAnd);
+  binaryOp(parserContext, nullishCoalesce, (cursor) => skipValue(cursor, TOKEN_OPERATOR, '??'), parseAnd);
 
 const parseNot = (parserContext: ParserContext): Node => {
   const tok = peekToken(parserContext);
@@ -28,10 +28,10 @@ const parseNot = (parserContext: ParserContext): Node => {
 };
 
 const parseAnd = (parserContext: ParserContext): Node =>
-  binaryOp(parserContext, and, (c) => skipSymbol(c, 'and') || skipOperator(c, '&&'), parseNot);
+  binaryOp(parserContext, and, (cursor) => skipSymbol(cursor, 'and') || skipOperator(cursor, '&&'), parseNot);
 
 const parseOr = (parserContext: ParserContext): Node =>
-  binaryOp(parserContext, or, (c) => skipSymbol(c, 'or') || skipOperator(c, '||'), parseNullishCoalesce);
+  binaryOp(parserContext, or, (cursor) => skipSymbol(cursor, 'or') || skipOperator(cursor, '||'), parseNullishCoalesce);
 
 const parseTernary = (parserContext: ParserContext, node: Node): Node => {
   if (skipValue(parserContext, TOKEN_OPERATOR, '?')) {

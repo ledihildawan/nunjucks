@@ -4,12 +4,14 @@ import { createRenderRuntime, type RenderRuntime } from './render-runtime.ts';
 import { getRenderFunction, buildSandboxOptions, buildSandboxedRuntime } from './executor-runtime.ts';
 import type { Environment } from '@nunjucks/shared';
 
+type SandboxMode = 'allowlist' | 'blocklist';
+
 interface ExecuteConfig {
   autoescape?: boolean;
   dev?: boolean;
   sandbox?: boolean;
   sandboxAllowlist?: readonly string[];
-  sandboxMode?: string;
+  sandboxMode?: SandboxMode;
   sandboxEnvironment?: Environment;
 }
 
@@ -28,14 +30,24 @@ const buildContextObject = (
   context: Record<string, unknown>,
   env: Env,
 ): Context => {
-  return createContext(context, {}, env);
+  return createContext({ ctx: context, env });
 };
+
+const defaultEnv = (config: ExecuteConfig): Env => ({
+  opts: {
+    dev: false,
+    autoescape: config.autoescape ?? true,
+    undefined: 'default',
+  },
+  getFilter: () => null,
+  getTest: () => null,
+});
 
 const executeNonSandbox = async (
   code: string,
   ctx: Context,
   frame: Frame,
-  env: unknown,
+  env: Env,
   runtime: RenderRuntime
 ): Promise<string> => {
   const { render, blocks } = getRenderFunction(code);
@@ -49,10 +61,10 @@ const execute = async (
   code: string,
   context: Record<string, unknown>,
   frame: Frame,
-  env: unknown,
+  env: Env | null,
   config: ExecuteConfig = {}
 ): Promise<string> => {
-  const resolvedEnv = (env ?? { opts: { dev: false, autoescape: config.autoescape ?? true, undefined: 'default' }, getFilter: () => null, getTest: () => null }) as Env;
+  const resolvedEnv = env ?? defaultEnv(config);
   const runtime = buildRuntime(config);
   const ctx = buildContextObject(context, resolvedEnv);
 
@@ -60,4 +72,4 @@ const execute = async (
 };
 
 export { execute };
-export type { ExecuteConfig };
+export type { ExecuteConfig, SandboxMode };

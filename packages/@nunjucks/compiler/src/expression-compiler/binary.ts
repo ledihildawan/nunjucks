@@ -3,10 +3,10 @@ import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 import { emitLocationGuard } from '../codegen.ts';
 
-const binOpEmitter = (compiler: Compiler, node: Node & { left: Node; right: Node }, frame: Frame, str: string): void => {
+const binOpEmitter = (compiler: Compiler, node: Node & { left: Node; right: Node }, frame: Frame, operator: string): void => {
   emitLocationGuard(compiler, node.lineno, node.colno);
   compiler.compile(node.left, frame);
-  compiler.emit(str);
+  compiler.emit(operator);
   compiler.compile(node.right, frame);
   compiler.emit(')');
 };

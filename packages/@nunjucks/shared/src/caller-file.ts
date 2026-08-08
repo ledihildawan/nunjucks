@@ -37,9 +37,9 @@ export const getCallerLocation = (): CallerLocation => {
   const caller = captureCaller();
   if (caller && typeof caller.getFileName === 'function') {
     return {
-      fileName: caller.getFileName() || 'unknown',
-      lineNumber: caller.getLineNumber?.() || null,
-      columnNumber: caller.getColumnNumber?.() || null
+      fileName: caller.getFileName() ?? 'unknown',
+      lineNumber: caller.getLineNumber?.() ?? null,
+      columnNumber: caller.getColumnNumber?.() ?? null
     };
   }
 

@@ -42,10 +42,10 @@ interface DiagnosticsBuildInput {
 
 export { findContextKeyPosition } from './find-context-key-position.ts';
 
-const readStringProp = (obj: unknown, key: string): string | undefined => {
-  if (!isKeyedObject(obj)) { return undefined; }
-  const value = obj[key];
-  return typeof value === 'string' ? value : undefined;
+const readStringProp = (value: unknown, key: string): string | undefined => {
+  if (!isKeyedObject(value)) { return undefined; }
+  const stringValue = value[key];
+  return typeof stringValue === 'string' ? stringValue : undefined;
 };
 
 const extractErrorSnapshot = (err: unknown): Record<string, unknown> => {
@@ -75,8 +75,8 @@ const resolveErrorProps = (err: unknown): {
   };
 };
 
-const buildErrorDef = (metadata: ReturnType<typeof normalizeErrorMetadata>, resolved: ReturnType<typeof resolveErrorProps>) => ({
-  name: metadata.code || 'RENDER_ERROR',
+  const buildErrorDef = (metadata: ReturnType<typeof normalizeErrorMetadata>, resolved: ReturnType<typeof resolveErrorProps>) => ({
+  name: metadata.code ?? 'RENDER_ERROR',
   message: () => metadata.message,
   pattern: MATCH_ANY_RE,
   causes: resolved.resolvedCauses,
@@ -84,7 +84,7 @@ const buildErrorDef = (metadata: ReturnType<typeof normalizeErrorMetadata>, reso
   fixComment: resolved.resolvedFixComment,
   suggestion: resolved.resolvedSuggestion,
   documentationUrl: resolved.resolvedDocumentationUrl,
-  severity: resolved.originalSeverity || 'error',
+  severity: resolved.originalSeverity ?? 'error',
 });
 
 const buildContextObj = (input: DiagnosticsBuildInput): Record<string, unknown> => ({
@@ -155,8 +155,8 @@ const resolveEffectiveBlockedKeys = (err: unknown, config: DiagnosticsConfig): r
 export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, template: string | null = null, renderContext: unknown = null): Promise<TemplateError> => {
   const resolvedSourceContent = typeof template === 'string' ? template : null;
   const initialMetadata = normalizeErrorMetadata(err, {
-    phase: config.phase || 'render',
-    templatePath: config.templatePath || config._callerFile || null,
+    phase: config.phase ?? 'render',
+    templatePath: config.templatePath ?? config._callerFile ?? null,
     sourceContent: resolvedSourceContent,
     renderContext: renderContext as Record<string, unknown> | null
   });
@@ -179,7 +179,7 @@ export const wrapWithLog = async (err: unknown, config: DiagnosticsConfig, templ
 
   const { lineno, colno, lineBase, templatePath, sourceContent, sourceStartLine, preferCallerLocation } = resolved;
   const errSnapshot = extractErrorSnapshot(err);
-  const phase = initialMetadata.phase || config.phase || 'render';
+  const phase = initialMetadata.phase ?? config.phase ?? 'render';
   const dev = config.dev ?? false;
   const ide = config.ide ?? DEFAULT_IDE;
   const timestamp = new Date().toISOString();

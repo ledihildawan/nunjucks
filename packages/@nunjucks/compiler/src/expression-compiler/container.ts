@@ -20,7 +20,7 @@ const TEMPLATE_ESCAPE_MAP: Record<string, string> = {
 };
 
 const escapeString = (str: string): string =>
-  join('')(pipe(str.split(''), map((char) => STRING_ESCAPE_MAP[char] ?? char)));
+  join('')(pipe([...str], map((char) => STRING_ESCAPE_MAP[char] ?? char)));
 
 const compileLiteral = (compiler: Compiler, node: { value?: unknown; lineno: number; colno: number }): void => {
   if (typeof node.value === 'string') {
@@ -40,8 +40,7 @@ const compileSymbol = (compiler: Compiler, node: SymbolNode, frame: Frame): void
   if (v) {
     compiler.emit(String(v));
   } else {
-    compiler.emit('runtime.contextOrFrameLookup(' +
-      'context, frame, "' + name + '")');
+    compiler.emit(`runtime.contextOrFrameLookup(context, frame, "${name}")`);
   }
 };
 
@@ -93,7 +92,7 @@ const compileSpread = (compiler: Compiler, node: SpreadNode, frame: Frame): void
 };
 
 const escapeTemplateString = (str: string): string =>
-  join('')(pipe(str.split(''), map((char) => TEMPLATE_ESCAPE_MAP[char] ?? char)));
+  join('')(pipe([...str], map((char) => TEMPLATE_ESCAPE_MAP[char] ?? char)));
 
 const compileTemplateLiteral = (compiler: Compiler, node: TemplateLiteralNode, frame: Frame): void => {
   const quasis = node.quasis ?? [];

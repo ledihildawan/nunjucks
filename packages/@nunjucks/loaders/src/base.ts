@@ -25,5 +25,5 @@ export const createLoader = (): Loader => {
   return loader;
 };
 
-export const isLoader = (obj: unknown): obj is Loader =>
-  Boolean(obj && typeof obj === 'object' && LoaderSymbol in obj);
+export const isLoader = (value: unknown): value is Loader =>
+  Boolean(value && typeof value === 'object' && LoaderSymbol in value);

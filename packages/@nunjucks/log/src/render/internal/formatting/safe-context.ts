@@ -99,17 +99,24 @@ const normalizeBuiltin = (value: object, state: NormalizeState): unknown => {
   return NOT_HANDLED;
 };
 
+interface NormalizeContext {
+  state: NormalizeState;
+  depth: number;
+  seen: WeakSet<object>;
+}
+
 const overflowNote = (total: number, shown: number, unit: string): string =>
   `[... ${total - shown} more ${unit}]`;
 
-const normalizeChildValue = (item: unknown, state: NormalizeState, depth: number, seen: WeakSet<object>): unknown =>
-  normalizeValue(item, state, depth + 1, seen);
+const normalizeChildValue = (item: unknown, context: NormalizeContext): unknown =>
+  normalizeValue(item, { ...context, depth: context.depth + 1 });
 
-const normalizeMap = (value: Map<unknown, unknown>, state: NormalizeState, depth: number, seen: WeakSet<object>): unknown => {
+const normalizeMap = (value: Map<unknown, unknown>, context: NormalizeContext): unknown => {
+  const { state } = context;
   const entries: unknown[][] = [];
   for (const [key, item] of value) {
     if (entries.length >= state.maxEntries) { break; }
-    entries.push([normalizeChildValue(key, state, depth, seen), normalizeChildValue(item, state, depth, seen)]);
+    entries.push([normalizeChildValue(key, context), normalizeChildValue(item, context)]);
   }
   if (value.size > state.maxEntries) {
     entries.push([`... ${value.size - state.maxEntries} more entries`, '[Truncated]']);
@@ -117,11 +124,12 @@ const normalizeMap = (value: Map<unknown, unknown>, state: NormalizeState, depth
   return { '[Map]': entries };
 };
 
-const normalizeSet = (value: Set<unknown>, state: NormalizeState, depth: number, seen: WeakSet<object>): unknown => {
+const normalizeSet = (value: Set<unknown>, context: NormalizeContext): unknown => {
+  const { state } = context;
   const entries: unknown[] = [];
   for (const item of value) {
     if (entries.length >= state.maxEntries) { break; }
-    entries.push(normalizeChildValue(item, state, depth, seen));
+    entries.push(normalizeChildValue(item, context));
   }
   if (value.size > state.maxEntries) {
     entries.push(overflowNote(value.size, state.maxEntries, 'items'));
@@ -129,68 +137,61 @@ const normalizeSet = (value: Set<unknown>, state: NormalizeState, depth: number,
   return { '[Set]': entries };
 };
 
-const normalizeArray = (value: unknown[], state: NormalizeState, depth: number, seen: WeakSet<object>): unknown => {
-  const entries = pipe(value, slice(0, state.maxEntries), map(item => normalizeChildValue(item, state, depth, seen)));
+const normalizeArray = (value: unknown[], context: NormalizeContext): unknown => {
+  const { state } = context;
+  const entries = pipe(value, slice(0, state.maxEntries), map(item => normalizeChildValue(item, context)));
   if (value.length > state.maxEntries) {
     entries.push(overflowNote(value.length, state.maxEntries, 'items'));
   }
   return entries;
 };
 
-const normalizeCollection = (
-  value: object,
-  state: NormalizeState,
-  depth: number,
-  seen: WeakSet<object>
-): unknown => {
-  if (value instanceof Map) { return normalizeMap(value, state, depth, seen); }
-  if (value instanceof Set) { return normalizeSet(value, state, depth, seen); }
-  if (Array.isArray(value)) { return normalizeArray(value, state, depth, seen); }
+const normalizeCollection = (value: object, context: NormalizeContext): unknown => {
+  if (value instanceof Map) { return normalizeMap(value, context); }
+  if (value instanceof Set) { return normalizeSet(value, context); }
+  if (Array.isArray(value)) { return normalizeArray(value, context); }
   return NOT_HANDLED;
 };
 
-const normalizePlainObject = (
-  value: object,
-  state: NormalizeState,
-  depth: number,
-  seen: WeakSet<object>
-): Record<string, unknown> => {
+const normalizePlainObject = (value: object, context: NormalizeContext): Record<string, unknown> => {
+  const { state, depth, seen } = context;
   const result: Record<string, unknown> = {};
-  const keys = ownEnumerableKeys(value).filter(key => visibleKey(key, depth));
-  keys.slice(0, state.maxEntries).forEach((key) => {
+  const visibleKeys = ownEnumerableKeys(value).filter(key => visibleKey(key, depth));
+  visibleKeys.slice(0, state.maxEntries).forEach((key) => {
     if (state.blockedKeys.has(key) || DANGEROUS_KEY_PATTERN.test(key)) {
       result[key] = '[Redacted]';
     } else {
-      result[key] = normalizeValue(readOwnValue(value, key), state, depth + 1, seen);
+      result[key] = normalizeValue(readOwnValue(value, key), { state, depth: depth + 1, seen });
     }
   });
-  if (keys.length > state.maxEntries) {
-    result['...'] = `${keys.length - state.maxEntries} more keys`;
+  if (visibleKeys.length > state.maxEntries) {
+    result['...'] = `${visibleKeys.length - state.maxEntries} more keys`;
   }
   return result;
 };
 
-const normalizeValue = (value: unknown, state: NormalizeState, depth: number, seen: WeakSet<object>): unknown => {
+const normalizeValue = (value: unknown, context: NormalizeContext): unknown => {
+  const { state, depth, seen } = context;
   const primitive = normalizePrimitive(value, state);
   if (primitive !== NOT_HANDLED) { return primitive; }
 
-  const obj = value as object;
-  if (seen.has(obj)) { return '[Circular]'; }
+  const objectValue = value as object;
+  if (seen.has(objectValue)) { return '[Circular]'; }
   if (depth >= state.maxDepth) { return '[Max depth reached]'; }
 
-  seen.add(obj);
+  seen.add(objectValue);
   try {
-    const builtin = normalizeBuiltin(obj, state);
+    const builtin = normalizeBuiltin(objectValue, state);
     if (builtin !== NOT_HANDLED) { return builtin; }
 
-    const collection = normalizeCollection(obj, state, depth, seen);
+    const collection = normalizeCollection(objectValue, context);
     if (collection !== NOT_HANDLED) { return collection; }
 
-    return normalizePlainObject(obj, state, depth, seen);
+    return normalizePlainObject(objectValue, context);
   } catch {
     return '[Unavailable]';
   } finally {
-    seen.delete(obj);
+    seen.delete(objectValue);
   }
 };
 
@@ -203,5 +204,5 @@ export const normalizeRenderContext = (
   );
   const { blockedKeys: _ignored, ...rest } = options;
   const state = { ...DEFAULT_OPTIONS, ...rest, totalLength: 0, blockedKeys };
-  return normalizeValue(context, state, 0, new WeakSet());
+  return normalizeValue(context, { state, depth: 0, seen: new WeakSet() });
 };

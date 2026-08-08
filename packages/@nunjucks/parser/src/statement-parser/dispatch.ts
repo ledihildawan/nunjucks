@@ -52,7 +52,7 @@ export const parseStatement = (parserContext: ParserContext, breakOn: readonly s
     return parser(parserContext);
   }
 
-  const ext = find(parserContext.extensions, e => (e.tags || []).includes(tagName) && Boolean(e.parse));
+  const ext = find(parserContext.extensions, e => (e.tags ?? []).includes(tagName) && Boolean(e.parse));
   if (ext?.parse) {
     return ext.parse(parserContext, nodes, {
       TOKEN_SYMBOL,

@@ -65,31 +65,31 @@ interface UndefinedResolution {
   warningMessage: () => string;
 }
 
-const resolveUndefined = (options: ResolveUndefinedOptions, r: UndefinedResolution): 'undefined' => {
+const resolveUndefined = (options: ResolveUndefinedOptions, resolution: UndefinedResolution): 'undefined' => {
   const { self, lineno, colno, mode, phase, templateName } = options;
 
   if (mode === 'strict') {
-    throwRuntimeError(r.errorDef, {
+    throwRuntimeError(resolution.errorDef, {
       self,
       lineno,
       colno,
-      params: r.params,
-      subject: r.subject,
+      params: resolution.params,
+      subject: resolution.subject,
       templateName,
     });
   }
 
   if (mode === 'debug') {
     emitUndefinedWarning(self, {
-      name: r.warningName,
-      message: r.warningMessage,
-      subject: r.subject,
+      name: resolution.warningName,
+      message: resolution.warningMessage,
+      subject: resolution.subject,
       lineno,
       colno,
       phase,
       templateName,
       mode,
-      varName: r.subject,
+      varName: resolution.subject,
     });
   }
 
@@ -99,24 +99,24 @@ const resolveUndefined = (options: ResolveUndefinedOptions, r: UndefinedResoluti
 const resolveUndefinedProperty = (options: ResolveUndefinedOptions): 'undefined' => {
   const { val: value, varName } = options;
   const propResult = value as PropertyNotFoundResult;
-  const accessPath = propResult.__access_path__ || varName || 'unknown';
+  const accessPath = propResult.__access_path__ ?? varName ?? 'unknown';
   const parentName = (!propResult.__nunjucks_parent__ && varName?.includes('.'))
     ? varName.slice(0, varName.lastIndexOf('.'))
     : propResult.__nunjucks_parent__;
   return resolveUndefined(options, {
     errorDef: ERROR_DEFINITIONS.UNDEFINED_PROPERTY,
-    params: { property: accessPath, parent: parentName || 'unknown' },
+    params: { property: accessPath, parent: parentName ?? 'unknown' },
     subject: accessPath,
     warningName: 'UNDEFINED_PROPERTY',
-    warningMessage: () => `Property '${accessPath}' not found in '${parentName || 'unknown'}'`,
+    warningMessage: () => `Property '${accessPath}' not found in '${parentName ?? 'unknown'}'`,
   });
 };
 
 const resolveNullAccess = (options: ResolveUndefinedOptions): 'undefined' => {
   const { val: value, varName } = options;
   const nullResult = value as NullAccessResult;
-  const accessPath = nullResult.__access_path__ || varName || 'unknown';
-  const parentName = nullResult.__nunjucks_parent__ || varName || 'unknown';
+  const accessPath = nullResult.__access_path__ ?? varName ?? 'unknown';
+  const parentName = nullResult.__nunjucks_parent__ ?? varName ?? 'unknown';
   return resolveUndefined(options, {
     errorDef: ERROR_DEFINITIONS.NULL_VALUE,
     params: { accessPath, state: 'null', parent: parentName },
@@ -153,7 +153,7 @@ export function ensureDefined(
 ): unknown {
   if (isPropertyNotFoundResult(value) || isNullAccessResult(value)) {
     const ctx = getLogContext(this);
-    const effectiveTemplateName = templateName || ctx.templateName || 'inline';
+    const effectiveTemplateName = templateName ?? ctx.templateName ?? 'inline';
     const options: ResolveUndefinedOptions = {
       self: this,
       val: value,
@@ -161,7 +161,7 @@ export function ensureDefined(
       lineno,
       colno,
       mode: undefinedMode,
-      phase: ctx.phase || 'render',
+      phase: ctx.phase ?? 'render',
       templateName: effectiveTemplateName,
     };
     if (isPropertyNotFoundResult(value)) {
@@ -172,7 +172,7 @@ export function ensureDefined(
 
   if (!isNonNullish(value)) {
     const ctx = getLogContext(this);
-    const effectiveTemplateName = templateName || ctx.templateName || 'inline';
+    const effectiveTemplateName = templateName ?? ctx.templateName ?? 'inline';
     return resolveUndefinedValue({
       self: this,
       val: value,
@@ -180,7 +180,7 @@ export function ensureDefined(
       lineno,
       colno,
       mode: undefinedMode,
-      phase: ctx.phase || 'render',
+      phase: ctx.phase ?? 'render',
       templateName: effectiveTemplateName,
     });
   }

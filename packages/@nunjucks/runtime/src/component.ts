@@ -46,8 +46,8 @@ export function makeComponent<A extends unknown[], R>(argNames: string[], kwargN
   };
 }
 
-export const makeKeywordArgs = <T extends Record<string, unknown>>(obj: T): T & { keywords: true } => ({
-  ...obj,
+export const makeKeywordArgs = <T extends Record<string, unknown>>(record: T): T & { keywords: true } => ({
+  ...record,
   keywords: true,
 });
 

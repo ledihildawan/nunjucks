@@ -1,20 +1,14 @@
-import * as stringFilters from '@nunjucks/filters';
-import * as arrayFilters from '@nunjucks/filters';
-import * as objectFilters from '@nunjucks/filters';
-import * as mathFilters from '@nunjucks/filters';
+import * as filters from '@nunjucks/filters';
 import { sanitize, type DomPurifyConfig } from '@nunjucks/filters';
 import type { FilterBundle } from './config/global.ts';
 
 const builtInFilters = Object.freeze({
-  ...stringFilters,
-  ...arrayFilters,
-  ...objectFilters,
-  ...mathFilters,
-  default: stringFilters.fallback,
-  d: stringFilters.fallback,
-  e: stringFilters.escape,
-  length: arrayFilters.lengthFilter,
-  tojson: stringFilters.tojson,
+  ...filters,
+  default: filters.fallback,
+  d: filters.fallback,
+  e: filters.escape,
+  length: filters.lengthFilter,
+  tojson: filters.tojson,
   sanitize,
 });
 

@@ -32,7 +32,7 @@ export const reservedKeywordClassifier = (input: ClassifyInput): Classification 
     return null;
   }
 
-  const keyword = input.subject || 'unknown';
+  const keyword = input.subject ?? 'unknown';
   const info = RESERVED_KEYWORD_CONTEXT[keyword] || {
     causes: ['Reserved keyword used outside its context'],
     fixCode: '',

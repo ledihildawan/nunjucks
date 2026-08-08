@@ -44,9 +44,8 @@ function createLog(
   return createWarningFromDef(errorDef, params, normalized, subject ?? null);
 }
 
-function isTemplateError(obj: unknown): obj is TemplateError {
-  return isKeyedObject(obj) && obj[TEMPLATE_ERROR] === true;
-}
+const isTemplateError = (value: unknown): value is TemplateError =>
+  isKeyedObject(value) && value[TEMPLATE_ERROR] === true;
 
 const asTemplateError = (err: Error | TemplateError): TemplateError => {
   if (isTemplateError(err)) { return err; }
@@ -63,7 +62,7 @@ const asTemplateError = (err: Error | TemplateError): TemplateError => {
 const withLocation = ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) => (err: TemplateError): TemplateError => {
   const result = Object.assign(createErrorEnvelope(err.message, err), err);
   result.applyLocation = (locationPath: string | undefined, chain?: IncludeChain): TemplateError => {
-    result.message = buildLocationMessage(locationPath, result, chain) + (result.message || '');
+    result.message = buildLocationMessage(locationPath, result, chain) + (result.message ?? '');
     result.firstUpdate = false;
     return result;
   };
@@ -99,9 +98,9 @@ const prettifyError = (options: PrettifyErrorOptions): TemplateError => {
   return pipe(err, asTemplateError, withLocation({ path, includeChain }), stripInternals(path));
 };
 
-const createFromLegacyData = (type: LogType, data: LegacyLogData): TemplateError | TemplateWarning => {
-  const info = (data.info ?? {}) as WarningInfo;
-  const base = createBaseMetadata(data.message, data, info, type);
+const createFromLegacyData = (type: LogType, legacyLogData: LegacyLogData): TemplateError | TemplateWarning => {
+  const info = (legacyLogData.info ?? {}) as WarningInfo;
+  const base = createBaseMetadata(legacyLogData.message, legacyLogData, info, type);
 
   if (type === 'error') {
     const err = createErrorEnvelope(base.message);

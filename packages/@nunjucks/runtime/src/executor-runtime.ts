@@ -24,16 +24,16 @@ const getRenderFunction = (code: string): RenderFunctionResult => {
       throw createLog('error', getError('INVALID_CODE_FORMAT'), {}, null, { phase: 'compile' });
     }
     const blocks = extractBlocks(renderFn);
-    return { render: renderFn.root, blocks, blockMeta: (renderFn[BLOCK_META_KEY] as Record<string, BlockLocation>) || {} };
+    return { render: renderFn.root, blocks, blockMeta: (renderFn[BLOCK_META_KEY] as Record<string, BlockLocation>) ?? {} };
   }
 
   throw createLog('error', getError('INVALID_CODE_FORMAT'), {}, null, { phase: 'compile' });
 };
 
-const buildSandboxOptions = (config: { sandboxAllowlist?: readonly string[]; sandboxMode?: string; sandboxEnvironment?: Environment }): SandboxOptions => ({
-  allowlist: config.sandboxAllowlist || [],
+const buildSandboxOptions = (config: { sandboxAllowlist?: readonly string[]; sandboxMode?: 'allowlist' | 'blocklist'; sandboxEnvironment?: Environment }): SandboxOptions => ({
+  allowlist: config.sandboxAllowlist ?? [],
   blocklistMode: config.sandboxMode !== 'allowlist',
-  environment: config.sandboxEnvironment || 'auto',
+  environment: config.sandboxEnvironment ?? 'auto',
 });
 
 const toOptionalResult = (result: unknown): unknown => {
@@ -43,8 +43,8 @@ const toOptionalResult = (result: unknown): unknown => {
 
 const buildSandboxedRuntime = (runtime: RenderRuntime, sandboxOptions: SandboxOptions): RenderRuntime => ({
   ...runtime,
-  memberLookup: (obj: unknown, value: string | symbol, parentName: string | null = null) => wrapMemberAccess(obj, value, true, sandboxOptions, parentName),
-  optionalMemberLookup: (obj: unknown, value: string | symbol, parentName: string | null = null) => toOptionalResult(wrapMemberAccess(obj, value, true, sandboxOptions, parentName)),
+  memberLookup: (target: unknown, value: string | symbol, parentName: string | null = null) => wrapMemberAccess(target, value, true, sandboxOptions, parentName),
+  optionalMemberLookup: (target: unknown, value: string | symbol, parentName: string | null = null) => toOptionalResult(wrapMemberAccess(target, value, true, sandboxOptions, parentName)),
 });
 
 export { getRenderFunction, buildSandboxOptions, buildSandboxedRuntime };

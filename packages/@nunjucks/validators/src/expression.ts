@@ -98,7 +98,7 @@ const walkChildNodes = (
     Object.entries(node).filter(([key]) => !NON_CHILD_KEYS.has(key)),
     ([key, child]) => {
       if (Array.isArray(child)) {
-        return flatMap(child, (c, i) => isNode(c) ? walk(c, config, [...path, key, i]) : []);
+        return flatMap(child, (element, i) => isNode(element) ? walk(element, config, [...path, key, i]) : []);
       }
       if (isNode(child)) {
         return walk(child, config, [...path, key]);
@@ -130,7 +130,7 @@ const walk = (
       return [
         ...checkCall(node, node.type, path),
         ...walk(node.name, config, [...path, 'name']),
-        ...flatMap(node.args, (a, i) => walk(a, config, [...path, 'args', i])),
+        ...flatMap(node.args, (arg, i) => walk(arg, config, [...path, 'args', i])),
       ];
 
     default:
@@ -139,8 +139,8 @@ const walk = (
 };
 
 const validateExpression = (ast: Node, config: ExpressionSecurityConfig = {}): ExpressionValidationError[] => {
-  const cfg = { ...DEFAULT_SECURITY_CONFIG, ...config };
-  return walk(ast, cfg, []);
+  const resolvedConfig = { ...DEFAULT_SECURITY_CONFIG, ...config };
+  return walk(ast, resolvedConfig, []);
 };
 
 export { ExpressionSecurityError, validateExpression };

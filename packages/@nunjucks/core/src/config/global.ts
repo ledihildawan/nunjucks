@@ -3,89 +3,107 @@ import type { DomPurifyConfig } from '@nunjucks/shared';
 
 type FilterObject = Readonly<Record<string, unknown>>;
 
+const SAFE_JSON = Object.freeze({
+  stringify: JSON.stringify,
+  parse: JSON.parse,
+});
+
+const SAFE_MATH = Object.freeze({
+  PI: Math.PI,
+  E: Math.E,
+  LN2: Math.LN2,
+  LN10: Math.LN10,
+  LOG2E: Math.LOG2E,
+  LOG10E: Math.LOG10E,
+  SQRT1_2: Math.SQRT1_2,
+  SQRT2: Math.SQRT2,
+  abs: Math.abs,
+  ceil: Math.ceil,
+  floor: Math.floor,
+  round: Math.round,
+  pow: Math.pow,
+  sqrt: Math.sqrt,
+  min: Math.min,
+  max: Math.max,
+  random: Math.random,
+  sin: Math.sin,
+  cos: Math.cos,
+  tan: Math.tan,
+  asin: Math.asin,
+  acos: Math.acos,
+  atan: Math.atan,
+  atan2: Math.atan2,
+  log: Math.log,
+  exp: Math.exp,
+});
+
+const SAFE_OBJECT = Object.freeze({
+  keys: Object.keys,
+  values: Object.values,
+  entries: Object.entries,
+  assign: Object.assign,
+  create: Object.create,
+  freeze: Object.freeze,
+  seal: Object.seal,
+  isFrozen: Object.isFrozen,
+  isSealed: Object.isSealed,
+  isExtensible: Object.isExtensible,
+  hasOwn: Object.hasOwn,
+  fromEntries: Object.fromEntries,
+});
+
+const SAFE_ARRAY = Object.freeze({
+  isArray: Array.isArray,
+  from: Array.from,
+  of: Array.of,
+});
+
+const SAFE_NUMBER = Object.freeze({
+  isNaN: Number.isNaN,
+  isFinite: Number.isFinite,
+  isInteger: Number.isInteger,
+  isSafeInteger: Number.isSafeInteger,
+  parseInt: Number.parseInt,
+  parseFloat: Number.parseFloat,
+  MAX_VALUE: Number.MAX_VALUE,
+  MIN_VALUE: Number.MIN_VALUE,
+  POSITIVE_INFINITY: Number.POSITIVE_INFINITY,
+  NEGATIVE_INFINITY: Number.NEGATIVE_INFINITY,
+});
+
+const SAFE_STRING = Object.freeze({
+  fromCharCode: String.fromCharCode,
+  fromCodePoint: String.fromCodePoint,
+  raw: String.raw,
+});
+
+const SAFE_DATE = Object.freeze({
+  now: Date.now,
+});
+
+const SAFE_PROMISE = Object.freeze({
+  resolve: Promise.resolve,
+  reject: Promise.reject,
+  all: Promise.all,
+  race: Promise.race,
+  allSettled: Promise.allSettled,
+  any: Promise.any,
+});
+
+const SAFE_ARRAYBUFFER = Object.freeze({
+  isView: ArrayBuffer.isView,
+});
+
 const SAFE_BUILTINS: Readonly<Record<string, unknown>> = Object.freeze({
-  JSON: Object.freeze({
-    stringify: JSON.stringify,
-    parse: JSON.parse,
-  }),
-  Math: Object.freeze({
-    PI: Math.PI,
-    E: Math.E,
-    LN2: Math.LN2,
-    LN10: Math.LN10,
-    LOG2E: Math.LOG2E,
-    LOG10E: Math.LOG10E,
-    SQRT1_2: Math.SQRT1_2,
-    SQRT2: Math.SQRT2,
-    abs: Math.abs,
-    ceil: Math.ceil,
-    floor: Math.floor,
-    round: Math.round,
-    pow: Math.pow,
-    sqrt: Math.sqrt,
-    min: Math.min,
-    max: Math.max,
-    random: Math.random,
-    sin: Math.sin,
-    cos: Math.cos,
-    tan: Math.tan,
-    asin: Math.asin,
-    acos: Math.acos,
-    atan: Math.atan,
-    atan2: Math.atan2,
-    log: Math.log,
-    exp: Math.exp,
-  }),
-  Object: Object.freeze({
-    keys: Object.keys,
-    values: Object.values,
-    entries: Object.entries,
-    assign: Object.assign,
-    create: Object.create,
-    freeze: Object.freeze,
-    seal: Object.seal,
-    isFrozen: Object.isFrozen,
-    isSealed: Object.isSealed,
-    isExtensible: Object.isExtensible,
-    hasOwn: Object.hasOwn,
-    fromEntries: Object.fromEntries,
-  }),
-  Array: Object.freeze({
-    isArray: Array.isArray,
-    from: Array.from,
-    of: Array.of,
-  }),
-  Number: Object.freeze({
-    isNaN: Number.isNaN,
-    isFinite: Number.isFinite,
-    isInteger: Number.isInteger,
-    isSafeInteger: Number.isSafeInteger,
-    parseInt: Number.parseInt,
-    parseFloat: Number.parseFloat,
-    MAX_VALUE: Number.MAX_VALUE,
-    MIN_VALUE: Number.MIN_VALUE,
-    POSITIVE_INFINITY: Number.POSITIVE_INFINITY,
-    NEGATIVE_INFINITY: Number.NEGATIVE_INFINITY,
-  }),
-  String: Object.freeze({
-    fromCharCode: String.fromCharCode,
-    fromCodePoint: String.fromCodePoint,
-    raw: String.raw,
-  }),
-  Date: Object.freeze({
-    now: Date.now,
-  }),
-  Promise: Object.freeze({
-    resolve: Promise.resolve,
-    reject: Promise.reject,
-    all: Promise.all,
-    race: Promise.race,
-    allSettled: Promise.allSettled,
-    any: Promise.any,
-  }),
-  ArrayBuffer: Object.freeze({
-    isView: ArrayBuffer.isView,
-  }),
+  JSON: SAFE_JSON,
+  Math: SAFE_MATH,
+  Object: SAFE_OBJECT,
+  Array: SAFE_ARRAY,
+  Number: SAFE_NUMBER,
+  String: SAFE_STRING,
+  Date: SAFE_DATE,
+  Promise: SAFE_PROMISE,
+  ArrayBuffer: SAFE_ARRAYBUFFER,
 });
 
 type SandboxEnvironment = 'auto' | 'node' | 'browser' | 'deno';

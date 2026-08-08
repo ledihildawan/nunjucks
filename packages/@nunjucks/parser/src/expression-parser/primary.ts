@@ -20,7 +20,7 @@ import { parseAggregate } from '../node-parser/aggregate/index.ts';
 import { parseTemplateLiteral } from '../node-parser/template-literal.ts';
 import { parsePostfix, parsePipeForward } from './postfix/index.ts';
 
-const parseBooleanValue = (tok: Token): unknown => {
+const parseBooleanValue = (tok: Token): boolean | undefined => {
   if (tok.value === 'true') { return true; }
   if (tok.value === 'false') { return false; }
   return undefined;

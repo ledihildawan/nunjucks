@@ -17,7 +17,7 @@ router.get('/scope', async (_req: Request, res: Response) => {
 router.get('/exec', async (_req: Request, res: Response) => {
   const html = await render('demo-exec.njk', {
     arr: [],
-    name: { append: function(this: { value: string }, x: string) { return this.value + x; }, value: "Hello" },
+    name: { append: function(this: { value: string }, suffix: string) { return this.value + suffix; }, value: "Hello" },
     items: []
   }, { views: VIEWS });
   res.type('html').send(html);

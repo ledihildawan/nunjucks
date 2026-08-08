@@ -10,7 +10,7 @@ export const fail = (
   errorName: string = 'WALK_UNKNOWN_TYPE'
 ): never => {
   const lastPart = pipe(msg, split(':'), last());
-  const subject = (lastPart || 'compile').trim();
+  const subject = (lastPart ?? 'compile').trim();
   const errorDef = ERROR_DEFINITIONS[errorName as keyof typeof ERROR_DEFINITIONS] ?? ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE;
 
   throw createLog(

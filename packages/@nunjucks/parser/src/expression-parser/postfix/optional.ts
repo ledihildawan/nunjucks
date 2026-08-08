@@ -70,16 +70,16 @@ export const parseOptionalChain = (parserContext: ParserContext, tok: OptionalCh
     return node;
   }
 
-  const val2 = nextToken(parserContext);
+  const nameTok = nextToken(parserContext);
 
-  if (val2.type !== TOKEN_SYMBOL) {
+  if (nameTok.type !== TOKEN_SYMBOL) {
     const targetName = (target ? String(target.value ?? 'expression') : 'expression');
-    fail(parserContext, `expected name as lookup value after ?. on ${targetName}, got ${val2.value}`,
-      val2.lineno,
-      val2.colno);
+    fail(parserContext, `expected name as lookup value after ?. on ${targetName}, got ${nameTok.value}`,
+      nameTok.lineno,
+      nameTok.colno);
   }
 
-  const lookup = literal(val2.lineno, val2.colno, val2.value);
+  const lookup = literal(nameTok.lineno, nameTok.colno, nameTok.value);
   const node = optionalChain(tok.lineno, tok.colno, target, lookup);
   markBracketNotation(node, false);
   return node;

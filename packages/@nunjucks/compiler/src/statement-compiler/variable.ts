@@ -89,6 +89,47 @@ const getCompoundOpJs = (operator: string): string | null => {
   }
 };
 
+interface CompoundAssignEmitInput {
+  compiler: Compiler;
+  node: CompoundAssignNode;
+  frame: Frame;
+  currentId: string;
+  valueId: string;
+}
+
+interface FilterAssignInput extends CompoundAssignEmitInput {
+  key: string;
+}
+
+const emitFloorDivAssignment = ({ compiler, node, frame, currentId, valueId }: CompoundAssignEmitInput): void => {
+  compiler.emit(`let ${valueId} = Math.floor(${currentId} / `);
+  compiler.compileExpression(node.value, frame);
+  compiler.emit(');');
+};
+
+const emitFilterAssignment = ({ compiler, node, frame, currentId, valueId, key }: FilterAssignInput): void => {
+  const valueNode = node.value;
+  const filterName = valueNode.type === 'symbol' ? valueNode.value as string : null;
+  const inputLocation = `${node.lineno ?? 0}, ${node.colno ?? 0}`;
+  if (filterName) {
+    compiler.emit(`let ${valueId} = await runtime.awaitValue(env.getFilter(${JSON.stringify(filterName)}, ${inputLocation}, ${inputLocation}, ${key}).call(context, ${currentId}));`);
+  } else {
+    compiler.emit(`let ${valueId} = await runtime.awaitValue(`);
+    compiler.compileExpression(valueNode, frame);
+    compiler.emit(`, ${currentId});`);
+  }
+};
+
+const emitGenericCompoundAssignment = ({ compiler, node, frame, currentId, valueId }: CompoundAssignEmitInput): void => {
+  const compoundOp = getCompoundOpJs(node.operator);
+  if (compoundOp === null) {
+    compiler.fail(`Unsupported compound operator: ${node.operator}`, node.lineno, node.colno);
+  }
+  compiler.emit(`let ${valueId} = ${currentId} ${compoundOp} `);
+  compiler.compileExpression(node.value, frame);
+  compiler.emit(';');
+};
+
 const compileCompoundAssignment = (compiler: Compiler, node: CompoundAssignNode, frame: Frame): void => {
   const targets = node.targets;
   const name = getTargetName(targets[0]);
@@ -97,7 +138,6 @@ const compileCompoundAssignment = (compiler: Compiler, node: CompoundAssignNode,
     return;
   }
 
-  const operator = node.operator;
   const key = JSON.stringify(name);
   const currentId = compiler.tmpid();
   const valueId = compiler.tmpid();
@@ -106,29 +146,12 @@ const compileCompoundAssignment = (compiler: Compiler, node: CompoundAssignNode,
   compiler.emit('(() => {');
   compiler.emit(`let ${currentId} = runtime.contextOrFrameLookup(context, frame, ${key});`);
 
-  if (operator === '//=') {
-    compiler.emit(`let ${valueId} = Math.floor(${currentId} / `);
-    compiler.compileExpression(node.value, frame);
-    compiler.emit(');');
-  } else if (operator === '|>=') {
-    const valueNode = node.value;
-    const filterName = valueNode.type === 'symbol' ? valueNode.value as string : null;
-    const inputLocation = `${node.lineno ?? 0}, ${node.colno ?? 0}`;
-    if (filterName) {
-      compiler.emit(`let ${valueId} = await runtime.awaitValue(env.getFilter(${JSON.stringify(filterName)}, ${inputLocation}, ${inputLocation}, ${key}).call(context, ${currentId}));`);
-    } else {
-      compiler.emit(`let ${valueId} = await runtime.awaitValue(`);
-      compiler.compileExpression(valueNode, frame);
-      compiler.emit(`, ${currentId});`);
-    }
+  if (node.operator === '//=') {
+    emitFloorDivAssignment({ compiler, node, frame, currentId, valueId });
+  } else if (node.operator === '|>=') {
+    emitFilterAssignment({ compiler, node, frame, currentId, valueId, key });
   } else {
-    const compoundOp = getCompoundOpJs(operator);
-    if (compoundOp === null) {
-      compiler.fail(`Unsupported compound operator: ${operator}`, node.lineno, node.colno);
-    }
-    compiler.emit(`let ${valueId} = ${currentId} ${compoundOp} `);
-    compiler.compileExpression(node.value, frame);
-    compiler.emit(';');
+    emitGenericCompoundAssignment({ compiler, node, frame, currentId, valueId });
   }
 
   compiler.emit(`frame.set(${key}, ${valueId}, true);`);

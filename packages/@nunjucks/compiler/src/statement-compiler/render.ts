@@ -1,21 +1,47 @@
-import type { RenderNode } from '@nunjucks/nodes';
+import type { CallNode, RenderNode } from '@nunjucks/nodes';
 import { isFunCall } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 import { emitLocationGuard } from '../codegen.ts';
 import { compileSlotFunction } from './slot.ts';
+
+const compileRenderSlots = (
+  compiler: Compiler,
+  slots: readonly { name: string; params: string[]; body: Node }[],
+  frame: Frame
+): string => {
+  const entries: string[] = [];
+  for (const slot of slots) {
+    const slotVar = `__slot_${slot.name}`;
+    compileSlotFunction({ compiler, params: slot.params, body: slot.body, parentFrame: frame, slotVar });
+    entries.push(`"${slot.name}": ${slotVar}`);
+  }
+  return `slots: { ${entries.join(', ')} }`;
+};
+
+const compileRenderFunCall = (compiler: Compiler, callExpr: CallNode, frame: Frame, kwargsPart: string): void => {
+  emitLocationGuard(compiler, callExpr.lineno, callExpr.colno ?? 0);
+  compiler.emit('runtime.callWrap(');
+  compiler.compile(callExpr.name, frame);
+  const nameStr = callExpr.name.type === 'symbol' ? String(callExpr.name.value) : 'render';
+  compiler.emit(`, ${JSON.stringify(nameStr)}, null, context, [`);
+  const args = callExpr.args;
+  args.forEach((argument: Node, i: number) => {
+    if (i > 0) { compiler.emit(', '); }
+    if (argument) { compiler.compile(argument, frame); }
+  });
+  if (args.length > 0) { compiler.emit(', '); }
+  compiler.emit(`runtime.makeKeywordArgs({ ${kwargsPart} })`);
+  compiler.emit(']))');
+};
 
 export const compileRenderBlock = (compiler: Compiler, node: RenderNode, parentFrame: Frame): void => {
   const frame = parentFrame.push(true);
   compiler.emitLine('frame = frame.push(true);');
 
   const slots = node.providedSlots ?? [];
-  const slotEntries: string[] = [];
-  for (const slot of slots) {
-    const slotVar = `__slot_${slot.name}`;
-    compileSlotFunction(compiler, slot.params, slot.body, frame, slotVar);
-    slotEntries.push(`"${slot.name}": ${slotVar}`);
-  }
+  const kwargsPart = slots.length > 0 ? compileRenderSlots(compiler, slots, frame) : '';
 
   const callExpr = node.callExpr;
 
@@ -23,30 +49,11 @@ export const compileRenderBlock = (compiler: Compiler, node: RenderNode, parentF
   compiler.emit('await runtime.awaitValue(');
 
   if (isFunCall(callExpr)) {
-    emitLocationGuard(compiler, node.lineno, node.colno ?? 0);
-    compiler.emit('runtime.callWrap(');
-    compiler.compile(callExpr.name, frame);
-    const fnName = callExpr.name;
-    const nameStr = fnName.type === 'symbol' ? String(fnName.value) : 'render';
-    compiler.emit(`, ${JSON.stringify(nameStr)}, null, context, [`);
-    const args = callExpr.args;
-    args.forEach((argument, i) => {
-      if (i > 0) { compiler.emit(', '); }
-      if (argument) { compiler.compile(argument, frame); }
-    });
-    if (args.length > 0) { compiler.emit(', '); }
-
-    const kwargsParts: string[] = [];
-    if (slotEntries.length > 0) {
-      kwargsParts.push(`slots: { ${slotEntries.join(', ')} }`);
-    }
-    compiler.emit(`runtime.makeKeywordArgs({ ${kwargsParts.join(', ')} })`);
-    compiler.emit(']))');
+    compileRenderFunCall(compiler, callExpr, frame, kwargsPart);
   } else {
     compiler.compile(callExpr, frame);
   }
 
   compiler.emitLine(`), env.opts.autoescape, lineno, colno, "html");`);
-
   compiler.emitLine('frame = frame.pop();');
 };

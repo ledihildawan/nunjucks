@@ -1,5 +1,6 @@
-import type { SubjectExtractor, ExtraExtractor } from './types.ts';
+import type { ExtraExtractor } from './types.ts';
 import { firstCapture } from './types.ts';
+import { escapeRegex } from '@nunjucks/shared';
 
 interface ErrorDefinitionOptions {
   name: string;
@@ -13,9 +14,13 @@ interface ErrorDefinitionOptions {
   extraFrom?: ExtraExtractor;
 }
 
+const SUPPORTED_PLACEHOLDERS = ['{type}', '{name}', '{key}', '{keys}', '{values}', '{violations}', '{subject}', '{attr}', '{by}'] as const;
+
+const messageHasVariable = (messageTemplate: string): boolean =>
+  SUPPORTED_PLACEHOLDERS.some(placeholder => messageTemplate.includes(placeholder));
+
 const createPattern = (messageTemplate: string): RegExp => {
-  const pattern = messageTemplate
-    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const pattern = escapeRegex(messageTemplate)
     .replaceAll('\\{type\\}', '(.+)')
     .replaceAll('\\{name\\}', '([^"]+)')
     .replaceAll('\\{key\\}', '([^"]+)')
@@ -30,12 +35,6 @@ const createPattern = (messageTemplate: string): RegExp => {
 
 const createErrorDefinition = (options: ErrorDefinitionOptions) => {
   const { name, message, category, causes, fixCode, fixComment, documentationUrl, severity, extraFrom } = options;
-  const hasVariable = message.includes('{type}') || message.includes('{name}') || message.includes('{key}') || message.includes('{keys}') || message.includes('{values}') || message.includes('{violations}') || message.includes('{subject}') || message.includes('{attr}') || message.includes('{by}');
-
-  let subjectFrom: SubjectExtractor | null = null;
-  if (hasVariable) {
-    subjectFrom = firstCapture;
-  }
 
   return {
     name,
@@ -48,7 +47,7 @@ const createErrorDefinition = (options: ErrorDefinitionOptions) => {
     fixComment,
     documentationUrl,
     severity,
-    subjectFrom,
+    subjectFrom: messageHasVariable(message) ? firstCapture : null,
     extraFrom: extraFrom ?? null
   };
 };

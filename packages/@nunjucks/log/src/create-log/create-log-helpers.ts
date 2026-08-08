@@ -11,7 +11,7 @@ const createErrorEnvelope = (message: string, cause?: Error): TemplateError => {
 
 const resolveMessage = (message: ErrorDefinitionEntry['message'], params?: Record<string, string>): string => {
   if (isFunction(message)) { return message(params); }
-  if (isString(message) && params) { return message.replace(/\{(\w+)\}/gu, (_, k) => params[k] ?? ''); }
+  if (isString(message) && params) { return message.replaceAll(/\{(\w+)\}/gu, (_, k) => params[k] ?? ''); }
   return message;
 };
 
@@ -33,17 +33,17 @@ const normalizeWarningContext = (context: WarningContext | null | undefined): No
   undefinedMode: context?.undefinedMode ?? 'chainable',
 });
 
-const isErrorDefinitionEntry = (data: unknown): data is ErrorDefinitionEntry => {
-  if (typeof data !== 'object' || data === null || !('message' in data)) { return false; }
-  const { message } = data as { message: unknown };
-  return (typeof message === 'function' || typeof message === 'string') && !('lineno' in data);
+const isErrorDefinitionEntry = (candidate: unknown): candidate is ErrorDefinitionEntry => {
+  if (typeof candidate !== 'object' || candidate === null || !('message' in candidate)) { return false; }
+  const { message } = candidate as { message: unknown };
+  return (typeof message === 'function' || typeof message === 'string') && !('lineno' in candidate);
 };
 
-const createBaseMetadata = (message: string, data: LegacyLogData, info: ErrorInfo | WarningInfo, type: LogType) => {
+const createBaseMetadata = (message: string, legacyLogData: LegacyLogData, info: ErrorInfo | WarningInfo, type: LogType) => {
   const base = {
     message,
-    lineno: data.lineno ?? null,
-    colno: data.colno ?? null,
+    lineno: legacyLogData.lineno ?? null,
+    colno: legacyLogData.colno ?? null,
     code: info.code ?? null,
     subject: info.subject ?? null,
     phase: info.phase ?? null,
@@ -79,7 +79,7 @@ const buildLocationMessage = (
 ): string => {
   const annotation = err.firstUpdate ? formatLocationAnnotation(err.lineno, err.colno, err.lineBase) : null;
   return [
-    `(${locationPath || 'unknown path'})`,
+    `(${locationPath ?? 'unknown path'})`,
     annotation ? ` ${annotation}` : null,
     chain && err.firstUpdate ? formatParentLocation(chain) : null,
     '\n ',

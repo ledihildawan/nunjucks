@@ -88,13 +88,13 @@ const buildRenderEnv = (loader: FileSystemLoader | null, config: RenderConfig): 
         if (ignoreMissing) { return null; }
         throw createLog('error', getError('FILE_NOT_FOUND'), { path: name }, name, { phase: 'load' });
       }
-      return createTemplate(source.src, this, source.path, eagerCompile ?? true, includeChain);
+      return createTemplate({ src: source.src, env: this, path: source.path, eagerCompile: eagerCompile ?? true, includeChain });
     },
   };
 };
 
 const compileTemplate = (templateSource: string, config: RenderConfig, templateName: string): CompileResult => {
-  const code = compileToCode(templateSource, templateName, config.undefined, { undefined: config.undefined } as ParseOptions);
+  const code = compileToCode({ source: templateSource, templateName, undefinedMode: config.undefined, parseOpts: { undefined: config.undefined } as ParseOptions });
   return { code };
 };
 

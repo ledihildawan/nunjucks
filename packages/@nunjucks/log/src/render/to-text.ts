@@ -44,7 +44,7 @@ const formatMediumText = (
   documentationUrl: string | null
 ): string => {
   const err = error as ErrorLike;
-  const path = templatePath || err.templateName || 'unknown';
+  const path = templatePath ?? err.templateName ?? 'unknown';
   const location = toDisplayLocation(
     lineno ?? err.lineno ?? null,
     colno ?? err.colno ?? null,
@@ -53,7 +53,7 @@ const formatMediumText = (
   const shortPath = shortenPath(path);
   const locationStr = ` at ${shortPath}:${location.line}:${location.col}`;
   const causeHint = causes.length > 0 ? stripMarkdown(causes[0] ?? '') : '';
-  const docHint = documentationUrl || '';
+  const docHint = documentationUrl ?? '';
   const extras = pipe([causeHint, docHint], filter(Boolean), join(' | '));
   const extrasPart = extras ? `\n${extras}` : '';
   return `${severityLabel} ${message}${locationStr}${extrasPart}`;
@@ -89,7 +89,7 @@ const formatFix = (fixCode: string, fixComment: string, documentationUrl: string
 };
 
 const formatStack = (error: unknown): string => {
-  const stack = (error as Error).stack || '';
+  const stack = (error as Error).stack ?? '';
   return pipe(stack, split('\n'), slice(1), map(formatStackLine), join('\n'));
 };
 

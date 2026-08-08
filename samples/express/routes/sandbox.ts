@@ -1,18 +1,14 @@
 import express, { type Router, type Request, type Response } from 'express';
 import { render } from '@nunjucks/core';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const renderTemplate = async (template: string, context: Record<string, unknown>, config: Record<string, unknown> = {}): Promise<string> => {
-  return await render(template, context, {
-    autoescape: true,
-    dev: true,
-    ide: 'vscode',
-    ...config
-  });
-};
+const renderTemplate = async <TContext extends Record<string, unknown>>(
+  { template, context, config = {} }: { template: string; context: TContext; config?: Record<string, unknown> },
+) => render(template, context, {
+  autoescape: true,
+  dev: true,
+  ide: 'vscode',
+  ...config
+});
 
 const router: Router = express.Router();
 
@@ -146,7 +142,7 @@ router.get('/test', async (_req: Request, res: Response) => {
 
   for (const test of tests) {
     try {
-      const result = await renderTemplate(test.template, context, { sandbox: test.sandbox });
+      const result = await renderTemplate({ template: test.template, context, config: { sandbox: test.sandbox } });
       results.push({ name: test.name, result, error: null, blocked: false });
     } catch (e) {
       results.push({ name: test.name, result: null, error: (e as Error).message, blocked: true });
@@ -210,7 +206,7 @@ router.get('/normal', async (_req: Request, res: Response) => {
 
   for (const test of tests) {
     try {
-      const result = await renderTemplate(test.template, context);
+      const result = await renderTemplate({ template: test.template, context });
       results.push({ name: test.name, result, error: null });
     } catch (e) {
       results.push({ name: test.name, result: null, error: (e as Error).message });
@@ -276,11 +272,11 @@ router.get('/allowlist', async (_req: Request, res: Response) => {
 
   for (const test of tests) {
     try {
-      const result = await renderTemplate(test.template, context, {
+      const result = await renderTemplate({ template: test.template, context, config: {
         sandbox: true,
         sandboxAllowlist: allowlist,
         sandboxMode: 'allowlist'
-      });
+      } });
       results.push({ name: test.name, result, error: null, passed: test.shouldPass });
     } catch (e) {
       results.push({ name: test.name, result: null, error: (e as Error).message, passed: !test.shouldPass });
@@ -352,7 +348,7 @@ router.get('/code-execution', async (_req: Request, res: Response) => {
       setInterval: () => 'setInterval',
       eval: () => 'eval',
       fetch: () => 'fetch',
-      xml: new XMLHttpRequest()
+      xml: () => 'XMLHttpRequest'
     }
   };
 
@@ -367,7 +363,7 @@ router.get('/code-execution', async (_req: Request, res: Response) => {
 
   for (const test of tests) {
     try {
-      const result = await renderTemplate(test.template, context, { sandbox: true });
+      const result = await renderTemplate({ template: test.template, context, config: { sandbox: true } });
       results.push({ name: test.name, result, error: null, blocked: false });
     } catch (e) {
       results.push({ name: test.name, result: null, error: (e as Error).message, blocked: true });

@@ -1,7 +1,7 @@
 const hasOwn = <O extends object, K extends PropertyKey>(
-  obj: O,
+  value: O,
   key: K
-): obj is O & Record<K, unknown> => Object.hasOwn(obj, key);
+): value is O & Record<K, unknown> => Object.hasOwn(value, key);
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -18,8 +18,8 @@ const isIterable = (value: unknown): value is Iterable<unknown> =>
 const isThenable = (value: unknown): value is Promise<unknown> =>
   isKeyedObject(value) && typeof value.then === 'function';
 
-const isArrayOf = <T>(guard: (x: unknown) => x is T) => (arr: unknown): arr is T[] =>
-  Array.isArray(arr) && arr.every(guard);
+const isArrayOf = <T>(guard: (value: unknown) => value is T) => (values: unknown): values is T[] =>
+  Array.isArray(values) && values.every(guard);
 
 const readObject = (value: unknown): Record<string, unknown> => {
   if (isObject(value)) {
@@ -42,7 +42,7 @@ const readNumber = (value: unknown): number | null => {
   return null;
 };
 
-const readWith = <T>(value: unknown, guard: (x: unknown) => x is T, fallback: T): T =>
+const readWith = <T>(value: unknown, guard: (value: unknown) => value is T, fallback: T): T =>
   guard(value) ? value : fallback;
 
 export {

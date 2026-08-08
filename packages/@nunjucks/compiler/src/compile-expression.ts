@@ -67,20 +67,18 @@ export const compileExpression = (
   compiler.compile(node, frame);
 };
 
+const isMatchingType = (typeName: string | undefined, type: NodeTypeMatcher): boolean => {
+  if (typeof type === 'string') { return typeName === type; }
+  if (type.name === undefined) { return false; }
+  return typeName === type.name || typeName === type.name.toLowerCase();
+};
+
 export const assertType = (
   node: Node,
   ...types: NodeTypeMatcher[]
 ): void => {
   const typeName = getNodeTypeName(node);
-  const matches = types.some(type => {
-    if (typeof type === 'string') {
-      return typeName === type;
-    }
-    if (type?.name && typeName === type.name) {
-      return true;
-    }
-    return Boolean(type?.name && typeName === type.name.toLowerCase());
-  });
+  const matches = types.some(type => isMatchingType(typeName, type));
 
   if (!matches) {
     throw createLog(

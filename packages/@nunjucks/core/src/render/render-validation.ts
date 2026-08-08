@@ -32,7 +32,7 @@ const getDangerousValueStamps = async (contextError: RenderValidationError, conf
   const callerLocation = config._callerLocation;
   if (!callerLocation || callerLocation.fileName === 'unknown') { return stamps; }
 
-  const pos = await findContextKeyPosition(callerLocation.fileName, callerLocation.lineNumber || 1, firstDangerousPath);
+  const pos = await findContextKeyPosition(callerLocation.fileName, callerLocation.lineNumber ?? 1, firstDangerousPath);
   if (pos) {
     stamps.lineno = pos.line;
     stamps.colno = pos.col;

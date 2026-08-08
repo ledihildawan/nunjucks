@@ -54,7 +54,7 @@ const EXEC_EXPRESSION_ERROR = createErrorDefinition({
   ],
   fixCode: '// Controller — before render():\nconst items = prepareItems();\nrender(template, { items })',
   fixComment: 'Use {% exec %} only for rendering state. Move data logic to your controller.',
-  extraFrom: (groups: RegExpMatchArray) => ({ detail: groups[1] || '' })
+  extraFrom: (groups: RegExpMatchArray) => ({ detail: groups[1] ?? '' })
 });
 
 export { TIMEOUT, ASSERT_TYPE_ERROR, UNAVAILABLE_IN_ENV, EXEC_EXPRESSION_ERROR };

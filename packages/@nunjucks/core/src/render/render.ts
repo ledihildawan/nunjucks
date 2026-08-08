@@ -76,8 +76,8 @@ const render = async (template: string, context: Record<string, unknown> = {}, o
   const baseConfig = setupRenderConfig(options);
   const config: RenderConfig = {
     ...baseConfig,
-    _callerFile: baseConfig._callerFile || getCallerFile(),
-    _callerLocation: baseConfig._callerLocation || getCallerLocation(),
+    _callerFile: baseConfig._callerFile ?? getCallerFile(),
+    _callerLocation: baseConfig._callerLocation ?? getCallerLocation(),
   };
 
   await validateRender(template, config, context);

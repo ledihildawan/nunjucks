@@ -20,13 +20,16 @@ export interface PropertyNotFoundResult {
 
 export type AccessResult = NullAccessResult | PropertyNotFoundResult;
 
-export const memberLookup = (obj: unknown, value: string, parentName: string | null = null): unknown => {
-  if (obj === null || obj === undefined) {
+export const memberLookup = (target: unknown, value: string, parentName: string | null = null): unknown => {
+  if (target === null || target === undefined) {
     return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: value };
   }
 
-  const target = obj as Record<string, unknown>;
-  const hasProperty = hasOwn(target, value) || (typeof obj === 'object' || typeof obj === 'function' ? (value in target) : (value in Object(obj)));
+  const record = target as Record<string, unknown>;
+  const hasProperty = hasOwn(record, value)
+    || (typeof target === 'object' || typeof target === 'function'
+      ? (value in record)
+      : (value in Object(target)));
 
   if (!hasProperty) {
     const marker = { [PROP_NOT_FOUND]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: value };
@@ -35,12 +38,12 @@ export const memberLookup = (obj: unknown, value: string, parentName: string | n
     return callable;
   }
 
-  if (isFunction(target[value])) {
-    const fn = target[value];
-    return (...args: unknown[]) => Reflect.apply(fn, target, args);
+  if (isFunction(record[value])) {
+    const fn = record[value];
+    return <A extends unknown[]>(...args: A): unknown => Reflect.apply(fn, record, args) as unknown;
   }
 
-  return target[value];
+  return record[value];
 };
 
 export const isNullAccessResult = (value: unknown): value is NullAccessResult => {
@@ -56,8 +59,8 @@ export const getNullParentName = (value: unknown): string | null => {
   return (value as NullAccessResult).__nunjucks_parent__ ?? null;
 };
 
-export const optionalMemberLookup = (obj: unknown, value: string, parentName: string | null = null): unknown => {
-  const result = memberLookup(obj, value, parentName);
+export const optionalMemberLookup = (target: unknown, value: string, parentName: string | null = null): unknown => {
+  const result = memberLookup(target, value, parentName);
   if (isNullAccessResult(result) || isPropertyNotFoundResult(result)) {
     return;
   }
@@ -74,32 +77,32 @@ const normalizeIndex = (idx: number | null, len: number, defaultVal: number, ste
   return Math.max(0, Math.min(len, idx < 0 ? len + idx : idx));
 };
 
-export const slice = <T>(arr: readonly T[] | string, start: number | null, stop: number | null, step: number | null): readonly T[] | string => {
+export const slice = <T>(source: readonly T[] | string, start: number | null, stop: number | null, step: number | null): readonly T[] | string => {
   if (step === 0) {
     throw createLog('error', ERROR_DEFINITIONS.SLICE_STEP, {}, 'step', { phase: 'render', lineBase: 'zero' });
   }
 
-  const len = arr.length;
+  const len = source.length;
   const stepValue = step ?? 1;
   const normalizedStart = normalizeIndex(start, len, 0, stepValue);
   const normalizedStop = normalizeIndex(stop, len, stepValue < 0 ? -1 : len, stepValue);
 
   if (stepValue === 1) {
-    return arr.slice(normalizedStart, normalizedStop);
+    return source.slice(normalizedStart, normalizedStop);
   }
 
   const result: T[] = [];
   if (stepValue > 0) {
     for (let i = normalizedStart; i < normalizedStop; i += stepValue) {
-      result.push(arr[i] as T);
+      result.push(source[i] as T);
     }
   } else {
     for (let i = normalizedStart; i >= 0 && i > normalizedStop; i += stepValue) {
-      result.push(arr[i] as T);
+      result.push(source[i] as T);
     }
   }
   return result;
-};;
+};
 
 export const nullishCoalesce = <T>(left: T | null | undefined, right: T): T => {
   if (isNonNullish(left)) {

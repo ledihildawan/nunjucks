@@ -29,6 +29,6 @@ export const createSecurityError = (message: string, code = 'SECURITY_VIOLATION'
 };
 
 export const isSecurityError = (e: unknown): e is SecurityError =>
-  e instanceof Error && (e as Error).name === 'SecurityError';
+  e instanceof Error && e.name === 'SecurityError';
 
 export { isTemplateError };

@@ -15,7 +15,7 @@ const sanitizeForAnsi = (value: unknown, seen?: WeakSet<object>): string => {
     return sanitizePrimitive(value);
   }
   if (seen?.has(value)) { return '[Circular]'; }
-  const newSeen = seen || new WeakSet();
+  const newSeen = seen ?? new WeakSet();
   newSeen.add(value);
   if (Array.isArray(value)) {
     return `Array(${value.length})`;

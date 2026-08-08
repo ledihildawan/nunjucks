@@ -107,7 +107,7 @@ interface FileSystemLoaderExtended {
 const createWatchHandler = (loader: FileSystemLoaderExtended, filePath: string) => (eventType: string, filename: string | null) => {
   if (!isFileChangeEvent(eventType)) { return; }
 
-  const name = filename || filePath;
+  const name = filename ?? filePath;
   loader.emit('update', name, filePath);
 
   if (eventType === 'rename') { loader.unwatchFile(filePath); }

@@ -11,10 +11,10 @@ interface SandboxOptions {
 type ResolvedSandboxOptions = Required<Omit<SandboxOptions, 'topLevel'>>;
 
 const resolveSandboxOptions = (options: SandboxOptions = {}): ResolvedSandboxOptions => ({
-  allowlist: options.allowlist || [],
+  allowlist: options.allowlist ?? [],
   blocklistMode: options.blocklistMode ?? true,
-  blockedContextKeys: options.blockedContextKeys || [],
-  environment: options.environment || 'auto',
+  blockedContextKeys: options.blockedContextKeys ?? [],
+  environment: options.environment ?? 'auto',
 });
 
 export { resolveSandboxOptions };

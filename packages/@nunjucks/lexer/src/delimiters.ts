@@ -51,12 +51,12 @@ export interface DelimiterTags {
 }
 
 export const createDelimiters = (tags: DelimiterTags = {}): Delimiters => ({
-  blockStart: tags.blockStart || DEFAULT_BLOCK_START,
-  blockEnd: tags.blockEnd || DEFAULT_BLOCK_END,
-  variableStart: tags.variableStart || DEFAULT_VARIABLE_START,
-  variableEnd: tags.variableEnd || DEFAULT_VARIABLE_END,
-  commentStart: tags.commentStart || DEFAULT_COMMENT_START,
-  commentEnd: tags.commentEnd || DEFAULT_COMMENT_END,
+  blockStart: tags.blockStart ?? DEFAULT_BLOCK_START,
+  blockEnd: tags.blockEnd ?? DEFAULT_BLOCK_END,
+  variableStart: tags.variableStart ?? DEFAULT_VARIABLE_START,
+  variableEnd: tags.variableEnd ?? DEFAULT_VARIABLE_END,
+  commentStart: tags.commentStart ?? DEFAULT_COMMENT_START,
+  commentEnd: tags.commentEnd ?? DEFAULT_COMMENT_END,
   stripBlockStart: STRIP_BLOCK_START,
   stripBlockEnd: STRIP_BLOCK_END,
   stripVariableStart: STRIP_VARIABLE_START,

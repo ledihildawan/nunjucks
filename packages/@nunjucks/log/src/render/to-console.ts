@@ -31,7 +31,7 @@ const formatMedium = (warning: Warning, options: ToConsoleOptions): string => {
   const location = toDisplayLocation(lineno ?? null, 0, warning.lineBase ?? 'zero');
   const lineNum = location.line;
 
-  const path = templateName || templatePath;
+  const path = templateName ?? templatePath;
   const displayPath = path ? `${shortenPath(path)}:${lineNum}` : '';
   const locationText = path && isFilePath(path)
     ? makeHyperlink(displayPath, resolveIdeLink(ide, path, lineNum, 1))

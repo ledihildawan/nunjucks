@@ -247,8 +247,8 @@ router.get('/filter-throw', async (_req, res, next) => {
             throw new Error('Filter intentionally threw');
           } catch (e) {
             const err = new Error(`Filter throwingFilter threw: ${(e as Error).message}`);
-            err.code = 'FILTER_ERROR';
-            (err as Record<string, unknown>).subject = 'throwingFilter';
+            (err as Error & { code: string; subject: string }).code = 'FILTER_ERROR';
+            (err as unknown as Record<string, unknown>).subject = 'throwingFilter';
             throw err;
           }
         }

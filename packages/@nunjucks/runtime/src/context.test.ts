@@ -9,41 +9,41 @@ const mockEnv = {
 
 describe('Context', () => {
   test('init stores ctx and env', () => {
-    const ctx = createContext({ name: 'test' }, {}, mockEnv);
+    const ctx = createContext({ ctx: { name: 'test' }, env: mockEnv });
     expect(ctx.ctx.name).toBe('test');
     expect(ctx.env).toBe(mockEnv);
   });
 
   test('init creates empty blocks and exported', () => {
-    const ctx = createContext({}, {}, mockEnv);
+    const ctx = createContext({ env: mockEnv });
     expect(ctx.blocks).toEqual({});
     expect(ctx.exported).toEqual([]);
   });
 
   test('init registers blocks', () => {
     const blockFn = () => {};
-    const ctx = createContext({}, { content: blockFn }, mockEnv);
+    const ctx = createContext({ blocks: { content: blockFn }, env: mockEnv });
     expect(ctx.blocks.content).toEqual([blockFn]);
   });
 
   test('lookup returns context variable', () => {
-    const ctx = createContext({ name: 'Alice' }, {}, mockEnv);
+    const ctx = createContext({ ctx: { name: 'Alice' }, env: mockEnv });
     expect(ctx.lookup('name')).toBe('Alice');
   });
 
   test('setVariable stores in context', () => {
-    const ctx = createContext({}, {}, mockEnv);
+    const ctx = createContext({ env: mockEnv });
     ctx.setVariable('key', 'val');
     expect(ctx.ctx.key).toBe('val');
   });
 
   test('getVariables returns ctx', () => {
-    const ctx = createContext({ a: 1 }, {}, mockEnv);
+    const ctx = createContext({ ctx: { a: 1 }, env: mockEnv });
     expect(ctx.getVariables()).toEqual({ a: 1 });
   });
 
   test('addBlock appends to block list', () => {
-    const ctx = createContext({}, {}, mockEnv);
+    const ctx = createContext({ env: mockEnv });
     const fn1 = () => {};
     const fn2 = () => {};
     ctx.addBlock('main', fn1);
@@ -52,23 +52,23 @@ describe('Context', () => {
   });
 
   test('addBlock returns this for chaining', () => {
-    const ctx = createContext({}, {}, mockEnv);
+    const ctx = createContext({ env: mockEnv });
     expect(ctx.addBlock('main', () => {})).toBe(ctx);
   });
 
   test('getBlock returns first block', () => {
     const fn = () => {};
-    const ctx = createContext({}, { main: fn }, mockEnv);
+    const ctx = createContext({ blocks: { main: fn }, env: mockEnv });
     expect(ctx.getBlock('main')).toBe(fn);
   });
 
   test('getBlock throws for unknown block', () => {
-    const ctx = createContext({}, {}, mockEnv);
+    const ctx = createContext({ env: mockEnv });
     expect(() => ctx.getBlock('missing')).toThrow('Undefined block: missing');
   });
 
   test('getBlock error has code and subject', () => {
-    const ctx = createContext({}, {}, mockEnv);
+    const ctx = createContext({ env: mockEnv });
     try {
       ctx.getBlock('missing', 3, 9);
     } catch (e) {
@@ -81,11 +81,11 @@ describe('Context', () => {
   });
 
   test('validateBlocks uses centralized block location metadata', () => {
-    const ctx = createContext({}, { missing: () => {} }, mockEnv, {
+    const ctx = createContext({ blocks: { missing: () => {} }, env: mockEnv, metadata: {
       blockLocations: {
         missing: { lineno: 1, colno: 3 },
       },
-    });
+    } });
     ctx.setParentBlockNames(['content']);
 
     try {
@@ -100,19 +100,19 @@ describe('Context', () => {
   });
 
   test('getSuper throws when block not found', () => {
-    const ctx = createContext({}, {}, mockEnv);
+    const ctx = createContext({ env: mockEnv });
     expect(() => ctx.getSuper(mockEnv, 'main', () => {}, null, null)).toThrow();
   });
 
   test('getSuper throws when no next block', () => {
     const fn = () => {};
-    const ctx = createContext({}, { main: fn }, mockEnv);
+    const ctx = createContext({ blocks: { main: fn }, env: mockEnv });
     expect(() => ctx.getSuper(mockEnv, 'main', fn, null, null)).toThrow('No super block available');
   });
 
   test('getSuper errors keep call location', () => {
     const fn = () => {};
-    const ctx = createContext({}, { main: fn }, mockEnv);
+    const ctx = createContext({ blocks: { main: fn }, env: mockEnv });
 
     try {
       ctx.getSuper(mockEnv, 'main', fn, null, null, 3, 9);
@@ -129,21 +129,21 @@ describe('Context', () => {
   test('getSuper calls next block', () => {
     const childBlock = () => 'child result';
     const parentBlock = () => 'parent result';
-    const ctx = createContext({}, { main: childBlock }, mockEnv);
+    const ctx = createContext({ blocks: { main: childBlock }, env: mockEnv });
     ctx.addBlock('main', parentBlock);
     const result = ctx.getSuper(mockEnv, 'main', childBlock, null, null);
     expect(result).toBe('parent result');
   });
 
   test('addExport and getExported', () => {
-    const ctx = createContext({ x: 1, y: 2 }, {}, mockEnv);
+    const ctx = createContext({ ctx: { x: 1, y: 2 }, env: mockEnv });
     ctx.addExport('x');
     ctx.addExport('y');
     expect(ctx.getExported()).toEqual({ x: 1, y: 2 });
   });
 
   test('getExported returns empty object when no exports', () => {
-    const ctx = createContext({}, {}, mockEnv);
+    const ctx = createContext({ env: mockEnv });
     expect(ctx.getExported()).toEqual({});
   });
 });

@@ -40,7 +40,7 @@ const prepareAfterComma = (
   const nextNode = appendChild(
     node,
     hole(origin.lineno ?? 0, origin.colno ?? 0)
-  ) as ChildrenNode;
+  );
   if (followedByClose) {
     nextToken(parserContext);
   }

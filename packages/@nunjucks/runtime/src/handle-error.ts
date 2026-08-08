@@ -4,19 +4,26 @@ import {
   getLogContext,
 } from './log-context.ts';
 
+interface ErrorWithLineInfo extends Error {
+  lineno?: number | null;
+}
+
+const isErrorWithLineInfo = (value: unknown): value is ErrorWithLineInfo =>
+  value instanceof Error;
+
 function handleError(this: unknown, error: unknown, lineno: number | null, colno: number | null): never {
   const ctx = getLogContext(this);
   const metadata = normalizeErrorMetadata(error, {
     lineno,
     colno,
-    phase: ctx.phase || 'render',
-    templateName: ctx.templateName || 'inline',
-    renderContext: ctx.renderContext || null,
+    phase: ctx.phase ?? 'render',
+    templateName: ctx.templateName ?? 'inline',
+    renderContext: ctx.renderContext ?? null,
     lineBase: 'zero',
   });
 
-  if (metadata.lineno !== null && error instanceof Error) {
-    const errorLineno = (error as Error & { lineno?: number }).lineno;
+  if (metadata.lineno !== null && isErrorWithLineInfo(error)) {
+    const errorLineno = error.lineno;
     if (errorLineno !== undefined && errorLineno !== null) {
       throw error;
     }
@@ -25,7 +32,7 @@ function handleError(this: unknown, error: unknown, lineno: number | null, colno
   const thrown = createLog(
     'error',
     {
-      name: metadata.code || 'RUNTIME_ERROR',
+      name: metadata.code ?? 'RUNTIME_ERROR',
       message: () => metadata.message,
       pattern: MATCH_ANY_RE,
     },

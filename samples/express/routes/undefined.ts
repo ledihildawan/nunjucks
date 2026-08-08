@@ -1,22 +1,23 @@
 import express, { type Router, type Request, type Response } from 'express';
 import { render } from '@nunjucks/core';
 import { formatError } from '@nunjucks/log';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const router: Router = express.Router();
 
-const renderTemplate = async (template: string, context: Record<string, unknown>, config: Record<string, unknown> = {}): Promise<string> => {
-  return await render(template, context, {
-    autoescape: true,
-    dev: true,
-    ide: 'vscode',
-    ...config
-  });
-};
+interface RenderTemplateOptions<TContext extends Record<string, unknown>> {
+  template: string;
+  context: TContext;
+  config?: Record<string, unknown>;
+}
+
+const renderTemplate = async <TContext extends Record<string, unknown>>(
+  { template, context, config = {} }: RenderTemplateOptions<TContext>,
+) => render(template, context, {
+  autoescape: true,
+  dev: true,
+  ide: 'vscode',
+  ...config
+});
 
 router.get('/', async (_req: Request, res: Response) => {
   res.type('html').send(`
@@ -83,7 +84,7 @@ router.get('/strict', async (_req: Request, res: Response) => {
   const context: Record<string, unknown> = { user: undefined };
 
   try {
-    await renderTemplate(template, context, { undefined: 'strict' });
+    await renderTemplate({ template, context, config: { undefined: 'strict' } });
     res.send('Should have thrown error');
   } catch (e: unknown) {
     const error = e instanceof Error ? e : new Error(String(e));
@@ -96,7 +97,7 @@ router.get('/debug', async (_req: Request, res: Response) => {
   const context: Record<string, unknown> = { user: undefined };
 
   try {
-    const result = await renderTemplate(template, context, { undefined: 'debug' });
+    const result = await renderTemplate({ template, context, config: { undefined: 'debug' } });
     res.type('html').send(`
 <!DOCTYPE html>
 <html>
@@ -128,7 +129,7 @@ router.get('/chainable', async (_req: Request, res: Response) => {
   const template = '{{ user.name }}';
   const context: Record<string, unknown> = { user: undefined };
 
-  const result = await renderTemplate(template, context, { undefined: 'chainable' });
+  const result = await renderTemplate({ template, context, config: { undefined: 'chainable' } });
 
   res.type('html').send(`
 <!DOCTYPE html>
@@ -165,7 +166,7 @@ router.get('/strict-nested', async (_req: Request, res: Response) => {
   const context: Record<string, unknown> = { user: undefined };
 
   try {
-    await renderTemplate(template, context, { undefined: 'strict' });
+    await renderTemplate({ template, context, config: { undefined: 'strict' } });
     res.send('Should have thrown error');
   } catch (e: unknown) {
     const error = e instanceof Error ? e : new Error(String(e));
@@ -178,7 +179,7 @@ router.get('/strict-array', async (_req: Request, res: Response) => {
   const context: Record<string, unknown> = { items: undefined };
 
   try {
-    await renderTemplate(template, context, { undefined: 'strict' });
+    await renderTemplate({ template, context, config: { undefined: 'strict' } });
     res.send('Should have thrown error');
   } catch (e: unknown) {
     const error = e instanceof Error ? e : new Error(String(e));

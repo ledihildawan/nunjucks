@@ -33,13 +33,13 @@ interface ScanContext {
   seen: WeakSet<object>;
 }
 
-const checkKeyDangerous = (
-  key: string,
-  _value: unknown,
-  isTopLevel: boolean,
-  _scan: ScanContext,
-  currentPath: string
-): string[] => {
+interface ScanState {
+  scan: ScanContext;
+  isTopLevel: boolean;
+  currentPath: string;
+}
+
+const checkKeyDangerous = (key: string, { isTopLevel, currentPath }: ScanState): string[] => {
   if (isBlockedNestedContextKey(key)) {
     return [currentPath];
   }
@@ -49,13 +49,7 @@ const checkKeyDangerous = (
   return [];
 };
 
-const checkValueDangerous = (
-  value: unknown,
-  key: string,
-  isTopLevel: boolean,
-  scan: ScanContext,
-  currentPath: string
-): string[] => {
+const checkValueDangerous = (value: unknown, key: string, { scan, isTopLevel, currentPath }: ScanState): string[] => {
   if (!isFunction(value) || !isTopLevel) { return []; }
   const fnName = value.name || key;
   const dangerous = (fnName === 'eval' || fnName === 'Function')
@@ -64,34 +58,31 @@ const checkValueDangerous = (
   return dangerous ? [currentPath] : [];
 };
 
-export const scanForDangerousValues = (
-  obj: unknown,
-  scan: ScanContext,
-  path = '',
-  isTopLevel = true
-): string[] => {
-  if (!obj || typeof obj !== 'object' || scan.seen.has(obj as object)) {
+const scanForDangerousValues = (context: unknown, state: ScanState): string[] => {
+  const { scan, currentPath: path, isTopLevel } = state;
+  if (!context || typeof context !== 'object' || scan.seen.has(context as object)) {
     return [];
   }
-  scan.seen.add(obj as object);
+  scan.seen.add(context as object);
 
-  return keys(obj as Record<string, unknown>).flatMap(key => {
-    const currentPath = path ? `${path}.${key}` : key;
-    const value = (obj as Record<string, unknown>)[key];
+  return keys(context as Record<string, unknown>).flatMap(key => {
+    const childPath = path ? `${path}.${key}` : key;
+    const value = (context as Record<string, unknown>)[key];
+    const entryState: ScanState = { scan, isTopLevel, currentPath: childPath };
     const nested = value && typeof value === 'object' && !isDangerousReference(value)
-      ? scanForDangerousValues(value, scan, currentPath, false)
+      ? scanForDangerousValues(value, { scan, isTopLevel: false, currentPath: childPath })
       : [];
 
     return [
-      ...checkKeyDangerous(key, value, isTopLevel, scan, currentPath),
-      ...checkValueDangerous(value, key, isTopLevel, scan, currentPath),
-      ...(isDangerousReference(value) ? [currentPath] : []),
+      ...checkKeyDangerous(key, entryState),
+      ...checkValueDangerous(value, key, entryState),
+      ...(isDangerousReference(value) ? [childPath] : []),
       ...nested,
     ];
   });
 };
 
-export const findDangerousValues = (obj: unknown, allowedGlobals?: readonly string[] | null): string[] => {
-  const paths = scanForDangerousValues(obj, { allowedGlobals, seen: new WeakSet() });
+export const findDangerousValues = (context: unknown, allowedGlobals?: readonly string[] | null): string[] => {
+  const paths = scanForDangerousValues(context, { scan: { allowedGlobals, seen: new WeakSet() }, isTopLevel: true, currentPath: '' });
   return [...new Set(paths)];
 };

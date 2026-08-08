@@ -14,8 +14,8 @@ const binaryOp = (
   let node = next(parserContext);
   let tok = peekToken(parserContext);
   while (consume(parserContext)) {
-    const node2 = next(parserContext);
-    node = create(tok.lineno, tok.colno, node, node2);
+    const rightNode = next(parserContext);
+    node = create(tok.lineno, tok.colno, node, rightNode);
     tok = peekToken(parserContext);
   }
   return node;

@@ -20,6 +20,7 @@ export { MATCH_ANY_RE } from './constants.ts';
 export { BLOCK_META_KEY, isCompiledTemplateExports } from './codegen-contract.ts';
 export type { CompiledRenderSignature, CompiledTemplateExports } from './codegen-contract.ts';
 export { extractBlocks } from './extract-blocks.ts';
+export { escapeRegex } from './escape-regex.ts';
 export { replace, slice } from './pipe-helpers.ts';
 export { RESERVED_KEYWORDS, validateFilterName, validateGlobalName, getReservedKeywords } from './reserved.ts';
 export { hasOwn, isNonNullish, isFunction, isString, isArray, isPlainObject, isKeyedObject, isIterable, isThenable, readObject, readString, readNumber } from './type-guards.ts';

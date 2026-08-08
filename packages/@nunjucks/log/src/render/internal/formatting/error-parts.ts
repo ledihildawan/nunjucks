@@ -16,7 +16,7 @@ export const mergeErrorParts = (error: unknown): MergedErrorParts => {
   };
   const classification = classifyFromError(errObj);
   return {
-    causes: classification.causes?.length ? [...classification.causes] : [...(errObj.causes || [])],
+    causes: classification.causes?.length ? [...classification.causes] : [...(errObj.causes ?? [])],
     fixCode: classification.fixCode ?? errObj.fixCode ?? '',
     fixComment: classification.fixComment ?? errObj.fixComment ?? '',
     documentationUrl: classification.documentationUrl ?? errObj.documentationUrl ?? null,

@@ -32,8 +32,8 @@ const parseInnerPattern = (parserContext: ParserContext): Node => {
   }
   const tok = peekToken(parserContext);
   if (tok?.type === TOKEN_SYMBOL) {
-    const t = nextToken(parserContext);
-    return symbol(t.lineno, t.colno, isSymbolToken(t) ? t.value : String(t.value));
+    const symbolTok = nextToken(parserContext);
+    return symbol(symbolTok.lineno, symbolTok.colno, isSymbolToken(symbolTok) ? symbolTok.value : String(symbolTok.value));
   }
   return fail(parserContext, 'parseInnerPattern: expected symbol or pattern',
     tok?.lineno ?? 0, tok?.colno ?? 0);
@@ -164,12 +164,12 @@ const parseObjectPropertyKey = (parserContext: ParserContext): { keyTok: Token; 
 const parseObjectPropertyValue = (parserContext: ParserContext, keyTok: Token, keyName: string): Node => {
   if (skip(parserContext, TOKEN_COLON)) {
     if (peekToken(parserContext).type === TOKEN_LEFT_BRACKET) {
-      const t = peekToken(parserContext);
-      return parseArrayPattern(parserContext, t.lineno, t.colno);
+      const bracketTok = peekToken(parserContext);
+      return parseArrayPattern(parserContext, bracketTok.lineno, bracketTok.colno);
     }
     if (peekToken(parserContext).type === TOKEN_LEFT_CURLY) {
-      const t = peekToken(parserContext);
-      return parseObjectPattern(parserContext, t.lineno, t.colno);
+      const braceTok = peekToken(parserContext);
+      return parseObjectPattern(parserContext, braceTok.lineno, braceTok.colno);
     }
     return parseInnerPattern(parserContext);
   }

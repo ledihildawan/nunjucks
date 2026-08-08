@@ -61,7 +61,7 @@ const validateUniqueBlockNames = (blocks: BlockNode[]): void => {
     const { lineno, colno } = block;
     if (!name) { continue; }
     if (seenBlocks.has(name)) {
-      throw createLog('error', ERROR_DEFINITIONS.DUPLICATE_BLOCK, { name }, name, { lineno, colno: colno || 0, phase: 'compile' });
+      throw createLog('error', ERROR_DEFINITIONS.DUPLICATE_BLOCK, { name }, name, { lineno, colno: colno ?? 0, phase: 'compile' });
     }
     seenBlocks.add(name);
   }

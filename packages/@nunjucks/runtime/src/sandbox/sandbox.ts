@@ -137,12 +137,12 @@ const makeSandboxTraps = (
   return { get: validateGet, set: validateSet, has: validateHas };
 };
 
-const createSandboxedObject = (obj: unknown, sandboxEnabled: boolean, options: SandboxOptions = {}): unknown => {
+const createSandboxedObject = (value: unknown, sandboxEnabled: boolean, options: SandboxOptions = {}): unknown => {
   const sandboxOptions = resolveSandboxOptions(options);
-  if (!(sandboxEnabled && isNonNullish(obj))) { return obj; }
-  if (typeof obj !== 'object' && !isFunction(obj)) { return obj; }
-  if (isFunction(obj)) { return wrapFunctionWithBlocking(obj as DynamicCallable, sandboxEnabled, null, sandboxOptions, null); }
-  return new Proxy(obj as object, makeSandboxTraps(sandboxEnabled, sandboxOptions, false));
+  if (!(sandboxEnabled && isNonNullish(value))) { return value; }
+  if (typeof value !== 'object' && !isFunction(value)) { return value; }
+  if (isFunction(value)) { return wrapFunctionWithBlocking(value as DynamicCallable, sandboxEnabled, null, sandboxOptions, null); }
+  return new Proxy(value as object, makeSandboxTraps(sandboxEnabled, sandboxOptions, false));
 };
 
 const createSandboxedContext = (context: unknown, sandboxEnabled: boolean, options: SandboxOptions = {}): unknown => {
@@ -163,31 +163,31 @@ const validateStringAccess = (value: string, sandboxOptions: ResolvedSandboxOpti
   assertAllowed(value, sandboxOptions);
 };
 
-const handleSandboxDisabled = (obj: unknown, value: string | symbol, parentName: string | null): unknown => {
-  if (!isNonNullish(obj)) { return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: value }; }
-  return (obj as Record<string | symbol, unknown>)[value];
+const handleSandboxDisabled = (target: unknown, value: string | symbol, parentName: string | null): unknown => {
+  if (!isNonNullish(target)) { return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: value }; }
+  return (target as Record<string | symbol, unknown>)[value];
 };
 
-const handleSymbolAccess = (obj: unknown, value: symbol): unknown => {
-  return (obj as Record<string | symbol, unknown> | undefined)?.[value];
+const handleSymbolAccess = (target: unknown, value: symbol): unknown => {
+  return (target as Record<string | symbol, unknown> | undefined)?.[value];
 };
 
 const handlePropertyNotFound = (value: string | symbol, parentName: string | null): unknown => {
   return createPropertyNotFoundCallable(value, parentName);
 };
 
-const wrapMemberAccess = (obj: unknown, val: string | symbol, sandboxEnabled: boolean, options: SandboxOptions = {}, parentName: string | null = null): unknown => {
+const wrapMemberAccess = (target: unknown, val: string | symbol, sandboxEnabled: boolean, options: SandboxOptions = {}, parentName: string | null = null): unknown => {
   const sandboxOptions = resolveSandboxOptions(options);
   const topLevel = options.topLevel ?? false;
 
-  if (!sandboxEnabled) { return handleSandboxDisabled(obj, val, parentName); }
-  if (typeof val === 'symbol') { return handleSymbolAccess(obj, val); }
+  if (!sandboxEnabled) { return handleSandboxDisabled(target, val, parentName); }
+  if (typeof val === 'symbol') { return handleSymbolAccess(target, val); }
   validateStringAccess(val, sandboxOptions, topLevel);
-  if (!isNonNullish(obj)) { return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val }; }
-  const target = obj as Record<string, unknown>;
-  if (!hasOwn(target, val)) { return handlePropertyNotFound(val, parentName); }
-  const value = target[val];
-  if (isFunction(value)) { return wrapFunctionWithBlocking(value as DynamicCallable, sandboxEnabled, val, sandboxOptions, target); }
+  if (!isNonNullish(target)) { return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: val }; }
+  const record = target as Record<string, unknown>;
+  if (!hasOwn(record, val)) { return handlePropertyNotFound(val, parentName); }
+  const value = record[val];
+  if (isFunction(value)) { return wrapFunctionWithBlocking(value as DynamicCallable, sandboxEnabled, val, sandboxOptions, record); }
   if (typeof value === 'object' && isNonNullish(value)) { return createSandboxedObject(value, sandboxEnabled, sandboxOptions); }
   return value;
 };

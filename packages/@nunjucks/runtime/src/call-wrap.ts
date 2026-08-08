@@ -14,7 +14,7 @@ const RESERVED_KEYWORD_CONTEXTS: Record<string, string> = {
 
 function callWrap(
   this: unknown,
-  obj: unknown,
+  target: unknown,
   name: string,
   displayName: string | null,
   context: unknown,
@@ -22,7 +22,7 @@ function callWrap(
   lineno?: number,
   colno?: number,
 ): unknown {
-  const messageName = displayName || name;
+  const messageName = displayName ?? name;
   if (RESERVED_KEYWORD_CONTEXTS[name]) {
     throwRuntimeError(ERROR_DEFINITIONS.RESERVED_KEYWORD_CONTEXT, {
       self: this,
@@ -33,8 +33,8 @@ function callWrap(
     });
   }
 
-  if (isNullAccessResult(obj)) {
-    const parentName = getNullParentName(obj) || name;
+  if (isNullAccessResult(target)) {
+    const parentName = getNullParentName(target) ?? name;
     throwRuntimeError(ERROR_DEFINITIONS.NULL_VALUE, {
       self: this,
       lineno,
@@ -44,7 +44,7 @@ function callWrap(
     });
   }
 
-  if (!obj) {
+  if (!target) {
     throwRuntimeError(ERROR_DEFINITIONS.NULL_VALUE, {
       self: this,
       lineno,
@@ -54,14 +54,14 @@ function callWrap(
     });
   }
 
-  if (typeof obj === 'function') {
-    return obj.apply(context, args);
+  if (typeof target === 'function') {
+    return target.apply(context, args);
   }
   throwRuntimeError(ERROR_DEFINITIONS.NOT_A_FUNCTION, {
     self: this,
     lineno,
     colno,
-    params: { name: messageName, type: typeof obj },
+    params: { name: messageName, type: typeof target },
     subject: name,
   });
 }

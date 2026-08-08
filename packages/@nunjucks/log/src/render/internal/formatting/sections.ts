@@ -19,7 +19,7 @@ const LT_RE = /</gu;
 const GT_RE = />/gu;
 const AMP_RE = /&/gu;
 
-const normalizePath = (p: string): string => p.replace(FILE_URL_PREFIX_RE, '');
+const normalizePath = (path: string): string => path.replace(FILE_URL_PREFIX_RE, '');
 
 const formatCodeTraceHtml = (snippet: string): string => {
   if (!snippet) { return '<div class="code-line"><span class="line-number">&nbsp;</span><span class="code-content">Source not available</span></div>'; }
@@ -152,6 +152,19 @@ interface ErrorWithStack {
   stack?: string;
 }
 
+const STACK_VISIBLE_COUNT = 5;
+
+const isInternalStackLine = (line: string): boolean => {
+  const path = line.toLowerCase();
+  return path.includes('nunjucks/nunjucks/src/') || path.includes('nunjucks\\nunjucks\\src\\');
+};
+
+const renderStackRow = (line: string, index: number, ide: string): string => {
+  const isHidden = index >= STACK_VISIBLE_COUNT;
+  const hiddenClass = isHidden ? ' is-collapsed' : '';
+  return `<div class="stack-row${hiddenClass}"><code class="stack-code">${linkifyFrame(line.trim(), ide)}</code></div>`;
+};
+
 const formatStackTraceHtml = (originalError: ErrorWithStack | null, isProduction = false, ide = DEFAULT_IDE): string => {
   if (!originalError?.stack) { return ''; }
 
@@ -159,22 +172,14 @@ const formatStackTraceHtml = (originalError: ErrorWithStack | null, isProduction
   if (jsStackLines.length === 0) { return ''; }
 
   const linesToShow = isProduction
-    ? jsStackLines.filter(line => {
-      const path = line.toLowerCase();
-      return !(path.includes('nunjucks/nunjucks/src/') || path.includes('nunjucks\\nunjucks\\src\\'));
-    })
+    ? jsStackLines.filter(line => !isInternalStackLine(line))
     : jsStackLines;
 
   if (linesToShow.length === 0) { return ''; }
 
-  const VisibleCount = 5;
-  const totalHidden = Math.max(0, linesToShow.length - VisibleCount);
+  const totalHidden = Math.max(0, linesToShow.length - STACK_VISIBLE_COUNT);
 
-  const allRows = linesToShow.map((line, index) => {
-    const isHidden = index >= VisibleCount;
-    const hiddenClass = isHidden ? ' is-collapsed' : '';
-    return `<div class="stack-row${hiddenClass}"><code class="stack-code">${linkifyFrame(line.trim(), ide)}</code></div>`;
-  }).join('');
+  const allRows = linesToShow.map((line, index) => renderStackRow(line, index, ide)).join('');
 
   const toggleBtn = totalHidden > 0
     ? `<button class="stack-toggle-btn" id="btn-toggle-stack">Show ${totalHidden} more lines...</button>`

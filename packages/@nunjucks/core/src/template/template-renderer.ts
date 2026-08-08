@@ -35,16 +35,16 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: { enrichErro
 
     renderingTemplates?.add(state.path);
 
-    const context = createContext(
-      ctx || {},
-      state.blocks,
-      state.env,
-      { blockLocations: state.blockMeta as Record<string, BlockLocation> }
-    );
+    const context = createContext({
+      ctx: ctx ?? {},
+      blocks: state.blocks,
+      env: state.env,
+      metadata: { blockLocations: state.blockMeta as Record<string, BlockLocation> },
+    });
     const frame = createRenderFrame(parentFrame as Frame | undefined);
 
     try {
-      const runtime = createRuntimeWithContext(state.path, ctx || {});
+      const runtime = createRuntimeWithContext(state.path, ctx ?? {});
       const result = await state.rootRenderFunc?.(state.env, context, frame, runtime);
       if (runtime.__warnings__.length > 0 && state.env.opts.dev) {
         return result + injectWarningsScript(runtime.__warnings__ as Warning[], { dev: true, verbosity: 'medium' });

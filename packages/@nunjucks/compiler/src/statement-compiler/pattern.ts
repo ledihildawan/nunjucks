@@ -31,7 +31,7 @@ const objectRest = (source: string, restId: string): string =>
 const compileAssignToFrame = ({ ctx: compiler, frame, registerFrame }: DestructuringContext, name: string, source: string): void => {
   const existingId = registerFrame ? frame.lookup(name) : null;
   compiler.emitLine(`frame.set(${JSON.stringify(name)}, ${source}, true);`);
-  if (name.charAt(0) !== '_') {
+  if (name[0] !== '_') {
     compiler.emitLine('if(frame.topLevel) {');
     compiler.emitLine(`context.addExport(${JSON.stringify(name)});`);
     compiler.emitLine('}');
@@ -70,14 +70,14 @@ const asArrayPattern = (node: Node): Node | null => {
   return arrayPattern(node.lineno, node.colno, children);
 };
 
-const compileArrayPattern = (dc: DestructuringContext, pattern: Node, source: string): void => {
+const compileArrayPattern = (destructuringContext: DestructuringContext, pattern: Node, source: string): void => {
   let i = 0;
   const patternChildren = pattern.children;
   if (!patternChildren) {
     return;
   }
   for (const child of patternChildren) {
-    const result = handleArrayPatternChild(dc, child, source, i);
+    const result = handleArrayPatternChild(destructuringContext, child, source, i);
     i = result.newIndex;
     if (result.shouldBreak) {
       break;
@@ -86,7 +86,7 @@ const compileArrayPattern = (dc: DestructuringContext, pattern: Node, source: st
 };
 
 const handleArrayPatternChild = (
-  dc: DestructuringContext,
+  destructuringContext: DestructuringContext,
   child: Node,
   source: string,
   i: number
@@ -95,113 +95,113 @@ const handleArrayPatternChild = (
     return { newIndex: i + 1, shouldBreak: false };
   }
   if (isRestPattern(child)) {
-    const childSource = arraySlice(source, i);
-    compileDestructuring(dc, child.target, childSource);
+    const restSource = arraySlice(source, i);
+    compileDestructuring(destructuringContext, child.target, restSource);
     return { newIndex: i, shouldBreak: true };
   }
-  const childSource = safeArrayIndex(source, i);
+  const indexedSource = safeArrayIndex(source, i);
   if (isAssignmentPattern(child)) {
-    const defaultId = emitDefaultBinding(dc, childSource, child.value);
-    compileDestructuring(dc, child.target, defaultId);
+    const defaultId = emitDefaultBinding(destructuringContext, indexedSource, child.value);
+    compileDestructuring(destructuringContext, child.target, defaultId);
   } else if (isObjectPattern(child) || isDict(child)) {
     const nestedPattern = asObjectPattern(child);
     if (!nestedPattern) { return { newIndex: i + 1, shouldBreak: false }; }
-    compileDestructuring(dc, nestedPattern, childSource);
+    compileDestructuring(destructuringContext, nestedPattern, indexedSource);
   } else {
-    compileDestructuring(dc, child, childSource);
+    compileDestructuring(destructuringContext, child, indexedSource);
   }
   return { newIndex: i + 1, shouldBreak: false };
 };
 
 const handlePatternPropertyValue = (
-  dc: DestructuringContext,
+  destructuringContext: DestructuringContext,
   child: PairNode,
   propSource: string
 ): void => {
   if (isAssignmentPattern(child.value)) {
     const valNode = child.value;
-    const defaultId = emitDefaultBinding(dc, propSource, valNode.value);
-    compileDestructuring(dc, valNode.target, defaultId);
+    const defaultId = emitDefaultBinding(destructuringContext, propSource, valNode.value);
+    compileDestructuring(destructuringContext, valNode.target, defaultId);
   } else {
-    compileDestructuring(dc, child.value, propSource);
+    compileDestructuring(destructuringContext, child.value, propSource);
   }
 };
 
 const handleRestProperty = (
-  dc: DestructuringContext,
+  destructuringContext: DestructuringContext,
   child: RestPatternNode,
   source: string
 ): void => {
-  const restId = dc.ctx.tmpid();
+  const restId = destructuringContext.ctx.tmpid();
   const childSource = objectRest(source, restId);
-  compileDestructuring(dc, child.target, childSource);
+  compileDestructuring(destructuringContext, child.target, childSource);
 };
 
 const handlePairSymbolAlias = (
-  dc: DestructuringContext,
+  destructuringContext: DestructuringContext,
   child: PairNode,
   propSource: string
 ): boolean => {
   if (isSymbol(child.value)) {
     const aliasName = child.value.value;
-    compileAssignToFrame(dc, aliasName, propSource);
+    compileAssignToFrame(destructuringContext, aliasName, propSource);
     return true;
   }
   return false;
 };
 
 const handlePairArrayOrObjectPattern = (
-  dc: DestructuringContext,
+  destructuringContext: DestructuringContext,
   child: PairNode,
   propSource: string
 ): boolean => {
   if (isArrayPattern(child.value) || isArray(child.value)) {
     const nestedPattern = asArrayPattern(child.value);
     if (!nestedPattern) { return true; }
-    compileDestructuring(dc, nestedPattern, propSource);
+    compileDestructuring(destructuringContext, nestedPattern, propSource);
     return true;
   }
   if (isObjectPattern(child.value) || isDict(child.value)) {
     const nestedPattern = asObjectPattern(child.value);
     if (!nestedPattern) { return true; }
-    compileDestructuring(dc, nestedPattern, propSource);
+    compileDestructuring(destructuringContext, nestedPattern, propSource);
     return true;
   }
   return false;
 };
 
 const handlePairAssignmentWithDefault = (
-  dc: DestructuringContext,
+  destructuringContext: DestructuringContext,
   child: PairNode,
   propSource: string
 ): boolean => {
   if (isAssignmentPattern(child.value)) {
     const valNode = child.value;
-    const defaultId = emitDefaultBinding(dc, propSource, valNode.value);
+    const defaultId = emitDefaultBinding(destructuringContext, propSource, valNode.value);
     const target = valNode.target;
-    compileAssignToFrame(dc, target.value as string, defaultId);
+    compileAssignToFrame(destructuringContext, target.value as string, defaultId);
     return true;
   }
   return false;
 };
 
 const handlePairProperty = (
-  dc: DestructuringContext,
+  destructuringContext: DestructuringContext,
   child: PairNode,
   propSource: string
 ): void => {
-  handlePairAssignmentWithDefault(dc, child, propSource) ||
-    handlePairArrayOrObjectPattern(dc, child, propSource) ||
-    handlePairSymbolAlias(dc, child, propSource);
+  handlePairAssignmentWithDefault(destructuringContext, child, propSource) ||
+    handlePairArrayOrObjectPattern(destructuringContext, child, propSource) ||
+    handlePairSymbolAlias(destructuringContext, child, propSource);
 };
 
 const processObjectPatternChild = (
-  dc: DestructuringContext,
+  destructuringContext: DestructuringContext,
   child: Node,
   source: string
 ): void => {
   if (isRestPattern(child)) {
-    handleRestProperty(dc, child, source);
+    handleRestProperty(destructuringContext, child, source);
     return;
   }
   if (isPatternProperty(child)) {
@@ -210,35 +210,35 @@ const processObjectPatternChild = (
       return;
     }
     const propSource = safeMemberLookup(source, propKey);
-    handlePatternPropertyValue(dc, child, propSource);
+    handlePatternPropertyValue(destructuringContext, child, propSource);
     return;
   }
   if (isPair(child) && isSymbol(child.key)) {
     const propKey = child.key.value;
     const propSource = safeMemberLookup(source, propKey);
-    handlePairProperty(dc, child, propSource);
+    handlePairProperty(destructuringContext, child, propSource);
   }
 };
 
-const compileObjectPattern = (dc: DestructuringContext, pattern: Node, source: string): void => {
+const compileObjectPattern = (destructuringContext: DestructuringContext, pattern: Node, source: string): void => {
   const patternChildren = pattern.children;
   if (!patternChildren) {
     return;
   }
-  forEach(patternChildren, child => processObjectPatternChild(dc, child, source));
+  forEach(patternChildren, child => processObjectPatternChild(destructuringContext, child, source));
 };
 
-const compileDestructuring = (dc: DestructuringContext, pattern: Node, source: string): void => {
+const compileDestructuring = (destructuringContext: DestructuringContext, pattern: Node, source: string): void => {
   if (isSymbol(pattern)) {
-    compileAssignToFrame(dc, pattern.value, source);
+    compileAssignToFrame(destructuringContext, pattern.value, source);
     return;
   }
   if (isArrayPattern(pattern)) {
-    compileArrayPattern(dc, pattern, source);
+    compileArrayPattern(destructuringContext, pattern, source);
     return;
   }
   if (isObjectPattern(pattern)) {
-    compileObjectPattern(dc, pattern, source);
+    compileObjectPattern(destructuringContext, pattern, source);
   }
 };
 

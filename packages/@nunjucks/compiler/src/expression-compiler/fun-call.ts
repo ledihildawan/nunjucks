@@ -40,11 +40,11 @@ const handleOptionalChain = (node: LookupNode): string => {
   const value = node.val;
   if (isSymbol(value)) {
     const suffix = isBracket ? `?.[${getNodeName(value)}]` : `?.${getNodeName(value)}`;
-    return target + suffix;
+    return `${target}${suffix}`;
   }
   if (isLiteral(value) && typeof value.value === 'string') {
     const suffix = isBracket ? `?.["${value.value}"]` : `?.${value.value}`;
-    return target + suffix;
+    return `${target}${suffix}`;
   }
   return `${target}?.[${getNodeName(value)}]`;
 };
@@ -91,7 +91,7 @@ export const compileFunCall = (compiler: Compiler, node: CallNode, frame: Frame)
 
   const funcName = getNodeName(node.name);
   const displayName = `${funcName}()`;
-  compiler.emit(`, "${funcName.replace(/"/gu, '\\"')}", "${displayName.replace(/"/gu, '\\"')}", context, `);
+  compiler.emit(`, "${funcName.replaceAll('"', '\\"')}", "${displayName.replaceAll('"', '\\"')}", context, `);
 
   compileAggregate(compiler, node.args, frame, { startChar: '[', endChar: `], ${lineno}, ${colno}))` });
 };

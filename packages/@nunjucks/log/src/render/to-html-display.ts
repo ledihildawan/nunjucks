@@ -11,7 +11,7 @@ const UNDEFINED_OUTPUT_RE = /attempted to output '([^']+)'/u;
 const RESERVED_KEYWORD_RE = /Cannot use reserved (\w+) '([^']+)'/u;
 
 const isScriptPath = (filePath?: string | null): boolean =>
-  SCRIPT_EXTENSION_RE.test(filePath || '');
+  SCRIPT_EXTENSION_RE.test(filePath ?? '');
 
 const SEVERITY_HEADINGS: Record<string, string> = {
   warning: 'Template Warning',
@@ -25,7 +25,7 @@ const renderBadge = (variant: string, text?: string | null): string => {
 };
 
 const resolveHumanTitle = ({ category, undefinedName, plain, fallback }: HumanTitleInput): string => {
-  const named = undefinedName || 'unknown';
+  const named = undefinedName ?? 'unknown';
 
   switch (category) {
     case 'UNDEFINED_VARIABLE':
@@ -67,9 +67,9 @@ const classifyError = (error: ErrorLike): ClassifiedError => {
   const parts = mergeErrorParts(error);
   const classified = classifyFromError(error);
   return {
-    category: error.code || classified.category.toUpperCase() || 'UNKNOWN',
-    undefinedName: classified.undefinedName || null,
-    title: classified.title || '',
+    category: error.code ?? classified.category.toUpperCase() ?? 'UNKNOWN',
+    undefinedName: classified.undefinedName ?? null,
+    title: classified.title ?? '',
     causes: parts.causes,
     fixCode: parts.fixCode,
     fixComment: parts.fixComment,
@@ -94,7 +94,7 @@ const resolveErrorLocation = (
   return {
     displayLine: location.line,
     displayCol: location.col,
-    displayPath: templatePath || 'unknown',
+    displayPath: templatePath ?? 'unknown',
     lineBaseValue,
   };
 };
@@ -102,12 +102,12 @@ const resolveErrorLocation = (
 const classifyAndBuildTitle = (error: ErrorLike) => {
   const classified = classifyError(error);
   const plain = toText(error, { verbosity: 'simple' });
-  const undefinedName = classified.undefinedName || plain.match(UNDEFINED_OUTPUT_RE)?.[1] || null;
+  const undefinedName = classified.undefinedName ?? plain.match(UNDEFINED_OUTPUT_RE)?.[1] ?? null;
   return resolveHumanTitle({
     category: classified.category,
     undefinedName,
     plain,
-    fallback: classified.title || plain
+    fallback: classified.title ?? plain
   });
 };
 

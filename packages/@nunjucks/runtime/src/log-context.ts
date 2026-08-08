@@ -38,8 +38,8 @@ export const throwRuntimeError = (
     {
       lineno: lineno ?? null,
       colno: colno ?? null,
-      phase: ctx.phase || 'render',
-      templateName: templateName ?? (ctx.templateName || 'inline'),
+      phase: ctx.phase ?? 'render',
+      templateName: templateName ?? ctx.templateName ?? 'inline',
       lineBase: 'zero',
     },
   );

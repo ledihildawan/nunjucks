@@ -12,7 +12,7 @@ import { parseExpression, parsePrimary } from "../expression-parser/index.ts";
 import { parseWithContext } from "./import-context.ts";
 
 const isUnderscore = (name: Node): boolean => {
-  if (typeof name.value === 'string' && name.value.charAt(0) === '_') {
+  if (typeof name.value === 'string' && name.value[0] === '_') {
     return true;
   }
   return false;
@@ -50,7 +50,7 @@ const handleBlockEnd = (
   }
 
   const nextTok = peekToken(parserContext);
-  if (isSymbolToken(nextTok) && nextTok.value.charAt(0) === '-') {
+  if (isSymbolToken(nextTok) && nextTok.value[0] === '-') {
     parserContext.dropLeadingWhitespace = true;
   }
 

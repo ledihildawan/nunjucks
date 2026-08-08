@@ -11,16 +11,16 @@ const replacePlaceholders = (
 ): string | null => {
   if (!str) { return str ?? null; }
   const baseResult = str
-    .replaceAll('{subject}', undefinedName || '')
-    .replaceAll('{target}', undefinedName || '')
-    .replaceAll('{name}', undefinedName || '')
-    .replaceAll('{key}', undefinedName || '');
+    .replaceAll('{subject}', undefinedName ?? '')
+    .replaceAll('{target}', undefinedName ?? '')
+    .replaceAll('{name}', undefinedName ?? '')
+    .replaceAll('{key}', undefinedName ?? '');
   if (!extra) { return baseResult; }
   return pipe(
     extra,
     keys(),
     reduce(
-      (acc, key) => acc.replaceAll(`{${key}}`, extra[key] || ''),
+      (acc, key) => acc.replaceAll(`{${key}}`, extra[key] ?? ''),
       baseResult
     )
   );
@@ -82,7 +82,7 @@ const codeClassifier: Classifier = (input) => {
 };
 
 const patternClassifier: Classifier = (input) => {
-  const rule = RULES.find(r => r.pattern.test(input.message || ''));
+  const rule = RULES.find(r => r.pattern.test(input.message ?? ''));
   return rule ? deriveFromRule(rule, input) : null;
 };
 

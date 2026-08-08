@@ -15,9 +15,9 @@ const parseMod = (parserContext: ParserContext): Node => binaryOp(parserContext,
 const parsePow = (parserContext: ParserContext): Node => binaryOp(parserContext, pow, op('**'), parseUnary);
 
 const parseConcat = (parserContext: ParserContext): Node =>
-  binaryOp(parserContext, concat, (c) => skipValue(c, TOKEN_OPERATOR, '~'), parseRange);
+  binaryOp(parserContext, concat, (cursor) => skipValue(cursor, TOKEN_OPERATOR, '~'), parseRange);
 
 const parseRange = (parserContext: ParserContext): Node =>
-  binaryOp(parserContext, range, (c) => skipValue(c, TOKEN_OPERATOR, '..'), parseAdd);
+  binaryOp(parserContext, range, (cursor) => skipValue(cursor, TOKEN_OPERATOR, '..'), parseAdd);
 
 export { parseConcat };

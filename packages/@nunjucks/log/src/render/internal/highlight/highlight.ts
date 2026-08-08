@@ -6,8 +6,8 @@ const PLAIN_RUN_RE = /^[^<{}"'|\s]+/u;
 const renderInlineMarkdown = (text: string): string => {
   if (!text) { return ''; }
   return escapeHtml(text)
-    .replace(/`([^`]+)`/gu, '<code class="md-code">$1</code>')
-    .replace(/\*\*([^*]+)\*\*/gu, '<strong>$1</strong>');
+    .replaceAll(/`([^`]+)`/gu, '<code class="md-code">$1</code>')
+    .replaceAll(/\*\*([^*]+)\*\*/gu, '<strong>$1</strong>');
 };
 
 interface SyntaxRule {

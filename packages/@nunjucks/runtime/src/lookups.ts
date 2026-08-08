@@ -1,25 +1,23 @@
 import { isArray, isIterable } from '@nunjucks/shared';
 
-function contextOrFrameLookup(
+export const contextOrFrameLookup = (
   context: { lookup: (name: string) => unknown },
   frame: { lookup: (name: string) => unknown },
   name: string,
-): unknown {
+): unknown => {
   const value = frame.lookup(name);
   if (value === undefined) {
     return context.lookup(name);
   }
   return value;
-}
+};
 
-function fromIterator(arr: unknown): unknown {
-  if (typeof arr !== 'object' || arr === null || isArray(arr)) {
-    return arr;
+export const fromIterator = (iterable: unknown): unknown => {
+  if (typeof iterable !== 'object' || iterable === null || isArray(iterable)) {
+    return iterable;
   }
-  if (isIterable(arr)) {
-    return Array.from(arr);
+  if (isIterable(iterable)) {
+    return Array.from(iterable);
   }
-  return arr;
-}
-
-export { contextOrFrameLookup, fromIterator };
+  return iterable;
+};

@@ -38,7 +38,7 @@ const LEADING_AT_RE = /^ at /;
 const formatMediumAnsi = (message: string, path: string, location: ReturnType<typeof toDisplayLocation>, causes: string[], documentationUrl: string | null, ide: string): string => {
   const [firstCause] = causes;
   const causeHint = firstCause ? stripMarkdown(firstCause) : '';
-  const extrasPart = getExtrasPart(causeHint, documentationUrl || '');
+  const extrasPart = getExtrasPart(causeHint, documentationUrl ?? '');
   const locationPart = path
     ? formatLocationString(path, location, ide).replace(LEADING_AT_RE, '')
     : ` at line ${location.line}`;
@@ -63,7 +63,7 @@ const extractAnsiErrorParts = (error: unknown, templatePath?: string, lineno?: n
   return {
     ...parts,
     severity: errObj.severity,
-    path: templatePath || errObj.templateName || '',
+    path: templatePath ?? errObj.templateName ?? '',
     displayLineno: lineno ?? errObj.lineno ?? null,
     displayColno: colno ?? errObj.colno ?? null,
     lineBase: errObj.lineBase ?? 'zero',
@@ -80,7 +80,7 @@ const formatFullAnsi = (
 ): string => {
   const { causes, fixCode, fixComment, documentationUrl, severity, path } = parts;
   const location = toDisplayLocation(parts.displayLineno, parts.displayColno, parts.lineBase);
-  const stack = (isErrorLike(error) ? error.stack : undefined) || '';
+  const stack = (isErrorLike(error) ? error.stack : undefined) ?? '';
   const formattedStack = pipe(stack, split('\n'), map(line => formatStackLine(line, ide)), join('\n'));
   const locationStr = formatLocationString(path, location, ide);
   const severityLabel = getSeverityLabel(severity);

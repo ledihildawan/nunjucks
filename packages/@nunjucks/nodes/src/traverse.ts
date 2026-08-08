@@ -2,30 +2,30 @@ import { map, pipe, reduce } from 'remeda';
 import type { CallExtensionNode, ChildrenNode, Node } from './types/index.ts';
 import { isNode, isCallExtension, isCallExtensionAsync } from './types/guards.ts';
 
-const getFields = (n: Node): string[] => {
+const getFields = (node: Node): string[] => {
   const excluded = new Set(['type', 'lineno', 'colno', 'fields']);
-  return (n.fields ?? []).filter(f => !excluded.has(f));
+  return (node.fields ?? []).filter(field => !excluded.has(field));
 };
 
 const getNodeField = (node: Node, field: string): unknown => Reflect.get(node, field);
 
-const getNodeTypeName = (n: unknown): string | undefined => {
-  if (isNode(n)) {
-    return n.type;
+const getNodeTypeName = (node: unknown): string | undefined => {
+  if (isNode(node)) {
+    return node.type;
   }
 };
 
 const appendChild = <K extends ChildrenNode>(node: K, child: Node): K =>
   ({ ...node, children: [...node.children, child] });
 
-const mapCOW = <T>(arr: readonly T[], fn: (item: T) => T): T[] => {
-  const mapped = pipe(arr, map(fn));
-  return mapped.every((item, i) => item === arr[i]) ? (arr as T[]) : mapped;
+const mapCOW = <T>(items: readonly T[], transform: (item: T) => T): T[] => {
+  const mapped = pipe(items, map(transform));
+  return mapped.every((item, i) => item === items[i]) ? (items as T[]) : mapped;
 };
 
-function walkValue(value: Node, walker: (n: Node) => Node): Node;
-function walkValue(value: unknown, walker: (n: Node) => Node): unknown;
-function walkValue(value: unknown, walker: (n: Node) => Node): unknown {
+function walkValue(value: Node, walker: (node: Node) => Node): Node;
+function walkValue(value: unknown, walker: (node: Node) => Node): unknown;
+function walkValue(value: unknown, walker: (node: Node) => Node): unknown {
   if (Array.isArray(value)) {
     return mapCOW(value, item => {
       if (isNode(item)) {
@@ -40,7 +40,7 @@ function walkValue(value: unknown, walker: (n: Node) => Node): unknown {
   return value;
 }
 
-const isCallExtNode = (n: Node): n is CallExtensionNode => isCallExtension(n) || isCallExtensionAsync(n);
+const isCallExtNode = (node: Node): node is CallExtensionNode => isCallExtension(node) || isCallExtensionAsync(node);
 
 const getTraversalFields = (node: Node): string[] =>
   getFields(node).filter(field =>
@@ -48,10 +48,10 @@ const getTraversalFields = (node: Node): string[] =>
     (!isCallExtNode(node) || (field !== 'args' && field !== 'contentArgs')),
   );
 
-const walkChildren = (node: Node, walker: (n: Node) => Node): Node => {
+const walkChildren = (node: Node, walker: (node: Node) => Node): Node => {
   const { children } = node;
   if (Array.isArray(children)) {
-    const newChildren = mapCOW(children, c => walker(c));
+    const newChildren = mapCOW(children, child => walker(child));
     if (newChildren !== children) {
       return { ...node, children: newChildren };
     }
@@ -61,20 +61,20 @@ const walkChildren = (node: Node, walker: (n: Node) => Node): Node => {
     const { args } = node;
     const newArgs = walkValue(args, walker);
     const { contentArgs } = node;
-    const newContentArgs = contentArgs ? mapCOW(contentArgs, c => walker(c)) : contentArgs;
+    const newContentArgs = contentArgs ? mapCOW(contentArgs, child => walker(child)) : contentArgs;
     if (newArgs !== args || newContentArgs !== contentArgs) {
       return { ...node, args: newArgs, contentArgs: newContentArgs };
     }
     return node;
   }
   const fieldsList = getFields(node);
-  const props = fieldsList.map(f => getNodeField(node, f));
-  const newProps = mapCOW<unknown>(props, p => walkValue(p, walker));
+  const props = fieldsList.map(field => getNodeField(node, field));
+  const newProps = mapCOW<unknown>(props, prop => walkValue(prop, walker));
   if (newProps !== props) {
     const newNode = pipe(
       fieldsList,
       reduce(
-        (acc, f, i) => ({ ...acc, [f]: newProps[i] }),
+        (acc, field, i) => ({ ...acc, [field]: newProps[i] }),
         { ...node },
       ),
     );
@@ -83,23 +83,23 @@ const walkChildren = (node: Node, walker: (n: Node) => Node): Node => {
   return node;
 };
 
-const walk = (ast: Node, fn: (n: Node) => Node | undefined): Node => {
+const walk = (ast: Node, visitor: (node: Node) => Node | undefined): Node => {
   if (!ast || typeof ast !== 'object') { return ast; }
   if (!(isNode(ast) || isCallExtNode(ast))) { return ast; }
 
-  const replaced = fn(ast);
+  const replaced = visitor(ast);
   if (replaced && replaced !== ast) {
     return replaced;
   }
-  const afterFn = replaced ?? ast;
-  return walkChildren(afterFn, c => walk(c, fn));
+  const afterVisitor = replaced ?? ast;
+  return walkChildren(afterVisitor, child => walk(child, visitor));
 };
 
-const matchPredicate = (n: Node, predicate: string | ((n: Node) => boolean)): boolean =>
-  typeof predicate === 'string' ? n.type === predicate : predicate(n);
+const matchPredicate = (node: Node, predicate: string | ((node: Node) => boolean)): boolean =>
+  typeof predicate === 'string' ? node.type === predicate : predicate(node);
 
-const searchFieldValue = (n: Node, field: string, search: (n: Node | null | undefined) => void): void => {
-  const value = getNodeField(n, field);
+const searchFieldValue = (node: Node, field: string, search: (node: Node | null | undefined) => void): void => {
+  const value = getNodeField(node, field);
   if (Array.isArray(value)) {
     for (const item of value) { if (isNode(item)) { search(item); } }
   } else if (isNode(value)) {
@@ -107,31 +107,31 @@ const searchFieldValue = (n: Node, field: string, search: (n: Node | null | unde
   }
 };
 
-const searchChildren = (n: Node, search: (n: Node | null | undefined) => void): void => {
-  if (Array.isArray(n.children)) {
-    for (const child of n.children) { search(child); }
+const searchChildren = (node: Node, search: (node: Node | null | undefined) => void): void => {
+  if (Array.isArray(node.children)) {
+    for (const child of node.children) { search(child); }
   }
-  if (isCallExtNode(n)) {
-    search(n.args);
-    for (const argument of n.contentArgs) { search(argument); }
+  if (isCallExtNode(node)) {
+    search(node.args);
+    for (const argument of node.contentArgs) { search(argument); }
   }
-  for (const field of getTraversalFields(n)) {
-    searchFieldValue(n, field, search);
+  for (const field of getTraversalFields(node)) {
+    searchFieldValue(node, field, search);
   }
 };
 
-const findAll = (node: Node, predicate: string | ((n: Node) => boolean)): Node[] => {
+const findAll = (node: Node, predicate: string | ((node: Node) => boolean)): Node[] => {
   const results: Node[] = [];
   const seen = new Set<Node>();
 
-  const search = (n: Node | null | undefined): void => {
-    if (!n || seen.has(n)) { return; }
-    seen.add(n);
+  const search = (current: Node | null | undefined): void => {
+    if (!current || seen.has(current)) { return; }
+    seen.add(current);
 
-    if (matchPredicate(n, predicate)) {
-      results.push(n);
+    if (matchPredicate(current, predicate)) {
+      results.push(current);
     }
-    searchChildren(n, search);
+    searchChildren(current, search);
   };
 
   search(node);

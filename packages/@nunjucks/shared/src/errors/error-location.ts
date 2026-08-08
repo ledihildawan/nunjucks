@@ -20,13 +20,14 @@ interface CallerInfo {
   finalPath: string | null;
 }
 
-const getCallerFlags = (
-  templatePath: string | null,
-  jsCaller: string | null,
-  jsCallerErrorLine: number | null,
-  _callerFile: string | null,
-  _callerLocation: { lineNumber?: number | null; columnNumber?: number | null } | null,
-) => {
+interface CallerFlags {
+  useExplicitCaller: boolean;
+  useAutoCaller: boolean;
+  preferCallerLocation: boolean;
+}
+
+const getCallerFlags = (inputs: LocationInputs): CallerFlags => {
+  const { templatePath = null, jsCaller = null, jsCallerErrorLine = null, _callerFile = null, _callerLocation = null } = inputs;
   const useExplicitCaller = jsCaller !== null && jsCallerErrorLine !== null;
   const useAutoCaller =
     !templatePath &&
@@ -37,15 +38,9 @@ const getCallerFlags = (
   return { useExplicitCaller, useAutoCaller, preferCallerLocation: !templatePath && (useExplicitCaller || useAutoCaller) };
 };
 
-const getActiveCallerInfo = (
-  useExplicitCaller: boolean,
-  useAutoCaller: boolean,
-  jsCaller: string | null,
-  jsCallerErrorLine: number | null,
-  jsCallerErrorCol: number | null,
-  _callerFile: string | null,
-  _callerLocation: { lineNumber?: number | null; columnNumber?: number | null } | null,
-) => {
+const getActiveCallerInfo = (inputs: LocationInputs, flags: CallerFlags) => {
+  const { useExplicitCaller, useAutoCaller } = flags;
+  const { jsCaller = null, jsCallerErrorLine = null, jsCallerErrorCol = null, _callerFile = null, _callerLocation = null } = inputs;
   const activeCaller = useExplicitCaller ? jsCaller : (useAutoCaller ? _callerFile ?? null : null);
   const activeCallerLine = useExplicitCaller ? jsCallerErrorLine : (useAutoCaller ? _callerLocation?.lineNumber ?? null : null);
   const activeCallerCol = useExplicitCaller ? jsCallerErrorCol : (useAutoCaller ? _callerLocation?.columnNumber ?? null : null);
@@ -56,11 +51,7 @@ const resolveCallerInfo = (inputs: LocationInputs): CallerInfo => {
   const {
     template = null,
     templatePath = null,
-    jsCaller = null,
-    jsCallerErrorLine = null,
-    jsCallerErrorCol = null,
     _callerFile = null,
-    _callerLocation = null,
     errLineno = null,
     errColno = null,
     lineno: configLineno = null,
@@ -69,12 +60,9 @@ const resolveCallerInfo = (inputs: LocationInputs): CallerInfo => {
     errLineBase = null,
   } = inputs;
 
-  const { useExplicitCaller, useAutoCaller, preferCallerLocation } = getCallerFlags(
-    templatePath, jsCaller, jsCallerErrorLine, _callerFile, _callerLocation
-  );
-  const { activeCaller, activeCallerLine, activeCallerCol } = getActiveCallerInfo(
-    useExplicitCaller, useAutoCaller, jsCaller, jsCallerErrorLine, jsCallerErrorCol, _callerFile, _callerLocation
-  );
+  const flags = getCallerFlags(inputs);
+  const { preferCallerLocation } = flags;
+  const { activeCaller, activeCallerLine, activeCallerCol } = getActiveCallerInfo(inputs, flags);
 
   const hasErrorLocation = errLineno !== null;
   const hasCallerLocation = hasErrorLocation && errLineBase === 'one';
@@ -89,14 +77,19 @@ const resolveCallerInfo = (inputs: LocationInputs): CallerInfo => {
   };
 };
 
+interface CallerFilePositionInput {
+  activeCaller: string;
+  template: string | null;
+  errLineno: number | null;
+  errColno: number | null;
+  subject: string | null;
+  activeCallerLine: number | null;
+}
+
 const resolveCallerFilePosition = async (
-  activeCaller: string,
-  template: string | null,
-  errLineno: number | null,
-  errColno: number | null,
-  subject: string | null,
-  activeCallerLine: number | null,
+  input: CallerFilePositionInput,
 ): Promise<{ source: string | null; line: number | null; col: number | null }> => {
+  const { activeCaller, template, errLineno, errColno, subject, activeCallerLine } = input;
   let fileContent: string | null = null;
   try {
     fileContent = await readFile(activeCaller, 'utf8');
@@ -106,55 +99,62 @@ const resolveCallerFilePosition = async (
   if (fileContent === null) {
     return { source: null, line: null, col: null };
   }
-  const position = extractCallerPosition(fileContent, template, errLineno, errColno, subject, activeCallerLine);
+  const position = extractCallerPosition({ content: fileContent, template, errLineno, errColno, subject, preferredLine: activeCallerLine });
   if (!position) {
     return { source: null, line: null, col: null };
   }
   return { source: fileContent, line: position.line, col: position.col };
 };
 
-const resolveSourceAndCoords = async (
-  info: CallerInfo
-): Promise<{ sourceContent: string | null; sourceStartLine: number; lineno: number | null; colno: number | null; lineBase: 'zero' | 'one' }> => {
-  const {
-    template, subject, configLineno, configColno, errLineno, errColno,
-    hasErrorLocation, hasCallerLocation, preferCallerLocation,
-    activeCaller, activeCallerLine, activeCallerCol,
-  } = info;
+const resolveCallerContent = async (info: CallerInfo): Promise<{
+  sourceContent: string | null;
+  callerLine: number | null;
+  callerCol: number | null;
+}> => {
+  const baseCallerLine = info.hasCallerLocation ? info.errLineno : info.activeCallerLine;
+  const baseCallerCol = info.hasCallerLocation ? info.errColno : info.activeCallerCol;
 
-  const baseResolvedCallerLine = hasCallerLocation ? errLineno : activeCallerLine;
-  const baseResolvedCallerCol = hasCallerLocation ? errColno : activeCallerCol;
-  let sourceContent = template;
-  let resolvedCallerLine = baseResolvedCallerLine;
-  let resolvedCallerCol = baseResolvedCallerCol;
-
-  if (preferCallerLocation && activeCaller && !hasCallerLocation) {
-    const { source, line, col } = await resolveCallerFilePosition(activeCaller, template, errLineno, errColno, subject, activeCallerLine);
+  if (info.preferCallerLocation && info.activeCaller && !info.hasCallerLocation) {
+    const { source, line, col } = await resolveCallerFilePosition({
+      activeCaller: info.activeCaller, template: info.template, errLineno: info.errLineno, errColno: info.errColno, subject: info.subject, activeCallerLine: info.activeCallerLine
+    });
     if (source !== null) {
-      sourceContent = source;
-      resolvedCallerLine = line;
-      resolvedCallerCol = col;
+      return { sourceContent: source, callerLine: line, callerCol: col };
     }
   }
 
-  let lineno: number | null;
-  let colno: number | null;
-  let lineBase: 'zero' | 'one';
-  if (preferCallerLocation) {
-    lineno = resolvedCallerLine ?? configLineno ?? errLineno ?? null;
-    colno = resolvedCallerCol ?? configColno ?? errColno ?? null;
-    lineBase = 'one';
-  } else if (hasErrorLocation && errLineno !== null) {
-    lineno = errLineno;
-    colno = errColno;
-    lineBase = 'zero';
-  } else {
-    lineno = configLineno;
-    colno = configColno;
-    lineBase = 'zero';
-  }
+  return { sourceContent: info.template, callerLine: baseCallerLine, callerCol: baseCallerCol };
+};
 
-  return { sourceContent, sourceStartLine: 1, lineno, colno, lineBase };
+const pickCoords = (info: CallerInfo, coords: { callerLine: number | null; callerCol: number | null }): {
+  lineno: number | null;
+  colno: number | null;
+  lineBase: 'zero' | 'one';
+} => {
+  const { callerLine, callerCol } = coords;
+  if (info.preferCallerLocation) {
+    return {
+      lineno: callerLine ?? info.configLineno ?? info.errLineno ?? null,
+      colno: callerCol ?? info.configColno ?? info.errColno ?? null,
+      lineBase: 'one',
+    };
+  }
+  if (info.hasErrorLocation && info.errLineno !== null) {
+    return { lineno: info.errLineno, colno: info.errColno, lineBase: 'zero' };
+  }
+  return { lineno: info.configLineno, colno: info.configColno, lineBase: 'zero' };
+};
+
+const resolveSourceAndCoords = async (info: CallerInfo): Promise<{
+  sourceContent: string | null;
+  sourceStartLine: number;
+  lineno: number | null;
+  colno: number | null;
+  lineBase: 'zero' | 'one';
+}> => {
+  const { sourceContent, callerLine, callerCol } = await resolveCallerContent(info);
+  const resolvedCoords = pickCoords(info, { callerLine, callerCol });
+  return { sourceContent, sourceStartLine: 1, ...resolvedCoords };
 };
 
 const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedLocation> => {

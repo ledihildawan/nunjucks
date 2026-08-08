@@ -81,7 +81,7 @@
 
   function escapeHtml(str) {
     if (typeof str !== 'string') return String(str);
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return str.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
   }
 
   function valueType(value) {
@@ -94,7 +94,7 @@
     if (Array.isArray(value)) {
       if (value.length === 0) return '[]';
       const preview = value.slice(0, 3).map(function(v) {
-        if (typeof v === 'string') return '"' + (v.length > 40 ? v.substring(0, 40) + '...' : v) + '"';
+        if (typeof v === 'string') return '"' + (v.length > 40 ? v.slice(0, 40) + '...' : v) + '"';
         if (v !== null && typeof v === 'object') return Array.isArray(v) ? '[...]' : '{...}';
         return String(v);
       }).join(', ');
@@ -105,14 +105,14 @@
       if (keys.length === 0) return '{}';
       const preview = keys.slice(0, 3).map(function(k) {
         const v = value[k];
-        const vStr = typeof v === 'string' ? '"' + (v.length > 40 ? v.substring(0, 40) + '...' : v) + '"' :
+        const vStr = typeof v === 'string' ? '"' + (v.length > 40 ? v.slice(0, 40) + '...' : v) + '"' :
           (v !== null && typeof v === 'object' ? (Array.isArray(v) ? '[...]' : '{...}') : String(v));
         return k + ': ' + vStr;
       }).join(', ');
       return '{' + preview + (keys.length > 3 ? ', ...' : '') + '}';
     }
     if (typeof value === 'string') {
-      const truncated = value.length > 40 ? value.substring(0, 40) + '...' : value;
+      const truncated = value.length > 40 ? value.slice(0, 40) + '...' : value;
       return '"' + truncated + '"';
     }
     return String(value);

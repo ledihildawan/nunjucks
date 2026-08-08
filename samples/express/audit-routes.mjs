@@ -41,7 +41,7 @@ const parse = (html) => {
   let caret = null;
   if (caretMatch) {
     const text = caretMatch[1].replaceAll('&nbsp;', ' ');
-    const carets = text.replace(/[^^]/g, '');
+    const carets = text.replaceAll(/[^^]/g, '');
     caret = { spaces: text.length - carets.length, carets: carets.length };
   }
   const badge = html.match(/badge badge-error">([^<]+)</u);
@@ -125,7 +125,7 @@ const validate = (_r, info) => {
   return { status: 'OK', reason: '' };
 };
 
-const short = (p) => (p ? p.replace(/^.*[/\\](samples[/\\].*)$/u, '$1').replace(/\\/g, '/') : p);
+const short = (p) => (p ? p.replace(/^.*[/\\](samples[/\\].*)$/u, '$1').replaceAll(/\\/g, '/') : p);
 
 const run = async () => {
   const routes = await discoverRoutes(BASE);

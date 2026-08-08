@@ -26,16 +26,16 @@ export const createParser = (tokens: TokenStream): ParserContext => {
 
 export const parse = (src: string, extensions?: ParserExtension[], options?: ParseOptions): Node & { children: readonly Node[] } => {
   const securityConfig = options?.security ?? null;
-  const p = createParser(createTokenizer(src, options));
+  const parser = createParser(createTokenizer(src, options));
   if (extensions !== undefined) {
-    p.extensions = extensions;
+    parser.extensions = extensions;
   }
-  const ast = root(0, 0, parseNodes(p));
+  const ast = root(0, 0, parseNodes(parser));
 
   if (securityConfig !== null) {
     const [firstError] = validateExpression(ast, securityConfig);
     if (firstError) {
-      fail(p, firstError.message, firstError.lineno, firstError.colno);
+      fail(parser, firstError.message, firstError.lineno, firstError.colno);
     }
   }
 

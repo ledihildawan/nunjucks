@@ -14,7 +14,7 @@ interface LoopContext {
   node: ForNode;
 }
 
-const emitLoopBindings = (compiler: Compiler, i: string, len: string): void => {
+const emitLoopBindings = ({ compiler, i, len }: { compiler: Compiler; i: string; len: string }): void => {
   const bindings = [
     {name: 'index', val: `${i} + 1`},
     {name: 'index0', val: i},
@@ -30,8 +30,16 @@ const emitLoopBindings = (compiler: Compiler, i: string, len: string): void => {
   }
 };
 
-const emitLoopBody = (compiler: Compiler, node: ForNode, frame: Frame, i: string, len: string): void => {
-  emitLoopBindings(compiler, i, len);
+interface LoopBodyInput {
+  compiler: Compiler;
+  node: ForNode;
+  frame: Frame;
+  i: string;
+  len: string;
+}
+
+const emitLoopBody = ({ compiler, node, frame, i, len }: LoopBodyInput): void => {
+  emitLoopBindings({ compiler, i, len });
   compiler.withScopedSyntax(() => {
     compiler.compile(node.body, frame);
   });
@@ -69,7 +77,7 @@ const compileFlatArrayBinding = ({ ctx: compiler, nameNode, frame, arr, i, len, 
       frame.set(childValue, tid);
     }
   }
-  emitLoopBody(compiler, node, frame, i, len);
+  emitLoopBody({ compiler, node, frame, i, len });
 };
 
 const compileFlatObjectBinding = ({ ctx: compiler, nameNode, frame, arr, i, len, node }: LoopContext): void => {
@@ -94,7 +102,7 @@ const compileFlatObjectBinding = ({ ctx: compiler, nameNode, frame, arr, i, len,
   compiler.emitLine(`frame.set("${keyValue}", ${k});`);
   compiler.emitLine(`frame.set("${valValue}", ${v});`);
 
-  emitLoopBody(compiler, node, frame, i, len);
+  emitLoopBody({ compiler, node, frame, i, len });
   compiler.emitLine('}');
 };
 
@@ -108,7 +116,7 @@ const compileDestructuredObjectBinding = ({ ctx: compiler, nameNode, frame, arr,
   compiler.emitLine(`let ${entryId} = ${arr}[${k}];`);
   compileDestructuring({ ctx: compiler, frame, registerFrame: true }, nameNode, entryId);
 
-  emitLoopBody(compiler, node, frame, i, len);
+  emitLoopBody({ compiler, node, frame, i, len });
   compiler.emitLine('}');
 };
 
@@ -124,7 +132,7 @@ const compileArrayBindingCase = ({ ctx: compiler, nameNode, frame, arr, i, len, 
     const itemId = compiler.tmpid();
     compiler.emitLine(`let ${itemId} = ${arr}[${i}];`);
     compileDestructuring({ ctx: compiler, frame, registerFrame: true }, nameNode, itemId);
-    emitLoopBody(compiler, node, frame, i, len);
+    emitLoopBody({ compiler, node, frame, i, len });
   }
   compiler.emitLine('}');
 
@@ -147,7 +155,7 @@ const compileSimpleBinding = ({ ctx: compiler, nameNode, frame, arr, i, len, nod
   compiler.emitLine(`let ${v} = ${arr}[${i}];`);
   compiler.emitLine(`frame.set("${nameValue}", ${v});`);
 
-  emitLoopBody(compiler, node, frame, i, len);
+  emitLoopBody({ compiler, node, frame, i, len });
 
   compiler.emitLine('}');
 };

@@ -9,7 +9,7 @@ import { compileSlotFunction } from './slot.ts';
 const extractComponentArgs = (compiler: Compiler, node: ComponentNode): { args: readonly Node[]; kwargs: ChildrenNode | null } => {
   const all = [...node.args];
   const last = all[all.length - 1];
-  const kwargs = last !== undefined && (isDict(last) || isKeywordArgs(last)) ? (last as ChildrenNode) : null;
+  const kwargs = last !== undefined && (isDict(last) || isKeywordArgs(last)) ? last : null;
   const args = kwargs ? all.slice(0, -1) : all;
   for (const argument of args) {
     compiler.assertType(argument, 'symbol');
@@ -57,6 +57,29 @@ const emitComponentArgBindings = (compiler: Compiler, args: readonly Node[], kwa
   }
 };
 
+const emitFallbackEntries = (compiler: Compiler, slots: readonly { name: string; params: string[]; body: Node }[], currFrame: Frame): string[] =>
+  slots.map((slot) => {
+    const slotVar = `__fallback_${slot.name}`;
+    compileSlotFunction({ compiler, params: slot.params, body: slot.body, parentFrame: currFrame, slotVar });
+    return `"${slot.name}": ${slotVar}`;
+  });
+
+const emitComponentContext = (
+  compiler: Compiler,
+  args: readonly Node[],
+  fallbackEntries: string[]
+): string => {
+  const ccId = `__component_${compiler.tmpid()}`;
+  const propEntries = args.map((n) => `"${n.value as string}": l_${n.value as string}`).join(', ');
+  const propsCode = propEntries === '' ? '{ ...__props }' : `{ ${propEntries}, ...__props }`;
+  compiler.emitLines(
+    'const { slots: __slots, keywords: __keywords, ...__props } = kwargs;',
+    `let ${ccId} = runtime.createComponentContext(${propsCode}, runtime.createSlotContext({ ${fallbackEntries.join(', ')} }, __slots));`,
+    'for (const [__k, __v] of Object.entries(__props)) { if (__v !== undefined) frame.set(__k, __v); }',
+    `frame.set("slot", ${ccId}.slots);`);
+  return ccId;
+};
+
 const compileComponent = (compiler: Compiler, node: ComponentNode): string => {
   const { args, kwargs } = extractComponentArgs(compiler, node);
   const funcId = `component_${compiler.tmpid()}`;
@@ -75,20 +98,8 @@ const compileComponent = (compiler: Compiler, node: ComponentNode): string => {
 
   emitComponentArgBindings(compiler, args, kwargs, currFrame);
 
-  const fallbackEntries = (node.fallbackSlots ?? []).map((slot) => {
-    const slotVar = `__fallback_${slot.name}`;
-    compileSlotFunction(compiler, slot.params, slot.body, currFrame, slotVar);
-    return `"${slot.name}": ${slotVar}`;
-  });
-
-  const ccId = `__component_${compiler.tmpid()}`;
-  const propEntries = args.map((n) => `"${n.value as string}": l_${n.value as string}`).join(', ');
-  const propsCode = propEntries === '' ? '{ ...__props }' : `{ ${propEntries}, ...__props }`;
-  compiler.emitLines(
-    'const { slots: __slots, keywords: __keywords, ...__props } = kwargs;',
-    `let ${ccId} = runtime.createComponentContext(${propsCode}, runtime.createSlotContext({ ${fallbackEntries.join(', ')} }, __slots));`,
-    'for (const [__k, __v] of Object.entries(__props)) { if (__v !== undefined) frame.set(__k, __v); }',
-    `frame.set("slot", ${ccId}.slots);`);
+  const fallbackEntries = emitFallbackEntries(compiler, node.fallbackSlots ?? [], currFrame);
+  const ccId = emitComponentContext(compiler, args, fallbackEntries);
 
   currFrame.set('slot', `${ccId}.slots`);
   currFrame.set('children', `${ccId}.slots("default")`);
@@ -116,7 +127,7 @@ export const compileComponentPublic = (compiler: Compiler, node: ComponentNode, 
   if (frame.parent) {
     compiler.emitLine(`frame.set("${name}", ${funcId});`);
   } else {
-    if (name.charAt(0) !== '_') {
+    if (name[0] !== '_') {
       compiler.emitLine(`context.addExport("${name}");`);
     }
     compiler.emitLine(`context.setVariable("${name}", ${funcId});`);

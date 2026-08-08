@@ -9,8 +9,16 @@ import { createTemplateRenderer } from './template-renderer';
 import { initTemplateState, loadSource } from './template-source';
 import { createGetExported } from './template-exporter';
 
-export const createTemplate = (src: string | TemplateSource, env?: Env, path?: string | null, eagerCompile?: boolean, includeChain?: IncludeChain | null): TemplateObject => {
-  const state = initTemplateState(src, env, path, includeChain);
+interface CreateTemplateOptions {
+  src: string | TemplateSource;
+  env?: Env;
+  path?: string | null;
+  eagerCompile?: boolean;
+  includeChain?: IncludeChain | null;
+}
+
+export const createTemplate = ({ src, env, path, eagerCompile, includeChain }: CreateTemplateOptions): TemplateObject => {
+  const state = initTemplateState({ src, env, path, includeChain });
   loadSource(state, src);
 
   const errorHandler = createTemplateErrorHandler(state);

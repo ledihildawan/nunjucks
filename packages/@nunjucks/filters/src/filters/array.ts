@@ -1,17 +1,17 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
-import { isPlainObject, isString, keys, map, pipe, range, reduce, sum as sumValues } from 'remeda';
+import { isPlainObject, isString, keys, pipe, range, reduce, sum as sumValues } from 'remeda';
 import { isSafeString, makeComponent } from '@nunjucks/runtime';
 import { makeFilterError, isArray, requireArrayError, assertItemsHaveAttr } from '../factory/index.ts';
 import { getAttrGetter } from './attributes.ts';
 
-export const first = (arr: unknown): unknown => {
-  if (!isArray(arr)) { throw requireArrayError(arr, ERROR_DEFINITIONS.FIRST_LAST_FILTER); }
-  return arr[0];
+export const first = (values: unknown): unknown => {
+  if (!isArray(values)) { throw requireArrayError(values, ERROR_DEFINITIONS.FIRST_LAST_FILTER); }
+  return values[0];
 };
 
-export const last = (arr: unknown): unknown => {
-  if (!isArray(arr)) { throw requireArrayError(arr, ERROR_DEFINITIONS.FIRST_LAST_FILTER); }
-  return arr.at(-1);
+export const last = (values: unknown): unknown => {
+  if (!isArray(values)) { throw requireArrayError(values, ERROR_DEFINITIONS.FIRST_LAST_FILTER); }
+  return values.at(-1);
 };
 
 const isMapOrSet = (value: unknown): boolean =>
@@ -36,19 +36,19 @@ const getLengthFromValue = (value: unknown): number => {
   return getValueLength(value);
 };
 
-export const lengthFilter = (val: unknown): number => {
-  const value = val === null || val === undefined || val === false ? '' : val;
+export const lengthFilter = (input: unknown): number => {
+  const value = input === null || input === undefined || input === false ? '' : input;
   return getLengthFromValue(value);
 };
 
 export const reverse = (value: unknown): unknown[] | string => {
   if (typeof value === 'string') {
-    return value.split('').toReversed().join('');
+    return [...value].toReversed().join('');
   }
   if (isArray(value)) {
     return [...value].toReversed();
   }
-  throw makeFilterError(ERROR_DEFINITIONS.LIST_FILTER, { type: typeof value }, typeof value, `Expected string or array but got ${typeof value}`);
+  throw makeFilterError({ errorDef: ERROR_DEFINITIONS.LIST_FILTER, params: { type: typeof value }, subject: typeof value, fallbackMessage: `Expected string or array but got ${typeof value}` });
 };
 
 const computeSliceParams = (arrLength: number, slices: number): { sliceLength: number; extra: number } => {
@@ -57,33 +57,42 @@ const computeSliceParams = (arrLength: number, slices: number): { sliceLength: n
   return { sliceLength, extra };
 };
 
-const buildSingleSlice = (
-  arr: unknown[],
-  i: number,
-  offset: number,
-  sliceLength: number,
-  extra: number,
-  fillWith: unknown | undefined
-): { slice: unknown[]; newOffset: number } => {
-  const start = offset + (i * sliceLength);
-  const newOffset = i < extra ? offset + 1 : offset;
-  const end = newOffset + ((i + 1) * sliceLength);
-  const currSlice = arr.slice(start, end);
-  if (fillWith !== undefined && i >= extra) { currSlice.push(fillWith); }
+interface SingleSliceInput {
+  items: unknown[];
+  index: number;
+  offset: number;
+  sliceLength: number;
+  extra: number;
+  fillWith: unknown | undefined;
+}
+
+const buildSingleSlice = ({
+  items,
+  index,
+  offset,
+  sliceLength,
+  extra,
+  fillWith,
+}: SingleSliceInput): { slice: unknown[]; newOffset: number } => {
+  const start = offset + (index * sliceLength);
+  const newOffset = index < extra ? offset + 1 : offset;
+  const end = newOffset + ((index + 1) * sliceLength);
+  const currSlice = items.slice(start, end);
+  if (fillWith !== undefined && index >= extra) { currSlice.push(fillWith); }
   return { slice: currSlice, newOffset };
 };
 
-export const slice = (arr: unknown, slices: number, fillWith?: unknown): unknown[][] => {
-  if (!isArray(arr)) { throw requireArrayError(arr, ERROR_DEFINITIONS.LIST_FILTER); }
+export const slice = (values: unknown, slices: number, fillWith?: unknown): unknown[][] => {
+  if (!isArray(values)) { throw requireArrayError(values, ERROR_DEFINITIONS.LIST_FILTER); }
   if (slices <= 0) {
-    throw makeFilterError(ERROR_DEFINITIONS.SLICE_ZERO, {}, '', 'slices must be positive');
+    throw makeFilterError({ errorDef: ERROR_DEFINITIONS.SLICE_ZERO, params: {}, subject: '', fallbackMessage: 'slices must be positive' });
   }
-  const { sliceLength, extra } = computeSliceParams(arr.length, slices);
+  const { sliceLength, extra } = computeSliceParams(values.length, slices);
   const { res } = pipe(
     range(0, slices),
     reduce(
       (acc, i) => {
-        const { slice: currSlice, newOffset } = buildSingleSlice(arr, i, acc.offset, sliceLength, extra, fillWith);
+        const { slice: currSlice, newOffset } = buildSingleSlice({ items: values, index: i, offset: acc.offset, sliceLength, extra, fillWith });
         return { res: [...acc.res, currSlice], offset: newOffset };
       },
       { res: [] as unknown[][], offset: 0 },
@@ -92,79 +101,98 @@ export const slice = (arr: unknown, slices: number, fillWith?: unknown): unknown
   return res;
 };
 
-const sumWithAttribute = (arr: unknown[], attr: string, start: number): number => {
-  assertItemsHaveAttr(arr, attr, ERROR_DEFINITIONS.SUM_FILTER_ATTR);
-  return start + sumValues(map(arr as Record<string, unknown>[], (v) => (v as Record<string, unknown>)[attr]) as number[]);
+const sumWithAttribute = (items: unknown[], attr: string, start: number): number => {
+  const typedItems = items as Record<string, unknown>[];
+  assertItemsHaveAttr<unknown>(typedItems, attr, ERROR_DEFINITIONS.SUM_FILTER_ATTR);
+  const values = typedItems.map((item) => item[attr]);
+  if (!values.every((value): value is number => typeof value === 'number')) {
+    throw makeFilterError({ errorDef: ERROR_DEFINITIONS.SUM_FILTER_ATTR, params: { attr }, subject: attr, fallbackMessage: `Attribute "${attr}" must contain numbers` });
+  }
+  return start + sumValues(values);
 };
 
-const sumWithoutAttribute = (arr: unknown[], start: number): number =>
-  start + sumValues(arr as number[]);
+const sumWithoutAttribute = (items: unknown[], start: number): number => {
+  if (!items.every((value): value is number => typeof value === 'number')) {
+    throw makeFilterError({ errorDef: ERROR_DEFINITIONS.SUM_FILTER, params: { type: 'array' }, subject: 'array', fallbackMessage: 'Array must contain numbers' });
+  }
+  return start + sumValues(items);
+};
 
-export const sum = (arr: unknown, attr?: string, start = 0): number => {
-  if (!(isArray(arr) || isPlainObject(arr))) {
-    throw makeFilterError(ERROR_DEFINITIONS.SUM_FILTER, { type: typeof arr }, typeof arr, `Expected array or plain object but got ${typeof arr}`);
+export const sum = (values: unknown, attr?: string, start = 0): number => {
+  if (!(isArray(values) || isPlainObject(values))) {
+    throw makeFilterError({ errorDef: ERROR_DEFINITIONS.SUM_FILTER, params: { type: typeof values }, subject: typeof values, fallbackMessage: `Expected array or plain object but got ${typeof values}` });
   }
   if (attr) {
-    if (!isArray(arr)) { throw requireArrayError(arr, ERROR_DEFINITIONS.SUM_FILTER); }
-    return sumWithAttribute(arr, attr, start);
+    if (!isArray(values)) { throw requireArrayError(values, ERROR_DEFINITIONS.SUM_FILTER); }
+    return sumWithAttribute(values, attr, start);
   }
-  if (!isArray(arr)) { throw requireArrayError(arr, ERROR_DEFINITIONS.SUM_FILTER); }
-  return sumWithoutAttribute(arr, start);
+  if (!isArray(values)) { throw requireArrayError(values, ERROR_DEFINITIONS.SUM_FILTER); }
+  return sumWithoutAttribute(values, start);
 };
 
-const getCompareValue = (item: unknown, sortAttr: string | undefined): unknown => {
+const getCompareValue = <T>(item: T, sortAttr: string | undefined): unknown => {
   if (!sortAttr) { return item; }
   return getAttrGetter(sortAttr)(item as Record<string, unknown>);
 };
 
-const toComparable = (value: unknown): string | number => {
+const toComparable = <T>(value: T): string | number => {
   if (typeof value === 'string' || typeof value === 'number') {
     return value;
   }
   return String(value);
 };
 
-const compareValues = (xVal: unknown, yVal: unknown, caseSens: boolean | string | undefined, sortReverse: boolean | string | undefined): number => {
-  const xRaw = toComparable(xVal);
-  const yRaw = toComparable(yVal);
-  const lower = !caseSens && isString(xRaw) && isString(yRaw);
-  const x = lower ? xRaw.toLowerCase() : xRaw;
-  const y = lower ? yRaw.toLowerCase() : yRaw;
-  if (x < y) { return sortReverse ? 1 : -1; }
-  if (x > y) { return sortReverse ? -1 : 1; }
+interface SortOptions {
+  sortAttr?: string | undefined;
+  sortReverse?: boolean | string | undefined;
+  caseSens?: boolean | string | undefined;
+}
+
+interface ComparisonInput {
+  left: unknown;
+  right: unknown;
+  caseSens: boolean | string | undefined;
+  sortReverse: boolean | string | undefined;
+}
+
+const compareValues = ({ left, right, caseSens, sortReverse }: ComparisonInput): number => {
+  const leftRaw = toComparable(left);
+  const rightRaw = toComparable(right);
+  const lower = !caseSens && isString(leftRaw) && isString(rightRaw);
+  const leftValue = lower ? leftRaw.toLowerCase() : leftRaw;
+  const rightValue = lower ? rightRaw.toLowerCase() : rightRaw;
+  if (leftValue < rightValue) { return sortReverse ? 1 : -1; }
+  if (leftValue > rightValue) { return sortReverse ? -1 : 1; }
   return 0;
 };
 
-const createSortComparator = (sortAttr: string | undefined, sortReverse: boolean | string | undefined, caseSens: boolean | string | undefined) => {
-  return (a: unknown, b: unknown): number => {
-    const xVal = getCompareValue(a, sortAttr);
-    const yVal = getCompareValue(b, sortAttr);
-    return compareValues(xVal, yVal, caseSens, sortReverse);
+const createSortComparator = ({ sortAttr, sortReverse, caseSens }: SortOptions) => {
+  return <T>(a: T, b: T): number => {
+    const left = getCompareValue(a, sortAttr);
+    const right = getCompareValue(b, sortAttr);
+    return compareValues({ left, right, caseSens, sortReverse });
   };
 };
 
-const sortArray = (
-  arr: unknown[],
-  sortAttr: string | undefined,
-  sortReverse: boolean | string | undefined,
-  caseSens: boolean | string | undefined
-): unknown[] => {
+const sortArray = (values: unknown[], options: SortOptions): unknown[] => {
+  const { sortAttr, sortReverse, caseSens } = options;
   if (sortAttr) {
-    assertItemsHaveAttr(arr, sortAttr, ERROR_DEFINITIONS.SORT_FILTER_ATTR);
+    const typedValues = values as Record<string, unknown>[];
+    assertItemsHaveAttr<unknown>(typedValues, sortAttr, ERROR_DEFINITIONS.SORT_FILTER_ATTR);
   }
-  const array = [...arr];
-  const comparator = createSortComparator(sortAttr, sortReverse, caseSens);
+  const array = [...values];
+  const comparator = createSortComparator({ sortAttr, sortReverse, caseSens });
   return array.toSorted(comparator);
 };
 
 export const sort = makeComponent(
   ['value', 'reverse', 'case_sensitive', 'attribute'],
   [],
-  (arr: unknown[], reversed?: boolean | string, caseSens?: boolean | string, attr?: string): unknown[] => {
-    if (!isArray(arr)) { throw requireArrayError(arr, ERROR_DEFINITIONS.SORT_FILTER); }
+  (values: unknown[], reversed?: boolean | string, caseSens?: boolean | string, attr?: string): unknown[] => {
+    if (!isArray(values)) { throw requireArrayError(values, ERROR_DEFINITIONS.SORT_FILTER); }
     const reversedIsString = typeof reversed === 'string';
     const sortAttr = reversedIsString ? reversed : attr;
     const sortReverse = reversedIsString ? caseSens : reversed;
-    return sortArray(arr, sortAttr, sortReverse, caseSens);
+    return sortArray(values, { sortAttr, sortReverse, caseSens });
   }
 );

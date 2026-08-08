@@ -18,8 +18,15 @@ const createFallbackEnv = (): Env => ({
   },
 });
 
-const initTemplateState = (_src: string | TemplateSource, env: Env | undefined, path: string | null | undefined, includeChain: IncludeChain | null | undefined): TemplateState => ({
-  env: env || createFallbackEnv(),
+interface InitTemplateStateOptions {
+  src: string | TemplateSource;
+  env: Env | undefined;
+  path: string | null | undefined;
+  includeChain: IncludeChain | null | undefined;
+}
+
+const initTemplateState = ({ src: _src, env, path, includeChain }: InitTemplateStateOptions): TemplateState => ({
+  env: env ?? createFallbackEnv(),
   path: path ?? undefined,
   _includeChain: includeChain ?? null,
   tmplStr: null,
@@ -35,10 +42,10 @@ const loadSource = (state: TemplateState, src: string | TemplateSource): void =>
     const srcObj = src as TemplateSource;
     switch (srcObj.type) {
       case 'code':
-        state.tmplProps = srcObj.obj as CompiledTemplateExports;
+        state.tmplProps = srcObj.value as CompiledTemplateExports;
         break;
       case 'string':
-        state.tmplStr = srcObj.obj as string;
+        state.tmplStr = srcObj.value as string;
         break;
       default:
         throw createLog('error', getError('TEMPLATE_INVALID_SOURCE'), { type: srcObj.type }, srcObj.type, { phase: 'load' });

@@ -40,10 +40,10 @@ const shouldStripTrailingWhitespace = (
     return nextVal.at(-1) === '-';
   }
   if (nextTok.type === TOKEN_VARIABLE_START) {
-    return nextVal.charAt(parserContext.tokens.tags.variableStart.length) === '-';
+    return nextVal[parserContext.tokens.tags.variableStart.length] === '-';
   }
   if (nextTok.type === TOKEN_COMMENT) {
-    return nextVal.charAt(parserContext.tokens.tags.commentStart.length) === '-';
+    return nextVal[parserContext.tokens.tags.commentStart.length] === '-';
   }
   return false;
 };
@@ -74,14 +74,14 @@ const parseRawToken = (tok: Token & { type: 'raw' }, buf: Node[]): void => {
 };
 
 const parseVariableToken = (parserContext: ParserContext, tok: Token, buf: Node[]): void => {
-  const e = parseExpression(parserContext);
+  const expression = parseExpression(parserContext);
   advanceAfterVariableEnd(parserContext);
-  buf.push(output(tok.lineno, tok.colno, [e]));
+  buf.push(output(tok.lineno, tok.colno, [expression]));
 };
 
 const parseCommentToken = (parserContext: ParserContext, tok: Token): void => {
   const tokVal = String(tok.value);
-  parserContext.dropLeadingWhitespace = tokVal.charAt(
+  parserContext.dropLeadingWhitespace = tokVal.at(
     tokVal.length - parserContext.tokens.tags.commentEnd.length - 1
   ) === '-';
 };

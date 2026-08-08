@@ -4,13 +4,15 @@ import type { Compiler } from '../index.ts';
 import type { Frame } from '@nunjucks/runtime';
 import type { Node } from '@nunjucks/nodes';
 
-const compileSlotFunction = (
-  compiler: Compiler,
-  params: string[],
-  body: Node,
-  parentFrame: Frame,
-  slotVar: string,
-): void => {
+interface SlotFunctionInput {
+  compiler: Compiler;
+  params: string[];
+  body: Node;
+  parentFrame: Frame;
+  slotVar: string;
+}
+
+const compileSlotFunction = ({ compiler, params, body, parentFrame, slotVar }: SlotFunctionInput): void => {
   const localParams = params.map(p => `l_${p}`);
 
   compiler.emitLine(`let ${slotVar} = async (${localParams.join(', ')}) => {`);

@@ -114,7 +114,7 @@ export const skipValue = (parserContext: ParserContext, type: Token['type'], val
   return true;
 };
 
-export const skipSymbol = (parserContext: ParserContext, value: string): boolean => skipValue(parserContext, TOKEN_SYMBOL, value);
+export const skipSymbol = (parserContext: ParserContext, symbolName: string): boolean => skipValue(parserContext, TOKEN_SYMBOL, symbolName);
 
 export const consumeWhitespaceDrop = (parserContext: ParserContext): boolean => {
   const drop = parserContext.dropLeadingWhitespace;
@@ -133,14 +133,13 @@ export const advanceAfterBlockEnd = (parserContext: ParserContext, name?: string
 
     blockName = isSymbolToken(nameTok)
       ? nameTok.value
-      : fail(parserContext, 'advanceAfterBlockEnd: expected symbol token or ' +
-          'explicit name to be passed', nameTok.lineno, nameTok.colno);
+      : fail(parserContext, 'advanceAfterBlockEnd: expected symbol token or explicit name to be passed', nameTok.lineno, nameTok.colno);
   }
 
   tok = nextToken(parserContext);
 
   if (isBlockEndToken(tok)) {
-    if (tok.value.charAt(0) === '-') {
+    if (tok.value[0] === '-') {
       parserContext.dropLeadingWhitespace = true;
     }
   } else {
@@ -154,7 +153,7 @@ export const advanceAfterVariableEnd = (parserContext: ParserContext): void => {
   const tok = nextToken(parserContext);
 
   if (isVariableEndToken(tok)) {
-    parserContext.dropLeadingWhitespace = tok.value.charAt(
+    parserContext.dropLeadingWhitespace = tok.value.at(
       tok.value.length - parserContext.tokens.tags.variableEnd.length - 1
     ) === '-';
   } else {

@@ -29,19 +29,33 @@ const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined, d
     `;
 };
 
-const buildErrorHeader = (
-  humanTitle: string,
-  category: string,
-  severity: 'error' | 'warning' | 'info',
-  phase: string | null | undefined,
-  verbosity: 'simple' | 'medium' | 'full',
-  displayPath: string,
-  displayLine: number,
-  displayCol: number,
-  ide: string,
-  canLinkLocation: boolean,
-  locDisplay: string
-): string => {
+interface ErrorHeaderInput {
+  humanTitle: string;
+  category: string;
+  severity: 'error' | 'warning' | 'info';
+  phase: string | null | undefined;
+  verbosity: 'simple' | 'medium' | 'full';
+  displayPath: string;
+  displayLine: number;
+  displayCol: number;
+  ide: string;
+  canLinkLocation: boolean;
+  locDisplay: string;
+}
+
+const buildErrorHeader = ({
+  humanTitle,
+  category,
+  severity,
+  phase,
+  verbosity,
+  displayPath,
+  displayLine,
+  displayCol,
+  ide,
+  canLinkLocation,
+  locDisplay,
+}: ErrorHeaderInput): string => {
   const codeBadge = renderBadge('badge-error', category);
   const phaseBadge = renderBadge('badge-code', phase);
   const headerTitle = escapeHtml(humanTitle);
@@ -73,17 +87,29 @@ const buildErrorHeader = (
   </header>`;
 };
 
-const buildFullErrorBody = (
-  sourceTrace: SourceTrace | null | undefined,
-  possibleCauses: string[],
-  fixCode: string,
-  fixComment: string,
-  documentationUrl: string | null,
-  renderContext: object | undefined,
-  error: ErrorLike,
-  ide: string,
-  displayPath: string
-): string => {
+interface FullErrorBodyInput {
+  sourceTrace: SourceTrace | null | undefined;
+  possibleCauses: string[];
+  fixCode: string;
+  fixComment: string;
+  documentationUrl: string | null;
+  renderContext: object | undefined;
+  error: ErrorLike;
+  ide: string;
+  displayPath: string;
+}
+
+const buildFullErrorBody = ({
+  sourceTrace,
+  possibleCauses,
+  fixCode,
+  fixComment,
+  documentationUrl,
+  renderContext,
+  error,
+  ide,
+  displayPath,
+}: FullErrorBodyInput): string => {
   const codeSection = renderSourceTraceSection(sourceTrace, displayPath);
   const possibleCausesList = possibleCauses.length > 0
     ? pipe(possibleCauses, map(c => `<li>${renderInlineMarkdown(c)}</li>`), join('\n          '))
@@ -116,16 +142,27 @@ const buildFullErrorBody = (
   </div>`;
 };
 
-const buildErrorFooter = (
-  version: string,
-  timestamp: string | undefined,
-  verbosity: 'simple' | 'medium' | 'full',
-  canLinkLocation: boolean,
-  ide: string,
-  displayPath: string,
-  displayLine: number,
-  displayCol: number
-): string => {
+interface ErrorFooterInput {
+  version: string;
+  timestamp: string | undefined;
+  verbosity: 'simple' | 'medium' | 'full';
+  canLinkLocation: boolean;
+  ide: string;
+  displayPath: string;
+  displayLine: number;
+  displayCol: number;
+}
+
+const buildErrorFooter = ({
+  version,
+  timestamp,
+  verbosity,
+  canLinkLocation,
+  ide,
+  displayPath,
+  displayLine,
+  displayCol,
+}: ErrorFooterInput): string => {
   const timestampPart = timestamp ? ` · ${escapeHtml(timestamp)}` : '';
   const footerActions = verbosity === 'full' && canLinkLocation
     ? (() => {
@@ -149,27 +186,37 @@ const buildErrorFooter = (
   </footer>`;
 };
 
-const buildErrorBodyContent = (
-  verbosity: string,
-  error: ErrorLike,
-  classified: ReturnType<typeof classifyError>,
-  sourceTrace: SourceTrace | null | undefined,
-  renderContext: unknown,
-  ide: string,
-  displayPath: string
-): string => {
+interface ErrorBodyContentInput {
+  verbosity: string;
+  error: ErrorLike;
+  classified: ReturnType<typeof classifyError>;
+  sourceTrace: SourceTrace | null | undefined;
+  renderContext: unknown;
+  ide: string;
+  displayPath: string;
+}
+
+const buildErrorBodyContent = ({
+  verbosity,
+  error,
+  classified,
+  sourceTrace,
+  renderContext,
+  ide,
+  displayPath,
+}: ErrorBodyContentInput): string => {
   if (verbosity !== 'full') { return ''; }
-  return buildFullErrorBody(
+  return buildFullErrorBody({
     sourceTrace,
-    classified.causes,
-    classified.fixCode,
-    classified.fixComment,
-    classified.documentationUrl,
-    renderContext as object | undefined,
+    possibleCauses: classified.causes,
+    fixCode: classified.fixCode,
+    fixComment: classified.fixComment,
+    documentationUrl: classified.documentationUrl,
+    renderContext: renderContext as object | undefined,
     error,
     ide,
-    displayPath
-  );
+    displayPath,
+  });
 };
 
 const buildHtmlWrapper = (header: string, errorBody: string, footer: string): string => `

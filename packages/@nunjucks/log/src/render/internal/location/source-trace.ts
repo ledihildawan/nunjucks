@@ -1,21 +1,20 @@
 import type { LineBase } from '../../../line-base.ts';
+import { escapeRegex } from '@nunjucks/shared';
 import { toDisplayLocation } from './location.ts';
 import { calculateCaretPosition } from '../highlight/caret.ts';
-
-const escapeForAlternation = (key: string): string => key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const buildSecretValuePattern = (blockedKeys: readonly string[] | null): RegExp | null => {
   if (!blockedKeys || blockedKeys.length === 0) { return null; }
   const cleaned = blockedKeys.filter((k): k is string => typeof k === 'string' && k.length > 0);
   if (cleaned.length === 0) { return null; }
-  const alternation = cleaned.map(escapeForAlternation).join('|');
+  const alternation = cleaned.map(escapeRegex).join('|');
   return new RegExp(`\\b(${alternation})(\\s*[:=]\\s*)(['"])([^'"\\\\]*(?:\\\\.[^'"\\\\]*)*)\\3`, 'giu');
 };
 
 const redactSecretValues = (line: string, blockedKeys: readonly string[] | null): string => {
   const pattern = buildSecretValuePattern(blockedKeys);
   if (!pattern) { return line; }
-  return line.replace(pattern, (_match, key, sep, quote) => `${key}${sep}${quote}[Redacted]${quote}`);
+  return line.replaceAll(pattern, (_match, key, sep, quote) => `${key}${sep}${quote}[Redacted]${quote}`);
 };
 
 interface SourceTraceLine {

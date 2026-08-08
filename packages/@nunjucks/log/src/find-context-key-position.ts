@@ -1,10 +1,27 @@
 import { readFile } from 'node:fs/promises';
 import { pipe, split, last } from 'remeda';
+import { escapeRegex } from '@nunjucks/shared';
 
 interface LinePosition {
   line: number;
   col: number;
 }
+
+const findBetterMatch = (
+  acc: { best: LinePosition | null; bestDistance: number },
+  candidate: LinePosition,
+  searchLine: number
+): { best: LinePosition | null; bestDistance: number } => {
+  const candidateLine = candidate.line - 1;
+  const candidateCol = candidate.col - 1;
+  const distance = Math.abs(candidateLine - searchLine);
+  const isCloser = distance < acc.bestDistance;
+  const isSameDistanceButNearer = distance === acc.bestDistance && candidateCol < (acc.best?.col ?? Number.POSITIVE_INFINITY);
+  if (isCloser || isSameDistanceButNearer) {
+    return { best: candidate, bestDistance: distance };
+  }
+  return acc;
+};
 
 const findBestMatch = (lines: string[], keyName: string, searchLine: number, searchRadius: number): LinePosition | null => {
   const start = Math.max(0, searchLine - searchRadius);
@@ -12,22 +29,14 @@ const findBestMatch = (lines: string[], keyName: string, searchLine: number, sea
 
   const findOccurrencesInLine = (lineIndex: number): LinePosition[] => {
     const line = lines[lineIndex] ?? '';
-    const pattern = new RegExp(keyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+    const pattern = new RegExp(escapeRegex(keyName), 'g');
     return [...line.matchAll(pattern)].map(match => ({ line: lineIndex + 1, col: (match.index ?? 0) + 1 }));
   };
 
   const candidates = Array.from({ length: end - start + 1 }, (_, offset) => start + offset).flatMap(findOccurrencesInLine);
 
   return candidates.reduce<{ best: LinePosition | null; bestDistance: number }>(
-    (acc, candidate) => {
-      const i = candidate.line - 1;
-      const found = candidate.col - 1;
-      const distance = Math.abs(i - searchLine);
-      if (distance < acc.bestDistance || (distance === acc.bestDistance && found < (acc.best?.col ?? Number.POSITIVE_INFINITY))) {
-        return { best: candidate, bestDistance: distance };
-      }
-      return acc;
-    },
+    (acc, candidate) => findBetterMatch(acc, candidate, searchLine),
     { best: null, bestDistance: Number.POSITIVE_INFINITY }
   ).best;
 };

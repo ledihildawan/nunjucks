@@ -28,8 +28,8 @@ const throwEscapedJsonError = (
     {
       lineno: lineno ?? null,
       colno: colno ?? null,
-      phase: ctx.phase || 'render',
-      templateName: ctx.templateName || 'inline',
+    phase: ctx.phase ?? 'render',
+    templateName: ctx.templateName ?? 'inline',
       lineBase: 'zero',
     },
   );
