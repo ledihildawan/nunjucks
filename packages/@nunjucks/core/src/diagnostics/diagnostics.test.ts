@@ -19,12 +19,19 @@ describe('wrapWithLog', () => {
     const original = new Error('test');
     const wrapped = await wrapWithLog(original, { phase: 'render' }, { template: '{{ x }}' });
     expect(wrapped).toBeDefined();
+    expect(wrapped.message).toContain('test');
+    expect(wrapped.code).toBeTruthy();
+    expect(wrapped.templateName).toBeNull();
+    expect(wrapped.lineno).toBeNull();
   });
 
   test('handles null render context', async () => {
     const original = new Error('test');
     const wrapped = await wrapWithLog(original, { phase: 'render' });
     expect(wrapped).toBeDefined();
+    expect(wrapped.message).toContain('test');
+    expect(wrapped.code).toBe('RENDER_ERROR');
+    expect(wrapped.phase).toBe('render');
   });
 
   test('includes blockedContextKeys from config', async () => {
@@ -34,5 +41,7 @@ describe('wrapWithLog', () => {
       blockedContextKeys: ['secret', 'password'],
     });
     expect(wrapped).toBeDefined();
+    expect(wrapped.message).toContain('blocked');
+    expect(wrapped.blockedKeys).toEqual(['secret', 'password']);
   });
 });

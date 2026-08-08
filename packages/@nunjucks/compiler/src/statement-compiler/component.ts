@@ -23,8 +23,8 @@ const pairKey = (pair: Node): string => {
 };
 
 const buildComponentArgNames = (args: readonly Node[], kwargs: ChildrenNode | null): { argNames: string[]; kwargNames: string[]; realNames: string[] } => {
-  const argNames = args.map((n) => `"${n.value as string}"`);
-  const kwargNames = (kwargs?.children ?? []).map((n) => `"${pairKey(n)}"`);
+  const argNames = args.map((n) => JSON.stringify(n.value as string));
+  const kwargNames = (kwargs?.children ?? []).map((n) => JSON.stringify(pairKey(n)));
   const realNames = [...args.map((n) => `l_${n.value as string}`), 'kwargs'];
   return { argNames, kwargNames, realNames };
 };
@@ -32,7 +32,7 @@ const buildComponentArgNames = (args: readonly Node[], kwargs: ChildrenNode | nu
 const emitComponentArgBindings = (compiler: Compiler, args: readonly Node[], kwargs: ChildrenNode | null, currFrame: Frame): void => {
   forEach(args, argument => {
     const argValue = argument.value as string;
-    compiler.emitLine(`frame = frame.set("${argValue}", l_${argValue});`);
+    compiler.emitLine(`frame = frame.set(${JSON.stringify(argValue)}, l_${argValue});`);
     currFrame.set(argValue, `l_${argValue}`);
   });
 
@@ -41,9 +41,9 @@ const emitComponentArgBindings = (compiler: Compiler, args: readonly Node[], kwa
     forEach(kwargs.children, pair => {
       const name = pairKey(pair);
       const isPositional = positionalNames.has(name);
-      compiler.emit(`frame = frame.set("${name}", `);
-      compiler.emit(`Object.hasOwn(kwargs, "${name}")`);
-      compiler.emit(` ? kwargs["${name}"] : `);
+      compiler.emit(`frame = frame.set(${JSON.stringify(name)}, `);
+      compiler.emit(`Object.hasOwn(kwargs, ${JSON.stringify(name)})`);
+      compiler.emit(` ? kwargs[${JSON.stringify(name)}] : `);
       if (isPositional) {
         compiler.emit(`(l_${name} !== undefined ? l_${name} : `);
       }
@@ -60,7 +60,7 @@ const emitFallbackEntries = (compiler: Compiler, slots: readonly { name: string;
   slots.map((slot) => {
     const slotVar = `__fallback_${slot.name}`;
     compileSlotFunction({ compiler, params: slot.params, body: slot.body, parentFrame: currFrame, slotVar });
-    return `"${slot.name}": ${slotVar}`;
+    return `${JSON.stringify(slot.name)}: ${slotVar}`;
   });
 
 const emitComponentContext = (
@@ -69,7 +69,7 @@ const emitComponentContext = (
   fallbackEntries: string[]
 ): string => {
   const ccId = `__component_${compiler.tmpid()}`;
-  const propEntries = args.map((n) => `"${n.value as string}": l_${n.value as string}`).join(', ');
+  const propEntries = args.map((n) => `${JSON.stringify(n.value as string)}: l_${n.value as string}`).join(', ');
   const propsCode = propEntries === '' ? '{ ...__props }' : `{ ${propEntries}, ...__props }`;
   compiler.emitLines(
     'const { slots: __slots, keywords: __keywords, ...__props } = kwargs;',
@@ -125,11 +125,11 @@ export const compileComponentPublic = (compiler: Compiler, { node, frame }: Comp
   frame.set(name, funcId);
 
   if (frame.parent) {
-    compiler.emitLine(`frame = frame.set("${name}", ${funcId});`);
+    compiler.emitLine(`frame = frame.set(${JSON.stringify(name)}, ${funcId});`);
   } else {
     if (name[0] !== '_') {
-      compiler.emitLine(`context = context.addExport("${name}");`);
+      compiler.emitLine(`context = context.addExport(${JSON.stringify(name)});`);
     }
-    compiler.emitLine(`context = context.setVariable("${name}", ${funcId});`);
+    compiler.emitLine(`context = context.setVariable(${JSON.stringify(name)}, ${funcId});`);
   }
 };

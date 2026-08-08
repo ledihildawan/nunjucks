@@ -15,7 +15,7 @@ const config = {
   },
 };
 
-const a = await render('hello.njk', { name: 'World' }, config);
+const a = await render('hello.njk', { context: { name: 'World' }, ...config });
 console.log(isOk(a) ? a.value : a.error);
-const b = await render('{{ appName }} v{{ version }}', {}, config);
+const b = await render('{{ appName }} v{{ version }}', { ...config });
 console.log(isOk(b) ? b.value : b.error);

@@ -18,7 +18,7 @@ const compileIncrementDecrement = (compiler: Compiler, node: IncDecNode, _frame:
 
     emitLocationGuard(compiler, node.lineno, node.colno);
     compiler.emit('(() => {');
-    compiler.emit(`let ${id} = runtime.contextOrFrameLookup(context, frame, "${varName}");`);
+    compiler.emit(`let ${id} = runtime.contextOrFrameLookup(context, frame, ${JSON.stringify(varName)});`);
 
     if (node.isPostfix) {
       compiler.emit(`let result = ${id};`);
@@ -28,8 +28,8 @@ const compileIncrementDecrement = (compiler: Compiler, node: IncDecNode, _frame:
       compiler.emit(`let result = ${id};`);
     }
 
-    compiler.emit(`frame = frame.set("${varName}", ${id}, true);`);
-    compiler.emit(`context = context.setVariable("${varName}", ${id});`);
+    compiler.emit(`frame = frame.set(${JSON.stringify(varName)}, ${id}, true);`);
+    compiler.emit(`context = context.setVariable(${JSON.stringify(varName)}, ${id});`);
     compiler.emit('return result;');
     compiler.emit('})())');
   } else {

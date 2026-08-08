@@ -28,7 +28,7 @@ const createEngine = (config: ExpressEngineConfig = {}): ExpressEngineFunction =
       } else {
         callback(result.error);
       }
-    });
+    }).catch((err: unknown) => callback(err instanceof Error ? err : new Error(String(err))));
   };
 
 export { createEngine };

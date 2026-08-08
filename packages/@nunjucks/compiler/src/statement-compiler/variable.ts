@@ -44,7 +44,7 @@ const compileVariableDeclaration = (compiler: Compiler, { node, frame }: Compile
     compiler.emitLine(';');
 
     if (name !== null) {
-      compiler.emitLine(`frame = frame.set("${name}", ${valueId}, true);`);
+      compiler.emitLine(`frame = frame.set(${JSON.stringify(name)}, ${valueId}, true);`);
     }
   }
 };
@@ -64,14 +64,14 @@ const compileVariableAssignment = (compiler: Compiler, { node, frame }: CompileN
     const name = getTargetName(targets[0]);
 
     if (name !== null) {
-      compiler.emitLine(`if (frame.lookup("${name}") === undefined) { throw new ReferenceError("Variable '${name}' is not defined. Use ${name} := value to declare it."); }`);
+      compiler.emitLine(`if (frame.lookup(${JSON.stringify(name)}) === undefined) { throw new ReferenceError("Variable '${name}' is not defined. Use ${name} := value to declare it."); }`);
 
       const valueId = compiler.tmpid();
       compiler.emitLine(`let ${valueId} = `);
       compiler.compileExpression(node.value, frame);
       compiler.emitLine(';');
 
-      compiler.emitLine(`frame = frame.set("${name}", ${valueId}, true);`);
+      compiler.emitLine(`frame = frame.set(${JSON.stringify(name)}, ${valueId}, true);`);
     }
   }
 };

@@ -1,6 +1,6 @@
 # Nunjucks Engineering Guidelines
 
-Monorepo of the nunjucks templating engine, split into focused `@nunjucks/*` workspaces (shared, error-catalog, error-renderer, error-formatter, log, nodes, lexer, parser, transformers, compiler, runtime, filters, loaders, validators, integrations, core). Verified compliant — 499 source files, 0 lint issues, 0 `any` violations, 1820 tests passing.
+Monorepo of the nunjucks templating engine, split into focused `@nunjucks/*` workspaces (shared, error-catalog, error-renderer, error-formatter, log, nodes, lexer, parser, transformers, compiler, runtime, filters, loaders, validators, integrations, core). Verified compliant — 476 source files, 0 lint issues, 0 `any` violations, 1853 tests passing.
 
 ## 1. Core Architectural Principles
 

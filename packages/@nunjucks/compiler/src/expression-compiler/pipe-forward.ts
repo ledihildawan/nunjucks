@@ -10,7 +10,7 @@ export const compilePipeForward = (compiler: Compiler, { node, frame }: CompileN
 
   const args = node.args;
 
-  compiler.emit(`await runtime.runFilter(env, "${filterName}", ${filterLocation}, context, `);
+  compiler.emit(`await runtime.runFilter(env, ${JSON.stringify(filterName)}, ${filterLocation}, context, `);
 
   args.forEach((argument, i) => {
     if (i > 0) {

@@ -45,7 +45,8 @@ const BUILTIN_TESTS: Readonly<Record<string, TestFn>> = {
   blank: (target) => typeof target === 'string' ? target.trim() === '' : (target === '' || target === null || target === undefined || (typeof target === 'object' && 'length' in target && target.length === 0)),
   contains: (target, item) => {
     if (target == null) { return false; }
-    if (typeof target === 'string' || Array.isArray(target)) { return target.includes(item as never); }
+    if (typeof target === 'string') { return target.includes(typeof item === 'string' ? item : String(item)); }
+    if (Array.isArray(target)) { return target.includes(item); }
     if (target instanceof Set) { return target.has(item); }
     return false;
   },

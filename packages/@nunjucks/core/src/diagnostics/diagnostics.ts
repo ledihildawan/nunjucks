@@ -19,15 +19,6 @@ interface DiagnosticsConfig {
   blockedContextKeys?: readonly string[] | null;
 }
 
-interface ErrorWithCauses extends Error {
-  causes?: string[];
-  fixCode?: string;
-  fixComment?: string;
-  suggestion?: string;
-  documentationUrl?: string;
-  severity?: 'error' | 'warning' | 'info';
-}
-
 interface DiagnosticsBuildInput {
   metadata: ReturnType<typeof normalizeErrorMetadata>;
   templatePath: string | null;
@@ -64,14 +55,20 @@ const resolveErrorProps = (err: unknown): {
   resolvedDocumentationUrl: string | undefined;
   originalSeverity: 'error' | 'warning' | 'info' | undefined;
 } => {
-  const errExt = err as ErrorWithCauses;
+  const record = isKeyedObject(err) ? err : null;
+  const causes = record?.causes;
+  const fixCode = record?.fixCode;
+  const fixComment = record?.fixComment;
+  const suggestion = record?.suggestion;
+  const documentationUrl = record?.documentationUrl;
+  const severity = record?.severity;
   return {
-    resolvedCauses: Array.isArray(errExt.causes) && errExt.causes.length > 0 ? errExt.causes : undefined,
-    resolvedFixCode: typeof errExt.fixCode === 'string' ? errExt.fixCode : undefined,
-    resolvedFixComment: typeof errExt.fixComment === 'string' ? errExt.fixComment : undefined,
-    resolvedSuggestion: typeof errExt.suggestion === 'string' ? errExt.suggestion : undefined,
-    resolvedDocumentationUrl: typeof errExt.documentationUrl === 'string' ? errExt.documentationUrl : undefined,
-    originalSeverity: errExt.severity,
+    resolvedCauses: Array.isArray(causes) && causes.length > 0 ? causes : undefined,
+    resolvedFixCode: typeof fixCode === 'string' ? fixCode : undefined,
+    resolvedFixComment: typeof fixComment === 'string' ? fixComment : undefined,
+    resolvedSuggestion: typeof suggestion === 'string' ? suggestion : undefined,
+    resolvedDocumentationUrl: typeof documentationUrl === 'string' ? documentationUrl : undefined,
+    originalSeverity: severity === 'error' || severity === 'warning' || severity === 'info' ? severity : undefined,
   };
 };
 

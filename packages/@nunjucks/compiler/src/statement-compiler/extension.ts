@@ -19,9 +19,9 @@ const emitExtensionCallBegin = (
     compiler.emit(`${compiler.buffer} += runtime.suppressValue(`);
   }
   if (emitAsync) {
-    compiler.emit(`let ${res} = await env.getExtension("${node.extName}")["${node.prop}"](`);
+    compiler.emit(`let ${res} = await env.getExtension(${JSON.stringify(node.extName)})[${JSON.stringify(node.prop)}](`);
   } else {
-    compiler.emit(`env.getExtension("${node.extName}")["${node.prop}"](`);
+    compiler.emit(`env.getExtension(${JSON.stringify(node.extName)})[${JSON.stringify(node.prop)}](`);
   }
   compiler.emit('context');
 };

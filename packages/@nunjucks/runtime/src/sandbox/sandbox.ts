@@ -20,12 +20,12 @@ const blockedKeysError = (key: string, blockedKeys: readonly string[]): Template
   const errorDef = ERROR_DEFINITIONS.BLOCKED_CONTEXT_KEYS;
   if (!errorDef) {
     const err = createLog('error', { def: { name: 'BLOCKED_CONTEXT_KEYS', message: `Blocked context key: ${key}` }, subject: key, context: { phase: 'render', lineBase: 'zero' } });
-    (err as { blockedKeys?: readonly string[] }).blockedKeys = blockedKeys;
+    Object.assign(err, { blockedKeys });
     return err;
   }
   const created = createLog('error', { def: errorDef, params: { keys: blockedKeys.join(', ') }, subject: key, context: { phase: 'render', lineBase: 'zero' } });
   if (created && typeof created === 'object') {
-    (created as { blockedKeys?: readonly string[] }).blockedKeys = blockedKeys;
+    Object.assign(created, { blockedKeys });
   }
   return created;
 };

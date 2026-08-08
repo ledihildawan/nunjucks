@@ -76,5 +76,18 @@ describe('createTokenizer', () => {
 
   test('handles special characters without crash', () => {
     expect(() => tokens('{{ x.y.z }}')).not.toThrow();
+    const tks = tokens('{{ x.y.z }}');
+    expect(tks.filter(t => t.type === 'symbol').map(t => t.value)).toEqual(['x', 'y', 'z']);
+    expect(tks.some(t => t.type === 'operator' && t.value === '.')).toBe(true);
+  });
+
+  test('tokenizes unicode strings and indexed access', () => {
+    const unicodeTks = tokens('{{ "café 日本語" }}');
+    expect(unicodeTks.some(t => t.type === 'string' && t.value === 'café 日本語')).toBe(true);
+
+    const indexTks = tokens('{{ arr[0] }}');
+    expect(indexTks.some(t => t.type === 'left-bracket')).toBe(true);
+    expect(indexTks.some(t => t.type === 'right-bracket')).toBe(true);
+    expect(indexTks.some(t => t.type === 'int' && t.value === 0)).toBe(true);
   });
 });

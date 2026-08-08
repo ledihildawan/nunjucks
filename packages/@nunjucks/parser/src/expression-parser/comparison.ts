@@ -123,9 +123,9 @@ const parseIs = (parserContext: ParserContext): Result<Node, TemplateError> => {
     return ok(negate ? not(loc(tok), builtTest) : builtTest);
   }
 
-  const node2R = parseCompare(parserContext);
-  if (isErr(node2R)) { return node2R; }
-  const builtIs = isOp(loc(tok), { left: initialNode, right: node2R.value });
+  const rightOperandR = parseCompare(parserContext);
+  if (isErr(rightOperandR)) { return rightOperandR; }
+  const builtIs = isOp(loc(tok), { left: initialNode, right: rightOperandR.value });
   return ok(negate ? not(loc(tok), builtIs) : builtIs);
 };
 
@@ -163,9 +163,9 @@ const isNotInversion = (tok: Token): boolean =>
   tok?.type === TOKEN_SYMBOL && tok?.value === 'not';
 
 const handleInExpression = (parserContext: ParserContext, node: Node, invert: boolean, inTok: Token): Result<Node, TemplateError> => {
-  const node2R = parseIs(parserContext);
-  if (isErr(node2R)) { return node2R; }
-  const newNode = inNode(loc(inTok), { left: node, right: node2R.value });
+  const rightOperandR = parseIs(parserContext);
+  if (isErr(rightOperandR)) { return rightOperandR; }
+  const newNode = inNode(loc(inTok), { left: node, right: rightOperandR.value });
   return ok(invert ? not(loc(inTok), newNode) : newNode);
 };
 

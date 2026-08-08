@@ -149,3 +149,20 @@ describe('dompurify per-render isolation', () => {
     expect(r2).toContain('<i>italic</i>');
   });
 });
+
+describe('render edge cases', () => {
+  test('empty template returns empty string', async () => {
+    const result = await renderTemplate('', {});
+    expect(result).toBe('');
+  });
+
+  test('unicode context values render correctly', async () => {
+    const result = await renderTemplate('{{ x }}', { x: '日本語' });
+    expect(result).toContain('日本語');
+  });
+
+  test('whitespace-only template preserves whitespace', async () => {
+    const result = await renderTemplate('   ', {});
+    expect(result).toBe('   ');
+  });
+});

@@ -79,7 +79,8 @@ describe('error - causes in code from registry', () => {
   test('syntax error produces humanized output', async () => {
     const err = await renderTemplate('{% unknownTag %}', {}).catch(e => e) as TemplateError;
     const text = formatError(err, { format: 'text', verbosity: 'full' });
-    expect(text).toBeDefined();
+    expect(text).toContain('Error:');
+    expect(text).toContain('unknownTag');
   });
 });
 
@@ -106,6 +107,8 @@ describe('error - documentation links', () => {
 
     expect(typeof html).toBe('string');
     expect(html.length).toBeGreaterThan(100);
+    expect(html).toContain(err.code ?? '');
+    expect(html).toContain('Possible Causes');
   });
 });
 
@@ -113,6 +116,8 @@ describe('error - related links', () => {
   test('error can have related links from definition', async () => {
     const err = await renderTemplate('{{ missing }}', {}, { undefined: 'strict' }).catch(e => e) as TemplateError;
     expect(err).toBeDefined();
+    expect(err.code).toBeTruthy();
+    expect(err.documentationUrl).toBeTruthy();
   });
 });
 
@@ -125,8 +130,10 @@ describe('error - sandbox', () => {
     ).catch(e => e) as TemplateError;
 
     expect(err).toBeDefined();
+    expect(err.code).toBe('UNDEFINED_PROPERTY');
     const text = formatError(err, { format: 'text', verbosity: 'full' });
-    expect(text).toBeDefined();
+    expect(text).toContain('Error:');
+    expect(text).toContain('Property');
   });
 });
 
@@ -142,9 +149,10 @@ describe('error - toJSON serialization', () => {
 });
 
 describe('error - empty/null safety', () => {
-  test('handles undefined error gracefully', () => {
-    const html = '';
+  test('handles plain Error gracefully', () => {
+    const html = formatError(new Error('boom'), { format: 'html', verbosity: 'full' });
     expect(html).toBeDefined();
+    expect(html).toContain('<!DOCTYPE html>');
   });
 
   test('error preserves all important fields', async () => {

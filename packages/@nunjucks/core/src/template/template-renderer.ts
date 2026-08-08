@@ -34,6 +34,11 @@ const createTemplateRenderer = (
     const state = getState();
 
     const renderingTemplates = state.env.renderingTemplates;
+    // WHY: this Set lives on the shared env to detect truly circular includes (A includes A).
+    // Limitation: it is NOT scoped to a single render pass, so two CONCURRENT independent
+    // renders of the SAME path on one env will spuriously trip CIRCULAR_INCLUDE (the second
+    // render sees the first's still-active entry). Callers that render the same template path
+    // concurrently must isolate by using a separate env per render (or per concurrency unit).
     if (renderingTemplates?.has(state.path)) {
       throw createLog('error', { def: getError('CIRCULAR_INCLUDE'), params: { path: state.path as string }, subject: state.path as string, context: { phase: 'render' } });
     }
@@ -51,7 +56,12 @@ const createTemplateRenderer = (
     try {
       const runtime = createRuntimeWithContext(state.path, ctx ?? {});
       const rootResult = await state.rootRenderFunc?.(state.env, context, frame, runtime);
-      const result = rootResult === undefined ? undefined : (Array.isArray(rootResult) ? rootResult[0] : rootResult);
+      // WHY: rootRenderFunc is optional (?.); a missing root means compilation produced no entry
+      // point, so surface it explicitly instead of casting an undefined result to string.
+      if (rootResult === undefined) {
+        throw new Error(`Template "${state.path as string}" has no compiled root render function`);
+      }
+      const result = Array.isArray(rootResult) ? rootResult[0] : rootResult;
       if (runtime.__warnings__.length > 0 && state.env.opts.dev) {
         return result + injectWarningsScript(runtime.__warnings__ as Warning[], { dev: true, verbosity: 'medium' });
       }
