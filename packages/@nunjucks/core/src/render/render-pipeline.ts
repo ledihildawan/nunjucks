@@ -61,12 +61,12 @@ const createEnvLookups = (config: RenderConfig): Pick<Env, 'getFilter' | 'getTes
   getFilter: (name: string, lineno: number | null, colno: number | null) => {
     const filter = config.filters?.[name];
     if (filter) { return filter; }
-    throw createLog('error', getError('UNDEFINED_FILTER'), { name }, name, { lineno, colno, phase: 'render', lineBase: 'zero' });
+    throw createLog('error', { def: getError('UNDEFINED_FILTER'), params: { name }, subject: name, context: { lineno, colno, phase: 'render', lineBase: 'zero' } });
   },
   getTest: (name: string, lineno: number | null, colno: number | null) => {
     const test = config.tests?.[name];
     if (test) { return test; }
-    throw createLog('error', getError('UNDEFINED_TEST'), { name }, name, { lineno, colno, phase: 'render', lineBase: 'zero' });
+    throw createLog('error', { def: getError('UNDEFINED_TEST'), params: { name }, subject: name, context: { lineno, colno, phase: 'render', lineBase: 'zero' } });
   },
 });
 
@@ -86,7 +86,7 @@ const buildRenderEnv = (loader: FileSystemLoader | null, config: RenderConfig): 
       const source = await loader.getSource(name);
       if (!source) {
         if (ignoreMissing) { return null; }
-        throw createLog('error', getError('FILE_NOT_FOUND'), { path: name }, name, { phase: 'load' });
+        throw createLog('error', { def: getError('FILE_NOT_FOUND'), params: { path: name }, subject: name, context: { phase: 'load' } });
       }
       return createTemplate({ src: source.src, env: this, path: source.path, eagerCompile: eagerCompile ?? true, includeChain });
     },
@@ -109,24 +109,27 @@ const handleContextStrictMode = async (context: Record<string, unknown>, config:
 
   if (config.contextStrict === 'error') {
     const subject = dangerousValuePaths.join(', ');
-    const err = createLog(
-      'error',
-      { name: 'DANGEROUS_CONTEXT_VALUES', message: `Context contains unsafe values: ${subject}` },
-      undefined,
+    const err = createLog('error', {
+      def: { name: 'DANGEROUS_CONTEXT_VALUES', message: `Context contains unsafe values: ${subject}` },
       subject,
-      { phase: 'render' },
-    );
+      context: { phase: 'render' },
+    });
     throw await wrapWithLog(err, config, { renderContext: context });
   }
 
   const scrubbedContext = scrubDangerousReferences(context) as Record<string, unknown>;
   const scrubWarning = createLog('warning', {
-    name: 'DANGEROUS_CONTEXT_VALUE_SCRUBBED',
-    message: () => `Scrubbed unsafe values from context: ${dangerousValuePaths.join(', ')}`,
-    pattern: MATCH_ANY_RE
-  }, { values: dangerousValuePaths.join(', ') }, dangerousValuePaths.join(', '), {
-    phase: 'render',
-    lineBase: 'zero'
+    def: {
+      name: 'DANGEROUS_CONTEXT_VALUE_SCRUBBED',
+      message: () => `Scrubbed unsafe values from context: ${dangerousValuePaths.join(', ')}`,
+      pattern: MATCH_ANY_RE
+    },
+    params: { values: dangerousValuePaths.join(', ') },
+    subject: dangerousValuePaths.join(', '),
+    context: {
+      phase: 'render',
+      lineBase: 'zero'
+    }
   });
 
   return { warningsCollector: [scrubWarning], dangerousValuePaths, context: scrubbedContext };

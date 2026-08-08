@@ -21,7 +21,7 @@ interface FilterErrorInput {
 
 const filterError = ({ ctx, errorDef, params, subject }: FilterErrorInput) => {
   const logContext = getLogContext(ctx);
-  return createLog('error', errorDef, params, subject, { phase: logContext.phase, templateName: logContext.templateName, lineBase: 'zero' });
+  return createLog('error', { def: errorDef, params, subject, context: { phase: logContext.phase, templateName: logContext.templateName, lineBase: 'zero' } });
 };
 
 interface MakeFilterErrorInput {

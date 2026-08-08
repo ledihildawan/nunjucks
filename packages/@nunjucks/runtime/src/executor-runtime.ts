@@ -22,13 +22,13 @@ const getRenderFunction = (code: string): RenderFunctionResult => {
     const codeWithReturn = `${code}; return root;`;
     const renderFn = new Function(codeWithReturn)();
     if (!isCompiledTemplateExports(renderFn)) {
-      throw createLog('error', getError('INVALID_CODE_FORMAT'), {}, null, { phase: 'compile' });
+      throw createLog('error', { def: getError('INVALID_CODE_FORMAT'), params: {}, subject: null, context: { phase: 'compile' } });
     }
     const blocks = extractBlocks(renderFn);
     return { render: renderFn.root, blocks, blockMeta: (renderFn[BLOCK_META_KEY] as Record<string, BlockLocation>) ?? {} };
   }
 
-  throw createLog('error', getError('INVALID_CODE_FORMAT'), {}, null, { phase: 'compile' });
+  throw createLog('error', { def: getError('INVALID_CODE_FORMAT'), params: {}, subject: null, context: { phase: 'compile' } });
 };
 
 const buildSandboxOptions = (config: { sandboxAllowlist?: readonly string[]; sandboxMode?: 'allowlist' | 'blocklist'; sandboxEnvironment?: Environment }): SandboxOptions => ({

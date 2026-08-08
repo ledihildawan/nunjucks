@@ -30,16 +30,15 @@ function handleError(this: unknown, error: unknown, lineno: number | null, colno
     }
   }
 
-  const thrown = createLog(
-    'error',
-    {
+  const thrown = createLog('error', {
+    def: {
       name: metadata.code ?? 'RUNTIME_ERROR',
       message: () => metadata.message,
       pattern: MATCH_ANY_RE,
     },
-    {},
-    metadata.subject,
-    {
+    params: {},
+    subject: metadata.subject,
+    context: {
       lineno: metadata.lineno,
       colno: metadata.colno,
       phase: metadata.phase,
@@ -50,7 +49,7 @@ function handleError(this: unknown, error: unknown, lineno: number | null, colno
       renderContext: metadata.renderContext,
       lineBase: metadata.lineBase,
     } as ErrorContext,
-  );
+  });
 
   thrown.templatePath = metadata.templatePath;
   thrown.sourceStartLine = metadata.sourceStartLine;

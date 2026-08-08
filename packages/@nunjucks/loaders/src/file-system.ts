@@ -22,7 +22,7 @@ const resolveFromSearchPath = (name: string) => (searchPath: string) => {
 };
 
 const makeFilesystemError = (targetPath: string, message: string) =>
-  createLog('error', getError('FILESYSTEM_ERROR'), { msg: message }, targetPath, { phase: 'load' });
+  createLog('error', { def: getError('FILESYSTEM_ERROR'), params: { msg: message }, subject: targetPath, context: { phase: 'load' } });
 
 const throwDirectoryError = (fullPath: string): never => {
   throw makeFilesystemError(fullPath, `EISDIR: illegal operation - path is a directory: ${fullPath}`);

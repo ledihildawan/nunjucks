@@ -30,19 +30,18 @@ export const throwRuntimeError = (
   { self, lineno, colno, params, subject, templateName }: ThrowRuntimeErrorOptions,
 ): never => {
   const ctx = getLogContext(self);
-  throw createLog(
-    'error',
+  throw createLog('error', {
     def,
-    params ?? {},
-    subject ?? null,
-    {
+    params: params ?? {},
+    subject: subject ?? null,
+    context: {
       lineno: lineno ?? null,
       colno: colno ?? null,
       phase: ctx.phase ?? 'render',
       templateName: templateName ?? ctx.templateName ?? 'inline',
       lineBase: 'zero',
     },
-  );
+  });
 };
 
 export type { LogContextShape };

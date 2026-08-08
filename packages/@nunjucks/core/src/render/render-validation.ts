@@ -11,18 +11,16 @@ const buildValidationError = async ({
   templateSource,
   context,
 }: ValidationErrorRequest): Promise<TemplateError> => {
-  const err = createLog(
-    'error',
-    { name: validationError.code, message: validationError.message },
-    undefined,
-    (stamps.subject as string | null | undefined) ?? validationError.subject ?? null,
-    {
+  const err = createLog('error', {
+    def: { name: validationError.code, message: validationError.message },
+    subject: (stamps.subject as string | null | undefined) ?? validationError.subject ?? null,
+    context: {
       phase: 'render',
       lineno: (stamps.lineno as number | null | undefined) ?? null,
       colno: (stamps.colno as number | null | undefined) ?? null,
       lineBase: (stamps.lineBase as 'one' | 'zero' | undefined) ?? 'zero',
     },
-  );
+  });
   return wrapWithLog(err, config, { template: templateSource, renderContext: context });
 };
 
@@ -45,7 +43,7 @@ const getDangerousValueStamps = async (contextError: RenderValidationError, conf
 
 export const validateRender = async (template: unknown, config: RenderConfig, context: unknown): Promise<Result<void, TemplateError>> => {
   if (typeof template !== 'string') {
-    const error = createLog('error', getError('TEMPLATE_MUST_BE_STRING'), {}, null, { phase: 'render' });
+    const error = createLog('error', { def: getError('TEMPLATE_MUST_BE_STRING'), params: {}, subject: null, context: { phase: 'render' } });
     return err(await wrapWithLog(error, config, { template: template as string | null, renderContext: context }));
   }
 
@@ -54,7 +52,7 @@ export const validateRender = async (template: unknown, config: RenderConfig, co
     const ve = validation.errors[0];
     if (ve === undefined) {
       // WHY: validators guarantee a non-empty errors tuple when valid===false, so this branch is an impossible-state invariant, not a domain error.
-      return err(createLog('error', { name: 'VALIDATION_ERROR', message: 'Validation failed but no errors found' }, undefined, null, { phase: 'render' }));
+      return err(createLog('error', { def: { name: 'VALIDATION_ERROR', message: 'Validation failed but no errors found' }, subject: null, context: { phase: 'render' } }));
     }
     const callerLineno = config._callerLocation?.lineNumber;
     const callerColno = config._callerLocation?.columnNumber;
@@ -78,7 +76,7 @@ export const validateRender = async (template: unknown, config: RenderConfig, co
     const ce = contextValidation.errors[0];
     if (ce === undefined) {
       // WHY: validators guarantee a non-empty errors tuple when valid===false, so this branch is an impossible-state invariant, not a domain error.
-      return err(createLog('error', { name: 'VALIDATION_ERROR', message: 'Context validation failed but no errors found' }, undefined, null, { phase: 'render' }));
+      return err(createLog('error', { def: { name: 'VALIDATION_ERROR', message: 'Context validation failed but no errors found' }, subject: null, context: { phase: 'render' } }));
     }
     const stamps = await getDangerousValueStamps(ce, config);
     return err(await buildValidationError({ validationError: ce, stamps, config, templateSource: template, context }));

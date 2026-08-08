@@ -21,19 +21,18 @@ interface LocationOptions {
 
 const throwEscapedJsonError = (self: unknown, loc: LocationOptions): never => {
   const ctx = getLogContext(self);
-  throw createLog(
-    'error',
-    ERROR_DEFINITIONS.JSON_ESCAPED_OUTPUT,
-    {},
-    null,
-    {
+  throw createLog('error', {
+    def: ERROR_DEFINITIONS.JSON_ESCAPED_OUTPUT,
+    params: {},
+    subject: null,
+    context: {
       lineno: loc.lineno ?? null,
       colno: loc.colno ?? null,
-    phase: ctx.phase ?? 'render',
-    templateName: ctx.templateName ?? 'inline',
+      phase: ctx.phase ?? 'render',
+      templateName: ctx.templateName ?? 'inline',
       lineBase: 'zero',
     },
-  );
+  });
 };
 
 const isScriptJsonLike = (value: unknown, stringValue: string): boolean =>

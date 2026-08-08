@@ -5,27 +5,17 @@ import { normalizeErrorContext, normalizeWarningContext, isErrorDefinitionEntry,
 import { createErrorFromDef, createWarningFromDef } from './create-log-error.ts';
 import { isKeyedObject } from '@nunjucks/shared';
 
-function createLog(
-  type: 'error',
-  errorDefOrData: ErrorDefinitionEntry | LegacyLogData,
-  params?: Record<string, string>,
-  subject?: string | null,
-  context?: ErrorContext | null
-): TemplateError;
-function createLog(
-  type: 'warning',
-  errorDefOrData: ErrorDefinitionEntry | LegacyLogData,
-  params?: Record<string, string>,
-  subject?: string | null,
-  context?: WarningContext | null
-): TemplateWarning;
-function createLog(
-  type: string,
-  errorDefOrData: ErrorDefinitionEntry | LegacyLogData,
-  params?: Record<string, string>,
-  subject?: string | null,
-  context?: ErrorContext | WarningContext | null
-): TemplateError | TemplateWarning {
+interface CreateLogFields {
+  def: ErrorDefinitionEntry | LegacyLogData;
+  params?: Record<string, string>;
+  subject?: string | null;
+  context?: ErrorContext | WarningContext | null;
+}
+
+function createLog(type: 'error', fields: CreateLogFields): TemplateError;
+function createLog(type: 'warning', fields: CreateLogFields): TemplateWarning;
+function createLog(type: string, fields: CreateLogFields): TemplateError | TemplateWarning {
+  const { def: errorDefOrData, params, subject, context } = fields;
   assertLogType(type);
 
   if (!isErrorDefinitionEntry(errorDefOrData)) {
@@ -50,12 +40,16 @@ const isTemplateError = (value: unknown): value is TemplateError =>
 const asTemplateError = (err: Error | TemplateError): TemplateError => {
   if (isTemplateError(err)) { return err; }
   const e = err as Partial<TemplateError>;
-  return createLog('error', { name: e.code ?? 'ERROR', message: err.message }, undefined, e.subject ?? null, {
-    lineno: e.lineno ?? null,
-    colno: e.colno ?? null,
-    phase: e.phase ?? 'render',
-    templateName: e.templateName ?? null,
-    lineBase: e.lineBase ?? 'zero'
+  return createLog('error', {
+    def: { name: e.code ?? 'ERROR', message: err.message },
+    subject: e.subject ?? null,
+    context: {
+      lineno: e.lineno ?? null,
+      colno: e.colno ?? null,
+      phase: e.phase ?? 'render',
+      templateName: e.templateName ?? null,
+      lineBase: e.lineBase ?? 'zero',
+    },
   });
 };
 
@@ -140,4 +134,4 @@ function assertLogType(type: string): asserts type is LogType {
 }
 
 export { createLog, isTemplateError, prettifyError };
-export type { ErrorDefinitionEntry, ErrorInfo, WarningInfo, OutputOptions, TemplateError, TemplateWarning, ErrorContext, WarningContext, IncludeChain };
+export type { ErrorDefinitionEntry, ErrorInfo, WarningInfo, OutputOptions, TemplateError, TemplateWarning, ErrorContext, WarningContext, IncludeChain, CreateLogFields };

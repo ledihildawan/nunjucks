@@ -74,26 +74,30 @@ type Context = MutableContext;
 const getKeys = (record: Record<string, unknown>): string[] => keys(record);
 
 const throwBlockNotFoundError = ({ name, location, lineno, colno }: { name: string; location: BlockLocation | undefined; lineno: number | null; colno: number | null }): never => {
-  throw createLog(
-    'error',
-    ERROR_DEFINITIONS.UNDEFINED_BLOCK,
-    { name },
-    name,
-    {
+  throw createLog('error', {
+    def: ERROR_DEFINITIONS.UNDEFINED_BLOCK,
+    params: { name },
+    subject: name,
+    context: {
       lineno: lineno ?? location?.lineno ?? null,
       colno: colno ?? location?.colno ?? null,
       phase: 'render',
       lineBase: 'zero',
     },
-  );
+  });
 };
 
 const throwNoSuperBlockError = (name: string, lineno: number | null, colno: number | null): never => {
-  throw createLog('error', ERROR_DEFINITIONS.NO_SUPER_BLOCK, { name }, name, {
-    lineno,
-    colno,
-    phase: 'render',
-    lineBase: 'zero',
+  throw createLog('error', {
+    def: ERROR_DEFINITIONS.NO_SUPER_BLOCK,
+    params: { name },
+    subject: name,
+    context: {
+      lineno,
+      colno,
+      phase: 'render',
+      lineBase: 'zero',
+    },
   });
 };
 

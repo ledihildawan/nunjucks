@@ -13,19 +13,18 @@ export const fail = (
   const subject = (lastPart ?? 'compile').trim();
   const errorDef = ERROR_DEFINITIONS[errorName as keyof typeof ERROR_DEFINITIONS] ?? ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE;
 
-  throw createLog(
-    'error',
-    errorDef,
-    { type: subject, detail: msg },
+  throw createLog('error', {
+    def: errorDef,
+    params: { type: subject, detail: msg },
     subject,
-    {
+    context: {
       lineno,
       colno,
       phase: 'compile',
       templateName: compiler.templateName,
       lineBase: 'zero',
     }
-  );
+  });
 };
 
 export const tmpid = (compiler: { lastId: number }): string => {

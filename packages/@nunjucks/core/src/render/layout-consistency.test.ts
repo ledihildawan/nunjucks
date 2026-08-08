@@ -50,9 +50,9 @@ describe('error layout consistency', () => {
   });
 
   test('docs link appears inline in fix section when available', () => {
-    const err = createLog('error', getError('UNDEFINED_VARIABLE'), { name: 'foo' }, 'foo', {
+    const err = createLog('error', { def: getError('UNDEFINED_VARIABLE'), params: { name: 'foo' }, subject: 'foo', context: {
       lineno: 1, colno: 0, phase: 'render', lineBase: 'zero' as const
-    }) as TemplateError;
+    } }) as TemplateError;
     const html = formatError(err, { format: 'html', verbosity: 'full' });
 
     expect(html).toContain('docs-inline');

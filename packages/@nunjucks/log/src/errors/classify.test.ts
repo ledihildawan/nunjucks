@@ -4,9 +4,9 @@ import { ERROR_DEFINITIONS } from '@nunjucks/log';
 describe('error messages - sample output', () => {
   test('UNDEFINED_VARIABLE message includes subject', async () => {
     const { createLog } = await import('@nunjucks/log');
-    const err = createLog('error', ERROR_DEFINITIONS.UNDEFINED_VARIABLE, { name: 'user.something' }, 'user.something', {
+    const err = createLog('error', { def: ERROR_DEFINITIONS.UNDEFINED_VARIABLE, params: { name: 'user.something' }, subject: 'user.something', context: {
       lineno: 1, colno: 0, phase: 'render', lineBase: 'zero'
-    }) as import('@nunjucks/log').TemplateError;
+    } }) as import('@nunjucks/log').TemplateError;
     expect(err.subject).toBe('user.something');
     expect(err.message).toContain('user.something');
     expect(err.causes!.length).toBeGreaterThan(0);
@@ -15,27 +15,27 @@ describe('error messages - sample output', () => {
 
   test('NULL_VALUE error handles nested access', async () => {
     const { createLog } = await import('@nunjucks/log');
-    const err = createLog('error', ERROR_DEFINITIONS.NULL_VALUE, { accessPath: 'name', parent: 'user', state: 'null' }, 'name', {
+    const err = createLog('error', { def: ERROR_DEFINITIONS.NULL_VALUE, params: { accessPath: 'name', parent: 'user', state: 'null' }, subject: 'name', context: {
       lineno: 1, colno: 0, phase: 'render', lineBase: 'zero'
-    });
+    } });
     expect(err.message).toContain('name');
     expect(err.message).toContain('user');
   });
 
   test('FILE_NOT_FOUND has helpful message', async () => {
     const { createLog } = await import('@nunjucks/log');
-    const err = createLog('error', ERROR_DEFINITIONS.FILE_NOT_FOUND, { path: 'missing.njk' }, 'missing.njk', {
+    const err = createLog('error', { def: ERROR_DEFINITIONS.FILE_NOT_FOUND, params: { path: 'missing.njk' }, subject: 'missing.njk', context: {
       lineno: 1, colno: 0, phase: 'render', lineBase: 'zero'
-    }) as import('@nunjucks/log').TemplateError;
+    } }) as import('@nunjucks/log').TemplateError;
     expect(err.message).toContain('missing.njk');
     expect(err.fixCode).toBeTruthy();
   });
 
   test('UNDEFINED_FILTER has helpful fix', async () => {
     const { createLog } = await import('@nunjucks/log');
-    const err = createLog('error', ERROR_DEFINITIONS.UNDEFINED_FILTER, { name: 'myFilter' }, 'myFilter', {
+    const err = createLog('error', { def: ERROR_DEFINITIONS.UNDEFINED_FILTER, params: { name: 'myFilter' }, subject: 'myFilter', context: {
       lineno: 1, colno: 0, phase: 'render', lineBase: 'zero'
-    }) as import('@nunjucks/log').TemplateError;
+    } }) as import('@nunjucks/log').TemplateError;
     expect(err.message).toContain('myFilter');
     expect(err.fixCode).toContain('addFilter');
   });

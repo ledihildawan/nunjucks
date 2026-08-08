@@ -30,7 +30,7 @@ const createTemplateRenderer = (state: TemplateState, errorHandler: { enrichErro
 
     const renderingTemplates = state.env._renderingTemplates;
     if (renderingTemplates?.has(state.path)) {
-      throw createLog('error', getError('CIRCULAR_INCLUDE'), { path: state.path as string }, state.path as string, { phase: 'render' });
+      throw createLog('error', { def: getError('CIRCULAR_INCLUDE'), params: { path: state.path as string }, subject: state.path as string, context: { phase: 'render' } });
     }
 
     renderingTemplates?.add(state.path);

@@ -79,7 +79,7 @@ const normalizeIndex = (idx: number | null, len: number, defaultVal: number, ste
 
 export const slice = <T>(source: readonly T[] | string, start: number | null, stop: number | null, step: number | null): readonly T[] | string => {
   if (step === 0) {
-    throw createLog('error', ERROR_DEFINITIONS.SLICE_STEP, {}, 'step', { phase: 'render', lineBase: 'zero' });
+    throw createLog('error', { def: ERROR_DEFINITIONS.SLICE_STEP, params: {}, subject: 'step', context: { phase: 'render', lineBase: 'zero' } });
   }
 
   const len = source.length;

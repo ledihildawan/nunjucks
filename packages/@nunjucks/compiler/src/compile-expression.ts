@@ -81,12 +81,10 @@ export const assertType = (
   const matches = types.some(type => isMatchingType(typeName, type));
 
   if (!matches) {
-    throw createLog(
-      'error',
-      { name: 'ASSERT_TYPE_ERROR', message: `assertType: invalid type: ${typeName}` },
-      undefined,
-      typeName,
-      { phase: 'compile', lineno: node.lineno ?? null, colno: node.colno ?? null, lineBase: 'zero' },
-    );
+    throw createLog('error', {
+      def: { name: 'ASSERT_TYPE_ERROR', message: `assertType: invalid type: ${typeName}` },
+      subject: typeName,
+      context: { phase: 'compile', lineno: node.lineno ?? null, colno: node.colno ?? null, lineBase: 'zero' },
+    });
   }
 };

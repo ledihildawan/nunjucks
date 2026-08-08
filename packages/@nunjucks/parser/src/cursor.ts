@@ -83,7 +83,7 @@ export const peekTokenOrNull = (parserContext: ParserContext): Token | null => {
 
 export const pushToken = (parserContext: ParserContext, tok: Token | null): void => {
   if (parserContext.peeked) {
-    throw createLog('error', ERROR_DEFINITIONS.PARSER_PUSH_TOKEN, {}, null, { phase: 'parse', lineBase: 'zero' });
+    throw createLog('error', { def: ERROR_DEFINITIONS.PARSER_PUSH_TOKEN, params: {}, subject: null, context: { phase: 'parse', lineBase: 'zero' } });
   }
   parserContext.peeked = tok;
 };

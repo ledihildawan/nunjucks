@@ -9,21 +9,21 @@ type DynamicCallable = (...args: unknown[]) => unknown;
 
 const sandboxError = (errorDef: ErrorDefinitionEntry | undefined, key: string | symbol, options: ResolvedSandboxOptions): TemplateError | TemplateWarning => {
   if (!errorDef) {
-    return createLog('error', { name: 'SANDBOX_ERROR', message: `Sandbox error: ${String(key)}` }, undefined, String(key), { phase: 'render', lineBase: 'zero' });
+    return createLog('error', { def: { name: 'SANDBOX_ERROR', message: `Sandbox error: ${String(key)}` }, subject: String(key), context: { phase: 'render', lineBase: 'zero' } });
   }
   const env = options.environment || 'auto';
   const category = getBlockedKeyCategory(String(key), env);
-  return createLog('error', errorDef, { key: String(key), category: category ?? '', environment: env }, String(key), { phase: 'render', lineBase: 'zero' });
+  return createLog('error', { def: errorDef, params: { key: String(key), category: category ?? '', environment: env }, subject: String(key), context: { phase: 'render', lineBase: 'zero' } });
 };
 
 const blockedKeysError = (key: string, blockedKeys: readonly string[]): TemplateError | TemplateWarning => {
   const errorDef = ERROR_DEFINITIONS.BLOCKED_CONTEXT_KEYS;
   if (!errorDef) {
-    const err = createLog('error', { name: 'BLOCKED_CONTEXT_KEYS', message: `Blocked context key: ${key}` }, undefined, key, { phase: 'render', lineBase: 'zero' });
+    const err = createLog('error', { def: { name: 'BLOCKED_CONTEXT_KEYS', message: `Blocked context key: ${key}` }, subject: key, context: { phase: 'render', lineBase: 'zero' } });
     (err as { blockedKeys?: readonly string[] }).blockedKeys = blockedKeys;
     return err;
   }
-  const created = createLog('error', errorDef, { keys: blockedKeys.join(', ') }, key, { phase: 'render', lineBase: 'zero' });
+  const created = createLog('error', { def: errorDef, params: { keys: blockedKeys.join(', ') }, subject: key, context: { phase: 'render', lineBase: 'zero' } });
   if (created && typeof created === 'object') {
     (created as { blockedKeys?: readonly string[] }).blockedKeys = blockedKeys;
   }

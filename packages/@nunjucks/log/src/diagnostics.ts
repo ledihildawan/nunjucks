@@ -144,7 +144,7 @@ const createErrorObject = (
   input: ErrorObjectInput
 ): TemplateError => {
   const errorDef = buildErrorDef(metadata, input.resolvedProps);
-  const errorObj = createLog('error', errorDef, {}, metadata.subject, input.contextObj as Parameters<typeof createLog>[4]);
+  const errorObj = createLog('error', { def: errorDef, params: {}, subject: metadata.subject, context: input.contextObj });
   return Object.assign(errorObj, {
     templatePath: input.templatePath,
     sourceStartLine: input.sourceStartLine,

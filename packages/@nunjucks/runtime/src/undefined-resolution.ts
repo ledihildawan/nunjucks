@@ -27,16 +27,15 @@ interface EmitUndefinedWarningOptions {
 }
 
 const emitUndefinedWarning = (self: unknown, options: EmitUndefinedWarningOptions): void => {
-  const warning = createLog(
-    'warning',
-    {
+  const warning = createLog('warning', {
+    def: {
       name: options.name,
       message: options.message,
       pattern: MATCH_ANY_RE,
     },
-    {},
-    options.subject,
-    {
+    params: {},
+    subject: options.subject,
+    context: {
       lineno: options.lineno ?? null,
       colno: options.colno ?? null,
       phase: options.phase,
@@ -45,7 +44,7 @@ const emitUndefinedWarning = (self: unknown, options: EmitUndefinedWarningOption
       varName: options.varName,
       lineBase: 'zero',
     } as WarningContext,
-  );
+  });
   const collector = self && typeof self === 'object'
     ? (self as { __warnings__?: unknown[] }).__warnings__
     : undefined;

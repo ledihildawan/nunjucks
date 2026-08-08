@@ -121,9 +121,9 @@ describe('error messages - real scenarios', () => {
   });
 
   test('FILE_NOT_FOUND has clear path message', () => {
-    const err = createLog('error', getError('FILE_NOT_FOUND'), { path: 'nonexistent.njk' }, 'nonexistent.njk', {
+    const err = createLog('error', { def: getError('FILE_NOT_FOUND'), params: { path: 'nonexistent.njk' }, subject: 'nonexistent.njk', context: {
       lineno: 1, colno: 0, phase: 'load', lineBase: 'zero' as const
-    });
+    } });
 
     expect(err.code).toBe('FILE_NOT_FOUND');
     expect(err.subject).toBe('nonexistent.njk');
@@ -141,9 +141,9 @@ describe('error messages - real scenarios', () => {
   });
 
   test('UNKNOWN_BLOCK_TAG mentions tag name and closing tags', () => {
-    const err = createLog('error', getError('UNKNOWN_BLOCK_TAG'), { tag: 'unknownTag' }, 'unknownTag', {
+    const err = createLog('error', { def: getError('UNKNOWN_BLOCK_TAG'), params: { tag: 'unknownTag' }, subject: 'unknownTag', context: {
       lineno: 1, colno: 0, phase: 'parse', lineBase: 'zero' as const
-    });
+    } });
 
     expect(err.code).toBe('UNKNOWN_BLOCK_TAG');
     expect(err.subject).toBe('unknownTag');

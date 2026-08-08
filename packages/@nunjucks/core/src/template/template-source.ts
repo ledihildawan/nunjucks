@@ -14,7 +14,7 @@ const createFallbackEnv = (): Env => ({
   getTest: () => null,
   getTemplate(name: string, _eagerCompile?: boolean, _includeChain?: unknown, ignoreMissing?: boolean) {
     if (ignoreMissing) { return null; }
-    throw createLog('error', getError('FILE_NOT_FOUND'), { path: name }, name, { phase: 'load' });
+    throw createLog('error', { def: getError('FILE_NOT_FOUND'), params: { path: name }, subject: name, context: { phase: 'load' } });
   },
 });
 
@@ -48,11 +48,11 @@ const loadSource = (state: TemplateState, src: string | TemplateSource): void =>
         state.tmplStr = srcObj.value as string;
         break;
       default:
-        throw createLog('error', getError('TEMPLATE_INVALID_SOURCE'), { type: srcObj.type }, srcObj.type, { phase: 'load' });
+        throw createLog('error', { def: getError('TEMPLATE_INVALID_SOURCE'), params: { type: srcObj.type }, subject: srcObj.type, context: { phase: 'load' } });
     }
   } else if (isString(src)) {
     state.tmplStr = src;
   } else {
-    throw createLog('error', getError('TEMPLATE_SRC_STRING'), {}, null, { phase: 'load' });
+    throw createLog('error', { def: getError('TEMPLATE_SRC_STRING'), params: {}, subject: null, context: { phase: 'load' } });
   }
 };

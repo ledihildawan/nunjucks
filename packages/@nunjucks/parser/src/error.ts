@@ -43,13 +43,18 @@ export const error = (parserContext: ParserContext, msg: string, lineno?: number
   const resolvedLineno = needsResolve ? (peeked?.lineno ?? 0) : lineno;
   const resolvedColno = needsResolve ? (peeked?.colno ?? 0) : colno;
   const err = createLog('error', {
-    name: 'PARSER_ERROR',
-    message: () => msg,
-    pattern: MATCH_ANY_RE,
-    causes: inferCauses(msg),
-    fixCode: inferFix(msg),
-    fixComment: 'See the causes above for guidance',
-  }, {}, null, { lineno: resolvedLineno, colno: resolvedColno, phase: 'parse', lineBase: 'zero' });
+    def: {
+      name: 'PARSER_ERROR',
+      message: () => msg,
+      pattern: MATCH_ANY_RE,
+      causes: inferCauses(msg),
+      fixCode: inferFix(msg),
+      fixComment: 'See the causes above for guidance',
+    },
+    params: {},
+    subject: null,
+    context: { lineno: resolvedLineno, colno: resolvedColno, phase: 'parse', lineBase: 'zero' },
+  });
   if (sentinel) {
     Object.assign(err, { sentinel });
   }
@@ -67,5 +72,5 @@ export const errorAt = (
   subject?: string,
   extra?: Record<string, string>
 ): never => {
-  throw createLog('error', errorDef, extra ?? {}, subject ?? null, { lineno, colno, phase: 'parse', lineBase: 'zero' });
+  throw createLog('error', { def: errorDef, params: extra ?? {}, subject: subject ?? null, context: { lineno, colno, phase: 'parse', lineBase: 'zero' } });
 };
