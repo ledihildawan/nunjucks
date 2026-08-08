@@ -5,6 +5,13 @@ import type { TemplateError } from '@nunjucks/log';
 import { ok, err, type Result } from '@nunjucks/shared';
 import type { RenderConfig, RenderValidationError, ValidationErrorRequest } from './render-types.ts';
 
+const combineValidationErrors = <T extends { message: string }>(errors: readonly T[]): T | undefined => {
+  const primary = errors[0];
+  if (primary === undefined || errors.length === 1) { return primary; }
+  const additionalMessages = errors.slice(1).map((e) => e.message).join('; ');
+  return { ...primary, message: `${primary.message} (+${errors.length - 1} more: ${additionalMessages})` };
+};
+
 const buildValidationError = async ({
   validationError,
   stamps,
@@ -55,7 +62,7 @@ export const validateRender = async (template: unknown, { config, context }: Val
 
   const validation = validateConfig(config);
   if (!validation.valid) {
-    const ve = validation.errors[0];
+    const ve = combineValidationErrors(validation.errors);
     if (ve === undefined) {
       // WHY: validators guarantee a non-empty errors tuple when valid===false, so this branch is an impossible-state invariant, not a domain error.
       return err(createLog('error', { def: { name: 'VALIDATION_ERROR', message: 'Validation failed but no errors found' }, subject: null, context: { phase: 'render' } }));
@@ -79,7 +86,7 @@ export const validateRender = async (template: unknown, { config, context }: Val
 
   const contextValidation = validateRenderContext(context, config);
   if (!contextValidation.valid) {
-    const ce = contextValidation.errors[0];
+    const ce = combineValidationErrors(contextValidation.errors);
     if (ce === undefined) {
       // WHY: validators guarantee a non-empty errors tuple when valid===false, so this branch is an impossible-state invariant, not a domain error.
       return err(createLog('error', { def: { name: 'VALIDATION_ERROR', message: 'Context validation failed but no errors found' }, subject: null, context: { phase: 'render' } }));
@@ -94,7 +101,10 @@ export const validateRender = async (template: unknown, { config, context }: Val
 export const validateTemplateSource = async (templateSource: string, { config, context }: ValidationOptions): Promise<Result<void, TemplateError>> => {
   const templateValidation = validateTemplate(templateSource, config);
   if (!templateValidation.valid) {
-    const ve = templateValidation.errors[0];
+    const ve = combineValidationErrors(templateValidation.errors);
+    if (ve === undefined) {
+      return ok(undefined);
+    }
     return err(await buildValidationError({
       validationError: ve,
       stamps: { lineno: ve.lineno, colno: ve.colno, code: ve.code, subject: ve.subject },
