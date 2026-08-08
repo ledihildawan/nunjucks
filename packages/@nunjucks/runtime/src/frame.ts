@@ -3,7 +3,7 @@ export interface Frame {
   parent: Frame | undefined;
   topLevel: boolean;
   readonly isolateWrites: boolean | undefined;
-  set: (name: string, value: unknown, resolveUp?: boolean) => void;
+  set: (name: string, value: unknown, resolveUp?: boolean) => Frame;
   get: (name: string) => unknown;
   lookup: (name: string) => unknown;
   resolve: (name: string, forWrite?: boolean) => Frame | undefined;
@@ -11,93 +11,74 @@ export interface Frame {
   pop: () => Frame | undefined;
 }
 
-const setNestedValue = (target: Record<string, unknown>, path: string[], lastPart: string, value: unknown): void => {
-  const current = path.reduce<Record<string, unknown>>((acc, id) => {
-    if (!acc[id]) {
-      acc[id] = {};
-    }
-    return acc[id] as Record<string, unknown>;
-  }, target);
-  current[lastPart] = value;
+const setNestedValueImmutable = (target: Record<string, unknown>, path: string[], lastPart: string, value: unknown): Record<string, unknown> => {
+  if (path.length === 0) {
+    return { ...target, [lastPart]: value };
+  }
+  const head = path[0];
+  if (head === undefined) { return target; }
+  const rest = path.slice(1);
+  const child = (target[head] ?? {}) as Record<string, unknown>;
+  return { ...target, [head]: setNestedValueImmutable(child, rest, lastPart, value) };
 };
 
-export const createFrame = (parent?: Frame | null, isolateWrites?: boolean): Frame => {
-  const state: {
-    variables: Record<string, unknown>;
-    parent: Frame | undefined;
-    topLevel: boolean;
-    isolateWrites: boolean | undefined;
-  } = {
-    variables: Object.create(null),
+interface FrameState {
+  variables: Record<string, unknown>;
+  parent: Frame | undefined;
+  topLevel: boolean;
+  isolateWrites: boolean | undefined;
+}
+
+export const createFrame = (parent?: Frame | null, isolateWrites?: boolean, variables?: Record<string, unknown>, topLevel?: boolean): Frame => {
+  const state: FrameState = {
+    variables: variables ?? Object.create(null),
     parent: parent ?? undefined,
-    topLevel: false,
+    topLevel: topLevel ?? false,
     isolateWrites,
   };
 
   const frame: Frame = {
-    get variables(): Record<string, unknown> {
-      return state.variables;
-    },
-    set variables(value: Record<string, unknown>) {
-      state.variables = value;
-    },
-    get parent(): Frame | undefined {
-      return state.parent;
-    },
-    set parent(value: Frame | undefined) {
-      state.parent = value;
-    },
-    get topLevel(): boolean {
-      return state.topLevel;
-    },
-    set topLevel(value: boolean) {
-      state.topLevel = value;
-    },
-    get isolateWrites(): boolean | undefined {
-      return state.isolateWrites;
-    },
+    get variables(): Record<string, unknown> { return state.variables; },
+    set variables(value: Record<string, unknown>) { state.variables = value; },
+    get parent(): Frame | undefined { return state.parent; },
+    set parent(value: Frame | undefined) { state.parent = value; },
+    get topLevel(): boolean { return state.topLevel; },
+    set topLevel(value: boolean) { state.topLevel = value; },
+    get isolateWrites(): boolean | undefined { return state.isolateWrites; },
 
-    // WHY: the Frame is render-time lexical-scope execution state — set() mutates variables in place, and the resolveUp path writes through to PARENT frames up the scope chain (shared by reference). This shared-reference scope-chain semantics is the imperative shell of template rendering (the guide endorses Functional Core / Imperative Shell); making it immutable would require threading new parent frames up the chain on every write — a deep execution-model redesign that is over-engineering for a guide-allowed shell.
-    set(name: string, value: unknown, resolveUp?: boolean): void {
+    // WHY: immutable scope-chain write — returns a NEW frame rather than mutating in place. The resolveUp path functionally rebuilds the chain from the resolved (parent) frame up to the current frame (a persistent-list update), so the caller reassigns `frame = frame.set(...)` and the new binding threads through without shared-reference mutation.
+    set(name: string, value: unknown, resolveUp?: boolean): Frame {
       const parts = name.split('.');
       const [firstPart] = parts;
       const lastPart = parts.at(-1);
-      if (firstPart === undefined || lastPart === undefined) { return; }
+      if (firstPart === undefined || lastPart === undefined) { return frame; }
 
       if (resolveUp) {
         const resolved = frame.resolve(firstPart, true);
-        if (resolved) {
-          resolved.set(name, value);
-          return;
+        if (resolved && resolved !== frame) {
+          const newResolvedVars = setNestedValueImmutable(resolved.variables, parts.slice(0, -1), lastPart, value);
+          return rebuildChain(frame, resolved, newResolvedVars);
         }
       }
 
-      setNestedValue(state.variables, parts.slice(0, -1), lastPart, value);
+      const newVariables = setNestedValueImmutable(state.variables, parts.slice(0, -1), lastPart, value);
+      return createFrame(state.parent, state.isolateWrites, newVariables, state.topLevel);
     },
 
     get(name: string): unknown {
       const value = state.variables[name];
-      if (value !== undefined) {
-        return value;
-      }
-      return null;
+      return value !== undefined ? value : null;
     },
 
     lookup(name: string): unknown {
       const value = state.variables[name];
-      if (value !== undefined) {
-        return value;
-      }
+      if (value !== undefined) { return value; }
       return state.parent?.lookup(name);
     },
 
     resolve(name: string, forWrite?: boolean): Frame | undefined {
       if (forWrite && state.isolateWrites) { return; }
-
-      const value = state.variables[name];
-      if (value !== undefined) {
-        return frame;
-      }
+      if (state.variables[name] !== undefined) { return frame; }
       return state.parent?.resolve(name);
     },
 
@@ -111,6 +92,24 @@ export const createFrame = (parent?: Frame | null, isolateWrites?: boolean): Fra
   };
 
   return frame;
+};
+
+const rebuildChain = (root: Frame, target: Frame, newTargetVariables: Record<string, unknown>): Frame => {
+  const path: Frame[] = [];
+  let cur: Frame | undefined = root;
+  while (cur && cur !== target) {
+    path.push(cur);
+    cur = cur.parent;
+  }
+  if (!cur) { return root; }
+
+  let newFrame = createFrame(target.parent, target.isolateWrites, newTargetVariables, target.topLevel);
+  for (let i = path.length - 1; i >= 0; i--) {
+    const node = path[i];
+    if (!node) { continue; }
+    newFrame = createFrame(newFrame, node.isolateWrites, node.variables, node.topLevel);
+  }
+  return newFrame;
 };
 
 export const lookup = (frame: Frame, name: string): unknown => frame.lookup(name);

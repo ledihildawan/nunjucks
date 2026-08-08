@@ -34,7 +34,7 @@ describe('compileVariableDeclaration', () => {
     const joined = c.emitted.join('');
     expect(joined).toContain('let t_1 =');
     expect(joined).toContain('V;');
-    expect(joined).toContain('frame.set("x", t_1, true);');
+    expect(joined).toContain('frame = frame.set("x", t_1, true);');
   });
 });
 
@@ -45,7 +45,7 @@ describe('compileVariableAssignment', () => {
     const joined = c.emitted.join('');
     expect(joined).toContain('ReferenceError');
     expect(joined).toContain('Use x := value to declare it');
-    expect(joined).toContain('frame.set("x",');
+    expect(joined).toContain('frame = frame.set("x",');
   });
 });
 
@@ -62,7 +62,7 @@ describe('compileCompoundAssignment', () => {
     const joined = c.emitted.join('');
     expect(joined).toContain('runtime.contextOrFrameLookup(context, frame, "count")');
     expect(joined).toContain('t_2 = t_1 +');
-    expect(joined).toContain('frame.set("count",');
+    expect(joined).toContain('frame = frame.set("count",');
   });
 
   test('//= emits Math.floor division', () => {

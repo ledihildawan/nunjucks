@@ -36,7 +36,7 @@ describe('compileCapture', () => {
       body: output(ZERO_LOC, [templateData(ZERO_LOC, 'x')]),
     } as never, frame);
     const joined = c.emitted.join('');
-    expect(joined).toContain('frame.set("captured", await (async () => {');
+    expect(joined).toContain('frame = frame.set("captured", await (async () => {');
     expect(joined).toContain('return output;');
     expect(joined).toContain('})());');
   });

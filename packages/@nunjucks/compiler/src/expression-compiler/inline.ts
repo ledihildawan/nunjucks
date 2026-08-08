@@ -28,7 +28,7 @@ export const compileWalrus = (compiler: Compiler, node: WalrusNode, frame: Frame
     compiler.emit(`let ${valueId} = `);
     compiler.compile(node.value, frame);
     compiler.emit(';');
-    compiler.emit(`frame.set(${JSON.stringify(target.value)}, ${valueId}, true);`);
+    compiler.emit(`frame = frame.set(${JSON.stringify(target.value)}, ${valueId}, true);`);
     compiler.emit(`return ${valueId};`);
     compiler.emit('})())');
   } else if (isArrayPattern(node.target) || isObjectPattern(node.target)) {

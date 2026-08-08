@@ -11,7 +11,7 @@ export const compileCapture = (
   const varName = node.name;
 
   if (varName) {
-    compiler.emitLine(`frame.set("${varName}", await (async () => {`);
+    compiler.emitLine(`frame = frame.set("${varName}", await (async () => {`);
   } else {
     compiler.emitLine('(async () => {');
   }

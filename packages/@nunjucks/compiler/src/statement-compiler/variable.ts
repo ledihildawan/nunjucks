@@ -43,7 +43,7 @@ const compileVariableDeclaration = (compiler: Compiler, node: VariableDeclNode, 
     compiler.emitLine(';');
 
     if (name !== null) {
-      compiler.emitLine(`frame.set("${name}", ${valueId}, true);`);
+      compiler.emitLine(`frame = frame.set("${name}", ${valueId}, true);`);
     }
   }
 };
@@ -70,7 +70,7 @@ const compileVariableAssignment = (compiler: Compiler, node: VariableDeclNode, f
       compiler.compileExpression(node.value, frame);
       compiler.emitLine(';');
 
-      compiler.emitLine(`frame.set("${name}", ${valueId}, true);`);
+      compiler.emitLine(`frame = frame.set("${name}", ${valueId}, true);`);
     }
   }
 };
@@ -154,7 +154,7 @@ const compileCompoundAssignment = (compiler: Compiler, node: CompoundAssignNode,
     emitGenericCompoundAssignment({ compiler, node, frame, currentId, valueId });
   }
 
-  compiler.emit(`frame.set(${key}, ${valueId}, true);`);
+  compiler.emit(`frame = frame.set(${key}, ${valueId}, true);`);
   compiler.emit(`context.setVariable(${key}, ${valueId});`);
   compiler.emit(`return ${valueId};`);
   compiler.emit('})())');

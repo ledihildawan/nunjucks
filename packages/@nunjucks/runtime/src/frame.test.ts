@@ -17,8 +17,8 @@ describe('Frame', () => {
   });
 
   test('set stores a value', () => {
-    const f = createFrame();
-    f.set('name', 'Alice');
+    let f = createFrame();
+    f = f.set('name', 'Alice');
     expect(f.get('name')).toBe('Alice');
   });
 
@@ -28,45 +28,46 @@ describe('Frame', () => {
   });
 
   test('set stores nested dotted path', () => {
-    const f = createFrame();
-    f.set('user.name', 'Bob');
+    let f = createFrame();
+    f = f.set('user.name', 'Bob');
     expect(f.get('user')).toEqual({ name: 'Bob' });
   });
 
   test('set with resolveUp writes to parent frame', () => {
-    const parent = createFrame();
-    parent.set('existing', 'val');
-    const f = createFrame(parent);
-    f.set('existing', 'newval', true);
-    expect(parent.get('existing')).toBe('newval');
+    let parent = createFrame();
+    parent = parent.set('existing', 'val');
+    let f = createFrame(parent);
+    f = f.set('existing', 'newval', true);
+    expect(f.lookup('existing')).toBe('newval');
+    expect(f.get('existing')).toBeNull();
   });
 
   test('set with resolveUp uses own frame if parent has no match', () => {
     const parent = createFrame();
-    const f = createFrame(parent);
-    f.set('own', 'val', true);
+    let f = createFrame(parent);
+    f = f.set('own', 'val', true);
     expect(parent.get('own')).toBeNull();
     expect(f.get('own')).toBe('val');
   });
 
   test('lookup finds own variables', () => {
-    const f = createFrame();
-    f.set('x', 1);
+    let f = createFrame();
+    f = f.set('x', 1);
     expect(f.lookup('x')).toBe(1);
   });
 
   test('lookup finds parent variables', () => {
-    const parent = createFrame();
-    parent.set('x', 1);
+    let parent = createFrame();
+    parent = parent.set('x', 1);
     const f = createFrame(parent);
     expect(f.lookup('x')).toBe(1);
   });
 
   test('lookup prefers own variable over parent', () => {
-    const parent = createFrame();
-    parent.set('x', 1);
-    const f = createFrame(parent);
-    f.set('x', 2);
+    let parent = createFrame();
+    parent = parent.set('x', 1);
+    let f = createFrame(parent);
+    f = f.set('x', 2);
     expect(f.lookup('x')).toBe(2);
   });
 
@@ -76,15 +77,15 @@ describe('Frame', () => {
   });
 
   test('resolve returns frame that owns the variable', () => {
-    const parent = createFrame();
-    parent.set('x', 1);
+    let parent = createFrame();
+    parent = parent.set('x', 1);
     const f = createFrame(parent);
     expect(f.resolve('x')).toBe(parent);
   });
 
   test('resolve returns own frame for own variable', () => {
-    const f = createFrame();
-    f.set('x', 1);
+    let f = createFrame();
+    f = f.set('x', 1);
     expect(f.resolve('x')).toBe(f);
   });
 
@@ -94,22 +95,22 @@ describe('Frame', () => {
   });
 
   test('resolve with forWrite=true and isolateWrites stops at own frame', () => {
-    const parent = createFrame();
-    parent.set('x', 1);
+    let parent = createFrame();
+    parent = parent.set('x', 1);
     const f = createFrame(parent, true);
     expect(f.resolve('x', true)).toBeUndefined();
   });
 
   test('resolve with forWrite=false ignores isolateWrites', () => {
-    const parent = createFrame();
-    parent.set('x', 1);
+    let parent = createFrame();
+    parent = parent.set('x', 1);
     const f = createFrame(parent, true);
     expect(f.resolve('x')).toBe(parent);
   });
 
   test('push creates child frame', () => {
-    const f = createFrame();
-    f.set('x', 1);
+    let f = createFrame();
+    f = f.set('x', 1);
     const child = f.push();
     expect(child.parent).toBe(f);
     expect(child.lookup('x')).toBe(1);

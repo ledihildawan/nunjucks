@@ -13,7 +13,7 @@ export const compileImport = (compiler: Compiler, node: ImportNode, frame: Frame
     ');');
 
   if (frame.parent) {
-    compiler.emitLine(`frame.set("${target}", ${id}_exported);`);
+    compiler.emitLine(`frame = frame.set("${target}", ${id}_exported);`);
   } else {
     compiler.emitLine(`context.setVariable("${target}", ${id}_exported);`);
   }

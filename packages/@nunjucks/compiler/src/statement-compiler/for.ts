@@ -27,7 +27,7 @@ const emitLoopBindings = ({ compiler, i, len }: { compiler: Compiler; i: string;
   ];
 
   forEach(bindings, (b) => {
-    compiler.emitLine(`frame.set("loop.${b.name}", ${b.val});`);
+    compiler.emitLine(`frame = frame.set("loop.${b.name}", ${b.val});`);
   });
 };
 
@@ -74,7 +74,7 @@ const compileFlatArrayBinding = ({ ctx: compiler, nameNode, frame, arr, i, len, 
       const tid = compiler.tmpid();
       compiler.emitLine(`let ${tid} = ${itemId}[${u}];`);
       const childValue = child.value as string;
-      compiler.emitLine(`frame.set("${childValue}", ${tid});`);
+      compiler.emitLine(`frame = frame.set("${childValue}", ${tid});`);
       frame.set(childValue, tid);
     });
   }
@@ -100,8 +100,8 @@ const compileFlatObjectBinding = ({ ctx: compiler, nameNode, frame, arr, i, len,
   compiler.emitLine(`for(let ${k} in ${arr}) {`);
   compiler.emitLine(`${i}++;`);
   compiler.emitLine(`let ${v} = ${arr}[${k}];`);
-  compiler.emitLine(`frame.set("${keyValue}", ${k});`);
-  compiler.emitLine(`frame.set("${valValue}", ${v});`);
+  compiler.emitLine(`frame = frame.set("${keyValue}", ${k});`);
+  compiler.emitLine(`frame = frame.set("${valValue}", ${v});`);
 
   emitLoopBody({ compiler, node, frame, i, len });
   compiler.emitLine('}');
@@ -154,7 +154,7 @@ const compileSimpleBinding = ({ ctx: compiler, nameNode, frame, arr, i, len, nod
   compiler.emitLine(`${len} = ${arr}.length;`);
   compiler.emitLine(`for(let ${i}=0; ${i} < ${arr}.length; ${i}++) {`);
   compiler.emitLine(`let ${v} = ${arr}[${i}];`);
-  compiler.emitLine(`frame.set("${nameValue}", ${v});`);
+  compiler.emitLine(`frame = frame.set("${nameValue}", ${v});`);
 
   emitLoopBody({ compiler, node, frame, i, len });
 

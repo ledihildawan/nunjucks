@@ -36,7 +36,7 @@ describe('compileSuper', () => {
     const baseSet = frame.set;
     frame.set = (k: string, v: unknown) => {
       setCalls.push([k, String(v)]);
-      baseSet(k, v);
+      return baseSet(k, v);
     };
     compileSuper(asCompiler(ctx), { blockName: 'content', symbol: { value: 'super' }, lineno: 2, colno: 4 } as never, frame);
     expect(emitted[0]).toBe('lineno = 2; colno = 4;');

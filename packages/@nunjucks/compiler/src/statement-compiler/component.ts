@@ -31,7 +31,7 @@ const buildComponentArgNames = (args: readonly Node[], kwargs: ChildrenNode | nu
 const emitComponentArgBindings = (compiler: Compiler, args: readonly Node[], kwargs: ChildrenNode | null, currFrame: Frame): void => {
   forEach(args, argument => {
     const argValue = argument.value as string;
-    compiler.emitLine(`frame.set("${argValue}", l_${argValue});`);
+    compiler.emitLine(`frame = frame.set("${argValue}", l_${argValue});`);
     currFrame.set(argValue, `l_${argValue}`);
   });
 
@@ -40,7 +40,7 @@ const emitComponentArgBindings = (compiler: Compiler, args: readonly Node[], kwa
     forEach(kwargs.children, pair => {
       const name = pairKey(pair);
       const isPositional = positionalNames.has(name);
-      compiler.emit(`frame.set("${name}", `);
+      compiler.emit(`frame = frame.set("${name}", `);
       compiler.emit(`Object.hasOwn(kwargs, "${name}")`);
       compiler.emit(` ? kwargs["${name}"] : `);
       if (isPositional) {
@@ -73,8 +73,9 @@ const emitComponentContext = (
   compiler.emitLines(
     'const { slots: __slots, keywords: __keywords, ...__props } = kwargs;',
     `let ${ccId} = runtime.createComponentContext(${propsCode}, runtime.createSlotContext({ ${fallbackEntries.join(', ')} }, __slots));`,
-    'for (const [__k, __v] of Object.entries(__props)) { if (__v !== undefined) frame.set(__k, __v); }',
-    `frame.set("slot", ${ccId}.slots);`);
+    'for (const [__k, __v] of Object.entries(__props)) { if (__v !== undefined) frame = frame.set(__k, __v); }',
+    `frame = frame.set("slot", ${ccId}.slots);`,
+    `frame = frame.set("children", ${ccId}.slots("default"));`);
   return ccId;
 };
 
@@ -123,7 +124,7 @@ export const compileComponentPublic = (compiler: Compiler, node: ComponentNode, 
   frame.set(name, funcId);
 
   if (frame.parent) {
-    compiler.emitLine(`frame.set("${name}", ${funcId});`);
+    compiler.emitLine(`frame = frame.set("${name}", ${funcId});`);
   } else {
     if (name[0] !== '_') {
       compiler.emitLine(`context.addExport("${name}");`);

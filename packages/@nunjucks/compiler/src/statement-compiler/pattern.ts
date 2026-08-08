@@ -31,7 +31,7 @@ const objectRest = (source: string, restId: string): string =>
 
 const compileAssignToFrame = ({ ctx: compiler, frame, registerFrame }: DestructuringContext, name: string, source: string): void => {
   const existingId = registerFrame ? frame.lookup(name) : null;
-  compiler.emitLine(`frame.set(${JSON.stringify(name)}, ${source}, true);`);
+  compiler.emitLine(`frame = frame.set(${JSON.stringify(name)}, ${source}, true);`);
   if (name[0] !== '_') {
     compiler.emitLine('if(frame.topLevel) {');
     compiler.emitLine(`context.addExport(${JSON.stringify(name)});`);

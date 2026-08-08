@@ -52,7 +52,7 @@ describe('compileWalrus', () => {
     } as never, frame);
     const joined = c.emitted.join('');
     expect(joined).toContain('let t_1 = V;');
-    expect(joined).toContain('frame.set("x", t_1, true);');
+    expect(joined).toContain('frame = frame.set("x", t_1, true);');
     expect(joined).toContain('return t_1;');
   });
 

@@ -23,7 +23,7 @@ const compileIncrementDecrement = (compiler: Compiler, node: IncDecNode, _frame:
       compiler.emit(`let result = ${id};`);
     }
 
-    compiler.emit(`frame.set("${varName}", ${id}, true);`);
+    compiler.emit(`frame = frame.set("${varName}", ${id}, true);`);
     compiler.emit(`context.setVariable("${varName}", ${id});`);
     compiler.emit('return result;');
     compiler.emit('})())');

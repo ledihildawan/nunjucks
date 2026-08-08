@@ -20,5 +20,6 @@ export const compileSuper = (compiler: Compiler, node: SuperNode, frame: Frame):
   emitLineLocation(compiler, node.lineno, node.colno);
   compiler.emitLine(`${id} = await context.getSuper(env, "${name}", b_${name}, frame, runtime, ${node.lineno}, ${node.colno});`);
   compiler.emitLine(`${id} = runtime.markSafe(${id});`);
+  compiler.emitLine(`frame = frame.set("${id}", ${id});`);
   frame.set(id, id);
 };

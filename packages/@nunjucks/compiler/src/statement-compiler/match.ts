@@ -24,7 +24,7 @@ export const compileMatch = (compiler: Compiler, node: MatchNode, parentFrame: F
     } else if (isSymbol(pattern)) {
       const name = pattern.value;
       if (name !== '_') {
-        compiler.emitLine(`frame.set("${name}", ${targetVar});`);
+        compiler.emitLine(`frame = frame.set("${name}", ${targetVar});`);
         frame.set(name, targetVar);
       }
     } else if (isArray(pattern) || isDict(pattern)) {

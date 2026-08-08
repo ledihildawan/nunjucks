@@ -13,7 +13,7 @@ export const compileScope = (compiler: Compiler, node: ScopeNode, frame: Frame):
       compiler.emitLine(`let ${valueId} = `);
       compiler.compileExpression(pair.value, frame);
       compiler.emitLine(';');
-      compiler.emitLine(`frame.set("${name}", ${valueId}, true);`);
+      compiler.emitLine(`frame = frame.set("${name}", ${valueId}, true);`);
     });
   }
 

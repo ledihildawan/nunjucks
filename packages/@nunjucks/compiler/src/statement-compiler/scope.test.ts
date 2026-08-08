@@ -30,7 +30,7 @@ describe('compileScope', () => {
     } as never, frame);
     const joined = c.emitted.join('');
     expect(joined).toContain('frame = frame.push(true);');
-    expect(joined).toContain('frame.set("x", t_1, true);');
+    expect(joined).toContain('frame = frame.set("x", t_1, true);');
     expect(joined).toContain('frame = frame.pop();');
   });
 

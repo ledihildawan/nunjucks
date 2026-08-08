@@ -49,8 +49,8 @@ describe('compileLiteral', () => {
 describe('compileSymbol', () => {
   test('emits frame.lookup result when present', () => {
     const c = makeCompiler();
-    const frameWith = createFrame();
-    frameWith.set('x', 't_99');
+    let frameWith = createFrame();
+    frameWith = frameWith.set('x', 't_99');
     compileSymbol(asCompiler(c), symbol(ZERO_LOC, 'x'), frameWith);
     expect(c.emitted).toEqual(['t_99']);
   });

@@ -29,7 +29,7 @@ const compileImportedName = (compiler: Compiler, nameNode: Node, importedId: str
   frame.set(alias, id);
 
   if (frame.parent) {
-    compiler.emitLine(`frame.set("${alias}", ${id});`);
+    compiler.emitLine(`frame = frame.set("${alias}", ${id});`);
   } else {
     compiler.emitLine(`context.setVariable("${alias}", ${id});`);
   }
