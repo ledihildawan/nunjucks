@@ -4,9 +4,7 @@
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./create-log": "./src/create-log/create-log.ts",
-    "./diagnostics": "./src/diagnostics.ts"
+    ".": "./src/index.ts"
   },
   "dependencies": {
     "@nunjucks/shared": "workspace:*",
