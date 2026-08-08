@@ -1,8 +1,5 @@
-export { createLog, prettifyError } from './create-log/create-log.ts';
-export type { TemplateError, TemplateWarning, ErrorContext, WarningContext, ErrorDefinitionEntry, IncludeChain } from './create-log/create-log.ts';
-export { formatError } from './create-log/create-log-error.ts';
-export { injectWarningsScript } from './warning/collector.ts';
-export type { Warning } from '@nunjucks/error-catalog';
+export { createLog, prettifyError, formatError, normalizeErrorMetadata, injectWarningsScript } from '@nunjucks/error-formatter';
+export type { TemplateError, TemplateWarning, ErrorContext, WarningContext, ErrorDefinitionEntry, IncludeChain } from '@nunjucks/error-formatter';
 export { ERROR_DEFINITIONS, getError } from '@nunjucks/error-catalog';
-export { normalizeErrorMetadata } from './normalize.ts';
+export type { Warning } from '@nunjucks/error-catalog';
 export { findContextKeyPosition, wrapWithLog } from './diagnostics.ts';

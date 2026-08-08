@@ -8,6 +8,7 @@
     "packages/@nunjucks/shared",
     "packages/@nunjucks/error-catalog",
     "packages/@nunjucks/error-renderer",
+    "packages/@nunjucks/error-formatter",
     "packages/@nunjucks/log",
     "packages/@nunjucks/lexer",
     "packages/@nunjucks/nodes",

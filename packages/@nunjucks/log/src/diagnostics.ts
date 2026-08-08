@@ -1,5 +1,4 @@
-import { createLog, type TemplateError } from './create-log/create-log.ts';
-import { normalizeErrorMetadata } from './normalize.ts';
+import { createLog, normalizeErrorMetadata, type TemplateError } from '@nunjucks/error-formatter';
 import { resolveLocation } from './error-location.ts';
 import { MATCH_ANY_RE, isKeyedObject } from '@nunjucks/shared';
 import { DEFAULT_IDE } from '@nunjucks/error-renderer';

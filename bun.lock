@@ -67,6 +67,16 @@
         "remeda": "^2.39.0",
       },
     },
+    "packages/@nunjucks/error-formatter": {
+      "name": "@nunjucks/error-formatter",
+      "version": "1.0.0",
+      "dependencies": {
+        "@nunjucks/error-catalog": "workspace:*",
+        "@nunjucks/error-renderer": "workspace:*",
+        "@nunjucks/shared": "workspace:*",
+        "remeda": "^2.39.0",
+      },
+    },
     "packages/@nunjucks/error-renderer": {
       "name": "@nunjucks/error-renderer",
       "version": "1.0.0",
@@ -114,6 +124,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@nunjucks/error-catalog": "workspace:*",
+        "@nunjucks/error-formatter": "workspace:*",
         "@nunjucks/error-renderer": "workspace:*",
         "@nunjucks/shared": "workspace:*",
         "picocolors": "^1.1.1",
@@ -236,6 +247,8 @@
     "@nunjucks/core": ["@nunjucks/core@workspace:packages/@nunjucks/core"],
 
     "@nunjucks/error-catalog": ["@nunjucks/error-catalog@workspace:packages/@nunjucks/error-catalog"],
+
+    "@nunjucks/error-formatter": ["@nunjucks/error-formatter@workspace:packages/@nunjucks/error-formatter"],
 
     "@nunjucks/error-renderer": ["@nunjucks/error-renderer@workspace:packages/@nunjucks/error-renderer"],
 

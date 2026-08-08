@@ -1,0 +1,16 @@
+{
+  "name": "@nunjucks/error-formatter",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@nunjucks/shared": "workspace:*",
+    "@nunjucks/error-catalog": "workspace:*",
+    "@nunjucks/error-renderer": "workspace:*",
+    "remeda": "^2.39.0"
+  },
+  "description": "Error/warning object construction and normalization for Nunjucks"
+}
