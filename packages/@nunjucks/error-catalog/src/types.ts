@@ -15,7 +15,7 @@ export interface ErrorLike {
   severity?: 'error' | 'warning' | 'info';
 }
 
-export const isErrorLike = (value: unknown): value is ErrorLike =>
+export const isObjectValue = (value: unknown): value is ErrorLike =>
   typeof value === 'object' && value !== null;
 
 export interface Warning {

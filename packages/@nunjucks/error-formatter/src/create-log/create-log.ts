@@ -128,6 +128,7 @@ const createFromLegacyData = (type: LogType, legacyLogData: LegacyLogData): Temp
 };
 
 function assertLogType(type: string): asserts type is LogType {
+  // WHY: invariant — createLog is internal and only ever called with 'error' or 'warning'; reaching here is a programming bug, not an expected failure.
   if (type !== 'error' && type !== 'warning') {
     throw new Error(`Unknown log type: ${type}`);
   }

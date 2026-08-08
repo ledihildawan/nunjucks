@@ -74,6 +74,7 @@ const existsAndWithinBase = async (basePath: string, fullPath: string): Promise<
   }
 
   // WHY: containment is checked on realpath-resolved values so symlinks inside the base that point outside are rejected; the earlier startsWith check could be defeated by a sibling directory sharing a name prefix (e.g. /app/templates vs /app/templates-secret).
+  // WHY: realpath failure after stat-success (EACCES/ELOOP) means containment cannot be verified — fail closed (treat as not loadable) rather than risk serving a path that escapes the base.
   try {
     const { realBase, realFull } = await resolveRealPaths(basePath, fullPath);
     return isWithinBase(realBase, realFull);

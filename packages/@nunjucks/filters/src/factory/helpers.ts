@@ -1,6 +1,6 @@
 import { isNonNullish, isNullish } from 'remeda';
 import { isSafeString, markSafe, copySafeness } from '@nunjucks/runtime';
-import { ok, err, escapeHtml, MATCH_ANY_RE, type Result } from '@nunjucks/shared';
+import { ok, err, isOk, escapeHtml, MATCH_ANY_RE, type Result } from '@nunjucks/shared';
 import { createLog } from '@nunjucks/log';
 import type { ErrorDefinitionEntry, TemplateError } from '@nunjucks/log';
 import type { FilterContext, SafeString } from './types.ts';
@@ -72,6 +72,12 @@ const validateItemsHaveAttr = <T>(items: unknown[], attr: string, errorDef: Erro
   return ok(items as Record<string, T>[]);
 };
 
-export { makeFilterError, normalize, safeString, safeHtml, preserveSafe, requireArrayError, requireNumberError, validateItemsHaveAttr };
+const validateItemsOrThrow = <T>(items: unknown[], attr: string, errorDef: ErrorDefinitionEntry | undefined): Record<string, T>[] => {
+  const validated = validateItemsHaveAttr<T>(items, attr, errorDef);
+  if (isOk(validated)) { return validated.value; }
+  throw validated.error;
+};
+
+export { makeFilterError, normalize, safeString, safeHtml, preserveSafe, requireArrayError, requireNumberError, validateItemsHaveAttr, validateItemsOrThrow };
 
 export { isSafeString } from './types.ts';

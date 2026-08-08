@@ -8,7 +8,7 @@ import { stripMarkdown, getSeverityLabel, getExtrasPart, formatStackLine, format
 import { renderContextAnsi } from './context-helpers';
 import { formatSourceTrace } from './source-helpers';
 import { getErrorMessage } from '../internal/formatting/message.ts';
-import { isErrorLike } from '@nunjucks/error-catalog';
+import { isObjectValue } from '@nunjucks/error-catalog';
 
 export { formatCausesAnsi, formatFixAnsi, getErrorMessage, formatMediumAnsi, extractAnsiErrorParts, formatFullAnsi, BULLET };
 
@@ -67,7 +67,7 @@ interface AnsiErrorParts {
 
 const extractAnsiErrorParts = (error: unknown, templatePath?: string, lineno?: number | null, colno?: number | null): AnsiErrorParts => {
   const parts = mergeErrorParts(error);
-  const errObj = isErrorLike(error) ? error : {};
+  const errObj = isObjectValue(error) ? error : {};
   return {
     ...parts,
     severity: errObj.severity,
@@ -90,13 +90,13 @@ const formatFullAnsi = (message: string, input: FullAnsiInput): string => {
   const { parts, ide, sourceTrace, renderContext, error } = input;
   const { causes, fixCode, fixComment, documentationUrl, severity, path } = parts;
   const location = toDisplayLocation(parts.displayLineno, parts.displayColno, parts.lineBase);
-  const stack = (isErrorLike(error) ? error.stack : undefined) ?? '';
+  const stack = (isObjectValue(error) ? error.stack : undefined) ?? '';
   const formattedStack = pipe(stack, split('\n'), map(line => formatStackLine(line, ide)), join('\n'));
   const locationStr = formatLocationString(path, location, ide);
   const severityLabel = getSeverityLabel(severity);
   const header = `${severityLabel} ${message}${locationStr}\n`;
 
-  const blockedKeys = (isErrorLike(error) ? error.blockedKeys : undefined) ?? null;
+  const blockedKeys = (isObjectValue(error) ? error.blockedKeys : undefined) ?? null;
   const causesStr = formatCausesAnsi(causes);
   const fixStr = formatFixAnsi(fixCode, fixComment, documentationUrl);
   const outputParts: string[] = [

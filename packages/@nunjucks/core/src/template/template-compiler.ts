@@ -20,6 +20,7 @@ const createTemplateCompiler = ({ getState, commit }: TemplateStateCell) => {
       return state.tmplProps;
     }
     const codeResult = compileToCode({ source: state.tmplStr ?? '', templateName: state.path ?? '', undefinedMode: state.env.opts.undefined as UndefinedMode | undefined, parseOpts: state.env.opts as ParseOptions });
+    // WHY: compileToCode returns Result, but this template-include path feeds safeCompile which prettifies+rethrows for the include system; unwrapping here keeps that throw-based shell intact while the render() path uses Result end-to-end.
     if (isErr(codeResult)) { throw codeResult.error; }
     const compiled = new Function(codeResult.value)();
     if (!isCompiledTemplateExports(compiled)) {

@@ -1,8 +1,7 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { isPlainObject, isString, keys, pipe, range, reduce, sum as sumValues } from 'remeda';
 import { isSafeString, makeComponent } from '@nunjucks/runtime';
-import { makeFilterError, isArray, requireArrayError, validateItemsHaveAttr } from '../factory/index.ts';
-import { isErr } from '@nunjucks/shared';
+import { makeFilterError, isArray, requireArrayError, validateItemsOrThrow } from '../factory/index.ts';
 import { getAttrGetter } from './attributes.ts';
 
 export const first = (values: unknown): unknown => {
@@ -103,9 +102,8 @@ export const slice = (values: unknown, slices: number, fillWith?: unknown): unkn
 };
 
 const sumWithAttribute = (items: unknown[], attr: string, start: number): number => {
-  const validated = validateItemsHaveAttr<unknown>(items, attr, ERROR_DEFINITIONS.SUM_FILTER_ATTR);
-  if (isErr(validated)) { throw validated.error; }
-  const values = validated.value.map((item) => item[attr]);
+  const typedItems = validateItemsOrThrow<unknown>(items, attr, ERROR_DEFINITIONS.SUM_FILTER_ATTR);
+  const values = typedItems.map((item) => item[attr]);
   if (!values.every((value): value is number => typeof value === 'number')) {
     throw makeFilterError({ errorDef: ERROR_DEFINITIONS.SUM_FILTER_ATTR, params: { attr }, subject: attr, fallbackMessage: `Attribute "${attr}" must contain numbers` });
   }
@@ -176,8 +174,7 @@ const createSortComparator = ({ sortAttr, sortReverse, caseSens }: SortOptions) 
 const sortArray = (values: unknown[], options: SortOptions): unknown[] => {
   const { sortAttr, sortReverse, caseSens } = options;
   if (sortAttr) {
-    const validated = validateItemsHaveAttr<unknown>(values, sortAttr, ERROR_DEFINITIONS.SORT_FILTER_ATTR);
-    if (isErr(validated)) { throw validated.error; }
+    validateItemsOrThrow<unknown>(values, sortAttr, ERROR_DEFINITIONS.SORT_FILTER_ATTR);
   }
   const array = [...values];
   const comparator = createSortComparator({ sortAttr, sortReverse, caseSens });
