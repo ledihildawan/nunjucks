@@ -29,7 +29,7 @@ describe('compileMatch', () => {
       cases: [when(ZERO_LOC, { pattern: literal(ZERO_LOC, 'a'), body: output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]) })],
       default: null,
     });
-    compileMatch(asCompiler(c), node as never, frame);
+    compileMatch(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');
     expect(joined).toContain('=== "a"');
     expect(joined).toContain('t_2 = false');
@@ -43,7 +43,7 @@ describe('compileMatch', () => {
       cases: [when(ZERO_LOC, { pattern: symbol(ZERO_LOC, '_'), body: output(ZERO_LOC, [templateData(ZERO_LOC, 'any')]) })],
       default: null,
     });
-    compileMatch(asCompiler(c), node as never, frame);
+    compileMatch(asCompiler(c), { node: node as never, frame });
     expect(c.emitted.join('')).not.toContain('frame.set("_"');
   });
 
@@ -54,7 +54,7 @@ describe('compileMatch', () => {
       cases: [],
       default: output(ZERO_LOC, [templateData(ZERO_LOC, 'd')]),
     });
-    compileMatch(asCompiler(c), node as never, frame);
+    compileMatch(asCompiler(c), { node: node as never, frame });
     expect(c.emitted.join('')).toContain('if (!');
   });
 });
@@ -62,6 +62,6 @@ describe('compileMatch', () => {
 describe('compileWhen', () => {
   test('fails because WhenNode should be handled by compileMatch', () => {
     const c = makeCompiler();
-    expect(() => compileWhen(asCompiler(c), {} as never, frame)).toThrow(/WhenNode/);
+    expect(() => compileWhen(asCompiler(c), { node: {} as never, frame })).toThrow(/WhenNode/);
   });
 });

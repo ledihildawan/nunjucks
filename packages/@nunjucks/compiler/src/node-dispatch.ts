@@ -79,21 +79,26 @@ import {
   compileRenderBlock,
 } from './statement-compiler/index.ts';
 
-export type CompileFn = (compiler: Compiler, node: Node, frame: Frame) => void;
+export interface CompileNodeInput<N extends Node = Node> {
+  node: N;
+  frame: Frame;
+}
+
+export type CompileFn<N extends Node = Node> = (compiler: Compiler, input: CompileNodeInput<N>) => void;
 
 const noFrame =
   <N extends Node = Node>(compile: (compiler: Compiler, node: N) => void): CompileFn =>
-  (compiler, node) => compile(compiler, node as N);
+  (compiler, { node }) => compile(compiler, node as N);
 
 const withFrame =
-  <N extends Node = Node>(compile: (compiler: Compiler, node: N, frame: Frame) => void): CompileFn =>
-  (compiler, node, frame) => compile(compiler, node as N, frame);
+  <N extends Node = Node>(compile: (compiler: Compiler, input: CompileNodeInput<N>) => void): CompileFn =>
+  (compiler, input) => compile(compiler, { node: input.node as N, frame: input.frame });
 
 const NODE_COMPILERS: Partial<Record<NodeType, CompileFn>> = {
   [T.NODE]: noFrame(compileLiteral),
   [T.VALUE]: noFrame(compileLiteral),
   [T.LITERAL]: noFrame(compileLiteral),
-  [T.SYMBOL]: (compiler, node, frame) => compileSymbol(compiler, node as SymbolNode, frame),
+  [T.SYMBOL]: (compiler, { node, frame }) => compileSymbol(compiler, { node: node as SymbolNode, frame }),
   [T.GROUP]: withFrame(compileGroup),
   [T.ARRAY]: withFrame(compileArray),
   [T.DICT]: withFrame(compileDict),
@@ -167,7 +172,7 @@ const NODE_COMPILERS: Partial<Record<NodeType, CompileFn>> = {
 export const compileDispatch = (compiler: Compiler, node: Node, frame: Frame): void => {
   const compile = NODE_COMPILERS[node.type];
   if (compile) {
-    compile(compiler, node, frame);
+    compile(compiler, { node, frame });
     return;
   }
   compiler.fail(`compile: Cannot compile node: ${node.type}`, node.lineno, node.colno);

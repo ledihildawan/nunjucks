@@ -1,6 +1,7 @@
 import type { UnaryOpNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 import { emitLocationGuard } from '../codegen.ts';
 
 interface UnaryOperatorOptions {
@@ -14,8 +15,8 @@ const compileUnary = (compiler: Compiler, node: UnaryOpNode, frame: Frame, { ope
   compiler.emit(')');
 };
 
-export const compileNot = (compiler: Compiler, node: UnaryOpNode, frame: Frame): void => compileUnary(compiler, node, frame, { operator: '!' });
+export const compileNot = (compiler: Compiler, { node, frame }: CompileNodeInput<UnaryOpNode>): void => compileUnary(compiler, node, frame, { operator: '!' });
 
-export const compileNeg = (compiler: Compiler, node: UnaryOpNode, frame: Frame): void => compileUnary(compiler, node, frame, { operator: '-' });
+export const compileNeg = (compiler: Compiler, { node, frame }: CompileNodeInput<UnaryOpNode>): void => compileUnary(compiler, node, frame, { operator: '-' });
 
-export const compilePos = (compiler: Compiler, node: UnaryOpNode, frame: Frame): void => compileUnary(compiler, node, frame, { operator: '+' });
+export const compilePos = (compiler: Compiler, { node, frame }: CompileNodeInput<UnaryOpNode>): void => compileUnary(compiler, node, frame, { operator: '+' });

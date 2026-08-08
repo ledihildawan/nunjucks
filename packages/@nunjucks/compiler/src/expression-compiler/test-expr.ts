@@ -1,10 +1,10 @@
 import { forEach } from 'remeda';
 import type { TestNode, TestCallNode } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 import { emitLocationGuard } from '../codegen.ts';
 
-export const compileTest = (compiler: Compiler, node: TestNode, frame: Frame): void => {
+export const compileTest = (compiler: Compiler, { node, frame }: CompileNodeInput<TestNode>): void => {
   const lineno = node.lineno;
   const colno = node.colno;
   const targetTmp = compiler.tmpid();
@@ -16,7 +16,7 @@ export const compileTest = (compiler: Compiler, node: TestNode, frame: Frame): v
   compiler.emit(')');
 };
 
-export const compileTestCall = (compiler: Compiler, node: TestCallNode, frame: Frame): void => {
+export const compileTestCall = (compiler: Compiler, { node, frame }: CompileNodeInput<TestCallNode>): void => {
   const lineno = node.lineno;
   const colno = node.colno;
   const targetTmp = compiler.tmpid();

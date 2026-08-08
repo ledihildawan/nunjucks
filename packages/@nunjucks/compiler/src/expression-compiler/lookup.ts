@@ -2,6 +2,7 @@ import { isLiteral, isLookupVal, isSlice, isSymbol } from '@nunjucks/nodes';
 import type { Node, LookupNode, SliceNode, CallNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 import { emitLocationGuard } from '../codegen.ts';
 import { compileAggregate } from './container.ts';
 
@@ -48,7 +49,7 @@ const emitMemberLookup = (compiler: Compiler, node: LookupNode, value: Node, fra
   compiler.emit(')');
 };
 
-export const compileLookupVal = (compiler: Compiler, node: LookupNode, frame: Frame): void => {
+export const compileLookupVal = (compiler: Compiler, { node, frame }: CompileNodeInput<LookupNode>): void => {
   const value = node.val;
   const location = locationFor(value, node);
   emitLocationGuard(compiler, location.lineno, location.colno);
@@ -62,7 +63,7 @@ export const compileLookupVal = (compiler: Compiler, node: LookupNode, frame: Fr
   compiler.emit(')');
 };
 
-export const compileOptionalChain = (compiler: Compiler, node: LookupNode, frame: Frame): void => {
+export const compileOptionalChain = (compiler: Compiler, { node, frame }: CompileNodeInput<LookupNode>): void => {
   const loc = locationFor(node.val, node);
   emitLocationGuard(compiler, loc.lineno, loc.colno);
   compiler.emit('runtime.optionalMemberLookup((');
@@ -73,7 +74,7 @@ export const compileOptionalChain = (compiler: Compiler, node: LookupNode, frame
   compiler.emit(')');
 };
 
-export const compileOptionalCall = (compiler: Compiler, node: CallNode, frame: Frame): void => {
+export const compileOptionalCall = (compiler: Compiler, { node, frame }: CompileNodeInput<CallNode>): void => {
   compiler.emit('((');
   compiler.compileExpression(node.name, frame);
   compiler.emit(') == null ? undefined : ');
@@ -83,7 +84,7 @@ export const compileOptionalCall = (compiler: Compiler, node: CallNode, frame: F
   compiler.emit(')');
 };
 
-export const compileSlice = (compiler: Compiler, node: SliceNode, frame: Frame): void => {
+export const compileSlice = (compiler: Compiler, { node, frame }: CompileNodeInput<SliceNode>): void => {
   const loc = locationFor(node, node);
   emitLocationGuard(compiler, loc.lineno, loc.colno);
   compiler.emit('runtime.slice((');

@@ -38,7 +38,7 @@ describe('compileSuper', () => {
       setCalls.push([k, String(v)]);
       return baseSet(k, v);
     };
-    compileSuper(asCompiler(ctx), { blockName: 'content', symbol: { value: 'super' }, lineno: 2, colno: 4 } as never, frame);
+    compileSuper(asCompiler(ctx), { node: { blockName: 'content', symbol: { value: 'super' }, lineno: 2, colno: 4 } as never, frame });
     expect(emitted[0]).toBe('lineno = 2; colno = 4;');
     expect(emitted[1]).toContain('getSuper(env, "content", b_content, frame, runtime, 2, 4)');
     expect(emitted[2]).toContain('runtime.markSafe(super)');

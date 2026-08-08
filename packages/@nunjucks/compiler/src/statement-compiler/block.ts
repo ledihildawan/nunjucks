@@ -1,6 +1,6 @@
 import type { BlockNode, SuperNode } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 import { emitLineLocation } from '../codegen.ts';
 
 export const compileBlock = (compiler: Compiler, node: BlockNode): void => {
@@ -13,7 +13,7 @@ export const compileBlock = (compiler: Compiler, node: BlockNode): void => {
   compiler.emitLine(`${compiler.buffer} += ${id};`);
 };
 
-export const compileSuper = (compiler: Compiler, node: SuperNode, frame: Frame): void => {
+export const compileSuper = (compiler: Compiler, { node, frame }: CompileNodeInput<SuperNode>): void => {
   const name = node.blockName;
   const id = String(node.symbol?.value ?? 'super');
 

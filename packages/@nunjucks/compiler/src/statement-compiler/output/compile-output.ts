@@ -10,6 +10,7 @@ import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import type { Compiler } from '../../index.ts';
+import type { CompileNodeInput } from '../../node-dispatch.ts';
 import { extractPropertyLocation } from '../../location-utils.ts';
 import { extractVarName } from './extract-location.ts';
 
@@ -85,8 +86,7 @@ const processOutputChild = (
 
 export const compileOutput = (
   compiler: Compiler,
-  node: Node,
-  frame: Frame
+  { node, frame }: CompileNodeInput<Node>
 ): void => {
   forEach(node.children ?? [], child => processOutputChild(compiler, child, frame));
   compiler.emit('\n');

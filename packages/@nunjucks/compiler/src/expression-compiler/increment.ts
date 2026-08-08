@@ -2,6 +2,7 @@ import { isSymbol } from '@nunjucks/nodes';
 import type { IncDecNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 import { emitLocationGuard } from '../codegen.ts';
 
 interface IncrementDecrementOptions {
@@ -37,10 +38,10 @@ const compileIncrementDecrement = (compiler: Compiler, node: IncDecNode, _frame:
   }
 };
 
-export const compileIncrement = (compiler: Compiler, node: IncDecNode, frame: Frame): void => {
+export const compileIncrement = (compiler: Compiler, { node, frame }: CompileNodeInput<IncDecNode>): void => {
   compileIncrementDecrement(compiler, node, frame, { operator: '+' });
 };
 
-export const compileDecrement = (compiler: Compiler, node: IncDecNode, frame: Frame): void => {
+export const compileDecrement = (compiler: Compiler, { node, frame }: CompileNodeInput<IncDecNode>): void => {
   compileIncrementDecrement(compiler, node, frame, { operator: '-' });
 };

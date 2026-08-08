@@ -51,12 +51,12 @@ describe('compileSymbol', () => {
     const c = makeCompiler();
     let frameWith = createFrame();
     frameWith = frameWith.set('x', 't_99');
-    compileSymbol(asCompiler(c), symbol(ZERO_LOC, 'x'), frameWith);
+    compileSymbol(asCompiler(c), { node: symbol(ZERO_LOC, 'x'), frame: frameWith });
     expect(c.emitted).toEqual(['t_99']);
   });
   test('emits contextOrFrameLookup when frame.lookup returns null', () => {
     const c = makeCompiler();
-    compileSymbol(asCompiler(c), symbol(ZERO_LOC, 'x'), frame);
+    compileSymbol(asCompiler(c), { node: symbol(ZERO_LOC, 'x'), frame });
     expect(c.emitted).toEqual(['runtime.contextOrFrameLookup(context, frame, "x")']);
   });
 });
@@ -64,12 +64,12 @@ describe('compileSymbol', () => {
 describe('compilePair', () => {
   test('string key emits literal key', () => {
     const c = makeCompiler();
-    compilePair(asCompiler(c), pair(loc({ lineno: 1, colno: 1 }), { key: symbol(loc({ lineno: 1, colno: 1 }), 'a'), val: { mock: 'V' } as never }), frame);
+    compilePair(asCompiler(c), { node: pair(loc({ lineno: 1, colno: 1 }), { key: symbol(loc({ lineno: 1, colno: 1 }), 'a'), val: { mock: 'V' } as never }), frame });
     expect(c.emitted.join('')).toBe('"a": V');
   });
   test('non-string non-symbol key fails', () => {
     const c = makeCompiler();
-    expect(() => compilePair(asCompiler(c), pair(loc({ lineno: 1, colno: 1 }), { key: symbol(loc({ lineno: 1, colno: 1 }), 'a'), val: spread(loc({ lineno: 1, colno: 1 }), { argument: symbol(loc({ lineno: 1, colno: 1 }), 's') }) as never }) as never, frame))
+    expect(() => compilePair(asCompiler(c), { node: pair(loc({ lineno: 1, colno: 1 }), { key: symbol(loc({ lineno: 1, colno: 1 }), 'a'), val: spread(loc({ lineno: 1, colno: 1 }), { argument: symbol(loc({ lineno: 1, colno: 1 }), 's') }) as never }) as never, frame }))
       .not.toThrow();
   });
 });
@@ -77,7 +77,7 @@ describe('compilePair', () => {
 describe('compileKeywordArgs', () => {
   test('wraps a dict in runtime.makeKeywordArgs', () => {
     const c = makeCompiler();
-    compileKeywordArgs(asCompiler(c), keywordArgs(ZERO_LOC), frame);
+    compileKeywordArgs(asCompiler(c), { node: keywordArgs(ZERO_LOC), frame });
     expect(c.emitted.join('')).toBe('runtime.makeKeywordArgs({})');
   });
 });
@@ -85,7 +85,7 @@ describe('compileKeywordArgs', () => {
 describe('compileSpread', () => {
   test('emits ... before argument', () => {
     const c = makeCompiler();
-    compileSpread(asCompiler(c), spread(loc({ lineno: 1, colno: 1 }), { argument: symbol(loc({ lineno: 1, colno: 1 }), 'xs') }), frame);
+    compileSpread(asCompiler(c), { node: spread(loc({ lineno: 1, colno: 1 }), { argument: symbol(loc({ lineno: 1, colno: 1 }), 'xs') }), frame });
     expect(c.emitted.join('')).toBe('..."xs"');
   });
 });
@@ -98,7 +98,7 @@ describe('compileTemplateLiteral', () => {
       { type: 'expression', node: symbol(ZERO_LOC, 'name') },
       { type: 'template', value: '!' },
     ]);
-    compileTemplateLiteral(asCompiler(c), node as never, frame);
+    compileTemplateLiteral(asCompiler(c), { node: node as never, frame });
     expect(c.emitted.join('')).toContain('`hi ${');
     expect(c.emitted.join('')).toContain('}!`');
   });
@@ -107,19 +107,19 @@ describe('compileTemplateLiteral', () => {
 describe('aggregate containers', () => {
   test('array emits comma-separated children in brackets', () => {
     const c = makeCompiler();
-    compileArray(asCompiler(c), { children: [{ mock: 'a' }, { mock: 'b' }] } as never, frame);
+    compileArray(asCompiler(c), { node: { children: [{ mock: 'a' }, { mock: 'b' }] } as never, frame });
     expect(c.emitted.join('')).toBe('[a,b]');
   });
 
   test('group emits parenthesized children', () => {
     const c = makeCompiler();
-    compileGroup(asCompiler(c), { children: [{ mock: 'a' }] } as never, frame);
+    compileGroup(asCompiler(c), { node: { children: [{ mock: 'a' }] } as never, frame });
     expect(c.emitted.join('')).toBe('(a)');
   });
 
   test('dict emits braced children', () => {
     const c = makeCompiler();
-    compileDict(asCompiler(c), { children: [{ mock: 'a' }] } as never, frame);
+    compileDict(asCompiler(c), { node: { children: [{ mock: 'a' }] } as never, frame });
     expect(c.emitted.join('')).toBe('{a}');
   });
 });

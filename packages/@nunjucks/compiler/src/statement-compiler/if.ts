@@ -1,8 +1,8 @@
 import type { IfNode } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 
-export const compileIf = (compiler: Compiler, node: IfNode, frame: Frame): void => {
+export const compileIf = (compiler: Compiler, { node, frame }: CompileNodeInput<IfNode>): void => {
   compiler.emit('if(');
   compiler.compileExpression(node.cond, frame);
   compiler.emitLine(') {');

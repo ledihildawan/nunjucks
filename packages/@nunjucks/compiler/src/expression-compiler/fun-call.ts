@@ -1,7 +1,7 @@
 import { BracketNotation, T, getNodeTypeName, isLiteral, isSymbol } from '@nunjucks/nodes';
 import type { Node, CallNode, LookupNode } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileAggregate } from './container.ts';
 import { extractPropertyLocation } from '../location-utils.ts';
 import { emitLocationGuard } from '../codegen.ts';
@@ -81,7 +81,7 @@ const getCallLocation = (node: CallNode): { lineno: number; colno: number } => {
   };
 };
 
-export const compileFunCall = (compiler: Compiler, node: CallNode, frame: Frame): void => {
+export const compileFunCall = (compiler: Compiler, { node, frame }: CompileNodeInput<CallNode>): void => {
   const { lineno, colno } = getCallLocation(node);
 
   emitLocationGuard(compiler, lineno, colno);

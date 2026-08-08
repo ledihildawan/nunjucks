@@ -23,7 +23,7 @@ const makeCompiler = () => {
 describe('compileTemplateData', () => {
   test('emits buffer += JSON-stringified value', () => {
     const c = makeCompiler();
-    compileTemplateData(asCompiler(c), templateData(ZERO_LOC, 'hi'), frame);
+    compileTemplateData(asCompiler(c), { node: templateData(ZERO_LOC, 'hi'), frame });
     expect(c.emitted.join('')).toBe('output += "hi";');
   });
 });
@@ -32,9 +32,12 @@ describe('compileCapture', () => {
   test('named capture wraps in frame.set with an async IIFE', () => {
     const c = makeCompiler();
     compileCapture(asCompiler(c), {
-      name: 'captured',
-      body: output(ZERO_LOC, [templateData(ZERO_LOC, 'x')]),
-    } as never, frame);
+      node: {
+        name: 'captured',
+        body: output(ZERO_LOC, [templateData(ZERO_LOC, 'x')]),
+      } as never,
+      frame,
+    });
     const joined = c.emitted.join('');
     expect(joined).toContain('frame = frame.set("captured", await (async () => {');
     expect(joined).toContain('return output;');
@@ -44,9 +47,12 @@ describe('compileCapture', () => {
   test('anonymous capture returns the value directly', () => {
     const c = makeCompiler();
     compileCapture(asCompiler(c), {
-      name: null,
-      body: output(ZERO_LOC, [templateData(ZERO_LOC, 'x')]),
-    } as never, frame);
+      node: {
+        name: null,
+        body: output(ZERO_LOC, [templateData(ZERO_LOC, 'x')]),
+      } as never,
+      frame,
+    });
     const joined = c.emitted.join('');
     expect(joined).toContain('(async () => {');
     expect(joined).toContain('})()');

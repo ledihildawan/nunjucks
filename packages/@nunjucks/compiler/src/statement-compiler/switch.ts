@@ -1,9 +1,9 @@
 import type { SwitchNode } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 
-export const compileSwitch = (compiler: Compiler, node: SwitchNode, frame: Frame): void => {
+export const compileSwitch = (compiler: Compiler, { node, frame }: CompileNodeInput<SwitchNode>): void => {
   compiler.emit('switch (');
   compiler.compile(node.expr, frame);
   compiler.emitLine(') {');

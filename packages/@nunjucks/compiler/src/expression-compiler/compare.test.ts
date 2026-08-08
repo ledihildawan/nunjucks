@@ -22,7 +22,7 @@ describe('compileCompare', () => {
       ops: [{ operator: '==', expr: { mock: 'R1' }, lineno: 5, colno: 9 }],
       lineno: 1, colno: 1,
     };
-    compileCompare(asCompiler(c), node as never, frame);
+    compileCompare(asCompiler(c), { node: node as never, frame });
     expect(c.emitted).toEqual([
       '(lineno = 5, colno = 9, ', 'EXPR',
       ' == ', '(lineno = 5, colno = 9, ', 'R1', ')',
@@ -40,7 +40,7 @@ describe('compileCompare', () => {
       ],
       lineno: 0, colno: 0,
     };
-    compileCompare(asCompiler(c), node as never, frame);
+    compileCompare(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');
     expect(joined).toBe('(lineno = 1, colno = 1, X < (lineno = 1, colno = 1, A) <= (lineno = 2, colno = 2, B))');
   });
@@ -54,7 +54,7 @@ describe('compileIs', () => {
       right: { value: 'defined' },
       lineno: 7, colno: 3,
     };
-    compileIs(asCompiler(c), node as never, frame);
+    compileIs(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');
     expect(joined).toContain('env.getTest("defined", 7, 3).call(context, ');
     expect(joined).toContain('LEFT');

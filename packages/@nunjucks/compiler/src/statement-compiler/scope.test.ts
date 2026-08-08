@@ -25,9 +25,12 @@ describe('compileScope', () => {
   test('pushes a frame, binds assignments, compiles body, pops frame', () => {
     const c = makeCompiler();
     compileScope(asCompiler(c), {
-      assignments: [pair(ZERO_LOC, { key: 'x', val: literal(ZERO_LOC, 1) })],
-      body: output(ZERO_LOC, [templateData(ZERO_LOC, 'scoped')]),
-    } as never, frame);
+      node: {
+        assignments: [pair(ZERO_LOC, { key: 'x', val: literal(ZERO_LOC, 1) })],
+        body: output(ZERO_LOC, [templateData(ZERO_LOC, 'scoped')]),
+      } as never,
+      frame,
+    });
     const joined = c.emitted.join('');
     expect(joined).toContain('frame = frame.push(true);');
     expect(joined).toContain('frame = frame.set("x", t_1, true);');
@@ -37,9 +40,12 @@ describe('compileScope', () => {
   test('compiles without assignments', () => {
     const c = makeCompiler();
     compileScope(asCompiler(c), {
-      assignments: [],
-      body: output(ZERO_LOC, [templateData(ZERO_LOC, 'scoped')]),
-    } as never, frame);
+      node: {
+        assignments: [],
+        body: output(ZERO_LOC, [templateData(ZERO_LOC, 'scoped')]),
+      } as never,
+      frame,
+    });
     const joined = c.emitted.join('');
     expect(joined).not.toContain('frame.set');
   });

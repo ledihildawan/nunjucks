@@ -53,6 +53,6 @@ describe('compileComponentPublic', () => {
       body: { mock: 'body' },
     };
     const frame = { parent: null, set: () => {} };
-    expect(() => compileComponentPublic(ctx as never, node as never, frame as never)).toThrow('assertType');
+    expect(() => compileComponentPublic(ctx as never, { node: node as never, frame: frame as never })).toThrow('assertType');
   });
 });

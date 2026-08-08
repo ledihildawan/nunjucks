@@ -3,6 +3,7 @@ import { isArray, isArrayPattern, isObjectPattern } from '@nunjucks/nodes';
 import type { Node, ForNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileDestructuring } from './pattern.ts';
 
 interface LoopContext {
@@ -169,7 +170,7 @@ const emitForElse = (compiler: Compiler, node: ForNode, len: string, frame: Fram
   }
 };
 
-export const compileFor = (compiler: Compiler, node: ForNode, parentFrame: Frame): void => {
+export const compileFor = (compiler: Compiler, { node, frame: parentFrame }: CompileNodeInput<ForNode>): void => {
   const i = compiler.tmpid();
   const len = compiler.tmpid();
   compiler.emitLine(`let ${len} = 0;`);

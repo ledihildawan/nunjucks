@@ -1,11 +1,11 @@
 import { isFunCall } from '@nunjucks/nodes';
 import type { Node, CompareNode, CompareOperandNode, BinaryNode } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 import { emitLocationGuard } from '../codegen.ts';
 
-export const compileCompare = (compiler: Compiler, node: CompareNode, frame: Frame): void => {
+export const compileCompare = (compiler: Compiler, { node, frame }: CompileNodeInput<CompareNode>): void => {
   const ops = node.ops;
   const first = ops[0] ?? node;
   emitLocationGuard(compiler, first.lineno, first.colno);
@@ -21,7 +21,7 @@ export const compileCompare = (compiler: Compiler, node: CompareNode, frame: Fra
   compiler.emit(')');
 };
 
-export const compileIs = (compiler: Compiler, node: BinaryNode, frame: Frame): void => {
+export const compileIs = (compiler: Compiler, { node, frame }: CompileNodeInput<BinaryNode>): void => {
   const rightNode = node.right;
   let right: unknown;
   let args: readonly Node[] | undefined;

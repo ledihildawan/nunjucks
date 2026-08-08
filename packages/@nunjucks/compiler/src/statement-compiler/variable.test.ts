@@ -30,7 +30,7 @@ const declNode = (name: string, valueMock: string) => ({
 describe('compileVariableDeclaration', () => {
   test('emits frame.set with the value', () => {
     const c = makeCompiler();
-    compileVariableDeclaration(asCompiler(c), declNode('x', 'V') as never, frame);
+    compileVariableDeclaration(asCompiler(c), { node: declNode('x', 'V') as never, frame });
     const joined = c.emitted.join('');
     expect(joined).toContain('let t_1 =');
     expect(joined).toContain('V;');
@@ -41,7 +41,7 @@ describe('compileVariableDeclaration', () => {
 describe('compileVariableAssignment', () => {
   test('emits a ReferenceError guard for undeclared variables', () => {
     const c = makeCompiler();
-    compileVariableAssignment(asCompiler(c), declNode('x', 'V') as never, frame);
+    compileVariableAssignment(asCompiler(c), { node: declNode('x', 'V') as never, frame });
     const joined = c.emitted.join('');
     expect(joined).toContain('ReferenceError');
     expect(joined).toContain('Use x := value to declare it');
@@ -58,7 +58,7 @@ describe('compileCompoundAssignment', () => {
       value: literal(loc({ lineno: 1, colno: 2 }), 1),
       lineno: 1, colno: 2,
     };
-    compileCompoundAssignment(asCompiler(c), node as never, frame);
+    compileCompoundAssignment(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');
     expect(joined).toContain('runtime.contextOrFrameLookup(context, frame, "count")');
     expect(joined).toContain('t_2 = t_1 +');
@@ -73,7 +73,7 @@ describe('compileCompoundAssignment', () => {
       value: literal(loc({ lineno: 1, colno: 2 }), 2),
       lineno: 1, colno: 2,
     };
-    compileCompoundAssignment(asCompiler(c), node as never, frame);
+    compileCompoundAssignment(asCompiler(c), { node: node as never, frame });
     expect(c.emitted.join('')).toContain('Math.floor(');
   });
 });

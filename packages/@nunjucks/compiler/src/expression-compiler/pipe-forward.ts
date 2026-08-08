@@ -1,8 +1,8 @@
 import type { CallNode } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 
-export const compilePipeForward = (compiler: Compiler, node: CallNode, frame: Frame): void => {
+export const compilePipeForward = (compiler: Compiler, { node, frame }: CompileNodeInput<CallNode>): void => {
   const name = node.name;
   compiler.assertType(name, 'symbol');
   const filterName = String(name.value);

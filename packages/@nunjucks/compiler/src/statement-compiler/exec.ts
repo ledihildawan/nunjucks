@@ -1,9 +1,9 @@
 import type { ExecNode } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 import { emitLineLocation } from '../codegen.ts';
 
-export const compileExec = (compiler: Compiler, node: ExecNode, frame: Frame): void => {
+export const compileExec = (compiler: Compiler, { node, frame }: CompileNodeInput<ExecNode>): void => {
   emitLineLocation(compiler, node.lineno, node.colno);
   compiler.emitLine('try {');
   compiler.emit('(');

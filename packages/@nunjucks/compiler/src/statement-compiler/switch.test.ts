@@ -26,7 +26,7 @@ describe('compileSwitch', () => {
       cases: [caseNode(ZERO_LOC, { cond: literal(ZERO_LOC, 1), body: output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]) })],
       default_: output(ZERO_LOC, [templateData(ZERO_LOC, 'd')]),
     });
-    compileSwitch(asCompiler(c), node as never, frame);
+    compileSwitch(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');
     expect(joined).toContain('switch (');
     expect(joined).toContain('case ');
@@ -41,7 +41,7 @@ describe('compileSwitch', () => {
       cases: [caseNode(ZERO_LOC, { cond: literal(ZERO_LOC, 1), body: output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]) })],
       default_: null,
     });
-    compileSwitch(asCompiler(c), node as never, frame);
+    compileSwitch(asCompiler(c), { node: node as never, frame });
     expect(c.emitted.join('')).not.toContain('default:');
   });
 });

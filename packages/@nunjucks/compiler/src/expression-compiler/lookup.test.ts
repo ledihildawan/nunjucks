@@ -25,7 +25,7 @@ describe('compileLookupVal', () => {
   test('member lookup emits runtime.memberLookup with parent name', () => {
     const c = makeCompiler();
     const node = lookupVal(loc({ lineno: 1, colno: 1 }), { target: { mock: 'OBJ' } as never, val: symbol(loc({ lineno: 2, colno: 2 }), 'key') });
-    compileLookupVal(asCompiler(c), node as never, frame);
+    compileLookupVal(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');
     expect(joined).toContain('runtime.memberLookup((OBJ),');
     expect(joined).toContain('"key"');
@@ -34,7 +34,7 @@ describe('compileLookupVal', () => {
   test('slice value emits runtime.slice with null bounds', () => {
     const c = makeCompiler();
     const node = lookupVal(loc({ lineno: 1, colno: 1 }), { target: { mock: 'ARR' } as never, val: slice(loc({ lineno: 2, colno: 2 }), { start: null, stop: null, step: null }) });
-    compileLookupVal(asCompiler(c), node as never, frame);
+    compileLookupVal(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');
     expect(joined).toContain('runtime.slice((ARR), null, null, null)');
   });
@@ -44,7 +44,7 @@ describe('compileOptionalChain', () => {
   test('emits runtime.optionalMemberLookup', () => {
     const c = makeCompiler();
     const node = optionalChain(loc({ lineno: 1, colno: 1 }), { target: { mock: 'OBJ' } as never, val: symbol(loc({ lineno: 2, colno: 2 }), 'key') });
-    compileOptionalChain(asCompiler(c), node as never, frame);
+    compileOptionalChain(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');
     expect(joined).toContain('runtime.optionalMemberLookup((OBJ),');
   });
@@ -54,7 +54,7 @@ describe('compileOptionalCall', () => {
   test('emits a null check around the callable', () => {
     const c = makeCompiler();
     const node = funCall(loc({ lineno: 1, colno: 1 }), { name: { mock: 'FN' } as never, args: [{ mock: 'A' } as never] });
-    compileOptionalCall(asCompiler(c), node as never, frame);
+    compileOptionalCall(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');
     expect(joined).toContain('== null ? undefined :');
     expect(joined).toContain('FN()');
@@ -65,7 +65,7 @@ describe('compileSlice', () => {
   test('emits runtime.slice with the three bounds', () => {
     const c = makeCompiler();
     const node = slice(loc({ lineno: 1, colno: 1 }), { start: { mock: 'S' } as never, stop: null, step: { mock: 'P' } as never });
-    compileSlice(asCompiler(c), node as never, frame);
+    compileSlice(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');
     expect(joined).toContain('runtime.slice((');
     expect(joined).toContain('null), (');

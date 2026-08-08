@@ -29,7 +29,7 @@ const makeUnary = (mock: string) => ({
   target: { mock },
 });
 
-type BinaryBitwiseEmitter = (compiler: Compiler, node: BinaryNode, frame: Frame) => void;
+type BinaryBitwiseEmitter = (compiler: Compiler, input: { node: BinaryNode; frame: Frame }) => void;
 
 const cases: Array<{ name: string; operator: string; emit: BinaryBitwiseEmitter }> = [
   { name: 'compileBitwiseOr', operator: '|', emit: compileBitwiseOr },
@@ -44,14 +44,14 @@ describe('binary bitwise emitters', () => {
   for (const { name, operator, emit } of cases) {
     test(`${name} emits ' ${operator} ' between operands`, () => {
       const c = makeCompiler();
-      emit(asCompiler(c), makeBinary('L', 'R') as never, frame);
+      emit(asCompiler(c), { node: makeBinary('L', 'R') as never, frame });
       expect(c.emitted.join('')).toBe(`(lineno = 5, colno = 9, L ${operator} R)`);
     });
   }
 
   test('compileBitwiseNot emits ~ before target', () => {
     const c = makeCompiler();
-    compileBitwiseNot(asCompiler(c), makeUnary('X') as never, frame);
+    compileBitwiseNot(asCompiler(c), { node: makeUnary('X') as never, frame });
     expect(c.emitted.join('')).toBe('(lineno = 6, colno = 3, ~X)');
   });
 });

@@ -1,9 +1,9 @@
 import type { ImportNode } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileGetTemplate } from './template-lookup.ts';
 
-export const compileImport = (compiler: Compiler, node: ImportNode, frame: Frame): void => {
+export const compileImport = (compiler: Compiler, { node, frame }: CompileNodeInput<ImportNode>): void => {
   const target = node.target;
   const id = compileGetTemplate(compiler, node, frame, { eagerCompile: false, ignoreMissing: false });
 

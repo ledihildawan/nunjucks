@@ -4,6 +4,7 @@ import { isFunCall } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 import { emitLocationGuard } from '../codegen.ts';
 import { compileSlotFunction } from './slot.ts';
 
@@ -37,7 +38,7 @@ const compileRenderFunCall = (compiler: Compiler, callExpr: CallNode, frame: Fra
   compiler.emit('] }))');
 };
 
-export const compileRenderBlock = (compiler: Compiler, node: RenderNode, parentFrame: Frame): void => {
+export const compileRenderBlock = (compiler: Compiler, { node, frame: parentFrame }: CompileNodeInput<RenderNode>): void => {
   const frame = parentFrame.push(true);
   compiler.emitLine('frame = frame.push(true);');
 

@@ -2,6 +2,7 @@ import { isNodeList } from '@nunjucks/nodes';
 import type { Node, CallExtensionNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 
 const resolveAutoescape = (node: CallExtensionNode): boolean => {
   const { autoescape: nodeAutoescape } = node;
@@ -96,7 +97,7 @@ const emitExtensionCallEnd = (
   }
 };
 
-export const compileCallExtension = (compiler: Compiler, node: CallExtensionNode, frame: Frame, useAsync?: boolean): void => {
+export const compileCallExtension = (compiler: Compiler, { node, frame }: CompileNodeInput<CallExtensionNode>, useAsync = false): void => {
   const args = node.args;
   const contentArgs = node.contentArgs;
   const autoescape = resolveAutoescape(node);
@@ -109,6 +110,6 @@ export const compileCallExtension = (compiler: Compiler, node: CallExtensionNode
   emitExtensionCallEnd(compiler, emitAsync, res, autoescape);
 };
 
-export const compileCallExtensionAsync = (compiler: Compiler, node: CallExtensionNode, frame: Frame): void => {
-  compileCallExtension(compiler, node, frame, true);
+export const compileCallExtensionAsync = (compiler: Compiler, input: CompileNodeInput<CallExtensionNode>): void => {
+  compileCallExtension(compiler, input, true);
 };

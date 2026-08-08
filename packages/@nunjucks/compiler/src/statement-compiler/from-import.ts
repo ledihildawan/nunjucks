@@ -3,6 +3,7 @@ import type { FromImportNode, Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileGetTemplate } from './import.ts';
 
 const extractNameAlias = (nameNode: Node): { name: string; alias: string } => {
@@ -35,7 +36,7 @@ const compileImportedName = (compiler: Compiler, nameNode: Node, importedId: str
   }
 };
 
-export const compileFromImport = (compiler: Compiler, node: FromImportNode, frame: Frame): void => {
+export const compileFromImport = (compiler: Compiler, { node, frame }: CompileNodeInput<FromImportNode>): void => {
   const importedId = compileGetTemplate(compiler, node, frame, { eagerCompile: false, ignoreMissing: false });
 
   const withContextArg = node.withContext ? 'context.getVariables(), frame' : '';

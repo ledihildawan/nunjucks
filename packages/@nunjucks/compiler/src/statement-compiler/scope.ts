@@ -1,9 +1,9 @@
 import type { ScopeNode } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 
-export const compileScope = (compiler: Compiler, node: ScopeNode, frame: Frame): void => {
+export const compileScope = (compiler: Compiler, { node, frame }: CompileNodeInput<ScopeNode>): void => {
   compiler.emitLine('frame = frame.push(true);');
 
   if (node.assignments?.length > 0) {

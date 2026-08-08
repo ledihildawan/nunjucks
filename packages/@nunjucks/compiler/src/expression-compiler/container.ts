@@ -3,6 +3,7 @@ import type { Node, SymbolNode, ChildrenNode, PairNode, SpreadNode, TemplateLite
 import type { Frame } from '@nunjucks/runtime';
 import { forEach, join, map, pipe } from 'remeda';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 import { loc } from '@nunjucks/shared';
 
 const STRING_ESCAPE_MAP: Record<string, string> = {
@@ -34,7 +35,7 @@ const compileLiteral = (compiler: Compiler, node: { value?: unknown; lineno: num
   }
 };
 
-const compileSymbol = (compiler: Compiler, node: SymbolNode, frame: Frame): void => {
+const compileSymbol = (compiler: Compiler, { node, frame }: CompileNodeInput<SymbolNode>): void => {
   const name = node.value;
   const v = frame.lookup(name);
 
@@ -45,23 +46,23 @@ const compileSymbol = (compiler: Compiler, node: SymbolNode, frame: Frame): void
   }
 };
 
-const compileGroup = (compiler: Compiler, node: ChildrenNode, frame: Frame): void => {
+const compileGroup = (compiler: Compiler, { node, frame }: CompileNodeInput<ChildrenNode>): void => {
   compileAggregate(compiler, node, frame, { startChar: '(', endChar: ')' });
 };
 
-const compileArray = (compiler: Compiler, node: ChildrenNode, frame: Frame): void => {
+const compileArray = (compiler: Compiler, { node, frame }: CompileNodeInput<ChildrenNode>): void => {
   compileAggregate(compiler, node, frame, { startChar: '[', endChar: ']' });
 };
 
-const compileDict = (compiler: Compiler, node: ChildrenNode, frame: Frame): void => {
+const compileDict = (compiler: Compiler, { node, frame }: CompileNodeInput<ChildrenNode>): void => {
   compileAggregate(compiler, node, frame, { startChar: '{', endChar: '}' });
 };
 
-const compileNodeList = (compiler: Compiler, node: ChildrenNode, frame: Frame): void => {
+const compileNodeList = (compiler: Compiler, { node, frame }: CompileNodeInput<ChildrenNode>): void => {
   compiler.compileChildren(node, frame);
 };
 
-const compilePair = (compiler: Compiler, node: PairNode, frame: Frame): void => {
+const compilePair = (compiler: Compiler, { node, frame }: CompileNodeInput<PairNode>): void => {
   const rawKey = node.key;
   const value = node.value;
   const key = isSymbol(rawKey)
@@ -81,13 +82,13 @@ const compilePair = (compiler: Compiler, node: PairNode, frame: Frame): void => 
   compiler.compileExpression(value, frame);
 };
 
-const compileKeywordArgs = (compiler: Compiler, node: ChildrenNode, frame: Frame): void => {
+const compileKeywordArgs = (compiler: Compiler, { node, frame }: CompileNodeInput<ChildrenNode>): void => {
   compiler.emit('runtime.makeKeywordArgs(');
-  compileDict(compiler, node, frame);
+  compileDict(compiler, { node, frame });
   compiler.emit(')');
 };
 
-const compileSpread = (compiler: Compiler, node: SpreadNode, frame: Frame): void => {
+const compileSpread = (compiler: Compiler, { node, frame }: CompileNodeInput<SpreadNode>): void => {
   compiler.emit('...');
   compiler.compile(node.argument, frame);
 };
@@ -95,7 +96,7 @@ const compileSpread = (compiler: Compiler, node: SpreadNode, frame: Frame): void
 const escapeTemplateString = (str: string): string =>
   join('')(pipe([...str], map((char) => TEMPLATE_ESCAPE_MAP[char] ?? char)));
 
-const compileTemplateLiteral = (compiler: Compiler, node: TemplateLiteralNode, frame: Frame): void => {
+const compileTemplateLiteral = (compiler: Compiler, { node, frame }: CompileNodeInput<TemplateLiteralNode>): void => {
   const quasis = node.quasis ?? [];
   compiler.emit('`');
 

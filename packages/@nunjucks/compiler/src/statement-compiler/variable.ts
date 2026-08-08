@@ -3,6 +3,7 @@ import { isArrayPattern, isObjectPattern, isSymbol } from '@nunjucks/nodes';
 import type { Node, VariableDeclNode, CompoundAssignNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 import { emitLocationGuard } from '../codegen.ts';
 import { compileDestructuring } from './pattern.ts';
 
@@ -23,7 +24,7 @@ const hasPatternTarget = (node: VariableDeclNode): boolean => {
   );
 };
 
-const compileVariableDeclaration = (compiler: Compiler, node: VariableDeclNode, frame: Frame): void => {
+const compileVariableDeclaration = (compiler: Compiler, { node, frame }: CompileNodeInput<VariableDeclNode>): void => {
   if (hasPatternTarget(node)) {
     const valueId = compiler.tmpid();
     compiler.emitLine(`let ${valueId} = `);
@@ -48,7 +49,7 @@ const compileVariableDeclaration = (compiler: Compiler, node: VariableDeclNode, 
   }
 };
 
-const compileVariableAssignment = (compiler: Compiler, node: VariableDeclNode, frame: Frame): void => {
+const compileVariableAssignment = (compiler: Compiler, { node, frame }: CompileNodeInput<VariableDeclNode>): void => {
   if (hasPatternTarget(node)) {
     const valueId = compiler.tmpid();
     compiler.emitLine(`let ${valueId} = `);
@@ -130,7 +131,7 @@ const emitGenericCompoundAssignment = ({ compiler, node, frame, currentId, value
   compiler.emit(';');
 };
 
-const compileCompoundAssignment = (compiler: Compiler, node: CompoundAssignNode, frame: Frame): void => {
+const compileCompoundAssignment = (compiler: Compiler, { node, frame }: CompileNodeInput<CompoundAssignNode>): void => {
   const targets = node.targets;
   const name = getTargetName(targets[0]);
   if (name === null) {

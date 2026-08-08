@@ -1,10 +1,10 @@
 import type { ExtendsNode, IncludeNode } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 import { emitLineLocation } from '../codegen.ts';
 import { compileGetTemplate, getTemplateLocation } from './template-lookup.ts';
 
-export const compileExtends = (compiler: Compiler, node: ExtendsNode, frame: Frame): void => {
+export const compileExtends = (compiler: Compiler, { node, frame }: CompileNodeInput<ExtendsNode>): void => {
   const k = compiler.tmpid();
 
   const parentTemplateId = compileGetTemplate(compiler, node, frame, { eagerCompile: true, ignoreMissing: false });
@@ -21,7 +21,7 @@ export const compileExtends = (compiler: Compiler, node: ExtendsNode, frame: Fra
   compiler.emitLine('context.validateBlocks();');
 };
 
-export const compileInclude = (compiler: Compiler, node: IncludeNode, frame: Frame): void => {
+export const compileInclude = (compiler: Compiler, { node, frame }: CompileNodeInput<IncludeNode>): void => {
   const tmplVar = compiler.tmpid();
   const resultVar = compiler.tmpid();
   const location = getTemplateLocation(node);

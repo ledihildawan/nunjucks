@@ -34,38 +34,38 @@ const frame = createFrame();
 describe('binary emitters', () => {
   test('compileAdd emits location guard, operands joined by " + "', () => {
     const c = makeCompiler();
-    compileAdd(asCompiler(c), makeNode('L', 'R') as never, frame);
+    compileAdd(asCompiler(c), { node: makeNode('L', 'R') as never, frame });
     expect(c.emitted).toEqual(['(lineno = 5, colno = 9, ', 'L', ' + ', 'R', ')']);
   });
 
   test('compileSub emits the subtraction operator', () => {
     const c = makeCompiler();
-    compileSub(asCompiler(c), makeNode('a', 'b') as never, frame);
+    compileSub(asCompiler(c), { node: makeNode('a', 'b') as never, frame });
     expect(c.emitted).toContain(' - ');
     expect(c.emitted[c.emitted.length - 1]).toBe(')');
   });
 
   test('compileMul emits the multiplication operator', () => {
     const c = makeCompiler();
-    compileMul(asCompiler(c), makeNode('a', 'b') as never, frame);
+    compileMul(asCompiler(c), { node: makeNode('a', 'b') as never, frame });
     expect(c.emitted).toContain(' * ');
   });
 
   test('compileOr emits the logical-or operator', () => {
     const c = makeCompiler();
-    compileOr(asCompiler(c), makeNode('x', 'y') as never, frame);
+    compileOr(asCompiler(c), { node: makeNode('x', 'y') as never, frame });
     expect(c.emitted).toContain(' || ');
   });
 
   test('compileAnd emits the logical-and operator', () => {
     const c = makeCompiler();
-    compileAnd(asCompiler(c), makeNode('x', 'y') as never, frame);
+    compileAnd(asCompiler(c), { node: makeNode('x', 'y') as never, frame });
     expect(c.emitted).toContain(' && ');
   });
 
   test('every binary emission starts with the location guard and ends with ")"', () => {
     const c = makeCompiler();
-    compileAdd(asCompiler(c), makeNode('L', 'R') as never, frame);
+    compileAdd(asCompiler(c), { node: makeNode('L', 'R') as never, frame });
     expect(c.emitted[0]).toBe('(lineno = 5, colno = 9, ');
     expect(c.emitted[c.emitted.length - 1]).toBe(')');
     expect(c.emitted.join('')).toBe('(lineno = 5, colno = 9, L + R)');

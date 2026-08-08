@@ -4,6 +4,7 @@ import type { Frame } from '@nunjucks/runtime';
 import { createFrame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileSlotFunction } from './slot.ts';
 
 const extractComponentArgs = (compiler: Compiler, node: ComponentNode): { args: readonly Node[]; kwargs: ChildrenNode | null } => {
@@ -117,7 +118,7 @@ const compileComponent = (compiler: Compiler, node: ComponentNode): string => {
   return funcId;
 };
 
-export const compileComponentPublic = (compiler: Compiler, node: ComponentNode, frame: Frame): void => {
+export const compileComponentPublic = (compiler: Compiler, { node, frame }: CompileNodeInput<ComponentNode>): void => {
   const funcId = compileComponent(compiler, node);
 
   const name = node.name;

@@ -1,11 +1,10 @@
 import type { CaptureNode } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../../index.ts';
+import type { CompileNodeInput } from '../../node-dispatch.ts';
 
 export const compileCapture = (
   compiler: Compiler,
-  node: CaptureNode,
-  frame: Frame
+  { node, frame }: CompileNodeInput<CaptureNode>
 ): void => {
   const { buffer } = compiler;
   const varName = node.name;

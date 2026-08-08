@@ -1,11 +1,11 @@
 import { isArrayPattern, isObjectPattern, isSymbol } from '@nunjucks/nodes';
 import type { IfNode, WalrusNode } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
+import type { CompileNodeInput } from '../node-dispatch.ts';
 import { emitLocationGuard } from '../codegen.ts';
 import { compileDestructuring } from '../statement-compiler/pattern.ts';
 
-export const compileInlineIf = (compiler: Compiler, node: IfNode, frame: Frame): void => {
+export const compileInlineIf = (compiler: Compiler, { node, frame }: CompileNodeInput<IfNode>): void => {
   compiler.emit('(');
   compiler.compile(node.cond, frame);
   compiler.emit('?');
@@ -19,7 +19,7 @@ export const compileInlineIf = (compiler: Compiler, node: IfNode, frame: Frame):
   compiler.emit(')');
 };
 
-export const compileWalrus = (compiler: Compiler, node: WalrusNode, frame: Frame): void => {
+export const compileWalrus = (compiler: Compiler, { node, frame }: CompileNodeInput<WalrusNode>): void => {
   if (isSymbol(node.target)) {
     const target = node.target;
     const valueId = compiler.tmpid();

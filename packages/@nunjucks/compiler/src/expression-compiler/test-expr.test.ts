@@ -20,10 +20,13 @@ describe('compileTest', () => {
   test('emits a comma-expression binding test result via runtime.runTest', () => {
     const c = makeCompiler();
     compileTest(asCompiler(c), {
-      lineno: 3, colno: 7,
-      name: 'defined',
-      target: { mock: 'X' },
-    } as never, frame);
+      node: {
+        lineno: 3, colno: 7,
+        name: 'defined',
+        target: { mock: 'X' },
+      } as never,
+      frame,
+    });
     const joined = c.emitted.join('');
     expect(joined).toContain('((t_1 = X), ');
     expect(joined).toContain('runtime.runTest(env, "defined", t_1))');
@@ -36,11 +39,14 @@ describe('compileTestCall', () => {
   test('emits runTest with accumulated arg temporaries', () => {
     const c = makeCompiler();
     compileTestCall(asCompiler(c), {
-      target: { mock: 'X' },
-      name: 'divisibleby',
-      args: [{ mock: 'N' }, { mock: 'M' }],
-      lineno: 4, colno: 2,
-    } as never, frame);
+      node: {
+        target: { mock: 'X' },
+        name: 'divisibleby',
+        args: [{ mock: 'N' }, { mock: 'M' }],
+        lineno: 4, colno: 2,
+      } as never,
+      frame,
+    });
     const joined = c.emitted.join('');
     expect(joined).toContain('(t_1 = X, ');
     expect(joined).toContain('t_2 = N, ');
@@ -52,11 +58,14 @@ describe('compileTestCall', () => {
   test('skips null args', () => {
     const c = makeCompiler();
     compileTestCall(asCompiler(c), {
-      target: { mock: 'X' },
-      name: 'odd',
-      args: [null],
-      lineno: 1, colno: 1,
-    } as never, frame);
+      node: {
+        target: { mock: 'X' },
+        name: 'odd',
+        args: [null],
+        lineno: 1, colno: 1,
+      } as never,
+      frame,
+    });
     const joined = c.emitted.join('');
     expect(joined).toContain('runtime.runTest(env, "odd", t_1))');
     expect(joined).not.toContain('t_2');
