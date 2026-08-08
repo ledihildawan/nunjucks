@@ -238,10 +238,7 @@ const extractCallerPosition = (input: CallerPositionInput): SourcePosition | nul
     return findSubjectOccurrence(content, subject, preferredLine);
   }
 
-  if (typeof template !== 'string') {
-    return findSubjectOccurrence(content, templateLiteralText(template), preferredLine);
-  }
-  return null;
+  return findSubjectOccurrence(content, templateLiteralText(template), preferredLine);
 };
 
 export { extractCallerPosition };

@@ -20,7 +20,11 @@ interface ExecutionContext {
 
 const setupRenderConfig = (options: Partial<GlobalConfig>): RenderConfig => {
   const defaults = getDefaultConfig(defaultFilterBundle);
-  const filters = { ...defaults.filters, ...(options.filters || {}) };
+  // WHY: filter-bundle values are typed as `unknown` (GlobalConfig.filters is a Readonly<Record<string, unknown>>), but every entry is genuinely a callable. The cast is scoped to this constructed value rather than the whole config, so the rest of the RenderConfig is checked structurally.
+  const filters = {
+    ...defaults.filters,
+    ...(options.filters || {}),
+  } as Record<string, (...args: unknown[]) => unknown>;
 
   if (options.dompurify) {
     const baseSanitize = filters.sanitize as ((str: unknown, config?: unknown) => unknown) | undefined;
@@ -32,10 +36,11 @@ const setupRenderConfig = (options: Partial<GlobalConfig>): RenderConfig => {
   return {
     ...defaults,
     ...options,
+    // WHY: GlobalConfig models "no blocked keys" as `null` (DEFAULT_CONFIG), while RenderConfig uses `undefined`; normalize here so the constructed config satisfies RenderConfig without a blind whole-object cast.
+    blockedContextKeys: options.blockedContextKeys ?? defaults.blockedContextKeys ?? undefined,
     filters,
     globals: { ...defaults.globals, ...(options.globals || {}) },
-    extensions: { ...defaults.extensions, ...(options.extensions || {}) },
-  } as RenderConfig;
+  };
 };
 
 const resolveTemplateName = (template: string, config: RenderConfig): string => {
@@ -89,7 +94,7 @@ const render = async (template: string, { context = {}, ...options }: RenderOpti
   const renderValidation = await validateRender(template, { config, context });
   if (isErr(renderValidation)) { return err(renderValidation.error); }
 
-  const loader = getLoader(config as Parameters<typeof getLoader>[0]);
+  const loader = getLoader(config);
   let templateSource: string;
   let templatePath: string | null;
   try {

@@ -39,7 +39,7 @@ export const createTemplate = ({ src, env, path, eagerCompile, includeChain }: C
     [Template]: true,
     get env() { return currentState.env; },
     get path() { return currentState.path; },
-    get compiled() { return currentState.compiled; },
+    get compiled() { return currentState.status === 'compiled'; },
     get blocks() { return currentState.blocks; },
     get blockMeta() { return currentState.blockMeta; },
     get rootRenderFunc() { return currentState.rootRenderFunc; },

@@ -1,8 +1,8 @@
 import { reduce } from 'remeda';
 
 export interface Frame {
-  variables: Record<string, unknown>;
-  parent: Frame | undefined;
+  readonly variables: Record<string, unknown>;
+  readonly parent: Frame | undefined;
   topLevel: boolean;
   readonly isolateWrites: boolean | undefined;
   set: (name: string, value: unknown, resolveUp?: boolean) => Frame;
@@ -41,9 +41,7 @@ export const createFrame = (parent?: Frame | null, isolateWrites?: boolean, vari
 
   const frame: Frame = {
     get variables(): Record<string, unknown> { return state.variables; },
-    set variables(value: Record<string, unknown>) { state.variables = value; },
     get parent(): Frame | undefined { return state.parent; },
-    set parent(value: Frame | undefined) { state.parent = value; },
     get topLevel(): boolean { return state.topLevel; },
     set topLevel(value: boolean) { state.topLevel = value; },
     get isolateWrites(): boolean | undefined { return state.isolateWrites; },
@@ -112,5 +110,3 @@ const rebuildChain = (root: Frame, target: Frame, newTargetVariables: Record<str
     baseFrame,
   );
 };
-
-export const lookup = (frame: Frame, name: string): unknown => frame.lookup(name);

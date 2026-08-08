@@ -78,8 +78,8 @@ const buildSingleSlice = ({
   const newOffset = index < extra ? offset + 1 : offset;
   const end = newOffset + ((index + 1) * sliceLength);
   const currSlice = items.slice(start, end);
-  if (fillWith !== undefined && index >= extra) { currSlice.push(fillWith); }
-  return { slice: currSlice, newOffset };
+  const slice = fillWith !== undefined && index >= extra ? [...currSlice, fillWith] : currSlice;
+  return { slice, newOffset };
 };
 
 export const slice = (values: unknown, slices: number, fillWith?: unknown): unknown[][] => {

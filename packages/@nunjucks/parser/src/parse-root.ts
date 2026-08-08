@@ -126,13 +126,15 @@ const handleToken = (parserContext: ParserContext, tok: Token, buf: Node[], brea
 const parseNodes = (parserContext: ParserContext, breakOn: readonly string[] | null = null): Result<Node[], TemplateError> => {
   const buf: Node[] = [];
 
+  // WHY: while-loop exempt per guide "Recursion Safety / Trampolining" — prevents stack overflow on large templates with thousands of top-level tokens.
   const parseLoop = (): Result<Node[], TemplateError> => {
-    const tok = nextTokenOrNull(parserContext);
-    if (!tok) { return ok(buf); }
-    const continueR = handleToken(parserContext, tok, buf, breakOn);
-    if (isErr(continueR)) { return continueR; }
-    if (!continueR.value) { return ok(buf); }
-    return parseLoop();
+    while (true) {
+      const tok = nextTokenOrNull(parserContext);
+      if (!tok) { return ok(buf); }
+      const continueR = handleToken(parserContext, tok, buf, breakOn);
+      if (isErr(continueR)) { return continueR; }
+      if (!continueR.value) { return ok(buf); }
+    }
   };
 
   return parseLoop();

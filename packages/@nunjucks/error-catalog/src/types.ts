@@ -1,3 +1,4 @@
+import type { Phase, UndefinedMode } from '@nunjucks/shared';
 import type { LineBase } from './line-base.ts';
 
 export interface ErrorLike {
@@ -8,7 +9,7 @@ export interface ErrorLike {
   templateName?: string | null;
   templatePath?: string | null;
   sourceContent?: string;
-  phase?: string | null;
+  phase?: Phase | null;
   code?: string | null;
   lineBase?: LineBase | null;
   blockedKeys?: readonly string[];
@@ -24,7 +25,7 @@ export interface Warning {
   lineno?: number | null;
   colno?: number | null;
   templateName?: string | null;
-  undefinedMode?: string;
+  undefinedMode?: UndefinedMode;
   varName?: string | null;
   subject?: string | null;
   lineBase?: LineBase | null;

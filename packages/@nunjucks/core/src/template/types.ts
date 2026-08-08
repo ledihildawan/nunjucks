@@ -7,17 +7,20 @@ export { Template };
 
 const Template = Symbol('Template');
 
-export interface TemplateState {
+type RootRenderFunc = (env: Env, context: unknown, frame: unknown, runtime: RuntimeContext) => unknown;
+
+type TemplateStateBase = {
   env: Env;
   path: string | undefined;
   includeChain: IncludeChain | null;
-  tmplStr: string | null;
-  tmplProps: CompiledTemplateExports | null;
   blocks: Record<string, BlockFn>;
   blockMeta: Record<string, BlockLocation>;
-  rootRenderFunc: ((env: Env, context: unknown, frame: unknown, runtime: RuntimeContext) => unknown) | null;
-  compiled: boolean;
-}
+};
+
+type TemplateState = TemplateStateBase & (
+  | { status: 'source'; tmplStr: string; tmplProps: null; rootRenderFunc: null }
+  | { status: 'compiled'; tmplStr: null; tmplProps: CompiledTemplateExports; rootRenderFunc: RootRenderFunc }
+);
 
 export interface TemplateSource {
   type: 'code' | 'string';
@@ -31,8 +34,10 @@ export interface TemplateObject {
   compiled: boolean;
   blocks: Record<string, BlockFn>;
   blockMeta: Record<string, BlockLocation>;
-  rootRenderFunc: ((env: Env, context: unknown, frame: unknown, runtime: RuntimeContext) => unknown) | null;
+  rootRenderFunc: RootRenderFunc | null;
   render: (ctx: Record<string, unknown>, parentFrame?: unknown) => Promise<string>;
   compile: () => void;
   getExported: (ctx?: Record<string, unknown>, parentFrame?: unknown) => Promise<Record<string, unknown>>;
 }
+
+export type { TemplateState, TemplateStateBase, RootRenderFunc };

@@ -1,11 +1,11 @@
 import { normalizeLineBase, type LineBase } from '@nunjucks/error-catalog';
-import { readObject, readString, readNumber, isKeyedObject } from '@nunjucks/shared';
+import { readObject, readString, readNumber, isKeyedObject, type Phase } from '@nunjucks/shared';
 
 interface ErrorMetadataFallback {
   lineno?: number | null;
   colno?: number | null;
   lineBase?: LineBase | null;
-  phase?: string | null;
+  phase?: Phase | null;
   templateName?: string | null;
   templatePath?: string | null;
   sourceContent?: string | null;
@@ -21,7 +21,7 @@ interface NormalizedErrorMetadata {
   lineno: number | null;
   colno: number | null;
   lineBase: LineBase;
-  phase: string | null;
+  phase: Phase | null;
   templateName: string | null;
   templatePath: string | null;
   sourceContent: string | null;
@@ -36,6 +36,13 @@ const readContext = (value: unknown): Record<string, unknown> | null =>
 
 const readLineBase = (value: unknown): LineBase | null => {
   if (value === 'zero' || value === 'one') {
+    return value;
+  }
+  return null;
+};
+
+const readPhase = (value: unknown): Phase | null => {
+  if (value === 'compile' || value === 'render' || value === 'load' || value === 'parse') {
     return value;
   }
   return null;
@@ -68,7 +75,7 @@ const normalizeFallbacks = ({ source, fallback, templateName }: NormalizeFallbac
   lineno: readNumber(source.lineno) ?? fallback.lineno ?? null,
   colno: readNumber(source.colno) ?? fallback.colno ?? null,
   lineBase: normalizeLineBase(readLineBase(source.lineBase) ?? fallback.lineBase),
-  phase: readString(source.phase) ?? fallback.phase ?? null,
+  phase: readPhase(source.phase) ?? fallback.phase ?? null,
   templateName,
   templatePath: readString(source.templatePath) ?? fallback.templatePath ?? templateName,
   sourceContent: readString(source.sourceContent) ?? fallback.sourceContent ?? null,

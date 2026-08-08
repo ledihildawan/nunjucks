@@ -1,6 +1,7 @@
 import type { Frame, SafeString } from '@nunjucks/runtime';
 import type { makeKeywordArgs, makeComponent } from '@nunjucks/runtime';
 import type { SuppressValueOptions, EnsureDefinedOptions, CallWrapOptions, InOperatorOptions } from '@nunjucks/runtime';
+import type { Phase } from '@nunjucks/shared';
 import type { keys } from 'remeda';
 
 interface RuntimeContext {
@@ -28,7 +29,7 @@ interface RuntimeContext {
   __warnings__: unknown[];
   logContext: {
     templateName: string;
-    phase: string;
+    phase: Phase;
     renderContext: unknown;
   };
 }

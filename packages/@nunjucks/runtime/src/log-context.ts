@@ -1,8 +1,9 @@
 import { createLog, type ErrorDefinitionEntry } from '@nunjucks/log';
+import type { Phase } from '@nunjucks/shared';
 
 interface LogContextShape {
   templateName: string | null;
-  phase: string;
+  phase: Phase;
   renderContext: Record<string, unknown> | null;
 }
 

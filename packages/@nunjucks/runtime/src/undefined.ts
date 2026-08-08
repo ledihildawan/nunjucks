@@ -1,6 +1,6 @@
-export const UNDEFINED_MODES = ['default', 'strict', 'debug', 'chainable'] as const;
+import { UNDEFINED_MODES, type UndefinedMode } from '@nunjucks/shared';
 
-export type UndefinedMode = (typeof UNDEFINED_MODES)[number];
+export { UNDEFINED_MODES, type UndefinedMode };
 
 export const DEFAULT_UNDEFINED_MODE: UndefinedMode = 'chainable';
 

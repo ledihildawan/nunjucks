@@ -4,9 +4,8 @@ import {
   optionalMemberLookup,
   slice,
   nullishCoalesce,
-  isNullAccessResult,
-  isPropertyNotFoundResult,
 } from '@nunjucks/runtime';
+import { isNullAccessResult, isPropertyNotFoundResult } from './member-access.ts';
 
 describe('memberLookup', () => {
   test('returns null marker for null/undefined object', () => {

@@ -1,5 +1,5 @@
 import { createLog, ERROR_DEFINITIONS, type ErrorDefinitionEntry, type WarningContext } from '@nunjucks/log';
-import { isNonNullish, MATCH_ANY_RE } from '@nunjucks/shared';
+import { isNonNullish, MATCH_ANY_RE, type Phase } from '@nunjucks/shared';
 import { isNullAccessResult, isPropertyNotFoundResult, type PropertyNotFoundResult, type NullAccessResult } from './member-access.ts';
 import { getLogContext, throwRuntimeError } from './log-context.ts';
 
@@ -10,7 +10,7 @@ interface ResolveUndefinedOptions {
   lineno?: number | null;
   colno?: number | null;
   mode: 'chainable' | 'strict' | 'debug';
-  phase: string;
+  phase: Phase;
   templateName: string;
 }
 
@@ -20,12 +20,13 @@ interface EmitUndefinedWarningOptions {
   subject: string | null;
   lineno?: number | null;
   colno?: number | null;
-  phase: string;
+  phase: Phase;
   templateName: string;
   mode: 'chainable' | 'strict' | 'debug';
   varName: string | null;
 }
 
+// WHY imperative shell: ensureDefined is invoked from generated template code and must return the 'undefined' sentinel. Warning collection is a render-time side-effect threaded through self.__warnings__ (initialized in render-runtime, drained by template-renderer), so the I/O cannot be lifted to the caller without breaking the generated-code contract. This is the boundary between pure resolution and the imperative render shell.
 const emitUndefinedWarning = (self: unknown, options: EmitUndefinedWarningOptions): void => {
   const warning = createLog('warning', {
     def: {
@@ -95,13 +96,12 @@ const resolveUndefined = (options: ResolveUndefinedOptions, resolution: Undefine
   return 'undefined';
 };
 
-const resolveUndefinedProperty = (options: ResolveUndefinedOptions): 'undefined' => {
-  const { val: value, varName } = options;
-  const propResult = value as PropertyNotFoundResult;
-  const accessPath = propResult.__access_path__ ?? varName ?? 'unknown';
-  const parentName = (!propResult.__nunjucks_parent__ && varName?.includes('.'))
+const resolveUndefinedProperty = (value: PropertyNotFoundResult, options: ResolveUndefinedOptions): 'undefined' => {
+  const { varName } = options;
+  const accessPath = value.__access_path__ ?? varName ?? 'unknown';
+  const parentName = (!value.__nunjucks_parent__ && varName?.includes('.'))
     ? varName.slice(0, varName.lastIndexOf('.'))
-    : propResult.__nunjucks_parent__;
+    : value.__nunjucks_parent__;
   return resolveUndefined(options, {
     errorDef: ERROR_DEFINITIONS.UNDEFINED_PROPERTY,
     params: { property: accessPath, parent: parentName ?? 'unknown' },
@@ -111,11 +111,10 @@ const resolveUndefinedProperty = (options: ResolveUndefinedOptions): 'undefined'
   });
 };
 
-const resolveNullAccess = (options: ResolveUndefinedOptions): 'undefined' => {
-  const { val: value, varName } = options;
-  const nullResult = value as NullAccessResult;
-  const accessPath = nullResult.__access_path__ ?? varName ?? 'unknown';
-  const parentName = nullResult.__nunjucks_parent__ ?? varName ?? 'unknown';
+const resolveNullAccess = (value: NullAccessResult, options: ResolveUndefinedOptions): 'undefined' => {
+  const { varName } = options;
+  const accessPath = value.__access_path__ ?? varName ?? 'unknown';
+  const parentName = value.__nunjucks_parent__ ?? varName ?? 'unknown';
   return resolveUndefined(options, {
     errorDef: ERROR_DEFINITIONS.NULL_VALUE,
     params: { accessPath, state: 'null', parent: parentName },
@@ -168,9 +167,9 @@ export function ensureDefined(
       templateName: effectiveTemplateName,
     };
     if (isPropertyNotFoundResult(value)) {
-      return resolveUndefinedProperty(resolveOptions);
+      return resolveUndefinedProperty(value, resolveOptions);
     }
-    return resolveNullAccess(resolveOptions);
+    return resolveNullAccess(value, resolveOptions);
   }
 
   if (!isNonNullish(value)) {

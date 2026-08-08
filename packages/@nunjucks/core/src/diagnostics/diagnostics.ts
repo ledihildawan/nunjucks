@@ -1,11 +1,11 @@
 import { createLog, normalizeErrorMetadata, type TemplateError } from '@nunjucks/error-formatter';
 import { resolveLocation } from './error-location.ts';
-import { MATCH_ANY_RE, isKeyedObject } from '@nunjucks/shared';
+import { MATCH_ANY_RE, isKeyedObject, type Phase } from '@nunjucks/shared';
 import { DEFAULT_IDE } from '@nunjucks/error-renderer';
 import type { LineBase } from '@nunjucks/error-catalog';
 
 interface DiagnosticsConfig {
-  phase?: string | null;
+  phase?: Phase | null;
   templatePath?: string | null;
   jsCaller?: string | null;
   jsCallerErrorLine?: number | null;
@@ -108,7 +108,7 @@ interface MetadataInput {
   lineno: number | null;
   colno: number | null;
   lineBase: LineBase;
-  phase: string;
+  phase: Phase;
   templatePath: string | null;
   sourceContent: string | null;
   sourceStartLine: number;

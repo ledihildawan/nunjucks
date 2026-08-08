@@ -1,11 +1,11 @@
 import { isNonNullish, isNullish } from 'remeda';
 import { isSafeString, markSafe, copySafeness } from '@nunjucks/runtime';
-import { ok, err, isOk, escapeHtml, MATCH_ANY_RE, type Result } from '@nunjucks/shared';
+import { ok, err, isOk, escapeHtml, MATCH_ANY_RE, type Result, type Phase } from '@nunjucks/shared';
 import { createLog } from '@nunjucks/log';
 import type { ErrorDefinitionEntry, TemplateError } from '@nunjucks/log';
 import type { FilterContext, SafeString } from './types.ts';
 
-const getLogContext = (ctx: FilterContext): { templateName: string; phase: string; renderContext: unknown } => {
+const getLogContext = (ctx: FilterContext): { templateName: string; phase: Phase; renderContext: unknown } => {
   if (ctx?.logContext) {
     return { templateName: ctx.logContext.templateName || 'inline', phase: ctx.logContext.phase || 'render', renderContext: ctx.logContext.renderContext ?? null };
   }

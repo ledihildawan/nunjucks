@@ -1,4 +1,3 @@
-import EventEmitter from 'node:events';
 import { findContextDangerousValues } from '@nunjucks/validators';
 import type { ParseOptions } from '@nunjucks/parser';
 import type { Env } from '@nunjucks/runtime';
@@ -74,14 +73,12 @@ const createEnvLookups = (config: RenderConfig): Pick<Env, 'getFilter' | 'getTes
 const buildRenderEnv = (loader: FileSystemLoader | null, config: RenderConfig): Env | null => {
   if (!loader || config.env) { return null; }
 
-  const emitter = new EventEmitter();
   return {
     opts: {
       dev: config.dev ?? false,
       autoescape: config.autoescape ?? true,
       undefined: config.undefined ?? 'default',
     },
-    emitter,
     ...createEnvLookups(config),
     async getTemplate(this: Env, name: string, eagerCompile?: boolean, includeChain?: IncludeChain | null, ignoreMissing?: boolean) {
       const source = await loader.getSource(name);

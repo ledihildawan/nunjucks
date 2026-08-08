@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { isNullAccessResult, isPropertyNotFoundResult } from '@nunjucks/runtime';
+import { isNullAccessResult, isPropertyNotFoundResult } from './member-access.ts';
 import { buildSandboxedRuntime, buildSandboxOptions } from './executor-runtime.ts';
 import { createRenderRuntime } from './render-runtime.ts';
 

@@ -4,7 +4,7 @@ import { getError } from '@nunjucks/log';
 import type { Env } from '@nunjucks/runtime';
 import type { IncludeChain } from '@nunjucks/log';
 import type { CompiledTemplateExports } from '@nunjucks/shared';
-import type { TemplateSource, TemplateState } from './types';
+import type { TemplateSource, TemplateState, TemplateStateBase } from './types';
 
 export { initTemplateState, loadSource, createFallbackEnv };
 
@@ -25,32 +25,28 @@ interface InitTemplateStateOptions {
   includeChain: IncludeChain | null | undefined;
 }
 
-const initTemplateState = ({ src: _src, env, path, includeChain }: InitTemplateStateOptions): TemplateState => ({
+const initTemplateState = ({ src: _src, env, path, includeChain }: InitTemplateStateOptions): TemplateStateBase => ({
   env: env ?? createFallbackEnv(),
   path: path ?? undefined,
   includeChain: includeChain ?? null,
-  tmplStr: null,
-  tmplProps: null,
   blocks: {},
   blockMeta: {},
-  rootRenderFunc: null,
-  compiled: false,
 });
 
-const loadSource = (state: TemplateState, src: string | TemplateSource): TemplateState => {
+const loadSource = (base: TemplateStateBase, src: string | TemplateSource): TemplateState => {
   if (isPlainObject(src)) {
     const srcObj = src as TemplateSource;
     switch (srcObj.type) {
       case 'code':
-        return { ...state, tmplProps: srcObj.value as CompiledTemplateExports };
+        return { ...base, status: 'compiled', tmplStr: null, tmplProps: srcObj.value as CompiledTemplateExports, rootRenderFunc: (srcObj.value as CompiledTemplateExports).root };
       case 'string':
-        return { ...state, tmplStr: srcObj.value as string };
+        return { ...base, status: 'source', tmplStr: srcObj.value as string, tmplProps: null, rootRenderFunc: null };
       default:
         throw createLog('error', { def: getError('TEMPLATE_INVALID_SOURCE'), params: { type: srcObj.type }, subject: srcObj.type, context: { phase: 'load' } });
     }
   }
   if (isString(src)) {
-    return { ...state, tmplStr: src };
+    return { ...base, status: 'source', tmplStr: src, tmplProps: null, rootRenderFunc: null };
   }
   throw createLog('error', { def: getError('TEMPLATE_SRC_STRING'), params: {}, subject: null, context: { phase: 'load' } });
 };

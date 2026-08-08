@@ -1,3 +1,4 @@
+import type { Phase } from '@nunjucks/shared';
 import { TEMPLATE_ERROR, isTemplateError } from '../branding.ts';
 
 export interface SecurityError extends Error {
@@ -7,7 +8,7 @@ export interface SecurityError extends Error {
   lineno: number | null;
   colno: number | null;
   subject: string | null;
-  phase: string | null;
+  phase: Phase | null;
   templateName: string | null;
   templatePath: string | null;
   [TEMPLATE_ERROR]?: boolean;

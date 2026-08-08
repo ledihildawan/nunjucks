@@ -1,4 +1,5 @@
 import type { LineBase } from '@nunjucks/error-catalog';
+import type { Phase } from '@nunjucks/shared';
 import type { SourceTrace } from '../location/source-trace.ts';
 import { DEFAULT_IDE } from '../config/defaults.ts';
 
@@ -7,7 +8,7 @@ export interface NormalizedLogMetadata {
   colno: number | null;
   code: string | null;
   subject: string | null;
-  phase: string | null;
+  phase: Phase | null;
   templateName: string | null;
   templatePath?: string | null;
   renderContext?: Record<string, unknown>;
@@ -37,7 +38,7 @@ export interface FormatterState {
   dev: boolean;
   ide: string;
   verbosity: 'simple' | 'medium' | 'full';
-  phase: string | null;
+  phase: Phase | null;
   templateName: string | null;
   lineno: number | null;
   colno: number | null;

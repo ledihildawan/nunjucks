@@ -112,7 +112,13 @@ const handleArrayElement = (parserContext: ParserContext, node: ChildrenNode, to
   return parseArraySymbolElement(parserContext, node, tok, sawRest);
 };
 
-const handleArrayTrailingComma = (
+interface TrailingCommaConfig {
+  terminationToken: Token['type'];
+  label: string;
+}
+
+const handleTrailingComma = (
+  { terminationToken, label }: TrailingCommaConfig,
   parserContext: ParserContext,
   tok: Token,
   node: ChildrenNode,
@@ -120,14 +126,12 @@ const handleArrayTrailingComma = (
 ): Result<{ node: ChildrenNode; sawRest: boolean; continueLoop: boolean }, TemplateError> => {
   if ((node.children?.length ?? 0) > 0 && !sawRest) {
     if (!skip(parserContext, TOKEN_COMMA)) {
-      return fail(parserContext, 'parseArrayPattern: expected comma',
-        tok.lineno,
-        tok.colno);
+      return fail(parserContext, `${label}: expected comma`, tok.lineno, tok.colno);
     }
     const afterR = peekToken(parserContext);
     if (isErr(afterR)) { return afterR; }
     const after = afterR.value;
-    if (after.type === TOKEN_RIGHT_BRACKET) {
+    if (after.type === terminationToken) {
       const consumedR = nextToken(parserContext);
       if (isErr(consumedR)) { return consumedR; }
       return ok({ node, sawRest, continueLoop: false });
@@ -139,7 +143,23 @@ const handleArrayTrailingComma = (
   return ok({ node, sawRest, continueLoop: true });
 };
 
-const consumeArrayElementComma = (parserContext: ParserContext): Result<boolean, TemplateError> => {
+const handleArrayTrailingComma = (
+  parserContext: ParserContext,
+  tok: Token,
+  node: ChildrenNode,
+  sawRest: boolean
+): Result<{ node: ChildrenNode; sawRest: boolean; continueLoop: boolean }, TemplateError> =>
+  handleTrailingComma({ terminationToken: TOKEN_RIGHT_BRACKET, label: 'parseArrayPattern' }, parserContext, tok, node, sawRest);
+
+const handleObjectTrailingComma = (
+  parserContext: ParserContext,
+  tok: Token,
+  node: ChildrenNode,
+  sawRest: boolean
+): Result<{ node: ChildrenNode; sawRest: boolean; continueLoop: boolean }, TemplateError> =>
+  handleTrailingComma({ terminationToken: TOKEN_RIGHT_CURLY, label: 'parseObjectPattern' }, parserContext, tok, node, sawRest);
+
+const consumeComma = (parserContext: ParserContext): Result<boolean, TemplateError> => {
   if (peekTokenOrNull(parserContext)?.type !== TOKEN_COMMA) {
     return ok(false);
   }
@@ -180,7 +200,7 @@ const parseArrayIteration = (
   node = result.value.node;
   sawRest = result.value.sawRest;
 
-  const consumedCommaR = consumeArrayElementComma(parserContext);
+  const consumedCommaR = consumeComma(parserContext);
   if (isErr(consumedCommaR)) { return consumedCommaR; }
   return ok({ node, sawRest, skipCommaNext: consumedCommaR.value, done: false });
 };
@@ -236,28 +256,6 @@ const parseObjectPropertyValue = (parserContext: ParserContext, keyTok: Token, k
   return ok(symbol(loc(keyTok), keyName));
 };
 
-const handleObjectTrailingComma = (parserContext: ParserContext, tok: Token, node: ChildrenNode, sawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean; continueLoop: boolean }, TemplateError> => {
-  if ((node.children?.length ?? 0) > 0 && !sawRest) {
-    if (!skip(parserContext, TOKEN_COMMA)) {
-      return fail(parserContext, 'parseObjectPattern: expected comma',
-        tok.lineno,
-        tok.colno);
-    }
-    const afterR = peekToken(parserContext);
-    if (isErr(afterR)) { return afterR; }
-    const after = afterR.value;
-    if (after.type === TOKEN_RIGHT_CURLY) {
-      const consumedR = nextToken(parserContext);
-      if (isErr(consumedR)) { return consumedR; }
-      return ok({ node, sawRest, continueLoop: false });
-    }
-    if (after.type === TOKEN_COMMA) {
-      return ok({ node: appendChild(node, hole(loc(after))), sawRest, continueLoop: true });
-    }
-  }
-  return ok({ node, sawRest, continueLoop: true });
-};
-
 const handleObjectSpread = (parserContext: ParserContext, node: ChildrenNode, sawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
   if (peekTokenOrNull(parserContext)?.type === TOKEN_SPREAD) {
     const consumedR = nextToken(parserContext);
@@ -287,15 +285,6 @@ const parseObjectPatternProperty = (parserContext: ParserContext, node: Children
   )));
 };
 
-const consumeObjectTrailingComma = (parserContext: ParserContext): Result<void, TemplateError> => {
-  if (peekTokenOrNull(parserContext)?.type !== TOKEN_COMMA) {
-    return ok(undefined);
-  }
-  const consumedR = nextToken(parserContext);
-  if (isErr(consumedR)) { return consumedR; }
-  return ok(undefined);
-};
-
 const tryObjectSpreadTerminator = (
   parserContext: ParserContext,
   node: ChildrenNode,
@@ -306,7 +295,7 @@ const tryObjectSpreadTerminator = (
   if (!spreadResult.value.sawRest) {
     return ok(null);
   }
-  const commaR = consumeObjectTrailingComma(parserContext);
+  const commaR = consumeComma(parserContext);
   if (isErr(commaR)) { return commaR; }
   return ok({ node: spreadResult.value.node });
 };

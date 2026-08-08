@@ -1,6 +1,6 @@
 import { ERROR_DEFINITIONS, createLog } from '@nunjucks/log';
 import type { IncludeChain } from '@nunjucks/log';
-import type { NodeLocation } from '@nunjucks/shared';
+import type { NodeLocation, UndefinedMode } from '@nunjucks/shared';
 import { find, forEach, keys } from 'remeda';
 
 const CONTEXT_KEY = Symbol('Context');
@@ -9,14 +9,13 @@ export interface Env {
   opts: {
     dev: boolean;
     autoescape: boolean;
-    undefined: string;
+    undefined: UndefinedMode;
   };
   getFilter: (name: string, lineno: number | null, colno: number | null) => unknown;
   getTest: (name: string, lineno: number | null, colno: number | null) => unknown;
   getTemplate?: (name: string, eagerCompile?: boolean, includeChain?: IncludeChain | null, ignoreMissing?: boolean) => unknown;
   emit?: (event: string, ...args: unknown[]) => void;
   renderingTemplates?: Set<string | undefined>;
-  emitter?: unknown;
 }
 
 type BlockLocation = NodeLocation;
@@ -187,8 +186,15 @@ const makeContext = (state: ContextState): Context => {
     },
 
     fork(data: Record<string, unknown> = {}): Context {
-      const child = createContext({ ctx: data, env: state.env });
-      child.parentContext = context;
+      const child = makeContext({
+        env: state.env,
+        ctx: { ...data },
+        blocks: {},
+        metadata: {},
+        exported: [],
+        parentBlockNames: null,
+        parentContext: context,
+      });
       return child;
     },
 

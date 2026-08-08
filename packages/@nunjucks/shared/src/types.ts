@@ -1,3 +1,5 @@
+type Phase = 'compile' | 'render' | 'load' | 'parse';
+
 interface NodeLocation {
   lineno: number | null;
   colno: number | null;
@@ -16,4 +18,4 @@ interface DomPurifyConfig {
   ALLOW_DATA_ATTR?: boolean;
 }
 
-export type { NodeLocation, DomPurifyConfig };
+export type { Phase, NodeLocation, DomPurifyConfig };

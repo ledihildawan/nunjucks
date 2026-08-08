@@ -1,4 +1,5 @@
 import type { LineBase } from '@nunjucks/error-catalog';
+import type { Phase } from '@nunjucks/shared';
 import type { SourceTrace } from './internal/location/source-trace.ts';
 import type { ErrorLike } from '@nunjucks/error-catalog';
 
@@ -38,7 +39,7 @@ interface ToHtmlOptions {
   lineno?: number | null;
   colno?: number | null;
   renderContext?: Record<string, unknown>;
-  phase?: string | null;
+  phase?: Phase | null;
   version?: string;
   timestamp?: string;
   csp?: Csp;

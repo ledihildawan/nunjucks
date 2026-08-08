@@ -16,10 +16,10 @@ interface TemplateStateCell {
 
 const createTemplateCompiler = ({ getState, commit }: TemplateStateCell) => {
   const compileToProps = (state: TemplateState): CompiledTemplateExports | null => {
-    if (state.tmplProps) {
+    if (state.status === 'compiled') {
       return state.tmplProps;
     }
-    const codeResult = compileToCode({ source: state.tmplStr ?? '', templateName: state.path ?? '', undefinedMode: state.env.opts.undefined as UndefinedMode | undefined, parseOpts: state.env.opts as ParseOptions });
+    const codeResult = compileToCode({ source: state.tmplStr, templateName: state.path ?? '', undefinedMode: state.env.opts.undefined as UndefinedMode | undefined, parseOpts: state.env.opts as ParseOptions });
     // WHY: compileToCode returns Result, but this template-include path feeds safeCompile which prettifies+rethrows for the include system; unwrapping here keeps that throw-based shell intact while the render() path uses Result end-to-end.
     if (isErr(codeResult)) { throw codeResult.error; }
     const compiled = loadCompiledCode(codeResult.value);
@@ -37,12 +37,17 @@ const createTemplateCompiler = ({ getState, commit }: TemplateStateCell) => {
 
     try {
       const props = compileToProps(state);
+      if (!props) { throw new Error('Compiled template output is missing a valid root export'); }
       commit({
-        ...state,
-        blocks: extractBlocks(props ?? {}) as Record<string, (...args: unknown[]) => unknown>,
-        blockMeta: (props?.[BLOCK_META_KEY] as Record<string, BlockLocation>) ?? {},
-        rootRenderFunc: props?.root as TemplateState['rootRenderFunc'],
-        compiled: true,
+        env: state.env,
+        path: state.path,
+        includeChain: state.includeChain,
+        status: 'compiled',
+        tmplStr: null,
+        tmplProps: props,
+        blocks: extractBlocks(props) as Record<string, (...args: unknown[]) => unknown>,
+        blockMeta: (props[BLOCK_META_KEY] as Record<string, BlockLocation>) ?? {},
+        rootRenderFunc: props.root,
       });
 
       state.env.emit?.(HOOK_EVENTS.TEMPLATE_COMPILE_COMPLETE, { template: state, path: state.path, duration: Date.now() - startTime });

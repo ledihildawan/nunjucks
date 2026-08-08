@@ -1,7 +1,7 @@
 import { arrayPattern, isArray, isArrayPattern, isAssignmentPattern, isDict, isHole, isObjectPattern, isPair, isPatternProperty, isRestPattern, isSymbol, objectPattern } from '@nunjucks/nodes';
 import type { Node, PairNode, RestPatternNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
-import { forEach } from 'remeda';
+import { forEach, reduce } from 'remeda';
 import type { Compiler } from '../index.ts';
 import { loc } from '@nunjucks/shared';
 
@@ -76,14 +76,15 @@ const compileArrayPattern = (destructuringContext: DestructuringContext, pattern
   if (!patternChildren) {
     return;
   }
-  const processChild = (index: number, childIndex: number): void => {
-    const child = patternChildren[childIndex];
-    if (!child) { return; }
-    const result = handleArrayPatternChild(destructuringContext, child, source, index);
-    if (result.shouldBreak) { return; }
-    processChild(result.newIndex, childIndex + 1);
-  };
-  processChild(0, 0);
+  reduce(
+    patternChildren,
+    (state, child) => {
+      if (state.done) { return state; }
+      const result = handleArrayPatternChild(destructuringContext, child, source, state.index);
+      return { index: result.newIndex, done: result.shouldBreak };
+    },
+    { index: 0, done: false },
+  );
 };
 
 const handleArrayPatternChild = (

@@ -1,5 +1,6 @@
 import type { LineBase } from '@nunjucks/error-catalog';
 import { TEMPLATE_ERROR } from '@nunjucks/error-catalog';
+import type { Phase, UndefinedMode } from '@nunjucks/shared';
 
 interface ErrorDefinitionEntry {
   name: string;
@@ -15,7 +16,7 @@ interface ErrorDefinitionEntry {
 interface ErrorInfo {
   code?: string | null;
   subject?: string | null;
-  phase?: string | null;
+  phase?: Phase | null;
   templateName?: string | null;
   renderContext?: Record<string, unknown>;
   blockedKeys?: readonly string[];
@@ -25,7 +26,7 @@ interface ErrorInfo {
 
 interface WarningInfo extends ErrorInfo {
   varName?: string | null;
-  undefinedMode?: string;
+  undefinedMode?: UndefinedMode;
 }
 
 interface OutputOptions {
@@ -53,7 +54,7 @@ interface TemplateError extends Error {
   colno: number | null;
   code: string | null;
   subject: string | null;
-  phase: string | null;
+  phase: Phase | null;
   templateName: string | null;
   templatePath: string | null;
   renderContext?: Record<string, unknown>;
@@ -81,10 +82,10 @@ interface TemplateWarning {
   colno: number | null;
   varName: string | null;
   templateName: string | null;
-  undefinedMode: string;
+  undefinedMode: UndefinedMode;
   code: string | null;
   subject: string | null;
-  phase: string | null;
+  phase: Phase | null;
   lineBase?: LineBase | null;
   causes?: string[];
   fixCode?: string | null;
@@ -94,7 +95,7 @@ interface TemplateWarning {
 interface ErrorContext {
   lineno?: number | null;
   colno?: number | null;
-  phase?: string | null;
+  phase?: Phase | null;
   templateName?: string | null;
   templatePath?: string | null;
   lineBase?: LineBase | null;
@@ -104,13 +105,13 @@ interface ErrorContext {
 
 interface WarningContext extends ErrorContext {
   varName?: string | null;
-  undefinedMode?: string | null;
+  undefinedMode?: UndefinedMode | null;
 }
 
 interface BaseContext {
   lineno: number | null;
   colno: number | null;
-  phase: string | null;
+  phase: Phase | null;
   templateName: string | null;
   lineBase: LineBase | null;
 }
@@ -119,7 +120,7 @@ interface NormalizedErrorContext extends BaseContext {}
 
 interface NormalizedWarningContext extends BaseContext {
   varName: string | null;
-  undefinedMode: string;
+  undefinedMode: UndefinedMode;
 }
 
 interface IncludeChain {

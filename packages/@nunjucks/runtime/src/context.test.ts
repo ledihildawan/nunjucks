@@ -1,7 +1,8 @@
 import { describe, test, expect } from 'bun:test';
 import { createContext } from '@nunjucks/runtime/context';
+import type { Env } from '@nunjucks/runtime/context';
 
-const mockEnv = {
+const mockEnv: Env = {
   opts: { dev: false, autoescape: true, undefined: 'default' },
   getFilter: () => null,
   getTest: () => null,

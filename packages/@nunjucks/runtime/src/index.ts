@@ -1,4 +1,4 @@
-export { createFrame, lookup, type Frame } from './frame.ts';
+export { createFrame, type Frame } from './frame.ts';
 export { createContext, type Env, type Context, type ContextMetadata, type BlockLocation, type BlockFn } from './context.ts';
 export {
   createSafeString,
@@ -21,12 +21,6 @@ export {
   optionalMemberLookup,
   slice,
   nullishCoalesce,
-  isNullAccessResult,
-  isPropertyNotFoundResult,
-  getNullParentName,
-  type NullAccessResult,
-  type PropertyNotFoundResult,
-  type AccessResult,
 } from './member-access.ts';
 export {
   createSandboxedObject,
