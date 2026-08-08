@@ -1,7 +1,7 @@
 import { ERROR_DEFINITIONS, createLog } from '@nunjucks/log';
 import type { IncludeChain } from '@nunjucks/log';
 import type { NodeLocation } from '@nunjucks/shared';
-import { find, keys } from 'remeda';
+import { find, forEach, keys } from 'remeda';
 
 const CONTEXT_KEY = Symbol('Context');
 
@@ -206,13 +206,14 @@ const createContext = ({
   return context;
 };
 
+// WHY: the Context object is render-time execution state — setVariable/addBlock/addExport are invoked by compiled template code and must mutate in place for variable-scope semantics (a {% set %} in a loop must be visible to subsequent lookups). This is the imperative shell of template execution, not domain logic, so the mutation is intentional.
 const registerBlocks = (ctxObj: Context, blocksInput: Record<string, unknown>): void => {
-  for (const name of getKeys(blocksInput)) {
+  forEach(getKeys(blocksInput), (name) => {
     const block = blocksInput[name];
     if (block) {
       ctxObj.addBlock(name, block as BlockFn);
     }
-  }
+  });
 };
 
 const isContext = (value: unknown): value is Context =>
