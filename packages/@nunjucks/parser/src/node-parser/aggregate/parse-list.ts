@@ -10,6 +10,7 @@ import {
 } from '@nunjucks/lexer';
 import { appendChild, hole } from '@nunjucks/nodes';
 import type { ChildrenNode, NodeLocation } from '@nunjucks/nodes';
+import { loc } from '@nunjucks/shared';
 import { fail, nextToken, peekToken, skip } from '../../cursor.ts';
 import type { ParserContext } from '../../cursor.ts';
 
@@ -39,7 +40,7 @@ const prepareAfterComma = (
   }
   const nextNode = appendChild(
     node,
-    hole(origin.lineno ?? 0, origin.colno ?? 0)
+    hole(loc(origin))
   );
   if (followedByClose) {
     nextToken(parserContext);

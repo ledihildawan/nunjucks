@@ -1,4 +1,5 @@
 import { describe, test, expect } from 'bun:test';
+import { ZERO_LOC } from '@nunjucks/shared';
 import {
   literal, symbol, templateData, funCall, lookupVal, block,
   array, dict, pair, forNode, ifNode,
@@ -16,7 +17,7 @@ const isOutput = (n: unknown): n is { type: 'output'; lineno: number; colno: num
 describe('nodes/types/guards', () => {
   describe('isNode', () => {
     test('returns true for a valid node', () => {
-      expect(isNode(literal(0, 0, 'x'))).toBe(true);
+      expect(isNode(literal(ZERO_LOC, 'x'))).toBe(true);
     });
 
     test('returns false for null', () => {
@@ -38,112 +39,112 @@ describe('nodes/types/guards', () => {
 
   describe('isLiteral', () => {
     test('returns true for literal node', () => {
-      expect(isLiteral(literal(0, 0, 'hello'))).toBe(true);
+      expect(isLiteral(literal(ZERO_LOC, 'hello'))).toBe(true);
     });
 
     test('returns false for symbol node', () => {
-      expect(isLiteral(symbol(0, 0, 'x'))).toBe(false);
+      expect(isLiteral(symbol(ZERO_LOC, 'x'))).toBe(false);
     });
   });
 
   describe('isSymbol', () => {
     test('returns true for symbol node', () => {
-      expect(isSymbol(symbol(0, 0, 'x'))).toBe(true);
+      expect(isSymbol(symbol(ZERO_LOC, 'x'))).toBe(true);
     });
 
     test('returns false for literal node', () => {
-      expect(isSymbol(literal(0, 0, 'x'))).toBe(false);
+      expect(isSymbol(literal(ZERO_LOC, 'x'))).toBe(false);
     });
   });
 
   describe('isFunCall', () => {
     test('returns true for funCall node', () => {
-      expect(isFunCall(funCall(0, 0, symbol(0, 0, 'fn'), []))).toBe(true);
+      expect(isFunCall(funCall(ZERO_LOC, symbol(ZERO_LOC, 'fn'), []))).toBe(true);
     });
 
     test('returns false for lookupVal node', () => {
-      expect(isFunCall(lookupVal(0, 0, symbol(0, 0, 'x'), literal(0, 0, 'y')))).toBe(false);
+      expect(isFunCall(lookupVal(ZERO_LOC, symbol(ZERO_LOC, 'x'), literal(ZERO_LOC, 'y')))).toBe(false);
     });
   });
 
   describe('isLookupVal', () => {
     test('returns true for lookupVal node', () => {
-      expect(isLookupVal(lookupVal(0, 0, symbol(0, 0, 'x'), literal(0, 0, 'y')))).toBe(true);
+      expect(isLookupVal(lookupVal(ZERO_LOC, symbol(ZERO_LOC, 'x'), literal(ZERO_LOC, 'y')))).toBe(true);
     });
 
     test('returns false for funCall node', () => {
-      expect(isLookupVal(funCall(0, 0, symbol(0, 0, 'fn'), []))).toBe(false);
+      expect(isLookupVal(funCall(ZERO_LOC, symbol(ZERO_LOC, 'fn'), []))).toBe(false);
     });
   });
 
   describe('isArray', () => {
     test('returns true for array node', () => {
-      expect(isArray(array(0, 0, [literal(0, 0, 1)]))).toBe(true);
+      expect(isArray(array(ZERO_LOC, [literal(ZERO_LOC, 1)]))).toBe(true);
     });
 
     test('returns false for dict node', () => {
-      expect(isArray(dict(0, 0, []))).toBe(false);
+      expect(isArray(dict(ZERO_LOC, []))).toBe(false);
     });
   });
 
   describe('isDict', () => {
     test('returns true for dict node', () => {
-      expect(isDict(dict(0, 0, []))).toBe(true);
+      expect(isDict(dict(ZERO_LOC, []))).toBe(true);
     });
 
     test('returns false for array node', () => {
-      expect(isDict(array(0, 0, []))).toBe(false);
+      expect(isDict(array(ZERO_LOC, []))).toBe(false);
     });
   });
 
   describe('isPair', () => {
     test('returns true for pair node', () => {
-      expect(isPair(pair(0, 0, literal(0, 0, 'key'), literal(0, 0, 'val')))).toBe(true);
+      expect(isPair(pair(ZERO_LOC, literal(ZERO_LOC, 'key'), literal(ZERO_LOC, 'val')))).toBe(true);
     });
 
     test('returns false for literal node', () => {
-      expect(isPair(literal(0, 0, 'x'))).toBe(false);
+      expect(isPair(literal(ZERO_LOC, 'x'))).toBe(false);
     });
   });
 
   describe('isFor', () => {
     test('returns true for for node', () => {
-      expect(isFor(forNode(0, 0, {
-        name: symbol(0, 0, 'x'),
-        arr: array(0, 0, []),
-        body: templateData(0, 0, ''),
+      expect(isFor(forNode(ZERO_LOC, {
+        name: symbol(ZERO_LOC, 'x'),
+        arr: array(ZERO_LOC, []),
+        body: templateData(ZERO_LOC, ''),
       }))).toBe(true);
     });
 
     test('returns false for if node', () => {
-      expect(isFor(ifNode(0, 0, { cond: literal(0, 0, true), body: templateData(0, 0, '') }))).toBe(false);
+      expect(isFor(ifNode(ZERO_LOC, { cond: literal(ZERO_LOC, true), body: templateData(ZERO_LOC, '') }))).toBe(false);
     });
   });
 
   describe('isIf', () => {
     test('returns true for if node', () => {
-      expect(isIf(ifNode(0, 0, {
-        cond: literal(0, 0, true),
-        body: templateData(0, 0, ''),
+      expect(isIf(ifNode(ZERO_LOC, {
+        cond: literal(ZERO_LOC, true),
+        body: templateData(ZERO_LOC, ''),
       }))).toBe(true);
     });
 
     test('returns false for for node', () => {
-      expect(isIf(forNode(0, 0, {
-        name: symbol(0, 0, 'x'),
-        arr: array(0, 0, []),
-        body: templateData(0, 0, ''),
+      expect(isIf(forNode(ZERO_LOC, {
+        name: symbol(ZERO_LOC, 'x'),
+        arr: array(ZERO_LOC, []),
+        body: templateData(ZERO_LOC, ''),
       }))).toBe(false);
     });
   });
 
   describe('isBlock', () => {
     test('returns true for block node', () => {
-      expect(isBlock(block(0, 0, 'b', templateData(0, 0, '')))).toBe(true);
+      expect(isBlock(block(ZERO_LOC, 'b', templateData(ZERO_LOC, '')))).toBe(true);
     });
 
     test('returns false for literal node', () => {
-      expect(isBlock(literal(0, 0, 'x'))).toBe(false);
+      expect(isBlock(literal(ZERO_LOC, 'x'))).toBe(false);
     });
   });
 
@@ -154,7 +155,7 @@ describe('nodes/types/guards', () => {
     });
 
     test('returns false for literal node', () => {
-      expect(isOutput(literal(0, 0, 'x'))).toBe(false);
+      expect(isOutput(literal(ZERO_LOC, 'x'))).toBe(false);
     });
   });
 

@@ -3,6 +3,7 @@ import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/index.ts";
+import { loc } from '@nunjucks/shared';
 
 export const parseInclude = (parserContext: ParserContext): Node => {
   const tagName = 'include';
@@ -11,7 +12,7 @@ export const parseInclude = (parserContext: ParserContext): Node => {
     fail(parserContext, `parseInclude: expected ${tagName}`);
   }
 
-  const node = include(tag.lineno, tag.colno);
+  const node = include(loc(tag));
   node.template = parseExpression(parserContext);
 
   if (skipSymbol(parserContext, 'only')) {

@@ -26,27 +26,27 @@ describe('ensureDefined', () => {
   });
 
   test('returns "undefined" string for null in chainable mode (default)', () => {
-    expect(ensureDefined(null, 1, 2)).toBe('undefined');
-    expect(ensureDefined(undefined, 1, 2)).toBe('undefined');
+    expect(ensureDefined(null, { lineno: 1, colno: 2 })).toBe('undefined');
+    expect(ensureDefined(undefined, { lineno: 1, colno: 2 })).toBe('undefined');
   });
 
   test('throws in strict mode for null/undefined', () => {
-    expect(() => ensureDefined(null, 1, 2, null, null, 'strict')).toThrow('Undefined value');
-    expect(() => ensureDefined(undefined, 1, 2, null, null, 'strict')).toThrow('Undefined value');
+    expect(() => ensureDefined(null, { lineno: 1, colno: 2, undefinedMode: 'strict' })).toThrow('Undefined value');
+    expect(() => ensureDefined(undefined, { lineno: 1, colno: 2, undefinedMode: 'strict' })).toThrow('Undefined value');
   });
 
   test('includes varName in strict error message', () => {
-    expect(() => ensureDefined(null, 1, 2, 'myVar', null, 'strict')).toThrow("'myVar'");
+    expect(() => ensureDefined(null, { lineno: 1, colno: 2, varName: 'myVar', undefinedMode: 'strict' })).toThrow("'myVar'");
   });
 
   test('sets UNDEFINED_VARIABLE code with varName, UNDEFINED_VALUE without', () => {
     try {
-      ensureDefined(null, 1, 2, 'x', null, 'strict');
+      ensureDefined(null, { lineno: 1, colno: 2, varName: 'x', undefinedMode: 'strict' });
     } catch (e) {
       expect((e as { code: string }).code).toBe('UNDEFINED_VARIABLE');
     }
     try {
-      ensureDefined(undefined, 1, 2, null, null, 'strict');
+      ensureDefined(undefined, { lineno: 1, colno: 2, undefinedMode: 'strict' });
     } catch (e) {
       expect((e as { code: string }).code).toBe('UNDEFINED_VALUE');
     }
@@ -54,7 +54,7 @@ describe('ensureDefined', () => {
 
   test('collects debug warnings when __warnings__ array is present', () => {
     const warnings: unknown[] = [];
-    const result = ensureDefined.call({ __warnings__: warnings }, undefined, 1, 2, 'v', null, 'debug');
+    const result = ensureDefined.call({ __warnings__: warnings }, undefined, { lineno: 1, colno: 2, varName: 'v', undefinedMode: 'debug' });
     expect(result).toBe('undefined');
     expect(warnings).toHaveLength(1);
   });
@@ -64,7 +64,7 @@ describe('ensureDefined', () => {
     let calls = 0;
     console.warn = () => { calls += 1; };
     try {
-      expect(ensureDefined(undefined, 1, 2, 'v', null, 'debug')).toBe('undefined');
+      expect(ensureDefined(undefined, { lineno: 1, colno: 2, varName: 'v', undefinedMode: 'debug' })).toBe('undefined');
     } finally {
       console.warn = original;
     }
@@ -72,30 +72,30 @@ describe('ensureDefined', () => {
   });
 
   test('handles property-not-found result in chainable mode', () => {
-    expect(ensureDefined(propNotFound('name', 'user'), 1, 2)).toBe('undefined');
+    expect(ensureDefined(propNotFound('name', 'user'), { lineno: 1, colno: 2 })).toBe('undefined');
   });
 
   test('throws UNDEFINED_PROPERTY in strict mode for property-not-found result', () => {
-    expect(() => ensureDefined(propNotFound('name', 'user'), 1, 2, null, null, 'strict')).toThrow(
+    expect(() => ensureDefined(propNotFound('name', 'user'), { lineno: 1, colno: 2, undefinedMode: 'strict' })).toThrow(
       "Property 'name' not found",
     );
     try {
-      ensureDefined(propNotFound('name', 'user'), 1, 2, null, null, 'strict');
+      ensureDefined(propNotFound('name', 'user'), { lineno: 1, colno: 2, undefinedMode: 'strict' });
     } catch (e) {
       expect((e as { code: string }).code).toBe('UNDEFINED_PROPERTY');
     }
   });
 
   test('handles null-access result in chainable mode', () => {
-    expect(ensureDefined(nullAccess('name', 'user'), 1, 2)).toBe('undefined');
+    expect(ensureDefined(nullAccess('name', 'user'), { lineno: 1, colno: 2 })).toBe('undefined');
   });
 
   test('throws NULL_VALUE in strict mode for null-access result', () => {
-    expect(() => ensureDefined(nullAccess('name', 'user'), 1, 2, null, null, 'strict')).toThrow(
+    expect(() => ensureDefined(nullAccess('name', 'user'), { lineno: 1, colno: 2, undefinedMode: 'strict' })).toThrow(
       "Cannot access 'name' on null",
     );
     try {
-      ensureDefined(nullAccess('name', 'user'), 1, 2, null, null, 'strict');
+      ensureDefined(nullAccess('name', 'user'), { lineno: 1, colno: 2, undefinedMode: 'strict' });
     } catch (e) {
       expect((e as { code: string }).code).toBe('NULL_VALUE');
     }
@@ -107,7 +107,7 @@ describe('ensureDefined', () => {
       __access_path__: 'x',
     };
     expect(() =>
-      ensureDefined(markerWithoutParent, 1, 2, 'user.profile', null, 'strict'),
+      ensureDefined(markerWithoutParent, { lineno: 1, colno: 2, varName: 'user.profile', undefinedMode: 'strict' }),
     ).toThrow("in 'user'");
   });
 });

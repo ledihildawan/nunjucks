@@ -51,7 +51,7 @@ export const compileIn = (compiler: Compiler, node: BinaryNode, frame: Frame): v
   compiler.compile(node.left, frame);
   compiler.emit(',');
   compiler.compile(node.right, frame);
-  compiler.emit(`, ${lineno}, ${colno}))`);
+  compiler.emit(`, { lineno: ${lineno}, colno: ${colno} }))`);
 };
 
 export const compileFloorDiv = (compiler: Compiler, node: BinaryOpNode, frame: Frame): void => {

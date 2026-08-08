@@ -26,6 +26,7 @@ import type { ParserContext } from '../cursor.ts';
 import { parseSignature } from '../node-parser/signature.ts';
 import type { BinNodeFn } from './binary-helpers.ts';
 import { parseConcat } from './arithmetic.ts';
+import { loc } from '@nunjucks/shared';
 
 const COMPARE_OPS = ['==', '===', '!=', '!==', '<', '>', '<=', '>='];
 
@@ -40,7 +41,7 @@ const parseCompare = (parserContext: ParserContext): Node => {
       break;
     }
     if (COMPARE_OPS.includes(String(tok.value))) {
-      ops.push(compareOperand(tok.lineno, tok.colno, parseConcat(parserContext), String(tok.value)));
+      ops.push(compareOperand(loc(tok), parseConcat(parserContext), String(tok.value)));
     } else {
       pushToken(parserContext, tok);
       break;
@@ -49,7 +50,7 @@ const parseCompare = (parserContext: ParserContext): Node => {
 
   const [firstOp] = ops;
   if (firstOp) {
-    return compare(firstOp.lineno, firstOp.colno, expr, ops);
+    return compare(loc(firstOp), expr, ops);
   }
   return expr;
 };
@@ -92,19 +93,18 @@ const parseIs = (parserContext: ParserContext): Node => {
   if (testName) {
     nextToken(parserContext);
     const testArgs = parseTestArgs(parserContext);
-    const lineno = tok.lineno;
-    const colno = tok.colno;
+    const origin = loc(tok);
 
     const builtTest = testArgs.length > 0
-      ? testCallNode(lineno, colno, { target: initialNode, name: testName, args: testArgs })
-      : testNode(lineno, colno, initialNode, testName);
+      ? testCallNode(origin, { target: initialNode, name: testName, args: testArgs })
+      : testNode(origin, initialNode, testName);
 
-    return negate ? not(tok.lineno, tok.colno, builtTest) : builtTest;
+    return negate ? not(loc(tok), builtTest) : builtTest;
   }
 
   const node2 = parseCompare(parserContext);
-  const builtIs = isOp(tok.lineno, tok.colno, initialNode, node2);
-  return negate ? not(tok.lineno, tok.colno, builtIs) : builtIs;
+  const builtIs = isOp(loc(tok), initialNode, node2);
+  return negate ? not(loc(tok), builtIs) : builtIs;
 };
 
 const bitwiseNodeMap: Record<string, BinNodeFn> = {
@@ -130,7 +130,7 @@ const parseBitwiseOr = (parserContext: ParserContext): Node => {
   }
 
   const right = parseIs(parserContext);
-  return createNode(tok.lineno, tok.colno, initialNode, right);
+  return createNode(loc(tok), initialNode, right);
 };
 
 const isInToken = (tok: Token): boolean =>
@@ -141,8 +141,8 @@ const isNotInversion = (tok: Token): boolean =>
 
 const handleInExpression = (parserContext: ParserContext, node: Node, invert: boolean, inTok: Token): Node => {
   const node2 = parseIs(parserContext);
-  const newNode = inNode(inTok.lineno, inTok.colno, node, node2);
-  return invert ? not(inTok.lineno, inTok.colno, newNode) : newNode;
+  const newNode = inNode(loc(inTok), node, node2);
+  return invert ? not(loc(inTok), newNode) : newNode;
 };
 
 const processInToken = (parserContext: ParserContext, node: Node, invert: boolean, inTok: Token): Node | null => {

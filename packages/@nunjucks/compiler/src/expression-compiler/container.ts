@@ -3,6 +3,7 @@ import type { Node, SymbolNode, ChildrenNode, PairNode, SpreadNode, TemplateLite
 import type { Frame } from '@nunjucks/runtime';
 import { forEach, join, map, pipe } from 'remeda';
 import type { Compiler } from '../index.ts';
+import { loc } from '@nunjucks/shared';
 
 const STRING_ESCAPE_MAP: Record<string, string> = {
   '\\': '\\\\',
@@ -64,7 +65,7 @@ const compilePair = (compiler: Compiler, node: PairNode, frame: Frame): void => 
   const rawKey = node.key;
   const value = node.value;
   const key = isSymbol(rawKey)
-    ? literal(rawKey.lineno, rawKey.colno, rawKey.value)
+    ? literal(loc(rawKey), rawKey.value)
     : rawKey;
 
   if (typeof rawKey !== 'string' && !isSymbol(rawKey) && !(isLiteral(rawKey) &&
@@ -74,7 +75,7 @@ const compilePair = (compiler: Compiler, node: PairNode, frame: Frame): void => 
       typeof rawKey !== 'string' ? rawKey.colno : node.colno);
   }
 
-  const keyNode = typeof key === 'string' ? literal(node.lineno, node.colno, key) : key;
+  const keyNode = typeof key === 'string' ? literal(loc(node), key) : key;
   compiler.compile(keyNode, frame);
   compiler.emit(': ');
   compiler.compileExpression(value, frame);

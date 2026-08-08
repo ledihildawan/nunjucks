@@ -3,6 +3,7 @@ import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/index.ts";
+import { loc } from '@nunjucks/shared';
 
 export const parseExtends = (parserContext: ParserContext): Node => {
   const tagName = 'extends';
@@ -11,7 +12,7 @@ export const parseExtends = (parserContext: ParserContext): Node => {
     fail(parserContext, `parseExtends: expected ${tagName}`);
   }
 
-  const node = extendsNode(tag.lineno, tag.colno);
+  const node = extendsNode(loc(tag));
   node.template = parseExpression(parserContext);
 
   advanceAfterBlockEnd(parserContext, String(tag.value));

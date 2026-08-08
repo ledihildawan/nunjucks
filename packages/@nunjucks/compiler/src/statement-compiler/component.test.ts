@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { compileComponentPublic } from '@nunjucks/compiler/statement-compiler/component';
 import { symbol, getNodeTypeName } from '@nunjucks/nodes';
+import { loc } from '@nunjucks/shared';
 
 const makeCtx = () => {
   const emitted: string[] = [];
@@ -47,7 +48,7 @@ describe('compileComponentPublic', () => {
   test('asserts arg types', () => {
     const ctx = makeCtx();
     const node = {
-      name: symbol(1, 1, 'bad'),
+      name: symbol(loc({ lineno: 1, colno: 1 }), 'bad'),
       args: ['not a symbol'],
       body: { mock: 'body' },
     };

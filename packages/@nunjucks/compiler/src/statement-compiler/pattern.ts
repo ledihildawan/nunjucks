@@ -3,6 +3,7 @@ import type { Node, PairNode, RestPatternNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
+import { loc } from '@nunjucks/shared';
 
 interface DestructuringContext {
   ctx: Compiler;
@@ -60,14 +61,14 @@ const asObjectPattern = (node: Node): Node | null => {
   if (isObjectPattern(node)) { return node; }
   const { children } = node;
   if (!children) { return null; }
-  return objectPattern(node.lineno, node.colno, children);
+  return objectPattern(loc(node), children);
 };
 
 const asArrayPattern = (node: Node): Node | null => {
   if (isArrayPattern(node)) { return node; }
   const { children } = node;
   if (!children) { return null; }
-  return arrayPattern(node.lineno, node.colno, children);
+  return arrayPattern(loc(node), children);
 };
 
 const compileArrayPattern = (destructuringContext: DestructuringContext, pattern: Node, source: string): void => {

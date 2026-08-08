@@ -6,6 +6,8 @@ import {
 import { symbol, keywordArgs, pair, spread, templateLiteral } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
+import { ZERO_LOC } from '@nunjucks/shared';
+import { loc } from '@nunjucks/shared';
 
 const frame = createFrame();
 
@@ -49,12 +51,12 @@ describe('compileSymbol', () => {
     const c = makeCompiler();
     const frameWith = createFrame();
     frameWith.set('x', 't_99');
-    compileSymbol(asCompiler(c), symbol(0, 0, 'x'), frameWith);
+    compileSymbol(asCompiler(c), symbol(ZERO_LOC, 'x'), frameWith);
     expect(c.emitted).toEqual(['t_99']);
   });
   test('emits contextOrFrameLookup when frame.lookup returns null', () => {
     const c = makeCompiler();
-    compileSymbol(asCompiler(c), symbol(0, 0, 'x'), frame);
+    compileSymbol(asCompiler(c), symbol(ZERO_LOC, 'x'), frame);
     expect(c.emitted).toEqual(['runtime.contextOrFrameLookup(context, frame, "x")']);
   });
 });
@@ -62,12 +64,12 @@ describe('compileSymbol', () => {
 describe('compilePair', () => {
   test('string key emits literal key', () => {
     const c = makeCompiler();
-    compilePair(asCompiler(c), pair(1, 1, symbol(1, 1, 'a'), { mock: 'V' } as never), frame);
+    compilePair(asCompiler(c), pair(loc({ lineno: 1, colno: 1 }), symbol(loc({ lineno: 1, colno: 1 }), 'a'), { mock: 'V' } as never), frame);
     expect(c.emitted.join('')).toBe('"a": V');
   });
   test('non-string non-symbol key fails', () => {
     const c = makeCompiler();
-    expect(() => compilePair(asCompiler(c), pair(1, 1, symbol(1, 1, 'a'), spread(1, 1, symbol(1, 1, 's')) as never) as never, frame))
+    expect(() => compilePair(asCompiler(c), pair(loc({ lineno: 1, colno: 1 }), symbol(loc({ lineno: 1, colno: 1 }), 'a'), spread(loc({ lineno: 1, colno: 1 }), symbol(loc({ lineno: 1, colno: 1 }), 's')) as never) as never, frame))
       .not.toThrow();
   });
 });
@@ -75,7 +77,7 @@ describe('compilePair', () => {
 describe('compileKeywordArgs', () => {
   test('wraps a dict in runtime.makeKeywordArgs', () => {
     const c = makeCompiler();
-    compileKeywordArgs(asCompiler(c), keywordArgs(0, 0), frame);
+    compileKeywordArgs(asCompiler(c), keywordArgs(ZERO_LOC), frame);
     expect(c.emitted.join('')).toBe('runtime.makeKeywordArgs({})');
   });
 });
@@ -83,7 +85,7 @@ describe('compileKeywordArgs', () => {
 describe('compileSpread', () => {
   test('emits ... before argument', () => {
     const c = makeCompiler();
-    compileSpread(asCompiler(c), spread(1, 1, symbol(1, 1, 'xs')), frame);
+    compileSpread(asCompiler(c), spread(loc({ lineno: 1, colno: 1 }), symbol(loc({ lineno: 1, colno: 1 }), 'xs')), frame);
     expect(c.emitted.join('')).toBe('..."xs"');
   });
 });
@@ -91,9 +93,9 @@ describe('compileSpread', () => {
 describe('compileTemplateLiteral', () => {
   test('emits a JS template literal mixing quasis and symbols', () => {
     const c = makeCompiler();
-    const node = templateLiteral(0, 0, [
+    const node = templateLiteral(ZERO_LOC, [
       { type: 'template', value: 'hi ' },
-      { type: 'expression', node: symbol(0, 0, 'name') },
+      { type: 'expression', node: symbol(ZERO_LOC, 'name') },
       { type: 'template', value: '!' },
     ]);
     compileTemplateLiteral(asCompiler(c), node as never, frame);

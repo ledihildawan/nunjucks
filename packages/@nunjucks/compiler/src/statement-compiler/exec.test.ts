@@ -3,6 +3,7 @@ import { compileExec } from './exec.ts';
 import { funCall, symbol } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
+import { loc } from '@nunjucks/shared';
 
 const frame = createFrame();
 
@@ -21,7 +22,7 @@ describe('compileExec', () => {
     const c = makeCompiler();
     compileExec(asCompiler(c), {
       lineno: 3, colno: 7,
-      expr: funCall(3, 7, symbol(3, 7, 'fn'), []),
+      expr: funCall(loc({ lineno: 3, colno: 7 }), symbol(loc({ lineno: 3, colno: 7 }), 'fn'), []),
     } as never, frame);
     const joined = c.emitted.join('');
     expect(joined).toContain('lineno = 3; colno = 7;');

@@ -25,7 +25,7 @@ const compileRenderFunCall = (compiler: Compiler, callExpr: CallNode, frame: Fra
   compiler.emit('runtime.callWrap(');
   compiler.compile(callExpr.name, frame);
   const nameStr = callExpr.name.type === 'symbol' ? String(callExpr.name.value) : 'render';
-  compiler.emit(`, ${JSON.stringify(nameStr)}, null, context, [`);
+  compiler.emit(`, ${JSON.stringify(nameStr)}, { displayName: null, context, args: [`);
   const args = callExpr.args;
   args.forEach((argument: Node, i: number) => {
     if (i > 0) { compiler.emit(', '); }
@@ -33,7 +33,7 @@ const compileRenderFunCall = (compiler: Compiler, callExpr: CallNode, frame: Fra
   });
   if (args.length > 0) { compiler.emit(', '); }
   compiler.emit(`runtime.makeKeywordArgs({ ${kwargsPart} })`);
-  compiler.emit(']))');
+  compiler.emit('] }))');
 };
 
 export const compileRenderBlock = (compiler: Compiler, node: RenderNode, parentFrame: Frame): void => {
@@ -54,6 +54,6 @@ export const compileRenderBlock = (compiler: Compiler, node: RenderNode, parentF
     compiler.compile(callExpr, frame);
   }
 
-  compiler.emitLine(`), env.opts.autoescape, lineno, colno, "html");`);
+  compiler.emitLine(`), { autoescape: env.opts.autoescape, lineno, colno, context: "html" });`);
   compiler.emitLine('frame = frame.pop();');
 };

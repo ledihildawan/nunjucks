@@ -17,6 +17,7 @@ import type { ChildrenNode, Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, skip, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/index.ts";
+import { loc } from '@nunjucks/shared';
 
 const isDestructuringStart = (parserContext: ParserContext): boolean => {
   const tok = peekToken(parserContext);
@@ -33,7 +34,7 @@ const parseInnerPattern = (parserContext: ParserContext): Node => {
   const tok = peekToken(parserContext);
   if (tok?.type === TOKEN_SYMBOL) {
     const symbolTok = nextToken(parserContext);
-    return symbol(symbolTok.lineno, symbolTok.colno, isSymbolToken(symbolTok) ? symbolTok.value : String(symbolTok.value));
+    return symbol(loc(symbolTok), isSymbolToken(symbolTok) ? symbolTok.value : String(symbolTok.value));
   }
   return fail(parserContext, 'parseInnerPattern: expected symbol or pattern',
     tok?.lineno ?? 0, tok?.colno ?? 0);
@@ -44,7 +45,7 @@ const parseAssignmentDefault = (parserContext: ParserContext, target: Node): Nod
   if (peeked?.type === TOKEN_OPERATOR && peeked?.value === '=') {
     nextToken(parserContext);
     const defaultExpr = parseExpression(parserContext);
-    return assignmentPattern(target.lineno, target.colno, target, defaultExpr);
+    return assignmentPattern(loc(target), target, defaultExpr);
   }
   return null;
 };
@@ -60,7 +61,7 @@ const handleArrayElement = (
   if (elementType === TOKEN_SPREAD) {
     nextToken(parserContext);
     const inner = parseInnerPattern(parserContext);
-    const rp = restPattern(tok.lineno, tok.colno, inner);
+    const rp = restPattern(loc(tok), inner);
     return { node: appendChild(node, rp), sawRest: true };
   }
   if (elementType === TOKEN_LEFT_BRACKET) {
@@ -81,7 +82,7 @@ const handleArrayElement = (
       symTok?.lineno ?? tok.lineno, symTok?.colno ?? tok.colno);
     return { node, sawRest };
   }
-  const target = symbol(symTok.lineno, symTok.colno, symTok.value);
+  const target = symbol(loc(symTok), symTok.value);
   const withDefault = parseAssignmentDefault(parserContext, target);
   return { node: appendChild(node, withDefault ?? target), sawRest };
 };
@@ -104,14 +105,14 @@ const handleArrayTrailingComma = (
       return { node, sawRest, continueLoop: false };
     }
     if (after?.type === TOKEN_COMMA) {
-      return { node: appendChild(node, hole(after.lineno, after.colno)), sawRest, continueLoop: true };
+      return { node: appendChild(node, hole(loc(after))), sawRest, continueLoop: true };
     }
   }
   return { node, sawRest, continueLoop: true };
 };
 
 const parseArrayPattern = (parserContext: ParserContext, lineno: number, colno: number): Node => {
-  let node = arrayPattern(lineno, colno);
+  let node = arrayPattern(loc({ lineno, colno }));
   const startTok = nextToken(parserContext);
   if (startTok.type !== TOKEN_LEFT_BRACKET) {
     fail(parserContext, 'parseArrayPattern: expected [', lineno, colno);
@@ -173,7 +174,7 @@ const parseObjectPropertyValue = (parserContext: ParserContext, keyTok: Token, k
     }
     return parseInnerPattern(parserContext);
   }
-  return symbol(keyTok.lineno, keyTok.colno, keyName);
+  return symbol(loc(keyTok), keyName);
 };
 
 const handleObjectTrailingComma = (parserContext: ParserContext, tok: Token, node: ChildrenNode, sawRest: boolean): { node: ChildrenNode; sawRest: boolean; continueLoop: boolean } => {
@@ -189,7 +190,7 @@ const handleObjectTrailingComma = (parserContext: ParserContext, tok: Token, nod
       return { node, sawRest, continueLoop: false };
     }
     if (after?.type === TOKEN_COMMA) {
-      return { node: appendChild(node, hole(after.lineno, after.colno)), sawRest, continueLoop: true };
+      return { node: appendChild(node, hole(loc(after))), sawRest, continueLoop: true };
     }
   }
   return { node, sawRest, continueLoop: true };
@@ -200,7 +201,7 @@ const handleObjectSpread = (parserContext: ParserContext, node: ChildrenNode, sa
     nextToken(parserContext);
     const tok = peekToken(parserContext);
     const inner = parseInnerPattern(parserContext);
-    return { node: appendChild(node, restPattern(tok.lineno, tok.colno, inner)), sawRest: true };
+    return { node: appendChild(node, restPattern(loc(tok), inner)), sawRest: true };
   }
   return { node, sawRest };
 };
@@ -210,9 +211,8 @@ const parseObjectPatternProperty = (parserContext: ParserContext, node: Children
   const valueTarget = parseObjectPropertyValue(parserContext, keyTok, keyName);
   const withDefault = parseAssignmentDefault(parserContext, valueTarget);
   return appendChild(node, patternProperty(
-    keyTok.lineno,
-    keyTok.colno,
-    symbol(keyTok.lineno, keyTok.colno, keyName),
+    loc(keyTok),
+    symbol(loc(keyTok), keyName),
     withDefault ?? valueTarget
   ));
 };
@@ -252,7 +252,7 @@ const parseObjectPatternLoop = (
 };
 
 const parseObjectPattern = (parserContext: ParserContext, lineno: number, colno: number): Node => {
-  const node = objectPattern(lineno, colno);
+  const node = objectPattern(loc({ lineno, colno }));
   const startTok = nextToken(parserContext);
   if (startTok.type !== TOKEN_LEFT_CURLY) {
     fail(parserContext, 'parseObjectPattern: expected {', lineno, colno);

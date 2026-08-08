@@ -12,16 +12,21 @@ const RESERVED_KEYWORD_CONTEXTS: Record<string, string> = {
   super: 'block that extends a parent template',
 };
 
+export interface CallWrapOptions {
+  displayName: string | null;
+  context: unknown;
+  args: unknown[];
+  lineno?: number;
+  colno?: number;
+}
+
 function callWrap(
   this: unknown,
   target: unknown,
   name: string,
-  displayName: string | null,
-  context: unknown,
-  args: unknown[],
-  lineno?: number,
-  colno?: number,
+  options: CallWrapOptions,
 ): unknown {
+  const { displayName, context, args, lineno, colno } = options;
   const messageName = displayName ?? name;
   if (RESERVED_KEYWORD_CONTEXTS[name]) {
     throwRuntimeError(ERROR_DEFINITIONS.RESERVED_KEYWORD_CONTEXT, {
@@ -66,7 +71,13 @@ function callWrap(
   });
 }
 
-function inOperator(this: unknown, key: unknown, value: unknown, lineno: number | null = null, colno: number | null = null): boolean {
+export interface InOperatorOptions {
+  lineno?: number | null;
+  colno?: number | null;
+}
+
+function inOperator(this: unknown, key: unknown, value: unknown, options: InOperatorOptions = {}): boolean {
+  const { lineno = null, colno = null } = options;
   if (isArray(value) || isString(value)) {
     return (value as { includes: (k: unknown) => boolean }).includes(key);
   }

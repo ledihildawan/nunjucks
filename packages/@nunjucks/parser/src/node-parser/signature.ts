@@ -11,6 +11,7 @@ import type { ChildrenNode, Node } from '@nunjucks/nodes';
 import { nextToken, peekToken, skip, skipValue, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/index.ts";
+import { loc } from '@nunjucks/shared';
 
 const isEqualsToken = (parserContext: ParserContext): boolean => {
   const tok = peekToken(parserContext);
@@ -34,10 +35,10 @@ const parseSignatureArg = (
   if (isAssignmentPattern(argument) && isEqualsToken(parserContext)) {
     nextToken(parserContext);
     const value = parseExpression(parserContext);
-    return { args, kwargs: appendChild(kwargs, pair(argument.lineno, argument.colno, argument.target, value)), checkComma: true };
+    return { args, kwargs: appendChild(kwargs, pair(loc(argument), argument.target, value)), checkComma: true };
   }
   if (skipValue(parserContext, TOKEN_OPERATOR, '=')) {
-    return { args, kwargs: appendChild(kwargs, pair(argument.lineno, argument.colno, argument, parseExpression(parserContext))), checkComma: true };
+    return { args, kwargs: appendChild(kwargs, pair(loc(argument), argument, parseExpression(parserContext))), checkComma: true };
   }
   return { args: appendChild(args, argument), kwargs, checkComma: true };
 };
@@ -97,7 +98,7 @@ export const parseSignature = (parserContext: ParserContext, tolerant?: boolean,
 
   const tok = initialTok.type === TOKEN_LEFT_PAREN ? nextToken(parserContext) : initialTok;
 
-  const loopResult = parseSignatureLoop(parserContext, nodeList(tok.lineno, tok.colno), keywordArgs(tok.lineno, tok.colno), noParens);
+  const loopResult = parseSignatureLoop(parserContext, nodeList(loc(tok)), keywordArgs(loc(tok)), noParens);
   const args = loopResult.kwargs.children.length > 0
     ? appendChild(loopResult.args, loopResult.kwargs)
     : loopResult.args;

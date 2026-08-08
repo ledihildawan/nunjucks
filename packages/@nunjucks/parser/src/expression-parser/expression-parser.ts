@@ -4,6 +4,7 @@ import { skipSymbol } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
 import { parseOr, parseTernary } from './logical.ts';
 import { parseWalrus } from './assignment.ts';
+import { loc } from '@nunjucks/shared';
 
 const parseTernaryExpression = (parserContext: ParserContext): Node => {
   const node = parseOr(parserContext);
@@ -11,7 +12,7 @@ const parseTernaryExpression = (parserContext: ParserContext): Node => {
   if (skipSymbol(parserContext, 'if')) {
     const condNode = parseOr(parserContext);
     const else_ = skipSymbol(parserContext, 'else') ? parseOr(parserContext) : null;
-    return inlineIf(node.lineno, node.colno, { body: node, cond: condNode, else_ });
+    return inlineIf(loc(node), { body: node, cond: condNode, else_ });
   }
 
   return parseWalrus(parserContext, parseTernary(parserContext, node));

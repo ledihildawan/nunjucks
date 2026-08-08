@@ -4,6 +4,7 @@ import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts"
 import type { ParserContext } from "../cursor.ts";
 import { parsePrimary } from "../expression-parser/index.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
+import { loc } from '@nunjucks/shared';
 
 export const parseBlock = (parserContext: ParserContext): Node => {
   const tag = peekToken(parserContext);
@@ -31,5 +32,5 @@ export const parseBlock = (parserContext: ParserContext): Node => {
 
   advanceAfterBlockEnd(parserContext, String(tok.value));
 
-  return block(tag.lineno, tag.colno, String(name.value), body);
+  return block(loc(tag), String(name.value), body);
 };

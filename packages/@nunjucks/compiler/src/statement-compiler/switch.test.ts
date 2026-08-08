@@ -3,6 +3,7 @@ import { compileSwitch } from './switch.ts';
 import { symbol, literal, output, templateData, caseNode, switchNode } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
+import { ZERO_LOC } from '@nunjucks/shared';
 
 const frame = createFrame();
 
@@ -20,10 +21,10 @@ const makeCompiler = () => {
 describe('compileSwitch', () => {
   test('emits switch with cases and default', () => {
     const c = makeCompiler();
-    const node = switchNode(0, 0, {
-      expr: symbol(0, 0, 'x'),
-      cases: [caseNode(0, 0, literal(0, 0, 1), output(0, 0, [templateData(0, 0, 'one')]))],
-      default_: output(0, 0, [templateData(0, 0, 'd')]),
+    const node = switchNode(ZERO_LOC, {
+      expr: symbol(ZERO_LOC, 'x'),
+      cases: [caseNode(ZERO_LOC, literal(ZERO_LOC, 1), output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]))],
+      default_: output(ZERO_LOC, [templateData(ZERO_LOC, 'd')]),
     });
     compileSwitch(asCompiler(c), node as never, frame);
     const joined = c.emitted.join('');
@@ -35,9 +36,9 @@ describe('compileSwitch', () => {
 
   test('omits default when not present', () => {
     const c = makeCompiler();
-    const node = switchNode(0, 0, {
-      expr: symbol(0, 0, 'x'),
-      cases: [caseNode(0, 0, literal(0, 0, 1), output(0, 0, [templateData(0, 0, 'one')]))],
+    const node = switchNode(ZERO_LOC, {
+      expr: symbol(ZERO_LOC, 'x'),
+      cases: [caseNode(ZERO_LOC, literal(ZERO_LOC, 1), output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]))],
       default_: null,
     });
     compileSwitch(asCompiler(c), node as never, frame);

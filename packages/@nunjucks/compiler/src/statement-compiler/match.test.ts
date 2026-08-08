@@ -3,6 +3,7 @@ import { compileMatch, compileWhen } from './match.ts';
 import { symbol, literal, output, templateData, when, match } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
+import { ZERO_LOC } from '@nunjucks/shared';
 
 const frame = createFrame();
 
@@ -23,9 +24,9 @@ const makeCompiler = () => {
 describe('compileMatch', () => {
   test('literal pattern emits strict equality', () => {
     const c = makeCompiler();
-    const node = match(0, 0, {
-      expr: symbol(0, 0, 'v'),
-      cases: [when(0, 0, literal(0, 0, 'a'), output(0, 0, [templateData(0, 0, 'one')]))],
+    const node = match(ZERO_LOC, {
+      expr: symbol(ZERO_LOC, 'v'),
+      cases: [when(ZERO_LOC, literal(ZERO_LOC, 'a'), output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]))],
       default: null,
     });
     compileMatch(asCompiler(c), node as never, frame);
@@ -37,9 +38,9 @@ describe('compileMatch', () => {
 
   test('symbol pattern binds the target (unless wildcard _)', () => {
     const c = makeCompiler();
-    const node = match(0, 0, {
-      expr: symbol(0, 0, 'v'),
-      cases: [when(0, 0, symbol(0, 0, '_'), output(0, 0, [templateData(0, 0, 'any')]))],
+    const node = match(ZERO_LOC, {
+      expr: symbol(ZERO_LOC, 'v'),
+      cases: [when(ZERO_LOC, symbol(ZERO_LOC, '_'), output(ZERO_LOC, [templateData(ZERO_LOC, 'any')]))],
       default: null,
     });
     compileMatch(asCompiler(c), node as never, frame);
@@ -48,10 +49,10 @@ describe('compileMatch', () => {
 
   test('emits default fallback when not matched', () => {
     const c = makeCompiler();
-    const node = match(0, 0, {
-      expr: symbol(0, 0, 'v'),
+    const node = match(ZERO_LOC, {
+      expr: symbol(ZERO_LOC, 'v'),
       cases: [],
-      default: output(0, 0, [templateData(0, 0, 'd')]),
+      default: output(ZERO_LOC, [templateData(ZERO_LOC, 'd')]),
     });
     compileMatch(asCompiler(c), node as never, frame);
     expect(c.emitted.join('')).toContain('if (!');

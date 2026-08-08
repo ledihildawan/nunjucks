@@ -5,6 +5,7 @@ import type { Node } from '@nunjucks/nodes';
 import { nextToken, fail } from "../../cursor.ts";
 import type { ParserContext } from "../../cursor.ts";
 import { markBracketNotation } from "./lookup.ts";
+import { loc } from '@nunjucks/shared';
 
 type DotOperatorToken = Token & { type: typeof TOKEN_OPERATOR };
 
@@ -19,8 +20,8 @@ export const parseDotAccess = (parserContext: ParserContext, tok: DotOperatorTok
       value.colno);
   }
 
-  const lookup = literal(value.lineno, value.colno, value.value);
-  const node = lookupVal(tok.lineno, tok.colno, target, lookup);
+  const lookup = literal(loc(value), value.value);
+  const node = lookupVal(loc(tok), target, lookup);
   markBracketNotation(node, false);
   return node;
 };

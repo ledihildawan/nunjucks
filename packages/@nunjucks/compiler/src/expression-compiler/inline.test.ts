@@ -3,6 +3,7 @@ import { compileInlineIf, compileWalrus } from './inline.ts';
 import { symbol, literal, lookupVal } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
+import { loc } from '@nunjucks/shared';
 
 const makeCompiler = () => {
   const emitted: string[] = [];
@@ -46,7 +47,7 @@ describe('compileWalrus', () => {
     const c = makeCompiler();
     compileWalrus(asCompiler(c), {
       lineno: 2, colno: 4,
-      target: symbol(2, 4, 'x'),
+      target: symbol(loc({ lineno: 2, colno: 4 }), 'x'),
       value: { mock: 'V' },
     } as never, frame);
     const joined = c.emitted.join('');
@@ -59,7 +60,7 @@ describe('compileWalrus', () => {
     const c = makeCompiler();
     expect(() => compileWalrus(asCompiler(c), {
       lineno: 1, colno: 1,
-      target: lookupVal(1, 1, symbol(1, 1, 'a'), literal(1, 1, 'b')),
+      target: lookupVal(loc({ lineno: 1, colno: 1 }), symbol(loc({ lineno: 1, colno: 1 }), 'a'), literal(loc({ lineno: 1, colno: 1 }), 'b')),
       value: { mock: 'V' },
     } as never, frame)).toThrow(/Walrus target must be a symbol/);
   });

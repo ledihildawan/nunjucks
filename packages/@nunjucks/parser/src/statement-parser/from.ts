@@ -10,6 +10,7 @@ import { nextToken, peekToken, skip, skipSymbol, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parseExpression, parsePrimary } from "../expression-parser/index.ts";
 import { parseWithContext } from "./import-context.ts";
+import { loc } from '@nunjucks/shared';
 
 const isUnderscore = (name: Node): boolean => {
   if (typeof name.value === 'string' && name.value[0] === '_') {
@@ -31,7 +32,7 @@ const parseImportName = (
 
   const hasAlias = skipSymbol(parserContext, 'as');
   const newNames = hasAlias
-    ? appendChild(names, pair(name.lineno, name.colno, name, parsePrimary(parserContext)))
+    ? appendChild(names, pair(loc(name), name, parsePrimary(parserContext)))
     : appendChild(names, name);
 
   const withContext = parseWithContext(parserContext);
@@ -71,7 +72,7 @@ export const parseFrom = (parserContext: ParserContext): Node => {
       fromTok.colno);
   }
 
-  let names: ChildrenNode = nodeList(fromTok.lineno, fromTok.colno);
+  let names: ChildrenNode = nodeList(loc(fromTok));
   let withContext: boolean | null | undefined;
 
   for (;;) {
@@ -92,7 +93,7 @@ export const parseFrom = (parserContext: ParserContext): Node => {
     withContext = result.withContext;
   }
 
-  return fromImportNode(fromTok.lineno, fromTok.colno, {
+  return fromImportNode(loc(fromTok), {
     template,
     names,
     withContext: withContext ?? false,

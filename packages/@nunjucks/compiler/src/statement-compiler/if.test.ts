@@ -3,6 +3,7 @@ import { compileIf } from './if.ts';
 import { literal, output, templateData } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
+import { ZERO_LOC } from '@nunjucks/shared';
 
 const frame = createFrame();
 
@@ -22,8 +23,8 @@ describe('compileIf', () => {
   test('emits if(COND) { ... } without else', () => {
     const c = makeCompiler();
     compileIf(asCompiler(c), {
-      cond: literal(0, 0, true),
-      body: output(0, 0, [templateData(0, 0, 'yes')]),
+      cond: literal(ZERO_LOC, true),
+      body: output(ZERO_LOC, [templateData(ZERO_LOC, 'yes')]),
       else_: null,
     } as never, frame);
     const joined = c.emitted.join('');
@@ -35,9 +36,9 @@ describe('compileIf', () => {
   test('emits else branch when else_ is present', () => {
     const c = makeCompiler();
     compileIf(asCompiler(c), {
-      cond: literal(0, 0, true),
-      body: output(0, 0, [templateData(0, 0, 'yes')]),
-      else_: output(0, 0, [templateData(0, 0, 'no')]),
+      cond: literal(ZERO_LOC, true),
+      body: output(ZERO_LOC, [templateData(ZERO_LOC, 'yes')]),
+      else_: output(ZERO_LOC, [templateData(ZERO_LOC, 'no')]),
     } as never, frame);
     const joined = c.emitted.join('');
     expect(joined).toContain('else');

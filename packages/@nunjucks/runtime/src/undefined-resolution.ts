@@ -142,19 +142,23 @@ const resolveUndefinedValue = (options: ResolveUndefinedOptions): 'undefined' =>
   });
 };
 
+export interface EnsureDefinedOptions {
+  lineno?: number | null;
+  colno?: number | null;
+  varName?: string | null;
+  undefinedMode?: 'chainable' | 'strict' | 'debug';
+}
+
 export function ensureDefined(
   this: unknown,
   value: unknown,
-  lineno?: number | null,
-  colno?: number | null,
-  varName: string | null = null,
-  templateName: string | null = null,
-  undefinedMode: 'chainable' | 'strict' | 'debug' = 'chainable',
+  options: EnsureDefinedOptions = {}
 ): unknown {
+  const { lineno, colno, varName = null, undefinedMode = 'chainable' } = options;
   if (isPropertyNotFoundResult(value) || isNullAccessResult(value)) {
     const ctx = getLogContext(this);
-    const effectiveTemplateName = templateName ?? ctx.templateName ?? 'inline';
-    const options: ResolveUndefinedOptions = {
+    const effectiveTemplateName = ctx.templateName ?? 'inline';
+    const resolveOptions: ResolveUndefinedOptions = {
       self: this,
       val: value,
       varName,
@@ -165,14 +169,14 @@ export function ensureDefined(
       templateName: effectiveTemplateName,
     };
     if (isPropertyNotFoundResult(value)) {
-      return resolveUndefinedProperty(options);
+      return resolveUndefinedProperty(resolveOptions);
     }
-    return resolveNullAccess(options);
+    return resolveNullAccess(resolveOptions);
   }
 
   if (!isNonNullish(value)) {
     const ctx = getLogContext(this);
-    const effectiveTemplateName = templateName ?? ctx.templateName ?? 'inline';
+    const effectiveTemplateName = ctx.templateName ?? 'inline';
     return resolveUndefinedValue({
       self: this,
       val: value,

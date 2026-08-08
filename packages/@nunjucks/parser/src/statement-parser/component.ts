@@ -5,6 +5,7 @@ import type { ParserContext } from "../cursor.ts";
 import { parsePrimary } from "../expression-parser/index.ts";
 import { parseSignature } from "../node-parser/signature.ts";
 import { parseSlottedBody, buildDefaultBody, advanceAfterTags } from "./slots.ts";
+import { loc } from '@nunjucks/shared';
 
 export const parseComponent = (parserContext: ParserContext): Node => {
   const compTok = peekToken(parserContext);
@@ -28,7 +29,7 @@ export const parseComponent = (parserContext: ParserContext): Node => {
     ...namedSlots,
   ];
 
-  const node = component(compTok.lineno, compTok.colno, {
+  const node = component(loc(compTok), {
     name: String(name.value),
     args: args?.children ?? [],
     body,

@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { emitFuncBegin, emitFuncEnd, addScopeLevel, closeScopeLevels, withScopedSyntax } from './statement-emitter.ts';
 import { literal } from '@nunjucks/nodes';
+import { loc } from '@nunjucks/shared';
 
 const makeScope = () => {
   const emitted: string[] = [];
@@ -22,7 +23,7 @@ const makeScope = () => {
 describe('emitFuncBegin', () => {
   test('emits async function header with lineno/colno and output buffer', () => {
     const c = makeScope();
-    emitFuncBegin(c as never, literal(2, 4, ''), 'root');
+    emitFuncBegin(c as never, literal(loc({ lineno: 2, colno: 4 }), ''), 'root');
     expect(c.buffer).toBe('output');
     expect(c.scopeStack).toEqual([]);
     const joined = c.emitted.join('');

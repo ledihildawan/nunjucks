@@ -11,6 +11,7 @@ import { parseFunCall } from "./fun-call.ts";
 import { parseBracketAccess } from "./lookup.ts";
 import { parseDotAccess } from "./dot.ts";
 import { parseOptionalChain } from "./optional.ts";
+import { loc } from '@nunjucks/shared';
 
 export const parsePostfix = (parserContext: ParserContext, node: Node): Node => {
   let current = node;
@@ -37,12 +38,12 @@ export const parsePostfix = (parserContext: ParserContext, node: Node): Node => 
         }
         if (tok.value === '++') {
           nextToken(parserContext);
-          current = increment(tok.lineno, tok.colno, current, true);
+          current = increment(loc(tok), current, true);
           continue;
         }
         if (tok.value === '--') {
           nextToken(parserContext);
-          current = decrement(tok.lineno, tok.colno, current, true);
+          current = decrement(loc(tok), current, true);
           continue;
         }
         return current;

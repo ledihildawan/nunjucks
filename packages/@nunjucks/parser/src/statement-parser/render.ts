@@ -5,6 +5,7 @@ import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts"
 import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/index.ts";
 import { parseSlottedBody, buildDefaultBody, advanceAfterTags } from "./slots.ts";
+import { loc } from '@nunjucks/shared';
 
 export const parseRenderBlock = (parserContext: ParserContext): Node => {
   const tag = peekToken(parserContext);
@@ -13,7 +14,7 @@ export const parseRenderBlock = (parserContext: ParserContext): Node => {
   }
 
   const parsed = parseExpression(parserContext);
-  const callExpr = isFunCall(parsed) ? parsed : funCall(tag.lineno, tag.colno, parsed);
+  const callExpr = isFunCall(parsed) ? parsed : funCall(loc(tag), parsed);
   advanceAfterBlockEnd(parserContext, 'render');
 
   const { defaultParts, namedSlots, implicitSlots } = parseSlottedBody(parserContext, 'endrender');
@@ -26,5 +27,5 @@ export const parseRenderBlock = (parserContext: ParserContext): Node => {
   }
   providedSlots.push(...implicitSlots, ...namedSlots);
 
-  return renderNode(tag.lineno, tag.colno, { callExpr, body, providedSlots });
+  return renderNode(loc(tag), { callExpr, body, providedSlots });
 };

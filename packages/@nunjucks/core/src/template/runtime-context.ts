@@ -1,5 +1,6 @@
 import type { Frame, SafeString } from '@nunjucks/runtime';
 import type { makeKeywordArgs, makeComponent } from '@nunjucks/runtime';
+import type { SuppressValueOptions, EnsureDefinedOptions, CallWrapOptions, InOperatorOptions } from '@nunjucks/runtime';
 import type { keys } from 'remeda';
 
 interface RuntimeContext {
@@ -14,14 +15,14 @@ interface RuntimeContext {
   optionalMemberLookup: (target: unknown, value: string | symbol, parentName: string | null) => unknown;
   slice: (source: unknown, start: number | null, stop: number | null, step: number | null) => unknown;
   nullishCoalesce: (value: unknown, fallback: unknown) => unknown;
-  suppressValue: (value: unknown, autoescape?: boolean, lineno?: number | null, colno?: number | null) => string;
+  suppressValue: (value: unknown, options?: SuppressValueOptions) => unknown;
   awaitValue: (value: unknown) => unknown;
-  ensureDefined: (value: unknown, lineno?: number | null, colno?: number | null, varName?: string | null, templateName?: string | null, undefinedMode?: 'chainable' | 'strict' | 'debug') => unknown;
-  callWrap: (target: unknown, name: string, displayName: string | null, context: unknown, args: unknown[], lineno?: number, colno?: number) => unknown;
+  ensureDefined: (value: unknown, options?: EnsureDefinedOptions) => unknown;
+  callWrap: (target: unknown, name: string, options: CallWrapOptions) => unknown;
   contextOrFrameLookup: (context: { lookup: (name: string) => unknown }, frame: { lookup: (name: string) => unknown }, name: string) => unknown;
   handleError: (err: unknown, lineno?: number | null, colno?: number | null, templateName?: string | null) => never;
   fromIterator: (iterable: unknown) => unknown;
-  inOperator: (key: unknown, value: unknown, lineno?: number | null, colno?: number | null) => boolean;
+  inOperator: (key: unknown, value: unknown, options?: InOperatorOptions) => boolean;
   runTest: (env: unknown, name: string, target: unknown, ...args: unknown[]) => boolean;
   keys: typeof keys;
   __warnings__: unknown[];

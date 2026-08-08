@@ -4,6 +4,7 @@ import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts"
 import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/index.ts";
 import { parseWithContext } from "./import-context.ts";
+import { loc } from '@nunjucks/shared';
 
 export const parseImport = (parserContext: ParserContext): Node => {
   const importTok = peekToken(parserContext);
@@ -24,7 +25,7 @@ export const parseImport = (parserContext: ParserContext): Node => {
   const target = parseExpression(parserContext);
   const withContext = parseWithContext(parserContext);
   if (!isSymbol(target)) { fail(parserContext, 'parseImport: expected import target', target.lineno, target.colno); }
-  const node = importNode(importTok.lineno, importTok.colno, {
+  const node = importNode(loc(importTok), {
     template,
     target: String(target.value),
     withContext: withContext ?? false,

@@ -10,6 +10,7 @@ import { peekToken, skipValue, nextToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
 import { tryParsePattern } from "../node-parser/pattern.ts";
+import { loc } from '@nunjucks/shared';
 
 export const parseVariableDeclaration = (parserContext: ParserContext): Node => {
   const tag = peekToken(parserContext);
@@ -27,7 +28,7 @@ export const parseVariableDeclaration = (parserContext: ParserContext): Node => 
 
   const value = parseExpression(parserContext);
 
-  return variableDeclaration(tag.lineno, tag.colno, targets, value);
+  return variableDeclaration(loc(tag), targets, value);
 };
 
 const parseOperator = (parserContext: ParserContext, tag: Token): string => {
@@ -61,8 +62,8 @@ export const parseVariableAssignment = (parserContext: ParserContext): Node => {
   const value = parseExpression(parserContext);
 
   if (operator !== '=') {
-    return compoundAssignment(tag.lineno, tag.colno, { targets, operator, value });
+    return compoundAssignment(loc(tag), { targets, operator, value });
   }
 
-  return variableAssignment(tag.lineno, tag.colno, targets, value);
+  return variableAssignment(loc(tag), targets, value);
 };

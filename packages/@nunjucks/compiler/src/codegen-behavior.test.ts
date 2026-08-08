@@ -9,6 +9,7 @@ import {
   component, execNode, scopeNode, match, when, renderNode,
 } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import { ZERO_LOC } from '@nunjucks/shared';
 
 const compileNode = (node: Node): string => {
   const c = createCompiler('test', 'chainable', '');
@@ -18,25 +19,25 @@ const compileNode = (node: Node): string => {
 
 const compileRoot = (children: Node[]): string => {
   const c = createCompiler('test', 'chainable', '');
-  c.compile(root(0, 0, children), createFrame());
+  c.compile(root(ZERO_LOC, children), createFrame());
   return c.getCode();
 };
 
 describe('codegen: literal and symbol', () => {
   test('string literal emits quoted string', () => {
-    const code = compileNode(literal(0, 0, 'hello'));
+    const code = compileNode(literal(ZERO_LOC, 'hello'));
     expect(code).toContain('hello');
   });
   test('number literal emits number', () => {
-    const code = compileNode(literal(0, 0, 42));
+    const code = compileNode(literal(ZERO_LOC, 42));
     expect(code).toContain('42');
   });
   test('boolean literal emits boolean', () => {
-    const code = compileNode(literal(0, 0, true));
+    const code = compileNode(literal(ZERO_LOC, true));
     expect(code).toContain('true');
   });
   test('symbol emits contextOrFrameLookup', () => {
-    const code = compileNode(symbol(0, 0, 'myVar'));
+    const code = compileNode(symbol(ZERO_LOC, 'myVar'));
     expect(code).toContain('contextOrFrameLookup');
     expect(code).toContain('myVar');
   });
@@ -44,56 +45,56 @@ describe('codegen: literal and symbol', () => {
 
 describe('codegen: binary operations', () => {
   test('add emits +', () => {
-    const code = compileNode(add(0, 0, literal(0, 0, 1), literal(0, 0, 2)));
+    const code = compileNode(add(ZERO_LOC, literal(ZERO_LOC, 1), literal(ZERO_LOC, 2)));
     expect(code).toContain('+');
   });
   test('sub emits -', () => {
-    const code = compileNode(sub(0, 0, literal(0, 0, 1), literal(0, 0, 2)));
+    const code = compileNode(sub(ZERO_LOC, literal(ZERO_LOC, 1), literal(ZERO_LOC, 2)));
     expect(code).toContain('-');
   });
   test('mul emits *', () => {
-    const code = compileNode(mul(0, 0, literal(0, 0, 1), literal(0, 0, 2)));
+    const code = compileNode(mul(ZERO_LOC, literal(ZERO_LOC, 1), literal(ZERO_LOC, 2)));
     expect(code).toContain('*');
   });
 });
 
 describe('codegen: logical operations', () => {
   test('and emits logical AND', () => {
-    const code = compileNode(and(0, 0, literal(0, 0, true), literal(0, 0, false)));
+    const code = compileNode(and(ZERO_LOC, literal(ZERO_LOC, true), literal(ZERO_LOC, false)));
     expect(code.length).toBeGreaterThan(0);
   });
   test('or emits logical OR', () => {
-    const code = compileNode(or(0, 0, literal(0, 0, true), literal(0, 0, false)));
+    const code = compileNode(or(ZERO_LOC, literal(ZERO_LOC, true), literal(ZERO_LOC, false)));
     expect(code.length).toBeGreaterThan(0);
   });
   test('not emits negation', () => {
-    const code = compileNode(not(0, 0, literal(0, 0, true)));
+    const code = compileNode(not(ZERO_LOC, literal(ZERO_LOC, true)));
     expect(code.length).toBeGreaterThan(0);
   });
   test('nullishCoalesce emits ??', () => {
-    const code = compileNode(nullishCoalesce(0, 0, literal(0, 0, 1), literal(0, 0, 2)));
+    const code = compileNode(nullishCoalesce(ZERO_LOC, literal(ZERO_LOC, 1), literal(ZERO_LOC, 2)));
     expect(code).toContain('??');
   });
 });
 
 describe('codegen: comparison', () => {
   test('compare emits comparison logic', () => {
-    const operand = compareOperand(0, 0, literal(0, 0, 2), '<');
-    const code = compileNode(compare(0, 0, literal(0, 0, 1), [operand]));
+    const operand = compareOperand(ZERO_LOC, literal(ZERO_LOC, 2), '<');
+    const code = compileNode(compare(ZERO_LOC, literal(ZERO_LOC, 1), [operand]));
     expect(code.length).toBeGreaterThan(0);
   });
 });
 
 describe('codegen: function call', () => {
   test('funCall emits runtime.callWrap', () => {
-    const code = compileNode(funCall(0, 0, symbol(0, 0, 'greet'), [literal(0, 0, 'World')]));
+    const code = compileNode(funCall(ZERO_LOC, symbol(ZERO_LOC, 'greet'), [literal(ZERO_LOC, 'World')]));
     expect(code).toContain('callWrap');
   });
 });
 
 describe('codegen: member lookup', () => {
   test('lookupVal emits member access', () => {
-    const code = compileNode(lookupVal(0, 0, symbol(0, 0, 'obj'), literal(0, 0, 'key')));
+    const code = compileNode(lookupVal(ZERO_LOC, symbol(ZERO_LOC, 'obj'), literal(ZERO_LOC, 'key')));
     expect(code).toContain('memberLookup');
   });
 });
@@ -101,10 +102,10 @@ describe('codegen: member lookup', () => {
 describe('codegen: if statement', () => {
   test('if/else emits conditional branching', () => {
     const code = compileRoot([
-      ifNode(0, 0, {
-        cond: literal(0, 0, true),
-        body: output(0, 0, [templateData(0, 0, 'yes')]),
-        else_: output(0, 0, [templateData(0, 0, 'no')]),
+      ifNode(ZERO_LOC, {
+        cond: literal(ZERO_LOC, true),
+        body: output(ZERO_LOC, [templateData(ZERO_LOC, 'yes')]),
+        else_: output(ZERO_LOC, [templateData(ZERO_LOC, 'no')]),
       }),
     ]);
     expect(code).toContain('if');
@@ -114,10 +115,10 @@ describe('codegen: if statement', () => {
 describe('codegen: for loop', () => {
   test('for emits loop with runtime.fromIterator', () => {
     const code = compileRoot([
-      forNode(0, 0, {
-        arr: symbol(0, 0, 'items'),
-        name: symbol(0, 0, 'x'),
-        body: output(0, 0, [templateData(0, 0, '.')]),
+      forNode(ZERO_LOC, {
+        arr: symbol(ZERO_LOC, 'items'),
+        name: symbol(ZERO_LOC, 'x'),
+        body: output(ZERO_LOC, [templateData(ZERO_LOC, '.')]),
         else_: null,
       }),
     ]);
@@ -127,11 +128,11 @@ describe('codegen: for loop', () => {
 
   test('for-else pre-declares len=0 before if block', () => {
     const code = compileRoot([
-      forNode(0, 0, {
-        arr: symbol(0, 0, 'items'),
-        name: symbol(0, 0, 'x'),
-        body: output(0, 0, [templateData(0, 0, '.')]),
-        else_: output(0, 0, [templateData(0, 0, 'empty')]),
+      forNode(ZERO_LOC, {
+        arr: symbol(ZERO_LOC, 'items'),
+        name: symbol(ZERO_LOC, 'x'),
+        body: output(ZERO_LOC, [templateData(ZERO_LOC, '.')]),
+        else_: output(ZERO_LOC, [templateData(ZERO_LOC, 'empty')]),
       }),
     ]);
     const lenInitPos = code.indexOf('= 0;');
@@ -143,10 +144,10 @@ describe('codegen: for loop', () => {
 
   test('for emits loop bindings (index, first, last)', () => {
     const code = compileRoot([
-      forNode(0, 0, {
-        arr: symbol(0, 0, 'items'),
-        name: symbol(0, 0, 'x'),
-        body: output(0, 0, [templateData(0, 0, '.')]),
+      forNode(ZERO_LOC, {
+        arr: symbol(ZERO_LOC, 'items'),
+        name: symbol(ZERO_LOC, 'x'),
+        body: output(ZERO_LOC, [templateData(ZERO_LOC, '.')]),
         else_: null,
       }),
     ]);
@@ -159,7 +160,7 @@ describe('codegen: for loop', () => {
 describe('codegen: block', () => {
   test('block emits block function with b_ prefix', () => {
     const code = compileRoot([
-      block(0, 0, 'content', output(0, 0, [templateData(0, 0, 'base')])),
+      block(ZERO_LOC, 'content', output(ZERO_LOC, [templateData(ZERO_LOC, 'base')])),
     ]);
     expect(code).toContain('b_content');
   });
@@ -167,14 +168,14 @@ describe('codegen: block', () => {
 
 describe('codegen: output and template data', () => {
   test('templateData emits string in suppressValue', () => {
-    const code = compileNode(output(0, 0, [templateData(0, 0, 'hello')]));
+    const code = compileNode(output(ZERO_LOC, [templateData(ZERO_LOC, 'hello')]));
     expect(code).toContain('hello');
   });
 });
 
 describe('codegen: root structure', () => {
   test('root emits async function with correct signature', () => {
-    const code = compileRoot([output(0, 0, [templateData(0, 0, 'x')])]);
+    const code = compileRoot([output(ZERO_LOC, [templateData(ZERO_LOC, 'x')])]);
     expect(code).toContain('async function root');
     expect(code).toContain('env, context, frame, runtime');
     expect(code).toContain('__blockMeta');
@@ -185,10 +186,10 @@ describe('codegen: root structure', () => {
 describe('codegen: component', () => {
   test('component emits async function with slot setup', () => {
     const code = compileRoot([
-      component(0, 0, {
+      component(ZERO_LOC, {
         name: 'MyComponent',
         args: [],
-        body: output(0, 0, [templateData(0, 0, 'content')]),
+        body: output(ZERO_LOC, [templateData(ZERO_LOC, 'content')]),
       }),
     ]);
     expect(code).toContain('async');
@@ -199,7 +200,7 @@ describe('codegen: component', () => {
 describe('codegen: exec', () => {
   test('exec emits try/catch around expression', () => {
     const code = compileRoot([
-      execNode(0, 0, funCall(0, 0, symbol(0, 0, 'someFn'), [])),
+      execNode(ZERO_LOC, funCall(ZERO_LOC, symbol(ZERO_LOC, 'someFn'), [])),
     ]);
     expect(code).toContain('try');
     expect(code).toContain('catch');
@@ -209,13 +210,13 @@ describe('codegen: exec', () => {
 describe('codegen: match', () => {
   test('match emits conditional branching', () => {
     const code = compileRoot([
-      match(0, 0, {
-        expr: symbol(0, 0, 'val'),
+      match(ZERO_LOC, {
+        expr: symbol(ZERO_LOC, 'val'),
         cases: [
-          when(0, 0, literal(0, 0, 'a'), output(0, 0, [templateData(0, 0, 'one')])),
-          when(0, 0, literal(0, 0, 'b'), output(0, 0, [templateData(0, 0, 'two')])),
+          when(ZERO_LOC, literal(ZERO_LOC, 'a'), output(ZERO_LOC, [templateData(ZERO_LOC, 'one')])),
+          when(ZERO_LOC, literal(ZERO_LOC, 'b'), output(ZERO_LOC, [templateData(ZERO_LOC, 'two')])),
         ],
-        default: output(0, 0, [templateData(0, 0, 'default')]),
+        default: output(ZERO_LOC, [templateData(ZERO_LOC, 'default')]),
       }),
     ]);
     expect(code).toContain('if');
@@ -225,9 +226,9 @@ describe('codegen: match', () => {
 describe('codegen: render', () => {
   test('render emits async component invocation', () => {
     const code = compileRoot([
-      renderNode(0, 0, {
-        callExpr: funCall(0, 0, symbol(0, 0, 'MyComponent'), []),
-        body: output(0, 0, [templateData(0, 0, 'body')]),
+      renderNode(ZERO_LOC, {
+        callExpr: funCall(ZERO_LOC, symbol(ZERO_LOC, 'MyComponent'), []),
+        body: output(ZERO_LOC, [templateData(ZERO_LOC, 'body')]),
         providedSlots: [],
       }),
     ]);
@@ -238,7 +239,7 @@ describe('codegen: render', () => {
 describe('codegen: scope', () => {
   test('scope emits frame operations', () => {
     const code = compileRoot([
-      scopeNode(0, 0, [], output(0, 0, [templateData(0, 0, 'scoped')])),
+      scopeNode(ZERO_LOC, [], output(ZERO_LOC, [templateData(ZERO_LOC, 'scoped')])),
     ]);
     expect(code).toContain('frame');
   });
@@ -247,7 +248,7 @@ describe('codegen: scope', () => {
 describe('codegen: slot', () => {
   test('block emits block function with b_ prefix', () => {
     const code = compileRoot([
-      block(0, 0, 'header', output(0, 0, [templateData(0, 0, 'header content')])),
+      block(ZERO_LOC, 'header', output(ZERO_LOC, [templateData(ZERO_LOC, 'header content')])),
     ]);
     expect(code).toContain('b_header');
   });

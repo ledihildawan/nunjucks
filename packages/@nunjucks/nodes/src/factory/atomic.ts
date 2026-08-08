@@ -1,33 +1,34 @@
 import { T, createNode } from './internal.ts';
+import type { Loc } from '@nunjucks/shared';
 import type { Node, NodeOf, NodeType } from '../types/index.ts';
 
-const createNodeWithChildren = <K extends NodeType>(nodeType: K, lineno: number, colno: number, children: readonly Node[] = []): NodeOf<K> =>
-  createNode(nodeType, lineno, colno, { children: [...children] });
+const createNodeWithChildren = <K extends NodeType>(nodeType: K, loc: Loc, children: readonly Node[] = []): NodeOf<K> =>
+  createNode(nodeType, loc, { children: [...children] });
 
-const node = (lineno: number, colno: number) => createNode(T.NODE, lineno, colno);
-const value = (lineno: number, colno: number, val: unknown) => createNode(T.VALUE, lineno, colno, { value: val });
-const nodeList = (lineno: number, colno: number, children: readonly Node[] = []) => createNodeWithChildren(T.NODE_LIST, lineno, colno, children);
-const output = (lineno: number, colno: number, children: readonly Node[] = []) => createNodeWithChildren(T.OUTPUT, lineno, colno, children);
-const root = (lineno: number, colno: number, children: readonly Node[] = []) => createNodeWithChildren(T.ROOT, lineno, colno, children);
+const node = (loc: Loc) => createNode(T.NODE, loc);
+const value = (loc: Loc, val: unknown) => createNode(T.VALUE, loc, { value: val });
+const nodeList = (loc: Loc, children: readonly Node[] = []) => createNodeWithChildren(T.NODE_LIST, loc, children);
+const output = (loc: Loc, children: readonly Node[] = []) => createNodeWithChildren(T.OUTPUT, loc, children);
+const root = (loc: Loc, children: readonly Node[] = []) => createNodeWithChildren(T.ROOT, loc, children);
 
-const literal = (lineno: number, colno: number, val: unknown) => createNode(T.LITERAL, lineno, colno, { value: val });
-const symbol = (lineno: number, colno: number, val: string) => createNode(T.SYMBOL, lineno, colno, { value: val });
-const templateData = (lineno: number, colno: number, val: string) => createNode(T.TEMPLATE_DATA, lineno, colno, { value: val });
+const literal = (loc: Loc, val: unknown) => createNode(T.LITERAL, loc, { value: val });
+const symbol = (loc: Loc, val: string) => createNode(T.SYMBOL, loc, { value: val });
+const templateData = (loc: Loc, val: string) => createNode(T.TEMPLATE_DATA, loc, { value: val });
 
-const hole = (lineno: number, colno: number) => createNode(T.HOLE, lineno, colno);
+const hole = (loc: Loc) => createNode(T.HOLE, loc);
 
-const group = (lineno: number, colno: number, children: readonly Node[] = []) => createNodeWithChildren(T.GROUP, lineno, colno, children);
-const array = (lineno: number, colno: number, children: readonly Node[] = []) => createNodeWithChildren(T.ARRAY, lineno, colno, children);
-const dict = (lineno: number, colno: number, children: readonly Node[] = []) => createNodeWithChildren(T.DICT, lineno, colno, children);
-const pair = (lineno: number, colno: number, key: Node | string, val: Node) => createNode(T.PAIR, lineno, colno, { key, value: val });
-const spread = (lineno: number, colno: number, argument: Node) => createNode(T.SPREAD, lineno, colno, { argument });
-const walrus = (lineno: number, colno: number, target: Node, val: Node) => createNode(T.WALRUS, lineno, colno, { target, value: val });
+const group = (loc: Loc, children: readonly Node[] = []) => createNodeWithChildren(T.GROUP, loc, children);
+const array = (loc: Loc, children: readonly Node[] = []) => createNodeWithChildren(T.ARRAY, loc, children);
+const dict = (loc: Loc, children: readonly Node[] = []) => createNodeWithChildren(T.DICT, loc, children);
+const pair = (loc: Loc, key: Node | string, val: Node) => createNode(T.PAIR, loc, { key, value: val });
+const spread = (loc: Loc, argument: Node) => createNode(T.SPREAD, loc, { argument });
+const walrus = (loc: Loc, target: Node, val: Node) => createNode(T.WALRUS, loc, { target, value: val });
 
-const templateLiteral = (lineno: number, colno: number, quasis: ({ type: 'template'; value: string } | { type: 'expression'; node: Node })[] = []) => createNode(T.TEMPLATE_LITERAL, lineno, colno, { quasis });
+const templateLiteral = (loc: Loc, quasis: ({ type: 'template'; value: string } | { type: 'expression'; node: Node })[] = []) => createNode(T.TEMPLATE_LITERAL, loc, { quasis });
 
-const keywordArgs = (lineno: number, colno: number, children: readonly Node[] = []) => createNodeWithChildren(T.KEYWORD_ARGS, lineno, colno, children);
+const keywordArgs = (loc: Loc, children: readonly Node[] = []) => createNodeWithChildren(T.KEYWORD_ARGS, loc, children);
 
-const range = (lineno: number, colno: number, left: Node, right: Node) => createNode(T.RANGE, lineno, colno, { left, right });
+const range = (loc: Loc, left: Node, right: Node) => createNode(T.RANGE, loc, { left, right });
 
 export {
   node, value, nodeList, output, root,

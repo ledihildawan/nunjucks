@@ -5,6 +5,7 @@ import { peekToken, nextToken, skipSymbol, skipOperator, skipValue } from '../cu
 import type { ParserContext } from '../cursor.ts';
 import { binaryOp } from './binary-helpers.ts';
 import { parseIn } from './comparison.ts';
+import { loc } from '@nunjucks/shared';
 
 const parseNullishCoalesce = (parserContext: ParserContext): Node =>
   binaryOp(parserContext, nullishCoalesce, (cursor) => skipValue(cursor, TOKEN_OPERATOR, '??'), parseAnd);
@@ -16,13 +17,13 @@ const parseNot = (parserContext: ParserContext): Node => {
   }
   if (tok.type === TOKEN_OPERATOR && tok.value === '!') {
     nextToken(parserContext);
-    return not(tok.lineno, tok.colno, parseNot(parserContext));
+    return not(loc(tok), parseNot(parserContext));
   }
   if (skipSymbol(parserContext, 'not')) {
-    return not(tok.lineno, tok.colno, parseNot(parserContext));
+    return not(loc(tok), parseNot(parserContext));
   }
   if (skipOperator(parserContext, '!')) {
-    return not(tok.lineno, tok.colno, parseNot(parserContext));
+    return not(loc(tok), parseNot(parserContext));
   }
   return parseIn(parserContext);
 };
@@ -38,7 +39,7 @@ const parseTernary = (parserContext: ParserContext, node: Node): Node => {
     const thenNode = parseOr(parserContext);
     if (skipValue(parserContext, TOKEN_COLON, ':')) {
       const elseNode = parseOr(parserContext);
-      const newNode = inlineIf(node.lineno, node.colno, { cond: node, body: thenNode, else_: elseNode });
+      const newNode = inlineIf(loc(node), { cond: node, body: thenNode, else_: elseNode });
       return parseTernary(parserContext, newNode);
     }
   }

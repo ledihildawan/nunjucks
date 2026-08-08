@@ -4,6 +4,7 @@ import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts"
 import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/index.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
+import { loc } from '@nunjucks/shared';
 
 export const parseIf = (parserContext: ParserContext): Node => {
   const tag = peekToken(parserContext);
@@ -39,5 +40,5 @@ export const parseIf = (parserContext: ParserContext): Node => {
       fail(parserContext, 'parseIf: expected elif, else, or endif, got end of file');
   }
 
-  return ifNode(tag.lineno, tag.colno, { cond, body, else_ });
+  return ifNode(loc(tag), { cond, body, else_ });
 };

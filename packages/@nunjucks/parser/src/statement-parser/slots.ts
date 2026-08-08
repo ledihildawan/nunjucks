@@ -1,5 +1,6 @@
 import type { Node, SlotBlock } from '@nunjucks/nodes';
 import { nodeList, output, templateData } from '@nunjucks/nodes';
+import { loc } from '@nunjucks/shared';
 import {
   TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_COMMA,
   isSymbolToken,
@@ -94,13 +95,14 @@ export const parseSlottedBody = (parserContext: ParserContext, endTag: string): 
 };
 
 export const buildDefaultBody = (parts: Node[], lineno: number, colno: number): Node => {
+  const origin = loc({ lineno, colno });
   if (parts.length === 0) {
-    return output(lineno, colno, [templateData(lineno, colno, '')]);
+    return output(origin, [templateData(origin, '')]);
   }
   if (parts.length === 1) {
     return parts[0] as Node;
   }
-  return nodeList(lineno, colno, parts);
+  return nodeList(origin, parts);
 };
 
 export const advanceAfterTags = (parserContext: ParserContext, tag: string): void => {

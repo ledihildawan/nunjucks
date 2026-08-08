@@ -3,6 +3,7 @@ import { compileScope } from './scope.ts';
 import { pair, output, templateData, literal } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
+import { ZERO_LOC } from '@nunjucks/shared';
 
 const frame = createFrame();
 
@@ -24,8 +25,8 @@ describe('compileScope', () => {
   test('pushes a frame, binds assignments, compiles body, pops frame', () => {
     const c = makeCompiler();
     compileScope(asCompiler(c), {
-      assignments: [pair(0, 0, 'x', literal(0, 0, 1))],
-      body: output(0, 0, [templateData(0, 0, 'scoped')]),
+      assignments: [pair(ZERO_LOC, 'x', literal(ZERO_LOC, 1))],
+      body: output(ZERO_LOC, [templateData(ZERO_LOC, 'scoped')]),
     } as never, frame);
     const joined = c.emitted.join('');
     expect(joined).toContain('frame = frame.push(true);');
@@ -37,7 +38,7 @@ describe('compileScope', () => {
     const c = makeCompiler();
     compileScope(asCompiler(c), {
       assignments: [],
-      body: output(0, 0, [templateData(0, 0, 'scoped')]),
+      body: output(ZERO_LOC, [templateData(ZERO_LOC, 'scoped')]),
     } as never, frame);
     const joined = c.emitted.join('');
     expect(joined).not.toContain('frame.set');

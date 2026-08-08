@@ -91,7 +91,7 @@ export const compileFunCall = (compiler: Compiler, node: CallNode, frame: Frame)
 
   const funcName = getNodeName(node.name);
   const displayName = `${funcName}()`;
-  compiler.emit(`, "${funcName.replaceAll('"', '\\"')}", "${displayName.replaceAll('"', '\\"')}", context, `);
+  compiler.emit(`, "${funcName.replaceAll('"', '\\"')}", { displayName: "${displayName.replaceAll('"', '\\"')}", context, args: `);
 
-  compileAggregate(compiler, node.args, frame, { startChar: '[', endChar: `], ${lineno}, ${colno}))` });
+  compileAggregate(compiler, node.args, frame, { startChar: '[', endChar: `], lineno: ${lineno}, colno: ${colno} }))` });
 };

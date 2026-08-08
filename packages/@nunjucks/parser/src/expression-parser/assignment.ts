@@ -22,29 +22,30 @@ import { peekToken, nextToken } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
 import { errorAt } from '../error.ts';
 import { parseOr } from './logical.ts';
+import { loc } from '@nunjucks/shared';
 
 const mapArrayPatternChild = (c: Node): Node => {
   if (isPair(c) && isSymbol(c.value) && typeof c.key !== 'string' && c.key.value === c.value.value) {
     return c.value;
   }
-  if (isSpread(c)) { return restPattern(c.lineno, c.colno, (c as SpreadNode).argument); }
+  if (isSpread(c)) { return restPattern(loc(c), (c as SpreadNode).argument); }
   return c;
 };
 
 const mapObjectPatternChild = (c: Node): Node => {
   if (isPair(c) && typeof c.key !== 'string' && isSymbol(c.key) && isSymbol(c.value) && c.key.value === c.value.value) {
-    return patternProperty(c.key.lineno, c.key.colno, String(c.key.value), c.key);
+    return patternProperty(loc(c.key), String(c.key.value), c.key);
   }
-  if (isSpread(c)) { return restPattern(c.lineno, c.colno, (c as SpreadNode).argument); }
+  if (isSpread(c)) { return restPattern(loc(c), (c as SpreadNode).argument); }
   return c;
 };
 
 const normalizePattern = (node: Node): Node => {
   if (isArrayPattern(node) || isObjectPattern(node)) { return node; }
   if (isArray(node)) {
-    return arrayPattern(node.lineno, node.colno, (node as { children: readonly Node[] }).children.map(mapArrayPatternChild));
+    return arrayPattern(loc(node), (node as { children: readonly Node[] }).children.map(mapArrayPatternChild));
   }
-  return objectPattern(node.lineno, node.colno, (node as { children: readonly Node[] }).children.map(mapObjectPatternChild));
+  return objectPattern(loc(node), (node as { children: readonly Node[] }).children.map(mapObjectPatternChild));
 };
 
 const isExpressionContext = (tok: Token): boolean =>
@@ -53,14 +54,14 @@ const isExpressionContext = (tok: Token): boolean =>
 const handleWalrusAssignment = (node: Node, valueNode: Node, isExprCtx: boolean): Node => {
   if (isSymbol(node)) {
     return isExprCtx
-      ? walrus(node.lineno, node.colno, node, valueNode)
-      : variableDeclaration(node.lineno, node.colno, [node], valueNode);
+      ? walrus(loc(node), node, valueNode)
+      : variableDeclaration(loc(node), [node], valueNode);
   }
   if (isArrayPattern(node) || isArray(node) || isObjectPattern(node) || isDict(node)) {
     const pattern = normalizePattern(node);
     return isExprCtx
-      ? walrus(pattern.lineno, pattern.colno, pattern, valueNode)
-      : variableDeclaration(pattern.lineno, pattern.colno, [pattern], valueNode);
+      ? walrus(loc(pattern), pattern, valueNode)
+      : variableDeclaration(loc(pattern), [pattern], valueNode);
   }
   throw errorAt(node.lineno, node.colno, ERROR_DEFINITIONS.WALRUS_TARGET_INVALID);
 };
@@ -68,7 +69,7 @@ const handleWalrusAssignment = (node: Node, valueNode: Node, isExprCtx: boolean)
 const handleCompoundAssignment = (parserContext: ParserContext, node: Node, operator: string): Node => {
   const valueNode = parseOr(parserContext);
   if (isSymbol(node)) {
-    return compoundAssignment(node.lineno, node.colno, { targets: [node], operator, value: valueNode });
+    return compoundAssignment(loc(node), { targets: [node], operator, value: valueNode });
   }
   throw errorAt(node.lineno, node.colno, ERROR_DEFINITIONS.ASSIGNMENT_TARGET_INVALID);
 };

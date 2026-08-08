@@ -62,7 +62,7 @@ const replace = (str: unknown, old: unknown, newValue: string, maxCount?: number
   if (oldStr === '') { return preserveSafe(str, newValue + pipe(s, split(''), joinRemeda(newValue)) + newValue); }
   const nextIndex = s.indexOf(oldStr);
   if (max === 0 || nextIndex === -1) { return s; }
-  return preserveSafe(str, performReplace(s, oldStr, newValue, max));
+  return preserveSafe(str, performReplace(s, { oldStr, newValue, max }));
 };
 
 const resolveOldString = (old: unknown): string | null => {
@@ -77,7 +77,7 @@ const resolveString = (str: unknown): string | null => {
   return null;
 };
 
-const performReplace = (s: string, oldStr: string, newValue: string, max: number): string => {
+const performReplace = (s: string, { oldStr, newValue, max }: { oldStr: string; newValue: string; max: number }): string => {
   if (oldStr === '') { return s; }
   const segments = s.split(oldStr);
   if (max === -1 || segments.length - 1 <= max) {

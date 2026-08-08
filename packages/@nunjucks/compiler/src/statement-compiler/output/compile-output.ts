@@ -20,9 +20,9 @@ const emitEnsureDefinedClose = (
   colno: number
 ): void => {
   const name = extractVarName(child);
-  const nameArg = name ? `, "${name}"` : ', null';
-  const modeArg = compiler.undefinedMode ? `, "${compiler.undefinedMode}"` : '';
-  compiler.emit(`,${lineno},${colno}${nameArg}, null${modeArg})`);
+  const nameProp = name ? `, varName: "${name}"` : '';
+  const modeProp = compiler.undefinedMode ? `, undefinedMode: "${compiler.undefinedMode}"` : '';
+  compiler.emit(`, { lineno: ${lineno}, colno: ${colno}${nameProp}${modeProp} })`);
 };
 
 const isVariableLike = (child: Node): boolean =>
@@ -64,7 +64,7 @@ const compileOutputChild = (
   if (!isPipeType) {
     compiler.emit(')');
   }
-  compiler.emit(`, env.opts.autoescape, lineno, colno, "${htmlContext}");`);
+  compiler.emit(`, { autoescape: env.opts.autoescape, lineno, colno, context: "${htmlContext}" });`);
 };
 
 const processOutputChild = (

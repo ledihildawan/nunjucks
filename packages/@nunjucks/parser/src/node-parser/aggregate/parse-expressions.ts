@@ -24,6 +24,7 @@ import {
 import { EXPECTED_COLON_AFTER_DICT_KEY } from '../../index.ts';
 import type { ParserContext } from '../../cursor.ts';
 import { parseExpression, parsePrimary } from '../../expression-parser/index.ts';
+import { loc } from '@nunjucks/shared';
 
 const parseSpread = (
   parserContext: ParserContext,
@@ -34,7 +35,7 @@ const parseSpread = (
   const argument = parseExpression(parserContext);
   return appendChild(
     node,
-    spread(origin.lineno ?? 0, origin.colno ?? 0, argument)
+    spread(loc(origin), argument)
   );
 };
 
@@ -51,16 +52,16 @@ const parseDictItem = (
     const value = parseExpression(parserContext);
     return appendChild(
       node,
-      pair(key.lineno, key.colno, key, value)
+      pair(loc(key), key, value)
     );
   }
 
   const next = peekToken(parserContext);
-  const value = symbol(key.lineno, key.colno, String(key.value));
+  const value = symbol(loc(key), String(key.value));
   if (next && (next.type === TOKEN_COMMA || next.type === TOKEN_RIGHT_CURLY)) {
     return appendChild(
       node,
-      pair(key.lineno, key.colno, key, value)
+      pair(loc(key), key, value)
     );
   }
 
@@ -68,14 +69,13 @@ const parseDictItem = (
     nextToken(parserContext);
     const defaultValue = parseExpression(parserContext);
     const pattern = assignmentPattern(
-      key.lineno,
-      key.colno,
+      loc(key),
       value,
       defaultValue
     );
     return appendChild(
       node,
-      pair(key.lineno, key.colno, key, pattern)
+      pair(loc(key), key, pattern)
     );
   }
 
@@ -107,8 +107,7 @@ export const parseAggregateExpression = (
     return appendChild(
       node,
       assignmentPattern(
-        expression.lineno,
-        expression.colno,
+        loc(expression),
         expression,
         defaultValue
       )

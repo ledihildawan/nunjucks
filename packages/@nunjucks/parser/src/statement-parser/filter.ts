@@ -1,5 +1,6 @@
 import { capture, nodeList, output, pipe } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import { loc } from '@nunjucks/shared';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parseFilterCallName, parseFilterCallArgs } from "../expression-parser/postfix/index.ts";
@@ -16,26 +17,22 @@ export const parseFilterStatement = (parserContext: ParserContext): Node => {
 
   advanceAfterBlockEnd(parserContext, String(filterTok.value));
   const body = capture(
-    name.lineno,
-    name.colno,
+    loc(name),
     parseUntilBlocks(parserContext, 'endfilter')
   );
   advanceAfterBlockEnd(parserContext);
 
   const node = pipe(
-    name.lineno,
-    name.colno,
+    loc(name),
     name,
     nodeList(
-      name.lineno,
-      name.colno,
+      loc(name),
       [body, ...args]
     ).children
   );
 
   return output(
-    name.lineno,
-    name.colno,
+    loc(name),
     [node]
   );
 };

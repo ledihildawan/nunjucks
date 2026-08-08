@@ -6,6 +6,7 @@ import {
 } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import type { Node } from '@nunjucks/nodes';
+import { ZERO_LOC } from '@nunjucks/shared';
 
 const compile = (node: Node): string => {
   const c = createCompiler('test', 'chainable', '');
@@ -15,40 +16,40 @@ const compile = (node: Node): string => {
 
 describe('node-dispatch: expression nodes', () => {
   test('literal emits value', () => {
-    const code = compile(literal(0, 0, 'hello'));
+    const code = compile(literal(ZERO_LOC, 'hello'));
     expect(code).toContain('hello');
   });
 
   test('symbol emits variable reference', () => {
-    const code = compile(symbol(0, 0, 'myVar'));
+    const code = compile(symbol(ZERO_LOC, 'myVar'));
     expect(code).toContain('myVar');
   });
 
   test('add emits binary operation', () => {
-    const code = compile(add(0, 0, literal(0, 0, 1), literal(0, 0, 2)));
+    const code = compile(add(ZERO_LOC, literal(ZERO_LOC, 1), literal(ZERO_LOC, 2)));
     expect(code).toContain('+');
   });
 
   test('funCall emits runtime.callWrap', () => {
-    const code = compile(funCall(0, 0, symbol(0, 0, 'greet'), [literal(0, 0, 'World')]));
+    const code = compile(funCall(ZERO_LOC, symbol(ZERO_LOC, 'greet'), [literal(ZERO_LOC, 'World')]));
     expect(code).toContain('callWrap');
   });
 
   test('lookupVal emits member access', () => {
-    const code = compile(lookupVal(0, 0, symbol(0, 0, 'obj'), literal(0, 0, 'key')));
+    const code = compile(lookupVal(ZERO_LOC, symbol(ZERO_LOC, 'obj'), literal(ZERO_LOC, 'key')));
     expect(code.length).toBeGreaterThan(0);
   });
 });
 
 describe('node-dispatch: statement nodes', () => {
   test('output compiles without error', () => {
-    const code = compile(output(0, 0, [templateData(0, 0, 'text')]));
+    const code = compile(output(ZERO_LOC, [templateData(ZERO_LOC, 'text')]));
     expect(code.length).toBeGreaterThan(0);
   });
 
   test('block emits block function', () => {
-    const body = output(0, 0, [templateData(0, 0, 'content')]);
-    const code = compile(block(0, 0, 'myblock', body));
+    const body = output(ZERO_LOC, [templateData(ZERO_LOC, 'content')]);
+    const code = compile(block(ZERO_LOC, 'myblock', body));
     expect(code.length).toBeGreaterThan(0);
   });
 });

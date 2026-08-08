@@ -1,9 +1,11 @@
 import type { Node } from '@nunjucks/nodes';
+import type { Loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/shared';
 import { TOKEN_OPERATOR } from '@nunjucks/lexer';
 import { peekToken, skipValue } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
 
-type BinNodeFn = (lineno: number, colno: number, left: Node, right: Node) => Node;
+type BinNodeFn = (loc: Loc, left: Node, right: Node) => Node;
 
 const binaryOp = (
   parserContext: ParserContext,
@@ -15,7 +17,7 @@ const binaryOp = (
   let tok = peekToken(parserContext);
   while (consume(parserContext)) {
     const rightNode = next(parserContext);
-    node = create(tok.lineno, tok.colno, node, rightNode);
+    node = create(loc(tok), node, rightNode);
     tok = peekToken(parserContext);
   }
   return node;

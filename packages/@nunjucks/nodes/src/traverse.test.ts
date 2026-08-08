@@ -2,12 +2,13 @@ import { describe, test, expect } from 'bun:test';
 import { root, output, templateData, block } from './index.ts';
 import type { Node, ChildrenNode } from './index.ts';
 import { walk, findAll, appendChild } from './traverse.ts';
+import { ZERO_LOC } from '@nunjucks/shared';
 
 describe('walk', () => {
   test('visits all nodes in AST', () => {
-    const ast = root(0, 0, [
-      output(0, 0, [templateData(0, 0, 'a')]),
-      output(0, 0, [templateData(0, 0, 'b')]),
+    const ast = root(ZERO_LOC, [
+      output(ZERO_LOC, [templateData(ZERO_LOC, 'a')]),
+      output(ZERO_LOC, [templateData(ZERO_LOC, 'b')]),
     ]) as Node;
     const visited: string[] = [];
     walk(ast, (n: Node) => {
@@ -20,8 +21,8 @@ describe('walk', () => {
   });
 
   test('replaces node when fn returns new node', () => {
-    const ast = root(0, 0, [
-      output(0, 0, [templateData(0, 0, 'a')]),
+    const ast = root(ZERO_LOC, [
+      output(ZERO_LOC, [templateData(ZERO_LOC, 'a')]),
     ]) as Node;
     const transformed = walk(ast, (n: Node) => {
       if (n.type === 'templateData') {
@@ -33,7 +34,7 @@ describe('walk', () => {
   });
 
   test('returns same reference when no changes', () => {
-    const ast = root(0, 0, [output(0, 0, [])]) as Node;
+    const ast = root(ZERO_LOC, [output(ZERO_LOC, [])]) as Node;
     const result = walk(ast, () => undefined);
     expect(result).toBe(ast);
   });
@@ -41,25 +42,25 @@ describe('walk', () => {
 
 describe('findAll', () => {
   test('finds nodes by type string', () => {
-    const ast = root(0, 0, [
-      output(0, 0, [templateData(0, 0, 'a')]),
-      output(0, 0, [templateData(0, 0, 'b')]),
+    const ast = root(ZERO_LOC, [
+      output(ZERO_LOC, [templateData(ZERO_LOC, 'a')]),
+      output(ZERO_LOC, [templateData(ZERO_LOC, 'b')]),
     ]) as Node;
     const results = findAll(ast, 'output');
     expect(results.length).toBe(2);
   });
 
   test('finds nodes by predicate', () => {
-    const ast = root(0, 0, [
-      block(0, 0, 'x', output(0, 0, [])),
-      block(0, 0, 'y', output(0, 0, [])),
+    const ast = root(ZERO_LOC, [
+      block(ZERO_LOC, 'x', output(ZERO_LOC, [])),
+      block(ZERO_LOC, 'y', output(ZERO_LOC, [])),
     ]) as Node;
     const results = findAll(ast, (n: Node) => n.type === 'block');
     expect(results.length).toBe(2);
   });
 
   test('returns empty for non-existent type', () => {
-    const ast = root(0, 0, []) as Node;
+    const ast = root(ZERO_LOC, []) as Node;
     const results = findAll(ast, 'nonexistent');
     expect(results).toEqual([]);
   });
@@ -67,17 +68,17 @@ describe('findAll', () => {
 
 describe('appendChild', () => {
   test('appends child to node with children array', () => {
-    const node = output(0, 0, []) as ChildrenNode;
-    const child = templateData(0, 0, 'x');
+    const node = output(ZERO_LOC, []) as ChildrenNode;
+    const child = templateData(ZERO_LOC, 'x');
     const result = appendChild(node, child);
     expect(result.children.length).toBe(1);
     expect(result.children[0]).toBe(child);
   });
 
   test('does not mutate original node', () => {
-    const node = output(0, 0, []) as ChildrenNode;
+    const node = output(ZERO_LOC, []) as ChildrenNode;
     const originalLen = node.children.length;
-    appendChild(node, templateData(0, 0, 'x'));
+    appendChild(node, templateData(ZERO_LOC, 'x'));
     expect(node.children.length).toBe(originalLen);
   });
 });

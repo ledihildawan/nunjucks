@@ -19,6 +19,7 @@ import { tryParsePattern } from '../node-parser/pattern.ts';
 import { parseAggregate } from '../node-parser/aggregate/index.ts';
 import { parseTemplateLiteral } from '../node-parser/template-literal.ts';
 import { parsePostfix, parsePipeForward } from './postfix/index.ts';
+import { loc } from '@nunjucks/shared';
 
 const parseBooleanValue = (tok: Token): boolean | undefined => {
   if (tok.value === 'true') { return true; }
@@ -29,22 +30,22 @@ const parseBooleanValue = (tok: Token): boolean | undefined => {
 const handleLiteralToken = (tok: Token, parserContext: ParserContext): Node | undefined => {
   switch (tok.type) {
     case TOKEN_STRING:
-      return literal(tok.lineno, tok.colno, tok.value);
+      return literal(loc(tok), tok.value);
     case TOKEN_INT:
     case TOKEN_FLOAT:
-      return literal(tok.lineno, tok.colno, tok.value);
+      return literal(loc(tok), tok.value);
     case TOKEN_BOOLEAN: {
       const value = parseBooleanValue(tok);
       if (value === undefined) {
         fail(parserContext, `invalid boolean: ${tok.value}`, tok.lineno, tok.colno);
       }
-      return literal(tok.lineno, tok.colno, value);
+      return literal(loc(tok), value);
     }
     case TOKEN_NONE:
-      return literal(tok.lineno, tok.colno, null);
+      return literal(loc(tok), null);
     case TOKEN_REGEX: {
       const { body, flags } = tok.value;
-      return literal(tok.lineno, tok.colno, new RegExp(body, flags));
+      return literal(loc(tok), new RegExp(body, flags));
     }
   }
   return undefined;
@@ -52,7 +53,7 @@ const handleLiteralToken = (tok: Token, parserContext: ParserContext): Node | un
 
 const handleSymbolOrTemplate = (tok: Token, parserContext: ParserContext): Node | null => {
   if (isSymbolToken(tok)) {
-    return symbol(tok.lineno, tok.colno, tok.value);
+    return symbol(loc(tok), tok.value);
   }
   if (tok.type === TOKEN_TEMPLATE_LITERAL) {
     pushToken(parserContext, tok);
@@ -106,15 +107,15 @@ const parseUnary = (parserContext: ParserContext, noPipes?: boolean): Node => {
   let node: Node;
 
   if (skipValue(parserContext, TOKEN_OPERATOR, '-')) {
-    node = neg(tok.lineno, tok.colno, parseUnary(parserContext, true));
+    node = neg(loc(tok), parseUnary(parserContext, true));
   } else if (skipValue(parserContext, TOKEN_OPERATOR, '+')) {
-    node = pos(tok.lineno, tok.colno, parseUnary(parserContext, true));
+    node = pos(loc(tok), parseUnary(parserContext, true));
   } else if (skipValue(parserContext, TOKEN_OPERATOR, '~')) {
-    node = bitwiseNot(tok.lineno, tok.colno, parseUnary(parserContext, true));
+    node = bitwiseNot(loc(tok), parseUnary(parserContext, true));
   } else if (skipValue(parserContext, TOKEN_OPERATOR, '++')) {
-    node = increment(tok.lineno, tok.colno, parseUnary(parserContext, true), false);
+    node = increment(loc(tok), parseUnary(parserContext, true), false);
   } else if (skipValue(parserContext, TOKEN_OPERATOR, '--')) {
-    node = decrement(tok.lineno, tok.colno, parseUnary(parserContext, true), false);
+    node = decrement(loc(tok), parseUnary(parserContext, true), false);
   } else {
     node = parsePrimary(parserContext);
   }

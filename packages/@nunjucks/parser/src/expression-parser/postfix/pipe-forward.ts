@@ -10,6 +10,7 @@ import type { Node } from '@nunjucks/nodes';
 import { peekToken, skip, skipValue, expect } from "../../cursor.ts";
 import type { ParserContext, } from "../../cursor.ts";
 import { parsePostfix } from "./index.ts";
+import { loc } from '@nunjucks/shared';
 
 export const parseFilterCallName = (parserContext: ParserContext): Node => {
   const tok = expect(parserContext, TOKEN_SYMBOL);
@@ -20,7 +21,7 @@ export const parseFilterCallName = (parserContext: ParserContext): Node => {
     name += `.${isSymbolToken(sym) ? sym.value : String(sym.value)}`;
   }
 
-  return symbol(tok.lineno, tok.colno, name);
+  return symbol(loc(tok), name);
 };
 
 export const parseFilterCallArgs = (parserContext: ParserContext, node: Node): readonly Node[] => {
@@ -40,12 +41,10 @@ export const parsePipeForward = (parserContext: ParserContext, node: Node): Node
     const name = parseFilterCallName(parserContext);
 
     current = pipe(
-      name.lineno,
-      name.colno,
+      loc(name),
       name,
       nodeList(
-        name.lineno,
-        name.colno,
+        loc(name),
         [current, ...parseFilterCallArgs(parserContext, current)]
       ).children
     );

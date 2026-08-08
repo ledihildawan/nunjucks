@@ -1,4 +1,5 @@
 import type { Node, BinaryOpNode, BinaryNode, UnaryOpNode, UnaryNode, IncDecNode, PairNode, RestPatternNode, AssignmentPatternNode, VariableDeclNode, CompoundAssignNode, LookupNode, SliceNode, CallNode, TestNode, TestCallNode, ChildrenNode } from '../types/index.ts';
+import type { Loc } from '@nunjucks/shared';
 import { T, createNode } from './internal.ts';
 
 interface SliceFields {
@@ -7,68 +8,68 @@ interface SliceFields {
   step: Node | null;
 }
 
-const slice = (lineno: number, colno: number, fields: SliceFields): SliceNode =>
-  createNode(T.SLICE, lineno, colno, { ...fields });
+const slice = (loc: Loc, fields: SliceFields): SliceNode =>
+  createNode(T.SLICE, loc, { ...fields });
 
-const funCall = (lineno: number, colno: number, name: Node | string, args: readonly Node[] = []): CallNode =>
-  createNode(T.FUN_CALL, lineno, colno, { name, args });
+const funCall = (loc: Loc, name: Node | string, args: readonly Node[] = []): CallNode =>
+  createNode(T.FUN_CALL, loc, { name, args });
 
-const pipe = (lineno: number, colno: number, name: Node | string, args: readonly Node[] = []): CallNode =>
-  createNode(T.PIPE, lineno, colno, { name, args });
+const pipe = (loc: Loc, name: Node | string, args: readonly Node[] = []): CallNode =>
+  createNode(T.PIPE, loc, { name, args });
 
-const lookupVal = (lineno: number, colno: number, target: Node, val: Node): LookupNode =>
-  createNode(T.LOOKUP_VAL, lineno, colno, { target, val });
+const lookupVal = (loc: Loc, target: Node, val: Node): LookupNode =>
+  createNode(T.LOOKUP_VAL, loc, { target, val });
 
-const optionalChain = (lineno: number, colno: number, target: Node, val: Node): LookupNode =>
-  createNode(T.OPTIONAL_CHAIN, lineno, colno, { target, val });
+const optionalChain = (loc: Loc, target: Node, val: Node): LookupNode =>
+  createNode(T.OPTIONAL_CHAIN, loc, { target, val });
 
-const optionalCall = (lineno: number, colno: number, name: Node | string, args: readonly Node[] = []): CallNode =>
-  createNode(T.OPTIONAL_CALL, lineno, colno, { name, args });
+const optionalCall = (loc: Loc, name: Node | string, args: readonly Node[] = []): CallNode =>
+  createNode(T.OPTIONAL_CALL, loc, { name, args });
 
-const add = (lineno: number, colno: number, left: Node, right: Node): BinaryOpNode => createNode(T.ADD, lineno, colno, { left, right, operator: '+' });
-const sub = (lineno: number, colno: number, left: Node, right: Node): BinaryOpNode => createNode(T.SUB, lineno, colno, { left, right, operator: '-' });
-const mul = (lineno: number, colno: number, left: Node, right: Node): BinaryOpNode => createNode(T.MUL, lineno, colno, { left, right, operator: '*' });
-const div = (lineno: number, colno: number, left: Node, right: Node): BinaryOpNode => createNode(T.DIV, lineno, colno, { left, right, operator: '/' });
-const floorDiv = (lineno: number, colno: number, left: Node, right: Node): BinaryOpNode => createNode(T.FLOOR_DIV, lineno, colno, { left, right, operator: '//' });
-const mod = (lineno: number, colno: number, left: Node, right: Node): BinaryOpNode => createNode(T.MOD, lineno, colno, { left, right, operator: '%' });
-const pow = (lineno: number, colno: number, left: Node, right: Node): BinaryOpNode => createNode(T.POW, lineno, colno, { left, right, operator: '**' });
-const concat = (lineno: number, colno: number, left: Node, right: Node): BinaryNode => createNode(T.CONCAT, lineno, colno, { left, right });
+const add = (loc: Loc, left: Node, right: Node): BinaryOpNode => createNode(T.ADD, loc, { left, right, operator: '+' });
+const sub = (loc: Loc, left: Node, right: Node): BinaryOpNode => createNode(T.SUB, loc, { left, right, operator: '-' });
+const mul = (loc: Loc, left: Node, right: Node): BinaryOpNode => createNode(T.MUL, loc, { left, right, operator: '*' });
+const div = (loc: Loc, left: Node, right: Node): BinaryOpNode => createNode(T.DIV, loc, { left, right, operator: '/' });
+const floorDiv = (loc: Loc, left: Node, right: Node): BinaryOpNode => createNode(T.FLOOR_DIV, loc, { left, right, operator: '//' });
+const mod = (loc: Loc, left: Node, right: Node): BinaryOpNode => createNode(T.MOD, loc, { left, right, operator: '%' });
+const pow = (loc: Loc, left: Node, right: Node): BinaryOpNode => createNode(T.POW, loc, { left, right, operator: '**' });
+const concat = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.CONCAT, loc, { left, right });
 
-const not = (lineno: number, colno: number, target: Node): UnaryOpNode => createNode(T.NOT, lineno, colno, { target, operator: 'not' });
-const neg = (lineno: number, colno: number, target: Node): UnaryOpNode => createNode(T.NEG, lineno, colno, { target, operator: '-' });
-const pos = (lineno: number, colno: number, target: Node): UnaryOpNode => createNode(T.POS, lineno, colno, { target, operator: '+' });
+const not = (loc: Loc, target: Node): UnaryOpNode => createNode(T.NOT, loc, { target, operator: 'not' });
+const neg = (loc: Loc, target: Node): UnaryOpNode => createNode(T.NEG, loc, { target, operator: '-' });
+const pos = (loc: Loc, target: Node): UnaryOpNode => createNode(T.POS, loc, { target, operator: '+' });
 
-const and = (lineno: number, colno: number, left: Node, right: Node): BinaryNode => createNode(T.AND, lineno, colno, { left, right });
-const or = (lineno: number, colno: number, left: Node, right: Node): BinaryNode => createNode(T.OR, lineno, colno, { left, right });
-const nullishCoalesce = (lineno: number, colno: number, left: Node, right: Node): BinaryNode => createNode(T.NULLISH_COALESCE, lineno, colno, { left, right });
+const and = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.AND, loc, { left, right });
+const or = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.OR, loc, { left, right });
+const nullishCoalesce = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.NULLISH_COALESCE, loc, { left, right });
 
-const compare = (lineno: number, colno: number, expr: Node, ops: readonly Node[] = []) =>
-  createNode(T.COMPARE, lineno, colno, { expr, ops });
+const compare = (loc: Loc, expr: Node, ops: readonly Node[] = []) =>
+  createNode(T.COMPARE, loc, { expr, ops });
 
-const compareOperand = (lineno: number, colno: number, expr: Node, operator: string) =>
-  createNode(T.COMPARE_OPERAND, lineno, colno, { expr, operator });
+const compareOperand = (loc: Loc, expr: Node, operator: string) =>
+  createNode(T.COMPARE_OPERAND, loc, { expr, operator });
 
-const bitwiseOr = (lineno: number, colno: number, left: Node, right: Node): BinaryNode => createNode(T.BITWISE_OR, lineno, colno, { left, right });
-const bitwiseAnd = (lineno: number, colno: number, left: Node, right: Node): BinaryNode => createNode(T.BITWISE_AND, lineno, colno, { left, right });
-const bitwiseXor = (lineno: number, colno: number, left: Node, right: Node): BinaryNode => createNode(T.BITWISE_XOR, lineno, colno, { left, right });
-const bitwiseLShift = (lineno: number, colno: number, left: Node, right: Node): BinaryNode => createNode(T.BITWISE_LSHIFT, lineno, colno, { left, right });
-const bitwiseRShift = (lineno: number, colno: number, left: Node, right: Node): BinaryNode => createNode(T.BITWISE_RSHIFT, lineno, colno, { left, right });
-const bitwiseNot = (lineno: number, colno: number, target: Node): UnaryNode => createNode(T.BITWISE_NOT, lineno, colno, { target });
+const bitwiseOr = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.BITWISE_OR, loc, { left, right });
+const bitwiseAnd = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.BITWISE_AND, loc, { left, right });
+const bitwiseXor = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.BITWISE_XOR, loc, { left, right });
+const bitwiseLShift = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.BITWISE_LSHIFT, loc, { left, right });
+const bitwiseRShift = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.BITWISE_RSHIFT, loc, { left, right });
+const bitwiseNot = (loc: Loc, target: Node): UnaryNode => createNode(T.BITWISE_NOT, loc, { target });
 
-const increment = (lineno: number, colno: number, target: Node, isPostfix: boolean): IncDecNode => createNode(T.INCREMENT, lineno, colno, { target, isPostfix });
-const decrement = (lineno: number, colno: number, target: Node, isPostfix: boolean): IncDecNode => createNode(T.DECREMENT, lineno, colno, { target, isPostfix });
+const increment = (loc: Loc, target: Node, isPostfix: boolean): IncDecNode => createNode(T.INCREMENT, loc, { target, isPostfix });
+const decrement = (loc: Loc, target: Node, isPostfix: boolean): IncDecNode => createNode(T.DECREMENT, loc, { target, isPostfix });
 
-const arrayPattern = (lineno: number, colno: number, children: readonly Node[] = []): ChildrenNode => createNode(T.ARRAY_PATTERN, lineno, colno, { children: [...children] });
-const objectPattern = (lineno: number, colno: number, children: readonly Node[] = []): ChildrenNode => createNode(T.OBJECT_PATTERN, lineno, colno, { children: [...children] });
-const patternProperty = (lineno: number, colno: number, key: Node | string, val: Node): PairNode => createNode(T.PATTERN_PROPERTY, lineno, colno, { key, value: val });
-const restPattern = (lineno: number, colno: number, target: Node): RestPatternNode => createNode(T.REST_PATTERN, lineno, colno, { target });
-const assignmentPattern = (lineno: number, colno: number, target: Node, defaultVal: Node): AssignmentPatternNode => createNode(T.ASSIGNMENT_PATTERN, lineno, colno, { target, value: defaultVal });
+const arrayPattern = (loc: Loc, children: readonly Node[] = []): ChildrenNode => createNode(T.ARRAY_PATTERN, loc, { children: [...children] });
+const objectPattern = (loc: Loc, children: readonly Node[] = []): ChildrenNode => createNode(T.OBJECT_PATTERN, loc, { children: [...children] });
+const patternProperty = (loc: Loc, key: Node | string, val: Node): PairNode => createNode(T.PATTERN_PROPERTY, loc, { key, value: val });
+const restPattern = (loc: Loc, target: Node): RestPatternNode => createNode(T.REST_PATTERN, loc, { target });
+const assignmentPattern = (loc: Loc, target: Node, defaultVal: Node): AssignmentPatternNode => createNode(T.ASSIGNMENT_PATTERN, loc, { target, value: defaultVal });
 
-const isOp = (lineno: number, colno: number, left: Node, right: Node): BinaryNode => createNode(T.IS, lineno, colno, { left, right });
-const inNode = (lineno: number, colno: number, left: Node, right: Node): BinaryNode => createNode(T.IN, lineno, colno, { left, right });
+const isOp = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.IS, loc, { left, right });
+const inNode = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.IN, loc, { left, right });
 
-const testNode = (lineno: number, colno: number, target: Node, name: string): TestNode =>
-  createNode(T.TEST, lineno, colno, { target, name });
+const testNode = (loc: Loc, target: Node, name: string): TestNode =>
+  createNode(T.TEST, loc, { target, name });
 
 interface TestCallFields {
   target: Node;
@@ -76,11 +77,11 @@ interface TestCallFields {
   args?: readonly Node[];
 }
 
-const testCallNode = (lineno: number, colno: number, fields: TestCallFields): TestCallNode =>
-  createNode(T.TEST_CALL, lineno, colno, { args: [], ...fields });
+const testCallNode = (loc: Loc, fields: TestCallFields): TestCallNode =>
+  createNode(T.TEST_CALL, loc, { args: [], ...fields });
 
-const variableDeclaration = (lineno: number, colno: number, targets: readonly Node[], val: Node): VariableDeclNode => createNode(T.VARIABLE_DECLARATION, lineno, colno, { targets, value: val });
-const variableAssignment = (lineno: number, colno: number, targets: readonly Node[], val: Node): VariableDeclNode => createNode(T.VARIABLE_ASSIGNMENT, lineno, colno, { targets, value: val });
+const variableDeclaration = (loc: Loc, targets: readonly Node[], val: Node): VariableDeclNode => createNode(T.VARIABLE_DECLARATION, loc, { targets, value: val });
+const variableAssignment = (loc: Loc, targets: readonly Node[], val: Node): VariableDeclNode => createNode(T.VARIABLE_ASSIGNMENT, loc, { targets, value: val });
 
 interface CompoundAssignmentFields {
   targets: Node[];
@@ -88,8 +89,8 @@ interface CompoundAssignmentFields {
   value: Node;
 }
 
-const compoundAssignment = (lineno: number, colno: number, fields: CompoundAssignmentFields): CompoundAssignNode =>
-  createNode(T.COMPOUND_ASSIGNMENT, lineno, colno, { ...fields });
+const compoundAssignment = (loc: Loc, fields: CompoundAssignmentFields): CompoundAssignNode =>
+  createNode(T.COMPOUND_ASSIGNMENT, loc, { ...fields });
 
 export {
   slice, funCall, pipe, lookupVal, optionalChain, optionalCall,

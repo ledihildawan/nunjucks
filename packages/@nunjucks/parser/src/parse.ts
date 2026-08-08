@@ -2,6 +2,7 @@ import { createTokenizer } from '@nunjucks/lexer';
 import type { LexerOptions } from '@nunjucks/lexer';
 import { root } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import { ZERO_LOC } from '@nunjucks/shared';
 import { fail } from "./cursor.ts";
 import type { ParserContext, ParserExtension, TokenStream } from "./cursor.ts";
 import { parseNodes } from "./parse-root.ts";
@@ -30,7 +31,7 @@ export const parse = (src: string, extensions?: ParserExtension[], options?: Par
   if (extensions !== undefined) {
     parser.extensions = extensions;
   }
-  const ast = root(0, 0, parseNodes(parser));
+  const ast = root(ZERO_LOC, parseNodes(parser));
 
   if (securityConfig !== null) {
     const [firstError] = validateExpression(ast, securityConfig);

@@ -25,3 +25,5 @@ export { replace, slice } from './pipe-helpers.ts';
 export { RESERVED_KEYWORDS, validateFilterName, validateGlobalName, getReservedKeywords } from './reserved.ts';
 export { hasOwn, isNonNullish, isFunction, isString, isArray, isPlainObject, isKeyedObject, isIterable, isThenable, readObject, readString, readNumber } from './type-guards.ts';
 export type { NodeLocation, DomPurifyConfig } from './types.ts';
+export { loc, ZERO_LOC } from './loc.ts';
+export type { Loc } from './loc.ts';

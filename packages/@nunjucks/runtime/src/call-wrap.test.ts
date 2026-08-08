@@ -6,38 +6,38 @@ describe('callWrap', () => {
     const fn = function (this: { prefix: string }, a: string, b: string) {
       return this.prefix + a + b;
     };
-    expect(callWrap(fn, 'test', 'test()', { prefix: 'r:' }, ['x', 'y'])).toBe('r:xy');
+    expect(callWrap(fn, 'test', { displayName: 'test()', context: { prefix: 'r:' }, args: ['x', 'y'] })).toBe('r:xy');
   });
 
   test('allows slot keyword', () => {
     const fn = () => 'result';
-    expect(callWrap(fn, 'slot', 'slot()', {}, [])).toBe('result');
+    expect(callWrap(fn, 'slot', { displayName: 'slot()', context: {}, args: [] })).toBe('result');
   });
 
   test('throws RESERVED_KEYWORD_CONTEXT for "super"', () => {
-    expect(() => callWrap(() => 1, 'super', 'super()', {}, [])).toThrow('reserved keyword');
+    expect(() => callWrap(() => 1, 'super', { displayName: 'super()', context: {}, args: [] })).toThrow('reserved keyword');
   });
 
   test('throws NULL_VALUE for null/undefined obj', () => {
-    expect(() => callWrap(null, 'foo', 'foo()', {}, [], 1, 2)).toThrow("Cannot access 'foo' on null");
+    expect(() => callWrap(null, 'foo', { displayName: 'foo()', context: {}, args: [], lineno: 1, colno: 2 })).toThrow("Cannot access 'foo' on null");
     try {
-      callWrap(undefined, 'foo', 'foo()', {}, [], 1, 2);
+      callWrap(undefined, 'foo', { displayName: 'foo()', context: {}, args: [], lineno: 1, colno: 2 });
     } catch (e) {
       expect((e as { code: string }).code).toBe('NULL_VALUE');
     }
   });
 
   test('throws NOT_A_FUNCTION for non-function obj', () => {
-    expect(() => callWrap(42, 'bar', 'bar()', {}, [], 1, 2)).toThrow('not a function');
+    expect(() => callWrap(42, 'bar', { displayName: 'bar()', context: {}, args: [], lineno: 1, colno: 2 })).toThrow('not a function');
     try {
-      callWrap('nope', 'bar', 'bar()', {}, [], 1, 2);
+      callWrap('nope', 'bar', { displayName: 'bar()', context: {}, args: [], lineno: 1, colno: 2 });
     } catch (e) {
       expect((e as { code: string }).code).toBe('NOT_A_FUNCTION');
     }
   });
 
   test('uses displayName in NOT_A_FUNCTION error', () => {
-    expect(() => callWrap(42, 'internal', 'prettyName()', {}, [], 1, 2)).toThrow("'prettyName()'");
+    expect(() => callWrap(42, 'internal', { displayName: 'prettyName()', context: {}, args: [], lineno: 1, colno: 2 })).toThrow("'prettyName()'");
   });
 });
 
@@ -64,7 +64,7 @@ describe('inOperator', () => {
 
   test('preserves location info on the thrown error', () => {
     try {
-      inOperator('x', 42, 3, 7);
+      inOperator('x', 42, { lineno: 3, colno: 7 });
     } catch (e) {
       expect((e as { code: string }).code).toBe('IN_OPERATOR');
       expect((e as { lineno: number }).lineno).toBe(3);

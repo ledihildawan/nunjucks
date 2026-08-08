@@ -4,6 +4,7 @@ import { peekToken, skipSymbol, advanceAfterBlockEnd, fail, nextTokenOrNull } fr
 import type { ParserContext } from "../cursor.ts";
 import { isSymbolToken } from '@nunjucks/lexer';
 import { parseUntilBlocks } from "../parse-root.ts";
+import { loc } from '@nunjucks/shared';
 
 export const parseCapture = (parserContext: ParserContext): Node => {
   const tag = peekToken(parserContext);
@@ -22,5 +23,5 @@ export const parseCapture = (parserContext: ParserContext): Node => {
   skipSymbol(parserContext, 'endcapture');
   advanceAfterBlockEnd(parserContext, 'endcapture');
 
-  return capture(tag.lineno, tag.colno, body, varName);
+  return capture(loc(tag), body, varName);
 };

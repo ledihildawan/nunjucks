@@ -6,6 +6,7 @@ import { nextToken, peekToken, fail } from "../../cursor.ts";
 import type { ParserContext } from "../../cursor.ts";
 import { parseExpression } from "../index.ts";
 import { markBracketNotation } from "./lookup.ts";
+import { loc } from '@nunjucks/shared';
 
 type OptionalChainOperatorToken = Token & { type: typeof TOKEN_OPERATOR };
 
@@ -23,7 +24,7 @@ const handleComma = (parserContext: ParserContext, expectComma: boolean): boolea
 };
 
 const parseOptionalCallArgs = (parserContext: ParserContext, tok: Token): ChildrenNode => {
-  let args = nodeList(tok.lineno, tok.colno);
+  let args = nodeList(loc(tok));
   let expectComma = false;
 
   for (;;) {
@@ -52,7 +53,7 @@ export const parseOptionalChain = (parserContext: ParserContext, tok: OptionalCh
   if (value?.type === TOKEN_LEFT_PAREN) {
     nextToken(parserContext);
     const args = parseOptionalCallArgs(parserContext, tok);
-    return optionalCall(tok.lineno, tok.colno, target, [...args.children]);
+    return optionalCall(loc(tok), target, [...args.children]);
   }
 
     const nextTok = peekToken(parserContext);
@@ -65,7 +66,7 @@ export const parseOptionalChain = (parserContext: ParserContext, tok: OptionalCh
       fail(parserContext, 'expected right bracket', rightBracket.lineno, rightBracket.colno);
     }
 
-    const node = optionalChain(tok.lineno, tok.colno, target, start);
+    const node = optionalChain(loc(tok), target, start);
     markBracketNotation(node, true);
     return node;
   }
@@ -79,8 +80,8 @@ export const parseOptionalChain = (parserContext: ParserContext, tok: OptionalCh
       nameTok.colno);
   }
 
-  const lookup = literal(nameTok.lineno, nameTok.colno, nameTok.value);
-  const node = optionalChain(tok.lineno, tok.colno, target, lookup);
+  const lookup = literal(loc(nameTok), nameTok.value);
+  const node = optionalChain(loc(tok), target, lookup);
   markBracketNotation(node, false);
   return node;
 };

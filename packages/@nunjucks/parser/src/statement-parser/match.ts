@@ -6,6 +6,7 @@ import { TOKEN_SYMBOL } from '@nunjucks/lexer';
 import { parseExpression, parsePrimary } from "../expression-parser/index.ts";
 import { tryParsePattern } from "../node-parser/pattern.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
+import { loc } from '@nunjucks/shared';
 
 export const parseMatch = (parserContext: ParserContext): Node => {
   const tag = peekToken(parserContext);
@@ -44,12 +45,12 @@ export const parseMatch = (parserContext: ParserContext): Node => {
     advanceAfterBlockEnd(parserContext, 'when');
     const body = parseUntilBlocks(parserContext, 'when', 'endmatch');
 
-    cases.push(when(tag.lineno, tag.colno, pattern, body, guard));
+    cases.push(when(loc(tag), pattern, body, guard));
     tok = peekToken(parserContext);
   }
 
   skipSymbol(parserContext, 'endmatch');
   advanceAfterBlockEnd(parserContext, 'endmatch');
 
-  return match(tag.lineno, tag.colno, { expr, cases, default: defaultCase });
+  return match(loc(tag), { expr, cases, default: defaultCase });
 };

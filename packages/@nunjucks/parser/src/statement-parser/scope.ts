@@ -6,6 +6,7 @@ import { TOKEN_BLOCK_END, TOKEN_COMMA, TOKEN_OPERATOR } from '@nunjucks/lexer';
 import type { Token } from '@nunjucks/lexer';
 import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
+import { loc } from '@nunjucks/shared';
 
 const isBlockEnd = (tok: Token | null | undefined): boolean => tok?.type === TOKEN_BLOCK_END;
 
@@ -23,7 +24,7 @@ const parseScopeAssignment = (parserContext: ParserContext, tag: Token): Node =>
     fail(parserContext, 'parseScope: expected expression after =', tag.lineno, tag.colno);
   }
 
-  return pair(nameSymbol.lineno, nameSymbol.colno, String(nameSymbol.value), value);
+  return pair(loc(nameSymbol), String(nameSymbol.value), value);
 };
 
 const parseScopeAssignments = (parserContext: ParserContext, tag: Token): Node[] => {
@@ -48,7 +49,7 @@ const parseScopeAssignments = (parserContext: ParserContext, tag: Token): Node[]
       fail(parserContext, 'parseScope: expected expression after =', tag.lineno, tag.colno);
     }
 
-    assignments.push(pair(nextName.lineno, nextName.colno, String(nextName.value), nextValue));
+    assignments.push(pair(loc(nextName), String(nextName.value), nextValue));
   }
 
   return assignments;
@@ -80,5 +81,5 @@ export const parseScope = (parserContext: ParserContext): Node => {
 
   advanceAfterBlockEnd(parserContext, 'endscope');
 
-  return scopeNode(tag.lineno, tag.colno, assignments, body);
+  return scopeNode(loc(tag), assignments, body);
 };

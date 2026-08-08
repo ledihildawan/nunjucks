@@ -14,11 +14,12 @@ const escapeValue = (value: unknown, context: HtmlContext = 'html'): string => {
   return escapeForContext(String(value), context);
 };
 
-const throwEscapedJsonError = (
-  self: unknown,
-  lineno?: number | null,
-  colno?: number | null
-): never => {
+interface LocationOptions {
+  lineno?: number | null;
+  colno?: number | null;
+}
+
+const throwEscapedJsonError = (self: unknown, loc: LocationOptions): never => {
   const ctx = getLogContext(self);
   throw createLog(
     'error',
@@ -26,8 +27,8 @@ const throwEscapedJsonError = (
     {},
     null,
     {
-      lineno: lineno ?? null,
-      colno: colno ?? null,
+      lineno: loc.lineno ?? null,
+      colno: loc.colno ?? null,
     phase: ctx.phase ?? 'render',
     templateName: ctx.templateName ?? 'inline',
       lineBase: 'zero',
@@ -46,19 +47,14 @@ const isEscapedJsonLike = (value: unknown, stringValue: string): boolean =>
   JSON_SCALAR_RE.test(stringValue.trim()) ||
   JSON_CONTAINER_RE.test(stringValue);
 
-const suppressScriptValue = (
-  self: unknown,
-  value: unknown,
-  lineno?: number | null,
-  colno?: number | null
-): unknown => {
+const suppressScriptValue = (self: unknown, value: unknown, loc: LocationOptions): unknown => {
   const stringValue = String(value);
   if (!isScriptJsonLike(value, stringValue)) {
     return SCRIPT_VALUE_NOT_HANDLED;
   }
   const encoded = JSON.stringify(value);
   if (RAW_OR_ESCAPED_LT_RE.test(encoded)) {
-    throwEscapedJsonError(self, lineno, colno);
+    throwEscapedJsonError(self, loc);
   }
   return encoded;
 };
@@ -66,35 +62,37 @@ const suppressScriptValue = (
 const suppressEscapedValue = (
   self: unknown,
   normalized: unknown,
-  context: HtmlContext,
-  lineno?: number | null,
-  colno?: number | null
+  options: { context: HtmlContext } & LocationOptions
 ): string => {
   const stringValue = String(normalized);
-  const escaped = escapeValue(stringValue, context);
+  const escaped = escapeValue(stringValue, options.context);
   if (
     isEscapedJsonLike(normalized, stringValue) &&
     ESCAPED_HTML_ENTITY_RE.test(escaped)
   ) {
-    throwEscapedJsonError(self, lineno, colno);
+    throwEscapedJsonError(self, options);
   }
   return escaped;
 };
 
+export interface SuppressValueOptions extends LocationOptions {
+  autoescape?: boolean;
+  context?: HtmlContext;
+}
+
 export function suppressValue(
   this: unknown,
   value: unknown,
-  autoescape?: boolean,
-  lineno?: number | null,
-  colno?: number | null,
-  context: HtmlContext = 'html'
+  options: SuppressValueOptions = {}
 ): unknown {
+  const { autoescape, lineno, colno, context = 'html' } = options;
+  const loc = { lineno, colno };
   if (isThenable(value)) {
-    return value.then((v) => suppressValue.call(this, v, autoescape, lineno, colno, context));
+    return value.then((v) => suppressValue.call(this, v, options));
   }
 
   if (autoescape && context === 'script' && !isSafeString(value)) {
-    const scriptValue = suppressScriptValue(this, value, lineno, colno);
+    const scriptValue = suppressScriptValue(this, value, loc);
     if (scriptValue !== SCRIPT_VALUE_NOT_HANDLED) {
       return scriptValue;
     }
@@ -103,13 +101,7 @@ export function suppressValue(
   const normalized: unknown = isNonNullish(value) ? value : '';
 
   if (autoescape && !isSafeString(normalized)) {
-    return suppressEscapedValue(
-      this,
-      normalized,
-      context,
-      lineno,
-      colno
-    );
+    return suppressEscapedValue(this, normalized, { context, ...loc });
   }
 
   return normalized;

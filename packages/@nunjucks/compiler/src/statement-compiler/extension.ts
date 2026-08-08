@@ -89,10 +89,10 @@ const emitExtensionCallEnd = (
   if (emitAsync) {
     compiler.emit(')');
     compiler.emitLine(
-      `\n${compiler.buffer} += runtime.suppressValue(await ${res}, ${autoescape} && env.opts.autoescape, lineno, colno);`);
+      `\n${compiler.buffer} += runtime.suppressValue(await ${res}, { autoescape: ${autoescape} && env.opts.autoescape, lineno, colno });`);
   } else {
     compiler.emit(')');
-    compiler.emit(`, ${autoescape} && env.opts.autoescape, lineno, colno);\n`);
+    compiler.emit(`, { autoescape: ${autoescape} && env.opts.autoescape, lineno, colno });\n`);
   }
 };
 

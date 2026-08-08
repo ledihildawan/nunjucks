@@ -6,6 +6,7 @@ import type { ParserContext } from "../cursor.ts";
 import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
 import { tryParsePattern } from "../node-parser/pattern.ts";
+import { loc } from '@nunjucks/shared';
 
 const parseForTarget = (parserContext: ParserContext): Node => {
   const patternNode = tryParsePattern(parserContext);
@@ -22,7 +23,7 @@ const parseForTarget = (parserContext: ParserContext): Node => {
   if (type !== TOKEN_COMMA) { return name; }
 
   const key = name;
-  const arrNode = array(key.lineno, key.colno);
+  const arrNode = array(loc(key));
   let result = appendChild(arrNode, key);
   while (skip(parserContext, TOKEN_COMMA)) {
     const prim = parsePrimary(parserContext);
@@ -60,5 +61,5 @@ export const parseFor = (parserContext: ParserContext): Node => {
 
   advanceAfterBlockEnd(parserContext);
 
-  return forNode(forTok.lineno, forTok.colno, { name, arr, body, else_ });
+  return forNode(loc(forTok), { name, arr, body, else_ });
 };

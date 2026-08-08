@@ -4,6 +4,7 @@ import type { Node } from '@nunjucks/nodes';
 import { map, pipe } from 'remeda';
 import { nextToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
+import { loc } from '@nunjucks/shared';
 
 const SIMPLE_IDENTIFIER_PATTERN = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
 
@@ -37,11 +38,11 @@ export const parseTemplateLiteral = (parserContext: ParserContext): Node | null 
           'Use filters or `:=` declarations for complex computations.',
           tok.lineno, tok.colno);
       }
-      const exprNode = symbol(tok.lineno, tok.colno, quasi.value);
+      const exprNode = symbol(loc(tok), quasi.value);
       return { type: 'expression' as const, node: exprNode };
     }
     return { type: 'template' as const, value: quasi.value };
   }));
 
-  return templateLiteral(tok.lineno, tok.colno, processedQuasis);
+  return templateLiteral(loc(tok), processedQuasis);
 };

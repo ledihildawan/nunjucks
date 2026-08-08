@@ -39,9 +39,12 @@ export {
   type ResolvedSandboxOptions,
 } from './sandbox/index.ts';
 export { suppressValue } from './suppress-value.ts';
+export type { SuppressValueOptions } from './suppress-value.ts';
 export { awaitValue } from './await-value.ts';
 export { ensureDefined } from './undefined-resolution.ts';
+export type { EnsureDefinedOptions } from './undefined-resolution.ts';
 export { callWrap, inOperator } from './call-wrap.ts';
+export type { CallWrapOptions, InOperatorOptions } from './call-wrap.ts';
 export { contextOrFrameLookup, fromIterator } from './lookups.ts';
 export { handleError } from './handle-error.ts';
 export {

@@ -3,6 +3,8 @@ import { compileVariableDeclaration, compileVariableAssignment, compileCompoundA
 import { symbol, literal } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
+import { ZERO_LOC } from '@nunjucks/shared';
+import { loc } from '@nunjucks/shared';
 
 const frame = createFrame();
 
@@ -21,7 +23,7 @@ const makeCompiler = () => {
 };
 
 const declNode = (name: string, valueMock: string) => ({
-  targets: [symbol(0, 0, name)],
+  targets: [symbol(ZERO_LOC, name)],
   value: { mock: valueMock },
 });
 
@@ -51,9 +53,9 @@ describe('compileCompoundAssignment', () => {
   test("'+=' emits the plus operator and frame.set", () => {
     const c = makeCompiler();
     const node = {
-      targets: [symbol(1, 2, 'count')],
+      targets: [symbol(loc({ lineno: 1, colno: 2 }), 'count')],
       operator: '+=',
-      value: literal(1, 2, 1),
+      value: literal(loc({ lineno: 1, colno: 2 }), 1),
       lineno: 1, colno: 2,
     };
     compileCompoundAssignment(asCompiler(c), node as never, frame);
@@ -66,9 +68,9 @@ describe('compileCompoundAssignment', () => {
   test('//= emits Math.floor division', () => {
     const c = makeCompiler();
     const node = {
-      targets: [symbol(1, 2, 'n')],
+      targets: [symbol(loc({ lineno: 1, colno: 2 }), 'n')],
       operator: '//=',
-      value: literal(1, 2, 2),
+      value: literal(loc({ lineno: 1, colno: 2 }), 2),
       lineno: 1, colno: 2,
     };
     compileCompoundAssignment(asCompiler(c), node as never, frame);

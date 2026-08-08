@@ -20,9 +20,10 @@ import {
 import type { ParserContext } from "./cursor.ts";
 import { parseStatement } from "./statement-parser/index.ts";
 import { parseExpression } from "./expression-parser/index.ts";
+import { loc, ZERO_LOC } from '@nunjucks/shared';
 
 const parseUntilBlocks = (parserContext: ParserContext, ...blockNames: string[]): Node => {
-  return nodeList(0, 0, parseNodes(parserContext, blockNames));
+  return nodeList(ZERO_LOC, parseNodes(parserContext, blockNames));
 };
 
 const LEADING_WHITESPACE_RE = /^\s*/;
@@ -58,25 +59,23 @@ const parseDataToken = (parserContext: ParserContext, tok: Token, buf: Node[], s
   );
 
   buf.push(output(
-    tok.lineno,
-    tok.colno,
-    [templateData(tok.lineno, tok.colno, data)]
+    loc(tok),
+    [templateData(loc(tok), data)]
   ));
 };
 
 const parseRawToken = (tok: Token & { type: 'raw' }, buf: Node[]): void => {
   const content = pipe(tok.value, replace(RAW_OPEN_TAG_RE, ''), replace(RAW_CLOSE_TAG_RE, ''));
   buf.push(output(
-    tok.lineno,
-    tok.colno,
-    [templateData(tok.lineno, tok.colno, content)]
+    loc(tok),
+    [templateData(loc(tok), content)]
   ));
 };
 
 const parseVariableToken = (parserContext: ParserContext, tok: Token, buf: Node[]): void => {
   const expression = parseExpression(parserContext);
   advanceAfterVariableEnd(parserContext);
-  buf.push(output(tok.lineno, tok.colno, [expression]));
+  buf.push(output(loc(tok), [expression]));
 };
 
 const parseCommentToken = (parserContext: ParserContext, tok: Token): void => {

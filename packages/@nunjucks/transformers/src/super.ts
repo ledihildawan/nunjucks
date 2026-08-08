@@ -1,6 +1,7 @@
 import type { Node, NodeLocation } from '@nunjucks/nodes';
 import { symbol, superNode, isBlock, isFunCall, walk } from '@nunjucks/nodes';
 import { createGensym } from '@nunjucks/runtime';
+import { loc } from '@nunjucks/shared';
 
 export const liftSuper = (ast: Node): Node => walk(ast, (blockNode: Node): Node | undefined => {
     if (!isBlock(blockNode)) { return; }
@@ -18,7 +19,7 @@ export const liftSuper = (ast: Node): Node => walk(ast, (blockNode: Node): Node 
         if (typeof name !== 'string' && name?.value === 'super') {
           const superLoc = { lineno: name.lineno, colno: name.colno };
           holder.location = superLoc;
-          return symbol(superLoc.lineno, superLoc.colno, sym);
+          return symbol(loc(superLoc), sym);
         }
       }
     });
@@ -29,10 +30,9 @@ export const liftSuper = (ast: Node): Node => walk(ast, (blockNode: Node): Node 
     const blockName = typeof blockNode.name === 'string' ? blockNode.name : String(blockNode.name?.value ?? '');
     const newChildren = [
       superNode(
-        superLoc.lineno ?? 0,
-        superLoc.colno ?? 0,
+        loc(superLoc),
         blockName,
-        symbol(superLoc.lineno ?? 0, superLoc.colno ?? 0, sym),
+        symbol(loc(superLoc), sym),
       ),
       ...bodyChildren,
     ];

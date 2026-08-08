@@ -3,6 +3,7 @@ import type { Node } from '@nunjucks/nodes';
 import { peekToken, skipSymbol, nextToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parseExpression } from "../expression-parser/index.ts";
+import { loc } from '@nunjucks/shared';
 
 export const parseExec = (parserContext: ParserContext): Node => {
   const tag = peekToken(parserContext);
@@ -12,5 +13,5 @@ export const parseExec = (parserContext: ParserContext): Node => {
 
   nextToken(parserContext);
 
-  return execNode(tag.lineno, tag.colno, expr);
+  return execNode(loc(tag), expr);
 };
