@@ -162,9 +162,9 @@ const compileSimpleBinding = ({ ctx: compiler, nameNode, frame, arr, i, len, nod
 };
 
 const emitForElse = (compiler: Compiler, node: ForNode, len: string, frame: Frame): void => {
-  if (node.else_) {
+  if (node.alternate) {
     compiler.emitLine(`if (!${len}) {`);
-    compiler.compile(node.else_, frame);
+    compiler.compile(node.alternate, frame);
     compiler.emitLine('}');
   }
 };

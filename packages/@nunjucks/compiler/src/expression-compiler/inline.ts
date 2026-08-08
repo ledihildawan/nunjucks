@@ -11,10 +11,10 @@ export const compileInlineIf = (compiler: Compiler, node: IfNode, frame: Frame):
   compiler.emit('?');
   compiler.compile(node.body, frame);
   compiler.emit(':');
-  if (node.else_ === null) {
+  if (node.alternate === null) {
     compiler.emit('""');
   } else {
-    compiler.compile(node.else_, frame);
+    compiler.compile(node.alternate, frame);
   }
   compiler.emit(')');
 };

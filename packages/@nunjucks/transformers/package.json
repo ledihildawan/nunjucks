@@ -8,7 +8,8 @@
     "./super": "./src/super.ts"
   },
   "dependencies": {
-    "@nunjucks/nodes": "workspace:*"
+    "@nunjucks/nodes": "workspace:*",
+    "@nunjucks/runtime": "workspace:*"
   },
   "description": "AST transformers for Nunjucks template engine"
 }

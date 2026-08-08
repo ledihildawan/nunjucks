@@ -53,13 +53,13 @@ export const parseFor = (parserContext: ParserContext): Node => {
 
   const body = parseUntilBlocks(parserContext, endBlock, 'else');
 
-  let else_: Node | null = null;
+  let alternate: Node | null = null;
   if (skipSymbol(parserContext, 'else')) {
     advanceAfterBlockEnd(parserContext, 'else');
-    else_ = parseUntilBlocks(parserContext, endBlock);
+    alternate = parseUntilBlocks(parserContext, endBlock);
   }
 
   advanceAfterBlockEnd(parserContext);
 
-  return forNode(loc(forTok), { name, arr, body, else_ });
+  return forNode(loc(forTok), { name, arr, body, alternate });
 };

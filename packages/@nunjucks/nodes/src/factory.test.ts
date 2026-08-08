@@ -52,10 +52,10 @@ describe('factory: node creation', () => {
   test('ifNode creates if node with named fields', () => {
     const cond = literal(ZERO_LOC, true);
     const body = output(ZERO_LOC, []);
-    const n = ifNode(ZERO_LOC, { cond, body, else_: null });
+    const n = ifNode(ZERO_LOC, { cond, body, alternate: null });
     expect(n.type).toBe('if');
     expect(n.cond).toBe(cond);
-    expect(n.else_).toBeNull();
+    expect(n.alternate).toBeNull();
   });
 
   test('root creates root node with children', () => {

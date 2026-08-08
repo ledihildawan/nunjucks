@@ -24,7 +24,7 @@ describe('parseFor', () => {
   test('parses a for loop with an else branch', () => {
     const node = parseFirst('{% for i in items %}x{% else %}empty{% endfor %}');
     expect(getNodeTypeName(node)).toBe('for');
-    const elseBranch = (node as { else_: Node | null }).else_;
+    const elseBranch = (node as { alternate: Node | null }).alternate;
     expect(elseBranch).not.toBeNull();
     expect(getNodeTypeName(elseBranch as Node)).toBe('nodeList');
   });

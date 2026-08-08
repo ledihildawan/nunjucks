@@ -1,4 +1,4 @@
-import { map, pipe, reduce } from 'remeda';
+import { forEach, map, pipe, reduce } from 'remeda';
 import type { CallExtensionNode, ChildrenNode, Node } from './types/index.ts';
 import { isNode, isCallExtension, isCallExtensionAsync } from './types/guards.ts';
 
@@ -98,26 +98,31 @@ const walk = (ast: Node, visitor: (node: Node) => Node | undefined): Node => {
 const matchPredicate = (node: Node, predicate: string | ((node: Node) => boolean)): boolean =>
   typeof predicate === 'string' ? node.type === predicate : predicate(node);
 
-const searchFieldValue = (node: Node, field: string, search: (node: Node | null | undefined) => void): void => {
+interface SearchFieldsOptions {
+  field: string;
+  onMatch: (node: Node | null | undefined) => void;
+}
+
+const searchFieldValue = (node: Node, { field, onMatch }: SearchFieldsOptions): void => {
   const value = getNodeField(node, field);
   if (Array.isArray(value)) {
-    for (const item of value) { if (isNode(item)) { search(item); } }
+    forEach(value, (item) => { if (isNode(item)) { onMatch(item); } });
   } else if (isNode(value)) {
-    search(value);
+    onMatch(value);
   }
 };
 
 const searchChildren = (node: Node, search: (node: Node | null | undefined) => void): void => {
   if (Array.isArray(node.children)) {
-    for (const child of node.children) { search(child); }
+    forEach(node.children, (child) => { search(child); });
   }
   if (isCallExtNode(node)) {
     search(node.args);
-    for (const argument of node.contentArgs) { search(argument); }
+    forEach(node.contentArgs, (argument) => { search(argument); });
   }
-  for (const field of getTraversalFields(node)) {
-    searchFieldValue(node, field, search);
-  }
+  forEach(getTraversalFields(node), (field) => {
+    searchFieldValue(node, { field, onMatch: search });
+  });
 };
 
 const findAll = (node: Node, predicate: string | ((node: Node) => boolean)): Node[] => {

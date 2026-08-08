@@ -21,24 +21,24 @@ export const parseIf = (parserContext: ParserContext): Node => {
   const body = parseUntilBlocks(parserContext, 'elif', 'elseif', 'else', 'endif');
   const tok = peekToken(parserContext);
 
-  let else_: Node | null = null;
+  let alternate: Node | null = null;
   switch (tok?.value) {
     case 'elseif':
     case 'elif':
-      else_ = parseIf(parserContext);
+      alternate = parseIf(parserContext);
       break;
     case 'else':
       advanceAfterBlockEnd(parserContext);
-      else_ = parseUntilBlocks(parserContext, 'endif');
+      alternate = parseUntilBlocks(parserContext, 'endif');
       advanceAfterBlockEnd(parserContext);
       break;
     case 'endif':
-      else_ = null;
+      alternate = null;
       advanceAfterBlockEnd(parserContext);
       break;
     default:
       fail(parserContext, 'parseIf: expected elif, else, or endif, got end of file');
   }
 
-  return ifNode(loc(tag), { cond, body, else_ });
+  return ifNode(loc(tag), { cond, body, alternate });
 };

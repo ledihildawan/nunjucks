@@ -19,7 +19,7 @@ interface IfNode extends NodeBase {
   readonly type: typeof T.IF | typeof T.INLINE_IF;
   cond: Node;
   body: Node;
-  else_: Node | null;
+  alternate: Node | null;
 }
 
 interface ForNode extends NodeBase {
@@ -27,7 +27,7 @@ interface ForNode extends NodeBase {
   arr: Node;
   name: Node;
   body: Node;
-  else_: Node | null;
+  alternate: Node | null;
 }
 
 interface ComponentNode extends NodeBase {

@@ -21,22 +21,22 @@ const makeCompiler = () => {
 const frame = createFrame();
 
 describe('compileInlineIf', () => {
-  test('emits cond ? body : else_', () => {
+  test('emits cond ? body : alternate', () => {
     const c = makeCompiler();
     compileInlineIf(asCompiler(c), {
       cond: { mock: 'C' },
       body: { mock: 'B' },
-      else_: { mock: 'E' },
+      alternate: { mock: 'E' },
     } as never, frame);
     expect(c.emitted.join('')).toBe('(C?B:E)');
   });
 
-  test('emits "" when else_ is null', () => {
+  test('emits "" when alternate is null', () => {
     const c = makeCompiler();
     compileInlineIf(asCompiler(c), {
       cond: { mock: 'C' },
       body: { mock: 'B' },
-      else_: null,
+      alternate: null,
     } as never, frame);
     expect(c.emitted.join('')).toBe('(C?B:"")');
   });

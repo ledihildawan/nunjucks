@@ -105,7 +105,7 @@ describe('codegen: if statement', () => {
       ifNode(ZERO_LOC, {
         cond: literal(ZERO_LOC, true),
         body: output(ZERO_LOC, [templateData(ZERO_LOC, 'yes')]),
-        else_: output(ZERO_LOC, [templateData(ZERO_LOC, 'no')]),
+        alternate: output(ZERO_LOC, [templateData(ZERO_LOC, 'no')]),
       }),
     ]);
     expect(code).toContain('if');
@@ -119,7 +119,7 @@ describe('codegen: for loop', () => {
         arr: symbol(ZERO_LOC, 'items'),
         name: symbol(ZERO_LOC, 'x'),
         body: output(ZERO_LOC, [templateData(ZERO_LOC, '.')]),
-        else_: null,
+        alternate: null,
       }),
     ]);
     expect(code).toContain('fromIterator');
@@ -132,7 +132,7 @@ describe('codegen: for loop', () => {
         arr: symbol(ZERO_LOC, 'items'),
         name: symbol(ZERO_LOC, 'x'),
         body: output(ZERO_LOC, [templateData(ZERO_LOC, '.')]),
-        else_: output(ZERO_LOC, [templateData(ZERO_LOC, 'empty')]),
+        alternate: output(ZERO_LOC, [templateData(ZERO_LOC, 'empty')]),
       }),
     ]);
     const lenInitPos = code.indexOf('= 0;');
@@ -148,7 +148,7 @@ describe('codegen: for loop', () => {
         arr: symbol(ZERO_LOC, 'items'),
         name: symbol(ZERO_LOC, 'x'),
         body: output(ZERO_LOC, [templateData(ZERO_LOC, '.')]),
-        else_: null,
+        alternate: null,
       }),
     ]);
     expect(code).toContain('loop.index');

@@ -34,8 +34,9 @@ export const parse = (src: string, extensions?: ParserExtension[], options?: Par
   const ast = root(ZERO_LOC, parseNodes(parser));
 
   if (securityConfig !== null) {
-    const [firstError] = validateExpression(ast, securityConfig);
-    if (firstError) {
+    const validation = validateExpression(ast, securityConfig);
+    if (!validation.valid) {
+      const firstError = validation.errors[0];
       fail(parser, firstError.message, firstError.lineno, firstError.colno);
     }
   }

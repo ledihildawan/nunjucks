@@ -25,7 +25,7 @@ describe('compileIf', () => {
     compileIf(asCompiler(c), {
       cond: literal(ZERO_LOC, true),
       body: output(ZERO_LOC, [templateData(ZERO_LOC, 'yes')]),
-      else_: null,
+      alternate: null,
     } as never, frame);
     const joined = c.emitted.join('');
     expect(joined).toContain('if(');
@@ -33,12 +33,12 @@ describe('compileIf', () => {
     expect(joined).not.toContain('else');
   });
 
-  test('emits else branch when else_ is present', () => {
+  test('emits else branch when alternate is present', () => {
     const c = makeCompiler();
     compileIf(asCompiler(c), {
       cond: literal(ZERO_LOC, true),
       body: output(ZERO_LOC, [templateData(ZERO_LOC, 'yes')]),
-      else_: output(ZERO_LOC, [templateData(ZERO_LOC, 'no')]),
+      alternate: output(ZERO_LOC, [templateData(ZERO_LOC, 'no')]),
     } as never, frame);
     const joined = c.emitted.join('');
     expect(joined).toContain('else');

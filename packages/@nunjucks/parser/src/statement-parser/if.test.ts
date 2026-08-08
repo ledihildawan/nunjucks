@@ -17,7 +17,7 @@ describe('parseIf', () => {
     expect(getNodeTypeName(node)).toBe('if');
     expect(isIf(node)).toBe(true);
     if (!isIf(node)) { return; }
-    expect(node.else_).toBeNull();
+    expect(node.alternate).toBeNull();
     expect(node.cond).toBeDefined();
   });
 
@@ -26,7 +26,7 @@ describe('parseIf', () => {
     expect(getNodeTypeName(node)).toBe('if');
     expect(isIf(node)).toBe(true);
     if (!isIf(node)) { return; }
-    const elseBranch = node.else_;
+    const elseBranch = node.alternate;
     expect(elseBranch).not.toBeNull();
     expect(getNodeTypeName(elseBranch as Node)).toBe('nodeList');
   });
@@ -36,7 +36,7 @@ describe('parseIf', () => {
     expect(getNodeTypeName(node)).toBe('if');
     expect(isIf(node)).toBe(true);
     if (!isIf(node)) { return; }
-    const elifBranch = node.else_;
+    const elifBranch = node.alternate;
     expect(getNodeTypeName(elifBranch as Node)).toBe('if');
   });
 
@@ -45,11 +45,11 @@ describe('parseIf', () => {
     expect(getNodeTypeName(node)).toBe('if');
     expect(isIf(node)).toBe(true);
     if (!isIf(node)) { return; }
-    const elifNode = node.else_;
+    const elifNode = node.alternate;
     expect(getNodeTypeName(elifNode as Node)).toBe('if');
     expect(isIf(elifNode)).toBe(true);
     if (!isIf(elifNode)) { return; }
-    expect(getNodeTypeName(elifNode.else_ as Node)).toBe('nodeList');
+    expect(getNodeTypeName(elifNode.alternate as Node)).toBe('nodeList');
   });
 
   test('accepts "elseif" as an alias for "elif"', () => {
@@ -57,7 +57,7 @@ describe('parseIf', () => {
     expect(getNodeTypeName(node)).toBe('if');
     expect(isIf(node)).toBe(true);
     if (!isIf(node)) { return; }
-    const branch = node.else_;
+    const branch = node.alternate;
     expect(getNodeTypeName(branch as Node)).toBe('if');
   });
 });

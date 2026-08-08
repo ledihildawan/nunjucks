@@ -11,8 +11,8 @@ const parseTernaryExpression = (parserContext: ParserContext): Node => {
 
   if (skipSymbol(parserContext, 'if')) {
     const condNode = parseOr(parserContext);
-    const else_ = skipSymbol(parserContext, 'else') ? parseOr(parserContext) : null;
-    return inlineIf(loc(node), { body: node, cond: condNode, else_ });
+    const alternate = skipSymbol(parserContext, 'else') ? parseOr(parserContext) : null;
+    return inlineIf(loc(node), { body: node, cond: condNode, alternate });
   }
 
   return parseWalrus(parserContext, parseTernary(parserContext, node));

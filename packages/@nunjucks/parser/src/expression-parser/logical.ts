@@ -39,7 +39,7 @@ const parseTernary = (parserContext: ParserContext, node: Node): Node => {
     const thenNode = parseOr(parserContext);
     if (skipValue(parserContext, TOKEN_COLON, ':')) {
       const elseNode = parseOr(parserContext);
-      const newNode = inlineIf(loc(node), { cond: node, body: thenNode, else_: elseNode });
+      const newNode = inlineIf(loc(node), { cond: node, body: thenNode, alternate: elseNode });
       return parseTernary(parserContext, newNode);
     }
   }

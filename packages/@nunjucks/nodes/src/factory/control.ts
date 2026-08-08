@@ -7,7 +7,7 @@ import { nodeList } from './atomic.ts';
 interface InlineIfFields {
   cond?: Node;
   body?: Node;
-  else_?: Node | null;
+  alternate?: Node | null;
 }
 
 interface BlockFields {
@@ -19,20 +19,20 @@ const block = (loc: Loc, fields: BlockFields = {}) =>
   createNode(T.BLOCK, loc, { ...fields });
 
 const ifNode = (loc: Loc, fields: InlineIfFields = {}) =>
-  createNode(T.IF, loc, { else_: null, ...fields });
+  createNode(T.IF, loc, { alternate: null, ...fields });
 
 const inlineIf = (loc: Loc, fields: InlineIfFields = {}) =>
-  createNode(T.INLINE_IF, loc, { else_: null, ...fields });
+  createNode(T.INLINE_IF, loc, { alternate: null, ...fields });
 
 interface ForFields {
   arr?: Node;
   name?: Node;
   body?: Node;
-  else_?: Node | null;
+  alternate?: Node | null;
 }
 
 const forNode = (loc: Loc, fields: ForFields = {}) =>
-  createNode(T.FOR, loc, { else_: null, ...fields });
+  createNode(T.FOR, loc, { alternate: null, ...fields });
 
 interface ComponentFields {
   name: string;

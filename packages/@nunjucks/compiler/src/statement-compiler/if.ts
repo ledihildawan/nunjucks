@@ -13,7 +13,7 @@ export const compileIf = (compiler: Compiler, node: IfNode, frame: Frame): void 
     compiler.emitLine('frame = frame.pop();');
   });
 
-  const elseNode = node.else_;
+  const elseNode = node.alternate;
   if (elseNode) {
     compiler.emitLine('}\nelse {');
 
