@@ -74,7 +74,11 @@ const injectWarningsIfNeeded = (result: string, warningsCollector: TemplateWarni
   return result;
 };
 
-const render = async (template: string, context: Record<string, unknown> = {}, options: Partial<GlobalConfig> = {}): Promise<Result<string, TemplateError>> => {
+interface RenderOptions extends Partial<GlobalConfig> {
+  context?: Record<string, unknown>;
+}
+
+const render = async (template: string, { context = {}, ...options }: RenderOptions = {}): Promise<Result<string, TemplateError>> => {
   const baseConfig = setupRenderConfig(options);
   const config: RenderConfig = {
     ...baseConfig,
@@ -82,7 +86,7 @@ const render = async (template: string, context: Record<string, unknown> = {}, o
     _callerLocation: baseConfig._callerLocation ?? getCallerLocation(),
   };
 
-  const renderValidation = await validateRender(template, config, context);
+  const renderValidation = await validateRender(template, { config, context });
   if (isErr(renderValidation)) { return err(renderValidation.error); }
 
   const loader = getLoader(config as Parameters<typeof getLoader>[0]);
@@ -95,7 +99,7 @@ const render = async (template: string, context: Record<string, unknown> = {}, o
   }
   const configWithPath: RenderConfig = templatePath ? { ...config, templatePath } : config;
 
-  const sourceValidation = await validateTemplateSource(templateSource, configWithPath, context);
+  const sourceValidation = await validateTemplateSource(templateSource, { config: configWithPath, context });
   if (isErr(sourceValidation)) { return err(sourceValidation.error); }
 
   const templateName = resolveTemplateName(template, configWithPath);
@@ -127,4 +131,4 @@ const render = async (template: string, context: Record<string, unknown> = {}, o
 };
 
 export { render };
-export type { RenderConfig };
+export type { RenderConfig, RenderOptions };

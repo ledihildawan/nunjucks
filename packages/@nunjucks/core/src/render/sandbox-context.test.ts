@@ -4,10 +4,11 @@ import { isErr } from '@nunjucks/shared';
 import process from "node:process";
 
 const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
-  const result = await render(template, context, {
+  const result = await render(template, {
+    context,
     autoescape: false,
     ...config
-  } as Record<string, unknown>);
+  });
   if (isErr(result)) { throw result.error; }
   return result.value;
 };

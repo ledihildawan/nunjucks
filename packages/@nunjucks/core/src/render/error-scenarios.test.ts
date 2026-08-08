@@ -4,11 +4,12 @@ import { createLog, getError, formatError, type TemplateError } from '@nunjucks/
 import { isErr } from '@nunjucks/shared';
 
 const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
-  const result = await render(template, context, {
+  const result = await render(template, {
+    context,
     autoescape: false,
     undefined: 'strict',
     ...config
-  } as Record<string, unknown>);
+  });
   if (isErr(result)) { throw result.error; }
   return result.value;
 };
@@ -239,9 +240,10 @@ describe('error messages - real scenarios', () => {
 
 describe('JSON_ESCAPED_OUTPUT detection', () => {
   const renderWithAutoescape = async (template: string, context: Record<string, unknown> = {}) => {
-    const result = await render(template, context, {
+    const result = await render(template, {
+      context,
       autoescape: true,
-    } as Record<string, unknown>);
+    });
     if (isErr(result)) { throw result.error; }
     return result.value;
   };

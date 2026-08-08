@@ -17,7 +17,8 @@ const createEngine = (config: ExpressEngineConfig = {}): ExpressEngineFunction =
     options: Record<string, unknown>,
     callback: (err: Error | null, rendered?: string) => void
   ): void {
-    render(path.basename(filePath), options, {
+    render(path.basename(filePath), {
+      context: options,
       ...config,
       views: path.dirname(filePath),
       templatePath: filePath,

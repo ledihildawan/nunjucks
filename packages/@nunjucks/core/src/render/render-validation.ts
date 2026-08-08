@@ -42,7 +42,12 @@ const getDangerousValueStamps = async (contextError: RenderValidationError, conf
   return stamps;
 };
 
-export const validateRender = async (template: unknown, config: RenderConfig, context: unknown): Promise<Result<void, TemplateError>> => {
+interface ValidationOptions {
+  config: RenderConfig;
+  context: unknown;
+}
+
+export const validateRender = async (template: unknown, { config, context }: ValidationOptions): Promise<Result<void, TemplateError>> => {
   if (typeof template !== 'string') {
     const error = createLog('error', { def: getError('TEMPLATE_MUST_BE_STRING'), params: {}, subject: null, context: { phase: 'render' } });
     return err(await wrapWithLog(error, config, { template: template as string | null, renderContext: context }));
@@ -86,7 +91,7 @@ export const validateRender = async (template: unknown, config: RenderConfig, co
   return ok(undefined);
 };
 
-export const validateTemplateSource = async (templateSource: string, config: RenderConfig, context: unknown): Promise<Result<void, TemplateError>> => {
+export const validateTemplateSource = async (templateSource: string, { config, context }: ValidationOptions): Promise<Result<void, TemplateError>> => {
   const templateValidation = validateTemplate(templateSource, config);
   if (!templateValidation.valid) {
     const ve = templateValidation.errors[0];

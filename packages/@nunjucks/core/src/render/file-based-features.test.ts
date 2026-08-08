@@ -8,13 +8,13 @@ import { join } from 'node:path';
 let tempDir: string;
 
 const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
-  const result = await render(template, context, { autoescape: false, ...config } as Record<string, unknown>);
+  const result = await render(template, { context, autoescape: false, ...config });
   if (isErr(result)) { throw result.error; }
   return result.value;
 };
 
 const renderFile = async (filename: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
-  const result = await render(filename, context, { views: tempDir, ...config } as Record<string, unknown>);
+  const result = await render(filename, { context, views: tempDir, ...config });
   if (isErr(result)) { throw result.error; }
   return result.value;
 };
