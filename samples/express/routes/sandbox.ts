@@ -1,9 +1,9 @@
 import express, { type Router, type Request, type Response } from 'express';
-import { render } from '@nunjucks/core';
+import { renderTemplate as renderResult } from '../lib/render-template.ts';
 
 const renderTemplate = async <TContext extends Record<string, unknown>>(
   { template, context, config = {} }: { template: string; context: TContext; config?: Record<string, unknown> },
-) => render(template, context, {
+) => renderResult(template, context, {
   autoescape: true,
   dev: true,
   ide: 'vscode',

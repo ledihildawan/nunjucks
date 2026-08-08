@@ -3,8 +3,8 @@ import { validateRender, validateTemplateSource } from './render-validation.ts';
 import { getLoader } from '../engine.ts';
 import type { RenderConfig } from './render-types.ts';
 import { execute, createFrame, withTimeout } from '@nunjucks/runtime';
-import { getCallerFile, getCallerLocation, isErr } from '@nunjucks/shared';
-import { injectWarningsScript, wrapWithLog, type TemplateWarning } from '@nunjucks/log';
+import { getCallerFile, getCallerLocation, ok, err, isErr, type Result } from '@nunjucks/shared';
+import { injectWarningsScript, wrapWithLog, type TemplateWarning, type TemplateError } from '@nunjucks/log';
 import type { GlobalConfig } from '../config/global.ts';
 import { getDefaultConfig } from '../config/global.ts';
 import { defaultFilterBundle } from '../filter-bundle.ts';
@@ -72,7 +72,7 @@ const injectWarningsIfNeeded = (result: string, warningsCollector: TemplateWarni
   return result;
 };
 
-const render = async (template: string, context: Record<string, unknown> = {}, options: Partial<GlobalConfig> = {}): Promise<string> => {
+const render = async (template: string, context: Record<string, unknown> = {}, options: Partial<GlobalConfig> = {}): Promise<Result<string, TemplateError>> => {
   const baseConfig = setupRenderConfig(options);
   const config: RenderConfig = {
     ...baseConfig,
@@ -81,22 +81,28 @@ const render = async (template: string, context: Record<string, unknown> = {}, o
   };
 
   const renderValidation = await validateRender(template, config, context);
-  if (isErr(renderValidation)) { throw renderValidation.error; }
+  if (isErr(renderValidation)) { return err(renderValidation.error); }
 
   const loader = getLoader(config as Parameters<typeof getLoader>[0]);
-  const { templateSource, templatePath } = await resolveTemplateSource(template, loader, config);
+  let templateSource: string;
+  let templatePath: string | null;
+  try {
+    ({ templateSource, templatePath } = await resolveTemplateSource(template, loader, config));
+  } catch (resolveErr) {
+    return err(await wrapWithLog(resolveErr, config, { template, renderContext: context }));
+  }
   const configWithPath: RenderConfig = templatePath ? { ...config, templatePath } : config;
 
   const sourceValidation = await validateTemplateSource(templateSource, configWithPath, context);
-  if (isErr(sourceValidation)) { throw sourceValidation.error; }
+  if (isErr(sourceValidation)) { return err(sourceValidation.error); }
 
   const templateName = resolveTemplateName(template, configWithPath);
 
   let code: string;
   try {
     ({ code } = compileTemplate(templateSource, configWithPath, templateName));
-  } catch (err) {
-    throw await wrapWithLog(err, configWithPath, { template: templateSource, renderContext: context });
+  } catch (compileErr) {
+    return err(await wrapWithLog(compileErr, configWithPath, { template: templateSource, renderContext: context }));
   }
 
   const { warningsCollector, context: safeContext } = await handleContextStrictMode(context, configWithPath);
@@ -112,11 +118,11 @@ const render = async (template: string, context: Record<string, unknown> = {}, o
       warningsCollector,
       templateName,
     }, resolvedConfig);
-  } catch (err) {
-    throw await wrapWithLog(err, resolvedConfig, { template: templateSource, renderContext: context });
+  } catch (executeErr) {
+    return err(await wrapWithLog(executeErr, resolvedConfig, { template: templateSource, renderContext: context }));
   }
 
-  return injectWarningsIfNeeded(result, warningsCollector, resolvedConfig.dev);
+  return ok(injectWarningsIfNeeded(result, warningsCollector, resolvedConfig.dev));
 };
 
 export { render };

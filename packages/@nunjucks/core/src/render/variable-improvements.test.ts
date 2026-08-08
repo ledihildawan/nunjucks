@@ -1,10 +1,15 @@
 ﻿import { describe, expect, test } from 'bun:test';
 import { render } from './render.ts';
+import { isErr } from '@nunjucks/shared';
 
-const renderTemplate = (template: string, context: Record<string, unknown> = {}) => render(template, context, {
-  autoescape: false,
-  undefined: 'strict'
-} as Record<string, unknown>);
+const renderTemplate = async (template: string, context: Record<string, unknown> = {}) => {
+  const result = await render(template, context, {
+    autoescape: false,
+    undefined: 'strict'
+  } as Record<string, unknown>);
+  if (isErr(result)) { throw result.error; }
+  return result.value;
+};
 
 describe('variable expression edge cases', () => {
   test('supports array destructuring walrus targets', async () => {

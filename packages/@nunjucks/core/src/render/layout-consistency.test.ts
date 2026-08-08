@@ -1,12 +1,17 @@
 ﻿import { describe, test, expect } from 'bun:test';
 import { render } from './render.ts';
 import { createLog, getError, formatError, type TemplateError } from '@nunjucks/log';
+import { isErr } from '@nunjucks/shared';
 
-const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => await render(template, context, {
-  autoescape: false,
-  undefined: 'strict',
-  ...config
-} as Record<string, unknown>);
+const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
+  const result = await render(template, context, {
+    autoescape: false,
+    undefined: 'strict',
+    ...config
+  } as Record<string, unknown>);
+  if (isErr(result)) { throw result.error; }
+  return result.value;
+};
 
 describe('error layout consistency', () => {
   test('all sections use text-label class for consistency', async () => {

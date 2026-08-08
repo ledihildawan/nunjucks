@@ -1,13 +1,22 @@
 import { describe, test, expect } from 'bun:test';
 import { render } from './render.ts';
+import { isErr } from '@nunjucks/shared';
 
-const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => await render(template, context, {
-  autoescape: false,
-  ...config
-} as Record<string, unknown>);
+const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
+  const result = await render(template, context, {
+    autoescape: false,
+    ...config
+  } as Record<string, unknown>);
+  if (isErr(result)) { throw result.error; }
+  return result.value;
+};
 
 describe('JavaScript expression smoke tests', () => {
-  const renderExpr = async (template: string, context: Record<string, unknown> = {}) => await render(template, context, { autoescape: false } as Record<string, unknown>);
+  const renderExpr = async (template: string, context: Record<string, unknown> = {}) => {
+    const result = await render(template, context, { autoescape: false } as Record<string, unknown>);
+    if (isErr(result)) { throw result.error; }
+    return result.value;
+  };
 
   test('JSON.stringify and JSON.parse work', async () => {
     const result = await renderExpr('{{ data |> tojson }}', { data: { a: 1, b: 'test' } });
@@ -130,7 +139,7 @@ describe('template source security scanning', () => {
     const dir = await mkdtemp(join(tmpdir(), 'njk-sec-'));
     await writeFile(join(dir, 'evil.njk'), "{{ eval('malicious') }}");
     try {
-      const err = await render('evil.njk', {}, { strictMode: true, views: dir } as Record<string, unknown>).catch(e => e);
+      const err = await renderTemplate('evil.njk', {}, { strictMode: true, views: dir } as Record<string, unknown>).catch(e => e);
       expect(err.code).toBe('DANGEROUS_TEMPLATE_CODE');
     } finally {
       await rm(dir, { recursive: true, force: true });
@@ -140,11 +149,11 @@ describe('template source security scanning', () => {
 
 describe('dompurify per-render isolation', () => {
   test('dompurify config does not leak across renders', async () => {
-    const r1 = await render('{{ x |> sanitize }}', { x: '<b>bold</b><i>italic</i>' }, { autoescape: false, dompurify: { ALLOWED_TAGS: ['b'] } } as Record<string, unknown>);
+    const r1 = await renderTemplate('{{ x |> sanitize }}', { x: '<b>bold</b><i>italic</i>' }, { dompurify: { ALLOWED_TAGS: ['b'] } } as Record<string, unknown>);
     expect(r1).toContain('bold');
     expect(r1).not.toContain('<i>');
 
-    const r2 = await render('{{ x |> sanitize }}', { x: '<b>bold</b><i>italic</i>' }, { autoescape: false } as Record<string, unknown>);
+    const r2 = await renderTemplate('{{ x |> sanitize }}', { x: '<b>bold</b><i>italic</i>' });
     expect(r2).toContain('<i>italic</i>');
   });
 });

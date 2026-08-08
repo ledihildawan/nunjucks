@@ -1,5 +1,5 @@
 import express, { type Router, type Request, type Response } from 'express';
-import { render } from '@nunjucks/core';
+import { renderTemplate as renderResult } from '../lib/render-template.ts';
 import { formatError } from '@nunjucks/log';
 
 const router: Router = express.Router();
@@ -12,7 +12,7 @@ interface RenderTemplateOptions<TContext extends Record<string, unknown>> {
 
 const renderTemplate = async <TContext extends Record<string, unknown>>(
   { template, context, config = {} }: RenderTemplateOptions<TContext>,
-) => render(template, context, {
+) => renderResult(template, context, {
   autoescape: true,
   dev: true,
   ide: 'vscode',

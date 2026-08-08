@@ -2,7 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import { createEngine, type ExpressEngineConfig } from '@nunjucks/integrations/express';
-import { render } from '@nunjucks/core';
+import { renderTemplate } from './lib/render-template.ts';
 import { formatError } from '@nunjucks/log';
 import { demoRouter } from './routes/demo.ts';
 import { errorRouter } from './routes/errors.ts';
@@ -35,7 +35,7 @@ app.get('/', (_req: Request, res: Response) => {
 });
 
 app.get('/home', async (_req: Request, res: Response) => {
-  const html = await render(
+  const html = await renderTemplate(
     `<!DOCTYPE html>
 <html>
 <head><title>Home</title></head>
@@ -53,7 +53,7 @@ app.get('/home', async (_req: Request, res: Response) => {
 });
 
 app.get('/security', async (_req: Request, res: Response) => {
-  const html = await render(
+  const html = await renderTemplate(
     `<!DOCTYPE html>
 <html>
 <head><title>Security Features Demo</title></head>

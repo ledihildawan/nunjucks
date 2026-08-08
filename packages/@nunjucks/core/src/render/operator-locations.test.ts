@@ -2,11 +2,16 @@ import { describe, test, expect } from 'bun:test';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { render } from './render.ts';
+import { isErr } from '@nunjucks/shared';
 
-const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => await render(template, context, {
-  autoescape: false,
-  ...config
-} as Record<string, unknown>);
+const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
+  const result = await render(template, context, {
+    autoescape: false,
+    ...config
+  } as Record<string, unknown>);
+  if (isErr(result)) { throw result.error; }
+  return result.value;
+};
 
 let currentTestSourceCache: { filePath: string; sourceContent: string; sourceLines: string[] } | null = null;
 
@@ -31,7 +36,7 @@ describe('inline template operator error locations', () => {
     const marker = "STATEMENT_ARITHMETIC_LOCATION_MARKER";
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
     const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
-    const err = await render('{% if 1 + invalid %}ok{% endif %}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1, contextStrict: false }).catch(e => e);
+    const err = await renderTemplate('{% if 1 + invalid %}ok{% endif %}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1, contextStrict: false }).catch(e => e);
     const callerLine = source[err.lineno - 1] ?? '';
 
     expect(err.lineBase).toBe('one');
@@ -44,7 +49,7 @@ describe('inline template operator error locations', () => {
     const marker = "STATEMENT_COMPARISON_LOCATION_MARKER";
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
     const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
-    const err = await render('{% if 1 < invalid %}ok{% endif %}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1, contextStrict: false }).catch(e => e);
+    const err = await renderTemplate('{% if 1 < invalid %}ok{% endif %}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1, contextStrict: false }).catch(e => e);
     const callerLine = source[err.lineno - 1] ?? '';
 
     expect(err.lineBase).toBe('one');
@@ -57,7 +62,7 @@ describe('inline template operator error locations', () => {
     const marker = "STATEMENT_UNARY_LOCATION_MARKER";
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
     const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
-    const err = await render('{% if -invalid %}ok{% endif %}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1, contextStrict: false }).catch(e => e);
+    const err = await renderTemplate('{% if -invalid %}ok{% endif %}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1, contextStrict: false }).catch(e => e);
     const callerLine = source[err.lineno - 1] ?? '';
 
     expect(err.lineBase).toBe('one');
@@ -182,7 +187,7 @@ describe('inline template operator error locations', () => {
     const { filePath, sourceLines: source } = await getCurrentTestSource();
     const marker = "STATEMENT_IN_LOCATION_MARKER";
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
-    const err = await render('{% if key in invalid %}ok{% endif %}', { key: 'x', invalid: 42 }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
+    const err = await renderTemplate('{% if key in invalid %}ok{% endif %}', { key: 'x', invalid: 42 }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
     const callerLine = source[err.lineno - 1] ?? '';
 
     expect(err.code).toBe('IN_OPERATOR');
@@ -193,7 +198,7 @@ describe('inline template operator error locations', () => {
 
   test('points bracket-string call errors at the property name', async () => {
     const { sourceLines: source } = await getCurrentTestSource();
-    const err = await render('Your status: {{ user["status"]() }}', {
+    const err = await renderTemplate('Your status: {{ user["status"]() }}', {
       user: { status: 'active' }
     }, {
       dev: true

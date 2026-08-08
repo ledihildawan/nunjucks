@@ -3,6 +3,13 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { render } from './render.ts';
 import { formatError } from '@nunjucks/log';
+import { isErr } from '@nunjucks/shared';
+
+const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
+  const result = await render(template, context, { ...config });
+  if (isErr(result)) { throw result.error; }
+  return result.value;
+};
 
 let currentTestSourceCache: { filePath: string; sourceContent: string; sourceLines: string[] } | null = null;
 
@@ -26,7 +33,7 @@ describe('inline template error location pointing', () => {
     const { filePath, sourceLines: source } = await getCurrentTestSource();
     const marker = "INLINE_LOCATION_MARKER";
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
-    const err = await render('{{ missingKey }}', {}, {
+    const err = await renderTemplate('{{ missingKey }}', {}, {
       dev: true,
       undefined: 'strict',
       jsCaller: filePath,
@@ -43,12 +50,12 @@ describe('inline template error location pointing', () => {
   test('automatically uses the real caller file for inline template locations', async () => {
     const { filePath, sourceLines: source } = await getCurrentTestSource();
     const cfg = { dev: true, undefined: 'strict' } as unknown as Partial<Record<string, unknown>>;
-    const err = await render('{{ product.name }}', { product: { test: 'test' } }, cfg).catch(e => e);
+    const err = await renderTemplate('{{ product.name }}', { product: { test: 'test' } }, cfg).catch(e => e);
 
     expect(err.lineBase).toBe('one');
     expect(err.templatePath).toBe(filePath);
     expect(err.templateName).toBe(filePath);
-    const expectedLine = source.findIndex(line => line.includes("render('{{ product.name }}'")) + 1;
+    const expectedLine = source.findIndex(line => line.includes("renderTemplate('{{ product.name }}'")) + 1;
     expect(expectedLine).toBeGreaterThan(0);
     expect(err.lineno).toBe(expectedLine);
     const callerLine = source[err.lineno - 1] ?? '';
@@ -59,7 +66,7 @@ describe('inline template error location pointing', () => {
     const { filePath, sourceLines: source } = await getCurrentTestSource();
     const marker = "MULTILINE_INLINE_MARKER";
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
-    const err = await render(`
+    const err = await renderTemplate(`
 
       {{ missingKey }}
 
@@ -83,7 +90,7 @@ describe('inline template error location pointing', () => {
     const { filePath, sourceLines: source } = await getCurrentTestSource();
     const marker = "RESERVED_FILTER_MARKER";
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
-    const err = await render('{{ value }}', { value: 'test' }, { dev: true, filters: { 'if': (v: unknown) => v }, _customFilters: { 'if': (v: unknown) => v }, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
+    const err = await renderTemplate('{{ value }}', { value: 'test' }, { dev: true, filters: { 'if': (v: unknown) => v }, _customFilters: { 'if': (v: unknown) => v }, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
     const callerLine = source[err.lineno - 1] ?? '';
 
     expect(err.code).toBe('RESERVED_KEYWORD');
@@ -97,7 +104,7 @@ describe('inline template error location pointing', () => {
     const { filePath, sourceLines: source } = await getCurrentTestSource();
     const marker = "RESERVED_FILTER_HTML_MARKER";
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
-    const err = await render('{{ value }}', { value: 'test' }, { dev: true, filters: { 'if': (v: unknown) => v }, _customFilters: { 'if': (v: unknown) => v }, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
+    const err = await renderTemplate('{{ value }}', { value: 'test' }, { dev: true, filters: { 'if': (v: unknown) => v }, _customFilters: { 'if': (v: unknown) => v }, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
     const callerLine = source[err.lineno - 1] ?? '';
     const html = formatError(err, { format: 'html', verbosity: 'full' });
     const markerMatch = html.match(/error-marker-content">([^<]*\^+)<\/span>/u);
@@ -108,7 +115,7 @@ describe('inline template error location pointing', () => {
 
   test('auto caller detection points reserved filter errors at the filter key', async () => {
     const cfg = { dev: true, filters: { 'if': (v: unknown) => v } } as unknown as Partial<Record<string, unknown>>;
-    const result = await render('{{ value }}', { value: 'test' }, cfg);
+    const result = await renderTemplate('{{ value }}', { value: 'test' }, cfg);
     expect(result).toBe('test');
   });
 
@@ -116,7 +123,7 @@ describe('inline template error location pointing', () => {
     const { filePath, sourceLines: source } = await getCurrentTestSource();
     const marker = "NON_STRING_TEMPLATE_MARKER";
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
-    const err = await render(123 as unknown as string, {}, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
+    const err = await renderTemplate(123 as unknown as string, {}, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
     const callerLine = source[err.lineno - 1] ?? '';
 
     expect(err.code).toBe('TEMPLATE_MUST_BE_STRING');
@@ -130,7 +137,7 @@ describe('inline template error location pointing', () => {
     const { filePath, sourceLines: source } = await getCurrentTestSource();
     const marker = "NULL_TEMPLATE_MARKER";
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
-    const err = await render(null as unknown as string, {}, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
+    const err = await renderTemplate(null as unknown as string, {}, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
     const callerLine = source[err.lineno - 1] ?? '';
 
     expect(err.code).toBe('TEMPLATE_MUST_BE_STRING');
@@ -144,7 +151,7 @@ describe('inline template error location pointing', () => {
     const { filePath, sourceLines: source } = await getCurrentTestSource();
     const marker = "INVALID_CONFIG_LOCATION_MARKER";
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
-    const err = await render('{{ test }}', { test: 'value' }, { dev: true, executionTimeout: -1, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
+    const err = await renderTemplate('{{ test }}', { test: 'value' }, { dev: true, executionTimeout: -1, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
     const callerLine = source[err.lineno - 1] ?? '';
 
     expect(err.code).toBe('INVALID_CONFIG');
@@ -158,7 +165,7 @@ describe('inline template error location pointing', () => {
     const { filePath, sourceLines: source } = await getCurrentTestSource();
     const marker = "MISSING_PROPERTY_LOCATION_MARKER";
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
-    const err = await render('{{ product.name }}', { product: { test: 'test' } }, { dev: true, undefined: 'strict', jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
+    const err = await renderTemplate('{{ product.name }}', { product: { test: 'test' } }, { dev: true, undefined: 'strict', jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
     const callerLine = source[err.lineno - 1] ?? '';
 
     expect(err.code).toBe('UNDEFINED_PROPERTY');
@@ -172,7 +179,7 @@ describe('inline template error location pointing', () => {
     const { filePath, sourceLines: source } = await getCurrentTestSource();
     const marker = "STATEMENT_SLICE_LOCATION_MARKER";
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
-    const err = await render('{% if items[::0] %}ok{% endif %}', { items: [1, 2, 3] }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
+    const err = await renderTemplate('{% if items[::0] %}ok{% endif %}', { items: [1, 2, 3] }, { dev: true, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
     const callerLine = source[err.lineno - 1] ?? '';
 
     expect(err.code).toBe('SLICE_STEP');
@@ -182,9 +189,9 @@ describe('inline template error location pointing', () => {
   });
 
   test('renders slice steps with omitted bounds', async () => {
-    await expect(render('{{ items[::2] }}', { items: [0, 1, 2, 3, 4] }))
+    await expect(renderTemplate('{{ items[::2] }}', { items: [0, 1, 2, 3, 4] }))
       .resolves.toBe('0,2,4');
-    await expect(render('{{ items[1::2] }}', { items: [0, 1, 2, 3, 4] }))
+    await expect(renderTemplate('{{ items[1::2] }}', { items: [0, 1, 2, 3, 4] }))
       .resolves.toBe('1,3');
   });
 });

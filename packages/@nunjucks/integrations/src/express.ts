@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { render } from '@nunjucks/core';
+import { isOk } from '@nunjucks/shared';
 import type { GlobalConfig } from '@nunjucks/core';
 
 type ExpressEngineConfig = Partial<GlobalConfig>;
@@ -20,10 +21,13 @@ const createEngine = (config: ExpressEngineConfig = {}): ExpressEngineFunction =
       ...config,
       views: path.dirname(filePath),
       templatePath: filePath,
-    }).then(
-      (rendered) => callback(null, rendered),
-      (err: Error) => callback(err),
-    );
+    }).then((result) => {
+      if (isOk(result)) {
+        callback(null, result.value);
+      } else {
+        callback(result.error);
+      }
+    });
   };
 
 export { createEngine };

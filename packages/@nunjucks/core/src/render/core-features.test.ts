@@ -1,8 +1,12 @@
 ﻿import { describe, test, expect } from 'bun:test';
 import { render } from './render.ts';
+import { isErr } from '@nunjucks/shared';
 
-const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) =>
-  await render(template, context, { autoescape: false, ...config } as Record<string, unknown>);
+const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
+  const result = await render(template, context, { autoescape: false, ...config } as Record<string, unknown>);
+  if (isErr(result)) { throw result.error; }
+  return result.value;
+};
 
 describe('loop variables', () => {
   test('loop.index starts at 1', async () => {
@@ -350,11 +354,11 @@ describe('undefined modes', () => {
 
 describe('autoescape', () => {
   test('autoescape on escapes HTML', async () => {
-    const result = await render('{{ x }}', { x: '<script>' }, { autoescape: true });
+    const result = await renderTemplate('{{ x }}', { x: '<script>' }, { autoescape: true });
     expect(result).toContain('&lt;script&gt;');
   });
   test('autoescape off', async () => {
-    const result = await render('{{ x }}', { x: '<b>' }, { autoescape: false });
+    const result = await renderTemplate('{{ x }}', { x: '<b>' }, { autoescape: false });
     expect(result).toBe('<b>');
   });
 });
