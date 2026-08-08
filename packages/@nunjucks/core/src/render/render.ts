@@ -3,7 +3,7 @@ import { validateRender, validateTemplateSource } from './render-validation.ts';
 import { getLoader } from '../engine.ts';
 import type { RenderConfig } from './render-types.ts';
 import { execute, createFrame, withTimeout } from '@nunjucks/runtime';
-import { getCallerFile, getCallerLocation } from '@nunjucks/shared';
+import { getCallerFile, getCallerLocation, isErr } from '@nunjucks/shared';
 import { injectWarningsScript, wrapWithLog, type TemplateWarning } from '@nunjucks/log';
 import type { GlobalConfig } from '../config/global.ts';
 import { getDefaultConfig } from '../config/global.ts';
@@ -80,13 +80,15 @@ const render = async (template: string, context: Record<string, unknown> = {}, o
     _callerLocation: baseConfig._callerLocation ?? getCallerLocation(),
   };
 
-  await validateRender(template, config, context);
+  const renderValidation = await validateRender(template, config, context);
+  if (isErr(renderValidation)) { throw renderValidation.error; }
 
   const loader = getLoader(config as Parameters<typeof getLoader>[0]);
   const { templateSource, templatePath } = await resolveTemplateSource(template, loader, config);
   const configWithPath: RenderConfig = templatePath ? { ...config, templatePath } : config;
 
-  await validateTemplateSource(templateSource, configWithPath, context);
+  const sourceValidation = await validateTemplateSource(templateSource, configWithPath, context);
+  if (isErr(sourceValidation)) { throw sourceValidation.error; }
 
   const templateName = resolveTemplateName(template, configWithPath);
 

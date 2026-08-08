@@ -38,6 +38,7 @@ const wrapFunctionWithBlocking = (
   thisArg: unknown,
 ): DynamicCallable => {
   if (!(sandboxEnabled && isFunction(fn))) { return fn; }
+  // WHY: this callable runs as a drop-in for the original function; throwing is the only way to surface a blocked code-execution call from a function invocation.
   return (...args) => {
     if (key && isCodeExecutionPattern(String(key)) && typeof args[0] === 'string') { throw sandboxError(ERROR_DEFINITIONS.SANDBOX_CODE_EXECUTION, key, options); }
     return fn.apply(thisArg, args);
@@ -45,6 +46,7 @@ const wrapFunctionWithBlocking = (
 };
 
 const assertAllowed = (key: string, sandboxOptions: ResolvedSandboxOptions): void => {
+  // WHY: invoked from Proxy get/set traps where throw is the sole failure channel — Result is not expressible in a trap return.
   if (!(sandboxOptions.blocklistMode || isAllowedKey(key, sandboxOptions.allowlist))) { throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ALLOWLIST, key, sandboxOptions); }
 };
 
@@ -53,6 +55,7 @@ const createValidateGet = (
   sandboxOptions: ResolvedSandboxOptions,
   topLevel: boolean,
 ) => {
+  // WHY: the returned handler is the Proxy `get` trap; all throws below are structurally forced because a trap can only fail by throwing.
   const { blockedContextKeys } = sandboxOptions;
 
   const checkBlockedContextKey = (key: string): void => {
@@ -86,6 +89,7 @@ const createValidateSet = (
   sandboxOptions: ResolvedSandboxOptions,
   topLevel: boolean,
 ) => {
+  // WHY: the returned handler is the Proxy `set` trap; all throws below are structurally forced because a trap can only fail by throwing.
   const { allowlist, blocklistMode } = sandboxOptions;
 
   const isKeyAllowed = (key: string): boolean => blocklistMode || isAllowedKey(key, allowlist);
@@ -159,6 +163,7 @@ const createPropertyNotFoundCallable = (value: string | symbol, parentName: stri
 };
 
 const validateStringAccess = (value: string, sandboxOptions: ResolvedSandboxOptions, topLevel: boolean): void => {
+  // WHY: member-lookup runtime path integrated with generated template code that uses throw-based control flow; converting to Result would require rewriting the entire runtime contract.
   if (isBlockedAtScope(value, sandboxOptions, topLevel)) { throw sandboxError(ERROR_DEFINITIONS.SANDBOX_ACCESS, value, sandboxOptions); }
   assertAllowed(value, sandboxOptions);
 };

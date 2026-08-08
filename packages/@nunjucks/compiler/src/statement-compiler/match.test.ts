@@ -26,7 +26,7 @@ describe('compileMatch', () => {
     const c = makeCompiler();
     const node = match(ZERO_LOC, {
       expr: symbol(ZERO_LOC, 'v'),
-      cases: [when(ZERO_LOC, literal(ZERO_LOC, 'a'), output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]))],
+      cases: [when(ZERO_LOC, { pattern: literal(ZERO_LOC, 'a'), body: output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]) })],
       default: null,
     });
     compileMatch(asCompiler(c), node as never, frame);
@@ -40,7 +40,7 @@ describe('compileMatch', () => {
     const c = makeCompiler();
     const node = match(ZERO_LOC, {
       expr: symbol(ZERO_LOC, 'v'),
-      cases: [when(ZERO_LOC, symbol(ZERO_LOC, '_'), output(ZERO_LOC, [templateData(ZERO_LOC, 'any')]))],
+      cases: [when(ZERO_LOC, { pattern: symbol(ZERO_LOC, '_'), body: output(ZERO_LOC, [templateData(ZERO_LOC, 'any')]) })],
       default: null,
     });
     compileMatch(asCompiler(c), node as never, frame);

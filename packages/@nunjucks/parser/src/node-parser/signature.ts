@@ -35,10 +35,10 @@ const parseSignatureArg = (
   if (isAssignmentPattern(argument) && isEqualsToken(parserContext)) {
     nextToken(parserContext);
     const value = parseExpression(parserContext);
-    return { args, kwargs: appendChild(kwargs, pair(loc(argument), argument.target, value)), checkComma: true };
+    return { args, kwargs: appendChild(kwargs, pair(loc(argument), { key: argument.target, val: value })), checkComma: true };
   }
   if (skipValue(parserContext, TOKEN_OPERATOR, '=')) {
-    return { args, kwargs: appendChild(kwargs, pair(loc(argument), argument, parseExpression(parserContext))), checkComma: true };
+    return { args, kwargs: appendChild(kwargs, pair(loc(argument), { key: argument, val: parseExpression(parserContext) })), checkComma: true };
   }
   return { args: appendChild(args, argument), kwargs, checkComma: true };
 };

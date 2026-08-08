@@ -60,7 +60,7 @@ describe('compileWalrus', () => {
     const c = makeCompiler();
     expect(() => compileWalrus(asCompiler(c), {
       lineno: 1, colno: 1,
-      target: lookupVal(loc({ lineno: 1, colno: 1 }), symbol(loc({ lineno: 1, colno: 1 }), 'a'), literal(loc({ lineno: 1, colno: 1 }), 'b')),
+      target: lookupVal(loc({ lineno: 1, colno: 1 }), { target: symbol(loc({ lineno: 1, colno: 1 }), 'a'), val: literal(loc({ lineno: 1, colno: 1 }), 'b') }),
       value: { mock: 'V' },
     } as never, frame)).toThrow(/Walrus target must be a symbol/);
   });

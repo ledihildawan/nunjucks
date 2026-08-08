@@ -45,7 +45,7 @@ const parseAssignmentDefault = (parserContext: ParserContext, target: Node): Nod
   if (peeked?.type === TOKEN_OPERATOR && peeked?.value === '=') {
     nextToken(parserContext);
     const defaultExpr = parseExpression(parserContext);
-    return assignmentPattern(loc(target), target, defaultExpr);
+    return assignmentPattern(loc(target), { target, defaultVal: defaultExpr });
   }
   return null;
 };
@@ -212,8 +212,7 @@ const parseObjectPatternProperty = (parserContext: ParserContext, node: Children
   const withDefault = parseAssignmentDefault(parserContext, valueTarget);
   return appendChild(node, patternProperty(
     loc(keyTok),
-    symbol(loc(keyTok), keyName),
-    withDefault ?? valueTarget
+    { key: symbol(loc(keyTok), keyName), val: withDefault ?? valueTarget }
   ));
 };
 

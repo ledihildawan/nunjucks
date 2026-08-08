@@ -52,8 +52,8 @@ describe('findAll', () => {
 
   test('finds nodes by predicate', () => {
     const ast = root(ZERO_LOC, [
-      block(ZERO_LOC, 'x', output(ZERO_LOC, [])),
-      block(ZERO_LOC, 'y', output(ZERO_LOC, [])),
+      block(ZERO_LOC, { name: 'x', body: output(ZERO_LOC, []) }),
+      block(ZERO_LOC, { name: 'y', body: output(ZERO_LOC, []) }),
     ]) as Node;
     const results = findAll(ast, (n: Node) => n.type === 'block');
     expect(results.length).toBe(2);

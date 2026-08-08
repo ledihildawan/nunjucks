@@ -22,7 +22,7 @@ describe('compileExec', () => {
     const c = makeCompiler();
     compileExec(asCompiler(c), {
       lineno: 3, colno: 7,
-      expr: funCall(loc({ lineno: 3, colno: 7 }), symbol(loc({ lineno: 3, colno: 7 }), 'fn'), []),
+      expr: funCall(loc({ lineno: 3, colno: 7 }), { name: symbol(loc({ lineno: 3, colno: 7 }), 'fn'), args: [] }),
     } as never, frame);
     const joined = c.emitted.join('');
     expect(joined).toContain('lineno = 3; colno = 7;');

@@ -26,17 +26,17 @@ describe('node-dispatch: expression nodes', () => {
   });
 
   test('add emits binary operation', () => {
-    const code = compile(add(ZERO_LOC, literal(ZERO_LOC, 1), literal(ZERO_LOC, 2)));
+    const code = compile(add(ZERO_LOC, { left: literal(ZERO_LOC, 1), right: literal(ZERO_LOC, 2) }));
     expect(code).toContain('+');
   });
 
   test('funCall emits runtime.callWrap', () => {
-    const code = compile(funCall(ZERO_LOC, symbol(ZERO_LOC, 'greet'), [literal(ZERO_LOC, 'World')]));
+    const code = compile(funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'greet'), args: [literal(ZERO_LOC, 'World')] }));
     expect(code).toContain('callWrap');
   });
 
   test('lookupVal emits member access', () => {
-    const code = compile(lookupVal(ZERO_LOC, symbol(ZERO_LOC, 'obj'), literal(ZERO_LOC, 'key')));
+    const code = compile(lookupVal(ZERO_LOC, { target: symbol(ZERO_LOC, 'obj'), val: literal(ZERO_LOC, 'key') }));
     expect(code.length).toBeGreaterThan(0);
   });
 });
@@ -49,7 +49,7 @@ describe('node-dispatch: statement nodes', () => {
 
   test('block emits block function', () => {
     const body = output(ZERO_LOC, [templateData(ZERO_LOC, 'content')]);
-    const code = compile(block(ZERO_LOC, 'myblock', body));
+    const code = compile(block(ZERO_LOC, { name: 'myblock', body }));
     expect(code.length).toBeGreaterThan(0);
   });
 });

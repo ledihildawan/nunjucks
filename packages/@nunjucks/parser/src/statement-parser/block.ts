@@ -32,5 +32,5 @@ export const parseBlock = (parserContext: ParserContext): Node => {
 
   advanceAfterBlockEnd(parserContext, String(tok.value));
 
-  return block(loc(tag), String(name.value), body);
+  return block(loc(tag), { name: String(name.value), body });
 };

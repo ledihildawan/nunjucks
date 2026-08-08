@@ -1,4 +1,4 @@
-import { pipe, map, filter } from 'remeda';
+import { pipe, map, filter, reduce } from 'remeda';
 import { getBlockedKeyCategory, isBlockedKey, slice } from '@nunjucks/shared';
 
 const DANGEROUS_KEY_PATTERN = /^(?:globalThis|process|window|parent|top|frames|opener)$/iu;
@@ -113,11 +113,11 @@ const normalizeChildValue = (item: unknown, context: NormalizeContext): unknown 
 
 const normalizeMap = (value: Map<unknown, unknown>, context: NormalizeContext): unknown => {
   const { state } = context;
-  const entries: unknown[][] = [];
-  for (const [key, item] of value) {
-    if (entries.length >= state.maxEntries) { break; }
-    entries.push([normalizeChildValue(key, context), normalizeChildValue(item, context)]);
-  }
+  const entries = pipe(
+    Array.from(value),
+    slice(0, state.maxEntries),
+    map(([key, item]) => [normalizeChildValue(key, context), normalizeChildValue(item, context)]),
+  );
   if (value.size > state.maxEntries) {
     entries.push([`... ${value.size - state.maxEntries} more entries`, '[Truncated]']);
   }
@@ -126,11 +126,11 @@ const normalizeMap = (value: Map<unknown, unknown>, context: NormalizeContext): 
 
 const normalizeSet = (value: Set<unknown>, context: NormalizeContext): unknown => {
   const { state } = context;
-  const entries: unknown[] = [];
-  for (const item of value) {
-    if (entries.length >= state.maxEntries) { break; }
-    entries.push(normalizeChildValue(item, context));
-  }
+  const entries = pipe(
+    Array.from(value),
+    slice(0, state.maxEntries),
+    map((item) => normalizeChildValue(item, context)),
+  );
   if (value.size > state.maxEntries) {
     entries.push(overflowNote(value.size, state.maxEntries, 'items'));
   }
@@ -155,15 +155,17 @@ const normalizeCollection = (value: object, context: NormalizeContext): unknown 
 
 const normalizePlainObject = (value: object, context: NormalizeContext): Record<string, unknown> => {
   const { state, depth, seen } = context;
-  const result: Record<string, unknown> = {};
   const visibleKeys = ownEnumerableKeys(value).filter(key => visibleKey(key, depth));
-  visibleKeys.slice(0, state.maxEntries).forEach((key) => {
-    if (state.blockedKeys.has(key) || DANGEROUS_KEY_PATTERN.test(key)) {
-      result[key] = '[Redacted]';
-    } else {
-      result[key] = normalizeValue(readOwnValue(value, key), { state, depth: depth + 1, seen });
-    }
-  });
+  const result = pipe(
+    visibleKeys.slice(0, state.maxEntries),
+    reduce((acc, key) => {
+      const isBlocked = state.blockedKeys.has(key) || DANGEROUS_KEY_PATTERN.test(key);
+      acc[key] = isBlocked
+        ? '[Redacted]'
+        : normalizeValue(readOwnValue(value, key), { state, depth: depth + 1, seen });
+      return acc;
+    }, {} as Record<string, unknown>),
+  );
   if (visibleKeys.length > state.maxEntries) {
     result['...'] = `${visibleKeys.length - state.maxEntries} more keys`;
   }

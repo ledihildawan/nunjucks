@@ -45,7 +45,7 @@ export const parseMatch = (parserContext: ParserContext): Node => {
     advanceAfterBlockEnd(parserContext, 'when');
     const body = parseUntilBlocks(parserContext, 'when', 'endmatch');
 
-    cases.push(when(loc(tag), pattern, body, guard));
+    cases.push(when(loc(tag), { pattern, body, guard }));
     tok = peekToken(parserContext);
   }
 

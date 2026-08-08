@@ -1,31 +1,31 @@
 import { describe, test, expect } from 'bun:test';
-import { _prepareAttributeParts, getAttrGetter } from './attributes.ts';
+import { prepareAttributeParts, getAttrGetter } from './attributes.ts';
 
 describe('filters/attributes', () => {
-  describe('_prepareAttributeParts', () => {
+  describe('prepareAttributeParts', () => {
     test('returns empty array for null', () => {
-      expect(_prepareAttributeParts(null)).toEqual([]);
+      expect(prepareAttributeParts(null)).toEqual([]);
     });
 
     test('returns empty array for undefined', () => {
-      expect(_prepareAttributeParts(undefined)).toEqual([]);
+      expect(prepareAttributeParts(undefined)).toEqual([]);
     });
 
     test('returns array with number as-is', () => {
-      expect(_prepareAttributeParts(0)).toEqual([0]);
-      expect(_prepareAttributeParts(42)).toEqual([42]);
+      expect(prepareAttributeParts(0)).toEqual([0]);
+      expect(prepareAttributeParts(42)).toEqual([42]);
     });
 
     test('splits dot-separated string', () => {
-      expect(_prepareAttributeParts('a.b.c')).toEqual(['a', 'b', 'c']);
+      expect(prepareAttributeParts('a.b.c')).toEqual(['a', 'b', 'c']);
     });
 
     test('returns single part for plain string', () => {
-      expect(_prepareAttributeParts('foo')).toEqual(['foo']);
+      expect(prepareAttributeParts('foo')).toEqual(['foo']);
     });
 
     test('handles empty string', () => {
-      expect(_prepareAttributeParts('')).toEqual(['']);
+      expect(prepareAttributeParts('')).toEqual(['']);
     });
   });
 

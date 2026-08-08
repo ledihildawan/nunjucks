@@ -1,7 +1,8 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
 import { isPlainObject, isString, keys, pipe, range, reduce, sum as sumValues } from 'remeda';
 import { isSafeString, makeComponent } from '@nunjucks/runtime';
-import { makeFilterError, isArray, requireArrayError, assertItemsHaveAttr } from '../factory/index.ts';
+import { makeFilterError, isArray, requireArrayError, validateItemsHaveAttr } from '../factory/index.ts';
+import { isErr } from '@nunjucks/shared';
 import { getAttrGetter } from './attributes.ts';
 
 export const first = (values: unknown): unknown => {
@@ -102,9 +103,9 @@ export const slice = (values: unknown, slices: number, fillWith?: unknown): unkn
 };
 
 const sumWithAttribute = (items: unknown[], attr: string, start: number): number => {
-  const typedItems = items as Record<string, unknown>[];
-  assertItemsHaveAttr<unknown>(typedItems, attr, ERROR_DEFINITIONS.SUM_FILTER_ATTR);
-  const values = typedItems.map((item) => item[attr]);
+  const validated = validateItemsHaveAttr<unknown>(items, attr, ERROR_DEFINITIONS.SUM_FILTER_ATTR);
+  if (isErr(validated)) { throw validated.error; }
+  const values = validated.value.map((item) => item[attr]);
   if (!values.every((value): value is number => typeof value === 'number')) {
     throw makeFilterError({ errorDef: ERROR_DEFINITIONS.SUM_FILTER_ATTR, params: { attr }, subject: attr, fallbackMessage: `Attribute "${attr}" must contain numbers` });
   }
@@ -119,14 +120,12 @@ const sumWithoutAttribute = (items: unknown[], start: number): number => {
 };
 
 export const sum = (values: unknown, attr?: string, start = 0): number => {
-  if (!(isArray(values) || isPlainObject(values))) {
-    throw makeFilterError({ errorDef: ERROR_DEFINITIONS.SUM_FILTER, params: { type: typeof values }, subject: typeof values, fallbackMessage: `Expected array or plain object but got ${typeof values}` });
+  if (!isArray(values)) {
+    throw requireArrayError(values, ERROR_DEFINITIONS.SUM_FILTER);
   }
   if (attr) {
-    if (!isArray(values)) { throw requireArrayError(values, ERROR_DEFINITIONS.SUM_FILTER); }
     return sumWithAttribute(values, attr, start);
   }
-  if (!isArray(values)) { throw requireArrayError(values, ERROR_DEFINITIONS.SUM_FILTER); }
   return sumWithoutAttribute(values, start);
 };
 
@@ -177,8 +176,8 @@ const createSortComparator = ({ sortAttr, sortReverse, caseSens }: SortOptions) 
 const sortArray = (values: unknown[], options: SortOptions): unknown[] => {
   const { sortAttr, sortReverse, caseSens } = options;
   if (sortAttr) {
-    const typedValues = values as Record<string, unknown>[];
-    assertItemsHaveAttr<unknown>(typedValues, sortAttr, ERROR_DEFINITIONS.SORT_FILTER_ATTR);
+    const validated = validateItemsHaveAttr<unknown>(values, sortAttr, ERROR_DEFINITIONS.SORT_FILTER_ATTR);
+    if (isErr(validated)) { throw validated.error; }
   }
   const array = [...values];
   const comparator = createSortComparator({ sortAttr, sortReverse, caseSens });

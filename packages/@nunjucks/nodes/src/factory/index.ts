@@ -81,15 +81,22 @@ export {
 };
 import type {
   SliceFields, TestCallFields, CompoundAssignmentFields,
+  CallFields, LookupFields, BinaryFields, CompareFields, CompareOperandFields,
+  IncDecFields, PatternPropertyFields, AssignmentPatternFields, TestNodeFields, VariableDeclFields,
 } from './operations.ts';
+import type { PairFields, SpreadFields, WalrusFields } from './atomic.ts';
 import type {
   InlineIfFields, ForFields, ComponentFields, ImportFields,
   FromImportFields, SwitchFields, CallExtensionFields,
-  MatchFields, RenderFields,
+  MatchFields, RenderFields, BlockFields, CaptureFields, ScopeFields, CaseFields, IncludeFields, SuperFields, WhenFields,
 } from './control.ts';
 
 export type {
   SliceFields, InlineIfFields, ForFields, ComponentFields, ImportFields,
   FromImportFields, SwitchFields, CompoundAssignmentFields, CallExtensionFields,
   TestCallFields, MatchFields, RenderFields,
+  CallFields, LookupFields, BinaryFields, CompareFields, CompareOperandFields,
+  IncDecFields, PatternPropertyFields, AssignmentPatternFields, TestNodeFields, VariableDeclFields,
+  PairFields, SpreadFields, WalrusFields,
+  BlockFields, CaptureFields, ScopeFields, CaseFields, IncludeFields, SuperFields, WhenFields,
 };

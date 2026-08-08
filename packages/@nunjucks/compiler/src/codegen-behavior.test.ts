@@ -45,26 +45,26 @@ describe('codegen: literal and symbol', () => {
 
 describe('codegen: binary operations', () => {
   test('add emits +', () => {
-    const code = compileNode(add(ZERO_LOC, literal(ZERO_LOC, 1), literal(ZERO_LOC, 2)));
+    const code = compileNode(add(ZERO_LOC, { left: literal(ZERO_LOC, 1), right: literal(ZERO_LOC, 2) }));
     expect(code).toContain('+');
   });
   test('sub emits -', () => {
-    const code = compileNode(sub(ZERO_LOC, literal(ZERO_LOC, 1), literal(ZERO_LOC, 2)));
+    const code = compileNode(sub(ZERO_LOC, { left: literal(ZERO_LOC, 1), right: literal(ZERO_LOC, 2) }));
     expect(code).toContain('-');
   });
   test('mul emits *', () => {
-    const code = compileNode(mul(ZERO_LOC, literal(ZERO_LOC, 1), literal(ZERO_LOC, 2)));
+    const code = compileNode(mul(ZERO_LOC, { left: literal(ZERO_LOC, 1), right: literal(ZERO_LOC, 2) }));
     expect(code).toContain('*');
   });
 });
 
 describe('codegen: logical operations', () => {
   test('and emits logical AND', () => {
-    const code = compileNode(and(ZERO_LOC, literal(ZERO_LOC, true), literal(ZERO_LOC, false)));
+    const code = compileNode(and(ZERO_LOC, { left: literal(ZERO_LOC, true), right: literal(ZERO_LOC, false) }));
     expect(code.length).toBeGreaterThan(0);
   });
   test('or emits logical OR', () => {
-    const code = compileNode(or(ZERO_LOC, literal(ZERO_LOC, true), literal(ZERO_LOC, false)));
+    const code = compileNode(or(ZERO_LOC, { left: literal(ZERO_LOC, true), right: literal(ZERO_LOC, false) }));
     expect(code.length).toBeGreaterThan(0);
   });
   test('not emits negation', () => {
@@ -72,29 +72,29 @@ describe('codegen: logical operations', () => {
     expect(code.length).toBeGreaterThan(0);
   });
   test('nullishCoalesce emits ??', () => {
-    const code = compileNode(nullishCoalesce(ZERO_LOC, literal(ZERO_LOC, 1), literal(ZERO_LOC, 2)));
+    const code = compileNode(nullishCoalesce(ZERO_LOC, { left: literal(ZERO_LOC, 1), right: literal(ZERO_LOC, 2) }));
     expect(code).toContain('??');
   });
 });
 
 describe('codegen: comparison', () => {
   test('compare emits comparison logic', () => {
-    const operand = compareOperand(ZERO_LOC, literal(ZERO_LOC, 2), '<');
-    const code = compileNode(compare(ZERO_LOC, literal(ZERO_LOC, 1), [operand]));
+    const operand = compareOperand(ZERO_LOC, { expr: literal(ZERO_LOC, 2), operator: '<' });
+    const code = compileNode(compare(ZERO_LOC, { expr: literal(ZERO_LOC, 1), ops: [operand] }));
     expect(code.length).toBeGreaterThan(0);
   });
 });
 
 describe('codegen: function call', () => {
   test('funCall emits runtime.callWrap', () => {
-    const code = compileNode(funCall(ZERO_LOC, symbol(ZERO_LOC, 'greet'), [literal(ZERO_LOC, 'World')]));
+    const code = compileNode(funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'greet'), args: [literal(ZERO_LOC, 'World')] }));
     expect(code).toContain('callWrap');
   });
 });
 
 describe('codegen: member lookup', () => {
   test('lookupVal emits member access', () => {
-    const code = compileNode(lookupVal(ZERO_LOC, symbol(ZERO_LOC, 'obj'), literal(ZERO_LOC, 'key')));
+    const code = compileNode(lookupVal(ZERO_LOC, { target: symbol(ZERO_LOC, 'obj'), val: literal(ZERO_LOC, 'key') }));
     expect(code).toContain('memberLookup');
   });
 });
@@ -160,7 +160,7 @@ describe('codegen: for loop', () => {
 describe('codegen: block', () => {
   test('block emits block function with b_ prefix', () => {
     const code = compileRoot([
-      block(ZERO_LOC, 'content', output(ZERO_LOC, [templateData(ZERO_LOC, 'base')])),
+      block(ZERO_LOC, { name: 'content', body: output(ZERO_LOC, [templateData(ZERO_LOC, 'base')]) }),
     ]);
     expect(code).toContain('b_content');
   });
@@ -200,7 +200,7 @@ describe('codegen: component', () => {
 describe('codegen: exec', () => {
   test('exec emits try/catch around expression', () => {
     const code = compileRoot([
-      execNode(ZERO_LOC, funCall(ZERO_LOC, symbol(ZERO_LOC, 'someFn'), [])),
+      execNode(ZERO_LOC, funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'someFn'), args: [] })),
     ]);
     expect(code).toContain('try');
     expect(code).toContain('catch');
@@ -213,8 +213,8 @@ describe('codegen: match', () => {
       match(ZERO_LOC, {
         expr: symbol(ZERO_LOC, 'val'),
         cases: [
-          when(ZERO_LOC, literal(ZERO_LOC, 'a'), output(ZERO_LOC, [templateData(ZERO_LOC, 'one')])),
-          when(ZERO_LOC, literal(ZERO_LOC, 'b'), output(ZERO_LOC, [templateData(ZERO_LOC, 'two')])),
+          when(ZERO_LOC, { pattern: literal(ZERO_LOC, 'a'), body: output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]) }),
+          when(ZERO_LOC, { pattern: literal(ZERO_LOC, 'b'), body: output(ZERO_LOC, [templateData(ZERO_LOC, 'two')]) }),
         ],
         default: output(ZERO_LOC, [templateData(ZERO_LOC, 'default')]),
       }),
@@ -227,7 +227,7 @@ describe('codegen: render', () => {
   test('render emits async component invocation', () => {
     const code = compileRoot([
       renderNode(ZERO_LOC, {
-        callExpr: funCall(ZERO_LOC, symbol(ZERO_LOC, 'MyComponent'), []),
+        callExpr: funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'MyComponent'), args: [] }),
         body: output(ZERO_LOC, [templateData(ZERO_LOC, 'body')]),
         providedSlots: [],
       }),
@@ -239,7 +239,7 @@ describe('codegen: render', () => {
 describe('codegen: scope', () => {
   test('scope emits frame operations', () => {
     const code = compileRoot([
-      scopeNode(ZERO_LOC, [], output(ZERO_LOC, [templateData(ZERO_LOC, 'scoped')])),
+      scopeNode(ZERO_LOC, { assignments: [], body: output(ZERO_LOC, [templateData(ZERO_LOC, 'scoped')]) }),
     ]);
     expect(code).toContain('frame');
   });
@@ -248,7 +248,7 @@ describe('codegen: scope', () => {
 describe('codegen: slot', () => {
   test('block emits block function with b_ prefix', () => {
     const code = compileRoot([
-      block(ZERO_LOC, 'header', output(ZERO_LOC, [templateData(ZERO_LOC, 'header content')])),
+      block(ZERO_LOC, { name: 'header', body: output(ZERO_LOC, [templateData(ZERO_LOC, 'header content')]) }),
     ]);
     expect(code).toContain('b_header');
   });

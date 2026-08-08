@@ -42,11 +42,13 @@ export const parsePipeForward = (parserContext: ParserContext, node: Node): Node
 
     current = pipe(
       loc(name),
-      name,
-      nodeList(
-        loc(name),
-        [current, ...parseFilterCallArgs(parserContext, current)]
-      ).children
+      {
+        name,
+        args: nodeList(
+          loc(name),
+          [current, ...parseFilterCallArgs(parserContext, current)]
+        ).children,
+      }
     );
   }
 

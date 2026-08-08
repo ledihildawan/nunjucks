@@ -38,12 +38,12 @@ export const parsePostfix = (parserContext: ParserContext, node: Node): Node => 
         }
         if (tok.value === '++') {
           nextToken(parserContext);
-          current = increment(loc(tok), current, true);
+          current = increment(loc(tok), { target: current, isPostfix: true });
           continue;
         }
         if (tok.value === '--') {
           nextToken(parserContext);
-          current = decrement(loc(tok), current, true);
+          current = decrement(loc(tok), { target: current, isPostfix: true });
           continue;
         }
         return current;

@@ -8,7 +8,7 @@ import { IO_ERRORS } from './io.ts';
 import { FILTER_ERRORS } from './filter.ts';
 import { TEMPLATE_ERRORS } from './template.ts';
 
-const _allErrors = {
+const allErrors = {
   ...RUNTIME_ERRORS,
   ...PARSER_ERRORS,
   ...SANDBOX_ERRORS,
@@ -17,9 +17,9 @@ const _allErrors = {
   ...TEMPLATE_ERRORS
 };
 
-type ErrorName = keyof typeof _allErrors;
+type ErrorName = keyof typeof allErrors;
 
-const ERROR_DEFINITIONS: Record<ErrorName, ErrorDefinition> = _allErrors;
+const ERROR_DEFINITIONS: Record<ErrorName, ErrorDefinition> = allErrors;
 
 const getError = <T extends ErrorName>(name: T): ErrorDefinition => {
   return ERROR_DEFINITIONS[name];

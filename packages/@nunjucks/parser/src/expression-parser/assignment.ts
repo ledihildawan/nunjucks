@@ -34,7 +34,7 @@ const mapArrayPatternChild = (c: Node): Node => {
 
 const mapObjectPatternChild = (c: Node): Node => {
   if (isPair(c) && typeof c.key !== 'string' && isSymbol(c.key) && isSymbol(c.value) && c.key.value === c.value.value) {
-    return patternProperty(loc(c.key), String(c.key.value), c.key);
+    return patternProperty(loc(c.key), { key: String(c.key.value), val: c.key });
   }
   if (isSpread(c)) { return restPattern(loc(c), (c as SpreadNode).argument); }
   return c;
@@ -54,14 +54,14 @@ const isExpressionContext = (tok: Token): boolean =>
 const handleWalrusAssignment = (node: Node, valueNode: Node, isExprCtx: boolean): Node => {
   if (isSymbol(node)) {
     return isExprCtx
-      ? walrus(loc(node), node, valueNode)
-      : variableDeclaration(loc(node), [node], valueNode);
+      ? walrus(loc(node), { target: node, val: valueNode })
+      : variableDeclaration(loc(node), { targets: [node], val: valueNode });
   }
   if (isArrayPattern(node) || isArray(node) || isObjectPattern(node) || isDict(node)) {
     const pattern = normalizePattern(node);
     return isExprCtx
-      ? walrus(loc(pattern), pattern, valueNode)
-      : variableDeclaration(loc(pattern), [pattern], valueNode);
+      ? walrus(loc(pattern), { target: pattern, val: valueNode })
+      : variableDeclaration(loc(pattern), { targets: [pattern], val: valueNode });
   }
   throw errorAt(node.lineno, node.colno, ERROR_DEFINITIONS.WALRUS_TARGET_INVALID);
 };

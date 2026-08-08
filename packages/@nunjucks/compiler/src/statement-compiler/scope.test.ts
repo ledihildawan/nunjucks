@@ -25,7 +25,7 @@ describe('compileScope', () => {
   test('pushes a frame, binds assignments, compiles body, pops frame', () => {
     const c = makeCompiler();
     compileScope(asCompiler(c), {
-      assignments: [pair(ZERO_LOC, 'x', literal(ZERO_LOC, 1))],
+      assignments: [pair(ZERO_LOC, { key: 'x', val: literal(ZERO_LOC, 1) })],
       body: output(ZERO_LOC, [templateData(ZERO_LOC, 'scoped')]),
     } as never, frame);
     const joined = c.emitted.join('');

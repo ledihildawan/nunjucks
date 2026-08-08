@@ -41,7 +41,7 @@ const parseCompare = (parserContext: ParserContext): Node => {
       break;
     }
     if (COMPARE_OPS.includes(String(tok.value))) {
-      ops.push(compareOperand(loc(tok), parseConcat(parserContext), String(tok.value)));
+      ops.push(compareOperand(loc(tok), { expr: parseConcat(parserContext), operator: String(tok.value) }));
     } else {
       pushToken(parserContext, tok);
       break;
@@ -50,7 +50,7 @@ const parseCompare = (parserContext: ParserContext): Node => {
 
   const [firstOp] = ops;
   if (firstOp) {
-    return compare(loc(firstOp), expr, ops);
+    return compare(loc(firstOp), { expr, ops });
   }
   return expr;
 };
@@ -97,13 +97,13 @@ const parseIs = (parserContext: ParserContext): Node => {
 
     const builtTest = testArgs.length > 0
       ? testCallNode(origin, { target: initialNode, name: testName, args: testArgs })
-      : testNode(origin, initialNode, testName);
+      : testNode(origin, { target: initialNode, name: testName });
 
     return negate ? not(loc(tok), builtTest) : builtTest;
   }
 
   const node2 = parseCompare(parserContext);
-  const builtIs = isOp(loc(tok), initialNode, node2);
+  const builtIs = isOp(loc(tok), { left: initialNode, right: node2 });
   return negate ? not(loc(tok), builtIs) : builtIs;
 };
 
@@ -130,7 +130,7 @@ const parseBitwiseOr = (parserContext: ParserContext): Node => {
   }
 
   const right = parseIs(parserContext);
-  return createNode(loc(tok), initialNode, right);
+  return createNode(loc(tok), { left: initialNode, right });
 };
 
 const isInToken = (tok: Token): boolean =>
@@ -141,7 +141,7 @@ const isNotInversion = (tok: Token): boolean =>
 
 const handleInExpression = (parserContext: ParserContext, node: Node, invert: boolean, inTok: Token): Node => {
   const node2 = parseIs(parserContext);
-  const newNode = inNode(loc(inTok), node, node2);
+  const newNode = inNode(loc(inTok), { left: node, right: node2 });
   return invert ? not(loc(inTok), newNode) : newNode;
 };
 

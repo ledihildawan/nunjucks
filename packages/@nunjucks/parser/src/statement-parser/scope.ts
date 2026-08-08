@@ -24,7 +24,7 @@ const parseScopeAssignment = (parserContext: ParserContext, tag: Token): Node =>
     fail(parserContext, 'parseScope: expected expression after =', tag.lineno, tag.colno);
   }
 
-  return pair(loc(nameSymbol), String(nameSymbol.value), value);
+  return pair(loc(nameSymbol), { key: String(nameSymbol.value), val: value });
 };
 
 const parseScopeAssignments = (parserContext: ParserContext, tag: Token): Node[] => {
@@ -49,7 +49,7 @@ const parseScopeAssignments = (parserContext: ParserContext, tag: Token): Node[]
       fail(parserContext, 'parseScope: expected expression after =', tag.lineno, tag.colno);
     }
 
-    assignments.push(pair(loc(nextName), String(nextName.value), nextValue));
+    assignments.push(pair(loc(nextName), { key: String(nextName.value), val: nextValue }));
   }
 
   return assignments;
@@ -81,5 +81,5 @@ export const parseScope = (parserContext: ParserContext): Node => {
 
   advanceAfterBlockEnd(parserContext, 'endscope');
 
-  return scopeNode(loc(tag), assignments, body);
+  return scopeNode(loc(tag), { assignments, body });
 };

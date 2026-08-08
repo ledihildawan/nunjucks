@@ -23,5 +23,5 @@ export const parseCapture = (parserContext: ParserContext): Node => {
   skipSymbol(parserContext, 'endcapture');
   advanceAfterBlockEnd(parserContext, 'endcapture');
 
-  return capture(loc(tag), body, varName);
+  return capture(loc(tag), { body, name: varName });
 };

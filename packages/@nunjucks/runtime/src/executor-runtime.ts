@@ -16,6 +16,7 @@ interface RenderFunctionResult {
 }
 
 const getRenderFunction = (code: string): RenderFunctionResult => {
+  // WHY: both throws below signal INVALID_CODE_FORMAT — a compiler-output invariant (the compiler emitted malformed code), not a user-input failure, so they are not domain errors to convert to Result.
   const newFormatMatch = code.match(ROOT_FUNCTION_RE);
   if (newFormatMatch) {
     const codeWithReturn = `${code}; return root;`;

@@ -21,7 +21,7 @@ export const parseDotAccess = (parserContext: ParserContext, tok: DotOperatorTok
   }
 
   const lookup = literal(loc(value), value.value);
-  const node = lookupVal(loc(tok), target, lookup);
+  const node = lookupVal(loc(tok), { target, val: lookup });
   markBracketNotation(node, false);
   return node;
 };

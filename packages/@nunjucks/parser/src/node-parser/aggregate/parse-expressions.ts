@@ -35,7 +35,7 @@ const parseSpread = (
   const argument = parseExpression(parserContext);
   return appendChild(
     node,
-    spread(loc(origin), argument)
+    spread(loc(origin), { argument })
   );
 };
 
@@ -52,7 +52,7 @@ const parseDictItem = (
     const value = parseExpression(parserContext);
     return appendChild(
       node,
-      pair(loc(key), key, value)
+      pair(loc(key), { key, val: value })
     );
   }
 
@@ -61,7 +61,7 @@ const parseDictItem = (
   if (next && (next.type === TOKEN_COMMA || next.type === TOKEN_RIGHT_CURLY)) {
     return appendChild(
       node,
-      pair(loc(key), key, value)
+      pair(loc(key), { key, val: value })
     );
   }
 
@@ -70,12 +70,11 @@ const parseDictItem = (
     const defaultValue = parseExpression(parserContext);
     const pattern = assignmentPattern(
       loc(key),
-      value,
-      defaultValue
+      { target: value, defaultVal: defaultValue }
     );
     return appendChild(
       node,
-      pair(loc(key), key, pattern)
+      pair(loc(key), { key, val: pattern })
     );
   }
 
@@ -108,8 +107,7 @@ export const parseAggregateExpression = (
       node,
       assignmentPattern(
         loc(expression),
-        expression,
-        defaultValue
+        { target: expression, defaultVal: defaultValue }
       )
     );
   }

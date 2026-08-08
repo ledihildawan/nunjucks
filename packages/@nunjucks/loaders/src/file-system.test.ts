@@ -109,6 +109,26 @@ describe('path traversal protection', () => {
     const source = await loader.getSource('../secret.njk');
     expect(source).toBeNull();
   });
+
+  test('blocks a sibling directory that shares a name prefix (startsWith bypass)', async () => {
+    const root = await makeDir();
+    const baseDir = join(root, 'templates');
+    const siblingDir = join(root, 'templates-secret');
+    await mkdir(baseDir);
+    await mkdir(siblingDir);
+    await writeFile(join(siblingDir, 'evil.njk'), 'pwned');
+    const loader = createFileSystemLoader(baseDir);
+    const source = await loader.getSource('../templates-secret/evil.njk');
+    expect(source).toBeNull();
+  });
+
+  test('rejects template names containing a null byte', async () => {
+    const dir = await makeDir();
+    await writeFile(join(dir, 'safe.njk'), 'content');
+    const loader = createFileSystemLoader(dir);
+    const source = await loader.getSource('safe.njk\0.evil');
+    expect(source).toBeNull();
+  });
 });
 
 describe('watch', () => {

@@ -23,7 +23,7 @@ describe('compileSwitch', () => {
     const c = makeCompiler();
     const node = switchNode(ZERO_LOC, {
       expr: symbol(ZERO_LOC, 'x'),
-      cases: [caseNode(ZERO_LOC, literal(ZERO_LOC, 1), output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]))],
+      cases: [caseNode(ZERO_LOC, { cond: literal(ZERO_LOC, 1), body: output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]) })],
       default_: output(ZERO_LOC, [templateData(ZERO_LOC, 'd')]),
     });
     compileSwitch(asCompiler(c), node as never, frame);
@@ -38,7 +38,7 @@ describe('compileSwitch', () => {
     const c = makeCompiler();
     const node = switchNode(ZERO_LOC, {
       expr: symbol(ZERO_LOC, 'x'),
-      cases: [caseNode(ZERO_LOC, literal(ZERO_LOC, 1), output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]))],
+      cases: [caseNode(ZERO_LOC, { cond: literal(ZERO_LOC, 1), body: output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]) })],
       default_: null,
     });
     compileSwitch(asCompiler(c), node as never, frame);

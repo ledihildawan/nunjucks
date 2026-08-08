@@ -53,7 +53,7 @@ export const parseOptionalChain = (parserContext: ParserContext, tok: OptionalCh
   if (value?.type === TOKEN_LEFT_PAREN) {
     nextToken(parserContext);
     const args = parseOptionalCallArgs(parserContext, tok);
-    return optionalCall(loc(tok), target, [...args.children]);
+    return optionalCall(loc(tok), { name: target, args: [...args.children] });
   }
 
     const nextTok = peekToken(parserContext);
@@ -66,7 +66,7 @@ export const parseOptionalChain = (parserContext: ParserContext, tok: OptionalCh
       fail(parserContext, 'expected right bracket', rightBracket.lineno, rightBracket.colno);
     }
 
-    const node = optionalChain(loc(tok), target, start);
+    const node = optionalChain(loc(tok), { target, val: start });
     markBracketNotation(node, true);
     return node;
   }
@@ -81,7 +81,7 @@ export const parseOptionalChain = (parserContext: ParserContext, tok: OptionalCh
   }
 
   const lookup = literal(loc(nameTok), nameTok.value);
-  const node = optionalChain(loc(tok), target, lookup);
+  const node = optionalChain(loc(tok), { target, val: lookup });
   markBracketNotation(node, false);
   return node;
 };

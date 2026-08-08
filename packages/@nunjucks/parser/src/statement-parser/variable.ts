@@ -28,7 +28,7 @@ export const parseVariableDeclaration = (parserContext: ParserContext): Node => 
 
   const value = parseExpression(parserContext);
 
-  return variableDeclaration(loc(tag), targets, value);
+  return variableDeclaration(loc(tag), { targets, val: value });
 };
 
 const parseOperator = (parserContext: ParserContext, tag: Token): string => {
@@ -65,5 +65,5 @@ export const parseVariableAssignment = (parserContext: ParserContext): Node => {
     return compoundAssignment(loc(tag), { targets, operator, value });
   }
 
-  return variableAssignment(loc(tag), targets, value);
+  return variableAssignment(loc(tag), { targets, val: value });
 };

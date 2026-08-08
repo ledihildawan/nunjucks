@@ -31,8 +31,7 @@ export const liftSuper = (ast: Node): Node => walk(ast, (blockNode: Node): Node 
     const newChildren = [
       superNode(
         loc(superLoc),
-        blockName,
-        symbol(loc(superLoc), sym),
+        { blockName, sym: symbol(loc(superLoc), sym) },
       ),
       ...bodyChildren,
     ];

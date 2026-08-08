@@ -32,7 +32,7 @@ const parseImportName = (
 
   const hasAlias = skipSymbol(parserContext, 'as');
   const newNames = hasAlias
-    ? appendChild(names, pair(loc(name), name, parsePrimary(parserContext)))
+    ? appendChild(names, pair(loc(name), { key: name, val: parsePrimary(parserContext) }))
     : appendChild(names, name);
 
   const withContext = parseWithContext(parserContext);

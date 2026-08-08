@@ -20,7 +20,7 @@ const parseSwitchCases = (parserContext: ParserContext, cases: Node[]): void => 
     const cond = parseExpression(parserContext);
     advanceAfterBlockEnd(parserContext, SWITCH_TOKENS.switchStart);
     const body = parseUntilBlocks(parserContext, SWITCH_TOKENS.caseStart, SWITCH_TOKENS.caseDefault, SWITCH_TOKENS.switchEnd);
-    cases.push(caseNode(loc(tok), cond, body));
+    cases.push(caseNode(loc(tok), { cond, body }));
     tok = peekToken(parserContext);
   }
 };

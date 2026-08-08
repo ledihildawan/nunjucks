@@ -1,14 +1,16 @@
 import { validateTemplate, validateConfig, validateRenderContext } from '@nunjucks/validators';
 import { createLog, getError, findContextKeyPosition, wrapWithLog } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/log';
+import { ok, err, type Result } from '@nunjucks/shared';
 import type { RenderConfig, RenderValidationError, ValidationErrorRequest } from './render-types.ts';
 
-const createValidationError = async ({
+const buildValidationError = async ({
   validationError,
   stamps,
   config,
   templateSource,
   context,
-}: ValidationErrorRequest): Promise<never> => {
+}: ValidationErrorRequest): Promise<TemplateError> => {
   const err = createLog(
     'error',
     { name: validationError.code, message: validationError.message },
@@ -21,7 +23,7 @@ const createValidationError = async ({
       lineBase: (stamps.lineBase as 'one' | 'zero' | undefined) ?? 'zero',
     },
   );
-  throw await wrapWithLog(err, config, { template: templateSource, renderContext: context });
+  return wrapWithLog(err, config, { template: templateSource, renderContext: context });
 };
 
 const getDangerousValueStamps = async (contextError: RenderValidationError, config: RenderConfig): Promise<Record<string, unknown>> => {
@@ -41,22 +43,23 @@ const getDangerousValueStamps = async (contextError: RenderValidationError, conf
   return stamps;
 };
 
-export const validateRender = async (template: unknown, config: RenderConfig, context: unknown): Promise<void> => {
+export const validateRender = async (template: unknown, config: RenderConfig, context: unknown): Promise<Result<void, TemplateError>> => {
   if (typeof template !== 'string') {
-    const err = createLog('error', getError('TEMPLATE_MUST_BE_STRING'), {}, null, { phase: 'render' });
-    throw await wrapWithLog(err, config, { template: template as string | null, renderContext: context });
+    const error = createLog('error', getError('TEMPLATE_MUST_BE_STRING'), {}, null, { phase: 'render' });
+    return err(await wrapWithLog(error, config, { template: template as string | null, renderContext: context }));
   }
 
   const validation = validateConfig(config);
   if (!validation.valid) {
     const ve = validation.errors[0];
     if (ve === undefined) {
-      throw createLog('error', { name: 'VALIDATION_ERROR', message: 'Validation failed but no errors found' }, undefined, null, { phase: 'render' });
+      // WHY: validators guarantee a non-empty errors tuple when valid===false, so this branch is an impossible-state invariant, not a domain error.
+      return err(createLog('error', { name: 'VALIDATION_ERROR', message: 'Validation failed but no errors found' }, undefined, null, { phase: 'render' }));
     }
     const callerLineno = config._callerLocation?.lineNumber;
     const callerColno = config._callerLocation?.columnNumber;
     const resolvedLineno: number | null | undefined = (callerLineno && callerLineno > 1) ? callerLineno - 1 : callerLineno;
-    await createValidationError({
+    return err(await buildValidationError({
       validationError: ve,
       stamps: {
         code: ve.code,
@@ -67,30 +70,35 @@ export const validateRender = async (template: unknown, config: RenderConfig, co
       config,
       templateSource: template,
       context
-    });
+    }));
   }
 
   const contextValidation = validateRenderContext(context, config);
   if (!contextValidation.valid) {
     const ce = contextValidation.errors[0];
     if (ce === undefined) {
-      throw createLog('error', { name: 'VALIDATION_ERROR', message: 'Context validation failed but no errors found' }, undefined, null, { phase: 'render' });
+      // WHY: validators guarantee a non-empty errors tuple when valid===false, so this branch is an impossible-state invariant, not a domain error.
+      return err(createLog('error', { name: 'VALIDATION_ERROR', message: 'Context validation failed but no errors found' }, undefined, null, { phase: 'render' }));
     }
     const stamps = await getDangerousValueStamps(ce, config);
-    await createValidationError({ validationError: ce, stamps, config, templateSource: template, context });
+    return err(await buildValidationError({ validationError: ce, stamps, config, templateSource: template, context }));
   }
+
+  return ok(undefined);
 };
 
-export const validateTemplateSource = async (templateSource: string, config: RenderConfig, context: unknown): Promise<void> => {
+export const validateTemplateSource = async (templateSource: string, config: RenderConfig, context: unknown): Promise<Result<void, TemplateError>> => {
   const templateValidation = validateTemplate(templateSource, config);
   if (!templateValidation.valid) {
     const ve = templateValidation.errors[0];
-    await createValidationError({
+    return err(await buildValidationError({
       validationError: ve,
       stamps: { lineno: ve.lineno, colno: ve.colno, code: ve.code, subject: ve.subject },
       config,
       templateSource,
       context
-    });
+    }));
   }
+
+  return ok(undefined);
 };

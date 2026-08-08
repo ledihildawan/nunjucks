@@ -11,6 +11,7 @@ interface ErrorWithLineInfo extends Error {
 const isErrorWithLineInfo = (value: unknown): value is ErrorWithLineInfo =>
   value instanceof Error;
 
+// WHY: handleError is the single re-throw funnel for errors raised by compiled template code; it is wired into generated code and must propagate via throw to the imperative-shell boundary that owns error reporting.
 function handleError(this: unknown, error: unknown, lineno: number | null, colno: number | null): never {
   const ctx = getLogContext(this);
   const metadata = normalizeErrorMetadata(error, {

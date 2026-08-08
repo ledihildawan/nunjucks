@@ -10,8 +10,13 @@ interface InlineIfFields {
   else_?: Node | null;
 }
 
-const block = (loc: Loc, name?: string, body?: Node) =>
-  createNode(T.BLOCK, loc, { name, body });
+interface BlockFields {
+  name?: string;
+  body?: Node;
+}
+
+const block = (loc: Loc, fields: BlockFields = {}) =>
+  createNode(T.BLOCK, loc, { ...fields });
 
 const ifNode = (loc: Loc, fields: InlineIfFields = {}) =>
   createNode(T.IF, loc, { else_: null, ...fields });
@@ -61,14 +66,24 @@ const fromImportNode = (loc: Loc, fields: FromImportFields) =>
     names: fields.names ?? nodeList(ZERO_LOC),
   });
 
-const capture = (loc: Loc, body: Node, name: string | null = null): CaptureNode =>
-  createNode(T.CAPTURE, loc, { body, name });
+interface CaptureFields {
+  body: Node;
+  name?: string | null;
+}
+
+const capture = (loc: Loc, fields: CaptureFields): CaptureNode =>
+  createNode(T.CAPTURE, loc, { name: null, ...fields });
 
 const execNode = (loc: Loc, expr: Node) =>
   createNode(T.EXEC, loc, { expr });
 
-const scopeNode = (loc: Loc, assignments: readonly Node[] = [], body: Node | null = null) =>
-  createNode(T.SCOPE, loc, { assignments, body });
+interface ScopeFields {
+  assignments?: readonly Node[];
+  body?: Node | null;
+}
+
+const scopeNode = (loc: Loc, fields: ScopeFields = {}) =>
+  createNode(T.SCOPE, loc, { assignments: [], body: null, ...fields });
 
 interface SwitchFields {
   expr: Node;
@@ -83,17 +98,32 @@ const switchNode = (loc: Loc, fields: SwitchFields) =>
     default: fields.default_ ?? null,
   });
 
-const caseNode = (loc: Loc, cond: Node, body: Node) =>
-  createNode(T.CASE, loc, { cond, body });
+interface CaseFields {
+  cond: Node;
+  body: Node;
+}
+
+const caseNode = (loc: Loc, fields: CaseFields) =>
+  createNode(T.CASE, loc, { ...fields });
 
 const extendsNode = (loc: Loc, template?: Node) =>
   createNode(T.EXTENDS, loc, { template });
 
-const include = (loc: Loc, template?: Node, ignoreMissing: boolean | null = null) =>
-  createNode(T.INCLUDE, loc, { template, ignoreMissing });
+interface IncludeFields {
+  template?: Node;
+  ignoreMissing?: boolean | null;
+}
 
-const superNode = (loc: Loc, blockName: string, sym: Node | null = null) =>
-  createNode(T.SUPER, loc, { blockName, symbol: sym });
+const include = (loc: Loc, fields: IncludeFields = {}) =>
+  createNode(T.INCLUDE, loc, { ignoreMissing: null, ...fields });
+
+interface SuperFields {
+  blockName: string;
+  sym?: Node | null;
+}
+
+const superNode = (loc: Loc, fields: SuperFields) =>
+  createNode(T.SUPER, loc, { blockName: fields.blockName, symbol: fields.sym ?? null });
 
 interface MatchFields {
   expr: Node;
@@ -104,8 +134,14 @@ interface MatchFields {
 const match = (loc: Loc, fields: MatchFields): MatchNode =>
   createNode(T.MATCH, loc, { cases: [], default: null, ...fields });
 
-const when = (loc: Loc, pattern: Node, body: Node, guard: Node | null = null): WhenNode =>
-  createNode(T.WHEN, loc, { pattern, guard, body });
+interface WhenFields {
+  pattern: Node;
+  body: Node;
+  guard?: Node | null;
+}
+
+const when = (loc: Loc, fields: WhenFields): WhenNode =>
+  createNode(T.WHEN, loc, { pattern: fields.pattern, guard: fields.guard ?? null, body: fields.body });
 
 interface RenderFields {
   callExpr: Node;
@@ -174,4 +210,4 @@ export {
   match, when, renderNode,
   callExtension, callExtensionAsync,
 };
-export type { InlineIfFields, ForFields, ComponentFields, ImportFields, FromImportFields, SwitchFields, MatchFields, RenderFields, CallExtensionFields };
+export type { InlineIfFields, ForFields, ComponentFields, ImportFields, FromImportFields, SwitchFields, MatchFields, RenderFields, CallExtensionFields, BlockFields, CaptureFields, ScopeFields, CaseFields, IncludeFields, SuperFields, WhenFields };

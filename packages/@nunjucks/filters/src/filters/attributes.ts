@@ -1,7 +1,7 @@
 import { reduce } from 'remeda';
 import { hasOwn } from '@nunjucks/shared';
 
-export const _prepareAttributeParts = (attr: string | number | null | undefined): (string | number)[] => {
+export const prepareAttributeParts = (attr: string | number | null | undefined): (string | number)[] => {
   if (attr == null) { return []; }
   if (typeof attr === 'string') {
     return attr.split('.');
@@ -12,13 +12,13 @@ export const _prepareAttributeParts = (attr: string | number | null | undefined)
 export const getAttrGetter = (
   attribute: string | number,
 ): ((item: Record<string, unknown>) => unknown) => {
-  const parts = _prepareAttributeParts(attribute);
+  const parts = prepareAttributeParts(attribute);
   return (item: Record<string, unknown>): unknown =>
     reduce(
       parts,
-      (_item, part) => {
-        if (_item !== null && typeof _item === 'object' && hasOwn(_item as Record<string, unknown>, String(part))) {
-          return (_item as Record<string, unknown>)[part];
+      (current, part) => {
+        if (current !== null && typeof current === 'object' && hasOwn(current as Record<string, unknown>, String(part))) {
+          return (current as Record<string, unknown>)[part];
         }
         return undefined;
       },

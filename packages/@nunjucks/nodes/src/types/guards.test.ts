@@ -59,21 +59,21 @@ describe('nodes/types/guards', () => {
 
   describe('isFunCall', () => {
     test('returns true for funCall node', () => {
-      expect(isFunCall(funCall(ZERO_LOC, symbol(ZERO_LOC, 'fn'), []))).toBe(true);
+      expect(isFunCall(funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'fn'), args: [] }))).toBe(true);
     });
 
     test('returns false for lookupVal node', () => {
-      expect(isFunCall(lookupVal(ZERO_LOC, symbol(ZERO_LOC, 'x'), literal(ZERO_LOC, 'y')))).toBe(false);
+      expect(isFunCall(lookupVal(ZERO_LOC, { target: symbol(ZERO_LOC, 'x'), val: literal(ZERO_LOC, 'y') }))).toBe(false);
     });
   });
 
   describe('isLookupVal', () => {
     test('returns true for lookupVal node', () => {
-      expect(isLookupVal(lookupVal(ZERO_LOC, symbol(ZERO_LOC, 'x'), literal(ZERO_LOC, 'y')))).toBe(true);
+      expect(isLookupVal(lookupVal(ZERO_LOC, { target: symbol(ZERO_LOC, 'x'), val: literal(ZERO_LOC, 'y') }))).toBe(true);
     });
 
     test('returns false for funCall node', () => {
-      expect(isLookupVal(funCall(ZERO_LOC, symbol(ZERO_LOC, 'fn'), []))).toBe(false);
+      expect(isLookupVal(funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'fn'), args: [] }))).toBe(false);
     });
   });
 
@@ -99,7 +99,7 @@ describe('nodes/types/guards', () => {
 
   describe('isPair', () => {
     test('returns true for pair node', () => {
-      expect(isPair(pair(ZERO_LOC, literal(ZERO_LOC, 'key'), literal(ZERO_LOC, 'val')))).toBe(true);
+      expect(isPair(pair(ZERO_LOC, { key: literal(ZERO_LOC, 'key'), val: literal(ZERO_LOC, 'val') }))).toBe(true);
     });
 
     test('returns false for literal node', () => {
@@ -140,7 +140,7 @@ describe('nodes/types/guards', () => {
 
   describe('isBlock', () => {
     test('returns true for block node', () => {
-      expect(isBlock(block(ZERO_LOC, 'b', templateData(ZERO_LOC, '')))).toBe(true);
+      expect(isBlock(block(ZERO_LOC, { name: 'b', body: templateData(ZERO_LOC, '') }))).toBe(true);
     });
 
     test('returns false for literal node', () => {

@@ -1,6 +1,7 @@
 import { T, createNode } from './internal.ts';
 import type { Loc } from '@nunjucks/shared';
 import type { Node, NodeOf, NodeType } from '../types/index.ts';
+import type { BinaryFields } from './operations.ts';
 
 const createNodeWithChildren = <K extends NodeType>(nodeType: K, loc: Loc, children: readonly Node[] = []): NodeOf<K> =>
   createNode(nodeType, loc, { children: [...children] });
@@ -20,15 +21,32 @@ const hole = (loc: Loc) => createNode(T.HOLE, loc);
 const group = (loc: Loc, children: readonly Node[] = []) => createNodeWithChildren(T.GROUP, loc, children);
 const array = (loc: Loc, children: readonly Node[] = []) => createNodeWithChildren(T.ARRAY, loc, children);
 const dict = (loc: Loc, children: readonly Node[] = []) => createNodeWithChildren(T.DICT, loc, children);
-const pair = (loc: Loc, key: Node | string, val: Node) => createNode(T.PAIR, loc, { key, value: val });
-const spread = (loc: Loc, argument: Node) => createNode(T.SPREAD, loc, { argument });
-const walrus = (loc: Loc, target: Node, val: Node) => createNode(T.WALRUS, loc, { target, value: val });
+
+interface PairFields {
+  key: Node | string;
+  val: Node;
+}
+
+const pair = (loc: Loc, fields: PairFields) => createNode(T.PAIR, loc, { key: fields.key, value: fields.val });
+
+interface SpreadFields {
+  argument: Node;
+}
+
+const spread = (loc: Loc, fields: SpreadFields) => createNode(T.SPREAD, loc, { ...fields });
+
+interface WalrusFields {
+  target: Node;
+  val: Node;
+}
+
+const walrus = (loc: Loc, fields: WalrusFields) => createNode(T.WALRUS, loc, { target: fields.target, value: fields.val });
 
 const templateLiteral = (loc: Loc, quasis: ({ type: 'template'; value: string } | { type: 'expression'; node: Node })[] = []) => createNode(T.TEMPLATE_LITERAL, loc, { quasis });
 
 const keywordArgs = (loc: Loc, children: readonly Node[] = []) => createNodeWithChildren(T.KEYWORD_ARGS, loc, children);
 
-const range = (loc: Loc, left: Node, right: Node) => createNode(T.RANGE, loc, { left, right });
+const range = (loc: Loc, fields: BinaryFields) => createNode(T.RANGE, loc, { ...fields });
 
 export {
   node, value, nodeList, output, root,
@@ -38,3 +56,4 @@ export {
   templateLiteral, keywordArgs,
   range,
 };
+export type { PairFields, SpreadFields, WalrusFields };

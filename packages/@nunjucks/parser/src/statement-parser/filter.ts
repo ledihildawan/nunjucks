@@ -18,17 +18,19 @@ export const parseFilterStatement = (parserContext: ParserContext): Node => {
   advanceAfterBlockEnd(parserContext, String(filterTok.value));
   const body = capture(
     loc(name),
-    parseUntilBlocks(parserContext, 'endfilter')
+    { body: parseUntilBlocks(parserContext, 'endfilter') }
   );
   advanceAfterBlockEnd(parserContext);
 
   const node = pipe(
     loc(name),
-    name,
-    nodeList(
-      loc(name),
-      [body, ...args]
-    ).children
+    {
+      name,
+      args: nodeList(
+        loc(name),
+        [body, ...args]
+      ).children,
+    }
   );
 
   return output(

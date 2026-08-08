@@ -20,7 +20,7 @@ const makeCompiler = () => {
 describe('compilePipeForward', () => {
   test('emits env.getFilter with filter name and location', () => {
     const c = makeCompiler();
-    const node = pipe(loc({ lineno: 3, colno: 7 }), symbol(loc({ lineno: 3, colno: 7 }), 'upper'), [{ mock: 'ARG' } as never]);
+    const node = pipe(loc({ lineno: 3, colno: 7 }), { name: symbol(loc({ lineno: 3, colno: 7 }), 'upper'), args: [{ mock: 'ARG' } as never] });
     compilePipeForward(asCompiler(c), node as never, frame);
     const joined = c.emitted.join('');
     expect(joined).toContain('env.getFilter("upper", 3, 7)');
@@ -31,7 +31,7 @@ describe('compilePipeForward', () => {
     const c = makeCompiler();
     let assertedType = '';
     const c2 = { ...c, assertType: (_n: unknown, ...types: string[]) => { assertedType = types.join(','); } };
-    const node = pipe(loc({ lineno: 1, colno: 1 }), symbol(loc({ lineno: 1, colno: 1 }), 'lower'), []);
+    const node = pipe(loc({ lineno: 1, colno: 1 }), { name: symbol(loc({ lineno: 1, colno: 1 }), 'lower'), args: [] });
     compilePipeForward(asCompiler(c2), node as never, frame);
     expect(assertedType).toBe('symbol');
   });
@@ -39,7 +39,7 @@ describe('compilePipeForward', () => {
   test('throws when callee is not a symbol', () => {
     const c = makeCompiler();
     const failing = { ...c, assertType: () => { throw new Error('assertType: invalid type'); } };
-    const node = pipe(loc({ lineno: 1, colno: 1 }), literal(loc({ lineno: 1, colno: 1 }), 'x'), []);
+    const node = pipe(loc({ lineno: 1, colno: 1 }), { name: literal(loc({ lineno: 1, colno: 1 }), 'x'), args: [] });
     expect(() => compilePipeForward(asCompiler(failing), node as never, frame)).toThrow('assertType');
   });
 });

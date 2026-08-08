@@ -27,3 +27,5 @@ export { hasOwn, isNonNullish, isFunction, isString, isArray, isPlainObject, isK
 export type { NodeLocation, DomPurifyConfig } from './types.ts';
 export { loc, ZERO_LOC } from './loc.ts';
 export type { Loc } from './loc.ts';
+export { ok, err, isOk, isErr, map, flatMap, mapErr, getOrElse, fromThrowable } from './result.ts';
+export type { Ok, Err, Result } from './result.ts';

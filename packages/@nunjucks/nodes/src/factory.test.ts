@@ -23,21 +23,21 @@ describe('factory: node creation', () => {
   test('add creates binary op node', () => {
     const left = literal(ZERO_LOC, 1);
     const right = literal(ZERO_LOC, 2);
-    const n = add(ZERO_LOC, left, right);
+    const n = add(ZERO_LOC, { left, right });
     expect(n.type).toBe('add');
     expect(n.operator).toBe('+');
   });
 
   test('block creates block node with name and body', () => {
     const body = output(ZERO_LOC, [templateData(ZERO_LOC, 'hi')]);
-    const n = block(ZERO_LOC, 'content', body);
+    const n = block(ZERO_LOC, { name: 'content', body });
     expect(n.type).toBe('block');
     expect(n.name).toBe('content');
   });
 
   test('funCall creates call node', () => {
     const name = symbol(ZERO_LOC, 'greet');
-    const n = funCall(ZERO_LOC, name, []);
+    const n = funCall(ZERO_LOC, { name, args: [] });
     expect(n.type).toBe('funCall');
     expect(n.args).toEqual([]);
   });
@@ -45,7 +45,7 @@ describe('factory: node creation', () => {
   test('lookupVal creates lookup node', () => {
     const target = symbol(ZERO_LOC, 'obj');
     const val = literal(ZERO_LOC, 'key');
-    const n = lookupVal(ZERO_LOC, target, val);
+    const n = lookupVal(ZERO_LOC, { target, val });
     expect(n.type).toBe('lookupVal');
   });
 
@@ -73,18 +73,18 @@ describe('type guards', () => {
   });
 
   test('isBlock narrows', () => {
-    const n = block(ZERO_LOC, 'x', output(ZERO_LOC, []));
+    const n = block(ZERO_LOC, { name: 'x', body: output(ZERO_LOC, []) });
     expect(isBlock(n)).toBe(true);
     expect(isBlock(literal(ZERO_LOC, 1))).toBe(false);
   });
 
   test('isFunCall narrows', () => {
-    const n = funCall(ZERO_LOC, symbol(ZERO_LOC, 'f'), []);
+    const n = funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'f'), args: [] });
     expect(isFunCall(n)).toBe(true);
   });
 
   test('isLookupVal narrows', () => {
-    const n = lookupVal(ZERO_LOC, symbol(ZERO_LOC, 'x'), literal(ZERO_LOC, 'y'));
+    const n = lookupVal(ZERO_LOC, { target: symbol(ZERO_LOC, 'x'), val: literal(ZERO_LOC, 'y') });
     expect(isLookupVal(n)).toBe(true);
   });
 });

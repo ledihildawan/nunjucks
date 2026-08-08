@@ -14,7 +14,7 @@ export const parseRenderBlock = (parserContext: ParserContext): Node => {
   }
 
   const parsed = parseExpression(parserContext);
-  const callExpr = isFunCall(parsed) ? parsed : funCall(loc(tag), parsed);
+  const callExpr = isFunCall(parsed) ? parsed : funCall(loc(tag), { name: parsed });
   advanceAfterBlockEnd(parserContext, 'render');
 
   const { defaultParts, namedSlots, implicitSlots } = parseSlottedBody(parserContext, 'endrender');

@@ -64,12 +64,12 @@ describe('compileSymbol', () => {
 describe('compilePair', () => {
   test('string key emits literal key', () => {
     const c = makeCompiler();
-    compilePair(asCompiler(c), pair(loc({ lineno: 1, colno: 1 }), symbol(loc({ lineno: 1, colno: 1 }), 'a'), { mock: 'V' } as never), frame);
+    compilePair(asCompiler(c), pair(loc({ lineno: 1, colno: 1 }), { key: symbol(loc({ lineno: 1, colno: 1 }), 'a'), val: { mock: 'V' } as never }), frame);
     expect(c.emitted.join('')).toBe('"a": V');
   });
   test('non-string non-symbol key fails', () => {
     const c = makeCompiler();
-    expect(() => compilePair(asCompiler(c), pair(loc({ lineno: 1, colno: 1 }), symbol(loc({ lineno: 1, colno: 1 }), 'a'), spread(loc({ lineno: 1, colno: 1 }), symbol(loc({ lineno: 1, colno: 1 }), 's')) as never) as never, frame))
+    expect(() => compilePair(asCompiler(c), pair(loc({ lineno: 1, colno: 1 }), { key: symbol(loc({ lineno: 1, colno: 1 }), 'a'), val: spread(loc({ lineno: 1, colno: 1 }), { argument: symbol(loc({ lineno: 1, colno: 1 }), 's') }) as never }) as never, frame))
       .not.toThrow();
   });
 });
@@ -85,7 +85,7 @@ describe('compileKeywordArgs', () => {
 describe('compileSpread', () => {
   test('emits ... before argument', () => {
     const c = makeCompiler();
-    compileSpread(asCompiler(c), spread(loc({ lineno: 1, colno: 1 }), symbol(loc({ lineno: 1, colno: 1 }), 'xs')), frame);
+    compileSpread(asCompiler(c), spread(loc({ lineno: 1, colno: 1 }), { argument: symbol(loc({ lineno: 1, colno: 1 }), 'xs') }), frame);
     expect(c.emitted.join('')).toBe('..."xs"');
   });
 });

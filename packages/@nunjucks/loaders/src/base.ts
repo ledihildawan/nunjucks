@@ -1,5 +1,3 @@
-import EventEmitter from 'node:events';
-
 export const LoaderSymbol = Symbol('Loader');
 
 export interface Loader {
@@ -8,21 +6,24 @@ export interface Loader {
   emit: (event: string, ...args: unknown[]) => void;
 }
 
-export const createLoader = (): Loader => {
-  const emitter = new EventEmitter();
+type Listener = (...args: unknown[]) => void;
 
-  const loader: Loader = {
+export const createLoader = (): Loader => {
+  const listeners: Record<string, Set<Listener>> = {};
+
+  return {
     [LoaderSymbol]: true,
 
-    on(event: string, handler: (...args: unknown[]) => void) {
-      emitter.on(event, handler);
+    on(event: string, handler: Listener): void {
+      const set = listeners[event] ?? new Set<Listener>();
+      listeners[event] = set;
+      set.add(handler);
     },
-    emit(event: string, ...args: unknown[]) {
-      emitter.emit(event, ...args);
+
+    emit(event: string, ...args: unknown[]): void {
+      listeners[event]?.forEach((handler) => { handler(...args); });
     },
   };
-
-  return loader;
 };
 
 export const isLoader = (value: unknown): value is Loader =>

@@ -1,10 +1,9 @@
-import { isArray } from 'remeda';
-import { readFile, stat } from 'node:fs/promises';
-import { watch, type FSWatcher } from 'node:fs';
+import { isArray, forEach } from 'remeda';
+import { readFile, stat, realpath } from 'node:fs/promises';
+import { watch, type FSWatcher, type Stats } from 'node:fs';
 import path from 'node:path';
 import { createLoader, type Loader } from './base.ts';
-import { getError } from '@nunjucks/log';
-import { createLog } from '@nunjucks/log';
+import { getError, createLog } from '@nunjucks/log';
 
 const normalizeSearchPaths = (searchPaths: string | string[] | undefined): string[] => {
   if (!searchPaths) {
@@ -15,8 +14,6 @@ const normalizeSearchPaths = (searchPaths: string | string[] | undefined): strin
   }
   return [path.normalize(searchPaths)];
 };
-
-const isPathWithinBase = (basePath: string) => (filePath: string) => filePath.startsWith(basePath);
 
 const resolveFromSearchPath = (name: string) => (searchPath: string) => {
   const basePath = path.resolve(searchPath);
@@ -44,40 +41,55 @@ const throwBasePathNotFoundError = (basePath: string, baseErr: unknown): never =
   throw makeFilesystemError(basePath, message);
 };
 
-const checkFileExists = async (fullPath: string): Promise<void> => {
-  const fileStat = await stat(fullPath);
-  if (fileStat.isDirectory()) {
-    throwDirectoryError(fullPath);
-  }
+const containsNullByte = (name: string): boolean => name.includes('\0');
+
+const isWithinBase = (basePath: string, fullPath: string): boolean => {
+  const relative = path.relative(basePath, fullPath);
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
 };
 
-const existsAndWithinBase = (basePath: string) => async ({ fullPath }: { fullPath: string }): Promise<boolean> => {
-  if (!isPathWithinBase(basePath)(fullPath)) { return false; }
+const resolveRealPaths = async (basePath: string, fullPath: string): Promise<{ realBase: string; realFull: string }> => {
+  const [realBase, realFull] = await Promise.all([realpath(basePath), realpath(fullPath)]);
+  return { realBase, realFull };
+};
 
+const existsAndWithinBase = async (basePath: string, fullPath: string): Promise<boolean> => {
+  let fileStat: Stats;
   try {
-    await checkFileExists(fullPath);
-    return true;
+    fileStat = await stat(fullPath);
   } catch (err: unknown) {
     if (isFileNotFoundError(err)) {
       try {
         await stat(basePath);
         return false;
-      } catch {
-        throwBasePathNotFoundError(basePath, err);
+      } catch (baseErr) {
+        throwBasePathNotFoundError(basePath, baseErr);
       }
     }
     throw makeFilesystemError(fullPath, String(err));
   }
+
+  if (fileStat.isDirectory()) {
+    throwDirectoryError(fullPath);
+  }
+
+  // WHY: containment is checked on realpath-resolved values so symlinks inside the base that point outside are rejected; the earlier startsWith check could be defeated by a sibling directory sharing a name prefix (e.g. /app/templates vs /app/templates-secret).
+  try {
+    const { realBase, realFull } = await resolveRealPaths(basePath, fullPath);
+    return isWithinBase(realBase, realFull);
+  } catch {
+    return false;
+  }
 };
 
-const findFileInSearchPaths = async (searchPaths: string[], name: string): Promise<string | null> => {
-  for (const searchPath of searchPaths) {
-    const { basePath, fullPath } = resolveFromSearchPath(name)(searchPath);
-    if (await existsAndWithinBase(basePath)({ fullPath })) {
-      return fullPath;
-    }
+const findFileInSearchPaths = async (searchPaths: readonly string[], name: string): Promise<string | null> => {
+  const [first, ...rest] = searchPaths;
+  if (first === undefined) { return null; }
+  const { basePath, fullPath } = resolveFromSearchPath(name)(first);
+  if (await existsAndWithinBase(basePath, fullPath)) {
+    return fullPath;
   }
-  return null;
+  return findFileInSearchPaths(rest, name);
 };
 
 const readFileSource = async (fullPath: string): Promise<FileSystemLoaderSource | null> => {
@@ -94,23 +106,16 @@ const readFileSource = async (fullPath: string): Promise<FileSystemLoaderSource 
 
 const isFileChangeEvent = (eventType: string) => eventType === 'change' || eventType === 'rename';
 
-interface FileSystemLoaderExtended {
-  pathsToNames: Record<string, string>;
-  watchEnabled: boolean;
-  async: true;
-  watchedFiles: Map<string, FSWatcher>;
-  searchPaths: string[];
-  emit: (event: string, ...args: unknown[]) => void;
-  unwatchFile: (filePath: string) => void;
-}
-
-const createWatchHandler = (loader: FileSystemLoaderExtended, filePath: string) => (eventType: string, filename: string | null) => {
+const createWatchHandler = (
+  filePath: string,
+  emit: (event: string, ...args: unknown[]) => void,
+  onRename: (filePath: string) => void,
+) => (eventType: string, filename: string | null) => {
   if (!isFileChangeEvent(eventType)) { return; }
 
-  const name = filename ?? filePath;
-  loader.emit('update', name, filePath);
+  emit('update', filename ?? filePath, filePath);
 
-  if (eventType === 'rename') { loader.unwatchFile(filePath); }
+  if (eventType === 'rename') { onRename(filePath); }
 };
 
 export interface FileSystemLoaderSource {
@@ -134,54 +139,57 @@ export interface FileSystemLoader extends Loader {
   unwatchAll: () => void;
 }
 
-const setupLoaderGetSource = (loader: FileSystemLoader) => {
-  loader.getSource = async (name: string): Promise<FileSystemLoaderSource | null> => {
-    const fullPath = await findFileInSearchPaths(loader.searchPaths, name);
-    if (!fullPath) { return null; }
+export const createFileSystemLoader = (searchPaths: string | string[] | undefined, options: FileSystemLoaderOptions = {}): FileSystemLoader => {
+  const base = createLoader();
+  const normalizedSearchPaths = normalizeSearchPaths(searchPaths);
+  const watchedFiles = new Map<string, FSWatcher>();
+  const pathsToNames: Record<string, string> = {};
+  const watchEnabled = Boolean(options.watch);
 
-    loader.pathsToNames[fullPath] = name;
-    if (loader.watchEnabled) { loader.watchFile(fullPath); }
-
-    const source = await readFileSource(fullPath);
-    loader.emit('load', name, source);
-    return source;
-  };
-};
-
-const setupLoaderWatch = (loader: FileSystemLoader) => {
-  loader.watchFile = (filePath: string): void => {
-    if (loader.watchedFiles.has(filePath)) { return; }
-
-    const watcher = watch(filePath, createWatchHandler(loader, filePath));
-    loader.watchedFiles.set(filePath, watcher);
-  };
-
-  loader.unwatchFile = (filePath: string): void => {
-    const watcher = loader.watchedFiles.get(filePath);
+  const unwatchFile = (filePath: string): void => {
+    const watcher = watchedFiles.get(filePath);
     if (watcher) {
       watcher.close();
-      loader.watchedFiles.delete(filePath);
+      watchedFiles.delete(filePath);
     }
   };
 
-  loader.unwatchAll = (): void => {
-    for (const watcher of loader.watchedFiles.values()) {
-      watcher.close();
-    }
-    loader.watchedFiles.clear();
+  const watchFile = (filePath: string): void => {
+    if (watchedFiles.has(filePath)) { return; }
+
+    const watcher = watch(filePath, createWatchHandler(filePath, base.emit, unwatchFile));
+    watchedFiles.set(filePath, watcher);
   };
-};
 
-export const createFileSystemLoader = (searchPaths: string | string[] | undefined, options: FileSystemLoaderOptions = {}): FileSystemLoader => {
-  const loader = createLoader() as FileSystemLoader;
-  loader.pathsToNames = {};
-  loader.watchEnabled = Boolean(options.watch);
-  loader.async = true;
-  loader.watchedFiles = new Map();
-  loader.searchPaths = normalizeSearchPaths(searchPaths);
+  const unwatchAll = (): void => {
+    forEach(Array.from(watchedFiles.values()), (watcher) => watcher.close());
+    watchedFiles.clear();
+  };
 
-  setupLoaderGetSource(loader);
-  setupLoaderWatch(loader);
+  const getSource = async (name: string): Promise<FileSystemLoaderSource | null> => {
+    if (containsNullByte(name)) { return null; }
 
-  return loader;
+    const fullPath = await findFileInSearchPaths(normalizedSearchPaths, name);
+    if (!fullPath) { return null; }
+
+    pathsToNames[fullPath] = name;
+    if (watchEnabled) { watchFile(fullPath); }
+
+    const source = await readFileSource(fullPath);
+    base.emit('load', name, source);
+    return source;
+  };
+
+  return {
+    ...base,
+    pathsToNames,
+    watchEnabled,
+    async: true,
+    watchedFiles,
+    searchPaths: normalizedSearchPaths,
+    getSource,
+    watchFile,
+    unwatchFile,
+    unwatchAll,
+  };
 };

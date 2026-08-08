@@ -113,9 +113,9 @@ const parseUnary = (parserContext: ParserContext, noPipes?: boolean): Node => {
   } else if (skipValue(parserContext, TOKEN_OPERATOR, '~')) {
     node = bitwiseNot(loc(tok), parseUnary(parserContext, true));
   } else if (skipValue(parserContext, TOKEN_OPERATOR, '++')) {
-    node = increment(loc(tok), parseUnary(parserContext, true), false);
+    node = increment(loc(tok), { target: parseUnary(parserContext, true), isPostfix: false });
   } else if (skipValue(parserContext, TOKEN_OPERATOR, '--')) {
-    node = decrement(loc(tok), parseUnary(parserContext, true), false);
+    node = decrement(loc(tok), { target: parseUnary(parserContext, true), isPostfix: false });
   } else {
     node = parsePrimary(parserContext);
   }

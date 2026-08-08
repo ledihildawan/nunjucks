@@ -11,65 +11,112 @@ interface SliceFields {
 const slice = (loc: Loc, fields: SliceFields): SliceNode =>
   createNode(T.SLICE, loc, { ...fields });
 
-const funCall = (loc: Loc, name: Node | string, args: readonly Node[] = []): CallNode =>
-  createNode(T.FUN_CALL, loc, { name, args });
+interface CallFields {
+  name: Node | string;
+  args?: readonly Node[];
+}
 
-const pipe = (loc: Loc, name: Node | string, args: readonly Node[] = []): CallNode =>
-  createNode(T.PIPE, loc, { name, args });
+const funCall = (loc: Loc, fields: CallFields): CallNode =>
+  createNode(T.FUN_CALL, loc, { args: [], ...fields });
 
-const lookupVal = (loc: Loc, target: Node, val: Node): LookupNode =>
-  createNode(T.LOOKUP_VAL, loc, { target, val });
+const pipe = (loc: Loc, fields: CallFields): CallNode =>
+  createNode(T.PIPE, loc, { args: [], ...fields });
 
-const optionalChain = (loc: Loc, target: Node, val: Node): LookupNode =>
-  createNode(T.OPTIONAL_CHAIN, loc, { target, val });
+const optionalCall = (loc: Loc, fields: CallFields): CallNode =>
+  createNode(T.OPTIONAL_CALL, loc, { args: [], ...fields });
 
-const optionalCall = (loc: Loc, name: Node | string, args: readonly Node[] = []): CallNode =>
-  createNode(T.OPTIONAL_CALL, loc, { name, args });
+interface LookupFields {
+  target: Node;
+  val: Node;
+}
 
-const add = (loc: Loc, left: Node, right: Node): BinaryOpNode => createNode(T.ADD, loc, { left, right, operator: '+' });
-const sub = (loc: Loc, left: Node, right: Node): BinaryOpNode => createNode(T.SUB, loc, { left, right, operator: '-' });
-const mul = (loc: Loc, left: Node, right: Node): BinaryOpNode => createNode(T.MUL, loc, { left, right, operator: '*' });
-const div = (loc: Loc, left: Node, right: Node): BinaryOpNode => createNode(T.DIV, loc, { left, right, operator: '/' });
-const floorDiv = (loc: Loc, left: Node, right: Node): BinaryOpNode => createNode(T.FLOOR_DIV, loc, { left, right, operator: '//' });
-const mod = (loc: Loc, left: Node, right: Node): BinaryOpNode => createNode(T.MOD, loc, { left, right, operator: '%' });
-const pow = (loc: Loc, left: Node, right: Node): BinaryOpNode => createNode(T.POW, loc, { left, right, operator: '**' });
-const concat = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.CONCAT, loc, { left, right });
+const lookupVal = (loc: Loc, fields: LookupFields): LookupNode =>
+  createNode(T.LOOKUP_VAL, loc, { ...fields });
+
+const optionalChain = (loc: Loc, fields: LookupFields): LookupNode =>
+  createNode(T.OPTIONAL_CHAIN, loc, { ...fields });
+
+interface BinaryFields {
+  left: Node;
+  right: Node;
+}
+
+const add = (loc: Loc, fields: BinaryFields): BinaryOpNode => createNode(T.ADD, loc, { ...fields, operator: '+' });
+const sub = (loc: Loc, fields: BinaryFields): BinaryOpNode => createNode(T.SUB, loc, { ...fields, operator: '-' });
+const mul = (loc: Loc, fields: BinaryFields): BinaryOpNode => createNode(T.MUL, loc, { ...fields, operator: '*' });
+const div = (loc: Loc, fields: BinaryFields): BinaryOpNode => createNode(T.DIV, loc, { ...fields, operator: '/' });
+const floorDiv = (loc: Loc, fields: BinaryFields): BinaryOpNode => createNode(T.FLOOR_DIV, loc, { ...fields, operator: '//' });
+const mod = (loc: Loc, fields: BinaryFields): BinaryOpNode => createNode(T.MOD, loc, { ...fields, operator: '%' });
+const pow = (loc: Loc, fields: BinaryFields): BinaryOpNode => createNode(T.POW, loc, { ...fields, operator: '**' });
+const concat = (loc: Loc, fields: BinaryFields): BinaryNode => createNode(T.CONCAT, loc, { ...fields });
 
 const not = (loc: Loc, target: Node): UnaryOpNode => createNode(T.NOT, loc, { target, operator: 'not' });
 const neg = (loc: Loc, target: Node): UnaryOpNode => createNode(T.NEG, loc, { target, operator: '-' });
 const pos = (loc: Loc, target: Node): UnaryOpNode => createNode(T.POS, loc, { target, operator: '+' });
 
-const and = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.AND, loc, { left, right });
-const or = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.OR, loc, { left, right });
-const nullishCoalesce = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.NULLISH_COALESCE, loc, { left, right });
+const and = (loc: Loc, fields: BinaryFields): BinaryNode => createNode(T.AND, loc, { ...fields });
+const or = (loc: Loc, fields: BinaryFields): BinaryNode => createNode(T.OR, loc, { ...fields });
+const nullishCoalesce = (loc: Loc, fields: BinaryFields): BinaryNode => createNode(T.NULLISH_COALESCE, loc, { ...fields });
 
-const compare = (loc: Loc, expr: Node, ops: readonly Node[] = []) =>
-  createNode(T.COMPARE, loc, { expr, ops });
+interface CompareFields {
+  expr: Node;
+  ops?: readonly Node[];
+}
 
-const compareOperand = (loc: Loc, expr: Node, operator: string) =>
-  createNode(T.COMPARE_OPERAND, loc, { expr, operator });
+const compare = (loc: Loc, fields: CompareFields) =>
+  createNode(T.COMPARE, loc, { ops: [], ...fields });
 
-const bitwiseOr = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.BITWISE_OR, loc, { left, right });
-const bitwiseAnd = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.BITWISE_AND, loc, { left, right });
-const bitwiseXor = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.BITWISE_XOR, loc, { left, right });
-const bitwiseLShift = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.BITWISE_LSHIFT, loc, { left, right });
-const bitwiseRShift = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.BITWISE_RSHIFT, loc, { left, right });
+interface CompareOperandFields {
+  expr: Node;
+  operator: string;
+}
+
+const compareOperand = (loc: Loc, fields: CompareOperandFields) =>
+  createNode(T.COMPARE_OPERAND, loc, { ...fields });
+
+const bitwiseOr = (loc: Loc, fields: BinaryFields): BinaryNode => createNode(T.BITWISE_OR, loc, { ...fields });
+const bitwiseAnd = (loc: Loc, fields: BinaryFields): BinaryNode => createNode(T.BITWISE_AND, loc, { ...fields });
+const bitwiseXor = (loc: Loc, fields: BinaryFields): BinaryNode => createNode(T.BITWISE_XOR, loc, { ...fields });
+const bitwiseLShift = (loc: Loc, fields: BinaryFields): BinaryNode => createNode(T.BITWISE_LSHIFT, loc, { ...fields });
+const bitwiseRShift = (loc: Loc, fields: BinaryFields): BinaryNode => createNode(T.BITWISE_RSHIFT, loc, { ...fields });
 const bitwiseNot = (loc: Loc, target: Node): UnaryNode => createNode(T.BITWISE_NOT, loc, { target });
 
-const increment = (loc: Loc, target: Node, isPostfix: boolean): IncDecNode => createNode(T.INCREMENT, loc, { target, isPostfix });
-const decrement = (loc: Loc, target: Node, isPostfix: boolean): IncDecNode => createNode(T.DECREMENT, loc, { target, isPostfix });
+interface IncDecFields {
+  target: Node;
+  isPostfix: boolean;
+}
+
+const increment = (loc: Loc, fields: IncDecFields): IncDecNode => createNode(T.INCREMENT, loc, { ...fields });
+const decrement = (loc: Loc, fields: IncDecFields): IncDecNode => createNode(T.DECREMENT, loc, { ...fields });
 
 const arrayPattern = (loc: Loc, children: readonly Node[] = []): ChildrenNode => createNode(T.ARRAY_PATTERN, loc, { children: [...children] });
 const objectPattern = (loc: Loc, children: readonly Node[] = []): ChildrenNode => createNode(T.OBJECT_PATTERN, loc, { children: [...children] });
-const patternProperty = (loc: Loc, key: Node | string, val: Node): PairNode => createNode(T.PATTERN_PROPERTY, loc, { key, value: val });
+
+interface PatternPropertyFields {
+  key: Node | string;
+  val: Node;
+}
+
+const patternProperty = (loc: Loc, fields: PatternPropertyFields): PairNode => createNode(T.PATTERN_PROPERTY, loc, { key: fields.key, value: fields.val });
 const restPattern = (loc: Loc, target: Node): RestPatternNode => createNode(T.REST_PATTERN, loc, { target });
-const assignmentPattern = (loc: Loc, target: Node, defaultVal: Node): AssignmentPatternNode => createNode(T.ASSIGNMENT_PATTERN, loc, { target, value: defaultVal });
 
-const isOp = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.IS, loc, { left, right });
-const inNode = (loc: Loc, left: Node, right: Node): BinaryNode => createNode(T.IN, loc, { left, right });
+interface AssignmentPatternFields {
+  target: Node;
+  defaultVal: Node;
+}
 
-const testNode = (loc: Loc, target: Node, name: string): TestNode =>
-  createNode(T.TEST, loc, { target, name });
+const assignmentPattern = (loc: Loc, fields: AssignmentPatternFields): AssignmentPatternNode => createNode(T.ASSIGNMENT_PATTERN, loc, { target: fields.target, value: fields.defaultVal });
+
+const isOp = (loc: Loc, fields: BinaryFields): BinaryNode => createNode(T.IS, loc, { ...fields });
+const inNode = (loc: Loc, fields: BinaryFields): BinaryNode => createNode(T.IN, loc, { ...fields });
+
+interface TestNodeFields {
+  target: Node;
+  name: string;
+}
+
+const testNode = (loc: Loc, fields: TestNodeFields): TestNode =>
+  createNode(T.TEST, loc, { ...fields });
 
 interface TestCallFields {
   target: Node;
@@ -80,8 +127,13 @@ interface TestCallFields {
 const testCallNode = (loc: Loc, fields: TestCallFields): TestCallNode =>
   createNode(T.TEST_CALL, loc, { args: [], ...fields });
 
-const variableDeclaration = (loc: Loc, targets: readonly Node[], val: Node): VariableDeclNode => createNode(T.VARIABLE_DECLARATION, loc, { targets, value: val });
-const variableAssignment = (loc: Loc, targets: readonly Node[], val: Node): VariableDeclNode => createNode(T.VARIABLE_ASSIGNMENT, loc, { targets, value: val });
+interface VariableDeclFields {
+  targets: readonly Node[];
+  val: Node;
+}
+
+const variableDeclaration = (loc: Loc, fields: VariableDeclFields): VariableDeclNode => createNode(T.VARIABLE_DECLARATION, loc, { targets: fields.targets, value: fields.val });
+const variableAssignment = (loc: Loc, fields: VariableDeclFields): VariableDeclNode => createNode(T.VARIABLE_ASSIGNMENT, loc, { targets: fields.targets, value: fields.val });
 
 interface CompoundAssignmentFields {
   targets: Node[];
@@ -103,4 +155,8 @@ export {
   isOp, inNode, testNode, testCallNode,
   variableDeclaration, variableAssignment, compoundAssignment,
 };
-export type { SliceFields, TestCallFields, CompoundAssignmentFields };
+export type {
+  SliceFields, CallFields, LookupFields, BinaryFields, CompareFields, CompareOperandFields,
+  IncDecFields, PatternPropertyFields, AssignmentPatternFields, TestNodeFields, TestCallFields,
+  VariableDeclFields, CompoundAssignmentFields,
+};

@@ -24,7 +24,7 @@ const makeCompiler = () => {
 describe('compileLookupVal', () => {
   test('member lookup emits runtime.memberLookup with parent name', () => {
     const c = makeCompiler();
-    const node = lookupVal(loc({ lineno: 1, colno: 1 }), { mock: 'OBJ' } as never, symbol(loc({ lineno: 2, colno: 2 }), 'key'));
+    const node = lookupVal(loc({ lineno: 1, colno: 1 }), { target: { mock: 'OBJ' } as never, val: symbol(loc({ lineno: 2, colno: 2 }), 'key') });
     compileLookupVal(asCompiler(c), node as never, frame);
     const joined = c.emitted.join('');
     expect(joined).toContain('runtime.memberLookup((OBJ),');
@@ -33,7 +33,7 @@ describe('compileLookupVal', () => {
 
   test('slice value emits runtime.slice with null bounds', () => {
     const c = makeCompiler();
-    const node = lookupVal(loc({ lineno: 1, colno: 1 }), { mock: 'ARR' } as never, slice(loc({ lineno: 2, colno: 2 }), { start: null, stop: null, step: null }));
+    const node = lookupVal(loc({ lineno: 1, colno: 1 }), { target: { mock: 'ARR' } as never, val: slice(loc({ lineno: 2, colno: 2 }), { start: null, stop: null, step: null }) });
     compileLookupVal(asCompiler(c), node as never, frame);
     const joined = c.emitted.join('');
     expect(joined).toContain('runtime.slice((ARR), null, null, null)');
@@ -43,7 +43,7 @@ describe('compileLookupVal', () => {
 describe('compileOptionalChain', () => {
   test('emits runtime.optionalMemberLookup', () => {
     const c = makeCompiler();
-    const node = optionalChain(loc({ lineno: 1, colno: 1 }), { mock: 'OBJ' } as never, symbol(loc({ lineno: 2, colno: 2 }), 'key'));
+    const node = optionalChain(loc({ lineno: 1, colno: 1 }), { target: { mock: 'OBJ' } as never, val: symbol(loc({ lineno: 2, colno: 2 }), 'key') });
     compileOptionalChain(asCompiler(c), node as never, frame);
     const joined = c.emitted.join('');
     expect(joined).toContain('runtime.optionalMemberLookup((OBJ),');
@@ -53,7 +53,7 @@ describe('compileOptionalChain', () => {
 describe('compileOptionalCall', () => {
   test('emits a null check around the callable', () => {
     const c = makeCompiler();
-    const node = funCall(loc({ lineno: 1, colno: 1 }), { mock: 'FN' } as never, [{ mock: 'A' } as never]);
+    const node = funCall(loc({ lineno: 1, colno: 1 }), { name: { mock: 'FN' } as never, args: [{ mock: 'A' } as never] });
     compileOptionalCall(asCompiler(c), node as never, frame);
     const joined = c.emitted.join('');
     expect(joined).toContain('== null ? undefined :');
