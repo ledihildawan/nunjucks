@@ -10,21 +10,22 @@ type RawState = {
 };
 
 const skipWhitespaceAfterBlockStart = (state: LexerState): LexerState => {
-  let current = state;
-  while (!isFinished(current) && getChar(current) === ' ') {
-    current = advance(current);
-  }
-  return current;
+  const skip = (current: LexerState): LexerState => {
+    if (isFinished(current) || getChar(current) !== ' ') { return current; }
+    return skip(advance(current));
+  };
+  return skip(state);
 };
 
 const extractTagName = (state: LexerState): { name: string; current: LexerState } => {
-  let name = '';
-  let current = state;
-  while (!isFinished(current) && getChar(current) !== ' ' && getChar(current) !== '%' && getChar(current) !== '}') {
-    name += getChar(current);
-    current = advance(current);
-  }
-  return { name, current };
+  const scan = (current: LexerState, name: string): { name: string; current: LexerState } => {
+    const char = getChar(current);
+    if (isFinished(current) || char === ' ' || char === '%' || char === '}') {
+      return { name, current };
+    }
+    return scan(advance(current), name + char);
+  };
+  return scan(state, '');
 };
 
 const getEndTagName = (name: string): string => (name === 'raw' ? 'endraw' : 'endverbatim');
@@ -33,16 +34,14 @@ const isWhitespaceChar = (char: string): boolean =>
   char === ' ' || char === '\n' || char === '\t' || char === '\r';
 
 const extractTagNameAfterBlockEnd = (beforeEnd: LexerState): { tagName: string; current: LexerState } => {
-  let tagName = '';
-  let current = beforeEnd;
-  while (!isFinished(current) && getChar(current) !== '%' && getChar(current) !== '}') {
-    if (isWhitespaceChar(getChar(current))) {
-      break;
+  const scan = (current: LexerState, tagName: string): { tagName: string; current: LexerState } => {
+    const char = getChar(current);
+    if (isFinished(current) || char === '%' || char === '}' || isWhitespaceChar(char)) {
+      return { tagName, current };
     }
-    tagName += getChar(current);
-    current = advance(current);
-  }
-  return { tagName, current };
+    return scan(advance(current), tagName + char);
+  };
+  return scan(beforeEnd, '');
 };
 
 const processBlockEndTag = (
@@ -87,28 +86,20 @@ const processRawContent = (
   endTagName: string,
   tags: { blockStart: string; blockEnd: string }
 ): RawState => {
-  let content = tags.blockStart + name;
-  let depth = 1;
-  let state = current;
-
-  while (!isFinished(state) && depth > 0) {
+  const scan = (state: LexerState, content: string, depth: number): RawState => {
+    if (isFinished(state) || depth <= 0) {
+      return { content, depth, current: state };
+    }
     if (matches(state, tags.blockEnd)) {
       const result = processBlockEndTag(state, name, endTagName, depth, tags);
       if (result === null) {
-        content += getChar(state);
-        state = advance(state);
-      } else {
-        content += result.content;
-        depth = result.depth;
-        state = result.current;
+        return scan(advance(state), content + getChar(state), depth);
       }
-    } else {
-      content += getChar(state);
-      state = advance(state);
+      return scan(result.current, content + result.content, result.depth);
     }
-  }
-
-  return { content, depth, current: state };
+    return scan(advance(state), content + getChar(state), depth);
+  };
+  return scan(current, tags.blockStart + name, 1);
 };
 
 export const tokenizeRaw: Tokenizer = (state) => {

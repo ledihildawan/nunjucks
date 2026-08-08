@@ -43,17 +43,25 @@ interface HighlightChunk {
   inTag: boolean;
 }
 
+const matchHtmlRule = (rules: SyntaxRule[], rest: string, inTag: boolean): HighlightChunk | null => {
+  if (rules.length === 0) { return null; }
+  const rule = rules[0];
+  if (!rule) { return null; }
+  const matched = rest.match(rule.re)?.[0];
+  if (matched) {
+    const nextInTag = rule.toggle ? (matched === '{{' || matched === '{%') : inTag;
+    return { html: span(rule.type, matched), length: matched.length, inTag: nextInTag };
+  }
+  return matchHtmlRule(rules.slice(1), rest, inTag);
+};
+
 const nextHtmlChunk = (rest: string, inTag: boolean): HighlightChunk => {
   const ws = rest.match(LEADING_WHITESPACE_RE)?.[0];
   if (ws) { return { html: ws, length: ws.length, inTag }; }
 
-  for (const rule of SYNTAX_RULES.filter(r => !r.tagOnly || inTag)) {
-    const matched = rest.match(rule.re)?.[0];
-    if (matched) {
-      const nextInTag = rule.toggle ? (matched === '{{' || matched === '{%') : inTag;
-      return { html: span(rule.type, matched), length: matched.length, inTag: nextInTag };
-    }
-  }
+  const applicableRules = SYNTAX_RULES.filter(r => !r.tagOnly || inTag);
+  const matched = matchHtmlRule(applicableRules, rest, inTag);
+  if (matched) { return matched; }
 
   const plain = rest.match(PLAIN_RUN_RE)?.[0];
   if (plain) { return { html: escapeHtml(plain), length: plain.length, inTag }; }
@@ -63,17 +71,12 @@ const nextHtmlChunk = (rest: string, inTag: boolean): HighlightChunk => {
 
 const highlightHtml = (code: string): string => {
   if (!code) { return ''; }
-  let out = '';
-  let i = 0;
-  let inTag = false;
-  while (i < code.length) {
+  const loop = (i: number, out: string, inTag: boolean): string => {
+    if (i >= code.length) { return out; }
     const chunk = nextHtmlChunk(code.slice(i), inTag);
-    out += chunk.html;
-    i += chunk.length;
-    const { inTag: newInTag } = chunk;
-    inTag = newInTag;
-  }
-  return out;
+    return loop(i + chunk.length, out + chunk.html, chunk.inTag);
+  };
+  return loop(0, '', false);
 };
 
 const JS_RULES: SyntaxRule[] = [
@@ -89,28 +92,33 @@ const JS_RULES: SyntaxRule[] = [
   { type: 'operator', re: /^(?:=>|==|!=|<=|>=|&&|\|\||<|>|\+|-|\*|\/|%|&|\||\^|!|=|\?|:|;|,|\.|\(|\)|\[|\]|\{|\})/u },
 ];
 
+const matchJsRule = (rules: SyntaxRule[], rest: string): HighlightChunk | null => {
+  if (rules.length === 0) { return null; }
+  const rule = rules[0];
+  if (!rule) { return null; }
+  const matched = rest.match(rule.re)?.[0];
+  if (matched) { return { html: span(rule.type, matched), length: matched.length, inTag: false }; }
+  return matchJsRule(rules.slice(1), rest);
+};
+
 const nextJsChunk = (rest: string): HighlightChunk => {
   const ws = rest.match(LEADING_WHITESPACE_RE)?.[0];
   if (ws) { return { html: ws, length: ws.length, inTag: false }; }
 
-  for (const rule of JS_RULES) {
-    const matched = rest.match(rule.re)?.[0];
-    if (matched) { return { html: span(rule.type, matched), length: matched.length, inTag: false }; }
-  }
+  const matched = matchJsRule(JS_RULES, rest);
+  if (matched) { return matched; }
 
   return { html: escapeHtml(rest[0] ?? ''), length: 1, inTag: false };
 };
 
 const highlightJs = (code: string): string => {
   if (!code) { return ''; }
-  let out = '';
-  let i = 0;
-  while (i < code.length) {
+  const loop = (i: number, out: string): string => {
+    if (i >= code.length) { return out; }
     const chunk = nextJsChunk(code.slice(i));
-    out += chunk.html;
-    i += chunk.length;
-  }
-  return out;
+    return loop(i + chunk.length, out + chunk.html);
+  };
+  return loop(0, '');
 };
 
 export { escapeHtml } from '@nunjucks/shared';

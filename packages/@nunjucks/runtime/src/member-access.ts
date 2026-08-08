@@ -91,17 +91,19 @@ export const slice = <T>(source: readonly T[] | string, start: number | null, st
     return source.slice(normalizedStart, normalizedStop);
   }
 
-  const result: T[] = [];
   if (stepValue > 0) {
-    for (let i = normalizedStart; i < normalizedStop; i += stepValue) {
-      result.push(source[i] as T);
-    }
-  } else {
-    for (let i = normalizedStart; i >= 0 && i > normalizedStop; i += stepValue) {
-      result.push(source[i] as T);
-    }
+    const collectForward = (i: number, acc: T[]): readonly T[] => {
+      if (i >= normalizedStop) { return acc; }
+      return collectForward(i + stepValue, [...acc, source[i] as T]);
+    };
+    return collectForward(normalizedStart, []);
   }
-  return result;
+
+  const collectBackward = (i: number, acc: T[]): readonly T[] => {
+    if (i < 0 || i <= normalizedStop) { return acc; }
+    return collectBackward(i + stepValue, [...acc, source[i] as T]);
+  };
+  return collectBackward(normalizedStart, []);
 };
 
 export const nullishCoalesce = <T>(left: T | null | undefined, right: T): T => {

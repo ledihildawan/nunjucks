@@ -1,4 +1,4 @@
-import type { Tokenizer } from '../types.ts';
+import type { Tokenizer, LexerState } from '../types.ts';
 import { getChar, matches, advance } from '../state.ts';
 import { createToken } from '../tokens.ts';
 import { TOKEN_DATA } from '../token-types.ts';
@@ -6,23 +6,15 @@ import { TOKEN_DATA } from '../token-types.ts';
 export const tokenizeTemplateText: Tokenizer = (state) => {
   if (state.inCode) { return null; }
 
-  let text = '';
   const { lineno, colno } = state;
-  let current = state;
-
-  while (current.index < current.str.length) {
-    const char = getChar(current);
-
-    if (
-      matches(current, current.tags.blockStart) ||
-      matches(current, current.tags.variableStart)
-    ) {
-      break;
+  const scan = (current: LexerState, text: string): { current: LexerState; text: string } => {
+    if (current.index >= current.str.length) { return { current, text }; }
+    if (matches(current, current.tags.blockStart) || matches(current, current.tags.variableStart)) {
+      return { current, text };
     }
-
-    text += char;
-    current = advance(current);
-  }
+    return scan(advance(current), text + getChar(current));
+  };
+  const { current, text } = scan(state, '');
 
   if (!text) { return null; }
   return {

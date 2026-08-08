@@ -38,16 +38,14 @@ export const advance = (state: LexerState, n = 1): LexerState => {
     return state;
   }
 
-  let newLineno = lineno;
-  let newColno = colno;
-  for (let i = index; i < newIndex; i++) {
+  const countLines = (i: number, lineNum: number, colNum: number): { lineno: number; colno: number } => {
+    if (i >= newIndex) { return { lineno: lineNum, colno: colNum }; }
     if (str[i] === '\n') {
-      newLineno++;
-      newColno = 0;
-    } else {
-      newColno++;
+      return countLines(i + 1, lineNum + 1, 0);
     }
-  }
+    return countLines(i + 1, lineNum, colNum + 1);
+  };
+  const { lineno: newLineno, colno: newColno } = countLines(index, lineno, colno);
 
   return { ...state, index: newIndex, lineno: newLineno, colno: newColno };
 };

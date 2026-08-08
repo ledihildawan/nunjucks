@@ -1,3 +1,5 @@
+import { reduce } from 'remeda';
+
 export interface Frame {
   variables: Record<string, unknown>;
   parent: Frame | undefined;
@@ -95,21 +97,20 @@ export const createFrame = (parent?: Frame | null, isolateWrites?: boolean, vari
 };
 
 const rebuildChain = (root: Frame, target: Frame, newTargetVariables: Record<string, unknown>): Frame => {
-  const path: Frame[] = [];
-  let cur: Frame | undefined = root;
-  while (cur && cur !== target) {
-    path.push(cur);
-    cur = cur.parent;
-  }
-  if (!cur) { return root; }
+  const collectPath = (cur: Frame | undefined, acc: Frame[]): Frame[] | null => {
+    if (!cur) { return null; }
+    if (cur === target) { return acc; }
+    return collectPath(cur.parent, [...acc, cur]);
+  };
+  const path = collectPath(root, []);
+  if (!path) { return root; }
 
-  let newFrame = createFrame(target.parent, target.isolateWrites, newTargetVariables, target.topLevel);
-  for (let i = path.length - 1; i >= 0; i--) {
-    const node = path[i];
-    if (!node) { continue; }
-    newFrame = createFrame(newFrame, node.isolateWrites, node.variables, node.topLevel);
-  }
-  return newFrame;
+  const baseFrame = createFrame(target.parent, target.isolateWrites, newTargetVariables, target.topLevel);
+  return reduce(
+    [...path].reverse(),
+    (acc, node) => createFrame(acc, node.isolateWrites, node.variables, node.topLevel),
+    baseFrame,
+  );
 };
 
 export const lookup = (frame: Frame, name: string): unknown => frame.lookup(name);

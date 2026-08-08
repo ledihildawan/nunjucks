@@ -1,4 +1,4 @@
-import type { Tokenizer } from '../types.ts';
+import type { Tokenizer, LexerState } from '../types.ts';
 import { getChar, matches, advance, isFinished } from '../state.ts';
 import { createToken } from '../tokens.ts';
 import { TOKEN_COMMENT } from '../token-types.ts';
@@ -6,21 +6,15 @@ import { TOKEN_COMMENT } from '../token-types.ts';
 export const tokenizeComment: Tokenizer = (state) => {
   if (!matches(state, state.tags.commentStart)) { return null; }
 
-  let current = advance(state, state.tags.commentStart.length);
-  let comment = state.tags.commentStart;
-
-  while (!isFinished(current)) {
-    const char = getChar(current);
-
+  const initial = advance(state, state.tags.commentStart.length);
+  const scan = (current: LexerState, comment: string): { current: LexerState; comment: string } => {
+    if (isFinished(current)) { return { current, comment }; }
     if (matches(current, state.tags.commentEnd)) {
-      comment += state.tags.commentEnd;
-      current = advance(current, state.tags.commentEnd.length);
-      break;
+      return { current: advance(current, state.tags.commentEnd.length), comment: comment + state.tags.commentEnd };
     }
-
-    comment += char;
-    current = advance(current);
-  }
+    return scan(advance(current), comment + getChar(current));
+  };
+  const { current, comment } = scan(initial, state.tags.commentStart);
 
   return {
     token: createToken(TOKEN_COMMENT, comment, state.lineno, state.colno),

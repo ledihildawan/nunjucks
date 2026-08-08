@@ -4,16 +4,13 @@ import { advance } from '../state.ts';
 import { createNumberToken } from '../tokens.ts';
 
 const parseDigits = (current: LexerState): { num: string; current: LexerState } => {
-  let num = '';
-  let pos = current;
-  while (
-    pos.index < pos.str.length &&
-    isDigit(pos.str[pos.index] ?? '')
-  ) {
-    num += pos.str[pos.index] ?? '';
-    pos = advance(pos);
-  }
-  return { num, current: pos };
+  const scan = (pos: LexerState, num: string): { num: string; current: LexerState } => {
+    if (pos.index >= pos.str.length || !isDigit(pos.str[pos.index] ?? '')) {
+      return { num, current: pos };
+    }
+    return scan(advance(pos), num + (pos.str[pos.index] ?? ''));
+  };
+  return scan(current, '');
 };
 
 const parseDecimalPart = (current: LexerState): { hasDecimal: boolean; num: string; current: LexerState } => {

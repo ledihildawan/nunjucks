@@ -28,24 +28,19 @@ const handleUnexpectedChar = (state: LexerState): never => {
 const isWhitespace = (char: string | null): boolean =>
   char !== null && WHITESPACE_CHARS.includes(char);
 
-function* lexGenerator(src: string, options: LexerOptions = {}): Generator<Token, void, unknown> {
-  let state = createState(src, options);
-
-  while (state.index < state.str.length) {
-    const result = tokenizers(state);
-
-    if (result) {
-      yield result.token;
-      state = processTokenizerResult(result);
-    } else {
-      const char = getChar(state);
-      if (char && !isWhitespace(char)) {
-        handleUnexpectedChar(state);
-      }
-      state = advance(state);
-    }
+const lexAll = (state: LexerState, tokens: Token[]): Token[] => {
+  if (state.index >= state.str.length) { return tokens; }
+  const result = tokenizers(state);
+  if (result) {
+    tokens.push(result.token);
+    return lexAll(processTokenizerResult(result), tokens);
   }
-}
+  const char = getChar(state);
+  if (char && !isWhitespace(char)) {
+    handleUnexpectedChar(state);
+  }
+  return lexAll(advance(state), tokens);
+};
 
 export const createTokenizer = (src: string, options: LexerOptions = {}): {
   nextToken: () => Token | null;
@@ -53,14 +48,17 @@ export const createTokenizer = (src: string, options: LexerOptions = {}): {
   trimBlocks: boolean;
   lstripBlocks: boolean;
 } => {
-  const generator = lexGenerator(src, options);
+  const tokens = lexAll(createState(src, options), []);
   const tags = createDelimiters(options.tags);
+  let cursor = 0;
 
   return {
     nextToken: (): Token | null => {
-      const result = generator.next();
-      if (result.done) { return null; }
-      return result.value;
+      if (cursor >= tokens.length) { return null; }
+      const token = tokens[cursor];
+      if (!token) { return null; }
+      cursor += 1;
+      return token;
     },
     tags,
     trimBlocks: Boolean(options.trimBlocks),

@@ -72,18 +72,18 @@ const asArrayPattern = (node: Node): Node | null => {
 };
 
 const compileArrayPattern = (destructuringContext: DestructuringContext, pattern: Node, source: string): void => {
-  let i = 0;
   const patternChildren = pattern.children;
   if (!patternChildren) {
     return;
   }
-  for (const child of patternChildren) {
-    const result = handleArrayPatternChild(destructuringContext, child, source, i);
-    i = result.newIndex;
-    if (result.shouldBreak) {
-      break;
-    }
-  }
+  const processChild = (index: number, childIndex: number): void => {
+    const child = patternChildren[childIndex];
+    if (!child) { return; }
+    const result = handleArrayPatternChild(destructuringContext, child, source, index);
+    if (result.shouldBreak) { return; }
+    processChild(result.newIndex, childIndex + 1);
+  };
+  processChild(0, 0);
 };
 
 const handleArrayPatternChild = (

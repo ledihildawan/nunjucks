@@ -18,27 +18,27 @@ const isPathLike = (word: string): boolean =>
   PATH_SEPARATOR_RE.test(word) || FILE_EXTENSION_RE.test(word);
 
 const findWordStart = (line: string, wordEnd: number): number => {
-  let pos = wordEnd - 2;
-  while (pos > 0 && isWordChar(line[pos - 1])) {
-    pos -= 1;
-  }
-  return pos;
+  const scanLeft = (pos: number): number => {
+    if (!(pos > 0 && isWordChar(line[pos - 1]))) { return pos; }
+    return scanLeft(pos - 1);
+  };
+  return scanLeft(wordEnd - 2);
 };
 
 const findWordEnd = (line: string, pos: number): number => {
-  let currentPos = pos;
-  while (currentPos < line.length && isWordChar(line[currentPos])) {
-    currentPos += 1;
-  }
-  return currentPos;
+  const scanRight = (currentPos: number): number => {
+    if (!(currentPos < line.length && isWordChar(line[currentPos]))) { return currentPos; }
+    return scanRight(currentPos + 1);
+  };
+  return scanRight(pos);
 };
 
 const findNonWordLeft = (line: string, pos: number): number => {
-  let searchLeft = pos - 1;
-  while (searchLeft >= 0 && !isWordChar(line[searchLeft])) {
-    searchLeft -= 1;
-  }
-  return searchLeft;
+  const scanLeft = (searchLeft: number): number => {
+    if (!(searchLeft >= 0 && !isWordChar(line[searchLeft]))) { return searchLeft; }
+    return scanLeft(searchLeft - 1);
+  };
+  return scanLeft(pos - 1);
 };
 
 const findWordBoundaries = (line: string, pos: number, charAtPos: string): { wordStart: number; wordEnd: number } => {
