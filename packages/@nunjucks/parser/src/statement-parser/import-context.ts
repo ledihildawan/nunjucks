@@ -1,8 +1,12 @@
+import type { TemplateError } from '@nunjucks/log';
 import { peekToken, skipSymbol, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
+import { ok, isErr, type Result } from '@nunjucks/shared';
 
-export const parseWithContext = (parserContext: ParserContext): boolean | null => {
-  const tok = peekToken(parserContext);
+export const parseWithContext = (parserContext: ParserContext): Result<boolean | null, TemplateError> => {
+  const tokR = peekToken(parserContext);
+  if (isErr(tokR)) { return tokR; }
+  const tok = tokR.value;
 
   const withContext: boolean | null = skipSymbol(parserContext, 'with')
     ? true
@@ -11,10 +15,10 @@ export const parseWithContext = (parserContext: ParserContext): boolean | null =
       : null;
 
   if (withContext !== null && !skipSymbol(parserContext, 'context')) {
-    fail(parserContext, 'parseFrom: expected context after with/without',
+    return fail(parserContext, 'parseFrom: expected context after with/without',
       tok.lineno,
       tok.colno);
   }
 
-  return withContext;
+  return ok(withContext);
 };

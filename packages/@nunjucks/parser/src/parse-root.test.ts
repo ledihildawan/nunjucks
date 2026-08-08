@@ -5,14 +5,14 @@ import { createParser } from './index.ts';
 import { peekTokenOrNull } from './cursor.ts';
 import { getNodeTypeName, isNodeList, isOutput, isTemplateData } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { asTokenStream } from './test-helpers.ts';
+import { asTokenStream, unwrap } from './test-helpers.ts';
 
 const makeCtx = (src: string) => {
   const tk = createTokenizer(src);
   return createParser(asTokenStream(tk));
 };
 
-const parse = (src: string, ...blocks: string[]) => parseUntilBlocks(makeCtx(src), ...blocks);
+const parse = (src: string, ...blocks: string[]) => unwrap(parseUntilBlocks(makeCtx(src), ...blocks));
 
 const childrenOf = (n: Node): readonly Node[] =>
   isNodeList(n) ? n.children : isOutput(n) ? n.children : [];
@@ -129,7 +129,7 @@ describe('parseUntilBlocks', () => {
 describe('parseNodes', () => {
   test('parses all tokens until EOF when breakOn is null', () => {
     const ctx = makeCtx('hello {{ x }}');
-    const nodes = parseNodes(ctx);
+    const nodes = unwrap(parseNodes(ctx));
     expect(nodes).toHaveLength(2);
     expect(getNodeTypeName(nodes[0])).toBe('output');
     expect(getNodeTypeName(nodes[1])).toBe('output');
@@ -137,7 +137,7 @@ describe('parseNodes', () => {
 
   test('stops at the breakOn block name without consuming it', () => {
     const ctx = makeCtx('a{% endblock %}b');
-    const nodes = parseNodes(ctx, ['endblock']);
+    const nodes = unwrap(parseNodes(ctx, ['endblock']));
     expect(nodes).toHaveLength(1);
     expect(peekTokenOrNull(ctx)).not.toBeNull();
   });
@@ -145,16 +145,16 @@ describe('parseNodes', () => {
   test('accepts a readonly breakOn list', () => {
     const ctx = makeCtx('a{% endif %}');
     const breakOn: readonly string[] = ['endif'];
-    expect(parseNodes(ctx, breakOn)).toHaveLength(1);
+    expect(unwrap(parseNodes(ctx, breakOn))).toHaveLength(1);
   });
 
   test('returns an empty array for empty input', () => {
     const ctx = makeCtx('');
-    expect(parseNodes(ctx)).toEqual([]);
+    expect(unwrap(parseNodes(ctx))).toEqual([]);
   });
 
   test('returns an empty array when the first token is a breakOn tag', () => {
     const ctx = makeCtx('{% endblock %}trailing');
-    expect(parseNodes(ctx, ['endblock'])).toEqual([]);
+    expect(unwrap(parseNodes(ctx, ['endblock']))).toEqual([]);
   });
 });

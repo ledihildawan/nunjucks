@@ -14,6 +14,7 @@ import {
   symbol,
 } from '@nunjucks/nodes';
 import type { ChildrenNode, NodeLocation } from '@nunjucks/nodes';
+import type { TemplateError } from '@nunjucks/log';
 import {
   fail,
   nextToken,
@@ -23,6 +24,7 @@ import {
 } from '../../cursor.ts';
 import { EXPECTED_COLON_AFTER_DICT_KEY } from '../../index.ts';
 import type { ParserContext } from '../../cursor.ts';
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import { parseExpression, parsePrimary } from '../../expression-parser/index.ts';
 import { loc } from '@nunjucks/shared';
 
@@ -30,86 +32,98 @@ const parseSpread = (
   parserContext: ParserContext,
   node: ChildrenNode,
   origin: NodeLocation
-): ChildrenNode => {
-  nextToken(parserContext);
-  const argument = parseExpression(parserContext);
-  return appendChild(
+): Result<ChildrenNode, TemplateError> => {
+  const consumedR = nextToken(parserContext);
+  if (isErr(consumedR)) { return consumedR; }
+  const argumentR = parseExpression(parserContext);
+  if (isErr(argumentR)) { return argumentR; }
+  return ok(appendChild(
     node,
-    spread(loc(origin), { argument })
-  );
+    spread(loc(origin), { argument: argumentR.value })
+  ));
 };
 
-const parseDictItem = (
-  parserContext: ParserContext,
-  node: ChildrenNode,
-  origin: NodeLocation
-): ChildrenNode => {
-  if (peekToken(parserContext).type === TOKEN_SPREAD) {
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+const parseDictItem = (parserContext: ParserContext, node: ChildrenNode, origin: NodeLocation): Result<ChildrenNode, TemplateError> => {
+  const peekR = peekToken(parserContext);
+  if (isErr(peekR)) { return peekR; }
+  if (peekR.value.type === TOKEN_SPREAD) {
     return parseSpread(parserContext, node, origin);
   }
-  const key = parsePrimary(parserContext);
+  const keyR = parsePrimary(parserContext);
+  if (isErr(keyR)) { return keyR; }
+  const key = keyR.value;
   if (skip(parserContext, TOKEN_COLON)) {
-    const value = parseExpression(parserContext);
-    return appendChild(
+    const valueR = parseExpression(parserContext);
+    if (isErr(valueR)) { return valueR; }
+    return ok(appendChild(
       node,
-      pair(loc(key), { key, val: value })
-    );
+      pair(loc(key), { key, val: valueR.value })
+    ));
   }
 
-  const next = peekToken(parserContext);
+  const nextR = peekToken(parserContext);
+  if (isErr(nextR)) { return nextR; }
+  const next = nextR.value;
   const value = symbol(loc(key), String(key.value));
-  if (next && (next.type === TOKEN_COMMA || next.type === TOKEN_RIGHT_CURLY)) {
-    return appendChild(
+  if (next.type === TOKEN_COMMA || next.type === TOKEN_RIGHT_CURLY) {
+    return ok(appendChild(
       node,
       pair(loc(key), { key, val: value })
-    );
+    ));
   }
 
   if (next?.type === TOKEN_OPERATOR && next.value === '=') {
-    nextToken(parserContext);
-    const defaultValue = parseExpression(parserContext);
+    const consumedR = nextToken(parserContext);
+    if (isErr(consumedR)) { return consumedR; }
+    const defaultValueR = parseExpression(parserContext);
+    if (isErr(defaultValueR)) { return defaultValueR; }
     const pattern = assignmentPattern(
       loc(key),
-      { target: value, defaultVal: defaultValue }
+      { target: value, defaultVal: defaultValueR.value }
     );
-    return appendChild(
+    return ok(appendChild(
       node,
       pair(loc(key), { key, val: pattern })
-    );
+    ));
   }
 
-  fail(
+  return fail(
     parserContext,
     'parseAggregate: expected colon after dict key',
     next?.lineno ?? origin.lineno,
     next?.colno ?? origin.colno,
     EXPECTED_COLON_AFTER_DICT_KEY
   );
-  return undefined as never;
 };
 
 export const parseAggregateExpression = (
   parserContext: ParserContext,
   node: ChildrenNode,
   origin: NodeLocation
-): ChildrenNode => {
+): Result<ChildrenNode, TemplateError> => {
   if (isDict(node)) {
     return parseDictItem(parserContext, node, origin);
   }
-  if (peekToken(parserContext).type === TOKEN_SPREAD) {
+  const peekR = peekToken(parserContext);
+  if (isErr(peekR)) { return peekR; }
+  if (peekR.value.type === TOKEN_SPREAD) {
     return parseSpread(parserContext, node, origin);
   }
 
-  const expression = parseExpression(parserContext);
+  const expressionR = parseExpression(parserContext);
+  if (isErr(expressionR)) { return expressionR; }
+  const expression = expressionR.value;
   if (skipValue(parserContext, TOKEN_OPERATOR, '=')) {
-    const defaultValue = parseExpression(parserContext);
-    return appendChild(
+    const defaultValueR = parseExpression(parserContext);
+    if (isErr(defaultValueR)) { return defaultValueR; }
+    return ok(appendChild(
       node,
       assignmentPattern(
         loc(expression),
-        { target: expression, defaultVal: defaultValue }
+        { target: expression, defaultVal: defaultValueR.value }
       )
-    );
+    ));
   }
-  return appendChild(node, expression);
+  return ok(appendChild(node, expression));
 };

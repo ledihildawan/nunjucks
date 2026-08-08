@@ -1,6 +1,8 @@
 import type { Node, SlotBlock } from '@nunjucks/nodes';
 import { nodeList, output, templateData } from '@nunjucks/nodes';
+import type { TemplateError } from '@nunjucks/log';
 import { loc } from '@nunjucks/shared';
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import {
   TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_COMMA,
   isSymbolToken,
@@ -42,16 +44,19 @@ const isTerminatorSymbol = (peeked: Token, endTag: string): boolean =>
 const isSlotSymbol = (peeked: Token): boolean =>
   isSymbolToken(peeked) && peeked.value === 'slot';
 
-const parseSlotBlock = (parserContext: ParserContext): ParsedSlot => {
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+const parseSlotBlock = (parserContext: ParserContext): Result<ParsedSlot, TemplateError> => {
   skipSymbol(parserContext, 'slot');
 
   const nameTok = nextTokenOrNull(parserContext);
   const name = nameTok && isSymbolToken(nameTok) ? nameTok.value : 'default';
 
   const params: string[] = [];
-  const afterName = peekToken(parserContext);
-  if (afterName.type === TOKEN_LEFT_PAREN) {
-    nextToken(parserContext);
+  const afterNameR = peekToken(parserContext);
+  if (isErr(afterNameR)) { return afterNameR; }
+  if (afterNameR.value.type === TOKEN_LEFT_PAREN) {
+    const consumedR = nextToken(parserContext);
+    if (isErr(consumedR)) { return consumedR; }
     while (true) {
       const inner = nextTokenOrNull(parserContext);
       if (!inner || inner.type === TOKEN_RIGHT_PAREN) { break; }
@@ -62,12 +67,15 @@ const parseSlotBlock = (parserContext: ParserContext): ParsedSlot => {
     }
   }
 
-  advanceAfterBlockEnd(parserContext, 'slot');
-  const body = parseUntilBlocks(parserContext, 'endslot');
+  const blockEndR = advanceAfterBlockEnd(parserContext, 'slot');
+  if (isErr(blockEndR)) { return blockEndR; }
+  const bodyR = parseUntilBlocks(parserContext, 'endslot');
+  if (isErr(bodyR)) { return bodyR; }
   skipSymbol(parserContext, 'endslot');
-  advanceAfterBlockEnd(parserContext, 'endslot');
+  const finalR = advanceAfterBlockEnd(parserContext, 'endslot');
+  if (isErr(finalR)) { return finalR; }
 
-  return { name, params, body };
+  return ok({ name, params, body: bodyR.value });
 };
 
 const appendDefaultChunk = (defaultParts: Node[], chunk: Node): void => {
@@ -76,22 +84,28 @@ const appendDefaultChunk = (defaultParts: Node[], chunk: Node): void => {
   }
 };
 
-export const parseSlottedBody = (parserContext: ParserContext, endTag: string): SlottedBody => {
+export const parseSlottedBody = (parserContext: ParserContext, endTag: string): Result<SlottedBody, TemplateError> => {
   const namedSlots: SlotBlock[] = [];
   const implicitSlots: SlotBlock[] = [];
   const defaultParts: Node[] = [];
 
-  while (true) {
-    const peeked = peekToken(parserContext);
+  for (;;) {
+    const peekedR = peekToken(parserContext);
+    if (isErr(peekedR)) { return peekedR; }
+    const peeked = peekedR.value;
     if (isTerminatorSymbol(peeked, endTag)) { break; }
     if (isSlotSymbol(peeked)) {
-      categorizeSlot(parseSlotBlock(parserContext), namedSlots, implicitSlots);
+      const slotR = parseSlotBlock(parserContext);
+      if (isErr(slotR)) { return slotR; }
+      categorizeSlot(slotR.value, namedSlots, implicitSlots);
       continue;
     }
-    appendDefaultChunk(defaultParts, parseUntilBlocks(parserContext, 'slot', endTag));
+    const chunkR = parseUntilBlocks(parserContext, 'slot', endTag);
+    if (isErr(chunkR)) { return chunkR; }
+    appendDefaultChunk(defaultParts, chunkR.value);
   }
 
-  return { defaultParts, namedSlots, implicitSlots };
+  return ok({ defaultParts, namedSlots, implicitSlots });
 };
 
 export const buildDefaultBody = (parts: Node[], lineno: number, colno: number): Node => {
@@ -105,7 +119,9 @@ export const buildDefaultBody = (parts: Node[], lineno: number, colno: number): 
   return nodeList(origin, parts);
 };
 
-export const advanceAfterTags = (parserContext: ParserContext, tag: string): void => {
+export const advanceAfterTags = (parserContext: ParserContext, tag: string): Result<void, TemplateError> => {
   skipSymbol(parserContext, tag);
-  advanceAfterBlockEnd(parserContext, tag);
+  const r = advanceAfterBlockEnd(parserContext, tag);
+  if (isErr(r)) { return r; }
+  return ok(undefined);
 };

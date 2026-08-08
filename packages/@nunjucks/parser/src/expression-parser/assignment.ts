@@ -18,9 +18,11 @@ import {
 } from '@nunjucks/nodes';
 import type { Node, SpreadNode } from '@nunjucks/nodes';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/log';
 import { peekToken, nextToken } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
 import { errorAt } from '../error.ts';
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import { parseOr } from './logical.ts';
 import { loc } from '@nunjucks/shared';
 
@@ -51,52 +53,62 @@ const normalizePattern = (node: Node): Node => {
 const isExpressionContext = (tok: Token): boolean =>
   tok && (tok.type === 'operator' || tok.type === 'right-paren' || tok.type === 'comma');
 
-const handleWalrusAssignment = (node: Node, valueNode: Node, isExprCtx: boolean): Node => {
+const handleWalrusAssignment = (node: Node, valueNode: Node, isExprCtx: boolean): Result<Node, TemplateError> => {
   if (isSymbol(node)) {
-    return isExprCtx
+    return ok(isExprCtx
       ? walrus(loc(node), { target: node, val: valueNode })
-      : variableDeclaration(loc(node), { targets: [node], val: valueNode });
+      : variableDeclaration(loc(node), { targets: [node], val: valueNode }));
   }
   if (isArrayPattern(node) || isArray(node) || isObjectPattern(node) || isDict(node)) {
     const pattern = normalizePattern(node);
-    return isExprCtx
+    return ok(isExprCtx
       ? walrus(loc(pattern), { target: pattern, val: valueNode })
-      : variableDeclaration(loc(pattern), { targets: [pattern], val: valueNode });
+      : variableDeclaration(loc(pattern), { targets: [pattern], val: valueNode }));
   }
-  throw errorAt(node.lineno, node.colno, ERROR_DEFINITIONS.WALRUS_TARGET_INVALID);
+  return errorAt(node.lineno, node.colno, ERROR_DEFINITIONS.WALRUS_TARGET_INVALID);
 };
 
-const handleCompoundAssignment = (parserContext: ParserContext, node: Node, operator: string): Node => {
-  const valueNode = parseOr(parserContext);
+const handleCompoundAssignment = (parserContext: ParserContext, node: Node, operator: string): Result<Node, TemplateError> => {
+  const valueNodeR = parseOr(parserContext);
+  if (isErr(valueNodeR)) { return valueNodeR; }
   if (isSymbol(node)) {
-    return compoundAssignment(loc(node), { targets: [node], operator, value: valueNode });
+    return ok(compoundAssignment(loc(node), { targets: [node], operator, value: valueNodeR.value }));
   }
-  throw errorAt(node.lineno, node.colno, ERROR_DEFINITIONS.ASSIGNMENT_TARGET_INVALID);
+  return errorAt(node.lineno, node.colno, ERROR_DEFINITIONS.ASSIGNMENT_TARGET_INVALID);
 };
 
-const parseWalrus = (parserContext: ParserContext, node: Node): Node => {
-  const tok = peekToken(parserContext);
-  if (tok && (tok.type === TOKEN_OPERATOR || tok.type === TOKEN_PIPEFORWARD)) {
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+const parseWalrus = (parserContext: ParserContext, node: Node): Result<Node, TemplateError> => {
+  const tokR = peekToken(parserContext);
+  if (isErr(tokR)) { return tokR; }
+  const tok = tokR.value;
+  if (tok.type === TOKEN_OPERATOR || tok.type === TOKEN_PIPEFORWARD) {
     if (tok.value === ':=') {
-      nextToken(parserContext);
-      const valueNode = parseOr(parserContext);
-      const afterTok = peekToken(parserContext);
-      const resultNode = handleWalrusAssignment(node, valueNode, isExpressionContext(afterTok));
-      return parseWalrus(parserContext, resultNode);
+      const consumedR = nextToken(parserContext);
+      if (isErr(consumedR)) { return consumedR; }
+      const valueNodeR = parseOr(parserContext);
+      if (isErr(valueNodeR)) { return valueNodeR; }
+      const afterTokR = peekToken(parserContext);
+      if (isErr(afterTokR)) { return afterTokR; }
+      const resultNodeR = handleWalrusAssignment(node, valueNodeR.value, isExpressionContext(afterTokR.value));
+      if (isErr(resultNodeR)) { return resultNodeR; }
+      return parseWalrus(parserContext, resultNodeR.value);
     }
 
     if (tok.type === TOKEN_OPERATOR && tok.value === '|>=') {
-      nextToken(parserContext);
+      const consumedR = nextToken(parserContext);
+      if (isErr(consumedR)) { return consumedR; }
       return handleCompoundAssignment(parserContext, node, tok.value);
     }
 
     if (COMPOUND_ASSIGNMENT_OPS.includes(String(tok.value))) {
-      nextToken(parserContext);
+      const consumedR = nextToken(parserContext);
+      if (isErr(consumedR)) { return consumedR; }
       return handleCompoundAssignment(parserContext, node, String(tok.value));
     }
   }
 
-  return node;
+  return ok(node);
 };
 
 export { parseWalrus };

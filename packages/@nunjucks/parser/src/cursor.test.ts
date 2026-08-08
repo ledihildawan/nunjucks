@@ -4,6 +4,7 @@ import { createParser } from './index.ts';
 import { nextTokenOrNull, peekTokenOrNull, skip, expect as expectToken, skipValue, skipSymbol, consumeWhitespaceDrop, nextToken } from './cursor.ts';
 import type { ParserContext } from './cursor.ts';
 import { asTokenStream } from './test-helpers.ts';
+import { isErr } from '@nunjucks/shared';
 
 const makeCtx = (src: string): ParserContext => {
   const tk = createTokenizer(src);
@@ -32,10 +33,10 @@ describe('cursor: token navigation', () => {
     expect(next).toBe(peeked);
   });
 
-  test('nextToken throws on EOF', () => {
+  test('nextToken returns Err on EOF', () => {
     const ctx = makeCtx('');
     while (nextTokenOrNull(ctx)) {  }
-    expect(() => nextToken(ctx)).toThrow();
+    expect(isErr(nextToken(ctx))).toBe(true);
   });
 
   test('skip returns true for matching type', () => {
@@ -58,10 +59,10 @@ describe('cursor: token navigation', () => {
     expect(skipValue(ctx, 'symbol' as never, 'y')).toBe(false);
   });
 
-  test('expect throws on wrong type', () => {
+  test('expect returns Err on wrong type', () => {
     const ctx = makeCtx('{{ x }}');
     nextTokenOrNull(ctx); 
-    expect(() => expectToken(ctx, 'block-end' as never)).toThrow();
+    expect(isErr(expectToken(ctx, 'block-end' as never))).toBe(true);
   });
 });
 

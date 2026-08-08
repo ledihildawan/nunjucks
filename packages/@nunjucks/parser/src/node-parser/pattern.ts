@@ -1,3 +1,4 @@
+// biome-ignore lint/style/noExcessiveLinesPerFile: Result unwrap boilerplate inflates line count
 import {
   TOKEN_COLON,
   TOKEN_COMMA,
@@ -14,77 +15,91 @@ import {
 } from '@nunjucks/lexer';
 import { appendChild, arrayPattern, assignmentPattern, hole, objectPattern, patternProperty, restPattern, symbol } from '@nunjucks/nodes';
 import type { ChildrenNode, Node } from '@nunjucks/nodes';
-import { nextToken, peekToken, skip, fail } from "../cursor.ts";
+import type { TemplateError } from '@nunjucks/log';
+import { nextToken, peekToken, peekTokenOrNull, skip, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import { parseExpression } from "../expression-parser/index.ts";
 import { loc } from '@nunjucks/shared';
 
 const isDestructuringStart = (parserContext: ParserContext): boolean => {
-  const tok = peekToken(parserContext);
-  return Boolean(tok) && (tok.type === TOKEN_LEFT_BRACKET || tok.type === TOKEN_LEFT_CURLY);
+  const tok = peekTokenOrNull(parserContext);
+  return tok !== null && (tok.type === TOKEN_LEFT_BRACKET || tok.type === TOKEN_LEFT_CURLY);
 };
 
-const parseInnerPattern = (parserContext: ParserContext): Node => {
+const parseInnerPattern = (parserContext: ParserContext): Result<Node, TemplateError> => {
   if (isDestructuringStart(parserContext)) {
-    const node = parsePattern(parserContext);
-    if (node) {
-      return node;
+    const nodeR = parsePattern(parserContext);
+    if (isErr(nodeR)) { return nodeR; }
+    if (nodeR.value) {
+      return ok(nodeR.value);
     }
   }
-  const tok = peekToken(parserContext);
+  const tokR = peekToken(parserContext);
+  if (isErr(tokR)) { return tokR; }
+  const tok = tokR.value;
   if (tok?.type === TOKEN_SYMBOL) {
-    const symbolTok = nextToken(parserContext);
-    return symbol(loc(symbolTok), isSymbolToken(symbolTok) ? symbolTok.value : String(symbolTok.value));
+    const symbolTokR = nextToken(parserContext);
+    if (isErr(symbolTokR)) { return symbolTokR; }
+    const symbolTok = symbolTokR.value;
+    return ok(symbol(loc(symbolTok), isSymbolToken(symbolTok) ? symbolTok.value : String(symbolTok.value)));
   }
   return fail(parserContext, 'parseInnerPattern: expected symbol or pattern',
     tok?.lineno ?? 0, tok?.colno ?? 0);
 };
 
-const parseAssignmentDefault = (parserContext: ParserContext, target: Node): Node | null => {
-  const peeked = peekToken(parserContext);
+const parseAssignmentDefault = (parserContext: ParserContext, target: Node): Result<Node | null, TemplateError> => {
+  const peeked = peekTokenOrNull(parserContext);
   if (peeked?.type === TOKEN_OPERATOR && peeked?.value === '=') {
-    nextToken(parserContext);
-    const defaultExpr = parseExpression(parserContext);
-    return assignmentPattern(loc(target), { target, defaultVal: defaultExpr });
+    const consumedR = nextToken(parserContext);
+    if (isErr(consumedR)) { return consumedR; }
+    const defaultExprR = parseExpression(parserContext);
+    if (isErr(defaultExprR)) { return defaultExprR; }
+    return ok(assignmentPattern(loc(target), { target, defaultVal: defaultExprR.value }));
   }
-  return null;
+  return ok(null);
 };
 
-const handleArrayElement = (
-  parserContext: ParserContext,
-  node: ChildrenNode,
-  tok: Token,
-  sawRest: boolean
-): { node: ChildrenNode; sawRest: boolean } => {
-  const elementType = peekToken(parserContext).type;
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+const handleArrayElement = (parserContext: ParserContext, node: ChildrenNode, tok: Token, sawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
+  const peekedR = peekToken(parserContext);
+  if (isErr(peekedR)) { return peekedR; }
+  const peeked = peekedR.value;
+  const elementType = peeked.type;
 
   if (elementType === TOKEN_SPREAD) {
-    nextToken(parserContext);
-    const inner = parseInnerPattern(parserContext);
-    const rp = restPattern(loc(tok), inner);
-    return { node: appendChild(node, rp), sawRest: true };
+    const consumedR = nextToken(parserContext);
+    if (isErr(consumedR)) { return consumedR; }
+    const innerR = parseInnerPattern(parserContext);
+    if (isErr(innerR)) { return innerR; }
+    const rp = restPattern(loc(tok), innerR.value);
+    return ok({ node: appendChild(node, rp), sawRest: true });
   }
   if (elementType === TOKEN_LEFT_BRACKET) {
-    const innerTok = peekToken(parserContext);
-    const inner = parseArrayPattern(parserContext, innerTok.lineno, innerTok.colno);
-    const withDefault = parseAssignmentDefault(parserContext, inner);
-    return { node: appendChild(node, withDefault ?? inner), sawRest };
+    const innerR = parseArrayPattern(parserContext, peeked.lineno, peeked.colno);
+    if (isErr(innerR)) { return innerR; }
+    const withDefaultR = parseAssignmentDefault(parserContext, innerR.value);
+    if (isErr(withDefaultR)) { return withDefaultR; }
+    return ok({ node: appendChild(node, withDefaultR.value ?? innerR.value), sawRest });
   }
   if (elementType === TOKEN_LEFT_CURLY) {
-    const innerTok = peekToken(parserContext);
-    const inner = parseObjectPattern(parserContext, innerTok.lineno, innerTok.colno);
-    const withDefault = parseAssignmentDefault(parserContext, inner);
-    return { node: appendChild(node, withDefault ?? inner), sawRest };
+    const innerR = parseObjectPattern(parserContext, peeked.lineno, peeked.colno);
+    if (isErr(innerR)) { return innerR; }
+    const withDefaultR = parseAssignmentDefault(parserContext, innerR.value);
+    if (isErr(withDefaultR)) { return withDefaultR; }
+    return ok({ node: appendChild(node, withDefaultR.value ?? innerR.value), sawRest });
   }
-  const symTok = nextToken(parserContext);
+  const symTokR = nextToken(parserContext);
+  if (isErr(symTokR)) { return symTokR; }
+  const symTok = symTokR.value;
   if (!symTok || symTok.type !== TOKEN_SYMBOL) {
-    fail(parserContext, 'parseArrayPattern: expected symbol in pattern',
+    return fail(parserContext, 'parseArrayPattern: expected symbol in pattern',
       symTok?.lineno ?? tok.lineno, symTok?.colno ?? tok.colno);
-    return { node, sawRest };
   }
   const target = symbol(loc(symTok), symTok.value);
-  const withDefault = parseAssignmentDefault(parserContext, target);
-  return { node: appendChild(node, withDefault ?? target), sawRest };
+  const withDefaultR = parseAssignmentDefault(parserContext, target);
+  if (isErr(withDefaultR)) { return withDefaultR; }
+  return ok({ node: appendChild(node, withDefaultR.value ?? target), sawRest });
 };
 
 const handleArrayTrailingComma = (
@@ -92,38 +107,47 @@ const handleArrayTrailingComma = (
   tok: Token,
   node: ChildrenNode,
   sawRest: boolean
-): { node: ChildrenNode; sawRest: boolean; continueLoop: boolean } => {
+): Result<{ node: ChildrenNode; sawRest: boolean; continueLoop: boolean }, TemplateError> => {
   if ((node.children?.length ?? 0) > 0 && !sawRest) {
     if (!skip(parserContext, TOKEN_COMMA)) {
-      fail(parserContext, 'parseArrayPattern: expected comma',
+      return fail(parserContext, 'parseArrayPattern: expected comma',
         tok.lineno,
         tok.colno);
     }
-    const after = peekToken(parserContext);
-    if (after?.type === TOKEN_RIGHT_BRACKET) {
-      nextToken(parserContext);
-      return { node, sawRest, continueLoop: false };
+    const afterR = peekToken(parserContext);
+    if (isErr(afterR)) { return afterR; }
+    const after = afterR.value;
+    if (after.type === TOKEN_RIGHT_BRACKET) {
+      const consumedR = nextToken(parserContext);
+      if (isErr(consumedR)) { return consumedR; }
+      return ok({ node, sawRest, continueLoop: false });
     }
-    if (after?.type === TOKEN_COMMA) {
-      return { node: appendChild(node, hole(loc(after))), sawRest, continueLoop: true };
+    if (after.type === TOKEN_COMMA) {
+      return ok({ node: appendChild(node, hole(loc(after))), sawRest, continueLoop: true });
     }
   }
-  return { node, sawRest, continueLoop: true };
+  return ok({ node, sawRest, continueLoop: true });
 };
 
-const parseArrayPattern = (parserContext: ParserContext, lineno: number, colno: number): Node => {
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+const parseArrayPattern = (parserContext: ParserContext, lineno: number, colno: number): Result<Node, TemplateError> => {
   let node = arrayPattern(loc({ lineno, colno }));
-  const startTok = nextToken(parserContext);
+  const startTokR = nextToken(parserContext);
+  if (isErr(startTokR)) { return startTokR; }
+  const startTok = startTokR.value;
   if (startTok.type !== TOKEN_LEFT_BRACKET) {
-    fail(parserContext, 'parseArrayPattern: expected [', lineno, colno);
+    return fail(parserContext, 'parseArrayPattern: expected [', lineno, colno);
   }
 
   let sawRest = false;
   let skipTrailingCommaCheck = false;
   for (;;) {
-    const tok = peekToken(parserContext);
+    const tokR = peekToken(parserContext);
+    if (isErr(tokR)) { return tokR; }
+    const tok = tokR.value;
     if (tok.type === TOKEN_RIGHT_BRACKET) {
-      nextToken(parserContext);
+      const consumedR = nextToken(parserContext);
+      if (isErr(consumedR)) { return consumedR; }
       break;
     }
 
@@ -131,156 +155,178 @@ const parseArrayPattern = (parserContext: ParserContext, lineno: number, colno: 
       skipTrailingCommaCheck = false;
     } else {
       const commaResult = handleArrayTrailingComma(parserContext, tok, node, sawRest);
-      if (!commaResult.continueLoop) {
+      if (isErr(commaResult)) { return commaResult; }
+      if (!commaResult.value.continueLoop) {
         break;
       }
-      node = commaResult.node;
-      sawRest = commaResult.sawRest;
+      node = commaResult.value.node;
+      sawRest = commaResult.value.sawRest;
     }
 
     const result = handleArrayElement(parserContext, node, tok, sawRest);
-    node = result.node;
-    sawRest = result.sawRest;
-    const after = peekToken(parserContext);
+    if (isErr(result)) { return result; }
+    node = result.value.node;
+    sawRest = result.value.sawRest;
+    const after = peekTokenOrNull(parserContext);
     if (after?.type === TOKEN_COMMA) {
-      nextToken(parserContext);
+      const consumedR = nextToken(parserContext);
+      if (isErr(consumedR)) { return consumedR; }
       skipTrailingCommaCheck = true;
     }
   }
 
-  return node;
+  return ok(node);
 };
 
-const parseObjectPropertyKey = (parserContext: ParserContext): { keyTok: Token; keyName: string } => {
-  const keyTok = nextToken(parserContext);
+const parseObjectPropertyKey = (parserContext: ParserContext): Result<{ keyTok: Token; keyName: string }, TemplateError> => {
+  const keyTokR = nextToken(parserContext);
+  if (isErr(keyTokR)) { return keyTokR; }
+  const keyTok = keyTokR.value;
   if (keyTok.type !== TOKEN_STRING && keyTok.type !== TOKEN_SYMBOL) {
-    fail(parserContext, 'parseObjectPattern: expected property name',
+    return fail(parserContext, 'parseObjectPattern: expected property name',
       keyTok.lineno,
       keyTok.colno);
   }
-  const keyName = keyTok.type === TOKEN_STRING ? String(keyTok.value) : (isSymbolToken(keyTok) ? keyTok.value : String(keyTok.value));
-  return { keyTok, keyName };
+  const keyName = String(keyTok.value);
+  return ok({ keyTok, keyName });
 };
 
-const parseObjectPropertyValue = (parserContext: ParserContext, keyTok: Token, keyName: string): Node => {
+const parseObjectPropertyValue = (parserContext: ParserContext, keyTok: Token, keyName: string): Result<Node, TemplateError> => {
   if (skip(parserContext, TOKEN_COLON)) {
-    if (peekToken(parserContext).type === TOKEN_LEFT_BRACKET) {
-      const bracketTok = peekToken(parserContext);
-      return parseArrayPattern(parserContext, bracketTok.lineno, bracketTok.colno);
+    const innerTok = peekTokenOrNull(parserContext);
+    if (innerTok?.type === TOKEN_LEFT_BRACKET) {
+      return parseArrayPattern(parserContext, innerTok.lineno, innerTok.colno);
     }
-    if (peekToken(parserContext).type === TOKEN_LEFT_CURLY) {
-      const braceTok = peekToken(parserContext);
-      return parseObjectPattern(parserContext, braceTok.lineno, braceTok.colno);
+    if (innerTok?.type === TOKEN_LEFT_CURLY) {
+      return parseObjectPattern(parserContext, innerTok.lineno, innerTok.colno);
     }
     return parseInnerPattern(parserContext);
   }
-  return symbol(loc(keyTok), keyName);
+  return ok(symbol(loc(keyTok), keyName));
 };
 
-const handleObjectTrailingComma = (parserContext: ParserContext, tok: Token, node: ChildrenNode, sawRest: boolean): { node: ChildrenNode; sawRest: boolean; continueLoop: boolean } => {
+const handleObjectTrailingComma = (parserContext: ParserContext, tok: Token, node: ChildrenNode, sawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean; continueLoop: boolean }, TemplateError> => {
   if ((node.children?.length ?? 0) > 0 && !sawRest) {
     if (!skip(parserContext, TOKEN_COMMA)) {
-      fail(parserContext, 'parseObjectPattern: expected comma',
+      return fail(parserContext, 'parseObjectPattern: expected comma',
         tok.lineno,
         tok.colno);
     }
-    const after = peekToken(parserContext);
-    if (after?.type === TOKEN_RIGHT_CURLY) {
-      nextToken(parserContext);
-      return { node, sawRest, continueLoop: false };
+    const afterR = peekToken(parserContext);
+    if (isErr(afterR)) { return afterR; }
+    const after = afterR.value;
+    if (after.type === TOKEN_RIGHT_CURLY) {
+      const consumedR = nextToken(parserContext);
+      if (isErr(consumedR)) { return consumedR; }
+      return ok({ node, sawRest, continueLoop: false });
     }
-    if (after?.type === TOKEN_COMMA) {
-      return { node: appendChild(node, hole(loc(after))), sawRest, continueLoop: true };
+    if (after.type === TOKEN_COMMA) {
+      return ok({ node: appendChild(node, hole(loc(after))), sawRest, continueLoop: true });
     }
   }
-  return { node, sawRest, continueLoop: true };
+  return ok({ node, sawRest, continueLoop: true });
 };
 
-const handleObjectSpread = (parserContext: ParserContext, node: ChildrenNode, sawRest: boolean): { node: ChildrenNode; sawRest: boolean } => {
-  if (peekToken(parserContext).type === TOKEN_SPREAD) {
-    nextToken(parserContext);
-    const tok = peekToken(parserContext);
-    const inner = parseInnerPattern(parserContext);
-    return { node: appendChild(node, restPattern(loc(tok), inner)), sawRest: true };
+const handleObjectSpread = (parserContext: ParserContext, node: ChildrenNode, sawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
+  if (peekTokenOrNull(parserContext)?.type === TOKEN_SPREAD) {
+    const consumedR = nextToken(parserContext);
+    if (isErr(consumedR)) { return consumedR; }
+    const tokR = peekToken(parserContext);
+    if (isErr(tokR)) { return tokR; }
+    const tok = tokR.value;
+    const innerR = parseInnerPattern(parserContext);
+    if (isErr(innerR)) { return innerR; }
+    return ok({ node: appendChild(node, restPattern(loc(tok), innerR.value)), sawRest: true });
   }
-  return { node, sawRest };
+  return ok({ node, sawRest });
 };
 
-const parseObjectPatternProperty = (parserContext: ParserContext, node: ChildrenNode): ChildrenNode => {
-  const { keyTok, keyName } = parseObjectPropertyKey(parserContext);
-  const valueTarget = parseObjectPropertyValue(parserContext, keyTok, keyName);
-  const withDefault = parseAssignmentDefault(parserContext, valueTarget);
-  return appendChild(node, patternProperty(
+const parseObjectPatternProperty = (parserContext: ParserContext, node: ChildrenNode): Result<ChildrenNode, TemplateError> => {
+  const keyR = parseObjectPropertyKey(parserContext);
+  if (isErr(keyR)) { return keyR; }
+  const { keyTok, keyName } = keyR.value;
+  const valueTargetR = parseObjectPropertyValue(parserContext, keyTok, keyName);
+  if (isErr(valueTargetR)) { return valueTargetR; }
+  const valueTarget = valueTargetR.value;
+  const withDefaultR = parseAssignmentDefault(parserContext, valueTarget);
+  if (isErr(withDefaultR)) { return withDefaultR; }
+  return ok(appendChild(node, patternProperty(
     loc(keyTok),
-    { key: symbol(loc(keyTok), keyName), val: withDefault ?? valueTarget }
-  ));
+    { key: symbol(loc(keyTok), keyName), val: withDefaultR.value ?? valueTarget }
+  )));
 };
 
-const parseObjectPatternLoop = (
-  parserContext: ParserContext,
-  initialNode: ChildrenNode,
-  initialSawRest: boolean
-): { node: ChildrenNode; sawRest: boolean } => {
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+const parseObjectPatternLoop = (parserContext: ParserContext, initialNode: ChildrenNode, initialSawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
   let node = initialNode;
   let sawRest = initialSawRest;
 
   for (;;) {
-    const tok = peekToken(parserContext);
+    const tokR = peekToken(parserContext);
+    if (isErr(tokR)) { return tokR; }
+    const tok = tokR.value;
     if (tok.type === TOKEN_RIGHT_CURLY) {
-      nextToken(parserContext);
-      return { node, sawRest };
+      const consumedR = nextToken(parserContext);
+      if (isErr(consumedR)) { return consumedR; }
+      return ok({ node, sawRest });
     }
 
     const commaResult = handleObjectTrailingComma(parserContext, tok, node, sawRest);
-    if (!commaResult.continueLoop) {
-      return { node: commaResult.node, sawRest: commaResult.sawRest };
+    if (isErr(commaResult)) { return commaResult; }
+    if (!commaResult.value.continueLoop) {
+      return ok({ node: commaResult.value.node, sawRest: commaResult.value.sawRest });
     }
 
-    const spreadResult = handleObjectSpread(parserContext, commaResult.node, commaResult.sawRest);
-    if (spreadResult.sawRest) {
-      const after = peekToken(parserContext);
+    const spreadResult = handleObjectSpread(parserContext, commaResult.value.node, commaResult.value.sawRest);
+    if (isErr(spreadResult)) { return spreadResult; }
+    if (spreadResult.value.sawRest) {
+      const after = peekTokenOrNull(parserContext);
       if (after?.type === TOKEN_COMMA) {
-        nextToken(parserContext);
+        const consumedR = nextToken(parserContext);
+        if (isErr(consumedR)) { return consumedR; }
       }
-      return { node: spreadResult.node, sawRest: true };
+      return ok({ node: spreadResult.value.node, sawRest: true });
     }
 
-    node = parseObjectPatternProperty(parserContext, spreadResult.node);
-    sawRest = commaResult.sawRest;
+    const propR = parseObjectPatternProperty(parserContext, spreadResult.value.node);
+    if (isErr(propR)) { return propR; }
+    node = propR.value;
+    sawRest = commaResult.value.sawRest;
   }
 };
 
-const parseObjectPattern = (parserContext: ParserContext, lineno: number, colno: number): Node => {
+const parseObjectPattern = (parserContext: ParserContext, lineno: number, colno: number): Result<Node, TemplateError> => {
   const node = objectPattern(loc({ lineno, colno }));
-  const startTok = nextToken(parserContext);
+  const startTokR = nextToken(parserContext);
+  if (isErr(startTokR)) { return startTokR; }
+  const startTok = startTokR.value;
   if (startTok.type !== TOKEN_LEFT_CURLY) {
-    fail(parserContext, 'parseObjectPattern: expected {', lineno, colno);
+    return fail(parserContext, 'parseObjectPattern: expected {', lineno, colno);
   }
 
-  const loopResult = parseObjectPatternLoop(parserContext, node, false);
-  return loopResult.node;
+  const loopR = parseObjectPatternLoop(parserContext, node, false);
+  if (isErr(loopR)) { return loopR; }
+  return ok(loopR.value.node);
 };
 
-export const parsePattern = (parserContext: ParserContext): Node | null => {
-  const tok = peekToken(parserContext);
-  if (!tok) {
-    fail(parserContext, 'parsePattern: unexpected end of input', 0, 0);
-  }
+export const parsePattern = (parserContext: ParserContext): Result<Node | null, TemplateError> => {
+  const tokR = peekToken(parserContext);
+  if (isErr(tokR)) { return tokR; }
+  const tok = tokR.value;
   if (tok.type === TOKEN_LEFT_BRACKET) {
     return parseArrayPattern(parserContext, tok.lineno, tok.colno);
   }
   if (tok.type === TOKEN_LEFT_CURLY) {
     return parseObjectPattern(parserContext, tok.lineno, tok.colno);
   }
-  fail(parserContext, 'parsePattern: expected [ or {',
+  return fail(parserContext, 'parsePattern: expected [ or {',
     tok.lineno,
     tok.colno);
-  return null;
 };
 
-export const tryParsePattern = (parserContext: ParserContext): Node | null => {
+export const tryParsePattern = (parserContext: ParserContext): Result<Node | null, TemplateError> => {
   if (isDestructuringStart(parserContext)) {
     return parsePattern(parserContext);
   }
-  return null;
+  return ok(null);
 };

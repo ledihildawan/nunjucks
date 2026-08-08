@@ -6,64 +6,95 @@ import {
 } from '@nunjucks/lexer';
 import { compoundAssignment, variableAssignment, variableDeclaration } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import type { TemplateError } from '@nunjucks/log';
 import { peekToken, skipValue, nextToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
 import { tryParsePattern } from "../node-parser/pattern.ts";
 import { loc } from '@nunjucks/shared';
 
-export const parseVariableDeclaration = (parserContext: ParserContext): Node => {
-  const tag = peekToken(parserContext);
+export const parseVariableDeclaration = (parserContext: ParserContext): Result<Node, TemplateError> => {
+  const tagR = peekToken(parserContext);
+  if (isErr(tagR)) { return tagR; }
+  const tag = tagR.value;
 
-  const patternNode = tryParsePattern(parserContext);
-  const target = patternNode ?? parsePrimary(parserContext);
+  const patternNodeR = tryParsePattern(parserContext);
+  if (isErr(patternNodeR)) { return patternNodeR; }
+  const patternNode = patternNodeR.value;
+  let target: Node;
+  if (patternNode) {
+    target = patternNode;
+  } else {
+    const primR = parsePrimary(parserContext);
+    if (isErr(primR)) { return primR; }
+    target = primR.value;
+  }
   if (!patternNode && (!target || (target.type !== 'symbol' && !target.value))) {
-    fail(parserContext, 'Expected variable name or pattern', tag.lineno, tag.colno);
+    return fail(parserContext, 'Expected variable name or pattern', tag.lineno, tag.colno);
   }
   const targets: Node[] = [target];
 
   if (!skipValue(parserContext, TOKEN_OPERATOR, ':=')) {
-    fail(parserContext, 'Expected :=', tag.lineno, tag.colno);
+    return fail(parserContext, 'Expected :=', tag.lineno, tag.colno);
   }
 
-  const value = parseExpression(parserContext);
+  const valueR = parseExpression(parserContext);
+  if (isErr(valueR)) { return valueR; }
 
-  return variableDeclaration(loc(tag), { targets, val: value });
+  return ok(variableDeclaration(loc(tag), { targets, val: valueR.value }));
 };
 
-const parseOperator = (parserContext: ParserContext, tag: Token): string => {
-  const tok = peekToken(parserContext);
+const parseOperator = (parserContext: ParserContext, tag: Token): Result<string, TemplateError> => {
+  const tokR = peekToken(parserContext);
+  if (isErr(tokR)) { return tokR; }
+  const tok = tokR.value;
   if (tok?.type === TOKEN_OPERATOR) {
     if (COMPOUND_ASSIGNMENT_OPS.includes(String(tok.value))) {
-      const next = nextToken(parserContext);
-      return isSymbolToken(next) ? next.value : String(next.value);
+      const nextR = nextToken(parserContext);
+      if (isErr(nextR)) { return nextR; }
+      return ok(isSymbolToken(nextR.value) ? nextR.value.value : String(nextR.value.value));
     }
     if (tok.value === '=') {
-      nextToken(parserContext);
-      return '=';
+      const consumedR = nextToken(parserContext);
+      if (isErr(consumedR)) { return consumedR; }
+      return ok('=');
     }
-    fail(parserContext, 'Expected =, ||= , &&=, ??=, **=, //=', tag.lineno, tag.colno);
+    return fail(parserContext, 'Expected =, ||= , &&=, ??=, **=, //=', tag.lineno, tag.colno);
   }
-  fail(parserContext, 'Expected =', tag.lineno, tag.colno);
-  return '';
+  return fail(parserContext, 'Expected =', tag.lineno, tag.colno);
 };
 
-export const parseVariableAssignment = (parserContext: ParserContext): Node => {
-  const tag = peekToken(parserContext);
+export const parseVariableAssignment = (parserContext: ParserContext): Result<Node, TemplateError> => {
+  const tagR = peekToken(parserContext);
+  if (isErr(tagR)) { return tagR; }
+  const tag = tagR.value;
 
-  const patternNode = tryParsePattern(parserContext);
-  const target = patternNode ?? parsePrimary(parserContext);
+  const patternNodeR = tryParsePattern(parserContext);
+  if (isErr(patternNodeR)) { return patternNodeR; }
+  const patternNode = patternNodeR.value;
+  let target: Node;
+  if (patternNode) {
+    target = patternNode;
+  } else {
+    const primR = parsePrimary(parserContext);
+    if (isErr(primR)) { return primR; }
+    target = primR.value;
+  }
   if (!patternNode && (!target || (target.type !== 'symbol' && !target.value))) {
-    fail(parserContext, 'Expected variable name or pattern', tag.lineno, tag.colno);
+    return fail(parserContext, 'Expected variable name or pattern', tag.lineno, tag.colno);
   }
   const targets: Node[] = [target];
 
-  const operator = parseOperator(parserContext, tag);
-  const value = parseExpression(parserContext);
+  const operatorR = parseOperator(parserContext, tag);
+  if (isErr(operatorR)) { return operatorR; }
+  const operator = operatorR.value;
+  const valueR = parseExpression(parserContext);
+  if (isErr(valueR)) { return valueR; }
 
   if (operator !== '=') {
-    return compoundAssignment(loc(tag), { targets, operator, value });
+    return ok(compoundAssignment(loc(tag), { targets, operator, value: valueR.value }));
   }
 
-  return variableAssignment(loc(tag), { targets, val: value });
+  return ok(variableAssignment(loc(tag), { targets, val: valueR.value }));
 };

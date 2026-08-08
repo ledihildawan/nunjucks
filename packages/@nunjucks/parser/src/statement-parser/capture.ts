@@ -1,15 +1,19 @@
 import type { Node } from '@nunjucks/nodes';
 import { capture } from '@nunjucks/nodes';
+import type { TemplateError } from '@nunjucks/log';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail, nextTokenOrNull } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import { isSymbolToken } from '@nunjucks/lexer';
 import { parseUntilBlocks } from "../parse-root.ts";
 import { loc } from '@nunjucks/shared';
 
-export const parseCapture = (parserContext: ParserContext): Node => {
-  const tag = peekToken(parserContext);
+export const parseCapture = (parserContext: ParserContext): Result<Node, TemplateError> => {
+  const tagR = peekToken(parserContext);
+  if (isErr(tagR)) { return tagR; }
+  const tag = tagR.value;
   if (!skipSymbol(parserContext, 'capture')) {
-    fail(parserContext, 'Expected capture', tag.lineno, tag.colno);
+    return fail(parserContext, 'Expected capture', tag.lineno, tag.colno);
   }
 
   const nameTok = nextTokenOrNull(parserContext);
@@ -18,10 +22,13 @@ export const parseCapture = (parserContext: ParserContext): Node => {
     varName = nameTok.value;
   }
 
-  advanceAfterBlockEnd(parserContext, 'capture');
-  const body = parseUntilBlocks(parserContext, 'endcapture');
+  const blockEndR = advanceAfterBlockEnd(parserContext, 'capture');
+  if (isErr(blockEndR)) { return blockEndR; }
+  const bodyR = parseUntilBlocks(parserContext, 'endcapture');
+  if (isErr(bodyR)) { return bodyR; }
   skipSymbol(parserContext, 'endcapture');
-  advanceAfterBlockEnd(parserContext, 'endcapture');
+  const finalR = advanceAfterBlockEnd(parserContext, 'endcapture');
+  if (isErr(finalR)) { return finalR; }
 
-  return capture(loc(tag), { body, name: varName });
+  return ok(capture(loc(tag), { body: bodyR.value, name: varName }));
 };

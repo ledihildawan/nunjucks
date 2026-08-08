@@ -1,17 +1,25 @@
 import { execNode } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import type { TemplateError } from '@nunjucks/log';
 import { peekToken, skipSymbol, nextToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import { parseExpression } from "../expression-parser/index.ts";
 import { loc } from '@nunjucks/shared';
 
-export const parseExec = (parserContext: ParserContext): Node => {
-  const tag = peekToken(parserContext);
-  if (!skipSymbol(parserContext, 'exec')) { fail(parserContext, 'expected exec', tag.lineno, tag.colno); }
+export const parseExec = (parserContext: ParserContext): Result<Node, TemplateError> => {
+  const tagR = peekToken(parserContext);
+  if (isErr(tagR)) { return tagR; }
+  const tag = tagR.value;
+  if (!skipSymbol(parserContext, 'exec')) {
+    return fail(parserContext, 'expected exec', tag.lineno, tag.colno);
+  }
 
-  const expr = parseExpression(parserContext);
+  const exprR = parseExpression(parserContext);
+  if (isErr(exprR)) { return exprR; }
 
-  nextToken(parserContext);
+  const consumedR = nextToken(parserContext);
+  if (isErr(consumedR)) { return consumedR; }
 
-  return execNode(loc(tag), expr);
+  return ok(execNode(loc(tag), exprR.value));
 };

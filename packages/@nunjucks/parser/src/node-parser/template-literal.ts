@@ -1,9 +1,10 @@
 import { TOKEN_TEMPLATE_LITERAL } from '@nunjucks/lexer';
 import { symbol, templateLiteral } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { map, pipe } from 'remeda';
+import type { TemplateError } from '@nunjucks/log';
 import { nextToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import { loc } from '@nunjucks/shared';
 
 const SIMPLE_IDENTIFIER_PATTERN = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
@@ -21,28 +22,32 @@ const isSafeTemplateExpression = (expr: string): boolean => {
   return true;
 };
 
-export const parseTemplateLiteral = (parserContext: ParserContext): Node | null => {
-  const tok = nextToken(parserContext);
+export const parseTemplateLiteral = (parserContext: ParserContext): Result<Node | null, TemplateError> => {
+  const tokR = nextToken(parserContext);
+  if (isErr(tokR)) { return tokR; }
+  const tok = tokR.value;
 
   if (tok.type !== TOKEN_TEMPLATE_LITERAL) {
-    return null;
+    return ok(null);
   }
 
   const quasis = tok.value.quasis ?? [];
 
-  const processedQuasis = pipe(quasis, map(quasi => {
+  const processedQuasis: Array<{ type: 'template'; value: string } | { type: 'expression'; node: Node }> = [];
+  for (const quasi of quasis) {
     if (quasi.type === 'expression' && quasi.value) {
       if (!isSafeTemplateExpression(quasi.value)) {
-        fail(parserContext, 'Template literal expressions must be simple identifiers only. ' +
+        return fail(parserContext, 'Template literal expressions must be simple identifiers only. ' +
           'Complex expressions like "${' + quasi.value + '}" are not allowed. ' +
           'Use filters or `:=` declarations for complex computations.',
           tok.lineno, tok.colno);
       }
       const exprNode = symbol(loc(tok), quasi.value);
-      return { type: 'expression' as const, node: exprNode };
+      processedQuasis.push({ type: 'expression', node: exprNode });
+    } else {
+      processedQuasis.push({ type: 'template', value: quasi.value });
     }
-    return { type: 'template' as const, value: quasi.value };
-  }));
+  }
 
-  return templateLiteral(loc(tok), processedQuasis);
+  return ok(templateLiteral(loc(tok), processedQuasis));
 };

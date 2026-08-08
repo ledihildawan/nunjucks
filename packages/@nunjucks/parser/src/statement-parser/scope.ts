@@ -1,85 +1,113 @@
 import { pair, scopeNode } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import type { TemplateError } from '@nunjucks/log';
 import { peekToken, skipSymbol, skip, nextToken, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { TOKEN_BLOCK_END, TOKEN_COMMA, TOKEN_OPERATOR } from '@nunjucks/lexer';
 import type { Token } from '@nunjucks/lexer';
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
 import { loc } from '@nunjucks/shared';
 
 const isBlockEnd = (tok: Token | null | undefined): boolean => tok?.type === TOKEN_BLOCK_END;
 
-const parseScopeAssignment = (parserContext: ParserContext, tag: Token): Node => {
-  const nameSymbol = parsePrimary(parserContext);
-  const eqTok = peekToken(parserContext);
+const parseScopeAssignment = (parserContext: ParserContext, tag: Token): Result<Node, TemplateError> => {
+  const nameSymbolR = parsePrimary(parserContext);
+  if (isErr(nameSymbolR)) { return nameSymbolR; }
+  const nameSymbol = nameSymbolR.value;
+  const eqTokR = peekToken(parserContext);
+  if (isErr(eqTokR)) { return eqTokR; }
+  const eqTok = eqTokR.value;
 
   if (!eqTok || eqTok.type !== TOKEN_OPERATOR || eqTok.value !== '=') {
-    fail(parserContext, 'parseScope: expected = after variable name', tag.lineno, tag.colno);
+    return fail(parserContext, 'parseScope: expected = after variable name', tag.lineno, tag.colno);
   }
 
-  nextToken(parserContext);
-  const value = parseExpression(parserContext);
-  if (!value) {
-    fail(parserContext, 'parseScope: expected expression after =', tag.lineno, tag.colno);
+  const consumedR = nextToken(parserContext);
+  if (isErr(consumedR)) { return consumedR; }
+  const valueR = parseExpression(parserContext);
+  if (isErr(valueR)) { return valueR; }
+  if (!valueR.value) {
+    return fail(parserContext, 'parseScope: expected expression after =', tag.lineno, tag.colno);
   }
 
-  return pair(loc(nameSymbol), { key: String(nameSymbol.value), val: value });
+  return ok(pair(loc(nameSymbol), { key: String(nameSymbol.value), val: valueR.value }));
 };
 
-const parseScopeAssignments = (parserContext: ParserContext, tag: Token): Node[] => {
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+const parseScopeAssignments = (parserContext: ParserContext, tag: Token): Result<Node[], TemplateError> => {
   const assignments: Node[] = [];
-  assignments.push(parseScopeAssignment(parserContext, tag));
+  const firstR = parseScopeAssignment(parserContext, tag);
+  if (isErr(firstR)) { return firstR; }
+  assignments.push(firstR.value);
 
   while (skip(parserContext, TOKEN_COMMA)) {
-    const nextNameTok = peekToken(parserContext);
-    if (nextNameTok?.type !== 'symbol') {
-      fail(parserContext, 'parseScope: expected variable name after comma', tag.lineno, tag.colno);
+    const nextNameTokR = peekToken(parserContext);
+    if (isErr(nextNameTokR)) { return nextNameTokR; }
+    if (nextNameTokR.value?.type !== 'symbol') {
+      return fail(parserContext, 'parseScope: expected variable name after comma', tag.lineno, tag.colno);
     }
 
-    const nextName = parsePrimary(parserContext);
-    const nextEq = peekToken(parserContext);
+    const nextNameR = parsePrimary(parserContext);
+    if (isErr(nextNameR)) { return nextNameR; }
+    const nextName = nextNameR.value;
+    const nextEqR = peekToken(parserContext);
+    if (isErr(nextEqR)) { return nextEqR; }
+    const nextEq = nextEqR.value;
     if (!nextEq || nextEq.type !== TOKEN_OPERATOR || nextEq.value !== '=') {
-      fail(parserContext, 'parseScope: expected = after variable name', tag.lineno, tag.colno);
+      return fail(parserContext, 'parseScope: expected = after variable name', tag.lineno, tag.colno);
     }
 
-    nextToken(parserContext);
-    const nextValue = parseExpression(parserContext);
-    if (!nextValue) {
-      fail(parserContext, 'parseScope: expected expression after =', tag.lineno, tag.colno);
+    const consumedEqR = nextToken(parserContext);
+    if (isErr(consumedEqR)) { return consumedEqR; }
+    const nextValueR = parseExpression(parserContext);
+    if (isErr(nextValueR)) { return nextValueR; }
+    if (!nextValueR.value) {
+      return fail(parserContext, 'parseScope: expected expression after =', tag.lineno, tag.colno);
     }
 
-    assignments.push(pair(loc(nextName), { key: String(nextName.value), val: nextValue }));
+    assignments.push(pair(loc(nextName), { key: String(nextName.value), val: nextValueR.value }));
   }
 
-  return assignments;
+  return ok(assignments);
 };
 
-export const parseScope = (parserContext: ParserContext): Node => {
-  const tag = peekToken(parserContext);
+export const parseScope = (parserContext: ParserContext): Result<Node, TemplateError> => {
+  const tagR = peekToken(parserContext);
+  if (isErr(tagR)) { return tagR; }
+  const tag = tagR.value;
   if (!skipSymbol(parserContext, 'scope')) {
-    fail(parserContext, 'parseScope: expected scope', tag.lineno, tag.colno);
+    return fail(parserContext, 'parseScope: expected scope', tag.lineno, tag.colno);
   }
 
-  const firstTok = peekToken(parserContext);
+  const firstTokR = peekToken(parserContext);
+  if (isErr(firstTokR)) { return firstTokR; }
+  const firstTok = firstTokR.value;
 
   let assignments: Node[] = [];
   if (isBlockEnd(firstTok)) {
-    advanceAfterBlockEnd(parserContext, 'scope');
+    const aR = advanceAfterBlockEnd(parserContext, 'scope');
+    if (isErr(aR)) { return aR; }
   } else if (firstTok?.type === 'symbol') {
-    assignments = parseScopeAssignments(parserContext, tag);
-    advanceAfterBlockEnd(parserContext, 'scope');
+    const assignmentsR = parseScopeAssignments(parserContext, tag);
+    if (isErr(assignmentsR)) { return assignmentsR; }
+    assignments = assignmentsR.value;
+    const aR = advanceAfterBlockEnd(parserContext, 'scope');
+    if (isErr(aR)) { return aR; }
   } else {
-    fail(parserContext, 'parseScope: expected variable name or block end', tag.lineno, tag.colno);
+    return fail(parserContext, 'parseScope: expected variable name or block end', tag.lineno, tag.colno);
   }
 
-  const body = parseUntilBlocks(parserContext, 'endscope');
+  const bodyR = parseUntilBlocks(parserContext, 'endscope');
+  if (isErr(bodyR)) { return bodyR; }
 
   if (!skipSymbol(parserContext, 'endscope')) {
-    fail(parserContext, 'parseScope: expected endscope', tag.lineno, tag.colno);
+    return fail(parserContext, 'parseScope: expected endscope', tag.lineno, tag.colno);
   }
 
-  advanceAfterBlockEnd(parserContext, 'endscope');
+  const finalR = advanceAfterBlockEnd(parserContext, 'endscope');
+  if (isErr(finalR)) { return finalR; }
 
-  return scopeNode(loc(tag), { assignments, body });
+  return ok(scopeNode(loc(tag), { assignments, body: bodyR.value }));
 };

@@ -12,8 +12,10 @@ import {
 } from '@nunjucks/lexer';
 import { literal, symbol, neg, pos, bitwiseNot, increment, decrement } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import type { TemplateError } from '@nunjucks/log';
 import { nextToken, peekToken, pushToken, skipValue, fail } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
+import { ok, isOk, isErr, type Result } from '@nunjucks/shared';
 import { EXPECTED_COLON_AFTER_DICT_KEY } from '../error.ts';
 import { tryParsePattern } from '../node-parser/pattern.ts';
 import { parseAggregate } from '../node-parser/aggregate/index.ts';
@@ -27,105 +29,123 @@ const parseBooleanValue = (tok: Token): boolean | undefined => {
   return undefined;
 };
 
-const handleLiteralToken = (tok: Token, parserContext: ParserContext): Node | undefined => {
+const handleLiteralToken = (tok: Token, parserContext: ParserContext): Result<Node | undefined, TemplateError> => {
   switch (tok.type) {
     case TOKEN_STRING:
-      return literal(loc(tok), tok.value);
+      return ok(literal(loc(tok), tok.value));
     case TOKEN_INT:
     case TOKEN_FLOAT:
-      return literal(loc(tok), tok.value);
+      return ok(literal(loc(tok), tok.value));
     case TOKEN_BOOLEAN: {
       const value = parseBooleanValue(tok);
       if (value === undefined) {
-        fail(parserContext, `invalid boolean: ${tok.value}`, tok.lineno, tok.colno);
+        return fail(parserContext, `invalid boolean: ${tok.value}`, tok.lineno, tok.colno);
       }
-      return literal(loc(tok), value);
+      return ok(literal(loc(tok), value));
     }
     case TOKEN_NONE:
-      return literal(loc(tok), null);
+      return ok(literal(loc(tok), null));
     case TOKEN_REGEX: {
       const { body, flags } = tok.value;
-      return literal(loc(tok), new RegExp(body, flags));
+      return ok(literal(loc(tok), new RegExp(body, flags)));
     }
   }
-  return undefined;
+  return ok(undefined);
 };
 
-const handleSymbolOrTemplate = (tok: Token, parserContext: ParserContext): Node | null => {
+const handleSymbolOrTemplate = (tok: Token, parserContext: ParserContext): Result<Node | null, TemplateError> => {
   if (isSymbolToken(tok)) {
-    return symbol(loc(tok), tok.value);
+    return ok(symbol(loc(tok), tok.value));
   }
   if (tok.type === TOKEN_TEMPLATE_LITERAL) {
     pushToken(parserContext, tok);
-    return parseTemplateLiteral(parserContext);
+    const tlR = parseTemplateLiteral(parserContext);
+    if (isErr(tlR)) { return tlR; }
+    return ok(tlR.value);
   }
-  return null;
+  return ok(null);
 };
 
-// WHY: controlled backtracking for a genuinely ambiguous grammar — both a dict literal `{k:1}` and a destructuring pattern `{k}` start with `{`, and the dict-vs-pattern decision can only be made after parsing the first key + peeking the following token (which parseAggregate does, throwing the EXPECTED_COLON_AFTER_DICT_KEY sentinel when it detects a pattern). A no-throw fix would require threading a speculative mode through parseAggregate's recursive structure (parseContent/parseExpressions); this bounded single-site backtracking is the proportionate, recognized parser technique for ambiguous grammar disambiguation.
-const parseAggregateOrPattern = (parserContext: ParserContext): Node | null => {
-  try {
-    return parseAggregate(parserContext);
-  } catch (e) {
-    if (e !== null && typeof e === 'object' && (e as { sentinel?: unknown }).sentinel === EXPECTED_COLON_AFTER_DICT_KEY) {
-      const node = tryParsePattern(parserContext);
-      if (!node) {
-        throw e;
-      }
-      return node;
+const parseAggregateOrPattern = (parserContext: ParserContext): Result<Node | null, TemplateError> => {
+  const aggR = parseAggregate(parserContext);
+  if (isOk(aggR)) { return aggR; }
+  if ((aggR.error as { sentinel?: unknown }).sentinel === EXPECTED_COLON_AFTER_DICT_KEY) {
+    const patternR = tryParsePattern(parserContext);
+    if (isOk(patternR) && patternR.value !== null) {
+      return patternR;
     }
-    throw e;
+    if (isErr(patternR)) { return patternR; }
   }
+  return aggR;
 };
 
-const parsePrimary = (parserContext: ParserContext, noPostfix?: boolean): Node => {
-  const tok = nextToken(parserContext);
+const parsePrimary = (parserContext: ParserContext, noPostfix?: boolean): Result<Node, TemplateError> => {
+  const tokR = nextToken(parserContext);
+  if (isErr(tokR)) { return tokR; }
+  const tok = tokR.value;
 
-  if (!tok) {
-    fail(parserContext, 'expected expression, got end of file');
+  const literalR = handleLiteralToken(tok, parserContext);
+  if (isErr(literalR)) { return literalR; }
+  if (literalR.value) {
+    return noPostfix ? ok(literalR.value) : parsePostfix(parserContext, literalR.value);
   }
 
-  const literalNode = handleLiteralToken(tok, parserContext);
-  if (literalNode) {
-    return noPostfix ? literalNode : parsePostfix(parserContext, literalNode);
-  }
-
-  const symbolNode = handleSymbolOrTemplate(tok, parserContext);
-  if (symbolNode) {
-    return noPostfix ? symbolNode : parsePostfix(parserContext, symbolNode);
+  const symbolR = handleSymbolOrTemplate(tok, parserContext);
+  if (isErr(symbolR)) { return symbolR; }
+  if (symbolR.value) {
+    return noPostfix ? ok(symbolR.value) : parsePostfix(parserContext, symbolR.value);
   }
 
   pushToken(parserContext, tok);
-  const aggregateNode = parseAggregateOrPattern(parserContext);
+  const aggregateR = parseAggregateOrPattern(parserContext);
+  if (isErr(aggregateR)) { return aggregateR; }
+  const aggregateNode = aggregateR.value;
   if (!aggregateNode) {
     return fail(parserContext, `expected expression, got ${tok.type}`, tok.lineno, tok.colno);
   }
-  return noPostfix ? aggregateNode : parsePostfix(parserContext, aggregateNode);
+  return noPostfix ? ok(aggregateNode) : parsePostfix(parserContext, aggregateNode);
 };
 
-const parseUnary = (parserContext: ParserContext, noPipes?: boolean): Node => {
-  const tok = peekToken(parserContext);
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+const parseUnary = (parserContext: ParserContext, noPipes?: boolean): Result<Node, TemplateError> => {
+  const tokR = peekToken(parserContext);
+  if (isErr(tokR)) { return tokR; }
+  const tok = tokR.value;
   let node: Node;
 
   if (skipValue(parserContext, TOKEN_OPERATOR, '-')) {
-    node = neg(loc(tok), parseUnary(parserContext, true));
+    const innerR = parseUnary(parserContext, true);
+    if (isErr(innerR)) { return innerR; }
+    node = neg(loc(tok), innerR.value);
   } else if (skipValue(parserContext, TOKEN_OPERATOR, '+')) {
-    node = pos(loc(tok), parseUnary(parserContext, true));
+    const innerR = parseUnary(parserContext, true);
+    if (isErr(innerR)) { return innerR; }
+    node = pos(loc(tok), innerR.value);
   } else if (skipValue(parserContext, TOKEN_OPERATOR, '~')) {
-    node = bitwiseNot(loc(tok), parseUnary(parserContext, true));
+    const innerR = parseUnary(parserContext, true);
+    if (isErr(innerR)) { return innerR; }
+    node = bitwiseNot(loc(tok), innerR.value);
   } else if (skipValue(parserContext, TOKEN_OPERATOR, '++')) {
-    node = increment(loc(tok), { target: parseUnary(parserContext, true), isPostfix: false });
+    const innerR = parseUnary(parserContext, true);
+    if (isErr(innerR)) { return innerR; }
+    node = increment(loc(tok), { target: innerR.value, isPostfix: false });
   } else if (skipValue(parserContext, TOKEN_OPERATOR, '--')) {
-    node = decrement(loc(tok), { target: parseUnary(parserContext, true), isPostfix: false });
+    const innerR = parseUnary(parserContext, true);
+    if (isErr(innerR)) { return innerR; }
+    node = decrement(loc(tok), { target: innerR.value, isPostfix: false });
   } else {
-    node = parsePrimary(parserContext);
+    const primaryR = parsePrimary(parserContext);
+    if (isErr(primaryR)) { return primaryR; }
+    node = primaryR.value;
   }
 
   if (!noPipes) {
-    node = parsePipeForward(parserContext, node);
+    const pipeR = parsePipeForward(parserContext, node);
+    if (isErr(pipeR)) { return pipeR; }
+    node = pipeR.value;
   }
 
-  return node;
+  return ok(node);
 };
 
 export { parsePrimary, parseUnary };

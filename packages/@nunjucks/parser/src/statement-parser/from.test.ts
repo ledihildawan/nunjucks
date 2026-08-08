@@ -4,11 +4,11 @@ import { createParser } from '../index.ts';
 import { parseNodes } from '../parse-root.ts';
 import { getNodeTypeName, isPair } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { asTokenStream } from '../test-helpers.ts';
+import { asTokenStream, unwrap } from '../test-helpers.ts';
 
 const parseFirst = (src: string): Node => {
   const ctx = createParser(asTokenStream(createTokenizer(src)));
-  return parseNodes(ctx)[0] as Node;
+  return unwrap(parseNodes(ctx))[0] as Node;
 };
 
 describe('parseFrom', () => {

@@ -1,40 +1,50 @@
 import { capture, nodeList, output, pipe } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import type { TemplateError } from '@nunjucks/log';
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import { loc } from '@nunjucks/shared';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { parseFilterCallName, parseFilterCallArgs } from "../expression-parser/postfix/index.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
 
-export const parseFilterStatement = (parserContext: ParserContext): Node => {
-  const filterTok = peekToken(parserContext);
+export const parseFilterStatement = (parserContext: ParserContext): Result<Node, TemplateError> => {
+  const filterTokR = peekToken(parserContext);
+  if (isErr(filterTokR)) { return filterTokR; }
+  const filterTok = filterTokR.value;
   if (!skipSymbol(parserContext, 'filter')) {
-    fail(parserContext, 'parseFilterStatement: expected filter');
+    return fail(parserContext, 'parseFilterStatement: expected filter');
   }
 
-  const name = parseFilterCallName(parserContext);
-  const args = parseFilterCallArgs(parserContext, name);
+  const nameR = parseFilterCallName(parserContext);
+  if (isErr(nameR)) { return nameR; }
+  const argsR = parseFilterCallArgs(parserContext, nameR.value);
+  if (isErr(argsR)) { return argsR; }
 
-  advanceAfterBlockEnd(parserContext, String(filterTok.value));
-  const body = capture(
-    loc(name),
-    { body: parseUntilBlocks(parserContext, 'endfilter') }
+  const blockEndR = advanceAfterBlockEnd(parserContext, String(filterTok.value));
+  if (isErr(blockEndR)) { return blockEndR; }
+  const capturedBodyR = parseUntilBlocks(parserContext, 'endfilter');
+  if (isErr(capturedBodyR)) { return capturedBodyR; }
+  const capturedBody = capture(
+    loc(nameR.value),
+    { body: capturedBodyR.value }
   );
-  advanceAfterBlockEnd(parserContext);
+  const finalR = advanceAfterBlockEnd(parserContext);
+  if (isErr(finalR)) { return finalR; }
 
   const node = pipe(
-    loc(name),
+    loc(nameR.value),
     {
-      name,
+      name: nameR.value,
       args: nodeList(
-        loc(name),
-        [body, ...args]
+        loc(nameR.value),
+        [capturedBody, ...argsR.value]
       ).children,
     }
   );
 
-  return output(
-    loc(name),
+  return ok(output(
+    loc(nameR.value),
     [node]
-  );
+  ));
 };

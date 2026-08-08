@@ -1,65 +1,83 @@
 import { TOKEN_COMMA } from '@nunjucks/lexer';
 import { appendChild, array, forNode, isSymbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import type { TemplateError } from '@nunjucks/log';
 import { peekToken, skipSymbol, skip, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
 import { tryParsePattern } from "../node-parser/pattern.ts";
 import { loc } from '@nunjucks/shared';
 
-const parseForTarget = (parserContext: ParserContext): Node => {
-  const patternNode = tryParsePattern(parserContext);
+const parseForTarget = (parserContext: ParserContext): Result<Node, TemplateError> => {
+  const patternNodeR = tryParsePattern(parserContext);
+  if (isErr(patternNodeR)) { return patternNodeR; }
+  const patternNode = patternNodeR.value;
   if (patternNode) {
-    return patternNode;
+    return ok(patternNode);
   }
 
-  const name = parsePrimary(parserContext);
+  const nameR = parsePrimary(parserContext);
+  if (isErr(nameR)) { return nameR; }
+  const name = nameR.value;
   if (!isSymbol(name)) {
-    fail(parserContext, 'parseFor: variable name expected for loop');
+    return fail(parserContext, 'parseFor: variable name expected for loop');
   }
 
-  const { type } = peekToken(parserContext);
-  if (type !== TOKEN_COMMA) { return name; }
+  const tokR = peekToken(parserContext);
+  if (isErr(tokR)) { return tokR; }
+  if (tokR.value.type !== TOKEN_COMMA) { return ok(name); }
 
   const key = name;
-  const arrNode = array(loc(key));
-  let result = appendChild(arrNode, key);
+  let result = appendChild(array(loc(key)), key);
   while (skip(parserContext, TOKEN_COMMA)) {
-    const prim = parsePrimary(parserContext);
-    result = appendChild(result, prim);
+    const primR = parsePrimary(parserContext);
+    if (isErr(primR)) { return primR; }
+    result = appendChild(result, primR.value);
   }
-  return result;
+  return ok(result);
 };
 
-export const parseFor = (parserContext: ParserContext): Node => {
-  const forTok = peekToken(parserContext);
+export const parseFor = (parserContext: ParserContext): Result<Node, TemplateError> => {
+  const forTokR = peekToken(parserContext);
+  if (isErr(forTokR)) { return forTokR; }
+  const forTok = forTokR.value;
 
   if (!skipSymbol(parserContext, 'for')) {
     return fail(parserContext, 'parseFor: expected for', forTok.lineno, forTok.colno);
   }
   const endBlock = 'endfor';
 
-  const name = parseForTarget(parserContext);
+  const nameR = parseForTarget(parserContext);
+  if (isErr(nameR)) { return nameR; }
+  const name = nameR.value;
 
   if (!skipSymbol(parserContext, 'in')) {
-    fail(parserContext, 'parseFor: expected "in" keyword for loop',
+    return fail(parserContext, 'parseFor: expected "in" keyword for loop',
       forTok.lineno,
       forTok.colno);
   }
 
-  const arr = parseExpression(parserContext);
-  advanceAfterBlockEnd(parserContext, String(forTok.value));
+  const arrR = parseExpression(parserContext);
+  if (isErr(arrR)) { return arrR; }
+  const blockEndR = advanceAfterBlockEnd(parserContext, String(forTok.value));
+  if (isErr(blockEndR)) { return blockEndR; }
 
-  const body = parseUntilBlocks(parserContext, endBlock, 'else');
+  const bodyR = parseUntilBlocks(parserContext, endBlock, 'else');
+  if (isErr(bodyR)) { return bodyR; }
 
   let alternate: Node | null = null;
   if (skipSymbol(parserContext, 'else')) {
-    advanceAfterBlockEnd(parserContext, 'else');
-    alternate = parseUntilBlocks(parserContext, endBlock);
+    const aR = advanceAfterBlockEnd(parserContext, 'else');
+    if (isErr(aR)) { return aR; }
+    const altBodyR = parseUntilBlocks(parserContext, endBlock);
+    if (isErr(altBodyR)) { return altBodyR; }
+    alternate = altBodyR.value;
   }
 
-  advanceAfterBlockEnd(parserContext);
+  const finalR = advanceAfterBlockEnd(parserContext);
+  if (isErr(finalR)) { return finalR; }
 
-  return forNode(loc(forTok), { name, arr, body, alternate });
+  return ok(forNode(loc(forTok), { name, arr: arrR.value, body: bodyR.value, alternate }));
 };

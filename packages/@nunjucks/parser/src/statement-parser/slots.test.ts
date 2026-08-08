@@ -5,7 +5,7 @@ import { nextTokenOrNull } from '../cursor.ts';
 import { parseSlottedBody, buildDefaultBody } from './slots.ts';
 import { getNodeTypeName } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { asTokenStream } from '../test-helpers.ts';
+import { asTokenStream, unwrap } from '../test-helpers.ts';
 
 const makeCtx = (src: string) =>
   createParser(asTokenStream(createTokenizer(src)));
@@ -16,7 +16,7 @@ const parseBody = (src: string) => {
   nextTokenOrNull(ctx);
   nextTokenOrNull(ctx);
   nextTokenOrNull(ctx);
-  return { ctx, body: parseSlottedBody(ctx, 'endcomponent') };
+  return { ctx, body: unwrap(parseSlottedBody(ctx, 'endcomponent')) };
 };
 
 describe('parseSlottedBody', () => {

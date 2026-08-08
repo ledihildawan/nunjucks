@@ -1,27 +1,39 @@
 import { isSymbol, component } from '@nunjucks/nodes';
 import type { Node, SlotBlock } from '@nunjucks/nodes';
+import type { TemplateError } from '@nunjucks/log';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import { parsePrimary } from "../expression-parser/index.ts";
 import { parseSignature } from "../node-parser/signature.ts";
 import { parseSlottedBody, buildDefaultBody, advanceAfterTags } from "./slots.ts";
 import { loc } from '@nunjucks/shared';
 
-export const parseComponent = (parserContext: ParserContext): Node => {
-  const compTok = peekToken(parserContext);
+export const parseComponent = (parserContext: ParserContext): Result<Node, TemplateError> => {
+  const compTokR = peekToken(parserContext);
+  if (isErr(compTokR)) { return compTokR; }
+  const compTok = compTokR.value;
   if (!skipSymbol(parserContext, 'component')) {
-    fail(parserContext, 'expected component');
+    return fail(parserContext, 'expected component');
   }
 
-  const name = parsePrimary(parserContext, true);
-  const args = parseSignature(parserContext, true);
+  const nameR = parsePrimary(parserContext, true);
+  if (isErr(nameR)) { return nameR; }
+  const name = nameR.value;
+  const argsR = parseSignature(parserContext, true);
+  if (isErr(argsR)) { return argsR; }
+  const args = argsR.value;
   if (!isSymbol(name)) {
-    fail(parserContext, 'expected component name', compTok.lineno, compTok.colno);
+    return fail(parserContext, 'expected component name', compTok.lineno, compTok.colno);
   }
 
-  advanceAfterBlockEnd(parserContext, String(compTok.value));
-  const { defaultParts, namedSlots, implicitSlots } = parseSlottedBody(parserContext, 'endcomponent');
-  advanceAfterTags(parserContext, 'endcomponent');
+  const blockEndR = advanceAfterBlockEnd(parserContext, String(compTok.value));
+  if (isErr(blockEndR)) { return blockEndR; }
+  const slotsR = parseSlottedBody(parserContext, 'endcomponent');
+  if (isErr(slotsR)) { return slotsR; }
+  const { defaultParts, namedSlots, implicitSlots } = slotsR.value;
+  const tagsR = advanceAfterTags(parserContext, 'endcomponent');
+  if (isErr(tagsR)) { return tagsR; }
 
   const body = buildDefaultBody(defaultParts, compTok.lineno, compTok.colno);
   const fallbackSlots: SlotBlock[] = [
@@ -36,5 +48,5 @@ export const parseComponent = (parserContext: ParserContext): Node => {
     fallbackSlots,
   });
 
-  return node;
+  return ok(node);
 };

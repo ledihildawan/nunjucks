@@ -6,8 +6,10 @@ import {
 } from '@nunjucks/lexer';
 import { appendChild, fromImportNode, nodeList, pair } from '@nunjucks/nodes';
 import type { ChildrenNode, Node } from '@nunjucks/nodes';
+import type { TemplateError } from '@nunjucks/log';
 import { nextToken, peekToken, skip, skipSymbol, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import { parseExpression, parsePrimary } from "../expression-parser/index.ts";
 import { parseWithContext } from "./import-context.ts";
 import { loc } from '@nunjucks/shared';
@@ -22,52 +24,67 @@ const isUnderscore = (name: Node): boolean => {
 const parseImportName = (
   parserContext: ParserContext,
   names: ChildrenNode
-): { names: ChildrenNode; withContext: boolean | null | undefined } => {
-  const name = parsePrimary(parserContext);
+): Result<{ names: ChildrenNode; withContext: boolean | null | undefined }, TemplateError> => {
+  const nameR = parsePrimary(parserContext);
+  if (isErr(nameR)) { return nameR; }
+  const name = nameR.value;
   if (isUnderscore(name)) {
-    fail(parserContext, 'parseFrom: names starting with an underscore cannot be imported',
+    return fail(parserContext, 'parseFrom: names starting with an underscore cannot be imported',
       name.lineno,
       name.colno);
   }
 
   const hasAlias = skipSymbol(parserContext, 'as');
-  const newNames = hasAlias
-    ? appendChild(names, pair(loc(name), { key: name, val: parsePrimary(parserContext) }))
-    : appendChild(names, name);
+  let newNames: ChildrenNode;
+  if (hasAlias) {
+    const aliasR = parsePrimary(parserContext);
+    if (isErr(aliasR)) { return aliasR; }
+    newNames = appendChild(names, pair(loc(name), { key: name, val: aliasR.value }));
+  } else {
+    newNames = appendChild(names, name);
+  }
 
-  const withContext = parseWithContext(parserContext);
-  return { names: newNames, withContext };
+  const withContextR = parseWithContext(parserContext);
+  if (isErr(withContextR)) { return withContextR; }
+  return ok({ names: newNames, withContext: withContextR.value });
 };
 
 const handleBlockEnd = (
   parserContext: ParserContext,
   names: ChildrenNode,
   fromTok: Token
-): void => {
+): Result<void, TemplateError> => {
   if (names.children.length === 0) {
-    fail(parserContext, 'parseFrom: Expected at least one import name',
+    return fail(parserContext, 'parseFrom: Expected at least one import name',
       fromTok.lineno,
       fromTok.colno);
   }
 
-  const nextTok = peekToken(parserContext);
-  if (isSymbolToken(nextTok) && nextTok.value[0] === '-') {
+  const nextTokR = peekToken(parserContext);
+  if (isErr(nextTokR)) { return nextTokR; }
+  if (isSymbolToken(nextTokR.value) && nextTokR.value.value[0] === '-') {
     parserContext.dropLeadingWhitespace = true;
   }
 
-  nextToken(parserContext);
+  const consumedR = nextToken(parserContext);
+  if (isErr(consumedR)) { return consumedR; }
+  return ok(undefined);
 };
 
-export const parseFrom = (parserContext: ParserContext): Node => {
-  const fromTok = peekToken(parserContext);
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+export const parseFrom = (parserContext: ParserContext): Result<Node, TemplateError> => {
+  const fromTokR = peekToken(parserContext);
+  if (isErr(fromTokR)) { return fromTokR; }
+  const fromTok = fromTokR.value;
   if (!skipSymbol(parserContext, 'from')) {
-    fail(parserContext, 'parseFrom: expected from');
+    return fail(parserContext, 'parseFrom: expected from');
   }
 
-  const template = parseExpression(parserContext);
+  const templateR = parseExpression(parserContext);
+  if (isErr(templateR)) { return templateR; }
 
   if (!skipSymbol(parserContext, 'import')) {
-    fail(parserContext, 'parseFrom: expected import',
+    return fail(parserContext, 'parseFrom: expected import',
       fromTok.lineno,
       fromTok.colno);
   }
@@ -76,26 +93,29 @@ export const parseFrom = (parserContext: ParserContext): Node => {
   let withContext: boolean | null | undefined;
 
   for (;;) {
-    const nextTok = peekToken(parserContext);
-    if (nextTok.type === TOKEN_BLOCK_END) {
-      handleBlockEnd(parserContext, names, fromTok);
+    const nextTokR = peekToken(parserContext);
+    if (isErr(nextTokR)) { return nextTokR; }
+    if (nextTokR.value.type === TOKEN_BLOCK_END) {
+      const endR = handleBlockEnd(parserContext, names, fromTok);
+      if (isErr(endR)) { return endR; }
       break;
     }
 
     if (names.children.length > 0 && !skip(parserContext, TOKEN_COMMA)) {
-      fail(parserContext, 'parseFrom: expected comma',
+      return fail(parserContext, 'parseFrom: expected comma',
         fromTok.lineno,
         fromTok.colno);
     }
 
     const result = parseImportName(parserContext, names);
-    names = result.names;
-    withContext = result.withContext;
+    if (isErr(result)) { return result; }
+    names = result.value.names;
+    withContext = result.value.withContext;
   }
 
-  return fromImportNode(loc(fromTok), {
-    template,
+  return ok(fromImportNode(loc(fromTok), {
+    template: templateR.value,
     names,
     withContext: withContext ?? false,
-  });
+  }));
 };

@@ -1,6 +1,7 @@
 import { createLog } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/log';
 import { find } from 'remeda';
-import { MATCH_ANY_RE } from '@nunjucks/shared';
+import { MATCH_ANY_RE, err, isOk, type Result } from '@nunjucks/shared';
 import { peekToken } from "./cursor.ts";
 import type { ParserContext } from "./cursor.ts";
 import type { ErrorDefinitionEntry } from '@nunjucks/log';
@@ -39,10 +40,11 @@ export const EXPECTED_COLON_AFTER_DICT_KEY = 'EXPECTED_COLON_AFTER_DICT_KEY';
 
 export const error = (parserContext: ParserContext, msg: string, lineno?: number, colno?: number, sentinel?: string) => {
   const needsResolve = lineno === undefined || colno === undefined;
-  const peeked = needsResolve ? peekToken(parserContext) : undefined;
+  const peekedResult = needsResolve ? peekToken(parserContext) : undefined;
+  const peeked = peekedResult && isOk(peekedResult) ? peekedResult.value : undefined;
   const resolvedLineno = needsResolve ? (peeked?.lineno ?? 0) : lineno;
   const resolvedColno = needsResolve ? (peeked?.colno ?? 0) : colno;
-  const err = createLog('error', {
+  const errObj = createLog('error', {
     def: {
       name: 'PARSER_ERROR',
       message: () => msg,
@@ -56,14 +58,13 @@ export const error = (parserContext: ParserContext, msg: string, lineno?: number
     context: { lineno: resolvedLineno, colno: resolvedColno, phase: 'parse', lineBase: 'zero' },
   });
   if (sentinel) {
-    Object.assign(err, { sentinel });
+    Object.assign(errObj, { sentinel });
   }
-  return err;
+  return errObj;
 };
 
-export const fail = (parserContext: ParserContext, msg: string, lineno?: number, colno?: number, sentinel?: string): never => {
-  throw error(parserContext, msg, lineno, colno, sentinel);
-};
+export const fail = (parserContext: ParserContext, msg: string, lineno?: number, colno?: number, sentinel?: string): Result<never, TemplateError> =>
+  err(error(parserContext, msg, lineno, colno, sentinel));
 
 export const errorAt = (
   lineno: number,
@@ -71,6 +72,5 @@ export const errorAt = (
   errorDef: ErrorDefinitionEntry,
   subject?: string,
   extra?: Record<string, string>
-): never => {
-  throw createLog('error', { def: errorDef, params: extra ?? {}, subject: subject ?? null, context: { lineno, colno, phase: 'parse', lineBase: 'zero' } });
-};
+): Result<never, TemplateError> =>
+  err(createLog('error', { def: errorDef, params: extra ?? {}, subject: subject ?? null, context: { lineno, colno, phase: 'parse', lineBase: 'zero' } }));

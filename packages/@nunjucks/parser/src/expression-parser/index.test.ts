@@ -4,20 +4,20 @@ import { parseExpression, parsePrimary } from './index.ts';
 import { createParser } from '../index.ts';
 import { nextTokenOrNull } from '../cursor.ts';
 import { getNodeTypeName } from '@nunjucks/nodes';
-import { asTokenStream } from '../test-helpers.ts';
+import { asTokenStream, unwrap } from '../test-helpers.ts';
 
 const parse = (src: string) => {
   const tk = createTokenizer(`{{ ${src} }}`);
   const ctx = createParser(asTokenStream(tk));
   nextTokenOrNull(ctx); 
-  return parseExpression(ctx);
+  return unwrap(parseExpression(ctx));
 };
 
 const parsePrim = (src: string) => {
   const tk = createTokenizer(`{{ ${src} }}`);
   const ctx = createParser(asTokenStream(tk));
   nextTokenOrNull(ctx); 
-  return parsePrimary(ctx);
+  return unwrap(parsePrimary(ctx));
 };
 
 describe('parseExpression: literals', () => {

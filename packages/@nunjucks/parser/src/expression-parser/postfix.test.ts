@@ -5,12 +5,12 @@ import { nextTokenOrNull } from '../cursor.ts';
 import { parseExpression } from './index.ts';
 import { getNodeTypeName } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { asTokenStream } from '../test-helpers.ts';
+import { asTokenStream, unwrap } from '../test-helpers.ts';
 
 const parse = (src: string): Node => {
   const ctx = createParser(asTokenStream(createTokenizer(`{{ ${src} }}`)));
   nextTokenOrNull(ctx);
-  return parseExpression(ctx);
+  return unwrap(parseExpression(ctx));
 };
 
 const childOf = (n: Node, i = 0): Node => (n as { children: readonly Node[] }).children[i] as Node;

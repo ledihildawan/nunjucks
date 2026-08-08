@@ -4,7 +4,7 @@ import type { ParseOptions } from '@nunjucks/parser';
 import { transform } from '@nunjucks/transformers';
 import { createFrame } from '@nunjucks/runtime';
 import type { UndefinedMode } from '@nunjucks/runtime';
-import { ok, err, type Result } from '@nunjucks/shared';
+import { ok, err, isErr, type Result } from '@nunjucks/shared';
 
 interface CompileToCodeOptions {
   source: string;
@@ -16,8 +16,11 @@ interface CompileToCodeOptions {
 const compileToCode = ({ source, templateName, undefinedMode, parseOpts }: CompileToCodeOptions): Result<string, Error> => {
   try {
     const compiler = createCompiler(templateName, undefinedMode, source);
-    const ast = parse(source, [], parseOpts);
-    const transformedAst = transform(ast);
+    const astR = parse(source, [], parseOpts);
+    if (isErr(astR)) {
+      return err(astR.error instanceof Error ? astR.error : new Error(String(astR.error)));
+    }
+    const transformedAst = transform(astR.value);
     compiler.compile(transformedAst, createFrame());
     return ok(compiler.getCode());
   } catch (error) {

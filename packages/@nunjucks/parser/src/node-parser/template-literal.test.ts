@@ -5,7 +5,7 @@ import { nextTokenOrNull } from '../cursor.ts';
 import { parseTemplateLiteral } from './template-literal.ts';
 import { getNodeTypeName, isTemplateLiteral } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { asTokenStream } from '../test-helpers.ts';
+import { asTokenStream, unwrap } from '../test-helpers.ts';
 
 const ctxFor = (src: string) => {
   const tk = createTokenizer(`{{ ${src} }}`);
@@ -14,7 +14,7 @@ const ctxFor = (src: string) => {
   return ctx;
 };
 
-const parseLit = (src: string): Node | null => parseTemplateLiteral(ctxFor(src));
+const parseLit = (src: string): Node | null => unwrap(parseTemplateLiteral(ctxFor(src)));
 
 describe('parseTemplateLiteral', () => {
   test('returns null when the next token is not a template literal', () => {

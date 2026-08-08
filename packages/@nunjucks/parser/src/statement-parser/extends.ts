@@ -1,20 +1,27 @@
 import { extendsNode } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import type { TemplateError } from '@nunjucks/log';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import { parseExpression } from "../expression-parser/index.ts";
 import { loc } from '@nunjucks/shared';
 
-export const parseExtends = (parserContext: ParserContext): Node => {
+export const parseExtends = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tagName = 'extends';
-  const tag = peekToken(parserContext);
+  const tagR = peekToken(parserContext);
+  if (isErr(tagR)) { return tagR; }
+  const tag = tagR.value;
   if (!skipSymbol(parserContext, tagName)) {
-    fail(parserContext, `parseExtends: expected ${tagName}`);
+    return fail(parserContext, `parseExtends: expected ${tagName}`);
   }
 
   const node = extendsNode(loc(tag));
-  node.template = parseExpression(parserContext);
+  const templateR = parseExpression(parserContext);
+  if (isErr(templateR)) { return templateR; }
+  node.template = templateR.value;
 
-  advanceAfterBlockEnd(parserContext, String(tag.value));
-  return node;
+  const blockEndR = advanceAfterBlockEnd(parserContext, String(tag.value));
+  if (isErr(blockEndR)) { return blockEndR; }
+  return ok(node);
 };

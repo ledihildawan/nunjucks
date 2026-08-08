@@ -7,50 +7,62 @@ import {
 } from '@nunjucks/lexer';
 import { isFunCall, nodeList, pipe, symbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import type { TemplateError } from '@nunjucks/log';
 import { peekToken, skip, skipValue, expect } from "../../cursor.ts";
 import type { ParserContext, } from "../../cursor.ts";
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import { parsePostfix } from "./index.ts";
 import { loc } from '@nunjucks/shared';
 
-export const parseFilterCallName = (parserContext: ParserContext): Node => {
-  const tok = expect(parserContext, TOKEN_SYMBOL);
+export const parseFilterCallName = (parserContext: ParserContext): Result<Node, TemplateError> => {
+  const tokR = expect(parserContext, TOKEN_SYMBOL);
+  if (isErr(tokR)) { return tokR; }
+  const tok = tokR.value;
   let name = isSymbolToken(tok) ? tok.value : String(tok.value);
 
   while (skipValue(parserContext, TOKEN_OPERATOR, '.')) {
-    const sym = expect(parserContext, TOKEN_SYMBOL);
+    const symR = expect(parserContext, TOKEN_SYMBOL);
+    if (isErr(symR)) { return symR; }
+    const sym = symR.value;
     name += `.${isSymbolToken(sym) ? sym.value : String(sym.value)}`;
   }
 
-  return symbol(loc(tok), name);
+  return ok(symbol(loc(tok), name));
 };
 
-export const parseFilterCallArgs = (parserContext: ParserContext, node: Node): readonly Node[] => {
-  if (peekToken(parserContext).type === TOKEN_LEFT_PAREN) {
-    const call = parsePostfix(parserContext, node);
-    if (isFunCall(call)) {
-      return call.args;
+export const parseFilterCallArgs = (parserContext: ParserContext, node: Node): Result<readonly Node[], TemplateError> => {
+  const peekR = peekToken(parserContext);
+  if (isErr(peekR)) { return peekR; }
+  if (peekR.value.type === TOKEN_LEFT_PAREN) {
+    const callR = parsePostfix(parserContext, node);
+    if (isErr(callR)) { return callR; }
+    if (isFunCall(callR.value)) {
+      return ok(callR.value.args);
     }
   }
-  return [];
+  return ok([]);
 };
 
-export const parsePipeForward = (parserContext: ParserContext, node: Node): Node => {
+export const parsePipeForward = (parserContext: ParserContext, node: Node): Result<Node, TemplateError> => {
   let current = node;
 
   while (skip(parserContext, TOKEN_PIPEFORWARD)) {
-    const name = parseFilterCallName(parserContext);
+    const nameR = parseFilterCallName(parserContext);
+    if (isErr(nameR)) { return nameR; }
+    const argsR = parseFilterCallArgs(parserContext, current);
+    if (isErr(argsR)) { return argsR; }
 
     current = pipe(
-      loc(name),
+      loc(nameR.value),
       {
-        name,
+        name: nameR.value,
         args: nodeList(
-          loc(name),
-          [current, ...parseFilterCallArgs(parserContext, current)]
+          loc(nameR.value),
+          [current, ...argsR.value]
         ).children,
       }
     );
   }
 
-  return current;
+  return ok(current);
 };

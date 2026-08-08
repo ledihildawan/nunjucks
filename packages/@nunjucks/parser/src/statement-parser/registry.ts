@@ -1,5 +1,7 @@
 import type { ParserContext } from "../cursor.ts";
 import type { Node } from '@nunjucks/nodes';
+import type { Result } from '@nunjucks/shared';
+import type { TemplateError } from '@nunjucks/log';
 import { parseFor } from "./for.ts";
 import { parseComponent } from "./component.ts";
 import { parseImport } from "./import.ts";
@@ -16,8 +18,8 @@ import { parseMatch } from "./match.ts";
 import { parseCapture } from "./capture.ts";
 import { parseRenderBlock } from "./render.ts";
 
-type StatementParser = (parserContext: ParserContext) => Node;
-type TaggedParser = (parserContext: ParserContext, ...args: unknown[]) => Node;
+type StatementParser = (parserContext: ParserContext) => Result<Node, TemplateError>;
+type TaggedParser = (parserContext: ParserContext, ...args: unknown[]) => Result<Node, TemplateError>;
 
 const STATEMENT_PARSERS: Record<string, StatementParser | TaggedParser> = {
   if: parseIf,

@@ -8,8 +8,9 @@ import {
 } from '@nunjucks/lexer';
 import { nodeList, output, templateData } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import type { TemplateError } from '@nunjucks/log';
 import { pipe } from 'remeda';
-import { replace } from '@nunjucks/shared';
+import { replace, loc, ZERO_LOC, ok, isErr, type Result } from '@nunjucks/shared';
 import {
   nextTokenOrNull,
   peekTokenOrNull,
@@ -20,10 +21,11 @@ import {
 import type { ParserContext } from "./cursor.ts";
 import { parseStatement } from "./statement-parser/index.ts";
 import { parseExpression } from "./expression-parser/index.ts";
-import { loc, ZERO_LOC } from '@nunjucks/shared';
 
-const parseUntilBlocks = (parserContext: ParserContext, ...blockNames: string[]): Node => {
-  return nodeList(ZERO_LOC, parseNodes(parserContext, blockNames));
+const parseUntilBlocks = (parserContext: ParserContext, ...blockNames: string[]): Result<Node, TemplateError> => {
+  const nodesR = parseNodes(parserContext, blockNames);
+  if (isErr(nodesR)) { return nodesR; }
+  return ok(nodeList(ZERO_LOC, nodesR.value));
 };
 
 const LEADING_WHITESPACE_RE = /^\s*/;
@@ -72,10 +74,13 @@ const parseRawToken = (tok: Token & { type: 'raw' }, buf: Node[]): void => {
   ));
 };
 
-const parseVariableToken = (parserContext: ParserContext, tok: Token, buf: Node[]): void => {
-  const expression = parseExpression(parserContext);
-  advanceAfterVariableEnd(parserContext);
-  buf.push(output(loc(tok), [expression]));
+const parseVariableToken = (parserContext: ParserContext, tok: Token, buf: Node[]): Result<void, TemplateError> => {
+  const exprR = parseExpression(parserContext);
+  if (isErr(exprR)) { return exprR; }
+  const endR = advanceAfterVariableEnd(parserContext);
+  if (isErr(endR)) { return endR; }
+  buf.push(output(loc(tok), [exprR.value]));
+  return ok(undefined);
 };
 
 const parseCommentToken = (parserContext: ParserContext, tok: Token): void => {
@@ -85,47 +90,51 @@ const parseCommentToken = (parserContext: ParserContext, tok: Token): void => {
   ) === '-';
 };
 
-const handleToken = (parserContext: ParserContext, tok: Token, buf: Node[], breakOn: readonly string[] | null = null): boolean => {
+const handleToken = (parserContext: ParserContext, tok: Token, buf: Node[], breakOn: readonly string[] | null = null): Result<boolean, TemplateError> => {
   const wsDrop = consumeWhitespaceDrop(parserContext);
 
   if (tok.type === TOKEN_DATA) {
     parseDataToken(parserContext, tok, buf, wsDrop);
-    return true;
+    return ok(true);
   }
   if (tok.type === TOKEN_BLOCK_START) {
-    const n = parseStatement(parserContext, breakOn);
+    const nR = parseStatement(parserContext, breakOn);
+    if (isErr(nR)) { return nR; }
+    const n = nR.value;
     if (!n) {
-      return false;
+      return ok(false);
     }
     buf.push(n);
-    return true;
+    return ok(true);
   }
   if (tok.type === TOKEN_VARIABLE_START) {
-    parseVariableToken(parserContext, tok, buf);
-    return true;
+    const r = parseVariableToken(parserContext, tok, buf);
+    if (isErr(r)) { return r; }
+    return ok(true);
   }
   if (tok.type === TOKEN_COMMENT) {
     parseCommentToken(parserContext, tok);
-    return true;
+    return ok(true);
   }
   if (tok.type === TOKEN_RAW) {
     parseRawToken(tok, buf);
-    return true;
+    return ok(true);
   }
-  fail(parserContext, `Unexpected token at top-level: ${tok.type}`, tok.lineno, tok.colno);
-  return true;
+  return fail(parserContext, `Unexpected token at top-level: ${tok.type}`, tok.lineno, tok.colno);
 };
 
-const parseNodes = (parserContext: ParserContext, breakOn: readonly string[] | null = null): Node[] => {
+const parseNodes = (parserContext: ParserContext, breakOn: readonly string[] | null = null): Result<Node[], TemplateError> => {
   const buf: Node[] = [];
 
   for (let tok = nextTokenOrNull(parserContext); tok; tok = nextTokenOrNull(parserContext)) {
-    if (!handleToken(parserContext, tok, buf, breakOn)) {
+    const continueR = handleToken(parserContext, tok, buf, breakOn);
+    if (isErr(continueR)) { return continueR; }
+    if (!continueR.value) {
       break;
     }
   }
 
-  return buf;
+  return ok(buf);
 };
 
 export { parseUntilBlocks, parseNodes };

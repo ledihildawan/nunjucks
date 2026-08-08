@@ -10,7 +10,9 @@ import type { Token, Delimiters } from '@nunjucks/lexer';
 import type { Node } from '@nunjucks/nodes';
 import { fail } from "./error.ts";
 import { createLog } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/log';
 import { ERROR_DEFINITIONS } from '@nunjucks/log';
+import { ok, isErr, type Result } from '@nunjucks/shared';
 
 export interface TokenStream {
   nextToken: () => Token | null;
@@ -56,22 +58,22 @@ export const nextTokenOrNull = (parserContext: ParserContext, withWhitespace?: b
 
 const EOF_LOCATION = { lineno: 0, colno: 0 } as const;
 
-export const nextToken = (parserContext: ParserContext, withWhitespace?: boolean): Token => {
+export const nextToken = (parserContext: ParserContext, withWhitespace?: boolean): Result<Token, TemplateError> => {
   const tok = nextTokenOrNull(parserContext, withWhitespace);
   if (tok === null) {
     return fail(parserContext, 'unexpected end of input', EOF_LOCATION.lineno, EOF_LOCATION.colno);
   }
-  return tok;
+  return ok(tok);
 };
 
-export const peekToken = (parserContext: ParserContext): Token => {
+export const peekToken = (parserContext: ParserContext): Result<Token, TemplateError> => {
   if (parserContext.peeked === null) {
     parserContext.peeked = nextTokenOrNull(parserContext);
   }
   if (parserContext.peeked === null) {
     return fail(parserContext, 'unexpected end of input', EOF_LOCATION.lineno, EOF_LOCATION.colno);
   }
-  return parserContext.peeked;
+  return ok(parserContext.peeked);
 };
 
 export const peekTokenOrNull = (parserContext: ParserContext): Token | null => {
@@ -97,12 +99,14 @@ export const skip = (parserContext: ParserContext, type: Token['type']): boolean
   return true;
 };
 
-export const expect = (parserContext: ParserContext, type: Token['type']): Token => {
-  const tok = nextToken(parserContext);
+export const expect = (parserContext: ParserContext, type: Token['type']): Result<Token, TemplateError> => {
+  const tokResult = nextToken(parserContext);
+  if (isErr(tokResult)) { return tokResult; }
+  const tok = tokResult.value;
   if (tok.type !== type) {
-    fail(parserContext, `expected ${type}, got ${tok.type}`, tok.lineno, tok.colno);
+    return fail(parserContext, `expected ${type}, got ${tok.type}`, tok.lineno, tok.colno);
   }
-  return tok;
+  return ok(tok);
 };
 
 export const skipValue = (parserContext: ParserContext, type: Token['type'], value?: Token['value']): boolean => {
@@ -125,41 +129,45 @@ export const consumeWhitespaceDrop = (parserContext: ParserContext): boolean => 
 export const skipOperator = (parserContext: ParserContext, ...vals: string[]): boolean =>
   vals.some(value => skipValue(parserContext, TOKEN_OPERATOR, value));
 
-export const advanceAfterBlockEnd = (parserContext: ParserContext, name?: string): Token => {
-  let tok: Token;
+export const advanceAfterBlockEnd = (parserContext: ParserContext, name?: string): Result<Token, TemplateError> => {
   let blockName = name;
   if (!blockName) {
-    const nameTok = nextToken(parserContext);
+    const nameTokResult = nextToken(parserContext);
+    if (isErr(nameTokResult)) { return nameTokResult; }
+    const nameTok = nameTokResult.value;
 
-    blockName = isSymbolToken(nameTok)
-      ? nameTok.value
-      : fail(parserContext, 'advanceAfterBlockEnd: expected symbol token or explicit name to be passed', nameTok.lineno, nameTok.colno);
+    if (!isSymbolToken(nameTok)) {
+      return fail(parserContext, 'advanceAfterBlockEnd: expected symbol token or explicit name to be passed', nameTok.lineno, nameTok.colno);
+    }
+    blockName = nameTok.value;
   }
 
-  tok = nextToken(parserContext);
+  const tokResult = nextToken(parserContext);
+  if (isErr(tokResult)) { return tokResult; }
+  const tok = tokResult.value;
 
   if (isBlockEndToken(tok)) {
     if (tok.value[0] === '-') {
       parserContext.dropLeadingWhitespace = true;
     }
-  } else {
-    fail(parserContext, `expected block end in ${blockName} statement`);
+    return ok(tok);
   }
-
-  return tok;
+  return fail(parserContext, `expected block end in ${blockName} statement`);
 };
 
-export const advanceAfterVariableEnd = (parserContext: ParserContext): void => {
-  const tok = nextToken(parserContext);
+export const advanceAfterVariableEnd = (parserContext: ParserContext): Result<void, TemplateError> => {
+  const tokResult = nextToken(parserContext);
+  if (isErr(tokResult)) { return tokResult; }
+  const tok = tokResult.value;
 
   if (isVariableEndToken(tok)) {
     parserContext.dropLeadingWhitespace = tok.value.at(
       tok.value.length - parserContext.tokens.tags.variableEnd.length - 1
     ) === '-';
-  } else {
-    pushToken(parserContext, tok);
-    fail(parserContext, 'expected variable end');
+    return ok(undefined);
   }
+  pushToken(parserContext, tok);
+  return fail(parserContext, 'expected variable end');
 };
 
 export { fail } from './error.ts';

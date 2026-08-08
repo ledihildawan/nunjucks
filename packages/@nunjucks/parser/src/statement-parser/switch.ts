@@ -1,7 +1,9 @@
 import { caseNode, switchNode } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import type { TemplateError } from '@nunjucks/log';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import { parseExpression } from "../expression-parser/index.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
 import { loc } from '@nunjucks/shared';
@@ -13,61 +15,86 @@ const SWITCH_TOKENS = {
   caseDefault: 'default',
 } as const;
 
-const parseSwitchCases = (parserContext: ParserContext, cases: Node[]): void => {
-  let tok = peekToken(parserContext);
+const parseSwitchCases = (parserContext: ParserContext, cases: Node[]): Result<void, TemplateError> => {
+  const tokR = peekToken(parserContext);
+  if (isErr(tokR)) { return tokR; }
+  let tok = tokR.value;
   while (tok?.value === SWITCH_TOKENS.caseStart) {
     skipSymbol(parserContext, SWITCH_TOKENS.caseStart);
-    const cond = parseExpression(parserContext);
-    advanceAfterBlockEnd(parserContext, SWITCH_TOKENS.switchStart);
-    const body = parseUntilBlocks(parserContext, SWITCH_TOKENS.caseStart, SWITCH_TOKENS.caseDefault, SWITCH_TOKENS.switchEnd);
-    cases.push(caseNode(loc(tok), { cond, body }));
-    tok = peekToken(parserContext);
+    const condR = parseExpression(parserContext);
+    if (isErr(condR)) { return condR; }
+    const blockEndR = advanceAfterBlockEnd(parserContext, SWITCH_TOKENS.switchStart);
+    if (isErr(blockEndR)) { return blockEndR; }
+    const bodyR = parseUntilBlocks(parserContext, SWITCH_TOKENS.caseStart, SWITCH_TOKENS.caseDefault, SWITCH_TOKENS.switchEnd);
+    if (isErr(bodyR)) { return bodyR; }
+    cases.push(caseNode(loc(tok), { cond: condR.value, body: bodyR.value }));
+    const nextTokR = peekToken(parserContext);
+    if (isErr(nextTokR)) { return nextTokR; }
+    tok = nextTokR.value;
   }
+  return ok(undefined);
 };
 
-const handleSwitchEnd = (parserContext: ParserContext): Node | undefined => {
-  const tok = peekToken(parserContext);
+const handleSwitchEnd = (parserContext: ParserContext): Result<Node | undefined, TemplateError> => {
+  const tokR = peekToken(parserContext);
+  if (isErr(tokR)) { return tokR; }
+  const tok = tokR.value;
   switch (tok.value) {
-    case SWITCH_TOKENS.caseDefault:
-      advanceAfterBlockEnd(parserContext);
+    case SWITCH_TOKENS.caseDefault: {
+      const aR = advanceAfterBlockEnd(parserContext);
+      if (isErr(aR)) { return aR; }
       return parseUntilBlocks(parserContext, SWITCH_TOKENS.switchEnd);
-    case SWITCH_TOKENS.switchEnd:
-      advanceAfterBlockEnd(parserContext);
-      return undefined;
+    }
+    case SWITCH_TOKENS.switchEnd: {
+      const aR = advanceAfterBlockEnd(parserContext);
+      if (isErr(aR)) { return aR; }
+      return ok(undefined);
+    }
     default:
-      fail(parserContext, 'parseSwitch: expected "case," "default" or "endswitch," got EOF.');
+      return fail(parserContext, 'parseSwitch: expected "case," "default" or "endswitch," got EOF.');
   }
 };
 
-export const parseSwitch = (parserContext: ParserContext): Node => {
-  const tag = peekToken(parserContext);
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+export const parseSwitch = (parserContext: ParserContext): Result<Node, TemplateError> => {
+  const tagR = peekToken(parserContext);
+  if (isErr(tagR)) { return tagR; }
+  const tag = tagR.value;
 
   if (
     !((skipSymbol(parserContext, SWITCH_TOKENS.switchStart)
     || skipSymbol(parserContext, SWITCH_TOKENS.caseStart))
     || skipSymbol(parserContext, SWITCH_TOKENS.caseDefault))
   ) {
-    fail(parserContext, 'parseSwitch: expected "switch," "case" or "default"', tag.lineno, tag.colno);
+    return fail(parserContext, 'parseSwitch: expected "switch," "case" or "default"', tag.lineno, tag.colno);
   }
 
-  const expr = parseExpression(parserContext);
+  const exprR = parseExpression(parserContext);
+  if (isErr(exprR)) { return exprR; }
 
-  advanceAfterBlockEnd(parserContext, SWITCH_TOKENS.switchStart);
-  parseUntilBlocks(parserContext, SWITCH_TOKENS.caseStart, SWITCH_TOKENS.caseDefault, SWITCH_TOKENS.switchEnd);
+  const headerEndR = advanceAfterBlockEnd(parserContext, SWITCH_TOKENS.switchStart);
+  if (isErr(headerEndR)) { return headerEndR; }
+  const headerBodyR = parseUntilBlocks(parserContext, SWITCH_TOKENS.caseStart, SWITCH_TOKENS.caseDefault, SWITCH_TOKENS.switchEnd);
+  if (isErr(headerBodyR)) { return headerBodyR; }
 
   const cases: Node[] = [];
-  parseSwitchCases(parserContext, cases);
+  const casesR = parseSwitchCases(parserContext, cases);
+  if (isErr(casesR)) { return casesR; }
 
-  const defaultCase = ((): Node | undefined => {
-    if (peekToken(parserContext).value === SWITCH_TOKENS.caseDefault) {
-      const result = handleSwitchEnd(parserContext);
-      advanceAfterBlockEnd(parserContext);
-      return result;
-    } else {
-      handleSwitchEnd(parserContext);
-      return undefined;
-    }
-  })();
+  let defaultCase: Node | undefined;
+  const peekEndR = peekToken(parserContext);
+  if (isErr(peekEndR)) { return peekEndR; }
+  if (peekEndR.value.value === SWITCH_TOKENS.caseDefault) {
+    const resultR = handleSwitchEnd(parserContext);
+    if (isErr(resultR)) { return resultR; }
+    defaultCase = resultR.value;
+    const aR = advanceAfterBlockEnd(parserContext);
+    if (isErr(aR)) { return aR; }
+  } else {
+    const resultR = handleSwitchEnd(parserContext);
+    if (isErr(resultR)) { return resultR; }
+    defaultCase = undefined;
+  }
 
-  return switchNode(loc(tag), { expr, cases, default_: defaultCase ?? null });
+  return ok(switchNode(loc(tag), { expr: exprR.value, cases, default_: defaultCase ?? null }));
 };

@@ -1,36 +1,44 @@
 import { block, isSymbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import type { TemplateError } from '@nunjucks/log';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import { parsePrimary } from "../expression-parser/index.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
 import { loc } from '@nunjucks/shared';
 
-export const parseBlock = (parserContext: ParserContext): Node => {
-  const tag = peekToken(parserContext);
+export const parseBlock = (parserContext: ParserContext): Result<Node, TemplateError> => {
+  const tagR = peekToken(parserContext);
+  if (isErr(tagR)) { return tagR; }
+  const tag = tagR.value;
   if (!skipSymbol(parserContext, 'block')) {
-    fail(parserContext, 'parseBlock: expected block', tag.lineno, tag.colno);
+    return fail(parserContext, 'parseBlock: expected block', tag.lineno, tag.colno);
   }
 
-  const name = parsePrimary(parserContext);
+  const nameR = parsePrimary(parserContext);
+  if (isErr(nameR)) { return nameR; }
+  const name = nameR.value;
   if (!isSymbol(name)) {
-    fail(parserContext, 'parseBlock: variable name expected',
+    return fail(parserContext, 'parseBlock: variable name expected',
       tag.lineno,
       tag.colno);
   }
 
-  advanceAfterBlockEnd(parserContext, 'block');
+  const blockEndR = advanceAfterBlockEnd(parserContext, 'block');
+  if (isErr(blockEndR)) { return blockEndR; }
 
-  const body = parseUntilBlocks(parserContext, 'endblock');
+  const bodyR = parseUntilBlocks(parserContext, 'endblock');
+  if (isErr(bodyR)) { return bodyR; }
   skipSymbol(parserContext, 'endblock');
   skipSymbol(parserContext, String(name.value));
 
-  const tok = peekToken(parserContext);
-  if (!tok) {
-    fail(parserContext, 'parseBlock: expected endblock, got end of file');
-  }
+  const tokR = peekToken(parserContext);
+  if (isErr(tokR)) { return tokR; }
+  const tok = tokR.value;
 
-  advanceAfterBlockEnd(parserContext, String(tok.value));
+  const finalR = advanceAfterBlockEnd(parserContext, String(tok.value));
+  if (isErr(finalR)) { return finalR; }
 
-  return block(loc(tag), { name: String(name.value), body });
+  return ok(block(loc(tag), { name: String(name.value), body: bodyR.value }));
 };

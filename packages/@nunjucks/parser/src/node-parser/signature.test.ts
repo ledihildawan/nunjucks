@@ -5,7 +5,7 @@ import { nextTokenOrNull } from '../cursor.ts';
 import { parseSignature } from './index.ts';
 import { getNodeTypeName } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { asTokenStream } from '../test-helpers.ts';
+import { asTokenStream, unwrap } from '../test-helpers.ts';
 
 const ctxFor = (src: string) => {
   const tk = createTokenizer(`{{ ${src} }}`);
@@ -15,7 +15,7 @@ const ctxFor = (src: string) => {
 };
 
 const parseSig = (src: string, tolerant?: boolean, noParens?: boolean): Node | null =>
-  parseSignature(ctxFor(src), tolerant, noParens);
+  unwrap(parseSignature(ctxFor(src), tolerant, noParens));
 
 describe('parseSignature', () => {
   test('returns null for tolerant mode without a left paren', () => {

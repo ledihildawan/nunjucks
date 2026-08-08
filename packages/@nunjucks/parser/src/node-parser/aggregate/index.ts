@@ -5,8 +5,10 @@ import {
 } from '@nunjucks/lexer';
 import { array, dict, group } from '@nunjucks/nodes';
 import type { ChildrenNode, Node } from '@nunjucks/nodes';
+import type { TemplateError } from '@nunjucks/log';
 import { loc } from '@nunjucks/shared';
 import type { Loc } from '@nunjucks/shared';
+import { ok, isErr, type Result } from '@nunjucks/shared';
 import { nextToken } from '../../cursor.ts';
 import type { ParserContext } from '../../cursor.ts';
 import { parseContent } from './parse-content.ts';
@@ -27,11 +29,15 @@ const createAggregateNode = (
   }
 };
 
-export const parseAggregate = (parserContext: ParserContext): Node | null => {
-  const token = nextToken(parserContext);
+export const parseAggregate = (parserContext: ParserContext): Result<Node | null, TemplateError> => {
+  const tokenR = nextToken(parserContext);
+  if (isErr(tokenR)) { return tokenR; }
+  const token = tokenR.value;
   const node = createAggregateNode(token.type, loc(token));
   if (!node) {
-    return null;
+    return ok(null);
   }
-  return parseContent(parserContext, node, token);
+  const contentR = parseContent(parserContext, node, token);
+  if (isErr(contentR)) { return contentR; }
+  return ok(contentR.value);
 };

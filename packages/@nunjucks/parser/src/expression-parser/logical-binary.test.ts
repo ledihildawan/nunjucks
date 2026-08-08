@@ -5,18 +5,18 @@ import { nextTokenOrNull } from '../cursor.ts';
 import { parseExpression, parsePrimary } from './index.ts';
 import { getNodeTypeName } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { asTokenStream } from '../test-helpers.ts';
+import { asTokenStream, unwrap } from '../test-helpers.ts';
 
 const parse = (src: string): Node => {
   const ctx = createParser(asTokenStream(createTokenizer(`{{ ${src} }}`)));
   nextTokenOrNull(ctx);
-  return parseExpression(ctx);
+  return unwrap(parseExpression(ctx));
 };
 
 const parsePrim = (src: string): Node => {
   const ctx = createParser(asTokenStream(createTokenizer(`{{ ${src} }}`)));
   nextTokenOrNull(ctx);
-  return parsePrimary(ctx);
+  return unwrap(parsePrimary(ctx));
 };
 
 describe('logical expressions', () => {

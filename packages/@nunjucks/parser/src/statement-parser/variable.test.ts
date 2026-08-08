@@ -6,15 +6,17 @@ import { parseVariableDeclaration, parseVariableAssignment } from './variable.ts
 import { getNodeTypeName } from '@nunjucks/nodes';
 import type { ParserContext } from '../cursor.ts';
 import type { Node } from '@nunjucks/nodes';
-import { asTokenStream } from '../test-helpers.ts';
+import { asTokenStream, unwrap } from '../test-helpers.ts';
+import type { Result } from '@nunjucks/shared';
+import type { TemplateError } from '@nunjucks/log';
 
 const parseStatement = (
   src: string,
-  parser: (ctx: ParserContext) => Node
+  parser: (ctx: ParserContext) => Result<Node, TemplateError>
 ): Node => {
   const ctx = createParser(asTokenStream(createTokenizer(src)));
   nextTokenOrNull(ctx);
-  return parser(ctx as never);
+  return unwrap(parser(ctx as never));
 };
 
 describe('parseVariableDeclaration (:=)', () => {

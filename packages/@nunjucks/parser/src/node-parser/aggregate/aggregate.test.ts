@@ -5,7 +5,7 @@ import { nextTokenOrNull } from '../../cursor.ts';
 import { parsePrimary } from '../../expression-parser/index.ts';
 import { getNodeTypeName, isChildrenNode } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { asTokenStream } from '../../test-helpers.ts';
+import { asTokenStream, unwrap } from '../../test-helpers.ts';
 
 const childrenOf = (node: Node): readonly Node[] =>
   isChildrenNode(node) ? node.children : [];
@@ -17,7 +17,7 @@ const ctxFor = (src: string) => {
   return ctx;
 };
 
-const parsePrim = (src: string): Node => parsePrimary(ctxFor(src));
+const parsePrim = (src: string): Node => unwrap(parsePrimary(ctxFor(src)));
 
 describe('parse-list / parse-expressions aggregates', () => {
   test('array with trailing comma', () => {

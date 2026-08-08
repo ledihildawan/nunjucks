@@ -2,7 +2,8 @@ import { createTokenizer } from '@nunjucks/lexer';
 import type { LexerOptions } from '@nunjucks/lexer';
 import { root } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { ZERO_LOC } from '@nunjucks/shared';
+import type { TemplateError } from '@nunjucks/log';
+import { ZERO_LOC, ok, isErr, type Result } from '@nunjucks/shared';
 import { fail } from "./cursor.ts";
 import type { ParserContext, ParserExtension, TokenStream } from "./cursor.ts";
 import { parseNodes } from "./parse-root.ts";
@@ -25,21 +26,23 @@ export const createParser = (tokens: TokenStream): ParserContext => {
   };
 };
 
-export const parse = (src: string, extensions?: ParserExtension[], options?: ParseOptions): Node & { children: readonly Node[] } => {
+export const parse = (src: string, extensions?: ParserExtension[], options?: ParseOptions): Result<Node & { children: readonly Node[] }, TemplateError> => {
   const securityConfig = options?.security ?? null;
   const parser = createParser(createTokenizer(src, options));
   if (extensions !== undefined) {
     parser.extensions = extensions;
   }
-  const ast = root(ZERO_LOC, parseNodes(parser));
+  const nodesR = parseNodes(parser);
+  if (isErr(nodesR)) { return nodesR; }
+  const ast = root(ZERO_LOC, nodesR.value);
 
   if (securityConfig !== null) {
     const validation = validateExpression(ast, securityConfig);
     if (!validation.valid) {
       const firstError = validation.errors[0];
-      fail(parser, firstError.message, firstError.lineno, firstError.colno);
+      return fail(parser, firstError.message, firstError.lineno, firstError.colno);
     }
   }
 
-  return ast;
+  return ok(ast);
 };
