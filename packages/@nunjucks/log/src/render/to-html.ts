@@ -3,14 +3,9 @@ import { classifyAndBuildTitle, buildErrorDisplay } from './to-html-display.ts';
 import { isFilePath } from './internal/config/ide-links.ts';
 import { shortenPath } from './internal/location/path-shortener.ts';
 import { DEFAULT_IDE, DEFAULT_VERSION } from './internal/config/defaults.ts';
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import scriptContent from './assets/error-script.js' with { type: 'text' };
+import cssContent from './assets/error-page.css' with { type: 'text' };
 import type { Csp, ErrorLike, ToHtmlOptions } from './to-html-types.ts';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const CSS = readFileSync(resolve(__dirname, './assets/error-page.css'), 'utf-8');
 
 const TOGGLE_SCRIPT = `<script>\n${scriptContent}\n</script>`;
 
@@ -25,7 +20,7 @@ const buildDocument = ({ title, body, scripts = '', csp = null }: { title: strin
 <title>${title}</title>
 <style${styleNonce}>
 body{margin:0;min-block-size:100dvh;padding:1rem;background:var(--color-bg-page);color:var(--color-text-primary);font-family:system-ui,-apple-system,sans-serif}
-${CSS}
+${cssContent}
 </style>
 </head>
 <body>

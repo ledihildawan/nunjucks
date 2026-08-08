@@ -1,13 +1,12 @@
 import { keys, isFunction } from 'remeda';
 import { getBlockedKeyCategory, isDangerousGlobal } from './blocked-keys.ts';
-import process from 'node:process';
 
 const globalRecord = globalThis as Record<string, unknown>;
 
 const isPrimitive = (value: unknown): boolean => value === null || value === undefined || (typeof value !== 'object' && typeof value !== 'function');
 
 const checkGlobalThis = (value: unknown): boolean => typeof globalThis !== 'undefined' && value === globalThis;
-const checkProcess = (value: unknown): boolean => typeof process !== 'undefined' && value === process;
+const checkProcess = (value: unknown): boolean => globalRecord.process !== undefined && value === globalRecord.process;
 const checkWindow = (value: unknown): boolean => globalRecord.window !== undefined && value === globalRecord.window;
 const checkDocument = (value: unknown): boolean => globalRecord.document !== undefined && value === globalRecord.document;
 const checkSelf = (value: unknown): boolean => globalRecord.self !== undefined && value === globalRecord.self;
