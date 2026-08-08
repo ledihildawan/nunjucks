@@ -1,7 +1,7 @@
 import type { ParseOptions } from '@nunjucks/parser';
 import type { UndefinedMode, BlockLocation } from '@nunjucks/runtime';
 import { HOOK_EVENTS } from '@nunjucks/runtime';
-import { extractBlocks, isCompiledTemplateExports, BLOCK_META_KEY } from '@nunjucks/shared';
+import { extractBlocks, isCompiledTemplateExports, BLOCK_META_KEY, isErr } from '@nunjucks/shared';
 import type { CompiledTemplateExports } from '@nunjucks/shared';
 import { prettifyError } from '@nunjucks/log';
 import { compileToCode } from '../compile-pipeline.ts';
@@ -19,8 +19,9 @@ const createTemplateCompiler = (state: TemplateState) => {
         if (state.tmplProps) {
           return state.tmplProps;
         }
-        const code = compileToCode({ source: state.tmplStr ?? '', templateName: state.path ?? '', undefinedMode: state.env.opts.undefined as UndefinedMode | undefined, parseOpts: state.env.opts as ParseOptions });
-        const compiled = new Function(code)();
+        const codeResult = compileToCode({ source: state.tmplStr ?? '', templateName: state.path ?? '', undefinedMode: state.env.opts.undefined as UndefinedMode | undefined, parseOpts: state.env.opts as ParseOptions });
+        if (isErr(codeResult)) { throw codeResult.error; }
+        const compiled = new Function(codeResult.value)();
         if (!isCompiledTemplateExports(compiled)) {
           return null;
         }

@@ -4,7 +4,7 @@ import type { ParseOptions } from '@nunjucks/parser';
 import type { Env } from '@nunjucks/runtime';
 import { createSandboxedContext } from '@nunjucks/runtime';
 import { createLog, getError, wrapWithLog, type IncludeChain, type TemplateWarning } from '@nunjucks/log';
-import { MATCH_ANY_RE, scrubDangerousReferences } from '@nunjucks/shared';
+import { MATCH_ANY_RE, scrubDangerousReferences, ok, isErr, type Result } from '@nunjucks/shared';
 import type { FileSystemLoader } from '@nunjucks/loaders';
 import { createTemplate } from '../template/index.ts';
 import { compileToCode } from '../compile-pipeline.ts';
@@ -93,9 +93,9 @@ const buildRenderEnv = (loader: FileSystemLoader | null, config: RenderConfig): 
   };
 };
 
-const compileTemplate = (templateSource: string, config: RenderConfig, templateName: string): CompileResult => {
-  const code = compileToCode({ source: templateSource, templateName, undefinedMode: config.undefined, parseOpts: { undefined: config.undefined } as ParseOptions });
-  return { code };
+const compileTemplate = (templateSource: string, config: RenderConfig, templateName: string): Result<CompileResult, Error> => {
+  const codeResult = compileToCode({ source: templateSource, templateName, undefinedMode: config.undefined, parseOpts: { undefined: config.undefined } as ParseOptions });
+  return isErr(codeResult) ? codeResult : ok({ code: codeResult.value });
 };
 
 const handleContextStrictMode = async (context: Record<string, unknown>, config: RenderConfig): Promise<{ warningsCollector: TemplateWarning[]; dangerousValuePaths: string[]; context: Record<string, unknown> }> => {

@@ -98,12 +98,11 @@ const render = async (template: string, context: Record<string, unknown> = {}, o
 
   const templateName = resolveTemplateName(template, configWithPath);
 
-  let code: string;
-  try {
-    ({ code } = compileTemplate(templateSource, configWithPath, templateName));
-  } catch (compileErr) {
-    return err(await wrapWithLog(compileErr, configWithPath, { template: templateSource, renderContext: context }));
+  const compileResult = compileTemplate(templateSource, configWithPath, templateName);
+  if (isErr(compileResult)) {
+    return err(await wrapWithLog(compileResult.error, configWithPath, { template: templateSource, renderContext: context }));
   }
+  const { code } = compileResult.value;
 
   const { warningsCollector, context: safeContext } = await handleContextStrictMode(context, configWithPath);
   const sandboxedCtx = prepareSandbox(configWithPath, safeContext);
