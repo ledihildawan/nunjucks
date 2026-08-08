@@ -18,12 +18,12 @@ const makeCompiler = () => {
 };
 
 describe('compilePipeForward', () => {
-  test('emits env.getFilter with filter name and location', () => {
+  test('emits runtime.runFilter with filter name and location', () => {
     const c = makeCompiler();
     const node = pipe(loc({ lineno: 3, colno: 7 }), { name: symbol(loc({ lineno: 3, colno: 7 }), 'upper'), args: [{ mock: 'ARG' } as never] });
     compilePipeForward(asCompiler(c), node as never, frame);
     const joined = c.emitted.join('');
-    expect(joined).toContain('env.getFilter("upper", 3, 7)');
+    expect(joined).toContain('runtime.runFilter(env, "upper", 3, 7, context');
     expect(joined).toContain('await runtime.awaitValue(ARG)');
   });
 

@@ -10,7 +10,7 @@ export const compilePipeForward = (compiler: Compiler, node: CallNode, frame: Fr
 
   const args = node.args;
 
-  compiler.emit(`await runtime.awaitValue(env.getFilter("${filterName}", ${filterLocation}).call(context, `);
+  compiler.emit(`await runtime.runFilter(env, "${filterName}", ${filterLocation}, context, `);
 
   args.forEach((argument, i) => {
     if (i > 0) {
@@ -23,5 +23,5 @@ export const compilePipeForward = (compiler: Compiler, node: CallNode, frame: Fr
     }
   });
 
-  compiler.emit('))');
+  compiler.emit(')');
 };

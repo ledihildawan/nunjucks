@@ -12,6 +12,7 @@ import { createFrame } from './frame.ts';
 import { makeKeywordArgs, makeComponent, createComponentContext } from './component.ts';
 import { createSlotContext } from './slots.ts';
 import { runTest } from './builtin-predicates.ts';
+import { runFilter } from './filter-runtime.ts';
 import { keys } from 'remeda';
 
 interface RenderRuntimeOptions {
@@ -43,6 +44,7 @@ const createRenderRuntime = (options?: RenderRuntimeOptions) => ({
   createComponentContext,
   keys,
   runTest,
+  runFilter,
   ...(options ? {
     __warnings__: [] as unknown[],
     logContext: {

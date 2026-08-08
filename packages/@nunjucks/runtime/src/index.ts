@@ -59,6 +59,7 @@ export {
   type UndefinedMode,
 } from './undefined.ts';
 export { runTest } from './builtin-predicates.ts';
+export { runFilter } from './filter-runtime.ts';
 export { createRenderRuntime } from './render-runtime.ts';
 export { createGensym } from './symbol-generator.ts';
 export {

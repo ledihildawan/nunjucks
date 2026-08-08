@@ -108,12 +108,11 @@ const emitFloorDivAssignment = ({ compiler, node, frame, currentId, valueId }: C
   compiler.emit(');');
 };
 
-const emitFilterAssignment = ({ compiler, node, frame, currentId, valueId, key }: FilterAssignInput): void => {
+const emitFilterAssignment = ({ compiler, node, frame, currentId, valueId }: FilterAssignInput): void => {
   const valueNode = node.value;
   const filterName = valueNode.type === 'symbol' ? valueNode.value as string : null;
-  const inputLocation = `${node.lineno ?? 0}, ${node.colno ?? 0}`;
   if (filterName) {
-    compiler.emit(`let ${valueId} = await runtime.awaitValue(env.getFilter(${JSON.stringify(filterName)}, ${inputLocation}, ${inputLocation}, ${key}).call(context, ${currentId}));`);
+    compiler.emit(`let ${valueId} = await runtime.runFilter(env, ${JSON.stringify(filterName)}, ${node.lineno ?? 0}, ${node.colno ?? 0}, context, ${currentId});`);
   } else {
     compiler.emit(`let ${valueId} = await runtime.awaitValue(`);
     compiler.compileExpression(valueNode, frame);
