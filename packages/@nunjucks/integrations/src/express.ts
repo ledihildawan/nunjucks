@@ -6,17 +6,17 @@ type ExpressEngineConfig = Partial<GlobalConfig>;
 
 type ExpressEngineFunction = (
   filePath: string,
-  options: object,
+  options: Record<string, unknown>,
   callback: (err: Error | null, rendered?: string) => void
 ) => void;
 
 const createEngine = (config: ExpressEngineConfig = {}): ExpressEngineFunction =>
   function nunjucksExpressEngine(
     filePath: string,
-    options: object,
+    options: Record<string, unknown>,
     callback: (err: Error | null, rendered?: string) => void
   ): void {
-    render(path.basename(filePath), options as Record<string, unknown>, {
+    render(path.basename(filePath), options, {
       ...config,
       views: path.dirname(filePath),
       templatePath: filePath,

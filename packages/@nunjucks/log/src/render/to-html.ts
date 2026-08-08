@@ -66,7 +66,7 @@ const buildErrorDocument = (error: ErrorLike, options: ToHtmlOptions): string =>
   } = options;
 
   const humanTitle = classifyAndBuildTitle(error);
-  const { classified, displayLine, displayCol, displayPath } = buildErrorDisplay(error, templatePath, lineno ?? undefined, colno ?? undefined, isJsCaller);
+  const { classified, displayLine, displayCol, displayPath } = buildErrorDisplay(error, { templatePath, lineno: lineno ?? undefined, colno: colno ?? undefined, isJsCaller });
   const locDisplay = `${shortenPath(displayPath)}:${displayLine}:${displayCol}`;
   const canLinkLocation = isFilePath(displayPath);
 

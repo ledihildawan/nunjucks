@@ -97,10 +97,10 @@ const isLinkablePath = (rawPath: string): boolean =>
   && PATH_SEPARATOR_RE.test(rawPath)
   && isFilePath(rawPath);
 
-const buildLocationLink = (ide: string, rawPath: string, line: string, col: string): string => {
-  const norm = normalizePath(rawPath);
+const buildLocationLink = (ide: string, target: { path: string; line: string; col: string }): string => {
+  const norm = normalizePath(target.path);
   const display = shortenPath(norm);
-  return `<a href="${resolveIdeLink(ide, norm, Number.parseInt(line, 10), Number.parseInt(col, 10))}" class="stack-link">${escapeHtml(display)}:${line}:${col}</a>`;
+  return `<a href="${resolveIdeLink(ide, { path: norm, line: Number.parseInt(target.line, 10), col: Number.parseInt(target.col, 10) })}" class="stack-link">${escapeHtml(display)}:${target.line}:${target.col}</a>`;
 };
 
 const functionSpan = (fnRaw: string): string =>
@@ -114,7 +114,7 @@ const renderParenFrame = (body: string, ide: string): string | null => {
   const col = paren[3] ?? '';
   const fnRaw = body.slice(0, paren.index ?? 0).trim();
   const inner = isLinkablePath(rawPath)
-    ? buildLocationLink(ide, rawPath, line, col)
+    ? buildLocationLink(ide, { path: rawPath, line, col })
     : `${escapeHtml(rawPath)}:${line}:${col}`;
   return `${functionSpan(fnRaw)}(${inner})`;
 };
@@ -124,7 +124,7 @@ const renderFileUrlFrame = (body: string, ide: string): string | null => {
   if (!m) { return null; }
   const rawPath = m[2] ?? '';
   if (!isLinkablePath(rawPath)) { return null; }
-  return `${functionSpan((m[1] ?? '').trim())}${buildLocationLink(ide, rawPath, m[3] ?? '', m[4] ?? '')}`;
+  return `${functionSpan((m[1] ?? '').trim())}${buildLocationLink(ide, { path: rawPath, line: m[3] ?? '', col: m[4] ?? '' })}`;
 };
 
 const renderFallbackFrame = (body: string): string => {

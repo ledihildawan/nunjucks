@@ -37,7 +37,7 @@ interface ToHtmlOptions {
   templatePath?: string;
   lineno?: number | null;
   colno?: number | null;
-  renderContext?: object;
+  renderContext?: Record<string, unknown>;
   phase?: string | null;
   version?: string;
   timestamp?: string;

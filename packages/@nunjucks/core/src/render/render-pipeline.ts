@@ -116,7 +116,7 @@ const handleContextStrictMode = async (context: Record<string, unknown>, config:
       subject,
       { phase: 'render' },
     );
-    throw await wrapWithLog(err, config, null, context);
+    throw await wrapWithLog(err, config, { renderContext: context });
   }
 
   const scrubbedContext = scrubDangerousReferences(context) as Record<string, unknown>;

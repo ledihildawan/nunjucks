@@ -35,13 +35,21 @@ const formatFixAnsi = (fixCode: string | null, fixComment: string | null, docume
 
 const LEADING_AT_RE = /^ at /;
 
-const formatMediumAnsi = (message: string, path: string, location: ReturnType<typeof toDisplayLocation>, causes: string[], documentationUrl: string | null, ide: string): string => {
-  const [firstCause] = causes;
+interface MediumAnsiInput {
+  path: string;
+  location: ReturnType<typeof toDisplayLocation>;
+  causes: string[];
+  documentationUrl: string | null;
+  ide: string;
+}
+
+const formatMediumAnsi = (message: string, input: MediumAnsiInput): string => {
+  const [firstCause] = input.causes;
   const causeHint = firstCause ? stripMarkdown(firstCause) : '';
-  const extrasPart = getExtrasPart(causeHint, documentationUrl ?? '');
-  const locationPart = path
-    ? formatLocationString(path, location, ide).replace(LEADING_AT_RE, '')
-    : ` at line ${location.line}`;
+  const extrasPart = getExtrasPart(causeHint, input.documentationUrl ?? '');
+  const locationPart = input.path
+    ? formatLocationString(input.path, input.location, input.ide).replace(LEADING_AT_RE, '')
+    : ` at line ${input.location.line}`;
   return `${message}${locationPart}${extrasPart}`;
 };
 
@@ -70,14 +78,16 @@ const extractAnsiErrorParts = (error: unknown, templatePath?: string, lineno?: n
   };
 };
 
-const formatFullAnsi = (
-  message: string,
-  parts: AnsiErrorParts,
-  ide: string,
-  sourceTrace: SourceTrace | null | undefined,
-  renderContext: Record<string, unknown> | undefined,
-  error: unknown
-): string => {
+interface FullAnsiInput {
+  parts: AnsiErrorParts;
+  ide: string;
+  sourceTrace: SourceTrace | null | undefined;
+  renderContext: Record<string, unknown> | undefined;
+  error: unknown;
+}
+
+const formatFullAnsi = (message: string, input: FullAnsiInput): string => {
+  const { parts, ide, sourceTrace, renderContext, error } = input;
   const { causes, fixCode, fixComment, documentationUrl, severity, path } = parts;
   const location = toDisplayLocation(parts.displayLineno, parts.displayColno, parts.lineBase);
   const stack = (isErrorLike(error) ? error.stack : undefined) ?? '';

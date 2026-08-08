@@ -33,30 +33,31 @@ const formatStackLine = (line: string): string => {
   return `  ${frame.raw}`;
 };
 
-const formatMediumText = (
-  message: string,
-  severityLabel: string,
-  error: unknown,
-  templatePath: string | undefined,
-  lineno: number | null | undefined,
-  colno: number | null | undefined,
-  causes: string[],
-  documentationUrl: string | null
-): string => {
-  const err = error as ErrorLike;
-  const path = templatePath ?? err.templateName ?? 'unknown';
+interface MediumTextInput {
+  severityLabel: string;
+  error: unknown;
+  templatePath: string | undefined;
+  lineno: number | null | undefined;
+  colno: number | null | undefined;
+  causes: string[];
+  documentationUrl: string | null;
+}
+
+const formatMediumText = (message: string, input: MediumTextInput): string => {
+  const err = input.error as ErrorLike;
+  const path = input.templatePath ?? err.templateName ?? 'unknown';
   const location = toDisplayLocation(
-    lineno ?? err.lineno ?? null,
-    colno ?? err.colno ?? null,
+    input.lineno ?? err.lineno ?? null,
+    input.colno ?? err.colno ?? null,
     err.lineBase ?? 'zero'
   );
   const shortPath = shortenPath(path);
   const locationStr = ` at ${shortPath}:${location.line}:${location.col}`;
-  const causeHint = causes.length > 0 ? stripMarkdown(causes[0] ?? '') : '';
-  const docHint = documentationUrl ?? '';
+  const causeHint = input.causes.length > 0 ? stripMarkdown(input.causes[0] ?? '') : '';
+  const docHint = input.documentationUrl ?? '';
   const extras = pipe([causeHint, docHint], filter(Boolean), join(' | '));
   const extrasPart = extras ? `\n${extras}` : '';
-  return `${severityLabel} ${message}${locationStr}${extrasPart}`;
+  return `${input.severityLabel} ${message}${locationStr}${extrasPart}`;
 };
 
 interface ErrorParts {
@@ -107,7 +108,7 @@ const toText = (error: unknown, options: ToTextOptions = {}): string => {
   const severityLabel = getSeverityLabel(severity);
 
   if (verbosity === 'medium' && (templatePath || lineno !== undefined || colno !== undefined)) {
-    return formatMediumText(message, severityLabel, error, templatePath, lineno, colno, causes, documentationUrl);
+    return formatMediumText(message, { severityLabel, error, templatePath, lineno, colno, causes, documentationUrl });
   }
 
   const formattedStack = formatStack(error);

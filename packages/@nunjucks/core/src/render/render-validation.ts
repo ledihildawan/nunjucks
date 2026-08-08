@@ -21,7 +21,7 @@ const createValidationError = async ({
       lineBase: (stamps.lineBase as 'one' | 'zero' | undefined) ?? 'zero',
     },
   );
-  throw await wrapWithLog(err, config, templateSource, context);
+  throw await wrapWithLog(err, config, { template: templateSource, renderContext: context });
 };
 
 const getDangerousValueStamps = async (contextError: RenderValidationError, config: RenderConfig): Promise<Record<string, unknown>> => {
@@ -44,7 +44,7 @@ const getDangerousValueStamps = async (contextError: RenderValidationError, conf
 export const validateRender = async (template: unknown, config: RenderConfig, context: unknown): Promise<void> => {
   if (typeof template !== 'string') {
     const err = createLog('error', getError('TEMPLATE_MUST_BE_STRING'), {}, null, { phase: 'render' });
-    throw await wrapWithLog(err, config, template as string | null, context);
+    throw await wrapWithLog(err, config, { template: template as string | null, renderContext: context });
   }
 
   const validation = validateConfig(config);

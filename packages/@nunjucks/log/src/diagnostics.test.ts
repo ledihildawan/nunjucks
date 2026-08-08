@@ -17,13 +17,13 @@ describe('wrapWithLog', () => {
 
   test('includes template source when provided', async () => {
     const original = new Error('test');
-    const wrapped = await wrapWithLog(original, { phase: 'render' }, '{{ x }}');
+    const wrapped = await wrapWithLog(original, { phase: 'render' }, { template: '{{ x }}' });
     expect(wrapped).toBeDefined();
   });
 
   test('handles null render context', async () => {
     const original = new Error('test');
-    const wrapped = await wrapWithLog(original, { phase: 'render' }, null, null);
+    const wrapped = await wrapWithLog(original, { phase: 'render' });
     expect(wrapped).toBeDefined();
   });
 

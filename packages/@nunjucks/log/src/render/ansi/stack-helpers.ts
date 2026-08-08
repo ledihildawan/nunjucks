@@ -40,7 +40,7 @@ const formatStackLine = (
   const location = `${shortPath}:${lineNum}:${colNum}`;
 
   if (isFilePath(frame.path)) {
-    const url = makeHyperlink(location, resolveIdeLink(ide, frame.path, lineNum, colNum));
+    const url = makeHyperlink(location, resolveIdeLink(ide, { path: frame.path, line: lineNum, col: colNum }));
     if (fn) { return `  at ${picocolors.cyan(fn)} (${url})`; }
     return `  at ${url}`;
   }
@@ -56,7 +56,7 @@ const formatLocationString = (
   if (!path) { return ''; }
   const shortPath = shortenPath(path);
   if (isFilePath(path)) {
-    const url = makeHyperlink(`${shortPath}:${location.line}:${location.col}`, resolveIdeLink(ide, path, location.line, location.col));
+    const url = makeHyperlink(`${shortPath}:${location.line}:${location.col}`, resolveIdeLink(ide, { path, line: location.line, col: location.col }));
     return ` at ${url}`;
   }
   return ` at ${shortPath}:${location.line}:${location.col}`;

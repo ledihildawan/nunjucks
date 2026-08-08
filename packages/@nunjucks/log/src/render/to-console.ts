@@ -34,7 +34,7 @@ const formatMedium = (warning: Warning, options: ToConsoleOptions): string => {
   const path = templateName ?? templatePath;
   const displayPath = path ? `${shortenPath(path)}:${lineNum}` : '';
   const locationText = path && isFilePath(path)
-    ? makeHyperlink(displayPath, resolveIdeLink(ide, path, lineNum, 1))
+    ? makeHyperlink(displayPath, resolveIdeLink(ide, { path, line: lineNum, col: 1 }))
     : displayPath;
   const locationStr = path
     ? `${picocolors.dim('at')} ${locationText}`
@@ -55,18 +55,25 @@ const formatMedium = (warning: Warning, options: ToConsoleOptions): string => {
 const getWarningTitle = (varName: string | null | undefined): string =>
   varName ? `Undefined variable '${varName}'` : 'Undefined variable';
 
-const getLocationString = (lineno: number | null | undefined, templateName: string | null | undefined, lineBase: LineBase | null | undefined, ide: string): string => {
-  const location = toDisplayLocation(lineno ?? null, 0, lineBase ?? 'zero');
+interface LocationStringInput {
+  lineno: number | null | undefined;
+  templateName: string | null | undefined;
+  lineBase: LineBase | null | undefined;
+  ide: string;
+}
+
+const getLocationString = (input: LocationStringInput): string => {
+  const location = toDisplayLocation(input.lineno ?? null, 0, input.lineBase ?? 'zero');
   const lineNum = location.line;
-  if (templateName) {
-    const shortPath = shortenPath(templateName);
+  if (input.templateName) {
+    const shortPath = shortenPath(input.templateName);
     const displayPath = `${shortPath}:${lineNum}`;
-    const locationText = isFilePath(templateName)
-      ? makeHyperlink(displayPath, resolveIdeLink(ide, templateName, lineNum, 1))
+    const locationText = isFilePath(input.templateName)
+      ? makeHyperlink(displayPath, resolveIdeLink(input.ide, { path: input.templateName, line: lineNum, col: 1 }))
       : displayPath;
     return locationText;
   }
-  if (lineno !== undefined && lineno !== null) {
+  if (input.lineno !== undefined && input.lineno !== null) {
     return picocolors.dim(`line ${lineNum}`);
   }
   return picocolors.dim('unknown');
@@ -83,7 +90,7 @@ const formatFull = (warning: Warning, options: ToConsoleOptions): string => {
     ...(undefinedMode && dev ? [picocolors.dim(`(${undefinedMode})`)] : []),
     '',
     `${picocolors.bold('Message:')} ${picocolors.yellow(getWarningTitle(varName))}`,
-    `${picocolors.bold('Location:')} ${getLocationString(lineno, templateName, warning.lineBase, ide)}`,
+    `${picocolors.bold('Location:')} ${getLocationString({ lineno, templateName, lineBase: warning.lineBase, ide })}`,
     ...(dev && subject ? ['', `${picocolors.bold('Subject:')} ${picocolors.cyan(subject)}`] : []),
     '',
     picocolors.dim(footer.join(' · '))

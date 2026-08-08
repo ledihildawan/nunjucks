@@ -78,23 +78,24 @@ const classifyError = (error: ErrorLike): ClassifiedError => {
   };
 };
 
-const resolveErrorLocation = (
-  error: ErrorLike | null,
-  lineno: number | null | undefined,
-  colno: number | null | undefined,
-  templatePath: string | undefined,
-  isJsCaller: boolean
-): LocationInfo => {
-  const lineBaseValue: LineBase = isJsCaller ? 'one' : (error?.lineBase ?? 'zero');
+interface ErrorLocationInput {
+  lineno: number | null | undefined;
+  colno: number | null | undefined;
+  templatePath: string | undefined;
+  isJsCaller: boolean;
+}
+
+const resolveErrorLocation = (error: ErrorLike | null, input: ErrorLocationInput): LocationInfo => {
+  const lineBaseValue: LineBase = input.isJsCaller ? 'one' : (error?.lineBase ?? 'zero');
   const location = toDisplayLocation(
-    lineno ?? error?.lineno ?? null,
-    colno ?? error?.colno ?? null,
+    input.lineno ?? error?.lineno ?? null,
+    input.colno ?? error?.colno ?? null,
     lineBaseValue
   );
   return {
     displayLine: location.line,
     displayCol: location.col,
-    displayPath: templatePath ?? 'unknown',
+    displayPath: input.templatePath ?? 'unknown',
     lineBaseValue,
   };
 };
@@ -113,14 +114,11 @@ const classifyAndBuildTitle = (error: ErrorLike) => {
 
 const buildErrorDisplay = (
   error: ErrorLike,
-  templatePath: string | undefined,
-  lineno: number | undefined,
-  colno: number | undefined,
-  isJsCaller: boolean
+  input: { templatePath: string | undefined; lineno: number | undefined; colno: number | undefined; isJsCaller: boolean }
 ) => {
   const classified = classifyError(error);
   const { displayLine, displayCol, displayPath } = resolveErrorLocation(
-    error, lineno, colno, templatePath, isJsCaller
+    error, { lineno: input.lineno, colno: input.colno, templatePath: input.templatePath, isJsCaller: input.isJsCaller }
   );
   return { classified, displayLine, displayCol, displayPath };
 };

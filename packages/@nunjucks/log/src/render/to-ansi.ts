@@ -30,8 +30,8 @@ const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
 
   if (verbosity === 'medium') {
     const location = toDisplayLocation(parts.displayLineno, parts.displayColno, parts.lineBase);
-    return formatMediumAnsi(message, parts.path, location, parts.causes, parts.documentationUrl, ide);
+    return formatMediumAnsi(message, { path: parts.path, location, causes: parts.causes, documentationUrl: parts.documentationUrl, ide });
   }
 
-  return formatFullAnsi(message, parts, ide, sourceTrace, options.renderContext, error);
+  return formatFullAnsi(message, { parts, ide, sourceTrace, renderContext: options.renderContext, error });
 };

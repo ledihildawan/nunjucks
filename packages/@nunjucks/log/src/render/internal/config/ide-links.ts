@@ -14,15 +14,21 @@ const isFilePath = (path?: string | null): boolean =>
 
 type IdeLinkFn = (path: string, line: number, col: number) => string;
 
-const resolveIdeLink = (ide: string | IdeLinkFn, path: string, line: number, col: number): string => {
+interface LinkTarget {
+  path: string;
+  line: number;
+  col: number;
+}
+
+const resolveIdeLink = (ide: string | IdeLinkFn, target: LinkTarget): string => {
   if (typeof ide === 'function') {
-    return ide(path, line, col);
+    return ide(target.path, target.line, target.col);
   }
   if (ide === 'custom') {
-    return `navto:nunjucks?path=${encodeURIComponent(path)}&line=${line}&col=${col}`;
+    return `navto:nunjucks?path=${encodeURIComponent(target.path)}&line=${target.line}&col=${target.col}`;
   }
-  const normalizedPath = normalizeDrivePath(path);
-  return `vscode://file/${normalizedPath}:${line}:${col}`;
+  const normalizedPath = normalizeDrivePath(target.path);
+  return `vscode://file/${normalizedPath}:${target.line}:${target.col}`;
 };
 
 const getIdeMeta = (_ide: string | IdeLinkFn): { label: string; color: string | null; icon: string } => ({
@@ -32,3 +38,4 @@ const getIdeMeta = (_ide: string | IdeLinkFn): { label: string; color: string | 
 });
 
 export { isFilePath, resolveIdeLink, getIdeMeta };
+export type { LinkTarget, IdeLinkFn };

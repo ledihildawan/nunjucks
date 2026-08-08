@@ -64,7 +64,7 @@ const buildErrorHeader = ({
   const devBadge = verbosity === 'full' ? '<span class="badge badge-dev">DEV</span>' : '';
 
   const locationLink = canLinkLocation
-    ? `<a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="loc-link error-location-link">${escapeHtml(locDisplay)}</a>`
+    ? `<a href="${resolveIdeLink(ide, { path: displayPath, line: displayLine, col: displayCol })}" class="loc-link error-location-link">${escapeHtml(locDisplay)}</a>`
     : `<span class="error-location-text">${escapeHtml(locDisplay)}</span>`;
   const errorLocationBlock = verbosity !== 'simple'
     ? `<p class="error-location">The error occurred in ${locationLink}</p>`
@@ -93,7 +93,7 @@ interface FullErrorBodyInput {
   fixCode: string;
   fixComment: string;
   documentationUrl: string | null;
-  renderContext: object | undefined;
+  renderContext: Record<string, unknown> | undefined;
   error: ErrorLike;
   ide: string;
   displayPath: string;
@@ -170,7 +170,7 @@ const buildErrorFooter = ({
       const ideLabel = `Open in ${ideMeta.label}`;
       return `
     <div class="error-footer-actions">
-      <a href="${resolveIdeLink(ide, displayPath, displayLine, displayCol)}" class="btn btn-solid">
+      <a href="${resolveIdeLink(ide, { path: displayPath, line: displayLine, col: displayCol })}" class="btn btn-solid">
         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">${ideMeta.icon}</svg>
         ${ideLabel}
       </a>
@@ -191,7 +191,7 @@ interface ErrorBodyContentInput {
   error: ErrorLike;
   classified: ReturnType<typeof classifyError>;
   sourceTrace: SourceTrace | null | undefined;
-  renderContext: unknown;
+  renderContext: Record<string, unknown> | undefined;
   ide: string;
   displayPath: string;
 }
@@ -212,7 +212,7 @@ const buildErrorBodyContent = ({
     fixCode: classified.fixCode,
     fixComment: classified.fixComment,
     documentationUrl: classified.documentationUrl,
-    renderContext: renderContext as object | undefined,
+    renderContext,
     error,
     ide,
     displayPath,

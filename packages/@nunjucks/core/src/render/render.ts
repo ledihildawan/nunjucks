@@ -94,7 +94,7 @@ const render = async (template: string, context: Record<string, unknown> = {}, o
   try {
     ({ code } = compileTemplate(templateSource, configWithPath, templateName));
   } catch (err) {
-    throw await wrapWithLog(err, configWithPath, templateSource, context);
+    throw await wrapWithLog(err, configWithPath, { template: templateSource, renderContext: context });
   }
 
   const { warningsCollector, context: safeContext } = await handleContextStrictMode(context, configWithPath);
@@ -111,7 +111,7 @@ const render = async (template: string, context: Record<string, unknown> = {}, o
       templateName,
     }, resolvedConfig);
   } catch (err) {
-    throw await wrapWithLog(err, resolvedConfig, templateSource, context);
+    throw await wrapWithLog(err, resolvedConfig, { template: templateSource, renderContext: context });
   }
 
   return injectWarningsIfNeeded(result, warningsCollector, resolvedConfig.dev);
