@@ -11,9 +11,7 @@ const extractComponentArgs = (compiler: Compiler, node: ComponentNode): { args: 
   const last = all[all.length - 1];
   const kwargs = last !== undefined && (isDict(last) || isKeywordArgs(last)) ? last : null;
   const args = kwargs ? all.slice(0, -1) : all;
-  for (const argument of args) {
-    compiler.assertType(argument, 'symbol');
-  }
+  forEach(args, (argument) => { compiler.assertType(argument, 'symbol'); });
   return { args, kwargs };
 };
 

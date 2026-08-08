@@ -1,3 +1,4 @@
+import { forEach } from 'remeda';
 import { isArrayPattern, isObjectPattern, isSymbol } from '@nunjucks/nodes';
 import type { Node, VariableDeclNode, CompoundAssignNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
@@ -29,9 +30,9 @@ const compileVariableDeclaration = (compiler: Compiler, node: VariableDeclNode, 
     compiler.compileExpression(node.value, frame);
     compiler.emitLine(';');
 
-    for (const pattern of node.targets) {
+    forEach(node.targets, (pattern) => {
       compileDestructuring({ ctx: compiler, frame, registerFrame: true }, pattern, valueId);
-    }
+    });
   } else {
     const targets = node.targets;
     const name = getTargetName(targets[0]);
@@ -54,9 +55,9 @@ const compileVariableAssignment = (compiler: Compiler, node: VariableDeclNode, f
     compiler.compileExpression(node.value, frame);
     compiler.emitLine(';');
 
-    for (const pattern of node.targets) {
+    forEach(node.targets, (pattern) => {
       compileDestructuring({ ctx: compiler, frame, registerFrame: true }, pattern, valueId);
-    }
+    });
   } else {
     const targets = node.targets;
     const name = getTargetName(targets[0]);

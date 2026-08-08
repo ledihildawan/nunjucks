@@ -1,3 +1,4 @@
+import { forEach } from 'remeda';
 import type { MatchNode, WhenNode } from '@nunjucks/nodes';
 import { isLiteral, isSymbol, isArray, isDict } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
@@ -14,7 +15,7 @@ export const compileMatch = (compiler: Compiler, node: MatchNode, parentFrame: F
   compiler.emitLine(';');
   compiler.emitLine(`let ${matchedVar} = false;`);
 
-  for (const caseNode of node.cases) {
+  forEach(node.cases, (caseNode) => {
     const pattern = caseNode.pattern;
     const condParts: string[] = [];
 
@@ -50,7 +51,7 @@ export const compileMatch = (compiler: Compiler, node: MatchNode, parentFrame: F
     compiler.emitLine(`${matchedVar} = true;`);
     compiler.compile(caseNode.body, frame);
     compiler.emitLine('}');
-  }
+  });
 
   if (node.default) {
     compiler.emitLine(`if (!${matchedVar}) {`);
@@ -61,6 +62,7 @@ export const compileMatch = (compiler: Compiler, node: MatchNode, parentFrame: F
   compiler.emitLine('frame = frame.pop();');
 };
 
+// WHY: WhenNode is compiled inline by compileMatch and must never reach the dispatcher directly; this stub is a defensive guard that fails loudly if dispatch routing is broken.
 export const compileWhen = (compiler: Compiler, _node: WhenNode, _frame: Frame): void => {
   compiler.fail('when: WhenNode should be compiled by compileMatch, not dispatched directly', 0, 0);
 };

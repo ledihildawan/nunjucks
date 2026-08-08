@@ -1,3 +1,4 @@
+import { forEach } from 'remeda';
 import { createFrame } from '@nunjucks/runtime';
 import type { Frame } from '@nunjucks/runtime';
 import { findAll, isBlock } from '@nunjucks/nodes';
@@ -31,7 +32,7 @@ const setupRootFunction = (compiler: Compiler, node: Node): { frame: Frame; chil
 
 const compileNonBlockChildren = (compiler: Compiler, node: Node, frame: Frame): void => {
   const nonBlockChildren = node.children?.filter(child => !isBlock(child)) ?? [];
-  for (const child of nonBlockChildren) { compiler.compile(child, frame); }
+  forEach(nonBlockChildren, (child) => { compiler.compile(child, frame); });
 };
 
 const emitParentTemplateBlockHandling = (
@@ -42,13 +43,13 @@ const emitParentTemplateBlockHandling = (
   compiler.emitLine('if(parentTemplate) {');
   compiler.emitLine('  return await parentTemplate.rootRenderFunc(env, context, frame, runtime);');
   compiler.emitLine('} else {');
-  for (const block of blocks) {
+  forEach(blocks, (block) => {
     const name = blockName(block);
-    if (!name) { continue; }
+    if (!name) { return; }
     const { lineno, colno } = getBlockLocation(block);
     compiler.emitLine(`  lineno = ${lineno}; colno = ${colno};`);
     compiler.emitLine(`  ${childBuffer} += await context.getBlock("${name}", ${lineno}, ${colno})(env, context, frame, runtime);`);
-  }
+  });
   compiler.emitLine('}');
   compiler.emitLine(`return ${childBuffer};`);
   compiler.emitFuncEnd(true);
@@ -56,44 +57,44 @@ const emitParentTemplateBlockHandling = (
 
 const validateUniqueBlockNames = (blocks: BlockNode[]): void => {
   const seenBlocks = new Set<string>();
-  for (const block of blocks) {
+  forEach(blocks, (block) => {
     const name = blockName(block);
     const { lineno, colno } = block;
-    if (!name) { continue; }
+    if (!name) { return; }
     if (seenBlocks.has(name)) {
       throw createLog('error', ERROR_DEFINITIONS.DUPLICATE_BLOCK, { name }, name, { lineno, colno: colno ?? 0, phase: 'compile' });
     }
     seenBlocks.add(name);
-  }
+  });
 };
 
 const emitBlockFunctions = (compiler: Compiler, blocks: BlockNode[]): void => {
-  for (const block of blocks) {
+  forEach(blocks, (block) => {
     const name = blockName(block);
-    if (!name) { continue; }
+    if (!name) { return; }
     compiler.emitFuncBegin(block, `b_${name}`);
     const tmpFrame = createFrame();
     compiler.emitLine('frame = frame.push(true);');
     compiler.compile(block.body, tmpFrame);
     compiler.emitFuncEnd();
-  }
+  });
 };
 
 const emitBlockReturnObject = (compiler: Compiler, blocks: BlockNode[]): void => {
   compiler.emitLine('return {');
-  for (const block of blocks) {
+  forEach(blocks, (block) => {
     const name = blockName(block);
-    if (name === undefined) { continue; }
+    if (name === undefined) { return; }
     const blockNameId = `b_${name}`;
     compiler.emitLine(`${blockNameId}: ${blockNameId},`);
-  }
+  });
   compiler.emitLine(`${BLOCK_META_KEY}: {`);
-  for (const block of blocks) {
+  forEach(blocks, (block) => {
     const name = blockName(block);
-    if (name === undefined) { continue; }
+    if (name === undefined) { return; }
     const { lineno, colno } = getBlockLocation(block);
     compiler.emitLine(`${JSON.stringify(name)}: { lineno: ${lineno}, colno: ${colno} },`);
-  }
+  });
   compiler.emitLine('},');
   compiler.emitLine('root: root\n};');
 };

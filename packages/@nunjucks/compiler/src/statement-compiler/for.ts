@@ -1,3 +1,4 @@
+import { forEach } from 'remeda';
 import { isArray, isArrayPattern, isObjectPattern } from '@nunjucks/nodes';
 import type { Node, ForNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
@@ -25,9 +26,9 @@ const emitLoopBindings = ({ compiler, i, len }: { compiler: Compiler; i: string;
     {name: 'length', val: len},
   ];
 
-  for (const b of bindings) {
+  forEach(bindings, (b) => {
     compiler.emitLine(`frame.set("loop.${b.name}", ${b.val});`);
-  }
+  });
 };
 
 interface LoopBodyInput {
@@ -68,14 +69,14 @@ const compileFlatArrayBinding = ({ ctx: compiler, nameNode, frame, arr, i, len, 
   const itemId = compiler.tmpid();
   compiler.emitLine(`let ${itemId} = ${arr}[${i}];`);
   if (nameNode.children) {
-    for (const [u, child] of nameNode.children.entries()) {
-      if (!child) { continue; }
+    forEach(nameNode.children, (child, u) => {
+      if (!child) { return; }
       const tid = compiler.tmpid();
       compiler.emitLine(`let ${tid} = ${itemId}[${u}];`);
       const childValue = child.value as string;
       compiler.emitLine(`frame.set("${childValue}", ${tid});`);
       frame.set(childValue, tid);
-    }
+    });
   }
   emitLoopBody({ compiler, node, frame, i, len });
 };

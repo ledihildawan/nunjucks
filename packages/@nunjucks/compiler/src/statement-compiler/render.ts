@@ -1,3 +1,4 @@
+import { forEach } from 'remeda';
 import type { CallNode, RenderNode } from '@nunjucks/nodes';
 import { isFunCall } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
@@ -12,11 +13,11 @@ const compileRenderSlots = (
   frame: Frame
 ): string => {
   const entries: string[] = [];
-  for (const slot of slots) {
+  forEach(slots, (slot) => {
     const slotVar = `__slot_${slot.name}`;
     compileSlotFunction({ compiler, params: slot.params, body: slot.body, parentFrame: frame, slotVar });
     entries.push(`"${slot.name}": ${slotVar}`);
-  }
+  });
   return `slots: { ${entries.join(', ')} }`;
 };
 
@@ -27,7 +28,7 @@ const compileRenderFunCall = (compiler: Compiler, callExpr: CallNode, frame: Fra
   const nameStr = callExpr.name.type === 'symbol' ? String(callExpr.name.value) : 'render';
   compiler.emit(`, ${JSON.stringify(nameStr)}, { displayName: null, context, args: [`);
   const args = callExpr.args;
-  args.forEach((argument: Node, i: number) => {
+  forEach(args, (argument: Node, i: number) => {
     if (i > 0) { compiler.emit(', '); }
     if (argument) { compiler.compile(argument, frame); }
   });

@@ -1,3 +1,4 @@
+import { forEach } from 'remeda';
 import type { TestNode, TestCallNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
@@ -24,14 +25,14 @@ export const compileTestCall = (compiler: Compiler, node: TestCallNode, frame: F
   compiler.emit(', ');
 
   const args: string[] = [];
-  for (const argNode of node.args) {
-    if (!argNode) { continue; }
+  forEach(node.args, (argNode) => {
+    if (!argNode) { return; }
     const argTmp = compiler.tmpid();
     compiler.emit(`${argTmp} = `);
     compiler.compile(argNode, frame);
     compiler.emit(', ');
     args.push(argTmp);
-  }
+  });
 
   emitLocationGuard(compiler, lineno, colno);
   const argsPart = args.length > 0 ? `, ${args.join(', ')}` : '';
