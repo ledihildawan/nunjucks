@@ -1,6 +1,6 @@
 # Nunjucks Engineering Guidelines
 
-Monorepo of the nunjucks templating engine, split into focused `@nunjucks/*` workspaces (shared, log, nodes, lexer, parser, transformers, compiler, runtime, filters, loaders, validators, integrations, core). Verified compliant with the principles below on commit `72ead61e` — 465 source files, 0 lint issues, 0 `any` violations, 1796 tests passing.
+Monorepo of the nunjucks templating engine, split into focused `@nunjucks/*` workspaces (shared, error-catalog, error-renderer, error-formatter, log, nodes, lexer, parser, transformers, compiler, runtime, filters, loaders, validators, integrations, core). Verified compliant — 499 source files, 0 lint issues, 0 `any` violations, 1820 tests passing.
 
 ## 1. Core Architectural Principles
 
@@ -22,16 +22,19 @@ Monorepo of the nunjucks templating engine, split into focused `@nunjucks/*` wor
 
 ## 4. Naming & Readability
 
+- **Strict Semantic Naming** — variable, function, and parameter names must express domain intent clearly. Generic numeric suffixes (e.g. `node1`, `node2`, `data1`, `item2`) are strictly prohibited. Use role-descriptive names (e.g. `leftNode`, `rightNode`, `sourceData`, `targetData`).
 - **Self-documenting names** — code explains itself; minimize inline comments.
 - **No variable shadowing** — strictly prohibited.
 - **Aliases** — avoid module/type/variable aliases unless resolving collisions.
 - **Flow clarity** — decompose complex logic into small, sequenced functions with traceable flow.
 - **Clean comments** — strip dead, redundant, or unnecessary comments. Keep only WHY comments (e.g. `biome-ignore` justifications).
 
-## 5. Syntax Modernization
+## 5. Syntax Modernization & Loop Policy
 
 - Use modern ECMAScript/TypeScript features: `replaceAll`, `Object.hasOwn`, `Number.isInteger`, optional chaining, nullish coalescing, `as const`, `matchAll`, iterator helpers.
 - Deprecate legacy patterns (e.g. `String.prototype.replace` with global regex when `replaceAll` fits, manual `hasOwnProperty` calls, etc.).
+- **Map/Filter/Reduce for collection transformations** — traditional for/while loops are strictly prohibited in Core/Domain layer code.
+- **Loop exemption (Optimization & Performance)** — for/while loops ARE permitted in isolated pure abstractions under three scenarios: (1) AST Parsers / Compilers / High-Throughput Engines (memory/GC overhead), (2) Recursion Safety / Trampolining (stack overflow prevention), (3) Async Time-based Control Flows (polling, retry, stream processing).
 
 ## Verification Before Commit
 

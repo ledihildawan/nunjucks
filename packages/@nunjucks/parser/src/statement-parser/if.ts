@@ -10,12 +10,12 @@ import { parseUntilBlocks } from "../parse-root.ts";
 import { loc } from '@nunjucks/shared';
 
 const parseIfElseAlternate = (parserContext: ParserContext): Result<Node, TemplateError> => {
-  const aR = advanceAfterBlockEnd(parserContext);
-  if (isErr(aR)) { return aR; }
+  const elseEndR = advanceAfterBlockEnd(parserContext);
+  if (isErr(elseEndR)) { return elseEndR; }
   const altBodyR = parseUntilBlocks(parserContext, 'endif');
   if (isErr(altBodyR)) { return altBodyR; }
-  const aR2 = advanceAfterBlockEnd(parserContext);
-  if (isErr(aR2)) { return aR2; }
+  const endifEndR = advanceAfterBlockEnd(parserContext);
+  if (isErr(endifEndR)) { return endifEndR; }
   return ok(altBodyR.value);
 };
 
@@ -27,8 +27,8 @@ const parseIfAlternate = (parserContext: ParserContext, tok: Token): Result<Node
     case 'else':
       return parseIfElseAlternate(parserContext);
     case 'endif': {
-      const aR = advanceAfterBlockEnd(parserContext);
-      if (isErr(aR)) { return aR; }
+      const endifEndR = advanceAfterBlockEnd(parserContext);
+      if (isErr(endifEndR)) { return endifEndR; }
       return ok(null);
     }
     default:
