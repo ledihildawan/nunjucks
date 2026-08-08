@@ -57,6 +57,7 @@ export const createFrame = (parent?: Frame | null, isolateWrites?: boolean): Fra
       return state.isolateWrites;
     },
 
+    // WHY: the Frame is render-time lexical-scope execution state — set() mutates variables in place, and the resolveUp path writes through to PARENT frames up the scope chain (shared by reference). This shared-reference scope-chain semantics is the imperative shell of template rendering (the guide endorses Functional Core / Imperative Shell); making it immutable would require threading new parent frames up the chain on every write — a deep execution-model redesign that is over-engineering for a guide-allowed shell.
     set(name: string, value: unknown, resolveUp?: boolean): void {
       const parts = name.split('.');
       const [firstPart] = parts;

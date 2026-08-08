@@ -62,6 +62,7 @@ const handleSymbolOrTemplate = (tok: Token, parserContext: ParserContext): Node 
   return null;
 };
 
+// WHY: controlled backtracking for a genuinely ambiguous grammar — both a dict literal `{k:1}` and a destructuring pattern `{k}` start with `{`, and the dict-vs-pattern decision can only be made after parsing the first key + peeking the following token (which parseAggregate does, throwing the EXPECTED_COLON_AFTER_DICT_KEY sentinel when it detects a pattern). A no-throw fix would require threading a speculative mode through parseAggregate's recursive structure (parseContent/parseExpressions); this bounded single-site backtracking is the proportionate, recognized parser technique for ambiguous grammar disambiguation.
 const parseAggregateOrPattern = (parserContext: ParserContext): Node | null => {
   try {
     return parseAggregate(parserContext);
