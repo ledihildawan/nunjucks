@@ -1,5 +1,4 @@
-import { normalizeLineBase } from '../../../line-base.ts';
-import type { LineBase } from '../../../line-base.ts';
+import { normalizeLineBase, type LineBase } from '@nunjucks/error-catalog';
 
 export interface DisplayLocation {
 	line: number;

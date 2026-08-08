@@ -1,6 +1,5 @@
-import type { LineBase } from '../line-base.ts';
-
-const TEMPLATE_ERROR = Symbol('TemplateError');
+import type { LineBase } from '@nunjucks/error-catalog';
+import { TEMPLATE_ERROR } from '@nunjucks/error-catalog';
 
 interface ErrorDefinitionEntry {
   name: string;

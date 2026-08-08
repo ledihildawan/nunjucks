@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { isTemplateError } from '../create-log/create-log.ts';
+import { isTemplateError } from '../branding.ts';
 import { createSecurityError, isSecurityError } from './security.ts';
 
 describe('createSecurityError', () => {

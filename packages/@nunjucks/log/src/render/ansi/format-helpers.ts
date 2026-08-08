@@ -1,14 +1,14 @@
 import { pipe, filter, join, map, split } from 'remeda';
 import picocolors from 'picocolors';
 import { toDisplayLocation } from '../internal/location/location.ts';
-import type { LineBase } from '../../line-base.ts';
+import type { LineBase } from '@nunjucks/error-catalog';
 import { mergeErrorParts } from '../internal/formatting/error-parts.ts';
 import type { SourceTrace } from '../internal/location/source-trace.ts';
 import { stripMarkdown, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString } from './stack-helpers';
 import { renderContextAnsi } from './context-helpers';
 import { formatSourceTrace } from './source-helpers';
 import { getErrorMessage } from '../internal/formatting/message.ts';
-import { isErrorLike } from '../../types.ts';
+import { isErrorLike } from '@nunjucks/error-catalog';
 
 export { formatCausesAnsi, formatFixAnsi, getErrorMessage, formatMediumAnsi, extractAnsiErrorParts, formatFullAnsi, BULLET };
 

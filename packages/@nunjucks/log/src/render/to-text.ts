@@ -6,7 +6,7 @@ import { parseStackFrame } from './internal/location/stack-parse.ts';
 import { slice } from '@nunjucks/shared';
 import { stripMarkdown } from './internal/formatting/markdown.ts';
 import { getErrorMessage } from './internal/formatting/message.ts';
-import type { ErrorLike } from '../types.ts';
+import type { ErrorLike } from '@nunjucks/error-catalog';
 
 interface ToTextOptions {
   verbosity?: 'simple' | 'medium' | 'full';

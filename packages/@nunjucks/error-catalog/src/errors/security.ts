@@ -1,5 +1,4 @@
-import { TEMPLATE_ERROR } from '../create-log/create-log-types.ts';
-import { isTemplateError } from '../create-log/create-log.ts';
+import { TEMPLATE_ERROR, isTemplateError } from '../branding.ts';
 
 export interface SecurityError extends Error {
   name: 'SecurityError';

@@ -1,5 +1,4 @@
-import type { LineBase } from './line-base.ts';
-import { normalizeLineBase } from './line-base.ts';
+import { normalizeLineBase, type LineBase } from '@nunjucks/error-catalog';
 import { readObject, readString, readNumber, isKeyedObject } from '@nunjucks/shared';
 
 interface ErrorMetadataFallback {

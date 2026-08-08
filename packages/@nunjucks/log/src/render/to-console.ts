@@ -3,7 +3,7 @@ import { pipe, filter } from 'remeda';
 import { shortenPath } from './internal/location/path-shortener.ts';
 import { isFilePath, resolveIdeLink } from './internal/config/ide-links.ts';
 import { toDisplayLocation } from './internal/location/location.ts';
-import type { LineBase } from '../line-base.ts';
+import type { LineBase } from '@nunjucks/error-catalog';
 import { makeHyperlink } from './ansi/stack-helpers.ts';
 import { DEFAULT_IDE, DEFAULT_VERSION } from './internal/config/defaults.ts';
 import type { Warning } from '../warning/collector.ts';

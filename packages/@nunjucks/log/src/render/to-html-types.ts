@@ -1,6 +1,6 @@
-import type { LineBase } from '../line-base.ts';
+import type { LineBase } from '@nunjucks/error-catalog';
 import type { SourceTrace } from './internal/location/source-trace.ts';
-import type { ErrorLike } from '../types.ts';
+import type { ErrorLike } from '@nunjucks/error-catalog';
 
 export type { ErrorLike };
 

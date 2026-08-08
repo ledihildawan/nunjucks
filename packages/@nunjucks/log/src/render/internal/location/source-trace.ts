@@ -1,4 +1,4 @@
-import type { LineBase } from '../../../line-base.ts';
+import type { LineBase } from '@nunjucks/error-catalog';
 import { escapeRegex } from '@nunjucks/shared';
 import { toDisplayLocation } from './location.ts';
 import { calculateCaretPosition } from '../highlight/caret.ts';

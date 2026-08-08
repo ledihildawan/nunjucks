@@ -1,7 +1,7 @@
 import { pipe, split } from 'remeda';
 import { replace } from '@nunjucks/shared';
 
-import type { LineBase } from '../line-base.ts';
+import type { LineBase } from '@nunjucks/error-catalog';
 
 interface Warning {
   message: string;

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@nunjucks/shared": "workspace:*",
+    "@nunjucks/error-catalog": "workspace:*",
     "picocolors": "^1.1.1"
   },
   "description": "Unified logging system for Nunjucks"

@@ -2,7 +2,7 @@ import { createFormatterState } from '../render/internal/formatting/metadata.ts'
 import { toAnsi } from '../render/to-ansi.ts';
 import { toText } from '../render/to-text.ts';
 import { toHtml } from '../render/to-html.ts';
-import { normalizeLineBase, type LineBase } from '../line-base.ts';
+import { normalizeLineBase, type LineBase } from '@nunjucks/error-catalog';
 import { buildSourceTrace } from '../render/internal/location/source-trace.ts';
 import type { SourceTrace } from '../render/internal/location/source-trace.ts';
 import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, OutputOptions, NormalizedErrorContext, NormalizedWarningContext } from './create-log-types.ts';

@@ -3,7 +3,7 @@ import { normalizeErrorMetadata } from './normalize.ts';
 import { resolveLocation } from './error-location.ts';
 import { MATCH_ANY_RE, isKeyedObject } from '@nunjucks/shared';
 import { DEFAULT_IDE } from './render/internal/config/defaults.ts';
-import type { LineBase } from './line-base.ts';
+import type { LineBase } from '@nunjucks/error-catalog';
 
 interface DiagnosticsConfig {
   phase?: string | null;

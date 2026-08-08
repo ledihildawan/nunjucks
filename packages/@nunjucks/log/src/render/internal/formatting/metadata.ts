@@ -1,4 +1,4 @@
-import type { LineBase } from '../../../line-base.ts';
+import type { LineBase } from '@nunjucks/error-catalog';
 import type { SourceTrace } from '../location/source-trace.ts';
 import { DEFAULT_IDE } from '../config/defaults.ts';
 

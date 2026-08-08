@@ -1,0 +1,14 @@
+{
+  "name": "@nunjucks/error-catalog",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@nunjucks/shared": "workspace:*",
+    "remeda": "^2.39.0"
+  },
+  "description": "Error definition catalog and shared error primitives for Nunjucks"
+}

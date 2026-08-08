@@ -6,6 +6,7 @@
   "type": "module",
   "workspaces": [
     "packages/@nunjucks/shared",
+    "packages/@nunjucks/error-catalog",
     "packages/@nunjucks/log",
     "packages/@nunjucks/lexer",
     "packages/@nunjucks/nodes",

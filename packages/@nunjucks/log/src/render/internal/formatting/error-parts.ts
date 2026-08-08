@@ -1,4 +1,4 @@
-import { classifyFromError } from '../../../errors/classify.ts';
+import { classifyFromError } from '@nunjucks/error-catalog';
 
 export interface MergedErrorParts {
   causes: string[];

@@ -1,9 +1,9 @@
-import { classifyFromError } from '../errors/classify.ts';
+import { classifyFromError } from '@nunjucks/error-catalog';
 import { mergeErrorParts } from './internal/formatting/error-parts.ts';
 import { toText } from './to-text.ts';
 import { escapeHtml, highlightHtml, highlightJs } from './internal/highlight/highlight.ts';
 import { toDisplayLocation } from './internal/location/location.ts';
-import type { LineBase } from '../line-base.ts';
+import type { LineBase } from '@nunjucks/error-catalog';
 import type { ClassifiedError, ErrorLike, HumanTitleInput, LocationInfo } from './to-html-types.ts';
 
 const SCRIPT_EXTENSION_RE = /\.(?:[cm]?[jt]sx?|mjs|cjs)$/iu;

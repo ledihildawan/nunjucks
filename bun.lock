@@ -33,14 +33,11 @@
       "name": "@nunjucks/compiler",
       "version": "1.0.0",
       "dependencies": {
-        "@nunjucks/lexer": "workspace:*",
         "@nunjucks/log": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
-        "@nunjucks/parser": "workspace:*",
         "@nunjucks/runtime": "workspace:*",
         "@nunjucks/shared": "workspace:*",
-        "@nunjucks/transformers": "workspace:*",
-        "remeda": "*",
+        "remeda": "^2.39.0",
       },
     },
     "packages/@nunjucks/core": {
@@ -49,21 +46,25 @@
       "dependencies": {
         "@nunjucks/compiler": "workspace:*",
         "@nunjucks/filters": "workspace:*",
-        "@nunjucks/lexer": "workspace:*",
         "@nunjucks/loaders": "workspace:*",
         "@nunjucks/log": "workspace:*",
-        "@nunjucks/nodes": "workspace:*",
         "@nunjucks/parser": "workspace:*",
         "@nunjucks/runtime": "workspace:*",
         "@nunjucks/shared": "workspace:*",
         "@nunjucks/transformers": "workspace:*",
         "@nunjucks/validators": "workspace:*",
-        "isomorphic-dompurify": "^2.14.0",
-        "picocolors": "^1.1.1",
         "remeda": "^2.39.0",
       },
       "devDependencies": {
         "@types/express": "^5.0.6",
+      },
+    },
+    "packages/@nunjucks/error-catalog": {
+      "name": "@nunjucks/error-catalog",
+      "version": "1.0.0",
+      "dependencies": {
+        "@nunjucks/shared": "workspace:*",
+        "remeda": "^2.39.0",
       },
     },
     "packages/@nunjucks/filters": {
@@ -74,7 +75,7 @@
         "@nunjucks/runtime": "workspace:*",
         "@nunjucks/shared": "workspace:*",
         "isomorphic-dompurify": "^2.14.0",
-        "remeda": "*",
+        "remeda": "^2.39.0",
       },
     },
     "packages/@nunjucks/integrations": {
@@ -82,22 +83,20 @@
       "version": "1.0.0",
       "dependencies": {
         "@nunjucks/core": "workspace:*",
-        "@nunjucks/loaders": "workspace:*",
-        "@nunjucks/log": "workspace:*",
       },
     },
     "packages/@nunjucks/lexer": {
       "name": "@nunjucks/lexer",
       "version": "1.0.0",
       "dependencies": {
-        "@nunjucks/shared": "workspace:*",
+        "remeda": "^2.39.0",
       },
     },
     "packages/@nunjucks/loaders": {
       "name": "@nunjucks/loaders",
       "version": "1.0.0",
       "dependencies": {
-        "@nunjucks/shared": "workspace:*",
+        "@nunjucks/log": "workspace:*",
       },
     },
     "packages/@nunjucks/log": {
@@ -105,7 +104,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@nunjucks/shared": "workspace:*",
-        "picocolors": "*",
+        "picocolors": "^1.1.1",
       },
     },
     "packages/@nunjucks/nodes": {
@@ -117,16 +116,17 @@
       "version": "1.0.0",
       "dependencies": {
         "@nunjucks/lexer": "workspace:*",
+        "@nunjucks/log": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
+        "@nunjucks/shared": "workspace:*",
+        "@nunjucks/validators": "workspace:*",
       },
     },
     "packages/@nunjucks/runtime": {
       "name": "@nunjucks/runtime",
       "version": "1.0.0",
       "dependencies": {
-        "@nunjucks/core": "workspace:*",
         "@nunjucks/log": "workspace:*",
-        "@nunjucks/nodes": "workspace:*",
         "@nunjucks/shared": "workspace:*",
       },
     },
@@ -134,7 +134,7 @@
       "name": "@nunjucks/shared",
       "version": "1.0.0",
       "dependencies": {
-        "remeda": "*",
+        "remeda": "^2.39.0",
       },
     },
     "packages/@nunjucks/transformers": {
@@ -142,13 +142,16 @@
       "version": "1.0.0",
       "dependencies": {
         "@nunjucks/nodes": "workspace:*",
+        "@nunjucks/runtime": "workspace:*",
       },
     },
     "packages/@nunjucks/validators": {
       "name": "@nunjucks/validators",
       "version": "1.0.0",
       "dependencies": {
+        "@nunjucks/nodes": "workspace:*",
         "@nunjucks/shared": "workspace:*",
+        "remeda": "^2.39.0",
       },
     },
     "samples/express": {
@@ -219,6 +222,8 @@
     "@nunjucks/compiler": ["@nunjucks/compiler@workspace:packages/@nunjucks/compiler"],
 
     "@nunjucks/core": ["@nunjucks/core@workspace:packages/@nunjucks/core"],
+
+    "@nunjucks/error-catalog": ["@nunjucks/error-catalog@workspace:packages/@nunjucks/error-catalog"],
 
     "@nunjucks/filters": ["@nunjucks/filters@workspace:packages/@nunjucks/filters"],
 
