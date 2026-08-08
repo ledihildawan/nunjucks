@@ -39,7 +39,14 @@ const isErrorDefinitionEntry = (candidate: unknown): candidate is ErrorDefinitio
   return (typeof message === 'function' || typeof message === 'string') && !('lineno' in candidate);
 };
 
-const createBaseMetadata = (message: string, legacyLogData: LegacyLogData, info: ErrorInfo | WarningInfo, type: LogType) => {
+interface CreateBaseMetadataOptions {
+  message: string;
+  legacyLogData: LegacyLogData;
+  info: ErrorInfo | WarningInfo;
+  type: LogType;
+}
+
+const createBaseMetadata = ({ message, legacyLogData, info, type }: CreateBaseMetadataOptions) => {
   const base = {
     message,
     lineno: legacyLogData.lineno ?? null,

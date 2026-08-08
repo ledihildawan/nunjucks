@@ -26,14 +26,14 @@ const createTemplateRenderer = (
     path: (e as { path?: string }).path ?? state.path,
     withInternals: state.env.opts.dev,
     err: enrichError(e as ErrorWithLineInfo),
-    includeChain: (e as { _includeChain?: IncludeChain })._includeChain ?? state._includeChain ?? undefined
+    includeChain: (e as { includeChain?: IncludeChain }).includeChain ?? state.includeChain ?? undefined
   });
 
   const render = async (ctx: Record<string, unknown>, parentFrame?: unknown): Promise<string> => {
     await compiler.safeCompile();
     const state = getState();
 
-    const renderingTemplates = state.env._renderingTemplates;
+    const renderingTemplates = state.env.renderingTemplates;
     if (renderingTemplates?.has(state.path)) {
       throw createLog('error', { def: getError('CIRCULAR_INCLUDE'), params: { path: state.path as string }, subject: state.path as string, context: { phase: 'render' } });
     }

@@ -39,10 +39,10 @@ interface RenderConfig {
   jsCaller?: string | null;
   jsCallerErrorLine?: number | null;
   jsCallerErrorCol?: number | null;
-  _callerFile?: string | null;
-  _callerLocation?: CallerLocation | null;
-  _customFilters?: Record<string, unknown>;
-  _customGlobals?: Record<string, unknown>;
+  callerFile?: string | null;
+  callerLocation?: CallerLocation | null;
+  customFilters?: Record<string, unknown>;
+  customGlobals?: Record<string, unknown>;
   filters?: Record<string, (...args: unknown[]) => unknown>;
   tests?: Record<string, (...args: unknown[]) => unknown>;
 }

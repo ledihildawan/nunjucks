@@ -385,7 +385,7 @@ router.get('/container-error', async (_req, res, next) => {
 
 router.get('/reserved-keyword-filter', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ value }}', { value: 'test' }, { dev: true, _customFilters: { 'if': (v: unknown) => v } });
+    const html = await renderTemplate('{{ value }}', { value: 'test' }, { dev: true, customFilters: { 'if': (v: unknown) => v } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -394,7 +394,7 @@ router.get('/reserved-keyword-filter', async (_req, res, next) => {
 
 router.get('/reserved-keyword-global', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ myArray }}', { myArray: [1, 2, 3] }, { dev: true, globals: { Array: {} }, _customGlobals: { Array: {} } });
+    const html = await renderTemplate('{{ myArray }}', { myArray: [1, 2, 3] }, { dev: true, globals: { Array: {} }, customGlobals: { Array: {} } });
     res.type('html').send(html);
   } catch (err) {
     next(err);

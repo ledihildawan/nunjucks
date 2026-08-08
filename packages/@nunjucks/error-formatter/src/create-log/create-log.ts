@@ -62,7 +62,7 @@ const withLocation = ({ path, includeChain }: { path?: string; includeChain?: In
   };
   result.templateName = result.templateName ?? (path ?? null);
   if (includeChain) {
-    result._includeChain = includeChain;
+    result.includeChain = includeChain;
   }
   return result;
 };
@@ -78,8 +78,8 @@ const stripInternals = (path?: string) => (err: TemplateError): TemplateError =>
   clean.subject = err.subject;
   clean.phase = err.phase;
   clean.lineBase = err.lineBase ?? 'zero';
-  if (err._includeChain) {
-    clean._includeChain = err._includeChain;
+  if (err.includeChain) {
+    clean.includeChain = err.includeChain;
   }
   return clean;
 };
@@ -94,7 +94,7 @@ const prettifyError = (options: PrettifyErrorOptions): TemplateError => {
 
 const createFromLegacyData = (type: LogType, legacyLogData: LegacyLogData): TemplateError | TemplateWarning => {
   const info = (legacyLogData.info ?? {}) as WarningInfo;
-  const base = createBaseMetadata(legacyLogData.message, legacyLogData, info, type);
+  const base = createBaseMetadata({ message: legacyLogData.message, legacyLogData, info, type });
 
   if (type === 'error') {
     const err = createErrorEnvelope(base.message);

@@ -4,7 +4,11 @@ import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 import { emitLocationGuard } from '../codegen.ts';
 
-const compileIncrementDecrement = (compiler: Compiler, node: IncDecNode, _frame: Frame, op: string): void => {
+interface IncrementDecrementOptions {
+  operator: string;
+}
+
+const compileIncrementDecrement = (compiler: Compiler, node: IncDecNode, _frame: Frame, { operator }: IncrementDecrementOptions): void => {
   const target = node.target;
 
   if (isSymbol(target)) {
@@ -17,9 +21,9 @@ const compileIncrementDecrement = (compiler: Compiler, node: IncDecNode, _frame:
 
     if (node.isPostfix) {
       compiler.emit(`let result = ${id};`);
-      compiler.emit(`${id} = ${id} ${op} 1;`);
+      compiler.emit(`${id} = ${id} ${operator} 1;`);
     } else {
-      compiler.emit(`${id} = ${id} ${op} 1;`);
+      compiler.emit(`${id} = ${id} ${operator} 1;`);
       compiler.emit(`let result = ${id};`);
     }
 
@@ -34,9 +38,9 @@ const compileIncrementDecrement = (compiler: Compiler, node: IncDecNode, _frame:
 };
 
 export const compileIncrement = (compiler: Compiler, node: IncDecNode, frame: Frame): void => {
-  compileIncrementDecrement(compiler, node, frame, '+');
+  compileIncrementDecrement(compiler, node, frame, { operator: '+' });
 };
 
 export const compileDecrement = (compiler: Compiler, node: IncDecNode, frame: Frame): void => {
-  compileIncrementDecrement(compiler, node, frame, '-');
+  compileIncrementDecrement(compiler, node, frame, { operator: '-' });
 };

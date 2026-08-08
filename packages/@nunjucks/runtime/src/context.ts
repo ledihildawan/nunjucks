@@ -15,7 +15,7 @@ export interface Env {
   getTest: (name: string, lineno: number | null, colno: number | null) => unknown;
   getTemplate?: (name: string, eagerCompile?: boolean, includeChain?: IncludeChain | null, ignoreMissing?: boolean) => unknown;
   emit?: (event: string, ...args: unknown[]) => void;
-  _renderingTemplates?: Set<string | undefined>;
+  renderingTemplates?: Set<string | undefined>;
   emitter?: unknown;
 }
 

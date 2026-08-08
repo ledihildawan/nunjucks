@@ -30,7 +30,7 @@ const getDangerousValueStamps = async (contextError: RenderValidationError, conf
   const firstDangerousPath = contextError.dangerousPaths?.[0];
   if (!firstDangerousPath) { return stamps; }
 
-  const callerLocation = config._callerLocation;
+  const callerLocation = config.callerLocation;
   if (!callerLocation || callerLocation.fileName === 'unknown') { return stamps; }
 
   const pos = await findContextKeyPosition(callerLocation.fileName, callerLocation.lineNumber ?? 1, firstDangerousPath);
@@ -60,8 +60,8 @@ export const validateRender = async (template: unknown, { config, context }: Val
       // WHY: validators guarantee a non-empty errors tuple when valid===false, so this branch is an impossible-state invariant, not a domain error.
       return err(createLog('error', { def: { name: 'VALIDATION_ERROR', message: 'Validation failed but no errors found' }, subject: null, context: { phase: 'render' } }));
     }
-    const callerLineno = config._callerLocation?.lineNumber;
-    const callerColno = config._callerLocation?.columnNumber;
+    const callerLineno = config.callerLocation?.lineNumber;
+    const callerColno = config.callerLocation?.columnNumber;
     const resolvedLineno: number | null | undefined = (callerLineno && callerLineno > 1) ? callerLineno - 1 : callerLineno;
     return err(await buildValidationError({
       validationError: ve,

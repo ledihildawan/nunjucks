@@ -4,8 +4,8 @@ interface LocationInputs {
   jsCaller?: string | null;
   jsCallerErrorLine?: number | null;
   jsCallerErrorCol?: number | null;
-  _callerFile?: string | null;
-  _callerLocation?: { lineNumber?: number | null; columnNumber?: number | null } | null;
+  callerFile?: string | null;
+  callerLocation?: { lineNumber?: number | null; columnNumber?: number | null } | null;
   errLineno?: number | null;
   errColno?: number | null;
   errLineBase?: 'zero' | 'one' | null;

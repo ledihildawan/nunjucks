@@ -28,7 +28,7 @@ interface InitTemplateStateOptions {
 const initTemplateState = ({ src: _src, env, path, includeChain }: InitTemplateStateOptions): TemplateState => ({
   env: env ?? createFallbackEnv(),
   path: path ?? undefined,
-  _includeChain: includeChain ?? null,
+  includeChain: includeChain ?? null,
   tmplStr: null,
   tmplProps: null,
   blocks: {},

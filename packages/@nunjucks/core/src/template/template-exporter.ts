@@ -19,14 +19,14 @@ const createGetExported = (
     await compiler.safeCompile();
   } catch (e) {
     const state = getState();
-    throw prettifyError({ path: state.path, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain ?? undefined });
+    throw prettifyError({ path: state.path, withInternals: state.env.opts.dev, err: e as Error, includeChain: state.includeChain ?? undefined });
   }
 
   const state = getState();
 
   const wrapExportedError = (e: unknown): never => {
     const path = (e as { path?: string }).path ?? state.path;
-    throw prettifyError({ path, withInternals: state.env.opts.dev, err: e as Error, includeChain: state._includeChain ?? undefined });
+    throw prettifyError({ path, withInternals: state.env.opts.dev, err: e as Error, includeChain: state.includeChain ?? undefined });
   };
 
   const renderFrame = createExportedFrame(parentFrame as Frame | undefined);

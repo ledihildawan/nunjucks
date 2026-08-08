@@ -17,8 +17,8 @@ export interface Config {
   executionTimeout?: number;
   maxTemplateSize?: number;
   sandboxEnvironment?: Environment;
-  _customFilters?: Record<string, unknown>;
-  _customGlobals?: Record<string, unknown>;
+  customFilters?: Record<string, unknown>;
+  customGlobals?: Record<string, unknown>;
 }
 
 const VALID_ENVIRONMENTS: ReadonlySet<Environment> = new Set(['auto', 'node', 'browser', 'deno']);
@@ -38,9 +38,9 @@ const validateSandboxEnv = (config: Config): ConfigValidationError[] =>
     : [];
 
 const validateCustomFilters = (config: Config): ConfigValidationError[] => {
-  if (!config._customFilters) { return []; }
+  if (!config.customFilters) { return []; }
   return pipe(
-    keys(config._customFilters),
+    keys(config.customFilters),
     flatMap((name) => {
       const validation = validateFilterName(name);
       if (!validation.valid && validation.error) {
@@ -53,9 +53,9 @@ const validateCustomFilters = (config: Config): ConfigValidationError[] => {
 };
 
 const validateCustomGlobals = (config: Config): ConfigValidationError[] => {
-  if (!config._customGlobals) { return []; }
+  if (!config.customGlobals) { return []; }
   return pipe(
-    keys(config._customGlobals),
+    keys(config.customGlobals),
     flatMap((name) => {
       const validation = validateGlobalName(name);
       if (!validation.valid && validation.error) {

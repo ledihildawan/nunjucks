@@ -18,11 +18,11 @@ describe('resolveLocation', () => {
       expect(result.colno).toBe(5);
     });
 
-    test('auto-detected _callerFile is used for inline templates', async () => {
+    test('auto-detected callerFile is used for inline templates', async () => {
       const result = await resolveLocation({
         template: '{{ foo }}',
-        _callerFile: '/path/to/caller.ts',
-        _callerLocation: { lineNumber: 25, columnNumber: 18 },
+        callerFile: '/path/to/caller.ts',
+        callerLocation: { lineNumber: 25, columnNumber: 18 },
         errLineno: 0,
         errColno: 3
       });
@@ -36,8 +36,8 @@ describe('resolveLocation', () => {
       const result = await resolveLocation({
         template: '{{ foo }}',
         templatePath: '/path/to/template.njk',
-        _callerFile: '/path/to/caller.ts',
-        _callerLocation: { lineNumber: 25, columnNumber: 18 },
+        callerFile: '/path/to/caller.ts',
+        callerLocation: { lineNumber: 25, columnNumber: 18 },
         errLineno: 5,
         errColno: 3
       });
@@ -83,8 +83,8 @@ describe('resolveLocation', () => {
     test('finds template in caller file and remaps col from template-relative to caller-relative', async () => {
       const result = await resolveLocation({
         template: '{{ user.name }}',
-        _callerFile: '/virtual/path',
-        _callerLocation: { lineNumber: 4, columnNumber: 1 },
+        callerFile: '/virtual/path',
+        callerLocation: { lineNumber: 4, columnNumber: 1 },
         errLineno: 0,
         errColno: 10
       });
@@ -96,14 +96,14 @@ describe('resolveLocation', () => {
   });
 
   describe('jsCaller fallback to auto-caller', () => {
-    test('explicit jsCaller takes precedence over auto-detected _callerFile', async () => {
+    test('explicit jsCaller takes precedence over auto-detected callerFile', async () => {
       const result = await resolveLocation({
         template: '{{ foo }}',
         jsCaller: '/explicit.ts',
         jsCallerErrorLine: 1,
         jsCallerErrorCol: 1,
-        _callerFile: '/auto.ts',
-        _callerLocation: { lineNumber: 99, columnNumber: 99 },
+        callerFile: '/auto.ts',
+        callerLocation: { lineNumber: 99, columnNumber: 99 },
         errLineno: 0,
         errColno: 3
       });
@@ -118,8 +118,8 @@ describe('resolveLocation', () => {
         template: '{{ foo }}',
         jsCaller: '/explicit.ts',
         jsCallerErrorLine: null,
-        _callerFile: '/auto.ts',
-        _callerLocation: { lineNumber: 42, columnNumber: 7 },
+        callerFile: '/auto.ts',
+        callerLocation: { lineNumber: 42, columnNumber: 7 },
         errLineno: 0,
         errColno: 3
       });
@@ -129,11 +129,11 @@ describe('resolveLocation', () => {
       expect(result.colno).toBe(3);
     });
 
-    test('_callerFile = "unknown" is treated as no caller', async () => {
+    test('callerFile = "unknown" is treated as no caller', async () => {
       const result = await resolveLocation({
         template: '{{ foo }}',
-        _callerFile: 'unknown',
-        _callerLocation: { lineNumber: 5, columnNumber: 5 },
+        callerFile: 'unknown',
+        callerLocation: { lineNumber: 5, columnNumber: 5 },
         errLineno: 0,
         errColno: 3
       });
@@ -145,8 +145,8 @@ describe('resolveLocation', () => {
     test('partial caller location (line only, no col) still enables caller preference', async () => {
       const result = await resolveLocation({
         template: '{{ foo }}',
-        _callerFile: '/auto.ts',
-        _callerLocation: { lineNumber: 10, columnNumber: null },
+        callerFile: '/auto.ts',
+        callerLocation: { lineNumber: 10, columnNumber: null },
         errLineno: 0,
         errColno: 3
       });

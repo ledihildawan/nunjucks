@@ -153,7 +153,7 @@ const renderNode = (loc: Loc, fields: RenderFields): RenderNode =>
   createNode(T.RENDER, loc, { providedSlots: [], ...fields });
 
 interface ExtensionMetadata {
-  __name?: string;
+  extensionName?: string;
   autoescape?: boolean;
 }
 
@@ -165,8 +165,8 @@ const extensionMetadata = (ext: unknown): ExtensionMetadata => {
 };
 
 const extensionName = (ext: unknown, metadata: ExtensionMetadata): string => {
-  if (metadata.__name) {
-    return metadata.__name;
+  if (metadata.extensionName) {
+    return metadata.extensionName;
   }
   if (typeof ext === 'string') {
     return ext;

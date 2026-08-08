@@ -27,23 +27,23 @@ interface CallerFlags {
 }
 
 const getCallerFlags = (inputs: LocationInputs): CallerFlags => {
-  const { templatePath = null, jsCaller = null, jsCallerErrorLine = null, _callerFile = null, _callerLocation = null } = inputs;
+  const { templatePath = null, jsCaller = null, jsCallerErrorLine = null, callerFile = null, callerLocation = null } = inputs;
   const useExplicitCaller = jsCaller !== null && jsCallerErrorLine !== null;
   const useAutoCaller =
     !templatePath &&
     jsCaller === null &&
-    _callerFile !== null &&
-    _callerFile !== 'unknown' &&
-    _callerLocation !== null;
+    callerFile !== null &&
+    callerFile !== 'unknown' &&
+    callerLocation !== null;
   return { useExplicitCaller, useAutoCaller, preferCallerLocation: !templatePath && (useExplicitCaller || useAutoCaller) };
 };
 
 const getActiveCallerInfo = (inputs: LocationInputs, flags: CallerFlags) => {
   const { useExplicitCaller, useAutoCaller } = flags;
-  const { jsCaller = null, jsCallerErrorLine = null, jsCallerErrorCol = null, _callerFile = null, _callerLocation = null } = inputs;
-  const activeCaller = useExplicitCaller ? jsCaller : (useAutoCaller ? _callerFile ?? null : null);
-  const activeCallerLine = useExplicitCaller ? jsCallerErrorLine : (useAutoCaller ? _callerLocation?.lineNumber ?? null : null);
-  const activeCallerCol = useExplicitCaller ? jsCallerErrorCol : (useAutoCaller ? _callerLocation?.columnNumber ?? null : null);
+  const { jsCaller = null, jsCallerErrorLine = null, jsCallerErrorCol = null, callerFile = null, callerLocation = null } = inputs;
+  const activeCaller = useExplicitCaller ? jsCaller : (useAutoCaller ? callerFile ?? null : null);
+  const activeCallerLine = useExplicitCaller ? jsCallerErrorLine : (useAutoCaller ? callerLocation?.lineNumber ?? null : null);
+  const activeCallerCol = useExplicitCaller ? jsCallerErrorCol : (useAutoCaller ? callerLocation?.columnNumber ?? null : null);
   return { activeCaller, activeCallerLine, activeCallerCol };
 };
 
@@ -51,7 +51,7 @@ const resolveCallerInfo = (inputs: LocationInputs): CallerInfo => {
   const {
     template = null,
     templatePath = null,
-    _callerFile = null,
+    callerFile = null,
     errLineno = null,
     errColno = null,
     lineno: configLineno = null,
@@ -68,7 +68,7 @@ const resolveCallerInfo = (inputs: LocationInputs): CallerInfo => {
   const hasCallerLocation = hasErrorLocation && errLineBase === 'one';
   const finalPath = preferCallerLocation
     ? activeCaller ?? templatePath ?? null
-    : templatePath ?? _callerFile ?? null;
+    : templatePath ?? callerFile ?? null;
 
   return {
     template, subject, configLineno, configColno, errLineno, errColno,

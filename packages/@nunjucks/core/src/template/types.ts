@@ -10,7 +10,7 @@ const Template = Symbol('Template');
 export interface TemplateState {
   env: Env;
   path: string | undefined;
-  _includeChain: IncludeChain | null;
+  includeChain: IncludeChain | null;
   tmplStr: string | null;
   tmplProps: CompiledTemplateExports | null;
   blocks: Record<string, BlockFn>;

@@ -8,7 +8,7 @@ export interface ErrorWithLineInfo extends Error {
   colno?: number;
   lineno?: number;
   path?: string;
-  _includeChain?: IncludeChain | null;
+  includeChain?: IncludeChain | null;
   getterName?: string;
   [key: string]: unknown;
 }
@@ -20,7 +20,14 @@ const resolveColno = (sourceColno: number | undefined, errColno: number): number
   return errColno;
 };
 
-const buildErrorMessage = (currentPath: string | undefined, sourceLineno: number | undefined, finalColno: number, e: ErrorWithLineInfo): string => {
+interface BuildErrorMessageOptions {
+  currentPath: string | undefined;
+  sourceLineno: number | undefined;
+  finalColno: number;
+  e: ErrorWithLineInfo;
+}
+
+const buildErrorMessage = ({ currentPath, sourceLineno, finalColno, e }: BuildErrorMessageOptions): string => {
   const locationPart = sourceLineno && finalColno > 0
     ? ` [Line ${sourceLineno}, Column ${finalColno}]`
     : sourceLineno
@@ -44,25 +51,25 @@ const extractFrameDetails = (
   const errColno = defaultTo(e.colno, 0);
   const finalColno = resolveColno(sourceColno, errColno);
   const templateLocation = `${currentPath}:${sourceLineno}:${finalColno}`;
-  const msg = buildErrorMessage(currentPath, sourceLineno, finalColno, e);
+  const msg = buildErrorMessage({ currentPath, sourceLineno, finalColno, e });
   const renderLine = `at ${e.getterName ?? 'root'} (${templateLocation})`;
   const newError = Object.assign(new Error(msg), {
     name: e.name ?? 'Template render error',
     lineno: sourceLineno,
     colno: finalColno,
     lineBase: 'zero',
-    _includeChain: e._includeChain ?? null,
+    includeChain: e.includeChain ?? null,
     stack: `${msg}\n    ${renderLine}\n    at Environment.render`,
   }) as ErrorWithLineInfo;
   return newError;
 };
 
-const createTemplateErrorHandler = (getState: () => { path: string | undefined; _includeChain: IncludeChain | null }) => {
+const createTemplateErrorHandler = (getState: () => { path: string | undefined; includeChain: IncludeChain | null }) => {
   const enrichError = (e: ErrorWithLineInfo): Error => {
-    const { path, _includeChain } = getState();
+    const { path, includeChain } = getState();
     const sourceLineno = e.lineno;
     const sourceColno = e.colno;
-    const hasIncludeChain = e._includeChain ?? _includeChain;
+    const hasIncludeChain = e.includeChain ?? includeChain;
 
     const extracted = extractFrameDetails(e, sourceLineno, sourceColno, path, hasIncludeChain);
     if (extracted) { return extracted; }

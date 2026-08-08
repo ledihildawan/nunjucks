@@ -31,6 +31,7 @@ const createTemplateCompiler = ({ getState, commit }: TemplateStateCell) => {
 
   const compile = () => {
     const state = getState();
+    // WHY: compile() is the imperative shell — it eval()s compiled code via loadCompiledCode, mutates state through commit(), and emits lifecycle hooks. Date.now() here provides shell-level compile-duration metrics consistent with that role; pure compileToCode() above has no clock access.
     const startTime = Date.now();
     state.env.emit?.(HOOK_EVENTS.TEMPLATE_COMPILE_START, { template: state, path: state.path });
 

@@ -71,7 +71,7 @@ interface TemplateError extends Error {
   toJSON?: () => Record<string, unknown>;
   outputOptions?: Omit<OutputOptions, 'format'>;
   applyLocation?: (path: string | undefined, includeChain?: IncludeChain) => TemplateError;
-  _includeChain?: IncludeChain;
+  includeChain?: IncludeChain;
   [TEMPLATE_ERROR]?: boolean;
 }
 

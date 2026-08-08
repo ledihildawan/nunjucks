@@ -90,7 +90,7 @@ describe('inline template error location pointing', () => {
     const { filePath, sourceLines: source } = await getCurrentTestSource();
     const marker = "RESERVED_FILTER_MARKER";
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
-    const err = await renderTemplate('{{ value }}', { value: 'test' }, { dev: true, filters: { 'if': (v: unknown) => v }, _customFilters: { 'if': (v: unknown) => v }, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
+    const err = await renderTemplate('{{ value }}', { value: 'test' }, { dev: true, filters: { 'if': (v: unknown) => v }, customFilters: { 'if': (v: unknown) => v }, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
     const callerLine = source[err.lineno - 1] ?? '';
 
     expect(err.code).toBe('RESERVED_KEYWORD');
@@ -104,7 +104,7 @@ describe('inline template error location pointing', () => {
     const { filePath, sourceLines: source } = await getCurrentTestSource();
     const marker = "RESERVED_FILTER_HTML_MARKER";
     const markerLine = source.findIndex(line => line.includes(marker)) + 1;
-    const err = await renderTemplate('{{ value }}', { value: 'test' }, { dev: true, filters: { 'if': (v: unknown) => v }, _customFilters: { 'if': (v: unknown) => v }, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
+    const err = await renderTemplate('{{ value }}', { value: 'test' }, { dev: true, filters: { 'if': (v: unknown) => v }, customFilters: { 'if': (v: unknown) => v }, jsCaller: filePath, jsCallerErrorLine: markerLine, jsCallerErrorCol: 1 }).catch(e => e);
     const callerLine = source[err.lineno - 1] ?? '';
     const html = formatError(err, { format: 'html', verbosity: 'full' });
     const markerMatch = html.match(/error-marker-content">([^<]*\^+)<\/span>/u);

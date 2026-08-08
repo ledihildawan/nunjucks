@@ -46,7 +46,7 @@ const resolveTemplateName = (template: string, config: RenderConfig): string => 
   if (looksLikeFile) {
     return template;
   }
-  return config._callerFile || 'inline';
+  return config.callerFile || 'inline';
 };
 
 const executeCompiledTemplate = async (ctx: ExecutionContext, config: RenderConfig): Promise<string> => {
@@ -82,8 +82,8 @@ const render = async (template: string, { context = {}, ...options }: RenderOpti
   const baseConfig = setupRenderConfig(options);
   const config: RenderConfig = {
     ...baseConfig,
-    _callerFile: baseConfig._callerFile ?? getCallerFile(),
-    _callerLocation: baseConfig._callerLocation ?? getCallerLocation(),
+    callerFile: baseConfig.callerFile ?? getCallerFile(),
+    callerLocation: baseConfig.callerLocation ?? getCallerLocation(),
   };
 
   const renderValidation = await validateRender(template, { config, context });

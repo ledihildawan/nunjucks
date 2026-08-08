@@ -10,8 +10,8 @@ interface DiagnosticsConfig {
   jsCaller?: string | null;
   jsCallerErrorLine?: number | null;
   jsCallerErrorCol?: number | null;
-  _callerFile?: string | null;
-  _callerLocation?: { fileName: string; lineNumber?: number | null; columnNumber?: number | null } | null;
+  callerFile?: string | null;
+  callerLocation?: { fileName: string; lineNumber?: number | null; columnNumber?: number | null } | null;
   dev?: boolean;
   ide?: string;
   lineno?: number | null;
@@ -168,7 +168,7 @@ export const wrapWithLog = async (
   const resolvedSourceContent = typeof template === 'string' ? template : null;
   const initialMetadata = normalizeErrorMetadata(err, {
     phase: config.phase ?? 'render',
-    templatePath: config.templatePath ?? config._callerFile ?? null,
+    templatePath: config.templatePath ?? config.callerFile ?? null,
     sourceContent: resolvedSourceContent,
     renderContext: renderContext as Record<string, unknown> | null
   });
@@ -179,8 +179,8 @@ export const wrapWithLog = async (
     jsCaller: config.jsCaller ?? null,
     jsCallerErrorLine: config.jsCallerErrorLine ?? null,
     jsCallerErrorCol: config.jsCallerErrorCol ?? null,
-    _callerFile: config._callerFile ?? null,
-    _callerLocation: config._callerLocation ?? null,
+    callerFile: config.callerFile ?? null,
+    callerLocation: config.callerLocation ?? null,
     errLineno: initialMetadata.lineno,
     errColno: initialMetadata.colno,
     errLineBase: initialMetadata.lineBase,
@@ -194,6 +194,7 @@ export const wrapWithLog = async (
   const phase = initialMetadata.phase ?? config.phase ?? 'render';
   const dev = config.dev ?? false;
   const ide = config.ide ?? DEFAULT_IDE;
+  // WHY: wrapWithLog is the error-enrichment shell — resolveLocation() above performs I/O to map template offsets to caller file:line. The timestamp is consistent with that impure role; render-boundary callers don't need to thread it through.
   const timestamp = new Date().toISOString();
 
   const metadata = buildMetadata(errSnapshot, { lineno, colno, lineBase, phase, templatePath, sourceContent, sourceStartLine, renderContext });

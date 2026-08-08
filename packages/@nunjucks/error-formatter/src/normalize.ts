@@ -58,7 +58,13 @@ const stringifyThrown = (thrown: unknown): string => {
 const getError = (thrown: unknown, message: string): Error =>
   thrown instanceof Error ? thrown : new Error(message);
 
-const normalizeFallbacks = (source: Record<string, unknown>, fallback: ErrorMetadataFallback, templateName: string | null) => ({
+interface NormalizeFallbacksOptions {
+  source: Record<string, unknown>;
+  fallback: ErrorMetadataFallback;
+  templateName: string | null;
+}
+
+const normalizeFallbacks = ({ source, fallback, templateName }: NormalizeFallbacksOptions) => ({
   lineno: readNumber(source.lineno) ?? fallback.lineno ?? null,
   colno: readNumber(source.colno) ?? fallback.colno ?? null,
   lineBase: normalizeLineBase(readLineBase(source.lineBase) ?? fallback.lineBase),
@@ -84,7 +90,7 @@ const normalizeErrorMetadata = (
   return {
     error,
     message,
-    ...normalizeFallbacks(source, fallback, templateName),
+    ...normalizeFallbacks({ source, fallback, templateName }),
   };
 };
 
