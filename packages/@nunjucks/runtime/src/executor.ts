@@ -2,7 +2,7 @@ import { createContext, type Env, type Context } from './context.ts';
 import type { Frame } from './frame.ts';
 import { createRenderRuntime, type RenderRuntime } from './render-runtime.ts';
 import { getRenderFunction, buildSandboxOptions, buildSandboxedRuntime } from './executor-runtime.ts';
-import type { Environment } from '@nunjucks/shared';
+import type { Environment, RenderResult } from '@nunjucks/shared';
 
 type SandboxMode = 'allowlist' | 'blocklist';
 
@@ -26,12 +26,17 @@ const buildRuntime = (config: ExecuteConfig): RenderRuntime => {
   return runtime;
 };
 
+// WHY: blocks must flow through createContext so they live in the immutable Context's state closure (where addBlock/getBlock read), not just on a bypassed property. The old `ctx.blocks = blocks` direct assignment was invisible to the closure-based immutable methods.
 const buildContextObject = (
   context: Record<string, unknown>,
   env: Env,
+  blocks: Record<string, unknown>,
 ): Context => {
-  return createContext({ ctx: context, env });
+  return createContext({ ctx: context, env, blocks });
 };
+
+const unwrapOutput = (result: RenderResult): string =>
+  Array.isArray(result) ? result[0] : result;
 
 const defaultEnv = (config: ExecuteConfig): Env => ({
   opts: {
@@ -45,16 +50,15 @@ const defaultEnv = (config: ExecuteConfig): Env => ({
 
 const executeNonSandbox = async (
   code: string,
-  ctx: Context,
+  context: Record<string, unknown>,
   frame: Frame,
   env: Env,
   runtime: RenderRuntime
 ): Promise<string> => {
   const { render, blocks } = getRenderFunction(code);
+  const ctx = buildContextObject(context, env, blocks);
 
-  ctx.blocks = blocks;
-
-  return await render(env, ctx, frame, runtime);
+  return unwrapOutput(await render(env, ctx, frame, runtime));
 };
 
 const execute = async (
@@ -66,9 +70,8 @@ const execute = async (
 ): Promise<string> => {
   const resolvedEnv = env ?? defaultEnv(config);
   const runtime = buildRuntime(config);
-  const ctx = buildContextObject(context, resolvedEnv);
 
-  return await executeNonSandbox(code, ctx, frame, resolvedEnv, runtime);
+  return await executeNonSandbox(code, context, frame, resolvedEnv, runtime);
 };
 
 export { execute };

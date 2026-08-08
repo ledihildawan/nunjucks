@@ -179,7 +179,7 @@ describe('codegen: root structure', () => {
     expect(code).toContain('async function root');
     expect(code).toContain('env, context, frame, runtime');
     expect(code).toContain('__blockMeta');
-    expect(code).toContain('return childOutput');
+    expect(code).toContain('return [childOutput, context]');
   });
 });
 

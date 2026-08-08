@@ -32,8 +32,8 @@ describe('Context', () => {
   });
 
   test('setVariable stores in context', () => {
-    const ctx = createContext({ env: mockEnv });
-    ctx.setVariable('key', 'val');
+    let ctx = createContext({ env: mockEnv });
+    ctx = ctx.setVariable('key', 'val');
     expect(ctx.ctx.key).toBe('val');
   });
 
@@ -43,17 +43,19 @@ describe('Context', () => {
   });
 
   test('addBlock appends to block list', () => {
-    const ctx = createContext({ env: mockEnv });
+    let ctx = createContext({ env: mockEnv });
     const fn1 = () => {};
     const fn2 = () => {};
-    ctx.addBlock('main', fn1);
-    ctx.addBlock('main', fn2);
+    ctx = ctx.addBlock('main', fn1);
+    ctx = ctx.addBlock('main', fn2);
     expect(ctx.blocks.main).toEqual([fn1, fn2]);
   });
 
-  test('addBlock returns this for chaining', () => {
+  test('addBlock returns a new context with the block', () => {
     const ctx = createContext({ env: mockEnv });
-    expect(ctx.addBlock('main', () => {})).toBe(ctx);
+    const next = ctx.addBlock('main', () => {});
+    expect(next).not.toBe(ctx);
+    expect(Array.isArray(next.blocks.main)).toBe(true);
   });
 
   test('getBlock returns first block', () => {
@@ -81,12 +83,12 @@ describe('Context', () => {
   });
 
   test('validateBlocks uses centralized block location metadata', () => {
-    const ctx = createContext({ blocks: { missing: () => {} }, env: mockEnv, metadata: {
+    let ctx = createContext({ blocks: { missing: () => {} }, env: mockEnv, metadata: {
       blockLocations: {
         missing: { lineno: 1, colno: 3 },
       },
     } });
-    ctx.setParentBlockNames(['content']);
+    ctx = ctx.setParentBlockNames(['content']);
 
     try {
       ctx.validateBlocks();
@@ -129,16 +131,16 @@ describe('Context', () => {
   test('getSuper calls next block', () => {
     const childBlock = () => 'child result';
     const parentBlock = () => 'parent result';
-    const ctx = createContext({ blocks: { main: childBlock }, env: mockEnv });
-    ctx.addBlock('main', parentBlock);
+    let ctx = createContext({ blocks: { main: childBlock }, env: mockEnv });
+    ctx = ctx.addBlock('main', parentBlock);
     const result = ctx.getSuper(mockEnv, 'main', childBlock, null, null);
     expect(result).toBe('parent result');
   });
 
   test('addExport and getExported', () => {
-    const ctx = createContext({ ctx: { x: 1, y: 2 }, env: mockEnv });
-    ctx.addExport('x');
-    ctx.addExport('y');
+    let ctx = createContext({ ctx: { x: 1, y: 2 }, env: mockEnv });
+    ctx = ctx.addExport('x');
+    ctx = ctx.addExport('y');
     expect(ctx.getExported()).toEqual({ x: 1, y: 2 });
   });
 

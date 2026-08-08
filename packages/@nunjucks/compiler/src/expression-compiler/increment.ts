@@ -24,7 +24,7 @@ const compileIncrementDecrement = (compiler: Compiler, node: IncDecNode, _frame:
     }
 
     compiler.emit(`frame = frame.set("${varName}", ${id}, true);`);
-    compiler.emit(`context.setVariable("${varName}", ${id});`);
+    compiler.emit(`context = context.setVariable("${varName}", ${id});`);
     compiler.emit('return result;');
     compiler.emit('})())');
   } else {

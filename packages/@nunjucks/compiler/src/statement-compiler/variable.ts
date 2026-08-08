@@ -155,7 +155,7 @@ const compileCompoundAssignment = (compiler: Compiler, node: CompoundAssignNode,
   }
 
   compiler.emit(`frame = frame.set(${key}, ${valueId}, true);`);
-  compiler.emit(`context.setVariable(${key}, ${valueId});`);
+  compiler.emit(`context = context.setVariable(${key}, ${valueId});`);
   compiler.emit(`return ${valueId};`);
   compiler.emit('})())');
 };

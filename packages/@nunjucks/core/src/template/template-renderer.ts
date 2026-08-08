@@ -50,7 +50,8 @@ const createTemplateRenderer = (
 
     try {
       const runtime = createRuntimeWithContext(state.path, ctx ?? {});
-      const result = await state.rootRenderFunc?.(state.env, context, frame, runtime);
+      const rootResult = await state.rootRenderFunc?.(state.env, context, frame, runtime);
+      const result = rootResult === undefined ? undefined : (Array.isArray(rootResult) ? rootResult[0] : rootResult);
       if (runtime.__warnings__.length > 0 && state.env.opts.dev) {
         return result + injectWarningsScript(runtime.__warnings__ as Warning[], { dev: true, verbosity: 'medium' });
       }

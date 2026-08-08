@@ -51,7 +51,7 @@ const emitParentTemplateBlockHandling = (
     compiler.emitLine(`  ${childBuffer} += await context.getBlock("${name}", ${lineno}, ${colno})(env, context, frame, runtime);`);
   });
   compiler.emitLine('}');
-  compiler.emitLine(`return ${childBuffer};`);
+  compiler.emitLine(`return [${childBuffer}, context];`);
   compiler.emitFuncEnd(true);
 };
 

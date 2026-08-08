@@ -34,7 +34,7 @@ const compileAssignToFrame = ({ ctx: compiler, frame, registerFrame }: Destructu
   compiler.emitLine(`frame = frame.set(${JSON.stringify(name)}, ${source}, true);`);
   if (name[0] !== '_') {
     compiler.emitLine('if(frame.topLevel) {');
-    compiler.emitLine(`context.addExport(${JSON.stringify(name)});`);
+    compiler.emitLine(`context = context.addExport(${JSON.stringify(name)});`);
     compiler.emitLine('}');
   }
   if (!registerFrame) {

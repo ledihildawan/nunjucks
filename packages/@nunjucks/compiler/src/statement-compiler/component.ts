@@ -127,8 +127,8 @@ export const compileComponentPublic = (compiler: Compiler, node: ComponentNode, 
     compiler.emitLine(`frame = frame.set("${name}", ${funcId});`);
   } else {
     if (name[0] !== '_') {
-      compiler.emitLine(`context.addExport("${name}");`);
+      compiler.emitLine(`context = context.addExport("${name}");`);
     }
-    compiler.emitLine(`context.setVariable("${name}", ${funcId});`);
+    compiler.emitLine(`context = context.setVariable("${name}", ${funcId});`);
   }
 };

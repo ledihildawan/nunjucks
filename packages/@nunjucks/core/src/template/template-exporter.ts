@@ -1,4 +1,4 @@
-import { createContext, createFrame, type BlockLocation, type Frame } from '@nunjucks/runtime';
+import { createContext, createFrame, type BlockLocation, type Context, type Frame } from '@nunjucks/runtime';
 import { prettifyError } from '@nunjucks/log';
 import type { TemplateState } from './types';
 import { createRuntimeWithContext } from './runtime-factory';
@@ -39,8 +39,10 @@ const createGetExported = (
   });
   try {
     const runtime = createRuntimeWithContext(state.path, ctx ?? {});
-    await state.rootRenderFunc?.(state.env, context, renderFrame, runtime);
-    return context.getExported();
+    const rootResult = await state.rootRenderFunc?.(state.env, context, renderFrame, runtime);
+    // WHY: immutable Context writes (addExport/setVariable) reassign `context` inside rootRenderFunc, so the exported names/values only live on the post-render context, which root returns as the second tuple element.
+    const finalContext = rootResult !== undefined && Array.isArray(rootResult) ? (rootResult[1] as Context) : context;
+    return finalContext.getExported();
   } catch (e) {
     return wrapExportedError(e);
   }

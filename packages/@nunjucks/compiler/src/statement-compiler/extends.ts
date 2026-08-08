@@ -12,10 +12,10 @@ export const compileExtends = (compiler: Compiler, node: ExtendsNode, frame: Fra
   compiler.emitLine(`parentTemplate = ${parentTemplateId}`);
 
   compiler.emitLine('let __parentBlockNames = Object.keys(parentTemplate.blocks);');
-  compiler.emitLine('context.setParentBlockNames(__parentBlockNames);');
+  compiler.emitLine('context = context.setParentBlockNames(__parentBlockNames);');
 
   compiler.emitLine(`for(let ${k} in parentTemplate.blocks) {`);
-  compiler.emitLine(`context.addBlock(${k}, parentTemplate.blocks[${k}]);`);
+  compiler.emitLine(`context = context.addBlock(${k}, parentTemplate.blocks[${k}]);`);
   compiler.emitLine('}');
 
   compiler.emitLine('context.validateBlocks();');

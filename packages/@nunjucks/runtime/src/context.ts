@@ -42,7 +42,6 @@ interface ReadOnlyContext {
   readonly blocks: Record<string, unknown>;
   readonly metadata: ContextMetadata;
   readonly parentBlockNames: string[] | null;
-  readonly validatedBlocks: boolean;
   readonly exported: string[];
   readonly lookup: (name: string) => unknown;
   readonly getBlock: (name: string, lineno?: number | null, colno?: number | null) => BlockFn;
@@ -58,18 +57,27 @@ interface MutableContext extends ReadOnlyContext {
   metadata: ContextMetadata;
   exported: string[];
   parentBlockNames: string[] | null;
-  validatedBlocks: boolean;
   parentContext: Context | null;
-  validateBlocks: () => void;
-  setParentBlockNames: (names: string[] | null) => void;
-  setVariable: (name: string, value: unknown) => void;
+  setParentBlockNames: (names: string[] | null) => Context;
+  setVariable: (name: string, value: unknown) => Context;
   addBlock: (name: string, block: BlockFn) => Context;
-  addExport: (name: string) => void;
+  addExport: (name: string) => Context;
   fork: (data?: Record<string, unknown>) => Context;
+  validateBlocks: () => void;
   [key: symbol]: unknown;
 }
 
 type Context = MutableContext;
+
+interface ContextState {
+  env: Env;
+  ctx: Record<string, unknown>;
+  blocks: Record<string, unknown>;
+  metadata: ContextMetadata;
+  exported: string[];
+  parentBlockNames: string[] | null;
+  parentContext: Context | null;
+}
 
 const getKeys = (record: Record<string, unknown>): string[] => keys(record);
 
@@ -78,12 +86,7 @@ const throwBlockNotFoundError = ({ name, location, lineno, colno }: { name: stri
     def: ERROR_DEFINITIONS.UNDEFINED_BLOCK,
     params: { name },
     subject: name,
-    context: {
-      lineno: lineno ?? location?.lineno ?? null,
-      colno: colno ?? location?.colno ?? null,
-      phase: 'render',
-      lineBase: 'zero',
-    },
+    context: { lineno: lineno ?? location?.lineno ?? null, colno: colno ?? location?.colno ?? null, phase: 'render', lineBase: 'zero' },
   });
 };
 
@@ -92,21 +95,12 @@ const throwNoSuperBlockError = (name: string, lineno: number | null, colno: numb
     def: ERROR_DEFINITIONS.NO_SUPER_BLOCK,
     params: { name },
     subject: name,
-    context: {
-      lineno,
-      colno,
-      phase: 'render',
-      lineBase: 'zero',
-    },
+    context: { lineno, colno, phase: 'render', lineBase: 'zero' },
   });
 };
 
 const createDefaultEnv = (): Env => ({
-  opts: {
-    dev: false,
-    autoescape: true,
-    undefined: 'default',
-  },
+  opts: { dev: false, autoescape: true, undefined: 'default' },
   getFilter: () => null,
   getTest: () => null,
 });
@@ -118,49 +112,49 @@ interface CreateContextOptions {
   metadata?: ContextMetadata;
 }
 
-const createContext = ({
-  ctx = {},
-  blocks = {},
-  env = null,
-  metadata = {},
-}: CreateContextOptions = {}): Context => {
+// WHY: the Context object is render-time execution state. The user-facing write methods (setVariable/addBlock/addExport/setParentBlockNames) return a NEW Context (immutable update) so generated code reassigns `context = context.setX(...)`; reads (lookup/getBlock/getSuper/getExported) are pure. validateBlocks is a pure check (no flag). parentContext/fork preserve the scope-chain. This keeps context-creation local while removing shared-reference mutation.
+const makeContext = (state: ContextState): Context => {
   const context: Context = {
-    env: env ?? createDefaultEnv(),
-    ctx: { ...ctx },
-    blocks: {},
-    metadata: metadata ?? {},
-    exported: [] as string[],
-    parentBlockNames: null as string[] | null,
-    validatedBlocks: false,
-    parentContext: null as Context | null,
-    validateBlocks: () => {
-      if (context.validatedBlocks) { return; }
-      context.validatedBlocks = true;
+    env: state.env,
+    ctx: state.ctx,
+    blocks: state.blocks,
+    metadata: state.metadata,
+    exported: state.exported,
+    parentBlockNames: state.parentBlockNames,
+    parentContext: state.parentContext,
 
-      if (context.parentBlockNames !== null) {
-        const parentBlockNames = new Set(context.parentBlockNames);
-        const blockName = find(
-          getKeys(context.blocks),
-          name => !parentBlockNames.has(name),
-        );
+    setParentBlockNames(names: string[] | null): Context {
+      return makeContext({ ...state, parentBlockNames: names });
+    },
+
+    lookup(name: string): unknown {
+      return state.ctx[name];
+    },
+
+    setVariable(name: string, value: unknown): Context {
+      return makeContext({ ...state, ctx: { ...state.ctx, [name]: value } });
+    },
+
+    addBlock(name: string, block: BlockFn): Context {
+      const existing = state.blocks[name];
+      const next = existing ? (Array.isArray(existing) ? [...existing, block] : [existing, block]) : [block];
+      return makeContext({ ...state, blocks: { ...state.blocks, [name]: next } });
+    },
+
+    validateBlocks(): void {
+      if (state.parentBlockNames !== null) {
+        const parentBlockNames = new Set(state.parentBlockNames);
+        const blockName = find(getKeys(state.blocks), (name) => !parentBlockNames.has(name));
         if (blockName) {
-          throwBlockNotFoundError({ name: blockName, location: context.metadata.blockLocations?.[blockName], lineno: null, colno: null });
+          throwBlockNotFoundError({ name: blockName, location: state.metadata.blockLocations?.[blockName], lineno: null, colno: null });
         }
       }
     },
-    setParentBlockNames: (names: string[] | null) => { context.parentBlockNames = names; },
-    lookup: (name: string) => context.ctx[name],
-    setVariable: (name: string, value: unknown) => { context.ctx[name] = value; },
-    addBlock: (name, block) => {
-      const existing = context.blocks[name];
-      const next = existing ? (Array.isArray(existing) ? [...existing, block] : [existing, block]) : [block];
-      context.blocks[name] = next;
-      return context;
-    },
-    getBlock: (name, lineno = null, colno = null) => {
+
+    getBlock(name: string, lineno: number | null = null, colno: number | null = null): BlockFn {
       context.validateBlocks();
-      const block = context.blocks[name];
-      const location = context.metadata.blockLocations?.[name];
+      const block = state.blocks[name];
+      const location = state.metadata.blockLocations?.[name];
       if (!block) {
         return throwBlockNotFoundError({ name, location, lineno, colno });
       }
@@ -168,52 +162,69 @@ const createContext = ({
       if (!firstBlock) {
         return throwBlockNotFoundError({ name, location, lineno, colno });
       }
-      return firstBlock;
+      return firstBlock as BlockFn;
     },
-    getSuper: (envObj, name, block, frame, runtime, lineno = null, colno = null) => {
-      const blockList = context.blocks[name];
+
+    getSuper(envObj: unknown, name: string, block: BlockFn, frame: unknown, runtime: unknown, lineno: number | null = null, colno: number | null = null): unknown {
+      const blockList = state.blocks[name];
       if (!blockList || !Array.isArray(blockList)) {
         return throwNoSuperBlockError(name, lineno, colno);
       }
       const idx = blockList.indexOf(block);
       const blk = blockList[idx + 1];
-
       if (idx === -1 || !blk) {
         return throwNoSuperBlockError(name, lineno, colno);
       }
+      return (blk as BlockFn)(envObj, context, frame, runtime);
+    },
 
-      return blk(envObj, context, frame, runtime);
+    addExport(name: string): Context {
+      return makeContext({ ...state, exported: [...state.exported, name] });
     },
-    addExport: (name) => { context.exported = [...context.exported, name]; },
-    getExported: () =>
-      Object.fromEntries(context.exported.map(name => [name, context.ctx[name]])),
-    fork: (data = {}) => {
-      const childCtx = createContext({ ctx: data, env: context.env });
-      childCtx.parentContext = context;
-      return childCtx;
+
+    getExported(): Record<string, unknown> {
+      return Object.fromEntries(state.exported.map((name) => [name, state.ctx[name]]));
     },
-    getVariables: () => {
-      if (context.parentContext) {
-        const parentVars = context.parentContext.getVariables();
-        return { ...parentVars, ...context.ctx };
+
+    fork(data: Record<string, unknown> = {}): Context {
+      const child = createContext({ ctx: data, env: state.env });
+      child.parentContext = context;
+      return child;
+    },
+
+    getVariables(): Record<string, unknown> {
+      if (state.parentContext) {
+        const parentVars = state.parentContext.getVariables();
+        return { ...parentVars, ...state.ctx };
       }
-      return context.ctx;
+      return state.ctx;
     },
+
     [CONTEXT_KEY]: true,
   };
 
-  registerBlocks(context, blocks);
   return context;
 };
 
-// WHY: the Context object is render-time execution state — setVariable/addBlock/addExport are invoked by compiled template code and must mutate in place for variable-scope semantics (a {% set %} in a loop must be visible to subsequent lookups). This is the imperative shell of template execution, not domain logic, so the mutation is intentional.
-const registerBlocks = (ctxObj: Context, blocksInput: Record<string, unknown>): void => {
-  forEach(getKeys(blocksInput), (name) => {
-    const block = blocksInput[name];
+const createContext = ({ ctx = {}, blocks = {}, env = null, metadata = {} }: CreateContextOptions = {}): Context => {
+  const context = makeContext({
+    env: env ?? createDefaultEnv(),
+    ctx: { ...ctx },
+    blocks: {},
+    metadata: metadata ?? {},
+    exported: [] as string[],
+    parentBlockNames: null as string[] | null,
+    parentContext: null as Context | null,
+  });
+
+  let current = context;
+  forEach(getKeys(blocks), (name) => {
+    const block = blocks[name];
     if (block) {
-      ctxObj.addBlock(name, block as BlockFn);
+      current = current.addBlock(name, block as BlockFn);
     }
   });
+  return current;
 };
 
 const isContext = (value: unknown): value is Context =>
