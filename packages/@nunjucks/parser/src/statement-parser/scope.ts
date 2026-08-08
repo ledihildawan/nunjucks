@@ -35,7 +35,6 @@ const parseScopeAssignment = (parserContext: ParserContext, tag: Token): Result<
   return ok(pair(loc(nameSymbol), { key: String(nameSymbol.value), val: valueR.value }));
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
 const parseScopeAssignments = (parserContext: ParserContext, tag: Token): Result<Node[], TemplateError> => {
   const assignments: Node[] = [];
   const firstR = parseScopeAssignment(parserContext, tag);
@@ -49,25 +48,9 @@ const parseScopeAssignments = (parserContext: ParserContext, tag: Token): Result
       return fail(parserContext, 'parseScope: expected variable name after comma', tag.lineno, tag.colno);
     }
 
-    const nextNameR = parsePrimary(parserContext);
-    if (isErr(nextNameR)) { return nextNameR; }
-    const nextName = nextNameR.value;
-    const nextEqR = peekToken(parserContext);
-    if (isErr(nextEqR)) { return nextEqR; }
-    const nextEq = nextEqR.value;
-    if (!nextEq || nextEq.type !== TOKEN_OPERATOR || nextEq.value !== '=') {
-      return fail(parserContext, 'parseScope: expected = after variable name', tag.lineno, tag.colno);
-    }
-
-    const consumedEqR = nextToken(parserContext);
-    if (isErr(consumedEqR)) { return consumedEqR; }
-    const nextValueR = parseExpression(parserContext);
-    if (isErr(nextValueR)) { return nextValueR; }
-    if (!nextValueR.value) {
-      return fail(parserContext, 'parseScope: expected expression after =', tag.lineno, tag.colno);
-    }
-
-    assignments.push(pair(loc(nextName), { key: String(nextName.value), val: nextValueR.value }));
+    const nextR = parseScopeAssignment(parserContext, tag);
+    if (isErr(nextR)) { return nextR; }
+    assignments.push(nextR.value);
   }
 
   return ok(assignments);

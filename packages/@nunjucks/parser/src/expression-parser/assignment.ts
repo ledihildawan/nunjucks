@@ -77,37 +77,36 @@ const handleCompoundAssignment = (parserContext: ParserContext, node: Node, oper
   return errorAt(node.lineno, node.colno, ERROR_DEFINITIONS.ASSIGNMENT_TARGET_INVALID);
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+const isCompoundAssignmentOp = (tok: Token): boolean =>
+  (tok.type === TOKEN_OPERATOR && tok.value === '|>=') || COMPOUND_ASSIGNMENT_OPS.includes(String(tok.value));
+
+const parseWalrusAssignment = (parserContext: ParserContext, node: Node): Result<Node, TemplateError> => {
+  const consumedR = nextToken(parserContext);
+  if (isErr(consumedR)) { return consumedR; }
+  const valueNodeR = parseOr(parserContext);
+  if (isErr(valueNodeR)) { return valueNodeR; }
+  const afterTokR = peekToken(parserContext);
+  if (isErr(afterTokR)) { return afterTokR; }
+  const resultNodeR = handleWalrusAssignment(node, valueNodeR.value, isExpressionContext(afterTokR.value));
+  if (isErr(resultNodeR)) { return resultNodeR; }
+  return parseWalrus(parserContext, resultNodeR.value);
+};
+
 const parseWalrus = (parserContext: ParserContext, node: Node): Result<Node, TemplateError> => {
   const tokR = peekToken(parserContext);
   if (isErr(tokR)) { return tokR; }
   const tok = tokR.value;
-  if (tok.type === TOKEN_OPERATOR || tok.type === TOKEN_PIPEFORWARD) {
-    if (tok.value === ':=') {
-      const consumedR = nextToken(parserContext);
-      if (isErr(consumedR)) { return consumedR; }
-      const valueNodeR = parseOr(parserContext);
-      if (isErr(valueNodeR)) { return valueNodeR; }
-      const afterTokR = peekToken(parserContext);
-      if (isErr(afterTokR)) { return afterTokR; }
-      const resultNodeR = handleWalrusAssignment(node, valueNodeR.value, isExpressionContext(afterTokR.value));
-      if (isErr(resultNodeR)) { return resultNodeR; }
-      return parseWalrus(parserContext, resultNodeR.value);
-    }
-
-    if (tok.type === TOKEN_OPERATOR && tok.value === '|>=') {
-      const consumedR = nextToken(parserContext);
-      if (isErr(consumedR)) { return consumedR; }
-      return handleCompoundAssignment(parserContext, node, tok.value);
-    }
-
-    if (COMPOUND_ASSIGNMENT_OPS.includes(String(tok.value))) {
-      const consumedR = nextToken(parserContext);
-      if (isErr(consumedR)) { return consumedR; }
-      return handleCompoundAssignment(parserContext, node, String(tok.value));
-    }
+  if (tok.type !== TOKEN_OPERATOR && tok.type !== TOKEN_PIPEFORWARD) {
+    return ok(node);
   }
-
+  if (tok.value === ':=') {
+    return parseWalrusAssignment(parserContext, node);
+  }
+  if (isCompoundAssignmentOp(tok)) {
+    const consumedR = nextToken(parserContext);
+    if (isErr(consumedR)) { return consumedR; }
+    return handleCompoundAssignment(parserContext, node, String(tok.value));
+  }
   return ok(node);
 };
 

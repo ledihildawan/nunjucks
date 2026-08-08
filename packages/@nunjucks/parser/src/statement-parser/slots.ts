@@ -44,7 +44,19 @@ const isTerminatorSymbol = (peeked: Token, endTag: string): boolean =>
 const isSlotSymbol = (peeked: Token): boolean =>
   isSymbolToken(peeked) && peeked.value === 'slot';
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+const parseSlotParams = (parserContext: ParserContext): string[] => {
+  const params: string[] = [];
+  for (;;) {
+    const inner = nextTokenOrNull(parserContext);
+    if (!inner || inner.type === TOKEN_RIGHT_PAREN) { break; }
+    if (inner.type === TOKEN_COMMA) { continue; }
+    if (isSymbolToken(inner)) {
+      params.push(inner.value);
+    }
+  }
+  return params;
+};
+
 const parseSlotBlock = (parserContext: ParserContext): Result<ParsedSlot, TemplateError> => {
   skipSymbol(parserContext, 'slot');
 
@@ -57,14 +69,7 @@ const parseSlotBlock = (parserContext: ParserContext): Result<ParsedSlot, Templa
   if (afterNameR.value.type === TOKEN_LEFT_PAREN) {
     const consumedR = nextToken(parserContext);
     if (isErr(consumedR)) { return consumedR; }
-    while (true) {
-      const inner = nextTokenOrNull(parserContext);
-      if (!inner || inner.type === TOKEN_RIGHT_PAREN) { break; }
-      if (inner.type === TOKEN_COMMA) { continue; }
-      if (isSymbolToken(inner)) {
-        params.push(inner.value);
-      }
-    }
+    params.push(...parseSlotParams(parserContext));
   }
 
   const blockEndR = advanceAfterBlockEnd(parserContext, 'slot');

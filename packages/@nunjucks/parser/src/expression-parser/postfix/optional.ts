@@ -34,7 +34,15 @@ const handleComma = (parserContext: ParserContext, expectComma: boolean): Result
   return ok(true);
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+const consumeEndOfArgs = (parserContext: ParserContext, next: Token): Result<boolean, TemplateError> => {
+  if (!isEndOfArgs(next)) { return ok(false); }
+  if (next) {
+    const consumedR = nextToken(parserContext);
+    if (isErr(consumedR)) { return consumedR; }
+  }
+  return ok(true);
+};
+
 const parseOptionalCallArgs = (parserContext: ParserContext, tok: Token): Result<ChildrenNode, TemplateError> => {
   let args = nodeList(loc(tok));
   let expectComma = false;
@@ -43,13 +51,10 @@ const parseOptionalCallArgs = (parserContext: ParserContext, tok: Token): Result
     const nextR = peekToken(parserContext);
     if (isErr(nextR)) { return nextR; }
     const next = nextR.value;
-    if (isEndOfArgs(next)) {
-      if (next) {
-        const consumedR = nextToken(parserContext);
-        if (isErr(consumedR)) { return consumedR; }
-      }
-      break;
-    }
+
+    const endR = consumeEndOfArgs(parserContext, next);
+    if (isErr(endR)) { return endR; }
+    if (endR.value) { break; }
 
     const commaR = handleComma(parserContext, expectComma);
     if (isErr(commaR)) { return commaR; }
@@ -64,39 +69,32 @@ const parseOptionalCallArgs = (parserContext: ParserContext, tok: Token): Result
   return ok(args);
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
-export const parseOptionalChain = (parserContext: ParserContext, tok: OptionalChainOperatorToken, target: Node): Result<Node, TemplateError> => {
-  const consumedOpR = nextToken(parserContext);
-  if (isErr(consumedOpR)) { return consumedOpR; }
-  const valueR = peekToken(parserContext);
-  if (isErr(valueR)) { return valueR; }
-  const value = valueR.value;
+const parseOptionalCall = (parserContext: ParserContext, tok: Token, target: Node): Result<Node, TemplateError> => {
+  const consumedParenR = nextToken(parserContext);
+  if (isErr(consumedParenR)) { return consumedParenR; }
+  const argsR = parseOptionalCallArgs(parserContext, tok);
+  if (isErr(argsR)) { return argsR; }
+  return ok(optionalCall(loc(tok), { name: target, args: [...argsR.value.children] }));
+};
 
-  if (value.type === TOKEN_LEFT_PAREN) {
-    const consumedParenR = nextToken(parserContext);
-    if (isErr(consumedParenR)) { return consumedParenR; }
-    const argsR = parseOptionalCallArgs(parserContext, tok);
-    if (isErr(argsR)) { return argsR; }
-    return ok(optionalCall(loc(tok), { name: target, args: [...argsR.value.children] }));
+const parseOptionalBracket = (parserContext: ParserContext, tok: Token, target: Node): Result<Node, TemplateError> => {
+  const consumedBracketR = nextToken(parserContext);
+  if (isErr(consumedBracketR)) { return consumedBracketR; }
+  const startR = parseExpression(parserContext);
+  if (isErr(startR)) { return startR; }
+
+  const rightBracketR = nextToken(parserContext);
+  if (isErr(rightBracketR)) { return rightBracketR; }
+  if (rightBracketR.value.type !== 'right-bracket') {
+    return fail(parserContext, 'expected right bracket', rightBracketR.value.lineno, rightBracketR.value.colno);
   }
 
-  if (value.type === TOKEN_LEFT_BRACKET) {
-    const consumedBracketR = nextToken(parserContext);
-    if (isErr(consumedBracketR)) { return consumedBracketR; }
-    const startR = parseExpression(parserContext);
-    if (isErr(startR)) { return startR; }
+  const node = optionalChain(loc(tok), { target, val: startR.value });
+  markBracketNotation(node, true);
+  return ok(node);
+};
 
-    const rightBracketR = nextToken(parserContext);
-    if (isErr(rightBracketR)) { return rightBracketR; }
-    if (rightBracketR.value.type !== 'right-bracket') {
-      return fail(parserContext, 'expected right bracket', rightBracketR.value.lineno, rightBracketR.value.colno);
-    }
-
-    const node = optionalChain(loc(tok), { target, val: startR.value });
-    markBracketNotation(node, true);
-    return ok(node);
-  }
-
+const parseOptionalLookup = (parserContext: ParserContext, tok: Token, target: Node): Result<Node, TemplateError> => {
   const nameTokR = nextToken(parserContext);
   if (isErr(nameTokR)) { return nameTokR; }
   const nameTok = nameTokR.value;
@@ -112,4 +110,20 @@ export const parseOptionalChain = (parserContext: ParserContext, tok: OptionalCh
   const node = optionalChain(loc(tok), { target, val: lookup });
   markBracketNotation(node, false);
   return ok(node);
+};
+
+export const parseOptionalChain = (parserContext: ParserContext, tok: OptionalChainOperatorToken, target: Node): Result<Node, TemplateError> => {
+  const consumedOpR = nextToken(parserContext);
+  if (isErr(consumedOpR)) { return consumedOpR; }
+  const valueR = peekToken(parserContext);
+  if (isErr(valueR)) { return valueR; }
+  const value = valueR.value;
+
+  if (value.type === TOKEN_LEFT_PAREN) {
+    return parseOptionalCall(parserContext, tok, target);
+  }
+  if (value.type === TOKEN_LEFT_BRACKET) {
+    return parseOptionalBracket(parserContext, tok, target);
+  }
+  return parseOptionalLookup(parserContext, tok, target);
 };

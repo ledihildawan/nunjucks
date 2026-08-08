@@ -60,35 +60,31 @@ const parseAssignmentDefault = (parserContext: ParserContext, target: Node): Res
   return ok(null);
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
-const handleArrayElement = (parserContext: ParserContext, node: ChildrenNode, tok: Token, sawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
-  const peekedR = peekToken(parserContext);
-  if (isErr(peekedR)) { return peekedR; }
-  const peeked = peekedR.value;
-  const elementType = peeked.type;
+const parseArrayRestElement = (parserContext: ParserContext, node: ChildrenNode, tok: Token): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
+  const consumedR = nextToken(parserContext);
+  if (isErr(consumedR)) { return consumedR; }
+  const innerR = parseInnerPattern(parserContext);
+  if (isErr(innerR)) { return innerR; }
+  const rp = restPattern(loc(tok), innerR.value);
+  return ok({ node: appendChild(node, rp), sawRest: true });
+};
 
-  if (elementType === TOKEN_SPREAD) {
-    const consumedR = nextToken(parserContext);
-    if (isErr(consumedR)) { return consumedR; }
-    const innerR = parseInnerPattern(parserContext);
-    if (isErr(innerR)) { return innerR; }
-    const rp = restPattern(loc(tok), innerR.value);
-    return ok({ node: appendChild(node, rp), sawRest: true });
+const parseNestedPatternElement = (parserContext: ParserContext, peeked: Token): Result<Node, TemplateError> => {
+  if (peeked.type === TOKEN_LEFT_BRACKET) {
+    return parseArrayPattern(parserContext, peeked.lineno, peeked.colno);
   }
-  if (elementType === TOKEN_LEFT_BRACKET) {
-    const innerR = parseArrayPattern(parserContext, peeked.lineno, peeked.colno);
-    if (isErr(innerR)) { return innerR; }
-    const withDefaultR = parseAssignmentDefault(parserContext, innerR.value);
-    if (isErr(withDefaultR)) { return withDefaultR; }
-    return ok({ node: appendChild(node, withDefaultR.value ?? innerR.value), sawRest });
-  }
-  if (elementType === TOKEN_LEFT_CURLY) {
-    const innerR = parseObjectPattern(parserContext, peeked.lineno, peeked.colno);
-    if (isErr(innerR)) { return innerR; }
-    const withDefaultR = parseAssignmentDefault(parserContext, innerR.value);
-    if (isErr(withDefaultR)) { return withDefaultR; }
-    return ok({ node: appendChild(node, withDefaultR.value ?? innerR.value), sawRest });
-  }
+  return parseObjectPattern(parserContext, peeked.lineno, peeked.colno);
+};
+
+const parseArrayNestedElement = (parserContext: ParserContext, node: ChildrenNode, peeked: Token, sawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
+  const innerR = parseNestedPatternElement(parserContext, peeked);
+  if (isErr(innerR)) { return innerR; }
+  const withDefaultR = parseAssignmentDefault(parserContext, innerR.value);
+  if (isErr(withDefaultR)) { return withDefaultR; }
+  return ok({ node: appendChild(node, withDefaultR.value ?? innerR.value), sawRest });
+};
+
+const parseArraySymbolElement = (parserContext: ParserContext, node: ChildrenNode, tok: Token, sawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
   const symTokR = nextToken(parserContext);
   if (isErr(symTokR)) { return symTokR; }
   const symTok = symTokR.value;
@@ -100,6 +96,20 @@ const handleArrayElement = (parserContext: ParserContext, node: ChildrenNode, to
   const withDefaultR = parseAssignmentDefault(parserContext, target);
   if (isErr(withDefaultR)) { return withDefaultR; }
   return ok({ node: appendChild(node, withDefaultR.value ?? target), sawRest });
+};
+
+const handleArrayElement = (parserContext: ParserContext, node: ChildrenNode, tok: Token, sawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
+  const peekedR = peekToken(parserContext);
+  if (isErr(peekedR)) { return peekedR; }
+  const peeked = peekedR.value;
+
+  if (peeked.type === TOKEN_SPREAD) {
+    return parseArrayRestElement(parserContext, node, tok);
+  }
+  if (peeked.type === TOKEN_LEFT_BRACKET || peeked.type === TOKEN_LEFT_CURLY) {
+    return parseArrayNestedElement(parserContext, node, peeked, sawRest);
+  }
+  return parseArraySymbolElement(parserContext, node, tok, sawRest);
 };
 
 const handleArrayTrailingComma = (
@@ -129,53 +139,73 @@ const handleArrayTrailingComma = (
   return ok({ node, sawRest, continueLoop: true });
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+const consumeArrayElementComma = (parserContext: ParserContext): Result<boolean, TemplateError> => {
+  if (peekTokenOrNull(parserContext)?.type !== TOKEN_COMMA) {
+    return ok(false);
+  }
+  const consumedR = nextToken(parserContext);
+  if (isErr(consumedR)) { return consumedR; }
+  return ok(true);
+};
+
+const parseArrayIteration = (
+  parserContext: ParserContext,
+  initialNode: ChildrenNode,
+  initialSawRest: boolean,
+  skipTrailingCommaCheck: boolean
+): Result<{ node: ChildrenNode; sawRest: boolean; skipCommaNext: boolean; done: boolean }, TemplateError> => {
+  const tokR = peekToken(parserContext);
+  if (isErr(tokR)) { return tokR; }
+  const tok = tokR.value;
+  if (tok.type === TOKEN_RIGHT_BRACKET) {
+    const consumedR = nextToken(parserContext);
+    if (isErr(consumedR)) { return consumedR; }
+    return ok({ node: initialNode, sawRest: initialSawRest, skipCommaNext: false, done: true });
+  }
+
+  let node = initialNode;
+  let sawRest = initialSawRest;
+  if (!skipTrailingCommaCheck) {
+    const commaResult = handleArrayTrailingComma(parserContext, tok, node, sawRest);
+    if (isErr(commaResult)) { return commaResult; }
+    if (!commaResult.value.continueLoop) {
+      return ok({ node: commaResult.value.node, sawRest: commaResult.value.sawRest, skipCommaNext: false, done: true });
+    }
+    node = commaResult.value.node;
+    sawRest = commaResult.value.sawRest;
+  }
+
+  const result = handleArrayElement(parserContext, node, tok, sawRest);
+  if (isErr(result)) { return result; }
+  node = result.value.node;
+  sawRest = result.value.sawRest;
+
+  const consumedCommaR = consumeArrayElementComma(parserContext);
+  if (isErr(consumedCommaR)) { return consumedCommaR; }
+  return ok({ node, sawRest, skipCommaNext: consumedCommaR.value, done: false });
+};
+
 const parseArrayPattern = (parserContext: ParserContext, lineno: number, colno: number): Result<Node, TemplateError> => {
-  let node = arrayPattern(loc({ lineno, colno }));
+  const node = arrayPattern(loc({ lineno, colno }));
   const startTokR = nextToken(parserContext);
   if (isErr(startTokR)) { return startTokR; }
-  const startTok = startTokR.value;
-  if (startTok.type !== TOKEN_LEFT_BRACKET) {
+  if (startTokR.value.type !== TOKEN_LEFT_BRACKET) {
     return fail(parserContext, 'parseArrayPattern: expected [', lineno, colno);
   }
 
+  let current = node;
   let sawRest = false;
   let skipTrailingCommaCheck = false;
   for (;;) {
-    const tokR = peekToken(parserContext);
-    if (isErr(tokR)) { return tokR; }
-    const tok = tokR.value;
-    if (tok.type === TOKEN_RIGHT_BRACKET) {
-      const consumedR = nextToken(parserContext);
-      if (isErr(consumedR)) { return consumedR; }
-      break;
+    const iterR = parseArrayIteration(parserContext, current, sawRest, skipTrailingCommaCheck);
+    if (isErr(iterR)) { return iterR; }
+    if (iterR.value.done) {
+      return ok(iterR.value.node);
     }
-
-    if (skipTrailingCommaCheck) {
-      skipTrailingCommaCheck = false;
-    } else {
-      const commaResult = handleArrayTrailingComma(parserContext, tok, node, sawRest);
-      if (isErr(commaResult)) { return commaResult; }
-      if (!commaResult.value.continueLoop) {
-        break;
-      }
-      node = commaResult.value.node;
-      sawRest = commaResult.value.sawRest;
-    }
-
-    const result = handleArrayElement(parserContext, node, tok, sawRest);
-    if (isErr(result)) { return result; }
-    node = result.value.node;
-    sawRest = result.value.sawRest;
-    const after = peekTokenOrNull(parserContext);
-    if (after?.type === TOKEN_COMMA) {
-      const consumedR = nextToken(parserContext);
-      if (isErr(consumedR)) { return consumedR; }
-      skipTrailingCommaCheck = true;
-    }
+    current = iterR.value.node;
+    sawRest = iterR.value.sawRest;
+    skipTrailingCommaCheck = iterR.value.skipCommaNext;
   }
-
-  return ok(node);
 };
 
 const parseObjectPropertyKey = (parserContext: ParserContext): Result<{ keyTok: Token; keyName: string }, TemplateError> => {
@@ -256,42 +286,69 @@ const parseObjectPatternProperty = (parserContext: ParserContext, node: Children
   )));
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+const consumeObjectTrailingComma = (parserContext: ParserContext): Result<void, TemplateError> => {
+  if (peekTokenOrNull(parserContext)?.type !== TOKEN_COMMA) {
+    return ok(undefined);
+  }
+  const consumedR = nextToken(parserContext);
+  if (isErr(consumedR)) { return consumedR; }
+  return ok(undefined);
+};
+
+const tryObjectSpreadTerminator = (
+  parserContext: ParserContext,
+  node: ChildrenNode,
+  sawRest: boolean
+): Result<{ node: ChildrenNode } | null, TemplateError> => {
+  const spreadResult = handleObjectSpread(parserContext, node, sawRest);
+  if (isErr(spreadResult)) { return spreadResult; }
+  if (!spreadResult.value.sawRest) {
+    return ok(null);
+  }
+  const commaR = consumeObjectTrailingComma(parserContext);
+  if (isErr(commaR)) { return commaR; }
+  return ok({ node: spreadResult.value.node });
+};
+
+const parseObjectIteration = (parserContext: ParserContext, node: ChildrenNode, sawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean; done: boolean }, TemplateError> => {
+  const tokR = peekToken(parserContext);
+  if (isErr(tokR)) { return tokR; }
+  const tok = tokR.value;
+  if (tok.type === TOKEN_RIGHT_CURLY) {
+    const consumedR = nextToken(parserContext);
+    if (isErr(consumedR)) { return consumedR; }
+    return ok({ node, sawRest, done: true });
+  }
+
+  const commaResult = handleObjectTrailingComma(parserContext, tok, node, sawRest);
+  if (isErr(commaResult)) { return commaResult; }
+  if (!commaResult.value.continueLoop) {
+    return ok({ node: commaResult.value.node, sawRest: commaResult.value.sawRest, done: true });
+  }
+
+  const spreadR = tryObjectSpreadTerminator(parserContext, commaResult.value.node, commaResult.value.sawRest);
+  if (isErr(spreadR)) { return spreadR; }
+  if (spreadR.value !== null) {
+    return ok({ node: spreadR.value.node, sawRest: true, done: true });
+  }
+
+  const propR = parseObjectPatternProperty(parserContext, commaResult.value.node);
+  if (isErr(propR)) { return propR; }
+  return ok({ node: propR.value, sawRest: commaResult.value.sawRest, done: false });
+};
+
 const parseObjectPatternLoop = (parserContext: ParserContext, initialNode: ChildrenNode, initialSawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
   let node = initialNode;
   let sawRest = initialSawRest;
 
   for (;;) {
-    const tokR = peekToken(parserContext);
-    if (isErr(tokR)) { return tokR; }
-    const tok = tokR.value;
-    if (tok.type === TOKEN_RIGHT_CURLY) {
-      const consumedR = nextToken(parserContext);
-      if (isErr(consumedR)) { return consumedR; }
-      return ok({ node, sawRest });
+    const iterR = parseObjectIteration(parserContext, node, sawRest);
+    if (isErr(iterR)) { return iterR; }
+    if (iterR.value.done) {
+      return ok({ node: iterR.value.node, sawRest: iterR.value.sawRest });
     }
-
-    const commaResult = handleObjectTrailingComma(parserContext, tok, node, sawRest);
-    if (isErr(commaResult)) { return commaResult; }
-    if (!commaResult.value.continueLoop) {
-      return ok({ node: commaResult.value.node, sawRest: commaResult.value.sawRest });
-    }
-
-    const spreadResult = handleObjectSpread(parserContext, commaResult.value.node, commaResult.value.sawRest);
-    if (isErr(spreadResult)) { return spreadResult; }
-    if (spreadResult.value.sawRest) {
-      const after = peekTokenOrNull(parserContext);
-      if (after?.type === TOKEN_COMMA) {
-        const consumedR = nextToken(parserContext);
-        if (isErr(consumedR)) { return consumedR; }
-      }
-      return ok({ node: spreadResult.value.node, sawRest: true });
-    }
-
-    const propR = parseObjectPatternProperty(parserContext, spreadResult.value.node);
-    if (isErr(propR)) { return propR; }
-    node = propR.value;
-    sawRest = commaResult.value.sawRest;
+    node = iterR.value.node;
+    sawRest = iterR.value.sawRest;
   }
 };
 

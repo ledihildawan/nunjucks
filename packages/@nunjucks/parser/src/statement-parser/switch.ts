@@ -55,7 +55,21 @@ const handleSwitchEnd = (parserContext: ParserContext): Result<Node | undefined,
   }
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+const parseSwitchDefault = (parserContext: ParserContext): Result<Node | undefined, TemplateError> => {
+  const peekEndR = peekToken(parserContext);
+  if (isErr(peekEndR)) { return peekEndR; }
+  if (peekEndR.value.value !== SWITCH_TOKENS.caseDefault) {
+    const resultR = handleSwitchEnd(parserContext);
+    if (isErr(resultR)) { return resultR; }
+    return ok(undefined);
+  }
+  const resultR = handleSwitchEnd(parserContext);
+  if (isErr(resultR)) { return resultR; }
+  const aR = advanceAfterBlockEnd(parserContext);
+  if (isErr(aR)) { return aR; }
+  return ok(resultR.value);
+};
+
 export const parseSwitch = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tagR = peekToken(parserContext);
   if (isErr(tagR)) { return tagR; }
@@ -81,20 +95,8 @@ export const parseSwitch = (parserContext: ParserContext): Result<Node, Template
   const casesR = parseSwitchCases(parserContext, cases);
   if (isErr(casesR)) { return casesR; }
 
-  let defaultCase: Node | undefined;
-  const peekEndR = peekToken(parserContext);
-  if (isErr(peekEndR)) { return peekEndR; }
-  if (peekEndR.value.value === SWITCH_TOKENS.caseDefault) {
-    const resultR = handleSwitchEnd(parserContext);
-    if (isErr(resultR)) { return resultR; }
-    defaultCase = resultR.value;
-    const aR = advanceAfterBlockEnd(parserContext);
-    if (isErr(aR)) { return aR; }
-  } else {
-    const resultR = handleSwitchEnd(parserContext);
-    if (isErr(resultR)) { return resultR; }
-    defaultCase = undefined;
-  }
+  const defaultCaseR = parseSwitchDefault(parserContext);
+  if (isErr(defaultCaseR)) { return defaultCaseR; }
 
-  return ok(switchNode(loc(tag), { expr: exprR.value, cases, default_: defaultCase ?? null }));
+  return ok(switchNode(loc(tag), { expr: exprR.value, cases, default_: defaultCaseR.value ?? null }));
 };

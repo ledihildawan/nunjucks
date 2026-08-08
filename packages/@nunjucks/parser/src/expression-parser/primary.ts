@@ -15,7 +15,7 @@ import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/log';
 import { nextToken, peekToken, pushToken, skipValue, fail } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
-import { ok, isOk, isErr, type Result } from '@nunjucks/shared';
+import { ok, isOk, isErr, type Result, type Loc } from '@nunjucks/shared';
 import { EXPECTED_COLON_AFTER_DICT_KEY } from '../error.ts';
 import { tryParsePattern } from '../node-parser/pattern.ts';
 import { parseAggregate } from '../node-parser/aggregate/index.ts';
@@ -106,33 +106,36 @@ const parsePrimary = (parserContext: ParserContext, noPostfix?: boolean): Result
   return noPostfix ? ok(aggregateNode) : parsePostfix(parserContext, aggregateNode);
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+const PREFIX_OPERATORS: ReadonlyArray<{ operator: string; build: (loc: Loc, inner: Node) => Node }> = [
+  { operator: '-', build: (origin, inner) => neg(origin, inner) },
+  { operator: '+', build: (origin, inner) => pos(origin, inner) },
+  { operator: '~', build: (origin, inner) => bitwiseNot(origin, inner) },
+  { operator: '++', build: (origin, inner) => increment(origin, { target: inner, isPostfix: false }) },
+  { operator: '--', build: (origin, inner) => decrement(origin, { target: inner, isPostfix: false }) },
+];
+
+const tryParsePrefixOperator = (parserContext: ParserContext, tok: Token): Result<Node | null, TemplateError> => {
+  for (const { operator, build } of PREFIX_OPERATORS) {
+    if (skipValue(parserContext, TOKEN_OPERATOR, operator)) {
+      const innerR = parseUnary(parserContext, true);
+      if (isErr(innerR)) { return innerR; }
+      return ok(build(loc(tok), innerR.value));
+    }
+  }
+  return ok(null);
+};
+
 const parseUnary = (parserContext: ParserContext, noPipes?: boolean): Result<Node, TemplateError> => {
   const tokR = peekToken(parserContext);
   if (isErr(tokR)) { return tokR; }
   const tok = tokR.value;
-  let node: Node;
 
-  if (skipValue(parserContext, TOKEN_OPERATOR, '-')) {
-    const innerR = parseUnary(parserContext, true);
-    if (isErr(innerR)) { return innerR; }
-    node = neg(loc(tok), innerR.value);
-  } else if (skipValue(parserContext, TOKEN_OPERATOR, '+')) {
-    const innerR = parseUnary(parserContext, true);
-    if (isErr(innerR)) { return innerR; }
-    node = pos(loc(tok), innerR.value);
-  } else if (skipValue(parserContext, TOKEN_OPERATOR, '~')) {
-    const innerR = parseUnary(parserContext, true);
-    if (isErr(innerR)) { return innerR; }
-    node = bitwiseNot(loc(tok), innerR.value);
-  } else if (skipValue(parserContext, TOKEN_OPERATOR, '++')) {
-    const innerR = parseUnary(parserContext, true);
-    if (isErr(innerR)) { return innerR; }
-    node = increment(loc(tok), { target: innerR.value, isPostfix: false });
-  } else if (skipValue(parserContext, TOKEN_OPERATOR, '--')) {
-    const innerR = parseUnary(parserContext, true);
-    if (isErr(innerR)) { return innerR; }
-    node = decrement(loc(tok), { target: innerR.value, isPostfix: false });
+  const prefixR = tryParsePrefixOperator(parserContext, tok);
+  if (isErr(prefixR)) { return prefixR; }
+
+  let node: Node;
+  if (prefixR.value !== null) {
+    node = prefixR.value;
   } else {
     const primaryR = parsePrimary(parserContext);
     if (isErr(primaryR)) { return primaryR; }

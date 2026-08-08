@@ -13,7 +13,7 @@ import {
   spread,
   symbol,
 } from '@nunjucks/nodes';
-import type { ChildrenNode, NodeLocation } from '@nunjucks/nodes';
+import type { ChildrenNode, Node, NodeLocation } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/log';
 import {
   fail,
@@ -43,7 +43,17 @@ const parseSpread = (
   ));
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+const parseDictDefaultAssignment = (parserContext: ParserContext, key: Node): Result<Node, TemplateError> => {
+  const consumedR = nextToken(parserContext);
+  if (isErr(consumedR)) { return consumedR; }
+  const defaultValueR = parseExpression(parserContext);
+  if (isErr(defaultValueR)) { return defaultValueR; }
+  return ok(assignmentPattern(
+    loc(key),
+    { target: symbol(loc(key), String(key.value)), defaultVal: defaultValueR.value }
+  ));
+};
+
 const parseDictItem = (parserContext: ParserContext, node: ChildrenNode, origin: NodeLocation): Result<ChildrenNode, TemplateError> => {
   const peekR = peekToken(parserContext);
   if (isErr(peekR)) { return peekR; }
@@ -74,17 +84,11 @@ const parseDictItem = (parserContext: ParserContext, node: ChildrenNode, origin:
   }
 
   if (next?.type === TOKEN_OPERATOR && next.value === '=') {
-    const consumedR = nextToken(parserContext);
-    if (isErr(consumedR)) { return consumedR; }
-    const defaultValueR = parseExpression(parserContext);
-    if (isErr(defaultValueR)) { return defaultValueR; }
-    const pattern = assignmentPattern(
-      loc(key),
-      { target: value, defaultVal: defaultValueR.value }
-    );
+    const patternR = parseDictDefaultAssignment(parserContext, key);
+    if (isErr(patternR)) { return patternR; }
     return ok(appendChild(
       node,
-      pair(loc(key), { key, val: pattern })
+      pair(loc(key), { key, val: patternR.value })
     ));
   }
 

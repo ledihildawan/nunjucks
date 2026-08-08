@@ -71,7 +71,30 @@ const handleBlockEnd = (
   return ok(undefined);
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Result unwrap-and-return short-circuits inflate branching
+const parseFromImportIteration = (
+  parserContext: ParserContext,
+  names: ChildrenNode,
+  fromTok: Token
+): Result<{ names: ChildrenNode; withContext: boolean | null | undefined; done: boolean }, TemplateError> => {
+  const nextTokR = peekToken(parserContext);
+  if (isErr(nextTokR)) { return nextTokR; }
+  if (nextTokR.value.type === TOKEN_BLOCK_END) {
+    const endR = handleBlockEnd(parserContext, names, fromTok);
+    if (isErr(endR)) { return endR; }
+    return ok({ names, withContext: undefined, done: true });
+  }
+
+  if (names.children.length > 0 && !skip(parserContext, TOKEN_COMMA)) {
+    return fail(parserContext, 'parseFrom: expected comma',
+      fromTok.lineno,
+      fromTok.colno);
+  }
+
+  const result = parseImportName(parserContext, names);
+  if (isErr(result)) { return result; }
+  return ok({ names: result.value.names, withContext: result.value.withContext, done: false });
+};
+
 export const parseFrom = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const fromTokR = peekToken(parserContext);
   if (isErr(fromTokR)) { return fromTokR; }
@@ -93,24 +116,11 @@ export const parseFrom = (parserContext: ParserContext): Result<Node, TemplateEr
   let withContext: boolean | null | undefined;
 
   for (;;) {
-    const nextTokR = peekToken(parserContext);
-    if (isErr(nextTokR)) { return nextTokR; }
-    if (nextTokR.value.type === TOKEN_BLOCK_END) {
-      const endR = handleBlockEnd(parserContext, names, fromTok);
-      if (isErr(endR)) { return endR; }
-      break;
-    }
-
-    if (names.children.length > 0 && !skip(parserContext, TOKEN_COMMA)) {
-      return fail(parserContext, 'parseFrom: expected comma',
-        fromTok.lineno,
-        fromTok.colno);
-    }
-
-    const result = parseImportName(parserContext, names);
-    if (isErr(result)) { return result; }
-    names = result.value.names;
-    withContext = result.value.withContext;
+    const iterR = parseFromImportIteration(parserContext, names, fromTok);
+    if (isErr(iterR)) { return iterR; }
+    if (iterR.value.done) { break; }
+    names = iterR.value.names;
+    withContext = iterR.value.withContext;
   }
 
   return ok(fromImportNode(loc(fromTok), {
