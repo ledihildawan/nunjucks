@@ -1,6 +1,7 @@
 import { createLog } from '@nunjucks/log';
 import { getError } from '@nunjucks/log';
 import { extractBlocks, isCompiledTemplateExports, BLOCK_META_KEY, type Environment, type CompiledRenderSignature } from '@nunjucks/shared';
+import { loadCompiledCode } from './code-loader.ts';
 import { wrapMemberAccess } from './sandbox/index.ts';
 import { isNullAccessResult, isPropertyNotFoundResult } from './member-access.ts';
 import type { SandboxOptions } from './sandbox/index.ts';
@@ -20,7 +21,7 @@ const getRenderFunction = (code: string): RenderFunctionResult => {
   const newFormatMatch = code.match(ROOT_FUNCTION_RE);
   if (newFormatMatch) {
     const codeWithReturn = `${code}; return root;`;
-    const renderFn = new Function(codeWithReturn)();
+    const renderFn = loadCompiledCode(codeWithReturn);
     if (!isCompiledTemplateExports(renderFn)) {
       throw createLog('error', { def: getError('INVALID_CODE_FORMAT'), params: {}, subject: null, context: { phase: 'compile' } });
     }

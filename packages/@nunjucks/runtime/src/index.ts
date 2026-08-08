@@ -67,3 +67,4 @@ export {
   isTimeoutError,
 } from './timeout.ts';
 export { execute, type ExecuteConfig } from './executor.ts';
+export { loadCompiledCode } from './code-loader.ts';

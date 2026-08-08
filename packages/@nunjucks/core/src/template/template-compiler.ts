@@ -1,6 +1,6 @@
 import type { ParseOptions } from '@nunjucks/parser';
 import type { UndefinedMode, BlockLocation } from '@nunjucks/runtime';
-import { HOOK_EVENTS } from '@nunjucks/runtime';
+import { HOOK_EVENTS, loadCompiledCode } from '@nunjucks/runtime';
 import { extractBlocks, isCompiledTemplateExports, BLOCK_META_KEY, isErr } from '@nunjucks/shared';
 import type { CompiledTemplateExports } from '@nunjucks/shared';
 import { prettifyError } from '@nunjucks/log';
@@ -22,7 +22,7 @@ const createTemplateCompiler = ({ getState, commit }: TemplateStateCell) => {
     const codeResult = compileToCode({ source: state.tmplStr ?? '', templateName: state.path ?? '', undefinedMode: state.env.opts.undefined as UndefinedMode | undefined, parseOpts: state.env.opts as ParseOptions });
     // WHY: compileToCode returns Result, but this template-include path feeds safeCompile which prettifies+rethrows for the include system; unwrapping here keeps that throw-based shell intact while the render() path uses Result end-to-end.
     if (isErr(codeResult)) { throw codeResult.error; }
-    const compiled = new Function(codeResult.value)();
+    const compiled = loadCompiledCode(codeResult.value);
     if (!isCompiledTemplateExports(compiled)) {
       return null;
     }
