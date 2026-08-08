@@ -1,12 +1,5 @@
 ﻿import { describe, test, expect } from 'bun:test';
-import { render } from './render.ts';
-import { isErr } from '@nunjucks/shared';
-
-const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
-  const result = await render(template, { context, autoescape: false, ...config });
-  if (isErr(result)) { throw result.error; }
-  return result.value;
-};
+import { renderTemplate } from './render-test-helper.ts';
 
 describe('loop variables', () => {
   test('loop.index starts at 1', async () => {

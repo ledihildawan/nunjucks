@@ -1,13 +1,6 @@
 import { describe, test, expect } from 'bun:test';
-import { render } from '@nunjucks/core';
-import { isErr } from '@nunjucks/shared';
+import { renderTemplate } from './render-test-helper.ts';
 import type { TemplateError } from '@nunjucks/log';
-
-const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
-  const result = await render(template, { context, autoescape: false, ...config });
-  if (isErr(result)) { throw result.error; }
-  return result.value;
-};
 
 describe('sandbox security - prototype pollution', () => {
   test('__proto__ access throws in sandbox mode', async () => {

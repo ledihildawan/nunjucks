@@ -102,7 +102,7 @@ export const slice = (values: unknown, slices: number, fillWith?: unknown): unkn
 };
 
 const sumWithAttribute = (items: unknown[], attr: string, start: number): number => {
-  const typedItems = validateItemsOrThrow<unknown>(items, attr, ERROR_DEFINITIONS.SUM_FILTER_ATTR);
+  const typedItems = validateItemsOrThrow<unknown>({ items, attr, errorDef: ERROR_DEFINITIONS.SUM_FILTER_ATTR });
   const values = typedItems.map((item) => item[attr]);
   if (!values.every((value): value is number => typeof value === 'number')) {
     throw makeFilterError({ errorDef: ERROR_DEFINITIONS.SUM_FILTER_ATTR, params: { attr }, subject: attr, fallbackMessage: `Attribute "${attr}" must contain numbers` });
@@ -174,7 +174,7 @@ const createSortComparator = ({ sortAttr, sortReverse, caseSens }: SortOptions) 
 const sortArray = (values: unknown[], options: SortOptions): unknown[] => {
   const { sortAttr, sortReverse, caseSens } = options;
   if (sortAttr) {
-    validateItemsOrThrow<unknown>(values, sortAttr, ERROR_DEFINITIONS.SORT_FILTER_ATTR);
+    validateItemsOrThrow<unknown>({ items: values, attr: sortAttr, errorDef: ERROR_DEFINITIONS.SORT_FILTER_ATTR });
   }
   const array = [...values];
   const comparator = createSortComparator({ sortAttr, sortReverse, caseSens });

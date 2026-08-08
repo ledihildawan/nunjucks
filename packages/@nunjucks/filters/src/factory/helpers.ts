@@ -64,7 +64,13 @@ const requireArrayError = (value: unknown, errorDef: ErrorDefinitionEntry | unde
 const requireNumberError = (value: unknown, errorDef: ErrorDefinitionEntry | undefined) =>
   makeFilterError({ errorDef, params: { type: typeof value }, subject: typeof value, fallbackMessage: `Expected number but got ${typeof value}` });
 
-const validateItemsHaveAttr = <T>(items: unknown[], attr: string, errorDef: ErrorDefinitionEntry | undefined): Result<Record<string, T>[], TemplateError> => {
+interface ValidateItemsInput {
+  items: unknown[];
+  attr: string;
+  errorDef: ErrorDefinitionEntry | undefined;
+}
+
+const validateItemsHaveAttr = <T>({ items, attr, errorDef }: ValidateItemsInput): Result<Record<string, T>[], TemplateError> => {
   const everyHasAttr = items.every((item) => item !== null && typeof item === 'object' && attr in item);
   if (!everyHasAttr) {
     return err(makeFilterError({ errorDef, params: { attr }, subject: attr, fallbackMessage: `Attribute "${attr}" not found in item` }));
@@ -72,8 +78,8 @@ const validateItemsHaveAttr = <T>(items: unknown[], attr: string, errorDef: Erro
   return ok(items as Record<string, T>[]);
 };
 
-const validateItemsOrThrow = <T>(items: unknown[], attr: string, errorDef: ErrorDefinitionEntry | undefined): Record<string, T>[] => {
-  const validated = validateItemsHaveAttr<T>(items, attr, errorDef);
+const validateItemsOrThrow = <T>(input: ValidateItemsInput): Record<string, T>[] => {
+  const validated = validateItemsHaveAttr<T>(input);
   if (isOk(validated)) { return validated.value; }
   throw validated.error;
 };

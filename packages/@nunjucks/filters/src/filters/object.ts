@@ -8,7 +8,7 @@ export const groupby = makeComponent(
   [],
   (items: unknown, attr: string): Record<string, unknown[]> => {
     if (!isArray(items)) { throw requireArrayError(items, ERROR_DEFINITIONS.GROUPBY_FILTER); }
-    const typedItems = validateItemsOrThrow<unknown>(items, attr, ERROR_DEFINITIONS.GROUPBY_FILTER_ATTR);
+    const typedItems = validateItemsOrThrow<unknown>({ items, attr, errorDef: ERROR_DEFINITIONS.GROUPBY_FILTER_ATTR });
     const getAttr = getAttrGetter(attr);
     return Object.groupBy(typedItems, (item) => {
       const key = getAttr(item);
