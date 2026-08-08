@@ -22,7 +22,7 @@ export const emitFuncEnd = (compiler: Emitter & ScopeManager, noReturn?: boolean
 
   compiler.closeScopeLevels();
   compiler.emitLine('} catch (e) {');
-  compiler.emitLine('  throw runtime.handleError(e, lineno, colno);');
+  compiler.emitLine('  throw runtime.handleError(e, { lineno, colno });');
   compiler.emitLine('}');
   compiler.emitLine('}');
   compiler.buffer = null;

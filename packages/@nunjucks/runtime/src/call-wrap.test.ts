@@ -43,28 +43,28 @@ describe('callWrap', () => {
 
 describe('inOperator', () => {
   test('checks array membership', () => {
-    expect(inOperator(2, [1, 2, 3])).toBe(true);
-    expect(inOperator(4, [1, 2, 3])).toBe(false);
+    expect(inOperator({ key: 2, value: [1, 2, 3] })).toBe(true);
+    expect(inOperator({ key: 4, value: [1, 2, 3] })).toBe(false);
   });
 
   test('checks string membership', () => {
-    expect(inOperator('o', 'hello')).toBe(true);
-    expect(inOperator('z', 'hello')).toBe(false);
+    expect(inOperator({ key: 'o', value: 'hello' })).toBe(true);
+    expect(inOperator({ key: 'z', value: 'hello' })).toBe(false);
   });
 
   test('checks object key presence', () => {
-    expect(inOperator('name', { name: 'alice' })).toBe(true);
-    expect(inOperator('age', { name: 'alice' })).toBe(false);
+    expect(inOperator({ key: 'name', value: { name: 'alice' } })).toBe(true);
+    expect(inOperator({ key: 'age', value: { name: 'alice' } })).toBe(false);
   });
 
   test('throws for unsupported right-hand types', () => {
-    expect(() => inOperator('x', 42)).toThrow("Cannot use 'in' operator");
-    expect(() => inOperator('x', null)).toThrow();
+    expect(() => inOperator({ key: 'x', value: 42 })).toThrow("Cannot use 'in' operator");
+    expect(() => inOperator({ key: 'x', value: null })).toThrow();
   });
 
   test('preserves location info on the thrown error', () => {
     try {
-      inOperator('x', 42, { lineno: 3, colno: 7 });
+      inOperator({ key: 'x', value: 42, lineno: 3, colno: 7 });
     } catch (e) {
       expect((e as { code: string }).code).toBe('IN_OPERATOR');
       expect((e as { lineno: number }).lineno).toBe(3);

@@ -47,11 +47,11 @@ export const compileIn = (compiler: Compiler, node: BinaryNode, frame: Frame): v
   const lineno = node.lineno;
   const colno = node.colno;
   emitLocationGuard(compiler, lineno, colno);
-  compiler.emit('runtime.inOperator(');
+  compiler.emit('runtime.inOperator({ key: ');
   compiler.compile(node.left, frame);
-  compiler.emit(',');
+  compiler.emit(', value: ');
   compiler.compile(node.right, frame);
-  compiler.emit(`, { lineno: ${lineno}, colno: ${colno} }))`);
+  compiler.emit(`, lineno: ${lineno}, colno: ${colno} }))`);
 };
 
 export const compileFloorDiv = (compiler: Compiler, node: BinaryOpNode, frame: Frame): void => {

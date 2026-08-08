@@ -20,9 +20,9 @@ interface RuntimeContext {
   ensureDefined: (value: unknown, options?: EnsureDefinedOptions) => unknown;
   callWrap: (target: unknown, name: string, options: CallWrapOptions) => unknown;
   contextOrFrameLookup: (context: { lookup: (name: string) => unknown }, frame: { lookup: (name: string) => unknown }, name: string) => unknown;
-  handleError: (err: unknown, lineno?: number | null, colno?: number | null, templateName?: string | null) => never;
+  handleError: (err: unknown, loc: { lineno: number | null; colno: number | null }) => never;
   fromIterator: (iterable: unknown) => unknown;
-  inOperator: (key: unknown, value: unknown, options?: InOperatorOptions) => boolean;
+  inOperator: (input: InOperatorOptions) => boolean;
   runTest: (env: unknown, name: string, target: unknown, ...args: unknown[]) => boolean;
   keys: typeof keys;
   __warnings__: unknown[];

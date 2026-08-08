@@ -72,12 +72,13 @@ function callWrap(
 }
 
 export interface InOperatorOptions {
+  key: unknown;
+  value: unknown;
   lineno?: number | null;
   colno?: number | null;
 }
 
-function inOperator(this: unknown, key: unknown, value: unknown, options: InOperatorOptions = {}): boolean {
-  const { lineno = null, colno = null } = options;
+function inOperator(this: unknown, { key, value, lineno = null, colno = null }: InOperatorOptions): boolean {
   if (isArray(value) || isString(value)) {
     return (value as { includes: (k: unknown) => boolean }).includes(key);
   }
