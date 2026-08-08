@@ -6,7 +6,7 @@ import { toDisplayLocation } from './internal/location/location.ts';
 import type { LineBase } from '@nunjucks/error-catalog';
 import { makeHyperlink } from './ansi/stack-helpers.ts';
 import { DEFAULT_IDE, DEFAULT_VERSION } from './internal/config/defaults.ts';
-import type { Warning } from '../warning/collector.ts';
+import type { Warning } from '@nunjucks/error-catalog';
 
 interface ToConsoleOptions {
   verbosity?: 'simple' | 'medium' | 'full';

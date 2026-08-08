@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { injectWarningsScript } from './collector.ts';
-import type { Warning } from './collector.ts';
+import type { Warning } from '@nunjucks/error-catalog';
 
 describe('injectWarningsScript', () => {
   test('returns empty string for null', () => {

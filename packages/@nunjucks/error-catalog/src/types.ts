@@ -17,3 +17,15 @@ export interface ErrorLike {
 
 export const isErrorLike = (value: unknown): value is ErrorLike =>
   typeof value === 'object' && value !== null;
+
+export interface Warning {
+  message: string;
+  code?: string | null;
+  lineno?: number | null;
+  colno?: number | null;
+  templateName?: string | null;
+  undefinedMode?: string;
+  varName?: string | null;
+  subject?: string | null;
+  lineBase?: LineBase | null;
+}

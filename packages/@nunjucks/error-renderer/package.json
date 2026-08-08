@@ -1,0 +1,16 @@
+{
+  "name": "@nunjucks/error-renderer",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@nunjucks/shared": "workspace:*",
+    "@nunjucks/error-catalog": "workspace:*",
+    "picocolors": "^1.1.1",
+    "remeda": "^2.39.0"
+  },
+  "description": "Error rendering (HTML/ANSI/text/console) for Nunjucks"
+}

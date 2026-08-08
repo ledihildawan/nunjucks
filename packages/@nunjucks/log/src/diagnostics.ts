@@ -2,7 +2,7 @@ import { createLog, type TemplateError } from './create-log/create-log.ts';
 import { normalizeErrorMetadata } from './normalize.ts';
 import { resolveLocation } from './error-location.ts';
 import { MATCH_ANY_RE, isKeyedObject } from '@nunjucks/shared';
-import { DEFAULT_IDE } from './render/internal/config/defaults.ts';
+import { DEFAULT_IDE } from '@nunjucks/error-renderer';
 import type { LineBase } from '@nunjucks/error-catalog';
 
 interface DiagnosticsConfig {

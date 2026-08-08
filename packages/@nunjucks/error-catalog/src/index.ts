@@ -27,5 +27,5 @@ export { TEMPLATE_ERROR, isTemplateError } from './branding.ts';
 export type { BrandedTemplateError } from './branding.ts';
 export type { LineBase } from './line-base.ts';
 export { normalizeLineBase } from './line-base.ts';
-export type { ErrorLike } from './types.ts';
+export type { ErrorLike, Warning } from './types.ts';
 export { isErrorLike } from './types.ts';

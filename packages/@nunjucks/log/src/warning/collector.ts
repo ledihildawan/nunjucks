@@ -1,19 +1,7 @@
 import { pipe, split } from 'remeda';
 import { replace } from '@nunjucks/shared';
 
-import type { LineBase } from '@nunjucks/error-catalog';
-
-interface Warning {
-  message: string;
-  code?: string | null;
-  lineno?: number | null;
-  colno?: number | null;
-  templateName?: string | null;
-  undefinedMode?: string;
-  varName?: string | null;
-  subject?: string | null;
-  lineBase?: LineBase | null;
-}
+import type { Warning } from '@nunjucks/error-catalog';
 
 interface InjectWarningsOptions {
   dev?: boolean;
@@ -72,4 +60,4 @@ const injectWarningsScript = (warnings: Warning[] | null | undefined, options: I
 };
 
 export { injectWarningsScript };
-export type { Warning, InjectWarningsOptions };
+export type { InjectWarningsOptions };

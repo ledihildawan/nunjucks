@@ -1,5 +1,5 @@
 import { isFunction, isString, pickBy } from 'remeda';
-import { formatLocationAnnotation } from '../render/internal/location/location.ts';
+import { formatLocationAnnotation } from '@nunjucks/error-renderer';
 import { TEMPLATE_ERROR } from './create-log-types.ts';
 import type { TemplateError, ErrorContext, WarningContext, NormalizedErrorContext, NormalizedWarningContext, ErrorDefinitionEntry, LegacyLogData, LogType, WarningInfo, IncludeChain, ErrorInfo } from './create-log-types.ts';
 
