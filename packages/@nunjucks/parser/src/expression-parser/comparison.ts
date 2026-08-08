@@ -38,7 +38,7 @@ const parseCompare = (parserContext: ParserContext): Result<Node, TemplateError>
   const expr = exprR.value;
   const ops: Node[] = [];
 
-  for (;;) {
+  const parseLoop = (): Result<void, TemplateError> => {
     const tokR = nextToken(parserContext);
     if (isErr(tokR)) { return tokR; }
     const tok = tokR.value;
@@ -47,11 +47,14 @@ const parseCompare = (parserContext: ParserContext): Result<Node, TemplateError>
       const operandR = parseConcat(parserContext);
       if (isErr(operandR)) { return operandR; }
       ops.push(compareOperand(loc(tok), { expr: operandR.value, operator: String(tok.value) }));
-    } else {
-      pushToken(parserContext, tok);
-      break;
+      return parseLoop();
     }
-  }
+    pushToken(parserContext, tok);
+    return ok(undefined);
+  };
+
+  const loopR = parseLoop();
+  if (isErr(loopR)) { return loopR; }
 
   const [firstOp] = ops;
   if (firstOp) {

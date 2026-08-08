@@ -70,27 +70,23 @@ const parseOneWhen = (parserContext: ParserContext, tag: Token): Result<WhenIter
 };
 
 const parseMatchCases = (parserContext: ParserContext, tag: Token): Result<{ cases: WhenNode[]; defaultCase: Node | null }, TemplateError> => {
-  const cases: WhenNode[] = [];
-  let defaultCase: Node | null = null;
-
-  const tokR = peekToken(parserContext);
-  if (isErr(tokR)) { return tokR; }
-  let tok = tokR.value;
-  while (tok.type === TOKEN_SYMBOL && tok.value === 'when') {
+  const collectCases = (accCases: WhenNode[]): Result<{ cases: WhenNode[]; defaultCase: Node | null }, TemplateError> => {
+    const peekR = peekToken(parserContext);
+    if (isErr(peekR)) { return peekR; }
+    const peeked = peekR.value;
+    if (!(peeked.type === TOKEN_SYMBOL && peeked.value === 'when')) {
+      return ok({ cases: accCases, defaultCase: null });
+    }
     const oneR = parseOneWhen(parserContext, tag);
     if (isErr(oneR)) { return oneR; }
     const one = oneR.value;
     if (one.kind === 'default') {
-      defaultCase = one.node;
-      break;
+      return ok({ cases: accCases, defaultCase: one.node });
     }
-    cases.push(one.node);
-    const nextTokR = peekToken(parserContext);
-    if (isErr(nextTokR)) { return nextTokR; }
-    tok = nextTokR.value;
-  }
+    return collectCases([...accCases, one.node]);
+  };
 
-  return ok({ cases, defaultCase });
+  return collectCases([]);
 };
 
 export const parseMatch = (parserContext: ParserContext): Result<Node, TemplateError> => {

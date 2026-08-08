@@ -46,15 +46,16 @@ const isSlotSymbol = (peeked: Token): boolean =>
 
 const parseSlotParams = (parserContext: ParserContext): string[] => {
   const params: string[] = [];
-  for (;;) {
+  const collect = (): string[] => {
     const inner = nextTokenOrNull(parserContext);
-    if (!inner || inner.type === TOKEN_RIGHT_PAREN) { break; }
-    if (inner.type === TOKEN_COMMA) { continue; }
+    if (!inner || inner.type === TOKEN_RIGHT_PAREN) { return params; }
+    if (inner.type === TOKEN_COMMA) { return collect(); }
     if (isSymbolToken(inner)) {
       params.push(inner.value);
     }
-  }
-  return params;
+    return collect();
+  };
+  return collect();
 };
 
 const parseSlotBlock = (parserContext: ParserContext): Result<ParsedSlot, TemplateError> => {
@@ -94,23 +95,26 @@ export const parseSlottedBody = (parserContext: ParserContext, endTag: string): 
   const implicitSlots: SlotBlock[] = [];
   const defaultParts: Node[] = [];
 
-  for (;;) {
+  const parseLoop = (): Result<SlottedBody, TemplateError> => {
     const peekedR = peekToken(parserContext);
     if (isErr(peekedR)) { return peekedR; }
     const peeked = peekedR.value;
-    if (isTerminatorSymbol(peeked, endTag)) { break; }
+    if (isTerminatorSymbol(peeked, endTag)) {
+      return ok({ defaultParts, namedSlots, implicitSlots });
+    }
     if (isSlotSymbol(peeked)) {
       const slotR = parseSlotBlock(parserContext);
       if (isErr(slotR)) { return slotR; }
       categorizeSlot(slotR.value, namedSlots, implicitSlots);
-      continue;
+      return parseLoop();
     }
     const chunkR = parseUntilBlocks(parserContext, 'slot', endTag);
     if (isErr(chunkR)) { return chunkR; }
     appendDefaultChunk(defaultParts, chunkR.value);
-  }
+    return parseLoop();
+  };
 
-  return ok({ defaultParts, namedSlots, implicitSlots });
+  return parseLoop();
 };
 
 export const buildDefaultBody = (parts: Node[], lineno: number, colno: number): Node => {

@@ -13,9 +13,10 @@ import {
 import { literal, symbol, neg, pos, bitwiseNot, increment, decrement } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/log';
-import { nextToken, peekToken, pushToken, skipValue, fail } from '../cursor.ts';
+import { nextToken, peekToken, peekTokenOrNull, pushToken, skipValue, fail } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
 import { ok, isOk, isErr, type Result, type Loc } from '@nunjucks/shared';
+import { find } from 'remeda';
 import { EXPECTED_COLON_AFTER_DICT_KEY } from '../error.ts';
 import { tryParsePattern } from '../node-parser/pattern.ts';
 import { parseAggregate } from '../node-parser/aggregate/index.ts';
@@ -115,14 +116,16 @@ const PREFIX_OPERATORS: ReadonlyArray<{ operator: string; build: (loc: Loc, inne
 ];
 
 const tryParsePrefixOperator = (parserContext: ParserContext, tok: Token): Result<Node | null, TemplateError> => {
-  for (const { operator, build } of PREFIX_OPERATORS) {
-    if (skipValue(parserContext, TOKEN_OPERATOR, operator)) {
-      const innerR = parseUnary(parserContext, true);
-      if (isErr(innerR)) { return innerR; }
-      return ok(build(loc(tok), innerR.value));
-    }
+  const peeked = peekTokenOrNull(parserContext);
+  const matched = find(PREFIX_OPERATORS, ({ operator }) =>
+    peeked?.type === TOKEN_OPERATOR && peeked?.value === operator);
+  if (!matched) {
+    return ok(null);
   }
-  return ok(null);
+  skipValue(parserContext, TOKEN_OPERATOR, matched.operator);
+  const innerR = parseUnary(parserContext, true);
+  if (isErr(innerR)) { return innerR; }
+  return ok(matched.build(loc(tok), innerR.value));
 };
 
 const parseUnary = (parserContext: ParserContext, noPipes?: boolean): Result<Node, TemplateError> => {

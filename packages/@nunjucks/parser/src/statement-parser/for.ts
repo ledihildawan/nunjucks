@@ -1,6 +1,6 @@
 import { TOKEN_COMMA } from '@nunjucks/lexer';
 import { appendChild, array, forNode, isSymbol } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
+import type { ChildrenNode, Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/log';
 import { peekToken, skipSymbol, skip, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -30,13 +30,14 @@ const parseForTarget = (parserContext: ParserContext): Result<Node, TemplateErro
   if (tokR.value.type !== TOKEN_COMMA) { return ok(name); }
 
   const key = name;
-  let result = appendChild(array(loc(key)), key);
-  while (skip(parserContext, TOKEN_COMMA)) {
+  const result = appendChild(array(loc(key)), key);
+  const collectCommaList = (acc: ChildrenNode): Result<Node, TemplateError> => {
+    if (!skip(parserContext, TOKEN_COMMA)) { return ok(acc); }
     const primR = parsePrimary(parserContext);
     if (isErr(primR)) { return primR; }
-    result = appendChild(result, primR.value);
-  }
-  return ok(result);
+    return collectCommaList(appendChild(acc, primR.value));
+  };
+  return collectCommaList(result);
 };
 
 export const parseFor = (parserContext: ParserContext): Result<Node, TemplateError> => {

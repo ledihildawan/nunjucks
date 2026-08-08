@@ -193,19 +193,20 @@ const parseArrayPattern = (parserContext: ParserContext, lineno: number, colno: 
     return fail(parserContext, 'parseArrayPattern: expected [', lineno, colno);
   }
 
-  let current = node;
-  let sawRest = false;
-  let skipTrailingCommaCheck = false;
-  for (;;) {
+  const parseLoop = (
+    current: ChildrenNode,
+    sawRest: boolean,
+    skipTrailingCommaCheck: boolean
+  ): Result<Node, TemplateError> => {
     const iterR = parseArrayIteration(parserContext, current, sawRest, skipTrailingCommaCheck);
     if (isErr(iterR)) { return iterR; }
     if (iterR.value.done) {
       return ok(iterR.value.node);
     }
-    current = iterR.value.node;
-    sawRest = iterR.value.sawRest;
-    skipTrailingCommaCheck = iterR.value.skipCommaNext;
-  }
+    return parseLoop(iterR.value.node, iterR.value.sawRest, iterR.value.skipCommaNext);
+  };
+
+  return parseLoop(node, false, false);
 };
 
 const parseObjectPropertyKey = (parserContext: ParserContext): Result<{ keyTok: Token; keyName: string }, TemplateError> => {
@@ -338,18 +339,19 @@ const parseObjectIteration = (parserContext: ParserContext, node: ChildrenNode, 
 };
 
 const parseObjectPatternLoop = (parserContext: ParserContext, initialNode: ChildrenNode, initialSawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
-  let node = initialNode;
-  let sawRest = initialSawRest;
-
-  for (;;) {
+  const parseLoop = (
+    node: ChildrenNode,
+    sawRest: boolean
+  ): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
     const iterR = parseObjectIteration(parserContext, node, sawRest);
     if (isErr(iterR)) { return iterR; }
     if (iterR.value.done) {
       return ok({ node: iterR.value.node, sawRest: iterR.value.sawRest });
     }
-    node = iterR.value.node;
-    sawRest = iterR.value.sawRest;
-  }
+    return parseLoop(iterR.value.node, iterR.value.sawRest);
+  };
+
+  return parseLoop(initialNode, initialSawRest);
 };
 
 const parseObjectPattern = (parserContext: ParserContext, lineno: number, colno: number): Result<Node, TemplateError> => {

@@ -66,13 +66,13 @@ const applyPostfixStep = (parserContext: ParserContext, current: Node): Result<{
 };
 
 export const parsePostfix = (parserContext: ParserContext, node: Node): Result<Node, TemplateError> => {
-  let current = node;
-  for (;;) {
+  const parseLoop = (current: Node): Result<Node, TemplateError> => {
     const stepR = applyPostfixStep(parserContext, current);
     if (isErr(stepR)) { return stepR; }
     if (stepR.value.stop) { return ok(stepR.value.node); }
-    current = stepR.value.node;
-  }
+    return parseLoop(stepR.value.node);
+  };
+  return parseLoop(node);
 };
 
 export { parsePipeForward, parseFilterCallName, parseFilterCallArgs } from './pipe-forward.ts';

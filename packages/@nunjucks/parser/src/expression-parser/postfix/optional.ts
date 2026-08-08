@@ -44,29 +44,25 @@ const consumeEndOfArgs = (parserContext: ParserContext, next: Token): Result<boo
 };
 
 const parseOptionalCallArgs = (parserContext: ParserContext, tok: Token): Result<ChildrenNode, TemplateError> => {
-  let args = nodeList(loc(tok));
-  let expectComma = false;
-
-  for (;;) {
+  const parseLoop = (args: ChildrenNode, expectComma: boolean): Result<ChildrenNode, TemplateError> => {
     const nextR = peekToken(parserContext);
     if (isErr(nextR)) { return nextR; }
     const next = nextR.value;
 
     const endR = consumeEndOfArgs(parserContext, next);
     if (isErr(endR)) { return endR; }
-    if (endR.value) { break; }
+    if (endR.value) { return ok(args); }
 
     const commaR = handleComma(parserContext, expectComma);
     if (isErr(commaR)) { return commaR; }
-    if (!commaR.value) { break; }
+    if (!commaR.value) { return ok(args); }
 
     const argumentR = parseExpression(parserContext);
     if (isErr(argumentR)) { return argumentR; }
-    args = appendChild(args, argumentR.value);
-    expectComma = true;
-  }
+    return parseLoop(appendChild(args, argumentR.value), true);
+  };
 
-  return ok(args);
+  return parseLoop(nodeList(loc(tok)), false);
 };
 
 const parseOptionalCall = (parserContext: ParserContext, tok: Token, target: Node): Result<Node, TemplateError> => {

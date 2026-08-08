@@ -83,28 +83,26 @@ const parseSignatureLoop = (
   kwargs: ChildrenNode,
   noParens: boolean | undefined
 ): Result<{ args: ChildrenNode; kwargs: ChildrenNode }, TemplateError> => {
-  let checkComma = false;
-  let currentArgs = args;
-  let currentKwargs = kwargs;
-
-  for (;;) {
+  const parseLoop = (
+    currentArgs: ChildrenNode,
+    currentKwargs: ChildrenNode,
+    checkComma: boolean
+  ): Result<{ args: ChildrenNode; kwargs: ChildrenNode }, TemplateError> => {
     const tokR = peekToken(parserContext);
     if (isErr(tokR)) { return tokR; }
     const tok = tokR.value;
     if (!shouldContinueParsing(tok, noParens)) {
       const endR = handleSignatureLoopEnd(parserContext, tok, noParens);
       if (isErr(endR)) { return endR; }
-      break;
+      return ok({ args: currentArgs, kwargs: currentKwargs });
     }
 
     const result = parseSignatureArg(parserContext, currentArgs, currentKwargs, checkComma);
     if (isErr(result)) { return result; }
-    currentArgs = result.value.args;
-    currentKwargs = result.value.kwargs;
-    checkComma = result.value.checkComma;
-  }
+    return parseLoop(result.value.args, result.value.kwargs, result.value.checkComma);
+  };
 
-  return ok({ args: currentArgs, kwargs: currentKwargs });
+  return parseLoop(args, kwargs, false);
 };
 
 export const parseSignature = (parserContext: ParserContext, tolerant?: boolean, noParens?: boolean): Result<Node | null, TemplateError> => {

@@ -1,7 +1,7 @@
 import type { Node } from '@nunjucks/nodes';
 import type { BinaryFields } from '@nunjucks/nodes';
 import type { Loc } from '@nunjucks/shared';
-import { loc, ok, isOk, isErr, type Result } from '@nunjucks/shared';
+import { loc, ok, isErr, type Result } from '@nunjucks/shared';
 import type { TemplateError } from '@nunjucks/log';
 import { TOKEN_OPERATOR } from '@nunjucks/lexer';
 import { peekToken, skipValue } from '../cursor.ts';
@@ -17,16 +17,19 @@ const binaryOp = (
 ): Result<Node, TemplateError> => {
   const firstR = next(parserContext);
   if (isErr(firstR)) { return firstR; }
-  let node = firstR.value;
-  let tokR = peekToken(parserContext);
-  while (isOk(tokR) && consume(parserContext)) {
+
+  const fold = (node: Node): Result<Node, TemplateError> => {
+    const tokR = peekToken(parserContext);
+    if (isErr(tokR)) { return tokR; }
+    if (!consume(parserContext)) {
+      return ok(node);
+    }
     const rightR = next(parserContext);
     if (isErr(rightR)) { return rightR; }
-    node = create(loc(tokR.value), { left: node, right: rightR.value });
-    tokR = peekToken(parserContext);
-  }
-  if (isErr(tokR)) { return tokR; }
-  return ok(node);
+    return fold(create(loc(tokR.value), { left: node, right: rightR.value }));
+  };
+
+  return fold(firstR.value);
 };
 
 const op = (operator: string) => (parserContext: ParserContext): boolean => skipValue(parserContext, TOKEN_OPERATOR, operator);

@@ -7,6 +7,7 @@ import { ok, isErr, type Result } from '@nunjucks/shared';
 import { parseExpression } from "../expression-parser/index.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
 import { loc } from '@nunjucks/shared';
+import type { Token } from '@nunjucks/lexer';
 
 const SWITCH_TOKENS = {
   switchStart: 'switch',
@@ -18,8 +19,9 @@ const SWITCH_TOKENS = {
 const parseSwitchCases = (parserContext: ParserContext, cases: Node[]): Result<void, TemplateError> => {
   const tokR = peekToken(parserContext);
   if (isErr(tokR)) { return tokR; }
-  let tok = tokR.value;
-  while (tok?.value === SWITCH_TOKENS.caseStart) {
+
+  const parseLoop = (tok: Token): Result<void, TemplateError> => {
+    if (tok?.value !== SWITCH_TOKENS.caseStart) { return ok(undefined); }
     skipSymbol(parserContext, SWITCH_TOKENS.caseStart);
     const condR = parseExpression(parserContext);
     if (isErr(condR)) { return condR; }
@@ -30,9 +32,10 @@ const parseSwitchCases = (parserContext: ParserContext, cases: Node[]): Result<v
     cases.push(caseNode(loc(tok), { cond: condR.value, body: bodyR.value }));
     const nextTokR = peekToken(parserContext);
     if (isErr(nextTokR)) { return nextTokR; }
-    tok = nextTokR.value;
-  }
-  return ok(undefined);
+    return parseLoop(nextTokR.value);
+  };
+
+  return parseLoop(tokR.value);
 };
 
 const handleSwitchEnd = (parserContext: ParserContext): Result<Node | undefined, TemplateError> => {

@@ -48,9 +48,11 @@ export const nextTokenOrNull = (parserContext: ParserContext, withWhitespace?: b
   tok = parserContext.tokens.nextToken();
 
   if (!withWhitespace) {
-    while (tok?.type === TOKEN_WHITESPACE) {
-      tok = parserContext.tokens.nextToken();
-    }
+    const skipWhitespace = (currentTok: Token | null): Token | null => {
+      if (currentTok?.type !== TOKEN_WHITESPACE) { return currentTok; }
+      return skipWhitespace(parserContext.tokens.nextToken());
+    };
+    tok = skipWhitespace(tok);
   }
 
   return tok;

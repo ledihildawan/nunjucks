@@ -41,7 +41,8 @@ const parseScopeAssignments = (parserContext: ParserContext, tag: Token): Result
   if (isErr(firstR)) { return firstR; }
   assignments.push(firstR.value);
 
-  while (skip(parserContext, TOKEN_COMMA)) {
+  const collect = (): Result<Node[], TemplateError> => {
+    if (!skip(parserContext, TOKEN_COMMA)) { return ok(assignments); }
     const nextNameTokR = peekToken(parserContext);
     if (isErr(nextNameTokR)) { return nextNameTokR; }
     if (nextNameTokR.value?.type !== 'symbol') {
@@ -51,9 +52,10 @@ const parseScopeAssignments = (parserContext: ParserContext, tag: Token): Result
     const nextR = parseScopeAssignment(parserContext, tag);
     if (isErr(nextR)) { return nextR; }
     assignments.push(nextR.value);
-  }
+    return collect();
+  };
 
-  return ok(assignments);
+  return collect();
 };
 
 export const parseScope = (parserContext: ParserContext): Result<Node, TemplateError> => {

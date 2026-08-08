@@ -10,20 +10,21 @@ export const parseContent = (
   initialNode: ChildrenNode,
   origin: NodeLocation
 ): Result<ChildrenNode, TemplateError> => {
-  let node = initialNode;
-  for (;;) {
+  const parseLoop = (node: ChildrenNode): Result<ChildrenNode, TemplateError> => {
     const listR = prepareListItem(parserContext, node, origin);
     if (isErr(listR)) { return listR; }
     const listState = listR.value;
-    node = listState.node;
+    const nextNode = listState.node;
     if (listState.done) {
-      return ok(node);
+      return ok(nextNode);
     }
     if (listState.skipExpression) {
-      continue;
+      return parseLoop(nextNode);
     }
-    const exprR = parseAggregateExpression(parserContext, node, origin);
+    const exprR = parseAggregateExpression(parserContext, nextNode, origin);
     if (isErr(exprR)) { return exprR; }
-    node = exprR.value;
-  }
+    return parseLoop(exprR.value);
+  };
+
+  return parseLoop(initialNode);
 };

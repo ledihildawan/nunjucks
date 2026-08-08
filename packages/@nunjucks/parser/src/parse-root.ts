@@ -126,15 +126,16 @@ const handleToken = (parserContext: ParserContext, tok: Token, buf: Node[], brea
 const parseNodes = (parserContext: ParserContext, breakOn: readonly string[] | null = null): Result<Node[], TemplateError> => {
   const buf: Node[] = [];
 
-  for (let tok = nextTokenOrNull(parserContext); tok; tok = nextTokenOrNull(parserContext)) {
+  const parseLoop = (): Result<Node[], TemplateError> => {
+    const tok = nextTokenOrNull(parserContext);
+    if (!tok) { return ok(buf); }
     const continueR = handleToken(parserContext, tok, buf, breakOn);
     if (isErr(continueR)) { return continueR; }
-    if (!continueR.value) {
-      break;
-    }
-  }
+    if (!continueR.value) { return ok(buf); }
+    return parseLoop();
+  };
 
-  return ok(buf);
+  return parseLoop();
 };
 
 export { parseUntilBlocks, parseNodes };

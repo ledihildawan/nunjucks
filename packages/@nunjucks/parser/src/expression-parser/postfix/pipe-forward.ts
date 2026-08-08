@@ -18,16 +18,19 @@ export const parseFilterCallName = (parserContext: ParserContext): Result<Node, 
   const tokR = expect(parserContext, TOKEN_SYMBOL);
   if (isErr(tokR)) { return tokR; }
   const tok = tokR.value;
-  let name = isSymbolToken(tok) ? tok.value : String(tok.value);
+  const initialName = isSymbolToken(tok) ? tok.value : String(tok.value);
 
-  while (skipValue(parserContext, TOKEN_OPERATOR, '.')) {
+  const buildName = (name: string): Result<string, TemplateError> => {
+    if (!skipValue(parserContext, TOKEN_OPERATOR, '.')) { return ok(name); }
     const symR = expect(parserContext, TOKEN_SYMBOL);
     if (isErr(symR)) { return symR; }
     const sym = symR.value;
-    name += `.${isSymbolToken(sym) ? sym.value : String(sym.value)}`;
-  }
+    return buildName(`${name}.${isSymbolToken(sym) ? sym.value : String(sym.value)}`);
+  };
 
-  return ok(symbol(loc(tok), name));
+  const nameR = buildName(initialName);
+  if (isErr(nameR)) { return nameR; }
+  return ok(symbol(loc(tok), nameR.value));
 };
 
 export const parseFilterCallArgs = (parserContext: ParserContext, node: Node): Result<readonly Node[], TemplateError> => {
@@ -44,25 +47,26 @@ export const parseFilterCallArgs = (parserContext: ParserContext, node: Node): R
 };
 
 export const parsePipeForward = (parserContext: ParserContext, node: Node): Result<Node, TemplateError> => {
-  let current = node;
-
-  while (skip(parserContext, TOKEN_PIPEFORWARD)) {
+  const parseLoop = (current: Node): Result<Node, TemplateError> => {
+    if (!skip(parserContext, TOKEN_PIPEFORWARD)) { return ok(current); }
     const nameR = parseFilterCallName(parserContext);
     if (isErr(nameR)) { return nameR; }
     const argsR = parseFilterCallArgs(parserContext, current);
     if (isErr(argsR)) { return argsR; }
 
-    current = pipe(
-      loc(nameR.value),
-      {
-        name: nameR.value,
-        args: nodeList(
-          loc(nameR.value),
-          [current, ...argsR.value]
-        ).children,
-      }
+    return parseLoop(
+      pipe(
+        loc(nameR.value),
+        {
+          name: nameR.value,
+          args: nodeList(
+            loc(nameR.value),
+            [current, ...argsR.value]
+          ).children,
+        }
+      )
     );
-  }
+  };
 
-  return ok(current);
+  return parseLoop(node);
 };

@@ -112,20 +112,24 @@ export const parseFrom = (parserContext: ParserContext): Result<Node, TemplateEr
       fromTok.colno);
   }
 
-  let names: ChildrenNode = nodeList(loc(fromTok));
-  let withContext: boolean | null | undefined;
-
-  for (;;) {
-    const iterR = parseFromImportIteration(parserContext, names, fromTok);
+  const importLoop = (
+    accNames: ChildrenNode,
+    accWithContext: boolean | null | undefined
+  ): Result<{ names: ChildrenNode; withContext: boolean | null | undefined }, TemplateError> => {
+    const iterR = parseFromImportIteration(parserContext, accNames, fromTok);
     if (isErr(iterR)) { return iterR; }
-    if (iterR.value.done) { break; }
-    names = iterR.value.names;
-    withContext = iterR.value.withContext;
-  }
+    if (iterR.value.done) {
+      return ok({ names: accNames, withContext: accWithContext });
+    }
+    return importLoop(iterR.value.names, iterR.value.withContext);
+  };
+
+  const loopR = importLoop(nodeList(loc(fromTok)), undefined);
+  if (isErr(loopR)) { return loopR; }
 
   return ok(fromImportNode(loc(fromTok), {
     template: templateR.value,
-    names,
-    withContext: withContext ?? false,
+    names: loopR.value.names,
+    withContext: loopR.value.withContext ?? false,
   }));
 };
