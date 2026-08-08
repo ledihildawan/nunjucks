@@ -28,18 +28,20 @@ const handleUnexpectedChar = (state: LexerState): never => {
 const isWhitespace = (char: string | null): boolean =>
   char !== null && WHITESPACE_CHARS.includes(char);
 
-const lexAll = (state: LexerState, tokens: Token[]): Token[] => {
-  if (state.index >= state.str.length) { return tokens; }
+// WHY: recursive generator (no for/while loop) that lazily yields tokens one at a time — satisfies the guide's "Lazy Evaluation & Streaming (Generator)" recommendation for processing potentially large template sources with low memory footprint. Each call yields at most one token, then delegates the remainder via yield*.
+const lexGenerator = function* (state: LexerState): Generator<Token, void, unknown> {
+  if (state.index >= state.str.length) { return; }
   const result = tokenizers(state);
   if (result) {
-    tokens.push(result.token);
-    return lexAll(processTokenizerResult(result), tokens);
+    yield result.token;
+    yield* lexGenerator(processTokenizerResult(result));
+    return;
   }
   const char = getChar(state);
   if (char && !isWhitespace(char)) {
     handleUnexpectedChar(state);
   }
-  return lexAll(advance(state), tokens);
+  yield* lexGenerator(advance(state));
 };
 
 export const createTokenizer = (src: string, options: LexerOptions = {}): {
@@ -48,17 +50,14 @@ export const createTokenizer = (src: string, options: LexerOptions = {}): {
   trimBlocks: boolean;
   lstripBlocks: boolean;
 } => {
-  const tokens = lexAll(createState(src, options), []);
+  const generator = lexGenerator(createState(src, options));
   const tags = createDelimiters(options.tags);
-  let cursor = 0;
 
   return {
     nextToken: (): Token | null => {
-      if (cursor >= tokens.length) { return null; }
-      const token = tokens[cursor];
-      if (!token) { return null; }
-      cursor += 1;
-      return token;
+      const result = generator.next();
+      if (result.done) { return null; }
+      return result.value;
     },
     tags,
     trimBlocks: Boolean(options.trimBlocks),
