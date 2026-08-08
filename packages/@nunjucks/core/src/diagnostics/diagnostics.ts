@@ -1,5 +1,5 @@
 import { createLog, normalizeErrorMetadata, type TemplateError } from '@nunjucks/error-formatter';
-import { resolveLocation } from './error-location.ts';
+import { resolveLocation, type LocationInputs, type CallerLocation } from './error-location.ts';
 import { MATCH_ANY_RE, isKeyedObject, type Phase } from '@nunjucks/shared';
 import { DEFAULT_IDE } from '@nunjucks/error-renderer';
 import type { LineBase } from '@nunjucks/error-catalog';
@@ -12,6 +12,7 @@ interface DiagnosticsConfig {
   jsCallerErrorCol?: number | null;
   callerFile?: string | null;
   callerLocation?: { fileName: string; lineNumber?: number | null; columnNumber?: number | null } | null;
+  callerFrames?: readonly CallerLocation[] | null;
   dev?: boolean;
   ide?: string;
   lineno?: number | null;
@@ -157,6 +158,29 @@ const resolveEffectiveBlockedKeys = (err: unknown, config: DiagnosticsConfig): r
   return config.blockedContextKeys ?? null;
 };
 
+interface LocationInputsBuild {
+  config: DiagnosticsConfig;
+  template: string | null;
+  metadata: ReturnType<typeof normalizeErrorMetadata>;
+}
+
+const buildLocationInputs = ({ config, template, metadata }: LocationInputsBuild): LocationInputs => ({
+  template,
+  templatePath: config.templatePath ?? null,
+  jsCaller: config.jsCaller ?? null,
+  jsCallerErrorLine: config.jsCallerErrorLine ?? null,
+  jsCallerErrorCol: config.jsCallerErrorCol ?? null,
+  callerFile: config.callerFile ?? null,
+  callerLocation: config.callerLocation ?? null,
+  callerFrames: config.callerFrames ?? null,
+  errLineno: metadata.lineno,
+  errColno: metadata.colno,
+  errLineBase: metadata.lineBase,
+  lineno: config.lineno ?? null,
+  colno: config.colno ?? null,
+  subject: metadata.subject
+});
+
 export const wrapWithLog = async (
   err: unknown,
   config: DiagnosticsConfig,
@@ -170,21 +194,7 @@ export const wrapWithLog = async (
     renderContext: renderContext as Record<string, unknown> | null
   });
 
-  const resolved = await resolveLocation({
-    template,
-    templatePath: config.templatePath ?? null,
-    jsCaller: config.jsCaller ?? null,
-    jsCallerErrorLine: config.jsCallerErrorLine ?? null,
-    jsCallerErrorCol: config.jsCallerErrorCol ?? null,
-    callerFile: config.callerFile ?? null,
-    callerLocation: config.callerLocation ?? null,
-    errLineno: initialMetadata.lineno,
-    errColno: initialMetadata.colno,
-    errLineBase: initialMetadata.lineBase,
-    lineno: config.lineno ?? null,
-    colno: config.colno ?? null,
-    subject: initialMetadata.subject
-  });
+  const resolved = await resolveLocation(buildLocationInputs({ config, template, metadata: initialMetadata }));
 
   const { lineno, colno, lineBase, templatePath, sourceContent, sourceStartLine, preferCallerLocation } = resolved;
   const errSnapshot = extractErrorSnapshot(err);

@@ -3,7 +3,7 @@ import { validateRender, validateTemplateSource } from './render-validation.ts';
 import { getLoader } from '../engine.ts';
 import type { RenderConfig } from './render-types.ts';
 import { execute, createFrame, withTimeout } from '@nunjucks/runtime';
-import { getCallerFile, getCallerLocation } from './caller-file.ts';
+import { getCallerFrames } from './caller-file.ts';
 import { ok, err, isErr, type Result } from '@nunjucks/shared';
 import { injectWarningsScript, type TemplateWarning, type TemplateError } from '@nunjucks/log';
 import { wrapWithLog } from '../diagnostics/diagnostics.ts';
@@ -85,10 +85,14 @@ interface RenderOptions extends Partial<GlobalConfig> {
 
 const render = async (template: string, { context = {}, ...options }: RenderOptions = {}): Promise<Result<string, TemplateError>> => {
   const baseConfig = setupRenderConfig(options);
+  const callerFrames = baseConfig.callerFrames ?? getCallerFrames();
+  const primaryCaller = callerFrames[0] ?? null;
   const config: RenderConfig = {
     ...baseConfig,
-    callerFile: baseConfig.callerFile ?? getCallerFile(),
-    callerLocation: baseConfig.callerLocation ?? getCallerLocation(),
+    callerFrames,
+    // WHY: callerFile/callerLocation are the innermost caller (frame 0) for legacy consumers (resolveTemplateName, diagnostics). Derived from the single stack capture above instead of capturing the stack again.
+    callerFile: baseConfig.callerFile ?? primaryCaller?.fileName ?? 'unknown',
+    callerLocation: baseConfig.callerLocation ?? primaryCaller,
   };
 
   const renderValidation = await validateRender(template, { config, context });

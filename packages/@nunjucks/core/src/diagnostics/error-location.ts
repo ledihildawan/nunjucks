@@ -1,175 +1,150 @@
 
 import { readFile } from 'node:fs/promises';
 
+import { reduce } from 'remeda';
 import { extractCallerPosition } from './error-location-matching.ts';
-import type { LocationInputs, ResolvedLocation } from './error-location-types.ts';
+import type { CallerLocation, LocationInputs, ResolvedLocation } from './error-location-types.ts';
 
-interface CallerInfo {
+interface CallerCandidate {
+  fileName: string;
+  lineNumber: number | null;
+  columnNumber: number | null;
+}
+
+interface CallerSearchInput {
   template: string | null;
-  subject: string | null;
-  configLineno: number | null;
-  configColno: number | null;
   errLineno: number | null;
   errColno: number | null;
-  hasErrorLocation: boolean;
-  hasCallerLocation: boolean;
-  preferCallerLocation: boolean;
-  activeCaller: string | null;
-  activeCallerLine: number | null;
-  activeCallerCol: number | null;
-  finalPath: string | null;
+  subject: string | null;
 }
 
-interface CallerFlags {
-  useExplicitCaller: boolean;
-  useAutoCaller: boolean;
-  preferCallerLocation: boolean;
+interface CandidateMatch {
+  source: string;
+  line: number;
+  col: number;
+  filePath: string;
 }
 
-const getCallerFlags = (inputs: LocationInputs): CallerFlags => {
-  const { templatePath = null, jsCaller = null, jsCallerErrorLine = null, callerFile = null, callerLocation = null } = inputs;
+type CallerSearchOutcome =
+  | { status: 'matched'; match: CandidateMatch }
+  | { status: 'unreadable'; candidate: CallerCandidate }
+  | { status: 'not-found' };
+
+const callerCandidateFromFrame = (frame: CallerLocation): CallerCandidate => ({
+  fileName: frame.fileName,
+  lineNumber: frame.lineNumber,
+  columnNumber: frame.columnNumber,
+});
+
+const buildCallerCandidates = (inputs: LocationInputs): CallerCandidate[] => {
+  const { jsCaller = null, jsCallerErrorLine = null, jsCallerErrorCol = null, callerFrames = null, callerFile = null, callerLocation = null } = inputs;
+  const explicitCaller = jsCaller !== null
+    ? [{ fileName: jsCaller, lineNumber: jsCallerErrorLine, columnNumber: jsCallerErrorCol }]
+    : [];
+  const autoCallers = callerFrames && callerFrames.length > 0
+    ? callerFrames.map(callerCandidateFromFrame)
+    : (callerFile !== null && callerFile !== 'unknown' && callerLocation !== null
+      ? [{ fileName: callerFile, lineNumber: callerLocation.lineNumber ?? null, columnNumber: callerLocation.columnNumber ?? null }]
+      : []);
+  return [...explicitCaller, ...autoCallers];
+};
+
+const hasAutoCaller = (inputs: LocationInputs): boolean => {
+  const { jsCaller = null, callerFrames = null, callerFile = null, callerLocation = null } = inputs;
+  if (jsCaller !== null) { return false; }
+  if (callerFrames && callerFrames.length > 0) { return true; }
+  return callerFile !== null && callerFile !== 'unknown' && callerLocation !== null;
+};
+
+const resolvePreferCallerLocation = (inputs: LocationInputs): boolean => {
+  const { templatePath = null, jsCaller = null, jsCallerErrorLine = null } = inputs;
+  if (templatePath) { return false; }
   const useExplicitCaller = jsCaller !== null && jsCallerErrorLine !== null;
-  const useAutoCaller =
-    !templatePath &&
-    jsCaller === null &&
-    callerFile !== null &&
-    callerFile !== 'unknown' &&
-    callerLocation !== null;
-  return { useExplicitCaller, useAutoCaller, preferCallerLocation: !templatePath && (useExplicitCaller || useAutoCaller) };
+  return useExplicitCaller || hasAutoCaller(inputs);
 };
 
-const getActiveCallerInfo = (inputs: LocationInputs, flags: CallerFlags) => {
-  const { useExplicitCaller, useAutoCaller } = flags;
-  const { jsCaller = null, jsCallerErrorLine = null, jsCallerErrorCol = null, callerFile = null, callerLocation = null } = inputs;
-  const activeCaller = useExplicitCaller ? jsCaller : (useAutoCaller ? callerFile ?? null : null);
-  const activeCallerLine = useExplicitCaller ? jsCallerErrorLine : (useAutoCaller ? callerLocation?.lineNumber ?? null : null);
-  const activeCallerCol = useExplicitCaller ? jsCallerErrorCol : (useAutoCaller ? callerLocation?.columnNumber ?? null : null);
-  return { activeCaller, activeCallerLine, activeCallerCol };
-};
-
-const resolveCallerInfo = (inputs: LocationInputs): CallerInfo => {
-  const {
-    template = null,
-    templatePath = null,
-    callerFile = null,
-    errLineno = null,
-    errColno = null,
-    lineno: configLineno = null,
-    colno: configColno = null,
-    subject = null,
-    errLineBase = null,
-  } = inputs;
-
-  const flags = getCallerFlags(inputs);
-  const { preferCallerLocation } = flags;
-  const { activeCaller, activeCallerLine, activeCallerCol } = getActiveCallerInfo(inputs, flags);
-
-  const hasErrorLocation = errLineno !== null;
-  const hasCallerLocation = hasErrorLocation && errLineBase === 'one';
-  const finalPath = preferCallerLocation
-    ? activeCaller ?? templatePath ?? null
-    : templatePath ?? callerFile ?? null;
-
-  return {
-    template, subject, configLineno, configColno, errLineno, errColno,
-    hasErrorLocation, hasCallerLocation, preferCallerLocation,
-    activeCaller, activeCallerLine, activeCallerCol, finalPath,
-  };
-};
-
-interface CallerFilePositionInput {
-  activeCaller: string;
-  template: string | null;
-  errLineno: number | null;
-  errColno: number | null;
-  subject: string | null;
-  activeCallerLine: number | null;
+interface CandidateRead {
+  candidate: CallerCandidate;
+  content: string | null;
 }
 
-const resolveCallerFilePosition = async (
-  input: CallerFilePositionInput,
-): Promise<{ source: string | null; line: number | null; col: number | null }> => {
-  const { activeCaller, template, errLineno, errColno, subject, activeCallerLine } = input;
-  let fileContent: string | null = null;
-  try {
-    fileContent = await readFile(activeCaller, 'utf8');
-  } catch {
-    fileContent = null;
-  }
-  if (fileContent === null) {
-    return { source: null, line: null, col: null };
-  }
-  const position = extractCallerPosition({ content: fileContent, template, errLineno, errColno, subject, preferredLine: activeCallerLine });
-  if (!position) {
-    return { source: null, line: null, col: null };
-  }
-  return { source: fileContent, line: position.line, col: position.col };
-};
-
-const resolveCallerContent = async (info: CallerInfo): Promise<{
-  sourceContent: string | null;
-  callerLine: number | null;
-  callerCol: number | null;
-}> => {
-  const baseCallerLine = info.hasCallerLocation ? info.errLineno : info.activeCallerLine;
-  const baseCallerCol = info.hasCallerLocation ? info.errColno : info.activeCallerCol;
-
-  if (info.preferCallerLocation && info.activeCaller && !info.hasCallerLocation) {
-    const { source, line, col } = await resolveCallerFilePosition({
-      activeCaller: info.activeCaller, template: info.template, errLineno: info.errLineno, errColno: info.errColno, subject: info.subject, activeCallerLine: info.activeCallerLine
-    });
-    if (source !== null) {
-      return { sourceContent: source, callerLine: line, callerCol: col };
+const readCandidateContents = (candidates: readonly CallerCandidate[]): Promise<CandidateRead[]> =>
+  Promise.all(candidates.map(async (candidate) => {
+    try {
+      const content = await readFile(candidate.fileName, 'utf8');
+      return { candidate, content };
+    } catch {
+      return { candidate, content: null };
     }
-  }
+  }));
 
-  return { sourceContent: info.template, callerLine: baseCallerLine, callerCol: baseCallerCol };
-};
+const INITIAL_SEARCH_OUTCOME: CallerSearchOutcome = { status: 'not-found' };
 
-const pickCoords = (info: CallerInfo, coords: { callerLine: number | null; callerCol: number | null }): {
-  lineno: number | null;
-  colno: number | null;
-  lineBase: 'zero' | 'one';
-} => {
-  const { callerLine, callerCol } = coords;
-  if (info.preferCallerLocation) {
+const foldCandidateSearch = (reads: readonly CandidateRead[], searchInput: CallerSearchInput): CallerSearchOutcome =>
+  reduce(reads, (outcome: CallerSearchOutcome, { candidate, content }: CandidateRead) => {
+    if (outcome.status === 'matched') { return outcome; }
+    if (content === null) {
+      return outcome.status === 'unreadable' ? outcome : { status: 'unreadable', candidate };
+    }
+    const position = extractCallerPosition({ content, template: searchInput.template, errLineno: searchInput.errLineno, errColno: searchInput.errColno, subject: searchInput.subject, preferredLine: candidate.lineNumber });
+    if (position) {
+      return { status: 'matched', match: { source: content, line: position.line, col: position.col, filePath: candidate.fileName } };
+    }
+    return outcome;
+  }, INITIAL_SEARCH_OUTCOME);
+
+const resolveCallerLocation = async (inputs: LocationInputs, candidates: readonly CallerCandidate[]): Promise<ResolvedLocation | null> => {
+  if (candidates.length === 0) { return null; }
+  const reads = await readCandidateContents(candidates);
+  const outcome = foldCandidateSearch(reads, { template: inputs.template ?? null, errLineno: inputs.errLineno ?? null, errColno: inputs.errColno ?? null, subject: inputs.subject ?? null });
+
+  if (outcome.status === 'matched') {
     return {
-      lineno: callerLine ?? info.configLineno ?? info.errLineno ?? null,
-      colno: callerCol ?? info.configColno ?? info.errColno ?? null,
-      lineBase: 'one',
+      sourceContent: outcome.match.source, sourceStartLine: 1,
+      lineno: outcome.match.line, colno: outcome.match.col, lineBase: 'one',
+      templatePath: outcome.match.filePath, preferCallerLocation: true,
     };
   }
-  if (info.hasErrorLocation && info.errLineno !== null) {
-    return { lineno: info.errLineno, colno: info.errColno, lineBase: 'zero' };
+  if (outcome.status === 'unreadable') {
+    // WHY: every candidate file was unreadable (e.g. virtual/non-existent paths), so the template literal could not be verified against any of them. Preserve the first unreadable candidate's coords for the location display rather than discarding them.
+    return {
+      sourceContent: inputs.template ?? null, sourceStartLine: 1,
+      lineno: outcome.candidate.lineNumber, colno: outcome.candidate.columnNumber, lineBase: 'one',
+      templatePath: outcome.candidate.fileName, preferCallerLocation: true,
+    };
   }
-  return { lineno: info.configLineno, colno: info.configColno, lineBase: 'zero' };
+  // WHY: 'not-found' — all readable candidate files lack the template literal, and there is nowhere else to look. Fall back to the template's own coords.
+  return null;
 };
 
-const resolveSourceAndCoords = async (info: CallerInfo): Promise<{
-  sourceContent: string | null;
-  sourceStartLine: number;
-  lineno: number | null;
-  colno: number | null;
-  lineBase: 'zero' | 'one';
-}> => {
-  const { sourceContent, callerLine, callerCol } = await resolveCallerContent(info);
-  const resolvedCoords = pickCoords(info, { callerLine, callerCol });
-  return { sourceContent, sourceStartLine: 1, ...resolvedCoords };
+const resolveTemplateLocation = (inputs: LocationInputs): ResolvedLocation => {
+  const errLineno = inputs.errLineno ?? null;
+  const errLineBase = inputs.errLineBase ?? null;
+  const hasErrorLocation = errLineno !== null;
+  const hasCallerLocation = hasErrorLocation && errLineBase === 'one';
+  if (hasErrorLocation) {
+    const lineBase = hasCallerLocation ? 'one' : 'zero';
+    return {
+      sourceContent: inputs.template ?? null, sourceStartLine: 1,
+      lineno: errLineno, colno: inputs.errColno ?? null, lineBase,
+      templatePath: inputs.templatePath ?? null, preferCallerLocation: false,
+    };
+  }
+  return {
+    sourceContent: inputs.template ?? null, sourceStartLine: 1,
+    lineno: inputs.lineno ?? null, colno: inputs.colno ?? null, lineBase: 'zero',
+    templatePath: inputs.templatePath ?? null, preferCallerLocation: false,
+  };
 };
 
 const resolveLocation = async (inputs: LocationInputs): Promise<ResolvedLocation> => {
-  const info = resolveCallerInfo(inputs);
-  const { sourceContent, sourceStartLine, lineno, colno, lineBase } = await resolveSourceAndCoords(info);
-  return {
-    lineno,
-    colno,
-    lineBase,
-    templatePath: info.finalPath,
-    sourceContent,
-    sourceStartLine,
-    preferCallerLocation: info.preferCallerLocation,
-  };
+  if (resolvePreferCallerLocation(inputs)) {
+    const candidates = buildCallerCandidates(inputs);
+    const callerResolved = await resolveCallerLocation(inputs, candidates);
+    if (callerResolved) { return callerResolved; }
+  }
+  return resolveTemplateLocation(inputs);
 };
 
 export { resolveLocation };
-export type { LocationInputs, ResolvedLocation };
+export type { CallerLocation, LocationInputs, ResolvedLocation };

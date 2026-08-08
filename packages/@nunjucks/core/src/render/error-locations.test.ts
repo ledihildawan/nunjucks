@@ -2,6 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { render } from './render.ts';
+import { renderViaExternalWrapper } from './fixtures/external-wrapper.ts';
 import { formatError } from '@nunjucks/log';
 import { isErr } from '@nunjucks/shared';
 
@@ -193,5 +194,21 @@ describe('inline template error location pointing', () => {
       .resolves.toBe('0,2,4');
     await expect(renderTemplate('{{ items[1::2] }}', { items: [0, 1, 2, 3, 4] }))
       .resolves.toBe('1,3');
+  });
+
+  test('source trace walks up past an external wrapper module to the file owning the literal', async () => {
+    const { filePath, sourceLines: source } = await getCurrentTestSource();
+    // WHY: the literal is authored HERE (this test file), but render() is invoked through renderViaExternalWrapper in a different module — exactly the Express renderTemplate-wrapper shape. The auto-caller must follow the stack up to this file, not stop at the wrapper.
+    const err = await renderViaExternalWrapper({ template: '{{ product.name }}', context: { product: { test: 'test' } }, config: { dev: true, undefined: 'strict' } }).catch((e) => e);
+    const callerLine = source[err.lineno - 1] ?? '';
+    const expectedLine = source.findIndex((line) => line.includes("renderViaExternalWrapper({ template: '{{ product.name }}'")) + 1;
+
+    expect(err.code).toBe('UNDEFINED_PROPERTY');
+    expect(err.lineBase).toBe('one');
+    expect(err.templatePath).toBe(filePath);
+    expect(err.templateName).toBe(filePath);
+    expect(expectedLine).toBeGreaterThan(0);
+    expect(err.lineno).toBe(expectedLine);
+    expect(err.colno).toBe(callerLine.indexOf('product.name') + 'product.'.length + 1);
   });
 });

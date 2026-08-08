@@ -41,6 +41,7 @@ interface RenderConfig {
   jsCallerErrorCol?: number | null;
   callerFile?: string | null;
   callerLocation?: CallerLocation | null;
+  callerFrames?: readonly CallerLocation[] | null;
   customFilters?: Record<string, unknown>;
   customGlobals?: Record<string, unknown>;
   filters?: Record<string, (...args: unknown[]) => unknown>;

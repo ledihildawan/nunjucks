@@ -1,47 +1,42 @@
+import type { CallerLocation } from '../diagnostics/error-location-types.ts';
+
 const CALLER_INDEX = 3;
-const MIN_STACK_LENGTH = 4;
+const MAX_CALLER_FRAMES = 6;
 
-export interface CallerLocation {
-  fileName: string;
-  lineNumber: number | null;
-  columnNumber: number | null;
-}
+export type { CallerLocation };
 
-
-const captureCaller = (): NodeJS.CallSite | null => {
+// WHY: stack capture is the impure shell of this module (it mutates Error.prepareStackTrace to read V8 CallSites). Kept isolated here so the rest of the module stays pure.
+const captureCallerStack = (): NodeJS.CallSite[] => {
   const original = Error.prepareStackTrace;
   let captured: NodeJS.CallSite[] | undefined;
   Error.prepareStackTrace = (_, callsite) => { captured = callsite; return callsite; };
   void new Error('caller').stack;
   Error.prepareStackTrace = original;
 
-  if ((captured?.length ?? 0) >= MIN_STACK_LENGTH) {
-    return captured?.[CALLER_INDEX] ?? null;
-  }
-  return null;
+  return captured ?? [];
 };
 
-export const getCallerFile = (): string => {
-  const caller = captureCaller();
-  if (caller && typeof caller.getFileName === 'function') {
-    const fileName = caller.getFileName();
-    if (fileName) {
-      return fileName;
-    }
-  }
-
-  return 'unknown';
+const isInternalCallerFile = (fileName: string | null | undefined): boolean => {
+  if (!fileName) { return true; }
+  if (fileName.startsWith('node:')) { return true; }
+  return fileName.includes('node_modules');
 };
 
-export const getCallerLocation = (): CallerLocation => {
-  const caller = captureCaller();
-  if (caller && typeof caller.getFileName === 'function') {
-    return {
-      fileName: caller.getFileName() ?? 'unknown',
-      lineNumber: caller.getLineNumber?.() ?? null,
-      columnNumber: caller.getColumnNumber?.() ?? null
-    };
-  }
-
-  return { fileName: 'unknown', lineNumber: null, columnNumber: null };
+const callsiteToCallerLocation = (site: NodeJS.CallSite): CallerLocation | null => {
+  const fileName = typeof site.getFileName === 'function' ? site.getFileName() : null;
+  if (!fileName || isInternalCallerFile(fileName)) { return null; }
+  return {
+    fileName,
+    lineNumber: typeof site.getLineNumber === 'function' ? (site.getLineNumber() ?? null) : null,
+    columnNumber: typeof site.getColumnNumber === 'function' ? (site.getColumnNumber() ?? null) : null,
+  };
 };
+
+// WHY: render() is often invoked through one or more user wrappers (e.g. an Express renderTemplate helper), so the template literal lives in a frame above the immediate caller. Capturing a small slice of the stack lets the resolver walk up until it finds the file that actually contains the literal, instead of fixating on the wrapper where render() is called.
+const getCallerFrames = (): CallerLocation[] =>
+  captureCallerStack()
+    .slice(CALLER_INDEX, CALLER_INDEX + MAX_CALLER_FRAMES)
+    .map(callsiteToCallerLocation)
+    .filter((frame): frame is CallerLocation => frame !== null);
+
+export { getCallerFrames };

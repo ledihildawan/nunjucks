@@ -1,3 +1,9 @@
+interface CallerLocation {
+  fileName: string;
+  lineNumber: number | null;
+  columnNumber: number | null;
+}
+
 interface LocationInputs {
   template?: string | null;
   templatePath?: string | null;
@@ -6,6 +12,7 @@ interface LocationInputs {
   jsCallerErrorCol?: number | null;
   callerFile?: string | null;
   callerLocation?: { lineNumber?: number | null; columnNumber?: number | null } | null;
+  callerFrames?: readonly CallerLocation[] | null;
   errLineno?: number | null;
   errColno?: number | null;
   errLineBase?: 'zero' | 'one' | null;
@@ -34,4 +41,4 @@ interface TemplateMatch {
   template: string;
 }
 
-export type { LocationInputs, ResolvedLocation, SourcePosition, TemplateMatch };
+export type { CallerLocation, LocationInputs, ResolvedLocation, SourcePosition, TemplateMatch };
