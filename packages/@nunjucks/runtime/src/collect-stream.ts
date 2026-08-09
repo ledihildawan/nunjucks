@@ -1,21 +1,21 @@
-// WHY: generator-rendering drain helpers (Option B). Root renders as an async generator that yields string fragments and returns the post-render context. capture/component bodies reuse the same generator model. These helpers drain generators back into values for blocking consumers. The loops are permitted per the stream-processing exemption (isolated pure abstractions draining async streams) and are stack-safe for large templates, unlike recursive drains which would overflow on thousands of chunks.
+// WHY: generator-rendering drain helpers (Option B). Root renders as an async generator that yields string fragments and returns the post-render context. capture/component bodies reuse the same generator model. These helpers drain generators back into values for blocking consumers. Array+join is used instead of += concatenation to avoid O(n²) string copies on large templates with many chunks.
 const collectString = async (stream: AsyncIterable<string>): Promise<string> => {
-  let output = '';
+  const chunks: string[] = [];
   for await (const chunk of stream) {
-    output += chunk;
+    chunks.push(chunk);
   }
-  return output;
+  return chunks.join('');
 };
 
 // WHY: like collectString but also captures the generator's return value — the post-render context the root generator returns (so import/getExported can read setVariable/addExport writes). A manual .next() loop is used instead of for-await because for-await does not expose the generator's return value.
 const collectStream = async (stream: AsyncGenerator<string, unknown>): Promise<{ output: string; context: unknown }> => {
-  let output = '';
+  const chunks: string[] = [];
   let step = await stream.next();
   while (!step.done) {
-    output += step.value;
+    chunks.push(step.value);
     step = await stream.next();
   }
-  return { output, context: step.value };
+  return { output: chunks.join(''), context: step.value };
 };
 
 export { collectString, collectStream };

@@ -192,16 +192,29 @@ const formatErrorMarker = (error: TemplateError, options: { ide?: string; conten
   return toHtmlMarker(error, { sourceTrace: trace, ide });
 };
 
-// WHY: wraps createRenderStream with a per-render enrichment cache so multiple sentinels in the same render share the same source-file read (resolveLocation reads the caller's file). Without caching, N errors = N file reads of the same file.
+// WHY: per-render enrichment cache. The first sentinel does full I/O (resolveLocation reads caller source files). Subsequent sentinels reuse the resolved location data (sourceContent, templatePath, sourceStartLine) and skip frame walking — eliminates N redundant file reads for N errors in the same render.
 const createCachedEnrichment = (prepared: PreparedTemplate) => {
-  let cachedSourceContent: string | null | undefined;
+  let locationCache: { sourceContent: string | null; templatePath: string | null; sourceStartLine: number; lineBase: string } | null = null;
+
   return async (sentinel: StreamErrorSentinel): Promise<string> => {
-    if (cachedSourceContent === undefined) {
+    if (!locationCache) {
       const enriched = await wrapWithLog(sentinel.error, prepared.resolvedConfig, { template: prepared.templateSource, renderContext: prepared.context });
-      cachedSourceContent = enriched.sourceContent ?? null;
+      locationCache = {
+        sourceContent: enriched.sourceContent ?? null,
+        templatePath: enriched.templatePath ?? null,
+        sourceStartLine: enriched.sourceStartLine ?? 1,
+        lineBase: enriched.lineBase ?? 'zero',
+      };
       return formatErrorMarker(enriched);
     }
-    const enriched = await wrapWithLog(sentinel.error, prepared.resolvedConfig, { template: prepared.templateSource, renderContext: prepared.context });
+    const enriched = await wrapWithLog(
+      sentinel.error,
+      { ...prepared.resolvedConfig, callerFrames: null, callerLocation: null, jsCaller: null },
+      { template: prepared.templateSource, renderContext: prepared.context },
+    );
+    enriched.sourceContent = locationCache.sourceContent ?? undefined;
+    enriched.templatePath = locationCache.templatePath ?? enriched.templatePath;
+    enriched.sourceStartLine = locationCache.sourceStartLine;
     return formatErrorMarker(enriched);
   };
 };

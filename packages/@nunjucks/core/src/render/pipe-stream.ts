@@ -1,5 +1,5 @@
 import type { RenderStreamResult } from './render-types.ts';
-import { withStreamTimeout } from './render-stream-adapters.ts';
+import { withStreamTimeout, coalesceStream } from './render-stream-adapters.ts';
 import { formatError, type TemplateError } from '@nunjucks/log';
 import { formatErrorMarker } from './render.ts';
 
@@ -19,6 +19,7 @@ interface PipeRenderStreamOptions {
   contentType?: 'html' | 'json' | 'text';
   dev?: boolean;
   timeoutMs?: number;
+  coalesceBytes?: number;
   ide?: string;
   logError?: boolean;
   signal?: AbortSignal;
@@ -98,7 +99,7 @@ const pipeRenderStream = async (
   sink: PipeSink,
   options: PipeRenderStreamOptions = {}
 ): Promise<void> => {
-  const { contentType = 'html', dev = false, timeoutMs = 0, ide = 'vscode', logError = dev, signal, onChunk, onError, onComplete } = options;
+  const { contentType = 'html', dev = false, timeoutMs = 0, coalesceBytes = 0, ide = 'vscode', logError = dev, signal, onChunk, onError, onComplete } = options;
   const mimeType = CONTENT_TYPE_MAP[contentType] ?? 'text/html; charset=utf-8';
   const stats = { chunks: 0, bytes: 0 };
   let errorCount = 0;
@@ -129,7 +130,8 @@ const pipeRenderStream = async (
   sink.setHeader('Cache-Control', 'no-cache, no-transform');
   sink.flushHeaders?.();
 
-  const stream = timeoutMs > 0 ? withStreamTimeout(result.stream, timeoutMs) : result.stream;
+  let stream = timeoutMs > 0 ? withStreamTimeout(result.stream, timeoutMs) : result.stream;
+  stream = coalesceStream(stream, coalesceBytes);
 
   const onAbort = (): void => { stream.return?.(undefined); };
   signal?.addEventListener('abort', onAbort, { once: true });
