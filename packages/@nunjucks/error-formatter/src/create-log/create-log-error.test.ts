@@ -4,8 +4,8 @@ import type { ErrorDefinitionEntry, NormalizedErrorContext, NormalizedWarningCon
 import { TEMPLATE_ERROR } from './create-log-types.ts';
 
 const def: ErrorDefinitionEntry = { name: 'MY_CODE', message: 'something broke', pattern: /x/ };
-const normErr: NormalizedErrorContext = { lineno: 3, colno: 7, phase: 'render', templateName: 't.njk', lineBase: 'zero' };
-const normWarn: NormalizedWarningContext = { lineno: 1, colno: 1, phase: 'render', templateName: null, lineBase: 'zero', varName: 'x', undefinedMode: 'chainable' };
+const normErr: NormalizedErrorContext = { lineno: 3, colno: 7, phase: 'render', templateName: 't.njk', lineBase: 'zero', timestamp: null };
+const normWarn: NormalizedWarningContext = { lineno: 1, colno: 1, phase: 'render', templateName: null, lineBase: 'zero', timestamp: null, varName: 'x', undefinedMode: 'chainable' };
 
 describe('createErrorFromDef', () => {
   test('builds a TemplateError carrying the definition identity and marker', () => {

@@ -39,6 +39,7 @@ const buildErrorSections = (input: ErrorSectionsInput): ErrorSections => {
   const { error, templatePath, lineno, colno, renderContext, version = DEFAULT_VERSION, timestamp, sourceTrace, ide = DEFAULT_IDE, verbosity = 'full', isJsCaller = false } = input;
   // WHY: fall back to error.renderContext when the caller didn't pass it explicitly — the error object carries renderContext after wrapWithLog enrichment, so callers like toHtmlMarker (via pipeRenderStream) don't need to thread it through manually.
   const effectiveRenderContext = renderContext ?? error.renderContext;
+  const effectiveTimestamp = timestamp ?? error.timestamp;
   const humanTitle = classifyAndBuildTitle(error);
   const { classified, displayLine, displayCol, displayPath } = buildErrorDisplay(error, { templatePath, lineno: lineno ?? undefined, colno: colno ?? undefined, isJsCaller });
   const locDisplay = `${shortenPath(displayPath)}:${displayLine}:${displayCol}`;
@@ -58,7 +59,7 @@ const buildErrorSections = (input: ErrorSectionsInput): ErrorSections => {
     locDisplay,
   });
   const body = buildErrorBodyContent({ verbosity, error, classified, sourceTrace, renderContext: effectiveRenderContext, ide, displayPath });
-  const footer = buildErrorFooter({ version, timestamp, verbosity, canLinkLocation, ide, displayPath, displayLine, displayCol });
+  const footer = buildErrorFooter({ version, timestamp: effectiveTimestamp, verbosity, canLinkLocation, ide, displayPath, displayLine, displayCol });
   const wrapped = buildHtmlWrapper(header, body, footer);
 
   return { header, body, footer, wrapped, message: humanTitle, severity: classified.severity, displayPath, displayLine, displayCol, locDisplay, canLinkLocation };

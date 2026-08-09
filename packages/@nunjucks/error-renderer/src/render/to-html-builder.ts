@@ -4,7 +4,7 @@ import { renderContextHtml, formatStackTraceHtml } from './internal/formatting/s
 import { resolveIdeLink, getIdeMeta } from './internal/config/ide-links.ts';
 import type { SourceTrace } from './internal/location/source-trace.ts';
 import type { ErrorLike } from './to-html-types.ts';
-import { renderBadge, SEVERITY_HEADINGS, type classifyError } from './to-html-display.ts';
+import { renderBadge, type classifyError } from './to-html-display.ts';
 
 const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined, _displayPath: string): string => {
   if (!sourceTrace || sourceTrace.lines.length === 0) { return ''; }
@@ -46,7 +46,7 @@ interface ErrorHeaderInput {
 const buildErrorHeader = ({
   humanTitle,
   category,
-  severity,
+  severity: _severity,
   phase,
   verbosity,
   displayPath,
@@ -59,9 +59,7 @@ const buildErrorHeader = ({
   const codeBadge = renderBadge('badge-error', category);
   const phaseBadge = renderBadge('badge-code', phase);
   const headerTitle = escapeHtml(humanTitle);
-  const severityText = SEVERITY_HEADINGS[severity] ?? SEVERITY_HEADINGS.error;
-  const phaseBadgePart = phaseBadge ? ` ${phaseBadge}` : '';
-  const devBadge = verbosity === 'full' ? '<span class="badge badge-dev">DEV</span>' : '';
+  const phaseBadgePart = phaseBadge ? ` <span style="margin-inline-start:auto">${phaseBadge}</span>` : '';
 
   const locationLink = canLinkLocation
     ? `<a href="${resolveIdeLink(ide, { path: displayPath, line: displayLine, col: displayCol })}" class="loc-link error-location-link">${escapeHtml(locDisplay)}</a>`
@@ -78,9 +76,7 @@ const buildErrorHeader = ({
         <line x1="12" y1="8" x2="12" y2="12"></line>
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
       </svg>
-      ${severityText}
       ${codeBadge}${phaseBadgePart}
-      ${devBadge}
     </div>
     <h1 id="err-title" class="error-title">${headerTitle}</h1>
     ${errorLocationBlock}
@@ -144,7 +140,7 @@ const buildFullErrorBody = ({
 
 interface ErrorFooterInput {
   version: string;
-  timestamp: string | undefined;
+  timestamp: string | null | undefined;
   verbosity: 'simple' | 'medium' | 'full';
   canLinkLocation: boolean;
   ide: string;

@@ -3,7 +3,7 @@ import { buildErrorHeader, buildErrorFooter, buildErrorBodyContent, buildHtmlWra
 import type { ClassifiedError, ErrorLike } from './to-html-types.ts';
 
 describe('buildErrorHeader', () => {
-  test('renders title, severity heading and an IDE link when linkable', () => {
+  test('renders title, category badge and an IDE link when linkable', () => {
     const html = buildErrorHeader({
       humanTitle: 'Boom',
       category: 'ERR_X',
@@ -19,7 +19,8 @@ describe('buildErrorHeader', () => {
     });
     expect(html).toContain('error-header');
     expect(html).toContain('Boom');
-    expect(html).toContain('Template Rendering Error');
+    expect(html).toContain('ERR_X');
+    expect(html).toContain('render');
     expect(html).toContain('loc-link');
     expect(html).toContain('vscode://file/');
   });
@@ -39,7 +40,6 @@ describe('buildErrorHeader', () => {
       locDisplay: 'a.njk:1:1',
     });
     expect(html).not.toContain('error-location');
-    expect(html).toContain('Template Warning');
   });
 });
 

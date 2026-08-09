@@ -21,6 +21,7 @@ const normalizeErrorContext = (context: ErrorContext | null | undefined): Normal
   phase: context?.phase ?? null,
   templateName: context?.templateName ?? null,
   lineBase: context?.lineBase ?? null,
+  timestamp: context?.timestamp ?? null,
 });
 
 const normalizeWarningContext = (context: WarningContext | null | undefined): NormalizedWarningContext => ({
@@ -29,6 +30,7 @@ const normalizeWarningContext = (context: WarningContext | null | undefined): No
   phase: context?.phase ?? null,
   templateName: context?.templateName ?? null,
   lineBase: context?.lineBase ?? null,
+  timestamp: context?.timestamp ?? null,
   varName: context?.varName ?? null,
   undefinedMode: context?.undefinedMode ?? 'chainable',
 });

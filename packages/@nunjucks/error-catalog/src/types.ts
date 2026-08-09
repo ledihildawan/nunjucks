@@ -15,6 +15,7 @@ export interface ErrorLike {
   lineBase?: LineBase | null;
   blockedKeys?: readonly string[];
   severity?: 'error' | 'warning' | 'info';
+  timestamp?: string | null;
 }
 
 export const isObjectValue = (value: unknown): value is ErrorLike =>
