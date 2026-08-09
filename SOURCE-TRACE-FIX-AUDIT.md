@@ -99,6 +99,21 @@ pertama yang mengandung literal. Hasil:
 6. **Dead code** — hapus `getCallerFile`/`getCallerLocation`/`captureCaller`/`MIN_STACK_LENGTH`.
 7. **Immutability** — `buildCallerCandidates` mutable `push` → spread/map.
 8. **Parameter limit** — fixture `renderViaExternalWrapper` 3-param → single options object.
+9. **Explicit error handling / zero-any** — fixture `throw result.error` + test `.catch((e) => e)` (implicit any) → fixture return `Result`, test pakai `isErr` + typed `err: TemplateError`.
+
+### Automated violation scan (evidence)
+Grep pattern-based scan across all 9 changed files:
+
+| Pattern | Hasil |
+|---|---|
+| `: any` / `as any` / `<any>` | 0 hit |
+| `for (` / `while (` (loops) | 0 hit |
+| `var` (legacy) | 0 hit |
+| `console.` | 0 hit |
+| `TODO` / `FIXME` | 0 hit |
+| `_[a-zA-Z]` (pseudo-private) | 0 hit |
+| `class` (OOP) | 0 hit |
+| `throw` (di kode saya) | 0 hit |
 
 ## 5. Test coverage (mencegah regresi)
 

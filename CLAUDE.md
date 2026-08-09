@@ -1,5 +1,7 @@
 # Nunjucks Engineering Guidelines
 
+> **Authoritative standard:** [`ARCHITECTURE.md`](./ARCHITECTURE.md) is the full, detailed Project Architecture & Coding Standards (layering taxonomy, advanced primitives, boundary validation, function design, naming). This file is the condensed cheat-sheet — when in doubt, defer to `ARCHITECTURE.md`.
+
 Monorepo of the nunjucks templating engine, split into focused `@nunjucks/*` workspaces (shared, error-catalog, error-renderer, error-formatter, log, nodes, lexer, parser, transformers, compiler, runtime, filters, loaders, validators, integrations, core). Verified compliant — 476 source files, 0 lint issues, 0 `any` violations, 1853 tests passing.
 
 ## 1. Core Architectural Principles
