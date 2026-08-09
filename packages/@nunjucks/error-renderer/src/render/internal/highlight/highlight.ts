@@ -1,4 +1,5 @@
 import { escapeHtml } from '@nunjucks/shared';
+import picocolors from 'picocolors';
 
 const LEADING_WHITESPACE_RE = /^\s+/u;
 const PLAIN_RUN_RE = /^[^<{}"'|\s]+/u;
@@ -121,5 +122,64 @@ const highlightJs = (code: string): string => {
   return loop(0, '');
 };
 
+// WHY: ANSI syntax coloring — mirrors the HTML tokenizer (SYNTAX_RULES + inTag toggle) but outputs picocolors terminal colors instead of HTML spans. Color scheme matches the HTML CSS (tag=red, delimiter=cyan, string=green, keyword=magenta, etc.) so ANSI and HTML output look consistent.
+const ANSI_COLOR_MAP: Record<string, ((text: string) => string) | undefined> = {
+  comment: (text) => picocolors.dim(picocolors.italic(text)),
+  tag: (text) => picocolors.red(text),
+  attr: (text) => picocolors.green(text),
+  delimiter: (text) => picocolors.cyan(picocolors.bold(text)),
+  pipe: (text) => picocolors.cyan(picocolors.bold(text)),
+  string: (text) => picocolors.green(text),
+  number: (text) => picocolors.yellow(text),
+  keyword: (text) => picocolors.magenta(picocolors.bold(text)),
+  variable: (text) => text,
+  operator: (text) => picocolors.gray(text),
+};
+
+const colorize = (type: string, text: string): string =>
+  (ANSI_COLOR_MAP[type] ?? ((t: string) => t))(text);
+
+interface AnsiChunk {
+  text: string;
+  length: number;
+  inTag: boolean;
+}
+
+const matchAnsiRule = (rules: readonly SyntaxRule[], rest: string, inTag: boolean): AnsiChunk | null => {
+  if (rules.length === 0) { return null; }
+  const rule = rules[0];
+  if (!rule) { return null; }
+  const matched = rest.match(rule.re)?.[0];
+  if (matched) {
+    const nextInTag = rule.toggle ? (matched === '{{' || matched === '{%') : inTag;
+    return { text: colorize(rule.type, matched), length: matched.length, inTag: nextInTag };
+  }
+  return matchAnsiRule(rules.slice(1), rest, inTag);
+};
+
+const nextAnsiChunk = (rest: string, inTag: boolean): AnsiChunk => {
+  const ws = rest.match(LEADING_WHITESPACE_RE)?.[0];
+  if (ws) { return { text: ws, length: ws.length, inTag }; }
+
+  const applicableRules = SYNTAX_RULES.filter(r => !r.tagOnly || inTag);
+  const matched = matchAnsiRule(applicableRules, rest, inTag);
+  if (matched) { return matched; }
+
+  const plain = rest.match(PLAIN_RUN_RE)?.[0];
+  if (plain) { return { text: plain, length: plain.length, inTag }; }
+
+  return { text: rest[0] ?? '', length: 1, inTag };
+};
+
+const highlightAnsi = (code: string): string => {
+  if (!code) { return ''; }
+  const loop = (i: number, out: string, inTag: boolean): string => {
+    if (i >= code.length) { return out; }
+    const chunk = nextAnsiChunk(code.slice(i), inTag);
+    return loop(i + chunk.length, out + chunk.text, chunk.inTag);
+  };
+  return loop(0, '', false);
+};
+
 export { escapeHtml } from '@nunjucks/shared';
-export { renderInlineMarkdown, highlightHtml, highlightJs };
+export { renderInlineMarkdown, highlightHtml, highlightJs, highlightAnsi };

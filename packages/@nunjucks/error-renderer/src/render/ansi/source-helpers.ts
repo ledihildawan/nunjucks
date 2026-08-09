@@ -1,4 +1,5 @@
 import picocolors from 'picocolors';
+import { highlightAnsi } from '../internal/highlight/highlight.ts';
 import type { SourceTraceLine, SourceTraceCaret } from '../internal/location/source-trace.ts';
 
 export { formatSourceTrace, formatCodeLine, getLinePrefix, formatCaretLine, getMarker, getLineNumWidth };
@@ -26,7 +27,8 @@ const formatCodeLine = (
 ): string => {
   const marker = getMarker(isError);
   const lineNumStr = String(lineNum).padStart(lineNumWidth, ' ');
-  return picocolors.dim(`${marker}${lineNumStr}${SEPARATOR}${content}`);
+  const highlighted = isError ? highlightAnsi(content) : picocolors.dim(highlightAnsi(content));
+  return `${marker}${picocolors.dim(lineNumStr)}${picocolors.dim(SEPARATOR)}${highlighted}`;
 };
 
 const getLinePrefix = (lineNumWidth: number): string =>

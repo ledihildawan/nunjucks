@@ -1,7 +1,7 @@
 import { classifyFromError } from '@nunjucks/error-catalog';
 import { mergeErrorParts } from './internal/formatting/error-parts.ts';
 import { toText } from './to-text.ts';
-import { escapeHtml, highlightHtml, highlightJs } from './internal/highlight/highlight.ts';
+import { escapeHtml } from './internal/highlight/highlight.ts';
 import { toDisplayLocation } from './internal/location/location.ts';
 import type { LineBase } from '@nunjucks/error-catalog';
 import type { ClassifiedError, ErrorLike, HumanTitleInput, LocationInfo } from './to-html-types.ts';
@@ -54,13 +54,6 @@ const resolveHumanTitle = ({ category, undefinedName, plain, fallback }: HumanTi
     default:
       return fallback;
   }
-};
-
-const highlightSource = (code: string, filePath?: string | null): string => {
-  if (isScriptPath(filePath)) {
-    return highlightJs(code);
-  }
-  return highlightHtml(code);
 };
 
 const classifyError = (error: ErrorLike): ClassifiedError => {
@@ -123,4 +116,4 @@ const buildErrorDisplay = (
   return { classified, displayLine, displayCol, displayPath };
 };
 
-export { classifyError, classifyAndBuildTitle, buildErrorDisplay, renderBadge, resolveHumanTitle, highlightSource, isScriptPath, SEVERITY_HEADINGS };
+export { classifyError, classifyAndBuildTitle, buildErrorDisplay, renderBadge, resolveHumanTitle, isScriptPath, SEVERITY_HEADINGS };

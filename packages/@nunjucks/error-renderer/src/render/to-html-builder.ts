@@ -4,14 +4,14 @@ import { renderContextHtml, formatStackTraceHtml } from './internal/formatting/s
 import { resolveIdeLink, getIdeMeta } from './internal/config/ide-links.ts';
 import type { SourceTrace } from './internal/location/source-trace.ts';
 import type { ErrorLike } from './to-html-types.ts';
-import { renderBadge, highlightSource, SEVERITY_HEADINGS, type classifyError } from './to-html-display.ts';
+import { renderBadge, SEVERITY_HEADINGS, type classifyError } from './to-html-display.ts';
 
-const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined, displayPath: string): string => {
+const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined, _displayPath: string): string => {
   if (!sourceTrace || sourceTrace.lines.length === 0) { return ''; }
 
   const rows = sourceTrace.lines.flatMap(line => {
     const errorClass = line.isError ? 'is-error' : '';
-    const row = `<div class="code-line ${errorClass}"><span class="line-number">${line.number}</span><span class="code-content">${highlightSource(line.content, displayPath)}</span></div>`;
+    const row = `<div class="code-line ${errorClass}"><span class="line-number">${line.number}</span><span class="code-content">${highlightHtml(line.content)}</span></div>`;
     if (line.isError && sourceTrace.caret) {
       const spaces = ' '.repeat(sourceTrace.caret.charStart);
       return [row, `<div class="code-line error-marker"><span class="line-number"></span><span class="code-content error-marker-content">${spaces}${sourceTrace.caret.carets}</span></div>`];

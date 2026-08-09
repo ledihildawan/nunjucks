@@ -1,0 +1,66 @@
+import { buildErrorHeader, buildErrorFooter, buildErrorBodyContent, buildHtmlWrapper } from './to-html-builder.ts';
+import { classifyAndBuildTitle, buildErrorDisplay } from './to-html-display.ts';
+import { isFilePath } from './internal/config/ide-links.ts';
+import { shortenPath } from './internal/location/path-shortener.ts';
+import { DEFAULT_IDE, DEFAULT_VERSION } from './internal/config/defaults.ts';
+import type { SourceTrace } from './internal/location/source-trace.ts';
+import type { ErrorLike } from './to-html-types.ts';
+
+interface ErrorSectionsInput {
+  error: ErrorLike;
+  templatePath?: string;
+  lineno?: number | null;
+  colno?: number | null;
+  renderContext?: Record<string, unknown>;
+  version?: string;
+  timestamp?: string | undefined;
+  sourceTrace?: SourceTrace | null | undefined;
+  ide?: string;
+  verbosity?: 'simple' | 'medium' | 'full';
+  isJsCaller?: boolean;
+}
+
+interface ErrorSections {
+  header: string;
+  body: string;
+  footer: string;
+  wrapped: string;
+  message: string;
+  severity: 'error' | 'warning' | 'info';
+  displayPath: string;
+  displayLine: number;
+  displayCol: number;
+  locDisplay: string;
+  canLinkLocation: boolean;
+}
+
+// WHY: shared assembly for both toHtml (full document) and toHtmlMarker (inline marker + modal). Computes the error title, display coords, and builds the header/body/footer/wrapper sections so neither renderer duplicates this pipeline.
+const buildErrorSections = (input: ErrorSectionsInput): ErrorSections => {
+  const { error, templatePath, lineno, colno, renderContext, version = DEFAULT_VERSION, timestamp, sourceTrace, ide = DEFAULT_IDE, verbosity = 'full', isJsCaller = false } = input;
+  const humanTitle = classifyAndBuildTitle(error);
+  const { classified, displayLine, displayCol, displayPath } = buildErrorDisplay(error, { templatePath, lineno: lineno ?? undefined, colno: colno ?? undefined, isJsCaller });
+  const locDisplay = `${shortenPath(displayPath)}:${displayLine}:${displayCol}`;
+  const canLinkLocation = isFilePath(displayPath);
+
+  const header = buildErrorHeader({
+    humanTitle,
+    category: classified.category,
+    severity: classified.severity,
+    phase: error.code ?? null,
+    verbosity,
+    displayPath,
+    displayLine,
+    displayCol,
+    ide,
+    canLinkLocation,
+    locDisplay,
+  });
+  const body = buildErrorBodyContent({ verbosity, error, classified, sourceTrace, renderContext, ide, displayPath });
+  const footer = buildErrorFooter({ version, timestamp, verbosity, canLinkLocation, ide, displayPath, displayLine, displayCol });
+  const wrapped = buildHtmlWrapper(header, body, footer);
+
+  return { header, body, footer, wrapped, message: humanTitle, severity: classified.severity, displayPath, displayLine, displayCol, locDisplay, canLinkLocation };
+};
+
+export { buildErrorSections };
+export type { ErrorSectionsInput, ErrorSections };

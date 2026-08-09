@@ -1,4 +1,4 @@
-export { toHtml, toText, toAnsi, toConsoleString } from './render/index.ts';
+export { toHtml, toHtmlMarker, toText, toAnsi, toConsoleString } from './render/index.ts';
 export type { ToHtmlOptions, ToTextOptions, AnsiOptions, ToConsoleOptions } from './render/index.ts';
 export { formatLocationAnnotation } from './render/internal/location/location.ts';
 export { createFormatterState } from './render/internal/formatting/metadata.ts';

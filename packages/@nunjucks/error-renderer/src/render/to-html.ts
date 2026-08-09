@@ -1,8 +1,4 @@
-import { buildErrorHeader, buildErrorFooter, buildErrorBodyContent, buildHtmlWrapper } from './to-html-builder.ts';
-import { classifyAndBuildTitle, buildErrorDisplay } from './to-html-display.ts';
-import { isFilePath } from './internal/config/ide-links.ts';
-import { shortenPath } from './internal/location/path-shortener.ts';
-import { DEFAULT_IDE, DEFAULT_VERSION } from './internal/config/defaults.ts';
+import { buildErrorSections } from './to-html-assembly.ts';
 import scriptContent from './assets/error-script.js' with { type: 'text' };
 import cssContent from './assets/error-page.css' with { type: 'text' };
 import type { Csp, ErrorLike, ToHtmlOptions } from './to-html-types.ts';
@@ -46,47 +42,22 @@ const buildProductionBody = (options: ToHtmlOptions): string => {
 };
 
 const buildErrorDocument = (error: ErrorLike, options: ToHtmlOptions): string => {
-  const {
-    templatePath = error.templateName ?? undefined,
-    lineno,
-    colno,
-    renderContext,
-    version = DEFAULT_VERSION,
-    timestamp,
-    csp,
-    sourceTrace,
-    ide = DEFAULT_IDE,
-    verbosity = 'full',
-    isJsCaller = false
-  } = options;
-
-  const humanTitle = classifyAndBuildTitle(error);
-  const { classified, displayLine, displayCol, displayPath } = buildErrorDisplay(error, { templatePath, lineno: lineno ?? undefined, colno: colno ?? undefined, isJsCaller });
-  const locDisplay = `${shortenPath(displayPath)}:${displayLine}:${displayCol}`;
-  const canLinkLocation = isFilePath(displayPath);
-
-  const header = buildErrorHeader({
-    humanTitle,
-    category: classified.category,
-    severity: classified.severity,
-    phase: error.code ?? null,
-    verbosity,
-    displayPath: locDisplay,
-    displayLine,
-    displayCol,
-    ide,
-    canLinkLocation,
-    locDisplay,
+  const sections = buildErrorSections({
+    error,
+    templatePath: options.templatePath ?? error.templateName ?? undefined,
+    lineno: options.lineno,
+    colno: options.colno,
+    renderContext: options.renderContext,
+    version: options.version,
+    timestamp: options.timestamp,
+    sourceTrace: options.sourceTrace,
+    ide: options.ide,
+    verbosity: options.verbosity,
+    isJsCaller: options.isJsCaller,
   });
 
-  const errorBody = buildErrorBodyContent({ verbosity, error, classified, sourceTrace, renderContext, ide, displayPath });
-
-  const footer = buildErrorFooter({ version, timestamp, verbosity, canLinkLocation, ide, displayPath, displayLine, displayCol });
-
-  const body = buildHtmlWrapper(header, errorBody, footer);
-
-  const docTitle = classified.severity === 'warning' ? 'Template Warning' : 'Template Error';
-  return buildDocument({ title: docTitle, body, scripts: TOGGLE_SCRIPT, csp: csp ?? null });
+  const docTitle = sections.severity === 'warning' ? 'Template Warning' : 'Template Error';
+  return buildDocument({ title: docTitle, body: sections.wrapped, scripts: TOGGLE_SCRIPT, csp: options.csp ?? null });
 };
 
 const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string => {

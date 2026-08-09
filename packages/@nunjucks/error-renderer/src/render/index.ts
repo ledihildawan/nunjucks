@@ -1,5 +1,6 @@
 export { toHtml } from './to-html.ts';
 export type { ToHtmlOptions } from './to-html.ts';
+export { toHtmlMarker } from './to-html-marker.ts';
 export { toText } from './to-text.ts';
 export type { ToTextOptions } from './to-text.ts';
 export { toAnsi } from './to-ansi.ts';
