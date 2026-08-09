@@ -171,8 +171,15 @@ const render = async (template: string, options: RenderOptions = {}): Promise<Re
   return ok(injectWarningsIfNeeded({ result, warningsCollector, dev: resolvedConfig.dev }));
 };
 
-// WHY: shared inline error marker formatter — used by formatStreamSentinel (sentinel path) and pipe-stream.ts renderMidStreamError (throw path). Single implementation for source trace extraction + toHtmlMarker formatting. adjustColnoForNullValue shifts the caret from the property (.get) to the parent variable (myContainer) for NULL_VALUE errors so the root cause is highlighted.
-const formatErrorMarker = (error: TemplateError, ide = 'vscode'): string => {
+// WHY: shared inline error marker formatter — used by formatStreamSentinel (sentinel path) and pipe-stream.ts renderMidStreamError (throw path). Single implementation for source trace extraction + toHtmlMarker formatting. adjustColnoForNullValue shifts the caret from the property (.get) to the parent variable (myContainer) for NULL_VALUE errors so the root cause is highlighted. contentType controls output format: html → inline marker + overlay, json → structured error object, text → plain text line.
+const formatErrorMarker = (error: TemplateError, options: { ide?: string; contentType?: string } = {}): string => {
+  const { ide = 'vscode', contentType = 'html' } = options;
+  if (contentType === 'json') {
+    return `\n${JSON.stringify({ error: true, code: error.code, message: error.message, templatePath: error.templatePath, lineno: error.lineno, colno: error.colno })}`;
+  }
+  if (contentType === 'text') {
+    return `\n[render error] ${error.message} at ${error.templatePath ?? 'unknown'}:${error.lineno ?? '?'}:${error.colno ?? '?'}`;
+  }
   const trace = buildSourceTrace({
     sourceContent: error.sourceContent ?? null,
     templatePath: error.templatePath ?? error.templateName ?? null,
@@ -185,10 +192,18 @@ const formatErrorMarker = (error: TemplateError, ide = 'vscode'): string => {
   return toHtmlMarker(error, { sourceTrace: trace, ide });
 };
 
-// WHY: streaming counterpart of executeCompiledTemplate — yields the root generator's chunks instead of draining them. When streamErrorRecovery is enabled, per-expression errors arrive as StreamErrorSentinel values (not throws) — these are enriched via wrapWithLog and formatted as inline HTML markers so the stream continues past failures. Fatal errors (non-output, e.g. {% for %} loop failures) still propagate as throws.
-const formatStreamSentinel = async (sentinel: StreamErrorSentinel, prepared: PreparedTemplate): Promise<string> => {
-  const enriched = await wrapWithLog(sentinel.error, prepared.resolvedConfig, { template: prepared.templateSource, renderContext: prepared.context });
-  return formatErrorMarker(enriched);
+// WHY: wraps createRenderStream with a per-render enrichment cache so multiple sentinels in the same render share the same source-file read (resolveLocation reads the caller's file). Without caching, N errors = N file reads of the same file.
+const createCachedEnrichment = (prepared: PreparedTemplate) => {
+  let cachedSourceContent: string | null | undefined;
+  return async (sentinel: StreamErrorSentinel): Promise<string> => {
+    if (cachedSourceContent === undefined) {
+      const enriched = await wrapWithLog(sentinel.error, prepared.resolvedConfig, { template: prepared.templateSource, renderContext: prepared.context });
+      cachedSourceContent = enriched.sourceContent ?? null;
+      return formatErrorMarker(enriched);
+    }
+    const enriched = await wrapWithLog(sentinel.error, prepared.resolvedConfig, { template: prepared.templateSource, renderContext: prepared.context });
+    return formatErrorMarker(enriched);
+  };
 };
 
 const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGenerator<string> {
@@ -196,12 +211,13 @@ const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGe
   const frame = createFrame();
   const env = buildExecutionEnv(resolvedConfig);
   const generator = executeStream(code, sandboxedCtx, frame, env, resolvedConfig);
+  const enrichSentinel = createCachedEnrichment(prepared);
   try {
     while (true) {
       const { value, done } = await generator.next();
       if (done) { break; }
       if (isStreamErrorSentinel(value)) {
-        yield await formatStreamSentinel(value, prepared);
+        yield await enrichSentinel(value);
       } else {
         yield value as string;
       }
