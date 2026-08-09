@@ -1,4 +1,5 @@
 import { pipe, filter, join, map, split } from 'remeda';
+import { slice } from '@nunjucks/shared';
 import picocolors from 'picocolors';
 import { toDisplayLocation } from '../internal/location/location.ts';
 import type { LineBase } from '@nunjucks/error-catalog';
@@ -91,7 +92,7 @@ const formatFullAnsi = (message: string, input: FullAnsiInput): string => {
   const { causes, fixCode, fixComment, documentationUrl, severity, path } = parts;
   const location = toDisplayLocation(parts.displayLineno, parts.displayColno, parts.lineBase);
   const stack = (isObjectValue(error) ? error.stack : undefined) ?? '';
-  const formattedStack = pipe(stack, split('\n'), map(line => formatStackLine(line, ide)), join('\n'));
+  const formattedStack = pipe(stack, split('\n'), slice(1), filter(line => line.trim().startsWith('at ')), map(line => formatStackLine(line, ide)), join('\n'));
   const locationStr = formatLocationString(path, location, ide);
   const severityLabel = getSeverityLabel(severity);
   const header = `${severityLabel} ${message}${locationStr}\n`;

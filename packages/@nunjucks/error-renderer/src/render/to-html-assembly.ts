@@ -48,7 +48,7 @@ const buildErrorSections = (input: ErrorSectionsInput): ErrorSections => {
     humanTitle,
     category: classified.category,
     severity: classified.severity,
-    phase: error.code ?? null,
+    phase: error.phase ?? null,
     verbosity,
     displayPath,
     displayLine,
