@@ -212,7 +212,6 @@ const streamContext = {
     timestamp: new Date().toISOString(),
   },
   dev: true,
-  undefined: 'strict',
   streamErrorRecovery: true,
   views: VIEWS,
   filters: { slow, formatPrice },
@@ -227,9 +226,9 @@ app.get('/stream', async (_req: Request, res: Response) => {
   );
 });
 
-// WHY: benchmark comparison — same template + data, but blocking render(). Both routes succeed so the comparison is purely about SPEED: /stream shows progressive render (content chunk-by-chunk); /stream-normal buffers everything, user waits for the full render before seeing anything. Open both in side-by-side tabs.
+// WHY: benchmark comparison — same template + data + config, but blocking render(). Both routes succeed so the comparison is purely about SPEED: /stream shows progressive render (content chunk-by-chunk); /stream-normal buffers everything, user waits for the full render before seeing anything. Open both in side-by-side tabs.
 app.get('/stream-normal', async (_req: Request, res: Response) => {
-  const result = await render(streamTemplate, { ...streamContext, streamErrorRecovery: false, undefined: 'default' });
+  const result = await render(streamTemplate, { ...streamContext, streamErrorRecovery: false });
   if (result.ok) {
     res.type('html').send(result.value);
   } else {

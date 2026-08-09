@@ -49,7 +49,13 @@ const collectBlockedKeys = (err: TemplateError): readonly string[] | null => {
   return null;
 };
 
-const formatErrorOutput = (err: TemplateError, options: ReturnType<typeof createFormatterState>, format: string | undefined): string => {
+interface FormatErrorOutputInput {
+  err: TemplateError;
+  options: ReturnType<typeof createFormatterState>;
+  format: string | undefined;
+}
+
+const formatErrorOutput = ({ err, options, format }: FormatErrorOutputInput): string => {
   if (format === 'ansi') { return toAnsi(err, options); }
   if (format === 'text') { return toText(err, options); }
   return toHtml(err, options);
@@ -65,7 +71,7 @@ const formatError = (err: Error | TemplateError, options: OutputOptions = {}): s
     options: { ...options, sourceTrace }
   });
 
-  return formatErrorOutput(templateError, opts, options.format);
+  return formatErrorOutput({ err: templateError, options: opts, format: options.format });
 };
 
 const isTemplateErrorLog = (err: Error | TemplateError): err is TemplateError =>

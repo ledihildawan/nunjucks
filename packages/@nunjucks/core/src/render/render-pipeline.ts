@@ -12,7 +12,13 @@ import type { RenderConfig, CompileResult, SandboxOptions } from './render-types
 
 const TEMPLATE_FILE_EXTENSION_RE = /\.(njk|js|html|htm|twig|ejs|eta)$/i;
 
-const resolveTemplateSource = async (template: string, loader: FileSystemLoader | null, config: RenderConfig): Promise<{ templateSource: string; templatePath: string | null }> => {
+interface ResolveTemplateSourceInput {
+  template: string;
+  loader: FileSystemLoader | null;
+  config: RenderConfig;
+}
+
+const resolveTemplateSource = async ({ template, loader, config }: ResolveTemplateSourceInput): Promise<{ templateSource: string; templatePath: string | null }> => {
   if (!loader || template.includes('{{') || template.includes('{%') || template.includes('{#')) {
     return { templateSource: template, templatePath: null };
   }
@@ -91,7 +97,13 @@ const buildRenderEnv = (loader: FileSystemLoader | null, config: RenderConfig): 
   };
 };
 
-const compileTemplate = (templateSource: string, config: RenderConfig, templateName: string): Result<CompileResult, Error> => {
+interface CompileTemplateInput {
+  templateSource: string;
+  config: RenderConfig;
+  templateName: string;
+}
+
+const compileTemplate = ({ templateSource, config, templateName }: CompileTemplateInput): Result<CompileResult, Error> => {
   const codeResult = compileToCode({ source: templateSource, templateName, undefinedMode: config.undefined, parseOpts: { undefined: config.undefined } as ParseOptions, streamErrorRecovery: config.streamErrorRecovery ?? false });
   return isErr(codeResult) ? codeResult : ok({ code: codeResult.value });
 };

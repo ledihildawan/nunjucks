@@ -133,7 +133,7 @@ const prepareRender = async (template: string, { context = {}, ...options }: Ren
   let templateSource: string;
   let templatePath: string | null;
   try {
-    ({ templateSource, templatePath } = await resolveTemplateSource(template, loader, config));
+    ({ templateSource, templatePath } = await resolveTemplateSource({ template, loader, config }));
   } catch (resolveErr) {
     return err(await wrapWithLog(resolveErr, config, { template, renderContext: safeContext }));
   }
@@ -144,7 +144,7 @@ const prepareRender = async (template: string, { context = {}, ...options }: Ren
 
   const templateName = resolveTemplateName(template, configWithPath);
 
-  const compileResult = compileTemplate(templateSource, configWithPath, templateName);
+  const compileResult = compileTemplate({ templateSource, config: configWithPath, templateName });
   if (isErr(compileResult)) {
     return err(await wrapWithLog(compileResult.error, configWithPath, { template: templateSource, renderContext: safeContext }));
   }
