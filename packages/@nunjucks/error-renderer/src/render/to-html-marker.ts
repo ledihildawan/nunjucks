@@ -1,6 +1,8 @@
 import { toHtml } from './to-html.ts';
 import { classifyAndBuildTitle } from './to-html-display.ts';
 import { escapeHtml } from './internal/highlight/highlight.ts';
+import { shortenPath } from './internal/location/path-shortener.ts';
+import { resolveIdeLink, isFilePath } from './internal/config/ide-links.ts';
 import type { ErrorLike, ToHtmlOptions } from './to-html-types.ts';
 
 const ALERT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
@@ -17,6 +19,8 @@ const MARKER_CSS = `
 .nj-err-detail{background:transparent;border:1px solid light-dark(oklch(90% 0.01 285),oklch(28% 0.02 285));color:light-dark(oklch(45% 0.2 25),oklch(70% 0.18 25));padding:.125rem .5rem;border-radius:.25rem;font-size:.6875rem;font-weight:500;cursor:pointer;white-space:nowrap;}
 .nj-err-detail:hover{background:light-dark(oklch(96% 0.01 285),oklch(22% 0.01 285));border-color:light-dark(oklch(60% 0.2 25),oklch(65% 0.2 25));}
 .nj-err-loc{margin-top:.25rem;color:light-dark(oklch(45% 0.02 285),oklch(75% 0.01 285));font-size:.6875rem;font-variant-numeric:tabular-nums;}
+.nj-err-loc-link{color:inherit;text-decoration:underline;text-decoration-color:light-dark(oklch(65% 0.01 285),oklch(45% 0.02 285));text-underline-offset:2px;}
+.nj-err-loc-link:hover{color:light-dark(oklch(45% 0.15 190),oklch(72% 0.13 190));}
 .nj-err-overlay{position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;box-sizing:border-box;}
 .nj-err-overlay[hidden]{display:none;}
 .nj-err-close{position:absolute;top:1rem;right:1rem;z-index:2;width:2.5rem;height:2.5rem;border-radius:50%;border:none;background:rgba(255,255,255,.9);color:#333;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);}
@@ -31,13 +35,16 @@ const toHtmlMarker = (error: ErrorLike, options: ToHtmlOptions = {}): string => 
   const fullPage = toHtml(error, options);
   const srcdocLiteral = JSON.stringify(fullPage).replaceAll('</', '<\\/');
 
-  const locParts = [
-    error.templatePath ?? error.templateName,
-    error.lineno != null ? String(error.lineno) : null,
-    error.colno != null ? String(error.colno) : null
-  ].filter(Boolean);
-  const locHtml = locParts.length > 0
-    ? `<div class="nj-err-loc">${escapeHtml(locParts.join(':'))}</div>`
+  const rawPath = error.templatePath ?? error.templateName ?? null;
+  const displayPath = rawPath ? shortenPath(rawPath) : null;
+  const line = error.lineno != null ? error.lineno : null;
+  const col = error.colno != null ? error.colno : null;
+  const locText = [displayPath, line, col].filter(v => v !== null && v !== undefined).join(':');
+  const canLink = rawPath !== null && isFilePath(rawPath);
+  const locHtml = locText
+    ? `<div class="nj-err-loc">${canLink && rawPath
+      ? `<a href="${resolveIdeLink('vscode', { path: rawPath, line: line ?? 0, col: col ?? 0 })}" class="nj-err-loc-link">${escapeHtml(locText)}</a>`
+      : escapeHtml(locText)}</div>`
     : '';
 
   return `<style>${MARKER_CSS}</style>
