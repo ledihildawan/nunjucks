@@ -37,6 +37,8 @@ const CONTENT_TYPE_MAP: Record<string, string> = {
 const serializeErrorPayload = (error: TemplateError): string =>
   JSON.stringify({ error: true, code: error.code, message: error.message, templatePath: error.templatePath, lineno: error.lineno, colno: error.colno });
 
+export { serializeErrorPayload };
+
 interface RenderErrorInput {
   err: TemplateError;
   contentType: string;
@@ -57,16 +59,8 @@ interface MidStreamErrorInput {
   ide: string;
 }
 
-const renderMidStreamError = ({ err, contentType, ide }: MidStreamErrorInput): string => {
-  const error = err as TemplateError;
-  if (contentType === 'json') {
-    return `\n${serializeErrorPayload(error)}`;
-  }
-  if (contentType === 'text') {
-    return `\n[render error] ${error.message} at ${error.templatePath ?? 'unknown'}:${error.lineno ?? '?'}:${error.colno ?? '?'}`;
-  }
-  return formatErrorMarker(error, { ide, contentType });
-};
+const renderMidStreamError = ({ err, contentType, ide }: MidStreamErrorInput): string =>
+  formatErrorMarker(err as TemplateError, { ide, contentType });
 
 const waitForDrain = (sink: PipeSink): Promise<void> =>
   new Promise((resolve) => {

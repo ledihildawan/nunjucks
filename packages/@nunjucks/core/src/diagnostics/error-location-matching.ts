@@ -203,7 +203,7 @@ const matchStringTemplate = (input: CallerPositionInput): SourcePosition | null 
   return null;
 };
 
-const matchNullTemplate = (
+const matchWithoutTemplateSource = (
   content: string,
   subject: string,
   errLineno: number | null,
@@ -240,7 +240,7 @@ const extractTemplatePosition = (input: CallerPositionInput): SourcePosition | n
     return matchStringTemplate(input);
   }
   if (template === null && subject) {
-    return matchNullTemplate(content, subject, errLineno, errColno, preferredLine);
+    return matchWithoutTemplateSource(content, subject, errLineno, errColno, preferredLine);
   }
   return null;
 };

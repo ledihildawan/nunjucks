@@ -44,6 +44,7 @@ const resolveTemplateSource = async ({ template, loader, config }: ResolveTempla
 };
 
 const prepareSandbox = (config: RenderConfig, context: Record<string, unknown>): Record<string, unknown> => {
+  // WHY: internalKeys are always allowed in sandbox — they are either runtime-internal markers (__nunjucks_undefined_mode) or CommonJS leakage guards (exports, module, require, __dirname, __filename) or Node globals the template runtime legitimately needs (global, globalThis, process for env checks).
   const internalKeys = ['__nunjucks_undefined_mode', 'exports', 'module', 'require', '__dirname', '__filename', 'global', 'globalThis', 'process'];
   const userAllowlist = config.sandboxAllowlist || [];
   const mergedAllowlist = [...new Set([...internalKeys, ...userAllowlist])];

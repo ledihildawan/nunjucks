@@ -4,7 +4,8 @@ import {
   getLogContext,
 } from './log-context.ts';
 
-const isErrorInstance = (value: unknown): value is Error & { lineno?: number | null } =>
+// WHY: isErrorInstance narrows to Error. The lineno access at the call site uses optional chaining because Error doesn't guarantee lineno — only TemplateError (a subclass via Object.assign) has it. The type intersection `Error & { lineno?: ... }` documents this without claiming the field always exists.
+const isErrorInstance = (value: unknown): value is Error =>
   value instanceof Error;
 
 interface HandleErrorLocation {
@@ -24,9 +25,9 @@ function handleError(this: unknown, error: unknown, { lineno, colno }: HandleErr
     lineBase: 'zero',
   });
 
-  // WHY: re-throw the original error if it already carries lineno — avoids double-enrichment (handleError would create a new TemplateError, losing the original's stack trace and custom fields).
+  // WHY: re-throw the original error if it already carries lineno — avoids double-enrichment. The outer metadata.lineno check is a cheap pre-filter (lineno may come from the call-site argument, not the error itself); the inner check verifies the error actually has lineno set.
   if (metadata.lineno !== null && isErrorInstance(error)) {
-    const errorLineno = error.lineno;
+    const errorLineno = (error as { lineno?: number | null }).lineno;
     if (errorLineno !== undefined && errorLineno !== null) {
       throw error;
     }

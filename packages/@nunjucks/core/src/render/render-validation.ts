@@ -76,6 +76,7 @@ export const validateRender = async (template: unknown, { config, context }: Val
     }
     const callerLineno = config.callerLocation?.lineNumber;
     const callerColno = config.callerLocation?.columnNumber;
+    // WHY: convert 1-based caller line to 0-based template line (lineBase: 'zero' set in buildValidationError). Guard against lineno === 1 because subtracting would produce 0 which is a valid 0-based index but loses the "first line" semantic for display.
     const resolvedLineno: number | null | undefined = (callerLineno && callerLineno > 1) ? callerLineno - 1 : callerLineno;
     return err(await buildValidationError({
       validationError: ve,

@@ -38,23 +38,14 @@ function callWrap(
     });
   }
 
-  if (isNullAccessResult(target)) {
-    const parentName = getNullParentName(target) ?? name;
+  // WHY: two null-check paths — isNullAccessResult catches sentinel objects from memberLookup (carries parent name); !target catches raw null/undefined. Both throw NULL_VALUE with the best available parent name.
+  const parentName = isNullAccessResult(target) ? (getNullParentName(target) ?? name) : null;
+  if (isNullAccessResult(target) || !target) {
     throwRuntimeError(ERROR_DEFINITIONS.NULL_VALUE, {
       self: this,
       lineno,
       colno,
-      params: { accessPath: name, state: 'null', parent: parentName },
-      subject: name,
-    });
-  }
-
-  if (!target) {
-    throwRuntimeError(ERROR_DEFINITIONS.NULL_VALUE, {
-      self: this,
-      lineno,
-      colno,
-      params: { accessPath: name, state: 'null', parent: name },
+      params: { accessPath: name, state: 'null', parent: parentName ?? name },
       subject: name,
     });
   }

@@ -1,6 +1,7 @@
 import { resolveTemplateSource, prepareSandbox, buildRenderEnv, compileTemplate, handleContextStrictMode, createEnvLookups, TEMPLATE_FILE_EXTENSION_RE } from './render-pipeline.ts';
 import { validateRender, validateTemplateSource } from './render-validation.ts';
 import { getLoader } from '../engine.ts';
+import { serializeErrorPayload } from './pipe-stream.ts';
 import type { RenderConfig, RenderStreamResult } from './render-types.ts';
 import { execute, executeStream, createFrame, withTimeout, isStreamErrorSentinel, type StreamErrorSentinel } from '@nunjucks/runtime';
 import { getCallerFrames } from './caller-file.ts';
@@ -182,7 +183,7 @@ const render = async (template: string, options: RenderOptions = {}): Promise<Re
 const formatErrorMarker = (error: TemplateError, options: { ide?: string; contentType?: string } = {}): string => {
   const { ide = 'vscode', contentType = 'html' } = options;
   if (contentType === 'json') {
-    return `\n${JSON.stringify({ error: true, code: error.code, message: error.message, templatePath: error.templatePath, lineno: error.lineno, colno: error.colno })}`;
+    return `\n${serializeErrorPayload(error)}`;
   }
   if (contentType === 'text') {
     return `\n[render error] ${error.message} at ${error.templatePath ?? 'unknown'}:${error.lineno ?? '?'}:${error.colno ?? '?'}`;
@@ -224,9 +225,7 @@ const createCachedEnrichment = (prepared: PreparedTemplate) => {
     enriched.sourceStartLine = locationCache.sourceStartLine;
     return formatErrorMarker(enriched);
   };
-};
-
-const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGenerator<string> {
+};const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGenerator<string> {
   const { code, sandboxedCtx, warningsCollector, resolvedConfig, templateSource, context } = prepared;
   const frame = createFrame();
   const env = buildExecutionEnv(resolvedConfig);

@@ -91,6 +91,7 @@ const processOutputChild = (
       const { lineno: rawLine, colno: rawColumn } = extractPropertyLocation(child);
       const walrusLineno = rawLine ?? 0;
       const walrusColno = rawColumn ?? 0;
+      // WHY: emitStreamCatch closes the try { opened below — compiler.compile MUST NOT emit intervening top-level statements between the open and close (the try/catch balance is implicit). The generated code reads: `lineno=X; colno=Y; try { <declaration> } catch(e) { yield streamError }`.
       compiler.emitLine(`lineno = ${walrusLineno}; colno = ${walrusColno}; try {`);
       compiler.compile(child, frame);
       compiler.emitStreamCatch(walrusLineno, walrusColno);

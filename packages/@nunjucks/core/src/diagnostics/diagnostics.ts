@@ -74,7 +74,7 @@ const resolveErrorProps = (err: unknown): {
   };
 };
 
-  const buildErrorDef = (metadata: ReturnType<typeof normalizeErrorMetadata>, resolved: ReturnType<typeof resolveErrorProps>) => ({
+const buildErrorDef = (metadata: ReturnType<typeof normalizeErrorMetadata>, resolved: ReturnType<typeof resolveErrorProps>) => ({
   name: metadata.code ?? 'RENDER_ERROR',
   message: () => metadata.message,
   pattern: MATCH_ANY_RE,
