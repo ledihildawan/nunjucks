@@ -86,7 +86,17 @@ const processOutputChild = (
     return;
   }
   if (isVariableLike(child)) {
-    compiler.compile(child, frame);
+    if (compiler.streamErrorRecovery) {
+      // WHY: walrus operator (:=) and variable declarations bypass compileOutputChild (which has the boundary). Wrap them so a failed expression evaluation (e.g. {{ x := missing.deep }}) produces an inline marker instead of killing the generator. The frame.set is never reached, so the variable stays undefined — subsequent {{ x }} hits its own output boundary.
+      const { lineno: rawLine, colno: rawColumn } = extractPropertyLocation(child);
+      const walrusLineno = rawLine ?? 0;
+      const walrusColno = rawColumn ?? 0;
+      compiler.emitLine(`lineno = ${walrusLineno}; colno = ${walrusColno}; try {`);
+      compiler.compile(child, frame);
+      compiler.emitLine('} catch (e) { yield runtime.streamError(e, { lineno, colno }); }');
+    } else {
+      compiler.compile(child, frame);
+    }
     return;
   }
   compileOutputChild(compiler, child, frame);
