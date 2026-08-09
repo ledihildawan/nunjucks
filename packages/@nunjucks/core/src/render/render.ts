@@ -156,10 +156,15 @@ const render = async (template: string, options: RenderOptions = {}): Promise<Re
 
 // WHY: streaming counterpart of executeCompiledTemplate — yields the root generator's chunks instead of draining them, so a consumer can pipe output incrementally. A mid-stream runtime error propagates as a throw from the generator (consumer catches via for-await); pre-stream errors are returned as { ok: false } by renderToStream before any chunk is produced.
 const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGenerator<string> {
-  const { code, sandboxedCtx, warningsCollector, resolvedConfig } = prepared;
+  const { code, sandboxedCtx, warningsCollector, resolvedConfig, templateSource, context } = prepared;
   const frame = createFrame();
   const env = buildExecutionEnv(resolvedConfig);
-  yield* executeStream(code, sandboxedCtx, frame, env, resolvedConfig);
+  try {
+    yield* executeStream(code, sandboxedCtx, frame, env, resolvedConfig);
+  } catch (streamErr) {
+    // WHY: enrich mid-stream errors via wrapWithLog so they carry the same full classification, source-trace, location, causes, and fix as blocking render errors. Without this, the consumer gets a raw handleError-enriched error (wrong category, no location, no causes).
+    throw await wrapWithLog(streamErr, resolvedConfig, { template: templateSource, renderContext: context });
+  }
   if (warningsCollector.length > 0 && resolvedConfig.dev) {
     yield injectWarningsScript(warningsCollector, { dev: true, verbosity: 'medium' });
   }
