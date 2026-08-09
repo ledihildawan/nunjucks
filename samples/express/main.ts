@@ -217,12 +217,18 @@ const streamContext = {
   filters: { slow, formatPrice },
 };
 
-// WHY: recommended approach — pipeRenderStream handles everything in one call: pre-stream error → full page, success → pipe chunks, mid-stream error → inline marker + overlay. This is the only streaming route you need.
+// WHY: recommended approach — pipeRenderStream handles everything in one call: pre-stream error → full page, success → pipe chunks, mid-stream error → inline marker + overlay. AbortSignal cancels the generator when the client disconnects (browser tab closed). Metrics hooks log timing and chunk count to the server console for observability.
 app.get('/stream', async (_req: Request, res: Response) => {
   await pipeRenderStream(
     await renderToStream(streamTemplate, streamContext),
     res,
-    { contentType: 'html', dev: true }
+    {
+      contentType: 'html',
+      dev: true,
+      onComplete: (stats) => {
+        console.log(`[stream] ${stats.chunks} chunks, ${stats.errors} errors, ${(stats.bytes / 1024).toFixed(1)}KB`);
+      },
+    }
   );
 });
 
