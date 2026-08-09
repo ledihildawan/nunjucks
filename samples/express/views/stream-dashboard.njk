@@ -1,0 +1,67 @@
+{% extends "stream-layout.njk" %}
+
+{% block kpis %}
+<script>mark('KPIs start');</script>
+<div class="kpi-grid">
+  <div class="kpi"><div class="label">Revenue</div><div class="value">{{ kpi.revenue |> slow }}</div><div class="trend trend-up">+12.4% vs last week</div></div>
+  <div class="kpi"><div class="label">Orders</div><div class="value">{{ kpi.orders |> slow }}</div><div class="trend trend-up">+8 today</div></div>
+  <div class="kpi"><div class="label">Conversion</div><div class="value">{{ kpi.conversion |> slow }}%</div><div class="trend trend-down">-0.3% vs target</div></div>
+</div>
+<script>mark('KPIs done');</script>
+{% endblock %}
+
+{% block orders %}
+<script>mark('Orders start');</script>
+<section>
+  <h2>Recent Orders</h2>
+  <div class="order-head"><span>Order</span><span>Customer</span><span>Total</span><span>Ship To</span><span>Status</span></div>
+  {% for order in orders %}
+  <div class="order-row">
+    <span>{{ order.id |> slow }}</span>
+    <span>{{ order.customer |> slow }}</span>
+    <span>{{ order.total |> formatPrice }}</span>
+    <span>{{ order.shipping.city }}</span>
+    <span><span class="status-badge status-{{ order.status }}">{{ order.status }}</span></span>
+  </div>
+  {% endfor %}
+</section>
+<script>mark('Orders done');</script>
+{% endblock %}
+
+{% block products %}
+<script>mark('Products start');</script>
+<section>
+  <h2>Top Products</h2>
+  <div class="product-grid">
+    {% for product in products %}
+    <div class="product-card">
+      <h3>{{ product.name |> slow }}</h3>
+      <div class="price">{{ product.price |> formatPrice }}</div>
+      <div class="stock">{% if product.stock == 0 %}<span class="stock-out">Out of stock</span>{% else %}{{ product.stock }} in stock{% endif %}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+<script>mark('Products done');</script>
+{% endblock %}
+
+{% block customer %}
+<script>mark('Customer start');</script>
+<section>
+  <h2>Customer Spotlight</h2>
+  <div class="widget">
+    <h3>{{ customer.name |> slow }}</h3>
+    <p style="color:#64748b;font-size:.875rem;margin-top:.25rem">{{ customer.bio }}</p>
+    <p style="font-size:.75rem;color:#94a3b8;margin-top:.5rem">Member since {{ customer.joinedAt |> slow }}</p>
+  </div>
+</section>
+<script>mark('Customer done');</script>
+{% endblock %}
+
+{% block widget %}
+<script>mark('Widget start');</script>
+<div class="widget">
+  {% include "weather-widget.njk" %}
+</div>
+<script>mark('Widget done');</script>
+{% endblock %}

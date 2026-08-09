@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Store Dashboard</title>
+<style>
+  *{box-sizing:border-box;margin:0}
+  body{font-family:system-ui,-apple-system,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.5}
+  .container{max-width:56rem;margin:0 auto;padding:1.5rem}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem}
+  header h1{font-size:1.5rem;font-weight:700}
+  header .badge{font-size:.7rem;background:#dbeafe;color:#1e40af;padding:.2rem .5rem;border-radius:.25rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem}
+  .kpi{background:#fff;border:1px solid #e2e8f0;border-radius:.625rem;padding:1.25rem}
+  .kpi .label{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#64748b}
+  .kpi .value{font-size:1.75rem;font-weight:700;margin-top:.25rem}
+  .kpi .trend{font-size:.75rem;margin-top:.25rem}
+  .trend-up{color:#059669}.trend-down{color:#dc2626}
+  section{margin-bottom:2rem}
+  section h2{font-size:1.125rem;font-weight:600;margin-bottom:.75rem}
+  .order-row{display:grid;grid-template-columns:1fr 1fr auto auto auto;gap:.75rem;align-items:center;background:#fff;border:1px solid #e2e8f0;border-top:none;padding:.625rem .875rem;font-size:.875rem}
+  .order-row:first-of-type{border-top:1px solid #e2e8f0;border-top-left-radius:.625rem;border-top-right-radius:.625rem}
+  .order-row:last-of-type{border-bottom-left-radius:.625rem;border-bottom-right-radius:.625rem}
+  .order-head{display:grid;grid-template-columns:1fr 1fr auto auto auto;gap:.75rem;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#64748b;padding:.625rem .875rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:.625rem .625rem 0 0}
+  .status-badge{display:inline-block;padding:.125rem .5rem;border-radius:.25rem;font-size:.7rem;font-weight:600}
+  .status-shipped{background:#d1fae5;color:#065f46}
+  .status-pending{background:#fef3c7;color:#92400e}
+  .status-processing{background:#dbeafe;color:#1e40af}
+  .product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+  .product-card{background:#fff;border:1px solid #e2e8f0;border-radius:.625rem;padding:1rem}
+  .product-card h3{font-size:.875rem;font-weight:600;margin-bottom:.25rem}
+  .product-card .price{font-size:1.125rem;font-weight:700;color:#059669}
+  .product-card .stock{font-size:.75rem;color:#64748b;margin-top:.25rem}
+  .stock-out{color:#dc2626;font-weight:600}
+  .widget{background:#fff;border:1px solid #e2e8f0;border-radius:.625rem;padding:1.25rem;margin-bottom:2rem}
+  footer{text-align:center;padding:2rem 0;font-size:.75rem;color:#94a3b8;border-top:1px solid #e2e8f0;margin-top:2rem}
+  #timing{position:fixed;bottom:0;left:0;right:0;background:#1e293b;color:#e2e8f0;font-family:ui-monospace,monospace;font-size:.7rem;padding:.375rem .75rem;display:flex;gap:1.5rem;z-index:9999;overflow-x:auto}
+  #timing span{white-space:nowrap}
+  #timing .label{color:#64748b}
+</style>
+</head><body>
+<div class="container">
+  <header>
+    <h1>Store Dashboard</h1>
+    <span class="badge">{{ mode }}</span>
+  </header>
+
+  {% block kpis %}{% endblock %}
+  {% block orders %}{% endblock %}
+  {% block products %}{% endblock %}
+  {% block customer %}{% endblock %}
+  {% block widget %}{% endblock %}
+
+  <footer>Rendered via Nunjucks {{ mode }} · {{ timestamp }}</footer>
+</div>
+<div id="timing"><span class="label">Chunk arrival:</span></div>
+<script>
+var t0=Date.now();
+function mark(label){
+  var el=document.getElementById('timing');
+  var span=document.createElement('span');
+  span.textContent=label+':+'+(Date.now()-t0)+'ms';
+  el.appendChild(span);
+}
+</script>
+</body></html>
