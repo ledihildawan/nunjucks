@@ -102,7 +102,14 @@ interface PreparedTemplate {
   readonly context: Record<string, unknown>;
 }
 
-// WHY: pass-1 of rendering — validation, context-scrub, template resolution, compile, and sandbox/env preparation, with NO execution. Extracted so render() (buffer-execute) and renderToStream() (stream-execute) share identical pre-execution work and error enrichment. Context strict mode runs BEFORE template resolution/compilation so dangerous values are caught early without wasted I/O. Every failure here is a Result error the consumer can still render as an error page (response headers not yet sent).
+// WHY: pass-1 pipeline — 6 ordered steps, each with a distinct error strategy:
+//   1. Validate config + context → Result err (inline def → catalog merge)
+//   2. Context strict mode → try/catch (throws for 'error' mode, caught here)
+//   3. Resolve template source → try/catch (file I/O, enriched via wrapWithLog)
+//   4. Validate template syntax → Result err (same pattern as step 1)
+//   5. Compile to JS → isErr check (compile errors enriched via wrapWithLog)
+//   6. Prepare sandbox + env → pure transform (no failure path)
+// Step 2 runs BEFORE step 3 so dangerous context values are caught early without wasted file I/O.
 const prepareRender = async (template: string, { context = {}, ...options }: RenderOptions = {}): Promise<Result<PreparedTemplate, TemplateError>> => {
   const baseConfig = setupRenderConfig(options);
   const callerFrames = baseConfig.callerFrames ?? getCallerFrames();

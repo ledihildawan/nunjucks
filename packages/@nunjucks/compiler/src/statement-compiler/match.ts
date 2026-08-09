@@ -17,7 +17,8 @@ export const compileMatch = (compiler: Compiler, { node, frame: parentFrame }: C
     compiler.emitLine(`let ${targetVar};`);
     compiler.emitLine(`try { ${targetVar} = `);
     compiler.compileExpression(node.expr, frame);
-    compiler.emitLine(`; } catch(e) { ${targetVar} = undefined; lineno = ${lineno}; colno = ${colno}; yield runtime.streamError(e, { lineno, colno }); }`);
+    compiler.emitLine('; ');
+    compiler.emitStreamCatch(lineno, colno, `${targetVar} = undefined`);
   } else {
     compiler.emitLine(`let ${targetVar} = `);
     compiler.compileExpression(node.expr, frame);

@@ -58,6 +58,7 @@ export interface Compiler extends Emitter, ScopeManager {
   fail: (msg: string, lineno?: number, colno?: number) => void;
   tmpid: () => string;
   getTemplateName: () => string;
+  emitStreamCatch: (lineno: number, colno: number, defaultAssignment?: string) => void;
   compileChildren: (node: Node, frame: Frame) => void;
   compileExpression: (node: Node, frame: Frame) => void;
   assertType: (node: Node, ...types: NodeTypeMatcher[]) => void;
@@ -124,6 +125,10 @@ export const createCompiler = (
     },
     getTemplateName() {
       return getCompilerTemplateName(compiler);
+    },
+    emitStreamCatch(lineno, colno, defaultAssignment) {
+      const assignment = defaultAssignment ? `${defaultAssignment}; ` : '';
+      compiler.emitLine(`} catch (e) { ${assignment}lineno = ${lineno}; colno = ${colno}; yield runtime.streamError(e, { lineno, colno }); }`);
     },
     compileChildren(node, frame) {
       compileNodeChildren(compiler, node, frame);

@@ -55,7 +55,7 @@ export const compileInclude = (compiler: Compiler, { node, frame }: CompileNodeI
   if (compiler.streamErrorRecovery) {
     compiler.emitLine('try {');
     emitIncludeBody();
-    compiler.emitLine(`} catch(e) { lineno = ${location.lineno}; colno = ${location.colno}; yield runtime.streamError(e, { lineno, colno }); }`);
+    compiler.emitStreamCatch(location.lineno, location.colno);
   } else {
     emitIncludeBody();
   }

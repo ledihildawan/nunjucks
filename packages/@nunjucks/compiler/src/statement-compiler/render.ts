@@ -61,7 +61,7 @@ export const compileRenderBlock = (compiler: Compiler, { node, frame: parentFram
 
   compiler.emitLine(`), { autoescape: env.opts.autoescape, lineno, colno, context: "html" });`);
   if (compiler.streamErrorRecovery) {
-    compiler.emitLine('} catch(e) { yield runtime.streamError(e, { lineno, colno }); }');
+    compiler.emitStreamCatch(node.lineno ?? 0, node.colno ?? 0);
   }
   compiler.emitLine('frame = frame.pop();');
 };

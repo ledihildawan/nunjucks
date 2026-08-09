@@ -110,7 +110,7 @@ export const validateTemplateSource = async (templateSource: string, { config, c
   if (!templateValidation.valid) {
     const ve = combineValidationErrors(templateValidation.errors);
     if (ve === undefined) {
-      return ok(undefined);
+      return err(createLog('error', { def: { name: 'VALIDATION_ERROR', message: 'Template validation failed but no errors found' }, subject: null, context: { phase: 'render' } }));
     }
     return err(await buildValidationError({
       validationError: ve,

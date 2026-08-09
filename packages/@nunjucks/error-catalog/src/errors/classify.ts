@@ -10,6 +10,7 @@ const replacePlaceholders = (
   extra?: Record<string, string | null> | null
 ): string | null => {
   if (!str) { return str ?? null; }
+  // WHY: {subject}, {target}, {name}, {key} are aliases — they all resolve to the same value (the extracted subject from the pattern match). This is because catalog definitions use different placeholder names for semantic clarity (e.g. "Variable '{name}'" vs "Property '{key}'") even though the runtime always extracts one subject value.
   const baseResult = str
     .replaceAll('{subject}', undefinedName ?? '')
     .replaceAll('{target}', undefinedName ?? '')

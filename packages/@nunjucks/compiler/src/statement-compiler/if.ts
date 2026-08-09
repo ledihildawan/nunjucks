@@ -11,7 +11,8 @@ export const compileIf = (compiler: Compiler, { node, frame }: CompileNodeInput<
     compiler.emitLine(`let ${condVar};`);
     compiler.emitLine(`try { ${condVar} = (`);
     compiler.compileExpression(node.cond, frame);
-    compiler.emitLine(`); } catch(e) { ${condVar} = false; lineno = ${lineno}; colno = ${colno}; yield runtime.streamError(e, { lineno, colno }); }`);
+    compiler.emit('); ');
+    compiler.emitStreamCatch(lineno, colno, `${condVar} = false`);
     compiler.emitLine(`if(${condVar}) {`);
   } else {
     compiler.emit('if(');

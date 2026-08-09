@@ -65,7 +65,8 @@ const setupForLoop = (compiler: Compiler, node: ForNode, parentFrame: Frame): { 
     compiler.emitLine(`let ${arr};`);
     compiler.emitLine(`try { ${arr} = `);
     compiler.compileExpression(node.arr, frame);
-    compiler.emitLine(`; } catch(e) { ${arr} = null; lineno = ${lineno}; colno = ${colno}; yield runtime.streamError(e, { lineno, colno }); }`);
+    compiler.emitLine('; ');
+    compiler.emitStreamCatch(lineno, colno, `${arr} = null`);
   } else {
     compiler.emit(`let ${arr} = `);
     compiler.compileExpression(node.arr, frame);

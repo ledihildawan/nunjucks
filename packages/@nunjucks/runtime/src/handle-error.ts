@@ -4,11 +4,7 @@ import {
   getLogContext,
 } from './log-context.ts';
 
-interface ErrorWithLineInfo extends Error {
-  lineno?: number | null;
-}
-
-const isErrorWithLineInfo = (value: unknown): value is ErrorWithLineInfo =>
+const isErrorInstance = (value: unknown): value is Error & { lineno?: number | null } =>
   value instanceof Error;
 
 interface HandleErrorLocation {
@@ -28,7 +24,8 @@ function handleError(this: unknown, error: unknown, { lineno, colno }: HandleErr
     lineBase: 'zero',
   });
 
-  if (metadata.lineno !== null && isErrorWithLineInfo(error)) {
+  // WHY: re-throw the original error if it already carries lineno — avoids double-enrichment (handleError would create a new TemplateError, losing the original's stack trace and custom fields).
+  if (metadata.lineno !== null && isErrorInstance(error)) {
     const errorLineno = error.lineno;
     if (errorLineno !== undefined && errorLineno !== null) {
       throw error;

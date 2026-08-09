@@ -34,6 +34,9 @@ const CONTENT_TYPE_MAP: Record<string, string> = {
   text: 'text/plain; charset=utf-8',
 };
 
+const serializeErrorPayload = (error: TemplateError): string =>
+  JSON.stringify({ error: true, code: error.code, message: error.message, templatePath: error.templatePath, lineno: error.lineno, colno: error.colno });
+
 interface RenderErrorInput {
   err: TemplateError;
   contentType: string;
@@ -43,7 +46,7 @@ interface RenderErrorInput {
 
 const renderPreStreamError = ({ err, contentType, dev, ide }: RenderErrorInput): string => {
   if (contentType === 'json') {
-    return JSON.stringify({ error: true, code: err.code, message: err.message, templatePath: err.templatePath, lineno: err.lineno, colno: err.colno });
+    return serializeErrorPayload(err);
   }
   return formatError(err, { format: contentType as 'html' | 'ansi' | 'text', dev, ide });
 };
@@ -57,7 +60,7 @@ interface MidStreamErrorInput {
 const renderMidStreamError = ({ err, contentType, ide }: MidStreamErrorInput): string => {
   const error = err as TemplateError;
   if (contentType === 'json') {
-    return `\n${JSON.stringify({ error: true, code: error.code, message: error.message, templatePath: error.templatePath, lineno: error.lineno, colno: error.colno })}`;
+    return `\n${serializeErrorPayload(error)}`;
   }
   if (contentType === 'text') {
     return `\n[render error] ${error.message} at ${error.templatePath ?? 'unknown'}:${error.lineno ?? '?'}:${error.colno ?? '?'}`;

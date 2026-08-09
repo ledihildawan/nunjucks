@@ -72,7 +72,7 @@ const compileOutputChild = (
   }
   compiler.emit(`, { autoescape: env.opts.autoescape, lineno, colno, context: "${htmlContext}" });`);
   if (compiler.streamErrorRecovery) {
-    compiler.emitLine('} catch (e) { yield runtime.streamError(e, { lineno, colno }); }');
+    compiler.emitStreamCatch(lineno, colno);
   }
 };
 
@@ -93,7 +93,7 @@ const processOutputChild = (
       const walrusColno = rawColumn ?? 0;
       compiler.emitLine(`lineno = ${walrusLineno}; colno = ${walrusColno}; try {`);
       compiler.compile(child, frame);
-      compiler.emitLine('} catch (e) { yield runtime.streamError(e, { lineno, colno }); }');
+      compiler.emitStreamCatch(walrusLineno, walrusColno);
     } else {
       compiler.compile(child, frame);
     }
