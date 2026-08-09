@@ -22,6 +22,7 @@ const normalizeErrorContext = (context: ErrorContext | null | undefined): Normal
   templateName: context?.templateName ?? null,
   lineBase: context?.lineBase ?? null,
   timestamp: context?.timestamp ?? null,
+  environment: context?.environment ?? null,
 });
 
 const normalizeWarningContext = (context: WarningContext | null | undefined): NormalizedWarningContext => ({
@@ -31,6 +32,7 @@ const normalizeWarningContext = (context: WarningContext | null | undefined): No
   templateName: context?.templateName ?? null,
   lineBase: context?.lineBase ?? null,
   timestamp: context?.timestamp ?? null,
+  environment: context?.environment ?? null,
   varName: context?.varName ?? null,
   undefinedMode: context?.undefinedMode ?? 'chainable',
 });

@@ -16,6 +16,7 @@ export interface ErrorLike {
   blockedKeys?: readonly string[];
   severity?: 'error' | 'warning' | 'info';
   timestamp?: string | null;
+  environment?: string | null;
 }
 
 export const isObjectValue = (value: unknown): value is ErrorLike =>

@@ -14,6 +14,7 @@ interface ErrorSectionsInput {
   renderContext?: Record<string, unknown>;
   version?: string;
   timestamp?: string | undefined;
+  environment?: string | null;
   sourceTrace?: SourceTrace | null | undefined;
   ide?: string;
   verbosity?: 'simple' | 'medium' | 'full';
@@ -36,10 +37,11 @@ interface ErrorSections {
 
 // WHY: shared assembly for both toHtml (full document) and toHtmlMarker (inline marker + modal). Computes the error title, display coords, and builds the header/body/footer/wrapper sections so neither renderer duplicates this pipeline.
 const buildErrorSections = (input: ErrorSectionsInput): ErrorSections => {
-  const { error, templatePath, lineno, colno, renderContext, version = DEFAULT_VERSION, timestamp, sourceTrace, ide = DEFAULT_IDE, verbosity = 'full', isJsCaller = false } = input;
+  const { error, templatePath, lineno, colno, renderContext, version = DEFAULT_VERSION, timestamp, environment, sourceTrace, ide = DEFAULT_IDE, verbosity = 'full', isJsCaller = false } = input;
   // WHY: fall back to error.renderContext when the caller didn't pass it explicitly — the error object carries renderContext after wrapWithLog enrichment, so callers like toHtmlMarker (via pipeRenderStream) don't need to thread it through manually.
   const effectiveRenderContext = renderContext ?? error.renderContext;
   const effectiveTimestamp = timestamp ?? error.timestamp;
+  const effectiveEnvironment = environment ?? error.environment ?? null;
   const humanTitle = classifyAndBuildTitle(error);
   const { classified, displayLine, displayCol, displayPath } = buildErrorDisplay(error, { templatePath, lineno: lineno ?? undefined, colno: colno ?? undefined, isJsCaller });
   const locDisplay = `${shortenPath(displayPath)}:${displayLine}:${displayCol}`;
@@ -50,6 +52,7 @@ const buildErrorSections = (input: ErrorSectionsInput): ErrorSections => {
     category: classified.category,
     severity: classified.severity,
     phase: error.phase ?? null,
+    environment: effectiveEnvironment,
     verbosity,
     displayPath,
     displayLine,

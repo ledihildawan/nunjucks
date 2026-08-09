@@ -30,6 +30,7 @@ interface DiagnosticsBuildInput {
   dev: boolean | null;
   ide: string | null;
   timestamp: string | null;
+  environment: string | null;
 }
 
 export { findContextKeyPosition } from './find-context-key-position.ts';
@@ -98,6 +99,7 @@ const buildContextObj = (input: DiagnosticsBuildInput): Record<string, unknown> 
   sourceStartLine: input.sourceStartLine,
   renderContext: input.renderContext ?? undefined,
   timestamp: input.timestamp,
+  environment: input.environment,
   verbosity: 'full',
   isJsCaller: input.preferCallerLocation,
 });
@@ -203,6 +205,7 @@ export const wrapWithLog = async (
   const ide = config.ide ?? DEFAULT_IDE;
   // WHY: wrapWithLog is the error-enrichment shell — resolveLocation() above performs I/O to map template offsets to caller file:line. The timestamp is consistent with that impure role; render-boundary callers don't need to thread it through.
   const timestamp = new Date().toISOString();
+  const environment = process.env.NODE_ENV ?? 'development';
 
   const metadata = buildMetadata(errSnapshot, { lineno, colno, lineBase, phase, templatePath, sourceContent, sourceStartLine, renderContext });
   const resolvedProps = resolveErrorProps(err);
@@ -216,6 +219,7 @@ export const wrapWithLog = async (
     dev: dev ?? null,
     ide,
     timestamp,
+    environment,
   });
 
   const effectiveBlockedKeys = resolveEffectiveBlockedKeys(err, config);

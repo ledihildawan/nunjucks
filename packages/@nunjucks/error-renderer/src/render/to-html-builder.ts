@@ -34,6 +34,7 @@ interface ErrorHeaderInput {
   category: string;
   severity: 'error' | 'warning' | 'info';
   phase: string | null | undefined;
+  environment: string | null;
   verbosity: 'simple' | 'medium' | 'full';
   displayPath: string;
   displayLine: number;
@@ -43,11 +44,15 @@ interface ErrorHeaderInput {
   locDisplay: string;
 }
 
+const titleCase = (value: string): string =>
+  value.charAt(0).toUpperCase() + value.slice(1);
+
 const buildErrorHeader = ({
   humanTitle,
   category,
   severity: _severity,
   phase,
+  environment,
   verbosity,
   displayPath,
   displayLine,
@@ -56,10 +61,11 @@ const buildErrorHeader = ({
   canLinkLocation,
   locDisplay,
 }: ErrorHeaderInput): string => {
-  const codeBadge = renderBadge('badge-error', category);
-  const phaseBadge = renderBadge('badge-code', phase);
+  const phaseText = phase ? titleCase(phase) : null;
+  const phaseBadge = renderBadge('badge-code', phaseText);
+  const envBadge = environment ? `<span class="badge badge-env" style="margin-inline-start:auto">${escapeHtml(titleCase(environment))}</span>` : '';
   const headerTitle = escapeHtml(humanTitle);
-  const phaseBadgePart = phaseBadge ? ` <span style="margin-inline-start:auto">${phaseBadge}</span>` : '';
+  const phaseBadgePart = phaseBadge ? ` ${phaseBadge}` : '';
 
   const locationLink = canLinkLocation
     ? `<a href="${resolveIdeLink(ide, { path: displayPath, line: displayLine, col: displayCol })}" class="loc-link error-location-link">${escapeHtml(locDisplay)}</a>`
@@ -76,7 +82,7 @@ const buildErrorHeader = ({
         <line x1="12" y1="8" x2="12" y2="12"></line>
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
       </svg>
-      ${codeBadge}${phaseBadgePart}
+      ${escapeHtml(category)}${phaseBadgePart}${envBadge}
     </div>
     <h1 id="err-title" class="error-title">${headerTitle}</h1>
     ${errorLocationBlock}

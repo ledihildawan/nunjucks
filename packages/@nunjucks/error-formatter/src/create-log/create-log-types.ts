@@ -102,6 +102,7 @@ interface ErrorContext {
   sourceContent?: string;
   sourceStartLine?: number;
   timestamp?: string | null;
+  environment?: string | null;
 }
 
 interface WarningContext extends ErrorContext {
@@ -116,6 +117,7 @@ interface BaseContext {
   templateName: string | null;
   lineBase: LineBase | null;
   timestamp: string | null;
+  environment: string | null;
 }
 
 interface NormalizedErrorContext extends BaseContext {}
