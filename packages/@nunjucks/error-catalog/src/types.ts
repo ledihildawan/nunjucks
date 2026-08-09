@@ -9,6 +9,7 @@ export interface ErrorLike {
   templateName?: string | null;
   templatePath?: string | null;
   sourceContent?: string;
+  renderContext?: Record<string, unknown>;
   phase?: Phase | null;
   code?: string | null;
   lineBase?: LineBase | null;

@@ -37,6 +37,8 @@ interface ErrorSections {
 // WHY: shared assembly for both toHtml (full document) and toHtmlMarker (inline marker + modal). Computes the error title, display coords, and builds the header/body/footer/wrapper sections so neither renderer duplicates this pipeline.
 const buildErrorSections = (input: ErrorSectionsInput): ErrorSections => {
   const { error, templatePath, lineno, colno, renderContext, version = DEFAULT_VERSION, timestamp, sourceTrace, ide = DEFAULT_IDE, verbosity = 'full', isJsCaller = false } = input;
+  // WHY: fall back to error.renderContext when the caller didn't pass it explicitly — the error object carries renderContext after wrapWithLog enrichment, so callers like toHtmlMarker (via pipeRenderStream) don't need to thread it through manually.
+  const effectiveRenderContext = renderContext ?? error.renderContext;
   const humanTitle = classifyAndBuildTitle(error);
   const { classified, displayLine, displayCol, displayPath } = buildErrorDisplay(error, { templatePath, lineno: lineno ?? undefined, colno: colno ?? undefined, isJsCaller });
   const locDisplay = `${shortenPath(displayPath)}:${displayLine}:${displayCol}`;
@@ -55,7 +57,7 @@ const buildErrorSections = (input: ErrorSectionsInput): ErrorSections => {
     canLinkLocation,
     locDisplay,
   });
-  const body = buildErrorBodyContent({ verbosity, error, classified, sourceTrace, renderContext, ide, displayPath });
+  const body = buildErrorBodyContent({ verbosity, error, classified, sourceTrace, renderContext: effectiveRenderContext, ide, displayPath });
   const footer = buildErrorFooter({ version, timestamp, verbosity, canLinkLocation, ide, displayPath, displayLine, displayCol });
   const wrapped = buildHtmlWrapper(header, body, footer);
 
