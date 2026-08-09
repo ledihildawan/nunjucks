@@ -5,7 +5,7 @@ import type { RenderConfig, RenderStreamResult } from './render-types.ts';
 import { execute, executeStream, createFrame, withTimeout, isStreamErrorSentinel, type StreamErrorSentinel } from '@nunjucks/runtime';
 import { getCallerFrames } from './caller-file.ts';
 import { ok, err, isErr, type Result } from '@nunjucks/shared';
-import { injectWarningsScript, type TemplateWarning, type TemplateError } from '@nunjucks/log';
+import { injectWarningsScript, adjustColnoForNullValue, type TemplateWarning, type TemplateError } from '@nunjucks/log';
 import { wrapWithLog } from '../diagnostics/diagnostics.ts';
 import { toHtmlMarker, buildSourceTrace } from '@nunjucks/error-renderer';
 import type { GlobalConfig } from '../config/global.ts';
@@ -171,13 +171,13 @@ const render = async (template: string, options: RenderOptions = {}): Promise<Re
   return ok(injectWarningsIfNeeded({ result, warningsCollector, dev: resolvedConfig.dev }));
 };
 
-// WHY: shared inline error marker formatter — used by formatStreamSentinel (sentinel path) and pipe-stream.ts renderMidStreamError (throw path). Single implementation for source trace extraction + toHtmlMarker formatting.
+// WHY: shared inline error marker formatter — used by formatStreamSentinel (sentinel path) and pipe-stream.ts renderMidStreamError (throw path). Single implementation for source trace extraction + toHtmlMarker formatting. adjustColnoForNullValue shifts the caret from the property (.get) to the parent variable (myContainer) for NULL_VALUE errors so the root cause is highlighted.
 const formatErrorMarker = (error: TemplateError, ide = 'vscode'): string => {
   const trace = buildSourceTrace({
     sourceContent: error.sourceContent ?? null,
     templatePath: error.templatePath ?? error.templateName ?? null,
     lineno: error.lineno,
-    colno: error.colno,
+    colno: adjustColnoForNullValue(error),
     lineBase: error.lineBase ?? 'zero',
     sourceStartLine: error.sourceStartLine ?? 1,
     blockedKeys: error.blockedKeys ?? null,

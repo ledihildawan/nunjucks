@@ -23,6 +23,19 @@ const resolveTraceLineBase = (err: TemplateError, isJsCaller: boolean | undefine
   return normalizeLineBase(err.lineBase);
 };
 
+const adjustColnoForNullValue = (err: TemplateError): number | null | undefined => {
+  if (err.code !== 'NULL_VALUE' || !err.sourceContent || err.lineno == null) { return err.colno; }
+  const parentMatch = err.message.match(/on (?:null|undefined) '([^']+)'$/u);
+  if (!parentMatch?.[1]) { return err.colno; }
+  const lines = err.sourceContent.split('\n');
+  const lineIndex = err.lineBase === 'zero' ? err.lineno : Math.max(0, err.lineno - 1);
+  const errorLine = lines[lineIndex];
+  if (!errorLine) { return err.colno; }
+  const parentIdx = errorLine.indexOf(parentMatch[1]);
+  if (parentIdx < 0) { return err.colno; }
+  return err.lineBase === 'zero' ? parentIdx : parentIdx + 1;
+};
+
 const buildSourceTraceIfNeeded = (
   err: TemplateError,
   verbosity: string,
@@ -34,7 +47,7 @@ const buildSourceTraceIfNeeded = (
     sourceContent: err.sourceContent ?? null,
     templatePath: options.templatePath ?? err.templatePath ?? err.templateName ?? null,
     lineno: err.lineno,
-    colno: err.colno,
+    colno: adjustColnoForNullValue(err),
     lineBase: traceLineBase,
     sourceStartLine: err.sourceStartLine ?? 1,
     blockedKeys: collectBlockedKeys(err)
@@ -141,4 +154,4 @@ const createWarningFromDef = (
   return warn;
 };
 
-export { formatError, createErrorFromDef, createWarningFromDef };
+export { formatError, createErrorFromDef, createWarningFromDef, adjustColnoForNullValue };
