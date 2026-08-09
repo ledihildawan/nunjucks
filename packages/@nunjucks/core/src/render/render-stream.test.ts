@@ -49,4 +49,32 @@ describe('renderToStream', () => {
     expect(chunks.length).toBeGreaterThan(1);
     expect(chunks.join('')).toBe('aBc');
   });
+
+  test('for-loop streamed output matches blocking render', async () => {
+    const template = '{% for item in items %}{{ item }},{% endfor %}';
+    const options = { context: { items: ['a', 'b', 'c'] } };
+    const blocking = await render(template, options);
+    const streamed = await renderToStream(template, options);
+
+    expect(streamed.ok).toBe(true);
+    if (!streamed.ok) { return; }
+    expect(await collectString(streamed.stream)).toBe(isOk(blocking) ? blocking.value : '');
+  });
+
+  test('async filter runs during streaming — output correct and delay respected', async () => {
+    const slow = async (value: unknown): Promise<string> => {
+      await new Promise((resolve) => { setTimeout(resolve, 120); });
+      return String(value);
+    };
+    const template = '[{{ a |> slow }}][{{ b |> slow }}]';
+    const start = Date.now();
+    const result = await renderToStream(template, { context: { a: '1', b: '2' }, filters: { slow } });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    const output = await collectString(result.stream);
+    expect(output).toBe('[1][2]');
+    // WHY: two sequential ~120ms awaits must elapse, proving the async filter executed inline during the stream (a fully synchronous/buffered path could not block on them).
+    expect(Date.now() - start).toBeGreaterThanOrEqual(220);
+  });
 });
