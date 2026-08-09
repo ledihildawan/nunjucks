@@ -55,7 +55,7 @@ describe('pipeRenderStream', () => {
     expect(mock.headers['Content-Type']).toContain('text/html');
     const output = mock.writes.join('');
     expect(output).toContain('OK ');
-    expect(output).toContain('nj-err-mark');
+    expect(output).toContain('nj-err-block');
     expect(output).toContain('nj-err-overlay');
     expect(mock.ended).toBe(true);
   });
