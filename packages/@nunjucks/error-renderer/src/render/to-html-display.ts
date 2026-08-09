@@ -6,18 +6,8 @@ import { toDisplayLocation } from './internal/location/location.ts';
 import type { LineBase } from '@nunjucks/error-catalog';
 import type { ClassifiedError, ErrorLike, HumanTitleInput, LocationInfo } from './to-html-types.ts';
 
-const SCRIPT_EXTENSION_RE = /\.(?:[cm]?[jt]sx?|mjs|cjs)$/iu;
 const UNDEFINED_OUTPUT_RE = /attempted to output '([^']+)'/u;
 const RESERVED_KEYWORD_RE = /Cannot use reserved (\w+) '([^']+)'/u;
-
-const isScriptPath = (filePath?: string | null): boolean =>
-  SCRIPT_EXTENSION_RE.test(filePath ?? '');
-
-const SEVERITY_HEADINGS: Record<string, string> = {
-  warning: 'Template Warning',
-  info: 'Template Info',
-  error: 'Template Rendering Error',
-};
 
 const renderBadge = (variant: string, text?: string | null): string => {
   if (!text) { return ''; }
@@ -116,4 +106,4 @@ const buildErrorDisplay = (
   return { classified, displayLine, displayCol, displayPath };
 };
 
-export { classifyError, classifyAndBuildTitle, buildErrorDisplay, renderBadge, resolveHumanTitle, isScriptPath, SEVERITY_HEADINGS };
+export { classifyError, classifyAndBuildTitle, buildErrorDisplay, renderBadge, resolveHumanTitle };

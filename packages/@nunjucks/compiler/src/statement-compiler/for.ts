@@ -58,9 +58,19 @@ const setupForLoop = (compiler: Compiler, node: ForNode, parentFrame: Frame): { 
   const arr = compiler.tmpid();
   const frame = parentFrame.push(true);
   compiler.emitLine('frame = frame.push(true);');
-  compiler.emit(`let ${arr} = `);
-  compiler.compileExpression(node.arr, frame);
-  compiler.emitLine(';');
+  if (compiler.streamErrorRecovery) {
+    const { lineno: rawLine, colno: rawCol } = node;
+    const lineno = rawLine ?? 0;
+    const colno = rawCol ?? 0;
+    compiler.emitLine(`let ${arr};`);
+    compiler.emitLine(`try { ${arr} = `);
+    compiler.compileExpression(node.arr, frame);
+    compiler.emitLine(`; } catch(e) { ${arr} = null; lineno = ${lineno}; colno = ${colno}; yield runtime.streamError(e, { lineno, colno }); }`);
+  } else {
+    compiler.emit(`let ${arr} = `);
+    compiler.compileExpression(node.arr, frame);
+    compiler.emitLine(';');
+  }
   compiler.emit(`if(${arr}) {`);
   compiler.emitLine(`${arr} = runtime.fromIterator(${arr});`);
   return { frame, arr };

@@ -129,19 +129,28 @@ const matchTemplateInCaller = ({ content, templateHint, errLineno, errColno, pre
 
 const collectRegexMatches = (content: string, re: RegExp): RegExpMatchArray[] => [...content.matchAll(re)];
 
+type SubjectMatchMode = 'quoted' | 'bare';
+
+const buildSubjectPatterns = (escaped: string, mode: SubjectMatchMode): Array<{ re: RegExp; group: number }> => {
+  if (mode === 'quoted') {
+    return [
+      { re: new RegExp(`'(${escaped})'`, 'g'), group: 1 },
+      { re: new RegExp(`"(${escaped})"`, 'g'), group: 1 },
+    ];
+  }
+  return [{ re: new RegExp(`\\b(${escaped})\\b`, 'g'), group: 1 }];
+};
+
 const findSubjectOccurrence = (
   content: string,
   subject: string | null,
-  preferredLine: number | null
+  preferredLine: number | null,
+  mode: SubjectMatchMode = 'quoted'
 ): SourcePosition | null => {
   if (!subject || typeof subject !== 'string') { return null; }
   const colOffset = subjectColumnOffset(subject);
   const escaped = escapeRegex(subject);
-  const patterns: Array<{ re: RegExp; group: number }> = [
-    { re: new RegExp(`'(${escaped})'`, 'g'), group: 1 },
-    { re: new RegExp(`"(${escaped})"`, 'g'), group: 1 },
-    { re: new RegExp(`\\b(${escaped})\\b`, 'g'), group: 1 }
-  ];
+  const patterns = buildSubjectPatterns(escaped, mode);
 
   return pipe(
     patterns,
@@ -220,26 +229,31 @@ const matchNullTemplate = (
   return findTemplatePattern(content, subject, preferredLine);
 };
 
-const extractCallerPosition = (input: CallerPositionInput): SourcePosition | null => {
+const resolveEffectiveSubject = (subject: string | null, template: string | null): string =>
+  subject ?? templateLiteralText(template);
+
+// WHY: caller-position search is split into three confidence tiers so foldCandidateSearch can try high-confidence matches (template literal) across ALL candidate files before falling back to lower-confidence ones. This prevents a reserved-word subject like 'if' from false-matching a TypeScript `if` keyword in a wrapper file when a later candidate has the actual quoted 'if' filter key.
+
+const extractTemplatePosition = (input: CallerPositionInput): SourcePosition | null => {
   const { content, template, errLineno, errColno, subject, preferredLine } = input;
   if (typeof template === 'string') {
-    const matched = matchStringTemplate(input);
-    if (matched) { return matched; }
-    if (subject) { return findSubjectOccurrence(content, subject, preferredLine); }
-    return null;
+    return matchStringTemplate(input);
   }
-
   if (template === null && subject) {
-    const matched = matchNullTemplate(content, subject, errLineno, errColno, preferredLine);
-    if (matched) { return matched; }
+    return matchNullTemplate(content, subject, errLineno, errColno, preferredLine);
   }
-
-  if (subject) {
-    return findSubjectOccurrence(content, subject, preferredLine);
-  }
-
-  return findSubjectOccurrence(content, templateLiteralText(template), preferredLine);
+  return null;
 };
 
-export { extractCallerPosition };
+const extractQuotedSubjectPosition = (input: CallerPositionInput): SourcePosition | null => {
+  const effectiveSubject = resolveEffectiveSubject(input.subject, input.template);
+  return findSubjectOccurrence(input.content, effectiveSubject, input.preferredLine, 'quoted');
+};
+
+const extractBareSubjectPosition = (input: CallerPositionInput): SourcePosition | null => {
+  const effectiveSubject = resolveEffectiveSubject(input.subject, input.template);
+  return findSubjectOccurrence(input.content, effectiveSubject, input.preferredLine, 'bare');
+};
+
+export { extractTemplatePosition, extractQuotedSubjectPosition, extractBareSubjectPosition };
 export type { SourcePosition };

@@ -3,12 +3,13 @@ import { withStreamTimeout } from './render-stream-adapters.ts';
 import { formatError, type TemplateError } from '@nunjucks/log';
 import { toHtmlMarker, buildSourceTrace } from '@nunjucks/error-renderer';
 
-// WHY: structural sink interface so pipeRenderStream works with any HTTP response shape. Express res satisfies this directly (res.status, res.setHeader, res.write, res.end); Bun/Deno/Web can adapt.
+// WHY: structural sink interface matching Express Response shape — res.status(), res.setHeader(), res.write(), res.end(), res.flushHeaders(). Express res satisfies this directly; Bun/Deno/Web can adapt (flushHeaders is optional — without it, chunks may buffer but still arrive).
 interface PipeSink {
-  setStatus: (code: number) => void;
+  status: (code: number) => void;
   setHeader: (name: string, value: string) => void;
   write: (chunk: string) => void | Promise<void>;
   end: () => void;
+  flushHeaders?: () => void;
 }
 
 interface PipeRenderStreamOptions {
@@ -69,7 +70,7 @@ const pipeRenderStream = async (
       // biome-ignore lint/suspicious/noConsole: intentional server-side ANSI error logging for dev debugging
       console.log(formatError(result.error, { format: 'ansi', dev }));
     }
-    sink.setStatus(500);
+    sink.status(500);
     sink.setHeader('Content-Type', mimeType);
     sink.write(renderPreStreamError(result.error, contentType, dev, ide));
     sink.end();
@@ -78,6 +79,8 @@ const pipeRenderStream = async (
 
   sink.setHeader('Content-Type', mimeType);
   sink.setHeader('X-Accel-Buffering', 'no');
+  sink.setHeader('Cache-Control', 'no-cache, no-transform');
+  sink.flushHeaders?.();
 
   const stream = timeoutMs > 0 ? withStreamTimeout(result.stream, timeoutMs) : result.stream;
 

@@ -13,6 +13,10 @@ export const compileExec = (compiler: Compiler, { node, frame }: CompileNodeInpu
   compiler.emitLine("  if (e instanceof Error && !e.code) {");
   compiler.emitLine("    e.code = 'EXEC_EXPRESSION_ERROR';");
   compiler.emitLine('  }');
-  compiler.emitLine('  throw e;');
+  if (compiler.streamErrorRecovery) {
+    compiler.emitLine(`  lineno = ${node.lineno ?? 0}; colno = ${node.colno ?? 0}; yield runtime.streamError(e, { lineno, colno });`);
+  } else {
+    compiler.emitLine('  throw e;');
+  }
   compiler.emitLine('}');
 };

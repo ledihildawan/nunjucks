@@ -41,6 +41,7 @@ export { callWrap, inOperator } from './call-wrap.ts';
 export type { CallWrapOptions, InOperatorOptions } from './call-wrap.ts';
 export { contextOrFrameLookup, fromIterator } from './lookups.ts';
 export { handleError } from './handle-error.ts';
+export { streamError, isStreamErrorSentinel, type StreamErrorSentinel } from './stream-error.ts';
 export {
   HOOK_EVENTS,
   type HookEvent,

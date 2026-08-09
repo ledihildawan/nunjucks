@@ -43,6 +43,7 @@ interface RenderConfig {
   callerFile?: string | null;
   callerLocation?: CallerLocation | null;
   callerFrames?: readonly CallerLocation[] | null;
+  streamErrorRecovery?: boolean;
   customFilters?: Record<string, unknown>;
   customGlobals?: Record<string, unknown>;
   filters?: Record<string, (...args: unknown[]) => unknown>;

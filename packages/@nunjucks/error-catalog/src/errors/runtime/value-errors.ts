@@ -14,6 +14,7 @@ const NULL_VALUE = {
   ],
   fixCode: '{{ {parent}?.{accessPath} |> default("") }}',
   fixComment: 'Use optional chaining `?.` or `default()` filter to handle null safely',
+  severity: 'error' as const,
   extraFrom: (groups: RegExpMatchArray) => ({ accessPath: groups[1] ?? '', state: groups[2] ?? '', parent: groups[3] ?? '' })
 };
 
@@ -46,8 +47,22 @@ const UNDEFINED_PROPERTY = {
   ],
   fixCode: '{{ {parent}?.{property} |> default("N/A") }}',
   fixComment: 'Use optional chaining `?.` or `default()` to handle missing properties gracefully',
+  severity: 'error' as const,
   extraFrom: (groups: RegExpMatchArray) => ({ property: groups[1] ?? '', parent: groups[2] ?? '' })
 };
+
+const UNDEFINED_VALUE = createErrorDefinition({
+  name: 'UNDEFINED_VALUE',
+  message: 'Undefined value',
+  category: 'undefined_value',
+  causes: [
+    'A nested property access returned `null` or `undefined`',
+    'An expression evaluated to `undefined`',
+    'A function call returned nothing'
+  ],
+  fixCode: "{{ value |> default('N/A') }}",
+  fixComment: 'Use the `default` filter to handle undefined values'
+});
 
 const UNDEFINED_VALUE_MATCH = createErrorDefinition({
   name: 'UNDEFINED_VALUE_MATCH',
@@ -103,6 +118,7 @@ const IN_OPERATOR = {
   ],
   fixCode: '{{ ["a", "b", "c"] |> contains("a") }}',
   fixComment: 'Use the `contains` filter or check `is in array` for arrays',
+  severity: 'error' as const,
   subjectFrom: (groups: RegExpMatchArray) => `${groups[1]} in ${groups[2]}`
 };
 
@@ -119,6 +135,7 @@ const INVALID_LOOKUP = {
   ],
   fixCode: "{{ {target}.key }} or {{ {target}['key'] }}",
   fixComment: 'Use either dot notation OR bracket notation, never mixed',
+  severity: 'error' as const,
   subjectFrom: firstCapture
 };
 
@@ -150,6 +167,6 @@ const NOT_A_FUNCTION = createErrorDefinition({
 
 export {
   NULL_VALUE, UNDEFINED_VARIABLE, UNDEFINED_PROPERTY,
-  UNDEFINED_VALUE_MATCH, OUTPUT_MATCH, CALL_MATCH,
+  UNDEFINED_VALUE, UNDEFINED_VALUE_MATCH, OUTPUT_MATCH, CALL_MATCH,
   IN_OPERATOR, INVALID_LOOKUP, KEY_NOT_FOUND, NOT_A_FUNCTION,
 };

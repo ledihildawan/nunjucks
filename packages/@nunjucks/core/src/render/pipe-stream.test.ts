@@ -8,7 +8,7 @@ const createMockSink = (): { sink: PipeSink; writes: string[]; status: number | 
   let ended = false;
   return {
     sink: {
-      setStatus: (code: number) => { status = code; },
+      status: (code: number) => { status = code; },
       setHeader: (name: string, value: string) => { headers[name] = value; },
       write: (chunk: string) => { writes.push(chunk); },
       end: () => { ended = true; },

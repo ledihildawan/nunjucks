@@ -2,7 +2,7 @@
 import { readFile } from 'node:fs/promises';
 
 import { reduce } from 'remeda';
-import { extractCallerPosition } from './error-location-matching.ts';
+import { extractTemplatePosition, extractQuotedSubjectPosition, extractBareSubjectPosition } from './error-location-matching.ts';
 import type { CallerLocation, LocationInputs, ResolvedLocation } from './error-location-types.ts';
 
 interface CallerCandidate {
@@ -80,18 +80,41 @@ const readCandidateContents = (candidates: readonly CallerCandidate[]): Promise<
 
 const INITIAL_SEARCH_OUTCOME: CallerSearchOutcome = { status: 'not-found' };
 
-const foldCandidateSearch = (reads: readonly CandidateRead[], searchInput: CallerSearchInput): CallerSearchOutcome =>
+type PositionExtractor = (input: { content: string; template: string | null; errLineno: number | null; errColno: number | null; subject: string | null; preferredLine: number | null }) => { line: number; col: number } | null;
+
+// WHY: multi-pass search ensures high-confidence matches (template literal, then quoted property key) are found across ALL candidate files before falling back to low-confidence bare-word matching. This prevents a reserved-word subject like 'if' from matching a TypeScript `if` keyword in an intermediate wrapper file when a later candidate file contains the actual quoted 'if' filter key.
+const searchPass = (
+  reads: readonly CandidateRead[],
+  searchInput: CallerSearchInput,
+  extractFn: PositionExtractor
+): CallerSearchOutcome =>
   reduce(reads, (outcome: CallerSearchOutcome, { candidate, content }: CandidateRead) => {
     if (outcome.status === 'matched') { return outcome; }
     if (content === null) {
       return outcome.status === 'unreadable' ? outcome : { status: 'unreadable', candidate };
     }
-    const position = extractCallerPosition({ content, template: searchInput.template, errLineno: searchInput.errLineno, errColno: searchInput.errColno, subject: searchInput.subject, preferredLine: candidate.lineNumber });
+    const position = extractFn({ content, template: searchInput.template, errLineno: searchInput.errLineno, errColno: searchInput.errColno, subject: searchInput.subject, preferredLine: candidate.lineNumber });
     if (position) {
       return { status: 'matched', match: { source: content, line: position.line, col: position.col, filePath: candidate.fileName } };
     }
     return outcome;
   }, INITIAL_SEARCH_OUTCOME);
+
+const firstNonNotFound = (...outcomes: CallerSearchOutcome[]): CallerSearchOutcome =>
+  outcomes.find((o) => o.status !== 'not-found') ?? INITIAL_SEARCH_OUTCOME;
+
+const foldCandidateSearch = (reads: readonly CandidateRead[], searchInput: CallerSearchInput): CallerSearchOutcome => {
+  const templateOutcome = searchPass(reads, searchInput, extractTemplatePosition);
+  if (templateOutcome.status === 'matched') { return templateOutcome; }
+
+  const quotedOutcome = searchPass(reads, searchInput, extractQuotedSubjectPosition);
+  if (quotedOutcome.status === 'matched') { return quotedOutcome; }
+
+  const bareOutcome = searchPass(reads, searchInput, extractBareSubjectPosition);
+  if (bareOutcome.status === 'matched') { return bareOutcome; }
+
+  return firstNonNotFound(templateOutcome, quotedOutcome, bareOutcome);
+};
 
 const resolveCallerLocation = async (inputs: LocationInputs, candidates: readonly CallerCandidate[]): Promise<ResolvedLocation | null> => {
   if (candidates.length === 0) { return null; }

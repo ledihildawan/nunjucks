@@ -1,17 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { isScriptPath, renderBadge, resolveHumanTitle } from './to-html-display.ts';
-
-describe('isScriptPath', () => {
-  test.each(['file.js', 'file.ts', 'file.jsx', 'file.tsx', 'file.mjs', 'file.cjs'])(
-    'returns true for %s',
-    (p) => { expect(isScriptPath(p)).toBe(true); },
-  );
-
-  test.each(['file.html', 'file.njk', 'file.css', '', null, undefined])(
-    'returns false for %s',
-    (p) => { expect(isScriptPath(p as never)).toBe(false); },
-  );
-});
+import { renderBadge, resolveHumanTitle } from './to-html-display.ts';
 
 describe('renderBadge', () => {
   test('returns empty string for null text', () => {

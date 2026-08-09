@@ -19,7 +19,10 @@ const captureCallerStack = (): NodeJS.CallSite[] => {
 const isInternalCallerFile = (fileName: string | null | undefined): boolean => {
   if (!fileName) { return true; }
   if (fileName.startsWith('node:')) { return true; }
-  return fileName.includes('node_modules');
+  if (fileName.includes('node_modules')) { return true; }
+  // WHY: in monorepo dev mode the engine source lives in packages/@nunjucks/ rather than node_modules/@nunjucks/. Filtering both paths ensures caller resolution always targets consumer code, never engine internals (which would false-match reserved-word subjects like 'if' against TypeScript keywords in the engine's own source). Test files (.test.) are exempt because they consume the engine's public API the same way end-user code does.
+  if (fileName.includes('@nunjucks') && !fileName.includes('.test.')) { return true; }
+  return false;
 };
 
 const callsiteToCallerLocation = (site: NodeJS.CallSite): CallerLocation | null => {

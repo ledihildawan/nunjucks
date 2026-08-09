@@ -11,11 +11,12 @@ interface CompileToCodeOptions {
   templateName: string;
   undefinedMode: UndefinedMode | undefined;
   parseOpts?: ParseOptions;
+  streamErrorRecovery?: boolean;
 }
 
-const compileToCode = ({ source, templateName, undefinedMode, parseOpts }: CompileToCodeOptions): Result<string, Error> => {
+const compileToCode = ({ source, templateName, undefinedMode, parseOpts, streamErrorRecovery }: CompileToCodeOptions): Result<string, Error> => {
   try {
-    const compiler = createCompiler(templateName, undefinedMode, source);
+    const compiler = createCompiler(templateName, undefinedMode, source, streamErrorRecovery ?? false);
     const astR = parse(source, [], parseOpts);
     if (isErr(astR)) {
       return err(astR.error instanceof Error ? astR.error : new Error(String(astR.error)));

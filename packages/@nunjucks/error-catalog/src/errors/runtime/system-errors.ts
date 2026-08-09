@@ -14,6 +14,7 @@ const TIMEOUT = {
   ],
   fixCode: '{{ env.opts.executionTimeout = 60000; /* 60s */ }}',
   fixComment: 'Increase the `executionTimeout` config or simplify the template',
+  severity: 'error' as const,
   subjectFrom: null
 };
 
@@ -39,7 +40,7 @@ const UNAVAILABLE_IN_ENV = createErrorDefinition({
     'The environment was created without registering this filter or test',
     'A custom environment is missing the filter/test handler'
   ],
-  fixCode: 'env.addFilter(\'{name}\', function(value) { return value; })',
+  fixCode: 'env.addFilter(\'myFilter\', function(value) { return value; })',
   fixComment: 'Register the missing filter with `env.addFilter()` or test with `env.addTest()`'
 });
 

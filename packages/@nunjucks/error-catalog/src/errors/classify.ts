@@ -44,18 +44,20 @@ const buildClassification = (
   extra: Record<string, string | null> | null,
   input: ClassifyInput
 ): Classification => {
+  // WHY: prefer the error's explicit subject over the pattern-extracted name for placeholder substitution. The pattern match captures the full expression from the message text (e.g. 'user["status"]()'), while the runtime-set subject is the precise reference (e.g. 'user["status"]'). Using the pattern match would produce incorrect fixCode like `typeof user["status"]()()` with doubled parens.
+  const effectiveSubject = input.subject ?? undefinedName;
   const baseCauses = input.causes?.length ? input.causes : rule.causes;
   const baseFixCode = input.fixCode ?? rule.fixCode;
   const baseFixComment = input.fixComment ?? rule.fixComment;
-  const title = rule.titleTemplate ? replacePlaceholders(rule.titleTemplate, undefinedName, extra) : null;
+  const title = rule.titleTemplate ? replacePlaceholders(rule.titleTemplate, effectiveSubject, extra) : null;
 
   return {
     category: rule.category,
-    undefinedName,
+    undefinedName: effectiveSubject,
     title,
-    causes: mapCauses(baseCauses, undefinedName, extra),
-    fixCode: replacePlaceholders(baseFixCode, undefinedName, extra),
-    fixComment: replacePlaceholders(baseFixComment, undefinedName, extra),
+    causes: mapCauses(baseCauses, effectiveSubject, extra),
+    fixCode: replacePlaceholders(baseFixCode, effectiveSubject, extra),
+    fixComment: replacePlaceholders(baseFixComment, effectiveSubject, extra),
     documentationUrl: rule.documentationUrl ?? null,
     severity: rule.severity ?? 'error'
   };

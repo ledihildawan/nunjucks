@@ -128,7 +128,7 @@ const resolveUndefinedValue = (options: ResolveUndefinedOptions): 'undefined' =>
   const { varName } = options;
   const errorDef: ErrorDefinitionEntry = varName
     ? ERROR_DEFINITIONS.UNDEFINED_VARIABLE
-    : { name: 'UNDEFINED_VALUE', message: () => 'Undefined value', pattern: MATCH_ANY_RE } as const;
+    : ERROR_DEFINITIONS.UNDEFINED_VALUE;
   return resolveUndefined(options, {
     errorDef,
     params: { name: varName ?? '' },

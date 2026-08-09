@@ -47,7 +47,10 @@ export const compileRenderBlock = (compiler: Compiler, { node, frame: parentFram
 
   const callExpr = node.callExpr;
 
-  compiler.emit(`lineno = ${node.lineno}; colno = ${node.colno ?? 0}; ${appendTarget(compiler)}runtime.suppressValue(`);
+  const prefix = compiler.streamErrorRecovery
+    ? `lineno = ${node.lineno}; colno = ${node.colno ?? 0}; try { ${appendTarget(compiler)}runtime.suppressValue(`
+    : `lineno = ${node.lineno}; colno = ${node.colno ?? 0}; ${appendTarget(compiler)}runtime.suppressValue(`;
+  compiler.emit(prefix);
   compiler.emit('await runtime.awaitValue(');
 
   if (isFunCall(callExpr)) {
@@ -57,5 +60,8 @@ export const compileRenderBlock = (compiler: Compiler, { node, frame: parentFram
   }
 
   compiler.emitLine(`), { autoescape: env.opts.autoescape, lineno, colno, context: "html" });`);
+  if (compiler.streamErrorRecovery) {
+    compiler.emitLine('} catch(e) { yield runtime.streamError(e, { lineno, colno }); }');
+  }
   compiler.emitLine('frame = frame.pop();');
 };

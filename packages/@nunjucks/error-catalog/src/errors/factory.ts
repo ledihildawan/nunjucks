@@ -14,7 +14,7 @@ interface ErrorDefinitionOptions {
   extraFrom?: ExtraExtractor;
 }
 
-const SUPPORTED_PLACEHOLDERS = ['{type}', '{name}', '{key}', '{keys}', '{values}', '{violations}', '{subject}', '{attr}', '{by}'] as const;
+const SUPPORTED_PLACEHOLDERS = ['{type}', '{name}', '{key}', '{keys}', '{values}', '{violations}', '{subject}', '{attr}', '{by}', '{path}', '{msg}', '{token}', '{expected}', '{tag}', '{detail}'] as const;
 
 const messageHasVariable = (messageTemplate: string): boolean =>
   SUPPORTED_PLACEHOLDERS.some(placeholder => messageTemplate.includes(placeholder));
@@ -22,14 +22,20 @@ const messageHasVariable = (messageTemplate: string): boolean =>
 const createPattern = (messageTemplate: string): RegExp => {
   const pattern = escapeRegex(messageTemplate)
     .replaceAll('\\{type\\}', '(.+)')
-    .replaceAll('\\{name\\}', '([^"]+)')
-    .replaceAll('\\{key\\}', '([^"]+)')
+    .replaceAll('\\{name\\}', '([^"\']+)')
+    .replaceAll('\\{key\\}', '([^"\']+)')
     .replaceAll('\\{keys\\}', '(.+)')
     .replaceAll('\\{values\\}', '(.+)')
     .replaceAll('\\{violations\\}', '(.+)')
-    .replaceAll('\\{subject\\}', '([^"]+)')
-    .replaceAll('\\{attr\\}', '([^"]+)')
-    .replaceAll('\\{by\\}', '(.+)');
+    .replaceAll('\\{subject\\}', '([^"\']+)')
+    .replaceAll('\\{attr\\}', '([^"\']+)')
+    .replaceAll('\\{by\\}', '(.+)')
+    .replaceAll('\\{path\\}', '(.+)')
+    .replaceAll('\\{msg\\}', '(.+)')
+    .replaceAll('\\{token\\}', '(.+)')
+    .replaceAll('\\{expected\\}', '(.+)')
+    .replaceAll('\\{tag\\}', '([^"\']+)')
+    .replaceAll('\\{detail\\}', '(.+)');
   return new RegExp(`^${pattern}$`, 'i');
 };
 
@@ -46,7 +52,8 @@ const createErrorDefinition = (options: ErrorDefinitionOptions) => {
     fixCode,
     fixComment,
     documentationUrl,
-    severity,
+    // WHY: severity defaults to 'error' so every factory-created definition has an explicit value. Only warnings (e.g. DANGEROUS_CONTEXT_VALUE_SCRUBBED) override to 'warning'.
+    severity: severity ?? 'error',
     subjectFrom: messageHasVariable(message) ? firstCapture : null,
     extraFrom: extraFrom ?? null
   };

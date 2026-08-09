@@ -4,6 +4,7 @@ import { awaitValue } from './await-value.ts';
 import { callWrap, inOperator } from './call-wrap.ts';
 import { contextOrFrameLookup, fromIterator } from './lookups.ts';
 import { handleError } from './handle-error.ts';
+import { streamError } from './stream-error.ts';
 import { collectString } from './collect-stream.ts';
 import {
   memberLookup, optionalMemberLookup, slice, nullishCoalesce,
@@ -25,6 +26,7 @@ const createRenderRuntime = (options?: RenderRuntimeOptions) => ({
   suppressValue,
   awaitValue,
   handleError,
+  streamError,
   collectString,
   contextOrFrameLookup,
   memberLookup,

@@ -10,9 +10,19 @@ export const compileMatch = (compiler: Compiler, { node, frame: parentFrame }: C
   const matchedVar = compiler.tmpid();
   const frame = parentFrame.push(true);
   compiler.emitLine('frame = frame.push(true);');
-  compiler.emitLine(`let ${targetVar} = `);
-  compiler.compileExpression(node.expr, frame);
-  compiler.emitLine(';');
+  if (compiler.streamErrorRecovery) {
+    const { lineno: rawLine, colno: rawCol } = node;
+    const lineno = rawLine ?? 0;
+    const colno = rawCol ?? 0;
+    compiler.emitLine(`let ${targetVar};`);
+    compiler.emitLine(`try { ${targetVar} = `);
+    compiler.compileExpression(node.expr, frame);
+    compiler.emitLine(`; } catch(e) { ${targetVar} = undefined; lineno = ${lineno}; colno = ${colno}; yield runtime.streamError(e, { lineno, colno }); }`);
+  } else {
+    compiler.emitLine(`let ${targetVar} = `);
+    compiler.compileExpression(node.expr, frame);
+    compiler.emitLine(';');
+  }
   compiler.emitLine(`let ${matchedVar} = false;`);
 
   forEach(node.cases, (caseNode) => {

@@ -3,8 +3,8 @@ import type { ParseOptions } from '@nunjucks/parser';
 import type { Env } from '@nunjucks/runtime';
 import { createSandboxedContext } from '@nunjucks/runtime';
 import { createLog, getError, type IncludeChain, type TemplateWarning } from '@nunjucks/log';
-import { wrapWithLog } from '../diagnostics/diagnostics.ts';
-import { MATCH_ANY_RE, scrubDangerousReferences, ok, isErr, type Result } from '@nunjucks/shared';
+import { wrapWithLog, findContextKeyPosition } from '../diagnostics/diagnostics.ts';
+import { scrubDangerousReferences, ok, isErr, type Result } from '@nunjucks/shared';
 import type { FileSystemLoader } from '@nunjucks/loaders';
 import { createTemplate } from '../template/index.ts';
 import { compileToCode } from '../compile-pipeline.ts';
@@ -92,7 +92,7 @@ const buildRenderEnv = (loader: FileSystemLoader | null, config: RenderConfig): 
 };
 
 const compileTemplate = (templateSource: string, config: RenderConfig, templateName: string): Result<CompileResult, Error> => {
-  const codeResult = compileToCode({ source: templateSource, templateName, undefinedMode: config.undefined, parseOpts: { undefined: config.undefined } as ParseOptions });
+  const codeResult = compileToCode({ source: templateSource, templateName, undefinedMode: config.undefined, parseOpts: { undefined: config.undefined } as ParseOptions, streamErrorRecovery: config.streamErrorRecovery ?? false });
   return isErr(codeResult) ? codeResult : ok({ code: codeResult.value });
 };
 
@@ -107,21 +107,36 @@ const handleContextStrictMode = async (context: Record<string, unknown>, config:
 
   if (config.contextStrict === 'error') {
     const subject = dangerousValuePaths.join(', ');
+    const firstPath = dangerousValuePaths[0] ?? '';
+    // WHY: walk all caller frames to find the file that actually defines the dangerous context value. The immediate caller (frame 0) is often a wrapper (e.g. Express renderTemplate helper) that doesn't contain the context definition — the real consumer code lives in a later frame.
+    const callerFrames = config.callerFrames ?? [];
+    const framePositions = await Promise.all(
+      callerFrames.map(frame =>
+        frame.fileName !== 'unknown' && firstPath
+          ? findContextKeyPosition(frame.fileName, frame.lineNumber ?? 1, firstPath).then(pos => pos ? { ...pos, fileName: frame.fileName } : null)
+          : Promise.resolve(null),
+      ),
+    );
+    const contextPos = framePositions.find((pos): pos is { line: number; col: number; fileName: string } => pos !== null) ?? null;
     const err = createLog('error', {
-      def: { name: 'DANGEROUS_CONTEXT_VALUES', message: `Context contains unsafe values: ${subject}` },
+      def: getError('DANGEROUS_CONTEXT_VALUES'),
+      params: { values: subject },
       subject,
-      context: { phase: 'render' },
+      context: contextPos
+        ? { phase: 'render', lineno: contextPos.line, colno: contextPos.col, lineBase: 'one' as const }
+        : { phase: 'render' },
     });
-    throw await wrapWithLog(err, config, { renderContext: context });
+    const enrichedConfig = contextPos
+      ? { ...config, jsCaller: contextPos.fileName, jsCallerErrorLine: contextPos.line, jsCallerErrorCol: contextPos.col }
+      : config;
+    // WHY: scrub dangerous values from the context before attaching to the error, so the error page's Render Context toggle never exposes them (e.g. process, eval). The consumer sees the safe version the engine would have used for rendering.
+    const safeForDisplay = scrubDangerousReferences(context) as Record<string, unknown>;
+    throw await wrapWithLog(err, enrichedConfig, { renderContext: safeForDisplay });
   }
 
   const scrubbedContext = scrubDangerousReferences(context) as Record<string, unknown>;
   const scrubWarning = createLog('warning', {
-    def: {
-      name: 'DANGEROUS_CONTEXT_VALUE_SCRUBBED',
-      message: () => `Scrubbed unsafe values from context: ${dangerousValuePaths.join(', ')}`,
-      pattern: MATCH_ANY_RE
-    },
+    def: getError('DANGEROUS_CONTEXT_VALUE_SCRUBBED'),
     params: { values: dangerousValuePaths.join(', ') },
     subject: dangerousValuePaths.join(', '),
     context: {

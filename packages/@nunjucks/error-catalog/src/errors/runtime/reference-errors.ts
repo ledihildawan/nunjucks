@@ -71,6 +71,7 @@ const UNKNOWN_BLOCK_RUNTIME = {
   ],
   fixCode: '{% block content %}\n  {{ super() }}\n  Additional child content\n{% endblock %}',
   fixComment: 'Rename the child block or remove the `super()` call',
+  severity: 'error' as const,
   subjectFrom: firstCapture
 };
 
@@ -99,7 +100,8 @@ const NO_SUPER_BLOCK = {
     'The parent block was removed or renamed in the parent file'
   ],
   fixCode: '{% block {subject} %}\n  {% if false %}{{ super() }}{% endif %}\n  Your content\n{% endblock %}',
-  fixComment: 'Guard the `super()` call with an `{% if %}` or remove it'
+  fixComment: 'Guard the `super()` call with an `{% if %}` or remove it',
+  severity: 'error' as const,
 };
 
 const RESERVED_KEYWORD = {
@@ -115,6 +117,7 @@ const RESERVED_KEYWORD = {
   ],
   fixCode: "env.addFilter('my{subject}', function(value) { /* ... */ })",
   fixComment: 'Choose a different name with a prefix or suffix to avoid the conflict',
+  severity: 'error' as const,
   subjectFrom: null
 };
 
@@ -130,6 +133,7 @@ const RESERVED_KEYWORD_CONTEXT = {
   ],
   fixCode: 'Use {subject} only in its intended context',
   fixComment: 'Review when {subject} can be used',
+  severity: 'error' as const,
   subjectFrom: firstCapture
 };
 

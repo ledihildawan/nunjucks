@@ -1,5 +1,5 @@
 import { validateTemplate, validateConfig, validateRenderContext } from '@nunjucks/validators';
-import { createLog, getError } from '@nunjucks/log';
+import { createLog, getError, ERROR_DEFINITIONS } from '@nunjucks/log';
 import { findContextKeyPosition, wrapWithLog } from '../diagnostics/diagnostics.ts';
 import type { TemplateError } from '@nunjucks/log';
 import { ok, err, type Result } from '@nunjucks/shared';
@@ -19,8 +19,15 @@ const buildValidationError = async ({
   templateSource,
   context,
 }: ValidationErrorRequest): Promise<TemplateError> => {
+  // WHY: merge the full catalog definition (causes, fixCode, fixComment, severity) with the validator's already-resolved message. Validators produce plain-text messages, but the catalog template (e.g. "Cannot use reserved {type} '{name}'") would require reconstructing params — overriding message avoids that while still enriching the error with diagnostic metadata.
+  const errorCode = validationError.code;
+  const catalogDef = errorCode && Object.hasOwn(ERROR_DEFINITIONS, errorCode)
+    ? ERROR_DEFINITIONS[errorCode as keyof typeof ERROR_DEFINITIONS]
+    : undefined;
   const err = createLog('error', {
-    def: { name: validationError.code, message: validationError.message },
+    def: catalogDef
+      ? { ...catalogDef, message: validationError.message }
+      : { name: validationError.code, message: validationError.message },
     subject: (stamps.subject as string | null | undefined) ?? validationError.subject ?? null,
     context: {
       phase: 'render',

@@ -54,6 +54,7 @@ export interface ScopeManager {
 export interface Compiler extends Emitter, ScopeManager {
   templateName: string | null;
   lastId: number;
+  streamErrorRecovery: boolean;
   fail: (msg: string, lineno?: number, colno?: number) => void;
   tmpid: () => string;
   getTemplateName: () => string;
@@ -67,7 +68,8 @@ export interface Compiler extends Emitter, ScopeManager {
 export const createCompiler = (
   templateName: string | null,
   undefinedMode: UndefinedMode | undefined,
-  source: string
+  source: string,
+  streamErrorRecovery = false
 ): Compiler => {
   const contextTracker = createHtmlContextTracker(source);
 
@@ -75,6 +77,7 @@ export const createCompiler = (
     templateName,
     codebuf: [],
     lastId: 0,
+    streamErrorRecovery,
     buffer: null,
     bufferStack: [],
     scopeStack: [],

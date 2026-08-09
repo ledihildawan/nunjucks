@@ -2,11 +2,12 @@ import { resolveTemplateSource, prepareSandbox, buildRenderEnv, compileTemplate,
 import { validateRender, validateTemplateSource } from './render-validation.ts';
 import { getLoader } from '../engine.ts';
 import type { RenderConfig, RenderStreamResult } from './render-types.ts';
-import { execute, executeStream, createFrame, withTimeout } from '@nunjucks/runtime';
+import { execute, executeStream, createFrame, withTimeout, isStreamErrorSentinel, type StreamErrorSentinel } from '@nunjucks/runtime';
 import { getCallerFrames } from './caller-file.ts';
 import { ok, err, isErr, type Result } from '@nunjucks/shared';
 import { injectWarningsScript, type TemplateWarning, type TemplateError } from '@nunjucks/log';
 import { wrapWithLog } from '../diagnostics/diagnostics.ts';
+import { toHtmlMarker, buildSourceTrace } from '@nunjucks/error-renderer';
 import type { GlobalConfig } from '../config/global.ts';
 import { getDefaultConfig } from '../config/global.ts';
 import { defaultFilterBundle } from '../filter-bundle.ts';
@@ -95,7 +96,7 @@ interface PreparedTemplate {
   readonly context: Record<string, unknown>;
 }
 
-// WHY: pass-1 of rendering — validation, template resolution, compile, and sandbox/env preparation, with NO execution. Extracted so render() (buffer-execute) and the future renderToStream() (stream-execute) share identical pre-execution work and error enrichment. Every failure here is a Result error the consumer can still render as an error page (response headers not yet sent).
+// WHY: pass-1 of rendering — validation, context-scrub, template resolution, compile, and sandbox/env preparation, with NO execution. Extracted so render() (buffer-execute) and renderToStream() (stream-execute) share identical pre-execution work and error enrichment. Context strict mode runs BEFORE template resolution/compilation so dangerous values are caught early without wasted I/O. Every failure here is a Result error the consumer can still render as an error page (response headers not yet sent).
 const prepareRender = async (template: string, { context = {}, ...options }: RenderOptions = {}): Promise<Result<PreparedTemplate, TemplateError>> => {
   const baseConfig = setupRenderConfig(options);
   const callerFrames = baseConfig.callerFrames ?? getCallerFrames();
@@ -111,33 +112,43 @@ const prepareRender = async (template: string, { context = {}, ...options }: Ren
   const renderValidation = await validateRender(template, { config, context });
   if (isErr(renderValidation)) { return err(renderValidation.error); }
 
+  // WHY: context strict mode must run before template resolution/compilation — if the context contains dangerous values (e.g. process, eval), there is no point reading files or compiling templates. handleContextStrictMode throws for 'error' mode; catch and convert to Result so render() never throws.
+  let warningsCollector: TemplateWarning[];
+  let safeContext: Record<string, unknown>;
+  try {
+    const strictResult = await handleContextStrictMode(context, config);
+    warningsCollector = strictResult.warningsCollector;
+    safeContext = strictResult.context;
+  } catch (strictErr) {
+    return err(strictErr as TemplateError);
+  }
+
   const loader = getLoader(config);
   let templateSource: string;
   let templatePath: string | null;
   try {
     ({ templateSource, templatePath } = await resolveTemplateSource(template, loader, config));
   } catch (resolveErr) {
-    return err(await wrapWithLog(resolveErr, config, { template, renderContext: context }));
+    return err(await wrapWithLog(resolveErr, config, { template, renderContext: safeContext }));
   }
   const configWithPath: RenderConfig = templatePath ? { ...config, templatePath } : config;
 
-  const sourceValidation = await validateTemplateSource(templateSource, { config: configWithPath, context });
+  const sourceValidation = await validateTemplateSource(templateSource, { config: configWithPath, context: safeContext });
   if (isErr(sourceValidation)) { return err(sourceValidation.error); }
 
   const templateName = resolveTemplateName(template, configWithPath);
 
   const compileResult = compileTemplate(templateSource, configWithPath, templateName);
   if (isErr(compileResult)) {
-    return err(await wrapWithLog(compileResult.error, configWithPath, { template: templateSource, renderContext: context }));
+    return err(await wrapWithLog(compileResult.error, configWithPath, { template: templateSource, renderContext: safeContext }));
   }
   const { code } = compileResult.value;
 
-  const { warningsCollector, context: safeContext } = await handleContextStrictMode(context, configWithPath);
   const sandboxedCtx = prepareSandbox(configWithPath, safeContext);
   const envOverride = buildRenderEnv(loader, configWithPath);
   const resolvedConfig: RenderConfig = envOverride ? { ...configWithPath, env: envOverride } : configWithPath;
 
-  return ok({ code, sandboxedCtx, warningsCollector, templateName, resolvedConfig, templateSource, context });
+  return ok({ code, sandboxedCtx, warningsCollector, templateName, resolvedConfig, templateSource, context: safeContext });
 };
 
 const render = async (template: string, options: RenderOptions = {}): Promise<Result<string, TemplateError>> => {
@@ -154,15 +165,37 @@ const render = async (template: string, options: RenderOptions = {}): Promise<Re
   return ok(injectWarningsIfNeeded(result, warningsCollector, resolvedConfig.dev));
 };
 
-// WHY: streaming counterpart of executeCompiledTemplate — yields the root generator's chunks instead of draining them, so a consumer can pipe output incrementally. A mid-stream runtime error propagates as a throw from the generator (consumer catches via for-await); pre-stream errors are returned as { ok: false } by renderToStream before any chunk is produced.
+// WHY: streaming counterpart of executeCompiledTemplate — yields the root generator's chunks instead of draining them. When streamErrorRecovery is enabled, per-expression errors arrive as StreamErrorSentinel values (not throws) — these are enriched via wrapWithLog and formatted as inline HTML markers so the stream continues past failures. Fatal errors (non-output, e.g. {% for %} loop failures) still propagate as throws.
+const formatStreamSentinel = async (sentinel: StreamErrorSentinel, prepared: PreparedTemplate): Promise<string> => {
+  const enriched = await wrapWithLog(sentinel.error, prepared.resolvedConfig, { template: prepared.templateSource, renderContext: prepared.context });
+  const trace = buildSourceTrace({
+    sourceContent: enriched.sourceContent ?? null,
+    templatePath: enriched.templatePath ?? enriched.templateName ?? null,
+    lineno: enriched.lineno,
+    colno: enriched.colno,
+    lineBase: enriched.lineBase ?? 'zero',
+    sourceStartLine: enriched.sourceStartLine ?? 1,
+  });
+  return toHtmlMarker(enriched, { sourceTrace: trace, ide: 'vscode' });
+};
+
 const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGenerator<string> {
   const { code, sandboxedCtx, warningsCollector, resolvedConfig, templateSource, context } = prepared;
   const frame = createFrame();
   const env = buildExecutionEnv(resolvedConfig);
+  const generator = executeStream(code, sandboxedCtx, frame, env, resolvedConfig);
   try {
-    yield* executeStream(code, sandboxedCtx, frame, env, resolvedConfig);
+    while (true) {
+      const { value, done } = await generator.next();
+      if (done) { break; }
+      if (isStreamErrorSentinel(value)) {
+        yield await formatStreamSentinel(value, prepared);
+      } else {
+        yield value as string;
+      }
+    }
   } catch (streamErr) {
-    // WHY: enrich mid-stream errors via wrapWithLog so they carry the same full classification, source-trace, location, causes, and fix as blocking render errors. Without this, the consumer gets a raw handleError-enriched error (wrong category, no location, no causes).
+    // WHY: enrich fatal mid-stream errors (non-output failures that bypass per-expression try/catch) via wrapWithLog so they carry the same full classification, source-trace, location, causes, and fix as blocking render errors.
     throw await wrapWithLog(streamErr, resolvedConfig, { template: templateSource, renderContext: context });
   }
   if (warningsCollector.length > 0 && resolvedConfig.dev) {
@@ -170,7 +203,7 @@ const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGe
   }
 };
 
-// WHY: two-pass streaming (Option B). Pass-1 (prepareRender) validates/compiles — a failure here is returned as { ok: false, error } so the consumer can still render an error page (response headers not yet sent). On success, pass-2 returns the async generator directly (no drain); mid-stream runtime errors then surface as a generator throw after chunks have already been emitted.
+// WHY: two-pass streaming (Option B). Pass-1 (prepareRender) validates/compiles — a failure here is returned as { ok: false, error } so the consumer can still render an error page (response headers not yet sent). On success, pass-2 returns the async generator directly (no drain); mid-stream runtime errors then surface as a generator throw after chunks have already been emitted. Pass streamErrorRecovery: true in options to enable per-expression error recovery (inline markers instead of stream termination).
 const renderToStream = async (template: string, options: RenderOptions = {}): Promise<RenderStreamResult> => {
   const prepared = await prepareRender(template, options);
   if (isErr(prepared)) { return { ok: false, error: prepared.error }; }

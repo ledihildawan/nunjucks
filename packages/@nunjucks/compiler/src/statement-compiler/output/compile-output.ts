@@ -52,7 +52,11 @@ const compileOutputChild = (
   const useEnsureDefined = !isOptional || compiler.undefinedMode === 'debug';
   const htmlContext = compiler.getHtmlContext(lineno, colno);
 
-  compiler.emitLine(`lineno = ${lineno}; colno = ${colno}; ${appendTarget(compiler)}runtime.suppressValue(`);
+  // WHY: when streamErrorRecovery is enabled, each output expression gets its own try/catch so a failing {{ expr }} yields an inline error marker (via runtime.streamError) instead of terminating the entire async generator. Static text and subsequent expressions continue to stream.
+  const prefix = compiler.streamErrorRecovery
+    ? `lineno = ${lineno}; colno = ${colno}; try { ${appendTarget(compiler)}runtime.suppressValue(`
+    : `lineno = ${lineno}; colno = ${colno}; ${appendTarget(compiler)}runtime.suppressValue(`;
+  compiler.emitLine(prefix);
   if (!isPipeType) {
     compiler.emit('await runtime.awaitValue(');
   }
@@ -67,6 +71,9 @@ const compileOutputChild = (
     compiler.emit(')');
   }
   compiler.emit(`, { autoescape: env.opts.autoescape, lineno, colno, context: "${htmlContext}" });`);
+  if (compiler.streamErrorRecovery) {
+    compiler.emitLine('} catch (e) { yield runtime.streamError(e, { lineno, colno }); }');
+  }
 };
 
 const processOutputChild = (
