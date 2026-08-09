@@ -44,7 +44,7 @@ const UNDEFINED_PROPERTY = {
     'The parent object `{parent}` is `undefined` or `null`',
     'Accessing a property of an array element that does not have that field'
   ],
-  fixCode: '{{ product?.name |> default("N/A") }}',
+  fixCode: '{{ {parent}?.{property} |> default("N/A") }}',
   fixComment: 'Use optional chaining `?.` or `default()` to handle missing properties gracefully',
   extraFrom: (groups: RegExpMatchArray) => ({ property: groups[1] ?? '', parent: groups[2] ?? '' })
 };
