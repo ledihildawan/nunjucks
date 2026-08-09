@@ -153,7 +153,7 @@ app.get('/stream-normal', async (_req: Request, res: Response) => {
 // WHY: JSON streaming API — same dashboard data but rendered as JSON. Walrus operator computes derived field inline. Error markers arrive as JSON objects (not HTML). Demonstrates content-type aware streaming markers for API consumers.
 app.get('/stream-api', async (_req: Request, res: Response) => {
   await pipeRenderStream(
-    await renderToStream('{{ { ...kpi, avgOrder := kpi.revenueNum / kpi.orderCount, orders: orders, customer: customer } |> tojson }}', {
+    await renderToStream('{{ avgOrder := kpi.revenueNum / kpi.orderCount }}{{ { revenue: kpi.revenue, avgOrder: avgOrder, orders: orders, customer: customer } |> tojson }}', {
       context: { ...streamContext.context, mode: 'JSON API' },
       dev: true,
       undefined: 'strict',
