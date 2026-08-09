@@ -1,4 +1,4 @@
-import { createContext, createFrame, type BlockLocation, type Context, type Frame } from '@nunjucks/runtime';
+import { createContext, createFrame, collectStream, type BlockLocation, type Context, type Frame } from '@nunjucks/runtime';
 import { prettifyError } from '@nunjucks/log';
 import type { TemplateState } from './types';
 import { createRuntimeWithContext } from './runtime-factory';
@@ -39,9 +39,13 @@ const createGetExported = (
   });
   try {
     const runtime = createRuntimeWithContext(state.path, ctx ?? {});
-    const rootResult = await state.rootRenderFunc?.(state.env, context, renderFrame, runtime);
-    // WHY: immutable Context writes (addExport/setVariable) reassign `context` inside rootRenderFunc, so the exported names/values only live on the post-render context, which root returns as the second tuple element.
-    const finalContext = rootResult !== undefined && Array.isArray(rootResult) ? (rootResult[1] as Context) : context;
+    const rootGen = state.rootRenderFunc?.(state.env, context, renderFrame, runtime);
+    // WHY: root is now an async generator (Option B); drain it to capture the post-render context it returns (immutable addExport/setVariable writes live there). Fall back to the original context if root is absent or returns none.
+    if (rootGen === undefined) {
+      return context.getExported();
+    }
+    const { context: drainedContext } = await collectStream(rootGen);
+    const finalContext = (drainedContext as Context | undefined) ?? context;
     return finalContext.getExported();
   } catch (e) {
     return wrapExportedError(e);

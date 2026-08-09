@@ -8,7 +8,7 @@ import type { SandboxOptions } from './sandbox/index.ts';
 import type { BlockLocation } from './context.ts';
 import type { RenderRuntime } from './render-runtime.ts';
 
-const ROOT_FUNCTION_RE = /^async\s+function\s+root\s*\(/;
+const ROOT_FUNCTION_RE = /^async\s+function\*\s+root\s*\(/;
 
 interface RenderFunctionResult {
   render: CompiledRenderSignature;

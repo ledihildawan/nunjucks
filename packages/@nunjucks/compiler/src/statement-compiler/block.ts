@@ -1,7 +1,7 @@
 import type { BlockNode, SuperNode } from '@nunjucks/nodes';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
-import { emitLineLocation } from '../codegen.ts';
+import { emitLineLocation, appendTarget } from '../codegen.ts';
 
 export const compileBlock = (compiler: Compiler, node: BlockNode): void => {
   const id = compiler.tmpid();
@@ -10,7 +10,7 @@ export const compileBlock = (compiler: Compiler, node: BlockNode): void => {
     : node.name;
   const name = nameNode?.value ?? 'block';
   compiler.emitLine(`let ${id} = await (await context.getBlock("${name}", ${node.lineno}, ${node.colno}))(env, context, frame, runtime);`);
-  compiler.emitLine(`${compiler.buffer} += ${id};`);
+  compiler.emitLine(`${appendTarget(compiler)}${id};`);
 };
 
 export const compileSuper = (compiler: Compiler, { node, frame }: CompileNodeInput<SuperNode>): void => {

@@ -2,7 +2,8 @@ import { createContext, type Env, type Context } from './context.ts';
 import type { Frame } from './frame.ts';
 import { createRenderRuntime, type RenderRuntime } from './render-runtime.ts';
 import { getRenderFunction, buildSandboxOptions, buildSandboxedRuntime } from './executor-runtime.ts';
-import type { Environment, RenderResult } from '@nunjucks/shared';
+import { collectString } from './collect-stream.ts';
+import type { Environment } from '@nunjucks/shared';
 
 type SandboxMode = 'allowlist' | 'blocklist';
 
@@ -35,9 +36,6 @@ const buildContextObject = (
   return createContext({ ctx: context, env, blocks });
 };
 
-const unwrapOutput = (result: RenderResult): string =>
-  Array.isArray(result) ? result[0] : result;
-
 const defaultEnv = (config: ExecuteConfig): Env => ({
   opts: {
     dev: false,
@@ -58,7 +56,8 @@ const executeNonSandbox = async (
   const { render, blocks } = getRenderFunction(code);
   const ctx = buildContextObject(context, env, blocks);
 
-  return unwrapOutput(await render(env, ctx, frame, runtime));
+  // WHY: root is now an async generator that yields output chunks; drain it into a string for blocking rendering. (Option B streaming pivot.)
+  return collectString(render(env, ctx, frame, runtime));
 };
 
 const execute = async (
@@ -71,8 +70,24 @@ const execute = async (
   const resolvedEnv = env ?? defaultEnv(config);
   const runtime = buildRuntime(config);
 
-  return await executeNonSandbox(code, context, frame, resolvedEnv, runtime);
+  return executeNonSandbox(code, context, frame, resolvedEnv, runtime);
 };
 
-export { execute };
+// WHY: streaming counterpart of execute — returns the root async generator WITHOUT draining, so renderToStream can hand it to a consumer (HTTP response pipe) that reads chunks incrementally. No executionTimeout here: a generator cannot be cleanly wrapped by withTimeout (it is not a Promise); streaming timeout is the consumer's responsibility.
+const executeStream = (
+  code: string,
+  context: Record<string, unknown>,
+  frame: Frame,
+  env: Env | null,
+  config: ExecuteConfig = {}
+): AsyncGenerator<string, unknown> => {
+  const resolvedEnv = env ?? defaultEnv(config);
+  const runtime = buildRuntime(config);
+  const { render, blocks } = getRenderFunction(code);
+  const ctx = buildContextObject(context, resolvedEnv, blocks);
+
+  return render(resolvedEnv, ctx, frame, runtime);
+};
+
+export { execute, executeStream };
 export type { ExecuteConfig, SandboxMode };

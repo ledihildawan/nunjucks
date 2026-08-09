@@ -6,17 +6,21 @@ export const emitFuncBegin = (
   node: Node,
   name: string
 ): void => {
-  compiler.buffer = 'output';
+  // WHY: Option B streaming — only `root` renders as an async generator (`buffer === null` signals "yield" to appendTarget); block/slot functions still return a plain string buffer. Diverging by name keeps the emit infrastructure shared while making the top-level template streamable.
+  const isRoot = name === 'root';
+  compiler.buffer = isRoot ? null : 'output';
   compiler.scopeStack = [];
-  compiler.emitLine(`async function ${name}(env, context, frame, runtime) {`);
+  compiler.emitLine(`async function${isRoot ? '*' : ''} ${name}(env, context, frame, runtime) {`);
   compiler.emitLine(`let lineno = ${node.lineno};`);
   compiler.emitLine(`let colno = ${node.colno ?? 0};`);
-  compiler.emitLine(`let ${compiler.buffer} = "";`);
+  if (!isRoot) {
+    compiler.emitLine(`let ${compiler.buffer} = "";`);
+  }
   compiler.emitLine('try {');
 };
 
 export const emitFuncEnd = (compiler: Emitter & ScopeManager, noReturn?: boolean): void => {
-  if (!noReturn) {
+  if (!noReturn && compiler.buffer !== null) {
     compiler.emitLine(`return ${compiler.buffer};`);
   }
 

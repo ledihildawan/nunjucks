@@ -61,5 +61,6 @@ export {
   type TimeoutError,
   isTimeoutError,
 } from './timeout.ts';
-export { execute, type ExecuteConfig } from './executor.ts';
+export { execute, executeStream, type ExecuteConfig } from './executor.ts';
 export { loadCompiledCode } from './code-loader.ts';
+export { collectString, collectStream } from './collect-stream.ts';

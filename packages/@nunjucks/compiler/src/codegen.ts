@@ -58,6 +58,10 @@ export const pushBuffer = (
   return id;
 };
 
+// WHY: Option B streaming — the root template renders as an async generator (`buffer === null`) and emits `yield chunk`; blocks/capture/slots still accumulate into a named string buffer and emit `buffer += chunk`. This picks the correct append target so every output emit-site stays uniform regardless of whether it currently sits in the streaming root or a string-returning scope.
+export const appendTarget = (compiler: Pick<Emitter, 'buffer'>): string =>
+  compiler.buffer === null ? 'yield ' : `${compiler.buffer} += `;
+
 export const getTemplateName = (
   compiler: { templateName: string | null }
 ): string => {

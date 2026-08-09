@@ -1,4 +1,4 @@
-import { createContext, createFrame, type BlockLocation, type Frame } from '@nunjucks/runtime';
+import { createContext, createFrame, collectStream, type BlockLocation, type Frame } from '@nunjucks/runtime';
 import { injectWarningsScript } from '@nunjucks/log';
 import type { Warning, IncludeChain } from '@nunjucks/log';
 import { prettifyError, getError } from '@nunjucks/log';
@@ -55,17 +55,18 @@ const createTemplateRenderer = (
 
     try {
       const runtime = createRuntimeWithContext(state.path, ctx ?? {});
-      const rootResult = await state.rootRenderFunc?.(state.env, context, frame, runtime);
+      const rootGen = state.rootRenderFunc?.(state.env, context, frame, runtime);
       // WHY: rootRenderFunc is optional (?.); a missing root means compilation produced no entry
       // point, so surface it explicitly instead of casting an undefined result to string.
-      if (rootResult === undefined) {
+      if (rootGen === undefined) {
         throw new Error(`Template "${state.path as string}" has no compiled root render function`);
       }
-      const result = Array.isArray(rootResult) ? rootResult[0] : rootResult;
+      // WHY: root is now an async generator (Option B) — drain it to a string; ignore the returned context here (this path returns rendered output only).
+      const { output: result } = await collectStream(rootGen);
       if (runtime.__warnings__.length > 0 && state.env.opts.dev) {
         return result + injectWarningsScript(runtime.__warnings__ as Warning[], { dev: true, verbosity: 'medium' });
       }
-      return result as string;
+      return result;
     } catch (e) {
       throw wrapRenderError(state, e);
     } finally {

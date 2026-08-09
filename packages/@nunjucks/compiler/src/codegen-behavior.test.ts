@@ -174,12 +174,13 @@ describe('codegen: output and template data', () => {
 });
 
 describe('codegen: root structure', () => {
-  test('root emits async function with correct signature', () => {
+  test('root emits async generator with correct signature', () => {
     const code = compileRoot([output(ZERO_LOC, [templateData(ZERO_LOC, 'x')])]);
-    expect(code).toContain('async function root');
+    expect(code).toContain('async function* root');
     expect(code).toContain('env, context, frame, runtime');
     expect(code).toContain('__blockMeta');
-    expect(code).toContain('return [childOutput, context]');
+    expect(code).toContain('yield "x"');
+    expect(code).toContain('return context');
   });
 });
 

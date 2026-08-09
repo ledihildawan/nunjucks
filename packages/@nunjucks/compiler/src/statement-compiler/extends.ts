@@ -1,7 +1,7 @@
 import type { ExtendsNode, IncludeNode } from '@nunjucks/nodes';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
-import { emitLineLocation } from '../codegen.ts';
+import { emitLineLocation, appendTarget } from '../codegen.ts';
 import { compileGetTemplate, getTemplateLocation } from './template-lookup.ts';
 
 export const compileExtends = (compiler: Compiler, { node, frame }: CompileNodeInput<ExtendsNode>): void => {
@@ -48,5 +48,5 @@ export const compileInclude = (compiler: Compiler, { node, frame }: CompileNodeI
   } else {
     compiler.emit(`let ${resultVar} = await ${tmplVar}_template.render(context.getVariables(), frame);`);
   }
-  compiler.emitLine(`${compiler.buffer} += ${resultVar};`);
+  compiler.emitLine(`${appendTarget(compiler)}${resultVar};`);
 };

@@ -2,28 +2,25 @@ import { describe, test, expect } from 'bun:test';
 import { execute } from './executor.ts';
 import { createFrame } from './frame.ts';
 
+// WHY: fixtures mirror the Option B compiled format — root is an async generator that yields output chunks; execute drains it via collectString.
 const compileBody = (body: string): string =>
-  `async function root(env, context, frame, runtime) {\n${body}\n}\nreturn { __blockMeta: {}, root: root };`;
+  `async function* root(env, context, frame, runtime) {\n${body}\n}\nreturn { __blockMeta: {}, root: root };`;
 
 const outputVariable = (name: string): string =>
-  compileBody([
-    'let output = "";',
-    `output += runtime.suppressValue(runtime.contextOrFrameLookup(context, frame, ${JSON.stringify(name)}), { autoescape: env.opts.autoescape, lineno: 0, colno: 0 });`,
-    'return output;',
-  ].join('\n'));
+  compileBody(`yield runtime.suppressValue(runtime.contextOrFrameLookup(context, frame, ${JSON.stringify(name)}), { autoescape: env.opts.autoescape, lineno: 0, colno: 0 });`);
 
 const emptyFrame = () => createFrame();
 
 describe('execute', () => {
   describe('basic execution', () => {
     test('renders compiled code and returns the output string', async () => {
-      const code = compileBody('return "hello world";');
+      const code = compileBody('yield "hello world";');
       const result = await execute(code, {}, emptyFrame(), null, {});
       expect(result).toBe('hello world');
     });
 
     test('returns a string built from a buffered output', async () => {
-      const code = compileBody('let output = "";\noutput += "foo";\noutput += "bar";\nreturn output;');
+      const code = compileBody('yield "foo";\nyield "bar";');
       const result = await execute(code, {}, emptyFrame(), null, {});
       expect(result).toBe('foobar');
     });
@@ -51,7 +48,7 @@ describe('execute', () => {
 
   describe('modes', () => {
     test('sandbox = true still renders output', async () => {
-      const code = compileBody('return "sandboxed";');
+      const code = compileBody('yield "sandboxed";');
       const result = await execute(code, {}, emptyFrame(), null, { sandbox: true });
       expect(result).toBe('sandboxed');
     });
@@ -63,14 +60,14 @@ describe('execute', () => {
     });
 
     test('dev = true still renders output', async () => {
-      const code = compileBody('return "dev mode";');
+      const code = compileBody('yield "dev mode";');
       const result = await execute(code, {}, emptyFrame(), null, { dev: true });
       expect(result).toBe('dev mode');
     });
   });
 
   describe('error handling', () => {
-    test('rejects when code does not start with "async function root"', async () => {
+    test('rejects when code does not start with "async function* root"', async () => {
       await expect(execute('this is not valid code', {}, emptyFrame(), null, {})).rejects.toThrow();
     });
 

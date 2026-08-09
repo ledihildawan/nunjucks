@@ -3,6 +3,7 @@ import type { Node, CallExtensionNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
+import { appendTarget } from '../codegen.ts';
 
 const resolveAutoescape = (node: CallExtensionNode): boolean => {
   const { autoescape: nodeAutoescape } = node;
@@ -16,7 +17,7 @@ const emitExtensionCallBegin = (
   res: string | null
 ): void => {
   if (!emitAsync) {
-    compiler.emit(`${compiler.buffer} += runtime.suppressValue(`);
+    compiler.emit(`${appendTarget(compiler)}runtime.suppressValue(`);
   }
   if (emitAsync) {
     compiler.emit(`let ${res} = await env.getExtension(${JSON.stringify(node.extName)})[${JSON.stringify(node.prop)}](`);
@@ -90,7 +91,7 @@ const emitExtensionCallEnd = (
   if (emitAsync) {
     compiler.emit(')');
     compiler.emitLine(
-      `\n${compiler.buffer} += runtime.suppressValue(await ${res}, { autoescape: ${autoescape} && env.opts.autoescape, lineno, colno });`);
+      `\n${appendTarget(compiler)}runtime.suppressValue(await ${res}, { autoescape: ${autoescape} && env.opts.autoescape, lineno, colno });`);
   } else {
     compiler.emit(')');
     compiler.emit(`, { autoescape: ${autoescape} && env.opts.autoescape, lineno, colno });\n`);

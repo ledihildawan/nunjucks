@@ -11,6 +11,7 @@ import type { Frame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import type { Compiler } from '../../index.ts';
 import type { CompileNodeInput } from '../../node-dispatch.ts';
+import { appendTarget } from '../../codegen.ts';
 import { extractPropertyLocation } from '../../location-utils.ts';
 import { extractVarName } from './extract-location.ts';
 
@@ -32,7 +33,7 @@ const isVariableLike = (child: Node): boolean =>
 
 const compileTemplateDataChild = (compiler: Compiler, child: Node): void => {
   if (child.value) {
-    compiler.emit(`${compiler.buffer} += `);
+    compiler.emit(appendTarget(compiler));
     compiler.emit(JSON.stringify(child.value));
     compiler.emit(';');
   }
@@ -51,7 +52,7 @@ const compileOutputChild = (
   const useEnsureDefined = !isOptional || compiler.undefinedMode === 'debug';
   const htmlContext = compiler.getHtmlContext(lineno, colno);
 
-  compiler.emitLine(`lineno = ${lineno}; colno = ${colno}; ${compiler.buffer} += runtime.suppressValue(`);
+  compiler.emitLine(`lineno = ${lineno}; colno = ${colno}; ${appendTarget(compiler)}runtime.suppressValue(`);
   if (!isPipeType) {
     compiler.emit('await runtime.awaitValue(');
   }

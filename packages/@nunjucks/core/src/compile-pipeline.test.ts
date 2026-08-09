@@ -11,7 +11,7 @@ describe('compileToCode', () => {
   test('produces JS string from simple template', () => {
     const code = unwrapCode(compileToCode({ source: 'Hello {{ name }}', templateName: 'test', undefinedMode: 'chainable' }));
     expect(typeof code).toBe('string');
-    expect(code).toContain('async function root');
+    expect(code).toContain('async function* root');
     expect(code).toContain('env, context, frame, runtime');
   });
 
@@ -28,12 +28,12 @@ describe('compileToCode', () => {
 
   test('handles undefined mode strict', () => {
     const code = unwrapCode(compileToCode({ source: '{{ x }}', templateName: 'test', undefinedMode: 'strict' }));
-    expect(code).toContain('async function root');
+    expect(code).toContain('async function* root');
   });
 
   test('handles empty template', () => {
     const code = unwrapCode(compileToCode({ source: '', templateName: 'test', undefinedMode: 'chainable' }));
-    expect(code).toContain('async function root');
+    expect(code).toContain('async function* root');
   });
 
   test('returns Err for unparseable template', () => {

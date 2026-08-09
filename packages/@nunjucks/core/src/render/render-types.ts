@@ -2,6 +2,7 @@ import type { Environment, BaseValidationError } from '@nunjucks/shared';
 import type { CallerLocation } from './caller-file.ts';
 import type { SandboxOptions, Env, UndefinedMode } from '@nunjucks/runtime';
 import type { SandboxMode } from '../config/global.ts';
+import type { TemplateError } from '@nunjucks/log';
 
 interface LoaderSource {
   src: string;
@@ -60,4 +61,9 @@ interface CompileResult {
   code: string;
 }
 
-export type { LoaderSource, ResolveResult, RenderValidationError, CallerLocation, Environment, SandboxOptions, RenderConfig, ValidationErrorRequest, CompileResult };
+// WHY: streaming-render error contract (two-pass). Pre-stream failures (compile/validate/load) arrive as `{ ok: false, error }` so the consumer can still render an error page — response headers are not yet sent. Once streaming starts, mid-stream runtime errors CANNOT render an error page; the AsyncGenerator throws instead and the consumer aborts + logs. The SAME TemplateError flows through both windows — only the delivery differs (Result vs throw), so no separate error type is needed.
+type RenderStreamResult =
+  | { readonly ok: false; readonly error: TemplateError }
+  | { readonly ok: true; readonly stream: AsyncGenerator<string> };
+
+export type { LoaderSource, ResolveResult, RenderValidationError, CallerLocation, Environment, SandboxOptions, RenderConfig, ValidationErrorRequest, CompileResult, RenderStreamResult };

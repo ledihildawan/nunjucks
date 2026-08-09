@@ -21,17 +21,26 @@ const makeScope = () => {
 };
 
 describe('emitFuncBegin', () => {
-  test('emits async function header with lineno/colno and output buffer', () => {
+  test('root emits an async generator header with no output buffer', () => {
     const c = makeScope();
     emitFuncBegin(c as never, literal(loc({ lineno: 2, colno: 4 }), ''), 'root');
-    expect(c.buffer).toBe('output');
+    expect(c.buffer).toBeNull();
     expect(c.scopeStack).toEqual([]);
     const joined = c.emitted.join('');
-    expect(joined).toContain('async function root(env, context, frame, runtime) {');
+    expect(joined).toContain('async function* root(env, context, frame, runtime) {');
     expect(joined).toContain('let lineno = 2;');
     expect(joined).toContain('let colno = 4;');
-    expect(joined).toContain('let output = "";');
+    expect(joined).not.toContain('let output = "";');
     expect(joined).toContain('try {');
+  });
+
+  test('block emits an async function header with an output buffer', () => {
+    const c = makeScope();
+    emitFuncBegin(c as never, literal(loc({ lineno: 2, colno: 4 }), ''), 'b_content');
+    expect(c.buffer).toBe('output');
+    const joined = c.emitted.join('');
+    expect(joined).toContain('async function b_content(env, context, frame, runtime) {');
+    expect(joined).toContain('let output = "";');
   });
 });
 

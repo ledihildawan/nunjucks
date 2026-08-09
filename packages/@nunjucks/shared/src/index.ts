@@ -15,7 +15,7 @@ export type { HtmlContext } from './escaping/index.ts';
 
 export { MATCH_ANY_RE } from './constants.ts';
 export { BLOCK_META_KEY, isCompiledTemplateExports } from './codegen-contract.ts';
-export type { CompiledRenderSignature, CompiledTemplateExports, RenderResult } from './codegen-contract.ts';
+export type { CompiledRenderSignature, CompiledBlockSignature, CompiledTemplateExports } from './codegen-contract.ts';
 export { extractBlocks } from './extract-blocks.ts';
 export { escapeRegex } from './escape-regex.ts';
 export { replace, slice } from './pipe-helpers.ts';

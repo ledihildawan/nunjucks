@@ -5,7 +5,7 @@ import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
-import { emitLocationGuard } from '../codegen.ts';
+import { emitLocationGuard, appendTarget } from '../codegen.ts';
 import { compileSlotFunction } from './slot.ts';
 
 const compileRenderSlots = (
@@ -47,7 +47,7 @@ export const compileRenderBlock = (compiler: Compiler, { node, frame: parentFram
 
   const callExpr = node.callExpr;
 
-  compiler.emit(`lineno = ${node.lineno}; colno = ${node.colno ?? 0}; ${compiler.buffer} += runtime.suppressValue(`);
+  compiler.emit(`lineno = ${node.lineno}; colno = ${node.colno ?? 0}; ${appendTarget(compiler)}runtime.suppressValue(`);
   compiler.emit('await runtime.awaitValue(');
 
   if (isFunCall(callExpr)) {

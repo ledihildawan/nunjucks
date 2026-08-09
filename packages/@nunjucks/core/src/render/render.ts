@@ -1,8 +1,8 @@
 import { resolveTemplateSource, prepareSandbox, buildRenderEnv, compileTemplate, handleContextStrictMode, createEnvLookups, TEMPLATE_FILE_EXTENSION_RE } from './render-pipeline.ts';
 import { validateRender, validateTemplateSource } from './render-validation.ts';
 import { getLoader } from '../engine.ts';
-import type { RenderConfig } from './render-types.ts';
-import { execute, createFrame, withTimeout } from '@nunjucks/runtime';
+import type { RenderConfig, RenderStreamResult } from './render-types.ts';
+import { execute, executeStream, createFrame, withTimeout } from '@nunjucks/runtime';
 import { getCallerFrames } from './caller-file.ts';
 import { ok, err, isErr, type Result } from '@nunjucks/shared';
 import { injectWarningsScript, type TemplateWarning, type TemplateError } from '@nunjucks/log';
@@ -54,16 +54,18 @@ const resolveTemplateName = (template: string, config: RenderConfig): string => 
   return config.callerFile || 'inline';
 };
 
+const buildExecutionEnv = (config: RenderConfig) => config.env ?? {
+  opts: {
+    dev: config.dev ?? false,
+    autoescape: config.autoescape ?? true,
+    undefined: config.undefined ?? 'default',
+  },
+  ...createEnvLookups(config),
+};
+
 const executeCompiledTemplate = async (ctx: ExecutionContext, config: RenderConfig): Promise<string> => {
   const frame = createFrame();
-  const env = config.env ?? {
-    opts: {
-      dev: config.dev ?? false,
-      autoescape: config.autoescape ?? true,
-      undefined: config.undefined ?? 'default',
-    },
-    ...createEnvLookups(config),
-  };
+  const env = buildExecutionEnv(config);
   const renderPromise = execute(ctx.code, ctx.sandboxedCtx, frame, env, { ...config });
 
   if ((config.executionTimeout ?? 0) > 0) {
@@ -83,7 +85,18 @@ interface RenderOptions extends Partial<GlobalConfig> {
   context?: Record<string, unknown>;
 }
 
-const render = async (template: string, { context = {}, ...options }: RenderOptions = {}): Promise<Result<string, TemplateError>> => {
+interface PreparedTemplate {
+  readonly code: string;
+  readonly sandboxedCtx: Record<string, unknown>;
+  readonly warningsCollector: TemplateWarning[];
+  readonly templateName: string;
+  readonly resolvedConfig: RenderConfig;
+  readonly templateSource: string;
+  readonly context: Record<string, unknown>;
+}
+
+// WHY: pass-1 of rendering — validation, template resolution, compile, and sandbox/env preparation, with NO execution. Extracted so render() (buffer-execute) and the future renderToStream() (stream-execute) share identical pre-execution work and error enrichment. Every failure here is a Result error the consumer can still render as an error page (response headers not yet sent).
+const prepareRender = async (template: string, { context = {}, ...options }: RenderOptions = {}): Promise<Result<PreparedTemplate, TemplateError>> => {
   const baseConfig = setupRenderConfig(options);
   const callerFrames = baseConfig.callerFrames ?? getCallerFrames();
   const primaryCaller = callerFrames[0] ?? null;
@@ -124,20 +137,40 @@ const render = async (template: string, { context = {}, ...options }: RenderOpti
   const envOverride = buildRenderEnv(loader, configWithPath);
   const resolvedConfig: RenderConfig = envOverride ? { ...configWithPath, env: envOverride } : configWithPath;
 
+  return ok({ code, sandboxedCtx, warningsCollector, templateName, resolvedConfig, templateSource, context });
+};
+
+const render = async (template: string, options: RenderOptions = {}): Promise<Result<string, TemplateError>> => {
+  const prepared = await prepareRender(template, options);
+  if (isErr(prepared)) { return prepared; }
+
+  const { code, sandboxedCtx, warningsCollector, templateName, resolvedConfig, templateSource, context } = prepared.value;
   let result: string;
   try {
-    result = await executeCompiledTemplate({
-      code,
-      sandboxedCtx,
-      warningsCollector,
-      templateName,
-    }, resolvedConfig);
+    result = await executeCompiledTemplate({ code, sandboxedCtx, warningsCollector, templateName }, resolvedConfig);
   } catch (executeErr) {
     return err(await wrapWithLog(executeErr, resolvedConfig, { template: templateSource, renderContext: context }));
   }
-
   return ok(injectWarningsIfNeeded(result, warningsCollector, resolvedConfig.dev));
 };
 
-export { render };
-export type { RenderConfig, RenderOptions };
+// WHY: streaming counterpart of executeCompiledTemplate — yields the root generator's chunks instead of draining them, so a consumer can pipe output incrementally. A mid-stream runtime error propagates as a throw from the generator (consumer catches via for-await); pre-stream errors are returned as { ok: false } by renderToStream before any chunk is produced.
+const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGenerator<string> {
+  const { code, sandboxedCtx, warningsCollector, resolvedConfig } = prepared;
+  const frame = createFrame();
+  const env = buildExecutionEnv(resolvedConfig);
+  yield* executeStream(code, sandboxedCtx, frame, env, resolvedConfig);
+  if (warningsCollector.length > 0 && resolvedConfig.dev) {
+    yield injectWarningsScript(warningsCollector, { dev: true, verbosity: 'medium' });
+  }
+};
+
+// WHY: two-pass streaming (Option B). Pass-1 (prepareRender) validates/compiles — a failure here is returned as { ok: false, error } so the consumer can still render an error page (response headers not yet sent). On success, pass-2 returns the async generator directly (no drain); mid-stream runtime errors then surface as a generator throw after chunks have already been emitted.
+const renderToStream = async (template: string, options: RenderOptions = {}): Promise<RenderStreamResult> => {
+  const prepared = await prepareRender(template, options);
+  if (isErr(prepared)) { return { ok: false, error: prepared.error }; }
+  return { ok: true, stream: createRenderStream(prepared.value) };
+};
+
+export { render, renderToStream };
+export type { RenderConfig, RenderOptions, RenderStreamResult };

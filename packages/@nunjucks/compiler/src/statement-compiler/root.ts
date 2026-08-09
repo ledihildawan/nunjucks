@@ -19,15 +19,12 @@ const getBlockLocation = (block: BlockNode): NodeLocation => ({
   colno: block.colno ?? 0,
 });
 
-const setupRootFunction = (compiler: Compiler, node: Node): { frame: Frame; childBuffer: string; savedBuffer: string } => {
+const setupRootFunction = (compiler: Compiler, node: Node): { frame: Frame } => {
   const frame = createFrame();
   compiler.emitFuncBegin(node, 'root');
   compiler.emitLine('let parentTemplate = null;');
-  const childBuffer = 'childOutput';
-  compiler.emitLine(`let ${childBuffer} = "";`);
-  const savedBuffer = compiler.buffer ?? '';
-  compiler.buffer = childBuffer;
-  return { frame, childBuffer, savedBuffer };
+  // WHY: root is an async generator (emitFuncBegin set buffer=null), so non-block children yield directly instead of accumulating into a childOutput buffer.
+  return { frame };
 };
 
 const compileNonBlockChildren = (compiler: Compiler, node: Node, frame: Frame): void => {
@@ -37,21 +34,20 @@ const compileNonBlockChildren = (compiler: Compiler, node: Node, frame: Frame): 
 
 const emitParentTemplateBlockHandling = (
   compiler: Compiler,
-  blocks: BlockNode[],
-  childBuffer: string
+  blocks: BlockNode[]
 ): void => {
   compiler.emitLine('if(parentTemplate) {');
-  compiler.emitLine('  return await parentTemplate.rootRenderFunc(env, context, frame, runtime);');
-  compiler.emitLine('} else {');
+  // WHY: parentTemplate.rootRenderFunc is itself an async generator — delegate so its chunks stream straight through, and propagate its returned context as this root's return value.
+  compiler.emitLine('  return yield* parentTemplate.rootRenderFunc(env, context, frame, runtime);');
+  compiler.emitLine('}');
   forEach(blocks, (block) => {
     const name = blockName(block);
     if (!name) { return; }
     const { lineno, colno } = getBlockLocation(block);
-    compiler.emitLine(`  lineno = ${lineno}; colno = ${colno};`);
-    compiler.emitLine(`  ${childBuffer} += await context.getBlock("${name}", ${lineno}, ${colno})(env, context, frame, runtime);`);
+    compiler.emitLine(`lineno = ${lineno}; colno = ${colno};`);
+    compiler.emitLine(`yield await context.getBlock("${name}", ${lineno}, ${colno})(env, context, frame, runtime);`);
   });
-  compiler.emitLine('}');
-  compiler.emitLine(`return [${childBuffer}, context];`);
+  compiler.emitLine('return context;');
   compiler.emitFuncEnd(true);
 };
 
@@ -101,13 +97,11 @@ const emitBlockReturnObject = (compiler: Compiler, blocks: BlockNode[]): void =>
 
 export const compileRoot = (compiler: Compiler, node: ChildrenNode): void => {
   const blocks = findAll(node, 'block').filter(isBlock);
-  const { frame, childBuffer, savedBuffer } = setupRootFunction(compiler, node);
+  const { frame } = setupRootFunction(compiler, node);
 
   compileNonBlockChildren(compiler, node, frame);
 
-  compiler.buffer = savedBuffer;
-
-  emitParentTemplateBlockHandling(compiler, blocks, childBuffer);
+  emitParentTemplateBlockHandling(compiler, blocks);
 
   compiler.inBlock = true;
 

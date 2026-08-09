@@ -7,7 +7,8 @@ export { Template };
 
 const Template = Symbol('Template');
 
-type RootRenderFunc = (env: Env, context: unknown, frame: unknown, runtime: RuntimeContext) => unknown;
+// WHY: Option B — root renders as an async generator yielding output chunks and returning the post-render context.
+type RootRenderFunc = (env: Env, context: unknown, frame: unknown, runtime: RuntimeContext) => AsyncGenerator<string, unknown>;
 
 type TemplateStateBase = {
   env: Env;
