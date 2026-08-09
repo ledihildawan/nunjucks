@@ -45,7 +45,8 @@ const emitParentTemplateBlockHandling = (
     if (!name) { return; }
     const { lineno, colno } = getBlockLocation(block);
     compiler.emitLine(`lineno = ${lineno}; colno = ${colno};`);
-    compiler.emitLine(`yield await context.getBlock("${name}", ${lineno}, ${colno})(env, context, frame, runtime);`);
+    // WHY: Option C — blocks are async generators; delegate so their chunks stream directly into the root output.
+    compiler.emitLine(`yield* (await context.getBlock("${name}", ${lineno}, ${colno}))(env, context, frame, runtime);`);
   });
   compiler.emitLine('return context;');
   compiler.emitFuncEnd(true);

@@ -2,6 +2,7 @@ import { ERROR_DEFINITIONS, createLog } from '@nunjucks/log';
 import type { IncludeChain } from '@nunjucks/log';
 import type { NodeLocation, UndefinedMode } from '@nunjucks/shared';
 import { find, forEach, keys } from 'remeda';
+import { collectString } from './collect-stream.ts';
 
 const CONTEXT_KEY = Symbol('Context');
 
@@ -174,7 +175,8 @@ const makeContext = (state: ContextState): Context => {
       if (idx === -1 || !blk) {
         return throwNoSuperBlockError(name, lineno, colno);
       }
-      return (blk as BlockFn)(envObj, context, frame, runtime);
+      // WHY: Option C — block functions are async generators; drain the super block into a string so it can be markSafe'd and used as a value. BlockFn is typed `=> unknown` (loose); the runtime guarantee is AsyncGenerator, hence the narrowing cast.
+      return collectString((blk as BlockFn)(envObj, context, frame, runtime) as AsyncGenerator<string, unknown>);
     },
 
     addExport(name: string): Context {

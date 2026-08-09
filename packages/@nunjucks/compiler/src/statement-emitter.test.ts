@@ -34,13 +34,13 @@ describe('emitFuncBegin', () => {
     expect(joined).toContain('try {');
   });
 
-  test('block emits an async function header with an output buffer', () => {
+  test('block emits an async generator header with no output buffer', () => {
     const c = makeScope();
     emitFuncBegin(c as never, literal(loc({ lineno: 2, colno: 4 }), ''), 'b_content');
-    expect(c.buffer).toBe('output');
+    expect(c.buffer).toBeNull();
     const joined = c.emitted.join('');
-    expect(joined).toContain('async function b_content(env, context, frame, runtime) {');
-    expect(joined).toContain('let output = "";');
+    expect(joined).toContain('async function* b_content(env, context, frame, runtime) {');
+    expect(joined).not.toContain('let output = "";');
   });
 });
 

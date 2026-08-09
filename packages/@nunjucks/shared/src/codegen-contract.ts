@@ -9,12 +9,13 @@ export type CompiledRenderSignature = (
   runtime: unknown,
 ) => AsyncGenerator<string, unknown>;
 
+// WHY: Option C — block functions are also async generators (they yield their content into the surrounding stream). capture/slot still drain to strings locally, but a named block function itself produces a generator that callers delegate (yield*) or drain (collectString).
 export type CompiledBlockSignature = (
   env: unknown,
   context: unknown,
   frame: unknown,
   runtime: unknown,
-) => Promise<string> | string;
+) => AsyncGenerator<string, unknown>;
 
 export interface CompiledTemplateExports {
   root: CompiledRenderSignature;

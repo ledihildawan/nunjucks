@@ -4,7 +4,7 @@ import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
 
 describe('compileBlock', () => {
-  test('emits a getBlock lookup for the named block then appends its result to the buffer', () => {
+  test('drains the block via collectString in a string-buffer context', () => {
     const emitted: string[] = [];
     const ctx = {
       emitLine: (s: string) => { emitted.push(s); },
@@ -12,9 +12,21 @@ describe('compileBlock', () => {
       buffer: 'output',
     };
     compileBlock(asCompiler(ctx), { name: 'content', lineno: 5, colno: 9 } as never);
-    expect(emitted[0]).toContain('let t_1 = await');
     expect(emitted[0]).toContain('getBlock("content", 5, 9)');
-    expect(emitted[1]).toBe('output += t_1;');
+    expect(emitted[0]).toContain('collectString(');
+    expect(emitted[0]).toContain('output += await runtime.collectString(');
+  });
+
+  test('delegates via yield* in a generator context', () => {
+    const emitted: string[] = [];
+    const ctx = {
+      emitLine: (s: string) => { emitted.push(s); },
+      tmpid: () => 't_1',
+      buffer: null,
+    };
+    compileBlock(asCompiler(ctx), { name: 'content', lineno: 5, colno: 9 } as never);
+    expect(emitted[0]).toContain('yield*');
+    expect(emitted[0]).toContain('getBlock("content", 5, 9)');
   });
 
   test('falls back to the node location when name is a string', () => {

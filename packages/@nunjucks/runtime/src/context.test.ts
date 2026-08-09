@@ -129,12 +129,13 @@ describe('Context', () => {
     throw new Error('Expected getSuper to throw');
   });
 
-  test('getSuper calls next block', () => {
-    const childBlock = () => 'child result';
-    const parentBlock = () => 'parent result';
+  test('getSuper calls next block', async () => {
+    const childBlock = (): unknown => 'child result';
+    // WHY: Option C — block functions are async generators; the super block yields its content and getSuper drains it to a string.
+    const parentBlock = async function* generate(): AsyncGenerator<string> { yield 'parent result'; };
     let ctx = createContext({ blocks: { main: childBlock }, env: mockEnv });
     ctx = ctx.addBlock('main', parentBlock);
-    const result = ctx.getSuper(mockEnv, 'main', childBlock, null, null);
+    const result = await ctx.getSuper(mockEnv, 'main', childBlock, null, null);
     expect(result).toBe('parent result');
   });
 
