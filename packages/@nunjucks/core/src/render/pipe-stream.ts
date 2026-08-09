@@ -37,14 +37,27 @@ const buildStreamSourceTrace = (err: TemplateError) =>
     blockedKeys: err.blockedKeys ?? null,
   });
 
-const renderPreStreamError = (err: TemplateError, contentType: string, dev: boolean, ide: string | undefined): string => {
+interface RenderErrorInput {
+  err: TemplateError;
+  contentType: string;
+  dev: boolean;
+  ide: string | undefined;
+}
+
+const renderPreStreamError = ({ err, contentType, dev, ide }: RenderErrorInput): string => {
   if (contentType === 'json') {
     return JSON.stringify({ error: true, code: err.code, message: err.message, templatePath: err.templatePath, lineno: err.lineno, colno: err.colno });
   }
   return formatError(err, { format: contentType as 'html' | 'ansi' | 'text', dev, ide });
 };
 
-const renderMidStreamError = (err: unknown, contentType: string, ide: string): string => {
+interface MidStreamErrorInput {
+  err: unknown;
+  contentType: string;
+  ide: string;
+}
+
+const renderMidStreamError = ({ err, contentType, ide }: MidStreamErrorInput): string => {
   const error = err as TemplateError;
   if (contentType === 'json') {
     return `\n${JSON.stringify({ error: true, code: error.code, message: error.message, templatePath: error.templatePath, lineno: error.lineno, colno: error.colno })}`;
@@ -72,7 +85,7 @@ const pipeRenderStream = async (
     }
     sink.status(500);
     sink.setHeader('Content-Type', mimeType);
-    sink.write(renderPreStreamError(result.error, contentType, dev, ide));
+    sink.write(renderPreStreamError({ err: result.error, contentType, dev, ide }));
     sink.end();
     return;
   }
@@ -94,7 +107,7 @@ const pipeRenderStream = async (
       // biome-ignore lint/suspicious/noConsole: intentional server-side ANSI error logging for dev debugging
       console.log(formatError(streamErr as Error, { format: 'ansi', dev }));
     }
-    sink.write(renderMidStreamError(streamErr, contentType, ide));
+    sink.write(renderMidStreamError({ err: streamErr, contentType, ide }));
     sink.end();
   }
 };

@@ -23,7 +23,14 @@ const findBetterMatch = (
   return acc;
 };
 
-const findBestMatch = (lines: string[], keyName: string, searchLine: number, searchRadius: number): LinePosition | null => {
+interface FindBestMatchInput {
+  lines: string[];
+  keyName: string;
+  searchLine: number;
+  searchRadius: number;
+}
+
+const findBestMatch = ({ lines, keyName, searchLine, searchRadius }: FindBestMatchInput): LinePosition | null => {
   const start = Math.max(0, searchLine - searchRadius);
   const end = Math.min(lines.length - 1, searchLine + searchRadius);
 
@@ -54,10 +61,10 @@ export const findContextKeyPosition = async (
     const searchRadius = 5;
 
     // WHY: prefer property-key occurrences (keyName followed by ':') over bare name matches. A dangerous path like 'user.global' produces keyName 'global', which also appears inside template expressions '{{ user.global }}'. Requiring the trailing ':' ensures we point at the context definition (e.g. `{ global: process }`) rather than the template expression.
-    const propKeyMatch = findBestMatch(lines, `${keyName}:`, searchLine, searchRadius);
+    const propKeyMatch = findBestMatch({ lines, keyName: `${keyName}:`, searchLine, searchRadius });
     if (propKeyMatch) { return propKeyMatch; }
 
-    return findBestMatch(lines, keyName, searchLine, searchRadius);
+    return findBestMatch({ lines, keyName, searchLine, searchRadius });
   } catch {
     return null;
   }

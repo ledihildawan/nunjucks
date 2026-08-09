@@ -75,7 +75,13 @@ const executeCompiledTemplate = async (ctx: ExecutionContext, config: RenderConf
   return await renderPromise;
 };
 
-const injectWarningsIfNeeded = (result: string, warningsCollector: TemplateWarning[], dev: boolean | undefined): string => {
+interface InjectWarningsInput {
+  result: string;
+  warningsCollector: TemplateWarning[];
+  dev: boolean | undefined;
+}
+
+const injectWarningsIfNeeded = ({ result, warningsCollector, dev }: InjectWarningsInput): string => {
   if (warningsCollector.length > 0 && dev) {
     return result + injectWarningsScript(warningsCollector, { dev: true, verbosity: 'medium' });
   }
@@ -162,7 +168,7 @@ const render = async (template: string, options: RenderOptions = {}): Promise<Re
   } catch (executeErr) {
     return err(await wrapWithLog(executeErr, resolvedConfig, { template: templateSource, renderContext: context }));
   }
-  return ok(injectWarningsIfNeeded(result, warningsCollector, resolvedConfig.dev));
+  return ok(injectWarningsIfNeeded({ result, warningsCollector, dev: resolvedConfig.dev }));
 };
 
 // WHY: streaming counterpart of executeCompiledTemplate — yields the root generator's chunks instead of draining them. When streamErrorRecovery is enabled, per-expression errors arrive as StreamErrorSentinel values (not throws) — these are enriched via wrapWithLog and formatted as inline HTML markers so the stream continues past failures. Fatal errors (non-output, e.g. {% for %} loop failures) still propagate as throws.
