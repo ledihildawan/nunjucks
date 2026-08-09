@@ -2,10 +2,12 @@
 
 {% block kpis %}
 <script>mark('KPIs start');</script>
+{{ avgOrder := kpi.revenueNum / kpi.orderCount }}
 <div class="kpi-grid">
   <div class="kpi"><div class="label">Revenue</div><div class="value">{{ kpi.revenue |> slow }}</div><div class="trend trend-up">+12.4% vs last week</div></div>
   <div class="kpi"><div class="label">Orders</div><div class="value">{{ kpi.orders |> slow }}</div><div class="trend trend-up">+8 today</div></div>
   <div class="kpi"><div class="label">Conversion</div><div class="value">{{ kpi.conversion |> slow }}%</div><div class="trend trend-down">-0.3% vs target</div></div>
+  <div class="kpi"><div class="label">Avg Order</div><div class="value">{{ avgOrder |> formatPrice }}</div><div class="trend trend-up">computed via walrus</div></div>
 </div>
 <script>mark('KPIs done');</script>
 {% endblock %}

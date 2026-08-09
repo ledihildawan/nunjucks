@@ -91,7 +91,7 @@ app.use('/demo', demoRouter);
 app.use('/errors', errorRouter);
 app.use('/boundary', boundaryRouter);
 
-// WHY: streaming demo — a realistic e-commerce admin dashboard using {% extends %} + {% block %} template inheritance. Each block has async content (|> slow filter simulating DB latency) to demonstrate progressive block-by-block streaming. streamErrorRecovery + undefined: 'strict' means incomplete data (missing shipping city on order #2, customer without bio) yields inline error markers — the rest of the dashboard renders normally. onChunk hooks inject visible timing markers so the user can see exactly when each block arrives in the browser.
+// WHY: streaming demo — a realistic e-commerce admin dashboard using {% extends %} + {% block %} template inheritance. Each block has async content (|> slow filter simulating DB latency) to demonstrate progressive block-by-block streaming. streamErrorRecovery + undefined: 'strict' means incomplete data (missing shipping city on order #2, customer without bio, walrus division by missing field) yields inline error markers via 8 boundary types — the rest of the dashboard renders normally. Walrus operator (:=) computes avg order value in KPIs block.
 const slow = async (value: unknown): Promise<string> => {
   await new Promise((resolve) => { setTimeout(resolve, 350); });
   return String(value);
@@ -104,7 +104,7 @@ const formatPrice = (value: unknown): string => {
 const streamContext = {
   context: {
     mode: 'Streaming',
-    kpi: { revenue: '$125,430', orders: '342', conversion: '3.2' },
+    kpi: { revenue: '$125,430', revenueNum: 125430, orderCount: 342, orders: '342', conversion: '3.2' },
     orders: [
       { id: 'ORD-7841', customer: 'Alice Chen', total: 89.99, shipping: { city: 'Jakarta' }, status: 'shipped' },
       { id: 'ORD-7842', customer: 'Bob Smith', total: 245.00, shipping: {}, status: 'processing' },
@@ -150,11 +150,11 @@ app.get('/stream-normal', async (_req: Request, res: Response) => {
   }
 });
 
-// WHY: JSON streaming API — same dashboard data but rendered as JSON content type. Error markers arrive as JSON objects (not HTML). Demonstrates content-type aware streaming markers for API consumers.
+// WHY: JSON streaming API — same dashboard data but rendered as JSON. Walrus operator computes derived field inline. Error markers arrive as JSON objects (not HTML). Demonstrates content-type aware streaming markers for API consumers.
 app.get('/stream-api', async (_req: Request, res: Response) => {
   await pipeRenderStream(
-    await renderToStream('{{ data |> tojson }}', {
-      context: { data: { ...streamContext.context, mode: 'JSON API' } },
+    await renderToStream('{{ { ...kpi, avgOrder := kpi.revenueNum / kpi.orderCount, orders: orders, customer: customer } |> tojson }}', {
+      context: { ...streamContext.context, mode: 'JSON API' },
       dev: true,
       undefined: 'strict',
       streamErrorRecovery: true,
