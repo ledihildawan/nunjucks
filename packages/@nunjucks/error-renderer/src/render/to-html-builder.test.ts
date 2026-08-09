@@ -23,7 +23,7 @@ describe('buildErrorHeader', () => {
     expect(html).toContain('ERR_X');
     expect(html).toContain('Render');
     expect(html).toContain('Development');
-    expect(html).toContain('badge-env');
+    expect(html).toContain('badge-dev');
     expect(html).toContain('loc-link');
     expect(html).toContain('vscode://file/');
   });

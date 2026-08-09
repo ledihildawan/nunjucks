@@ -63,7 +63,7 @@ const buildErrorHeader = ({
 }: ErrorHeaderInput): string => {
   const phaseText = phase ? titleCase(phase) : null;
   const phaseBadge = renderBadge('badge-code', phaseText);
-  const envBadge = environment ? `<span class="badge badge-env" style="margin-inline-start:auto">${escapeHtml(titleCase(environment))}</span>` : '';
+  const envBadge = environment ? `<span class="badge badge-dev" style="margin-inline-start:auto;text-transform:none">${escapeHtml(titleCase(environment))}</span>` : '';
   const headerTitle = escapeHtml(humanTitle);
   const phaseBadgePart = phaseBadge ? ` ${phaseBadge}` : '';
 
