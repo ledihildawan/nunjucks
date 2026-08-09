@@ -35,27 +35,16 @@ function handleError(this: unknown, error: unknown, { lineno, colno }: HandleErr
     }
   }
 
-  // WHY: merge the full catalog definition (causes, fixCode, fixComment, severity) with the resolved message. Inline def was used before, which meant error markers and pages showed no causes/fix. Also replace {subject} placeholders in causes/fixCode/fixComment so the rendered text is concrete, not template literals.
+  // WHY: merge the full catalog definition (causes, fixCode, fixComment, severity) with the resolved message. {subject} placeholders are left intact here — classify.ts replaces them at render time (single source of truth for placeholder substitution).
   const errorCode = metadata.code ?? 'RUNTIME_ERROR';
-  const subjectStr = metadata.subject ?? '';
   const catalogDef = errorCode && Object.hasOwn(ERROR_DEFINITIONS, errorCode)
     ? ERROR_DEFINITIONS[errorCode as keyof typeof ERROR_DEFINITIONS]
     : undefined;
 
   const thrown = createLog('error', {
     def: catalogDef
-      ? {
-          ...catalogDef,
-          message: () => metadata.message,
-          causes: catalogDef.causes?.map(c => c.replaceAll('{subject}', subjectStr)),
-          fixCode: catalogDef.fixCode?.replaceAll('{subject}', subjectStr),
-          fixComment: catalogDef.fixComment?.replaceAll('{subject}', subjectStr),
-        }
-      : {
-          name: errorCode,
-          message: () => metadata.message,
-          pattern: MATCH_ANY_RE,
-        },
+      ? { ...catalogDef, message: () => metadata.message }
+      : { name: errorCode, message: () => metadata.message, pattern: MATCH_ANY_RE },
     params: {},
     subject: metadata.subject,
     context: {

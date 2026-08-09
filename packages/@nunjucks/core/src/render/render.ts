@@ -171,18 +171,24 @@ const render = async (template: string, options: RenderOptions = {}): Promise<Re
   return ok(injectWarningsIfNeeded({ result, warningsCollector, dev: resolvedConfig.dev }));
 };
 
+// WHY: shared inline error marker formatter — used by formatStreamSentinel (sentinel path) and pipe-stream.ts renderMidStreamError (throw path). Single implementation for source trace extraction + toHtmlMarker formatting.
+const formatErrorMarker = (error: TemplateError, ide = 'vscode'): string => {
+  const trace = buildSourceTrace({
+    sourceContent: error.sourceContent ?? null,
+    templatePath: error.templatePath ?? error.templateName ?? null,
+    lineno: error.lineno,
+    colno: error.colno,
+    lineBase: error.lineBase ?? 'zero',
+    sourceStartLine: error.sourceStartLine ?? 1,
+    blockedKeys: error.blockedKeys ?? null,
+  });
+  return toHtmlMarker(error, { sourceTrace: trace, ide });
+};
+
 // WHY: streaming counterpart of executeCompiledTemplate — yields the root generator's chunks instead of draining them. When streamErrorRecovery is enabled, per-expression errors arrive as StreamErrorSentinel values (not throws) — these are enriched via wrapWithLog and formatted as inline HTML markers so the stream continues past failures. Fatal errors (non-output, e.g. {% for %} loop failures) still propagate as throws.
 const formatStreamSentinel = async (sentinel: StreamErrorSentinel, prepared: PreparedTemplate): Promise<string> => {
   const enriched = await wrapWithLog(sentinel.error, prepared.resolvedConfig, { template: prepared.templateSource, renderContext: prepared.context });
-  const trace = buildSourceTrace({
-    sourceContent: enriched.sourceContent ?? null,
-    templatePath: enriched.templatePath ?? enriched.templateName ?? null,
-    lineno: enriched.lineno,
-    colno: enriched.colno,
-    lineBase: enriched.lineBase ?? 'zero',
-    sourceStartLine: enriched.sourceStartLine ?? 1,
-  });
-  return toHtmlMarker(enriched, { sourceTrace: trace, ide: 'vscode' });
+  return formatErrorMarker(enriched);
 };
 
 const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGenerator<string> {
@@ -216,5 +222,5 @@ const renderToStream = async (template: string, options: RenderOptions = {}): Pr
   return { ok: true, stream: createRenderStream(prepared.value) };
 };
 
-export { render, renderToStream };
+export { render, renderToStream, formatErrorMarker };
 export type { RenderConfig, RenderOptions, RenderStreamResult };

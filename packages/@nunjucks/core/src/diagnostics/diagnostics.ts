@@ -183,6 +183,24 @@ const buildLocationInputs = ({ config, template, metadata }: LocationInputsBuild
   subject: metadata.subject
 });
 
+// WHY: wrapWithLog is the error-enrichment shell — the SECOND pass in a two-layer pipeline:
+//
+//   Layer 1 (runtime): handleError() normalizes the raw error, looks up the catalog
+//     definition (causes, fixCode, fixComment), and creates a TemplateError. This error
+//     has correct code/message/subject/lineno but NO source trace or caller-location data.
+//
+//   Layer 2 (diagnostics): wrapWithLog() receives the Layer-1 error and adds:
+//     a) resolveLocation() — reads caller source files to map template offsets → file:line
+//     b) resolveErrorProps() — preserves causes/fixCode from the Layer-1 error
+//     c) createErrorObject() — re-creates the error with full metadata + location + timestamp
+//
+//   The double normalizeErrorMetadata() call is intentional: Layer 1 normalizes the RAW
+//   error (may be a plain Error, TypeError, etc.), Layer 2 normalizes the ENRICHED
+//   TemplateError (consistent shape). Both pass through the same field-extraction logic.
+//
+//   In streaming mode, streamError() sits between the layers: it calls handleError (Layer 1)
+//   and catches the throw, returning a sentinel. formatStreamSentinel then calls wrapWithLog
+//   (Layer 2) on the sentinel's error.
 export const wrapWithLog = async (
   err: unknown,
   config: DiagnosticsConfig,

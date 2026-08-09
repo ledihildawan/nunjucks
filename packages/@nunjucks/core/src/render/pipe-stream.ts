@@ -1,7 +1,7 @@
 import type { RenderStreamResult } from './render-types.ts';
 import { withStreamTimeout } from './render-stream-adapters.ts';
 import { formatError, type TemplateError } from '@nunjucks/log';
-import { toHtmlMarker, buildSourceTrace } from '@nunjucks/error-renderer';
+import { formatErrorMarker } from './render.ts';
 
 // WHY: structural sink interface matching Express Response shape — res.status(), res.setHeader(), res.write(), res.end(), res.flushHeaders(). Express res satisfies this directly; Bun/Deno/Web can adapt (flushHeaders is optional — without it, chunks may buffer but still arrive).
 interface PipeSink {
@@ -25,17 +25,6 @@ const CONTENT_TYPE_MAP: Record<string, string> = {
   json: 'application/json; charset=utf-8',
   text: 'text/plain; charset=utf-8',
 };
-
-const buildStreamSourceTrace = (err: TemplateError) =>
-  buildSourceTrace({
-    sourceContent: err.sourceContent ?? null,
-    templatePath: err.templatePath ?? err.templateName ?? null,
-    lineno: err.lineno,
-    colno: err.colno,
-    lineBase: err.lineBase ?? 'zero',
-    sourceStartLine: err.sourceStartLine ?? 1,
-    blockedKeys: err.blockedKeys ?? null,
-  });
 
 interface RenderErrorInput {
   err: TemplateError;
@@ -65,8 +54,7 @@ const renderMidStreamError = ({ err, contentType, ide }: MidStreamErrorInput): s
   if (contentType === 'text') {
     return `\n[render error] ${error.message} at ${error.templatePath ?? 'unknown'}:${error.lineno ?? '?'}:${error.colno ?? '?'}`;
   }
-  const trace = buildStreamSourceTrace(error);
-  return toHtmlMarker(error, { sourceTrace: trace, ide });
+  return formatErrorMarker(error, ide);
 };
 
 // WHY: pipeRenderStream encapsulates the full streaming lifecycle — pre-stream error (full page), success (pipe chunks), mid-stream error (inline marker) — so the consumer writes 1 line instead of 25 lines of boilerplate. Handles Content-Type, headers, timeout, ANSI logging, and content-type-aware error rendering internally.

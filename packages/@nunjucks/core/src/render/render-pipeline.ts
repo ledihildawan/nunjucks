@@ -2,7 +2,7 @@ import { findContextDangerousValues } from '@nunjucks/validators';
 import type { ParseOptions } from '@nunjucks/parser';
 import type { Env } from '@nunjucks/runtime';
 import { createSandboxedContext } from '@nunjucks/runtime';
-import { createLog, getError, type IncludeChain, type TemplateWarning } from '@nunjucks/log';
+import { createLog, getError, type IncludeChain, type TemplateWarning, type TemplateError } from '@nunjucks/log';
 import { wrapWithLog, findContextKeyPosition } from '../diagnostics/diagnostics.ts';
 import { scrubDangerousReferences, ok, isErr, type Result } from '@nunjucks/shared';
 import type { FileSystemLoader } from '@nunjucks/loaders';
@@ -108,6 +108,40 @@ const compileTemplate = ({ templateSource, config, templateName }: CompileTempla
   return isErr(codeResult) ? codeResult : ok({ code: codeResult.value });
 };
 
+interface DangerousContextInput {
+  context: Record<string, unknown>;
+  config: RenderConfig;
+  dangerousValuePaths: string[];
+}
+
+// WHY: isolated error creation for context strict mode — walks caller frames to locate the dangerous value in consumer code, enriches config with jsCaller for location resolution, and scrubs the context before display. Separated from handleContextStrictMode so the main function reads as a simple check-then-throw-or-scrub flow.
+const createDangerousContextError = async ({ context, config, dangerousValuePaths }: DangerousContextInput): Promise<TemplateError> => {
+  const subject = dangerousValuePaths.join(', ');
+  const firstPath = dangerousValuePaths[0] ?? '';
+  const callerFrames = config.callerFrames ?? [];
+  const framePositions = await Promise.all(
+    callerFrames.map(frame =>
+      frame.fileName !== 'unknown' && firstPath
+        ? findContextKeyPosition(frame.fileName, frame.lineNumber ?? 1, firstPath).then(pos => pos ? { ...pos, fileName: frame.fileName } : null)
+        : Promise.resolve(null),
+    ),
+  );
+  const contextPos = framePositions.find((pos): pos is { line: number; col: number; fileName: string } => pos !== null) ?? null;
+  const err = createLog('error', {
+    def: getError('DANGEROUS_CONTEXT_VALUES'),
+    params: { values: subject },
+    subject,
+    context: contextPos
+      ? { phase: 'render', lineno: contextPos.line, colno: contextPos.col, lineBase: 'one' as const }
+      : { phase: 'render' },
+  });
+  const enrichedConfig = contextPos
+    ? { ...config, jsCaller: contextPos.fileName, jsCallerErrorLine: contextPos.line, jsCallerErrorCol: contextPos.col }
+    : config;
+  const safeForDisplay = scrubDangerousReferences(context) as Record<string, unknown>;
+  return wrapWithLog(err, enrichedConfig, { renderContext: safeForDisplay });
+};
+
 const handleContextStrictMode = async (context: Record<string, unknown>, config: RenderConfig): Promise<{ warningsCollector: TemplateWarning[]; dangerousValuePaths: string[]; context: Record<string, unknown> }> => {
   const warningsCollector: TemplateWarning[] = [];
   const contextStrict = config.contextStrict === true || (config.contextStrict !== false && config.dev === true);
@@ -118,32 +152,7 @@ const handleContextStrictMode = async (context: Record<string, unknown>, config:
   }
 
   if (config.contextStrict === 'error') {
-    const subject = dangerousValuePaths.join(', ');
-    const firstPath = dangerousValuePaths[0] ?? '';
-    // WHY: walk all caller frames to find the file that actually defines the dangerous context value. The immediate caller (frame 0) is often a wrapper (e.g. Express renderTemplate helper) that doesn't contain the context definition — the real consumer code lives in a later frame.
-    const callerFrames = config.callerFrames ?? [];
-    const framePositions = await Promise.all(
-      callerFrames.map(frame =>
-        frame.fileName !== 'unknown' && firstPath
-          ? findContextKeyPosition(frame.fileName, frame.lineNumber ?? 1, firstPath).then(pos => pos ? { ...pos, fileName: frame.fileName } : null)
-          : Promise.resolve(null),
-      ),
-    );
-    const contextPos = framePositions.find((pos): pos is { line: number; col: number; fileName: string } => pos !== null) ?? null;
-    const err = createLog('error', {
-      def: getError('DANGEROUS_CONTEXT_VALUES'),
-      params: { values: subject },
-      subject,
-      context: contextPos
-        ? { phase: 'render', lineno: contextPos.line, colno: contextPos.col, lineBase: 'one' as const }
-        : { phase: 'render' },
-    });
-    const enrichedConfig = contextPos
-      ? { ...config, jsCaller: contextPos.fileName, jsCallerErrorLine: contextPos.line, jsCallerErrorCol: contextPos.col }
-      : config;
-    // WHY: scrub dangerous values from the context before attaching to the error, so the error page's Render Context toggle never exposes them (e.g. process, eval). The consumer sees the safe version the engine would have used for rendering.
-    const safeForDisplay = scrubDangerousReferences(context) as Record<string, unknown>;
-    throw await wrapWithLog(err, enrichedConfig, { renderContext: safeForDisplay });
+    throw await createDangerousContextError({ context, config, dangerousValuePaths });
   }
 
   const scrubbedContext = scrubDangerousReferences(context) as Record<string, unknown>;
