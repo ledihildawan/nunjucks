@@ -14,6 +14,7 @@ export interface Env {
   };
   getFilter: (name: string, lineno: number | null, colno: number | null) => unknown;
   getTest: (name: string, lineno: number | null, colno: number | null) => unknown;
+  getExtension?: (name: string) => unknown;
   getTemplate?: (name: string, eagerCompile?: boolean, includeChain?: IncludeChain | null, ignoreMissing?: boolean) => unknown;
   emit?: (event: string, ...args: unknown[]) => void;
   renderingTemplates?: Set<string | undefined>;

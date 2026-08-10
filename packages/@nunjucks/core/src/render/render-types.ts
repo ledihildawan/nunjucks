@@ -51,6 +51,7 @@ interface RenderConfig {
   customGlobals?: Record<string, unknown>;
   filters?: Record<string, (...args: unknown[]) => unknown>;
   tests?: Record<string, (...args: unknown[]) => unknown>;
+  extensions?: Readonly<Record<string, unknown>>;
 }
 
 interface ValidationErrorRequest {

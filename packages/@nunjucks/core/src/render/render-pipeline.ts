@@ -1,5 +1,5 @@
 import { findContextDangerousValues } from '@nunjucks/validators';
-import type { ParseOptions } from '@nunjucks/parser';
+import type { ParseOptions, ParserExtension } from '@nunjucks/parser';
 import type { Env } from '@nunjucks/runtime';
 import { createSandboxedContext } from '@nunjucks/runtime';
 import { createLog, getError, type IncludeChain, type TemplateWarning, type TemplateError } from '@nunjucks/log';
@@ -64,7 +64,7 @@ const prepareSandbox = (config: RenderConfig, context: Record<string, unknown>):
   return sandboxedCtx;
 };
 
-const createEnvLookups = (config: RenderConfig): Pick<Env, 'getFilter' | 'getTest'> => ({
+const createEnvLookups = (config: RenderConfig): Pick<Env, 'getFilter' | 'getTest' | 'getExtension'> => ({
   getFilter: (name: string, lineno: number | null, colno: number | null) => {
     const filter = config.filters?.[name];
     if (filter) { return filter; }
@@ -74,6 +74,11 @@ const createEnvLookups = (config: RenderConfig): Pick<Env, 'getFilter' | 'getTes
     const test = config.tests?.[name];
     if (test) { return test; }
     throw createLog('error', { def: getError('UNDEFINED_TEST'), params: { name }, subject: name, context: { lineno, colno, phase: 'render', lineBase: 'zero' } });
+  },
+  getExtension: (name: string) => {
+    const extension = config.extensions?.[name];
+    if (extension !== undefined) { return extension; }
+    throw createLog('error', { def: getError('UNDEFINED_EXTENSION'), params: { name }, subject: name, context: { phase: 'render', lineBase: 'zero' } });
   },
 });
 
@@ -105,7 +110,10 @@ interface CompileTemplateInput {
 }
 
 const compileTemplate = ({ templateSource, config, templateName }: CompileTemplateInput): Result<CompileResult, Error> => {
-  const codeResult = compileToCode({ source: templateSource, templateName, undefinedMode: config.undefined, parseOpts: { undefined: config.undefined, trimBlocks: config.trimBlocks, lstripBlocks: config.lstripBlocks } as ParseOptions, streamErrorRecovery: config.streamErrorRecovery ?? false });
+  // WHY: convert config.extensions (name → ext object map) into the ParserExtension[] the parser expects —
+  // each value carries `tags` + `parse`; the map key is the lookup name used by env.getExtension at runtime.
+  const parserExtensions = config.extensions ? (Object.values(config.extensions) as readonly ParserExtension[]) : undefined;
+  const codeResult = compileToCode({ source: templateSource, templateName, undefinedMode: config.undefined, parseOpts: { undefined: config.undefined, trimBlocks: config.trimBlocks, lstripBlocks: config.lstripBlocks } as ParseOptions, streamErrorRecovery: config.streamErrorRecovery ?? false, extensions: parserExtensions });
   return isErr(codeResult) ? codeResult : ok({ code: codeResult.value });
 };
 

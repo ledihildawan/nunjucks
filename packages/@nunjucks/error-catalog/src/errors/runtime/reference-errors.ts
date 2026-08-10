@@ -57,6 +57,20 @@ const UNDEFINED_BLOCK = createErrorDefinition({
   fixComment: 'Either rename the block or add the corresponding block to the parent template'
 });
 
+const UNDEFINED_EXTENSION = createErrorDefinition({
+  name: 'UNDEFINED_EXTENSION',
+  message: "Extension '{name}' is not registered",
+  category: 'undefined_function',
+  causes: [
+    'The extension `{subject}` was not registered in the factory config (`extensions`) or a plugin',
+    'A custom tag `{% {subject} %}` was used but the extension defining it was not provided',
+    'A typo in the extension name (case-sensitive)',
+    'The extension was folded via a plugin that did not contribute its `tags`'
+  ],
+  fixCode: "const njk = nunjucks({ extensions: { '{subject}': { tags: ['{subject}'], run: (ctx, ...args) => '' } } })",
+  fixComment: 'Register the extension in the factory config or via a plugin',
+});
+
 const UNKNOWN_BLOCK_RUNTIME = {
   name: 'UNKNOWN_BLOCK_RUNTIME',
   message: 'unknown block "{name}"',
@@ -139,6 +153,6 @@ const RESERVED_KEYWORD_CONTEXT = {
 
 export {
   UNDEFINED_FUNCTION, UNDEFINED_FILTER, UNDEFINED_TEST,
-  UNDEFINED_BLOCK, UNKNOWN_BLOCK_RUNTIME, DUPLICATE_BLOCK, NO_SUPER_BLOCK,
+  UNDEFINED_BLOCK, UNDEFINED_EXTENSION, UNKNOWN_BLOCK_RUNTIME, DUPLICATE_BLOCK, NO_SUPER_BLOCK,
   RESERVED_KEYWORD, RESERVED_KEYWORD_CONTEXT,
 };
