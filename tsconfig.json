@@ -27,5 +27,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "exclude": ["samples/**/*", "dist/**/*"]
+  "exclude": ["dist/**/*"]
 }

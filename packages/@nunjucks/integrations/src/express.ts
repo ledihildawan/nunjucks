@@ -7,7 +7,7 @@ type ExpressEngineConfig = NunjucksConfig;
 
 type ExpressEngineFunction = (
   filePath: string,
-  options: Record<string, unknown>,
+  options: object,
   callback: (err: Error | null, rendered?: string) => void
 ) => void;
 
@@ -18,10 +18,10 @@ const createEngine = (config: ExpressEngineConfig = {}): ExpressEngineFunction =
   const engine = nunjucks(config);
   return function nunjucksExpressEngine(
     filePath: string,
-    options: Record<string, unknown>,
+    options: object,
     callback: (err: Error | null, rendered?: string) => void
   ): void {
-    engine.render(path.basename(filePath), options, { views: path.dirname(filePath), templatePath: filePath })
+    engine.render(path.basename(filePath), options as Record<string, unknown>, { views: path.dirname(filePath), templatePath: filePath })
       .then((result) => {
         if (isOk(result)) {
           callback(null, result.value);
