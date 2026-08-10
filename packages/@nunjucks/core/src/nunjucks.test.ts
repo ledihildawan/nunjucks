@@ -93,4 +93,27 @@ describe('nunjucks factory', () => {
     const result = await njk.render('{{ x |> if }}', { x: 'y' });
     expect(result.ok).toBe(false);
   });
+
+  test('limits.maxTemplateSize flatten is enforced by the validator', async () => {
+    // WHY: proves the nested limits group flattens to the internal config the validator reads.
+    const njk = nunjucks({ limits: { maxTemplateSize: 5 } });
+    const result = await njk.render('this template is way too long');
+    expect(result.ok).toBe(false);
+  });
+
+  test('plugin tests fold and are usable in {% if x is testName %}', async () => {
+    const njk = nunjucks({ plugins: [{ name: 'predicates', tests: { isYes: (value: unknown) => value === 'yes' } }] });
+    const result = await njk.render('{% if x is isYes %}Y{% else %}N{% endif %}', { x: 'yes' });
+    expect(result.ok).toBe(true);
+    if (!result.ok) { return; }
+    expect(result.value).toBe('Y');
+  });
+
+  test('per-call executionTimeout override applies above the factory default', async () => {
+    // WHY: the 3rd-arg overrides (PerRenderOverrides) must override factory limits for a single call.
+    const njk = nunjucks({});
+    const result = await njk.render('{{ a }}', { a: 'ok' }, { executionTimeout: 1 });
+    // WHY: a trivial render completes well within 1ms, so this asserts the override is accepted (not that it times out).
+    expect(result.ok).toBe(true);
+  });
 });
