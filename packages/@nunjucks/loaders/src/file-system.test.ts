@@ -25,7 +25,7 @@ describe('createFileSystemLoader', () => {
     expect(loader.searchPaths).toEqual(['.']);
     expect(loader.async).toBe(true);
     expect(loader.watchEnabled).toBe(false);
-    expect(loader.pathsToNames).toEqual({});
+    expect(loader.pathsToNames).toBeInstanceOf(Map);
   });
 
   test('creates loader with single search path', () => {
@@ -93,7 +93,7 @@ describe('getSource', () => {
     await writeFile(join(dir, 'tracked.njk'), 'content');
     const loader = createFileSystemLoader(dir);
     await loader.getSource('tracked.njk');
-    const keys = Object.keys(loader.pathsToNames);
+    const keys = Array.from(loader.pathsToNames.keys());
     expect(keys.length).toBe(1);
     expect(keys[0]).toContain('tracked.njk');
   });

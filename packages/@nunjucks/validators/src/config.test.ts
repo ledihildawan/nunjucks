@@ -122,6 +122,28 @@ describe('validateConfig - reserved keyword validation', () => {
       expect(error.type).toBe('global');
     });
   });
+
+  describe('discriminated union result', () => {
+    test('valid:true branch narrows errors to an empty readonly tuple', () => {
+      const result = validateConfig({ customFilters: { 'myFilter': () => {} } });
+      if (result.valid) {
+        expect(result.errors).toEqual([]);
+        expect(result.errors).toHaveLength(0);
+      } else {
+        throw new Error('should be valid');
+      }
+    });
+
+    test('valid:false branch narrows errors to a non-empty tuple with at least one element', () => {
+      const result = validateConfig({ customFilters: { 'if': () => {} } });
+      if (!result.valid) {
+        expect(result.errors.length).toBeGreaterThanOrEqual(1);
+        expect(result.errors[0]).toBeDefined();
+      } else {
+        throw new Error('should be invalid');
+      }
+    });
+  });
 });
 
 describe('RESERVED_KEYWORDS', () => {

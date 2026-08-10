@@ -6,7 +6,7 @@ import type { Node } from '@nunjucks/nodes';
 
 interface SlotFunctionInput {
   compiler: Compiler;
-  params: string[];
+  params: readonly string[];
   body: Node;
   parentFrame: Frame;
   slotVar: string;

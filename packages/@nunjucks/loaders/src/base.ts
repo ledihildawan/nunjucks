@@ -9,19 +9,19 @@ export interface Loader {
 type Listener = (...args: unknown[]) => void;
 
 export const createLoader = (): Loader => {
-  const listeners: Record<string, Set<Listener>> = {};
+  const listeners = new Map<string, Set<Listener>>();
 
   return {
     [LoaderSymbol]: true,
 
     on(event: string, handler: Listener): void {
-      const set = listeners[event] ?? new Set<Listener>();
-      listeners[event] = set;
+      const set = listeners.get(event) ?? new Set<Listener>();
+      listeners.set(event, set);
       set.add(handler);
     },
 
     emit(event: string, ...args: unknown[]): void {
-      listeners[event]?.forEach((handler) => { handler(...args); });
+      listeners.get(event)?.forEach((handler) => { handler(...args); });
     },
   };
 };

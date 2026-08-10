@@ -8,7 +8,7 @@ const BACKSLASH_RE = /\\/gu;
 export const normalizeDrivePath = (path: string) =>
   path.replace(FILE_URL_PREFIX_RE, '')
     .replace(LEADING_SLASH_DRIVE_RE, '$1:')
-    .replace(BACKSLASH_RE, '/');
+    .replaceAll(BACKSLASH_RE, '/');
 
 export const shortenPath = (path: string, projectRoot: string = process.cwd()): string => {
   const normalizedPath = normalizeDrivePath(path);

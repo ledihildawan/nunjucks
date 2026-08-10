@@ -23,4 +23,11 @@ describe('parseExtends', () => {
     expect(getNodeTypeName(node)).toBe('extends');
     expect(getNodeTypeName((node as { template: Node }).template)).toBe('symbol');
   });
+
+  test('builds the node with the template field in a single factory call (no mutation)', () => {
+    const node = parseFirst('{% extends "base.html" %}') as { template: Node };
+    expect(node.template).toBeDefined();
+    expect(getNodeTypeName(node.template)).toBe('literal');
+    expect(node.template.value).toBe('base.html');
+  });
 });

@@ -51,11 +51,14 @@ const findWordBoundaries = (line: string, pos: number): { wordStart: number; wor
   return { wordStart, wordEnd };
 };
 
+interface DotPathSegmentInput {
+  highlightWord: string;
+  wordStart: number;
+  relativePos: number;
+}
+
 const findSegmentInDotPath = (
-  highlightWord: string,
-  wordStart: number,
-  _wordEnd: number,
-  relativePos: number
+  { highlightWord, wordStart, relativePos }: DotPathSegmentInput
 ): { wordStart: number; wordEnd: number; highlightWord: string } | null => {
   const segments = highlightWord.split('.');
   const { found } = segments.reduce<{ found: { wordStart: number; wordEnd: number; highlightWord: string } | null; offset: number }>(
@@ -74,16 +77,20 @@ const findSegmentInDotPath = (
   return found;
 };
 
+interface ResolveHighlightWordInput {
+  line: string;
+  pos: number;
+  wordStart: number;
+  wordEnd: number;
+}
+
 const resolveHighlightWord = (
-  line: string,
-  pos: number,
-  wordStart: number,
-  wordEnd: number
+  { line, pos, wordStart, wordEnd }: ResolveHighlightWordInput
 ): { wordStart: number; wordEnd: number; highlightWord: string } => {
   const highlightWord = line.slice(wordStart, wordEnd);
   if (highlightWord?.includes('.') && !isPathLike(highlightWord)) {
     const relativePos = pos - wordStart;
-    const result = findSegmentInDotPath(highlightWord, wordStart, wordEnd, relativePos);
+    const result = findSegmentInDotPath({ highlightWord, wordStart, relativePos });
     if (result) {
       return result;
     }
@@ -120,7 +127,7 @@ const calculateCaretPosition = (
   const pos = (!isWordChar(rawCharAtPos) && searchLeft >= 0 && isWordChar(line[searchLeft])) ? searchLeft : rawPos;
 
   const { wordStart: initialStart, wordEnd: initialEnd } = findWordBoundaries(line, pos);
-  const { wordStart, wordEnd, highlightWord } = resolveHighlightWord(line, pos, initialStart, initialEnd);
+  const { wordStart, wordEnd, highlightWord } = resolveHighlightWord({ line, pos, wordStart: initialStart, wordEnd: initialEnd });
   const carets = buildCarets(highlightWord);
 
   return { wordStart, wordEnd, highlightWord, carets };

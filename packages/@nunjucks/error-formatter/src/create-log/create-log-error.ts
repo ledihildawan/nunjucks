@@ -38,10 +38,9 @@ const adjustColnoForNullValue = (err: TemplateError): number | null | undefined 
 
 const buildSourceTraceIfNeeded = (
   err: TemplateError,
-  verbosity: string,
   options: OutputOptions
 ): SourceTrace | null => {
-  if (verbosity === 'simple') { return null; }
+  if ((options.verbosity ?? 'full') === 'simple') { return null; }
   const traceLineBase = resolveTraceLineBase(err, options.isJsCaller);
   return buildSourceTrace({
     sourceContent: err.sourceContent ?? null,
@@ -76,8 +75,7 @@ const formatErrorOutput = ({ err, options, format }: FormatErrorOutputInput): st
 
 const formatError = (err: Error | TemplateError, options: OutputOptions = {}): string => {
   const templateError = isTemplateErrorLog(err) ? err : toTemplateError(err);
-  const verbosity = options.verbosity ?? 'full';
-  const sourceTrace = buildSourceTraceIfNeeded(templateError, verbosity, options);
+  const sourceTrace = buildSourceTraceIfNeeded(templateError, options);
 
   const opts = createFormatterState({
     metadata: toFormatterMetadata(templateError, templateError.renderContext),

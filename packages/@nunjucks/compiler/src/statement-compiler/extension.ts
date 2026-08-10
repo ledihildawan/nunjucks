@@ -31,7 +31,7 @@ const emitExtensionCallBegin = (
 const emitExtensionArgs = (
   compiler: Compiler,
   args: Node | null,
-  contentArgs: Node[],
+  contentArgs: readonly Node[],
   frame: Frame
 ): void => {
   if (!args && contentArgs.length === 0) {
@@ -70,7 +70,7 @@ const emitContentArg = (compiler: Compiler, argument: Node | null, frame: Frame)
 
 const emitContentArgs = (
   compiler: Compiler,
-  contentArgs: Node[],
+  contentArgs: readonly Node[],
   frame: Frame
 ): void => {
   contentArgs.forEach((argument, i) => {

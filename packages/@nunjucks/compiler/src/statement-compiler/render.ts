@@ -1,5 +1,5 @@
 import { forEach } from 'remeda';
-import type { CallNode, RenderNode } from '@nunjucks/nodes';
+import type { CallNode, RenderNode, SlotBlock } from '@nunjucks/nodes';
 import { isFunCall } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
@@ -10,7 +10,7 @@ import { compileSlotFunction } from './slot.ts';
 
 const compileRenderSlots = (
   compiler: Compiler,
-  slots: readonly { name: string; params: string[]; body: Node }[],
+  slots: readonly SlotBlock[],
   frame: Frame
 ): string => {
   const entries: string[] = [];

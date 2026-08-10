@@ -32,4 +32,28 @@ describe('parseInclude', () => {
     const node = parseFirst('{% include "partial.html" with user %}');
     expect((node as { with: Node }).with).toBeDefined();
   });
+
+  test('parses a fully-specified include with only and ignore missing together', () => {
+    const node = parseFirst('{% include "partial.html" only ignore missing %}') as {
+      template: Node;
+      ignoreMissing: boolean | null;
+      only?: boolean;
+      with?: Node;
+    };
+    expect(node.template.value).toBe('partial.html');
+    expect(node.only).toBe(true);
+    expect(node.ignoreMissing).toBe(true);
+    expect(node.with).toBeUndefined();
+  });
+
+  test('builds the node with default ignoreMissing=null when not specified', () => {
+    const node = parseFirst('{% include "partial.html" %}') as {
+      ignoreMissing: boolean | null;
+      only?: boolean;
+      with?: Node;
+    };
+    expect(node.ignoreMissing).toBeNull();
+    expect(node.only).toBeUndefined();
+    expect(node.with).toBeUndefined();
+  });
 });

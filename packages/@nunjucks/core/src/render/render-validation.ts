@@ -5,11 +5,11 @@ import type { TemplateError } from '@nunjucks/log';
 import { ok, err, type Result } from '@nunjucks/shared';
 import type { RenderConfig, RenderValidationError, ValidationErrorRequest } from './render-types.ts';
 
-const combineValidationErrors = <T extends { message: string }>(errors: readonly T[]): T | undefined => {
-  const primary = errors[0];
-  if (primary === undefined || errors.length === 1) { return primary; }
-  const additionalMessages = errors.slice(1).map((e) => e.message).join('; ');
-  return { ...primary, message: `${primary.message} (+${errors.length - 1} more: ${additionalMessages})` };
+const combineValidationErrors = <T extends { message: string }>(errors: readonly [T, ...T[]]): T => {
+  const [primary, ...rest] = errors;
+  if (rest.length === 0) { return primary; }
+  const additionalMessages = rest.map((e) => e.message).join('; ');
+  return { ...primary, message: `${primary.message} (+${rest.length} more: ${additionalMessages})` };
 };
 
 const buildValidationError = async ({
@@ -70,10 +70,6 @@ export const validateRender = async (template: unknown, { config, context }: Val
   const validation = validateConfig(config);
   if (!validation.valid) {
     const ve = combineValidationErrors(validation.errors);
-    if (ve === undefined) {
-      // WHY: validators guarantee a non-empty errors tuple when valid===false, so this branch is an impossible-state invariant, not a domain error.
-      return err(createLog('error', { def: { name: 'VALIDATION_ERROR', message: 'Validation failed but no errors found' }, subject: null, context: { phase: 'render' } }));
-    }
     const callerLineno = config.callerLocation?.lineNumber;
     const callerColno = config.callerLocation?.columnNumber;
     // WHY: convert 1-based caller line to 0-based template line (lineBase: 'zero' set in buildValidationError). Guard against lineno === 1 because subtracting would produce 0 which is a valid 0-based index but loses the "first line" semantic for display.
@@ -95,10 +91,6 @@ export const validateRender = async (template: unknown, { config, context }: Val
   const contextValidation = validateRenderContext(context, config);
   if (!contextValidation.valid) {
     const ce = combineValidationErrors(contextValidation.errors);
-    if (ce === undefined) {
-      // WHY: validators guarantee a non-empty errors tuple when valid===false, so this branch is an impossible-state invariant, not a domain error.
-      return err(createLog('error', { def: { name: 'VALIDATION_ERROR', message: 'Context validation failed but no errors found' }, subject: null, context: { phase: 'render' } }));
-    }
     const stamps = await getDangerousValueStamps(ce, config);
     return err(await buildValidationError({ validationError: ce, stamps, config, templateSource: template, context }));
   }
@@ -110,9 +102,6 @@ export const validateTemplateSource = async (templateSource: string, { config, c
   const templateValidation = validateTemplate(templateSource, config);
   if (!templateValidation.valid) {
     const ve = combineValidationErrors(templateValidation.errors);
-    if (ve === undefined) {
-      return err(createLog('error', { def: { name: 'VALIDATION_ERROR', message: 'Template validation failed but no errors found' }, subject: null, context: { phase: 'render' } }));
-    }
     return err(await buildValidationError({
       validationError: ve,
       stamps: { lineno: ve.lineno, colno: ve.colno, code: ve.code, subject: ve.subject },

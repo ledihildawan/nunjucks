@@ -106,8 +106,12 @@ interface CaseFields {
 const caseNode = (loc: Loc, fields: CaseFields) =>
   createNode(T.CASE, loc, { ...fields });
 
-const extendsNode = (loc: Loc, template?: Node) =>
-  createNode(T.EXTENDS, loc, { template });
+interface ExtendsFields {
+  template: Node;
+}
+
+const extendsNode = (loc: Loc, fields: ExtendsFields) =>
+  createNode(T.EXTENDS, loc, { template: fields.template });
 
 interface IncludeFields {
   template?: Node;
@@ -210,4 +214,4 @@ export {
   match, when, renderNode,
   callExtension, callExtensionAsync,
 };
-export type { InlineIfFields, ForFields, ComponentFields, ImportFields, FromImportFields, SwitchFields, MatchFields, RenderFields, CallExtensionFields, BlockFields, CaptureFields, ScopeFields, CaseFields, IncludeFields, SuperFields, WhenFields };
+export type { InlineIfFields, ForFields, ComponentFields, ImportFields, FromImportFields, SwitchFields, MatchFields, RenderFields, CallExtensionFields, BlockFields, CaptureFields, ScopeFields, CaseFields, IncludeFields, SuperFields, WhenFields, ExtendsFields };

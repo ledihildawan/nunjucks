@@ -132,7 +132,7 @@ export interface FileSystemLoaderOptions {
 }
 
 export interface FileSystemLoader extends Loader {
-  pathsToNames: Record<string, string>;
+  pathsToNames: Map<string, string>;
   watchEnabled: boolean;
   async: true;
   watchedFiles: Map<string, FSWatcher>;
@@ -147,7 +147,7 @@ export const createFileSystemLoader = (searchPaths: string | string[] | undefine
   const base = createLoader();
   const normalizedSearchPaths = normalizeSearchPaths(searchPaths);
   const watchedFiles = new Map<string, FSWatcher>();
-  const pathsToNames: Record<string, string> = {};
+  const pathsToNames = new Map<string, string>();
   const watchEnabled = Boolean(options.watch);
 
   const unwatchFile = (filePath: string): void => {
@@ -176,7 +176,7 @@ export const createFileSystemLoader = (searchPaths: string | string[] | undefine
     const fullPath = await findFileInSearchPaths(normalizedSearchPaths, name);
     if (!fullPath) { return null; }
 
-    pathsToNames[fullPath] = name;
+    pathsToNames.set(fullPath, name);
     if (watchEnabled) { watchFile(fullPath); }
 
     const source = await readFileSource(fullPath);

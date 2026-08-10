@@ -5,94 +5,94 @@ import type { PairNode, ChildrenNode } from './expression-nodes.ts';
 
 interface BlockNode extends NodeBase {
   readonly type: typeof T.BLOCK;
-  name: Node | string | undefined;
-  body: Node;
+  readonly name: Node | string | undefined;
+  readonly body: Node;
 }
 
 interface CaptureNode extends NodeBase {
   readonly type: typeof T.CAPTURE;
-  body: Node;
-  name?: string | null;
+  readonly body: Node;
+  readonly name?: string | null;
 }
 
 interface IfNode extends NodeBase {
   readonly type: typeof T.IF | typeof T.INLINE_IF;
-  cond: Node;
-  body: Node;
-  alternate: Node | null;
+  readonly cond: Node;
+  readonly body: Node;
+  readonly alternate: Node | null;
 }
 
 interface ForNode extends NodeBase {
   readonly type: typeof T.FOR;
-  arr: Node;
-  name: Node;
-  body: Node;
-  alternate: Node | null;
+  readonly arr: Node;
+  readonly name: Node;
+  readonly body: Node;
+  readonly alternate: Node | null;
 }
 
 interface ComponentNode extends NodeBase {
   readonly type: typeof T.COMPONENT;
-  name: string;
-  args: Node[];
-  body: Node;
-  fallbackSlots: SlotBlock[];
+  readonly name: string;
+  readonly args: readonly Node[];
+  readonly body: Node;
+  readonly fallbackSlots: readonly SlotBlock[];
 }
 
 interface ExecNode extends NodeBase {
   readonly type: typeof T.EXEC;
-  expr: Node;
+  readonly expr: Node;
 }
 
 interface ScopeNode extends NodeBase {
   readonly type: typeof T.SCOPE;
-  assignments: PairNode[];
-  body: Node;
+  readonly assignments: readonly PairNode[];
+  readonly body: Node;
 }
 
 interface SwitchNode extends NodeBase {
   readonly type: typeof T.SWITCH;
-  expr: Node;
-  cases: CaseNode[];
-  default: Node | null;
+  readonly expr: Node;
+  readonly cases: readonly CaseNode[];
+  readonly default: Node | null;
 }
 
 interface CaseNode extends NodeBase {
   readonly type: typeof T.CASE;
-  cond: Node;
-  body: Node;
+  readonly cond: Node;
+  readonly body: Node;
 }
 
 interface ExtendsNode extends NodeBase {
   readonly type: typeof T.EXTENDS;
-  template: Node;
+  readonly template: Node;
 }
 
 interface IncludeNode extends NodeBase {
   readonly type: typeof T.INCLUDE;
-  template: Node;
-  ignoreMissing: boolean | null;
-  only?: boolean;
-  with?: Node;
+  readonly template: Node;
+  readonly ignoreMissing: boolean | null;
+  readonly only?: boolean;
+  readonly with?: Node;
 }
 
 interface SuperNode extends NodeBase {
   readonly type: typeof T.SUPER;
-  blockName: string;
-  symbol: Node | null;
+  readonly blockName: string;
+  readonly symbol: Node | null;
 }
 
 interface ImportNode extends NodeBase {
   readonly type: typeof T.IMPORT;
-  template: Node;
-  target: string;
-  withContext: boolean;
+  readonly template: Node;
+  readonly target: string;
+  readonly withContext: boolean;
 }
 
 interface FromImportNode extends NodeBase {
   readonly type: typeof T.FROM_IMPORT;
-  template: Node;
-  names: ChildrenNode;
-  withContext: boolean;
+  readonly template: Node;
+  readonly names: ChildrenNode;
+  readonly withContext: boolean;
 }
 
 interface VariableDeclNode extends NodeBase {
@@ -110,11 +110,11 @@ interface CompoundAssignNode extends NodeBase {
 
 interface CallExtensionNode extends NodeBase {
   readonly type: typeof T.CALL_EXTENSION | typeof T.CALL_EXTENSION_ASYNC;
-  extName: string;
-  prop: string;
-  args: Node;
-  contentArgs: Node[];
-  autoescape: boolean;
+  readonly extName: string;
+  readonly prop: string;
+  readonly args: Node;
+  readonly contentArgs: readonly Node[];
+  readonly autoescape: boolean;
 }
 
 interface WhenNode extends NodeBase {
@@ -132,9 +132,9 @@ interface MatchNode extends NodeBase {
 }
 
 interface SlotBlock {
-  name: string;
-  params: string[];
-  body: Node;
+  readonly name: string;
+  readonly params: readonly string[];
+  readonly body: Node;
 }
 
 interface RenderNode extends NodeBase {

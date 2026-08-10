@@ -16,12 +16,10 @@ export const parseExtends = (parserContext: ParserContext): Result<Node, Templat
     return fail(parserContext, `parseExtends: expected ${tagName}`);
   }
 
-  const node = extendsNode(loc(tag));
   const templateR = parseExpression(parserContext);
   if (isErr(templateR)) { return templateR; }
-  node.template = templateR.value;
 
   const blockEndR = advanceAfterBlockEnd(parserContext, String(tag.value));
   if (isErr(blockEndR)) { return blockEndR; }
-  return ok(node);
+  return ok(extendsNode(loc(tag), { template: templateR.value }));
 };

@@ -8,10 +8,9 @@ export interface ConfigValidationError extends BaseValidationError {
   type: string;
 }
 
-export interface ConfigValidationResult {
-  valid: boolean;
-  errors: ConfigValidationError[];
-}
+export type ConfigValidationResult =
+  | { valid: true; errors: readonly [] }
+  | { valid: false; errors: readonly [ConfigValidationError, ...ConfigValidationError[]] };
 
 export interface Config {
   executionTimeout?: number;
@@ -79,5 +78,11 @@ export const validateConfig = (config: Config): ConfigValidationResult => {
     ...validateCustomFilters(config),
     ...validateCustomGlobals(config),
   ];
-  return { valid: errors.length === 0, errors };
+
+  if (errors.length === 0) {
+    return { valid: true, errors: [] as const };
+  }
+  const first = errors[0] as ConfigValidationError;
+  const rest = errors.slice(1);
+  return { valid: false, errors: [first, ...rest] as const };
 };

@@ -11,7 +11,7 @@ const sandboxError = (errorDef: ErrorDefinitionEntry | undefined, key: string | 
   if (!errorDef) {
     return createLog('error', { def: { name: 'SANDBOX_ERROR', message: `Sandbox error: ${String(key)}` }, subject: String(key), context: { phase: 'render', lineBase: 'zero' } });
   }
-  const env = options.environment || 'auto';
+  const env = options.environment ?? 'auto';
   const category = getBlockedKeyCategory(String(key), env);
   return createLog('error', { def: errorDef, params: { key: String(key), category: category ?? '', environment: env }, subject: String(key), context: { phase: 'render', lineBase: 'zero' } });
 };

@@ -33,7 +33,7 @@ describe('parseComponent', () => {
     const node = parseFirst(
       '{% component card %}{% slot default %}fallback{% endslot %}{% endcomponent %}'
     );
-    const slots = (node as { fallbackSlots: SlotBlock[] }).fallbackSlots;
+    const slots = (node as { fallbackSlots: readonly SlotBlock[] }).fallbackSlots;
     expect(slots).toHaveLength(1);
     expect(slots[0]?.name).toBe('default');
   });
@@ -42,7 +42,7 @@ describe('parseComponent', () => {
     const node = parseFirst(
       '{% component card %}{% slot header %}head{% endslot %}body{% endcomponent %}'
     );
-    const slots = (node as { fallbackSlots: SlotBlock[] }).fallbackSlots;
+    const slots = (node as { fallbackSlots: readonly SlotBlock[] }).fallbackSlots;
     expect(slots.some(s => s.name === 'header')).toBe(true);
   });
 });

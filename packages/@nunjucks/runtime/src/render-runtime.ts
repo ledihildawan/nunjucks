@@ -52,7 +52,7 @@ const createRenderRuntime = (options?: RenderRuntimeOptions) => ({
   ...(options ? {
     __warnings__: [] as unknown[],
     logContext: {
-      templateName: options.templateName || 'inline',
+      templateName: options.templateName ?? 'inline',
       phase: 'render' as const,
       renderContext: options.renderContext ?? null,
     },

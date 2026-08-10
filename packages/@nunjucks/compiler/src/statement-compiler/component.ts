@@ -1,5 +1,5 @@
 import { isDict, isKeywordArgs } from '@nunjucks/nodes';
-import type { Node, ComponentNode, ChildrenNode, PairNode } from '@nunjucks/nodes';
+import type { Node, ComponentNode, ChildrenNode, PairNode, SlotBlock } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { createFrame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
@@ -56,7 +56,7 @@ const emitComponentArgBindings = (compiler: Compiler, args: readonly Node[], kwa
   }
 };
 
-const emitFallbackEntries = (compiler: Compiler, slots: readonly { name: string; params: string[]; body: Node }[], currFrame: Frame): string[] =>
+const emitFallbackEntries = (compiler: Compiler, slots: readonly SlotBlock[], currFrame: Frame): string[] =>
   slots.map((slot) => {
     const slotVar = `__fallback_${slot.name}`;
     compileSlotFunction({ compiler, params: slot.params, body: slot.body, parentFrame: currFrame, slotVar });

@@ -11,6 +11,9 @@ describe('normalizeDrivePath', () => {
   test('converts backslashes to forward slashes', () => {
     expect(normalizeDrivePath('C:\\src\\app\\file.ts')).toBe('C:/src/app/file.ts');
   });
+  test('converts every backslash in a deep path (replaceAll regression)', () => {
+    expect(normalizeDrivePath('C:\\a\\b\\c\\d\\e\\f.ts')).toBe('C:/a/b/c/d/e/f.ts');
+  });
   test('leaves a plain posix path unchanged', () => {
     expect(normalizeDrivePath('/var/log/app')).toBe('/var/log/app');
   });

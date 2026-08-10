@@ -16,24 +16,26 @@ export const parseInclude = (parserContext: ParserContext): Result<Node, Templat
     return fail(parserContext, `parseInclude: expected ${tagName}`);
   }
 
-  const node = include(loc(tag));
   const templateR = parseExpression(parserContext);
   if (isErr(templateR)) { return templateR; }
-  node.template = templateR.value;
+
+  const includeFields: { template: Node; ignoreMissing?: boolean; only?: boolean; with?: Node } = {
+    template: templateR.value,
+  };
 
   if (skipSymbol(parserContext, 'only')) {
-    node.only = true;
+    includeFields.only = true;
   } else if (skipSymbol(parserContext, 'with')) {
     const withR = parseExpression(parserContext);
     if (isErr(withR)) { return withR; }
-    node.with = withR.value;
+    includeFields.with = withR.value;
   }
 
   if (skipSymbol(parserContext, 'ignore') && skipSymbol(parserContext, 'missing')) {
-    node.ignoreMissing = true;
+    includeFields.ignoreMissing = true;
   }
 
   const blockEndR = advanceAfterBlockEnd(parserContext, String(tag.value));
   if (isErr(blockEndR)) { return blockEndR; }
-  return ok(node);
+  return ok(include(loc(tag), includeFields));
 };
