@@ -53,7 +53,7 @@ const EXEC_EXPRESSION_ERROR = createErrorDefinition({
     'The expression calls a method on a value that does not support it',
     'Data preparation should happen in your **controller** before render'
   ],
-  fixCode: '// Controller — before render():\nconst items = prepareItems();\nrender(template, { items })',
+  fixCode: '// Controller — before render():\nconst items = prepareItems();\nconst njk = nunjucks({});\nawait njk.render(template, { items })',
   fixComment: 'Use {% exec %} only for rendering state. Move data logic to your controller.',
   extraFrom: (groups: RegExpMatchArray) => ({ detail: groups[1] ?? '' })
 });

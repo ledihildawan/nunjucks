@@ -67,8 +67,9 @@ router.get('/', async (_req: Request, res: Response) => {
   </div>
 
   <h2>Code Example</h2>
-  <pre>// via config
-const html = await nunjucks(template, context, { undefined: 'strict' });</pre>
+  <pre>// via factory config
+const njk = nunjucks({ undefined: 'strict' });
+const html = await njk.render(template, context);</pre>
 
   <div class="nav">
     <a href="/">Back to Home</a>

@@ -29,7 +29,7 @@ export const TEMPLATE_ERRORS = {
       'A `null`, `undefined`, number, or boolean was passed instead',
       'The template loader returned an unexpected value'
     ],
-    fixCode: 'render("Hello {{ name }}", { name: "World" })\n// or\nrender({ src: "template.njk", path: "/path" }, ctx)',
+    fixCode: 'nunjucks({}).render("Hello {{ name }}", { name: "World" })\n// or, for a file template:\nnunjucks({ views: "/path" }).render("template.njk", ctx)',
     fixComment: 'Pass a template string or a source descriptor object',
     subjectFrom: null
   },
@@ -44,7 +44,7 @@ export const TEMPLATE_ERRORS = {
       'A primitive value like number, boolean, or null was given',
       'The template was loaded from an unsupported source'
     ],
-    fixCode: 'render({ src: "template.njk", path: "/templates/template.njk" }, context)',
+    fixCode: 'nunjucks({ views: "/templates" }).render("template.njk", context)',
     fixComment: 'Provide src as a string path or a `{ src, path }` object',
     subjectFrom: null
   },
@@ -59,7 +59,7 @@ export const TEMPLATE_ERRORS = {
       'A custom template implementation does not conform to the template interface',
       'The template object was corrupted during processing'
     ],
-    fixCode: 'render("Hello {{ name }}", { name: "World" })',
+    fixCode: 'nunjucks({}).render("Hello {{ name }}", { name: "World" })',
     fixComment: 'Pass a string template or a proper Template object',
     subjectFrom: null
   },
@@ -74,7 +74,7 @@ export const TEMPLATE_ERRORS = {
       'A custom compiler produced non-standard output',
       'The template was not compiled by nunjucks'
     ],
-    fixCode: 'render("Hello {{ name }}", { name: "World" })',
+    fixCode: 'nunjucks({}).render("Hello {{ name }}", { name: "World" })',
     fixComment: 'Ensure the template is compiled by nunjucks using `compile()`',
     documentationUrl: `${DOCS_BASE}#compile`,
     subjectFrom: null
@@ -151,7 +151,7 @@ export const TEMPLATE_ERRORS = {
       'A file path was passed without a loader',
       'The render function received the wrong argument'
     ],
-    fixCode: 'render("Hello {{ name }}", { name: "World" })\nrender("./template.njk", context, { loader: createFileSystemLoader(".") })',
+    fixCode: 'nunjucks({}).render("Hello {{ name }}", { name: "World" })\nnunjucks({ views: "." }).render("./template.njk", context)',
     fixComment: 'Pass a string template or configure a loader for file paths',
     subjectFrom: null
   }

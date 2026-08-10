@@ -106,7 +106,7 @@ export const SANDBOX_ERRORS = {
       'Template tried to access `{keys}` which you have explicitly blocked',
       'Either remove the key from `blockedContextKeys`, or stop referencing it in the template'
     ],
-    fixCode: "render(template, ctx, { blockedContextKeys: ['{keys}'] })",
+    fixCode: "nunjucks({ security: { blockedContextKeys: ['{keys}'] } }).render(template, ctx)",
     fixComment: 'Pass the value via a non-blocked name, or remove it from `blockedContextKeys`',
     extraFrom: (groups: RegExpMatchArray) => ({ keys: groups[1] ?? '' })
   }),

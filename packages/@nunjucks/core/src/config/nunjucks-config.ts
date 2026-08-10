@@ -45,6 +45,7 @@ interface NunjucksConfig {
   readonly undefined?: UndefinedMode;
   readonly trimBlocks?: boolean;
   readonly lstripBlocks?: boolean;
+  readonly ide?: string;
   readonly security?: SecurityConfig;
   readonly limits?: LimitsConfig;
   readonly streaming?: StreamingConfig;

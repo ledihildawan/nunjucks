@@ -32,6 +32,7 @@ const buildBaseOptions = (config: NunjucksConfig): Record<string, unknown> => {
     undefined: config.undefined,
     trimBlocks: config.trimBlocks,
     lstripBlocks: config.lstripBlocks,
+    ide: config.ide,
     views: config.views,
     sandbox: config.security?.sandbox,
     sandboxMode: config.security?.sandboxMode,
@@ -62,6 +63,7 @@ const buildDefaultPipeOptions = (config: NunjucksConfig): PipeRenderStreamOption
   coalesceBytes: config.streaming?.coalesceBytes ?? 0,
   maxOutputSize: config.limits?.maxOutputSize ?? 0,
   contentType: config.streaming?.contentType ?? 'html',
+  ide: config.ide ?? 'vscode',
 });
 
 // WHY: the factory closes over shared config (filters, globals, security, limits, loader path, etc.) and
