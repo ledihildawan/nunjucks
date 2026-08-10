@@ -21,6 +21,11 @@ const compact = <T extends Record<string, unknown>>(record: T): Partial<T> =>
 // streaming groups are flattened 1:1 to their existing flat keys.
 const buildBaseOptions = (config: NunjucksConfig): Record<string, unknown> => {
   const folded = foldPlugins(config.plugins);
+  // WHY: merged once so the same map feeds both rendering (filters/globals) and the security name-validation
+  // (customFilters/customGlobals read by validateConfig in render-validation.ts). Without this mapping the
+  // validator's reserved/dangerous-name check silently skips factory-supplied filters/globals.
+  const mergedFilters = { ...folded.filters, ...config.filters };
+  const mergedGlobals = { ...folded.globals, ...config.globals };
   return compact({
     dev: config.dev,
     autoescape: config.autoescape,
@@ -36,13 +41,16 @@ const buildBaseOptions = (config: NunjucksConfig): Record<string, unknown> => {
     contextStrict: config.security?.contextStrict,
     scanContextValues: config.security?.scanContextValues,
     strictMode: config.security?.strictMode,
+    allowedGlobals: config.security?.allowedGlobals,
     executionTimeout: config.limits?.executionTimeout,
     maxTemplateSize: config.limits?.maxTemplateSize,
     maxOutputSize: config.limits?.maxOutputSize,
     streamErrorRecovery: config.streaming?.errorRecovery,
     streamContentType: config.streaming?.contentType,
-    filters: { ...folded.filters, ...config.filters },
-    globals: { ...folded.globals, ...config.globals },
+    filters: mergedFilters,
+    globals: mergedGlobals,
+    customFilters: mergedFilters,
+    customGlobals: mergedGlobals,
     tests: { ...folded.tests, ...config.tests },
     extensions: { ...folded.extensions, ...config.extensions },
     dompurify: config.dompurify ?? folded.dompurify,

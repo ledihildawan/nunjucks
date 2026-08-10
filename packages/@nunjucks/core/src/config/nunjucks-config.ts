@@ -19,6 +19,7 @@ interface SecurityConfig {
   readonly sandboxAllowlist?: readonly string[];
   readonly sandboxEnvironment?: SandboxEnvironment;
   readonly blockedContextKeys?: readonly string[];
+  readonly allowedGlobals?: readonly string[];
   readonly contextStrict?: boolean | 'error';
   readonly scanContextValues?: boolean;
   readonly strictMode?: boolean;

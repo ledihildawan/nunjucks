@@ -71,7 +71,7 @@ describe('nunjucks factory', () => {
 
   test('factory-owned loader resolves file templates from views', async () => {
     // WHY: proves the factory creates and uses its OWN loader for the configured views path (not the
-    // module-global cache), and that a per-call views override resolves a different loader within the factory.
+    // module-global cache).
     const viewsDir = path.join(tmpdir(), `njk-factory-${Date.now()}`);
     await mkdir(viewsDir, { recursive: true });
     await writeFile(path.join(viewsDir, 'greet.njk'), 'Hello {{ name }}!');
@@ -84,5 +84,13 @@ describe('nunjucks factory', () => {
     } finally {
       await rm(viewsDir, { recursive: true, force: true });
     }
+  });
+
+  test('factory-supplied filters with reserved names are rejected by validation', async () => {
+    // WHY: the factory maps filters → customFilters so the existing per-render validateConfig fires and
+    // rejects a filter name that shadows a reserved keyword (e.g. `if`).
+    const njk = nunjucks({ filters: { if: () => 'x' } });
+    const result = await njk.render('{{ x |> if }}', { x: 'y' });
+    expect(result.ok).toBe(false);
   });
 });
