@@ -140,7 +140,7 @@ const prepareRender = async (template: string, { context = {}, ...options }: Ren
     return err(strictErr as TemplateError);
   }
 
-  const loader = getLoader(config);
+  const loader = config.loader !== undefined ? config.loader : getLoader(config);
   let templateSource: string;
   let templatePath: string | null;
   try {

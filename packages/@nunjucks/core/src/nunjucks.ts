@@ -1,6 +1,7 @@
 import { render as renderInternal, renderToStream as renderToStreamInternal } from './render/render.ts';
 import { pipeRenderStream as pipeRenderStreamInternal } from './render/pipe-stream.ts';
 import { foldPlugins } from './plugin/index.ts';
+import { createFileSystemLoader, type FileSystemLoader } from '@nunjucks/loaders';
 import type { NunjucksConfig, NunjucksEngine, PerRenderOverrides } from './config/nunjucks-config.ts';
 import type { RenderStreamResult } from './render/render-types.ts';
 import type { PipeSink, PipeRenderStreamOptions } from './render/pipe-stream.ts';
@@ -62,8 +63,23 @@ const nunjucks = (config: NunjucksConfig = {}): NunjucksEngine => {
   const baseOptions = buildBaseOptions(config);
   const defaultPipeOptions = buildDefaultPipeOptions(config);
 
+  // WHY: per-factory loader cache (closure-scoped, NOT module-global). The factory owns the loader lifecycle,
+  // so two factories with the same views path get ISOLATED loader instances — no hidden cross-instance sharing.
+  // Resolved per effective views (factory-time views OR a per-call override, e.g. Express's dirname(filePath)),
+  // so a per-call views change creates/caches a loader within this factory only. GC'd when the factory is.
+  const loaderCache = new Map<string, FileSystemLoader>();
+  const resolveLoader = (views: string | undefined): FileSystemLoader | null => {
+    if (!views) { return null; }
+    const cached = loaderCache.get(views);
+    if (cached) { return cached; }
+    const loader = createFileSystemLoader(views);
+    loaderCache.set(views, loader);
+    return loader;
+  };
+
   const buildCallOptions = (context: Record<string, unknown> | undefined, overrides: PerRenderOverrides | undefined): Record<string, unknown> => ({
     ...baseOptions,
+    loader: resolveLoader(overrides?.views ?? config.views),
     ...(context !== undefined && { context }),
     ...overrides,
   });

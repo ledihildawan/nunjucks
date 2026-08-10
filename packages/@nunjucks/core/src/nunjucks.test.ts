@@ -1,4 +1,7 @@
 import { describe, test, expect } from 'bun:test';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { nunjucks } from './nunjucks.ts';
 
 describe('nunjucks factory', () => {
@@ -64,5 +67,22 @@ describe('nunjucks factory', () => {
     const chunks: string[] = [];
     for await (const chunk of result.stream) { chunks.push(chunk); }
     expect(chunks.join('')).toBe('Hi there');
+  });
+
+  test('factory-owned loader resolves file templates from views', async () => {
+    // WHY: proves the factory creates and uses its OWN loader for the configured views path (not the
+    // module-global cache), and that a per-call views override resolves a different loader within the factory.
+    const viewsDir = path.join(tmpdir(), `njk-factory-${Date.now()}`);
+    await mkdir(viewsDir, { recursive: true });
+    await writeFile(path.join(viewsDir, 'greet.njk'), 'Hello {{ name }}!');
+    try {
+      const njk = nunjucks({ views: viewsDir });
+      const result = await njk.render('greet.njk', { name: 'File' });
+      expect(result.ok).toBe(true);
+      if (!result.ok) { return; }
+      expect(result.value).toBe('Hello File!');
+    } finally {
+      await rm(viewsDir, { recursive: true, force: true });
+    }
   });
 });

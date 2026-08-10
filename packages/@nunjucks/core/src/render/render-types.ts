@@ -3,6 +3,7 @@ import type { CallerLocation } from './caller-file.ts';
 import type { SandboxOptions, Env, UndefinedMode } from '@nunjucks/runtime';
 import type { SandboxMode } from '../config/global.ts';
 import type { TemplateError } from '@nunjucks/log';
+import type { FileSystemLoader } from '@nunjucks/loaders';
 
 interface LoaderSource {
   src: string;
@@ -47,6 +48,7 @@ interface RenderConfig {
   callerLocation?: CallerLocation | null;
   callerFrames?: readonly CallerLocation[] | null;
   streamErrorRecovery?: boolean;
+  loader?: FileSystemLoader | null;
   customFilters?: Record<string, unknown>;
   customGlobals?: Record<string, unknown>;
   filters?: Record<string, (...args: unknown[]) => unknown>;
