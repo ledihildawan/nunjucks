@@ -31,6 +31,7 @@ interface RenderConfig {
   contextStrict?: boolean | 'error';
   allowedGlobals?: readonly string[];
   executionTimeout?: number;
+  maxOutputSize?: number;
   maxTemplateSize?: number;
   strictMode?: boolean;
   scanContextValues?: boolean;

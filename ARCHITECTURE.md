@@ -103,3 +103,52 @@ Positional parameters > 2 are strictly allowed without options objects **ONLY** 
 - **No Shadowing & Pseudo-Privates** — Variable shadowing is prohibited. Avoid pseudo-private naming conventions (e.g., `_myPrivateVar`); enforce encapsulation via language-level scope mechanism.
 - **Unused Parameters** — Use a single `_` or a `_` prefix exclusively for intentionally unused arguments (e.g., `.map((_, index) => ...)`).
 - **Modern Syntax Only** — Rely strictly on current, stable language features. Commented-out code and legacy syntax must be permanently removed prior to code review.
+
+## 8. Error Handling & Streaming Error Strategy
+
+Template rendering uses a **two-pass streaming pipeline** (`renderToStream`) with a **three-tier error strategy**. The deciding question for any error is: *does one failing expression make the whole page useless, or only that spot?* Structural/safety failures abort; per-expression data failures render inline.
+
+### Tier 1 — Pre-stream block (full error page)
+
+Failures detected in **pass-1** (`prepareRender`) arrive as `{ ok: false, error }` before any chunk is streamed. Response headers are not yet sent, so the consumer can render a full error page. These always block because the template cannot produce valid output at all:
+
+- **Syntax / parse / compile errors** — malformed `{% %}`, unbalanced blocks, invalid expression grammar.
+- **Template source resolution** — file-not-found, filesystem I/O errors, loader failures.
+- **Context security violations** — dangerous context values (`eval`, `Function`, `process`) caught by strict mode; blocked context keys.
+- **Config / validation errors** — invalid render configuration, oversized templates.
+
+### Tier 2 — Mid-stream inline marker (recoverable)
+
+With `streamErrorRecovery: true`, the compiler emits a per-expression `try/catch` boundary. A failing `{{ expr }}` calls `runtime.streamError()`, which returns a **sentinel** (it does **not** throw) — `createRenderStream` formats it as an inline error marker and the generator **continues** to the next expression. This serves dashboards / partial-data pages where one missing field must not blank the whole view:
+
+- **Data lookups** — `NULL_VALUE`, `UNDEFINED_VARIABLE`, `UNDEFINED_PROPERTY`, `KEY_NOT_FOUND`.
+- **Filter input failures** — `FILTER_TYPE_ERROR`, slice/sum/sort filter errors.
+- **Non-fatal sandbox access** — `SANDBOX_ACCESS` on a blocked (non-intrinsic) property.
+
+### Tier 3 — Mid-stream fatal throw (abort)
+
+Errors that bypass the per-expression boundary (e.g. `{% extends %}` / `{% include %}` runtime resolution failure) OR whose code is in the **`FATAL_STREAM_CODES` denylist** re-throw out of `streamError`. The generator throws, `createRenderStream` enriches via `wrapWithLog` and re-throws, and the consumer aborts + logs. These never become inline markers because continuing is unsafe or meaningless:
+
+| Code | Reason |
+|------|--------|
+| `SANDBOX_CODE_EXECUTION` | Code-injection attempt (`eval` / `Function` / string `setTimeout`) — security |
+| `CIRCULAR_INCLUDE` | Infinite include loop — structural, would never terminate |
+| `TIMEOUT` | Execution budget exceeded — system |
+
+`isFatalStreamError` is **fail-open**: an error without a `.code` (unrecognized or un-enriched) returns `false` and degrades to the Tier-2 inline marker.
+
+### Lifecycle phase is orthogonal to error tier
+
+The `Phase` union (`'compile' | 'render' | 'load' | 'parse'`) tags the **pipeline stage** where an error originated; it does not decide tier. Pass-1 timing naturally routes `compile`/`parse`/`load` into Tier 1, while `render`-phase errors split between Tier 2 and Tier 3 based on `FATAL_STREAM_CODES` + the `streamErrorRecovery` flag. Do not add streaming-tier concepts to `Phase` — keep the two concerns separate.
+
+### Production guardrails (streaming)
+
+The streaming path enforces a layered safety contract; each wrapper propagates `.return()` so abort/timeout/error cannot leave zombie generators:
+
+- **Total deadline** — `executionTimeout` (same knob as blocking) bounds the whole stream wall-clock via `withStreamDeadline`; on expiry it throws `code='TIMEOUT'` (Tier 3).
+- **Idle guard** — `timeoutMs` (per-chunk, via `withStreamTimeout`) catches a single stalled chunk; also `code='TIMEOUT'`.
+- **Output bound** — `maxOutputSize` trips an `OUTPUT_SIZE_EXCEEDED` circuit breaker in `pipeChunks` (Tier 3) to stop runaway-loop DoS.
+- **Backpressure** — `pipeChunks` awaits `write()` (honors `Promise<boolean>`); `waitForDrain` detaches its listener and races the abort signal (no listener leak, no hang).
+- **Cleanup cascade** — every wrapper (`withStreamDeadline` → `withStreamTimeout` → `coalesceStream` → `createRenderStream`) has a `try/finally` or for-await cleanup that returns the underlying iterator. `createRenderStream`'s `finally` is the authoritative owner.
+- **JSON consumers** — `streamContentType: 'json'` makes Tier-2 sentinels fatal (Tier 3) because an inline marker would corrupt the JSON response.
+- **Single-use** — the returned `AsyncGenerator` rejects a second iteration with a clear error.

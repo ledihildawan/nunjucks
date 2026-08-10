@@ -1,5 +1,6 @@
 import { resolveTemplateSource, prepareSandbox, buildRenderEnv, compileTemplate, handleContextStrictMode, createEnvLookups, TEMPLATE_FILE_EXTENSION_RE } from './render-pipeline.ts';
 import { validateRender, validateTemplateSource } from './render-validation.ts';
+import { withStreamDeadline, coerceChunk, guardSingleConsumer } from './render-stream-adapters.ts';
 import { getLoader } from '../engine.ts';
 import { serializeErrorPayload } from './pipe-stream.ts';
 import type { RenderConfig, RenderStreamResult } from './render-types.ts';
@@ -91,6 +92,7 @@ const injectWarningsIfNeeded = ({ result, warningsCollector, dev }: InjectWarnin
 
 interface RenderOptions extends Partial<GlobalConfig> {
   context?: Record<string, unknown>;
+  streamContentType?: 'html' | 'json' | 'text';
 }
 
 interface PreparedTemplate {
@@ -101,6 +103,7 @@ interface PreparedTemplate {
   readonly resolvedConfig: RenderConfig;
   readonly templateSource: string;
   readonly context: Record<string, unknown>;
+  readonly streamContentType: 'html' | 'json' | 'text';
 }
 
 // WHY: pass-1 pipeline — 6 ordered steps, each with a distinct error strategy:
@@ -162,7 +165,7 @@ const prepareRender = async (template: string, { context = {}, ...options }: Ren
   const envOverride = buildRenderEnv(loader, configWithPath);
   const resolvedConfig: RenderConfig = envOverride ? { ...configWithPath, env: envOverride } : configWithPath;
 
-  return ok({ code, sandboxedCtx, warningsCollector, templateName, resolvedConfig, templateSource, context: safeContext });
+  return ok({ code, sandboxedCtx, warningsCollector, templateName, resolvedConfig, templateSource, context: safeContext, streamContentType: options.streamContentType ?? 'html' });
 };
 
 const render = async (template: string, options: RenderOptions = {}): Promise<Result<string, TemplateError>> => {
@@ -200,11 +203,11 @@ const formatErrorMarker = (error: TemplateError, options: { ide?: string; conten
   return toHtmlMarker(error, { sourceTrace: trace, ide });
 };
 
-// WHY: per-render enrichment cache. The first sentinel does full I/O (resolveLocation reads caller source files). Subsequent sentinels reuse the resolved location data (sourceContent, templatePath, sourceStartLine) and skip frame walking — eliminates N redundant file reads for N errors in the same render.
+// WHY: per-render enrichment cache for the Tier-2 (inline-marker) path. The first sentinel does full I/O (resolveLocation reads caller source files). Subsequent sentinels reuse the resolved location data (sourceContent, templatePath, sourceStartLine) and skip frame walking — eliminates N redundant file reads for N errors in the same render. Asymmetry with Tier 3 (the catch below) is intentional: Tier 2 may emit MANY sentinels (cache pays off), while Tier 3 is a SINGLE fatal throw that ends the stream (cache would never be reused), so the catch calls wrapWithLog directly without caching. Returns the enriched TemplateError; createRenderStream does the contentType-aware formatting so the JSON-fatal decision stays at the consumption point.
 const createCachedEnrichment = (prepared: PreparedTemplate) => {
   let locationCache: { sourceContent: string | null; templatePath: string | null; sourceStartLine: number; lineBase: string } | null = null;
 
-  return async (sentinel: StreamErrorSentinel): Promise<string> => {
+  return async (sentinel: StreamErrorSentinel): Promise<TemplateError> => {
     if (!locationCache) {
       const enriched = await wrapWithLog(sentinel.error, prepared.resolvedConfig, { template: prepared.templateSource, renderContext: prepared.context });
       locationCache = {
@@ -213,7 +216,7 @@ const createCachedEnrichment = (prepared: PreparedTemplate) => {
         sourceStartLine: enriched.sourceStartLine ?? 1,
         lineBase: enriched.lineBase ?? 'zero',
       };
-      return formatErrorMarker(enriched);
+      return enriched;
     }
     const enriched = await wrapWithLog(
       sentinel.error,
@@ -223,38 +226,66 @@ const createCachedEnrichment = (prepared: PreparedTemplate) => {
     enriched.sourceContent = locationCache.sourceContent ?? undefined;
     enriched.templatePath = locationCache.templatePath ?? enriched.templatePath;
     enriched.sourceStartLine = locationCache.sourceStartLine;
-    return formatErrorMarker(enriched);
+    return enriched;
   };
-};const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGenerator<string> {
+};
+
+interface SentinelChunkInput {
+  sentinel: StreamErrorSentinel;
+  streamContentType: 'html' | 'json' | 'text';
+  enrichSentinel: (sentinel: StreamErrorSentinel) => Promise<TemplateError>;
+}
+
+// WHY: decide a sentinel's fate by content type. json → fatal throw (an inline marker fragment after a JSON prefix is unparseable, so abort to the Tier 3 path); html/text → enriched inline marker string. The raw Layer-1 error is thrown for json so the caller's catch enriches it ONCE via wrapWithLog (no double-enrichment — enrichSentinel is skipped).
+const formatSentinelChunk = async ({ sentinel, streamContentType, enrichSentinel }: SentinelChunkInput): Promise<string> => {
+  if (streamContentType === 'json') {
+    throw sentinel.error;
+  }
+  const enriched = await enrichSentinel(sentinel);
+  return formatErrorMarker(enriched, { contentType: streamContentType });
+};
+
+// WHY: createRenderStream is the pass-2 streaming generator. try/catch/finally guarantees the underlying
+// executeStream generator is returned on ANY termination — consumer abort, the timeout wrapper's .return(),
+// normal completion, or a re-thrown fatal error. Without the finally, the inner generator (and any in-flight
+// async filter / {% include %} / DB call inside a filter) would keep running as a zombie after the consumer
+// stops iterating.
+const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGenerator<string> {
   const { code, sandboxedCtx, warningsCollector, resolvedConfig, templateSource, context } = prepared;
   const frame = createFrame();
   const env = buildExecutionEnv(resolvedConfig);
-  const generator = executeStream(code, sandboxedCtx, frame, env, resolvedConfig);
+  const rootGenerator = executeStream(code, sandboxedCtx, frame, env, resolvedConfig);
+  // WHY: executionTimeout is the TOTAL wall-clock deadline for streaming (same knob as blocking render). When set, withStreamDeadline races every chunk against a single timer and throws a code='TIMEOUT' (Tier 3 fatal) error on expiry. When unset (0), the generator runs unbounded by total time (the consumer's idle timeoutMs is still applicable via pipeRenderStream).
+  const deadlineMs = resolvedConfig.executionTimeout ?? 0;
+  const generator = deadlineMs > 0 ? withStreamDeadline(rootGenerator, deadlineMs) : rootGenerator;
   const enrichSentinel = createCachedEnrichment(prepared);
   try {
     while (true) {
       const { value, done } = await generator.next();
       if (done) { break; }
       if (isStreamErrorSentinel(value)) {
-        yield await enrichSentinel(value);
+        yield await formatSentinelChunk({ sentinel: value, streamContentType: prepared.streamContentType, enrichSentinel });
       } else {
-        yield value as string;
+        yield coerceChunk(value);
       }
     }
   } catch (streamErr) {
-    // WHY: enrich fatal mid-stream errors (non-output failures that bypass per-expression try/catch) via wrapWithLog so they carry the same full classification, source-trace, location, causes, and fix as blocking render errors.
+    // WHY: enrich fatal mid-stream errors (non-output failures that bypass per-expression try/catch, plus json-fatal sentinels from formatSentinelChunk) via wrapWithLog so they carry the same full classification, source-trace, location, causes, and fix as blocking render errors.
     throw await wrapWithLog(streamErr, resolvedConfig, { template: templateSource, renderContext: context });
+  } finally {
+    // WHY: cascade cleanup to executeStream on early termination (abort/timeout/break) — best-effort, not awaited, since a stalled generator's .return() may never settle. On normal completion the generator is already done and .return() is a no-op.
+    generator.return(undefined).catch(() => { /* best-effort: swallow cleanup rejection */ });
   }
   if (warningsCollector.length > 0 && resolvedConfig.dev) {
     yield injectWarningsScript(warningsCollector, { dev: true, verbosity: 'medium' });
   }
 };
 
-// WHY: two-pass streaming (Option B). Pass-1 (prepareRender) validates/compiles — a failure here is returned as { ok: false, error } so the consumer can still render an error page (response headers not yet sent). On success, pass-2 returns the async generator directly (no drain); mid-stream runtime errors then surface as a generator throw after chunks have already been emitted. Pass streamErrorRecovery: true in options to enable per-expression error recovery (inline markers instead of stream termination).
+// WHY: two-pass streaming (Option B). Pass-1 (prepareRender) validates/compiles — a failure here is returned as { ok: false, error } so the consumer can still render an error page (response headers not yet sent). On success, pass-2 returns the async generator directly (no drain); mid-stream runtime errors then surface as a generator throw after chunks have already been emitted. Pass streamErrorRecovery: true in options to enable per-expression error recovery (inline markers instead of stream termination). Pass streamContentType: 'json' to make mid-stream sentinels fatal (JSON cannot absorb inline markers without corrupting the response).
 const renderToStream = async (template: string, options: RenderOptions = {}): Promise<RenderStreamResult> => {
   const prepared = await prepareRender(template, options);
   if (isErr(prepared)) { return { ok: false, error: prepared.error }; }
-  return { ok: true, stream: createRenderStream(prepared.value) };
+  return { ok: true, stream: guardSingleConsumer(createRenderStream(prepared.value)) };
 };
 
 export { render, renderToStream, formatErrorMarker };

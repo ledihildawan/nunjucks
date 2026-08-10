@@ -25,6 +25,27 @@ describe('streamError', () => {
   });
 });
 
+describe('streamError fatal-code handling', () => {
+  test('re-throws an error whose code is in FATAL_STREAM_CODES instead of returning a sentinel', () => {
+    // WHY: lineno on the crafted error makes handleError re-throw the original (handle-error.ts early-return path), so `.code` is preserved into streamError's catch where isFatalStreamError reads it.
+    const fatal = Object.assign(new Error('timed out'), { code: 'TIMEOUT', lineno: 1 });
+    expect(() => streamError.call({}, fatal, { lineno: 1, colno: 0 })).toThrow('timed out');
+  });
+
+  test('re-throws every fatal code (SANDBOX_CODE_EXECUTION, CIRCULAR_INCLUDE, TIMEOUT)', () => {
+    for (const code of ['SANDBOX_CODE_EXECUTION', 'CIRCULAR_INCLUDE', 'TIMEOUT']) {
+      const fatal = Object.assign(new Error(code), { code, lineno: 1 });
+      expect(() => streamError.call({}, fatal, { lineno: 1, colno: 0 })).toThrow();
+    }
+  });
+
+  test('returns a sentinel for a recoverable code even with lineno set', () => {
+    const recoverable = Object.assign(new Error('null value'), { code: 'NULL_VALUE', lineno: 1 });
+    const result = streamError.call({}, recoverable, { lineno: 1, colno: 0 });
+    expect(isStreamErrorSentinel(result)).toBe(true);
+  });
+});
+
 describe('isStreamErrorSentinel', () => {
   test('returns true for a StreamErrorSentinel', () => {
     const sentinel: StreamErrorSentinel = { __streamError: true, error: new Error('x'), lineno: 0, colno: 0 };

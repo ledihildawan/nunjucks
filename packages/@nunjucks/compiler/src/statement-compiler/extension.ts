@@ -17,7 +17,8 @@ const emitExtensionCallBegin = (
   res: string | null
 ): void => {
   if (!emitAsync) {
-    compiler.emit(`${appendTarget(compiler)}runtime.suppressValue(`);
+    // WHY: `await` resolves a Promise returned by the extension fn before suppressValue runs — without it, a sync extension that unexpectedly returns a thenable would yield "[object Promise]" (silent corruption in both blocking and streaming paths). Root is always an async generator (Option B), so await is valid here; on a non-Promise result it is a no-op (one microtask, no semantic change).
+    compiler.emit(`${appendTarget(compiler)}runtime.suppressValue(await `);
   }
   if (emitAsync) {
     compiler.emit(`let ${res} = await env.getExtension(${JSON.stringify(node.extName)})[${JSON.stringify(node.prop)}](`);

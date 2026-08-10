@@ -87,15 +87,15 @@ export const SANDBOX_ERRORS = {
   }),
   SANDBOX_PROTO_ACCESS: createErrorDefinition({
     name: 'SANDBOX_PROTO_ACCESS',
-    message: 'Sandbox proto access',
-    category: 'sandbox_blocked',
+    message: 'Sandbox prototype access blocked',
+    category: 'security_error',
     causes: [
-      'Attempted to access **undefined variable** in sandbox mode',
-      'Accessing properties on undefined in sandboxed template',
-      'A property path goes through an undefined intermediate value'
+      'Attempted to access a **prototype-pollution vector** (`__proto__`, `constructor`, or `prototype`) in sandbox mode',
+      'Sandbox blocks these object intrinsics to prevent privilege escalation and prototype tampering',
+      'A property lookup resolved to a dangerous intrinsic key'
     ],
-    fixCode: '{{ value |> default("") }}',
-    fixComment: 'Use `default()` filter or check for undefined before accessing properties'
+    fixCode: '{{ value }}',
+    fixComment: 'Use a safe own-property name instead of `__proto__`, `constructor`, or `prototype`'
   }),
   BLOCKED_CONTEXT_KEYS: createErrorDefinition({
     name: 'BLOCKED_CONTEXT_KEYS',

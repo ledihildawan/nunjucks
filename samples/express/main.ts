@@ -121,18 +121,32 @@ const streamContext = {
   dev: true,
   undefined: 'strict',
   streamErrorRecovery: true,
+  executionTimeout: 30000,
   views: VIEWS,
   filters: { slow, formatPrice },
 };
 
-// WHY: streaming route — uses {% extends %} + {% block %} template files. Error recovery + strict mode means missing data (order #2 city, customer bio) produces inline markers. onComplete logs chunk count, error count, total KB.
-app.get('/stream', async (_req: Request, res: Response) => {
+// WHY: wires an Express client-disconnect to an AbortSignal so pipeRenderStream can abort the render and cascade-cleanup (Fase 1) the moment the browser closes the connection. The `!res.writableEnded` guard avoids a spurious abort after the response has already completed normally. The listener lives for the request lifecycle (GC'd with req) — no leak.
+const createDisconnectSignal = (req: Request, res: Response): AbortSignal => {
+  const controller = new AbortController();
+  req.on('close', () => { if (!res.writableEnded) { controller.abort(); } });
+  return controller.signal;
+};
+
+// WHY: streaming route — uses {% extends %} + {% block %} template files. Error recovery + strict mode means missing data (order #2 city, customer bio) produces inline markers. Demonstrates the full production guardrail chain: client-disconnect signal (cascade cleanup), idle per-chunk timeout (timeoutMs), total deadline (executionTimeout via streamContext), output-size breaker (maxOutputSize), and per-phase error observability (onError). onComplete logs chunk count, error count, total KB.
+app.get('/stream', async (req: Request, res: Response) => {
   await pipeRenderStream(
     await renderToStream('stream-dashboard.njk', streamContext),
     res,
     {
       contentType: 'html',
       dev: true,
+      signal: createDisconnectSignal(req, res),
+      timeoutMs: 10000,
+      maxOutputSize: 2 * 1024 * 1024,
+      onError: (err, phase) => {
+        console.log(`[stream] ${phase} error: ${err.message}`);
+      },
       onComplete: (stats) => {
         console.log(`[stream] ${stats.chunks} chunks, ${stats.errors} errors, ${(stats.bytes / 1024).toFixed(1)}KB`);
       },
@@ -140,9 +154,10 @@ app.get('/stream', async (_req: Request, res: Response) => {
   );
 });
 
-// WHY: benchmark comparison — same template + data + config, but blocking render. Both routes succeed (non-strict for normal) so the comparison is purely about SPEED: /stream shows progressive block-by-block render; /stream-normal buffers everything, user waits for the full render before seeing anything.
-app.get('/stream-normal', async (_req: Request, res: Response) => {
+// WHY: benchmark comparison — same template + data + config, but blocking render. Both routes succeed (non-strict for normal) so the comparison is purely about SPEED: /stream shows progressive block-by-block render; /stream-normal buffers everything, user waits for the full render before seeing anything. The `req.destroyed` guard skips sending a buffered response to a client that disconnected during the (potentially long) blocking render — the render itself cannot be aborted mid-flight (no signal on the blocking API), but executionTimeout (via streamContext) bounds its total time.
+app.get('/stream-normal', async (req: Request, res: Response) => {
   const result = await render('stream-dashboard.njk', { ...streamContext, mode: 'Blocking', streamErrorRecovery: false, undefined: 'default' });
+  if (req.destroyed) { return; }
   if (result.ok) {
     res.type('html').send(result.value);
   } else {
@@ -150,14 +165,16 @@ app.get('/stream-normal', async (_req: Request, res: Response) => {
   }
 });
 
-// WHY: JSON streaming API — same dashboard data but rendered as JSON. Walrus operator computes derived field inline. Error markers arrive as JSON objects (not HTML). Demonstrates content-type aware streaming markers for API consumers.
-app.get('/stream-api', async (_req: Request, res: Response) => {
+// WHY: JSON streaming API — same dashboard data but rendered as JSON. Walrus operator computes derived field inline. NOTE: JSON cannot absorb inline error markers without corrupting the response (a bare {error:...} fragment after a JSON prefix is unparseable), so streamContentType: 'json' makes any mid-stream recoverable sentinel FATAL — the stream aborts to the Tier 3 mid-stream path (onError fires, response ends) rather than emitting a marker. Use html/text if you want per-expression inline recovery.
+app.get('/stream-api', async (req: Request, res: Response) => {
   await pipeRenderStream(
     await renderToStream('{{ avgOrder := kpi.revenueNum / kpi.orderCount }}{{ { revenue: kpi.revenue, avgOrder: avgOrder, orders: orders, customer: customer } |> tojson }}', {
       context: { ...streamContext.context, mode: 'JSON API' },
       dev: true,
       undefined: 'strict',
       streamErrorRecovery: true,
+      streamContentType: 'json',
+      executionTimeout: 30000,
       views: VIEWS,
       filters: { slow, formatPrice },
     }),
@@ -165,6 +182,10 @@ app.get('/stream-api', async (_req: Request, res: Response) => {
     {
       contentType: 'json',
       dev: true,
+      signal: createDisconnectSignal(req, res),
+      onError: (err, phase) => {
+        console.log(`[stream-api] ${phase} error: ${err.message}`);
+      },
       onComplete: (stats) => {
         console.log(`[stream-api] ${stats.chunks} chunks, ${stats.errors} errors, ${(stats.bytes / 1024).toFixed(1)}KB`);
       },

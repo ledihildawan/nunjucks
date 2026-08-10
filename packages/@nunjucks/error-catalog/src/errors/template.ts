@@ -110,6 +110,21 @@ export const TEMPLATE_ERRORS = {
     fixComment: 'Increase `maxTemplateSize` or split the template into smaller files',
     subjectFrom: null
   },
+  OUTPUT_SIZE_EXCEEDED: {
+    name: 'OUTPUT_SIZE_EXCEEDED',
+    message: 'Rendered output exceeds maximum size of {max} bytes',
+    pattern: /output exceeds maximum size/iu,
+    category: 'validation_error',
+    titleTemplate: 'Output size limit exceeded',
+    causes: [
+      'The rendered output is **larger than the configured `maxOutputSize`**',
+      'A runaway loop (e.g. `{% for %}` over a huge range) produced unbounded output',
+      'The size limit is too restrictive for your use case'
+    ],
+    fixCode: '{% for item in items |> slice(0, 1000) %}...{% endfor %}\n// or raise the limit\npipeRenderStream(result, sink, { maxOutputSize: 10 * 1024 * 1024 })',
+    fixComment: 'Paginate/bound the loop, or raise `maxOutputSize`',
+    subjectFrom: null
+  },
   INVALID_CONFIG: {
     name: 'INVALID_CONFIG',
     message: 'Invalid configuration: {key} must be >= 0',

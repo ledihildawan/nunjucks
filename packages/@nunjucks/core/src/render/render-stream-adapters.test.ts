@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { toWebReadableStream, withStreamTimeout, isStreamTimeoutError } from './render-stream-adapters.ts';
+import { toWebReadableStream, withStreamTimeout, withStreamDeadline, coalesceStream, coerceChunk, isStreamTimeoutError } from './render-stream-adapters.ts';
 
 const fromChunks = (chunks: readonly string[], delayMs = 0): AsyncGenerator<string> =>
   (async function* generate() {
@@ -47,5 +47,100 @@ describe('withStreamTimeout', () => {
       caught = error;
     }
     expect(isStreamTimeoutError(caught)).toBe(true);
+  });
+});
+
+describe('withStreamDeadline', () => {
+  test('completes normally when the source finishes before the total deadline', async () => {
+    const chunks: string[] = [];
+    for await (const chunk of withStreamDeadline(fromChunks(['a', 'b', 'c'], 1), 500)) {
+      chunks.push(chunk);
+    }
+    expect(chunks.join('')).toBe('abc');
+  });
+
+  test('throws a StreamTimeoutError when the total deadline elapses mid-stream', async () => {
+    // WHY: chunks arrive every 30ms but the total deadline is 50ms — the idle guard would pass, only the total deadline aborts.
+    const stream = fromChunks(['x', 'y', 'z'], 30);
+    let caught: unknown;
+    try {
+      for await (const _chunk of withStreamDeadline(stream, 50)) { void _chunk; }
+    } catch (error) {
+      caught = error;
+    }
+    expect(isStreamTimeoutError(caught)).toBe(true);
+  });
+
+  test('timeout error carries code=TIMEOUT so FATAL_STREAM_CODES recognizes it', async () => {
+    let caught: unknown;
+    try {
+      for await (const _chunk of withStreamDeadline(fromChunks(['a', 'b'], 80), 20)) { void _chunk; }
+    } catch (error) {
+      caught = error;
+    }
+    expect((caught as { code?: string }).code).toBe('TIMEOUT');
+  });
+});
+
+describe('coalesceStream', () => {
+  test('threshold=0 is transparent — every chunk passes through untouched', async () => {
+    const chunks: string[] = [];
+    for await (const chunk of coalesceStream(fromChunks(['a', 'b', 'c']), 0)) {
+      chunks.push(chunk);
+    }
+    expect(chunks).toEqual(['a', 'b', 'c']);
+  });
+
+  test('flushes the first chunk immediately then batches up to the threshold', async () => {
+    const chunks: string[] = [];
+    for await (const chunk of coalesceStream(fromChunks(['1', '22', '333', '4']), 3)) {
+      chunks.push(chunk);
+    }
+    // WHY: first chunk '1' flushes immediately (progressive rendering); '22'+'333' batch (5 >= 3) flush; '4' flushes at end.
+    expect(chunks).toEqual(['1', '22333', '4']);
+  });
+
+  test('flushes the remaining buffer at end even when below threshold', async () => {
+    const chunks: string[] = [];
+    for await (const chunk of coalesceStream(fromChunks(['head', 'a', 'b']), 10)) {
+      chunks.push(chunk);
+    }
+    // WHY: 'head' first-flush; 'a'+'b' = 2 < 10 so they stay buffered until source ends, then flush as 'ab'.
+    expect(chunks).toEqual(['head', 'ab']);
+  });
+
+  test('threshold=1 batches everything after the first chunk', async () => {
+    const chunks: string[] = [];
+    for await (const chunk of coalesceStream(fromChunks(['x', 'y', 'z']), 1)) {
+      chunks.push(chunk);
+    }
+    expect(chunks).toEqual(['x', 'y', 'z']);
+  });
+});
+
+describe('coerceChunk', () => {
+  test('passes a primitive string through untouched', () => {
+    expect(coerceChunk('hello')).toBe('hello');
+    expect(typeof coerceChunk('hello')).toBe('string');
+  });
+
+  test('coerces a boxed String (SafeString-shaped) to a primitive string', () => {
+    // WHY: regression for ERR_INVALID_ARG_TYPE — SafeString extends String (boxed). coerceChunk must produce a
+    // primitive so HTTP sinks (res.write / TextEncoder.encode) accept the chunk.
+    const boxed = new String('abc');
+    expect(typeof boxed).toBe('object');
+    const result = coerceChunk(boxed);
+    expect(typeof result).toBe('string');
+    expect(result).toBe('abc');
+  });
+
+  test('coerces a number to a string', () => {
+    expect(coerceChunk(42)).toBe('42');
+  });
+
+  test('throws on a Promise leak (fail-loud safety net for missing await at an emit site)', () => {
+    // WHY: without this guard a leaked Promise would silently stringify to "[object Promise]". Throwing surfaces
+    // the bug as a mid-stream error instead of corrupting the response.
+    expect(() => coerceChunk(Promise.resolve('x'))).toThrow('Promise leaked');
   });
 });
