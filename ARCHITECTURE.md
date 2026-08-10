@@ -152,3 +152,44 @@ The streaming path enforces a layered safety contract; each wrapper propagates `
 - **Cleanup cascade** — every wrapper (`withStreamDeadline` → `withStreamTimeout` → `coalesceStream` → `createRenderStream`) has a `try/finally` or for-await cleanup that returns the underlying iterator. `createRenderStream`'s `finally` is the authoritative owner.
 - **JSON consumers** — `streamContentType: 'json'` makes Tier-2 sentinels fatal (Tier 3) because an inline marker would corrupt the JSON response.
 - **Single-use** — the returned `AsyncGenerator` rejects a second iteration with a clear error.
+
+## 9. Entry Point & Render Pipeline
+
+The public API is a **single factory** that returns an engine. There is no flat `render(template, options)` export — config is baked into the engine once, and per-call sites only pass the template + context.
+
+### Factory → engine
+
+```ts
+import { nunjucks } from '@nunjucks/core';
+
+const njk = nunjucks(config);   // nunjucks() is a thin wrapper over the base createNunjucks() in factory.ts
+await njk.render(template, context?, overrides?);
+await njk.renderToStream(template, context?, overrides?);
+await njk.pipeRenderStream(result, sink, options?);
+```
+
+The `nunjucks` ↔ `createNunjucks` split mirrors the betterAuth `betterAuth`/`createBetterAuth` pattern: the base factory carries the implementation; the public name is a stable wrapper with room to gain an init/context param later if a real purpose emerges (none today — the filter bundle stays hardcoded inside).
+
+### Config layering (NunjucksConfig)
+
+The public `NunjucksConfig` is **nested by concern**:
+
+- top-level: `dev`, `views`, `autoescape`, `undefined`, `trimBlocks`, `lstripBlocks`, `ide`
+- `security`: `sandbox`, `sandboxMode`, `sandboxAllowlist`, `blockedContextKeys`, `contextStrict`, `scanContextValues`, `strictMode`, `allowedGlobals`
+- `limits`: `executionTimeout`, `maxTemplateSize`, `maxOutputSize`
+- `streaming`: `errorRecovery`, `contentType`, `idleTimeout`, `coalesceBytes`
+- flat extensions: `filters`, `globals`, `tests`, `extensions`, `dompurify`
+- `plugins`: `NunjucksPlugin[]`
+
+**Plugin precedence** (lowest → highest): built-in defaults → plugins (folded left-to-right) → the user's direct `filters`/`globals`/`tests`/`extensions`. A later layer overrides an earlier same-named entry.
+
+### Flatten flow (public → internal)
+
+`factory.ts` `buildBaseOptions` flattens the nested `NunjucksConfig` into a flat options bag (compacted — `undefined` keys removed so they don't clobber built-in defaults when spread). The internal `render.ts` `setupRenderConfig` then merges that bag over the `GlobalConfig` defaults, producing the internal `RenderConfig` (flat, plus diagnostics like `callerFrames`/`env`/`loader`). The factory's `customFilters`/`customGlobals` mapping is load-bearing: it feeds the user's filter/global NAMES to `validateConfig` (security name-check) WITHOUT including the built-in defaults — see the WHY on `validators/src/config.ts`.
+
+The factory owns the loader lifecycle (closure-scoped cache per `views` path, isolated across factory instances). Internal `render()` callers (core tests) get an uncached loader created from `views`.
+
+### Two-pass render pipeline
+
+1. **Pass-1 (`prepareRender`)** — validate config + context (security name-check, dangerous-value scan), resolve the template source (inline vs file), compile to JS. A failure here is returned as `{ ok: false, error }` so the consumer can still render an error page (response headers not yet sent).
+2. **Pass-2 (`createRenderStream`)** — the async generator yields chunks; mid-stream runtime errors throw after chunks are emitted. `streamErrorRecovery: true` wraps each `{{ expr }}` in a per-expression try/catch (inline marker instead of termination). See §8 for the three-tier error strategy.

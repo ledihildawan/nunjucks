@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { nunjucks } from './nunjucks.ts';
+import { nunjucks } from './index.ts';
 
 describe('nunjucks factory', () => {
   test('render returns the rendered template with context', async () => {

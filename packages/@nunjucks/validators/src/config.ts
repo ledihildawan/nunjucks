@@ -17,6 +17,11 @@ export interface Config {
   executionTimeout?: number;
   maxTemplateSize?: number;
   sandboxEnvironment?: Environment;
+  // WHY: these are the USER-supplied names only (validated for reserved/dangerous). They are deliberately a
+  // SEPARATE channel from the full merged filters/globals used at render time: the built-in defaults include
+  // intentionally "dangerous-named" but safe-curated globals (Object/Array/Math via SAFE_BUILTINS), which would
+  // false-positive if validated. The factory (core/src/factory.ts) maps its filters/globals into customFilters/
+  // customGlobals so the user's names get checked without checking the trusted built-ins.
   customFilters?: Record<string, unknown>;
   customGlobals?: Record<string, unknown>;
 }

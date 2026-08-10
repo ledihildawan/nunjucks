@@ -1,6 +1,11 @@
 import { nunjucks, type NunjucksConfig } from '@nunjucks/core';
 import { isErr } from '@nunjucks/shared';
 
+// WHY: simplified sample helper — builds a fresh factory PER CALL because each demo route passes a different
+// config (security/limits/etc.). This is fine for a low-traffic demo, but do NOT copy this pattern for
+// production per-request rendering: rebuilding the factory also rebuilds the filter/global merge and the loader
+// cache every request. For production, create ONE nunjucks(config) engine at module load (see
+// @nunjucks/integrations/express createEngine, or samples/express/main.ts streamNjk/blockingNjk) and reuse it.
 const renderTemplate = async (
   template: string,
   context: Record<string, unknown> = {},

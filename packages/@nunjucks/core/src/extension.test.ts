@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { nunjucks } from './nunjucks.ts';
+import { nunjucks } from './index.ts';
 import type { nodes } from '@nunjucks/nodes';
 import { ZERO_LOC } from '@nunjucks/shared';
 import { skipSymbol, advanceAfterBlockEnd, type ParserContext } from '@nunjucks/parser';

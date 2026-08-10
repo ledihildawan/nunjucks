@@ -1,7 +1,7 @@
 import { resolveTemplateSource, prepareSandbox, buildRenderEnv, compileTemplate, handleContextStrictMode, createEnvLookups, TEMPLATE_FILE_EXTENSION_RE } from './render-pipeline.ts';
 import { validateRender, validateTemplateSource } from './render-validation.ts';
 import { withStreamDeadline, coerceChunk, guardSingleConsumer } from './render-stream-adapters.ts';
-import { getLoader } from '../engine.ts';
+import { createFileSystemLoader } from '@nunjucks/loaders';
 import { serializeErrorPayload } from './pipe-stream.ts';
 import type { RenderConfig, RenderStreamResult } from './render-types.ts';
 import { execute, executeStream, createFrame, withTimeout, isStreamErrorSentinel, type StreamErrorSentinel } from '@nunjucks/runtime';
@@ -121,7 +121,7 @@ const prepareRender = async (template: string, { context = {}, ...options }: Ren
   const config: RenderConfig = {
     ...baseConfig,
     callerFrames,
-    // WHY: callerFile/callerLocation are the innermost caller (frame 0) for legacy consumers (resolveTemplateName, diagnostics). Derived from the single stack capture above instead of capturing the stack again.
+    // WHY: callerFile/callerLocation are the innermost caller (frame 0) for internal consumers that read callerFile directly (resolveTemplateName, diagnostics). Derived from the single stack capture above instead of capturing the stack again.
     callerFile: baseConfig.callerFile ?? primaryCaller?.fileName ?? 'unknown',
     callerLocation: baseConfig.callerLocation ?? primaryCaller,
   };
@@ -140,7 +140,10 @@ const prepareRender = async (template: string, { context = {}, ...options }: Ren
     return err(strictErr as TemplateError);
   }
 
-  const loader = config.loader !== undefined ? config.loader : getLoader(config);
+  // WHY: the factory always sets config.loader (closure-cached, isolated per factory). Internal render() callers
+  // (core tests) leave it unset — derive an UNCACHED loader from views for them. No module-global cache: this is
+  // the only loader-creation site outside the factory, so there is no hidden cross-instance sharing.
+  const loader = config.loader ?? (config.views ? createFileSystemLoader(config.views) : null);
   let templateSource: string;
   let templatePath: string | null;
   try {

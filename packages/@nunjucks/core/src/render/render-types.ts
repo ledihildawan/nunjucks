@@ -20,6 +20,11 @@ interface RenderValidationError extends BaseValidationError {
   dangerousPaths?: string[];
 }
 
+// WHY: RenderConfig is the INTERNAL flat form (plus diagnostics: callerFrames, env, loader). The relationship
+// across the four config types: NunjucksConfig (public, nested) → factory.buildBaseOptions flattens it →
+// render.setupRenderConfig merges GlobalConfig defaults + the flat bag → RenderConfig (this). RenderOptions
+// (render.ts) is the loose input shape (Partial<GlobalConfig> + context) used by the internal render(). Only
+// NunjucksConfig is public; the other three are engine-internal.
 interface RenderConfig {
   dev?: boolean;
   autoescape?: boolean;
@@ -40,6 +45,7 @@ interface RenderConfig {
   scanContextValues?: boolean;
   blockedContextKeys?: readonly string[];
   env?: Env | null;
+  views?: string | null;
   templatePath?: string | null;
   jsCaller?: string | null;
   jsCallerErrorLine?: number | null;

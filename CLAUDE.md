@@ -4,6 +4,8 @@
 
 Monorepo of the nunjucks templating engine, split into focused `@nunjucks/*` workspaces (shared, error-catalog, error-renderer, error-formatter, log, nodes, lexer, parser, transformers, compiler, runtime, filters, loaders, validators, integrations, core). Verified compliant — 476 source files, 0 lint issues, 0 `any` violations, 1853 tests passing.
 
+> **Public API:** the single entry point is `import { nunjucks } from '@nunjucks/core'`. `nunjucks(config)` returns an engine (`render` / `renderToStream` / `pipeRenderStream`); it is a thin wrapper over the base `createNunjucks` in `core/src/factory.ts`. The flat `render(template, options)` exports are engine-internal (used by the factory + core tests via relative imports) and NOT re-exported from the public index. See `ARCHITECTURE.md` §9 for the factory, config nesting, plugin layering, and the two-pass render pipeline.
+
 ## 1. Core Architectural Principles
 
 - **Clean Code, SOLID, YAGNI, KISS** — apply always; reject abstraction that isn't needed now.

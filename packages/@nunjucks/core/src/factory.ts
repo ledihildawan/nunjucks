@@ -66,10 +66,11 @@ const buildDefaultPipeOptions = (config: NunjucksConfig): PipeRenderStreamOption
   ide: config.ide ?? 'vscode',
 });
 
-// WHY: the factory closes over shared config (filters, globals, security, limits, loader path, etc.) and
-// returns an engine whose per-call methods only need the template + context + minimal overrides. This is the
-// betterAuth-style entry point replacing the flat render(template, bigOptionsBag) API.
-const nunjucks = (config: NunjucksConfig = {}): NunjucksEngine => {
+// WHY: the base factory — closes over shared config (filters, globals, security, limits, loader path, etc.) and
+// returns an engine whose per-call methods only need the template + context + minimal overrides. The public
+// `nunjucks(config)` entry (in index.ts) is a thin wrapper over this; the split mirrors the betterAuth
+// createBetterAuth/betterAuth pattern, leaving room for a future init/context param if a real purpose emerges.
+const createNunjucks = (config: NunjucksConfig = {}): NunjucksEngine => {
   const baseOptions = buildBaseOptions(config);
   const defaultPipeOptions = buildDefaultPipeOptions(config);
 
@@ -104,4 +105,4 @@ const nunjucks = (config: NunjucksConfig = {}): NunjucksEngine => {
   };
 };
 
-export { nunjucks };
+export { createNunjucks };
