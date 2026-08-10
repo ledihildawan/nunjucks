@@ -122,7 +122,7 @@ describe('buildErrorBodyContent', () => {
 
 describe('buildHtmlWrapper', () => {
   test('wraps header, body and footer into a labelled main element', () => {
-    const html = buildHtmlWrapper('<header/>', '<body/>', '<footer/>');
+    const html = buildHtmlWrapper({ header: '<header/>', errorBody: '<body/>', footer: '<footer/>' });
     expect(html).toContain('error-wrapper');
     expect(html).toContain('aria-labelledby="err-title"');
     expect(html).toContain('<header/>');

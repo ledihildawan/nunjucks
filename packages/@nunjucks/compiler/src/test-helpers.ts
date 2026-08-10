@@ -1,3 +1,3 @@
 import type { Compiler } from './create-compiler.ts';
 
-export const asCompiler = <T>(mock: T): Compiler => mock as Compiler;
+export const asCompiler = (mock: unknown): Compiler => mock as Compiler;

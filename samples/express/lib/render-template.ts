@@ -1,6 +1,11 @@
 import { nunjucks, type NunjucksConfig } from '@nunjucks/core';
 import { isErr } from '@nunjucks/shared';
 
+interface RenderTemplateOptions {
+  context?: Record<string, unknown>;
+  config?: NunjucksConfig;
+}
+
 // WHY: simplified sample helper — builds a fresh factory PER CALL because each demo route passes a different
 // config (security/limits/etc.). This is fine for a low-traffic demo, but do NOT copy this pattern for
 // production per-request rendering: rebuilding the factory also rebuilds the filter/global merge and the loader
@@ -8,8 +13,7 @@ import { isErr } from '@nunjucks/shared';
 // @nunjucks/integrations/express createEngine, or samples/express/main.ts streamNjk/blockingNjk) and reuse it.
 const renderTemplate = async (
   template: string,
-  context: Record<string, unknown> = {},
-  config: NunjucksConfig = {},
+  { context = {}, config = {} }: RenderTemplateOptions = {},
 ): Promise<string> => {
   const result = await nunjucks(config).render(template, context);
   // WHY: this sample integrates with Express, whose error-middleware pattern routes failures
@@ -22,4 +26,5 @@ const renderTemplate = async (
 };
 
 export { renderTemplate };
+export type { RenderTemplateOptions };
 

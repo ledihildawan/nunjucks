@@ -122,7 +122,7 @@ const buildFullErrorBody = ({
     ? `\n<span class="docs-inline">Learn more: <a href="${escapeHtml(documentationUrl)}" target="_blank" rel="noopener" class="docs-link">${escapeHtml(documentationUrl)}</a></span>`
     : '';
   const renderContextSection = renderContext ? renderContextHtml(renderContext, error.blockedKeys) : '';
-  const stackTraceSection = error.stack ? formatStackTraceHtml(error, false, ide) : '';
+  const stackTraceSection = error.stack ? formatStackTraceHtml({ originalError: error, isProduction: false, ide }) : '';
 
   return `
   <div class="error-body">
@@ -221,7 +221,13 @@ const buildErrorBodyContent = ({
   });
 };
 
-const buildHtmlWrapper = (header: string, errorBody: string, footer: string): string => `
+interface BuildHtmlWrapperOptions {
+  header: string;
+  errorBody: string;
+  footer: string;
+}
+
+const buildHtmlWrapper = ({ header, errorBody, footer }: BuildHtmlWrapperOptions): string => `
 <main class="error-wrapper" aria-labelledby="err-title">
   ${header}
   ${errorBody}

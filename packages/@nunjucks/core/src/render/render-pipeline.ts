@@ -131,7 +131,7 @@ const createDangerousContextError = async ({ context, config, dangerousValuePath
   const framePositions = await Promise.all(
     callerFrames.map(frame =>
       frame.fileName !== 'unknown' && firstPath
-        ? findContextKeyPosition(frame.fileName, frame.lineNumber ?? 1, firstPath).then(pos => pos ? { ...pos, fileName: frame.fileName } : null)
+        ? findContextKeyPosition({ sourceFile: frame.fileName, callLine: frame.lineNumber ?? 1, dangerousPath: firstPath }).then(pos => pos ? { ...pos, fileName: frame.fileName } : null)
         : Promise.resolve(null),
     ),
   );

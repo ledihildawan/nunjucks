@@ -1,4 +1,5 @@
 import { keys, isFunction } from 'remeda';
+import { isKeyedObject } from '../type-guards.ts';
 import { getBlockedKeyCategory, isDangerousGlobal } from './blocked-keys.ts';
 
 const globalRecord = globalThis as Record<string, unknown>;
@@ -59,14 +60,17 @@ const checkValueDangerous = (value: unknown, key: string, { scan, isTopLevel, cu
 
 const scanForDangerousValues = (context: unknown, state: ScanState): string[] => {
   const { scan, currentPath: path, isTopLevel } = state;
-  if (!context || typeof context !== 'object' || scan.seen.has(context as object)) {
+  // WHY: isKeyedObject (typeof === 'object' && non-null) deliberately includes Arrays so that
+  // dangerous values nested inside arrays are still detected — using isRecord here would skip them.
+  if (!isKeyedObject(context) || scan.seen.has(context)) {
     return [];
   }
-  scan.seen.add(context as object);
+  scan.seen.add(context);
 
-  return keys(context as Record<string, unknown>).flatMap(key => {
+  const record = context as Record<string, unknown>;
+  return keys(record).flatMap(key => {
     const childPath = path ? `${path}.${key}` : key;
-    const value = (context as Record<string, unknown>)[key];
+    const value = record[key];
     const entryState: ScanState = { scan, isTopLevel, currentPath: childPath };
     const nested = value && typeof value === 'object' && !isDangerousReference(value)
       ? scanForDangerousValues(value, { scan, isTopLevel: false, currentPath: childPath })

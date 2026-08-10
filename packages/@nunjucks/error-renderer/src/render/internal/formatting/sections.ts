@@ -159,13 +159,25 @@ const isInternalStackLine = (line: string): boolean => {
   return path.includes('nunjucks/nunjucks/src/') || path.includes('nunjucks\\nunjucks\\src\\');
 };
 
-const renderStackRow = (line: string, index: number, ide: string): string => {
+interface RenderStackRowInput {
+  line: string;
+  index: number;
+  ide: string;
+}
+
+const renderStackRow = ({ line, index, ide }: RenderStackRowInput): string => {
   const isHidden = index >= STACK_VISIBLE_COUNT;
   const hiddenClass = isHidden ? ' is-collapsed' : '';
   return `<div class="stack-row${hiddenClass}"><code class="stack-code">${linkifyFrame(line.trim(), ide)}</code></div>`;
 };
 
-const formatStackTraceHtml = (originalError: ErrorWithStack | null, isProduction = false, ide = DEFAULT_IDE): string => {
+interface FormatStackTraceHtmlInput {
+  originalError: ErrorWithStack | null;
+  isProduction?: boolean;
+  ide?: string;
+}
+
+const formatStackTraceHtml = ({ originalError, isProduction = false, ide = DEFAULT_IDE }: FormatStackTraceHtmlInput): string => {
   if (!originalError?.stack) { return ''; }
 
   const jsStackLines = pipe(originalError.stack, split('\n'), slice(1), filter(line => line.trim().startsWith('at ')));
@@ -179,7 +191,7 @@ const formatStackTraceHtml = (originalError: ErrorWithStack | null, isProduction
 
   const totalHidden = Math.max(0, linesToShow.length - STACK_VISIBLE_COUNT);
 
-  const allRows = linesToShow.map((line, index) => renderStackRow(line, index, ide)).join('');
+  const allRows = linesToShow.map((line, index) => renderStackRow({ line, index, ide })).join('');
 
   const toggleBtn = totalHidden > 0
     ? `<button class="stack-toggle-btn" id="btn-toggle-stack">Show ${totalHidden} more lines...</button>`

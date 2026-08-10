@@ -1,9 +1,10 @@
-import path from 'node:path';
+﻿import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express, { type Router } from 'express';
 import { renderTemplate } from '../lib/render-template.ts';
 import { createSandboxedContext } from '@nunjucks/runtime';
-import type { ErrorRoute, ErrorGroup } from './types.ts';
+import type { ErrorRoute } from './types.ts';
+import { errorGroups } from './errors-index-groups.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -72,11 +73,8 @@ const router: Router = express.Router();
 errorRoutes.forEach(({ path: routePath, template, context, filters }) => {
   router.get(`/${routePath}`, async (_req, res, next) => {
     try {
-      const options: Record<string, unknown> = { dev: true, undefined: 'strict', views: VIEWS };
-      if (filters) {
-        options.filters = filters;
-      }
-      const html = await renderTemplate(template, context, options);
+      const config: Record<string, unknown> = { dev: true, undefined: 'strict', views: VIEWS, ...(filters ? { filters } : {}) };
+      const html = await renderTemplate(template, { context, config });
       res.type('html').send(html);
     } catch (err) {
       next(err);
@@ -86,7 +84,7 @@ errorRoutes.forEach(({ path: routePath, template, context, filters }) => {
 
 router.get('/inline-filter-error', async (_req, res, next) => {
   try {
-    await renderTemplate('{{ "test" |> nonexistentFilter }}', {}, { dev: true });
+    await renderTemplate('{{ "test" |> nonexistentFilter }}', { context: {}, config: { dev: true } });
     res.send('Should have thrown');
   } catch (err) {
     next(err);
@@ -95,7 +93,7 @@ router.get('/inline-filter-error', async (_req, res, next) => {
 
 router.get('/inline-syntax-error', async (_req, res, next) => {
   try {
-    await renderTemplate('{% if true %} {% endif %} {{ invalid', {}, { dev: true });
+    await renderTemplate('{% if true %} {% endif %} {{ invalid', { context: {}, config: { dev: true } });
     res.send('Should have thrown');
   } catch (err) {
     next(err);
@@ -104,7 +102,7 @@ router.get('/inline-syntax-error', async (_req, res, next) => {
 
 router.get('/undefined-block', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('errors/undefined-block.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
+    const html = await renderTemplate('errors/undefined-block.njk', { context: {}, config: { dev: true, undefined: 'strict', views: VIEWS } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -113,7 +111,7 @@ router.get('/undefined-block', async (_req, res, next) => {
 
 router.get('/no-super-block', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{% block content %}{{ super() }}{% endblock %}', {}, { dev: true });
+    const html = await renderTemplate('{% block content %}{{ super() }}{% endblock %}', { context: {}, config: { dev: true } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -122,7 +120,7 @@ router.get('/no-super-block', async (_req, res, next) => {
 
 router.get('/reserved-keyword', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ super() }}', {}, { dev: true });
+    const html = await renderTemplate('{{ super() }}', { context: {}, config: { dev: true } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -131,7 +129,7 @@ router.get('/reserved-keyword', async (_req, res, next) => {
 
 router.get('/no-super-block-template', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('errors/no-super-block.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
+    const html = await renderTemplate('errors/no-super-block.njk', { context: {}, config: { dev: true, undefined: 'strict', views: VIEWS } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -140,7 +138,7 @@ router.get('/no-super-block-template', async (_req, res, next) => {
 
 router.get('/invalid-include', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('errors/invalid-include.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
+    const html = await renderTemplate('errors/invalid-include.njk', { context: {}, config: { dev: true, undefined: 'strict', views: VIEWS } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -149,7 +147,7 @@ router.get('/invalid-include', async (_req, res, next) => {
 
 router.get('/circular-include', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('errors/circular-include.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
+    const html = await renderTemplate('errors/circular-include.njk', { context: {}, config: { dev: true, undefined: 'strict', views: VIEWS } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -158,7 +156,7 @@ router.get('/circular-include', async (_req, res, next) => {
 
 router.get('/file-not-found', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('errors/file-not-found.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
+    const html = await renderTemplate('errors/file-not-found.njk', { context: {}, config: { dev: true, undefined: 'strict', views: VIEWS } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -167,7 +165,7 @@ router.get('/file-not-found', async (_req, res, next) => {
 
 router.get('/filesystem-error', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('errors/filesystem-error.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
+    const html = await renderTemplate('errors/filesystem-error.njk', { context: {}, config: { dev: true, undefined: 'strict', views: VIEWS } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -176,7 +174,7 @@ router.get('/filesystem-error', async (_req, res, next) => {
 
 router.get('/inline-error', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ undefinedVar }}', {}, { dev: true, undefined: 'strict' });
+    const html = await renderTemplate('{{ undefinedVar }}', { context: {}, config: { dev: true, undefined: 'strict' } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -185,7 +183,7 @@ router.get('/inline-error', async (_req, res, next) => {
 
 router.get('/sandbox-proto', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ user.__proto__ }}', { user: {} }, { dev: true, security: { sandbox: true } });
+    const html = await renderTemplate('{{ user.__proto__ }}', { context: { user: {} }, config: { dev: true, security: { sandbox: true } } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -194,7 +192,7 @@ router.get('/sandbox-proto', async (_req, res, next) => {
 
 router.get('/sandbox-constructor', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ user.constructor }}', { user: {} }, { dev: true, security: { sandbox: true } });
+    const html = await renderTemplate('{{ user.constructor }}', { context: { user: {} }, config: { dev: true, security: { sandbox: true } } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -203,7 +201,7 @@ router.get('/sandbox-constructor', async (_req, res, next) => {
 
 router.get('/sandbox-process', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ user.global }}', { user: { global: process } }, { dev: true, security: { sandbox: true, contextStrict: 'error' } });
+    const html = await renderTemplate('{{ user.global }}', { context: { user: { global: process } }, config: { dev: true, security: { sandbox: true, contextStrict: 'error' } } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -212,7 +210,7 @@ router.get('/sandbox-process', async (_req, res, next) => {
 
 router.get('/slice-error', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ [1,2,3][::0] }}', {}, { dev: true });
+    const html = await renderTemplate('{{ [1,2,3][::0] }}', { context: {}, config: { dev: true } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -221,7 +219,7 @@ router.get('/slice-error', async (_req, res, next) => {
 
 router.get('/list-filter-error', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ 42 |> list }}', {}, { dev: true });
+    const html = await renderTemplate('{{ 42 |> list }}', { context: {}, config: { dev: true } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -230,7 +228,7 @@ router.get('/list-filter-error', async (_req, res, next) => {
 
 router.get('/in-operator-error', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ key in value }}', { key: 'test', value: 123 }, { dev: true });
+    const html = await renderTemplate('{{ key in value }}', { context: { key: 'test', value: 123 }, config: { dev: true } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -239,7 +237,7 @@ router.get('/in-operator-error', async (_req, res, next) => {
 
 router.get('/filter-throw', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ "test" |> throwingFilter }}', {}, {
+    const html = await renderTemplate('{{ "test" |> throwingFilter }}', { context: {}, config: {
       dev: true,
       filters: {
         throwingFilter: () => {
@@ -253,7 +251,7 @@ router.get('/filter-throw', async (_req, res, next) => {
           }
         }
       }
-    });
+    } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -262,7 +260,7 @@ router.get('/filter-throw', async (_req, res, next) => {
 
 router.get('/sandbox-timeout', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{% for i in range(0, 100000) %}{{ i }}{% endfor %}', {}, { dev: true, security: { sandbox: true }, limits: { executionTimeout: 1 } });
+    const html = await renderTemplate('{% for i in range(0, 100000) %}{{ i }}{% endfor %}', { context: {}, config: { dev: true, security: { sandbox: true }, limits: { executionTimeout: 1 } } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -271,12 +269,13 @@ router.get('/sandbox-timeout', async (_req, res, next) => {
 
 router.get('/sandbox-context-modify', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ modifyContext() }}', {
+    const html = await renderTemplate('{{ modifyContext() }}', { context: {
+      // WHY: intentional mutation to test sandbox write-block — this callback attempts to reassign a property on the sandboxed context, which the sandbox proxy must reject.
       modifyContext: () => {
         const context = createSandboxedContext({ user: 'alice' }, true);
         (context as { user?: string }).user = 'bob';
       }
-    }, { dev: true, security: { sandbox: true } });
+    }, config: { dev: true, security: { sandbox: true } } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -285,7 +284,7 @@ router.get('/sandbox-context-modify', async (_req, res, next) => {
 
 router.get('/blocked-context-keys', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ password }}', { password: 'secret123' }, { dev: true, security: { strictMode: true, blockedContextKeys: ['password'] } });
+    const html = await renderTemplate('{{ password }}', { context: { password: 'secret123' }, config: { dev: true, security: { strictMode: true, blockedContextKeys: ['password'] } } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -294,7 +293,7 @@ router.get('/blocked-context-keys', async (_req, res, next) => {
 
 router.get('/blocked-custom-key', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ creditCard }}', { creditCard: '4111-1111-1111-1111' }, { dev: true, security: { strictMode: true, blockedContextKeys: ['creditCard'] } });
+    const html = await renderTemplate('{{ creditCard }}', { context: { creditCard: '4111-1111-1111-1111' }, config: { dev: true, security: { strictMode: true, blockedContextKeys: ['creditCard'] } } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -303,7 +302,7 @@ router.get('/blocked-custom-key', async (_req, res, next) => {
 
 router.get('/no-blocked-context-keys', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ password.upper() }}', { password: 'mySecretValue123', apiKey: 'abc-def-ghi' }, { dev: true });
+    const html = await renderTemplate('{{ password.upper() }}', { context: { password: 'mySecretValue123', apiKey: 'abc-def-ghi' }, config: { dev: true } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -312,7 +311,7 @@ router.get('/no-blocked-context-keys', async (_req, res, next) => {
 
 router.get('/dangerous-context', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ env.NODE_ENV }}', {}, { dev: true });
+    const html = await renderTemplate('{{ env.NODE_ENV }}', { context: {}, config: { dev: true } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -321,7 +320,7 @@ router.get('/dangerous-context', async (_req, res, next) => {
 
 router.get('/dangerous-context-values', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ user.name }}', { user: { name: 'test', eval: 'profile label' }, globalThis }, { dev: true, security: { strictMode: true, scanContextValues: true } });
+    const html = await renderTemplate('{{ user.name }}', { context: { user: { name: 'test', eval: 'profile label' }, globalThis }, config: { dev: true, security: { strictMode: true, scanContextValues: true } } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -330,7 +329,7 @@ router.get('/dangerous-context-values', async (_req, res, next) => {
 
 router.get('/dangerous-template', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ eval("1+1") }}', {}, { dev: true, security: { strictMode: true } });
+    const html = await renderTemplate('{{ eval("1+1") }}', { context: {}, config: { dev: true, security: { strictMode: true } } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -340,7 +339,7 @@ router.get('/dangerous-template', async (_req, res, next) => {
 router.get('/template-size', async (_req, res, next) => {
   try {
     const largeTemplate = 'x'.repeat(10000);
-    const html = await renderTemplate(largeTemplate, {}, { dev: true, limits: { maxTemplateSize: 1000 } });
+    const html = await renderTemplate(largeTemplate, { context: {}, config: { dev: true, limits: { maxTemplateSize: 1000 } } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -349,7 +348,7 @@ router.get('/template-size', async (_req, res, next) => {
 
 router.get('/invalid-config', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ test }}', { test: 'value' }, { dev: true, limits: { executionTimeout: -1 } });
+    const html = await renderTemplate('{{ test }}', { context: { test: 'value' }, config: { dev: true, limits: { executionTimeout: -1 } } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -358,7 +357,7 @@ router.get('/invalid-config', async (_req, res, next) => {
 
 router.get('/key-not-found', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ missingKey }}', {}, { dev: true, undefined: 'strict' });
+    const html = await renderTemplate('{{ missingKey }}', { context: {}, config: { dev: true, undefined: 'strict' } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -367,7 +366,7 @@ router.get('/key-not-found', async (_req, res, next) => {
 
 router.get('/import-error', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('errors/import-error.njk', {}, { dev: true, undefined: 'strict', views: VIEWS });
+    const html = await renderTemplate('errors/import-error.njk', { context: {}, config: { dev: true, undefined: 'strict', views: VIEWS } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -376,7 +375,7 @@ router.get('/import-error', async (_req, res, next) => {
 
 router.get('/container-error', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ container.get("missing") }}', { container: { get: undefined } }, { dev: true });
+    const html = await renderTemplate('{{ container.get("missing") }}', { context: { container: { get: undefined } }, config: { dev: true } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -385,7 +384,7 @@ router.get('/container-error', async (_req, res, next) => {
 
 router.get('/reserved-keyword-filter', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ value }}', { value: 'test' }, { dev: true, filters: { 'if': (v: unknown) => v } });
+    const html = await renderTemplate('{{ value }}', { context: { value: 'test' }, config: { dev: true, filters: { 'if': (v: unknown) => v } } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -394,7 +393,7 @@ router.get('/reserved-keyword-filter', async (_req, res, next) => {
 
 router.get('/reserved-keyword-global', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ myArray }}', { myArray: [1, 2, 3] }, { dev: true, globals: { Array: {} } });
+    const html = await renderTemplate('{{ myArray }}', { context: { myArray: [1, 2, 3] }, config: { dev: true, globals: { Array: {} } } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -403,7 +402,7 @@ router.get('/reserved-keyword-global', async (_req, res, next) => {
 
 router.get('/groupby-type-error', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ items |> groupby("missing") }}', { items: [{ name: 'test' }] }, { dev: true, undefined: 'strict' });
+    const html = await renderTemplate('{{ items |> groupby("missing") }}', { context: { items: [{ name: 'test' }] }, config: { dev: true, undefined: 'strict' } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -412,7 +411,7 @@ router.get('/groupby-type-error', async (_req, res, next) => {
 
 router.get('/sort-type-error', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ items |> sort("missing") }}', { items: [{ name: 'test' }] }, { dev: true, undefined: 'strict' });
+    const html = await renderTemplate('{{ items |> sort("missing") }}', { context: { items: [{ name: 'test' }] }, config: { dev: true, undefined: 'strict' } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -421,7 +420,7 @@ router.get('/sort-type-error', async (_req, res, next) => {
 
 router.get('/dictsort-value-error', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ data |> dictsort }}', { data: 'not an object' }, { dev: true });
+    const html = await renderTemplate('{{ data |> dictsort }}', { context: { data: 'not an object' }, config: { dev: true } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -430,7 +429,7 @@ router.get('/dictsort-value-error', async (_req, res, next) => {
 
 router.get('/dictsort-by-error', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ data |> dictsort(false, "invalid") }}', { data: { a: 1, b: 2 } }, { dev: true });
+    const html = await renderTemplate('{{ data |> dictsort(false, "invalid") }}', { context: { data: { a: 1, b: 2 } }, config: { dev: true } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -439,7 +438,7 @@ router.get('/dictsort-by-error', async (_req, res, next) => {
 
 router.get('/unknown-block-runtime', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{% extends "base.njk" %}{% block nonexistent %}{{ super() }}{% endblock %}', {}, { dev: true, views: VIEWS });
+    const html = await renderTemplate('{% extends "base.njk" %}{% block nonexistent %}{{ super() }}{% endblock %}', { context: {}, config: { dev: true, views: VIEWS } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -448,7 +447,7 @@ router.get('/unknown-block-runtime', async (_req, res, next) => {
 
 router.get('/expected-variable-end', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ user.name ', { user: { name: 'test' } }, { dev: true });
+    const html = await renderTemplate('{{ user.name ', { context: { user: { name: 'test' } }, config: { dev: true } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -457,7 +456,7 @@ router.get('/expected-variable-end', async (_req, res, next) => {
 
 router.get('/parser-unexpected-token', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{% if true %}{% endif %}{{ ', {}, { dev: true });
+    const html = await renderTemplate('{% if true %}{% endif %}{{ ', { context: {}, config: { dev: true } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -466,7 +465,7 @@ router.get('/parser-unexpected-token', async (_req, res, next) => {
 
 router.get('/sandbox-access', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ global }}', { global: process }, { dev: true, security: { sandbox: true, contextStrict: false } });
+    const html = await renderTemplate('{{ global }}', { context: { global: process }, config: { dev: true, security: { sandbox: true, contextStrict: false } } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -475,7 +474,7 @@ router.get('/sandbox-access', async (_req, res, next) => {
 
 router.get('/sandbox-allowlist', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ customVar }}', { customVar: 'test' }, { dev: true, security: { sandbox: true, sandboxAllowlist: ['allowedVar'], sandboxMode: 'allowlist' } });
+    const html = await renderTemplate('{{ customVar }}', { context: { customVar: 'test' }, config: { dev: true, security: { sandbox: true, sandboxAllowlist: ['allowedVar'], sandboxMode: 'allowlist' } } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -484,7 +483,7 @@ router.get('/sandbox-allowlist', async (_req, res, next) => {
 
 router.get('/sandbox-code-execution', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ setTimeout("alert(1)", 0) }}', { setTimeout }, { dev: true, security: { sandbox: true } });
+    const html = await renderTemplate('{{ setTimeout("alert(1)", 0) }}', { context: { setTimeout }, config: { dev: true, security: { sandbox: true } } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -493,7 +492,7 @@ router.get('/sandbox-code-execution', async (_req, res, next) => {
 
 router.get('/sandbox-context-error', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ user.something }}', { user: undefined }, { dev: true, security: { sandbox: true }, undefined: 'strict' });
+    const html = await renderTemplate('{{ user.something }}', { context: { user: undefined }, config: { dev: true, security: { sandbox: true }, undefined: 'strict' } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -502,7 +501,7 @@ router.get('/sandbox-context-error', async (_req, res, next) => {
 
 router.get('/container-factory', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ container.get("test") }}', { container: { get: 'not a function' } }, { dev: true });
+    const html = await renderTemplate('{{ container.get("test") }}', { context: { container: { get: 'not a function' } }, config: { dev: true } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -511,7 +510,7 @@ router.get('/container-factory', async (_req, res, next) => {
 
 router.get('/container-not-registered', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ myContainer.get("test") }}', {}, { dev: true });
+    const html = await renderTemplate('{{ myContainer.get("test") }}', { context: {}, config: { dev: true } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -520,7 +519,7 @@ router.get('/container-not-registered', async (_req, res, next) => {
 
 router.get('/template-must-be-string', async (_req, res, next) => {
   try {
-    const html = await renderTemplate(123 as unknown as string, {}, { dev: true });
+    const html = await renderTemplate(123 as unknown as string, { context: {}, config: { dev: true } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -529,7 +528,7 @@ router.get('/template-must-be-string', async (_req, res, next) => {
 
 router.get('/template-null', async (_req, res, next) => {
   try {
-    const html = await renderTemplate(null as unknown as string, {}, { dev: true });
+    const html = await renderTemplate(null as unknown as string, { context: {}, config: { dev: true } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -538,7 +537,7 @@ router.get('/template-null', async (_req, res, next) => {
 
 router.get('/undefined-value-match', async (_req, res, next) => {
   try {
-    const html = await renderTemplate('{{ product.name }}', { product: { test: 'test' } }, { dev: true, undefined: 'strict' });
+    const html = await renderTemplate('{{ product.name }}', { context: { product: { test: 'test' } }, config: { dev: true, undefined: 'strict' } });
     res.type('html').send(html);
   } catch (err) {
     next(err);
@@ -547,165 +546,8 @@ router.get('/undefined-value-match', async (_req, res, next) => {
 
 router.get('/', async (_req, res, next) => {
   try {
-    const groups: ErrorGroup[] = [
-      {
-        name: 'UNDEFINED_VARIABLE',
-        items: [
-          { path: 'undefined-variable', desc: 'Variable not in context' },
-          { path: 'undefined-value', desc: 'Nested property is null' },
-          { path: 'undefined-value-match', desc: 'Attempted to output undefined value' },
-          { path: 'inline-error', desc: 'Inline template undefined variable' },
-          { path: 'key-not-found', desc: 'Key not found in context (strict mode)' },
-          { path: 'sandbox-context-error', desc: 'Sandbox context error (undefined)' },
-        ]
-      },
-      {
-        name: 'UNDEFINED_FUNCTION',
-        items: [
-          { path: 'undefined-function', desc: 'Function not registered' },
-          { path: 'container-error', desc: 'Container get returns undefined' },
-          { path: 'container-not-registered', desc: 'Container not registered' },
-          { path: 'sandbox-timeout', desc: 'Sandbox timeout function not found' },
-        ]
-      },
-      {
-        name: 'UNDEFINED_FILTER',
-        items: [
-          { path: 'undefined-filter', desc: 'Filter not registered' },
-          { path: 'sort-filter-attr', desc: 'Sort filter attribute undefined' },
-          { path: 'groupby-filter', desc: 'Groupby filter requires an array' },
-          { path: 'groupby-filter-attr', desc: 'Groupby filter attribute undefined' },
-          { path: 'dictsort-filter', desc: 'Dictsort filter requires object' },
-          { path: 'dictsort-filter-by', desc: 'Dictsort filter by mode invalid' },
-          { path: 'inline-filter-error', desc: 'Inline template undefined filter' },
-        ]
-      },
-      {
-        name: 'UNDEFINED_BLOCK',
-        items: [
-          { path: 'undefined-block', desc: 'Block not in parent template' },
-          { path: 'unknown-block-runtime', desc: 'Block not found in parent' },
-        ]
-      },
-      {
-        name: 'NOT_A_FUNCTION',
-        items: [
-          { path: 'not-a-function', desc: 'Calling non-function value' },
-        ]
-      },
-      {
-        name: 'FILTER_TYPE_ERROR',
-        items: [
-          { path: 'list-filter-error', desc: 'List filter requires iterable' },
-        ]
-      },
-      {
-        name: 'OPERATOR_ERROR',
-        items: [
-          { path: 'in-operator-error', desc: 'In operator on primitive type' },
-        ]
-      },
-      {
-        name: 'FILTER_ATTR_ERROR',
-        items: [
-          { path: 'groupby-type-error', desc: 'Groupby attribute undefined' },
-          { path: 'sort-type-error', desc: 'Sort attribute undefined' },
-          { path: 'dictsort-value-error', desc: 'Dictsort requires object' },
-          { path: 'dictsort-by-error', desc: 'Dictsort invalid by param' },
-        ]
-      },
-      {
-        name: 'PARSER_ERROR',
-        items: [
-          { path: 'syntax-error', desc: 'Invalid template syntax' },
-          { path: 'parser-expected', desc: 'Parser expected different token' },
-          { path: 'inline-syntax-error', desc: 'Inline template syntax error' },
-          { path: 'invalid-lookup', desc: 'Invalid bracket notation' },
-          { path: 'unknown-block-tag', desc: 'Unknown block tag' },
-          { path: 'expected-variable-end', desc: 'Expected variable end' },
-          { path: 'parser-unexpected-token', desc: 'Unexpected token while parsing' },
-          { path: 'sandbox-code-execution', desc: 'Code execution blocked (parser)' },
-          { path: 'slice-error', desc: 'Slice step cannot be zero' },
-        ]
-      },
-      {
-        name: 'DUPLICATE_BLOCK',
-        items: [
-          { path: 'duplicate-block', desc: 'Duplicate block definition' },
-        ]
-      },
-      {
-        name: 'RESERVED_KEYWORD_CONTEXT',
-        items: [
-          { path: 'reserved-keyword', desc: 'Reserved keyword used as a function call' },
-        ]
-      },
-      {
-        name: 'RUNTIME_ERROR',
-        items: [
-          { path: 'filter-error', desc: 'Filter throws during execution' },
-          { path: 'no-super-block', desc: 'super() called without parent block' },
-          { path: 'filter-throw', desc: 'Inline filter throws during execution' },
-        ]
-      },
-      {
-        name: 'FILE_NOT_FOUND',
-        items: [
-          { path: 'no-super-block-template', desc: 'super() in child without parent block' },
-          { path: 'circular-include', desc: 'Template includes itself' },
-          { path: 'file-not-found', desc: 'Included template not found' },
-          { path: 'filesystem-error', desc: 'Absolute path with non-existent file' },
-          { path: 'import-error', desc: 'Cannot import symbol' },
-        ]
-      },
-      {
-        name: 'INVALID_INCLUDE',
-        items: [
-          { path: 'invalid-include', desc: 'Non-string template name for include' },
-        ]
-      },
-      {
-        name: 'RENDER_ERROR',
-        items: [
-          { path: 'sandbox-context-modify', desc: 'Cannot modify sandboxed context' },
-          { path: 'sandbox-allowlist', desc: 'Variable not in sandbox allowlist' },
-          { path: 'reserved-keyword-filter', desc: 'Using reserved word as filter' },
-          { path: 'reserved-keyword-global', desc: 'Using reserved word as global' },
-          { path: 'template-size', desc: 'Template exceeds maximum size' },
-          { path: 'invalid-config', desc: 'Invalid config (negative timeout)' },
-          { path: 'blocked-context-keys', desc: 'Context contains blocked keys (dynamic redaction)' },
-          { path: 'blocked-custom-key', desc: 'Custom blocked key (no heuristic)' },
-          { path: 'no-blocked-context-keys', desc: 'No blocked keys: library does not assume' },
-          { path: 'dangerous-context', desc: 'Context contains dangerous values' },
-          { path: 'dangerous-template', desc: 'Template contains dangerous code' },
-        ]
-      },
-      {
-        name: 'SANDBOX_ACCESS',
-        items: [
-          { path: 'sandbox-proto', desc: 'Sandbox blocks __proto__ access' },
-          { path: 'sandbox-constructor', desc: 'Sandbox blocks constructor access' },
-          { path: 'sandbox-process', desc: 'Sandbox blocks process access' },
-          { path: 'sandbox-access', desc: 'Cannot access in sandbox mode' },
-        ]
-      },
-      {
-        name: 'TEMPLATE_MUST_BE_STRING',
-        items: [
-          { path: 'template-must-be-string', desc: 'Template must be string' },
-          { path: 'template-null', desc: 'Template is null' },
-        ]
-      },
-      {
-        name: 'UNKNOWN',
-        items: [
-          { path: 'container-factory', desc: 'Container factory error (unclear error type)' },
-        ]
-      },
-    ];
-
-    const total = groups.reduce((sum, g) => sum + g.items.length, 0);
-    const html = await renderTemplate('errors/index.njk', { groups, total }, { dev: true, views: VIEWS });
+    const total = errorGroups.reduce((sum, g) => sum + g.items.length, 0);
+    const html = await renderTemplate('errors/index.njk', { context: { groups: errorGroups, total }, config: { dev: true, views: VIEWS } });
     res.type('html').send(html);
   } catch (err) {
     next(err);

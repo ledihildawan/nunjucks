@@ -105,7 +105,13 @@ interface NormalizeContext {
   seen: WeakSet<object>;
 }
 
-const overflowNote = (total: number, shown: number, unit: string): string =>
+interface OverflowNoteOptions {
+  total: number;
+  shown: number;
+  unit: string;
+}
+
+const overflowNote = ({ total, shown, unit }: OverflowNoteOptions): string =>
   `[... ${total - shown} more ${unit}]`;
 
 const normalizeChildValue = (item: unknown, context: NormalizeContext): unknown =>
@@ -118,10 +124,10 @@ const normalizeMap = (value: Map<unknown, unknown>, context: NormalizeContext): 
     slice(0, state.maxEntries),
     map(([key, item]) => [normalizeChildValue(key, context), normalizeChildValue(item, context)]),
   );
-  if (value.size > state.maxEntries) {
-    entries.push([`... ${value.size - state.maxEntries} more entries`, '[Truncated]']);
-  }
-  return { '[Map]': entries };
+  const allEntries = value.size > state.maxEntries
+    ? [...entries, [`... ${value.size - state.maxEntries} more entries`, '[Truncated]']]
+    : entries;
+  return { '[Map]': allEntries };
 };
 
 const normalizeSet = (value: Set<unknown>, context: NormalizeContext): unknown => {
@@ -131,19 +137,17 @@ const normalizeSet = (value: Set<unknown>, context: NormalizeContext): unknown =
     slice(0, state.maxEntries),
     map((item) => normalizeChildValue(item, context)),
   );
-  if (value.size > state.maxEntries) {
-    entries.push(overflowNote(value.size, state.maxEntries, 'items'));
-  }
-  return { '[Set]': entries };
+  return value.size > state.maxEntries
+    ? { '[Set]': [...entries, overflowNote({ total: value.size, shown: state.maxEntries, unit: 'items' })] }
+    : { '[Set]': entries };
 };
 
 const normalizeArray = (value: unknown[], context: NormalizeContext): unknown => {
   const { state } = context;
   const entries = pipe(value, slice(0, state.maxEntries), map(item => normalizeChildValue(item, context)));
-  if (value.length > state.maxEntries) {
-    entries.push(overflowNote(value.length, state.maxEntries, 'items'));
-  }
-  return entries;
+  return value.length > state.maxEntries
+    ? [...entries, overflowNote({ total: value.length, shown: state.maxEntries, unit: 'items' })]
+    : entries;
 };
 
 const normalizeCollection = (value: object, context: NormalizeContext): unknown => {

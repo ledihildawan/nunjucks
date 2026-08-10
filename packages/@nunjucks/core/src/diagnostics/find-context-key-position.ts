@@ -48,10 +48,14 @@ const findBestMatch = ({ lines, keyName, searchLine, searchRadius }: FindBestMat
   ).best;
 };
 
+interface FindContextKeyPositionInput {
+  sourceFile: string;
+  callLine: number;
+  dangerousPath: string;
+}
+
 export const findContextKeyPosition = async (
-  sourceFile: string,
-  callLine: number,
-  dangerousPath: string
+  { sourceFile, callLine, dangerousPath }: FindContextKeyPositionInput
 ): Promise<LinePosition | null> => {
   try {
     const content = await readFile(sourceFile, 'utf-8');

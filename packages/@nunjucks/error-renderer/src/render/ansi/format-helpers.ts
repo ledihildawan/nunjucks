@@ -21,7 +21,13 @@ const formatCausesAnsi = (causes: readonly string[]): string => {
   return `\n${picocolors.bold('Possible Causes:')}\n${items}\n`;
 };
 
-const formatFixAnsi = (fixCode: string | null, fixComment: string | null, documentationUrl: string | null): string => {
+interface FormatFixAnsiInput {
+  fixCode: string | null;
+  fixComment: string | null;
+  documentationUrl: string | null;
+}
+
+const formatFixAnsi = ({ fixCode, fixComment, documentationUrl }: FormatFixAnsiInput): string => {
   if (!fixCode) { return ''; }
 
   const parts: string[] = [
@@ -49,7 +55,7 @@ const formatMediumAnsi = (message: string, input: MediumAnsiInput): string => {
   const causeHint = firstCause ? stripMarkdown(firstCause) : '';
   const extrasPart = getExtrasPart(causeHint, input.documentationUrl ?? '');
   const locationPart = input.path
-    ? formatLocationString(input.path, input.location, input.ide).replace(LEADING_AT_RE, '')
+    ? formatLocationString({ path: input.path, location: input.location, ide: input.ide }).replace(LEADING_AT_RE, '')
     : ` at line ${input.location.line}`;
   return `${message}${locationPart}${extrasPart}`;
 };
@@ -66,7 +72,14 @@ interface AnsiErrorParts {
   lineBase: LineBase | null;
 }
 
-const extractAnsiErrorParts = (error: unknown, templatePath?: string, lineno?: number | null, colno?: number | null): AnsiErrorParts => {
+interface ExtractAnsiErrorPartsInput {
+  error: unknown;
+  templatePath?: string;
+  lineno?: number | null;
+  colno?: number | null;
+}
+
+const extractAnsiErrorParts = ({ error, templatePath, lineno, colno }: ExtractAnsiErrorPartsInput): AnsiErrorParts => {
   const parts = mergeErrorParts(error);
   const errObj = isObjectValue(error) ? error : {};
   return {
@@ -90,16 +103,16 @@ interface FullAnsiInput {
 const formatFullAnsi = (message: string, input: FullAnsiInput): string => {
   const { parts, ide, sourceTrace, renderContext, error } = input;
   const { causes, fixCode, fixComment, documentationUrl, severity, path } = parts;
-  const location = toDisplayLocation(parts.displayLineno, parts.displayColno, parts.lineBase);
+  const location = toDisplayLocation({ lineno: parts.displayLineno, colno: parts.displayColno, lineBase: parts.lineBase });
   const stack = (isObjectValue(error) ? error.stack : undefined) ?? '';
   const formattedStack = pipe(stack, split('\n'), slice(1), filter(line => line.trim().startsWith('at ')), map(line => formatStackLine(line, ide)), join('\n'));
-  const locationStr = formatLocationString(path, location, ide);
+  const locationStr = formatLocationString({ path, location, ide });
   const severityLabel = getSeverityLabel(severity);
   const header = `${severityLabel} ${message}${locationStr}\n`;
 
   const blockedKeys = (isObjectValue(error) ? error.blockedKeys : undefined) ?? null;
   const causesStr = formatCausesAnsi(causes);
-  const fixStr = formatFixAnsi(fixCode, fixComment, documentationUrl);
+  const fixStr = formatFixAnsi({ fixCode, fixComment, documentationUrl });
   const outputParts: string[] = [
     header,
     ...((sourceTrace?.lines.length ?? 0) > 0

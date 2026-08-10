@@ -14,19 +14,18 @@ export interface SecurityError extends Error {
   [TEMPLATE_ERROR]?: boolean;
 }
 
-export const createSecurityError = (message: string, code = 'SECURITY_VIOLATION'): SecurityError => {
-  const err = new Error(message) as SecurityError;
-  err.name = 'SecurityError';
-  err.code = code;
-  err.lineno = null;
-  err.colno = null;
-  err.subject = null;
-  err.phase = 'render';
-  err.templateName = null;
-  err.templatePath = null;
-  err[TEMPLATE_ERROR] = true;
-  return err;
-};
+export const createSecurityError = (message: string, code = 'SECURITY_VIOLATION'): SecurityError =>
+  Object.assign(new Error(message) as SecurityError, {
+    name: 'SecurityError' as const,
+    code,
+    lineno: null,
+    colno: null,
+    subject: null,
+    phase: 'render' as Phase,
+    templateName: null,
+    templatePath: null,
+    [TEMPLATE_ERROR]: true,
+  });
 
 export const isSecurityError = (e: unknown): e is SecurityError =>
   e instanceof Error && e.name === 'SecurityError';

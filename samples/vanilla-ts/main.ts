@@ -15,7 +15,7 @@ const njk = nunjucks({
   },
 });
 
-const a = await njk.render('hello.njk', { name: 'World' });
-console.log(isOk(a) ? a.value : a.error);
-const b = await njk.render('{{ appName }} v{{ version }}');
-console.log(isOk(b) ? b.value : b.error);
+const helloResult = await njk.render('hello.njk', { name: 'World' });
+console.log(isOk(helloResult) ? helloResult.value : helloResult.error);
+const versionResult = await njk.render('{{ appName }} v{{ version }}');
+console.log(isOk(versionResult) ? versionResult.value : versionResult.error);

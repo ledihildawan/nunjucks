@@ -1,5 +1,5 @@
 import express, { type Router, type Request, type Response, type NextFunction } from 'express';
-import { renderTemplate as renderResult } from '../lib/render-template.ts';
+import { renderTemplate as renderBase } from '../lib/render-template.ts';
 
 const router: Router = express.Router();
 
@@ -11,12 +11,12 @@ interface RenderTemplateOptions<TContext extends Record<string, unknown>> {
 
 const renderTemplate = async <TContext extends Record<string, unknown>>(
   { template, context, config = {} }: RenderTemplateOptions<TContext>,
-) => renderResult(template, context, {
+) => renderBase(template, { context, config: {
   autoescape: true,
   dev: true,
   ide: 'vscode',
   ...config
-});
+}});
 
 router.get('/', async (_req: Request, res: Response) => {
   res.type('html').send(`

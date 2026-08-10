@@ -10,53 +10,57 @@ const VIEWS = path.join(__dirname, '..', 'views');
 const router: Router = express.Router();
 
 router.get('/scope', async (_req: Request, res: Response) => {
-  const html = await renderTemplate('demo-scope.njk', {}, { views: VIEWS });
+  const html = await renderTemplate('demo-scope.njk', { context: {}, config: { views: VIEWS } });
   res.type('html').send(html);
 });
 
 router.get('/exec', async (_req: Request, res: Response) => {
   const html = await renderTemplate('demo-exec.njk', {
-    arr: [],
-    name: { append: function(this: { value: string }, suffix: string) { return this.value + suffix; }, value: "Hello" },
-    items: []
-  }, { views: VIEWS });
+    context: {
+      arr: [],
+      name: { append: function(this: { value: string }, suffix: string) { return this.value + suffix; }, value: "Hello" },
+      items: []
+    }, config: { views: VIEWS } });
   res.type('html').send(html);
 });
 
 router.get('/switch', async (_req: Request, res: Response) => {
   const html = await renderTemplate('demo-switch.njk', {
-    status: "active",
-    priority: 2
-  }, { views: VIEWS });
+    context: {
+      status: "active",
+      priority: 2
+    }, config: { views: VIEWS } });
   res.type('html').send(html);
 });
 
 router.get('/slot', async (_req: Request, res: Response) => {
-  const html = await renderTemplate('demo-slot.njk', {}, { views: VIEWS });
+  const html = await renderTemplate('demo-slot.njk', { context: {}, config: { views: VIEWS } });
   res.type('html').send(html);
 });
 
 router.get('/component', async (_req: Request, res: Response) => {
-  const html = await renderTemplate('component-demo.njk', { username: 'John Doe' }, { views: VIEWS });
+  const html = await renderTemplate('component-demo.njk', { context: { username: 'John Doe' }, config: { views: VIEWS } });
   res.type('html').send(html);
 });
 
 router.get('/pipe', async (_req: Request, res: Response) => {
   const html = await renderTemplate('demo-pipe.njk', {
-    items: ["one", "two", "three"]
-  }, { views: VIEWS });
+    context: {
+      items: ["one", "two", "three"]
+    }, config: { views: VIEWS } });
   res.type('html').send(html);
 });
 
 router.get('/security', async (_req: Request, res: Response) => {
   const html = await renderTemplate('demo-security.njk', {
-    userInput: '<script>alert("XSS attack!")</script><p>Hello World</p>',
-    dangerousHtml: '<img src=x onerror="alert(1)"><script>document.location="http://evil.com"</script>',
-    configData: { theme: 'dark', debug: true, count: 42 },
-    userData: { name: 'John', role: 'admin', id: 123 },
-    htmlContent: '<b>Bold</b> & "quoted"',
-    attrContent: 'value="with quotes"\'s and stuff'
-  }, { views: VIEWS, autoescape: true });
+    context: {
+      userInput: '<script>alert("XSS attack!")</script><p>Hello World</p>',
+      dangerousHtml: '<img src=x onerror="alert(1)"><script>document.location="http://evil.com"</script>',
+      configData: { theme: 'dark', debug: true, count: 42 },
+      userData: { name: 'John', role: 'admin', id: 123 },
+      htmlContent: '<b>Bold</b> & "quoted"',
+      attrContent: 'value="with quotes"\'s and stuff'
+    }, config: { views: VIEWS, autoescape: true } });
   res.type('html').send(html);
 });
 

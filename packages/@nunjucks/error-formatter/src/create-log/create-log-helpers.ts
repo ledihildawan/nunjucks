@@ -83,12 +83,18 @@ const formatParentLocation = (chain: IncludeChain): string => {
   return `\n   (included from ${chain.parentTmpl}:${chain.parentLineno}${parentColnoPart})`;
 };
 
-const buildLocationMessage = (
-  locationPath: string | undefined,
-  err: TemplateError,
-  chain?: IncludeChain
-): string => {
-  const annotation = err.firstUpdate ? formatLocationAnnotation(err.lineno, err.colno, err.lineBase) : null;
+interface BuildLocationMessageOptions {
+  locationPath: string | undefined;
+  err: TemplateError;
+  chain?: IncludeChain;
+}
+
+const buildLocationMessage = ({
+  locationPath,
+  err,
+  chain,
+}: BuildLocationMessageOptions): string => {
+  const annotation = err.firstUpdate ? formatLocationAnnotation({ lineno: err.lineno, colno: err.colno, lineBase: err.lineBase }) : null;
   return [
     `(${locationPath ?? 'unknown path'})`,
     annotation ? ` ${annotation}` : null,

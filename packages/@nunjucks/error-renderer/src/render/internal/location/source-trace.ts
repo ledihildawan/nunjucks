@@ -108,7 +108,7 @@ const buildSourceTrace = (input: BuildSourceTraceInput): SourceTrace => {
     blockedKeys = null
   } = input;
 
-  const location = toDisplayLocation(lineno, colno, lineBase);
+  const location = toDisplayLocation({ lineno, colno, lineBase });
   const displayLine = location.line;
   const displayCol = location.col;
 

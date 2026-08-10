@@ -12,14 +12,17 @@ const router: Router = express.Router();
 router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const html = await renderTemplate('warnings.njk', {
-      pageTitle: 'Warnings Demo',
-      availableValue: 'This value is defined',
-      user: undefined,
-    }, {
-      views: VIEWS,
-      dev: true,
-      undefined: 'debug',
-      autoescape: true,
+      context: {
+        pageTitle: 'Warnings Demo',
+        availableValue: 'This value is defined',
+        user: undefined,
+      },
+      config: {
+        views: VIEWS,
+        dev: true,
+        undefined: 'debug',
+        autoescape: true,
+      },
     });
     res.type('html').send(html);
   } catch (error) {

@@ -9,7 +9,7 @@ const normWarn: NormalizedWarningContext = { lineno: 1, colno: 1, phase: 'render
 
 describe('createErrorFromDef', () => {
   test('builds a TemplateError carrying the definition identity and marker', () => {
-    const err = createErrorFromDef(def, undefined, normErr, undefined, 'subj');
+    const err = createErrorFromDef({ errorDef: def, paramsValue: undefined, normalized: normErr, extra: undefined, subject: 'subj' });
     expect(err.name).toBe('Template render error');
     expect(err.code).toBe('MY_CODE');
     expect(err.message).toBe('something broke');
@@ -20,13 +20,13 @@ describe('createErrorFromDef', () => {
   });
 
   test('templatePath mirrors the normalised templateName', () => {
-    const err = createErrorFromDef(def, undefined, normErr, undefined, null);
+    const err = createErrorFromDef({ errorDef: def, paramsValue: undefined, normalized: normErr, extra: undefined, subject: null });
     expect(err.templatePath).toBe('t.njk');
   });
 
   test('resolves the message function with params', () => {
     const fnDef: ErrorDefinitionEntry = { name: 'P', message: (a) => `v=${(a as Record<string, string>)?.k ?? ''}`, pattern: /./ };
-    expect(createErrorFromDef(fnDef, { k: '1' }, normErr, undefined, null).message).toBe('v=1');
+    expect(createErrorFromDef({ errorDef: fnDef, paramsValue: { k: '1' }, normalized: normErr, extra: undefined, subject: null }).message).toBe('v=1');
   });
 
   test('attaches optional causes/fixCode/documentationUrl/severity when the definition provides them', () => {
@@ -34,7 +34,7 @@ describe('createErrorFromDef', () => {
       name: 'RICH', message: 'm', pattern: /./,
       causes: ['c1', 'c2'], fixCode: 'fc', fixComment: 'fx', documentationUrl: 'https://x', severity: 'warning',
     };
-    const err = createErrorFromDef(richDef, undefined, normErr, undefined, null);
+    const err = createErrorFromDef({ errorDef: richDef, paramsValue: undefined, normalized: normErr, extra: undefined, subject: null });
     expect(err.causes).toEqual(['c1', 'c2']);
     expect(err.fixCode).toBe('fc');
     expect(err.fixComment).toBe('fx');
@@ -43,7 +43,7 @@ describe('createErrorFromDef', () => {
   });
 
   test('toJSON serialises the structural fields', () => {
-    const err = createErrorFromDef(def, undefined, normErr, undefined, 'subj');
+    const err = createErrorFromDef({ errorDef: def, paramsValue: undefined, normalized: normErr, extra: undefined, subject: 'subj' });
     const json = err.toJSON?.();
     expect(json?.code).toBe('MY_CODE');
     expect(json?.message).toBe('something broke');
@@ -53,7 +53,7 @@ describe('createErrorFromDef', () => {
 
 describe('createWarningFromDef', () => {
   test('builds a TemplateWarning with resolved message, code, and warning-specific fields', () => {
-    const warn = createWarningFromDef(def, undefined, normWarn, null);
+    const warn = createWarningFromDef({ errorDef: def, paramsValue: undefined, normalizedWarning: normWarn, subject: null });
     expect(warn.message).toBe('something broke');
     expect(warn.code).toBe('MY_CODE');
     expect(warn.varName).toBe('x');
@@ -61,7 +61,7 @@ describe('createWarningFromDef', () => {
   });
 
   test('omits causes/fixCode when the definition has none', () => {
-    const warn = createWarningFromDef(def, undefined, normWarn, null);
+    const warn = createWarningFromDef({ errorDef: def, paramsValue: undefined, normalizedWarning: normWarn, subject: null });
     expect(warn.causes).toBeUndefined();
     expect(warn.fixCode).toBeUndefined();
   });

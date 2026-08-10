@@ -1,14 +1,14 @@
 import express, { type Router, type Request, type Response } from 'express';
-import { renderTemplate as renderResult } from '../lib/render-template.ts';
+import { renderTemplate as renderBase } from '../lib/render-template.ts';
 
 const renderTemplate = async <TContext extends Record<string, unknown>>(
   { template, context, config = {} }: { template: string; context: TContext; config?: Record<string, unknown> },
-) => renderResult(template, context, {
+) => renderBase(template, { context, config: {
   autoescape: true,
   dev: true,
   ide: 'vscode',
   ...config
-});
+}});
 
 const router: Router = express.Router();
 
@@ -111,7 +111,7 @@ const njk = nunjucks({ security: { sandbox: true } });
 const html = await njk.render(template, context);
 
 // Allowlist mode - only allow specific keys
-const njk2 = nunjucks({
+const allowlistNjk = nunjucks({
   security: {
     sandbox: true,
     sandboxAllowlist: ['user', 'name'],

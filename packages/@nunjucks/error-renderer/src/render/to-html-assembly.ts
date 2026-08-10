@@ -63,7 +63,7 @@ const buildErrorSections = (input: ErrorSectionsInput): ErrorSections => {
   });
   const body = buildErrorBodyContent({ verbosity, error, classified, sourceTrace, renderContext: effectiveRenderContext, ide, displayPath });
   const footer = buildErrorFooter({ version, timestamp: effectiveTimestamp, verbosity, canLinkLocation, ide, displayPath, displayLine, displayCol });
-  const wrapped = buildHtmlWrapper(header, body, footer);
+  const wrapped = buildHtmlWrapper({ header, errorBody: body, footer });
 
   return { header, body, footer, wrapped, message: humanTitle, severity: classified.severity, displayPath, displayLine, displayCol, locDisplay, canLinkLocation };
 };

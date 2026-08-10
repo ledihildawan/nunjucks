@@ -15,3 +15,6 @@ build
 /samples/express/js/templates.js
 /nunjucks-original
 /output-error-html
+
+# local tooling state (opencode plans/session)
+.opencode/

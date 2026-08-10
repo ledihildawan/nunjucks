@@ -1,8 +1,11 @@
 import { keys } from 'remeda';
+import { isKeyedObject } from '../type-guards.ts';
 import { isDangerousReference } from './context-security.ts';
 
 const visitAndScrub = (value: unknown, seen: WeakSet<object>): unknown => {
-  if (value === null || typeof value !== 'object') { return value; }
+  // WHY: isKeyedObject narrows unknown → Record<PropertyKey, unknown> without excluding arrays;
+  // the explicit Array.isArray branch handles element-wise recursion before the record walk.
+  if (!isKeyedObject(value)) { return value; }
   if (seen.has(value)) { return value; }
   if (Array.isArray(value)) {
     seen.add(value);

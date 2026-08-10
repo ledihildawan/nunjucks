@@ -104,6 +104,10 @@ Positional parameters > 2 are strictly allowed without options objects **ONLY** 
 - **Unused Parameters** — Use a single `_` or a `_` prefix exclusively for intentionally unused arguments (e.g., `.map((_, index) => ...)`).
 - **Modern Syntax Only** — Rely strictly on current, stable language features. Commented-out code and legacy syntax must be permanently removed prior to code review.
 
+### Namespace-Marker Sentinels (exception to the pseudo-private rule)
+
+The `__nunjucks_*__` / `__streamError` / `__warnings__` / `__access_path__` tokens used in `runtime/` and emitted by `compiler/` are **not** the `_myPrivateVar` pseudo-private anti-pattern. They are deliberate **cross-realm-safe sentinel keys** — property names prefixed with `__nunjucks` so they never collide with user template variables and survive serialization boundaries (cross-iframe/VM) where `Symbol` would not. Code reviewers should treat the `__nunjucks*__` prefix as a sanctioned namespace convention, not a §7 violation.
+
 ## 8. Error Handling & Streaming Error Strategy
 
 Template rendering uses a **two-pass streaming pipeline** (`renderToStream`) with a **three-tier error strategy**. The deciding question for any error is: *does one failing expression make the whole page useless, or only that spot?* Structural/safety failures abort; per-expression data failures render inline.

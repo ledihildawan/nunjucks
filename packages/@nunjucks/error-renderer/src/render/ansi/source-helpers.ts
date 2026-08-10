@@ -19,12 +19,14 @@ const getLineNumWidth = (lines: SourceTraceLine[]): number => {
   return Math.max(MIN_LINE_NUM_WIDTH, String(maxLineNum).length);
 };
 
-const formatCodeLine = (
-  lineNum: number,
-  content: string,
-  isError: boolean,
-  lineNumWidth: number
-): string => {
+interface FormatCodeLineInput {
+  lineNum: number;
+  content: string;
+  isError: boolean;
+  lineNumWidth: number;
+}
+
+const formatCodeLine = ({ lineNum, content, isError, lineNumWidth }: FormatCodeLineInput): string => {
   const marker = getMarker(isError);
   const lineNumStr = String(lineNum).padStart(lineNumWidth, ' ');
   const highlighted = isError ? highlightAnsi(content) : picocolors.dim(highlightAnsi(content));
@@ -34,11 +36,13 @@ const formatCodeLine = (
 const getLinePrefix = (lineNumWidth: number): string =>
   picocolors.dim(`${NORMAL_MARKER}${' '.repeat(lineNumWidth)}${SEPARATOR}`);
 
-const formatCaretLine = (
-  lineNumWidth: number,
-  charStart: number,
-  carets: string
-): string => {
+interface FormatCaretLineInput {
+  lineNumWidth: number;
+  charStart: number;
+  carets: string;
+}
+
+const formatCaretLine = ({ lineNumWidth, charStart, carets }: FormatCaretLineInput): string => {
   const prefix = getLinePrefix(lineNumWidth);
   return `${prefix}${' '.repeat(charStart)}${picocolors.red(carets)}`;
 };
@@ -52,10 +56,10 @@ const formatSourceTrace = (
   const lineNumWidth = getLineNumWidth(lines);
 
   return lines.flatMap((line) => {
-    const codeLine = formatCodeLine(line.number, line.content, line.isError, lineNumWidth);
+    const codeLine = formatCodeLine({ lineNum: line.number, content: line.content, isError: line.isError, lineNumWidth });
     if (!(line.isError && caret)) {
       return [codeLine];
     }
-    return [codeLine, formatCaretLine(lineNumWidth, caret.charStart, caret.carets)];
+    return [codeLine, formatCaretLine({ lineNumWidth, charStart: caret.charStart, carets: caret.carets })];
   });
 };

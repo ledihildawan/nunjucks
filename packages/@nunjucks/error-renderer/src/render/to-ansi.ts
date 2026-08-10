@@ -26,10 +26,10 @@ const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
     return message;
   }
 
-  const parts = extractAnsiErrorParts(error, templatePath, lineno, colno);
+  const parts = extractAnsiErrorParts({ error, templatePath, lineno, colno });
 
   if (verbosity === 'medium') {
-    const location = toDisplayLocation(parts.displayLineno, parts.displayColno, parts.lineBase);
+    const location = toDisplayLocation({ lineno: parts.displayLineno, colno: parts.displayColno, lineBase: parts.lineBase });
     return formatMediumAnsi(message, { path: parts.path, location, causes: parts.causes, documentationUrl: parts.documentationUrl, ide });
   }
 

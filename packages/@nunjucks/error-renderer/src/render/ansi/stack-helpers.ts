@@ -48,11 +48,13 @@ const formatStackLine = (
   return `  at ${location}`;
 };
 
-const formatLocationString = (
-  path: string,
-  location: { line: number; col: number },
-  ide: string
-): string => {
+interface FormatLocationStringInput {
+  path: string;
+  location: { line: number; col: number };
+  ide: string;
+}
+
+const formatLocationString = ({ path, location, ide }: FormatLocationStringInput): string => {
   if (!path) { return ''; }
   const shortPath = shortenPath(path);
   if (isFilePath(path)) {

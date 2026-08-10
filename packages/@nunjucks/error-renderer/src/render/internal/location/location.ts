@@ -5,29 +5,27 @@ export interface DisplayLocation {
 	col: number;
 }
 
-export const formatLocationAnnotation = (
-	lineno?: number | null,
-	colno?: number | null,
-	lineBase?: LineBase | null
-): string => {
+interface LocationInput {
+	lineno?: number | null;
+	colno?: number | null;
+	lineBase?: LineBase | null;
+}
+
+export const formatLocationAnnotation = ({ lineno, colno, lineBase }: LocationInput): string => {
 	const hasLine = lineno !== undefined && lineno !== null;
 	const hasCol = colno !== undefined && colno !== null;
 
 	if (!hasLine) { return ''; }
 
 	const colnoArg = hasCol ? colno : null;
-	const location = toDisplayLocation(lineno, colnoArg, lineBase);
+	const location = toDisplayLocation({ lineno, colno: colnoArg, lineBase });
 	if (hasCol) {
 		return `[Line ${location.line}, Column ${location.col}]`;
 	}
 	return `[Line ${location.line}]`;
 };
 
-export const toDisplayLocation = (
-	lineno?: number | null,
-	colno?: number | null,
-	lineBase?: LineBase | null
-): DisplayLocation => {
+export const toDisplayLocation = ({ lineno, colno, lineBase }: LocationInput): DisplayLocation => {
 	const base = normalizeLineBase(lineBase);
 	const safeLine = lineno ?? 0;
 	const safeCol = colno ?? 0;

@@ -46,11 +46,11 @@ interface MediumTextInput {
 const formatMediumText = (message: string, input: MediumTextInput): string => {
   const err = input.error as ErrorLike;
   const path = input.templatePath ?? err.templateName ?? 'unknown';
-  const location = toDisplayLocation(
-    input.lineno ?? err.lineno ?? null,
-    input.colno ?? err.colno ?? null,
-    err.lineBase ?? 'zero'
-  );
+  const location = toDisplayLocation({
+    lineno: input.lineno ?? err.lineno ?? null,
+    colno: input.colno ?? err.colno ?? null,
+    lineBase: err.lineBase ?? 'zero'
+  });
   const shortPath = shortenPath(path);
   const locationStr = ` at ${shortPath}:${location.line}:${location.col}`;
   const causeHint = input.causes.length > 0 ? stripMarkdown(input.causes[0] ?? '') : '';
@@ -79,7 +79,13 @@ const formatCauses = (causes: string[]): string[] => {
   return ['', 'Possible Causes:', ...causes.map(c => `  • ${stripMarkdown(c)}`)];
 };
 
-const formatFix = (fixCode: string, fixComment: string, documentationUrl: string | null): string[] => {
+interface FormatFixInput {
+  fixCode: string;
+  fixComment: string;
+  documentationUrl: string | null;
+}
+
+const formatFix = ({ fixCode, fixComment, documentationUrl }: FormatFixInput): string[] => {
   if (!fixCode) { return []; }
   return [
     '', 'Suggested Fix:',
@@ -115,7 +121,7 @@ const toText = (error: unknown, options: ToTextOptions = {}): string => {
   const parts: string[] = [
     `${severityLabel} ${message}`,
     ...formatCauses(causes),
-    ...formatFix(fixCode, fixComment, documentationUrl),
+    ...formatFix({ fixCode, fixComment, documentationUrl }),
     ...(formattedStack ? ['', formattedStack] : [])
   ];
 

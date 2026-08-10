@@ -6,7 +6,9 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const BASE = process.argv[2] || 'http://localhost:4000';
+// WHY: dev-only CLI arg — trusted dev input. Validated as URL shape; falls back to localhost demo server.
+const rawBase = process.argv[2] ?? 'http://localhost:4000';
+const BASE = rawBase.startsWith('http') ? rawBase : 'http://localhost:4000';
 const ERRORS_TS = path.join(__dirname, 'routes', 'errors.ts');
 
 const discoverRoutes = async (base) => {
@@ -130,8 +132,7 @@ const short = (p) => (p ? p.replace(/^.*[/\\](samples[/\\].*)$/u, '$1').replaceA
 
 const run = async () => {
   const routes = await discoverRoutes(BASE);
-  const rows = [];
-  await Promise.all(routes.map(async (route) => {
+  const rows = await Promise.all(routes.map(async (route) => {
     try {
       const res = await fetch(`${BASE}/errors/${route}`);
       const html = await res.text();
@@ -139,9 +140,9 @@ const run = async () => {
       info.threw = res.status >= 400;
       info.hasErrorPage = /class="error-(?:wrapper|title|location)"/u.test(html);
       const v = validate(route, info);
-      rows.push({ route, status: v.status, reason: v.reason, info });
+      return { route, status: v.status, reason: v.reason, info };
     } catch (err) {
-      rows.push({ route, status: 'ERROR', reason: String(err), info: {} });
+      return { route, status: 'ERROR', reason: String(err), info: {} };
     }
   }));
 
@@ -150,13 +151,13 @@ const run = async () => {
   const pad = (s, n) => String(s ?? '').padEnd(n);
   console.log(`${pad('ROUTE', 26) + pad('STATUS', 11) + pad('LOCATION', 46)}CODE`);
   console.log('-'.repeat(120));
-  for (const r of rows) {
+  rows.forEach((r) => {
     const loc = r.info.loc
       ? `${short(r.info.loc.path)}:${r.info.loc.line}:${r.info.loc.col}`
       : '(none)';
     console.log(pad(r.route, 26) + pad(r.status, 11) + pad(loc, 46) + (r.info.code || ''));
     if (r.status !== 'OK') { console.log(`  └─ ${r.reason}`); }
-  }
+  });
 
   const bad = rows.filter(r => !['OK', 'NO_ERROR'].includes(r.status));
   const noErr = rows.filter(r => r.status === 'NO_ERROR').length;

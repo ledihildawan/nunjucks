@@ -28,7 +28,7 @@ const formatMedium = (warning: Warning, options: ToConsoleOptions): string => {
 
   const title = varName ? `Undefined variable '${varName}'` : 'Undefined variable';
 
-  const location = toDisplayLocation(lineno ?? null, 0, warning.lineBase ?? 'zero');
+  const location = toDisplayLocation({ lineno: lineno ?? null, colno: 0, lineBase: warning.lineBase ?? 'zero' });
   const lineNum = location.line;
 
   const path = templateName ?? templatePath;
@@ -63,7 +63,7 @@ interface LocationStringInput {
 }
 
 const getLocationString = (input: LocationStringInput): string => {
-  const location = toDisplayLocation(input.lineno ?? null, 0, input.lineBase ?? 'zero');
+  const location = toDisplayLocation({ lineno: input.lineno ?? null, colno: 0, lineBase: input.lineBase ?? 'zero' });
   const lineNum = location.line;
   if (input.templateName) {
     const shortPath = shortenPath(input.templateName);

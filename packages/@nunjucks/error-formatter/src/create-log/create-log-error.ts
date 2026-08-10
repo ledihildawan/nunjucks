@@ -115,13 +115,21 @@ const buildErrorJson = (err: TemplateError) => (): Record<string, unknown> => ({
   stack: err.stack
 });
 
-const createErrorFromDef = (
-  errorDef: ErrorDefinitionEntry,
-  paramsValue: Record<string, string> | undefined,
-  normalized: NormalizedErrorContext,
-  extra: Record<string, unknown> | undefined,
-  subject: string | null
-): TemplateError => {
+interface CreateErrorFromDefOptions {
+  errorDef: ErrorDefinitionEntry;
+  paramsValue: Record<string, string> | undefined;
+  normalized: NormalizedErrorContext;
+  extra: Record<string, unknown> | undefined;
+  subject: string | null;
+}
+
+const createErrorFromDef = ({
+  errorDef,
+  paramsValue,
+  normalized,
+  extra,
+  subject,
+}: CreateErrorFromDefOptions): TemplateError => {
   const err = createErrorEnvelope(resolveMessage(errorDef.message, paramsValue));
   Object.assign(err, { name: 'Template render error', code: errorDef.name, subject, ...normalized });
   if (extra?.sourceContent) { err.sourceContent = extra.sourceContent as string; }
@@ -136,12 +144,19 @@ const createErrorFromDef = (
   return err;
 };
 
-const createWarningFromDef = (
-  errorDef: ErrorDefinitionEntry,
-  paramsValue: Record<string, string> | undefined,
-  normalizedWarning: NormalizedWarningContext,
-  subject: string | null
-): TemplateWarning => {
+interface CreateWarningFromDefOptions {
+  errorDef: ErrorDefinitionEntry;
+  paramsValue: Record<string, string> | undefined;
+  normalizedWarning: NormalizedWarningContext;
+  subject: string | null;
+}
+
+const createWarningFromDef = ({
+  errorDef,
+  paramsValue,
+  normalizedWarning,
+  subject,
+}: CreateWarningFromDefOptions): TemplateWarning => {
   const warn = {
     message: resolveMessage(errorDef.message, paramsValue),
     code: errorDef.name,

@@ -25,9 +25,10 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
   try {
     const html = await renderTemplate('boundary.njk', {
-      name: parsed.data.name,
-      count: parsed.data.count,
-    }, { views: VIEWS, autoescape: true, dev: true });
+      context: {
+        name: parsed.data.name,
+        count: parsed.data.count,
+      }, config: { views: VIEWS, autoescape: true, dev: true } });
     res.type('html').send(html);
   } catch (err) {
     next(err);

@@ -101,7 +101,13 @@ export const slice = (values: unknown, slices: number, fillWith?: unknown): unkn
   return res;
 };
 
-const sumWithAttribute = (items: unknown[], attr: string, start: number): number => {
+interface SumWithAttributeInput {
+  items: unknown[];
+  attr: string;
+  start: number;
+}
+
+const sumWithAttribute = ({ items, attr, start }: SumWithAttributeInput): number => {
   const typedItems = validateItemsOrThrow<unknown>({ items, attr, errorDef: ERROR_DEFINITIONS.SUM_FILTER_ATTR });
   const values = typedItems.map((item) => item[attr]);
   if (!values.every((value): value is number => typeof value === 'number')) {
@@ -122,17 +128,17 @@ export const sum = (values: unknown, attr?: string, start = 0): number => {
     throw requireArrayError(values, ERROR_DEFINITIONS.SUM_FILTER);
   }
   if (attr) {
-    return sumWithAttribute(values, attr, start);
+    return sumWithAttribute({ items: values, attr, start });
   }
   return sumWithoutAttribute(values, start);
 };
 
-const getCompareValue = <T>(item: T, sortAttr: string | undefined): unknown => {
+const getCompareValue = (item: unknown, sortAttr: string | undefined): unknown => {
   if (!sortAttr) { return item; }
   return getAttrGetter(sortAttr)(item as Record<string, unknown>);
 };
 
-const toComparable = <T>(value: T): string | number => {
+const toComparable = (value: unknown): string | number => {
   if (typeof value === 'string' || typeof value === 'number') {
     return value;
   }
@@ -164,7 +170,7 @@ const compareValues = ({ left, right, caseSens, sortReverse }: ComparisonInput):
 };
 
 const createSortComparator = ({ sortAttr, sortReverse, caseSens }: SortOptions) => {
-  return <T>(a: T, b: T): number => {
+  return (a: unknown, b: unknown): number => {
     const left = getCompareValue(a, sortAttr);
     const right = getCompareValue(b, sortAttr);
     return compareValues({ left, right, caseSens, sortReverse });

@@ -70,11 +70,11 @@ interface ErrorLocationInput {
 
 const resolveErrorLocation = (error: ErrorLike | null, input: ErrorLocationInput): LocationInfo => {
   const lineBaseValue: LineBase = input.isJsCaller ? 'one' : (error?.lineBase ?? 'zero');
-  const location = toDisplayLocation(
-    input.lineno ?? error?.lineno ?? null,
-    input.colno ?? error?.colno ?? null,
-    lineBaseValue
-  );
+  const location = toDisplayLocation({
+    lineno: input.lineno ?? error?.lineno ?? null,
+    colno: input.colno ?? error?.colno ?? null,
+    lineBase: lineBaseValue
+  });
   return {
     displayLine: location.line,
     displayCol: location.col,

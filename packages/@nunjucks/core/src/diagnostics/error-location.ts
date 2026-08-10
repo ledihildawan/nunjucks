@@ -83,11 +83,17 @@ const INITIAL_SEARCH_OUTCOME: CallerSearchOutcome = { status: 'not-found' };
 type PositionExtractor = (input: { content: string; template: string | null; errLineno: number | null; errColno: number | null; subject: string | null; preferredLine: number | null }) => { line: number; col: number } | null;
 
 // WHY: multi-pass search ensures high-confidence matches (template literal, then quoted property key) are found across ALL candidate files before falling back to low-confidence bare-word matching. This prevents a reserved-word subject like 'if' from matching a TypeScript `if` keyword in an intermediate wrapper file when a later candidate file contains the actual quoted 'if' filter key.
-const searchPass = (
-  reads: readonly CandidateRead[],
-  searchInput: CallerSearchInput,
-  extractFn: PositionExtractor
-): CallerSearchOutcome =>
+interface SearchPassOptions {
+  reads: readonly CandidateRead[];
+  searchInput: CallerSearchInput;
+  extractFn: PositionExtractor;
+}
+
+const searchPass = ({
+  reads,
+  searchInput,
+  extractFn,
+}: SearchPassOptions): CallerSearchOutcome =>
   reduce(reads, (outcome: CallerSearchOutcome, { candidate, content }: CandidateRead) => {
     if (outcome.status === 'matched') { return outcome; }
     if (content === null) {
@@ -104,13 +110,13 @@ const firstNonNotFound = (...outcomes: CallerSearchOutcome[]): CallerSearchOutco
   outcomes.find((o) => o.status !== 'not-found') ?? INITIAL_SEARCH_OUTCOME;
 
 const foldCandidateSearch = (reads: readonly CandidateRead[], searchInput: CallerSearchInput): CallerSearchOutcome => {
-  const templateOutcome = searchPass(reads, searchInput, extractTemplatePosition);
+  const templateOutcome = searchPass({ reads, searchInput, extractFn: extractTemplatePosition });
   if (templateOutcome.status === 'matched') { return templateOutcome; }
 
-  const quotedOutcome = searchPass(reads, searchInput, extractQuotedSubjectPosition);
+  const quotedOutcome = searchPass({ reads, searchInput, extractFn: extractQuotedSubjectPosition });
   if (quotedOutcome.status === 'matched') { return quotedOutcome; }
 
-  const bareOutcome = searchPass(reads, searchInput, extractBareSubjectPosition);
+  const bareOutcome = searchPass({ reads, searchInput, extractFn: extractBareSubjectPosition });
   if (bareOutcome.status === 'matched') { return bareOutcome; }
 
   return firstNonNotFound(templateOutcome, quotedOutcome, bareOutcome);

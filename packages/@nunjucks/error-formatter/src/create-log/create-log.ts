@@ -27,11 +27,11 @@ function createLog(type: string, fields: CreateLogFields): TemplateError | Templ
 
   if (type === 'error') {
     const normalized = normalizeErrorContext(context);
-    return createErrorFromDef(errorDef, params, normalized, extra, subject ?? null);
+    return createErrorFromDef({ errorDef, paramsValue: params, normalized, extra, subject: subject ?? null });
   }
 
   const normalized = normalizeWarningContext(context);
-  return createWarningFromDef(errorDef, params, normalized, subject ?? null);
+  return createWarningFromDef({ errorDef, paramsValue: params, normalizedWarning: normalized, subject: subject ?? null });
 }
 
 const isTemplateError = (value: unknown): value is TemplateError =>
@@ -56,7 +56,7 @@ const asTemplateError = (err: Error | TemplateError): TemplateError => {
 const withLocation = ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) => (err: TemplateError): TemplateError => {
   const result = Object.assign(createErrorEnvelope(err.message, err), err);
   result.applyLocation = (locationPath: string | undefined, chain?: IncludeChain): TemplateError => {
-    result.message = buildLocationMessage(locationPath, result, chain) + (result.message ?? '');
+    result.message = buildLocationMessage({ locationPath, err: result, chain }) + (result.message ?? '');
     result.firstUpdate = false;
     return result;
   };

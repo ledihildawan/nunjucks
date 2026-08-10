@@ -42,13 +42,15 @@ describe('renderContextHtml', () => {
 
 describe('formatStackTraceHtml', () => {
   test('returns empty when there is no stack', () => {
-    expect(formatStackTraceHtml(null)).toBe('');
-    expect(formatStackTraceHtml({})).toBe('');
+    expect(formatStackTraceHtml({ originalError: null })).toBe('');
+    expect(formatStackTraceHtml({ originalError: {} })).toBe('');
   });
 
   test('renders stack rows from a JS stack string', () => {
     const html = formatStackTraceHtml({
-      stack: 'Error: boom\n    at foo (bar.js:1:5)\n    at baz (qux.js:2:10)',
+      originalError: {
+        stack: 'Error: boom\n    at foo (bar.js:1:5)\n    at baz (qux.js:2:10)',
+      },
     });
     expect(html).toContain('stack-trace');
     expect(html).toContain('foo');

@@ -33,16 +33,28 @@ const emptyFold: FoldedPlugins = {
   dompurify: undefined,
 };
 
+// WHY: drop malformed (null/undefined) extension values at fold time rather than letting them surface as
+// a runtime cast failure during render. Filters/tests/extensions are callable or FilterObject-shaped;
+// globals may be any non-null value. A `null`/`undefined` entry is always a plugin-author bug, so we
+// strip it here — closing the §5 plugin-value boundary gap noted in the audit.
+const isUsableExtensionValue = (value: unknown): boolean => value !== null && value !== undefined;
+
+const mergeExtensions = (folded: ExtensionMap, incoming: ExtensionMap | undefined): ExtensionMap => {
+  if (!incoming) { return folded; }
+  const merged = { ...folded, ...incoming };
+  return Object.fromEntries(Object.entries(merged).filter(([, value]) => isUsableExtensionValue(value)));
+};
+
 // WHY: fold plugins left-to-right so a later plugin overrides an earlier one's same-named filter/global/etc.
 // (declarative reduce per Rule 2). The factory then layers the user's direct filters/globals/tests/extensions
 // on top of this folded result, which in turn sit above the built-in default filter bundle.
 const foldPlugins = (plugins: readonly NunjucksPlugin[] = []): FoldedPlugins =>
   plugins.reduce<FoldedPlugins>(
     (folded, plugin) => ({
-      filters: { ...folded.filters, ...plugin.filters },
-      globals: { ...folded.globals, ...plugin.globals },
-      tests: { ...folded.tests, ...plugin.tests },
-      extensions: { ...folded.extensions, ...plugin.extensions },
+      filters: mergeExtensions(folded.filters, plugin.filters),
+      globals: mergeExtensions(folded.globals, plugin.globals),
+      tests: mergeExtensions(folded.tests, plugin.tests),
+      extensions: mergeExtensions(folded.extensions, plugin.extensions),
       dompurify: plugin.dompurify ?? folded.dompurify,
     }),
     emptyFold,

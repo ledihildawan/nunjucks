@@ -41,10 +41,10 @@ const findNonWordLeft = (line: string, pos: number): number => {
   return scanLeft(pos - 1);
 };
 
-const findWordBoundaries = (line: string, pos: number, charAtPos: string): { wordStart: number; wordEnd: number } => {
+const findWordBoundaries = (line: string, pos: number): { wordStart: number; wordEnd: number } => {
   let wordStart = pos;
   let wordEnd = pos;
-  if (isWordChar(charAtPos)) {
+  if (isWordChar(line[pos])) {
     wordEnd = findWordEnd(line, pos);
     wordStart = findWordStart(line, wordEnd);
   }
@@ -118,9 +118,8 @@ const calculateCaretPosition = (
 
   const searchLeft = !isWordChar(rawCharAtPos) ? findNonWordLeft(line, rawPos) : rawPos;
   const pos = (!isWordChar(rawCharAtPos) && searchLeft >= 0 && isWordChar(line[searchLeft])) ? searchLeft : rawPos;
-  const charAtPos = line[pos];
 
-  const { wordStart: initialStart, wordEnd: initialEnd } = findWordBoundaries(line, pos, charAtPos ?? '');
+  const { wordStart: initialStart, wordEnd: initialEnd } = findWordBoundaries(line, pos);
   const { wordStart, wordEnd, highlightWord } = resolveHighlightWord(line, pos, initialStart, initialEnd);
   const carets = buildCarets(highlightWord);
 

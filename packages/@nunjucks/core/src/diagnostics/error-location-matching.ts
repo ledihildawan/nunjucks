@@ -32,26 +32,32 @@ const positionAtOffset = (text: string, offset: number): { lineOffset: number; c
   };
 };
 
-const templateLocationOffset = (
-  template: string,
-  templateErrorLine: number | null,
-  templateErrorCol: number | null
-): number => {
+interface TemplateCoordinateInput {
+  template: string;
+  errorLine: number | null;
+  errorCol: number | null;
+}
+
+const templateLocationOffset = ({
+  template,
+  errorLine,
+  errorCol,
+}: TemplateCoordinateInput): number => {
   const templateLines = template.split('\n');
-  const line = templateErrorLine ?? 0;
-  const col = templateErrorCol ?? 0;
+  const line = errorLine ?? 0;
+  const col = errorCol ?? 0;
   const clampedLine = Math.max(0, Math.min(line, templateLines.length - 1));
   const offset = pipe(templateLines, slice(0, clampedLine), reduce((sum, l) => sum + l.length + 1, 0));
   return offset + Math.max(0, Math.min(col, templateLines[clampedLine]?.length ?? 0));
 };
 
-const isCoordinateWithinTemplate = (
-  template: string,
-  templateErrorLine: number | null,
-  templateErrorCol: number | null
-): boolean => {
-  const line = templateErrorLine;
-  const col = templateErrorCol;
+const isCoordinateWithinTemplate = ({
+  template,
+  errorLine,
+  errorCol,
+}: TemplateCoordinateInput): boolean => {
+  const line = errorLine;
+  const col = errorCol;
   if (line === null || col === null) { return false; }
   const templateLines = template.split('\n');
   if (line < 0 || line >= templateLines.length) { return false; }
@@ -64,11 +70,17 @@ const findAllOccurrences = (content: string, candidate: string): number[] => {
   return [...content.matchAll(new RegExp(escaped, 'g'))].map((match) => match.index ?? 0);
 };
 
-const findTemplateOccurrence = (
-  content: string,
-  templateHint: string,
-  preferredLine: number | null
-): TemplateMatch | null => {
+interface TemplateOccurrenceInput {
+  content: string;
+  templateHint: string;
+  preferredLine: number | null;
+}
+
+const findTemplateOccurrence = ({
+  content,
+  templateHint,
+  preferredLine,
+}: TemplateOccurrenceInput): TemplateMatch | null => {
   const candidates = templateCandidates(templateHint);
   const allMatches = pipe(
     candidates,
@@ -117,12 +129,12 @@ interface TemplateMatchInput {
 }
 
 const matchTemplateInCaller = ({ content, templateHint, errLineno, errColno, preferredLine }: TemplateMatchInput): SourcePosition | null => {
-  if (!isCoordinateWithinTemplate(templateHint, errLineno, errColno)) {
+  if (!isCoordinateWithinTemplate({ template: templateHint, errorLine: errLineno, errorCol: errColno })) {
     return null;
   }
-  const match = findTemplateOccurrence(content, templateHint, preferredLine);
+  const match = findTemplateOccurrence({ content, templateHint, preferredLine });
   if (!match) { return null; }
-  const targetOffset = match.index + templateLocationOffset(match.template, errLineno, errColno);
+  const targetOffset = match.index + templateLocationOffset({ template: match.template, errorLine: errLineno, errorCol: errColno });
   const pos = positionAtOffset(content, targetOffset);
   return { line: pos.lineOffset + 1, col: pos.col + 1 };
 };
@@ -141,12 +153,19 @@ const buildSubjectPatterns = (escaped: string, mode: SubjectMatchMode): Array<{ 
   return [{ re: new RegExp(`\\b(${escaped})\\b`, 'g'), group: 1 }];
 };
 
-const findSubjectOccurrence = (
-  content: string,
-  subject: string | null,
-  preferredLine: number | null,
-  mode: SubjectMatchMode = 'quoted'
-): SourcePosition | null => {
+interface SubjectOccurrenceInput {
+  content: string;
+  subject: string | null;
+  preferredLine: number | null;
+  mode?: SubjectMatchMode;
+}
+
+const findSubjectOccurrence = ({
+  content,
+  subject,
+  preferredLine,
+  mode = 'quoted',
+}: SubjectOccurrenceInput): SourcePosition | null => {
   if (!subject || typeof subject !== 'string') { return null; }
   const colOffset = subjectColumnOffset(subject);
   const escaped = escapeRegex(subject);
@@ -168,13 +187,19 @@ const findSubjectOccurrence = (
   ).position;
 };
 
-const findTemplatePattern = (
-  content: string,
-  subject: string,
-  preferredLine: number | null
-): SourcePosition | null => {
+interface TemplatePatternInput {
+  content: string;
+  subject: string;
+  preferredLine: number | null;
+}
+
+const findTemplatePattern = ({
+  content,
+  subject,
+  preferredLine,
+}: TemplatePatternInput): SourcePosition | null => {
   const pattern = `{{ ${subject} }}`;
-  const match = findTemplateOccurrence(content, pattern, preferredLine);
+  const match = findTemplateOccurrence({ content, templateHint: pattern, preferredLine });
   if (!match) { return null; }
   const pos = positionAtOffset(content, match.index + 3);
   return { line: pos.lineOffset + 1, col: pos.col + 1 };
@@ -198,18 +223,26 @@ const matchStringTemplate = (input: CallerPositionInput): SourcePosition | null 
     return matchTemplateInCaller({ content, templateHint: `{{ ${subject} }}`, errLineno, errColno, preferredLine });
   }
   if (subject && template.trim() === `{{ ${subject} }}`) {
-    return findTemplatePattern(content, subject, preferredLine);
+    return findTemplatePattern({ content, subject, preferredLine });
   }
   return null;
 };
 
-const matchWithoutTemplateSource = (
-  content: string,
-  subject: string,
-  errLineno: number | null,
-  errColno: number | null,
-  preferredLine: number | null
-): SourcePosition | null => {
+interface MatchWithoutTemplateSourceInput {
+  content: string;
+  subject: string;
+  errLineno: number | null;
+  errColno: number | null;
+  preferredLine: number | null;
+}
+
+const matchWithoutTemplateSource = ({
+  content,
+  subject,
+  errLineno,
+  errColno,
+  preferredLine,
+}: MatchWithoutTemplateSourceInput): SourcePosition | null => {
   const pattern = `{{ ${subject} }}`;
   if (errLineno !== null && errColno !== null) {
     const line = content.split('\n')[errLineno - 1];
@@ -226,7 +259,7 @@ const matchWithoutTemplateSource = (
       }
     }
   }
-  return findTemplatePattern(content, subject, preferredLine);
+  return findTemplatePattern({ content, subject, preferredLine });
 };
 
 const resolveEffectiveSubject = (subject: string | null, template: string | null): string =>
@@ -240,19 +273,19 @@ const extractTemplatePosition = (input: CallerPositionInput): SourcePosition | n
     return matchStringTemplate(input);
   }
   if (template === null && subject) {
-    return matchWithoutTemplateSource(content, subject, errLineno, errColno, preferredLine);
+    return matchWithoutTemplateSource({ content, subject, errLineno, errColno, preferredLine });
   }
   return null;
 };
 
 const extractQuotedSubjectPosition = (input: CallerPositionInput): SourcePosition | null => {
   const effectiveSubject = resolveEffectiveSubject(input.subject, input.template);
-  return findSubjectOccurrence(input.content, effectiveSubject, input.preferredLine, 'quoted');
+  return findSubjectOccurrence({ content: input.content, subject: effectiveSubject, preferredLine: input.preferredLine, mode: 'quoted' });
 };
 
 const extractBareSubjectPosition = (input: CallerPositionInput): SourcePosition | null => {
   const effectiveSubject = resolveEffectiveSubject(input.subject, input.template);
-  return findSubjectOccurrence(input.content, effectiveSubject, input.preferredLine, 'bare');
+  return findSubjectOccurrence({ content: input.content, subject: effectiveSubject, preferredLine: input.preferredLine, mode: 'bare' });
 };
 
 export { extractTemplatePosition, extractQuotedSubjectPosition, extractBareSubjectPosition };

@@ -36,13 +36,15 @@ const buildErrorMessage = ({ currentPath, sourceLineno, finalColno, e }: BuildEr
   return `(${currentPath})${locationPart}\n  ${e.message}`;
 };
 
-const extractFrameDetails = (
-  e: ErrorWithLineInfo,
-  sourceLineno: number | undefined,
-  sourceColno: number | undefined,
-  currentPath: string | undefined,
-  hasIncludeChain: unknown
-): Error | null => {
+interface ExtractFrameDetailsInput {
+  error: ErrorWithLineInfo;
+  sourceLineno: number | undefined;
+  sourceColno: number | undefined;
+  currentPath: string | undefined;
+  hasIncludeChain: unknown;
+}
+
+const extractFrameDetails = ({ error: e, sourceLineno, sourceColno, currentPath, hasIncludeChain }: ExtractFrameDetailsInput): Error | null => {
   if (hasIncludeChain) { return null; }
   if (e.lineBase === 'zero' || e.lineBase === 'one') { return null; }
   if (sourceLineno === undefined) { return null; }
@@ -71,7 +73,7 @@ const createTemplateErrorHandler = (getState: () => { path: string | undefined; 
     const sourceColno = e.colno;
     const hasIncludeChain = e.includeChain ?? includeChain;
 
-    const extracted = extractFrameDetails(e, sourceLineno, sourceColno, path, hasIncludeChain);
+    const extracted = extractFrameDetails({ error: e, sourceLineno, sourceColno, currentPath: path, hasIncludeChain });
     if (extracted) { return extracted; }
     if (e.path) { return e; }
     return Object.assign(Object.create(Object.getPrototypeOf(e) ?? Error.prototype), e, { path }) as ErrorWithLineInfo;

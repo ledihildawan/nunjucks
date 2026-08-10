@@ -107,17 +107,20 @@ const readFileSource = async (fullPath: string): Promise<FileSystemLoaderSource 
 
 const isFileChangeEvent = (eventType: string) => eventType === 'change' || eventType === 'rename';
 
-const createWatchHandler = (
-  filePath: string,
-  emit: (event: string, ...args: unknown[]) => void,
-  onRename: (filePath: string) => void,
-) => (eventType: string, filename: string | null) => {
-  if (!isFileChangeEvent(eventType)) { return; }
+interface CreateWatchHandlerOptions {
+  filePath: string;
+  emit: (event: string, ...args: unknown[]) => void;
+  onRename: (filePath: string) => void;
+}
 
-  emit('update', filename ?? filePath, filePath);
+const createWatchHandler = ({ filePath, emit, onRename }: CreateWatchHandlerOptions) =>
+  (eventType: string, filename: string | null) => {
+    if (!isFileChangeEvent(eventType)) { return; }
 
-  if (eventType === 'rename') { onRename(filePath); }
-};
+    emit('update', filename ?? filePath, filePath);
+
+    if (eventType === 'rename') { onRename(filePath); }
+  };
 
 export interface FileSystemLoaderSource {
   src: string;
@@ -158,7 +161,7 @@ export const createFileSystemLoader = (searchPaths: string | string[] | undefine
   const watchFile = (filePath: string): void => {
     if (watchedFiles.has(filePath)) { return; }
 
-    const watcher = watch(filePath, createWatchHandler(filePath, base.emit, unwatchFile));
+    const watcher = watch(filePath, createWatchHandler({ filePath, emit: base.emit, onRename: unwatchFile }));
     watchedFiles.set(filePath, watcher);
   };
 
