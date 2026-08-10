@@ -23,6 +23,8 @@ interface RenderConfig {
   dev?: boolean;
   autoescape?: boolean;
   undefined?: UndefinedMode;
+  trimBlocks?: boolean;
+  lstripBlocks?: boolean;
   globals?: Record<string, unknown>;
   sandbox?: boolean;
   sandboxAllowlist?: readonly string[];

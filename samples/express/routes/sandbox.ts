@@ -106,14 +106,17 @@ router.get('/', async (_req: Request, res: Response) => {
   </div>
 
   <h2>Code Example</h2>
-  <pre>// Enable sandbox via config
-const html = await nunjucks(template, context, { sandbox: true });
+  <pre>// Enable sandbox via the factory config
+const njk = nunjucks({ security: { sandbox: true } });
+const html = await njk.render(template, context);
 
 // Allowlist mode - only allow specific keys
-const html2 = await nunjucks(template, context, {
-  sandbox: true,
-  sandboxAllowlist: ['user', 'name'],
-  sandboxMode: 'allowlist'
+const njk2 = nunjucks({
+  security: {
+    sandbox: true,
+    sandboxAllowlist: ['user', 'name'],
+    sandboxMode: 'allowlist'
+  }
 });</pre>
 </body>
 </html>
@@ -140,7 +143,7 @@ router.get('/test', async (_req: Request, res: Response) => {
 
   const results = await Promise.all(tests.map(async (test): Promise<TestResult> => {
     try {
-      const result = await renderTemplate({ template: test.template, context, config: { sandbox: test.sandbox } });
+      const result = await renderTemplate({ template: test.template, context, config: { security: { sandbox: test.sandbox } } });
       return { name: test.name, result, error: null, blocked: false };
     } catch (e) {
       return { name: test.name, result: null, error: (e as Error).message, blocked: true };
@@ -269,9 +272,11 @@ router.get('/allowlist', async (_req: Request, res: Response) => {
   const results = await Promise.all(tests.map(async (test): Promise<TestResult> => {
     try {
       const result = await renderTemplate({ template: test.template, context, config: {
-        sandbox: true,
-        sandboxAllowlist: allowlist,
-        sandboxMode: 'allowlist'
+        security: {
+          sandbox: true,
+          sandboxAllowlist: allowlist,
+          sandboxMode: 'allowlist'
+        }
       } });
       return { name: test.name, result, error: null, passed: test.shouldPass };
     } catch (e) {
@@ -357,7 +362,7 @@ router.get('/code-execution', async (_req: Request, res: Response) => {
 
   const results = await Promise.all(tests.map(async (test): Promise<TestResult> => {
     try {
-      const result = await renderTemplate({ template: test.template, context, config: { sandbox: true } });
+      const result = await renderTemplate({ template: test.template, context, config: { security: { sandbox: true } } });
       return { name: test.name, result, error: null, blocked: false };
     } catch (e) {
       return { name: test.name, result: null, error: (e as Error).message, blocked: true };

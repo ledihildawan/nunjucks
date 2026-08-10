@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import { createEngine, type ExpressEngineConfig } from '@nunjucks/integrations/express';
 import { renderTemplate } from './lib/render-template.ts';
-import { renderToStream, pipeRenderStream, render } from '@nunjucks/core';
+import { nunjucks } from '@nunjucks/core';
 import { formatError } from '@nunjucks/log';import { demoRouter } from './routes/demo.ts';
 import { errorRouter } from './routes/errors.ts';
 import { boundaryRouter } from './routes/boundaries.ts';
@@ -101,30 +101,51 @@ const formatPrice = (value: unknown): string => {
   return Number.isFinite(n) ? `$${n.toFixed(2)}` : '—';
 };
 
-const streamContext = {
-  context: {
-    mode: 'Streaming',
-    kpi: { revenue: '$125,430', revenueNum: 125430, orderCount: 342, orders: '342', conversion: '3.2' },
-    orders: [
-      { id: 'ORD-7841', customer: 'Alice Chen', total: 89.99, shipping: { city: 'Jakarta' }, status: 'shipped' },
-      { id: 'ORD-7842', customer: 'Bob Smith', total: 245.00, shipping: {}, status: 'processing' },
-      { id: 'ORD-7843', customer: 'Charlie Doe', total: 12.50, shipping: { city: 'Bandung' }, status: 'pending' },
-    ],
-    products: [
-      { name: 'Wireless Headphones', price: 79.99, stock: 23 },
-      { name: 'USB-C Hub 8-in-1', price: 34.50, stock: 0 },
-      { name: 'Mechanical Keyboard', price: 129.00, stock: 7 },
-    ],
-    customer: { name: 'Ada Lovelace', joinedAt: 'Jan 2024' },
-    timestamp: new Date().toISOString(),
-  },
+const dashboardData = {
+  mode: 'Streaming',
+  kpi: { revenue: '$125,430', revenueNum: 125430, orderCount: 342, orders: '342', conversion: '3.2' },
+  orders: [
+    { id: 'ORD-7841', customer: 'Alice Chen', total: 89.99, shipping: { city: 'Jakarta' }, status: 'shipped' },
+    { id: 'ORD-7842', customer: 'Bob Smith', total: 245.00, shipping: {}, status: 'processing' },
+    { id: 'ORD-7843', customer: 'Charlie Doe', total: 12.50, shipping: { city: 'Bandung' }, status: 'pending' },
+  ],
+  products: [
+    { name: 'Wireless Headphones', price: 79.99, stock: 23 },
+    { name: 'USB-C Hub 8-in-1', price: 34.50, stock: 0 },
+    { name: 'Mechanical Keyboard', price: 129.00, stock: 7 },
+  ],
+  customer: { name: 'Ada Lovelace', joinedAt: 'Jan 2024' },
+  timestamp: new Date().toISOString(),
+};
+
+// WHY: one factory per distinct config profile. /stream + /stream-api share strict-undefined + recovery;
+// /stream-normal is a non-strict blocking benchmark; /stream-api adds the JSON content type (fatal sentinels).
+// Configuring once at module load avoids rebuilding the engine per request.
+const streamNjk = nunjucks({
   dev: true,
   undefined: 'strict',
-  streamErrorRecovery: true,
-  executionTimeout: 30000,
   views: VIEWS,
   filters: { slow, formatPrice },
-};
+  limits: { executionTimeout: 30000 },
+  streaming: { errorRecovery: true },
+});
+
+const blockingNjk = nunjucks({
+  dev: true,
+  undefined: 'default',
+  views: VIEWS,
+  filters: { slow, formatPrice },
+  limits: { executionTimeout: 30000 },
+});
+
+const apiNjk = nunjucks({
+  dev: true,
+  undefined: 'strict',
+  views: VIEWS,
+  filters: { slow, formatPrice },
+  limits: { executionTimeout: 30000 },
+  streaming: { errorRecovery: true, contentType: 'json' },
+});
 
 // WHY: wires an Express client-disconnect to an AbortSignal so pipeRenderStream can abort the render and cascade-cleanup (Fase 1) the moment the browser closes the connection. The `!res.writableEnded` guard avoids a spurious abort after the response has already completed normally. The listener lives for the request lifecycle (GC'd with req) — no leak.
 const createDisconnectSignal = (req: Request, res: Response): AbortSignal => {
@@ -135,12 +156,10 @@ const createDisconnectSignal = (req: Request, res: Response): AbortSignal => {
 
 // WHY: streaming route — uses {% extends %} + {% block %} template files. Error recovery + strict mode means missing data (order #2 city, customer bio) produces inline markers. Demonstrates the full production guardrail chain: client-disconnect signal (cascade cleanup), idle per-chunk timeout (timeoutMs), total deadline (executionTimeout via streamContext), output-size breaker (maxOutputSize), and per-phase error observability (onError). onComplete logs chunk count, error count, total KB.
 app.get('/stream', async (req: Request, res: Response) => {
-  await pipeRenderStream(
-    await renderToStream('stream-dashboard.njk', streamContext),
+  await streamNjk.pipeRenderStream(
+    await streamNjk.renderToStream('stream-dashboard.njk', { ...dashboardData, mode: 'Streaming' }),
     res,
     {
-      contentType: 'html',
-      dev: true,
       signal: createDisconnectSignal(req, res),
       timeoutMs: 10000,
       maxOutputSize: 2 * 1024 * 1024,
@@ -156,7 +175,7 @@ app.get('/stream', async (req: Request, res: Response) => {
 
 // WHY: benchmark comparison — same template + data + config, but blocking render. Both routes succeed (non-strict for normal) so the comparison is purely about SPEED: /stream shows progressive block-by-block render; /stream-normal buffers everything, user waits for the full render before seeing anything. The `req.destroyed` guard skips sending a buffered response to a client that disconnected during the (potentially long) blocking render — the render itself cannot be aborted mid-flight (no signal on the blocking API), but executionTimeout (via streamContext) bounds its total time.
 app.get('/stream-normal', async (req: Request, res: Response) => {
-  const result = await render('stream-dashboard.njk', { ...streamContext, mode: 'Blocking', streamErrorRecovery: false, undefined: 'default' });
+  const result = await blockingNjk.render('stream-dashboard.njk', { ...dashboardData, mode: 'Blocking' });
   if (req.destroyed) { return; }
   if (result.ok) {
     res.type('html').send(result.value);
@@ -167,21 +186,10 @@ app.get('/stream-normal', async (req: Request, res: Response) => {
 
 // WHY: JSON streaming API — same dashboard data but rendered as JSON. Walrus operator computes derived field inline. NOTE: JSON cannot absorb inline error markers without corrupting the response (a bare {error:...} fragment after a JSON prefix is unparseable), so streamContentType: 'json' makes any mid-stream recoverable sentinel FATAL — the stream aborts to the Tier 3 mid-stream path (onError fires, response ends) rather than emitting a marker. Use html/text if you want per-expression inline recovery.
 app.get('/stream-api', async (req: Request, res: Response) => {
-  await pipeRenderStream(
-    await renderToStream('{{ avgOrder := kpi.revenueNum / kpi.orderCount }}{{ { revenue: kpi.revenue, avgOrder: avgOrder, orders: orders, customer: customer } |> tojson }}', {
-      context: { ...streamContext.context, mode: 'JSON API' },
-      dev: true,
-      undefined: 'strict',
-      streamErrorRecovery: true,
-      streamContentType: 'json',
-      executionTimeout: 30000,
-      views: VIEWS,
-      filters: { slow, formatPrice },
-    }),
+  await apiNjk.pipeRenderStream(
+    await apiNjk.renderToStream('{{ avgOrder := kpi.revenueNum / kpi.orderCount }}{{ { revenue: kpi.revenue, avgOrder: avgOrder, orders: orders, customer: customer } |> tojson }}', { ...dashboardData, mode: 'JSON API' }),
     res,
     {
-      contentType: 'json',
-      dev: true,
       signal: createDisconnectSignal(req, res),
       onError: (err, phase) => {
         console.log(`[stream-api] ${phase} error: ${err.message}`);

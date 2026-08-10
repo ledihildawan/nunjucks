@@ -105,7 +105,7 @@ interface CompileTemplateInput {
 }
 
 const compileTemplate = ({ templateSource, config, templateName }: CompileTemplateInput): Result<CompileResult, Error> => {
-  const codeResult = compileToCode({ source: templateSource, templateName, undefinedMode: config.undefined, parseOpts: { undefined: config.undefined } as ParseOptions, streamErrorRecovery: config.streamErrorRecovery ?? false });
+  const codeResult = compileToCode({ source: templateSource, templateName, undefinedMode: config.undefined, parseOpts: { undefined: config.undefined, trimBlocks: config.trimBlocks, lstripBlocks: config.lstripBlocks } as ParseOptions, streamErrorRecovery: config.streamErrorRecovery ?? false });
   return isErr(codeResult) ? codeResult : ok({ code: codeResult.value });
 };
 
