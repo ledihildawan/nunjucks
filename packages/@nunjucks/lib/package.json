@@ -19,7 +19,8 @@
     "./get-error-message": "./src/get-error-message.ts",
     "./sanitize-helpers": "./src/sanitize-helpers.ts",
     "./string-case": "./src/string-case.ts",
-    "./path-basename": "./src/path-basename.ts"
+    "./path-basename": "./src/path-basename.ts",
+    "./is-digit": "./src/is-digit.ts"
   },
   "dependencies": {
     "remeda": "^2.39.0"

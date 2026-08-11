@@ -7,6 +7,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@nunjucks/lib": "workspace:*",
     "remeda": "^2.39.0"
   },
   "description": "Lexer for Nunjucks template engine"

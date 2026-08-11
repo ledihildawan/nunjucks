@@ -20,3 +20,4 @@ export * from './get-error-message.ts';
 export * from './sanitize-helpers.ts';
 export * from './string-case.ts';
 export * from './path-basename.ts';
+export * from './is-digit.ts';
