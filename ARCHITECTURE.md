@@ -96,6 +96,21 @@ Positional parameters > 2 are strictly allowed without options objects **ONLY** 
 - **Encapsulation via Scope** — Restrict exports. Keep internal helper functions private to the module/file scope.
 - **Test Co-location** — Keep unit and behavior tests alongside the implementation files they target.
 
+### Error Cluster Architecture (formatter ↔ renderer)
+
+The error cluster (`@nunjucks/error-catalog`, `@nunjucks/error-formatter`, `@nunjucks/error-renderer`) follows an **orchestrator pattern**:
+
+- **`error-renderer`** — presentation primitive. Provides low-level formatting: syntax highlighting, ANSI escape codes, HTML rendering, source trace layout. It has no business logic — it receives structured data and renders it.
+- **`error-formatter`** — orchestrator. Owns error/warning *business logic*: maps raw errors to catalog definitions, resolves line bases, builds structured log objects (`createLog`), assembles context for renderer. It calls renderer to do the actual presentation.
+- **`error-catalog`** — registry. Holds `ERROR_DEFINITIONS`, `TEMPLATE_ERROR` branding, `LineBase`/`normalizeLineBase` primitives, and pure error-classification logic. It is the lowest-level primitive.
+
+**The import direction `error-formatter → error-renderer` is correct.** Formatter orchestrates; renderer provides primitives. This is not a layering inversion — it is a deliberate **presentation-separation pattern** where the orchestrator (formatter) delegates to a specialized presenter (renderer). The renderer is intentionally unaware of Nunjucks error semantics.
+
+This architecture enables:
+- `error-renderer` to be reusable for non-Nunjucks error rendering (pure presentation)
+- `error-formatter` to be unit-testable in isolation from presentation
+- `error-catalog` to be a pure, stateless registry consumable by any layer
+
 ## 7. Naming Conventions & Readability
 
 - **Strict Semantic Naming** — Variable, function, and parameter names must express domain intent clearly. Using generic numeric suffixes (e.g., `node1`, `node2`, `data1`, `item2`) is strictly prohibited. Names must describe the specific role or context (e.g., `leftNode`, `rightNode`, `sourceData`, `targetData`).
@@ -197,3 +212,12 @@ The factory owns the loader lifecycle (closure-scoped cache per `views` path, is
 
 1. **Pass-1 (`prepareRender`)** — validate config + context (security name-check, dangerous-value scan), resolve the template source (inline vs file), compile to JS. A failure here is returned as `{ ok: false, error }` so the consumer can still render an error page (response headers not yet sent).
 2. **Pass-2 (`createRenderStream`)** — the async generator yields chunks; mid-stream runtime errors throw after chunks are emitted. `streamErrorRecovery: true` wraps each `{{ expr }}` in a per-expression try/catch (inline marker instead of termination). See §8 for the three-tier error strategy.
+
+### Context defense-in-depth
+
+`scanContextValues` (default `true`) scans template context values for dangerous objects (`eval`, `Function`, `process`, etc.) during render preparation. This is a **defense-in-depth** measure — it does not replace the sandbox, it complements it:
+
+- **Sandbox** is the primary defense: it blocks access to global intrinsics and dangerous constructors at runtime when template code *executes*.
+- **Context scanning** is the secondary defense: it detects dangerous values *in the data context* before render begins, warn-or-block based on `contextStrict` + `dev` mode.
+
+Both layers must be enabled for full protection. The sandbox is ineffective if a template accesses `process.env.SECRET` passed in the context — context scanning catches this at preparation time.
