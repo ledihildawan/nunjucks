@@ -1,7 +1,7 @@
-import type { SourceTrace } from './internal/location/source-trace.ts';
-import { toDisplayLocation } from './internal/location/location.ts';
+import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
+import { toDisplayLocation } from './presentation/source-trace/location.ts';
 import { extractAnsiErrorParts, formatMediumAnsi, formatFullAnsi, getErrorMessage } from './ansi/format-helpers';
-import { DEFAULT_IDE } from './internal/config/defaults.ts';
+import { DEFAULT_IDE } from './presentation/ide-links/defaults.ts';
 
 export { toAnsi };
 export type { AnsiOptions };

@@ -1,8 +1,8 @@
-import { escapeHtml, highlightHtml, renderInlineMarkdown } from './internal/highlight/highlight.ts';
+import { escapeHtml, highlightHtml, renderInlineMarkdown } from './presentation/syntax-highlight/highlight.ts';
 import { join, map, pipe } from 'remeda';
-import { renderContextHtml, formatStackTraceHtml } from './internal/formatting/sections.ts';
-import { resolveIdeLink, getIdeMeta } from './internal/config/ide-links.ts';
-import type { SourceTrace } from './internal/location/source-trace.ts';
+import { renderContextHtml, formatStackTraceHtml } from './presentation/error/sections.ts';
+import { resolveIdeLink, getIdeMeta } from './presentation/ide-links/ide-links.ts';
+import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
 import type { ErrorLike } from './to-html-types.ts';
 import { renderBadge, type classifyError } from './to-html-display.ts';
 

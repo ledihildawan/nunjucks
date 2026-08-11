@@ -1,4 +1,4 @@
-import { normalizeDrivePath } from '../location/path-shortener.ts';
+import { normalizeDrivePath } from '../source-trace/path-shortener.ts';
 
 const FILE_PATH_PATTERN = /\.(njk|nunjucks|js|ts|mjs|cjs|jsx|tsx|html|htm|tmpl|tpl|pug|ejs|handlebars|hbs|erb|php|py|rb|go|java|c|cpp|h|cs|rs|swift|kt|scala|css|scss|sass|less|styl|json|yaml|yml|xml|md|txt)$/iu;
 

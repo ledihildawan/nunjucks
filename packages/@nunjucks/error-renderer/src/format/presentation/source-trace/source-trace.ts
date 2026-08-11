@@ -1,7 +1,7 @@
 import type { LineBase } from '@nunjucks/error-catalog';
 import { escapeRegex } from '@nunjucks/shared';
 import { toDisplayLocation } from './location.ts';
-import { calculateCaretPosition } from '../highlight/caret.ts';
+import { calculateCaretPosition } from '../syntax-highlight/caret.ts';
 
 const buildSecretValuePattern = (blockedKeys: readonly string[] | null): RegExp | null => {
   if (!blockedKeys || blockedKeys.length === 0) { return null; }

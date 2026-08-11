@@ -1,8 +1,8 @@
 import { pipe, keys, values, filter, join, map, split } from 'remeda';
-import { escapeHtml, highlightHtml, highlightJs } from '../highlight/highlight.ts';
-import { isFilePath, resolveIdeLink } from '../config/ide-links.ts';
-import { shortenPath } from '../location/path-shortener.ts';
-import { DEFAULT_IDE } from '../config/defaults.ts';
+import { escapeHtml, highlightHtml, highlightJs } from '../syntax-highlight/highlight.ts';
+import { isFilePath, resolveIdeLink } from '../ide-links/ide-links.ts';
+import { shortenPath } from '../source-trace/path-shortener.ts';
+import { DEFAULT_IDE } from '../ide-links/defaults.ts';
 import { normalizeRenderContext } from './safe-context.ts';
 import { replace, slice } from '@nunjucks/shared';
 

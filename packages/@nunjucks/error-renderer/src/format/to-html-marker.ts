@@ -1,8 +1,8 @@
 import { toHtml } from './to-html.ts';
 import { classifyAndBuildTitle } from './to-html-display.ts';
-import { escapeHtml } from './internal/highlight/highlight.ts';
-import { shortenPath } from './internal/location/path-shortener.ts';
-import { resolveIdeLink, isFilePath } from './internal/config/ide-links.ts';
+import { escapeHtml } from './presentation/syntax-highlight/highlight.ts';
+import { shortenPath } from './presentation/source-trace/path-shortener.ts';
+import { resolveIdeLink, isFilePath } from './presentation/ide-links/ide-links.ts';
 import type { ErrorLike, ToHtmlOptions } from './to-html-types.ts';
 
 const ALERT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';

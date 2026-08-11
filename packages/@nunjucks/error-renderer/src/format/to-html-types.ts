@@ -1,6 +1,6 @@
 import type { LineBase } from '@nunjucks/error-catalog';
 import type { Phase } from '@nunjucks/shared';
-import type { SourceTrace } from './internal/location/source-trace.ts';
+import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
 import type { ErrorLike } from '@nunjucks/error-catalog';
 
 export type { ErrorLike };

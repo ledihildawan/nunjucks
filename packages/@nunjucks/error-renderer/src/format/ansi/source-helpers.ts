@@ -1,6 +1,6 @@
 import picocolors from 'picocolors';
-import { highlightAnsi } from '../internal/highlight/highlight.ts';
-import type { SourceTraceLine, SourceTraceCaret } from '../internal/location/source-trace.ts';
+import { highlightAnsi } from '../presentation/syntax-highlight/highlight.ts';
+import type { SourceTraceLine, SourceTraceCaret } from '../presentation/source-trace/source-trace.ts';
 
 export { formatSourceTrace, formatCodeLine, getLinePrefix, formatCaretLine, getMarker, getLineNumWidth };
 

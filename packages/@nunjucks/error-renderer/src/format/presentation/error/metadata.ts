@@ -1,7 +1,7 @@
 import type { LineBase } from '@nunjucks/error-catalog';
 import type { Phase } from '@nunjucks/shared';
-import type { SourceTrace } from '../location/source-trace.ts';
-import { DEFAULT_IDE } from '../config/defaults.ts';
+import type { SourceTrace } from '../source-trace/source-trace.ts';
+import { DEFAULT_IDE } from '../ide-links/defaults.ts';
 
 export interface NormalizedLogMetadata {
   lineno: number | null;

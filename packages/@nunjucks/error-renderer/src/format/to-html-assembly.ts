@@ -1,9 +1,9 @@
 import { buildErrorHeader, buildErrorFooter, buildErrorBodyContent, buildHtmlWrapper } from './to-html-builder.ts';
 import { classifyAndBuildTitle, buildErrorDisplay } from './to-html-display.ts';
-import { isFilePath } from './internal/config/ide-links.ts';
-import { shortenPath } from './internal/location/path-shortener.ts';
-import { DEFAULT_IDE, DEFAULT_VERSION } from './internal/config/defaults.ts';
-import type { SourceTrace } from './internal/location/source-trace.ts';
+import { isFilePath } from './presentation/ide-links/ide-links.ts';
+import { shortenPath } from './presentation/source-trace/path-shortener.ts';
+import { DEFAULT_IDE, DEFAULT_VERSION } from './presentation/ide-links/defaults.ts';
+import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
 import type { ErrorLike } from './to-html-types.ts';
 
 interface ErrorSectionsInput {

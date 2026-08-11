@@ -1,8 +1,8 @@
 import { classifyFromError } from '@nunjucks/error-catalog';
-import { mergeErrorParts } from './internal/formatting/error-parts.ts';
+import { mergeErrorParts } from './presentation/error/error-parts.ts';
 import { toText } from './to-text.ts';
-import { escapeHtml } from './internal/highlight/highlight.ts';
-import { toDisplayLocation } from './internal/location/location.ts';
+import { escapeHtml } from './presentation/syntax-highlight/highlight.ts';
+import { toDisplayLocation } from './presentation/source-trace/location.ts';
 import type { LineBase } from '@nunjucks/error-catalog';
 import type { ClassifiedError, ErrorLike, HumanTitleInput, LocationInfo } from './to-html-types.ts';
 
