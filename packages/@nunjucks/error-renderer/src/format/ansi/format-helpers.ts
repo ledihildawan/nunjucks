@@ -1,5 +1,5 @@
 import { pipe, filter, join, map, split } from 'remeda';
-import { slice } from '@nunjucks/shared';
+import { slice } from '@nunjucks/lib';
 import picocolors from 'picocolors';
 import { toDisplayLocation } from '../presentation/source-trace/location.ts';
 import type { LineBase } from '@nunjucks/error-catalog';

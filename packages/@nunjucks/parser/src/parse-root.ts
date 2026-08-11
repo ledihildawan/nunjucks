@@ -10,7 +10,9 @@ import { nodeList, output, templateData } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/log';
 import { pipe } from 'remeda';
-import { replace, loc, ZERO_LOC, ok, isErr, type Result } from '@nunjucks/shared';
+import { replace } from '@nunjucks/lib';
+import { loc, ZERO_LOC } from '@nunjucks/shared';
+import { ok, isErr, type Result } from '@nunjucks/lib';
 import {
   nextTokenOrNull,
   peekTokenOrNull,

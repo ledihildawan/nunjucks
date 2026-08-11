@@ -1,5 +1,5 @@
 import { pipe, split } from 'remeda';
-import { replace } from '@nunjucks/shared';
+import { replace } from '@nunjucks/lib';
 
 import type { Warning } from '@nunjucks/error-catalog';
 

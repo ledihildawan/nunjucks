@@ -4,7 +4,7 @@ import { isFilePath, resolveIdeLink } from '../ide-links/ide-links.ts';
 import { shortenPath } from '../source-trace/path-shortener.ts';
 import { DEFAULT_IDE } from '../ide-links/defaults.ts';
 import { normalizeRenderContext } from './safe-context.ts';
-import { replace, slice } from '@nunjucks/shared';
+import { replace, slice } from '@nunjucks/lib';
 
 const FILE_URL_PREFIX_RE = /^file:\/\/+/u;
 const LEADING_WHITESPACE_RE = /^\s*/u;
