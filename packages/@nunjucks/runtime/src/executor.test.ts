@@ -15,19 +15,19 @@ describe('execute', () => {
   describe('basic execution', () => {
     test('renders compiled code and returns the output string', async () => {
       const code = compileBody('yield "hello world";');
-      const result = await execute(code, {}, emptyFrame(), null, {});
+      const result = await execute({ code, context: {}, frame: emptyFrame(), env: null, config: {} });
       expect(result).toBe('hello world');
     });
 
     test('returns a string built from a buffered output', async () => {
       const code = compileBody('yield "foo";\nyield "bar";');
-      const result = await execute(code, {}, emptyFrame(), null, {});
+      const result = await execute({ code, context: {}, frame: emptyFrame(), env: null, config: {} });
       expect(result).toBe('foobar');
     });
 
     test('preserves and renders variables from the context', async () => {
       const code = outputVariable('name');
-      const result = await execute(code, { name: 'Alice' }, emptyFrame(), null, { autoescape: false });
+      const result = await execute({ code, context: { name: 'Alice' }, frame: emptyFrame(), env: null, config: { autoescape: false } });
       expect(result).toBe('Alice');
     });
   });
@@ -35,13 +35,13 @@ describe('execute', () => {
   describe('autoescape', () => {
     test('defaults to true and escapes HTML', async () => {
       const code = outputVariable('html');
-      const result = await execute(code, { html: '<b>Alice</b>' }, emptyFrame(), null, {});
+      const result = await execute({ code, context: { html: '<b>Alice</b>' }, frame: emptyFrame(), env: null, config: {} });
       expect(result).toBe('&lt;b&gt;Alice&lt;/b&gt;');
     });
 
     test('when false, renders raw HTML', async () => {
       const code = outputVariable('html');
-      const result = await execute(code, { html: '<b>Alice</b>' }, emptyFrame(), null, { autoescape: false });
+      const result = await execute({ code, context: { html: '<b>Alice</b>' }, frame: emptyFrame(), env: null, config: { autoescape: false } });
       expect(result).toBe('<b>Alice</b>');
     });
   });
@@ -49,30 +49,30 @@ describe('execute', () => {
   describe('modes', () => {
     test('sandbox = true still renders output', async () => {
       const code = compileBody('yield "sandboxed";');
-      const result = await execute(code, {}, emptyFrame(), null, { sandbox: true });
+      const result = await execute({ code, context: {}, frame: emptyFrame(), env: null, config: { sandbox: true } });
       expect(result).toBe('sandboxed');
     });
 
     test('sandbox = true still reads context variables', async () => {
       const code = outputVariable('name');
-      const result = await execute(code, { name: 'Bob' }, emptyFrame(), null, { sandbox: true, autoescape: false });
+      const result = await execute({ code, context: { name: 'Bob' }, frame: emptyFrame(), env: null, config: { sandbox: true, autoescape: false } });
       expect(result).toBe('Bob');
     });
 
     test('dev = true still renders output', async () => {
       const code = compileBody('yield "dev mode";');
-      const result = await execute(code, {}, emptyFrame(), null, { dev: true });
+      const result = await execute({ code, context: {}, frame: emptyFrame(), env: null, config: { dev: true } });
       expect(result).toBe('dev mode');
     });
   });
 
   describe('error handling', () => {
     test('rejects when code does not start with "async function* root"', async () => {
-      await expect(execute('this is not valid code', {}, emptyFrame(), null, {})).rejects.toThrow();
+      await expect(execute({ code: 'this is not valid code', context: {}, frame: emptyFrame(), env: null, config: {} })).rejects.toThrow();
     });
 
     test('rejects when the root function is missing', async () => {
-      await expect(execute('function notRoot() {}', {}, emptyFrame(), null, {})).rejects.toThrow();
+      await expect(execute({ code: 'function notRoot() {}', context: {}, frame: emptyFrame(), env: null, config: {} })).rejects.toThrow();
     });
   });
 });

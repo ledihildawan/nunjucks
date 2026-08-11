@@ -4,7 +4,7 @@ import { withStreamDeadline, coerceChunk, guardSingleConsumer } from './render-s
 import { createFileSystemLoader } from '@nunjucks/loaders';
 import { serializeErrorPayload } from './pipe-stream.ts';
 import type { RenderConfig, RenderStreamResult } from './render-types.ts';
-import { execute, executeStream, createFrame, isStreamErrorSentinel, type StreamErrorSentinel } from '@nunjucks/runtime';
+import { execute, executeStream, createFrame, isStreamErrorSentinel, type StreamErrorSentinel, type ExecuteConfig } from '@nunjucks/runtime';
 import { withTimeout } from '@nunjucks/lib/async/timeout';
 import { getCallerFrames } from './caller-file.ts';
 import { ok, err, isErr, type Result } from '@nunjucks/lib';
@@ -70,7 +70,7 @@ const buildExecutionEnv = (config: RenderConfig) => config.env ?? {
 const executeCompiledTemplate = async (ctx: ExecutionContext, config: RenderConfig): Promise<string> => {
   const frame = createFrame();
   const env = buildExecutionEnv(config);
-  const renderPromise = execute(ctx.code, ctx.sandboxedCtx, frame, env, { ...config });
+  const renderPromise = execute({ code: ctx.code, context: ctx.sandboxedCtx, frame, env, config: config as ExecuteConfig });
 
   if ((config.executionTimeout ?? 0) > 0) {
     return await withTimeout(renderPromise, config.executionTimeout ?? 0);
@@ -260,7 +260,7 @@ const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGe
   const { code, sandboxedCtx, warningsCollector, resolvedConfig, templateSource, context } = prepared;
   const frame = createFrame();
   const env = buildExecutionEnv(resolvedConfig);
-  const rootGenerator = executeStream(code, sandboxedCtx, frame, env, resolvedConfig);
+  const rootGenerator = executeStream({ code, context: sandboxedCtx, frame, env, config: resolvedConfig as ExecuteConfig });
   // WHY: executionTimeout is the TOTAL wall-clock deadline for streaming (same knob as blocking render). When set, withStreamDeadline races every chunk against a single timer and throws a code='TIMEOUT' (Tier 3 fatal) error on expiry. When unset (0), the generator runs unbounded by total time (the consumer's idle timeoutMs is still applicable via pipeRenderStream).
   const deadlineMs = resolvedConfig.executionTimeout ?? 0;
   const generator = deadlineMs > 0 ? withStreamDeadline(rootGenerator, deadlineMs) : rootGenerator;
