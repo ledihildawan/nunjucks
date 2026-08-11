@@ -4,6 +4,8 @@ import { createState, advance, getChar } from './state.ts';
 import { tokenizers } from './tokenizers/index.ts';
 import { createDelimiters } from './delimiters.ts';
 import { WHITESPACE_CHARS } from './constants.ts';
+import { createLog } from '@nunjucks/log';
+import { MATCH_ANY_RE } from '@nunjucks/shared';
 
 const updateCodeState = (tokenType: string, state: LexerState): LexerState => {
   if (tokenType === 'block-start' || tokenType === 'variable-start') {
@@ -22,7 +24,16 @@ const processTokenizerResult = (result: { token: Token; state: LexerState }): Le
 
 const handleUnexpectedChar = (state: LexerState): never => {
   const char = getChar(state);
-  throw new Error(`Unexpected character '${char}' at line ${state.lineno}:${state.colno}`);
+  throw createLog('error', {
+    def: {
+      name: 'UNEXPECTED_CHAR',
+      message: () => `Unexpected character '${char}' at line ${state.lineno}:${state.colno}`,
+      pattern: MATCH_ANY_RE,
+    },
+    params: { char },
+    subject: char,
+    context: { lineno: state.lineno, colno: state.colno, phase: 'parse', lineBase: 'zero' },
+  });
 };
 
 const isWhitespace = (char: string | null): boolean =>

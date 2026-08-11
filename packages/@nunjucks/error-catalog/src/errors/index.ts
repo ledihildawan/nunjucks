@@ -8,6 +8,7 @@ export { SANDBOX_ERRORS } from './sandbox.ts';
 export { IO_ERRORS } from './io.ts';
 export { FILTER_ERRORS } from './filter.ts';
 export { TEMPLATE_ERRORS } from './template.ts';
+export { LEXER_ERRORS } from './lexer.ts';
 export { classifyFromError } from './classify.ts';
 export { createSecurityError, isSecurityError } from './security.ts';
 export type { SecurityError } from './security.ts';

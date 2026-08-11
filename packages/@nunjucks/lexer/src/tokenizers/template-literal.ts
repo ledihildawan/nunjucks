@@ -2,6 +2,8 @@ import type { Tokenizer, LexerState } from '../types.ts';
 import { getChar, getPeek, advance, isFinished } from '../state.ts';
 import { createToken } from '../tokens.ts';
 import { TOKEN_TEMPLATE_LITERAL } from '../token-types.ts';
+import { createLog } from '@nunjucks/log';
+import { MATCH_ANY_RE } from '@nunjucks/shared';
 
 export interface TemplateQuasi {
   type: 'template' | 'expression';
@@ -24,7 +26,16 @@ const processInterpolationChar = (exprChar: string, exprDepth: number): { depthD
     return { depthDelta: -1, charToAdd: exprChar };
   }
   if (isBacktickInExpression(exprChar, exprDepth)) {
-    throw new Error('Unexpected backtick in template expression');
+    throw createLog('error', {
+      def: {
+        name: 'UNEXPECTED_BACKTICK',
+        message: () => 'Unexpected backtick in template expression',
+        pattern: MATCH_ANY_RE,
+      },
+      params: {},
+      subject: null,
+      context: { lineno: null, colno: null, phase: 'parse', lineBase: 'zero' },
+    });
   }
   return { depthDelta: 0, charToAdd: exprChar };
 };

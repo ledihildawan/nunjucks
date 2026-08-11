@@ -7,6 +7,7 @@ import { SANDBOX_ERRORS } from './sandbox.ts';
 import { IO_ERRORS } from './io.ts';
 import { FILTER_ERRORS } from './filter.ts';
 import { TEMPLATE_ERRORS } from './template.ts';
+import { LEXER_ERRORS } from './lexer.ts';
 
 const allErrors = {
   ...RUNTIME_ERRORS,
@@ -14,7 +15,8 @@ const allErrors = {
   ...SANDBOX_ERRORS,
   ...IO_ERRORS,
   ...FILTER_ERRORS,
-  ...TEMPLATE_ERRORS
+  ...TEMPLATE_ERRORS,
+  ...LEXER_ERRORS
 };
 
 type ErrorName = keyof typeof allErrors;
