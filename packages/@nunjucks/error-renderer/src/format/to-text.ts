@@ -5,7 +5,7 @@ import { mergeErrorParts } from './presentation/error/error-parts.ts';
 import { parseStackFrame } from '@nunjucks/lib/stack-parse';
 import { slice } from '@nunjucks/shared';
 import { stripMarkdown } from '@nunjucks/lib/strip-markdown';
-import { getErrorMessage } from './presentation/error/message.ts';
+import { getErrorMessage } from '@nunjucks/lib/get-error-message';
 import type { ErrorLike } from '@nunjucks/error-catalog';
 
 interface ToTextOptions {

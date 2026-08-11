@@ -16,3 +16,4 @@ export * from './stream-timeout.ts';
 export * from './stack-parse.ts';
 export * from './ansi-helpers.ts';
 export * from './strip-markdown.ts';
+export * from './get-error-message.ts';

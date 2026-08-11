@@ -15,7 +15,8 @@
     "./stream-timeout": "./src/stream-timeout.ts",
     "./stack-parse": "./src/stack-parse.ts",
     "./ansi-helpers": "./src/ansi-helpers.ts",
-    "./strip-markdown": "./src/strip-markdown.ts"
+    "./strip-markdown": "./src/strip-markdown.ts",
+    "./get-error-message": "./src/get-error-message.ts"
   },
   "dependencies": {
     "remeda": "^2.39.0"
