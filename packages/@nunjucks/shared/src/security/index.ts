@@ -15,3 +15,4 @@ export { scanTemplateForDangerousCode } from './template-security.ts';
 export type { DangerousCodeViolation } from './template-security.ts';
 export { scrubDangerousReferences, visitAndScrub } from './scrubber.ts';
 export { containsNullByte, isWithinBase } from './path-policy.ts';
+export { ExpressionSecurityError, DEFAULT_SECURITY_CONFIG, type ExpressionSecurityConfig, DANGEROUS_PROPERTIES, DANGEROUS_CALLEES } from './expression-policy.ts';

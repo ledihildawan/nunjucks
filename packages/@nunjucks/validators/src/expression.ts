@@ -1,36 +1,13 @@
 import { getNodeTypeName, isNode, isSymbol } from '@nunjucks/nodes';
 import type { Node, LookupNode, CallNode, SymbolNode } from '@nunjucks/nodes';
-import { OBJECT_INTRINSICS, CODE_EXECUTION_KEYS } from '@nunjucks/shared';
 import type { BaseValidationError } from '@nunjucks/shared';
 import { flatMap } from 'remeda';
+import { ExpressionSecurityError, DEFAULT_SECURITY_CONFIG, DANGEROUS_PROPERTIES, DANGEROUS_CALLEES, type ExpressionSecurityConfig } from '@nunjucks/shared/security';
 
-const ExpressionSecurityError = {
-  DYNAMIC_PROPERTY_ACCESS: 'DYNAMIC_PROPERTY_ACCESS',
-  DANGEROUS_BRACKET_ACCESS: 'DANGEROUS_BRACKET_ACCESS',
-  UNSAFE_PROPERTY: 'UNSAFE_PROPERTY',
-};
-
-const DEFAULT_SECURITY_CONFIG = {
-  allowDynamicPropertyAccess: false,
-  allowConstructorAccess: false,
-  allowPrototypeAccess: false,
-  blockedPropertyPatterns: [
-    /^__/,
-    /constructor$/,
-    /prototype$/,
-  ],
-} as const;
-
-export type ExpressionSecurityConfig = {
-  allowDynamicPropertyAccess?: boolean;
-  allowConstructorAccess?: boolean;
-  allowPrototypeAccess?: boolean;
-  blockedPropertyPatterns?: readonly RegExp[];
-};
+export { ExpressionSecurityError, DEFAULT_SECURITY_CONFIG, DANGEROUS_PROPERTIES, DANGEROUS_CALLEES, validateExpression };
+export type { ExpressionSecurityConfig };
 
 const NON_CHILD_KEYS = new Set(['lineno', 'colno', 'fields']);
-
-const DANGEROUS_PROPERTIES: ReadonlySet<string> = new Set(OBJECT_INTRINSICS);
 
 interface ExpressionValidationError extends BaseValidationError {
   code: string;
@@ -42,8 +19,6 @@ interface ExpressionValidationError extends BaseValidationError {
 export type ExpressionValidationResult =
   | { valid: true; errors: readonly [] }
   | { valid: false; errors: readonly [ExpressionValidationError, ...ExpressionValidationError[]] };
-
-const DANGEROUS_CALLEES: ReadonlySet<string> = new Set(CODE_EXECUTION_KEYS);
 
 const staticPropertyName = (value: Node | null | undefined): string | null => {
   if (!value) { return null; }
@@ -149,5 +124,3 @@ const validateExpression = (ast: Node, config: ExpressionSecurityConfig = {}): E
   }
   return { valid: false, errors: errors as [ExpressionValidationError, ...ExpressionValidationError[]] };
 };
-
-export { ExpressionSecurityError, validateExpression };
