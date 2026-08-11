@@ -1,11 +1,6 @@
 import { flatMap, pipe, reduce } from 'remeda';
-import { slice, escapeRegex } from '@nunjucks/lib';
+import { slice, lineDistance, positionAtOffset, findAllOccurrences, escapeRegex } from '@nunjucks/lib';
 import type { SourcePosition, TemplateMatch } from './error-location-types.ts';
-
-const lineDistance = (line: number, preferredLine: number | null | undefined): number => {
-  if (preferredLine === null || preferredLine === undefined) { return 0; }
-  return Math.abs(line - preferredLine);
-};
 
 const templateCandidates = (templateHint: string): string[] => {
   if (!templateHint.includes('\n')) { return [templateHint]; }
@@ -21,15 +16,6 @@ const templateLiteralText = (template: unknown): string => {
 const subjectColumnOffset = (subject: string): number => {
   if (!subject.includes('.')) { return 0; }
   return subject.lastIndexOf('.') + 1;
-};
-
-const positionAtOffset = (text: string, offset: number): { lineOffset: number; col: number } => {
-  const before = text.slice(0, offset);
-  const parts = before.split('\n');
-  return {
-    lineOffset: parts.length - 1,
-    col: (parts.at(-1)?.length ?? 0)
-  };
 };
 
 interface TemplateCoordinateInput {
@@ -65,10 +51,7 @@ const isCoordinateWithinTemplate = ({
   return col >= 0 && col <= targetLine.length;
 };
 
-const findAllOccurrences = (content: string, candidate: string): number[] => {
-  const escaped = escapeRegex(candidate);
-  return [...content.matchAll(new RegExp(escaped, 'g'))].map((match) => match.index ?? 0);
-};
+
 
 interface TemplateOccurrenceInput {
   content: string;

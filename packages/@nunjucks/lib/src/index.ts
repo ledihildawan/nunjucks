@@ -19,5 +19,6 @@ export * from './strip-markdown.ts';
 export * from './get-error-message.ts';
 export * from './sanitize-helpers.ts';
 export * from './string-case.ts';
+export * from './string/find-all-occurrences.ts';
 export * from './path-basename.ts';
 export * from './is-digit.ts';
