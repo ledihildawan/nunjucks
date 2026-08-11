@@ -3,8 +3,8 @@ import {
   createSandboxedObject,
   createSandboxedContext,
   wrapMemberAccess,
-  isCodeExecutionPattern,
 } from '@nunjucks/runtime/sandbox';
+import { isCodeExecutionPattern } from '@nunjucks/shared';
 
 describe('Sandbox Property-Based Tests', () => {
   describe('OBJECT_INTRINSICS own properties are blocked', () => {

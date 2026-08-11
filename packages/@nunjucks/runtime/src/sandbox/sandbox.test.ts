@@ -4,9 +4,8 @@ import {
   createSandboxedContext,
   wrapMemberAccess,
   isAllowedKey,
-  isBlockedKey,
-  isCodeExecutionPattern,
 } from '@nunjucks/runtime/sandbox';
+import { isBlockedKey, isCodeExecutionPattern } from '@nunjucks/shared';
 
 describe('createSandboxedObject', () => {
   test('returns original object when sandbox disabled', () => {
