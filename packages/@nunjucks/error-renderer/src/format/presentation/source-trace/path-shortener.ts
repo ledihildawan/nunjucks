@@ -1,5 +1,5 @@
 import { pipe, filter, split, last } from 'remeda';
-import process from "node:process";
+import process from 'node:process';
 
 const FILE_URL_PREFIX_RE = /^file:\/\//u;
 const LEADING_SLASH_DRIVE_RE = /^[\\/]+([A-Za-z]):/u;

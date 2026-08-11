@@ -4,10 +4,10 @@ import { shortenPath } from '../presentation/source-trace/path-shortener.ts';
 import { isFilePath, resolveIdeLink } from '../presentation/ide-links/ide-links.ts';
 import { stripMarkdown } from '../presentation/error/markdown.ts';
 import { parseStackFrame } from '@nunjucks/lib/stack-parse';
+import { makeHyperlink } from '@nunjucks/lib/ansi-helpers';
 
-export { makeHyperlink, stripMarkdown, getSeverityColor, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString };
-
-const makeHyperlink = (text: string, url: string): string => `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
+export { makeHyperlink } from '@nunjucks/lib/ansi-helpers';
+export { stripMarkdown, getSeverityColor, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString };
 
 const getSeverityColor = (severity?: string): ((text: string) => string) => {
   if (severity === 'warning') { return picocolors.yellow; }
