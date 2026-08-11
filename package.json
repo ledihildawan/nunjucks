@@ -5,6 +5,7 @@
   "author": "James Long <longster@gmail.com>",
   "type": "module",
   "workspaces": [
+    "packages/@nunjucks/lib",
     "packages/@nunjucks/shared",
     "packages/@nunjucks/error-catalog",
     "packages/@nunjucks/error-renderer",
@@ -24,6 +25,7 @@
     "samples/express"
   ],
   "dependencies": {
+    "@nunjucks/lib": "workspace:*",
     "@nunjucks/core": "workspace:*",
     "@nunjucks/lexer": "workspace:*",
     "@nunjucks/log": "workspace:*",

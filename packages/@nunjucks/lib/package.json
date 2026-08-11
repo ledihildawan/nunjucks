@@ -1,0 +1,13 @@
+{
+  "name": "@nunjucks/lib",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "remeda": "^2.39.0"
+  },
+  "description": "Domain-agnostic technical utilities for Nunjucks — pure algorithms, I/O wrappers, and data formatters. Must know ZERO business rules. Lolos Copy-Paste Test ke proyek manapun."
+}

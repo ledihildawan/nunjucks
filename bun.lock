@@ -10,6 +10,7 @@
         "@nunjucks/filters": "workspace:*",
         "@nunjucks/integrations": "workspace:*",
         "@nunjucks/lexer": "workspace:*",
+        "@nunjucks/lib": "workspace:*",
         "@nunjucks/loaders": "workspace:*",
         "@nunjucks/log": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
@@ -110,6 +111,13 @@
     },
     "packages/@nunjucks/lexer": {
       "name": "@nunjucks/lexer",
+      "version": "1.0.0",
+      "dependencies": {
+        "remeda": "^2.39.0",
+      },
+    },
+    "packages/@nunjucks/lib": {
+      "name": "@nunjucks/lib",
       "version": "1.0.0",
       "dependencies": {
         "remeda": "^2.39.0",
@@ -259,6 +267,8 @@
     "@nunjucks/integrations": ["@nunjucks/integrations@workspace:packages/@nunjucks/integrations"],
 
     "@nunjucks/lexer": ["@nunjucks/lexer@workspace:packages/@nunjucks/lexer"],
+
+    "@nunjucks/lib": ["@nunjucks/lib@workspace:packages/@nunjucks/lib"],
 
     "@nunjucks/loaders": ["@nunjucks/loaders@workspace:packages/@nunjucks/loaders"],
 
