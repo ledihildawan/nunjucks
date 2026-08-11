@@ -148,7 +148,7 @@ const DEFAULT_CONFIG: Omit<GlobalConfig, 'filters' | 'dompurify'> = Object.freez
   executionTimeout: 0,
   maxTemplateSize: 0,
   blockedContextKeys: null,
-  scanContextValues: false,
+  scanContextValues: true,
   autoescape: true,
   trimBlocks: false,
   lstripBlocks: false,
