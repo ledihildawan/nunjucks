@@ -1,48 +1,9 @@
 // WHY: consumer-side streaming helpers. renderToStream yields a plain AsyncGenerator<string>; these adapters convert it into the stream shapes real HTTP/runtimes expect, and enforce a per-chunk timeout so a stalled render cannot hang a response indefinitely.
 
 import { isThenable } from '@nunjucks/shared';
-
-const encodeChunk = (chunk: string): Uint8Array => new TextEncoder().encode(chunk);
-
-// WHY: Web ReadableStream is the universal primitive — Node (>=18 via Readable.fromWeb), Bun, Deno, and edge runtimes all consume it, so a single adapter covers every target without a node: import in core.
-const toWebReadableStream = (stream: AsyncIterable<string>): ReadableStream<Uint8Array> => {
-  const iterator = stream[Symbol.asyncIterator]();
-  return new ReadableStream({
-    async pull(controller) {
-      const { value, done } = await iterator.next();
-      if (done) {
-        controller.close();
-        return;
-      }
-      controller.enqueue(encodeChunk(value));
-    },
-    cancel() {
-      iterator.return?.();
-    }
-  });
-};
-
-interface StreamTimeoutError extends Error {
-  isStreamTimeout: true;
-  code: string;
-  timeoutMs: number;
-  kind: 'idle' | 'deadline';
-}
-
-// WHY: carries code='TIMEOUT' so it is recognized by FATAL_STREAM_CODES (Tier 3 fatal) — the same code the blocking path's withTimeout emits — keeping streaming and blocking timeout errors shape-consistent. `kind` distinguishes idle (per-chunk) from deadline (total wall-clock) for observability without splitting the catalog code.
-const createStreamTimeoutError = (timeoutMs: number, kind: 'idle' | 'deadline' = 'idle'): StreamTimeoutError => {
-  const label = kind === 'deadline' ? `exceeded total deadline of ${timeoutMs}ms` : `chunk timed out after ${timeoutMs}ms`;
-  const error = new Error(`Stream ${label}`) as StreamTimeoutError;
-  error.name = 'StreamTimeoutError';
-  error.isStreamTimeout = true;
-  error.code = 'TIMEOUT';
-  error.timeoutMs = timeoutMs;
-  error.kind = kind;
-  return error;
-};
-
-const isStreamTimeoutError = (value: unknown): value is StreamTimeoutError =>
-  typeof value === 'object' && value !== null && (value as { isStreamTimeout?: unknown }).isStreamTimeout === true;
+import { toWebReadableStream } from '@nunjucks/lib/web-readable-stream';
+import { coalesceStream } from '@nunjucks/lib/stream-coalesce';
+import { createStreamTimeoutError, isStreamTimeoutError, type StreamTimeoutError } from '@nunjucks/lib/stream-timeout';
 
 // WHY: a generator cannot be wrapped by withTimeout (it is not a Promise), so streaming timeout is enforced per-chunk: each .next() races against a timer. This is the idle/per-chunk guard complementing the total executionTimeout deadline enforced by withStreamDeadline. try/finally guarantees the timer is cleared on EVERY exit path (chunk yielded, done, timeout, external .return(), throw) — previously N chunks leaked N concurrent timers. The finally also best-effort returns the underlying iterator WITHOUT awaiting: a stalled .next() (e.g. an async filter awaiting a never-resolving promise) may never let .return() settle, so awaiting would re-introduce the hang this guard exists to break. A .return() on an already-completed iterator is a no-op, so calling it unconditionally is safe.
 const withStreamTimeout = async function* (stream: AsyncIterator<string>, timeoutMs: number): AsyncGenerator<string> {
@@ -71,31 +32,6 @@ const withStreamTimeout = async function* (stream: AsyncIterator<string>, timeou
     if (pendingReturn !== undefined) {
       pendingReturn.catch(() => { /* best-effort: swallow cleanup rejection */ });
     }
-  }
-};
-
-// WHY: coalesces small chunks into larger writes to reduce HTTP overhead. Progressive rendering is preserved — the first chunk flushes immediately (content visible ASAP), subsequent chunks batch until threshold. 0 = no coalescing (every chunk writes immediately, maximum progressiveness). Cleanup-transparent: the for-await-of loop calls .return() on its source iterator on early termination (abort/timeout/break), so this wrapper forwards cleanup down the chain without needing its own try/finally.
-const coalesceStream = async function* (stream: AsyncGenerator<string>, threshold = 0): AsyncGenerator<string> {
-  if (threshold <= 0) {
-    yield* stream;
-    return;
-  }
-  let buffer = '';
-  let isFirst = true;
-  for await (const chunk of stream) {
-    if (isFirst) {
-      yield chunk;
-      isFirst = false;
-      continue;
-    }
-    buffer += chunk;
-    if (buffer.length >= threshold) {
-      yield buffer;
-      buffer = '';
-    }
-  }
-  if (buffer) {
-    yield buffer;
   }
 };
 

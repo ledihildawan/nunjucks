@@ -10,3 +10,6 @@ export * from './symbol-generator.ts';
 export * from './collect-stream.ts';
 export * from './nullish-coalesce.ts';
 export * from './from-iterator.ts';
+export * from './web-readable-stream.ts';
+export * from './stream-coalesce.ts';
+export * from './stream-timeout.ts';
