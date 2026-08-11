@@ -60,9 +60,11 @@ const buildLocationHtml = (loc: LocData): string => {
   return `<div class="nj-err-loc"><span class="nj-err-loc-label">The error occurred in</span> ${link}</div>`;
 };
 
+let errorIdSeq = 0;
+
 const toHtmlMarker = (error: ErrorLike, options: ToHtmlOptions = {}): string => {
   const message = escapeHtml(classifyAndBuildTitle(error));
-  const id = `nj-err-${Math.random().toString(36).slice(2, 8)}`;
+  const id = `nj-err-${errorIdSeq++}`;
   const fullPage = toHtml(error, options);
   const srcdocLiteral = JSON.stringify(fullPage).replaceAll('</', '<\\/');
   const locHtml = buildLocationHtml(extractLocData(error));
