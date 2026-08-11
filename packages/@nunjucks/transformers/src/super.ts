@@ -1,6 +1,6 @@
 import type { Node } from '@nunjucks/nodes';
 import { symbol, superNode, isBlock, isFunCall, walk, findAll } from '@nunjucks/nodes';
-import { createGensym } from '@nunjucks/runtime';
+import { createGensym } from '@nunjucks/lib/symbol-generator';
 import { loc } from '@nunjucks/shared';
 
 export const liftSuper = (ast: Node): Node => walk(ast, (blockNode: Node): Node | undefined => {
@@ -17,7 +17,7 @@ export const liftSuper = (ast: Node): Node => walk(ast, (blockNode: Node): Node 
 
     const nameNode = superCall.name as { value: string; lineno: number; colno: number };
     const superLoc = { lineno: nameNode.lineno, colno: nameNode.colno };
-    const gensym = createGensym();
+    const gensym = createGensym('hole');
     const sym = gensym();
 
     const newBody = walk(body, (node: Node): Node | undefined => {

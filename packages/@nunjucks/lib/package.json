@@ -5,7 +5,8 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./async/timeout": "./src/async/timeout.ts"
+    "./async/timeout": "./src/async/timeout.ts",
+    "./symbol-generator": "./src/symbol-generator.ts"
   },
   "dependencies": {
     "remeda": "^2.39.0"

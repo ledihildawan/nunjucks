@@ -3,8 +3,8 @@ import { createGensym } from './symbol-generator.ts';
 
 describe('runtime/symbol-generator', () => {
   describe('createGensym', () => {
-    test('generates unique symbols with default prefix', () => {
-      const gensym = createGensym();
+    test('generates unique symbols with hole prefix', () => {
+      const gensym = createGensym('hole');
       const first = gensym();
       const second = gensym();
       expect(first).toMatch(/^hole_\d+$/);
