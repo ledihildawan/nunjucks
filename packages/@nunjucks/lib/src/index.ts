@@ -13,3 +13,4 @@ export * from './from-iterator.ts';
 export * from './web-readable-stream.ts';
 export * from './stream-coalesce.ts';
 export * from './stream-timeout.ts';
+export * from './stack-parse.ts';

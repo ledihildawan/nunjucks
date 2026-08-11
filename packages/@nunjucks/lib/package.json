@@ -12,7 +12,8 @@
     "./from-iterator": "./src/from-iterator.ts",
     "./web-readable-stream": "./src/web-readable-stream.ts",
     "./stream-coalesce": "./src/stream-coalesce.ts",
-    "./stream-timeout": "./src/stream-timeout.ts"
+    "./stream-timeout": "./src/stream-timeout.ts",
+    "./stack-parse": "./src/stack-parse.ts"
   },
   "dependencies": {
     "remeda": "^2.39.0"

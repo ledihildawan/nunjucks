@@ -3,7 +3,7 @@ import picocolors from 'picocolors';
 import { shortenPath } from '../presentation/source-trace/path-shortener.ts';
 import { isFilePath, resolveIdeLink } from '../presentation/ide-links/ide-links.ts';
 import { stripMarkdown } from '../presentation/error/markdown.ts';
-import { parseStackFrame } from '../presentation/source-trace/stack-parse.ts';
+import { parseStackFrame } from '@nunjucks/lib/stack-parse';
 
 export { makeHyperlink, stripMarkdown, getSeverityColor, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString };
 

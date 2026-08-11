@@ -2,7 +2,7 @@ import { pipe, filter, join, map, split } from 'remeda';
 import { shortenPath } from './presentation/source-trace/path-shortener.ts';
 import { toDisplayLocation } from './presentation/source-trace/location.ts';
 import { mergeErrorParts } from './presentation/error/error-parts.ts';
-import { parseStackFrame } from './presentation/source-trace/stack-parse.ts';
+import { parseStackFrame } from '@nunjucks/lib/stack-parse';
 import { slice } from '@nunjucks/shared';
 import { stripMarkdown } from './presentation/error/markdown.ts';
 import { getErrorMessage } from './presentation/error/message.ts';
