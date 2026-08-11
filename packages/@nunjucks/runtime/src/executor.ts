@@ -1,4 +1,4 @@
-import { createContext, type Env, type Context } from './context.ts';
+import { createContext, type Env } from './context.ts';
 import type { Frame } from './frame.ts';
 import { createRenderRuntime, type RenderRuntime } from './render-runtime.ts';
 import { getRenderFunction, buildSandboxOptions, buildSandboxedRuntime } from './executor-runtime.ts';
@@ -35,14 +35,6 @@ const buildRuntime = (config: ExecuteConfig): RenderRuntime => {
 	return runtime;
 };
 
-const buildContextObject = (
-	context: Record<string, unknown>,
-	env: Env,
-	blocks: Record<string, unknown>,
-): Context => {
-	return createContext({ ctx: context, env, blocks });
-};
-
 const defaultEnv = (config: ExecuteConfig): Env => ({
 	opts: {
 		dev: false,
@@ -61,7 +53,7 @@ const executeNonSandbox = async (
 	runtime: RenderRuntime
 ): Promise<string> => {
 	const { render, blocks } = getRenderFunction(code);
-	const ctx = buildContextObject(context, env, blocks);
+	const ctx = createContext({ ctx: context, env, blocks });
 
 	return collectString(render(env, ctx, frame, runtime));
 };
@@ -81,7 +73,7 @@ const executeStream = (
 	const resolvedEnv = env ?? defaultEnv(config);
 	const runtime = buildRuntime(config);
 	const { render, blocks } = getRenderFunction(code);
-	const ctx = buildContextObject(context, resolvedEnv, blocks);
+	const ctx = createContext({ ctx: context, env, blocks });
 
 	return render(resolvedEnv, ctx, frame, runtime);
 };
