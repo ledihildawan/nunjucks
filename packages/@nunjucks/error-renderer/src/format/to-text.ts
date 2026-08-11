@@ -4,7 +4,7 @@ import { toDisplayLocation } from './presentation/source-trace/location.ts';
 import { mergeErrorParts } from './presentation/error/error-parts.ts';
 import { parseStackFrame } from '@nunjucks/lib/stack-parse';
 import { slice } from '@nunjucks/shared';
-import { stripMarkdown } from './presentation/error/markdown.ts';
+import { stripMarkdown } from '@nunjucks/lib/strip-markdown';
 import { getErrorMessage } from './presentation/error/message.ts';
 import type { ErrorLike } from '@nunjucks/error-catalog';
 

@@ -14,7 +14,8 @@
     "./stream-coalesce": "./src/stream-coalesce.ts",
     "./stream-timeout": "./src/stream-timeout.ts",
     "./stack-parse": "./src/stack-parse.ts",
-    "./ansi-helpers": "./src/ansi-helpers.ts"
+    "./ansi-helpers": "./src/ansi-helpers.ts",
+    "./strip-markdown": "./src/strip-markdown.ts"
   },
   "dependencies": {
     "remeda": "^2.39.0"

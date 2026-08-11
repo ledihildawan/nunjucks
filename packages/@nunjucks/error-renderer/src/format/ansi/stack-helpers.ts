@@ -2,7 +2,7 @@ import { pipe, filter, join } from 'remeda';
 import picocolors from 'picocolors';
 import { shortenPath } from '../presentation/source-trace/path-shortener.ts';
 import { isFilePath, resolveIdeLink } from '../presentation/ide-links/ide-links.ts';
-import { stripMarkdown } from '../presentation/error/markdown.ts';
+import { stripMarkdown } from '@nunjucks/lib/strip-markdown';
 import { parseStackFrame } from '@nunjucks/lib/stack-parse';
 import { makeHyperlink } from '@nunjucks/lib/ansi-helpers';
 
