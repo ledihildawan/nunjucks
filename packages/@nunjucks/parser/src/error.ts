@@ -1,7 +1,8 @@
 import { createLog } from '@nunjucks/log';
 import type { TemplateError } from '@nunjucks/log';
 import { find } from 'remeda';
-import { MATCH_ANY_RE, err, isOk, type Result } from '@nunjucks/shared';
+import { MATCH_ANY_RE } from '@nunjucks/shared';
+import { err, isOk, type Result } from '@nunjucks/lib';
 import { peekToken } from "./cursor.ts";
 import type { ParserContext } from "./cursor.ts";
 import type { ErrorDefinitionEntry } from '@nunjucks/log';

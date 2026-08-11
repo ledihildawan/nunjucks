@@ -4,7 +4,7 @@ import type { TemplateError } from '@nunjucks/log';
 import { TOKEN_OPERATOR } from '@nunjucks/lexer';
 import { skipValue } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
-import type { Result } from '@nunjucks/shared';
+import type { Result } from '@nunjucks/lib';
 import { binaryOp, op } from './binary-helpers.ts';
 import { parseUnary } from './primary.ts';
 

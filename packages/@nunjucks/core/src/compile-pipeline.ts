@@ -4,7 +4,7 @@ import type { ParseOptions, ParserExtension } from '@nunjucks/parser';
 import { transform } from '@nunjucks/transformers';
 import { createFrame } from '@nunjucks/runtime';
 import type { UndefinedMode } from '@nunjucks/runtime';
-import { ok, err, isErr, type Result } from '@nunjucks/shared';
+import { ok, err, isErr, type Result } from '@nunjucks/lib';
 
 interface CompileToCodeOptions {
   source: string;

@@ -1,4 +1,4 @@
-import { isErr, type Result } from '@nunjucks/shared';
+import { isErr, type Result } from '@nunjucks/lib';
 import type { ParserContext, TokenStream } from './cursor.ts';
 
 export const asTokenStream = (mock: unknown): TokenStream => mock as TokenStream;

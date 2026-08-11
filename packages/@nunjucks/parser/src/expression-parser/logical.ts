@@ -4,7 +4,7 @@ import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/log';
 import { peekToken, nextToken, skipSymbol, skipOperator, skipValue } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
-import { ok, isErr, type Result } from '@nunjucks/shared';
+import { ok, isErr, type Result } from '@nunjucks/lib';
 import { binaryOp } from './binary-helpers.ts';
 import { parseIn } from './comparison.ts';
 import { loc } from '@nunjucks/shared';

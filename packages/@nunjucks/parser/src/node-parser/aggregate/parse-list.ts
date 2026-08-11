@@ -12,7 +12,7 @@ import { appendChild, hole } from '@nunjucks/nodes';
 import type { ChildrenNode, NodeLocation } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/log';
 import { loc } from '@nunjucks/shared';
-import { ok, isErr, type Result } from '@nunjucks/shared';
+import { ok, isErr, type Result } from '@nunjucks/lib';
 import { fail, nextToken, peekToken, skip } from '../../cursor.ts';
 import type { ParserContext } from '../../cursor.ts';
 

@@ -1,7 +1,7 @@
 import { capture, nodeList, output, pipe } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/log';
-import { ok, isErr, type Result } from '@nunjucks/shared';
+import { ok, isErr, type Result } from '@nunjucks/lib';
 import { loc } from '@nunjucks/shared';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";

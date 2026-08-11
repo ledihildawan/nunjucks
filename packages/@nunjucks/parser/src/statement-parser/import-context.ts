@@ -1,7 +1,7 @@
 import type { TemplateError } from '@nunjucks/log';
 import { peekToken, skipSymbol, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { ok, isErr, type Result } from '@nunjucks/shared';
+import { ok, isErr, type Result } from '@nunjucks/lib';
 
 export const parseWithContext = (parserContext: ParserContext): Result<boolean | null, TemplateError> => {
   const tokR = peekToken(parserContext);

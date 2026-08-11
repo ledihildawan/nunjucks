@@ -32,7 +32,7 @@ import type { Node } from '@nunjucks/nodes';
 import { find } from 'remeda';
 import { peekToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { ok, isErr, type Result } from '@nunjucks/shared';
+import { ok, isErr, type Result } from '@nunjucks/lib';
 import type { TemplateError } from '@nunjucks/log';
 import { STATEMENT_PARSERS } from './registry.ts';
 

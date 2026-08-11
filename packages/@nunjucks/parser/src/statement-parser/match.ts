@@ -5,7 +5,7 @@ import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts"
 import type { ParserContext } from "../cursor.ts";
 import { TOKEN_SYMBOL } from '@nunjucks/lexer';
 import type { Token } from '@nunjucks/lexer';
-import { ok, isErr, type Result } from '@nunjucks/shared';
+import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseExpression, parsePrimary } from "../expression-parser/index.ts";
 import { tryParsePattern } from "../node-parser/pattern.ts";
 import { parseUntilBlocks } from "../parse-root.ts";

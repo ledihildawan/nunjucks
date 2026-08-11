@@ -17,5 +17,5 @@ export type { RenderStreamResult } from './render/render-types.ts';
 export type { PipeSink, PipeRenderStreamOptions } from './render/pipe-stream.ts';
 export { toWebReadableStream, withStreamTimeout, withStreamDeadline, isStreamTimeoutError, type StreamTimeoutError } from './render/render-stream-adapters.ts';
 export type { GlobalConfig } from './config/global.ts';
-export type { Result } from '@nunjucks/shared';
+export type { Result } from '@nunjucks/lib';
 export type { TemplateError } from '@nunjucks/log';

@@ -22,7 +22,7 @@ import type { TemplateError } from '@nunjucks/log';
 import { peekToken, nextToken } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
 import { errorAt } from '../error.ts';
-import { ok, isErr, type Result } from '@nunjucks/shared';
+import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseOr } from './logical.ts';
 import { loc } from '@nunjucks/shared';
 

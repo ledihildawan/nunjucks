@@ -2,7 +2,7 @@ import { validateTemplate, validateConfig, validateRenderContext } from '@nunjuc
 import { createLog, getError, ERROR_DEFINITIONS } from '@nunjucks/log';
 import { findContextKeyPosition, wrapWithLog } from '../diagnostics/diagnostics.ts';
 import type { TemplateError } from '@nunjucks/log';
-import { ok, err, type Result } from '@nunjucks/shared';
+import { ok, err, type Result } from '@nunjucks/lib';
 import type { RenderConfig, RenderValidationError, ValidationErrorRequest } from './render-types.ts';
 
 const combineValidationErrors = <T extends { message: string }>(errors: readonly [T, ...T[]]): T => {

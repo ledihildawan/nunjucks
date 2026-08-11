@@ -9,7 +9,7 @@ import type { ChildrenNode, Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/log';
 import { nextToken, peekToken, skip, skipSymbol, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { ok, isErr, type Result } from '@nunjucks/shared';
+import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseExpression, parsePrimary } from "../expression-parser/index.ts";
 import { parseWithContext } from "./import-context.ts";
 import { loc } from '@nunjucks/shared';

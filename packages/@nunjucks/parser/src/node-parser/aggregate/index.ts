@@ -8,7 +8,7 @@ import type { ChildrenNode, Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/log';
 import { loc } from '@nunjucks/shared';
 import type { Loc } from '@nunjucks/shared';
-import { ok, isErr, type Result } from '@nunjucks/shared';
+import { ok, isErr, type Result } from '@nunjucks/lib';
 import { nextToken } from '../../cursor.ts';
 import type { ParserContext } from '../../cursor.ts';
 import { parseContent } from './parse-content.ts';

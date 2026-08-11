@@ -6,7 +6,7 @@ import { serializeErrorPayload } from './pipe-stream.ts';
 import type { RenderConfig, RenderStreamResult } from './render-types.ts';
 import { execute, executeStream, createFrame, withTimeout, isStreamErrorSentinel, type StreamErrorSentinel } from '@nunjucks/runtime';
 import { getCallerFrames } from './caller-file.ts';
-import { ok, err, isErr, type Result } from '@nunjucks/shared';
+import { ok, err, isErr, type Result } from '@nunjucks/lib';
 import { injectWarningsScript, adjustColnoForNullValue, type TemplateWarning, type TemplateError } from '@nunjucks/log';
 import { wrapWithLog } from '../diagnostics/diagnostics.ts';
 import { toHtmlMarker, buildSourceTrace } from '@nunjucks/error-renderer';

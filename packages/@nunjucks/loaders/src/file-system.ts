@@ -4,7 +4,7 @@ import { watch, type FSWatcher, type Stats } from 'node:fs';
 import path from 'node:path';
 import { createLoader, type Loader } from './base.ts';
 import { getError, createLog } from '@nunjucks/log';
-import { ok, err, type Result } from '@nunjucks/shared';
+import { ok, err, type Result } from '@nunjucks/lib';
 import type { TemplateError } from '@nunjucks/log';
 
 const normalizeSearchPaths = (searchPaths: string | string[] | undefined): string[] => {

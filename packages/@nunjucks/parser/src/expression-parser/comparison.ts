@@ -24,7 +24,7 @@ import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/log';
 import { nextToken, peekToken, pushToken, skipSymbol } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
-import { ok, isErr, type Result } from '@nunjucks/shared';
+import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseSignature } from '../node-parser/signature.ts';
 import type { BinNodeFn } from './binary-helpers.ts';
 import { parseConcat } from './arithmetic.ts';

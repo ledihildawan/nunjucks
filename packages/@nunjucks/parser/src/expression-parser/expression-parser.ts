@@ -3,7 +3,7 @@ import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/log';
 import { skipSymbol } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
-import { ok, isErr, type Result } from '@nunjucks/shared';
+import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseOr, parseTernary } from './logical.ts';
 import { parseWalrus } from './assignment.ts';
 import { loc } from '@nunjucks/shared';

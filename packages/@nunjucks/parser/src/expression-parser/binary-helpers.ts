@@ -1,7 +1,8 @@
 import type { Node } from '@nunjucks/nodes';
 import type { BinaryFields } from '@nunjucks/nodes';
 import type { Loc } from '@nunjucks/shared';
-import { loc, ok, isErr, type Result } from '@nunjucks/shared';
+import { loc } from '@nunjucks/shared';
+import { ok, isErr, type Result } from '@nunjucks/lib';
 import type { TemplateError } from '@nunjucks/log';
 import { TOKEN_OPERATOR } from '@nunjucks/lexer';
 import { peekToken, skipValue } from '../cursor.ts';

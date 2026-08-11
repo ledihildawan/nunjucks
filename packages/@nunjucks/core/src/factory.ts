@@ -5,7 +5,7 @@ import { createFileSystemLoader, type FileSystemLoader } from '@nunjucks/loaders
 import type { NunjucksConfig, NunjucksEngine, PerRenderOverrides } from './config/nunjucks-config.ts';
 import type { RenderStreamResult } from './render/render-types.ts';
 import type { PipeSink, PipeRenderStreamOptions } from './render/pipe-stream.ts';
-import type { Result } from '@nunjucks/shared';
+import type { Result } from '@nunjucks/lib';
 import type { TemplateError } from '@nunjucks/log';
 
 // WHY: strip keys whose value is undefined so they do NOT override the engine's built-in defaults when the

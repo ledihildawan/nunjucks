@@ -10,7 +10,7 @@ import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/log';
 import { peekToken, skip, skipValue, expect } from "../../cursor.ts";
 import type { ParserContext, } from "../../cursor.ts";
-import { ok, isErr, type Result } from '@nunjucks/shared';
+import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parsePostfix } from "./index.ts";
 import { loc } from '@nunjucks/shared';
 
