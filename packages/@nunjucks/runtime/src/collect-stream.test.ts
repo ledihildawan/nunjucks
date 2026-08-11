@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { collectString } from './collect-stream.ts';
+import { collectString, collectStream } from './collect-stream.ts';
 
 describe('collectString', () => {
   test('drains an async generator into a concatenated string', async () => {
@@ -20,5 +20,38 @@ describe('collectString', () => {
       yield '3';
     })();
     expect(await collectString(stream)).toBe('1-2-3');
+  });
+});
+
+describe('collectStream', () => {
+  test('drains an async generator and captures return value', async () => {
+    const stream = (async function* generate() {
+      yield 'x';
+      yield 'y';
+      return { exported: 'context' };
+    })();
+    const result = await collectStream(stream);
+    expect(result.output).toBe('xy');
+    expect(result.context).toEqual({ exported: 'context' });
+  });
+
+  test('returns empty output with undefined context for empty generator', async () => {
+    const stream = (async function* generate() { yield ''; return null; })();
+    const result = await collectStream(stream);
+    expect(result.output).toBe('');
+    expect(result.context).toBeNull();
+  });
+
+  test('preserves chunk order and captures final context', async () => {
+    const stream = (async function* generate() {
+      yield 'a';
+      await Promise.resolve();
+      yield 'b';
+      yield 'c';
+      return 'final';
+    })();
+    const result = await collectStream(stream);
+    expect(result.output).toBe('abc');
+    expect(result.context).toBe('final');
   });
 });

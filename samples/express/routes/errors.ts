@@ -12,11 +12,23 @@ interface EnrichedFilterError extends Error {
   subject: string;
 }
 
-// WHY: the public nunjucks.render(template: string, ...) signature strictly types the template parameter,
-// so there is no runtime-validated path to feed a non-string through the engine. This helper centralises the
-// deliberate type-bypass used by the bad-input demo routes (/template-must-be-string, /template-null) so the
-// escape hatch is isolated, self-documenting, and not copy-pasted inline at each call site.
-const injectInvalidTemplate = (value: unknown): string => value as string;
+// WHY: branded type to isolate the deliberate type-bypass used by bad-input demo routes.
+// The public nunjucks.render(template: string, ...) strictly types the template parameter,
+// so there is no runtime-validated path to feed a non-string through the engine.
+// This helper centralises the escape hatch so it is isolated and self-documenting.
+type InvalidTemplate = string & { readonly __brand: unique symbol };
+const createInvalidTemplate = (value: unknown): InvalidTemplate => {
+  if (typeof value !== 'string' && value !== null) {
+    throw new Error(`createInvalidTemplate expects string or null, got ${typeof value}`);
+  }
+  return String(value) as InvalidTemplate;
+};
+
+const isError = (err: unknown): err is Error => err instanceof Error;
+const handleError = (err: unknown): Error => {
+  if (isError(err)) { return err; }
+  return new Error(String(err));
+};
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -89,7 +101,7 @@ errorRoutes.forEach(({ path: routePath, template, context, filters }) => {
       const html = await renderTemplate(template, { context, config });
       res.type('html').send(html);
     } catch (err: unknown) {
-      next(err as Error);
+      next(handleError(err));
     }
   });
 });
@@ -532,7 +544,7 @@ router.get('/container-not-registered', async (_req, res, next) => {
 
 router.get('/template-must-be-string', async (_req, res, next) => {
   try {
-    const html = await renderTemplate(injectInvalidTemplate(123), { context: {}, config: { dev: true } });
+    const html = await renderTemplate(createInvalidTemplate(123), { context: {}, config: { dev: true } });
     res.type('html').send(html);
   } catch (err: unknown) {
     next(err as Error);
@@ -541,7 +553,7 @@ router.get('/template-must-be-string', async (_req, res, next) => {
 
 router.get('/template-null', async (_req, res, next) => {
   try {
-    const html = await renderTemplate(injectInvalidTemplate(null), { context: {}, config: { dev: true } });
+    const html = await renderTemplate(createInvalidTemplate(null), { context: {}, config: { dev: true } });
     res.type('html').send(html);
   } catch (err: unknown) {
     next(err as Error);
