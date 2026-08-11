@@ -6,6 +6,7 @@ import { createLoader, type Loader } from './base.ts';
 import { getError, createLog } from '@nunjucks/log';
 import { ok, err, type Result } from '@nunjucks/lib';
 import type { TemplateError } from '@nunjucks/log';
+import { containsNullByte, isWithinBase } from '@nunjucks/shared/security';
 
 const normalizeSearchPaths = (searchPaths: string | string[] | undefined): string[] => {
   if (!searchPaths) {
@@ -40,13 +41,6 @@ const basePathNotFoundError = (basePath: string, baseErr: unknown): Result<never
     ? `ENOENT: no such file or directory: ${basePath}`
     : String(baseErr);
   return err(makeFilesystemError(basePath, message));
-};
-
-const containsNullByte = (name: string): boolean => name.includes('\0');
-
-const isWithinBase = (basePath: string, fullPath: string): boolean => {
-  const relative = path.relative(basePath, fullPath);
-  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
 };
 
 const resolveRealPaths = async (basePath: string, fullPath: string): Promise<{ realBase: string; realFull: string }> => {

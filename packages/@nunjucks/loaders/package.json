@@ -8,7 +8,8 @@
     "./file-system": "./src/file-system.ts"
   },
   "dependencies": {
-    "@nunjucks/log": "workspace:*"
+    "@nunjucks/log": "workspace:*",
+    "@nunjucks/shared": "workspace:*"
   },
   "description": "Template loaders for Nunjucks"
 }
