@@ -1,5 +1,6 @@
 import { normalizeLineBase, type LineBase } from '@nunjucks/error-catalog';
-import { readObject, readString, readNumber, isKeyedObject, type Phase } from '@nunjucks/shared';
+import type { Phase } from '@nunjucks/shared';
+import { readObject, readString, readNumber, isKeyedObject } from '@nunjucks/lib';
 
 interface ErrorMetadataFallback {
   lineno?: number | null;

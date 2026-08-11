@@ -1,4 +1,4 @@
-import { hasOwn } from '@nunjucks/shared';
+import { hasOwn } from '@nunjucks/lib';
 import type { SlotContext } from './slots.ts';
 
 type KeywordArgs = Record<string, unknown> & { keywords: boolean };

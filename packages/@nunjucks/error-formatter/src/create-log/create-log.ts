@@ -3,7 +3,7 @@ import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, LegacyLogDat
 import { TEMPLATE_ERROR } from './create-log-types.ts';
 import { normalizeErrorContext, normalizeWarningContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, buildLocationMessage, createErrorEnvelope } from './create-log-helpers.ts';
 import { createErrorFromDef, createWarningFromDef } from './create-log-error.ts';
-import { isKeyedObject } from '@nunjucks/shared';
+import { isKeyedObject } from '@nunjucks/lib';
 
 interface CreateLogFields {
   def: ErrorDefinitionEntry | LegacyLogData;

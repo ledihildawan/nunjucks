@@ -1,4 +1,4 @@
-import { isKeyedObject } from '@nunjucks/shared';
+import { isKeyedObject } from '@nunjucks/lib';
 
 const TEMPLATE_ERROR = Symbol('TemplateError');
 

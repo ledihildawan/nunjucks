@@ -1,5 +1,5 @@
 import { reduce } from 'remeda';
-import { hasOwn } from '@nunjucks/shared';
+import { hasOwn } from '@nunjucks/lib';
 
 export const prepareAttributeParts = (attr: string | number | null | undefined): (string | number)[] => {
   if (attr == null) { return []; }

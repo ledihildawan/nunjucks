@@ -6,7 +6,7 @@ const isTypedArray = (value: unknown): boolean =>
   value instanceof BigInt64Array || value instanceof BigUint64Array;
 
 import { isSafeString } from './safe-string.ts';
-import { isKeyedObject } from '@nunjucks/shared';
+import { isKeyedObject } from '@nunjucks/lib';
 
 type TestFn = (target: unknown, ...args: unknown[]) => boolean;
 
