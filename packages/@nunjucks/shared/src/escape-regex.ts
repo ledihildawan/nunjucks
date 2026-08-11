@@ -1,4 +1,1 @@
-const escapeRegex = (value: string): string =>
-  value.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-export { escapeRegex };
+export { escapeRegex } from '@nunjucks/lib';

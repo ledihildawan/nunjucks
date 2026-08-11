@@ -1,5 +1,5 @@
 import type { LineBase } from '@nunjucks/error-catalog';
-import { escapeRegex } from '@nunjucks/shared';
+import { escapeRegex } from '@nunjucks/lib';
 import { toDisplayLocation } from './location.ts';
 import { calculateCaretPosition } from '../syntax-highlight/caret.ts';
 

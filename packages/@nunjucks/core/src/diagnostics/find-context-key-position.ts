@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { pipe, split, last } from 'remeda';
-import { escapeRegex } from '@nunjucks/shared';
+import { escapeRegex } from '@nunjucks/lib';
 
 interface LinePosition {
   line: number;
