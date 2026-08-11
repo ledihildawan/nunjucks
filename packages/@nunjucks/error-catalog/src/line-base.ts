@@ -1,4 +1,2 @@
-export type LineBase = 'zero' | 'one';
-
-export const normalizeLineBase = (lineBase?: LineBase | null): LineBase =>
-  lineBase === 'one' ? 'one' : 'zero';
+export type { LineBase } from '@nunjucks/shared';
+export { normalizeLineBase } from '@nunjucks/shared';

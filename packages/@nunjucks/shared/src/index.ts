@@ -9,6 +9,10 @@ export {
 export type { Environment, DangerousCodeViolation } from './security/index.ts';
 
 export type { BaseValidationError } from './errors/index.ts';
+export type { LineBase } from './errors/index.ts';
+export { normalizeLineBase } from './errors/index.ts';
+export { TEMPLATE_ERROR, isTemplateError } from './errors/index.ts';
+export type { BrandedTemplateError } from './errors/index.ts';
 
 export { escapeHtml, escapeForContext, createHtmlContextTracker } from './escaping/index.ts';
 export type { HtmlContext } from './escaping/index.ts';
