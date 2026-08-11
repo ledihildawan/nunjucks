@@ -7,3 +7,4 @@ export * from './escape-html.ts';
 export * from './escape-context.ts';
 export * from './async/timeout.ts';
 export * from './symbol-generator.ts';
+export * from './collect-stream.ts';

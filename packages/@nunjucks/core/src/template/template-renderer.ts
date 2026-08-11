@@ -1,4 +1,5 @@
-import { createContext, createFrame, collectStream, type BlockLocation, type Frame } from '@nunjucks/runtime';
+import { createContext, createFrame, type BlockLocation, type Frame } from '@nunjucks/runtime';
+import { collectStream } from '@nunjucks/lib/collect-stream';
 import { injectWarningsScript } from '@nunjucks/log';
 import type { Warning, IncludeChain } from '@nunjucks/log';
 import { prettifyError, getError } from '@nunjucks/log';
