@@ -16,7 +16,9 @@
     "./extract-blocks": "./src/extract-blocks.ts",
     "./escape-regex": "./src/escape-regex.ts",
     "./reserved": "./src/reserved.ts",
-    "./type-guards": "./src/type-guards.ts"
+    "./type-guards": "./src/type-guards.ts",
+    "./runtime-contract": "./src/runtime-contract/index.ts",
+    "./runtime-contract/frame": "./src/runtime-contract/frame.ts"
   },
   "dependencies": {
     "remeda": "^2.39.0"

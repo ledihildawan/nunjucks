@@ -1,17 +1,7 @@
 import { reduce } from 'remeda';
+import type { Frame, CreateFrameOptions } from '@nunjucks/shared/runtime-contract/frame';
 
-export interface Frame {
-  readonly variables: Record<string, unknown>;
-  readonly parent: Frame | undefined;
-  topLevel: boolean;
-  readonly isolateWrites: boolean | undefined;
-  set: (name: string, value: unknown, resolveUp?: boolean) => Frame;
-  get: (name: string) => unknown;
-  lookup: (name: string) => unknown;
-  resolve: (name: string, forWrite?: boolean) => Frame | undefined;
-  push: (writeIsolation?: boolean) => Frame;
-  pop: () => Frame | undefined;
-}
+export type { Frame, CreateFrameOptions };
 
 interface SetNestedInput {
   target: Record<string, unknown>;
@@ -37,13 +27,6 @@ interface FrameState {
   parent: Frame | undefined;
   topLevel: boolean;
   isolateWrites: boolean | undefined;
-}
-
-interface CreateFrameOptions {
-  parent?: Frame | null;
-  isolateWrites?: boolean;
-  variables?: Record<string, unknown>;
-  topLevel?: boolean;
 }
 
 export const createFrame = (options: CreateFrameOptions = {}): Frame => {
