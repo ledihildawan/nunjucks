@@ -1,5 +1,5 @@
 import { isNonNullish, isNullish } from 'remeda';
-import { isSafeString, markSafe, copySafeness } from '@nunjucks/runtime';
+import { isSafeString, markSafe, copySafeness } from '@nunjucks/shared/safe-string';
 import { ok, err, escapeHtml, MATCH_ANY_RE, type Result } from '@nunjucks/lib';
 import type { Phase } from '@nunjucks/shared';
 import { createLog } from '@nunjucks/log';

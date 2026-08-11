@@ -18,7 +18,8 @@
     "./reserved": "./src/reserved.ts",
     "./type-guards": "./src/type-guards.ts",
     "./runtime-contract": "./src/runtime-contract/index.ts",
-    "./runtime-contract/frame": "./src/runtime-contract/frame.ts"
+    "./runtime-contract/frame": "./src/runtime-contract/frame.ts",
+    "./safe-string": "./src/safe-string/index.ts"
   },
   "dependencies": {
     "remeda": "^2.39.0"

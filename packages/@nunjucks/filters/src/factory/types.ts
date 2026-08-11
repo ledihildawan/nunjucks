@@ -1,4 +1,5 @@
-import { isSafeString, type SafeString } from '@nunjucks/runtime';
+import { isSafeString } from '@nunjucks/shared/safe-string';
+import type { SafeString } from '@nunjucks/shared/safe-string';
 import type { Phase } from '@nunjucks/shared';
 
 export { isSafeString };

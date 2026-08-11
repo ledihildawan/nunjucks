@@ -1,6 +1,6 @@
 import DomPurify from 'isomorphic-dompurify';
 import { safeString } from '../factory/index.ts';
-import type { SafeString } from '@nunjucks/runtime';
+import type { SafeString } from '@nunjucks/shared/safe-string';
 import type { DomPurifyConfig } from '@nunjucks/shared';
 
 const sanitize = (str: unknown, config?: DomPurifyConfig): SafeString => {
