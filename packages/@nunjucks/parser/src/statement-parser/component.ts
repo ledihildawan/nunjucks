@@ -24,7 +24,7 @@ export const parseComponent = (parserContext: ParserContext): Result<Node, Templ
   if (isErr(argsR)) { return argsR; }
   const args = argsR.value;
   if (!isSymbol(name)) {
-    return fail(parserContext, 'expected component name', compTok.lineno, compTok.colno);
+    return fail(parserContext, 'expected component name', { lineno: compTok.lineno, colno: compTok.colno });
   }
 
   const blockEndR = advanceAfterBlockEnd(parserContext, String(compTok.value));

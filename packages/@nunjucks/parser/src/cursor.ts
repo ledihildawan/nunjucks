@@ -63,7 +63,7 @@ const EOF_LOCATION = { lineno: 0, colno: 0 } as const;
 export const nextToken = (parserContext: ParserContext, withWhitespace?: boolean): Result<Token, TemplateError> => {
   const tok = nextTokenOrNull(parserContext, withWhitespace);
   if (tok === null) {
-    return fail(parserContext, 'unexpected end of input', EOF_LOCATION.lineno, EOF_LOCATION.colno);
+    return fail(parserContext, 'unexpected end of input', { lineno: EOF_LOCATION.lineno, colno: EOF_LOCATION.colno });
   }
   return ok(tok);
 };
@@ -73,7 +73,7 @@ export const peekToken = (parserContext: ParserContext): Result<Token, TemplateE
     parserContext.peeked = nextTokenOrNull(parserContext);
   }
   if (parserContext.peeked === null) {
-    return fail(parserContext, 'unexpected end of input', EOF_LOCATION.lineno, EOF_LOCATION.colno);
+    return fail(parserContext, 'unexpected end of input', { lineno: EOF_LOCATION.lineno, colno: EOF_LOCATION.colno });
   }
   return ok(parserContext.peeked);
 };
@@ -106,7 +106,7 @@ export const expect = (parserContext: ParserContext, type: Token['type']): Resul
   if (isErr(tokResult)) { return tokResult; }
   const tok = tokResult.value;
   if (tok.type !== type) {
-    return fail(parserContext, `expected ${type}, got ${tok.type}`, tok.lineno, tok.colno);
+    return fail(parserContext, `expected ${type}, got ${tok.type}`, { lineno: tok.lineno, colno: tok.colno });
   }
   return ok(tok);
 };
@@ -139,7 +139,7 @@ export const advanceAfterBlockEnd = (parserContext: ParserContext, name?: string
     const nameTok = nameTokResult.value;
 
     if (!isSymbolToken(nameTok)) {
-      return fail(parserContext, 'advanceAfterBlockEnd: expected symbol token or explicit name to be passed', nameTok.lineno, nameTok.colno);
+      return fail(parserContext, 'advanceAfterBlockEnd: expected symbol token or explicit name to be passed', { lineno: nameTok.lineno, colno: nameTok.colno });
     }
     blockName = nameTok.value;
   }

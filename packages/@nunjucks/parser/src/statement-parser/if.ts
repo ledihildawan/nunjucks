@@ -42,9 +42,7 @@ export const parseIf = (parserContext: ParserContext): Result<Node, TemplateErro
   const tag = tagR.value;
 
   if (!(skipSymbol(parserContext, 'if') || skipSymbol(parserContext, 'elif') || skipSymbol(parserContext, 'elseif'))) {
-    return fail(parserContext, 'parseIf: expected if, elif, or elseif',
-      tag.lineno,
-      tag.colno);
+    return fail(parserContext, 'parseIf: expected if, elif, or elseif', { lineno: tag.lineno, colno: tag.colno });
   }
 
   const condR = parseExpression(parserContext);

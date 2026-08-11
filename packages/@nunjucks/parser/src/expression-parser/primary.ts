@@ -41,7 +41,7 @@ const handleLiteralToken = (tok: Token, parserContext: ParserContext): Result<No
     case TOKEN_BOOLEAN: {
       const value = parseBooleanValue(tok);
       if (value === undefined) {
-        return fail(parserContext, `invalid boolean: ${tok.value}`, tok.lineno, tok.colno);
+        return fail(parserContext, `invalid boolean: ${tok.value}`, { lineno: tok.lineno, colno: tok.colno });
       }
       return ok(literal(loc(tok), value));
     }
@@ -103,7 +103,7 @@ const parsePrimary = (parserContext: ParserContext, noPostfix?: boolean): Result
   if (isErr(aggregateR)) { return aggregateR; }
   const aggregateNode = aggregateR.value;
   if (!aggregateNode) {
-    return fail(parserContext, `expected expression, got ${tok.type}`, tok.lineno, tok.colno);
+    return fail(parserContext, `expected expression, got ${tok.type}`, { lineno: tok.lineno, colno: tok.colno });
   }
   return noPostfix ? ok(aggregateNode) : parsePostfix(parserContext, aggregateNode);
 };

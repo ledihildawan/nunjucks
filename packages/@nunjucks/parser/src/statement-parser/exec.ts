@@ -12,7 +12,7 @@ export const parseExec = (parserContext: ParserContext): Result<Node, TemplateEr
   if (isErr(tagR)) { return tagR; }
   const tag = tagR.value;
   if (!skipSymbol(parserContext, 'exec')) {
-    return fail(parserContext, 'expected exec', tag.lineno, tag.colno);
+    return fail(parserContext, 'expected exec', { lineno: tag.lineno, colno: tag.colno });
   }
 
   const exprR = parseExpression(parserContext);

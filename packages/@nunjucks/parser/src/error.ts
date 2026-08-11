@@ -39,12 +39,18 @@ const inferFix = (msg: string): string => {
 
 export const EXPECTED_COLON_AFTER_DICT_KEY = 'EXPECTED_COLON_AFTER_DICT_KEY';
 
-export const error = (parserContext: ParserContext, msg: string, lineno?: number, colno?: number, sentinel?: string) => {
-  const needsResolve = lineno === undefined || colno === undefined;
+interface ErrorOptions {
+  lineno?: number;
+  colno?: number;
+  sentinel?: string;
+}
+
+export const error = (parserContext: ParserContext, msg: string, options?: ErrorOptions) => {
+  const needsResolve = options?.lineno === undefined || options?.colno === undefined;
   const peekedResult = needsResolve ? peekToken(parserContext) : undefined;
   const peeked = peekedResult && isOk(peekedResult) ? peekedResult.value : undefined;
-  const resolvedLineno = needsResolve ? (peeked?.lineno ?? 0) : lineno;
-  const resolvedColno = needsResolve ? (peeked?.colno ?? 0) : colno;
+  const resolvedLineno = needsResolve ? (peeked?.lineno ?? 0) : options?.lineno;
+  const resolvedColno = needsResolve ? (peeked?.colno ?? 0) : options?.colno;
   const errObj = createLog('error', {
     def: {
       name: 'PARSER_ERROR',
@@ -58,14 +64,14 @@ export const error = (parserContext: ParserContext, msg: string, lineno?: number
     subject: null,
     context: { lineno: resolvedLineno, colno: resolvedColno, phase: 'parse', lineBase: 'zero' },
   });
-  if (sentinel) {
-    Object.assign(errObj, { sentinel });
+  if (options?.sentinel) {
+    Object.assign(errObj, { sentinel: options.sentinel });
   }
   return errObj;
 };
 
-export const fail = (parserContext: ParserContext, msg: string, lineno?: number, colno?: number, sentinel?: string): Result<never, TemplateError> =>
-  err(error(parserContext, msg, lineno, colno, sentinel));
+export const fail = (parserContext: ParserContext, msg: string, options?: ErrorOptions): Result<never, TemplateError> =>
+  err(error(parserContext, msg, options));
 
 export const errorAt = (
   lineno: number,

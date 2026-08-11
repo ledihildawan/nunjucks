@@ -94,7 +94,7 @@ export const parseMatch = (parserContext: ParserContext): Result<Node, TemplateE
   if (isErr(tagR)) { return tagR; }
   const tag = tagR.value;
   if (!skipSymbol(parserContext, 'match')) {
-    return fail(parserContext, 'Expected match', tag.lineno, tag.colno);
+    return fail(parserContext, 'Expected match', { lineno: tag.lineno, colno: tag.colno });
   }
 
   const exprR = parseExpression(parserContext);

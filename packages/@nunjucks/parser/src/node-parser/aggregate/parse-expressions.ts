@@ -92,13 +92,7 @@ const parseDictItem = (parserContext: ParserContext, node: ChildrenNode, origin:
     ));
   }
 
-  return fail(
-    parserContext,
-    'parseAggregate: expected colon after dict key',
-    next?.lineno ?? origin.lineno,
-    next?.colno ?? origin.colno,
-    EXPECTED_COLON_AFTER_DICT_KEY
-  );
+  return fail(parserContext, 'parseAggregate: expected colon after dict key', { lineno: next?.lineno ?? origin.lineno, colno: next?.colno ?? origin.colno, sentinel: EXPECTED_COLON_AFTER_DICT_KEY });
 };
 
 export const parseAggregateExpression = (

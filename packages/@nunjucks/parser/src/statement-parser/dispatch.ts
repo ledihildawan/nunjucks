@@ -42,7 +42,7 @@ export const parseStatement = (parserContext: ParserContext, breakOn: readonly s
   const tok = tokR.value;
 
   if (tok.type !== TOKEN_SYMBOL) {
-    return fail(parserContext, 'tag name expected', tok.lineno, tok.colno);
+    return fail(parserContext, 'tag name expected', { lineno: tok.lineno, colno: tok.colno });
   }
 
   if (breakOn?.includes(String(tok.value))) {
@@ -85,5 +85,5 @@ export const parseStatement = (parserContext: ParserContext, breakOn: readonly s
       TOKEN_REGEX,
     }));
   }
-  return fail(parserContext, `unknown block tag: ${tok.value}`, tok.lineno, tok.colno);
+  return fail(parserContext, `unknown block tag: ${tok.value}`, { lineno: tok.lineno, colno: tok.colno });
 };

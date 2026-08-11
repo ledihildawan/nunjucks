@@ -45,7 +45,7 @@ const parseInnerPattern = (parserContext: ParserContext): Result<Node, TemplateE
     return ok(symbol(loc(symbolTok), isSymbolToken(symbolTok) ? symbolTok.value : String(symbolTok.value)));
   }
   return fail(parserContext, 'parseInnerPattern: expected symbol or pattern',
-    tok?.lineno ?? 0, tok?.colno ?? 0);
+    { lineno: tok?.lineno ?? 0, colno: tok?.colno ?? 0 });
 };
 
 const parseAssignmentDefault = (parserContext: ParserContext, target: Node): Result<Node | null, TemplateError> => {
@@ -90,7 +90,7 @@ const parseArraySymbolElement = (parserContext: ParserContext, node: ChildrenNod
   const symTok = symTokR.value;
   if (!symTok || symTok.type !== TOKEN_SYMBOL) {
     return fail(parserContext, 'parseArrayPattern: expected symbol in pattern',
-      symTok?.lineno ?? tok.lineno, symTok?.colno ?? tok.colno);
+      { lineno: symTok?.lineno ?? tok.lineno, colno: symTok?.colno ?? tok.colno });
   }
   const target = symbol(loc(symTok), symTok.value);
   const withDefaultR = parseAssignmentDefault(parserContext, target);
@@ -126,7 +126,7 @@ const handleTrailingComma = (
 ): Result<{ node: ChildrenNode; sawRest: boolean; continueLoop: boolean }, TemplateError> => {
   if ((node.children?.length ?? 0) > 0 && !sawRest) {
     if (!skip(parserContext, TOKEN_COMMA)) {
-      return fail(parserContext, `${label}: expected comma`, tok.lineno, tok.colno);
+      return fail(parserContext, `${label}: expected comma`, { lineno: tok.lineno, colno: tok.colno });
     }
     const afterR = peekToken(parserContext);
     if (isErr(afterR)) { return afterR; }
@@ -210,7 +210,7 @@ const parseArrayPattern = (parserContext: ParserContext, lineno: number, colno: 
   const startTokR = nextToken(parserContext);
   if (isErr(startTokR)) { return startTokR; }
   if (startTokR.value.type !== TOKEN_LEFT_BRACKET) {
-    return fail(parserContext, 'parseArrayPattern: expected [', lineno, colno);
+    return fail(parserContext, 'parseArrayPattern: expected [', { lineno, colno });
   }
 
   const parseLoop = (
@@ -235,8 +235,7 @@ const parseObjectPropertyKey = (parserContext: ParserContext): Result<{ keyTok: 
   const keyTok = keyTokR.value;
   if (keyTok.type !== TOKEN_STRING && keyTok.type !== TOKEN_SYMBOL) {
     return fail(parserContext, 'parseObjectPattern: expected property name',
-      keyTok.lineno,
-      keyTok.colno);
+      { lineno: keyTok.lineno, colno: keyTok.colno });
   }
   const keyName = String(keyTok.value);
   return ok({ keyTok, keyName });
@@ -349,7 +348,7 @@ const parseObjectPattern = (parserContext: ParserContext, lineno: number, colno:
   if (isErr(startTokR)) { return startTokR; }
   const startTok = startTokR.value;
   if (startTok.type !== TOKEN_LEFT_CURLY) {
-    return fail(parserContext, 'parseObjectPattern: expected {', lineno, colno);
+    return fail(parserContext, 'parseObjectPattern: expected {', { lineno, colno });
   }
 
   const loopR = parseObjectPatternLoop(parserContext, node, false);
@@ -368,8 +367,7 @@ export const parsePattern = (parserContext: ParserContext): Result<Node | null, 
     return parseObjectPattern(parserContext, tok.lineno, tok.colno);
   }
   return fail(parserContext, 'parsePattern: expected [ or {',
-    tok.lineno,
-    tok.colno);
+    { lineno: tok.lineno, colno: tok.colno });
 };
 
 export const tryParsePattern = (parserContext: ParserContext): Result<Node | null, TemplateError> => {

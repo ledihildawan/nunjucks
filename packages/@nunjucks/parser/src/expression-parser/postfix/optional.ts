@@ -27,7 +27,7 @@ const handleComma = (parserContext: ParserContext, expectComma: boolean): Result
   const nextR = peekToken(parserContext);
   if (isErr(nextR)) { return nextR; }
   if (nextR.value.type !== TOKEN_COMMA) {
-    return fail(parserContext, 'expected comma after expression', nextR.value.lineno ?? 0, nextR.value.colno ?? 0);
+    return fail(parserContext, 'expected comma after expression', { lineno: nextR.value.lineno ?? 0, colno: nextR.value.colno ?? 0 });
   }
   const consumedR = nextToken(parserContext);
   if (isErr(consumedR)) { return consumedR; }
@@ -82,7 +82,7 @@ const parseOptionalBracket = (parserContext: ParserContext, tok: Token, target: 
   const rightBracketR = nextToken(parserContext);
   if (isErr(rightBracketR)) { return rightBracketR; }
   if (rightBracketR.value.type !== 'right-bracket') {
-    return fail(parserContext, 'expected right bracket', rightBracketR.value.lineno, rightBracketR.value.colno);
+    return fail(parserContext, 'expected right bracket', { lineno: rightBracketR.value.lineno, colno: rightBracketR.value.colno });
   }
 
   const node = optionalChain(loc(tok), { target, val: startR.value });
@@ -97,9 +97,7 @@ const parseOptionalLookup = (parserContext: ParserContext, tok: Token, target: N
 
   if (nameTok.type !== TOKEN_SYMBOL) {
     const targetName = (target ? String(target.value ?? 'expression') : 'expression');
-    return fail(parserContext, `expected name as lookup value after ?. on ${targetName}, got ${nameTok.value}`,
-      nameTok.lineno,
-      nameTok.colno);
+    return fail(parserContext, `expected name as lookup value after ?. on ${targetName}, got ${nameTok.value}`, { lineno: nameTok.lineno, colno: nameTok.colno });
   }
 
   const lookup = literal(loc(nameTok), nameTok.value);

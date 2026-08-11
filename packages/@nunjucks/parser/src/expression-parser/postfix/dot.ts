@@ -20,9 +20,7 @@ export const parseDotAccess = (parserContext: ParserContext, tok: DotOperatorTok
 
   if (value.type !== TOKEN_SYMBOL) {
     const targetName = (target ? String(target.value ?? 'expression') : 'expression');
-    return fail(parserContext, `expected name as lookup value after dot on ${targetName}, got ${value.value}`,
-      value.lineno,
-      value.colno);
+    return fail(parserContext, `expected name as lookup value after dot on ${targetName}, got ${value.value}`, { lineno: value.lineno, colno: value.colno });
   }
 
   const lookup = literal(loc(value), value.value);

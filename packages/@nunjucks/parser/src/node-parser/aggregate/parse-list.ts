@@ -86,12 +86,7 @@ export const prepareListItem = (
   }
 
   if (!canFollowWithoutComma(current.type)) {
-    return fail(
-      parserContext,
-      'parseAggregate: expected comma after expression',
-      current.lineno,
-      current.colno
-    );
+    return fail(parserContext, 'parseAggregate: expected comma after expression', { lineno: current.lineno, colno: current.colno });
   }
   return ok({ node, done: false, skipExpression: false });
 };

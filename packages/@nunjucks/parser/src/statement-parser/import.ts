@@ -13,18 +13,14 @@ export const parseImport = (parserContext: ParserContext): Result<Node, Template
   if (isErr(importTokR)) { return importTokR; }
   const importTok = importTokR.value;
   if (!skipSymbol(parserContext, 'import')) {
-    return fail(parserContext, 'parseImport: expected import',
-      importTok.lineno,
-      importTok.colno);
+    return fail(parserContext, 'parseImport: expected import', { lineno: importTok.lineno, colno: importTok.colno });
   }
 
   const templateR = parseExpression(parserContext);
   if (isErr(templateR)) { return templateR; }
 
   if (!skipSymbol(parserContext, 'as')) {
-    return fail(parserContext, 'parseImport: expected "as" keyword',
-      importTok.lineno,
-      importTok.colno);
+    return fail(parserContext, 'parseImport: expected "as" keyword', { lineno: importTok.lineno, colno: importTok.colno });
   }
 
   const targetR = parseExpression(parserContext);
@@ -33,7 +29,7 @@ export const parseImport = (parserContext: ParserContext): Result<Node, Template
   const withContextR = parseWithContext(parserContext);
   if (isErr(withContextR)) { return withContextR; }
   if (!isSymbol(target)) {
-    return fail(parserContext, 'parseImport: expected import target', target.lineno, target.colno);
+    return fail(parserContext, 'parseImport: expected import target', { lineno: target.lineno, colno: target.colno });
   }
   const node = importNode(loc(importTok), {
     template: templateR.value,

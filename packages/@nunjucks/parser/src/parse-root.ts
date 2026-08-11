@@ -122,7 +122,7 @@ const handleToken = (parserContext: ParserContext, tok: Token, breakOn: readonly
     const node = parseRawToken(tok);
     return ok({ continue: true, nodes: [node] });
   }
-  return fail(parserContext, `Unexpected token at top-level: ${tok.type}`, tok.lineno, tok.colno);
+  return fail(parserContext, `Unexpected token at top-level: ${tok.type}`, { lineno: tok.lineno, colno: tok.colno });
 };
 
 const parseNodes = (parserContext: ParserContext, breakOn: readonly string[] | null = null): Result<Node[], TemplateError> => {

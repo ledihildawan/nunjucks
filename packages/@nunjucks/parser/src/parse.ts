@@ -41,7 +41,7 @@ export const parse = (src: string, extensions?: ParserExtension[], options?: Par
     const validation = validateExpression(ast, securityConfig);
     if (!validation.valid) {
       const firstError = validation.errors[0];
-      return fail(parser, firstError.message, firstError.lineno, firstError.colno);
+      return fail(parser, firstError.message, { lineno: firstError.lineno, colno: firstError.colno });
     }
   }
 

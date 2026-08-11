@@ -29,9 +29,7 @@ const parseImportName = (
   if (isErr(nameR)) { return nameR; }
   const name = nameR.value;
   if (isUnderscore(name)) {
-    return fail(parserContext, 'parseFrom: names starting with an underscore cannot be imported',
-      name.lineno,
-      name.colno);
+    return fail(parserContext, 'parseFrom: names starting with an underscore cannot be imported', { lineno: name.lineno, colno: name.colno });
   }
 
   const hasAlias = skipSymbol(parserContext, 'as');
@@ -55,9 +53,7 @@ const handleBlockEnd = (
   fromTok: Token
 ): Result<void, TemplateError> => {
   if (names.children.length === 0) {
-    return fail(parserContext, 'parseFrom: Expected at least one import name',
-      fromTok.lineno,
-      fromTok.colno);
+    return fail(parserContext, 'parseFrom: Expected at least one import name', { lineno: fromTok.lineno, colno: fromTok.colno });
   }
 
   const nextTokR = peekToken(parserContext);
@@ -85,9 +81,7 @@ const parseFromImportIteration = (
   }
 
   if (names.children.length > 0 && !skip(parserContext, TOKEN_COMMA)) {
-    return fail(parserContext, 'parseFrom: expected comma',
-      fromTok.lineno,
-      fromTok.colno);
+    return fail(parserContext, 'parseFrom: expected comma', { lineno: fromTok.lineno, colno: fromTok.colno });
   }
 
   const result = parseImportName(parserContext, names);
@@ -107,9 +101,7 @@ export const parseFrom = (parserContext: ParserContext): Result<Node, TemplateEr
   if (isErr(templateR)) { return templateR; }
 
   if (!skipSymbol(parserContext, 'import')) {
-    return fail(parserContext, 'parseFrom: expected import',
-      fromTok.lineno,
-      fromTok.colno);
+    return fail(parserContext, 'parseFrom: expected import', { lineno: fromTok.lineno, colno: fromTok.colno });
   }
 
   const importLoop = (

@@ -13,7 +13,7 @@ export const parseCapture = (parserContext: ParserContext): Result<Node, Templat
   if (isErr(tagR)) { return tagR; }
   const tag = tagR.value;
   if (!skipSymbol(parserContext, 'capture')) {
-    return fail(parserContext, 'Expected capture', tag.lineno, tag.colno);
+    return fail(parserContext, 'Expected capture', { lineno: tag.lineno, colno: tag.colno });
   }
 
   const nameTok = nextTokenOrNull(parserContext);

@@ -31,12 +31,12 @@ export const parseVariableDeclaration = (parserContext: ParserContext): Result<N
     target = primR.value;
   }
   if (!patternNode && (!target || (target.type !== 'symbol' && !target.value))) {
-    return fail(parserContext, 'Expected variable name or pattern', tag.lineno, tag.colno);
+    return fail(parserContext, 'Expected variable name or pattern', { lineno: tag.lineno, colno: tag.colno });
   }
   const targets: Node[] = [target];
 
   if (!skipValue(parserContext, TOKEN_OPERATOR, ':=')) {
-    return fail(parserContext, 'Expected :=', tag.lineno, tag.colno);
+    return fail(parserContext, 'Expected :=', { lineno: tag.lineno, colno: tag.colno });
   }
 
   const valueR = parseExpression(parserContext);
@@ -60,9 +60,9 @@ const parseOperator = (parserContext: ParserContext, tag: Token): Result<string,
       if (isErr(consumedR)) { return consumedR; }
       return ok('=');
     }
-    return fail(parserContext, 'Expected =, ||= , &&=, ??=, **=, //=', tag.lineno, tag.colno);
+    return fail(parserContext, 'Expected =, ||= , &&=, ??=, **=, //=', { lineno: tag.lineno, colno: tag.colno });
   }
-  return fail(parserContext, 'Expected =', tag.lineno, tag.colno);
+  return fail(parserContext, 'Expected =', { lineno: tag.lineno, colno: tag.colno });
 };
 
 export const parseVariableAssignment = (parserContext: ParserContext): Result<Node, TemplateError> => {
@@ -82,7 +82,7 @@ export const parseVariableAssignment = (parserContext: ParserContext): Result<No
     target = primR.value;
   }
   if (!patternNode && (!target || (target.type !== 'symbol' && !target.value))) {
-    return fail(parserContext, 'Expected variable name or pattern', tag.lineno, tag.colno);
+    return fail(parserContext, 'Expected variable name or pattern', { lineno: tag.lineno, colno: tag.colno });
   }
   const targets: Node[] = [target];
 
