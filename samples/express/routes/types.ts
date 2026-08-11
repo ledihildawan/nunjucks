@@ -1,5 +1,3 @@
-import type { Request, Response, NextFunction } from 'express';
-
 export interface ErrorRoute {
   path: string;
   template: string;
@@ -13,5 +11,3 @@ export interface ErrorGroup {
   name: string;
   items: Array<{ path: string; desc: string }>;
 }
-
-export type AsyncRequestHandler = (req: Request, res: Response, next: NextFunction) => Promise<void>;

@@ -11,7 +11,7 @@ describe('Frame', () => {
 
   test('constructor sets parent and isolateWrites', () => {
     const parent = createFrame();
-    const f = createFrame(parent, true);
+    const f = createFrame({ parent, isolateWrites: true });
     expect(f.parent).toBe(parent);
     expect(f.isolateWrites).toBe(true);
   });
@@ -36,7 +36,7 @@ describe('Frame', () => {
   test('set with resolveUp writes to parent frame', () => {
     let parent = createFrame();
     parent = parent.set('existing', 'val');
-    let f = createFrame(parent);
+    let f = createFrame({ parent });
     f = f.set('existing', 'newval', true);
     expect(f.lookup('existing')).toBe('newval');
     expect(f.get('existing')).toBeNull();
@@ -44,7 +44,7 @@ describe('Frame', () => {
 
   test('set with resolveUp uses own frame if parent has no match', () => {
     const parent = createFrame();
-    let f = createFrame(parent);
+    let f = createFrame({ parent });
     f = f.set('own', 'val', true);
     expect(parent.get('own')).toBeNull();
     expect(f.get('own')).toBe('val');
@@ -59,14 +59,14 @@ describe('Frame', () => {
   test('lookup finds parent variables', () => {
     let parent = createFrame();
     parent = parent.set('x', 1);
-    const f = createFrame(parent);
+    const f = createFrame({ parent });
     expect(f.lookup('x')).toBe(1);
   });
 
   test('lookup prefers own variable over parent', () => {
     let parent = createFrame();
     parent = parent.set('x', 1);
-    let f = createFrame(parent);
+    let f = createFrame({ parent });
     f = f.set('x', 2);
     expect(f.lookup('x')).toBe(2);
   });
@@ -79,7 +79,7 @@ describe('Frame', () => {
   test('resolve returns frame that owns the variable', () => {
     let parent = createFrame();
     parent = parent.set('x', 1);
-    const f = createFrame(parent);
+    const f = createFrame({ parent });
     expect(f.resolve('x')).toBe(parent);
   });
 
@@ -97,14 +97,14 @@ describe('Frame', () => {
   test('resolve with forWrite=true and isolateWrites stops at own frame', () => {
     let parent = createFrame();
     parent = parent.set('x', 1);
-    const f = createFrame(parent, true);
+    const f = createFrame({ parent, isolateWrites: true });
     expect(f.resolve('x', true)).toBeUndefined();
   });
 
   test('resolve with forWrite=false ignores isolateWrites', () => {
     let parent = createFrame();
     parent = parent.set('x', 1);
-    const f = createFrame(parent, true);
+    const f = createFrame({ parent, isolateWrites: true });
     expect(f.resolve('x')).toBe(parent);
   });
 
@@ -117,14 +117,14 @@ describe('Frame', () => {
   });
 
   test('push propagates isolateWrites', () => {
-    const f = createFrame(null, true);
+    const f = createFrame({ isolateWrites: true });
     const child = f.push(true);
     expect(child.isolateWrites).toBe(true);
   });
 
   test('pop returns parent', () => {
     const parent = createFrame();
-    const child = createFrame(parent);
+    const child = createFrame({ parent });
     expect(child.pop()).toBe(parent);
   });
 

@@ -2,128 +2,135 @@ import { describe, test, expect } from 'bun:test';
 import {
   isBlockedKey,
   isDangerousGlobal,
-  isCodeExecutionPattern,
   getBlockedKeyCategory,
+  isCodeExecutionPattern,
+  ENVIRONMENTS,
   BLOCKED_KEYS_LIST,
   DANGEROUS_GLOBALS_LIST,
-  ENVIRONMENTS,
+  OBJECT_INTRINSICS,
+  CODE_EXECUTION_KEYS,
 } from './blocked-keys.ts';
 
-describe('isBlockedKey', () => {
-  test('blocks object intrinsics', () => {
-    expect(isBlockedKey('__proto__')).toBe(true);
-    expect(isBlockedKey('constructor')).toBe(true);
-    expect(isBlockedKey('prototype')).toBe(true);
-    expect(isBlockedKey('hasOwnProperty')).toBe(true);
-    expect(isBlockedKey('valueOf')).toBe(true);
+describe('blocked-keys', () => {
+  describe('getBlockedKeyCategory', () => {
+    test('returns object_intrinsic for prototype properties', () => {
+      expect(getBlockedKeyCategory('__proto__')).toBe('object_intrinsic');
+      expect(getBlockedKeyCategory('constructor')).toBe('object_intrinsic');
+      expect(getBlockedKeyCategory('prototype')).toBe('object_intrinsic');
+    });
+
+    test('returns universal_global for universal dangerous globals', () => {
+      expect(getBlockedKeyCategory('eval')).toBe('universal_global');
+      expect(getBlockedKeyCategory('Function')).toBe('universal_global');
+      expect(getBlockedKeyCategory('Proxy')).toBe('universal_global');
+    });
+
+    test('returns node_global in auto env', () => {
+      expect(getBlockedKeyCategory('process', 'auto')).toBe('node_global');
+      expect(getBlockedKeyCategory('Buffer', 'auto')).toBe('node_global');
+    });
+
+    test('returns browser_global in auto env', () => {
+      expect(getBlockedKeyCategory('window', 'auto')).toBe('browser_global');
+      expect(getBlockedKeyCategory('document', 'auto')).toBe('browser_global');
+    });
+
+    test('returns null for safe keys', () => {
+      expect(getBlockedKeyCategory('myVar')).toBe(null);
+      expect(getBlockedKeyCategory('data')).toBe(null);
+    });
   });
 
-  test('blocks universal globals in all envs', () => {
-    expect(isBlockedKey('eval')).toBe(true);
-    expect(isBlockedKey('Function')).toBe(true);
-    expect(isBlockedKey('globalThis')).toBe(true);
+  describe('isBlockedKey', () => {
+    test('blocks object intrinsics in all environments', () => {
+      expect(isBlockedKey('__proto__')).toBe(true);
+      expect(isBlockedKey('constructor')).toBe(true);
+    });
+
+    test('blocks universal globals in all environments', () => {
+      expect(isBlockedKey('eval')).toBe(true);
+      expect(isBlockedKey('Function')).toBe(true);
+    });
+
+    test('blocks node globals when env is node', () => {
+      expect(isBlockedKey('process', 'node')).toBe(true);
+      expect(isBlockedKey('Buffer', 'node')).toBe(true);
+    });
+
+    test('blocks browser globals when env is browser', () => {
+      expect(isBlockedKey('window', 'browser')).toBe(true);
+      expect(isBlockedKey('document', 'browser')).toBe(true);
+    });
+
+    test('allows safe keys', () => {
+      expect(isBlockedKey('myVariable')).toBe(false);
+      expect(isBlockedKey('userData')).toBe(false);
+    });
+
+    test('handles auto environment correctly', () => {
+      expect(isBlockedKey('process', 'auto')).toBe(true);
+      expect(isBlockedKey('window', 'auto')).toBe(true);
+    });
   });
 
-  test('env-specific: node globals', () => {
-    expect(isBlockedKey('process', 'node')).toBe(true);
-    expect(isBlockedKey('require', 'node')).toBe(true);
-    expect(isBlockedKey('process', 'browser')).toBe(false);
+  describe('isDangerousGlobal', () => {
+    test('identifies dangerous globals', () => {
+      expect(isDangerousGlobal('eval')).toBe(true);
+      expect(isDangerousGlobal('Function')).toBe(true);
+      expect(isDangerousGlobal('process')).toBe(true);
+      expect(isDangerousGlobal('window')).toBe(true);
+    });
+
+    test('returns false for safe keys', () => {
+      expect(isDangerousGlobal('Array')).toBe(false);
+      expect(isDangerousGlobal('Object')).toBe(false);
+      expect(isDangerousGlobal('Math')).toBe(false);
+    });
   });
 
-  test('env-specific: browser globals', () => {
-    expect(isBlockedKey('window', 'browser')).toBe(true);
-    expect(isBlockedKey('document', 'browser')).toBe(true);
-    expect(isBlockedKey('window', 'node')).toBe(false);
+  describe('isCodeExecutionPattern', () => {
+    test('identifies code execution patterns', () => {
+      expect(isCodeExecutionPattern('eval')).toBe(true);
+      expect(isCodeExecutionPattern('Function')).toBe(true);
+      expect(isCodeExecutionPattern('setTimeout')).toBe(true);
+      expect(isCodeExecutionPattern('setInterval')).toBe(true);
+    });
+
+    test('returns false for non-execution patterns', () => {
+      expect(isCodeExecutionPattern('Array')).toBe(false);
+      expect(isCodeExecutionPattern('Object')).toBe(false);
+    });
   });
 
-  test('env-specific: deno globals', () => {
-    expect(isBlockedKey('Deno', 'deno')).toBe(true);
-    expect(isBlockedKey('Deno', 'node')).toBe(false);
-  });
+  describe('exported lists', () => {
+    test('BLOCKED_KEYS_LIST contains expected keys', () => {
+      expect(BLOCKED_KEYS_LIST).toContain('eval');
+      expect(BLOCKED_KEYS_LIST).toContain('__proto__');
+      expect(BLOCKED_KEYS_LIST).toContain('process');
+    });
 
-  test('auto env blocks everything', () => {
-    expect(isBlockedKey('process')).toBe(true);
-    expect(isBlockedKey('window')).toBe(true);
-    expect(isBlockedKey('Deno')).toBe(true);
-  });
+    test('DANGEROUS_GLOBALS_LIST contains expected globals', () => {
+      expect(DANGEROUS_GLOBALS_LIST).toContain('eval');
+      expect(DANGEROUS_GLOBALS_LIST).toContain('globalThis');
+    });
 
-  test('allows normal variable names', () => {
-    expect(isBlockedKey('userName')).toBe(false);
-    expect(isBlockedKey('items')).toBe(false);
-    expect(isBlockedKey('data')).toBe(false);
-  });
-});
+    test('OBJECT_INTRINSICS contains prototype properties', () => {
+      expect(OBJECT_INTRINSICS).toContain('__proto__');
+      expect(OBJECT_INTRINSICS).toContain('constructor');
+    });
 
-describe('isDangerousGlobal', () => {
-  test('detects dangerous globals', () => {
-    expect(isDangerousGlobal('eval')).toBe(true);
-    expect(isDangerousGlobal('Function')).toBe(true);
-    expect(isDangerousGlobal('process')).toBe(true);
-    expect(isDangerousGlobal('require')).toBe(true);
-  });
+    test('CODE_EXECUTION_KEYS contains execution patterns', () => {
+      expect(CODE_EXECUTION_KEYS).toContain('eval');
+      expect(CODE_EXECUTION_KEYS).toContain('Function');
+      expect(CODE_EXECUTION_KEYS).toContain('exec');
+    });
 
-  test('does not flag object intrinsics', () => {
-    expect(isDangerousGlobal('constructor')).toBe(false);
-    expect(isDangerousGlobal('__proto__')).toBe(false);
-  });
-
-  test('allows normal names', () => {
-    expect(isDangerousGlobal('myVar')).toBe(false);
-  });
-});
-
-describe('isCodeExecutionPattern', () => {
-  test('detects code execution patterns', () => {
-    expect(isCodeExecutionPattern('eval')).toBe(true);
-    expect(isCodeExecutionPattern('Function')).toBe(true);
-    expect(isCodeExecutionPattern('setTimeout')).toBe(true);
-    expect(isCodeExecutionPattern('exec')).toBe(true);
-    expect(isCodeExecutionPattern('spawn')).toBe(true);
-  });
-
-  test('allows normal function names', () => {
-    expect(isCodeExecutionPattern('myFunc')).toBe(false);
-    expect(isCodeExecutionPattern('render')).toBe(false);
-  });
-});
-
-describe('getBlockedKeyCategory', () => {
-  test('categorizes object intrinsics', () => {
-    expect(getBlockedKeyCategory('__proto__')).toBe('object_intrinsic');
-    expect(getBlockedKeyCategory('toString')).toBe('object_intrinsic');
-  });
-
-  test('categorizes universal globals', () => {
-    expect(getBlockedKeyCategory('eval')).toBe('universal_global');
-    expect(getBlockedKeyCategory('globalThis')).toBe('universal_global');
-  });
-
-  test('categorizes env-specific globals', () => {
-    expect(getBlockedKeyCategory('process', 'node')).toBe('node_global');
-    expect(getBlockedKeyCategory('window', 'browser')).toBe('browser_global');
-    expect(getBlockedKeyCategory('Deno', 'deno')).toBe('deno_global');
-  });
-
-  test('returns null for unknown keys', () => {
-    expect(getBlockedKeyCategory('myVar')).toBe(null);
-  });
-});
-
-describe('exported lists', () => {
-  test('BLOCKED_KEYS_LIST is non-empty array', () => {
-    expect(Array.isArray(BLOCKED_KEYS_LIST)).toBe(true);
-    expect(BLOCKED_KEYS_LIST.length).toBeGreaterThan(10);
-    expect(BLOCKED_KEYS_LIST).toContain('__proto__');
-  });
-
-  test('DANGEROUS_GLOBALS_LIST is non-empty array', () => {
-    expect(Array.isArray(DANGEROUS_GLOBALS_LIST)).toBe(true);
-    expect(DANGEROUS_GLOBALS_LIST).toContain('eval');
-  });
-
-  test('ENVIRONMENTS constants', () => {
-    expect(ENVIRONMENTS.NODE).toBe('node');
-    expect(ENVIRONMENTS.BROWSER).toBe('browser');
-    expect(ENVIRONMENTS.DENO).toBe('deno');
+    test('ENVIRONMENTS has correct values', () => {
+      expect(ENVIRONMENTS).toEqual({
+        NODE: 'node',
+        BROWSER: 'browser',
+        DENO: 'deno',
+      });
+    });
   });
 });

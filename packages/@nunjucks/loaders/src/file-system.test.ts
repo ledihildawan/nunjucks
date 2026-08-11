@@ -3,6 +3,7 @@ import { mkdtemp, writeFile, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createFileSystemLoader } from './file-system.ts';
+import { isOk } from '@nunjucks/shared';
 
 const tempDirs: string[] = [];
 
@@ -49,10 +50,12 @@ describe('getSource', () => {
     const dir = await makeDir();
     await writeFile(join(dir, 'hello.njk'), 'Hello {{ name }}');
     const loader = createFileSystemLoader(dir);
-    const source = await loader.getSource('hello.njk');
-    expect(source).not.toBeNull();
-    expect(source!.src).toBe('Hello {{ name }}');
-    expect(source!.path).toContain('hello.njk');
+    const result = await loader.getSource('hello.njk');
+    expect(result).not.toBeNull();
+    if (result !== null && isOk(result)) {
+      expect(result.value.src).toBe('Hello {{ name }}');
+      expect(result.value.path).toContain('hello.njk');
+    }
   });
 
   test('returns null for non-existent file', async () => {
@@ -67,8 +70,11 @@ describe('getSource', () => {
     const dir2 = await makeDir();
     await writeFile(join(dir2, 'shared.njk'), 'from dir2');
     const loader = createFileSystemLoader([dir1, dir2]);
-    const source = await loader.getSource('shared.njk');
-    expect(source!.src).toBe('from dir2');
+    const result = await loader.getSource('shared.njk');
+    expect(result).not.toBeNull();
+    if (result !== null && isOk(result)) {
+      expect(result.value.src).toBe('from dir2');
+    }
   });
 
   test('prefers first path when file exists in both', async () => {
@@ -77,15 +83,22 @@ describe('getSource', () => {
     await writeFile(join(dir1, 'both.njk'), 'from dir1');
     await writeFile(join(dir2, 'both.njk'), 'from dir2');
     const loader = createFileSystemLoader([dir1, dir2]);
-    const source = await loader.getSource('both.njk');
-    expect(source!.src).toBe('from dir1');
+    const result = await loader.getSource('both.njk');
+    expect(result).not.toBeNull();
+    if (result !== null && isOk(result)) {
+      expect(result.value.src).toBe('from dir1');
+    }
   });
 
   test('throws on directory path', async () => {
     const dir = await makeDir();
     await mkdir(join(dir, 'subdir'));
     const loader = createFileSystemLoader(dir);
-    await expect(loader.getSource('subdir')).rejects.toThrow();
+    const result = await loader.getSource('subdir');
+    expect(result).not.toBeNull();
+    if (result !== null && !isOk(result)) {
+      expect(result.error.message).toContain('EISDIR');
+    }
   });
 
   test('records loaded file in pathsToNames', async () => {

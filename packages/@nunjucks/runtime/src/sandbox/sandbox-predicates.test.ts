@@ -49,22 +49,22 @@ describe('isAllowedKey', () => {
 
 describe('isBlockedAtScope', () => {
   test('never blocks symbol keys', () => {
-    expect(isBlockedAtScope(Symbol.iterator, nodeOpts, true)).toBe(false);
+    expect(isBlockedAtScope({ key: Symbol.iterator, sandboxOptions: nodeOpts, topLevel: true })).toBe(false);
   });
 
   test('returns false for keys with no category', () => {
-    expect(isBlockedAtScope('safeKey', nodeOpts, true)).toBe(false);
+    expect(isBlockedAtScope({ key: 'safeKey', sandboxOptions: nodeOpts, topLevel: true })).toBe(false);
   });
 
   test('blocks object intrinsics at every level', () => {
-    expect(isBlockedAtScope('__proto__', nodeOpts, true)).toBe(true);
-    expect(isBlockedAtScope('__proto__', nodeOpts, false)).toBe(true);
-    expect(isBlockedAtScope('constructor', nodeOpts, false)).toBe(true);
+    expect(isBlockedAtScope({ key: '__proto__', sandboxOptions: nodeOpts, topLevel: true })).toBe(true);
+    expect(isBlockedAtScope({ key: '__proto__', sandboxOptions: nodeOpts, topLevel: false })).toBe(true);
+    expect(isBlockedAtScope({ key: 'constructor', sandboxOptions: nodeOpts, topLevel: false })).toBe(true);
   });
 
   test('blocks other categorised keys only at top level', () => {
-    expect(isBlockedAtScope('process', nodeOpts, true)).toBe(true);
-    expect(isBlockedAtScope('process', nodeOpts, false)).toBe(false);
+    expect(isBlockedAtScope({ key: 'process', sandboxOptions: nodeOpts, topLevel: true })).toBe(true);
+    expect(isBlockedAtScope({ key: 'process', sandboxOptions: nodeOpts, topLevel: false })).toBe(false);
   });
 });
 

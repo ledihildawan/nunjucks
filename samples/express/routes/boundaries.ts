@@ -30,8 +30,8 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
         count: parsed.data.count,
       }, config: { views: VIEWS, autoescape: true, dev: true } });
     res.type('html').send(html);
-  } catch (err) {
-    next(err);
+  } catch (err: unknown) {
+    next(err as Error);
   }
 });
 

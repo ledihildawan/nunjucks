@@ -23,21 +23,24 @@ const resolveTemplateSource = async ({ template, loader, config }: ResolveTempla
     return { templateSource: template, templatePath: null };
   }
 
-  try {
-    const source = await loader.getSource(template);
-    if (source?.src) {
-      const resolvedPath: string | null = config.templatePath ? null : source.path;
-      return {
-        templateSource: source.src,
-        templatePath: resolvedPath
-      };
-    }
-  } catch (loaderErr) {
-    const { code } = loaderErr as { code?: string };
+  const sourceResult = await loader.getSource(template);
+  if (sourceResult === null) {
+    return { templateSource: template, templatePath: null };
+  }
+  if (isErr(sourceResult)) {
+    const { code } = sourceResult.error as { code?: string };
     if (code === 'ENOENT' || code === 'MODULE_NOT_FOUND' || code === 'ERR_MODULE_NOT_FOUND') {
       return { templateSource: template, templatePath: null };
     }
-    throw loaderErr;
+    throw sourceResult.error;
+  }
+  const source = sourceResult.value;
+  if (source.src) {
+    const resolvedPath: string | null = config.templatePath ? null : source.path;
+    return {
+      templateSource: source.src,
+      templatePath: resolvedPath
+    };
   }
 
   return { templateSource: template, templatePath: null };
@@ -60,7 +63,7 @@ const prepareSandbox = (config: RenderConfig, context: Record<string, unknown>):
 
   const sandboxEnabled = (config.sandbox ?? false) || ((blockedKeys?.length ?? 0) > 0);
   const mergedContext = { ...context, ...config.globals };
-  const sandboxedCtx = createSandboxedContext(mergedContext, sandboxEnabled, sandboxOptions) as Record<string, unknown>;
+  const sandboxedCtx = createSandboxedContext({ context: mergedContext, sandboxEnabled, options: sandboxOptions }) as Record<string, unknown>;
   return sandboxedCtx;
 };
 
@@ -93,11 +96,13 @@ const buildRenderEnv = (loader: FileSystemLoader | null, config: RenderConfig): 
     },
     ...createEnvLookups(config),
     async getTemplate(this: Env, name: string, eagerCompile?: boolean, includeChain?: IncludeChain | null, ignoreMissing?: boolean) {
-      const source = await loader.getSource(name);
-      if (!source) {
+      const sourceResult = await loader.getSource(name);
+      if (sourceResult === null) {
         if (ignoreMissing) { return null; }
         throw createLog('error', { def: getError('FILE_NOT_FOUND'), params: { path: name }, subject: name, context: { phase: 'load' } });
       }
+      if (isErr(sourceResult)) { throw sourceResult.error; }
+      const source = sourceResult.value;
       return createTemplate({ src: source.src, env: this, path: source.path, eagerCompile: eagerCompile ?? true, includeChain });
     },
   };

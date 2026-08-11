@@ -44,32 +44,33 @@ const parseInterpolation = (current: LexerState): ParseInterpolationResult => {
   return scan(current, 1, '');
 };
 
-const pushTemplateQuasi = (
+const addTemplateQuasi = (
   quasis: TemplateQuasi[],
   currentStr: string
-): void => {
+): TemplateQuasi[] => {
   if (currentStr) {
-    quasis.push({ type: 'template', value: currentStr });
+    return [...quasis, { type: 'template', value: currentStr }];
   }
+  return quasis;
 };
 
 const handleInterpolationStart = (
   current: LexerState,
   currentStr: string,
   quasis: TemplateQuasi[]
-): { newCurrent: LexerState; newStr: string } => {
-  pushTemplateQuasi(quasis, currentStr);
+): { newCurrent: LexerState; newStr: string; quasis: TemplateQuasi[] } => {
+  const newQuasis = addTemplateQuasi(quasis, currentStr);
   const newCurrent = advance(current, 2);
-  return { newCurrent, newStr: '' };
+  return { newCurrent, newStr: '', quasis: newQuasis };
 };
 
 const finalizeTemplateLiteral = (
   current: LexerState,
   currentStr: string,
   quasis: TemplateQuasi[]
-): LexerState => {
-  pushTemplateQuasi(quasis, currentStr);
-  return advance(current);
+): { finalCurrent: LexerState; quasis: TemplateQuasi[] } => {
+  const newQuasis = addTemplateQuasi(quasis, currentStr);
+  return { finalCurrent: advance(current), quasis: newQuasis };
 };
 
 const consumeTemplateContent = (
@@ -91,19 +92,23 @@ const consumeTemplateLoop = (
     currentStr: string,
     quasis: TemplateQuasi[]
   ): { quasis: TemplateQuasi[]; finalCurrent: LexerState } => {
-    if (isFinished(current)) { return { quasis, finalCurrent: current }; }
+    if (isFinished(current)) {
+      const finalQuasis = addTemplateQuasi(quasis, currentStr);
+      return { quasis: finalQuasis, finalCurrent: current };
+    }
     const char = getChar(current);
 
     if (char === '$' && getPeek(current) === '{') {
-      const { newCurrent, newStr } = handleInterpolationStart(current, currentStr, quasis);
+      const { newCurrent, newStr, quasis: updatedQuasis } = handleInterpolationStart(current, currentStr, quasis);
       const { exprContent, current: afterExpr } = parseInterpolation(newCurrent);
-      quasis.push({ type: 'expression', value: exprContent.trim() });
-      return scan(afterExpr, newStr, quasis);
+      const exprQuasi: TemplateQuasi = { type: 'expression', value: exprContent.trim() };
+      const quasisWithExpr: TemplateQuasi[] = [...updatedQuasis, exprQuasi];
+      return scan(afterExpr, newStr, quasisWithExpr);
     }
 
     if (char === '`') {
-      const finalized = finalizeTemplateLiteral(current, currentStr, quasis);
-      return { quasis, finalCurrent: finalized };
+      const { finalCurrent, quasis: finalQuasis } = finalizeTemplateLiteral(current, currentStr, quasis);
+      return { quasis: finalQuasis, finalCurrent };
     }
 
     const { newCurrent, newStr } = consumeTemplateContent(current, currentStr);

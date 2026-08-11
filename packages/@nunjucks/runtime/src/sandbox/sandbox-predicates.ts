@@ -17,9 +17,15 @@ const isAllowedKey = (key: string, allowlist: readonly string[] | null | undefin
   return allowlist.includes(key);
 };
 
-const isBlockedAtScope = (key: string | symbol, options: ResolvedSandboxOptions, topLevel = false): boolean => {
+interface BlockedAtScopeInput {
+  key: string | symbol;
+  sandboxOptions: ResolvedSandboxOptions;
+  topLevel: boolean;
+}
+
+const isBlockedAtScope = ({ key, sandboxOptions, topLevel }: BlockedAtScopeInput): boolean => {
   if (typeof key === 'symbol') { return false; }
-  const category = getBlockedKeyCategory(key as string, options.environment);
+  const category = getBlockedKeyCategory(key as string, sandboxOptions.environment);
   if (!category) { return false; }
   return topLevel || category === 'object_intrinsic';
 };

@@ -1,4 +1,5 @@
 import express, { type Router, type Request, type Response, type NextFunction } from 'express';
+import type { NunjucksConfig } from '@nunjucks/core';
 import { renderTemplate as renderBase } from '../lib/render-template.ts';
 
 const router: Router = express.Router();
@@ -6,7 +7,7 @@ const router: Router = express.Router();
 interface RenderTemplateOptions<TContext extends Record<string, unknown>> {
   template: string;
   context: TContext;
-  config?: Record<string, unknown>;
+  config?: NunjucksConfig;
 }
 
 const renderTemplate = async <TContext extends Record<string, unknown>>(

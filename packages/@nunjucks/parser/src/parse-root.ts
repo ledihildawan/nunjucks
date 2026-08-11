@@ -51,7 +51,7 @@ const shouldStripTrailingWhitespace = (
   return false;
 };
 
-const parseDataToken = (parserContext: ParserContext, tok: Token, buf: Node[], stripLeading: boolean): void => {
+const parseDataToken = (parserContext: ParserContext, tok: Token, stripLeading: boolean): Node => {
   const nextTok = peekTokenOrNull(parserContext);
   const stripTrailing = Boolean(nextTok && shouldStripTrailingWhitespace(nextTok, parserContext));
   const data = pipe(
@@ -60,27 +60,26 @@ const parseDataToken = (parserContext: ParserContext, tok: Token, buf: Node[], s
     s => (stripTrailing ? s.replace(TRAILING_WHITESPACE_RE, '') : s),
   );
 
-  buf.push(output(
+  return output(
     loc(tok),
     [templateData(loc(tok), data)]
-  ));
+  );
 };
 
-const parseRawToken = (tok: Token & { type: 'raw' }, buf: Node[]): void => {
+const parseRawToken = (tok: Token & { type: 'raw' }): Node => {
   const content = pipe(tok.value, replace(RAW_OPEN_TAG_RE, ''), replace(RAW_CLOSE_TAG_RE, ''));
-  buf.push(output(
+  return output(
     loc(tok),
     [templateData(loc(tok), content)]
-  ));
+  );
 };
 
-const parseVariableToken = (parserContext: ParserContext, tok: Token, buf: Node[]): Result<void, TemplateError> => {
+const parseVariableToken = (parserContext: ParserContext, tok: Token): Result<Node, TemplateError> => {
   const exprR = parseExpression(parserContext);
   if (isErr(exprR)) { return exprR; }
   const endR = advanceAfterVariableEnd(parserContext);
   if (isErr(endR)) { return endR; }
-  buf.push(output(loc(tok), [exprR.value]));
-  return ok(undefined);
+  return ok(output(loc(tok), [exprR.value]));
 };
 
 const parseCommentToken = (parserContext: ParserContext, tok: Token): void => {
@@ -90,50 +89,52 @@ const parseCommentToken = (parserContext: ParserContext, tok: Token): void => {
   ) === '-';
 };
 
-const handleToken = (parserContext: ParserContext, tok: Token, buf: Node[], breakOn: readonly string[] | null = null): Result<boolean, TemplateError> => {
+interface HandleTokenResult {
+  continue: boolean;
+  nodes: Node[];
+}
+
+const handleToken = (parserContext: ParserContext, tok: Token, breakOn: readonly string[] | null = null): Result<HandleTokenResult, TemplateError> => {
   const wsDrop = consumeWhitespaceDrop(parserContext);
 
   if (tok.type === TOKEN_DATA) {
-    parseDataToken(parserContext, tok, buf, wsDrop);
-    return ok(true);
+    const node = parseDataToken(parserContext, tok, wsDrop);
+    return ok({ continue: true, nodes: [node] });
   }
   if (tok.type === TOKEN_BLOCK_START) {
     const nR = parseStatement(parserContext, breakOn);
     if (isErr(nR)) { return nR; }
     const n = nR.value;
-    if (!n) {
-      return ok(false);
-    }
-    buf.push(n);
-    return ok(true);
+    return ok({ continue: n !== null, nodes: n ? [n] : [] });
   }
   if (tok.type === TOKEN_VARIABLE_START) {
-    const r = parseVariableToken(parserContext, tok, buf);
-    if (isErr(r)) { return r; }
-    return ok(true);
+    const nodeR = parseVariableToken(parserContext, tok);
+    if (isErr(nodeR)) { return nodeR; }
+    return ok({ continue: true, nodes: [nodeR.value] });
   }
   if (tok.type === TOKEN_COMMENT) {
     parseCommentToken(parserContext, tok);
-    return ok(true);
+    return ok({ continue: true, nodes: [] });
   }
   if (tok.type === TOKEN_RAW) {
-    parseRawToken(tok, buf);
-    return ok(true);
+    const node = parseRawToken(tok);
+    return ok({ continue: true, nodes: [node] });
   }
   return fail(parserContext, `Unexpected token at top-level: ${tok.type}`, tok.lineno, tok.colno);
 };
 
 const parseNodes = (parserContext: ParserContext, breakOn: readonly string[] | null = null): Result<Node[], TemplateError> => {
-  const buf: Node[] = [];
+  let nodes: Node[] = [];
 
-  // WHY: while-loop exempt per guide "Recursion Safety / Trampolining" — prevents stack overflow on large templates with thousands of top-level tokens.
   const parseLoop = (): Result<Node[], TemplateError> => {
     while (true) {
       const tok = nextTokenOrNull(parserContext);
-      if (!tok) { return ok(buf); }
-      const continueR = handleToken(parserContext, tok, buf, breakOn);
-      if (isErr(continueR)) { return continueR; }
-      if (!continueR.value) { return ok(buf); }
+      if (!tok) { return ok(nodes); }
+      const resultR = handleToken(parserContext, tok, breakOn);
+      if (isErr(resultR)) { return resultR; }
+      const result = resultR.value;
+      if (!result.continue) { return ok(nodes); }
+      nodes = [...nodes, ...result.nodes];
     }
   };
 

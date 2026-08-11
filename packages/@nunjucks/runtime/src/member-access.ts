@@ -67,9 +67,16 @@ export const optionalMemberLookup = (target: unknown, value: string, parentName:
   return result;
 };
 
-const normalizeIndex = (idx: number | null, len: number, defaultVal: number, stepValue: number): number => {
+interface NormalizeIndexInput {
+  idx: number | null;
+  len: number;
+  defaultVal: number;
+  step: number;
+}
+
+const normalizeIndex = ({ idx, len, defaultVal, step }: NormalizeIndexInput): number => {
   if (!isNonNullish(idx)) {
-    if (stepValue < 0) {
+    if (step < 0) {
       return defaultVal === 0 ? len - 1 : -1;
     }
     return defaultVal;
@@ -84,8 +91,8 @@ export const slice = <T>(source: readonly T[] | string, start: number | null, st
 
   const len = source.length;
   const stepValue = step ?? 1;
-  const normalizedStart = normalizeIndex(start, len, 0, stepValue);
-  const normalizedStop = normalizeIndex(stop, len, stepValue < 0 ? -1 : len, stepValue);
+  const normalizedStart = normalizeIndex({ idx: start, len, defaultVal: 0, step: stepValue });
+  const normalizedStop = normalizeIndex({ idx: stop, len, defaultVal: stepValue < 0 ? -1 : len, step: stepValue });
 
   if (stepValue === 1) {
     return source.slice(normalizedStart, normalizedStop);

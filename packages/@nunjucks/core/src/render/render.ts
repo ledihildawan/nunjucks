@@ -226,10 +226,12 @@ const createCachedEnrichment = (prepared: PreparedTemplate) => {
       { ...prepared.resolvedConfig, callerFrames: null, callerLocation: null, jsCaller: null },
       { template: prepared.templateSource, renderContext: prepared.context },
     );
-    enriched.sourceContent = locationCache.sourceContent ?? undefined;
-    enriched.templatePath = locationCache.templatePath ?? enriched.templatePath;
-    enriched.sourceStartLine = locationCache.sourceStartLine;
-    return enriched;
+    return {
+      ...enriched,
+      sourceContent: locationCache.sourceContent ?? undefined,
+      templatePath: locationCache.templatePath ?? enriched.templatePath,
+      sourceStartLine: locationCache.sourceStartLine,
+    };
   };
 };
 

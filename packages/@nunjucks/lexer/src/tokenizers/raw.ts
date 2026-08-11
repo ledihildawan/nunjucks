@@ -44,13 +44,21 @@ const extractTagNameAfterBlockEnd = (beforeEnd: LexerState): { tagName: string; 
   return scan(beforeEnd, '');
 };
 
-const processBlockEndTag = (
-  current: LexerState,
-  name: string,
-  endTagName: string,
-  depth: number,
-  tags: { blockStart: string; blockEnd: string }
-): RawState | null => {
+interface ProcessBlockEndTagOptions {
+  current: LexerState;
+  name: string;
+  endTagName: string;
+  depth: number;
+  tags: { blockStart: string; blockEnd: string };
+}
+
+const processBlockEndTag = ({
+  current,
+  name,
+  endTagName,
+  depth,
+  tags,
+}: ProcessBlockEndTagOptions): RawState | null => {
   const afterBlockEnd = advance(current, tags.blockEnd.length);
   const { tagName } = extractTagNameAfterBlockEnd(afterBlockEnd);
 
@@ -80,18 +88,25 @@ const processBlockEndTag = (
   return null;
 };
 
-const processRawContent = (
-  current: LexerState,
-  name: string,
-  endTagName: string,
-  tags: { blockStart: string; blockEnd: string }
-): RawState => {
+interface ProcessRawContentOptions {
+  current: LexerState;
+  name: string;
+  endTagName: string;
+  tags: { blockStart: string; blockEnd: string };
+}
+
+const processRawContent = ({
+  current,
+  name,
+  endTagName,
+  tags,
+}: ProcessRawContentOptions): RawState => {
   const scan = (state: LexerState, content: string, depth: number): RawState => {
     if (isFinished(state) || depth <= 0) {
       return { content, depth, current: state };
     }
     if (matches(state, tags.blockEnd)) {
-      const result = processBlockEndTag(state, name, endTagName, depth, tags);
+      const result = processBlockEndTag({ current: state, name, endTagName, depth, tags });
       if (result === null) {
         return scan(advance(state), content + getChar(state), depth);
       }
@@ -114,7 +129,7 @@ export const tokenizeRaw: Tokenizer = (state) => {
   if (name !== 'raw' && name !== 'verbatim') { return null; }
 
   const endTagName = getEndTagName(name);
-  const { content, current: finalState } = processRawContent(afterName, name, endTagName, state.tags);
+  const { content, current: finalState } = processRawContent({ current: afterName, name, endTagName, tags: state.tags });
 
   return {
     token: createToken(TOKEN_RAW, content, state.lineno, state.colno),

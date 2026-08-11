@@ -91,7 +91,7 @@ const throwBlockNotFoundError = ({ name, location, lineno, colno }: { name: stri
   });
 };
 
-const throwNoSuperBlockError = (name: string, lineno: number | null, colno: number | null): never => {
+const throwNoSuperBlockError = ({ name, lineno, colno }: { name: string; lineno: number | null; colno: number | null }): never => {
   throw createLog('error', {
     def: ERROR_DEFINITIONS.NO_SUPER_BLOCK,
     params: { name },
@@ -169,12 +169,12 @@ const makeContext = (state: ContextState): Context => {
     getSuper(envObj: unknown, name: string, block: BlockFn, frame: unknown, runtime: unknown, lineno: number | null = null, colno: number | null = null): unknown {
       const blockList = state.blocks[name];
       if (!blockList || !Array.isArray(blockList)) {
-        return throwNoSuperBlockError(name, lineno, colno);
+        return throwNoSuperBlockError({ name, lineno, colno });
       }
       const idx = blockList.indexOf(block);
       const blk = blockList[idx + 1];
       if (idx === -1 || !blk) {
-        return throwNoSuperBlockError(name, lineno, colno);
+        return throwNoSuperBlockError({ name, lineno, colno });
       }
       // WHY: Option C — block functions are async generators; drain the super block into a string so it can be markSafe'd and used as a value. BlockFn is typed `=> unknown` (loose); the runtime guarantee is AsyncGenerator, hence the narrowing cast.
       return collectString((blk as BlockFn)(envObj, context, frame, runtime) as AsyncGenerator<string, unknown>);

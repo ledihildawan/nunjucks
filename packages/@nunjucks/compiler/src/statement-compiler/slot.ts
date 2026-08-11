@@ -19,7 +19,7 @@ const compileSlotFunction = ({ compiler, params, body, parentFrame, slotVar }: S
   compiler.emitLine('  let __slotFrame = frame;');
   compiler.emitLine('  frame = runtime.createFrame(__slotFrame);');
 
-  const slotFrame = createFrame(parentFrame);
+  const slotFrame = createFrame({ parent: parentFrame });
   forEach(params, param => {
     compiler.emitLine(`  frame = frame.set("${param}", l_${param});`);
     slotFrame.set(param, `l_${param}`);

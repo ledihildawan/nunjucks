@@ -45,8 +45,8 @@ const toOptionalResult = (result: unknown): unknown => {
 
 const buildSandboxedRuntime = (runtime: RenderRuntime, sandboxOptions: SandboxOptions): RenderRuntime => ({
   ...runtime,
-  memberLookup: (target: unknown, value: string | symbol, parentName: string | null = null) => wrapMemberAccess(target, value, true, sandboxOptions, parentName),
-  optionalMemberLookup: (target: unknown, value: string | symbol, parentName: string | null = null) => toOptionalResult(wrapMemberAccess(target, value, true, sandboxOptions, parentName)),
+  memberLookup: (target: unknown, value: string | symbol, parentName: string | null = null) => wrapMemberAccess({ target, value, sandboxEnabled: true, options: sandboxOptions, parentName }),
+  optionalMemberLookup: (target: unknown, value: string | symbol, parentName: string | null = null) => toOptionalResult(wrapMemberAccess({ target, value, sandboxEnabled: true, options: sandboxOptions, parentName })),
 });
 
 export { getRenderFunction, buildSandboxOptions, buildSandboxedRuntime };

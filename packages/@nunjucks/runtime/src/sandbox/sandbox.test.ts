@@ -11,31 +11,31 @@ import {
 describe('createSandboxedObject', () => {
   test('returns original object when sandbox disabled', () => {
     const obj = { name: 'test' };
-    const result = createSandboxedObject(obj, false);
+    const result = createSandboxedObject({ value: obj, sandboxEnabled: false });
     expect(result).toBe(obj);
   });
 
   test('blocks access to __proto__', () => {
     const obj = { name: 'test' };
-    const sandboxed = createSandboxedObject(obj, true) as Record<string, unknown>;
+    const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string, unknown>;
     expect(() => sandboxed.__proto__).toThrow();
   });
 
   test('blocks access to constructor', () => {
     const obj = { name: 'test' };
-    const sandboxed = createSandboxedObject(obj, true) as Record<string, unknown>;
+    const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string, unknown>;
     expect(() => sandboxed.constructor).toThrow();
   });
 
   test('allows normal property access', () => {
     const obj = { name: 'test' };
-    const sandboxed = createSandboxedObject(obj, true) as Record<string, unknown>;
+    const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string, unknown>;
     expect(sandboxed.name).toBe('test');
   });
 
   test('blocks setting blocked keys', () => {
     const obj = { name: 'test' };
-    const sandboxed = createSandboxedObject(obj, true) as Record<string, unknown>;
+    const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string, unknown>;
     expect(() => {
       sandboxed.__proto__ = {};
     }).toThrow();
@@ -43,21 +43,21 @@ describe('createSandboxedObject', () => {
 
   test('allows setting normal keys', () => {
     const obj = { name: 'test' };
-    const sandboxed = createSandboxedObject(obj, true) as Record<string, unknown>;
+    const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string, unknown>;
     sandboxed.newProp = 'value';
     expect(sandboxed.newProp).toBe('value');
   });
 
   test('handles nested objects', () => {
     const obj = { user: { name: 'test' } };
-    const sandboxed = createSandboxedObject(obj, true) as { user: Record<string, unknown> };
+    const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as { user: Record<string, unknown> };
     expect(sandboxed.user.name).toBe('test');
     expect(() => sandboxed.user.__proto__).toThrow();
   });
 
   test('allows nested data keys that only look like globals', () => {
     const obj = { user: { eval: 'label', global: 'team', process: 'workflow' } };
-    const sandboxed = createSandboxedObject(obj, true) as { user: Record<string, unknown> };
+    const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as { user: Record<string, unknown> };
 
     expect(sandboxed.user.eval).toBe('label');
     expect(sandboxed.user.global).toBe('team');
@@ -68,7 +68,7 @@ describe('createSandboxedObject', () => {
     const parent = { inheritedSecret: 'hidden' };
     const obj = Object.create(parent);
     obj.name = 'visible';
-    const sandboxed = createSandboxedObject(obj, true) as Record<string, unknown>;
+    const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string, unknown>;
 
     expect(sandboxed.name).toBe('visible');
     expect(sandboxed.inheritedSecret).toBeUndefined();
@@ -78,36 +78,36 @@ describe('createSandboxedObject', () => {
   test('does not treat symbol access as string key escape', () => {
     const tag = Symbol.toStringTag;
     const obj = { [tag]: 'SafeThing', name: 'visible' };
-    const sandboxed = createSandboxedObject(obj, true) as Record<string | symbol, unknown>;
+    const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string | symbol, unknown>;
 
     expect(sandboxed[tag]).toBe('SafeThing');
     expect(sandboxed.name).toBe('visible');
   });
 
   test('handles null', () => {
-    expect(createSandboxedObject(null, true)).toBe(null);
+    expect(createSandboxedObject({ value: null, sandboxEnabled: true })).toBe(null);
   });
 
   test('handles undefined', () => {
-    expect(createSandboxedObject(undefined, true)).toBe(undefined);
+    expect(createSandboxedObject({ value: undefined, sandboxEnabled: true })).toBe(undefined);
   });
 
   test('handles primitives', () => {
-    expect(createSandboxedObject('string', true)).toBe('string');
-    expect(createSandboxedObject(42, true)).toBe(42);
-    expect(createSandboxedObject(true, true)).toBe(true);
+    expect(createSandboxedObject({ value: 'string', sandboxEnabled: true })).toBe('string');
+    expect(createSandboxedObject({ value: 42, sandboxEnabled: true })).toBe(42);
+    expect(createSandboxedObject({ value: true, sandboxEnabled: true })).toBe(true);
   });
 
   test('wraps functions', () => {
     const obj = { fn: () => 'called' };
-    const sandboxed = createSandboxedObject(obj, true) as { fn: () => string };
+    const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as { fn: () => string };
     expect(typeof sandboxed.fn).toBe('function');
     expect(sandboxed.fn()).toBe('called');
   });
 
   test('blocks string code execution in sandboxed functions', () => {
     const obj = { setTimeout: () => 'scheduled' };
-    const sandboxed = createSandboxedObject(obj, true) as { setTimeout: (...args: unknown[]) => unknown };
+    const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as { setTimeout: (...args: unknown[]) => unknown };
 
     try {
       sandboxed.setTimeout('alert(1)', 0);
@@ -123,13 +123,13 @@ describe('createSandboxedObject', () => {
 describe('createSandboxedContext', () => {
   test('returns original context when sandbox disabled', () => {
     const ctx = { name: 'test' };
-    const result = createSandboxedContext(ctx, false);
+    const result = createSandboxedContext({ context: ctx, sandboxEnabled: false });
     expect(result).toBe(ctx);
   });
 
   test('sandbox all top-level properties', () => {
     const ctx = { user: { name: 'test' }, count: 5 };
-    const sandboxed = createSandboxedContext(ctx, true) as { count: number; user: Record<string, unknown> };
+    const sandboxed = createSandboxedContext({ context: ctx, sandboxEnabled: true }) as { count: number; user: Record<string, unknown> };
     expect(sandboxed.count).toBe(5);
     expect(sandboxed.user.name).toBe('test');
     expect(() => sandboxed.user.__proto__).toThrow();
@@ -137,7 +137,7 @@ describe('createSandboxedContext', () => {
 
   test('blocks global-like names only at the top-level context boundary', () => {
     const ctx = { user: { eval: 'profile label', global: 'account' }, eval: 'global collision' };
-    const sandboxed = createSandboxedContext(ctx, true) as { user: Record<string, unknown>; eval: unknown };
+    const sandboxed = createSandboxedContext({ context: ctx, sandboxEnabled: true }) as { user: Record<string, unknown>; eval: unknown };
 
     expect(sandboxed.user.eval).toBe('profile label');
     expect(sandboxed.user.global).toBe('account');
@@ -146,7 +146,7 @@ describe('createSandboxedContext', () => {
 
   test('blocks direct context mutation in sandbox mode', () => {
     const ctx = { user: 'john' };
-    const sandboxed = createSandboxedContext(ctx, true) as { user: string };
+    const sandboxed = createSandboxedContext({ context: ctx, sandboxEnabled: true }) as { user: string };
 
     try {
       sandboxed.user = 'jane';
@@ -159,7 +159,7 @@ describe('createSandboxedContext', () => {
   });
 
   test('allows internal runtime metadata on sandboxed context', () => {
-    const sandboxed = createSandboxedContext({}, true) as Record<string, unknown>;
+    const sandboxed = createSandboxedContext({ context: {}, sandboxEnabled: true }) as Record<string, unknown>;
 
     sandboxed.__nunjucks_undefined_mode = 'strict';
 
@@ -167,55 +167,55 @@ describe('createSandboxedContext', () => {
   });
 
   test('handles empty context', () => {
-    expect(createSandboxedContext({}, true)).toEqual({});
-    expect(createSandboxedContext(null, true)).toBe(null);
-    expect(createSandboxedContext(undefined, true)).toBe(undefined);
+    expect(createSandboxedContext({ context: {}, sandboxEnabled: true })).toEqual({});
+    expect(createSandboxedContext({ context: null, sandboxEnabled: true })).toBe(null);
+    expect(createSandboxedContext({ context: undefined, sandboxEnabled: true })).toBe(undefined);
   });
 });
 
 describe('wrapMemberAccess', () => {
   test('returns value when sandbox disabled', () => {
     const obj = { name: 'test' };
-    expect(wrapMemberAccess(obj, 'name', false)).toBe('test');
+    expect(wrapMemberAccess({ target: obj, value: 'name', sandboxEnabled: false })).toBe('test');
   });
 
   test('blocks access to blocked keys', () => {
     const obj = { name: 'test' };
-    expect(() => wrapMemberAccess(obj, '__proto__', true)).toThrow();
+    expect(() => wrapMemberAccess({ target: obj, value: '__proto__', sandboxEnabled: true })).toThrow();
   });
 
   test('allows member access for nested global-like data keys', () => {
     const obj = { eval: 'label', global: 'team' };
 
-    expect(wrapMemberAccess(obj, 'eval', true)).toBe('label');
-    expect(wrapMemberAccess(obj, 'global', true)).toBe('team');
+    expect(wrapMemberAccess({ target: obj, value: 'eval', sandboxEnabled: true })).toBe('label');
+    expect(wrapMemberAccess({ target: obj, value: 'global', sandboxEnabled: true })).toBe('team');
   });
 
   test('allows access to normal keys', () => {
     const obj = { name: 'test' };
-    expect(wrapMemberAccess(obj, 'name', true)).toBe('test');
+    expect(wrapMemberAccess({ target: obj, value: 'name', sandboxEnabled: true })).toBe('test');
   });
 
   test('handles null/undefined target', () => {
-    const nullResult = wrapMemberAccess(null, 'name', true) as { __nunjucks_null__: boolean; __access_path__: string };
+    const nullResult = wrapMemberAccess({ target: null, value: 'name', sandboxEnabled: true }) as { __nunjucks_null__: boolean; __access_path__: string };
     expect(nullResult).toBeDefined();
     expect(nullResult.__nunjucks_null__).toBe(true);
     expect(nullResult.__access_path__).toBe('name');
-    const undefinedResult = wrapMemberAccess(undefined, 'name', true) as { __nunjucks_null__: boolean; __access_path__: string };
+    const undefinedResult = wrapMemberAccess({ target: undefined, value: 'name', sandboxEnabled: true }) as { __nunjucks_null__: boolean; __access_path__: string };
     expect(undefinedResult.__nunjucks_null__).toBe(true);
     expect(undefinedResult.__access_path__).toBe('name');
   });
 
   test('wraps functions in object', () => {
     const obj = { fn: () => 'called' };
-    const result = wrapMemberAccess(obj, 'fn', true) as () => string;
+    const result = wrapMemberAccess({ target: obj, value: 'fn', sandboxEnabled: true }) as () => string;
     expect(typeof result).toBe('function');
     expect(result()).toBe('called');
   });
 
   test('handles nested dangerous keys', () => {
     const obj = { user: { name: 'test' } };
-    const sandboxed = wrapMemberAccess(obj, 'user', true) as Record<string, unknown>;
+    const sandboxed = wrapMemberAccess({ target: obj, value: 'user', sandboxEnabled: true }) as Record<string, unknown>;
     expect(() => sandboxed.__proto__).toThrow();
   });
 });
@@ -259,7 +259,7 @@ describe('isBlockedKey', () => {
 
   test('createSandboxedContext applies the requested sandbox environment', () => {
     const ctx = { document: { title: 'safe in node scope' }, process: { env: {} } };
-    const sandboxed = createSandboxedContext(ctx, true, { environment: 'node' }) as {
+    const sandboxed = createSandboxedContext({ context: ctx, sandboxEnabled: true, options: { environment: 'node' } }) as {
       document: { title: string };
       process: unknown;
     };
@@ -271,8 +271,8 @@ describe('isBlockedKey', () => {
   test('wrapMemberAccess applies the requested sandbox environment', () => {
     const obj = { document: 'node-local', process: 'node-global' };
 
-    expect(wrapMemberAccess(obj, 'document', true, { environment: 'node' })).toBe('node-local');
-    expect(() => wrapMemberAccess(obj, 'process', true, { environment: 'node', topLevel: true })).toThrow();
+    expect(wrapMemberAccess({ target: obj, value: 'document', sandboxEnabled: true, options: { environment: 'node' } })).toBe('node-local');
+    expect(() => wrapMemberAccess({ target: obj, value: 'process', sandboxEnabled: true, options: { environment: 'node', topLevel: true } })).toThrow();
   });
 });
 
@@ -308,14 +308,14 @@ describe('isCodeExecutionPattern', () => {
 describe('Allowlist Mode', () => {
   test('createSandboxedObject allows blocklist-only mode by default', () => {
     const obj = { user: 'john', admin: 'secret' };
-    const sandboxed = createSandboxedObject(obj, true, { allowlist: [], blocklistMode: true }) as Record<string, unknown>;
+    const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true, options: { allowlist: [], blocklistMode: true } }) as Record<string, unknown>;
     expect(sandboxed.user).toBe('john');
     expect(sandboxed.admin).toBe('secret');
   });
 
   test('createSandboxedObject blocks non-allowlisted keys in allowlist mode', () => {
     const obj = { user: 'john', admin: 'secret', password: '123' };
-    const sandboxed = createSandboxedObject(obj, true, { allowlist: ['user'], blocklistMode: false }) as Record<string, unknown>;
+    const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true, options: { allowlist: ['user'], blocklistMode: false } }) as Record<string, unknown>;
     expect(sandboxed.user).toBe('john');
     expect(() => sandboxed.admin).toThrow();
     expect(() => sandboxed.password).toThrow();
@@ -323,20 +323,20 @@ describe('Allowlist Mode', () => {
 
   test('createSandboxedContext blocks non-allowlisted keys in allowlist mode', () => {
     const ctx = { user: 'john', admin: 'secret' };
-    const sandboxed = createSandboxedContext(ctx, true, { allowlist: ['user'], blocklistMode: false }) as Record<string, unknown>;
+    const sandboxed = createSandboxedContext({ context: ctx, sandboxEnabled: true, options: { allowlist: ['user'], blocklistMode: false } }) as Record<string, unknown>;
     expect(sandboxed.user).toBe('john');
     expect(() => sandboxed.admin).toThrow();
   });
 
   test('wrapMemberAccess supports allowlist mode', () => {
     const obj = { user: 'john', admin: 'secret' };
-    expect(wrapMemberAccess(obj, 'user', true, { allowlist: ['user'], blocklistMode: false })).toBe('john');
-    expect(() => wrapMemberAccess(obj, 'admin', true, { allowlist: ['user'], blocklistMode: false })).toThrow();
+    expect(wrapMemberAccess({ target: obj, value: 'user', sandboxEnabled: true, options: { allowlist: ['user'], blocklistMode: false } })).toBe('john');
+    expect(() => wrapMemberAccess({ target: obj, value: 'admin', sandboxEnabled: true, options: { allowlist: ['user'], blocklistMode: false } })).toThrow();
   });
 
   test('nested objects inherit allowlist options', () => {
     const obj = { user: { name: 'john', password: '123' } };
-    const sandboxed = createSandboxedObject(obj, true, { allowlist: ['user', 'name'], blocklistMode: false }) as {
+    const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true, options: { allowlist: ['user', 'name'], blocklistMode: false } }) as {
       user: Record<string, unknown>;
     };
     expect(sandboxed.user.name).toBe('john');

@@ -13,15 +13,23 @@ export interface Frame {
   pop: () => Frame | undefined;
 }
 
-const setNestedValueImmutable = (target: Record<string, unknown>, path: string[], lastPart: string, value: unknown): Record<string, unknown> => {
-  if (path.length === 0) {
+interface SetNestedInput {
+  target: Record<string, unknown>;
+  parts: string[];
+  value: unknown;
+}
+
+const setNestedValueImmutable = ({ target, parts, value }: SetNestedInput): Record<string, unknown> => {
+  if (parts.length === 0) { return target; }
+  const lastPart = parts.at(-1);
+  if (lastPart === undefined) { return target; }
+  if (parts.length === 1) {
     return { ...target, [lastPart]: value };
   }
-  const head = path[0];
+  const head = parts[0];
   if (head === undefined) { return target; }
-  const rest = path.slice(1);
   const child = (target[head] ?? {}) as Record<string, unknown>;
-  return { ...target, [head]: setNestedValueImmutable(child, rest, lastPart, value) };
+  return { ...target, [head]: setNestedValueImmutable({ target: child, parts: parts.slice(1), value }) };
 };
 
 interface FrameState {
@@ -31,12 +39,19 @@ interface FrameState {
   isolateWrites: boolean | undefined;
 }
 
-export const createFrame = (parent?: Frame | null, isolateWrites?: boolean, variables?: Record<string, unknown>, topLevel?: boolean): Frame => {
+interface CreateFrameOptions {
+  parent?: Frame | null;
+  isolateWrites?: boolean;
+  variables?: Record<string, unknown>;
+  topLevel?: boolean;
+}
+
+export const createFrame = (options: CreateFrameOptions = {}): Frame => {
   const state: FrameState = {
-    variables: variables ?? Object.create(null),
-    parent: parent ?? undefined,
-    topLevel: topLevel ?? false,
-    isolateWrites,
+    variables: options.variables ?? Object.create(null),
+    parent: options.parent ?? undefined,
+    topLevel: options.topLevel ?? false,
+    isolateWrites: options.isolateWrites,
   };
 
   const frame: Frame = {
@@ -50,19 +65,18 @@ export const createFrame = (parent?: Frame | null, isolateWrites?: boolean, vari
     set(name: string, value: unknown, resolveUp?: boolean): Frame {
       const parts = name.split('.');
       const [firstPart] = parts;
-      const lastPart = parts.at(-1);
-      if (firstPart === undefined || lastPart === undefined) { return frame; }
+      if (firstPart === undefined || parts.length === 0) { return frame; }
 
       if (resolveUp) {
         const resolved = frame.resolve(firstPart, true);
         if (resolved && resolved !== frame) {
-          const newResolvedVars = setNestedValueImmutable(resolved.variables, parts.slice(0, -1), lastPart, value);
-          return rebuildChain(frame, resolved, newResolvedVars);
+          const newResolvedVars = setNestedValueImmutable({ target: resolved.variables, parts, value });
+          return rebuildChain({ root: frame, target: resolved, newTargetVariables: newResolvedVars });
         }
       }
 
-      const newVariables = setNestedValueImmutable(state.variables, parts.slice(0, -1), lastPart, value);
-      return createFrame(state.parent, state.isolateWrites, newVariables, state.topLevel);
+      const newVariables = setNestedValueImmutable({ target: state.variables, parts, value });
+      return createFrame({ parent: state.parent, isolateWrites: state.isolateWrites, variables: newVariables, topLevel: state.topLevel });
     },
 
     get(name: string): unknown {
@@ -83,7 +97,7 @@ export const createFrame = (parent?: Frame | null, isolateWrites?: boolean, vari
     },
 
     push(writeIsolation?: boolean): Frame {
-      return createFrame(frame, writeIsolation);
+      return createFrame({ parent: frame, isolateWrites: writeIsolation });
     },
 
     pop(): Frame | undefined {
@@ -94,7 +108,13 @@ export const createFrame = (parent?: Frame | null, isolateWrites?: boolean, vari
   return frame;
 };
 
-const rebuildChain = (root: Frame, target: Frame, newTargetVariables: Record<string, unknown>): Frame => {
+interface RebuildChainInput {
+  root: Frame;
+  target: Frame;
+  newTargetVariables: Record<string, unknown>;
+}
+
+const rebuildChain = ({ root, target, newTargetVariables }: RebuildChainInput): Frame => {
   const collectPath = (cur: Frame | undefined, acc: Frame[]): Frame[] | null => {
     if (!cur) { return null; }
     if (cur === target) { return acc; }
@@ -103,10 +123,10 @@ const rebuildChain = (root: Frame, target: Frame, newTargetVariables: Record<str
   const path = collectPath(root, []);
   if (!path) { return root; }
 
-  const baseFrame = createFrame(target.parent, target.isolateWrites, newTargetVariables, target.topLevel);
+  const baseFrame = createFrame({ parent: target.parent, isolateWrites: target.isolateWrites, variables: newTargetVariables, topLevel: target.topLevel });
   return reduce(
     [...path].reverse(),
-    (acc, node) => createFrame(acc, node.isolateWrites, node.variables, node.topLevel),
+    (acc, node) => createFrame({ parent: acc, isolateWrites: node.isolateWrites, variables: node.variables, topLevel: node.topLevel }),
     baseFrame,
   );
 };

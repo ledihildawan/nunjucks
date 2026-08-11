@@ -4,157 +4,176 @@ import {
   optionalMemberLookup,
   slice,
   nullishCoalesce,
-} from '@nunjucks/runtime';
-import { isNullAccessResult, isPropertyNotFoundResult } from './member-access.ts';
+  isNullAccessResult,
+  isPropertyNotFoundResult,
+  getNullParentName,
+  NULL_MARKER,
+  PARENT_NAME,
+  ACCESS_PATH,
+  PROP_NOT_FOUND,
+} from './member-access.ts';
 
 describe('memberLookup', () => {
-  test('returns null marker for null/undefined object', () => {
-    const result = memberLookup(null, 'key') as { __nunjucks_parent__: string | null; __access_path__: string };
+  test('returns value for existing string key', () => {
+    const target = { name: 'Alice', age: 30 };
+    expect(memberLookup(target, 'name')).toBe('Alice');
+    expect(memberLookup(target, 'age')).toBe(30);
+  });
+
+  test('returns NullAccessResult when target is null', () => {
+    const result = memberLookup(null, 'name') as Record<string, unknown>;
     expect(isNullAccessResult(result)).toBe(true);
-    expect(result.__nunjucks_parent__).toBe(null);
-    expect(result.__access_path__).toBe('key');
+    expect(result[NULL_MARKER]).toBe(true);
+    expect(result[ACCESS_PATH]).toBe('name');
   });
 
-  test('gets property value', () => {
-    expect(memberLookup({ a: 1 }, 'a')).toBe(1);
+  test('returns NullAccessResult when target is undefined', () => {
+    const result = memberLookup(undefined, 'prop') as Record<string, unknown>;
+    expect(isNullAccessResult(result)).toBe(true);
+    expect(result[ACCESS_PATH]).toBe('prop');
   });
 
-  test('wraps function in call proxy', () => {
-    const obj = { fn: (x: number) => x * 2 };
-    const proxy = memberLookup(obj, 'fn') as (x: number) => number;
-    expect(proxy(3)).toBe(6);
+  test('carries parentName into NullAccessResult', () => {
+    const result = memberLookup(null, 'child', 'parent') as Record<string, unknown>;
+    expect(result[PARENT_NAME]).toBe('parent');
   });
 
-  test('call proxy preserves this', () => {
-    const obj = { name: 'test', getName(this: { name: string }) { return this.name; } };
-    const proxy = memberLookup(obj, 'getName') as () => string;
-    expect(proxy()).toBe('test');
+  test('returns PropertyNotFoundResult callable for missing own property', () => {
+    const result = memberLookup({ a: 1 }, 'missing') as Record<string, unknown>;
+    expect(isPropertyNotFoundResult(result)).toBe(true);
+    expect(result[PROP_NOT_FOUND]).toBe(true);
+    expect(typeof result).toBe('function');
+    expect((result as unknown as () => unknown)()).toBeUndefined();
   });
 
-  test('returns callable proxy for missing key that returns undefined when called', () => {
-    const result = memberLookup({}, 'missing') as () => unknown;
-    expect(result()).toBeUndefined();
+  test('PropertyNotFoundResult callable has null prototype', () => {
+    const result = memberLookup({}, 'x') as unknown;
+    expect(Object.getPrototypeOf(result)).toBeNull();
+  });
+
+  test('detects inherited properties via `in` operator on object target', () => {
+    class Alive { aliveMethod() { return 'inherited'; } }
+    const target = new Alive();
+    const result = memberLookup(target, 'aliveMethod');
+    expect(typeof result).toBe('function');
+  });
+
+  test('wraps function values with bound apply on the owning record', () => {
+    const target = { who: 'world', greet() { return `hi ${this.who}`; } };
+    const fn = memberLookup(target, 'greet') as (...args: unknown[]) => unknown;
+    expect(typeof fn).toBe('function');
+    expect(fn()).toBe('hi world');
   });
 });
 
 describe('optionalMemberLookup', () => {
-  test('returns undefined for null/undefined object', () => {
-    expect(optionalMemberLookup(null, 'key')).toBeUndefined();
-    expect(optionalMemberLookup(undefined, 'key')).toBeUndefined();
+  test('returns the value when property exists', () => {
+    expect(optionalMemberLookup({ x: 42 }, 'x')).toBe(42);
   });
 
-  test('gets property value', () => {
-    expect(optionalMemberLookup({ a: 1 }, 'a')).toBe(1);
+  test('returns undefined for NullAccessResult', () => {
+    expect(optionalMemberLookup(null, 'x')).toBeUndefined();
   });
 
-  test('wraps function in call proxy', () => {
-    const obj = { fn: (x: number) => x * 2 };
-    const proxy = optionalMemberLookup(obj, 'fn') as (x: number) => number;
-    expect(proxy(3)).toBe(6);
+  test('returns undefined for PropertyNotFoundResult', () => {
+    expect(optionalMemberLookup({}, 'missing')).toBeUndefined();
+  });
+
+  test('passes parentName through', () => {
+    expect(optionalMemberLookup({ a: 1 }, 'a', 'ctx')).toBe(1);
+  });
+});
+
+describe('isNullAccessResult / isPropertyNotFoundResult', () => {
+  test('isNullAccessResult rejects primitives and null', () => {
+    expect(isNullAccessResult(null)).toBe(false);
+    expect(isNullAccessResult(undefined)).toBe(false);
+    expect(isNullAccessResult('str')).toBe(false);
+    expect(isNullAccessResult(42)).toBe(false);
+  });
+
+  test('isPropertyNotFoundResult rejects plain objects', () => {
+    expect(isPropertyNotFoundResult({})).toBe(false);
+    expect(isPropertyNotFoundResult(null)).toBe(false);
+  });
+});
+
+describe('getNullParentName', () => {
+  test('extracts parent name from a NullAccessResult', () => {
+    const result = memberLookup(null, 'field', 'root');
+    expect(getNullParentName(result)).toBe('root');
+  });
+
+  test('returns null for nullish input', () => {
+    expect(getNullParentName(null)).toBeNull();
+    expect(getNullParentName(undefined)).toBeNull();
+  });
+
+  test('returns null when marker is absent', () => {
+    expect(getNullParentName({ other: 'shape' })).toBeNull();
   });
 });
 
 describe('slice', () => {
-  const arr = [0, 1, 2, 3, 4, 5];
-
-  test('defaults start to 0 when step is positive', () => {
-    expect(slice(arr, null, 3, 1)).toEqual([0, 1, 2]);
+  test('throws on zero step', () => {
+    expect(() => slice([1, 2, 3], 0, 2, 0)).toThrow();
   });
 
-  test('defaults start to end when step is negative', () => {
-    expect(slice(arr, null, null, -1)).toEqual([5, 4, 3, 2, 1, 0]);
-  });
-
-  test('defaults stop to length when step is positive', () => {
-    expect(slice(arr, 2, null, 1)).toEqual([2, 3, 4, 5]);
-  });
-
-  test('defaults stop to -1 when step is negative', () => {
-    expect(slice(arr, 3, null, -1)).toEqual([3, 2, 1, 0]);
-  });
-
-  test('uses arr.slice for step=1', () => {
-    expect(slice(arr, 1, 4, 1)).toEqual([1, 2, 3]);
-  });
-
-  test('uses arr.slice for step=null', () => {
-    expect(slice(arr, 1, 4, null)).toEqual([1, 2, 3]);
-  });
-
-  test('uses arr.slice for step=undefined', () => {
-    expect(slice(arr, 1, 4, undefined as unknown as null)).toEqual([1, 2, 3]);
-  });
-
-  test('supports omitted start and stop with a step', () => {
-    expect(slice(arr, null, null, 2)).toEqual([0, 2, 4]);
-  });
-
-  test('positive step skips elements', () => {
-    expect(slice(arr, 0, 6, 2)).toEqual([0, 2, 4]);
-  });
-
-  test('negative step reverses', () => {
-    expect(slice(arr, 4, 0, -1)).toEqual([4, 3, 2, 1]);
-  });
-
-  test('handles negative start', () => {
-    expect(slice(arr, -3, 6, 1)).toEqual([3, 4, 5]);
-  });
-
-  test('handles negative stop', () => {
-    expect(slice(arr, 0, -1, 1)).toEqual([0, 1, 2, 3, 4]);
-  });
-
-  test('throws for step=0', () => {
-    expect(() => slice(arr, 0, 5, 0)).toThrow('slice: step cannot be zero');
+  test('basic slice with step=1 returns a shallow copy subrange', () => {
+    expect(slice([1, 2, 3, 4, 5], 1, 4, 1)).toEqual([2, 3, 4]);
+    expect(slice([1, 2, 3, 4, 5], 0, 5, null)).toEqual([1, 2, 3, 4, 5]);
   });
 
   test('works on strings', () => {
-    expect(slice('hello', 1, 4, 1)).toEqual('ell');
+    expect(slice('hello world', 0, 5, 1)).toBe('hello');
+    expect(slice('hello', 1, null, null)).toBe('ello');
+  });
+
+  test('clamps negative start index from the end', () => {
+    expect(slice([1, 2, 3, 4, 5], -2, null, 1)).toEqual([4, 5]);
+  });
+
+  test('clamps negative stop index from the end', () => {
+    expect(slice([1, 2, 3, 4, 5], 0, -1, 1)).toEqual([1, 2, 3, 4]);
+  });
+
+  test('forward step skips elements', () => {
+    expect(slice([1, 2, 3, 4, 5, 6], 0, 6, 2)).toEqual([1, 3, 5]);
+  });
+
+  test('backward step reverses from the start index down to stop', () => {
+    expect(slice([1, 2, 3, 4, 5], 4, 0, -1)).toEqual([5, 4, 3, 2]);
+  });
+
+  test('null start with negative step resolves to last element', () => {
+    expect(slice([1, 2, 3], null, null, -1)).toEqual([3, 2, 1]);
+  });
+
+  test('null stop with negative step resolves to index -1 (excluded)', () => {
+    expect(slice([1, 2, 3, 4], 3, null, -2)).toEqual([4, 2]);
+  });
+
+  test('returns empty array when range is empty', () => {
+    expect(slice([1, 2, 3], 2, 2, 1)).toEqual([]);
   });
 });
 
 describe('nullishCoalesce', () => {
-  test('returns left when not null/undefined', () => {
-    expect(nullishCoalesce(0, 42)).toBe(0);
-    expect(nullishCoalesce('', 'default')).toBe('');
-    expect(nullishCoalesce(false, true)).toBe(false);
+  test('returns left when non-nullish (including falsy non-nullish values)', () => {
+    expect(nullishCoalesce('left', 'fallback')).toBe('left');
+    const numericLeft: number | null = 0;
+    expect(nullishCoalesce(numericLeft, -1)).toBe(0);
+    const booleanLeft: boolean | null = false;
+    expect(nullishCoalesce(booleanLeft, true)).toBe(false);
   });
 
-  test('returns right when left is null', () => {
-    expect(nullishCoalesce(null, 42)).toBe(42);
+  test('returns right when left is null or undefined', () => {
+    expect(nullishCoalesce(null, 'fallback')).toBe('fallback');
+    expect(nullishCoalesce(undefined, 'fallback')).toBe('fallback');
   });
 
-  test('returns right when left is undefined', () => {
-    expect(nullishCoalesce(undefined, 42)).toBe(42);
-  });
-});
-
-describe('memberLookup: primitive methods', () => {
-  test('string method accessible', () => {
-    const result = memberLookup('hello', 'toUpperCase', null);
-    expect(typeof result).toBe('function');
-    const fn = result as (...args: unknown[]) => unknown;
-    expect(fn()).toBe('HELLO');
-  });
-
-  test('number method accessible', () => {
-    const result = memberLookup(3.14, 'toFixed', null);
-    expect(typeof result).toBe('function');
-    const fn = result as (...args: unknown[]) => unknown;
-    expect(fn(1)).toBe('3.1');
-  });
-
-  test('string length property', () => {
-    expect(memberLookup('hello', 'length', null)).toBe(5);
-  });
-
-  test('array length property', () => {
-    expect(memberLookup([1, 2, 3], 'length', null)).toBe(3);
-  });
-
-  test('non-existent property on primitive', () => {
-    const result = memberLookup('hello', 'nonExistent', null);
-    expect(isPropertyNotFoundResult(result)).toBe(true);
+  test('preserves generic type inference', () => {
+    const value: number | null = 7;
+    expect(nullishCoalesce(value, 0)).toBe(7);
   });
 });

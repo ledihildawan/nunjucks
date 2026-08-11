@@ -1,8 +1,9 @@
 import express, { type Router, type Request, type Response } from 'express';
+import type { NunjucksConfig } from '@nunjucks/core';
 import { renderTemplate as renderBase } from '../lib/render-template.ts';
 
 const renderTemplate = async <TContext extends Record<string, unknown>>(
-  { template, context, config = {} }: { template: string; context: TContext; config?: Record<string, unknown> },
+  { template, context, config = {} }: { template: string; context: TContext; config?: NunjucksConfig },
 ) => renderBase(template, { context, config: {
   autoescape: true,
   dev: true,
