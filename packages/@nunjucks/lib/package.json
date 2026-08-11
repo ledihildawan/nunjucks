@@ -16,7 +16,8 @@
     "./stack-parse": "./src/stack-parse.ts",
     "./ansi-helpers": "./src/ansi-helpers.ts",
     "./strip-markdown": "./src/strip-markdown.ts",
-    "./get-error-message": "./src/get-error-message.ts"
+    "./get-error-message": "./src/get-error-message.ts",
+    "./sanitize-helpers": "./src/sanitize-helpers.ts"
   },
   "dependencies": {
     "remeda": "^2.39.0"
