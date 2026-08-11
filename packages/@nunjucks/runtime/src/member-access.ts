@@ -113,9 +113,4 @@ export const slice = <T>(source: readonly T[] | string, start: number | null, st
   return collectBackward(normalizedStart, []);
 };
 
-export const nullishCoalesce = <T>(left: T | null | undefined, right: T): T => {
-  if (isNonNullish(left)) {
-    return left;
-  }
-  return right;
-};
+export { nullishCoalesce } from '@nunjucks/lib/nullish-coalesce';

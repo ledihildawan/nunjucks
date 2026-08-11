@@ -7,7 +7,8 @@
     ".": "./src/index.ts",
     "./async/timeout": "./src/async/timeout.ts",
     "./symbol-generator": "./src/symbol-generator.ts",
-    "./collect-stream": "./src/collect-stream.ts"
+    "./collect-stream": "./src/collect-stream.ts",
+    "./nullish-coalesce": "./src/nullish-coalesce.ts"
   },
   "dependencies": {
     "remeda": "^2.39.0"
