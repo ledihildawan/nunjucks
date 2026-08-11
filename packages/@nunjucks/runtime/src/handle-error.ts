@@ -1,5 +1,5 @@
 import { createLog, normalizeErrorMetadata, ERROR_DEFINITIONS, type ErrorContext } from '@nunjucks/log';
-import { MATCH_ANY_RE } from '@nunjucks/shared';
+import { MATCH_ANY_RE } from '@nunjucks/lib';
 import {
   getLogContext,
 } from './log-context.ts';

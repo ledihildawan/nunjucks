@@ -1,5 +1,7 @@
 import { createLog, ERROR_DEFINITIONS, type ErrorDefinitionEntry, type WarningContext } from '@nunjucks/log';
-import { isNonNullish, MATCH_ANY_RE, type Phase } from '@nunjucks/shared';
+import { isNonNullish } from '@nunjucks/lib';
+import { MATCH_ANY_RE } from '@nunjucks/lib';
+import type { Phase } from '@nunjucks/shared';
 import { isNullAccessResult, isPropertyNotFoundResult, type PropertyNotFoundResult, type NullAccessResult } from './member-access.ts';
 import { getLogContext, throwRuntimeError } from './log-context.ts';
 

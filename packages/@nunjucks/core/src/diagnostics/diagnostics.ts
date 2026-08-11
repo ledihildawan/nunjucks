@@ -1,6 +1,8 @@
 import { createLog, normalizeErrorMetadata, type TemplateError } from '@nunjucks/error-formatter';
 import { resolveLocation, type LocationInputs, type CallerLocation } from './error-location.ts';
-import { MATCH_ANY_RE, isKeyedObject, type Phase } from '@nunjucks/shared';
+import { MATCH_ANY_RE } from '@nunjucks/lib';
+import { isKeyedObject } from '@nunjucks/lib';
+import type { Phase } from '@nunjucks/shared';
 import { DEFAULT_IDE } from '@nunjucks/error-renderer';
 import type { LineBase } from '@nunjucks/error-catalog';
 
