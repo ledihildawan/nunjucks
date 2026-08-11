@@ -1,5 +1,3 @@
-import { isArray, isIterable } from '@nunjucks/shared';
-
 export const contextOrFrameLookup = (
   context: { lookup: (name: string) => unknown },
   frame: { lookup: (name: string) => unknown },
@@ -12,12 +10,4 @@ export const contextOrFrameLookup = (
   return value;
 };
 
-export const fromIterator = (iterable: unknown): unknown => {
-  if (typeof iterable !== 'object' || iterable === null || isArray(iterable)) {
-    return iterable;
-  }
-  if (isIterable(iterable)) {
-    return Array.from(iterable);
-  }
-  return iterable;
-};
+export { fromIterator } from '@nunjucks/lib/from-iterator';

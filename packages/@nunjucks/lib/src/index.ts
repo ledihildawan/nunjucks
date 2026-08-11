@@ -9,3 +9,4 @@ export * from './async/timeout.ts';
 export * from './symbol-generator.ts';
 export * from './collect-stream.ts';
 export * from './nullish-coalesce.ts';
+export * from './from-iterator.ts';
