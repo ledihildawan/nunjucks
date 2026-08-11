@@ -1,11 +1,11 @@
 
 import type { Node } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
+import type { Frame } from '@nunjucks/shared/runtime-contract';
 
 import { forEach } from 'remeda';
 import { compileDispatch } from './node-dispatch.ts';
-import { DEFAULT_UNDEFINED_MODE, type UndefinedMode } from '@nunjucks/runtime';
-import { createHtmlContextTracker, type HtmlContext } from '@nunjucks/shared';
+import { DEFAULT_UNDEFINED_MODE } from '@nunjucks/runtime';
+import { createHtmlContextTracker, type HtmlContext, type UndefinedMode } from '@nunjucks/shared';
 import {
   fail as failCompiler,
   getTemplateName as getCompilerTemplateName,

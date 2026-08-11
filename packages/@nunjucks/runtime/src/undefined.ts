@@ -1,4 +1,4 @@
-import { UNDEFINED_MODES, type UndefinedMode } from '@nunjucks/shared';
+import { UNDEFINED_MODES, type UndefinedMode } from '@nunjucks/shared/runtime-contract';
 
 export { UNDEFINED_MODES, type UndefinedMode };
 
