@@ -1,18 +1,12 @@
-import { pipe, split } from 'remeda';
-import { replace } from '@nunjucks/lib';
-
 import type { Warning } from '@nunjucks/error-catalog';
+import { basename } from '@nunjucks/lib/path-basename';
 
 interface InjectWarningsOptions {
   dev?: boolean;
   verbosity?: 'simple' | 'medium' | 'full';
 }
 
-const getFileName = (path: string | null | undefined): string => {
-  if (!path) { return 'unknown'; }
-  const parts = pipe(path, replace(/\\/gu, '/'), split('/'));
-  return parts.at(-1) ?? 'unknown';
-};
+const getFileName = basename;
 
 const getLocationString = (w: Warning): string => {
   if (w.lineno === undefined || w.lineno === null) {
