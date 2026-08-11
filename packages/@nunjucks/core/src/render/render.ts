@@ -4,7 +4,8 @@ import { withStreamDeadline, coerceChunk, guardSingleConsumer } from './render-s
 import { createFileSystemLoader } from '@nunjucks/loaders';
 import { serializeErrorPayload } from './pipe-stream.ts';
 import type { RenderConfig, RenderStreamResult } from './render-types.ts';
-import { execute, executeStream, createFrame, withTimeout, isStreamErrorSentinel, type StreamErrorSentinel } from '@nunjucks/runtime';
+import { execute, executeStream, createFrame, isStreamErrorSentinel, type StreamErrorSentinel } from '@nunjucks/runtime';
+import { withTimeout } from '@nunjucks/lib/async/timeout';
 import { getCallerFrames } from './caller-file.ts';
 import { ok, err, isErr, type Result } from '@nunjucks/lib';
 import { injectWarningsScript, adjustColnoForNullValue, type TemplateWarning, type TemplateError } from '@nunjucks/log';

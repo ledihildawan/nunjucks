@@ -15,6 +15,7 @@
     "@nunjucks/error-formatter": "workspace:*",
     "@nunjucks/error-renderer": "workspace:*",
     "@nunjucks/filters": "workspace:*",
+    "@nunjucks/lib": "workspace:*",
     "@nunjucks/log": "workspace:*",
     "@nunjucks/parser": "workspace:*",
     "@nunjucks/runtime": "workspace:*",

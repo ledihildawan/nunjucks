@@ -5,3 +5,4 @@ export * from './escape-regex.ts';
 export * from './regex-constants.ts';
 export * from './escape-html.ts';
 export * from './escape-context.ts';
+export * from './async/timeout.ts';
