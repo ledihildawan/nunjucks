@@ -5,21 +5,12 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./caller-file": "./src/caller-file.ts",
-    "./error-location": "./src/errors/error-location.ts",
-    "./errors": "./src/errors/index.ts",
-    "./blocked-keys": "./src/security/blocked-keys.ts",
-    "./security": "./src/security/index.ts",
-    "./escape": "./src/escaping/escape.ts",
-    "./escape-context": "./src/escaping/escape-context.ts",
-    "./escaping": "./src/escaping/index.ts",
-    "./extract-blocks": "./src/extract-blocks.ts",
-    "./escape-regex": "./src/escape-regex.ts",
-    "./reserved": "./src/reserved.ts",
-    "./type-guards": "./src/type-guards.ts",
     "./runtime-contract": "./src/runtime-contract/index.ts",
     "./runtime-contract/frame": "./src/runtime-contract/frame.ts",
-    "./safe-string": "./src/safe-string/index.ts"
+    "./runtime-contract/undefined-modes": "./src/runtime-contract/undefined-modes.ts",
+    "./safe-string": "./src/safe-string/index.ts",
+    "./security": "./src/security/index.ts",
+    "./errors": "./src/errors/index.ts"
   },
   "dependencies": {
     "remeda": "^2.39.0"
