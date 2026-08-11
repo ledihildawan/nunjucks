@@ -1,5 +1,5 @@
 import { createLog, ERROR_DEFINITIONS } from '@nunjucks/log';
-import { escapeForContext, isNonNullish, isThenable, type HtmlContext } from '@nunjucks/shared';
+import { escapeForContext, isNonNullish, isThenable, type HtmlContext } from '@nunjucks/lib';
 import { isSafeString } from './safe-string.ts';
 import { getLogContext } from './log-context.ts';
 

@@ -1,4 +1,4 @@
-import { escapeHtml } from '@nunjucks/shared';
+import { escapeHtml } from '@nunjucks/lib';
 import picocolors from 'picocolors';
 
 const LEADING_WHITESPACE_RE = /^\s+/u;

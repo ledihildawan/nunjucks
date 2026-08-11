@@ -9,7 +9,7 @@ export { createFormatterState } from './error/metadata.ts';
 export { normalizeRenderContext } from './error/safe-context.ts';
 export type { MergedErrorParts } from './error/error-parts.ts';
 export { mergeErrorParts } from './error/error-parts.ts';
-export { escapeHtml } from '@nunjucks/shared';
+export { escapeHtml } from '@nunjucks/lib';
 export { renderInlineMarkdown, highlightHtml, highlightJs } from './syntax-highlight/highlight.ts';
 export type { LineBase } from '@nunjucks/error-catalog';
 export type { DisplayLocation } from './source-trace/location.ts';

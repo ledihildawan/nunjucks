@@ -1,6 +1,7 @@
 import { isNonNullish, isNullish } from 'remeda';
 import { isSafeString, markSafe, copySafeness } from '@nunjucks/runtime';
-import { ok, err, escapeHtml, MATCH_ANY_RE, type Result, type Phase } from '@nunjucks/shared';
+import { ok, err, escapeHtml, MATCH_ANY_RE, type Result } from '@nunjucks/lib';
+import type { Phase } from '@nunjucks/shared';
 import { createLog } from '@nunjucks/log';
 import type { ErrorDefinitionEntry, TemplateError } from '@nunjucks/log';
 import type { FilterContext, SafeString } from './types.ts';
