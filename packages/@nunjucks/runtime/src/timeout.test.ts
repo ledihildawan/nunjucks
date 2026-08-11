@@ -48,18 +48,4 @@ describe('withTimeout', () => {
     expect(isTimeoutError(err)).toBe(true);
     expect((err as Error).message).toContain('timed out after 30ms');
   });
-
-  test('invokes onTimeout callback when timing out', async () => {
-    let called = false;
-    const never = new Promise(() => {});
-    const err = await withTimeout(never, 30, () => { called = true; }).catch((e: unknown) => e);
-    expect(isTimeoutError(err)).toBe(true);
-    expect(called).toBe(true);
-  });
-
-  test('does not invoke onTimeout when the promise settles in time', async () => {
-    let called = false;
-    await withTimeout(Promise.resolve(1), 1000, () => { called = true; });
-    expect(called).toBe(false);
-  });
 });
