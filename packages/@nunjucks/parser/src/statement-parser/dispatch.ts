@@ -33,7 +33,7 @@ import { find } from 'remeda';
 import { peekToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { STATEMENT_PARSERS } from './registry.ts';
 
 export const parseStatement = (parserContext: ParserContext, breakOn: readonly string[] | null = null): Result<Node | null, TemplateError> => {

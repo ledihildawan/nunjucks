@@ -1,6 +1,6 @@
 import type { Node } from '@nunjucks/nodes';
 import { symbol, superNode, isBlock, isFunCall, walk, findAll } from '@nunjucks/nodes';
-import { createGensym } from '@nunjucks/lib/symbol-generator';
+import { createGensym } from '@nunjucks/lib/gensym';
 import { loc } from '@nunjucks/shared';
 
 export const liftSuper = (ast: Node): Node => walk(ast, (blockNode: Node): Node | undefined => {

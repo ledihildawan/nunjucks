@@ -2,7 +2,7 @@ import type { Tokenizer, LexerState } from '../types.ts';
 import { getChar, getPeek, advance, isFinished } from '../state.ts';
 import { createToken } from '../tokens.ts';
 import { TOKEN_TEMPLATE_LITERAL } from '../token-types.ts';
-import { createLog } from '@nunjucks/log';
+import { createLog } from '@nunjucks/error-formatter';
 import { MATCH_ANY_RE } from '@nunjucks/shared';
 
 export interface TemplateQuasi {

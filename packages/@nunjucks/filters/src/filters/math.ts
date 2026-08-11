@@ -1,4 +1,4 @@
-import { ERROR_DEFINITIONS } from '@nunjucks/log';
+import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { requireNumberError } from '../factory/index.ts';
 
 export const abs = (value: unknown): number => {

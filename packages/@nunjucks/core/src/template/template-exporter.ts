@@ -1,6 +1,6 @@
 import { createContext, createFrame, type BlockLocation, type Context, type Frame } from '@nunjucks/runtime';
 import { collectStream } from '@nunjucks/lib/collect-stream';
-import { prettifyError } from '@nunjucks/log';
+import { prettifyError } from '@nunjucks/error-formatter';
 import type { TemplateState } from './types';
 import { createRuntimeWithContext } from './runtime-factory';
 

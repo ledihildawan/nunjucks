@@ -1,5 +1,7 @@
 import { isCodeExecutionPattern, getBlockedKeyCategory, isNonNullish, isFunction, hasOwn } from '@nunjucks/shared';
-import { createLog, ERROR_DEFINITIONS, type ErrorDefinitionEntry, type TemplateError, type TemplateWarning } from '@nunjucks/log';
+import { createLog } from '@nunjucks/error-formatter';
+import type { ErrorDefinitionEntry, TemplateError, TemplateWarning } from '@nunjucks/error-formatter';
+import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { NULL_MARKER, PARENT_NAME, ACCESS_PATH, PROP_NOT_FOUND } from '../member-access.ts';
 import { resolveSandboxOptions } from './sandbox-options.ts';
 import type { SandboxOptions, ResolvedSandboxOptions } from './sandbox-options.ts';

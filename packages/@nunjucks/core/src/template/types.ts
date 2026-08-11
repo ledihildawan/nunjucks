@@ -1,5 +1,5 @@
 import type { Env, BlockLocation, BlockFn } from '@nunjucks/runtime';
-import type { IncludeChain } from '@nunjucks/log';
+import type { IncludeChain } from '@nunjucks/error-formatter';
 import type { CompiledTemplateExports } from '@nunjucks/shared';
 import type { RuntimeContext } from './runtime-context.ts';
 

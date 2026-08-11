@@ -3,7 +3,7 @@ import type { BinaryFields } from '@nunjucks/nodes';
 import type { Loc } from '@nunjucks/shared';
 import { loc } from '@nunjucks/shared';
 import { ok, isErr, type Result } from '@nunjucks/lib';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { TOKEN_OPERATOR } from '@nunjucks/lexer';
 import { peekToken, skipValue } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';

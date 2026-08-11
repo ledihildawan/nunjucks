@@ -1,6 +1,6 @@
 
 import type { Node } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/shared/runtime-contract';
+import type { Frame } from '@nunjucks/runtime';
 
 import { forEach } from 'remeda';
 import { compileDispatch } from './node-dispatch.ts';

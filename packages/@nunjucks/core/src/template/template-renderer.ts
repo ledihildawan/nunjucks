@@ -1,9 +1,11 @@
 import { createContext, createFrame, type BlockLocation, type Frame } from '@nunjucks/runtime';
 import { collectStream } from '@nunjucks/lib/collect-stream';
-import { injectWarningsScript } from '@nunjucks/log';
-import type { Warning, IncludeChain } from '@nunjucks/log';
-import { prettifyError, getError } from '@nunjucks/log';
-import { createLog } from '@nunjucks/log';
+import { injectWarningsScript } from '@nunjucks/error-formatter';
+import type { IncludeChain } from '@nunjucks/error-formatter';
+import type { Warning } from '@nunjucks/error-catalog';
+import { prettifyError } from '@nunjucks/error-formatter';
+import { getError } from '@nunjucks/error-catalog';
+import { createLog } from '@nunjucks/error-formatter';
 import type { TemplateState } from './types';
 import type { ErrorWithLineInfo } from './template-error-handler';
 import { createRuntimeWithContext } from './runtime-factory';

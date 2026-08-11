@@ -1,6 +1,6 @@
 import { inlineIf } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { skipSymbol } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
 import { ok, isErr, type Result } from '@nunjucks/lib';

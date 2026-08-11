@@ -5,7 +5,7 @@ import { resolveIdeLink, getIdeMeta } from './presentation/ide-links/ide-links.t
 import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
 import type { ErrorLike } from './to-html-types.ts';
 import { renderBadge, type classifyError } from './to-html-display.ts';
-import { titleCase } from '@nunjucks/lib/string-case';
+import { titleCase } from './string-case.ts';
 
 const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined, _displayPath: string): string => {
   if (!sourceTrace || sourceTrace.lines.length === 0) { return ''; }

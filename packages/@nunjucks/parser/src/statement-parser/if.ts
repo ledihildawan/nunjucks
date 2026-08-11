@@ -1,6 +1,6 @@
 import { ifNode } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import type { Token } from '@nunjucks/lexer';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";

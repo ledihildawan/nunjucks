@@ -1,4 +1,4 @@
-import { scanTemplateForDangerousCode, type DangerousCodeViolation } from '@nunjucks/shared';
+import { scanTemplateForDangerousCode, type DangerousCodeViolation } from './security/index.ts';
 import type { BaseValidationError } from '@nunjucks/shared';
 import { join, map, pipe } from 'remeda';
 

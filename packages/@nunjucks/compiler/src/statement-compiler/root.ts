@@ -3,8 +3,8 @@ import { createFrame } from '@nunjucks/runtime';
 import type { Frame } from '@nunjucks/runtime';
 import { findAll, isBlock } from '@nunjucks/nodes';
 import type { Node, ChildrenNode, BlockNode, NodeLocation } from '@nunjucks/nodes';
-import { ERROR_DEFINITIONS } from '@nunjucks/log';
-import { createLog } from '@nunjucks/log';
+import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
+import { createLog } from '@nunjucks/error-formatter';
 import { BLOCK_META_KEY } from '@nunjucks/shared';
 import type { Compiler } from '../index.ts';
 

@@ -1,6 +1,8 @@
 ﻿import { describe, test, expect } from 'bun:test';
 import { render } from './render.ts';
-import { createLog, getError, formatError, type TemplateError } from '@nunjucks/log';
+import { createLog, formatError } from '@nunjucks/error-formatter';
+import type { TemplateError } from '@nunjucks/error-formatter';
+import { getError } from '@nunjucks/error-catalog';
 import { isErr } from '@nunjucks/shared';
 
 const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {

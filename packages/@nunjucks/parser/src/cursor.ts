@@ -9,9 +9,9 @@ import {
 import type { Token, Delimiters } from '@nunjucks/lexer';
 import type { Node } from '@nunjucks/nodes';
 import { fail } from "./error.ts";
-import { createLog } from '@nunjucks/log';
-import type { TemplateError } from '@nunjucks/log';
-import { ERROR_DEFINITIONS } from '@nunjucks/log';
+import { createLog } from '@nunjucks/error-formatter';
+import type { TemplateError } from '@nunjucks/error-formatter';
+import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { ok, isErr, type Result } from '@nunjucks/lib';
 
 export interface TokenStream {

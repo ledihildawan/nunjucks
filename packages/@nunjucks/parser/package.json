@@ -7,9 +7,10 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@nunjucks/error-catalog": "workspace:*",
+    "@nunjucks/error-formatter": "workspace:*",
     "@nunjucks/lexer": "workspace:*",
     "@nunjucks/nodes": "workspace:*",
-    "@nunjucks/log": "workspace:*",
     "@nunjucks/shared": "workspace:*",
     "@nunjucks/validators": "workspace:*"
   },

@@ -38,7 +38,7 @@ import {
 } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
-import { createLog } from '@nunjucks/log';
+import { createLog } from '@nunjucks/error-formatter';
 import { forEach } from 'remeda';
 import type { Compiler, NodeTypeMatcher } from './index.ts';
 

@@ -38,3 +38,6 @@ export {
 export { COMPOUND_ASSIGNMENT_OPS } from './delimiters.ts';
 
 export { isTestKeyword } from './predicate-definitions.ts';
+
+export { loc, ZERO_LOC } from './loc.ts';
+export type { Loc } from './loc.ts';

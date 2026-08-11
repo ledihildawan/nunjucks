@@ -5,11 +5,6 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./runtime-contract": "./src/runtime-contract/index.ts",
-    "./runtime-contract/frame": "./src/runtime-contract/frame.ts",
-    "./runtime-contract/undefined-modes": "./src/runtime-contract/undefined-modes.ts",
-    "./safe-string": "./src/safe-string/index.ts",
-    "./security": "./src/security/index.ts",
     "./errors": "./src/errors/index.ts"
   },
   "dependencies": {

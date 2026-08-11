@@ -1,7 +1,9 @@
-import { createLog, ERROR_DEFINITIONS } from '@nunjucks/log';
-import { escapeForContext, isNonNullish, isThenable, type HtmlContext } from '@nunjucks/lib';
-import { isSafeString } from './safe-string.ts';
-import { getLogContext } from './log-context.ts';
+import { createLog } from '@nunjucks/error-formatter';
+import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
+import { isNonNullish, isThenable } from '@nunjucks/lib';
+import { escapeForContext, type HtmlContext } from '@nunjucks/shared';
+import { isSafeString } from './runtime-contract/safe-string.ts';
+import { getLogContext } from './error-context.ts';
 
 const JSON_SCALAR_RE = /^(?:true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')$/u;
 const JSON_CONTAINER_RE = /^[[{]/u;

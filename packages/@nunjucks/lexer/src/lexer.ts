@@ -4,8 +4,8 @@ import { createState, advance, getChar } from './state.ts';
 import { tokenizers } from './tokenizers/index.ts';
 import { createDelimiters } from './delimiters.ts';
 import { WHITESPACE_CHARS } from './constants.ts';
-import { createLog } from '@nunjucks/log';
-import { MATCH_ANY_RE } from '@nunjucks/shared';
+import { createLog } from '@nunjucks/error-formatter';
+import { MATCH_ANY_RE } from '@nunjucks/lib';
 
 const updateCodeState = (tokenType: string, state: LexerState): LexerState => {
   if (tokenType === 'block-start' || tokenType === 'variable-start') {

@@ -1,9 +1,9 @@
 import { isNonNullish, isNullish } from 'remeda';
-import { isSafeString, markSafe, copySafeness } from '@nunjucks/shared/safe-string';
-import { ok, err, escapeHtml, MATCH_ANY_RE, type Result } from '@nunjucks/lib';
+import { isSafeString, markSafe, copySafeness } from '@nunjucks/runtime';
+import { ok, err, escapeHtml, MATCH_ANY_RE, type Result } from '@nunjucks/shared';
 import type { Phase } from '@nunjucks/shared';
-import { createLog } from '@nunjucks/log';
-import type { ErrorDefinitionEntry, TemplateError } from '@nunjucks/log';
+import { createLog } from '@nunjucks/error-formatter';
+import type { ErrorDefinitionEntry, TemplateError } from '@nunjucks/error-formatter';
 import type { FilterContext, SafeString } from './types.ts';
 
 const getLogContext = (ctx: FilterContext): { templateName: string; phase: Phase; renderContext: unknown } => {

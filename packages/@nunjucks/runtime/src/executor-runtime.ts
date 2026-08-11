@@ -1,5 +1,5 @@
-import { createLog } from '@nunjucks/log';
-import { getError } from '@nunjucks/log';
+import { createLog } from '@nunjucks/error-formatter';
+import { getError } from '@nunjucks/error-catalog';
 import { extractBlocks, isCompiledTemplateExports, BLOCK_META_KEY, type Environment, type CompiledRenderSignature } from '@nunjucks/shared';
 import { loadCompiledCode } from './code-loader.ts';
 import { wrapMemberAccess } from './sandbox/index.ts';

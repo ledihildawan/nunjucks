@@ -8,7 +8,7 @@ import type { ParserContext } from '../cursor.ts';
 import type { Node } from '@nunjucks/nodes';
 import { asTokenStream, unwrap } from '../test-helpers.ts';
 import type { Result } from '@nunjucks/shared';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 
 const parseStatement = (
   src: string,

@@ -1,5 +1,5 @@
 import { reduce } from 'remeda';
-import type { Frame, CreateFrameOptions } from '@nunjucks/shared/runtime-contract/frame';
+import type { Frame, CreateFrameOptions } from './runtime-contract/frame.ts';
 
 export type { Frame, CreateFrameOptions };
 

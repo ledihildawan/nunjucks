@@ -1,2 +1,7 @@
-export { createSafeString, isSafeString, copySafeness, markSafe } from '@nunjucks/shared/safe-string';
-export type { SafeString } from '@nunjucks/shared/safe-string';
+export {
+  createSafeString,
+  isSafeString,
+  copySafeness,
+  markSafe,
+  type SafeString,
+} from './runtime-contract/safe-string.ts';

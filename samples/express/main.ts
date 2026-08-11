@@ -2,12 +2,16 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import { createEngine, type ExpressEngineConfig } from '@nunjucks/integrations/express';
-import { renderTemplate } from './lib/render-template.ts';
-import { formatError } from '@nunjucks/log';
+import { renderTemplate } from './lib/express-render.ts';
+import { formatError } from '@nunjucks/error-formatter';
 import { demoRouter } from './routes/demo.ts';
 import { errorRouter } from './routes/errors.ts';
 import { boundaryRouter } from './routes/boundaries.ts';
 import { streamingRouter } from './routes/streaming.ts';
+import { remoteRouter } from './routes/remote.ts';
+import { sandboxRouter } from './routes/sandbox.ts';
+import { undefinedRouter } from './routes/undefined.ts';
+import { warningsRouter } from './routes/warnings.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -92,6 +96,10 @@ app.get('/security', async (_req: Request, res: Response) => {
 app.use('/demo', demoRouter);
 app.use('/errors', errorRouter);
 app.use('/boundary', boundaryRouter);
+app.use('/remote', remoteRouter);
+app.use('/sandbox', sandboxRouter);
+app.use('/undefined', undefinedRouter);
+app.use('/warnings', warningsRouter);
 app.use(streamingRouter);
 
 app.use(async (err: Error, _req: Request, res: Response, _next: NextFunction) => {
@@ -112,4 +120,8 @@ app.listen(4000, () => {
   console.log('  /errors        - Error scenarios index');
   console.log('  /errors/*      - Individual error scenarios');
   console.log('  /boundary      - Boundary validation (zod schema on req.query)');
+  console.log('  /sandbox/*      - Sandbox security demos');
+  console.log('  /undefined/*    - Undefined variable handling demos');
+  console.log('  /warnings      - Warnings demo');
+  console.log('  /remote/*      - Remote extension demo');
 });

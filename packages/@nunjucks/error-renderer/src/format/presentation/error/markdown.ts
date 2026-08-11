@@ -1,1 +1,1 @@
-export { stripMarkdown } from '@nunjucks/lib/strip-markdown';
+export { stripMarkdown } from '../../strip-markdown.ts';

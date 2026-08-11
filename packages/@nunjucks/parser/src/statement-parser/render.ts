@@ -1,7 +1,7 @@
 import { renderNode } from '@nunjucks/nodes';
 import { funCall, isFunCall } from '@nunjucks/nodes';
 import type { Node, SlotBlock } from '@nunjucks/nodes';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';

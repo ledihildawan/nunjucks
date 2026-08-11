@@ -8,7 +8,8 @@ import { execute, executeStream, createFrame, isStreamErrorSentinel, type Stream
 import { withTimeout } from '@nunjucks/lib/async/timeout';
 import { getCallerFrames } from './caller-file.ts';
 import { ok, err, isErr, type Result } from '@nunjucks/lib';
-import { injectWarningsScript, adjustColnoForNullValue, type TemplateWarning, type TemplateError } from '@nunjucks/log';
+import { injectWarningsScript, adjustColnoForNullValue } from '@nunjucks/error-formatter';
+import type { TemplateWarning, TemplateError } from '@nunjucks/error-formatter';
 import { wrapWithLog } from '../diagnostics/diagnostics.ts';
 import { toHtmlMarker, buildSourceTrace } from '@nunjucks/error-renderer';
 import type { GlobalConfig } from '../config/global.ts';
@@ -32,11 +33,11 @@ const setupRenderConfig = (options: Partial<GlobalConfig>): RenderConfig => {
 
   if (options.dompurify) {
     const baseSanitize = filters.sanitize as ((str: unknown, config?: unknown) => unknown) | undefined;
-    const dompurifyConfig = options.dompurify;
-    filters.sanitize = (str: unknown, config?: unknown): unknown =>
-      baseSanitize ? baseSanitize(str, config ?? dompurifyConfig) : undefined;
+    filters.sanitize = (str: unknown, config?: unknown): unknown => baseSanitize ? baseSanitize(str, config ?? options.dompurify) : undefined;
   }
 
+  const contextStrictExplicitlySet = options.contextStrict !== undefined;
+  const sandboxExplicitlySet = options.sandbox !== undefined;
   return {
     ...defaults,
     ...options,
@@ -44,6 +45,8 @@ const setupRenderConfig = (options: Partial<GlobalConfig>): RenderConfig => {
     blockedContextKeys: options.blockedContextKeys ?? defaults.blockedContextKeys ?? undefined,
     filters,
     globals: { ...defaults.globals, ...(options.globals || {}) },
+    // WHY: when contextStrict or sandbox is explicitly set, scanContextValues must be disabled so handleContextStrictMode/sandbox handles dangerous values instead of validateRenderContext (which always errors and calls getters during scanning).
+    scanContextValues: contextStrictExplicitlySet || sandboxExplicitlySet ? false : defaults.scanContextValues,
   };
 };
 

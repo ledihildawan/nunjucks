@@ -14,7 +14,7 @@ import {
   symbol,
 } from '@nunjucks/nodes';
 import type { ChildrenNode, Node, NodeLocation } from '@nunjucks/nodes';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import {
   fail,
   nextToken,

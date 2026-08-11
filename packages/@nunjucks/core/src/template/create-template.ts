@@ -1,5 +1,5 @@
-import { prettifyError } from '@nunjucks/log';
-import type { IncludeChain } from '@nunjucks/log';
+import { prettifyError } from '@nunjucks/error-formatter';
+import type { IncludeChain } from '@nunjucks/error-formatter';
 import type { Env } from '@nunjucks/runtime';
 import type { TemplateObject, TemplateSource, TemplateState } from './types';
 import { Template } from './types';

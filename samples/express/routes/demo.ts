@@ -1,5 +1,5 @@
 import express, { type Router, type Request, type Response } from 'express';
-import { renderTemplate } from '../lib/render-template.ts';
+import { renderTemplate } from '../lib/express-render.ts';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 

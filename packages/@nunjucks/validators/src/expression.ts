@@ -2,7 +2,7 @@ import { getNodeTypeName, isNode, isSymbol } from '@nunjucks/nodes';
 import type { Node, LookupNode, CallNode, SymbolNode } from '@nunjucks/nodes';
 import type { BaseValidationError } from '@nunjucks/shared';
 import { flatMap } from 'remeda';
-import { ExpressionSecurityError, DEFAULT_SECURITY_CONFIG, DANGEROUS_PROPERTIES, DANGEROUS_CALLEES, type ExpressionSecurityConfig } from '@nunjucks/shared/security';
+import { ExpressionSecurityError, DEFAULT_SECURITY_CONFIG, DANGEROUS_PROPERTIES, DANGEROUS_CALLEES, type ExpressionSecurityConfig } from './security/index.ts';
 
 export { ExpressionSecurityError, DEFAULT_SECURITY_CONFIG, DANGEROUS_PROPERTIES, DANGEROUS_CALLEES, validateExpression };
 export type { ExpressionSecurityConfig };

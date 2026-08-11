@@ -5,7 +5,7 @@ import {
 } from '@nunjucks/lexer';
 import { array, dict, group } from '@nunjucks/nodes';
 import type { ChildrenNode, Node } from '@nunjucks/nodes';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { loc } from '@nunjucks/shared';
 import type { Loc } from '@nunjucks/shared';
 import { ok, isErr, type Result } from '@nunjucks/lib';

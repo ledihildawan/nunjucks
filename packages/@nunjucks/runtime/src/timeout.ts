@@ -1,1 +1,5 @@
-export { createTimeoutError, isTimeoutError, withTimeout, type TimeoutError } from '@nunjucks/lib/async/timeout';
+export {
+  withTimeout,
+  type TimeoutError,
+  isTimeoutError,
+} from '@nunjucks/lib/async/timeout';

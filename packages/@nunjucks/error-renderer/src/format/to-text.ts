@@ -2,10 +2,10 @@ import { pipe, filter, join, map, split } from 'remeda';
 import { shortenPath } from './presentation/source-trace/path-shortener.ts';
 import { toDisplayLocation } from './presentation/source-trace/location.ts';
 import { mergeErrorParts } from './presentation/error/error-parts.ts';
-import { parseStackFrame } from '@nunjucks/lib/stack-parse';
+import { parseStackFrame } from './presentation/source-trace/stack-parse.ts';
 import { slice } from '@nunjucks/shared';
-import { stripMarkdown } from '@nunjucks/lib/strip-markdown';
-import { getErrorMessage } from '@nunjucks/lib/get-error-message';
+import { stripMarkdown } from './strip-markdown.ts';
+import { getErrorMessage } from '@nunjucks/error-catalog/get-error-message';
 import type { ErrorLike } from '@nunjucks/error-catalog';
 
 interface ToTextOptions {

@@ -2,7 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express, { type Router, type Request, type Response, type NextFunction } from 'express';
 import { z } from 'zod';
-import { renderTemplate } from '../lib/render-template.ts';
+import { renderTemplate } from '../lib/express-render.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

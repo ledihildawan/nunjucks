@@ -2,7 +2,7 @@ import type { Environment, BaseValidationError } from '@nunjucks/shared';
 import type { CallerLocation } from './caller-file.ts';
 import type { SandboxOptions, Env, UndefinedMode } from '@nunjucks/runtime';
 import type { SandboxMode } from '../config/global.ts';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import type { FileSystemLoader } from '@nunjucks/loaders';
 
 interface LoaderSource {

@@ -8,7 +8,7 @@ import type { SourceTrace } from '../presentation/source-trace/source-trace.ts';
 import { stripMarkdown, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString } from './stack-helpers';
 import { renderContextAnsi } from './context-helpers';
 import { formatSourceTrace } from './source-helpers';
-import { getErrorMessage } from '@nunjucks/lib/get-error-message';
+import { getErrorMessage } from '@nunjucks/error-catalog/get-error-message';
 import { isObjectValue } from '@nunjucks/error-catalog';
 
 export { formatCausesAnsi, formatFixAnsi, getErrorMessage, formatMediumAnsi, extractAnsiErrorParts, formatFullAnsi, BULLET };

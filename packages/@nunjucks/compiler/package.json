@@ -14,9 +14,10 @@
     "./statement-compiler/slot": "./src/statement-compiler/slot.ts"
   },
   "dependencies": {
+    "@nunjucks/error-catalog": "workspace:*",
+    "@nunjucks/error-formatter": "workspace:*",
     "@nunjucks/nodes": "workspace:*",
     "@nunjucks/runtime": "workspace:*",
-    "@nunjucks/log": "workspace:*",
     "@nunjucks/shared": "workspace:*",
     "remeda": "^2.39.0"
   },

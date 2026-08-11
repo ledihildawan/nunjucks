@@ -2,7 +2,7 @@ import { createTokenizer } from '@nunjucks/lexer';
 import type { LexerOptions } from '@nunjucks/lexer';
 import { root } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { ZERO_LOC } from '@nunjucks/shared';
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { fail } from "./cursor.ts";

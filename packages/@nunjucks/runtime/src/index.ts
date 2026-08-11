@@ -6,7 +6,7 @@ export {
   copySafeness,
   markSafe,
   type SafeString,
-} from './safe-string.ts';
+} from './runtime-contract/safe-string.ts';
 export {
   makeComponent,
   makeKeywordArgs,
@@ -57,12 +57,13 @@ export {
 export { runTest } from './builtin-predicates.ts';
 export { runFilter } from './filter-runtime.ts';
 export { createRenderRuntime } from './render-runtime.ts';
-export { createGensym } from './symbol-generator.ts';
+export { createGensym } from '@nunjucks/lib/gensym';
 export {
   withTimeout,
   type TimeoutError,
   isTimeoutError,
-} from './timeout.ts';
+} from '@nunjucks/lib/async/timeout';
 export { execute, executeStream, type ExecuteConfig } from './executor.ts';
 export { loadCompiledCode } from './code-loader.ts';
-export { collectString, collectStream } from './collect-stream.ts';
+export { collectString, collectStream } from '@nunjucks/lib/collect-stream';
+export { escapeHtml, escapeForContext, createHtmlContextTracker, type HtmlContext } from './escaping/index.ts';

@@ -1,4 +1,5 @@
-import { createLog, type WarningContext } from '@nunjucks/log';
+import { createLog } from '@nunjucks/error-formatter';
+import type { WarningContext } from '@nunjucks/error-formatter';
 import { MATCH_ANY_RE } from '@nunjucks/lib';
 import type { Phase } from '@nunjucks/shared';
 

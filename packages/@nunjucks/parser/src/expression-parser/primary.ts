@@ -12,7 +12,7 @@ import {
 } from '@nunjucks/lexer';
 import { literal, symbol, neg, pos, bitwiseNot, increment, decrement } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { nextToken, peekToken, peekTokenOrNull, pushToken, skipValue, fail } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
 import type { Loc } from '@nunjucks/shared';

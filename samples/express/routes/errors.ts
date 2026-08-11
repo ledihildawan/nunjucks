@@ -1,11 +1,11 @@
 ﻿import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express, { type Router } from 'express';
-import { renderTemplate } from '../lib/render-template.ts';
+import { renderTemplate } from '../lib/express-render.ts';
 import { createSandboxedContext } from '@nunjucks/runtime';
 import type { NunjucksConfig } from '@nunjucks/core';
-import type { ErrorRoute } from './types.ts';
-import { errorGroups } from './errors-index-groups.ts';
+import type { ErrorRoute } from '../lib/error-route-types.ts';
+import { errorGroups } from '../lib/error-route-metadata.ts';
 
 interface EnrichedFilterError extends Error {
   code: string;

@@ -1,6 +1,6 @@
 import { pipe, keys, map } from 'remeda';
 import { normalizeRenderContext } from '../presentation/error/safe-context.ts';
-import { sanitizeForAnsi } from '@nunjucks/lib/sanitize-helpers';
+import { sanitizeForAnsi } from './sanitize-helpers.ts';
 
 export { formatContextValue, renderContextAnsi };
 

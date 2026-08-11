@@ -1,5 +1,6 @@
 import { flatMap, keys, pipe } from 'remeda';
-import { validateFilterName, validateGlobalName, type Environment } from '@nunjucks/shared';
+import { validateFilterName, validateGlobalName } from './reserved.ts';
+import type { Environment } from './security/index.ts';
 import type { BaseValidationError } from '@nunjucks/shared';
 
 export interface ConfigValidationError extends BaseValidationError {

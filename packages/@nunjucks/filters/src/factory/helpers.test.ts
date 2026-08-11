@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import type { ErrorDefinitionEntry } from '@nunjucks/log';
+import type { ErrorDefinitionEntry } from '@nunjucks/error-formatter';
 import {
   makeFilterError,
   normalize,

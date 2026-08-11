@@ -2,7 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express, { type Router, type Request, type Response } from 'express';
 import { nunjucks } from '@nunjucks/core';
-import { formatError } from '@nunjucks/log';
+import { formatError } from '@nunjucks/error-formatter';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

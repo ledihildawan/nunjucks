@@ -1,4 +1,4 @@
-import { ERROR_DEFINITIONS } from '@nunjucks/log';
+import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { isArray, isKeyedObject, isPlainObject, isString } from '@nunjucks/shared';
 import {
   getNullParentName,
@@ -6,7 +6,7 @@ import {
 } from './member-access.ts';
 import {
   throwRuntimeError,
-} from './log-context.ts';
+} from './error-context.ts';
 
 const RESERVED_KEYWORD_CONTEXTS: Record<string, string> = {
   super: 'block that extends a parent template',

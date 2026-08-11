@@ -8,7 +8,7 @@ import {
 } from '@nunjucks/lexer';
 import { nodeList, output, templateData } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { pipe } from 'remeda';
 import { replace } from '@nunjucks/lib';
 import { loc, ZERO_LOC } from '@nunjucks/shared';

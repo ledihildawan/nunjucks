@@ -1,7 +1,7 @@
 import { TOKEN_OPERATOR, TOKEN_COLON } from '@nunjucks/lexer';
 import { nullishCoalesce, and, or, not, inlineIf } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { peekToken, nextToken, skipSymbol, skipOperator, skipValue } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
 import { ok, isErr, type Result } from '@nunjucks/lib';

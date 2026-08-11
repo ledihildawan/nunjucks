@@ -1,7 +1,7 @@
 import { TOKEN_COMMA } from '@nunjucks/lexer';
 import { appendChild, array, forNode, isSymbol } from '@nunjucks/nodes';
 import type { ChildrenNode, Node } from '@nunjucks/nodes';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { peekToken, skipSymbol, skip, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';

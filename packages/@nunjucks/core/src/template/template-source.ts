@@ -1,8 +1,8 @@
 import { isString, isPlainObject } from 'remeda';
-import { createLog } from '@nunjucks/log';
-import { getError } from '@nunjucks/log';
+import { createLog } from '@nunjucks/error-formatter';
+import { getError } from '@nunjucks/error-catalog';
 import type { Env } from '@nunjucks/runtime';
-import type { IncludeChain } from '@nunjucks/log';
+import type { IncludeChain } from '@nunjucks/error-formatter';
 import type { CompiledTemplateExports } from '@nunjucks/shared';
 import type { TemplateSource, TemplateState, TemplateStateBase } from './types';
 

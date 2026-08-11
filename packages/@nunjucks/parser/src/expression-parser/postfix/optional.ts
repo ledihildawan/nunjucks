@@ -9,7 +9,7 @@ import {
 import type { Token } from '@nunjucks/lexer';
 import { appendChild, literal, nodeList, optionalCall, optionalChain } from '@nunjucks/nodes';
 import type { ChildrenNode, Node } from '@nunjucks/nodes';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { nextToken, peekToken, fail } from "../../cursor.ts";
 import type { ParserContext } from "../../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';

@@ -1,6 +1,7 @@
 ﻿import { describe, test, expect } from 'bun:test';
 import { renderTemplate } from './render-test-helper.ts';
-import { formatError, type TemplateError } from '@nunjucks/log';
+import { formatError } from '@nunjucks/error-formatter';
+import type { TemplateError } from '@nunjucks/error-formatter';
 
 describe('error messages - causes and fix', () => {
   test('undefined variable error includes causes', async () => {

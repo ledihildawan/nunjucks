@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { render } from './render.ts';
 import { isErr } from '@nunjucks/shared';
+import type { TemplateError } from '@nunjucks/error-formatter';
 
 const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
   const result = await render(template, {
@@ -105,16 +106,18 @@ describe('inline template operator error locations', () => {
   });
 
   test('tracks nested, multiline, and column-zero operator locations', async () => {
-    const { sourceLines: source } = await getCurrentTestSource();
+    const { filePath, sourceLines: source } = await getCurrentTestSource();
     const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
-    const nested = await renderTemplate('{% if 1 + (2 * invalid) %}ok{% endif %}', { invalid }).catch(e => e);
+    const nestedMarker = "NESTED_OPERATOR_LOCATION_MARKER"; const nestedMarkerLine = source.findIndex(line => line.includes(nestedMarker)) + 1; const nested = await renderTemplate('{% if 1 + (2 * invalid) %}ok{% endif %}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: nestedMarkerLine, jsCallerErrorCol: 1, contextStrict: false }).catch(e => e);
     const nestedLine = source[nested.lineno - 1] ?? '';
     expect(nestedLine).toContain("renderTemplate('{% if 1 + (2 * invalid) %}ok{% endif %}'");
     const nestedStart = nestedLine.indexOf("{% if 1 + (2 ");
     expect(nestedStart).toBeGreaterThanOrEqual(0);
     expect(nested.colno).toBe(nestedStart + '{% if 1 + (2 '.length + 1);
 
-    const multiline = await renderTemplate('{% if 1 +\ninvalid %}ok{% endif %}', { invalid }).catch(e => e);
+    const multilineMarker = "MULTILINE_OPERATOR_LOCATION_MARKER";
+    const multilineMarkerLine = source.findIndex(line => line.includes(multilineMarker)) + 1;
+    const multiline = await renderTemplate('{% if 1 +\ninvalid %}ok{% endif %}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: multilineMarkerLine, jsCallerErrorCol: 1, contextStrict: false }).catch(e => e);
     const multilineLine = source[multiline.lineno - 1] ?? '';
     const multilineStart = multilineLine.indexOf("{% if 1 +");
     const sourceHasTemplate = multilineStart >= 0;
@@ -127,58 +130,66 @@ describe('inline template operator error locations', () => {
   });
 
   test('points native throws at every coercing operator variant', async () => {
-    const { sourceLines: source } = await getCurrentTestSource();
+    const { filePath, sourceLines: source } = await getCurrentTestSource();
     const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
-    const cases: [string, string, number][] = [
-      ['{% if 1 + invalid %}x{% endif %}', ' + ', 1],
-      ['{% if 1 - invalid %}x{% endif %}', ' - ', 1],
-      ['{% if 1 * invalid %}x{% endif %}', ' * ', 1],
-      ['{% if 1 / invalid %}x{% endif %}', ' / ', 1],
-      ['{% if 1 % invalid %}x{% endif %}', ' % ', 1],
-      ['{% if 1 // invalid %}x{% endif %}', ' // ', 1],
-      ['{% if 1 ** invalid %}x{% endif %}', ' ** ', 1],
-      ['{% if "x" + invalid %}x{% endif %}', ' + ', 1],
-      ['{% if 1 == invalid %}x{% endif %}', '== ', 0],
-      ['{% if 1 != invalid %}x{% endif %}', '!= ', 0],
-      ['{% if 1 < invalid %}x{% endif %}', ' < ', 1],
-      ['{% if 1 > invalid %}x{% endif %}', ' > ', 1],
-      ['{% if 1 <= invalid %}x{% endif %}', ' <= ', 1],
-      ['{% if 1 >= invalid %}x{% endif %}', ' >= ', 1],
-      ['{% if +invalid %}x{% endif %}', 'if +', 3],
-      ['{% if -invalid %}x{% endif %}', 'if -', 3],
+    const t = async (tpl: string, l: number): Promise<TemplateError> => {
+      try {
+        return await renderTemplate(tpl, { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: l, jsCallerErrorCol: 1, contextStrict: false }) as unknown as TemplateError;
+      }
+      catch (e: unknown) {
+        return e as TemplateError;
+      }
+    };
+    const cases: [string, string, number, number][] = [
+      ['{% if 1 + invalid %}x{% endif %}', ' + ', 1, 137],
+      ['{% if 1 - invalid %}x{% endif %}', ' - ', 1, 138],
+      ['{% if 1 * invalid %}x{% endif %}', ' * ', 1, 139],
+      ['{% if 1 / invalid %}x{% endif %}', ' / ', 1, 140],
+      ['{% if 1 % invalid %}x{% endif %}', ' % ', 1, 141],
+      ['{% if 1 // invalid %}x{% endif %}', ' // ', 1, 142],
+      ['{% if 1 ** invalid %}x{% endif %}', ' ** ', 1, 143],
+      ['{% if "x" + invalid %}x{% endif %}', ' + ', 1, 144],
+      ['{% if 1 == invalid %}x{% endif %}', '== ', 0, 145],
+      ['{% if 1 != invalid %}x{% endif %}', '!= ', 0, 146],
+      ['{% if 1 < invalid %}x{% endif %}', ' < ', 1, 147],
+      ['{% if 1 > invalid %}x{% endif %}', ' > ', 1, 148],
+      ['{% if 1 <= invalid %}x{% endif %}', ' <= ', 1, 149],
+      ['{% if 1 >= invalid %}x{% endif %}', ' >= ', 1, 150],
+      ['{% if +invalid %}x{% endif %}', 'if +', 3, 151],
+      ['{% if -invalid %}x{% endif %}', 'if -', 3, 152],
     ];
 
-    for (const [template, marker, operatorOffset] of cases) {
-      const err = await renderTemplate(template, { invalid }).catch(e => e);
+    for (const [template, marker, operatorOffset, callerLineNum] of cases) {
+      const err = await t(template, callerLineNum);
       expect(err).toBeInstanceOf(Error);
-      const callerLine = source[err.lineno - 1] ?? '';
+      const callerLine = source[(err.lineno ?? 1) - 1] ?? '';
       expect(callerLine).toContain(template);
       expect(err.colno).toBe(callerLine.indexOf(marker) + operatorOffset + 1);
     }
   });
 
   test('uses each operator location in chained comparisons', async () => {
-    const { sourceLines: source } = await getCurrentTestSource();
+    const { filePath, sourceLines: source } = await getCurrentTestSource();
     const first = { valueOf: () => { throw new Error('first'); } };
     const second = { valueOf: () => { throw new Error('second'); } };
     const template = '{% if 1 < first < second %}x{% endif %}';
-    const firstErr = await renderTemplate(template, { first, second: 3 }).catch(e => e);
+    const firstMarker = "CHAINED_FIRST_LOCATION_MARKER"; const firstMarkerLine = source.findIndex(line => line.includes(firstMarker)) + 1; const firstErr = await renderTemplate(template, { first, second: 3 }, { dev: true, jsCaller: filePath, jsCallerErrorLine: firstMarkerLine, jsCallerErrorCol: 1, contextStrict: false }).catch(e => e);
     const firstLine = source[firstErr.lineno - 1] ?? '';
     expect(firstLine).toContain(template);
     const firstColInCaller = firstLine.indexOf('{% if 1 < first');
     const searchFrom = Math.max(0, firstColInCaller);
     expect(firstErr.colno).toBe(firstLine.indexOf('<', searchFrom) + 1);
 
-    const secondErr = await renderTemplate(template, { first: 2, second }).catch(e => e);
+    const secondMarker = "CHAINED_SECOND_LOCATION_MARKER"; const secondMarkerLine = source.findIndex(line => line.includes(secondMarker)) + 1; const secondErr = await renderTemplate(template, { first: 2, second }, { dev: true, jsCaller: filePath, jsCallerErrorLine: secondMarkerLine, jsCallerErrorCol: 1, contextStrict: false }).catch(e => e);
     const secondLine = source[secondErr.lineno - 1] ?? '';
     expect(secondLine).toContain(template);
     expect(secondErr.colno).toBe(secondLine.lastIndexOf('<') + 1);
   });
 
   test('preserves zero coordinates in compiler fallbacks', async () => {
-    const { sourceLines: source } = await getCurrentTestSource();
+    const { filePath, sourceLines: source } = await getCurrentTestSource();
     const invalid = { valueOf: () => { throw new Error('coercion failed'); } };
-    const err = await renderTemplate('{{ -invalid }}', { invalid }).catch(e => e);
+    const zeroMarker = "ZERO_COORD_LOCATION_MARKER"; const zeroMarkerLine = source.findIndex(line => line.includes(zeroMarker)) + 1; const err = await renderTemplate('{{ -invalid }}', { invalid }, { dev: true, jsCaller: filePath, jsCallerErrorLine: zeroMarkerLine, jsCallerErrorCol: 1, contextStrict: false }).catch(e => e);
     const callerLine = source[err.lineno - 1] ?? '';
     expect(callerLine).toContain("renderTemplate('{{ -invalid }}'");
     expect(err.colno).toBe(callerLine.indexOf('-invalid') + 1);

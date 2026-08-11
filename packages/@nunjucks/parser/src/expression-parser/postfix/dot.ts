@@ -2,7 +2,7 @@ import { TOKEN_SYMBOL, type TOKEN_OPERATOR } from '@nunjucks/lexer';
 import type { Token } from '@nunjucks/lexer';
 import { literal, lookupVal } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { nextToken, fail } from "../../cursor.ts";
 import type { ParserContext } from "../../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';

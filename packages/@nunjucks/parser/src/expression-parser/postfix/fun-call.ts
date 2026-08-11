@@ -1,6 +1,6 @@
 import { funCall } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import type { TOKEN_LEFT_PAREN } from '@nunjucks/lexer';
 import type { Token } from '@nunjucks/lexer';
 import { ok, isErr, type Result } from '@nunjucks/lib';

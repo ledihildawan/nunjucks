@@ -1,7 +1,8 @@
 import { validateTemplate, validateConfig, validateRenderContext } from '@nunjucks/validators';
-import { createLog, getError, ERROR_DEFINITIONS } from '@nunjucks/log';
+import { createLog } from '@nunjucks/error-formatter';
+import { getError, ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { findContextKeyPosition, wrapWithLog } from '../diagnostics/diagnostics.ts';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { ok, err, type Result } from '@nunjucks/lib';
 import type { RenderConfig, RenderValidationError, ValidationErrorRequest } from './render-types.ts';
 

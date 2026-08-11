@@ -1,6 +1,6 @@
 import { isNonNullish } from '@nunjucks/lib';
 import { isNullAccessResult, isPropertyNotFoundResult } from './member-access.ts';
-import { getLogContext } from './log-context.ts';
+import { getLogContext } from './error-context.ts';
 import { resolveUndefinedProperty, resolveNullAccess, resolveUndefinedValue, type ResolveUndefinedOptions } from './undefined-rules.ts';
 
 export interface EnsureDefinedOptions {

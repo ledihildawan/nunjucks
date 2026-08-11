@@ -18,4 +18,4 @@ export type { PipeSink, PipeRenderStreamOptions } from './render/pipe-stream.ts'
 export { toWebReadableStream, withStreamTimeout, withStreamDeadline, isStreamTimeoutError, type StreamTimeoutError } from './render/render-stream-adapters.ts';
 export type { GlobalConfig } from './config/global.ts';
 export type { Result } from '@nunjucks/lib';
-export type { TemplateError } from '@nunjucks/log';
+export type { TemplateError } from '@nunjucks/error-formatter';

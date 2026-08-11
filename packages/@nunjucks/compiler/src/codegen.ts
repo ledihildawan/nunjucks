@@ -1,4 +1,5 @@
-import { createLog, ERROR_DEFINITIONS } from '@nunjucks/log';
+import { createLog } from '@nunjucks/error-formatter';
+import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { last, pipe, split } from 'remeda';
 import type { Emitter } from './index.ts';
 

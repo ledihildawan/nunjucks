@@ -1,6 +1,6 @@
 import { add, sub, mul, div, floorDiv, mod, pow, concat, range } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { TOKEN_OPERATOR } from '@nunjucks/lexer';
 import { skipValue } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';

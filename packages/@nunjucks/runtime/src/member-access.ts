@@ -1,5 +1,6 @@
 import { isNonNullish, isFunction, hasOwn } from '@nunjucks/shared';
-import { createLog, ERROR_DEFINITIONS } from '@nunjucks/log';
+import { createLog } from '@nunjucks/error-formatter';
+import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 
 export const NULL_MARKER = '__nunjucks_null__';
 export const PARENT_NAME = '__nunjucks_parent__';

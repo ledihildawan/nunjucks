@@ -1,1 +1,1 @@
-export { getErrorMessage } from '@nunjucks/lib/get-error-message';
+export { getErrorMessage } from '@nunjucks/error-catalog/get-error-message';

@@ -13,8 +13,9 @@
     "./factory": "./src/factory/index.ts"
   },
   "dependencies": {
+    "@nunjucks/error-catalog": "workspace:*",
+    "@nunjucks/error-formatter": "workspace:*",
     "@nunjucks/runtime": "workspace:*",
-    "@nunjucks/log": "workspace:*",
     "@nunjucks/shared": "workspace:*",
     "isomorphic-dompurify": "^2.14.0",
     "remeda": "^2.39.0"

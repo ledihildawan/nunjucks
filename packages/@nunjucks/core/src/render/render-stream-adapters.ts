@@ -3,7 +3,7 @@
 import { isThenable } from '@nunjucks/shared';
 import { toWebReadableStream } from '@nunjucks/lib/web-readable-stream';
 import { coalesceStream } from '@nunjucks/lib/stream-coalesce';
-import { createStreamTimeoutError, isStreamTimeoutError, type StreamTimeoutError } from '@nunjucks/lib/stream-timeout';
+import { createStreamTimeoutError, isStreamTimeoutError, type StreamTimeoutError } from '@nunjucks/runtime/stream-timeout';
 
 // WHY: a generator cannot be wrapped by withTimeout (it is not a Promise), so streaming timeout is enforced per-chunk: each .next() races against a timer. This is the idle/per-chunk guard complementing the total executionTimeout deadline enforced by withStreamDeadline. try/finally guarantees the timer is cleared on EVERY exit path (chunk yielded, done, timeout, external .return(), throw) — previously N chunks leaked N concurrent timers. The finally also best-effort returns the underlying iterator WITHOUT awaiting: a stalled .next() (e.g. an async filter awaiting a never-resolving promise) may never let .return() settle, so awaiting would re-introduce the hang this guard exists to break. A .return() on an already-completed iterator is a no-op, so calling it unconditionally is safe.
 const withStreamTimeout = async function* (stream: AsyncIterator<string>, timeoutMs: number): AsyncGenerator<string> {

@@ -1,7 +1,7 @@
 import type { UndefinedMode } from '@nunjucks/runtime';
 import type { DomPurifyConfig } from '@nunjucks/shared';
 import type { Result } from '@nunjucks/lib';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import type { SandboxMode, SandboxEnvironment } from './global.ts';
 import type { NunjucksPlugin } from '../plugin/plugin.ts';
 import type { RenderStreamResult } from '../render/render-types.ts';

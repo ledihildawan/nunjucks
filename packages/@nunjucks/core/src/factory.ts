@@ -6,7 +6,7 @@ import type { NunjucksConfig, NunjucksEngine, PerRenderOverrides } from './confi
 import type { RenderStreamResult } from './render/render-types.ts';
 import type { PipeSink, PipeRenderStreamOptions } from './render/pipe-stream.ts';
 import type { Result } from '@nunjucks/lib';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 
 // WHY: strip keys whose value is undefined so they do NOT override the engine's built-in defaults when the
 // base bag is spread into the internal render options ({ ...defaults, ...options }). A present-undefined key

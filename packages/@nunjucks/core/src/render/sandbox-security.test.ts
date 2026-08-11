@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { renderTemplate } from './render-test-helper.ts';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 
 describe('sandbox security - prototype pollution', () => {
   test('__proto__ access throws in sandbox mode', async () => {

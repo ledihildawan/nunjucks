@@ -17,8 +17,8 @@ import {
   isSymbol,
 } from '@nunjucks/nodes';
 import type { Node, SpreadNode } from '@nunjucks/nodes';
-import { ERROR_DEFINITIONS } from '@nunjucks/log';
-import type { TemplateError } from '@nunjucks/log';
+import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { peekToken, nextToken } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
 import { errorAt } from '../error.ts';

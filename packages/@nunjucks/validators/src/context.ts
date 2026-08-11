@@ -1,4 +1,4 @@
-import { findDangerousValues } from '@nunjucks/shared';
+import { findDangerousValues } from './security/index.ts';
 import type { BaseValidationError } from '@nunjucks/shared';
 
 interface ContextValidationError extends BaseValidationError {

@@ -1,7 +1,8 @@
-import { ERROR_DEFINITIONS, type ErrorDefinitionEntry } from '@nunjucks/log';
+import type { ErrorDefinitionEntry } from '@nunjucks/error-formatter';
+import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { Phase } from '@nunjucks/shared';
 import type { PropertyNotFoundResult, NullAccessResult } from './member-access.ts';
-import { throwRuntimeError } from './log-context.ts';
+import { throwRuntimeError } from './error-context.ts';
 import { emitUndefinedWarning } from './shell/warning-emitter.ts';
 
 export interface ResolveUndefinedOptions {

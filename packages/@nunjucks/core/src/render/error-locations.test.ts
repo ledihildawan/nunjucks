@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { render } from './render.ts';
 import { renderViaExternalWrapper } from './fixtures/external-wrapper.ts';
-import { formatError } from '@nunjucks/log';
+import { formatError } from '@nunjucks/error-formatter';
 import { isErr } from '@nunjucks/shared';
 
 const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {

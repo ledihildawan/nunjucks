@@ -1,4 +1,4 @@
-import { ERROR_DEFINITIONS } from '@nunjucks/log';
+import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { makeComponent } from '@nunjucks/runtime';
 import { makeFilterError, isArray, requireArrayError, validateItemsHaveAttr } from '../factory/index.ts';
 import { getAttrGetter } from './attributes.ts';

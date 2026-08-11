@@ -1,6 +1,6 @@
 import { expect, describe, test } from 'bun:test';
 import { validateConfig } from '@nunjucks/validators';
-import { RESERVED_KEYWORDS, getReservedKeywords } from '@nunjucks/shared';
+import { RESERVED_KEYWORDS, getReservedKeywords } from './reserved.ts';
 
 describe('validateConfig - reserved keyword validation', () => {
   describe('filters', () => {

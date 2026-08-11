@@ -3,7 +3,7 @@ import type { UndefinedMode, BlockLocation } from '@nunjucks/runtime';
 import { HOOK_EVENTS, loadCompiledCode } from '@nunjucks/runtime';
 import { extractBlocks, isCompiledTemplateExports, BLOCK_META_KEY, isErr } from '@nunjucks/shared';
 import type { CompiledTemplateExports } from '@nunjucks/shared';
-import { prettifyError } from '@nunjucks/log';
+import { prettifyError } from '@nunjucks/error-formatter';
 import { compileToCode } from '../compile-pipeline.ts';
 import type { TemplateState } from './types';
 

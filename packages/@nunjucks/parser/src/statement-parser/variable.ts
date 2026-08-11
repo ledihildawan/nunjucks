@@ -6,7 +6,7 @@ import {
 } from '@nunjucks/lexer';
 import { compoundAssignment, variableAssignment, variableDeclaration } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { peekToken, skipValue, nextToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';

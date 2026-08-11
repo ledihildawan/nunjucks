@@ -1,6 +1,6 @@
 import express, { type Router, type Request, type Response, type NextFunction } from 'express';
 import type { NunjucksConfig } from '@nunjucks/core';
-import { renderTemplate as renderBase } from '../lib/render-template.ts';
+import { renderTemplate as renderBase } from '../lib/express-render.ts';
 
 const router: Router = express.Router();
 

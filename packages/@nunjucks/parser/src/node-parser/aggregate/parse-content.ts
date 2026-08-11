@@ -1,5 +1,5 @@
 import type { ChildrenNode, NodeLocation } from '@nunjucks/nodes';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import type { ParserContext } from '../../cursor.ts';
 import { parseAggregateExpression } from './parse-expressions.ts';

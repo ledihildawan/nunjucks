@@ -1,5 +1,5 @@
 import { defaultTo, entries, join as joinRemeda, map, pipe, split } from 'remeda';
-import { ERROR_DEFINITIONS } from '@nunjucks/log';
+import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { normalize, safeString, safeHtml, preserveSafe, createStringFilter, createMacroFilter, isSafeString, isArray, requireArrayError } from '../factory/index.ts';
 import type { SafeString } from '../factory/index.ts';
 

@@ -6,21 +6,15 @@
   "exports": {
     ".": "./src/index.ts",
     "./async/timeout": "./src/async/timeout.ts",
-    "./symbol-generator": "./src/symbol-generator.ts",
     "./collect-stream": "./src/collect-stream.ts",
     "./nullish-coalesce": "./src/nullish-coalesce.ts",
     "./from-iterator": "./src/from-iterator.ts",
     "./web-readable-stream": "./src/web-readable-stream.ts",
     "./stream-coalesce": "./src/stream-coalesce.ts",
     "./stream-timeout": "./src/stream-timeout.ts",
-    "./stack-parse": "./src/stack-parse.ts",
-    "./ansi-helpers": "./src/ansi-helpers.ts",
-    "./strip-markdown": "./src/strip-markdown.ts",
-    "./get-error-message": "./src/get-error-message.ts",
-    "./sanitize-helpers": "./src/sanitize-helpers.ts",
-    "./string-case": "./src/string-case.ts",
     "./path-basename": "./src/path-basename.ts",
-    "./is-digit": "./src/is-digit.ts"
+    "./is-digit": "./src/is-digit.ts",
+    "./gensym": "./src/gensym.ts"
   },
   "dependencies": {
     "remeda": "^2.39.0"

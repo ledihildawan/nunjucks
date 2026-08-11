@@ -3,10 +3,11 @@ import { readFile, stat, realpath } from 'node:fs/promises';
 import { watch, type FSWatcher, type Stats } from 'node:fs';
 import path from 'node:path';
 import { createLoader, type Loader } from './base.ts';
-import { getError, createLog } from '@nunjucks/log';
+import { createLog } from '@nunjucks/error-formatter';
+import { getError } from '@nunjucks/error-catalog';
 import { ok, err, type Result } from '@nunjucks/lib';
-import type { TemplateError } from '@nunjucks/log';
-import { containsNullByte, isWithinBase } from '@nunjucks/shared/security';
+import type { TemplateError } from '@nunjucks/error-formatter';
+import { containsNullByte, isWithinBase } from '@nunjucks/validators/security';
 
 const normalizeSearchPaths = (searchPaths: string | string[] | undefined): string[] => {
   if (!searchPaths) {

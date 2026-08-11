@@ -1,5 +1,5 @@
 import { defaultTo } from 'remeda';
-import type { IncludeChain } from '@nunjucks/log';
+import type { IncludeChain } from '@nunjucks/error-formatter';
 
 export { createTemplateErrorHandler, buildErrorMessage, extractFrameDetails };
 

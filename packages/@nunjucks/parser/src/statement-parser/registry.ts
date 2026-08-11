@@ -1,7 +1,7 @@
 import type { ParserContext } from "../cursor.ts";
 import type { Node } from '@nunjucks/nodes';
 import type { Result } from '@nunjucks/lib';
-import type { TemplateError } from '@nunjucks/log';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { parseFor } from "./for.ts";
 import { parseComponent } from "./component.ts";
 import { parseImport } from "./import.ts";

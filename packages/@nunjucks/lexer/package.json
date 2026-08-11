@@ -7,8 +7,8 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@nunjucks/error-formatter": "workspace:*",
     "@nunjucks/lib": "workspace:*",
-    "@nunjucks/log": "workspace:*",
     "remeda": "^2.39.0"
   },
   "description": "Lexer for Nunjucks template engine"

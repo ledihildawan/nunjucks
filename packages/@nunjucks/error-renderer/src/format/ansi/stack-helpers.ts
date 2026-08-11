@@ -2,11 +2,11 @@ import { pipe, filter, join } from 'remeda';
 import picocolors from 'picocolors';
 import { shortenPath } from '../presentation/source-trace/path-shortener.ts';
 import { isFilePath, resolveIdeLink } from '../presentation/ide-links/ide-links.ts';
-import { stripMarkdown } from '@nunjucks/lib/strip-markdown';
-import { parseStackFrame } from '@nunjucks/lib/stack-parse';
-import { makeHyperlink } from '@nunjucks/lib/ansi-helpers';
+import { stripMarkdown } from '../strip-markdown.ts';
+import { parseStackFrame } from '../presentation/source-trace/stack-parse.ts';
+import { makeHyperlink } from './ansi-helpers.ts';
 
-export { makeHyperlink } from '@nunjucks/lib/ansi-helpers';
+export { makeHyperlink } from './ansi-helpers.ts';
 export { stripMarkdown, getSeverityColor, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString };
 
 const getSeverityColor = (severity?: string): ((text: string) => string) => {

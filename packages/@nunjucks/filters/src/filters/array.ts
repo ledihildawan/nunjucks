@@ -1,4 +1,4 @@
-import { ERROR_DEFINITIONS } from '@nunjucks/log';
+import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { isPlainObject, isString, keys, pipe, range, reduce, sum as sumValues } from 'remeda';
 import { isSafeString, makeComponent } from '@nunjucks/runtime';
 import { makeFilterError, isArray, requireArrayError, validateItemsHaveAttr } from '../factory/index.ts';

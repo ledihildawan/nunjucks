@@ -5,29 +5,26 @@ export {
   findDangerousValues,
   scanTemplateForDangerousCode,
   scrubDangerousReferences,
-} from './security/index.ts';
-export type { Environment, DangerousCodeViolation } from './security/index.ts';
-
+  visitAndScrub,
+  containsNullByte,
+  isWithinBase,
+  ExpressionSecurityError, DEFAULT_SECURITY_CONFIG, type ExpressionSecurityConfig, DANGEROUS_PROPERTIES, DANGEROUS_CALLEES,
+  type DangerousCodeViolation, type Environment,
+} from '@nunjucks/validators/security';
 export type { BaseValidationError } from './errors/index.ts';
-export type { LineBase } from './errors/index.ts';
 export { normalizeLineBase } from './errors/index.ts';
-export { TEMPLATE_ERROR, isTemplateError } from './errors/index.ts';
-export type { BrandedTemplateError } from './errors/index.ts';
-
-export { escapeHtml, escapeForContext, createHtmlContextTracker } from './escaping/index.ts';
-export type { HtmlContext } from './escaping/index.ts';
-
-export { MATCH_ANY_RE } from './constants.ts';
-export { BLOCK_META_KEY, isCompiledTemplateExports } from './codegen-contract.ts';
-export type { CompiledRenderSignature, CompiledBlockSignature, CompiledTemplateExports } from './codegen-contract.ts';
-export { extractBlocks } from './extract-blocks.ts';
-export { escapeRegex } from './escape-regex.ts';
-export { replace, slice } from './pipe-helpers.ts';
-export { RESERVED_KEYWORDS, validateFilterName, validateGlobalName, getReservedKeywords } from './reserved.ts';
-export { hasOwn, isNonNullish, isFunction, isString, isArray, isPlainObject, isKeyedObject, isIterable, isThenable, readObject, readString, readNumber } from './type-guards.ts';
+export { TEMPLATE_ERROR, isTemplateError } from '@nunjucks/error-catalog';
+export type { BrandedTemplateError } from '@nunjucks/error-catalog';
+export type { LineBase } from '@nunjucks/error-catalog';
+export { escapeHtml, escapeForContext, createHtmlContextTracker, type HtmlContext } from '@nunjucks/runtime/escaping';
+export { BLOCK_META_KEY, isCompiledTemplateExports, extractBlocks } from '@nunjucks/compiler';
+export type { CompiledRenderSignature, CompiledBlockSignature, CompiledTemplateExports } from '@nunjucks/compiler';
+export { lineDistance, positionAtOffset, findAllOccurrences } from '@nunjucks/compiler';
+export { loc, ZERO_LOC } from '@nunjucks/lexer';
+export type { Loc } from '@nunjucks/lexer';
+export { MATCH_ANY_RE } from '@nunjucks/lib';
+export { escapeRegex, replace, slice, ok, err, isOk, isErr, map, flatMap, mapErr, getOrElse, fromThrowable } from '@nunjucks/lib';
+export type { Ok, Err, Result } from '@nunjucks/lib';
+export { hasOwn, isNonNullish, isFunction, isString, isArray, isPlainObject, isKeyedObject, isIterable, isThenable, readObject, readString, readNumber } from '@nunjucks/lib';
 export type { Phase, NodeLocation, DomPurifyConfig } from './types.ts';
-export { UNDEFINED_MODES, type UndefinedMode } from './runtime-contract/index.ts';
-export { loc, ZERO_LOC } from './loc.ts';
-export type { Loc } from './loc.ts';
-export { ok, err, isOk, isErr, map } from './result.ts';
-export type { Ok, Err, Result } from './result.ts';
+export { UNDEFINED_MODES, type UndefinedMode } from '@nunjucks/runtime';

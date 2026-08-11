@@ -1,8 +1,10 @@
-import { createLog, normalizeErrorMetadata, ERROR_DEFINITIONS, type ErrorContext } from '@nunjucks/log';
+import { createLog, normalizeErrorMetadata } from '@nunjucks/error-formatter';
+import type { ErrorContext } from '@nunjucks/error-formatter';
+import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { MATCH_ANY_RE } from '@nunjucks/lib';
 import {
   getLogContext,
-} from './log-context.ts';
+} from './error-context.ts';
 
 // WHY: isErrorInstance narrows to Error. The lineno access at the call site uses optional chaining because Error doesn't guarantee lineno — only TemplateError (a subclass via Object.assign) has it. The type intersection `Error & { lineno?: ... }` documents this without claiming the field always exists.
 const isErrorInstance = (value: unknown): value is Error =>

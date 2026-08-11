@@ -1,11 +1,11 @@
-import { createLog } from '@nunjucks/log';
-import type { TemplateError } from '@nunjucks/log';
+import { createLog } from '@nunjucks/error-formatter';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { find } from 'remeda';
 import { MATCH_ANY_RE } from '@nunjucks/shared';
 import { err, isOk, type Result } from '@nunjucks/lib';
 import { peekToken } from "./cursor.ts";
 import type { ParserContext } from "./cursor.ts";
-import type { ErrorDefinitionEntry } from '@nunjucks/log';
+import type { ErrorDefinitionEntry } from '@nunjucks/error-formatter';
 
 const CAUSE_PATTERNS: Array<{ check: (lower: string) => boolean; causes: string[] }> = [
   { check: lower => lower.includes('expected') && lower.includes('expression'), causes: ['Missing expression where one is required', 'Check for empty `{{ }}` or `{% %}` blocks'] },

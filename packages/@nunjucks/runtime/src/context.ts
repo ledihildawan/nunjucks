@@ -1,5 +1,6 @@
-import { ERROR_DEFINITIONS, createLog } from '@nunjucks/log';
-import type { IncludeChain } from '@nunjucks/log';
+import { createLog } from '@nunjucks/error-formatter';
+import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
+import type { IncludeChain } from '@nunjucks/error-formatter';
 import type { NodeLocation, UndefinedMode } from '@nunjucks/shared';
 import { find, forEach, keys } from 'remeda';
 import { collectString } from './collect-stream.ts';
