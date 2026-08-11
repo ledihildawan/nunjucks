@@ -5,6 +5,7 @@ import { resolveIdeLink, getIdeMeta } from './presentation/ide-links/ide-links.t
 import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
 import type { ErrorLike } from './to-html-types.ts';
 import { renderBadge, type classifyError } from './to-html-display.ts';
+import { titleCase } from '@nunjucks/lib/string-case';
 
 const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined, _displayPath: string): string => {
   if (!sourceTrace || sourceTrace.lines.length === 0) { return ''; }
@@ -43,9 +44,6 @@ interface ErrorHeaderInput {
   canLinkLocation: boolean;
   locDisplay: string;
 }
-
-const titleCase = (value: string): string =>
-  value.charAt(0).toUpperCase() + value.slice(1);
 
 const buildErrorHeader = ({
   humanTitle,

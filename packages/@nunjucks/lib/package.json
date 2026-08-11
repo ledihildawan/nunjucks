@@ -17,7 +17,8 @@
     "./ansi-helpers": "./src/ansi-helpers.ts",
     "./strip-markdown": "./src/strip-markdown.ts",
     "./get-error-message": "./src/get-error-message.ts",
-    "./sanitize-helpers": "./src/sanitize-helpers.ts"
+    "./sanitize-helpers": "./src/sanitize-helpers.ts",
+    "./string-case": "./src/string-case.ts"
   },
   "dependencies": {
     "remeda": "^2.39.0"
