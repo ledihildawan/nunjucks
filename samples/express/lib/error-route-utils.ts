@@ -4,8 +4,10 @@ import { ok, err, type Result } from '@nunjucks/lib';
 type InvalidTemplate = string & { readonly __brand: unique symbol };
 
 const createInvalidTemplate = (value: unknown): Result<InvalidTemplate, Error> => {
-  if (typeof value !== 'string' && value !== null) {
-    return err(new Error(`createInvalidTemplate expects string or null, got ${typeof value}`));
+  if (typeof value !== 'string' || value === null) {
+    const errObj = new Error(`Invalid value for 'template'`) as Error & { code?: string };
+    errObj.code = 'VALIDATION_ERROR';
+    return err(errObj);
   }
   return ok(String(value) as InvalidTemplate);
 };
