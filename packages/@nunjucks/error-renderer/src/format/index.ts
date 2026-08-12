@@ -7,3 +7,5 @@ export { toAnsi } from './to-ansi.ts';
 export type { AnsiOptions } from './to-ansi.ts';
 export { toConsoleString } from './to-console.ts';
 export type { Warning, ToConsoleOptions } from './to-console.ts';
+export { injectWarningsScript } from './warning-script.ts';
+export type { WarningScriptOptions } from './warning-script.ts';

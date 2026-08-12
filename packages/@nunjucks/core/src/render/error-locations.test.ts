@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { render } from './render.ts';
 import { renderViaExternalWrapper } from './fixtures/external-wrapper.ts';
 import { formatError } from '@nunjucks/error-formatter';
-import { isErr } from '@nunjucks/shared';
+import { isErr } from '@nunjucks/lib';
 
 const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
   const result = await render(template, { context, ...config });

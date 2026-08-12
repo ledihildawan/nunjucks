@@ -3,7 +3,7 @@ import type { Frame } from './frame.ts';
 import { createRenderRuntime, type RenderRuntime } from './render-runtime.ts';
 import { getRenderFunction, buildSandboxOptions, buildSandboxedRuntime } from './executor-runtime.ts';
 import { collectString } from './collect-stream.ts';
-import type { Environment } from '@nunjucks/shared';
+import type { Environment } from '@nunjucks/validators/security';
 
 type SandboxMode = 'allowlist' | 'blocklist';
 
@@ -22,6 +22,14 @@ interface ExecuteOptions {
 	frame: Frame;
 	env: Env | null;
 	config?: ExecuteConfig;
+}
+
+interface ExecuteNonSandboxOptions {
+	code: string;
+	context: Record<string, unknown>;
+	frame: Frame;
+	env: Env;
+	runtime: RenderRuntime;
 }
 
 const buildRuntime = (config: ExecuteConfig): RenderRuntime => {
@@ -45,13 +53,8 @@ const defaultEnv = (config: ExecuteConfig): Env => ({
 	getTest: () => null,
 });
 
-const executeNonSandbox = async (
-	code: string,
-	context: Record<string, unknown>,
-	frame: Frame,
-	env: Env,
-	runtime: RenderRuntime
-): Promise<string> => {
+const executeNonSandbox = async (options: ExecuteNonSandboxOptions): Promise<string> => {
+	const { code, context, frame, env, runtime } = options;
 	const { render, blocks } = getRenderFunction(code);
 	const ctx = createContext({ ctx: context, env, blocks });
 
@@ -63,7 +66,7 @@ const execute = async (options: ExecuteOptions): Promise<string> => {
 	const resolvedEnv = env ?? defaultEnv(config);
 	const runtime = buildRuntime(config);
 
-	return executeNonSandbox(code, context, frame, resolvedEnv, runtime);
+	return executeNonSandbox({ code, context, frame, env: resolvedEnv, runtime });
 };
 
 const executeStream = (
@@ -79,4 +82,4 @@ const executeStream = (
 };
 
 export { execute, executeStream };
-export type { ExecuteOptions, ExecuteConfig, SandboxMode };
+export type { ExecuteOptions, ExecuteNonSandboxOptions, ExecuteConfig, SandboxMode };

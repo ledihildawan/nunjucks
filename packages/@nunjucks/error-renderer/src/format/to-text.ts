@@ -3,7 +3,7 @@ import { shortenPath } from './presentation/source-trace/path-shortener.ts';
 import { toDisplayLocation } from './presentation/source-trace/location.ts';
 import { mergeErrorParts } from './presentation/error/error-parts.ts';
 import { parseStackFrame } from './presentation/source-trace/stack-parse.ts';
-import { slice } from '@nunjucks/shared';
+import { slice } from '@nunjucks/lib';
 import { stripMarkdown } from './strip-markdown.ts';
 import { getErrorMessage } from '@nunjucks/error-catalog/get-error-message';
 import type { ErrorLike } from '@nunjucks/error-catalog';
@@ -24,7 +24,7 @@ const getSeverityLabel = (severity: 'error' | 'warning' | 'info' | undefined): s
 const formatStackLine = (line: string): string => {
   const frame = parseStackFrame(line);
   if (frame.path && frame.line !== null) {
-    const shortPath = shortenPath(frame.path);
+    const shortPath = shortenPath(frame.path, '');
     if (frame.fn) {
       return `  at ${frame.fn} (${shortPath}:${frame.line})`;
     }
@@ -51,7 +51,7 @@ const formatMediumText = (message: string, input: MediumTextInput): string => {
     colno: input.colno ?? err.colno ?? null,
     lineBase: err.lineBase ?? 'zero'
   });
-  const shortPath = shortenPath(path);
+  const shortPath = shortenPath(path, '');
   const locationStr = ` at ${shortPath}:${location.line}:${location.col}`;
   const causeHint = input.causes.length > 0 ? stripMarkdown(input.causes[0] ?? '') : '';
   const docHint = input.documentationUrl ?? '';

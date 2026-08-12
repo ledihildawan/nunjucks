@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { isOk } from '@nunjucks/shared';
+import { isOk } from '@nunjucks/lib';
 import { compileToCode } from './compile-pipeline.ts';
 
 const unwrapCode = (result: ReturnType<typeof compileToCode>): string => {

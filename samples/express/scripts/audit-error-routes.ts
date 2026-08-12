@@ -179,13 +179,19 @@ const run = async (): Promise<void> => {
     try {
       const res = await fetch(`${BASE}/errors/${route}`);
       const html = await res.text();
-      const info = parse(html) as RouteInfo;
-      info.threw = res.status >= 400;
-      info.hasErrorPage = /class="error-(?:wrapper|title|location)"/u.test(html);
+      const parsed = parse(html);
+      const info: RouteInfo = {
+        loc: parsed.loc,
+        caret: parsed.caret,
+        code: parsed.code,
+        title: parsed.title,
+        threw: res.status >= 400,
+        hasErrorPage: /class="error-(?:wrapper|title|location)"/u.test(html),
+      };
       const v = validate(route, info);
       return { route, status: v.status, reason: v.reason, info };
     } catch (err: unknown) {
-      return { route, status: 'ERROR', reason: String(err), info: {} as RouteInfo };
+      return { route, status: 'ERROR', reason: String(err), info: { loc: null, caret: null, code: null, title: null, threw: false, hasErrorPage: false } };
     }
   }));
 
@@ -193,13 +199,13 @@ const run = async (): Promise<void> => {
 
   console.log(`${pad('ROUTE', 26) + pad('STATUS', 11) + pad('LOCATION', 46)}CODE`);
   console.log('-'.repeat(120));
-  for (const r of rows) {
-    const loc = r.info.loc
-      ? `${short(r.info.loc.path)}:${r.info.loc.line}:${r.info.loc.col}`
+  console.log(rows.map((row) => {
+    const loc = row.info.loc
+      ? `${short(row.info.loc.path)}:${row.info.loc.line}:${row.info.loc.col}`
       : '(none)';
-    console.log(pad(r.route, 26) + pad(r.status, 11) + pad(loc, 46) + (r.info.code || ''));
-    if (r.status !== 'OK') { console.log(`  └─ ${r.reason}`); }
-  }
+    const line = pad(row.route, 26) + pad(row.status, 11) + pad(loc, 46) + (row.info.code || '');
+    return row.status !== 'OK' ? `${line}\n  └─ ${row.reason}` : line;
+  }).join('\n'));
 
   const bad = rows.filter(r => !['OK', 'NO_ERROR'].includes(r.status));
   const noErr = rows.filter(r => r.status === 'NO_ERROR').length;

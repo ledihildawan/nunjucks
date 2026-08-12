@@ -6,7 +6,7 @@ import type { ParserContext } from "../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseExpression } from "../expression-parser/index.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 import type { Token } from '@nunjucks/lexer';
 
 const SWITCH_TOKENS = {

@@ -16,7 +16,14 @@ const extractNameAlias = (nameNode: Node): { name: string; alias: string } => {
   return { name, alias: name };
 };
 
-const compileImportedName = (compiler: Compiler, nameNode: Node, importedId: string, frame: Frame): void => {
+interface CompileImportedNameOptions {
+  compiler: Compiler;
+  nameNode: Node;
+  importedId: string;
+  frame: Frame;
+}
+
+const compileImportedName = ({ compiler, nameNode, importedId, frame }: CompileImportedNameOptions): void => {
   const { name, alias } = extractNameAlias(nameNode);
   const id = compiler.tmpid();
 
@@ -27,22 +34,22 @@ const compileImportedName = (compiler: Compiler, nameNode: Node, importedId: str
   compiler.emitLine(`throw new Error("Cannot import '${name}' from module");`);
   compiler.emitLine('}');
 
-  frame.set(alias, id);
+  frame.set({ name: alias, value: id });
 
   if (frame.parent) {
-    compiler.emitLine(`frame = frame.set("${alias}", ${id});`);
+    compiler.emitLine(`frame = frame.set({ name: "${alias}", value: ${id} });`);
   } else {
     compiler.emitLine(`context = context.setVariable("${alias}", ${id});`);
   }
 };
 
 export const compileFromImport = (compiler: Compiler, { node, frame }: CompileNodeInput<FromImportNode>): void => {
-  const importedId = compileGetTemplate(compiler, node, frame, { eagerCompile: false, ignoreMissing: false });
+  const importedId = compileGetTemplate(compiler, node, frame, { eagerCompile: false, ignoreMissing: false, includeChain: compiler.getTemplateName() });
 
   const withContextArg = node.withContext ? 'context.getVariables(), frame' : '';
   compiler.emitLine(`let ${importedId}_exported = await ${importedId}.getExported(` +
     withContextArg +
     ');');
 
-  forEach(node.names.children, nameNode => compileImportedName(compiler, nameNode, importedId, frame));
+  forEach(node.names.children, nameNode => compileImportedName({ compiler, nameNode, importedId, frame }));
 };

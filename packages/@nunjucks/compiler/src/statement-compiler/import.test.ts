@@ -3,7 +3,7 @@ import { compileImport } from './import.ts';
 import { importNode, literal } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 const templateLoc = loc({ lineno: 2, colno: 5 });
 
@@ -33,7 +33,7 @@ describe('compileImport', () => {
     compileImport(asCompiler(c), { node: buildImportNode(false), frame: createFrame() });
     const joined = c.emitted.join('');
     expect(joined).toContain('lineno = 2; colno = 6;');
-    expect(joined).toContain('let t_1 = await env.getTemplate(lib.njk, false, "parent", false);');
+    expect(joined).toContain('let t_1 = await env.getTemplate({ name: lib.njk, eagerCompile: false, includeChain: "parent", ignoreMissing: false });');
     expect(joined).toContain('let t_1_exported = await t_1.getExported();');
     expect(joined).toContain('context = context.setVariable("myLib", t_1_exported);');
   });
@@ -68,7 +68,7 @@ describe('compileImport', () => {
       {
         label: 'child frame (has parent) writes through frame.set',
         hasParent: true,
-        expected: 'frame = frame.set("myLib", t_1_exported);',
+        expected: 'frame = frame.set({ name: "myLib", value: t_1_exported });',
         forbidden: 'context.setVariable',
       },
     ];

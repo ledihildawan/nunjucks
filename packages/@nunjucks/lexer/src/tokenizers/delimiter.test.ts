@@ -75,16 +75,22 @@ const delimiterRoles: ReadonlyArray<{
 describe('createDelimiterTokenizer', () => {
   describe('factory contract', () => {
     test('returns a tokenizer function', () => {
-      const tokenize = createDelimiterTokenizer(
-        TOKEN_BLOCK_START, 'stripBlockStart', 'blockStart', { stripLeft: true },
-      );
+      const tokenize = createDelimiterTokenizer({
+        tokenType: TOKEN_BLOCK_START,
+        stripKey: 'stripBlockStart',
+        plainKey: 'blockStart',
+        stripFlag: { stripLeft: true },
+      });
       expect(typeof tokenize).toBe('function');
     });
 
     test('yields a { token, state } pair on a match', () => {
-      const tokenize = createDelimiterTokenizer(
-        TOKEN_BLOCK_START, 'stripBlockStart', 'blockStart', { stripLeft: true },
-      );
+      const tokenize = createDelimiterTokenizer({
+        tokenType: TOKEN_BLOCK_START,
+        stripKey: 'stripBlockStart',
+        plainKey: 'blockStart',
+        stripFlag: { stripLeft: true },
+      });
       const result = tokenize(createState(DEFAULT_BLOCK_START));
       expect(result).not.toBeNull();
       expect(result).toHaveProperty('token');
@@ -92,16 +98,22 @@ describe('createDelimiterTokenizer', () => {
     });
 
     test('returns null for empty input', () => {
-      const tokenize = createDelimiterTokenizer(
-        TOKEN_BLOCK_START, 'stripBlockStart', 'blockStart', { stripLeft: true },
-      );
+      const tokenize = createDelimiterTokenizer({
+        tokenType: TOKEN_BLOCK_START,
+        stripKey: 'stripBlockStart',
+        plainKey: 'blockStart',
+        stripFlag: { stripLeft: true },
+      });
       expect(tokenize(createState(''))).toBeNull();
     });
 
     test('is stateless across repeated invocations on equal input', () => {
-      const tokenize = createDelimiterTokenizer(
-        TOKEN_BLOCK_START, 'stripBlockStart', 'blockStart', { stripLeft: true },
-      );
+      const tokenize = createDelimiterTokenizer({
+        tokenType: TOKEN_BLOCK_START,
+        stripKey: 'stripBlockStart',
+        plainKey: 'blockStart',
+        stripFlag: { stripLeft: true },
+      });
       const first = tokenize(createState(STRIP_BLOCK_START));
       const second = tokenize(createState(STRIP_BLOCK_START));
       expect(second?.token).toEqual(first?.token);
@@ -112,9 +124,12 @@ describe('createDelimiterTokenizer', () => {
   describe('delimiter role matrix', () => {
     test('detects the strip variant and sets only the matching strip flag', () => {
       delimiterRoles.forEach((role) => {
-        const tokenize = createDelimiterTokenizer(
-          role.tokenType, role.stripKey, role.plainKey, role.stripFlag,
-        );
+        const tokenize = createDelimiterTokenizer({
+          tokenType: role.tokenType,
+          stripKey: role.stripKey,
+          plainKey: role.plainKey,
+          stripFlag: role.stripFlag,
+        });
         const result = tokenize(createState(role.stripLiteral));
         expect({
           role: role.name,
@@ -134,9 +149,12 @@ describe('createDelimiterTokenizer', () => {
 
     test('prefers the strip variant over a leading plain prefix match', () => {
       delimiterRoles.forEach((role) => {
-        const tokenize = createDelimiterTokenizer(
-          role.tokenType, role.stripKey, role.plainKey, role.stripFlag,
-        );
+        const tokenize = createDelimiterTokenizer({
+          tokenType: role.tokenType,
+          stripKey: role.stripKey,
+          plainKey: role.plainKey,
+          stripFlag: role.stripFlag,
+        });
         const result = tokenize(createState(role.stripLiteral));
         expect({
           role: role.name,
@@ -152,9 +170,12 @@ describe('createDelimiterTokenizer', () => {
 
     test('tokenizes the plain variant without any strip metadata', () => {
       delimiterRoles.forEach((role) => {
-        const tokenize = createDelimiterTokenizer(
-          role.tokenType, role.stripKey, role.plainKey, role.stripFlag,
-        );
+        const tokenize = createDelimiterTokenizer({
+          tokenType: role.tokenType,
+          stripKey: role.stripKey,
+          plainKey: role.plainKey,
+          stripFlag: role.stripFlag,
+        });
         const result = tokenize(createState(role.plainLiteral));
         expect({
           role: role.name,
@@ -174,9 +195,12 @@ describe('createDelimiterTokenizer', () => {
 
     test('advances the state by the length of the matched delimiter', () => {
       delimiterRoles.forEach((role) => {
-        const tokenize = createDelimiterTokenizer(
-          role.tokenType, role.stripKey, role.plainKey, role.stripFlag,
-        );
+        const tokenize = createDelimiterTokenizer({
+          tokenType: role.tokenType,
+          stripKey: role.stripKey,
+          plainKey: role.plainKey,
+          stripFlag: role.stripFlag,
+        });
         const stripResult = tokenize(createState(role.stripLiteral));
         const plainResult = tokenize(createState(role.plainLiteral));
         expect({
@@ -193,9 +217,12 @@ describe('createDelimiterTokenizer', () => {
 
     test('returns null when neither the strip nor plain variant matches', () => {
       delimiterRoles.forEach((role) => {
-        const tokenize = createDelimiterTokenizer(
-          role.tokenType, role.stripKey, role.plainKey, role.stripFlag,
-        );
+        const tokenize = createDelimiterTokenizer({
+          tokenType: role.tokenType,
+          stripKey: role.stripKey,
+          plainKey: role.plainKey,
+          stripFlag: role.stripFlag,
+        });
         expect({ role: role.name, result: tokenize(createState('abc')) }).toEqual({
           role: role.name,
           result: null,
@@ -206,27 +233,36 @@ describe('createDelimiterTokenizer', () => {
 
   describe('strip flag semantics', () => {
     test('start delimiters flag stripLeft only', () => {
-      const tokenize = createDelimiterTokenizer(
-        TOKEN_VARIABLE_START, 'stripVariableStart', 'variableStart', { stripLeft: true },
-      );
+      const tokenize = createDelimiterTokenizer({
+        tokenType: TOKEN_VARIABLE_START,
+        stripKey: 'stripVariableStart',
+        plainKey: 'variableStart',
+        stripFlag: { stripLeft: true },
+      });
       const result = tokenize(createState(STRIP_VARIABLE_START));
       expect(result?.token.stripLeft).toBe(true);
       expect(result?.token.stripRight).toBeUndefined();
     });
 
     test('end delimiters flag stripRight only', () => {
-      const tokenize = createDelimiterTokenizer(
-        TOKEN_BLOCK_END, 'stripBlockEnd', 'blockEnd', { stripRight: true },
-      );
+      const tokenize = createDelimiterTokenizer({
+        tokenType: TOKEN_BLOCK_END,
+        stripKey: 'stripBlockEnd',
+        plainKey: 'blockEnd',
+        stripFlag: { stripRight: true },
+      });
       const result = tokenize(createState(STRIP_BLOCK_END));
       expect(result?.token.stripRight).toBe(true);
       expect(result?.token.stripLeft).toBeUndefined();
     });
 
     test('forwards a combined stripLeft and stripRight flag verbatim onto the strip token', () => {
-      const tokenize = createDelimiterTokenizer(
-        TOKEN_BLOCK_START, 'stripBlockStart', 'blockStart', { stripLeft: true, stripRight: true },
-      );
+      const tokenize = createDelimiterTokenizer({
+        tokenType: TOKEN_BLOCK_START,
+        stripKey: 'stripBlockStart',
+        plainKey: 'blockStart',
+        stripFlag: { stripLeft: true, stripRight: true },
+      });
       const result = tokenize(createState(STRIP_BLOCK_START));
       expect(result?.token.stripLeft).toBe(true);
       expect(result?.token.stripRight).toBe(true);
@@ -235,9 +271,12 @@ describe('createDelimiterTokenizer', () => {
 
   describe('configured custom delimiters', () => {
     test('matches a custom-configured plain delimiter', () => {
-      const tokenize = createDelimiterTokenizer(
-        TOKEN_BLOCK_START, 'stripBlockStart', 'blockStart', { stripLeft: true },
-      );
+      const tokenize = createDelimiterTokenizer({
+        tokenType: TOKEN_BLOCK_START,
+        stripKey: 'stripBlockStart',
+        plainKey: 'blockStart',
+        stripFlag: { stripLeft: true },
+      });
       const result = tokenize(createState('<<', { tags: { blockStart: '<<' } }));
       expect(result?.token.value).toBe('<<');
       expect(result?.token.stripLeft).toBeUndefined();
@@ -245,27 +284,36 @@ describe('createDelimiterTokenizer', () => {
     });
 
     test('keeps the strip delimiter at the default constant regardless of custom plain tags', () => {
-      const tokenize = createDelimiterTokenizer(
-        TOKEN_BLOCK_START, 'stripBlockStart', 'blockStart', { stripLeft: true },
-      );
+      const tokenize = createDelimiterTokenizer({
+        tokenType: TOKEN_BLOCK_START,
+        stripKey: 'stripBlockStart',
+        plainKey: 'blockStart',
+        stripFlag: { stripLeft: true },
+      });
       const result = tokenize(createState(STRIP_BLOCK_START, { tags: { blockStart: '<<' } }));
       expect(result?.token.value).toBe(STRIP_BLOCK_START);
       expect(result?.token.stripLeft).toBe(true);
     });
 
     test('returns null when input matches the default but not the custom plain delimiter', () => {
-      const tokenize = createDelimiterTokenizer(
-        TOKEN_BLOCK_START, 'stripBlockStart', 'blockStart', { stripLeft: true },
-      );
+      const tokenize = createDelimiterTokenizer({
+        tokenType: TOKEN_BLOCK_START,
+        stripKey: 'stripBlockStart',
+        plainKey: 'blockStart',
+        stripFlag: { stripLeft: true },
+      });
       expect(tokenize(createState('{%', { tags: { blockStart: '<<' } }))).toBeNull();
     });
   });
 
   describe('position metadata and state threading', () => {
     test('token inherits lineno and colno from the inbound state', () => {
-      const tokenize = createDelimiterTokenizer(
-        TOKEN_BLOCK_START, 'stripBlockStart', 'blockStart', { stripLeft: true },
-      );
+      const tokenize = createDelimiterTokenizer({
+        tokenType: TOKEN_BLOCK_START,
+        stripKey: 'stripBlockStart',
+        plainKey: 'blockStart',
+        stripFlag: { stripLeft: true },
+      });
       const positioned = advance(createState('  {%'), 2);
       const result = tokenize(positioned);
       expect(result?.token.lineno).toBe(0);
@@ -273,9 +321,12 @@ describe('createDelimiterTokenizer', () => {
     });
 
     test('resulting state threads forward from the inbound position', () => {
-      const tokenize = createDelimiterTokenizer(
-        TOKEN_BLOCK_START, 'stripBlockStart', 'blockStart', { stripLeft: true },
-      );
+      const tokenize = createDelimiterTokenizer({
+        tokenType: TOKEN_BLOCK_START,
+        stripKey: 'stripBlockStart',
+        plainKey: 'blockStart',
+        stripFlag: { stripLeft: true },
+      });
       const positioned = advance(createState('  {%'), 2);
       const result = tokenize(positioned);
       expect(result?.state.index).toBe(4);

@@ -107,14 +107,13 @@ describe('toConsoleString — full verbosity dev mode', () => {
     expect(output).toContain('[W100]');
   });
 
-  test('uses the default version when none is provided', () => {
+  test('omits the version when none is provided', () => {
     const output = toConsoleString(baseWarning, { verbosity: 'full' });
-    expect(output).toContain('Nunjucks 3.2.4');
+    expect(output).not.toContain('Nunjucks');
   });
 
   test('omits the timestamp footer segment when timestamp is absent', () => {
     const output = toConsoleString(baseWarning, { verbosity: 'full' });
-    expect(output).toContain('Nunjucks 3.2.4');
     expect(output).not.toContain(' · ');
   });
 });

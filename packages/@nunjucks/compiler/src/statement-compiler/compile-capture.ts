@@ -10,7 +10,7 @@ export const compileCapture = (
   const varName = node.name;
 
   if (varName) {
-    compiler.emitLine(`frame = frame.set("${varName}", await (async () => {`);
+    compiler.emitLine(`frame = frame.set({ name: "${varName}", value: await (async () => {`);
   } else {
     compiler.emitLine('(async () => {');
   }
@@ -23,7 +23,7 @@ export const compileCapture = (
   compiler.emitLine('return output;');
 
   if (varName) {
-    compiler.emitLine('})());');
+    compiler.emitLine('})() });');
   } else {
     compiler.emitLine('})()');
   }

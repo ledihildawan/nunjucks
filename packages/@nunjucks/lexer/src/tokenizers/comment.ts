@@ -17,7 +17,7 @@ export const tokenizeComment: Tokenizer = (state) => {
   const { current, comment } = scan(initial, state.tags.commentStart);
 
   return {
-    token: createToken(TOKEN_COMMENT, comment, state.lineno, state.colno),
+    token: createToken({ type: TOKEN_COMMENT, value: comment, lineno: state.lineno, colno: state.colno }),
     state: current,
   };
 };

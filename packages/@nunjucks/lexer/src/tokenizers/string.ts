@@ -12,11 +12,11 @@ export const tokenizeString: Tokenizer = (state) => {
   const { lineno, colno } = state;
   const quote = char;
   const afterOpen = advance(state);
-  const content = parseStringContent(afterOpen.str, afterOpen.index, quote);
+  const content = parseStringContent({ str: afterOpen.str, start: afterOpen.index, quote });
   const current = advance(afterOpen, content.length + 1);
 
   return {
-    token: createToken(TOKEN_STRING, content, lineno, colno),
+    token: createToken({ type: TOKEN_STRING, value: content, lineno, colno }),
     state: current,
   };
 };

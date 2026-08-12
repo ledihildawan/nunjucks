@@ -1,5 +1,5 @@
 import type { Node, BinaryOpNode, BinaryNode, UnaryOpNode, UnaryNode, IncDecNode, PairNode, RestPatternNode, AssignmentPatternNode, VariableDeclNode, CompoundAssignNode, LookupNode, SliceNode, CallNode, TestNode, TestCallNode, ChildrenNode } from '../types/index.ts';
-import type { Loc } from '@nunjucks/shared';
+import type { Loc } from '@nunjucks/lexer';
 import { T, createNode } from './internal.ts';
 
 interface SliceFields {

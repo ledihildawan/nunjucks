@@ -7,7 +7,7 @@ import type { ParserContext } from "../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseExpression } from "../expression-parser/index.ts";
 import { parseSlottedBody, buildDefaultBody, advanceAfterTags } from "./slots.ts";
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 export const parseRenderBlock = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tagR = peekToken(parserContext);

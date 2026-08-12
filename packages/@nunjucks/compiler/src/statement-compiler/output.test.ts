@@ -3,7 +3,7 @@ import { compileTemplateData, compileCapture } from './index.ts';
 import { templateData, output } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { ZERO_LOC } from '@nunjucks/shared';
+import { ZERO_LOC } from '@nunjucks/lexer';
 
 const frame = createFrame();
 
@@ -39,9 +39,9 @@ describe('compileCapture', () => {
       frame,
     });
     const joined = c.emitted.join('');
-    expect(joined).toContain('frame = frame.set("captured", await (async () => {');
+    expect(joined).toContain('frame = frame.set({ name: "captured", value: await (async () => {');
     expect(joined).toContain('return output;');
-    expect(joined).toContain('})());');
+    expect(joined).toContain('})() });');
   });
 
   test('anonymous capture returns the value directly', () => {

@@ -5,7 +5,8 @@ import type { Frame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import { compileDispatch } from './node-dispatch.ts';
 import { DEFAULT_UNDEFINED_MODE } from '@nunjucks/runtime';
-import { createHtmlContextTracker, type HtmlContext, type UndefinedMode } from '@nunjucks/shared';
+import { createHtmlContextTracker, type HtmlContext } from '@nunjucks/runtime/escaping';
+import type { UndefinedMode } from '@nunjucks/runtime';
 import {
   fail as failCompiler,
   getTemplateName as getCompilerTemplateName,
@@ -66,12 +67,19 @@ export interface Compiler extends Emitter, ScopeManager {
   getHtmlContext: (lineno: number, colno: number) => HtmlContext;
 }
 
-export const createCompiler = (
-  templateName: string | null,
-  undefinedMode: UndefinedMode | undefined,
-  source: string,
-  streamErrorRecovery = false
-): Compiler => {
+interface CreateCompilerOptions {
+  templateName: string | null;
+  undefinedMode?: UndefinedMode | undefined;
+  source: string;
+  streamErrorRecovery?: boolean;
+}
+
+export const createCompiler = ({
+  templateName,
+  undefinedMode,
+  source,
+  streamErrorRecovery = false,
+}: CreateCompilerOptions): Compiler => {
   const contextTracker = createHtmlContextTracker(source);
 
   const compiler: Compiler = {
@@ -87,7 +95,7 @@ export const createCompiler = (
     compiledLine: 0,
 
     fail(msg, lineno, colno) {
-      failCompiler(compiler, msg, lineno, colno);
+      failCompiler({ compiler, msg, lineno, colno });
     },
     pushBuffer() {
       return pushCompilerBuffer(compiler);

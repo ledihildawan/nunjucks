@@ -55,12 +55,12 @@ const lexGenerator = function* (state: LexerState): Generator<Token, void, unkno
   yield* lexGenerator(advance(state));
 };
 
-export const createTokenizer = (src: string, options: LexerOptions = {}): {
+export interface TokenizerResult {
   nextToken: () => Token | null;
   tags: ReturnType<typeof createDelimiters>;
-  trimBlocks: boolean;
-  lstripBlocks: boolean;
-} => {
+}
+
+export const createTokenizer = (src: string, options: LexerOptions = {}): TokenizerResult => {
   const generator = lexGenerator(createState(src, options));
   const tags = createDelimiters(options.tags);
 
@@ -71,7 +71,5 @@ export const createTokenizer = (src: string, options: LexerOptions = {}): {
       return result.value;
     },
     tags,
-    trimBlocks: Boolean(options.trimBlocks),
-    lstripBlocks: Boolean(options.lstripBlocks),
   };
 };

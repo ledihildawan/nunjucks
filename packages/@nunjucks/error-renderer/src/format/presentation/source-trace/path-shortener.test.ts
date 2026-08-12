@@ -24,7 +24,7 @@ describe('shortenPath', () => {
     expect(shortenPath('/Users/bob/work/app', '/Users/bob/work')).toBe('Users/.../work/app');
   });
   test('leaves paths without a users/home segment untouched', () => {
-    expect(shortenPath('/var/log/app')).toBe('/var/log/app');
+    expect(shortenPath('/var/log/app', '')).toBe('/var/log/app');
   });
   test('treats home as a private root segment', () => {
     expect(shortenPath('/home/bob/work/app', '/home/bob/work')).toBe('home/.../work/app');

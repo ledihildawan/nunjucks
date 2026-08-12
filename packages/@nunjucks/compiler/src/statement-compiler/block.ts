@@ -22,8 +22,8 @@ export const compileSuper = (compiler: Compiler, { node, frame }: CompileNodeInp
   const id = String(node.symbol?.value ?? 'super');
 
   emitLineLocation(compiler, node.lineno, node.colno);
-  compiler.emitLine(`${id} = await context.getSuper(env, "${name}", b_${name}, frame, runtime, ${node.lineno}, ${node.colno});`);
+  compiler.emitLine(`${id} = await context.getSuper({ envObj: env, name: "${name}", block: b_${name}, frame, runtime, lineno: ${node.lineno}, colno: ${node.colno} });`);
   compiler.emitLine(`${id} = runtime.markSafe(${id});`);
-  compiler.emitLine(`frame = frame.set("${id}", ${id});`);
-  frame.set(id, id);
+  compiler.emitLine(`frame = frame.set({ name: "${id}", value: ${id} });`);
+  frame.set({ name: id, value: id });
 };

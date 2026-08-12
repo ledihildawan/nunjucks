@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import { compileRoot } from './root.ts';
 import { root, block, symbol } from '@nunjucks/nodes';
 import type { ChildrenNode, Node } from '@nunjucks/nodes';
-import { ZERO_LOC } from '@nunjucks/shared';
+import { ZERO_LOC } from '@nunjucks/lexer';
 import type { Compiler } from '../index.ts';
 
 const makeCompiler = () => {

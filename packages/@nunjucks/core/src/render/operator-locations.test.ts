@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { render } from './render.ts';
-import { isErr } from '@nunjucks/shared';
+import { isErr } from '@nunjucks/lib';
 import type { TemplateError } from '@nunjucks/error-formatter';
 
 const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {

@@ -15,6 +15,7 @@
   "dependencies": {
     "@nunjucks/error-catalog": "workspace:*",
     "@nunjucks/error-formatter": "workspace:*",
+    "@nunjucks/lib": "workspace:*",
     "@nunjucks/runtime": "workspace:*",
     "@nunjucks/shared": "workspace:*",
     "isomorphic-dompurify": "^2.14.0",

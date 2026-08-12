@@ -17,6 +17,8 @@ export interface TemplateValidatorConfig {
   strictMode?: boolean;
 }
 
+const isNonEmpty = <T>(arr: readonly T[]): arr is readonly [T, ...T[]] => arr.length > 0;
+
 const checkTemplateSize = (template: string, config: TemplateValidatorConfig): TemplateValidationError | null => {
   if (!config.maxTemplateSize || config.maxTemplateSize <= 0) {
     return null;
@@ -55,10 +57,9 @@ export const validateTemplate = (template: string, config: TemplateValidatorConf
   const errors = [checkTemplateSize(template, config), checkDangerousCode(template, config)]
     .filter((e): e is TemplateValidationError => e !== null);
 
-  if (errors.length === 0) {
+  if (!isNonEmpty(errors)) {
     return { valid: true, errors: [] as const };
   }
-  const first = errors[0] as TemplateValidationError;
-  const rest = errors.slice(1);
+  const [first, ...rest] = errors;
   return { valid: false, errors: [first, ...rest] as const };
 };

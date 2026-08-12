@@ -4,8 +4,8 @@ import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { nextToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
-import { ok, isErr, type Result } from '@nunjucks/shared';
-import { loc } from '@nunjucks/shared';
+import { ok, isErr, type Result } from '@nunjucks/lib';
+import { loc } from '@nunjucks/lexer';
 import { find, map } from 'remeda';
 
 const SIMPLE_IDENTIFIER_PATTERN = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;

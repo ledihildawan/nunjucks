@@ -3,13 +3,21 @@ import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { last, pipe, split } from 'remeda';
 import type { Emitter } from './index.ts';
 
-export const fail = (
-  compiler: { templateName: string | null },
-  msg: string,
-  lineno?: number,
-  colno?: number,
-  errorName: string = 'WALK_UNKNOWN_TYPE'
-): never => {
+interface FailOptions {
+  compiler: { templateName: string | null };
+  msg: string;
+  lineno?: number;
+  colno?: number;
+  errorName?: string;
+}
+
+export const fail = ({
+  compiler,
+  msg,
+  lineno,
+  colno,
+  errorName = 'WALK_UNKNOWN_TYPE',
+}: FailOptions): never => {
   const lastPart = pipe(msg, split(':'), last());
   const subject = (lastPart ?? 'compile').trim();
   const errorDef = ERROR_DEFINITIONS[errorName as keyof typeof ERROR_DEFINITIONS] ?? ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE;

@@ -5,7 +5,7 @@ import { symbol, literal, pair } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { ZERO_LOC } from '@nunjucks/shared';
+import { ZERO_LOC } from '@nunjucks/lexer';
 
 const makeCompiler = () => {
   const emitted: string[] = [];
@@ -31,7 +31,7 @@ const destructure = (pattern: Node, source: string, registerFrame = true) => {
 describe('compileDestructuring', () => {
   test('symbol pattern emits a frame binding', () => {
     const out = destructure(symbol(ZERO_LOC, 'a'), 'src');
-    expect(out).toContain('frame.set("a"');
+    expect(out).toContain('frame.set({ name: "a"');
     expect(out).toContain('let t_1 = src;');
   });
 

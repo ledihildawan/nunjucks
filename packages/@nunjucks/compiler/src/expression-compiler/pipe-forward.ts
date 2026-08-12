@@ -6,13 +6,13 @@ export const compilePipeForward = (compiler: Compiler, { node, frame }: CompileN
   const name = node.name;
   compiler.assertType(name, 'symbol');
   const filterName = String(name.value);
-  const filterLocation = `${node.lineno}, ${node.colno ?? 0}`;
 
   const args = node.args;
 
-  compiler.emit(`await runtime.runFilter(env, ${JSON.stringify(filterName)}, ${filterLocation}, context, `);
+  compiler.emit(`await (async () => { const r = await runtime.runFilter({ env, name: ${JSON.stringify(filterName)}, lineno: ${node.lineno ?? 0}, colno: ${node.colno ?? 0}, context, args: [`);
 
-  args.forEach((argument, i) => {
+  for (let i = 0; i < args.length; i++) {
+    const argument = args[i];
     if (i > 0) {
       compiler.emit(', ');
     }
@@ -21,7 +21,7 @@ export const compilePipeForward = (compiler: Compiler, { node, frame }: CompileN
       compiler.compile(argument, frame);
       compiler.emit(')');
     }
-  });
+  }
 
-  compiler.emit(')');
+  compiler.emit('] }); if (!r.ok) { throw r.error; } return r.value; })()');
 };

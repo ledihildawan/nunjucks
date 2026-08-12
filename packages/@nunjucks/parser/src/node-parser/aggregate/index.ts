@@ -6,8 +6,8 @@ import {
 import { array, dict, group } from '@nunjucks/nodes';
 import type { ChildrenNode, Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { loc } from '@nunjucks/shared';
-import type { Loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
+import type { Loc } from '@nunjucks/lexer';
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { nextToken } from '../../cursor.ts';
 import type { ParserContext } from '../../cursor.ts';

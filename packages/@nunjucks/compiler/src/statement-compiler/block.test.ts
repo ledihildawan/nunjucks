@@ -2,6 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import { compileBlock, compileSuper } from './block.ts';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
+import type { FrameSetOptions } from '@nunjucks/runtime/frame';
 
 describe('compileBlock', () => {
   test('drains the block via collectString in a string-buffer context', () => {
@@ -46,13 +47,13 @@ describe('compileSuper', () => {
     };
     const frame = createFrame();
     const baseSet = frame.set;
-    frame.set = (k: string, v: unknown) => {
-      setCalls.push([k, String(v)]);
-      return baseSet(k, v);
+    frame.set = (options: FrameSetOptions) => {
+      setCalls.push([options.name, String(options.value)]);
+      return baseSet({ name: options.name, value: options.value });
     };
     compileSuper(asCompiler(ctx), { node: { blockName: 'content', symbol: { value: 'super' }, lineno: 2, colno: 4 } as never, frame });
     expect(emitted[0]).toBe('lineno = 2; colno = 4;');
-    expect(emitted[1]).toContain('getSuper(env, "content", b_content, frame, runtime, 2, 4)');
+    expect(emitted[1]).toContain('context.getSuper({ envObj: env, name: "content", block: b_content, frame, runtime, lineno: 2, colno: 4 })');
     expect(emitted[2]).toContain('runtime.markSafe(super)');
     expect(setCalls).toEqual([['super', 'super']]);
   });

@@ -3,7 +3,7 @@ import { compileLookupVal, compileOptionalChain, compileOptionalCall, compileSli
 import { symbol, lookupVal, optionalChain, slice, funCall } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 const frame = createFrame();
 
@@ -36,7 +36,7 @@ describe('compileLookupVal', () => {
     const node = lookupVal(loc({ lineno: 1, colno: 1 }), { target: { mock: 'ARR' } as never, val: slice(loc({ lineno: 2, colno: 2 }), { start: null, stop: null, step: null }) });
     compileLookupVal(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');
-    expect(joined).toContain('runtime.slice((ARR), null, null, null)');
+    expect(joined).toContain('runtime.slice({ source: (ARR), start: null, stop: null, step: null })');
   });
 });
 
@@ -67,7 +67,7 @@ describe('compileSlice', () => {
     const node = slice(loc({ lineno: 1, colno: 1 }), { start: { mock: 'S' } as never, stop: null, step: { mock: 'P' } as never });
     compileSlice(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');
-    expect(joined).toContain('runtime.slice((');
-    expect(joined).toContain('null), (');
+    expect(joined).toContain('runtime.slice({ source: (');
+    expect(joined).toContain(', start: null, stop: ');
   });
 });

@@ -132,7 +132,7 @@ export const tokenizeRaw: Tokenizer = (state) => {
   const { content, current: finalState } = processRawContent({ current: afterName, name, endTagName, tags: state.tags });
 
   return {
-    token: createToken(TOKEN_RAW, content, state.lineno, state.colno),
+    token: createToken({ type: TOKEN_RAW, value: content, lineno: state.lineno, colno: state.colno }),
     state: finalState,
   };
 };

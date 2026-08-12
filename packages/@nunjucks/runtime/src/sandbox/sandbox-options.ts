@@ -1,4 +1,4 @@
-import type { Environment } from '@nunjucks/shared';
+import type { Environment } from '@nunjucks/validators/security';
 
 interface SandboxOptions {
   allowlist?: readonly string[];

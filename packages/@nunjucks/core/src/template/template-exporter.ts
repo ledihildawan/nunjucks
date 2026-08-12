@@ -18,7 +18,7 @@ const createGetExported = (
 
   try {
     await compiler.safeCompile();
-  } catch (e) {
+  } catch (e: unknown) {
     const state = getState();
     throw prettifyError({ path: state.path, withInternals: state.env.opts.dev, err: e as Error, includeChain: state.includeChain ?? undefined });
   }
@@ -45,10 +45,10 @@ const createGetExported = (
     if (rootGen === undefined) {
       return context.getExported();
     }
-    const { context: drainedContext } = await collectStream(rootGen);
+    const { returnValue: drainedContext } = await collectStream(rootGen);
     const finalContext = (drainedContext as Context | undefined) ?? context;
     return finalContext.getExported();
-  } catch (e) {
+  } catch (e: unknown) {
     return wrapExportedError(e);
   }
 };

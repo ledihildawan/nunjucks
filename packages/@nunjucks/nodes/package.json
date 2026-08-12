@@ -6,9 +6,13 @@
   "exports": {
     ".": "./src/index.ts",
     "./types": "./src/types/index.ts",
-    "./factory": "./src/factory.ts",
+    "./factory": "./src/factory/index.ts",
     "./guards": "./src/types/guards.ts",
     "./traverse": "./src/traverse.ts"
+  },
+  "dependencies": {
+    "@nunjucks/lexer": "workspace:*",
+    "@nunjucks/shared": "workspace:*"
   },
   "description": "AST node types for Nunjucks template engine",
   "keywords": ["nunjucks", "ast", "nodes"],

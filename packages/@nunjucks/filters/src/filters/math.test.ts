@@ -1,65 +1,71 @@
 import { describe, test, expect } from 'bun:test';
+import { isOk, getOrElse } from '@nunjucks/lib';
 import { abs, round } from './math.ts';
 
 describe('filters/math', () => {
   describe('abs', () => {
     test('returns the absolute value of a positive number', () => {
-      expect(abs(5)).toBe(5);
+      expect(getOrElse(abs(5), null)).toBe(5);
     });
 
     test('returns the absolute value of a negative number', () => {
-      expect(abs(-5)).toBe(5);
-      expect(abs(-3.14)).toBe(3.14);
+      expect(getOrElse(abs(-5), null)).toBe(5);
+      expect(getOrElse(abs(-3.14), null)).toBe(3.14);
     });
 
     test('returns zero for zero', () => {
-      expect(abs(0)).toBe(0);
+      expect(getOrElse(abs(0), null)).toBe(0);
     });
 
-    test('throws when given a non-number', () => {
-      expect(() => abs('5')).toThrow();
-      expect(() => abs(null)).toThrow();
-      expect(() => abs(undefined)).toThrow();
+    test('returns error when given a non-number', () => {
+      const result1 = abs('5');
+      expect(isOk(result1)).toBe(false);
+      const result2 = abs(null);
+      expect(isOk(result2)).toBe(false);
+      const result3 = abs(undefined);
+      expect(isOk(result3)).toBe(false);
     });
   });
 
   describe('round', () => {
     test('rounds to the nearest integer by default', () => {
-      expect(round(1.4)).toBe(1);
-      expect(round(1.5)).toBe(2);
-      expect(round(1.6)).toBe(2);
-      expect(round(-1.4)).toBe(-1);
-      expect(round(-1.5)).toBe(-1);
+      expect(getOrElse(round(1.4), null)).toBe(1);
+      expect(getOrElse(round(1.5), null)).toBe(2);
+      expect(getOrElse(round(1.6), null)).toBe(2);
+      expect(getOrElse(round(-1.4), null)).toBe(-1);
+      expect(getOrElse(round(-1.5), null)).toBe(-1);
     });
 
     test('rounds to the requested decimal precision', () => {
-      expect(round(1.234, 2)).toBe(1.23);
-      expect(round(1.235, 2)).toBe(1.24);
-      expect(round(1.2345, 3)).toBe(1.235);
+      expect(getOrElse(round(1.234, 2), null)).toBe(1.23);
+      expect(getOrElse(round(1.235, 2), null)).toBe(1.24);
+      expect(getOrElse(round(1.2345, 3), null)).toBe(1.235);
     });
 
     test('uses Math.ceil when method is "ceil"', () => {
-      expect(round(1.1, 0, 'ceil')).toBe(2);
-      expect(round(1.234, 2, 'ceil')).toBe(1.24);
+      expect(getOrElse(round(1.1, 0, 'ceil'), null)).toBe(2);
+      expect(getOrElse(round(1.234, 2, 'ceil'), null)).toBe(1.24);
     });
 
     test('uses Math.floor when method is "floor"', () => {
-      expect(round(1.9, 0, 'floor')).toBe(1);
-      expect(round(1.239, 2, 'floor')).toBe(1.23);
+      expect(getOrElse(round(1.9, 0, 'floor'), null)).toBe(1);
+      expect(getOrElse(round(1.239, 2, 'floor'), null)).toBe(1.23);
     });
 
     test('uses Math.round when method is "round" (or omitted)', () => {
-      expect(round(1.5, 0, 'round')).toBe(2);
-      expect(round(2.5, 0, 'round')).toBe(3);
+      expect(getOrElse(round(1.5, 0, 'round'), null)).toBe(2);
+      expect(getOrElse(round(2.5, 0, 'round'), null)).toBe(3);
     });
 
     test('treats omitted precision as zero', () => {
-      expect(round(3.7)).toBe(4);
+      expect(getOrElse(round(3.7), null)).toBe(4);
     });
 
-    test('throws when given a non-number', () => {
-      expect(() => round('1.5')).toThrow();
-      expect(() => round(null)).toThrow();
+    test('returns error when given a non-number', () => {
+      const result1 = round('1.5');
+      expect(isOk(result1)).toBe(false);
+      const result2 = round(null);
+      expect(isOk(result2)).toBe(false);
     });
   });
 });

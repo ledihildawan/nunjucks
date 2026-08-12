@@ -39,7 +39,7 @@ export const tokenizeOperator: Tokenizer = (state) => {
   const type: TokenType = op === '...' ? 'spread' : matchTokenType(op);
 
   return {
-    token: createToken(type, op, state.lineno, state.colno),
+    token: createToken({ type, value: op, lineno: state.lineno, colno: state.colno }),
     state: current,
   };
 };

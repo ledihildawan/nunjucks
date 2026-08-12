@@ -21,7 +21,9 @@ export const createLoader = (): Loader => {
     },
 
     emit(event: string, ...args: unknown[]): void {
-      listeners.get(event)?.forEach((handler) => { handler(...args); });
+      const handlers = listeners.get(event);
+      if (!handlers) { return; }
+      handlers.forEach((handler) => { handler(...args); });
     },
   };
 };

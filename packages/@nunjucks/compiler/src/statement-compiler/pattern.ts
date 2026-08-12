@@ -3,7 +3,7 @@ import type { Node, PairNode, RestPatternNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { forEach, reduce } from 'remeda';
 import type { Compiler } from '../index.ts';
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 interface DestructuringContext {
   ctx: Compiler;
@@ -31,7 +31,7 @@ const objectRest = (source: string, restId: string): string =>
 
 const compileAssignToFrame = ({ ctx: compiler, frame, registerFrame }: DestructuringContext, name: string, source: string): void => {
   const existingId = registerFrame ? frame.lookup(name) : null;
-  compiler.emitLine(`frame = frame.set(${JSON.stringify(name)}, ${source}, true);`);
+  compiler.emitLine(`frame = frame.set({ name: ${JSON.stringify(name)}, value: ${source}, resolveUp: true });`);
   if (name[0] !== '_') {
     compiler.emitLine('if(frame.topLevel) {');
     compiler.emitLine(`context = context.addExport(${JSON.stringify(name)});`);
@@ -44,7 +44,7 @@ const compileAssignToFrame = ({ ctx: compiler, frame, registerFrame }: Destructu
     compiler.emitLine(`let ${existingId} = ${source};`);
   } else {
     const id = compiler.tmpid();
-    frame.set(name, id);
+    frame.set({ name, value: id });
     compiler.emitLine(`let ${id} = ${source};`);
   }
 };

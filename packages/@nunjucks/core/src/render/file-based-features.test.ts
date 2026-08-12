@@ -1,6 +1,6 @@
 ﻿import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
 import { render } from './render.ts';
-import { isErr } from '@nunjucks/shared';
+import { isErr } from '@nunjucks/lib';
 import { renderTemplate } from './render-test-helper.ts';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';

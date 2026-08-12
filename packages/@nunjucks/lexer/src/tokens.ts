@@ -1,13 +1,21 @@
 import { TOKEN_BLOCK_END, TOKEN_FLOAT, TOKEN_INT, TOKEN_SYMBOL, TOKEN_VARIABLE_END } from './token-types.ts';
 import type { Token, TokenType, TokenValueByType } from './token-types.ts';
 
-export const createToken = <K extends TokenType>(
-  type: K,
-  value: TokenValueByType[K],
-  lineno: number,
-  colno: number,
-  strip?: { stripLeft?: boolean; stripRight?: boolean }
-): Token => ({
+interface CreateTokenOptions {
+  type: TokenType;
+  value: TokenValueByType[TokenType];
+  lineno: number;
+  colno: number;
+  strip?: { stripLeft?: boolean; stripRight?: boolean };
+}
+
+export const createToken = ({
+  type,
+  value,
+  lineno,
+  colno,
+  strip,
+}: CreateTokenOptions): Token => ({
   type,
   value,
   lineno,
@@ -16,14 +24,21 @@ export const createToken = <K extends TokenType>(
   ...(strip?.stripRight && { stripRight: true }),
 }) as Token;
 
-export const createNumberToken = (
-  value: number,
-  lineno: number,
-  colno: number,
-  hasDecimal: boolean
-): Token => {
+interface CreateNumberTokenOptions {
+  value: number;
+  lineno: number;
+  colno: number;
+  hasDecimal: boolean;
+}
+
+export const createNumberToken = ({
+  value,
+  lineno,
+  colno,
+  hasDecimal,
+}: CreateNumberTokenOptions): Token => {
   const type: TokenType = hasDecimal ? TOKEN_FLOAT : TOKEN_INT;
-  return createToken(type, value, lineno, colno);
+  return createToken({ type, value, lineno, colno });
 };
 
 export const isStringToken = (tok: Token): tok is Token & { value: string } =>

@@ -6,13 +6,13 @@ import { createToken } from '../tokens.ts';
 import { TOKEN_WHITESPACE } from '../token-types.ts';
 
 export const tokenizeWhitespace: Tokenizer = (state) => {
-  const ws = extractWhile(state.str, state.index, WHITESPACE_CHARS);
+  const ws = extractWhile({ str: state.str, start: state.index, chars: WHITESPACE_CHARS });
   if (!ws) { return null; }
 
   const newState = advance(state, ws.length);
 
   return {
-    token: createToken(TOKEN_WHITESPACE, ws, state.lineno, state.colno),
+    token: createToken({ type: TOKEN_WHITESPACE, value: ws, lineno: state.lineno, colno: state.colno }),
     state: newState,
   };
 };

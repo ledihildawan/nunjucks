@@ -3,11 +3,6 @@ import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 import { emitLineLocation } from '../codegen.ts';
 
-export interface GetTemplateOptions {
-  eagerCompile: boolean;
-  ignoreMissing: boolean;
-}
-
 type TemplateCarrier = ExtendsNode | IncludeNode | ImportNode | FromImportNode;
 
 const getLocationFromNode = (node: TemplateCarrier): { lineno: number; colno: number } => {
@@ -22,14 +17,19 @@ const getLocationFromNode = (node: TemplateCarrier): { lineno: number; colno: nu
 
 export const getTemplateLocation = (node: TemplateCarrier): { lineno: number; colno: number } => getLocationFromNode(node);
 
-export const compileGetTemplate = (compiler: Compiler, node: TemplateCarrier, frame: Frame, options: GetTemplateOptions): string => {
-  const { eagerCompile, ignoreMissing } = options;
+export interface CompileGetTemplateOptions {
+  eagerCompile: boolean;
+  includeChain?: string;
+  ignoreMissing: boolean;
+}
+
+export const compileGetTemplate = (compiler: Compiler, node: TemplateCarrier, frame: Frame, options: CompileGetTemplateOptions): string => {
+  const { eagerCompile, includeChain, ignoreMissing } = options;
   const id = compiler.tmpid();
-  const parentName = compiler.getTemplateName();
   const location = getLocationFromNode(node);
   emitLineLocation(compiler, location.lineno, location.colno);
-  compiler.emit(`let ${id} = await env.getTemplate(`);
+  compiler.emit(`let ${id} = await env.getTemplate({ name: `);
   compiler.compileExpression(node.template, frame);
-  compiler.emitLine(`, ${eagerCompile}, ${parentName}, ${ignoreMissing});`);
+  compiler.emitLine(`, eagerCompile: ${eagerCompile}${includeChain ? `, includeChain: ${includeChain}` : ''}, ignoreMissing: ${ignoreMissing} });`);
   return id;
 };

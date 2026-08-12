@@ -1,7 +1,7 @@
 import type { Node, SlotBlock } from '@nunjucks/nodes';
 import { nodeList, output, templateData } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import {
   TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_COMMA,

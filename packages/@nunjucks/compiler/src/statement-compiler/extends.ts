@@ -5,17 +5,17 @@ import { emitLineLocation, appendTarget } from '../codegen.ts';
 import { compileGetTemplate, getTemplateLocation } from './template-lookup.ts';
 
 export const compileExtends = (compiler: Compiler, { node, frame }: CompileNodeInput<ExtendsNode>): void => {
-  const k = compiler.tmpid();
+  const blockKey = compiler.tmpid();
 
-  const parentTemplateId = compileGetTemplate(compiler, node, frame, { eagerCompile: true, ignoreMissing: false });
+  const parentTemplateId = compileGetTemplate(compiler, node, frame, { eagerCompile: true, ignoreMissing: false, includeChain: compiler.getTemplateName() });
 
   compiler.emitLine(`parentTemplate = ${parentTemplateId}`);
 
   compiler.emitLine('let __parentBlockNames = Object.keys(parentTemplate.blocks);');
   compiler.emitLine('context = context.setParentBlockNames(__parentBlockNames);');
 
-  compiler.emitLine(`for(let ${k} in parentTemplate.blocks) {`);
-  compiler.emitLine(`context = context.addBlock(${k}, parentTemplate.blocks[${k}]);`);
+  compiler.emitLine(`for(let ${blockKey} in parentTemplate.blocks) {`);
+  compiler.emitLine(`context = context.addBlock(${blockKey}, parentTemplate.blocks[${blockKey}]);`);
   compiler.emitLine('}');
 
   compiler.emitLine('context.validateBlocks();');
@@ -32,10 +32,9 @@ export const compileInclude = (compiler: Compiler, { node, frame }: CompileNodeI
     compiler.compileExpression(node.template, frame);
     compiler.emitLine(';');
     compiler.emitLine(`if(typeof ${tmplVar} !== 'string') { const err = new Error('template names must be a string'); err.code = 'INVALID_INCLUDE'; err.subject = ${tmplVar}; throw err; }`);
-    compiler.emit(`let ${tmplVar}_template = await env.getTemplate(${tmplVar}, false, `);
     const ignoreMissing = node.ignoreMissing ? 'true' : 'false';
     const includeChain = `{parentTmpl: ${compiler.getTemplateName()}, parentLineno: ${location.lineno + 1}, parentColno: ${location.colno + 1}}`;
-    compiler.emitLine(`${includeChain}, ${ignoreMissing});`);
+    compiler.emit(`let ${tmplVar}_template = await env.getTemplate({ name: ${tmplVar}, eagerCompile: false, includeChain: ${includeChain}, ignoreMissing: ${ignoreMissing} });`);
 
     if (node.only) {
       compiler.emit(`let ${resultVar} = await ${tmplVar}_template.render({}, frame);`);

@@ -32,6 +32,16 @@ interface PipeRenderStreamOptions {
   onComplete?: (stats: { chunks: number; errors: number; bytes: number }) => void;
 }
 
+// WHY: centralizes dev-gated error logging. When onError is provided, it is called (the caller owns logging). When onError is absent, console.log is used as fallback — preserving exact previous behavior when no hook is registered.
+const emitErrorLog = (error: Error | TemplateError, phase: 'pre-stream' | 'mid-stream', logError: boolean, dev: boolean, onError: PipeRenderStreamOptions['onError']): void => {
+  if (onError) {
+    onError(error, phase);
+  } else if (logError) {
+    // biome-ignore lint/suspicious/noConsole: intentional server-side ANSI error logging for dev debugging
+    console.log(formatError(redactForLog(error as TemplateError), { format: 'ansi', dev }));
+  }
+};
+
 const CONTENT_TYPE_MAP: Record<string, string> = {
   html: 'text/html; charset=utf-8',
   json: 'application/json; charset=utf-8',
@@ -155,11 +165,7 @@ const pipeRenderStream = async (
 
   if (!result.ok) {
     errorCount += 1;
-    if (logError) {
-      // biome-ignore lint/suspicious/noConsole: intentional server-side ANSI error logging for dev debugging
-      console.log(formatError(redactForLog(result.error), { format: 'ansi', dev }));
-    }
-    onError?.(result.error, 'pre-stream');
+    emitErrorLog(result.error, 'pre-stream', logError, dev, onError);
     sink.status(500);
     sink.setHeader('Content-Type', mimeType);
     sink.write(renderPreStreamError({ err: result.error, contentType, dev, ide }));
@@ -184,16 +190,12 @@ const pipeRenderStream = async (
     await pipeChunks({ stream, sink, signal, onChunk, stats, maxOutputSize });
     // WHY: always finalize the sink, even on abort — Express res.end() is idempotent on a closed socket, but NOT calling it leaves the response un-finalized (the framework cannot know we are done). The previous `if (!signal?.aborted)` guard caused a client mid-stream disconnect to leak an open response.
     sink.end();
-  } catch (streamErr) {
+  } catch (streamErr: unknown) {
     if (signal?.aborted) {
       sink.end();
     } else {
       errorCount += 1;
-      if (logError) {
-        // biome-ignore lint/suspicious/noConsole: intentional server-side ANSI error logging for dev debugging
-        console.log(formatError(redactForLog(streamErr as TemplateError), { format: 'ansi', dev }));
-      }
-      onError?.(streamErr as Error, 'mid-stream');
+      emitErrorLog(streamErr as Error, 'mid-stream', logError, dev, onError);
       sink.write(renderMidStreamError({ err: streamErr, contentType, ide }));
       sink.end();
     }

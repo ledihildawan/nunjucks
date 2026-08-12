@@ -4,7 +4,8 @@ import { fromImportNode, literal, nodeList, symbol, pair } from '@nunjucks/nodes
 import type { Frame } from '@nunjucks/runtime';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { loc } from '@nunjucks/shared';
+import type { FrameSetOptions } from '@nunjucks/runtime/frame';
+import { loc } from '@nunjucks/lexer';
 
 const templateLoc = loc({ lineno: 1, colno: 4 });
 
@@ -40,9 +41,9 @@ const makeSpyFrame = (parent?: Frame): SpyFrame => {
   const base = createFrame(parent ? { parent } : {});
   const setCalls: [string, string][] = [];
   const originalSet = base.set;
-  base.set = (name: string, value: unknown) => {
-    setCalls.push([name, String(value)]);
-    return originalSet(name, value);
+  base.set = (options: FrameSetOptions) => {
+    setCalls.push([options.name, String(options.value)]);
+    return originalSet({ name: options.name, value: options.value });
   };
   return { frame: base, setCalls };
 };
@@ -57,7 +58,7 @@ describe('compileFromImport', () => {
     });
     const joined = c.emitted.join('');
     expect(joined).toContain('lineno = 1; colno = 5;');
-    expect(joined).toContain('let t_1 = await env.getTemplate(lib.njk, false, "parent", false);');
+    expect(joined).toContain('let t_1 = await env.getTemplate({ name: lib.njk, eagerCompile: false, includeChain: "parent", ignoreMissing: false });');
     expect(joined).toContain('let t_1_exported = await t_1.getExported();');
   });
 
@@ -143,7 +144,7 @@ describe('compileFromImport', () => {
       frame,
     });
     const joined = c.emitted.join('');
-    expect(joined).toContain('frame = frame.set("foo", t_2);');
+    expect(joined).toContain('frame = frame.set({ name: "foo", value: t_2 });');
     expect(joined).not.toContain('context.setVariable');
   });
 });

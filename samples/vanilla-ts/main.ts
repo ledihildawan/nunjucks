@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nunjucks } from '@nunjucks/core';
-import { isOk } from '@nunjucks/shared';
+import { isOk } from '@nunjucks/lib';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

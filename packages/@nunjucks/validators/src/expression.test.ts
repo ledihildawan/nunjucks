@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { nodes } from '@nunjucks/nodes';
 import { validateExpression, ExpressionSecurityError } from './expression';
-import { loc, ZERO_LOC } from '@nunjucks/shared';
+import { loc, ZERO_LOC } from '@nunjucks/lexer';
 
 const ExprErr = ExpressionSecurityError;
 

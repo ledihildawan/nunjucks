@@ -7,6 +7,7 @@ import {
   isIterable,
   isThenable,
   isArrayOf,
+  isTypedArray,
   readObject,
   readString,
   readNumber,
@@ -122,6 +123,28 @@ describe('readWith', () => {
 
   test('returns the fallback when the guard fails', () => {
     expect(readWith(42, isString, 'fallback')).toBe('fallback');
+  });
+});
+
+describe('isTypedArray', () => {
+  test('true for every typed array flavor', () => {
+    expect(isTypedArray(new Int8Array(1))).toBe(true);
+    expect(isTypedArray(new Uint8Array(1))).toBe(true);
+    expect(isTypedArray(new Uint8ClampedArray(1))).toBe(true);
+    expect(isTypedArray(new Int16Array(1))).toBe(true);
+    expect(isTypedArray(new Uint16Array(1))).toBe(true);
+    expect(isTypedArray(new Int32Array(1))).toBe(true);
+    expect(isTypedArray(new Uint32Array(1))).toBe(true);
+    expect(isTypedArray(new Float32Array(1))).toBe(true);
+    expect(isTypedArray(new Float64Array(1))).toBe(true);
+    expect(isTypedArray(new BigInt64Array(1))).toBe(true);
+    expect(isTypedArray(new BigUint64Array(1))).toBe(true);
+  });
+
+  test('false for plain arrays and primitives', () => {
+    expect(isTypedArray([1, 2])).toBe(false);
+    expect(isTypedArray('s')).toBe(false);
+    expect(isTypedArray(null)).toBe(false);
   });
 });
 

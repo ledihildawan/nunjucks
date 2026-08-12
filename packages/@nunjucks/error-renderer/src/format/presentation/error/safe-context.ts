@@ -1,7 +1,7 @@
 import { pipe, map, filter, reduce } from 'remeda';
-import { getBlockedKeyCategory, isBlockedKey, slice } from '@nunjucks/shared';
+import { getBlockedKeyCategory, isBlockedKey, DANGEROUS_KEY_PATTERN } from '@nunjucks/validators/security';
+import { slice } from '@nunjucks/lib';
 
-const DANGEROUS_KEY_PATTERN = /^(?:globalThis|process|window|parent|top|frames|opener)$/iu;
 const DEFAULT_OPTIONS = Object.freeze({ maxDepth: 8, maxEntries: 50, maxStringLength: 1024, maxTotalLength: 65_536 });
 
 interface TruncateState {

@@ -3,7 +3,7 @@ import { compileCapture } from './compile-capture.ts';
 import { capture, output, templateData } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { ZERO_LOC } from '@nunjucks/shared';
+import { ZERO_LOC } from '@nunjucks/lexer';
 
 const frame = createFrame();
 
@@ -35,10 +35,10 @@ describe('compileCapture', () => {
     });
     compileCapture(asCompiler(c), { node: namedCapture, frame });
     const joined = c.emitted.join('');
-    expect(joined).toContain('frame = frame.set("captured", await (async () => {');
+    expect(joined).toContain('frame = frame.set({ name: "captured", value: await (async () => {');
     expect(joined).toContain('let output = "";');
     expect(joined).toContain('return output;');
-    expect(joined).toContain('})());');
+    expect(joined).toContain('})() });');
   });
 
   test('anonymous capture emits a bare async IIFE with no frame.set wrap', () => {
@@ -56,7 +56,7 @@ describe('compileCapture', () => {
 
   describe('buffer swap', () => {
     const bufferCases: ReadonlyArray<{ label: string; name: string | null; terminator: string }> = [
-      { label: 'named capture swaps to "output" during the body then restores the original buffer', name: 'captured', terminator: '})());' },
+      { label: 'named capture swaps to "output" during the body then restores the original buffer', name: 'captured', terminator: '})() });' },
       { label: 'anonymous capture swaps to "output" during the body then restores the original buffer', name: null, terminator: '})()' },
     ];
     bufferCases.forEach(({ label, name, terminator }) => {

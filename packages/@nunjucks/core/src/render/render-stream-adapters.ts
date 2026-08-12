@@ -1,14 +1,16 @@
 // WHY: consumer-side streaming helpers. renderToStream yields a plain AsyncGenerator<string>; these adapters convert it into the stream shapes real HTTP/runtimes expect, and enforce a per-chunk timeout so a stalled render cannot hang a response indefinitely.
 
-import { isThenable } from '@nunjucks/shared';
+import { isThenable } from '@nunjucks/lib';
 import { toWebReadableStream } from '@nunjucks/lib/web-readable-stream';
 import { coalesceStream } from '@nunjucks/lib/stream-coalesce';
 import { createStreamTimeoutError, isStreamTimeoutError, type StreamTimeoutError } from '@nunjucks/runtime/stream-timeout';
+import { ok, err, type Result } from '@nunjucks/lib';
 
 // WHY: a generator cannot be wrapped by withTimeout (it is not a Promise), so streaming timeout is enforced per-chunk: each .next() races against a timer. This is the idle/per-chunk guard complementing the total executionTimeout deadline enforced by withStreamDeadline. try/finally guarantees the timer is cleared on EVERY exit path (chunk yielded, done, timeout, external .return(), throw) — previously N chunks leaked N concurrent timers. The finally also best-effort returns the underlying iterator WITHOUT awaiting: a stalled .next() (e.g. an async filter awaiting a never-resolving promise) may never let .return() settle, so awaiting would re-introduce the hang this guard exists to break. A .return() on an already-completed iterator is a no-op, so calling it unconditionally is safe.
 const withStreamTimeout = async function* (stream: AsyncIterator<string>, timeoutMs: number): AsyncGenerator<string> {
   let handle: ReturnType<typeof setTimeout> | undefined;
   try {
+    // WHY: Async stream polling requires imperative loop — must race next() against per-chunk idle timeout.
     while (true) {
       const timeoutToken = Symbol('streamTimeout');
       const timerPromise = new Promise<symbol>((resolve) => {
@@ -42,6 +44,7 @@ const withStreamDeadline = async function* (stream: AsyncGenerator<string>, dead
     const deadlinePromise = new Promise<never>((_, reject) => {
       handle = setTimeout(() => { reject(createStreamTimeoutError(deadlineMs, 'deadline')); }, deadlineMs);
     });
+    // WHY: Async stream polling requires imperative loop — must race next() against total wall-clock deadline.
     while (true) {
       const step = await Promise.race([stream.next(), deadlinePromise]);
       if (step.done) {
@@ -55,13 +58,13 @@ const withStreamDeadline = async function* (stream: AsyncGenerator<string>, dead
   }
 };
 
-// WHY: streaming yield boundary — coerce SafeString (a boxed String, instanceof String) to a primitive string. suppressValue returns the SafeString object for already-safe values so the blocking path's `buffer += value` coerces via toString; the streaming path yields directly, so without this coercion a SafeString object reaches the HTTP sink (res.write / TextEncoder.encode) which rejects boxed strings with ERR_INVALID_ARG_TYPE. The thenable check is a fail-loud safety net: a Promise reaching here means an emit site forgot to await (every known site does — see compile-output/extension/extends); stringifying it would silently produce "[object Promise]", so throw instead to surface the bug.
-const coerceChunk = (value: unknown): string => {
-  if (typeof value === 'string') { return value; }
+// WHY: streaming yield boundary — coerce SafeString (a boxed String, instanceof String) to a primitive string. suppressValue returns the SafeString object for already-safe values so the blocking path's `buffer += value` coerces via toString; the streaming path yields directly, so without this coercion a SafeString object reaches the HTTP sink (res.write / TextEncoder.encode) which rejects boxed strings with ERR_INVALID_ARG_TYPE. The thenable check is a fail-loud safety net: a Promise reaching here means an emit site forgot to await (every known site does — see compile-output/extension/extends); stringifying it would silently produce "[object Promise]", so return err instead to surface the bug.
+const coerceChunk = (value: unknown): Result<string, Error> => {
+  if (typeof value === 'string') { return ok(value); }
   if (isThenable(value)) {
-    throw new Error('renderToStream: Promise leaked to stream boundary — an emit site is missing await');
+    return err(new Error('renderToStream: Promise leaked to stream boundary — an emit site is missing await'));
   }
-  return String(value);
+  return ok(String(value));
 };
 
 // WHY: single-use guard around the streaming generator. Async generators already reject CONCURRENT .next() calls ("Generator is already running"), but a consumer that caches result.stream and iterates it a SECOND time after completion would silently get an empty stream (every subsequent .next() returns { done: true }). This wrapper converts that silent empty into a clear error so the mistake surfaces immediately. .return()/.throw() delegate to the inner generator so the cleanup cascade is unaffected.

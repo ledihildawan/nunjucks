@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { nunjucks } from './index.ts';
 import type { nodes } from '@nunjucks/nodes';
-import { ZERO_LOC } from '@nunjucks/shared';
+import { ZERO_LOC } from '@nunjucks/lexer';
 import { skipSymbol, advanceAfterBlockEnd, type ParserContext } from '@nunjucks/parser';
 
 // WHY: a minimal custom block-tag extension. `tags` lets the parser dispatch `{% hello %}` to this extension's

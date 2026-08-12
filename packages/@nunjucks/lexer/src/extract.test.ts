@@ -3,42 +3,42 @@ import { extractWhile, extractUntil, parseStringContent } from './extract.ts';
 
 describe('extractWhile', () => {
   test('consumes chars while they are in the allowed set', () => {
-    expect(extractWhile('abc123!', 0, 'abc')).toBe('abc');
+    expect(extractWhile({ str: 'abc123!', start: 0, chars: 'abc' })).toBe('abc');
   });
 
   test('starts from the given index', () => {
-    expect(extractWhile('xxabc', 2, 'abc')).toBe('abc');
+    expect(extractWhile({ str: 'xxabc', start: 2, chars: 'abc' })).toBe('abc');
   });
 
   test('stops at end of string', () => {
-    expect(extractWhile('aaa', 0, 'a')).toBe('aaa');
+    expect(extractWhile({ str: 'aaa', start: 0, chars: 'a' })).toBe('aaa');
   });
 
   test('returns empty when the first char is not allowed', () => {
-    expect(extractWhile('!', 0, 'abc')).toBe('');
+    expect(extractWhile({ str: '!', start: 0, chars: 'abc' })).toBe('');
   });
 });
 
 describe('extractUntil', () => {
   test('consumes chars until one is in the stop set', () => {
-    expect(extractUntil('hello world', 0, ' ')).toBe('hello');
+    expect(extractUntil({ str: 'hello world', start: 0, chars: ' ' })).toBe('hello');
   });
 
   test('runs to end of string when no stop char is found', () => {
-    expect(extractUntil('hello', 0, ' ')).toBe('hello');
+    expect(extractUntil({ str: 'hello', start: 0, chars: ' ' })).toBe('hello');
   });
 });
 
 describe('parseStringContent', () => {
   test('reads until the closing quote', () => {
-    expect(parseStringContent('say "hi"', 0, '"')).toBe('say ');
+    expect(parseStringContent({ str: 'say "hi"', start: 0, quote: '"' })).toBe('say ');
   });
 
   test('skips an escaped quote inside the content', () => {
-    expect(parseStringContent('a\\"b"', 0, '"')).toBe('a\\"b');
+    expect(parseStringContent({ str: 'a\\"b"', start: 0, quote: '"' })).toBe('a\\"b');
   });
 
   test('stops at end of string without a closing quote', () => {
-    expect(parseStringContent('no quote here', 0, '"')).toBe('no quote here');
+    expect(parseStringContent({ str: 'no quote here', start: 0, quote: '"' })).toBe('no quote here');
   });
 });

@@ -15,7 +15,7 @@ import type { ParserContext } from "../../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseExpression } from "../index.ts";
 import { markBracketNotation } from "./lookup.ts";
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 type OptionalChainOperatorToken = Token & { type: typeof TOKEN_OPERATOR };
 

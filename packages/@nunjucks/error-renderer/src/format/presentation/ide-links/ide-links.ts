@@ -35,7 +35,7 @@ const resolveIdeLink = (ide: string | IdeLinkFn, target: LinkTarget): string => 
 const VS_CODE_ICON = '<path fill="currentColor" d="M17.5 2.5L9 11l-4.5-3.5L2 9.5l4 4.5-4 4.5 2.5 2L9 17l8.5 8.5 4-2V4.5l-4-2zM17 6.5v11l-6-5.5 6-5.5z"/>';
 
 const getIdeMeta = (_ide: string | IdeLinkFn): { label: string; color: string | null; icon: string } => ({
-  label: 'VS Code',
+  label: 'VSCode',
   color: '#007ACC',
   icon: VS_CODE_ICON,
 });

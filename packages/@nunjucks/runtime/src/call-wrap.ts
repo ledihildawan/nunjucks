@@ -1,5 +1,5 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
-import { isArray, isKeyedObject, isPlainObject, isString } from '@nunjucks/shared';
+import { isArray, isKeyedObject, isPlainObject, isString } from '@nunjucks/lib';
 import {
   getNullParentName,
   isNullAccessResult,

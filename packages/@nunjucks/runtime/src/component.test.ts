@@ -58,32 +58,32 @@ describe('getKeywordArgs', () => {
 });
 
 describe('makeComponent', () => {
-  const add = makeComponent(['a', 'b'], [], (a: number, b: number) => a + b);
+  const add = makeComponent({ argNames: ['a', 'b'], kwargNames: [], func: (a: number, b: number) => a + b });
 
   test('calls func with positional args', () => {
     expect((add as (a: number, b: number) => number)(3, 4)).toBe(7);
   });
 
   test('passes extra args as unnamed kwargs', () => {
-    const macro = makeComponent(['a'], ['b'], (a: number, kwargs: { b?: number }) => a + (kwargs.b || 0));
+    const macro = makeComponent({ argNames: ['a'], kwargNames: ['b'], func: (a: number, kwargs: { b?: number }) => a + (kwargs.b || 0) });
     expect((macro as (a: number, b: number) => number)(1, 2)).toBe(3);
   });
 
   test('fills missing args from kwargs', () => {
-    const fn = makeComponent(['a', 'b'], [], (a: number, b: number, extra: { c?: number }) => a + b + (extra.c || 0));
+    const fn = makeComponent({ argNames: ['a', 'b'], kwargNames: [], func: (a: number, b: number, extra: { c?: number }) => a + b + (extra.c || 0) });
     const kwargs = makeKeywordArgs({ b: 10 });
     expect((fn as (a: number, kwargs: { b: number }) => number)(5, kwargs)).toBe(15);
   });
 
   test('extra positional args fill kwarg names', () => {
-    const macro = makeComponent(['a'], ['b'], (a: number, kwargs: { b?: number }) => a + (kwargs.b || 0));
+    const macro = makeComponent({ argNames: ['a'], kwargNames: ['b'], func: (a: number, kwargs: { b?: number }) => a + (kwargs.b || 0) });
     expect((macro as (a: number, b: number) => number)(1, 2)).toBe(3);
   });
 
   test('preserves this context', () => {
-    const macro = makeComponent([], [], function (this: { val: number }) {
+    const macro = makeComponent({ argNames: [], kwargNames: [], func: function (this: { val: number }) {
       return this.val;
-    });
+    } });
     expect((macro as unknown as () => number).call({ val: 42 })).toBe(42);
   });
 });

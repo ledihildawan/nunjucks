@@ -6,7 +6,7 @@ import { createLog } from '@nunjucks/error-formatter';
 import type { IncludeChain, TemplateWarning, TemplateError } from '@nunjucks/error-formatter';
 import { getError } from '@nunjucks/error-catalog';
 import { wrapWithLog, findContextKeyPosition } from '../diagnostics/diagnostics.ts';
-import { scrubDangerousReferences } from '@nunjucks/shared';
+import { scrubDangerousReferences } from '@nunjucks/validators/security';
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import type { FileSystemLoader } from '@nunjucks/loaders';
 import { createTemplate } from '../template/index.ts';
@@ -14,6 +14,32 @@ import { compileToCode } from '../compile-pipeline.ts';
 import type { RenderConfig, CompileResult, SandboxOptions } from './render-types.ts';
 
 const TEMPLATE_FILE_EXTENSION_RE = /\.(njk|js|html|htm|twig|ejs|eta)$/i;
+
+interface NormalizeGetTemplateArgsOptions {
+  nameOrOptions: string | GetTemplateOptions;
+  eagerCompileArg?: boolean;
+  includeChainArg?: IncludeChain | null;
+  ignoreMissingArg?: boolean;
+}
+
+interface GetTemplateOptions {
+  name: string;
+  eagerCompile?: boolean;
+  includeChain?: IncludeChain | null;
+  ignoreMissing?: boolean;
+}
+
+function normalizeGetTemplateArgs({
+  nameOrOptions,
+  eagerCompileArg,
+  includeChainArg,
+  ignoreMissingArg,
+}: NormalizeGetTemplateArgsOptions) {
+  if (typeof nameOrOptions === 'string') {
+    return { name: nameOrOptions, eagerCompile: eagerCompileArg ?? true, includeChain: includeChainArg, ignoreMissing: ignoreMissingArg };
+  }
+  return { name: nameOrOptions.name, eagerCompile: nameOrOptions.eagerCompile ?? true, includeChain: nameOrOptions.includeChain, ignoreMissing: nameOrOptions.ignoreMissing };
+}
 
 interface ResolveTemplateSourceInput {
   template: string;
@@ -98,7 +124,15 @@ const buildRenderEnv = (loader: FileSystemLoader | null, config: RenderConfig): 
       undefined: config.undefined ?? 'default',
     },
     ...createEnvLookups(config),
-    async getTemplate(this: Env, name: string, eagerCompile?: boolean, includeChain?: IncludeChain | null, ignoreMissing?: boolean) {
+    async getTemplate(
+      this: Env,
+      nameOrOptions: string | GetTemplateOptions,
+      eagerCompileArg?: boolean,
+      includeChainArg?: IncludeChain | null,
+      ignoreMissingArg?: boolean,
+    ) {
+      const { name, eagerCompile, includeChain, ignoreMissing } = normalizeGetTemplateArgs({ nameOrOptions, eagerCompileArg, includeChainArg, ignoreMissingArg });
+
       const sourceResult = await loader.getSource(name);
       if (sourceResult === null) {
         if (ignoreMissing) { return null; }
@@ -106,9 +140,18 @@ const buildRenderEnv = (loader: FileSystemLoader | null, config: RenderConfig): 
       }
       if (isErr(sourceResult)) { throw sourceResult.error; }
       const source = sourceResult.value;
-      return createTemplate({ src: source.src, env: this, path: source.path, eagerCompile: eagerCompile ?? true, includeChain });
+      return createTemplate({ src: source.src, env: this, path: source.path, eagerCompile, includeChain });
     },
   };
+};
+
+const buildExecutionEnv = (config: RenderConfig): Env => config.env ?? {
+  opts: {
+    dev: config.dev ?? false,
+    autoescape: config.autoescape ?? true,
+    undefined: config.undefined ?? 'default',
+  },
+  ...createEnvLookups(config),
 };
 
 interface CompileTemplateInput {
@@ -186,4 +229,4 @@ const handleContextStrictMode = async (context: Record<string, unknown>, config:
   return { warningsCollector: [scrubWarning], dangerousValuePaths, context: scrubbedContext };
 };
 
-export { resolveTemplateSource, prepareSandbox, buildRenderEnv, compileTemplate, handleContextStrictMode, createEnvLookups, TEMPLATE_FILE_EXTENSION_RE };
+export { resolveTemplateSource, prepareSandbox, buildRenderEnv, buildExecutionEnv, compileTemplate, handleContextStrictMode, createEnvLookups, TEMPLATE_FILE_EXTENSION_RE };

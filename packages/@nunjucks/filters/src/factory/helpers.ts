@@ -1,17 +1,11 @@
-import { isNonNullish, isNullish } from 'remeda';
-import { isSafeString, markSafe, copySafeness } from '@nunjucks/runtime';
-import { ok, err, escapeHtml, MATCH_ANY_RE, type Result } from '@nunjucks/shared';
-import type { Phase } from '@nunjucks/shared';
+import { isNonNullish } from 'remeda';
+import { isSafeString, markSafe, copySafeness, getLogContext } from '@nunjucks/runtime';
+import { escapeHtml } from '@nunjucks/lib/escape';
+import { normalize } from '@nunjucks/lib/to-string';
+import { ok, err, MATCH_ANY_RE, type Result } from '@nunjucks/lib';
 import { createLog } from '@nunjucks/error-formatter';
 import type { ErrorDefinitionEntry, TemplateError } from '@nunjucks/error-formatter';
 import type { FilterContext, SafeString } from './types.ts';
-
-const getLogContext = (ctx: FilterContext): { templateName: string; phase: Phase; renderContext: unknown } => {
-  if (ctx?.logContext) {
-    return { templateName: ctx.logContext.templateName || 'inline', phase: ctx.logContext.phase || 'render', renderContext: ctx.logContext.renderContext ?? null };
-  }
-  return { templateName: 'inline', phase: 'render', renderContext: null };
-};
 
 interface FilterErrorInput {
   ctx: FilterContext;
@@ -22,7 +16,7 @@ interface FilterErrorInput {
 
 const filterError = ({ ctx, errorDef, params, subject }: FilterErrorInput) => {
   const logContext = getLogContext(ctx);
-  return createLog('error', { def: errorDef, params, subject, context: { phase: logContext.phase, templateName: logContext.templateName, lineBase: 'zero' } });
+  return createLog('error', { def: errorDef, params, subject, context: { phase: logContext.phase ?? 'render', templateName: logContext.templateName ?? 'inline', lineBase: 'zero' } });
 };
 
 interface MakeFilterErrorInput {
@@ -37,23 +31,16 @@ const makeFilterError = ({ errorDef, params, subject, fallbackMessage }: MakeFil
   return filterError({ ctx: undefined, errorDef: resolvedDef, params, subject });
 };
 
-const normalize = (value: unknown, defaultValue: string): string => {
-  if (isNullish(value) || value === false) {
-    return defaultValue;
-  }
-  return String(value);
-};
-
 const safeString = (str: unknown): SafeString => {
   if (isSafeString(str)) { return str; }
-  const s = isNonNullish(str) ? String(str) : '';
-  return markSafe(s) as SafeString;
+  const stringValue = isNonNullish(str) ? String(str) : '';
+  return markSafe(stringValue) as SafeString;
 };
 
 const safeHtml = (str: unknown): SafeString => {
   if (isSafeString(str)) { return str; }
-  const s = isNonNullish(str) ? String(str) : '';
-  return markSafe(escapeHtml(s)) as SafeString;
+  const stringValue = isNonNullish(str) ? String(str) : '';
+  return markSafe(escapeHtml(stringValue)) as SafeString;
 };
 
 const preserveSafe = (original: unknown, result: string): string =>

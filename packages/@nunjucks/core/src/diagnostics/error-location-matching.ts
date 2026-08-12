@@ -1,6 +1,6 @@
 import { flatMap, pipe, reduce } from 'remeda';
 import { slice, escapeRegex } from '@nunjucks/lib';
-import { lineDistance, positionAtOffset, findAllOccurrences } from '@nunjucks/shared';
+import { lineDistance, positionAtOffset, findAllOccurrences } from '@nunjucks/compiler';
 import type { SourcePosition, TemplateMatch } from './error-location-types.ts';
 
 const templateCandidates = (templateHint: string): string[] => {

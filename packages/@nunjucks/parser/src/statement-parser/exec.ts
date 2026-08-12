@@ -5,7 +5,7 @@ import { peekToken, skipSymbol, nextToken, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseExpression } from "../expression-parser/index.ts";
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 export const parseExec = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tagR = peekToken(parserContext);

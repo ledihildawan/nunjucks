@@ -19,23 +19,23 @@ import {
 } from './token-types.ts';
 import type { TemplateQuasi, Token } from './token-types.ts';
 
-const stringToken = createToken(TOKEN_STRING, 'hello', 1, 2);
-const symbolToken = createToken(TOKEN_SYMBOL, 'foo', 3, 4);
-const blockEndToken = createToken(TOKEN_BLOCK_END, '%}', 5, 6);
-const variableEndToken = createToken(TOKEN_VARIABLE_END, '}}', 7, 8);
-const intToken = createToken(TOKEN_INT, 42, 9, 10);
-const floatToken = createToken(TOKEN_FLOAT, 3.14, 11, 12);
-const regexToken = createToken(TOKEN_REGEX, { body: 'abc', flags: 'g' }, 13, 14);
-const templateLiteralToken = createToken(
-  TOKEN_TEMPLATE_LITERAL,
-  { quasis: [] as TemplateQuasi[], expressions: [] },
-  15,
-  16,
-);
+const stringToken = createToken({ type: TOKEN_STRING, value: 'hello', lineno: 1, colno: 2 });
+const symbolToken = createToken({ type: TOKEN_SYMBOL, value: 'foo', lineno: 3, colno: 4 });
+const blockEndToken = createToken({ type: TOKEN_BLOCK_END, value: '%}', lineno: 5, colno: 6 });
+const variableEndToken = createToken({ type: TOKEN_VARIABLE_END, value: '}}', lineno: 7, colno: 8 });
+const intToken = createToken({ type: TOKEN_INT, value: 42, lineno: 9, colno: 10 });
+const floatToken = createToken({ type: TOKEN_FLOAT, value: 3.14, lineno: 11, colno: 12 });
+const regexToken = createToken({ type: TOKEN_REGEX, value: { body: 'abc', flags: 'g' }, lineno: 13, colno: 14 });
+const templateLiteralToken = createToken({
+  type: TOKEN_TEMPLATE_LITERAL,
+  value: { quasis: [] as TemplateQuasi[], expressions: [] },
+  lineno: 15,
+  colno: 16,
+});
 
 describe('createToken', () => {
   test('sets every core field verbatim for a string-valued token', () => {
-    const token = createToken(TOKEN_STRING, 'hello', 12, 7);
+    const token = createToken({ type: TOKEN_STRING, value: 'hello', lineno: 12, colno: 7 });
     expect(token.type).toBe(TOKEN_STRING);
     expect(token.value).toBe('hello');
     expect(token.lineno).toBe(12);
@@ -43,18 +43,18 @@ describe('createToken', () => {
   });
 
   test('preserves a numeric value through the generic value slot', () => {
-    const token = createToken(TOKEN_INT, 2048, 4, 2);
+    const token = createToken({ type: TOKEN_INT, value: 2048, lineno: 4, colno: 2 });
     expect(token.type).toBe(TOKEN_INT);
     expect(token.value).toBe(2048);
   });
 
   test('preserves an object value through the generic value slot', () => {
-    const token = createToken(TOKEN_REGEX, { body: 'abc', flags: 'gi' }, 1, 1);
+    const token = createToken({ type: TOKEN_REGEX, value: { body: 'abc', flags: 'gi' }, lineno: 1, colno: 1 });
     expect(token.value).toEqual({ body: 'abc', flags: 'gi' });
   });
 
   test('omits strip flags entirely when no strip argument is supplied', () => {
-    const token = createToken(TOKEN_STRING, 'hello', 1, 1);
+    const token = createToken({ type: TOKEN_STRING, value: 'hello', lineno: 1, colno: 1 });
     expect(token.stripLeft).toBeUndefined();
     expect(token.stripRight).toBeUndefined();
     expect(Object.hasOwn(token, 'stripLeft')).toBe(false);
@@ -74,7 +74,7 @@ describe('createToken', () => {
 
   test('sets strip flags according to the provided strip argument', () => {
     stripScenarios.forEach(({ name, strip, expectedLeft, expectedRight }) => {
-      const token = createToken(TOKEN_STRING, 'x', 1, 1, strip);
+      const token = createToken({ type: TOKEN_STRING, value: 'x', lineno: 1, colno: 1, strip });
       expect({ name, left: token.stripLeft, right: token.stripRight }).toEqual({
         name,
         left: expectedLeft,
@@ -84,7 +84,7 @@ describe('createToken', () => {
   });
 
   test('drops strip flags that are explicitly false', () => {
-    const token = createToken(TOKEN_STRING, 'x', 1, 1, { stripLeft: false, stripRight: false });
+    const token = createToken({ type: TOKEN_STRING, value: 'x', lineno: 1, colno: 1, strip: { stripLeft: false, stripRight: false } });
     expect(token.stripLeft).toBeUndefined();
     expect(token.stripRight).toBeUndefined();
     expect(Object.hasOwn(token, 'stripLeft')).toBe(false);
@@ -105,14 +105,14 @@ describe('createNumberToken', () => {
 
   test('emits TOKEN_INT without decimals and TOKEN_FLOAT with decimals', () => {
     numberCases.forEach(({ name, value, hasDecimal, expectedType }) => {
-      const token = createNumberToken(value, 1, 1, hasDecimal);
+      const token = createNumberToken({ value, lineno: 1, colno: 1, hasDecimal });
       expect({ name, type: token.type, value: token.value }).toEqual({ name, type: expectedType, value });
     });
   });
 
   test('forwards lineno/colno verbatim and carries no strip flags', () => {
     numberCases.forEach(({ name, value, hasDecimal }) => {
-      const token = createNumberToken(value, 17, 9, hasDecimal);
+      const token = createNumberToken({ value, lineno: 17, colno: 9, hasDecimal });
       expect({ name, lineno: token.lineno, colno: token.colno, stripLeft: token.stripLeft, stripRight: token.stripRight }).toEqual({
         name,
         lineno: 17,

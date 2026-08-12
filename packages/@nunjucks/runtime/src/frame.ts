@@ -1,7 +1,7 @@
 import { reduce } from 'remeda';
-import type { Frame, CreateFrameOptions } from './runtime-contract/frame.ts';
+import type { Frame, CreateFrameOptions, FrameSetOptions } from './runtime-contract/frame.ts';
 
-export type { Frame, CreateFrameOptions };
+export type { Frame, CreateFrameOptions, FrameSetOptions };
 
 interface SetNestedInput {
   target: Record<string, unknown>;
@@ -44,8 +44,7 @@ export const createFrame = (options: CreateFrameOptions = {}): Frame => {
     set topLevel(value: boolean) { state.topLevel = value; },
     get isolateWrites(): boolean | undefined { return state.isolateWrites; },
 
-    // WHY: immutable scope-chain write — returns a NEW frame rather than mutating in place. The resolveUp path functionally rebuilds the chain from the resolved (parent) frame up to the current frame (a persistent-list update), so the caller reassigns `frame = frame.set(...)` and the new binding threads through without shared-reference mutation.
-    set(name: string, value: unknown, resolveUp?: boolean): Frame {
+    set({ name, value, resolveUp = false }: FrameSetOptions): Frame {
       const parts = name.split('.');
       const [firstPart] = parts;
       if (firstPart === undefined || parts.length === 0) { return frame; }

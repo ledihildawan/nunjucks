@@ -3,7 +3,7 @@ import { getChar, getPeek, advance, isFinished } from '../state.ts';
 import { createToken } from '../tokens.ts';
 import { TOKEN_TEMPLATE_LITERAL } from '../token-types.ts';
 import { createLog } from '@nunjucks/error-formatter';
-import { MATCH_ANY_RE } from '@nunjucks/shared';
+import { MATCH_ANY_RE } from '@nunjucks/lib';
 
 export interface TemplateQuasi {
   type: 'template' | 'expression';
@@ -135,12 +135,12 @@ export const tokenizeTemplateLiteral: Tokenizer = (state) => {
   const { quasis, finalCurrent } = consumeTemplateLoop(initialCurrent);
 
   return {
-    token: createToken(
-      TOKEN_TEMPLATE_LITERAL,
-      { quasis, expressions: [] },
-      state.lineno,
-      state.colno
-    ),
+    token: createToken({
+      type: TOKEN_TEMPLATE_LITERAL,
+      value: { quasis, expressions: [] },
+      lineno: state.lineno,
+      colno: state.colno,
+    }),
     state: finalCurrent,
   };
 };

@@ -28,7 +28,7 @@ const compileIncrementDecrement = (compiler: Compiler, node: IncDecNode, _frame:
       compiler.emit(`let result = ${id};`);
     }
 
-    compiler.emit(`frame = frame.set(${JSON.stringify(varName)}, ${id}, true);`);
+    compiler.emit(`frame = frame.set({ name: ${JSON.stringify(varName)}, value: ${id}, resolveUp: true });`);
     compiler.emit(`context = context.setVariable(${JSON.stringify(varName)}, ${id});`);
     compiler.emit('return result;');
     compiler.emit('})())');

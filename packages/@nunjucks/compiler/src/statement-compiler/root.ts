@@ -5,7 +5,7 @@ import { findAll, isBlock } from '@nunjucks/nodes';
 import type { Node, ChildrenNode, BlockNode, NodeLocation } from '@nunjucks/nodes';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { createLog } from '@nunjucks/error-formatter';
-import { BLOCK_META_KEY } from '@nunjucks/shared';
+import { BLOCK_META_KEY } from '@nunjucks/compiler';
 import type { Compiler } from '../index.ts';
 
 const blockName = (block: BlockNode): string | undefined => {

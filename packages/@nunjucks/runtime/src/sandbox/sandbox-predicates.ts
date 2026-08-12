@@ -1,4 +1,4 @@
-import { getBlockedKeyCategory } from '@nunjucks/shared';
+import { getBlockedKeyCategory } from '@nunjucks/validators/security';
 import type { ResolvedSandboxOptions } from './sandbox-options.ts';
 
 const DANGEROUS_OBJECT_INTRINSICS = new Set(['__proto__', 'constructor', 'prototype']);

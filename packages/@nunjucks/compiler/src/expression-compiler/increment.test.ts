@@ -3,7 +3,7 @@ import { compileIncrement, compileDecrement } from './increment.ts';
 import { symbol, literal } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 const frame = createFrame();
 

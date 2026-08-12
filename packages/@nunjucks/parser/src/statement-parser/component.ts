@@ -7,7 +7,7 @@ import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parsePrimary } from "../expression-parser/index.ts";
 import { parseSignature } from "../node-parser/signature.ts";
 import { parseSlottedBody, buildDefaultBody, advanceAfterTags } from "./slots.ts";
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 export const parseComponent = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const compTokR = peekToken(parserContext);
@@ -20,7 +20,7 @@ export const parseComponent = (parserContext: ParserContext): Result<Node, Templ
   const nameR = parsePrimary(parserContext, true);
   if (isErr(nameR)) { return nameR; }
   const name = nameR.value;
-  const argsR = parseSignature(parserContext, true);
+  const argsR = parseSignature({ parserContext, tolerant: true });
   if (isErr(argsR)) { return argsR; }
   const args = argsR.value;
   if (!isSymbol(name)) {

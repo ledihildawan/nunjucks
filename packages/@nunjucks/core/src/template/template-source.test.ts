@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { initTemplateState, loadSource, createFallbackEnv } from './template-source.ts';
-import { BLOCK_META_KEY } from '@nunjucks/shared';
+import { BLOCK_META_KEY } from '@nunjucks/compiler';
 import type { TemplateSource } from './types.ts';
 
 describe('createFallbackEnv', () => {
@@ -28,7 +28,7 @@ describe('createFallbackEnv', () => {
 
   test('getTemplate returns null when ignoreMissing is true', () => {
     const env = createFallbackEnv();
-    expect(env.getTemplate!('missing.html', false, undefined, true)).toBeNull();
+    expect(env.getTemplate!({ name: 'missing.html', ignoreMissing: true })).toBeNull();
   });
 });
 

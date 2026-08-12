@@ -1,6 +1,6 @@
 ﻿import { describe, expect, test } from 'bun:test';
 import { render } from './render.ts';
-import { isErr } from '@nunjucks/shared';
+import { isErr } from '@nunjucks/lib';
 
 const renderTemplate = async (template: string, context: Record<string, unknown> = {}) => {
   const result = await render(template, {

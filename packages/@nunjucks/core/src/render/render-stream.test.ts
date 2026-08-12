@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { render, renderToStream } from './render.ts';
 import { collectString } from '@nunjucks/runtime';
-import { isOk } from '@nunjucks/shared';
+import { isOk } from '@nunjucks/lib';
 
 describe('renderToStream', () => {
   test('drained stream output matches blocking render', async () => {

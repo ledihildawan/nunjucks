@@ -17,12 +17,12 @@ const compileSlotFunction = ({ compiler, params, body, parentFrame, slotVar }: S
 
   compiler.emitLine(`let ${slotVar} = async (${localParams.join(', ')}) => {`);
   compiler.emitLine('  let __slotFrame = frame;');
-  compiler.emitLine('  frame = runtime.createFrame(__slotFrame);');
+  compiler.emitLine('  frame = runtime.createFrame({ parent: __slotFrame });');
 
   const slotFrame = createFrame({ parent: parentFrame });
   forEach(params, param => {
-    compiler.emitLine(`  frame = frame.set("${param}", l_${param});`);
-    slotFrame.set(param, `l_${param}`);
+    compiler.emitLine(`  frame = frame.set({ name: "${param}", value: l_${param} });`);
+    slotFrame.set({ name: param, value: `l_${param}` });
   });
 
   const buf = compiler.pushBuffer();

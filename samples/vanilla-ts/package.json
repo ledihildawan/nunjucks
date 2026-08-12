@@ -12,7 +12,7 @@
     "@nunjucks/compiler": "workspace:*",
     "@nunjucks/filters": "workspace:*",
     "@nunjucks/lexer": "workspace:*",
-    "@nunjucks/log": "workspace:*",
+    "@nunjucks/lib": "workspace:*",
     "@nunjucks/nodes": "workspace:*",
     "@nunjucks/parser": "workspace:*",
     "@nunjucks/runtime": "workspace:*",

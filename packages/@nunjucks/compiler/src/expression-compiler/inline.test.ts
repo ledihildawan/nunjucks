@@ -3,7 +3,7 @@ import { compileInlineIf, compileWalrus } from './inline.ts';
 import { symbol, literal, lookupVal } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 const makeCompiler = () => {
   const emitted: string[] = [];
@@ -61,7 +61,7 @@ describe('compileWalrus', () => {
     });
     const joined = c.emitted.join('');
     expect(joined).toContain('let t_1 = V;');
-    expect(joined).toContain('frame = frame.set("x", t_1, true);');
+    expect(joined).toContain('frame = frame.set({ name: "x", value: t_1, resolveUp: true });');
     expect(joined).toContain('return t_1;');
   });
 

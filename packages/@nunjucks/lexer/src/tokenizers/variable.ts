@@ -1,9 +1,15 @@
 import { TOKEN_VARIABLE_START, TOKEN_VARIABLE_END } from '../token-types.ts';
 import { createDelimiterTokenizer } from './delimiter.ts';
 
-export const tokenizeVariableStart = createDelimiterTokenizer(
-  TOKEN_VARIABLE_START, 'stripVariableStart', 'variableStart', { stripLeft: true },
-);
-export const tokenizeVariableEnd = createDelimiterTokenizer(
-  TOKEN_VARIABLE_END, 'stripVariableEnd', 'variableEnd', { stripRight: true },
-);
+export const tokenizeVariableStart = createDelimiterTokenizer({
+  tokenType: TOKEN_VARIABLE_START,
+  stripKey: 'stripVariableStart',
+  plainKey: 'variableStart',
+  stripFlag: { stripLeft: true },
+});
+export const tokenizeVariableEnd = createDelimiterTokenizer({
+  tokenType: TOKEN_VARIABLE_END,
+  stripKey: 'stripVariableEnd',
+  plainKey: 'variableEnd',
+  stripFlag: { stripRight: true },
+});

@@ -68,10 +68,12 @@ describe('createTokenizer', () => {
     expect(tk.tags.variableEnd).toBe('}}');
   });
 
-  test('trimBlocks and lstripBlocks are booleans', () => {
+  test('returns tokenizer result with nextToken and tags', () => {
     const tk = createTokenizer('x');
-    expect(typeof tk.trimBlocks).toBe('boolean');
-    expect(typeof tk.lstripBlocks).toBe('boolean');
+    expect(typeof tk.nextToken).toBe('function');
+    expect(typeof tk.tags).toBe('object');
+    expect(tk.tags.blockStart).toBe('{%');
+    expect(tk.tags.blockEnd).toBe('%}');
   });
 
   test('handles special characters without crash', () => {

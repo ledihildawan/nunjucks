@@ -1,7 +1,7 @@
 import { createLog } from '@nunjucks/error-formatter';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { isNonNullish, isThenable } from '@nunjucks/lib';
-import { escapeForContext, type HtmlContext } from '@nunjucks/shared';
+import { escapeForContext, type HtmlContext } from '@nunjucks/runtime/escaping';
 import { isSafeString } from './runtime-contract/safe-string.ts';
 import { getLogContext } from './error-context.ts';
 

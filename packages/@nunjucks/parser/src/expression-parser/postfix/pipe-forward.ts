@@ -12,7 +12,7 @@ import { peekToken, skip, skipValue, expect } from "../../cursor.ts";
 import type { ParserContext, } from "../../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parsePostfix } from "./index.ts";
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 export const parseFilterCallName = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tokR = expect(parserContext, TOKEN_SYMBOL);

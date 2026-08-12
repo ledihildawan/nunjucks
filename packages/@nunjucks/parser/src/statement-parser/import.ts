@@ -6,7 +6,7 @@ import type { ParserContext } from "../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseExpression } from "../expression-parser/index.ts";
 import { parseWithContext } from "./import-context.ts";
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 export const parseImport = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const importTokR = peekToken(parserContext);

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { runFilter } from './filter-runtime.ts';
+import { isOk, isErr } from '@nunjucks/lib';
 
 type ResolvedFilter = (...args: unknown[]) => unknown;
 type GetFilter = (name: string, lineno: number, colno: number) => ResolvedFilter;
@@ -14,9 +15,11 @@ describe('runFilter', () => {
       const uppercaseFilter = (...args: unknown[]): unknown => String(args[0]).toUpperCase();
       const validEnv = createValidFilterEnv(() => uppercaseFilter);
 
-      const result = await runFilter(validEnv, 'upper', 1, 2, null, 'hello');
+      const result = await runFilter({ env: validEnv, name: 'upper', lineno: 1, colno: 2, context: null, args: ['hello'] });
 
-      expect(result).toBe('HELLO');
+      expect(isOk(result)).toBe(true);
+      if (!isOk(result)) { return; }
+      expect(result.value).toBe('HELLO');
     });
 
     test('awaits the value of a promise-returning filter', async () => {
@@ -24,9 +27,11 @@ describe('runFilter', () => {
         Promise.resolve(`async:${String(args[0])}`);
       const validEnv = createValidFilterEnv(() => asyncEchoFilter);
 
-      const result = await runFilter(validEnv, 'asyncEcho', 10, 20, null, 'payload');
+      const result = await runFilter({ env: validEnv, name: 'asyncEcho', lineno: 10, colno: 20, context: null, args: ['payload'] });
 
-      expect(result).toBe('async:payload');
+      expect(isOk(result)).toBe(true);
+      if (!isOk(result)) { return; }
+      expect(result.value).toBe('async:payload');
     });
 
     test('binds the render context as `this` inside the filter', async () => {
@@ -36,9 +41,11 @@ describe('runFilter', () => {
       const renderContext = { prefix: 'ctx' };
       const validEnv = createValidFilterEnv(() => prefixedFilter);
 
-      const result = await runFilter(validEnv, 'prefixed', 1, 1, renderContext, 'value');
+      const result = await runFilter({ env: validEnv, name: 'prefixed', lineno: 1, colno: 1, context: renderContext, args: ['value'] });
 
-      expect(result).toBe('ctx:value');
+      expect(isOk(result)).toBe(true);
+      if (!isOk(result)) { return; }
+      expect(result.value).toBe('ctx:value');
     });
 
     test('forwards trailing positional args to the filter', async () => {
@@ -46,9 +53,11 @@ describe('runFilter', () => {
         args.reduce<number>((total, value) => total + Number(value), 0);
       const validEnv = createValidFilterEnv(() => sumFilter);
 
-      const result = await runFilter(validEnv, 'sum', 1, 1, null, 1, 2, 3, 4);
+      const result = await runFilter({ env: validEnv, name: 'sum', lineno: 1, colno: 1, context: null, args: [1, 2, 3, 4] });
 
-      expect(result).toBe(10);
+      expect(isOk(result)).toBe(true);
+      if (!isOk(result)) { return; }
+      expect(result.value).toBe(10);
     });
 
     test('passes name, lineno, and colno through to getFilter', async () => {
@@ -58,7 +67,7 @@ describe('runFilter', () => {
         return (): unknown => 'resolved';
       });
 
-      await runFilter(validEnv, 'tracked', 7, 9, null);
+      await runFilter({ env: validEnv, name: 'tracked', lineno: 7, colno: 9, context: null, args: [] });
 
       expect(getFilterInvocations).toEqual([{ name: 'tracked', lineno: 7, colno: 9 }]);
     });
@@ -72,7 +81,10 @@ describe('runFilter', () => {
       };
       const validEnv = createValidFilterEnv(() => throwingFilter);
 
-      await expect(runFilter(validEnv, 'boom', 1, 1, null)).rejects.toBe(filterError);
+      const result = await runFilter({ env: validEnv, name: 'boom', lineno: 1, colno: 1, context: null, args: [] });
+      expect(isErr(result)).toBe(true);
+      if (!isErr(result)) { return; }
+      expect(result.error).toBe(filterError);
     });
 
     test('propagates the rejection of a promise-returning filter', async () => {
@@ -80,7 +92,10 @@ describe('runFilter', () => {
       const rejectingFilter = (): unknown => Promise.reject(rejectionError);
       const validEnv = createValidFilterEnv(() => rejectingFilter);
 
-      await expect(runFilter(validEnv, 'rej', 1, 1, null)).rejects.toBe(rejectionError);
+      const result = await runFilter({ env: validEnv, name: 'rej', lineno: 1, colno: 1, context: null, args: [] });
+      expect(isErr(result)).toBe(true);
+      if (!isErr(result)) { return; }
+      expect(result.error).toBe(rejectionError);
     });
 
     test('propagates the error when getFilter cannot resolve the filter name', async () => {
@@ -89,7 +104,10 @@ describe('runFilter', () => {
         throw notFoundError;
       });
 
-      await expect(runFilter(validEnv, 'missing', 3, 5, null)).rejects.toBe(notFoundError);
+      const result = await runFilter({ env: validEnv, name: 'missing', lineno: 3, colno: 5, context: null, args: [] });
+      expect(isErr(result)).toBe(true);
+      if (!isErr(result)) { return; }
+      expect(result.error).toBe(notFoundError);
     });
   });
 
@@ -107,24 +125,30 @@ describe('runFilter', () => {
 
     invalidEnvs.forEach(({ label, env }) => {
       test(`rejects with a TypeError for ${label}`, async () => {
-        await expect(runFilter(env, 'upper', 1, 1, null)).rejects.toBeInstanceOf(TypeError);
+        const result = await runFilter({ env, name: 'upper', lineno: 1, colno: 1, context: null, args: [] });
+        expect(isErr(result)).toBe(true);
+        if (!isErr(result)) { return; }
+        expect(result.error).toBeInstanceOf(TypeError);
       });
     });
 
     test('rejection message names the required getFilter contract', async () => {
       const nullEnv = null;
 
-      await expect(runFilter(nullEnv, 'upper', 1, 1, null)).rejects.toThrow(
-        'getFilter(name, lineno, colno)',
-      );
+      const result = await runFilter({ env: nullEnv, name: 'upper', lineno: 1, colno: 1, context: null, args: [] });
+      expect(isErr(result)).toBe(true);
+      if (!isErr(result)) { return; }
+      expect((result.error as Error).message).toContain('getFilter(name, lineno, colno)');
     });
 
     test('accepts a valid env and never reaches the guard throw', async () => {
       const validEnv = createValidFilterEnv(() => (): unknown => 'value');
 
-      const result = await runFilter(validEnv, 'ok', 1, 1, null);
+      const result = await runFilter({ env: validEnv, name: 'ok', lineno: 1, colno: 1, context: null, args: [] });
 
-      expect(result).toBe('value');
+      expect(isOk(result)).toBe(true);
+      if (!isOk(result)) { return; }
+      expect(result.value).toBe('value');
     });
   });
 });

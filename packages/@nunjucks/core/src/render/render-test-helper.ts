@@ -1,5 +1,5 @@
 import { render } from './render.ts';
-import { isErr } from '@nunjucks/shared';
+import { isErr } from '@nunjucks/lib';
 import type { GlobalConfig } from '../config/global.ts';
 
 const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Partial<GlobalConfig> = {}): Promise<string> => {

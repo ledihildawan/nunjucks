@@ -6,15 +6,13 @@ interface InjectWarningsOptions {
   verbosity?: 'simple' | 'medium' | 'full';
 }
 
-const getFileName = basename;
-
 const getLocationString = (w: Warning): string => {
   if (w.lineno === undefined || w.lineno === null) {
     return '';
   }
   const lineNum = w.lineno + 1;
   const colNum = w.colno != null ? `:${w.colno}` : '';
-  const fileName = getFileName(w.templateName);
+  const fileName = basename(w.templateName);
   return ` at ${fileName}:${lineNum}${colNum}`;
 };
 

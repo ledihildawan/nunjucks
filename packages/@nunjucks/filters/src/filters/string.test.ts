@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { isSafeString } from '@nunjucks/runtime';
+import { isErr, getOrElse } from '@nunjucks/lib';
 import {
   capitalize, fallback,
 // biome-ignore lint/suspicious/noShadowRestrictedNames: `escape` is the public name of this Nunjucks filter; renaming would break every template that uses it.
@@ -94,23 +95,25 @@ describe('filters/string', () => {
 
   describe('join', () => {
     test('joins array elements with a separator', () => {
-      expect(joinFilter(['a', 'b', 'c'])).toBe('abc');
-      expect(joinFilter(['a', 'b', 'c'], '-')).toBe('a-b-c');
-      expect(joinFilter(['a', 'b', 'c'], ', ')).toBe('a, b, c');
+      expect(getOrElse(joinFilter(['a', 'b', 'c']), null)).toBe('abc');
+      expect(getOrElse(joinFilter(['a', 'b', 'c'], '-'), null)).toBe('a-b-c');
+      expect(getOrElse(joinFilter(['a', 'b', 'c'], ', '), null)).toBe('a, b, c');
     });
 
     test('joins empty arrays to empty string', () => {
-      expect(joinFilter([])).toBe('');
+      expect(getOrElse(joinFilter([]), null)).toBe('');
     });
 
     test('joins object attribute values when attr is given', () => {
       const items = [{ name: 'alice' }, { name: 'bob' }];
-      expect(joinFilter(items, ' & ', 'name')).toBe('alice & bob');
+      expect(getOrElse(joinFilter(items, ' & ', 'name'), null)).toBe('alice & bob');
     });
 
-    test('throws when input is not an array', () => {
-      expect(() => joinFilter('not array')).toThrow();
-      expect(() => joinFilter({ 0: 'a' })).toThrow();
+    test('returns error when input is not an array', () => {
+      const result1 = joinFilter('not array');
+      expect(isErr(result1)).toBe(true);
+      const result2 = joinFilter({ 0: 'a' });
+      expect(isErr(result2)).toBe(true);
     });
   });
 

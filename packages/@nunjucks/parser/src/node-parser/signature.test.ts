@@ -15,7 +15,7 @@ const ctxFor = (src: string) => {
 };
 
 const parseSig = (src: string, tolerant?: boolean, noParens?: boolean): Node | null =>
-  unwrap(parseSignature(ctxFor(src), tolerant, noParens));
+  unwrap(parseSignature({ parserContext: ctxFor(src), tolerant, noParens }));
 
 describe('parseSignature', () => {
   test('returns null for tolerant mode without a left paren', () => {

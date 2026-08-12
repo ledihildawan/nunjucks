@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { ZERO_LOC, loc, type Loc } from '@nunjucks/shared';
+import { ZERO_LOC, loc, type Loc } from '@nunjucks/lexer';
 import { T } from '../types/index.ts';
 import type { SlotBlock } from '../types/index.ts';
 import { literal, symbol, output, array, nodeList, pair } from './atomic.ts';

@@ -1,5 +1,5 @@
 import { T, createNode } from './internal.ts';
-import type { Loc } from '@nunjucks/shared';
+import type { Loc } from '@nunjucks/lexer';
 import type { Node, NodeOf, NodeType } from '../types/index.ts';
 import type { BinaryFields } from './operations.ts';
 

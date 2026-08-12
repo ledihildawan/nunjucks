@@ -2,6 +2,7 @@ import { toAnsi, toText, toHtml, createFormatterState, buildSourceTrace, type So
 import { normalizeLineBase, type LineBase } from '@nunjucks/error-catalog';
 import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, OutputOptions, NormalizedErrorContext, NormalizedWarningContext } from './create-log-types.ts';
 import { resolveMessage, createErrorEnvelope } from './create-log-helpers.ts';
+import { classifyAndBuildTitle } from './title-helpers.ts';
 
 const isTemplateError = (log: TemplateError | TemplateWarning): log is TemplateError =>
   (log as TemplateError).templatePath !== undefined;
@@ -76,10 +77,11 @@ const formatErrorOutput = ({ err, options, format }: FormatErrorOutputInput): st
 const formatError = (err: Error | TemplateError, options: OutputOptions = {}): string => {
   const templateError = isTemplateErrorLog(err) ? err : toTemplateError(err);
   const sourceTrace = buildSourceTraceIfNeeded(templateError, options);
+  const humanTitle = classifyAndBuildTitle(templateError);
 
   const opts = createFormatterState({
     metadata: toFormatterMetadata(templateError, templateError.renderContext),
-    options: { ...options, sourceTrace }
+    options: { ...options, sourceTrace, humanTitle }
   });
 
   return formatErrorOutput({ err: templateError, options: opts, format: options.format });

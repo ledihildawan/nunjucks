@@ -30,7 +30,7 @@ export const createTemplate = ({ src, env, path, eagerCompile, includeChain }: C
   if (eagerCompile) {
     try {
       compiler.compile();
-    } catch (err) {
+    } catch (err: unknown) {
       throw prettifyError({ path: currentState.path, withInternals: currentState.env.opts.dev, err: err as Error });
     }
   }

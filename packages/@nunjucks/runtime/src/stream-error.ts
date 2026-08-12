@@ -14,14 +14,15 @@ const isStreamErrorSentinel = (value: unknown): value is StreamErrorSentinel =>
 // WHY: streamError is the per-expression error recovery for streaming mode. Called from compiled template code's per-expression try/catch, it enriches the error (via handleError) but does NOT throw — instead returning a sentinel that createRenderStream detects and formats as an inline marker. The generator then continues to the next expression. handleError always throws (return type: never), so the catch is the only exit path.
 // WHY: fatal codes (security/structural/system — see FATAL_STREAM_CODES) re-throw instead of becoming a sentinel. The throw escapes the compiled catch block, propagates up the async generator, and rides the existing mid-stream fatal path (createRenderStream catch → wrapWithLog → pipe-stream mid-stream handler). Recoverable codes still yield an inline marker and let the page continue.
 const streamError = function(this: unknown, error: unknown, { lineno, colno }: { lineno: number; colno: number }): StreamErrorSentinel {
-  // WHY: handleError always throws (return type: never). The catch is the only exit path — no fallthrough return needed.
   try {
     handleError.call(this, error, { lineno, colno });
-  } catch (enriched) {
+  } catch (enriched: unknown) {
     if (isFatalStreamError(enriched)) { throw enriched; }
     return { __streamError: true, error: enriched, lineno, colno };
   }
-  throw new Error('unreachable: handleError always throws');
+  // WHY: handleError never returns (return type: never) — this assignment silences TypeScript's unreachable-code error while preserving the intent that this line is truly unreachable.
+  const unreachableMarker: never = (() => { throw new Error('unreachable: handleError always throws'); })();
+  return unreachableMarker as StreamErrorSentinel;
 };
 
 export { streamError, isStreamErrorSentinel };

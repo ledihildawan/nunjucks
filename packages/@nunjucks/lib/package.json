@@ -11,10 +11,18 @@
     "./from-iterator": "./src/from-iterator.ts",
     "./web-readable-stream": "./src/web-readable-stream.ts",
     "./stream-coalesce": "./src/stream-coalesce.ts",
-    "./stream-timeout": "./src/stream-timeout.ts",
     "./path-basename": "./src/path-basename.ts",
     "./is-digit": "./src/is-digit.ts",
-    "./gensym": "./src/gensym.ts"
+    "./gensym": "./src/gensym.ts",
+    "./type-guards": "./src/type-guards.ts",
+    "./escape": "./src/escape.ts",
+    "./slice": "./src/slice.ts",
+    "./path-policy": "./src/path-policy.ts",
+    "./compare": "./src/compare.ts",
+    "./deep-get": "./src/deep-get.ts",
+    "./to-string": "./src/to-string.ts",
+    "./strip-markdown": "./src/strip-markdown.ts",
+    "./string-case": "./src/string-case.ts"
   },
   "dependencies": {
     "remeda": "^2.39.0"

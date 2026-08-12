@@ -1,11 +1,19 @@
 import { createLog } from '@nunjucks/error-formatter';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { IncludeChain } from '@nunjucks/error-formatter';
-import type { NodeLocation, UndefinedMode } from '@nunjucks/shared';
-import { find, forEach, keys } from 'remeda';
+import type { NodeLocation } from '@nunjucks/shared';
+import type { UndefinedMode } from '@nunjucks/runtime';
+import { find, reduce, keys } from 'remeda';
 import { collectString } from './collect-stream.ts';
 
 const CONTEXT_KEY = Symbol('Context');
+
+interface GetTemplateOptions {
+  name: string;
+  eagerCompile?: boolean;
+  includeChain?: IncludeChain | null;
+  ignoreMissing?: boolean;
+}
 
 export interface Env {
   opts: {
@@ -16,7 +24,7 @@ export interface Env {
   getFilter: (name: string, lineno: number | null, colno: number | null) => unknown;
   getTest: (name: string, lineno: number | null, colno: number | null) => unknown;
   getExtension?: (name: string) => unknown;
-  getTemplate?: (name: string, eagerCompile?: boolean, includeChain?: IncludeChain | null, ignoreMissing?: boolean) => unknown;
+  getTemplate?: (nameOrOptions: string | GetTemplateOptions) => unknown;
   emit?: (event: string, ...args: unknown[]) => void;
   renderingTemplates?: Set<string | undefined>;
 }
@@ -28,15 +36,18 @@ export interface ContextMetadata {
 }
 
 type BlockFn = (...args: unknown[]) => unknown;
-type GetSuperFn = (
-  envObj: unknown,
-  name: string,
-  block: BlockFn,
-  frame: unknown,
-  runtime: unknown,
-  lineno?: number | null,
-  colno?: number | null,
-) => unknown;
+
+interface GetSuperOptions {
+  envObj: unknown;
+  name: string;
+  block: BlockFn;
+  frame: unknown;
+  runtime: unknown;
+  lineno?: number | null;
+  colno?: number | null;
+}
+
+type GetSuperFn = (options: GetSuperOptions) => unknown;
 
 interface ReadOnlyContext {
   readonly env: Env;
@@ -167,7 +178,7 @@ const makeContext = (state: ContextState): Context => {
       return firstBlock as BlockFn;
     },
 
-    getSuper(envObj: unknown, name: string, block: BlockFn, frame: unknown, runtime: unknown, lineno: number | null = null, colno: number | null = null): unknown {
+    getSuper({ envObj, name, block, frame, runtime, lineno = null, colno = null }: GetSuperOptions): unknown {
       const blockList = state.blocks[name];
       if (!blockList || !Array.isArray(blockList)) {
         return throwNoSuperBlockError({ name, lineno, colno });
@@ -227,14 +238,13 @@ const createContext = ({ ctx = {}, blocks = {}, env = null, metadata = {} }: Cre
     parentContext: null as Context | null,
   });
 
-  let current = context;
-  forEach(getKeys(blocks), (name) => {
+  return reduce(getKeys(blocks), (acc, name) => {
     const block = blocks[name];
     if (block) {
-      current = current.addBlock(name, block as BlockFn);
+      return acc.addBlock(name, block as BlockFn);
     }
-  });
-  return current;
+    return acc;
+  }, context);
 };
 
 const isContext = (value: unknown): value is Context =>

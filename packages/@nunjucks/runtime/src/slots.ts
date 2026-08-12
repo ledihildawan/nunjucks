@@ -1,4 +1,4 @@
-import { hasOwn } from '@nunjucks/shared';
+import { hasOwn } from '@nunjucks/lib';
 
 type SlotFn = (...args: unknown[]) => unknown;
 

@@ -9,6 +9,8 @@ export type { ExpressionSecurityConfig };
 
 const NON_CHILD_KEYS = new Set(['lineno', 'colno', 'fields']);
 
+const isNonEmpty = <T>(arr: readonly T[]): arr is readonly [T, ...T[]] => arr.length > 0;
+
 interface ExpressionValidationError extends BaseValidationError {
   code: string;
   path: readonly (string | number)[];
@@ -119,8 +121,9 @@ const validateExpression = (ast: Node, config: ExpressionSecurityConfig = {}): E
   const blocked = config.blockedPropertyPatterns ?? DEFAULT_SECURITY_CONFIG.blockedPropertyPatterns;
   const walk = createExpressionWalker(blocked);
   const errors = walk(ast, []);
-  if (errors.length === 0) {
+  if (!isNonEmpty(errors)) {
     return { valid: true, errors: [] as const };
   }
-  return { valid: false, errors: errors as [ExpressionValidationError, ...ExpressionValidationError[]] };
+  const [first, ...rest] = errors;
+  return { valid: false, errors: [first, ...rest] as const };
 };

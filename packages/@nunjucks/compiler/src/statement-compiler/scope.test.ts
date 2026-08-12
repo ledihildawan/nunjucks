@@ -3,7 +3,7 @@ import { compileScope } from './scope.ts';
 import { pair, output, templateData, literal } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { ZERO_LOC } from '@nunjucks/shared';
+import { ZERO_LOC } from '@nunjucks/lexer';
 
 const frame = createFrame();
 
@@ -33,7 +33,7 @@ describe('compileScope', () => {
     });
     const joined = c.emitted.join('');
     expect(joined).toContain('frame = frame.push(true);');
-    expect(joined).toContain('frame = frame.set("x", t_1, true);');
+    expect(joined).toContain('frame = frame.set({ name: "x", value: t_1, resolveUp: true });');
     expect(joined).toContain('frame = frame.pop();');
   });
 

@@ -7,7 +7,7 @@ import type { ParserContext } from "../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseExpression } from "../expression-parser/index.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 const parseIfElseAlternate = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const elseEndR = advanceAfterBlockEnd(parserContext);

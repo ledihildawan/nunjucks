@@ -2,7 +2,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import { createEngine, type ExpressEngineConfig } from '@nunjucks/integrations/express';
-import { renderTemplate } from './lib/express-render.ts';
+import { renderTemplate, sendTemplateResult } from './lib/express-render.ts';
+import { currentYear } from './lib/clock.ts';
 import { formatError } from '@nunjucks/error-formatter';
 import { demoRouter } from './routes/demo.ts';
 import { errorRouter } from './routes/errors.ts';
@@ -25,7 +26,7 @@ const engineConfig: ExpressEngineConfig = {
   globals: {
     appName: 'Nunjucks Express Demo',
     version: '1.0.0',
-    getYear: () => new Date().getFullYear(),
+    getYear: () => currentYear(),
   },
   filters: {
     shout: (v: string) => `${String(v).toUpperCase()}!!!`,
@@ -40,9 +41,12 @@ app.get('/', (_req: Request, res: Response) => {
   res.render('index', { userName: 'Guest' });
 });
 
-app.get('/home', async (_req: Request, res: Response) => {
-  const html = await renderTemplate(
-    `<!DOCTYPE html>
+app.get('/home', async (_req: Request, res: Response, next: NextFunction) => {
+  sendTemplateResult(
+    res,
+    next,
+    await renderTemplate(
+      `<!DOCTYPE html>
 <html>
 <head><title>Home</title></head>
 <body>
@@ -52,14 +56,17 @@ app.get('/home', async (_req: Request, res: Response) => {
   <p>Shout: {{ "hello" |> shout }}</p>
 </body>
 </html>`,
-    { context: { username: 'John Doe' }, config: engineConfig }
+      { context: { username: 'John Doe' }, config: engineConfig }
+    )
   );
-  res.type('html').send(html);
 });
 
-app.get('/security', async (_req: Request, res: Response) => {
-  const html = await renderTemplate(
-    `<!DOCTYPE html>
+app.get('/security', async (_req: Request, res: Response, next: NextFunction) => {
+  sendTemplateResult(
+    res,
+    next,
+    await renderTemplate(
+      `<!DOCTYPE html>
 <html>
 <head><title>Security Features Demo</title></head>
 <body>
@@ -80,17 +87,17 @@ app.get('/security', async (_req: Request, res: Response) => {
   <p>Attribute: <code>&lt;div data-value="{{ attrContent }}"&gt;&lt;/div&gt;</code></p>
 </body>
 </html>`,
-    {
-      context: {
-        userInput: '<script>alert("XSS")</script><p>Safe content</p>',
-        configData: { theme: 'dark', debug: true },
-        htmlContent: '<b>Bold</b> & "quoted"',
-        attrContent: 'value="with quotes"'
-      },
-      config: engineConfig
-    }
+      {
+        context: {
+          userInput: '<script>alert("XSS")</script><p>Safe content</p>',
+          configData: { theme: 'dark', debug: true },
+          htmlContent: '<b>Bold</b> & "quoted"',
+          attrContent: 'value="with quotes"'
+        },
+        config: engineConfig
+      }
+    )
   );
-  res.type('html').send(html);
 });
 
 app.use('/demo', demoRouter);

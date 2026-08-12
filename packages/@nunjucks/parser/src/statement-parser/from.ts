@@ -12,7 +12,7 @@ import type { ParserContext } from "../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseExpression, parsePrimary } from "../expression-parser/index.ts";
 import { parseWithContext } from "./import-context.ts";
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 const isUnderscore = (name: Node): boolean => {
   if (typeof name.value === 'string' && name.value[0] === '_') {

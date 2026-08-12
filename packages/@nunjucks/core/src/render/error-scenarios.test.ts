@@ -3,7 +3,7 @@ import { render } from './render.ts';
 import { createLog, formatError } from '@nunjucks/error-formatter';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { getError } from '@nunjucks/error-catalog';
-import { isErr } from '@nunjucks/shared';
+import { isErr } from '@nunjucks/lib';
 
 const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
   const result = await render(template, {

@@ -3,7 +3,7 @@ import { compilePipeForward } from './pipe-forward.ts';
 import { symbol, literal, pipe } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 const frame = createFrame();
 
@@ -23,7 +23,7 @@ describe('compilePipeForward', () => {
     const node = pipe(loc({ lineno: 3, colno: 7 }), { name: symbol(loc({ lineno: 3, colno: 7 }), 'upper'), args: [{ mock: 'ARG' } as never] });
     compilePipeForward(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');
-    expect(joined).toContain('runtime.runFilter(env, "upper", 3, 7, context');
+    expect(joined).toContain('runtime.runFilter({ env, name: "upper", lineno: 3, colno: 7, context, args: [');
     expect(joined).toContain('await runtime.awaitValue(ARG)');
   });
 

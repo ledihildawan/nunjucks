@@ -11,3 +11,8 @@ export interface ErrorGroup {
   name: string;
   items: Array<{ path: string; desc: string }>;
 }
+
+export interface EnrichedFilterError extends Error {
+  code: string;
+  subject: string;
+}

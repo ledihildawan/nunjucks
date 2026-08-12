@@ -4,7 +4,7 @@ import { createParser } from './index.ts';
 import { nextTokenOrNull, peekTokenOrNull, skip, expect as expectToken, skipValue, skipSymbol, consumeWhitespaceDrop, nextToken } from './cursor.ts';
 import type { ParserContext } from './cursor.ts';
 import { asTokenStream } from './test-helpers.ts';
-import { isErr } from '@nunjucks/shared';
+import { isErr } from '@nunjucks/lib';
 
 const makeCtx = (src: string): ParserContext => {
   const tk = createTokenizer(src);

@@ -3,7 +3,7 @@ import type { LexerOptions } from '@nunjucks/lexer';
 import { root } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { ZERO_LOC } from '@nunjucks/shared';
+import { ZERO_LOC } from '@nunjucks/lexer';
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { fail } from "./cursor.ts";
 import type { ParserContext, ParserExtension, TokenStream } from "./cursor.ts";

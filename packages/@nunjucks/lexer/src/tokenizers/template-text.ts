@@ -18,7 +18,7 @@ export const tokenizeTemplateText: Tokenizer = (state) => {
 
   if (!text) { return null; }
   return {
-    token: createToken(TOKEN_DATA, text, lineno, colno),
+    token: createToken({ type: TOKEN_DATA, value: text, lineno, colno }),
     state: current,
   };
 };

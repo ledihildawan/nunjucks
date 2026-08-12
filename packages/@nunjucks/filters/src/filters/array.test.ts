@@ -1,34 +1,47 @@
 import { describe, test, expect } from 'bun:test';
+import { isOk, isErr, getOrElse } from '@nunjucks/lib';
 import { first, last, lengthFilter, reverse, slice, sum, sort } from './array.ts';
 
 describe('filters/array', () => {
   describe('first', () => {
     test('returns the first element of an array', () => {
-      expect(first([1, 2, 3])).toBe(1);
+      const result = first([1, 2, 3]);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toBe(1);
     });
 
     test('returns undefined for an empty array', () => {
-      expect(first([])).toBeUndefined();
+      const result = first([]);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toBeUndefined();
     });
 
-    test('throws when input is not an array', () => {
-      expect(() => first('not an array')).toThrow();
-      expect(() => first(null)).toThrow();
-      expect(() => first({ 0: 'a' })).toThrow();
+    test('returns error when input is not an array', () => {
+      const result1 = first('not an array');
+      expect(isErr(result1)).toBe(true);
+      const result2 = first(null);
+      expect(isErr(result2)).toBe(true);
+      const result3 = first({ 0: 'a' });
+      expect(isErr(result3)).toBe(true);
     });
   });
 
   describe('last', () => {
     test('returns the last element of an array', () => {
-      expect(last([1, 2, 3])).toBe(3);
+      const result = last([1, 2, 3]);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toBe(3);
     });
 
     test('returns undefined for an empty array', () => {
-      expect(last([])).toBeUndefined();
+      const result = last([]);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toBeUndefined();
     });
 
-    test('throws when input is not an array', () => {
-      expect(() => last(42)).toThrow();
+    test('returns error when input is not an array', () => {
+      const result = last(42);
+      expect(isErr(result)).toBe(true);
     });
   });
 
@@ -61,11 +74,15 @@ describe('filters/array', () => {
 
   describe('reverse', () => {
     test('reverses an array', () => {
-      expect(reverse([1, 2, 3])).toEqual([3, 2, 1]);
+      const result = reverse([1, 2, 3]);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual([3, 2, 1]);
     });
 
     test('reverses a string', () => {
-      expect(reverse('abc')).toBe('cba');
+      const result = reverse('abc');
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toBe('cba');
     });
 
     test('does not mutate the original input', () => {
@@ -74,62 +91,79 @@ describe('filters/array', () => {
       expect(arr).toEqual([1, 2, 3]);
     });
 
-    test('throws when input is neither a string nor an array', () => {
-      expect(() => reverse(123)).toThrow();
-      expect(() => reverse(null)).toThrow();
+    test('returns error when input is neither a string nor an array', () => {
+      const result1 = reverse(123);
+      expect(isErr(result1)).toBe(true);
+      const result2 = reverse(null);
+      expect(isErr(result2)).toBe(true);
     });
   });
 
   describe('slice', () => {
     test('divides an array into N roughly equal slices', () => {
-      const result = slice([1, 2, 3, 4, 5, 6], 3) as number[][];
-      expect(result).toHaveLength(3);
-      expect(result[0]).toEqual([1, 2]);
-      expect(result[1]).toEqual([3, 4]);
-      expect(result[2]).toEqual([5, 6]);
+      const result = slice([1, 2, 3, 4, 5, 6], 3);
+      expect(isOk(result)).toBe(true);
+      const value = getOrElse(result, null!);
+      expect(value).toHaveLength(3);
+      expect(value[0]).toEqual([1, 2]);
+      expect(value[1]).toEqual([3, 4]);
+      expect(value[2]).toEqual([5, 6]);
     });
 
     test('distributes leftover elements to earlier slices', () => {
-      const result = slice([1, 2, 3, 4, 5, 6, 7], 3) as number[][];
-      expect(result[0]).toEqual([1, 2, 3]);
-      expect(result[1]).toEqual([4, 5]);
-      expect(result[2]).toEqual([6, 7]);
+      const result = slice([1, 2, 3, 4, 5, 6, 7], 3);
+      expect(isOk(result)).toBe(true);
+      const value = getOrElse(result, null!);
+      expect(value[0]).toEqual([1, 2, 3]);
+      expect(value[1]).toEqual([4, 5]);
+      expect(value[2]).toEqual([6, 7]);
     });
 
     test('pads trailing slices with the fillWith value when leftover', () => {
-      const result = slice([1, 2, 3, 4], 3, 'x') as Array<Array<number | string>>;
-      expect(result[0]).toEqual([1, 2]);
-      expect(result[1]).toEqual([3, 'x']);
-      expect(result[2]).toEqual([4, 'x']);
+      const result = slice([1, 2, 3, 4], 3, 'x');
+      expect(isOk(result)).toBe(true);
+      const value = getOrElse(result, null!);
+      expect(value[0]).toEqual([1, 2]);
+      expect(value[1]).toEqual([3, 'x']);
+      expect(value[2]).toEqual([4, 'x']);
     });
 
     test('pads trailing empty slices when N exceeds the array length', () => {
-      const result = slice([1, 2, 3], 5, null) as Array<Array<number | null>>;
-      expect(result).toHaveLength(5);
-      expect(result[0]).toEqual([1]);
-      expect(result[1]).toEqual([2]);
-      expect(result[2]).toEqual([3]);
-      expect(result[3]).toEqual([null]);
-      expect(result[4]).toEqual([null]);
+      const result = slice([1, 2, 3], 5, null);
+      expect(isOk(result)).toBe(true);
+      const value = getOrElse(result, null!);
+      expect(value).toHaveLength(5);
+      expect(value[0]).toEqual([1]);
+      expect(value[1]).toEqual([2]);
+      expect(value[2]).toEqual([3]);
+      expect(value[3]).toEqual([null]);
+      expect(value[4]).toEqual([null]);
     });
 
-    test('throws when N is zero or negative', () => {
-      expect(() => slice([1, 2], 0)).toThrow();
-      expect(() => slice([1, 2], -1)).toThrow();
+    test('returns error when N is zero or negative', () => {
+      const result1 = slice([1, 2], 0);
+      expect(isErr(result1)).toBe(true);
+      const result2 = slice([1, 2], -1);
+      expect(isErr(result2)).toBe(true);
     });
 
-    test('throws when input is not an array', () => {
-      expect(() => slice('not array', 2)).toThrow();
+    test('returns error when input is not an array', () => {
+      const result = slice('not array', 2);
+      expect(isErr(result)).toBe(true);
     });
   });
 
   describe('sum', () => {
     test('sums an array of numbers', () => {
-      expect(sum([1, 2, 3, 4])).toBe(10);
+      const result = sum([1, 2, 3, 4]);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toBe(10);
     });
 
     test('returns the start value when the array is empty', () => {
-      expect(sum([], undefined, 5)).toBe(5);
+      const result = sum([], undefined, 5);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toBe(5);
     });
 
     test('sums values of an object when an attribute name is provided', () => {
@@ -138,51 +172,68 @@ describe('filters/array', () => {
         { type: 'b', val: 2 },
         { type: 'a', val: 3 },
       ];
-      const total = sum(items, 'val');
-      expect(total).toBe(6);
+      const result = sum(items, 'val');
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toBe(6);
     });
 
-    test('throws when input is a plain object without an attribute', () => {
-      expect(() => sum({ a: 1, b: 2 })).toThrow();
+    test('returns error when input is a plain object without an attribute', () => {
+      const result = sum({ a: 1, b: 2 });
+      expect(isErr(result)).toBe(true);
     });
 
     test('sums a named attribute across array items', () => {
       const items = [{ price: 1 }, { price: 2 }, { price: 3 }];
-      expect(sum(items, 'price')).toBe(6);
+      const result = sum(items, 'price');
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toBe(6);
     });
 
-    test('throws when input is neither an array nor a plain object', () => {
-      expect(() => sum('nope')).toThrow();
-      expect(() => sum(42)).toThrow();
+    test('returns error when input is neither an array nor a plain object', () => {
+      const result1 = sum('nope');
+      expect(isErr(result1)).toBe(true);
+      const result2 = sum(42);
+      expect(isErr(result2)).toBe(true);
     });
   });
 
   describe('sort', () => {
     test('sorts an array of numbers ascending', () => {
-      expect(sort([3, 1, 2])).toEqual([1, 2, 3]);
+      const result = sort([3, 1, 2]);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual([1, 2, 3]);
     });
 
     test('sorts an array of strings alphabetically', () => {
-      expect(sort(['banana', 'apple', 'cherry'])).toEqual(['apple', 'banana', 'cherry']);
+      const result = sort(['banana', 'apple', 'cherry']);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual(['apple', 'banana', 'cherry']);
     });
 
     test('sorts in reverse when reverse is true', () => {
-      expect(sort([1, 2, 3], true)).toEqual([3, 2, 1]);
+      const result = sort([1, 2, 3], true);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual([3, 2, 1]);
     });
 
     test('is case-insensitive by default for strings', () => {
-      expect(sort(['banana', 'Apple', 'cherry'])).toEqual(['Apple', 'banana', 'cherry']);
+      const result = sort(['banana', 'Apple', 'cherry']);
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual(['Apple', 'banana', 'cherry']);
     });
 
     test('respects case_sensitive=true', () => {
-      const result = sort(['banana', 'Apple', 'cherry'], false, true) as string[];
+      const result = sort(['banana', 'Apple', 'cherry'], false, true);
+      expect(isOk(result)).toBe(true);
       const sortedCopy = ['banana', 'Apple', 'cherry'].sort();
-      expect(result).toEqual(sortedCopy);
+      expect(getOrElse(result, null)).toEqual(sortedCopy);
     });
 
     test('sorts by an attribute when attribute is provided', () => {
       const items = [{ age: 30 }, { age: 10 }, { age: 20 }];
-      expect(sort(items, false, false, 'age')).toEqual([{ age: 10 }, { age: 20 }, { age: 30 }]);
+      const result = sort(items, false, false, 'age');
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual([{ age: 10 }, { age: 20 }, { age: 30 }]);
     });
 
     test('does not mutate the input array', () => {
@@ -191,8 +242,9 @@ describe('filters/array', () => {
       expect(arr).toEqual([3, 1, 2]);
     });
 
-    test('throws when input is not an array', () => {
-      expect(() => sort('not array')).toThrow();
+    test('returns error when input is not an array', () => {
+      const result = sort('not array');
+      expect(isErr(result)).toBe(true);
     });
   });
 });

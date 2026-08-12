@@ -3,7 +3,7 @@ import { createTokenizer } from '@nunjucks/lexer';
 import { add, mul } from '@nunjucks/nodes';
 import { getNodeTypeName } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { isErr } from '@nunjucks/shared';
+import { isErr } from '@nunjucks/lib';
 import { createParser } from '../index.ts';
 import { nextTokenOrNull, peekToken } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';

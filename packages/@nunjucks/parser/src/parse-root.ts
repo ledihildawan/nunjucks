@@ -11,7 +11,7 @@ import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { pipe } from 'remeda';
 import { replace } from '@nunjucks/lib';
-import { loc, ZERO_LOC } from '@nunjucks/shared';
+import { loc, ZERO_LOC } from '@nunjucks/lexer';
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import {
   nextTokenOrNull,

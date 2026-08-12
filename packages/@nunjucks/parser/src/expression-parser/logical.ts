@@ -7,7 +7,7 @@ import type { ParserContext } from '../cursor.ts';
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { binaryOp } from './binary-helpers.ts';
 import { parseIn } from './comparison.ts';
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 const parseNullishCoalesce = (parserContext: ParserContext): Result<Node, TemplateError> =>
   binaryOp(parserContext, nullishCoalesce, (cursor) => skipValue(cursor, TOKEN_OPERATOR, '??'), parseAnd);

@@ -3,8 +3,8 @@ import { compileVariableDeclaration, compileVariableAssignment, compileCompoundA
 import { symbol, literal } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { ZERO_LOC } from '@nunjucks/shared';
-import { loc } from '@nunjucks/shared';
+import { ZERO_LOC } from '@nunjucks/lexer';
+import { loc } from '@nunjucks/lexer';
 
 const frame = createFrame();
 
@@ -34,7 +34,7 @@ describe('compileVariableDeclaration', () => {
     const joined = c.emitted.join('');
     expect(joined).toContain('let t_1 =');
     expect(joined).toContain('V;');
-    expect(joined).toContain('frame = frame.set("x", t_1, true);');
+    expect(joined).toContain('frame = frame.set({ name: "x", value: t_1, resolveUp: true });');
   });
 });
 
@@ -45,7 +45,7 @@ describe('compileVariableAssignment', () => {
     const joined = c.emitted.join('');
     expect(joined).toContain('ReferenceError');
     expect(joined).toContain('Use x := value to declare it');
-    expect(joined).toContain('frame = frame.set("x",');
+    expect(joined).toContain('frame = frame.set({ name: "x"');
   });
 });
 
@@ -62,7 +62,7 @@ describe('compileCompoundAssignment', () => {
     const joined = c.emitted.join('');
     expect(joined).toContain('runtime.contextOrFrameLookup(context, frame, "count")');
     expect(joined).toContain('t_2 = t_1 +');
-    expect(joined).toContain('frame = frame.set("count",');
+    expect(joined).toContain('frame = frame.set({ name: "count"');
   });
 
   test('//= emits Math.floor division', () => {

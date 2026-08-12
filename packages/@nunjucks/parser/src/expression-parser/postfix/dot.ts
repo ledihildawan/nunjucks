@@ -7,7 +7,7 @@ import { nextToken, fail } from "../../cursor.ts";
 import type { ParserContext } from "../../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { markBracketNotation } from "./lookup.ts";
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 type DotOperatorToken = Token & { type: typeof TOKEN_OPERATOR };
 

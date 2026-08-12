@@ -4,7 +4,7 @@ import type { Frame } from '@nunjucks/runtime';
 import { forEach, join, map, pipe } from 'remeda';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 const STRING_ESCAPE_MAP: Record<string, string> = {
   '\\': '\\\\',
@@ -37,10 +37,10 @@ const compileLiteral = (compiler: Compiler, node: { value?: unknown; lineno: num
 
 const compileSymbol = (compiler: Compiler, { node, frame }: CompileNodeInput<SymbolNode>): void => {
   const name = node.value;
-  const v = frame.lookup(name);
+  const lookupResult = frame.lookup(name);
 
-  if (v) {
-    compiler.emit(String(v));
+  if (lookupResult) {
+    compiler.emit(String(lookupResult));
   } else {
     compiler.emit(`runtime.contextOrFrameLookup(context, frame, "${name}")`);
   }
@@ -127,8 +127,9 @@ const compileAggregate = (compiler: Compiler, node: ChildrenNode | CallNode | re
   }
 
   const children: readonly Node[] = Array.isArray(node) ? node : ((node as ChildrenNode).children ?? []);
-  children.forEach((child, i) => {
-    if (!child) { return; }
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    if (!child) { continue; }
     if (i > 0) {
       compiler.emit(',');
     }
@@ -138,7 +139,7 @@ const compileAggregate = (compiler: Compiler, node: ChildrenNode | CallNode | re
     } else {
       compiler.compile(child, frame);
     }
-  });
+  }
 
   if (endChar) {
     compiler.emit(endChar);

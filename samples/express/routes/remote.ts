@@ -1,4 +1,5 @@
 import express, { type Router, type Request, type Response } from 'express';
+import { localizedTime } from '../lib/clock.ts';
 
 export const remoteRouter: Router = express.Router();
 
@@ -62,7 +63,7 @@ remoteRouter.get('/api/hello', (_req: Request, res: Response) => {
 });
 
 remoteRouter.get('/api/time', (_req: Request, res: Response) => {
-  res.send(`Current time: <strong>${new Date().toLocaleTimeString()}</strong>`);
+  res.send(`Current time: <strong>${localizedTime()}</strong>`);
 });
 
 remoteRouter.get('/api/slow', (_req: Request, res: Response) => {

@@ -28,6 +28,8 @@ export interface Config {
 
 const VALID_ENVIRONMENTS: ReadonlySet<Environment> = new Set(['auto', 'node', 'browser', 'deno']);
 
+const isNonEmpty = <T>(arr: readonly T[]): arr is readonly [T, ...T[]] => arr.length > 0;
+
 const validateNumericConfig = (config: Config): ConfigValidationError[] => [
   ...((config.executionTimeout ?? 0) < 0
     ? [{ code: 'INVALID_CONFIG', message: 'Invalid configuration: executionTimeout must be >= 0', subject: 'executionTimeout', type: 'numeric' }]
@@ -80,10 +82,9 @@ export const validateConfig = (config: Config): ConfigValidationResult => {
     ...validateCustomGlobals(config),
   ];
 
-  if (errors.length === 0) {
+  if (!isNonEmpty(errors)) {
     return { valid: true, errors: [] as const };
   }
-  const first = errors[0] as ConfigValidationError;
-  const rest = errors.slice(1);
+  const [first, ...rest] = errors;
   return { valid: false, errors: [first, ...rest] as const };
 };

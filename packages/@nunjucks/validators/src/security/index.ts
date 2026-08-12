@@ -14,5 +14,6 @@ export { isDangerousReference, findDangerousValues } from './context-security.ts
 export { scanTemplateForDangerousCode } from './template-security.ts';
 export type { DangerousCodeViolation } from './template-security.ts';
 export { scrubDangerousReferences, visitAndScrub } from './scrubber.ts';
-export { containsNullByte, isWithinBase } from './path-policy.ts';
+export { containsNullByte, isWithinBase } from '@nunjucks/lib/path-policy';
 export { ExpressionSecurityError, DEFAULT_SECURITY_CONFIG, type ExpressionSecurityConfig, DANGEROUS_PROPERTIES, DANGEROUS_CALLEES } from './expression-policy.ts';
+export { DANGEROUS_KEY_PATTERN } from './dangerous-keys.ts';

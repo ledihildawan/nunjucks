@@ -6,7 +6,8 @@
     "./express": "./src/express.ts"
   },
   "dependencies": {
-    "@nunjucks/core": "workspace:*"
+    "@nunjucks/core": "workspace:*",
+    "@nunjucks/lib": "workspace:*"
   },
   "description": "Integration adapters for Nunjucks"
 }

@@ -3,7 +3,7 @@ import { compileRenderBlock } from './render.ts';
 import { renderNode, funCall, symbol } from '@nunjucks/nodes';
 import type { SlotBlock } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
-import { ZERO_LOC } from '@nunjucks/shared';
+import { ZERO_LOC } from '@nunjucks/lexer';
 import type { Compiler } from '../index.ts';
 
 const makeCompiler = () => {

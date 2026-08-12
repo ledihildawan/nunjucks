@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { createNunjucks } from './factory.ts';
-import { isOk } from '@nunjucks/shared';
+import { isOk } from '@nunjucks/lib';
 
 describe('createNunjucks', () => {
   test('creates engine with render method', () => {

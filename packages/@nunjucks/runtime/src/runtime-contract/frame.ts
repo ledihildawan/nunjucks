@@ -1,9 +1,15 @@
+export interface FrameSetOptions {
+  name: string;
+  value: unknown;
+  resolveUp?: boolean;
+}
+
 export interface Frame {
   readonly variables: Record<string, unknown>;
   readonly parent: Frame | undefined;
   topLevel: boolean;
   readonly isolateWrites: boolean | undefined;
-  set: (name: string, value: unknown, resolveUp?: boolean) => Frame;
+  set: (options: FrameSetOptions) => Frame;
   get: (name: string) => unknown;
   lookup: (name: string) => unknown;
   resolve: (name: string, forWrite?: boolean) => Frame | undefined;

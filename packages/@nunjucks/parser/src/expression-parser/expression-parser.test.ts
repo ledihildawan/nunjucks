@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import { createTokenizer } from '@nunjucks/lexer';
 import { getNodeTypeName } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { isErr } from '@nunjucks/shared';
+import { isErr } from '@nunjucks/lib';
 import { createParser } from '../index.ts';
 import { nextTokenOrNull } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';

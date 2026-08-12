@@ -5,7 +5,7 @@ import { appendTarget } from '../codegen.ts';
 
 export const compileTemplateData = (
   compiler: Compiler,
-  { node, frame: _frame }: CompileNodeInput<Node>
+  { node }: CompileNodeInput<Node>
 ): void => {
   compiler.emit(appendTarget(compiler));
   compiler.emit(JSON.stringify(node.value));

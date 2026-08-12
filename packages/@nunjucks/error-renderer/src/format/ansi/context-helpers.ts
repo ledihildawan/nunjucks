@@ -1,6 +1,7 @@
 import { pipe, keys, map } from 'remeda';
 import { normalizeRenderContext } from '../presentation/error/safe-context.ts';
 import { sanitizeForAnsi } from './sanitize-helpers.ts';
+import picocolors from 'picocolors';
 
 export { formatContextValue, renderContextAnsi };
 
@@ -31,5 +32,3 @@ const renderContextAnsi = (context: Record<string, unknown>, blockedKeys?: reado
   const entries = pipe(record, keys(), map(key => `${INDENT}${key} ${formatContextValue(record[key])}`));
   return header + entries.join('\n');
 };
-
-import picocolors from 'picocolors';

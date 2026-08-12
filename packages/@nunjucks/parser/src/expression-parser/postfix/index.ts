@@ -14,20 +14,20 @@ import { parseFunCall } from "./fun-call.ts";
 import { parseBracketAccess } from "./lookup.ts";
 import { parseDotAccess } from "./dot.ts";
 import { parseOptionalChain } from "./optional.ts";
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 type OperatorToken = Token & { type: typeof TOKEN_OPERATOR };
 
 const applyPostfixOperator = (parserContext: ParserContext, tok: OperatorToken, current: Node): Result<{ node: Node; stop: boolean }, TemplateError> => {
   if (tok.value === '.') {
-    const r = parseDotAccess(parserContext, tok, current);
-    if (isErr(r)) { return r; }
-    return ok({ node: r.value, stop: false });
+    const parseResult = parseDotAccess(parserContext, tok, current);
+    if (isErr(parseResult)) { return parseResult; }
+    return ok({ node: parseResult.value, stop: false });
   }
   if (tok.value === '?.') {
-    const r = parseOptionalChain(parserContext, tok, current);
-    if (isErr(r)) { return r; }
-    return ok({ node: r.value, stop: false });
+    const parseResult = parseOptionalChain(parserContext, tok, current);
+    if (isErr(parseResult)) { return parseResult; }
+    return ok({ node: parseResult.value, stop: false });
   }
   if (tok.value === '++') {
     const consumedR = nextToken(parserContext);
@@ -48,16 +48,16 @@ const applyPostfixStep = (parserContext: ParserContext, current: Node): Result<{
   const tok = tokR.value;
 
   if (tok.type === TOKEN_LEFT_PAREN) {
-    const r = parseFunCall(parserContext, tok, current);
-    if (isErr(r)) { return r; }
-    return ok({ node: r.value, stop: false });
+    const parseResult = parseFunCall(parserContext, tok, current);
+    if (isErr(parseResult)) { return parseResult; }
+    return ok({ node: parseResult.value, stop: false });
   }
   if (tok.type === TOKEN_LEFT_BRACKET) {
     const consumedR = nextToken(parserContext);
     if (isErr(consumedR)) { return consumedR; }
-    const r = parseBracketAccess(parserContext, tok, current);
-    if (isErr(r)) { return r; }
-    return ok({ node: r.value, stop: false });
+    const parseResult = parseBracketAccess(parserContext, tok, current);
+    if (isErr(parseResult)) { return parseResult; }
+    return ok({ node: parseResult.value, stop: false });
   }
   if (tok.type === TOKEN_OPERATOR) {
     return applyPostfixOperator(parserContext, tok, current);

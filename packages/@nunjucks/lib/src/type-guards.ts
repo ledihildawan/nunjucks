@@ -52,6 +52,12 @@ const readWith =
   ): T =>
     guard(value) ? value : fallback;
 
+const isTypedArray = (value: unknown): boolean =>
+  value instanceof Int8Array || value instanceof Uint8Array || value instanceof Uint8ClampedArray ||
+  value instanceof Int16Array || value instanceof Uint16Array || value instanceof Int32Array ||
+  value instanceof Uint32Array || value instanceof Float32Array || value instanceof Float64Array ||
+  value instanceof BigInt64Array || value instanceof BigUint64Array;
+
 export {
   hasOwn,
   isObject,
@@ -60,6 +66,7 @@ export {
   isIterable,
   isThenable,
   isArrayOf,
+  isTypedArray,
   readObject,
   readString,
   readNumber,

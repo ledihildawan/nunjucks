@@ -1,6 +1,7 @@
 import type { LineBase } from '@nunjucks/error-catalog';
 import { TEMPLATE_ERROR } from '@nunjucks/error-catalog';
-import type { Phase, UndefinedMode } from '@nunjucks/shared';
+import type { Phase } from '@nunjucks/shared';
+import type { UndefinedMode } from '@nunjucks/runtime';
 
 interface ErrorDefinitionEntry {
   name: string;
@@ -46,6 +47,7 @@ interface OutputOptions {
   jsCaller?: string;
   jsCallerErrorLine?: number;
   isJsCaller?: boolean;
+  humanTitle?: string;
 }
 
 interface TemplateError extends Error {

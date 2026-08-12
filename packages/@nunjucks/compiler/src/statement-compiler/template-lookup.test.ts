@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import { getTemplateLocation, compileGetTemplate } from './template-lookup.ts';
 import { extendsNode, include, importNode, fromImportNode, literal, symbol, nodeList } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
-import { ZERO_LOC } from '@nunjucks/shared';
+import { ZERO_LOC } from '@nunjucks/lexer';
 import type { Compiler } from '../index.ts';
 
 const makeCompiler = () => {
@@ -82,6 +82,6 @@ describe('compileGetTemplate', () => {
     const node = extendsNode(ZERO_LOC, { template: literal(ZERO_LOC, 'base.html') });
     compileGetTemplate(compiler as unknown as Compiler, node, frame, { eagerCompile: true, ignoreMissing: false });
     const out = compiler.emitted.join('');
-    expect(out).toContain(', true, "test.html", false);');
+    expect(out).toContain('env.getTemplate({ name: E, eagerCompile: true, ignoreMissing: false });');
   });
 });

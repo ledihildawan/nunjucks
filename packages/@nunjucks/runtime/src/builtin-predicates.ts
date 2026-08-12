@@ -1,12 +1,6 @@
 
-const isTypedArray = (value: unknown): boolean =>
-  value instanceof Int8Array || value instanceof Uint8Array || value instanceof Uint8ClampedArray ||
-  value instanceof Int16Array || value instanceof Uint16Array || value instanceof Int32Array ||
-  value instanceof Uint32Array || value instanceof Float32Array || value instanceof Float64Array ||
-  value instanceof BigInt64Array || value instanceof BigUint64Array;
-
 import { isSafeString } from './safe-string.ts';
-import { isKeyedObject } from '@nunjucks/lib';
+import { isKeyedObject, isTypedArray } from '@nunjucks/lib';
 
 type TestFn = (target: unknown, ...args: unknown[]) => boolean;
 

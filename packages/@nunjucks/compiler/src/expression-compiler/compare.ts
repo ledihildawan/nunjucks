@@ -37,14 +37,15 @@ export const compileIs = (compiler: Compiler, { node, frame }: CompileNodeInput<
   compiler.emit(`env.getTest(${JSON.stringify(String(right))}, ${lineno}, ${colno}).call(context, `);
   compiler.compile(node.left, frame);
   if (args) {
-    args.forEach((argument, i) => {
+    for (let i = 0; i < args.length; i++) {
+      const argument = args[i];
       if (i > 0) {
         compiler.emit(',');
       }
       if (argument) {
         compiler.compile(argument, frame);
       }
-    });
+    }
   }
   compiler.emit(') === true)');
 };

@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import { compileSlotFunction } from './slot.ts';
 import { symbol } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
-import { ZERO_LOC } from '@nunjucks/shared';
+import { ZERO_LOC } from '@nunjucks/lexer';
 import type { Compiler } from '../index.ts';
 
 const makeCompiler = () => {
@@ -65,8 +65,8 @@ describe('compileSlotFunction', () => {
     const out = compiler.emitted.join('');
     expect(out).toContain('l_title');
     expect(out).toContain('l_content');
-    expect(out).toContain('frame.set("title"');
-    expect(out).toContain('frame.set("content"');
+    expect(out).toContain('frame.set({ name: "title"');
+    expect(out).toContain('frame.set({ name: "content"');
   });
 
   test('compiles body content', () => {

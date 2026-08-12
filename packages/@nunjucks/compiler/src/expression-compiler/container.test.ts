@@ -6,8 +6,8 @@ import {
 import { symbol, keywordArgs, pair, spread, templateLiteral } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { ZERO_LOC } from '@nunjucks/shared';
-import { loc } from '@nunjucks/shared';
+import { ZERO_LOC } from '@nunjucks/lexer';
+import { loc } from '@nunjucks/lexer';
 
 const frame = createFrame();
 
@@ -50,7 +50,7 @@ describe('compileSymbol', () => {
   test('emits frame.lookup result when present', () => {
     const c = makeCompiler();
     let frameWith = createFrame();
-    frameWith = frameWith.set('x', 't_99');
+    frameWith = frameWith.set({ name: 'x', value: 't_99' });
     compileSymbol(asCompiler(c), { node: symbol(ZERO_LOC, 'x'), frame: frameWith });
     expect(c.emitted).toEqual(['t_99']);
   });

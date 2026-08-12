@@ -9,7 +9,7 @@ import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseExpression, parsePrimary } from "../expression-parser/index.ts";
 import { tryParsePattern } from "../node-parser/pattern.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 const parseWhenDefault = (parserContext: ParserContext): Result<Node, TemplateError> => {
   skipSymbol(parserContext, '_');

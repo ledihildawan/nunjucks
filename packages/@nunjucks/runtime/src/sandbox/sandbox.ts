@@ -1,4 +1,5 @@
-import { isCodeExecutionPattern, getBlockedKeyCategory, isNonNullish, isFunction, hasOwn } from '@nunjucks/shared';
+import { isCodeExecutionPattern, getBlockedKeyCategory } from '@nunjucks/validators/security';
+import { isNonNullish, isFunction, hasOwn } from '@nunjucks/lib';
 import { createLog } from '@nunjucks/error-formatter';
 import type { ErrorDefinitionEntry, TemplateError, TemplateWarning } from '@nunjucks/error-formatter';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
@@ -98,7 +99,12 @@ const createValidateGet = ({ sandboxEnabled, sandboxOptions, topLevel }: Validat
   };
 };
 
-const createValidateSet = (sandboxOptions: ResolvedSandboxOptions, topLevel: boolean) => {
+interface ValidateSetOptions {
+  sandboxOptions: ResolvedSandboxOptions;
+  topLevel: boolean;
+}
+
+const createValidateSet = ({ sandboxOptions, topLevel }: ValidateSetOptions) => {
   // WHY: the returned handler is the Proxy `set` trap; all throws below are structurally forced because a trap can only fail by throwing.
   const { allowlist, blocklistMode } = sandboxOptions;
 
@@ -125,7 +131,12 @@ const createValidateSet = (sandboxOptions: ResolvedSandboxOptions, topLevel: boo
   };
 };
 
-const createValidateHas = (sandboxOptions: ResolvedSandboxOptions, topLevel: boolean) => {
+interface ValidateHasOptions {
+  sandboxOptions: ResolvedSandboxOptions;
+  topLevel: boolean;
+}
+
+const createValidateHas = ({ sandboxOptions, topLevel }: ValidateHasOptions) => {
   const { allowlist, blocklistMode } = sandboxOptions;
 
   return (target: Record<string | symbol, unknown>, key: string | symbol): boolean => {
@@ -138,8 +149,8 @@ const createValidateHas = (sandboxOptions: ResolvedSandboxOptions, topLevel: boo
 
 const makeSandboxTraps = ({ sandboxEnabled, sandboxOptions, topLevel }: ValidateHandlerInput): ProxyHandler<Record<string | symbol, unknown>> => {
   const validateGet = createValidateGet({ sandboxEnabled, sandboxOptions, topLevel });
-  const validateSet = createValidateSet(sandboxOptions, topLevel);
-  const validateHas = createValidateHas(sandboxOptions, topLevel);
+  const validateSet = createValidateSet({ sandboxOptions, topLevel });
+  const validateHas = createValidateHas({ sandboxOptions, topLevel });
 
   return { get: validateGet, set: validateSet, has: validateHas };
 };

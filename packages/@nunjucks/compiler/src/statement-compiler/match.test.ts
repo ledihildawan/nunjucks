@@ -3,7 +3,7 @@ import { compileMatch, compileWhen } from './match.ts';
 import { symbol, literal, output, templateData, when, match } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { ZERO_LOC } from '@nunjucks/shared';
+import { ZERO_LOC } from '@nunjucks/lexer';
 
 const frame = createFrame();
 

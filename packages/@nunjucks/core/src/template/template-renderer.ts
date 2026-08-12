@@ -1,6 +1,6 @@
 import { createContext, createFrame, type BlockLocation, type Frame } from '@nunjucks/runtime';
 import { collectStream } from '@nunjucks/lib/collect-stream';
-import { injectWarningsScript } from '@nunjucks/error-formatter';
+import { injectWarningsScript } from '@nunjucks/error-renderer';
 import type { IncludeChain } from '@nunjucks/error-formatter';
 import type { Warning } from '@nunjucks/error-catalog';
 import { prettifyError } from '@nunjucks/error-formatter';
@@ -70,7 +70,7 @@ const createTemplateRenderer = (
         return result + injectWarningsScript(runtime.__warnings__ as Warning[], { dev: true, verbosity: 'medium' });
       }
       return result;
-    } catch (e) {
+    } catch (e: unknown) {
       throw wrapRenderError(state, e);
     } finally {
       renderingTemplates?.delete(state.path);

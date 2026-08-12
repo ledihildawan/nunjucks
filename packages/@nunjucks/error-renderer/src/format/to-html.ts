@@ -1,6 +1,6 @@
 import { buildErrorSections } from './to-html-assembly.ts';
-import scriptContent from './assets/error-script.js' with { type: 'text' };
-import cssContent from './assets/error-page.css' with { type: 'text' };
+import scriptContent from '../../public/error-script.js' with { type: 'text' };
+import cssContent from '../../public/error-page.css' with { type: 'text' };
 import type { Csp, ErrorLike, ToHtmlOptions } from './to-html-types.ts';
 
 const TOGGLE_SCRIPT = `<script>\n${scriptContent}\n</script>`;
@@ -54,6 +54,7 @@ const buildErrorDocument = (error: ErrorLike, options: ToHtmlOptions): string =>
     ide: options.ide,
     verbosity: options.verbosity,
     isJsCaller: options.isJsCaller,
+    humanTitle: options.humanTitle,
   });
 
   const docTitle = sections.severity === 'warning' ? 'Template Warning' : 'Template Error';

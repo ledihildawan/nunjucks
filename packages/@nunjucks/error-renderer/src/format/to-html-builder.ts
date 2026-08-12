@@ -4,8 +4,19 @@ import { renderContextHtml, formatStackTraceHtml } from './presentation/error/se
 import { resolveIdeLink, getIdeMeta } from './presentation/ide-links/ide-links.ts';
 import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
 import type { ErrorLike } from './to-html-types.ts';
-import { renderBadge, type classifyError } from './to-html-display.ts';
+import { renderBadge } from './to-html-display.ts';
 import { titleCase } from './string-case.ts';
+
+interface ClassifiedErrorInfo {
+  category: string;
+  undefinedName: string | null;
+  title: string;
+  causes: string[];
+  fixCode: string;
+  fixComment: string;
+  documentationUrl: string | null;
+  severity: 'error' | 'warning' | 'info';
+}
 
 const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined, _displayPath: string): string => {
   if (!sourceTrace || sourceTrace.lines.length === 0) { return ''; }
@@ -164,6 +175,7 @@ const buildErrorFooter = ({
   displayCol,
 }: ErrorFooterInput): string => {
   const timestampPart = timestamp ? ` · ${escapeHtml(timestamp)}` : '';
+  const versionPart = version ? ` Nunjucks ${escapeHtml(version)}` : '';
   const footerActions = verbosity === 'full' && canLinkLocation
     ? (() => {
       const ideMeta = getIdeMeta(ide);
@@ -180,7 +192,7 @@ const buildErrorFooter = ({
   return `
   <footer class="error-footer">
     <p class="meta">
-      Nunjucks ${version}${timestampPart}
+      ${versionPart}${timestampPart}
     </p>
     ${footerActions}
   </footer>`;
@@ -189,7 +201,7 @@ const buildErrorFooter = ({
 interface ErrorBodyContentInput {
   verbosity: string;
   error: ErrorLike;
-  classified: ReturnType<typeof classifyError>;
+  classified: ClassifiedErrorInfo;
   sourceTrace: SourceTrace | null | undefined;
   renderContext: Record<string, unknown> | undefined;
   ide: string;

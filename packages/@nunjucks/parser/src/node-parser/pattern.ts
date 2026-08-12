@@ -20,7 +20,7 @@ import { nextToken, peekToken, peekTokenOrNull, skip, fail } from "../cursor.ts"
 import type { ParserContext } from "../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseExpression } from "../expression-parser/index.ts";
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 const isDestructuringStart = (parserContext: ParserContext): boolean => {
   const tok = peekTokenOrNull(parserContext);

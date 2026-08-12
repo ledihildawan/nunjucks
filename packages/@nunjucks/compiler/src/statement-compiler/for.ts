@@ -28,7 +28,7 @@ const emitLoopBindings = ({ compiler, i, len }: { compiler: Compiler; i: string;
   ];
 
   forEach(bindings, (b) => {
-    compiler.emitLine(`frame = frame.set("loop.${b.name}", ${b.val});`);
+    compiler.emitLine(`frame = frame.set({ name: "loop.${b.name}", value: ${b.val} });`);
   });
 };
 
@@ -86,8 +86,8 @@ const compileFlatArrayBinding = ({ ctx: compiler, nameNode, frame, arr, i, len, 
       const tid = compiler.tmpid();
       compiler.emitLine(`let ${tid} = ${itemId}[${u}];`);
       const childValue = child.value as string;
-      compiler.emitLine(`frame = frame.set("${childValue}", ${tid});`);
-      frame.set(childValue, tid);
+      compiler.emitLine(`frame = frame.set({ name: "${childValue}", value: ${tid} });`);
+      frame.set({ name: childValue, value: tid });
     });
   }
   emitLoopBody({ compiler, node, frame, i, len });
@@ -104,16 +104,16 @@ const compileFlatObjectBinding = ({ ctx: compiler, nameNode, frame, arr, i, len,
   const valValue = value.value as string;
   const k = compiler.tmpid();
   const v = compiler.tmpid();
-  frame.set(keyValue, k);
-  frame.set(valValue, v);
+  frame.set({ name: keyValue, value: k });
+  frame.set({ name: valValue, value: v });
 
   compiler.emitLine(`${i} = -1;`);
   compiler.emitLine(`${len} = runtime.keys(${arr}).length;`);
   compiler.emitLine(`for(let ${k} in ${arr}) {`);
   compiler.emitLine(`${i}++;`);
   compiler.emitLine(`let ${v} = ${arr}[${k}];`);
-  compiler.emitLine(`frame = frame.set("${keyValue}", ${k});`);
-  compiler.emitLine(`frame = frame.set("${valValue}", ${v});`);
+  compiler.emitLine(`frame = frame.set({ name: "${keyValue}", value: ${k} });`);
+  compiler.emitLine(`frame = frame.set({ name: "${valValue}", value: ${v} });`);
 
   emitLoopBody({ compiler, node, frame, i, len });
   compiler.emitLine('}');
@@ -161,19 +161,26 @@ const compileArrayBindingCase = ({ ctx: compiler, nameNode, frame, arr, i, len, 
 const compileSimpleBinding = ({ ctx: compiler, nameNode, frame, arr, i, len, node }: LoopContext): void => {
   const v = compiler.tmpid();
   const nameValue = nameNode.value as string;
-  frame.set(nameValue, v);
+  frame.set({ name: nameValue, value: v });
 
   compiler.emitLine(`${len} = ${arr}.length;`);
   compiler.emitLine(`for(let ${i}=0; ${i} < ${arr}.length; ${i}++) {`);
   compiler.emitLine(`let ${v} = ${arr}[${i}];`);
-  compiler.emitLine(`frame = frame.set("${nameValue}", ${v});`);
+  compiler.emitLine(`frame = frame.set({ name: "${nameValue}", value: ${v} });`);
 
   emitLoopBody({ compiler, node, frame, i, len });
 
   compiler.emitLine('}');
 };
 
-const emitForElse = (compiler: Compiler, node: ForNode, len: string, frame: Frame): void => {
+interface EmitForElseOptions {
+  compiler: Compiler;
+  node: ForNode;
+  len: string;
+  frame: Frame;
+}
+
+const emitForElse = ({ compiler, node, len, frame }: EmitForElseOptions): void => {
   if (node.alternate) {
     compiler.emitLine(`if (!${len}) {`);
     compiler.compile(node.alternate, frame);
@@ -195,6 +202,6 @@ export const compileFor = (compiler: Compiler, { node, frame: parentFrame }: Com
   }
 
   compiler.emitLine('}');
-  emitForElse(compiler, node, len, frame);
+  emitForElse({ compiler, node, len, frame });
   compiler.emitLine('frame = frame.pop();');
 };

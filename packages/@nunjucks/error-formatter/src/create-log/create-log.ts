@@ -130,4 +130,4 @@ const createFromLegacyData = (type: LogType, legacyLogData: LegacyLogData): Temp
 };
 
 export { createLog, isTemplateError, prettifyError };
-export type { ErrorDefinitionEntry, ErrorInfo, WarningInfo, OutputOptions, TemplateError, TemplateWarning, ErrorContext, WarningContext, IncludeChain, CreateLogFields };
+export type { ErrorDefinitionEntry, ErrorInfo, WarningInfo, OutputOptions, TemplateError, TemplateWarning, ErrorContext, WarningContext, IncludeChain, CreateLogFields, LegacyLogData };

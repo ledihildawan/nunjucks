@@ -1,6 +1,6 @@
 import type { Node, CaptureNode, MatchNode, WhenNode, RenderNode, SlotBlock, CallExtensionNode } from '../types/index.ts';
-import type { Loc } from '@nunjucks/shared';
-import { ZERO_LOC } from '@nunjucks/shared';
+import type { Loc } from '@nunjucks/lexer';
+import { ZERO_LOC } from '@nunjucks/lexer';
 import { T, createNode } from './internal.ts';
 import { nodeList } from './atomic.ts';
 

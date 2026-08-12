@@ -32,7 +32,12 @@ export interface ParserContext {
   extensions: ParserExtension[];
 }
 
-export const nextTokenOrNull = (parserContext: ParserContext, withWhitespace?: boolean): Token | null => {
+interface NextTokenOptions {
+  withWhitespace?: boolean;
+}
+
+export const nextTokenOrNull = (parserContext: ParserContext, options?: NextTokenOptions): Token | null => {
+  const withWhitespace = options?.withWhitespace ?? false;
   let tok: Token | null;
 
   if (parserContext.peeked) {
@@ -60,8 +65,8 @@ export const nextTokenOrNull = (parserContext: ParserContext, withWhitespace?: b
 
 const EOF_LOCATION = { lineno: 0, colno: 0 } as const;
 
-export const nextToken = (parserContext: ParserContext, withWhitespace?: boolean): Result<Token, TemplateError> => {
-  const tok = nextTokenOrNull(parserContext, withWhitespace);
+export const nextToken = (parserContext: ParserContext, options?: NextTokenOptions): Result<Token, TemplateError> => {
+  const tok = nextTokenOrNull(parserContext, options);
   if (tok === null) {
     return fail(parserContext, 'unexpected end of input', { lineno: EOF_LOCATION.lineno, colno: EOF_LOCATION.colno });
   }

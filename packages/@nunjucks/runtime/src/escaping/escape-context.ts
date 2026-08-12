@@ -1,31 +1,6 @@
-import { escapeHtml } from './escape-html.ts';
+import { escapeHtml, escapeAttribute, escapeScriptString, escapeStyle } from '@nunjucks/lib/escape';
 
 type HtmlContext = 'html' | 'attribute' | 'script' | 'style' | 'comment';
-
-const escapeAttribute = (str: string): string => str
-  .replaceAll('&', '&amp;')
-  .replaceAll('<', '&lt;')
-  .replaceAll('>', '&gt;')
-  .replaceAll('"', '&quot;')
-  .replaceAll('\'', '&#39;')
-  .replaceAll('`', '&#96;');
-
-const escapeScriptString = (str: string): string => str
-  .replaceAll('\\', '\\\\')
-  .replaceAll('"', '\\"')
-  .replaceAll('\'', "\\'")
-  .replaceAll('\n', '\\n')
-  .replaceAll('\r', '\\r')
-  .replaceAll('\t', '\\t')
-  .replaceAll('<', '\\u003c')
-  .replaceAll('>', '\\u003e');
-
-const escapeStyle = (str: string): string => str
-  .replaceAll('&', '&amp;')
-  .replaceAll('<', '&lt;')
-  .replaceAll('>', '&gt;')
-  .replaceAll('"', '&quot;')
-  .replaceAll('\'', '&#39;');
 
 const escapeForContext = (str: string, context: HtmlContext): string => {
   switch (context) {
@@ -60,13 +35,13 @@ const lastMatch = (re: RegExp, text: string): RegExpExecArray | undefined => {
 };
 
 const lastMatchEnd = (re: RegExp, text: string): number => {
-  const m = lastMatch(re, text);
-  return m ? m.index + (m[0]?.length ?? 0) : -1;
+  const matchResult = lastMatch(re, text);
+  return matchResult ? matchResult.index + (matchResult[0]?.length ?? 0) : -1;
 };
 
 const lastMatchStart = (re: RegExp, text: string): number => {
-  const m = lastMatch(re, text);
-  return m ? m.index : -1;
+  const matchResult = lastMatch(re, text);
+  return matchResult ? matchResult.index : -1;
 };
 
 const scanScriptStyleContext = (before: string): ScriptStyleScan => {

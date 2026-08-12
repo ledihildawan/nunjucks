@@ -1,11 +1,11 @@
 import { createLog } from '@nunjucks/error-formatter';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { find } from 'remeda';
-import { MATCH_ANY_RE } from '@nunjucks/shared';
+import { MATCH_ANY_RE } from '@nunjucks/lib';
 import { err, isOk, type Result } from '@nunjucks/lib';
 import { peekToken } from "./cursor.ts";
 import type { ParserContext } from "./cursor.ts";
-import type { ErrorDefinitionEntry } from '@nunjucks/error-formatter';
+import type { ErrorDefinitionEntry, LegacyLogData } from '@nunjucks/error-formatter';
 
 const CAUSE_PATTERNS: Array<{ check: (lower: string) => boolean; causes: string[] }> = [
   { check: lower => lower.includes('expected') && lower.includes('expression'), causes: ['Missing expression where one is required', 'Check for empty `{{ }}` or `{% %}` blocks'] },
@@ -73,11 +73,19 @@ export const error = (parserContext: ParserContext, msg: string, options?: Error
 export const fail = (parserContext: ParserContext, msg: string, options?: ErrorOptions): Result<never, TemplateError> =>
   err(error(parserContext, msg, options));
 
-export const errorAt = (
-  lineno: number,
-  colno: number,
-  errorDef: ErrorDefinitionEntry,
-  subject?: string,
-  extra?: Record<string, string>
-): Result<never, TemplateError> =>
-  err(createLog('error', { def: errorDef, params: extra ?? {}, subject: subject ?? null, context: { lineno, colno, phase: 'parse', lineBase: 'zero' } }));
+interface ErrorAtOptions {
+  lineno: number;
+  colno: number;
+  errorDef: ErrorDefinitionEntry | LegacyLogData;
+  subject?: string;
+  extra?: Record<string, unknown>;
+}
+
+export const errorAt = ({
+  lineno,
+  colno,
+  errorDef,
+  subject,
+  extra,
+}: ErrorAtOptions): Result<never, TemplateError> =>
+  err(createLog('error', { def: errorDef, params: (extra ?? {}) as Record<string, string>, subject: subject ?? null, context: { lineno, colno, phase: 'parse', lineBase: 'zero' } }));

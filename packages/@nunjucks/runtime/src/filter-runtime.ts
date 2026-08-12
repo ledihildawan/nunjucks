@@ -1,4 +1,6 @@
 import { awaitValue } from './await-value.ts';
+import { isThenable } from '@nunjucks/lib';
+import { ok, err, type Result } from '@nunjucks/lib';
 
 interface FilterEnv {
   getFilter: (name: string, lineno: number, colno: number) => (...args: unknown[]) => unknown;
@@ -7,20 +9,51 @@ interface FilterEnv {
 const isFilterEnv = (env: unknown): env is FilterEnv =>
   env !== null && typeof env === 'object' && 'getFilter' in env && typeof env.getFilter === 'function';
 
-// WHY: single chokepoint for filter invocation from generated code — resolves the filter, calls it with the render context, and awaits the result. Filter errors (bad input, undefined filter) propagate as throws to the render() Result boundary. Consolidating the two compiler emit-sites here DRYs filter invocation and opens a path to Result-returning filters.
-const runFilter = async (
-  env: unknown,
-  name: string,
-  lineno: number,
-  colno: number,
-  context: unknown,
-  ...args: unknown[]
-): Promise<unknown> => {
+interface RunFilterOptions {
+  env: unknown;
+  name: string;
+  lineno: number;
+  colno: number;
+  context: unknown;
+  args: unknown[];
+}
+
+const isOkResult = (value: unknown): value is { ok: true; value: unknown } =>
+  typeof value === 'object' && value !== null && (value as { ok: unknown }).ok === true;
+
+const isErrResult = (value: unknown): value is { ok: false; error: unknown } =>
+  typeof value === 'object' && value !== null && (value as { ok: unknown }).ok === false;
+
+const runFilter = async (options: RunFilterOptions): Promise<Result<unknown, TypeError>> => {
+  const { env, name, lineno, colno, context, args } = options;
   if (!isFilterEnv(env)) {
-    throw new TypeError('runFilter requires an environment exposing getFilter(name, lineno, colno)');
+    return err(new TypeError('runFilter requires an environment exposing getFilter(name, lineno, colno)'));
   }
-  const filter = env.getFilter(name, lineno, colno);
-  return awaitValue(filter.call(context, ...args));
+  try {
+    const filter = env.getFilter(name, lineno, colno);
+    const value = filter.call(context, ...args);
+    const resolved = awaitValue(value);
+    if (isThenable(resolved)) {
+      const awaited = await resolved;
+      if (isErrResult(awaited)) {
+        return err(awaited.error as TypeError);
+      }
+      if (isOkResult(awaited)) {
+        return awaited;
+      }
+      return ok(awaited);
+    }
+    if (isErrResult(resolved)) {
+      return err(resolved.error as TypeError);
+    }
+    if (isOkResult(resolved)) {
+      return resolved;
+    }
+    return ok(resolved);
+  } catch (error: unknown) {
+    return err(error as TypeError);
+  }
 };
 
 export { runFilter };
+export type { RunFilterOptions };

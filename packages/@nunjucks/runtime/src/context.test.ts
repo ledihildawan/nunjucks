@@ -104,13 +104,13 @@ describe('Context', () => {
 
   test('getSuper throws when block not found', () => {
     const ctx = createContext({ env: mockEnv });
-    expect(() => ctx.getSuper(mockEnv, 'main', () => {}, null, null)).toThrow();
+    expect(() => ctx.getSuper({ envObj: mockEnv, name: 'main', block: () => {}, frame: null, runtime: null })).toThrow();
   });
 
   test('getSuper throws when no next block', () => {
     const fn = () => {};
     const ctx = createContext({ blocks: { main: fn }, env: mockEnv });
-    expect(() => ctx.getSuper(mockEnv, 'main', fn, null, null)).toThrow('No super block available');
+    expect(() => ctx.getSuper({ envObj: mockEnv, name: 'main', block: fn, frame: null, runtime: null })).toThrow('No super block available');
   });
 
   test('getSuper errors keep call location', () => {
@@ -118,7 +118,7 @@ describe('Context', () => {
     const ctx = createContext({ blocks: { main: fn }, env: mockEnv });
 
     try {
-      ctx.getSuper(mockEnv, 'main', fn, null, null, 3, 9);
+      ctx.getSuper({ envObj: mockEnv, name: 'main', block: fn, frame: null, runtime: null, lineno: 3, colno: 9 });
     } catch (e) {
       expect((e as { code: string }).code).toBe('NO_SUPER_BLOCK');
       expect((e as { lineno: number }).lineno).toBe(3);
@@ -135,7 +135,7 @@ describe('Context', () => {
     const parentBlock = async function* generate(): AsyncGenerator<string> { yield 'parent result'; };
     let ctx = createContext({ blocks: { main: childBlock }, env: mockEnv });
     ctx = ctx.addBlock('main', parentBlock);
-    const result = await ctx.getSuper(mockEnv, 'main', childBlock, null, null);
+    const result = await ctx.getSuper({ envObj: mockEnv, name: 'main', block: childBlock, frame: null, runtime: null });
     expect(result).toBe('parent result');
   });
 

@@ -3,7 +3,7 @@ import { compileFor } from './for.ts';
 import { forNode, symbol, arrayPattern, objectPattern, pair, literal } from '@nunjucks/nodes';
 import type { ForNode } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
-import { ZERO_LOC } from '@nunjucks/shared';
+import { ZERO_LOC } from '@nunjucks/lexer';
 import type { Compiler } from '../index.ts';
 
 const makeCompiler = () => {
@@ -39,7 +39,7 @@ describe('compileFor', () => {
     });
     const out = compile(node);
     expect(out).toContain('frame = frame.push(true)');
-    expect(out).toContain('frame = frame.set("item"');
+    expect(out).toContain('frame = frame.set({ name: "item"');
     expect(out).toContain('frame = frame.pop()');
   });
 

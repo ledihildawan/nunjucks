@@ -24,7 +24,7 @@ import type { ParserContext } from '../cursor.ts';
 import { errorAt } from '../error.ts';
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseOr } from './logical.ts';
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 const mapArrayPatternChild = (c: Node): Node => {
   if (isPair(c) && isSymbol(c.value) && typeof c.key !== 'string' && c.key.value === c.value.value) {
@@ -65,7 +65,7 @@ const handleWalrusAssignment = (node: Node, valueNode: Node, isExprCtx: boolean)
       ? walrus(loc(pattern), { target: pattern, val: valueNode })
       : variableDeclaration(loc(pattern), { targets: [pattern], val: valueNode }));
   }
-  return errorAt(node.lineno, node.colno, ERROR_DEFINITIONS.WALRUS_TARGET_INVALID);
+  return errorAt({ lineno: node.lineno, colno: node.colno, errorDef: ERROR_DEFINITIONS.WALRUS_TARGET_INVALID });
 };
 
 const handleCompoundAssignment = (parserContext: ParserContext, node: Node, operator: string): Result<Node, TemplateError> => {
@@ -74,7 +74,7 @@ const handleCompoundAssignment = (parserContext: ParserContext, node: Node, oper
   if (isSymbol(node)) {
     return ok(compoundAssignment(loc(node), { targets: [node], operator, value: valueNodeR.value }));
   }
-  return errorAt(node.lineno, node.colno, ERROR_DEFINITIONS.ASSIGNMENT_TARGET_INVALID);
+  return errorAt({ lineno: node.lineno, colno: node.colno, errorDef: ERROR_DEFINITIONS.ASSIGNMENT_TARGET_INVALID });
 };
 
 const isCompoundAssignmentOp = (tok: Token): boolean =>

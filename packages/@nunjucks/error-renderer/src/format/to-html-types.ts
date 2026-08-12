@@ -50,6 +50,8 @@ interface ToHtmlOptions {
   verbosity?: 'simple' | 'medium' | 'full';
   isJsCaller?: boolean;
   isProduction?: boolean;
+  humanTitle?: string;
+  projectRoot?: string;
 }
 
 export type { Csp, HumanTitleInput, ClassifiedError, LocationInfo, ToHtmlOptions };

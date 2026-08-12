@@ -28,7 +28,7 @@ import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseSignature } from '../node-parser/signature.ts';
 import type { BinNodeFn } from './binary-helpers.ts';
 import { parseConcat } from './arithmetic.ts';
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 const COMPARE_OPS = ['==', '===', '!=', '!==', '<', '>', '<=', '>='];
 
@@ -82,7 +82,7 @@ const parseTestArgs = (parserContext: ParserContext): Result<readonly Node[], Te
   if (peekR.value.type !== TOKEN_LEFT_PAREN) {
     return ok([]);
   }
-  const sigR = parseSignature(parserContext);
+  const sigR = parseSignature({ parserContext });
   if (isErr(sigR)) { return sigR; }
   const sig = sigR.value;
   if (sig && 'children' in sig) {
@@ -162,16 +162,30 @@ const isInToken = (tok: Token): boolean =>
 const isNotInversion = (tok: Token): boolean =>
   tok?.type === TOKEN_SYMBOL && tok?.value === 'not';
 
-const handleInExpression = (parserContext: ParserContext, node: Node, invert: boolean, inTok: Token): Result<Node, TemplateError> => {
+interface HandleInExpressionOptions {
+  parserContext: ParserContext;
+  node: Node;
+  invert: boolean;
+  inTok: Token;
+}
+
+const handleInExpression = ({ parserContext, node, invert, inTok }: HandleInExpressionOptions): Result<Node, TemplateError> => {
   const rightOperandR = parseIs(parserContext);
   if (isErr(rightOperandR)) { return rightOperandR; }
   const newNode = inNode(loc(inTok), { left: node, right: rightOperandR.value });
   return ok(invert ? not(loc(inTok), newNode) : newNode);
 };
 
-const processInToken = (parserContext: ParserContext, node: Node, invert: boolean, inTok: Token): Result<Node | null, TemplateError> => {
+interface ProcessInTokenOptions {
+  parserContext: ParserContext;
+  node: Node;
+  invert: boolean;
+  inTok: Token;
+}
+
+const processInToken = ({ parserContext, node, invert, inTok }: ProcessInTokenOptions): Result<Node | null, TemplateError> => {
   if (isInToken(inTok)) {
-    const handledR = handleInExpression(parserContext, node, invert, inTok);
+    const handledR = handleInExpression({ parserContext, node, invert, inTok });
     if (isErr(handledR)) { return handledR; }
     return parseInLoop(parserContext, handledR.value);
   }
@@ -198,7 +212,7 @@ const parseInLoop = (parserContext: ParserContext, node: Node): Result<Node, Tem
   } else {
     inTok = tok;
   }
-  const resultR = processInToken(parserContext, node, invert, inTok);
+  const resultR = processInToken({ parserContext, node, invert, inTok });
   if (isErr(resultR)) { return resultR; }
   return ok(resultR.value ?? node);
 };

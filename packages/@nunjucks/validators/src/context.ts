@@ -27,12 +27,13 @@ const validateRenderContext = (context: unknown, config: ContextValidatorConfig)
     return { valid: true, errors: [] as const };
   }
 
+  const [first] = dangerous;
   return {
     valid: false,
     errors: [{
       code: 'DANGEROUS_CONTEXT_VALUES',
       message: `Context contains unsafe values: ${dangerous.join(', ')}`,
-      subject: dangerous[0],
+      subject: first,
       dangerousPaths: dangerous
     }]
   };

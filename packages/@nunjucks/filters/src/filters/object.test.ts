@@ -1,4 +1,5 @@
 import { describe, test, expect } from 'bun:test';
+import { isOk, isErr, getOrElse } from '@nunjucks/lib';
 import { groupby } from './object.ts';
 
 describe('filters/object', () => {
@@ -9,7 +10,9 @@ describe('filters/object', () => {
         { type: 'veg', name: 'carrot' },
         { type: 'fruit', name: 'banana' },
       ];
-      const grouped = groupby(items, 'type') as Record<string, Array<{ type: string; name: string }>>;
+      const result = groupby(items, 'type');
+      expect(isOk(result)).toBe(true);
+      const grouped = getOrElse(result, null) as Record<string, Array<{ type: string; name: string }>>;
       expect(grouped.fruit).toEqual([
         { type: 'fruit', name: 'apple' },
         { type: 'fruit', name: 'banana' },
@@ -22,7 +25,9 @@ describe('filters/object', () => {
         { k: 'a', v: 1 },
         { k: 'a', v: 2 },
       ];
-      const grouped = groupby(items, 'k') as Record<string, Array<{ k: string; v: number }>>;
+      const result = groupby(items, 'k');
+      expect(isOk(result)).toBe(true);
+      const grouped = getOrElse(result, null) as Record<string, Array<{ k: string; v: number }>>;
       expect(Object.keys(grouped)).toEqual(['a']);
       expect(grouped.a).toHaveLength(2);
     });
@@ -33,7 +38,9 @@ describe('filters/object', () => {
         { id: 2, name: 'two' },
         { id: 1, name: 'uno' },
       ];
-      const grouped = groupby(items, 'id') as Record<string, Array<{ id: number; name: string }>>;
+      const result = groupby(items, 'id');
+      expect(isOk(result)).toBe(true);
+      const grouped = getOrElse(result, null) as Record<string, Array<{ id: number; name: string }>>;
       expect(grouped['1']).toEqual([
         { id: 1, name: 'one' },
         { id: 1, name: 'uno' },
@@ -41,18 +48,22 @@ describe('filters/object', () => {
       expect(grouped['2']).toEqual([{ id: 2, name: 'two' }]);
     });
 
-    test('throws when input is not an array', () => {
-      expect(() => groupby('nope', 'k')).toThrow();
-      expect(() => groupby({ a: 1 }, 'k')).toThrow();
-      expect(() => groupby(null, 'k')).toThrow();
+    test('returns error when input is not an array', () => {
+      const result1 = groupby('nope', 'k');
+      expect(isErr(result1)).toBe(true);
+      const result2 = groupby({ a: 1 }, 'k');
+      expect(isErr(result2)).toBe(true);
+      const result3 = groupby(null, 'k');
+      expect(isErr(result3)).toBe(true);
     });
 
-    test('throws when an item is missing the named attribute', () => {
+    test('returns error when an item is missing the named attribute', () => {
       const items = [
         { type: 'a' },
         { other: 'b' },
       ];
-      expect(() => groupby(items, 'type')).toThrow(/type/);
+      const result = groupby(items, 'type');
+      expect(isErr(result)).toBe(true);
     });
   });
 });

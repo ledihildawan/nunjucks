@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { toWebReadableStream, withStreamTimeout, withStreamDeadline, coalesceStream, coerceChunk, isStreamTimeoutError } from './render-stream-adapters.ts';
+import { isOk, isErr } from '@nunjucks/lib';
 
 const fromChunks = (chunks: readonly string[], delayMs = 0): AsyncGenerator<string> =>
   (async function* generate() {
@@ -120,8 +121,11 @@ describe('coalesceStream', () => {
 
 describe('coerceChunk', () => {
   test('passes a primitive string through untouched', () => {
-    expect(coerceChunk('hello')).toBe('hello');
-    expect(typeof coerceChunk('hello')).toBe('string');
+    const result = coerceChunk('hello');
+    expect(isOk(result)).toBe(true);
+    if (!isOk(result)) { return; }
+    expect(result.value).toBe('hello');
+    expect(typeof result.value).toBe('string');
   });
 
   test('coerces a boxed String (SafeString-shaped) to a primitive string', () => {
@@ -130,17 +134,25 @@ describe('coerceChunk', () => {
     const boxed = new String('abc');
     expect(typeof boxed).toBe('object');
     const result = coerceChunk(boxed);
-    expect(typeof result).toBe('string');
-    expect(result).toBe('abc');
+    expect(isOk(result)).toBe(true);
+    if (!isOk(result)) { return; }
+    expect(typeof result.value).toBe('string');
+    expect(result.value).toBe('abc');
   });
 
   test('coerces a number to a string', () => {
-    expect(coerceChunk(42)).toBe('42');
+    const result = coerceChunk(42);
+    expect(isOk(result)).toBe(true);
+    if (!isOk(result)) { return; }
+    expect(result.value).toBe('42');
   });
 
-  test('throws on a Promise leak (fail-loud safety net for missing await at an emit site)', () => {
-    // WHY: without this guard a leaked Promise would silently stringify to "[object Promise]". Throwing surfaces
+  test('returns err on a Promise leak (fail-loud safety net for missing await at an emit site)', () => {
+    // WHY: without this guard a leaked Promise would silently stringify to "[object Promise]". Returning err surfaces
     // the bug as a mid-stream error instead of corrupting the response.
-    expect(() => coerceChunk(Promise.resolve('x'))).toThrow('Promise leaked');
+    const result = coerceChunk(Promise.resolve('x'));
+    expect(isErr(result)).toBe(true);
+    if (!isErr(result)) { return; }
+    expect(result.error.message).toContain('Promise leaked');
   });
 });

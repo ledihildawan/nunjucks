@@ -7,7 +7,7 @@ import { createLog } from '@nunjucks/error-formatter';
 import { getError } from '@nunjucks/error-catalog';
 import { ok, err, type Result } from '@nunjucks/lib';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { containsNullByte, isWithinBase } from '@nunjucks/validators/security';
+import { containsNullByte, isWithinBase } from '@nunjucks/lib/path-policy';
 
 const normalizeSearchPaths = (searchPaths: string | string[] | undefined): string[] => {
   if (!searchPaths) {
@@ -44,9 +44,13 @@ const basePathNotFoundError = (basePath: string, baseErr: unknown): Result<never
   return err(makeFilesystemError(basePath, message));
 };
 
-const resolveRealPaths = async (basePath: string, fullPath: string): Promise<{ realBase: string; realFull: string }> => {
-  const [realBase, realFull] = await Promise.all([realpath(basePath), realpath(fullPath)]);
-  return { realBase, realFull };
+const resolveRealPaths = async (basePath: string, fullPath: string): Promise<Result<{ realBase: string; realFull: string }, TemplateError>> => {
+  try {
+    const [realBase, realFull] = await Promise.all([realpath(basePath), realpath(fullPath)]);
+    return ok({ realBase, realFull });
+  } catch (e: unknown) {
+    return err(makeFilesystemError(fullPath, `realpath failed: ${String(e)}`));
+  }
 };
 
 const existsAndWithinBase = async (basePath: string, fullPath: string): Promise<Result<boolean, TemplateError>> => {
@@ -58,7 +62,7 @@ const existsAndWithinBase = async (basePath: string, fullPath: string): Promise<
       try {
         await stat(basePath);
         return ok(false);
-      } catch (baseErr) {
+      } catch (baseErr: unknown) {
         return basePathNotFoundError(basePath, baseErr);
       }
     }
@@ -69,12 +73,11 @@ const existsAndWithinBase = async (basePath: string, fullPath: string): Promise<
     return directoryError(fullPath);
   }
 
-  try {
-    const { realBase, realFull } = await resolveRealPaths(basePath, fullPath);
-    return ok(isWithinBase(realBase, realFull));
-  } catch {
-    return ok(false);
+  const realPathResult = await resolveRealPaths(basePath, fullPath);
+  if (!realPathResult.ok) {
+    return err(realPathResult.error);
   }
+  return ok(isWithinBase(realPathResult.value.realBase, realPathResult.value.realFull));
 };
 
 const findFileInSearchPaths = async (searchPaths: readonly string[], name: string): Promise<Result<string, TemplateError> | null> => {
@@ -82,18 +85,23 @@ const findFileInSearchPaths = async (searchPaths: readonly string[], name: strin
   if (first === undefined) { return null; }
   const { basePath, fullPath } = resolveFromSearchPath(name)(first);
   const result = await existsAndWithinBase(basePath, fullPath);
-  if (!result.ok) { return result; }
-  return result.value ? ok(fullPath) : findFileInSearchPaths(rest, name);
+  if (result.ok && !result.value) {
+    return findFileInSearchPaths(rest, name);
+  }
+  if (!result.ok) {
+    return err(result.error);
+  }
+  return ok(fullPath);
 };
 
-const readFileSource = async (fullPath: string): Promise<Result<FileSystemLoaderSource, TemplateError>> => {
+const readFileSource = async (fullPath: string): Promise<Result<{ path: string; src: string } | null, TemplateError>> => {
   try {
     return ok({
       src: await readFile(fullPath, 'utf-8'),
       path: fullPath
     });
   } catch (e: unknown) {
-    if (isFileNotFoundError(e)) { return ok({ src: '', path: fullPath }); }
+    if (isFileNotFoundError(e)) { return ok(null); }
     return err(makeFilesystemError(fullPath, String(e)));
   }
 };
@@ -154,7 +162,15 @@ export const createFileSystemLoader = (searchPaths: string | string[] | undefine
   const watchFile = (filePath: string): void => {
     if (watchedFiles.has(filePath)) { return; }
 
-    const watcher = watch(filePath, createWatchHandler({ filePath, emit: base.emit, onRename: unwatchFile }));
+    let watcher: FSWatcher;
+    try {
+      watcher = watch(filePath, createWatchHandler({ filePath, emit: base.emit, onRename: unwatchFile }));
+    } catch (err: unknown) {
+      base.emit('error', err);
+      return;
+    }
+
+    watcher.on('error', (err) => base.emit('error', err));
     watchedFiles.set(filePath, watcher);
   };
 
@@ -176,10 +192,9 @@ export const createFileSystemLoader = (searchPaths: string | string[] | undefine
 
     const sourceResult = await readFileSource(fullPath);
     if (!sourceResult.ok) { return err(sourceResult.error); }
+    if (sourceResult.value === null) { return null; }
 
-    const source = sourceResult.value;
-    if (source.src === '') { return null; }
-
+    const source: FileSystemLoaderSource = { ...sourceResult.value };
     base.emit('load', name, source);
     return ok(source);
   };

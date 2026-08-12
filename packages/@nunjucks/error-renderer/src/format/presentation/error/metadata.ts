@@ -31,6 +31,7 @@ export interface FormatterStateInput {
     isJsCaller?: boolean;
     isProduction?: boolean;
     renderContext?: Record<string, unknown>;
+    humanTitle?: string;
   };
 }
 
@@ -52,6 +53,7 @@ export interface FormatterState {
   jsCallerErrorLine?: number;
   isJsCaller?: boolean;
   isProduction?: boolean;
+  humanTitle?: string;
 }
 
 export const createFormatterState = ({ metadata, options = {} }: FormatterStateInput): FormatterState => ({
@@ -71,5 +73,6 @@ export const createFormatterState = ({ metadata, options = {} }: FormatterStateI
   jsCaller: options.jsCaller,
   jsCallerErrorLine: options.jsCallerErrorLine,
   isJsCaller: options.isJsCaller,
-  isProduction: options.isProduction
+  isProduction: options.isProduction,
+  humanTitle: options.humanTitle
 });

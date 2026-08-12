@@ -3,7 +3,7 @@ import { mkdtemp, writeFile, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createFileSystemLoader } from './file-system.ts';
-import { isOk } from '@nunjucks/shared';
+import { isOk } from '@nunjucks/lib';
 
 const tempDirs: string[] = [];
 

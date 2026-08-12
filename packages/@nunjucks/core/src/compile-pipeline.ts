@@ -17,7 +17,7 @@ interface CompileToCodeOptions {
 
 const compileToCode = ({ source, templateName, undefinedMode, parseOpts, streamErrorRecovery, extensions }: CompileToCodeOptions): Result<string, Error> => {
   try {
-    const compiler = createCompiler(templateName, undefinedMode, source, streamErrorRecovery ?? false);
+    const compiler = createCompiler({ templateName, undefinedMode, source, streamErrorRecovery: streamErrorRecovery ?? false });
     const astR = parse(source, extensions ? [...extensions] : undefined, parseOpts);
     if (isErr(astR)) {
       return err(astR.error instanceof Error ? astR.error : new Error(String(astR.error)));
@@ -25,7 +25,7 @@ const compileToCode = ({ source, templateName, undefinedMode, parseOpts, streamE
     const transformedAst = transform(astR.value);
     compiler.compile(transformedAst, createFrame());
     return ok(compiler.getCode());
-  } catch (error) {
+  } catch (error: unknown) {
     return err(error instanceof Error ? error : new Error(String(error)));
   }
 };

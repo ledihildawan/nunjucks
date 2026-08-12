@@ -81,7 +81,7 @@ describe('resolveIdeLink', () => {
 describe('getIdeMeta', () => {
   test('returns the VS Code label and brand color for the vscode ide', () => {
     const meta = getIdeMeta('vscode');
-    expect(meta.label).toBe('VS Code');
+    expect(meta.label).toBe('VSCode');
     expect(meta.color).toBe('#007ACC');
   });
 

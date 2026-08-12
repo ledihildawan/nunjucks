@@ -12,7 +12,7 @@ export { mergeErrorParts } from './error/error-parts.ts';
 export { renderInlineMarkdown, highlightHtml, highlightJs } from './syntax-highlight/highlight.ts';
 export type { DisplayLocation } from './source-trace/location.ts';
 export { formatLocationAnnotation, toDisplayLocation } from './source-trace/location.ts';
-export { DEFAULT_IDE, DEFAULT_VERSION } from './ide-links/defaults.ts';
+export { DEFAULT_IDE } from './ide-links/defaults.ts';
 export { calculateCaretPosition } from './syntax-highlight/caret.ts';
 export type { CaretResult } from './syntax-highlight/caret.ts';
 export { normalizeDrivePath, shortenPath } from './source-trace/path-shortener.ts';

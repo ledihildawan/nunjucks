@@ -9,16 +9,16 @@ import {
   component, execNode, scopeNode, match, when, renderNode,
 } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { ZERO_LOC } from '@nunjucks/shared';
+import { ZERO_LOC } from '@nunjucks/lexer';
 
 const compileNode = (node: Node): string => {
-  const c = createCompiler('test', 'chainable', '');
+  const c = createCompiler({ templateName: 'test', undefinedMode: 'chainable', source: '' });
   c.compile(node, createFrame());
   return c.getCode();
 };
 
 const compileRoot = (children: Node[]): string => {
-  const c = createCompiler('test', 'chainable', '');
+  const c = createCompiler({ templateName: 'test', undefinedMode: 'chainable', source: '' });
   c.compile(root(ZERO_LOC, children), createFrame());
   return c.getCode();
 };

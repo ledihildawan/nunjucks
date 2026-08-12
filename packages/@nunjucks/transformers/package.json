@@ -8,6 +8,7 @@
     "./super": "./src/super.ts"
   },
   "dependencies": {
+    "@nunjucks/lexer": "workspace:*",
     "@nunjucks/lib": "workspace:*",
     "@nunjucks/nodes": "workspace:*"
   },

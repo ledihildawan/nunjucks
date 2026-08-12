@@ -1,4 +1,4 @@
-import { isThenable } from '@nunjucks/shared';
+import { isThenable } from '@nunjucks/lib';
 
 export const awaitValue = <T>(value: T | Promise<T>): Promise<T> | T => {
   if (isThenable(value)) {

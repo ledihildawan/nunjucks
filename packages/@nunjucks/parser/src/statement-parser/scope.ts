@@ -8,7 +8,7 @@ import type { Token } from '@nunjucks/lexer';
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
 import { parseUntilBlocks } from "../parse-root.ts";
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 const isBlockEnd = (tok: Token | null | undefined): boolean => tok?.type === TOKEN_BLOCK_END;
 

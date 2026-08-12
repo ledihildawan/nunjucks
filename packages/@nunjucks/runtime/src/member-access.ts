@@ -1,4 +1,4 @@
-import { isNonNullish, isFunction, hasOwn } from '@nunjucks/shared';
+import { isNonNullish, isFunction, hasOwn, normalizeIndex, collectForward, collectBackward } from '@nunjucks/lib';
 import { createLog } from '@nunjucks/error-formatter';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 
@@ -68,24 +68,15 @@ export const optionalMemberLookup = (target: unknown, value: string, parentName:
   return result;
 };
 
-interface NormalizeIndexInput {
-  idx: number | null;
-  len: number;
-  defaultVal: number;
-  step: number;
+interface SliceOptions<T> {
+  source: readonly T[] | string;
+  start: number | null;
+  stop: number | null;
+  step: number | null;
 }
 
-const normalizeIndex = ({ idx, len, defaultVal, step }: NormalizeIndexInput): number => {
-  if (!isNonNullish(idx)) {
-    if (step < 0) {
-      return defaultVal === 0 ? len - 1 : -1;
-    }
-    return defaultVal;
-  }
-  return Math.max(0, Math.min(len, idx < 0 ? len + idx : idx));
-};
-
-export const slice = <T>(source: readonly T[] | string, start: number | null, stop: number | null, step: number | null): readonly T[] | string => {
+export const slice = <T>(options: SliceOptions<T>): readonly T[] | string => {
+  const { source, start, stop, step } = options;
   if (step === 0) {
     throw createLog('error', { def: ERROR_DEFINITIONS.SLICE_STEP, params: {}, subject: 'step', context: { phase: 'render', lineBase: 'zero' } });
   }
@@ -100,18 +91,10 @@ export const slice = <T>(source: readonly T[] | string, start: number | null, st
   }
 
   if (stepValue > 0) {
-    const collectForward = (i: number, acc: T[]): readonly T[] => {
-      if (i >= normalizedStop) { return acc; }
-      return collectForward(i + stepValue, [...acc, source[i] as T]);
-    };
-    return collectForward(normalizedStart, []);
+    return collectForward({ source, start: normalizedStart, stop: normalizedStop, step: stepValue });
   }
 
-  const collectBackward = (i: number, acc: T[]): readonly T[] => {
-    if (i < 0 || i <= normalizedStop) { return acc; }
-    return collectBackward(i + stepValue, [...acc, source[i] as T]);
-  };
-  return collectBackward(normalizedStart, []);
+  return collectBackward({ source, start: normalizedStart, stop: normalizedStop, step: stepValue });
 };
 
 export { nullishCoalesce } from '@nunjucks/lib/nullish-coalesce';

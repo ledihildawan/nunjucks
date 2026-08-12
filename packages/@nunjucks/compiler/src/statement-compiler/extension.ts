@@ -46,13 +46,14 @@ const emitExtensionArgs = (
   if (!args.children) { return; }
   const children = args.children;
   const lastIndex = children.length - 1;
-  children.forEach((argument, i) => {
-    if (!argument) { return; }
+  for (let i = 0; i < children.length; i++) {
+    const argument = children[i];
+    if (!argument) { continue; }
     compiler.compileExpression(argument, frame);
     if (i !== lastIndex || contentArgs.length > 0) {
       compiler.emit(',');
     }
-  });
+  }
 };
 
 const emitContentArg = (compiler: Compiler, argument: Node | null, frame: Frame): void => {
@@ -73,14 +74,15 @@ const emitContentArgs = (
   contentArgs: readonly Node[],
   frame: Frame
 ): void => {
-  contentArgs.forEach((argument, i) => {
+  for (let i = 0; i < contentArgs.length; i++) {
+    const argument = contentArgs[i];
     if (i > 0) {
       compiler.emit(',');
     }
     if (argument) {
       emitContentArg(compiler, argument, frame);
     }
-  });
+  }
 };
 
 const emitExtensionCallEnd = (

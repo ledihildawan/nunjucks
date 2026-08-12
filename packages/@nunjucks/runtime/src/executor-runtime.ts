@@ -1,6 +1,7 @@
 import { createLog } from '@nunjucks/error-formatter';
 import { getError } from '@nunjucks/error-catalog';
-import { extractBlocks, isCompiledTemplateExports, BLOCK_META_KEY, type Environment, type CompiledRenderSignature } from '@nunjucks/shared';
+import { extractBlocks, isCompiledTemplateExports, BLOCK_META_KEY, type CompiledRenderSignature } from '@nunjucks/shared';
+import type { Environment } from '@nunjucks/validators/security';
 import { loadCompiledCode } from './code-loader.ts';
 import { wrapMemberAccess } from './sandbox/index.ts';
 import { isNullAccessResult, isPropertyNotFoundResult } from './member-access.ts';

@@ -6,7 +6,7 @@ import type { ParserContext } from '../cursor.ts';
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseOr, parseTernary } from './logical.ts';
 import { parseWalrus } from './assignment.ts';
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 const parseTernaryExpression = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const nodeR = parseOr(parserContext);

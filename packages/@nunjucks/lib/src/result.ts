@@ -35,7 +35,7 @@ const getOrElse = <T, E>(result: Result<T, E>, fallback: T): T =>
 const fromThrowable = <T>(thunk: () => T): Result<T, unknown> => {
   try {
     return ok(thunk());
-  } catch (error) {
+  } catch (error: unknown) {
     return err(error);
   }
 };

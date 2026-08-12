@@ -1,30 +1,57 @@
+import type { NextFunction, Response } from 'express';
 import { nunjucks, type NunjucksConfig } from '@nunjucks/core';
-import { isErr } from '@nunjucks/shared';
+import { ok, err, isErr, type Result } from '@nunjucks/lib';
 
 interface RenderTemplateOptions {
   context?: Record<string, unknown>;
   config?: NunjucksConfig;
 }
 
-// WHY: simplified sample helper — builds a fresh factory PER CALL because each demo route passes a different
-// config (security/limits/etc.). This is fine for a low-traffic demo, but do NOT copy this pattern for
-// production per-request rendering: rebuilding the factory also rebuilds the filter/global merge and the loader
-// cache every request. For production, create ONE nunjucks(config) engine at module load (see
-// @nunjucks/integrations/express createEngine, or samples/express/main.ts streamNjk/blockingNjk) and reuse it.
 const renderTemplate = async (
   template: string,
   { context = {}, config = {} }: RenderTemplateOptions = {},
-): Promise<string> => {
+): Promise<Result<string, Error>> => {
   const result = await nunjucks(config).render(template, context);
-  // WHY: this sample integrates with Express, whose error-middleware pattern routes failures
-  // via next(err). We intentionally unwrap the Result here so render errors surface as thrown
-  // exceptions that Express's error middleware can intercept and render.
   if (isErr(result)) {
-    throw result.error;
+    return err(result.error);
   }
-  return result.value;
+  return ok(result.value);
 };
 
-export { renderTemplate };
-export type { RenderTemplateOptions };
+// WHY: Express Shell sends the HTML value or hands the error to the error middleware — never serializes the Result wrapper.
+const sendTemplateResult = (
+  res: Response,
+  next: NextFunction,
+  result: Result<string, Error>,
+): void => {
+  if (result.ok) {
+    res.type('html').send(result.value);
+    return;
+  }
+  next(result.error);
+};
 
+interface RenderDemoTemplateOptions {
+  context?: Record<string, unknown>;
+  config?: NunjucksConfig;
+}
+
+// WHY: demo default config shared by the sandbox and undefined-variable route groups — autoescape on, dev on,
+// vscode IDE hints; explicit config overrides merge on top so callers can flip undefined/security modes.
+const renderDemoTemplate = async (
+  template: string,
+  { context = {}, config = {} }: RenderDemoTemplateOptions = {},
+): Promise<Result<string, Error>> => {
+  return renderTemplate(template, {
+    context,
+    config: {
+      autoescape: true,
+      dev: true,
+      ide: 'vscode',
+      ...config,
+    },
+  });
+};
+
+export { renderTemplate, sendTemplateResult, renderDemoTemplate };
+export type { RenderTemplateOptions, RenderDemoTemplateOptions };

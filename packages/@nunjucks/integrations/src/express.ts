@@ -1,9 +1,7 @@
 import path from 'node:path';
 import { nunjucks } from '@nunjucks/core';
 import type { NunjucksConfig } from '@nunjucks/core';
-import { isOk } from '@nunjucks/shared';
-
-type ExpressEngineConfig = NunjucksConfig;
+import { isOk } from '@nunjucks/lib';
 
 type ExpressEngineFunction = (
   filePath: string,
@@ -14,7 +12,7 @@ type ExpressEngineFunction = (
 // WHY: createEngine closes over a nunjucks() factory instance built once at registration time (loader, filters,
 // globals merged once). The returned Express view-engine function delegates each request to engine.render with
 // two Express-specific per-call overrides — views (the file's directory) and templatePath (the full file path).
-const createEngine = (config: ExpressEngineConfig = {}): ExpressEngineFunction => {
+const createEngine = (config: NunjucksConfig = {}): ExpressEngineFunction => {
   const engine = nunjucks(config);
   return function nunjucksExpressEngine(
     filePath: string,
@@ -34,4 +32,5 @@ const createEngine = (config: ExpressEngineConfig = {}): ExpressEngineFunction =
 };
 
 export { createEngine };
-export type { ExpressEngineConfig, ExpressEngineFunction };
+export type { ExpressEngineFunction };
+export type { NunjucksConfig as ExpressEngineConfig };

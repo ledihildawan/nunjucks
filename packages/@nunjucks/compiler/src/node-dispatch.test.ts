@@ -6,10 +6,10 @@ import {
 } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import type { Node } from '@nunjucks/nodes';
-import { ZERO_LOC } from '@nunjucks/shared';
+import { ZERO_LOC } from '@nunjucks/lexer';
 
 const compile = (node: Node): string => {
-  const c = createCompiler('test', 'chainable', '');
+  const c = createCompiler({ templateName: 'test', undefinedMode: 'chainable', source: '' });
   c.compile(node, createFrame());
   return c.getCode();
 };
@@ -56,7 +56,7 @@ describe('node-dispatch: statement nodes', () => {
 
 describe('node-dispatch: compileDispatch via createCompiler', () => {
   test('dispatches unknown node type to fail', () => {
-    const c = createCompiler('test', 'chainable', '');
+    const c = createCompiler({ templateName: 'test', undefinedMode: 'chainable', source: '' });
     const fakeNode = { type: 'nonexistent', lineno: 0, colno: 0 } as unknown as Node;
     expect(() => c.compile(fakeNode, createFrame())).toThrow();
   });

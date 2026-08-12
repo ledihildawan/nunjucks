@@ -1,23 +1,8 @@
 import express, { type Router, type Request, type Response, type NextFunction } from 'express';
-import type { NunjucksConfig } from '@nunjucks/core';
-import { renderTemplate as renderBase } from '../lib/express-render.ts';
+import type { Result } from '@nunjucks/lib';
+import { renderDemoTemplate } from '../lib/express-render.ts';
 
 const router: Router = express.Router();
-
-interface RenderTemplateOptions<TContext extends Record<string, unknown>> {
-  template: string;
-  context: TContext;
-  config?: NunjucksConfig;
-}
-
-const renderTemplate = async <TContext extends Record<string, unknown>>(
-  { template, context, config = {} }: RenderTemplateOptions<TContext>,
-) => renderBase(template, { context, config: {
-  autoescape: true,
-  dev: true,
-  ide: 'vscode',
-  ...config
-}});
 
 router.get('/', async (_req: Request, res: Response) => {
   res.type('html').send(`
@@ -80,26 +65,60 @@ const html = await njk.render(template, context);</pre>
   `);
 });
 
-router.get('/strict', async (_req: Request, res: Response, next: NextFunction) => {
+// WHY: renderTemplate never throws — the assertion only holds on the ok path; the error path returns a page showing the thrown error message.
+const sendStrictResult = (
+  res: Response,
+  options: { template: string; result: Result<string, Error> },
+): void => {
+  const { template, result } = options;
+  if (result.ok) {
+    res.type('html').send('Should have thrown error');
+    return;
+  }
+  res.status(400).type('html').send(`
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Strict Mode - Error Thrown</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
+    h1 { color: #e74c3c; }
+    code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; }
+    pre { background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 8px; overflow-x: auto; }
+    a { color: #3498db; }
+  </style>
+</head>
+<body>
+  <h1>Strict Mode - Error Thrown</h1>
+  <p>Template: <code>${template}</code></p>
+  <p><strong>Error:</strong></p>
+  <pre>${result.error.message}</pre>
+  <p><a href="/undefined">Back to Undefined Types Demo</a></p>
+</body>
+</html>`);
+};
+
+router.get('/strict', async (_req: Request, res: Response) => {
   const template = '{{ user.name }}';
   const context: Record<string, unknown> = { user: undefined };
 
-  try {
-    await renderTemplate({ template, context, config: { undefined: 'strict' } });
-    res.send('Should have thrown error');
-  } catch (e) {
-    next(e);
-  }
+  sendStrictResult(res, {
+    template,
+    result: await renderDemoTemplate(template, { context, config: { undefined: 'strict' } }),
+  });
 });
 
 router.get('/debug', async (_req: Request, res: Response, next: NextFunction) => {
   const template = '{{ user.testing }}';
   const context: Record<string, unknown> = { user: undefined };
 
-  try {
-    const result = await renderTemplate({ template, context, config: { undefined: 'debug' } });
-    // WHY: inline HTML for demo brevity; production should use .njk templates with autoescape
-    res.type('html').send(`
+  const result = await renderDemoTemplate(template, { context, config: { undefined: 'debug' } });
+  if (!result.ok) {
+    return next(result.error);
+  }
+
+  // WHY: inline HTML for demo brevity; production should use .njk templates with autoescape
+  res.type('html').send(`
 <!DOCTYPE html>
 <html>
 <head>
@@ -116,24 +135,23 @@ router.get('/debug', async (_req: Request, res: Response, next: NextFunction) =>
   <h1>Debug Mode - No Error</h1>
   <p>Template: <code>{{ user.testing }}</code></p>
   <p>Context: <code>{ user: undefined }</code></p>
-  <p><strong>Result:</strong> "${result}"</p>
+  <p><strong>Result:</strong> "${result.value}"</p>
   <p><a href="/undefined">Back to Undefined Types Demo</a></p>
 </body>
 </html>`);
-  } catch (e) {
-    next(e);
-  }
 });
 
 router.get('/chainable', async (_req: Request, res: Response, next: NextFunction) => {
   const template = '{{ user.name }}';
   const context: Record<string, unknown> = { user: undefined };
 
-  try {
-    const result = await renderTemplate({ template, context, config: { undefined: 'chainable' } });
+  const result = await renderDemoTemplate(template, { context, config: { undefined: 'chainable' } });
+  if (!result.ok) {
+    return next(result.error);
+  }
 
-    // WHY: inline HTML for demo brevity; production should use .njk templates with autoescape
-    res.type('html').send(`
+  // WHY: inline HTML for demo brevity; production should use .njk templates with autoescape
+  res.type('html').send(`
 <!DOCTYPE html>
 <html>
 <head>
@@ -152,7 +170,7 @@ router.get('/chainable', async (_req: Request, res: Response, next: NextFunction
   <p>Context: <code>{ user: undefined }</code></p>
 
   <div class="result">
-    <strong>Output:</strong> "${result}"
+    <strong>Output:</strong> "${result.value}"
   </div>
 
   <p>No warning in console - silent "undefined" string returned.</p>
@@ -161,33 +179,26 @@ router.get('/chainable', async (_req: Request, res: Response, next: NextFunction
 </body>
 </html>
   `);
-  } catch (e) {
-    next(e);
-  }
 });
 
-router.get('/strict-nested', async (_req: Request, res: Response, next: NextFunction) => {
+router.get('/strict-nested', async (_req: Request, res: Response) => {
   const template = '{{ user.profile.name }}';
   const context: Record<string, unknown> = { user: undefined };
 
-  try {
-    await renderTemplate({ template, context, config: { undefined: 'strict' } });
-    res.send('Should have thrown error');
-  } catch (e) {
-    next(e);
-  }
+  sendStrictResult(res, {
+    template,
+    result: await renderDemoTemplate(template, { context, config: { undefined: 'strict' } }),
+  });
 });
 
-router.get('/strict-array', async (_req: Request, res: Response, next: NextFunction) => {
+router.get('/strict-array', async (_req: Request, res: Response) => {
   const template = '{{ items }}';
   const context: Record<string, unknown> = { items: undefined };
 
-  try {
-    await renderTemplate({ template, context, config: { undefined: 'strict' } });
-    res.send('Should have thrown error');
-  } catch (e) {
-    next(e);
-  }
+  sendStrictResult(res, {
+    template,
+    result: await renderDemoTemplate(template, { context, config: { undefined: 'strict' } }),
+  });
 });
 
 export { router as undefinedRouter };

@@ -116,45 +116,45 @@ describe('getNullParentName', () => {
 
 describe('slice', () => {
   test('throws on zero step', () => {
-    expect(() => slice([1, 2, 3], 0, 2, 0)).toThrow();
+    expect(() => slice({ source: [1, 2, 3], start: 0, stop: 2, step: 0 })).toThrow();
   });
 
   test('basic slice with step=1 returns a shallow copy subrange', () => {
-    expect(slice([1, 2, 3, 4, 5], 1, 4, 1)).toEqual([2, 3, 4]);
-    expect(slice([1, 2, 3, 4, 5], 0, 5, null)).toEqual([1, 2, 3, 4, 5]);
+    expect(slice({ source: [1, 2, 3, 4, 5], start: 1, stop: 4, step: 1 })).toEqual([2, 3, 4]);
+    expect(slice({ source: [1, 2, 3, 4, 5], start: 0, stop: 5, step: null })).toEqual([1, 2, 3, 4, 5]);
   });
 
   test('works on strings', () => {
-    expect(slice('hello world', 0, 5, 1)).toBe('hello');
-    expect(slice('hello', 1, null, null)).toBe('ello');
+    expect(slice({ source: 'hello world', start: 0, stop: 5, step: 1 })).toBe('hello');
+    expect(slice({ source: 'hello', start: 1, stop: null, step: null })).toBe('ello');
   });
 
   test('clamps negative start index from the end', () => {
-    expect(slice([1, 2, 3, 4, 5], -2, null, 1)).toEqual([4, 5]);
+    expect(slice({ source: [1, 2, 3, 4, 5], start: -2, stop: null, step: 1 })).toEqual([4, 5]);
   });
 
   test('clamps negative stop index from the end', () => {
-    expect(slice([1, 2, 3, 4, 5], 0, -1, 1)).toEqual([1, 2, 3, 4]);
+    expect(slice({ source: [1, 2, 3, 4, 5], start: 0, stop: -1, step: 1 })).toEqual([1, 2, 3, 4]);
   });
 
   test('forward step skips elements', () => {
-    expect(slice([1, 2, 3, 4, 5, 6], 0, 6, 2)).toEqual([1, 3, 5]);
+    expect(slice({ source: [1, 2, 3, 4, 5, 6], start: 0, stop: 6, step: 2 })).toEqual([1, 3, 5]);
   });
 
   test('backward step reverses from the start index down to stop', () => {
-    expect(slice([1, 2, 3, 4, 5], 4, 0, -1)).toEqual([5, 4, 3, 2]);
+    expect(slice({ source: [1, 2, 3, 4, 5], start: 4, stop: 0, step: -1 })).toEqual([5, 4, 3, 2]);
   });
 
   test('null start with negative step resolves to last element', () => {
-    expect(slice([1, 2, 3], null, null, -1)).toEqual([3, 2, 1]);
+    expect(slice({ source: [1, 2, 3], start: null, stop: null, step: -1 })).toEqual([3, 2, 1]);
   });
 
   test('null stop with negative step resolves to index -1 (excluded)', () => {
-    expect(slice([1, 2, 3, 4], 3, null, -2)).toEqual([4, 2]);
+    expect(slice({ source: [1, 2, 3, 4], start: 3, stop: null, step: -2 })).toEqual([4, 2]);
   });
 
   test('returns empty array when range is empty', () => {
-    expect(slice([1, 2, 3], 2, 2, 1)).toEqual([]);
+    expect(slice({ source: [1, 2, 3], start: 2, stop: 2, step: 1 })).toEqual([]);
   });
 });
 

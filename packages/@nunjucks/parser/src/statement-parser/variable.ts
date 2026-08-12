@@ -12,7 +12,7 @@ import type { ParserContext } from "../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parsePrimary, parseExpression } from "../expression-parser/index.ts";
 import { tryParsePattern } from "../node-parser/pattern.ts";
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 export const parseVariableDeclaration = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tagR = peekToken(parserContext);

@@ -35,7 +35,7 @@ const formatStackLine = (
 
   const lineNum = frame.line;
   const colNum = frame.col ?? 1;
-  const shortPath = shortenPath(frame.path);
+  const shortPath = shortenPath(frame.path, '');
   const fn = frame.fn;
   const location = `${shortPath}:${lineNum}:${colNum}`;
 
@@ -56,7 +56,7 @@ interface FormatLocationStringInput {
 
 const formatLocationString = ({ path, location, ide }: FormatLocationStringInput): string => {
   if (!path) { return ''; }
-  const shortPath = shortenPath(path);
+  const shortPath = shortenPath(path, '');
   if (isFilePath(path)) {
     const url = makeHyperlink(`${shortPath}:${location.line}:${location.col}`, resolveIdeLink(ide, { path, line: location.line, col: location.col }));
     return ` at ${url}`;

@@ -1,7 +1,9 @@
 import { defaultTo, entries, join as joinRemeda, map, pipe, split } from 'remeda';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
+import { ok, err, type Result } from '@nunjucks/lib';
 import { normalize, safeString, safeHtml, preserveSafe, createStringFilter, createMacroFilter, isSafeString, isArray, requireArrayError } from '../factory/index.ts';
 import type { SafeString } from '../factory/index.ts';
+import type { TemplateError } from '@nunjucks/error-formatter';
 
 const capitalize = createStringFilter((s: string): string => {
   const returnValue = s.toLowerCase();
@@ -40,11 +42,11 @@ const indent = (str: unknown, width?: number, indentfirst?: boolean): string => 
   return preserveSafe(str, res);
 };
 
-const joinFilter = (values: unknown, del?: string, attr?: string): string => {
-  if (!isArray(values)) { throw requireArrayError(values, ERROR_DEFINITIONS.JOIN_FILTER); }
+const joinFilter = (values: unknown, del?: string, attr?: string): Result<string, TemplateError> => {
+  if (!isArray(values)) { return err(requireArrayError(values, ERROR_DEFINITIONS.JOIN_FILTER)); }
   const delimiter = defaultTo(del, '');
   const items = attr ? values.map((v) => (v as Record<string, unknown>)[attr]) : values;
-  return (items as unknown[]).join(delimiter);
+  return ok((items as unknown[]).join(delimiter));
 };
 
 const lower = createStringFilter((s: string): string => s.toLowerCase());
@@ -57,12 +59,12 @@ const replace = (str: unknown, old: unknown, newValue: string, maxCount?: number
   const max = maxCount ?? -1;
   const oldStr = resolveOldString(old);
   if (oldStr === null) { return str as string; }
-  const s = resolveString(str);
-  if (s === null) { return str as string; }
-  if (oldStr === '') { return preserveSafe(str, newValue + pipe(s, split(''), joinRemeda(newValue)) + newValue); }
-  const nextIndex = s.indexOf(oldStr);
-  if (max === 0 || nextIndex === -1) { return s; }
-  return preserveSafe(str, performReplace(s, { oldStr, newValue, max }));
+  const resolvedInput = resolveString(str);
+  if (resolvedInput === null) { return str as string; }
+  if (oldStr === '') { return preserveSafe(str, newValue + pipe(resolvedInput, split(''), joinRemeda(newValue)) + newValue); }
+  const nextIndex = resolvedInput.indexOf(oldStr);
+  if (max === 0 || nextIndex === -1) { return resolvedInput; }
+  return preserveSafe(str, performReplace(resolvedInput, { oldStr, newValue, max }));
 };
 
 const resolveOldString = (old: unknown): string | null => {
@@ -114,7 +116,7 @@ const urlencode = (queryParameters: unknown): string => {
   const keyvals = Array.isArray(queryParameters)
     ? (queryParameters as [string, unknown][])
     : entries(queryParameters as Record<string, unknown>);
-  return pipe(keyvals, map(([k, v]) => `${enc(k)}=${enc(String(v))}`), joinRemeda('&'));
+  return pipe(keyvals, map(([key, val]) => `${enc(key)}=${enc(String(val))}`), joinRemeda('&'));
 };
 
 export { capitalize, fallback, escape, tojson, indent, joinFilter as join, lower, replace, title, trim, truncate, upper, urlencode };

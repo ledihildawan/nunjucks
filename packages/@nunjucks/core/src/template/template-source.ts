@@ -3,16 +3,25 @@ import { createLog } from '@nunjucks/error-formatter';
 import { getError } from '@nunjucks/error-catalog';
 import type { Env } from '@nunjucks/runtime';
 import type { IncludeChain } from '@nunjucks/error-formatter';
-import type { CompiledTemplateExports } from '@nunjucks/shared';
+import type { CompiledTemplateExports } from '@nunjucks/compiler';
 import type { TemplateSource, TemplateState, TemplateStateBase } from './types';
 
 export { initTemplateState, loadSource, createFallbackEnv };
+
+interface GetTemplateOptions {
+  name: string;
+  eagerCompile?: boolean;
+  includeChain?: IncludeChain | null;
+  ignoreMissing?: boolean;
+}
 
 const createFallbackEnv = (): Env => ({
   opts: { dev: false, autoescape: true, undefined: 'default' },
   getFilter: () => null,
   getTest: () => null,
-  getTemplate(name: string, _eagerCompile?: boolean, _includeChain?: unknown, ignoreMissing?: boolean) {
+  getTemplate(nameOrOptions: string | GetTemplateOptions) {
+    const name = typeof nameOrOptions === 'string' ? nameOrOptions : nameOrOptions.name;
+    const ignoreMissing = typeof nameOrOptions === 'string' ? undefined : nameOrOptions.ignoreMissing;
     if (ignoreMissing) { return null; }
     throw createLog('error', { def: getError('FILE_NOT_FOUND'), params: { path: name }, subject: name, context: { phase: 'load' } });
   },

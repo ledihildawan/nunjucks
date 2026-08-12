@@ -8,7 +8,7 @@ const collectString = async (stream: AsyncIterable<string>): Promise<string> => 
 };
 const collectStream = async (
   stream: AsyncGenerator<string, unknown>,
-): Promise<{ output: string; context: unknown }> => {
+): Promise<{ output: string; returnValue: unknown }> => {
   const drain = async (
     acc: string[],
   ): Promise<{ acc: string[]; value: unknown }> => {
@@ -20,7 +20,7 @@ const collectStream = async (
   };
 
   const { acc, value } = await drain([]);
-  return { output: acc.join(''), context: value };
+  return { output: acc.join(''), returnValue: value };
 };
 
 export { collectString, collectStream };

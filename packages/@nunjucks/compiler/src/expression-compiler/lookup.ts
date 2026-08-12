@@ -23,19 +23,33 @@ const getTargetName = (node: Node | undefined): string | null => {
   return null;
 };
 
-const emitSlice = (compiler: Compiler, value: SliceNode, node: LookupNode, frame: Frame): void => {
-  compiler.emit('runtime.slice((');
+interface EmitSliceOptions {
+  compiler: Compiler;
+  value: SliceNode;
+  node: LookupNode;
+  frame: Frame;
+}
+
+const emitSlice = ({ compiler, value, node, frame }: EmitSliceOptions): void => {
+  compiler.emit('runtime.slice({ source: (');
   compiler.compileExpression(node.target, frame);
-  compiler.emit('), ');
+  compiler.emit('), start: ');
   if (value.start) { compiler.compileExpression(value.start, frame); } else { compiler.emit('null'); }
-  compiler.emit(', ');
+  compiler.emit(', stop: ');
   if (value.stop) { compiler.compileExpression(value.stop, frame); } else { compiler.emit('null'); }
-  compiler.emit(', ');
+  compiler.emit(', step: ');
   if (value.step) { compiler.compileExpression(value.step, frame); } else { compiler.emit('null'); }
-  compiler.emit(')');
+  compiler.emit(' })');
 };
 
-const emitMemberLookup = (compiler: Compiler, node: LookupNode, value: Node, frame: Frame): void => {
+interface EmitMemberLookupOptions {
+  compiler: Compiler;
+  node: LookupNode;
+  value: Node;
+  frame: Frame;
+}
+
+const emitMemberLookup = ({ compiler, node, value, frame }: EmitMemberLookupOptions): void => {
   const parentName = getTargetName(node.target);
   compiler.emit('runtime.memberLookup((');
   compiler.compileExpression(node.target, frame);
@@ -55,9 +69,9 @@ export const compileLookupVal = (compiler: Compiler, { node, frame }: CompileNod
   emitLocationGuard(compiler, location.lineno, location.colno);
 
   if (isSlice(value)) {
-    emitSlice(compiler, value, node, frame);
+    emitSlice({ compiler, value, node, frame });
   } else {
-    emitMemberLookup(compiler, node, value, frame);
+    emitMemberLookup({ compiler, node, value, frame });
   }
 
   compiler.emit(')');
@@ -87,12 +101,11 @@ export const compileOptionalCall = (compiler: Compiler, { node, frame }: Compile
 export const compileSlice = (compiler: Compiler, { node, frame }: CompileNodeInput<SliceNode>): void => {
   const loc = locationFor(node, node);
   emitLocationGuard(compiler, loc.lineno, loc.colno);
-  compiler.emit('runtime.slice((');
+  compiler.emit('runtime.slice({ source: (');
   if (node.start) { compiler.compileExpression(node.start, frame); } else { compiler.emit('null'); }
-  compiler.emit('), (');
+  compiler.emit('), start: ');
   if (node.stop) { compiler.compileExpression(node.stop, frame); } else { compiler.emit('null'); }
-  compiler.emit('), (');
+  compiler.emit(', stop: ');
   if (node.step) { compiler.compileExpression(node.step, frame); } else { compiler.emit('null'); }
-  compiler.emit('))');
-  compiler.emit(')');
+  compiler.emit(', step: null })');
 };

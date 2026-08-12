@@ -1,4 +1,4 @@
-import { readObject, readString } from '@nunjucks/shared';
+import { readObject, readString } from '@nunjucks/lib';
 
 // WHY: error codes that MUST abort the stream even when streamErrorRecovery is enabled.
 // These are security / structural / system failures where continuing to render would be

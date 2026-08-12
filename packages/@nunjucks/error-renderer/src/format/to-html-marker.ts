@@ -1,8 +1,7 @@
 import { toHtml } from './to-html.ts';
-import { classifyAndBuildTitle } from './to-html-display.ts';
 import { escapeHtml } from './presentation/syntax-highlight/highlight.ts';
 import { shortenPath } from './presentation/source-trace/path-shortener.ts';
-import { resolveIdeLink, isFilePath } from './presentation/ide-links/ide-links.ts';
+import { resolveIdeLink, isFilePath, getIdeMeta } from './presentation/ide-links/ide-links.ts';
 import type { ErrorLike, ToHtmlOptions } from './to-html-types.ts';
 
 const ALERT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
@@ -36,14 +35,31 @@ interface LocData {
   canLink: boolean;
 }
 
-const extractLocData = (error: ErrorLike): LocData => {
+const hashString = (str: string): string => {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+  }
+  return (hash >>> 0).toString(16);
+};
+
+const makeErrorId = (error: ErrorLike): string => {
+  const parts = [
+    error.message ?? '',
+    error.templatePath ?? error.templateName ?? '',
+    error.lineno?.toString() ?? '',
+  ].join('|');
+  return `nj-err-${hashString(parts)}`;
+};
+
+const extractLocData = (error: ErrorLike, projectRoot?: string): LocData => {
   const rawPath = error.templatePath ?? error.templateName ?? null;
   const line = error.lineno != null ? error.lineno : null;
   const col = error.colno != null ? error.colno : null;
   const posSuffix = [line, col].filter(v => v !== null).join(':');
   return {
     rawPath,
-    displayPath: rawPath ? shortenPath(rawPath) : null,
+    displayPath: rawPath ? shortenPath(rawPath, projectRoot ?? '') : null,
     line,
     col,
     posSuffix,
@@ -51,23 +67,22 @@ const extractLocData = (error: ErrorLike): LocData => {
   };
 };
 
-const buildLocationHtml = (loc: LocData): string => {
+const buildLocationHtml = (loc: LocData, ide: string): string => {
   if (!loc.displayPath) { return ''; }
   const locText = loc.posSuffix ? `${escapeHtml(loc.displayPath)}:${escapeHtml(loc.posSuffix)}` : escapeHtml(loc.displayPath);
+  const ideMeta = getIdeMeta(ide);
   const link = loc.canLink && loc.rawPath
-    ? `<a href="${resolveIdeLink('vscode', { path: loc.rawPath, line: loc.line ?? 0, col: loc.col ?? 0 })}" class="nj-err-loc-link" title="Open in VSCode">${locText}</a>`
+    ? `<a href="${resolveIdeLink(ide, { path: loc.rawPath, line: loc.line ?? 0, col: loc.col ?? 0 })}" class="nj-err-loc-link" title="Open in ${ideMeta.label}">${locText}</a>`
     : `<span class="nj-err-loc-link">${locText}</span>`;
   return `<div class="nj-err-loc"><span class="nj-err-loc-label">The error occurred in</span> ${link}</div>`;
 };
 
-let errorIdSeq = 0;
-
 const toHtmlMarker = (error: ErrorLike, options: ToHtmlOptions = {}): string => {
-  const message = escapeHtml(classifyAndBuildTitle(error));
-  const id = `nj-err-${errorIdSeq++}`;
+  const message = escapeHtml(options.humanTitle ?? error.message ?? 'Unknown error');
+  const id = makeErrorId(error);
   const fullPage = toHtml(error, options);
   const srcdocLiteral = JSON.stringify(fullPage).replaceAll('</', '<\\/');
-  const locHtml = buildLocationHtml(extractLocData(error));
+  const locHtml = buildLocationHtml(extractLocData(error, options.projectRoot), options.ide ?? 'vscode');
 
   return `<style>${MARKER_CSS}</style>
 <div class="nj-err-block" role="status" aria-live="polite">

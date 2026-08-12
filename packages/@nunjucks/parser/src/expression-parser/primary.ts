@@ -15,7 +15,7 @@ import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { nextToken, peekToken, peekTokenOrNull, pushToken, skipValue, fail } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
-import type { Loc } from '@nunjucks/shared';
+import type { Loc } from '@nunjucks/lexer';
 import { ok, isOk, isErr, type Result } from '@nunjucks/lib';
 import { find } from 'remeda';
 import { EXPECTED_COLON_AFTER_DICT_KEY } from '../error.ts';
@@ -23,7 +23,7 @@ import { tryParsePattern } from '../node-parser/pattern.ts';
 import { parseAggregate } from '../node-parser/aggregate/index.ts';
 import { parseTemplateLiteral } from '../node-parser/template-literal.ts';
 import { parsePostfix, parsePipeForward } from './postfix/index.ts';
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 const parseBooleanValue = (tok: Token): boolean | undefined => {
   if (tok.value === 'true') { return true; }

@@ -1,4 +1,5 @@
-import type { Environment, BaseValidationError } from '@nunjucks/shared';
+import type { Environment } from '@nunjucks/validators/security';
+import type { BaseValidationError } from '@nunjucks/shared';
 import type { CallerLocation } from './caller-file.ts';
 import type { SandboxOptions, Env, UndefinedMode } from '@nunjucks/runtime';
 import type { SandboxMode } from '../config/global.ts';
@@ -74,9 +75,25 @@ interface CompileResult {
   code: string;
 }
 
+interface PreparedTemplate {
+  readonly code: string;
+  readonly sandboxedCtx: Record<string, unknown>;
+  readonly warningsCollector: import('@nunjucks/error-formatter').TemplateWarning[];
+  readonly templateName: string;
+  readonly resolvedConfig: RenderConfig;
+  readonly templateSource: string;
+  readonly context: Record<string, unknown>;
+  readonly streamContentType: 'html' | 'json' | 'text';
+}
+
+interface RenderOptions extends Partial<import('../config/global.ts').GlobalConfig> {
+  context?: Record<string, unknown>;
+  streamContentType?: 'html' | 'json' | 'text';
+}
+
 // WHY: streaming-render error contract (two-pass). Pre-stream failures (compile/validate/load) arrive as `{ ok: false, error }` so the consumer can still render an error page — response headers are not yet sent. Once streaming starts, mid-stream runtime errors CANNOT render an error page; the AsyncGenerator throws instead and the consumer aborts + logs. The SAME TemplateError flows through both windows — only the delivery differs (Result vs throw), so no separate error type is needed.
 type RenderStreamResult =
   | { readonly ok: false; readonly error: TemplateError }
   | { readonly ok: true; readonly stream: AsyncGenerator<string> };
 
-export type { LoaderSource, ResolveResult, RenderValidationError, CallerLocation, Environment, SandboxOptions, RenderConfig, ValidationErrorRequest, CompileResult, RenderStreamResult };
+export type { LoaderSource, ResolveResult, RenderValidationError, CallerLocation, Environment, SandboxOptions, RenderConfig, ValidationErrorRequest, CompileResult, RenderStreamResult, PreparedTemplate, RenderOptions };

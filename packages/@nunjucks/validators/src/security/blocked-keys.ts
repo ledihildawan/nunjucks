@@ -19,7 +19,7 @@ const BLOCKED_KEY_CATEGORIES = Object.freeze({
     'toString',
     'toLocaleString',
     'valueOf',
-  ] as const,
+  ] as readonly string[],
   UNIVERSAL_GLOBALS: [
     'globalThis',
     'eval',
@@ -30,7 +30,7 @@ const BLOCKED_KEY_CATEGORIES = Object.freeze({
     'Reflect',
     'Proxy',
     'WebAssembly',
-  ] as const,
+  ] as readonly string[],
   NODE_GLOBALS: [
     'global',
     'process',
@@ -40,7 +40,7 @@ const BLOCKED_KEY_CATEGORIES = Object.freeze({
     '__dirname',
     '__filename',
     'Buffer',
-  ] as const,
+  ] as readonly string[],
   BROWSER_GLOBALS: [
     'window',
     'self',
@@ -63,11 +63,11 @@ const BLOCKED_KEY_CATEGORIES = Object.freeze({
     'SharedWorker',
     'ServiceWorker',
     'importScripts',
-  ] as const,
+  ] as readonly string[],
   DENO_GLOBALS: [
     'Deno',
     'process',
-  ] as const,
+  ] as readonly string[],
   CODE_EXECUTION: [
     'eval',
     'Function',
@@ -94,7 +94,7 @@ const BLOCKED_KEY_CATEGORIES = Object.freeze({
     'Worker',
     'SharedWorker',
     'WebAssembly',
-  ] as const,
+  ] as readonly string[],
 });
 
 const BASE_BLOCKED_KEYS = toSet(
@@ -132,21 +132,21 @@ export type Environment = 'auto' | 'node' | 'browser' | 'deno';
 export const isCodeExecutionPattern = (key: string): boolean => CODE_EXECUTION_PATTERNS.has(key);
 
 const checkEnvGlobals = (key: string, env: Environment): BlockedKeyCategory | null => {
-  if ((env === 'auto' || env === 'node') && (BLOCKED_KEY_CATEGORIES.NODE_GLOBALS as readonly string[]).includes(key)) {
+  if ((env === 'auto' || env === 'node') && BLOCKED_KEY_CATEGORIES.NODE_GLOBALS.includes(key)) {
     return 'node_global';
   }
-  if ((env === 'auto' || env === 'browser') && (BLOCKED_KEY_CATEGORIES.BROWSER_GLOBALS as readonly string[]).includes(key)) {
+  if ((env === 'auto' || env === 'browser') && BLOCKED_KEY_CATEGORIES.BROWSER_GLOBALS.includes(key)) {
     return 'browser_global';
   }
-  if ((env === 'auto' || env === 'deno') && (BLOCKED_KEY_CATEGORIES.DENO_GLOBALS as readonly string[]).includes(key)) {
+  if ((env === 'auto' || env === 'deno') && BLOCKED_KEY_CATEGORIES.DENO_GLOBALS.includes(key)) {
     return 'deno_global';
   }
   return null;
 };
 
 export const getBlockedKeyCategory = (key: string, env: Environment = 'auto'): BlockedKeyCategory => {
-  if ((BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS as readonly string[]).includes(key)) { return 'object_intrinsic'; }
-  if ((BLOCKED_KEY_CATEGORIES.UNIVERSAL_GLOBALS as readonly string[]).includes(key)) { return 'universal_global'; }
+  if (BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS.includes(key)) { return 'object_intrinsic'; }
+  if (BLOCKED_KEY_CATEGORIES.UNIVERSAL_GLOBALS.includes(key)) { return 'universal_global'; }
   return checkEnvGlobals(key, env);
 };
 

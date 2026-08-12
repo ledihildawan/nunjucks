@@ -18,7 +18,6 @@ export const errorGroups: ErrorGroup[] = [
       { path: 'undefined-function', desc: 'Function not registered' },
       { path: 'container-error', desc: 'Container get returns undefined' },
       { path: 'container-not-registered', desc: 'Container not registered' },
-      { path: 'sandbox-timeout', desc: 'Sandbox timeout function not found' },
     ]
   },
   {
@@ -98,13 +97,13 @@ export const errorGroups: ErrorGroup[] = [
     items: [
       { path: 'filter-error', desc: 'Filter throws during execution' },
       { path: 'no-super-block', desc: 'super() called without parent block' },
+      { path: 'no-super-block-template', desc: 'super() in child template without parent block' },
       { path: 'filter-throw', desc: 'Inline filter throws during execution' },
     ]
   },
   {
     name: 'FILE_NOT_FOUND',
     items: [
-      { path: 'no-super-block-template', desc: 'super() in child without parent block' },
       { path: 'circular-include', desc: 'Template includes itself' },
       { path: 'file-not-found', desc: 'Included template not found' },
       { path: 'filesystem-error', desc: 'Absolute path with non-existent file' },
@@ -126,10 +125,12 @@ export const errorGroups: ErrorGroup[] = [
       { path: 'reserved-keyword-global', desc: 'Using reserved word as global' },
       { path: 'template-size', desc: 'Template exceeds maximum size' },
       { path: 'invalid-config', desc: 'Invalid config (negative timeout)' },
+      { path: 'sandbox-timeout', desc: 'Execution exceeds timeout limit' },
       { path: 'blocked-context-keys', desc: 'Context contains blocked keys (dynamic redaction)' },
       { path: 'blocked-custom-key', desc: 'Custom blocked key (no heuristic)' },
       { path: 'no-blocked-context-keys', desc: 'No blocked keys: library does not assume' },
       { path: 'dangerous-context', desc: 'Context contains dangerous values' },
+      { path: 'dangerous-context-values', desc: 'Context values scanned for dangerous keys' },
       { path: 'dangerous-template', desc: 'Template contains dangerous code' },
     ]
   },

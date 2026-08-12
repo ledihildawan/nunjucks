@@ -44,7 +44,7 @@ const compileVariableDeclaration = (compiler: Compiler, { node, frame }: Compile
     compiler.emitLine(';');
 
     if (name !== null) {
-      compiler.emitLine(`frame = frame.set(${JSON.stringify(name)}, ${valueId}, true);`);
+      compiler.emitLine(`frame = frame.set({ name: ${JSON.stringify(name)}, value: ${valueId}, resolveUp: true });`);
     }
   }
 };
@@ -71,7 +71,7 @@ const compileVariableAssignment = (compiler: Compiler, { node, frame }: CompileN
       compiler.compileExpression(node.value, frame);
       compiler.emitLine(';');
 
-      compiler.emitLine(`frame = frame.set(${JSON.stringify(name)}, ${valueId}, true);`);
+      compiler.emitLine(`frame = frame.set({ name: ${JSON.stringify(name)}, value: ${valueId}, resolveUp: true });`);
     }
   }
 };
@@ -113,7 +113,7 @@ const emitFilterAssignment = ({ compiler, node, frame, currentId, valueId }: Fil
   const valueNode = node.value;
   const filterName = valueNode.type === 'symbol' ? valueNode.value as string : null;
   if (filterName) {
-    compiler.emit(`let ${valueId} = await runtime.runFilter(env, ${JSON.stringify(filterName)}, ${node.lineno ?? 0}, ${node.colno ?? 0}, context, ${currentId});`);
+    compiler.emit(`let ${valueId} = await (async () => { const r = await runtime.runFilter({ env, name: ${JSON.stringify(filterName)}, lineno: ${node.lineno ?? 0}, colno: ${node.colno ?? 0}, context, args: [${currentId}] }); if (!r.ok) { throw r.error; } return r.value; })();`);
   } else {
     compiler.emit(`let ${valueId} = await runtime.awaitValue(`);
     compiler.compileExpression(valueNode, frame);
@@ -155,7 +155,7 @@ const compileCompoundAssignment = (compiler: Compiler, { node, frame }: CompileN
     emitGenericCompoundAssignment({ compiler, node, frame, currentId, valueId });
   }
 
-  compiler.emit(`frame = frame.set(${key}, ${valueId}, true);`);
+  compiler.emit(`frame = frame.set({ name: ${key}, value: ${valueId}, resolveUp: true });`);
   compiler.emit(`context = context.setVariable(${key}, ${valueId});`);
   compiler.emit(`return ${valueId};`);
   compiler.emit('})())');

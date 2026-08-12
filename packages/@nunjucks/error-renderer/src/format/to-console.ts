@@ -5,7 +5,7 @@ import { isFilePath, resolveIdeLink } from './presentation/ide-links/ide-links.t
 import { toDisplayLocation } from './presentation/source-trace/location.ts';
 import type { LineBase } from '@nunjucks/error-catalog';
 import { makeHyperlink } from './ansi/stack-helpers.ts';
-import { DEFAULT_IDE, DEFAULT_VERSION } from './presentation/ide-links/defaults.ts';
+import { DEFAULT_IDE } from './presentation/ide-links/defaults.ts';
 import type { Warning } from '@nunjucks/error-catalog';
 
 interface ToConsoleOptions {
@@ -32,7 +32,7 @@ const formatMedium = (warning: Warning, options: ToConsoleOptions): string => {
   const lineNum = location.line;
 
   const path = templateName ?? templatePath;
-  const displayPath = path ? `${shortenPath(path)}:${lineNum}` : '';
+  const displayPath = path ? `${shortenPath(path, '')}:${lineNum}` : '';
   const locationText = path && isFilePath(path)
     ? makeHyperlink(displayPath, resolveIdeLink(ide, { path, line: lineNum, col: 1 }))
     : displayPath;
@@ -66,7 +66,7 @@ const getLocationString = (input: LocationStringInput): string => {
   const location = toDisplayLocation({ lineno: input.lineno ?? null, colno: 0, lineBase: input.lineBase ?? 'zero' });
   const lineNum = location.line;
   if (input.templateName) {
-    const shortPath = shortenPath(input.templateName);
+    const shortPath = shortenPath(input.templateName, '');
     const displayPath = `${shortPath}:${lineNum}`;
     const locationText = isFilePath(input.templateName)
       ? makeHyperlink(displayPath, resolveIdeLink(input.ide, { path: input.templateName, line: lineNum, col: 1 }))
@@ -80,10 +80,11 @@ const getLocationString = (input: LocationStringInput): string => {
 };
 
 const formatFull = (warning: Warning, options: ToConsoleOptions): string => {
-  const { dev = false, version = DEFAULT_VERSION, timestamp, ide = DEFAULT_IDE } = options;
+  const { dev = false, version, timestamp, ide = DEFAULT_IDE } = options;
   const { lineno, templateName, varName, undefinedMode, code, subject } = warning;
 
-  const footer = [`Nunjucks ${version}`, ...(timestamp ? [timestamp] : [])];
+  const versionPart = version ? `Nunjucks ${version}` : null;
+  const footer = [versionPart, timestamp].filter(Boolean);
   const parts: string[] = [
     `${picocolors.bgYellow(picocolors.black('[WARNING]'))} ${picocolors.bold('Template Warning')}`,
     ...(code ? [picocolors.yellow(`[${code}]`)] : []),

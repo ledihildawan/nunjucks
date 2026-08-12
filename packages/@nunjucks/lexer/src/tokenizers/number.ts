@@ -39,7 +39,7 @@ export const tokenizeNumber: Tokenizer = (state) => {
   if (value === null) { return null; }
 
   return {
-    token: createNumberToken(value, lineno, colno, hasDecimal),
+    token: createNumberToken({ value, lineno, colno, hasDecimal }),
     state: afterDecimal,
   };
 };

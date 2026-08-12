@@ -13,7 +13,7 @@ import { nextToken, peekToken, peekTokenOrNull, skip, skipValue, fail } from "..
 import type { ParserContext } from "../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseExpression } from "../expression-parser/index.ts";
-import { loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/lexer';
 
 interface SignatureArgState {
   args: ChildrenNode;
@@ -26,12 +26,19 @@ const isEqualsToken = (parserContext: ParserContext): boolean => {
   return tok?.type === TOKEN_OPERATOR && tok.value === '=';
 };
 
-const parseSignatureArg = (
-  parserContext: ParserContext,
-  args: ChildrenNode,
-  kwargs: ChildrenNode,
-  checkComma: boolean
-): Result<SignatureArgState, TemplateError> => {
+interface ParseSignatureArgOptions {
+  parserContext: ParserContext;
+  args: ChildrenNode;
+  kwargs: ChildrenNode;
+  checkComma: boolean;
+}
+
+const parseSignatureArg = ({
+  parserContext,
+  args,
+  kwargs,
+  checkComma,
+}: ParseSignatureArgOptions): Result<SignatureArgState, TemplateError> => {
   const tokR = peekToken(parserContext);
   if (isErr(tokR)) { return tokR; }
   const tok = tokR.value;
@@ -77,12 +84,19 @@ const handleSignatureLoopEnd = (parserContext: ParserContext, tok: Token, noPare
   return ok(undefined);
 };
 
-const parseSignatureLoop = (
-  parserContext: ParserContext,
-  args: ChildrenNode,
-  kwargs: ChildrenNode,
-  noParens: boolean | undefined
-): Result<{ args: ChildrenNode; kwargs: ChildrenNode }, TemplateError> => {
+interface ParseSignatureLoopOptions {
+  parserContext: ParserContext;
+  args: ChildrenNode;
+  kwargs: ChildrenNode;
+  noParens: boolean | undefined;
+}
+
+const parseSignatureLoop = ({
+  parserContext,
+  args,
+  kwargs,
+  noParens,
+}: ParseSignatureLoopOptions): Result<{ args: ChildrenNode; kwargs: ChildrenNode }, TemplateError> => {
   const parseLoop = (
     currentArgs: ChildrenNode,
     currentKwargs: ChildrenNode,
@@ -97,7 +111,7 @@ const parseSignatureLoop = (
       return ok({ args: currentArgs, kwargs: currentKwargs });
     }
 
-    const result = parseSignatureArg(parserContext, currentArgs, currentKwargs, checkComma);
+    const result = parseSignatureArg({ parserContext, args: currentArgs, kwargs: currentKwargs, checkComma });
     if (isErr(result)) { return result; }
     return parseLoop(result.value.args, result.value.kwargs, result.value.checkComma);
   };
@@ -105,7 +119,13 @@ const parseSignatureLoop = (
   return parseLoop(args, kwargs, false);
 };
 
-export const parseSignature = (parserContext: ParserContext, tolerant?: boolean, noParens?: boolean): Result<Node | null, TemplateError> => {
+export interface ParseSignatureOptions {
+  parserContext: ParserContext;
+  tolerant?: boolean;
+  noParens?: boolean;
+}
+
+export const parseSignature = ({ parserContext, tolerant = false, noParens = false }: ParseSignatureOptions): Result<Node | null, TemplateError> => {
   const initialTokR = peekToken(parserContext);
   if (isErr(initialTokR)) { return initialTokR; }
   const initialTok = initialTokR.value;
@@ -125,7 +145,7 @@ export const parseSignature = (parserContext: ParserContext, tolerant?: boolean,
     tok = initialTok;
   }
 
-  const loopR = parseSignatureLoop(parserContext, nodeList(loc(tok)), keywordArgs(loc(tok)), noParens);
+  const loopR = parseSignatureLoop({ parserContext, args: nodeList(loc(tok)), kwargs: keywordArgs(loc(tok)), noParens });
   if (isErr(loopR)) { return loopR; }
   const args = loopR.value.kwargs.children.length > 0
     ? appendChild(loopR.value.args, loopR.value.kwargs)

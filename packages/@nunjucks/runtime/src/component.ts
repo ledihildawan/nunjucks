@@ -16,7 +16,13 @@ const createComponentContext = (
   slots: SlotContext,
 ): ComponentContext => ({ props, slots });
 
-export function makeComponent<A extends unknown[], R>(argNames: string[], kwargNames: string[], func: (...args: A) => R): (...componentArgs: unknown[]) => R {
+interface MakeComponentOptions<A extends unknown[], R> {
+  argNames: string[];
+  kwargNames: string[];
+  func: (...args: A) => R;
+}
+
+export function makeComponent<A extends unknown[], R>({ argNames, kwargNames, func }: MakeComponentOptions<A, R>): (...componentArgs: unknown[]) => R {
   return function component(this: unknown, ...componentArgs: unknown[]): R {
     const argCount = numArgs(componentArgs);
     const kwargs = { ...getKeywordArgs(componentArgs) };
