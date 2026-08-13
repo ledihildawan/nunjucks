@@ -15,7 +15,9 @@ const njk = nunjucks({
   },
 });
 
-const helloResult = await njk.render('hello.njk', { name: 'World' });
+const [helloResult, versionResult] = await Promise.all([
+  njk.render('hello.njk', { name: 'World' }),
+  njk.render('{{ appName }} v{{ version }}'),
+]);
 console.log(isOk(helloResult) ? helloResult.value : helloResult.error);
-const versionResult = await njk.render('{{ appName }} v{{ version }}');
 console.log(isOk(versionResult) ? versionResult.value : versionResult.error);

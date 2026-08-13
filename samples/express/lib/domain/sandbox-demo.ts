@@ -1,11 +1,11 @@
 import type { NunjucksConfig } from '@nunjucks/core';
-import { renderDemoTemplate } from './express-render.ts';
+import { renderDemoTemplate } from './render-template.ts';
+import { escapeHtml } from './error-route-utils.ts';
 
 interface TestCase {
   name: string;
   template: string;
   sandbox?: boolean;
-  expectError?: boolean;
   shouldPass?: boolean;
 }
 
@@ -86,13 +86,6 @@ const statusLabel = (row: SandboxTestResult, suite: SandboxSuite): string => {
       return row.passed ? 'Correct' : 'Unexpected';
   }
 };
-
-const escapeHtml = (s: string): string =>
-  s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 
 const renderTable = (
   table: SandboxTestResult[],
@@ -191,31 +184,26 @@ const sandboxSuites: SandboxSuite[] = [
         name: 'Access __proto__ (blocked)',
         template: '{{ user.__proto__ }}',
         sandbox: true,
-        expectError: true,
       },
       {
         name: 'Access constructor (blocked)',
         template: '{{ user.constructor }}',
         sandbox: true,
-        expectError: true,
       },
       {
         name: 'Access toString (blocked)',
         template: '{{ user.toString }}',
         sandbox: true,
-        expectError: true,
       },
       {
         name: 'Access process (Node blocked)',
         template: '{{ this.process }}',
         sandbox: true,
-        expectError: true,
       },
       {
         name: 'Access prototype (blocked)',
         template: '{{ user.prototype }}',
         sandbox: true,
-        expectError: true,
       },
     ],
   },
@@ -308,22 +296,18 @@ const sandboxSuites: SandboxSuite[] = [
       {
         name: 'Access setTimeout (blocked)',
         template: '{{ user.setTimeout }}',
-        expectError: true,
       },
       {
         name: 'Access setInterval (blocked)',
         template: '{{ user.setInterval }}',
-        expectError: true,
       },
       {
         name: 'Access eval (blocked)',
         template: '{{ user.eval }}',
-        expectError: true,
       },
       {
         name: 'Access fetch (blocked)',
         template: '{{ user.fetch }}',
-        expectError: true,
       },
     ],
   },

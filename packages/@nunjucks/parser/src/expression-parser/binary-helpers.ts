@@ -1,7 +1,7 @@
 import type { Node } from '@nunjucks/nodes';
 import type { BinaryFields } from '@nunjucks/nodes';
-import type { Loc } from '@nunjucks/lexer';
-import { loc } from '@nunjucks/lexer';
+import type { Loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/shared';
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { TOKEN_OPERATOR } from '@nunjucks/lexer';

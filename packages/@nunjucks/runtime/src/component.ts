@@ -20,12 +20,28 @@ interface MakeComponentOptions<A extends unknown[], R> {
   argNames: string[];
   kwargNames: string[];
   func: (...args: A) => R;
+  optionsArg?: boolean;
 }
 
-export function makeComponent<A extends unknown[], R>({ argNames, kwargNames, func }: MakeComponentOptions<A, R>): (...componentArgs: unknown[]) => R {
+export function makeComponent<A extends unknown[], R>({ argNames, kwargNames, func, optionsArg = false }: MakeComponentOptions<A, R>): (...componentArgs: unknown[]) => R {
   return function component(this: unknown, ...componentArgs: unknown[]): R {
     const argCount = numArgs(componentArgs);
     const kwargs = { ...getKeywordArgs(componentArgs) };
+
+    if (optionsArg) {
+      const positional = componentArgs.slice(0, argCount);
+      const namedKwargs = kwargs;
+      const optionsObj = positional.reduce<Record<string, unknown>>((acc, value, index) => {
+        const name = index === 0 ? argNames[0] : kwargNames[index - 1];
+        if (name !== undefined && value !== undefined) {
+          acc[name] = value;
+        }
+        return acc;
+      }, {});
+
+      Object.assign(optionsObj, namedKwargs);
+      return Reflect.apply(func, this, [optionsObj]) as R;
+    }
 
     const args = argCount > argNames.length
       ? ((): unknown[] => {

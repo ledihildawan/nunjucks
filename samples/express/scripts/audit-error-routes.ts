@@ -47,11 +47,11 @@ const ERRORS_TS = path.join(__dirname, '..', 'routes', 'errors.ts');
 
 const discoverRoutes = async (base: string): Promise<string[]> => {
   try {
-    const res = await fetch(`${base}/errors/`);
-    if (res.ok) {
-      const html = await res.text();
+    const response = await fetch(`${base}/errors/`);
+    if (response.ok) {
+      const html = await response.text();
       const found = [...html.matchAll(/href="\/errors\/([a-z0-9-]+)"/gu)]
-        .map((m) => m[1])
+        .map((match) => match[1])
         .filter((s): s is string => s !== undefined);
       if (found.length) {
         return [...new Set(found)].sort((a, b) => a.localeCompare(b));
@@ -68,8 +68,8 @@ const discoverRoutes = async (base: string): Promise<string[]> => {
   )];
 };
 
-const decode = (s: string): string =>
-  s.replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&quot;', '"').replaceAll('&#39;', "'").replaceAll('&amp;', '&');
+const decode = (input: string): string =>
+  input.replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&quot;', '"').replaceAll('&#39;', "'").replaceAll('&amp;', '&');
 
 const parse = (html: string): ParseResult => {
   const link = html.match(/The error occurred in <a href="[a-z]+:\/\/file\/([^"]+)"/u)
@@ -171,21 +171,21 @@ const validate = (_route: string, info: RouteInfo): ValidationResult => {
 
 const short = (p: string | null): string | null => p ? p.replace(/^.*[/\\](samples[/\\].*)$/u, '$1').replaceAll(/\\/g, '/') : p;
 
-const pad = (s: string | null | undefined, n: number): string => String(s ?? '').padEnd(n);
+const pad = (value: string | null | undefined, width: number): string => String(value ?? '').padEnd(width);
 
 const run = async (): Promise<void> => {
   const routes = await discoverRoutes(BASE);
   const rows: RouteRow[] = await Promise.all(routes.map(async (route): Promise<RouteRow> => {
     try {
-      const res = await fetch(`${BASE}/errors/${route}`);
-      const html = await res.text();
+      const response = await fetch(`${BASE}/errors/${route}`);
+      const html = await response.text();
       const parsed = parse(html);
       const info: RouteInfo = {
         loc: parsed.loc,
         caret: parsed.caret,
         code: parsed.code,
         title: parsed.title,
-        threw: res.status >= 400,
+        threw: response.status >= 400,
         hasErrorPage: /class="error-(?:wrapper|title|location)"/u.test(html),
       };
       const v = validate(route, info);

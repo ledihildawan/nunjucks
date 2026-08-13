@@ -22,7 +22,7 @@ import {
   skip,
   skipValue,
 } from '../../cursor.ts';
-import { EXPECTED_COLON_AFTER_DICT_KEY } from '../../index.ts';
+import { EXPECTED_COLON_AFTER_DICT_KEY } from '../../error.ts';
 import type { ParserContext } from '../../cursor.ts';
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseExpression, parsePrimary } from '../../expression-parser/index.ts';

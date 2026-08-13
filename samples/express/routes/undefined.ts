@@ -1,6 +1,7 @@
 import express, { type Router, type Request, type Response, type NextFunction } from 'express';
 import type { Result } from '@nunjucks/lib';
-import { renderDemoTemplate } from '../lib/express-render.ts';
+import { escapeHtml } from '../lib/domain/error-route-utils.ts';
+import { renderDemoTemplate } from '../lib/domain/render-template.ts';
 
 const router: Router = express.Router();
 
@@ -92,7 +93,7 @@ const sendStrictResult = (
   <h1>Strict Mode - Error Thrown</h1>
   <p>Template: <code>${template}</code></p>
   <p><strong>Error:</strong></p>
-  <pre>${result.error.message}</pre>
+  <pre>${escapeHtml(result.error.message)}</pre>
   <p><a href="/undefined">Back to Undefined Types Demo</a></p>
 </body>
 </html>`);

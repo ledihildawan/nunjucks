@@ -1,7 +1,7 @@
 import { isFunction, isString, pickBy } from 'remeda';
 import { formatLocationAnnotation } from '@nunjucks/error-renderer';
 import { TEMPLATE_ERROR } from './create-log-types.ts';
-import type { TemplateError, ErrorContext, WarningContext, NormalizedErrorContext, NormalizedWarningContext, ErrorDefinitionEntry, LegacyLogData, LogType, WarningInfo, IncludeChain, ErrorInfo } from './create-log-types.ts';
+import type { TemplateError, ErrorContext, WarningContext, NormalizedErrorContext, NormalizedWarningContext, ErrorDefinitionEntry, RawLogData, LogType, WarningInfo, IncludeChain, ErrorInfo } from './create-log-types.ts';
 
 const createErrorEnvelope = (message: string, cause?: Error): TemplateError => {
   const err = new Error(message, cause ? { cause } : undefined) as TemplateError;
@@ -45,16 +45,16 @@ const isErrorDefinitionEntry = (candidate: unknown): candidate is ErrorDefinitio
 
 interface CreateBaseMetadataOptions {
   message: string;
-  legacyLogData: LegacyLogData;
+  rawLogData: RawLogData;
   info: ErrorInfo | WarningInfo;
   type: LogType;
 }
 
-const createBaseMetadata = ({ message, legacyLogData, info, type }: CreateBaseMetadataOptions) => {
-  const base = {
+const createBaseMetadata = ({ message, rawLogData, info, type }: CreateBaseMetadataOptions) => {
+  const baseMetadata = {
     message,
-    lineno: legacyLogData.lineno ?? null,
-    colno: legacyLogData.colno ?? null,
+    lineno: rawLogData.lineno ?? null,
+    colno: rawLogData.colno ?? null,
     code: info.code ?? null,
     subject: info.subject ?? null,
     phase: info.phase ?? null,
@@ -64,12 +64,12 @@ const createBaseMetadata = ({ message, legacyLogData, info, type }: CreateBaseMe
   if (type === 'warning') {
     const warningInfo = info as WarningInfo;
     return {
-      ...base,
+      ...baseMetadata,
       varName: warningInfo.varName ?? null,
       undefinedMode: warningInfo.undefinedMode ?? 'chainable'
     };
   }
-  return base;
+  return baseMetadata;
 };
 
 const extractExtraFromContext = (context: ErrorContext | null | undefined): Record<string, unknown> | undefined => {

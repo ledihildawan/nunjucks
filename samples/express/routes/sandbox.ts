@@ -1,5 +1,5 @@
 import express, { type Router, type Request, type Response } from 'express';
-import { runTests, renderTable, sandboxSuites } from '../lib/sandbox-demo.ts';
+import { runTests, renderTable, sandboxSuites } from '../lib/domain/sandbox-demo.ts';
 
 const router: Router = express.Router();
 

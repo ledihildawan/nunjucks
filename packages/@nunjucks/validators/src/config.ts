@@ -1,5 +1,7 @@
 import { flatMap, keys, pipe } from 'remeda';
 import { validateFilterName, validateGlobalName } from './reserved.ts';
+import { isNonEmpty } from './is-non-empty.ts';
+import { ok, err, isErr, type Result } from '@nunjucks/lib';
 import type { Environment } from './security/index.ts';
 import type { BaseValidationError } from '@nunjucks/shared';
 
@@ -9,9 +11,7 @@ export interface ConfigValidationError extends BaseValidationError {
   type: string;
 }
 
-export type ConfigValidationResult =
-  | { valid: true; errors: readonly [] }
-  | { valid: false; errors: readonly [ConfigValidationError, ...ConfigValidationError[]] };
+export type ConfigValidationResult = Result<void, readonly [ConfigValidationError, ...ConfigValidationError[]]>;
 
 export interface Config {
   executionTimeout?: number;
@@ -27,8 +27,6 @@ export interface Config {
 }
 
 const VALID_ENVIRONMENTS: ReadonlySet<Environment> = new Set(['auto', 'node', 'browser', 'deno']);
-
-const isNonEmpty = <T>(arr: readonly T[]): arr is readonly [T, ...T[]] => arr.length > 0;
 
 const validateNumericConfig = (config: Config): ConfigValidationError[] => [
   ...((config.executionTimeout ?? 0) < 0
@@ -50,7 +48,7 @@ const validateCustomFilters = (config: Config): ConfigValidationError[] => {
     keys(config.customFilters),
     flatMap((name) => {
       const validation = validateFilterName(name);
-      if (!validation.valid && validation.error) {
+      if (isErr(validation)) {
         const { code, message, subject, type } = validation.error;
         return [{ code, message, subject, type }];
       }
@@ -65,7 +63,7 @@ const validateCustomGlobals = (config: Config): ConfigValidationError[] => {
     keys(config.customGlobals),
     flatMap((name) => {
       const validation = validateGlobalName(name);
-      if (!validation.valid && validation.error) {
+      if (isErr(validation)) {
         const { code, message, subject, type } = validation.error;
         return [{ code, message, subject, type }];
       }
@@ -83,8 +81,8 @@ export const validateConfig = (config: Config): ConfigValidationResult => {
   ];
 
   if (!isNonEmpty(errors)) {
-    return { valid: true, errors: [] as const };
+    return ok(undefined);
   }
   const [first, ...rest] = errors;
-  return { valid: false, errors: [first, ...rest] as const };
+  return err([first, ...rest] as const);
 };

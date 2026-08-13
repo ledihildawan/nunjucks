@@ -1,8 +1,6 @@
 import type { UndefinedMode } from '@nunjucks/runtime';
 import type { DomPurifyConfig } from '@nunjucks/shared';
 
-type FilterObject = Readonly<Record<string, unknown>>;
-
 const SAFE_JSON = Object.freeze({
   stringify: JSON.stringify,
   parse: JSON.parse,
@@ -123,7 +121,7 @@ interface GlobalConfigBase {
   readonly trimBlocks: boolean;
   readonly lstripBlocks: boolean;
   readonly undefined: UndefinedMode;
-  readonly filters: FilterObject;
+  readonly filters: Readonly<Record<string, unknown>>;
   readonly globals: Readonly<Record<string, unknown>>;
   readonly extensions: Readonly<Record<string, unknown>>;
   readonly views: string | null;
@@ -135,7 +133,7 @@ interface GlobalConfig extends GlobalConfigBase {
 }
 
 interface FilterBundle {
-  readonly filters: FilterObject;
+  readonly filters: Readonly<Record<string, unknown>>;
   readonly dompurify: DomPurifyConfig;
 }
 

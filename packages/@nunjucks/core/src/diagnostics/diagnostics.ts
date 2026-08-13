@@ -36,6 +36,7 @@ interface DiagnosticsBuildInput {
 }
 
 export { findContextKeyPosition } from './find-context-key-position.ts';
+export { readProjectSource } from './project-source-reader.ts';
 
 const readStringProp = (value: unknown, key: string): string | undefined => {
   if (!isKeyedObject(value)) { return undefined; }

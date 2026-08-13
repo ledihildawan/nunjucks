@@ -1,5 +1,5 @@
 import type { Phase } from '@nunjucks/shared';
-import { TEMPLATE_ERROR, isTemplateError } from '../branding.ts';
+import { TEMPLATE_ERROR } from '../branding.ts';
 
 export interface SecurityError extends Error {
   name: 'SecurityError';
@@ -29,5 +29,3 @@ export const createSecurityError = (message: string, code = 'SECURITY_VIOLATION'
 
 export const isSecurityError = (e: unknown): e is SecurityError =>
   e instanceof Error && e.name === 'SecurityError';
-
-export { isTemplateError };

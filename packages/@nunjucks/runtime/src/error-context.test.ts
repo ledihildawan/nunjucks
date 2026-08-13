@@ -102,7 +102,7 @@ describe('hasLogContext (module-private — exercised via getLogContext)', () =>
 describe('throwRuntimeError', () => {
   test('throws a TemplateError whose code is the def name and whose name is fixed', () => {
     try {
-      throwRuntimeError(sampleDef, { self: null, params: { name: 'foo' } });
+      throwRuntimeError(sampleDef, { runtimeContext: null, params: { name: 'foo' } });
       throw new Error('throwRuntimeError did not throw');
     } catch (error) {
       const templateError = error as TemplateError;
@@ -113,7 +113,7 @@ describe('throwRuntimeError', () => {
 
   test('interpolates params into the def message', () => {
     try {
-      throwRuntimeError(sampleDef, { self: null, params: { name: 'bar' } });
+      throwRuntimeError(sampleDef, { runtimeContext: null, params: { name: 'bar' } });
       throw new Error('throwRuntimeError did not throw');
     } catch (error) {
       expect((error as TemplateError).message).toBe("Variable 'bar' is missing");
@@ -122,7 +122,7 @@ describe('throwRuntimeError', () => {
 
   test('forwards the subject onto the error', () => {
     try {
-      throwRuntimeError(sampleDef, { self: null, params: { name: 'x' }, subject: 'mySubject' });
+      throwRuntimeError(sampleDef, { runtimeContext: null, params: { name: 'x' }, subject: 'mySubject' });
       throw new Error('throwRuntimeError did not throw');
     } catch (error) {
       expect((error as TemplateError).subject).toBe('mySubject');
@@ -131,7 +131,7 @@ describe('throwRuntimeError', () => {
 
   test('subject defaults to null when omitted', () => {
     try {
-      throwRuntimeError(sampleDef, { self: null, params: { name: 'x' } });
+      throwRuntimeError(sampleDef, { runtimeContext: null, params: { name: 'x' } });
       throw new Error('throwRuntimeError did not throw');
     } catch (error) {
       expect((error as TemplateError).subject).toBeNull();
@@ -140,7 +140,7 @@ describe('throwRuntimeError', () => {
 
   test('passes lineno and colno into the error context', () => {
     try {
-      throwRuntimeError(sampleDef, { self: null, lineno: 17, colno: 4, params: { name: 'x' } });
+      throwRuntimeError(sampleDef, { runtimeContext: null, lineno: 17, colno: 4, params: { name: 'x' } });
       throw new Error('throwRuntimeError did not throw');
     } catch (error) {
       const templateError = error as TemplateError;
@@ -151,7 +151,7 @@ describe('throwRuntimeError', () => {
 
   test('lineno and colno default to null when omitted', () => {
     try {
-      throwRuntimeError(sampleDef, { self: null, params: { name: 'x' } });
+      throwRuntimeError(sampleDef, { runtimeContext: null, params: { name: 'x' } });
       throw new Error('throwRuntimeError did not throw');
     } catch (error) {
       const templateError = error as TemplateError;
@@ -162,7 +162,7 @@ describe('throwRuntimeError', () => {
 
   test('uses the "render" phase, "inline" templateName and "zero" lineBase when no logContext is present', () => {
     try {
-      throwRuntimeError(sampleDef, { self: null, params: { name: 'x' } });
+      throwRuntimeError(sampleDef, { runtimeContext: null, params: { name: 'x' } });
       throw new Error('throwRuntimeError did not throw');
     } catch (error) {
       const templateError = error as TemplateError;
@@ -177,7 +177,7 @@ describe('throwRuntimeError', () => {
       logContext: { templateName: 'embedded.njk', phase: 'compile' as Phase, renderContext: null },
     };
     try {
-      throwRuntimeError(sampleDef, { self: carrier, params: { name: 'x' } });
+      throwRuntimeError(sampleDef, { runtimeContext: carrier, params: { name: 'x' } });
       throw new Error('throwRuntimeError did not throw');
     } catch (error) {
       const templateError = error as TemplateError;
@@ -191,7 +191,7 @@ describe('throwRuntimeError', () => {
       logContext: { templateName: 'embedded.njk', phase: 'render' as Phase, renderContext: null },
     };
     try {
-      throwRuntimeError(sampleDef, { self: carrier, templateName: 'override.njk', params: { name: 'x' } });
+      throwRuntimeError(sampleDef, { runtimeContext: carrier, templateName: 'override.njk', params: { name: 'x' } });
       throw new Error('throwRuntimeError did not throw');
     } catch (error) {
       expect((error as TemplateError).templateName).toBe('override.njk');
@@ -203,7 +203,7 @@ describe('throwRuntimeError', () => {
       logContext: { templateName: null, phase: 'render' as Phase, renderContext: null },
     };
     try {
-      throwRuntimeError(sampleDef, { self: carrier, params: { name: 'x' } });
+      throwRuntimeError(sampleDef, { runtimeContext: carrier, params: { name: 'x' } });
       throw new Error('throwRuntimeError did not throw');
     } catch (error) {
       expect((error as TemplateError).templateName).toBe('inline');
@@ -212,7 +212,7 @@ describe('throwRuntimeError', () => {
 
   test('supports a function-typed def message resolved with params', () => {
     try {
-      throwRuntimeError(functionMessageDef, { self: null, params: { k: 'zzz' } });
+      throwRuntimeError(functionMessageDef, { runtimeContext: null, params: { k: 'zzz' } });
       throw new Error('throwRuntimeError did not throw');
     } catch (error) {
       const templateError = error as TemplateError;
@@ -223,7 +223,7 @@ describe('throwRuntimeError', () => {
 
   test('defaults omitted params to an empty object so placeholder-free messages still resolve', () => {
     try {
-      throwRuntimeError(placeholderFreeDef, { self: null });
+      throwRuntimeError(placeholderFreeDef, { runtimeContext: null });
       throw new Error('throwRuntimeError did not throw');
     } catch (error) {
       expect((error as TemplateError).message).toBe('something broke');
@@ -231,13 +231,13 @@ describe('throwRuntimeError', () => {
   });
 
   test('is captured by the toThrow matcher', () => {
-    expect(() => throwRuntimeError(sampleDef, { self: null, params: { name: 'x' } })).toThrow();
+    expect(() => throwRuntimeError(sampleDef, { runtimeContext: null, params: { name: 'x' } })).toThrow();
   });
 
   test('works against a real catalog definition (UNDEFINED_VARIABLE)', () => {
     try {
       throwRuntimeError(ERROR_DEFINITIONS.UNDEFINED_VARIABLE, {
-        self: null,
+        runtimeContext: null,
         params: { name: 'user.name' },
         subject: 'user.name',
       });

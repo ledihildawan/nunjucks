@@ -19,6 +19,7 @@ import {
   bitwiseXor,
   bitwiseLShift,
   bitwiseRShift,
+  isChildrenNode,
 } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/error-formatter';
@@ -85,8 +86,8 @@ const parseTestArgs = (parserContext: ParserContext): Result<readonly Node[], Te
   const sigR = parseSignature({ parserContext });
   if (isErr(sigR)) { return sigR; }
   const sig = sigR.value;
-  if (sig && 'children' in sig) {
-    return ok((sig as { children: readonly Node[] }).children);
+  if (sig && isChildrenNode(sig)) {
+    return ok(sig.children);
   }
   return ok([]);
 };

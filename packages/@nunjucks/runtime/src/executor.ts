@@ -2,7 +2,7 @@ import { createContext, type Env } from './context.ts';
 import type { Frame } from './frame.ts';
 import { createRenderRuntime, type RenderRuntime } from './render-runtime.ts';
 import { getRenderFunction, buildSandboxOptions, buildSandboxedRuntime } from './executor-runtime.ts';
-import { collectString } from './collect-stream.ts';
+import { collectString } from '@nunjucks/lib/collect-stream';
 import type { Environment } from '@nunjucks/validators/security';
 
 type SandboxMode = 'allowlist' | 'blocklist';

@@ -1,5 +1,5 @@
 
-import { isSafeString } from './safe-string.ts';
+import { isSafeString } from './runtime-contract/safe-string.ts';
 import { isKeyedObject, isTypedArray } from '@nunjucks/lib';
 
 type TestFn = (target: unknown, ...args: unknown[]) => boolean;

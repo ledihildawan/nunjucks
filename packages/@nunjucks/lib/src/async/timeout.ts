@@ -3,10 +3,10 @@ export interface TimeoutError extends Error {
 }
 
 export const createTimeoutError = (message = 'Operation timed out'): TimeoutError => {
-  const err = new Error(message) as TimeoutError;
-  err.name = 'TimeoutError';
-  err.code = 'TIMEOUT';
-  return err;
+  const timeoutError = new Error(message) as TimeoutError;
+  timeoutError.name = 'TimeoutError';
+  timeoutError.code = 'TIMEOUT';
+  return timeoutError;
 };
 
 export const isTimeoutError = (e: unknown): e is TimeoutError =>

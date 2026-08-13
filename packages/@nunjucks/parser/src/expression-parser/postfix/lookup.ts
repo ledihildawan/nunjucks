@@ -76,5 +76,3 @@ const parseBracketAccess = (parserContext: ParserContext, bracketTok: LeftBracke
 };
 
 export { parseBracketAccess };
-
-export { BracketNotation } from '@nunjucks/nodes';

@@ -6,8 +6,8 @@ import { throwRuntimeError } from './error-context.ts';
 import { emitUndefinedWarning } from './shell/warning-emitter.ts';
 
 export interface ResolveUndefinedOptions {
-	self: unknown;
-	val: unknown;
+	runtimeContext: unknown;
+	subjectValue: unknown;
 	varName: string | null;
 	lineno?: number | null;
 	colno?: number | null;
@@ -25,11 +25,11 @@ export interface UndefinedResolution {
 }
 
 const resolveUndefined = (options: ResolveUndefinedOptions, resolution: UndefinedResolution): 'undefined' => {
-	const { self, lineno, colno, mode, phase, templateName } = options;
+	const { runtimeContext, lineno, colno, mode, phase, templateName } = options;
 
 	if (mode === 'strict') {
 		throwRuntimeError(resolution.errorDef, {
-			self,
+			runtimeContext,
 			lineno,
 			colno,
 			params: resolution.params,
@@ -39,7 +39,7 @@ const resolveUndefined = (options: ResolveUndefinedOptions, resolution: Undefine
 	}
 
 	if (mode === 'debug') {
-		emitUndefinedWarning(self, {
+		emitUndefinedWarning(runtimeContext, {
 			name: resolution.warningName,
 			message: resolution.warningMessage,
 			subject: resolution.subject,
@@ -57,7 +57,7 @@ const resolveUndefined = (options: ResolveUndefinedOptions, resolution: Undefine
 
 export const resolveUndefinedProperty = (value: PropertyNotFoundResult, options: ResolveUndefinedOptions): 'undefined' => {
 	const { varName } = options;
-	const accessPath = value.__access_path__ ?? varName ?? 'unknown';
+	const accessPath = value.__nunjucks_access_path__ ?? varName ?? 'unknown';
 	const parentName = (!value.__nunjucks_parent__ && varName?.includes('.'))
 		? varName.slice(0, varName.lastIndexOf('.'))
 		: value.__nunjucks_parent__;
@@ -72,7 +72,7 @@ export const resolveUndefinedProperty = (value: PropertyNotFoundResult, options:
 
 export const resolveNullAccess = (value: NullAccessResult, options: ResolveUndefinedOptions): 'undefined' => {
 	const { varName } = options;
-	const accessPath = value.__access_path__ ?? varName ?? 'unknown';
+	const accessPath = value.__nunjucks_access_path__ ?? varName ?? 'unknown';
 	const parentName = value.__nunjucks_parent__ ?? varName ?? 'unknown';
 	return resolveUndefined(options, {
 		errorDef: ERROR_DEFINITIONS.NULL_VALUE,

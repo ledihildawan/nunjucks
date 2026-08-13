@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import { compileExtends, compileInclude } from './extends.ts';
 import { extendsNode, include, symbol, literal } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
-import { ZERO_LOC } from '@nunjucks/lexer';
+import { ZERO_LOC } from '@nunjucks/shared';
 import type { Compiler } from '../index.ts';
 
 const makeCompiler = () => {

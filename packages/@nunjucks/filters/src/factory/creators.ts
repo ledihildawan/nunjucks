@@ -14,4 +14,13 @@ const createMacroFilter = <T extends unknown[]>(
 ) =>
   makeComponent({ argNames, kwargNames: [], func: fn });
 
-export { createStringFilter, createMacroFilter };
+const createFilter = <T extends object, R>(
+  argNames: string[],
+  func: (options: T) => R
+) => {
+  const wrapper = (opts: Record<string, unknown>) => func(opts as T);
+  const firstName = argNames[0] ?? '';
+  return makeComponent({ argNames: [firstName], kwargNames: argNames.slice(1), func: wrapper as (opts: Record<string, unknown>) => R, optionsArg: true });
+};
+
+export { createStringFilter, createMacroFilter, createFilter };

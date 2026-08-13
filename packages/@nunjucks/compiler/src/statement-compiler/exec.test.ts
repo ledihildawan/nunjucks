@@ -3,7 +3,7 @@ import { compileExec } from './exec.ts';
 import { funCall, symbol } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { loc } from '@nunjucks/lexer';
+import { loc } from '@nunjucks/shared';
 
 const frame = createFrame();
 

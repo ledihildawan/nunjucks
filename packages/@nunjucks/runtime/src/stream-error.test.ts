@@ -48,7 +48,7 @@ describe('streamError fatal-code handling', () => {
 
 describe('isStreamErrorSentinel', () => {
   test('returns true for a StreamErrorSentinel', () => {
-    const sentinel: StreamErrorSentinel = { __streamError: true, error: new Error('x'), lineno: 0, colno: 0 };
+    const sentinel: StreamErrorSentinel = { __nunjucks_stream_error__: true, error: new Error('x'), lineno: 0, colno: 0 };
     expect(isStreamErrorSentinel(sentinel)).toBe(true);
   });
 
@@ -60,7 +60,7 @@ describe('isStreamErrorSentinel', () => {
     expect(isStreamErrorSentinel(null)).toBe(false);
   });
 
-  test('returns false for a plain object without __streamError', () => {
+  test('returns false for a plain object without __nunjucks_stream_error__', () => {
     expect(isStreamErrorSentinel({ error: new Error('x') })).toBe(false);
   });
 });

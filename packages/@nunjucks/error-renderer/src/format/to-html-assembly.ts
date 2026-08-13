@@ -4,18 +4,7 @@ import { isFilePath } from './presentation/ide-links/ide-links.ts';
 import { shortenPath } from './presentation/source-trace/path-shortener.ts';
 import { DEFAULT_IDE } from './presentation/ide-links/defaults.ts';
 import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
-import type { ErrorLike } from './to-html-types.ts';
-
-interface ClassifiedErrorInfo {
-  category: string;
-  undefinedName: string | null;
-  title: string;
-  causes: string[];
-  fixCode: string;
-  fixComment: string;
-  documentationUrl: string | null;
-  severity: 'error' | 'warning' | 'info';
-}
+import type { ErrorLike, ClassifiedError } from './to-html-types.ts';
 
 interface ErrorSectionsInput {
   error: ErrorLike;
@@ -31,7 +20,7 @@ interface ErrorSectionsInput {
   verbosity?: 'simple' | 'medium' | 'full';
   isJsCaller?: boolean;
   humanTitle?: string;
-  classified?: ClassifiedErrorInfo;
+  classified?: ClassifiedError;
   projectRoot?: string;
 }
 
@@ -65,7 +54,6 @@ const buildErrorSections = (input: ErrorSectionsInput): ErrorSections => {
   const header = buildErrorHeader({
     humanTitle,
     category: classified.category,
-    severity: classified.severity,
     phase: error.phase ?? null,
     environment: effectiveEnvironment,
     verbosity,
@@ -76,7 +64,7 @@ const buildErrorSections = (input: ErrorSectionsInput): ErrorSections => {
     canLinkLocation,
     locDisplay,
   });
-  const body = buildErrorBodyContent({ verbosity, error, classified, sourceTrace, renderContext: effectiveRenderContext, ide, displayPath });
+  const body = buildErrorBodyContent({ verbosity, error, classified, sourceTrace, renderContext: effectiveRenderContext, ide });
   const footer = buildErrorFooter({ version: version ?? '', timestamp: effectiveTimestamp, verbosity, canLinkLocation, ide, displayPath, displayLine, displayCol });
   const wrapped = buildHtmlWrapper({ header, errorBody: body, footer });
 

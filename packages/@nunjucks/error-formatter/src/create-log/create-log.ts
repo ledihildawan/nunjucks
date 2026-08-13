@@ -1,12 +1,12 @@
 import { pipe } from 'remeda';
-import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, LegacyLogData, LogType, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, ErrorInfo, WarningInfo, OutputOptions } from './create-log-types.ts';
+import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, RawLogData, LogType, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, ErrorInfo, WarningInfo, OutputOptions } from './create-log-types.ts';
 import { TEMPLATE_ERROR } from './create-log-types.ts';
 import { normalizeErrorContext, normalizeWarningContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, buildLocationMessage, createErrorEnvelope } from './create-log-helpers.ts';
 import { createErrorFromDef, createWarningFromDef } from './create-log-error.ts';
 import { isKeyedObject } from '@nunjucks/lib';
 
 interface CreateLogFields {
-  def: ErrorDefinitionEntry | LegacyLogData;
+  def: ErrorDefinitionEntry | RawLogData;
   params?: Record<string, string>;
   subject?: string | null;
   context?: ErrorContext | WarningContext | null;
@@ -17,11 +17,11 @@ function createLog(type: 'warning', fields: CreateLogFields): TemplateWarning;
 function createLog(type: string, fields: CreateLogFields): TemplateError | TemplateWarning {
   const { def: errorDefOrData, params, subject, context } = fields;
   if (type !== 'error' && type !== 'warning') {
-    return createFromLegacyData('error', { message: `Unknown log type: ${type}` });
+    return createFromRawData('error', { message: `Unknown log type: ${type}` });
   }
 
   if (!isErrorDefinitionEntry(errorDefOrData)) {
-    return createFromLegacyData(type, errorDefOrData);
+    return createFromRawData(type, errorDefOrData);
   }
 
   const errorDef = errorDefOrData;
@@ -41,16 +41,16 @@ const isTemplateError = (value: unknown): value is TemplateError =>
 
 const asTemplateError = (err: Error | TemplateError): TemplateError => {
   if (isTemplateError(err)) { return err; }
-  const e = err as Partial<TemplateError>;
+  const partialErr = err as Partial<TemplateError>;
   return createLog('error', {
-    def: { name: e.code ?? 'ERROR', message: err.message },
-    subject: e.subject ?? null,
+    def: { name: partialErr.code ?? 'ERROR', message: err.message },
+    subject: partialErr.subject ?? null,
     context: {
-      lineno: e.lineno ?? null,
-      colno: e.colno ?? null,
-      phase: e.phase ?? 'render',
-      templateName: e.templateName ?? null,
-      lineBase: e.lineBase ?? 'zero',
+      lineno: partialErr.lineno ?? null,
+      colno: partialErr.colno ?? null,
+      phase: partialErr.phase ?? 'render',
+      templateName: partialErr.templateName ?? null,
+      lineBase: partialErr.lineBase ?? 'zero',
     },
   });
 };
@@ -94,40 +94,40 @@ const prettifyError = (options: PrettifyErrorOptions): TemplateError => {
   return pipe(err, asTemplateError, withLocation({ path, includeChain }), stripInternals(path));
 };
 
-const createFromLegacyData = (type: LogType, legacyLogData: LegacyLogData): TemplateError | TemplateWarning => {
-  const info = (legacyLogData.info ?? {}) as WarningInfo;
-  const base = createBaseMetadata({ message: legacyLogData.message, legacyLogData, info, type });
+const createFromRawData = (type: LogType, rawLogData: RawLogData): TemplateError | TemplateWarning => {
+  const warningInfo = (rawLogData.info ?? {}) as WarningInfo;
+  const baseMetadata = createBaseMetadata({ message: rawLogData.message, rawLogData, info: warningInfo, type });
 
   if (type === 'error') {
-    const err = createErrorEnvelope(base.message);
+    const err = createErrorEnvelope(baseMetadata.message);
     Object.assign(err, {
       name: 'Template render error',
-      code: base.code,
-      subject: base.subject,
-      lineno: base.lineno,
-      colno: base.colno,
-      phase: base.phase,
-      templateName: base.templateName,
-      lineBase: base.lineBase,
-      templatePath: base.templateName,
+      code: baseMetadata.code,
+      subject: baseMetadata.subject,
+      lineno: baseMetadata.lineno,
+      colno: baseMetadata.colno,
+      phase: baseMetadata.phase,
+      templateName: baseMetadata.templateName,
+      lineBase: baseMetadata.lineBase,
+      templatePath: baseMetadata.templateName,
     });
     return err;
   }
 
   const warn: TemplateWarning = {
-    message: base.message,
-    lineno: base.lineno,
-    colno: base.colno,
-    varName: info.varName ?? null,
-    templateName: base.templateName,
-    undefinedMode: info.undefinedMode ?? 'chainable',
-    code: base.code,
-    subject: base.subject,
-    phase: base.phase,
-    lineBase: base.lineBase,
+    message: baseMetadata.message,
+    lineno: baseMetadata.lineno,
+    colno: baseMetadata.colno,
+    varName: warningInfo.varName ?? null,
+    templateName: baseMetadata.templateName,
+    undefinedMode: warningInfo.undefinedMode ?? 'chainable',
+    code: baseMetadata.code,
+    subject: baseMetadata.subject,
+    phase: baseMetadata.phase,
+    lineBase: baseMetadata.lineBase,
   };
   return warn;
 };
 
 export { createLog, isTemplateError, prettifyError };
-export type { ErrorDefinitionEntry, ErrorInfo, WarningInfo, OutputOptions, TemplateError, TemplateWarning, ErrorContext, WarningContext, IncludeChain, CreateLogFields, LegacyLogData };
+export type { ErrorDefinitionEntry, ErrorInfo, WarningInfo, OutputOptions, TemplateError, TemplateWarning, ErrorContext, WarningContext, IncludeChain, CreateLogFields, RawLogData };

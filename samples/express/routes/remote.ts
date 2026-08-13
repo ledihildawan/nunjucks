@@ -1,9 +1,9 @@
 import express, { type Router, type Request, type Response } from 'express';
-import { localizedTime } from '../lib/clock.ts';
+import { localizedTime } from '../lib/io/clock.ts';
 
-export const remoteRouter: Router = express.Router();
+const router: Router = express.Router();
 
-remoteRouter.get('/', (_req: Request, res: Response) => {
+router.get('/', (_req: Request, res: Response) => {
   res.send(`
 <!DOCTYPE html>
 <html>
@@ -58,20 +58,23 @@ remoteRouter.get('/', (_req: Request, res: Response) => {
   `);
 });
 
-remoteRouter.get('/api/hello', (_req: Request, res: Response) => {
+router.get('/api/hello', (_req: Request, res: Response) => {
   res.send('<strong>Hello from remote API!</strong>');
 });
 
-remoteRouter.get('/api/time', (_req: Request, res: Response) => {
+router.get('/api/time', (_req: Request, res: Response) => {
   res.send(`Current time: <strong>${localizedTime()}</strong>`);
 });
 
-remoteRouter.get('/api/slow', (_req: Request, res: Response) => {
+router.get('/api/slow', (req: Request, res: Response) => {
   setTimeout(() => {
+    if (req.destroyed) { return; }
     res.send('<strong>Slow content loaded!</strong>');
   }, 2000);
 });
 
-remoteRouter.get('/api/error', (_req: Request, res: Response) => {
+router.get('/api/error', (_req: Request, res: Response) => {
   res.status(500).send('Server error');
 });
+
+export { router as remoteRouter };

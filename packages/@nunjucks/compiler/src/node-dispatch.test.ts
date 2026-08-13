@@ -6,7 +6,7 @@ import {
 } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import type { Node } from '@nunjucks/nodes';
-import { ZERO_LOC } from '@nunjucks/lexer';
+import { ZERO_LOC } from '@nunjucks/shared';
 
 const compile = (node: Node): string => {
   const c = createCompiler({ templateName: 'test', undefinedMode: 'chainable', source: '' });

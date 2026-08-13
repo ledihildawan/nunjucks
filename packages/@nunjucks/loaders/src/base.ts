@@ -1,3 +1,5 @@
+import { forEach } from 'remeda';
+
 export const LoaderSymbol = Symbol('Loader');
 
 export interface Loader {
@@ -23,7 +25,7 @@ export const createLoader = (): Loader => {
     emit(event: string, ...args: unknown[]): void {
       const handlers = listeners.get(event);
       if (!handlers) { return; }
-      handlers.forEach((handler) => { handler(...args); });
+      forEach([...handlers], (handler) => { handler(...args); });
     },
   };
 };

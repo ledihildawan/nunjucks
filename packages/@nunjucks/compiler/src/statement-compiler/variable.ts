@@ -32,7 +32,7 @@ const compileVariableDeclaration = (compiler: Compiler, { node, frame }: Compile
     compiler.emitLine(';');
 
     forEach(node.targets, (pattern) => {
-      compileDestructuring({ ctx: compiler, frame, registerFrame: true }, pattern, valueId);
+      compileDestructuring({ compiler, frame, registerFrame: true }, pattern, valueId);
     });
   } else {
     const targets = node.targets;
@@ -57,7 +57,7 @@ const compileVariableAssignment = (compiler: Compiler, { node, frame }: CompileN
     compiler.emitLine(';');
 
     forEach(node.targets, (pattern) => {
-      compileDestructuring({ ctx: compiler, frame, registerFrame: true }, pattern, valueId);
+      compileDestructuring({ compiler, frame, registerFrame: true }, pattern, valueId);
     });
   } else {
     const targets = node.targets;

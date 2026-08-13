@@ -1,8 +1,6 @@
 import { isLookupVal, type Node } from '@nunjucks/nodes';
 import type { NodeLocation } from '@nunjucks/shared';
 
-export type { NodeLocation };
-
 const hasIntegerLocation = (node: { lineno: unknown; colno: unknown }): boolean =>
   Number.isInteger(node.lineno) && Number.isInteger(node.colno);
 

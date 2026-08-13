@@ -9,7 +9,7 @@ import {
   component, execNode, scopeNode, match, when, renderNode,
 } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { ZERO_LOC } from '@nunjucks/lexer';
+import { ZERO_LOC } from '@nunjucks/shared';
 
 const compileNode = (node: Node): string => {
   const c = createCompiler({ templateName: 'test', undefinedMode: 'chainable', source: '' });

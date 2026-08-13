@@ -1,5 +1,5 @@
 import { isString } from 'remeda';
-import { getAttrGetter } from './deep-get.ts';
+import { getAttrGetter } from './attribute-getter.ts';
 
 const toComparable = (value: unknown): string | number => {
   if (typeof value === 'string' || typeof value === 'number') {

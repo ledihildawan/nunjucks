@@ -9,6 +9,7 @@
   "dependencies": {
     "@nunjucks/error-formatter": "workspace:*",
     "@nunjucks/lib": "workspace:*",
+    "@nunjucks/shared": "workspace:*",
     "remeda": "^2.39.0"
   },
   "description": "Lexer for Nunjucks template engine"

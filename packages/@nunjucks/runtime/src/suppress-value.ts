@@ -1,7 +1,7 @@
 import { createLog } from '@nunjucks/error-formatter';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { isNonNullish, isThenable } from '@nunjucks/lib';
-import { escapeForContext, type HtmlContext } from '@nunjucks/runtime/escaping';
+import { escapeForContext, type HtmlContext } from './escaping/index.ts';
 import { isSafeString } from './runtime-contract/safe-string.ts';
 import { getLogContext } from './error-context.ts';
 
@@ -21,8 +21,8 @@ interface LocationOptions {
   colno?: number | null;
 }
 
-const throwEscapedJsonError = (self: unknown, loc: LocationOptions): never => {
-  const ctx = getLogContext(self);
+const throwEscapedJsonError = (runtimeContext: unknown, loc: LocationOptions): never => {
+  const ctx = getLogContext(runtimeContext);
   throw createLog('error', {
     def: ERROR_DEFINITIONS.JSON_ESCAPED_OUTPUT,
     params: {},
@@ -48,20 +48,20 @@ const isEscapedJsonLike = (value: unknown, stringValue: string): boolean =>
   JSON_SCALAR_RE.test(stringValue.trim()) ||
   JSON_CONTAINER_RE.test(stringValue);
 
-const suppressScriptValue = (self: unknown, value: unknown, loc: LocationOptions): unknown => {
+const suppressScriptValue = (runtimeContext: unknown, value: unknown, loc: LocationOptions): unknown => {
   const stringValue = String(value);
   if (!isScriptJsonLike(value, stringValue)) {
     return SCRIPT_VALUE_NOT_HANDLED;
   }
   const encoded = JSON.stringify(value);
   if (RAW_OR_ESCAPED_LT_RE.test(encoded)) {
-    throwEscapedJsonError(self, loc);
+    throwEscapedJsonError(runtimeContext, loc);
   }
   return encoded;
 };
 
 const suppressEscapedValue = (
-  self: unknown,
+  runtimeContext: unknown,
   normalized: unknown,
   options: { context: HtmlContext } & LocationOptions
 ): string => {
@@ -71,7 +71,7 @@ const suppressEscapedValue = (
     isEscapedJsonLike(normalized, stringValue) &&
     ESCAPED_HTML_ENTITY_RE.test(escaped)
   ) {
-    throwEscapedJsonError(self, options);
+    throwEscapedJsonError(runtimeContext, options);
   }
   return escaped;
 };

@@ -5,6 +5,7 @@ import { createFrame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
+import { assertSafeIdentifier } from '../codegen.ts';
 import { compileSlotFunction } from './slot.ts';
 
 const extractComponentArgs = (compiler: Compiler, node: ComponentNode): { args: readonly Node[]; kwargs: ChildrenNode | null } => {
@@ -58,6 +59,7 @@ const emitComponentArgBindings = (compiler: Compiler, args: readonly Node[], kwa
 
 const emitFallbackEntries = (compiler: Compiler, slots: readonly SlotBlock[], currFrame: Frame): string[] =>
   slots.map((slot) => {
+    assertSafeIdentifier(slot.name, { compiler });
     const slotVar = `__fallback_${slot.name}`;
     compileSlotFunction({ compiler, params: slot.params, body: slot.body, parentFrame: currFrame, slotVar });
     return `${JSON.stringify(slot.name)}: ${slotVar}`;
@@ -68,16 +70,16 @@ const emitComponentContext = (
   args: readonly Node[],
   fallbackEntries: string[]
 ): string => {
-  const ccId = `__component_${compiler.tmpid()}`;
-  const propEntries = args.map((n) => `${JSON.stringify(n.value as string)}: l_${n.value as string}`).join(', ');
+  const componentContextId = `__component_${compiler.tmpid()}`;
+  const propEntries = args.map((arg) => `${JSON.stringify(arg.value as string)}: l_${arg.value as string}`).join(', ');
   const propsCode = propEntries === '' ? '{ ...__props }' : `{ ${propEntries}, ...__props }`;
   compiler.emitLines(
     'const { slots: __slots, keywords: __keywords, ...__props } = kwargs;',
-    `let ${ccId} = runtime.createComponentContext(${propsCode}, runtime.createSlotContext({ ${fallbackEntries.join(', ')} }, __slots));`,
+    `let ${componentContextId} = runtime.createComponentContext(${propsCode}, runtime.createSlotContext({ ${fallbackEntries.join(', ')} }, __slots));`,
     'for (const [__k, __v] of Object.entries(__props)) { if (__v !== undefined) frame = frame.set({ name: __k, value: __v }); }',
-    `frame = frame.set({ name: "slot", value: ${ccId}.slots });`,
-    `frame = frame.set({ name: "children", value: ${ccId}.slots("default") });`);
-  return ccId;
+    `frame = frame.set({ name: "slot", value: ${componentContextId}.slots });`,
+    `frame = frame.set({ name: "children", value: ${componentContextId}.slots("default") });`);
+  return componentContextId;
 };
 
 const compileComponent = (compiler: Compiler, node: ComponentNode): string => {
@@ -99,10 +101,10 @@ const compileComponent = (compiler: Compiler, node: ComponentNode): string => {
   emitComponentArgBindings(compiler, args, kwargs, currFrame);
 
   const fallbackEntries = emitFallbackEntries(compiler, node.fallbackSlots ?? [], currFrame);
-  const ccId = emitComponentContext(compiler, args, fallbackEntries);
+  const componentContextId = emitComponentContext(compiler, args, fallbackEntries);
 
-  currFrame.set({ name: 'slot', value: `${ccId}.slots` });
-  currFrame.set({ name: 'children', value: `${ccId}.slots("default")` });
+  currFrame.set({ name: 'slot', value: `${componentContextId}.slots` });
+  currFrame.set({ name: 'children', value: `${componentContextId}.slots("default")` });
 
   const bufferId = compiler.pushBuffer();
 

@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { normalize } from './to-string.ts';
+import { normalize } from './normalize.ts';
 
 describe('normalize', () => {
   test('coerces non-nullish values to strings', () => {

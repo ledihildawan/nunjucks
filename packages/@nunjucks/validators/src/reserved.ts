@@ -1,4 +1,5 @@
 import { BLOCKED_KEYS_LIST } from './security/index.ts';
+import { ok, err, type Result } from '@nunjucks/lib';
 
 const RESERVED_KEYWORDS = new Set<string>([
   'if', 'elif', 'else', 'endif',
@@ -39,35 +40,30 @@ const RESERVED_KEYWORDS = new Set<string>([
   ...BLOCKED_KEYS_LIST,
 ]);
 
-interface ValidationResult {
-  valid: boolean;
-  error?: {
-    code: string;
-    subject: string;
-    type: string;
-    message: string;
-  };
+interface ReservedNameError {
+  code: string;
+  subject: string;
+  type: string;
+  message: string;
 }
 
-const validateReservedName = (name: string, type = 'name'): ValidationResult => {
+const validateReservedName = (name: string, type = 'name'): Result<void, ReservedNameError> => {
   if (RESERVED_KEYWORDS.has(name)) {
-    return {
-      valid: false,
-      error: {
-        code: 'RESERVED_KEYWORD',
-        subject: name,
-        type,
-        message: `Cannot use reserved ${type} '${name}'`
-      }
-    };
+    return err({
+      code: 'RESERVED_KEYWORD',
+      subject: name,
+      type,
+      message: `Cannot use reserved ${type} '${name}'`
+    });
   }
-  return { valid: true };
+  return ok(undefined);
 };
 
-const validateFilterName = (name: string): ValidationResult => validateReservedName(name, 'filter');
+const validateFilterName = (name: string): Result<void, ReservedNameError> => validateReservedName(name, 'filter');
 
-const validateGlobalName = (name: string): ValidationResult => validateReservedName(name, 'global');
+const validateGlobalName = (name: string): Result<void, ReservedNameError> => validateReservedName(name, 'global');
 
 const getReservedKeywords = (): string[] => [...RESERVED_KEYWORDS];
 
 export { RESERVED_KEYWORDS, validateFilterName, validateGlobalName, getReservedKeywords };
+export type { ReservedNameError };

@@ -2,7 +2,7 @@ import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { makeComponent } from '@nunjucks/runtime';
 import { ok, err } from '@nunjucks/lib';
 import { isArray, requireArrayError, validateItemsHaveAttr } from '../factory/index.ts';
-import { getAttrGetter } from './attributes.ts';
+import { getAttrGetter } from '@nunjucks/lib/attribute-getter';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import type { Result } from '@nunjucks/lib';
 

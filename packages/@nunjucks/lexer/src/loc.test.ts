@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'bun:test';
-import { loc, ZERO_LOC, LOC_BRAND } from './loc.ts';
+import { loc, ZERO_LOC } from './loc.ts';
+import { LOC_BRAND } from '@nunjucks/shared';
 
 describe('loc', () => {
   test('creates a location from non-null lineno and colno', () => {

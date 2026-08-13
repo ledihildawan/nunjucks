@@ -36,6 +36,37 @@ export const fail = ({
   });
 };
 
+// WHY: §10 defense-in-depth — the codegen boundary must not trust upstream
+// guarantees. A template-derived name flowing into a generated JS identifier
+// (b_<name>) or a string literal ("${name}") must be a safe JS identifier so
+// it cannot break out of its emit context. Fails closed with a clear compile
+// error if a metacharacter slips through. Note: `$` and `_` are legitimate JS
+// identifier chars and are allowed; the danger set is quotes/semicolons/
+// backslashes/newlines — exactly the chars the lexer's DELIM_CHARS omits.
+const SAFE_IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/u;
+
+interface AssertIdentifierOptions {
+  compiler: { templateName: string | null };
+  lineno?: number | null;
+  colno?: number | null;
+}
+
+export const assertSafeIdentifier = (name: string, { compiler, lineno, colno }: AssertIdentifierOptions): void => {
+  if (SAFE_IDENTIFIER_RE.test(name)) { return; }
+  throw createLog('error', {
+    def: ERROR_DEFINITIONS.INVALID_IDENTIFIER,
+    params: { name },
+    subject: name,
+    context: {
+      lineno: lineno ?? undefined,
+      colno: colno ?? undefined,
+      phase: 'compile',
+      templateName: compiler.templateName,
+      lineBase: 'zero',
+    }
+  });
+};
+
 export const tmpid = (compiler: { lastId: number }): string => {
   compiler.lastId += 1;
   return `t_${compiler.lastId}`;

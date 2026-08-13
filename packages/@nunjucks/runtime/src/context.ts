@@ -4,7 +4,7 @@ import type { IncludeChain } from '@nunjucks/error-formatter';
 import type { NodeLocation } from '@nunjucks/shared';
 import type { UndefinedMode } from '@nunjucks/runtime';
 import { find, reduce, keys } from 'remeda';
-import { collectString } from './collect-stream.ts';
+import { collectString } from '@nunjucks/lib/collect-stream';
 
 const CONTEXT_KEY = Symbol('Context');
 
@@ -166,12 +166,12 @@ const makeContext = (state: ContextState): Context => {
 
     getBlock(name: string, lineno: number | null = null, colno: number | null = null): BlockFn {
       context.validateBlocks();
-      const block = state.blocks[name];
+      const storedBlock = state.blocks[name];
       const location = state.metadata.blockLocations?.[name];
-      if (!block) {
+      if (!storedBlock) {
         return throwBlockNotFoundError({ name, location, lineno, colno });
       }
-      const firstBlock = Array.isArray(block) ? block[0] : block;
+      const firstBlock = Array.isArray(storedBlock) ? storedBlock[0] : storedBlock;
       if (!firstBlock) {
         return throwBlockNotFoundError({ name, location, lineno, colno });
       }
@@ -184,12 +184,12 @@ const makeContext = (state: ContextState): Context => {
         return throwNoSuperBlockError({ name, lineno, colno });
       }
       const idx = blockList.indexOf(block);
-      const blk = blockList[idx + 1];
-      if (idx === -1 || !blk) {
+      const parentBlock = blockList[idx + 1];
+      if (idx === -1 || !parentBlock) {
         return throwNoSuperBlockError({ name, lineno, colno });
       }
       // WHY: Option C — block functions are async generators; drain the super block into a string so it can be markSafe'd and used as a value. BlockFn is typed `=> unknown` (loose); the runtime guarantee is AsyncGenerator, hence the narrowing cast.
-      return collectString((blk as BlockFn)(envObj, context, frame, runtime) as AsyncGenerator<string, unknown>);
+      return collectString((parentBlock as BlockFn)(envObj, context, frame, runtime) as AsyncGenerator<string, unknown>);
     },
 
     addExport(name: string): Context {
@@ -200,10 +200,10 @@ const makeContext = (state: ContextState): Context => {
       return Object.fromEntries(state.exported.map((name) => [name, state.ctx[name]]));
     },
 
-    fork(data: Record<string, unknown> = {}): Context {
+    fork(childVariables: Record<string, unknown> = {}): Context {
       const child = makeContext({
         env: state.env,
-        ctx: { ...data },
+        ctx: { ...childVariables },
         blocks: {},
         metadata: {},
         exported: [],
@@ -227,7 +227,7 @@ const makeContext = (state: ContextState): Context => {
   return context;
 };
 
-const createContext = ({ ctx = {}, blocks = {}, env = null, metadata = {} }: CreateContextOptions = {}): Context => {
+const createContext = ({ ctx = {}, blocks: initialBlocks = {}, env = null, metadata = {} }: CreateContextOptions = {}): Context => {
   const context = makeContext({
     env: env ?? createDefaultEnv(),
     ctx: { ...ctx },
@@ -238,8 +238,8 @@ const createContext = ({ ctx = {}, blocks = {}, env = null, metadata = {} }: Cre
     parentContext: null as Context | null,
   });
 
-  return reduce(getKeys(blocks), (acc, name) => {
-    const block = blocks[name];
+  return reduce(getKeys(initialBlocks), (acc, name) => {
+    const block = initialBlocks[name];
     if (block) {
       return acc.addBlock(name, block as BlockFn);
     }
@@ -247,8 +247,5 @@ const createContext = ({ ctx = {}, blocks = {}, env = null, metadata = {} }: Cre
   }, context);
 };
 
-const isContext = (value: unknown): value is Context =>
-  Boolean(value) && (value as { [k: symbol]: unknown })[CONTEXT_KEY] === true;
-
-export { createContext, isContext };
+export { createContext };
 export type { BlockLocation, Context, BlockFn };

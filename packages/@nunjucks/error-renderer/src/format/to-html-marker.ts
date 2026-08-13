@@ -36,10 +36,7 @@ interface LocData {
 }
 
 const hashString = (str: string): string => {
-  let hash = 5381;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
-  }
+  const hash = [...str].reduce((acc, char) => ((acc << 5) + acc) ^ char.charCodeAt(0), 5381);
   return (hash >>> 0).toString(16);
 };
 

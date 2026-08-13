@@ -17,11 +17,11 @@
     "./type-guards": "./src/type-guards.ts",
     "./escape": "./src/escape.ts",
     "./slice": "./src/slice.ts",
-    "./path-policy": "./src/path-policy.ts",
+    "./path-security": "./src/path-security.ts",
     "./compare": "./src/compare.ts",
-    "./deep-get": "./src/deep-get.ts",
-    "./to-string": "./src/to-string.ts",
-    "./strip-markdown": "./src/strip-markdown.ts",
+    "./attribute-getter": "./src/attribute-getter.ts",
+    "./normalize": "./src/normalize.ts",
+    "./strip-inline-markdown": "./src/strip-inline-markdown.ts",
     "./string-case": "./src/string-case.ts"
   },
   "dependencies": {

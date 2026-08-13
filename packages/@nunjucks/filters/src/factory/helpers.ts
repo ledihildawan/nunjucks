@@ -1,7 +1,7 @@
 import { isNonNullish } from 'remeda';
 import { isSafeString, markSafe, copySafeness, getLogContext } from '@nunjucks/runtime';
 import { escapeHtml } from '@nunjucks/lib/escape';
-import { normalize } from '@nunjucks/lib/to-string';
+import { normalize } from '@nunjucks/lib/normalize';
 import { ok, err, MATCH_ANY_RE, type Result } from '@nunjucks/lib';
 import { createLog } from '@nunjucks/error-formatter';
 import type { ErrorDefinitionEntry, TemplateError } from '@nunjucks/error-formatter';

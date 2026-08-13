@@ -7,7 +7,6 @@ describe('buildErrorHeader', () => {
     const html = buildErrorHeader({
       humanTitle: 'Boom',
       category: 'ERR_X',
-      severity: 'error',
       phase: 'render',
       environment: 'development',
       verbosity: 'medium',
@@ -32,7 +31,6 @@ describe('buildErrorHeader', () => {
     const html = buildErrorHeader({
       humanTitle: 'Boom',
       category: 'ERR',
-      severity: 'warning',
       phase: null,
       environment: null,
       verbosity: 'simple',
@@ -87,7 +85,6 @@ describe('buildErrorBodyContent', () => {
       sourceTrace: null,
       renderContext: undefined,
       ide: 'vscode',
-      displayPath: 'a.njk',
     });
     expect(out).toBe('');
   });
@@ -110,7 +107,6 @@ describe('buildErrorBodyContent', () => {
       sourceTrace: null,
       renderContext: undefined,
       ide: 'vscode',
-      displayPath: 'a.njk',
     });
     expect(html).toContain('error-body');
     expect(html).toContain('Possible Causes');

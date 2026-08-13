@@ -3,24 +3,22 @@ import type { Node, LookupNode, CallNode, SymbolNode } from '@nunjucks/nodes';
 import type { BaseValidationError } from '@nunjucks/shared';
 import { flatMap } from 'remeda';
 import { ExpressionSecurityError, DEFAULT_SECURITY_CONFIG, DANGEROUS_PROPERTIES, DANGEROUS_CALLEES, type ExpressionSecurityConfig } from './security/index.ts';
+import { isNonEmpty } from './is-non-empty.ts';
+import { ok, err, type Result } from '@nunjucks/lib';
 
 export { ExpressionSecurityError, DEFAULT_SECURITY_CONFIG, DANGEROUS_PROPERTIES, DANGEROUS_CALLEES, validateExpression };
 export type { ExpressionSecurityConfig };
 
 const NON_CHILD_KEYS = new Set(['lineno', 'colno', 'fields']);
 
-const isNonEmpty = <T>(arr: readonly T[]): arr is readonly [T, ...T[]] => arr.length > 0;
-
-interface ExpressionValidationError extends BaseValidationError {
+export interface ExpressionValidationError extends BaseValidationError {
   code: string;
   path: readonly (string | number)[];
   lineno: number;
   colno: number;
 }
 
-export type ExpressionValidationResult =
-  | { valid: true; errors: readonly [] }
-  | { valid: false; errors: readonly [ExpressionValidationError, ...ExpressionValidationError[]] };
+export type ExpressionValidationResult = Result<void, readonly [ExpressionValidationError, ...ExpressionValidationError[]]>;
 
 const staticPropertyName = (value: Node | null | undefined): string | null => {
   if (!value) { return null; }
@@ -48,13 +46,13 @@ const createExpressionWalker = (blocked: readonly RegExp[]) => {
     const propName = staticPropertyName(node.val);
     if (!propName) { return []; }
 
-    const where = [...path, 'lookupVal'];
+    const lookupPath = [...path, 'lookupVal'];
     return [
       ...(DANGEROUS_PROPERTIES.has(propName)
-        ? [unsafeProperty({ message: `Access to dangerous property '${propName}' is not allowed`, node, path: where })]
+        ? [unsafeProperty({ message: `Access to dangerous property '${propName}' is not allowed`, node, path: lookupPath })]
         : []),
       ...(blocked.some(pattern => pattern.test(propName))
-        ? [unsafeProperty({ message: `Property '${propName}' matches blocked pattern`, node, path: where })]
+        ? [unsafeProperty({ message: `Property '${propName}' matches blocked pattern`, node, path: lookupPath })]
         : []),
     ];
   };
@@ -122,8 +120,8 @@ const validateExpression = (ast: Node, config: ExpressionSecurityConfig = {}): E
   const walk = createExpressionWalker(blocked);
   const errors = walk(ast, []);
   if (!isNonEmpty(errors)) {
-    return { valid: true, errors: [] as const };
+    return ok(undefined);
   }
   const [first, ...rest] = errors;
-  return { valid: false, errors: [first, ...rest] as const };
+  return err([first, ...rest] as const);
 };

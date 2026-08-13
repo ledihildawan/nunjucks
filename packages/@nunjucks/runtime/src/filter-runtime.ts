@@ -24,7 +24,7 @@ const isOkResult = (value: unknown): value is { ok: true; value: unknown } =>
 const isErrResult = (value: unknown): value is { ok: false; error: unknown } =>
   typeof value === 'object' && value !== null && (value as { ok: unknown }).ok === false;
 
-const runFilter = async (options: RunFilterOptions): Promise<Result<unknown, TypeError>> => {
+const runFilter = async (options: RunFilterOptions): Promise<Result<unknown, unknown>> => {
   const { env, name, lineno, colno, context, args } = options;
   if (!isFilterEnv(env)) {
     return err(new TypeError('runFilter requires an environment exposing getFilter(name, lineno, colno)'));
@@ -36,7 +36,7 @@ const runFilter = async (options: RunFilterOptions): Promise<Result<unknown, Typ
     if (isThenable(resolved)) {
       const awaited = await resolved;
       if (isErrResult(awaited)) {
-        return err(awaited.error as TypeError);
+        return err(awaited.error);
       }
       if (isOkResult(awaited)) {
         return awaited;
@@ -44,14 +44,14 @@ const runFilter = async (options: RunFilterOptions): Promise<Result<unknown, Typ
       return ok(awaited);
     }
     if (isErrResult(resolved)) {
-      return err(resolved.error as TypeError);
+      return err(resolved.error);
     }
     if (isOkResult(resolved)) {
       return resolved;
     }
     return ok(resolved);
   } catch (error: unknown) {
-    return err(error as TypeError);
+    return err(error);
   }
 };
 

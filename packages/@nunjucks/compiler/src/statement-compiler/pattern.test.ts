@@ -5,7 +5,7 @@ import { symbol, literal, pair } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { ZERO_LOC } from '@nunjucks/lexer';
+import { ZERO_LOC } from '@nunjucks/shared';
 
 const makeCompiler = () => {
   const emitted: string[] = [];
@@ -24,7 +24,7 @@ const makeCompiler = () => {
 const destructure = (pattern: Node, source: string, registerFrame = true) => {
   const compiler = makeCompiler();
   const frame = createFrame();
-  compileDestructuring({ ctx: asCompiler(compiler), frame, registerFrame }, pattern, source);
+  compileDestructuring({ compiler: asCompiler(compiler), frame, registerFrame }, pattern, source);
   return compiler.emitted.join('');
 };
 

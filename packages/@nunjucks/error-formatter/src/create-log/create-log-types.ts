@@ -1,7 +1,6 @@
 import type { LineBase } from '@nunjucks/error-catalog';
 import { TEMPLATE_ERROR } from '@nunjucks/error-catalog';
-import type { Phase } from '@nunjucks/shared';
-import type { UndefinedMode } from '@nunjucks/runtime';
+import type { Phase, UndefinedMode } from '@nunjucks/shared';
 
 interface ErrorDefinitionEntry {
   name: string;
@@ -30,6 +29,21 @@ interface WarningInfo extends ErrorInfo {
   undefinedMode?: UndefinedMode;
 }
 
+interface ProjectSourceLocation {
+  path: string;
+  line: number | null;
+  col: number | null;
+}
+
+interface ProjectSourceContent {
+  sourceContent: string;
+  templatePath: string;
+  lineno: number;
+  colno: number;
+}
+
+type SourceFileReader = (location: ProjectSourceLocation) => ProjectSourceContent | null;
+
 interface OutputOptions {
   format?: 'html' | 'ansi' | 'text';
   verbosity?: 'simple' | 'medium' | 'full';
@@ -48,6 +62,7 @@ interface OutputOptions {
   jsCallerErrorLine?: number;
   isJsCaller?: boolean;
   humanTitle?: string;
+  sourceFileReader?: SourceFileReader;
 }
 
 interface TemplateError extends Error {
@@ -142,7 +157,7 @@ interface PrettifyErrorOptions {
   includeChain?: IncludeChain;
 }
 
-interface LegacyLogData {
+interface RawLogData {
   message: string;
   lineno?: number | null;
   colno?: number | null;
@@ -151,5 +166,5 @@ interface LegacyLogData {
 
 type LogType = 'error' | 'warning';
 
-export type { ErrorDefinitionEntry, ErrorInfo, WarningInfo, OutputOptions, TemplateError, TemplateWarning, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, LegacyLogData, LogType, BaseContext, NormalizedErrorContext, NormalizedWarningContext };
+export type { ErrorDefinitionEntry, ErrorInfo, WarningInfo, OutputOptions, ProjectSourceLocation, ProjectSourceContent, SourceFileReader, TemplateError, TemplateWarning, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, RawLogData, LogType, BaseContext, NormalizedErrorContext, NormalizedWarningContext };
 export { TEMPLATE_ERROR };

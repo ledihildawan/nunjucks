@@ -79,6 +79,21 @@ export const TEMPLATE_ERRORS = {
     documentationUrl: `${DOCS_BASE}#compile`,
     subjectFrom: null
   },
+  INVALID_IDENTIFIER: {
+    name: 'INVALID_IDENTIFIER',
+    message: "Invalid identifier '{name}': template symbol names must be valid JavaScript identifiers",
+    pattern: /Invalid identifier '([^']+)'/iu,
+    category: 'invalid_template',
+    titleTemplate: "Invalid identifier '{subject}'",
+    causes: [
+      'A block, variable, macro, or import name contains **characters that are not valid in a JavaScript identifier**',
+      'A symbol token reached the compiler carrying quotes, semicolons, or other metacharacters',
+      'The template was hand-crafted to probe the code-generation boundary'
+    ],
+    fixCode: '{% block content %}...{% endblock %}\n{% set myVar = value %}',
+    fixComment: 'Use plain identifier names (letters, digits, $, _) — avoid quotes, semicolons, or backslashes in symbol names',
+    subjectFrom: firstCapture
+  },
   WALK_UNKNOWN_TYPE: {
     name: 'WALK_UNKNOWN_TYPE',
     message: "walk: unknown node type '{type}'",

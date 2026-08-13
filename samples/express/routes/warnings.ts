@@ -1,11 +1,7 @@
 import express, { type Router, type Request, type Response, type NextFunction } from 'express';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { renderTemplate, sendTemplateResult } from '../lib/express-render.ts';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const VIEWS = path.join(__dirname, '..', 'views');
+import { renderTemplate } from '../lib/domain/render-template.ts';
+import { sendTemplateResult } from '../lib/io/send-template-result.ts';
+import { VIEWS } from '../lib/io/views-path.ts';
 
 const router: Router = express.Router();
 

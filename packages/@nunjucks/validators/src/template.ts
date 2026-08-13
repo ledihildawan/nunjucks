@@ -1,6 +1,8 @@
 import { scanTemplateForDangerousCode, type DangerousCodeViolation } from './security/index.ts';
 import type { BaseValidationError } from '@nunjucks/shared';
 import { join, map, pipe } from 'remeda';
+import { isNonEmpty } from './is-non-empty.ts';
+import { ok, err, type Result } from '@nunjucks/lib';
 
 export interface TemplateValidationError extends BaseValidationError {
   code: string;
@@ -8,16 +10,12 @@ export interface TemplateValidationError extends BaseValidationError {
   violations?: DangerousCodeViolation[];
 }
 
-export type TemplateValidationResult =
-  | { valid: true; errors: readonly [] }
-  | { valid: false; errors: readonly [TemplateValidationError, ...TemplateValidationError[]] };
+export type TemplateValidationResult = Result<void, readonly [TemplateValidationError, ...TemplateValidationError[]]>;
 
 export interface TemplateValidatorConfig {
   maxTemplateSize?: number;
   strictMode?: boolean;
 }
-
-const isNonEmpty = <T>(arr: readonly T[]): arr is readonly [T, ...T[]] => arr.length > 0;
 
 const checkTemplateSize = (template: string, config: TemplateValidatorConfig): TemplateValidationError | null => {
   if (!config.maxTemplateSize || config.maxTemplateSize <= 0) {
@@ -58,8 +56,8 @@ export const validateTemplate = (template: string, config: TemplateValidatorConf
     .filter((e): e is TemplateValidationError => e !== null);
 
   if (!isNonEmpty(errors)) {
-    return { valid: true, errors: [] as const };
+    return ok(undefined);
   }
   const [first, ...rest] = errors;
-  return { valid: false, errors: [first, ...rest] as const };
+  return err([first, ...rest] as const);
 };

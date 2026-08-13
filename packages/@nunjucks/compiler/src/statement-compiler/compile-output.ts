@@ -13,7 +13,7 @@ import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { appendTarget } from '../codegen.ts';
 import { extractPropertyLocation } from '../location-utils.ts';
-import { extractVarName } from './extract-location.ts';
+import { extractVarName } from './extract-var-name.ts';
 
 const emitEnsureDefinedClose = (
   compiler: Compiler,
@@ -22,8 +22,8 @@ const emitEnsureDefinedClose = (
   colno: number
 ): void => {
   const name = extractVarName(child);
-  const nameProp = name ? `, varName: "${name}"` : '';
-  const modeProp = compiler.undefinedMode ? `, undefinedMode: "${compiler.undefinedMode}"` : '';
+  const nameProp = name ? `, varName: ${JSON.stringify(name)}` : '';
+  const modeProp = compiler.undefinedMode ? `, undefinedMode: ${JSON.stringify(compiler.undefinedMode)}` : '';
   compiler.emit(`, { lineno: ${lineno}, colno: ${colno}${nameProp}${modeProp} })`);
 };
 
@@ -70,7 +70,7 @@ const compileOutputChild = (
   if (!isPipeType) {
     compiler.emit(')');
   }
-  compiler.emit(`, { autoescape: env.opts.autoescape, lineno, colno, context: "${htmlContext}" });`);
+  compiler.emit(`, { autoescape: env.opts.autoescape, lineno, colno, context: ${JSON.stringify(htmlContext)} });`);
   if (compiler.streamErrorRecovery) {
     compiler.emitStreamCatch(lineno, colno);
   }

@@ -18,9 +18,15 @@ const visitAndScrub = (value: unknown, seen: WeakSet<object>): unknown => {
   );
 };
 
-export const scrubDangerousReferences = (context: unknown): unknown => {
+export const scrubDangerousReferences = <T>(context: T): T => {
   const seen = new WeakSet<object>();
-  return visitAndScrub(context, seen);
+  // WHY: visitAndScrub returns `unknown` because it rebuilds objects via
+  // Object.fromEntries. The structural invariant it upholds: for non-dangerous
+  // inputs every key is preserved with its (recursively scrubbed) value, so the
+  // result is structurally assignable back to T. Dangerous keys are *removed*,
+  // making the result a structural subtype of T — never a supertype — so the
+  // cast is a sound upper bound. TS cannot prove the round-trip, hence the cast.
+  return visitAndScrub(context, seen) as T;
 };
 
 export { visitAndScrub };

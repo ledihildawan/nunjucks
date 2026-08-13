@@ -5,7 +5,7 @@ import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
-import { emitLocationGuard, appendTarget } from '../codegen.ts';
+import { emitLocationGuard, appendTarget, assertSafeIdentifier } from '../codegen.ts';
 import { compileSlotFunction } from './slot.ts';
 
 const compileRenderSlots = (
@@ -15,9 +15,10 @@ const compileRenderSlots = (
 ): string => {
   const entries: string[] = [];
   forEach(slots, (slot) => {
+    assertSafeIdentifier(slot.name, { compiler });
     const slotVar = `__slot_${slot.name}`;
     compileSlotFunction({ compiler, params: slot.params, body: slot.body, parentFrame: frame, slotVar });
-    entries.push(`"${slot.name}": ${slotVar}`);
+    entries.push(`${JSON.stringify(slot.name)}: ${slotVar}`);
   });
   return `slots: { ${entries.join(', ')} }`;
 };

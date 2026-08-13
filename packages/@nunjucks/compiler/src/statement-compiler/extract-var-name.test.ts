@@ -1,8 +1,8 @@
 import { describe, test, expect } from 'bun:test';
-import { extractVarName } from './extract-location.ts';
+import { extractVarName } from './extract-var-name.ts';
 import { symbol, literal, lookupVal, funCall } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { ZERO_LOC } from '@nunjucks/lexer';
+import { ZERO_LOC } from '@nunjucks/shared';
 
 describe('extractVarName', () => {
   test('returns the symbol value for a simple symbol node', () => {

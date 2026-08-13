@@ -3,7 +3,7 @@ import { compileSwitch } from './switch.ts';
 import { symbol, literal, output, templateData, caseNode, switchNode } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { ZERO_LOC } from '@nunjucks/lexer';
+import { ZERO_LOC } from '@nunjucks/shared';
 
 const frame = createFrame();
 

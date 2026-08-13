@@ -1,4 +1,4 @@
-const createSymbolGenerator = (seed: number, prefix: string): (() => string) => {
+const createIdGenerator = (seed: number, prefix: string): (() => string) => {
   let counter = seed;
   return (): string => {
     const result = `${prefix}_${counter}`;
@@ -7,4 +7,4 @@ const createSymbolGenerator = (seed: number, prefix: string): (() => string) => 
   };
 };
 
-export const createGensym = (prefix: string): (() => string) => createSymbolGenerator(0, prefix);
+export const createGensym = (prefix: string): (() => string) => createIdGenerator(0, prefix);

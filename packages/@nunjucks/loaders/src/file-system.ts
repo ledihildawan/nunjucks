@@ -7,7 +7,7 @@ import { createLog } from '@nunjucks/error-formatter';
 import { getError } from '@nunjucks/error-catalog';
 import { ok, err, type Result } from '@nunjucks/lib';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { containsNullByte, isWithinBase } from '@nunjucks/lib/path-policy';
+import { containsNullByte, isWithinBase } from '@nunjucks/lib/path-security';
 
 const normalizeSearchPaths = (searchPaths: string | string[] | undefined): string[] => {
   if (!searchPaths) {

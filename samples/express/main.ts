@@ -1,10 +1,11 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import { createEngine, type ExpressEngineConfig } from '@nunjucks/integrations/express';
-import { renderTemplate, sendTemplateResult } from './lib/express-render.ts';
-import { currentYear } from './lib/clock.ts';
-import { formatError } from '@nunjucks/error-formatter';
+import { renderTemplate } from './lib/domain/render-template.ts';
+import { sendTemplateResult } from './lib/io/send-template-result.ts';
+import { currentYear } from './lib/io/clock.ts';
+import { VIEWS } from './lib/io/views-path.ts';
+import { formatError, type SourceFileReader } from '@nunjucks/error-formatter';
+import { readProjectSource } from '@nunjucks/core/diagnostics';
 import { demoRouter } from './routes/demo.ts';
 import { errorRouter } from './routes/errors.ts';
 import { boundaryRouter } from './routes/boundaries.ts';
@@ -13,10 +14,6 @@ import { remoteRouter } from './routes/remote.ts';
 import { sandboxRouter } from './routes/sandbox.ts';
 import { undefinedRouter } from './routes/undefined.ts';
 import { warningsRouter } from './routes/warnings.ts';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const VIEWS = path.join(__dirname, 'views');
 
 const app: Express = express();
 
@@ -45,19 +42,7 @@ app.get('/home', async (_req: Request, res: Response, next: NextFunction) => {
   sendTemplateResult(
     res,
     next,
-    await renderTemplate(
-      `<!DOCTYPE html>
-<html>
-<head><title>Home</title></head>
-<body>
-  <h1>Welcome, {{ username }}!</h1>
-  <p>App: {{ appName }} v{{ version }}</p>
-  <p>Year: {{ getYear() }}</p>
-  <p>Shout: {{ "hello" |> shout }}</p>
-</body>
-</html>`,
-      { context: { username: 'John Doe' }, config: engineConfig }
-    )
+    await renderTemplate('home-welcome.njk', { context: { username: 'John Doe' }, config: engineConfig })
   );
 });
 
@@ -65,38 +50,15 @@ app.get('/security', async (_req: Request, res: Response, next: NextFunction) =>
   sendTemplateResult(
     res,
     next,
-    await renderTemplate(
-      `<!DOCTYPE html>
-<html>
-<head><title>Security Features Demo</title></head>
-<body>
-  <h1>Security Features Demo</h1>
-
-  <h2>1. Sanitize Filter (DOMPurify)</h2>
-  <p>Raw user input (XSS risk): <code>{{ userInput }}</code></p>
-  <p>Sanitized: <code>{{ userInput |> sanitize }}</code></p>
-
-  <h2>2. Auto-toJSON in Script Context</h2>
-  <script>
-    const config = {{ configData }};
-    console.log('Config loaded:', config);
-  </script>
-
-  <h2>3. Context-Aware Escaping</h2>
-  <p>HTML: <code>{{ htmlContent }}</code></p>
-  <p>Attribute: <code>&lt;div data-value="{{ attrContent }}"&gt;&lt;/div&gt;</code></p>
-</body>
-</html>`,
-      {
-        context: {
-          userInput: '<script>alert("XSS")</script><p>Safe content</p>',
-          configData: { theme: 'dark', debug: true },
-          htmlContent: '<b>Bold</b> & "quoted"',
-          attrContent: 'value="with quotes"'
-        },
-        config: engineConfig
-      }
-    )
+    await renderTemplate('security-features.njk', {
+      context: {
+        userInput: '<script>alert("XSS")</script><p>Safe content</p>',
+        configData: { theme: 'dark', debug: true },
+        htmlContent: '<b>Bold</b> & "quoted"',
+        attrContent: 'value="with quotes"'
+      },
+      config: engineConfig
+    })
   );
 });
 
@@ -110,8 +72,9 @@ app.use('/warnings', warningsRouter);
 app.use(streamingRouter);
 
 app.use(async (err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.log(formatError(err, { format: 'ansi', dev: true }));
-  res.status(500).type('html').send(formatError(err, { format: 'html', dev: true }));
+  const sourceFileReader: SourceFileReader = readProjectSource;
+  console.log(formatError(err, { format: 'ansi', dev: true, sourceFileReader }));
+  res.status(500).type('html').send(formatError(err, { format: 'html', dev: true, sourceFileReader }));
 });
 
 app.listen(4000, () => {

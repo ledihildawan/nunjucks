@@ -4,9 +4,8 @@ import { toDisplayLocation } from './presentation/source-trace/location.ts';
 import { mergeErrorParts } from './presentation/error/error-parts.ts';
 import { parseStackFrame } from './presentation/source-trace/stack-parse.ts';
 import { slice } from '@nunjucks/lib';
-import { stripMarkdown } from './strip-markdown.ts';
+import { stripInlineMarkdown } from '@nunjucks/lib/strip-inline-markdown';
 import { getErrorMessage } from '@nunjucks/error-catalog/get-error-message';
-import type { ErrorLike } from '@nunjucks/error-catalog';
 
 interface ToTextOptions {
   verbosity?: 'simple' | 'medium' | 'full';
@@ -33,6 +32,18 @@ const formatStackLine = (line: string): string => {
   return `  ${frame.raw}`;
 };
 
+interface ErrorRecord {
+  templateName?: string;
+  lineno?: number | null;
+  colno?: number | null;
+  lineBase?: 'zero' | 'one';
+  severity?: 'error' | 'warning' | 'info';
+  stack?: string;
+}
+
+const isErrorRecord = (value: unknown): value is ErrorRecord =>
+  typeof value === 'object' && value !== null;
+
 interface MediumTextInput {
   severityLabel: string;
   error: unknown;
@@ -44,7 +55,7 @@ interface MediumTextInput {
 }
 
 const formatMediumText = (message: string, input: MediumTextInput): string => {
-  const err = input.error as ErrorLike;
+  const err = isErrorRecord(input.error) ? input.error : {};
   const path = input.templatePath ?? err.templateName ?? 'unknown';
   const location = toDisplayLocation({
     lineno: input.lineno ?? err.lineno ?? null,
@@ -53,7 +64,7 @@ const formatMediumText = (message: string, input: MediumTextInput): string => {
   });
   const shortPath = shortenPath(path, '');
   const locationStr = ` at ${shortPath}:${location.line}:${location.col}`;
-  const causeHint = input.causes.length > 0 ? stripMarkdown(input.causes[0] ?? '') : '';
+  const causeHint = input.causes.length > 0 ? stripInlineMarkdown(input.causes[0] ?? '') : '';
   const docHint = input.documentationUrl ?? '';
   const extras = pipe([causeHint, docHint], filter(Boolean), join(' | '));
   const extrasPart = extras ? `\n${extras}` : '';
@@ -70,13 +81,13 @@ interface ErrorParts {
 
 const extractErrorParts = (error: unknown): ErrorParts => {
   const parts = mergeErrorParts(error);
-  const errObj = error as { severity?: 'error' | 'warning' | 'info' };
-  return { ...parts, severity: errObj.severity };
+  const severity = isErrorRecord(error) ? error.severity : undefined;
+  return { ...parts, severity };
 };
 
 const formatCauses = (causes: string[]): string[] => {
   if (causes.length === 0) { return []; }
-  return ['', 'Possible Causes:', ...causes.map(c => `  • ${stripMarkdown(c)}`)];
+  return ['', 'Possible Causes:', ...causes.map(c => `  • ${stripInlineMarkdown(c)}`)];
 };
 
 interface FormatFixInput {
@@ -89,14 +100,14 @@ const formatFix = ({ fixCode, fixComment, documentationUrl }: FormatFixInput): s
   if (!fixCode) { return []; }
   return [
     '', 'Suggested Fix:',
-    ...(fixComment ? [`  // ${stripMarkdown(fixComment)}`] : []),
+    ...(fixComment ? [`  // ${stripInlineMarkdown(fixComment)}`] : []),
     `  ${fixCode}`,
     ...(documentationUrl ? [`  Learn more: ${documentationUrl}`] : [])
   ];
 };
 
 const formatStack = (error: unknown): string => {
-  const stack = (error as Error).stack ?? '';
+  const stack = isErrorRecord(error) ? (error.stack ?? '') : '';
   return pipe(stack, split('\n'), slice(1), map(formatStackLine), join('\n'));
 };
 

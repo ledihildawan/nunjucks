@@ -4,6 +4,7 @@ import type { Frame } from '@nunjucks/runtime';
 import { forEach, join, map, pipe } from 'remeda';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
+import { assertSafeIdentifier } from '../codegen.ts';
 import { loc } from '@nunjucks/lexer';
 
 const STRING_ESCAPE_MAP: Record<string, string> = {
@@ -42,7 +43,8 @@ const compileSymbol = (compiler: Compiler, { node, frame }: CompileNodeInput<Sym
   if (lookupResult) {
     compiler.emit(String(lookupResult));
   } else {
-    compiler.emit(`runtime.contextOrFrameLookup(context, frame, "${name}")`);
+    assertSafeIdentifier(name, { compiler });
+    compiler.emit(`runtime.contextOrFrameLookup(context, frame, ${JSON.stringify(name)})`);
   }
 };
 

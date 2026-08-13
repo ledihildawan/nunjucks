@@ -1,51 +1,51 @@
 import { describe, test, expect } from 'bun:test';
 import { nodes } from '@nunjucks/nodes';
-import { validateExpression, ExpressionSecurityError } from './expression';
-import { loc, ZERO_LOC } from '@nunjucks/lexer';
+import { validateExpression, ExpressionSecurityError, type ExpressionValidationError } from './expression';
+import type { ExpressionValidationResult } from './expression';
+import { isErr } from '@nunjucks/lib';
+import { loc, ZERO_LOC } from '@nunjucks/shared';
 
 const ExprErr = ExpressionSecurityError;
+
+const errorsOf = (result: ExpressionValidationResult): readonly ExpressionValidationError[] =>
+  isErr(result) ? result.error : [];
 
 describe('validateExpression', () => {
   describe('safe expressions', () => {
     test('simple symbol passes', () => {
       const ast = nodes.symbol(ZERO_LOC, 'name');
-      const { errors } = validateExpression(ast);
-      expect(errors).toHaveLength(0);
+      expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
 
     test('literal value passes', () => {
       const ast = nodes.literal(ZERO_LOC, 'hello');
-      const { errors } = validateExpression(ast);
-      expect(errors).toHaveLength(0);
+      expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
 
     test('safe property lookup passes', () => {
       const ast = nodes.lookupVal(ZERO_LOC, { target: nodes.symbol(ZERO_LOC, 'obj'), val: nodes.literal(ZERO_LOC, 'safeProp') });
-      const { errors } = validateExpression(ast);
-      expect(errors).toHaveLength(0);
+      expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
 
     test('safe function call passes', () => {
       const ast = nodes.funCall(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'greet'), args: [
         nodes.literal(ZERO_LOC, 'world'),
       ] });
-      const { errors } = validateExpression(ast);
-      expect(errors).toHaveLength(0);
+      expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
 
     test('safe pipe expression passes', () => {
       const ast = nodes.pipe(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'upper'), args: [
         nodes.symbol(ZERO_LOC, 'name'),
       ] });
-      const { errors } = validateExpression(ast);
-      expect(errors).toHaveLength(0);
+      expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
   });
 
   describe('UNSAFE_PROPERTY - dangerous symbol access', () => {
     test('__proto__ symbol triggers UNSAFE_PROPERTY', () => {
       const ast = nodes.symbol(ZERO_LOC, '__proto__');
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
       expect(errors[0]!.message).toContain('__proto__');
@@ -53,7 +53,7 @@ describe('validateExpression', () => {
 
     test('constructor symbol triggers UNSAFE_PROPERTY', () => {
       const ast = nodes.symbol(ZERO_LOC, 'constructor');
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
       expect(errors[0]!.message).toContain('constructor');
@@ -61,7 +61,7 @@ describe('validateExpression', () => {
 
     test('prototype symbol triggers UNSAFE_PROPERTY', () => {
       const ast = nodes.symbol(ZERO_LOC, 'prototype');
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
       expect(errors[0]!.message).toContain('prototype');
@@ -69,14 +69,14 @@ describe('validateExpression', () => {
 
     test('hasOwnProperty symbol triggers UNSAFE_PROPERTY', () => {
       const ast = nodes.symbol(ZERO_LOC, 'hasOwnProperty');
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
     });
 
     test('toString symbol triggers UNSAFE_PROPERTY (in OBJECT_INTRINSICS)', () => {
       const ast = nodes.symbol(ZERO_LOC, 'toString');
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
     });
@@ -88,7 +88,7 @@ describe('validateExpression', () => {
         target: nodes.symbol(ZERO_LOC, 'obj'),
         val: nodes.literal(ZERO_LOC, '__secret__'),
       });
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
       expect(errors[0]!.message).toContain('matches blocked pattern');
@@ -99,7 +99,7 @@ describe('validateExpression', () => {
         target: nodes.symbol(ZERO_LOC, 'obj'),
         val: nodes.literal(ZERO_LOC, 'some_constructor'),
       });
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
       expect(errors[0]!.message).toContain('matches blocked pattern');
@@ -110,7 +110,7 @@ describe('validateExpression', () => {
         target: nodes.symbol(ZERO_LOC, 'obj'),
         val: nodes.literal(ZERO_LOC, 'my_prototype'),
       });
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
       expect(errors[0]!.message).toContain('matches blocked pattern');
@@ -121,7 +121,7 @@ describe('validateExpression', () => {
         target: nodes.symbol(ZERO_LOC, 'obj'),
         val: nodes.literal(ZERO_LOC, 'secretKey'),
       });
-      const { errors } = validateExpression(ast, { blockedPropertyPatterns: [/^secret/] });
+      const errors = errorsOf(validateExpression(ast, { blockedPropertyPatterns: [/^secret/] }));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
     });
@@ -131,7 +131,7 @@ describe('validateExpression', () => {
         target: nodes.symbol(ZERO_LOC, 'obj'),
         val: nodes.literal(ZERO_LOC, '__secret__'),
       });
-      const { errors } = validateExpression(ast, { blockedPropertyPatterns: [] });
+      const errors = errorsOf(validateExpression(ast, { blockedPropertyPatterns: [] }));
       expect(errors).toHaveLength(0);
     });
   });
@@ -141,7 +141,7 @@ describe('validateExpression', () => {
       const ast = nodes.funCall(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'eval'), args: [
         nodes.literal(ZERO_LOC, 'x'),
       ] });
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
       expect(errors[0]!.message).toContain('eval');
@@ -151,7 +151,7 @@ describe('validateExpression', () => {
       const ast = nodes.funCall(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'Function'), args: [
         nodes.literal(ZERO_LOC, 'x'),
       ] });
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
       expect(errors[0]!.message).toContain('Function');
@@ -162,7 +162,7 @@ describe('validateExpression', () => {
         nodes.symbol(ZERO_LOC, 'callback'),
         nodes.literal(ZERO_LOC, 100),
       ] });
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
       expect(errors[0]!.message).toContain('setTimeout');
@@ -172,7 +172,7 @@ describe('validateExpression', () => {
       const ast = nodes.funCall(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'AsyncFunction'), args: [
         nodes.literal(ZERO_LOC, 'x'),
       ] });
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
     });
@@ -181,7 +181,7 @@ describe('validateExpression', () => {
       const ast = nodes.funCall(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'GeneratorFunction'), args: [
         nodes.literal(ZERO_LOC, 'x'),
       ] });
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
     });
@@ -193,8 +193,7 @@ describe('validateExpression', () => {
         target: nodes.symbol(ZERO_LOC, 'obj'),
         val: nodes.symbol(ZERO_LOC, 'dynamicProp'),
       });
-      const { errors } = validateExpression(ast);
-      expect(errors).toHaveLength(0);
+      expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
 
     test('allowDynamicPropertyAccess: true allows dynamic property access', () => {
@@ -202,8 +201,7 @@ describe('validateExpression', () => {
         target: nodes.symbol(ZERO_LOC, 'obj'),
         val: nodes.symbol(ZERO_LOC, 'dynamicProp'),
       });
-      const { errors } = validateExpression(ast, { allowDynamicPropertyAccess: true });
-      expect(errors).toHaveLength(0);
+      expect(errorsOf(validateExpression(ast, { allowDynamicPropertyAccess: true }))).toHaveLength(0);
     });
 
     test('lookupVal with literal string property does not trigger errors', () => {
@@ -211,8 +209,7 @@ describe('validateExpression', () => {
         target: nodes.symbol(ZERO_LOC, 'obj'),
         val: nodes.literal(ZERO_LOC, 'safeProp'),
       });
-      const { errors } = validateExpression(ast);
-      expect(errors).toHaveLength(0);
+      expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
 
     test('lookupVal with literal numeric property does not trigger errors', () => {
@@ -220,8 +217,7 @@ describe('validateExpression', () => {
         target: nodes.symbol(ZERO_LOC, 'arr'),
         val: nodes.literal(ZERO_LOC, 42),
       });
-      const { errors } = validateExpression(ast);
-      expect(errors).toHaveLength(0);
+      expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
   });
 
@@ -231,7 +227,7 @@ describe('validateExpression', () => {
         target: nodes.symbol(ZERO_LOC, 'obj'),
         val: nodes.symbol(ZERO_LOC, '__proto__'),
       });
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors.length).toBeGreaterThan(0);
       expect(errors.some((e) => e.code === ExprErr.UNSAFE_PROPERTY)).toBe(true);
     });
@@ -241,7 +237,7 @@ describe('validateExpression', () => {
         target: nodes.symbol(ZERO_LOC, 'obj'),
         val: nodes.symbol(ZERO_LOC, 'constructor'),
       });
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors.some((e) => e.code === ExprErr.UNSAFE_PROPERTY)).toBe(true);
     });
 
@@ -250,7 +246,7 @@ describe('validateExpression', () => {
         target: nodes.lookupVal(ZERO_LOC, { target: nodes.symbol(ZERO_LOC, 'a'), val: nodes.symbol(ZERO_LOC, 'b') }),
         val: nodes.symbol(ZERO_LOC, '__proto__'),
       });
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors.some((e) => e.code === ExprErr.UNSAFE_PROPERTY)).toBe(true);
     });
 
@@ -260,7 +256,7 @@ describe('validateExpression', () => {
         val: nodes.symbol(ZERO_LOC, 'x'),
       });
       const outerLookup = nodes.lookupVal(ZERO_LOC, { target: innerLookup, val: nodes.symbol(ZERO_LOC, 'y') });
-      const { errors } = validateExpression(outerLookup);
+      const errors = errorsOf(validateExpression(outerLookup));
       expect(errors.some((e) => e.code === ExprErr.UNSAFE_PROPERTY)).toBe(true);
     });
   });
@@ -270,7 +266,7 @@ describe('validateExpression', () => {
       const ast = nodes.pipe(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'eval'), args: [
         nodes.symbol(ZERO_LOC, 'x'),
       ] });
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
       expect(errors[0]!.message).toContain('eval');
@@ -280,7 +276,7 @@ describe('validateExpression', () => {
       const ast = nodes.pipe(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'Function'), args: [
         nodes.symbol(ZERO_LOC, 'x'),
       ] });
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
       expect(errors[0]!.message).toContain('Function');
@@ -290,8 +286,7 @@ describe('validateExpression', () => {
       const ast = nodes.pipe(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'upper'), args: [
         nodes.symbol(ZERO_LOC, 'text'),
       ] });
-      const { errors } = validateExpression(ast);
-      expect(errors).toHaveLength(0);
+      expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
 
     test('pipe with multiple args passes for safe function', () => {
@@ -300,15 +295,14 @@ describe('validateExpression', () => {
         nodes.literal(ZERO_LOC, 'old'),
         nodes.literal(ZERO_LOC, 'new'),
       ] });
-      const { errors } = validateExpression(ast);
-      expect(errors).toHaveLength(0);
+      expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
 
     test('pipe with dangerous argument', () => {
       const ast = nodes.pipe(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'upper'), args: [
         nodes.symbol(ZERO_LOC, '__proto__'),
       ] });
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors.some((e) => e.code === ExprErr.UNSAFE_PROPERTY)).toBe(true);
     });
   });
@@ -316,7 +310,7 @@ describe('validateExpression', () => {
   describe('error location', () => {
     test('error includes lineno and colno', () => {
       const ast = nodes.symbol(loc({ lineno: 5, colno: 10 }), '__proto__');
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.lineno).toBe(5);
       expect(errors[0]!.colno).toBe(10);
@@ -327,7 +321,7 @@ describe('validateExpression', () => {
         target: nodes.symbol(loc({ lineno: 1, colno: 2 }), 'obj'),
         val: nodes.symbol(loc({ lineno: 3, colno: 4 }), '__proto__'),
       });
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors.length).toBeGreaterThan(0);
       expect(errors[0]!.path).toBeDefined();
     });
@@ -336,8 +330,8 @@ describe('validateExpression', () => {
   describe('configuration overrides', () => {
     test('empty config uses default security config', () => {
       const ast = nodes.symbol(ZERO_LOC, '__proto__');
-      const { errors: errorsWithDefault } = validateExpression(ast);
-      const { errors: errorsWithEmpty } = validateExpression(ast, {});
+      const errorsWithDefault = errorsOf(validateExpression(ast));
+      const errorsWithEmpty = errorsOf(validateExpression(ast, {}));
       expect(errorsWithDefault).toHaveLength(errorsWithEmpty.length);
     });
 
@@ -346,7 +340,7 @@ describe('validateExpression', () => {
         target: nodes.symbol(ZERO_LOC, 'obj'),
         val: nodes.literal(ZERO_LOC, '__secret__'),
       });
-      const { errors } = validateExpression(ast, { blockedPropertyPatterns: [] });
+      const errors = errorsOf(validateExpression(ast, { blockedPropertyPatterns: [] }));
       expect(errors).toHaveLength(0);
     });
 
@@ -355,7 +349,7 @@ describe('validateExpression', () => {
         target: nodes.symbol(ZERO_LOC, 'obj'),
         val: nodes.literal(ZERO_LOC, 'abc'),
       });
-      const { errors } = validateExpression(ast, { blockedPropertyPatterns: [/^abc/] });
+      const errors = errorsOf(validateExpression(ast, { blockedPropertyPatterns: [/^abc/] }));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
     });
@@ -365,7 +359,7 @@ describe('validateExpression', () => {
         target: nodes.symbol(ZERO_LOC, 'obj'),
         val: nodes.symbol(ZERO_LOC, 'anyProp'),
       });
-      const { errors } = validateExpression(ast, { allowDynamicPropertyAccess: true });
+      const errors = errorsOf(validateExpression(ast, { allowDynamicPropertyAccess: true }));
       expect(errors).toHaveLength(0);
     });
   });
@@ -376,7 +370,7 @@ describe('validateExpression', () => {
         target: nodes.symbol(ZERO_LOC, '__proto__'),
         val: nodes.symbol(ZERO_LOC, 'constructor'),
       });
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors.length).toBeGreaterThanOrEqual(2);
     });
 
@@ -384,7 +378,7 @@ describe('validateExpression', () => {
       const ast = nodes.funCall(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'eval'), args: [
         nodes.symbol(ZERO_LOC, '__proto__'),
       ] });
-      const { errors } = validateExpression(ast);
+      const errors = errorsOf(validateExpression(ast));
       expect(errors.some((e) => e.code === ExprErr.UNSAFE_PROPERTY)).toBe(true);
     });
 
@@ -392,8 +386,7 @@ describe('validateExpression', () => {
       const ast = nodes.funCall(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'greet'), args: [
         nodes.symbol(ZERO_LOC, 'name'),
       ] });
-      const { errors } = validateExpression(ast);
-      expect(errors).toHaveLength(0);
+      expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
   });
 });

@@ -2,12 +2,12 @@ import { pipe, filter, join } from 'remeda';
 import picocolors from 'picocolors';
 import { shortenPath } from '../presentation/source-trace/path-shortener.ts';
 import { isFilePath, resolveIdeLink } from '../presentation/ide-links/ide-links.ts';
-import { stripMarkdown } from '../strip-markdown.ts';
+import { stripInlineMarkdown } from '@nunjucks/lib/strip-inline-markdown';
 import { parseStackFrame } from '../presentation/source-trace/stack-parse.ts';
-import { makeHyperlink } from './ansi-helpers.ts';
+import { makeHyperlink } from './hyperlink.ts';
 
-export { makeHyperlink } from './ansi-helpers.ts';
-export { stripMarkdown, getSeverityColor, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString };
+export { makeHyperlink } from './hyperlink.ts';
+export { stripInlineMarkdown, getSeverityColor, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString };
 
 const getSeverityColor = (severity?: string): ((text: string) => string) => {
   if (severity === 'warning') { return picocolors.yellow; }

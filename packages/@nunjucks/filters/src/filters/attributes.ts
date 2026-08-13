@@ -1,1 +1,0 @@
-export { prepareAttributeParts, getAttrGetter } from '@nunjucks/lib/deep-get';

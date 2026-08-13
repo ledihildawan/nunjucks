@@ -8,18 +8,18 @@ interface LogContextShape {
   renderContext: Record<string, unknown> | null;
 }
 
-const hasLogContext = (self: unknown): self is { logContext: LogContextShape } =>
-  self != null && typeof self === 'object' && 'logContext' in self;
+const hasLogContext = (runtimeContext: unknown): runtimeContext is { logContext: LogContextShape } =>
+  runtimeContext != null && typeof runtimeContext === 'object' && 'logContext' in runtimeContext;
 
-export const getLogContext = (self: unknown): LogContextShape => {
-  if (hasLogContext(self)) {
-    return self.logContext;
+export const getLogContext = (runtimeContext: unknown): LogContextShape => {
+  if (hasLogContext(runtimeContext)) {
+    return runtimeContext.logContext;
   }
   return { templateName: null, phase: 'render', renderContext: null };
 };
 
 interface ThrowRuntimeErrorOptions {
-  self: unknown;
+  runtimeContext: unknown;
   lineno?: number | null;
   colno?: number | null;
   params?: Record<string, string>;
@@ -29,9 +29,9 @@ interface ThrowRuntimeErrorOptions {
 
 export const throwRuntimeError = (
   def: ErrorDefinitionEntry,
-  { self, lineno, colno, params, subject, templateName }: ThrowRuntimeErrorOptions,
+  { runtimeContext, lineno, colno, params, subject, templateName }: ThrowRuntimeErrorOptions,
 ): never => {
-  const ctx = getLogContext(self);
+  const ctx = getLogContext(runtimeContext);
   throw createLog('error', {
     def,
     params: params ?? {},

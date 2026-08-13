@@ -101,19 +101,28 @@ const emitExtensionCallEnd = (
   }
 };
 
-export const compileCallExtension = (compiler: Compiler, { node, frame }: CompileNodeInput<CallExtensionNode>, useAsync = false): void => {
+export const compileCallExtension = (compiler: Compiler, { node, frame }: CompileNodeInput<CallExtensionNode>): void => {
   const args = node.args;
   const contentArgs = node.contentArgs;
   const autoescape = resolveAutoescape(node);
-  const emitAsync = useAsync || contentArgs.length > 0;
-  const res = emitAsync ? compiler.tmpid() : null;
+  const emitAsync = contentArgs.length > 0;
+  const asyncResultId = emitAsync ? compiler.tmpid() : null;
 
-  emitExtensionCallBegin(compiler, node, emitAsync, res);
+  emitExtensionCallBegin(compiler, node, emitAsync, asyncResultId);
   emitExtensionArgs(compiler, args, contentArgs, frame);
   emitContentArgs(compiler, contentArgs, frame);
-  emitExtensionCallEnd(compiler, emitAsync, res, autoescape);
+  emitExtensionCallEnd(compiler, emitAsync, asyncResultId, autoescape);
 };
 
 export const compileCallExtensionAsync = (compiler: Compiler, input: CompileNodeInput<CallExtensionNode>): void => {
-  compileCallExtension(compiler, input, true);
+  const args = input.node.args;
+  const contentArgs = input.node.contentArgs;
+  const autoescape = resolveAutoescape(input.node);
+  const emitAsync = true;
+  const asyncResultId = compiler.tmpid();
+
+  emitExtensionCallBegin(compiler, input.node, emitAsync, asyncResultId);
+  emitExtensionArgs(compiler, args, contentArgs, input.frame);
+  emitContentArgs(compiler, contentArgs, input.frame);
+  emitExtensionCallEnd(compiler, emitAsync, asyncResultId, autoescape);
 };

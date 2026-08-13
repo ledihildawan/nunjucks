@@ -65,4 +65,3 @@ const createErrorDefinition = (options: ErrorDefinitionOptions) => {
 };
 
 export { createErrorDefinition };
-export type { ErrorDefinitionOptions };

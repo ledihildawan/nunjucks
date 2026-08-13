@@ -7,13 +7,13 @@ export const extractVarName = (node: Node): string | null => {
   }
 
   if (isLookupVal(node)) {
-    const base = extractVarName(node.target);
-    if (!base) {
+    const targetName = extractVarName(node.target);
+    if (!targetName) {
       return null;
     }
     const value = node.val;
     const property = value?.value ?? String((value as { name?: unknown })?.name ?? '') ?? '';
-    return `${base}.${property}`;
+    return `${targetName}.${property}`;
   }
 
   return null;

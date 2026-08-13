@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head><title>Security Features Demo</title></head>
+<body>
+  <h1>Security Features Demo</h1>
+
+  <h2>1. Sanitize Filter (DOMPurify)</h2>
+  <p>Raw user input (XSS risk): <code>{{ userInput }}</code></p>
+  <p>Sanitized: <code>{{ userInput |> sanitize }}</code></p>
+
+  <h2>2. Auto-toJSON in Script Context</h2>
+  <script>
+    const config = {{ configData }};
+    console.log('Config loaded:', config);
+  </script>
+
+  <h2>3. Context-Aware Escaping</h2>
+  <p>HTML: <code>{{ htmlContent }}</code></p>
+  <p>Attribute: <code>&lt;div data-value="{{ attrContent }}"&gt;&lt;/div&gt;</code></p>
+</body>
+</html>

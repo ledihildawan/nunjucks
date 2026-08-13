@@ -1,4 +1,3 @@
-import type { NextFunction, Response } from 'express';
 import { nunjucks, type NunjucksConfig } from '@nunjucks/core';
 import { ok, err, isErr, type Result } from '@nunjucks/lib';
 
@@ -16,19 +15,6 @@ const renderTemplate = async (
     return err(result.error);
   }
   return ok(result.value);
-};
-
-// WHY: Express Shell sends the HTML value or hands the error to the error middleware — never serializes the Result wrapper.
-const sendTemplateResult = (
-  res: Response,
-  next: NextFunction,
-  result: Result<string, Error>,
-): void => {
-  if (result.ok) {
-    res.type('html').send(result.value);
-    return;
-  }
-  next(result.error);
 };
 
 interface RenderDemoTemplateOptions {
@@ -53,5 +39,5 @@ const renderDemoTemplate = async (
   });
 };
 
-export { renderTemplate, sendTemplateResult, renderDemoTemplate };
+export { renderTemplate, renderDemoTemplate };
 export type { RenderTemplateOptions, RenderDemoTemplateOptions };

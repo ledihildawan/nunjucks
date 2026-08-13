@@ -6,27 +6,27 @@ interface WarningScriptOptions {
   verbosity?: 'simple' | 'medium' | 'full';
 }
 
-const getLocationString = (w: Warning): string => {
-  if (w.lineno === undefined || w.lineno === null) {
+const getLocationString = (warning: Warning): string => {
+  if (warning.lineno === undefined || warning.lineno === null) {
     return '';
   }
-  const lineNum = w.lineno + 1;
-  const colNum = w.colno != null ? `:${w.colno}` : '';
-  const fileName = basename(w.templateName);
+  const lineNum = warning.lineno + 1;
+  const colNum = warning.colno != null ? `:${warning.colno}` : '';
+  const fileName = basename(warning.templateName);
   return ` at ${fileName}:${lineNum}${colNum}`;
 };
 
-const formatWarning = (w: Warning | string, options: { verbosity?: 'simple' | 'medium' | 'full' } = {}): string => {
+const formatWarning = (warning: Warning | string, options: { verbosity?: 'simple' | 'medium' | 'full' } = {}): string => {
   const { verbosity = 'full' } = options;
-  const message = typeof w === 'string' ? w : w.message;
+  const message = typeof warning === 'string' ? warning : warning.message;
 
-  if (typeof w === 'string') {
+  if (typeof warning === 'string') {
     return `[WARNING] ${message}`;
   }
 
-  const undefinedMode = w.undefinedMode ?? 'chainable';
-  const code = w.code ?? null;
-  const locationStr = getLocationString(w);
+  const undefinedMode = warning.undefinedMode ?? 'chainable';
+  const code = warning.code ?? null;
+  const locationStr = getLocationString(warning);
 
   if (verbosity === 'simple') {
     return `[WARNING] ${message}`;
@@ -43,8 +43,8 @@ const injectWarningsScript = (warnings: Warning[] | null | undefined, options: W
 
   if (!warnings || warnings.length === 0) { return ''; }
 
-  const consoleScripts = warnings.map(w => {
-    const formatted = formatWarning(w, { verbosity });
+  const consoleScripts = warnings.map(warning => {
+    const formatted = formatWarning(warning, { verbosity });
     return `console.warn('[Nunjucks]', ${JSON.stringify(formatted)});`;
   });
 

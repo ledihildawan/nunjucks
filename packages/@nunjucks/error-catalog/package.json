@@ -8,6 +8,7 @@
     "./get-error-message": "./src/get-error-message.ts"
   },
   "dependencies": {
+    "@nunjucks/lib": "workspace:*",
     "@nunjucks/shared": "workspace:*",
     "remeda": "^2.39.0"
   },

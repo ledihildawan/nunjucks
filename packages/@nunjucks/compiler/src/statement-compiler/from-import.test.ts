@@ -1,11 +1,9 @@
 import { describe, test, expect } from 'bun:test';
 import { compileFromImport } from './from-import.ts';
 import { fromImportNode, literal, nodeList, symbol, pair } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
-import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import type { FrameSetOptions } from '@nunjucks/runtime/frame';
-import { loc } from '@nunjucks/lexer';
+import { loc } from '@nunjucks/shared';
+import { asCompiler } from '../test-helpers.ts';
 
 const templateLoc = loc({ lineno: 1, colno: 4 });
 
@@ -32,29 +30,12 @@ const buildFromImportNode = (
     withContext,
   });
 
-interface SpyFrame {
-  frame: Frame;
-  setCalls: [string, string][];
-}
-
-const makeSpyFrame = (parent?: Frame): SpyFrame => {
-  const base = createFrame(parent ? { parent } : {});
-  const setCalls: [string, string][] = [];
-  const originalSet = base.set;
-  base.set = (options: FrameSetOptions) => {
-    setCalls.push([options.name, String(options.value)]);
-    return originalSet({ name: options.name, value: options.value });
-  };
-  return { frame: base, setCalls };
-};
-
 describe('compileFromImport', () => {
   test('emits the getTemplate lookup then the getExported header for the module', () => {
     const c = makeCompiler();
-    const { frame } = makeSpyFrame();
     compileFromImport(asCompiler(c), {
       node: buildFromImportNode(nodeList(templateLoc, [symbol(templateLoc, 'foo')])),
-      frame,
+      frame: createFrame(),
     });
     const joined = c.emitted.join('');
     expect(joined).toContain('lineno = 1; colno = 5;');
@@ -64,10 +45,9 @@ describe('compileFromImport', () => {
 
   test('passes context.getVariables(), frame to getExported when withContext is true', () => {
     const c = makeCompiler();
-    const { frame } = makeSpyFrame();
     compileFromImport(asCompiler(c), {
       node: buildFromImportNode(nodeList(templateLoc, [symbol(templateLoc, 'foo')]), true),
-      frame,
+      frame: createFrame(),
     });
     expect(c.emitted.join('')).toContain('await t_1.getExported(context.getVariables(), frame);');
   });
@@ -105,43 +85,39 @@ describe('compileFromImport', () => {
     nameCases.forEach(({ label, names, importedName, alias }) => {
       test(label, () => {
         const c = makeCompiler();
-        const { frame, setCalls } = makeSpyFrame();
-        compileFromImport(asCompiler(c), { node: buildFromImportNode(names), frame });
+        compileFromImport(asCompiler(c), { node: buildFromImportNode(names), frame: createFrame() });
         const joined = c.emitted.join('');
-        expect(joined).toContain(`if(Object.hasOwn(t_1_exported, "${importedName}")) {`);
-        expect(joined).toContain(`t_2 = t_1_exported["${importedName}"];`);
-        expect(joined).toContain(`throw new Error("Cannot import '${importedName}' from module");`);
-        expect(joined).toContain(`context = context.setVariable("${alias}", t_2);`);
-        expect(setCalls).toContainEqual([alias, 't_2']);
+        expect(joined).toContain(`if(Object.hasOwn(t_1_exported, ${JSON.stringify(importedName)})) {`);
+        expect(joined).toContain(`t_2 = t_1_exported[${JSON.stringify(importedName)}];`);
+        expect(joined).toContain(`throw new Error('Cannot import ' + ${JSON.stringify(importedName)} + ' from module');`);
+        expect(joined).toContain(`context = context.setVariable(${JSON.stringify(alias)}, t_2);`);
       });
     });
   });
 
   test('emits an Object.hasOwn guard plus a missing-import throw for every imported name', () => {
     const c = makeCompiler();
-    const { frame } = makeSpyFrame();
     compileFromImport(asCompiler(c), {
       node: buildFromImportNode(nodeList(templateLoc, [
         symbol(templateLoc, 'foo'),
         symbol(templateLoc, 'bar'),
       ])),
-      frame,
+      frame: createFrame(),
     });
     const joined = c.emitted.join('');
     expect(joined).toContain('if(Object.hasOwn(t_1_exported, "foo")) {');
     expect(joined).toContain('if(Object.hasOwn(t_1_exported, "bar")) {');
-    expect(joined).toContain('throw new Error("Cannot import \'foo\' from module");');
-    expect(joined).toContain('throw new Error("Cannot import \'bar\' from module");');
+    expect(joined).toContain("throw new Error('Cannot import ' + \"foo\" + ' from module');");
+    expect(joined).toContain("throw new Error('Cannot import ' + \"bar\" + ' from module');");
     expect(joined).toContain('t_2 = t_1_exported["foo"];');
     expect(joined).toContain('t_3 = t_1_exported["bar"];');
   });
 
   test('writes through frame.set when the frame has a parent', () => {
     const c = makeCompiler();
-    const { frame } = makeSpyFrame(createFrame());
     compileFromImport(asCompiler(c), {
       node: buildFromImportNode(nodeList(templateLoc, [symbol(templateLoc, 'foo')])),
-      frame,
+      frame: createFrame({ parent: createFrame() }),
     });
     const joined = c.emitted.join('');
     expect(joined).toContain('frame = frame.set({ name: "foo", value: t_2 });');

@@ -208,7 +208,7 @@ export const normalizeRenderContext = (
   const blockedKeys = new Set<string>(
     (options.blockedKeys ?? []).filter((k): k is string => typeof k === 'string' && k.length > 0)
   );
-  const { blockedKeys: _ignored, ...rest } = options;
+  const { ...rest } = options;
   const state = { ...DEFAULT_OPTIONS, ...rest, totalLength: 0, blockedKeys };
   return normalizeValue(context, { state, depth: 0, seen: new WeakSet() });
 };

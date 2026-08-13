@@ -3,7 +3,7 @@ import { createLog } from '@nunjucks/error-formatter';
 import { getError, ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { findContextKeyPosition, wrapWithLog } from '../diagnostics/diagnostics.ts';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { ok, err, type Result } from '@nunjucks/lib';
+import { ok, err, isErr, type Result } from '@nunjucks/lib';
 import type { RenderConfig, RenderValidationError, ValidationErrorRequest } from './render-types.ts';
 
 const combineValidationErrors = <T extends { message: string }>(errors: readonly [T, ...T[]]): T => {
@@ -15,7 +15,7 @@ const combineValidationErrors = <T extends { message: string }>(errors: readonly
 
 const buildValidationError = async ({
   validationError,
-  stamps,
+  stamps: locationMeta,
   config,
   templateSource,
   context,
@@ -29,32 +29,32 @@ const buildValidationError = async ({
     def: catalogDef
       ? { ...catalogDef, message: validationError.message }
       : { name: validationError.code, message: validationError.message },
-    subject: (stamps.subject as string | null | undefined) ?? validationError.subject ?? null,
+    subject: (locationMeta.subject as string | null | undefined) ?? validationError.subject ?? null,
     context: {
       phase: 'render',
-      lineno: (stamps.lineno as number | null | undefined) ?? null,
-      colno: (stamps.colno as number | null | undefined) ?? null,
-      lineBase: (stamps.lineBase as 'one' | 'zero' | undefined) ?? 'zero',
+      lineno: (locationMeta.lineno as number | null | undefined) ?? null,
+      colno: (locationMeta.colno as number | null | undefined) ?? null,
+      lineBase: (locationMeta.lineBase as 'one' | 'zero' | undefined) ?? 'zero',
     },
   });
   return wrapWithLog(err, config, { template: templateSource, renderContext: context });
 };
 
-const getDangerousValueStamps = async (contextError: RenderValidationError, config: RenderConfig): Promise<Record<string, unknown>> => {
-  const stamps: Record<string, unknown> = { code: contextError.code };
+const getDangerousValueLocationMeta = async (contextError: RenderValidationError, config: RenderConfig): Promise<Record<string, unknown>> => {
+  const locationMeta: Record<string, unknown> = { code: contextError.code };
   const firstDangerousPath = contextError.dangerousPaths?.[0];
-  if (!firstDangerousPath) { return stamps; }
+  if (!firstDangerousPath) { return locationMeta; }
 
   const callerLocation = config.callerLocation;
-  if (!callerLocation || callerLocation.fileName === 'unknown') { return stamps; }
+  if (!callerLocation || callerLocation.fileName === 'unknown') { return locationMeta; }
 
   const pos = await findContextKeyPosition({ sourceFile: callerLocation.fileName, callLine: callerLocation.lineNumber ?? 1, dangerousPath: firstDangerousPath });
   if (pos) {
-    stamps.lineno = pos.line;
-    stamps.colno = pos.col;
-    stamps.lineBase = 'one';
+    locationMeta.lineno = pos.line;
+    locationMeta.colno = pos.col;
+    locationMeta.lineBase = 'one';
   }
-  return stamps;
+  return locationMeta;
 };
 
 interface ValidationOptions {
@@ -69,17 +69,17 @@ export const validateRender = async (template: unknown, { config, context }: Val
   }
 
   const validation = validateConfig(config);
-  if (!validation.valid) {
-    const ve = combineValidationErrors(validation.errors);
+  if (isErr(validation)) {
+    const configError = combineValidationErrors(validation.error);
     const callerLineno = config.callerLocation?.lineNumber;
     const callerColno = config.callerLocation?.columnNumber;
     // WHY: convert 1-based caller line to 0-based template line (lineBase: 'zero' set in buildValidationError). Guard against lineno === 1 because subtracting would produce 0 which is a valid 0-based index but loses the "first line" semantic for display.
     const resolvedLineno: number | null | undefined = (callerLineno && callerLineno > 1) ? callerLineno - 1 : callerLineno;
     return err(await buildValidationError({
-      validationError: ve,
+      validationError: configError,
       stamps: {
-        code: ve.code,
-        subject: ve.subject,
+        code: configError.code,
+        subject: configError.subject,
         lineno: resolvedLineno,
         colno: callerColno
       },
@@ -90,10 +90,10 @@ export const validateRender = async (template: unknown, { config, context }: Val
   }
 
   const contextValidation = validateRenderContext(context, config);
-  if (!contextValidation.valid) {
-    const ce = combineValidationErrors(contextValidation.errors);
-    const stamps = await getDangerousValueStamps(ce, config);
-    return err(await buildValidationError({ validationError: ce, stamps, config, templateSource: template, context }));
+  if (isErr(contextValidation)) {
+    const contextError = combineValidationErrors(contextValidation.error);
+    const locationMeta = await getDangerousValueLocationMeta(contextError, config);
+    return err(await buildValidationError({ validationError: contextError, stamps: locationMeta, config, templateSource: template, context }));
   }
 
   return ok(undefined);
@@ -101,11 +101,11 @@ export const validateRender = async (template: unknown, { config, context }: Val
 
 export const validateTemplateSource = async (templateSource: string, { config, context }: ValidationOptions): Promise<Result<void, TemplateError>> => {
   const templateValidation = validateTemplate(templateSource, config);
-  if (!templateValidation.valid) {
-    const ve = combineValidationErrors(templateValidation.errors);
+  if (isErr(templateValidation)) {
+    const configError = combineValidationErrors(templateValidation.error);
     return err(await buildValidationError({
-      validationError: ve,
-      stamps: { lineno: ve.lineno, colno: ve.colno, code: ve.code, subject: ve.subject },
+      validationError: configError,
+      stamps: { lineno: configError.lineno, colno: configError.colno, code: configError.code, subject: configError.subject },
       config,
       templateSource,
       context

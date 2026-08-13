@@ -11,7 +11,6 @@
     "./traverse": "./src/traverse.ts"
   },
   "dependencies": {
-    "@nunjucks/lexer": "workspace:*",
     "@nunjucks/shared": "workspace:*"
   },
   "description": "AST node types for Nunjucks template engine",

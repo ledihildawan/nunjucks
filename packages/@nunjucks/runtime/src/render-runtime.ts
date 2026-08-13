@@ -2,14 +2,16 @@ import { suppressValue } from './suppress-value.ts';
 import { ensureDefined } from './undefined-resolution.ts';
 import { awaitValue } from './await-value.ts';
 import { callWrap, inOperator } from './call-wrap.ts';
-import { contextOrFrameLookup, fromIterator } from './lookups.ts';
+import { contextOrFrameLookup } from './lookups.ts';
+import { fromIterator } from '@nunjucks/lib/from-iterator';
 import { handleError } from './handle-error.ts';
 import { streamError } from './stream-error.ts';
-import { collectString } from './collect-stream.ts';
+import { collectString } from '@nunjucks/lib/collect-stream';
 import {
-  memberLookup, optionalMemberLookup, slice, nullishCoalesce,
+  memberLookup, optionalMemberLookup, slice,
 } from './member-access.ts';
-import { isSafeString, markSafe, copySafeness, createSafeString } from './safe-string.ts';
+import { nullishCoalesce } from '@nunjucks/lib/nullish-coalesce';
+import { isSafeString, markSafe, copySafeness, createSafeString } from './runtime-contract/safe-string.ts';
 import { createFrame } from './frame.ts';
 import { makeKeywordArgs, makeComponent, createComponentContext } from './component.ts';
 import { createSlotContext } from './slots.ts';

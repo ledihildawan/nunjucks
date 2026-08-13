@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { runTest } from './builtin-predicates.ts';
-import { createSafeString } from './safe-string.ts';
+import { createSafeString } from './runtime-contract/safe-string.ts';
 
 const T = (name: string, target: unknown, ...args: unknown[]) => runTest(null, name, target, ...args);
 

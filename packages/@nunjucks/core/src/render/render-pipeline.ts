@@ -123,6 +123,7 @@ const buildRenderEnv = (loader: FileSystemLoader | null, config: RenderConfig): 
       autoescape: config.autoescape ?? true,
       undefined: config.undefined ?? 'default',
     },
+    renderingTemplates: new Set(),
     ...createEnvLookups(config),
     async getTemplate(
       this: Env,
@@ -198,7 +199,7 @@ const createDangerousContextError = async ({ context, config, dangerousValuePath
   const enrichedConfig = contextPos
     ? { ...config, jsCaller: contextPos.fileName, jsCallerErrorLine: contextPos.line, jsCallerErrorCol: contextPos.col }
     : config;
-  const safeForDisplay = scrubDangerousReferences(context) as Record<string, unknown>;
+  const safeForDisplay = scrubDangerousReferences(context);
   return wrapWithLog(err, enrichedConfig, { renderContext: safeForDisplay });
 };
 
@@ -215,7 +216,7 @@ const handleContextStrictMode = async (context: Record<string, unknown>, config:
     throw await createDangerousContextError({ context, config, dangerousValuePaths });
   }
 
-  const scrubbedContext = scrubDangerousReferences(context) as Record<string, unknown>;
+  const scrubbedContext = scrubDangerousReferences(context);
   const scrubWarning = createLog('warning', {
     def: getError('DANGEROUS_CONTEXT_VALUE_SCRUBBED'),
     params: { values: dangerousValuePaths.join(', ') },

@@ -50,7 +50,7 @@ describe('toHtmlMarker — location link (canLink true)', () => {
     const markerHtml = toHtmlMarker(fileLocationError);
     expect(markerHtml).toContain('<a href="vscode://file/');
     expect(markerHtml).toContain('class="nj-err-loc-link"');
-    expect(markerHtml).toContain('title="Open in VSCode"');
+    expect(markerHtml).toContain('title="Open in VS Code"');
   });
 
   test('renders an anchor when only templateName is a file path', () => {

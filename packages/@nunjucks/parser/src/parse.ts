@@ -3,15 +3,13 @@ import type { LexerOptions } from '@nunjucks/lexer';
 import { root } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { ZERO_LOC } from '@nunjucks/lexer';
+import { ZERO_LOC } from '@nunjucks/shared';
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { fail } from "./cursor.ts";
 import type { ParserContext, ParserExtension, TokenStream } from "./cursor.ts";
 import { parseNodes } from "./parse-root.ts";
 import { validateExpression } from '@nunjucks/validators';
 import type { ExpressionSecurityConfig } from '@nunjucks/validators';
-
-export { EXPECTED_COLON_AFTER_DICT_KEY } from "./error.ts";
 
 export interface ParseOptions extends LexerOptions {
   security?: ExpressionSecurityConfig | null;
@@ -39,8 +37,8 @@ export const parse = (src: string, extensions?: ParserExtension[], options?: Par
 
   if (securityConfig !== null) {
     const validation = validateExpression(ast, securityConfig);
-    if (!validation.valid) {
-      const firstError = validation.errors[0];
+    if (isErr(validation)) {
+      const [firstError] = validation.error;
       return fail(parser, firstError.message, { lineno: firstError.lineno, colno: firstError.colno });
     }
   }

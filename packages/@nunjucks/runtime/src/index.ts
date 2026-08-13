@@ -20,7 +20,6 @@ export {
   memberLookup,
   optionalMemberLookup,
   slice,
-  nullishCoalesce,
 } from './member-access.ts';
 export {
   createSandboxedObject,
@@ -39,7 +38,7 @@ export { ensureDefined } from './undefined-resolution.ts';
 export type { EnsureDefinedOptions } from './undefined-resolution.ts';
 export { callWrap, inOperator } from './call-wrap.ts';
 export type { CallWrapOptions, InOperatorOptions } from './call-wrap.ts';
-export { contextOrFrameLookup, fromIterator } from './lookups.ts';
+export { contextOrFrameLookup } from './lookups.ts';
 export { handleError } from './handle-error.ts';
 export { getLogContext } from './error-context.ts';
 export { streamError, isStreamErrorSentinel, type StreamErrorSentinel } from './stream-error.ts';
@@ -59,7 +58,6 @@ export { runTest } from './builtin-predicates.ts';
 export { runFilter } from './filter-runtime.ts';
 export type { RunFilterOptions } from './filter-runtime.ts';
 export { createRenderRuntime } from './render-runtime.ts';
-export { createGensym } from '@nunjucks/lib/gensym';
 export {
   withTimeout,
   type TimeoutError,
@@ -68,4 +66,5 @@ export {
 export { execute, executeStream, type ExecuteConfig, type ExecuteNonSandboxOptions } from './executor.ts';
 export { loadCompiledCode } from './code-loader.ts';
 export { collectString, collectStream } from '@nunjucks/lib/collect-stream';
-export { escapeHtml, escapeForContext, createHtmlContextTracker, type HtmlContext } from './escaping/index.ts';
+export { escapeHtml } from '@nunjucks/lib/escape';
+export { escapeForContext, createHtmlContextTracker, type HtmlContext } from './escaping/index.ts';

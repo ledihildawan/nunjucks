@@ -97,10 +97,10 @@ interface RebuildChainInput {
 }
 
 const rebuildChain = ({ root, target, newTargetVariables }: RebuildChainInput): Frame => {
-  const collectPath = (cur: Frame | undefined, acc: Frame[]): Frame[] | null => {
-    if (!cur) { return null; }
-    if (cur === target) { return acc; }
-    return collectPath(cur.parent, [...acc, cur]);
+  const collectPath = (currentFrame: Frame | undefined, acc: Frame[]): Frame[] | null => {
+    if (!currentFrame) { return null; }
+    if (currentFrame === target) { return acc; }
+    return collectPath(currentFrame.parent, [...acc, currentFrame]);
   };
   const path = collectPath(root, []);
   if (!path) { return root; }

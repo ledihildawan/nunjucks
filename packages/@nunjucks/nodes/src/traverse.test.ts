@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import { root, output, templateData, block } from './index.ts';
 import type { Node, ChildrenNode } from './index.ts';
 import { walk, findAll, appendChild } from './traverse.ts';
-import { ZERO_LOC } from '@nunjucks/lexer';
+import { ZERO_LOC } from '@nunjucks/shared';
 
 describe('walk', () => {
   test('visits all nodes in AST', () => {

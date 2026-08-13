@@ -1,6 +1,7 @@
 import express, { type Router, type Request, type Response, type NextFunction } from 'express';
 import { formatError } from '@nunjucks/error-formatter';
-import { dashboardData, streamNjk, blockingNjk, apiNjk } from '../lib/stream-demo.ts';
+import { dashboardData } from '../lib/domain/dashboard-data.ts';
+import { streamNjk, blockingNjk, apiNjk } from '../lib/io/stream-engines.ts';
 
 const router: Router = express.Router();
 

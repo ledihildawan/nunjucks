@@ -1,7 +1,7 @@
 import { defaultTo, entries, join as joinRemeda, map, pipe, split } from 'remeda';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { ok, err, type Result } from '@nunjucks/lib';
-import { normalize, safeString, safeHtml, preserveSafe, createStringFilter, createMacroFilter, isSafeString, isArray, requireArrayError } from '../factory/index.ts';
+import { normalize, safeString, safeHtml, preserveSafe, createStringFilter, createMacroFilter, createFilter, isSafeString, isArray, requireArrayError } from '../factory/index.ts';
 import type { SafeString } from '../factory/index.ts';
 import type { TemplateError } from '@nunjucks/error-formatter';
 
@@ -33,20 +33,20 @@ const indent = (str: unknown, width?: number, indentfirst?: boolean): string => 
   const indentWidth = defaultTo(width, DEFAULT_INDENT_WIDTH);
   const indentSpaces = ' '.repeat(Math.round(indentWidth));
   const lines = normalizedString.split('\n');
-  const res = lines.map((line: string, i: number) => {
+  const indented = lines.map((line: string, i: number) => {
     if (i === 0 && !indentfirst) {
       return line;
     }
     return `${indentSpaces}${line}`;
   }).join('\n');
-  return preserveSafe(str, res);
+  return preserveSafe(str, indented);
 };
 
-const joinFilter = (values: unknown, del?: string, attr?: string): Result<string, TemplateError> => {
+const joinFilter = (values: unknown, delimiter?: string, attr?: string): Result<string, TemplateError> => {
   if (!isArray(values)) { return err(requireArrayError(values, ERROR_DEFINITIONS.JOIN_FILTER)); }
-  const delimiter = defaultTo(del, '');
+  const resolvedDelimiter = defaultTo(delimiter, '');
   const items = attr ? values.map((v) => (v as Record<string, unknown>)[attr]) : values;
-  return ok((items as unknown[]).join(delimiter));
+  return ok((items as unknown[]).join(resolvedDelimiter));
 };
 
 const lower = createStringFilter((s: string): string => s.toLowerCase());
@@ -94,10 +94,17 @@ const title = createStringFilter((s: string): string => pipe(s, split(' '), map(
 
 const trim = createStringFilter((s: string): string => s.trim());
 
+interface TruncateOptions {
+  input: unknown;
+  length?: number;
+  killwords?: boolean;
+  end?: string;
+}
+
 const DEFAULT_TRUNCATE_LENGTH = 255;
 
-const truncate = (input: unknown, length?: number, killwords?: boolean, end?: string): string => {
-  const orig = input;
+const truncateImpl = ({ input, length, killwords, end }: TruncateOptions): string => {
+  const originalInput = input;
   const normalized = normalize(input, '');
   const initial = typeof normalized === 'string' ? normalized : String(normalized);
   const len = defaultTo(length, DEFAULT_TRUNCATE_LENGTH);
@@ -105,8 +112,10 @@ const truncate = (input: unknown, length?: number, killwords?: boolean, end?: st
   const spaceIdx = initial.lastIndexOf(' ', len);
   const cutIdx = killwords ? len : spaceIdx === -1 ? len : spaceIdx;
   const result = initial.slice(0, cutIdx) + defaultTo(end, '...');
-  return preserveSafe(orig, result);
+  return preserveSafe(originalInput, result);
 };
+
+const truncate = createFilter(['input', 'length', 'killwords', 'end'], truncateImpl);
 
 const upper = createStringFilter((s: string): string => s.toUpperCase());
 

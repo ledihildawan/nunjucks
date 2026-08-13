@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { ZERO_LOC, loc, type Loc } from '@nunjucks/lexer';
+import { ZERO_LOC, loc, type Loc } from '@nunjucks/shared';
 import { T } from '../types/index.ts';
 import type {
   Node,

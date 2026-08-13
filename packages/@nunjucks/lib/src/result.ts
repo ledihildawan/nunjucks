@@ -1,16 +1,16 @@
-interface Ok<T, _E> {
+interface Ok<T, _E = never> {
   ok: true;
   value: T;
 }
 
-interface Err<_T, E> {
+interface Err<_T = never, E = unknown> {
   ok: false;
   error: E;
 }
 
 type Result<T, E> = Ok<T, E> | Err<T, E>;
 
-const ok = <T>(value: T): Ok<T, never> => ({ ok: true, value });
+const ok = <T>(value: T): Ok<T> => ({ ok: true, value });
 
 const err = <E>(error: E): Err<never, E> => ({ ok: false, error });
 

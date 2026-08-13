@@ -5,7 +5,7 @@ import { toDisplayLocation } from '../presentation/source-trace/location.ts';
 import type { LineBase } from '@nunjucks/error-catalog';
 import { mergeErrorParts } from '../presentation/error/error-parts.ts';
 import type { SourceTrace } from '../presentation/source-trace/source-trace.ts';
-import { stripMarkdown, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString } from './stack-helpers';
+import { stripInlineMarkdown, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString } from './stack-helpers';
 import { renderContextAnsi } from './context-helpers';
 import { formatSourceTrace } from './source-helpers';
 import { getErrorMessage } from '@nunjucks/error-catalog/get-error-message';
@@ -17,7 +17,7 @@ const BULLET = `${picocolors.yellow('•')} `;
 
 const formatCausesAnsi = (causes: readonly string[]): string => {
   if (!causes || causes.length === 0) { return ''; }
-  const items = pipe(causes, map(c => `  ${BULLET}${stripMarkdown(c)}`), join('\n'));
+  const items = pipe(causes, map(c => `  ${BULLET}${stripInlineMarkdown(c)}`), join('\n'));
   return `\n${picocolors.bold('Possible Causes:')}\n${items}\n`;
 };
 
@@ -32,7 +32,7 @@ const formatFixAnsi = ({ fixCode, fixComment, documentationUrl }: FormatFixAnsiI
 
   const parts: string[] = [
     `${picocolors.bold('Suggested Fix:')}`,
-    ...(fixComment ? [picocolors.dim(`// ${stripMarkdown(fixComment)}`)] : []),
+    ...(fixComment ? [picocolors.dim(`// ${stripInlineMarkdown(fixComment)}`)] : []),
     picocolors.green(fixCode),
     ...(documentationUrl ? [`\n${picocolors.dim(`Learn more: ${documentationUrl}`)}`] : [])
   ];
@@ -52,7 +52,7 @@ interface MediumAnsiInput {
 
 const formatMediumAnsi = (message: string, input: MediumAnsiInput): string => {
   const [firstCause] = input.causes;
-  const causeHint = firstCause ? stripMarkdown(firstCause) : '';
+  const causeHint = firstCause ? stripInlineMarkdown(firstCause) : '';
   const extrasPart = getExtrasPart(causeHint, input.documentationUrl ?? '');
   const locationPart = input.path
     ? formatLocationString({ path: input.path, location: input.location, ide: input.ide }).replace(LEADING_AT_RE, '')

@@ -68,17 +68,17 @@ const windowSourceTrace = (params: {
     return { lines: [], caret: null, displayLine, displayCol, resolvedPath };
   }
 
-  const ctx = Math.max(0, context);
-  const start = Math.max(0, errorIndex - ctx);
-  const end = Math.min(lines.length, errorIndex + ctx + 1);
+  const contextWindow = Math.max(0, context);
+  const start = Math.max(0, errorIndex - contextWindow);
+  const end = Math.min(lines.length, errorIndex + contextWindow + 1);
 
   const traceLines: SourceTraceLine[] = Array.from({ length: end - start }, (_, offset) => {
-    const i = start + offset;
-    const rawLine = lines[i] ?? '';
+    const index = start + offset;
+    const rawLine = lines[index] ?? '';
     return {
-      number: sourceStartLine + i,
+      number: sourceStartLine + index,
       content: redactSecretValues(rawLine, blockedKeys),
-      isError: i === errorIndex
+      isError: index === errorIndex
     };
   });
 

@@ -32,8 +32,16 @@ interface PipeRenderStreamOptions {
   onComplete?: (stats: { chunks: number; errors: number; bytes: number }) => void;
 }
 
+interface EmitErrorLogInput {
+  error: Error | TemplateError;
+  phase: 'pre-stream' | 'mid-stream';
+  logError: boolean;
+  dev: boolean;
+  onError: PipeRenderStreamOptions['onError'];
+}
+
 // WHY: centralizes dev-gated error logging. When onError is provided, it is called (the caller owns logging). When onError is absent, console.log is used as fallback — preserving exact previous behavior when no hook is registered.
-const emitErrorLog = (error: Error | TemplateError, phase: 'pre-stream' | 'mid-stream', logError: boolean, dev: boolean, onError: PipeRenderStreamOptions['onError']): void => {
+const emitErrorLog = ({ error, phase, logError, dev, onError }: EmitErrorLogInput): void => {
   if (onError) {
     onError(error, phase);
   } else if (logError) {
@@ -165,7 +173,7 @@ const pipeRenderStream = async (
 
   if (!result.ok) {
     errorCount += 1;
-    emitErrorLog(result.error, 'pre-stream', logError, dev, onError);
+    emitErrorLog({ error: result.error, phase: 'pre-stream', logError, dev, onError });
     sink.status(500);
     sink.setHeader('Content-Type', mimeType);
     sink.write(renderPreStreamError({ err: result.error, contentType, dev, ide }));
@@ -195,7 +203,7 @@ const pipeRenderStream = async (
       sink.end();
     } else {
       errorCount += 1;
-      emitErrorLog(streamErr as Error, 'mid-stream', logError, dev, onError);
+      emitErrorLog({ error: streamErr as Error, phase: 'mid-stream', logError, dev, onError });
       sink.write(renderMidStreamError({ err: streamErr, contentType, ide }));
       sink.end();
     }

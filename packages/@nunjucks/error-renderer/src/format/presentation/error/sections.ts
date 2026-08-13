@@ -67,9 +67,14 @@ type SerializableContext =
 const safeJson = (value: SerializableContext): string =>
   pipe(JSON.stringify(value), replace(LT_RE, '\\u003c'), replace(GT_RE, '\\u003e'), replace(AMP_RE, '\\u0026'));
 
+const isSerializableRecord = (value: unknown): value is Record<string, SerializableContext> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
 const renderContextHtml = (ctx: unknown, blockedKeys?: readonly string[] | null): string => {
   if (!ctx || typeof ctx !== 'object') { return ''; }
-  const serialized = normalizeRenderContext(ctx, { blockedKeys }) as Record<string, SerializableContext>;
+  const normalized = normalizeRenderContext(ctx, { blockedKeys });
+  if (!isSerializableRecord(normalized)) { return ''; }
+  const serialized = normalized;
   const filteredKeys = pipe(serialized, keys());
   if (filteredKeys.length === 0) { return ''; }
 
@@ -120,11 +125,11 @@ const renderParenFrame = (body: string, ide: string): string | null => {
 };
 
 const renderFileUrlFrame = (body: string, ide: string): string | null => {
-  const m = body.match(FILE_URL_LOCATION_RE);
-  if (!m) { return null; }
-  const rawPath = m[2] ?? '';
+  const fileUrlMatch = body.match(FILE_URL_LOCATION_RE);
+  if (!fileUrlMatch) { return null; }
+  const rawPath = fileUrlMatch[2] ?? '';
   if (!isLinkablePath(rawPath)) { return null; }
-  return `${functionSpan((m[1] ?? '').trim())}${buildLocationLink(ide, { path: rawPath, line: m[3] ?? '', col: m[4] ?? '' })}`;
+  return `${functionSpan((fileUrlMatch[1] ?? '').trim())}${buildLocationLink(ide, { path: rawPath, line: fileUrlMatch[3] ?? '', col: fileUrlMatch[4] ?? '' })}`;
 };
 
 const renderFallbackFrame = (body: string): string => {

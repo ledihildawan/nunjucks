@@ -1,9 +1,9 @@
 import { describe, test, expect } from 'bun:test';
+import { nullishCoalesce } from '@nunjucks/lib/nullish-coalesce';
 import {
   memberLookup,
   optionalMemberLookup,
   slice,
-  nullishCoalesce,
   isNullAccessResult,
   isPropertyNotFoundResult,
   getNullParentName,

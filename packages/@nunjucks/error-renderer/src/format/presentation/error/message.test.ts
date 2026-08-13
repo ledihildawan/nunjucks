@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { getErrorMessage } from './message.ts';
+import { getErrorMessage } from '@nunjucks/error-catalog/get-error-message';
 
 describe('getErrorMessage', () => {
   test('returns message string from error', () => {

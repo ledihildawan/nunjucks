@@ -5,6 +5,10 @@ interface NodeLocation {
   colno: number | null;
 }
 
+const UNDEFINED_MODES = ['default', 'strict', 'debug', 'chainable'] as const;
+
+type UndefinedMode = (typeof UNDEFINED_MODES)[number];
+
 interface DomPurifyConfig {
   ALLOWED_TAGS?: string[];
   ALLOWED_ATTR?: string[];
@@ -18,4 +22,5 @@ interface DomPurifyConfig {
   ALLOW_DATA_ATTR?: boolean;
 }
 
-export type { Phase, NodeLocation, DomPurifyConfig };
+export { UNDEFINED_MODES };
+export type { Phase, NodeLocation, DomPurifyConfig, UndefinedMode };

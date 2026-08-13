@@ -6,7 +6,7 @@ import type { Compiler } from '../index.ts';
 import { loc } from '@nunjucks/lexer';
 
 interface DestructuringContext {
-  ctx: Compiler;
+  compiler: Compiler;
   frame: Frame;
   registerFrame: boolean;
 }
@@ -29,7 +29,7 @@ const arraySlice = (source: string, start: number): string =>
 const objectRest = (source: string, restId: string): string =>
   `(() => { const ${restId} = {}; if (${source} != null && typeof ${source} === 'object') { for (const __k in ${source}) { ${restId}[__k] = ${source}[__k]; } } return ${restId}; })()`;
 
-const compileAssignToFrame = ({ ctx: compiler, frame, registerFrame }: DestructuringContext, name: string, source: string): void => {
+const compileAssignToFrame = ({ compiler, frame, registerFrame }: DestructuringContext, name: string, source: string): void => {
   const existingId = registerFrame ? frame.lookup(name) : null;
   compiler.emitLine(`frame = frame.set({ name: ${JSON.stringify(name)}, value: ${source}, resolveUp: true });`);
   if (name[0] !== '_') {
@@ -49,7 +49,7 @@ const compileAssignToFrame = ({ ctx: compiler, frame, registerFrame }: Destructu
   }
 };
 
-const emitDefaultBinding = ({ ctx: compiler, frame }: DestructuringContext, source: string, defaultExpr: Node): string => {
+const emitDefaultBinding = ({ compiler, frame }: DestructuringContext, source: string, defaultExpr: Node): string => {
   const defaultId = compiler.tmpid();
   compiler.emitLine(`let ${defaultId} = (${source}) === undefined ? (`);
   compiler.compileExpression(defaultExpr, frame);
@@ -134,7 +134,7 @@ const handleRestProperty = (
   child: RestPatternNode,
   source: string
 ): void => {
-  const restId = destructuringContext.ctx.tmpid();
+  const restId = destructuringContext.compiler.tmpid();
   const childSource = objectRest(source, restId);
   compileDestructuring(destructuringContext, child.target, childSource);
 };

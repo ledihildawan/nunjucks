@@ -1,8 +1,5 @@
 import type { DomPurifyConfig } from '@nunjucks/shared';
-
-// WHY: filters/globals/tests/extensions are dynamic user-supplied callables/values. `unknown` mirrors
-// GlobalConfig's FilterObject and avoids contravariance friction on specific filter signatures.
-type ExtensionMap = Readonly<Record<string, unknown>>;
+import type { ExtensionMap } from '../config/nunjucks-config.ts';
 
 // WHY: a plugin is a composable bundle of template extensions — filters, globals, tests, custom-tag
 // extensions, and dompurify config — installed as a unit via the factory's `plugins: [...]` option. Mirrors

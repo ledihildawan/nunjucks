@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { findContextDangerousValues, validateRenderContext } from '@nunjucks/validators';
+import { isOk } from '@nunjucks/lib';
 import process from "node:process";
 
 describe('findContextDangerousValues', () => {
@@ -33,6 +34,6 @@ describe('validateRenderContext strict mode', () => {
 
   test('passes silently when strictMode is false', () => {
     const result = validateRenderContext({ user: { name: 'Ada' } }, { strictMode: false });
-    expect(result.valid).toBe(true);
+    expect(isOk(result)).toBe(true);
   });
 });

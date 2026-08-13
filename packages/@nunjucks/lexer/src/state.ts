@@ -31,9 +31,9 @@ export const getPeek = (state: LexerState): string => {
 export const isFinished = (state: LexerState): boolean =>
   state.index >= state.str.length;
 
-export const advance = (state: LexerState, n = 1): LexerState => {
+export const advance = (state: LexerState, charCount = 1): LexerState => {
   const { str, index, lineno, colno } = state;
-  const newIndex = Math.min(index + n, str.length);
+  const newIndex = Math.min(index + charCount, str.length);
   if (newIndex === index) {
     return state;
   }

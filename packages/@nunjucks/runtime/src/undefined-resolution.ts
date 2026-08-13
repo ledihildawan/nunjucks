@@ -20,8 +20,8 @@ export function ensureDefined(
 		const ctx = getLogContext(this);
 		const effectiveTemplateName = ctx.templateName ?? 'inline';
 		const resolveOptions: ResolveUndefinedOptions = {
-			self: this,
-			val: value,
+			runtimeContext: this,
+			subjectValue: value,
 			varName,
 			lineno,
 			colno,
@@ -39,8 +39,8 @@ export function ensureDefined(
 		const ctx = getLogContext(this);
 		const effectiveTemplateName = ctx.templateName ?? 'inline';
 		return resolveUndefinedValue({
-			self: this,
-			val: value,
+			runtimeContext: this,
+			subjectValue: value,
 			varName,
 			lineno,
 			colno,

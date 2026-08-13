@@ -1,5 +1,5 @@
 import { COMPLEX_OPERATORS } from './delimiters.ts';
-import { isDigit } from '@nunjucks/lib/is-digit';
+import { isDigit } from '@nunjucks/lib';
 
 const COMPLEX_OPERATOR_SET = new Set<string>(COMPLEX_OPERATORS);
 

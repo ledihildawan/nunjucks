@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import { compileSlotFunction } from './slot.ts';
 import { symbol } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
-import { ZERO_LOC } from '@nunjucks/lexer';
+import { ZERO_LOC } from '@nunjucks/shared';
 import type { Compiler } from '../index.ts';
 
 const makeCompiler = () => {

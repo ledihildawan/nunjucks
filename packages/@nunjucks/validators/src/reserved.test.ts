@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { RESERVED_KEYWORDS, validateFilterName, validateGlobalName, getReservedKeywords } from './reserved.ts';
+import { isOk, isErr } from '@nunjucks/lib';
 
 describe('RESERVED_KEYWORDS', () => {
   test('contains template keywords, JS builtins, and literals', () => {
@@ -19,27 +20,31 @@ describe('RESERVED_KEYWORDS', () => {
 describe('validateFilterName', () => {
   test('rejects reserved names with a descriptive error', () => {
     const result = validateFilterName('eval');
-    expect(result.valid).toBe(false);
-    expect(result.error?.code).toBe('RESERVED_KEYWORD');
-    expect(result.error?.subject).toBe('eval');
-    expect(result.error?.type).toBe('filter');
-    expect(result.error?.message).toContain('filter');
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error.code).toBe('RESERVED_KEYWORD');
+      expect(result.error.subject).toBe('eval');
+      expect(result.error.type).toBe('filter');
+      expect(result.error.message).toContain('filter');
+    }
   });
 
   test('accepts non-reserved names', () => {
-    expect(validateFilterName('myFilter')).toEqual({ valid: true });
+    expect(isOk(validateFilterName('myFilter'))).toBe(true);
   });
 });
 
 describe('validateGlobalName', () => {
   test('rejects reserved names labelled as global', () => {
     const result = validateGlobalName('process');
-    expect(result.valid).toBe(false);
-    expect(result.error?.type).toBe('global');
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error.type).toBe('global');
+    }
   });
 
   test('accepts non-reserved names', () => {
-    expect(validateGlobalName('myGlobal')).toEqual({ valid: true });
+    expect(isOk(validateGlobalName('myGlobal'))).toBe(true);
   });
 });
 

@@ -2,7 +2,6 @@ import { describe, test, expect } from 'bun:test';
 import {
   hasOwn,
   isObject,
-  isRecord,
   isKeyedObject,
   isIterable,
   isThenable,
@@ -42,14 +41,6 @@ describe('isObject', () => {
     expect(isObject([])).toBe(false);
     expect(isObject('s')).toBe(false);
     expect(isObject(42)).toBe(false);
-  });
-});
-
-describe('isRecord', () => {
-  test('mirrors isObject for record narrowing', () => {
-    expect(isRecord({ a: 1 })).toBe(true);
-    expect(isRecord(null)).toBe(false);
-    expect(isRecord([1, 2])).toBe(false);
   });
 });
 

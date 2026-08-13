@@ -3,22 +3,11 @@ import { join, map, pipe } from 'remeda';
 import { renderContextHtml, formatStackTraceHtml } from './presentation/error/sections.ts';
 import { resolveIdeLink, getIdeMeta } from './presentation/ide-links/ide-links.ts';
 import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
-import type { ErrorLike } from './to-html-types.ts';
+import type { ErrorLike, ClassifiedError } from './to-html-types.ts';
 import { renderBadge } from './to-html-display.ts';
-import { titleCase } from './string-case.ts';
+import { titleCase } from '@nunjucks/lib/string-case';
 
-interface ClassifiedErrorInfo {
-  category: string;
-  undefinedName: string | null;
-  title: string;
-  causes: string[];
-  fixCode: string;
-  fixComment: string;
-  documentationUrl: string | null;
-  severity: 'error' | 'warning' | 'info';
-}
-
-const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined, _displayPath: string): string => {
+const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined): string => {
   if (!sourceTrace || sourceTrace.lines.length === 0) { return ''; }
 
   const rows = sourceTrace.lines.flatMap(line => {
@@ -44,7 +33,6 @@ const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined, _
 interface ErrorHeaderInput {
   humanTitle: string;
   category: string;
-  severity: 'error' | 'warning' | 'info';
   phase: string | null | undefined;
   environment: string | null;
   verbosity: 'simple' | 'medium' | 'full';
@@ -59,7 +47,6 @@ interface ErrorHeaderInput {
 const buildErrorHeader = ({
   humanTitle,
   category,
-  severity: _severity,
   phase,
   environment,
   verbosity,
@@ -107,7 +94,6 @@ interface FullErrorBodyInput {
   renderContext: Record<string, unknown> | undefined;
   error: ErrorLike;
   ide: string;
-  displayPath: string;
 }
 
 const buildFullErrorBody = ({
@@ -119,9 +105,8 @@ const buildFullErrorBody = ({
   renderContext,
   error,
   ide,
-  displayPath,
 }: FullErrorBodyInput): string => {
-  const codeSection = renderSourceTraceSection(sourceTrace, displayPath);
+  const codeSection = renderSourceTraceSection(sourceTrace);
   const possibleCausesList = possibleCauses.length > 0
     ? pipe(possibleCauses, map(c => `<li>${renderInlineMarkdown(c)}</li>`), join('\n          '))
     : '<li>Check template syntax and context</li>';
@@ -201,11 +186,10 @@ const buildErrorFooter = ({
 interface ErrorBodyContentInput {
   verbosity: string;
   error: ErrorLike;
-  classified: ClassifiedErrorInfo;
+  classified: ClassifiedError;
   sourceTrace: SourceTrace | null | undefined;
   renderContext: Record<string, unknown> | undefined;
   ide: string;
-  displayPath: string;
 }
 
 const buildErrorBodyContent = ({
@@ -215,7 +199,6 @@ const buildErrorBodyContent = ({
   sourceTrace,
   renderContext,
   ide,
-  displayPath,
 }: ErrorBodyContentInput): string => {
   if (verbosity !== 'full') { return ''; }
   return buildFullErrorBody({
@@ -227,7 +210,6 @@ const buildErrorBodyContent = ({
     renderContext,
     error,
     ide,
-    displayPath,
   });
 };
 

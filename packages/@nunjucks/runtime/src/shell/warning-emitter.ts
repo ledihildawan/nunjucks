@@ -15,7 +15,7 @@ export interface EmitUndefinedWarningOptions {
 	varName: string | null;
 }
 
-export const emitUndefinedWarning = (self: unknown, options: EmitUndefinedWarningOptions): void => {
+export const emitUndefinedWarning = (runtimeContext: unknown, options: EmitUndefinedWarningOptions): void => {
 	const warning = createLog('warning', {
 		def: {
 			name: options.name,
@@ -34,8 +34,8 @@ export const emitUndefinedWarning = (self: unknown, options: EmitUndefinedWarnin
 			lineBase: 'zero',
 		} as WarningContext,
 	});
-	const collector = self && typeof self === 'object'
-		? (self as { __warnings__?: unknown[] }).__warnings__
+	const collector = runtimeContext && typeof runtimeContext === 'object'
+		? (runtimeContext as { __warnings__?: unknown[] }).__warnings__
 		: undefined;
 	if (Array.isArray(collector)) {
 		collector.push(warning);

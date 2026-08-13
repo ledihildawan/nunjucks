@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { suppressValue } from './index.ts';
-import { createSafeString } from './safe-string.ts';
+import { createSafeString } from './runtime-contract/safe-string.ts';
 
 describe('suppressValue', () => {
   test('returns empty string for null and undefined', () => {

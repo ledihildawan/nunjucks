@@ -6,9 +6,6 @@ const hasOwn = <O extends object, K extends PropertyKey>(
 const isObject = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  isObject(value);
-
 const isKeyedObject = (value: unknown): value is Record<PropertyKey, unknown> =>
   value !== null && typeof value === 'object';
 
@@ -61,7 +58,6 @@ const isTypedArray = (value: unknown): boolean =>
 export {
   hasOwn,
   isObject,
-  isRecord,
   isKeyedObject,
   isIterable,
   isThenable,

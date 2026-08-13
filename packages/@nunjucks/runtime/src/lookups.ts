@@ -9,5 +9,3 @@ export const contextOrFrameLookup = (
   }
   return value;
 };
-
-export { fromIterator } from '@nunjucks/lib/from-iterator';

@@ -5,7 +5,7 @@ import { MATCH_ANY_RE } from '@nunjucks/lib';
 import { err, isOk, type Result } from '@nunjucks/lib';
 import { peekToken } from "./cursor.ts";
 import type { ParserContext } from "./cursor.ts";
-import type { ErrorDefinitionEntry, LegacyLogData } from '@nunjucks/error-formatter';
+import type { ErrorDefinitionEntry, RawLogData } from '@nunjucks/error-formatter';
 
 const CAUSE_PATTERNS: Array<{ check: (lower: string) => boolean; causes: string[] }> = [
   { check: lower => lower.includes('expected') && lower.includes('expression'), causes: ['Missing expression where one is required', 'Check for empty `{{ }}` or `{% %}` blocks'] },
@@ -76,7 +76,7 @@ export const fail = (parserContext: ParserContext, msg: string, options?: ErrorO
 interface ErrorAtOptions {
   lineno: number;
   colno: number;
-  errorDef: ErrorDefinitionEntry | LegacyLogData;
+  errorDef: ErrorDefinitionEntry | RawLogData;
   subject?: string;
   extra?: Record<string, unknown>;
 }

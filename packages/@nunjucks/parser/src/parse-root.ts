@@ -11,7 +11,7 @@ import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { pipe } from 'remeda';
 import { replace } from '@nunjucks/lib';
-import { loc, ZERO_LOC } from '@nunjucks/lexer';
+import { loc, ZERO_LOC } from '@nunjucks/shared';
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import {
   nextTokenOrNull,
@@ -56,7 +56,7 @@ const shouldStripTrailingWhitespace = (
 const parseDataToken = (parserContext: ParserContext, tok: Token, stripLeading: boolean): Node => {
   const nextTok = peekTokenOrNull(parserContext);
   const stripTrailing = Boolean(nextTok && shouldStripTrailingWhitespace(nextTok, parserContext));
-  const data = pipe(
+  const templateText = pipe(
     String(tok.value),
     s => (stripLeading ? s.replace(LEADING_WHITESPACE_RE, '') : s),
     s => (stripTrailing ? s.replace(TRAILING_WHITESPACE_RE, '') : s),
@@ -64,7 +64,7 @@ const parseDataToken = (parserContext: ParserContext, tok: Token, stripLeading: 
 
   return output(
     loc(tok),
-    [templateData(loc(tok), data)]
+    [templateData(loc(tok), templateText)]
   );
 };
 

@@ -5,8 +5,9 @@ import { findAll, isBlock } from '@nunjucks/nodes';
 import type { Node, ChildrenNode, BlockNode, NodeLocation } from '@nunjucks/nodes';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { createLog } from '@nunjucks/error-formatter';
-import { BLOCK_META_KEY } from '@nunjucks/compiler';
+import { BLOCK_META_KEY } from '@nunjucks/shared';
 import type { Compiler } from '../index.ts';
+import { assertSafeIdentifier } from '../codegen.ts';
 
 const blockName = (block: BlockNode): string | undefined => {
   const { name } = block;
@@ -44,9 +45,10 @@ const emitParentTemplateBlockHandling = (
     const name = blockName(block);
     if (!name) { return; }
     const { lineno, colno } = getBlockLocation(block);
+    assertSafeIdentifier(name, { compiler, lineno, colno });
     compiler.emitLine(`lineno = ${lineno}; colno = ${colno};`);
     // WHY: Option C — blocks are async generators; delegate so their chunks stream directly into the root output.
-    compiler.emitLine(`yield* (await context.getBlock("${name}", ${lineno}, ${colno}))(env, context, frame, runtime);`);
+    compiler.emitLine(`yield* (await context.getBlock(${JSON.stringify(name)}, ${lineno}, ${colno}))(env, context, frame, runtime);`);
   });
   compiler.emitLine('return context;');
   compiler.emitFuncEnd(true);
@@ -69,6 +71,7 @@ const emitBlockFunctions = (compiler: Compiler, blocks: BlockNode[]): void => {
   forEach(blocks, (block) => {
     const name = blockName(block);
     if (!name) { return; }
+    assertSafeIdentifier(name, { compiler, lineno: block.lineno, colno: block.colno });
     compiler.emitFuncBegin(block, `b_${name}`);
     const tmpFrame = createFrame();
     compiler.emitLine('frame = frame.push(true);');
@@ -82,6 +85,7 @@ const emitBlockReturnObject = (compiler: Compiler, blocks: BlockNode[]): void =>
   forEach(blocks, (block) => {
     const name = blockName(block);
     if (name === undefined) { return; }
+    assertSafeIdentifier(name, { compiler, lineno: block.lineno, colno: block.colno });
     const blockNameId = `b_${name}`;
     compiler.emitLine(`${blockNameId}: ${blockNameId},`);
   });

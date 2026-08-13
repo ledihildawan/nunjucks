@@ -5,4 +5,3 @@ export type { ParserExtension, ParserContext } from './cursor.ts';
 // needs these helpers to consume tokens (skip the tag name, advance past `%}`, etc.) the same way built-in
 // tag parsers do. Exported so extensions can be authored against the public package surface.
 export { skipSymbol, advanceAfterBlockEnd, consumeWhitespaceDrop, peekToken, nextToken, fail } from './cursor.ts';
-export { EXPECTED_COLON_AFTER_DICT_KEY } from './parse.ts';

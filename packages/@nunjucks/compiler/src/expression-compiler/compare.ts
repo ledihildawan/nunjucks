@@ -22,14 +22,14 @@ export const compileCompare = (compiler: Compiler, { node, frame }: CompileNodeI
 };
 
 export const compileIs = (compiler: Compiler, { node, frame }: CompileNodeInput<BinaryNode>): void => {
-  const rightNode = node.right;
+  const rightOperand = node.right;
   let right: unknown;
   let args: readonly Node[] | undefined;
-  if (isFunCall(rightNode)) {
-    right = rightNode.name.value;
-    args = rightNode.args;
+  if (isFunCall(rightOperand)) {
+    right = rightOperand.name.value;
+    args = rightOperand.args;
   } else {
-    right = rightNode.value;
+    right = rightOperand.value;
   }
   const lineno = node.lineno;
   const colno = node.colno;

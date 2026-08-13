@@ -15,7 +15,7 @@ import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { nextToken, peekToken, peekTokenOrNull, pushToken, skipValue, fail } from '../cursor.ts';
 import type { ParserContext } from '../cursor.ts';
-import type { Loc } from '@nunjucks/lexer';
+import type { Loc } from '@nunjucks/shared';
 import { ok, isOk, isErr, type Result } from '@nunjucks/lib';
 import { find } from 'remeda';
 import { EXPECTED_COLON_AFTER_DICT_KEY } from '../error.ts';

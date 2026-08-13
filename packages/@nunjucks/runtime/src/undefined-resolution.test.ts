@@ -4,13 +4,13 @@ import { ensureDefined } from './index.ts';
 const propNotFound = (path = 'x', parent = 'obj') => ({
   __nunjucks_prop_not_found__: true,
   __nunjucks_parent__: parent,
-  __access_path__: path,
+  __nunjucks_access_path__: path,
 });
 
 const nullAccess = (path = 'x', parent = 'obj') => ({
   __nunjucks_null__: true,
   __nunjucks_parent__: parent,
-  __access_path__: path,
+  __nunjucks_access_path__: path,
 });
 
 describe('ensureDefined', () => {
@@ -104,7 +104,7 @@ describe('ensureDefined', () => {
   test('derives parent name from dotted varName for property-not-found in strict mode', () => {
     const markerWithoutParent = {
       __nunjucks_prop_not_found__: true,
-      __access_path__: 'x',
+      __nunjucks_access_path__: 'x',
     };
     expect(() =>
       ensureDefined(markerWithoutParent, { lineno: 1, colno: 2, varName: 'user.profile', undefinedMode: 'strict' }),

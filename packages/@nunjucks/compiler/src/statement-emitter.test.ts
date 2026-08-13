@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { emitFuncBegin, emitFuncEnd, addScopeLevel, closeScopeLevels, withScopedSyntax } from './statement-emitter.ts';
 import { literal } from '@nunjucks/nodes';
-import { loc } from '@nunjucks/lexer';
+import { loc } from '@nunjucks/shared';
 
 const makeScope = () => {
   const emitted: string[] = [];

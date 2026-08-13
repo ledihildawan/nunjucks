@@ -196,13 +196,13 @@ describe('wrapMemberAccess', () => {
   });
 
   test('handles null/undefined target', () => {
-    const nullResult = wrapMemberAccess({ target: null, value: 'name', sandboxEnabled: true }) as { __nunjucks_null__: boolean; __access_path__: string };
+    const nullResult = wrapMemberAccess({ target: null, value: 'name', sandboxEnabled: true }) as { __nunjucks_null__: boolean; __nunjucks_access_path__: string };
     expect(nullResult).toBeDefined();
     expect(nullResult.__nunjucks_null__).toBe(true);
-    expect(nullResult.__access_path__).toBe('name');
-    const undefinedResult = wrapMemberAccess({ target: undefined, value: 'name', sandboxEnabled: true }) as { __nunjucks_null__: boolean; __access_path__: string };
+    expect(nullResult.__nunjucks_access_path__).toBe('name');
+    const undefinedResult = wrapMemberAccess({ target: undefined, value: 'name', sandboxEnabled: true }) as { __nunjucks_null__: boolean; __nunjucks_access_path__: string };
     expect(undefinedResult.__nunjucks_null__).toBe(true);
-    expect(undefinedResult.__access_path__).toBe('name');
+    expect(undefinedResult.__nunjucks_access_path__).toBe('name');
   });
 
   test('wraps functions in object', () => {

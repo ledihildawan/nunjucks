@@ -30,7 +30,7 @@ function callWrap(
   const messageName = displayName ?? name;
   if (RESERVED_KEYWORD_CONTEXTS[name]) {
     throwRuntimeError(ERROR_DEFINITIONS.RESERVED_KEYWORD_CONTEXT, {
-      self: this,
+      runtimeContext: this,
       lineno,
       colno,
       params: { name },
@@ -42,7 +42,7 @@ function callWrap(
   const parentName = isNullAccessResult(target) ? (getNullParentName(target) ?? name) : null;
   if (isNullAccessResult(target) || !target) {
     throwRuntimeError(ERROR_DEFINITIONS.NULL_VALUE, {
-      self: this,
+      runtimeContext: this,
       lineno,
       colno,
       params: { accessPath: name, state: 'null', parent: parentName ?? name },
@@ -54,7 +54,7 @@ function callWrap(
     return target.apply(context, args);
   }
   throwRuntimeError(ERROR_DEFINITIONS.NOT_A_FUNCTION, {
-    self: this,
+    runtimeContext: this,
     lineno,
     colno,
     params: { name: messageName, type: typeof target },
@@ -77,7 +77,7 @@ function inOperator(this: unknown, { key, value, lineno = null, colno = null }: 
     return isKeyedObject(value) && String(key) in value;
   }
   return throwRuntimeError(ERROR_DEFINITIONS.IN_OPERATOR, {
-    self: this,
+    runtimeContext: this,
     lineno,
     colno,
     params: { key: String(key), type: typeof value },

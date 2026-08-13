@@ -1,8 +1,8 @@
-import { toAnsi, toText, toHtml, createFormatterState, buildSourceTrace, type SourceTrace } from '@nunjucks/error-renderer';
+import { toAnsi, toText, toHtml, createFormatterState, buildSourceTrace, parseStackFrame, classifyAndBuildTitle, type SourceTrace } from '@nunjucks/error-renderer';
+import type { ProjectSourceContent } from './create-log-types.ts';
 import { normalizeLineBase, type LineBase } from '@nunjucks/error-catalog';
 import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, OutputOptions, NormalizedErrorContext, NormalizedWarningContext } from './create-log-types.ts';
 import { resolveMessage, createErrorEnvelope } from './create-log-helpers.ts';
-import { classifyAndBuildTitle } from './title-helpers.ts';
 
 const isTemplateError = (log: TemplateError | TemplateWarning): log is TemplateError =>
   (log as TemplateError).templatePath !== undefined;
@@ -75,7 +75,7 @@ const formatErrorOutput = ({ err, options, format }: FormatErrorOutputInput): st
 };
 
 const formatError = (err: Error | TemplateError, options: OutputOptions = {}): string => {
-  const templateError = isTemplateErrorLog(err) ? err : toTemplateError(err);
+  const templateError = isTemplateErrorLog(err) ? err : toTemplateError(err, options);
   const sourceTrace = buildSourceTraceIfNeeded(templateError, options);
   const humanTitle = classifyAndBuildTitle(templateError);
 
@@ -90,9 +90,31 @@ const formatError = (err: Error | TemplateError, options: OutputOptions = {}): s
 const isTemplateErrorLog = (err: Error | TemplateError): err is TemplateError =>
   (err as TemplateError).templatePath !== undefined || err.name === 'Template render error';
 
-const toTemplateError = (err: Error): TemplateError => {
+const isProjectSource = (path: string): boolean => {
+  const normalized = path.replace(/\\/g, '/');
+  return !normalized.includes('/node_modules/') && !normalized.includes('\\node_modules\\');
+};
+
+const extractSourceFromStack = (stack: string, sourceFileReader: ((location: { path: string; line: number | null; col: number | null }) => ProjectSourceContent | null) | undefined): ProjectSourceContent | null => {
+  if (!sourceFileReader) { return null; }
+  const lines = stack.split('\n');
+  const projectFrame = lines.map(parseStackFrame).find(frame => frame.path !== null && frame.line !== null && isProjectSource(frame.path));
+  if (!projectFrame?.path || projectFrame.line === null) { return null; }
+  return sourceFileReader({ path: projectFrame.path, line: projectFrame.line, col: projectFrame.col ?? null });
+};
+
+const toTemplateError = (err: Error, options: OutputOptions): TemplateError => {
   const wrapped = new Error(err.message) as TemplateError;
-  if (err.stack) { wrapped.stack = err.stack; }
+  if (err.stack) {
+    wrapped.stack = err.stack;
+    const sourceInfo = extractSourceFromStack(err.stack, options.sourceFileReader);
+    if (sourceInfo) {
+      wrapped.sourceContent = sourceInfo.sourceContent;
+      wrapped.templatePath = sourceInfo.templatePath;
+      wrapped.lineno = sourceInfo.lineno;
+      wrapped.colno = sourceInfo.colno;
+    }
+  }
   return wrapped;
 };
 
@@ -132,8 +154,8 @@ const createErrorFromDef = ({
 }: CreateErrorFromDefOptions): TemplateError => {
   const err = createErrorEnvelope(resolveMessage(errorDef.message, paramsValue));
   Object.assign(err, { name: 'Template render error', code: errorDef.name, subject, ...normalized });
-  if (extra?.sourceContent) { err.sourceContent = extra.sourceContent as string; }
-  if (Number.isInteger(extra?.sourceStartLine)) { err.sourceStartLine = extra?.sourceStartLine as number; }
+  if (typeof extra?.sourceContent === 'string') { err.sourceContent = extra.sourceContent; }
+  if (typeof extra?.sourceStartLine === 'number') { err.sourceStartLine = extra.sourceStartLine; }
   err.templatePath = normalized.templateName;
   if (errorDef.causes?.length) { err.causes = [...(errorDef.causes ?? [])]; }
   if (errorDef.fixCode) { err.fixCode = errorDef.fixCode; }

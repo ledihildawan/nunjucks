@@ -33,7 +33,6 @@ const resolveHumanTitle = ({ category, undefinedName, plain, fallback }: HumanTi
       return 'Template syntax error';
     case 'VALIDATION_ERROR':
       return 'Template must be a string';
-    case 'DICTSDICT_FILTER_BY':
     case 'RESERVED_KEYWORD_CONTEXT':
       return plain;
     case 'RESERVED_KEYWORD': {

@@ -55,6 +55,51 @@ describe('resolveIdeLink', () => {
     );
   });
 
+  test('builds cursor link using vscode scheme', () => {
+    expect(resolveIdeLink('cursor', { path: 'app.ts', line: 1, col: 2 })).toBe(
+      'vscode://file/app.ts:1:2',
+    );
+  });
+
+  test('builds zed:// link for zed', () => {
+    expect(resolveIdeLink('zed', { path: 'app.ts', line: 5, col: 10 })).toBe(
+      'zed://open?file=app.ts&line=5&col=10',
+    );
+  });
+
+  test('builds textmate txmt:// link', () => {
+    expect(resolveIdeLink('textmate', { path: 'app.ts', line: 3, col: 7 })).toBe(
+      'txmt://open?url=file://app.ts&line=3&column=7',
+    );
+  });
+
+  test('builds bbedit:// link', () => {
+    expect(resolveIdeLink('bbedit', { path: 'app.ts', line: 4, col: 8 })).toBe(
+      'bbedit://app.ts?line=4',
+    );
+  });
+
+  test('builds sublime link with subl scheme', () => {
+    expect(resolveIdeLink('sublime', { path: 'app.ts', line: 2, col: 5 })).toBe(
+      'subl://open?url=file://app.ts&line=2',
+    );
+  });
+
+  test('returns jetbrains documentation URL for jetbrains family', () => {
+    expect(resolveIdeLink('jetbrains', { path: 'app.ts', line: 1, col: 1 })).toBe(
+      'https://www.jetbrains.com/idea/guide/tips/open-in-ide/',
+    );
+    expect(resolveIdeLink('intellij', { path: 'app.ts', line: 1, col: 1 })).toBe(
+      'https://www.jetbrains.com/idea/guide/tips/open-in-ide/',
+    );
+    expect(resolveIdeLink('pycharm', { path: 'app.ts', line: 1, col: 1 })).toBe(
+      'https://www.jetbrains.com/idea/guide/tips/open-in-ide/',
+    );
+    expect(resolveIdeLink('webstorm', { path: 'app.ts', line: 1, col: 1 })).toBe(
+      'https://www.jetbrains.com/idea/guide/tips/open-in-ide/',
+    );
+  });
+
   test('builds a custom navto: link without normalising the path', () => {
     const customPath = 'C:\\src\\app.ts';
     const link = resolveIdeLink('custom', { path: customPath, line: 5, col: 6 });
@@ -62,9 +107,9 @@ describe('resolveIdeLink', () => {
   });
 
   test('uses a custom ide link builder function', () => {
-    const builder: IdeLinkFn = (path, line, col) => `webstorm://open?file=${path}&line=${line}&col=${col}`;
+    const builder: IdeLinkFn = (path, line, col) => `custom://open?file=${path}&line=${line}&col=${col}`;
     expect(resolveIdeLink(builder, { path: 'src/app.ts', line: 7, col: 8 })).toBe(
-      'webstorm://open?file=src/app.ts&line=7&col=8',
+      'custom://open?file=src/app.ts&line=7&col=8',
     );
   });
 
@@ -74,26 +119,84 @@ describe('resolveIdeLink', () => {
   });
 
   test('falls back to vscode:// for any unrecognised ide string', () => {
-    expect(resolveIdeLink('webstorm', { path: 'app.ts', line: 1, col: 1 })).toBe('vscode://file/app.ts:1:1');
+    expect(resolveIdeLink('nonexistent-ide', { path: 'app.ts', line: 1, col: 1 })).toBe('vscode://file/app.ts:1:1');
   });
 });
 
 describe('getIdeMeta', () => {
-  test('returns the VS Code label and brand color for the vscode ide', () => {
-    const meta = getIdeMeta('vscode');
-    expect(meta.label).toBe('VSCode');
+  test('returns VS Code metadata by default', () => {
+    const meta = getIdeMeta();
+    expect(meta.label).toBe('VS Code');
     expect(meta.color).toBe('#007ACC');
   });
 
-  test('includes an svg path icon using currentColor', () => {
-    const icon = getIdeMeta('vscode').icon;
-    expect(icon).toContain('currentColor');
-    expect(icon).toContain('<path');
+  test('returns VS Code metadata for unknown IDE', () => {
+    const meta = getIdeMeta('unknown');
+    expect(meta.label).toBe('VS Code');
+    expect(meta.color).toBe('#007ACC');
   });
 
-  test('returns the same VS Code meta regardless of the ide argument', () => {
-    const builder: IdeLinkFn = () => '';
-    expect(getIdeMeta('custom')).toEqual(getIdeMeta('vscode'));
-    expect(getIdeMeta(builder)).toEqual(getIdeMeta('vscode'));
+  test('returns Cursor metadata for cursor', () => {
+    const meta = getIdeMeta('cursor');
+    expect(meta.label).toBe('Cursor');
+    expect(meta.color).toBe('#000000');
+  });
+
+  test('returns WebStorm metadata for webstorm', () => {
+    const meta = getIdeMeta('webstorm');
+    expect(meta.label).toBe('WebStorm');
+    expect(meta.color).toBe('#000000');
+  });
+
+  test('returns PyCharm metadata for pycharm', () => {
+    const meta = getIdeMeta('pycharm');
+    expect(meta.label).toBe('PyCharm');
+    expect(meta.color).toBe('#000000');
+  });
+
+  test('returns JetBrains metadata for jetbrains family', () => {
+    const jetbrainsMeta = getIdeMeta('jetbrains');
+    expect(jetbrainsMeta.label).toBe('JetBrains');
+    expect(jetbrainsMeta.color).toBe('#000000');
+
+    expect(getIdeMeta('intellij').label).toBe('JetBrains');
+    expect(getIdeMeta('goland').label).toBe('JetBrains');
+    expect(getIdeMeta('rider').label).toBe('JetBrains');
+  });
+
+  test('returns Zed metadata for zed', () => {
+    const meta = getIdeMeta('zed');
+    expect(meta.label).toBe('Zed');
+    expect(meta.color).toBe('#000000');
+  });
+
+  test('returns Sublime Text metadata for sublime', () => {
+    const meta = getIdeMeta('sublime');
+    expect(meta.label).toBe('Sublime Text');
+    expect(meta.color).toBe('#FF9800');
+  });
+
+  test('returns TextMate metadata for textmate', () => {
+    const meta = getIdeMeta('textmate');
+    expect(meta.label).toBe('TextMate');
+    expect(meta.color).toBe('#000000');
+  });
+
+  test('returns VSCodium metadata for vscodium', () => {
+    const meta = getIdeMeta('vscodium');
+    expect(meta.label).toBe('VSCodium');
+    expect(meta.color).toBe('#2F80ED');
+  });
+
+  test('returns BBEdit metadata for bbedit', () => {
+    const meta = getIdeMeta('bbedit');
+    expect(meta.label).toBe('BBEdit');
+    expect(meta.color).toBe('#000000');
+  });
+
+  test('includes an svg icon using currentColor', () => {
+    const icon = getIdeMeta('vscode').icon;
+    expect(icon).toContain('currentColor');
+    expect(icon).toContain('<svg');
   });
 });

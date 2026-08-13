@@ -45,9 +45,9 @@ const mapObjectPatternChild = (c: Node): Node => {
 const normalizePattern = (node: Node): Node => {
   if (isArrayPattern(node) || isObjectPattern(node)) { return node; }
   if (isArray(node)) {
-    return arrayPattern(loc(node), (node as { children: readonly Node[] }).children.map(mapArrayPatternChild));
+    return arrayPattern(loc(node), (node.children ?? []).map(mapArrayPatternChild));
   }
-  return objectPattern(loc(node), (node as { children: readonly Node[] }).children.map(mapObjectPatternChild));
+  return objectPattern(loc(node), (node.children ?? []).map(mapObjectPatternChild));
 };
 
 const isExpressionContext = (tok: Token): boolean =>

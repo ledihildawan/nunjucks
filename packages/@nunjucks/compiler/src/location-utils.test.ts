@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { extractPropertyLocation } from './location-utils.ts';
 import { literal, lookupVal, symbol } from '@nunjucks/nodes';
-import { loc } from '@nunjucks/lexer';
+import { loc } from '@nunjucks/shared';
 
 describe('extractPropertyLocation', () => {
   test('returns null location for null/undefined node', () => {

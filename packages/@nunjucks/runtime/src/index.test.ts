@@ -15,7 +15,6 @@ describe('@nunjucks/runtime barrel', () => {
   test('exports member access helpers', () => {
     expect(typeof runtime.memberLookup).toBe('function');
     expect(typeof runtime.slice).toBe('function');
-    expect(typeof runtime.nullishCoalesce).toBe('function');
   });
 
   test('exports sandbox helpers', () => {
@@ -27,7 +26,6 @@ describe('@nunjucks/runtime barrel', () => {
     expect(typeof runtime.callWrap).toBe('function');
     expect(typeof runtime.contextOrFrameLookup).toBe('function');
     expect(typeof runtime.handleError).toBe('function');
-    expect(typeof runtime.fromIterator).toBe('function');
     expect(typeof runtime.inOperator).toBe('function');
   });
 

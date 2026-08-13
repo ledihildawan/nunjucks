@@ -9,3 +9,4 @@ export { toConsoleString } from './to-console.ts';
 export type { Warning, ToConsoleOptions } from './to-console.ts';
 export { injectWarningsScript } from './warning-script.ts';
 export type { WarningScriptOptions } from './warning-script.ts';
+export type { ClassifiedError, HumanTitleInput } from './to-html-types.ts';

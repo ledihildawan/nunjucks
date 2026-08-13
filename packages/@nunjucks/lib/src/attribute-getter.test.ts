@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { prepareAttributeParts, getAttrGetter } from './deep-get.ts';
+import { prepareAttributeParts, getAttrGetter } from './attribute-getter.ts';
 
 describe('prepareAttributeParts', () => {
   test('splits dotted strings into parts', () => {

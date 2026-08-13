@@ -4,19 +4,19 @@ import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 
 export const NULL_MARKER = '__nunjucks_null__';
 export const PARENT_NAME = '__nunjucks_parent__';
-export const ACCESS_PATH = '__access_path__';
+export const ACCESS_PATH = '__nunjucks_access_path__';
 export const PROP_NOT_FOUND = '__nunjucks_prop_not_found__';
 
 export interface NullAccessResult {
   __nunjucks_null__: true;
   __nunjucks_parent__: string | null;
-  __access_path__: string;
+  __nunjucks_access_path__: string;
 }
 
 export interface PropertyNotFoundResult {
   __nunjucks_prop_not_found__: true;
   __nunjucks_parent__: string | null;
-  __access_path__: string;
+  __nunjucks_access_path__: string;
 }
 
 export type AccessResult = NullAccessResult | PropertyNotFoundResult;
@@ -96,5 +96,3 @@ export const slice = <T>(options: SliceOptions<T>): readonly T[] | string => {
 
   return collectBackward({ source, start: normalizedStart, stop: normalizedStop, step: stepValue });
 };
-
-export { nullishCoalesce } from '@nunjucks/lib/nullish-coalesce';

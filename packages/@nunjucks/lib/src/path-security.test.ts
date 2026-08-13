@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { containsNullByte, isWithinBase } from './path-policy.ts';
+import { containsNullByte, isWithinBase } from './path-security.ts';
 
 describe('containsNullByte', () => {
   test('detects NUL characters anywhere in the name', () => {

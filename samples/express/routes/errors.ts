@@ -1,17 +1,13 @@
-﻿import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import express, { type Router } from 'express';
-import { renderTemplate, sendTemplateResult } from '../lib/express-render.ts';
+﻿import express, { type Router } from 'express';
+import { renderTemplate } from '../lib/domain/render-template.ts';
+import { sendTemplateResult } from '../lib/io/send-template-result.ts';
 import { createSandboxedContext } from '@nunjucks/runtime';
 import type { NunjucksConfig } from '@nunjucks/core';
-import { errorGroups } from '../lib/error-route-metadata.ts';
-import { errorRoutes } from '../lib/error-route-data.ts';
-import { createInvalidTemplate, escapeHtml } from '../lib/error-route-utils.ts';
-import type { EnrichedFilterError } from '../lib/error-route-types.ts';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const VIEWS = path.join(__dirname, '..', 'views');
+import { errorGroups } from '../lib/domain/error-route-metadata.ts';
+import { errorRoutes } from '../lib/domain/error-route-data.ts';
+import { createTemplateSource, escapeHtml } from '../lib/domain/error-route-utils.ts';
+import type { EnrichedFilterError } from '../lib/domain/error-route-types.ts';
+import { VIEWS } from '../lib/io/views-path.ts';
 
 const router: Router = express.Router();
 
@@ -242,7 +238,7 @@ router.get('/container-not-registered', async (_req, res, next) => {
 });
 
 router.get('/template-must-be-string', async (_req, res, next) => {
-    const invalidResult = createInvalidTemplate(123);
+    const invalidResult = createTemplateSource(123);
     if (!invalidResult.ok) {
       return next(invalidResult.error);
     }
@@ -250,7 +246,7 @@ router.get('/template-must-be-string', async (_req, res, next) => {
   });
 
 router.get('/template-null', async (_req, res, next) => {
-    const invalidResult = createInvalidTemplate(null);
+    const invalidResult = createTemplateSource(null);
     if (!invalidResult.ok) {
       return next(invalidResult.error);
     }

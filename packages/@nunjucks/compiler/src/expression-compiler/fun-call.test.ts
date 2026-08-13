@@ -3,7 +3,7 @@ import { compileFunCall } from './fun-call.ts';
 import { symbol, literal, funCall } from '@nunjucks/nodes';
 import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { loc } from '@nunjucks/lexer';
+import { loc } from '@nunjucks/shared';
 
 const frame = createFrame();
 

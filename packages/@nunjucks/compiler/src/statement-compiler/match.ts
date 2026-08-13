@@ -3,6 +3,7 @@ import type { MatchNode, WhenNode } from '@nunjucks/nodes';
 import { isLiteral, isSymbol, isArray, isDict } from '@nunjucks/nodes';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
+import { assertSafeIdentifier } from '../codegen.ts';
 import { compileDestructuring } from './pattern.ts';
 
 export const compileMatch = (compiler: Compiler, { node, frame: parentFrame }: CompileNodeInput<MatchNode>): void => {
@@ -35,12 +36,13 @@ export const compileMatch = (compiler: Compiler, { node, frame: parentFrame }: C
     } else if (isSymbol(pattern)) {
       const name = pattern.value;
       if (name !== '_') {
-        compiler.emitLine(`frame = frame.set({ name: "${name}", value: ${targetVar} });`);
+        assertSafeIdentifier(name, { compiler });
+        compiler.emitLine(`frame = frame.set({ name: ${JSON.stringify(name)}, value: ${targetVar} });`);
         frame.set({ name, value: targetVar });
       }
     } else if (isArray(pattern) || isDict(pattern)) {
       condParts.push(`${targetVar} != null`);
-      compileDestructuring({ ctx: compiler, frame, registerFrame: true }, pattern, targetVar);
+      compileDestructuring({ compiler, frame, registerFrame: true }, pattern, targetVar);
     } else {
       const exprId = compiler.tmpid();
       compiler.emitLine(`let ${exprId} = `);
@@ -74,6 +76,6 @@ export const compileMatch = (compiler: Compiler, { node, frame: parentFrame }: C
 };
 
 // WHY: WhenNode is compiled inline by compileMatch and must never reach the dispatcher directly; this stub is a defensive guard that fails loudly if dispatch routing is broken.
-export const compileWhen = (compiler: Compiler, { node: _node, frame: _frame }: CompileNodeInput<WhenNode>): void => {
+export const compileWhen = (compiler: Compiler, _input: CompileNodeInput<WhenNode>): void => {
   compiler.fail('when: WhenNode should be compiled by compileMatch, not dispatched directly', 0, 0);
 };

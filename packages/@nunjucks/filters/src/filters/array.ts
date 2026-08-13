@@ -1,9 +1,9 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { isPlainObject, keys, pipe, range, reduce, sum as sumValues } from 'remeda';
-import { isSafeString, makeComponent } from '@nunjucks/runtime';
+import { isSafeString } from '@nunjucks/runtime';
 import { ok, err, type Result } from '@nunjucks/lib';
 import { createSortComparator } from '@nunjucks/lib/compare';
-import { makeFilterError, isArray, requireArrayError, validateItemsHaveAttr } from '../factory/index.ts';
+import { makeFilterError, createFilter, isArray, requireArrayError, validateItemsHaveAttr } from '../factory/index.ts';
 import type { TemplateError } from '@nunjucks/error-formatter';
 
 export const first = (values: unknown): Result<unknown, TemplateError> => {
@@ -90,17 +90,17 @@ export const slice = (values: unknown, slices: number, fillWith?: unknown): Resu
     return err(makeFilterError({ errorDef: ERROR_DEFINITIONS.SLICE_ZERO, params: {}, subject: '', fallbackMessage: 'slices must be positive' }));
   }
   const { sliceLength, extra } = computeSliceParams(values.length, slices);
-  const { res } = pipe(
+  const { resultSlices } = pipe(
     range(0, slices),
     reduce(
       (acc, i) => {
         const { slice: currSlice, newOffset } = buildSingleSlice({ items: values, index: i, offset: acc.offset, sliceLength, extra, fillWith });
-        return { res: [...acc.res, currSlice], offset: newOffset };
+        return { resultSlices: [...acc.resultSlices, currSlice], offset: newOffset };
       },
-      { res: [] as unknown[][], offset: 0 },
+      { resultSlices: [] as unknown[][], offset: 0 },
     ),
   );
-  return ok(res);
+  return ok(resultSlices);
 };
 
 interface SumWithAttributeInput {
@@ -154,14 +154,19 @@ const sortArray = (values: unknown[], options: SortOptions): Result<unknown[], T
   return ok(array.toSorted(comparator));
 };
 
-export const sort = makeComponent({
-  argNames: ['value', 'reverse', 'case_sensitive', 'attribute'],
-  kwargNames: [],
-  func: (values: unknown[], reversed?: boolean | string, caseSens?: boolean | string, attr?: string): Result<unknown[], TemplateError> => {
-    if (!isArray(values)) { return err(requireArrayError(values, ERROR_DEFINITIONS.SORT_FILTER)); }
-    const reversedIsString = typeof reversed === 'string';
-    const sortAttr = reversedIsString ? reversed : attr;
-    const sortReverse = reversedIsString ? caseSens : reversed;
-    return sortArray(values, { sortAttr, sortReverse, caseSens });
-  },
-});
+interface SortOptionsInput {
+  values: unknown[];
+  reversed?: boolean | string;
+  caseSens?: boolean | string;
+  attr?: string;
+}
+
+const sortImpl = ({ values, reversed, caseSens, attr }: SortOptionsInput): Result<unknown[], TemplateError> => {
+  if (!isArray(values)) { return err(requireArrayError(values, ERROR_DEFINITIONS.SORT_FILTER)); }
+  const reversedIsString = typeof reversed === 'string';
+  const sortAttr = reversedIsString ? reversed : attr;
+  const sortReverse = reversedIsString ? caseSens : reversed;
+  return sortArray(values, { sortAttr, sortReverse, caseSens });
+};
+
+export const sort = createFilter(['values', 'reversed', 'caseSens', 'attr'], sortImpl);

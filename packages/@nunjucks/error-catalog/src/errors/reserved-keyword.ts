@@ -33,7 +33,7 @@ export const reservedKeywordClassifier = (input: ClassifyInput): Classification 
   }
 
   const keyword = input.subject ?? 'unknown';
-  const info = RESERVED_KEYWORD_CONTEXT[keyword] || {
+  const keywordGuidance = RESERVED_KEYWORD_CONTEXT[keyword] || {
     causes: ['Reserved keyword used outside its context'],
     fixCode: '',
     fixComment: ''
@@ -45,6 +45,6 @@ export const reservedKeywordClassifier = (input: ClassifyInput): Classification 
     title: `Cannot use reserved keyword '${keyword}' outside of its intended context`,
     documentationUrl: null,
     severity: 'error',
-    ...info
+    ...keywordGuidance
   };
 };

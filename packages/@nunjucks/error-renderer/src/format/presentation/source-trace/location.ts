@@ -26,11 +26,11 @@ export const formatLocationAnnotation = ({ lineno, colno, lineBase }: LocationIn
 };
 
 export const toDisplayLocation = ({ lineno, colno, lineBase }: LocationInput): DisplayLocation => {
-	const base = normalizeLineBase(lineBase);
+	const lineBaseValue = normalizeLineBase(lineBase);
 	const safeLine = lineno ?? 0;
 	const safeCol = colno ?? 0;
 
-	if (base === 'one') {
+	if (lineBaseValue === 'one') {
 		return {
 			line: safeLine || 1,
 			col: safeCol || 1

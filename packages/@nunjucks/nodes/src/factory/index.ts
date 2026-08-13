@@ -1,4 +1,4 @@
-import { T, createNode } from './internal.ts';
+import { createNode, T } from './create-node.ts';
 import * as guards from '../types/guards.ts';
 import * as traverse from '../traverse.ts';
 import {

@@ -1,5 +1,4 @@
-import type { Phase } from '@nunjucks/shared';
-import type { UndefinedMode } from '@nunjucks/runtime';
+import type { Phase, UndefinedMode } from '@nunjucks/shared';
 import type { LineBase } from './line-base.ts';
 
 export interface ErrorLike {

@@ -34,6 +34,7 @@
 
       --color-error-text: light-dark(oklch(45% 0.2 25), oklch(70% 0.18 25));
       --color-error-hover: light-dark(oklch(35% 0.2 25), oklch(55% 0.18 25));
+      --color-error-bg: light-dark(oklch(45% 0.2 25 / 0.12), oklch(70% 0.18 25 / 0.18));
 
       --color-btn-bg: light-dark(oklch(20% 0.02 285), oklch(90% 0.01 285));
       --color-btn-text: light-dark(oklch(98% 0.01 285), oklch(15% 0.01 285));
@@ -483,7 +484,7 @@
 
   <script>
     // Data from Nunjucks SSR
-    const groupsData = {{ JSON.stringify(groups) }};
+    const groupsData = {{ groups |> tojson }};
     const total = {{ total }};
 
     const preview = document.getElementById('preview');
@@ -554,16 +555,22 @@
       }
     }
 
-    // Filter groups by query
+    // Filter groups by query — matches against the group name (keeps all items)
+    // or against individual item path/desc.
     function filterGroups(data, query) {
       return data
-        .map(group => ({
-          ...group,
-          items: group.items.filter(item =>
-            item.path.toLowerCase().includes(query) ||
-            item.desc.toLowerCase().includes(query)
-          )
-        }))
+        .map(group => {
+          if (group.name.toLowerCase().includes(query)) {
+            return group;
+          }
+          return {
+            ...group,
+            items: group.items.filter(item =>
+              item.path.toLowerCase().includes(query) ||
+              item.desc.toLowerCase().includes(query)
+            )
+          };
+        })
         .filter(group => group.items.length > 0);
     }
 
@@ -583,10 +590,14 @@
         header.dataset.originalCount = group.items.length;
         header.setAttribute('role', 'heading');
         header.setAttribute('aria-level', '2');
-        header.innerHTML = `
-          <span class="group-title">${group.name}</span>
-          <span class="count">(${group.items.length})</span>
-        `;
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'group-title';
+        titleSpan.textContent = group.name;
+        const countSpan = document.createElement('span');
+        countSpan.className = 'count';
+        countSpan.textContent = `(${group.items.length})`;
+        header.appendChild(titleSpan);
+        header.appendChild(countSpan);
         section.appendChild(header);
 
         const ul = document.createElement('ul');
@@ -599,13 +610,21 @@
           const li = document.createElement('li');
           li.setAttribute('role', 'listitem');
 
+          const code = document.createElement('code');
+          code.textContent = item.path;
+
+          const descSpan = document.createElement('span');
+          descSpan.className = 'item-desc';
+          descSpan.textContent = item.desc;
+
           const a = document.createElement('a');
           a.href = `/errors/${item.path}`;
           a.className = 'error-card';
           a.dataset.path = item.path;
           a.dataset.desc = item.desc;
           a.setAttribute('aria-label', `${item.desc} - ${item.path}`);
-          a.innerHTML = `<code>${item.path}</code><span class="item-desc">${item.desc}</span>`;
+          a.appendChild(code);
+          a.appendChild(descSpan);
 
           li.appendChild(a);
           ul.appendChild(li);
@@ -630,7 +649,15 @@
       el.className = 'no-results';
       el.setAttribute('role', 'status');
       el.setAttribute('aria-live', 'polite');
-      el.innerHTML = `<p>No error routes match <strong>"${query}"</strong></p><p>Try different keywords or browse all routes.</p>`;
+      const p1 = document.createElement('p');
+      p1.appendChild(document.createTextNode('No error routes match '));
+      const strong = document.createElement('strong');
+      strong.textContent = `"${query}"`;
+      p1.appendChild(strong);
+      const p2 = document.createElement('p');
+      p2.textContent = 'Try different keywords or browse all routes.';
+      el.appendChild(p1);
+      el.appendChild(p2);
       sidebarContent.appendChild(el);
     }
 
@@ -680,28 +707,38 @@
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
 
-    document.querySelectorAll('.group-header').forEach(header => {
-      header.addEventListener('click', () => {
+    // WHY: event delegation on the stable sidebarContent parent. The search
+    // filter rebuilds the list DOM on every query, which detaches any listener
+    // bound directly to .error-card / .group-header nodes. Delegating from the
+    // parent keeps clicks working across re-renders without re-attaching.
+    function selectErrorCard(card) {
+      if (activeLink) activeLink.classList.remove('active');
+      activeLink = card;
+      activeLink.classList.add('active');
+      const path = card.dataset.path;
+      currentUrl = '/errors/' + path;
+      preview.classList.add('active');
+      urlText.textContent = currentUrl;
+      previewFrame.src = currentUrl;
+      location.hash = 'preview=' + currentUrl;
+    }
+
+    sidebarContent.addEventListener('click', (e) => {
+      const card = e.target.closest('.error-card');
+      if (card) {
+        e.preventDefault();
+        selectErrorCard(card);
+        return;
+      }
+      const header = e.target.closest('.group-header');
+      if (header) {
         const index = header.dataset.group;
         const list = document.getElementById('group-' + index);
-        header.classList.toggle('open');
-        list.classList.toggle('open');
-      });
-    });
-
-    document.querySelectorAll('.error-card').forEach(card => {
-      card.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (activeLink) activeLink.classList.remove('active');
-        activeLink = card;
-        activeLink.classList.add('active');
-        const path = card.dataset.path;
-        currentUrl = '/errors/' + path;
-        preview.classList.add('active');
-        urlText.textContent = currentUrl;
-        previewFrame.src = currentUrl;
-        location.hash = 'preview=' + currentUrl;
-      });
+        if (list) {
+          header.classList.toggle('open');
+          list.classList.toggle('open');
+        }
+      }
     });
 
     function openInNewTab() {
@@ -713,13 +750,7 @@
       const path = url.replace('/errors/', '');
       const card = document.querySelector('a[data-path="' + path + '"]');
       if (card) {
-        if (activeLink) activeLink.classList.remove('active');
-        activeLink = card;
-        activeLink.classList.add('active');
-        currentUrl = '/errors/' + path;
-        preview.classList.add('active');
-        urlText.textContent = currentUrl;
-        previewFrame.src = currentUrl;
+        selectErrorCard(card);
         card.scrollIntoView();
       }
     }

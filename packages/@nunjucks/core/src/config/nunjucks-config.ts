@@ -12,7 +12,7 @@ type ContentType = 'html' | 'json' | 'text';
 // as `Record<string, unknown>` matches the established GlobalConfig pattern and avoids contravariance friction
 // (a `(value: string) => string` filter is not assignable to `(...args: unknown[]) => unknown`). The internal
 // render pipeline casts to the callable shape at the call site.
-type ExtensionMap = Readonly<Record<string, unknown>>;
+export type ExtensionMap = Readonly<Record<string, unknown>>;
 
 interface SecurityConfig {
   readonly sandbox?: boolean;

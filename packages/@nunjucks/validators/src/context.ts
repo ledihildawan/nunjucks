@@ -1,16 +1,15 @@
 import { findDangerousValues } from './security/index.ts';
+import { ok, err, type Result } from '@nunjucks/lib';
 import type { BaseValidationError } from '@nunjucks/shared';
 
-interface ContextValidationError extends BaseValidationError {
+export interface ContextValidationError extends BaseValidationError {
   code: string;
   dangerousPaths?: string[];
 }
 
-type ContextValidationResult =
-  | { valid: true; errors: readonly [] }
-  | { valid: false; errors: readonly [ContextValidationError, ...ContextValidationError[]] };
+export type ContextValidationResult = Result<void, readonly [ContextValidationError, ...ContextValidationError[]]>;
 
-interface ContextValidatorConfig {
+export interface ContextValidatorConfig {
   strictMode?: boolean;
   scanContextValues?: boolean;
   blockedContextKeys?: readonly string[];
@@ -19,24 +18,21 @@ interface ContextValidatorConfig {
 
 const validateRenderContext = (context: unknown, config: ContextValidatorConfig): ContextValidationResult => {
   if (!(config.strictMode || config.scanContextValues)) {
-    return { valid: true, errors: [] as const };
+    return ok(undefined);
   }
 
   const dangerous = findDangerousValues(context, config.allowedGlobals);
   if (dangerous.length === 0) {
-    return { valid: true, errors: [] as const };
+    return ok(undefined);
   }
 
   const [first] = dangerous;
-  return {
-    valid: false,
-    errors: [{
-      code: 'DANGEROUS_CONTEXT_VALUES',
-      message: `Context contains unsafe values: ${dangerous.join(', ')}`,
-      subject: first,
-      dangerousPaths: dangerous
-    }]
-  };
+  return err([{
+    code: 'DANGEROUS_CONTEXT_VALUES',
+    message: `Context contains unsafe values: ${dangerous.join(', ')}`,
+    subject: first,
+    dangerousPaths: dangerous
+  }] as const);
 };
 
 const findContextDangerousValues = (context: unknown, config: { allowedGlobals?: readonly string[] } = {}): string[] => {
@@ -45,4 +41,3 @@ const findContextDangerousValues = (context: unknown, config: { allowedGlobals?:
 };
 
 export { validateRenderContext, findContextDangerousValues };
-export type { ContextValidationError, ContextValidationResult, ContextValidatorConfig };

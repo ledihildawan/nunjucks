@@ -4,6 +4,7 @@ import type { Frame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
+import { assertSafeIdentifier } from '../codegen.ts';
 import { compileGetTemplate } from './import.ts';
 
 const extractNameAlias = (nameNode: Node): { name: string; alias: string } => {
@@ -25,21 +26,23 @@ interface CompileImportedNameOptions {
 
 const compileImportedName = ({ compiler, nameNode, importedId, frame }: CompileImportedNameOptions): void => {
   const { name, alias } = extractNameAlias(nameNode);
+  assertSafeIdentifier(name, { compiler });
+  assertSafeIdentifier(alias, { compiler });
   const id = compiler.tmpid();
 
   compiler.emitLine(`let ${id};`);
-  compiler.emitLine(`if(Object.hasOwn(${importedId}_exported, "${name}")) {`);
-  compiler.emitLine(`${id} = ${importedId}_exported["${name}"];`);
+  compiler.emitLine(`if(Object.hasOwn(${importedId}_exported, ${JSON.stringify(name)})) {`);
+  compiler.emitLine(`${id} = ${importedId}_exported[${JSON.stringify(name)}];`);
   compiler.emitLine('} else {');
-  compiler.emitLine(`throw new Error("Cannot import '${name}' from module");`);
+  compiler.emitLine(`throw new Error('Cannot import ' + ${JSON.stringify(name)} + ' from module');`);
   compiler.emitLine('}');
 
   frame.set({ name: alias, value: id });
 
   if (frame.parent) {
-    compiler.emitLine(`frame = frame.set({ name: "${alias}", value: ${id} });`);
+    compiler.emitLine(`frame = frame.set({ name: ${JSON.stringify(alias)}, value: ${id} });`);
   } else {
-    compiler.emitLine(`context = context.setVariable("${alias}", ${id});`);
+    compiler.emitLine(`context = context.setVariable(${JSON.stringify(alias)}, ${id});`);
   }
 };
 

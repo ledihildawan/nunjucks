@@ -121,7 +121,7 @@ This architecture enables:
 
 ### Namespace-Marker Sentinels (exception to the pseudo-private rule)
 
-The `__nunjucks_*__` / `__streamError` / `__warnings__` / `__access_path__` tokens used in `runtime/` and emitted by `compiler/` are **not** the `_myPrivateVar` pseudo-private anti-pattern. They are deliberate **cross-realm-safe sentinel keys** — property names prefixed with `__nunjucks` so they never collide with user template variables and survive serialization boundaries (cross-iframe/VM) where `Symbol` would not. Code reviewers should treat the `__nunjucks*__` prefix as a sanctioned namespace convention, not a §7 violation.
+The `__nunjucks_*__` tokens used in `runtime/` and emitted by `compiler/` are **not** the `_myPrivateVar` pseudo-private anti-pattern. They are deliberate **cross-realm-safe sentinel keys** — property names prefixed with `__nunjucks` so they never collide with user template variables and survive serialization boundaries (cross-iframe/VM) where `Symbol` would not. Code reviewers should treat the `__nunjucks*__` prefix as a sanctioned namespace convention, not a §7 violation. (Sanctioned sentinels include `__nunjucks_stream_error__`, `__nunjucks_access_path__`, `__nunjucks_warnings__`, `__nunjucks_null__`, `__nunjucks_parent__`, `__nunjucks_prop_not_found__`.)
 
 ## 8. Error Handling & Streaming Error Strategy
 

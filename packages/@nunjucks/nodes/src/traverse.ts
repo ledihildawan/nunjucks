@@ -1,4 +1,4 @@
-import { forEach, map, pipe, reduce } from 'remeda';
+import { map, pipe, reduce } from 'remeda';
 import type { CallExtensionNode, ChildrenNode, Node } from './types/index.ts';
 import { isNode, isCallExtension, isCallExtensionAsync } from './types/guards.ts';
 
@@ -98,49 +98,35 @@ const walk = (ast: Node, visitor: (node: Node) => Node | undefined): Node => {
 const matchPredicate = (node: Node, predicate: string | ((node: Node) => boolean)): boolean =>
   typeof predicate === 'string' ? node.type === predicate : predicate(node);
 
-interface SearchFieldsOptions {
-  field: string;
-  onMatch: (node: Node | null | undefined) => void;
-}
-
-const searchFieldValue = (node: Node, { field, onMatch }: SearchFieldsOptions): void => {
+const getFieldNodes = (node: Node, field: string): Node[] => {
   const value = getNodeField(node, field);
   if (Array.isArray(value)) {
-    forEach(value, (item) => { if (isNode(item)) { onMatch(item); } });
-  } else if (isNode(value)) {
-    onMatch(value);
+    return value.filter(isNode);
   }
+  return isNode(value) ? [value] : [];
 };
 
-const searchChildren = (node: Node, search: (node: Node | null | undefined) => void): void => {
-  if (Array.isArray(node.children)) {
-    forEach(node.children, (child) => { search(child); });
-  }
-  if (isCallExtNode(node)) {
-    search(node.args);
-    forEach(node.contentArgs, (argument) => { search(argument); });
-  }
-  forEach(getTraversalFields(node), (field) => {
-    searchFieldValue(node, { field, onMatch: search });
-  });
+const getChildNodes = (node: Node): Node[] => {
+  const children = Array.isArray(node.children)
+    ? node.children.filter(isNode)
+    : [];
+  const callExtChildren = isCallExtNode(node)
+    ? [node.args, ...node.contentArgs].filter(isNode)
+    : [];
+  const fieldChildren = getTraversalFields(node).flatMap(field => getFieldNodes(node, field));
+  return [...children, ...callExtChildren, ...fieldChildren];
 };
 
 const findAll = (node: Node, predicate: string | ((node: Node) => boolean)): Node[] => {
-  const results: Node[] = [];
   const seen = new Set<Node>();
-
-  const search = (current: Node | null | undefined): void => {
-    if (!current || seen.has(current)) { return; }
+  const collect = (current: Node): Node[] => {
+    if (seen.has(current)) { return []; }
     seen.add(current);
-
-    if (matchPredicate(current, predicate)) {
-      results.push(current);
-    }
-    searchChildren(current, search);
+    const self = matchPredicate(current, predicate) ? [current] : [];
+    const descendants = getChildNodes(current).flatMap(collect);
+    return [...self, ...descendants];
   };
-
-  search(node);
-  return results;
+  return collect(node);
 };
 
 export { getNodeTypeName, appendChild, walk, findAll };

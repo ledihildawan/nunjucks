@@ -1,4 +1,4 @@
-import { escapeHtml } from '@nunjucks/runtime';
+import { escapeHtml } from '@nunjucks/lib/escape';
 import picocolors from 'picocolors';
 
 const LEADING_WHITESPACE_RE = /^\s+/u;
@@ -181,5 +181,5 @@ const highlightAnsi = (code: string): string => {
   return loop(0, '', false);
 };
 
-export { escapeHtml } from '@nunjucks/runtime';
+export { escapeHtml } from '@nunjucks/lib/escape';
 export { renderInlineMarkdown, highlightHtml, highlightJs, highlightAnsi };

@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import { transform } from './index.ts';
 import { root, block, output, templateData, symbol, funCall, findAll } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { ZERO_LOC } from '@nunjucks/lexer';
+import { ZERO_LOC } from '@nunjucks/shared';
 
 describe('transform (liftSuper)', () => {
   test('does not modify AST without super() calls', () => {

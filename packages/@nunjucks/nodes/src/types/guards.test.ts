@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { ZERO_LOC } from '@nunjucks/lexer';
+import { ZERO_LOC } from '@nunjucks/shared';
 import {
   literal, symbol, templateData, funCall, lookupVal, block,
   array, dict, pair, forNode, ifNode,
