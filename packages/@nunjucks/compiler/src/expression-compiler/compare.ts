@@ -1,5 +1,5 @@
-import { isFunCall } from '@nunjucks/nodes';
-import type { Node, CompareNode, CompareOperandNode, BinaryNode } from '@nunjucks/nodes';
+import { isFunCall, isCompareOperand } from '@nunjucks/nodes';
+import type { Node, CompareNode, BinaryNode } from '@nunjucks/nodes';
 import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
@@ -12,7 +12,8 @@ export const compileCompare = (compiler: Compiler, { node, frame }: CompileNodeI
   compiler.compile(node.expr, frame);
 
   forEach(ops, (op) => {
-    const operand = op as CompareOperandNode;
+    const operand = isCompareOperand(op) ? op : null;
+    if (!operand) { return; }
     compiler.emit(` ${operand.operator} `);
     emitLocationGuard(compiler, operand.lineno, operand.colno);
     compiler.compile(operand.expr, frame);

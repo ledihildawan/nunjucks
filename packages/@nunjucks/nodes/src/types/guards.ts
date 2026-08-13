@@ -1,4 +1,4 @@
-import { T, type CallExtensionNode, type CallNode, type ChildrenNode, type ForNode, type IfNode, type LiteralNode, type MatchNode, type Node, type NodeType, type RenderNode, type SwitchNode, type SymbolNode, type TemplateDataNode, type TemplateLiteralNode, type TestNode, type TestCallNode } from './index.ts';
+import { T, type CallExtensionNode, type CallNode, type ChildrenNode, type CompareOperandNode, type ForNode, type IfNode, type LiteralNode, type MatchNode, type Node, type NodeType, type RenderNode, type SwitchNode, type SymbolNode, type TemplateDataNode, type TemplateLiteralNode, type TestNode, type TestCallNode } from './index.ts';
 
 const nodeTypes: ReadonlySet<NodeType> = new Set(Object.values(T));
 
@@ -22,6 +22,7 @@ export const isSymbol = (n: unknown): n is SymbolNode => is(T.SYMBOL)(n);
 export const isNodeList = is(T.NODE_LIST);
 export const isOutput = (n: unknown): n is ChildrenNode & { readonly type: typeof T.OUTPUT } => is(T.OUTPUT)(n);
 export const isFunCall = is(T.FUN_CALL);
+export const isCompareOperand = (n: unknown): n is CompareOperandNode => is(T.COMPARE_OPERAND)(n);
 export const isPipe = (n: unknown): n is CallNode & { readonly type: typeof T.PIPE } => is(T.PIPE)(n);
 export const isLookupVal = is(T.LOOKUP_VAL);
 export const isSlice = is(T.SLICE);

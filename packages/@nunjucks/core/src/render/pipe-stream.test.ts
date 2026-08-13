@@ -4,7 +4,7 @@ import { nunjucks, type PipeSink } from '@nunjucks/core';
 const njk = nunjucks({});
 const strictNjk = nunjucks({ undefined: 'strict' });
 
-const createMockSink = (): { sink: PipeSink; writes: string[]; status: number | null; headers: Record<string, string>; ended: boolean } => {
+const createFakeSink = (): { sink: PipeSink; writes: string[]; status: number | null; headers: Record<string, string>; ended: boolean } => {
   const writes: string[] = [];
   const headers: Record<string, string> = {};
   let status: number | null = null;
@@ -25,51 +25,51 @@ const createMockSink = (): { sink: PipeSink; writes: string[]; status: number | 
 
 describe('pipeRenderStream', () => {
   test('pre-stream error → status 500 + full error page', async () => {
-    const mock = createMockSink();
+    const fake = createFakeSink();
     const result = await njk.renderToStream('{{ unclosed');
 
-    await njk.pipeRenderStream(result, mock.sink, { dev: true });
+    await njk.pipeRenderStream(result, fake.sink, { dev: true });
 
-    expect(mock.status).toBe(500);
-    expect(mock.headers['Content-Type']).toContain('text/html');
-    expect(mock.writes[0]).toContain('Template');
-    expect(mock.ended).toBe(true);
+    expect(fake.status).toBe(500);
+    expect(fake.headers['Content-Type']).toContain('text/html');
+    expect(fake.writes[0]).toContain('Template');
+    expect(fake.ended).toBe(true);
   });
 
   test('successful stream → pipes all chunks + ends', async () => {
-    const mock = createMockSink();
+    const fake = createFakeSink();
     const result = await njk.renderToStream('Hello {{ name }}!', { name: 'World' });
 
-    await njk.pipeRenderStream(result, mock.sink, { dev: true });
+    await njk.pipeRenderStream(result, fake.sink, { dev: true });
 
-    expect(mock.status).toBeNull();
-    expect(mock.headers['Content-Type']).toContain('text/html');
-    expect(mock.headers['X-Accel-Buffering']).toBe('no');
-    expect(mock.writes.join('')).toBe('Hello World!');
-    expect(mock.ended).toBe(true);
+    expect(fake.status).toBeNull();
+    expect(fake.headers['Content-Type']).toContain('text/html');
+    expect(fake.headers['X-Accel-Buffering']).toBe('no');
+    expect(fake.writes.join('')).toBe('Hello World!');
+    expect(fake.ended).toBe(true);
   });
 
   test('mid-stream error → appends marker fragment + ends', async () => {
-    const mock = createMockSink();
+    const fake = createFakeSink();
     const result = await strictNjk.renderToStream('OK {{ bad.missing }}', { bad: {} });
 
-    await njk.pipeRenderStream(result, mock.sink, { dev: true });
+    await njk.pipeRenderStream(result, fake.sink, { dev: true });
 
-    expect(mock.headers['Content-Type']).toContain('text/html');
-    const output = mock.writes.join('');
+    expect(fake.headers['Content-Type']).toContain('text/html');
+    const output = fake.writes.join('');
     expect(output).toContain('OK ');
     expect(output).toContain('nj-err-block');
     expect(output).toContain('nj-err-overlay');
-    expect(mock.ended).toBe(true);
+    expect(fake.ended).toBe(true);
   });
 
   test('text contentType → plain text error for mid-stream', async () => {
-    const mock = createMockSink();
+    const fake = createFakeSink();
     const result = await strictNjk.renderToStream('OK {{ bad.missing }}', { bad: {} });
 
-    await njk.pipeRenderStream(result, mock.sink, { contentType: 'text', dev: true });
+    await njk.pipeRenderStream(result, fake.sink, { contentType: 'text', dev: true });
 
-    const output = mock.writes.join('');
+    const output = fake.writes.join('');
     expect(output).toContain('OK ');
     expect(output).toContain('[render error]');
     expect(output).not.toContain('nj-err-mark');
@@ -80,11 +80,11 @@ describe('pipeRenderStream', () => {
     // are written, the sink is finalized (end), and onComplete fires — proving the abort listener + .return()
     // cascade terminated the stream cleanly rather than leaking an open response.
     const controller = new AbortController();
-    const mock = createMockSink();
+    const fake = createFakeSink();
     const result = await njk.renderToStream('a{{ b }}c{{ d }}e', { b: 'B', d: 'D' });
     let completeStats: { chunks: number; errors: number; bytes: number } | null = null;
     let chunkIndex = 0;
-    await njk.pipeRenderStream(result, mock.sink, {
+    await njk.pipeRenderStream(result, fake.sink, {
       signal: controller.signal,
       onChunk: () => {
         chunkIndex += 1;
@@ -92,8 +92,8 @@ describe('pipeRenderStream', () => {
       },
       onComplete: (stats) => { completeStats = stats; },
     });
-    expect(mock.writes.join('')).toBe('a');
-    expect(mock.ended).toBe(true);
+    expect(fake.writes.join('')).toBe('a');
+    expect(fake.ended).toBe(true);
     expect(completeStats).not.toBeNull();
   });
 
@@ -128,11 +128,11 @@ describe('pipeRenderStream', () => {
   test('maxOutputSize circuit breaker throws OUTPUT_SIZE_EXCEEDED mid-stream', async () => {
     // WHY: a loop producing output past the limit trips the breaker; the error rides the Tier 3 mid-stream path
     // (status stays 200 since headers flushed, but the marker fragment carries the OUTPUT_SIZE_EXCEEDED code).
-    const mock = createMockSink();
+    const fake = createFakeSink();
     const result = await njk.renderToStream('{% for i in [1,2,3,4,5] %}{{ i }}{% endfor %}');
-    await njk.pipeRenderStream(result, mock.sink, { maxOutputSize: 3, contentType: 'json', dev: true });
-    const output = mock.writes.join('');
+    await njk.pipeRenderStream(result, fake.sink, { maxOutputSize: 3, contentType: 'json', dev: true });
+    const output = fake.writes.join('');
     expect(output).toContain('OUTPUT_SIZE_EXCEEDED');
-    expect(mock.ended).toBe(true);
+    expect(fake.ended).toBe(true);
   });
 });

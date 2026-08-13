@@ -19,7 +19,7 @@ describe('compileCompare', () => {
     const c = makeCompiler();
     const node = {
       expr: { mock: 'EXPR' },
-      ops: [{ operator: '==', expr: { mock: 'R1' }, lineno: 5, colno: 9 }],
+      ops: [{ type: 'compareOperand', operator: '==', expr: { mock: 'R1' }, lineno: 5, colno: 9 }],
       lineno: 1, colno: 1,
     };
     compileCompare(asCompiler(c), { node: node as never, frame });
@@ -35,8 +35,8 @@ describe('compileCompare', () => {
     const node = {
       expr: { mock: 'X' },
       ops: [
-        { operator: '<', expr: { mock: 'A' }, lineno: 1, colno: 1 },
-        { operator: '<=', expr: { mock: 'B' }, lineno: 2, colno: 2 },
+        { type: 'compareOperand', operator: '<', expr: { mock: 'A' }, lineno: 1, colno: 1 },
+        { type: 'compareOperand', operator: '<=', expr: { mock: 'B' }, lineno: 2, colno: 2 },
       ],
       lineno: 0, colno: 0,
     };
