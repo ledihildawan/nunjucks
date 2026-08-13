@@ -5,7 +5,7 @@ type TemplateSource = string & { readonly __brand: unique symbol };
 
 const createTemplateSource = (value: unknown): Result<TemplateSource, Error> => {
   if (typeof value !== 'string') {
-    const errObj = new Error('Template must be a string') as Error & { code?: string };
+    const errObj: Error & { code?: string } = new Error('Template must be a string');
     errObj.code = 'TEMPLATE_MUST_BE_STRING';
     return err(errObj);
   }

@@ -9,13 +9,6 @@
   },
   "dependencies": {
     "@nunjucks/core": "workspace:*",
-    "@nunjucks/compiler": "workspace:*",
-    "@nunjucks/filters": "workspace:*",
-    "@nunjucks/lexer": "workspace:*",
-    "@nunjucks/lib": "workspace:*",
-    "@nunjucks/nodes": "workspace:*",
-    "@nunjucks/parser": "workspace:*",
-    "@nunjucks/runtime": "workspace:*",
-    "@nunjucks/transformers": "workspace:*"
+    "@nunjucks/lib": "workspace:*"
   }
 }

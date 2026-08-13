@@ -6,6 +6,10 @@ interface RenderTemplateOptions {
   config?: NunjucksConfig;
 }
 
+// WHY: a fresh engine is built per call so each route's filter/security/limits overrides stay isolated;
+// the demo's `/errors` routes intentionally vary these per scenario, so memoizing the factory would
+// couple unrelated routes' configuration. The cost is acceptable because the factory is cheap and the
+// sample server is single-process for demonstration.
 const renderTemplate = async (
   template: string,
   { context = {}, config = {} }: RenderTemplateOptions = {},

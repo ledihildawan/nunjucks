@@ -81,7 +81,7 @@ app.listen(4000, () => {
   console.log('Server running at http://localhost:4000');
   console.log('\nDemo routes:');
   console.log('  /              - Home');
-  console.log('  /home          - Inline template with pipe syntax');
+  console.log('  /home          - Home welcome (extends base, getYear global, shout filter)');
   console.log('  /security      - Security features (sanitize, auto-tojson)');
   console.log('  /stream        - Streaming dashboard (extends+blocks, error recovery, metrics)');
   console.log('  /stream-normal - Same dashboard, blocking render (compare side-by-side)');
