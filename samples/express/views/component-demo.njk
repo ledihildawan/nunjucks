@@ -1,15 +1,25 @@
 {% extends "base.njk" %}
-{% import "components.njk" as components %}
 
 {% block content %}
 <h2>Component Demo</h2>
 <p>Welcome, {{ username }}!</p>
 
-<h3>User Cards (using component):</h3>
-{{ components.user_card(username, "Active") }}
-{{ components.user_card("Jane", "Inactive") }}
-{{ components.user_card("Bob", "Active") }}
+<h3>User Cards:</h3>
+<div class="user-card">
+  <h4>{{ username }}</h4>
+  <span class="status status-active">Active</span>
+</div>
+<div class="user-card">
+  <h4>Jane</h4>
+  <span class="status status-inactive">Inactive</span>
+</div>
+<div class="user-card">
+  <h4>Bob</h4>
+  <span class="status status-active">Active</span>
+</div>
 
 <h3>Simple List:</h3>
-{{ components.simple_list(["One", "Two", "Three"]) }}
+<ul class="simple-list">
+  {% for item in ["One", "Two", "Three"] %}<li>{{ item }}</li>{% endfor %}
+</ul>
 {% endblock %}

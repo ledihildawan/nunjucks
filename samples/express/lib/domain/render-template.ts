@@ -44,4 +44,3 @@ const renderDemoTemplate = async (
 };
 
 export { renderTemplate, renderDemoTemplate };
-export type { RenderTemplateOptions, RenderDemoTemplateOptions };

@@ -13,4 +13,3 @@ const createTemplateSource = (value: unknown): Result<TemplateSource, Error> => 
 };
 
 export { escapeHtml, createTemplateSource };
-export type { TemplateSource };
