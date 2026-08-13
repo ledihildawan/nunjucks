@@ -71,7 +71,7 @@ app.use('/undefined', undefinedRouter);
 app.use('/warnings', warningsRouter);
 app.use(streamingRouter);
 
-app.use(async (err: Error, _req: Request, res: Response, _next: NextFunction) => {
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   const sourceFileReader: SourceFileReader = readProjectSource;
   console.log(formatError(err, { format: 'ansi', dev: true, sourceFileReader }));
   res.status(500).type('html').send(formatError(err, { format: 'html', dev: true, sourceFileReader }));
