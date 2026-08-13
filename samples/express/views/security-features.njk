@@ -1,21 +1,42 @@
 <!DOCTYPE html>
-<html>
-<head><title>Security Features Demo</title></head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="description" content="Nunjucks engine — context-aware escaping across HTML, attribute, and script auto-tojson zones.">
+  <title>{{ appName }} — Security Features</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 880px; margin: 60px auto; padding: 0 24px; color: #2c3e50; line-height: 1.6; }
+    h1 { margin: 0 0 8px; font-size: 1.6rem; }
+    h2 { color: #3498db; border-bottom: 2px solid #3498db; padding-bottom: 6px; margin-top: 32px; font-size: 1.1rem; }
+    .raw, .safe { padding: 10px 14px; border-radius: 6px; margin: 6px 0; font-family: ui-monospace, monospace; font-size: 0.85rem; word-break: break-all; }
+    .raw { background: #fde8e8; border-left: 4px solid #e74c3c; }
+    .safe { background: #e8f6f3; border-left: 4px solid #27ae60; }
+    code { font-family: ui-monospace, monospace; background: #f3f4f6; padding: 1px 6px; border-radius: 4px; font-size: 0.9em; }
+    .script-output { background: #2c3e50; color: #ecf0f1; padding: 12px 16px; border-radius: 6px; font-size: 0.85rem; }
+    a { color: #3498db; }
+  </style>
+</head>
 <body>
-  <h1>Security Features Demo</h1>
+  <h1>Security Features</h1>
+  <p>Auto-escaping inspects the <em>output context</em> — the same value lands safely in HTML, in an attribute, or as a JS literal. The engine never trusts the context to be what the developer assumed.</p>
 
-  <h2>1. Sanitize Filter (DOMPurify)</h2>
-  <p>Raw user input (XSS risk): <code>{{ userInput }}</code></p>
-  <p>Sanitized: <code>{{ userInput |> sanitize }}</code></p>
+  <h2>1. Context-aware escaping — HTML</h2>
+  <div class="raw">raw: {{ userInput }}</div>
+  <div class="safe">escaped: {{ userInput |> sanitize }}</div>
 
-  <h2>2. Auto-toJSON in Script Context</h2>
+  <h2>2. Script context — auto-toJSON</h2>
+  <p>Inside <code>&lt;script&gt;</code>, plain values are JSON-encoded automatically. The output is a valid JS literal — no string-injection surface.</p>
   <script>
     const config = {{ configData }};
     console.log('Config loaded:', config);
   </script>
+  <div class="script-output">const config = {{ configData }};</div>
 
-  <h2>3. Context-Aware Escaping</h2>
-  <p>HTML: <code>{{ htmlContent }}</code></p>
-  <p>Attribute: <code>&lt;div data-value="{{ attrContent }}"&gt;&lt;/div&gt;</code></p>
+  <h2>3. Context-aware escaping — attribute</h2>
+  <p>Attribute values get quote-aware escaping.</p>
+  <div class="raw">raw: {{ attrContent }}</div>
+  <div class="safe">in-attr: &lt;div data-value="{{ attrContent }}"&gt;&lt;/div&gt;</div>
+
+  <p><a href="/">← Back to index</a></p>
 </body>
 </html>

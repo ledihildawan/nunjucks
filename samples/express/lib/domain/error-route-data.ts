@@ -47,7 +47,7 @@ const errorRoutes: ErrorRoute[] = [
   { path: 'filter-error', template: 'errors/filter-error.njk', context: { value: 42, data: complexUserContext }, category: 'filter_error', desc: 'Filter throws during execution', filters: { failingAsync: () => { throw new Error('Filter intentionally failed'); } } },
   { path: 'undefined-value', template: 'errors/undefined-value.njk', context: { product: null }, category: 'undefined_value', desc: 'Nested property is null' },
   { path: 'syntax-error', template: 'errors/syntax-error.njk', context: {}, category: 'syntax_error', desc: 'Invalid template syntax' },
-  { path: 'parser-expected', template: 'errors/parser-expected.njk', context: {}, category: 'syntax_error', desc: 'Parser expected token ?' },
+  { path: 'parser-expected', template: 'errors/parser-expected.njk', context: {}, category: 'syntax_error', desc: 'Parser expected different token' },
   { path: 'invalid-lookup', template: 'errors/invalid-lookup.njk', context: {}, category: 'invalid_lookup', desc: 'Invalid bracket notation' },
   { path: 'duplicate-block', template: 'errors/duplicate-block.njk', context: {}, category: 'duplicate_block', desc: 'Duplicate block definition' },
   { path: 'unknown-block-tag', template: 'errors/unknown-block-tag.njk', context: {}, category: 'unknown_block_tag', desc: 'Unmatched closing tag' },

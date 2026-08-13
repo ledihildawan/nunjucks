@@ -1,21 +1,119 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Nunjucks template engine — live demo of every public surface (compile, render, stream, security, errors) wired through an Express server.">
   <title>{{ appName }}</title>
   <style>
-    body { font-family: sans-serif; margin: 40px; }
-    h1 { color: #333; }
-    .demo-link { background: #0066cc; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 5px; }
-    .demo-link:hover { background: #0055aa; }
+    :root {
+      color-scheme: light dark;
+      --bg: light-dark(oklch(98% 0.005 250), oklch(15% 0.01 250));
+      --panel: light-dark(oklch(100% 0 0), oklch(20% 0.01 250));
+      --border: light-dark(oklch(90% 0.005 250), oklch(28% 0.01 250));
+      --text: light-dark(oklch(20% 0.02 250), oklch(95% 0.01 250));
+      --muted: light-dark(oklch(45% 0.02 250), oklch(70% 0.01 250));
+      --accent: light-dark(oklch(55% 0.18 250), oklch(70% 0.16 250));
+      --accent-text: light-dark(oklch(98% 0 0), oklch(15% 0 0));
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 880px;
+      margin: 60px auto;
+      padding: 0 24px;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    h1 { font-size: 1.8rem; margin: 0 0 4px; font-weight: 600; }
+    .meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 32px; }
+    h2 { font-size: 1.1rem; margin: 32px 0 12px; font-weight: 600; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+    a.card {
+      display: block;
+      padding: 14px 16px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    a.card:hover { border-color: var(--accent); transform: translateY(-1px); }
+    a.card code {
+      display: block;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 0.85rem;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    a.card span {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      background: var(--accent);
+      color: var(--accent-text);
+      border-radius: 9999px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    footer { color: var(--muted); font-size: 0.85rem; margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); }
   </style>
 </head>
 <body>
-  <h1>Welcome to {{ appName }}!</h1>
-  <p>Version: {{ version }} ({{ getYear() }})</p>
-  <p>Hello, {{ userName }}!</p>
+  <h1>{{ appName }}</h1>
+  <p class="meta">Version {{ version }} · {{ getYear() }} · Hello, {{ userName }}</p>
 
-  <h2>Demo Routes</h2>
-  <p><a href="/home" class="demo-link">/home</a> Inline template with pipe syntax (|>)</p>
-  <p><a href="/security" class="demo-link">/security</a> Security features: sanitize filter, auto-toJSON in script context</p>
+  <h2>Core engine <span class="badge">public API</span></h2>
+  <div class="grid">
+    <a class="card" href="/home"><code>/home</code><span>Template inheritance, globals, pipe filters — the smallest complete demo.</span></a>
+    <a class="card" href="/security"><code>/security</code><span>Context-aware escaping across HTML, attribute, and script-auto-tojson zones.</span></a>
+    <a class="card" href="/warnings"><code>/warnings</code><span>Dev warnings — surface hints without aborting the render.</span></a>
+  </div>
+
+  <h2>Streaming pipeline</h2>
+  <div class="grid">
+    <a class="card" href="/stream"><code>/stream</code><span>Progressive block-by-block render with abort-on-disconnect and idle/deadline guards.</span></a>
+    <a class="card" href="/stream-normal"><code>/stream-normal</code><span>Same dashboard, blocking render — compare time-to-first-byte.</span></a>
+    <a class="card" href="/stream-api"><code>/stream-api</code><span>JSON streaming — content-type aware error promotion (no inline markers).</span></a>
+  </div>
+
+  <h2>Language features</h2>
+  <div class="grid">
+    <a class="card" href="/demo/pipe"><code>/demo/pipe</code><span>Forward pipe operator: <code>value |&gt; filter1 |&gt; filter2</code></span></a>
+    <a class="card" href="/demo/scope"><code>/demo/scope</code><span>Loop scoping with <code>{% set %}</code> inside <code>{% for %}</code></span></a>
+    <a class="card" href="/demo/switch"><code>/demo/switch</code><span><code>{% switch %}</code> / <code>{% case %}</code> multi-branch dispatch.</span></a>
+    <a class="card" href="/demo/slot"><code>/demo/slot</code><span><code>{% slot %}</code> / <code>{% fill %}</code> named template composition.</span></a>
+    <a class="card" href="/demo/component"><code>/demo/component</code><span><code>{% component %}</code> block-based component authoring.</span></a>
+    <a class="card" href="/demo/exec"><code>/demo/exec</code><span>Method binding with <code>this</code> inside templates.</span></a>
+    <a class="card" href="/demo/security"><code>/demo/security</code><span>Sandbox + scanContextValues on a richer context.</span></a>
+  </div>
+
+  <h2>Error taxonomy <span class="badge">browse</span></h2>
+  <div class="grid">
+    <a class="card" href="/errors"><code>/errors</code><span>All error routes grouped by tier and category. Search + live preview.</span></a>
+  </div>
+
+  <h2>Boundary &amp; security</h2>
+  <div class="grid">
+    <a class="card" href="/boundary"><code>/boundary</code><span>zod schema narrows <code>req.query</code> before render — unknown → domain pattern.</span></a>
+    <a class="card" href="/sandbox"><code>/sandbox</code><span>Proxy sandbox blocks __proto__, constructor, process, setTimeout, eval.</span></a>
+    <a class="card" href="/undefined"><code>/undefined</code><span>Undefined handling modes: strict, debug, chainable.</span></a>
+  </div>
+
+  <h2>Async composition</h2>
+  <div class="grid">
+    <a class="card" href="/remote"><code>/remote</code><span><code>{% remote %}</code> tag — fetch a fragment, fall back on error.</span></a>
+  </div>
+
+  <footer>
+    Every route renders through <code>nunjucks(config)</code> from <code>@nunjucks/core</code>.
+    The catalog at startup mirrors this grid.
+  </footer>
 </body>
 </html>

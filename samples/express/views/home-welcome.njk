@@ -1,10 +1,33 @@
 <!DOCTYPE html>
-<html>
-<head><title>Home</title></head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="description" content="Nunjucks engine — template inheritance, globals, and the forward pipe filter operator.">
+  <title>{{ appName }} — Home</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 720px; margin: 60px auto; padding: 0 24px; color: #2c3e50; line-height: 1.6; }
+    h1 { margin: 0 0 8px; font-size: 1.6rem; }
+    dl { margin: 24px 0; }
+    dt { font-weight: 600; color: #3498db; margin-top: 16px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    dd { margin: 4px 0 0; }
+    code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; background: #f3f4f6; padding: 1px 6px; border-radius: 4px; font-size: 0.9em; }
+    a { color: #3498db; }
+    footer { color: #7f8c8d; font-size: 0.85rem; margin-top: 48px; padding-top: 16px; border-top: 1px solid #ecf0f1; }
+  </style>
+</head>
 <body>
-  <h1>Welcome, {{ username }}!</h1>
-  <p>App: {{ appName }} v{{ version }}</p>
-  <p>Year: {{ getYear() }}</p>
-  <p>Shout: {{ "hello" |> shout }}</p>
+  <h1>Welcome, {{ username }}</h1>
+  <p>The smallest end-to-end demo: <code>{% extends %}</code>, <code>{{ '{{ appName }}' }}</code>, <code>{% for %}</code>, and a custom filter via the forward pipe operator.</p>
+
+  <dl>
+    <dt>Globals</dt>
+    <dd><code>{{ '{{ appName }} v{{ version }}' }}</code> → <strong>{{ appName }} v{{ version }}</strong></dd>
+    <dt>Function global</dt>
+    <dd><code>{{ '{{ getYear() }}' }}</code> → <strong>{{ getYear() }}</strong></dd>
+    <dt>Pipe filter</dt>
+    <dd><code>{{ '{{ "hello" |> shout }}' }}</code> → <strong>{{ "hello" |> shout }}</strong></dd>
+  </dl>
+
+  <footer><a href="/">← Back to index</a> · Renders through <code>nunjucks(config)</code></footer>
 </body>
 </html>

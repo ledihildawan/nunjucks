@@ -7,10 +7,10 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="author" content="Nunjucks">
 
-  <title>Nunjucks Error Routes ({{ total }} errors) - Interactive Preview</title>
+  <title>Error Routes — Nunjucks engine ({{ total }} error scenarios)</title>
 
   <meta property="og:title" content="Nunjucks Error Routes - Interactive Preview">
-  <meta property="og:description" content="Browse and preview all Nunjucks template error types with syntax highlighting, possible causes, and suggested fixes.">
+  <meta property="og:description" content="Browse and preview all Nunjucks template error types grouped by engine tier, with syntax highlighting, possible causes, and suggested fixes.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="/errors">
   <meta name="twitter:card" content="summary">
@@ -102,6 +102,18 @@
     }
     h1 { font-size: 16px; margin: 0; color: var(--color-text-primary); font-weight: 600; }
     .header-hint { color: var(--color-text-secondary); font-size: 12px; }
+    .tier-legend {
+      display: inline-flex;
+      gap: 12px;
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--color-text-secondary);
+    }
+    .tier-legend span { display: inline-flex; align-items: center; gap: 4px; }
+    .tier-legend .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .tier-legend .dot[data-tier="tier 1"] { background: oklch(70% 0.18 145); }
+    .tier-legend .dot[data-tier="tier 2"] { background: oklch(75% 0.18 75); }
+    .tier-legend .dot[data-tier="tier 3"] { background: oklch(70% 0.2 25); }
 
     .header-btn {
       display: flex; align-items: center; justify-content: center;
@@ -378,6 +390,30 @@
     .group-header.open::before { transform: rotate(90deg); }
     .group-title { text-wrap: balance; word-break: break-word; }
     .group-header .count { color: var(--color-text-secondary); font-weight: normal; flex-shrink: 0; }
+    .group-header .tier {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+    }
+    .group-header .tier[data-tier="tier 1"] {
+      background: oklch(70% 0.15 145 / 0.18);
+      color: oklch(45% 0.18 145);
+    }
+    .group-header .tier[data-tier="tier 2"] {
+      background: oklch(80% 0.15 85 / 0.2);
+      color: oklch(45% 0.16 60);
+    }
+    .group-header .tier[data-tier="tier 3"] {
+      background: oklch(70% 0.18 25 / 0.15);
+      color: oklch(45% 0.2 25);
+    }
+    .group-header .tier[data-tier="—"] {
+      background: var(--color-bg-alt);
+      color: var(--color-text-secondary);
+    }
     ul { list-style: none; padding: 0; margin: 0; display: none; }
     ul.open { display: block; }
     ul li:first-child { margin-top: 0; }
@@ -405,7 +441,12 @@
 
   <header class="header" role="banner">
     <h1>Error Routes</h1>
-    <span class="header-hint">Browse {{ total }} error types</span>
+    <span class="header-hint">Browse {{ total }} error types grouped by engine tier</span>
+    <div class="tier-legend" aria-label="Engine tier legend">
+      <span><span class="dot" data-tier="tier 1"></span>tier 1 — recoverable inline</span>
+      <span><span class="dot" data-tier="tier 2"></span>tier 2 — recoverable render-time</span>
+      <span><span class="dot" data-tier="tier 3"></span>tier 3 — fatal</span>
+    </div>
   </header>
 
   <main id="main-content" role="main">
@@ -416,7 +457,7 @@
             type="search"
             id="search-input"
             role="searchbox"
-            placeholder="Search error routes..."
+            placeholder="Filter by name, path, or description..."
             aria-label="Search error routes"
             aria-controls="error-list"
             autocomplete="off"
@@ -429,6 +470,7 @@
         <section class="group" aria-labelledby="group-heading-{{ loop.index }}">
           <h2 class="group-header open" id="group-heading-{{ loop.index }}" data-group="{{ loop.index }}" data-original-count="{{ group.items.length }}" role="heading" aria-level="2">
             <span class="group-title">{{ group.name }}</span>
+            <span class="tier" data-tier="{{ group.tier }}" aria-label="Engine tier {{ group.tier }}">{{ group.tier }}</span>
             <span class="count">({{ group.items.length }})</span>
           </h2>
           <ul class="open" id="group-{{ loop.index }}" role="list" aria-label="Error routes in {{ group.name }}">
@@ -593,10 +635,16 @@
         const titleSpan = document.createElement('span');
         titleSpan.className = 'group-title';
         titleSpan.textContent = group.name;
+        const tierSpan = document.createElement('span');
+        tierSpan.className = 'tier';
+        tierSpan.dataset.tier = group.tier;
+        tierSpan.setAttribute('aria-label', `Engine tier ${group.tier}`);
+        tierSpan.textContent = group.tier;
         const countSpan = document.createElement('span');
         countSpan.className = 'count';
         countSpan.textContent = `(${group.items.length})`;
         header.appendChild(titleSpan);
+        header.appendChild(tierSpan);
         header.appendChild(countSpan);
         section.appendChild(header);
 

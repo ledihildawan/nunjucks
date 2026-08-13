@@ -9,6 +9,7 @@ export interface ErrorRoute {
 
 export interface ErrorGroup {
   name: string;
+  tier: 'tier 1' | 'tier 2' | 'tier 3' | '—';
   items: Array<{ path: string; desc: string }>;
 }
 

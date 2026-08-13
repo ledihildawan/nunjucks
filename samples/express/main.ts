@@ -77,21 +77,37 @@ app.use(async (err: Error, _req: Request, res: Response, _next: NextFunction) =>
   res.status(500).type('html').send(formatError(err, { format: 'html', dev: true, sourceFileReader }));
 });
 
+// WHY: declarative catalog — every demo surface declares its path + intent once. The listen
+// handler renders the catalog via map/join so the running output stays in lockstep with the
+// real mounted routes (no duplicate hand-written list to drift).
+interface RouteEntry {
+  path: string;
+  intent: string;
+}
+
+const baseRoutes: readonly RouteEntry[] = [
+  { path: '/', intent: 'Engine entry — basic render, globals, custom filter' },
+  { path: '/home', intent: 'Template inheritance + global + pipe filter' },
+  { path: '/security', intent: 'Context-aware escaping: HTML, attr, script auto-tojson' },
+  { path: '/stream', intent: 'Streaming render — progressive blocks, abort-on-disconnect, idle/deadline/output-size guards' },
+  { path: '/stream-normal', intent: 'Same dashboard, blocking render (latency comparison)' },
+  { path: '/stream-api', intent: 'JSON streaming API — content-type aware error promotion' },
+  { path: '/demo/:feature', intent: 'Language features — pipe, scope, switch, slot, component, exec' },
+  { path: '/errors', intent: 'Error taxonomy browser — search, filter, live preview' },
+  { path: '/errors/:scenario', intent: 'Per-error routes — catalogued by tier and category' },
+  { path: '/boundary', intent: 'Boundary validation — zod schema narrows req.query before render' },
+  { path: '/sandbox/:mode', intent: 'Sandbox security — proxy blocks proto/constructor/process, code execution' },
+  { path: '/undefined/:mode', intent: 'Undefined variable modes — strict, debug, chainable' },
+  { path: '/warnings', intent: 'Dev warnings — surface console hints without aborting render' },
+  { path: '/remote', intent: 'Remote tag — async fragment fetch with error branch' },
+] as const;
+
 app.listen(4000, () => {
-  console.log('Server running at http://localhost:4000');
-  console.log('\nDemo routes:');
-  console.log('  /              - Home');
-  console.log('  /home          - Home welcome (extends base, getYear global, shout filter)');
-  console.log('  /security      - Security features (sanitize, auto-tojson)');
-  console.log('  /stream        - Streaming dashboard (extends+blocks, error recovery, metrics)');
-  console.log('  /stream-normal - Same dashboard, blocking render (compare side-by-side)');
-  console.log('  /stream-api    - JSON streaming API (content-type aware error markers)');
-  console.log('  /demo/*        - Demo routes (pipe, scope, switch, slot, component, etc)');
-  console.log('  /errors        - Error scenarios index');
-  console.log('  /errors/*      - Individual error scenarios');
-  console.log('  /boundary      - Boundary validation (zod schema on req.query)');
-  console.log('  /sandbox/*      - Sandbox security demos');
-  console.log('  /undefined/*    - Undefined variable handling demos');
-  console.log('  /warnings      - Warnings demo');
-  console.log('  /remote/*      - Remote extension demo');
+  const catalog = baseRoutes
+    .map((entry) => `  ${entry.path.padEnd(22)} — ${entry.intent}`)
+    .join('\n');
+  console.log('\nNunjucks Express Demo — http://localhost:4000');
+  console.log('Engine surface at a glance:\n');
+  console.log(catalog);
+  console.log('\nEvery route renders with `nunjucks(config)` from @nunjucks/core.');
 });
