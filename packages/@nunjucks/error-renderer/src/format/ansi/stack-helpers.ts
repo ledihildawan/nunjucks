@@ -4,9 +4,9 @@ import { shortenPath } from '../presentation/source-trace/path-shortener.ts';
 import { isFilePath, resolveIdeLink } from '../presentation/ide-links/ide-links.ts';
 import { stripInlineMarkdown } from '@nunjucks/lib/strip-inline-markdown';
 import { parseStackFrame } from '../presentation/source-trace/stack-parse.ts';
-import { makeHyperlink } from './hyperlink.ts';
+import { createHyperlink } from './hyperlink.ts';
 
-export { makeHyperlink } from './hyperlink.ts';
+export { createHyperlink } from './hyperlink.ts';
 export { stripInlineMarkdown, getSeverityColor, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString };
 
 const getSeverityColor = (severity?: string): ((text: string) => string) => {
@@ -40,7 +40,7 @@ const formatStackLine = (
   const location = `${shortPath}:${lineNum}:${colNum}`;
 
   if (isFilePath(frame.path)) {
-    const url = makeHyperlink(location, resolveIdeLink(ide, { path: frame.path, line: lineNum, col: colNum }));
+    const url = createHyperlink(location, resolveIdeLink(ide, { path: frame.path, line: lineNum, col: colNum }));
     if (fn) { return `  at ${picocolors.cyan(fn)} (${url})`; }
     return `  at ${url}`;
   }
@@ -58,7 +58,7 @@ const formatLocationString = ({ path, location, ide }: FormatLocationStringInput
   if (!path) { return ''; }
   const shortPath = shortenPath(path, '');
   if (isFilePath(path)) {
-    const url = makeHyperlink(`${shortPath}:${location.line}:${location.col}`, resolveIdeLink(ide, { path, line: location.line, col: location.col }));
+    const url = createHyperlink(`${shortPath}:${location.line}:${location.col}`, resolveIdeLink(ide, { path, line: location.line, col: location.col }));
     return ` at ${url}`;
   }
   return ` at ${shortPath}:${location.line}:${location.col}`;

@@ -4,7 +4,7 @@ import { shortenPath } from './presentation/source-trace/path-shortener.ts';
 import { isFilePath, resolveIdeLink } from './presentation/ide-links/ide-links.ts';
 import { toDisplayLocation } from './presentation/source-trace/location.ts';
 import type { LineBase } from '@nunjucks/error-catalog';
-import { makeHyperlink } from './ansi/stack-helpers.ts';
+import { createHyperlink } from './ansi/stack-helpers.ts';
 import { DEFAULT_IDE } from './presentation/ide-links/defaults.ts';
 import type { Warning } from '@nunjucks/error-catalog';
 
@@ -34,7 +34,7 @@ const formatMedium = (warning: Warning, options: ToConsoleOptions): string => {
   const path = templateName ?? templatePath;
   const displayPath = path ? `${shortenPath(path, '')}:${lineNum}` : '';
   const locationText = path && isFilePath(path)
-    ? makeHyperlink(displayPath, resolveIdeLink(ide, { path, line: lineNum, col: 1 }))
+    ? createHyperlink(displayPath, resolveIdeLink(ide, { path, line: lineNum, col: 1 }))
     : displayPath;
   const locationStr = path
     ? `${picocolors.dim('at')} ${locationText}`
@@ -69,7 +69,7 @@ const getLocationString = (input: LocationStringInput): string => {
     const shortPath = shortenPath(input.templateName, '');
     const displayPath = `${shortPath}:${lineNum}`;
     const locationText = isFilePath(input.templateName)
-      ? makeHyperlink(displayPath, resolveIdeLink(input.ide, { path: input.templateName, line: lineNum, col: 1 }))
+      ? createHyperlink(displayPath, resolveIdeLink(input.ide, { path: input.templateName, line: lineNum, col: 1 }))
       : displayPath;
     return locationText;
   }

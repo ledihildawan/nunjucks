@@ -16,7 +16,7 @@ import {
   isSpread,
   isSymbol,
 } from '@nunjucks/nodes';
-import type { Node, SpreadNode } from '@nunjucks/nodes';
+import type { Node } from '@nunjucks/nodes';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { peekToken, nextToken } from '../cursor.ts';
@@ -30,7 +30,7 @@ const mapArrayPatternChild = (c: Node): Node => {
   if (isPair(c) && isSymbol(c.value) && typeof c.key !== 'string' && c.key.value === c.value.value) {
     return c.value;
   }
-  if (isSpread(c)) { return restPattern(loc(c), (c as SpreadNode).argument); }
+  if (isSpread(c)) { return restPattern(loc(c), c.argument); }
   return c;
 };
 
@@ -38,7 +38,7 @@ const mapObjectPatternChild = (c: Node): Node => {
   if (isPair(c) && typeof c.key !== 'string' && isSymbol(c.key) && isSymbol(c.value) && c.key.value === c.value.value) {
     return patternProperty(loc(c.key), { key: String(c.key.value), val: c.key });
   }
-  if (isSpread(c)) { return restPattern(loc(c), (c as SpreadNode).argument); }
+  if (isSpread(c)) { return restPattern(loc(c), c.argument); }
   return c;
 };
 
