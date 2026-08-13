@@ -261,4 +261,4 @@ router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
   sendTemplateResult(res, next, await renderTemplate('errors/index.njk', { context: { groups: errorGroups, total: errorGroups.reduce((sum, group) => sum + group.items.length, 0) }, config: { dev: true, views: VIEWS } }));
 });
 
-export { router as errorRouter, errorRoutes };
+export { router as errorRouter };

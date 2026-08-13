@@ -5,7 +5,7 @@ import { renderDemoTemplate } from '../lib/domain/render-template.ts';
 
 const router: Router = express.Router();
 
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', (_req: Request, res: Response) => {
   res.type('html').send(`
 <!DOCTYPE html>
 <html>

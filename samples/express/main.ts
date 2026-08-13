@@ -17,6 +17,8 @@ import { warningsRouter } from './routes/warnings.ts';
 
 const app: Express = express();
 
+const PORT = 4000;
+
 const engineConfig: ExpressEngineConfig = {
   dev: true,
   autoescape: true,
@@ -102,11 +104,11 @@ const baseRoutes: readonly RouteEntry[] = [
   { path: '/remote', intent: 'Remote tag — async fragment fetch with error branch' },
 ] as const;
 
-app.listen(4000, () => {
+app.listen(PORT, () => {
   const catalog = baseRoutes
     .map((entry) => `  ${entry.path.padEnd(22)} — ${entry.intent}`)
     .join('\n');
-  console.log('\nNunjucks Express Demo — http://localhost:4000');
+  console.log(`\nNunjucks Express Demo — http://localhost:${PORT}`);
   console.log('Engine surface at a glance:\n');
   console.log(catalog);
   console.log('\nEvery route renders with `nunjucks(config)` from @nunjucks/core.');

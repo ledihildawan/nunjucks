@@ -3,7 +3,7 @@ import { runTests, renderTable, sandboxSuites } from '../lib/domain/sandbox-demo
 
 const router: Router = express.Router();
 
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', (_req: Request, res: Response) => {
   // WHY: inline HTML for demo brevity; production should use .njk templates with autoescape
   res.type('html').send(`
 <!DOCTYPE html>
