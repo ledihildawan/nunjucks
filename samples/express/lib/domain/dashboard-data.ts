@@ -24,6 +24,7 @@ const dashboardData = {
     { name: 'Mechanical Keyboard', price: 129.00, stock: 7 },
   ],
   customer: { name: 'Ada Lovelace', joinedAt: 'Jan 2024' },
+  weather: { location: 'Jakarta', tempC: 31, condition: 'Partly Cloudy', humidity: 72, windKph: 14 },
   timestamp: isoTimestamp(),
 };
 

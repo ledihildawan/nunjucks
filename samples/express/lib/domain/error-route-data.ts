@@ -58,4 +58,4 @@ const errorRoutes: ErrorRoute[] = [
   { path: 'dictsort-filter-by', template: 'errors/dictsort-filter-by.njk', context: { data: { a: 1, b: 2 } }, category: 'dictsort_filter_by', desc: 'Dictsort invalid by param' },
 ];
 
-export { complexUserContext, errorRoutes };
+export { errorRoutes };

@@ -25,7 +25,7 @@ const buildValidationError = async ({
   const catalogDef = errorCode && Object.hasOwn(ERROR_DEFINITIONS, errorCode)
     ? ERROR_DEFINITIONS[errorCode as keyof typeof ERROR_DEFINITIONS]
     : undefined;
-  const err = createLog('error', {
+  const templateError = createLog('error', {
     def: catalogDef
       ? { ...catalogDef, message: validationError.message }
       : { name: validationError.code, message: validationError.message },
@@ -37,7 +37,7 @@ const buildValidationError = async ({
       lineBase: (locationMeta.lineBase as 'one' | 'zero' | undefined) ?? 'zero',
     },
   });
-  return wrapWithLog(err, config, { template: templateSource, renderContext: context });
+  return wrapWithLog(templateError, config, { template: templateSource, renderContext: context });
 };
 
 const getDangerousValueLocationMeta = async (contextError: RenderValidationError, config: RenderConfig): Promise<Record<string, unknown>> => {
