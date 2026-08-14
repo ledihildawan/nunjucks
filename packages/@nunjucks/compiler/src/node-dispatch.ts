@@ -91,14 +91,14 @@ const noFrame =
   (compiler, { node }) => compile(compiler, node as N);
 
 const withFrame =
-  <N extends Node = Node>(compile: (compiler: Compiler, input: CompileNodeInput<N>) => void): CompileFn =>
+  <N extends Node>(compile: (compiler: Compiler, input: CompileNodeInput<N>) => void): CompileFn =>
   (compiler, input) => compile(compiler, { node: input.node as N, frame: input.frame });
 
 const NODE_COMPILERS: Partial<Record<NodeType, CompileFn>> = {
   [T.NODE]: noFrame(compileLiteral),
   [T.VALUE]: noFrame(compileLiteral),
   [T.LITERAL]: noFrame(compileLiteral),
-  [T.SYMBOL]: (compiler, { node, frame }) => compileSymbol(compiler, { node: node as SymbolNode, frame }),
+  [T.SYMBOL]: withFrame<SymbolNode>(compileSymbol),
   [T.GROUP]: withFrame(compileGroup),
   [T.ARRAY]: withFrame(compileArray),
   [T.DICT]: withFrame(compileDict),

@@ -15,7 +15,7 @@ import { loc } from '@nunjucks/lexer';
 
 type LeftBracketToken = Token & { type: typeof TOKEN_LEFT_BRACKET };
 
-export const markBracketNotation = (node: Node, isBracket: boolean): void => {
+const markBracketNotation = (node: Node, isBracket: boolean): void => {
   node[BracketNotation] = isBracket;
 };
 
@@ -53,7 +53,7 @@ const parseBracketAccess = (parserContext: ParserContext, bracketTok: LeftBracke
     const sliceR = buildSlice(parserContext, bracketTok, null);
     if (isErr(sliceR)) { return sliceR; }
     const node = lookupVal(loc(bracketTok), { target, val: sliceR.value });
-    markBracketNotation(node, true);
+    markAsBracket(node);
     return ok(node);
   }
 
@@ -64,15 +64,18 @@ const parseBracketAccess = (parserContext: ParserContext, bracketTok: LeftBracke
     const sliceR = buildSlice(parserContext, bracketTok, startR.value);
     if (isErr(sliceR)) { return sliceR; }
     const node = lookupVal(loc(bracketTok), { target, val: sliceR.value });
-    markBracketNotation(node, true);
+    markAsBracket(node);
     return ok(node);
   }
 
   const endR = expect(parserContext, TOKEN_RIGHT_BRACKET);
   if (isErr(endR)) { return endR; }
   const node = lookupVal(loc(bracketTok), { target, val: startR.value });
-  markBracketNotation(node, true);
+  markAsBracket(node);
   return ok(node);
 };
 
-export { parseBracketAccess };
+const markAsBracket = (node: Node): void => { markBracketNotation(node, true); };
+const markAsDot = (node: Node): void => { markBracketNotation(node, false); };
+
+export { parseBracketAccess, markAsBracket, markAsDot };

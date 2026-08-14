@@ -1,5 +1,5 @@
-import { BracketNotation, T, getNodeTypeName, isLiteral, isSymbol } from '@nunjucks/nodes';
-import type { Node, CallNode, LookupNode } from '@nunjucks/nodes';
+import { BracketNotation, T, isLiteral, isSymbol } from '@nunjucks/nodes';
+import type { Node, CallNode, LookupNode, LiteralNode, SymbolNode } from '@nunjucks/nodes';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileAggregate } from './container.ts';
@@ -8,13 +8,20 @@ import { emitLocationGuard } from '../codegen.ts';
 
 const bracketFlag = (n: Node): boolean | undefined => n[BracketNotation];
 
-const buildSymbolSuffix = (value: Node, isBracket: boolean, prefix: string): string => {
+interface BuildSuffixInput {
+  value: Node;
+  isBracket: boolean;
+  prefix: string;
+}
+
+const buildSymbolSuffix = ({ value, isBracket, prefix }: BuildSuffixInput): string => {
   const suffix = isBracket ? `[${getNodeName(value)}]` : `.${getNodeName(value)}`;
   return prefix + suffix;
 };
 
-const buildLiteralSuffix = (value: Node, isBracket: boolean, prefix: string): string => {
-  const suffix = isBracket ? `["${value.value}"]` : `.${value.value}`;
+const buildLiteralSuffix = ({ value, isBracket, prefix }: BuildSuffixInput): string => {
+  const literalValue = (value as LiteralNode).value;
+  const suffix = isBracket ? `["${literalValue}"]` : `.${literalValue}`;
   return prefix + suffix;
 };
 
@@ -26,10 +33,10 @@ const handleLookupVal = (node: LookupNode): string => {
   const isBracket = bracketFlag(node) === true;
   const value = node.val;
   if (isSymbol(value)) {
-    return buildSymbolSuffix(value, isBracket, target);
+    return buildSymbolSuffix({ value, isBracket, prefix: target });
   }
   if (isLiteral(value) && typeof value.value === 'string') {
-    return buildLiteralSuffix(value, isBracket, target);
+    return buildLiteralSuffix({ value, isBracket, prefix: target });
   }
   return buildBracketAccessSuffix(target, value);
 };
@@ -43,25 +50,27 @@ const handleOptionalChain = (node: LookupNode): string => {
     return `${target}${suffix}`;
   }
   if (isLiteral(value) && typeof value.value === 'string') {
-    const suffix = isBracket ? `?.["${value.value}"]` : `?.${value.value}`;
+    const literalValue = (value as LiteralNode).value;
+    const suffix = isBracket ? `?.["${literalValue}"]` : `?.${literalValue}`;
     return `${target}${suffix}`;
   }
   return `${target}?.[${getNodeName(value)}]`;
 };
 
 const getNodeName = (node: Node): string => {
-  const typeName = getNodeTypeName(node);
-  switch (typeName) {
+  switch (node.type) {
     case T.SYMBOL:
-      return node.value as string;
-    case T.FUN_CALL:
-      return `the return value of (${getNodeName((node as CallNode).name)})`;
+      return (node as SymbolNode).value;
+    case T.FUN_CALL: {
+      const callNode = node as CallNode;
+      return `the return value of (${getNodeName(callNode.name)})`;
+    }
     case T.LOOKUP_VAL:
       return handleLookupVal(node as LookupNode);
     case T.OPTIONAL_CHAIN:
       return handleOptionalChain(node as LookupNode);
     case T.LITERAL:
-      return (node.value as { toString: () => string }).toString();
+      return String((node as LiteralNode).value);
     default:
       return '--expression--';
   }

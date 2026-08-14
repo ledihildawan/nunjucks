@@ -81,7 +81,7 @@ const parseAggregateOrPattern = (parserContext: ParserContext): Result<Node | nu
   return aggR;
 };
 
-const parsePrimary = (parserContext: ParserContext, noPostfix?: boolean): Result<Node, TemplateError> => {
+const parsePrimaryRaw = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tokR = nextToken(parserContext);
   if (isErr(tokR)) { return tokR; }
   const tok = tokR.value;
@@ -89,13 +89,13 @@ const parsePrimary = (parserContext: ParserContext, noPostfix?: boolean): Result
   const literalR = handleLiteralToken(tok, parserContext);
   if (isErr(literalR)) { return literalR; }
   if (literalR.value) {
-    return noPostfix ? ok(literalR.value) : parsePostfix(parserContext, literalR.value);
+    return ok(literalR.value);
   }
 
   const symbolR = handleSymbolOrTemplate(tok, parserContext);
   if (isErr(symbolR)) { return symbolR; }
   if (symbolR.value) {
-    return noPostfix ? ok(symbolR.value) : parsePostfix(parserContext, symbolR.value);
+    return ok(symbolR.value);
   }
 
   pushToken(parserContext, tok);
@@ -105,8 +105,17 @@ const parsePrimary = (parserContext: ParserContext, noPostfix?: boolean): Result
   if (!aggregateNode) {
     return fail(parserContext, `expected expression, got ${tok.type}`, { lineno: tok.lineno, colno: tok.colno });
   }
-  return noPostfix ? ok(aggregateNode) : parsePostfix(parserContext, aggregateNode);
+  return ok(aggregateNode);
 };
+
+const parsePrimary = (parserContext: ParserContext): Result<Node, TemplateError> => {
+  const rawR = parsePrimaryRaw(parserContext);
+  if (isErr(rawR)) { return rawR; }
+  return parsePostfix(parserContext, rawR.value);
+};
+
+const parsePrimaryWithoutPostfix = (parserContext: ParserContext): Result<Node, TemplateError> =>
+  parsePrimaryRaw(parserContext);
 
 const PREFIX_OPERATORS: ReadonlyArray<{ operator: string; build: (loc: Loc, inner: Node) => Node }> = [
   { operator: '-', build: (origin, inner) => neg(origin, inner) },
@@ -124,12 +133,12 @@ const tryParsePrefixOperator = (parserContext: ParserContext, tok: Token): Resul
     return ok(null);
   }
   skipValue(parserContext, TOKEN_OPERATOR, matched.operator);
-  const innerR = parseUnary(parserContext, true);
+  const innerR = parseUnaryWithoutPipes(parserContext);
   if (isErr(innerR)) { return innerR; }
   return ok(matched.build(loc(tok), innerR.value));
 };
 
-const parseUnary = (parserContext: ParserContext, noPipes?: boolean): Result<Node, TemplateError> => {
+const parseUnaryWithoutPipes = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tokR = peekToken(parserContext);
   if (isErr(tokR)) { return tokR; }
   const tok = tokR.value;
@@ -137,22 +146,17 @@ const parseUnary = (parserContext: ParserContext, noPipes?: boolean): Result<Nod
   const prefixR = tryParsePrefixOperator(parserContext, tok);
   if (isErr(prefixR)) { return prefixR; }
 
-  let node: Node;
   if (prefixR.value !== null) {
-    node = prefixR.value;
-  } else {
-    const primaryR = parsePrimary(parserContext);
-    if (isErr(primaryR)) { return primaryR; }
-    node = primaryR.value;
+    return ok(prefixR.value);
   }
 
-  if (!noPipes) {
-    const pipeR = parsePipeForward(parserContext, node);
-    if (isErr(pipeR)) { return pipeR; }
-    node = pipeR.value;
-  }
-
-  return ok(node);
+  return parsePrimary(parserContext);
 };
 
-export { parsePrimary, parseUnary };
+const parseUnary = (parserContext: ParserContext): Result<Node, TemplateError> => {
+  const baseR = parseUnaryWithoutPipes(parserContext);
+  if (isErr(baseR)) { return baseR; }
+  return parsePipeForward(parserContext, baseR.value);
+};
+
+export { parsePrimary, parsePrimaryWithoutPostfix, parseUnary, parseUnaryWithoutPipes };

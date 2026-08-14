@@ -4,7 +4,7 @@ import type { TemplateError } from '@nunjucks/error-formatter';
 import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';
-import { parsePrimary } from "../expression-parser/index.ts";
+import { parsePrimaryWithoutPostfix } from "../expression-parser/index.ts";
 import { parseSignature } from "../node-parser/signature.ts";
 import { parseSlottedBody, buildDefaultBody, advanceAfterTags } from "./slots.ts";
 import { loc } from '@nunjucks/lexer';
@@ -17,7 +17,7 @@ export const parseComponent = (parserContext: ParserContext): Result<Node, Templ
     return fail(parserContext, 'expected component');
   }
 
-  const nameR = parsePrimary(parserContext, true);
+  const nameR = parsePrimaryWithoutPostfix(parserContext);
   if (isErr(nameR)) { return nameR; }
   const name = nameR.value;
   const argsR = parseSignature({ parserContext, tolerant: true });

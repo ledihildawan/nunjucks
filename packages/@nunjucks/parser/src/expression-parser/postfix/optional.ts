@@ -14,7 +14,7 @@ import { nextToken, peekToken, fail } from "../../cursor.ts";
 import type { ParserContext } from "../../cursor.ts";
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import { parseExpression } from "../index.ts";
-import { markBracketNotation } from "./lookup.ts";
+import { markAsBracket, markAsDot } from "./lookup.ts";
 import { loc } from '@nunjucks/lexer';
 
 type OptionalChainOperatorToken = Token & { type: typeof TOKEN_OPERATOR };
@@ -86,7 +86,7 @@ const parseOptionalBracket = (parserContext: ParserContext, tok: Token, target: 
   }
 
   const node = optionalChain(loc(tok), { target, val: startR.value });
-  markBracketNotation(node, true);
+  markAsBracket(node);
   return ok(node);
 };
 
@@ -102,7 +102,7 @@ const parseOptionalLookup = (parserContext: ParserContext, tok: Token, target: N
 
   const lookup = literal(loc(nameTok), nameTok.value);
   const node = optionalChain(loc(tok), { target, val: lookup });
-  markBracketNotation(node, false);
+  markAsDot(node);
   return ok(node);
 };
 
