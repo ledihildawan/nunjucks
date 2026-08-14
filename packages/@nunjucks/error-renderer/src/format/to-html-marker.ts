@@ -111,7 +111,7 @@ const toHtmlMarker = (error: ErrorLike, options: ToHtmlOptions & { severity?: Ma
     // Clicking the icon opens the same overlay as the block variant.
     return `<style>${css}</style>
 <span class="nj-err-inline" role="status" aria-live="polite">
-  <span class="nj-err-icon" data-nj-err-open="${id}" role="button" tabindex="0" aria-label="${escapeHtml(message)} — click to view details" title="${escapeHtml(message)}">${ALERT_ICON}</span>
+  <span class="nj-err-icon" data-nj-err-open="${id}" role="button" tabindex="0" aria-label="${message} — click to view details" title="${message}">${ALERT_ICON}</span>
 </span>
 <div class="nj-err-overlay" id="${id}" hidden>
   <button class="nj-err-close" type="button" aria-label="Close error overlay">${CLOSE_ICON}</button>

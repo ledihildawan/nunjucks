@@ -1,5 +1,6 @@
 import express, { type Router, type Request, type Response, type NextFunction } from 'express';
 import { formatError } from '@nunjucks/error-formatter';
+import { PACKAGE_VERSION } from '@nunjucks/integrations/express';
 import { dashboardData } from '../lib/domain/dashboard-data.ts';
 import { streamNjk, blockingNjk, apiNjk } from '../lib/io/stream-engines.ts';
 
@@ -40,7 +41,7 @@ router.get('/stream-normal', async (req: Request, res: Response) => {
   if (result.ok) {
     res.type('html').send(result.value);
   } else {
-    res.status(500).type('html').send(formatError(result.error, { format: 'html', dev: true }));
+    res.status(500).type('html').send(formatError(result.error, { format: 'html', dev: true, version: PACKAGE_VERSION }));
   }
 });
 
@@ -58,6 +59,30 @@ router.get('/stream-api', async (req: Request, res: Response, next: NextFunction
       },
       onComplete: (stats) => {
         console.log(`[stream-api] ${stats.chunks} chunks, ${stats.errors} errors, ${(stats.bytes / 1024).toFixed(1)}KB`);
+      },
+    }
+  );
+});
+
+// WHY: block-level error UI demo — /stream shows inline markers (compact icons) for recoverable
+// expression errors (missing variables). This route triggers a FATAL include error (FILE_NOT_FOUND)
+// which renders as a full BLOCK error card (not just an inline icon). The error occupies the
+// full widget area, providing much more visible feedback than an inline marker.
+router.get('/stream-block-error', async (req: Request, res: Response, next: NextFunction) => {
+  const streamResult = await streamNjk.renderToStream('stream-block-error-demo.njk', { ...dashboardData, mode: 'Block Error Demo' });
+  if (!streamResult.ok) { return next(streamResult.error); }
+  await streamNjk.pipeRenderStream(
+    streamResult,
+    res,
+    {
+      signal: createDisconnectSignal(req, res),
+      timeoutMs: 10000,
+      maxOutputSize: 2 * 1024 * 1024,
+      onError: (err, phase) => {
+        console.log(`[stream-block-error] ${phase} error: ${err.message}`);
+      },
+      onComplete: (stats) => {
+        console.log(`[stream-block-error] ${stats.chunks} chunks, ${stats.errors} errors, ${(stats.bytes / 1024).toFixed(1)}KB`);
       },
     }
   );

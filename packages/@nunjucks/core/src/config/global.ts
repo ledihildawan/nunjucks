@@ -1,5 +1,9 @@
 import type { UndefinedMode } from '@nunjucks/runtime';
 import type { DomPurifyConfig } from '@nunjucks/shared';
+import packageJson from '../../package.json';
+
+const PACKAGE_VERSION = packageJson.version as string;
+export { PACKAGE_VERSION };
 
 const SAFE_JSON = Object.freeze({
   stringify: JSON.stringify,
@@ -102,6 +106,7 @@ const SAFE_BUILTINS: Readonly<Record<string, unknown>> = Object.freeze({
   Date: SAFE_DATE,
   Promise: SAFE_PROMISE,
   ArrayBuffer: SAFE_ARRAYBUFFER,
+  version: PACKAGE_VERSION,
 });
 
 type SandboxEnvironment = 'auto' | 'node' | 'browser' | 'deno';

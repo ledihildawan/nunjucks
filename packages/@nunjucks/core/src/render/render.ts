@@ -116,7 +116,7 @@ const prepareRender = async (template: string, { context = {}, ...options }: Ren
   const envOverride = buildRenderEnv(loader, configWithPath);
   const resolvedConfig: RenderConfig = envOverride ? { ...configWithPath, env: envOverride } : configWithPath;
 
-  return ok({ code, sandboxedCtx, warningsCollector, templateName, resolvedConfig, templateSource, context: safeContext, streamContentType: options.streamContentType ?? 'html' });
+  return ok({ code, sandboxedCtx, warningsCollector, templateName, resolvedConfig, templateSource, context: safeContext, streamContentType: options.streamContentType ?? 'html', version: resolvedConfig.version });
 };
 
 const render = async (template: string, options: RenderOptions = {}): Promise<Result<string, TemplateError>> => {

@@ -25,9 +25,9 @@ describe('tokenizeTemplateText', () => {
     expect(r?.token.value).toBe('text ');
   });
 
-  test('does not break on comment start', () => {
+  test('stops at comment start', () => {
     const r = run('a {# b');
-    expect(r?.token.value).toBe('a {# b');
+    expect(r?.token.value).toBe('a ');
   });
 
   test('returns null for empty string', () => {

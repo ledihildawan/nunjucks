@@ -32,6 +32,8 @@ interface RenderConfig {
   undefined?: UndefinedMode;
   trimBlocks?: boolean;
   lstripBlocks?: boolean;
+  ide?: string;
+  version?: string;
   globals?: Record<string, unknown>;
   sandbox?: boolean;
   sandboxAllowlist?: readonly string[];
@@ -84,6 +86,7 @@ interface PreparedTemplate {
   readonly templateSource: string;
   readonly context: Record<string, unknown>;
   readonly streamContentType: 'html' | 'json' | 'text';
+  readonly version?: string;
 }
 
 interface RenderOptions extends Partial<import('../config/global.ts').GlobalConfig> {

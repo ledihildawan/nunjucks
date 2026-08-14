@@ -131,7 +131,7 @@ const buildMetadata = (
   sourceContent: input.sourceContent,
   sourceStartLine: input.sourceStartLine,
   renderContext: input.renderContext as Record<string, unknown> | null,
-  code: 'RENDER_ERROR'
+  code: typeof errSnapshot.code === 'string' ? errSnapshot.code : 'RENDER_ERROR'
 });
 
 interface ErrorObjectInput {

@@ -25,6 +25,7 @@ interface PipeRenderStreamOptions {
   coalesceBytes?: number;
   maxOutputSize?: number;
   ide?: string;
+  version?: string;
   logError?: boolean;
   signal?: AbortSignal;
   onChunk?: (chunk: string, index: number) => void;
@@ -79,10 +80,11 @@ interface MidStreamErrorInput {
   err: unknown;
   contentType: string;
   ide: string;
+  version: string | undefined;
 }
 
-const renderMidStreamError = ({ err, contentType, ide }: MidStreamErrorInput): string =>
-  formatErrorMarker(err as TemplateError, { ide, contentType });
+const renderMidStreamError = ({ err, contentType, ide, version }: MidStreamErrorInput): string =>
+  formatErrorMarker(err as TemplateError, { ide, contentType, version });
 
 // WHY: shallow-clone a TemplateError with renderContext stripped before it reaches the dev ANSI log. renderContext holds the user's render data (potentially PII/secrets) and the ANSI renderer echoes it verbatim — the original error keeps renderContext for response formatting (where blockedKeys + dev gating apply), but the server log must not leak it. message/stack are non-enumerable on Error so they are set explicitly; all other catalog fields ride through Object.assign.
 const redactForLog = (error: TemplateError): TemplateError => {
@@ -160,7 +162,7 @@ const pipeRenderStream = async (
   sink: PipeSink,
   options: PipeRenderStreamOptions = {}
 ): Promise<void> => {
-  const { contentType = 'html', dev = false, timeoutMs = 0, coalesceBytes = 0, maxOutputSize = 0, ide = 'vscode', logError = dev, signal, onChunk, onError, onComplete } = options;
+  const { contentType = 'html', dev = false, timeoutMs = 0, coalesceBytes = 0, maxOutputSize = 0, ide = 'vscode', version, logError = dev, signal, onChunk, onError, onComplete } = options;
   const mimeType = CONTENT_TYPE_MAP[contentType] ?? 'text/html; charset=utf-8';
   const stats = { chunks: 0, bytes: 0 };
   let errorCount = 0;
@@ -204,7 +206,7 @@ const pipeRenderStream = async (
     } else {
       errorCount += 1;
       emitErrorLog({ error: streamErr as Error, phase: 'mid-stream', logError, dev, onError });
-      sink.write(renderMidStreamError({ err: streamErr, contentType, ide }));
+      sink.write(renderMidStreamError({ err: streamErr, contentType, ide, version }));
       sink.end();
     }
   } finally {

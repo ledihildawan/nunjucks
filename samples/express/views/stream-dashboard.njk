@@ -66,6 +66,13 @@
 {% block widget %}
 <script>mark('Widget start');</script>
 <div class="widget">
+  {# INLINE error probe — renders as compact error icon #}
+  <p>Missing: {{ undefinedInlineProbe }}</p>
+
+  {# BLOCK error probe — FILE_NOT_FOUND from include → full block error card #}
+  {% include "nonexistent-widget.njk" %}
+
+  {# FALLBACK if include succeeds — normal content #}
   {% include "weather-widget.njk" %}
 </div>
 <script>mark('Widget done');</script>

@@ -1,5 +1,5 @@
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
-import { createEngine, type ExpressEngineConfig } from '@nunjucks/integrations/express';
+import { createEngine, type ExpressEngineConfig, PACKAGE_VERSION } from '@nunjucks/integrations/express';
 import { renderTemplate } from './lib/domain/render-template.ts';
 import { sendTemplateResult } from './lib/io/send-template-result.ts';
 import { currentYear } from './lib/io/clock.ts';
@@ -24,7 +24,6 @@ const engineConfig: ExpressEngineConfig = {
   autoescape: true,
   globals: {
     appName: 'Nunjucks Express Demo',
-    version: '1.0.0',
     getYear: () => currentYear(),
   },
   filters: {
@@ -76,7 +75,7 @@ app.use(streamingRouter);
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   const sourceFileReader: SourceFileReader = readProjectSource;
   console.log(formatError(err, { format: 'ansi', dev: true, sourceFileReader }));
-  res.status(500).type('html').send(formatError(err, { format: 'html', dev: true, sourceFileReader }));
+  res.status(500).type('html').send(formatError(err, { format: 'html', dev: true, sourceFileReader, version: PACKAGE_VERSION }));
 });
 
 // WHY: declarative catalog — every demo surface declares its path + intent once. The listen

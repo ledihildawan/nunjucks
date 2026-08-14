@@ -1,5 +1,6 @@
 import { createNunjucks } from './factory.ts';
 import type { NunjucksConfig, NunjucksEngine } from './config/nunjucks-config.ts';
+import { PACKAGE_VERSION } from './config/global.ts';
 
 // WHY: public API surface. `nunjucks(config)` is the single entry point (factory → engine) — a thin wrapper
 // over the base `createNunjucks` (in factory.ts). The split mirrors betterAuth's createBetterAuth/betterAuth
@@ -9,7 +10,7 @@ import type { NunjucksConfig, NunjucksEngine } from './config/nunjucks-config.ts
 // NOT re-exported here. Advanced streaming adapters remain available for non-Express runtimes.
 const nunjucks = (config: NunjucksConfig = {}): NunjucksEngine => createNunjucks(config);
 
-export { nunjucks, createNunjucks };
+export { nunjucks, createNunjucks, PACKAGE_VERSION };
 export type { NunjucksConfig, SecurityConfig, LimitsConfig, StreamingConfig, PerRenderOverrides, NunjucksEngine } from './config/nunjucks-config.ts';
 export { foldPlugins } from './plugin/index.ts';
 export type { NunjucksPlugin } from './plugin/index.ts';

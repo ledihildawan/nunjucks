@@ -11,7 +11,6 @@ const njk = nunjucks({
   views: VIEWS,
   globals: {
     appName: 'Nunjucks App',
-    version: '1.0.0',
   },
 });
 

@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { nunjucks } from '@nunjucks/core';
+import { nunjucks, PACKAGE_VERSION } from '@nunjucks/core';
 import type { NunjucksConfig } from '@nunjucks/core';
 import { isOk } from '@nunjucks/lib';
 
@@ -31,6 +31,6 @@ const createEngine = (config: NunjucksConfig = {}): ExpressEngineFunction => {
   };
 };
 
-export { createEngine };
+export { createEngine, PACKAGE_VERSION };
 export type { ExpressEngineFunction };
 export type { NunjucksConfig as ExpressEngineConfig };

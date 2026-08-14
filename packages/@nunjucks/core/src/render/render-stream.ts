@@ -5,7 +5,7 @@ import { isErr } from '@nunjucks/lib';
 import { injectWarningsScript } from '@nunjucks/error-renderer';
 import { adjustColnoForNullValue } from '@nunjucks/error-formatter';
 import { wrapWithLog } from '../diagnostics/diagnostics.ts';
-import { toHtmlMarker, buildSourceTrace } from '@nunjucks/error-renderer';
+import { toHtmlMarker, buildSourceTrace, classifyAndBuildTitle } from '@nunjucks/error-renderer';
 import { serializeErrorPayload } from './pipe-stream.ts';
 import { getSeverity } from './severity-levels.ts';
 import type { PreparedTemplate } from './render-types.ts';
@@ -16,6 +16,7 @@ interface SentinelChunkInput {
   sentinel: StreamErrorSentinel;
   streamContentType: 'html' | 'json' | 'text';
   enrichSentinel: (sentinel: StreamErrorSentinel) => Promise<TemplateError>;
+  version?: string;
 }
 
 const createCachedEnrichment = (prepared: PreparedTemplate) => {
@@ -46,7 +47,7 @@ const createCachedEnrichment = (prepared: PreparedTemplate) => {
   };
 };
 
-const formatSentinelChunk = async ({ sentinel, streamContentType, enrichSentinel }: SentinelChunkInput): Promise<string> => {
+const formatSentinelChunk = async ({ sentinel, streamContentType, enrichSentinel, version }: SentinelChunkInput): Promise<string> => {
   if (streamContentType === 'json') {
     throw sentinel.error;
   }
@@ -61,11 +62,12 @@ const formatSentinelChunk = async ({ sentinel, streamContentType, enrichSentinel
     blockedKeys: enriched.blockedKeys ?? null,
   });
   const severity: ErrorSeverity = getSeverity(enriched);
-  return toHtmlMarker(enriched, { sourceTrace: trace, ide: 'vscode', severity });
+  const humanTitle = classifyAndBuildTitle(enriched);
+  return toHtmlMarker(enriched, { sourceTrace: trace, ide: 'vscode', severity, humanTitle, version });
 };
 
-const formatErrorMarker = (error: TemplateError, options: { ide?: string; contentType?: string } = {}): string => {
-  const { ide = 'vscode', contentType = 'html' } = options;
+const formatErrorMarker = (error: TemplateError, options: { ide?: string; contentType?: string; version?: string } = {}): string => {
+  const { ide = 'vscode', contentType = 'html', version } = options;
   if (contentType === 'json') {
     return `\n${serializeErrorPayload(error)}`;
   }
@@ -81,7 +83,8 @@ const formatErrorMarker = (error: TemplateError, options: { ide?: string; conten
     sourceStartLine: error.sourceStartLine ?? 1,
     blockedKeys: error.blockedKeys ?? null,
   });
-  return toHtmlMarker(error, { sourceTrace: trace, ide, severity: 'block' });
+  const humanTitle = classifyAndBuildTitle(error);
+  return toHtmlMarker(error, { sourceTrace: trace, ide, severity: 'block', humanTitle, version });
 };
 
 const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGenerator<string> {
@@ -97,7 +100,7 @@ const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGe
       const { value, done } = await generator.next();
       if (done) { break; }
       if (isStreamErrorSentinel(value)) {
-        yield await formatSentinelChunk({ sentinel: value, streamContentType: prepared.streamContentType, enrichSentinel });
+        yield await formatSentinelChunk({ sentinel: value, streamContentType: prepared.streamContentType, enrichSentinel, version: prepared.version });
       } else {
         const chunkResult = coerceChunk(value);
         if (isErr(chunkResult)) { throw chunkResult.error; }

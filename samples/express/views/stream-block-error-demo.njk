@@ -1,0 +1,19 @@
+{% extends "stream-layout.njk" %}
+
+{% block kpis %}
+<script>mark('KPIs start');</script>
+<div class="kpi-grid">
+  <div class="kpi"><div class="label">Revenue</div><div class="value">{{ kpi.revenue |> slow }}</div><div class="trend trend-up">+12.4%</div></div>
+  <div class="kpi"><div class="label">Orders</div><div class="value">{{ kpi.orders |> slow }}</div><div class="trend trend-up">+8</div></div>
+</div>
+<script>mark('KPIs done');</script>
+{% endblock %}
+
+{% block widget %}
+<script>mark('Widget start');</script>
+<div class="widget">
+  {# BLOCK error: FILE_NOT_FOUND from include → full block error card occupies this area #}
+  {% include "nonexistent-widget.njk" %}
+</div>
+<script>mark('Widget done');</script>
+{% endblock %}

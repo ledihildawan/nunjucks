@@ -7,6 +7,7 @@ import type { RenderStreamResult } from './render/render-types.ts';
 import type { PipeSink, PipeRenderStreamOptions } from './render/pipe-stream.ts';
 import type { Result } from '@nunjucks/lib';
 import type { TemplateError } from '@nunjucks/error-formatter';
+import { PACKAGE_VERSION } from './config/global.ts';
 
 // WHY: strip keys whose value is undefined so they do NOT override the engine's built-in defaults when the
 // base bag is spread into the internal render options ({ ...defaults, ...options }). A present-undefined key
@@ -33,6 +34,7 @@ const buildBaseOptions = (config: NunjucksConfig): Record<string, unknown> => {
     trimBlocks: config.trimBlocks,
     lstripBlocks: config.lstripBlocks,
     ide: config.ide,
+    version: PACKAGE_VERSION,
     views: config.views,
     sandbox: config.security?.sandbox,
     sandboxMode: config.security?.sandboxMode,
@@ -64,6 +66,7 @@ const buildDefaultPipeOptions = (config: NunjucksConfig): PipeRenderStreamOption
   maxOutputSize: config.limits?.maxOutputSize ?? 0,
   contentType: config.streaming?.contentType ?? 'html',
   ide: config.ide ?? 'vscode',
+  version: PACKAGE_VERSION,
 });
 
 // WHY: the base factory — closes over shared config (filters, globals, security, limits, loader path, etc.) and
