@@ -53,8 +53,11 @@
   <h2>Customer Spotlight</h2>
   <div class="widget">
     <h3>{{ customer.name |> slow }}</h3>
+    {# bio is deliberately absent from customer context — renders as INLINE error marker (compact icon) #}
     <p style="color:#64748b;font-size:.875rem;margin-top:.25rem">{{ customer.bio }}</p>
     <p style="font-size:.75rem;color:#94a3b8;margin-top:.5rem">Member since {{ customer.joinedAt |> slow }}</p>
+    {# INLINE error probe — undefinedInlineProbe does not exist in context → inline warning icon #}
+    <p>Probe: {{ undefinedInlineProbe }}</p>
   </div>
 </section>
 <script>mark('Customer done');</script>

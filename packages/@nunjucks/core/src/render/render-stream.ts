@@ -7,8 +7,10 @@ import { adjustColnoForNullValue } from '@nunjucks/error-formatter';
 import { wrapWithLog } from '../diagnostics/diagnostics.ts';
 import { toHtmlMarker, buildSourceTrace } from '@nunjucks/error-renderer';
 import { serializeErrorPayload } from './pipe-stream.ts';
+import { getSeverity } from './severity-levels.ts';
 import type { PreparedTemplate } from './render-types.ts';
 import type { TemplateError } from '@nunjucks/error-formatter';
+import type { ErrorSeverity } from './severity-levels.ts';
 
 interface SentinelChunkInput {
   sentinel: StreamErrorSentinel;
@@ -58,7 +60,8 @@ const formatSentinelChunk = async ({ sentinel, streamContentType, enrichSentinel
     sourceStartLine: enriched.sourceStartLine ?? 1,
     blockedKeys: enriched.blockedKeys ?? null,
   });
-  return toHtmlMarker(enriched, { sourceTrace: trace, ide: 'vscode' });
+  const severity: ErrorSeverity = getSeverity(enriched);
+  return toHtmlMarker(enriched, { sourceTrace: trace, ide: 'vscode', severity });
 };
 
 const formatErrorMarker = (error: TemplateError, options: { ide?: string; contentType?: string } = {}): string => {
@@ -78,7 +81,7 @@ const formatErrorMarker = (error: TemplateError, options: { ide?: string; conten
     sourceStartLine: error.sourceStartLine ?? 1,
     blockedKeys: error.blockedKeys ?? null,
   });
-  return toHtmlMarker(error, { sourceTrace: trace, ide });
+  return toHtmlMarker(error, { sourceTrace: trace, ide, severity: 'block' });
 };
 
 const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGenerator<string> {
