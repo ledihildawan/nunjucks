@@ -23,7 +23,14 @@ const compileRenderSlots = (
   return `slots: { ${entries.join(', ')} }`;
 };
 
-const compileRenderFunCall = (compiler: Compiler, callExpr: CallNode, frame: Frame, kwargsPart: string): void => {
+interface CompileRenderFunCallInput {
+  compiler: Compiler;
+  callExpr: CallNode;
+  frame: Frame;
+  kwargsPart: string;
+}
+
+const compileRenderFunCall = ({ compiler, callExpr, frame, kwargsPart }: CompileRenderFunCallInput): void => {
   emitLocationGuard(compiler, callExpr.lineno, callExpr.colno ?? 0);
   compiler.emit('runtime.callWrap(');
   compiler.compile(callExpr.name, frame);
@@ -55,7 +62,7 @@ export const compileRenderBlock = (compiler: Compiler, { node, frame: parentFram
   compiler.emit('await runtime.awaitValue(');
 
   if (isFunCall(callExpr)) {
-    compileRenderFunCall(compiler, callExpr, frame, kwargsPart);
+    compileRenderFunCall({ compiler, callExpr, frame, kwargsPart });
   } else {
     compiler.compile(callExpr, frame);
   }

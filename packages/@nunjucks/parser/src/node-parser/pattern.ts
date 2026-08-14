@@ -78,7 +78,7 @@ const parseNestedPatternElement = (parserContext: ParserContext, peeked: Token):
   return parseObjectPattern(parserContext, origin);
 };
 
-const parseArrayNestedElement = (parserContext: ParserContext, node: ChildrenNode, peeked: Token, sawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
+const parseArrayNestedElement = ({ parserContext, node, peeked, sawRest }: { parserContext: ParserContext; node: ChildrenNode; peeked: Token; sawRest: boolean }): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
   const innerR = parseNestedPatternElement(parserContext, peeked);
   if (isErr(innerR)) { return innerR; }
   const withDefaultR = parseAssignmentDefault(parserContext, innerR.value);
@@ -86,7 +86,7 @@ const parseArrayNestedElement = (parserContext: ParserContext, node: ChildrenNod
   return ok({ node: appendChild(node, withDefaultR.value ?? innerR.value), sawRest });
 };
 
-const parseArraySymbolElement = (parserContext: ParserContext, node: ChildrenNode, tok: Token, sawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
+const parseArraySymbolElement = ({ parserContext, node, tok, sawRest }: { parserContext: ParserContext; node: ChildrenNode; tok: Token; sawRest: boolean }): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
   const symTokR = nextToken(parserContext);
   if (isErr(symTokR)) { return symTokR; }
   const symTok = symTokR.value;
@@ -100,7 +100,7 @@ const parseArraySymbolElement = (parserContext: ParserContext, node: ChildrenNod
   return ok({ node: appendChild(node, withDefaultR.value ?? target), sawRest });
 };
 
-const handleArrayElement = (parserContext: ParserContext, node: ChildrenNode, tok: Token, sawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
+const handleArrayElement = ({ parserContext, node, tok, sawRest }: { parserContext: ParserContext; node: ChildrenNode; tok: Token; sawRest: boolean }): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
   const peekedR = peekToken(parserContext);
   if (isErr(peekedR)) { return peekedR; }
   const peeked = peekedR.value;
@@ -109,9 +109,9 @@ const handleArrayElement = (parserContext: ParserContext, node: ChildrenNode, to
     return parseArrayRestElement(parserContext, node, tok);
   }
   if (peeked.type === TOKEN_LEFT_BRACKET || peeked.type === TOKEN_LEFT_CURLY) {
-    return parseArrayNestedElement(parserContext, node, peeked, sawRest);
+    return parseArrayNestedElement({ parserContext, node, peeked, sawRest });
   }
-  return parseArraySymbolElement(parserContext, node, tok, sawRest);
+  return parseArraySymbolElement({ parserContext, node, tok, sawRest });
 };
 
 interface TrailingCommaConfig {
@@ -170,12 +170,17 @@ const consumeComma = (parserContext: ParserContext): Result<boolean, TemplateErr
   return ok(true);
 };
 
-const parseArrayIteration = (
-  parserContext: ParserContext,
-  initialNode: ChildrenNode,
-  initialSawRest: boolean,
-  skipTrailingCommaCheck: boolean
-): Result<{ node: ChildrenNode; sawRest: boolean; skipCommaNext: boolean; done: boolean }, TemplateError> => {
+const parseArrayIteration = ({
+  parserContext,
+  initialNode,
+  initialSawRest,
+  skipTrailingCommaCheck,
+}: {
+  parserContext: ParserContext;
+  initialNode: ChildrenNode;
+  initialSawRest: boolean;
+  skipTrailingCommaCheck: boolean;
+}): Result<{ node: ChildrenNode; sawRest: boolean; skipCommaNext: boolean; done: boolean }, TemplateError> => {
   const tokR = peekToken(parserContext);
   if (isErr(tokR)) { return tokR; }
   const tok = tokR.value;
@@ -197,7 +202,7 @@ const parseArrayIteration = (
     sawRest = commaResult.value.sawRest;
   }
 
-  const result = handleArrayElement(parserContext, node, tok, sawRest);
+  const result = handleArrayElement({ parserContext, node, tok, sawRest });
   if (isErr(result)) { return result; }
   node = result.value.node;
   sawRest = result.value.sawRest;
@@ -220,7 +225,7 @@ const parseArrayPattern = (parserContext: ParserContext, origin: Loc): Result<No
     sawRest: boolean,
     skipTrailingCommaCheck: boolean
   ): Result<Node, TemplateError> => {
-    const iterR = parseArrayIteration(parserContext, current, sawRest, skipTrailingCommaCheck);
+    const iterR = parseArrayIteration({ parserContext, initialNode: current, initialSawRest: sawRest, skipTrailingCommaCheck });
     if (isErr(iterR)) { return iterR; }
     if (iterR.value.done) {
       return ok(iterR.value.node);
@@ -301,7 +306,7 @@ const tryObjectSpreadTerminator = (
   return ok({ node: spreadResult.value.node });
 };
 
-const parseObjectIteration = (parserContext: ParserContext, node: ChildrenNode, sawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean; done: boolean }, TemplateError> => {
+const parseObjectIteration = ({ parserContext, node, sawRest }: { parserContext: ParserContext; node: ChildrenNode; sawRest: boolean }): Result<{ node: ChildrenNode; sawRest: boolean; done: boolean }, TemplateError> => {
   const tokR = peekToken(parserContext);
   if (isErr(tokR)) { return tokR; }
   const tok = tokR.value;
@@ -328,12 +333,12 @@ const parseObjectIteration = (parserContext: ParserContext, node: ChildrenNode, 
   return ok({ node: propR.value, sawRest: commaResult.value.sawRest, done: false });
 };
 
-const parseObjectPatternLoop = (parserContext: ParserContext, initialNode: ChildrenNode, initialSawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
+const parseObjectPatternLoop = ({ parserContext, initialNode, initialSawRest }: { parserContext: ParserContext; initialNode: ChildrenNode; initialSawRest: boolean }): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
   const parseLoop = (
     node: ChildrenNode,
     sawRest: boolean
   ): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
-    const iterR = parseObjectIteration(parserContext, node, sawRest);
+    const iterR = parseObjectIteration({ parserContext, node, sawRest });
     if (isErr(iterR)) { return iterR; }
     if (iterR.value.done) {
       return ok({ node: iterR.value.node, sawRest: iterR.value.sawRest });
@@ -352,7 +357,7 @@ const parseObjectPattern = (parserContext: ParserContext, origin: Loc): Result<N
     return fail(parserContext, 'parseObjectPattern: expected {', { lineno: origin.lineno, colno: origin.colno });
   }
 
-  const loopR = parseObjectPatternLoop(parserContext, node, false);
+  const loopR = parseObjectPatternLoop({ parserContext, initialNode: node, initialSawRest: false });
   if (isErr(loopR)) { return loopR; }
   return ok(loopR.value.node);
 };

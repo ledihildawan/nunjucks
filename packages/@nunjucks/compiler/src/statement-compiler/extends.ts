@@ -7,7 +7,7 @@ import { compileGetTemplate, getTemplateLocation } from './template-lookup.ts';
 export const compileExtends = (compiler: Compiler, { node, frame }: CompileNodeInput<ExtendsNode>): void => {
   const blockKey = compiler.tmpid();
 
-  const parentTemplateId = compileGetTemplate(compiler, node, frame, { eagerCompile: true, ignoreMissing: false, includeChain: compiler.getTemplateName() });
+  const parentTemplateId = compileGetTemplate({ compiler, node, frame, options: { eagerCompile: true, ignoreMissing: false, includeChain: compiler.getTemplateName() } });
 
   compiler.emitLine(`parentTemplate = ${parentTemplateId}`);
 

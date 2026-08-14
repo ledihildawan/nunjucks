@@ -1,5 +1,5 @@
 import { BracketNotation, T, isLiteral, isSymbol } from '@nunjucks/nodes';
-import type { Node, CallNode, LookupNode, LiteralNode, SymbolNode } from '@nunjucks/nodes';
+import type { Node, CallNode, LookupNode, LiteralNode } from '@nunjucks/nodes';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileAggregate } from './container.ts';
@@ -60,17 +60,16 @@ const handleOptionalChain = (node: LookupNode): string => {
 const getNodeName = (node: Node): string => {
   switch (node.type) {
     case T.SYMBOL:
-      return (node as SymbolNode).value;
+      return node.value;
     case T.FUN_CALL: {
-      const callNode = node as CallNode;
-      return `the return value of (${getNodeName(callNode.name)})`;
+      return `the return value of (${getNodeName(node.name)})`;
     }
     case T.LOOKUP_VAL:
-      return handleLookupVal(node as LookupNode);
+      return handleLookupVal(node);
     case T.OPTIONAL_CHAIN:
-      return handleOptionalChain(node as LookupNode);
+      return handleOptionalChain(node);
     case T.LITERAL:
-      return String((node as LiteralNode).value);
+      return String(node.value);
     default:
       return '--expression--';
   }
@@ -78,10 +77,11 @@ const getNodeName = (node: Node): string => {
 
 const getCallLocation = (node: CallNode): { lineno: number; colno: number } => {
   const name = node.name;
+  // WHY: `name` is the CallNode's `.name` (a LookupNode for `obj["key"]()`). The quoted-bracket-string heuristic checks whether the inner `.val` is a string-literal — for `user["status"]()` that gives `true`, for `user[var]()` gives `false`. The `as LookupNode` cast is required because `name` is a `Node` union, but the `.val` field is `LookupNode`-specific.
   const lookupName = name as LookupNode;
   const isQuotedBracketString = bracketFlag(name) === true &&
     isLiteral(lookupName.val) &&
-    typeof lookupName.val?.value === 'string';
+    typeof lookupName.val.value === 'string';
   const extraColno = isQuotedBracketString ? 1 : 0;
   const loc = extractPropertyLocation(name, extraColno);
   return {

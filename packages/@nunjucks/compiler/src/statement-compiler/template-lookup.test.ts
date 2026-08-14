@@ -63,7 +63,7 @@ describe('compileGetTemplate', () => {
     const compiler = makeCompiler();
     const frame = createFrame();
     const node = extendsNode(ZERO_LOC, { template: literal(ZERO_LOC, 'base.html') });
-    compileGetTemplate(compiler as unknown as Compiler, node, frame, { eagerCompile: true, ignoreMissing: false });
+    compileGetTemplate({ compiler: compiler as unknown as Compiler, node, frame, options: { eagerCompile: true, ignoreMissing: false } });
     const out = compiler.emitted.join('');
     expect(out).toContain('env.getTemplate');
   });
@@ -72,7 +72,7 @@ describe('compileGetTemplate', () => {
     const compiler = makeCompiler();
     const frame = createFrame();
     const node = extendsNode(ZERO_LOC, { template: literal(ZERO_LOC, 'base.html') });
-    const result = compileGetTemplate(compiler as unknown as Compiler, node, frame, { eagerCompile: true, ignoreMissing: false });
+    const result = compileGetTemplate({ compiler: compiler as unknown as Compiler, node, frame, options: { eagerCompile: true, ignoreMissing: false } });
     expect(result).toMatch(/^t_\d+$/);
   });
 
@@ -80,7 +80,7 @@ describe('compileGetTemplate', () => {
     const compiler = makeCompiler();
     const frame = createFrame();
     const node = extendsNode(ZERO_LOC, { template: literal(ZERO_LOC, 'base.html') });
-    compileGetTemplate(compiler as unknown as Compiler, node, frame, { eagerCompile: true, ignoreMissing: false });
+    compileGetTemplate({ compiler: compiler as unknown as Compiler, node, frame, options: { eagerCompile: true, ignoreMissing: false } });
     const out = compiler.emitted.join('');
     expect(out).toContain('env.getTemplate({ name: E, eagerCompile: true, ignoreMissing: false });');
   });

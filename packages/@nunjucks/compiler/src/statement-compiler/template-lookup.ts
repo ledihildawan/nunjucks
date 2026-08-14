@@ -23,7 +23,14 @@ export interface CompileGetTemplateOptions {
   ignoreMissing: boolean;
 }
 
-export const compileGetTemplate = (compiler: Compiler, node: TemplateCarrier, frame: Frame, options: CompileGetTemplateOptions): string => {
+interface CompileGetTemplateInput {
+  compiler: Compiler;
+  node: TemplateCarrier;
+  frame: Frame;
+  options: CompileGetTemplateOptions;
+}
+
+export const compileGetTemplate = ({ compiler, node, frame, options }: CompileGetTemplateInput): string => {
   const { eagerCompile, includeChain, ignoreMissing } = options;
   const id = compiler.tmpid();
   const location = getLocationFromNode(node);

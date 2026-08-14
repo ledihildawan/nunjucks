@@ -10,12 +10,14 @@ const resolveAutoescape = (node: CallExtensionNode): boolean => {
   return typeof nodeAutoescape === 'boolean' ? nodeAutoescape : true;
 };
 
-const emitExtensionCallBegin = (
-  compiler: Compiler,
-  node: CallExtensionNode,
-  emitAsync: boolean,
-  res: string | null
-): void => {
+interface EmitExtensionCallBeginInput {
+  compiler: Compiler;
+  node: CallExtensionNode;
+  emitAsync: boolean;
+  res: string | null;
+}
+
+const emitExtensionCallBegin = ({ compiler, node, emitAsync, res }: EmitExtensionCallBeginInput): void => {
   if (!emitAsync) {
     // WHY: `await` resolves a Promise returned by the extension fn before suppressValue runs — without it, a sync extension that unexpectedly returns a thenable would yield "[object Promise]" (silent corruption in both blocking and streaming paths). Root is always an async generator (Option B), so await is valid here; on a non-Promise result it is a no-op (one microtask, no semantic change).
     compiler.emit(`${appendTarget(compiler)}runtime.suppressValue(await `);
@@ -28,12 +30,14 @@ const emitExtensionCallBegin = (
   compiler.emit('context');
 };
 
-const emitExtensionArgs = (
-  compiler: Compiler,
-  args: Node | null,
-  contentArgs: readonly Node[],
-  frame: Frame
-): void => {
+interface EmitExtensionArgsInput {
+  compiler: Compiler;
+  args: Node | null;
+  contentArgs: readonly Node[];
+  frame: Frame;
+}
+
+const emitExtensionArgs = ({ compiler, args, contentArgs, frame }: EmitExtensionArgsInput): void => {
   if (!args && contentArgs.length === 0) {
     return;
   }
@@ -56,7 +60,13 @@ const emitExtensionArgs = (
   }
 };
 
-const emitContentArg = (compiler: Compiler, argument: Node | null, frame: Frame): void => {
+interface EmitContentArgInput {
+  compiler: Compiler;
+  argument: Node | null;
+  frame: Frame;
+}
+
+const emitContentArg = ({ compiler, argument, frame }: EmitContentArgInput): void => {
   if (argument) {
     compiler.emitLine('async function() {');
     const id = compiler.pushBuffer();
@@ -69,28 +79,32 @@ const emitContentArg = (compiler: Compiler, argument: Node | null, frame: Frame)
   }
 };
 
-const emitContentArgs = (
-  compiler: Compiler,
-  contentArgs: readonly Node[],
-  frame: Frame
-): void => {
+interface EmitContentArgsInput {
+  compiler: Compiler;
+  contentArgs: readonly Node[];
+  frame: Frame;
+}
+
+const emitContentArgs = ({ compiler, contentArgs, frame }: EmitContentArgsInput): void => {
   for (let i = 0; i < contentArgs.length; i++) {
     const argument = contentArgs[i];
     if (i > 0) {
       compiler.emit(',');
     }
     if (argument) {
-      emitContentArg(compiler, argument, frame);
+      emitContentArg({ compiler, argument, frame });
     }
   }
 };
 
-const emitExtensionCallEnd = (
-  compiler: Compiler,
-  emitAsync: boolean,
-  res: string | null,
-  autoescape: boolean
-): void => {
+interface EmitExtensionCallEndInput {
+  compiler: Compiler;
+  emitAsync: boolean;
+  res: string | null;
+  autoescape: boolean;
+}
+
+const emitExtensionCallEnd = ({ compiler, emitAsync, res, autoescape }: EmitExtensionCallEndInput): void => {
   if (emitAsync) {
     compiler.emit(')');
     compiler.emitLine(
@@ -108,10 +122,10 @@ export const compileCallExtension = (compiler: Compiler, { node, frame }: Compil
   const emitAsync = contentArgs.length > 0;
   const asyncResultId = emitAsync ? compiler.tmpid() : null;
 
-  emitExtensionCallBegin(compiler, node, emitAsync, asyncResultId);
-  emitExtensionArgs(compiler, args, contentArgs, frame);
-  emitContentArgs(compiler, contentArgs, frame);
-  emitExtensionCallEnd(compiler, emitAsync, asyncResultId, autoescape);
+  emitExtensionCallBegin({ compiler, node, emitAsync, res: asyncResultId });
+  emitExtensionArgs({ compiler, args, contentArgs, frame });
+  emitContentArgs({ compiler, contentArgs, frame });
+  emitExtensionCallEnd({ compiler, emitAsync, res: asyncResultId, autoescape });
 };
 
 export const compileCallExtensionAsync = (compiler: Compiler, input: CompileNodeInput<CallExtensionNode>): void => {
@@ -121,8 +135,8 @@ export const compileCallExtensionAsync = (compiler: Compiler, input: CompileNode
   const emitAsync = true;
   const asyncResultId = compiler.tmpid();
 
-  emitExtensionCallBegin(compiler, input.node, emitAsync, asyncResultId);
-  emitExtensionArgs(compiler, args, contentArgs, input.frame);
-  emitContentArgs(compiler, contentArgs, input.frame);
-  emitExtensionCallEnd(compiler, emitAsync, asyncResultId, autoescape);
+  emitExtensionCallBegin({ compiler, node: input.node, emitAsync, res: asyncResultId });
+  emitExtensionArgs({ compiler, args, contentArgs, frame: input.frame });
+  emitContentArgs({ compiler, contentArgs, frame: input.frame });
+  emitExtensionCallEnd({ compiler, emitAsync, res: asyncResultId, autoescape });
 };

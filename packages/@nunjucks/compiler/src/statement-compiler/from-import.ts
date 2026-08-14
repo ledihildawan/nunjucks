@@ -5,7 +5,7 @@ import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { assertSafeIdentifier } from '../codegen.ts';
-import { compileGetTemplate } from './import.ts';
+import { compileGetTemplate } from './template-lookup.ts';
 
 const extractNameAlias = (nameNode: Node): { name: string; alias: string } => {
   if (isPair(nameNode)) {
@@ -47,7 +47,7 @@ const compileImportedName = ({ compiler, nameNode, importedId, frame }: CompileI
 };
 
 export const compileFromImport = (compiler: Compiler, { node, frame }: CompileNodeInput<FromImportNode>): void => {
-  const importedId = compileGetTemplate(compiler, node, frame, { eagerCompile: false, ignoreMissing: false, includeChain: compiler.getTemplateName() });
+  const importedId = compileGetTemplate({ compiler, node, frame, options: { eagerCompile: false, ignoreMissing: false, includeChain: compiler.getTemplateName() } });
 
   const withContextArg = node.withContext ? 'context.getVariables(), frame' : '';
   compiler.emitLine(`let ${importedId}_exported = await ${importedId}.getExported(` +

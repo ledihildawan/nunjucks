@@ -55,7 +55,13 @@ const isArrayBinding = (n: Node): boolean =>
 
 const isFlatArrayBinding = (n: Node): boolean => isArray(n);
 
-const setupForLoop = (compiler: Compiler, node: ForNode, parentFrame: Frame): { frame: Frame; iterableId: string } => {
+interface SetupForLoopInput {
+  compiler: Compiler;
+  node: ForNode;
+  parentFrame: Frame;
+}
+
+const setupForLoop = ({ compiler, node, parentFrame }: SetupForLoopInput): { frame: Frame; iterableId: string } => {
   const iterableId = compiler.tmpid();
   const frame = parentFrame.push(true);
   compiler.emitLine('frame = frame.push(true);');
@@ -197,7 +203,7 @@ export const compileFor = (compiler: Compiler, { node, frame: parentFrame }: Com
   const index = compiler.tmpid();
   const length = compiler.tmpid();
   compiler.emitLine(`let ${length} = 0;`);
-  const { frame, iterableId } = setupForLoop(compiler, node, parentFrame);
+  const { frame, iterableId } = setupForLoop({ compiler, node, parentFrame });
   const nameNode = node.name;
 
   if (isArrayBinding(nameNode)) {

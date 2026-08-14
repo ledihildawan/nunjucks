@@ -7,7 +7,7 @@ import { compileGetTemplate } from './template-lookup.ts';
 export const compileImport = (compiler: Compiler, { node, frame }: CompileNodeInput<ImportNode>): void => {
   const target = node.target;
   assertSafeIdentifier(target, { compiler });
-  const id = compileGetTemplate(compiler, node, frame, { eagerCompile: false, ignoreMissing: false, includeChain: compiler.getTemplateName() });
+  const id = compileGetTemplate({ compiler, node, frame, options: { eagerCompile: false, ignoreMissing: false, includeChain: compiler.getTemplateName() } });
 
   const withContextArg = node.withContext ? 'context.getVariables(), frame' : '';
   compiler.emitLine(`let ${id}_exported = await ${id}.getExported(` +
@@ -20,5 +20,3 @@ export const compileImport = (compiler: Compiler, { node, frame }: CompileNodeIn
     compiler.emitLine(`context = context.setVariable(${JSON.stringify(target)}, ${id}_exported);`);
   }
 };
-
-export { compileGetTemplate } from './template-lookup.ts';
