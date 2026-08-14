@@ -1,5 +1,4 @@
-import { createLog, normalizeErrorMetadata } from '@nunjucks/error-formatter';
-import type { ErrorContext } from '@nunjucks/error-formatter';
+import { createLog, normalizeErrorMetadata, type ErrorContext } from '@nunjucks/error-formatter';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { MATCH_ANY_RE } from '@nunjucks/lib';
 import {

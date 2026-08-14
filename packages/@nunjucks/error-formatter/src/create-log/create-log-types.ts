@@ -120,6 +120,7 @@ interface ErrorContext {
   sourceStartLine?: number;
   timestamp?: string | null;
   environment?: string | null;
+  renderContext?: Record<string, unknown> | null;
 }
 
 interface WarningContext extends ErrorContext {

@@ -89,6 +89,9 @@ const buildErrorDef = (metadata: ReturnType<typeof normalizeErrorMetadata>, reso
   severity: resolved.originalSeverity ?? 'error',
 });
 
+const toRenderContext = (value: unknown): Record<string, unknown> | null =>
+  isKeyedObject(value) ? (value as Record<string, unknown>) : null;
+
 const buildContextObj = (input: DiagnosticsBuildInput): Record<string, unknown> => ({
   lineno: input.metadata.lineno,
   colno: input.metadata.colno,
@@ -130,7 +133,7 @@ const buildMetadata = (
   templatePath: input.templatePath,
   sourceContent: input.sourceContent,
   sourceStartLine: input.sourceStartLine,
-  renderContext: input.renderContext as Record<string, unknown> | null,
+  renderContext: toRenderContext(input.renderContext),
   code: typeof errSnapshot.code === 'string' ? errSnapshot.code : 'RENDER_ERROR'
 });
 
@@ -214,7 +217,7 @@ export const wrapWithLog = async (
     phase: config.phase ?? 'render',
     templatePath: config.templatePath ?? config.callerFile ?? null,
     sourceContent: resolvedSourceContent,
-    renderContext: renderContext as Record<string, unknown> | null
+    renderContext: toRenderContext(renderContext)
   });
 
   const resolved = await resolveLocation(buildLocationInputs({ config, template, metadata: initialMetadata }));
@@ -235,7 +238,7 @@ export const wrapWithLog = async (
     templatePath,
     sourceContent,
     sourceStartLine,
-    renderContext: renderContext as Record<string, unknown> | null,
+    renderContext: toRenderContext(renderContext),
     preferCallerLocation,
     dev: dev ?? null,
     ide,

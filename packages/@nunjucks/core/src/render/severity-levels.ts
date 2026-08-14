@@ -30,8 +30,7 @@ const BLOCK_ERROR_CODES: ReadonlySet<string> = new Set([
 
 const readErrorCode = (error: unknown): string | null => {
   if (error === null || typeof error !== 'object') { return null; }
-  const e = error as Record<string, unknown>;
-  const code = e.code;
+  const code = (error as { code?: unknown }).code;
   return typeof code === 'string' ? code : null;
 };
 
