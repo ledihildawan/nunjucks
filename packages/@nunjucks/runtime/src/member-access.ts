@@ -56,8 +56,8 @@ export const isPropertyNotFoundResult = (value: unknown): value is PropertyNotFo
 };
 
 export const getNullParentName = (value: unknown): string | null => {
-  if (!isNonNullish(value)) { return null; }
-  return (value as NullAccessResult).__nunjucks_parent__ ?? null;
+  if (!isNullAccessResult(value)) { return null; }
+  return value.__nunjucks_parent__ ?? null;
 };
 
 export const optionalMemberLookup = (target: unknown, value: string, parentName: string | null = null): unknown => {

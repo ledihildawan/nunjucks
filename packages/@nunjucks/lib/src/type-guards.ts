@@ -55,6 +55,9 @@ const isTypedArray = (value: unknown): boolean =>
   value instanceof Uint32Array || value instanceof Float32Array || value instanceof Float64Array ||
   value instanceof BigInt64Array || value instanceof BigUint64Array;
 
+const isResultLike = (value: unknown): value is { ok: boolean } =>
+  isKeyedObject(value) && typeof value.ok === 'boolean';
+
 export {
   hasOwn,
   isObject,
@@ -63,6 +66,7 @@ export {
   isThenable,
   isArrayOf,
   isTypedArray,
+  isResultLike,
   readObject,
   readString,
   readNumber,

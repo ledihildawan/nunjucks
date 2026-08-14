@@ -1,5 +1,5 @@
 import { awaitValue } from './await-value.ts';
-import { isThenable } from '@nunjucks/lib';
+import { isThenable, isResultLike } from '@nunjucks/lib';
 import { ok, err, type Result } from '@nunjucks/lib';
 
 interface FilterEnv {
@@ -19,10 +19,10 @@ interface RunFilterOptions {
 }
 
 const isOkResult = (value: unknown): value is { ok: true; value: unknown } =>
-  typeof value === 'object' && value !== null && (value as { ok: unknown }).ok === true;
+  isResultLike(value) && value.ok === true;
 
 const isErrResult = (value: unknown): value is { ok: false; error: unknown } =>
-  typeof value === 'object' && value !== null && (value as { ok: unknown }).ok === false;
+  isResultLike(value) && value.ok === false;
 
 const runFilter = async (options: RunFilterOptions): Promise<Result<unknown, unknown>> => {
   const { env, name, lineno, colno, context, args } = options;

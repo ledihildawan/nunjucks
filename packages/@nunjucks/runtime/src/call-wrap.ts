@@ -71,7 +71,7 @@ export interface InOperatorOptions {
 
 function inOperator(this: unknown, { key, value, lineno = null, colno = null }: InOperatorOptions): boolean {
   if (isArray(value) || isString(value)) {
-    return (value as { includes: (k: unknown) => boolean }).includes(key);
+    return (value as unknown[] | string).includes(key as never);
   }
   if (isPlainObject(value)) {
     return isKeyedObject(value) && String(key) in value;
