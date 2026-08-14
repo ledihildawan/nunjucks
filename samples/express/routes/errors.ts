@@ -11,13 +11,30 @@ import { VIEWS } from '../lib/io/views-path.ts';
 
 const router: Router = express.Router();
 
-errorRoutes.reduce<Router>((acc, { path: routePath, template, context, filters }) => {
-  const config: NunjucksConfig = { dev: true, undefined: 'strict', views: VIEWS, ...(filters ? { filters } : {}) };
+errorRoutes.reduce<Router>((acc, { path: routePath, template, context }) => {
+  const config: NunjucksConfig = { dev: true, undefined: 'strict', views: VIEWS };
   acc.get(`/${routePath}`, async (_req: Request, res: Response, next: NextFunction) => {
     sendTemplateResult(res, next, await renderTemplate(template, { context, config }));
   });
   return acc;
 }, router);
+
+// WHY: filter-error overrides the data-driven route to inject a throwing filter (formerly buried in
+// lib/domain/error-route-data.ts). The shell owns the throwing filters; the domain only owns the
+// template + context data.
+router.get('/filter-error', async (_req: Request, res: Response, next: NextFunction) => {
+  sendTemplateResult(res, next, await renderTemplate('errors/filter-error.njk', {
+    context: { value: 42, data: { user: 'alice' } },
+    config: {
+      dev: true,
+      undefined: 'strict',
+      views: VIEWS,
+      filters: {
+        failingAsync: () => { throw new Error('Filter intentionally failed'); },
+      },
+    },
+  }));
+});
 
 // WHY: inverted assertion — renderTemplate reports failure via Result, so an ok render means the error scenario silently passed.
 router.get('/inline-filter-error', async (_req: Request, res: Response) => {

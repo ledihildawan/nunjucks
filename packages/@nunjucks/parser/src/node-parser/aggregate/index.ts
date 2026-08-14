@@ -15,15 +15,15 @@ import { parseContent } from './parse-content.ts';
 
 const createAggregateNode = (
   type: string,
-  loc: Loc
+  origin: Loc
 ): ChildrenNode | null => {
   switch (type) {
     case TOKEN_LEFT_PAREN:
-      return group(loc);
+      return group(origin);
     case TOKEN_LEFT_BRACKET:
-      return array(loc);
+      return array(origin);
     case TOKEN_LEFT_CURLY:
-      return dict(loc);
+      return dict(origin);
     default:
       return null;
   }

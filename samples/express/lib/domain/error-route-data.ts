@@ -44,7 +44,7 @@ const errorRoutes: ErrorRoute[] = [
   { path: 'undefined-function', template: 'errors/undefined-function.njk', context: complexUserContext, category: 'undefined_function', desc: 'Function not registered' },
   { path: 'not-a-function', template: 'errors/not-a-function.njk', context: { user: { name: 'Alice', status: 'active' } }, category: 'not_a_function', desc: 'Calling non-function value' },
   { path: 'undefined-filter', template: 'errors/undefined-filter.njk', context: complexUserContext, category: 'undefined_filter', desc: 'Filter not registered' },
-  { path: 'filter-error', template: 'errors/filter-error.njk', context: { value: 42, data: complexUserContext }, category: 'filter_error', desc: 'Filter throws during execution', filters: { failingAsync: () => { throw new Error('Filter intentionally failed'); } } },
+  { path: 'filter-error', template: 'errors/filter-error.njk', context: { value: 42, data: complexUserContext }, category: 'filter_error', desc: 'Filter throws during execution' },
   { path: 'undefined-value', template: 'errors/undefined-value.njk', context: { product: null }, category: 'undefined_value', desc: 'Nested property is null' },
   { path: 'syntax-error', template: 'errors/syntax-error.njk', context: {}, category: 'syntax_error', desc: 'Invalid template syntax' },
   { path: 'parser-expected', template: 'errors/parser-expected.njk', context: {}, category: 'syntax_error', desc: 'Parser expected different token' },

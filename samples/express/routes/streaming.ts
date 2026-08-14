@@ -2,9 +2,16 @@ import express, { type Router, type Request, type Response, type NextFunction } 
 import { formatError } from '@nunjucks/error-formatter';
 import { PACKAGE_VERSION } from '@nunjucks/integrations/express';
 import { dashboardData } from '../lib/domain/dashboard-data.ts';
+import { isoTimestamp } from '../lib/io/clock.ts';
 import { streamNjk, blockingNjk, apiNjk } from '../lib/io/stream-engines.ts';
 
 const router: Router = express.Router();
+
+const dashboardContext = (mode: string): Record<string, unknown> => ({
+  ...dashboardData,
+  mode,
+  timestamp: isoTimestamp(),
+});
 
 // WHY: wires an Express client-disconnect to an AbortSignal so pipeRenderStream can abort the render and cascade-cleanup the moment the browser closes the connection. The `!res.writableEnded` guard avoids a spurious abort after the response has already completed normally. The listener lives for the request lifecycle (GC'd with req) — no leak.
 const createDisconnectSignal = (req: Request, res: Response): AbortSignal => {
@@ -15,7 +22,7 @@ const createDisconnectSignal = (req: Request, res: Response): AbortSignal => {
 
 // WHY: streaming route — uses {% extends %} + {% block %} template files. Error recovery + strict mode means missing data (order #2 city, customer bio) produces inline markers. Demonstrates the full production guardrail chain: client-disconnect signal (cascade cleanup), idle per-chunk timeout (timeoutMs), total deadline (executionTimeout), output-size breaker (maxOutputSize), and per-phase error observability (onError). onComplete logs chunk count, error count, total KB.
 router.get('/stream', async (req: Request, res: Response, next: NextFunction) => {
-  const streamResult = await streamNjk.renderToStream('stream-dashboard.njk', { ...dashboardData, mode: 'Streaming' });
+  const streamResult = await streamNjk.renderToStream('stream-dashboard.njk', dashboardContext('Streaming'));
   if (!streamResult.ok) { return next(streamResult.error); }
   await streamNjk.pipeRenderStream(
     streamResult,
@@ -36,7 +43,7 @@ router.get('/stream', async (req: Request, res: Response, next: NextFunction) =>
 
 // WHY: benchmark comparison — same template + data + config, but blocking render. Both routes succeed (non-strict for normal) so the comparison is purely about SPEED: /stream shows progressive block-by-block render; /stream-normal buffers everything, user waits for the full render before seeing anything. The `req.destroyed` guard skips sending a buffered response to a client that disconnected during the (potentially long) blocking render — the render itself cannot be aborted mid-flight (no signal on the blocking API), but executionTimeout bounds its total time.
 router.get('/stream-normal', async (req: Request, res: Response) => {
-  const result = await blockingNjk.render('stream-dashboard.njk', { ...dashboardData, mode: 'Blocking' });
+  const result = await blockingNjk.render('stream-dashboard.njk', dashboardContext('Blocking'));
   if (req.destroyed) { return; }
   if (result.ok) {
     res.type('html').send(result.value);
@@ -47,7 +54,7 @@ router.get('/stream-normal', async (req: Request, res: Response) => {
 
 // WHY: JSON streaming API — same dashboard data but rendered as JSON. Walrus operator computes derived field inline. NOTE: JSON cannot absorb inline error markers without corrupting the response (a bare {error:...} fragment after a JSON prefix is unparseable), so streamContentType: 'json' makes any mid-stream recoverable sentinel FATAL — the stream aborts to the Tier 3 mid-stream path (onError fires, response ends) rather than emitting a marker. Use html/text if you want per-expression inline recovery.
 router.get('/stream-api', async (req: Request, res: Response, next: NextFunction) => {
-  const streamResult = await apiNjk.renderToStream('{{ avgOrder := kpi.revenueNum / kpi.orderCount }}{{ { revenue: kpi.revenue, avgOrder: avgOrder, orders: orders, customer: customer } |> tojson }}', { ...dashboardData, mode: 'JSON API' });
+  const streamResult = await apiNjk.renderToStream('{{ avgOrder := kpi.revenueNum / kpi.orderCount }}{{ { revenue: kpi.revenue, avgOrder: avgOrder, orders: orders, customer: customer } |> tojson }}', dashboardContext('JSON API'));
   if (!streamResult.ok) { return next(streamResult.error); }
   await apiNjk.pipeRenderStream(
     streamResult,
@@ -69,7 +76,7 @@ router.get('/stream-api', async (req: Request, res: Response, next: NextFunction
 // which renders as a full BLOCK error card (not just an inline icon). The error occupies the
 // full widget area, providing much more visible feedback than an inline marker.
 router.get('/stream-block-error', async (req: Request, res: Response, next: NextFunction) => {
-  const streamResult = await streamNjk.renderToStream('stream-block-error-demo.njk', { ...dashboardData, mode: 'Block Error Demo' });
+  const streamResult = await streamNjk.renderToStream('stream-block-error-demo.njk', dashboardContext('Block Error Demo'));
   if (!streamResult.ok) { return next(streamResult.error); }
   await streamNjk.pipeRenderStream(
     streamResult,
