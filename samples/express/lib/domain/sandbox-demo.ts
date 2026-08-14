@@ -33,11 +33,17 @@ interface SandboxSuite {
   config: NunjucksConfig;
 }
 
-const runTests = async (
-  tests: TestCase[],
-  context: Record<string, unknown>,
-  config: NunjucksConfig = {},
-): Promise<SandboxTestResult[]> =>
+interface RunTestsInput {
+  tests: TestCase[];
+  context: Record<string, unknown>;
+  config?: NunjucksConfig;
+}
+
+const runTests = async ({
+  tests,
+  context,
+  config = {},
+}: RunTestsInput): Promise<SandboxTestResult[]> =>
   Promise.all(
     tests.map(async (test): Promise<SandboxTestResult> => {
       const testConfig: NunjucksConfig =

@@ -1,10 +1,6 @@
 import { isoTimestamp } from '../io/clock.ts';
 
 // WHY: streaming demo — a realistic e-commerce admin dashboard using {% extends %} + {% block %} template inheritance. Each block has async content (|> slow filter simulating DB latency) to demonstrate progressive block-by-block streaming. streamErrorRecovery + undefined: 'strict' means incomplete data (missing shipping city on order #2, customer without bio, walrus division by missing field) yields inline error markers via 8 boundary types — the rest of the dashboard renders normally. Walrus operator (:=) computes avg order value in KPIs block.
-const slow = async (value: unknown): Promise<string> => {
-  await new Promise((resolve) => { setTimeout(resolve, 350); });
-  return String(value);
-};
 const formatPrice = (value: unknown): string => {
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? `$${numericValue.toFixed(2)}` : '—';
@@ -28,4 +24,4 @@ const dashboardData = {
   timestamp: isoTimestamp(),
 };
 
-export { slow, formatPrice, dashboardData };
+export { formatPrice, dashboardData };

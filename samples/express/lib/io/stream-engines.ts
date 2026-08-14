@@ -1,6 +1,7 @@
 import { nunjucks } from '@nunjucks/core';
 import { VIEWS } from './views-path.ts';
-import { slow, formatPrice } from '../domain/dashboard-data.ts';
+import { slow } from './slow-filter.ts';
+import { formatPrice } from '../domain/dashboard-data.ts';
 
 // WHY: one factory per distinct config profile. /stream + /stream-api share strict-undefined + recovery;
 // /stream-normal is a non-strict blocking benchmark; /stream-api adds the JSON content type (fatal sentinels).
