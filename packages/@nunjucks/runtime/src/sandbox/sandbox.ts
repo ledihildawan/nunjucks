@@ -51,8 +51,12 @@ interface WrapFunctionBlockingInput {
 const wrapFunctionWithBlocking = ({ fn, sandboxEnabled, key, sandboxOptions, thisArg }: WrapFunctionBlockingInput): DynamicCallable => {
   if (!(sandboxEnabled && isFunction(fn))) { return fn; }
   // WHY: this callable runs as a drop-in for the original function; throwing is the only way to surface a blocked code-execution call from a function invocation.
+  // WHY: defense-in-depth — when the caller passes `key: null` (standalone function entry point, no property name), fall back to `fn.name` so `globalThis.fetch('alert(1)')` still triggers SANDBOX_CODE_EXECUTION.
+  const effectiveKey = key ?? (typeof fn.name === 'string' ? fn.name : null);
   return (...args) => {
-    if (key && isCodeExecutionPattern(String(key)) && typeof args[0] === 'string') { throw sandboxError({ errorDef: ERROR_DEFINITIONS.SANDBOX_CODE_EXECUTION, key, sandboxOptions }); }
+    if (effectiveKey && isCodeExecutionPattern(effectiveKey) && typeof args[0] === 'string') {
+      throw sandboxError({ errorDef: ERROR_DEFINITIONS.SANDBOX_CODE_EXECUTION, key: effectiveKey, sandboxOptions });
+    }
     return fn.apply(thisArg, args);
   };
 };
@@ -94,7 +98,11 @@ const createValidateGet = ({ sandboxEnabled, sandboxOptions, topLevel }: Validat
   };
 
   return (target: Record<string | symbol, unknown>, key: string | symbol): unknown => {
-    if (typeof key === 'symbol') { if (isBlockedSymbol(key)) { throw sandboxError({ errorDef: ERROR_DEFINITIONS.SANDBOX_ACCESS, key, sandboxOptions }); } return target[key]; }
+    if (typeof key === 'symbol') {
+      if (isBlockedSymbol(key)) { throw sandboxError({ errorDef: ERROR_DEFINITIONS.SANDBOX_ACCESS, key, sandboxOptions }); }
+      // WHY: own-property check prevents prototype-chain symbol access (e.g. a Symbol-defined property on Object.prototype would otherwise leak through `target[key]`).
+      return hasOwn(target, key) ? target[key] : undefined;
+    }
     return validateStringKey(target, key);
   };
 };
@@ -140,7 +148,11 @@ const createValidateHas = ({ sandboxOptions, topLevel }: ValidateHasOptions) => 
   const { allowlist, blocklistMode } = sandboxOptions;
 
   return (target: Record<string | symbol, unknown>, key: string | symbol): boolean => {
-    if (typeof key === 'symbol') { if (isBlockedSymbol(key)) { return false; } return key in target; }
+    if (typeof key === 'symbol') {
+      if (isBlockedSymbol(key)) { return false; }
+      // WHY: own-property check prevents inherited-symbol presence from leaking through the `in` operator (which walks the prototype chain).
+      return hasOwn(target, key);
+    }
     if (isBlockedAtScope({ key, sandboxOptions, topLevel })) { return false; }
     if (topLevel && !blocklistMode && !isAllowedKey(key, allowlist)) { return false; }
     return hasOwn(target, key);

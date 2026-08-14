@@ -6,6 +6,11 @@ interface WarningScriptOptions {
   verbosity?: 'simple' | 'medium' | 'full';
 }
 
+const safeJsonForScript = (value: string): string => value
+  .replaceAll('<', '\\u003c')
+  .replaceAll('>', '\\u003e')
+  .replaceAll('&', '\\u0026');
+
 const getLocationString = (warning: Warning): string => {
   if (warning.lineno === undefined || warning.lineno === null) {
     return '';
@@ -45,7 +50,7 @@ const injectWarningsScript = (warnings: Warning[] | null | undefined, options: W
 
   const consoleScripts = warnings.map(warning => {
     const formatted = formatWarning(warning, { verbosity });
-    return `console.warn('[Nunjucks]', ${JSON.stringify(formatted)});`;
+    return `console.warn('[Nunjucks]', ${safeJsonForScript(JSON.stringify(formatted))});`;
   });
 
   return `<script>window.__nunjucks_warnings__=window.__nunjucks_warnings__||[];${consoleScripts.join('')}</script>`;

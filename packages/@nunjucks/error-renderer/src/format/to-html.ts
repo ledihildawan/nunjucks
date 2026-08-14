@@ -1,6 +1,7 @@
 import { buildErrorSections } from './to-html-assembly.ts';
 import scriptContent from '../../public/error-script.js' with { type: 'text' };
 import cssContent from '../../public/error-page.css' with { type: 'text' };
+import { escapeHtml } from './presentation/syntax-highlight/highlight.ts';
 import type { Csp, ErrorLike, ToHtmlOptions } from './to-html-types.ts';
 
 const TOGGLE_SCRIPT = `<script>\n${scriptContent}\n</script>`;
@@ -27,7 +28,7 @@ ${scripts}
 };
 
 const buildProductionBody = (options: ToHtmlOptions): string => {
-  const ref = options.timestamp ? `<p class="prod-ref">${options.timestamp}</p>` : '';
+  const ref = options.timestamp ? `<p class="prod-ref">${escapeHtml(options.timestamp)}</p>` : '';
   return `
 <main class="prod-main">
   <div class="prod-icon">
