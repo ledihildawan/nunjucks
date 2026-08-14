@@ -1,5 +1,5 @@
 import { pipe, keys, values, filter, join, map, split } from 'remeda';
-import { escapeHtml, highlightHtml, highlightJs } from '../syntax-highlight/highlight.ts';
+import { escapeHtml, escapeAttribute, highlightHtml, highlightJs } from '../syntax-highlight/highlight.ts';
 import { isFilePath, resolveIdeLink } from '../ide-links/ide-links.ts';
 import { shortenPath } from '../source-trace/path-shortener.ts';
 import { DEFAULT_IDE } from '../ide-links/defaults.ts';
@@ -105,7 +105,7 @@ const isLinkablePath = (rawPath: string): boolean =>
 const buildLocationLink = (ide: string, target: { path: string; line: string; col: string }): string => {
   const norm = normalizePath(target.path);
   const display = shortenPath(norm, '');
-  return `<a href="${resolveIdeLink(ide, { path: norm, line: Number.parseInt(target.line, 10), col: Number.parseInt(target.col, 10) })}" class="stack-link">${escapeHtml(display)}:${target.line}:${target.col}</a>`;
+  return `<a href="${escapeAttribute(resolveIdeLink(ide, { path: norm, line: Number.parseInt(target.line, 10), col: Number.parseInt(target.col, 10) }))}" class="stack-link">${escapeHtml(display)}:${target.line}:${target.col}</a>`;
 };
 
 const functionSpan = (fnRaw: string): string =>

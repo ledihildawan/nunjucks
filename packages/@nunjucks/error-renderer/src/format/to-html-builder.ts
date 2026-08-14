@@ -1,4 +1,4 @@
-import { escapeHtml, highlightHtml, renderInlineMarkdown } from './presentation/syntax-highlight/highlight.ts';
+import { escapeHtml, escapeAttribute, highlightHtml, renderInlineMarkdown } from './presentation/syntax-highlight/highlight.ts';
 import { join, map, pipe } from 'remeda';
 import { renderContextHtml, formatStackTraceHtml } from './presentation/error/sections.ts';
 import { resolveIdeLink, getIdeMeta } from './presentation/ide-links/ide-links.ts';
@@ -15,7 +15,7 @@ const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined): 
     const row = `<div class="code-line ${errorClass}"><span class="line-number">${line.number}</span><span class="code-content">${highlightHtml(line.content)}</span></div>`;
     if (line.isError && sourceTrace.caret) {
       const spaces = ' '.repeat(sourceTrace.caret.charStart);
-      return [row, `<div class="code-line error-marker"><span class="line-number"></span><span class="code-content error-marker-content">${spaces}${sourceTrace.caret.carets}</span></div>`];
+      return [row, `<div class="code-line error-marker"><span class="line-number"></span><span class="code-content error-marker-content">${spaces}${escapeHtml(sourceTrace.caret.carets)}</span></div>`];
     }
     return [row];
   });
@@ -64,7 +64,7 @@ const buildErrorHeader = ({
   const phaseBadgePart = phaseBadge ? ` ${phaseBadge}` : '';
 
   const locationLink = canLinkLocation
-    ? `<a href="${resolveIdeLink(ide, { path: displayPath, line: displayLine, col: displayCol })}" class="loc-link error-location-link">${escapeHtml(locDisplay)}</a>`
+    ? `<a href="${escapeAttribute(resolveIdeLink(ide, { path: displayPath, line: displayLine, col: displayCol }))}" class="loc-link error-location-link">${escapeHtml(locDisplay)}</a>`
     : `<span class="error-location-text">${escapeHtml(locDisplay)}</span>`;
   const errorLocationBlock = verbosity !== 'simple'
     ? `<p class="error-location">The error occurred in ${locationLink}</p>`
@@ -167,7 +167,7 @@ const buildErrorFooter = ({
       const ideLabel = `Open in ${ideMeta.label}`;
       return `
     <div class="error-footer-actions">
-      <a href="${resolveIdeLink(ide, { path: displayPath, line: displayLine, col: displayCol })}" class="btn btn-solid">
+      <a href="${escapeAttribute(resolveIdeLink(ide, { path: displayPath, line: displayLine, col: displayCol }))}" class="btn btn-solid">
         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">${ideMeta.icon}</svg>
         ${ideLabel}
       </a>

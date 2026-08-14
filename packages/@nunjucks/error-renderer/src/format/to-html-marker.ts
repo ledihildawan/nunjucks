@@ -1,5 +1,5 @@
 import { toHtml } from './to-html.ts';
-import { escapeHtml } from './presentation/syntax-highlight/highlight.ts';
+import { escapeHtml, escapeAttribute } from './presentation/syntax-highlight/highlight.ts';
 import { shortenPath } from './presentation/source-trace/path-shortener.ts';
 import { resolveIdeLink, isFilePath, getIdeMeta } from './presentation/ide-links/ide-links.ts';
 import type { ErrorLike, ToHtmlOptions } from './to-html-types.ts';
@@ -87,7 +87,7 @@ const buildLocationHtml = (loc: LocData, ide: string): string => {
   const locText = loc.posSuffix ? `${escapeHtml(loc.displayPath)}:${escapeHtml(loc.posSuffix)}` : escapeHtml(loc.displayPath);
   const ideMeta = getIdeMeta(ide);
   const link = loc.canLink && loc.rawPath
-    ? `<a href="${resolveIdeLink(ide, { path: loc.rawPath, line: loc.line ?? 0, col: loc.col ?? 0 })}" class="nj-err-loc-link" title="Open in ${ideMeta.label}">${locText}</a>`
+    ? `<a href="${escapeAttribute(resolveIdeLink(ide, { path: loc.rawPath, line: loc.line ?? 0, col: loc.col ?? 0 }))}" class="nj-err-loc-link" title="Open in ${escapeAttribute(ideMeta.label)}">${locText}</a>`
     : `<span class="nj-err-loc-link">${locText}</span>`;
   return `<div class="nj-err-loc"><span class="nj-err-loc-label">The error occurred in</span> ${link}</div>`;
 };

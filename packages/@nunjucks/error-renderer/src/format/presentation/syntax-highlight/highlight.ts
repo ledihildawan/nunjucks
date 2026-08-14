@@ -181,5 +181,5 @@ const highlightAnsi = (code: string): string => {
   return loop(0, '', false);
 };
 
-export { escapeHtml } from '@nunjucks/lib/escape';
+export { escapeHtml, escapeAttribute } from '@nunjucks/lib/escape';
 export { renderInlineMarkdown, highlightHtml, highlightJs, highlightAnsi };
