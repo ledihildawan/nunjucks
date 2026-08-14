@@ -28,7 +28,7 @@ const ASSERT_TYPE_ERROR = createErrorDefinition({
     'This indicates a bug in nunjucks itself'
   ],
   fixCode: '/* Please report this as a bug at https://github.com/mozilla/nunjucks/issues */',
-  fixComment: 'This is a nunjucks internal error - not caused by your template',
+  fixComment: 'This is a nunjucks internal error — not caused by your template. If this is reproducible, please open an issue with the template that triggered it and the full stack trace.',
   documentationUrl: 'https://github.com/mozilla/nunjucks/issues'
 });
 

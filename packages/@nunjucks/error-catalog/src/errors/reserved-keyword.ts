@@ -34,9 +34,12 @@ export const reservedKeywordClassifier = (input: ClassifyInput): Classification 
 
   const keyword = input.subject ?? 'unknown';
   const keywordGuidance = RESERVED_KEYWORD_CONTEXT[keyword] || {
-    causes: ['Reserved keyword used outside its context'],
-    fixCode: '',
-    fixComment: ''
+    causes: [
+      'This word is reserved by the nunjucks parser and cannot be used as a variable, filter, or function name',
+      'Each reserved keyword has a specific context where it is valid (see nunjucks documentation)'
+    ],
+    fixCode: "// Rename to avoid the reserved keyword — e.g. myFn() instead of fn()",
+    fixComment: "Use a non-reserved name for your variable, filter, or function. Common alternatives: 'fn' → 'call', 'import' → 'load', 'export' → 'save'"
   };
 
   return {

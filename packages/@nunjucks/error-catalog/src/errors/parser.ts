@@ -110,8 +110,9 @@ export const PARSER_ERRORS = {
       'Template contains a token sequence that the parser cannot interpret',
       'A custom extension returned an invalid AST node'
     ],
-    fixCode: '/* Check syntax at the reported location */',
-    fixComment: 'Review the template around the reported line and column'
+    fixCode: '{{ value }}',
+    fixComment: 'Look at the reported line and column — check for mismatched quotes, unclosed brackets, missing operators, or characters that look similar but are not (e.g. typographic quotes vs straight quotes)',
+    documentationUrl: `${DOCS_BASE}#tags`
   }),
   PARSER_PUSH_TOKEN: createErrorDefinition({
     name: 'PARSER_PUSH_TOKEN',
