@@ -35,7 +35,7 @@ export const parseComponent = (parserContext: ParserContext): Result<Node, Templ
   const tagsR = advanceAfterTags(parserContext, 'endcomponent');
   if (isErr(tagsR)) { return tagsR; }
 
-  const body = buildDefaultBody(defaultParts, compTok.lineno, compTok.colno);
+  const body = buildDefaultBody(defaultParts, loc(compTok));
   const fallbackSlots: SlotBlock[] = [
     ...implicitSlots.map(s => ({ ...s, name: 'default' })),
     ...namedSlots,

@@ -31,7 +31,7 @@ export const parseRenderBlock = (parserContext: ParserContext): Result<Node, Tem
   if (isErr(tagsR)) { return tagsR; }
 
   const providedSlots: SlotBlock[] = [];
-  const body = buildDefaultBody(defaultParts, tag.lineno, tag.colno);
+  const body = buildDefaultBody(defaultParts, loc(tag));
   if (defaultParts.length > 0) {
     providedSlots.push({ name: 'default', params: [], body });
   }

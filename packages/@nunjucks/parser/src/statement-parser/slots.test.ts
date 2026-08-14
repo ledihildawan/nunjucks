@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { createTokenizer } from '@nunjucks/lexer';
+import { createTokenizer, loc } from '@nunjucks/lexer';
 import { createParser } from '../index.ts';
 import { nextTokenOrNull } from '../cursor.ts';
 import { parseSlottedBody, buildDefaultBody } from './slots.ts';
@@ -47,21 +47,23 @@ describe('parseSlottedBody', () => {
 });
 
 describe('buildDefaultBody', () => {
+  const ZERO_LOC = loc({ lineno: 0, colno: 0 });
+
   test('returns an empty output for no parts', () => {
-    const node = buildDefaultBody([], 0, 0);
+    const node = buildDefaultBody([], ZERO_LOC);
     expect(getNodeTypeName(node)).toBe('output');
     expect((node as { children: readonly Node[] }).children).toHaveLength(1);
   });
 
   test('returns the single part directly', () => {
     const part = { type: 'symbol', value: 'a' } as unknown as Node;
-    expect(buildDefaultBody([part], 0, 0)).toBe(part);
+    expect(buildDefaultBody([part], ZERO_LOC)).toBe(part);
   });
 
   test('wraps multiple parts in a nodeList', () => {
     const a = { type: 'symbol', value: 'a' } as unknown as Node;
     const b = { type: 'symbol', value: 'b' } as unknown as Node;
-    const node = buildDefaultBody([a, b], 0, 0);
+    const node = buildDefaultBody([a, b], ZERO_LOC);
     expect(getNodeTypeName(node)).toBe('nodeList');
   });
 });

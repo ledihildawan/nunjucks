@@ -71,19 +71,6 @@ const isNoParensEnd = (tok: Token): boolean =>
 const isParensEnd = (tok: Token): boolean =>
   tok?.type === TOKEN_RIGHT_PAREN;
 
-const shouldContinueParsing = (tok: Token, noParens: boolean | undefined): boolean => {
-  if (noParens) { return !isNoParensEnd(tok); }
-  return !isParensEnd(tok);
-};
-
-const handleSignatureLoopEnd = (parserContext: ParserContext, tok: Token, noParens: boolean | undefined): Result<void, TemplateError> => {
-  if (!noParens && tok?.type === TOKEN_RIGHT_PAREN) {
-    const consumedR = nextToken(parserContext);
-    if (isErr(consumedR)) { return consumedR; }
-  }
-  return ok(undefined);
-};
-
 interface ParseSignatureLoopOptions {
   parserContext: ParserContext;
   args: ChildrenNode;
@@ -97,6 +84,17 @@ const parseSignatureLoop = ({
   kwargs,
   noParens,
 }: ParseSignatureLoopOptions): Result<{ args: ChildrenNode; kwargs: ChildrenNode }, TemplateError> => {
+  const isLoopEnd = (tok: Token): boolean =>
+    noParens ? isNoParensEnd(tok) : isParensEnd(tok);
+
+  const consumeLoopEnd = (tok: Token): Result<void, TemplateError> => {
+    if (!noParens && tok?.type === TOKEN_RIGHT_PAREN) {
+      const consumedR = nextToken(parserContext);
+      if (isErr(consumedR)) { return consumedR; }
+    }
+    return ok(undefined);
+  };
+
   const parseLoop = (
     currentArgs: ChildrenNode,
     currentKwargs: ChildrenNode,
@@ -105,8 +103,8 @@ const parseSignatureLoop = ({
     const tokR = peekToken(parserContext);
     if (isErr(tokR)) { return tokR; }
     const tok = tokR.value;
-    if (!shouldContinueParsing(tok, noParens)) {
-      const endR = handleSignatureLoopEnd(parserContext, tok, noParens);
+    if (isLoopEnd(tok)) {
+      const endR = consumeLoopEnd(tok);
       if (isErr(endR)) { return endR; }
       return ok({ args: currentArgs, kwargs: currentKwargs });
     }

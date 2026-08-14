@@ -1,7 +1,7 @@
 import type { Node, SlotBlock } from '@nunjucks/nodes';
 import { nodeList, output, templateData } from '@nunjucks/nodes';
+import type { Loc } from '@nunjucks/shared';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { loc } from '@nunjucks/lexer';
 import { ok, isErr, type Result } from '@nunjucks/lib';
 import {
   TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_COMMA,
@@ -117,13 +117,14 @@ export const parseSlottedBody = (parserContext: ParserContext, endTag: string): 
   return parseLoop();
 };
 
-export const buildDefaultBody = (parts: Node[], lineno: number, colno: number): Node => {
-  const origin = loc({ lineno, colno });
+export const buildDefaultBody = (parts: Node[], origin: Loc): Node => {
   if (parts.length === 0) {
     return output(origin, [templateData(origin, '')]);
   }
   if (parts.length === 1) {
-    return parts[0] as Node;
+    const first = parts[0];
+    if (first) { return first; }
+    return output(origin, [templateData(origin, '')]);
   }
   return nodeList(origin, parts);
 };

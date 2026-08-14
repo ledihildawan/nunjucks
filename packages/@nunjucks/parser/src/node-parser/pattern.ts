@@ -15,6 +15,7 @@ import {
 } from '@nunjucks/lexer';
 import { appendChild, arrayPattern, assignmentPattern, hole, objectPattern, patternProperty, restPattern, symbol } from '@nunjucks/nodes';
 import type { ChildrenNode, Node } from '@nunjucks/nodes';
+import type { Loc } from '@nunjucks/shared';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { nextToken, peekToken, peekTokenOrNull, skip, fail } from "../cursor.ts";
 import type { ParserContext } from "../cursor.ts";
@@ -70,10 +71,11 @@ const parseArrayRestElement = (parserContext: ParserContext, node: ChildrenNode,
 };
 
 const parseNestedPatternElement = (parserContext: ParserContext, peeked: Token): Result<Node, TemplateError> => {
+  const origin = loc(peeked);
   if (peeked.type === TOKEN_LEFT_BRACKET) {
-    return parseArrayPattern(parserContext, peeked.lineno, peeked.colno);
+    return parseArrayPattern(parserContext, origin);
   }
-  return parseObjectPattern(parserContext, peeked.lineno, peeked.colno);
+  return parseObjectPattern(parserContext, origin);
 };
 
 const parseArrayNestedElement = (parserContext: ParserContext, node: ChildrenNode, peeked: Token, sawRest: boolean): Result<{ node: ChildrenNode; sawRest: boolean }, TemplateError> => {
@@ -205,12 +207,12 @@ const parseArrayIteration = (
   return ok({ node, sawRest, skipCommaNext: consumedCommaR.value, done: false });
 };
 
-const parseArrayPattern = (parserContext: ParserContext, lineno: number, colno: number): Result<Node, TemplateError> => {
-  const node = arrayPattern(loc({ lineno, colno }));
+const parseArrayPattern = (parserContext: ParserContext, origin: Loc): Result<Node, TemplateError> => {
+  const node = arrayPattern(origin);
   const startTokR = nextToken(parserContext);
   if (isErr(startTokR)) { return startTokR; }
   if (startTokR.value.type !== TOKEN_LEFT_BRACKET) {
-    return fail(parserContext, 'parseArrayPattern: expected [', { lineno, colno });
+    return fail(parserContext, 'parseArrayPattern: expected [', { lineno: origin.lineno, colno: origin.colno });
   }
 
   const parseLoop = (
@@ -245,10 +247,10 @@ const parseObjectPropertyValue = (parserContext: ParserContext, keyTok: Token, k
   if (skip(parserContext, TOKEN_COLON)) {
     const innerTok = peekTokenOrNull(parserContext);
     if (innerTok?.type === TOKEN_LEFT_BRACKET) {
-      return parseArrayPattern(parserContext, innerTok.lineno, innerTok.colno);
+      return parseArrayPattern(parserContext, loc(innerTok));
     }
     if (innerTok?.type === TOKEN_LEFT_CURLY) {
-      return parseObjectPattern(parserContext, innerTok.lineno, innerTok.colno);
+      return parseObjectPattern(parserContext, loc(innerTok));
     }
     return parseInnerPattern(parserContext);
   }
@@ -342,13 +344,12 @@ const parseObjectPatternLoop = (parserContext: ParserContext, initialNode: Child
   return parseLoop(initialNode, initialSawRest);
 };
 
-const parseObjectPattern = (parserContext: ParserContext, lineno: number, colno: number): Result<Node, TemplateError> => {
-  const node = objectPattern(loc({ lineno, colno }));
+const parseObjectPattern = (parserContext: ParserContext, origin: Loc): Result<Node, TemplateError> => {
+  const node = objectPattern(origin);
   const startTokR = nextToken(parserContext);
   if (isErr(startTokR)) { return startTokR; }
-  const startTok = startTokR.value;
-  if (startTok.type !== TOKEN_LEFT_CURLY) {
-    return fail(parserContext, 'parseObjectPattern: expected {', { lineno, colno });
+  if (startTokR.value.type !== TOKEN_LEFT_CURLY) {
+    return fail(parserContext, 'parseObjectPattern: expected {', { lineno: origin.lineno, colno: origin.colno });
   }
 
   const loopR = parseObjectPatternLoop(parserContext, node, false);
@@ -360,11 +361,12 @@ export const parsePattern = (parserContext: ParserContext): Result<Node | null, 
   const tokR = peekToken(parserContext);
   if (isErr(tokR)) { return tokR; }
   const tok = tokR.value;
+  const origin = loc(tok);
   if (tok.type === TOKEN_LEFT_BRACKET) {
-    return parseArrayPattern(parserContext, tok.lineno, tok.colno);
+    return parseArrayPattern(parserContext, origin);
   }
   if (tok.type === TOKEN_LEFT_CURLY) {
-    return parseObjectPattern(parserContext, tok.lineno, tok.colno);
+    return parseObjectPattern(parserContext, origin);
   }
   return fail(parserContext, 'parsePattern: expected [ or {',
     { lineno: tok.lineno, colno: tok.colno });

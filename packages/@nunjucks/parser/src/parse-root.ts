@@ -53,7 +53,11 @@ const shouldStripTrailingWhitespace = (
   return false;
 };
 
-const parseDataToken = (parserContext: ParserContext, tok: Token, stripLeading: boolean): Node => {
+const parseDataToken = (
+  parserContext: ParserContext,
+  tok: Token,
+  { stripLeading }: { stripLeading: boolean }
+): Node => {
   const nextTok = peekTokenOrNull(parserContext);
   const stripTrailing = Boolean(nextTok && shouldStripTrailingWhitespace(nextTok, parserContext));
   const templateText = pipe(
@@ -100,7 +104,7 @@ const handleToken = (parserContext: ParserContext, tok: Token, breakOn: readonly
   const wsDrop = consumeWhitespaceDrop(parserContext);
 
   if (tok.type === TOKEN_DATA) {
-    const node = parseDataToken(parserContext, tok, wsDrop);
+    const node = parseDataToken(parserContext, tok, { stripLeading: wsDrop });
     return ok({ continue: true, nodes: [node] });
   }
   if (tok.type === TOKEN_BLOCK_START) {
