@@ -78,8 +78,8 @@ export const compileLookupVal = (compiler: Compiler, { node, frame }: CompileNod
 };
 
 export const compileOptionalChain = (compiler: Compiler, { node, frame }: CompileNodeInput<LookupNode>): void => {
-  const loc = locationFor(node.val, node);
-  emitLocationGuard(compiler, loc.lineno, loc.colno);
+  const nodeLoc = locationFor(node.val, node);
+  emitLocationGuard(compiler, nodeLoc.lineno, nodeLoc.colno);
   compiler.emit('runtime.optionalMemberLookup((');
   compiler.compileExpression(node.target, frame);
   compiler.emit('),');
@@ -99,8 +99,8 @@ export const compileOptionalCall = (compiler: Compiler, { node, frame }: Compile
 };
 
 export const compileSlice = (compiler: Compiler, { node, frame }: CompileNodeInput<SliceNode>): void => {
-  const loc = locationFor(node, node);
-  emitLocationGuard(compiler, loc.lineno, loc.colno);
+  const nodeLoc = locationFor(node, node);
+  emitLocationGuard(compiler, nodeLoc.lineno, nodeLoc.colno);
   compiler.emit('runtime.slice({ source: (');
   if (node.start) { compiler.compileExpression(node.start, frame); } else { compiler.emit('null'); }
   compiler.emit('), start: ');

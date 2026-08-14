@@ -1,6 +1,6 @@
 import { createLog } from '@nunjucks/error-formatter';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { find } from 'remeda';
+import { find, mapValues } from 'remeda';
 import { MATCH_ANY_RE } from '@nunjucks/lib';
 import { err, isOk, type Result } from '@nunjucks/lib';
 import { peekToken } from "./cursor.ts";
@@ -87,5 +87,8 @@ export const errorAt = ({
   errorDef,
   subject,
   extra,
-}: ErrorAtOptions): Result<never, TemplateError> =>
-  err(createLog('error', { def: errorDef, params: (extra ?? {}) as Record<string, string>, subject: subject ?? null, context: { lineno, colno, phase: 'parse', lineBase: 'zero' } }));
+}: ErrorAtOptions): Result<never, TemplateError> => {
+  // WHY: `createLog`'s `params` is typed `Record<string, string>` but callers pass `Record<string, unknown>`. Coerce each value via `String()` so the catalog formatter receives a real string (instead of relying on the unsafe `as Record<string, string>` cast that would silently corrupt error output for non-string params).
+  const stringParams = mapValues(extra ?? {}, value => String(value));
+  return err(createLog('error', { def: errorDef, params: stringParams, subject: subject ?? null, context: { lineno, colno, phase: 'parse', lineBase: 'zero' } }));
+};

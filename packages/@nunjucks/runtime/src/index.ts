@@ -25,9 +25,7 @@ export {
   createSandboxedObject,
   createSandboxedContext,
   wrapMemberAccess,
-  wrapFunctionWithBlocking,
   resolveSandboxOptions,
-  isAllowedKey,
   type SandboxOptions,
   type ResolvedSandboxOptions,
 } from './sandbox/index.ts';
@@ -63,7 +61,7 @@ export {
   type TimeoutError,
   isTimeoutError,
 } from '@nunjucks/lib/async/timeout';
-export { execute, executeStream, type ExecuteConfig, type ExecuteNonSandboxOptions } from './executor.ts';
+export { execute, executeStream, type ExecuteConfig } from './executor.ts';
 export { loadCompiledCode } from './code-loader.ts';
 export { collectString, collectStream } from '@nunjucks/lib/collect-stream';
 export { escapeHtml } from '@nunjucks/lib/escape';

@@ -1,5 +1,4 @@
-import { ok, err, type Result } from '@nunjucks/lib';
-import { escapeHtml } from '@nunjucks/lib/escape';
+import { ok, err, type Result, escapeHtml } from '@nunjucks/lib';
 
 type TemplateSource = string & { readonly __brand: unique symbol };
 

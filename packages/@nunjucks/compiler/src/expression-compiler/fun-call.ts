@@ -83,10 +83,10 @@ const getCallLocation = (node: CallNode): { lineno: number; colno: number } => {
     isLiteral(lookupName.val) &&
     typeof lookupName.val.value === 'string';
   const extraColno = isQuotedBracketString ? 1 : 0;
-  const loc = extractPropertyLocation(name, extraColno);
+  const propLoc = extractPropertyLocation(name, extraColno);
   return {
-    lineno: loc.lineno ?? node.lineno,
-    colno: loc.colno ?? node.colno
+    lineno: propLoc.lineno ?? node.lineno,
+    colno: propLoc.colno ?? node.colno
   };
 };
 

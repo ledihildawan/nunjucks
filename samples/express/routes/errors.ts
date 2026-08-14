@@ -2,6 +2,7 @@
 import { renderTemplate } from '../lib/domain/render-template.ts';
 import { sendTemplateResult } from '../lib/io/send-template-result.ts';
 import { createSandboxedContext } from '@nunjucks/runtime';
+import { isKeyedObject } from '@nunjucks/lib';
 import type { NunjucksConfig } from '@nunjucks/core';
 import { errorGroups } from '../lib/domain/error-route-metadata.ts';
 import { errorRoutes } from '../lib/domain/error-route-data.ts';
@@ -142,7 +143,7 @@ router.get('/sandbox-context-modify', async (_req: Request, res: Response, next:
   sendTemplateResult(res, next, await renderTemplate('{{ modifyContext() }}', { context: {
     modifyContext: () => {
       const context = createSandboxedContext({ context: { user: 'alice' }, sandboxEnabled: true });
-      (context as { user?: string }).user = 'bob';
+      if (isKeyedObject(context)) { context.user = 'bob'; }
     }
   }, config: { dev: true, security: { sandbox: true } } }));
 });
@@ -255,20 +256,20 @@ router.get('/container-not-registered', async (_req: Request, res: Response, nex
 });
 
 router.get('/template-must-be-string', async (_req: Request, res: Response, next: NextFunction) => {
-    const invalidResult = createTemplateSource(123);
-    if (!invalidResult.ok) {
-      return next(invalidResult.error);
-    }
-    sendTemplateResult(res, next, await renderTemplate(invalidResult.value, { context: {}, config: { dev: true } }));
-  });
+  const invalidResult = createTemplateSource(123);
+  if (!invalidResult.ok) {
+    return next(invalidResult.error);
+  }
+  sendTemplateResult(res, next, await renderTemplate(invalidResult.value, { context: {}, config: { dev: true } }));
+});
 
 router.get('/template-null', async (_req: Request, res: Response, next: NextFunction) => {
-    const invalidResult = createTemplateSource(null);
-    if (!invalidResult.ok) {
-      return next(invalidResult.error);
-    }
-    sendTemplateResult(res, next, await renderTemplate(invalidResult.value, { context: {}, config: { dev: true } }));
-  });
+  const invalidResult = createTemplateSource(null);
+  if (!invalidResult.ok) {
+    return next(invalidResult.error);
+  }
+  sendTemplateResult(res, next, await renderTemplate(invalidResult.value, { context: {}, config: { dev: true } }));
+});
 
 router.get('/undefined-value-match', async (_req: Request, res: Response, next: NextFunction) => {
   sendTemplateResult(res, next, await renderTemplate('{{ product.name }}', { context: { product: { test: 'test' } }, config: { dev: true, undefined: 'strict' } }));

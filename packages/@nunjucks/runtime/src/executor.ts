@@ -82,4 +82,4 @@ const executeStream = (
 };
 
 export { execute, executeStream };
-export type { ExecuteOptions, ExecuteNonSandboxOptions, ExecuteConfig, SandboxMode };
+export type { ExecuteOptions, ExecuteConfig, SandboxMode };

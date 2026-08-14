@@ -68,30 +68,23 @@ const runTests = async ({
 
 const outcomeError = (row: SandboxTestResult): Error | null => row.outcome[0];
 
-const statusClass = (row: SandboxTestResult, suite: SandboxSuite): string => {
+const classifyStatus = (row: SandboxTestResult, suite: SandboxSuite): { className: string; label: string } => {
   switch (suite.statusMode) {
     case 'blocked':
-      return row.blocked ? 'blocked' : 'allowed';
+      return { className: row.blocked ? 'blocked' : 'allowed', label: row.blocked ? 'BLOCKED' : 'ALLOWED' };
     case 'normal':
-      return row.name.includes('__proto__') ||
-        row.name.includes('constructor')
-        ? 'danger'
-        : '';
+      return {
+        className: row.name.includes('__proto__') || row.name.includes('constructor') ? 'danger' : '',
+        label: outcomeError(row) !== null ? 'Error' : 'Allowed',
+      };
     case 'allowlist':
-      return row.passed ? 'passed' : 'failed';
+      return { className: row.passed ? 'passed' : 'failed', label: row.passed ? 'Correct' : 'Unexpected' };
   }
 };
 
-const statusLabel = (row: SandboxTestResult, suite: SandboxSuite): string => {
-  switch (suite.statusMode) {
-    case 'blocked':
-      return row.blocked ? 'BLOCKED' : 'ALLOWED';
-    case 'normal':
-      return outcomeError(row) !== null ? 'Error' : 'Allowed';
-    case 'allowlist':
-      return row.passed ? 'Correct' : 'Unexpected';
-  }
-};
+const statusClass = (row: SandboxTestResult, suite: SandboxSuite): string => classifyStatus(row, suite).className;
+
+const statusLabel = (row: SandboxTestResult, suite: SandboxSuite): string => classifyStatus(row, suite).label;
 
 const renderTable = (
   table: SandboxTestResult[],

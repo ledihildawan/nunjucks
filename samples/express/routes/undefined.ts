@@ -91,7 +91,7 @@ const sendStrictResult = (
 </head>
 <body>
   <h1>Strict Mode - Error Thrown</h1>
-  <p>Template: <code>${template}</code></p>
+  <p>Template: <code>${escapeHtml(template)}</code></p>
   <p><strong>Error:</strong></p>
   <pre>${escapeHtml(result.error.message)}</pre>
   <p><a href="/undefined">Back to Undefined Types Demo</a></p>
@@ -136,7 +136,7 @@ router.get('/debug', async (_req: Request, res: Response, next: NextFunction) =>
   <h1>Debug Mode - No Error</h1>
   <p>Template: <code>{{ user.testing }}</code></p>
   <p>Context: <code>{ user: undefined }</code></p>
-  <p><strong>Result:</strong> "${result.value}"</p>
+  <p><strong>Result:</strong> "${escapeHtml(result.value)}"</p>
   <p><a href="/undefined">Back to Undefined Types Demo</a></p>
 </body>
 </html>`);
@@ -171,7 +171,7 @@ router.get('/chainable', async (_req: Request, res: Response, next: NextFunction
   <p>Context: <code>{ user: undefined }</code></p>
 
   <div class="result">
-    <strong>Output:</strong> "${result.value}"
+    <strong>Output:</strong> "${escapeHtml(result.value)}"
   </div>
 
   <p>No warning in console - silent "undefined" string returned.</p>
