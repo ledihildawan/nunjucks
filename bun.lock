@@ -17,7 +17,6 @@
         "@nunjucks/shared": "workspace:*",
         "@nunjucks/transformers": "workspace:*",
         "@nunjucks/validators": "workspace:*",
-        "express": "5",
         "picocolors": "^1.1.1",
         "remeda": "^2.39.0",
       },
@@ -42,7 +41,7 @@
     },
     "packages/@nunjucks/core": {
       "name": "@nunjucks/core",
-      "version": "3.2.4",
+      "version": "4.0.0",
       "dependencies": {
         "@nunjucks/compiler": "workspace:*",
         "@nunjucks/error-catalog": "workspace:*",
