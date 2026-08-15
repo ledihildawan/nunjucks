@@ -1,6 +1,16 @@
+const readErrorMessage = (error: unknown): string | null => {
+  if (typeof error !== 'object' || error === null) {
+    return null;
+  }
+  if ('message' in error && typeof error.message === 'string') {
+    return error.message;
+  }
+  return null;
+};
+
 export const getErrorMessage = (error: unknown): string => {
-  const rawMessage = (error as Error).message;
-  const baseMessage = !rawMessage || typeof rawMessage !== 'string' ? String(error) : rawMessage;
+  const rawMessage = readErrorMessage(error);
+  const baseMessage = rawMessage !== null && rawMessage !== '' ? rawMessage : String(error);
   const firstStackLine = baseMessage.indexOf('\n    at ');
   return firstStackLine !== -1 ? baseMessage.slice(0, firstStackLine) : baseMessage;
 };

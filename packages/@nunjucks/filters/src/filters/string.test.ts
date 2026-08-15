@@ -79,6 +79,22 @@ describe('filters/string', () => {
       expect(String(getOrElse(tojson(null), null))).toBe('null');
       expect(String(getOrElse(tojson(true), null))).toBe('true');
     });
+
+    test('escapes markup-significant characters to prevent script-context breakout', () => {
+      const result = String(getOrElse(tojson('</script><script>alert(1)</script>'), null));
+      expect(result).toBe('"\\u003c/script\\u003e\\u003cscript\\u003ealert(1)\\u003c/script\\u003e"');
+      expect(result).not.toContain('</script>');
+    });
+
+    test('escapes ampersands so SafeString output cannot reopen entities', () => {
+      expect(String(getOrElse(tojson('a & b'), null))).toBe('"a \\u0026 b"');
+    });
+
+    test('round-trips through JSON.parse after markup escaping', () => {
+      const payload = { bio: '</script><script>alert(1)</script>', link: 'a&b' };
+      const serialized = String(getOrElse(tojson(payload), null));
+      expect(JSON.parse(serialized)).toEqual(payload);
+    });
   });
 
   describe('indent', () => {

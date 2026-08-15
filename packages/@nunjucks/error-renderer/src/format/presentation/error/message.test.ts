@@ -19,7 +19,7 @@ describe('getErrorMessage', () => {
     expect(getErrorMessage(42)).toBe('42');
   });
 
-  test('throws on null (property access on null)', () => {
-    expect(() => getErrorMessage(null)).toThrow();
+  test('falls back to String() for null instead of throwing', () => {
+    expect(getErrorMessage(null)).toBe('null');
   });
 });

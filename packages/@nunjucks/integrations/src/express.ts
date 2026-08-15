@@ -1,13 +1,27 @@
 import path from 'node:path';
 import { nunjucks, PACKAGE_VERSION } from '@nunjucks/core';
 import type { NunjucksConfig } from '@nunjucks/core';
-import { isOk } from '@nunjucks/lib';
+import { isOk, isPlainObject } from '@nunjucks/lib';
 
 type ExpressEngineFunction = (
   filePath: string,
-  options: object,
+  options: unknown,
   callback: (err: Error | null, rendered?: string) => void
 ) => void;
+
+// WHY: Express merges app.locals/res.locals into the render-options bag and injects engine-internal keys
+// (settings/cache/_locals). This is an untrusted boundary: the bag must be narrowed to a plain object and
+// stripped of internal keys before it enters the engine as template context.
+const EXPRESS_INTERNAL_OPTION_KEYS = new Set(['settings', 'cache', '_locals']);
+
+const sanitizeExpressOptions = (options: unknown): Record<string, unknown> => {
+  if (!isPlainObject(options)) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(options).filter(([key]) => !EXPRESS_INTERNAL_OPTION_KEYS.has(key))
+  );
+};
 
 // WHY: createEngine closes over a nunjucks() factory instance built once at registration time (loader, filters,
 // globals merged once). The returned Express view-engine function delegates each request to engine.render with
@@ -16,10 +30,12 @@ const createEngine = (config: NunjucksConfig = {}): ExpressEngineFunction => {
   const engine = nunjucks(config);
   return function nunjucksExpressEngine(
     filePath: string,
-    options: object,
+    options: unknown,
     callback: (err: Error | null, rendered?: string) => void
   ): void {
-    engine.render(path.basename(filePath), options as Record<string, unknown>, { views: path.dirname(filePath), templatePath: filePath })
+    const renderContext = sanitizeExpressOptions(options);
+    const renderOptions = { views: path.dirname(filePath), templatePath: filePath };
+    engine.render(path.basename(filePath), renderContext, renderOptions)
       .then((result) => {
         if (isOk(result)) {
           callback(null, result.value);

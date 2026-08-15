@@ -42,8 +42,17 @@ const fallback = createMacroFilter(['val', 'def', 'bool'], fallbackImpl);
 // biome-ignore lint/suspicious/noShadowRestrictedNames: `escape` is the public name of this Nunjucks filter; renaming it would break every template that uses it.
 const escape = (str: unknown): Result<SafeString, TemplateError> => ok(safeHtml(str));
 
+// WHY: JSON.stringify leaves <, >, & unescaped; since tojson yields a SafeString that bypasses
+// autoescape (and the script-context JSON guard), a literal "</script>" inside a value would
+// break out of script/HTML contexts. \u003c-style escapes keep the output valid, round-trippable JSON.
+const escapeJsonForMarkup = (serialized: string): string =>
+  serialized
+    .replaceAll('<', '\\u003c')
+    .replaceAll('>', '\\u003e')
+    .replaceAll('&', '\\u0026');
+
 const tojson = (value: unknown): Result<SafeString, TemplateError> =>
-  ok(safeString(JSON.stringify(value)));
+  ok(safeString(escapeJsonForMarkup(JSON.stringify(value) ?? 'undefined')));
 
 const DEFAULT_INDENT_WIDTH = 4;
 
@@ -169,7 +178,12 @@ const replaceImpl = ({
 const replace = createFilter(['str', 'old', 'newValue', 'maxCount'], replaceImpl);
 
 const title = createStringFilter((s: string): string =>
-  pipe(s, split(' '), map(capitalizeString), joinRemeda(' '))
+  pipe(
+    s,
+    split(' '),
+    map(capitalizeString),
+    joinRemeda(' ')
+  )
 );
 
 const trim = createStringFilter((s: string): string => s.trim());

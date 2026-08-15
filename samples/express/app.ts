@@ -85,9 +85,21 @@ const createApp = (): Express => {
   // WHY: never ship rich dev error pages to prod clients
   const devErrorMode = process.env.NODE_ENV !== 'production';
 
+  // WHY: renderContext can carry user PII and must never reach server logs — mirror the library's
+  // redactForLog rule and strip it before the dev ANSI dump; only the (dev-gated) HTML page shows it.
+  const stripRenderContext = (error: Error): Error => {
+    if (!('renderContext' in error)) {
+      return error;
+    }
+    const { renderContext: _redacted, ...loggableError } = error;
+    return loggableError;
+  };
+
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     const sourceFileReader: SourceFileReader = readProjectSource;
-    console.log(formatError(err, { format: 'ansi', dev: devErrorMode, sourceFileReader }));
+    console.log(
+      formatError(stripRenderContext(err), { format: 'ansi', dev: devErrorMode, sourceFileReader })
+    );
     res
       .status(500)
       .type('html')
