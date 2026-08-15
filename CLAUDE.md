@@ -2,7 +2,7 @@
 
 > **Authoritative standard:** [`ARCHITECTURE.md`](./ARCHITECTURE.md) is the full, detailed Project Architecture & Coding Standards (layering taxonomy, advanced primitives, boundary validation, function design, naming). This file is the condensed cheat-sheet — when in doubt, defer to `ARCHITECTURE.md`.
 
-Monorepo of the nunjucks templating engine, split into focused `@nunjucks/*` workspaces (shared, error-catalog, error-renderer, error-formatter, log, nodes, lexer, parser, transformers, compiler, runtime, filters, loaders, validators, integrations, core). Verified compliant — 476 source files, 0 lint issues, 0 `any` violations, 1853 tests passing.
+Monorepo of the nunjucks templating engine, split into focused `@nunjucks/*` workspaces (lib, shared, error-catalog, error-renderer, error-formatter, nodes, lexer, parser, transformers, compiler, runtime, filters, loaders, validators, integrations, core). Verified compliant — 0 lint issues, 0 `any` violations; run `bun test` for the current suite size (counts drift with every change, so they are not pinned here).
 
 > **Public API:** the single entry point is `import { nunjucks } from '@nunjucks/core'`. `nunjucks(config)` returns an engine (`render` / `renderToStream` / `pipeRenderStream`); it is a thin wrapper over the base `createNunjucks` in `core/src/factory.ts`. The flat `render(template, options)` exports are engine-internal (used by the factory + core tests via relative imports) and NOT re-exported from the public index. See `ARCHITECTURE.md` §9 for the factory, config nesting, plugin layering, and the two-pass render pipeline.
 

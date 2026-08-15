@@ -1,6 +1,20 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+TypeScript monorepo rewrite era (`@nunjucks/*` workspaces). Highlights of recent work:
+
+* **Security:** `tojson` XSS escaping (`<`, `>`, `&` re-encoded as `\u003c/\u003e/\u0026`); Express render-options boundary sanitization; renderContext stripped from server logs and production error pages; sandbox demo secrets are placeholders only.
+* **Error taxonomy:** catalog-derived `ERROR_CODES` SSOT (rename-safe via `keyof typeof ERROR_DEFINITIONS`); new catalog entries `INVALID_ASSIGN_TARGET` and `STREAM_ALREADY_CONSUMED`; severity display set derives overlapping codes from the catalog.
+* **Render pipeline:** `resolveTemplateSource` returns `Result` like its sibling `prepareRender` steps; `TemplateSource` is now a discriminated union correlating tag and payload.
+* **Type honesty:** `replace` filter returns `Result<unknown, ...>` (pinned pass-through parity) instead of an unsound `as string`; single-instantiation generics de-generified per the Rule of Three (`extractBlocks`, `runTest`, `compact`, slice collectors, `validateItemsHaveAttr`, `createKeywordArgs`); `HookEvent` keeps its literal union via `as const`.
+* **Error pages:** syntax-highlighting keyword set synced with the parser statement grammar (switch/match/scope/exec/capture families, verbatim alias; dropped nonexistent `set`); fixed a `textContent` double-escape in the context tree.
+* **Loaders:** watcher `'error'` events with no subscriber now log a fallback instead of vanishing; symlink-safe path containment retained.
+* **Samples:** Result-based sandbox test outcomes; `NODE_ENV`-gated `/stream-normal` error pages; `res.headersSent` guard in the Express error middleware.
+* **Hygiene:** orphan barrels and dead types removed (`config/`, `ansi/`, `presentation/`, `LoaderSource`, `ResolveResult`); duplicate `stripInlineMarkdown` test consolidated into `@nunjucks/lib`.
+
 3.2.4 (Apr 13 2023)
 ------------------
 
