@@ -10,7 +10,9 @@ interface BenchCase {
   iterations: number;
 }
 
-const engine = nunjucks({});
+// WHY: deadline bound so a pathological hang cannot block the harness indefinitely —
+// iterations are fixed, this guards the worst case only.
+const engine = nunjucks({ limits: { executionTimeout: 10_000 } });
 
 const simpleTemplate = 'Hello {{ name }}!';
 const loopTemplate =
