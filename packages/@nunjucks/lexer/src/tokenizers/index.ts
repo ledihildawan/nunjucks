@@ -24,7 +24,7 @@ export { tokenizeTemplateText } from './template-text.ts';
 export { tokenizeVariableEnd, tokenizeVariableStart } from './variable.ts';
 export { tokenizeWhitespace } from './whitespace.ts';
 
-export const templateTokenizers = firstMatch(
+const templateTokenizers = firstMatch(
   tokenizeRaw,
   tokenizeBlockStart,
   tokenizeVariableStart,
@@ -32,7 +32,7 @@ export const templateTokenizers = firstMatch(
   tokenizeTemplateText
 );
 
-export const codeTokenizers = firstMatch(
+const codeTokenizers = firstMatch(
   tokenizeString,
   tokenizeTemplateLiteral,
   tokenizeWhitespace,

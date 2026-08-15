@@ -24,8 +24,7 @@
     "@nunjucks/lib": "workspace:*",
     "@nunjucks/shared": "workspace:*",
     "@nunjucks/error-catalog": "workspace:*",
-    "@nunjucks/error-formatter": "workspace:*",
-    "@nunjucks/validators": "workspace:*"
+    "@nunjucks/error-formatter": "workspace:*"
   },
   "description": "Runtime for Nunjucks template engine"
 }

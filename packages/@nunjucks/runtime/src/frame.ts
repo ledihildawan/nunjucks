@@ -60,9 +60,6 @@ export const createFrame = (options: CreateFrameOptions = {}): Frame => {
     get topLevel(): boolean {
       return state.topLevel;
     },
-    set topLevel(value: boolean) {
-      state.topLevel = value;
-    },
     get isolateWrites(): boolean | undefined {
       return state.isolateWrites;
     },

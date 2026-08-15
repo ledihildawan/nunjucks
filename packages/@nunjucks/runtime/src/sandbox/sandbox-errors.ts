@@ -5,7 +5,7 @@ import type {
   TemplateWarning,
 } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
-import { getBlockedKeyCategory } from '@nunjucks/validators/security';
+import { getBlockedKeyCategory } from '@nunjucks/shared';
 import type { ResolvedSandboxOptions } from './sandbox-options.ts';
 import { isAllowedKey } from './sandbox-predicates.ts';
 

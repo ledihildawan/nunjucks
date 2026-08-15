@@ -16,11 +16,8 @@ export { createRenderFrame, createTemplateRenderer };
 const toErrorWithLineInfo = (e: unknown): ErrorWithLineInfo =>
   normalizeErrorMetadata(e).error as ErrorWithLineInfo;
 
-const createRenderFrame = (parentFrame: Frame | undefined): Frame => {
-  const frame = parentFrame ? parentFrame.push(true) : createFrame();
-  frame.topLevel = true;
-  return frame;
-};
+const createRenderFrame = (parentFrame: Frame | undefined): Frame =>
+  createFrame({ parent: parentFrame, isolateWrites: parentFrame !== undefined, topLevel: true });
 
 const createTemplateRenderer = (
   getState: () => TemplateState,

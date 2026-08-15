@@ -15,8 +15,6 @@ import {
   T,
   type TemplateDataNode,
   type TemplateLiteralNode,
-  type TestCallNode,
-  type TestNode,
 } from './index.ts';
 
 const nodeTypes: ReadonlySet<NodeType> = new Set(Object.values(T));
@@ -72,8 +70,6 @@ export const isAssignmentPattern = is(T.ASSIGNMENT_PATTERN);
 export const isHole = is(T.HOLE);
 export const isVariableDeclaration = is(T.VARIABLE_DECLARATION);
 export const isVariableAssignment = is(T.VARIABLE_ASSIGNMENT);
-export const isTest = (n: unknown): n is TestNode => is(T.TEST)(n);
-export const isTestCall = (n: unknown): n is TestCallNode => is(T.TEST_CALL)(n);
 export const isMatch = (n: unknown): n is MatchNode => is(T.MATCH)(n);
 export const isSwitch = (n: unknown): n is SwitchNode => is(T.SWITCH)(n);
 export const isRender = (n: unknown): n is RenderNode => is(T.RENDER)(n);

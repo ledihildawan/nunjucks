@@ -3,10 +3,10 @@ import { createLog } from '@nunjucks/error-formatter';
 import {
   BLOCK_META_KEY,
   type CompiledRenderSignature,
+  type Environment,
   extractBlocks,
   isCompiledTemplateExports,
 } from '@nunjucks/shared';
-import type { Environment } from '@nunjucks/validators/security';
 import { loadCompiledCode } from './code-loader.ts';
 import type { BlockLocation } from './context.ts';
 import { isNullAccessResult, isPropertyNotFoundResult } from './member-access.ts';

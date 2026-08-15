@@ -6,7 +6,7 @@ import type { TemplateError } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
 import { err, ok, type Result } from '@nunjucks/lib';
 import { containsNullByte, isWithinBase } from '@nunjucks/lib/path-security';
-import { forEach, isArray } from 'remeda';
+import { isArray } from 'remeda';
 import { createLoader, type Loader } from './base.ts';
 
 const normalizeSearchPaths = (searchPaths: string | string[] | undefined): string[] => {
@@ -212,7 +212,11 @@ export const createFileSystemLoader = (
   };
 
   const unwatchAll = (): void => {
-    forEach(Array.from(watchedFiles.values()), (watcher) => watcher.close());
+    // WHY: imperative teardown sequence — each watcher.close() is an independent
+    // side-effectful cleanup; no data is transformed between iterations.
+    for (const watcher of watchedFiles.values()) {
+      watcher.close();
+    }
     watchedFiles.clear();
   };
 

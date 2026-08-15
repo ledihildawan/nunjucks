@@ -1,5 +1,3 @@
-import { forEach } from 'remeda';
-
 export const LoaderSymbol = Symbol('Loader');
 
 export interface Loader {
@@ -27,9 +25,11 @@ export const createLoader = (): Loader => {
       if (!handlers) {
         return;
       }
-      forEach([...handlers], (handler) => {
+      // WHY: imperative sequence, not a pipeline — emit orchestrates independent
+      // side-effecting handlers in registration order; no data flows between them.
+      for (const handler of [...handlers]) {
         handler(...args);
-      });
+      }
     },
   };
 };

@@ -109,13 +109,13 @@ const patternClassifier: Classifier = (input) => {
   return rule ? deriveFromRule(rule, input) : null;
 };
 
-export const classifiers: Classifier[] = [
+const classifiers: Classifier[] = [
   reservedKeywordClassifier,
   codeClassifier,
   patternClassifier,
 ];
 
-export const classifyInput = (input: ClassifyInput): Classification =>
+const classifyInput = (input: ClassifyInput): Classification =>
   pipe(
     classifiers,
     map((classifier) => classifier(input)),

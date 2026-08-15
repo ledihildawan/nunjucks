@@ -11,7 +11,6 @@
     "@nunjucks/error-catalog": "workspace:*",
     "@nunjucks/error-formatter": "workspace:*",
     "@nunjucks/lib": "workspace:*",
-    "@nunjucks/shared": "workspace:*",
     "remeda": "^2.39.0"
   },
   "description": "Template loaders for Nunjucks"

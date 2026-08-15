@@ -1,7 +1,8 @@
 import type { TemplateError } from '@nunjucks/error-formatter';
+import { isTemplateError } from '@nunjucks/error-formatter';
 import type { LexerOptions } from '@nunjucks/lexer';
 import { createTokenizer } from '@nunjucks/lexer';
-import { isErr, ok, type Result } from '@nunjucks/lib';
+import { err, isErr, ok, type Result } from '@nunjucks/lib';
 import type { Node } from '@nunjucks/nodes';
 import { root } from '@nunjucks/nodes';
 import { ZERO_LOC } from '@nunjucks/shared';
@@ -36,7 +37,18 @@ export const parse = (
   if (extensions !== undefined) {
     parser.extensions = [...extensions];
   }
-  const nodesR = parseNodes(parser);
+  let nodesR: ReturnType<typeof parseNodes>;
+  try {
+    nodesR = parseNodes(parser);
+  } catch (thrownError: unknown) {
+    // WHY: the lexer tokenizer signals failures by throwing branded TemplateErrors while
+    // parse() owns the Result boundary — template errors must never escape as exceptions.
+    // Non-template throws are programmer/extension bugs and deliberately propagate.
+    if (isTemplateError(thrownError)) {
+      return err(thrownError);
+    }
+    throw thrownError;
+  }
   if (isErr(nodesR)) {
     return nodesR;
   }

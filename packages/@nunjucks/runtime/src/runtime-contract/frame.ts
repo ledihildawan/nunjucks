@@ -7,7 +7,7 @@ export interface FrameSetOptions {
 export interface Frame {
   readonly variables: Record<string, unknown>;
   readonly parent: Frame | undefined;
-  topLevel: boolean;
+  readonly topLevel: boolean;
   readonly isolateWrites: boolean | undefined;
   set: (options: FrameSetOptions) => Frame;
   get: (name: string) => unknown;

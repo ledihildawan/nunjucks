@@ -95,8 +95,6 @@ interface ContextState {
   parentContext: Context | null;
 }
 
-const getKeys = (record: Record<string, unknown>): string[] => keys(record);
-
 const createDefaultEnv = (): Env => ({
   opts: { dev: false, autoescape: true, undefined: 'default' },
   getFilter: () => null,
@@ -148,8 +146,8 @@ const createContextFromState = (state: ContextState): Context => {
 
     validateBlocks(): void {
       if (state.parentBlockNames !== null) {
-        const parentBlockNames = new Set(state.parentBlockNames);
-        const blockName = find(getKeys(state.blocks), (name) => !parentBlockNames.has(name));
+        const parentBlockNameSet = new Set(state.parentBlockNames);
+        const blockName = find(keys(state.blocks), (name) => !parentBlockNameSet.has(name));
         if (blockName) {
           throwBlockNotFoundError({
             name: blockName,
@@ -251,7 +249,7 @@ const createContext = ({
   });
 
   return reduce(
-    getKeys(initialBlocks),
+    keys(initialBlocks),
     (acc, name) => {
       const block = initialBlocks[name];
       if (block) {

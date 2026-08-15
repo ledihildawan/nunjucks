@@ -7,7 +7,6 @@ export const emitCompilerFuncBegin = (
   name: string
 ): void => {
   // WHY: Option C — both root and block functions are async generators that yield output chunks (buffer === null signals 'yield' to appendTarget). Only capture/slot set their own local buffer to accumulate a string. Diverging root vs block is no longer needed.
-  void name;
   compiler.buffer = null;
   compiler.scopeStack = [];
   compiler.emitLine(`async function* ${name}(env, context, frame, runtime) {`);

@@ -19,11 +19,8 @@ const createGetExported =
     ctx?: Record<string, unknown>,
     parentFrame?: unknown
   ): Promise<Record<string, unknown>> => {
-    const createExportedFrame = (inputParentFrame: Frame | undefined): Frame => {
-      const exportFrame = inputParentFrame ? inputParentFrame.push() : createFrame();
-      exportFrame.topLevel = true;
-      return exportFrame;
-    };
+    const createExportedFrame = (inputParentFrame: Frame | undefined): Frame =>
+      createFrame({ parent: inputParentFrame, topLevel: true });
 
     try {
       await compiler.safeCompile();

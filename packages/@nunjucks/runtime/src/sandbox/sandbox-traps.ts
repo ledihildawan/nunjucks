@@ -1,6 +1,6 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { hasOwn, isFunction, isNonNullish } from '@nunjucks/lib';
-import { isCodeExecutionPattern } from '@nunjucks/validators/security';
+import { isCodeExecutionPattern } from '@nunjucks/shared';
 import {
   assertAllowed,
   blockedKeysError,
