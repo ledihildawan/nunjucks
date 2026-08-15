@@ -95,6 +95,8 @@ interface ContextState {
   parentContext: Context | null;
 }
 
+// WHY: canonical bare Env — the single source for the "no env supplied" default shape;
+// core's fallback Env derives from it instead of duplicating the base.
 const createDefaultEnv = (): Env => ({
   opts: { dev: false, autoescape: true, undefined: 'default' },
   getFilter: () => null,
@@ -262,4 +264,4 @@ const createContext = ({
 };
 
 export type { BlockFn, BlockLocation, Context, GetTemplateOptions };
-export { createContext };
+export { createContext, createDefaultEnv };

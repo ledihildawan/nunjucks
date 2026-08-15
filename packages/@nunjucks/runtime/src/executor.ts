@@ -1,7 +1,7 @@
 import { ERROR_CODES } from '@nunjucks/error-catalog';
 import { collectString } from '@nunjucks/lib/collect-stream';
 import type { Environment, SandboxMode } from '@nunjucks/shared';
-import { createContext, type Env } from './context.ts';
+import { createContext, createDefaultEnv, type Env } from './context.ts';
 import {
   buildSandboxedRuntime,
   buildSandboxOptions,
@@ -80,15 +80,12 @@ const buildRuntime = (config: ExecuteConfig): RenderRuntime => {
   return runtime;
 };
 
-const defaultEnv = (config: ExecuteConfig): Env => ({
-  opts: {
-    dev: false,
-    autoescape: config.autoescape ?? true,
-    undefined: 'default',
-  },
-  getFilter: () => null,
-  getTest: () => null,
-});
+// WHY: derives from the canonical bare Env (context.ts) so the executor default cannot
+// drift from the context default; only autoescape is config-overridable here.
+const defaultEnv = (config: ExecuteConfig): Env => {
+  const base = createDefaultEnv();
+  return { ...base, opts: { ...base.opts, autoescape: config.autoescape ?? true } };
+};
 
 const executeNonSandbox = async (options: ExecuteNonSandboxOptions): Promise<string> => {
   const { code, context, frame, env, runtime, executionTimeoutMs } = options;

@@ -14,6 +14,7 @@ export {
   type BlockLocation,
   type Context,
   createContext,
+  createDefaultEnv,
   type Env,
   type GetTemplateOptions,
 } from './context.ts';

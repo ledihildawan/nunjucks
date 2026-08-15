@@ -1,7 +1,7 @@
 import { getError } from '@nunjucks/error-catalog';
 import type { IncludeChain } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
-import type { Env } from '@nunjucks/runtime';
+import { type Env, createDefaultEnv } from '@nunjucks/runtime';
 import { isCompiledTemplateExports } from '@nunjucks/shared';
 import { isPlainObject, isString } from 'remeda';
 import type { TemplateSource, TemplateState, TemplateStateBase } from './types';
@@ -15,10 +15,10 @@ interface GetTemplateOptions {
   ignoreMissing?: boolean;
 }
 
+// WHY: derives from runtime's canonical bare Env (SSOT) — this fallback only adds the
+// getTemplate behavior a source-loading path needs.
 const createFallbackEnv = (): Env => ({
-  opts: { dev: false, autoescape: true, undefined: 'default' },
-  getFilter: () => null,
-  getTest: () => null,
+  ...createDefaultEnv(),
   getTemplate({ name, ignoreMissing }: GetTemplateOptions) {
     if (ignoreMissing) {
       return null;

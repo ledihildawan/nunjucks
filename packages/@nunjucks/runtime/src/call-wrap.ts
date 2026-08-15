@@ -3,9 +3,9 @@ import { isArray, isKeyedObject, isPlainObject, isString } from '@nunjucks/lib';
 import { throwRuntimeError } from './error-context.ts';
 import { getNullParentName, isNullAccessResult } from './member-access.ts';
 
-const RESERVED_KEYWORD_CONTEXTS: Record<string, string> = {
-  super: 'block that extends a parent template',
-};
+// WHY: only `super` is reserved at call sites today — callWrap names that trip this set
+// throw RESERVED_KEYWORD_CONTEXT with the caller-supplied subject.
+const RESERVED_KEYWORD_CONTEXT_NAMES = new Set(['super']);
 
 export interface CallWrapOptions {
   displayName: string | null;
@@ -18,7 +18,7 @@ export interface CallWrapOptions {
 function callWrap(this: unknown, target: unknown, name: string, options: CallWrapOptions): unknown {
   const { displayName, context, args, lineno, colno } = options;
   const messageName = displayName ?? name;
-  if (RESERVED_KEYWORD_CONTEXTS[name]) {
+  if (RESERVED_KEYWORD_CONTEXT_NAMES.has(name)) {
     throwRuntimeError(ERROR_DEFINITIONS.RESERVED_KEYWORD_CONTEXT, {
       runtimeContext: this,
       lineno,

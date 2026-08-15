@@ -201,7 +201,7 @@ const createValidateHas = ({ sandboxOptions, topLevel }: ValidateHasOptions) => 
   };
 };
 
-const makeSandboxTraps = ({
+const createSandboxTraps = ({
   sandboxEnabled,
   sandboxOptions,
   topLevel,
@@ -245,9 +245,9 @@ const createSandboxedObject = ({
   }
   return new Proxy(
     value as object,
-    makeSandboxTraps({ sandboxEnabled, sandboxOptions: resolvedOptions, topLevel: false })
+    createSandboxTraps({ sandboxEnabled, sandboxOptions: resolvedOptions, topLevel: false })
   );
 };
 
 export type { SandboxedValueInput, WrapFunctionBlockingInput };
-export { createSandboxedObject, makeSandboxTraps, wrapFunctionWithBlocking };
+export { createSandboxedObject, createSandboxTraps, wrapFunctionWithBlocking };

@@ -7,7 +7,7 @@ import { resolveSandboxOptions } from './sandbox-options.ts';
 import { isBlockedAtScope } from './sandbox-predicates.ts';
 import {
   createSandboxedObject,
-  makeSandboxTraps,
+  createSandboxTraps,
   wrapFunctionWithBlocking,
 } from './sandbox-traps.ts';
 
@@ -31,7 +31,7 @@ const createSandboxedContext = ({
   }
   return new Proxy(
     context as object,
-    makeSandboxTraps({ sandboxEnabled, sandboxOptions, topLevel: true })
+    createSandboxTraps({ sandboxEnabled, sandboxOptions, topLevel: true })
   );
 };
 
