@@ -42,6 +42,7 @@ Implementation must follow this usage hierarchy to balance Functional Purity wit
   - `runtime/src/code-loader.ts` — `new Function(...)` compiled-template loading; the single auditable dynamic-execution boundary (see sandbox guards in `runtime/src/sandbox/**`).
   - Wall-clock reads for async time-based control flows (Rule: performance exemption 3): `runtime/src/executor.ts` (blocking deadline), `core/src/render/render-stream-adapters.ts` (per-chunk idle + stream deadline), `core/src/template/template-compiler.ts` (compile-duration metrics), `core/src/diagnostics/diagnostics.ts` (timestamp).
   - `core/src/factory.ts` — reads `process.env.NODE_ENV` once at engine creation to derive the environment label (the only `process.env` site outside diagnostics; kept because the factory is the composition shell).
+  - `core/src/render/pipe-stream.ts` — `console.log` ANSI error fallback when no `onError` hook is registered (dev-gated; the streaming imperative shell's last-resort log).
 
 ## 3. Performance Exemptions & Low-Level Primitives
 

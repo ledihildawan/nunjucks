@@ -85,7 +85,7 @@ Autoescaping is **context-aware**: the compiler tracks whether an interpolation 
 
 Registered set (aliases in parentheses). All return `Result` internally; failures surface as catalogued filter errors.
 
-**String** — `capitalize`, `escape` (`e`) HTML-escape → SafeString, `fallback` (`default`, `d`) `(value, fallback, useFalsy=false)`, `indent(width=4, first=false)`, `join(delim='', attr)`, `lower`, `upper`, `trim`, `title`, `replace(old, new, max=-1)` (string or RegExp needle), `truncate(len=255, killwords=false, end="…")`, `tojson` (XSS-safe JSON → SafeString).
+**String** — `capitalize`, `escape` (`e`) HTML-escape → SafeString, `fallback` (`default`, `d`) `(value, fallback, useFalsy=false)`, `indent(width=4, first=false)`, `join(delim='', attr)`, `lower`, `upper`, `trim`, `title`, `replace(old, new, max=-1)` (string or RegExp needle), `truncate(len=255, killwords=false, end='...')`, `tojson` (XSS-safe JSON → SafeString).
 
 **Array** — `first`, `last`, `length` (`lengthFilter`), `reverse`, `slice(n, fill)` (n near-equal columns), `sort`, `sum(attr?, start=0)`.
 

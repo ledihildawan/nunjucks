@@ -107,7 +107,7 @@ Everything the engine needs ships from the core barrel:
 
 Two subpath entries are public contract: `@nunjucks/core/diagnostics` (`readProjectSource` — map caller source files for error pages) and `@nunjucks/integrations/express` (`createEngine` for Express 5). Utilities like the `Result` helpers (`isOk`, `isErr`, `getOrElse`) live in `@nunjucks/lib`.
 
-Everything else (`createNunjucks`, plugin folding internals, streaming adapters, sandbox primitives) is engine-internal and reachable only within the repo.
+Everything else (`createNunjucks`, plugin folding internals, streaming adapters, sandbox primitives) is engine-internal and reachable only within the repo. Internal workspace packages (`@nunjucks/lib`, `@nunjucks/runtime`, `@nunjucks/error-catalog`, …) are importable by first-party monorepo consumers — samples, bench, other packages — via their barrels, but they are **not** npm publishing contract; only `@nunjucks/core` and `@nunjucks/integrations/express` are the designed user surface.
 
 ## Express integration
 
