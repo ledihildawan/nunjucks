@@ -44,7 +44,6 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.5",
     "@types/express": "^5.0.6",
-    "fast-check": "^4.9.0",
     "typescript": "7.0.2"
   },
   "scripts": {
