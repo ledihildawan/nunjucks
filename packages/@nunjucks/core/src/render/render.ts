@@ -197,7 +197,7 @@ const prepareRender = async (
   const sourceResult = await resolveTemplateSource({ template, loader, config });
   if (isErr(sourceResult)) {
     return err(
-      await wrapWithLog(sourceResult.error, config, { template, renderContext: safeContext })
+      await wrapWithLog({ error: sourceResult.error, config, template, renderContext: safeContext })
     );
   }
   const { templateSource, templatePath } = sourceResult.value;
@@ -216,7 +216,9 @@ const prepareRender = async (
   const compileResult = compileTemplate({ templateSource, config: configWithPath, templateName });
   if (isErr(compileResult)) {
     return err(
-      await wrapWithLog(compileResult.error, configWithPath, {
+      await wrapWithLog({
+        error: compileResult.error,
+        config: configWithPath,
         template: templateSource,
         renderContext: safeContext,
       })
@@ -269,7 +271,9 @@ const render = async (
     );
   } catch (executeErr: unknown) {
     return err(
-      await wrapWithLog(executeErr, resolvedConfig, {
+      await wrapWithLog({
+        error: executeErr,
+        config: resolvedConfig,
         template: templateSource,
         renderContext: context,
       })

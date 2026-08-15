@@ -39,7 +39,9 @@ const createCachedEnrichment = (prepared: PreparedTemplate) => {
 
   return async (sentinel: StreamErrorSentinel): Promise<TemplateError> => {
     if (!locationCache) {
-      const enriched = await wrapWithLog(sentinel.error, prepared.resolvedConfig, {
+      const enriched = await wrapWithLog({
+        error: sentinel.error,
+        config: prepared.resolvedConfig,
         template: prepared.templateSource,
         renderContext: prepared.context,
       });
@@ -51,11 +53,17 @@ const createCachedEnrichment = (prepared: PreparedTemplate) => {
       };
       return enriched;
     }
-    const enriched = await wrapWithLog(
-      sentinel.error,
-      { ...prepared.resolvedConfig, callerFrames: null, callerLocation: null, jsCaller: null },
-      { template: prepared.templateSource, renderContext: prepared.context }
-    );
+    const enriched = await wrapWithLog({
+      error: sentinel.error,
+      config: {
+        ...prepared.resolvedConfig,
+        callerFrames: null,
+        callerLocation: null,
+        jsCaller: null,
+      },
+      template: prepared.templateSource,
+      renderContext: prepared.context,
+    });
     return {
       ...enriched,
       sourceContent: locationCache.sourceContent ?? undefined,
@@ -156,7 +164,9 @@ const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGe
       }
     }
   } catch (streamErr: unknown) {
-    throw await wrapWithLog(streamErr, resolvedConfig, {
+    throw await wrapWithLog({
+      error: streamErr,
+      config: resolvedConfig,
       template: templateSource,
       renderContext: context,
     });

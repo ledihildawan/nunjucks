@@ -1,4 +1,5 @@
 import type { LineBase } from '@nunjucks/error-catalog';
+import { ERROR_CODES } from '@nunjucks/error-catalog';
 import { createLog, normalizeErrorMetadata, type TemplateError } from '@nunjucks/error-formatter';
 import { DEFAULT_IDE } from '@nunjucks/error-renderer';
 import { isKeyedObject } from '@nunjucks/lib';
@@ -91,7 +92,7 @@ const buildMetadata = (errSnapshot: Record<string, unknown>, input: MetadataInpu
     sourceContent: input.sourceContent,
     sourceStartLine: input.sourceStartLine,
     renderContext: toRenderContext(input.renderContext),
-    code: typeof errSnapshot.code === 'string' ? errSnapshot.code : 'RENDER_ERROR',
+    code: typeof errSnapshot.code === 'string' ? errSnapshot.code : ERROR_CODES.RENDER_ERROR,
   });
 
 interface ErrorObjectInput {
@@ -184,13 +185,21 @@ const buildLocationInputs = ({
 //   In streaming mode, streamError() sits between the layers: it calls handleError (Layer 1)
 //   and catches the throw, returning a sentinel. formatStreamSentinel then calls wrapWithLog
 //   (Layer 2) on the sentinel's error.
-export const wrapWithLog = async (
-  err: unknown,
-  config: DiagnosticsConfig,
-  { template = null, renderContext = null }: { template?: unknown; renderContext?: unknown } = {}
-): Promise<TemplateError> => {
+interface WrapWithLogInput {
+  error: unknown;
+  config: DiagnosticsConfig;
+  template?: unknown;
+  renderContext?: unknown;
+}
+
+export const wrapWithLog = async ({
+  error,
+  config,
+  template = null,
+  renderContext = null,
+}: WrapWithLogInput): Promise<TemplateError> => {
   const resolvedSourceContent = typeof template === 'string' ? template : null;
-  const initialMetadata = normalizeErrorMetadata(err, {
+  const initialMetadata = normalizeErrorMetadata(error, {
     phase: config.phase ?? 'render',
     templatePath: config.templatePath ?? config.callerFile ?? null,
     sourceContent: resolvedSourceContent,
@@ -214,7 +223,7 @@ export const wrapWithLog = async (
     sourceStartLine,
     preferCallerLocation,
   } = resolved;
-  const errSnapshot = extractErrorSnapshot(err);
+  const errSnapshot = extractErrorSnapshot(error);
   const phase = initialMetadata.phase ?? config.phase ?? 'render';
   const dev = config.dev ?? false;
   const ide = config.ide ?? DEFAULT_IDE;
@@ -235,7 +244,7 @@ export const wrapWithLog = async (
     sourceStartLine,
     renderContext,
   });
-  const resolvedProps = resolveErrorProps(err);
+  const resolvedProps = resolveErrorProps(error);
   const contextObj = buildContextObj({
     metadata,
     templatePath,
@@ -249,7 +258,7 @@ export const wrapWithLog = async (
     environment,
   });
 
-  const effectiveBlockedKeys = resolveEffectiveBlockedKeys(err, config);
+  const effectiveBlockedKeys = resolveEffectiveBlockedKeys(error, config);
   return createErrorObject(metadata, {
     resolvedProps,
     contextObj,

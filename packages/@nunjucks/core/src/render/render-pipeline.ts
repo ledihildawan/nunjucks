@@ -195,7 +195,11 @@ const createDangerousContextError = async ({
       }
     : config;
   const safeForDisplay = scrubDangerousReferences(context);
-  return wrapWithLog(dangerousContextError, enrichedConfig, { renderContext: safeForDisplay });
+  return wrapWithLog({
+    error: dangerousContextError,
+    config: enrichedConfig,
+    renderContext: safeForDisplay,
+  });
 };
 
 interface ContextStrictModeOutcome {

@@ -72,7 +72,7 @@ export { serializeErrorPayload };
 
 interface RenderErrorInput {
   err: TemplateError;
-  contentType: string;
+  contentType: 'html' | 'json' | 'text';
   dev: boolean;
   ide: string | undefined;
 }
@@ -81,18 +81,25 @@ const renderPreStreamError = ({ err, contentType, dev, ide }: RenderErrorInput):
   if (contentType === 'json') {
     return serializeErrorPayload(err);
   }
-  return formatError(err, { format: contentType as 'html' | 'ansi' | 'text', dev, ide });
+  // WHY: the json early-return above narrows contentType to 'html' | 'text' — both valid
+  // formatError formats, so no cast is needed and drift is impossible by construction.
+  return formatError(err, { format: contentType, dev, ide });
 };
 
 interface MidStreamErrorInput {
   err: unknown;
-  contentType: string;
+  contentType: 'html' | 'json' | 'text';
   ide: string;
   version: string | undefined;
 }
 
+// WHY: mid-stream errors are caught as `unknown` — anything can cross the throw boundary
+// (catalogued TemplateError, plain Error, or a thrown primitive). Normalize before the cast
+// so a non-Error never reaches formatErrorMarker/emitErrorLog with a lying static type.
+const toErrorLike = (err: unknown): Error => (err instanceof Error ? err : new Error(String(err)));
+
 const renderMidStreamError = ({ err, contentType, ide, version }: MidStreamErrorInput): string =>
-  formatErrorMarker(err as TemplateError, { ide, contentType, version });
+  formatErrorMarker(toErrorLike(err) as TemplateError, { ide, contentType, version });
 
 // WHY: shallow-clone a TemplateError with renderContext stripped before it reaches the dev ANSI log. renderContext holds the user's render data (potentially PII/secrets) and the ANSI renderer echoes it verbatim — the original error keeps renderContext for response formatting (where blockedKeys + dev gating apply), but the server log must not leak it. message/stack are non-enumerable on Error so they are set explicitly; all other catalog fields ride through Object.assign.
 const redactForLog = (error: TemplateError): TemplateError => {
@@ -251,7 +258,7 @@ const pipeRenderStream = async (
       sink.end();
     } else {
       errorCount += 1;
-      emitErrorLog({ error: streamErr as Error, phase: 'mid-stream', logError, dev, onError });
+      emitErrorLog({ error: toErrorLike(streamErr), phase: 'mid-stream', logError, dev, onError });
       sink.write(renderMidStreamError({ err: streamErr, contentType, ide, version }));
       sink.end();
     }

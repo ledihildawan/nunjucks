@@ -49,7 +49,12 @@ const buildValidationError = async ({
       lineBase: (locationMeta.lineBase as 'one' | 'zero' | undefined) ?? 'zero',
     },
   });
-  return wrapWithLog(templateError, config, { template: templateSource, renderContext: context });
+  return wrapWithLog({
+    error: templateError,
+    config,
+    template: templateSource,
+    renderContext: context,
+  });
 };
 
 const getDangerousValueLocationMeta = async (
@@ -96,7 +101,7 @@ export const validateRender = async (
       subject: null,
       context: { phase: 'render' },
     });
-    return err(await wrapWithLog(error, config, { template, renderContext: context }));
+    return err(await wrapWithLog({ error, config, template, renderContext: context }));
   }
 
   const validation = validateConfig(config);
