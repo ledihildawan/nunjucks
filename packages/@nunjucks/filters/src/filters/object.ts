@@ -13,7 +13,7 @@ export const groupby = createComponent({
     if (!isArray(items)) {
       return err(requireArrayError(items, ERROR_DEFINITIONS.GROUPBY_FILTER));
     }
-    const validatedResult = validateItemsHaveAttr<unknown>({
+    const validatedResult = validateItemsHaveAttr({
       items,
       attr,
       errorDef: ERROR_DEFINITIONS.GROUPBY_FILTER_ATTR,

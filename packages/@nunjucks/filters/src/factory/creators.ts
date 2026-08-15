@@ -11,7 +11,10 @@ const createStringFilter =
     return ok(preserveSafe(value, fn(normalizedValue)));
   };
 
-const createMacroFilter = <T extends unknown[], R>(argNames: string[], fn: (...args: T) => R) =>
+// WHY: only R is generic — it propagates the implementation's return type (e.g. its Result
+// shape) to the wrapped filter. The args tuple generic it previously carried was phantom
+// (values are unknown end-to-end at the component boundary).
+const createMacroFilter = <R>(argNames: string[], fn: (...args: unknown[]) => R) =>
   createComponent({ argNames, kwargNames: [], func: fn });
 
 const createFilter = <T extends object, R>(argNames: string[], func: (options: T) => R) => {

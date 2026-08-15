@@ -90,11 +90,11 @@ interface ValidateItemsInput {
   errorDef: ErrorDefinitionEntry | undefined;
 }
 
-const validateItemsHaveAttr = <T>({
+const validateItemsHaveAttr = ({
   items,
   attr,
   errorDef,
-}: ValidateItemsInput): Result<Record<string, T>[], TemplateError> => {
+}: ValidateItemsInput): Result<Record<string, unknown>[], TemplateError> => {
   const everyHasAttr = items.every(
     (item) => item !== null && typeof item === 'object' && attr in item
   );
@@ -108,7 +108,7 @@ const validateItemsHaveAttr = <T>({
       })
     );
   }
-  return ok(items as Record<string, T>[]);
+  return ok(items as Record<string, unknown>[]);
 };
 
 export { isSafeString } from './types.ts';

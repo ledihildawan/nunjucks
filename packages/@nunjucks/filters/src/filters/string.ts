@@ -23,10 +23,12 @@ const capitalizeString = (s: string): string => {
 
 const capitalize = createStringFilter(capitalizeString);
 
+// WHY: `bool` is `unknown`, not boolean — the macro-filter wrapper invokes implementations
+// with unknown args; the parameter is only truthiness-checked.
 const fallbackImpl = (
   value: unknown,
   def: unknown,
-  bool?: boolean
+  bool?: unknown
 ): Result<unknown, TemplateError> => {
   if (bool) {
     return ok(value || def);
@@ -134,7 +136,15 @@ const performReplace = (
   return head + oldStr + tail;
 };
 
-const applyReplace = (str: unknown, old: unknown, newValue: string, maxCount?: number): string => {
+// WHY: returns `unknown` — when the needle or input cannot be resolved to a string, the
+// filter passes the input through untouched (nunjucks parity, pinned by tests); pretending
+// the result is always a string would be an unsound cast.
+const applyReplace = (
+  str: unknown,
+  old: unknown,
+  newValue: string,
+  maxCount?: number
+): unknown => {
   if (old instanceof RegExp) {
     const resolvedString = resolveString(str);
     return resolvedString === null ? String(str ?? '') : resolvedString.replace(old, newValue);
@@ -142,11 +152,11 @@ const applyReplace = (str: unknown, old: unknown, newValue: string, maxCount?: n
   const max = maxCount ?? -1;
   const oldStr = resolveOldString(old);
   if (oldStr === null) {
-    return str as string;
+    return str;
   }
   const resolvedInput = resolveString(str);
   if (resolvedInput === null) {
-    return str as string;
+    return str;
   }
   if (oldStr === '') {
     return preserveSafe(
@@ -173,7 +183,7 @@ const replaceImpl = ({
   old,
   newValue,
   maxCount,
-}: ReplaceOptions): Result<string, TemplateError> => ok(applyReplace(str, old, newValue, maxCount));
+}: ReplaceOptions): Result<unknown, TemplateError> => ok(applyReplace(str, old, newValue, maxCount));
 
 const replace = createFilter(['str', 'old', 'newValue', 'maxCount'], replaceImpl);
 

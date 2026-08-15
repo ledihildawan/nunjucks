@@ -153,7 +153,7 @@ const sumWithAttribute = ({
   attr,
   start,
 }: SumWithAttributeInput): Result<number, TemplateError> => {
-  const validatedResult = validateItemsHaveAttr<unknown>({
+  const validatedResult = validateItemsHaveAttr({
     items,
     attr,
     errorDef: ERROR_DEFINITIONS.SUM_FILTER_ATTR,
@@ -209,7 +209,7 @@ interface SortOptions {
 const sortArray = (values: unknown[], options: SortOptions): Result<unknown[], TemplateError> => {
   const { sortAttr, sortReverse, caseSens } = options;
   if (sortAttr) {
-    const validatedResult = validateItemsHaveAttr<unknown>({
+    const validatedResult = validateItemsHaveAttr({
       items: values,
       attr: sortAttr,
       errorDef: ERROR_DEFINITIONS.SORT_FILTER_ATTR,
