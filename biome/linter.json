@@ -112,6 +112,7 @@
 				"noPrototypeBuiltins": "error",
 				"noRedeclare": "error",
 				"noShadowRestrictedNames": "error",
+				"noShadow": "error",
 				"noUnsafeDeclarationMerging": "error",
 				"noUnsafeNegation": "error",
 				"noFocusedTests": "error",

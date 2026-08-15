@@ -34,6 +34,10 @@ Implementation must follow this usage hierarchy to balance Functional Purity wit
 - Use **Validation Accumulators** (e.g., Schema Validators) at boundary inputs to parse external data and accumulate validation errors at once.
 - Use **Option / Maybe** patterns or Null-safe wrappers to handle empty values safely.
 - Isolate **I/O operations** (Database, Network, File System) within dedicated adapter boundaries.
+- Sanctioned I/O adapter pockets (the complete list of non-loader I/O sites):
+  - `loaders/**` — the primary filesystem shell (source resolution, caching, watching).
+  - `core/src/diagnostics/**` — error-enrichment adapter that reads **caller project sources** off disk to compute error locations; it never touches templates themselves.
+  - `runtime/src/shell/**` — the package's local imperative-shell pocket (console fallback when no warning collector is attached).
 
 ## 3. Performance Exemptions & Low-Level Primitives
 
@@ -95,6 +99,10 @@ Positional parameters > 2 are strictly allowed without options objects **ONLY** 
 - **High Cohesion & Single Responsibility** — A module handles exactly one domain capability (e.g., `PaymentGateway` manages payments only).
 - **Encapsulation via Scope** — Restrict exports. Keep internal helper functions private to the module/file scope.
 - **Test Co-location** — Keep unit and behavior tests alongside the implementation files they target.
+
+### Manifest-Declared Subpath Exports (exception to the single-barrel rule)
+
+Several packages (`lib`, `runtime`, `compiler`, `core`, …) declare additional subpath entries in their `package.json` `exports` map (e.g. `@nunjucks/lib/collect-stream`, `@nunjucks/runtime/escaping`). These are **deliberate, manifest-declared contracts** — sanctioned deviations from the single-`index.ts`-barrel rule for two reasons: (1) hot-path modules avoid pulling the whole barrel's transitive imports, and (2) leaf utilities stay importable by packages that depend on only that slice. The rule that remains absolute: **every subpath must be declared in `exports`** — deep-linking into undeclared `src/` internals from outside the package is forbidden, and re-exports that exist only for test convenience must not accumulate on public barrels.
 
 ### Error Cluster Architecture (formatter ↔ renderer)
 

@@ -194,3 +194,41 @@ Re-scanned all 16 packages + samples against §1–§12 with independent greps f
 
 **Verification after Round 2:** typecheck clean, lint clean (609 files), 2676 tests pass / 0 fail.
 
+---
+
+## ROUND 3 AUDIT (independent re-scan, 2026-08-16)
+
+5 parallel audit agents re-scanned all 16 packages + samples against §1–§11 (Phase I architecture, Phase II type-safety/threat, Phase II loops/pipelines/async/errors, Phase III testing/naming/lifecycle, samples OWASP). Baseline before fixes: typecheck ✅, lint ✅ (617 files), 2723 tests ✅ — no pre-existing errors; all findings were rule-compliance gaps.
+
+### Round-3 Fixes
+
+| # | Rule | Severity | Violation | Fix |
+|---|---|---|---|---|
+| 1 | §10 Injection immunity | MEDIUM | `component.ts` — component arg names emitted as raw JS identifiers `l_${value}` without `assertSafeIdentifier` (the only remaining compiler codegen gap; slot.ts already gated). | Added the gate in `extractComponentArgs` mirroring `slot.ts`; locked with a regression test (`component.test.ts` rejects `a";evil()` with `INVALID_IDENTIFIER`). |
+| 2 | §5 Unsafe casts | MEDIUM | `pipe-stream.ts:97,256` — caught-`unknown` mid-stream errors cast to `TemplateError`/`Error` without narrowing. | Added `toErrorLike` normalizer (`err instanceof Error ? err : new Error(String(err))`) at both sites. |
+| 3 | §8 Shadowing enforcement | MEDIUM | biome `noShadow` absent from config while CLAUDE.md prohibits shadowing. | Enabled `noShadow: "error"` in `biome/linter.json`; fixed all 21 surfaced violations: lexer `comment.ts`/`template-text.ts` scan-callback shadowed destructured results, `lib/collect-stream.ts` `acc`, and `loc` callback params shadowing the imported `loc` factory in nodes factory tests (renamed to role-descriptive `position`/`endState`/`dataText`/`commentValue`/`chunks`). |
+| 4 | §9 Dead exports | MEDIUM | 7 fully-dead types: `AccessResult`, `IoErrorName`, `SandboxErrorName`, `FilterErrorName`, `ParserErrorName`, `TemplateErrorName`, `RuntimeErrorName`. | Deleted (same `*ErrorName` straggler family as Round-1's `LoaderSource` removals). |
+| 5 | §9 Mock vocabulary | MEDIUM | 25 compiler test files named pure fakes with banned `mock` vocabulary (`MockNode`, `{ mock: 'X' }`, `leftMock`). | Mechanical rename to `FakeNode`/`marker`/`leftMarker` (~110 occurrences); zero behavior change, compiler suite identical (204/204). |
+| 6 | §1 YAGNI | LOW | `runtime/hooks.ts` — 6 of 9 `HOOK_EVENTS` never emitted anywhere. | Deleted the 6 speculative events; WHY comment now states events are added together with their emitting call site. New drift-guard test asserts the constant map matches the emitted set. |
+| 7 | §1 Rule of Three | LOW | `lib/gensym.ts` — two-layer id-generator abstraction with a single leaf caller. | Inlined into `createGensym`. |
+| 8 | §5 Parameter limits | LOW | `diagnostics.ts` `wrapWithLog(err, config, {…})` — 3 inputs, only third bundled. | Refactored to single `WrapWithLogInput` options object; 14 call sites updated. |
+| 9 | §11 Dead surface | LOW | 27 module-internal-only exports carrying `export`; `ContextMetadata` + `SecurityError` barrel re-exports with zero consumers; test-only exports `isFor`, `isLoader`, `isValidUndefinedMode`. | Unexported the 27; removed both barrel lines; deleted the 3 dead guards + their sole-coverage tests (11 tests). ~15 audit candidates verified kept-alive (real usage found — false positives). |
+| 10 | §8 Numeric suffixes | LOW | `result1/2/3` (filters tests), `global1: 'value1'` (render-pipeline.test.ts), `p1`/`p2` (samples `errors/index.njk` DOM code). | Role-descriptive renames (`nullInputResult`, `globalGreeting`, `noResultsMessage`/`noResultsHint`). |
+| 11 | OWASP A05 | LOW | `samples/express/main.ts` `app.listen(PORT)` bound all interfaces while serving rich dev error pages. | Bound `127.0.0.1` with a WHY comment (mirrors the test server). |
+| 12 | §6 Style / §3 type safety | LOW | Duplicate `@nunjucks/lib` imports (samples `errors.ts`, `sandbox-demo.ts`); unnarrowed `as AddressInfo` (samples `app.test.ts`); misleading `raw:` labels in `security-features.njk` (output is autoescaped). | Merged imports; replaced cast with `null`/`string` narrowing that fails loudly; labels now `direct:`. |
+| 13 | §2 Boundary documentation | LOW | `core/src/diagnostics/**` fs reads and `runtime/src/shell/**` console pocket were real but undocumented exemptions. | Sanctioned both pockets explicitly in ARCHITECTURE.md §2 (complete list of non-loader I/O sites). |
+
+### Round-3 Findings NOT fixed (intentional, with taste)
+
+- **F7 clock injection** (`executor.ts` `Date.now`): the deadline mechanism is inherently wall-clock; bun's `setSystemTime` covers test determinism — injecting a clock adds API surface for no real purity gain (KISS).
+- **SSOT enriched-error trio** (`ErrorLike`/`TemplateError`/`ErrorWithLineInfo`): making `TemplateError` extend `ErrorLike` would still require redeclaring every field (optional→required narrowing), so the refactor consolidates nothing (Rule of Three/YAGNI). Load-bearing invariants (`TEMPLATE_ERROR`, `LineBase`, `Phase`) already single-sourced.
+- **lexer → error-formatter edge** (vs leaner error-catalog): not a cycle, not prohibited; extraction is high-friction/low-value.
+- **`create-log.ts:98` / `create-log-helpers.ts:65` casts**: `RawLogData.info` is an internally-constructed typed union, not untrusted I/O; all reads nullish-guarded — §5 boundary sanitization doesn't apply.
+- **Plugin fold single-consumer** (`foldPlugins`): documented public `plugins` config surface (ARCHITECTURE §9), tested — YAGNI-watch only.
+- **ANSI/text `full` verbosity default**: server-log sinks only (HTTP paths are dev-gated + JSON payload is stack-free) — documented design.
+- **Audit artifacts at repo root** (`AUDIT-REPORT.md`, `SOURCE-TRACE-FIX-AUDIT.md`): tracked intentionally; relocation is cosmetic churn.
+
+### Verification after Round 3
+
+`bun run typecheck` → 0 errors · `bun run lint` → 617 files, 0 issues (now with `noShadow: error` enforced) · `bun test` → **2714 pass / 0 fail** (2723 − 11 deleted dead-guard tests + 2 new: hooks drift-guard + component §10 regression).
+
