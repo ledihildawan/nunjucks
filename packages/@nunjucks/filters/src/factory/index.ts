@@ -1,10 +1,18 @@
-export type { FilterContext, StringFn, SafeString } from './types.ts';
-
-export { makeFilterError, normalize, safeString, safeHtml, preserveSafe, requireArrayError, requireNumberError, validateItemsHaveAttr } from './helpers.ts';
-
-export { isSafeString, isArray } from './types.ts';
 export {
-  createStringFilter,
+  createFilter,
   createMacroFilter,
-  createFilter
+  createStringFilter,
 } from './creators.ts';
+
+export {
+  createFilterError,
+  normalize,
+  preserveSafe,
+  requireArrayError,
+  requireNumberError,
+  safeHtml,
+  safeString,
+  validateItemsHaveAttr,
+} from './helpers.ts';
+export type { FilterContext, SafeString, StringFn } from './types.ts';
+export { isArray, isSafeString } from './types.ts';

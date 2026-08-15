@@ -1,5 +1,5 @@
-import { describe, test, expect } from 'bun:test';
-import { isOk, isErr, getOrElse } from '@nunjucks/lib';
+import { describe, expect, test } from 'bun:test';
+import { getOrElse, isErr, isOk } from '@nunjucks/lib';
 import { groupby } from './object.ts';
 
 describe('filters/object', () => {
@@ -12,7 +12,10 @@ describe('filters/object', () => {
       ];
       const result = groupby(items, 'type');
       expect(isOk(result)).toBe(true);
-      const grouped = getOrElse(result, null) as Record<string, Array<{ type: string; name: string }>>;
+      const grouped = getOrElse(result, null) as Record<
+        string,
+        Array<{ type: string; name: string }>
+      >;
       expect(grouped.fruit).toEqual([
         { type: 'fruit', name: 'apple' },
         { type: 'fruit', name: 'banana' },
@@ -40,7 +43,10 @@ describe('filters/object', () => {
       ];
       const result = groupby(items, 'id');
       expect(isOk(result)).toBe(true);
-      const grouped = getOrElse(result, null) as Record<string, Array<{ id: number; name: string }>>;
+      const grouped = getOrElse(result, null) as Record<
+        string,
+        Array<{ id: number; name: string }>
+      >;
       expect(grouped['1']).toEqual([
         { id: 1, name: 'one' },
         { id: 1, name: 'uno' },
@@ -58,10 +64,7 @@ describe('filters/object', () => {
     });
 
     test('returns error when an item is missing the named attribute', () => {
-      const items = [
-        { type: 'a' },
-        { other: 'b' },
-      ];
+      const items = [{ type: 'a' }, { other: 'b' }];
       const result = groupby(items, 'type');
       expect(isErr(result)).toBe(true);
     });

@@ -1,5 +1,5 @@
-import { describe, test, expect } from 'bun:test';
-import { toComparable, compareValues, createSortComparator } from './compare.ts';
+import { describe, expect, test } from 'bun:test';
+import { compareValues, createSortComparator, toComparable } from './compare.ts';
 
 describe('toComparable', () => {
   test('keeps strings and numbers as-is', () => {
@@ -15,7 +15,9 @@ describe('toComparable', () => {
 
 describe('compareValues', () => {
   test('sorts ascending by default', () => {
-    const result = [3, 1, 2].toSorted((a, b) => compareValues({ left: a, right: b, caseSens: true, sortReverse: false }));
+    const result = [3, 1, 2].toSorted((a, b) =>
+      compareValues({ left: a, right: b, caseSens: true, sortReverse: false })
+    );
     expect(result).toEqual([1, 2, 3]);
   });
 
@@ -24,7 +26,9 @@ describe('compareValues', () => {
   });
 
   test('compares case-insensitively when caseSens is unset', () => {
-    expect(compareValues({ left: 'A', right: 'b', caseSens: undefined, sortReverse: false })).toBe(-1);
+    expect(compareValues({ left: 'A', right: 'b', caseSens: undefined, sortReverse: false })).toBe(
+      -1
+    );
   });
 });
 

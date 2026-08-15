@@ -1,5 +1,6 @@
-import { describe, test, expect } from 'bun:test';
-import { createStringFilter, createMacroFilter } from './creators.ts';
+import { describe, expect, test } from 'bun:test';
+import { getOrElse } from '@nunjucks/lib';
+import { createMacroFilter, createStringFilter } from './creators.ts';
 import { isSafeString, safeString } from './helpers.ts';
 
 describe('createStringFilter', () => {
@@ -15,16 +16,36 @@ describe('createStringFilter', () => {
     readonly expected: string;
   };
   const transformCases: readonly TransformCase[] = [
-    { label: 'upper-cases lowercase text', transform: (s) => s.toUpperCase(), input: 'hello', expected: 'HELLO' },
-    { label: 'trims surrounding whitespace', transform: (s) => s.trim(), input: '  hi  ', expected: 'hi' },
-    { label: 'reverses characters', transform: (s) => s.split('').reverse().join(''), input: 'abc', expected: 'cba' },
-    { label: 'leaves an empty string untouched', transform: (s) => s.toUpperCase(), input: '', expected: '' },
+    {
+      label: 'upper-cases lowercase text',
+      transform: (s) => s.toUpperCase(),
+      input: 'hello',
+      expected: 'HELLO',
+    },
+    {
+      label: 'trims surrounding whitespace',
+      transform: (s) => s.trim(),
+      input: '  hi  ',
+      expected: 'hi',
+    },
+    {
+      label: 'reverses characters',
+      transform: (s) => s.split('').reverse().join(''),
+      input: 'abc',
+      expected: 'cba',
+    },
+    {
+      label: 'leaves an empty string untouched',
+      transform: (s) => s.toUpperCase(),
+      input: '',
+      expected: '',
+    },
   ];
 
   transformCases.forEach(({ label, transform, input, expected }) => {
     test(`applies a transformation that ${label}`, () => {
       const filter = createStringFilter(transform);
-      expect(filter(input)).toBe(expected);
+      expect(getOrElse(filter(input), null)).toBe(expected);
     });
   });
 
@@ -33,46 +54,50 @@ describe('createStringFilter', () => {
     { label: 'a positive number coerced then transformed', input: 42, expected: '42' },
     { label: 'zero coerced then transformed', input: 0, expected: '0' },
     { label: 'true coerced then transformed', input: true, expected: 'TRUE' },
-    { label: 'a plain object stringified then transformed', input: { key: 'value' }, expected: '[OBJECT OBJECT]' },
+    {
+      label: 'a plain object stringified then transformed',
+      input: { key: 'value' },
+      expected: '[OBJECT OBJECT]',
+    },
     { label: 'an array stringified then transformed', input: [1, 2, 3], expected: '1,2,3' },
   ];
 
   const upper = createStringFilter((s: string): string => s.toUpperCase());
   coerceCases.forEach(({ label, input, expected }) => {
     test(`coerces ${label}`, () => {
-      expect(upper(input)).toBe(expected);
+      expect(getOrElse(upper(input), null)).toBe(expected);
     });
   });
 
   test('normalizes nullish and false inputs to the empty string before transforming', () => {
-    expect(upper(null)).toBe('');
-    expect(upper(undefined)).toBe('');
-    expect(upper(false)).toBe('');
+    expect(getOrElse(upper(null), null)).toBe('');
+    expect(getOrElse(upper(undefined), null)).toBe('');
+    expect(getOrElse(upper(false), null)).toBe('');
   });
 
   test('returns a plain (non-safe) string when the input is a plain string', () => {
     const identity = createStringFilter((s: string): string => s);
-    const result = identity('plain');
+    const result = getOrElse(identity('plain'), null);
     expect(result).toBe('plain');
     expect(isSafeString(result)).toBe(false);
   });
 
   test('preserves safeness by returning a SafeString when the input is a SafeString', () => {
     const safeInput = safeString('hello');
-    const result = upper(safeInput);
+    const result = getOrElse(upper(safeInput), null!);
     expect(isSafeString(result)).toBe(true);
     expect(result.toString()).toBe('HELLO');
   });
 
   test('does not mark the result safe when the input is nullish', () => {
     const identity = createStringFilter((s: string): string => s);
-    expect(isSafeString(identity(null))).toBe(false);
-    expect(isSafeString(identity(undefined))).toBe(false);
+    expect(isSafeString(getOrElse(identity(null), null))).toBe(false);
+    expect(isSafeString(getOrElse(identity(undefined), null))).toBe(false);
   });
 
   test('does not mark the result safe when the input is a non-safe primitive', () => {
     const identity = createStringFilter((s: string): string => s);
-    expect(isSafeString(identity('plain'))).toBe(false);
+    expect(isSafeString(getOrElse(identity('plain'), null))).toBe(false);
   });
 });
 
@@ -108,14 +133,17 @@ describe('createMacroFilter', () => {
   test('returns the wrapped function return value directly without coercion', () => {
     const macro = createMacroFilter(
       ['value', 'fallback'],
-      (value: unknown, fallback: unknown) => value ?? fallback,
+      (value: unknown, fallback: unknown) => value ?? fallback
     );
     expect(macro(null, 'default')).toBe('default');
     expect(macro('present', 'default')).toBe('present');
   });
 
   test('supports a non-object return value from the wrapped function', () => {
-    const macro = createMacroFilter(['a', 'b'], (a: unknown, b: unknown) => (a as number) + (b as number));
+    const macro = createMacroFilter(
+      ['a', 'b'],
+      (a: unknown, b: unknown) => (a as number) + (b as number)
+    );
     expect(macro(2, 3)).toBe(5);
   });
 });

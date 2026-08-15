@@ -1,5 +1,5 @@
-import { describe, test, expect } from 'bun:test';
-import { isOk, getOrElse } from '@nunjucks/lib';
+import { describe, expect, test } from 'bun:test';
+import { getOrElse, isOk } from '@nunjucks/lib';
 import { abs, round } from './math.ts';
 
 describe('filters/math', () => {

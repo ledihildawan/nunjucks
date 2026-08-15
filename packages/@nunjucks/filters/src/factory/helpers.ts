@@ -1,10 +1,10 @@
-import { isNonNullish } from 'remeda';
-import { isSafeString, markSafe, copySafeness, getLogContext } from '@nunjucks/runtime';
+import type { ErrorDefinitionEntry, TemplateError } from '@nunjucks/error-formatter';
+import { createLog } from '@nunjucks/error-formatter';
+import { err, MATCH_ANY_RE, ok, type Result } from '@nunjucks/lib';
 import { escapeHtml } from '@nunjucks/lib/escape';
 import { normalize } from '@nunjucks/lib/normalize';
-import { ok, err, MATCH_ANY_RE, type Result } from '@nunjucks/lib';
-import { createLog } from '@nunjucks/error-formatter';
-import type { ErrorDefinitionEntry, TemplateError } from '@nunjucks/error-formatter';
+import { copySafeness, getLogContext, isSafeString, markSafe } from '@nunjucks/runtime';
+import { isNonNullish } from 'remeda';
 import type { FilterContext, SafeString } from './types.ts';
 
 interface FilterErrorInput {
@@ -16,29 +16,51 @@ interface FilterErrorInput {
 
 const filterError = ({ ctx, errorDef, params, subject }: FilterErrorInput) => {
   const logContext = getLogContext(ctx);
-  return createLog('error', { def: errorDef, params, subject, context: { phase: logContext.phase ?? 'render', templateName: logContext.templateName ?? 'inline', lineBase: 'zero' } });
+  return createLog('error', {
+    def: errorDef,
+    params,
+    subject,
+    context: {
+      phase: logContext.phase ?? 'render',
+      templateName: logContext.templateName ?? 'inline',
+      lineBase: 'zero',
+    },
+  });
 };
 
-interface MakeFilterErrorInput {
+interface CreateFilterErrorInput {
   errorDef: ErrorDefinitionEntry | undefined;
   params: Record<string, string>;
   subject: string;
   fallbackMessage: string;
 }
 
-const makeFilterError = ({ errorDef, params, subject, fallbackMessage }: MakeFilterErrorInput) => {
-  const resolvedDef: ErrorDefinitionEntry = errorDef ?? { name: 'FILTER_ERROR', message: fallbackMessage, pattern: MATCH_ANY_RE };
+const createFilterError = ({
+  errorDef,
+  params,
+  subject,
+  fallbackMessage,
+}: CreateFilterErrorInput) => {
+  const resolvedDef: ErrorDefinitionEntry = errorDef ?? {
+    name: 'FILTER_ERROR',
+    message: fallbackMessage,
+    pattern: MATCH_ANY_RE,
+  };
   return filterError({ ctx: undefined, errorDef: resolvedDef, params, subject });
 };
 
 const safeString = (str: unknown): SafeString => {
-  if (isSafeString(str)) { return str; }
+  if (isSafeString(str)) {
+    return str;
+  }
   const stringValue = isNonNullish(str) ? String(str) : '';
   return markSafe(stringValue) as SafeString;
 };
 
 const safeHtml = (str: unknown): SafeString => {
-  if (isSafeString(str)) { return str; }
+  if (isSafeString(str)) {
+    return str;
+  }
   const stringValue = isNonNullish(str) ? String(str) : '';
   return markSafe(escapeHtml(stringValue)) as SafeString;
 };
@@ -47,10 +69,20 @@ const preserveSafe = (original: unknown, result: string): string =>
   copySafeness(original as object, result) as string;
 
 const requireArrayError = (value: unknown, errorDef: ErrorDefinitionEntry | undefined) =>
-  makeFilterError({ errorDef, params: { type: typeof value }, subject: typeof value, fallbackMessage: `Expected array but got ${typeof value}` });
+  createFilterError({
+    errorDef,
+    params: { type: typeof value },
+    subject: typeof value,
+    fallbackMessage: `Expected array but got ${typeof value}`,
+  });
 
 const requireNumberError = (value: unknown, errorDef: ErrorDefinitionEntry | undefined) =>
-  makeFilterError({ errorDef, params: { type: typeof value }, subject: typeof value, fallbackMessage: `Expected number but got ${typeof value}` });
+  createFilterError({
+    errorDef,
+    params: { type: typeof value },
+    subject: typeof value,
+    fallbackMessage: `Expected number but got ${typeof value}`,
+  });
 
 interface ValidateItemsInput {
   items: unknown[];
@@ -58,14 +90,35 @@ interface ValidateItemsInput {
   errorDef: ErrorDefinitionEntry | undefined;
 }
 
-const validateItemsHaveAttr = <T>({ items, attr, errorDef }: ValidateItemsInput): Result<Record<string, T>[], TemplateError> => {
-  const everyHasAttr = items.every((item) => item !== null && typeof item === 'object' && attr in item);
+const validateItemsHaveAttr = <T>({
+  items,
+  attr,
+  errorDef,
+}: ValidateItemsInput): Result<Record<string, T>[], TemplateError> => {
+  const everyHasAttr = items.every(
+    (item) => item !== null && typeof item === 'object' && attr in item
+  );
   if (!everyHasAttr) {
-    return err(makeFilterError({ errorDef, params: { attr }, subject: attr, fallbackMessage: `Attribute "${attr}" not found in item` }));
+    return err(
+      createFilterError({
+        errorDef,
+        params: { attr },
+        subject: attr,
+        fallbackMessage: `Attribute "${attr}" not found in item`,
+      })
+    );
   }
   return ok(items as Record<string, T>[]);
 };
 
-export { makeFilterError, normalize, safeString, safeHtml, preserveSafe, requireArrayError, requireNumberError, validateItemsHaveAttr };
-
 export { isSafeString } from './types.ts';
+export {
+  createFilterError,
+  normalize,
+  preserveSafe,
+  requireArrayError,
+  requireNumberError,
+  safeHtml,
+  safeString,
+  validateItemsHaveAttr,
+};

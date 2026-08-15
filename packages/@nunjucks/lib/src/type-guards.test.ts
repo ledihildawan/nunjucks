@@ -1,21 +1,19 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import {
   hasOwn,
-  isObject,
-  isKeyedObject,
+  isArray,
+  isFunction,
   isIterable,
+  isKeyedObject,
+  isNonNullish,
+  isObject,
+  isPlainObject,
+  isString,
   isThenable,
-  isArrayOf,
   isTypedArray,
+  readNumber,
   readObject,
   readString,
-  readNumber,
-  readWith,
-  isNonNullish,
-  isFunction,
-  isString,
-  isArray,
-  isPlainObject,
 } from './type-guards.ts';
 
 describe('hasOwn', () => {
@@ -74,18 +72,6 @@ describe('isThenable', () => {
   });
 });
 
-describe('isArrayOf', () => {
-  const isStringArray = isArrayOf(isString);
-  test('true when every element satisfies the guard', () => {
-    expect(isStringArray(['a', 'b'])).toBe(true);
-  });
-  test('false when any element fails or input is not an array', () => {
-    expect(isStringArray(['a', 1])).toBe(false);
-    expect(isStringArray('ab')).toBe(false);
-    expect(isStringArray([])).toBe(true);
-  });
-});
-
 describe('readers', () => {
   test('readObject returns the object or empty fallback', () => {
     expect(readObject({ a: 1 })).toEqual({ a: 1 });
@@ -104,16 +90,6 @@ describe('readers', () => {
     expect(readNumber(3.5)).toBeNull();
     expect(readNumber('3')).toBeNull();
     expect(readNumber(null)).toBeNull();
-  });
-});
-
-describe('readWith', () => {
-  test('returns the value when the guard passes', () => {
-    expect(readWith('hello', isString, 'fallback')).toBe('hello');
-  });
-
-  test('returns the fallback when the guard fails', () => {
-    expect(readWith(42, isString, 'fallback')).toBe('fallback');
   });
 });
 

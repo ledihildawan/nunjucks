@@ -1,6 +1,5 @@
-export type { FilterContext } from './factory/index.ts';
-export * from './filters/string.ts';
 export * from './filters/array.ts';
-export * from './filters/object.ts';
 export * from './filters/math.ts';
-export { sanitize, type DomPurifyConfig } from './filters/sanitize.ts';
+export * from './filters/object.ts';
+export { type DomPurifyConfig, sanitize } from './filters/sanitize.ts';
+export * from './filters/string.ts';

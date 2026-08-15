@@ -11,8 +11,8 @@ const toComparable = (value: unknown): string | number => {
 interface ComparisonInput {
   left: unknown;
   right: unknown;
-  caseSens: boolean | string | undefined;
-  sortReverse: boolean | string | undefined;
+  caseSens: boolean | undefined;
+  sortReverse: boolean | undefined;
 }
 
 const compareValues = ({ left, right, caseSens, sortReverse }: ComparisonInput): number => {
@@ -21,20 +21,26 @@ const compareValues = ({ left, right, caseSens, sortReverse }: ComparisonInput):
   const lower = !caseSens && isString(leftRaw) && isString(rightRaw);
   const leftValue = lower ? leftRaw.toLowerCase() : leftRaw;
   const rightValue = lower ? rightRaw.toLowerCase() : rightRaw;
-  if (leftValue < rightValue) { return sortReverse ? 1 : -1; }
-  if (leftValue > rightValue) { return sortReverse ? -1 : 1; }
+  if (leftValue < rightValue) {
+    return sortReverse ? 1 : -1;
+  }
+  if (leftValue > rightValue) {
+    return sortReverse ? -1 : 1;
+  }
   return 0;
 };
 
 const getCompareValue = (item: unknown, sortAttr: string | undefined): unknown => {
-  if (!sortAttr) { return item; }
+  if (!sortAttr) {
+    return item;
+  }
   return getAttrGetter(sortAttr)(item as Record<string, unknown>);
 };
 
 interface SortComparatorOptions {
   sortAttr?: string | undefined;
-  sortReverse?: boolean | string | undefined;
-  caseSens?: boolean | string | undefined;
+  sortReverse?: boolean | undefined;
+  caseSens?: boolean | undefined;
 }
 
 const createSortComparator = ({ sortAttr, sortReverse, caseSens }: SortComparatorOptions) => {
@@ -45,4 +51,4 @@ const createSortComparator = ({ sortAttr, sortReverse, caseSens }: SortComparato
   };
 };
 
-export { toComparable, compareValues, createSortComparator };
+export { compareValues, createSortComparator, toComparable };

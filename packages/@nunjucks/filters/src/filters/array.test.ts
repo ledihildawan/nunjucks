@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
-import { isOk, isErr, getOrElse } from '@nunjucks/lib';
-import { first, last, lengthFilter, reverse, slice, sum, sort } from './array.ts';
+import { describe, expect, test } from 'bun:test';
+import { getOrElse, isErr, isOk } from '@nunjucks/lib';
+import { first, last, lengthFilter, reverse, slice, sort, sum } from './array.ts';
 
 describe('filters/array', () => {
   describe('first', () => {
@@ -47,28 +47,42 @@ describe('filters/array', () => {
 
   describe('lengthFilter', () => {
     test('returns the length of an array', () => {
-      expect(lengthFilter([1, 2, 3, 4])).toBe(4);
-      expect(lengthFilter([])).toBe(0);
+      expect(getOrElse(lengthFilter([1, 2, 3, 4]), null)).toBe(4);
+      expect(getOrElse(lengthFilter([]), null)).toBe(0);
     });
 
     test('returns the length of a string', () => {
-      expect(lengthFilter('hello')).toBe(5);
+      expect(getOrElse(lengthFilter('hello'), null)).toBe(5);
     });
 
     test('returns the number of own keys on a plain object', () => {
-      expect(lengthFilter({ a: 1, b: 2, c: 3 })).toBe(3);
-      expect(lengthFilter({})).toBe(0);
+      expect(getOrElse(lengthFilter({ a: 1, b: 2, c: 3 }), null)).toBe(3);
+      expect(getOrElse(lengthFilter({}), null)).toBe(0);
     });
 
     test('returns the size of a Map or Set', () => {
-      expect(lengthFilter(new Map([['a', 1], ['b', 2]]))).toBe(2);
-      expect(lengthFilter(new Set([1, 2, 3]))).toBe(3);
+      expect(
+        getOrElse(
+          lengthFilter(
+            new Map([
+              ['a', 1],
+              ['b', 2],
+            ])
+          ),
+          null
+        )
+      ).toBe(2);
+      expect(getOrElse(lengthFilter(new Set([1, 2, 3])), null)).toBe(3);
     });
 
     test('treats null, undefined, and false as an empty value', () => {
-      expect(lengthFilter(null)).toBe(0);
-      expect(lengthFilter(undefined)).toBe(0);
-      expect(lengthFilter(false)).toBe(0);
+      expect(getOrElse(lengthFilter(null), null)).toBe(0);
+      expect(getOrElse(lengthFilter(undefined), null)).toBe(0);
+      expect(getOrElse(lengthFilter(false), null)).toBe(0);
+    });
+
+    test('returns an ok result', () => {
+      expect(isOk(lengthFilter([1, 2]))).toBe(true);
     });
   });
 
@@ -245,6 +259,33 @@ describe('filters/array', () => {
     test('returns error when input is not an array', () => {
       const result = sort('not array');
       expect(isErr(result)).toBe(true);
+    });
+
+    test('coerces string "true" kwargs to boolean true', () => {
+      const result = sort(['banana', 'Apple', 'cherry'], false, 'true');
+      expect(isOk(result)).toBe(true);
+      const sortedCopy = ['banana', 'Apple', 'cherry'].sort();
+      expect(getOrElse(result, null)).toEqual(sortedCopy);
+    });
+
+    test('treats non-"true" string kwargs as false', () => {
+      const result = sort(['banana', 'Apple', 'cherry'], false, 'yes');
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual(['Apple', 'banana', 'cherry']);
+    });
+
+    test('coerces string reverse flag when sorting by attribute positionally', () => {
+      const items = [{ age: 30 }, { age: 10 }, { age: 20 }];
+      const result = sort(items, 'age', 'true');
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual([{ age: 30 }, { age: 20 }, { age: 10 }]);
+    });
+
+    test('binds reversed, caseSens, and attr from keyword arguments', () => {
+      const items = [{ age: 30 }, { age: 10 }, { age: 20 }];
+      const result = sort(items, { keywords: true, attr: 'age', reversed: true });
+      expect(isOk(result)).toBe(true);
+      expect(getOrElse(result, null)).toEqual([{ age: 30 }, { age: 20 }, { age: 10 }]);
     });
   });
 });

@@ -15,11 +15,6 @@ const isIterable = (value: unknown): value is Iterable<unknown> =>
 const isThenable = (value: unknown): value is Promise<unknown> =>
   isKeyedObject(value) && typeof value.then === 'function';
 
-const isArrayOf =
-  <T>(guard: (value: unknown) => value is T) =>
-  (values: unknown): values is T[] =>
-    Array.isArray(values) && values.every(guard);
-
 const readObject = (value: unknown): Record<string, unknown> => {
   if (isObject(value)) {
     return value;
@@ -41,36 +36,32 @@ const readNumber = (value: unknown): number | null => {
   return null;
 };
 
-const readWith =
-  <T>(
-    value: unknown,
-    guard: (value: unknown) => value is T,
-    fallback: T
-  ): T =>
-    guard(value) ? value : fallback;
-
 const isTypedArray = (value: unknown): boolean =>
-  value instanceof Int8Array || value instanceof Uint8Array || value instanceof Uint8ClampedArray ||
-  value instanceof Int16Array || value instanceof Uint16Array || value instanceof Int32Array ||
-  value instanceof Uint32Array || value instanceof Float32Array || value instanceof Float64Array ||
-  value instanceof BigInt64Array || value instanceof BigUint64Array;
+  value instanceof Int8Array ||
+  value instanceof Uint8Array ||
+  value instanceof Uint8ClampedArray ||
+  value instanceof Int16Array ||
+  value instanceof Uint16Array ||
+  value instanceof Int32Array ||
+  value instanceof Uint32Array ||
+  value instanceof Float32Array ||
+  value instanceof Float64Array ||
+  value instanceof BigInt64Array ||
+  value instanceof BigUint64Array;
 
 const isResultLike = (value: unknown): value is { ok: boolean } =>
   isKeyedObject(value) && typeof value.ok === 'boolean';
 
+export { isArray, isFunction, isNonNullish, isPlainObject, isString } from 'remeda';
 export {
   hasOwn,
-  isObject,
-  isKeyedObject,
   isIterable,
-  isThenable,
-  isArrayOf,
-  isTypedArray,
+  isKeyedObject,
+  isObject,
   isResultLike,
+  isThenable,
+  isTypedArray,
+  readNumber,
   readObject,
   readString,
-  readNumber,
-  readWith,
 };
-
-export { isNonNullish, isFunction, isString, isArray, isPlainObject } from 'remeda';

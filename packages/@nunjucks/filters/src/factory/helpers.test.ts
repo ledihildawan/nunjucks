@@ -1,15 +1,15 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import type { ErrorDefinitionEntry } from '@nunjucks/error-formatter';
 import {
-  makeFilterError,
+  createFilterError,
+  isSafeString,
   normalize,
-  safeString,
-  safeHtml,
   preserveSafe,
   requireArrayError,
   requireNumberError,
+  safeHtml,
+  safeString,
   validateItemsHaveAttr,
-  isSafeString,
 } from './helpers.ts';
 
 const filterErrorDef: ErrorDefinitionEntry = {
@@ -21,7 +21,11 @@ const filterErrorDef: ErrorDefinitionEntry = {
 describe('normalize', () => {
   const fallback = 'fallback';
 
-  type NormalizeCase = { readonly label: string; readonly input: unknown; readonly expected: string };
+  type NormalizeCase = {
+    readonly label: string;
+    readonly input: unknown;
+    readonly expected: string;
+  };
   const normalizeCases: readonly NormalizeCase[] = [
     { label: 'a truthy string', input: 'hello', expected: 'hello' },
     { label: 'a number coerced to string', input: 42, expected: '42' },
@@ -176,9 +180,9 @@ describe('validateItemsHaveAttr', () => {
   });
 });
 
-describe('makeFilterError', () => {
+describe('createFilterError', () => {
   test('builds an error from a provided errorDef', () => {
-    const result = makeFilterError({
+    const result = createFilterError({
       errorDef: filterErrorDef,
       params: { attr: 'name' },
       subject: 'name',
@@ -191,7 +195,7 @@ describe('makeFilterError', () => {
   });
 
   test('falls back to a FILTER_ERROR with the fallbackMessage when errorDef is undefined', () => {
-    const result = makeFilterError({
+    const result = createFilterError({
       errorDef: undefined,
       params: {},
       subject: 'subject',
@@ -203,7 +207,7 @@ describe('makeFilterError', () => {
   });
 
   test('applies the default inline log context produced by the internal getLogContext', () => {
-    const result = makeFilterError({
+    const result = createFilterError({
       errorDef: undefined,
       params: {},
       subject: 'subject',
@@ -219,7 +223,7 @@ describe('makeFilterError', () => {
       message: (args) => `attr ${(args as Record<string, string> | undefined)?.attr ?? '?'}`,
       pattern: /./,
     };
-    const result = makeFilterError({
+    const result = createFilterError({
       errorDef: fnDef,
       params: { attr: 'name' },
       subject: 'name',
@@ -230,7 +234,11 @@ describe('makeFilterError', () => {
 });
 
 describe('requireArrayError', () => {
-  type RequireErrorCase = { readonly label: string; readonly input: unknown; readonly expectedType: string };
+  type RequireErrorCase = {
+    readonly label: string;
+    readonly input: unknown;
+    readonly expectedType: string;
+  };
   const requireArrayCases: readonly RequireErrorCase[] = [
     { label: 'a string', input: 'not-array', expectedType: 'string' },
     { label: 'a number', input: 42, expectedType: 'number' },
@@ -257,7 +265,11 @@ describe('requireArrayError', () => {
 });
 
 describe('requireNumberError', () => {
-  type RequireErrorCase = { readonly label: string; readonly input: unknown; readonly expectedType: string };
+  type RequireErrorCase = {
+    readonly label: string;
+    readonly input: unknown;
+    readonly expectedType: string;
+  };
   const requireNumberCases: readonly RequireErrorCase[] = [
     { label: 'a string', input: 'not-number', expectedType: 'string' },
     { label: 'a boolean', input: true, expectedType: 'boolean' },

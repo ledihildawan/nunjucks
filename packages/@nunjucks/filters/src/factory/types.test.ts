@@ -1,9 +1,13 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { markSafe } from '@nunjucks/runtime';
 import { isArray, isSafeString } from './types.ts';
 
 describe('isArray', () => {
-  type IsArrayCase = { readonly label: string; readonly input: unknown; readonly expected: boolean };
+  type IsArrayCase = {
+    readonly label: string;
+    readonly input: unknown;
+    readonly expected: boolean;
+  };
   const isArrayCases: readonly IsArrayCase[] = [
     { label: 'an empty array', input: [], expected: true },
     { label: 'a populated array of numbers', input: [1, 2, 3], expected: true },
