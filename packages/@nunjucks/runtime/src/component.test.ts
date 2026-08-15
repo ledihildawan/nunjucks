@@ -84,7 +84,8 @@ describe('createComponent', () => {
       func: (a: number, b: number, extra: { c?: number }) => a + b + (extra.c || 0),
     });
     const kwargs = createKeywordArgs({ b: 10 });
-    expect((fn as (a: number, kwargs: { b: number }) => number)(5, kwargs)).toBe(15);
+    const invokeWithKwargs = fn as (a: number, kwargs: unknown) => number;
+    expect(invokeWithKwargs(5, kwargs)).toBe(15);
   });
 
   test('extra positional args fill kwarg names', () => {

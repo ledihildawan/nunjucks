@@ -26,54 +26,56 @@ export interface TemplateValidatorConfig {
 const checkTemplateSize = (
   template: string,
   config: TemplateValidatorConfig
-): TemplateValidationError | null => {
+): readonly TemplateValidationError[] => {
   if (!config.maxTemplateSize || config.maxTemplateSize <= 0) {
-    return null;
+    return [];
   }
   const size = template.length;
   if (size > config.maxTemplateSize) {
-    return {
-      code: 'TEMPLATE_SIZE_EXCEEDED',
-      message: `Template exceeds maximum size of ${config.maxTemplateSize} bytes`,
-      subject: 'maxTemplateSize',
-    };
+    return [
+      {
+        code: 'TEMPLATE_SIZE_EXCEEDED',
+        message: `Template exceeds maximum size of ${config.maxTemplateSize} bytes`,
+        subject: 'maxTemplateSize',
+      },
+    ];
   }
-  return null;
+  return [];
 };
 
 const checkDangerousCode = (
   template: string,
   config: TemplateValidatorConfig
-): TemplateValidationError | null => {
+): readonly TemplateValidationError[] => {
   if (!config.strictMode) {
-    return null;
+    return [];
   }
   const violations = scanTemplateForDangerousCode(template);
   if (violations.length === 0) {
-    return null;
+    return [];
   }
   const [first] = violations;
-  return {
-    code: 'DANGEROUS_TEMPLATE_CODE',
-    subject: first?.name ?? 'template',
-    message: `Template contains dangerous code: ${pipe(
+  return [
+    {
+      code: 'DANGEROUS_TEMPLATE_CODE',
+      subject: first?.name ?? 'template',
+      message: `Template contains dangerous code: ${pipe(
+        violations,
+        map((v) => v.message),
+        join('; ')
+      )}`,
       violations,
-      map((v) => v.message),
-      join('; ')
-    )}`,
-    violations,
-    lineno: first?.line,
-    colno: first?.col,
-  };
+      lineno: first?.line,
+      colno: first?.col,
+    },
+  ];
 };
 
 export const validateTemplate = (
   template: string,
   config: TemplateValidatorConfig
 ): TemplateValidationResult => {
-  const errors = [checkTemplateSize(template, config), checkDangerousCode(template, config)].filter(
-    (e): e is TemplateValidationError => e !== null
-  );
+  const errors = [...checkTemplateSize(template, config), ...checkDangerousCode(template, config)];
 
   if (!isNonEmpty(errors)) {
     return ok(undefined);

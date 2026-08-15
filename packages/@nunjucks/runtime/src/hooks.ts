@@ -1,3 +1,4 @@
+// WHY: `as const` keeps HookEvent a 9-literal union instead of collapsing to string
 const HOOK_EVENTS = Object.freeze({
   TEMPLATE_LOADING: 'template:loading',
   TEMPLATE_LOADED: 'template:loaded',
@@ -8,7 +9,7 @@ const HOOK_EVENTS = Object.freeze({
   RENDER_START: 'render:start',
   RENDER_COMPLETE: 'render:complete',
   RENDER_ERROR: 'render:error',
-});
+} as const);
 
 type HookEvent = (typeof HOOK_EVENTS)[keyof typeof HOOK_EVENTS];
 

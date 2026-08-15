@@ -17,25 +17,25 @@ const normalizeIndex = ({ idx, len, defaultVal, step }: NormalizeIndexInput): nu
   return Math.max(0, Math.min(len, idx < 0 ? len + idx : idx));
 };
 
-interface SliceCollectInput<T> {
-  source: readonly T[] | string;
+interface SliceCollectInput {
+  source: readonly unknown[] | string;
   start: number;
   stop: number;
   step: number;
 }
 
-const collectForward = <T>({ source, start, stop, step }: SliceCollectInput<T>): readonly T[] => {
-  const drain = (index: number, acc: T[]): readonly T[] => {
+const collectForward = ({ source, start, stop, step }: SliceCollectInput): readonly unknown[] => {
+  const drain = (index: number, acc: unknown[]): readonly unknown[] => {
     if (index >= stop) { return acc; }
-    return drain(index + step, [...acc, source[index] as T]);
+    return drain(index + step, [...acc, source[index]]);
   };
   return drain(start, []);
 };
 
-const collectBackward = <T>({ source, start, stop, step }: SliceCollectInput<T>): readonly T[] => {
-  const drain = (index: number, acc: T[]): readonly T[] => {
+const collectBackward = ({ source, start, stop, step }: SliceCollectInput): readonly unknown[] => {
+  const drain = (index: number, acc: unknown[]): readonly unknown[] => {
     if (index < 0 || index <= stop) { return acc; }
-    return drain(index + step, [...acc, source[index] as T]);
+    return drain(index + step, [...acc, source[index]]);
   };
   return drain(start, []);
 };

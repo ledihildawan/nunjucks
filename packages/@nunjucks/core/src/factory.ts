@@ -24,10 +24,8 @@ import type { RenderOptions, RenderStreamResult } from './render/render-types.ts
 // base bag is spread into the internal render options ({ ...defaults, ...options }). A present-undefined key
 // (e.g. sandbox: undefined from an absent security group) would clobber the default; removing it lets the
 // default survive. null is preserved (it is meaningful for blockedContextKeys etc.).
-const compact = <T extends Record<string, unknown>>(record: T): Partial<T> =>
-  Object.fromEntries(
-    Object.entries(record).filter(([, value]) => value !== undefined)
-  ) as Partial<T>;
+const compact = (record: Record<string, unknown>): Record<string, unknown> =>
+  Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined));
 
 interface FactoryValidationInput {
   filters: Record<string, unknown>;

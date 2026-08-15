@@ -95,12 +95,7 @@ const BUILTIN_TESTS: Readonly<Record<string, TestFn>> = {
   escaped: (target) => !isSafeString(target),
 };
 
-const runTest = <T = unknown>(
-  env: unknown,
-  name: string,
-  target: T,
-  ...args: unknown[]
-): boolean => {
+const runTest = (env: unknown, name: string, target: unknown, ...args: unknown[]): boolean => {
   const builtin = BUILTIN_TESTS[name];
   if (builtin) {
     return builtin(target, ...args);

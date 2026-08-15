@@ -22,15 +22,17 @@ const visitAndScrub = (value: unknown, seen: WeakSet<object>): unknown => {
   );
 };
 
-export const scrubDangerousReferences = <T>(context: T): T => {
+// WHY: accepts `unknown` — the scrubber is applied to untrusted render-context shapes and
+// returns non-objects untouched (pinned by tests); the generic `T → T` it replaced was
+// phantom (every caller passed Record<string, unknown>) and asserted more than it proved.
+export const scrubDangerousReferences = (context: unknown): unknown => {
   const seen = new WeakSet<object>();
-  // WHY: visitAndScrub returns `unknown` because it rebuilds objects via
-  // Object.fromEntries. The structural invariant it upholds: for non-dangerous
-  // inputs every key is preserved with its (recursively scrubbed) value, so the
-  // result is structurally assignable back to T. Dangerous keys are *removed*,
-  // making the result a structural subtype of T — never a supertype — so the
-  // cast is a sound upper bound. TS cannot prove the round-trip, hence the cast.
-  return visitAndScrub(context, seen) as T;
+  // WHY: visitAndScrub rebuilds objects via Object.fromEntries. The structural invariant it
+  // upholds: for non-dangerous inputs every key is preserved with its (recursively scrubbed)
+  // value, so the result is structurally assignable back to the input's shape. Dangerous keys
+  // are *removed*, making the result a structural subtype — never a supertype — so the cast
+  // is a sound upper bound. TS cannot prove the round-trip, hence the cast.
+  return visitAndScrub(context, seen);
 };
 
 export { visitAndScrub };

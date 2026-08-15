@@ -45,6 +45,11 @@ export const memberLookup = (
       : value in Object(target));
 
   if (!hasProperty) {
+    // WHY: the not-found sentinel is a CALLABLE object — templates that invoke a missing
+    // method (`{{ user.missing() }}`) flow through call-wrap, which applies the function and
+    // yields undefined instead of crashing; the discriminator guards
+    // (isPropertyNotFoundResult) and optionalMemberLookup bridge the same state back into
+    // the value channel for non-call sites. Documented in ARCHITECTURE.md §7 sentinels.
     const marker = { [PROP_NOT_FOUND]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: value };
     const callable = Object.assign(() => undefined, marker);
     Object.setPrototypeOf(callable, null);
@@ -92,14 +97,14 @@ export const optionalMemberLookup = (
   return result;
 };
 
-interface SliceOptions<T> {
-  source: readonly T[] | string;
+interface SliceOptions {
+  source: readonly unknown[] | string;
   start: number | null;
   stop: number | null;
   step: number | null;
 }
 
-export const slice = <T>(options: SliceOptions<T>): readonly T[] | string => {
+export const slice = (options: SliceOptions): readonly unknown[] | string => {
   const { source, start, stop, step } = options;
   if (step === 0) {
     throw createLog('error', {

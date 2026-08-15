@@ -29,10 +29,10 @@ export const isCompiledTemplateExports = (value: unknown): value is CompiledTemp
   return typeof (value as { root?: unknown }).root === 'function';
 };
 
-export const extractBlocks = <T = unknown>(source: Record<string, T>): Partial<Record<string, T>> =>
+export const extractBlocks = (source: Record<string, unknown>): Partial<Record<string, unknown>> =>
   pipe(
     Object.entries(source),
-    filter(([key]: readonly [string, T]) => key.startsWith('b_')),
-    map(([key, value]: readonly [string, T]) => [key.slice(2), value]),
+    filter(([key]: readonly [string, unknown]) => key.startsWith('b_')),
+    map(([key, value]: readonly [string, unknown]) => [key.slice(2), value]),
     Object.fromEntries
-  ) as Partial<Record<string, T>>;
+  ) as Partial<Record<string, unknown>>;

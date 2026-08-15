@@ -222,7 +222,9 @@ const handleContextStrictMode = async (
     return err(await createDangerousContextError({ context, config, dangerousValuePaths }));
   }
 
-  const scrubbedContext = scrubDangerousReferences(context);
+  // WHY: scrubber's structural invariant (scrubber.ts) guarantees record-in → record-out,
+  // so narrowing the `unknown` return back to the context shape is sound.
+  const scrubbedContext = scrubDangerousReferences(context) as Record<string, unknown>;
   const scrubWarning = createLog('warning', {
     def: getError('DANGEROUS_CONTEXT_VALUE_SCRUBBED'),
     params: { values: dangerousValuePaths.join(', ') },

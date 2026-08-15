@@ -47,39 +47,59 @@ export function createComponent<A extends unknown[], R>({
       return Reflect.apply(func, this, [{ ...positionalOptions, ...namedKwargs }]) as R;
     }
 
-    const args =
-      argCount > argNames.length
-        ? ((): unknown[] => {
-            const extraArgs = componentArgs.slice(argNames.length, argCount);
-            const extraKwargs = Object.fromEntries(
-              extraArgs
-                .map((value, i) => [kwargNames[i], value] as [string | undefined, unknown])
-                .filter((entry): entry is [string, unknown] => entry[0] !== undefined)
-            );
-            return [...componentArgs.slice(0, argNames.length), { ...kwargs, ...extraKwargs }];
-          })()
-        : argCount < argNames.length
-          ? ((): unknown[] => {
-              const missingNames = argNames.slice(argCount);
-              const consumedSet = new Set(missingNames);
-              const remainingKwargs = createKeywordArgs(
-                Object.fromEntries(Object.entries(kwargs).filter(([k]) => !consumedSet.has(k)))
-              );
-              return [
-                ...componentArgs.slice(0, argCount),
-                ...missingNames.map((argument) => kwargs[argument]),
-                remainingKwargs,
-              ];
-            })()
-          : componentArgs;
+    const args = resolveComponentArgs({ componentArgs, argNames, kwargNames, kwargs, argCount });
 
     return Reflect.apply(func, this, args) as R;
   };
 }
 
-export const createKeywordArgs = <T extends Record<string, unknown>>(
-  record: T
-): T & { keywords: true } => ({
+interface ResolveComponentArgsInput {
+  componentArgs: unknown[];
+  argNames: readonly string[];
+  kwargNames: readonly string[];
+  kwargs: Record<string, unknown>;
+  argCount: number;
+}
+
+// WHY: positional/keyword reconciliation — extra positionals past the named arity fold into
+// the trailing kwargs object; missing names are filled from kwargs (or undefined) so the
+// component always receives exactly `argNames.length` positional slots.
+const resolveComponentArgs = ({
+  componentArgs,
+  argNames,
+  kwargNames,
+  kwargs,
+  argCount,
+}: ResolveComponentArgsInput): unknown[] => {
+  if (argCount > argNames.length) {
+    const extraArgs = componentArgs.slice(argNames.length, argCount);
+    const extraKwargs = Object.fromEntries(
+      extraArgs
+        .map((value, i) => [kwargNames[i], value] as [string | undefined, unknown])
+        .filter((entry): entry is [string, unknown] => entry[0] !== undefined)
+    );
+    return [...componentArgs.slice(0, argNames.length), { ...kwargs, ...extraKwargs }];
+  }
+
+  if (argCount < argNames.length) {
+    const missingNames = argNames.slice(argCount);
+    const consumedSet = new Set(missingNames);
+    const remainingKwargs = createKeywordArgs(
+      Object.fromEntries(Object.entries(kwargs).filter(([k]) => !consumedSet.has(k)))
+    );
+    return [
+      ...componentArgs.slice(0, argCount),
+      ...missingNames.map((argument) => kwargs[argument]),
+      remainingKwargs,
+    ];
+  }
+
+  return componentArgs;
+};
+
+export const createKeywordArgs = (
+  record: Record<string, unknown>
+): Record<string, unknown> & { keywords: true } => ({
   ...record,
   keywords: true,
 });
