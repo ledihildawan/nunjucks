@@ -1,13 +1,13 @@
-import { pipe, values, map } from 'remeda';
-import type { ErrorDefinition, Classification, SubjectExtractor, ExtraExtractor } from './types.ts';
-import { firstCapture } from './types.ts';
-import { RUNTIME_ERRORS } from './runtime/index.ts';
-import { PARSER_ERRORS } from './parser.ts';
-import { SANDBOX_ERRORS } from './sandbox.ts';
-import { IO_ERRORS } from './io.ts';
+import { map, pipe, values } from 'remeda';
 import { FILTER_ERRORS } from './filter.ts';
-import { TEMPLATE_ERRORS } from './template.ts';
+import { IO_ERRORS } from './io.ts';
 import { LEXER_ERRORS } from './lexer.ts';
+import { PARSER_ERRORS } from './parser.ts';
+import { RUNTIME_ERRORS } from './runtime/index.ts';
+import { SANDBOX_ERRORS } from './sandbox.ts';
+import { TEMPLATE_ERRORS } from './template.ts';
+import type { Classification, ErrorDefinition, ExtraExtractor, SubjectExtractor } from './types.ts';
+import { firstCapture } from './types.ts';
 
 const allErrors = {
   ...RUNTIME_ERRORS,
@@ -16,7 +16,7 @@ const allErrors = {
   ...IO_ERRORS,
   ...FILTER_ERRORS,
   ...TEMPLATE_ERRORS,
-  ...LEXER_ERRORS
+  ...LEXER_ERRORS,
 };
 
 type ErrorName = keyof typeof allErrors;
@@ -50,14 +50,10 @@ const toRule = (def: ErrorDefinition): Rule => ({
   fixCode: def.fixCode,
   fixComment: def.fixComment,
   documentationUrl: def.documentationUrl,
-  severity: def.severity
+  severity: def.severity,
 });
 
-const RULES: Rule[] = pipe(
-  ERROR_DEFINITIONS,
-  values(),
-  map(toRule)
-);
+const RULES: Rule[] = pipe(ERROR_DEFINITIONS, values(), map(toRule));
 
 const DEFAULT_CLASSIFICATION: Classification = {
   category: 'unknown',
@@ -65,12 +61,12 @@ const DEFAULT_CLASSIFICATION: Classification = {
   causes: [
     'Check template **syntax**',
     'Verify **variable scope**',
-    'Check **render context** data'
+    'Check **render context** data',
   ],
   fixCode: 'Inspect the error message above for clues',
   fixComment: 'Review the template source and context',
   documentationUrl: null,
-  severity: 'error'
+  severity: 'error',
 };
 
-export { ERROR_DEFINITIONS, getError, RULES, DEFAULT_CLASSIFICATION, toRule };
+export { DEFAULT_CLASSIFICATION, ERROR_DEFINITIONS, getError, RULES, toRule };

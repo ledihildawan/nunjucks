@@ -1,25 +1,34 @@
+import type { LineBase } from '@nunjucks/error-catalog';
 import { classifyFromError } from '@nunjucks/error-catalog';
 import { mergeErrorParts } from './presentation/error/error-parts.ts';
-import { toText } from './to-text.ts';
-import { escapeHtml } from './presentation/syntax-highlight/highlight.ts';
 import { toDisplayLocation } from './presentation/source-trace/location.ts';
-import type { LineBase } from '@nunjucks/error-catalog';
+import { escapeHtml } from './presentation/syntax-highlight/highlight.ts';
 import type { ClassifiedError, ErrorLike, HumanTitleInput, LocationInfo } from './to-html-types.ts';
+import { toText } from './to-text.ts';
 
 const UNDEFINED_OUTPUT_RE = /attempted to output '([^']+)'/u;
 const RESERVED_KEYWORD_RE = /Cannot use reserved (\w+) '([^']+)'/u;
 
 const renderBadge = (variant: string, text?: string | null): string => {
-  if (!text) { return ''; }
+  if (!text) {
+    return '';
+  }
   return `<span class="badge ${variant}">${escapeHtml(text)}</span>`;
 };
 
-const resolveHumanTitle = ({ category, undefinedName, plain, fallback }: HumanTitleInput): string => {
+const resolveHumanTitle = ({
+  category,
+  undefinedName,
+  plain,
+  fallback,
+}: HumanTitleInput): string => {
   const named = undefinedName ?? 'unknown';
 
   switch (category) {
     case 'UNDEFINED_VARIABLE':
-      if (!undefinedName) { return fallback; }
+      if (!undefinedName) {
+        return fallback;
+      }
       return `Variable '${undefinedName}' is not defined`;
     case 'UNDEFINED_FUNCTION':
       return `Function '${named}' is not defined`;
@@ -37,7 +46,9 @@ const resolveHumanTitle = ({ category, undefinedName, plain, fallback }: HumanTi
       return plain;
     case 'RESERVED_KEYWORD': {
       const match = plain.match(RESERVED_KEYWORD_RE);
-      if (!match) { return fallback; }
+      if (!match) {
+        return fallback;
+      }
       return `Cannot use reserved ${match[1]} '${match[2]}'`;
     }
     default:
@@ -72,7 +83,7 @@ const resolveErrorLocation = (error: ErrorLike | null, input: ErrorLocationInput
   const location = toDisplayLocation({
     lineno: input.lineno ?? error?.lineno ?? null,
     colno: input.colno ?? error?.colno ?? null,
-    lineBase: lineBaseValue
+    lineBase: lineBaseValue,
   });
   return {
     displayLine: location.line,
@@ -90,19 +101,27 @@ const classifyAndBuildTitle = (error: ErrorLike) => {
     category: classified.category,
     undefinedName,
     plain,
-    fallback: classified.title ?? plain
+    fallback: classified.title ?? plain,
   });
 };
 
 const buildErrorDisplay = (
   error: ErrorLike,
-  input: { templatePath: string | undefined; lineno: number | undefined; colno: number | undefined; isJsCaller: boolean }
+  input: {
+    templatePath: string | undefined;
+    lineno: number | undefined;
+    colno: number | undefined;
+    isJsCaller: boolean;
+  }
 ) => {
   const classified = classifyError(error);
-  const { displayLine, displayCol, displayPath } = resolveErrorLocation(
-    error, { lineno: input.lineno, colno: input.colno, templatePath: input.templatePath, isJsCaller: input.isJsCaller }
-  );
+  const { displayLine, displayCol, displayPath } = resolveErrorLocation(error, {
+    lineno: input.lineno,
+    colno: input.colno,
+    templatePath: input.templatePath,
+    isJsCaller: input.isJsCaller,
+  });
   return { classified, displayLine, displayCol, displayPath };
 };
 
-export { classifyError, classifyAndBuildTitle, buildErrorDisplay, renderBadge, resolveHumanTitle };
+export { buildErrorDisplay, classifyAndBuildTitle, classifyError, renderBadge, resolveHumanTitle };

@@ -14,6 +14,10 @@
     "@nunjucks/shared": "workspace:*"
   },
   "description": "AST node types for Nunjucks template engine",
-  "keywords": ["nunjucks", "ast", "nodes"],
+  "keywords": [
+    "nunjucks",
+    "ast",
+    "nodes"
+  ],
   "license": "BSD-2-Clause"
 }

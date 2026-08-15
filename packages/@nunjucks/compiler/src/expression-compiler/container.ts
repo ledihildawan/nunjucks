@@ -1,11 +1,19 @@
+import type {
+  CallNode,
+  ChildrenNode,
+  Node,
+  PairNode,
+  SpreadNode,
+  SymbolNode,
+  TemplateLiteralNode,
+} from '@nunjucks/nodes';
 import { isLiteral, isSpread, isSymbol, literal } from '@nunjucks/nodes';
-import type { Node, SymbolNode, ChildrenNode, PairNode, SpreadNode, TemplateLiteralNode, CallNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
+import { loc } from '@nunjucks/shared';
 import { forEach, join, map, pipe } from 'remeda';
+import { assertSafeIdentifier } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
-import { assertSafeIdentifier } from '../codegen.ts';
-import { loc } from '@nunjucks/lexer';
 
 const STRING_ESCAPE_MAP: Record<string, string> = {
   '\\': '\\\\',
@@ -19,13 +27,21 @@ const STRING_ESCAPE_MAP: Record<string, string> = {
 const TEMPLATE_ESCAPE_MAP: Record<string, string> = {
   '\\': '\\\\',
   '`': '\\`',
-  '$': '\\$',
+  $: '\\$',
 };
 
 const escapeString = (str: string): string =>
-  join('')(pipe([...str], map((char) => STRING_ESCAPE_MAP[char] ?? char)));
+  join('')(
+    pipe(
+      [...str],
+      map((char) => STRING_ESCAPE_MAP[char] ?? char)
+    )
+  );
 
-const compileLiteral = (compiler: Compiler, node: { value?: unknown; lineno: number; colno: number }): void => {
+const compileLiteral = (
+  compiler: Compiler,
+  node: { value?: unknown; lineno: number; colno: number }
+): void => {
   if (typeof node.value === 'string') {
     const value = escapeString(node.value);
     compiler.emit(`"${value}"`);
@@ -48,11 +64,17 @@ const compileSymbol = (compiler: Compiler, { node, frame }: CompileNodeInput<Sym
   }
 };
 
-const compileGroup = (compiler: Compiler, { node, frame }: CompileNodeInput<ChildrenNode>): void => {
+const compileGroup = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<ChildrenNode>
+): void => {
   compileAggregate(compiler, node, frame, { startChar: '(', endChar: ')' });
 };
 
-const compileArray = (compiler: Compiler, { node, frame }: CompileNodeInput<ChildrenNode>): void => {
+const compileArray = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<ChildrenNode>
+): void => {
   compileAggregate(compiler, node, frame, { startChar: '[', endChar: ']' });
 };
 
@@ -60,22 +82,28 @@ const compileDict = (compiler: Compiler, { node, frame }: CompileNodeInput<Child
   compileAggregate(compiler, node, frame, { startChar: '{', endChar: '}' });
 };
 
-const compileNodeList = (compiler: Compiler, { node, frame }: CompileNodeInput<ChildrenNode>): void => {
+const compileNodeList = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<ChildrenNode>
+): void => {
   compiler.compileChildren(node, frame);
 };
 
 const compilePair = (compiler: Compiler, { node, frame }: CompileNodeInput<PairNode>): void => {
   const rawKey = node.key;
   const value = node.value;
-  const key = isSymbol(rawKey)
-    ? literal(loc(rawKey), rawKey.value)
-    : rawKey;
+  const key = isSymbol(rawKey) ? literal(loc(rawKey), rawKey.value) : rawKey;
 
-  if (typeof rawKey !== 'string' && !isSymbol(rawKey) && !(isLiteral(rawKey) &&
-    typeof rawKey.value === 'string')) {
-    compiler.fail('compilePair: Dict keys must be strings or names',
+  if (
+    typeof rawKey !== 'string' &&
+    !isSymbol(rawKey) &&
+    !(isLiteral(rawKey) && typeof rawKey.value === 'string')
+  ) {
+    compiler.fail(
+      'compilePair: Dict keys must be strings or names',
       typeof rawKey !== 'string' ? rawKey.lineno : node.lineno,
-      typeof rawKey !== 'string' ? rawKey.colno : node.colno);
+      typeof rawKey !== 'string' ? rawKey.colno : node.colno
+    );
   }
 
   const keyNode = typeof key === 'string' ? literal(loc(node), key) : key;
@@ -84,7 +112,10 @@ const compilePair = (compiler: Compiler, { node, frame }: CompileNodeInput<PairN
   compiler.compileExpression(value, frame);
 };
 
-const compileKeywordArgs = (compiler: Compiler, { node, frame }: CompileNodeInput<ChildrenNode>): void => {
+const compileKeywordArgs = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<ChildrenNode>
+): void => {
   compiler.emit('runtime.makeKeywordArgs(');
   compileDict(compiler, { node, frame });
   compiler.emit(')');
@@ -96,9 +127,17 @@ const compileSpread = (compiler: Compiler, { node, frame }: CompileNodeInput<Spr
 };
 
 const escapeTemplateString = (str: string): string =>
-  join('')(pipe([...str], map((char) => TEMPLATE_ESCAPE_MAP[char] ?? char)));
+  join('')(
+    pipe(
+      [...str],
+      map((char) => TEMPLATE_ESCAPE_MAP[char] ?? char)
+    )
+  );
 
-const compileTemplateLiteral = (compiler: Compiler, { node, frame }: CompileNodeInput<TemplateLiteralNode>): void => {
+const compileTemplateLiteral = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<TemplateLiteralNode>
+): void => {
   const quasis = node.quasis ?? [];
   compiler.emit('`');
 
@@ -122,16 +161,25 @@ interface CompileAggregateOptions {
   endChar?: string;
 }
 
-const compileAggregate = (compiler: Compiler, node: ChildrenNode | CallNode | readonly Node[], frame: Frame, options?: CompileAggregateOptions): void => {
+const compileAggregate = (
+  compiler: Compiler,
+  node: ChildrenNode | CallNode | readonly Node[],
+  frame: Frame,
+  options?: CompileAggregateOptions
+): void => {
   const { startChar, endChar } = options ?? {};
   if (startChar) {
     compiler.emit(startChar);
   }
 
-  const children: readonly Node[] = Array.isArray(node) ? node : ((node as ChildrenNode).children ?? []);
+  const children: readonly Node[] = Array.isArray(node)
+    ? node
+    : ((node as ChildrenNode).children ?? []);
   for (let i = 0; i < children.length; i++) {
     const child = children[i];
-    if (!child) { continue; }
+    if (!child) {
+      continue;
+    }
     if (i > 0) {
       compiler.emit(',');
     }
@@ -148,4 +196,16 @@ const compileAggregate = (compiler: Compiler, node: ChildrenNode | CallNode | re
   }
 };
 
-export { compileLiteral, compileSymbol, compileGroup, compileArray, compileDict, compileNodeList, compilePair, compileKeywordArgs, compileSpread, compileTemplateLiteral, compileAggregate };
+export {
+  compileAggregate,
+  compileArray,
+  compileDict,
+  compileGroup,
+  compileKeywordArgs,
+  compileLiteral,
+  compileNodeList,
+  compilePair,
+  compileSpread,
+  compileSymbol,
+  compileTemplateLiteral,
+};

@@ -1,5 +1,5 @@
-import { describe, test, expect } from 'bun:test';
-import { isDangerousReference, findDangerousValues } from './context-security.ts';
+import { describe, expect, test } from 'bun:test';
+import { findDangerousValues, isDangerousReference } from './context-security.ts';
 
 describe('context-security', () => {
   describe('isDangerousReference', () => {
@@ -143,7 +143,7 @@ describe('context-security', () => {
         },
       };
       const result = findDangerousValues(context);
-      const processPaths = result.filter(p => p.endsWith('process'));
+      const processPaths = result.filter((p) => p.endsWith('process'));
       expect(processPaths).toHaveLength(2);
     });
   });

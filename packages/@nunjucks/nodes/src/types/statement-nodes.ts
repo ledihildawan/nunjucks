@@ -1,7 +1,7 @@
-import type { T } from './constants.ts';
-import type { Node } from './node-types.ts';
 import type { NodeBase } from './base.ts';
-import type { PairNode, ChildrenNode } from './expression-nodes.ts';
+import type { T } from './constants.ts';
+import type { ChildrenNode, PairNode } from './expression-nodes.ts';
+import type { Node } from './node-types.ts';
 
 interface BlockNode extends NodeBase {
   readonly type: typeof T.BLOCK;
@@ -146,24 +146,24 @@ interface RenderNode extends NodeBase {
 
 export type {
   BlockNode,
-  CaptureNode,
-  IfNode,
-  ForNode,
-  ComponentNode,
-  ExecNode,
-  ScopeNode,
-  SwitchNode,
-  CaseNode,
-  ExtendsNode,
-  IncludeNode,
-  SuperNode,
-  ImportNode,
-  FromImportNode,
-  VariableDeclNode,
-  CompoundAssignNode,
   CallExtensionNode,
-  WhenNode,
+  CaptureNode,
+  CaseNode,
+  ComponentNode,
+  CompoundAssignNode,
+  ExecNode,
+  ExtendsNode,
+  ForNode,
+  FromImportNode,
+  IfNode,
+  ImportNode,
+  IncludeNode,
   MatchNode,
-  SlotBlock,
   RenderNode,
+  ScopeNode,
+  SlotBlock,
+  SuperNode,
+  SwitchNode,
+  VariableDeclNode,
+  WhenNode,
 };

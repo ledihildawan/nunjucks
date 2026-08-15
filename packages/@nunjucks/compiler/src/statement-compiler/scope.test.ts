@@ -1,9 +1,9 @@
-import { describe, test, expect } from 'bun:test';
-import { compileScope } from './scope.ts';
-import { pair, output, templateData, literal } from '@nunjucks/nodes';
-import { asCompiler } from '../test-helpers.ts';
+import { describe, expect, test } from 'bun:test';
+import { literal, output, pair, templateData } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime/frame';
 import { ZERO_LOC } from '@nunjucks/shared';
+import { asCompiler } from '../test-helpers.ts';
+import { compileScope } from './scope.ts';
 
 const frame = createFrame();
 
@@ -12,11 +12,22 @@ const makeCompiler = () => {
   let id = 0;
   return {
     emitted,
-    emit: (s: string) => { emitted.push(s); },
-    emitLine: (s: string) => { emitted.push(`${s}\n`); },
-    tmpid: () => { id += 1; return `t_${id}`; },
-    compile: (n: { mock?: string }) => { emitted.push(n.mock ?? 'BODY'); },
-    compileExpression: (n: { mock?: string }) => { emitted.push(n.mock ?? 'VAL'); },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    emitLine: (s: string) => {
+      emitted.push(`${s}\n`);
+    },
+    nextCompilerId: () => {
+      id += 1;
+      return `t_${id}`;
+    },
+    compile: (n: { mock?: string }) => {
+      emitted.push(n.mock ?? 'BODY');
+    },
+    compileExpression: (n: { mock?: string }) => {
+      emitted.push(n.mock ?? 'VAL');
+    },
     withScopedSyntax: (fn: () => void) => fn(),
   };
 };

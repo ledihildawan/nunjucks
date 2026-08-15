@@ -1,14 +1,15 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import {
-  isBlockedKey,
-  isDangerousGlobal,
-  getBlockedKeyCategory,
-  isCodeExecutionPattern,
-  ENVIRONMENTS,
   BLOCKED_KEYS_LIST,
-  DANGEROUS_GLOBALS_LIST,
-  OBJECT_INTRINSICS,
   CODE_EXECUTION_KEYS,
+  DANGEROUS_GLOBALS_LIST,
+  DANGEROUS_KEY_PATTERN,
+  ENVIRONMENTS,
+  getBlockedKeyCategory,
+  isBlockedKey,
+  isCodeExecutionPattern,
+  isDangerousGlobal,
+  OBJECT_INTRINSICS,
 } from './blocked-keys.ts';
 
 describe('blocked-keys', () => {
@@ -131,6 +132,20 @@ describe('blocked-keys', () => {
         BROWSER: 'browser',
         DENO: 'deno',
       });
+    });
+  });
+
+  describe('DANGEROUS_KEY_PATTERN', () => {
+    test('matches top-level navigation and process globals', () => {
+      expect(DANGEROUS_KEY_PATTERN.test('globalThis')).toBe(true);
+      expect(DANGEROUS_KEY_PATTERN.test('process')).toBe(true);
+      expect(DANGEROUS_KEY_PATTERN.test('window')).toBe(true);
+    });
+
+    test('does not match substrings of safe keys', () => {
+      expect(DANGEROUS_KEY_PATTERN.test('topLevel')).toBe(false);
+      expect(DANGEROUS_KEY_PATTERN.test('parentItem')).toBe(false);
+      expect(DANGEROUS_KEY_PATTERN.test('user')).toBe(false);
     });
   });
 });

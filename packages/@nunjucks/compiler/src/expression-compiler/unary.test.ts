@@ -1,14 +1,18 @@
-import { describe, test, expect } from 'bun:test';
-import { compileNot, compileNeg, compilePos } from './unary.ts';
-import { asCompiler } from '../test-helpers.ts';
+import { describe, expect, test } from 'bun:test';
 import { createFrame } from '@nunjucks/runtime/frame';
+import { asCompiler } from '../test-helpers.ts';
+import { compileNeg, compileNot, compilePos } from './unary.ts';
 
 const makeCompiler = () => {
   const emitted: string[] = [];
   return {
     emitted,
-    emit: (s: string) => { emitted.push(s); },
-    compile: (node: { mock?: string }) => { emitted.push(node.mock as string); },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    compile: (node: { mock?: string }) => {
+      emitted.push(node.mock as string);
+    },
   };
 };
 

@@ -1,4 +1,3 @@
-
 export interface DangerousCodeViolation {
   message: string;
   pattern: string;
@@ -29,7 +28,12 @@ interface ViolationInput {
   source: string;
 }
 
-const toViolation = ({ match, pattern, message, source }: ViolationInput): DangerousCodeViolation => {
+const toViolation = ({
+  match,
+  pattern,
+  message,
+  source,
+}: ViolationInput): DangerousCodeViolation => {
   const { line, col } = getLineColFromIndex(source, match.index ?? 0);
   const nameMatch = match[0].match(IDENTIFIER_PATTERN);
   const [name = null] = nameMatch ?? [];
@@ -40,7 +44,9 @@ const scanTemplateForDangerousCode = (templateContent: string): DangerousCodeVio
   DANGEROUS_PATTERNS.flatMap(({ pattern, message }) => {
     const regex = new RegExp(pattern.source, 'gu');
     const matches = [...templateContent.matchAll(regex)];
-    return matches.map(match => toViolation({ match, pattern, message, source: templateContent }));
+    return matches.map((match) =>
+      toViolation({ match, pattern, message, source: templateContent })
+    );
   });
 
 export { scanTemplateForDangerousCode };

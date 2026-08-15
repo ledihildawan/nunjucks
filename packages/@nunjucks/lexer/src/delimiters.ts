@@ -15,15 +15,53 @@ export const STRIP_VARIABLE_START = '{{-';
 export const STRIP_VARIABLE_END = '-}}';
 
 export const COMPLEX_OPERATORS = [
-  '==', '===', '!=', '!==', '<=', '>=', '//', '**', '?.', '??', '.?', '||', '&&',
-  '||=', '&&=', '??=', '|>', '..', '...', '**=', '//=', ':=', '<<', '>>', '++', '--',
-  '+=', '-=', '*=', '/=', '%=', '|>='
+  '==',
+  '===',
+  '!=',
+  '!==',
+  '<=',
+  '>=',
+  '//',
+  '**',
+  '?.',
+  '??',
+  '.?',
+  '||',
+  '&&',
+  '||=',
+  '&&=',
+  '??=',
+  '|>',
+  '..',
+  '...',
+  '**=',
+  '//=',
+  ':=',
+  '<<',
+  '>>',
+  '++',
+  '--',
+  '+=',
+  '-=',
+  '*=',
+  '/=',
+  '%=',
+  '|>=',
 ] as const;
 
-export type ComplexOperator = typeof COMPLEX_OPERATORS[number];
+export type ComplexOperator = (typeof COMPLEX_OPERATORS)[number];
 
 export const COMPOUND_ASSIGNMENT_OPS: readonly string[] = [
-  '||=', '&&=', '??=', '**=', '//=', '+=', '-=', '*=', '/=', '%=',
+  '||=',
+  '&&=',
+  '??=',
+  '**=',
+  '//=',
+  '+=',
+  '-=',
+  '*=',
+  '/=',
+  '%=',
 ];
 
 export const REGEX_FLAGS = ['g', 'i', 'm', 'y'] as const;

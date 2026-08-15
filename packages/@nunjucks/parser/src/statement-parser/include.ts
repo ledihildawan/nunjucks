@@ -1,23 +1,27 @@
-import { include } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { peekToken, skipSymbol, advanceAfterBlockEnd, fail } from "../cursor.ts";
-import type { ParserContext } from "../cursor.ts";
-import { ok, isErr, type Result } from '@nunjucks/lib';
-import { parseExpression } from "../expression-parser/index.ts";
-import { loc } from '@nunjucks/lexer';
+import { isErr, ok, type Result } from '@nunjucks/lib';
+import type { Node } from '@nunjucks/nodes';
+import { include } from '@nunjucks/nodes';
+import { loc } from '@nunjucks/shared';
+import type { ParserContext } from '../cursor.ts';
+import { advanceAfterBlockEnd, fail, peekToken, skipSymbol } from '../cursor.ts';
+import { parseExpression } from '../expression-parser/index.ts';
 
 export const parseInclude = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const tagName = 'include';
   const tagR = peekToken(parserContext);
-  if (isErr(tagR)) { return tagR; }
+  if (isErr(tagR)) {
+    return tagR;
+  }
   const tag = tagR.value;
   if (!skipSymbol(parserContext, tagName)) {
     return fail(parserContext, `parseInclude: expected ${tagName}`);
   }
 
   const templateR = parseExpression(parserContext);
-  if (isErr(templateR)) { return templateR; }
+  if (isErr(templateR)) {
+    return templateR;
+  }
 
   const includeFields: { template: Node; ignoreMissing?: boolean; only?: boolean; with?: Node } = {
     template: templateR.value,
@@ -27,7 +31,9 @@ export const parseInclude = (parserContext: ParserContext): Result<Node, Templat
     includeFields.only = true;
   } else if (skipSymbol(parserContext, 'with')) {
     const withR = parseExpression(parserContext);
-    if (isErr(withR)) { return withR; }
+    if (isErr(withR)) {
+      return withR;
+    }
     includeFields.with = withR.value;
   }
 
@@ -36,6 +42,8 @@ export const parseInclude = (parserContext: ParserContext): Result<Node, Templat
   }
 
   const blockEndR = advanceAfterBlockEnd(parserContext, String(tag.value));
-  if (isErr(blockEndR)) { return blockEndR; }
+  if (isErr(blockEndR)) {
+    return blockEndR;
+  }
   return ok(include(loc(tag), includeFields));
 };

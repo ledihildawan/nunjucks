@@ -1,15 +1,17 @@
-import { describe, test, expect } from 'bun:test';
-import { compileBlock, compileSuper } from './block.ts';
-import { asCompiler } from '../test-helpers.ts';
-import { createFrame } from '@nunjucks/runtime/frame';
+import { describe, expect, test } from 'bun:test';
 import type { FrameSetOptions } from '@nunjucks/runtime/frame';
+import { createFrame } from '@nunjucks/runtime/frame';
+import { asCompiler } from '../test-helpers.ts';
+import { compileBlock, compileSuper } from './block.ts';
 
 describe('compileBlock', () => {
   test('drains the block via collectString in a string-buffer context', () => {
     const emitted: string[] = [];
     const ctx = {
-      emitLine: (s: string) => { emitted.push(s); },
-      tmpid: () => 't_1',
+      emitLine: (s: string) => {
+        emitted.push(s);
+      },
+      nextCompilerId: () => 't_1',
       buffer: 'output',
     };
     compileBlock(asCompiler(ctx), { name: 'content', lineno: 5, colno: 9 } as never);
@@ -21,8 +23,10 @@ describe('compileBlock', () => {
   test('delegates via yield* in a generator context', () => {
     const emitted: string[] = [];
     const ctx = {
-      emitLine: (s: string) => { emitted.push(s); },
-      tmpid: () => 't_1',
+      emitLine: (s: string) => {
+        emitted.push(s);
+      },
+      nextCompilerId: () => 't_1',
       buffer: null,
     };
     compileBlock(asCompiler(ctx), { name: 'content', lineno: 5, colno: 9 } as never);
@@ -32,7 +36,13 @@ describe('compileBlock', () => {
 
   test('falls back to the node location when name is a string', () => {
     const emitted: string[] = [];
-    const ctx = { emitLine: (s: string) => { emitted.push(s); }, tmpid: () => 't_2', buffer: 'b' };
+    const ctx = {
+      emitLine: (s: string) => {
+        emitted.push(s);
+      },
+      nextCompilerId: () => 't_2',
+      buffer: 'b',
+    };
     compileBlock(asCompiler(ctx), { name: 'main', lineno: 1, colno: 1 } as never);
     expect(emitted[0]).toContain('getBlock("main", 1, 1)');
   });
@@ -43,7 +53,9 @@ describe('compileSuper', () => {
     const emitted: string[] = [];
     const setCalls: [string, string][] = [];
     const ctx = {
-      emitLine: (s: string) => { emitted.push(s); },
+      emitLine: (s: string) => {
+        emitted.push(s);
+      },
     };
     const frame = createFrame();
     const baseSet = frame.set;
@@ -51,9 +63,14 @@ describe('compileSuper', () => {
       setCalls.push([options.name, String(options.value)]);
       return baseSet({ name: options.name, value: options.value });
     };
-    compileSuper(asCompiler(ctx), { node: { blockName: 'content', symbol: { value: 'super' }, lineno: 2, colno: 4 } as never, frame });
+    compileSuper(asCompiler(ctx), {
+      node: { blockName: 'content', symbol: { value: 'super' }, lineno: 2, colno: 4 } as never,
+      frame,
+    });
     expect(emitted[0]).toBe('lineno = 2; colno = 4;');
-    expect(emitted[1]).toContain('context.getSuper({ envObj: env, name: "content", block: b_content, frame, runtime, lineno: 2, colno: 4 })');
+    expect(emitted[1]).toContain(
+      'context.getSuper({ envObj: env, name: "content", block: b_content, frame, runtime, lineno: 2, colno: 4 })'
+    );
     expect(emitted[2]).toContain('runtime.markSafe(super)');
     expect(setCalls).toEqual([['super', 'super']]);
   });

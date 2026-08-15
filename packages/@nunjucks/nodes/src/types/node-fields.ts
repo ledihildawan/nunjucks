@@ -1,4 +1,4 @@
-import { T, type NodeType } from './constants.ts';
+import { type NodeType, T } from './constants.ts';
 
 export const FIELDS: Readonly<Record<NodeType, readonly string[]>> = {
   [T.NODE]: [],

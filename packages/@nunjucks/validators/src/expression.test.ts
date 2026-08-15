@@ -1,9 +1,13 @@
-import { describe, test, expect } from 'bun:test';
-import { nodes } from '@nunjucks/nodes';
-import { validateExpression, ExpressionSecurityError, type ExpressionValidationError } from './expression';
-import type { ExpressionValidationResult } from './expression';
+import { describe, expect, test } from 'bun:test';
 import { isErr } from '@nunjucks/lib';
+import { nodes } from '@nunjucks/nodes';
 import { loc, ZERO_LOC } from '@nunjucks/shared';
+import type { ExpressionValidationResult } from './expression';
+import {
+  ExpressionSecurityError,
+  type ExpressionValidationError,
+  validateExpression,
+} from './expression';
 
 const ExprErr = ExpressionSecurityError;
 
@@ -23,21 +27,26 @@ describe('validateExpression', () => {
     });
 
     test('safe property lookup passes', () => {
-      const ast = nodes.lookupVal(ZERO_LOC, { target: nodes.symbol(ZERO_LOC, 'obj'), val: nodes.literal(ZERO_LOC, 'safeProp') });
+      const ast = nodes.lookupVal(ZERO_LOC, {
+        target: nodes.symbol(ZERO_LOC, 'obj'),
+        val: nodes.literal(ZERO_LOC, 'safeProp'),
+      });
       expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
 
     test('safe function call passes', () => {
-      const ast = nodes.funCall(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'greet'), args: [
-        nodes.literal(ZERO_LOC, 'world'),
-      ] });
+      const ast = nodes.funCall(ZERO_LOC, {
+        name: nodes.symbol(ZERO_LOC, 'greet'),
+        args: [nodes.literal(ZERO_LOC, 'world')],
+      });
       expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
 
     test('safe pipe expression passes', () => {
-      const ast = nodes.pipe(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'upper'), args: [
-        nodes.symbol(ZERO_LOC, 'name'),
-      ] });
+      const ast = nodes.pipe(ZERO_LOC, {
+        name: nodes.symbol(ZERO_LOC, 'upper'),
+        args: [nodes.symbol(ZERO_LOC, 'name')],
+      });
       expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
   });
@@ -138,9 +147,10 @@ describe('validateExpression', () => {
 
   describe('UNSAFE_PROPERTY - dangerous function calls', () => {
     test('eval() triggers UNSAFE_PROPERTY', () => {
-      const ast = nodes.funCall(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'eval'), args: [
-        nodes.literal(ZERO_LOC, 'x'),
-      ] });
+      const ast = nodes.funCall(ZERO_LOC, {
+        name: nodes.symbol(ZERO_LOC, 'eval'),
+        args: [nodes.literal(ZERO_LOC, 'x')],
+      });
       const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
@@ -148,9 +158,10 @@ describe('validateExpression', () => {
     });
 
     test('Function() triggers UNSAFE_PROPERTY', () => {
-      const ast = nodes.funCall(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'Function'), args: [
-        nodes.literal(ZERO_LOC, 'x'),
-      ] });
+      const ast = nodes.funCall(ZERO_LOC, {
+        name: nodes.symbol(ZERO_LOC, 'Function'),
+        args: [nodes.literal(ZERO_LOC, 'x')],
+      });
       const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
@@ -158,10 +169,10 @@ describe('validateExpression', () => {
     });
 
     test('setTimeout() triggers UNSAFE_PROPERTY', () => {
-      const ast = nodes.funCall(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'setTimeout'), args: [
-        nodes.symbol(ZERO_LOC, 'callback'),
-        nodes.literal(ZERO_LOC, 100),
-      ] });
+      const ast = nodes.funCall(ZERO_LOC, {
+        name: nodes.symbol(ZERO_LOC, 'setTimeout'),
+        args: [nodes.symbol(ZERO_LOC, 'callback'), nodes.literal(ZERO_LOC, 100)],
+      });
       const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
@@ -169,18 +180,20 @@ describe('validateExpression', () => {
     });
 
     test('AsyncFunction() triggers UNSAFE_PROPERTY', () => {
-      const ast = nodes.funCall(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'AsyncFunction'), args: [
-        nodes.literal(ZERO_LOC, 'x'),
-      ] });
+      const ast = nodes.funCall(ZERO_LOC, {
+        name: nodes.symbol(ZERO_LOC, 'AsyncFunction'),
+        args: [nodes.literal(ZERO_LOC, 'x')],
+      });
       const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
     });
 
     test('GeneratorFunction() triggers UNSAFE_PROPERTY', () => {
-      const ast = nodes.funCall(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'GeneratorFunction'), args: [
-        nodes.literal(ZERO_LOC, 'x'),
-      ] });
+      const ast = nodes.funCall(ZERO_LOC, {
+        name: nodes.symbol(ZERO_LOC, 'GeneratorFunction'),
+        args: [nodes.literal(ZERO_LOC, 'x')],
+      });
       const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
@@ -201,7 +214,9 @@ describe('validateExpression', () => {
         target: nodes.symbol(ZERO_LOC, 'obj'),
         val: nodes.symbol(ZERO_LOC, 'dynamicProp'),
       });
-      expect(errorsOf(validateExpression(ast, { allowDynamicPropertyAccess: true }))).toHaveLength(0);
+      expect(errorsOf(validateExpression(ast, { allowDynamicPropertyAccess: true }))).toHaveLength(
+        0
+      );
     });
 
     test('lookupVal with literal string property does not trigger errors', () => {
@@ -243,7 +258,10 @@ describe('validateExpression', () => {
 
     test('deeply nested dangerous access', () => {
       const ast = nodes.lookupVal(ZERO_LOC, {
-        target: nodes.lookupVal(ZERO_LOC, { target: nodes.symbol(ZERO_LOC, 'a'), val: nodes.symbol(ZERO_LOC, 'b') }),
+        target: nodes.lookupVal(ZERO_LOC, {
+          target: nodes.symbol(ZERO_LOC, 'a'),
+          val: nodes.symbol(ZERO_LOC, 'b'),
+        }),
         val: nodes.symbol(ZERO_LOC, '__proto__'),
       });
       const errors = errorsOf(validateExpression(ast));
@@ -255,7 +273,10 @@ describe('validateExpression', () => {
         target: nodes.symbol(ZERO_LOC, '__proto__'),
         val: nodes.symbol(ZERO_LOC, 'x'),
       });
-      const outerLookup = nodes.lookupVal(ZERO_LOC, { target: innerLookup, val: nodes.symbol(ZERO_LOC, 'y') });
+      const outerLookup = nodes.lookupVal(ZERO_LOC, {
+        target: innerLookup,
+        val: nodes.symbol(ZERO_LOC, 'y'),
+      });
       const errors = errorsOf(validateExpression(outerLookup));
       expect(errors.some((e) => e.code === ExprErr.UNSAFE_PROPERTY)).toBe(true);
     });
@@ -263,9 +284,10 @@ describe('validateExpression', () => {
 
   describe('pipe expressions', () => {
     test('x | eval triggers UNSAFE_PROPERTY', () => {
-      const ast = nodes.pipe(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'eval'), args: [
-        nodes.symbol(ZERO_LOC, 'x'),
-      ] });
+      const ast = nodes.pipe(ZERO_LOC, {
+        name: nodes.symbol(ZERO_LOC, 'eval'),
+        args: [nodes.symbol(ZERO_LOC, 'x')],
+      });
       const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
@@ -273,9 +295,10 @@ describe('validateExpression', () => {
     });
 
     test('x | Function triggers UNSAFE_PROPERTY', () => {
-      const ast = nodes.pipe(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'Function'), args: [
-        nodes.symbol(ZERO_LOC, 'x'),
-      ] });
+      const ast = nodes.pipe(ZERO_LOC, {
+        name: nodes.symbol(ZERO_LOC, 'Function'),
+        args: [nodes.symbol(ZERO_LOC, 'x')],
+      });
       const errors = errorsOf(validateExpression(ast));
       expect(errors).toHaveLength(1);
       expect(errors[0]!.code).toBe(ExprErr.UNSAFE_PROPERTY);
@@ -283,25 +306,30 @@ describe('validateExpression', () => {
     });
 
     test('safe pipe passes', () => {
-      const ast = nodes.pipe(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'upper'), args: [
-        nodes.symbol(ZERO_LOC, 'text'),
-      ] });
+      const ast = nodes.pipe(ZERO_LOC, {
+        name: nodes.symbol(ZERO_LOC, 'upper'),
+        args: [nodes.symbol(ZERO_LOC, 'text')],
+      });
       expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
 
     test('pipe with multiple args passes for safe function', () => {
-      const ast = nodes.pipe(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'replace'), args: [
-        nodes.symbol(ZERO_LOC, 'text'),
-        nodes.literal(ZERO_LOC, 'old'),
-        nodes.literal(ZERO_LOC, 'new'),
-      ] });
+      const ast = nodes.pipe(ZERO_LOC, {
+        name: nodes.symbol(ZERO_LOC, 'replace'),
+        args: [
+          nodes.symbol(ZERO_LOC, 'text'),
+          nodes.literal(ZERO_LOC, 'old'),
+          nodes.literal(ZERO_LOC, 'new'),
+        ],
+      });
       expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
 
     test('pipe with dangerous argument', () => {
-      const ast = nodes.pipe(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'upper'), args: [
-        nodes.symbol(ZERO_LOC, '__proto__'),
-      ] });
+      const ast = nodes.pipe(ZERO_LOC, {
+        name: nodes.symbol(ZERO_LOC, 'upper'),
+        args: [nodes.symbol(ZERO_LOC, '__proto__')],
+      });
       const errors = errorsOf(validateExpression(ast));
       expect(errors.some((e) => e.code === ExprErr.UNSAFE_PROPERTY)).toBe(true);
     });
@@ -375,17 +403,19 @@ describe('validateExpression', () => {
     });
 
     test('dangerous call with dangerous argument', () => {
-      const ast = nodes.funCall(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'eval'), args: [
-        nodes.symbol(ZERO_LOC, '__proto__'),
-      ] });
+      const ast = nodes.funCall(ZERO_LOC, {
+        name: nodes.symbol(ZERO_LOC, 'eval'),
+        args: [nodes.symbol(ZERO_LOC, '__proto__')],
+      });
       const errors = errorsOf(validateExpression(ast));
       expect(errors.some((e) => e.code === ExprErr.UNSAFE_PROPERTY)).toBe(true);
     });
 
     test('safe expression with dangerous call', () => {
-      const ast = nodes.funCall(ZERO_LOC, { name: nodes.symbol(ZERO_LOC, 'greet'), args: [
-        nodes.symbol(ZERO_LOC, 'name'),
-      ] });
+      const ast = nodes.funCall(ZERO_LOC, {
+        name: nodes.symbol(ZERO_LOC, 'greet'),
+        args: [nodes.symbol(ZERO_LOC, 'name')],
+      });
       expect(errorsOf(validateExpression(ast))).toHaveLength(0);
     });
   });

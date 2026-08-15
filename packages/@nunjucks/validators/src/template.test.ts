@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
-import { validateTemplate, type TemplateValidatorConfig } from './template.ts';
-import { isOk, isErr } from '@nunjucks/lib';
+import { describe, expect, test } from 'bun:test';
+import { isErr, isOk } from '@nunjucks/lib';
+import { type TemplateValidatorConfig, validateTemplate } from './template.ts';
 
 describe('validateTemplate', () => {
   const safeConfig: TemplateValidatorConfig = {};

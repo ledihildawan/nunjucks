@@ -1,15 +1,15 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createTokenizer } from '@nunjucks/lexer';
-import { createParser } from '../index.ts';
-import { nextTokenOrNull } from '../cursor.ts';
-import { parseTemplateLiteral } from './template-literal.ts';
-import { getNodeTypeName, isTemplateLiteral } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { asTokenStream, unwrap } from '../test-helpers.ts';
+import { getNodeTypeName, isTemplateLiteral } from '@nunjucks/nodes';
+import { nextTokenOrNull } from '../cursor.ts';
+import { createParser } from '../index.ts';
+import { unwrap } from '../test-helpers.ts';
+import { parseTemplateLiteral } from './template-literal.ts';
 
 const ctxFor = (src: string) => {
   const tk = createTokenizer(`{{ ${src} }}`);
-  const ctx = createParser(asTokenStream(tk));
+  const ctx = createParser(tk);
   nextTokenOrNull(ctx);
   return ctx;
 };
@@ -25,7 +25,9 @@ describe('parseTemplateLiteral', () => {
     const node = parseLit('`hello world`');
     expect(getNodeTypeName(node as Node)).toBe('templateLiteral');
     expect(isTemplateLiteral(node)).toBe(true);
-    if (!isTemplateLiteral(node)) { return; }
+    if (!isTemplateLiteral(node)) {
+      return;
+    }
     expect(node.quasis).toHaveLength(1);
   });
 
@@ -33,7 +35,9 @@ describe('parseTemplateLiteral', () => {
     const node = parseLit('`hello $' + '{name}`');
     expect(getNodeTypeName(node as Node)).toBe('templateLiteral');
     expect(isTemplateLiteral(node)).toBe(true);
-    if (!isTemplateLiteral(node)) { return; }
+    if (!isTemplateLiteral(node)) {
+      return;
+    }
     expect(node.quasis).toHaveLength(2);
     const expr = node.quasis[1];
     expect(expr?.type).toBe('expression');

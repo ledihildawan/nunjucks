@@ -1,9 +1,9 @@
-import { describe, test, expect } from 'bun:test';
-import { compileFromImport } from './from-import.ts';
-import { fromImportNode, literal, nodeList, symbol, pair } from '@nunjucks/nodes';
+import { describe, expect, test } from 'bun:test';
+import { fromImportNode, literal, nodeList, pair, symbol } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime/frame';
 import { loc } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
+import { compileFromImport } from './from-import.ts';
 
 const templateLoc = loc({ lineno: 1, colno: 4 });
 
@@ -12,18 +12,24 @@ const makeCompiler = () => {
   let id = 0;
   return {
     emitted,
-    emit: (s: string) => { emitted.push(s); },
-    emitLine: (s: string) => { emitted.push(`${s}\n`); },
-    tmpid: () => { id += 1; return `t_${id}`; },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    emitLine: (s: string) => {
+      emitted.push(`${s}\n`);
+    },
+    nextCompilerId: () => {
+      id += 1;
+      return `t_${id}`;
+    },
     getTemplateName: () => '"parent"',
-    compileExpression: (node: { value?: unknown }) => { emitted.push(String(node.value ?? 'TPL')); },
+    compileExpression: (node: { value?: unknown }) => {
+      emitted.push(String(node.value ?? 'TPL'));
+    },
   };
 };
 
-const buildFromImportNode = (
-  names: ReturnType<typeof nodeList>,
-  withContext = false,
-) =>
+const buildFromImportNode = (names: ReturnType<typeof nodeList>, withContext = false) =>
   fromImportNode(templateLoc, {
     template: literal(templateLoc, 'lib.njk'),
     names,
@@ -39,7 +45,9 @@ describe('compileFromImport', () => {
     });
     const joined = c.emitted.join('');
     expect(joined).toContain('lineno = 1; colno = 5;');
-    expect(joined).toContain('let t_1 = await env.getTemplate({ name: lib.njk, eagerCompile: false, includeChain: "parent", ignoreMissing: false });');
+    expect(joined).toContain(
+      'let t_1 = await env.getTemplate({ name: lib.njk, eagerCompile: false, includeChain: "parent", ignoreMissing: false });'
+    );
     expect(joined).toContain('let t_1_exported = await t_1.getExported();');
   });
 
@@ -85,11 +93,18 @@ describe('compileFromImport', () => {
     nameCases.forEach(({ label, names, importedName, alias }) => {
       test(label, () => {
         const c = makeCompiler();
-        compileFromImport(asCompiler(c), { node: buildFromImportNode(names), frame: createFrame() });
+        compileFromImport(asCompiler(c), {
+          node: buildFromImportNode(names),
+          frame: createFrame(),
+        });
         const joined = c.emitted.join('');
-        expect(joined).toContain(`if(Object.hasOwn(t_1_exported, ${JSON.stringify(importedName)})) {`);
+        expect(joined).toContain(
+          `if(Object.hasOwn(t_1_exported, ${JSON.stringify(importedName)})) {`
+        );
         expect(joined).toContain(`t_2 = t_1_exported[${JSON.stringify(importedName)}];`);
-        expect(joined).toContain(`throw new Error('Cannot import ' + ${JSON.stringify(importedName)} + ' from module');`);
+        expect(joined).toContain(
+          `throw new Error('Cannot import ' + ${JSON.stringify(importedName)} + ' from module');`
+        );
         expect(joined).toContain(`context = context.setVariable(${JSON.stringify(alias)}, t_2);`);
       });
     });
@@ -98,10 +113,9 @@ describe('compileFromImport', () => {
   test('emits an Object.hasOwn guard plus a missing-import throw for every imported name', () => {
     const c = makeCompiler();
     compileFromImport(asCompiler(c), {
-      node: buildFromImportNode(nodeList(templateLoc, [
-        symbol(templateLoc, 'foo'),
-        symbol(templateLoc, 'bar'),
-      ])),
+      node: buildFromImportNode(
+        nodeList(templateLoc, [symbol(templateLoc, 'foo'), symbol(templateLoc, 'bar')])
+      ),
       frame: createFrame(),
     });
     const joined = c.emitted.join('');

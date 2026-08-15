@@ -1,4 +1,4 @@
-import { OBJECT_INTRINSICS, CODE_EXECUTION_KEYS } from './blocked-keys.ts';
+import { CODE_EXECUTION_KEYS, OBJECT_INTRINSICS } from './blocked-keys.ts';
 
 export const ExpressionSecurityError = {
   DYNAMIC_PROPERTY_ACCESS: 'DYNAMIC_PROPERTY_ACCESS',
@@ -10,11 +10,7 @@ export const DEFAULT_SECURITY_CONFIG = {
   allowDynamicPropertyAccess: false,
   allowConstructorAccess: false,
   allowPrototypeAccess: false,
-  blockedPropertyPatterns: [
-    /^__/,
-    /constructor$/,
-    /prototype$/,
-  ],
+  blockedPropertyPatterns: [/^__/, /constructor$/, /prototype$/],
 } as const;
 
 export type ExpressionSecurityConfig = {

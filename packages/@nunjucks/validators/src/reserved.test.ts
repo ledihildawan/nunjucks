@@ -1,6 +1,11 @@
-import { describe, test, expect } from 'bun:test';
-import { RESERVED_KEYWORDS, validateFilterName, validateGlobalName, getReservedKeywords } from './reserved.ts';
-import { isOk, isErr } from '@nunjucks/lib';
+import { describe, expect, test } from 'bun:test';
+import { isErr, isOk } from '@nunjucks/lib';
+import {
+  getReservedKeywords,
+  RESERVED_KEYWORDS,
+  validateFilterName,
+  validateGlobalName,
+} from './reserved.ts';
 
 describe('RESERVED_KEYWORDS', () => {
   test('contains template keywords, JS builtins, and literals', () => {

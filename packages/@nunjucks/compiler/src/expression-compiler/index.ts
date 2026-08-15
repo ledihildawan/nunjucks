@@ -1,40 +1,49 @@
 export {
-  compileLiteral,
-  compileSymbol,
-  compileGroup,
-  compileArray,
-  compileDict,
-  compileNodeList,
-  compilePair,
-  compileKeywordArgs,
-  compileAggregate,
-  compileSpread,
-  compileTemplateLiteral,
-} from './container.ts';
-
-export { compileFunCall } from './fun-call.ts';
-export { compilePipeForward } from './pipe-forward.ts';
-export { compileLookupVal, compileOptionalChain, compileOptionalCall, compileSlice } from './lookup.ts';
-export { compileCompare, compileIs } from './compare.ts';
-export { compileBitwiseOr, compileBitwiseAnd, compileBitwiseXor, compileBitwiseLShift, compileBitwiseRShift, compileBitwiseNot } from './bitwise.ts';
-export { compileIncrement, compileDecrement } from './increment.ts';
-export { compileInlineIf, compileWalrus } from './inline.ts';
-
-export {
-  compileOr,
-  compileAnd,
   compileAdd,
+  compileAnd,
   compileConcat,
+  compileDiv,
+  compileFloorDiv,
+  compileIn,
+  compileMod,
+  compileMul,
+  compileNullishCoalesce,
+  compileOr,
+  compilePow,
   compileRange,
   compileSub,
-  compileMul,
-  compileDiv,
-  compileMod,
-  compileNullishCoalesce,
-  compileIn,
-  compileFloorDiv,
-  compilePow,
 } from './binary.ts';
-
-export { compileNot, compileNeg, compilePos } from './unary.ts';
+export {
+  compileBitwiseAnd,
+  compileBitwiseLShift,
+  compileBitwiseNot,
+  compileBitwiseOr,
+  compileBitwiseRShift,
+  compileBitwiseXor,
+} from './bitwise.ts';
+export { compileCompare, compileIs } from './compare.ts';
+export {
+  compileAggregate,
+  compileArray,
+  compileDict,
+  compileGroup,
+  compileKeywordArgs,
+  compileLiteral,
+  compileNodeList,
+  compilePair,
+  compileSpread,
+  compileSymbol,
+  compileTemplateLiteral,
+} from './container.ts';
+export { compileFunCall } from './fun-call.ts';
+export { compileDecrement, compileIncrement } from './increment.ts';
+export { compileInlineIf, compileWalrus } from './inline.ts';
+export {
+  compileLookupVal,
+  compileOptionalCall,
+  compileOptionalChain,
+  compileSlice,
+} from './lookup.ts';
+export { compilePipeForward } from './pipe-forward.ts';
 export { compileTest, compileTestCall } from './test-expr.ts';
+export { compileNeg, compileNot, compilePos } from './unary.ts';

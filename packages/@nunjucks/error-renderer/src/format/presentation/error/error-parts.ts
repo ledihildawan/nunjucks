@@ -19,7 +19,9 @@ interface ErrorPartFields {
 }
 
 const readErrorPartFields = (error: unknown): ErrorPartFields | null => {
-  if (typeof error !== 'object' || error === null) { return null; }
+  if (typeof error !== 'object' || error === null) {
+    return null;
+  }
   const record = error as Record<string, unknown>;
   return {
     message: record.message,
@@ -39,8 +41,7 @@ const readStringArray = (value: unknown): string[] =>
 const readStringOrNull = (value: unknown): string | null =>
   typeof value === 'string' ? value : null;
 
-const readString = (value: unknown): string =>
-  typeof value === 'string' ? value : '';
+const readString = (value: unknown): string => (typeof value === 'string' ? value : '');
 
 export const mergeErrorParts = (error: unknown): MergedErrorParts => {
   const fields = readErrorPartFields(error);
@@ -50,7 +51,9 @@ export const mergeErrorParts = (error: unknown): MergedErrorParts => {
   // `unknown → concrete` cast. classifyFromError itself reads fields defensively.
   const classification = classifyFromError(fields as Parameters<typeof classifyFromError>[0]);
   return {
-    causes: classification.causes?.length ? [...classification.causes] : readStringArray(fields?.causes),
+    causes: classification.causes?.length
+      ? [...classification.causes]
+      : readStringArray(fields?.causes),
     fixCode: classification.fixCode ?? readString(fields?.fixCode),
     fixComment: classification.fixComment ?? readString(fields?.fixComment),
     documentationUrl: classification.documentationUrl ?? readStringOrNull(fields?.documentationUrl),

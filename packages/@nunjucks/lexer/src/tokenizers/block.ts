@@ -1,4 +1,4 @@
-import { TOKEN_BLOCK_START, TOKEN_BLOCK_END } from '../token-types.ts';
+import { TOKEN_BLOCK_END, TOKEN_BLOCK_START } from '../token-types.ts';
 import { createDelimiterTokenizer } from './delimiter.ts';
 
 export const tokenizeBlockStart = createDelimiterTokenizer({

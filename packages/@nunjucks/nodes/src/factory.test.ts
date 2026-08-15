@@ -1,9 +1,20 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { ZERO_LOC } from '@nunjucks/shared';
 import {
-  root, output, literal, symbol, templateData,
-  add, ifNode, funCall, lookupVal, block,
-  isBlock, isFunCall, isLookupVal, isSymbol,
+  add,
+  block,
+  funCall,
+  ifNode,
+  isBlock,
+  isFunCall,
+  isLookupVal,
+  isSymbol,
+  literal,
+  lookupVal,
+  output,
+  root,
+  symbol,
+  templateData,
 } from './index.ts';
 
 describe('factory: node creation', () => {

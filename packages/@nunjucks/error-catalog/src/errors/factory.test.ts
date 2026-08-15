@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createErrorDefinition } from './factory.ts';
 
 const baseOpts = { name: 'TEST_ERROR', category: 'test', causes: [] };

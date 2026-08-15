@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { normalizeRenderContext } from './safe-context.ts';
 
 describe('normalizeRenderContext', () => {
@@ -19,7 +19,7 @@ describe('normalizeRenderContext', () => {
   test('redacts explicitly blocked keys', () => {
     const out = normalizeRenderContext(
       { secret: 'hidden', ok: 1 },
-      { blockedKeys: ['secret'] },
+      { blockedKeys: ['secret'] }
     ) as Record<string, unknown>;
     expect(out.secret).toBe('[Redacted]');
     expect(out.ok).toBe(1);
@@ -34,7 +34,9 @@ describe('normalizeRenderContext', () => {
   });
 
   test('formats functions and arrays', () => {
-    const named = function named() { /* noop */ };
+    const named = function named() {
+      /* noop */
+    };
     expect(normalizeRenderContext(named)).toBe('[Function: named]');
     const out = normalizeRenderContext([1, 2]) as unknown[];
     expect(out[0]).toBe(1);

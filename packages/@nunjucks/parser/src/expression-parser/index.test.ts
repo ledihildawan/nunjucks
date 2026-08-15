@@ -1,22 +1,22 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createTokenizer } from '@nunjucks/lexer';
-import { parseExpression, parsePrimary } from './index.ts';
-import { createParser } from '../index.ts';
-import { nextTokenOrNull } from '../cursor.ts';
 import { getNodeTypeName } from '@nunjucks/nodes';
-import { asTokenStream, unwrap } from '../test-helpers.ts';
+import { nextTokenOrNull } from '../cursor.ts';
+import { createParser } from '../index.ts';
+import { unwrap } from '../test-helpers.ts';
+import { parseExpression, parsePrimary } from './index.ts';
 
 const parse = (src: string) => {
   const tk = createTokenizer(`{{ ${src} }}`);
-  const ctx = createParser(asTokenStream(tk));
-  nextTokenOrNull(ctx); 
+  const ctx = createParser(tk);
+  nextTokenOrNull(ctx);
   return unwrap(parseExpression(ctx));
 };
 
 const parsePrim = (src: string) => {
   const tk = createTokenizer(`{{ ${src} }}`);
-  const ctx = createParser(asTokenStream(tk));
-  nextTokenOrNull(ctx); 
+  const ctx = createParser(tk);
+  nextTokenOrNull(ctx);
   return unwrap(parsePrimary(ctx));
 };
 

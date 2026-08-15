@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createState } from '../state.ts';
 import { tokenizeComment } from './comment.ts';
 
@@ -23,6 +23,6 @@ describe('tokenizeComment', () => {
   test('unterminated comment reaches EOF', () => {
     const r = run('{# no end');
     expect(r?.token.value).toBe('{# no end');
-    expect(r?.state.index).toBe(r?.state.str.length);
+    expect(r?.state.index).toBe(r?.state.source.length);
   });
 });

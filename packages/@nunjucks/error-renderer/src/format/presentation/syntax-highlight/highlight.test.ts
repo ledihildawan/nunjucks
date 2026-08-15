@@ -1,5 +1,5 @@
-import { describe, test, expect } from 'bun:test';
-import { renderInlineMarkdown, highlightHtml, highlightJs } from './highlight.ts';
+import { describe, expect, test } from 'bun:test';
+import { highlightHtml, highlightJs, renderInlineMarkdown } from './highlight.ts';
 
 describe('renderInlineMarkdown', () => {
   test('empty returns empty', () => {

@@ -1,11 +1,11 @@
-import { pipe, filter, join, map, split } from 'remeda';
-import { shortenPath } from './presentation/source-trace/path-shortener.ts';
-import { toDisplayLocation } from './presentation/source-trace/location.ts';
-import { mergeErrorParts } from './presentation/error/error-parts.ts';
-import { parseStackFrame } from './presentation/source-trace/stack-parse.ts';
+import { getErrorMessage } from '@nunjucks/error-catalog/get-error-message';
 import { slice } from '@nunjucks/lib';
 import { stripInlineMarkdown } from '@nunjucks/lib/strip-inline-markdown';
-import { getErrorMessage } from '@nunjucks/error-catalog/get-error-message';
+import { filter, join, map, pipe, split } from 'remeda';
+import { mergeErrorParts } from './presentation/error/error-parts.ts';
+import { toDisplayLocation } from './presentation/source-trace/location.ts';
+import { shortenPath } from './presentation/source-trace/path-shortener.ts';
+import { parseStackFrame } from './presentation/source-trace/stack-parse.ts';
 
 interface ToTextOptions {
   verbosity?: 'simple' | 'medium' | 'full';
@@ -15,8 +15,12 @@ interface ToTextOptions {
 }
 
 const getSeverityLabel = (severity: 'error' | 'warning' | 'info' | undefined): string => {
-  if (severity === 'warning') { return 'Warning:'; }
-  if (severity === 'info') { return 'Info:'; }
+  if (severity === 'warning') {
+    return 'Warning:';
+  }
+  if (severity === 'info') {
+    return 'Info:';
+  }
   return 'Error:';
 };
 
@@ -60,7 +64,7 @@ const formatMediumText = (message: string, input: MediumTextInput): string => {
   const location = toDisplayLocation({
     lineno: input.lineno ?? err.lineno ?? null,
     colno: input.colno ?? err.colno ?? null,
-    lineBase: err.lineBase ?? 'zero'
+    lineBase: err.lineBase ?? 'zero',
   });
   const shortPath = shortenPath(path, '');
   const locationStr = ` at ${shortPath}:${location.line}:${location.col}`;
@@ -86,8 +90,10 @@ const extractErrorParts = (error: unknown): ErrorParts => {
 };
 
 const formatCauses = (causes: string[]): string[] => {
-  if (causes.length === 0) { return []; }
-  return ['', 'Possible Causes:', ...causes.map(c => `  • ${stripInlineMarkdown(c)}`)];
+  if (causes.length === 0) {
+    return [];
+  }
+  return ['', 'Possible Causes:', ...causes.map((c) => `  • ${stripInlineMarkdown(c)}`)];
 };
 
 interface FormatFixInput {
@@ -97,12 +103,15 @@ interface FormatFixInput {
 }
 
 const formatFix = ({ fixCode, fixComment, documentationUrl }: FormatFixInput): string[] => {
-  if (!fixCode) { return []; }
+  if (!fixCode) {
+    return [];
+  }
   return [
-    '', 'Suggested Fix:',
+    '',
+    'Suggested Fix:',
     ...(fixComment ? [`  // ${stripInlineMarkdown(fixComment)}`] : []),
     `  ${fixCode}`,
-    ...(documentationUrl ? [`  Learn more: ${documentationUrl}`] : [])
+    ...(documentationUrl ? [`  Learn more: ${documentationUrl}`] : []),
   ];
 };
 
@@ -112,7 +121,9 @@ const formatStack = (error: unknown): string => {
 };
 
 const toText = (error: unknown, options: ToTextOptions = {}): string => {
-  if (!error) { return ''; }
+  if (!error) {
+    return '';
+  }
 
   const { verbosity = 'full', templatePath, lineno, colno } = options;
   const message = getErrorMessage(error);
@@ -125,7 +136,15 @@ const toText = (error: unknown, options: ToTextOptions = {}): string => {
   const severityLabel = getSeverityLabel(severity);
 
   if (verbosity === 'medium' && (templatePath || lineno !== undefined || colno !== undefined)) {
-    return formatMediumText(message, { severityLabel, error, templatePath, lineno, colno, causes, documentationUrl });
+    return formatMediumText(message, {
+      severityLabel,
+      error,
+      templatePath,
+      lineno,
+      colno,
+      causes,
+      documentationUrl,
+    });
   }
 
   const formattedStack = formatStack(error);
@@ -133,11 +152,11 @@ const toText = (error: unknown, options: ToTextOptions = {}): string => {
     `${severityLabel} ${message}`,
     ...formatCauses(causes),
     ...formatFix({ fixCode, fixComment, documentationUrl }),
-    ...(formattedStack ? ['', formattedStack] : [])
+    ...(formattedStack ? ['', formattedStack] : []),
   ];
 
   return pipe(parts, filter(Boolean), join('\n'));
 };
 
-export { toText };
 export type { ToTextOptions };
+export { toText };

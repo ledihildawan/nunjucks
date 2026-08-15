@@ -1,13 +1,18 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createState } from '../state.ts';
 import { tokenizeTemplateLiteral } from './template-literal.ts';
 
-interface TemplateValue { quasis: Array<{ type: string; value: string }>; expressions: unknown[] }
+interface TemplateValue {
+  quasis: Array<{ type: string; value: string }>;
+  expressions: unknown[];
+}
 
 const run = (src: string) => tokenizeTemplateLiteral({ ...createState(src), inCode: true });
 
 const quasisOf = (r: ReturnType<typeof run>): TemplateValue['quasis'] => {
-  if (!r) { throw new Error('null result'); }
+  if (!r) {
+    throw new Error('null result');
+  }
   return (r.token.value as TemplateValue).quasis;
 };
 
@@ -32,7 +37,9 @@ describe('tokenizeTemplateLiteral', () => {
 
   test('expressions field is always empty array', () => {
     const r = run('`x`');
-    if (!r) { throw new Error('null'); }
+    if (!r) {
+      throw new Error('null');
+    }
     expect((r.token.value as TemplateValue).expressions).toEqual([]);
   });
 

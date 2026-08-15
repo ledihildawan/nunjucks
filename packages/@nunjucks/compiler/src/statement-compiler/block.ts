@@ -1,12 +1,13 @@
 import type { BlockNode, SuperNode } from '@nunjucks/nodes';
+import { assertSafeIdentifier, emitLineLocation } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
-import { emitLineLocation, assertSafeIdentifier } from '../codegen.ts';
 
 export const compileBlock = (compiler: Compiler, node: BlockNode): void => {
-  const nameNode = typeof node.name === 'string'
-    ? { value: node.name, lineno: node.lineno, colno: node.colno }
-    : node.name;
+  const nameNode =
+    typeof node.name === 'string'
+      ? { value: node.name, lineno: node.lineno, colno: node.colno }
+      : node.name;
   const name = typeof node.name === 'string' ? node.name : String(nameNode?.value ?? 'block');
   assertSafeIdentifier(name, { compiler, lineno: node.lineno, colno: node.colno });
   // WHY: Option C — block functions are async generators. In a generator context (buffer === null) delegate with yield* so the block's chunks stream through; in a string-accumulating context (capture/slot buffer) drain the block into a string via runtime.collectString.
@@ -18,14 +19,19 @@ export const compileBlock = (compiler: Compiler, node: BlockNode): void => {
   }
 };
 
-export const compileSuper = (compiler: Compiler, { node, frame }: CompileNodeInput<SuperNode>): void => {
+export const compileSuper = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<SuperNode>
+): void => {
   const name = node.blockName;
   const id = String(node.symbol?.value ?? 'super');
   assertSafeIdentifier(name, { compiler, lineno: node.lineno, colno: node.colno });
   assertSafeIdentifier(id, { compiler, lineno: node.lineno, colno: node.colno });
 
   emitLineLocation(compiler, node.lineno, node.colno);
-  compiler.emitLine(`${id} = await context.getSuper({ envObj: env, name: ${JSON.stringify(name)}, block: b_${name}, frame, runtime, lineno: ${node.lineno}, colno: ${node.colno} });`);
+  compiler.emitLine(
+    `${id} = await context.getSuper({ envObj: env, name: ${JSON.stringify(name)}, block: b_${name}, frame, runtime, lineno: ${node.lineno}, colno: ${node.colno} });`
+  );
   compiler.emitLine(`${id} = runtime.markSafe(${id});`);
   compiler.emitLine(`frame = frame.set({ name: ${JSON.stringify(id)}, value: ${id} });`);
   frame.set({ name: id, value: id });

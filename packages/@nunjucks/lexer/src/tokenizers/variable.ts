@@ -1,4 +1,4 @@
-import { TOKEN_VARIABLE_START, TOKEN_VARIABLE_END } from '../token-types.ts';
+import { TOKEN_VARIABLE_END, TOKEN_VARIABLE_START } from '../token-types.ts';
 import { createDelimiterTokenizer } from './delimiter.ts';
 
 export const tokenizeVariableStart = createDelimiterTokenizer({

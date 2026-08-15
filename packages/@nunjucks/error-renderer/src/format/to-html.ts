@@ -1,12 +1,22 @@
-import { buildErrorSections } from './to-html-assembly.ts';
-import scriptContent from '../../public/error-script.js' with { type: 'text' };
 import cssContent from '../../public/error-page.css' with { type: 'text' };
+import scriptContent from '../../public/error-script.js' with { type: 'text' };
 import { escapeHtml } from './presentation/syntax-highlight/highlight.ts';
+import { buildErrorSections } from './to-html-assembly.ts';
 import type { Csp, ErrorLike, ToHtmlOptions } from './to-html-types.ts';
 
 const TOGGLE_SCRIPT = `<script>\n${scriptContent}\n</script>`;
 
-const buildDocument = ({ title, body, scripts = '', csp = null }: { title: string; body: string; scripts?: string; csp?: Csp | null }): string => {
+const buildDocument = ({
+  title,
+  body,
+  scripts = '',
+  csp = null,
+}: {
+  title: string;
+  body: string;
+  scripts?: string;
+  csp?: Csp | null;
+}): string => {
   const styleNonce = csp?.nonce ? ` nonce="${csp.nonce}"` : '';
   return `<!DOCTYPE html>
 <html lang="en">
@@ -59,7 +69,12 @@ const buildErrorDocument = (error: ErrorLike, options: ToHtmlOptions): string =>
   });
 
   const docTitle = sections.severity === 'warning' ? 'Template Warning' : 'Template Error';
-  return buildDocument({ title: docTitle, body: sections.wrapped, scripts: TOGGLE_SCRIPT, csp: options.csp ?? null });
+  return buildDocument({
+    title: docTitle,
+    body: sections.wrapped,
+    scripts: TOGGLE_SCRIPT,
+    csp: options.csp ?? null,
+  });
 };
 
 const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string => {
@@ -70,11 +85,15 @@ const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string =>
   }
 
   if (options.isProduction) {
-    return buildDocument({ title: 'Rendering Interrupted', body: buildProductionBody(options), csp: csp ?? null });
+    return buildDocument({
+      title: 'Rendering Interrupted',
+      body: buildProductionBody(options),
+      csp: csp ?? null,
+    });
   }
 
   return buildErrorDocument(error, options);
 };
 
-export { toHtml };
 export type { ToHtmlOptions };
+export { toHtml };

@@ -1,24 +1,33 @@
+import type { CallNode, LookupNode, Node, SliceNode } from '@nunjucks/nodes';
 import { isLiteral, isLookupVal, isSlice, isSymbol } from '@nunjucks/nodes';
-import type { Node, LookupNode, SliceNode, CallNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
+import { emitLocationGuard } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
-import { emitLocationGuard } from '../codegen.ts';
 import { compileAggregate } from './container.ts';
 
-const locationFor = (node: Node | undefined, fallback: Node): { lineno: number; colno: number } => ({
+const locationFor = (
+  node: Node | undefined,
+  fallback: Node
+): { lineno: number; colno: number } => ({
   lineno: node?.lineno ?? fallback.lineno,
-  colno: node?.colno ?? fallback.colno
+  colno: node?.colno ?? fallback.colno,
 });
 
 const getTargetName = (node: Node | undefined): string | null => {
-  if (!node) { return null; }
-  if (isSymbol(node)) { return node.value; }
+  if (!node) {
+    return null;
+  }
+  if (isSymbol(node)) {
+    return node.value;
+  }
   if (isLookupVal(node)) {
     const parentName = getTargetName(node.target);
     const value = node.val;
     const propName: unknown = isLiteral(value) ? value.value : null;
-    if (parentName && propName) { return `${parentName}.${propName}`; }
+    if (parentName && propName) {
+      return `${parentName}.${propName}`;
+    }
   }
   return null;
 };
@@ -34,11 +43,23 @@ const emitSlice = ({ compiler, value, node, frame }: EmitSliceOptions): void => 
   compiler.emit('runtime.slice({ source: (');
   compiler.compileExpression(node.target, frame);
   compiler.emit('), start: ');
-  if (value.start) { compiler.compileExpression(value.start, frame); } else { compiler.emit('null'); }
+  if (value.start) {
+    compiler.compileExpression(value.start, frame);
+  } else {
+    compiler.emit('null');
+  }
   compiler.emit(', stop: ');
-  if (value.stop) { compiler.compileExpression(value.stop, frame); } else { compiler.emit('null'); }
+  if (value.stop) {
+    compiler.compileExpression(value.stop, frame);
+  } else {
+    compiler.emit('null');
+  }
   compiler.emit(', step: ');
-  if (value.step) { compiler.compileExpression(value.step, frame); } else { compiler.emit('null'); }
+  if (value.step) {
+    compiler.compileExpression(value.step, frame);
+  } else {
+    compiler.emit('null');
+  }
   compiler.emit(' })');
 };
 
@@ -63,7 +84,10 @@ const emitMemberLookup = ({ compiler, node, value, frame }: EmitMemberLookupOpti
   compiler.emit(')');
 };
 
-export const compileLookupVal = (compiler: Compiler, { node, frame }: CompileNodeInput<LookupNode>): void => {
+export const compileLookupVal = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<LookupNode>
+): void => {
   const value = node.val;
   const location = locationFor(value, node);
   emitLocationGuard(compiler, location.lineno, location.colno);
@@ -77,7 +101,10 @@ export const compileLookupVal = (compiler: Compiler, { node, frame }: CompileNod
   compiler.emit(')');
 };
 
-export const compileOptionalChain = (compiler: Compiler, { node, frame }: CompileNodeInput<LookupNode>): void => {
+export const compileOptionalChain = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<LookupNode>
+): void => {
   const nodeLoc = locationFor(node.val, node);
   emitLocationGuard(compiler, nodeLoc.lineno, nodeLoc.colno);
   compiler.emit('runtime.optionalMemberLookup((');
@@ -88,7 +115,10 @@ export const compileOptionalChain = (compiler: Compiler, { node, frame }: Compil
   compiler.emit(')');
 };
 
-export const compileOptionalCall = (compiler: Compiler, { node, frame }: CompileNodeInput<CallNode>): void => {
+export const compileOptionalCall = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<CallNode>
+): void => {
   compiler.emit('((');
   compiler.compileExpression(node.name, frame);
   compiler.emit(') == null ? undefined : ');
@@ -98,14 +128,29 @@ export const compileOptionalCall = (compiler: Compiler, { node, frame }: Compile
   compiler.emit(')');
 };
 
-export const compileSlice = (compiler: Compiler, { node, frame }: CompileNodeInput<SliceNode>): void => {
+export const compileSlice = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<SliceNode>
+): void => {
   const nodeLoc = locationFor(node, node);
   emitLocationGuard(compiler, nodeLoc.lineno, nodeLoc.colno);
   compiler.emit('runtime.slice({ source: (');
-  if (node.start) { compiler.compileExpression(node.start, frame); } else { compiler.emit('null'); }
+  if (node.start) {
+    compiler.compileExpression(node.start, frame);
+  } else {
+    compiler.emit('null');
+  }
   compiler.emit('), start: ');
-  if (node.stop) { compiler.compileExpression(node.stop, frame); } else { compiler.emit('null'); }
+  if (node.stop) {
+    compiler.compileExpression(node.stop, frame);
+  } else {
+    compiler.emit('null');
+  }
   compiler.emit(', stop: ');
-  if (node.step) { compiler.compileExpression(node.step, frame); } else { compiler.emit('null'); }
+  if (node.step) {
+    compiler.compileExpression(node.step, frame);
+  } else {
+    compiler.emit('null');
+  }
   compiler.emit(', step: null })');
 };

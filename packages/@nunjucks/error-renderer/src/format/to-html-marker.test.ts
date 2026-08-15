@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
-import { toHtmlMarker } from './to-html-marker.ts';
+import { describe, expect, test } from 'bun:test';
 import type { ErrorLike } from '@nunjucks/error-catalog';
+import { toHtmlMarker } from './to-html-marker.ts';
 
 const MATCHED_UNDEFINED_VARIABLE = "Variable 'foo' is not defined";
 
@@ -88,7 +88,7 @@ describe('toHtmlMarker — iframe srcdoc escaping', () => {
     expect(markerHtml).toContain('<\\/');
     const srcdocLiteral = markerHtml.slice(
       markerHtml.indexOf('srcdoc='),
-      markerHtml.indexOf(';o.appendChild(f)'),
+      markerHtml.indexOf(';o.appendChild(f)')
     );
     expect(srcdocLiteral).not.toContain('</');
   });

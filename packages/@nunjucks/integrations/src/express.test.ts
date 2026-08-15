@@ -7,9 +7,11 @@ import { createEngine } from './express.ts';
 const temporaryDirectories: string[] = [];
 
 afterEach(async () => {
-  for (const directory of temporaryDirectories.splice(0)) {
-    await rm(directory, { recursive: true, force: true });
-  }
+  await Promise.all(
+    temporaryDirectories
+      .splice(0)
+      .map((directory) => rm(directory, { recursive: true, force: true }))
+  );
 });
 
 describe('Express integration', () => {
@@ -21,7 +23,10 @@ describe('Express integration', () => {
 
     const rendered = await new Promise<string>((resolve, reject) => {
       createEngine()(templatePath, { name: 'Ada' }, (err, html) => {
-        if (err) { reject(err); return; }
+        if (err) {
+          reject(err);
+          return;
+        }
         resolve(html ?? '');
       });
     });

@@ -1,7 +1,7 @@
 import type { CaptureNode } from '@nunjucks/nodes';
+import { assertSafeIdentifier } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
-import { assertSafeIdentifier } from '../codegen.ts';
 
 export const compileCapture = (
   compiler: Compiler,
@@ -12,7 +12,9 @@ export const compileCapture = (
 
   if (varName) {
     assertSafeIdentifier(varName, { compiler });
-    compiler.emitLine(`frame = frame.set({ name: ${JSON.stringify(varName)}, value: await (async () => {`);
+    compiler.emitLine(
+      `frame = frame.set({ name: ${JSON.stringify(varName)}, value: await (async () => {`
+    );
   } else {
     compiler.emitLine('(async () => {');
   }

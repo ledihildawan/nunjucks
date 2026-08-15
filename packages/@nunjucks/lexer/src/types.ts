@@ -1,8 +1,8 @@
-import type { Token, } from './token-types.ts';
 import type { Delimiters, DelimiterTags } from './delimiters.ts';
+import type { Token } from './token-types.ts';
 
 export interface LexerState {
-  str: string;
+  source: string;
   index: number;
   lineno: number;
   colno: number;
@@ -18,9 +18,9 @@ export interface LexerOptions {
   lstripBlocks?: boolean;
 }
 
-export interface TokenizeResult {
+export interface TokenStep {
   token: Token;
   state: LexerState;
 }
 
-export type Tokenizer = (state: LexerState) => TokenizeResult | null;
+export type Tokenizer = (state: LexerState) => TokenStep | null;

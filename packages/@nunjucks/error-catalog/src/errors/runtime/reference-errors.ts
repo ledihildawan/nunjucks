@@ -9,10 +9,10 @@ const UNDEFINED_FUNCTION = createErrorDefinition({
     'The function `{subject}` was not registered with `env.addGlobal()`',
     'You may have meant a filter - check if `{subject}` is registered with `env.addFilter()`',
     'A typo in the function name (case-sensitive)',
-    'Missing import - the function may live in another module'
+    'Missing import - the function may live in another module',
   ],
   fixCode: "env.addGlobal('{subject}', function() { /* ... */ })",
-  fixComment: 'Register the missing function globally on the environment before rendering'
+  fixComment: 'Register the missing function globally on the environment before rendering',
 });
 
 const UNDEFINED_FILTER = createErrorDefinition({
@@ -23,11 +23,11 @@ const UNDEFINED_FILTER = createErrorDefinition({
     'The filter `{subject}` was not registered with `env.addFilter()`',
     'A typo in the filter name (case-sensitive)',
     'The input value is `undefined` - check the variable being filtered exists',
-    'You may have meant a global function - check `env.addGlobal()`'
+    'You may have meant a global function - check `env.addGlobal()`',
   ],
   fixCode: "env.addFilter('{subject}', function(value) { return value; })",
   fixComment: 'Register the missing filter on the environment before rendering',
-  documentationUrl: 'https://mozilla.github.io/nunjucks/templating.html#filters'
+  documentationUrl: 'https://mozilla.github.io/nunjucks/templating.html#filters',
 });
 
 const UNDEFINED_TEST = createErrorDefinition({
@@ -37,10 +37,10 @@ const UNDEFINED_TEST = createErrorDefinition({
   causes: [
     'The test `{subject}` was not registered with `env.addTest()`',
     'A typo in the test name (case-sensitive)',
-    'Built-in tests like `defined`, `undefined`, `null` may be what you want'
+    'Built-in tests like `defined`, `undefined`, `null` may be what you want',
   ],
   fixCode: "env.addTest('{subject}', function(value) { return /* boolean */ false; })",
-  fixComment: 'Register the missing test on the environment'
+  fixComment: 'Register the missing test on the environment',
 });
 
 const UNDEFINED_BLOCK = createErrorDefinition({
@@ -51,10 +51,10 @@ const UNDEFINED_BLOCK = createErrorDefinition({
     'The child template overrides block `{subject}`, but the parent template never defines it',
     'The block name `{subject}` may be misspelled in either the child or parent template',
     'The template may be extending the wrong parent file',
-    'The parent file failed to load and is empty'
+    'The parent file failed to load and is empty',
   ],
   fixCode: '{% extends "base.njk" %}\n\n{% block content %}\n  Your content here\n{% endblock %}',
-  fixComment: 'Either rename the block or add the corresponding block to the parent template'
+  fixComment: 'Either rename the block or add the corresponding block to the parent template',
 });
 
 const UNDEFINED_EXTENSION = createErrorDefinition({
@@ -65,9 +65,10 @@ const UNDEFINED_EXTENSION = createErrorDefinition({
     'The extension `{subject}` was not registered in the factory config (`extensions`) or a plugin',
     'A custom tag `{% {subject} %}` was used but the extension defining it was not provided',
     'A typo in the extension name (case-sensitive)',
-    'The extension was folded via a plugin that did not contribute its `tags`'
+    'The extension was folded via a plugin that did not contribute its `tags`',
   ],
-  fixCode: "const njk = nunjucks({ extensions: { '{subject}': { tags: ['{subject}'], run: (ctx, ...args) => '' } } })",
+  fixCode:
+    "const njk = nunjucks({ extensions: { '{subject}': { tags: ['{subject}'], run: (ctx, ...args) => '' } } })",
   fixComment: 'Register the extension in the factory config or via a plugin',
 });
 
@@ -81,12 +82,12 @@ const UNKNOWN_BLOCK_RUNTIME = {
     'The child template overrides block `{subject}`, but the parent template never defines it',
     'The block name `{subject}` may be misspelled in either the child or parent template',
     'The template may be extending the wrong parent file',
-    '`{{ super() }}` is being called but the parent block does not exist'
+    '`{{ super() }}` is being called but the parent block does not exist',
   ],
   fixCode: '{% block content %}\n  {{ super() }}\n  Additional child content\n{% endblock %}',
   fixComment: 'Rename the child block or remove the `super()` call',
   severity: 'error' as const,
-  subjectFrom: firstCapture
+  subjectFrom: firstCapture,
 };
 
 const DUPLICATE_BLOCK = createErrorDefinition({
@@ -96,10 +97,10 @@ const DUPLICATE_BLOCK = createErrorDefinition({
   causes: [
     'The block `{subject}` is defined multiple times in the same template',
     'A copy-paste error left two block declarations with the same name',
-    'The template is being compiled twice (e.g. included and extended simultaneously)'
+    'The template is being compiled twice (e.g. included and extended simultaneously)',
   ],
-  fixCode: "{% block content %}{% endblock %}",
-  fixComment: 'Remove or rename the duplicate block'
+  fixCode: '{% block content %}{% endblock %}',
+  fixComment: 'Remove or rename the duplicate block',
 });
 
 const NO_SUPER_BLOCK = {
@@ -107,13 +108,14 @@ const NO_SUPER_BLOCK = {
   message: 'No super block available',
   pattern: /no super block available|called super\(\) in a block without parent/iu,
   category: 'no_super_block',
-  titleTemplate: "Cannot call super() - parent has no block",
+  titleTemplate: 'Cannot call super() - parent has no block',
   causes: [
     '`super()` was called inside block `{subject}` but the parent template does not define it',
     'The template is being rendered without extending a parent',
-    'The parent block was removed or renamed in the parent file'
+    'The parent block was removed or renamed in the parent file',
   ],
-  fixCode: '{% block {subject} %}\n  {% if false %}{{ super() }}{% endif %}\n  Your content\n{% endblock %}',
+  fixCode:
+    '{% block {subject} %}\n  {% if false %}{{ super() }}{% endif %}\n  Your content\n{% endblock %}',
   fixComment: 'Guard the `super()` call with an `{% if %}` or remove it',
   severity: 'error' as const,
 };
@@ -127,32 +129,40 @@ const RESERVED_KEYWORD = {
   causes: [
     'Used a **reserved JavaScript or nunjucks keyword** as a custom name',
     'Trying to override built-in names like `if`, `for`, `block`, `component`',
-    'The reserved keyword conflicts with parser internals'
+    'The reserved keyword conflicts with parser internals',
   ],
   fixCode: "env.addFilter('my{subject}', function(value) { /* ... */ })",
   fixComment: 'Choose a different name with a prefix or suffix to avoid the conflict',
   severity: 'error' as const,
-  subjectFrom: null
+  subjectFrom: null,
 };
 
 const RESERVED_KEYWORD_CONTEXT = {
   name: 'RESERVED_KEYWORD_CONTEXT',
   message: "Cannot use reserved keyword '{name}' outside of its intended context",
-  pattern: /reserved keyword.*context|cannot use.*reserved keyword|slot.*only available|only available inside.*component/iu,
+  pattern:
+    /reserved keyword.*context|cannot use.*reserved keyword|slot.*only available|only available inside.*component/iu,
   category: 'reserved_keyword_context',
   titleTemplate: "Cannot use reserved keyword '{subject}' outside of its intended context",
   causes: [
     '`{subject}` is a **reserved keyword** with special context requirements',
-    'Only available in specific template constructs'
+    'Only available in specific template constructs',
   ],
   fixCode: 'Use {subject} only in its intended context',
   fixComment: 'Review when {subject} can be used',
   severity: 'error' as const,
-  subjectFrom: firstCapture
+  subjectFrom: firstCapture,
 };
 
 export {
-  UNDEFINED_FUNCTION, UNDEFINED_FILTER, UNDEFINED_TEST,
-  UNDEFINED_BLOCK, UNDEFINED_EXTENSION, UNKNOWN_BLOCK_RUNTIME, DUPLICATE_BLOCK, NO_SUPER_BLOCK,
-  RESERVED_KEYWORD, RESERVED_KEYWORD_CONTEXT,
+  DUPLICATE_BLOCK,
+  NO_SUPER_BLOCK,
+  RESERVED_KEYWORD,
+  RESERVED_KEYWORD_CONTEXT,
+  UNDEFINED_BLOCK,
+  UNDEFINED_EXTENSION,
+  UNDEFINED_FILTER,
+  UNDEFINED_FUNCTION,
+  UNDEFINED_TEST,
+  UNKNOWN_BLOCK_RUNTIME,
 };

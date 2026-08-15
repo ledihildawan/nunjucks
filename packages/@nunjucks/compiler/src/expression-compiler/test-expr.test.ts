@@ -1,16 +1,23 @@
-import { describe, test, expect } from 'bun:test';
-import { compileTest, compileTestCall } from './test-expr.ts';
-import { asCompiler } from '../test-helpers.ts';
+import { describe, expect, test } from 'bun:test';
 import { createFrame } from '@nunjucks/runtime/frame';
+import { asCompiler } from '../test-helpers.ts';
+import { compileTest, compileTestCall } from './test-expr.ts';
 
 const makeCompiler = () => {
   const emitted: string[] = [];
   let id = 0;
   return {
     emitted,
-    emit: (s: string) => { emitted.push(s); },
-    tmpid: () => { id += 1; return `t_${id}`; },
-    compile: (node: { mock?: string }) => { emitted.push(node.mock as string); },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    nextCompilerId: () => {
+      id += 1;
+      return `t_${id}`;
+    },
+    compile: (node: { mock?: string }) => {
+      emitted.push(node.mock as string);
+    },
   };
 };
 
@@ -21,7 +28,8 @@ describe('compileTest', () => {
     const c = makeCompiler();
     compileTest(asCompiler(c), {
       node: {
-        lineno: 3, colno: 7,
+        lineno: 3,
+        colno: 7,
         name: 'defined',
         target: { mock: 'X' },
       } as never,
@@ -43,7 +51,8 @@ describe('compileTestCall', () => {
         target: { mock: 'X' },
         name: 'divisibleby',
         args: [{ mock: 'N' }, { mock: 'M' }],
-        lineno: 4, colno: 2,
+        lineno: 4,
+        colno: 2,
       } as never,
       frame,
     });
@@ -62,7 +71,8 @@ describe('compileTestCall', () => {
         target: { mock: 'X' },
         name: 'odd',
         args: [null],
-        lineno: 1, colno: 1,
+        lineno: 1,
+        colno: 1,
       } as never,
       frame,
     });

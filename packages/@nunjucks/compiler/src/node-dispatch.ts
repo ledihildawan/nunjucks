@@ -1,82 +1,81 @@
-
-import { T } from '@nunjucks/nodes';
 import type { Node, NodeType, SymbolNode } from '@nunjucks/nodes';
+import { T } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
-import type { Compiler } from './index.ts';
 import {
-  compileLiteral,
-  compileSymbol,
-  compileGroup,
-  compileArray,
-  compileDict,
-  compileNodeList,
-  compilePair,
-  compileKeywordArgs,
-  compileFunCall,
-  compilePipeForward,
-  compileLookupVal,
-  compileOptionalChain,
-  compileOptionalCall,
-  compileSlice,
-  compileCompare,
-  compileIs,
-  compileInlineIf,
-  compileWalrus,
-  compileOr,
-  compileAnd,
   compileAdd,
-  compileConcat,
-  compileRange,
-  compileSub,
-  compileMul,
-  compileDiv,
-  compileMod,
-  compileNullishCoalesce,
-  compileIn,
-  compileFloorDiv,
-  compilePow,
-  compileNot,
-  compileNeg,
-  compilePos,
-  compileSpread,
-  compileTemplateLiteral,
-  compileBitwiseOr,
+  compileAnd,
+  compileArray,
   compileBitwiseAnd,
-  compileBitwiseXor,
   compileBitwiseLShift,
-  compileBitwiseRShift,
   compileBitwiseNot,
-  compileIncrement,
+  compileBitwiseOr,
+  compileBitwiseRShift,
+  compileBitwiseXor,
+  compileCompare,
+  compileConcat,
   compileDecrement,
+  compileDict,
+  compileDiv,
+  compileFloorDiv,
+  compileFunCall,
+  compileGroup,
+  compileIn,
+  compileIncrement,
+  compileInlineIf,
+  compileIs,
+  compileKeywordArgs,
+  compileLiteral,
+  compileLookupVal,
+  compileMod,
+  compileMul,
+  compileNeg,
+  compileNodeList,
+  compileNot,
+  compileNullishCoalesce,
+  compileOptionalCall,
+  compileOptionalChain,
+  compileOr,
+  compilePair,
+  compilePipeForward,
+  compilePos,
+  compilePow,
+  compileRange,
+  compileSlice,
+  compileSpread,
+  compileSub,
+  compileSymbol,
+  compileTemplateLiteral,
   compileTest,
   compileTestCall,
+  compileWalrus,
 } from './expression-compiler/index.ts';
+import type { Compiler } from './index.ts';
 
 import {
-  compileIf,
-  compileVariableDeclaration,
-  compileVariableAssignment,
-  compileCompoundAssignment,
-  compileSwitch,
-  compileFor,
-  compileComponentPublic,
   compileBlock,
-  compileSuper,
-  compileImport,
-  compileFromImport,
-  compileExtends,
-  compileInclude,
-  compileTemplateData,
-  compileCapture,
-  compileOutput,
-  compileRoot,
   compileCallExtension,
   compileCallExtensionAsync,
+  compileCapture,
+  compileComponentPublic,
+  compileCompoundAssignment,
   compileExec,
-  compileScope,
+  compileExtends,
+  compileFor,
+  compileFromImport,
+  compileIf,
+  compileImport,
+  compileInclude,
   compileMatch,
-  compileWhen,
+  compileOutput,
   compileRenderBlock,
+  compileRoot,
+  compileScope,
+  compileSuper,
+  compileSwitch,
+  compileTemplateData,
+  compileVariableAssignment,
+  compileVariableDeclaration,
+  compileWhen,
 } from './statement-compiler/index.ts';
 
 export interface CompileNodeInput<N extends Node = Node> {
@@ -84,15 +83,20 @@ export interface CompileNodeInput<N extends Node = Node> {
   frame: Frame;
 }
 
-export type CompileFn<N extends Node = Node> = (compiler: Compiler, input: CompileNodeInput<N>) => void;
+export type CompileFn<N extends Node = Node> = (
+  compiler: Compiler,
+  input: CompileNodeInput<N>
+) => void;
 
 const noFrame =
   <N extends Node = Node>(compile: (compiler: Compiler, node: N) => void): CompileFn =>
-  (compiler, { node }) => compile(compiler, node as N);
+  (compiler, { node }) =>
+    compile(compiler, node as N);
 
 const withFrame =
   <N extends Node>(compile: (compiler: Compiler, input: CompileNodeInput<N>) => void): CompileFn =>
-  (compiler, input) => compile(compiler, { node: input.node as N, frame: input.frame });
+  (compiler, input) =>
+    compile(compiler, { node: input.node as N, frame: input.frame });
 
 const NODE_COMPILERS: Partial<Record<NodeType, CompileFn>> = {
   [T.NODE]: noFrame(compileLiteral),

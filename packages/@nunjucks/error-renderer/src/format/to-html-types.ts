@@ -1,7 +1,6 @@
-import type { LineBase } from '@nunjucks/error-catalog';
+import type { ErrorLike, LineBase } from '@nunjucks/error-catalog';
 import type { Phase } from '@nunjucks/shared';
 import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
-import type { ErrorLike } from '@nunjucks/error-catalog';
 
 export type { ErrorLike };
 
@@ -54,4 +53,4 @@ interface ToHtmlOptions {
   projectRoot?: string;
 }
 
-export type { Csp, HumanTitleInput, ClassifiedError, LocationInfo, ToHtmlOptions };
+export type { ClassifiedError, Csp, HumanTitleInput, LocationInfo, ToHtmlOptions };

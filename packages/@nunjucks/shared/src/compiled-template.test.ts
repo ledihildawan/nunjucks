@@ -1,5 +1,5 @@
-import { describe, test, expect } from 'bun:test';
-import { BLOCK_META_KEY, isCompiledTemplateExports, extractBlocks } from './compiled-template.ts';
+import { describe, expect, test } from 'bun:test';
+import { BLOCK_META_KEY, extractBlocks, isCompiledTemplateExports } from './compiled-template.ts';
 
 describe('BLOCK_META_KEY', () => {
   test('is a stable string constant', () => {
@@ -9,7 +9,12 @@ describe('BLOCK_META_KEY', () => {
 
 describe('isCompiledTemplateExports', () => {
   test('accepts exports with a root render function', () => {
-    const value = { root: async function* root(): AsyncGenerator<string, unknown> { yield ''; return undefined; } };
+    const value = {
+      root: async function* root(): AsyncGenerator<string, unknown> {
+        yield '';
+        return undefined;
+      },
+    };
     expect(isCompiledTemplateExports(value)).toBe(true);
   });
 

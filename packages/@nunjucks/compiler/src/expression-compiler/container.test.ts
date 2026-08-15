@@ -1,30 +1,46 @@
-import { describe, test, expect } from 'bun:test';
-import {
-  compileLiteral, compileSymbol, compileGroup, compileArray, compileDict,
-  compilePair, compileKeywordArgs, compileSpread, compileTemplateLiteral,
-} from './container.ts';
-import { symbol, keywordArgs, pair, spread, templateLiteral } from '@nunjucks/nodes';
-import { asCompiler } from '../test-helpers.ts';
+import { describe, expect, test } from 'bun:test';
+import { keywordArgs, pair, spread, symbol, templateLiteral } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { ZERO_LOC } from '@nunjucks/shared';
-import { loc } from '@nunjucks/shared';
+import { loc, ZERO_LOC } from '@nunjucks/shared';
+import { asCompiler } from '../test-helpers.ts';
+import {
+  compileArray,
+  compileDict,
+  compileGroup,
+  compileKeywordArgs,
+  compileLiteral,
+  compilePair,
+  compileSpread,
+  compileSymbol,
+  compileTemplateLiteral,
+} from './container.ts';
 
 const frame = createFrame();
 
 const makeCompiler = () => {
   const emitted: string[] = [];
   const emitValue = (node: { mock?: string; value?: string; children?: unknown[] }) => {
-    if (typeof node.mock === 'string') { emitted.push(node.mock); return; }
-    if (typeof node.value === 'string') { emitted.push(`"${node.value}"`); return; }
+    if (typeof node.mock === 'string') {
+      emitted.push(node.mock);
+      return;
+    }
+    if (typeof node.value === 'string') {
+      emitted.push(`"${node.value}"`);
+      return;
+    }
     emitted.push(String(node.value));
   };
   return {
     emitted,
-    emit: (s: string) => { emitted.push(s); },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
     compile: emitValue,
     compileExpression: emitValue,
     compileChildren: emitValue,
-    fail: (msg: string) => { throw new Error(msg); },
+    fail: (msg: string) => {
+      throw new Error(msg);
+    },
   };
 };
 
@@ -64,13 +80,28 @@ describe('compileSymbol', () => {
 describe('compilePair', () => {
   test('string key emits literal key', () => {
     const c = makeCompiler();
-    compilePair(asCompiler(c), { node: pair(loc({ lineno: 1, colno: 1 }), { key: symbol(loc({ lineno: 1, colno: 1 }), 'a'), val: { mock: 'V' } as never }), frame });
+    compilePair(asCompiler(c), {
+      node: pair(loc({ lineno: 1, colno: 1 }), {
+        key: symbol(loc({ lineno: 1, colno: 1 }), 'a'),
+        val: { mock: 'V' } as never,
+      }),
+      frame,
+    });
     expect(c.emitted.join('')).toBe('"a": V');
   });
   test('non-string non-symbol key fails', () => {
     const c = makeCompiler();
-    expect(() => compilePair(asCompiler(c), { node: pair(loc({ lineno: 1, colno: 1 }), { key: symbol(loc({ lineno: 1, colno: 1 }), 'a'), val: spread(loc({ lineno: 1, colno: 1 }), { argument: symbol(loc({ lineno: 1, colno: 1 }), 's') }) as never }) as never, frame }))
-      .not.toThrow();
+    expect(() =>
+      compilePair(asCompiler(c), {
+        node: pair(loc({ lineno: 1, colno: 1 }), {
+          key: symbol(loc({ lineno: 1, colno: 1 }), 'a'),
+          val: spread(loc({ lineno: 1, colno: 1 }), {
+            argument: symbol(loc({ lineno: 1, colno: 1 }), 's'),
+          }) as never,
+        }) as never,
+        frame,
+      })
+    ).not.toThrow();
   });
 });
 
@@ -85,7 +116,12 @@ describe('compileKeywordArgs', () => {
 describe('compileSpread', () => {
   test('emits ... before argument', () => {
     const c = makeCompiler();
-    compileSpread(asCompiler(c), { node: spread(loc({ lineno: 1, colno: 1 }), { argument: symbol(loc({ lineno: 1, colno: 1 }), 'xs') }), frame });
+    compileSpread(asCompiler(c), {
+      node: spread(loc({ lineno: 1, colno: 1 }), {
+        argument: symbol(loc({ lineno: 1, colno: 1 }), 'xs'),
+      }),
+      frame,
+    });
     expect(c.emitted.join('')).toBe('..."xs"');
   });
 });
@@ -107,7 +143,10 @@ describe('compileTemplateLiteral', () => {
 describe('aggregate containers', () => {
   test('array emits comma-separated children in brackets', () => {
     const c = makeCompiler();
-    compileArray(asCompiler(c), { node: { children: [{ mock: 'a' }, { mock: 'b' }] } as never, frame });
+    compileArray(asCompiler(c), {
+      node: { children: [{ mock: 'a' }, { mock: 'b' }] } as never,
+      frame,
+    });
     expect(c.emitted.join('')).toBe('[a,b]');
   });
 

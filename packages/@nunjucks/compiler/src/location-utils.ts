@@ -8,7 +8,9 @@ export const extractPropertyLocation = (
   node: Node | null | undefined,
   colnoOffset = 0
 ): NodeLocation => {
-  if (!node) { return { lineno: null, colno: null }; }
+  if (!node) {
+    return { lineno: null, colno: null };
+  }
   if (isLookupVal(node)) {
     const value = node.val;
     if (value && hasIntegerLocation(value)) {

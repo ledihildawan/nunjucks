@@ -1,20 +1,20 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
+import type { TemplateError } from '@nunjucks/error-formatter';
 import { createTokenizer } from '@nunjucks/lexer';
-import { createParser } from '../index.ts';
-import { nextTokenOrNull } from '../cursor.ts';
-import { parseVariableDeclaration, parseVariableAssignment } from './variable.ts';
+import type { Result } from '@nunjucks/lib';
+import type { Node } from '@nunjucks/nodes';
 import { getNodeTypeName } from '@nunjucks/nodes';
 import type { ParserContext } from '../cursor.ts';
-import type { Node } from '@nunjucks/nodes';
-import { asTokenStream, unwrap } from '../test-helpers.ts';
-import type { Result } from '@nunjucks/lib';
-import type { TemplateError } from '@nunjucks/error-formatter';
+import { nextTokenOrNull } from '../cursor.ts';
+import { createParser } from '../index.ts';
+import { unwrap } from '../test-helpers.ts';
+import { parseVariableAssignment, parseVariableDeclaration } from './variable.ts';
 
 const parseStatement = (
   src: string,
   parser: (ctx: ParserContext) => Result<Node, TemplateError>
 ): Node => {
-  const ctx = createParser(asTokenStream(createTokenizer(src)));
+  const ctx = createParser(createTokenizer(src));
   nextTokenOrNull(ctx);
   return unwrap(parser(ctx as never));
 };

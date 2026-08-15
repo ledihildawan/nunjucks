@@ -1,5 +1,5 @@
-import { createLog } from '@nunjucks/error-formatter';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
+import { createLog } from '@nunjucks/error-formatter';
 import { last, pipe, split } from 'remeda';
 import type { Emitter } from './index.ts';
 
@@ -20,7 +20,9 @@ export const fail = ({
 }: FailOptions): never => {
   const lastPart = pipe(msg, split(':'), last());
   const subject = (lastPart ?? 'compile').trim();
-  const errorDef = ERROR_DEFINITIONS[errorName as keyof typeof ERROR_DEFINITIONS] ?? ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE;
+  const errorDef =
+    ERROR_DEFINITIONS[errorName as keyof typeof ERROR_DEFINITIONS] ??
+    ERROR_DEFINITIONS.WALK_UNKNOWN_TYPE;
 
   throw createLog('error', {
     def: errorDef,
@@ -32,7 +34,7 @@ export const fail = ({
       phase: 'compile',
       templateName: compiler.templateName,
       lineBase: 'zero',
-    }
+    },
   });
 };
 
@@ -51,8 +53,13 @@ interface AssertIdentifierOptions {
   colno?: number | null;
 }
 
-export const assertSafeIdentifier = (name: string, { compiler, lineno, colno }: AssertIdentifierOptions): void => {
-  if (SAFE_IDENTIFIER_RE.test(name)) { return; }
+export const assertSafeIdentifier = (
+  name: string,
+  { compiler, lineno, colno }: AssertIdentifierOptions
+): void => {
+  if (SAFE_IDENTIFIER_RE.test(name)) {
+    return;
+  }
   throw createLog('error', {
     def: ERROR_DEFINITIONS.INVALID_IDENTIFIER,
     params: { name },
@@ -63,11 +70,11 @@ export const assertSafeIdentifier = (name: string, { compiler, lineno, colno }: 
       phase: 'compile',
       templateName: compiler.templateName,
       lineBase: 'zero',
-    }
+    },
   });
 };
 
-export const tmpid = (compiler: { lastId: number }): string => {
+export const nextCompilerId = (compiler: { lastId: number }): string => {
   compiler.lastId += 1;
   return `t_${compiler.lastId}`;
 };
@@ -91,7 +98,7 @@ export const emitLineLocation = (
 export const pushBuffer = (
   compiler: Pick<Emitter, 'buffer' | 'bufferStack' | 'emit' | 'getCode'> & { lastId: number }
 ): string => {
-  const id = tmpid(compiler);
+  const id = nextCompilerId(compiler);
   compiler.bufferStack.push(compiler.buffer);
   compiler.buffer = id;
   compiler.emit(`let ${id} = "";`);
@@ -102,9 +109,7 @@ export const pushBuffer = (
 export const appendTarget = (compiler: Pick<Emitter, 'buffer'>): string =>
   compiler.buffer === null ? 'yield ' : `${compiler.buffer} += `;
 
-export const getTemplateName = (
-  compiler: { templateName: string | null }
-): string => {
+export const getTemplateName = (compiler: { templateName: string | null }): string => {
   if (compiler.templateName === null || compiler.templateName === undefined) {
     return 'undefined';
   }

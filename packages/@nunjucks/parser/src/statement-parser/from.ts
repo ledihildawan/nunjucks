@@ -1,18 +1,14 @@
-import type { Token } from '@nunjucks/lexer';
-import {
-  TOKEN_BLOCK_END,
-  TOKEN_COMMA,
-  isSymbolToken,
-} from '@nunjucks/lexer';
-import { appendChild, fromImportNode, nodeList, pair } from '@nunjucks/nodes';
-import type { ChildrenNode, Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { nextToken, peekToken, skip, skipSymbol, fail } from "../cursor.ts";
-import type { ParserContext } from "../cursor.ts";
-import { ok, isErr, type Result } from '@nunjucks/lib';
-import { parseExpression, parsePrimary } from "../expression-parser/index.ts";
-import { parseWithContext } from "./import-context.ts";
-import { loc } from '@nunjucks/lexer';
+import type { Token } from '@nunjucks/lexer';
+import { isSymbolToken, TOKEN_BLOCK_END, TOKEN_COMMA } from '@nunjucks/lexer';
+import { isErr, ok, type Result } from '@nunjucks/lib';
+import type { ChildrenNode, Node } from '@nunjucks/nodes';
+import { appendChild, fromImportNode, nodeList, pair } from '@nunjucks/nodes';
+import { loc } from '@nunjucks/shared';
+import type { ParserContext } from '../cursor.ts';
+import { fail, nextToken, peekToken, skip, skipSymbol } from '../cursor.ts';
+import { parseExpression, parsePrimary } from '../expression-parser/index.ts';
+import { parseWithContext } from './import-context.ts';
 
 const isUnderscore = (name: Node): boolean => {
   if (typeof name.value === 'string' && name.value[0] === '_') {
@@ -26,24 +22,33 @@ const parseImportName = (
   names: ChildrenNode
 ): Result<{ names: ChildrenNode; withContext: boolean | null | undefined }, TemplateError> => {
   const nameR = parsePrimary(parserContext);
-  if (isErr(nameR)) { return nameR; }
+  if (isErr(nameR)) {
+    return nameR;
+  }
   const name = nameR.value;
   if (isUnderscore(name)) {
-    return fail(parserContext, 'parseFrom: names starting with an underscore cannot be imported', { lineno: name.lineno, colno: name.colno });
+    return fail(parserContext, 'parseFrom: names starting with an underscore cannot be imported', {
+      lineno: name.lineno,
+      colno: name.colno,
+    });
   }
 
   const hasAlias = skipSymbol(parserContext, 'as');
   let newNames: ChildrenNode;
   if (hasAlias) {
     const aliasR = parsePrimary(parserContext);
-    if (isErr(aliasR)) { return aliasR; }
+    if (isErr(aliasR)) {
+      return aliasR;
+    }
     newNames = appendChild(names, pair(loc(name), { key: name, val: aliasR.value }));
   } else {
     newNames = appendChild(names, name);
   }
 
   const withContextR = parseWithContext(parserContext);
-  if (isErr(withContextR)) { return withContextR; }
+  if (isErr(withContextR)) {
+    return withContextR;
+  }
   return ok({ names: newNames, withContext: withContextR.value });
 };
 
@@ -53,17 +58,24 @@ const handleBlockEnd = (
   fromTok: Token
 ): Result<void, TemplateError> => {
   if (names.children.length === 0) {
-    return fail(parserContext, 'parseFrom: Expected at least one import name', { lineno: fromTok.lineno, colno: fromTok.colno });
+    return fail(parserContext, 'parseFrom: Expected at least one import name', {
+      lineno: fromTok.lineno,
+      colno: fromTok.colno,
+    });
   }
 
   const nextTokR = peekToken(parserContext);
-  if (isErr(nextTokR)) { return nextTokR; }
+  if (isErr(nextTokR)) {
+    return nextTokR;
+  }
   if (isSymbolToken(nextTokR.value) && nextTokR.value.value[0] === '-') {
     parserContext.dropLeadingWhitespace = true;
   }
 
   const consumedR = nextToken(parserContext);
-  if (isErr(consumedR)) { return consumedR; }
+  if (isErr(consumedR)) {
+    return consumedR;
+  }
   return ok(undefined);
 };
 
@@ -71,37 +83,56 @@ const parseFromImportIteration = (
   parserContext: ParserContext,
   names: ChildrenNode,
   fromTok: Token
-): Result<{ names: ChildrenNode; withContext: boolean | null | undefined; done: boolean }, TemplateError> => {
+): Result<
+  { names: ChildrenNode; withContext: boolean | null | undefined; done: boolean },
+  TemplateError
+> => {
   const nextTokR = peekToken(parserContext);
-  if (isErr(nextTokR)) { return nextTokR; }
+  if (isErr(nextTokR)) {
+    return nextTokR;
+  }
   if (nextTokR.value.type === TOKEN_BLOCK_END) {
     const endR = handleBlockEnd(parserContext, names, fromTok);
-    if (isErr(endR)) { return endR; }
+    if (isErr(endR)) {
+      return endR;
+    }
     return ok({ names, withContext: undefined, done: true });
   }
 
   if (names.children.length > 0 && !skip(parserContext, TOKEN_COMMA)) {
-    return fail(parserContext, 'parseFrom: expected comma', { lineno: fromTok.lineno, colno: fromTok.colno });
+    return fail(parserContext, 'parseFrom: expected comma', {
+      lineno: fromTok.lineno,
+      colno: fromTok.colno,
+    });
   }
 
   const result = parseImportName(parserContext, names);
-  if (isErr(result)) { return result; }
+  if (isErr(result)) {
+    return result;
+  }
   return ok({ names: result.value.names, withContext: result.value.withContext, done: false });
 };
 
 export const parseFrom = (parserContext: ParserContext): Result<Node, TemplateError> => {
   const fromTokR = peekToken(parserContext);
-  if (isErr(fromTokR)) { return fromTokR; }
+  if (isErr(fromTokR)) {
+    return fromTokR;
+  }
   const fromTok = fromTokR.value;
   if (!skipSymbol(parserContext, 'from')) {
     return fail(parserContext, 'parseFrom: expected from');
   }
 
   const templateR = parseExpression(parserContext);
-  if (isErr(templateR)) { return templateR; }
+  if (isErr(templateR)) {
+    return templateR;
+  }
 
   if (!skipSymbol(parserContext, 'import')) {
-    return fail(parserContext, 'parseFrom: expected import', { lineno: fromTok.lineno, colno: fromTok.colno });
+    return fail(parserContext, 'parseFrom: expected import', {
+      lineno: fromTok.lineno,
+      colno: fromTok.colno,
+    });
   }
 
   const importLoop = (
@@ -109,7 +140,9 @@ export const parseFrom = (parserContext: ParserContext): Result<Node, TemplateEr
     accWithContext: boolean | null | undefined
   ): Result<{ names: ChildrenNode; withContext: boolean | null | undefined }, TemplateError> => {
     const iterR = parseFromImportIteration(parserContext, accNames, fromTok);
-    if (isErr(iterR)) { return iterR; }
+    if (isErr(iterR)) {
+      return iterR;
+    }
     if (iterR.value.done) {
       return ok({ names: accNames, withContext: accWithContext });
     }
@@ -117,11 +150,15 @@ export const parseFrom = (parserContext: ParserContext): Result<Node, TemplateEr
   };
 
   const loopR = importLoop(nodeList(loc(fromTok)), undefined);
-  if (isErr(loopR)) { return loopR; }
+  if (isErr(loopR)) {
+    return loopR;
+  }
 
-  return ok(fromImportNode(loc(fromTok), {
-    template: templateR.value,
-    names: loopR.value.names,
-    withContext: loopR.value.withContext ?? false,
-  }));
+  return ok(
+    fromImportNode(loc(fromTok), {
+      template: templateR.value,
+      names: loopR.value.names,
+      withContext: loopR.value.withContext ?? false,
+    })
+  );
 };

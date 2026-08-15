@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createState } from '../state.ts';
-import { tokenizeBlockStart, tokenizeBlockEnd } from './block.ts';
+import { tokenizeBlockEnd, tokenizeBlockStart } from './block.ts';
 
 const run = (src: string) => tokenizeBlockStart({ ...createState(src), inCode: false });
 

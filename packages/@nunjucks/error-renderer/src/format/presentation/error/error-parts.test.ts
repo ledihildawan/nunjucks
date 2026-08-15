@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { mergeErrorParts } from './error-parts.ts';
 
 describe('mergeErrorParts', () => {
@@ -74,7 +74,9 @@ describe('mergeErrorParts', () => {
       expect(Array.isArray(parts.causes)).toBe(true);
       expect(typeof parts.fixCode).toBe('string');
       expect(typeof parts.fixComment).toBe('string');
-      expect(parts.documentationUrl === null || typeof parts.documentationUrl === 'string').toBe(true);
+      expect(parts.documentationUrl === null || typeof parts.documentationUrl === 'string').toBe(
+        true
+      );
     });
   });
 });

@@ -1,29 +1,21 @@
-
 import type { Node } from '@nunjucks/nodes';
-import type { Frame } from '@nunjucks/runtime';
-
-import { forEach } from 'remeda';
-import { compileDispatch } from './node-dispatch.ts';
+import type { Frame, UndefinedMode } from '@nunjucks/runtime';
 import { DEFAULT_UNDEFINED_MODE } from '@nunjucks/runtime';
 import { createHtmlContextTracker, type HtmlContext } from '@nunjucks/runtime/escaping';
-import type { UndefinedMode } from '@nunjucks/runtime';
+import { forEach } from 'remeda';
+import { fail, getTemplateName, nextCompilerId, pushBuffer } from './codegen.ts';
 import {
-  fail as failCompiler,
-  getTemplateName as getCompilerTemplateName,
-  pushBuffer as pushCompilerBuffer,
-  tmpid as nextCompilerId,
-} from './codegen.ts';
-import {
-  assertType as assertNodeType,
-  compileChildren as compileNodeChildren,
-  compileExpression as compileNodeExpression,
+  assertNodeType,
+  compileNodeChildren,
+  compileNodeExpression,
 } from './compile-expression.ts';
+import { compileDispatch } from './node-dispatch.ts';
 import {
-  addScopeLevel as addCompilerScopeLevel,
-  closeScopeLevels as closeCompilerScopeLevels,
-  emitFuncBegin as emitCompilerFuncBegin,
-  emitFuncEnd as emitCompilerFuncEnd,
-  withScopedSyntax as withCompilerScopedSyntax,
+  addCompilerScopeLevel,
+  closeCompilerScopeLevels,
+  emitCompilerFuncBegin,
+  emitCompilerFuncEnd,
+  withCompilerScopedSyntax,
 } from './statement-emitter.ts';
 
 export type NodeTypeMatcher = string | { readonly name: string };
@@ -57,7 +49,7 @@ export interface Compiler extends Emitter, ScopeManager {
   lastId: number;
   streamErrorRecovery: boolean;
   fail: (msg: string, lineno?: number, colno?: number) => void;
-  tmpid: () => string;
+  nextCompilerId: () => string;
   getTemplateName: () => string;
   emitStreamCatch: (lineno: number, colno: number, defaultAssignment?: string) => void;
   compileChildren: (node: Node, frame: Frame) => void;
@@ -95,10 +87,10 @@ export const createCompiler = ({
     compiledLine: 0,
 
     fail(msg, lineno, colno) {
-      failCompiler({ compiler, msg, lineno, colno });
+      fail({ compiler, msg, lineno, colno });
     },
     pushBuffer() {
-      return pushCompilerBuffer(compiler);
+      return pushBuffer(compiler);
     },
     popBuffer() {
       compiler.buffer = compiler.bufferStack.pop() ?? null;
@@ -111,7 +103,7 @@ export const createCompiler = ({
       compiler.emit(`${code}\n`);
     },
     emitLines(...lines) {
-      forEach(lines, line => compiler.emitLine(line));
+      forEach(lines, (line) => compiler.emitLine(line));
     },
     emitFuncBegin(node, name) {
       emitCompilerFuncBegin(compiler, node, name);
@@ -128,15 +120,17 @@ export const createCompiler = ({
     withScopedSyntax(func) {
       withCompilerScopedSyntax(compiler, func);
     },
-    tmpid() {
+    nextCompilerId() {
       return nextCompilerId(compiler);
     },
     getTemplateName() {
-      return getCompilerTemplateName(compiler);
+      return getTemplateName(compiler);
     },
     emitStreamCatch(lineno, colno, defaultAssignment) {
       const assignment = defaultAssignment ? `${defaultAssignment}; ` : '';
-      compiler.emitLine(`} catch (e) { ${assignment}lineno = ${lineno}; colno = ${colno}; yield runtime.streamError(e, { lineno, colno }); }`);
+      compiler.emitLine(
+        `} catch (e) { ${assignment}lineno = ${lineno}; colno = ${colno}; yield runtime.streamError(e, { lineno, colno }); }`
+      );
     },
     compileChildren(node, frame) {
       compileNodeChildren(compiler, node, frame);

@@ -1,9 +1,9 @@
-import { describe, test, expect } from 'bun:test';
-import { compileExec } from './exec.ts';
+import { describe, expect, test } from 'bun:test';
 import { funCall, symbol } from '@nunjucks/nodes';
-import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
 import { loc } from '@nunjucks/shared';
+import { asCompiler } from '../test-helpers.ts';
+import { compileExec } from './exec.ts';
 
 const frame = createFrame();
 
@@ -11,9 +11,15 @@ const makeCompiler = () => {
   const emitted: string[] = [];
   return {
     emitted,
-    emit: (s: string) => { emitted.push(s); },
-    emitLine: (s: string) => { emitted.push(`${s}\n`); },
-    compileExpression: (n: { mock?: string }) => { emitted.push(n.mock ?? 'EXPR'); },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    emitLine: (s: string) => {
+      emitted.push(`${s}\n`);
+    },
+    compileExpression: (n: { mock?: string }) => {
+      emitted.push(n.mock ?? 'EXPR');
+    },
   };
 };
 
@@ -22,8 +28,12 @@ describe('compileExec', () => {
     const c = makeCompiler();
     compileExec(asCompiler(c), {
       node: {
-        lineno: 3, colno: 7,
-        expr: funCall(loc({ lineno: 3, colno: 7 }), { name: symbol(loc({ lineno: 3, colno: 7 }), 'fn'), args: [] }),
+        lineno: 3,
+        colno: 7,
+        expr: funCall(loc({ lineno: 3, colno: 7 }), {
+          name: symbol(loc({ lineno: 3, colno: 7 }), 'fn'),
+          args: [],
+        }),
       } as never,
       frame,
     });

@@ -1,5 +1,5 @@
-import { describe, test, expect } from 'bun:test';
-import { createState, getChar, getPeek, isFinished, advance, matches } from './state.ts';
+import { describe, expect, test } from 'bun:test';
+import { advance, createState, getChar, getPeek, isFinished, matches } from './state.ts';
 
 describe('createState', () => {
   test('initialises with defaults', () => {

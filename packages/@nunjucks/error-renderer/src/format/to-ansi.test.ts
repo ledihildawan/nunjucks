@@ -1,7 +1,7 @@
-import { describe, test, expect } from 'bun:test';
-import { toAnsi } from './to-ansi.ts';
-import type { AnsiOptions } from './to-ansi.ts';
+import { describe, expect, test } from 'bun:test';
 import type { ErrorLike } from '@nunjucks/error-catalog';
+import type { AnsiOptions } from './to-ansi.ts';
+import { toAnsi } from './to-ansi.ts';
 
 const nullishErrorInputs: readonly unknown[] = [null, undefined];
 

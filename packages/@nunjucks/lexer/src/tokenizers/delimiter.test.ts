@@ -1,24 +1,24 @@
-import { describe, test, expect } from 'bun:test';
-import { createState, advance } from '../state.ts';
-import { createDelimiterTokenizer } from './delimiter.ts';
+import { describe, expect, test } from 'bun:test';
+import type { Delimiters } from '../delimiters.ts';
 import {
-  TOKEN_BLOCK_START,
-  TOKEN_BLOCK_END,
-  TOKEN_VARIABLE_START,
-  TOKEN_VARIABLE_END,
-} from '../token-types.ts';
+  DEFAULT_BLOCK_END,
+  DEFAULT_BLOCK_START,
+  DEFAULT_VARIABLE_END,
+  DEFAULT_VARIABLE_START,
+  STRIP_BLOCK_END,
+  STRIP_BLOCK_START,
+  STRIP_VARIABLE_END,
+  STRIP_VARIABLE_START,
+} from '../delimiters.ts';
+import { advance, createState } from '../state.ts';
 import type { TokenType } from '../token-types.ts';
 import {
-  DEFAULT_BLOCK_START,
-  DEFAULT_BLOCK_END,
-  DEFAULT_VARIABLE_START,
-  DEFAULT_VARIABLE_END,
-  STRIP_BLOCK_START,
-  STRIP_BLOCK_END,
-  STRIP_VARIABLE_START,
-  STRIP_VARIABLE_END,
-} from '../delimiters.ts';
-import type { Delimiters } from '../delimiters.ts';
+  TOKEN_BLOCK_END,
+  TOKEN_BLOCK_START,
+  TOKEN_VARIABLE_END,
+  TOKEN_VARIABLE_START,
+} from '../token-types.ts';
+import { createDelimiterTokenizer } from './delimiter.ts';
 
 const delimiterRoles: ReadonlyArray<{
   name: string;

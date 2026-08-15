@@ -1,8 +1,7 @@
-
-import { pipe, keys, reduce, find, map } from 'remeda';
-import type { Classifier, ClassifyInput, Classification } from './types.ts';
-import { RULES, ERROR_DEFINITIONS, DEFAULT_CLASSIFICATION, toRule } from './registry.ts';
+import { find, keys, map, pipe, reduce } from 'remeda';
+import { DEFAULT_CLASSIFICATION, ERROR_DEFINITIONS, RULES, toRule } from './registry.ts';
 import { reservedKeywordClassifier } from './reserved-keyword.ts';
+import type { Classification, Classifier, ClassifyInput } from './types.ts';
 
 interface ReplacePlaceholdersInput {
   str: string | null | undefined;
@@ -10,22 +9,27 @@ interface ReplacePlaceholdersInput {
   extra?: Record<string, string | null> | null;
 }
 
-const replacePlaceholders = ({ str, undefinedName, extra }: ReplacePlaceholdersInput): string | null => {
-  if (!str) { return str ?? null; }
+const replacePlaceholders = ({
+  str,
+  undefinedName,
+  extra,
+}: ReplacePlaceholdersInput): string | null => {
+  if (!str) {
+    return str ?? null;
+  }
   // WHY: {subject}, {target}, {name}, {key} are aliases — they all resolve to the same value (the extracted subject from the pattern match). This is because catalog definitions use different placeholder names for semantic clarity (e.g. "Variable '{name}'" vs "Property '{key}'") even though the runtime always extracts one subject value.
   const baseResult = str
     .replaceAll('{subject}', undefinedName ?? '')
     .replaceAll('{target}', undefinedName ?? '')
     .replaceAll('{name}', undefinedName ?? '')
     .replaceAll('{key}', undefinedName ?? '');
-  if (!extra) { return baseResult; }
+  if (!extra) {
+    return baseResult;
+  }
   return pipe(
     extra,
     keys(),
-    reduce(
-      (acc, key) => acc.replaceAll(`{${key}}`, extra[key] ?? ''),
-      baseResult
-    )
+    reduce((acc, key) => acc.replaceAll(`{${key}}`, extra[key] ?? ''), baseResult)
   );
 };
 
@@ -36,15 +40,17 @@ interface MapCausesOptions {
 }
 
 const mapCauses = ({ causes, undefinedName, extra }: MapCausesOptions): string[] =>
-  causes.map(c => replacePlaceholders({ str: c, undefinedName, extra })).filter((cause): cause is string => cause !== null);
+  causes
+    .map((c) => replacePlaceholders({ str: c, undefinedName, extra }))
+    .filter((cause): cause is string => cause !== null);
 
-const extractRuleData = (rule: typeof RULES[0], match: RegExpMatchArray | null) => ({
+const extractRuleData = (rule: (typeof RULES)[0], match: RegExpMatchArray | null) => ({
   undefinedName: match !== null && rule.subjectFrom ? rule.subjectFrom(match) : null,
   extra: rule.extraFrom && match ? rule.extraFrom(match) : null,
 });
 
 interface BuildClassificationOptions {
-  rule: typeof RULES[0];
+  rule: (typeof RULES)[0];
   undefinedName: string | null;
   extra: Record<string, string | null> | null;
   input: ClassifyInput;
@@ -61,7 +67,9 @@ const buildClassification = ({
   const baseCauses = input.causes?.length ? input.causes : rule.causes;
   const baseFixCode = input.fixCode ?? rule.fixCode;
   const baseFixComment = input.fixComment ?? rule.fixComment;
-  const title = rule.titleTemplate ? replacePlaceholders({ str: rule.titleTemplate, undefinedName: effectiveSubject, extra }) : null;
+  const title = rule.titleTemplate
+    ? replacePlaceholders({ str: rule.titleTemplate, undefinedName: effectiveSubject, extra })
+    : null;
 
   return {
     category: rule.category,
@@ -69,16 +77,17 @@ const buildClassification = ({
     title,
     causes: mapCauses({ causes: baseCauses, undefinedName: effectiveSubject, extra }),
     fixCode: replacePlaceholders({ str: baseFixCode, undefinedName: effectiveSubject, extra }),
-    fixComment: replacePlaceholders({ str: baseFixComment, undefinedName: effectiveSubject, extra }),
+    fixComment: replacePlaceholders({
+      str: baseFixComment,
+      undefinedName: effectiveSubject,
+      extra,
+    }),
     documentationUrl: rule.documentationUrl ?? null,
-    severity: rule.severity ?? 'error'
+    severity: rule.severity ?? 'error',
   };
 };
 
-const deriveFromRule = (
-  rule: typeof RULES[0],
-  input: ClassifyInput
-): Classification => {
+const deriveFromRule = (rule: (typeof RULES)[0], input: ClassifyInput): Classification => {
   const match = input.message?.match(rule.pattern) ?? null;
   const { undefinedName, extra } = extractRuleData(rule, match);
   return buildClassification({ rule, undefinedName, extra, input });
@@ -96,14 +105,14 @@ const codeClassifier: Classifier = (input) => {
 };
 
 const patternClassifier: Classifier = (input) => {
-  const rule = RULES.find(r => r.pattern.test(input.message ?? ''));
+  const rule = RULES.find((r) => r.pattern.test(input.message ?? ''));
   return rule ? deriveFromRule(rule, input) : null;
 };
 
 export const classifiers: Classifier[] = [
   reservedKeywordClassifier,
   codeClassifier,
-  patternClassifier
+  patternClassifier,
 ];
 
 export const classifyInput = (input: ClassifyInput): Classification =>
@@ -133,7 +142,7 @@ export const classifyFromError = (error: ErrorWithExtras | null): Classification
       fixCode: null,
       fixComment: null,
       documentationUrl: null,
-      severity: 'error'
+      severity: 'error',
     };
   }
   return classifyInput({
@@ -142,6 +151,6 @@ export const classifyFromError = (error: ErrorWithExtras | null): Classification
     subject: error.subject,
     causes: error.causes,
     fixCode: error.fixCode ?? undefined,
-    fixComment: error.fixComment ?? undefined
+    fixComment: error.fixComment ?? undefined,
   });
 };

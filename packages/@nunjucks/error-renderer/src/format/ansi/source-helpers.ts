@@ -1,8 +1,18 @@
 import picocolors from 'picocolors';
+import type {
+  SourceTraceCaret,
+  SourceTraceLine,
+} from '../presentation/source-trace/source-trace.ts';
 import { highlightAnsi } from '../presentation/syntax-highlight/highlight.ts';
-import type { SourceTraceLine, SourceTraceCaret } from '../presentation/source-trace/source-trace.ts';
 
-export { formatSourceTrace, formatCodeLine, getLinePrefix, formatCaretLine, getMarker, getLineNumWidth };
+export {
+  formatCaretLine,
+  formatCodeLine,
+  formatSourceTrace,
+  getLineNumWidth,
+  getLinePrefix,
+  getMarker,
+};
 
 const SEPARATOR = ' │ ';
 const ERROR_MARKER = '> ';
@@ -10,12 +20,14 @@ const NORMAL_MARKER = '  ';
 const MIN_LINE_NUM_WIDTH = 2;
 
 const getMarker = (isError: boolean): string => {
-  if (isError) { return ERROR_MARKER; }
+  if (isError) {
+    return ERROR_MARKER;
+  }
   return NORMAL_MARKER;
 };
 
 const getLineNumWidth = (lines: SourceTraceLine[]): number => {
-  const maxLineNum = Math.max(...lines.map(l => l.number));
+  const maxLineNum = Math.max(...lines.map((l) => l.number));
   return Math.max(MIN_LINE_NUM_WIDTH, String(maxLineNum).length);
 };
 
@@ -26,7 +38,12 @@ interface FormatCodeLineInput {
   lineNumWidth: number;
 }
 
-const formatCodeLine = ({ lineNum, content, isError, lineNumWidth }: FormatCodeLineInput): string => {
+const formatCodeLine = ({
+  lineNum,
+  content,
+  isError,
+  lineNumWidth,
+}: FormatCodeLineInput): string => {
   const marker = getMarker(isError);
   const lineNumStr = String(lineNum).padStart(lineNumWidth, ' ');
   const highlighted = isError ? highlightAnsi(content) : picocolors.dim(highlightAnsi(content));
@@ -47,19 +64,26 @@ const formatCaretLine = ({ lineNumWidth, charStart, carets }: FormatCaretLineInp
   return `${prefix}${' '.repeat(charStart)}${picocolors.red(carets)}`;
 };
 
-const formatSourceTrace = (
-  lines: SourceTraceLine[],
-  caret: SourceTraceCaret | null
-): string[] => {
-  if (lines.length === 0) { return []; }
+const formatSourceTrace = (lines: SourceTraceLine[], caret: SourceTraceCaret | null): string[] => {
+  if (lines.length === 0) {
+    return [];
+  }
 
   const lineNumWidth = getLineNumWidth(lines);
 
   return lines.flatMap((line) => {
-    const codeLine = formatCodeLine({ lineNum: line.number, content: line.content, isError: line.isError, lineNumWidth });
+    const codeLine = formatCodeLine({
+      lineNum: line.number,
+      content: line.content,
+      isError: line.isError,
+      lineNumWidth,
+    });
     if (!(line.isError && caret)) {
       return [codeLine];
     }
-    return [codeLine, formatCaretLine({ lineNumWidth, charStart: caret.charStart, carets: caret.carets })];
+    return [
+      codeLine,
+      formatCaretLine({ lineNumWidth, charStart: caret.charStart, carets: caret.carets }),
+    ];
   });
 };

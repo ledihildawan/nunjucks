@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { stripInlineMarkdown } from '@nunjucks/lib/strip-inline-markdown';
 
 describe('stripInlineMarkdown', () => {
@@ -15,7 +15,9 @@ describe('stripInlineMarkdown', () => {
   });
 
   test('strips every code segment in a string with multiple code spans (replaceAll regression)', () => {
-    expect(stripInlineMarkdown('use `foo` then `bar` then `baz`')).toBe('use foo then bar then baz');
+    expect(stripInlineMarkdown('use `foo` then `bar` then `baz`')).toBe(
+      'use foo then bar then baz'
+    );
   });
 
   test('strips mixed bold and code segments together', () => {

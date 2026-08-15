@@ -1,10 +1,10 @@
-import { forEach } from 'remeda';
+import type { CompoundAssignNode, Node, VariableDeclNode } from '@nunjucks/nodes';
 import { isArrayPattern, isObjectPattern, isSymbol } from '@nunjucks/nodes';
-import type { Node, VariableDeclNode, CompoundAssignNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
+import { forEach } from 'remeda';
+import { assertSafeIdentifier, emitLocationGuard } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
-import { emitLocationGuard, assertSafeIdentifier } from '../codegen.ts';
 import { compileDestructuring } from './pattern.ts';
 
 const getTargetName = (target: Node | undefined): string | null => {
@@ -19,14 +19,15 @@ const getTargetName = (target: Node | undefined): string | null => {
 
 const hasPatternTarget = (node: VariableDeclNode): boolean => {
   const targets = node.targets;
-  return Boolean(targets) && targets.some(t =>
-    isArrayPattern(t) || isObjectPattern(t)
-  );
+  return Boolean(targets) && targets.some((t) => isArrayPattern(t) || isObjectPattern(t));
 };
 
-const compileVariableDeclaration = (compiler: Compiler, { node, frame }: CompileNodeInput<VariableDeclNode>): void => {
+const compileVariableDeclaration = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<VariableDeclNode>
+): void => {
   if (hasPatternTarget(node)) {
-    const valueId = compiler.tmpid();
+    const valueId = compiler.nextCompilerId();
     compiler.emitLine(`let ${valueId} = `);
     compiler.compileExpression(node.value, frame);
     compiler.emitLine(';');
@@ -37,21 +38,26 @@ const compileVariableDeclaration = (compiler: Compiler, { node, frame }: Compile
   } else {
     const targets = node.targets;
     const name = getTargetName(targets[0]);
-    const valueId = compiler.tmpid();
+    const valueId = compiler.nextCompilerId();
 
     compiler.emitLine(`let ${valueId} = `);
     compiler.compileExpression(node.value, frame);
     compiler.emitLine(';');
 
     if (name !== null) {
-      compiler.emitLine(`frame = frame.set({ name: ${JSON.stringify(name)}, value: ${valueId}, resolveUp: true });`);
+      compiler.emitLine(
+        `frame = frame.set({ name: ${JSON.stringify(name)}, value: ${valueId}, resolveUp: true });`
+      );
     }
   }
 };
 
-const compileVariableAssignment = (compiler: Compiler, { node, frame }: CompileNodeInput<VariableDeclNode>): void => {
+const compileVariableAssignment = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<VariableDeclNode>
+): void => {
   if (hasPatternTarget(node)) {
-    const valueId = compiler.tmpid();
+    const valueId = compiler.nextCompilerId();
     compiler.emitLine(`let ${valueId} = `);
     compiler.compileExpression(node.value, frame);
     compiler.emitLine(';');
@@ -67,30 +73,44 @@ const compileVariableAssignment = (compiler: Compiler, { node, frame }: CompileN
       // WHY: defense-in-depth — `name` originates from a lexer `symbol` token (DELIM_CHARS blocks the run), but we still validate the identifier before emitting it into the generated source. String interpolation inside the ReferenceError message escapes through JSON.stringify so the embedded `${name}` cannot break out of the generated double-quoted string.
       assertSafeIdentifier(name, { compiler, lineno: node.lineno, colno: node.colno });
       const referenceErrorMessage = `Variable '${name}' is not defined. Use ${name} := value to declare it.`;
-      compiler.emitLine(`if (frame.lookup(${JSON.stringify(name)}) === undefined) { throw new ReferenceError(${JSON.stringify(referenceErrorMessage)}); }`);
+      compiler.emitLine(
+        `if (frame.lookup(${JSON.stringify(name)}) === undefined) { throw new ReferenceError(${JSON.stringify(referenceErrorMessage)}); }`
+      );
 
-      const valueId = compiler.tmpid();
+      const valueId = compiler.nextCompilerId();
       compiler.emitLine(`let ${valueId} = `);
       compiler.compileExpression(node.value, frame);
       compiler.emitLine(';');
 
-      compiler.emitLine(`frame = frame.set({ name: ${JSON.stringify(name)}, value: ${valueId}, resolveUp: true });`);
+      compiler.emitLine(
+        `frame = frame.set({ name: ${JSON.stringify(name)}, value: ${valueId}, resolveUp: true });`
+      );
     }
   }
 };
 
 const getCompoundOpJs = (operator: string): string | null => {
   switch (operator) {
-    case '||=': return '||';
-    case '&&=': return '&&';
-    case '??=': return '??';
-    case '**=': return '**';
-    case '+=': return '+';
-    case '-=': return '-';
-    case '*=': return '*';
-    case '/=': return '/';
-    case '%=': return '%';
-    default: return null;
+    case '||=':
+      return '||';
+    case '&&=':
+      return '&&';
+    case '??=':
+      return '??';
+    case '**=':
+      return '**';
+    case '+=':
+      return '+';
+    case '-=':
+      return '-';
+    case '*=':
+      return '*';
+    case '/=':
+      return '/';
+    case '%=':
+      return '%';
+    default:
+      return null;
   }
 };
 
@@ -106,17 +126,31 @@ interface FilterAssignInput extends CompoundAssignEmitInput {
   key: string;
 }
 
-const emitFloorDivAssignment = ({ compiler, node, frame, currentId, valueId }: CompoundAssignEmitInput): void => {
+const emitFloorDivAssignment = ({
+  compiler,
+  node,
+  frame,
+  currentId,
+  valueId,
+}: CompoundAssignEmitInput): void => {
   compiler.emit(`let ${valueId} = Math.floor(${currentId} / `);
   compiler.compileExpression(node.value, frame);
   compiler.emit(');');
 };
 
-const emitFilterAssignment = ({ compiler, node, frame, currentId, valueId }: FilterAssignInput): void => {
+const emitFilterAssignment = ({
+  compiler,
+  node,
+  frame,
+  currentId,
+  valueId,
+}: FilterAssignInput): void => {
   const valueNode = node.value;
-  const filterName = valueNode.type === 'symbol' ? valueNode.value as string : null;
+  const filterName = valueNode.type === 'symbol' ? (valueNode.value as string) : null;
   if (filterName) {
-    compiler.emit(`let ${valueId} = await (async () => { const r = await runtime.runFilter({ env, name: ${JSON.stringify(filterName)}, lineno: ${node.lineno ?? 0}, colno: ${node.colno ?? 0}, context, args: [${currentId}] }); if (!r.ok) { throw r.error; } return r.value; })();`);
+    compiler.emit(
+      `let ${valueId} = await (async () => { const r = await runtime.runFilter({ env, name: ${JSON.stringify(filterName)}, lineno: ${node.lineno ?? 0}, colno: ${node.colno ?? 0}, context, args: [${currentId}] }); if (!r.ok) { throw r.error; } return r.value; })();`
+    );
   } else {
     compiler.emit(`let ${valueId} = await runtime.awaitValue(`);
     compiler.compileExpression(valueNode, frame);
@@ -124,7 +158,13 @@ const emitFilterAssignment = ({ compiler, node, frame, currentId, valueId }: Fil
   }
 };
 
-const emitGenericCompoundAssignment = ({ compiler, node, frame, currentId, valueId }: CompoundAssignEmitInput): void => {
+const emitGenericCompoundAssignment = ({
+  compiler,
+  node,
+  frame,
+  currentId,
+  valueId,
+}: CompoundAssignEmitInput): void => {
   const compoundOp = getCompoundOpJs(node.operator);
   if (compoundOp === null) {
     compiler.fail(`Unsupported compound operator: ${node.operator}`, node.lineno, node.colno);
@@ -134,7 +174,10 @@ const emitGenericCompoundAssignment = ({ compiler, node, frame, currentId, value
   compiler.emit(';');
 };
 
-const compileCompoundAssignment = (compiler: Compiler, { node, frame }: CompileNodeInput<CompoundAssignNode>): void => {
+const compileCompoundAssignment = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<CompoundAssignNode>
+): void => {
   const targets = node.targets;
   const name = getTargetName(targets[0]);
   if (name === null) {
@@ -143,8 +186,8 @@ const compileCompoundAssignment = (compiler: Compiler, { node, frame }: CompileN
   }
 
   const key = JSON.stringify(name);
-  const currentId = compiler.tmpid();
-  const valueId = compiler.tmpid();
+  const currentId = compiler.nextCompilerId();
+  const valueId = compiler.nextCompilerId();
 
   emitLocationGuard(compiler, node.lineno ?? 0, node.colno ?? 0);
   compiler.emit('(() => {');
@@ -164,4 +207,4 @@ const compileCompoundAssignment = (compiler: Compiler, { node, frame }: CompileN
   compiler.emit('})())');
 };
 
-export { compileVariableDeclaration, compileVariableAssignment, compileCompoundAssignment };
+export { compileCompoundAssignment, compileVariableAssignment, compileVariableDeclaration };

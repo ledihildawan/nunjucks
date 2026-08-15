@@ -1,20 +1,32 @@
 import type { LineBase } from '@nunjucks/error-catalog';
 import { escapeRegex } from '@nunjucks/lib';
-import { toDisplayLocation } from './location.ts';
 import { calculateCaretPosition } from '../syntax-highlight/caret.ts';
+import { toDisplayLocation } from './location.ts';
 
 const buildSecretValuePattern = (blockedKeys: readonly string[] | null): RegExp | null => {
-  if (!blockedKeys || blockedKeys.length === 0) { return null; }
+  if (!blockedKeys || blockedKeys.length === 0) {
+    return null;
+  }
   const cleaned = blockedKeys.filter((k): k is string => typeof k === 'string' && k.length > 0);
-  if (cleaned.length === 0) { return null; }
+  if (cleaned.length === 0) {
+    return null;
+  }
   const alternation = cleaned.map(escapeRegex).join('|');
-  return new RegExp(`\\b(${alternation})(\\s*[:=]\\s*)(['"])([^'"\\\\]*(?:\\\\.[^'"\\\\]*)*)\\3`, 'giu');
+  return new RegExp(
+    `\\b(${alternation})(\\s*[:=]\\s*)(['"])([^'"\\\\]*(?:\\\\.[^'"\\\\]*)*)\\3`,
+    'giu'
+  );
 };
 
 const redactSecretValues = (line: string, blockedKeys: readonly string[] | null): string => {
   const pattern = buildSecretValuePattern(blockedKeys);
-  if (!pattern) { return line; }
-  return line.replaceAll(pattern, (_match, key, sep, quote) => `${key}${sep}${quote}[Redacted]${quote}`);
+  if (!pattern) {
+    return line;
+  }
+  return line.replaceAll(
+    pattern,
+    (_match, key, sep, quote) => `${key}${sep}${quote}[Redacted]${quote}`
+  );
 };
 
 interface SourceTraceLine {
@@ -60,7 +72,8 @@ const windowSourceTrace = (params: {
   resolvedPath: string | null;
   blockedKeys: readonly string[] | null;
 }): SourceTrace => {
-  const { content, displayLine, displayCol, sourceStartLine, context, resolvedPath, blockedKeys } = params;
+  const { content, displayLine, displayCol, sourceStartLine, context, resolvedPath, blockedKeys } =
+    params;
 
   const lines = content.split('\n');
   const errorIndex = displayLine - sourceStartLine;
@@ -78,7 +91,7 @@ const windowSourceTrace = (params: {
     return {
       number: sourceStartLine + index,
       content: redactSecretValues(rawLine, blockedKeys),
-      isError: index === errorIndex
+      isError: index === errorIndex,
     };
   });
 
@@ -86,11 +99,11 @@ const windowSourceTrace = (params: {
   const caretInfo = displayCol > 0 ? calculateCaretPosition(errorLineContent, displayCol) : null;
   const caret: SourceTraceCaret | null = caretInfo
     ? {
-      line: displayLine,
-      charStart: caretInfo.wordStart,
-      charEnd: caretInfo.wordEnd,
-      carets: caretInfo.carets
-    }
+        line: displayLine,
+        charStart: caretInfo.wordStart,
+        charEnd: caretInfo.wordEnd,
+        carets: caretInfo.carets,
+      }
     : null;
 
   return { lines: traceLines, caret, displayLine, displayCol, resolvedPath };
@@ -105,7 +118,7 @@ const buildSourceTrace = (input: BuildSourceTraceInput): SourceTrace => {
     lineBase = null,
     sourceStartLine = 1,
     context = DEFAULT_CONTEXT,
-    blockedKeys = null
+    blockedKeys = null,
   } = input;
 
   const location = toDisplayLocation({ lineno, colno, lineBase });
@@ -123,9 +136,9 @@ const buildSourceTrace = (input: BuildSourceTraceInput): SourceTrace => {
     sourceStartLine,
     context,
     resolvedPath: templatePath,
-    blockedKeys
+    blockedKeys,
   });
 };
 
-export { windowSourceTrace, buildSourceTrace };
-export type { SourceTraceLine, SourceTraceCaret, SourceTrace, BuildSourceTraceInput };
+export type { BuildSourceTraceInput, SourceTrace, SourceTraceCaret, SourceTraceLine };
+export { buildSourceTrace, windowSourceTrace };

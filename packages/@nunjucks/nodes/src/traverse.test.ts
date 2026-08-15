@@ -1,8 +1,8 @@
-import { describe, test, expect } from 'bun:test';
-import { root, output, templateData, block } from './index.ts';
-import type { Node, ChildrenNode } from './index.ts';
-import { walk, findAll, appendChild } from './traverse.ts';
+import { describe, expect, test } from 'bun:test';
 import { ZERO_LOC } from '@nunjucks/shared';
+import type { ChildrenNode, Node } from './index.ts';
+import { block, output, root, templateData } from './index.ts';
+import { appendChild, findAll, walk } from './traverse.ts';
 
 describe('walk', () => {
   test('visits all nodes in AST', () => {
@@ -21,9 +21,7 @@ describe('walk', () => {
   });
 
   test('replaces node when fn returns new node', () => {
-    const ast = root(ZERO_LOC, [
-      output(ZERO_LOC, [templateData(ZERO_LOC, 'a')]),
-    ]) as Node;
+    const ast = root(ZERO_LOC, [output(ZERO_LOC, [templateData(ZERO_LOC, 'a')])]) as Node;
     const transformed = walk(ast, (n: Node) => {
       if (n.type === 'templateData') {
         return { ...n, value: 'REPLACED' } as Node;

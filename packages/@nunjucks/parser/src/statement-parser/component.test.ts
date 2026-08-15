@@ -1,13 +1,13 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createTokenizer } from '@nunjucks/lexer';
+import type { Node, SlotBlock } from '@nunjucks/nodes';
+import { getNodeTypeName } from '@nunjucks/nodes';
 import { createParser } from '../index.ts';
 import { parseNodes } from '../parse-root.ts';
-import { getNodeTypeName } from '@nunjucks/nodes';
-import type { Node, SlotBlock } from '@nunjucks/nodes';
-import { asTokenStream, unwrap } from '../test-helpers.ts';
+import { unwrap } from '../test-helpers.ts';
 
 const parseFirst = (src: string): Node => {
-  const ctx = createParser(asTokenStream(createTokenizer(src)));
+  const ctx = createParser(createTokenizer(src));
   return unwrap(parseNodes(ctx))[0] as Node;
 };
 
@@ -43,6 +43,6 @@ describe('parseComponent', () => {
       '{% component card %}{% slot header %}head{% endslot %}body{% endcomponent %}'
     );
     const slots = (node as { fallbackSlots: readonly SlotBlock[] }).fallbackSlots;
-    expect(slots.some(s => s.name === 'header')).toBe(true);
+    expect(slots.some((s) => s.name === 'header')).toBe(true);
   });
 });

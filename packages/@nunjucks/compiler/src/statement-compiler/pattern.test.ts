@@ -1,23 +1,43 @@
-import { describe, test, expect } from 'bun:test';
-import { compileDestructuring } from './pattern.ts';
-import { arrayPattern, objectPattern, assignmentPattern, restPattern } from '@nunjucks/nodes';
-import { symbol, literal, pair } from '@nunjucks/nodes';
+import { describe, expect, test } from 'bun:test';
 import type { Node } from '@nunjucks/nodes';
-import { asCompiler } from '../test-helpers.ts';
+import {
+  arrayPattern,
+  assignmentPattern,
+  literal,
+  objectPattern,
+  pair,
+  restPattern,
+  symbol,
+} from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime/frame';
 import { ZERO_LOC } from '@nunjucks/shared';
+import { asCompiler } from '../test-helpers.ts';
+import { compileDestructuring } from './pattern.ts';
 
 const makeCompiler = () => {
   const emitted: string[] = [];
   let id = 0;
   return {
     emitted,
-    emit: (s: string) => { emitted.push(s); },
-    emitLine: (s: string) => { emitted.push(`${s}\n`); },
-    tmpid: () => { id += 1; return `t_${id}`; },
-    compile: (n: { mock?: string }) => { emitted.push(n.mock ?? 'X'); },
-    compileExpression: (n: { mock?: string }) => { emitted.push(n.mock ?? 'E'); },
-    fail: (msg: string) => { throw new Error(msg); },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    emitLine: (s: string) => {
+      emitted.push(`${s}\n`);
+    },
+    nextCompilerId: () => {
+      id += 1;
+      return `t_${id}`;
+    },
+    compile: (n: { mock?: string }) => {
+      emitted.push(n.mock ?? 'X');
+    },
+    compileExpression: (n: { mock?: string }) => {
+      emitted.push(n.mock ?? 'E');
+    },
+    fail: (msg: string) => {
+      throw new Error(msg);
+    },
   };
 };
 
@@ -51,7 +71,10 @@ describe('compileDestructuring', () => {
 
   test('assignment pattern emits a default-value binding', () => {
     const pattern = arrayPattern(ZERO_LOC, [
-      assignmentPattern(ZERO_LOC, { target: symbol(ZERO_LOC, 'a'), defaultVal: literal(ZERO_LOC, 1) }),
+      assignmentPattern(ZERO_LOC, {
+        target: symbol(ZERO_LOC, 'a'),
+        defaultVal: literal(ZERO_LOC, 1),
+      }),
     ]);
     const out = destructure(pattern, 'src');
     expect(out).toContain('=== undefined ?');

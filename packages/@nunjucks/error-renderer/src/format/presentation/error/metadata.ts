@@ -1,7 +1,7 @@
 import type { LineBase } from '@nunjucks/error-catalog';
 import type { Phase } from '@nunjucks/shared';
-import type { SourceTrace } from '../source-trace/source-trace.ts';
 import { DEFAULT_IDE } from '../ide-links/defaults.ts';
+import type { SourceTrace } from '../source-trace/source-trace.ts';
 
 export interface NormalizedLogMetadata {
   lineno: number | null;
@@ -56,7 +56,10 @@ export interface FormatterState {
   humanTitle?: string;
 }
 
-export const createFormatterState = ({ metadata, options = {} }: FormatterStateInput): FormatterState => ({
+export const createFormatterState = ({
+  metadata,
+  options = {},
+}: FormatterStateInput): FormatterState => ({
   dev: options.dev ?? false,
   ide: options.ide ?? DEFAULT_IDE,
   verbosity: options.verbosity ?? 'full',
@@ -74,5 +77,5 @@ export const createFormatterState = ({ metadata, options = {} }: FormatterStateI
   jsCallerErrorLine: options.jsCallerErrorLine,
   isJsCaller: options.isJsCaller,
   isProduction: options.isProduction,
-  humanTitle: options.humanTitle
+  humanTitle: options.humanTitle,
 });

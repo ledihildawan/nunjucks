@@ -1,8 +1,8 @@
-import { describe, test, expect } from 'bun:test';
-import { compileAdd, compileSub, compileMul, compileOr, compileAnd } from './binary.ts';
-import { asCompiler } from '../test-helpers.ts';
-import { createFrame } from '@nunjucks/runtime/frame';
+import { describe, expect, test } from 'bun:test';
 import type { Node } from '@nunjucks/nodes';
+import { createFrame } from '@nunjucks/runtime/frame';
+import { asCompiler } from '../test-helpers.ts';
+import { compileAdd, compileAnd, compileMul, compileOr, compileSub } from './binary.ts';
 
 interface MockNode {
   mock: string;
@@ -16,8 +16,12 @@ const makeCompiler = () => {
   const emitted: string[] = [];
   return {
     emitted,
-    emit: (s: string) => { emitted.push(s); },
-    compile: (node: Node | MockNode) => { emitted.push((node as MockNode).mock); },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    compile: (node: Node | MockNode) => {
+      emitted.push((node as MockNode).mock);
+    },
   };
 };
 

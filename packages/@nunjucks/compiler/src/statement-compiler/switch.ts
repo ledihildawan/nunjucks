@@ -3,11 +3,14 @@ import { forEach } from 'remeda';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
-export const compileSwitch = (compiler: Compiler, { node, frame }: CompileNodeInput<SwitchNode>): void => {
+export const compileSwitch = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<SwitchNode>
+): void => {
   compiler.emit('switch (');
   compiler.compile(node.expr, frame);
   compiler.emitLine(') {');
-  forEach(node.cases ?? [], c => {
+  forEach(node.cases ?? [], (c) => {
     compiler.emit('case ');
     compiler.compile(c.cond, frame);
     compiler.emitLine(':');

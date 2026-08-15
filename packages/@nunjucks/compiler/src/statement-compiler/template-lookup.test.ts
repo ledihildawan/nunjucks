@@ -1,20 +1,39 @@
-import { describe, test, expect } from 'bun:test';
-import { getTemplateLocation, compileGetTemplate } from './template-lookup.ts';
-import { extendsNode, include, importNode, fromImportNode, literal, symbol, nodeList } from '@nunjucks/nodes';
+import { describe, expect, test } from 'bun:test';
+import {
+  extendsNode,
+  fromImportNode,
+  importNode,
+  include,
+  literal,
+  nodeList,
+  symbol,
+} from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import type { Compiler } from '../index.ts';
+import { compileGetTemplate, getTemplateLocation } from './template-lookup.ts';
 
 const makeCompiler = () => {
   const emitted: string[] = [];
   let id = 0;
   return {
     emitted,
-    emit: (s: string) => { emitted.push(s); },
-    emitLine: (s: string) => { emitted.push(`${s}\n`); },
-    tmpid: () => { id += 1; return `t_${id}`; },
-    compile: (n: { mock?: string }) => { emitted.push(n.mock ?? 'X'); },
-    compileExpression: (n: { mock?: string }) => { emitted.push(n.mock ?? 'E'); },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    emitLine: (s: string) => {
+      emitted.push(`${s}\n`);
+    },
+    nextCompilerId: () => {
+      id += 1;
+      return `t_${id}`;
+    },
+    compile: (n: { mock?: string }) => {
+      emitted.push(n.mock ?? 'X');
+    },
+    compileExpression: (n: { mock?: string }) => {
+      emitted.push(n.mock ?? 'E');
+    },
     streamErrorRecovery: false,
     getTemplateName: () => '"test.html"',
   };
@@ -28,7 +47,10 @@ describe('getTemplateLocation', () => {
   });
 
   test('extracts location from include node', () => {
-    const node = include(ZERO_LOC, { template: literal(ZERO_LOC, 'partial.html'), ignoreMissing: false });
+    const node = include(ZERO_LOC, {
+      template: literal(ZERO_LOC, 'partial.html'),
+      ignoreMissing: false,
+    });
     const loc = getTemplateLocation(node);
     expect(loc.lineno).toBe(ZERO_LOC.lineno);
   });
@@ -40,7 +62,10 @@ describe('getTemplateLocation', () => {
   });
 
   test('extracts location from from-import node', () => {
-    const node = fromImportNode(ZERO_LOC, { template: literal(ZERO_LOC, 'utils.html'), names: nodeList(ZERO_LOC, []) });
+    const node = fromImportNode(ZERO_LOC, {
+      template: literal(ZERO_LOC, 'utils.html'),
+      names: nodeList(ZERO_LOC, []),
+    });
     const loc = getTemplateLocation(node);
     expect(loc.lineno).toBe(ZERO_LOC.lineno);
   });
@@ -63,16 +88,26 @@ describe('compileGetTemplate', () => {
     const compiler = makeCompiler();
     const frame = createFrame();
     const node = extendsNode(ZERO_LOC, { template: literal(ZERO_LOC, 'base.html') });
-    compileGetTemplate({ compiler: compiler as unknown as Compiler, node, frame, options: { eagerCompile: true, ignoreMissing: false } });
+    compileGetTemplate({
+      compiler: compiler as unknown as Compiler,
+      node,
+      frame,
+      options: { eagerCompile: true, ignoreMissing: false },
+    });
     const out = compiler.emitted.join('');
     expect(out).toContain('env.getTemplate');
   });
 
-  test('returns tmpid variable name', () => {
+  test('returns nextCompilerId variable name', () => {
     const compiler = makeCompiler();
     const frame = createFrame();
     const node = extendsNode(ZERO_LOC, { template: literal(ZERO_LOC, 'base.html') });
-    const result = compileGetTemplate({ compiler: compiler as unknown as Compiler, node, frame, options: { eagerCompile: true, ignoreMissing: false } });
+    const result = compileGetTemplate({
+      compiler: compiler as unknown as Compiler,
+      node,
+      frame,
+      options: { eagerCompile: true, ignoreMissing: false },
+    });
     expect(result).toMatch(/^t_\d+$/);
   });
 
@@ -80,8 +115,15 @@ describe('compileGetTemplate', () => {
     const compiler = makeCompiler();
     const frame = createFrame();
     const node = extendsNode(ZERO_LOC, { template: literal(ZERO_LOC, 'base.html') });
-    compileGetTemplate({ compiler: compiler as unknown as Compiler, node, frame, options: { eagerCompile: true, ignoreMissing: false } });
+    compileGetTemplate({
+      compiler: compiler as unknown as Compiler,
+      node,
+      frame,
+      options: { eagerCompile: true, ignoreMissing: false },
+    });
     const out = compiler.emitted.join('');
-    expect(out).toContain('env.getTemplate({ name: E, eagerCompile: true, ignoreMissing: false });');
+    expect(out).toContain(
+      'env.getTemplate({ name: E, eagerCompile: true, ignoreMissing: false });'
+    );
   });
 });

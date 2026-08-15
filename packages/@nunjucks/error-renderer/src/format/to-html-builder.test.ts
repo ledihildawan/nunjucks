@@ -1,5 +1,10 @@
-import { describe, test, expect } from 'bun:test';
-import { buildErrorHeader, buildErrorFooter, buildErrorBodyContent, buildHtmlWrapper } from './to-html-builder.ts';
+import { describe, expect, test } from 'bun:test';
+import {
+  buildErrorBodyContent,
+  buildErrorFooter,
+  buildErrorHeader,
+  buildHtmlWrapper,
+} from './to-html-builder.ts';
 import type { ClassifiedError, ErrorLike } from './to-html-types.ts';
 
 describe('buildErrorHeader', () => {
@@ -118,7 +123,11 @@ describe('buildErrorBodyContent', () => {
 
 describe('buildHtmlWrapper', () => {
   test('wraps header, body and footer into a labelled main element', () => {
-    const html = buildHtmlWrapper({ header: '<header/>', errorBody: '<body/>', footer: '<footer/>' });
+    const html = buildHtmlWrapper({
+      header: '<header/>',
+      errorBody: '<body/>',
+      footer: '<footer/>',
+    });
     expect(html).toContain('error-wrapper');
     expect(html).toContain('aria-labelledby="err-title"');
     expect(html).toContain('<header/>');

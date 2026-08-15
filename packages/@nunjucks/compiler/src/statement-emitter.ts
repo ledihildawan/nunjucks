@@ -1,7 +1,7 @@
 import type { Node } from '@nunjucks/nodes';
 import type { Emitter, ScopeManager } from './index.ts';
 
-export const emitFuncBegin = (
+export const emitCompilerFuncBegin = (
   compiler: Emitter & ScopeManager,
   node: Node,
   name: string
@@ -16,7 +16,7 @@ export const emitFuncBegin = (
   compiler.emitLine('try {');
 };
 
-export const emitFuncEnd = (compiler: Emitter & ScopeManager, noReturn?: boolean): void => {
+export const emitCompilerFuncEnd = (compiler: Emitter & ScopeManager, noReturn?: boolean): void => {
   if (!noReturn && compiler.buffer !== null) {
     compiler.emitLine(`return ${compiler.buffer};`);
   }
@@ -29,13 +29,11 @@ export const emitFuncEnd = (compiler: Emitter & ScopeManager, noReturn?: boolean
   compiler.buffer = null;
 };
 
-export const addScopeLevel = (
-  compiler: Pick<ScopeManager, 'scopeStack'>
-): void => {
+export const addCompilerScopeLevel = (compiler: Pick<ScopeManager, 'scopeStack'>): void => {
   compiler.scopeStack.push('})');
 };
 
-export const closeScopeLevels = (
+export const closeCompilerScopeLevels = (
   compiler: Pick<ScopeManager, 'scopeStack'> & Pick<Emitter, 'emitLine'>
 ): void => {
   if (compiler.scopeStack.length > 0) {
@@ -44,7 +42,7 @@ export const closeScopeLevels = (
   }
 };
 
-export const withScopedSyntax = (
+export const withCompilerScopedSyntax = (
   compiler: Pick<ScopeManager, 'scopeStack' | 'closeScopeLevels'>,
   func: () => void
 ): void => {

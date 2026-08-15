@@ -81,6 +81,6 @@ export const T = Object.freeze({
   RENDER: 'render',
 } as const);
 
-export type NodeType = typeof T[keyof typeof T];
+export type NodeType = (typeof T)[keyof typeof T];
 
 export const BracketNotation = Symbol('BracketNotation');

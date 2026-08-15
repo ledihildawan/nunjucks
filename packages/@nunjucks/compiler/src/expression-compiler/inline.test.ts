@@ -1,20 +1,31 @@
-import { describe, test, expect } from 'bun:test';
-import { compileInlineIf, compileWalrus } from './inline.ts';
-import { symbol, literal, lookupVal } from '@nunjucks/nodes';
-import { asCompiler } from '../test-helpers.ts';
+import { describe, expect, test } from 'bun:test';
+import { literal, lookupVal, symbol } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime/frame';
 import { loc } from '@nunjucks/shared';
+import { asCompiler } from '../test-helpers.ts';
+import { compileInlineIf, compileWalrus } from './inline.ts';
 
 const makeCompiler = () => {
   const emitted: string[] = [];
   let id = 0;
   return {
     emitted,
-    emit: (s: string) => { emitted.push(s); },
-    emitLine: (s: string) => { emitted.push(`${s}\n`); },
-    tmpid: () => { id += 1; return `t_${id}`; },
-    compile: (node: { mock?: string }) => { emitted.push(node.mock as string); },
-    fail: (msg: string) => { throw new Error(msg); },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    emitLine: (s: string) => {
+      emitted.push(`${s}\n`);
+    },
+    nextCompilerId: () => {
+      id += 1;
+      return `t_${id}`;
+    },
+    compile: (node: { mock?: string }) => {
+      emitted.push(node.mock as string);
+    },
+    fail: (msg: string) => {
+      throw new Error(msg);
+    },
   };
 };
 
@@ -53,7 +64,8 @@ describe('compileWalrus', () => {
     const c = makeCompiler();
     compileWalrus(asCompiler(c), {
       node: {
-        lineno: 2, colno: 4,
+        lineno: 2,
+        colno: 4,
         target: symbol(loc({ lineno: 2, colno: 4 }), 'x'),
         value: { mock: 'V' },
       } as never,
@@ -67,13 +79,19 @@ describe('compileWalrus', () => {
 
   test('non-symbol non-pattern target fails', () => {
     const c = makeCompiler();
-    expect(() => compileWalrus(asCompiler(c), {
-      node: {
-        lineno: 1, colno: 1,
-        target: lookupVal(loc({ lineno: 1, colno: 1 }), { target: symbol(loc({ lineno: 1, colno: 1 }), 'a'), val: literal(loc({ lineno: 1, colno: 1 }), 'b') }),
-        value: { mock: 'V' },
-      } as never,
-      frame,
-    })).toThrow(/Walrus target must be a symbol/);
+    expect(() =>
+      compileWalrus(asCompiler(c), {
+        node: {
+          lineno: 1,
+          colno: 1,
+          target: lookupVal(loc({ lineno: 1, colno: 1 }), {
+            target: symbol(loc({ lineno: 1, colno: 1 }), 'a'),
+            val: literal(loc({ lineno: 1, colno: 1 }), 'b'),
+          }),
+          value: { mock: 'V' },
+        } as never,
+        frame,
+      })
+    ).toThrow(/Walrus target must be a symbol/);
   });
 });

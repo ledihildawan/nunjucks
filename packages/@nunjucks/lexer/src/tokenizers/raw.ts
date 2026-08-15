@@ -1,7 +1,7 @@
-import type { Tokenizer, LexerState } from '../types.ts';
-import { getChar, matches, advance, isFinished } from '../state.ts';
-import { createToken } from '../tokens.ts';
+import { advance, getChar, isFinished, matches } from '../state.ts';
 import { TOKEN_RAW } from '../token-types.ts';
+import { createToken } from '../tokens.ts';
+import type { LexerState, Tokenizer } from '../types.ts';
 
 type RawState = {
   content: string;
@@ -11,7 +11,9 @@ type RawState = {
 
 const skipWhitespaceAfterBlockStart = (state: LexerState): LexerState => {
   const skip = (current: LexerState): LexerState => {
-    if (isFinished(current) || getChar(current) !== ' ') { return current; }
+    if (isFinished(current) || getChar(current) !== ' ') {
+      return current;
+    }
     return skip(advance(current));
   };
   return skip(state);
@@ -33,7 +35,9 @@ const getEndTagName = (name: string): string => (name === 'raw' ? 'endraw' : 'en
 const isWhitespaceChar = (char: string): boolean =>
   char === ' ' || char === '\n' || char === '\t' || char === '\r';
 
-const extractTagNameAfterBlockEnd = (beforeEnd: LexerState): { tagName: string; current: LexerState } => {
+const extractTagNameAfterBlockEnd = (
+  beforeEnd: LexerState
+): { tagName: string; current: LexerState } => {
   const scan = (current: LexerState, tagName: string): { tagName: string; current: LexerState } => {
     const char = getChar(current);
     if (isFinished(current) || char === '%' || char === '}' || isWhitespaceChar(char)) {
@@ -118,7 +122,9 @@ const processRawContent = ({
 };
 
 export const tokenizeRaw: Tokenizer = (state) => {
-  if (!matches(state, state.tags.blockStart)) { return null; }
+  if (!matches(state, state.tags.blockStart)) {
+    return null;
+  }
 
   const blockStartLen = state.tags.blockStart.length;
   let current = advance(state, blockStartLen);
@@ -126,13 +132,25 @@ export const tokenizeRaw: Tokenizer = (state) => {
   current = skipWhitespaceAfterBlockStart(current);
   const { name, current: afterName } = extractTagName(current);
 
-  if (name !== 'raw' && name !== 'verbatim') { return null; }
+  if (name !== 'raw' && name !== 'verbatim') {
+    return null;
+  }
 
   const endTagName = getEndTagName(name);
-  const { content, current: finalState } = processRawContent({ current: afterName, name, endTagName, tags: state.tags });
+  const { content, current: finalState } = processRawContent({
+    current: afterName,
+    name,
+    endTagName,
+    tags: state.tags,
+  });
 
   return {
-    token: createToken({ type: TOKEN_RAW, value: content, lineno: state.lineno, colno: state.colno }),
+    token: createToken({
+      type: TOKEN_RAW,
+      value: content,
+      lineno: state.lineno,
+      colno: state.colno,
+    }),
     state: finalState,
   };
 };

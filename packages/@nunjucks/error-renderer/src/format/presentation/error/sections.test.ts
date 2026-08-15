@@ -1,5 +1,10 @@
-import { describe, test, expect } from 'bun:test';
-import { formatCodeTraceHtml, formatJsTraceHtml, renderContextHtml, formatStackTraceHtml } from './sections.ts';
+import { describe, expect, test } from 'bun:test';
+import {
+  formatCodeTraceHtml,
+  formatJsTraceHtml,
+  formatStackTraceHtml,
+  renderContextHtml,
+} from './sections.ts';
 
 describe('formatCodeTraceHtml', () => {
   test('renders a placeholder when the snippet is empty', () => {

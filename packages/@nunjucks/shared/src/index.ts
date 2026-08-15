@@ -1,6 +1,19 @@
-export type { BaseValidationError } from './validation-error.ts';
-export { UNDEFINED_MODES } from './types.ts';
-export type { Phase, NodeLocation, DomPurifyConfig, UndefinedMode } from './types.ts';
+export type { Environment } from './blocked-keys.ts';
+export {
+  BLOCKED_KEYS_LIST,
+  CODE_EXECUTION_KEYS,
+  DANGEROUS_GLOBALS_LIST,
+  DANGEROUS_KEY_PATTERN,
+  ENVIRONMENTS,
+  getBlockedKeyCategory,
+  isBlockedKey,
+  isCodeExecutionPattern,
+  isDangerousGlobal,
+  OBJECT_INTRINSICS,
+} from './blocked-keys.ts';
 export * from './compiled-template.ts';
-export { loc, ZERO_LOC, LOC_BRAND } from './loc.ts';
 export type { Loc } from './loc.ts';
+export { LOC_BRAND, loc, ZERO_LOC } from './loc.ts';
+export type { DomPurifyConfig, NodeLocation, Phase, UndefinedMode } from './types.ts';
+export { UNDEFINED_MODES } from './types.ts';
+export type { BaseValidationError } from './validation-error.ts';

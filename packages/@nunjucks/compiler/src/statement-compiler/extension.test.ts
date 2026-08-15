@@ -1,20 +1,31 @@
-import { describe, test, expect } from 'bun:test';
-import { compileCallExtension, compileCallExtensionAsync } from './extension.ts';
-import { callExtension, symbol, literal, nodeList } from '@nunjucks/nodes';
+import { describe, expect, test } from 'bun:test';
+import { callExtension, literal, nodeList, symbol } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import type { Compiler } from '../index.ts';
+import { compileCallExtension, compileCallExtensionAsync } from './extension.ts';
 
 const makeCompiler = () => {
   const emitted: string[] = [];
   let id = 0;
   return {
     emitted,
-    emit: (s: string) => { emitted.push(s); },
-    emitLine: (s: string) => { emitted.push(`${s}\n`); },
-    tmpid: () => { id += 1; return `t_${id}`; },
-    compile: (n: { mock?: string }) => { emitted.push(n.mock ?? 'X'); },
-    compileExpression: (n: { mock?: string }) => { emitted.push(n.mock ?? 'E'); },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    emitLine: (s: string) => {
+      emitted.push(`${s}\n`);
+    },
+    nextCompilerId: () => {
+      id += 1;
+      return `t_${id}`;
+    },
+    compile: (n: { mock?: string }) => {
+      emitted.push(n.mock ?? 'X');
+    },
+    compileExpression: (n: { mock?: string }) => {
+      emitted.push(n.mock ?? 'E');
+    },
     streamErrorRecovery: false,
     pushBuffer: () => 'buf_1',
     popBuffer: () => {},

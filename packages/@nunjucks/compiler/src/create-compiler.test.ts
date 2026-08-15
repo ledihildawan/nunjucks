@@ -1,9 +1,13 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createCompiler } from './create-compiler.ts';
 
 describe('createCompiler', () => {
   test('returns compiler with correct initial state', () => {
-    const c = createCompiler({ templateName: 'test.njk', undefinedMode: undefined, source: '{{ x }}' });
+    const c = createCompiler({
+      templateName: 'test.njk',
+      undefinedMode: undefined,
+      source: '{{ x }}',
+    });
     expect(c.templateName).toBe('test.njk');
     expect(c.codebuf).toEqual([]);
     expect(c.lastId).toBe(0);
@@ -36,10 +40,10 @@ describe('createCompiler', () => {
     expect(c.compiledLine).toBe(3);
   });
 
-  test('tmpid returns unique incrementing ids', () => {
+  test('nextCompilerId returns unique incrementing ids', () => {
     const c = createCompiler({ templateName: 'test', undefinedMode: undefined, source: '' });
-    const id1 = c.tmpid();
-    const id2 = c.tmpid();
+    const id1 = c.nextCompilerId();
+    const id2 = c.nextCompilerId();
     expect(id1).toMatch(/^t_\d+$/);
     expect(id2).toMatch(/^t_\d+$/);
     expect(id1).not.toBe(id2);
@@ -88,7 +92,11 @@ describe('createCompiler', () => {
   });
 
   test('getTemplateName returns JSON-stringified name', () => {
-    const c = createCompiler({ templateName: 'path/to/file.njk', undefinedMode: undefined, source: '' });
+    const c = createCompiler({
+      templateName: 'path/to/file.njk',
+      undefinedMode: undefined,
+      source: '',
+    });
     expect(c.getTemplateName()).toBe('"path/to/file.njk"');
   });
 
@@ -98,7 +106,11 @@ describe('createCompiler', () => {
   });
 
   test('compile dispatches to correct compiler for node type', () => {
-    const c = createCompiler({ templateName: 'test', undefinedMode: undefined, source: '{{ 1 + 2 }}' });
+    const c = createCompiler({
+      templateName: 'test',
+      undefinedMode: undefined,
+      source: '{{ 1 + 2 }}',
+    });
     expect(() => c.fail('test error')).toThrow();
   });
 });

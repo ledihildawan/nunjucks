@@ -1,5 +1,5 @@
-import { BracketNotation } from './constants.ts';
 import type { NodeType } from './constants.ts';
+import { BracketNotation } from './constants.ts';
 import type { Node } from './node-types.ts';
 
 interface NodeBase {

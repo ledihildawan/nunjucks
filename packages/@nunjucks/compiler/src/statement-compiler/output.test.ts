@@ -1,9 +1,9 @@
-import { describe, test, expect } from 'bun:test';
-import { compileTemplateData, compileCapture } from './index.ts';
-import { templateData, output } from '@nunjucks/nodes';
-import { asCompiler } from '../test-helpers.ts';
+import { describe, expect, test } from 'bun:test';
+import { output, templateData } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime/frame';
 import { ZERO_LOC } from '@nunjucks/shared';
+import { asCompiler } from '../test-helpers.ts';
+import { compileCapture, compileTemplateData } from './index.ts';
 
 const frame = createFrame();
 
@@ -12,11 +12,19 @@ const makeCompiler = () => {
   return {
     emitted,
     buffer: 'output',
-    emit: (s: string) => { emitted.push(s); },
-    emitLine: (s: string) => { emitted.push(`${s}\n`); },
-    compile: (n: { mock?: string }) => { emitted.push(n.mock ?? 'B'); },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    emitLine: (s: string) => {
+      emitted.push(`${s}\n`);
+    },
+    compile: (n: { mock?: string }) => {
+      emitted.push(n.mock ?? 'B');
+    },
     withScopedSyntax: (fn: () => void) => fn(),
-    fail: (msg: string) => { throw new Error(msg); },
+    fail: (msg: string) => {
+      throw new Error(msg);
+    },
   };
 };
 

@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
-import { buildErrorSections } from './to-html-assembly.ts';
+import { describe, expect, test } from 'bun:test';
 import type { ErrorLike } from '@nunjucks/error-catalog';
+import { buildErrorSections } from './to-html-assembly.ts';
 
 const createFakeError = (overrides: Partial<ErrorLike> = {}): ErrorLike => ({
   message: 'Test error message',

@@ -1,9 +1,9 @@
-import { describe, test, expect } from 'bun:test';
-import { createState } from './state.ts';
+import { describe, expect, test } from 'bun:test';
 import { firstMatch } from './combinators.ts';
-import { tokenizeWhitespace } from './tokenizers/whitespace.ts';
+import { createState } from './state.ts';
 import { tokenizeNumber } from './tokenizers/number.ts';
 import { tokenizeSymbol } from './tokenizers/symbol.ts';
+import { tokenizeWhitespace } from './tokenizers/whitespace.ts';
 
 const match = firstMatch(tokenizeWhitespace, tokenizeNumber, tokenizeSymbol);
 

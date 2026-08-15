@@ -1,6 +1,6 @@
+import { escapeRegex } from '@nunjucks/lib';
 import type { ExtraExtractor } from './types.ts';
 import { firstCapture } from './types.ts';
-import { escapeRegex } from '@nunjucks/lib';
 
 interface ErrorDefinitionOptions {
   name: string;
@@ -15,7 +15,10 @@ interface ErrorDefinitionOptions {
 }
 
 // WHY: single source of truth for placeholder → regex capture group mapping. Adding a new placeholder requires ONE entry here — no parallel list to keep in sync. Identifiers (name, key, subject, attr, tag) use [^"']+ to avoid matching quoted strings; free-form values (type, path, msg, etc.) use .+ for broad matching.
-const PLACEHOLDER_PATTERNS: ReadonlyArray<{ readonly placeholder: string; readonly capture: string }> = [
+const PLACEHOLDER_PATTERNS: ReadonlyArray<{
+  readonly placeholder: string;
+  readonly capture: string;
+}> = [
   { placeholder: '{type}', capture: '(.+)' },
   { placeholder: '{name}', capture: '([^"\']+)' },
   { placeholder: '{key}', capture: '([^"\']+)' },
@@ -39,13 +42,23 @@ const messageHasVariable = (messageTemplate: string): boolean =>
 const createPattern = (messageTemplate: string): RegExp => {
   const pattern = PLACEHOLDER_PATTERNS.reduce(
     (acc, { placeholder, capture }) => acc.replaceAll(escapeRegex(placeholder), capture),
-    escapeRegex(messageTemplate),
+    escapeRegex(messageTemplate)
   );
   return new RegExp(`^${pattern}$`, 'i');
 };
 
 const createErrorDefinition = (options: ErrorDefinitionOptions) => {
-  const { name, message, category, causes, fixCode, fixComment, documentationUrl, severity, extraFrom } = options;
+  const {
+    name,
+    message,
+    category,
+    causes,
+    fixCode,
+    fixComment,
+    documentationUrl,
+    severity,
+    extraFrom,
+  } = options;
 
   return {
     name,
@@ -60,7 +73,7 @@ const createErrorDefinition = (options: ErrorDefinitionOptions) => {
     // WHY: severity defaults to 'error' so every factory-created definition has an explicit value. Only warnings (e.g. DANGEROUS_CONTEXT_VALUE_SCRUBBED) override to 'warning'.
     severity: severity ?? 'error',
     subjectFrom: messageHasVariable(message) ? firstCapture : null,
-    extraFrom: extraFrom ?? null
+    extraFrom: extraFrom ?? null,
   };
 };
 

@@ -1,13 +1,45 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
-import { createLog } from '@nunjucks/error-formatter';
-import type { TemplateError } from '@nunjucks/error-formatter';
+import type { ErrorDefinition } from './types.ts';
+
+// WHY: local TemplateError-shaped fixture avoids a test-only dependency on @nunjucks/error-formatter (cycle + undeclared dep)
+interface LocalTemplateError {
+  subject: string | null;
+  message: string;
+  causes: readonly string[];
+  fixCode: string | null;
+}
+
+const resolveMessage = (
+  message: ErrorDefinition['message'],
+  params: Record<string, string>
+): string =>
+  typeof message === 'function'
+    ? message(params)
+    : message.replaceAll(/\{(\w+)\}/gu, (_, key: string) => params[key] ?? '');
+
+const createLocalTemplateError = ({
+  def,
+  params,
+  subject,
+}: {
+  def: ErrorDefinition;
+  params: Record<string, string>;
+  subject: string;
+}): LocalTemplateError => ({
+  subject,
+  message: resolveMessage(def.message, params),
+  causes: [...def.causes],
+  fixCode: def.fixCode ?? null,
+});
 
 describe('error messages - sample output', () => {
   test('UNDEFINED_VARIABLE message includes subject', () => {
-    const err = createLog('error', { def: ERROR_DEFINITIONS.UNDEFINED_VARIABLE, params: { name: 'user.something' }, subject: 'user.something', context: {
-      lineno: 1, colno: 0, phase: 'render', lineBase: 'zero'
-    } }) as TemplateError;
+    const err = createLocalTemplateError({
+      def: ERROR_DEFINITIONS.UNDEFINED_VARIABLE,
+      params: { name: 'user.something' },
+      subject: 'user.something',
+    });
     expect(err.subject).toBe('user.something');
     expect(err.message).toContain('user.something');
     expect(err.causes!.length).toBeGreaterThan(0);
@@ -15,25 +47,31 @@ describe('error messages - sample output', () => {
   });
 
   test('NULL_VALUE error handles nested access', () => {
-    const err = createLog('error', { def: ERROR_DEFINITIONS.NULL_VALUE, params: { accessPath: 'name', parent: 'user', state: 'null' }, subject: 'name', context: {
-      lineno: 1, colno: 0, phase: 'render', lineBase: 'zero'
-    } });
+    const err = createLocalTemplateError({
+      def: ERROR_DEFINITIONS.NULL_VALUE,
+      params: { accessPath: 'name', parent: 'user', state: 'null' },
+      subject: 'name',
+    });
     expect(err.message).toContain('name');
     expect(err.message).toContain('user');
   });
 
   test('FILE_NOT_FOUND has helpful message', () => {
-    const err = createLog('error', { def: ERROR_DEFINITIONS.FILE_NOT_FOUND, params: { path: 'missing.njk' }, subject: 'missing.njk', context: {
-      lineno: 1, colno: 0, phase: 'render', lineBase: 'zero'
-    } }) as TemplateError;
+    const err = createLocalTemplateError({
+      def: ERROR_DEFINITIONS.FILE_NOT_FOUND,
+      params: { path: 'missing.njk' },
+      subject: 'missing.njk',
+    });
     expect(err.message).toContain('missing.njk');
     expect(err.fixCode).toBeTruthy();
   });
 
   test('UNDEFINED_FILTER has helpful fix', () => {
-    const err = createLog('error', { def: ERROR_DEFINITIONS.UNDEFINED_FILTER, params: { name: 'myFilter' }, subject: 'myFilter', context: {
-      lineno: 1, colno: 0, phase: 'render', lineBase: 'zero'
-    } }) as TemplateError;
+    const err = createLocalTemplateError({
+      def: ERROR_DEFINITIONS.UNDEFINED_FILTER,
+      params: { name: 'myFilter' },
+      subject: 'myFilter',
+    });
     expect(err.message).toContain('myFilter');
     expect(err.fixCode).toContain('addFilter');
   });
@@ -45,11 +83,11 @@ describe('classify', () => {
     const cls = classifyFromError({
       code: 'UNDEFINED_PROPERTY',
       subject: 'something',
-      message: "Property 'something' not found in 'user'"
+      message: "Property 'something' not found in 'user'",
     });
 
-    expect(cls.causes.some(c => c.includes('something'))).toBe(true);
-    expect(cls.causes.some(c => c.includes('user'))).toBe(true);
+    expect(cls.causes.some((c) => c.includes('something'))).toBe(true);
+    expect(cls.causes.some((c) => c.includes('user'))).toBe(true);
   });
 
   test('classification substitutes placeholders in fixCode', async () => {
@@ -57,7 +95,7 @@ describe('classify', () => {
     const cls = classifyFromError({
       code: 'UNDEFINED_FILTER',
       subject: 'myFilter',
-      message: "Filter 'myFilter' is not defined"
+      message: "Filter 'myFilter' is not defined",
     });
 
     expect(cls.fixCode).toContain('myFilter');
@@ -68,20 +106,20 @@ describe('classify', () => {
     const { classifyFromError } = await import('./classify.ts');
     const cls = classifyFromError({
       code: 'NULL_VALUE',
-      message: "Cannot access 'name' on null 'user'"
+      message: "Cannot access 'name' on null 'user'",
     });
 
-    expect(cls.causes.some(c => c.includes('user'))).toBe(true);
+    expect(cls.causes.some((c) => c.includes('user'))).toBe(true);
   });
 
   test('UNDEFINED_VARIABLE classification substitutes subject', async () => {
     const { classifyFromError } = await import('./classify.ts');
     const cls = classifyFromError({
       code: 'UNDEFINED_VARIABLE',
-      message: "Variable 'foo' is not defined"
+      message: "Variable 'foo' is not defined",
     });
 
-    expect(cls.causes.some(c => c.includes('foo'))).toBe(true);
+    expect(cls.causes.some((c) => c.includes('foo'))).toBe(true);
     expect(cls.fixCode).toContain('foo');
   });
 });

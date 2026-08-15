@@ -1,17 +1,13 @@
-import {
-  TOKEN_COLON,
-  TOKEN_RIGHT_BRACKET,
-  type TOKEN_LEFT_BRACKET,
-} from '@nunjucks/lexer';
-import type { Token } from '@nunjucks/lexer';
-import { BracketNotation, lookupVal, slice } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { peekToken, skip, expect } from "../../cursor.ts";
-import type { ParserContext } from "../../cursor.ts";
-import { ok, isErr, type Result } from '@nunjucks/lib';
-import { parseExpression } from "../index.ts";
-import { loc } from '@nunjucks/lexer';
+import type { Token } from '@nunjucks/lexer';
+import { TOKEN_COLON, type TOKEN_LEFT_BRACKET, TOKEN_RIGHT_BRACKET } from '@nunjucks/lexer';
+import { isErr, ok, type Result } from '@nunjucks/lib';
+import type { Node } from '@nunjucks/nodes';
+import { BracketNotation, lookupVal, slice } from '@nunjucks/nodes';
+import { loc } from '@nunjucks/shared';
+import type { ParserContext } from '../../cursor.ts';
+import { expect, peekToken, skip } from '../../cursor.ts';
+import { parseExpression } from '../index.ts';
 
 type LeftBracketToken = Token & { type: typeof TOKEN_LEFT_BRACKET };
 
@@ -19,13 +15,21 @@ const markBracketNotation = (node: Node, isBracket: boolean): void => {
   node[BracketNotation] = isBracket;
 };
 
-const buildSlice = (parserContext: ParserContext, bracketTok: LeftBracketToken, start: Node | null): Result<Node, TemplateError> => {
+const buildSlice = (
+  parserContext: ParserContext,
+  bracketTok: LeftBracketToken,
+  start: Node | null
+): Result<Node, TemplateError> => {
   const peekedStopR = peekToken(parserContext);
-  if (isErr(peekedStopR)) { return peekedStopR; }
+  if (isErr(peekedStopR)) {
+    return peekedStopR;
+  }
   let stop: Node | null = null;
   if (peekedStopR.value.type !== TOKEN_RIGHT_BRACKET && peekedStopR.value.type !== TOKEN_COLON) {
     const stopR = parseExpression(parserContext);
-    if (isErr(stopR)) { return stopR; }
+    if (isErr(stopR)) {
+      return stopR;
+    }
     stop = stopR.value;
   }
 
@@ -33,49 +37,71 @@ const buildSlice = (parserContext: ParserContext, bracketTok: LeftBracketToken, 
   let step: Node | null = null;
   if (hasColon) {
     const peekedStepR = peekToken(parserContext);
-    if (isErr(peekedStepR)) { return peekedStepR; }
+    if (isErr(peekedStepR)) {
+      return peekedStepR;
+    }
     if (peekedStepR.value.type !== TOKEN_RIGHT_BRACKET) {
       const stepR = parseExpression(parserContext);
-      if (isErr(stepR)) { return stepR; }
+      if (isErr(stepR)) {
+        return stepR;
+      }
       step = stepR.value;
     }
   }
 
   const endR = expect(parserContext, TOKEN_RIGHT_BRACKET);
-  if (isErr(endR)) { return endR; }
+  if (isErr(endR)) {
+    return endR;
+  }
   const location = step || stop || start || bracketTok;
   const sliceNode = slice(loc(location), { start, stop, step });
   return ok(sliceNode);
 };
 
-const parseBracketAccess = (parserContext: ParserContext, bracketTok: LeftBracketToken, target: Node): Result<Node, TemplateError> => {
+const parseBracketAccess = (
+  parserContext: ParserContext,
+  bracketTok: LeftBracketToken,
+  target: Node
+): Result<Node, TemplateError> => {
   if (skip(parserContext, TOKEN_COLON)) {
     const sliceR = buildSlice(parserContext, bracketTok, null);
-    if (isErr(sliceR)) { return sliceR; }
+    if (isErr(sliceR)) {
+      return sliceR;
+    }
     const node = lookupVal(loc(bracketTok), { target, val: sliceR.value });
     markAsBracket(node);
     return ok(node);
   }
 
   const startR = parseExpression(parserContext);
-  if (isErr(startR)) { return startR; }
+  if (isErr(startR)) {
+    return startR;
+  }
 
   if (skip(parserContext, TOKEN_COLON)) {
     const sliceR = buildSlice(parserContext, bracketTok, startR.value);
-    if (isErr(sliceR)) { return sliceR; }
+    if (isErr(sliceR)) {
+      return sliceR;
+    }
     const node = lookupVal(loc(bracketTok), { target, val: sliceR.value });
     markAsBracket(node);
     return ok(node);
   }
 
   const endR = expect(parserContext, TOKEN_RIGHT_BRACKET);
-  if (isErr(endR)) { return endR; }
+  if (isErr(endR)) {
+    return endR;
+  }
   const node = lookupVal(loc(bracketTok), { target, val: startR.value });
   markAsBracket(node);
   return ok(node);
 };
 
-const markAsBracket = (node: Node): void => { markBracketNotation(node, true); };
-const markAsDot = (node: Node): void => { markBracketNotation(node, false); };
+const markAsBracket = (node: Node): void => {
+  markBracketNotation(node, true);
+};
+const markAsDot = (node: Node): void => {
+  markBracketNotation(node, false);
+};
 
-export { parseBracketAccess, markAsBracket, markAsDot };
+export { markAsBracket, markAsDot, parseBracketAccess };

@@ -103,6 +103,7 @@ export type TokenValueByType = {
   [TOKEN_TEMPLATE_LITERAL]: { quasis: TemplateQuasi[]; expressions: [] };
 };
 
-export type Token = TokenBase & {
-  [K in TokenType]: { type: K; value: TokenValueByType[K] };
-}[TokenType];
+export type Token = TokenBase &
+  {
+    [K in TokenType]: { type: K; value: TokenValueByType[K] };
+  }[TokenType];

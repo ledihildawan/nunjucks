@@ -1,25 +1,28 @@
-import type { ParserContext } from "../cursor.ts";
-import type { Node } from '@nunjucks/nodes';
-import type { Result } from '@nunjucks/lib';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { parseFor } from "./for.ts";
-import { parseComponent } from "./component.ts";
-import { parseImport } from "./import.ts";
-import { parseFrom } from "./from.ts";
-import { parseBlock } from "./block.ts";
-import { parseExtends } from "./extends.ts";
-import { parseInclude } from "./include.ts";
-import { parseIf } from "./if.ts";
-import { parseSwitch } from "./switch.ts";
-import { parseFilterStatement } from "./filter.ts";
-import { parseExec } from "./exec.ts";
-import { parseScope } from "./scope.ts";
-import { parseMatch } from "./match.ts";
-import { parseCapture } from "./capture.ts";
-import { parseRenderBlock } from "./render.ts";
+import type { Result } from '@nunjucks/lib';
+import type { Node } from '@nunjucks/nodes';
+import type { ParserContext } from '../cursor.ts';
+import { parseBlock } from './block.ts';
+import { parseCapture } from './capture.ts';
+import { parseComponent } from './component.ts';
+import { parseExec } from './exec.ts';
+import { parseExtends } from './extends.ts';
+import { parseFilterStatement } from './filter.ts';
+import { parseFor } from './for.ts';
+import { parseFrom } from './from.ts';
+import { parseIf } from './if.ts';
+import { parseImport } from './import.ts';
+import { parseInclude } from './include.ts';
+import { parseMatch } from './match.ts';
+import { parseRenderBlock } from './render.ts';
+import { parseScope } from './scope.ts';
+import { parseSwitch } from './switch.ts';
 
 type StatementParser = (parserContext: ParserContext) => Result<Node, TemplateError>;
-type TaggedParser = (parserContext: ParserContext, ...args: unknown[]) => Result<Node, TemplateError>;
+type TaggedParser = (
+  parserContext: ParserContext,
+  ...args: unknown[]
+) => Result<Node, TemplateError>;
 
 const STATEMENT_PARSERS: Record<string, StatementParser | TaggedParser> = {
   if: parseIf,

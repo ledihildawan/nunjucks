@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { getErrorMessage } from '@nunjucks/error-catalog/get-error-message';
 
 describe('getErrorMessage', () => {

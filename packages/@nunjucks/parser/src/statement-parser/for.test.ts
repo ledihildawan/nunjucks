@@ -1,13 +1,13 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createTokenizer } from '@nunjucks/lexer';
+import type { Node } from '@nunjucks/nodes';
+import { getNodeTypeName, isArray, isSymbol } from '@nunjucks/nodes';
 import { createParser } from '../index.ts';
 import { parseNodes } from '../parse-root.ts';
-import { getNodeTypeName, isArray, isSymbol } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
-import { asTokenStream, unwrap } from '../test-helpers.ts';
+import { unwrap } from '../test-helpers.ts';
 
 const parseFirst = (src: string): Node => {
-  const ctx = createParser(asTokenStream(createTokenizer(src)));
+  const ctx = createParser(createTokenizer(src));
   return unwrap(parseNodes(ctx))[0] as Node;
 };
 

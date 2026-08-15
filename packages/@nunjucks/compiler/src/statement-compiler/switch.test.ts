@@ -1,9 +1,9 @@
-import { describe, test, expect } from 'bun:test';
-import { compileSwitch } from './switch.ts';
-import { symbol, literal, output, templateData, caseNode, switchNode } from '@nunjucks/nodes';
-import { asCompiler } from '../test-helpers.ts';
+import { describe, expect, test } from 'bun:test';
+import { caseNode, literal, output, switchNode, symbol, templateData } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime/frame';
 import { ZERO_LOC } from '@nunjucks/shared';
+import { asCompiler } from '../test-helpers.ts';
+import { compileSwitch } from './switch.ts';
 
 const frame = createFrame();
 
@@ -11,9 +11,15 @@ const makeCompiler = () => {
   const emitted: string[] = [];
   return {
     emitted,
-    emit: (s: string) => { emitted.push(s); },
-    emitLine: (s: string) => { emitted.push(`${s}\n`); },
-    compile: (n: { mock?: string }) => { emitted.push(n.mock ?? 'X'); },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    emitLine: (s: string) => {
+      emitted.push(`${s}\n`);
+    },
+    compile: (n: { mock?: string }) => {
+      emitted.push(n.mock ?? 'X');
+    },
     withScopedSyntax: (fn: () => void) => fn(),
   };
 };
@@ -23,7 +29,12 @@ describe('compileSwitch', () => {
     const c = makeCompiler();
     const node = switchNode(ZERO_LOC, {
       expr: symbol(ZERO_LOC, 'x'),
-      cases: [caseNode(ZERO_LOC, { cond: literal(ZERO_LOC, 1), body: output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]) })],
+      cases: [
+        caseNode(ZERO_LOC, {
+          cond: literal(ZERO_LOC, 1),
+          body: output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]),
+        }),
+      ],
       default_: output(ZERO_LOC, [templateData(ZERO_LOC, 'd')]),
     });
     compileSwitch(asCompiler(c), { node: node as never, frame });
@@ -38,7 +49,12 @@ describe('compileSwitch', () => {
     const c = makeCompiler();
     const node = switchNode(ZERO_LOC, {
       expr: symbol(ZERO_LOC, 'x'),
-      cases: [caseNode(ZERO_LOC, { cond: literal(ZERO_LOC, 1), body: output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]) })],
+      cases: [
+        caseNode(ZERO_LOC, {
+          cond: literal(ZERO_LOC, 1),
+          body: output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]),
+        }),
+      ],
       default_: null,
     });
     compileSwitch(asCompiler(c), { node: node as never, frame });

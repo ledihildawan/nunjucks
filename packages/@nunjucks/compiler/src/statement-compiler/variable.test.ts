@@ -1,10 +1,13 @@
-import { describe, test, expect } from 'bun:test';
-import { compileVariableDeclaration, compileVariableAssignment, compileCompoundAssignment } from './variable.ts';
-import { symbol, literal } from '@nunjucks/nodes';
-import { asCompiler } from '../test-helpers.ts';
+import { describe, expect, test } from 'bun:test';
+import { literal, symbol } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime/frame';
-import { ZERO_LOC } from '@nunjucks/shared';
-import { loc } from '@nunjucks/shared';
+import { loc, ZERO_LOC } from '@nunjucks/shared';
+import { asCompiler } from '../test-helpers.ts';
+import {
+  compileCompoundAssignment,
+  compileVariableAssignment,
+  compileVariableDeclaration,
+} from './variable.ts';
 
 const frame = createFrame();
 
@@ -13,12 +16,25 @@ const makeCompiler = () => {
   let id = 0;
   return {
     emitted,
-    emit: (s: string) => { emitted.push(s); },
-    emitLine: (s: string) => { emitted.push(`${s}\n`); },
-    tmpid: () => { id += 1; return `t_${id}`; },
-    compile: (n: { mock?: string }) => { emitted.push(n.mock ?? 'X'); },
-    compileExpression: (n: { mock?: string }) => { emitted.push(n.mock ?? 'V'); },
-    fail: (msg: string, ..._rest: unknown[]) => { throw new Error(msg); },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    emitLine: (s: string) => {
+      emitted.push(`${s}\n`);
+    },
+    nextCompilerId: () => {
+      id += 1;
+      return `t_${id}`;
+    },
+    compile: (n: { mock?: string }) => {
+      emitted.push(n.mock ?? 'X');
+    },
+    compileExpression: (n: { mock?: string }) => {
+      emitted.push(n.mock ?? 'V');
+    },
+    fail: (msg: string, ..._rest: unknown[]) => {
+      throw new Error(msg);
+    },
   };
 };
 
@@ -56,7 +72,8 @@ describe('compileCompoundAssignment', () => {
       targets: [symbol(loc({ lineno: 1, colno: 2 }), 'count')],
       operator: '+=',
       value: literal(loc({ lineno: 1, colno: 2 }), 1),
-      lineno: 1, colno: 2,
+      lineno: 1,
+      colno: 2,
     };
     compileCompoundAssignment(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');
@@ -71,7 +88,8 @@ describe('compileCompoundAssignment', () => {
       targets: [symbol(loc({ lineno: 1, colno: 2 }), 'n')],
       operator: '//=',
       value: literal(loc({ lineno: 1, colno: 2 }), 2),
-      lineno: 1, colno: 2,
+      lineno: 1,
+      colno: 2,
     };
     compileCompoundAssignment(asCompiler(c), { node: node as never, frame });
     expect(c.emitted.join('')).toContain('Math.floor(');

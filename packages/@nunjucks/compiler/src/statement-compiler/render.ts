@@ -1,11 +1,10 @@
-import { forEach } from 'remeda';
-import type { CallNode, RenderNode, SlotBlock } from '@nunjucks/nodes';
+import type { CallNode, Node, RenderNode, SlotBlock } from '@nunjucks/nodes';
 import { isFunCall } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
+import { forEach } from 'remeda';
+import { appendTarget, assertSafeIdentifier, emitLocationGuard } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
-import { emitLocationGuard, appendTarget, assertSafeIdentifier } from '../codegen.ts';
 import { compileSlotFunction } from './slot.ts';
 
 const compileRenderSlots = (
@@ -17,7 +16,13 @@ const compileRenderSlots = (
   forEach(slots, (slot) => {
     assertSafeIdentifier(slot.name, { compiler });
     const slotVar = `__slot_${slot.name}`;
-    compileSlotFunction({ compiler, params: slot.params, body: slot.body, parentFrame: frame, slotVar });
+    compileSlotFunction({
+      compiler,
+      params: slot.params,
+      body: slot.body,
+      parentFrame: frame,
+      slotVar,
+    });
     entries.push(`${JSON.stringify(slot.name)}: ${slotVar}`);
   });
   return `slots: { ${entries.join(', ')} }`;
@@ -30,7 +35,12 @@ interface CompileRenderFunCallInput {
   kwargsPart: string;
 }
 
-const compileRenderFunCall = ({ compiler, callExpr, frame, kwargsPart }: CompileRenderFunCallInput): void => {
+const compileRenderFunCall = ({
+  compiler,
+  callExpr,
+  frame,
+  kwargsPart,
+}: CompileRenderFunCallInput): void => {
   emitLocationGuard(compiler, callExpr.lineno, callExpr.colno ?? 0);
   compiler.emit('runtime.callWrap(');
   compiler.compile(callExpr.name, frame);
@@ -38,15 +48,24 @@ const compileRenderFunCall = ({ compiler, callExpr, frame, kwargsPart }: Compile
   compiler.emit(`, ${JSON.stringify(nameStr)}, { displayName: null, context, args: [`);
   const args = callExpr.args;
   forEach(args, (argument: Node, i: number) => {
-    if (i > 0) { compiler.emit(', '); }
-    if (argument) { compiler.compile(argument, frame); }
+    if (i > 0) {
+      compiler.emit(', ');
+    }
+    if (argument) {
+      compiler.compile(argument, frame);
+    }
   });
-  if (args.length > 0) { compiler.emit(', '); }
+  if (args.length > 0) {
+    compiler.emit(', ');
+  }
   compiler.emit(`runtime.makeKeywordArgs({ ${kwargsPart} })`);
   compiler.emit('] }))');
 };
 
-export const compileRenderBlock = (compiler: Compiler, { node, frame: parentFrame }: CompileNodeInput<RenderNode>): void => {
+export const compileRenderBlock = (
+  compiler: Compiler,
+  { node, frame: parentFrame }: CompileNodeInput<RenderNode>
+): void => {
   const frame = parentFrame.push(true);
   compiler.emitLine('frame = frame.push(true);');
 

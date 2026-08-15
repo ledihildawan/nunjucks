@@ -1,23 +1,43 @@
-import { pipe, filter, join, map, split } from 'remeda';
+import type { LineBase } from '@nunjucks/error-catalog';
+import { isObjectValue } from '@nunjucks/error-catalog';
+import { getErrorMessage } from '@nunjucks/error-catalog/get-error-message';
 import { slice } from '@nunjucks/lib';
 import picocolors from 'picocolors';
-import { toDisplayLocation } from '../presentation/source-trace/location.ts';
-import type { LineBase } from '@nunjucks/error-catalog';
+import { filter, join, map, pipe, split } from 'remeda';
 import { mergeErrorParts } from '../presentation/error/error-parts.ts';
+import { toDisplayLocation } from '../presentation/source-trace/location.ts';
 import type { SourceTrace } from '../presentation/source-trace/source-trace.ts';
-import { stripInlineMarkdown, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString } from './stack-helpers';
 import { renderContextAnsi } from './context-helpers';
 import { formatSourceTrace } from './source-helpers';
-import { getErrorMessage } from '@nunjucks/error-catalog/get-error-message';
-import { isObjectValue } from '@nunjucks/error-catalog';
+import {
+  formatLocationString,
+  formatStackLine,
+  getExtrasPart,
+  getSeverityLabel,
+  stripInlineMarkdown,
+} from './stack-helpers';
 
-export { formatCausesAnsi, formatFixAnsi, getErrorMessage, formatMediumAnsi, extractAnsiErrorParts, formatFullAnsi, BULLET };
+export {
+  BULLET,
+  extractAnsiErrorParts,
+  formatCausesAnsi,
+  formatFixAnsi,
+  formatFullAnsi,
+  formatMediumAnsi,
+  getErrorMessage,
+};
 
 const BULLET = `${picocolors.yellow('•')} `;
 
 const formatCausesAnsi = (causes: readonly string[]): string => {
-  if (!causes || causes.length === 0) { return ''; }
-  const items = pipe(causes, map(c => `  ${BULLET}${stripInlineMarkdown(c)}`), join('\n'));
+  if (!causes || causes.length === 0) {
+    return '';
+  }
+  const items = pipe(
+    causes,
+    map((c) => `  ${BULLET}${stripInlineMarkdown(c)}`),
+    join('\n')
+  );
   return `\n${picocolors.bold('Possible Causes:')}\n${items}\n`;
 };
 
@@ -28,13 +48,15 @@ interface FormatFixAnsiInput {
 }
 
 const formatFixAnsi = ({ fixCode, fixComment, documentationUrl }: FormatFixAnsiInput): string => {
-  if (!fixCode) { return ''; }
+  if (!fixCode) {
+    return '';
+  }
 
   const parts: string[] = [
     `${picocolors.bold('Suggested Fix:')}`,
     ...(fixComment ? [picocolors.dim(`// ${stripInlineMarkdown(fixComment)}`)] : []),
     picocolors.green(fixCode),
-    ...(documentationUrl ? [`\n${picocolors.dim(`Learn more: ${documentationUrl}`)}`] : [])
+    ...(documentationUrl ? [`\n${picocolors.dim(`Learn more: ${documentationUrl}`)}`] : []),
   ];
 
   return parts.join('\n');
@@ -55,7 +77,10 @@ const formatMediumAnsi = (message: string, input: MediumAnsiInput): string => {
   const causeHint = firstCause ? stripInlineMarkdown(firstCause) : '';
   const extrasPart = getExtrasPart(causeHint, input.documentationUrl ?? '');
   const locationPart = input.path
-    ? formatLocationString({ path: input.path, location: input.location, ide: input.ide }).replace(LEADING_AT_RE, '')
+    ? formatLocationString({ path: input.path, location: input.location, ide: input.ide }).replace(
+        LEADING_AT_RE,
+        ''
+      )
     : ` at line ${input.location.line}`;
   return `${message}${locationPart}${extrasPart}`;
 };
@@ -79,7 +104,12 @@ interface ExtractAnsiErrorPartsInput {
   colno?: number | null;
 }
 
-const extractAnsiErrorParts = ({ error, templatePath, lineno, colno }: ExtractAnsiErrorPartsInput): AnsiErrorParts => {
+const extractAnsiErrorParts = ({
+  error,
+  templatePath,
+  lineno,
+  colno,
+}: ExtractAnsiErrorPartsInput): AnsiErrorParts => {
   const parts = mergeErrorParts(error);
   const errObj = isObjectValue(error) ? error : {};
   return {
@@ -103,9 +133,20 @@ interface FullAnsiInput {
 const formatFullAnsi = (message: string, input: FullAnsiInput): string => {
   const { parts, ide, sourceTrace, renderContext, error } = input;
   const { causes, fixCode, fixComment, documentationUrl, severity, path } = parts;
-  const location = toDisplayLocation({ lineno: parts.displayLineno, colno: parts.displayColno, lineBase: parts.lineBase });
+  const location = toDisplayLocation({
+    lineno: parts.displayLineno,
+    colno: parts.displayColno,
+    lineBase: parts.lineBase,
+  });
   const stack = (isObjectValue(error) ? error.stack : undefined) ?? '';
-  const formattedStack = pipe(stack, split('\n'), slice(1), filter(line => line.trim().startsWith('at ')), map(line => formatStackLine(line, ide)), join('\n'));
+  const formattedStack = pipe(
+    stack,
+    split('\n'),
+    slice(1),
+    filter((line) => line.trim().startsWith('at ')),
+    map((line) => formatStackLine(line, ide)),
+    join('\n')
+  );
   const locationStr = formatLocationString({ path, location, ide });
   const severityLabel = getSeverityLabel(severity);
   const header = `${severityLabel} ${message}${locationStr}\n`;
@@ -116,12 +157,15 @@ const formatFullAnsi = (message: string, input: FullAnsiInput): string => {
   const outputParts: string[] = [
     header,
     ...((sourceTrace?.lines.length ?? 0) > 0
-      ? [picocolors.bold('Source Trace:'), formatSourceTrace(sourceTrace?.lines ?? [], sourceTrace?.caret ?? null).join('\n')]
+      ? [
+          picocolors.bold('Source Trace:'),
+          formatSourceTrace(sourceTrace?.lines ?? [], sourceTrace?.caret ?? null).join('\n'),
+        ]
       : []),
     ...(causesStr ? [causesStr] : []),
     ...(fixStr ? [fixStr] : []),
     ...(renderContext ? [renderContextAnsi(renderContext, blockedKeys)] : []),
-    `\n${picocolors.bold('Stack Trace:')}\n${formattedStack}`
+    `\n${picocolors.bold('Stack Trace:')}\n${formattedStack}`,
   ];
 
   return pipe(outputParts, filter(Boolean), join('\n'));

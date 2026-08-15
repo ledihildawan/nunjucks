@@ -1,15 +1,15 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createTokenizer } from '@nunjucks/lexer';
-import { createParser } from '../index.ts';
-import { nextTokenOrNull } from '../cursor.ts';
-import { parseSignature } from './index.ts';
-import { getNodeTypeName } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { asTokenStream, unwrap } from '../test-helpers.ts';
+import { getNodeTypeName } from '@nunjucks/nodes';
+import { nextTokenOrNull } from '../cursor.ts';
+import { createParser } from '../index.ts';
+import { unwrap } from '../test-helpers.ts';
+import { parseSignature } from './index.ts';
 
 const ctxFor = (src: string) => {
   const tk = createTokenizer(`{{ ${src} }}`);
-  const ctx = createParser(asTokenStream(tk));
+  const ctx = createParser(tk);
   nextTokenOrNull(ctx);
   return ctx;
 };

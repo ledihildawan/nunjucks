@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { renderBadge, resolveHumanTitle } from './to-html-display.ts';
 
 describe('renderBadge', () => {
@@ -23,29 +23,35 @@ describe('renderBadge', () => {
 
 describe('resolveHumanTitle', () => {
   test('undefined variable with name', () => {
-    expect(resolveHumanTitle({
-      category: 'UNDEFINED_VARIABLE',
-      undefinedName: 'foo',
-      plain: '',
-      fallback: 'Error',
-    })).toContain('foo');
+    expect(
+      resolveHumanTitle({
+        category: 'UNDEFINED_VARIABLE',
+        undefinedName: 'foo',
+        plain: '',
+        fallback: 'Error',
+      })
+    ).toContain('foo');
   });
 
   test('undefined function', () => {
-    expect(resolveHumanTitle({
-      category: 'UNDEFINED_FUNCTION',
-      undefinedName: 'bar',
-      plain: '',
-      fallback: 'Error',
-    })).toContain('bar');
+    expect(
+      resolveHumanTitle({
+        category: 'UNDEFINED_FUNCTION',
+        undefinedName: 'bar',
+        plain: '',
+        fallback: 'Error',
+      })
+    ).toContain('bar');
   });
 
   test('fallback for unknown category', () => {
-    expect(resolveHumanTitle({
-      category: 'UNKNOWN',
-      undefinedName: null,
-      plain: '',
-      fallback: 'My Error',
-    })).toBe('My Error');
+    expect(
+      resolveHumanTitle({
+        category: 'UNKNOWN',
+        undefinedName: null,
+        plain: '',
+        fallback: 'My Error',
+      })
+    ).toBe('My Error');
   });
 });

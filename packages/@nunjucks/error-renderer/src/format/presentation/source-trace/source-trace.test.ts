@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { buildSourceTrace } from './source-trace.ts';
 
 describe('buildSourceTrace', () => {
@@ -6,10 +6,10 @@ describe('buildSourceTrace', () => {
     const source = ['Hello {{ user.name }}!', 'Your status: {{ user["status"]() }}', ''].join('\n');
     const trace = buildSourceTrace({
       sourceContent: source,
-      lineno: 1, 
-      colno: 22, 
+      lineno: 1,
+      colno: 22,
       lineBase: 'zero',
-      sourceStartLine: 1
+      sourceStartLine: 1,
     });
 
     const errorLine = trace.lines.find((l) => l.isError);
@@ -28,7 +28,7 @@ describe('buildSourceTrace', () => {
       lineno: 0,
       colno: 3,
       lineBase: 'zero',
-      sourceStartLine: 1
+      sourceStartLine: 1,
     });
 
     const errorLine = trace.lines.find((l) => l.isError);
@@ -41,10 +41,10 @@ describe('buildSourceTrace', () => {
     const source = ['line one', 'line two', 'line three'].join('\n');
     const trace = buildSourceTrace({
       sourceContent: source,
-      lineno: 3, 
+      lineno: 3,
       colno: 1,
       lineBase: 'one',
-      sourceStartLine: 1
+      sourceStartLine: 1,
     });
 
     const errorLine = trace.lines.find((l) => l.isError);
@@ -59,7 +59,7 @@ describe('buildSourceTrace', () => {
       templatePath: 'inline',
       lineno: 4,
       colno: 5,
-      lineBase: 'zero'
+      lineBase: 'zero',
     });
 
     expect(trace.lines).toEqual([]);
@@ -73,13 +73,13 @@ describe('buildSourceTrace', () => {
     const trace = buildSourceTrace({
       sourceContent: source,
       lineno: 0,
-      colno: 11, 
+      colno: 11,
       lineBase: 'zero',
-      sourceStartLine: 1
+      sourceStartLine: 1,
     });
 
     expect(trace.caret).not.toBeNull();
-    expect(trace.caret?.charStart).toBe(8); 
+    expect(trace.caret?.charStart).toBe(8);
     expect(trace.caret?.carets).toBe('^^^^^^');
   });
 
@@ -90,7 +90,7 @@ describe('buildSourceTrace', () => {
       lineno: 0,
       colno: 0,
       lineBase: 'zero',
-      sourceStartLine: 1
+      sourceStartLine: 1,
     });
 
     expect(trace.resolvedPath).toBe('inline');

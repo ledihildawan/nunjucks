@@ -4,7 +4,7 @@ import type { CompileNodeInput } from '../node-dispatch.ts';
 
 export const compileIf = (compiler: Compiler, { node, frame }: CompileNodeInput<IfNode>): void => {
   if (compiler.streamErrorRecovery) {
-    const condVar = compiler.tmpid();
+    const condVar = compiler.nextCompilerId();
     const { lineno: rawLine, colno: rawCol } = node;
     const lineno = rawLine ?? 0;
     const colno = rawCol ?? 0;

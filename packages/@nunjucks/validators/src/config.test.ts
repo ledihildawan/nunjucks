@@ -1,12 +1,12 @@
-import { expect, describe, test } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
+import { isErr, isOk } from '@nunjucks/lib';
 import { validateConfig } from '@nunjucks/validators';
-import { RESERVED_KEYWORDS, getReservedKeywords } from './reserved.ts';
-import { isOk, isErr } from '@nunjucks/lib';
+import { getReservedKeywords, RESERVED_KEYWORDS } from './reserved.ts';
 
 describe('validateConfig - reserved keyword validation', () => {
   describe('filters', () => {
     test('rejects nunjucks template keyword as filter name', () => {
-      const result = validateConfig({ customFilters: { 'if': () => {} } });
+      const result = validateConfig({ customFilters: { if: () => {} } });
       expect(isErr(result)).toBe(true);
       if (isErr(result)) {
         const error = result.error[0];
@@ -16,7 +16,7 @@ describe('validateConfig - reserved keyword validation', () => {
     });
 
     test('rejects JavaScript built-in as filter name', () => {
-      const result = validateConfig({ customFilters: { 'Array': () => {} } });
+      const result = validateConfig({ customFilters: { Array: () => {} } });
       expect(isErr(result)).toBe(true);
       if (isErr(result)) {
         const error = result.error[0];
@@ -25,27 +25,27 @@ describe('validateConfig - reserved keyword validation', () => {
     });
 
     test('rejects nunjucks runtime global as filter name', () => {
-      const result = validateConfig({ customFilters: { 'range': () => {} } });
+      const result = validateConfig({ customFilters: { range: () => {} } });
       expect(isErr(result)).toBe(true);
     });
 
     test('rejects existing filter name as filter name', () => {
-      const result = validateConfig({ customFilters: { 'upper': () => {} } });
+      const result = validateConfig({ customFilters: { upper: () => {} } });
       expect(isErr(result)).toBe(true);
     });
 
     test('accepts non-reserved filter names', () => {
-      const result = validateConfig({ customFilters: { 'myCustomFilter': () => {} } });
+      const result = validateConfig({ customFilters: { myCustomFilter: () => {} } });
       expect(isOk(result)).toBe(true);
     });
 
     test('rejects multiple reserved filter names in one config', () => {
       const result = validateConfig({
         customFilters: {
-          'if': () => {},
-          'Array': () => {},
-          'upper': () => {}
-        }
+          if: () => {},
+          Array: () => {},
+          upper: () => {},
+        },
       });
       expect(isErr(result)).toBe(true);
       if (isErr(result)) {
@@ -56,7 +56,7 @@ describe('validateConfig - reserved keyword validation', () => {
 
   describe('globals', () => {
     test('rejects nunjucks template keyword as global name', () => {
-      const result = validateConfig({ customGlobals: { 'for': {} } });
+      const result = validateConfig({ customGlobals: { for: {} } });
       expect(isErr(result)).toBe(true);
       if (isErr(result)) {
         const error = result.error[0];
@@ -66,27 +66,27 @@ describe('validateConfig - reserved keyword validation', () => {
     });
 
     test('rejects JavaScript built-in as global name', () => {
-      const result = validateConfig({ customGlobals: { 'Object': {} } });
+      const result = validateConfig({ customGlobals: { Object: {} } });
       expect(isErr(result)).toBe(true);
     });
 
     test('rejects nunjucks runtime global as global name', () => {
-      const result = validateConfig({ customGlobals: { 'cycler': {} } });
+      const result = validateConfig({ customGlobals: { cycler: {} } });
       expect(isErr(result)).toBe(true);
     });
 
     test('accepts non-reserved global names', () => {
-      const result = validateConfig({ customGlobals: { 'myGlobal': {} } });
+      const result = validateConfig({ customGlobals: { myGlobal: {} } });
       expect(isOk(result)).toBe(true);
     });
 
     test('rejects multiple reserved global names in one config', () => {
       const result = validateConfig({
         customGlobals: {
-          'for': {},
-          'String': {},
-          'log': {}
-        }
+          for: {},
+          String: {},
+          log: {},
+        },
       });
       expect(isErr(result)).toBe(true);
       if (isErr(result)) {
@@ -98,8 +98,8 @@ describe('validateConfig - reserved keyword validation', () => {
   describe('mixed filters and globals', () => {
     test('rejects reserved keywords in both filters and globals', () => {
       const result = validateConfig({
-        customFilters: { 'if': () => {} },
-        customGlobals: { 'Array': {} }
+        customFilters: { if: () => {} },
+        customGlobals: { Array: {} },
       });
       expect(isErr(result)).toBe(true);
       if (isErr(result)) {
@@ -109,8 +109,8 @@ describe('validateConfig - reserved keyword validation', () => {
 
     test('accepts valid filters and globals together', () => {
       const result = validateConfig({
-        customFilters: { 'myFilter': () => {} },
-        customGlobals: { 'myGlobal': {} }
+        customFilters: { myFilter: () => {} },
+        customGlobals: { myGlobal: {} },
       });
       expect(isOk(result)).toBe(true);
     });
@@ -118,7 +118,7 @@ describe('validateConfig - reserved keyword validation', () => {
 
   describe('error codes', () => {
     test('returns RESERVED_KEYWORD error code for filters', () => {
-      const result = validateConfig({ customFilters: { 'if': () => {} } });
+      const result = validateConfig({ customFilters: { if: () => {} } });
       if (isErr(result)) {
         const error = result.error[0];
         expect(error.code).toBe('RESERVED_KEYWORD');
@@ -128,7 +128,7 @@ describe('validateConfig - reserved keyword validation', () => {
     });
 
     test('returns RESERVED_KEYWORD error code for globals', () => {
-      const result = validateConfig({ customGlobals: { 'for': {} } });
+      const result = validateConfig({ customGlobals: { for: {} } });
       if (isErr(result)) {
         const error = result.error[0];
         expect(error.code).toBe('RESERVED_KEYWORD');
@@ -140,7 +140,7 @@ describe('validateConfig - reserved keyword validation', () => {
 
   describe('Result shape', () => {
     test('ok branch is an Ok with undefined value', () => {
-      const result = validateConfig({ customFilters: { 'myFilter': () => {} } });
+      const result = validateConfig({ customFilters: { myFilter: () => {} } });
       if (isOk(result)) {
         expect(result.value).toBeUndefined();
       } else {
@@ -149,7 +149,7 @@ describe('validateConfig - reserved keyword validation', () => {
     });
 
     test('err branch narrows error to a non-empty tuple with at least one element', () => {
-      const result = validateConfig({ customFilters: { 'if': () => {} } });
+      const result = validateConfig({ customFilters: { if: () => {} } });
       if (isErr(result)) {
         expect(result.error.length).toBeGreaterThanOrEqual(1);
         expect(result.error[0]).toBeDefined();

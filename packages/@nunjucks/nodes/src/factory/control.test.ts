@@ -1,15 +1,29 @@
-import { describe, test, expect } from 'bun:test';
-import { ZERO_LOC, loc, type Loc } from '@nunjucks/shared';
-import { T } from '../types/index.ts';
+import { describe, expect, test } from 'bun:test';
+import { type Loc, loc, ZERO_LOC } from '@nunjucks/shared';
 import type { SlotBlock } from '../types/index.ts';
-import { literal, symbol, output, array, nodeList, pair } from './atomic.ts';
+import { T } from '../types/index.ts';
+import { array, literal, nodeList, output, pair, symbol } from './atomic.ts';
 import {
-  block, ifNode, inlineIf, forNode,
-  component, importNode, fromImportNode,
-  capture, execNode, scopeNode,
-  switchNode, caseNode, extendsNode, include, superNode,
-  match, when, renderNode,
-  callExtension, callExtensionAsync,
+  block,
+  callExtension,
+  callExtensionAsync,
+  capture,
+  caseNode,
+  component,
+  execNode,
+  extendsNode,
+  forNode,
+  fromImportNode,
+  ifNode,
+  importNode,
+  include,
+  inlineIf,
+  match,
+  renderNode,
+  scopeNode,
+  superNode,
+  switchNode,
+  when,
 } from './control.ts';
 
 const customLoc: Loc = loc({ lineno: 5, colno: 8 });
@@ -49,7 +63,11 @@ describe('ifNode', () => {
 
   test('stores an explicit alternate branch', () => {
     const alternateNode = output(ZERO_LOC, []);
-    const ifStatement = ifNode(ZERO_LOC, { cond: conditionNode, body: bodyNode, alternate: alternateNode });
+    const ifStatement = ifNode(ZERO_LOC, {
+      cond: conditionNode,
+      body: bodyNode,
+      alternate: alternateNode,
+    });
     expect(ifStatement.alternate).toBe(alternateNode);
   });
 });
@@ -68,7 +86,11 @@ describe('inlineIf', () => {
 
 describe('forNode', () => {
   test('creates a for node forwarding location and loop fields, defaulting alternate to null', () => {
-    const forStatement = forNode(customLoc, { arr: iterableNode, name: loopNameNode, body: bodyNode });
+    const forStatement = forNode(customLoc, {
+      arr: iterableNode,
+      name: loopNameNode,
+      body: bodyNode,
+    });
     expect(forStatement.type).toBe(T.FOR);
     expect(forStatement.lineno).toBe(customLoc.lineno);
     expect(forStatement.colno).toBe(customLoc.colno);
@@ -80,7 +102,12 @@ describe('forNode', () => {
 
   test('stores an explicit alternate branch', () => {
     const alternateNode = output(ZERO_LOC, []);
-    const forStatement = forNode(ZERO_LOC, { arr: iterableNode, name: loopNameNode, body: bodyNode, alternate: alternateNode });
+    const forStatement = forNode(ZERO_LOC, {
+      arr: iterableNode,
+      name: loopNameNode,
+      body: bodyNode,
+      alternate: alternateNode,
+    });
     expect(forStatement.alternate).toBe(alternateNode);
   });
 });
@@ -99,7 +126,12 @@ describe('component', () => {
   test('attaches provided args, body, and fallbackSlots', () => {
     const argNode = literal(ZERO_LOC, 'title');
     const fallbackSlot: SlotBlock = { name: 'header', params: [], body: bodyNode };
-    const componentNode = component(ZERO_LOC, { name: 'Card', args: [argNode], body: bodyNode, fallbackSlots: [fallbackSlot] });
+    const componentNode = component(ZERO_LOC, {
+      name: 'Card',
+      args: [argNode],
+      body: bodyNode,
+      fallbackSlots: [fallbackSlot],
+    });
     expect(componentNode.args).toEqual([argNode]);
     expect(componentNode.body).toBe(bodyNode);
     expect(componentNode.fallbackSlots).toEqual([fallbackSlot]);
@@ -119,7 +151,11 @@ describe('importNode', () => {
   });
 
   test('forwards withContext when explicitly true', () => {
-    const importStatement = importNode(ZERO_LOC, { template: 'base.njk', target: 'base', withContext: true });
+    const importStatement = importNode(ZERO_LOC, {
+      template: 'base.njk',
+      target: 'base',
+      withContext: true,
+    });
     expect(importStatement.withContext).toBe(true);
   });
 
@@ -206,7 +242,11 @@ describe('switchNode', () => {
 
   test('attaches cases and maps default_ to default', () => {
     const switchCaseNode = caseNode(ZERO_LOC, { cond: conditionNode, body: bodyNode });
-    const switchStatement = switchNode(ZERO_LOC, { expr: conditionNode, cases: [switchCaseNode], default_: defaultBranchNode });
+    const switchStatement = switchNode(ZERO_LOC, {
+      expr: conditionNode,
+      cases: [switchCaseNode],
+      default_: defaultBranchNode,
+    });
     expect(switchStatement.cases).toEqual([switchCaseNode]);
     expect(switchStatement.default).toBe(defaultBranchNode);
   });
@@ -278,7 +318,11 @@ describe('match', () => {
 
   test('attaches cases and default', () => {
     const matchWhenNode = when(ZERO_LOC, { pattern: loopNameNode, body: bodyNode });
-    const matchStatement = match(ZERO_LOC, { expr: conditionNode, cases: [matchWhenNode], default: defaultBranchNode });
+    const matchStatement = match(ZERO_LOC, {
+      expr: conditionNode,
+      cases: [matchWhenNode],
+      default: defaultBranchNode,
+    });
     expect(matchStatement.cases).toEqual([matchWhenNode]);
     expect(matchStatement.default).toBe(defaultBranchNode);
   });
@@ -296,7 +340,11 @@ describe('when', () => {
   });
 
   test('forwards an explicit guard', () => {
-    const whenStatement = when(ZERO_LOC, { pattern: loopNameNode, body: bodyNode, guard: conditionNode });
+    const whenStatement = when(ZERO_LOC, {
+      pattern: loopNameNode,
+      body: bodyNode,
+      guard: conditionNode,
+    });
     expect(whenStatement.guard).toBe(conditionNode);
   });
 });
@@ -314,14 +362,21 @@ describe('renderNode', () => {
 
   test('attaches provided slots', () => {
     const slot: SlotBlock = { name: 'default', params: ['it'], body: bodyNode };
-    const renderStatement = renderNode(ZERO_LOC, { callExpr: conditionNode, body: bodyNode, providedSlots: [slot] });
+    const renderStatement = renderNode(ZERO_LOC, {
+      callExpr: conditionNode,
+      body: bodyNode,
+      providedSlots: [slot],
+    });
     expect(renderStatement.providedSlots).toEqual([slot]);
   });
 });
 
 describe('callExtension', () => {
   test('creates a callExtension node from an object ext carrying extension metadata', () => {
-    const callExtNode = callExtension(customLoc, { ext: { extensionName: 'Ext', autoescape: false }, prop: 'run' });
+    const callExtNode = callExtension(customLoc, {
+      ext: { extensionName: 'Ext', autoescape: false },
+      prop: 'run',
+    });
     expect(callExtNode.type).toBe(T.CALL_EXTENSION);
     expect(callExtNode.lineno).toBe(customLoc.lineno);
     expect(callExtNode.colno).toBe(customLoc.colno);
@@ -346,7 +401,12 @@ describe('callExtension', () => {
   test('forwards provided args and contentArgs', () => {
     const argsNode = nodeList(ZERO_LOC, [literal(ZERO_LOC, 1)]);
     const contentArgNode = output(ZERO_LOC, []);
-    const callExtNode = callExtension(ZERO_LOC, { ext: 'Ext', prop: 'run', args: argsNode, contentArgs: [contentArgNode] });
+    const callExtNode = callExtension(ZERO_LOC, {
+      ext: 'Ext',
+      prop: 'run',
+      args: argsNode,
+      contentArgs: [contentArgNode],
+    });
     expect(callExtNode.args).toBe(argsNode);
     expect(callExtNode.contentArgs).toEqual([contentArgNode]);
   });

@@ -1,17 +1,41 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
+import {
+  array,
+  block,
+  dict,
+  forNode,
+  funCall,
+  ifNode,
+  literal,
+  lookupVal,
+  pair,
+  symbol,
+  templateData,
+} from '@nunjucks/nodes';
 import { ZERO_LOC } from '@nunjucks/shared';
 import {
-  literal, symbol, templateData, funCall, lookupVal, block,
-  array, dict, pair, forNode, ifNode,
-} from '@nunjucks/nodes';
-import {
-  isNode, isLiteral, isSymbol,
-  isFunCall, isLookupVal, isArray, isDict, isPair, isFor, isIf,
-  isBlock, isSlice, isNodeList, isArrayPattern, isObjectPattern,
-  isVariableDeclaration, isVariableAssignment,
+  isArray,
+  isArrayPattern,
+  isBlock,
+  isDict,
+  isFor,
+  isFunCall,
+  isIf,
+  isLiteral,
+  isLookupVal,
+  isNode,
+  isNodeList,
+  isObjectPattern,
+  isPair,
+  isSlice,
+  isSymbol,
+  isVariableAssignment,
+  isVariableDeclaration,
 } from './index.ts';
 
-const isOutput = (n: unknown): n is { type: 'output'; lineno: number; colno: number; children: unknown[] } =>
+const isOutput = (
+  n: unknown
+): n is { type: 'output'; lineno: number; colno: number; children: unknown[] } =>
   n !== null && typeof n === 'object' && (n as { type?: string }).type === 'output';
 
 describe('nodes/types/guards', () => {
@@ -63,17 +87,27 @@ describe('nodes/types/guards', () => {
     });
 
     test('returns false for lookupVal node', () => {
-      expect(isFunCall(lookupVal(ZERO_LOC, { target: symbol(ZERO_LOC, 'x'), val: literal(ZERO_LOC, 'y') }))).toBe(false);
+      expect(
+        isFunCall(
+          lookupVal(ZERO_LOC, { target: symbol(ZERO_LOC, 'x'), val: literal(ZERO_LOC, 'y') })
+        )
+      ).toBe(false);
     });
   });
 
   describe('isLookupVal', () => {
     test('returns true for lookupVal node', () => {
-      expect(isLookupVal(lookupVal(ZERO_LOC, { target: symbol(ZERO_LOC, 'x'), val: literal(ZERO_LOC, 'y') }))).toBe(true);
+      expect(
+        isLookupVal(
+          lookupVal(ZERO_LOC, { target: symbol(ZERO_LOC, 'x'), val: literal(ZERO_LOC, 'y') })
+        )
+      ).toBe(true);
     });
 
     test('returns false for funCall node', () => {
-      expect(isLookupVal(funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'fn'), args: [] }))).toBe(false);
+      expect(isLookupVal(funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'fn'), args: [] }))).toBe(
+        false
+      );
     });
   });
 
@@ -99,7 +133,9 @@ describe('nodes/types/guards', () => {
 
   describe('isPair', () => {
     test('returns true for pair node', () => {
-      expect(isPair(pair(ZERO_LOC, { key: literal(ZERO_LOC, 'key'), val: literal(ZERO_LOC, 'val') }))).toBe(true);
+      expect(
+        isPair(pair(ZERO_LOC, { key: literal(ZERO_LOC, 'key'), val: literal(ZERO_LOC, 'val') }))
+      ).toBe(true);
     });
 
     test('returns false for literal node', () => {
@@ -109,32 +145,46 @@ describe('nodes/types/guards', () => {
 
   describe('isFor', () => {
     test('returns true for for node', () => {
-      expect(isFor(forNode(ZERO_LOC, {
-        name: symbol(ZERO_LOC, 'x'),
-        arr: array(ZERO_LOC, []),
-        body: templateData(ZERO_LOC, ''),
-      }))).toBe(true);
+      expect(
+        isFor(
+          forNode(ZERO_LOC, {
+            name: symbol(ZERO_LOC, 'x'),
+            arr: array(ZERO_LOC, []),
+            body: templateData(ZERO_LOC, ''),
+          })
+        )
+      ).toBe(true);
     });
 
     test('returns false for if node', () => {
-      expect(isFor(ifNode(ZERO_LOC, { cond: literal(ZERO_LOC, true), body: templateData(ZERO_LOC, '') }))).toBe(false);
+      expect(
+        isFor(ifNode(ZERO_LOC, { cond: literal(ZERO_LOC, true), body: templateData(ZERO_LOC, '') }))
+      ).toBe(false);
     });
   });
 
   describe('isIf', () => {
     test('returns true for if node', () => {
-      expect(isIf(ifNode(ZERO_LOC, {
-        cond: literal(ZERO_LOC, true),
-        body: templateData(ZERO_LOC, ''),
-      }))).toBe(true);
+      expect(
+        isIf(
+          ifNode(ZERO_LOC, {
+            cond: literal(ZERO_LOC, true),
+            body: templateData(ZERO_LOC, ''),
+          })
+        )
+      ).toBe(true);
     });
 
     test('returns false for for node', () => {
-      expect(isIf(forNode(ZERO_LOC, {
-        name: symbol(ZERO_LOC, 'x'),
-        arr: array(ZERO_LOC, []),
-        body: templateData(ZERO_LOC, ''),
-      }))).toBe(false);
+      expect(
+        isIf(
+          forNode(ZERO_LOC, {
+            name: symbol(ZERO_LOC, 'x'),
+            arr: array(ZERO_LOC, []),
+            body: templateData(ZERO_LOC, ''),
+          })
+        )
+      ).toBe(false);
     });
   });
 

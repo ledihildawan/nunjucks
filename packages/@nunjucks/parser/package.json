@@ -10,11 +10,16 @@
     "@nunjucks/error-catalog": "workspace:*",
     "@nunjucks/error-formatter": "workspace:*",
     "@nunjucks/lexer": "workspace:*",
+    "@nunjucks/lib": "workspace:*",
     "@nunjucks/nodes": "workspace:*",
     "@nunjucks/shared": "workspace:*",
     "@nunjucks/validators": "workspace:*"
   },
   "description": "Parser for Nunjucks template engine",
-  "keywords": ["nunjucks", "parser", "ast"],
+  "keywords": [
+    "nunjucks",
+    "parser",
+    "ast"
+  ],
   "license": "BSD-2-Clause"
 }

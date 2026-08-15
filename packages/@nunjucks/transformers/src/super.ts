@@ -1,19 +1,26 @@
-import type { Node } from '@nunjucks/nodes';
-import { symbol, superNode, isBlock, isFunCall, walk, findAll } from '@nunjucks/nodes';
 import { createGensym } from '@nunjucks/lib/gensym';
-import { loc } from '@nunjucks/lexer';
+import type { Node } from '@nunjucks/nodes';
+import { findAll, isBlock, isFunCall, superNode, symbol, walk } from '@nunjucks/nodes';
+import { loc } from '@nunjucks/shared';
 
-export const liftSuper = (ast: Node): Node => walk(ast, (blockNode: Node): Node | undefined => {
-    if (!isBlock(blockNode)) { return; }
+export const liftSuper = (ast: Node): Node =>
+  walk(ast, (blockNode: Node): Node | undefined => {
+    if (!isBlock(blockNode)) {
+      return;
+    }
 
     const { body } = blockNode;
-    if (!body) { return; }
+    if (!body) {
+      return;
+    }
 
     const isSuperCall = (node: Node): boolean =>
       isFunCall(node) && typeof node.name !== 'string' && node.name?.value === 'super';
 
     const superCall = findAll(body, isSuperCall).find(isFunCall);
-    if (!superCall) { return; }
+    if (!superCall) {
+      return;
+    }
 
     const nameNode = superCall.name as { value: string; lineno: number; colno: number };
     const superLoc = { lineno: nameNode.lineno, colno: nameNode.colno };
@@ -27,12 +34,10 @@ export const liftSuper = (ast: Node): Node => walk(ast, (blockNode: Node): Node 
     });
 
     const bodyChildren = newBody.children ?? [];
-    const blockName = typeof blockNode.name === 'string' ? blockNode.name : String(blockNode.name?.value ?? '');
+    const blockName =
+      typeof blockNode.name === 'string' ? blockNode.name : String(blockNode.name?.value ?? '');
     const newChildren = [
-      superNode(
-        loc(superLoc),
-        { blockName, sym: symbol(loc(superLoc), sym) },
-      ),
+      superNode(loc(superLoc), { blockName, sym: symbol(loc(superLoc), sym) }),
       ...bodyChildren,
     ];
     const replacedBody = { ...newBody, children: newChildren };

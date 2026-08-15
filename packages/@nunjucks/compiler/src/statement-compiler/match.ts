@@ -1,14 +1,17 @@
-import { forEach } from 'remeda';
 import type { MatchNode, WhenNode } from '@nunjucks/nodes';
-import { isLiteral, isSymbol, isArray, isDict } from '@nunjucks/nodes';
+import { isArray, isDict, isLiteral, isSymbol } from '@nunjucks/nodes';
+import { forEach } from 'remeda';
+import { assertSafeIdentifier } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
-import { assertSafeIdentifier } from '../codegen.ts';
 import { compileDestructuring } from './pattern.ts';
 
-export const compileMatch = (compiler: Compiler, { node, frame: parentFrame }: CompileNodeInput<MatchNode>): void => {
-  const targetVar = compiler.tmpid();
-  const matchedVar = compiler.tmpid();
+export const compileMatch = (
+  compiler: Compiler,
+  { node, frame: parentFrame }: CompileNodeInput<MatchNode>
+): void => {
+  const targetVar = compiler.nextCompilerId();
+  const matchedVar = compiler.nextCompilerId();
   const frame = parentFrame.push(true);
   compiler.emitLine('frame = frame.push(true);');
   if (compiler.streamErrorRecovery) {
@@ -37,14 +40,16 @@ export const compileMatch = (compiler: Compiler, { node, frame: parentFrame }: C
       const name = pattern.value;
       if (name !== '_') {
         assertSafeIdentifier(name, { compiler });
-        compiler.emitLine(`frame = frame.set({ name: ${JSON.stringify(name)}, value: ${targetVar} });`);
+        compiler.emitLine(
+          `frame = frame.set({ name: ${JSON.stringify(name)}, value: ${targetVar} });`
+        );
         frame.set({ name, value: targetVar });
       }
     } else if (isArray(pattern) || isDict(pattern)) {
       condParts.push(`${targetVar} != null`);
       compileDestructuring({ compiler, frame, registerFrame: true }, pattern, targetVar);
     } else {
-      const exprId = compiler.tmpid();
+      const exprId = compiler.nextCompilerId();
       compiler.emitLine(`let ${exprId} = `);
       compiler.compile(pattern, frame);
       compiler.emitLine(';');
@@ -52,7 +57,7 @@ export const compileMatch = (compiler: Compiler, { node, frame: parentFrame }: C
     }
 
     if (caseNode.guard) {
-      const guardId = compiler.tmpid();
+      const guardId = compiler.nextCompilerId();
       compiler.emitLine(`let ${guardId} = `);
       compiler.compile(caseNode.guard, frame);
       compiler.emitLine(';');

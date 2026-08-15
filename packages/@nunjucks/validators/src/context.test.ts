@@ -1,7 +1,7 @@
-import { describe, test, expect } from 'bun:test';
-import { findContextDangerousValues, validateRenderContext } from '@nunjucks/validators';
+import { describe, expect, test } from 'bun:test';
+import process from 'node:process';
 import { isOk } from '@nunjucks/lib';
-import process from "node:process";
+import { findContextDangerousValues, validateRenderContext } from '@nunjucks/validators';
 
 describe('findContextDangerousValues', () => {
   test('flags process inside nested values', () => {
@@ -10,7 +10,10 @@ describe('findContextDangerousValues', () => {
   });
 
   test('flags globalThis at any depth', () => {
-    const paths = findContextDangerousValues({ a: globalThis, b: { nested: { deep: globalThis } } });
+    const paths = findContextDangerousValues({
+      a: globalThis,
+      b: { nested: { deep: globalThis } },
+    });
     expect(paths).toContain('a');
     expect(paths).toContain('b.nested.deep');
   });

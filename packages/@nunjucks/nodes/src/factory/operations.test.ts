@@ -1,38 +1,71 @@
-import { describe, test, expect } from 'bun:test';
-import { ZERO_LOC, loc, type Loc } from '@nunjucks/shared';
-import { T } from '../types/index.ts';
+import { describe, expect, test } from 'bun:test';
+import { type Loc, loc, ZERO_LOC } from '@nunjucks/shared';
 import type {
-  Node,
-  BinaryOpNode,
+  AssignmentPatternNode,
   BinaryNode,
-  UnaryOpNode,
-  UnaryNode,
-  IncDecNode,
+  BinaryOpNode,
   CallNode,
-  LookupNode,
-  SliceNode,
+  ChildrenNode,
   CompareNode,
   CompareOperandNode,
+  CompoundAssignNode,
+  IncDecNode,
+  LookupNode,
+  Node,
   PairNode,
   RestPatternNode,
-  AssignmentPatternNode,
-  TestNode,
+  SliceNode,
   TestCallNode,
+  TestNode,
+  UnaryNode,
+  UnaryOpNode,
   VariableDeclNode,
-  CompoundAssignNode,
-  ChildrenNode,
 } from '../types/index.ts';
+import { T } from '../types/index.ts';
 import { literal, symbol } from './atomic.ts';
 import {
-  slice, funCall, pipe, lookupVal, optionalChain, optionalCall,
-  add, sub, mul, div, floorDiv, mod, pow, concat,
-  not, neg, pos, and, or, nullishCoalesce,
-  compare, compareOperand,
-  bitwiseOr, bitwiseAnd, bitwiseXor, bitwiseLShift, bitwiseRShift, bitwiseNot,
-  increment, decrement,
-  arrayPattern, objectPattern, patternProperty, restPattern, assignmentPattern,
-  isOp, inNode, testNode, testCallNode,
-  variableDeclaration, variableAssignment, compoundAssignment,
+  add,
+  and,
+  arrayPattern,
+  assignmentPattern,
+  bitwiseAnd,
+  bitwiseLShift,
+  bitwiseNot,
+  bitwiseOr,
+  bitwiseRShift,
+  bitwiseXor,
+  compare,
+  compareOperand,
+  compoundAssignment,
+  concat,
+  decrement,
+  div,
+  floorDiv,
+  funCall,
+  increment,
+  inNode,
+  isOp,
+  lookupVal,
+  mod,
+  mul,
+  neg,
+  not,
+  nullishCoalesce,
+  objectPattern,
+  optionalCall,
+  optionalChain,
+  or,
+  patternProperty,
+  pipe,
+  pos,
+  pow,
+  restPattern,
+  slice,
+  sub,
+  testCallNode,
+  testNode,
+  variableAssignment,
+  variableDeclaration,
 } from './operations.ts';
 
 const customLoc: Loc = loc({ lineno: 7, colno: 14 });
@@ -47,13 +80,48 @@ describe('binary arithmetic operators', () => {
     operator: string;
     build: (loc: Loc) => BinaryOpNode;
   }> = [
-    { factory: 'add', typename: T.ADD, operator: '+', build: (loc) => add(loc, { left: leftOperand, right: rightOperand }) },
-    { factory: 'sub', typename: T.SUB, operator: '-', build: (loc) => sub(loc, { left: leftOperand, right: rightOperand }) },
-    { factory: 'mul', typename: T.MUL, operator: '*', build: (loc) => mul(loc, { left: leftOperand, right: rightOperand }) },
-    { factory: 'div', typename: T.DIV, operator: '/', build: (loc) => div(loc, { left: leftOperand, right: rightOperand }) },
-    { factory: 'floorDiv', typename: T.FLOOR_DIV, operator: '//', build: (loc) => floorDiv(loc, { left: leftOperand, right: rightOperand }) },
-    { factory: 'mod', typename: T.MOD, operator: '%', build: (loc) => mod(loc, { left: leftOperand, right: rightOperand }) },
-    { factory: 'pow', typename: T.POW, operator: '**', build: (loc) => pow(loc, { left: leftOperand, right: rightOperand }) },
+    {
+      factory: 'add',
+      typename: T.ADD,
+      operator: '+',
+      build: (loc) => add(loc, { left: leftOperand, right: rightOperand }),
+    },
+    {
+      factory: 'sub',
+      typename: T.SUB,
+      operator: '-',
+      build: (loc) => sub(loc, { left: leftOperand, right: rightOperand }),
+    },
+    {
+      factory: 'mul',
+      typename: T.MUL,
+      operator: '*',
+      build: (loc) => mul(loc, { left: leftOperand, right: rightOperand }),
+    },
+    {
+      factory: 'div',
+      typename: T.DIV,
+      operator: '/',
+      build: (loc) => div(loc, { left: leftOperand, right: rightOperand }),
+    },
+    {
+      factory: 'floorDiv',
+      typename: T.FLOOR_DIV,
+      operator: '//',
+      build: (loc) => floorDiv(loc, { left: leftOperand, right: rightOperand }),
+    },
+    {
+      factory: 'mod',
+      typename: T.MOD,
+      operator: '%',
+      build: (loc) => mod(loc, { left: leftOperand, right: rightOperand }),
+    },
+    {
+      factory: 'pow',
+      typename: T.POW,
+      operator: '**',
+      build: (loc) => pow(loc, { left: leftOperand, right: rightOperand }),
+    },
   ];
 
   binaryOpCases.forEach(({ factory, typename, operator, build }) => {
@@ -81,17 +149,61 @@ describe('binary nodes without operator', () => {
     typename: BinaryNode['type'];
     build: (loc: Loc) => BinaryNode;
   }> = [
-    { factory: 'concat', typename: T.CONCAT, build: (loc) => concat(loc, { left: leftOperand, right: rightOperand }) },
-    { factory: 'and', typename: T.AND, build: (loc) => and(loc, { left: leftOperand, right: rightOperand }) },
-    { factory: 'or', typename: T.OR, build: (loc) => or(loc, { left: leftOperand, right: rightOperand }) },
-    { factory: 'nullishCoalesce', typename: T.NULLISH_COALESCE, build: (loc) => nullishCoalesce(loc, { left: leftOperand, right: rightOperand }) },
-    { factory: 'bitwiseOr', typename: T.BITWISE_OR, build: (loc) => bitwiseOr(loc, { left: leftOperand, right: rightOperand }) },
-    { factory: 'bitwiseAnd', typename: T.BITWISE_AND, build: (loc) => bitwiseAnd(loc, { left: leftOperand, right: rightOperand }) },
-    { factory: 'bitwiseXor', typename: T.BITWISE_XOR, build: (loc) => bitwiseXor(loc, { left: leftOperand, right: rightOperand }) },
-    { factory: 'bitwiseLShift', typename: T.BITWISE_LSHIFT, build: (loc) => bitwiseLShift(loc, { left: leftOperand, right: rightOperand }) },
-    { factory: 'bitwiseRShift', typename: T.BITWISE_RSHIFT, build: (loc) => bitwiseRShift(loc, { left: leftOperand, right: rightOperand }) },
-    { factory: 'isOp', typename: T.IS, build: (loc) => isOp(loc, { left: leftOperand, right: rightOperand }) },
-    { factory: 'inNode', typename: T.IN, build: (loc) => inNode(loc, { left: leftOperand, right: rightOperand }) },
+    {
+      factory: 'concat',
+      typename: T.CONCAT,
+      build: (loc) => concat(loc, { left: leftOperand, right: rightOperand }),
+    },
+    {
+      factory: 'and',
+      typename: T.AND,
+      build: (loc) => and(loc, { left: leftOperand, right: rightOperand }),
+    },
+    {
+      factory: 'or',
+      typename: T.OR,
+      build: (loc) => or(loc, { left: leftOperand, right: rightOperand }),
+    },
+    {
+      factory: 'nullishCoalesce',
+      typename: T.NULLISH_COALESCE,
+      build: (loc) => nullishCoalesce(loc, { left: leftOperand, right: rightOperand }),
+    },
+    {
+      factory: 'bitwiseOr',
+      typename: T.BITWISE_OR,
+      build: (loc) => bitwiseOr(loc, { left: leftOperand, right: rightOperand }),
+    },
+    {
+      factory: 'bitwiseAnd',
+      typename: T.BITWISE_AND,
+      build: (loc) => bitwiseAnd(loc, { left: leftOperand, right: rightOperand }),
+    },
+    {
+      factory: 'bitwiseXor',
+      typename: T.BITWISE_XOR,
+      build: (loc) => bitwiseXor(loc, { left: leftOperand, right: rightOperand }),
+    },
+    {
+      factory: 'bitwiseLShift',
+      typename: T.BITWISE_LSHIFT,
+      build: (loc) => bitwiseLShift(loc, { left: leftOperand, right: rightOperand }),
+    },
+    {
+      factory: 'bitwiseRShift',
+      typename: T.BITWISE_RSHIFT,
+      build: (loc) => bitwiseRShift(loc, { left: leftOperand, right: rightOperand }),
+    },
+    {
+      factory: 'isOp',
+      typename: T.IS,
+      build: (loc) => isOp(loc, { left: leftOperand, right: rightOperand }),
+    },
+    {
+      factory: 'inNode',
+      typename: T.IN,
+      build: (loc) => inNode(loc, { left: leftOperand, right: rightOperand }),
+    },
   ];
 
   binaryNodeCases.forEach(({ factory, typename, build }) => {
@@ -154,7 +266,11 @@ describe('bitwiseNot', () => {
 
 describe('slice', () => {
   test('creates a slice node forwarding start, stop, and step', () => {
-    const sliceNode: SliceNode = slice(customLoc, { start: leftOperand, stop: rightOperand, step: null });
+    const sliceNode: SliceNode = slice(customLoc, {
+      start: leftOperand,
+      stop: rightOperand,
+      step: null,
+    });
     expect(sliceNode.type).toBe(T.SLICE);
     expect(sliceNode.lineno).toBe(customLoc.lineno);
     expect(sliceNode.colno).toBe(customLoc.colno);
@@ -177,9 +293,27 @@ describe('call nodes', () => {
     typename: CallNode['type'];
     build: (loc: Loc, args?: readonly Node[]) => CallNode;
   }> = [
-    { factory: 'funCall', typename: T.FUN_CALL, build: (loc, args) => funCall(loc, args === undefined ? { name: targetOperand } : { name: targetOperand, args }) },
-    { factory: 'pipe', typename: T.PIPE, build: (loc, args) => pipe(loc, args === undefined ? { name: targetOperand } : { name: targetOperand, args }) },
-    { factory: 'optionalCall', typename: T.OPTIONAL_CALL, build: (loc, args) => optionalCall(loc, args === undefined ? { name: targetOperand } : { name: targetOperand, args }) },
+    {
+      factory: 'funCall',
+      typename: T.FUN_CALL,
+      build: (loc, args) =>
+        funCall(loc, args === undefined ? { name: targetOperand } : { name: targetOperand, args }),
+    },
+    {
+      factory: 'pipe',
+      typename: T.PIPE,
+      build: (loc, args) =>
+        pipe(loc, args === undefined ? { name: targetOperand } : { name: targetOperand, args }),
+    },
+    {
+      factory: 'optionalCall',
+      typename: T.OPTIONAL_CALL,
+      build: (loc, args) =>
+        optionalCall(
+          loc,
+          args === undefined ? { name: targetOperand } : { name: targetOperand, args }
+        ),
+    },
   ];
 
   callCases.forEach(({ factory, typename, build }) => {
@@ -212,8 +346,16 @@ describe('lookup nodes', () => {
     typename: LookupNode['type'];
     build: (loc: Loc) => LookupNode;
   }> = [
-    { factory: 'lookupVal', typename: T.LOOKUP_VAL, build: (loc) => lookupVal(loc, { target: targetOperand, val: rightOperand }) },
-    { factory: 'optionalChain', typename: T.OPTIONAL_CHAIN, build: (loc) => optionalChain(loc, { target: targetOperand, val: rightOperand }) },
+    {
+      factory: 'lookupVal',
+      typename: T.LOOKUP_VAL,
+      build: (loc) => lookupVal(loc, { target: targetOperand, val: rightOperand }),
+    },
+    {
+      factory: 'optionalChain',
+      typename: T.OPTIONAL_CHAIN,
+      build: (loc) => optionalChain(loc, { target: targetOperand, val: rightOperand }),
+    },
   ];
 
   lookupCases.forEach(({ factory, typename, build }) => {
@@ -257,7 +399,10 @@ describe('compare', () => {
 
 describe('compareOperand', () => {
   test('creates a compareOperand node forwarding expr and operator', () => {
-    const compareOperandNode: CompareOperandNode = compareOperand(customLoc, { expr: targetOperand, operator: '>=' });
+    const compareOperandNode: CompareOperandNode = compareOperand(customLoc, {
+      expr: targetOperand,
+      operator: '>=',
+    });
     expect(compareOperandNode.type).toBe(T.COMPARE_OPERAND);
     expect(compareOperandNode.lineno).toBe(customLoc.lineno);
     expect(compareOperandNode.colno).toBe(customLoc.colno);
@@ -302,8 +447,16 @@ describe('arrayPattern and objectPattern', () => {
     typename: ChildrenNode['type'];
     build: (loc: Loc, children?: readonly Node[]) => ChildrenNode;
   }> = [
-    { factory: 'arrayPattern', typename: T.ARRAY_PATTERN, build: (loc, children) => arrayPattern(loc, children) },
-    { factory: 'objectPattern', typename: T.OBJECT_PATTERN, build: (loc, children) => objectPattern(loc, children) },
+    {
+      factory: 'arrayPattern',
+      typename: T.ARRAY_PATTERN,
+      build: (loc, children) => arrayPattern(loc, children),
+    },
+    {
+      factory: 'objectPattern',
+      typename: T.OBJECT_PATTERN,
+      build: (loc, children) => objectPattern(loc, children),
+    },
   ];
 
   patternCases.forEach(({ factory, typename, build }) => {
@@ -330,7 +483,10 @@ describe('arrayPattern and objectPattern', () => {
 
 describe('patternProperty', () => {
   test('creates a patternProperty node storing key and value (val maps to value)', () => {
-    const patternPropertyNode: PairNode = patternProperty(customLoc, { key: 'alias', val: targetOperand });
+    const patternPropertyNode: PairNode = patternProperty(customLoc, {
+      key: 'alias',
+      val: targetOperand,
+    });
     expect(patternPropertyNode.type).toBe(T.PATTERN_PROPERTY);
     expect(patternPropertyNode.lineno).toBe(customLoc.lineno);
     expect(patternPropertyNode.colno).toBe(customLoc.colno);
@@ -339,7 +495,10 @@ describe('patternProperty', () => {
   });
 
   test('accepts a Node key', () => {
-    const patternPropertyNode = patternProperty(ZERO_LOC, { key: targetOperand, val: rightOperand });
+    const patternPropertyNode = patternProperty(ZERO_LOC, {
+      key: targetOperand,
+      val: rightOperand,
+    });
     expect(patternPropertyNode.key).toBe(targetOperand);
     expect(patternPropertyNode.value).toBe(rightOperand);
   });
@@ -357,7 +516,10 @@ describe('restPattern', () => {
 
 describe('assignmentPattern', () => {
   test('creates an assignmentPattern node storing target and default value (defaultVal maps to value)', () => {
-    const assignmentPatternNode: AssignmentPatternNode = assignmentPattern(customLoc, { target: targetOperand, defaultVal: rightOperand });
+    const assignmentPatternNode: AssignmentPatternNode = assignmentPattern(customLoc, {
+      target: targetOperand,
+      defaultVal: rightOperand,
+    });
     expect(assignmentPatternNode.type).toBe(T.ASSIGNMENT_PATTERN);
     expect(assignmentPatternNode.lineno).toBe(customLoc.lineno);
     expect(assignmentPatternNode.colno).toBe(customLoc.colno);
@@ -379,7 +541,10 @@ describe('testNode', () => {
 
 describe('testCallNode', () => {
   test('creates a testCall node forwarding location, target, and name', () => {
-    const testCallNodeInstance: TestCallNode = testCallNode(customLoc, { target: targetOperand, name: 'divisibleby' });
+    const testCallNodeInstance: TestCallNode = testCallNode(customLoc, {
+      target: targetOperand,
+      name: 'divisibleby',
+    });
     expect(testCallNodeInstance.type).toBe(T.TEST_CALL);
     expect(testCallNodeInstance.lineno).toBe(customLoc.lineno);
     expect(testCallNodeInstance.colno).toBe(customLoc.colno);
@@ -394,7 +559,11 @@ describe('testCallNode', () => {
 
   test('attaches provided args', () => {
     const argNode = literal(ZERO_LOC, 3);
-    const testCallNodeInstance = testCallNode(ZERO_LOC, { target: targetOperand, name: 'divisibleby', args: [argNode] });
+    const testCallNodeInstance = testCallNode(ZERO_LOC, {
+      target: targetOperand,
+      name: 'divisibleby',
+      args: [argNode],
+    });
     expect(testCallNodeInstance.args).toEqual([argNode]);
   });
 });
@@ -405,8 +574,16 @@ describe('variableDeclaration and variableAssignment', () => {
     typename: VariableDeclNode['type'];
     build: (loc: Loc, fields: { targets: readonly Node[]; val: Node }) => VariableDeclNode;
   }> = [
-    { factory: 'variableDeclaration', typename: T.VARIABLE_DECLARATION, build: (loc, fields) => variableDeclaration(loc, fields) },
-    { factory: 'variableAssignment', typename: T.VARIABLE_ASSIGNMENT, build: (loc, fields) => variableAssignment(loc, fields) },
+    {
+      factory: 'variableDeclaration',
+      typename: T.VARIABLE_DECLARATION,
+      build: (loc, fields) => variableDeclaration(loc, fields),
+    },
+    {
+      factory: 'variableAssignment',
+      typename: T.VARIABLE_ASSIGNMENT,
+      build: (loc, fields) => variableAssignment(loc, fields),
+    },
   ];
 
   declCases.forEach(({ factory, typename, build }) => {
@@ -419,7 +596,10 @@ describe('variableDeclaration and variableAssignment', () => {
       });
 
       test('stores targets and value (val maps to value)', () => {
-        const declNode = build(ZERO_LOC, { targets: [targetOperand, leftOperand], val: rightOperand });
+        const declNode = build(ZERO_LOC, {
+          targets: [targetOperand, leftOperand],
+          val: rightOperand,
+        });
         expect(declNode.targets).toEqual([targetOperand, leftOperand]);
         expect(declNode.value).toBe(rightOperand);
       });
@@ -429,7 +609,11 @@ describe('variableDeclaration and variableAssignment', () => {
 
 describe('compoundAssignment', () => {
   test('creates a compoundAssignment node with targets, operator, and value', () => {
-    const compoundNode: CompoundAssignNode = compoundAssignment(customLoc, { targets: [targetOperand], operator: '+=', value: rightOperand });
+    const compoundNode: CompoundAssignNode = compoundAssignment(customLoc, {
+      targets: [targetOperand],
+      operator: '+=',
+      value: rightOperand,
+    });
     expect(compoundNode.type).toBe(T.COMPOUND_ASSIGNMENT);
     expect(compoundNode.lineno).toBe(customLoc.lineno);
     expect(compoundNode.colno).toBe(customLoc.colno);

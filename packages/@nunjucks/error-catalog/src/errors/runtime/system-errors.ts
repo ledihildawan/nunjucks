@@ -10,12 +10,12 @@ const TIMEOUT = {
     'The template **took too long** to execute',
     'An infinite loop in the template logic (e.g. recursive macro)',
     'Large data processing in template (e.g. nested loops over millions of items)',
-    'A blocking operation that does not resolve'
+    'A blocking operation that does not resolve',
   ],
   fixCode: '{{ env.opts.executionTimeout = 60000; /* 60s */ }}',
   fixComment: 'Increase the `executionTimeout` config or simplify the template',
   severity: 'error' as const,
-  subjectFrom: null
+  subjectFrom: null,
 };
 
 const ASSERT_TYPE_ERROR = createErrorDefinition({
@@ -25,11 +25,12 @@ const ASSERT_TYPE_ERROR = createErrorDefinition({
   causes: [
     'An internal type assertion failed in the compiler',
     'The AST contains an unexpected node shape',
-    'This indicates a bug in nunjucks itself'
+    'This indicates a bug in nunjucks itself',
   ],
   fixCode: '/* Please report this as a bug at https://github.com/mozilla/nunjucks/issues */',
-  fixComment: 'This is a nunjucks internal error — not caused by your template. If this is reproducible, please open an issue with the template that triggered it and the full stack trace.',
-  documentationUrl: 'https://github.com/mozilla/nunjucks/issues'
+  fixComment:
+    'This is a nunjucks internal error — not caused by your template. If this is reproducible, please open an issue with the template that triggered it and the full stack trace.',
+  documentationUrl: 'https://github.com/mozilla/nunjucks/issues',
 });
 
 const UNAVAILABLE_IN_ENV = createErrorDefinition({
@@ -38,10 +39,10 @@ const UNAVAILABLE_IN_ENV = createErrorDefinition({
   category: 'unavailable',
   causes: [
     'The environment was created without registering this filter or test',
-    'A custom environment is missing the filter/test handler'
+    'A custom environment is missing the filter/test handler',
   ],
-  fixCode: 'env.addFilter(\'myFilter\', function(value) { return value; })',
-  fixComment: 'Register the missing filter with `env.addFilter()` or test with `env.addTest()`'
+  fixCode: "env.addFilter('myFilter', function(value) { return value; })",
+  fixComment: 'Register the missing filter with `env.addFilter()` or test with `env.addTest()`',
 });
 
 const EXEC_EXPRESSION_ERROR = createErrorDefinition({
@@ -51,11 +52,12 @@ const EXEC_EXPRESSION_ERROR = createErrorDefinition({
   causes: [
     'Variable referenced in `{% exec %}` was not passed to the render context',
     'The expression calls a method on a value that does not support it',
-    'Data preparation should happen in your **controller** before render'
+    'Data preparation should happen in your **controller** before render',
   ],
-  fixCode: '// Controller — before render():\nconst items = prepareItems();\nconst njk = nunjucks({});\nawait njk.render(template, { items })',
+  fixCode:
+    '// Controller — before render():\nconst items = prepareItems();\nconst njk = nunjucks({});\nawait njk.render(template, { items })',
   fixComment: 'Use {% exec %} only for rendering state. Move data logic to your controller.',
-  extraFrom: (groups: RegExpMatchArray) => ({ detail: groups[1] ?? '' })
+  extraFrom: (groups: RegExpMatchArray) => ({ detail: groups[1] ?? '' }),
 });
 
-export { TIMEOUT, ASSERT_TYPE_ERROR, UNAVAILABLE_IN_ENV, EXEC_EXPRESSION_ERROR };
+export { ASSERT_TYPE_ERROR, EXEC_EXPRESSION_ERROR, TIMEOUT, UNAVAILABLE_IN_ENV };

@@ -1,19 +1,20 @@
-import { createTokenizer } from '@nunjucks/lexer';
-import type { LexerOptions } from '@nunjucks/lexer';
-import { root } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
 import type { TemplateError } from '@nunjucks/error-formatter';
+import type { LexerOptions } from '@nunjucks/lexer';
+import { createTokenizer } from '@nunjucks/lexer';
+import { isErr, ok, type Result } from '@nunjucks/lib';
+import type { Node } from '@nunjucks/nodes';
+import { root } from '@nunjucks/nodes';
 import { ZERO_LOC } from '@nunjucks/shared';
-import { ok, isErr, type Result } from '@nunjucks/lib';
-import { fail } from "./cursor.ts";
-import type { ParserContext, ParserExtension, TokenStream } from "./cursor.ts";
-import { parseNodes } from "./parse-root.ts";
-import { validateExpression } from '@nunjucks/validators';
 import type { ExpressionSecurityConfig } from '@nunjucks/validators';
+import { validateExpression } from '@nunjucks/validators';
+import type { ParserContext, ParserExtension, TokenStream } from './cursor.ts';
+import { fail } from './cursor.ts';
+import { parseNodes } from './parse-root.ts';
 
 export interface ParseOptions extends LexerOptions {
   security?: ExpressionSecurityConfig | null;
   autoescape?: boolean;
+  extensions?: readonly ParserExtension[];
 }
 
 export const createParser = (tokens: TokenStream): ParserContext => {
@@ -25,21 +26,30 @@ export const createParser = (tokens: TokenStream): ParserContext => {
   };
 };
 
-export const parse = (src: string, extensions?: ParserExtension[], options?: ParseOptions): Result<Node & { children: readonly Node[] }, TemplateError> => {
+export const parse = (
+  src: string,
+  options?: ParseOptions
+): Result<Node & { children: readonly Node[] }, TemplateError> => {
   const securityConfig = options?.security ?? null;
   const parser = createParser(createTokenizer(src, options));
+  const { extensions } = options ?? {};
   if (extensions !== undefined) {
-    parser.extensions = extensions;
+    parser.extensions = [...extensions];
   }
   const nodesR = parseNodes(parser);
-  if (isErr(nodesR)) { return nodesR; }
+  if (isErr(nodesR)) {
+    return nodesR;
+  }
   const ast = root(ZERO_LOC, nodesR.value);
 
   if (securityConfig !== null) {
     const validation = validateExpression(ast, securityConfig);
     if (isErr(validation)) {
       const [firstError] = validation.error;
-      return fail(parser, firstError.message, { lineno: firstError.lineno, colno: firstError.colno });
+      return fail(parser, firstError.message, {
+        lineno: firstError.lineno,
+        colno: firstError.colno,
+      });
     }
   }
 

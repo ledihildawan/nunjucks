@@ -1,8 +1,8 @@
-import type { Node, BinaryNode, BinaryOpNode, RangeNode } from '@nunjucks/nodes';
+import type { BinaryNode, BinaryOpNode, Node, RangeNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
+import { emitLocationGuard } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
-import { emitLocationGuard } from '../codegen.ts';
 
 interface BinOpEmitterOptions {
   operator: string;
@@ -21,15 +21,30 @@ const binOpEmitter = (
   compiler.emit(')');
 };
 
-export const compileOr = (compiler: Compiler, { node, frame }: CompileNodeInput<BinaryNode>): void => binOpEmitter(compiler, node, frame, { operator: ' || ' });
+export const compileOr = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<BinaryNode>
+): void => binOpEmitter(compiler, node, frame, { operator: ' || ' });
 
-export const compileAnd = (compiler: Compiler, { node, frame }: CompileNodeInput<BinaryNode>): void => binOpEmitter(compiler, node, frame, { operator: ' && ' });
+export const compileAnd = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<BinaryNode>
+): void => binOpEmitter(compiler, node, frame, { operator: ' && ' });
 
-export const compileAdd = (compiler: Compiler, { node, frame }: CompileNodeInput<BinaryOpNode>): void => binOpEmitter(compiler, node, frame, { operator: ' + ' });
+export const compileAdd = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<BinaryOpNode>
+): void => binOpEmitter(compiler, node, frame, { operator: ' + ' });
 
-export const compileConcat = (compiler: Compiler, { node, frame }: CompileNodeInput<BinaryNode>): void => binOpEmitter(compiler, node, frame, { operator: ' + "" + ' });
+export const compileConcat = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<BinaryNode>
+): void => binOpEmitter(compiler, node, frame, { operator: ' + "" + ' });
 
-export const compileRange = (compiler: Compiler, { node, frame }: CompileNodeInput<RangeNode>): void => {
+export const compileRange = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<RangeNode>
+): void => {
   compiler.emit('(() => { let s = ');
   compiler.compile(node.left, frame);
   compiler.emit('; let e = ');
@@ -37,15 +52,30 @@ export const compileRange = (compiler: Compiler, { node, frame }: CompileNodeInp
   compiler.emit('; let r = []; for (let i = s; i <= e; i++) { r.push(i); } return r; })()');
 };
 
-export const compileSub = (compiler: Compiler, { node, frame }: CompileNodeInput<BinaryOpNode>): void => binOpEmitter(compiler, node, frame, { operator: ' - ' });
+export const compileSub = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<BinaryOpNode>
+): void => binOpEmitter(compiler, node, frame, { operator: ' - ' });
 
-export const compileMul = (compiler: Compiler, { node, frame }: CompileNodeInput<BinaryOpNode>): void => binOpEmitter(compiler, node, frame, { operator: ' * ' });
+export const compileMul = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<BinaryOpNode>
+): void => binOpEmitter(compiler, node, frame, { operator: ' * ' });
 
-export const compileDiv = (compiler: Compiler, { node, frame }: CompileNodeInput<BinaryOpNode>): void => binOpEmitter(compiler, node, frame, { operator: ' / ' });
+export const compileDiv = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<BinaryOpNode>
+): void => binOpEmitter(compiler, node, frame, { operator: ' / ' });
 
-export const compileMod = (compiler: Compiler, { node, frame }: CompileNodeInput<BinaryOpNode>): void => binOpEmitter(compiler, node, frame, { operator: ' % ' });
+export const compileMod = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<BinaryOpNode>
+): void => binOpEmitter(compiler, node, frame, { operator: ' % ' });
 
-export const compileNullishCoalesce = (compiler: Compiler, { node, frame }: CompileNodeInput<BinaryNode>): void => {
+export const compileNullishCoalesce = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<BinaryNode>
+): void => {
   emitLocationGuard(compiler, node.lineno, node.colno);
   compiler.compile(node.left, frame);
   compiler.emit(' ?? ');
@@ -53,7 +83,10 @@ export const compileNullishCoalesce = (compiler: Compiler, { node, frame }: Comp
   compiler.emit(')');
 };
 
-export const compileIn = (compiler: Compiler, { node, frame }: CompileNodeInput<BinaryNode>): void => {
+export const compileIn = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<BinaryNode>
+): void => {
   const lineno = node.lineno;
   const colno = node.colno;
   emitLocationGuard(compiler, lineno, colno);
@@ -64,7 +97,10 @@ export const compileIn = (compiler: Compiler, { node, frame }: CompileNodeInput<
   compiler.emit(`, lineno: ${lineno}, colno: ${colno} }))`);
 };
 
-export const compileFloorDiv = (compiler: Compiler, { node, frame }: CompileNodeInput<BinaryOpNode>): void => {
+export const compileFloorDiv = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<BinaryOpNode>
+): void => {
   emitLocationGuard(compiler, node.lineno, node.colno);
   compiler.emit('Math.floor(');
   compiler.compile(node.left, frame);
@@ -73,7 +109,10 @@ export const compileFloorDiv = (compiler: Compiler, { node, frame }: CompileNode
   compiler.emit('))');
 };
 
-export const compilePow = (compiler: Compiler, { node, frame }: CompileNodeInput<BinaryOpNode>): void => {
+export const compilePow = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<BinaryOpNode>
+): void => {
   emitLocationGuard(compiler, node.lineno, node.colno);
   compiler.emit('Math.pow(');
   compiler.compile(node.left, frame);

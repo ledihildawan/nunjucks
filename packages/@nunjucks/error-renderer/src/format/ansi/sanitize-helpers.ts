@@ -1,10 +1,18 @@
 import { keys } from 'remeda';
 
 export const sanitizePrimitive = (value: unknown): string => {
-  if (value === null) { return 'null'; }
-  if (value === undefined) { return 'undefined'; }
-  if (typeof value === 'function') { return `[Function: ${value.name || 'anonymous'}]`; }
-  if (typeof value === 'string') { return `"${value}"`; }
+  if (value === null) {
+    return 'null';
+  }
+  if (value === undefined) {
+    return 'undefined';
+  }
+  if (typeof value === 'function') {
+    return `[Function: ${value.name || 'anonymous'}]`;
+  }
+  if (typeof value === 'string') {
+    return `"${value}"`;
+  }
   return String(value);
 };
 
@@ -12,7 +20,9 @@ export const sanitizeForAnsi = (value: unknown, seen?: WeakSet<object>): string 
   if (typeof value !== 'object' || value === null) {
     return sanitizePrimitive(value);
   }
-  if (seen?.has(value)) { return '[Circular]'; }
+  if (seen?.has(value)) {
+    return '[Circular]';
+  }
   const newSeen = seen ?? new WeakSet();
   newSeen.add(value);
   if (Array.isArray(value)) {

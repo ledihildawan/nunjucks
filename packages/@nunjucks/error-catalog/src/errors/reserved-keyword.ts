@@ -1,11 +1,14 @@
 import type { Classification, ClassifyInput } from './types.ts';
 
-const RESERVED_KEYWORD_CONTEXT: Record<string, { causes: string[]; fixCode: string; fixComment: string }> = {
+const RESERVED_KEYWORD_CONTEXT: Record<
+  string,
+  { causes: string[]; fixCode: string; fixComment: string }
+> = {
   slot: {
     causes: [
       '`slot` is a **tag** used to declare slot content inside `{% component %}` and `{% render %}` blocks',
       'Used to declare fallback slots in a component definition',
-      'Used to provide named slots in a render invocation'
+      'Used to provide named slots in a render invocation',
     ],
     fixCode: `{% component Card %}
   {% slot title %}Default title{% endslot %}
@@ -14,17 +17,17 @@ const RESERVED_KEYWORD_CONTEXT: Record<string, { causes: string[]; fixCode: stri
 {% render Card %}
   {% slot title %}Custom title{% endslot %}
 {% endrender %}`,
-    fixComment: 'slot is only available as a block inside component and render bodies'
+    fixComment: 'slot is only available as a block inside component and render bodies',
   },
   super: {
     causes: [
       '`super()` can only be called inside a **block that extends a parent template**',
       'The template must use `{% extends "parent.njk" %}`',
-      '`super()` calls the parent template\'s block content'
+      "`super()` calls the parent template's block content",
     ],
     fixCode: '{% extends "parent.njk" %}\n{% block content %}{{ super() }}{% endblock %}',
-    fixComment: 'super() requires the template to extend a parent with the block'
-  }
+    fixComment: 'super() requires the template to extend a parent with the block',
+  },
 };
 
 export const reservedKeywordClassifier = (input: ClassifyInput): Classification | null => {
@@ -36,10 +39,11 @@ export const reservedKeywordClassifier = (input: ClassifyInput): Classification 
   const keywordGuidance = RESERVED_KEYWORD_CONTEXT[keyword] || {
     causes: [
       'This word is reserved by the nunjucks parser and cannot be used as a variable, filter, or function name',
-      'Each reserved keyword has a specific context where it is valid (see nunjucks documentation)'
+      'Each reserved keyword has a specific context where it is valid (see nunjucks documentation)',
     ],
-    fixCode: "// Rename to avoid the reserved keyword — e.g. myFn() instead of fn()",
-    fixComment: "Use a non-reserved name for your variable, filter, or function. Common alternatives: 'fn' → 'call', 'import' → 'load', 'export' → 'save'"
+    fixCode: '// Rename to avoid the reserved keyword — e.g. myFn() instead of fn()',
+    fixComment:
+      "Use a non-reserved name for your variable, filter, or function. Common alternatives: 'fn' → 'call', 'import' → 'load', 'export' → 'save'",
   };
 
   return {
@@ -48,6 +52,6 @@ export const reservedKeywordClassifier = (input: ClassifyInput): Classification 
     title: `Cannot use reserved keyword '${keyword}' outside of its intended context`,
     documentationUrl: null,
     severity: 'error',
-    ...keywordGuidance
+    ...keywordGuidance,
   };
 };

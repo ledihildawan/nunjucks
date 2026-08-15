@@ -6,18 +6,20 @@ export const PARSER_ERRORS = {
   SYNTAX_ERROR: {
     name: 'SYNTAX_ERROR',
     message: 'Syntax error',
-    pattern: /^Unexpected token|unexpected end of file|unexpected end of template|unexpected token:|parse error|Parse error|Unexpected end of input|^expected arguments$|^expected (?:comma|right bracket|block end|endtry|elif|else|endif)|^tag name expected|^invalid boolean|^expected expression, got end of file|^expected [a-zA-Z]+(?:, got [a-zA-Z.]+)?$/iu,
+    pattern:
+      /^Unexpected token|unexpected end of file|unexpected end of template|unexpected token:|parse error|Parse error|Unexpected end of input|^expected arguments$|^expected (?:comma|right bracket|block end|endtry|elif|else|endif)|^tag name expected|^invalid boolean|^expected expression, got end of file|^expected [a-zA-Z]+(?:, got [a-zA-Z.]+)?$/iu,
     category: 'syntax_error',
-    titleTemplate: "Template syntax error",
+    titleTemplate: 'Template syntax error',
     causes: [
       'Missing closing tag (e.g. `{% endif %}`, `{% endfor %}`, `{% endblock %}`)',
       '**Mismatched quotes** or brackets in expressions',
       '**Unclosed** array or object brackets like `[` without `]`',
-      'A character is missing or out of place at the caret position'
+      'A character is missing or out of place at the caret position',
     ],
     fixCode: '{% if condition %}\n  {{ value }}\n{% endif %}',
-    fixComment: 'Verify all opening tags have matching closing tags and all brackets/quotes are paired',
-    documentationUrl: `${DOCS_BASE}#tags`
+    fixComment:
+      'Verify all opening tags have matching closing tags and all brackets/quotes are paired',
+    documentationUrl: `${DOCS_BASE}#tags`,
   },
   PARSER_UNEXPECTED_TOKEN: createErrorDefinition({
     name: 'PARSER_UNEXPECTED_TOKEN',
@@ -26,11 +28,11 @@ export const PARSER_ERRORS = {
     causes: [
       'A character that the parser did not expect at this position',
       'An operator used in an invalid context',
-      'A keyword used where a value was expected (or vice versa)'
+      'A keyword used where a value was expected (or vice versa)',
     ],
     fixCode: '{{ a + b }}',
     fixComment: 'Check the operator and operand types around the error position',
-    documentationUrl: `${DOCS_BASE}#expressions`
+    documentationUrl: `${DOCS_BASE}#expressions`,
   }),
   PARSER_EXPECTED: createErrorDefinition({
     name: 'PARSER_EXPECTED',
@@ -39,10 +41,10 @@ export const PARSER_ERRORS = {
     causes: [
       'The parser expected a specific token at this position',
       'A required keyword or symbol is missing',
-      'A previous tag is unclosed or missing a parameter'
+      'A previous tag is unclosed or missing a parameter',
     ],
     fixCode: '{% if condition %}{% endif %}',
-    fixComment: 'Add the missing token indicated by the error message'
+    fixComment: 'Add the missing token indicated by the error message',
   }),
   PARSER_EXPECTED_IN: {
     name: 'PARSER_EXPECTED_IN',
@@ -53,10 +55,10 @@ export const PARSER_ERRORS = {
     causes: [
       'The `for` loop syntax is incomplete',
       'Missing the `in` keyword between the variable and the iterable',
-      'A typo (e.g. `of` instead of `in`)'
+      'A typo (e.g. `of` instead of `in`)',
     ],
     fixCode: '{% for item in items %}\n  {{ item }}\n{% endfor %}',
-    fixComment: 'The correct syntax is `{% for VAR in COLLECTION %}`'
+    fixComment: 'The correct syntax is `{% for VAR in COLLECTION %}`',
   },
   PARSER_VARIABLE_NAME: {
     name: 'PARSER_VARIABLE_NAME',
@@ -67,25 +69,26 @@ export const PARSER_ERRORS = {
     causes: [
       'A variable name is missing where one is required',
       'The identifier starts with a digit or contains invalid characters',
-      'Missing identifier after `for`, or missing target before `:=`'
+      'Missing identifier after `for`, or missing target before `:=`',
     ],
     fixCode: '{{ validName := value }}',
-    fixComment: 'Use a valid identifier: letters, digits, underscores (not starting with digit)'
+    fixComment: 'Use a valid identifier: letters, digits, underscores (not starting with digit)',
   },
   PARSER_TAG_NAME: {
     name: 'PARSER_TAG_NAME',
     message: 'tag name expected',
-    pattern: /^tag name expected$|parse(?:Block|From|TemplateRef|FilterStatement|If|Import|Include): expected [a-zA-Z]+$/iu,
+    pattern:
+      /^tag name expected$|parse(?:Block|From|TemplateRef|FilterStatement|If|Import|Include): expected [a-zA-Z]+$/iu,
     category: 'syntax_error',
     titleTemplate: 'Tag name expected',
     causes: [
       'A tag (e.g. `if`, `for`, `block`) is missing its name',
       'A keyword was used where a tag was expected',
-      'The tag is malformed'
+      'The tag is malformed',
     ],
     fixCode: '{% if condition %}...{% endif %}',
     fixComment: 'Make sure the tag has a valid name like `if`, `for`, `block`, etc.',
-    documentationUrl: `${DOCS_BASE}#tags`
+    documentationUrl: `${DOCS_BASE}#tags`,
   },
   PARSER_EXPRESSION: {
     name: 'PARSER_EXPRESSION',
@@ -96,10 +99,10 @@ export const PARSER_ERRORS = {
     causes: [
       'An expression is required but was not provided',
       'Empty `{{ }}` or `{% %}` blocks',
-      'Missing expression after `=`, `:`, `,`, or other operator'
+      'Missing expression after `=`, `:`, `,`, or other operator',
     ],
     fixCode: '{{ variableName }}\n{% if variableName %}...{% endif %}',
-    fixComment: 'Add a valid expression in place of the missing one'
+    fixComment: 'Add a valid expression in place of the missing one',
   },
   PARSER_ERROR: createErrorDefinition({
     name: 'PARSER_ERROR',
@@ -108,11 +111,12 @@ export const PARSER_ERRORS = {
     causes: [
       'An unexpected value was encountered during parsing',
       'Template contains a token sequence that the parser cannot interpret',
-      'A custom extension returned an invalid AST node'
+      'A custom extension returned an invalid AST node',
     ],
     fixCode: '{{ value }}',
-    fixComment: 'Look at the reported line and column — check for mismatched quotes, unclosed brackets, missing operators, or characters that look similar but are not (e.g. typographic quotes vs straight quotes)',
-    documentationUrl: `${DOCS_BASE}#tags`
+    fixComment:
+      'Look at the reported line and column — check for mismatched quotes, unclosed brackets, missing operators, or characters that look similar but are not (e.g. typographic quotes vs straight quotes)',
+    documentationUrl: `${DOCS_BASE}#tags`,
   }),
   PARSER_PUSH_TOKEN: createErrorDefinition({
     name: 'PARSER_PUSH_TOKEN',
@@ -120,11 +124,11 @@ export const PARSER_ERRORS = {
     category: 'syntax_error',
     causes: [
       'The parser tried to push back multiple tokens at once',
-      'This is typically a nunjucks internal issue, not a template syntax problem'
+      'This is typically a nunjucks internal issue, not a template syntax problem',
     ],
     fixCode: '/* This is an internal parser issue */',
     fixComment: 'This is a parser bug, please report it with the template that triggered it',
-    documentationUrl: 'https://github.com/mozilla/nunjucks/issues'
+    documentationUrl: 'https://github.com/mozilla/nunjucks/issues',
   }),
   EXPECTED_VARIABLE_END: createErrorDefinition({
     name: 'EXPECTED_VARIABLE_END',
@@ -133,23 +137,23 @@ export const PARSER_ERRORS = {
     causes: [
       'Missing closing `}}` in a variable expression like `{{ value`',
       'The variable expression is not properly terminated',
-      'A multi-line expression is missing its closing tag'
+      'A multi-line expression is missing its closing tag',
     ],
     fixCode: '{{ value }}',
-    fixComment: 'Add the missing closing `}}` to terminate the variable expression'
+    fixComment: 'Add the missing closing `}}` to terminate the variable expression',
   }),
   UNKNOWN_BLOCK_TAG: createErrorDefinition({
     name: 'UNKNOWN_BLOCK_TAG',
-    message: "unknown block tag: {tag}",
+    message: 'unknown block tag: {tag}',
     category: 'unknown_block_tag',
     causes: [
       'A typo in the block tag name (e.g. `{% iff %}` instead of `{% if %}`)',
       'A custom tag has not been registered',
-      'An unmatched closing tag (e.g. `{% endif %}` without `{% if %}`)'
+      'An unmatched closing tag (e.g. `{% endif %}` without `{% if %}`)',
     ],
-    fixCode: "{% if condition %}...{% endif %}",
+    fixCode: '{% if condition %}...{% endif %}',
     fixComment: 'Use only registered tags, or register custom tags via env.addExtension()',
-    documentationUrl: `${DOCS_BASE}#tags`
+    documentationUrl: `${DOCS_BASE}#tags`,
   }),
   INVALID_BOOLEAN: createErrorDefinition({
     name: 'INVALID_BOOLEAN',
@@ -158,10 +162,10 @@ export const PARSER_ERRORS = {
     causes: [
       'A non-boolean value was used where a boolean was expected',
       'A custom extension returns a non-boolean from a test',
-      'The literal `true` or `false` was misspelled'
+      'The literal `true` or `false` was misspelled',
     ],
     fixCode: '{{ true }} or {{ false }}',
-    fixComment: 'Use the literals `true` or `false` (lowercase)'
+    fixComment: 'Use the literals `true` or `false` (lowercase)',
   }),
   WALRUS_TARGET_INVALID: createErrorDefinition({
     name: 'WALRUS_TARGET_INVALID',
@@ -169,10 +173,11 @@ export const PARSER_ERRORS = {
     category: 'syntax_error',
     causes: [
       'The target of `:=` must be a variable name',
-      'The left-hand side of `:=` must be a variable name or a destructuring pattern'
+      'The left-hand side of `:=` must be a variable name or a destructuring pattern',
     ],
     fixCode: '{{ x := value }}',
-    fixComment: 'Use a variable name or a destructuring pattern (`[a, b]`, `{x, y}`) as the walrus target'
+    fixComment:
+      'Use a variable name or a destructuring pattern (`[a, b]`, `{x, y}`) as the walrus target',
   }),
   ASSIGNMENT_TARGET_INVALID: createErrorDefinition({
     name: 'ASSIGNMENT_TARGET_INVALID',
@@ -180,11 +185,11 @@ export const PARSER_ERRORS = {
     category: 'syntax_error',
     causes: [
       'Compound assignment (`+=`, `-=`, etc.) requires a simple variable name as the target',
-      'Object property assignment is not supported in nunjucks templates'
+      'Object property assignment is not supported in nunjucks templates',
     ],
     fixCode: '{{ x += 1 }}',
-    fixComment: 'Use `:=` to declare a variable, `=` to reassign, or compound operators like `+=`'
-  })
+    fixComment: 'Use `:=` to declare a variable, `=` to reassign, or compound operators like `+=`',
+  }),
 } as const;
 
 export type ParserErrorName = keyof typeof PARSER_ERRORS;

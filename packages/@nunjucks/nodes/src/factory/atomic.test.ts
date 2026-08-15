@@ -1,29 +1,41 @@
-import { describe, test, expect } from 'bun:test';
-import { ZERO_LOC, loc, type Loc } from '@nunjucks/shared';
-import { T } from '../types/index.ts';
+import { describe, expect, test } from 'bun:test';
+import { type Loc, loc, ZERO_LOC } from '@nunjucks/shared';
 import type {
-  Node,
+  ChildrenNode,
   GenericNode,
-  ValueNode,
+  HoleNode,
   LiteralNode,
+  Node,
+  PairNode,
+  RangeNode,
+  SpreadNode,
   SymbolNode,
   TemplateDataNode,
-  ChildrenNode,
-  PairNode,
-  SpreadNode,
-  WalrusNode,
   TemplateLiteralNode,
   TemplateQuasi,
-  RangeNode,
-  HoleNode,
+  ValueNode,
+  WalrusNode,
 } from '../types/index.ts';
+import { T } from '../types/index.ts';
 import {
-  node, value, nodeList, output, root,
-  literal, symbol, templateData,
+  array,
+  dict,
+  group,
   hole,
-  group, array, dict, pair, spread, walrus,
-  templateLiteral, keywordArgs,
+  keywordArgs,
+  literal,
+  node,
+  nodeList,
+  output,
+  pair,
   range,
+  root,
+  spread,
+  symbol,
+  templateData,
+  templateLiteral,
+  value,
+  walrus,
 } from './atomic.ts';
 
 const customLoc: Loc = loc({ lineno: 10, colno: 20 });
@@ -51,9 +63,24 @@ describe('value-bearing nodes', () => {
     build: (loc: Loc, val: unknown) => ValueBearingNode;
   }> = [
     { factory: 'value', typename: T.VALUE, sampleValue: 42, build: (loc, val) => value(loc, val) },
-    { factory: 'literal', typename: T.LITERAL, sampleValue: 'hello', build: (loc, val) => literal(loc, val) },
-    { factory: 'symbol', typename: T.SYMBOL, sampleValue: 'x', build: (loc, val) => symbol(loc, val as string) },
-    { factory: 'templateData', typename: T.TEMPLATE_DATA, sampleValue: 'raw', build: (loc, val) => templateData(loc, val as string) },
+    {
+      factory: 'literal',
+      typename: T.LITERAL,
+      sampleValue: 'hello',
+      build: (loc, val) => literal(loc, val),
+    },
+    {
+      factory: 'symbol',
+      typename: T.SYMBOL,
+      sampleValue: 'x',
+      build: (loc, val) => symbol(loc, val as string),
+    },
+    {
+      factory: 'templateData',
+      typename: T.TEMPLATE_DATA,
+      sampleValue: 'raw',
+      build: (loc, val) => templateData(loc, val as string),
+    },
   ];
 
   valueNodeCases.forEach(({ factory, typename, sampleValue, build }) => {
@@ -88,13 +115,21 @@ describe('children-bearing nodes', () => {
     typename: ChildrenNode['type'];
     build: (loc: Loc, children?: readonly Node[]) => ChildrenNode;
   }> = [
-    { factory: 'nodeList', typename: T.NODE_LIST, build: (loc, children) => nodeList(loc, children) },
+    {
+      factory: 'nodeList',
+      typename: T.NODE_LIST,
+      build: (loc, children) => nodeList(loc, children),
+    },
     { factory: 'output', typename: T.OUTPUT, build: (loc, children) => output(loc, children) },
     { factory: 'root', typename: T.ROOT, build: (loc, children) => root(loc, children) },
     { factory: 'group', typename: T.GROUP, build: (loc, children) => group(loc, children) },
     { factory: 'array', typename: T.ARRAY, build: (loc, children) => array(loc, children) },
     { factory: 'dict', typename: T.DICT, build: (loc, children) => dict(loc, children) },
-    { factory: 'keywordArgs', typename: T.KEYWORD_ARGS, build: (loc, children) => keywordArgs(loc, children) },
+    {
+      factory: 'keywordArgs',
+      typename: T.KEYWORD_ARGS,
+      build: (loc, children) => keywordArgs(loc, children),
+    },
   ];
 
   childrenNodeCases.forEach(({ factory, typename, build }) => {

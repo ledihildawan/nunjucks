@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
-import { isFilePath, resolveIdeLink, getIdeMeta } from './ide-links.ts';
+import { describe, expect, test } from 'bun:test';
 import type { IdeLinkFn, LinkTarget } from './ide-links.ts';
+import { getIdeMeta, isFilePath, resolveIdeLink } from './ide-links.ts';
 
 describe('isFilePath', () => {
   const detectedCases: ReadonlyArray<{ label: string; path: string }> = [
@@ -45,58 +45,58 @@ describe('resolveIdeLink', () => {
 
   test('converts backslashes to forward slashes for vscode links', () => {
     expect(resolveIdeLink('vscode', { path: 'C:\\a\\b\\c.ts', line: 1, col: 2 })).toBe(
-      'vscode://file/C:/a/b/c.ts:1:2',
+      'vscode://file/C:/a/b/c.ts:1:2'
     );
   });
 
   test('strips a file:// prefix for vscode links', () => {
     expect(resolveIdeLink('vscode', { path: 'file:///C:/src/app.ts', line: 3, col: 4 })).toBe(
-      'vscode://file/C:/src/app.ts:3:4',
+      'vscode://file/C:/src/app.ts:3:4'
     );
   });
 
   test('builds cursor link using vscode scheme', () => {
     expect(resolveIdeLink('cursor', { path: 'app.ts', line: 1, col: 2 })).toBe(
-      'vscode://file/app.ts:1:2',
+      'vscode://file/app.ts:1:2'
     );
   });
 
   test('builds zed:// link for zed', () => {
     expect(resolveIdeLink('zed', { path: 'app.ts', line: 5, col: 10 })).toBe(
-      'zed://open?file=app.ts&line=5&col=10',
+      'zed://open?file=app.ts&line=5&col=10'
     );
   });
 
   test('builds textmate txmt:// link', () => {
     expect(resolveIdeLink('textmate', { path: 'app.ts', line: 3, col: 7 })).toBe(
-      'txmt://open?url=file://app.ts&line=3&column=7',
+      'txmt://open?url=file://app.ts&line=3&column=7'
     );
   });
 
   test('builds bbedit:// link', () => {
     expect(resolveIdeLink('bbedit', { path: 'app.ts', line: 4, col: 8 })).toBe(
-      'bbedit://app.ts?line=4',
+      'bbedit://app.ts?line=4'
     );
   });
 
   test('builds sublime link with subl scheme', () => {
     expect(resolveIdeLink('sublime', { path: 'app.ts', line: 2, col: 5 })).toBe(
-      'subl://open?url=file://app.ts&line=2',
+      'subl://open?url=file://app.ts&line=2'
     );
   });
 
   test('returns jetbrains documentation URL for jetbrains family', () => {
     expect(resolveIdeLink('jetbrains', { path: 'app.ts', line: 1, col: 1 })).toBe(
-      'https://www.jetbrains.com/idea/guide/tips/open-in-ide/',
+      'https://www.jetbrains.com/idea/guide/tips/open-in-ide/'
     );
     expect(resolveIdeLink('intellij', { path: 'app.ts', line: 1, col: 1 })).toBe(
-      'https://www.jetbrains.com/idea/guide/tips/open-in-ide/',
+      'https://www.jetbrains.com/idea/guide/tips/open-in-ide/'
     );
     expect(resolveIdeLink('pycharm', { path: 'app.ts', line: 1, col: 1 })).toBe(
-      'https://www.jetbrains.com/idea/guide/tips/open-in-ide/',
+      'https://www.jetbrains.com/idea/guide/tips/open-in-ide/'
     );
     expect(resolveIdeLink('webstorm', { path: 'app.ts', line: 1, col: 1 })).toBe(
-      'https://www.jetbrains.com/idea/guide/tips/open-in-ide/',
+      'https://www.jetbrains.com/idea/guide/tips/open-in-ide/'
     );
   });
 
@@ -107,9 +107,10 @@ describe('resolveIdeLink', () => {
   });
 
   test('uses a custom ide link builder function', () => {
-    const builder: IdeLinkFn = (path, line, col) => `custom://open?file=${path}&line=${line}&col=${col}`;
+    const builder: IdeLinkFn = (path, line, col) =>
+      `custom://open?file=${path}&line=${line}&col=${col}`;
     expect(resolveIdeLink(builder, { path: 'src/app.ts', line: 7, col: 8 })).toBe(
-      'custom://open?file=src/app.ts&line=7&col=8',
+      'custom://open?file=src/app.ts&line=7&col=8'
     );
   });
 
@@ -119,7 +120,9 @@ describe('resolveIdeLink', () => {
   });
 
   test('falls back to vscode:// for any unrecognised ide string', () => {
-    expect(resolveIdeLink('nonexistent-ide', { path: 'app.ts', line: 1, col: 1 })).toBe('vscode://file/app.ts:1:1');
+    expect(resolveIdeLink('nonexistent-ide', { path: 'app.ts', line: 1, col: 1 })).toBe(
+      'vscode://file/app.ts:1:1'
+    );
   });
 });
 

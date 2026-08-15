@@ -12,7 +12,6 @@
         "@nunjucks/lexer": "workspace:*",
         "@nunjucks/lib": "workspace:*",
         "@nunjucks/loaders": "workspace:*",
-        "@nunjucks/log": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
         "@nunjucks/runtime": "workspace:*",
         "@nunjucks/shared": "workspace:*",
@@ -21,7 +20,6 @@
         "express": "5",
         "picocolors": "^1.1.1",
         "remeda": "^2.39.0",
-        "terminal-link": "^5.0.0",
       },
       "devDependencies": {
         "@biomejs/biome": "^2.5.5",
@@ -34,7 +32,9 @@
       "name": "@nunjucks/compiler",
       "version": "1.0.0",
       "dependencies": {
-        "@nunjucks/log": "workspace:*",
+        "@nunjucks/error-catalog": "workspace:*",
+        "@nunjucks/error-formatter": "workspace:*",
+        "@nunjucks/lib": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
         "@nunjucks/runtime": "workspace:*",
         "@nunjucks/shared": "workspace:*",
@@ -50,8 +50,8 @@
         "@nunjucks/error-formatter": "workspace:*",
         "@nunjucks/error-renderer": "workspace:*",
         "@nunjucks/filters": "workspace:*",
+        "@nunjucks/lib": "workspace:*",
         "@nunjucks/loaders": "workspace:*",
-        "@nunjucks/log": "workspace:*",
         "@nunjucks/parser": "workspace:*",
         "@nunjucks/runtime": "workspace:*",
         "@nunjucks/shared": "workspace:*",
@@ -67,6 +67,7 @@
       "name": "@nunjucks/error-catalog",
       "version": "1.0.0",
       "dependencies": {
+        "@nunjucks/lib": "workspace:*",
         "@nunjucks/shared": "workspace:*",
         "remeda": "^2.39.0",
       },
@@ -77,6 +78,7 @@
       "dependencies": {
         "@nunjucks/error-catalog": "workspace:*",
         "@nunjucks/error-renderer": "workspace:*",
+        "@nunjucks/lib": "workspace:*",
         "@nunjucks/shared": "workspace:*",
         "remeda": "^2.39.0",
       },
@@ -86,6 +88,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@nunjucks/error-catalog": "workspace:*",
+        "@nunjucks/lib": "workspace:*",
         "@nunjucks/shared": "workspace:*",
         "picocolors": "^1.1.1",
         "remeda": "^2.39.0",
@@ -95,7 +98,9 @@
       "name": "@nunjucks/filters",
       "version": "1.0.0",
       "dependencies": {
-        "@nunjucks/log": "workspace:*",
+        "@nunjucks/error-catalog": "workspace:*",
+        "@nunjucks/error-formatter": "workspace:*",
+        "@nunjucks/lib": "workspace:*",
         "@nunjucks/runtime": "workspace:*",
         "@nunjucks/shared": "workspace:*",
         "isomorphic-dompurify": "^2.14.0",
@@ -107,12 +112,16 @@
       "version": "1.0.0",
       "dependencies": {
         "@nunjucks/core": "workspace:*",
+        "@nunjucks/lib": "workspace:*",
       },
     },
     "packages/@nunjucks/lexer": {
       "name": "@nunjucks/lexer",
       "version": "1.0.0",
       "dependencies": {
+        "@nunjucks/error-formatter": "workspace:*",
+        "@nunjucks/lib": "workspace:*",
+        "@nunjucks/shared": "workspace:*",
         "remeda": "^2.39.0",
       },
     },
@@ -127,28 +136,28 @@
       "name": "@nunjucks/loaders",
       "version": "1.0.0",
       "dependencies": {
-        "@nunjucks/log": "workspace:*",
-      },
-    },
-    "packages/@nunjucks/log": {
-      "name": "@nunjucks/log",
-      "version": "1.0.0",
-      "dependencies": {
         "@nunjucks/error-catalog": "workspace:*",
         "@nunjucks/error-formatter": "workspace:*",
+        "@nunjucks/lib": "workspace:*",
         "@nunjucks/shared": "workspace:*",
+        "remeda": "^2.39.0",
       },
     },
     "packages/@nunjucks/nodes": {
       "name": "@nunjucks/nodes",
       "version": "1.0.0",
+      "dependencies": {
+        "@nunjucks/shared": "workspace:*",
+      },
     },
     "packages/@nunjucks/parser": {
       "name": "@nunjucks/parser",
       "version": "1.0.0",
       "dependencies": {
+        "@nunjucks/error-catalog": "workspace:*",
+        "@nunjucks/error-formatter": "workspace:*",
         "@nunjucks/lexer": "workspace:*",
-        "@nunjucks/log": "workspace:*",
+        "@nunjucks/lib": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
         "@nunjucks/shared": "workspace:*",
         "@nunjucks/validators": "workspace:*",
@@ -158,8 +167,11 @@
       "name": "@nunjucks/runtime",
       "version": "1.0.0",
       "dependencies": {
-        "@nunjucks/log": "workspace:*",
+        "@nunjucks/error-catalog": "workspace:*",
+        "@nunjucks/error-formatter": "workspace:*",
+        "@nunjucks/lib": "workspace:*",
         "@nunjucks/shared": "workspace:*",
+        "@nunjucks/validators": "workspace:*",
       },
     },
     "packages/@nunjucks/shared": {
@@ -173,14 +185,16 @@
       "name": "@nunjucks/transformers",
       "version": "1.0.0",
       "dependencies": {
+        "@nunjucks/lib": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
-        "@nunjucks/runtime": "workspace:*",
+        "@nunjucks/shared": "workspace:*",
       },
     },
     "packages/@nunjucks/validators": {
       "name": "@nunjucks/validators",
       "version": "1.0.0",
       "dependencies": {
+        "@nunjucks/lib": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
         "@nunjucks/shared": "workspace:*",
         "remeda": "^2.39.0",
@@ -190,15 +204,11 @@
       "name": "@nunjucks/samples-express",
       "version": "1.0.0",
       "dependencies": {
-        "@nunjucks/compiler": "workspace:*",
         "@nunjucks/core": "workspace:*",
-        "@nunjucks/filters": "workspace:*",
-        "@nunjucks/lexer": "workspace:*",
-        "@nunjucks/log": "workspace:*",
-        "@nunjucks/nodes": "workspace:*",
-        "@nunjucks/parser": "workspace:*",
+        "@nunjucks/error-formatter": "workspace:*",
+        "@nunjucks/integrations": "workspace:*",
+        "@nunjucks/lib": "workspace:*",
         "@nunjucks/runtime": "workspace:*",
-        "@nunjucks/transformers": "workspace:*",
         "express": "^5.0.0",
         "zod": "^3.23.0",
       },
@@ -271,8 +281,6 @@
     "@nunjucks/lib": ["@nunjucks/lib@workspace:packages/@nunjucks/lib"],
 
     "@nunjucks/loaders": ["@nunjucks/loaders@workspace:packages/@nunjucks/loaders"],
-
-    "@nunjucks/log": ["@nunjucks/log@workspace:packages/@nunjucks/log"],
 
     "@nunjucks/nodes": ["@nunjucks/nodes@workspace:packages/@nunjucks/nodes"],
 
@@ -354,8 +362,6 @@
 
     "agent-base": ["agent-base@7.1.4", "", {}, "sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ=="],
 
-    "ansi-escapes": ["ansi-escapes@7.3.0", "", { "dependencies": { "environment": "^1.0.0" } }, ""],
-
     "bidi-js": ["bidi-js@1.0.3", "", { "dependencies": { "require-from-string": "^2.0.2" } }, "sha512-RKshQI1R3YQ+n9YJz2QQ147P66ELpa1FQEg20Dk8oW9t2KgLbpDLLp9aGZ7y8WHSshDknG0bknqGw5/tyCs5tw=="],
 
     "body-parser": ["body-parser@2.3.0", "", { "dependencies": { "bytes": "^3.1.2", "content-type": "^2.0.0", "debug": "^4.4.3", "http-errors": "^2.0.1", "iconv-lite": "^0.7.2", "on-finished": "^2.4.1", "qs": "^6.15.2", "raw-body": "^3.0.2", "type-is": "^2.1.0" } }, ""],
@@ -396,8 +402,6 @@
 
     "entities": ["entities@8.0.0", "", {}, "sha512-zwfzJecQ/Uej6tusMqwAqU/6KL2XaB2VZ2Jg54Je6ahNBGNH6Ek6g3jjNCF0fG9EWQKGZNddNjU5F1ZQn/sBnA=="],
 
-    "environment": ["environment@1.1.0", "", {}, ""],
-
     "es-define-property": ["es-define-property@1.0.1", "", {}, ""],
 
     "es-errors": ["es-errors@1.3.0", "", {}, ""],
@@ -425,8 +429,6 @@
     "get-proto": ["get-proto@1.0.1", "", { "dependencies": { "dunder-proto": "^1.0.1", "es-object-atoms": "^1.0.0" } }, ""],
 
     "gopd": ["gopd@1.2.0", "", {}, ""],
-
-    "has-flag": ["has-flag@5.0.1", "", {}, ""],
 
     "has-symbols": ["has-symbols@1.1.0", "", {}, ""],
 
@@ -526,13 +528,7 @@
 
     "statuses": ["statuses@2.0.1", "", {}, ""],
 
-    "supports-color": ["supports-color@10.2.2", "", {}, ""],
-
-    "supports-hyperlinks": ["supports-hyperlinks@4.5.0", "", { "dependencies": { "has-flag": "^5.0.1", "supports-color": "^10.2.2" } }, ""],
-
     "symbol-tree": ["symbol-tree@3.2.4", "", {}, "sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw=="],
-
-    "terminal-link": ["terminal-link@5.0.0", "", { "dependencies": { "ansi-escapes": "^7.0.0", "supports-hyperlinks": "^4.1.0" } }, ""],
 
     "tldts": ["tldts@7.4.9", "", { "dependencies": { "tldts-core": "^7.4.9" }, "bin": { "tldts": "bin/cli.js" } }, "sha512-3kZ8wQQ/k5DrChD4X4FVvr2D7E5uoRgAqkPyLpSCGUvqOvqu+JEdr3mwMUaVWb+vMHZaKhF5fp2PBigKsui7hA=="],
 

@@ -1,5 +1,5 @@
-(function() {
-  const initStackToggle = function() {
+(function () {
+  const initStackToggle = function () {
     const content = document.querySelector('#stack-container .stack-content');
     if (!content) return;
 
@@ -16,19 +16,25 @@
     }
 
     const hiddenRows = allRows.slice(VISIBLE_COUNT);
-    hiddenRows.forEach((row) => { row.style.display = 'none'; });
+    hiddenRows.forEach((row) => {
+      row.style.display = 'none';
+    });
 
     const lastVisibleRow = allRows[VISIBLE_COUNT - 1];
     if (lastVisibleRow) {
       lastVisibleRow.style.borderBottom = 'none';
     }
 
-    const toggleStack = function() {
+    const toggleStack = function () {
       if (prefersReducedMotion) {
         const isExpanded = content.classList.contains('is-expanded');
-        hiddenRows.forEach((row) => { row.style.display = isExpanded ? 'none' : 'flex'; });
+        hiddenRows.forEach((row) => {
+          row.style.display = isExpanded ? 'none' : 'flex';
+        });
         content.classList.toggle('is-expanded');
-        btn.textContent = isExpanded ? 'Show ' + totalHidden + ' more lines...' : 'Collapse stack trace';
+        btn.textContent = isExpanded
+          ? 'Show ' + totalHidden + ' more lines...'
+          : 'Collapse stack trace';
         if (isExpanded) {
           if (lastVisibleRow) {
             lastVisibleRow.style.borderBottom = 'none';
@@ -48,12 +54,16 @@
         content.style.removeProperty('max-height');
         content.classList.remove('is-expanded');
         btn.textContent = 'Show ' + totalHidden + ' more lines...';
-        hiddenRows.forEach((row) => { row.style.display = 'none'; });
+        hiddenRows.forEach((row) => {
+          row.style.display = 'none';
+        });
         if (lastVisibleRow) {
           lastVisibleRow.style.borderBottom = 'none';
         }
       } else {
-        hiddenRows.forEach((row) => { row.style.display = 'flex'; });
+        hiddenRows.forEach((row) => {
+          row.style.display = 'flex';
+        });
         content.classList.add('is-expanded');
         btn.textContent = 'Collapse stack trace';
         const lastRow = allRows.at(-1);
@@ -75,7 +85,9 @@
     parent.appendChild(fragment);
 
     if (end < nodes.length) {
-      requestAnimationFrame(function() { batchRender(parent, nodes, end); });
+      requestAnimationFrame(function () {
+        batchRender(parent, nodes, end);
+      });
     }
   }
 
@@ -93,22 +105,35 @@
   function previewValue(value) {
     if (Array.isArray(value)) {
       if (value.length === 0) return '[]';
-      const preview = value.slice(0, 3).map(function(v) {
-        if (typeof v === 'string') return '"' + (v.length > 40 ? v.slice(0, 40) + '...' : v) + '"';
-        if (v !== null && typeof v === 'object') return Array.isArray(v) ? '[...]' : '{...}';
-        return String(v);
-      }).join(', ');
+      const preview = value
+        .slice(0, 3)
+        .map(function (v) {
+          if (typeof v === 'string')
+            return '"' + (v.length > 40 ? v.slice(0, 40) + '...' : v) + '"';
+          if (v !== null && typeof v === 'object') return Array.isArray(v) ? '[...]' : '{...}';
+          return String(v);
+        })
+        .join(', ');
       return '(' + value.length + ') [' + preview + (value.length > 3 ? ', ...' : '') + ']';
     }
     if (value !== null && typeof value === 'object') {
       const keys = Object.keys(value);
       if (keys.length === 0) return '{}';
-      const preview = keys.slice(0, 3).map(function(k) {
-        const v = value[k];
-        const vStr = typeof v === 'string' ? '"' + (v.length > 40 ? v.slice(0, 40) + '...' : v) + '"' :
-          (v !== null && typeof v === 'object' ? (Array.isArray(v) ? '[...]' : '{...}') : String(v));
-        return k + ': ' + vStr;
-      }).join(', ');
+      const preview = keys
+        .slice(0, 3)
+        .map(function (k) {
+          const v = value[k];
+          const vStr =
+            typeof v === 'string'
+              ? '"' + (v.length > 40 ? v.slice(0, 40) + '...' : v) + '"'
+              : v !== null && typeof v === 'object'
+                ? Array.isArray(v)
+                  ? '[...]'
+                  : '{...}'
+                : String(v);
+          return k + ': ' + vStr;
+        })
+        .join(', ');
       return '{' + preview + (keys.length > 3 ? ', ...' : '') + '}';
     }
     if (typeof value === 'string') {
@@ -120,9 +145,8 @@
 
   function createNode(key, value) {
     const isObject = value !== null && typeof value === 'object';
-    const isEmpty = isObject && (
-      Array.isArray(value) ? value.length === 0 : Object.keys(value).length === 0
-    );
+    const isEmpty =
+      isObject && (Array.isArray(value) ? value.length === 0 : Object.keys(value).length === 0);
     const isExpandable = isObject && !isEmpty;
 
     const row = document.createElement('div');
@@ -136,7 +160,12 @@
       row.setAttribute('role', 'button');
       row.setAttribute('tabindex', '0');
       row.setAttribute('aria-expanded', 'false');
-      row.innerHTML = '<span class="ctx-toggle">▶</span><span class="ctx-key">' + escapeHtml(key) + ':</span> <span class="ctx-label">' + escapeHtml(previewValue(value)) + '</span>';
+      row.innerHTML =
+        '<span class="ctx-toggle">▶</span><span class="ctx-key">' +
+        escapeHtml(key) +
+        ':</span> <span class="ctx-label">' +
+        escapeHtml(previewValue(value)) +
+        '</span>';
 
       const container = document.createElement('div');
       container.className = 'ctx-children hidden';
@@ -146,7 +175,7 @@
       closing.className = 'ctx-closing hidden';
       closing.textContent = closeBracket;
 
-      const toggle = function() {
+      const toggle = function () {
         const isHidden = container.classList.toggle('hidden');
         const toggleEl = row.querySelector('.ctx-toggle');
         const labelEl = row.querySelector('.ctx-label');
@@ -156,14 +185,16 @@
 
         if (!isHidden && !loaded) {
           const entries = Object.entries(value);
-          const nodes = entries.map(function(entry) { return createNode(entry[0], entry[1]); });
+          const nodes = entries.map(function (entry) {
+            return createNode(entry[0], entry[1]);
+          });
           batchRender(container, nodes, 0);
           loaded = true;
         }
       };
 
       row.addEventListener('click', toggle);
-      row.addEventListener('keydown', function(event) {
+      row.addEventListener('keydown', function (event) {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
           toggle();
@@ -180,7 +211,14 @@
 
     const type = valueType(value);
     const displayVal = escapeHtml(previewValue(value));
-    row.innerHTML = '<span class="ctx-toggle"></span><span class="ctx-key">' + escapeHtml(key) + ':</span> <span class="ctx-' + type + '">' + displayVal + '</span>';
+    row.innerHTML =
+      '<span class="ctx-toggle"></span><span class="ctx-key">' +
+      escapeHtml(key) +
+      ':</span> <span class="ctx-' +
+      type +
+      '">' +
+      displayVal +
+      '</span>';
     return row;
   }
 
@@ -245,62 +283,77 @@
     const expandButton = document.querySelector('[data-ctx-action="expand"]');
     const collapseButton = document.querySelector('[data-ctx-action="collapse"]');
 
-    const updateContextActions = function() {
+    const updateContextActions = function () {
       const expandableRows = Array.from(viewer.querySelectorAll('.ctx-row.is-expandable'));
-      const expandedCount = expandableRows.filter(function(row) {
+      const expandedCount = expandableRows.filter(function (row) {
         return row.getAttribute('aria-expanded') === 'true';
       }).length;
-      if (expandButton) expandButton.disabled = expandableRows.length === 0 || expandedCount === expandableRows.length;
+      if (expandButton)
+        expandButton.disabled =
+          expandableRows.length === 0 || expandedCount === expandableRows.length;
       if (collapseButton) collapseButton.disabled = expandedCount === 0;
     };
 
-    const expandAll = function(root) {
-      Array.from(root.querySelectorAll('.ctx-row.is-expandable')).forEach(function(row) {
+    const expandAll = function (root) {
+      Array.from(root.querySelectorAll('.ctx-row.is-expandable')).forEach(function (row) {
         if (row.getAttribute('aria-expanded') !== 'true') row.click();
       });
-      const stillHasCollapsed = Array.from(root.querySelectorAll('.ctx-row.is-expandable')).some(function(row) {
-        return row.getAttribute('aria-expanded') !== 'true';
-      });
+      const stillHasCollapsed = Array.from(root.querySelectorAll('.ctx-row.is-expandable')).some(
+        function (row) {
+          return row.getAttribute('aria-expanded') !== 'true';
+        }
+      );
       if (stillHasCollapsed) {
-        requestAnimationFrame(function() { expandAll(root); });
+        requestAnimationFrame(function () {
+          expandAll(root);
+        });
       } else {
         updateContextActions();
       }
     };
 
-    const collapseAll = function(root) {
-      Array.from(root.querySelectorAll('.ctx-row.is-expandable')).toReversed().forEach(function(row) {
-        if (row.getAttribute('aria-expanded') === 'true') row.click();
-      });
+    const collapseAll = function (root) {
+      Array.from(root.querySelectorAll('.ctx-row.is-expandable'))
+        .toReversed()
+        .forEach(function (row) {
+          if (row.getAttribute('aria-expanded') === 'true') row.click();
+        });
       updateContextActions();
     };
 
-    viewer.addEventListener('click', function(event) {
-      if (event.target.closest('.ctx-row.is-expandable')) requestAnimationFrame(updateContextActions);
+    viewer.addEventListener('click', function (event) {
+      if (event.target.closest('.ctx-row.is-expandable'))
+        requestAnimationFrame(updateContextActions);
     });
     updateContextActions();
 
-    document.querySelectorAll('[data-ctx-action]').forEach(function(button) {
-      button.addEventListener('click', function() {
+    document.querySelectorAll('[data-ctx-action]').forEach(function (button) {
+      button.addEventListener('click', function () {
         const action = button.getAttribute('data-ctx-action');
         if (action === 'expand') expandAll(viewer);
         if (action === 'collapse') collapseAll(viewer);
         if (action === 'copy') {
           const original = button.textContent;
-          copyText(JSON.stringify(data, null, 2)).then(function() {
-            button.textContent = 'Copied';
-            setTimeout(function() { button.textContent = original; }, 1200);
-          }).catch(function() {
-            button.textContent = 'Copy failed';
-            setTimeout(function() { button.textContent = original; }, 1200);
-          });
+          copyText(JSON.stringify(data, null, 2))
+            .then(function () {
+              button.textContent = 'Copied';
+              setTimeout(function () {
+                button.textContent = original;
+              }, 1200);
+            })
+            .catch(function () {
+              button.textContent = 'Copy failed';
+              setTimeout(function () {
+                button.textContent = original;
+              }, 1200);
+            });
         }
       });
     });
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       initStackToggle();
       initContextToggle();
     });

@@ -1,45 +1,66 @@
+import type { ChildrenNode, ComponentNode, Node, PairNode, SlotBlock } from '@nunjucks/nodes';
 import { isDict, isKeywordArgs } from '@nunjucks/nodes';
-import type { Node, ComponentNode, ChildrenNode, PairNode, SlotBlock } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { createFrame } from '@nunjucks/runtime';
 import { forEach } from 'remeda';
+import { assertSafeIdentifier } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
-import { assertSafeIdentifier } from '../codegen.ts';
 import { compileSlotFunction } from './slot.ts';
 
-const extractComponentArgs = (compiler: Compiler, node: ComponentNode): { args: readonly Node[]; kwargs: ChildrenNode | null } => {
+const extractComponentArgs = (
+  compiler: Compiler,
+  node: ComponentNode
+): { args: readonly Node[]; kwargs: ChildrenNode | null } => {
   const all = [...node.args];
   const last = all[all.length - 1];
   const kwargs = last !== undefined && (isDict(last) || isKeywordArgs(last)) ? last : null;
   const args = kwargs ? all.slice(0, -1) : all;
-  forEach(args, (argument) => { compiler.assertType(argument, 'symbol'); });
+  forEach(args, (argument) => {
+    compiler.assertType(argument, 'symbol');
+  });
   return { args, kwargs };
 };
 
 const pairKey = (pair: Node): string => {
   const key = (pair as PairNode).key;
-  if (typeof key === 'string') { return key; }
+  if (typeof key === 'string') {
+    return key;
+  }
   return typeof key.value === 'string' ? key.value : '';
 };
 
-const buildComponentArgNames = (args: readonly Node[], kwargs: ChildrenNode | null): { argNames: string[]; kwargNames: string[]; realNames: string[] } => {
+const buildComponentArgNames = (
+  args: readonly Node[],
+  kwargs: ChildrenNode | null
+): { argNames: string[]; kwargNames: string[]; realNames: string[] } => {
   const argNames = args.map((n) => JSON.stringify(n.value as string));
   const kwargNames = (kwargs?.children ?? []).map((n) => JSON.stringify(pairKey(n)));
   const realNames = [...args.map((n) => `l_${n.value as string}`), 'kwargs'];
   return { argNames, kwargNames, realNames };
 };
 
-const emitComponentArgBindings = (compiler: Compiler, args: readonly Node[], kwargs: ChildrenNode | null, currFrame: Frame): void => {
-  forEach(args, argument => {
+interface EmitComponentArgBindingsInput {
+  args: readonly Node[];
+  kwargs: ChildrenNode | null;
+  frame: Frame;
+}
+
+const emitComponentArgBindings = (
+  compiler: Compiler,
+  { args, kwargs, frame }: EmitComponentArgBindingsInput
+): void => {
+  forEach(args, (argument) => {
     const argValue = argument.value as string;
-    compiler.emitLine(`frame = frame.set({ name: ${JSON.stringify(argValue)}, value: l_${argValue} });`);
-    currFrame.set({ name: argValue, value: `l_${argValue}` });
+    compiler.emitLine(
+      `frame = frame.set({ name: ${JSON.stringify(argValue)}, value: l_${argValue} });`
+    );
+    frame.set({ name: argValue, value: `l_${argValue}` });
   });
 
   if (kwargs) {
     const positionalNames = new Set(args.map((n) => n.value as string));
-    forEach(kwargs.children, pair => {
+    forEach(kwargs.children, (pair) => {
       const name = pairKey(pair);
       const isPositional = positionalNames.has(name);
       compiler.emit(`frame = frame.set({ name: ${JSON.stringify(name)}, value: `);
@@ -48,7 +69,7 @@ const emitComponentArgBindings = (compiler: Compiler, args: readonly Node[], kwa
       if (isPositional) {
         compiler.emit(`(l_${name} !== undefined ? l_${name} : `);
       }
-      compiler.compileExpression((pair as PairNode).value, currFrame);
+      compiler.compileExpression((pair as PairNode).value, frame);
       if (isPositional) {
         compiler.emit(')');
       }
@@ -57,11 +78,21 @@ const emitComponentArgBindings = (compiler: Compiler, args: readonly Node[], kwa
   }
 };
 
-const emitFallbackEntries = (compiler: Compiler, slots: readonly SlotBlock[], currFrame: Frame): string[] =>
+const emitFallbackEntries = (
+  compiler: Compiler,
+  slots: readonly SlotBlock[],
+  currFrame: Frame
+): string[] =>
   slots.map((slot) => {
     assertSafeIdentifier(slot.name, { compiler });
     const slotVar = `__fallback_${slot.name}`;
-    compileSlotFunction({ compiler, params: slot.params, body: slot.body, parentFrame: currFrame, slotVar });
+    compileSlotFunction({
+      compiler,
+      params: slot.params,
+      body: slot.body,
+      parentFrame: currFrame,
+      slotVar,
+    });
     return `${JSON.stringify(slot.name)}: ${slotVar}`;
   });
 
@@ -70,21 +101,24 @@ const emitComponentContext = (
   args: readonly Node[],
   fallbackEntries: string[]
 ): string => {
-  const componentContextId = `__component_${compiler.tmpid()}`;
-  const propEntries = args.map((arg) => `${JSON.stringify(arg.value as string)}: l_${arg.value as string}`).join(', ');
+  const componentContextId = `__component_${compiler.nextCompilerId()}`;
+  const propEntries = args
+    .map((arg) => `${JSON.stringify(arg.value as string)}: l_${arg.value as string}`)
+    .join(', ');
   const propsCode = propEntries === '' ? '{ ...__props }' : `{ ${propEntries}, ...__props }`;
   compiler.emitLines(
     'const { slots: __slots, keywords: __keywords, ...__props } = kwargs;',
     `let ${componentContextId} = runtime.createComponentContext(${propsCode}, runtime.createSlotContext({ ${fallbackEntries.join(', ')} }, __slots));`,
     'for (const [__k, __v] of Object.entries(__props)) { if (__v !== undefined) frame = frame.set({ name: __k, value: __v }); }',
     `frame = frame.set({ name: "slot", value: ${componentContextId}.slots });`,
-    `frame = frame.set({ name: "children", value: ${componentContextId}.slots("default") });`);
+    `frame = frame.set({ name: "children", value: ${componentContextId}.slots("default") });`
+  );
   return componentContextId;
 };
 
 const compileComponent = (compiler: Compiler, node: ComponentNode): string => {
   const { args, kwargs } = extractComponentArgs(compiler, node);
-  const funcId = `component_${compiler.tmpid()}`;
+  const funcId = `component_${compiler.nextCompilerId()}`;
   const { argNames, kwargNames, realNames } = buildComponentArgNames(args, kwargs);
 
   const currFrame = createFrame();
@@ -96,9 +130,10 @@ const compileComponent = (compiler: Compiler, node: ComponentNode): string => {
     `func: async (${realNames.join(', ')}) => {`,
     'let outerFrame = frame;',
     'frame = runtime.createFrame();',
-    'kwargs ??= {};');
+    'kwargs ??= {};'
+  );
 
-  emitComponentArgBindings(compiler, args, kwargs, currFrame);
+  emitComponentArgBindings(compiler, { args, kwargs, frame: currFrame });
 
   const fallbackEntries = emitFallbackEntries(compiler, node.fallbackSlots ?? [], currFrame);
   const componentContextId = emitComponentContext(compiler, args, fallbackEntries);
@@ -120,7 +155,10 @@ const compileComponent = (compiler: Compiler, node: ComponentNode): string => {
   return funcId;
 };
 
-export const compileComponentPublic = (compiler: Compiler, { node, frame }: CompileNodeInput<ComponentNode>): void => {
+export const compileComponentPublic = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<ComponentNode>
+): void => {
   const funcId = compileComponent(compiler, node);
 
   const name = node.name;

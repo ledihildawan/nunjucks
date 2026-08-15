@@ -1,48 +1,54 @@
 interface ExtractWhileOptions {
-  str: string;
+  source: string;
   start: number;
   chars: string;
 }
 
-export const extractWhile = ({ str, start, chars }: ExtractWhileOptions): string => {
+export const extractWhile = ({ source, start, chars }: ExtractWhileOptions): string => {
   const findEnd = (end: number): number => {
-    if (end >= str.length || !chars.includes(str[end] ?? '')) { return end; }
+    if (end >= source.length || !chars.includes(source[end] ?? '')) {
+      return end;
+    }
     return findEnd(end + 1);
   };
-  return str.slice(start, findEnd(start));
+  return source.slice(start, findEnd(start));
 };
 
 interface ExtractUntilOptions {
-  str: string;
+  source: string;
   start: number;
   chars: string;
 }
 
-export const extractUntil = ({ str, start, chars }: ExtractUntilOptions): string => {
+export const extractUntil = ({ source, start, chars }: ExtractUntilOptions): string => {
   const findEnd = (end: number): number => {
-    if (end >= str.length || chars.includes(str[end] ?? '')) { return end; }
+    if (end >= source.length || chars.includes(source[end] ?? '')) {
+      return end;
+    }
     return findEnd(end + 1);
   };
-  return str.slice(start, findEnd(start));
+  return source.slice(start, findEnd(start));
 };
 
 interface ParseStringContentOptions {
-  str: string;
+  source: string;
   start: number;
   quote: string;
 }
 
-export const parseStringContent = ({
-  str,
-  start,
-  quote,
-}: ParseStringContentOptions): string => {
+export const parseStringContent = ({ source, start, quote }: ParseStringContentOptions): string => {
   const findEnd = (end: number): number => {
-    if (end >= str.length) { return end; }
-    const char = str[end] ?? '';
-    if (char === quote) { return end; }
-    if (char === '\\' && end + 1 < str.length) { return findEnd(end + 2); }
+    if (end >= source.length) {
+      return end;
+    }
+    const char = source[end] ?? '';
+    if (char === quote) {
+      return end;
+    }
+    if (char === '\\' && end + 1 < source.length) {
+      return findEnd(end + 2);
+    }
     return findEnd(end + 1);
   };
-  return str.slice(start, findEnd(start));
+  return source.slice(start, findEnd(start));
 };

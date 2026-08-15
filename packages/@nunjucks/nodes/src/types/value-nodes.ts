@@ -1,5 +1,5 @@
-import type { T } from './constants.ts';
 import type { NodeBase } from './base.ts';
+import type { T } from './constants.ts';
 
 interface GenericNode extends NodeBase {
   readonly type: typeof T.NODE;
@@ -29,4 +29,4 @@ interface HoleNode extends NodeBase {
   readonly type: typeof T.HOLE;
 }
 
-export type { GenericNode, ValueNode, LiteralNode, SymbolNode, TemplateDataNode, HoleNode };
+export type { GenericNode, HoleNode, LiteralNode, SymbolNode, TemplateDataNode, ValueNode };

@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
-import { toHtml } from './to-html.ts';
+import { describe, expect, test } from 'bun:test';
 import type { ErrorLike } from '@nunjucks/error-catalog';
+import { toHtml } from './to-html.ts';
 
 describe('toHtml', () => {
   test('returns production body when error is null', () => {

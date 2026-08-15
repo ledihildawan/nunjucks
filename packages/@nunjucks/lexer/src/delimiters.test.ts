@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  COMPOUND_ASSIGNMENT_OPS,
   COMPLEX_OPERATORS,
+  COMPOUND_ASSIGNMENT_OPS,
+  createDelimiters,
   DEFAULT_BLOCK_END,
   DEFAULT_BLOCK_START,
   DEFAULT_COMMENT_END,
@@ -16,7 +17,6 @@ import {
   STRIP_VARIABLE_END,
   STRIP_VARIABLE_START,
   WHITESPACE_CHARS,
-  createDelimiters,
 } from './delimiters.ts';
 
 describe('character-class constants', () => {
@@ -67,9 +67,38 @@ describe('strip-tag constants', () => {
 describe('COMPLEX_OPERATORS', () => {
   test('is a readonly tuple with the expected members', () => {
     expect(COMPLEX_OPERATORS).toEqual([
-      '==', '===', '!=', '!==', '<=', '>=', '//', '**', '?.', '??', '.?', '||', '&&',
-      '||=', '&&=', '??=', '|>', '..', '...', '**=', '//=', ':=', '<<', '>>', '++', '--',
-      '+=', '-=', '*=', '/=', '%=', '|>=',
+      '==',
+      '===',
+      '!=',
+      '!==',
+      '<=',
+      '>=',
+      '//',
+      '**',
+      '?.',
+      '??',
+      '.?',
+      '||',
+      '&&',
+      '||=',
+      '&&=',
+      '??=',
+      '|>',
+      '..',
+      '...',
+      '**=',
+      '//=',
+      ':=',
+      '<<',
+      '>>',
+      '++',
+      '--',
+      '+=',
+      '-=',
+      '*=',
+      '/=',
+      '%=',
+      '|>=',
     ]);
     expect(COMPLEX_OPERATORS).toHaveLength(32);
   });
@@ -83,7 +112,16 @@ describe('COMPLEX_OPERATORS', () => {
 describe('COMPOUND_ASSIGNMENT_OPS', () => {
   test('contains the expected compound-assignment operators', () => {
     expect(COMPOUND_ASSIGNMENT_OPS).toEqual([
-      '||=', '&&=', '??=', '**=', '//=', '+=', '-=', '*=', '/=', '%=',
+      '||=',
+      '&&=',
+      '??=',
+      '**=',
+      '//=',
+      '+=',
+      '-=',
+      '*=',
+      '/=',
+      '%=',
     ]);
   });
 

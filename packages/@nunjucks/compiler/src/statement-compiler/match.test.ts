@@ -1,9 +1,9 @@
-import { describe, test, expect } from 'bun:test';
-import { compileMatch, compileWhen } from './match.ts';
-import { symbol, literal, output, templateData, when, match } from '@nunjucks/nodes';
-import { asCompiler } from '../test-helpers.ts';
+import { describe, expect, test } from 'bun:test';
+import { literal, match, output, symbol, templateData, when } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime/frame';
 import { ZERO_LOC } from '@nunjucks/shared';
+import { asCompiler } from '../test-helpers.ts';
+import { compileMatch, compileWhen } from './match.ts';
 
 const frame = createFrame();
 
@@ -12,12 +12,25 @@ const makeCompiler = () => {
   let id = 0;
   return {
     emitted,
-    emit: (s: string) => { emitted.push(s); },
-    emitLine: (s: string) => { emitted.push(`${s}\n`); },
-    tmpid: () => { id += 1; return `t_${id}`; },
-    compile: (n: { mock?: string }) => { emitted.push(n.mock ?? 'X'); },
-    compileExpression: (n: { mock?: string }) => { emitted.push(n.mock ?? 'E'); },
-    fail: (msg: string) => { throw new Error(msg); },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    emitLine: (s: string) => {
+      emitted.push(`${s}\n`);
+    },
+    nextCompilerId: () => {
+      id += 1;
+      return `t_${id}`;
+    },
+    compile: (n: { mock?: string }) => {
+      emitted.push(n.mock ?? 'X');
+    },
+    compileExpression: (n: { mock?: string }) => {
+      emitted.push(n.mock ?? 'E');
+    },
+    fail: (msg: string) => {
+      throw new Error(msg);
+    },
   };
 };
 
@@ -26,7 +39,12 @@ describe('compileMatch', () => {
     const c = makeCompiler();
     const node = match(ZERO_LOC, {
       expr: symbol(ZERO_LOC, 'v'),
-      cases: [when(ZERO_LOC, { pattern: literal(ZERO_LOC, 'a'), body: output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]) })],
+      cases: [
+        when(ZERO_LOC, {
+          pattern: literal(ZERO_LOC, 'a'),
+          body: output(ZERO_LOC, [templateData(ZERO_LOC, 'one')]),
+        }),
+      ],
       default: null,
     });
     compileMatch(asCompiler(c), { node: node as never, frame });
@@ -40,7 +58,12 @@ describe('compileMatch', () => {
     const c = makeCompiler();
     const node = match(ZERO_LOC, {
       expr: symbol(ZERO_LOC, 'v'),
-      cases: [when(ZERO_LOC, { pattern: symbol(ZERO_LOC, '_'), body: output(ZERO_LOC, [templateData(ZERO_LOC, 'any')]) })],
+      cases: [
+        when(ZERO_LOC, {
+          pattern: symbol(ZERO_LOC, '_'),
+          body: output(ZERO_LOC, [templateData(ZERO_LOC, 'any')]),
+        }),
+      ],
       default: null,
     });
     compileMatch(asCompiler(c), { node: node as never, frame });

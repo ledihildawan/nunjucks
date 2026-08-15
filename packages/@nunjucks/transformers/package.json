@@ -8,9 +8,9 @@
     "./super": "./src/super.ts"
   },
   "dependencies": {
-    "@nunjucks/lexer": "workspace:*",
     "@nunjucks/lib": "workspace:*",
-    "@nunjucks/nodes": "workspace:*"
+    "@nunjucks/nodes": "workspace:*",
+    "@nunjucks/shared": "workspace:*"
   },
   "description": "AST transformers for Nunjucks template engine"
 }

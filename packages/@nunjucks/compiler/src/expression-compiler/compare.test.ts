@@ -1,15 +1,21 @@
-import { describe, test, expect } from 'bun:test';
-import { compileCompare, compileIs } from './compare.ts';
-import { asCompiler } from '../test-helpers.ts';
+import { describe, expect, test } from 'bun:test';
 import { createFrame } from '@nunjucks/runtime/frame';
+import { asCompiler } from '../test-helpers.ts';
+import { compileCompare, compileIs } from './compare.ts';
 
 const makeCompiler = () => {
   const emitted: string[] = [];
   return {
     emitted,
-    emit: (s: string) => { emitted.push(s); },
-    emitLine: (s: string) => { emitted.push(`${s}\n`); },
-    compile: (node: { mock?: string }) => { emitted.push(node.mock as string); },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    emitLine: (s: string) => {
+      emitted.push(`${s}\n`);
+    },
+    compile: (node: { mock?: string }) => {
+      emitted.push(node.mock as string);
+    },
   };
 };
 const frame = createFrame();
@@ -20,12 +26,17 @@ describe('compileCompare', () => {
     const node = {
       expr: { mock: 'EXPR' },
       ops: [{ type: 'compareOperand', operator: '==', expr: { mock: 'R1' }, lineno: 5, colno: 9 }],
-      lineno: 1, colno: 1,
+      lineno: 1,
+      colno: 1,
     };
     compileCompare(asCompiler(c), { node: node as never, frame });
     expect(c.emitted).toEqual([
-      '(lineno = 5, colno = 9, ', 'EXPR',
-      ' == ', '(lineno = 5, colno = 9, ', 'R1', ')',
+      '(lineno = 5, colno = 9, ',
+      'EXPR',
+      ' == ',
+      '(lineno = 5, colno = 9, ',
+      'R1',
+      ')',
       ')',
     ]);
   });
@@ -38,11 +49,14 @@ describe('compileCompare', () => {
         { type: 'compareOperand', operator: '<', expr: { mock: 'A' }, lineno: 1, colno: 1 },
         { type: 'compareOperand', operator: '<=', expr: { mock: 'B' }, lineno: 2, colno: 2 },
       ],
-      lineno: 0, colno: 0,
+      lineno: 0,
+      colno: 0,
     };
     compileCompare(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');
-    expect(joined).toBe('(lineno = 1, colno = 1, X < (lineno = 1, colno = 1, A) <= (lineno = 2, colno = 2, B))');
+    expect(joined).toBe(
+      '(lineno = 1, colno = 1, X < (lineno = 1, colno = 1, A) <= (lineno = 2, colno = 2, B))'
+    );
   });
 });
 
@@ -52,7 +66,8 @@ describe('compileIs', () => {
     const node = {
       left: { mock: 'LEFT' },
       right: { value: 'defined' },
-      lineno: 7, colno: 3,
+      lineno: 7,
+      colno: 3,
     };
     compileIs(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');

@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
-import { toText } from './to-text.ts';
+import { describe, expect, test } from 'bun:test';
 import type { ErrorLike } from '@nunjucks/error-catalog';
+import { toText } from './to-text.ts';
 
 const nullishErrorInputs: readonly unknown[] = [null, undefined];
 
@@ -61,28 +61,28 @@ describe('toText — medium verbosity with location', () => {
       lineBase: 'zero',
     };
     expect(toText(mediumError, { verbosity: 'medium', templatePath: 'app.njk' })).toBe(
-      'Error: boom at app.njk:1:1\nCheck template syntax',
+      'Error: boom at app.njk:1:1\nCheck template syntax'
     );
   });
 
   test('honors one-based lineBase for the displayed line', () => {
     const oneBasedError: ErrorLike = { message: 'boom', lineno: 4, lineBase: 'one' };
     expect(toText(oneBasedError, { verbosity: 'medium', templatePath: 'app.njk' })).toBe(
-      'Error: boom at app.njk:4:1\nCheck template syntax',
+      'Error: boom at app.njk:4:1\nCheck template syntax'
     );
   });
 
   test('derives location from options rather than the error object', () => {
     const errorWithoutLoc: ErrorLike = { message: 'boom' };
     expect(toText(errorWithoutLoc, { verbosity: 'medium', lineno: 2, colno: 5 })).toBe(
-      'Error: boom at unknown:3:6\nCheck template syntax',
+      'Error: boom at unknown:3:6\nCheck template syntax'
     );
   });
 
   test('does not render the "Possible Causes" section header at medium verbosity', () => {
     const mediumError: ErrorLike = { message: 'boom', lineno: 0, lineBase: 'zero' };
     expect(toText(mediumError, { verbosity: 'medium', templatePath: 'app.njk' })).not.toContain(
-      'Possible Causes:',
+      'Possible Causes:'
     );
   });
 });

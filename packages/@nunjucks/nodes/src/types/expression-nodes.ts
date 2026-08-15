@@ -1,19 +1,30 @@
+import type { NodeBase } from './base.ts';
 import type { T } from './constants.ts';
 import type { Node } from './node-types.ts';
-import type { NodeBase } from './base.ts';
 
 interface ChildrenNode extends NodeBase {
   readonly type:
-  | typeof T.NODE_LIST | typeof T.ROOT | typeof T.OUTPUT | typeof T.GROUP
-  | typeof T.ARRAY | typeof T.DICT | typeof T.ARRAY_PATTERN
-  | typeof T.OBJECT_PATTERN | typeof T.KEYWORD_ARGS;
+    | typeof T.NODE_LIST
+    | typeof T.ROOT
+    | typeof T.OUTPUT
+    | typeof T.GROUP
+    | typeof T.ARRAY
+    | typeof T.DICT
+    | typeof T.ARRAY_PATTERN
+    | typeof T.OBJECT_PATTERN
+    | typeof T.KEYWORD_ARGS;
   readonly children: readonly Node[];
 }
 
 interface BinaryOpNode extends NodeBase {
   readonly type:
-  | typeof T.ADD | typeof T.SUB | typeof T.MUL | typeof T.DIV
-  | typeof T.FLOOR_DIV | typeof T.MOD | typeof T.POW;
+    | typeof T.ADD
+    | typeof T.SUB
+    | typeof T.MUL
+    | typeof T.DIV
+    | typeof T.FLOOR_DIV
+    | typeof T.MOD
+    | typeof T.POW;
   readonly left: Node;
   readonly right: Node;
   readonly operator: string;
@@ -21,10 +32,17 @@ interface BinaryOpNode extends NodeBase {
 
 interface BinaryNode extends NodeBase {
   readonly type:
-  | typeof T.CONCAT | typeof T.AND | typeof T.OR | typeof T.NULLISH_COALESCE
-  | typeof T.BITWISE_OR | typeof T.BITWISE_AND | typeof T.BITWISE_XOR
-  | typeof T.BITWISE_LSHIFT | typeof T.BITWISE_RSHIFT
-  | typeof T.IS | typeof T.IN;
+    | typeof T.CONCAT
+    | typeof T.AND
+    | typeof T.OR
+    | typeof T.NULLISH_COALESCE
+    | typeof T.BITWISE_OR
+    | typeof T.BITWISE_AND
+    | typeof T.BITWISE_XOR
+    | typeof T.BITWISE_LSHIFT
+    | typeof T.BITWISE_RSHIFT
+    | typeof T.IS
+    | typeof T.IN;
   readonly left: Node;
   readonly right: Node;
 }
@@ -105,9 +123,7 @@ interface AssignmentPatternNode extends NodeBase {
   readonly value: Node;
 }
 
-type TemplateQuasi =
-  | { type: 'template'; value: string }
-  | { type: 'expression'; node: Node };
+type TemplateQuasi = { type: 'template'; value: string } | { type: 'expression'; node: Node };
 
 interface TemplateLiteralNode extends NodeBase {
   readonly type: typeof T.TEMPLATE_LITERAL;
@@ -134,25 +150,25 @@ interface RangeNode extends NodeBase {
 }
 
 export type {
-  ChildrenNode,
-  BinaryOpNode,
+  AssignmentPatternNode,
   BinaryNode,
-  UnaryOpNode,
-  UnaryNode,
-  IncDecNode,
+  BinaryOpNode,
   CallNode,
-  LookupNode,
-  SliceNode,
+  ChildrenNode,
   CompareNode,
   CompareOperandNode,
+  IncDecNode,
+  LookupNode,
   PairNode,
-  SpreadNode,
-  WalrusNode,
-  RestPatternNode,
-  AssignmentPatternNode,
-  TemplateQuasi,
-  TemplateLiteralNode,
-  TestNode,
-  TestCallNode,
   RangeNode,
+  RestPatternNode,
+  SliceNode,
+  SpreadNode,
+  TemplateLiteralNode,
+  TemplateQuasi,
+  TestCallNode,
+  TestNode,
+  UnaryNode,
+  UnaryOpNode,
+  WalrusNode,
 };

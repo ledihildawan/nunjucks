@@ -1,12 +1,11 @@
-import type { Node } from '@nunjucks/nodes';
-import type { BinaryFields } from '@nunjucks/nodes';
-import type { Loc } from '@nunjucks/shared';
-import { loc } from '@nunjucks/shared';
-import { ok, isErr, type Result } from '@nunjucks/lib';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { TOKEN_OPERATOR } from '@nunjucks/lexer';
-import { peekToken, skipValue } from '../cursor.ts';
+import { isErr, ok, type Result } from '@nunjucks/lib';
+import type { BinaryFields, Node } from '@nunjucks/nodes';
+import type { Loc } from '@nunjucks/shared';
+import { loc } from '@nunjucks/shared';
 import type { ParserContext } from '../cursor.ts';
+import { peekToken, skipValue } from '../cursor.ts';
 
 type BinNodeFn = (loc: Loc, fields: BinaryFields) => Node;
 
@@ -17,23 +16,32 @@ const binaryOp = (
   next: (parserContext: ParserContext) => Result<Node, TemplateError>
 ): Result<Node, TemplateError> => {
   const firstR = next(parserContext);
-  if (isErr(firstR)) { return firstR; }
+  if (isErr(firstR)) {
+    return firstR;
+  }
 
   const fold = (node: Node): Result<Node, TemplateError> => {
     const tokR = peekToken(parserContext);
-    if (isErr(tokR)) { return tokR; }
+    if (isErr(tokR)) {
+      return tokR;
+    }
     if (!consume(parserContext)) {
       return ok(node);
     }
     const rightR = next(parserContext);
-    if (isErr(rightR)) { return rightR; }
+    if (isErr(rightR)) {
+      return rightR;
+    }
     return fold(create(loc(tokR.value), { left: node, right: rightR.value }));
   };
 
   return fold(firstR.value);
 };
 
-const op = (operator: string) => (parserContext: ParserContext): boolean => skipValue(parserContext, TOKEN_OPERATOR, operator);
+const op =
+  (operator: string) =>
+  (parserContext: ParserContext): boolean =>
+    skipValue(parserContext, TOKEN_OPERATOR, operator);
 
-export { binaryOp, op };
 export type { BinNodeFn };
+export { binaryOp, op };

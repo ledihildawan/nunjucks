@@ -1,62 +1,65 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createTokenizer } from './lexer.ts';
 
 const tokens = (src: string) => {
   const tk = createTokenizer(src);
   const result = [];
   let t = tk.nextToken();
-  while (t) { result.push(t); t = tk.nextToken(); }
+  while (t) {
+    result.push(t);
+    t = tk.nextToken();
+  }
   return result;
 };
 
 describe('createTokenizer', () => {
   test('tokenizes plain text as data token', () => {
     const tks = tokens('hello world');
-    const dataTokens = tks.filter(t => t.type === 'data');
+    const dataTokens = tks.filter((t) => t.type === 'data');
     expect(dataTokens.length).toBeGreaterThanOrEqual(1);
   });
 
   test('tokenizes {{ }} variable expression', () => {
     const tks = tokens('{{ x }}');
-    expect(tks.some(t => t.type === 'variable-start')).toBe(true);
-    expect(tks.some(t => t.type === 'variable-end')).toBe(true);
+    expect(tks.some((t) => t.type === 'variable-start')).toBe(true);
+    expect(tks.some((t) => t.type === 'variable-end')).toBe(true);
   });
 
   test('tokenizes {% %} block tag', () => {
     const tks = tokens('{% if true %}');
-    expect(tks.some(t => t.type === 'block-start')).toBe(true);
-    expect(tks.some(t => t.type === 'block-end')).toBe(true);
+    expect(tks.some((t) => t.type === 'block-start')).toBe(true);
+    expect(tks.some((t) => t.type === 'block-end')).toBe(true);
   });
 
   test('tokenizes {# #} comment', () => {
     const tks = tokens('{# comment #}');
-    expect(tks.some(t => t.type === 'comment')).toBe(true);
+    expect(tks.some((t) => t.type === 'comment')).toBe(true);
   });
 
   test('tokenizes symbols inside code', () => {
     const tks = tokens('{{ x }}');
-    const symbols = tks.filter(t => t.type === 'symbol');
-    expect(symbols.some(s => s.value === 'x')).toBe(true);
+    const symbols = tks.filter((t) => t.type === 'symbol');
+    expect(symbols.some((s) => s.value === 'x')).toBe(true);
   });
 
   test('tokenizes numbers', () => {
     const tks = tokens('{{ 42 }}');
-    expect(tks.some(t => t.type === 'int' && t.value === 42)).toBe(true);
+    expect(tks.some((t) => t.type === 'int' && t.value === 42)).toBe(true);
   });
 
   test('tokenizes string literals', () => {
     const tks = tokens('{{ "hello" }}');
-    expect(tks.some(t => t.type === 'string')).toBe(true);
+    expect(tks.some((t) => t.type === 'string')).toBe(true);
   });
 
   test('tokenizes operators', () => {
     const tks = tokens('{{ 1 + 2 }}');
-    expect(tks.some(t => t.type === 'operator' && t.value === '+')).toBe(true);
+    expect(tks.some((t) => t.type === 'operator' && t.value === '+')).toBe(true);
   });
 
   test('returns null at end of stream', () => {
     const tk = createTokenizer('x');
-    while (tk.nextToken()) {  }
+    while (tk.nextToken()) {}
     expect(tk.nextToken()).toBeNull();
   });
 
@@ -79,17 +82,17 @@ describe('createTokenizer', () => {
   test('handles special characters without crash', () => {
     expect(() => tokens('{{ x.y.z }}')).not.toThrow();
     const tks = tokens('{{ x.y.z }}');
-    expect(tks.filter(t => t.type === 'symbol').map(t => t.value)).toEqual(['x', 'y', 'z']);
-    expect(tks.some(t => t.type === 'operator' && t.value === '.')).toBe(true);
+    expect(tks.filter((t) => t.type === 'symbol').map((t) => t.value)).toEqual(['x', 'y', 'z']);
+    expect(tks.some((t) => t.type === 'operator' && t.value === '.')).toBe(true);
   });
 
   test('tokenizes unicode strings and indexed access', () => {
     const unicodeTks = tokens('{{ "café 日本語" }}');
-    expect(unicodeTks.some(t => t.type === 'string' && t.value === 'café 日本語')).toBe(true);
+    expect(unicodeTks.some((t) => t.type === 'string' && t.value === 'café 日本語')).toBe(true);
 
     const indexTks = tokens('{{ arr[0] }}');
-    expect(indexTks.some(t => t.type === 'left-bracket')).toBe(true);
-    expect(indexTks.some(t => t.type === 'right-bracket')).toBe(true);
-    expect(indexTks.some(t => t.type === 'int' && t.value === 0)).toBe(true);
+    expect(indexTks.some((t) => t.type === 'left-bracket')).toBe(true);
+    expect(indexTks.some((t) => t.type === 'right-bracket')).toBe(true);
+    expect(indexTks.some((t) => t.type === 'int' && t.value === 0)).toBe(true);
   });
 });

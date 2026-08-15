@@ -1,14 +1,21 @@
-export { ERROR_DEFINITIONS, getError } from './registry.ts';
-export { createErrorDefinition } from './factory.ts';
-export { firstCapture } from './types.ts';
-export type { ErrorDefinition, SubjectExtractor, ExtraExtractor, ErrorSeverity, Classification, ClassifyInput, Classifier } from './types.ts';
-export { RUNTIME_ERRORS } from './runtime/index.ts';
-export { PARSER_ERRORS } from './parser.ts';
-export { SANDBOX_ERRORS } from './sandbox.ts';
-export { IO_ERRORS } from './io.ts';
-export { FILTER_ERRORS } from './filter.ts';
-export { TEMPLATE_ERRORS } from './template.ts';
-export { LEXER_ERRORS } from './lexer.ts';
 export { classifyFromError } from './classify.ts';
-export { createSecurityError, isSecurityError } from './security.ts';
+export { createErrorDefinition } from './factory.ts';
+export { FILTER_ERRORS } from './filter.ts';
+export { IO_ERRORS } from './io.ts';
+export { LEXER_ERRORS } from './lexer.ts';
+export { PARSER_ERRORS } from './parser.ts';
+export { ERROR_DEFINITIONS, getError } from './registry.ts';
+export { RUNTIME_ERRORS } from './runtime/index.ts';
+export { SANDBOX_ERRORS } from './sandbox.ts';
 export type { SecurityError } from './security.ts';
+export { TEMPLATE_ERRORS } from './template.ts';
+export type {
+  Classification,
+  Classifier,
+  ClassifyInput,
+  ErrorDefinition,
+  ErrorSeverity,
+  ExtraExtractor,
+  SubjectExtractor,
+} from './types.ts';
+export { firstCapture } from './types.ts';

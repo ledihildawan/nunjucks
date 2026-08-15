@@ -1,10 +1,15 @@
-import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
-import { toDisplayLocation } from './presentation/source-trace/location.ts';
-import { extractAnsiErrorParts, formatMediumAnsi, formatFullAnsi, getErrorMessage } from './ansi/format-helpers';
+import {
+  extractAnsiErrorParts,
+  formatFullAnsi,
+  formatMediumAnsi,
+  getErrorMessage,
+} from './ansi/format-helpers';
 import { DEFAULT_IDE } from './presentation/ide-links/defaults.ts';
+import { toDisplayLocation } from './presentation/source-trace/location.ts';
+import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
 
-export { toAnsi };
 export type { AnsiOptions };
+export { toAnsi };
 
 interface AnsiOptions {
   verbosity?: 'simple' | 'medium' | 'full';
@@ -17,9 +22,18 @@ interface AnsiOptions {
 }
 
 const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
-  if (!error) { return ''; }
+  if (!error) {
+    return '';
+  }
 
-  const { verbosity = 'full', templatePath, lineno, colno, ide = DEFAULT_IDE, sourceTrace } = options;
+  const {
+    verbosity = 'full',
+    templatePath,
+    lineno,
+    colno,
+    ide = DEFAULT_IDE,
+    sourceTrace,
+  } = options;
   const message = getErrorMessage(error);
 
   if (verbosity === 'simple') {
@@ -29,9 +43,25 @@ const toAnsi = (error: unknown, options: AnsiOptions = {}): string => {
   const parts = extractAnsiErrorParts({ error, templatePath, lineno, colno });
 
   if (verbosity === 'medium') {
-    const location = toDisplayLocation({ lineno: parts.displayLineno, colno: parts.displayColno, lineBase: parts.lineBase });
-    return formatMediumAnsi(message, { path: parts.path, location, causes: parts.causes, documentationUrl: parts.documentationUrl, ide });
+    const location = toDisplayLocation({
+      lineno: parts.displayLineno,
+      colno: parts.displayColno,
+      lineBase: parts.lineBase,
+    });
+    return formatMediumAnsi(message, {
+      path: parts.path,
+      location,
+      causes: parts.causes,
+      documentationUrl: parts.documentationUrl,
+      ide,
+    });
   }
 
-  return formatFullAnsi(message, { parts, ide, sourceTrace, renderContext: options.renderContext, error });
+  return formatFullAnsi(message, {
+    parts,
+    ide,
+    sourceTrace,
+    renderContext: options.renderContext,
+    error,
+  });
 };

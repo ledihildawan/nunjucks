@@ -1,12 +1,14 @@
-import { toHtml } from './to-html.ts';
-import { escapeHtml, escapeAttribute } from './presentation/syntax-highlight/highlight.ts';
+import { getIdeMeta, isFilePath, resolveIdeLink } from './presentation/ide-links/ide-links.ts';
 import { shortenPath } from './presentation/source-trace/path-shortener.ts';
-import { resolveIdeLink, isFilePath, getIdeMeta } from './presentation/ide-links/ide-links.ts';
+import { escapeAttribute, escapeHtml } from './presentation/syntax-highlight/highlight.ts';
+import { toHtml } from './to-html.ts';
 import type { ErrorLike, ToHtmlOptions } from './to-html-types.ts';
 
-const ALERT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+const ALERT_ICON =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
 
-const CLOSE_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+const CLOSE_ICON =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 
 const BLOCK_CSS = `
 .nj-err-block{margin:.5rem 0;background:light-dark(oklch(100% 0 0),oklch(18% 0.01 285));border:1px solid light-dark(oklch(90% 0.01 285),oklch(28% 0.02 285));border-block-start:.25rem solid light-dark(oklch(60% 0.2 25),oklch(65% 0.2 25));border-radius:.375rem;font-family:system-ui,-apple-system,sans-serif;font-size:.8125rem;color:light-dark(oklch(20% 0.02 285),oklch(95% 0.01 285));color-scheme:light dark;overflow:hidden;box-shadow:0 0 0 1px oklch(0 0 0/0.06),0 2px 4px -1px oklch(0 0 0/0.06),0 4px 8px 0 oklch(0 0 0/0.04);}
@@ -71,7 +73,7 @@ const extractLocData = (error: ErrorLike, projectRoot?: string): LocData => {
   const rawPath = error.templatePath ?? error.templateName ?? null;
   const line = error.lineno != null ? error.lineno : null;
   const col = error.colno != null ? error.colno : null;
-  const posSuffix = [line, col].filter(v => v !== null).join(':');
+  const posSuffix = [line, col].filter((v) => v !== null).join(':');
   return {
     rawPath,
     displayPath: rawPath ? shortenPath(rawPath, projectRoot ?? '') : null,
@@ -83,28 +85,37 @@ const extractLocData = (error: ErrorLike, projectRoot?: string): LocData => {
 };
 
 const buildLocationHtml = (loc: LocData, ide: string): string => {
-  if (!loc.displayPath) { return ''; }
-  const locText = loc.posSuffix ? `${escapeHtml(loc.displayPath)}:${escapeHtml(loc.posSuffix)}` : escapeHtml(loc.displayPath);
+  if (!loc.displayPath) {
+    return '';
+  }
+  const locText = loc.posSuffix
+    ? `${escapeHtml(loc.displayPath)}:${escapeHtml(loc.posSuffix)}`
+    : escapeHtml(loc.displayPath);
   const ideMeta = getIdeMeta(ide);
-  const link = loc.canLink && loc.rawPath
-    ? `<a href="${escapeAttribute(resolveIdeLink(ide, { path: loc.rawPath, line: loc.line ?? 0, col: loc.col ?? 0 }))}" class="nj-err-loc-link" title="Open in ${escapeAttribute(ideMeta.label)}">${locText}</a>`
-    : `<span class="nj-err-loc-link">${locText}</span>`;
+  const link =
+    loc.canLink && loc.rawPath
+      ? `<a href="${escapeAttribute(resolveIdeLink(ide, { path: loc.rawPath, line: loc.line ?? 0, col: loc.col ?? 0 }))}" class="nj-err-loc-link" title="Open in ${escapeAttribute(ideMeta.label)}">${locText}</a>`
+      : `<span class="nj-err-loc-link">${locText}</span>`;
   return `<div class="nj-err-loc"><span class="nj-err-loc-label">The error occurred in</span> ${link}</div>`;
 };
 
 // WHY: severity is injected by the render stream based on the error's catalog code.
 // BLOCK = structural/security/system failure — full block with header, message, location.
 // INLINE = expression-level recoverable failure — compact icon inline in the text flow.
-const toHtmlMarker = (error: ErrorLike, options: ToHtmlOptions & { severity?: MarkerSeverity } = {}): string => {
+const toHtmlMarker = (
+  error: ErrorLike,
+  options: ToHtmlOptions & { severity?: MarkerSeverity } = {}
+): string => {
   const severity: MarkerSeverity = options.severity ?? 'block';
   const message = escapeHtml(options.humanTitle ?? error.message ?? 'Unknown error');
   const id = makeErrorId(error);
   const fullPage = toHtml(error, options);
   const srcdocLiteral = JSON.stringify(fullPage).replaceAll('</', '<\\/');
   const css = severity === 'inline' ? INLINE_CSS : BLOCK_CSS;
-  const locHtml = severity === 'block'
-    ? buildLocationHtml(extractLocData(error, options.projectRoot), options.ide ?? 'vscode')
-    : '';
+  const locHtml =
+    severity === 'block'
+      ? buildLocationHtml(extractLocData(error, options.projectRoot), options.ide ?? 'vscode')
+      : '';
 
   if (severity === 'inline') {
     // Compact inline icon — no block wrapper, no location bar, no message text.

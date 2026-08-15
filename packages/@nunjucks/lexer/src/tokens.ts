@@ -1,5 +1,11 @@
-import { TOKEN_BLOCK_END, TOKEN_FLOAT, TOKEN_INT, TOKEN_SYMBOL, TOKEN_VARIABLE_END } from './token-types.ts';
 import type { Token, TokenType, TokenValueByType } from './token-types.ts';
+import {
+  TOKEN_BLOCK_END,
+  TOKEN_FLOAT,
+  TOKEN_INT,
+  TOKEN_SYMBOL,
+  TOKEN_VARIABLE_END,
+} from './token-types.ts';
 
 interface CreateTokenOptions {
   type: TokenType;
@@ -9,20 +15,15 @@ interface CreateTokenOptions {
   strip?: { stripLeft?: boolean; stripRight?: boolean };
 }
 
-export const createToken = ({
-  type,
-  value,
-  lineno,
-  colno,
-  strip,
-}: CreateTokenOptions): Token => ({
-  type,
-  value,
-  lineno,
-  colno,
-  ...(strip?.stripLeft && { stripLeft: true }),
-  ...(strip?.stripRight && { stripRight: true }),
-}) as Token;
+export const createToken = ({ type, value, lineno, colno, strip }: CreateTokenOptions): Token =>
+  ({
+    type,
+    value,
+    lineno,
+    colno,
+    ...(strip?.stripLeft && { stripLeft: true }),
+    ...(strip?.stripRight && { stripRight: true }),
+  }) as Token;
 
 interface CreateNumberTokenOptions {
   value: number;

@@ -2,14 +2,19 @@ import type { CallNode } from '@nunjucks/nodes';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
-export const compilePipeForward = (compiler: Compiler, { node, frame }: CompileNodeInput<CallNode>): void => {
+export const compilePipeForward = (
+  compiler: Compiler,
+  { node, frame }: CompileNodeInput<CallNode>
+): void => {
   const name = node.name;
   compiler.assertType(name, 'symbol');
   const filterName = String(name.value);
 
   const args = node.args;
 
-  compiler.emit(`await (async () => { const r = await runtime.runFilter({ env, name: ${JSON.stringify(filterName)}, lineno: ${node.lineno ?? 0}, colno: ${node.colno ?? 0}, context, args: [`);
+  compiler.emit(
+    `await (async () => { const r = await runtime.runFilter({ env, name: ${JSON.stringify(filterName)}, lineno: ${node.lineno ?? 0}, colno: ${node.colno ?? 0}, context, args: [`
+  );
 
   for (let i = 0; i < args.length; i++) {
     const argument = args[i];

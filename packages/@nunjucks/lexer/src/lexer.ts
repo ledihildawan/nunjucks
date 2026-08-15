@@ -1,11 +1,11 @@
-import type { LexerOptions, LexerState } from './types.ts';
-import type { Token } from './token-types.ts';
-import { createState, advance, getChar } from './state.ts';
-import { tokenizers } from './tokenizers/index.ts';
-import { createDelimiters } from './delimiters.ts';
-import { WHITESPACE_CHARS } from './constants.ts';
 import { createLog } from '@nunjucks/error-formatter';
 import { MATCH_ANY_RE } from '@nunjucks/lib';
+import { WHITESPACE_CHARS } from './constants.ts';
+import { createDelimiters } from './delimiters.ts';
+import { advance, createState, getChar } from './state.ts';
+import type { Token } from './token-types.ts';
+import { tokenizers } from './tokenizers/index.ts';
+import type { LexerOptions, LexerState } from './types.ts';
 
 const updateCodeState = (tokenType: string, state: LexerState): LexerState => {
   if (tokenType === 'block-start' || tokenType === 'variable-start') {
@@ -41,7 +41,9 @@ const isWhitespace = (char: string | null): boolean =>
 
 // WHY: recursive generator (no for/while loop) that lazily yields tokens one at a time — satisfies the guide's "Lazy Evaluation & Streaming (Generator)" recommendation for processing potentially large template sources with low memory footprint. Each call yields at most one token, then delegates the remainder via yield*.
 const lexGenerator = function* (state: LexerState): Generator<Token, void, unknown> {
-  if (state.index >= state.str.length) { return; }
+  if (state.index >= state.source.length) {
+    return;
+  }
   const result = tokenizers(state);
   if (result) {
     yield result.token;
@@ -67,7 +69,9 @@ export const createTokenizer = (src: string, options: LexerOptions = {}): Tokeni
   return {
     nextToken: (): Token | null => {
       const result = generator.next();
-      if (result.done) { return null; }
+      if (result.done) {
+        return null;
+      }
       return result.value;
     },
     tags,

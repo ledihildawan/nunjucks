@@ -1,21 +1,21 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import {
-  isComplexOperator,
-  isDigit,
-  isBooleanString,
-  isNullString,
-  WHITESPACE_CHARS,
+  COMPLEX_OPERATORS,
+  createDelimiters,
+  DEFAULT_BLOCK_END,
+  DEFAULT_BLOCK_START,
+  DEFAULT_COMMENT_END,
+  DEFAULT_COMMENT_START,
+  DEFAULT_VARIABLE_END,
+  DEFAULT_VARIABLE_START,
   DELIM_CHARS,
   INT_CHARS,
-  DEFAULT_BLOCK_START,
-  DEFAULT_BLOCK_END,
-  DEFAULT_VARIABLE_START,
-  DEFAULT_VARIABLE_END,
-  DEFAULT_COMMENT_START,
-  DEFAULT_COMMENT_END,
-  COMPLEX_OPERATORS,
+  isBooleanString,
+  isComplexOperator,
+  isDigit,
+  isNullString,
   REGEX_FLAGS,
-  createDelimiters,
+  WHITESPACE_CHARS,
 } from './constants.ts';
 
 describe('isComplexOperator', () => {
@@ -27,8 +27,29 @@ describe('isComplexOperator', () => {
 
   test('returns false for single-character operators and non-operators', () => {
     const nonOperators = [
-      '+', '-', '=', '<', '>', '.', '|', '&', '?', ':', '!', '/', '*', '%', '~',
-      '#', ',', '`', 'foo', '', '==!', '<=>', ' ',
+      '+',
+      '-',
+      '=',
+      '<',
+      '>',
+      '.',
+      '|',
+      '&',
+      '?',
+      ':',
+      '!',
+      '/',
+      '*',
+      '%',
+      '~',
+      '#',
+      ',',
+      '`',
+      'foo',
+      '',
+      '==!',
+      '<=>',
+      ' ',
     ];
     nonOperators.forEach((token) => {
       expect(isComplexOperator(token)).toBe(false);
@@ -67,8 +88,21 @@ describe('isBooleanString', () => {
 
   test('returns false for non-boolean strings', () => {
     const nonBooleans = [
-      'True', 'False', 'TRUE', 'FALSE', '', '0', '1', 'yes', 'no',
-      'truthy', 'falsy', 'null', 'none', ' true', 'true ',
+      'True',
+      'False',
+      'TRUE',
+      'FALSE',
+      '',
+      '0',
+      '1',
+      'yes',
+      'no',
+      'truthy',
+      'falsy',
+      'null',
+      'none',
+      ' true',
+      'true ',
     ];
     nonBooleans.forEach((token) => {
       expect(isBooleanString(token)).toBe(false);
@@ -85,8 +119,17 @@ describe('isNullString', () => {
 
   test('returns false for non-null strings', () => {
     const nonNulls = [
-      'None', 'NULL', 'Null', '', 'nil', 'undefined', 'true', 'false',
-      'none ', ' null', 'nonenull',
+      'None',
+      'NULL',
+      'Null',
+      '',
+      'nil',
+      'undefined',
+      'true',
+      'false',
+      'none ',
+      ' null',
+      'nonenull',
     ];
     nonNulls.forEach((token) => {
       expect(isNullString(token)).toBe(false);
@@ -136,9 +179,38 @@ describe('exported default delimiter tags', () => {
 describe('COMPLEX_OPERATORS', () => {
   test('is a readonly tuple with the expected members', () => {
     expect(COMPLEX_OPERATORS).toEqual([
-      '==', '===', '!=', '!==', '<=', '>=', '//', '**', '?.', '??', '.?', '||', '&&',
-      '||=', '&&=', '??=', '|>', '..', '...', '**=', '//=', ':=', '<<', '>>', '++', '--',
-      '+=', '-=', '*=', '/=', '%=', '|>=',
+      '==',
+      '===',
+      '!=',
+      '!==',
+      '<=',
+      '>=',
+      '//',
+      '**',
+      '?.',
+      '??',
+      '.?',
+      '||',
+      '&&',
+      '||=',
+      '&&=',
+      '??=',
+      '|>',
+      '..',
+      '...',
+      '**=',
+      '//=',
+      ':=',
+      '<<',
+      '>>',
+      '++',
+      '--',
+      '+=',
+      '-=',
+      '*=',
+      '/=',
+      '%=',
+      '|>=',
     ]);
     expect(COMPLEX_OPERATORS).toHaveLength(32);
   });

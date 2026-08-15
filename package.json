@@ -38,8 +38,7 @@
     "@nunjucks/validators": "workspace:*",
     "express": "5",
     "picocolors": "^1.1.1",
-    "remeda": "^2.39.0",
-    "terminal-link": "^5.0.0"
+    "remeda": "^2.39.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.5",

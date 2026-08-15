@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { compileComponentPublic } from '@nunjucks/compiler/statement-compiler/component';
-import { symbol, getNodeTypeName } from '@nunjucks/nodes';
+import { getNodeTypeName, symbol } from '@nunjucks/nodes';
 import { loc } from '@nunjucks/shared';
 
 const makeCtx = () => {
@@ -12,8 +12,12 @@ const makeCtx = () => {
     emitted,
     emit: (s: string) => emitted.push(s),
     emitLine: (s: string) => emitted.push(`${s}\n`),
-    emitLines: (...lines: string[]) => { for (const l of lines) { emitted.push(`${l}\n`); } },
-    tmpid: () => {
+    emitLines: (...lines: string[]) => {
+      for (const l of lines) {
+        emitted.push(`${l}\n`);
+      }
+    },
+    nextCompilerId: () => {
       lastId += 1;
       return `t_${lastId}`;
     },
@@ -53,6 +57,8 @@ describe('compileComponentPublic', () => {
       body: { mock: 'body' },
     };
     const frame = { parent: null, set: () => {} };
-    expect(() => compileComponentPublic(ctx as never, { node: node as never, frame: frame as never })).toThrow('assertType');
+    expect(() =>
+      compileComponentPublic(ctx as never, { node: node as never, frame: frame as never })
+    ).toThrow('assertType');
   });
 });

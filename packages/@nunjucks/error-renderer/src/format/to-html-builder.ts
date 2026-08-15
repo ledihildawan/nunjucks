@@ -1,21 +1,31 @@
-import { escapeHtml, escapeAttribute, highlightHtml, renderInlineMarkdown } from './presentation/syntax-highlight/highlight.ts';
-import { join, map, pipe } from 'remeda';
-import { renderContextHtml, formatStackTraceHtml } from './presentation/error/sections.ts';
-import { resolveIdeLink, getIdeMeta } from './presentation/ide-links/ide-links.ts';
-import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
-import type { ErrorLike, ClassifiedError } from './to-html-types.ts';
-import { renderBadge } from './to-html-display.ts';
 import { titleCase } from '@nunjucks/lib/string-case';
+import { join, map, pipe } from 'remeda';
+import { formatStackTraceHtml, renderContextHtml } from './presentation/error/sections.ts';
+import { getIdeMeta, resolveIdeLink } from './presentation/ide-links/ide-links.ts';
+import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
+import {
+  escapeAttribute,
+  escapeHtml,
+  highlightHtml,
+  renderInlineMarkdown,
+} from './presentation/syntax-highlight/highlight.ts';
+import { renderBadge } from './to-html-display.ts';
+import type { ClassifiedError, ErrorLike } from './to-html-types.ts';
 
 const renderSourceTraceSection = (sourceTrace: SourceTrace | null | undefined): string => {
-  if (!sourceTrace || sourceTrace.lines.length === 0) { return ''; }
+  if (!sourceTrace || sourceTrace.lines.length === 0) {
+    return '';
+  }
 
-  const rows = sourceTrace.lines.flatMap(line => {
+  const rows = sourceTrace.lines.flatMap((line) => {
     const errorClass = line.isError ? 'is-error' : '';
     const row = `<div class="code-line ${errorClass}"><span class="line-number">${line.number}</span><span class="code-content">${highlightHtml(line.content)}</span></div>`;
     if (line.isError && sourceTrace.caret) {
       const spaces = ' '.repeat(sourceTrace.caret.charStart);
-      return [row, `<div class="code-line error-marker"><span class="line-number"></span><span class="code-content error-marker-content">${spaces}${escapeHtml(sourceTrace.caret.carets)}</span></div>`];
+      return [
+        row,
+        `<div class="code-line error-marker"><span class="line-number"></span><span class="code-content error-marker-content">${spaces}${escapeHtml(sourceTrace.caret.carets)}</span></div>`,
+      ];
     }
     return [row];
   });
@@ -59,16 +69,19 @@ const buildErrorHeader = ({
 }: ErrorHeaderInput): string => {
   const phaseText = phase ? titleCase(phase) : null;
   const phaseBadge = renderBadge('badge-code', phaseText);
-  const envBadge = environment ? `<span class="badge badge-dev" style="margin-inline-start:auto;text-transform:none">${escapeHtml(titleCase(environment))}</span>` : '';
+  const envBadge = environment
+    ? `<span class="badge badge-dev" style="margin-inline-start:auto;text-transform:none">${escapeHtml(titleCase(environment))}</span>`
+    : '';
   const headerTitle = escapeHtml(humanTitle);
   const phaseBadgePart = phaseBadge ? ` ${phaseBadge}` : '';
 
   const locationLink = canLinkLocation
     ? `<a href="${escapeAttribute(resolveIdeLink(ide, { path: displayPath, line: displayLine, col: displayCol }))}" class="loc-link error-location-link">${escapeHtml(locDisplay)}</a>`
     : `<span class="error-location-text">${escapeHtml(locDisplay)}</span>`;
-  const errorLocationBlock = verbosity !== 'simple'
-    ? `<p class="error-location">The error occurred in ${locationLink}</p>`
-    : '';
+  const errorLocationBlock =
+    verbosity !== 'simple'
+      ? `<p class="error-location">The error occurred in ${locationLink}</p>`
+      : '';
 
   return `
   <header class="error-header">
@@ -107,16 +120,27 @@ const buildFullErrorBody = ({
   ide,
 }: FullErrorBodyInput): string => {
   const codeSection = renderSourceTraceSection(sourceTrace);
-  const possibleCausesList = possibleCauses.length > 0
-    ? pipe(possibleCauses, map(c => `<li>${renderInlineMarkdown(c)}</li>`), join('\n          '))
-    : '<li>Check template syntax and context</li>';
-  const fixCommentSpan = fixComment ? `<span class="syntax-comment">${escapeHtml(fixComment)}</span>\n` : '';
+  const possibleCausesList =
+    possibleCauses.length > 0
+      ? pipe(
+          possibleCauses,
+          map((c) => `<li>${renderInlineMarkdown(c)}</li>`),
+          join('\n          ')
+        )
+      : '<li>Check template syntax and context</li>';
+  const fixCommentSpan = fixComment
+    ? `<span class="syntax-comment">${escapeHtml(fixComment)}</span>\n`
+    : '';
   const fixCodeBlock = fixCode ? highlightHtml(fixCode) : '// No fix available';
   const docsLink = documentationUrl
     ? `\n<span class="docs-inline">Learn more: <a href="${escapeHtml(documentationUrl)}" target="_blank" rel="noopener" class="docs-link">${escapeHtml(documentationUrl)}</a></span>`
     : '';
-  const renderContextSection = renderContext ? renderContextHtml(renderContext, error.blockedKeys) : '';
-  const stackTraceSection = error.stack ? formatStackTraceHtml({ originalError: error, isProduction: false, ide }) : '';
+  const renderContextSection = renderContext
+    ? renderContextHtml(renderContext, error.blockedKeys)
+    : '';
+  const stackTraceSection = error.stack
+    ? formatStackTraceHtml({ originalError: error, isProduction: false, ide })
+    : '';
 
   return `
   <div class="error-body">
@@ -161,19 +185,20 @@ const buildErrorFooter = ({
 }: ErrorFooterInput): string => {
   const timestampPart = timestamp ? ` · ${escapeHtml(timestamp)}` : '';
   const versionPart = version ? ` Nunjucks ${escapeHtml(version)}` : '';
-  const footerActions = verbosity === 'full' && canLinkLocation
-    ? (() => {
-      const ideMeta = getIdeMeta(ide);
-      const ideLabel = `Open in ${ideMeta.label}`;
-      return `
+  const footerActions =
+    verbosity === 'full' && canLinkLocation
+      ? (() => {
+          const ideMeta = getIdeMeta(ide);
+          const ideLabel = `Open in ${ideMeta.label}`;
+          return `
     <div class="error-footer-actions">
       <a href="${escapeAttribute(resolveIdeLink(ide, { path: displayPath, line: displayLine, col: displayCol }))}" class="btn btn-solid">
         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">${ideMeta.icon}</svg>
         ${ideLabel}
       </a>
     </div>`;
-    })()
-    : '';
+        })()
+      : '';
   return `
   <footer class="error-footer">
     <p class="meta">
@@ -200,7 +225,9 @@ const buildErrorBodyContent = ({
   renderContext,
   ide,
 }: ErrorBodyContentInput): string => {
-  if (verbosity !== 'full') { return ''; }
+  if (verbosity !== 'full') {
+    return '';
+  }
   return buildFullErrorBody({
     sourceTrace,
     possibleCauses: classified.causes,
@@ -226,4 +253,4 @@ const buildHtmlWrapper = ({ header, errorBody, footer }: BuildHtmlWrapperOptions
   ${footer}
 </main>`;
 
-export { buildErrorHeader, buildErrorFooter, buildErrorBodyContent, buildHtmlWrapper };
+export { buildErrorBodyContent, buildErrorFooter, buildErrorHeader, buildHtmlWrapper };

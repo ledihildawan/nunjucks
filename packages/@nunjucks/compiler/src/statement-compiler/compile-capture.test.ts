@@ -1,9 +1,9 @@
-import { describe, test, expect } from 'bun:test';
-import { compileCapture } from './compile-capture.ts';
+import { describe, expect, test } from 'bun:test';
 import { capture, output, templateData } from '@nunjucks/nodes';
-import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
 import { ZERO_LOC } from '@nunjucks/shared';
+import { asCompiler } from '../test-helpers.ts';
+import { compileCapture } from './compile-capture.ts';
 
 const frame = createFrame();
 
@@ -14,10 +14,18 @@ const makeCompiler = () => {
   return {
     emitted,
     bufferAtCompile,
-    get buffer() { return buffer; },
-    set buffer(nextBuffer: string) { buffer = nextBuffer; },
-    emit: (s: string) => { emitted.push(s); },
-    emitLine: (s: string) => { emitted.push(`${s}\n`); },
+    get buffer() {
+      return buffer;
+    },
+    set buffer(nextBuffer: string) {
+      buffer = nextBuffer;
+    },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    emitLine: (s: string) => {
+      emitted.push(`${s}\n`);
+    },
     compile: (node: { mock?: string }) => {
       bufferAtCompile.push(buffer);
       emitted.push(node.mock ?? 'BODY');
@@ -56,8 +64,17 @@ describe('compileCapture', () => {
 
   describe('buffer swap', () => {
     const bufferCases: ReadonlyArray<{ label: string; name: string | null; terminator: string }> = [
-      { label: 'named capture swaps to "output" during the body then restores the original buffer', name: 'captured', terminator: '})() });' },
-      { label: 'anonymous capture swaps to "output" during the body then restores the original buffer', name: null, terminator: '})()' },
+      {
+        label: 'named capture swaps to "output" during the body then restores the original buffer',
+        name: 'captured',
+        terminator: '})() });',
+      },
+      {
+        label:
+          'anonymous capture swaps to "output" during the body then restores the original buffer',
+        name: null,
+        terminator: '})()',
+      },
     ];
     bufferCases.forEach(({ label, name, terminator }) => {
       test(label, () => {

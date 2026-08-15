@@ -12,11 +12,11 @@ export const TEMPLATE_ERRORS = {
     causes: [
       'The value provided for `{subject}` is **not in the expected format**',
       'A required field is missing or empty',
-      'A type mismatch (e.g. string expected, number given)'
+      'A type mismatch (e.g. string expected, number given)',
     ],
     fixCode: 'env.opts.{subject} = "valid-value";',
     fixComment: 'Provide a valid value for the `{subject}` option',
-    subjectFrom: firstCapture
+    subjectFrom: firstCapture,
   },
   TEMPLATE_INVALID_SOURCE: {
     name: 'TEMPLATE_INVALID_SOURCE',
@@ -27,11 +27,12 @@ export const TEMPLATE_ERRORS = {
     causes: [
       'The template source is **not a string and not an object**',
       'A `null`, `undefined`, number, or boolean was passed instead',
-      'The template loader returned an unexpected value'
+      'The template loader returned an unexpected value',
     ],
-    fixCode: 'nunjucks({}).render("Hello {{ name }}", { name: "World" })\n// or, for a file template:\nnunjucks({ views: "/path" }).render("template.njk", ctx)',
+    fixCode:
+      'nunjucks({}).render("Hello {{ name }}", { name: "World" })\n// or, for a file template:\nnunjucks({ views: "/path" }).render("template.njk", ctx)',
     fixComment: 'Pass a template string or a source descriptor object',
-    subjectFrom: null
+    subjectFrom: null,
   },
   TEMPLATE_SRC_STRING: {
     name: 'TEMPLATE_SRC_STRING',
@@ -42,11 +43,11 @@ export const TEMPLATE_ERRORS = {
     causes: [
       'The `src` field of a template descriptor must be a **string** or **object**',
       'A primitive value like number, boolean, or null was given',
-      'The template was loaded from an unsupported source'
+      'The template was loaded from an unsupported source',
     ],
     fixCode: 'nunjucks({ views: "/templates" }).render("template.njk", context)',
     fixComment: 'Provide src as a string path or a `{ src, path }` object',
-    subjectFrom: null
+    subjectFrom: null,
   },
   TEMPLATE_NO_RENDER: {
     name: 'TEMPLATE_NO_RENDER',
@@ -57,11 +58,11 @@ export const TEMPLATE_ERRORS = {
     causes: [
       'The template object is **missing the `render` method**',
       'A custom template implementation does not conform to the template interface',
-      'The template object was corrupted during processing'
+      'The template object was corrupted during processing',
     ],
     fixCode: 'nunjucks({}).render("Hello {{ name }}", { name: "World" })',
     fixComment: 'Pass a string template or a proper Template object',
-    subjectFrom: null
+    subjectFrom: null,
   },
   INVALID_CODE_FORMAT: {
     name: 'INVALID_CODE_FORMAT',
@@ -72,27 +73,29 @@ export const TEMPLATE_ERRORS = {
     causes: [
       'The compiled template code **does not start with the expected format**',
       'A custom compiler produced non-standard output',
-      'The template was not compiled by nunjucks'
+      'The template was not compiled by nunjucks',
     ],
     fixCode: 'nunjucks({}).render("Hello {{ name }}", { name: "World" })',
     fixComment: 'Ensure the template is compiled by nunjucks using `compile()`',
     documentationUrl: `${DOCS_BASE}#compile`,
-    subjectFrom: null
+    subjectFrom: null,
   },
   INVALID_IDENTIFIER: {
     name: 'INVALID_IDENTIFIER',
-    message: "Invalid identifier '{name}': template symbol names must be valid JavaScript identifiers",
+    message:
+      "Invalid identifier '{name}': template symbol names must be valid JavaScript identifiers",
     pattern: /Invalid identifier '([^']+)'/iu,
     category: 'invalid_template',
     titleTemplate: "Invalid identifier '{subject}'",
     causes: [
       'A block, variable, macro, or import name contains **characters that are not valid in a JavaScript identifier**',
       'A symbol token reached the compiler carrying quotes, semicolons, or other metacharacters',
-      'The template was hand-crafted to probe the code-generation boundary'
+      'The template was hand-crafted to probe the code-generation boundary',
     ],
     fixCode: '{% block content %}...{% endblock %}\n{% set myVar = value %}',
-    fixComment: 'Use plain identifier names (letters, digits, $, _) — avoid quotes, semicolons, or backslashes in symbol names',
-    subjectFrom: firstCapture
+    fixComment:
+      'Use plain identifier names (letters, digits, $, _) — avoid quotes, semicolons, or backslashes in symbol names',
+    subjectFrom: firstCapture,
   },
   WALK_UNKNOWN_TYPE: {
     name: 'WALK_UNKNOWN_TYPE',
@@ -103,12 +106,12 @@ export const TEMPLATE_ERRORS = {
     causes: [
       'The AST transformer encountered a **node type it does not recognize**',
       'A custom extension produced an unexpected AST node',
-      'Internal nunjucks bug'
+      'Internal nunjucks bug',
     ],
     fixCode: '/* Please report this as a bug at https://github.com/mozilla/nunjucks/issues */',
     fixComment: 'This is a nunjucks internal error',
     documentationUrl: 'https://github.com/mozilla/nunjucks/issues',
-    subjectFrom: null
+    subjectFrom: null,
   },
   TEMPLATE_SIZE_EXCEEDED: {
     name: 'TEMPLATE_SIZE_EXCEEDED',
@@ -119,11 +122,11 @@ export const TEMPLATE_ERRORS = {
     causes: [
       'The template is **larger than the configured `maxTemplateSize`**',
       'A single template is too large for safe processing',
-      'The size limit is too restrictive for your use case'
+      'The size limit is too restrictive for your use case',
     ],
     fixCode: 'env.opts.maxTemplateSize = 1024 * 1024;  // 1 MB',
     fixComment: 'Increase `maxTemplateSize` or split the template into smaller files',
-    subjectFrom: null
+    subjectFrom: null,
   },
   OUTPUT_SIZE_EXCEEDED: {
     name: 'OUTPUT_SIZE_EXCEEDED',
@@ -134,11 +137,12 @@ export const TEMPLATE_ERRORS = {
     causes: [
       'The rendered output is **larger than the configured `maxOutputSize`**',
       'A runaway loop (e.g. `{% for %}` over a huge range) produced unbounded output',
-      'The size limit is too restrictive for your use case'
+      'The size limit is too restrictive for your use case',
     ],
-    fixCode: '{% for item in items |> slice(0, 1000) %}...{% endfor %}\n// or raise the limit\npipeRenderStream(result, sink, { maxOutputSize: 10 * 1024 * 1024 })',
+    fixCode:
+      '{% for item in items |> slice(0, 1000) %}...{% endfor %}\n// or raise the limit\npipeRenderStream(result, sink, { maxOutputSize: 10 * 1024 * 1024 })',
     fixComment: 'Paginate/bound the loop, or raise `maxOutputSize`',
-    subjectFrom: null
+    subjectFrom: null,
   },
   INVALID_CONFIG: {
     name: 'INVALID_CONFIG',
@@ -149,11 +153,12 @@ export const TEMPLATE_ERRORS = {
     causes: [
       'The configuration value `{subject}` is **negative** but must be `>= 0`',
       'Timeout or size values cannot be negative',
-      'A unit mismatch (e.g. milliseconds vs seconds)'
+      'A unit mismatch (e.g. milliseconds vs seconds)',
     ],
-    fixCode: 'env.opts.executionTimeout = 30000;  // 30 seconds\nenv.opts.maxTemplateSize = 1024 * 1024;',
+    fixCode:
+      'env.opts.executionTimeout = 30000;  // 30 seconds\nenv.opts.maxTemplateSize = 1024 * 1024;',
     fixComment: 'Use non-negative values for `{subject}` (0 means unlimited)',
-    subjectFrom: firstCapture
+    subjectFrom: firstCapture,
   },
   TEMPLATE_MUST_BE_STRING: {
     name: 'TEMPLATE_MUST_BE_STRING',
@@ -164,12 +169,13 @@ export const TEMPLATE_ERRORS = {
     causes: [
       'The template parameter is **not a string** (got `null`, `undefined`, object, etc.)',
       'A file path was passed without a loader',
-      'The render function received the wrong argument'
+      'The render function received the wrong argument',
     ],
-    fixCode: 'nunjucks({}).render("Hello {{ name }}", { name: "World" })\nnunjucks({ views: "." }).render("./template.njk", context)',
+    fixCode:
+      'nunjucks({}).render("Hello {{ name }}", { name: "World" })\nnunjucks({ views: "." }).render("./template.njk", context)',
     fixComment: 'Pass a string template or configure a loader for file paths',
-    subjectFrom: null
-  }
+    subjectFrom: null,
+  },
 } as const satisfies Record<string, ErrorDefinition>;
 
 export type TemplateErrorName = keyof typeof TEMPLATE_ERRORS;

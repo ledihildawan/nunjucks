@@ -1,16 +1,16 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createTokenizer } from '@nunjucks/lexer';
-import { getNodeTypeName } from '@nunjucks/nodes';
-import type { Node } from '@nunjucks/nodes';
 import { isErr } from '@nunjucks/lib';
-import { createParser } from '../index.ts';
-import { nextTokenOrNull } from '../cursor.ts';
+import type { Node } from '@nunjucks/nodes';
+import { getNodeTypeName } from '@nunjucks/nodes';
 import type { ParserContext } from '../cursor.ts';
-import { asTokenStream, unwrap } from '../test-helpers.ts';
+import { nextTokenOrNull } from '../cursor.ts';
+import { createParser } from '../index.ts';
+import { unwrap } from '../test-helpers.ts';
 import { parseExpression } from './expression-parser.ts';
 
 const makeContext = (source: string): ParserContext => {
-  const ctx = createParser(asTokenStream(createTokenizer(`{{ ${source} }}`)));
+  const ctx = createParser(createTokenizer(`{{ ${source} }}`));
   nextTokenOrNull(ctx);
   return ctx;
 };

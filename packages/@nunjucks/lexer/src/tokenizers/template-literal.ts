@@ -1,9 +1,9 @@
-import type { Tokenizer, LexerState } from '../types.ts';
-import { getChar, getPeek, advance, isFinished } from '../state.ts';
-import { createToken } from '../tokens.ts';
-import { TOKEN_TEMPLATE_LITERAL } from '../token-types.ts';
 import { createLog } from '@nunjucks/error-formatter';
 import { MATCH_ANY_RE } from '@nunjucks/lib';
+import { advance, getChar, getPeek, isFinished } from '../state.ts';
+import { TOKEN_TEMPLATE_LITERAL } from '../token-types.ts';
+import { createToken } from '../tokens.ts';
+import type { LexerState, Tokenizer } from '../types.ts';
 
 export interface TemplateQuasi {
   type: 'template' | 'expression';
@@ -18,7 +18,10 @@ type ParseInterpolationResult = {
 const isBacktickInExpression = (exprChar: string, exprDepth: number): boolean =>
   exprChar === '`' && exprDepth === 1;
 
-const processInterpolationChar = (exprChar: string, exprDepth: number): { depthDelta: number; charToAdd: string } | null => {
+const processInterpolationChar = (
+  exprChar: string,
+  exprDepth: number
+): { depthDelta: number; charToAdd: string } | null => {
   if (exprChar === '{') {
     return { depthDelta: 1, charToAdd: exprChar };
   }
@@ -41,13 +44,20 @@ const processInterpolationChar = (exprChar: string, exprDepth: number): { depthD
 };
 
 const parseInterpolation = (current: LexerState): ParseInterpolationResult => {
-  const scan = (pos: LexerState, exprDepth: number, exprContent: string): ParseInterpolationResult => {
-    if (isFinished(pos) || exprDepth <= 0) { return { exprContent, current: pos }; }
+  const scan = (
+    pos: LexerState,
+    exprDepth: number,
+    exprContent: string
+  ): ParseInterpolationResult => {
+    if (isFinished(pos) || exprDepth <= 0) {
+      return { exprContent, current: pos };
+    }
     const exprChar = getChar(pos);
     const result = processInterpolationChar(exprChar, exprDepth);
     if (result) {
       const newDepth = exprDepth + result.depthDelta;
-      const newContent = (result.depthDelta === 0 || newDepth > 0) ? exprContent + result.charToAdd : exprContent;
+      const newContent =
+        result.depthDelta === 0 || newDepth > 0 ? exprContent + result.charToAdd : exprContent;
       return scan(advance(pos), newDepth, newContent);
     }
     return scan(advance(pos), exprDepth, exprContent);
@@ -55,10 +65,7 @@ const parseInterpolation = (current: LexerState): ParseInterpolationResult => {
   return scan(current, 1, '');
 };
 
-const addTemplateQuasi = (
-  quasis: TemplateQuasi[],
-  currentStr: string
-): TemplateQuasi[] => {
+const addTemplateQuasi = (quasis: TemplateQuasi[], currentStr: string): TemplateQuasi[] => {
   if (currentStr) {
     return [...quasis, { type: 'template', value: currentStr }];
   }
@@ -110,7 +117,11 @@ const consumeTemplateLoop = (
     const char = getChar(current);
 
     if (char === '$' && getPeek(current) === '{') {
-      const { newCurrent, newStr, quasis: updatedQuasis } = handleInterpolationStart(current, currentStr, quasis);
+      const {
+        newCurrent,
+        newStr,
+        quasis: updatedQuasis,
+      } = handleInterpolationStart(current, currentStr, quasis);
       const { exprContent, current: afterExpr } = parseInterpolation(newCurrent);
       const exprQuasi: TemplateQuasi = { type: 'expression', value: exprContent.trim() };
       const quasisWithExpr: TemplateQuasi[] = [...updatedQuasis, exprQuasi];
@@ -118,7 +129,11 @@ const consumeTemplateLoop = (
     }
 
     if (char === '`') {
-      const { finalCurrent, quasis: finalQuasis } = finalizeTemplateLiteral(current, currentStr, quasis);
+      const { finalCurrent, quasis: finalQuasis } = finalizeTemplateLiteral(
+        current,
+        currentStr,
+        quasis
+      );
       return { quasis: finalQuasis, finalCurrent };
     }
 
@@ -129,7 +144,9 @@ const consumeTemplateLoop = (
 };
 
 export const tokenizeTemplateLiteral: Tokenizer = (state) => {
-  if (getChar(state) !== '`') { return null; }
+  if (getChar(state) !== '`') {
+    return null;
+  }
 
   const initialCurrent = advance(state);
   const { quasis, finalCurrent } = consumeTemplateLoop(initialCurrent);

@@ -22,5 +22,5 @@ interface DomPurifyConfig {
   ALLOW_DATA_ATTR?: boolean;
 }
 
+export type { DomPurifyConfig, NodeLocation, Phase, UndefinedMode };
 export { UNDEFINED_MODES };
-export type { Phase, NodeLocation, DomPurifyConfig, UndefinedMode };

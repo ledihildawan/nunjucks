@@ -1,1 +1,2 @@
-export const createHyperlink = (text: string, url: string): string => `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
+export const createHyperlink = (text: string, url: string): string =>
+  `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;

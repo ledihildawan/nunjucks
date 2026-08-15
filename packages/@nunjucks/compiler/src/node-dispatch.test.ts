@@ -1,12 +1,18 @@
-import { describe, test, expect } from 'bun:test';
-import { createCompiler } from './create-compiler.ts';
+import { describe, expect, test } from 'bun:test';
+import type { Node } from '@nunjucks/nodes';
 import {
-  literal, symbol, add, funCall, lookupVal,
-  block, output, templateData,
+  add,
+  block,
+  funCall,
+  literal,
+  lookupVal,
+  output,
+  symbol,
+  templateData,
 } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
-import type { Node } from '@nunjucks/nodes';
 import { ZERO_LOC } from '@nunjucks/shared';
+import { createCompiler } from './create-compiler.ts';
 
 const compile = (node: Node): string => {
   const c = createCompiler({ templateName: 'test', undefinedMode: 'chainable', source: '' });
@@ -26,17 +32,23 @@ describe('node-dispatch: expression nodes', () => {
   });
 
   test('add emits binary operation', () => {
-    const code = compile(add(ZERO_LOC, { left: literal(ZERO_LOC, 1), right: literal(ZERO_LOC, 2) }));
+    const code = compile(
+      add(ZERO_LOC, { left: literal(ZERO_LOC, 1), right: literal(ZERO_LOC, 2) })
+    );
     expect(code).toContain('+');
   });
 
   test('funCall emits runtime.callWrap', () => {
-    const code = compile(funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'greet'), args: [literal(ZERO_LOC, 'World')] }));
+    const code = compile(
+      funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'greet'), args: [literal(ZERO_LOC, 'World')] })
+    );
     expect(code).toContain('callWrap');
   });
 
   test('lookupVal emits member access', () => {
-    const code = compile(lookupVal(ZERO_LOC, { target: symbol(ZERO_LOC, 'obj'), val: literal(ZERO_LOC, 'key') }));
+    const code = compile(
+      lookupVal(ZERO_LOC, { target: symbol(ZERO_LOC, 'obj'), val: literal(ZERO_LOC, 'key') })
+    );
     expect(code.length).toBeGreaterThan(0);
   });
 });

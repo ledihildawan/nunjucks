@@ -1,31 +1,41 @@
-import { describe, test, expect } from 'bun:test';
-import {
-  compileBitwiseOr, compileBitwiseAnd, compileBitwiseXor,
-  compileBitwiseLShift, compileBitwiseRShift, compileBitwiseNot,
-} from './bitwise.ts';
-import { asCompiler } from '../test-helpers.ts';
+import { describe, expect, test } from 'bun:test';
 import type { BinaryNode } from '@nunjucks/nodes';
-import { createFrame } from '@nunjucks/runtime/frame';
 import type { Frame } from '@nunjucks/runtime';
+import { createFrame } from '@nunjucks/runtime/frame';
 import type { Compiler } from '../create-compiler.ts';
+import { asCompiler } from '../test-helpers.ts';
+import {
+  compileBitwiseAnd,
+  compileBitwiseLShift,
+  compileBitwiseNot,
+  compileBitwiseOr,
+  compileBitwiseRShift,
+  compileBitwiseXor,
+} from './bitwise.ts';
 
 const makeCompiler = () => {
   const emitted: string[] = [];
   return {
     emitted,
-    emit: (s: string) => { emitted.push(s); },
-    compile: (node: { mock?: string }) => { emitted.push(node.mock as string); },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    compile: (node: { mock?: string }) => {
+      emitted.push(node.mock as string);
+    },
   };
 };
 
 const makeBinary = (l: string, r: string) => ({
-  lineno: 5, colno: 9,
+  lineno: 5,
+  colno: 9,
   left: { mock: l },
   right: { mock: r },
 });
 
 const makeUnary = (mock: string) => ({
-  lineno: 6, colno: 3,
+  lineno: 6,
+  colno: 3,
   target: { mock },
 });
 

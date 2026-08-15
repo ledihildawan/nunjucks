@@ -1,10 +1,15 @@
-import { describe, test, expect } from 'bun:test';
-import { createFormatterState } from './metadata.ts';
+import { describe, expect, test } from 'bun:test';
 import type { NormalizedLogMetadata } from './metadata.ts';
+import { createFormatterState } from './metadata.ts';
 
 const baseMeta: NormalizedLogMetadata = {
-  lineno: 0, colno: 0, code: null, subject: null,
-  phase: null, templateName: 't', lineBase: 'zero' as const,
+  lineno: 0,
+  colno: 0,
+  code: null,
+  subject: null,
+  phase: null,
+  templateName: 't',
+  lineBase: 'zero' as const,
 };
 
 describe('createFormatterState', () => {

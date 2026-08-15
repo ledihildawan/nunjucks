@@ -1,18 +1,19 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createTokenizer } from '@nunjucks/lexer';
-import { parseUntilBlocks, parseNodes } from './parse-root.ts';
-import { createParser } from './index.ts';
-import { peekTokenOrNull } from './cursor.ts';
-import { getNodeTypeName, isNodeList, isOutput, isTemplateData } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
-import { asTokenStream, unwrap } from './test-helpers.ts';
+import { getNodeTypeName, isNodeList, isOutput, isTemplateData } from '@nunjucks/nodes';
+import { peekTokenOrNull } from './cursor.ts';
+import { createParser } from './index.ts';
+import { parseNodes, parseUntilBlocks } from './parse-root.ts';
+import { unwrap } from './test-helpers.ts';
 
 const makeCtx = (src: string) => {
   const tk = createTokenizer(src);
-  return createParser(asTokenStream(tk));
+  return createParser(tk);
 };
 
-const parse = (src: string, ...blocks: string[]) => unwrap(parseUntilBlocks(makeCtx(src), ...blocks));
+const parse = (src: string, ...blocks: string[]) =>
+  unwrap(parseUntilBlocks(makeCtx(src), ...blocks));
 
 const childrenOf = (n: Node): readonly Node[] =>
   isNodeList(n) ? n.children : isOutput(n) ? n.children : [];

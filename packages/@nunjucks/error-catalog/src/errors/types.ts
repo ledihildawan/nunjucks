@@ -42,6 +42,13 @@ type Classifier = (input: ClassifyInput) => Classification | null;
 
 const firstCapture: SubjectExtractor = (groups) => groups[1] ?? null;
 
+export type {
+  Classification,
+  Classifier,
+  ClassifyInput,
+  ErrorDefinition,
+  ErrorSeverity,
+  ExtraExtractor,
+  SubjectExtractor,
+};
 export { firstCapture };
-
-export type { SubjectExtractor, ExtraExtractor, ErrorSeverity, ErrorDefinition, Classification, ClassifyInput, Classifier };

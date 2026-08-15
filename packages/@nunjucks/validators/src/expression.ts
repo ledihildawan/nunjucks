@@ -1,13 +1,25 @@
+import { err, ok, type Result } from '@nunjucks/lib';
+import type { CallNode, LookupNode, Node, SymbolNode } from '@nunjucks/nodes';
 import { getNodeTypeName, isNode, isSymbol } from '@nunjucks/nodes';
-import type { Node, LookupNode, CallNode, SymbolNode } from '@nunjucks/nodes';
 import type { BaseValidationError } from '@nunjucks/shared';
 import { flatMap } from 'remeda';
-import { ExpressionSecurityError, DEFAULT_SECURITY_CONFIG, DANGEROUS_PROPERTIES, DANGEROUS_CALLEES, type ExpressionSecurityConfig } from './security/index.ts';
 import { isNonEmpty } from './is-non-empty.ts';
-import { ok, err, type Result } from '@nunjucks/lib';
+import {
+  DANGEROUS_CALLEES,
+  DANGEROUS_PROPERTIES,
+  DEFAULT_SECURITY_CONFIG,
+  type ExpressionSecurityConfig,
+  ExpressionSecurityError,
+} from './security/index.ts';
 
-export { ExpressionSecurityError, DEFAULT_SECURITY_CONFIG, DANGEROUS_PROPERTIES, DANGEROUS_CALLEES, validateExpression };
 export type { ExpressionSecurityConfig };
+export {
+  DANGEROUS_CALLEES,
+  DANGEROUS_PROPERTIES,
+  DEFAULT_SECURITY_CONFIG,
+  ExpressionSecurityError,
+  validateExpression,
+};
 
 const NON_CHILD_KEYS = new Set(['lineno', 'colno', 'fields']);
 
@@ -18,12 +30,21 @@ export interface ExpressionValidationError extends BaseValidationError {
   colno: number;
 }
 
-export type ExpressionValidationResult = Result<void, readonly [ExpressionValidationError, ...ExpressionValidationError[]]>;
+export type ExpressionValidationResult = Result<
+  void,
+  readonly [ExpressionValidationError, ...ExpressionValidationError[]]
+>;
 
 const staticPropertyName = (value: Node | null | undefined): string | null => {
-  if (!value) { return null; }
-  if (isSymbol(value)) { return value.value; }
-  if (getNodeTypeName(value) === 'literal' && typeof value.value === 'string') { return value.value; }
+  if (!value) {
+    return null;
+  }
+  if (isSymbol(value)) {
+    return value.value;
+  }
+  if (getNodeTypeName(value) === 'literal' && typeof value.value === 'string') {
+    return value.value;
+  }
   return null;
 };
 
@@ -33,7 +54,11 @@ interface UnsafePropertyInput {
   path: readonly (string | number)[];
 }
 
-const unsafeProperty = ({ message, node, path }: UnsafePropertyInput): ExpressionValidationError => ({
+const unsafeProperty = ({
+  message,
+  node,
+  path,
+}: UnsafePropertyInput): ExpressionValidationError => ({
   code: ExpressionSecurityError.UNSAFE_PROPERTY,
   message,
   path,
@@ -42,51 +67,102 @@ const unsafeProperty = ({ message, node, path }: UnsafePropertyInput): Expressio
 });
 
 const createExpressionWalker = (blocked: readonly RegExp[]) => {
-  const checkLookupVal = (node: LookupNode, path: readonly (string | number)[]): ExpressionValidationError[] => {
+  const checkLookupVal = (
+    node: LookupNode,
+    path: readonly (string | number)[]
+  ): ExpressionValidationError[] => {
     const propName = staticPropertyName(node.val);
-    if (!propName) { return []; }
+    if (!propName) {
+      return [];
+    }
 
     const lookupPath = [...path, 'lookupVal'];
     return [
       ...(DANGEROUS_PROPERTIES.has(propName)
-        ? [unsafeProperty({ message: `Access to dangerous property '${propName}' is not allowed`, node, path: lookupPath })]
+        ? [
+            unsafeProperty({
+              message: `Access to dangerous property '${propName}' is not allowed`,
+              node,
+              path: lookupPath,
+            }),
+          ]
         : []),
-      ...(blocked.some(pattern => pattern.test(propName))
-        ? [unsafeProperty({ message: `Property '${propName}' matches blocked pattern`, node, path: lookupPath })]
+      ...(blocked.some((pattern) => pattern.test(propName))
+        ? [
+            unsafeProperty({
+              message: `Property '${propName}' matches blocked pattern`,
+              node,
+              path: lookupPath,
+            }),
+          ]
         : []),
     ];
   };
 
-  const checkSymbol = (node: SymbolNode, path: readonly (string | number)[]): ExpressionValidationError[] => {
+  const checkSymbol = (
+    node: SymbolNode,
+    path: readonly (string | number)[]
+  ): ExpressionValidationError[] => {
     const name = node.value;
-    if (!DANGEROUS_PROPERTIES.has(name)) { return []; }
-    return [unsafeProperty({ message: `Dangerous symbol '${name}' is not allowed`, node, path: [...path, 'symbol'] })];
+    if (!DANGEROUS_PROPERTIES.has(name)) {
+      return [];
+    }
+    return [
+      unsafeProperty({
+        message: `Dangerous symbol '${name}' is not allowed`,
+        node,
+        path: [...path, 'symbol'],
+      }),
+    ];
   };
 
-  const checkCall = (node: CallNode, path: readonly (string | number)[]): ExpressionValidationError[] => {
+  const checkCall = (
+    node: CallNode,
+    path: readonly (string | number)[]
+  ): ExpressionValidationError[] => {
     const name = node.name;
-    if (!isSymbol(name)) { return []; }
+    if (!isSymbol(name)) {
+      return [];
+    }
     const fnName = name.value;
-    if (!DANGEROUS_CALLEES.has(fnName)) { return []; }
-    return [unsafeProperty({ message: `Dangerous function call '${fnName}' is not allowed`, node, path: [...path, node.type] })];
+    if (!DANGEROUS_CALLEES.has(fnName)) {
+      return [];
+    }
+    return [
+      unsafeProperty({
+        message: `Dangerous function call '${fnName}' is not allowed`,
+        node,
+        path: [...path, node.type],
+      }),
+    ];
   };
 
-  const walkChildNodes = (node: Node, path: readonly (string | number)[]): ExpressionValidationError[] =>
+  const walkChildNodes = (
+    node: Node,
+    path: readonly (string | number)[]
+  ): ExpressionValidationError[] =>
     flatMap(
       Object.entries(node).filter(([key]) => !NON_CHILD_KEYS.has(key)),
       ([key, child]) => {
         if (Array.isArray(child)) {
-          return flatMap(child, (element, i) => isNode(element) ? walk(element, [...path, key, i]) : []);
+          return flatMap(child, (element, i) =>
+            isNode(element) ? walk(element, [...path, key, i]) : []
+          );
         }
         if (isNode(child)) {
           return walk(child, [...path, key]);
         }
         return [];
-      },
+      }
     );
 
-  const walk = (node: Node | null | undefined, path: readonly (string | number)[]): ExpressionValidationError[] => {
-    if (!node) { return []; }
+  const walk = (
+    node: Node | null | undefined,
+    path: readonly (string | number)[]
+  ): ExpressionValidationError[] => {
+    if (!node) {
+      return [];
+    }
 
     switch (node.type) {
       case 'lookupVal':
@@ -115,7 +191,10 @@ const createExpressionWalker = (blocked: readonly RegExp[]) => {
   return walk;
 };
 
-const validateExpression = (ast: Node, config: ExpressionSecurityConfig = {}): ExpressionValidationResult => {
+const validateExpression = (
+  ast: Node,
+  config: ExpressionSecurityConfig = {}
+): ExpressionValidationResult => {
   const blocked = config.blockedPropertyPatterns ?? DEFAULT_SECURITY_CONFIG.blockedPropertyPatterns;
   const walk = createExpressionWalker(blocked);
   const errors = walk(ast, []);

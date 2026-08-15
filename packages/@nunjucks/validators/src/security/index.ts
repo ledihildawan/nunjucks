@@ -1,18 +1,22 @@
+export type { Environment } from './blocked-keys.ts';
 export {
+  BLOCKED_KEYS_LIST,
+  CODE_EXECUTION_KEYS,
+  DANGEROUS_GLOBALS_LIST,
   ENVIRONMENTS,
-  isCodeExecutionPattern,
   getBlockedKeyCategory,
   isBlockedKey,
+  isCodeExecutionPattern,
   isDangerousGlobal,
-  BLOCKED_KEYS_LIST,
-  DANGEROUS_GLOBALS_LIST,
   OBJECT_INTRINSICS,
-  CODE_EXECUTION_KEYS,
 } from './blocked-keys.ts';
-export type { Environment } from './blocked-keys.ts';
-export { isDangerousReference, findDangerousValues } from './context-security.ts';
-export { scanTemplateForDangerousCode } from './template-security.ts';
-export type { DangerousCodeViolation } from './template-security.ts';
-export { scrubDangerousReferences } from './scrubber.ts';
-export { ExpressionSecurityError, DEFAULT_SECURITY_CONFIG, type ExpressionSecurityConfig, DANGEROUS_PROPERTIES, DANGEROUS_CALLEES } from './expression-policy.ts';
 export { DANGEROUS_KEY_PATTERN } from './dangerous-keys.ts';
+export {
+  DANGEROUS_CALLEES,
+  DANGEROUS_PROPERTIES,
+  DEFAULT_SECURITY_CONFIG,
+  type ExpressionSecurityConfig,
+  ExpressionSecurityError,
+} from './expression-policy.ts';
+export { scrubDangerousReferences } from './scrubber.ts';
+export type { DangerousCodeViolation } from './template-security.ts';

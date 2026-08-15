@@ -10,11 +10,12 @@ export const FILTER_ERRORS = {
     causes: [
       'The filter **threw an error** during execution',
       'Invalid input value passed to the filter (e.g. `null` when array expected)',
-      'A custom filter has a bug or missing edge case'
+      'A custom filter has a bug or missing edge case',
     ],
-    fixCode: 'env.addFilter("myFilter", function(value) {\n  if (value === null || value === undefined) return "";\n  return value.toUpperCase();\n})',
+    fixCode:
+      'env.addFilter("myFilter", function(value) {\n  if (value === null || value === undefined) return "";\n  return value.toUpperCase();\n})',
     fixComment: 'Add input validation in your custom filter and handle edge cases',
-    subjectFrom: null
+    subjectFrom: null,
   },
   FILTER_TYPE_ERROR: createErrorDefinition({
     name: 'FILTER_TYPE_ERROR',
@@ -23,10 +24,10 @@ export const FILTER_ERRORS = {
     causes: [
       'The filter tried to access an attribute but it was `undefined`',
       'Some items in the array do not have the requested attribute',
-      'The attribute name is misspelled in the filter argument'
+      'The attribute name is misspelled in the filter argument',
     ],
     fixCode: '{{ items |> groupby("existingAttr") }}',
-    fixComment: 'Use an attribute name that exists on all items'
+    fixComment: 'Use an attribute name that exists on all items',
   }),
   SLICE_STEP: createErrorDefinition({
     name: 'SLICE_STEP',
@@ -35,10 +36,10 @@ export const FILTER_ERRORS = {
     causes: [
       'The slice **step** is zero, which would cause an infinite loop',
       'Invalid slice notation like `[::0]` was used',
-      'A computed step value happened to be zero'
+      'A computed step value happened to be zero',
     ],
     fixCode: '{{ list[::1] }}\n{{ list[::2] }}\n{{ list[1::2] }}',
-    fixComment: 'Use a non-zero step. Positive steps go forward, negative go backward'
+    fixComment: 'Use a non-zero step. Positive steps go forward, negative go backward',
   }),
   SLICE_ZERO: createErrorDefinition({
     name: 'SLICE_ZERO',
@@ -47,58 +48,58 @@ export const FILTER_ERRORS = {
     causes: [
       'The `slice` filter requires a **positive** number of slices',
       'Passed value is zero or negative',
-      'A computed value happened to be zero or negative'
+      'A computed value happened to be zero or negative',
     ],
     fixCode: '{{ items |> slice(2) }}',
-    fixComment: 'Use a positive number for slices (e.g., 2 to split into 2 slices)'
+    fixComment: 'Use a positive number for slices (e.g., 2 to split into 2 slices)',
   }),
   LIST_FILTER: createErrorDefinition({
     name: 'LIST_FILTER',
-    message: "list: expected array, got {type}",
+    message: 'list: expected array, got {type}',
     category: 'iterable_error',
     causes: [
       'The `list` filter requires an **iterable** input (string, array, etc.)',
       'Passed value is a primitive like number, boolean, or null',
-      'An object was passed instead of an array'
+      'An object was passed instead of an array',
     ],
     fixCode: '{{ "hello" |> list }}\n{{ [1, 2] |> list }}',
-    fixComment: 'Convert the value to a string or array first'
+    fixComment: 'Convert the value to a string or array first',
   }),
   FIRST_LAST_FILTER: createErrorDefinition({
     name: 'FIRST_LAST_FILTER',
-    message: "first/last: expected array, got {type}",
+    message: 'first/last: expected array, got {type}',
     category: 'array_error',
     causes: [
       'The `first` and `last` filters require an **array** input',
       'A string, number, or null was passed instead of an array',
-      'Maybe the variable was destructured incorrectly'
+      'Maybe the variable was destructured incorrectly',
     ],
     fixCode: '{{ items |> first }}',
-    fixComment: 'Ensure the value passed to first/last is an array'
+    fixComment: 'Ensure the value passed to first/last is an array',
   }),
   JOIN_FILTER: createErrorDefinition({
     name: 'JOIN_FILTER',
-    message: "join: expected array, got {type}",
+    message: 'join: expected array, got {type}',
     category: 'array_error',
     causes: [
       'The `join` filter requires an **array** input',
       'A string, number, or null was passed instead of an array',
-      'The variable might not be an array in the render context'
+      'The variable might not be an array in the render context',
     ],
     fixCode: '{{ items |> join(", ") }}',
-    fixComment: 'Ensure the value passed to join is an array'
+    fixComment: 'Ensure the value passed to join is an array',
   }),
   SUM_FILTER: createErrorDefinition({
     name: 'SUM_FILTER',
-    message: "sum: expected array, got {type}",
+    message: 'sum: expected array, got {type}',
     category: 'array_error',
     causes: [
       'The `sum` filter requires an **array** input',
       'A string, object, or null was passed',
-      'The variable might not be an array in the render context'
+      'The variable might not be an array in the render context',
     ],
     fixCode: '{{ prices |> sum }}',
-    fixComment: 'Ensure the value passed to sum is an array of numbers'
+    fixComment: 'Ensure the value passed to sum is an array of numbers',
   }),
   SUM_FILTER_ATTR: createErrorDefinition({
     name: 'SUM_FILTER_ATTR',
@@ -107,22 +108,22 @@ export const FILTER_ERRORS = {
     causes: [
       'The `sum` filter with attribute requires the attribute to exist on **all items**',
       'Some items in the array do not have the requested attribute',
-      'The attribute name is misspelled'
+      'The attribute name is misspelled',
     ],
     fixCode: '{{ items |> sum("price") }}',
-    fixComment: 'Use an attribute that exists on every item in the array'
+    fixComment: 'Use an attribute that exists on every item in the array',
   }),
   SORT_FILTER: createErrorDefinition({
     name: 'SORT_FILTER',
-    message: "sort: expected array, got {type}",
+    message: 'sort: expected array, got {type}',
     category: 'sort_type_error',
     causes: [
       'The `sort` filter requires an **array** input',
       'A string, object, or null value was passed',
-      'Maybe the variable was destructured incorrectly'
+      'Maybe the variable was destructured incorrectly',
     ],
     fixCode: '{{ items |> sort }}',
-    fixComment: 'Ensure the value passed to `sort` is an array'
+    fixComment: 'Ensure the value passed to `sort` is an array',
   }),
   SORT_FILTER_ATTR: createErrorDefinition({
     name: 'SORT_FILTER_ATTR',
@@ -131,22 +132,22 @@ export const FILTER_ERRORS = {
     causes: [
       'The attribute `{attr}` is **missing on one or more items**',
       'The attribute name is misspelled in the sort call',
-      'Inconsistent data shape across the array'
+      'Inconsistent data shape across the array',
     ],
     fixCode: '{{ items |> sort(false, false, "existingAttr") }}',
-    fixComment: 'Use an attribute that exists on every item in the array'
+    fixComment: 'Use an attribute that exists on every item in the array',
   }),
   GROUPBY_FILTER: createErrorDefinition({
     name: 'GROUPBY_FILTER',
-    message: "groupby: expected array, got {type}",
+    message: 'groupby: expected array, got {type}',
     category: 'groupby_type_error',
     causes: [
       'The `groupby` filter requires an **array** input',
       'The value is a string, object, or null',
-      'A database query returned no results (empty array is OK, but undefined is not)'
+      'A database query returned no results (empty array is OK, but undefined is not)',
     ],
     fixCode: '{{ items |> groupby("category") }}',
-    fixComment: 'Pass an array to the groupby filter'
+    fixComment: 'Pass an array to the groupby filter',
   }),
   GROUPBY_FILTER_ATTR: createErrorDefinition({
     name: 'GROUPBY_FILTER_ATTR',
@@ -155,38 +156,38 @@ export const FILTER_ERRORS = {
     causes: [
       'The groupby attribute `{attr}` **does not exist on the items**',
       'The attribute name is misspelled',
-      'Some items in the array have a different shape'
+      'Some items in the array have a different shape',
     ],
     fixCode: '{% for group in items |> groupby("category") %}\n  {{ group.grouper }}\n{% endfor %}',
-    fixComment: 'Use an attribute that exists on all items'
+    fixComment: 'Use an attribute that exists on all items',
   }),
   MATH_FILTER: createErrorDefinition({
     name: 'MATH_FILTER',
-    message: "abs/round: expected number, got {type}",
+    message: 'abs/round: expected number, got {type}',
     category: 'math_error',
     causes: [
       'The `abs` and `round` filters require a **number** input',
       'A string, array, or null was passed instead of a number',
-      'The variable might not be a number in the render context'
+      'The variable might not be a number in the render context',
     ],
     fixCode: '{{ value |> abs }}',
-    fixComment: 'Ensure the value passed to abs/round is a number'
+    fixComment: 'Ensure the value passed to abs/round is a number',
   }),
   JSON_ESCAPED_OUTPUT: {
     name: 'JSON_ESCAPED_OUTPUT',
-    message: "JSON output is HTML-escaped when autoescape is enabled",
+    message: 'JSON output is HTML-escaped when autoescape is enabled',
     pattern: /JSON output is HTML-escaped/iu,
     category: 'json_error',
-    titleTemplate: "JSON output is HTML-escaped",
+    titleTemplate: 'JSON output is HTML-escaped',
     causes: [
       '`JSON.stringify()` output is being **HTML-escaped** by autoescape',
       'This produces **invalid JSON** (e.g., `&quot;` instead of `"`)',
-      'Use the `|> tojson` filter for JavaScript context output'
+      'Use the `|> tojson` filter for JavaScript context output',
     ],
     fixCode: '{{ value |> tojson }}',
     fixComment: 'Use the tojson filter for JSON output in autoescape mode',
-    subjectFrom: null
-  }
+    subjectFrom: null,
+  },
 } as const;
 
 export type FilterErrorName = keyof typeof FILTER_ERRORS;

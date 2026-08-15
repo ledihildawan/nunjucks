@@ -1,5 +1,5 @@
-import { describe, test, expect } from 'bun:test';
-import { sanitizePrimitive, sanitizeForAnsi } from './sanitize-helpers.ts';
+import { describe, expect, test } from 'bun:test';
+import { sanitizeForAnsi, sanitizePrimitive } from './sanitize-helpers.ts';
 
 describe('sanitizePrimitive', () => {
   test('null', () => {

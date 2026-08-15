@@ -1,63 +1,33 @@
-import { describe, test, expect } from 'bun:test';
-import { tmpid, emitLocationGuard, emitLineLocation, getTemplateName } from './codegen.ts';
-import type { Compiler } from './index.ts';
+import { describe, expect, test } from 'bun:test';
+import { emitLineLocation, emitLocationGuard, getTemplateName, nextCompilerId } from './codegen.ts';
+import { createCompiler } from './create-compiler.ts';
 
-const mockCompiler = (overrides: Partial<Compiler> = {}): Compiler => ({
-  templateName: 'test',
-  codebuf: [],
-  lastId: 0,
-  buffer: null,
-  bufferStack: [],
-  scopeStack: [],
-  inBlock: false,
-  undefinedMode: 'chainable',
-  compiledLine: 0,
-  fail: () => { throw new Error('fail'); },
-  pushBuffer: () => '',
-  popBuffer: () => {},
-  emit: (_code: string) => {},
-  emitLine: (_code: string) => {},
-  emitLines: () => {},
-  emitFuncBegin: () => {},
-  emitFuncEnd: () => {},
-  addScopeLevel: () => {},
-  closeScopeLevels: () => {},
-  withScopedSyntax: () => {},
-  tmpid: () => 't_x',
-  getTemplateName: () => '"test"',
-  compileChildren: () => {},
-  compileExpression: () => {},
-  assertType: () => {},
-  compile: () => {},
-  getCode: () => '',
-  getHtmlContext: () => ({ context: 'text' }) as never,
-  ...overrides,
-}) as Compiler;
+const makeCompiler = () =>
+  createCompiler({ templateName: 'test', undefinedMode: undefined, source: '' });
 
-describe('tmpid', () => {
+describe('nextCompilerId', () => {
   test('returns t_N format and increments', () => {
-    const ctx = { lastId: 0 };
-    expect(tmpid(ctx)).toBe('t_1');
-    expect(tmpid(ctx)).toBe('t_2');
+    const ctx = makeCompiler();
+    expect(nextCompilerId(ctx)).toBe('t_1');
+    expect(nextCompilerId(ctx)).toBe('t_2');
     expect(ctx.lastId).toBe(2);
   });
 });
 
 describe('emitLocationGuard', () => {
   test('emits comma-operator location guard', () => {
-    const emitted: string[] = [];
-    const ctx = mockCompiler({ emit: (code: string) => { emitted.push(code); } });
+    const ctx = makeCompiler();
     emitLocationGuard(ctx, 5, 10);
-    expect(emitted).toEqual(['(lineno = 5, colno = 10, ']);
+    expect(ctx.codebuf).toEqual(['(lineno = 5, colno = 10, ']);
   });
 });
 
 describe('emitLineLocation', () => {
   test('emits statement-style location', () => {
-    const emitted: string[] = [];
-    const ctx = mockCompiler({ emitLine: (code: string) => { emitted.push(code); } });
+    const ctx = makeCompiler();
     emitLineLocation(ctx, 3, 7);
-    expect(emitted).toEqual(['lineno = 3; colno = 7;']);
+    expect(ctx.codebuf).toEqual(['lineno = 3; colno = 7;\n']);
+    expect(ctx.compiledLine).toBe(1);
   });
 });
 

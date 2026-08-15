@@ -1,9 +1,7 @@
 import { isErr, type Result } from '@nunjucks/lib';
-import type { ParserContext, TokenStream } from './cursor.ts';
+import type { ParserContext } from './cursor.ts';
 
-export const asTokenStream = (mock: unknown): TokenStream => mock as TokenStream;
-
-export const asParserContext = (mock: unknown): ParserContext => mock as ParserContext;
+export const asParserContext = (context: unknown): ParserContext => context as ParserContext;
 
 export const unwrap = <T, E>(result: Result<T, E>): T => {
   if (isErr(result)) {

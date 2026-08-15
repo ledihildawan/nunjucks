@@ -1,9 +1,9 @@
-import { describe, test, expect } from 'bun:test';
-import { compileImport } from './import.ts';
+import { describe, expect, test } from 'bun:test';
 import { importNode, literal } from '@nunjucks/nodes';
-import { asCompiler } from '../test-helpers.ts';
 import { createFrame } from '@nunjucks/runtime/frame';
 import { loc } from '@nunjucks/shared';
+import { asCompiler } from '../test-helpers.ts';
+import { compileImport } from './import.ts';
 
 const templateLoc = loc({ lineno: 2, colno: 5 });
 
@@ -12,11 +12,20 @@ const makeCompiler = () => {
   let id = 0;
   return {
     emitted,
-    emit: (s: string) => { emitted.push(s); },
-    emitLine: (s: string) => { emitted.push(`${s}\n`); },
-    tmpid: () => { id += 1; return `t_${id}`; },
+    emit: (s: string) => {
+      emitted.push(s);
+    },
+    emitLine: (s: string) => {
+      emitted.push(`${s}\n`);
+    },
+    nextCompilerId: () => {
+      id += 1;
+      return `t_${id}`;
+    },
     getTemplateName: () => '"parent"',
-    compileExpression: (node: { value?: unknown }) => { emitted.push(String(node.value ?? 'TPL')); },
+    compileExpression: (node: { value?: unknown }) => {
+      emitted.push(String(node.value ?? 'TPL'));
+    },
   };
 };
 
@@ -33,7 +42,9 @@ describe('compileImport', () => {
     compileImport(asCompiler(c), { node: buildImportNode(false), frame: createFrame() });
     const joined = c.emitted.join('');
     expect(joined).toContain('lineno = 2; colno = 6;');
-    expect(joined).toContain('let t_1 = await env.getTemplate({ name: lib.njk, eagerCompile: false, includeChain: "parent", ignoreMissing: false });');
+    expect(joined).toContain(
+      'let t_1 = await env.getTemplate({ name: lib.njk, eagerCompile: false, includeChain: "parent", ignoreMissing: false });'
+    );
     expect(joined).toContain('let t_1_exported = await t_1.getExported();');
     expect(joined).toContain('context = context.setVariable("myLib", t_1_exported);');
   });

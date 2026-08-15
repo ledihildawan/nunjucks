@@ -1,17 +1,28 @@
-import { pipe, filter, join } from 'remeda';
-import picocolors from 'picocolors';
-import { shortenPath } from '../presentation/source-trace/path-shortener.ts';
-import { isFilePath, resolveIdeLink } from '../presentation/ide-links/ide-links.ts';
 import { stripInlineMarkdown } from '@nunjucks/lib/strip-inline-markdown';
+import picocolors from 'picocolors';
+import { filter, join, pipe } from 'remeda';
+import { isFilePath, resolveIdeLink } from '../presentation/ide-links/ide-links.ts';
+import { shortenPath } from '../presentation/source-trace/path-shortener.ts';
 import { parseStackFrame } from '../presentation/source-trace/stack-parse.ts';
 import { createHyperlink } from './hyperlink.ts';
 
 export { createHyperlink } from './hyperlink.ts';
-export { stripInlineMarkdown, getSeverityColor, getSeverityLabel, getExtrasPart, formatStackLine, formatLocationString };
+export {
+  formatLocationString,
+  formatStackLine,
+  getExtrasPart,
+  getSeverityColor,
+  getSeverityLabel,
+  stripInlineMarkdown,
+};
 
 const getSeverityColor = (severity?: string): ((text: string) => string) => {
-  if (severity === 'warning') { return picocolors.yellow; }
-  if (severity === 'info') { return picocolors.blue; }
+  if (severity === 'warning') {
+    return picocolors.yellow;
+  }
+  if (severity === 'info') {
+    return picocolors.blue;
+  }
   return picocolors.red;
 };
 
@@ -20,14 +31,13 @@ const getSeverityLabel = (severity?: string): ReturnType<typeof picocolors.bold>
 
 const getExtrasPart = (causeHint: string, docHint: string): string => {
   const extras = pipe([causeHint, docHint], filter(Boolean), join(' | '));
-  if (!extras) { return ''; }
+  if (!extras) {
+    return '';
+  }
   return `\n${extras}`;
 };
 
-const formatStackLine = (
-  line: string,
-  ide: string
-): string => {
+const formatStackLine = (line: string, ide: string): string => {
   const frame = parseStackFrame(line);
   if (!(frame.path && frame.line !== null)) {
     return `  ${frame.raw}`;
@@ -40,11 +50,18 @@ const formatStackLine = (
   const location = `${shortPath}:${lineNum}:${colNum}`;
 
   if (isFilePath(frame.path)) {
-    const url = createHyperlink(location, resolveIdeLink(ide, { path: frame.path, line: lineNum, col: colNum }));
-    if (fn) { return `  at ${picocolors.cyan(fn)} (${url})`; }
+    const url = createHyperlink(
+      location,
+      resolveIdeLink(ide, { path: frame.path, line: lineNum, col: colNum })
+    );
+    if (fn) {
+      return `  at ${picocolors.cyan(fn)} (${url})`;
+    }
     return `  at ${url}`;
   }
-  if (fn) { return `  at ${fn} (${location})`; }
+  if (fn) {
+    return `  at ${fn} (${location})`;
+  }
   return `  at ${location}`;
 };
 
@@ -55,10 +72,15 @@ interface FormatLocationStringInput {
 }
 
 const formatLocationString = ({ path, location, ide }: FormatLocationStringInput): string => {
-  if (!path) { return ''; }
+  if (!path) {
+    return '';
+  }
   const shortPath = shortenPath(path, '');
   if (isFilePath(path)) {
-    const url = createHyperlink(`${shortPath}:${location.line}:${location.col}`, resolveIdeLink(ide, { path, line: location.line, col: location.col }));
+    const url = createHyperlink(
+      `${shortPath}:${location.line}:${location.col}`,
+      resolveIdeLink(ide, { path, line: location.line, col: location.col })
+    );
     return ` at ${url}`;
   }
   return ` at ${shortPath}:${location.line}:${location.col}`;

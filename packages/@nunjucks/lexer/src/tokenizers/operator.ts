@@ -1,28 +1,30 @@
-import type { Tokenizer } from '../types.ts';
 import { DELIM_CHARS, isComplexOperator } from '../constants.ts';
-import { getChar, getPeek, advance } from '../state.ts';
-import { createToken } from '../tokens.ts';
+import { advance, getChar, getPeek } from '../state.ts';
 import type { TokenType } from '../token-types.ts';
+import { createToken } from '../tokens.ts';
+import type { Tokenizer } from '../types.ts';
 
 const MAX_OPERATOR_CHARS = 3;
 
 const TOKEN_TYPES: Record<string, TokenType> = {
-  '(' : 'left-paren',
-  ')' : 'right-paren',
-  '[' : 'left-bracket',
-  ']' : 'right-bracket',
-  '{' : 'left-curly',
-  '}' : 'right-curly',
-  ',' : 'comma',
-  ':' : 'colon',
-  '|>' : 'pipe-forward',
+  '(': 'left-paren',
+  ')': 'right-paren',
+  '[': 'left-bracket',
+  ']': 'right-bracket',
+  '{': 'left-curly',
+  '}': 'right-curly',
+  ',': 'comma',
+  ':': 'colon',
+  '|>': 'pipe-forward',
 };
 
 const matchTokenType = (char: string): TokenType => TOKEN_TYPES[char] ?? 'operator';
 
 export const tokenizeOperator: Tokenizer = (state) => {
   const char = getChar(state);
-  if (!DELIM_CHARS.includes(char)) { return null; }
+  if (!DELIM_CHARS.includes(char)) {
+    return null;
+  }
 
   const twoChar = char + getPeek(state);
   const threeChar = twoChar + getChar(advance(state, 2));

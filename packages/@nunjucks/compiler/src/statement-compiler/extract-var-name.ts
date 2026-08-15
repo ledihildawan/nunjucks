@@ -1,5 +1,5 @@
-import { isLookupVal, isSymbol } from '@nunjucks/nodes';
 import type { Node } from '@nunjucks/nodes';
+import { isLookupVal, isSymbol } from '@nunjucks/nodes';
 
 export const extractVarName = (node: Node): string | null => {
   if (isSymbol(node)) {

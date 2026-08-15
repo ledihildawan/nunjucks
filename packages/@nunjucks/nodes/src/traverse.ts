@@ -1,10 +1,10 @@
 import { map, pipe, reduce } from 'remeda';
+import { isCallExtension, isCallExtensionAsync, isNode } from './types/guards.ts';
 import type { CallExtensionNode, ChildrenNode, Node } from './types/index.ts';
-import { isNode, isCallExtension, isCallExtensionAsync } from './types/guards.ts';
 
 const getFields = (node: Node): string[] => {
   const excluded = new Set(['type', 'lineno', 'colno', 'fields']);
-  return (node.fields ?? []).filter(field => !excluded.has(field));
+  return (node.fields ?? []).filter((field) => !excluded.has(field));
 };
 
 const getNodeField = (node: Node, field: string): unknown => Reflect.get(node, field);
@@ -15,8 +15,10 @@ const getNodeTypeName = (node: unknown): string | undefined => {
   }
 };
 
-const appendChild = <K extends ChildrenNode>(node: K, child: Node): K =>
-  ({ ...node, children: [...node.children, child] });
+const appendChild = <K extends ChildrenNode>(node: K, child: Node): K => ({
+  ...node,
+  children: [...node.children, child],
+});
 
 const mapCOW = <T>(items: readonly T[], transform: (item: T) => T): T[] => {
   const mapped = pipe(items, map(transform));
@@ -27,7 +29,7 @@ function walkValue(value: Node, walker: (node: Node) => Node): Node;
 function walkValue(value: unknown, walker: (node: Node) => Node): unknown;
 function walkValue(value: unknown, walker: (node: Node) => Node): unknown {
   if (Array.isArray(value)) {
-    return mapCOW(value, item => {
+    return mapCOW(value, (item) => {
       if (isNode(item)) {
         return walker(item);
       }
@@ -40,18 +42,20 @@ function walkValue(value: unknown, walker: (node: Node) => Node): unknown {
   return value;
 }
 
-const isCallExtNode = (node: Node): node is CallExtensionNode => isCallExtension(node) || isCallExtensionAsync(node);
+const isCallExtNode = (node: Node): node is CallExtensionNode =>
+  isCallExtension(node) || isCallExtensionAsync(node);
 
 const getTraversalFields = (node: Node): string[] =>
-  getFields(node).filter(field =>
-    field !== 'children' &&
-    (!isCallExtNode(node) || (field !== 'args' && field !== 'contentArgs')),
+  getFields(node).filter(
+    (field) =>
+      field !== 'children' &&
+      (!isCallExtNode(node) || (field !== 'args' && field !== 'contentArgs'))
   );
 
 const walkChildren = (node: Node, walker: (node: Node) => Node): Node => {
   const { children } = node;
   if (Array.isArray(children)) {
-    const newChildren = mapCOW(children, child => walker(child));
+    const newChildren = mapCOW(children, (child) => walker(child));
     if (newChildren !== children) {
       return { ...node, children: newChildren };
     }
@@ -61,22 +65,21 @@ const walkChildren = (node: Node, walker: (node: Node) => Node): Node => {
     const { args } = node;
     const newArgs = walkValue(args, walker);
     const { contentArgs } = node;
-    const newContentArgs = contentArgs ? mapCOW(contentArgs, child => walker(child)) : contentArgs;
+    const newContentArgs = contentArgs
+      ? mapCOW(contentArgs, (child) => walker(child))
+      : contentArgs;
     if (newArgs !== args || newContentArgs !== contentArgs) {
       return { ...node, args: newArgs, contentArgs: newContentArgs };
     }
     return node;
   }
   const fieldsList = getFields(node);
-  const props = fieldsList.map(field => getNodeField(node, field));
-  const newProps = mapCOW<unknown>(props, prop => walkValue(prop, walker));
+  const props = fieldsList.map((field) => getNodeField(node, field));
+  const newProps = mapCOW<unknown>(props, (prop) => walkValue(prop, walker));
   if (newProps !== props) {
     const newNode = pipe(
       fieldsList,
-      reduce(
-        (acc, field, i) => ({ ...acc, [field]: newProps[i] }),
-        { ...node },
-      ),
+      reduce((acc, field, i) => ({ ...acc, [field]: newProps[i] }), { ...node })
     );
     return newNode;
   }
@@ -84,15 +87,19 @@ const walkChildren = (node: Node, walker: (node: Node) => Node): Node => {
 };
 
 const walk = (ast: Node, visitor: (node: Node) => Node | undefined): Node => {
-  if (!ast || typeof ast !== 'object') { return ast; }
-  if (!(isNode(ast) || isCallExtNode(ast))) { return ast; }
+  if (!ast || typeof ast !== 'object') {
+    return ast;
+  }
+  if (!(isNode(ast) || isCallExtNode(ast))) {
+    return ast;
+  }
 
   const replaced = visitor(ast);
   if (replaced && replaced !== ast) {
     return replaced;
   }
   const afterVisitor = replaced ?? ast;
-  return walkChildren(afterVisitor, child => walk(child, visitor));
+  return walkChildren(afterVisitor, (child) => walk(child, visitor));
 };
 
 const matchPredicate = (node: Node, predicate: string | ((node: Node) => boolean)): boolean =>
@@ -107,20 +114,20 @@ const getFieldNodes = (node: Node, field: string): Node[] => {
 };
 
 const getChildNodes = (node: Node): Node[] => {
-  const children = Array.isArray(node.children)
-    ? node.children.filter(isNode)
-    : [];
+  const children = Array.isArray(node.children) ? node.children.filter(isNode) : [];
   const callExtChildren = isCallExtNode(node)
     ? [node.args, ...node.contentArgs].filter(isNode)
     : [];
-  const fieldChildren = getTraversalFields(node).flatMap(field => getFieldNodes(node, field));
+  const fieldChildren = getTraversalFields(node).flatMap((field) => getFieldNodes(node, field));
   return [...children, ...callExtChildren, ...fieldChildren];
 };
 
 const findAll = (node: Node, predicate: string | ((node: Node) => boolean)): Node[] => {
   const seen = new Set<Node>();
   const collect = (current: Node): Node[] => {
-    if (seen.has(current)) { return []; }
+    if (seen.has(current)) {
+      return [];
+    }
     seen.add(current);
     const self = matchPredicate(current, predicate) ? [current] : [];
     const descendants = getChildNodes(current).flatMap(collect);
@@ -129,4 +136,4 @@ const findAll = (node: Node, predicate: string | ((node: Node) => boolean)): Nod
   return collect(node);
 };
 
-export { getNodeTypeName, appendChild, walk, findAll };
+export { appendChild, findAll, getNodeTypeName, walk };

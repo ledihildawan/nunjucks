@@ -1,11 +1,12 @@
-import { pipe, filter, split, last } from 'remeda';
+import { filter, last, pipe, split } from 'remeda';
 
 const FILE_URL_PREFIX_RE = /^file:\/\//u;
 const LEADING_SLASH_DRIVE_RE = /^[\\/]+([A-Za-z]):/u;
 const BACKSLASH_RE = /\\/gu;
 
 export const normalizeDrivePath = (path: string) =>
-  path.replace(FILE_URL_PREFIX_RE, '')
+  path
+    .replace(FILE_URL_PREFIX_RE, '')
     .replace(LEADING_SLASH_DRIVE_RE, '$1:')
     .replaceAll(BACKSLASH_RE, '/');
 
@@ -13,14 +14,11 @@ export const shortenPath = (path: string, projectRoot: string): string => {
   const normalizedPath = normalizeDrivePath(path);
   const normalizedRoot = normalizeDrivePath(projectRoot);
 
-  const parts = pipe(
-    normalizedPath.split('/'),
-    filter(Boolean)
-  );
+  const parts = pipe(normalizedPath.split('/'), filter(Boolean));
   const rootDirName = pipe(normalizedRoot, split('/'), last()) ?? '';
 
-  const privateIdx = parts.findIndex(part =>
-    part.toLowerCase() === 'users' || part.toLowerCase() === 'home'
+  const privateIdx = parts.findIndex(
+    (part) => part.toLowerCase() === 'users' || part.toLowerCase() === 'home'
   );
 
   if (privateIdx !== -1) {

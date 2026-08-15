@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { scrubDangerousReferences, visitAndScrub } from './scrubber.ts';
 
 describe('scrubber', () => {
@@ -63,7 +63,10 @@ describe('scrubber', () => {
 
     test('removes top-level dangerous references', () => {
       const seen = new WeakSet();
-      const result = visitAndScrub({ a: 1, dangerous: globalThis }, seen) as Record<string, unknown>;
+      const result = visitAndScrub({ a: 1, dangerous: globalThis }, seen) as Record<
+        string,
+        unknown
+      >;
       expect(Object.hasOwn(result, 'dangerous')).toBe(false);
       expect(result.a).toBe(1);
     });

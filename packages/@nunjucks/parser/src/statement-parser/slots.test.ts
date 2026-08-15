@@ -1,14 +1,14 @@
-import { describe, test, expect } from 'bun:test';
-import { createTokenizer, loc } from '@nunjucks/lexer';
-import { createParser } from '../index.ts';
-import { nextTokenOrNull } from '../cursor.ts';
-import { parseSlottedBody, buildDefaultBody } from './slots.ts';
-import { getNodeTypeName } from '@nunjucks/nodes';
+import { describe, expect, test } from 'bun:test';
+import { createTokenizer } from '@nunjucks/lexer';
 import type { Node } from '@nunjucks/nodes';
-import { asTokenStream, unwrap } from '../test-helpers.ts';
+import { getNodeTypeName } from '@nunjucks/nodes';
+import { loc } from '@nunjucks/shared';
+import { nextTokenOrNull } from '../cursor.ts';
+import { createParser } from '../index.ts';
+import { unwrap } from '../test-helpers.ts';
+import { buildDefaultBody, parseSlottedBody } from './slots.ts';
 
-const makeCtx = (src: string) =>
-  createParser(asTokenStream(createTokenizer(src)));
+const makeCtx = (src: string) => createParser(createTokenizer(src));
 
 const parseBody = (src: string) => {
   const ctx = makeCtx(`{% component x %}${src}{% endcomponent %}`);

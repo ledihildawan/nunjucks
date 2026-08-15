@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createState } from '../state.ts';
-import { tokenizeVariableStart, tokenizeVariableEnd } from './variable.ts';
+import { tokenizeVariableEnd, tokenizeVariableStart } from './variable.ts';
 
 describe('tokenizeVariableStart', () => {
   test('plain {{', () => {
