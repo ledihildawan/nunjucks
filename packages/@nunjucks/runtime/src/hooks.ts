@@ -10,7 +10,7 @@ const HOOK_EVENTS = Object.freeze({
   RENDER_ERROR: 'render:error',
 });
 
-type HookEvent = typeof HOOK_EVENTS[keyof typeof HOOK_EVENTS];
+type HookEvent = (typeof HOOK_EVENTS)[keyof typeof HOOK_EVENTS];
 
-export { HOOK_EVENTS };
 export type { HookEvent };
+export { HOOK_EVENTS };

@@ -1,6 +1,5 @@
-
-import { isSafeString } from './runtime-contract/safe-string.ts';
 import { isKeyedObject, isTypedArray } from '@nunjucks/lib';
+import { isSafeString } from './runtime-contract/safe-string.ts';
 
 type TestFn = (target: unknown, ...args: unknown[]) => boolean;
 
@@ -24,7 +23,11 @@ const BUILTIN_TESTS: Readonly<Record<string, TestFn>> = {
   zero: (target) => target === 0,
   finite: (target) => Number.isFinite(target),
   nan: (target) => Number.isNaN(target),
-  divisibleby: (target, divisor) => typeof target === 'number' && !Number.isNaN(target) && typeof divisor === 'number' && target % divisor === 0,
+  divisibleby: (target, divisor) =>
+    typeof target === 'number' &&
+    !Number.isNaN(target) &&
+    typeof divisor === 'number' &&
+    target % divisor === 0,
   between: (target, low, high) => Number(target) >= Number(low) && Number(target) <= Number(high),
   string: (target) => typeof target === 'string',
   lower: (target) => typeof target === 'string' && target === target.toLowerCase(),
@@ -32,16 +35,38 @@ const BUILTIN_TESTS: Readonly<Record<string, TestFn>> = {
   alpha: (target) => typeof target === 'string' && /^[a-zA-Z]+$/.test(target),
   alphanumeric: (target) => typeof target === 'string' && /^[a-zA-Z0-9]+$/.test(target),
   numeric: (target) => typeof target === 'string' && /^[0-9]+$/.test(target),
-  startswith: (target, prefix) => typeof target === 'string' && typeof prefix === 'string' && target.startsWith(prefix),
-  endswith: (target, suffix) => typeof target === 'string' && typeof suffix === 'string' && target.endsWith(suffix),
-  matches: (target, pattern) => typeof target === 'string' && (pattern instanceof RegExp ? pattern.test(target) : new RegExp(String(pattern)).test(target)),
-  empty: (target) => target === '' || target === null || target === undefined || (typeof target === 'object' && target !== null && 'length' in target && target.length === 0),
-  blank: (target) => typeof target === 'string' ? target.trim() === '' : (target === '' || target === null || target === undefined || (typeof target === 'object' && 'length' in target && target.length === 0)),
+  startswith: (target, prefix) =>
+    typeof target === 'string' && typeof prefix === 'string' && target.startsWith(prefix),
+  endswith: (target, suffix) =>
+    typeof target === 'string' && typeof suffix === 'string' && target.endsWith(suffix),
+  matches: (target, pattern) =>
+    typeof target === 'string' &&
+    (pattern instanceof RegExp ? pattern.test(target) : new RegExp(String(pattern)).test(target)),
+  empty: (target) =>
+    target === '' ||
+    target === null ||
+    target === undefined ||
+    (typeof target === 'object' && target !== null && 'length' in target && target.length === 0),
+  blank: (target) =>
+    typeof target === 'string'
+      ? target.trim() === ''
+      : target === '' ||
+        target === null ||
+        target === undefined ||
+        (typeof target === 'object' && 'length' in target && target.length === 0),
   contains: (target, item) => {
-    if (target == null) { return false; }
-    if (typeof target === 'string') { return target.includes(typeof item === 'string' ? item : String(item)); }
-    if (Array.isArray(target)) { return target.includes(item); }
-    if (target instanceof Set) { return target.has(item); }
+    if (target == null) {
+      return false;
+    }
+    if (typeof target === 'string') {
+      return target.includes(typeof item === 'string' ? item : String(item));
+    }
+    if (Array.isArray(target)) {
+      return target.includes(item);
+    }
+    if (target instanceof Set) {
+      return target.has(item);
+    }
     return false;
   },
   array: (target) => Array.isArray(target),
@@ -53,7 +78,8 @@ const BUILTIN_TESTS: Readonly<Record<string, TestFn>> = {
   bigint: (target) => typeof target === 'bigint',
   symbol: (target) => typeof target === 'symbol',
   function: (target) => typeof target === 'function',
-  asyncfunction: (target) => typeof target === 'function' && target.constructor.name === 'AsyncFunction',
+  asyncfunction: (target) =>
+    typeof target === 'function' && target.constructor.name === 'AsyncFunction',
   Map: (target) => target instanceof Map,
   Set: (target) => target instanceof Set,
   Date: (target) => target instanceof Date,
@@ -76,10 +102,14 @@ const runTest = <T = unknown>(
   ...args: unknown[]
 ): boolean => {
   const builtin = BUILTIN_TESTS[name];
-  if (builtin) { return builtin(target, ...args); }
+  if (builtin) {
+    return builtin(target, ...args);
+  }
   const envObj = env as { getTest?: (name: string) => TestFn | undefined } | null;
   const custom = envObj?.getTest?.(name);
-  if (typeof custom === 'function') { return custom(target, ...args); }
+  if (typeof custom === 'function') {
+    return custom(target, ...args);
+  }
   return false;
 };
 

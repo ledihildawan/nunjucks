@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import * as runtime from '@nunjucks/runtime';
 
 describe('@nunjucks/runtime barrel', () => {
@@ -19,7 +19,6 @@ describe('@nunjucks/runtime barrel', () => {
 
   test('exports sandbox helpers', () => {
     expect(typeof runtime.createSandboxedContext).toBe('function');
-    expect(typeof runtime.wrapMemberAccess).toBe('function');
   });
 
   test('exports operator helpers', () => {
@@ -32,8 +31,8 @@ describe('@nunjucks/runtime barrel', () => {
   test('exports safe-string and component helpers', () => {
     expect(typeof runtime.createSafeString).toBe('function');
     expect(typeof runtime.isSafeString).toBe('function');
-    expect(typeof runtime.makeKeywordArgs).toBe('function');
-    expect(typeof runtime.makeComponent).toBe('function');
+    expect(typeof runtime.createKeywordArgs).toBe('function');
+    expect(typeof runtime.createComponent).toBe('function');
   });
 
   test('exports constants', () => {

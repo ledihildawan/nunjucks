@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { suppressValue } from './index.ts';
 import { createSafeString } from './runtime-contract/safe-string.ts';
 
@@ -20,7 +20,7 @@ describe('suppressValue', () => {
 
   test('escapes all special characters', () => {
     expect(suppressValue('a&b<c>d"e\'f\\g', { autoescape: true })).toBe(
-      'a&amp;b&lt;c&gt;d&quot;e&#39;f&#92;g',
+      'a&amp;b&lt;c&gt;d&quot;e&#39;f&#92;g'
     );
   });
 

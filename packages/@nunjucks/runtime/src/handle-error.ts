@@ -1,13 +1,10 @@
-import { createLog, normalizeErrorMetadata, type ErrorContext } from '@nunjucks/error-formatter';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
+import { createLog, type ErrorContext, normalizeErrorMetadata } from '@nunjucks/error-formatter';
 import { MATCH_ANY_RE } from '@nunjucks/lib';
-import {
-  getLogContext,
-} from './error-context.ts';
+import { getLogContext } from './error-context.ts';
 
 // WHY: isErrorInstance narrows to Error. The lineno access at the call site uses optional chaining because Error doesn't guarantee lineno — only TemplateError (a subclass via Object.assign) has it. The type intersection `Error & { lineno?: ... }` documents this without claiming the field always exists.
-const isErrorInstance = (value: unknown): value is Error =>
-  value instanceof Error;
+const isErrorInstance = (value: unknown): value is Error => value instanceof Error;
 
 interface HandleErrorLocation {
   lineno: number | null;
@@ -36,9 +33,10 @@ function handleError(this: unknown, error: unknown, { lineno, colno }: HandleErr
 
   // WHY: merge the full catalog definition (causes, fixCode, fixComment, severity) with the resolved message. {subject} placeholders are left intact here — classify.ts replaces them at render time (single source of truth for placeholder substitution).
   const errorCode = metadata.code ?? 'RUNTIME_ERROR';
-  const catalogDef = errorCode && Object.hasOwn(ERROR_DEFINITIONS, errorCode)
-    ? ERROR_DEFINITIONS[errorCode as keyof typeof ERROR_DEFINITIONS]
-    : undefined;
+  const catalogDef =
+    errorCode && Object.hasOwn(ERROR_DEFINITIONS, errorCode)
+      ? ERROR_DEFINITIONS[errorCode as keyof typeof ERROR_DEFINITIONS]
+      : undefined;
 
   const thrown = createLog('error', {
     def: catalogDef

@@ -1,16 +1,16 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { nullishCoalesce } from '@nunjucks/lib/nullish-coalesce';
 import {
-  memberLookup,
-  optionalMemberLookup,
-  slice,
+  ACCESS_PATH,
+  getNullParentName,
   isNullAccessResult,
   isPropertyNotFoundResult,
-  getNullParentName,
+  memberLookup,
   NULL_MARKER,
+  optionalMemberLookup,
   PARENT_NAME,
-  ACCESS_PATH,
   PROP_NOT_FOUND,
+  slice,
 } from './member-access.ts';
 
 describe('memberLookup', () => {
@@ -52,14 +52,23 @@ describe('memberLookup', () => {
   });
 
   test('detects inherited properties via `in` operator on object target', () => {
-    class Alive { aliveMethod() { return 'inherited'; } }
+    class Alive {
+      aliveMethod() {
+        return 'inherited';
+      }
+    }
     const target = new Alive();
     const result = memberLookup(target, 'aliveMethod');
     expect(typeof result).toBe('function');
   });
 
   test('wraps function values with bound apply on the owning record', () => {
-    const target = { who: 'world', greet() { return `hi ${this.who}`; } };
+    const target = {
+      who: 'world',
+      greet() {
+        return `hi ${this.who}`;
+      },
+    };
     const fn = memberLookup(target, 'greet') as (...args: unknown[]) => unknown;
     expect(typeof fn).toBe('function');
     expect(fn()).toBe('hi world');
@@ -121,7 +130,9 @@ describe('slice', () => {
 
   test('basic slice with step=1 returns a shallow copy subrange', () => {
     expect(slice({ source: [1, 2, 3, 4, 5], start: 1, stop: 4, step: 1 })).toEqual([2, 3, 4]);
-    expect(slice({ source: [1, 2, 3, 4, 5], start: 0, stop: 5, step: null })).toEqual([1, 2, 3, 4, 5]);
+    expect(slice({ source: [1, 2, 3, 4, 5], start: 0, stop: 5, step: null })).toEqual([
+      1, 2, 3, 4, 5,
+    ]);
   });
 
   test('works on strings', () => {

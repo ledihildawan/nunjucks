@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { FATAL_STREAM_CODES, isFatalStreamError } from './stream-fatal-codes.ts';
 
 describe('FATAL_STREAM_CODES', () => {

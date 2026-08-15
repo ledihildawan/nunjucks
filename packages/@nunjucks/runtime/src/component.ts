@@ -13,17 +13,22 @@ interface ComponentContext {
 
 const createComponentContext = (
   props: Record<string, unknown>,
-  slots: SlotContext,
+  slots: SlotContext
 ): ComponentContext => ({ props, slots });
 
-interface MakeComponentOptions<A extends unknown[], R> {
+interface CreateComponentOptions<A extends unknown[], R> {
   argNames: string[];
   kwargNames: string[];
   func: (...args: A) => R;
   optionsArg?: boolean;
 }
 
-export function makeComponent<A extends unknown[], R>({ argNames, kwargNames, func, optionsArg = false }: MakeComponentOptions<A, R>): (...componentArgs: unknown[]) => R {
+export function createComponent<A extends unknown[], R>({
+  argNames,
+  kwargNames,
+  func,
+  optionsArg = false,
+}: CreateComponentOptions<A, R>): (...componentArgs: unknown[]) => R {
   return function component(this: unknown, ...componentArgs: unknown[]): R {
     const argCount = numArgs(componentArgs);
     const kwargs = { ...getKeywordArgs(componentArgs) };
@@ -43,32 +48,39 @@ export function makeComponent<A extends unknown[], R>({ argNames, kwargNames, fu
       return Reflect.apply(func, this, [optionsObj]) as R;
     }
 
-    const args = argCount > argNames.length
-      ? ((): unknown[] => {
-          const extraArgs = componentArgs.slice(argNames.length, argCount);
-          const extraKwargs = Object.fromEntries(
-            extraArgs
-              .map((value, i) => [kwargNames[i], value] as [string | undefined, unknown])
-              .filter((entry): entry is [string, unknown] => entry[0] !== undefined)
-          );
-          return [...componentArgs.slice(0, argNames.length), { ...kwargs, ...extraKwargs }];
-        })()
-      : argCount < argNames.length
+    const args =
+      argCount > argNames.length
         ? ((): unknown[] => {
-            const missingNames = argNames.slice(argCount);
-            const consumedSet = new Set(missingNames);
-            const remainingKwargs = makeKeywordArgs(
-              Object.fromEntries(Object.entries(kwargs).filter(([k]) => !consumedSet.has(k)))
+            const extraArgs = componentArgs.slice(argNames.length, argCount);
+            const extraKwargs = Object.fromEntries(
+              extraArgs
+                .map((value, i) => [kwargNames[i], value] as [string | undefined, unknown])
+                .filter((entry): entry is [string, unknown] => entry[0] !== undefined)
             );
-            return [...componentArgs.slice(0, argCount), ...missingNames.map(argument => kwargs[argument]), remainingKwargs];
+            return [...componentArgs.slice(0, argNames.length), { ...kwargs, ...extraKwargs }];
           })()
-        : componentArgs;
+        : argCount < argNames.length
+          ? ((): unknown[] => {
+              const missingNames = argNames.slice(argCount);
+              const consumedSet = new Set(missingNames);
+              const remainingKwargs = createKeywordArgs(
+                Object.fromEntries(Object.entries(kwargs).filter(([k]) => !consumedSet.has(k)))
+              );
+              return [
+                ...componentArgs.slice(0, argCount),
+                ...missingNames.map((argument) => kwargs[argument]),
+                remainingKwargs,
+              ];
+            })()
+          : componentArgs;
 
     return Reflect.apply(func, this, args) as R;
   };
 }
 
-export const makeKeywordArgs = <T extends Record<string, unknown>>(record: T): T & { keywords: true } => ({
+export const createKeywordArgs = <T extends Record<string, unknown>>(
+  record: T
+): T & { keywords: true } => ({
   ...record,
   keywords: true,
 });
@@ -94,5 +106,5 @@ export const numArgs = (args: unknown[]): number => {
   return len;
 };
 
-export { createComponentContext };
 export type { ComponentContext };
+export { createComponentContext };

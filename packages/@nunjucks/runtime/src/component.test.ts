@@ -1,15 +1,15 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import {
-  makeComponent,
-  makeKeywordArgs,
+  createComponent,
+  createKeywordArgs,
   getKeywordArgs,
   numArgs,
 } from '@nunjucks/runtime/component';
 
-describe('makeKeywordArgs', () => {
+describe('createKeywordArgs', () => {
   test('adds keywords flag to object', () => {
     const obj = { a: 1 };
-    const result = makeKeywordArgs(obj);
+    const result = createKeywordArgs(obj);
     expect(result.a).toBe(1);
     expect(result).not.toBe(obj);
     expect(result.keywords).toBe(true);
@@ -26,7 +26,7 @@ describe('numArgs', () => {
   });
 
   test('excludes keyword args from count', () => {
-    const args = [1, 2, makeKeywordArgs({ a: 1 })];
+    const args = [1, 2, createKeywordArgs({ a: 1 })];
     expect(numArgs(args)).toBe(2);
   });
 });
@@ -41,13 +41,13 @@ describe('getKeywordArgs', () => {
   });
 
   test('extracts keyword args from last position', () => {
-    const kwargs = makeKeywordArgs({ a: 1 });
+    const kwargs = createKeywordArgs({ a: 1 });
     expect(getKeywordArgs([1, kwargs])).toEqual({ a: 1, keywords: true });
   });
 
   test('merges multiple keyword args objects, later wins', () => {
-    const first = makeKeywordArgs({ a: 1, name: 'x' });
-    const second = makeKeywordArgs({ name: 'y', extra: true });
+    const first = createKeywordArgs({ a: 1, name: 'x' });
+    const second = createKeywordArgs({ name: 'y', extra: true });
     expect(getKeywordArgs([1, first, second])).toEqual({
       a: 1,
       name: 'y',
@@ -57,33 +57,53 @@ describe('getKeywordArgs', () => {
   });
 });
 
-describe('makeComponent', () => {
-  const add = makeComponent({ argNames: ['a', 'b'], kwargNames: [], func: (a: number, b: number) => a + b });
+describe('createComponent', () => {
+  const add = createComponent({
+    argNames: ['a', 'b'],
+    kwargNames: [],
+    func: (a: number, b: number) => a + b,
+  });
 
   test('calls func with positional args', () => {
     expect((add as (a: number, b: number) => number)(3, 4)).toBe(7);
   });
 
   test('passes extra args as unnamed kwargs', () => {
-    const macro = makeComponent({ argNames: ['a'], kwargNames: ['b'], func: (a: number, kwargs: { b?: number }) => a + (kwargs.b || 0) });
+    const macro = createComponent({
+      argNames: ['a'],
+      kwargNames: ['b'],
+      func: (a: number, kwargs: { b?: number }) => a + (kwargs.b || 0),
+    });
     expect((macro as (a: number, b: number) => number)(1, 2)).toBe(3);
   });
 
   test('fills missing args from kwargs', () => {
-    const fn = makeComponent({ argNames: ['a', 'b'], kwargNames: [], func: (a: number, b: number, extra: { c?: number }) => a + b + (extra.c || 0) });
-    const kwargs = makeKeywordArgs({ b: 10 });
+    const fn = createComponent({
+      argNames: ['a', 'b'],
+      kwargNames: [],
+      func: (a: number, b: number, extra: { c?: number }) => a + b + (extra.c || 0),
+    });
+    const kwargs = createKeywordArgs({ b: 10 });
     expect((fn as (a: number, kwargs: { b: number }) => number)(5, kwargs)).toBe(15);
   });
 
   test('extra positional args fill kwarg names', () => {
-    const macro = makeComponent({ argNames: ['a'], kwargNames: ['b'], func: (a: number, kwargs: { b?: number }) => a + (kwargs.b || 0) });
+    const macro = createComponent({
+      argNames: ['a'],
+      kwargNames: ['b'],
+      func: (a: number, kwargs: { b?: number }) => a + (kwargs.b || 0),
+    });
     expect((macro as (a: number, b: number) => number)(1, 2)).toBe(3);
   });
 
   test('preserves this context', () => {
-    const macro = makeComponent({ argNames: [], kwargNames: [], func: function (this: { val: number }) {
-      return this.val;
-    } });
+    const macro = createComponent({
+      argNames: [],
+      kwargNames: [],
+      func: function (this: { val: number }) {
+        return this.val;
+      },
+    });
     expect((macro as unknown as () => number).call({ val: 42 })).toBe(42);
   });
 });

@@ -1,7 +1,7 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import {
-  createSandboxedObject,
   createSandboxedContext,
+  createSandboxedObject,
   wrapMemberAccess,
 } from '@nunjucks/runtime/sandbox';
 import { isCodeExecutionPattern } from '@nunjucks/validators/security';
@@ -10,21 +10,30 @@ describe('Sandbox Property-Based Tests', () => {
   describe('OBJECT_INTRINSICS own properties are blocked', () => {
     test('__proto__ as own property is blocked', () => {
       const obj = { __proto__: 'blocked', safe: 'value' };
-      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string, unknown>;
+      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<
+        string,
+        unknown
+      >;
       expect(() => sandboxed['__proto__']).toThrow();
       expect(sandboxed.safe).toBe('value');
     });
 
     test('constructor as own property is blocked', () => {
       const obj = { constructor: 'blocked', safe: 'value' };
-      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string, unknown>;
+      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<
+        string,
+        unknown
+      >;
       expect(() => sandboxed['constructor']).toThrow();
       expect(sandboxed.safe).toBe('value');
     });
 
     test('prototype as own property is blocked', () => {
       const obj = { prototype: 'blocked', safe: 'value' };
-      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string, unknown>;
+      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<
+        string,
+        unknown
+      >;
       expect(() => sandboxed['prototype']).toThrow();
       expect(sandboxed.safe).toBe('value');
     });
@@ -33,7 +42,10 @@ describe('Sandbox Property-Based Tests', () => {
       const dangerousOwnProps = ['__proto__', 'constructor', 'prototype'];
       for (const key of dangerousOwnProps) {
         const obj = { [key]: 'blocked', safeKey: 'visible' };
-        const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string, unknown>;
+        const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<
+          string,
+          unknown
+        >;
         expect(() => sandboxed[key]).toThrow();
         expect(sandboxed.safeKey).toBe('visible');
       }
@@ -41,7 +53,10 @@ describe('Sandbox Property-Based Tests', () => {
 
     test('inherited toString is NOT returned (returns undefined)', () => {
       const obj = { safe: 'value' };
-      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string, unknown>;
+      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<
+        string,
+        unknown
+      >;
       const result = sandboxed['toString'];
       expect(result).toBeUndefined();
     });
@@ -50,29 +65,64 @@ describe('Sandbox Property-Based Tests', () => {
   describe('Code execution functions are blocked', () => {
     test('setTimeout with string code throws', () => {
       const obj = { setTimeout: () => 'scheduled' };
-      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as { setTimeout: (...args: unknown[]) => unknown };
+      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as {
+        setTimeout: (...args: unknown[]) => unknown;
+      };
       expect(() => sandboxed.setTimeout('alert(1)', 0)).toThrow();
     });
 
     test('setInterval with string code throws', () => {
       const obj = { setInterval: () => 'scheduled' };
-      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as { setInterval: (...args: unknown[]) => unknown };
+      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as {
+        setInterval: (...args: unknown[]) => unknown;
+      };
       expect(() => sandboxed.setInterval('alert(1)', 0)).toThrow();
     });
 
     test('all CODE_EXECUTION patterns are detected', () => {
-      const codeExecPatterns = ['eval', 'Function', 'AsyncFunction', 'GeneratorFunction',
-        'AsyncGeneratorFunction', 'setTimeout', 'setInterval', 'setImmediate',
-        'requestAnimationFrame', 'queueMicrotask', 'exec', 'execFile', 'execSync',
-        'spawn', 'spawnSync', 'fork', 'import', 'importScripts', 'fetch',
-        'XMLHttpRequest', 'WebSocket', 'Worker', 'SharedWorker', 'WebAssembly'];
+      const codeExecPatterns = [
+        'eval',
+        'Function',
+        'AsyncFunction',
+        'GeneratorFunction',
+        'AsyncGeneratorFunction',
+        'setTimeout',
+        'setInterval',
+        'setImmediate',
+        'requestAnimationFrame',
+        'queueMicrotask',
+        'exec',
+        'execFile',
+        'execSync',
+        'spawn',
+        'spawnSync',
+        'fork',
+        'import',
+        'importScripts',
+        'fetch',
+        'XMLHttpRequest',
+        'WebSocket',
+        'Worker',
+        'SharedWorker',
+        'WebAssembly',
+      ];
       for (const key of codeExecPatterns) {
         expect(isCodeExecutionPattern(key)).toBe(true);
       }
     });
 
     test('safe functions are not detected as code execution', () => {
-      const safeKeys = ['map', 'filter', 'reduce', 'slice', 'forEach', 'find', 'some', 'every', 'includes'];
+      const safeKeys = [
+        'map',
+        'filter',
+        'reduce',
+        'slice',
+        'forEach',
+        'find',
+        'some',
+        'every',
+        'includes',
+      ];
       for (const key of safeKeys) {
         expect(isCodeExecutionPattern(key)).toBe(false);
       }
@@ -82,26 +132,44 @@ describe('Sandbox Property-Based Tests', () => {
   describe('Prototype pollution is blocked', () => {
     test('__proto__ setting throws', () => {
       const obj = { safe: 'value' };
-      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string, unknown>;
-      expect(() => { sandboxed['__proto__'] = {}; }).toThrow();
+      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<
+        string,
+        unknown
+      >;
+      expect(() => {
+        sandboxed['__proto__'] = {};
+      }).toThrow();
     });
 
     test('constructor setting throws', () => {
       const obj = { safe: 'value' };
-      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string, unknown>;
-      expect(() => { sandboxed['constructor'] = {}; }).toThrow();
+      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<
+        string,
+        unknown
+      >;
+      expect(() => {
+        sandboxed['constructor'] = {};
+      }).toThrow();
     });
 
     test('prototype setting throws', () => {
       const obj = { safe: 'value' };
-      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string, unknown>;
-      expect(() => { sandboxed['prototype'] = {}; }).toThrow();
+      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<
+        string,
+        unknown
+      >;
+      expect(() => {
+        sandboxed['prototype'] = {};
+      }).toThrow();
     });
 
     test('nested prototype pollution is blocked', () => {
       const inner = { data: 'secret' };
       const outer = { inner };
-      const sandboxed = createSandboxedObject({ value: outer, sandboxEnabled: true }) as Record<string, unknown>;
+      const sandboxed = createSandboxedObject({ value: outer, sandboxEnabled: true }) as Record<
+        string,
+        unknown
+      >;
       const innerSandboxed = sandboxed.inner as Record<string, unknown>;
       expect(() => innerSandboxed['__proto__']).toThrow();
     });
@@ -111,20 +179,22 @@ describe('Sandbox Property-Based Tests', () => {
     test('Symbol.toStringTag is allowed', () => {
       const tag = Symbol.toStringTag;
       const obj = { [tag]: 'SafeThing', name: 'visible' };
-      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string | symbol, unknown>;
+      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<
+        string | symbol,
+        unknown
+      >;
       expect(sandboxed[tag]).toBe('SafeThing');
       expect(sandboxed.name).toBe('visible');
     });
 
     test('unsafe symbol descriptions are blocked', () => {
-      const unsafeSymbols = [
-        Symbol('constructor'),
-        Symbol('prototype'),
-        Symbol('__proto__'),
-      ];
+      const unsafeSymbols = [Symbol('constructor'), Symbol('prototype'), Symbol('__proto__')];
       for (const sym of unsafeSymbols) {
         const obj = { [sym]: 'dangerous', safe: 'ok' };
-        const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string | symbol, unknown>;
+        const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<
+          string | symbol,
+          unknown
+        >;
         expect(() => sandboxed[sym]).toThrow();
       }
     });
@@ -132,7 +202,10 @@ describe('Sandbox Property-Based Tests', () => {
     test('anonymous symbols are blocked', () => {
       const anonSym = Symbol();
       const obj = { [anonSym]: 'dangerous' };
-      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string | symbol, unknown>;
+      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<
+        string | symbol,
+        unknown
+      >;
       expect(() => sandboxed[anonSym]).toThrow();
     });
   });
@@ -141,7 +214,10 @@ describe('Sandbox Property-Based Tests', () => {
     test('nested objects are also sandboxed', () => {
       const inner = { dangerous: 'hidden', safe: 'visible' };
       const outer = { inner, topLevelSafe: 'ok' };
-      const sandboxed = createSandboxedObject({ value: outer, sandboxEnabled: true }) as Record<string, unknown>;
+      const sandboxed = createSandboxedObject({ value: outer, sandboxEnabled: true }) as Record<
+        string,
+        unknown
+      >;
       const innerSandboxed = sandboxed.inner as Record<string, unknown>;
       expect(() => innerSandboxed['__proto__']).toThrow();
       expect(innerSandboxed.safe).toBe('visible');
@@ -151,19 +227,25 @@ describe('Sandbox Property-Based Tests', () => {
       const level3 = { key: 'secret' };
       const level2 = { level3 };
       const level1 = { level2 };
-      const sandboxed = createSandboxedObject({ value: level1, sandboxEnabled: true }) as Record<string, unknown>;
-      const l2 = (sandboxed.level2 as Record<string, unknown>);
-      const l3 = (l2.level3 as Record<string, unknown>);
+      const sandboxed = createSandboxedObject({ value: level1, sandboxEnabled: true }) as Record<
+        string,
+        unknown
+      >;
+      const l2 = sandboxed.level2 as Record<string, unknown>;
+      const l3 = l2.level3 as Record<string, unknown>;
       expect(() => l3['__proto__']).toThrow();
     });
 
     test('functions in nested objects are wrapped', () => {
       const inner = {
         setTimeout: () => 'scheduled',
-        safeFunc: () => 'safe'
+        safeFunc: () => 'safe',
       };
       const outer = { inner };
-      const sandboxed = createSandboxedObject({ value: outer, sandboxEnabled: true }) as Record<string, unknown>;
+      const sandboxed = createSandboxedObject({ value: outer, sandboxEnabled: true }) as Record<
+        string,
+        unknown
+      >;
       const innerSandboxed = sandboxed.inner as { setTimeout: (...args: unknown[]) => unknown };
       expect(() => innerSandboxed.setTimeout('alert(1)', 0)).toThrow();
     });
@@ -175,9 +257,12 @@ describe('Sandbox Property-Based Tests', () => {
         eval: 'dangerous',
         Function: 'dangerous',
         Proxy: 'dangerous',
-        safeKey: 'ok'
+        safeKey: 'ok',
       };
-      const sandboxed = createSandboxedContext({ context, sandboxEnabled: true }) as Record<string, unknown>;
+      const sandboxed = createSandboxedContext({ context, sandboxEnabled: true }) as Record<
+        string,
+        unknown
+      >;
       expect(() => sandboxed['eval']).toThrow();
       expect(() => sandboxed['Function']).toThrow();
       expect(() => sandboxed['Proxy']).toThrow();
@@ -189,9 +274,13 @@ describe('Sandbox Property-Based Tests', () => {
         process: 'dangerous',
         require: 'dangerous',
         global: 'dangerous',
-        safeKey: 'ok'
+        safeKey: 'ok',
       };
-      const sandboxed = createSandboxedContext({ context, sandboxEnabled: true, options: { environment: 'node' } }) as Record<string, unknown>;
+      const sandboxed = createSandboxedContext({
+        context,
+        sandboxEnabled: true,
+        options: { environment: 'node' },
+      }) as Record<string, unknown>;
       expect(() => sandboxed['process']).toThrow();
       expect(() => sandboxed['require']).toThrow();
       expect(() => sandboxed['global']).toThrow();
@@ -203,9 +292,13 @@ describe('Sandbox Property-Based Tests', () => {
         fetch: 'dangerous',
         XMLHttpRequest: 'dangerous',
         WebSocket: 'dangerous',
-        safeKey: 'ok'
+        safeKey: 'ok',
       };
-      const sandboxed = createSandboxedContext({ context, sandboxEnabled: true, options: { environment: 'browser' } }) as Record<string, unknown>;
+      const sandboxed = createSandboxedContext({
+        context,
+        sandboxEnabled: true,
+        options: { environment: 'browser' },
+      }) as Record<string, unknown>;
       expect(() => sandboxed['fetch']).toThrow();
       expect(() => sandboxed['XMLHttpRequest']).toThrow();
       expect(() => sandboxed['WebSocket']).toThrow();
@@ -216,13 +309,17 @@ describe('Sandbox Property-Based Tests', () => {
   describe('wrapMemberAccess security', () => {
     test('blocks access to own OBJECT_INTRINSICS', () => {
       const target = { __proto__: 'blocked', safe: 'ok' };
-      expect(() => wrapMemberAccess({ target, value: '__proto__', sandboxEnabled: true })).toThrow();
+      expect(() =>
+        wrapMemberAccess({ target, value: '__proto__', sandboxEnabled: true })
+      ).toThrow();
       expect(target.safe).toBe('ok');
     });
 
     test('blocks code execution patterns in function arguments', () => {
       const target = { setTimeout: () => 'result' };
-      const wrapped = wrapMemberAccess({ target, value: 'setTimeout', sandboxEnabled: true }) as { setTimeout: (...args: unknown[]) => unknown };
+      const wrapped = wrapMemberAccess({ target, value: 'setTimeout', sandboxEnabled: true }) as {
+        setTimeout: (...args: unknown[]) => unknown;
+      };
       expect(() => wrapped.setTimeout('alert(1)', 0)).toThrow();
     });
   });
@@ -247,13 +344,19 @@ describe('Sandbox Property-Based Tests', () => {
 
     test('accessing non-existent keys returns undefined', () => {
       const obj = { existing: 'value' };
-      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string, unknown>;
+      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<
+        string,
+        unknown
+      >;
       expect(sandboxed['nonExistent']).toBeUndefined();
     });
 
     test('has operator works correctly', () => {
       const obj = { existing: 'value', __proto__: 'blocked' };
-      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<string, unknown>;
+      const sandboxed = createSandboxedObject({ value: obj, sandboxEnabled: true }) as Record<
+        string,
+        unknown
+      >;
       expect('existing' in sandboxed).toBe(true);
       expect('nonExistent' in sandboxed).toBe(false);
     });

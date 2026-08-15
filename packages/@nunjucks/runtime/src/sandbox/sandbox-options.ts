@@ -17,5 +17,5 @@ const resolveSandboxOptions = (options: SandboxOptions = {}): ResolvedSandboxOpt
   environment: options.environment ?? 'auto',
 });
 
+export type { ResolvedSandboxOptions, SandboxOptions };
 export { resolveSandboxOptions };
-export type { SandboxOptions, ResolvedSandboxOptions };

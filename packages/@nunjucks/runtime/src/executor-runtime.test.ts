@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { isNullAccessResult, isPropertyNotFoundResult } from './member-access.ts';
 import { buildSandboxedRuntime, buildSandboxOptions } from './executor-runtime.ts';
+import { isNullAccessResult, isPropertyNotFoundResult } from './member-access.ts';
 import { createRenderRuntime } from './render-runtime.ts';
 
 describe('buildSandboxedRuntime', () => {

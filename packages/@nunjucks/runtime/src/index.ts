@@ -1,68 +1,64 @@
-export { createFrame, type Frame } from './frame.ts';
-export { createContext, type Env, type Context, type ContextMetadata, type BlockLocation, type BlockFn } from './context.ts';
+// WHY: collectString stays re-exported because core's render-stream.test.ts imports it from '@nunjucks/runtime'.
+export { collectString } from '@nunjucks/lib/collect-stream';
+export { awaitValue } from './await-value.ts';
+export { runTest } from './builtin-predicates.ts';
+export type { CallWrapOptions, InOperatorOptions } from './call-wrap.ts';
+export { callWrap, inOperator } from './call-wrap.ts';
+export { loadCompiledCode } from './code-loader.ts';
 export {
-  createSafeString,
-  isSafeString,
-  copySafeness,
-  markSafe,
-  type SafeString,
-} from './runtime-contract/safe-string.ts';
-export {
-  makeComponent,
-  makeKeywordArgs,
-  getKeywordArgs,
-  numArgs,
-  createComponentContext,
   type ComponentContext,
+  createComponent,
+  createComponentContext,
+  createKeywordArgs,
 } from './component.ts';
-export { createSlotContext, type SlotFn, type SlotContext } from './slots.ts';
+export {
+  type BlockFn,
+  type BlockLocation,
+  type Context,
+  type ContextMetadata,
+  createContext,
+  type Env,
+  type GetTemplateOptions,
+} from './context.ts';
+export { getLogContext } from './error-context.ts';
+export { createHtmlContextTracker, type HtmlContext } from './escaping/index.ts';
+export { type ExecuteConfig, execute, executeStream } from './executor.ts';
+export type { RunFilterOptions } from './filter-runtime.ts';
+export { runFilter } from './filter-runtime.ts';
+export { createFrame, type Frame } from './frame.ts';
+export { handleError } from './handle-error.ts';
+export {
+  HOOK_EVENTS,
+  type HookEvent,
+} from './hooks.ts';
+export { contextOrFrameLookup } from './lookups.ts';
 export {
   memberLookup,
   optionalMemberLookup,
   slice,
 } from './member-access.ts';
-export {
-  createSandboxedObject,
-  createSandboxedContext,
-  wrapMemberAccess,
-  resolveSandboxOptions,
-  type SandboxOptions,
-  type ResolvedSandboxOptions,
-} from './sandbox/index.ts';
-export { suppressValue } from './suppress-value.ts';
-export type { SuppressValueOptions } from './suppress-value.ts';
-export { awaitValue } from './await-value.ts';
-export { ensureDefined } from './undefined-resolution.ts';
-export type { EnsureDefinedOptions } from './undefined-resolution.ts';
-export { callWrap, inOperator } from './call-wrap.ts';
-export type { CallWrapOptions, InOperatorOptions } from './call-wrap.ts';
-export { contextOrFrameLookup } from './lookups.ts';
-export { handleError } from './handle-error.ts';
-export { getLogContext } from './error-context.ts';
-export { streamError, isStreamErrorSentinel, type StreamErrorSentinel } from './stream-error.ts';
-export { FATAL_STREAM_CODES, isFatalStreamError } from './stream-fatal-codes.ts';
-export {
-  HOOK_EVENTS,
-  type HookEvent,
-} from './hooks.ts';
-export {
-  UNDEFINED_MODES,
-  DEFAULT_UNDEFINED_MODE,
-  getUndefinedMode,
-  isValidUndefinedMode,
-  type UndefinedMode,
-} from './undefined.ts';
-export { runTest } from './builtin-predicates.ts';
-export { runFilter } from './filter-runtime.ts';
-export type { RunFilterOptions } from './filter-runtime.ts';
 export { createRenderRuntime } from './render-runtime.ts';
 export {
-  withTimeout,
-  type TimeoutError,
-  isTimeoutError,
-} from '@nunjucks/lib/async/timeout';
-export { execute, executeStream, type ExecuteConfig } from './executor.ts';
-export { loadCompiledCode } from './code-loader.ts';
-export { collectString, collectStream } from '@nunjucks/lib/collect-stream';
-export { escapeHtml } from '@nunjucks/lib/escape';
-export { escapeForContext, createHtmlContextTracker, type HtmlContext } from './escaping/index.ts';
+  copySafeness,
+  createSafeString,
+  isSafeString,
+  markSafe,
+  type SafeString,
+} from './runtime-contract/safe-string.ts';
+export {
+  createSandboxedContext,
+  type ResolvedSandboxOptions,
+  type SandboxOptions,
+} from './sandbox/index.ts';
+export { createSlotContext, type SlotContext, type SlotFn } from './slots.ts';
+export { isStreamErrorSentinel, type StreamErrorSentinel, streamError } from './stream-error.ts';
+export { FATAL_STREAM_CODES } from './stream-fatal-codes.ts';
+export type { SuppressValueOptions } from './suppress-value.ts';
+export { suppressValue } from './suppress-value.ts';
+export {
+  DEFAULT_UNDEFINED_MODE,
+  UNDEFINED_MODES,
+  type UndefinedMode,
+} from './undefined.ts';
+export type { EnsureDefinedOptions } from './undefined-resolution.ts';
+export { ensureDefined } from './undefined-resolution.ts';

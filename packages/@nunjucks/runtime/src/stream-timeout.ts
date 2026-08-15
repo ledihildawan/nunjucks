@@ -6,8 +6,14 @@ export interface StreamTimeoutError extends Error {
   kind: 'idle' | 'deadline';
 }
 
-export const createStreamTimeoutError = (timeoutMs: number, kind: 'idle' | 'deadline' = 'idle'): StreamTimeoutError => {
-  const label = kind === 'deadline' ? `exceeded total deadline of ${timeoutMs}ms` : `chunk timed out after ${timeoutMs}ms`;
+export const createStreamTimeoutError = (
+  timeoutMs: number,
+  kind: 'idle' | 'deadline' = 'idle'
+): StreamTimeoutError => {
+  const label =
+    kind === 'deadline'
+      ? `exceeded total deadline of ${timeoutMs}ms`
+      : `chunk timed out after ${timeoutMs}ms`;
   const error = new Error(`Stream ${label}`) as StreamTimeoutError;
   error.name = 'StreamTimeoutError';
   error.isStreamTimeout = true;
@@ -18,4 +24,6 @@ export const createStreamTimeoutError = (timeoutMs: number, kind: 'idle' | 'dead
 };
 
 export const isStreamTimeoutError = (value: unknown): value is StreamTimeoutError =>
-  typeof value === 'object' && value !== null && (value as { isStreamTimeout?: unknown }).isStreamTimeout === true;
+  typeof value === 'object' &&
+  value !== null &&
+  (value as { isStreamTimeout?: unknown }).isStreamTimeout === true;

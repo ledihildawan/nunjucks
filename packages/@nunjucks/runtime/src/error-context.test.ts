@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import type { ErrorDefinitionEntry, TemplateError } from '@nunjucks/error-formatter';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
+import type { ErrorDefinitionEntry, TemplateError } from '@nunjucks/error-formatter';
 import type { Phase } from '@nunjucks/shared';
 import { getLogContext, throwRuntimeError } from './error-context.ts';
 
@@ -62,9 +62,15 @@ describe('hasLogContext (module-private — exercised via getLogContext)', () =>
     renderContext: null,
   };
 
-  const carrierCases: ReadonlyArray<{ label: string; carrier: { logContext: typeof embeddedLogContext } & Record<string, unknown> }> = [
+  const carrierCases: ReadonlyArray<{
+    label: string;
+    carrier: { logContext: typeof embeddedLogContext } & Record<string, unknown>;
+  }> = [
     { label: 'object whose only key is logContext', carrier: { logContext: embeddedLogContext } },
-    { label: 'object with logContext alongside other keys', carrier: { logContext: embeddedLogContext, extra: 1 } },
+    {
+      label: 'object with logContext alongside other keys',
+      carrier: { logContext: embeddedLogContext, extra: 1 },
+    },
   ];
 
   test('returns true for carrier values, yielding the embedded logContext', () => {
@@ -122,7 +128,11 @@ describe('throwRuntimeError', () => {
 
   test('forwards the subject onto the error', () => {
     try {
-      throwRuntimeError(sampleDef, { runtimeContext: null, params: { name: 'x' }, subject: 'mySubject' });
+      throwRuntimeError(sampleDef, {
+        runtimeContext: null,
+        params: { name: 'x' },
+        subject: 'mySubject',
+      });
       throw new Error('throwRuntimeError did not throw');
     } catch (error) {
       expect((error as TemplateError).subject).toBe('mySubject');
@@ -140,7 +150,12 @@ describe('throwRuntimeError', () => {
 
   test('passes lineno and colno into the error context', () => {
     try {
-      throwRuntimeError(sampleDef, { runtimeContext: null, lineno: 17, colno: 4, params: { name: 'x' } });
+      throwRuntimeError(sampleDef, {
+        runtimeContext: null,
+        lineno: 17,
+        colno: 4,
+        params: { name: 'x' },
+      });
       throw new Error('throwRuntimeError did not throw');
     } catch (error) {
       const templateError = error as TemplateError;
@@ -191,7 +206,11 @@ describe('throwRuntimeError', () => {
       logContext: { templateName: 'embedded.njk', phase: 'render' as Phase, renderContext: null },
     };
     try {
-      throwRuntimeError(sampleDef, { runtimeContext: carrier, templateName: 'override.njk', params: { name: 'x' } });
+      throwRuntimeError(sampleDef, {
+        runtimeContext: carrier,
+        templateName: 'override.njk',
+        params: { name: 'x' },
+      });
       throw new Error('throwRuntimeError did not throw');
     } catch (error) {
       expect((error as TemplateError).templateName).toBe('override.njk');
@@ -231,7 +250,9 @@ describe('throwRuntimeError', () => {
   });
 
   test('is captured by the toThrow matcher', () => {
-    expect(() => throwRuntimeError(sampleDef, { runtimeContext: null, params: { name: 'x' } })).toThrow();
+    expect(() =>
+      throwRuntimeError(sampleDef, { runtimeContext: null, params: { name: 'x' } })
+    ).toThrow();
   });
 
   test('works against a real catalog definition (UNDEFINED_VARIABLE)', () => {

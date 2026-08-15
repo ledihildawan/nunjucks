@@ -1,22 +1,22 @@
-import { describe, test, expect } from 'bun:test';
-import { createSlotContext, createComponentContext } from '@nunjucks/runtime';
+import { describe, expect, test } from 'bun:test';
+import { createComponentContext, createSlotContext } from '@nunjucks/runtime';
 
-const fn = (_name: string, ret: unknown) => (..._args: unknown[]) => ret;
+const fn =
+  (_name: string, ret: unknown) =>
+  (..._args: unknown[]) =>
+    ret;
 
 describe('createSlotContext', () => {
   test('provided slot wins over fallback', () => {
     const ctx = createSlotContext(
       { title: fn('fallback', 'Default') },
-      { title: fn('provided', 'Custom') },
+      { title: fn('provided', 'Custom') }
     );
     expect(ctx('title')).toBe('Custom');
   });
 
   test('empty provided slot overrides fallback (explicit empty is a decision)', () => {
-    const ctx = createSlotContext(
-      { title: fn('fallback', 'Default') },
-      { title: fn('empty', '') },
-    );
+    const ctx = createSlotContext({ title: fn('fallback', 'Default') }, { title: fn('empty', '') });
     expect(ctx('title')).toBe('');
   });
 
@@ -33,7 +33,7 @@ describe('createSlotContext', () => {
   test('has() is provided-only: true for provided, false for fallback-only, false for missing', () => {
     const ctx = createSlotContext(
       { title: fn('fallback', 'Default') },
-      { footer: fn('provided', 'Footer') },
+      { footer: fn('provided', 'Footer') }
     );
     expect(ctx.has('footer')).toBe(true);
     expect(ctx.has('title')).toBe(false);
@@ -55,18 +55,12 @@ describe('createSlotContext', () => {
   });
 
   test('scoped props: args are forwarded to the SlotFn', () => {
-    const ctx = createSlotContext(
-      {},
-      { row: (item: unknown) => `row:${String(item)}` },
-    );
+    const ctx = createSlotContext({}, { row: (item: unknown) => `row:${String(item)}` });
     expect(ctx('row', 42)).toBe('row:42');
   });
 
   test('async SlotFn returns promise as-is (renderer awaits)', async () => {
-    const ctx = createSlotContext(
-      {},
-      { body: async () => 'async content' },
-    );
+    const ctx = createSlotContext({}, { body: async () => 'async content' });
     const ret = ctx('body');
     expect(ret).toBeInstanceOf(Promise);
     await expect(ret).resolves.toBe('async content');

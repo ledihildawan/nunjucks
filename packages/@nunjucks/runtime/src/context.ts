@@ -1,10 +1,13 @@
-import { createLog } from '@nunjucks/error-formatter';
-import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { IncludeChain } from '@nunjucks/error-formatter';
-import type { NodeLocation } from '@nunjucks/shared';
-import type { UndefinedMode } from '@nunjucks/runtime';
-import { find, reduce, keys } from 'remeda';
 import { collectString } from '@nunjucks/lib/collect-stream';
+import type { UndefinedMode } from '@nunjucks/runtime';
+import type { NodeLocation } from '@nunjucks/shared';
+import { find, keys, reduce } from 'remeda';
+import {
+  throwBlockNotFoundError,
+  throwBlockNotFunctionError,
+  throwNoSuperBlockError,
+} from './context-errors.ts';
 
 const CONTEXT_KEY = Symbol('Context');
 
@@ -24,7 +27,7 @@ export interface Env {
   getFilter: (name: string, lineno: number | null, colno: number | null) => unknown;
   getTest: (name: string, lineno: number | null, colno: number | null) => unknown;
   getExtension?: (name: string) => unknown;
-  getTemplate?: (nameOrOptions: string | GetTemplateOptions) => unknown;
+  getTemplate?: (options: GetTemplateOptions) => unknown;
   emit?: (event: string, ...args: unknown[]) => void;
   renderingTemplates?: Set<string | undefined>;
 }
@@ -75,7 +78,7 @@ interface MutableContext extends ReadOnlyContext {
   setVariable: (name: string, value: unknown) => Context;
   addBlock: (name: string, block: BlockFn) => Context;
   addExport: (name: string) => Context;
-  fork: (data?: Record<string, unknown>) => Context;
+  fork: (childContext?: Record<string, unknown>) => Context;
   validateBlocks: () => void;
   [key: symbol]: unknown;
 }
@@ -94,24 +97,6 @@ interface ContextState {
 
 const getKeys = (record: Record<string, unknown>): string[] => keys(record);
 
-const throwBlockNotFoundError = ({ name, location, lineno, colno }: { name: string; location: BlockLocation | undefined; lineno: number | null; colno: number | null }): never => {
-  throw createLog('error', {
-    def: ERROR_DEFINITIONS.UNDEFINED_BLOCK,
-    params: { name },
-    subject: name,
-    context: { lineno: lineno ?? location?.lineno ?? null, colno: colno ?? location?.colno ?? null, phase: 'render', lineBase: 'zero' },
-  });
-};
-
-const throwNoSuperBlockError = ({ name, lineno, colno }: { name: string; lineno: number | null; colno: number | null }): never => {
-  throw createLog('error', {
-    def: ERROR_DEFINITIONS.NO_SUPER_BLOCK,
-    params: { name },
-    subject: name,
-    context: { lineno, colno, phase: 'render', lineBase: 'zero' },
-  });
-};
-
 const createDefaultEnv = (): Env => ({
   opts: { dev: false, autoescape: true, undefined: 'default' },
   getFilter: () => null,
@@ -126,7 +111,7 @@ interface CreateContextOptions {
 }
 
 // WHY: the Context object is render-time execution state. The user-facing write methods (setVariable/addBlock/addExport/setParentBlockNames) return a NEW Context (immutable update) so generated code reassigns `context = context.setX(...)`; reads (lookup/getBlock/getSuper/getExported) are pure. validateBlocks is a pure check (no flag). parentContext/fork preserve the scope-chain. This keeps context-creation local while removing shared-reference mutation.
-const makeContext = (state: ContextState): Context => {
+const createContextFromState = (state: ContextState): Context => {
   const context: Context = {
     env: state.env,
     ctx: state.ctx,
@@ -137,7 +122,7 @@ const makeContext = (state: ContextState): Context => {
     parentContext: state.parentContext,
 
     setParentBlockNames(names: string[] | null): Context {
-      return makeContext({ ...state, parentBlockNames: names });
+      return createContextFromState({ ...state, parentBlockNames: names });
     },
 
     lookup(name: string): unknown {
@@ -145,13 +130,20 @@ const makeContext = (state: ContextState): Context => {
     },
 
     setVariable(name: string, value: unknown): Context {
-      return makeContext({ ...state, ctx: { ...state.ctx, [name]: value } });
+      return createContextFromState({ ...state, ctx: { ...state.ctx, [name]: value } });
     },
 
     addBlock(name: string, block: BlockFn): Context {
+      if (typeof block !== 'function') {
+        return throwBlockNotFunctionError({ name });
+      }
       const existing = state.blocks[name];
-      const next = existing ? (Array.isArray(existing) ? [...existing, block] : [existing, block]) : [block];
-      return makeContext({ ...state, blocks: { ...state.blocks, [name]: next } });
+      const next = existing
+        ? Array.isArray(existing)
+          ? [...existing, block]
+          : [existing, block]
+        : [block];
+      return createContextFromState({ ...state, blocks: { ...state.blocks, [name]: next } });
     },
 
     validateBlocks(): void {
@@ -159,7 +151,12 @@ const makeContext = (state: ContextState): Context => {
         const parentBlockNames = new Set(state.parentBlockNames);
         const blockName = find(getKeys(state.blocks), (name) => !parentBlockNames.has(name));
         if (blockName) {
-          throwBlockNotFoundError({ name: blockName, location: state.metadata.blockLocations?.[blockName], lineno: null, colno: null });
+          throwBlockNotFoundError({
+            name: blockName,
+            location: state.metadata.blockLocations?.[blockName],
+            lineno: null,
+            colno: null,
+          });
         }
       }
     },
@@ -178,7 +175,15 @@ const makeContext = (state: ContextState): Context => {
       return firstBlock as BlockFn;
     },
 
-    getSuper({ envObj, name, block, frame, runtime, lineno = null, colno = null }: GetSuperOptions): unknown {
+    getSuper({
+      envObj,
+      name,
+      block,
+      frame,
+      runtime,
+      lineno = null,
+      colno = null,
+    }: GetSuperOptions): unknown {
       const blockList = state.blocks[name];
       if (!blockList || !Array.isArray(blockList)) {
         return throwNoSuperBlockError({ name, lineno, colno });
@@ -189,21 +194,23 @@ const makeContext = (state: ContextState): Context => {
         return throwNoSuperBlockError({ name, lineno, colno });
       }
       // WHY: Option C — block functions are async generators; drain the super block into a string so it can be markSafe'd and used as a value. BlockFn is typed `=> unknown` (loose); the runtime guarantee is AsyncGenerator, hence the narrowing cast.
-      return collectString((parentBlock as BlockFn)(envObj, context, frame, runtime) as AsyncGenerator<string, unknown>);
+      return collectString(
+        (parentBlock as BlockFn)(envObj, context, frame, runtime) as AsyncGenerator<string, unknown>
+      );
     },
 
     addExport(name: string): Context {
-      return makeContext({ ...state, exported: [...state.exported, name] });
+      return createContextFromState({ ...state, exported: [...state.exported, name] });
     },
 
     getExported(): Record<string, unknown> {
       return Object.fromEntries(state.exported.map((name) => [name, state.ctx[name]]));
     },
 
-    fork(childVariables: Record<string, unknown> = {}): Context {
-      const child = makeContext({
+    fork(childContext: Record<string, unknown> = {}): Context {
+      const child = createContextFromState({
         env: state.env,
-        ctx: { ...childVariables },
+        ctx: { ...childContext },
         blocks: {},
         metadata: {},
         exported: [],
@@ -227,8 +234,13 @@ const makeContext = (state: ContextState): Context => {
   return context;
 };
 
-const createContext = ({ ctx = {}, blocks: initialBlocks = {}, env = null, metadata = {} }: CreateContextOptions = {}): Context => {
-  const context = makeContext({
+const createContext = ({
+  ctx = {},
+  blocks: initialBlocks = {},
+  env = null,
+  metadata = {},
+}: CreateContextOptions = {}): Context => {
+  const context = createContextFromState({
     env: env ?? createDefaultEnv(),
     ctx: { ...ctx },
     blocks: {},
@@ -238,14 +250,18 @@ const createContext = ({ ctx = {}, blocks: initialBlocks = {}, env = null, metad
     parentContext: null as Context | null,
   });
 
-  return reduce(getKeys(initialBlocks), (acc, name) => {
-    const block = initialBlocks[name];
-    if (block) {
-      return acc.addBlock(name, block as BlockFn);
-    }
-    return acc;
-  }, context);
+  return reduce(
+    getKeys(initialBlocks),
+    (acc, name) => {
+      const block = initialBlocks[name];
+      if (block) {
+        return acc.addBlock(name, block as BlockFn);
+      }
+      return acc;
+    },
+    context
+  );
 };
 
+export type { BlockFn, BlockLocation, Context, GetTemplateOptions };
 export { createContext };
-export type { BlockLocation, Context, BlockFn };

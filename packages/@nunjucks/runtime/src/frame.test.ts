@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createFrame } from '@nunjucks/runtime/frame';
 
 describe('Frame', () => {
@@ -22,9 +22,9 @@ describe('Frame', () => {
     expect(f.get('name')).toBe('Alice');
   });
 
-  test('get returns null for unset variable', () => {
+  test('get returns undefined for unset variable', () => {
     const f = createFrame();
-    expect(f.get('missing')).toBeNull();
+    expect(f.get('missing')).toBeUndefined();
   });
 
   test('set stores nested dotted path', () => {
@@ -39,14 +39,14 @@ describe('Frame', () => {
     let f = createFrame({ parent });
     f = f.set({ name: 'existing', value: 'newval', resolveUp: true });
     expect(f.lookup('existing')).toBe('newval');
-    expect(f.get('existing')).toBeNull();
+    expect(f.get('existing')).toBeUndefined();
   });
 
   test('set with resolveUp uses own frame if parent has no match', () => {
     const parent = createFrame();
     let f = createFrame({ parent });
     f = f.set({ name: 'own', value: 'val', resolveUp: true });
-    expect(parent.get('own')).toBeNull();
+    expect(parent.get('own')).toBeUndefined();
     expect(f.get('own')).toBe('val');
   });
 

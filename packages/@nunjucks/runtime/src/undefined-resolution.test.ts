@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { ensureDefined } from './index.ts';
 
 const propNotFound = (path = 'x', parent = 'obj') => ({
@@ -31,12 +31,18 @@ describe('ensureDefined', () => {
   });
 
   test('throws in strict mode for null/undefined', () => {
-    expect(() => ensureDefined(null, { lineno: 1, colno: 2, undefinedMode: 'strict' })).toThrow('Undefined value');
-    expect(() => ensureDefined(undefined, { lineno: 1, colno: 2, undefinedMode: 'strict' })).toThrow('Undefined value');
+    expect(() => ensureDefined(null, { lineno: 1, colno: 2, undefinedMode: 'strict' })).toThrow(
+      'Undefined value'
+    );
+    expect(() =>
+      ensureDefined(undefined, { lineno: 1, colno: 2, undefinedMode: 'strict' })
+    ).toThrow('Undefined value');
   });
 
   test('includes varName in strict error message', () => {
-    expect(() => ensureDefined(null, { lineno: 1, colno: 2, varName: 'myVar', undefinedMode: 'strict' })).toThrow("'myVar'");
+    expect(() =>
+      ensureDefined(null, { lineno: 1, colno: 2, varName: 'myVar', undefinedMode: 'strict' })
+    ).toThrow("'myVar'");
   });
 
   test('sets UNDEFINED_VARIABLE code with varName, UNDEFINED_VALUE without', () => {
@@ -54,7 +60,12 @@ describe('ensureDefined', () => {
 
   test('collects debug warnings when __warnings__ array is present', () => {
     const warnings: unknown[] = [];
-    const result = ensureDefined.call({ __warnings__: warnings }, undefined, { lineno: 1, colno: 2, varName: 'v', undefinedMode: 'debug' });
+    const result = ensureDefined.call({ __warnings__: warnings }, undefined, {
+      lineno: 1,
+      colno: 2,
+      varName: 'v',
+      undefinedMode: 'debug',
+    });
     expect(result).toBe('undefined');
     expect(warnings).toHaveLength(1);
   });
@@ -62,9 +73,13 @@ describe('ensureDefined', () => {
   test('prints to console.warn in debug mode when no collector exists', () => {
     const original = console.warn;
     let calls = 0;
-    console.warn = () => { calls += 1; };
+    console.warn = () => {
+      calls += 1;
+    };
     try {
-      expect(ensureDefined(undefined, { lineno: 1, colno: 2, varName: 'v', undefinedMode: 'debug' })).toBe('undefined');
+      expect(
+        ensureDefined(undefined, { lineno: 1, colno: 2, varName: 'v', undefinedMode: 'debug' })
+      ).toBe('undefined');
     } finally {
       console.warn = original;
     }
@@ -76,9 +91,9 @@ describe('ensureDefined', () => {
   });
 
   test('throws UNDEFINED_PROPERTY in strict mode for property-not-found result', () => {
-    expect(() => ensureDefined(propNotFound('name', 'user'), { lineno: 1, colno: 2, undefinedMode: 'strict' })).toThrow(
-      "Property 'name' not found",
-    );
+    expect(() =>
+      ensureDefined(propNotFound('name', 'user'), { lineno: 1, colno: 2, undefinedMode: 'strict' })
+    ).toThrow("Property 'name' not found");
     try {
       ensureDefined(propNotFound('name', 'user'), { lineno: 1, colno: 2, undefinedMode: 'strict' });
     } catch (e) {
@@ -91,9 +106,9 @@ describe('ensureDefined', () => {
   });
 
   test('throws NULL_VALUE in strict mode for null-access result', () => {
-    expect(() => ensureDefined(nullAccess('name', 'user'), { lineno: 1, colno: 2, undefinedMode: 'strict' })).toThrow(
-      "Cannot access 'name' on null",
-    );
+    expect(() =>
+      ensureDefined(nullAccess('name', 'user'), { lineno: 1, colno: 2, undefinedMode: 'strict' })
+    ).toThrow("Cannot access 'name' on null");
     try {
       ensureDefined(nullAccess('name', 'user'), { lineno: 1, colno: 2, undefinedMode: 'strict' });
     } catch (e) {
@@ -107,7 +122,12 @@ describe('ensureDefined', () => {
       __nunjucks_access_path__: 'x',
     };
     expect(() =>
-      ensureDefined(markerWithoutParent, { lineno: 1, colno: 2, varName: 'user.profile', undefinedMode: 'strict' }),
+      ensureDefined(markerWithoutParent, {
+        lineno: 1,
+        colno: 2,
+        varName: 'user.profile',
+        undefinedMode: 'strict',
+      })
     ).toThrow("in 'user'");
   });
 });

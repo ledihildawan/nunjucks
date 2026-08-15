@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
-import { contextOrFrameLookup } from './lookups.ts';
+import { describe, expect, test } from 'bun:test';
 import { fromIterator } from '@nunjucks/lib/from-iterator';
+import { contextOrFrameLookup } from './lookups.ts';
 
 describe('contextOrFrameLookup', () => {
   test('prefers frame value when defined', () => {

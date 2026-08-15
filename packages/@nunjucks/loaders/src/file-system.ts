@@ -1,13 +1,13 @@
-import { isArray, forEach } from 'remeda';
-import { readFile, stat, realpath } from 'node:fs/promises';
-import { watch, type FSWatcher, type Stats } from 'node:fs';
+import { type FSWatcher, type Stats, watch } from 'node:fs';
+import { readFile, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { createLoader, type Loader } from './base.ts';
-import { createLog } from '@nunjucks/error-formatter';
 import { getError } from '@nunjucks/error-catalog';
-import { ok, err, type Result } from '@nunjucks/lib';
 import type { TemplateError } from '@nunjucks/error-formatter';
+import { createLog } from '@nunjucks/error-formatter';
+import { err, ok, type Result } from '@nunjucks/lib';
 import { containsNullByte, isWithinBase } from '@nunjucks/lib/path-security';
+import { forEach, isArray } from 'remeda';
+import { createLoader, type Loader } from './base.ts';
 
 const normalizeSearchPaths = (searchPaths: string | string[] | undefined): string[] => {
   if (!searchPaths) {
@@ -25,35 +25,50 @@ const resolveFromSearchPath = (name: string) => (searchPath: string) => {
   return { basePath, fullPath };
 };
 
-const makeFilesystemError = (targetPath: string, message: string): TemplateError =>
-  createLog('error', { def: getError('FILESYSTEM_ERROR'), params: { msg: message }, subject: targetPath, context: { phase: 'load' } });
+const createFilesystemError = (targetPath: string, message: string): TemplateError =>
+  createLog('error', {
+    def: getError('FILESYSTEM_ERROR'),
+    params: { msg: message },
+    subject: targetPath,
+    context: { phase: 'load' },
+  });
 
 const directoryError = (fullPath: string): Result<never, TemplateError> =>
-  err(makeFilesystemError(fullPath, `EISDIR: illegal operation - path is a directory: ${fullPath}`));
+  err(
+    createFilesystemError(fullPath, `EISDIR: illegal operation - path is a directory: ${fullPath}`)
+  );
 
 const hasErrorCode = (e: unknown): e is { code: string } =>
   e !== null && typeof e === 'object' && 'code' in e;
 
-const isFileNotFoundError = (e: unknown): boolean =>
-  hasErrorCode(e) && e.code === 'ENOENT';
+const isFileNotFoundError = (e: unknown): boolean => hasErrorCode(e) && e.code === 'ENOENT';
 
-const basePathNotFoundError = (basePath: string, baseErr: unknown): Result<never, TemplateError> => {
+const basePathNotFoundError = (
+  basePath: string,
+  baseErr: unknown
+): Result<never, TemplateError> => {
   const message = isFileNotFoundError(baseErr)
     ? `ENOENT: no such file or directory: ${basePath}`
     : String(baseErr);
-  return err(makeFilesystemError(basePath, message));
+  return err(createFilesystemError(basePath, message));
 };
 
-const resolveRealPaths = async (basePath: string, fullPath: string): Promise<Result<{ realBase: string; realFull: string }, TemplateError>> => {
+const resolveRealPaths = async (
+  basePath: string,
+  fullPath: string
+): Promise<Result<{ realBase: string; realFull: string }, TemplateError>> => {
   try {
     const [realBase, realFull] = await Promise.all([realpath(basePath), realpath(fullPath)]);
     return ok({ realBase, realFull });
   } catch (e: unknown) {
-    return err(makeFilesystemError(fullPath, `realpath failed: ${String(e)}`));
+    return err(createFilesystemError(fullPath, `realpath failed: ${String(e)}`));
   }
 };
 
-const existsAndWithinBase = async (basePath: string, fullPath: string): Promise<Result<boolean, TemplateError>> => {
+const existsAndWithinBase = async (
+  basePath: string,
+  fullPath: string
+): Promise<Result<boolean, TemplateError>> => {
   let fileStat: Stats;
   try {
     fileStat = await stat(fullPath);
@@ -66,7 +81,7 @@ const existsAndWithinBase = async (basePath: string, fullPath: string): Promise<
         return basePathNotFoundError(basePath, baseErr);
       }
     }
-    return err(makeFilesystemError(fullPath, String(e)));
+    return err(createFilesystemError(fullPath, String(e)));
   }
 
   if (fileStat.isDirectory()) {
@@ -80,9 +95,14 @@ const existsAndWithinBase = async (basePath: string, fullPath: string): Promise<
   return ok(isWithinBase(realPathResult.value.realBase, realPathResult.value.realFull));
 };
 
-const findFileInSearchPaths = async (searchPaths: readonly string[], name: string): Promise<Result<string, TemplateError> | null> => {
+const findFileInSearchPaths = async (
+  searchPaths: readonly string[],
+  name: string
+): Promise<Result<string, TemplateError> | null> => {
   const [first, ...rest] = searchPaths;
-  if (first === undefined) { return null; }
+  if (first === undefined) {
+    return null;
+  }
   const { basePath, fullPath } = resolveFromSearchPath(name)(first);
   const result = await existsAndWithinBase(basePath, fullPath);
   if (result.ok && !result.value) {
@@ -94,15 +114,19 @@ const findFileInSearchPaths = async (searchPaths: readonly string[], name: strin
   return ok(fullPath);
 };
 
-const readFileSource = async (fullPath: string): Promise<Result<{ path: string; src: string } | null, TemplateError>> => {
+const readFileSource = async (
+  fullPath: string
+): Promise<Result<{ path: string; src: string } | null, TemplateError>> => {
   try {
     return ok({
       src: await readFile(fullPath, 'utf-8'),
-      path: fullPath
+      path: fullPath,
     });
   } catch (e: unknown) {
-    if (isFileNotFoundError(e)) { return ok(null); }
-    return err(makeFilesystemError(fullPath, String(e)));
+    if (isFileNotFoundError(e)) {
+      return ok(null);
+    }
+    return err(createFilesystemError(fullPath, String(e)));
   }
 };
 
@@ -114,13 +138,18 @@ interface CreateWatchHandlerOptions {
   onRename: (filePath: string) => void;
 }
 
-const createWatchHandler = ({ filePath, emit, onRename }: CreateWatchHandlerOptions) =>
+const createWatchHandler =
+  ({ filePath, emit, onRename }: CreateWatchHandlerOptions) =>
   (eventType: string, filename: string | null) => {
-    if (!isFileChangeEvent(eventType)) { return; }
+    if (!isFileChangeEvent(eventType)) {
+      return;
+    }
 
     emit('update', filename ?? filePath, filePath);
 
-    if (eventType === 'rename') { onRename(filePath); }
+    if (eventType === 'rename') {
+      onRename(filePath);
+    }
   };
 
 export interface FileSystemLoaderSource {
@@ -144,7 +173,10 @@ export interface FileSystemLoader extends Loader {
   unwatchAll: () => void;
 }
 
-export const createFileSystemLoader = (searchPaths: string | string[] | undefined, options: FileSystemLoaderOptions = {}): FileSystemLoader => {
+export const createFileSystemLoader = (
+  searchPaths: string | string[] | undefined,
+  options: FileSystemLoaderOptions = {}
+): FileSystemLoader => {
   const base = createLoader();
   const normalizedSearchPaths = normalizeSearchPaths(searchPaths);
   const watchedFiles = new Map<string, FSWatcher>();
@@ -160,11 +192,16 @@ export const createFileSystemLoader = (searchPaths: string | string[] | undefine
   };
 
   const watchFile = (filePath: string): void => {
-    if (watchedFiles.has(filePath)) { return; }
+    if (watchedFiles.has(filePath)) {
+      return;
+    }
 
     let watcher: FSWatcher;
     try {
-      watcher = watch(filePath, createWatchHandler({ filePath, emit: base.emit, onRename: unwatchFile }));
+      watcher = watch(
+        filePath,
+        createWatchHandler({ filePath, emit: base.emit, onRename: unwatchFile })
+      );
     } catch (err: unknown) {
       base.emit('error', err);
       return;
@@ -179,20 +216,34 @@ export const createFileSystemLoader = (searchPaths: string | string[] | undefine
     watchedFiles.clear();
   };
 
-  const getSource = async (name: string): Promise<Result<FileSystemLoaderSource, TemplateError> | null> => {
-    if (containsNullByte(name)) { return null; }
+  const getSource = async (
+    name: string
+  ): Promise<Result<FileSystemLoaderSource, TemplateError> | null> => {
+    if (containsNullByte(name)) {
+      return null;
+    }
 
     const pathResult = await findFileInSearchPaths(normalizedSearchPaths, name);
-    if (pathResult === null) { return null; }
-    if (!pathResult.ok) { return err(pathResult.error); }
+    if (pathResult === null) {
+      return null;
+    }
+    if (!pathResult.ok) {
+      return err(pathResult.error);
+    }
 
     const fullPath = pathResult.value;
     pathsToNames.set(fullPath, name);
-    if (watchEnabled) { watchFile(fullPath); }
+    if (watchEnabled) {
+      watchFile(fullPath);
+    }
 
     const sourceResult = await readFileSource(fullPath);
-    if (!sourceResult.ok) { return err(sourceResult.error); }
-    if (sourceResult.value === null) { return null; }
+    if (!sourceResult.ok) {
+      return err(sourceResult.error);
+    }
+    if (sourceResult.value === null) {
+      return null;
+    }
 
     const source: FileSystemLoaderSource = { ...sourceResult.value };
     base.emit('load', name, source);

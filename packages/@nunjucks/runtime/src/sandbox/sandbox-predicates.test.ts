@@ -1,10 +1,10 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { resolveSandboxOptions } from './sandbox-options.ts';
 import {
   DANGEROUS_OBJECT_INTRINSICS,
-  isBlockedSymbol,
   isAllowedKey,
   isBlockedAtScope,
+  isBlockedSymbol,
   isInternalKey,
 } from './sandbox-predicates.ts';
 
@@ -49,22 +49,36 @@ describe('isAllowedKey', () => {
 
 describe('isBlockedAtScope', () => {
   test('never blocks symbol keys', () => {
-    expect(isBlockedAtScope({ key: Symbol.iterator, sandboxOptions: nodeOpts, topLevel: true })).toBe(false);
+    expect(
+      isBlockedAtScope({ key: Symbol.iterator, sandboxOptions: nodeOpts, topLevel: true })
+    ).toBe(false);
   });
 
   test('returns false for keys with no category', () => {
-    expect(isBlockedAtScope({ key: 'safeKey', sandboxOptions: nodeOpts, topLevel: true })).toBe(false);
+    expect(isBlockedAtScope({ key: 'safeKey', sandboxOptions: nodeOpts, topLevel: true })).toBe(
+      false
+    );
   });
 
   test('blocks object intrinsics at every level', () => {
-    expect(isBlockedAtScope({ key: '__proto__', sandboxOptions: nodeOpts, topLevel: true })).toBe(true);
-    expect(isBlockedAtScope({ key: '__proto__', sandboxOptions: nodeOpts, topLevel: false })).toBe(true);
-    expect(isBlockedAtScope({ key: 'constructor', sandboxOptions: nodeOpts, topLevel: false })).toBe(true);
+    expect(isBlockedAtScope({ key: '__proto__', sandboxOptions: nodeOpts, topLevel: true })).toBe(
+      true
+    );
+    expect(isBlockedAtScope({ key: '__proto__', sandboxOptions: nodeOpts, topLevel: false })).toBe(
+      true
+    );
+    expect(
+      isBlockedAtScope({ key: 'constructor', sandboxOptions: nodeOpts, topLevel: false })
+    ).toBe(true);
   });
 
   test('blocks other categorised keys only at top level', () => {
-    expect(isBlockedAtScope({ key: 'process', sandboxOptions: nodeOpts, topLevel: true })).toBe(true);
-    expect(isBlockedAtScope({ key: 'process', sandboxOptions: nodeOpts, topLevel: false })).toBe(false);
+    expect(isBlockedAtScope({ key: 'process', sandboxOptions: nodeOpts, topLevel: true })).toBe(
+      true
+    );
+    expect(isBlockedAtScope({ key: 'process', sandboxOptions: nodeOpts, topLevel: false })).toBe(
+      false
+    );
   });
 });
 

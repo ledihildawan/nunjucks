@@ -1,4 +1,4 @@
-import { escapeHtml, escapeAttribute, escapeScriptString, escapeStyle } from '@nunjucks/lib/escape';
+import { escapeAttribute, escapeHtml, escapeScriptString, escapeStyle } from '@nunjucks/lib/escape';
 
 type HtmlContext = 'html' | 'attribute' | 'script' | 'style' | 'comment';
 
@@ -59,20 +59,29 @@ const scanScriptStyleContext = (before: string): ScriptStyleScan => {
   return { context: 'html', lastOpen: -1, lastClose: -1 };
 };
 
-const detectAttributeContext = (before: string, scriptStyleResult: ScriptStyleScan): HtmlContext => {
+const detectAttributeContext = (
+  before: string,
+  scriptStyleResult: ScriptStyleScan
+): HtmlContext => {
   if (scriptStyleResult.context !== 'html') {
     return scriptStyleResult.context;
   }
 
   const openTagMatch = UNCLOSED_OPEN_TAG_RE.exec(before);
-  if (!openTagMatch) { return 'html'; }
+  if (!openTagMatch) {
+    return 'html';
+  }
 
   const openTagContent = before.slice(openTagMatch.index);
 
-  if (!openTagContent.includes('=')) { return 'html'; }
+  if (!openTagContent.includes('=')) {
+    return 'html';
+  }
 
   const equalsMatch = ATTRIBUTE_EQUALS_RE.exec(openTagContent);
-  if (!equalsMatch) { return 'html'; }
+  if (!equalsMatch) {
+    return 'html';
+  }
 
   const afterEquals = openTagContent.slice(equalsMatch.index + (equalsMatch[0]?.length ?? 0));
 
@@ -99,7 +108,10 @@ interface HtmlContextTracker {
 const createHtmlContextTracker = (source: string): HtmlContextTracker => {
   const lines = source.split('\n');
   const lineOffsets: number[] = lines.slice(0, -1).reduce<number[]>(
-    (acc, line) => { acc.push((acc.at(-1) ?? 0) + line.length + 1); return acc; },
+    (acc, line) => {
+      acc.push((acc.at(-1) ?? 0) + line.length + 1);
+      return acc;
+    },
     [0]
   );
 
@@ -113,9 +125,15 @@ const createHtmlContextTracker = (source: string): HtmlContextTracker => {
 
   return {
     getContextAtLineCol: (line, col) => contextBefore(source.slice(0, offsetOf(line, col))),
-    getContextAt: at => contextBefore(source.slice(0, at)),
+    getContextAt: (at) => contextBefore(source.slice(0, at)),
   };
 };
 
-export { escapeAttribute, escapeScriptString, escapeStyle, escapeForContext, createHtmlContextTracker };
 export type { HtmlContext };
+export {
+  createHtmlContextTracker,
+  escapeAttribute,
+  escapeForContext,
+  escapeScriptString,
+  escapeStyle,
+};

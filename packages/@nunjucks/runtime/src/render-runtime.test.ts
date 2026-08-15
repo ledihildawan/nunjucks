@@ -1,17 +1,33 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createRenderRuntime } from './render-runtime.ts';
 
 describe('createRenderRuntime', () => {
   test('returns all 23 helpers required by compiled code', () => {
     const rt = createRenderRuntime() as Record<string, unknown>;
     const required = [
-      'suppressValue', 'awaitValue', 'handleError', 'contextOrFrameLookup',
-      'memberLookup', 'optionalMemberLookup', 'slice', 'nullishCoalesce',
-      'inOperator', 'fromIterator', 'callWrap', 'ensureDefined',
-      'isSafeString', 'markSafe', 'copySafeness',
-      'createFrame', 'createSafeString', 'makeKeywordArgs', 'makeComponent',
-      'createSlotContext', 'createComponentContext',
-      'keys', 'runTest',
+      'suppressValue',
+      'awaitValue',
+      'handleError',
+      'contextOrFrameLookup',
+      'memberLookup',
+      'optionalMemberLookup',
+      'slice',
+      'nullishCoalesce',
+      'inOperator',
+      'fromIterator',
+      'callWrap',
+      'ensureDefined',
+      'isSafeString',
+      'markSafe',
+      'copySafeness',
+      'createFrame',
+      'createSafeString',
+      'makeKeywordArgs',
+      'makeComponent',
+      'createSlotContext',
+      'createComponentContext',
+      'keys',
+      'runTest',
     ];
     for (const key of required) {
       expect(typeof rt[key]).toBe('function');
@@ -25,7 +41,10 @@ describe('createRenderRuntime', () => {
   });
 
   test('with options includes __warnings__ and logContext', () => {
-    const rt = createRenderRuntime({ templateName: 'test.njk', renderContext: { x: 1 } }) as Record<string, unknown>;
+    const rt = createRenderRuntime({ templateName: 'test.njk', renderContext: { x: 1 } }) as Record<
+      string,
+      unknown
+    >;
     expect(Array.isArray(rt.__warnings__)).toBe(true);
     expect((rt.__warnings__ as unknown[]).length).toBe(0);
     expect((rt.logContext as { templateName: string }).templateName).toBe('test.njk');

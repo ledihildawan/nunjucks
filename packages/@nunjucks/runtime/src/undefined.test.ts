@@ -1,10 +1,5 @@
-import { describe, test, expect } from 'bun:test';
-import {
-  UNDEFINED_MODES,
-  DEFAULT_UNDEFINED_MODE,
-  isValidUndefinedMode,
-  getUndefinedMode
-} from './undefined.ts';
+import { describe, expect, test } from 'bun:test';
+import { DEFAULT_UNDEFINED_MODE, isValidUndefinedMode, UNDEFINED_MODES } from './undefined.ts';
 
 describe('UNDEFINED_MODES', () => {
   test('contains expected modes', () => {
@@ -34,32 +29,5 @@ describe('isValidUndefinedMode', () => {
     expect(isValidUndefinedMode('invalid')).toBe(false);
     expect(isValidUndefinedMode(null)).toBe(false);
     expect(isValidUndefinedMode(undefined)).toBe(false);
-  });
-});
-
-describe('getUndefinedMode', () => {
-  test('returns mode from opts when valid', () => {
-    expect(getUndefinedMode({ undefined: 'strict' })).toBe('strict');
-    expect(getUndefinedMode({ undefined: 'debug' })).toBe('debug');
-    expect(getUndefinedMode({ undefined: 'chainable' })).toBe('chainable');
-  });
-
-  test('returns default when opts.undefined is undefined', () => {
-    expect(getUndefinedMode({})).toBe('chainable');
-    expect(getUndefinedMode({ undefined: null })).toBe('chainable');
-    expect(getUndefinedMode({ undefined })).toBe('chainable');
-  });
-
-  test('returns default when opts.undefined is invalid', () => {
-    expect(getUndefinedMode({ undefined: 'invalid' })).toBe('chainable');
-    expect(getUndefinedMode({ undefined: 'strict ' })).toBe('chainable');
-  });
-
-  test('returns default when opts is null', () => {
-    expect(getUndefinedMode(null)).toBe('chainable');
-  });
-
-  test('returns default when opts is undefined', () => {
-    expect(getUndefinedMode(undefined)).toBe('chainable');
   });
 });

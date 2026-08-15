@@ -21,7 +21,10 @@ export const isSafeString = (value: unknown): value is SafeString => {
   return Boolean(value) && (value as { val?: unknown }).val !== undefined;
 };
 
-export const copySafeness = <T extends { toString: () => string }>(dest: unknown, target: T): SafeString | string => {
+export const copySafeness = <T extends { toString: () => string }>(
+  dest: unknown,
+  target: T
+): SafeString | string => {
   if (dest && (dest as { val?: unknown }).val !== undefined) {
     return createSafeString(target.toString());
   }

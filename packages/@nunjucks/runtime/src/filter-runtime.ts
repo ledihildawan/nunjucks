@@ -1,13 +1,15 @@
+import { err, isResultLike, isThenable, ok, type Result } from '@nunjucks/lib';
 import { awaitValue } from './await-value.ts';
-import { isThenable, isResultLike } from '@nunjucks/lib';
-import { ok, err, type Result } from '@nunjucks/lib';
 
 interface FilterEnv {
   getFilter: (name: string, lineno: number, colno: number) => (...args: unknown[]) => unknown;
 }
 
 const isFilterEnv = (env: unknown): env is FilterEnv =>
-  env !== null && typeof env === 'object' && 'getFilter' in env && typeof env.getFilter === 'function';
+  env !== null &&
+  typeof env === 'object' &&
+  'getFilter' in env &&
+  typeof env.getFilter === 'function';
 
 interface RunFilterOptions {
   env: unknown;
@@ -27,7 +29,9 @@ const isErrResult = (value: unknown): value is { ok: false; error: unknown } =>
 const runFilter = async (options: RunFilterOptions): Promise<Result<unknown, unknown>> => {
   const { env, name, lineno, colno, context, args } = options;
   if (!isFilterEnv(env)) {
-    return err(new TypeError('runFilter requires an environment exposing getFilter(name, lineno, colno)'));
+    return err(
+      new TypeError('runFilter requires an environment exposing getFilter(name, lineno, colno)')
+    );
   }
   try {
     const filter = env.getFilter(name, lineno, colno);
@@ -55,5 +59,5 @@ const runFilter = async (options: RunFilterOptions): Promise<Result<unknown, unk
   }
 };
 
-export { runFilter };
 export type { RunFilterOptions };
+export { runFilter };

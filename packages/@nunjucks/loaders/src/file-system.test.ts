@@ -1,17 +1,16 @@
-import { describe, test, expect, afterEach } from 'bun:test';
-import { mkdtemp, writeFile, mkdir, rm } from 'node:fs/promises';
+import { afterEach, describe, expect, test } from 'bun:test';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createFileSystemLoader } from './file-system.ts';
 import { isOk } from '@nunjucks/lib';
+import { createFileSystemLoader } from './file-system.ts';
 
 const tempDirs: string[] = [];
 
 afterEach(async () => {
-  while (tempDirs.length > 0) {
-    const dir = tempDirs.pop()!;
-    await rm(dir, { recursive: true, force: true }).catch(() => {});
-  }
+  await Promise.all(
+    tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true }).catch(() => {}))
+  );
 });
 
 const makeDir = async () => {
@@ -80,8 +79,10 @@ describe('getSource', () => {
   test('prefers first path when file exists in both', async () => {
     const dir1 = await makeDir();
     const dir2 = await makeDir();
-    await writeFile(join(dir1, 'both.njk'), 'from dir1');
-    await writeFile(join(dir2, 'both.njk'), 'from dir2');
+    await Promise.all([
+      writeFile(join(dir1, 'both.njk'), 'from dir1'),
+      writeFile(join(dir2, 'both.njk'), 'from dir2'),
+    ]);
     const loader = createFileSystemLoader([dir1, dir2]);
     const result = await loader.getSource('both.njk');
     expect(result).not.toBeNull();
@@ -160,8 +161,7 @@ describe('watch', () => {
     const dir = await makeDir();
     const f1 = join(dir, 'a.njk');
     const f2 = join(dir, 'b.njk');
-    await writeFile(f1, 'a');
-    await writeFile(f2, 'b');
+    await Promise.all([writeFile(f1, 'a'), writeFile(f2, 'b')]);
     const loader = createFileSystemLoader(dir, { watch: true });
     loader.watchFile(f1);
     loader.watchFile(f2);

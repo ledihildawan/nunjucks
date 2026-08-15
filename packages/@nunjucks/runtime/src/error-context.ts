@@ -1,5 +1,5 @@
-import { createLog } from '@nunjucks/error-formatter';
 import type { ErrorDefinitionEntry } from '@nunjucks/error-formatter';
+import { createLog } from '@nunjucks/error-formatter';
 import type { Phase } from '@nunjucks/shared';
 
 interface LogContextShape {
@@ -8,7 +8,9 @@ interface LogContextShape {
   renderContext: Record<string, unknown> | null;
 }
 
-const hasLogContext = (runtimeContext: unknown): runtimeContext is { logContext: LogContextShape } =>
+const hasLogContext = (
+  runtimeContext: unknown
+): runtimeContext is { logContext: LogContextShape } =>
   runtimeContext != null && typeof runtimeContext === 'object' && 'logContext' in runtimeContext;
 
 export const getLogContext = (runtimeContext: unknown): LogContextShape => {
@@ -29,7 +31,7 @@ interface ThrowRuntimeErrorOptions {
 
 export const throwRuntimeError = (
   def: ErrorDefinitionEntry,
-  { runtimeContext, lineno, colno, params, subject, templateName }: ThrowRuntimeErrorOptions,
+  { runtimeContext, lineno, colno, params, subject, templateName }: ThrowRuntimeErrorOptions
 ): never => {
   const ctx = getLogContext(runtimeContext);
   throw createLog('error', {

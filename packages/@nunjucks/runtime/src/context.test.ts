@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
-import { createContext } from '@nunjucks/runtime/context';
+import { describe, expect, test } from 'bun:test';
 import type { Env } from '@nunjucks/runtime/context';
+import { createContext } from '@nunjucks/runtime/context';
 
 const fakeEnv: Env = {
   opts: { dev: false, autoescape: true, undefined: 'default' },
@@ -59,6 +59,19 @@ describe('Context', () => {
     expect(Array.isArray(next.blocks.main)).toBe(true);
   });
 
+  test('addBlock throws a catalog error for a non-function block', () => {
+    const ctx = createContext({ env: fakeEnv });
+    try {
+      ctx.addBlock('main', 'not-a-function' as unknown as () => void);
+    } catch (e) {
+      expect((e as { code: string }).code).toBe('NOT_A_FUNCTION');
+      expect((e as { subject: string }).subject).toBe('main');
+      return;
+    }
+
+    throw new Error('Expected addBlock to throw');
+  });
+
   test('getBlock returns first block', () => {
     const fn = () => {};
     const ctx = createContext({ blocks: { main: fn }, env: fakeEnv });
@@ -84,11 +97,15 @@ describe('Context', () => {
   });
 
   test('validateBlocks uses centralized block location metadata', () => {
-    let ctx = createContext({ blocks: { missing: () => {} }, env: fakeEnv, metadata: {
-      blockLocations: {
-        missing: { lineno: 1, colno: 3 },
+    let ctx = createContext({
+      blocks: { missing: () => {} },
+      env: fakeEnv,
+      metadata: {
+        blockLocations: {
+          missing: { lineno: 1, colno: 3 },
+        },
       },
-    } });
+    });
     ctx = ctx.setParentBlockNames(['content']);
 
     try {
@@ -104,13 +121,17 @@ describe('Context', () => {
 
   test('getSuper throws when block not found', () => {
     const ctx = createContext({ env: fakeEnv });
-    expect(() => ctx.getSuper({ envObj: fakeEnv, name: 'main', block: () => {}, frame: null, runtime: null })).toThrow();
+    expect(() =>
+      ctx.getSuper({ envObj: fakeEnv, name: 'main', block: () => {}, frame: null, runtime: null })
+    ).toThrow();
   });
 
   test('getSuper throws when no next block', () => {
     const fn = () => {};
     const ctx = createContext({ blocks: { main: fn }, env: fakeEnv });
-    expect(() => ctx.getSuper({ envObj: fakeEnv, name: 'main', block: fn, frame: null, runtime: null })).toThrow('No super block available');
+    expect(() =>
+      ctx.getSuper({ envObj: fakeEnv, name: 'main', block: fn, frame: null, runtime: null })
+    ).toThrow('No super block available');
   });
 
   test('getSuper errors keep call location', () => {
@@ -118,7 +139,15 @@ describe('Context', () => {
     const ctx = createContext({ blocks: { main: fn }, env: fakeEnv });
 
     try {
-      ctx.getSuper({ envObj: fakeEnv, name: 'main', block: fn, frame: null, runtime: null, lineno: 3, colno: 9 });
+      ctx.getSuper({
+        envObj: fakeEnv,
+        name: 'main',
+        block: fn,
+        frame: null,
+        runtime: null,
+        lineno: 3,
+        colno: 9,
+      });
     } catch (e) {
       expect((e as { code: string }).code).toBe('NO_SUPER_BLOCK');
       expect((e as { lineno: number }).lineno).toBe(3);
@@ -132,10 +161,18 @@ describe('Context', () => {
   test('getSuper calls next block', async () => {
     const childBlock = (): unknown => 'child result';
     // WHY: Option C — block functions are async generators; the super block yields its content and getSuper drains it to a string.
-    const parentBlock = async function* generate(): AsyncGenerator<string> { yield 'parent result'; };
+    const parentBlock = async function* generate(): AsyncGenerator<string> {
+      yield 'parent result';
+    };
     let ctx = createContext({ blocks: { main: childBlock }, env: fakeEnv });
     ctx = ctx.addBlock('main', parentBlock);
-    const result = await ctx.getSuper({ envObj: fakeEnv, name: 'main', block: childBlock, frame: null, runtime: null });
+    const result = await ctx.getSuper({
+      envObj: fakeEnv,
+      name: 'main',
+      block: childBlock,
+      frame: null,
+      runtime: null,
+    });
     expect(result).toBe('parent result');
   });
 

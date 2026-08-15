@@ -1,9 +1,17 @@
 import { describe, expect, test } from 'bun:test';
-import { escapeForContext, escapeAttribute, escapeScriptString, escapeStyle, createHtmlContextTracker } from './escape-context.ts';
+import {
+  createHtmlContextTracker,
+  escapeAttribute,
+  escapeForContext,
+  escapeScriptString,
+  escapeStyle,
+} from './escape-context.ts';
 
 describe('escapeForContext', () => {
   test('html context escapes & < > " \' \\', () => {
-    expect(escapeForContext('a & <b> "c" \'d\' \\e', 'html')).toBe('a &amp; &lt;b&gt; &quot;c&quot; &#39;d&#39; &#92;e');
+    expect(escapeForContext('a & <b> "c" \'d\' \\e', 'html')).toBe(
+      'a &amp; &lt;b&gt; &quot;c&quot; &#39;d&#39; &#92;e'
+    );
   });
 
   test('attribute context escapes backtick too', () => {

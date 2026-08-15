@@ -1,18 +1,21 @@
-import { createLog } from '@nunjucks/error-formatter';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
+import { createLog } from '@nunjucks/error-formatter';
 import { isNonNullish, isThenable } from '@nunjucks/lib';
+import { getLogContext } from './error-context.ts';
 import { escapeForContext, type HtmlContext } from './escaping/index.ts';
 import { isSafeString } from './runtime-contract/safe-string.ts';
-import { getLogContext } from './error-context.ts';
 
-const JSON_SCALAR_RE = /^(?:true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')$/u;
+const JSON_SCALAR_RE =
+  /^(?:true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')$/u;
 const JSON_CONTAINER_RE = /^[[{]/u;
 const RAW_OR_ESCAPED_LT_RE = /<|&lt;/u;
 const ESCAPED_HTML_ENTITY_RE = /&[quot;<>]/u;
 const SCRIPT_VALUE_NOT_HANDLED = Symbol('scriptValueNotHandled');
 
 const escapeValue = (value: unknown, context: HtmlContext = 'html'): string => {
-  if (!isNonNullish(value)) { return ''; }
+  if (!isNonNullish(value)) {
+    return '';
+  }
   return escapeForContext(String(value), context);
 };
 
@@ -48,7 +51,11 @@ const isEscapedJsonLike = (value: unknown, stringValue: string): boolean =>
   JSON_SCALAR_RE.test(stringValue.trim()) ||
   JSON_CONTAINER_RE.test(stringValue);
 
-const suppressScriptValue = (runtimeContext: unknown, value: unknown, loc: LocationOptions): unknown => {
+const suppressScriptValue = (
+  runtimeContext: unknown,
+  value: unknown,
+  loc: LocationOptions
+): unknown => {
   const stringValue = String(value);
   if (!isScriptJsonLike(value, stringValue)) {
     return SCRIPT_VALUE_NOT_HANDLED;
@@ -67,10 +74,7 @@ const suppressEscapedValue = (
 ): string => {
   const stringValue = String(normalized);
   const escaped = escapeValue(stringValue, options.context);
-  if (
-    isEscapedJsonLike(normalized, stringValue) &&
-    ESCAPED_HTML_ENTITY_RE.test(escaped)
-  ) {
+  if (isEscapedJsonLike(normalized, stringValue) && ESCAPED_HTML_ENTITY_RE.test(escaped)) {
     throwEscapedJsonError(runtimeContext, options);
   }
   return escaped;

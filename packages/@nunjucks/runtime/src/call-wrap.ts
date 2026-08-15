@@ -1,12 +1,7 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { isArray, isKeyedObject, isPlainObject, isString } from '@nunjucks/lib';
-import {
-  getNullParentName,
-  isNullAccessResult,
-} from './member-access.ts';
-import {
-  throwRuntimeError,
-} from './error-context.ts';
+import { throwRuntimeError } from './error-context.ts';
+import { getNullParentName, isNullAccessResult } from './member-access.ts';
 
 const RESERVED_KEYWORD_CONTEXTS: Record<string, string> = {
   super: 'block that extends a parent template',
@@ -20,12 +15,7 @@ export interface CallWrapOptions {
   colno?: number;
 }
 
-function callWrap(
-  this: unknown,
-  target: unknown,
-  name: string,
-  options: CallWrapOptions,
-): unknown {
+function callWrap(this: unknown, target: unknown, name: string, options: CallWrapOptions): unknown {
   const { displayName, context, args, lineno, colno } = options;
   const messageName = displayName ?? name;
   if (RESERVED_KEYWORD_CONTEXTS[name]) {
@@ -69,7 +59,10 @@ export interface InOperatorOptions {
   colno?: number | null;
 }
 
-function inOperator(this: unknown, { key, value, lineno = null, colno = null }: InOperatorOptions): boolean {
+function inOperator(
+  this: unknown,
+  { key, value, lineno = null, colno = null }: InOperatorOptions
+): boolean {
   if (isArray(value) || isString(value)) {
     return (value as unknown[] | string).includes(key as never);
   }

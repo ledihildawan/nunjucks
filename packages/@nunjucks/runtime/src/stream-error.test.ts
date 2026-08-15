@@ -1,5 +1,5 @@
-import { describe, test, expect } from 'bun:test';
-import { streamError, isStreamErrorSentinel, type StreamErrorSentinel } from './stream-error.ts';
+import { describe, expect, test } from 'bun:test';
+import { isStreamErrorSentinel, type StreamErrorSentinel, streamError } from './stream-error.ts';
 
 describe('streamError', () => {
   test('returns a sentinel with the enriched error', () => {
@@ -48,7 +48,12 @@ describe('streamError fatal-code handling', () => {
 
 describe('isStreamErrorSentinel', () => {
   test('returns true for a StreamErrorSentinel', () => {
-    const sentinel: StreamErrorSentinel = { __nunjucks_stream_error__: true, error: new Error('x'), lineno: 0, colno: 0 };
+    const sentinel: StreamErrorSentinel = {
+      __nunjucks_stream_error__: true,
+      error: new Error('x'),
+      lineno: 0,
+      colno: 0,
+    };
     expect(isStreamErrorSentinel(sentinel)).toBe(true);
   });
 

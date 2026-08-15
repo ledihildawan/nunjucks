@@ -9,7 +9,7 @@ interface SlotContext {
 
 const createSlotContext = (
   fallbacks: Record<string, SlotFn>,
-  provided?: Record<string, SlotFn>,
+  provided?: Record<string, SlotFn>
 ): SlotContext => {
   const resolve = (name: string): SlotFn | undefined => {
     if (provided !== undefined && hasOwn(provided, name)) {
@@ -38,5 +38,5 @@ const createSlotContext = (
   return slot;
 };
 
+export type { SlotContext, SlotFn };
 export { createSlotContext };
-export type { SlotFn, SlotContext };
