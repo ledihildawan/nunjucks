@@ -54,7 +54,7 @@ const safeString = (str: unknown): SafeString => {
     return str;
   }
   const stringValue = isNonNullish(str) ? String(str) : '';
-  return markSafe(stringValue) as SafeString;
+  return markSafe(stringValue);
 };
 
 const safeHtml = (str: unknown): SafeString => {
@@ -62,7 +62,7 @@ const safeHtml = (str: unknown): SafeString => {
     return str;
   }
   const stringValue = isNonNullish(str) ? String(str) : '';
-  return markSafe(escapeHtml(stringValue)) as SafeString;
+  return markSafe(escapeHtml(stringValue));
 };
 
 const preserveSafe = (original: unknown, result: string): string =>

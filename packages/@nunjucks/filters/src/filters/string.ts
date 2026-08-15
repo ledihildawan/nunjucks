@@ -1,7 +1,7 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { err, ok, type Result } from '@nunjucks/lib';
-import { defaultTo, entries, join as joinRemeda, map, pipe, split } from 'remeda';
+import { defaultTo, join as joinRemeda, map, pipe, split } from 'remeda';
 import type { SafeString } from '../factory/index.ts';
 import {
   createFilter,
@@ -14,6 +14,7 @@ import {
   requireArrayError,
   safeHtml,
   safeString,
+  validateItemsHaveAttr,
 } from '../factory/index.ts';
 
 const capitalizeString = (s: string): string => {
@@ -103,8 +104,18 @@ const joinFilter = (
     return err(requireArrayError(values, ERROR_DEFINITIONS.JOIN_FILTER));
   }
   const resolvedDelimiter = defaultTo(delimiter, '');
-  const items = attr ? values.map((v) => (v as Record<string, unknown>)[attr]) : values;
-  return ok((items as unknown[]).join(resolvedDelimiter));
+  if (!attr) {
+    return ok(values.join(resolvedDelimiter));
+  }
+  const validatedResult = validateItemsHaveAttr({
+    items: values,
+    attr,
+    errorDef: ERROR_DEFINITIONS.JOIN_FILTER,
+  });
+  if (!validatedResult.ok) {
+    return err(validatedResult.error);
+  }
+  return ok(validatedResult.value.map((item) => item[attr]).join(resolvedDelimiter));
 };
 
 const lower = createStringFilter((s: string): string => s.toLowerCase());
@@ -148,18 +159,18 @@ const performReplace = (
 // WHY: returns `unknown` — when the needle or input cannot be resolved to a string, the
 // filter passes the input through untouched (nunjucks parity, pinned by tests); pretending
 // the result is always a string would be an unsound cast.
-const applyReplace = (
-  str: unknown,
-  old: unknown,
-  newValue: string,
-  maxCount?: number
-): unknown => {
-  if (old instanceof RegExp) {
+const applyReplace = ({
+  str,
+  old: oldValue,
+  newValue,
+  maxCount,
+}: ReplaceOptions): unknown => {
+  if (oldValue instanceof RegExp) {
     const resolvedString = resolveString(str);
-    return resolvedString === null ? String(str ?? '') : resolvedString.replace(old, newValue);
+    return resolvedString === null ? String(str ?? '') : resolvedString.replace(oldValue, newValue);
   }
   const max = maxCount ?? -1;
-  const oldStr = resolveOldString(old);
+  const oldStr = resolveOldString(oldValue);
   if (oldStr === null) {
     return str;
   }
@@ -187,12 +198,8 @@ interface ReplaceOptions {
   maxCount?: number;
 }
 
-const replaceImpl = ({
-  str,
-  old,
-  newValue,
-  maxCount,
-}: ReplaceOptions): Result<unknown, TemplateError> => ok(applyReplace(str, old, newValue, maxCount));
+const replaceImpl = (replaceOptions: ReplaceOptions): Result<unknown, TemplateError> =>
+  ok(applyReplace(replaceOptions));
 
 const replace = createFilter(['str', 'old', 'newValue', 'maxCount'], replaceImpl);
 
@@ -239,23 +246,6 @@ const truncate = createFilter(['input', 'length', 'killwords', 'end'], truncateI
 
 const upper = createStringFilter((s: string): string => s.toUpperCase());
 
-const urlencode = (queryParameters: unknown): Result<string, TemplateError> => {
-  const enc = encodeURIComponent;
-  if (typeof queryParameters === 'string') {
-    return ok(enc(queryParameters));
-  }
-  const keyvals = Array.isArray(queryParameters)
-    ? (queryParameters as [string, unknown][])
-    : entries(queryParameters as Record<string, unknown>);
-  return ok(
-    pipe(
-      keyvals,
-      map(([key, val]) => `${enc(key)}=${enc(String(val))}`),
-      joinRemeda('&')
-    )
-  );
-};
-
 export {
   capitalize,
   escape,
@@ -269,5 +259,4 @@ export {
   trim,
   truncate,
   upper,
-  urlencode,
 };

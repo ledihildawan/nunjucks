@@ -34,7 +34,15 @@ const getCollectionSize = (value: unknown): number =>
 
 const getObjectLength = (value: unknown): number => keys(value as Record<string, unknown>).length;
 
-const getValueLength = (value: unknown): number => (value as { length: number }).length;
+// WHY: nunjucks parity — values without a numeric `length` (numbers, booleans) report 0
+// instead of leaking `undefined` through a `number`-typed result.
+const getValueLength = (value: unknown): number => {
+  if (value === null || value === undefined) {
+    return 0;
+  }
+  const length = (value as { length?: unknown }).length;
+  return typeof length === 'number' ? length : 0;
+};
 
 const getLengthFromValue = (value: unknown): number => {
   if (isMapOrSet(value)) {

@@ -15,7 +15,6 @@ import {
   trim,
   truncate,
   upper,
-  urlencode,
 } from './string.ts';
 
 describe('filters/string', () => {
@@ -145,6 +144,11 @@ describe('filters/string', () => {
       const objectInputResult = joinFilter({ 0: 'a' });
       expect(isErr(objectInputResult)).toBe(true);
     });
+
+    test('returns error when an item lacks the requested attribute', () => {
+      const result = joinFilter([{ name: 'alice' }, null], '-', 'name');
+      expect(isErr(result)).toBe(true);
+    });
   });
 
   describe('lower', () => {
@@ -251,29 +255,6 @@ describe('filters/string', () => {
     });
   });
 
-  describe('urlencode', () => {
-    test('encodes a plain string', () => {
-      expect(getOrElse(urlencode('hello world'), null)).toBe('hello%20world');
-    });
-
-    test('encodes object key/value pairs', () => {
-      const params = { name: 'alice', age: '30' };
-      expect(getOrElse(urlencode(params), null)).toBe('name=alice&age=30');
-    });
-
-    test('encodes an iterable of pairs', () => {
-      const pairs = [
-        ['k', 'v'],
-        ['x', 'y'],
-      ];
-      expect(getOrElse(urlencode(pairs), null)).toBe('k=v&x=y');
-    });
-
-    test('encodes special characters', () => {
-      expect(getOrElse(urlencode('a=b&c=d'), null)).toBe('a%3Db%26c%3Dd');
-    });
-  });
-
   describe('result wrapping', () => {
     test('every unified filter returns an ok result', () => {
       expect(isOk(capitalize('hello'))).toBe(true);
@@ -281,7 +262,6 @@ describe('filters/string', () => {
       expect(isOk(upper('hello'))).toBe(true);
       expect(isOk(title('hello world'))).toBe(true);
       expect(isOk(trim('  x  '))).toBe(true);
-      expect(isOk(urlencode('a b'))).toBe(true);
       expect(isOk(truncate('hello', 2))).toBe(true);
       expect(isOk(tojson({ a: 1 }))).toBe(true);
       expect(isOk(fallback(null, 'def'))).toBe(true);

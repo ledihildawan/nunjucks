@@ -81,6 +81,11 @@ describe('filters/array', () => {
       expect(getOrElse(lengthFilter(false), null)).toBe(0);
     });
 
+    test('reports 0 for values without a numeric length', () => {
+      expect(getOrElse(lengthFilter(3), null)).toBe(0);
+      expect(getOrElse(lengthFilter(true), null)).toBe(0);
+    });
+
     test('returns an ok result', () => {
       expect(isOk(lengthFilter([1, 2]))).toBe(true);
     });
