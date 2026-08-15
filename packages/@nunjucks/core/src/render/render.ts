@@ -3,7 +3,6 @@ import type { TemplateError, TemplateWarning } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
 import { injectWarningsScript } from '@nunjucks/error-renderer';
 import { err, isErr, isKeyedObject, ok, type Result } from '@nunjucks/lib';
-import { createFileSystemLoader } from '@nunjucks/loaders';
 import { createFrame, type ExecuteConfig, execute } from '@nunjucks/runtime';
 import { getDefaultConfig } from '../config/global.ts';
 import { wrapWithLog } from '../diagnostics/diagnostics.ts';
@@ -14,6 +13,7 @@ import {
   compileTemplate,
   handleContextStrictMode,
   prepareSandbox,
+  resolveConfiguredLoader,
   resolveTemplateSource,
   TEMPLATE_FILE_EXTENSION_RE,
 } from './render-pipeline.ts';
@@ -193,7 +193,7 @@ const prepareRender = async (
   }
   const { warningsCollector, context: safeContext } = strictResult.value;
 
-  const loader = config.loader ?? (config.views ? createFileSystemLoader(config.views) : null);
+  const loader = config.loader ?? resolveConfiguredLoader(config);
   const sourceResult = await resolveTemplateSource({ template, loader, config });
   if (isErr(sourceResult)) {
     return err(

@@ -127,7 +127,7 @@ interface GlobalConfigBase {
   readonly filters: Readonly<Record<string, unknown>>;
   readonly globals: Readonly<Record<string, unknown>>;
   readonly extensions: Readonly<Record<string, unknown>>;
-  readonly views: string | null;
+  readonly views: string | string[] | null;
   readonly dompurify: DomPurifyConfig;
 }
 

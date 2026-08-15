@@ -42,7 +42,9 @@ interface StreamingConfig {
 
 interface NunjucksConfig {
   readonly dev?: boolean;
-  readonly views?: string;
+  // WHY: multi-root lookup mirrors createFileSystemLoader's searchPaths contract —
+  // templates resolve from the first root that has them.
+  readonly views?: string | string[];
   // WHY: custom loaders REPLACE filesystem resolution entirely (first-match-wins chain);
   // `views` is ignored when a non-empty chain is supplied — pass createFileSystemLoader(paths)
   // inside the array to combine custom sources with the filesystem.
@@ -64,7 +66,7 @@ interface NunjucksConfig {
 }
 
 interface PerRenderOverrides {
-  readonly views?: string;
+  readonly views?: string | string[];
   readonly templatePath?: string | null;
   readonly executionTimeout?: number;
   readonly streamContentType?: ContentType;

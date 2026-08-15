@@ -139,12 +139,16 @@ const validateStringArray = ({ value, subject, type }: StringArrayInput): Config
       ]
     : [];
 
+const isValidViewsValue = (views: unknown): boolean =>
+  typeof views === 'string' ||
+  (Array.isArray(views) && views.every((entry) => typeof entry === 'string'));
+
 const validateViews = (views: unknown): ConfigValidationError[] =>
-  views !== undefined && views !== null && typeof views !== 'string'
+  views !== undefined && views !== null && !isValidViewsValue(views)
     ? [
         {
           code: 'INVALID_CONFIG',
-          message: 'Invalid configuration: views must be a string path',
+          message: 'Invalid configuration: views must be a string path or an array of string paths',
           subject: 'views',
           type: 'path',
         },

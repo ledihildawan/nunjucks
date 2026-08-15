@@ -2,7 +2,7 @@ import { getError } from '@nunjucks/error-catalog';
 import type { TemplateError, TemplateWarning } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
 import { err, isErr, isKeyedObject, ok, type Result } from '@nunjucks/lib';
-import type { TemplateLoader } from '@nunjucks/loaders';
+import { createFileSystemLoader, type FileSystemLoader, type TemplateLoader } from '@nunjucks/loaders';
 import type { ParseOptions, ParserExtension } from '@nunjucks/parser';
 import { createSandboxedContext } from '@nunjucks/runtime';
 import { findContextDangerousValues } from '@nunjucks/validators';
@@ -245,10 +245,20 @@ const handleContextStrictMode = async (
   return ok({ warningsCollector: [scrubWarning], context: scrubbedContext });
 };
 
+// WHY: empty views array must NOT fall through to the loader's '.' default root.
+const resolveConfiguredLoader = (config: RenderConfig): FileSystemLoader | null => {
+  const views = config.views;
+  if (views === null || views === undefined || views.length === 0) {
+    return null;
+  }
+  return createFileSystemLoader(views);
+};
+
 export {
   compileTemplate,
   handleContextStrictMode,
   prepareSandbox,
+  resolveConfiguredLoader,
   resolveTemplateSource,
   TEMPLATE_FILE_EXTENSION_RE,
 };

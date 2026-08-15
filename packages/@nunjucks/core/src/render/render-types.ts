@@ -38,7 +38,7 @@ interface RenderConfig {
   scanContextValues?: boolean;
   blockedContextKeys?: readonly string[];
   env?: Env | null;
-  views?: string | null;
+  views?: string | string[] | null;
   templatePath?: string | null;
   jsCaller?: string | null;
   jsCallerErrorLine?: number | null;

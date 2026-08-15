@@ -141,16 +141,21 @@ const createNunjucks = (config: NunjucksConfig = {}): NunjucksEngine => {
   // Resolved per effective views (factory-time views OR a per-call override, e.g. Express's dirname(filePath)),
   // so a per-call views change creates/caches a loader within this factory only. GC'd when the factory is.
   const loaderCache = new Map<string, FileSystemLoader>();
-  const resolveLoader = (views: string | undefined): FileSystemLoader | null => {
-    if (!views) {
+  // WHY: JSON.stringify cache key — unambiguous identity for both a single path string and
+  // a multi-root array (join with any separator could collide with that separator in a path).
+  const loaderCacheKey = (views: string | string[]): string =>
+    typeof views === 'string' ? views : JSON.stringify(views);
+  const resolveLoader = (views: string | string[] | undefined): FileSystemLoader | null => {
+    if (!views || (Array.isArray(views) && views.length === 0)) {
       return null;
     }
-    const cached = loaderCache.get(views);
+    const cacheKey = loaderCacheKey(views);
+    const cached = loaderCache.get(cacheKey);
     if (cached) {
       return cached;
     }
     const loader = createFileSystemLoader(views);
-    loaderCache.set(views, loader);
+    loaderCache.set(cacheKey, loader);
     return loader;
   };
 

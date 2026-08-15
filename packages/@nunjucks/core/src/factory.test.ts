@@ -1,4 +1,7 @@
 import { describe, expect, test } from 'bun:test';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { isErr, isOk } from '@nunjucks/lib';
 import type { TemplateLoader } from '@nunjucks/loaders';
 import { createNunjucks } from './factory.ts';
@@ -232,6 +235,28 @@ describe('createNunjucks', () => {
     if (isOk(result)) {
       expect(result.value).toBe('from custom');
     }
+  });
+
+  test('views as an array resolves from multiple roots (first match wins)', async () => {
+    const rootPrimary = await mkdtemp(join(tmpdir(), 'nunjucks-views-primary-'));
+    const rootFallback = await mkdtemp(join(tmpdir(), 'nunjucks-views-fallback-'));
+    await writeFile(join(rootPrimary, 'shared.njk'), 'from primary');
+    await writeFile(join(rootFallback, 'shared.njk'), 'from fallback');
+    await writeFile(join(rootFallback, 'only-fallback.njk'), 'fallback exclusive');
+    try {
+      const engine = createNunjucks({ views: [rootPrimary, rootFallback] });
+      const shared = await engine.render('shared.njk');
+      const exclusive = await engine.render('only-fallback.njk');
+      expect(isOk(shared) && shared.value).toBe('from primary');
+      expect(isOk(exclusive) && exclusive.value).toBe('fallback exclusive');
+    } finally {
+      await rm(rootPrimary, { recursive: true, force: true });
+      await rm(rootFallback, { recursive: true, force: true });
+    }
+  });
+
+  test('invalid config: views array with non-string entries is rejected', () => {
+    expect(() => createNunjucks({ views: [1, 2] as unknown as string[] })).toThrow('views');
   });
 
   test('invalid config: non-function filter is rejected at factory creation', () => {
