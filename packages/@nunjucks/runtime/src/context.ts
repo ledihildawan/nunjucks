@@ -1,8 +1,8 @@
 import type { IncludeChain } from '@nunjucks/error-formatter';
 import { collectString } from '@nunjucks/lib/collect-stream';
-import type { UndefinedMode } from '@nunjucks/runtime';
 import type { NodeLocation } from '@nunjucks/shared';
 import { find, keys, reduce } from 'remeda';
+import type { UndefinedMode } from './runtime-contract/undefined-modes.ts';
 import {
   throwBlockNotFoundError,
   throwBlockNotFunctionError,

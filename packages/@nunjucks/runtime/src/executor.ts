@@ -1,3 +1,4 @@
+import { ERROR_CODES } from '@nunjucks/error-catalog';
 import { collectString } from '@nunjucks/lib/collect-stream';
 import type { Environment, SandboxMode } from '@nunjucks/shared';
 import { createContext, type Env } from './context.ts';
@@ -49,7 +50,7 @@ const createDeadlineTimeoutError = (timeoutMs: number): DeadlineTimeoutError => 
     `Template rendering timed out after ${timeoutMs}ms`
   ) as DeadlineTimeoutError;
   timeoutError.name = 'TimeoutError';
-  timeoutError.code = 'TIMEOUT';
+  timeoutError.code = ERROR_CODES.TIMEOUT;
   return timeoutError;
 };
 

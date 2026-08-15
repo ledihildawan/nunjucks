@@ -164,6 +164,8 @@ describe('renderToStream', () => {
       }
     };
     await expect(iterateAgain()).rejects.toThrow('already consumed');
+    // WHY: the catalog code lets consumers branch on API misuse without message matching
+    await expect(iterateAgain()).rejects.toMatchObject({ code: 'STREAM_ALREADY_CONSUMED' });
   });
 
   test('streamContentType json makes a recoverable sentinel fatal instead of an inline marker', async () => {

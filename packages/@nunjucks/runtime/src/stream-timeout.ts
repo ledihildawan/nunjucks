@@ -1,4 +1,6 @@
-// WHY: carries code='TIMEOUT' so it is recognized by FATAL_STREAM_CODES (Tier 3 fatal) — the same code the blocking path's withTimeout emits — keeping streaming and blocking timeout errors shape-consistent. `kind` distinguishes idle (per-chunk) from deadline (total wall-clock) for observability without splitting the catalog code.
+// WHY: carries code=ERROR_CODES.TIMEOUT so it is recognized by FATAL_STREAM_CODES (Tier 3 fatal) — the same code the blocking path's withTimeout emits — keeping streaming and blocking timeout errors shape-consistent. `kind` distinguishes idle (per-chunk) from deadline (total wall-clock) for observability without splitting the catalog code.
+import { ERROR_CODES } from '@nunjucks/error-catalog';
+
 export interface StreamTimeoutError extends Error {
   isStreamTimeout: true;
   code: string;
@@ -17,7 +19,7 @@ export const createStreamTimeoutError = (
   const error = new Error(`Stream ${label}`) as StreamTimeoutError;
   error.name = 'StreamTimeoutError';
   error.isStreamTimeout = true;
-  error.code = 'TIMEOUT';
+  error.code = ERROR_CODES.TIMEOUT;
   error.timeoutMs = timeoutMs;
   error.kind = kind;
   return error;

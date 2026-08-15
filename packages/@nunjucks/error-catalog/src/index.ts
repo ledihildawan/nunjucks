@@ -1,3 +1,4 @@
+export { ERROR_CODES } from './error-codes.ts';
 export type { BrandedTemplateError } from './branding.ts';
 export { isTemplateError, TEMPLATE_ERROR } from './branding.ts';
 export type {

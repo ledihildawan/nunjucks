@@ -1,3 +1,4 @@
+import { ERROR_CODES } from '@nunjucks/error-catalog';
 import type { IncDecNode } from '@nunjucks/nodes';
 import { isSymbol } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
@@ -43,7 +44,9 @@ const compileIncrementDecrement = (
     compiler.emit('})())');
   } else {
     emitLocationGuard(compiler, node.lineno, node.colno);
-    compiler.emit('(() => { throw new Error("Invalid left-hand side expression"); })())');
+    compiler.emit(
+      `(() => { const err = new Error('Invalid left-hand side expression'); err.code = ${JSON.stringify(ERROR_CODES.INVALID_ASSIGN_TARGET)}; throw err; })())`
+    );
   }
 };
 

@@ -1,5 +1,6 @@
 // WHY: consumer-side streaming helpers. renderToStream yields a plain AsyncGenerator<string>; these adapters convert it into the stream shapes real HTTP/runtimes expect, and enforce a per-chunk timeout so a stalled render cannot hang a response indefinitely.
 
+import { ERROR_CODES } from '@nunjucks/error-catalog';
 import { err, isThenable, ok, type Result } from '@nunjucks/lib';
 import { coalesceStream } from '@nunjucks/lib/stream-coalesce';
 import { toWebReadableStream } from '@nunjucks/lib/web-readable-stream';
@@ -101,11 +102,11 @@ const guardSingleConsumer = (inner: AsyncGenerator<string>): AsyncGenerator<stri
     },
     next(value?: unknown): Promise<IteratorResult<string>> {
       if (finished) {
-        return Promise.reject(
-          new Error(
-            'renderToStream: stream already consumed — a stream is single-use; call renderToStream() again for a fresh stream'
-          )
-        );
+        const consumedError = new Error(
+          'renderToStream: stream already consumed — a stream is single-use; call renderToStream() again for a fresh stream'
+        ) as Error & { code: string };
+        consumedError.code = ERROR_CODES.STREAM_ALREADY_CONSUMED;
+        return Promise.reject(consumedError);
       }
       return inner.next(value).then((result) => {
         if (result.done) {

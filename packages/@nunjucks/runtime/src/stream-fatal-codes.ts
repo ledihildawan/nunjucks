@@ -1,3 +1,4 @@
+import { ERROR_CODES } from '@nunjucks/error-catalog';
 import { readObject, readString } from '@nunjucks/lib';
 
 // WHY: error codes that MUST abort the stream even when streamErrorRecovery is enabled.
@@ -7,9 +8,9 @@ import { readObject, readString } from '@nunjucks/lib';
 // wrapWithLog → pipe-stream mid-stream error handler). Recoverable per-expression errors
 // (data lookups, undefined values, filter input failures) stay inline markers.
 const FATAL_STREAM_CODES: ReadonlySet<string> = new Set([
-  'SANDBOX_CODE_EXECUTION',
-  'CIRCULAR_INCLUDE',
-  'TIMEOUT',
+  ERROR_CODES.SANDBOX_CODE_EXECUTION,
+  ERROR_CODES.CIRCULAR_INCLUDE,
+  ERROR_CODES.TIMEOUT,
 ]);
 
 const readErrorCode = (error: unknown): string | null => {

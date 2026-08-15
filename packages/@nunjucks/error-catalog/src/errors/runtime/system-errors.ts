@@ -33,6 +33,31 @@ const ASSERT_TYPE_ERROR = createErrorDefinition({
   documentationUrl: 'https://github.com/mozilla/nunjucks/issues',
 });
 
+const INVALID_ASSIGN_TARGET = createErrorDefinition({
+  name: 'INVALID_ASSIGN_TARGET',
+  message: 'Invalid left-hand side expression',
+  category: 'runtime_error',
+  causes: [
+    'The `++`/`--` operator targeted a non-variable expression (e.g. a lookup or literal)',
+    'Only plain variable names are valid increment/decrement targets',
+  ],
+  fixCode: '{% set counter = counter + 1 %}',
+  fixComment: 'Target a variable name, or compute the new value with `{% set %}`',
+});
+
+const STREAM_ALREADY_CONSUMED = createErrorDefinition({
+  name: 'STREAM_ALREADY_CONSUMED',
+  message:
+    'renderToStream: stream already consumed — a stream is single-use; call renderToStream() again for a fresh stream',
+  category: 'api_misuse',
+  causes: [
+    'The same stream returned by `renderToStream()` was iterated a second time',
+    'A render stream is single-use — each iteration drains the underlying generator',
+  ],
+  fixCode: "const result = await njk.renderToStream(template); // call again for a fresh stream",
+  fixComment: 'Call `renderToStream()` again to obtain a new stream instead of re-iterating the old one',
+});
+
 const UNAVAILABLE_IN_ENV = createErrorDefinition({
   name: 'UNAVAILABLE_IN_ENV',
   message: 'not available in this environment',
@@ -60,4 +85,11 @@ const EXEC_EXPRESSION_ERROR = createErrorDefinition({
   extraFrom: (groups: RegExpMatchArray) => ({ detail: groups[1] ?? '' }),
 });
 
-export { ASSERT_TYPE_ERROR, EXEC_EXPRESSION_ERROR, TIMEOUT, UNAVAILABLE_IN_ENV };
+export {
+  ASSERT_TYPE_ERROR,
+  EXEC_EXPRESSION_ERROR,
+  INVALID_ASSIGN_TARGET,
+  STREAM_ALREADY_CONSUMED,
+  TIMEOUT,
+  UNAVAILABLE_IN_ENV,
+};

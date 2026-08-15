@@ -69,6 +69,7 @@ describe('compileIncrement', () => {
     compileIncrement(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');
     expect(joined).toContain('Invalid left-hand side expression');
+    expect(joined).toContain('err.code = "INVALID_ASSIGN_TARGET"');
   });
 });
 
