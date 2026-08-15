@@ -1,10 +1,28 @@
 Changelog
 =========
 
-Unreleased
-----------
+4.0.0
+-----
 
-TypeScript monorepo rewrite era (`@nunjucks/*` workspaces). Highlights of recent work:
+Major version: the clean break from the upstream 3.x JavaScript API is now explicit. The engine is a TypeScript monorepo of `@nunjucks/*` workspaces, internal-use only (all packages marked `private`; not published to npm).
+
+**Breaking vs upstream nunjucks 3.x**
+
+* The only entry point is the `nunjucks(config)` factory from `@nunjucks/core` returning an engine (`render` / `renderToStream` / `pipeRenderStream`). There is no `Environment`, no `env.addFilter`/`addGlobal`/`addExtension` — filters, globals, tests, and custom tags are declared in the factory config (or bundled via `plugins`).
+* All rendering is async and `Result`-based (`{ ok, value }` / `{ ok: false, error }`) — no callbacks, no `renderSync`.
+* Template language deviations: `{% set %}` is replaced by the walrus operator `{{ x := expr }}`; no `{% macro %}`/`{% call %}` (use `{% component %}`/`{% render %}`); no `safe` filter; pipe-first filter syntax `x |> filter(args)`; new tags `{% scope %}`, `{% switch %}`, `{% match %}`, `{% exec %}`, `{% capture %}`; template-literal interpolations are identifier-only. See `docs/templating.md`.
+
+**New in 4.0.0**
+
+* Custom loaders: `config.loaders` accepts `TemplateLoader[]` (first-match-wins chain; replaces filesystem resolution when non-empty). `TemplateLoader` contract + `createLoaderChain` + `createFileSystemLoader` from `@nunjucks/loaders`.
+* `views` accepts a single path or an array of paths (multi-root, first match wins).
+* Context-aware autoescaping (html / attribute / script / style / comment zones) and sandboxed rendering (`security.*` config).
+* Streaming pipeline with per-chunk idle timeout, total deadline, coalescing, and error recovery (inline markers) — `renderToStream` + `pipeRenderStream`.
+* Structured error catalog with classification, source traces, IDE links, and dev error pages (`formatError`, `@nunjucks/core/diagnostics`).
+* Error-remediation texts now teach the real factory-config API (previously suggested nonexistent `env.addFilter`-style calls).
+* Legacy upstream jekyll `docs/` tree removed; replaced by `docs/templating.md` (this engine's language reference).
+
+3.2.4-era rewrite highlights (superseded by 4.0.0):
 
 * **Security:** `tojson` XSS escaping (`<`, `>`, `&` re-encoded as `\u003c/\u003e/\u0026`); Express render-options boundary sanitization; renderContext stripped from server logs and production error pages; sandbox demo secrets are placeholders only.
 * **Error taxonomy:** catalog-derived `ERROR_CODES` SSOT (rename-safe via `keyof typeof ERROR_DEFINITIONS`); new catalog entries `INVALID_ASSIGN_TARGET` and `STREAM_ALREADY_CONSUMED`; severity display set derives overlapping codes from the catalog.

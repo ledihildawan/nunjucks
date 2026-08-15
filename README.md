@@ -121,16 +121,20 @@ app.set('view engine', 'njk');
 
 ## Documentation
 
+- [`docs/templating.md`](./docs/templating.md) — this engine's template language reference (tags, expressions, filters, tests, components/slots).
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — full Project Architecture & Coding Standards (§9 covers the entry point, render pipeline, plugin layering).
 - [`CLAUDE.md`](./CLAUDE.md) — condensed contributor cheat-sheet.
-- [`samples/`](./samples) — runnable demos (`samples/express`, `samples/vanilla-ts`).
+- [`samples/`](./samples) — runnable demos; see [`samples/README.md`](./samples/README.md) (`samples/express`, `samples/vanilla-ts`).
+- [`CHANGELOG.md`](./CHANGELOG.md) — 4.0.0 documents the breaking changes vs upstream 3.x.
 
 ## Development
 
 ```
 bun run typecheck   # tsc --noEmit (includes samples)
-bun run lint        # biome lint packages samples
+bun run lint        # biome lint packages samples bench
 bun test            # bun test
+bun run bench       # render benchmarks (bench/)
+bun run coverage    # bun test --coverage
 ```
 
 ## License

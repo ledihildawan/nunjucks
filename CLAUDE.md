@@ -4,7 +4,7 @@
 
 Monorepo of the nunjucks templating engine, split into focused `@nunjucks/*` workspaces (lib, shared, error-catalog, error-renderer, error-formatter, nodes, lexer, parser, transformers, compiler, runtime, filters, loaders, validators, integrations, core). Verified compliant — 0 lint issues, 0 `any` violations; run `bun test` for the current suite size (counts drift with every change, so they are not pinned here).
 
-> **Public API:** the single entry point is `import { nunjucks } from '@nunjucks/core'`. `nunjucks(config)` returns an engine (`render` / `renderToStream` / `pipeRenderStream`); it is a thin wrapper over the base `createNunjucks` in `core/src/factory.ts`. The flat `render(template, options)` exports are engine-internal (used by the factory + core tests via relative imports) and NOT re-exported from the public index. See `ARCHITECTURE.md` §9 for the factory, config nesting, plugin layering, and the two-pass render pipeline.
+> **Public API (4.0.0):** the single entry point is `import { nunjucks } from '@nunjucks/core'`. `nunjucks(config)` returns an engine (`render` / `renderToStream` / `pipeRenderStream`). The core barrel exports ONLY the factory, `PACKAGE_VERSION`, `formatError`, and the types the engine signatures reference — `createNunjucks`, plugin folding, streaming adapters, and sandbox internals are engine-internal. Template sources: `views: string | string[]` (multi-root, first match wins) or `config.loaders: TemplateLoader[]` (custom chain, replaces filesystem resolution when non-empty; contract + `createLoaderChain` in `@nunjucks/loaders`). Declared subpaths: `@nunjucks/core/diagnostics` and `@nunjucks/integrations/express`. All packages are `private` (internal monorepo use, not published). The flat `render(template, options)` exports are engine-internal (factory + core tests via relative imports). Language reference: `docs/templating.md`. See `ARCHITECTURE.md` §9 for the factory, config nesting, plugin layering, and the two-pass render pipeline.
 
 ## 1. Core Architectural Principles
 
@@ -44,7 +44,7 @@ Monorepo of the nunjucks templating engine, split into focused `@nunjucks/*` wor
 
 ```
 bun run typecheck   # tsc --noEmit
-bun run lint        # biome lint packages samples
+bun run lint        # biome lint packages samples bench
 bun test            # bun test
 ```
 
