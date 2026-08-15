@@ -1,3 +1,5 @@
+import { ERROR_CODES } from '@nunjucks/error-catalog';
+
 // WHY: severity determines how an error is displayed in the stream. BLOCK errors are structural/
 // security/system failures that take up a full visual block in the output. INLINE errors are
 // expression-level recoverable failures shown as compact markers that do not disrupt the document
@@ -8,8 +10,9 @@
 type ErrorSeverity = 'block' | 'inline';
 
 const BLOCK_ERROR_CODES: ReadonlySet<string> = new Set([
-  'CIRCULAR_INCLUDE',
-  'TIMEOUT',
+  ERROR_CODES.CIRCULAR_INCLUDE,
+  ERROR_CODES.TIMEOUT,
+  ERROR_CODES.SANDBOX_CODE_EXECUTION,
   'ASSERT_TYPE_ERROR',
   'INVALID_INCLUDE',
   'UNDEFINED_BLOCK',
@@ -22,7 +25,6 @@ const BLOCK_ERROR_CODES: ReadonlySet<string> = new Set([
   'IMPORT_ERROR',
   'FILESYSTEM_ERROR',
   'FILE_NOT_FOUND',
-  'SANDBOX_CODE_EXECUTION',
   'RENDER_ERROR',
   'INVALID_CONFIG',
   'TEMPLATE_SIZE_EXCEEDED',

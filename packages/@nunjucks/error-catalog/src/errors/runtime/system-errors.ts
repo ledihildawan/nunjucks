@@ -41,8 +41,8 @@ const INVALID_ASSIGN_TARGET = createErrorDefinition({
     'The `++`/`--` operator targeted a non-variable expression (e.g. a lookup or literal)',
     'Only plain variable names are valid increment/decrement targets',
   ],
-  fixCode: '{% set counter = counter + 1 %}',
-  fixComment: 'Target a variable name, or compute the new value with `{% set %}`',
+  fixCode: '{{ counter := counter + 1 }}',
+  fixComment: 'Target a variable name, or compute the new value with the walrus operator `:=`',
 });
 
 const STREAM_ALREADY_CONSUMED = createErrorDefinition({
