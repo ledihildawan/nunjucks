@@ -2,17 +2,17 @@ import { err, ok, type Result } from '@nunjucks/lib';
 import type { BaseValidationError } from '@nunjucks/shared';
 import { findDangerousValues } from './security/context-security.ts';
 
-export interface ContextValidationError extends BaseValidationError {
+interface ContextValidationError extends BaseValidationError {
   code: string;
   dangerousPaths?: string[];
 }
 
-export type ContextValidationResult = Result<
+type ContextValidationResult = Result<
   void,
   readonly [ContextValidationError, ...ContextValidationError[]]
 >;
 
-export interface ContextValidatorConfig {
+interface ContextValidatorConfig {
   strictMode?: boolean;
   scanContextValues?: boolean;
   blockedContextKeys?: readonly string[];

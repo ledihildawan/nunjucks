@@ -18,7 +18,6 @@ import {
   isArrayPattern,
   isBlock,
   isDict,
-  isFor,
   isFunCall,
   isIf,
   isLiteral,
@@ -140,26 +139,6 @@ describe('nodes/types/guards', () => {
 
     test('returns false for literal node', () => {
       expect(isPair(literal(ZERO_LOC, 'x'))).toBe(false);
-    });
-  });
-
-  describe('isFor', () => {
-    test('returns true for for node', () => {
-      expect(
-        isFor(
-          forNode(ZERO_LOC, {
-            name: symbol(ZERO_LOC, 'x'),
-            arr: array(ZERO_LOC, []),
-            body: templateData(ZERO_LOC, ''),
-          })
-        )
-      ).toBe(true);
-    });
-
-    test('returns false for if node', () => {
-      expect(
-        isFor(ifNode(ZERO_LOC, { cond: literal(ZERO_LOC, true), body: templateData(ZERO_LOC, '') }))
-      ).toBe(false);
     });
   });
 

@@ -65,7 +65,7 @@ export interface TemplateQuasi {
   value: string;
 }
 
-export interface TokenBase {
+interface TokenBase {
   lineno: number;
   colno: number;
   stripLeft?: boolean;

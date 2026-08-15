@@ -1,7 +1,7 @@
 const STACK_LOCATION_RE = /\(([^()]+):(\d+):(\d+)\)$/u;
 const STACK_FUNCTION_RE = /^at\s+([^\s]+)/u;
 
-export interface ParsedStackFrame {
+interface ParsedStackFrame {
   raw: string;
   fn: string;
   path: string | null;

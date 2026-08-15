@@ -152,12 +152,12 @@ const createWatchHandler =
     }
   };
 
-export interface FileSystemLoaderSource {
+interface FileSystemLoaderSource {
   src: string;
   path: string;
 }
 
-export interface FileSystemLoaderOptions {
+interface FileSystemLoaderOptions {
   watch?: boolean;
 }
 

@@ -1,4 +1,4 @@
-export type TestCategory =
+type TestCategory =
   | 'existence'
   | 'boolean'
   | 'primitive'

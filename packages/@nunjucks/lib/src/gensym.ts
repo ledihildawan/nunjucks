@@ -1,10 +1,8 @@
-const createIdGenerator = (seed: number, prefix: string): (() => string) => {
-  let counter = seed;
+export const createGensym = (prefix: string): (() => string) => {
+  let counter = 0;
   return (): string => {
-    const result = `${prefix}_${counter}`;
+    const id = `${prefix}_${counter}`;
     counter += 1;
-    return result;
+    return id;
   };
 };
-
-export const createGensym = (prefix: string): (() => string) => createIdGenerator(0, prefix);

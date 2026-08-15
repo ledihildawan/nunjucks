@@ -83,10 +83,7 @@ export interface CompileNodeInput<N extends Node = Node> {
   frame: Frame;
 }
 
-export type CompileFn<N extends Node = Node> = (
-  compiler: Compiler,
-  input: CompileNodeInput<N>
-) => void;
+type CompileFn<N extends Node = Node> = (compiler: Compiler, input: CompileNodeInput<N>) => void;
 
 const noFrame =
   <N extends Node = Node>(compile: (compiler: Compiler, node: N) => void): CompileFn =>

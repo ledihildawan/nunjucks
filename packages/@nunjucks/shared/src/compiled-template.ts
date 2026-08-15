@@ -9,7 +9,7 @@ export type CompiledRenderSignature = (
   runtime: unknown
 ) => AsyncGenerator<string, unknown>;
 
-export type CompiledBlockSignature = (
+type CompiledBlockSignature = (
   env: unknown,
   context: unknown,
   frame: unknown,

@@ -15,13 +15,13 @@ import {
 } from '../cursor.ts';
 import { parseUntilBlocks } from '../parse-root.ts';
 
-export interface ParsedSlot {
+interface ParsedSlot {
   name: string;
   params: string[];
   body: Node;
 }
 
-export interface SlottedBody {
+interface SlottedBody {
   defaultParts: Node[];
   namedSlots: SlotBlock[];
   implicitSlots: SlotBlock[];

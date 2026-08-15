@@ -1,9 +1,10 @@
 import type { WarningContext } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
-import { MATCH_ANY_RE } from '@nunjucks/lib';
+import { MATCH_ANY_RE, readObject } from '@nunjucks/lib';
 import type { Phase } from '@nunjucks/shared';
+import { WARNINGS_CONTEXT_KEY } from '@nunjucks/shared';
 
-export interface EmitUndefinedWarningOptions {
+interface EmitUndefinedWarningOptions {
   name: string;
   message: () => string;
   subject: string | null;
@@ -37,10 +38,7 @@ export const emitUndefinedWarning = (
       lineBase: 'zero',
     } as WarningContext,
   });
-  const collector =
-    runtimeContext && typeof runtimeContext === 'object'
-      ? (runtimeContext as { __warnings__?: unknown[] }).__warnings__
-      : undefined;
+  const collector = readObject(runtimeContext)[WARNINGS_CONTEXT_KEY];
   if (Array.isArray(collector)) {
     collector.push(warning);
   } else {

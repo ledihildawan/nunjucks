@@ -16,7 +16,7 @@ export interface ResolveUndefinedOptions {
   templateName: string;
 }
 
-export interface UndefinedResolution {
+interface UndefinedResolution {
   errorDef: ErrorDefinitionEntry;
   params: Record<string, string>;
   subject: string | null;
@@ -72,7 +72,7 @@ export const resolveUndefinedProperty = (
     errorDef: ERROR_DEFINITIONS.UNDEFINED_PROPERTY,
     params: { property: accessPath, parent: parentName ?? 'unknown' },
     subject: accessPath,
-    warningName: 'UNDEFINED_PROPERTY',
+    warningName: ERROR_DEFINITIONS.UNDEFINED_PROPERTY.name,
     warningMessage: () => `Property '${accessPath}' not found in '${parentName ?? 'unknown'}'`,
   });
 };
@@ -88,7 +88,7 @@ export const resolveNullAccess = (
     errorDef: ERROR_DEFINITIONS.NULL_VALUE,
     params: { accessPath, state: 'null', parent: parentName },
     subject: accessPath,
-    warningName: 'NULL_VALUE',
+    warningName: ERROR_DEFINITIONS.NULL_VALUE.name,
     warningMessage: () => `Cannot access '${accessPath}' on null '${parentName}'`,
   });
 };
@@ -102,7 +102,7 @@ export const resolveUndefinedValue = (options: ResolveUndefinedOptions): 'undefi
     errorDef,
     params: { name: varName ?? '' },
     subject: varName,
-    warningName: 'UNDEFINED_VARIABLE',
+    warningName: ERROR_DEFINITIONS.UNDEFINED_VARIABLE.name,
     warningMessage: () =>
       varName ? `Variable '${varName}' is undefined or null` : 'Variable is undefined or null',
   });

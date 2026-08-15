@@ -57,7 +57,7 @@ const lexGenerator = function* (state: LexerState): Generator<Token, void, unkno
   yield* lexGenerator(advance(state));
 };
 
-export interface TokenizerResult {
+interface TokenizerResult {
   nextToken: () => Token | null;
   tags: ReturnType<typeof createDelimiters>;
 }

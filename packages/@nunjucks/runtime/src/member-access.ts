@@ -26,8 +26,6 @@ export interface PropertyNotFoundResult {
   __nunjucks_access_path__: string;
 }
 
-export type AccessResult = NullAccessResult | PropertyNotFoundResult;
-
 export const memberLookup = (
   target: unknown,
   value: string,

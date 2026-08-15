@@ -5,18 +5,18 @@ import { isNonEmpty } from './is-non-empty.ts';
 import { validateFilterName, validateGlobalName } from './reserved.ts';
 import type { Environment } from './security/index.ts';
 
-export interface ConfigValidationError extends BaseValidationError {
+interface ConfigValidationError extends BaseValidationError {
   code: string;
   subject: string;
   type: string;
 }
 
-export type ConfigValidationResult = Result<
+type ConfigValidationResult = Result<
   void,
   readonly [ConfigValidationError, ...ConfigValidationError[]]
 >;
 
-export interface Config {
+interface Config {
   executionTimeout?: number;
   maxTemplateSize?: number;
   maxOutputSize?: number;
@@ -25,6 +25,7 @@ export interface Config {
   undefined?: string;
   sandboxMode?: string;
   sandboxEnvironment?: Environment;
+  streamContentType?: string;
   blockedContextKeys?: readonly unknown[];
   sandboxAllowlist?: readonly unknown[];
   allowedGlobals?: readonly unknown[];
@@ -44,6 +45,7 @@ export interface Config {
 const VALID_ENVIRONMENTS: ReadonlySet<Environment> = new Set(['auto', 'node', 'browser', 'deno']);
 const VALID_SANDBOX_MODES: ReadonlySet<string> = new Set(['blocklist', 'allowlist']);
 const VALID_UNDEFINED_MODES: ReadonlySet<string> = new Set(UNDEFINED_MODES);
+const VALID_CONTENT_TYPES: ReadonlySet<string> = new Set(['html', 'json', 'text']);
 
 const validateNonNegativeNumeric = (
   value: number | undefined,
@@ -110,6 +112,12 @@ const validateEnumConfig = (config: Config): ConfigValidationError[] => [
     validValues: VALID_ENVIRONMENTS,
     subject: 'sandboxEnvironment',
     type: 'sandbox',
+  }),
+  ...validateEnumMembership({
+    value: config.streamContentType,
+    validValues: VALID_CONTENT_TYPES,
+    subject: 'streamContentType',
+    type: 'enum',
   }),
 ];
 

@@ -1,6 +1,6 @@
 import { classifyFromError } from '@nunjucks/error-catalog';
 
-export interface MergedErrorParts {
+interface MergedErrorParts {
   causes: string[];
   fixCode: string;
   fixComment: string;

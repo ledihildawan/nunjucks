@@ -18,7 +18,7 @@ const getLocationFromNode = (node: TemplateCarrier): { lineno: number; colno: nu
 export const getTemplateLocation = (node: TemplateCarrier): { lineno: number; colno: number } =>
   getLocationFromNode(node);
 
-export interface CompileGetTemplateOptions {
+interface CompileGetTemplateOptions {
   eagerCompile: boolean;
   includeChain?: string;
   ignoreMissing: boolean;

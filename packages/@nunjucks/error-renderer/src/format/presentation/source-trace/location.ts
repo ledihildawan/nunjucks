@@ -1,6 +1,6 @@
 import { type LineBase, normalizeLineBase } from '@nunjucks/error-catalog';
 
-export interface DisplayLocation {
+interface DisplayLocation {
   line: number;
   col: number;
 }

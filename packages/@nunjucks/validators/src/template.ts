@@ -7,13 +7,13 @@ import {
   scanTemplateForDangerousCode,
 } from './security/template-security.ts';
 
-export interface TemplateValidationError extends BaseValidationError {
+interface TemplateValidationError extends BaseValidationError {
   code: string;
   subject: string;
   violations?: DangerousCodeViolation[];
 }
 
-export type TemplateValidationResult = Result<
+type TemplateValidationResult = Result<
   void,
   readonly [TemplateValidationError, ...TemplateValidationError[]]
 >;

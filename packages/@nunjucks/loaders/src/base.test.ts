@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { createLoader, isLoader, LoaderSymbol } from './base.ts';
+import { createLoader, LoaderSymbol } from './base.ts';
 
 describe('loaders/base', () => {
   describe('createLoader', () => {
@@ -25,43 +25,6 @@ describe('loaders/base', () => {
       loader.emit('test', 1, 2);
       expect(called).toBe(true);
       expect(calledWith).toEqual([1, 2]);
-    });
-  });
-
-  describe('isLoader', () => {
-    test('returns true for a loader from createLoader', () => {
-      const loader = createLoader();
-      expect(isLoader(loader)).toBe(true);
-    });
-
-    test('returns false for a plain object', () => {
-      expect(isLoader({})).toBe(false);
-    });
-
-    test('returns false for null', () => {
-      expect(isLoader(null)).toBe(false);
-    });
-
-    test('returns false for undefined', () => {
-      expect(isLoader(undefined)).toBe(false);
-    });
-
-    test('returns false for a string', () => {
-      expect(isLoader('loader')).toBe(false);
-    });
-
-    test('returns true for an object with LoaderSymbol', () => {
-      const obj = { [LoaderSymbol]: true, on: () => {}, emit: () => {} };
-      expect(isLoader(obj)).toBe(true);
-    });
-
-    test('returns true for an object with LoaderSymbol and correct methods', () => {
-      const obj = {
-        [LoaderSymbol]: true,
-        on: () => {},
-        emit: () => {},
-      };
-      expect(isLoader(obj)).toBe(true);
     });
   });
 });

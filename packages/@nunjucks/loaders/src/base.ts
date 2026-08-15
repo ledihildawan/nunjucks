@@ -40,6 +40,3 @@ export const createLoader = (): Loader => {
     },
   };
 };
-
-export const isLoader = (value: unknown): value is Loader =>
-  Boolean(value && typeof value === 'object' && LoaderSymbol in value);

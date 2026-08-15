@@ -34,7 +34,7 @@ export interface Env {
 
 type BlockLocation = NodeLocation;
 
-export interface ContextMetadata {
+interface ContextMetadata {
   blockLocations?: Record<string, BlockLocation>;
 }
 

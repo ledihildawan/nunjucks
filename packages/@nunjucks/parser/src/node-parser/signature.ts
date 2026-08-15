@@ -151,7 +151,7 @@ const parseSignatureLoop = ({
   return parseLoop(args, kwargs, false);
 };
 
-export interface ParseSignatureOptions {
+interface ParseSignatureOptions {
   parserContext: ParserContext;
   tolerant?: boolean;
   noParens?: boolean;

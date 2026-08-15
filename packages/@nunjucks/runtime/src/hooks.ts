@@ -1,14 +1,10 @@
-// WHY: `as const` keeps HookEvent a 9-literal union instead of collapsing to string
+// WHY: `as const` keeps HookEvent a 3-literal union instead of collapsing to string.
+// Only compile-phase hooks are declared — speculative load/render lifecycle events with
+// no emitter were removed (YAGNI); re-add an event together with the call site that emits it.
 const HOOK_EVENTS = Object.freeze({
-  TEMPLATE_LOADING: 'template:loading',
-  TEMPLATE_LOADED: 'template:loaded',
-  TEMPLATE_LOAD_ERROR: 'template:load:error',
   TEMPLATE_COMPILE_START: 'template:compile:start',
   TEMPLATE_COMPILE_COMPLETE: 'template:compile:complete',
   TEMPLATE_COMPILE_ERROR: 'template:compile:error',
-  RENDER_START: 'render:start',
-  RENDER_COMPLETE: 'render:complete',
-  RENDER_ERROR: 'render:error',
 } as const);
 
 type HookEvent = (typeof HOOK_EVENTS)[keyof typeof HOOK_EVENTS];

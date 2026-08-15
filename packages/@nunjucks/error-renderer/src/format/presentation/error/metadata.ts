@@ -15,7 +15,7 @@ export interface NormalizedLogMetadata {
   lineBase: LineBase;
 }
 
-export interface FormatterStateInput {
+interface FormatterStateInput {
   metadata: NormalizedLogMetadata;
   options?: {
     dev?: boolean;
@@ -35,7 +35,7 @@ export interface FormatterStateInput {
   };
 }
 
-export interface FormatterState {
+interface FormatterState {
   dev: boolean;
   ide: string;
   verbosity: 'simple' | 'medium' | 'full';
@@ -56,6 +56,11 @@ export interface FormatterState {
   humanTitle?: string;
 }
 
+// WHY: isProduction must never stay disconnected from dev — a caller that renders error
+// pages with dev:false (the default) is by definition NOT asking for the rich dev page.
+// Deriving the fallback here makes the production "Rendering Interrupted" page the
+// safe-by-default output; only dev:true (or an explicit isProduction:false) opts into
+// stack traces, source excerpts, and render-context sections.
 export const createFormatterState = ({
   metadata,
   options = {},
@@ -76,6 +81,6 @@ export const createFormatterState = ({
   jsCaller: options.jsCaller,
   jsCallerErrorLine: options.jsCallerErrorLine,
   isJsCaller: options.isJsCaller,
-  isProduction: options.isProduction,
+  isProduction: options.isProduction ?? !(options.dev ?? false),
   humanTitle: options.humanTitle,
 });

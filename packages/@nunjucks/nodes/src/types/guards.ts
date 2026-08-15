@@ -3,7 +3,6 @@ import {
   type CallNode,
   type ChildrenNode,
   type CompareOperandNode,
-  type ForNode,
   type IfNode,
   type LiteralNode,
   type MatchNode,
@@ -49,7 +48,6 @@ export const isSlice = is(T.SLICE);
 export const isArray = (n: unknown): n is ChildrenNode => is(T.ARRAY)(n);
 export const isDict = (n: unknown): n is ChildrenNode => is(T.DICT)(n);
 export const isPair = is(T.PAIR);
-export const isFor = (n: unknown): n is ForNode => is(T.FOR)(n);
 export const isIf = (n: unknown): n is IfNode & { readonly type: typeof T.IF } => is(T.IF)(n);
 export const isBlock = is(T.BLOCK);
 export const isCallExtension = is(T.CALL_EXTENSION);

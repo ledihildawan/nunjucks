@@ -1,5 +1,3 @@
-// WHY: collectString stays re-exported because core's render-stream.test.ts imports it from '@nunjucks/runtime'.
-export { collectString } from '@nunjucks/lib/collect-stream';
 export { awaitValue } from './await-value.ts';
 export { runTest } from './builtin-predicates.ts';
 export type { CallWrapOptions, InOperatorOptions } from './call-wrap.ts';
@@ -15,7 +13,6 @@ export {
   type BlockFn,
   type BlockLocation,
   type Context,
-  type ContextMetadata,
   createContext,
   type Env,
   type GetTemplateOptions,
