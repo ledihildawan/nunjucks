@@ -70,3 +70,13 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bun run build
+
+  coverage:
+    runs-on: ubuntu-latest
+    # WHY: informational visibility — no thresholds yet; failures surface as test failures, not coverage deltas.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun test --coverage

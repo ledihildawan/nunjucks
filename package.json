@@ -45,33 +45,18 @@
     "@types/express": "^5.0.6",
     "typescript": "7.0.2"
   },
+  "private": true,
   "scripts": {
     "build": "bun run scripts/bundle.js",
-    "lint": "biome lint packages samples",
+    "lint": "biome lint packages samples bench",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
+    "bench": "bun run bench/render.bench.ts",
     "coverage": "bun test --coverage"
-  },
-  "exports": {
-    ".": {
-      "import": "@nunjucks/core/src/index.ts"
-    },
-    "./bundle": "./dist/index.js"
-  },
-  "files": [
-    "dist/**"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/mozilla/nunjucks.git"
   },
   "keywords": [
     "template",
     "templating"
   ],
-  "license": "BSD-2-Clause",
-  "bugs": {
-    "url": "https://github.com/mozilla/nunjucks/issues"
-  },
-  "private": true
+  "license": "BSD-2-Clause"
 }

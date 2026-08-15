@@ -189,6 +189,7 @@
       "name": "@nunjucks/validators",
       "version": "1.0.0",
       "dependencies": {
+        "@nunjucks/filters": "workspace:*",
         "@nunjucks/lib": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
         "@nunjucks/shared": "workspace:*",
