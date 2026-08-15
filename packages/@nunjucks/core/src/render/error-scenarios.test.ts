@@ -108,10 +108,10 @@ describe('error messages - real scenarios', () => {
     )) as TemplateError;
 
     expect(err.code).toBe('UNDEFINED_FILTER');
-    expect(err.fixCode).toContain('addFilter');
+    expect(err.fixCode).toContain('filters');
 
     const text = formatError(err, { format: 'text', verbosity: 'full' });
-    expect(text).toContain('addFilter');
+    expect(text).toContain('filters');
     expect(text).toContain('register');
   });
 

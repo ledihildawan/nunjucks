@@ -6,13 +6,13 @@ const UNDEFINED_FUNCTION = createErrorDefinition({
   message: "Function '{name}' is not defined",
   category: 'undefined_function',
   causes: [
-    'The function `{subject}` was not registered with `env.addGlobal()`',
-    'You may have meant a filter - check if `{subject}` is registered with `env.addFilter()`',
+    'The function `{subject}` was not registered in the factory config (`globals`) or a plugin',
+    'You may have meant a filter - check if `{subject}` is registered in the factory config (`filters`)',
     'A typo in the function name (case-sensitive)',
     'Missing import - the function may live in another module',
   ],
-  fixCode: "env.addGlobal('{subject}', function() { /* ... */ })",
-  fixComment: 'Register the missing function globally on the environment before rendering',
+  fixCode: "const njk = nunjucks({ globals: { '{subject}': () => { /* ... */ } } })",
+  fixComment: 'Register the missing function in the factory config `globals` before rendering',
 });
 
 const UNDEFINED_FILTER = createErrorDefinition({
@@ -20,13 +20,13 @@ const UNDEFINED_FILTER = createErrorDefinition({
   message: "Filter '{name}' is not defined",
   category: 'undefined_filter',
   causes: [
-    'The filter `{subject}` was not registered with `env.addFilter()`',
+    'The filter `{subject}` was not registered in the factory config (`filters`) or a plugin',
     'A typo in the filter name (case-sensitive)',
     'The input value is `undefined` - check the variable being filtered exists',
-    'You may have meant a global function - check `env.addGlobal()`',
+    'You may have meant a global function - check the factory config (`globals`)',
   ],
-  fixCode: "env.addFilter('{subject}', function(value) { return value; })",
-  fixComment: 'Register the missing filter on the environment before rendering',
+  fixCode: "const njk = nunjucks({ filters: { '{subject}': (value) => value } })",
+  fixComment: 'Register the missing filter in the factory config `filters` before rendering',
   documentationUrl: 'https://mozilla.github.io/nunjucks/templating.html#filters',
 });
 
@@ -35,12 +35,12 @@ const UNDEFINED_TEST = createErrorDefinition({
   message: "Test '{name}' is not defined",
   category: 'undefined_test',
   causes: [
-    'The test `{subject}` was not registered with `env.addTest()`',
+    'The test `{subject}` was not registered in the factory config (`tests`) or a plugin',
     'A typo in the test name (case-sensitive)',
     'Built-in tests like `defined`, `undefined`, `null` may be what you want',
   ],
-  fixCode: "env.addTest('{subject}', function(value) { return /* boolean */ false; })",
-  fixComment: 'Register the missing test on the environment',
+  fixCode: "const njk = nunjucks({ tests: { '{subject}': (value) => false } })",
+  fixComment: 'Register the missing test in the factory config `tests`',
 });
 
 const UNDEFINED_BLOCK = createErrorDefinition({
@@ -131,7 +131,7 @@ const RESERVED_KEYWORD = {
     'Trying to override built-in names like `if`, `for`, `block`, `component`',
     'The reserved keyword conflicts with parser internals',
   ],
-  fixCode: "env.addFilter('my{subject}', function(value) { /* ... */ })",
+  fixCode: "const njk = nunjucks({ filters: { 'my{subject}': (value) => value } })",
   fixComment: 'Choose a different name with a prefix or suffix to avoid the conflict',
   severity: 'error' as const,
   subjectFrom: null,

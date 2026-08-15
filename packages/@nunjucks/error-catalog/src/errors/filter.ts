@@ -13,7 +13,7 @@ export const FILTER_ERRORS = {
       'A custom filter has a bug or missing edge case',
     ],
     fixCode:
-      'env.addFilter("myFilter", function(value) {\n  if (value === null || value === undefined) return "";\n  return value.toUpperCase();\n})',
+      'nunjucks({ filters: { myFilter: (value) => {\n  if (value === null || value === undefined) return "";\n  return value.toUpperCase();\n} } })',
     fixComment: 'Add input validation in your custom filter and handle edge cases',
     subjectFrom: null,
   },

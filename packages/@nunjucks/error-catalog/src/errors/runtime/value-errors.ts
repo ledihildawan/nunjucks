@@ -106,8 +106,8 @@ const CALL_MATCH = createErrorDefinition({
     'A filter or global was not registered',
     'The value being called is not actually a function',
   ],
-  fixCode: 'env.addGlobal("funcName", function(arg) { /* ... */ })',
-  fixComment: 'Register the function with `addGlobal` before rendering',
+  fixCode: 'const njk = nunjucks({ globals: { funcName: (arg) => { /* ... */ } } })',
+  fixComment: 'Register the function in the factory config `globals` before rendering',
 });
 
 const IN_OPERATOR = {

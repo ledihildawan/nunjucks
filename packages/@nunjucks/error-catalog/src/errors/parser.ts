@@ -152,7 +152,7 @@ export const PARSER_ERRORS = {
       'An unmatched closing tag (e.g. `{% endif %}` without `{% if %}`)',
     ],
     fixCode: '{% if condition %}...{% endif %}',
-    fixComment: 'Use only registered tags, or register custom tags via env.addExtension()',
+    fixComment: 'Use only registered tags, or register custom tags via the factory config (`extensions`)',
     documentationUrl: `${DOCS_BASE}#tags`,
   }),
   INVALID_BOOLEAN: createErrorDefinition({

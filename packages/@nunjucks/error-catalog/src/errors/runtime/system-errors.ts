@@ -66,8 +66,8 @@ const UNAVAILABLE_IN_ENV = createErrorDefinition({
     'The environment was created without registering this filter or test',
     'A custom environment is missing the filter/test handler',
   ],
-  fixCode: "env.addFilter('myFilter', function(value) { return value; })",
-  fixComment: 'Register the missing filter with `env.addFilter()` or test with `env.addTest()`',
+  fixCode: "const njk = nunjucks({ filters: { myFilter: (value) => value } })",
+  fixComment: 'Register the missing filter in the factory config `filters`, or a test via `tests`',
 });
 
 const EXEC_EXPRESSION_ERROR = createErrorDefinition({

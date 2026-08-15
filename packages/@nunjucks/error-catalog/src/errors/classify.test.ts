@@ -73,7 +73,7 @@ describe('error messages - sample output', () => {
       subject: 'myFilter',
     });
     expect(err.message).toContain('myFilter');
-    expect(err.fixCode).toContain('addFilter');
+    expect(err.fixCode).toContain('filters');
   });
 });
 
