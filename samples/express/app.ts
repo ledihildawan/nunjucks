@@ -25,6 +25,10 @@ const createApp = (): Express => {
   const engineConfig: ExpressEngineConfig = {
     dev: true,
     autoescape: true,
+    // WHY: views must be baked into the config — renderTemplate() builds a standalone engine
+    // that does not see Express's app.set('views'), so without this the template name is
+    // compiled as an inline literal string instead of being resolved from disk.
+    views: VIEWS,
     globals: {
       appName: 'Nunjucks Express Demo',
       getYear: () => currentYear(),

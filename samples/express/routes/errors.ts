@@ -206,11 +206,27 @@ router.get('/slice-error', async (_req: Request, res: Response, next: NextFuncti
   );
 });
 
+// WHY: shell-owned throwing filter — the engine has no built-in `list` filter, so this route
+// registers one whose failure carries the catalog's LIST_FILTER code, showing how a custom
+// filter's typed error surfaces as a rich error page.
 router.get('/list-filter-error', async (_req: Request, res: Response, next: NextFunction) => {
   sendTemplateResult(
     res,
     next,
-    await renderTemplate('{{ 42 |> list }}', { context: {}, config: { dev: true } })
+    await renderTemplate('{{ 42 |> list }}', {
+      context: {},
+      config: {
+        dev: true,
+        filters: {
+          list: (value: unknown) => {
+            throw Object.assign(new Error(`list: expected array, got ${typeof value}`), {
+              code: 'LIST_FILTER',
+              subject: 'list',
+            });
+          },
+        },
+      },
+    })
   );
 });
 
@@ -249,11 +265,13 @@ router.get('/filter-throw', async (_req: Request, res: Response, next: NextFunct
 });
 
 router.get('/sandbox-timeout', async (_req: Request, res: Response, next: NextFunction) => {
+  // WHY: the workload comes from the context — the engine has no `range` global, so a large
+  // literal array keeps the loop honest while the 1ms executionTimeout budget trips TIMEOUT.
   sendTemplateResult(
     res,
     next,
-    await renderTemplate('{% for i in range(0, 100000) %}{{ i }}{% endfor %}', {
-      context: {},
+    await renderTemplate('{% for index in indexes %}{{ index }}{% endfor %}', {
+      context: { indexes: Array.from({ length: 100000 }, (_, index) => index) },
       config: { dev: true, security: { sandbox: true }, limits: { executionTimeout: 1 } },
     })
   );
@@ -314,11 +332,17 @@ router.get('/no-blocked-context-keys', async (_req: Request, res: Response, next
   );
 });
 
+// WHY: intentional dangerous-context probe — `process` itself is a dangerous reference, so the
+// scanner flags it at any nesting depth under strictMode. Distinct from /dangerous-context-values,
+// which injects globalThis to exercise the same scan at the top level.
 router.get('/dangerous-context', async (_req: Request, res: Response, next: NextFunction) => {
   sendTemplateResult(
     res,
     next,
-    await renderTemplate('{{ env.NODE_ENV }}', { context: {}, config: { dev: true } })
+    await renderTemplate('{{ env.NODE_ENV }}', {
+      context: { env: process },
+      config: { dev: true, security: { strictMode: true, scanContextValues: true } },
+    })
   );
 });
 
@@ -443,28 +467,6 @@ router.get('/sort-type-error', async (_req: Request, res: Response, next: NextFu
     await renderTemplate('{{ items |> sort("missing") }}', {
       context: { items: [{ name: 'test' }] },
       config: { dev: true, undefined: 'strict' },
-    })
-  );
-});
-
-router.get('/dictsort-value-error', async (_req: Request, res: Response, next: NextFunction) => {
-  sendTemplateResult(
-    res,
-    next,
-    await renderTemplate('{{ data |> dictsort }}', {
-      context: { data: 'not an object' },
-      config: { dev: true },
-    })
-  );
-});
-
-router.get('/dictsort-by-error', async (_req: Request, res: Response, next: NextFunction) => {
-  sendTemplateResult(
-    res,
-    next,
-    await renderTemplate('{{ data |> dictsort(false, "invalid") }}', {
-      context: { data: { a: 1, b: 2 } },
-      config: { dev: true },
     })
   );
 });

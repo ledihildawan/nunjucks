@@ -138,20 +138,6 @@ const errorRoutes: ErrorRoute[] = [
     category: 'groupby_filter_attr',
     desc: 'Groupby attribute undefined',
   },
-  {
-    path: 'dictsort-filter',
-    template: 'errors/dictsort-filter.njk',
-    context: { data: 'not an object' },
-    category: 'dictsort_filter',
-    desc: 'Dictsort requires object',
-  },
-  {
-    path: 'dictsort-filter-by',
-    template: 'errors/dictsort-filter-by.njk',
-    context: { data: { a: 1, b: 2 } },
-    category: 'dictsort_filter_by',
-    desc: 'Dictsort invalid by param',
-  },
 ];
 
 export { errorRoutes };

@@ -21,7 +21,8 @@
     "packages/@nunjucks/loaders",
     "packages/@nunjucks/integrations",
     "packages/@nunjucks/validators",
-    "samples/express"
+    "samples/express",
+    "samples/vanilla-ts"
   ],
   "dependencies": {
     "@nunjucks/lib": "workspace:*",

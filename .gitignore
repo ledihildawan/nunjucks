@@ -18,3 +18,12 @@ build
 
 # local tooling state (opencode plans/session)
 .opencode/
+
+# ephemeral cognitive scratchpad (audit/verification artifacts)
+/herment/
+
+# local scratch space
+/tmp/
+
+# local agent settings
+.claude/settings.local.json

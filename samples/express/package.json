@@ -9,10 +9,8 @@
   },
   "dependencies": {
     "@nunjucks/core": "workspace:*",
-    "@nunjucks/error-formatter": "workspace:*",
     "@nunjucks/integrations": "workspace:*",
     "@nunjucks/lib": "workspace:*",
-    "@nunjucks/runtime": "workspace:*",
     "express": "^5.0.0",
     "zod": "^3.23.0"
   },

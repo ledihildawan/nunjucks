@@ -506,7 +506,7 @@
         </span>
         <span class="preview-url" id="preview-url" aria-live="off">
           <span class="url-text"></span>
-          <button class="preview-btn refresh" type="button" onclick="refreshPreview()" aria-label="Refresh preview">
+          <button class="preview-btn refresh" type="button" id="refresh-preview" aria-label="Refresh preview">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           </button>
         </span>
@@ -516,7 +516,7 @@
             <circle cx="12" cy="12" r="4"/>
           </svg>
         </button>
-        <button class="preview-btn" type="button" onclick="openInNewTab()" aria-label="Open in new tab">
+        <button class="preview-btn" type="button" id="open-preview-tab" aria-label="Open in new tab">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         </button>
       </header>
@@ -580,6 +580,9 @@
     applyTheme(savedTheme);
 
     themeToggle.addEventListener('click', toggleTheme);
+
+    document.getElementById('refresh-preview').addEventListener('click', refreshPreview);
+    document.getElementById('open-preview-tab').addEventListener('click', openInNewTab);
 
     // Debounce utility
     function debounce(fn, delay) {
@@ -796,7 +799,9 @@
     if (location.hash.startsWith('#preview=')) {
       const url = location.hash.slice('#preview='.length);
       const path = url.replace('/errors/', '');
-      const card = document.querySelector('a[data-path="' + path + '"]');
+      // WHY: CSS.escape — the fragment is external input interpolated into a selector;
+      // unescaped it can throw a SyntaxError or select an unintended node.
+      const card = document.querySelector('a[data-path="' + CSS.escape(path) + '"]');
       if (card) {
         selectErrorCard(card);
         card.scrollIntoView();

@@ -98,9 +98,12 @@ const renderTable = (table: SandboxTestResult[], suite: SandboxSuite): string =>
   const rows = table
     .map((row) => {
       const err = outcomeError(row);
+      // WHY: row.outcome[1] is engine output rendered under renderDemoTemplate's forced
+      // autoescape — it arrives pre-escaped; error messages are the only untrusted text
+      // and are escaped explicitly above.
       const resultText = err !== null ? escapeHtml(err.message) : (row.outcome[1] ?? '');
-      const sc = statusClass(row, suite);
-      const sl = statusLabel(row, suite);
+      const statusClassName = statusClass(row, suite);
+      const statusLabelText = statusLabel(row, suite);
       return (
         '<tr>' +
         '<td>' +
@@ -110,9 +113,9 @@ const renderTable = (table: SandboxTestResult[], suite: SandboxSuite): string =>
         resultText +
         '</td>' +
         '<td class="' +
-        sc +
+        statusClassName +
         '">' +
-        sl +
+        statusLabelText +
         '</td>' +
         '</tr>'
       );

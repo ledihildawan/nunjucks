@@ -42,7 +42,7 @@ interface RouteRow {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rawBase = process.argv[2] ?? 'http://localhost:4000';
-const BASE = rawBase.startsWith('http') ? rawBase : 'http://localhost:4000';
+const BASE = rawBase.startsWith('http') ? rawBase : `http://${rawBase}`;
 const ERRORS_TS = path.join(__dirname, '..', 'routes', 'errors.ts');
 
 const discoverRoutes = async (base: string): Promise<string[]> => {
@@ -266,4 +266,7 @@ const run = async (): Promise<void> => {
   }
 };
 
-run();
+run().catch((err: unknown) => {
+  console.error(`audit-error-routes failed: ${err instanceof Error ? err.message : String(err)}`);
+  process.exitCode = 1;
+});

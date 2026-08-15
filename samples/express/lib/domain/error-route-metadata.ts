@@ -34,8 +34,6 @@ export const errorGroups: ErrorGroup[] = [
       { path: 'sort-filter-attr', desc: 'Sort filter attribute undefined' },
       { path: 'groupby-filter', desc: 'Groupby filter requires an array' },
       { path: 'groupby-filter-attr', desc: 'Groupby filter attribute undefined' },
-      { path: 'dictsort-filter', desc: 'Dictsort filter requires object' },
-      { path: 'dictsort-filter-by', desc: 'Dictsort filter by mode invalid' },
       { path: 'inline-filter-error', desc: 'Inline template undefined filter' },
     ],
   },
@@ -68,8 +66,6 @@ export const errorGroups: ErrorGroup[] = [
     items: [
       { path: 'groupby-type-error', desc: 'Groupby attribute undefined' },
       { path: 'sort-type-error', desc: 'Sort attribute undefined' },
-      { path: 'dictsort-value-error', desc: 'Dictsort requires object' },
-      { path: 'dictsort-by-error', desc: 'Dictsort invalid by param' },
     ],
   },
   {

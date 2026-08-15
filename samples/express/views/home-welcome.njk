@@ -17,7 +17,7 @@
 </head>
 <body>
   <h1>Welcome, {{ username }}</h1>
-  <p>The smallest end-to-end demo: <code>{% extends %}</code>, <code>{{ '{{ appName }}' }}</code>, <code>{% for %}</code>, and a custom filter via the forward pipe operator.</p>
+  <p>The smallest end-to-end demo: <code>{{ '{% extends %}' }}</code>, <code>{{ '{{ appName }}' }}</code>, <code>{{ '{% for %}' }}</code>, and a custom filter via the forward pipe operator.</p>
 
   <dl>
     <dt>Globals</dt>
@@ -25,7 +25,7 @@
     <dt>Function global</dt>
     <dd><code>{{ '{{ getYear() }}' }}</code> → <strong>{{ getYear() }}</strong></dd>
     <dt>Pipe filter</dt>
-    <dd><code>{{ '{{ "hello" |> shout }}' }}</code> → <strong>{{ "hello" |> shout }}</strong></dd>
+    <dd><code>{% raw %}{{ "hello" |> shout }}{% endraw %}</code> → <strong>{{ "hello" |> shout }}</strong></dd>
   </dl>
 
   <footer><a href="/">← Back to index</a> · Renders through <code>nunjucks(config)</code></footer>

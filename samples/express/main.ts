@@ -24,8 +24,12 @@ const baseRoutes: readonly RouteEntry[] = [
   { path: '/stream-normal', intent: 'Same dashboard, blocking render (latency comparison)' },
   { path: '/stream-api', intent: 'JSON streaming API — content-type aware error promotion' },
   {
-    path: '/demo/:feature',
-    intent: 'Language features — pipe, scope, switch, slot, component, exec',
+    path: '/stream-block-error',
+    intent: 'Fatal include mid-stream — block error card instead of an inline marker',
+  },
+  {
+    path: '/demo/pipe · /demo/scope · …',
+    intent: 'Language features — pipe, scope, switch, slot, component, exec (see home grid)',
   },
   { path: '/errors', intent: 'Error taxonomy browser — search, filter, live preview' },
   { path: '/errors/:scenario', intent: 'Per-error routes — catalogued by tier and category' },
@@ -36,7 +40,7 @@ const baseRoutes: readonly RouteEntry[] = [
   },
   { path: '/undefined/:mode', intent: 'Undefined variable modes — strict, debug, chainable' },
   { path: '/warnings', intent: 'Dev warnings — surface console hints without aborting render' },
-  { path: '/remote', intent: 'Remote tag — async fragment fetch with error branch' },
+  { path: '/remote', intent: 'Async composition — engine-rendered shell + client fetch with error branch' },
 ] as const;
 
 app.listen(PORT, () => {

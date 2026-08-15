@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Async Composition Demo</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
+    h1 { color: #2c3e50; }
+    .demo { background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    pre { background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    .note { background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; }
+    button { margin: 4px 4px 4px 0; padding: 8px 14px; border-radius: 5px; border: 1px solid #3498db; background: #fff; color: #3498db; cursor: pointer; }
+    button:hover { background: #3498db; color: #fff; }
+    #fragment-result { margin-top: 12px; padding: 12px; border-radius: 5px; font-family: monospace; }
+    .loading { background: #e8f4f8; color: #2471a3; }
+    .ok { background: #d5f4e6; color: #1e8449; }
+    .error { background: #fadbd8; color: #c0392b; }
+    ul { line-height: 1.7; }
+    a { color: #3498db; }
+  </style>
+</head>
+<body>
+  <h1>Async Composition</h1>
+
+  <div class="note">
+    <strong>Note:</strong> the page shell is rendered by the engine; dynamic fragments are
+    loaded in the browser with <code>fetch</code> against the JSON endpoints below. Each
+    request has an explicit <em>loading</em> state and an <em>error</em> branch — the same
+    fallback shape a server-rendered fragment pipeline would use.
+  </div>
+
+  <h2>Demo</h2>
+  <div class="demo">
+    <button type="button" data-endpoint="/remote/api/hello">Fetch greeting</button>
+    <button type="button" data-endpoint="/remote/api/time">Fetch time</button>
+    <button type="button" data-endpoint="/remote/api/slow">Fetch slow (2s)</button>
+    <button type="button" data-endpoint="/remote/api/error">Fetch failing</button>
+    <div id="fragment-result" aria-live="polite">Idle — pick an endpoint above.</div>
+  </div>
+
+  <h2>Endpoints</h2>
+  <ul>
+    <li><code>GET /remote/api/hello</code> — simple greeting fragment</li>
+    <li><code>GET /remote/api/time</code> — current server time</li>
+    <li><code>GET /remote/api/slow</code> — simulates latency (2s delay)</li>
+    <li><code>GET /remote/api/error</code> — returns 500 to exercise the error branch</li>
+  </ul>
+
+  <p><a href="/">Back to Index</a></p>
+
+  <script>
+    (function () {
+      var resultBox = document.getElementById('fragment-result');
+
+      var showState = function (state, text) {
+        resultBox.className = state;
+        resultBox.textContent = text;
+      };
+
+      document.querySelectorAll('button[data-endpoint]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          showState('loading', 'Loading…');
+          fetch(button.getAttribute('data-endpoint'))
+            .then(function (response) {
+              if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+              }
+              return response.text();
+            })
+            .then(function (body) {
+              showState('ok', body);
+            })
+            .catch(function (error) {
+              showState('error', 'Failed to load: ' + error.message);
+            });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

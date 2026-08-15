@@ -30,7 +30,8 @@ router.get('/', (_req: Request, res: Response) => {
 <body>
   <h1>Undefined Types Demo</h1>
 
-  <p>Nunjucks has 3 modes for handling undefined variables:</p>
+  <p>Nunjucks has explicit modes for handling undefined variables — the factory default is
+  <code>undefined: 'default'</code>, which renders missing values as empty output:</p>
 
   <div class="mode strict">
     <h3>1. strict - Error on undefined</h3>
@@ -49,7 +50,7 @@ router.get('/', (_req: Request, res: Response) => {
   <div class="mode chainable">
     <h3>3. chainable - Silent "undefined"</h3>
     <p>Silent - returns "undefined" string without warning.</p>
-    <p><code>undefined: 'chainable'</code> (default)</p>
+    <p><code>undefined: 'chainable'</code></p>
     <a href="/undefined/chainable">Test chainable mode</a>
   </div>
 

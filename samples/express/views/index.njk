@@ -81,6 +81,7 @@
     <a class="card" href="/stream"><code>/stream</code><span>Progressive block-by-block render with abort-on-disconnect and idle/deadline guards.</span></a>
     <a class="card" href="/stream-normal"><code>/stream-normal</code><span>Same dashboard, blocking render — compare time-to-first-byte.</span></a>
     <a class="card" href="/stream-api"><code>/stream-api</code><span>JSON streaming — content-type aware error promotion (no inline markers).</span></a>
+    <a class="card" href="/stream-block-error"><code>/stream-block-error</code><span>Fatal include mid-stream — block error card instead of an inline marker.</span></a>
   </div>
 
   <h2>Language features</h2>
@@ -88,7 +89,7 @@
     <a class="card" href="/demo/pipe"><code>/demo/pipe</code><span>Forward pipe operator: <code>value |&gt; filter1 |&gt; filter2</code></span></a>
     <a class="card" href="/demo/scope"><code>/demo/scope</code><span>Loop scoping with <code>{% set %}</code> inside <code>{% for %}</code></span></a>
     <a class="card" href="/demo/switch"><code>/demo/switch</code><span><code>{% switch %}</code> / <code>{% case %}</code> multi-branch dispatch.</span></a>
-    <a class="card" href="/demo/slot"><code>/demo/slot</code><span><code>{% slot %}</code> / <code>{% fill %}</code> named template composition.</span></a>
+    <a class="card" href="/demo/slot"><code>/demo/slot</code><span><code>{% slot %}</code> / <code>{% render %}</code> named template composition.</span></a>
     <a class="card" href="/demo/component"><code>/demo/component</code><span><code>{% component %}</code> block-based component authoring.</span></a>
     <a class="card" href="/demo/exec"><code>/demo/exec</code><span>Method binding with <code>this</code> inside templates.</span></a>
     <a class="card" href="/demo/security"><code>/demo/security</code><span>Sandbox + scanContextValues on a richer context.</span></a>
@@ -108,7 +109,7 @@
 
   <h2>Async composition</h2>
   <div class="grid">
-    <a class="card" href="/remote"><code>/remote</code><span><code>{% remote %}</code> tag — fetch a fragment, fall back on error.</span></a>
+    <a class="card" href="/remote"><code>/remote</code><span>Engine-rendered shell + client <code>fetch</code> of JSON endpoints, with loading and error branches.</span></a>
   </div>
 
   <footer>
