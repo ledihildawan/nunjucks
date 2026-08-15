@@ -20,8 +20,8 @@ const makeCompiler = () => {
     emit: (s: string) => {
       emitted.push(s);
     },
-    compile: (node: { mock?: string }) => {
-      emitted.push(node.mock as string);
+    compile: (node: { marker?: string }) => {
+      emitted.push(node.marker as string);
     },
   };
 };
@@ -29,14 +29,14 @@ const makeCompiler = () => {
 const makeBinary = (l: string, r: string) => ({
   lineno: 5,
   colno: 9,
-  left: { mock: l },
-  right: { mock: r },
+  left: { marker: l },
+  right: { marker: r },
 });
 
-const makeUnary = (mock: string) => ({
+const makeUnary = (marker: string) => ({
   lineno: 6,
   colno: 3,
-  target: { mock },
+  target: { marker },
 });
 
 type BinaryBitwiseEmitter = (compiler: Compiler, input: { node: BinaryNode; frame: Frame }) => void;

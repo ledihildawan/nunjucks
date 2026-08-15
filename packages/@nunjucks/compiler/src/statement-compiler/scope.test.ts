@@ -22,11 +22,11 @@ const makeCompiler = () => {
       id += 1;
       return `t_${id}`;
     },
-    compile: (n: { mock?: string }) => {
-      emitted.push(n.mock ?? 'BODY');
+    compile: (n: { marker?: string }) => {
+      emitted.push(n.marker ?? 'BODY');
     },
-    compileExpression: (n: { mock?: string }) => {
-      emitted.push(n.mock ?? 'VAL');
+    compileExpression: (n: { marker?: string }) => {
+      emitted.push(n.marker ?? 'VAL');
     },
     withScopedSyntax: (fn: () => void) => fn(),
   };

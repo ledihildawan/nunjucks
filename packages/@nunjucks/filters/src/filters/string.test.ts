@@ -140,10 +140,10 @@ describe('filters/string', () => {
     });
 
     test('returns error when input is not an array', () => {
-      const result1 = joinFilter('not array');
-      expect(isErr(result1)).toBe(true);
-      const result2 = joinFilter({ 0: 'a' });
-      expect(isErr(result2)).toBe(true);
+      const stringInputResult = joinFilter('not array');
+      expect(isErr(stringInputResult)).toBe(true);
+      const objectInputResult = joinFilter({ 0: 'a' });
+      expect(isErr(objectInputResult)).toBe(true);
     });
   });
 

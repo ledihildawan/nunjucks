@@ -13,8 +13,8 @@ const makeCompiler = () => {
     emitLine: (s: string) => {
       emitted.push(`${s}\n`);
     },
-    compile: (node: { mock?: string }) => {
-      emitted.push(node.mock as string);
+    compile: (node: { marker?: string }) => {
+      emitted.push(node.marker as string);
     },
   };
 };
@@ -24,8 +24,8 @@ describe('compileCompare', () => {
   test('emits location guard, expr, then each operator with operand and closing parens', () => {
     const c = makeCompiler();
     const node = {
-      expr: { mock: 'EXPR' },
-      ops: [{ type: 'compareOperand', operator: '==', expr: { mock: 'R1' }, lineno: 5, colno: 9 }],
+      expr: { marker: 'EXPR' },
+      ops: [{ type: 'compareOperand', operator: '==', expr: { marker: 'R1' }, lineno: 5, colno: 9 }],
       lineno: 1,
       colno: 1,
     };
@@ -44,10 +44,10 @@ describe('compileCompare', () => {
   test('chains multiple operands with one ")" per op plus a trailing ")"', () => {
     const c = makeCompiler();
     const node = {
-      expr: { mock: 'X' },
+      expr: { marker: 'X' },
       ops: [
-        { type: 'compareOperand', operator: '<', expr: { mock: 'A' }, lineno: 1, colno: 1 },
-        { type: 'compareOperand', operator: '<=', expr: { mock: 'B' }, lineno: 2, colno: 2 },
+        { type: 'compareOperand', operator: '<', expr: { marker: 'A' }, lineno: 1, colno: 1 },
+        { type: 'compareOperand', operator: '<=', expr: { marker: 'B' }, lineno: 2, colno: 2 },
       ],
       lineno: 0,
       colno: 0,
@@ -64,7 +64,7 @@ describe('compileIs', () => {
   test('emits env.getTest call wrapping the left operand and closes with "=== true)"', () => {
     const c = makeCompiler();
     const node = {
-      left: { mock: 'LEFT' },
+      left: { marker: 'LEFT' },
       right: { value: 'defined' },
       lineno: 7,
       colno: 3,

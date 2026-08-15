@@ -22,8 +22,8 @@ const makeCompiler = () => {
       id += 1;
       return `t_${id}`;
     },
-    compile: (n: { mock?: string }) => {
-      emitted.push(n.mock ?? 'X');
+    compile: (n: { marker?: string }) => {
+      emitted.push(n.marker ?? 'X');
     },
   };
 };

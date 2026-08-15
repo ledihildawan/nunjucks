@@ -15,8 +15,8 @@ const makeCompiler = () => {
       id += 1;
       return `t_${id}`;
     },
-    compile: (node: { mock?: string }) => {
-      emitted.push(node.mock as string);
+    compile: (node: { marker?: string }) => {
+      emitted.push(node.marker as string);
     },
   };
 };
@@ -31,7 +31,7 @@ describe('compileTest', () => {
         lineno: 3,
         colno: 7,
         name: 'defined',
-        target: { mock: 'X' },
+        target: { marker: 'X' },
       } as never,
       frame,
     });
@@ -48,9 +48,9 @@ describe('compileTestCall', () => {
     const c = makeCompiler();
     compileTestCall(asCompiler(c), {
       node: {
-        target: { mock: 'X' },
+        target: { marker: 'X' },
         name: 'divisibleby',
-        args: [{ mock: 'N' }, { mock: 'M' }],
+        args: [{ marker: 'N' }, { marker: 'M' }],
         lineno: 4,
         colno: 2,
       } as never,
@@ -68,7 +68,7 @@ describe('compileTestCall', () => {
     const c = makeCompiler();
     compileTestCall(asCompiler(c), {
       node: {
-        target: { mock: 'X' },
+        target: { marker: 'X' },
         name: 'odd',
         args: [null],
         lineno: 1,

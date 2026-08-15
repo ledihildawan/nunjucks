@@ -19,9 +19,9 @@ const frame = createFrame();
 
 const makeCompiler = () => {
   const emitted: string[] = [];
-  const emitValue = (node: { mock?: string; value?: string; children?: unknown[] }) => {
-    if (typeof node.mock === 'string') {
-      emitted.push(node.mock);
+  const emitValue = (node: { marker?: string; value?: string; children?: unknown[] }) => {
+    if (typeof node.marker === 'string') {
+      emitted.push(node.marker);
       return;
     }
     if (typeof node.value === 'string') {
@@ -83,7 +83,7 @@ describe('compilePair', () => {
     compilePair(asCompiler(c), {
       node: pair(loc({ lineno: 1, colno: 1 }), {
         key: symbol(loc({ lineno: 1, colno: 1 }), 'a'),
-        val: { mock: 'V' } as never,
+        val: { marker: 'V' } as never,
       }),
       frame,
     });
@@ -144,7 +144,7 @@ describe('aggregate containers', () => {
   test('array emits comma-separated children in brackets', () => {
     const c = makeCompiler();
     compileArray(asCompiler(c), {
-      node: { children: [{ mock: 'a' }, { mock: 'b' }] } as never,
+      node: { children: [{ marker: 'a' }, { marker: 'b' }] } as never,
       frame,
     });
     expect(c.emitted.join('')).toBe('[a,b]');
@@ -152,13 +152,13 @@ describe('aggregate containers', () => {
 
   test('group emits parenthesized children', () => {
     const c = makeCompiler();
-    compileGroup(asCompiler(c), { node: { children: [{ mock: 'a' }] } as never, frame });
+    compileGroup(asCompiler(c), { node: { children: [{ marker: 'a' }] } as never, frame });
     expect(c.emitted.join('')).toBe('(a)');
   });
 
   test('dict emits braced children', () => {
     const c = makeCompiler();
-    compileDict(asCompiler(c), { node: { children: [{ mock: 'a' }] } as never, frame });
+    compileDict(asCompiler(c), { node: { children: [{ marker: 'a' }] } as never, frame });
     expect(c.emitted.join('')).toBe('{a}');
   });
 });

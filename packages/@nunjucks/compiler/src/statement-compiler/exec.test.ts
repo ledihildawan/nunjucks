@@ -17,8 +17,8 @@ const makeCompiler = () => {
     emitLine: (s: string) => {
       emitted.push(`${s}\n`);
     },
-    compileExpression: (n: { mock?: string }) => {
-      emitted.push(n.mock ?? 'EXPR');
+    compileExpression: (n: { marker?: string }) => {
+      emitted.push(n.marker ?? 'EXPR');
     },
   };
 };

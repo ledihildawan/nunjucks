@@ -10,16 +10,16 @@ const makeCompiler = () => {
     emit: (s: string) => {
       emitted.push(s);
     },
-    compile: (node: { mock?: string }) => {
-      emitted.push(node.mock as string);
+    compile: (node: { marker?: string }) => {
+      emitted.push(node.marker as string);
     },
   };
 };
 
-const makeUnary = (mock: string) => ({
+const makeUnary = (marker: string) => ({
   lineno: 5,
   colno: 9,
-  target: { mock },
+  target: { marker },
 });
 
 const frame = createFrame();

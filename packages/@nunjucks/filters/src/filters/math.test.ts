@@ -18,12 +18,12 @@ describe('filters/math', () => {
     });
 
     test('returns error when given a non-number', () => {
-      const result1 = abs('5');
-      expect(isOk(result1)).toBe(false);
-      const result2 = abs(null);
-      expect(isOk(result2)).toBe(false);
-      const result3 = abs(undefined);
-      expect(isOk(result3)).toBe(false);
+      const stringInputResult = abs('5');
+      expect(isOk(stringInputResult)).toBe(false);
+      const nullInputResult = abs(null);
+      expect(isOk(nullInputResult)).toBe(false);
+      const undefinedInputResult = abs(undefined);
+      expect(isOk(undefinedInputResult)).toBe(false);
     });
   });
 
@@ -62,10 +62,10 @@ describe('filters/math', () => {
     });
 
     test('returns error when given a non-number', () => {
-      const result1 = round('1.5');
-      expect(isOk(result1)).toBe(false);
-      const result2 = round(null);
-      expect(isOk(result2)).toBe(false);
+      const stringInputResult = round('1.5');
+      expect(isOk(stringInputResult)).toBe(false);
+      const nullInputResult = round(null);
+      expect(isOk(nullInputResult)).toBe(false);
     });
   });
 });

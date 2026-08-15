@@ -84,43 +84,43 @@ describe('binary arithmetic operators', () => {
       factory: 'add',
       typename: T.ADD,
       operator: '+',
-      build: (loc) => add(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => add(position, { left: leftOperand, right: rightOperand }),
     },
     {
       factory: 'sub',
       typename: T.SUB,
       operator: '-',
-      build: (loc) => sub(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => sub(position, { left: leftOperand, right: rightOperand }),
     },
     {
       factory: 'mul',
       typename: T.MUL,
       operator: '*',
-      build: (loc) => mul(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => mul(position, { left: leftOperand, right: rightOperand }),
     },
     {
       factory: 'div',
       typename: T.DIV,
       operator: '/',
-      build: (loc) => div(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => div(position, { left: leftOperand, right: rightOperand }),
     },
     {
       factory: 'floorDiv',
       typename: T.FLOOR_DIV,
       operator: '//',
-      build: (loc) => floorDiv(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => floorDiv(position, { left: leftOperand, right: rightOperand }),
     },
     {
       factory: 'mod',
       typename: T.MOD,
       operator: '%',
-      build: (loc) => mod(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => mod(position, { left: leftOperand, right: rightOperand }),
     },
     {
       factory: 'pow',
       typename: T.POW,
       operator: '**',
-      build: (loc) => pow(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => pow(position, { left: leftOperand, right: rightOperand }),
     },
   ];
 
@@ -152,57 +152,57 @@ describe('binary nodes without operator', () => {
     {
       factory: 'concat',
       typename: T.CONCAT,
-      build: (loc) => concat(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => concat(position, { left: leftOperand, right: rightOperand }),
     },
     {
       factory: 'and',
       typename: T.AND,
-      build: (loc) => and(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => and(position, { left: leftOperand, right: rightOperand }),
     },
     {
       factory: 'or',
       typename: T.OR,
-      build: (loc) => or(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => or(position, { left: leftOperand, right: rightOperand }),
     },
     {
       factory: 'nullishCoalesce',
       typename: T.NULLISH_COALESCE,
-      build: (loc) => nullishCoalesce(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => nullishCoalesce(position, { left: leftOperand, right: rightOperand }),
     },
     {
       factory: 'bitwiseOr',
       typename: T.BITWISE_OR,
-      build: (loc) => bitwiseOr(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => bitwiseOr(position, { left: leftOperand, right: rightOperand }),
     },
     {
       factory: 'bitwiseAnd',
       typename: T.BITWISE_AND,
-      build: (loc) => bitwiseAnd(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => bitwiseAnd(position, { left: leftOperand, right: rightOperand }),
     },
     {
       factory: 'bitwiseXor',
       typename: T.BITWISE_XOR,
-      build: (loc) => bitwiseXor(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => bitwiseXor(position, { left: leftOperand, right: rightOperand }),
     },
     {
       factory: 'bitwiseLShift',
       typename: T.BITWISE_LSHIFT,
-      build: (loc) => bitwiseLShift(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => bitwiseLShift(position, { left: leftOperand, right: rightOperand }),
     },
     {
       factory: 'bitwiseRShift',
       typename: T.BITWISE_RSHIFT,
-      build: (loc) => bitwiseRShift(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => bitwiseRShift(position, { left: leftOperand, right: rightOperand }),
     },
     {
       factory: 'isOp',
       typename: T.IS,
-      build: (loc) => isOp(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => isOp(position, { left: leftOperand, right: rightOperand }),
     },
     {
       factory: 'inNode',
       typename: T.IN,
-      build: (loc) => inNode(loc, { left: leftOperand, right: rightOperand }),
+      build: (position) => inNode(position, { left: leftOperand, right: rightOperand }),
     },
   ];
 
@@ -231,9 +231,9 @@ describe('unary operators', () => {
     operator: string;
     build: (loc: Loc) => UnaryOpNode;
   }> = [
-    { factory: 'not', typename: T.NOT, operator: 'not', build: (loc) => not(loc, targetOperand) },
-    { factory: 'neg', typename: T.NEG, operator: '-', build: (loc) => neg(loc, targetOperand) },
-    { factory: 'pos', typename: T.POS, operator: '+', build: (loc) => pos(loc, targetOperand) },
+    { factory: 'not', typename: T.NOT, operator: 'not', build: (position) => not(position, targetOperand) },
+    { factory: 'neg', typename: T.NEG, operator: '-', build: (position) => neg(position, targetOperand) },
+    { factory: 'pos', typename: T.POS, operator: '+', build: (position) => pos(position, targetOperand) },
   ];
 
   unaryOpCases.forEach(({ factory, typename, operator, build }) => {
@@ -296,21 +296,21 @@ describe('call nodes', () => {
     {
       factory: 'funCall',
       typename: T.FUN_CALL,
-      build: (loc, args) =>
-        funCall(loc, args === undefined ? { name: targetOperand } : { name: targetOperand, args }),
+      build: (position, args) =>
+        funCall(position, args === undefined ? { name: targetOperand } : { name: targetOperand, args }),
     },
     {
       factory: 'pipe',
       typename: T.PIPE,
-      build: (loc, args) =>
-        pipe(loc, args === undefined ? { name: targetOperand } : { name: targetOperand, args }),
+      build: (position, args) =>
+        pipe(position, args === undefined ? { name: targetOperand } : { name: targetOperand, args }),
     },
     {
       factory: 'optionalCall',
       typename: T.OPTIONAL_CALL,
-      build: (loc, args) =>
+      build: (position, args) =>
         optionalCall(
-          loc,
+          position,
           args === undefined ? { name: targetOperand } : { name: targetOperand, args }
         ),
     },
@@ -349,12 +349,12 @@ describe('lookup nodes', () => {
     {
       factory: 'lookupVal',
       typename: T.LOOKUP_VAL,
-      build: (loc) => lookupVal(loc, { target: targetOperand, val: rightOperand }),
+      build: (position) => lookupVal(position, { target: targetOperand, val: rightOperand }),
     },
     {
       factory: 'optionalChain',
       typename: T.OPTIONAL_CHAIN,
-      build: (loc) => optionalChain(loc, { target: targetOperand, val: rightOperand }),
+      build: (position) => optionalChain(position, { target: targetOperand, val: rightOperand }),
     },
   ];
 
@@ -417,8 +417,8 @@ describe('increment and decrement', () => {
     typename: IncDecNode['type'];
     build: (loc: Loc, fields: { target: Node; isPostfix: boolean }) => IncDecNode;
   }> = [
-    { factory: 'increment', typename: T.INCREMENT, build: (loc, fields) => increment(loc, fields) },
-    { factory: 'decrement', typename: T.DECREMENT, build: (loc, fields) => decrement(loc, fields) },
+    { factory: 'increment', typename: T.INCREMENT, build: (position, fields) => increment(position, fields) },
+    { factory: 'decrement', typename: T.DECREMENT, build: (position, fields) => decrement(position, fields) },
   ];
 
   incDecCases.forEach(({ factory, typename, build }) => {
@@ -450,12 +450,12 @@ describe('arrayPattern and objectPattern', () => {
     {
       factory: 'arrayPattern',
       typename: T.ARRAY_PATTERN,
-      build: (loc, children) => arrayPattern(loc, children),
+      build: (position, children) => arrayPattern(position, children),
     },
     {
       factory: 'objectPattern',
       typename: T.OBJECT_PATTERN,
-      build: (loc, children) => objectPattern(loc, children),
+      build: (position, children) => objectPattern(position, children),
     },
   ];
 
@@ -577,12 +577,12 @@ describe('variableDeclaration and variableAssignment', () => {
     {
       factory: 'variableDeclaration',
       typename: T.VARIABLE_DECLARATION,
-      build: (loc, fields) => variableDeclaration(loc, fields),
+      build: (position, fields) => variableDeclaration(position, fields),
     },
     {
       factory: 'variableAssignment',
       typename: T.VARIABLE_ASSIGNMENT,
-      build: (loc, fields) => variableAssignment(loc, fields),
+      build: (position, fields) => variableAssignment(position, fields),
     },
   ];
 

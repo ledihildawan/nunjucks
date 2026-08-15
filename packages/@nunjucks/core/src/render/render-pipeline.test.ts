@@ -39,10 +39,10 @@ describe('render-pipeline', () => {
     });
 
     test('merges globals into context', () => {
-      const config = { sandbox: false, globals: { global1: 'value1' } };
+      const config = { sandbox: false, globals: { globalGreeting: 'hello' } };
       const context = { name: 'Ada' };
       const result = prepareSandbox(config as unknown as RenderConfig, context);
-      expect(result).toEqual({ name: 'Ada', global1: 'value1' });
+      expect(result).toEqual({ name: 'Ada', globalGreeting: 'hello' });
     });
 
     test('handles empty context', () => {

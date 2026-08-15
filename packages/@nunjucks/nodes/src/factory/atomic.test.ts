@@ -62,24 +62,24 @@ describe('value-bearing nodes', () => {
     sampleValue: unknown;
     build: (loc: Loc, val: unknown) => ValueBearingNode;
   }> = [
-    { factory: 'value', typename: T.VALUE, sampleValue: 42, build: (loc, val) => value(loc, val) },
+    { factory: 'value', typename: T.VALUE, sampleValue: 42, build: (position, val) => value(position, val) },
     {
       factory: 'literal',
       typename: T.LITERAL,
       sampleValue: 'hello',
-      build: (loc, val) => literal(loc, val),
+      build: (position, val) => literal(position, val),
     },
     {
       factory: 'symbol',
       typename: T.SYMBOL,
       sampleValue: 'x',
-      build: (loc, val) => symbol(loc, val as string),
+      build: (position, val) => symbol(position, val as string),
     },
     {
       factory: 'templateData',
       typename: T.TEMPLATE_DATA,
       sampleValue: 'raw',
-      build: (loc, val) => templateData(loc, val as string),
+      build: (position, val) => templateData(position, val as string),
     },
   ];
 
@@ -118,17 +118,17 @@ describe('children-bearing nodes', () => {
     {
       factory: 'nodeList',
       typename: T.NODE_LIST,
-      build: (loc, children) => nodeList(loc, children),
+      build: (position, children) => nodeList(position, children),
     },
-    { factory: 'output', typename: T.OUTPUT, build: (loc, children) => output(loc, children) },
-    { factory: 'root', typename: T.ROOT, build: (loc, children) => root(loc, children) },
-    { factory: 'group', typename: T.GROUP, build: (loc, children) => group(loc, children) },
-    { factory: 'array', typename: T.ARRAY, build: (loc, children) => array(loc, children) },
-    { factory: 'dict', typename: T.DICT, build: (loc, children) => dict(loc, children) },
+    { factory: 'output', typename: T.OUTPUT, build: (position, children) => output(position, children) },
+    { factory: 'root', typename: T.ROOT, build: (position, children) => root(position, children) },
+    { factory: 'group', typename: T.GROUP, build: (position, children) => group(position, children) },
+    { factory: 'array', typename: T.ARRAY, build: (position, children) => array(position, children) },
+    { factory: 'dict', typename: T.DICT, build: (position, children) => dict(position, children) },
     {
       factory: 'keywordArgs',
       typename: T.KEYWORD_ARGS,
-      build: (loc, children) => keywordArgs(loc, children),
+      build: (position, children) => keywordArgs(position, children),
     },
   ];
 

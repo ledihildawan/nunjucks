@@ -26,11 +26,11 @@ const makeCompiler = () => {
       id += 1;
       return `t_${id}`;
     },
-    compile: (n: { mock?: string }) => {
-      emitted.push(n.mock ?? 'X');
+    compile: (n: { marker?: string }) => {
+      emitted.push(n.marker ?? 'X');
     },
-    compileExpression: (n: { mock?: string }) => {
-      emitted.push(n.mock ?? 'V');
+    compileExpression: (n: { marker?: string }) => {
+      emitted.push(n.marker ?? 'V');
     },
     fail: (msg: string, ..._rest: unknown[]) => {
       throw new Error(msg);
@@ -38,9 +38,9 @@ const makeCompiler = () => {
   };
 };
 
-const declNode = (name: string, valueMock: string) => ({
+const declNode = (name: string, valueMarker: string) => ({
   targets: [symbol(ZERO_LOC, name)],
-  value: { mock: valueMock },
+  value: { marker: valueMarker },
 });
 
 describe('compileVariableDeclaration', () => {

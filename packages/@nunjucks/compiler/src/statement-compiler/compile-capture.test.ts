@@ -26,9 +26,9 @@ const makeCompiler = () => {
     emitLine: (s: string) => {
       emitted.push(`${s}\n`);
     },
-    compile: (node: { mock?: string }) => {
+    compile: (node: { marker?: string }) => {
       bufferAtCompile.push(buffer);
-      emitted.push(node.mock ?? 'BODY');
+      emitted.push(node.marker ?? 'BODY');
     },
     withScopedSyntax: (fn: () => void) => fn(),
   };

@@ -4,12 +4,12 @@ import { createFrame } from '@nunjucks/runtime/frame';
 import { asCompiler } from '../test-helpers.ts';
 import { compileAdd, compileAnd, compileMul, compileOr, compileSub } from './binary.ts';
 
-interface MockNode {
-  mock: string;
+interface FakeNode {
+  marker: string;
   lineno: number;
   colno: number;
-  left: Node | MockNode;
-  right: Node | MockNode;
+  left: Node | FakeNode;
+  right: Node | FakeNode;
 }
 
 const makeCompiler = () => {
@@ -19,18 +19,18 @@ const makeCompiler = () => {
     emit: (s: string) => {
       emitted.push(s);
     },
-    compile: (node: Node | MockNode) => {
-      emitted.push((node as MockNode).mock);
+    compile: (node: Node | FakeNode) => {
+      emitted.push((node as FakeNode).marker);
     },
   };
 };
 
-const makeNode = (leftMock: string, rightMock: string): MockNode => ({
-  mock: 'ignored',
+const makeNode = (leftMarker: string, rightMarker: string): FakeNode => ({
+  marker: 'ignored',
   lineno: 5,
   colno: 9,
-  left: { mock: leftMock } as unknown as Node,
-  right: { mock: rightMock } as unknown as Node,
+  left: { marker: leftMarker } as unknown as Node,
+  right: { marker: rightMarker } as unknown as Node,
 });
 
 const frame = createFrame();

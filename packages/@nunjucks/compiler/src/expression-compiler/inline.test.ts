@@ -20,8 +20,8 @@ const makeCompiler = () => {
       id += 1;
       return `t_${id}`;
     },
-    compile: (node: { mock?: string }) => {
-      emitted.push(node.mock as string);
+    compile: (node: { marker?: string }) => {
+      emitted.push(node.marker as string);
     },
     fail: (msg: string) => {
       throw new Error(msg);
@@ -36,9 +36,9 @@ describe('compileInlineIf', () => {
     const c = makeCompiler();
     compileInlineIf(asCompiler(c), {
       node: {
-        cond: { mock: 'C' },
-        body: { mock: 'B' },
-        alternate: { mock: 'E' },
+        cond: { marker: 'C' },
+        body: { marker: 'B' },
+        alternate: { marker: 'E' },
       } as never,
       frame,
     });
@@ -49,8 +49,8 @@ describe('compileInlineIf', () => {
     const c = makeCompiler();
     compileInlineIf(asCompiler(c), {
       node: {
-        cond: { mock: 'C' },
-        body: { mock: 'B' },
+        cond: { marker: 'C' },
+        body: { marker: 'B' },
         alternate: null,
       } as never,
       frame,
@@ -67,7 +67,7 @@ describe('compileWalrus', () => {
         lineno: 2,
         colno: 4,
         target: symbol(loc({ lineno: 2, colno: 4 }), 'x'),
-        value: { mock: 'V' },
+        value: { marker: 'V' },
       } as never,
       frame,
     });
@@ -88,7 +88,7 @@ describe('compileWalrus', () => {
             target: symbol(loc({ lineno: 1, colno: 1 }), 'a'),
             val: literal(loc({ lineno: 1, colno: 1 }), 'b'),
           }),
-          value: { mock: 'V' },
+          value: { marker: 'V' },
         } as never,
         frame,
       })

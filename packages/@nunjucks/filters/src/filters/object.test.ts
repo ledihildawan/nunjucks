@@ -55,12 +55,12 @@ describe('filters/object', () => {
     });
 
     test('returns error when input is not an array', () => {
-      const result1 = groupby('nope', 'k');
-      expect(isErr(result1)).toBe(true);
-      const result2 = groupby({ a: 1 }, 'k');
-      expect(isErr(result2)).toBe(true);
-      const result3 = groupby(null, 'k');
-      expect(isErr(result3)).toBe(true);
+      const stringInputResult = groupby('nope', 'k');
+      expect(isErr(stringInputResult)).toBe(true);
+      const objectInputResult = groupby({ a: 1 }, 'k');
+      expect(isErr(objectInputResult)).toBe(true);
+      const nullInputResult = groupby(null, 'k');
+      expect(isErr(nullInputResult)).toBe(true);
     });
 
     test('returns error when an item is missing the named attribute', () => {

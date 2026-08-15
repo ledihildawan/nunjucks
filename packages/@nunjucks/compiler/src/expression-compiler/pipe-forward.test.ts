@@ -15,8 +15,8 @@ const makeCompiler = () => {
       emitted.push(s);
     },
     assertType: () => {},
-    compile: (n: { mock?: string }) => {
-      emitted.push(n.mock ?? 'X');
+    compile: (n: { marker?: string }) => {
+      emitted.push(n.marker ?? 'X');
     },
   };
 };
@@ -26,7 +26,7 @@ describe('compilePipeForward', () => {
     const c = makeCompiler();
     const node = pipe(loc({ lineno: 3, colno: 7 }), {
       name: symbol(loc({ lineno: 3, colno: 7 }), 'upper'),
-      args: [{ mock: 'ARG' } as never],
+      args: [{ marker: 'ARG' } as never],
     });
     compilePipeForward(asCompiler(c), { node: node as never, frame });
     const joined = c.emitted.join('');

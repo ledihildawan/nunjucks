@@ -17,12 +17,12 @@ describe('filters/array', () => {
     });
 
     test('returns error when input is not an array', () => {
-      const result1 = first('not an array');
-      expect(isErr(result1)).toBe(true);
-      const result2 = first(null);
-      expect(isErr(result2)).toBe(true);
-      const result3 = first({ 0: 'a' });
-      expect(isErr(result3)).toBe(true);
+      const stringInputResult = first('not an array');
+      expect(isErr(stringInputResult)).toBe(true);
+      const nullInputResult = first(null);
+      expect(isErr(nullInputResult)).toBe(true);
+      const objectInputResult = first({ 0: 'a' });
+      expect(isErr(objectInputResult)).toBe(true);
     });
   });
 
@@ -106,10 +106,10 @@ describe('filters/array', () => {
     });
 
     test('returns error when input is neither a string nor an array', () => {
-      const result1 = reverse(123);
-      expect(isErr(result1)).toBe(true);
-      const result2 = reverse(null);
-      expect(isErr(result2)).toBe(true);
+      const numericInputResult = reverse(123);
+      expect(isErr(numericInputResult)).toBe(true);
+      const nullInputResult = reverse(null);
+      expect(isErr(nullInputResult)).toBe(true);
     });
   });
 
@@ -155,10 +155,10 @@ describe('filters/array', () => {
     });
 
     test('returns error when N is zero or negative', () => {
-      const result1 = slice([1, 2], 0);
-      expect(isErr(result1)).toBe(true);
-      const result2 = slice([1, 2], -1);
-      expect(isErr(result2)).toBe(true);
+      const zeroCountResult = slice([1, 2], 0);
+      expect(isErr(zeroCountResult)).toBe(true);
+      const negativeCountResult = slice([1, 2], -1);
+      expect(isErr(negativeCountResult)).toBe(true);
     });
 
     test('returns error when input is not an array', () => {
@@ -204,10 +204,10 @@ describe('filters/array', () => {
     });
 
     test('returns error when input is neither an array nor a plain object', () => {
-      const result1 = sum('nope');
-      expect(isErr(result1)).toBe(true);
-      const result2 = sum(42);
-      expect(isErr(result2)).toBe(true);
+      const stringInputResult = sum('nope');
+      expect(isErr(stringInputResult)).toBe(true);
+      const numericInputResult = sum(42);
+      expect(isErr(numericInputResult)).toBe(true);
     });
   });
 

@@ -22,8 +22,8 @@ const makeCompiler = ({ streamErrorRecovery = false }: { streamErrorRecovery?: b
     emitLine: (s: string) => {
       emitted.push(`${s}\n`);
     },
-    compile: (n: { mock?: string }) => {
-      emitted.push(n.mock ?? 'CHILD');
+    compile: (n: { marker?: string }) => {
+      emitted.push(n.marker ?? 'CHILD');
     },
     getHtmlContext: (lineno: number, colno: number) => `ctx:${lineno}:${colno}`,
     emitStreamCatch: (lineno: number, colno: number) => {
