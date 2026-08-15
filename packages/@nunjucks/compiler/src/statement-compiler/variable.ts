@@ -73,8 +73,10 @@ const compileVariableAssignment = (
       // WHY: defense-in-depth — `name` originates from a lexer `symbol` token (DELIM_CHARS blocks the run), but we still validate the identifier before emitting it into the generated source. String interpolation inside the ReferenceError message escapes through JSON.stringify so the embedded `${name}` cannot break out of the generated double-quoted string.
       assertSafeIdentifier(name, { compiler, lineno: node.lineno, colno: node.colno });
       const referenceErrorMessage = `Variable '${name}' is not defined. Use ${name} := value to declare it.`;
+      // WHY: the attached code lets the error funnel classify this throw as UNDEFINED_VARIABLE
+      // (causes/fixCode/docs) instead of degrading to the generic RUNTIME_ERROR definition.
       compiler.emitLine(
-        `if (frame.lookup(${JSON.stringify(name)}) === undefined) { throw new ReferenceError(${JSON.stringify(referenceErrorMessage)}); }`
+        `if (frame.lookup(${JSON.stringify(name)}) === undefined) { const referenceError = new ReferenceError(${JSON.stringify(referenceErrorMessage)}); referenceError.code = 'UNDEFINED_VARIABLE'; throw referenceError; }`
       );
 
       const valueId = compiler.nextCompilerId();

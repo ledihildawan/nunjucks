@@ -1,5 +1,5 @@
 import type { UndefinedMode } from '@nunjucks/runtime';
-import type { DomPurifyConfig } from '@nunjucks/shared';
+import type { DomPurifyConfig, Environment, SandboxMode } from '@nunjucks/shared';
 import packageJson from '../../package.json';
 
 const PACKAGE_VERSION = packageJson.version as string;
@@ -110,13 +110,10 @@ const SAFE_BUILTINS: Readonly<Record<string, unknown>> = Object.freeze({
   version: PACKAGE_VERSION,
 });
 
-type SandboxEnvironment = 'auto' | 'node' | 'browser' | 'deno';
-type SandboxMode = 'blocklist' | 'allowlist';
-
 interface GlobalConfigBase {
   readonly sandbox: boolean;
   readonly sandboxAllowlist: readonly string[];
-  readonly sandboxEnvironment: SandboxEnvironment;
+  readonly sandboxEnvironment: Environment;
   readonly sandboxMode: SandboxMode;
   readonly strictMode: boolean;
   readonly executionTimeout: number;
@@ -171,9 +168,9 @@ const getDefaultConfig = (bundle?: FilterBundle): GlobalConfig =>
 
 export type {
   DomPurifyConfig,
+  Environment as SandboxEnvironment,
   FilterBundle,
   GlobalConfig,
-  SandboxEnvironment,
   SandboxMode,
   UndefinedMode,
 };

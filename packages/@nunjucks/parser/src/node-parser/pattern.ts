@@ -99,8 +99,8 @@ const parseArrayRestElement = (
   if (isErr(innerR)) {
     return innerR;
   }
-  const rp = restPattern(loc(tok), innerR.value);
-  return ok({ node: appendChild(node, rp), sawRest: true });
+  const restPatternNode = restPattern(loc(tok), innerR.value);
+  return ok({ node: appendChild(node, restPatternNode), sawRest: true });
 };
 
 const parseNestedPatternElement = (

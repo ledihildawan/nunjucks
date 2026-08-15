@@ -27,8 +27,8 @@ const makeCtx = (src: string): ParserContext => {
 describe('cursor: token navigation', () => {
   test('nextTokenOrNull returns tokens then null at EOF', () => {
     const ctx = makeCtx('{{ x }}');
-    const t1 = nextTokenOrNull(ctx);
-    expect(t1).toBeTruthy();
+    const firstToken = nextTokenOrNull(ctx);
+    expect(firstToken).toBeTruthy();
     while (nextTokenOrNull(ctx)) {}
     expect(nextTokenOrNull(ctx)).toBeNull();
   });

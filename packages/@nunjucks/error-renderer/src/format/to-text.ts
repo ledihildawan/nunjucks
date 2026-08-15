@@ -117,7 +117,13 @@ const formatFix = ({ fixCode, fixComment, documentationUrl }: FormatFixInput): s
 
 const formatStack = (error: unknown): string => {
   const stack = isErrorRecord(error) ? (error.stack ?? '') : '';
-  return pipe(stack, split('\n'), slice(1), map(formatStackLine), join('\n'));
+  return pipe(
+    stack,
+    split('\n'),
+    slice(1),
+    map(formatStackLine),
+    join('\n')
+  );
 };
 
 const toText = (error: unknown, options: ToTextOptions = {}): string => {

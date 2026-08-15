@@ -1,7 +1,13 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import type { Token } from '@nunjucks/lexer';
-import { COMPOUND_ASSIGNMENT_OPS, TOKEN_OPERATOR, TOKEN_PIPEFORWARD } from '@nunjucks/lexer';
+import {
+  COMPOUND_ASSIGNMENT_OPS,
+  TOKEN_COMMA,
+  TOKEN_OPERATOR,
+  TOKEN_PIPEFORWARD,
+  TOKEN_RIGHT_PAREN,
+} from '@nunjucks/lexer';
 import { isErr, ok, type Result } from '@nunjucks/lib';
 import type { Node } from '@nunjucks/nodes';
 import {
@@ -68,7 +74,7 @@ const normalizePattern = (node: Node): Node => {
 };
 
 const isExpressionContext = (tok: Token): boolean =>
-  tok && (tok.type === 'operator' || tok.type === 'right-paren' || tok.type === 'comma');
+  tok && (tok.type === TOKEN_OPERATOR || tok.type === TOKEN_RIGHT_PAREN || tok.type === TOKEN_COMMA);
 
 const handleWalrusAssignment = (
   node: Node,

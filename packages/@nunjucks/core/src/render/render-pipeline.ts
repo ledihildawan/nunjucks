@@ -157,7 +157,11 @@ const createDangerousContextError = async ({
             sourceFile: frame.fileName,
             callLine: frame.lineNumber ?? 1,
             dangerousPath: firstPath,
-          }).then((pos) => (pos ? { ...pos, fileName: frame.fileName } : null))
+          })
+            .then((pos) => (pos ? { ...pos, fileName: frame.fileName } : null))
+            // WHY: enrichment is best-effort — a failed lookup must never turn the never-rejecting
+            // render() contract into an unexpected rejection.
+            .catch(() => null)
         : Promise.resolve(null)
     )
   );
@@ -165,7 +169,7 @@ const createDangerousContextError = async ({
     framePositions.find(
       (pos): pos is { line: number; col: number; fileName: string } => pos !== null
     ) ?? null;
-  const err = createLog('error', {
+  const dangerousContextError = createLog('error', {
     def: getError('DANGEROUS_CONTEXT_VALUES'),
     params: { values: subject },
     subject,
@@ -187,7 +191,7 @@ const createDangerousContextError = async ({
       }
     : config;
   const safeForDisplay = scrubDangerousReferences(context);
-  return wrapWithLog(err, enrichedConfig, { renderContext: safeForDisplay });
+  return wrapWithLog(dangerousContextError, enrichedConfig, { renderContext: safeForDisplay });
 };
 
 interface ContextStrictModeOutcome {

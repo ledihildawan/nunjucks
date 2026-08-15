@@ -103,7 +103,7 @@ describe('compileFromImport', () => {
         );
         expect(joined).toContain(`t_2 = t_1_exported[${JSON.stringify(importedName)}];`);
         expect(joined).toContain(
-          `throw new Error('Cannot import ' + ${JSON.stringify(importedName)} + ' from module');`
+          `const importError = new Error('Cannot import ' + ${JSON.stringify(importedName)} + ' from module'); importError.code = 'IMPORT_ERROR';`
         );
         expect(joined).toContain(`context = context.setVariable(${JSON.stringify(alias)}, t_2);`);
       });
@@ -121,8 +121,12 @@ describe('compileFromImport', () => {
     const joined = c.emitted.join('');
     expect(joined).toContain('if(Object.hasOwn(t_1_exported, "foo")) {');
     expect(joined).toContain('if(Object.hasOwn(t_1_exported, "bar")) {');
-    expect(joined).toContain("throw new Error('Cannot import ' + \"foo\" + ' from module');");
-    expect(joined).toContain("throw new Error('Cannot import ' + \"bar\" + ' from module');");
+    expect(joined).toContain(
+      "const importError = new Error('Cannot import ' + \"foo\" + ' from module'); importError.code = 'IMPORT_ERROR';"
+    );
+    expect(joined).toContain(
+      "const importError = new Error('Cannot import ' + \"bar\" + ' from module'); importError.code = 'IMPORT_ERROR';"
+    );
     expect(joined).toContain('t_2 = t_1_exported["foo"];');
     expect(joined).toContain('t_3 = t_1_exported["bar"];');
   });

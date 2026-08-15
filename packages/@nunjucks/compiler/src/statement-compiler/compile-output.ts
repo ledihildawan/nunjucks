@@ -18,19 +18,19 @@ import { extractVarName } from './extract-var-name.ts';
 
 interface EmitEnsureDefinedCloseInput {
   child: Node;
-  loc: Loc;
+  nodeLoc: Loc;
 }
 
 const emitEnsureDefinedClose = (
   compiler: Compiler,
-  { child, loc }: EmitEnsureDefinedCloseInput
+  { child, nodeLoc }: EmitEnsureDefinedCloseInput
 ): void => {
   const name = extractVarName(child);
   const nameProp = name ? `, varName: ${JSON.stringify(name)}` : '';
   const modeProp = compiler.undefinedMode
     ? `, undefinedMode: ${JSON.stringify(compiler.undefinedMode)}`
     : '';
-  compiler.emit(`, { lineno: ${loc.lineno}, colno: ${loc.colno}${nameProp}${modeProp} })`);
+  compiler.emit(`, { lineno: ${nodeLoc.lineno}, colno: ${nodeLoc.colno}${nameProp}${modeProp} })`);
 };
 
 const isVariableLike = (child: Node): boolean =>
@@ -65,7 +65,7 @@ const compileOutputChild = (compiler: Compiler, child: Node, frame: Frame): void
   }
   compiler.compile(child, frame);
   if (useEnsureDefined) {
-    emitEnsureDefinedClose(compiler, { child, loc: childLoc });
+    emitEnsureDefinedClose(compiler, { child, nodeLoc: childLoc });
   }
   if (!isPipeType) {
     compiler.emit(')');

@@ -60,7 +60,7 @@ const hashString = (str: string): string => {
   return (hash >>> 0).toString(16);
 };
 
-const makeErrorId = (error: ErrorLike): string => {
+const createErrorId = (error: ErrorLike): string => {
   const parts = [
     error.message ?? '',
     error.templatePath ?? error.templateName ?? '',
@@ -108,7 +108,7 @@ const toHtmlMarker = (
 ): string => {
   const severity: MarkerSeverity = options.severity ?? 'block';
   const message = escapeHtml(options.humanTitle ?? error.message ?? 'Unknown error');
-  const id = makeErrorId(error);
+  const id = createErrorId(error);
   const fullPage = toHtml(error, options);
   const srcdocLiteral = JSON.stringify(fullPage).replaceAll('</', '<\\/');
   const css = severity === 'inline' ? INLINE_CSS : BLOCK_CSS;

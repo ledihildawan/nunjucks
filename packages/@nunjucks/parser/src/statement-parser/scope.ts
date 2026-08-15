@@ -1,6 +1,6 @@
 import type { TemplateError } from '@nunjucks/error-formatter';
 import type { Token } from '@nunjucks/lexer';
-import { TOKEN_BLOCK_END, TOKEN_COMMA, TOKEN_OPERATOR } from '@nunjucks/lexer';
+import { TOKEN_BLOCK_END, TOKEN_COMMA, TOKEN_OPERATOR, TOKEN_SYMBOL } from '@nunjucks/lexer';
 import { isErr, ok, type Result } from '@nunjucks/lib';
 import type { Node } from '@nunjucks/nodes';
 import { pair, scopeNode } from '@nunjucks/nodes';
@@ -71,7 +71,7 @@ const parseScopeAssignments = (
     if (isErr(nextNameTokR)) {
       return nextNameTokR;
     }
-    if (nextNameTokR.value?.type !== 'symbol') {
+    if (nextNameTokR.value?.type !== TOKEN_SYMBOL) {
       return fail(parserContext, 'parseScope: expected variable name after comma', {
         lineno: tag.lineno,
         colno: tag.colno,
@@ -110,19 +110,19 @@ export const parseScope = (parserContext: ParserContext): Result<Node, TemplateE
 
   let assignments: Node[] = [];
   if (isBlockEnd(firstTok)) {
-    const aR = advanceAfterBlockEnd(parserContext, 'scope');
-    if (isErr(aR)) {
-      return aR;
+    const advanceResult = advanceAfterBlockEnd(parserContext, 'scope');
+    if (isErr(advanceResult)) {
+      return advanceResult;
     }
-  } else if (firstTok?.type === 'symbol') {
+  } else if (firstTok?.type === TOKEN_SYMBOL) {
     const assignmentsR = parseScopeAssignments(parserContext, tag);
     if (isErr(assignmentsR)) {
       return assignmentsR;
     }
     assignments = assignmentsR.value;
-    const aR = advanceAfterBlockEnd(parserContext, 'scope');
-    if (isErr(aR)) {
-      return aR;
+    const advanceResult = advanceAfterBlockEnd(parserContext, 'scope');
+    if (isErr(advanceResult)) {
+      return advanceResult;
     }
   } else {
     return fail(parserContext, 'parseScope: expected variable name or block end', {

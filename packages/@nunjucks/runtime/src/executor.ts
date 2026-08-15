@@ -1,5 +1,5 @@
 import { collectString } from '@nunjucks/lib/collect-stream';
-import type { Environment } from '@nunjucks/shared';
+import type { Environment, SandboxMode } from '@nunjucks/shared';
 import { createContext, type Env } from './context.ts';
 import {
   buildSandboxedRuntime,
@@ -8,8 +8,6 @@ import {
 } from './executor-runtime.ts';
 import type { Frame } from './frame.ts';
 import { createRenderRuntime, type RenderRuntime } from './render-runtime.ts';
-
-type SandboxMode = 'allowlist' | 'blocklist';
 
 interface ExecuteConfig {
   autoescape?: boolean;

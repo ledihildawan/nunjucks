@@ -66,16 +66,16 @@ const handleSwitchEnd = (parserContext: ParserContext): Result<Node | undefined,
   const tok = tokR.value;
   switch (tok.value) {
     case SWITCH_TOKENS.caseDefault: {
-      const aR = advanceAfterBlockEnd(parserContext);
-      if (isErr(aR)) {
-        return aR;
+      const advanceResult = advanceAfterBlockEnd(parserContext);
+      if (isErr(advanceResult)) {
+        return advanceResult;
       }
       return parseUntilBlocks(parserContext, SWITCH_TOKENS.switchEnd);
     }
     case SWITCH_TOKENS.switchEnd: {
-      const aR = advanceAfterBlockEnd(parserContext);
-      if (isErr(aR)) {
-        return aR;
+      const advanceResult = advanceAfterBlockEnd(parserContext);
+      if (isErr(advanceResult)) {
+        return advanceResult;
       }
       return ok(undefined);
     }
@@ -105,9 +105,9 @@ const parseSwitchDefault = (
   if (isErr(resultR)) {
     return resultR;
   }
-  const aR = advanceAfterBlockEnd(parserContext);
-  if (isErr(aR)) {
-    return aR;
+  const advanceResult = advanceAfterBlockEnd(parserContext);
+  if (isErr(advanceResult)) {
+    return advanceResult;
   }
   return ok(resultR.value);
 };

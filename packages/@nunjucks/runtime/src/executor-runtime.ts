@@ -6,6 +6,7 @@ import {
   type Environment,
   extractBlocks,
   isCompiledTemplateExports,
+  type SandboxMode,
 } from '@nunjucks/shared';
 import { loadCompiledCode } from './code-loader.ts';
 import type { BlockLocation } from './context.ts';
@@ -54,7 +55,7 @@ const getRenderFunction = (code: string): RenderFunctionResult => {
 
 const buildSandboxOptions = (config: {
   sandboxAllowlist?: readonly string[];
-  sandboxMode?: 'allowlist' | 'blocklist';
+  sandboxMode?: SandboxMode;
   sandboxEnvironment?: Environment;
 }): SandboxOptions => ({
   allowlist: config.sandboxAllowlist ?? [],

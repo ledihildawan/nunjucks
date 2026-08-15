@@ -159,9 +159,9 @@ export const advanceAfterTags = (
   tag: string
 ): Result<void, TemplateError> => {
   skipSymbol(parserContext, tag);
-  const r = advanceAfterBlockEnd(parserContext, tag);
-  if (isErr(r)) {
-    return r;
+  const advanceResult = advanceAfterBlockEnd(parserContext, tag);
+  if (isErr(advanceResult)) {
+    return advanceResult;
   }
   return ok(undefined);
 };

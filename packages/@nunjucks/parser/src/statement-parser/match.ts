@@ -13,9 +13,9 @@ import { parseUntilBlocks } from '../parse-root.ts';
 
 const parseWhenDefault = (parserContext: ParserContext): Result<Node, TemplateError> => {
   skipSymbol(parserContext, '_');
-  const aR = advanceAfterBlockEnd(parserContext, 'when');
-  if (isErr(aR)) {
-    return aR;
+  const advanceResult = advanceAfterBlockEnd(parserContext, 'when');
+  if (isErr(advanceResult)) {
+    return advanceResult;
   }
   return parseUntilBlocks(parserContext, 'endmatch');
 };

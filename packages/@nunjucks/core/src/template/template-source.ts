@@ -19,10 +19,7 @@ const createFallbackEnv = (): Env => ({
   opts: { dev: false, autoescape: true, undefined: 'default' },
   getFilter: () => null,
   getTest: () => null,
-  getTemplate(nameOrOptions: string | GetTemplateOptions) {
-    const name = typeof nameOrOptions === 'string' ? nameOrOptions : nameOrOptions.name;
-    const ignoreMissing =
-      typeof nameOrOptions === 'string' ? undefined : nameOrOptions.ignoreMissing;
+  getTemplate({ name, ignoreMissing }: GetTemplateOptions) {
     if (ignoreMissing) {
       return null;
     }

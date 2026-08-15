@@ -9,6 +9,10 @@ const UNDEFINED_MODES = ['default', 'strict', 'debug', 'chainable'] as const;
 
 type UndefinedMode = (typeof UNDEFINED_MODES)[number];
 
+const SANDBOX_MODES = ['blocklist', 'allowlist'] as const;
+
+type SandboxMode = (typeof SANDBOX_MODES)[number];
+
 interface DomPurifyConfig {
   ALLOWED_TAGS?: string[];
   ALLOWED_ATTR?: string[];
@@ -22,5 +26,5 @@ interface DomPurifyConfig {
   ALLOW_DATA_ATTR?: boolean;
 }
 
-export type { DomPurifyConfig, NodeLocation, Phase, UndefinedMode };
-export { UNDEFINED_MODES };
+export type { DomPurifyConfig, NodeLocation, Phase, SandboxMode, UndefinedMode };
+export { SANDBOX_MODES, UNDEFINED_MODES };

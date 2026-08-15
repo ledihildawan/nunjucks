@@ -96,9 +96,9 @@ export const parseFor = (parserContext: ParserContext): Result<Node, TemplateErr
 
   let alternate: Node | null = null;
   if (skipSymbol(parserContext, 'else')) {
-    const aR = advanceAfterBlockEnd(parserContext, 'else');
-    if (isErr(aR)) {
-      return aR;
+    const advanceResult = advanceAfterBlockEnd(parserContext, 'else');
+    if (isErr(advanceResult)) {
+      return advanceResult;
     }
     const altBodyR = parseUntilBlocks(parserContext, endBlock);
     if (isErr(altBodyR)) {

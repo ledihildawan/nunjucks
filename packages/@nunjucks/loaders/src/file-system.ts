@@ -202,12 +202,12 @@ export const createFileSystemLoader = (
         filePath,
         createWatchHandler({ filePath, emit: base.emit, onRename: unwatchFile })
       );
-    } catch (err: unknown) {
-      base.emit('error', err);
+    } catch (watchError: unknown) {
+      base.emit('error', watchError);
       return;
     }
 
-    watcher.on('error', (err) => base.emit('error', err));
+    watcher.on('error', (watchError) => base.emit('error', watchError));
     watchedFiles.set(filePath, watcher);
   };
 

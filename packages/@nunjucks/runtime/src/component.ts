@@ -36,7 +36,7 @@ export function createComponent<A extends unknown[], R>({
     if (optionsArg) {
       const positional = componentArgs.slice(0, argCount);
       const namedKwargs = kwargs;
-      const optionsObj = positional.reduce<Record<string, unknown>>((acc, value, index) => {
+      const positionalOptions = positional.reduce<Record<string, unknown>>((acc, value, index) => {
         const name = index === 0 ? argNames[0] : kwargNames[index - 1];
         if (name !== undefined && value !== undefined) {
           acc[name] = value;
@@ -44,8 +44,7 @@ export function createComponent<A extends unknown[], R>({
         return acc;
       }, {});
 
-      Object.assign(optionsObj, namedKwargs);
-      return Reflect.apply(func, this, [optionsObj]) as R;
+      return Reflect.apply(func, this, [{ ...positionalOptions, ...namedKwargs }]) as R;
     }
 
     const args =

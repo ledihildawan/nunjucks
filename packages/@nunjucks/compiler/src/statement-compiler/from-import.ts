@@ -39,8 +39,10 @@ const compileImportedName = ({
   compiler.emitLine(`if(Object.hasOwn(${importedId}_exported, ${JSON.stringify(name)})) {`);
   compiler.emitLine(`${id} = ${importedId}_exported[${JSON.stringify(name)}];`);
   compiler.emitLine('} else {');
+  // WHY: the attached code lets the error funnel classify this throw as IMPORT_ERROR
+  // (causes/fixCode/docs) instead of degrading to the generic RUNTIME_ERROR definition.
   compiler.emitLine(
-    `throw new Error('Cannot import ' + ${JSON.stringify(name)} + ' from module');`
+    `const importError = new Error('Cannot import ' + ${JSON.stringify(name)} + ' from module'); importError.code = 'IMPORT_ERROR'; importError.subject = ${JSON.stringify(name)}; throw importError;`
   );
   compiler.emitLine('}');
 
