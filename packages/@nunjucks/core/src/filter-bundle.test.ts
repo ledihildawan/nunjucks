@@ -2,9 +2,9 @@ import { getReservedKeywords } from '@nunjucks/validators';
 import { expect, test } from 'bun:test';
 import { defaultFilterBundle } from './filter-bundle.ts';
 
-// WHY: RESERVED_KEYWORDS (validators) must cover every built-in filter name so a user-supplied
-// filter can never shadow the engine surface. The two lists live in different packages (validators
-// cannot import filters without a dependency cycle), so this test is the single drift guard.
+// WHY: both sides now derive from @nunjucks/filters filter-names.ts (SSOT), so this test
+// cannot fail via drift — it stays as a contract pin proving the engine's registered
+// filter surface is fully reserved, whatever filters adds in the future.
 test('every built-in filter name is reserved', () => {
   const reservedNames = new Set(getReservedKeywords());
   const builtInNames = Object.keys(defaultFilterBundle.filters);

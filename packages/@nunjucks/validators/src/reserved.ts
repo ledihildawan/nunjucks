@@ -1,4 +1,5 @@
 import { err, ok, type Result } from '@nunjucks/lib';
+import { BUILTIN_FILTER_NAMES } from '@nunjucks/filters';
 import { BLOCKED_KEYS_LIST } from '@nunjucks/shared';
 import { JS_BUILTIN_CONSTRUCTORS } from './js-builtins.ts';
 
@@ -87,38 +88,10 @@ const RESERVED_KEYWORDS = new Set<string>([
   'toString',
   'valueOf',
   'toJSON',
-  // WHY: filter names mirror the ACTUAL built-in filter surface (filter implementations in
-  // @nunjucks/filters + the default/d/e/length aliases wired in core/src/filter-bundle.ts).
-  // Drift is guarded by core/src/filter-bundle.test.ts, which fails when a built-in filter
-  // name is missing from this list.
-  'default',
-  'd',
-  'e',
-  'abs',
-  'capitalize',
-  'escape',
-  'fallback',
-  'first',
-  'groupby',
-  'indent',
-  'join',
-  'last',
-  'length',
-  'lengthFilter',
-  'lower',
-  'replace',
-  'reverse',
-  'round',
-  'sanitize',
-  'slice',
-  'sort',
-  'sum',
-  'title',
-  'tojson',
-  'trim',
-  'truncate',
-  'upper',
-  'urlencode',
+  // WHY: built-in filter names derive from @nunjucks/filters itself (filter-names.ts
+  // includes the upstream aliases) — adding a filter there automatically reserves
+  // its name here; no hand-maintained list to drift.
+  ...BUILTIN_FILTER_NAMES,
   ...BLOCKED_KEYS_LIST,
 ]);
 

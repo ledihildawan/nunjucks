@@ -12,6 +12,7 @@
     "./expression": "./src/expression.ts"
   },
   "dependencies": {
+    "@nunjucks/filters": "workspace:*",
     "@nunjucks/lib": "workspace:*",
     "@nunjucks/shared": "workspace:*",
     "@nunjucks/nodes": "workspace:*",
