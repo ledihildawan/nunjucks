@@ -1,6 +1,6 @@
-import type { Env, BlockLocation, BlockFn } from '@nunjucks/runtime';
 import type { IncludeChain } from '@nunjucks/error-formatter';
-import type { CompiledTemplateExports } from '@nunjucks/compiler';
+import type { BlockFn, BlockLocation, Env } from '@nunjucks/runtime';
+import type { CompiledTemplateExports } from '@nunjucks/shared';
 import type { RuntimeContext } from './runtime-context.ts';
 
 export { Template };
@@ -8,7 +8,12 @@ export { Template };
 const Template = Symbol('Template');
 
 // WHY: Option B — root renders as an async generator yielding output chunks and returning the post-render context.
-type RootRenderFunc = (env: Env, context: unknown, frame: unknown, runtime: RuntimeContext) => AsyncGenerator<string, unknown>;
+type RootRenderFunc = (
+  env: Env,
+  context: unknown,
+  frame: unknown,
+  runtime: RuntimeContext
+) => AsyncGenerator<string, unknown>;
 
 type TemplateStateBase = {
   env: Env;
@@ -18,10 +23,16 @@ type TemplateStateBase = {
   blockMeta: Record<string, BlockLocation>;
 };
 
-type TemplateState = TemplateStateBase & (
-  | { status: 'source'; tmplStr: string; tmplProps: null; rootRenderFunc: null }
-  | { status: 'compiled'; tmplStr: null; tmplProps: CompiledTemplateExports; rootRenderFunc: RootRenderFunc }
-);
+type TemplateState = TemplateStateBase &
+  (
+    | { status: 'source'; tmplStr: string; tmplProps: null; rootRenderFunc: null }
+    | {
+        status: 'compiled';
+        tmplStr: null;
+        tmplProps: CompiledTemplateExports;
+        rootRenderFunc: RootRenderFunc;
+      }
+  );
 
 export interface TemplateSource {
   type: 'code' | 'string';
@@ -38,7 +49,10 @@ export interface TemplateObject {
   rootRenderFunc: RootRenderFunc | null;
   render: (ctx: Record<string, unknown>, parentFrame?: unknown) => Promise<string>;
   compile: () => void;
-  getExported: (ctx?: Record<string, unknown>, parentFrame?: unknown) => Promise<Record<string, unknown>>;
+  getExported: (
+    ctx?: Record<string, unknown>,
+    parentFrame?: unknown
+  ) => Promise<Record<string, unknown>>;
 }
 
-export type { TemplateState, TemplateStateBase, RootRenderFunc };
+export type { RootRenderFunc, TemplateState, TemplateStateBase };

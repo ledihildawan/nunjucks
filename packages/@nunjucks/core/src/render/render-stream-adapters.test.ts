@@ -1,11 +1,22 @@
-import { describe, test, expect } from 'bun:test';
-import { toWebReadableStream, withStreamTimeout, withStreamDeadline, coalesceStream, coerceChunk, isStreamTimeoutError } from './render-stream-adapters.ts';
-import { isOk, isErr } from '@nunjucks/lib';
+import { describe, expect, test } from 'bun:test';
+import { isErr, isOk } from '@nunjucks/lib';
+import {
+  coalesceStream,
+  coerceChunk,
+  isStreamTimeoutError,
+  toWebReadableStream,
+  withStreamDeadline,
+  withStreamTimeout,
+} from './render-stream-adapters.ts';
 
 const fromChunks = (chunks: readonly string[], delayMs = 0): AsyncGenerator<string> =>
   (async function* generate() {
     for (const chunk of chunks) {
-      if (delayMs > 0) { await new Promise((resolve) => { setTimeout(resolve, delayMs); }); }
+      if (delayMs > 0) {
+        await new Promise((resolve) => {
+          setTimeout(resolve, delayMs);
+        });
+      }
       yield chunk;
     }
   })();
@@ -19,7 +30,9 @@ describe('toWebReadableStream', () => {
 
     while (true) {
       const { value, done } = await reader.read();
-      if (done) { break; }
+      if (done) {
+        break;
+      }
       collected.push(decoder.decode(value));
     }
     expect(collected.join('')).toBe('abc');
@@ -43,7 +56,9 @@ describe('withStreamTimeout', () => {
     const timed = withStreamTimeout(stream, 20);
     let caught: unknown;
     try {
-      for await (const _chunk of timed) { void _chunk; }
+      for await (const _chunk of timed) {
+        void _chunk;
+      }
     } catch (error) {
       caught = error;
     }
@@ -65,7 +80,9 @@ describe('withStreamDeadline', () => {
     const stream = fromChunks(['x', 'y', 'z'], 30);
     let caught: unknown;
     try {
-      for await (const _chunk of withStreamDeadline(stream, 50)) { void _chunk; }
+      for await (const _chunk of withStreamDeadline(stream, 50)) {
+        void _chunk;
+      }
     } catch (error) {
       caught = error;
     }
@@ -75,7 +92,9 @@ describe('withStreamDeadline', () => {
   test('timeout error carries code=TIMEOUT so FATAL_STREAM_CODES recognizes it', async () => {
     let caught: unknown;
     try {
-      for await (const _chunk of withStreamDeadline(fromChunks(['a', 'b'], 80), 20)) { void _chunk; }
+      for await (const _chunk of withStreamDeadline(fromChunks(['a', 'b'], 80), 20)) {
+        void _chunk;
+      }
     } catch (error) {
       caught = error;
     }
@@ -123,7 +142,9 @@ describe('coerceChunk', () => {
   test('passes a primitive string through untouched', () => {
     const result = coerceChunk('hello');
     expect(isOk(result)).toBe(true);
-    if (!isOk(result)) { return; }
+    if (!isOk(result)) {
+      return;
+    }
     expect(result.value).toBe('hello');
     expect(typeof result.value).toBe('string');
   });
@@ -135,7 +156,9 @@ describe('coerceChunk', () => {
     expect(typeof boxed).toBe('object');
     const result = coerceChunk(boxed);
     expect(isOk(result)).toBe(true);
-    if (!isOk(result)) { return; }
+    if (!isOk(result)) {
+      return;
+    }
     expect(typeof result.value).toBe('string');
     expect(result.value).toBe('abc');
   });
@@ -143,7 +166,9 @@ describe('coerceChunk', () => {
   test('coerces a number to a string', () => {
     const result = coerceChunk(42);
     expect(isOk(result)).toBe(true);
-    if (!isOk(result)) { return; }
+    if (!isOk(result)) {
+      return;
+    }
     expect(result.value).toBe('42');
   });
 
@@ -152,7 +177,9 @@ describe('coerceChunk', () => {
     // the bug as a mid-stream error instead of corrupting the response.
     const result = coerceChunk(Promise.resolve('x'));
     expect(isErr(result)).toBe(true);
-    if (!isErr(result)) { return; }
+    if (!isErr(result)) {
+      return;
+    }
     expect(result.error.message).toContain('Promise leaked');
   });
 });

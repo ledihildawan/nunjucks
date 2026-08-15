@@ -1,13 +1,10 @@
-﻿import { describe, test, expect } from 'bun:test';
+﻿import { describe, expect, test } from 'bun:test';
 import { renderTemplate } from './render-test-helper.ts';
 
 describe('exec tag', () => {
   test('executes function without producing output', async () => {
     const items: string[] = [];
-    const result = await renderTemplate(
-      '{% exec items.push("hello") %}done',
-      { items }
-    );
+    const result = await renderTemplate('{% exec items.push("hello") %}done', { items });
     expect(result).toBe('done');
     expect(items).toEqual(['hello']);
   });
@@ -22,10 +19,9 @@ describe('exec tag', () => {
   });
 
   test('exec with function call side effect', async () => {
-    const result = await renderTemplate(
-      '{% exec log.push("counted") %}{{ log[0] }}',
-      { log: [] as string[] }
-    );
+    const result = await renderTemplate('{% exec log.push("counted") %}{{ log[0] }}', {
+      log: [] as string[],
+    });
     expect(result).toBe('counted');
   });
 
@@ -49,17 +45,14 @@ describe('exec tag', () => {
 
   test('exec with complex expression', async () => {
     const log: string[] = [];
-    const result = await renderTemplate(
-      '{% exec log.push("msg: " + "test") %}{{ log[0] }}',
-      { log }
-    );
+    const result = await renderTemplate('{% exec log.push("msg: " + "test") %}{{ log[0] }}', {
+      log,
+    });
     expect(result).toBe('msg: test');
   });
 
   test('exec does not affect template output', async () => {
-    const result = await renderTemplate(
-      'before{% exec null %}after'
-    );
+    const result = await renderTemplate('before{% exec null %}after');
     expect(result).toBe('beforeafter');
   });
 });

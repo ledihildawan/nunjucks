@@ -1,5 +1,5 @@
 import * as filters from '@nunjucks/filters';
-import { sanitize, type DomPurifyConfig } from '@nunjucks/filters';
+import { type DomPurifyConfig, sanitize } from '@nunjucks/filters';
 import type { FilterBundle } from './config/global.ts';
 
 const builtInFilters = Object.freeze({
@@ -17,5 +17,5 @@ const defaultFilterBundle: FilterBundle = Object.freeze({
   dompurify: Object.freeze({}),
 });
 
-export { defaultFilterBundle };
 export type { DomPurifyConfig, FilterBundle };
+export { defaultFilterBundle };

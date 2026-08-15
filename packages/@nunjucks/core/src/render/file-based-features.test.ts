@@ -1,16 +1,22 @@
-﻿import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { render } from './render.ts';
-import { isErr } from '@nunjucks/lib';
-import { renderTemplate } from './render-test-helper.ts';
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+﻿import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { isErr } from '@nunjucks/lib';
+import { render } from './render.ts';
+import { renderTemplate } from './render-test-helper.ts';
 
 let tempDir: string;
 
-const renderFile = async (filename: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
+const renderFile = async (
+  filename: string,
+  context: Record<string, unknown> = {},
+  config: Record<string, unknown> = {}
+) => {
   const result = await render(filename, { context, views: tempDir, ...config });
-  if (isErr(result)) { throw result.error; }
+  if (isErr(result)) {
+    throw result.error;
+  }
   return result.value;
 };
 
@@ -24,23 +30,36 @@ afterAll(async () => {
 
 describe('extends and blocks', () => {
   test('basic extends with block override', async () => {
-    await writeFile(join(tempDir, 'base.njk'), 'Base{% block content %}default{% endblock %}');
-    await writeFile(join(tempDir, 'child.njk'), '{% extends "base.njk" %}{% block content %}override{% endblock %}');
+    await Promise.all([
+      writeFile(join(tempDir, 'base.njk'), 'Base{% block content %}default{% endblock %}'),
+      writeFile(
+        join(tempDir, 'child.njk'),
+        '{% extends "base.njk" %}{% block content %}override{% endblock %}'
+      ),
+    ]);
 
     const result = await renderFile('child.njk', {});
     expect(result).toContain('override');
   });
 
   test('block without extends uses default content', async () => {
-    await writeFile(join(tempDir, 'only-block.njk'), 'Before{% block main %}default content{% endblock %}After');
+    await writeFile(
+      join(tempDir, 'only-block.njk'),
+      'Before{% block main %}default content{% endblock %}After'
+    );
 
     const result = await renderFile('only-block.njk', {});
     expect(result).toContain('default content');
   });
 
   test('child can access parent block via super', async () => {
-    await writeFile(join(tempDir, 'super-base.njk'), 'Header{% block content %}Parent{% endblock %}');
-    await writeFile(join(tempDir, 'super-child.njk'), '{% extends "super-base.njk" %}{% block content %}Child: {{ super() }}{% endblock %}');
+    await Promise.all([
+      writeFile(join(tempDir, 'super-base.njk'), 'Header{% block content %}Parent{% endblock %}'),
+      writeFile(
+        join(tempDir, 'super-child.njk'),
+        '{% extends "super-base.njk" %}{% block content %}Child: {{ super() }}{% endblock %}'
+      ),
+    ]);
 
     const result = await renderFile('super-child.njk', {});
     expect(result).toContain('Child: Parent');
@@ -49,16 +68,20 @@ describe('extends and blocks', () => {
 
 describe('include', () => {
   test('include renders another template', async () => {
-    await writeFile(join(tempDir, 'partial.njk'), 'Partial content');
-    await writeFile(join(tempDir, 'main.njk'), 'Main:{% include "partial.njk" %}');
+    await Promise.all([
+      writeFile(join(tempDir, 'partial.njk'), 'Partial content'),
+      writeFile(join(tempDir, 'main.njk'), 'Main:{% include "partial.njk" %}'),
+    ]);
 
     const result = await renderFile('main.njk', {});
     expect(result).toContain('Partial content');
   });
 
   test('include with context passes variables', async () => {
-    await writeFile(join(tempDir, 'with-context.njk'), 'Hello {{ name }}');
-    await writeFile(join(tempDir, 'use-context.njk'), '{% include "with-context.njk" %}');
+    await Promise.all([
+      writeFile(join(tempDir, 'with-context.njk'), 'Hello {{ name }}'),
+      writeFile(join(tempDir, 'use-context.njk'), '{% include "with-context.njk" %}'),
+    ]);
 
     const result = await renderFile('use-context.njk', { name: 'Alice' });
     expect(result).toContain('Hello Alice');
@@ -140,14 +163,22 @@ describe('components', () => {
 
 describe('import', () => {
   test('import component from another file', async () => {
-    await writeFile(join(tempDir, 'components.njk'), `
+    await Promise.all([
+      writeFile(
+        join(tempDir, 'components.njk'),
+        `
 {% component hello(name) %}Hello {{ name }}!{% endcomponent %}
 {% component goodbye(name) %}Goodbye {{ name }}!{% endcomponent %}
-`);
-    await writeFile(join(tempDir, 'use-components.njk'), `
+`
+      ),
+      writeFile(
+        join(tempDir, 'use-components.njk'),
+        `
 {% import "components.njk" as m %}
 {{ m.hello("World") }}
-`);
+`
+      ),
+    ]);
 
     const result = await renderFile('use-components.njk', {});
     expect(result).toContain('Hello World!');
@@ -156,28 +187,44 @@ describe('import', () => {
 
 describe('from import', () => {
   test('from import brings components into scope directly', async () => {
-    await writeFile(join(tempDir, 'my-components.njk'), `
+    await Promise.all([
+      writeFile(
+        join(tempDir, 'my-components.njk'),
+        `
 {% component greet(name) %}Hi {{ name }}{% endcomponent %}
 {% component farewell(name) %}Bye {{ name }}{% endcomponent %}
-`);
-    await writeFile(join(tempDir, 'use-from.njk'), `
+`
+      ),
+      writeFile(
+        join(tempDir, 'use-from.njk'),
+        `
 {% from "my-components.njk" import greet %}
 {{ greet("Alice") }}
-`);
+`
+      ),
+    ]);
 
     const result = await renderFile('use-from.njk', {});
     expect(result).toContain('Hi Alice');
   });
 
   test('from import with multiple items', async () => {
-    await writeFile(join(tempDir, 'math-components.njk'), `
+    await Promise.all([
+      writeFile(
+        join(tempDir, 'math-components.njk'),
+        `
 {% component double(x) %}{{ x * 2 }}{% endcomponent %}
 {% component triple(x) %}{{ x * 3 }}{% endcomponent %}
-`);
-    await writeFile(join(tempDir, 'use-multi-import.njk'), `
+`
+      ),
+      writeFile(
+        join(tempDir, 'use-multi-import.njk'),
+        `
 {% from "math-components.njk" import double, triple %}
 double(5) = {{ double(5) }}, triple(5) = {{ triple(5) }}
-`);
+`
+      ),
+    ]);
 
     const result = await renderFile('use-multi-import.njk', {});
     expect(result).toContain('double(5) = 10');
@@ -185,38 +232,62 @@ double(5) = {{ double(5) }}, triple(5) = {{ triple(5) }}
   });
 
   test('from import with alias', async () => {
-    await writeFile(join(tempDir, 'utils.njk'), `
+    await Promise.all([
+      writeFile(
+        join(tempDir, 'utils.njk'),
+        `
 {% component greet(name) %}Hello {{ name }}{% endcomponent %}
-`);
-    await writeFile(join(tempDir, 'use-alias.njk'), `
+`
+      ),
+      writeFile(
+        join(tempDir, 'use-alias.njk'),
+        `
 {% from "utils.njk" import greet as say_hello %}
 {{ say_hello("Bob") }}
-`);
+`
+      ),
+    ]);
 
     const result = await renderFile('use-alias.njk', {});
     expect(result).toContain('Hello Bob');
   });
 
   test('from import with context', async () => {
-    await writeFile(join(tempDir, 'ctx-components.njk'), `
+    await Promise.all([
+      writeFile(
+        join(tempDir, 'ctx-components.njk'),
+        `
 {% component show_user() %}{{ user.name }}{% endcomponent %}
-`);
-    await writeFile(join(tempDir, 'use-ctx.njk'), `
+`
+      ),
+      writeFile(
+        join(tempDir, 'use-ctx.njk'),
+        `
 {% from "ctx-components.njk" import show_user with context %}
 {{ show_user() }}
-`);
+`
+      ),
+    ]);
 
     const result = await renderFile('use-ctx.njk', { user: { name: 'Charlie' } });
     expect(result).toContain('Charlie');
   });
 
   test('from import throws when symbol not found', async () => {
-    await writeFile(join(tempDir, 'partial-components.njk'), `
+    await Promise.all([
+      writeFile(
+        join(tempDir, 'partial-components.njk'),
+        `
 {% component foo() %}foo{% endcomponent %}
-`);
-    await writeFile(join(tempDir, 'use-missing.njk'), `
+`
+      ),
+      writeFile(
+        join(tempDir, 'use-missing.njk'),
+        `
 {% from "partial-components.njk" import missing_component %}
-`);
+`
+      ),
+    ]);
 
     await expect(renderFile('use-missing.njk', {})).rejects.toThrow();
   });

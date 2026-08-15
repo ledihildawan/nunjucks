@@ -1,6 +1,6 @@
-import { createNunjucks } from './factory.ts';
-import type { NunjucksConfig, NunjucksEngine } from './config/nunjucks-config.ts';
 import { PACKAGE_VERSION } from './config/global.ts';
+import type { NunjucksConfig, NunjucksEngine } from './config/nunjucks-config.ts';
+import { createNunjucks } from './factory.ts';
 
 // WHY: public API surface. `nunjucks(config)` is the single entry point (factory → engine) — a thin wrapper
 // over the base `createNunjucks` (in factory.ts). The split mirrors betterAuth's createBetterAuth/betterAuth
@@ -10,13 +10,28 @@ import { PACKAGE_VERSION } from './config/global.ts';
 // NOT re-exported here. Advanced streaming adapters remain available for non-Express runtimes.
 const nunjucks = (config: NunjucksConfig = {}): NunjucksEngine => createNunjucks(config);
 
-export { nunjucks, createNunjucks, PACKAGE_VERSION };
-export type { NunjucksConfig, SecurityConfig, LimitsConfig, StreamingConfig, PerRenderOverrides, NunjucksEngine } from './config/nunjucks-config.ts';
-export { foldPlugins } from './plugin/index.ts';
-export type { NunjucksPlugin } from './plugin/index.ts';
-export type { RenderStreamResult } from './render/render-types.ts';
-export type { PipeSink, PipeRenderStreamOptions } from './render/pipe-stream.ts';
-export { toWebReadableStream, withStreamTimeout, withStreamDeadline, isStreamTimeoutError, type StreamTimeoutError } from './render/render-stream-adapters.ts';
-export type { GlobalConfig } from './config/global.ts';
+export type { SourceFileReader, TemplateError } from '@nunjucks/error-formatter';
+export { formatError } from '@nunjucks/error-formatter';
 export type { Result } from '@nunjucks/lib';
-export type { TemplateError } from '@nunjucks/error-formatter';
+export { createSandboxedContext } from '@nunjucks/runtime';
+export type { GlobalConfig } from './config/global.ts';
+export type {
+  LimitsConfig,
+  NunjucksConfig,
+  NunjucksEngine,
+  PerRenderOverrides,
+  SecurityConfig,
+  StreamingConfig,
+} from './config/nunjucks-config.ts';
+export type { NunjucksPlugin } from './plugin/index.ts';
+export { foldPlugins } from './plugin/index.ts';
+export type { PipeRenderStreamOptions, PipeSink } from './render/pipe-stream.ts';
+export {
+  isStreamTimeoutError,
+  type StreamTimeoutError,
+  toWebReadableStream,
+  withStreamDeadline,
+  withStreamTimeout,
+} from './render/render-stream-adapters.ts';
+export type { RenderStreamResult } from './render/render-types.ts';
+export { createNunjucks, nunjucks, PACKAGE_VERSION };

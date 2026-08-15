@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createGetExported } from './template-exporter.ts';
 import { createFallbackEnv } from './template-source.ts';
 
@@ -22,7 +22,11 @@ describe('createGetExported', () => {
 
   test('calls safeCompile before rendering', async () => {
     let compileCalled = false;
-    const compiler = { safeCompile: async () => { compileCalled = true; } };
+    const compiler = {
+      safeCompile: async () => {
+        compileCalled = true;
+      },
+    };
     const getState = () => ({
       env: createFallbackEnv(),
       path: 'test.html',
@@ -40,7 +44,11 @@ describe('createGetExported', () => {
   });
 
   test('throws prettifyError when compile fails', async () => {
-    const compiler = { safeCompile: async () => { throw new Error('compile failed'); } };
+    const compiler = {
+      safeCompile: async () => {
+        throw new Error('compile failed');
+      },
+    };
     const getState = () => ({
       env: createFallbackEnv(),
       path: 'test.html',

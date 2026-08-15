@@ -1,10 +1,10 @@
 import { createCompiler } from '@nunjucks/compiler';
-import { parse } from '@nunjucks/parser';
+import { err, isErr, ok, type Result } from '@nunjucks/lib';
 import type { ParseOptions, ParserExtension } from '@nunjucks/parser';
-import { transform } from '@nunjucks/transformers';
-import { createFrame } from '@nunjucks/runtime';
+import { parse } from '@nunjucks/parser';
 import type { UndefinedMode } from '@nunjucks/runtime';
-import { ok, err, isErr, type Result } from '@nunjucks/lib';
+import { createFrame } from '@nunjucks/runtime';
+import { transform } from '@nunjucks/transformers';
 
 interface CompileToCodeOptions {
   source: string;
@@ -15,10 +15,22 @@ interface CompileToCodeOptions {
   extensions?: readonly ParserExtension[];
 }
 
-const compileToCode = ({ source, templateName, undefinedMode, parseOpts, streamErrorRecovery, extensions }: CompileToCodeOptions): Result<string, Error> => {
+const compileToCode = ({
+  source,
+  templateName,
+  undefinedMode,
+  parseOpts,
+  streamErrorRecovery,
+  extensions,
+}: CompileToCodeOptions): Result<string, Error> => {
   try {
-    const compiler = createCompiler({ templateName, undefinedMode, source, streamErrorRecovery: streamErrorRecovery ?? false });
-    const astR = parse(source, extensions ? [...extensions] : undefined, parseOpts);
+    const compiler = createCompiler({
+      templateName,
+      undefinedMode,
+      source,
+      streamErrorRecovery: streamErrorRecovery ?? false,
+    });
+    const astR = parse(source, { ...parseOpts, extensions });
     if (isErr(astR)) {
       return err(astR.error instanceof Error ? astR.error : new Error(String(astR.error)));
     }

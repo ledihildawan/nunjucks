@@ -1,24 +1,30 @@
-﻿import { describe, test, expect } from 'bun:test';
-import { render } from './render.ts';
-import { createLog, formatError } from '@nunjucks/error-formatter';
-import type { TemplateError } from '@nunjucks/error-formatter';
+﻿import { describe, expect, test } from 'bun:test';
 import { getError } from '@nunjucks/error-catalog';
+import type { TemplateError } from '@nunjucks/error-formatter';
+import { createLog, formatError } from '@nunjucks/error-formatter';
 import { isErr } from '@nunjucks/lib';
+import { render } from './render.ts';
 
-const renderTemplate = async (template: string, context: Record<string, unknown> = {}, config: Record<string, unknown> = {}) => {
+const renderTemplate = async (
+  template: string,
+  context: Record<string, unknown> = {},
+  config: Record<string, unknown> = {}
+) => {
   const result = await render(template, {
     context,
     autoescape: false,
     undefined: 'strict',
-    ...config
+    ...config,
   });
-  if (isErr(result)) { throw result.error; }
+  if (isErr(result)) {
+    throw result.error;
+  }
   return result.value;
 };
 
 describe('error layout consistency', () => {
   test('all sections use text-label class for consistency', async () => {
-    const err = await renderTemplate('{{ missing }}', {}).catch(e => e) as TemplateError;
+    const err = (await renderTemplate('{{ missing }}', {}).catch((e) => e)) as TemplateError;
     const html = formatError(err, { format: 'html', verbosity: 'full' });
 
     const textLabels = html.match(/class="text-label"/g);
@@ -27,14 +33,14 @@ describe('error layout consistency', () => {
   });
 
   test('text output includes sections in order', async () => {
-    const err = await renderTemplate('{{ missing }}', {}).catch(e => e) as TemplateError;
+    const err = (await renderTemplate('{{ missing }}', {}).catch((e) => e)) as TemplateError;
     const text = formatError(err, { format: 'text', verbosity: 'full' });
 
     expect(text.indexOf('Possible Causes:')).toBeLessThan(text.indexOf('Suggested Fix:'));
   });
 
   test('ansi output includes all sections with consistent format', async () => {
-    const err = await renderTemplate('{{ missing }}', {}).catch(e => e) as TemplateError;
+    const err = (await renderTemplate('{{ missing }}', {}).catch((e) => e)) as TemplateError;
     const ansi = formatError(err, { format: 'ansi', verbosity: 'full' });
 
     expect(ansi).toContain('Possible Causes:');
@@ -42,7 +48,7 @@ describe('error layout consistency', () => {
   });
 
   test('html structure has consistent section ordering', async () => {
-    const err = await renderTemplate('{{ missing }}', {}).catch(e => e) as TemplateError;
+    const err = (await renderTemplate('{{ missing }}', {}).catch((e) => e)) as TemplateError;
     const html = formatError(err, { format: 'html', verbosity: 'full' });
 
     const causesIdx = html.indexOf('h-causes');
@@ -53,9 +59,17 @@ describe('error layout consistency', () => {
   });
 
   test('docs link appears inline in fix section when available', () => {
-    const err = createLog('error', { def: getError('UNDEFINED_VARIABLE'), params: { name: 'foo' }, subject: 'foo', context: {
-      lineno: 1, colno: 0, phase: 'render', lineBase: 'zero' as const
-    } }) as TemplateError;
+    const err = createLog('error', {
+      def: getError('UNDEFINED_VARIABLE'),
+      params: { name: 'foo' },
+      subject: 'foo',
+      context: {
+        lineno: 1,
+        colno: 0,
+        phase: 'render',
+        lineBase: 'zero' as const,
+      },
+    }) as TemplateError;
     const html = formatError(err, { format: 'html', verbosity: 'full' });
 
     expect(html).toContain('docs-inline');

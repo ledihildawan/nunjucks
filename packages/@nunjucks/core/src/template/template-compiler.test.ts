@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createTemplateCompiler } from './template-compiler.ts';
 import { createFallbackEnv } from './template-source.ts';
 

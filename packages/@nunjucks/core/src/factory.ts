@@ -1,32 +1,87 @@
-import { render as renderInternal, renderToStream as renderToStreamInternal } from './render/render.ts';
-import { pipeRenderStream as pipeRenderStreamInternal } from './render/pipe-stream.ts';
-import { foldPlugins } from './plugin/index.ts';
-import { createFileSystemLoader, type FileSystemLoader } from '@nunjucks/loaders';
-import type { NunjucksConfig, NunjucksEngine, PerRenderOverrides } from './config/nunjucks-config.ts';
-import type { RenderStreamResult } from './render/render-types.ts';
-import type { PipeSink, PipeRenderStreamOptions } from './render/pipe-stream.ts';
-import type { Result } from '@nunjucks/lib';
+import { getError } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
+import { createLog } from '@nunjucks/error-formatter';
+import type { Result } from '@nunjucks/lib';
+import { isErr } from '@nunjucks/lib';
+import { createFileSystemLoader, type FileSystemLoader } from '@nunjucks/loaders';
+import { validateConfig } from '@nunjucks/validators';
 import { PACKAGE_VERSION } from './config/global.ts';
+import type {
+  NunjucksConfig,
+  NunjucksEngine,
+  PerRenderOverrides,
+} from './config/nunjucks-config.ts';
+import { foldPlugins } from './plugin/index.ts';
+import type { PipeRenderStreamOptions, PipeSink } from './render/pipe-stream.ts';
+import { pipeRenderStream as pipeRenderStreamInternal } from './render/pipe-stream.ts';
+import {
+  render as renderInternal,
+  renderToStream as renderToStreamInternal,
+} from './render/render.ts';
+import type { RenderOptions, RenderStreamResult } from './render/render-types.ts';
 
 // WHY: strip keys whose value is undefined so they do NOT override the engine's built-in defaults when the
 // base bag is spread into the internal render options ({ ...defaults, ...options }). A present-undefined key
 // (e.g. sandbox: undefined from an absent security group) would clobber the default; removing it lets the
 // default survive. null is preserved (it is meaningful for blockedContextKeys etc.).
 const compact = <T extends Record<string, unknown>>(record: T): Partial<T> =>
-  Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined)) as Partial<T>;
+  Object.fromEntries(
+    Object.entries(record).filter(([, value]) => value !== undefined)
+  ) as Partial<T>;
+
+interface FactoryValidationInput {
+  filters: Record<string, unknown>;
+  globals: Record<string, unknown>;
+  tests: Record<string, unknown>;
+}
+
+// WHY: factory is the shell boundary — creating an engine from invalid config is a programmer error, so it
+// fails fast with a catalog-enriched TemplateError instead of deferring to per-render validation. Note: globals
+// values are deliberately NOT callable-checked — globals are data (strings, objects), unlike filters/tests.
+const assertValidConfig = (config: NunjucksConfig, merged: FactoryValidationInput): void => {
+  const validation = validateConfig({
+    executionTimeout: config.limits?.executionTimeout,
+    maxTemplateSize: config.limits?.maxTemplateSize,
+    maxOutputSize: config.limits?.maxOutputSize,
+    streamingCoalesceBytes: config.streaming?.coalesceBytes,
+    streamingIdleTimeout: config.streaming?.idleTimeout,
+    undefined: config.undefined,
+    sandboxMode: config.security?.sandboxMode,
+    sandboxEnvironment: config.security?.sandboxEnvironment,
+    blockedContextKeys: config.security?.blockedContextKeys,
+    sandboxAllowlist: config.security?.sandboxAllowlist,
+    allowedGlobals: config.security?.allowedGlobals,
+    views: config.views,
+    customFilters: merged.filters,
+    customTests: merged.tests,
+    customGlobals: merged.globals,
+  });
+  if (isErr(validation)) {
+    const [primary, ...rest] = validation.error;
+    const suffix =
+      rest.length > 0 ? ` (+${rest.length} more: ${rest.map((e) => e.message).join('; ')})` : '';
+    throw createLog('error', {
+      def: { ...getError('INVALID_CONFIG'), message: () => `${primary.message}${suffix}` },
+      params: {},
+      subject: primary.subject,
+      context: { phase: 'render', lineBase: 'zero' },
+    });
+  }
+};
 
 // WHY: flatten the nested NunjucksConfig into the flat options bag the internal render pipeline expects, after
 // folding plugins. Layering order (lowest → highest precedence): built-in defaults (applied inside render) →
 // plugin filters/globals/tests/extensions → user's direct filters/globals/tests/extensions. Security/limits/
 // streaming groups are flattened 1:1 to their existing flat keys.
-const buildBaseOptions = (config: NunjucksConfig): Record<string, unknown> => {
+const buildBaseOptions = (config: NunjucksConfig): RenderOptions => {
   const folded = foldPlugins(config.plugins);
   // WHY: merged once so the same map feeds both rendering (filters/globals) and the security name-validation
   // (customFilters/customGlobals read by validateConfig in render-validation.ts). Without this mapping the
   // validator's reserved/dangerous-name check silently skips factory-supplied filters/globals.
   const mergedFilters = { ...folded.filters, ...config.filters };
   const mergedGlobals = { ...folded.globals, ...config.globals };
+  const mergedTests = { ...folded.tests, ...config.tests };
+  assertValidConfig(config, { filters: mergedFilters, globals: mergedGlobals, tests: mergedTests });
   return compact({
     dev: config.dev,
     autoescape: config.autoescape,
@@ -36,6 +91,7 @@ const buildBaseOptions = (config: NunjucksConfig): Record<string, unknown> => {
     ide: config.ide,
     version: PACKAGE_VERSION,
     views: config.views,
+    environment: process.env.NODE_ENV ?? 'development',
     sandbox: config.security?.sandbox,
     sandboxMode: config.security?.sandboxMode,
     sandboxAllowlist: config.security?.sandboxAllowlist,
@@ -54,7 +110,7 @@ const buildBaseOptions = (config: NunjucksConfig): Record<string, unknown> => {
     globals: mergedGlobals,
     customFilters: mergedFilters,
     customGlobals: mergedGlobals,
-    tests: { ...folded.tests, ...config.tests },
+    tests: mergedTests,
     extensions: { ...folded.extensions, ...config.extensions },
     dompurify: config.dompurify ?? folded.dompurify,
   });
@@ -83,15 +139,22 @@ const createNunjucks = (config: NunjucksConfig = {}): NunjucksEngine => {
   // so a per-call views change creates/caches a loader within this factory only. GC'd when the factory is.
   const loaderCache = new Map<string, FileSystemLoader>();
   const resolveLoader = (views: string | undefined): FileSystemLoader | null => {
-    if (!views) { return null; }
+    if (!views) {
+      return null;
+    }
     const cached = loaderCache.get(views);
-    if (cached) { return cached; }
+    if (cached) {
+      return cached;
+    }
     const loader = createFileSystemLoader(views);
     loaderCache.set(views, loader);
     return loader;
   };
 
-  const buildCallOptions = (context: Record<string, unknown> | undefined, overrides: PerRenderOverrides | undefined): Record<string, unknown> => ({
+  const buildCallOptions = (
+    context: Record<string, unknown> | undefined,
+    overrides: PerRenderOverrides | undefined
+  ): RenderOptions => ({
     ...baseOptions,
     loader: resolveLoader(overrides?.views ?? config.views),
     ...(context !== undefined && { context }),
@@ -99,11 +162,23 @@ const createNunjucks = (config: NunjucksConfig = {}): NunjucksEngine => {
   });
 
   return {
-    render: (template: string, context?: Record<string, unknown>, overrides?: PerRenderOverrides): Promise<Result<string, TemplateError>> =>
+    render: (
+      template: string,
+      context?: Record<string, unknown>,
+      overrides?: PerRenderOverrides
+    ): Promise<Result<string, TemplateError>> =>
       renderInternal(template, buildCallOptions(context, overrides)),
-    renderToStream: (template: string, context?: Record<string, unknown>, overrides?: PerRenderOverrides): Promise<RenderStreamResult> =>
+    renderToStream: (
+      template: string,
+      context?: Record<string, unknown>,
+      overrides?: PerRenderOverrides
+    ): Promise<RenderStreamResult> =>
       renderToStreamInternal(template, buildCallOptions(context, overrides)),
-    pipeRenderStream: (result: RenderStreamResult, sink: PipeSink, options?: PipeRenderStreamOptions): Promise<void> =>
+    pipeRenderStream: (
+      result: RenderStreamResult,
+      sink: PipeSink,
+      options?: PipeRenderStreamOptions
+    ): Promise<void> =>
       pipeRenderStreamInternal(result, sink, { ...defaultPipeOptions, ...options }),
   };
 };

@@ -1,25 +1,47 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { nunjucks, type PipeSink } from '@nunjucks/core';
 
 const njk = nunjucks({});
 const strictNjk = nunjucks({ undefined: 'strict' });
 
-const createFakeSink = (): { sink: PipeSink; writes: string[]; status: number | null; headers: Record<string, string>; ended: boolean } => {
+const createFakeSink = (): {
+  sink: PipeSink;
+  writes: string[];
+  status: number | null;
+  headers: Record<string, string>;
+  ended: boolean;
+} => {
   const writes: string[] = [];
   const headers: Record<string, string> = {};
   let status: number | null = null;
   let ended = false;
   return {
     sink: {
-      status: (code: number) => { status = code; },
-      setHeader: (name: string, value: string) => { headers[name] = value; },
-      write: (chunk: string) => { writes.push(chunk); },
-      end: () => { ended = true; },
+      status: (code: number) => {
+        status = code;
+      },
+      setHeader: (name: string, value: string) => {
+        headers[name] = value;
+      },
+      write: (chunk: string) => {
+        writes.push(chunk);
+      },
+      end: () => {
+        ended = true;
+      },
     },
-    get writes() { return writes; },
-    get status() { return status; },
-    get headers() { return headers; },
-    get ended() { return ended; },
+    get writes() {
+      return writes;
+    },
+    get status() {
+      return status;
+    },
+    get headers() {
+      return headers;
+    },
+    get ended() {
+      return ended;
+    },
   };
 };
 
@@ -88,9 +110,13 @@ describe('pipeRenderStream', () => {
       signal: controller.signal,
       onChunk: () => {
         chunkIndex += 1;
-        if (chunkIndex === 1) { controller.abort(); }
+        if (chunkIndex === 1) {
+          controller.abort();
+        }
       },
-      onComplete: (stats) => { completeStats = stats; },
+      onComplete: (stats) => {
+        completeStats = stats;
+      },
     });
     expect(fake.writes.join('')).toBe('a');
     expect(fake.ended).toBe(true);
@@ -111,14 +137,20 @@ describe('pipeRenderStream', () => {
         writeCount += 1;
         if (writeCount === 1) {
           // WHY: first write signals backpressure; emit drain asynchronously so waitForDrain resolves.
-          setTimeout(() => { drainListener?.(); }, 5);
+          setTimeout(() => {
+            drainListener?.();
+          }, 5);
           return Promise.resolve(false);
         }
         return Promise.resolve(true);
       },
       end: () => {},
-      on: (_event: string, listener: () => void) => { drainListener = listener; },
-      off: () => { drainListener = null; },
+      on: (_event: string, listener: () => void) => {
+        drainListener = listener;
+      },
+      off: () => {
+        drainListener = null;
+      },
     };
     const result = await njk.renderToStream('a{{ b }}c', { b: 'B' });
     await njk.pipeRenderStream(result, sink, {});
@@ -130,7 +162,11 @@ describe('pipeRenderStream', () => {
     // (status stays 200 since headers flushed, but the marker fragment carries the OUTPUT_SIZE_EXCEEDED code).
     const fake = createFakeSink();
     const result = await njk.renderToStream('{% for i in [1,2,3,4,5] %}{{ i }}{% endfor %}');
-    await njk.pipeRenderStream(result, fake.sink, { maxOutputSize: 3, contentType: 'json', dev: true });
+    await njk.pipeRenderStream(result, fake.sink, {
+      maxOutputSize: 3,
+      contentType: 'json',
+      dev: true,
+    });
     const output = fake.writes.join('');
     expect(output).toContain('OUTPUT_SIZE_EXCEEDED');
     expect(fake.ended).toBe(true);

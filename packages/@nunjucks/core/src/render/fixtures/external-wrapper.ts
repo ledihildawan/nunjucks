@@ -7,5 +7,8 @@ interface ExternalWrapperCall {
   config: Record<string, unknown>;
 }
 
-export const renderViaExternalWrapper = ({ template, context, config }: ExternalWrapperCall): ReturnType<typeof render> =>
-  render(template, { context, ...config });
+export const renderViaExternalWrapper = ({
+  template,
+  context,
+  config,
+}: ExternalWrapperCall): ReturnType<typeof render> => render(template, { context, ...config });

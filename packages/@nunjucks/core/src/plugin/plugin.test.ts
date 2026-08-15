@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
-import { foldPlugins } from './plugin.ts';
+import { describe, expect, test } from 'bun:test';
 import type { NunjucksPlugin } from './plugin.ts';
+import { foldPlugins } from './plugin.ts';
 
 describe('foldPlugins', () => {
   test('returns the empty fold when no plugins are supplied', () => {

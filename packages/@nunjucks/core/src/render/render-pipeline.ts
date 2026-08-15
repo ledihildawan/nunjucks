@@ -1,45 +1,17 @@
-import { findContextDangerousValues } from '@nunjucks/validators';
-import type { ParseOptions, ParserExtension } from '@nunjucks/parser';
-import type { Env } from '@nunjucks/runtime';
-import { createSandboxedContext } from '@nunjucks/runtime';
-import { createLog } from '@nunjucks/error-formatter';
-import type { IncludeChain, TemplateWarning, TemplateError } from '@nunjucks/error-formatter';
 import { getError } from '@nunjucks/error-catalog';
-import { wrapWithLog, findContextKeyPosition } from '../diagnostics/diagnostics.ts';
-import { scrubDangerousReferences } from '@nunjucks/validators/security';
-import { ok, isErr, type Result } from '@nunjucks/lib';
+import type { TemplateError, TemplateWarning } from '@nunjucks/error-formatter';
+import { createLog } from '@nunjucks/error-formatter';
+import { err, isErr, isKeyedObject, ok, type Result } from '@nunjucks/lib';
 import type { FileSystemLoader } from '@nunjucks/loaders';
-import { createTemplate } from '../template/index.ts';
+import type { ParseOptions, ParserExtension } from '@nunjucks/parser';
+import { createSandboxedContext } from '@nunjucks/runtime';
+import { findContextDangerousValues } from '@nunjucks/validators';
+import { scrubDangerousReferences } from '@nunjucks/validators/security';
 import { compileToCode } from '../compile-pipeline.ts';
-import type { RenderConfig, CompileResult, SandboxOptions } from './render-types.ts';
+import { findContextKeyPosition, wrapWithLog } from '../diagnostics/diagnostics.ts';
+import type { CompileResult, RenderConfig, SandboxOptions } from './render-types.ts';
 
 const TEMPLATE_FILE_EXTENSION_RE = /\.(njk|js|html|htm|twig|ejs|eta)$/i;
-
-interface NormalizeGetTemplateArgsOptions {
-  nameOrOptions: string | GetTemplateOptions;
-  eagerCompileArg?: boolean;
-  includeChainArg?: IncludeChain | null;
-  ignoreMissingArg?: boolean;
-}
-
-interface GetTemplateOptions {
-  name: string;
-  eagerCompile?: boolean;
-  includeChain?: IncludeChain | null;
-  ignoreMissing?: boolean;
-}
-
-function normalizeGetTemplateArgs({
-  nameOrOptions,
-  eagerCompileArg,
-  includeChainArg,
-  ignoreMissingArg,
-}: NormalizeGetTemplateArgsOptions) {
-  if (typeof nameOrOptions === 'string') {
-    return { name: nameOrOptions, eagerCompile: eagerCompileArg ?? true, includeChain: includeChainArg, ignoreMissing: ignoreMissingArg };
-  }
-  return { name: nameOrOptions.name, eagerCompile: nameOrOptions.eagerCompile ?? true, includeChain: nameOrOptions.includeChain, ignoreMissing: nameOrOptions.ignoreMissing };
-}
 
 interface ResolveTemplateSourceInput {
   template: string;
@@ -47,7 +19,14 @@ interface ResolveTemplateSourceInput {
   config: RenderConfig;
 }
 
-const resolveTemplateSource = async ({ template, loader, config }: ResolveTemplateSourceInput): Promise<{ templateSource: string; templatePath: string | null }> => {
+const resolveTemplateSource = async ({
+  template,
+  loader,
+  config,
+}: ResolveTemplateSourceInput): Promise<{
+  templateSource: string;
+  templatePath: string | null;
+}> => {
   if (!loader || template.includes('{{') || template.includes('{%') || template.includes('{#')) {
     return { templateSource: template, templatePath: null };
   }
@@ -57,32 +36,52 @@ const resolveTemplateSource = async ({ template, loader, config }: ResolveTempla
     return { templateSource: template, templatePath: null };
   }
   if (isErr(sourceResult)) {
-    const { code } = sourceResult.error as { code?: string };
-    if (code === 'ENOENT' || code === 'MODULE_NOT_FOUND' || code === 'ERR_MODULE_NOT_FOUND') {
+    const loaderError: unknown = sourceResult.error;
+    const errorCode =
+      isKeyedObject(loaderError) && typeof loaderError.code === 'string' ? loaderError.code : null;
+    if (
+      errorCode === 'ENOENT' ||
+      errorCode === 'MODULE_NOT_FOUND' ||
+      errorCode === 'ERR_MODULE_NOT_FOUND'
+    ) {
       return { templateSource: template, templatePath: null };
     }
-    throw sourceResult.error;
+    throw loaderError;
   }
   const source = sourceResult.value;
   if (source.src) {
     const resolvedPath: string | null = config.templatePath ? null : source.path;
     return {
       templateSource: source.src,
-      templatePath: resolvedPath
+      templatePath: resolvedPath,
     };
   }
 
   return { templateSource: template, templatePath: null };
 };
 
-const prepareSandbox = (config: RenderConfig, context: Record<string, unknown>): Record<string, unknown> => {
+const prepareSandbox = (
+  config: RenderConfig,
+  context: Record<string, unknown>
+): Record<string, unknown> => {
   // WHY: internalKeys are always allowed in sandbox — they are either runtime-internal markers (__nunjucks_undefined_mode) or CommonJS leakage guards (exports, module, require, __dirname, __filename) or Node globals the template runtime legitimately needs (global, globalThis, process for env checks).
-  const internalKeys = ['__nunjucks_undefined_mode', 'exports', 'module', 'require', '__dirname', '__filename', 'global', 'globalThis', 'process'];
+  const internalKeys = [
+    '__nunjucks_undefined_mode',
+    'exports',
+    'module',
+    'require',
+    '__dirname',
+    '__filename',
+    'global',
+    'globalThis',
+    'process',
+  ];
   const userAllowlist = config.sandboxAllowlist || [];
   const mergedAllowlist = [...new Set([...internalKeys, ...userAllowlist])];
 
   const blockedKeys = config.blockedContextKeys;
-  const resolvedBlockedKeys: string[] | undefined = (blockedKeys !== null && blockedKeys !== undefined) ? [...blockedKeys] : undefined;
+  const resolvedBlockedKeys: string[] | undefined =
+    blockedKeys !== null && blockedKeys !== undefined ? [...blockedKeys] : undefined;
   const sandboxOptions: SandboxOptions = {
     allowlist: mergedAllowlist,
     blocklistMode: config.sandboxMode !== 'allowlist',
@@ -90,69 +89,14 @@ const prepareSandbox = (config: RenderConfig, context: Record<string, unknown>):
     environment: config.sandboxEnvironment || 'auto',
   };
 
-  const sandboxEnabled = (config.sandbox ?? false) || ((blockedKeys?.length ?? 0) > 0);
+  const sandboxEnabled = (config.sandbox ?? false) || (blockedKeys?.length ?? 0) > 0;
   const mergedContext = { ...context, ...config.globals };
-  const sandboxedCtx = createSandboxedContext({ context: mergedContext, sandboxEnabled, options: sandboxOptions }) as Record<string, unknown>;
+  const sandboxedCtx = createSandboxedContext({
+    context: mergedContext,
+    sandboxEnabled,
+    options: sandboxOptions,
+  }) as Record<string, unknown>;
   return sandboxedCtx;
-};
-
-const createEnvLookups = (config: RenderConfig): Pick<Env, 'getFilter' | 'getTest' | 'getExtension'> => ({
-  getFilter: (name: string, lineno: number | null, colno: number | null) => {
-    const filter = config.filters?.[name];
-    if (filter) { return filter; }
-    throw createLog('error', { def: getError('UNDEFINED_FILTER'), params: { name }, subject: name, context: { lineno, colno, phase: 'render', lineBase: 'zero' } });
-  },
-  getTest: (name: string, lineno: number | null, colno: number | null) => {
-    const test = config.tests?.[name];
-    if (test) { return test; }
-    throw createLog('error', { def: getError('UNDEFINED_TEST'), params: { name }, subject: name, context: { lineno, colno, phase: 'render', lineBase: 'zero' } });
-  },
-  getExtension: (name: string) => {
-    const extension = config.extensions?.[name];
-    if (extension !== undefined) { return extension; }
-    throw createLog('error', { def: getError('UNDEFINED_EXTENSION'), params: { name }, subject: name, context: { phase: 'render', lineBase: 'zero' } });
-  },
-});
-
-const buildRenderEnv = (loader: FileSystemLoader | null, config: RenderConfig): Env | null => {
-  if (!loader || config.env) { return null; }
-
-  return {
-    opts: {
-      dev: config.dev ?? false,
-      autoescape: config.autoescape ?? true,
-      undefined: config.undefined ?? 'default',
-    },
-    renderingTemplates: new Set(),
-    ...createEnvLookups(config),
-    async getTemplate(
-      this: Env,
-      nameOrOptions: string | GetTemplateOptions,
-      eagerCompileArg?: boolean,
-      includeChainArg?: IncludeChain | null,
-      ignoreMissingArg?: boolean,
-    ) {
-      const { name, eagerCompile, includeChain, ignoreMissing } = normalizeGetTemplateArgs({ nameOrOptions, eagerCompileArg, includeChainArg, ignoreMissingArg });
-
-      const sourceResult = await loader.getSource(name);
-      if (sourceResult === null) {
-        if (ignoreMissing) { return null; }
-        throw createLog('error', { def: getError('FILE_NOT_FOUND'), params: { path: name }, subject: name, context: { phase: 'load' } });
-      }
-      if (isErr(sourceResult)) { throw sourceResult.error; }
-      const source = sourceResult.value;
-      return createTemplate({ src: source.src, env: this, path: source.path, eagerCompile, includeChain });
-    },
-  };
-};
-
-const buildExecutionEnv = (config: RenderConfig): Env => config.env ?? {
-  opts: {
-    dev: config.dev ?? false,
-    autoescape: config.autoescape ?? true,
-    undefined: config.undefined ?? 'default',
-  },
-  ...createEnvLookups(config),
 };
 
 interface CompileTemplateInput {
@@ -161,11 +105,33 @@ interface CompileTemplateInput {
   templateName: string;
 }
 
-const compileTemplate = ({ templateSource, config, templateName }: CompileTemplateInput): Result<CompileResult, Error> => {
+const isParserExtension = (value: unknown): value is ParserExtension =>
+  isKeyedObject(value) && Array.isArray(value.tags) && typeof value.parse === 'function';
+
+const compileTemplate = ({
+  templateSource,
+  config,
+  templateName,
+}: CompileTemplateInput): Result<CompileResult, Error> => {
   // WHY: convert config.extensions (name → ext object map) into the ParserExtension[] the parser expects —
   // each value carries `tags` + `parse`; the map key is the lookup name used by env.getExtension at runtime.
-  const parserExtensions = config.extensions ? (Object.values(config.extensions) as readonly ParserExtension[]) : undefined;
-  const codeResult = compileToCode({ source: templateSource, templateName, undefinedMode: config.undefined, parseOpts: { undefined: config.undefined, trimBlocks: config.trimBlocks, lstripBlocks: config.lstripBlocks } as ParseOptions, streamErrorRecovery: config.streamErrorRecovery ?? false, extensions: parserExtensions });
+  // Non-conforming values are dropped silently and purely here; misconfigured extensions surface through
+  // factory-time config validation.
+  const parserExtensions = config.extensions
+    ? Object.values(config.extensions).filter(isParserExtension)
+    : undefined;
+  const parseOpts: ParseOptions = {
+    trimBlocks: config.trimBlocks,
+    lstripBlocks: config.lstripBlocks,
+  };
+  const codeResult = compileToCode({
+    source: templateSource,
+    templateName,
+    undefinedMode: config.undefined,
+    parseOpts,
+    streamErrorRecovery: config.streamErrorRecovery ?? false,
+    extensions: parserExtensions,
+  });
   return isErr(codeResult) ? codeResult : ok({ code: codeResult.value });
 };
 
@@ -176,44 +142,76 @@ interface DangerousContextInput {
 }
 
 // WHY: isolated error creation for context strict mode — walks caller frames to locate the dangerous value in consumer code, enriches config with jsCaller for location resolution, and scrubs the context before display. Separated from handleContextStrictMode so the main function reads as a simple check-then-throw-or-scrub flow.
-const createDangerousContextError = async ({ context, config, dangerousValuePaths }: DangerousContextInput): Promise<TemplateError> => {
+const createDangerousContextError = async ({
+  context,
+  config,
+  dangerousValuePaths,
+}: DangerousContextInput): Promise<TemplateError> => {
   const subject = dangerousValuePaths.join(', ');
   const firstPath = dangerousValuePaths[0] ?? '';
   const callerFrames = config.callerFrames ?? [];
   const framePositions = await Promise.all(
-    callerFrames.map(frame =>
+    callerFrames.map((frame) =>
       frame.fileName !== 'unknown' && firstPath
-        ? findContextKeyPosition({ sourceFile: frame.fileName, callLine: frame.lineNumber ?? 1, dangerousPath: firstPath }).then(pos => pos ? { ...pos, fileName: frame.fileName } : null)
-        : Promise.resolve(null),
-    ),
+        ? findContextKeyPosition({
+            sourceFile: frame.fileName,
+            callLine: frame.lineNumber ?? 1,
+            dangerousPath: firstPath,
+          }).then((pos) => (pos ? { ...pos, fileName: frame.fileName } : null))
+        : Promise.resolve(null)
+    )
   );
-  const contextPos = framePositions.find((pos): pos is { line: number; col: number; fileName: string } => pos !== null) ?? null;
+  const contextPos =
+    framePositions.find(
+      (pos): pos is { line: number; col: number; fileName: string } => pos !== null
+    ) ?? null;
   const err = createLog('error', {
     def: getError('DANGEROUS_CONTEXT_VALUES'),
     params: { values: subject },
     subject,
     context: contextPos
-      ? { phase: 'render', lineno: contextPos.line, colno: contextPos.col, lineBase: 'one' as const }
+      ? {
+          phase: 'render',
+          lineno: contextPos.line,
+          colno: contextPos.col,
+          lineBase: 'one' as const,
+        }
       : { phase: 'render' },
   });
   const enrichedConfig = contextPos
-    ? { ...config, jsCaller: contextPos.fileName, jsCallerErrorLine: contextPos.line, jsCallerErrorCol: contextPos.col }
+    ? {
+        ...config,
+        jsCaller: contextPos.fileName,
+        jsCallerErrorLine: contextPos.line,
+        jsCallerErrorCol: contextPos.col,
+      }
     : config;
   const safeForDisplay = scrubDangerousReferences(context);
   return wrapWithLog(err, enrichedConfig, { renderContext: safeForDisplay });
 };
 
-const handleContextStrictMode = async (context: Record<string, unknown>, config: RenderConfig): Promise<{ warningsCollector: TemplateWarning[]; dangerousValuePaths: string[]; context: Record<string, unknown> }> => {
+interface ContextStrictModeOutcome {
+  warningsCollector: TemplateWarning[];
+  context: Record<string, unknown>;
+}
+
+const handleContextStrictMode = async (
+  context: Record<string, unknown>,
+  config: RenderConfig
+): Promise<Result<ContextStrictModeOutcome, TemplateError>> => {
   const warningsCollector: TemplateWarning[] = [];
-  const contextStrict = config.contextStrict === true || (config.contextStrict !== false && config.dev === true);
-  const dangerousValuePaths: string[] = contextStrict ? findContextDangerousValues(context, config) : [];
+  const contextStrict =
+    config.contextStrict === true || (config.contextStrict !== false && config.dev === true);
+  const dangerousValuePaths: string[] = contextStrict
+    ? findContextDangerousValues(context, config)
+    : [];
 
   if (!contextStrict || dangerousValuePaths.length === 0) {
-    return { warningsCollector, dangerousValuePaths, context };
+    return ok({ warningsCollector, context });
   }
 
   if (config.contextStrict === 'error') {
-    throw await createDangerousContextError({ context, config, dangerousValuePaths });
+    return err(await createDangerousContextError({ context, config, dangerousValuePaths }));
   }
 
   const scrubbedContext = scrubDangerousReferences(context);
@@ -223,11 +221,17 @@ const handleContextStrictMode = async (context: Record<string, unknown>, config:
     subject: dangerousValuePaths.join(', '),
     context: {
       phase: 'render',
-      lineBase: 'zero'
-    }
+      lineBase: 'zero',
+    },
   });
 
-  return { warningsCollector: [scrubWarning], dangerousValuePaths, context: scrubbedContext };
+  return ok({ warningsCollector: [scrubWarning], context: scrubbedContext });
 };
 
-export { resolveTemplateSource, prepareSandbox, buildRenderEnv, buildExecutionEnv, compileTemplate, handleContextStrictMode, createEnvLookups, TEMPLATE_FILE_EXTENSION_RE };
+export {
+  compileTemplate,
+  handleContextStrictMode,
+  prepareSandbox,
+  resolveTemplateSource,
+  TEMPLATE_FILE_EXTENSION_RE,
+};

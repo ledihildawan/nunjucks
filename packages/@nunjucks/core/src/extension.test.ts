@@ -1,8 +1,8 @@
-import { describe, test, expect } from 'bun:test';
-import { nunjucks } from './index.ts';
+import { describe, expect, test } from 'bun:test';
 import type { nodes } from '@nunjucks/nodes';
+import { advanceAfterBlockEnd, type ParserContext, skipSymbol } from '@nunjucks/parser';
 import { ZERO_LOC } from '@nunjucks/shared';
-import { skipSymbol, advanceAfterBlockEnd, type ParserContext } from '@nunjucks/parser';
+import { nunjucks } from './index.ts';
 
 // WHY: a minimal custom block-tag extension. `tags` lets the parser dispatch `{% hello %}` to this extension's
 // parse callback; `extensionName` is the runtime lookup key (env.getExtension("hello")); `run` is the method
@@ -29,15 +29,21 @@ describe('extension wiring (end-to-end)', () => {
     const njk = nunjucks({ extensions: { hello: helloExtension } });
     const result = await njk.render('prefix {% hello %} suffix');
     expect(result.ok).toBe(true);
-    if (!result.ok) { return; }
+    if (!result.ok) {
+      return;
+    }
     expect(result.value).toBe('prefix Hello from extension! suffix');
   });
 
   test('a custom tag registered via a plugin renders its output', async () => {
-    const njk = nunjucks({ plugins: [{ name: 'hello-plugin', extensions: { hello: helloExtension } }] });
+    const njk = nunjucks({
+      plugins: [{ name: 'hello-plugin', extensions: { hello: helloExtension } }],
+    });
     const result = await njk.render('{% hello %}');
     expect(result.ok).toBe(true);
-    if (!result.ok) { return; }
+    if (!result.ok) {
+      return;
+    }
     expect(result.value).toBe('Hello from extension!');
   });
 

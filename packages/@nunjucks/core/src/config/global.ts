@@ -3,6 +3,7 @@ import type { DomPurifyConfig } from '@nunjucks/shared';
 import packageJson from '../../package.json';
 
 const PACKAGE_VERSION = packageJson.version as string;
+
 export { PACKAGE_VERSION };
 
 const SAFE_JSON = Object.freeze({
@@ -161,11 +162,19 @@ const DEFAULT_CONFIG: Omit<GlobalConfig, 'filters' | 'dompurify'> = Object.freez
   views: null,
 });
 
-const getDefaultConfig = (bundle?: FilterBundle): GlobalConfig => ({
-  ...DEFAULT_CONFIG,
-  filters: bundle?.filters ?? Object.freeze({}),
-  dompurify: bundle?.dompurify ?? Object.freeze({}),
-} as GlobalConfig);
+const getDefaultConfig = (bundle?: FilterBundle): GlobalConfig =>
+  ({
+    ...DEFAULT_CONFIG,
+    filters: bundle?.filters ?? Object.freeze({}),
+    dompurify: bundle?.dompurify ?? Object.freeze({}),
+  }) as GlobalConfig;
 
+export type {
+  DomPurifyConfig,
+  FilterBundle,
+  GlobalConfig,
+  SandboxEnvironment,
+  SandboxMode,
+  UndefinedMode,
+};
 export { getDefaultConfig };
-export type { SandboxEnvironment, SandboxMode, UndefinedMode, GlobalConfig, FilterBundle, DomPurifyConfig };

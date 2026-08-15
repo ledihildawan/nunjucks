@@ -1,10 +1,11 @@
-import type { Environment } from '@nunjucks/validators/security';
-import type { BaseValidationError } from '@nunjucks/shared';
-import type { CallerLocation } from './caller-file.ts';
-import type { SandboxOptions, Env, UndefinedMode } from '@nunjucks/runtime';
-import type { SandboxMode } from '../config/global.ts';
 import type { TemplateError } from '@nunjucks/error-formatter';
+import type { Result } from '@nunjucks/lib';
 import type { FileSystemLoader } from '@nunjucks/loaders';
+import type { Env, SandboxOptions, UndefinedMode } from '@nunjucks/runtime';
+import type { BaseValidationError } from '@nunjucks/shared';
+import type { Environment } from '@nunjucks/validators/security';
+import type { SandboxMode } from '../config/global.ts';
+import type { CallerLocation } from './caller-file.ts';
 
 interface LoaderSource {
   src: string;
@@ -63,6 +64,7 @@ interface RenderConfig {
   filters?: Record<string, (...args: unknown[]) => unknown>;
   tests?: Record<string, (...args: unknown[]) => unknown>;
   extensions?: Readonly<Record<string, unknown>>;
+  environment?: string | null;
 }
 
 interface ValidationErrorRequest {
@@ -94,9 +96,25 @@ interface RenderOptions extends Partial<import('../config/global.ts').GlobalConf
   streamContentType?: 'html' | 'json' | 'text';
 }
 
-// WHY: streaming-render error contract (two-pass). Pre-stream failures (compile/validate/load) arrive as `{ ok: false, error }` so the consumer can still render an error page — response headers are not yet sent. Once streaming starts, mid-stream runtime errors CANNOT render an error page; the AsyncGenerator throws instead and the consumer aborts + logs. The SAME TemplateError flows through both windows — only the delivery differs (Result vs throw), so no separate error type is needed.
-type RenderStreamResult =
-  | { readonly ok: false; readonly error: TemplateError }
-  | { readonly ok: true; readonly stream: AsyncGenerator<string> };
+// WHY: streaming-render error contract (two-pass), expressed as the standard Result shape from @nunjucks/lib.
+// Pre-stream failures (compile/validate/load) arrive as `err(error)` so the consumer can still render an error
+// page — response headers are not yet sent. Once streaming starts, mid-stream runtime errors CANNOT render an
+// error page; the AsyncGenerator (`ok(generator)`) throws instead and the consumer aborts + logs. The SAME
+// TemplateError flows through both windows — only the delivery differs (Result vs throw), so no separate error
+// type is needed.
+type RenderStreamResult = Result<AsyncGenerator<string, unknown, unknown>, TemplateError>;
 
-export type { LoaderSource, ResolveResult, RenderValidationError, CallerLocation, Environment, SandboxOptions, RenderConfig, ValidationErrorRequest, CompileResult, RenderStreamResult, PreparedTemplate, RenderOptions };
+export type {
+  CallerLocation,
+  CompileResult,
+  Environment,
+  LoaderSource,
+  PreparedTemplate,
+  RenderConfig,
+  RenderOptions,
+  RenderStreamResult,
+  RenderValidationError,
+  ResolveResult,
+  SandboxOptions,
+  ValidationErrorRequest,
+};

@@ -1,12 +1,12 @@
-import { isString, isPlainObject } from 'remeda';
-import { createLog } from '@nunjucks/error-formatter';
 import { getError } from '@nunjucks/error-catalog';
-import type { Env } from '@nunjucks/runtime';
 import type { IncludeChain } from '@nunjucks/error-formatter';
-import type { CompiledTemplateExports } from '@nunjucks/compiler';
+import { createLog } from '@nunjucks/error-formatter';
+import type { Env } from '@nunjucks/runtime';
+import { isCompiledTemplateExports } from '@nunjucks/shared';
+import { isPlainObject, isString } from 'remeda';
 import type { TemplateSource, TemplateState, TemplateStateBase } from './types';
 
-export { initTemplateState, loadSource, createFallbackEnv };
+export { createFallbackEnv, initTemplateState, loadSource };
 
 interface GetTemplateOptions {
   name: string;
@@ -21,9 +21,17 @@ const createFallbackEnv = (): Env => ({
   getTest: () => null,
   getTemplate(nameOrOptions: string | GetTemplateOptions) {
     const name = typeof nameOrOptions === 'string' ? nameOrOptions : nameOrOptions.name;
-    const ignoreMissing = typeof nameOrOptions === 'string' ? undefined : nameOrOptions.ignoreMissing;
-    if (ignoreMissing) { return null; }
-    throw createLog('error', { def: getError('FILE_NOT_FOUND'), params: { path: name }, subject: name, context: { phase: 'load' } });
+    const ignoreMissing =
+      typeof nameOrOptions === 'string' ? undefined : nameOrOptions.ignoreMissing;
+    if (ignoreMissing) {
+      return null;
+    }
+    throw createLog('error', {
+      def: getError('FILE_NOT_FOUND'),
+      params: { path: name },
+      subject: name,
+      context: { phase: 'load' },
+    });
   },
 });
 
@@ -34,7 +42,12 @@ interface InitTemplateStateOptions {
   includeChain: IncludeChain | null | undefined;
 }
 
-const initTemplateState = ({ src: _src, env, path, includeChain }: InitTemplateStateOptions): TemplateStateBase => ({
+const initTemplateState = ({
+  src: _src,
+  env,
+  path,
+  includeChain,
+}: InitTemplateStateOptions): TemplateStateBase => ({
   env: env ?? createFallbackEnv(),
   path: path ?? undefined,
   includeChain: includeChain ?? null,
@@ -47,15 +60,53 @@ const loadSource = (base: TemplateStateBase, src: string | TemplateSource): Temp
     const srcObj = src as TemplateSource;
     switch (srcObj.type) {
       case 'code':
-        return { ...base, status: 'compiled', tmplStr: null, tmplProps: srcObj.value as CompiledTemplateExports, rootRenderFunc: (srcObj.value as CompiledTemplateExports).root };
+        if (!isCompiledTemplateExports(srcObj.value)) {
+          throw createLog('error', {
+            def: getError('TEMPLATE_INVALID_SOURCE'),
+            params: { type: 'code (value is not compiled template exports)' },
+            subject: 'code',
+            context: { phase: 'load' },
+          });
+        }
+        return {
+          ...base,
+          status: 'compiled',
+          tmplStr: null,
+          tmplProps: srcObj.value,
+          rootRenderFunc: srcObj.value.root,
+        };
       case 'string':
-        return { ...base, status: 'source', tmplStr: srcObj.value as string, tmplProps: null, rootRenderFunc: null };
+        if (typeof srcObj.value !== 'string') {
+          throw createLog('error', {
+            def: getError('TEMPLATE_INVALID_SOURCE'),
+            params: { type: 'string (value is not a string)' },
+            subject: 'string',
+            context: { phase: 'load' },
+          });
+        }
+        return {
+          ...base,
+          status: 'source',
+          tmplStr: srcObj.value,
+          tmplProps: null,
+          rootRenderFunc: null,
+        };
       default:
-        throw createLog('error', { def: getError('TEMPLATE_INVALID_SOURCE'), params: { type: srcObj.type }, subject: srcObj.type, context: { phase: 'load' } });
+        throw createLog('error', {
+          def: getError('TEMPLATE_INVALID_SOURCE'),
+          params: { type: srcObj.type },
+          subject: srcObj.type,
+          context: { phase: 'load' },
+        });
     }
   }
   if (isString(src)) {
     return { ...base, status: 'source', tmplStr: src, tmplProps: null, rootRenderFunc: null };
   }
-  throw createLog('error', { def: getError('TEMPLATE_SRC_STRING'), params: {}, subject: null, context: { phase: 'load' } });
+  throw createLog('error', {
+    def: getError('TEMPLATE_SRC_STRING'),
+    params: {},
+    subject: null,
+    context: { phase: 'load' },
+  });
 };

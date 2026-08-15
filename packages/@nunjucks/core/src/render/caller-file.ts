@@ -5,33 +5,50 @@ const MAX_CALLER_FRAMES = 6;
 
 export type { CallerLocation };
 
-// WHY: stack capture is the impure shell of this module (it mutates Error.prepareStackTrace to read V8 CallSites). Kept isolated here so the rest of the module stays pure.
+// WHY: stack capture is the impure shell of this module (it mutates Error.prepareStackTrace to read V8 CallSites). Kept isolated here so the rest of the module stays pure. The try/finally guarantees the global swap is restored even if stack access throws — a leaked override would corrupt every future Error stack capture in the process.
 const captureCallerStack = (): NodeJS.CallSite[] => {
   const original = Error.prepareStackTrace;
   let captured: NodeJS.CallSite[] | undefined;
-  Error.prepareStackTrace = (_, callsite) => { captured = callsite; return callsite; };
-  void new Error('caller').stack;
-  Error.prepareStackTrace = original;
+  try {
+    Error.prepareStackTrace = (_, callsite) => {
+      captured = callsite;
+      return callsite;
+    };
+    void new Error('caller').stack;
+  } finally {
+    Error.prepareStackTrace = original;
+  }
 
   return captured ?? [];
 };
 
 const isInternalCallerFile = (fileName: string | null | undefined): boolean => {
-  if (!fileName) { return true; }
-  if (fileName.startsWith('node:')) { return true; }
-  if (fileName.includes('node_modules')) { return true; }
+  if (!fileName) {
+    return true;
+  }
+  if (fileName.startsWith('node:')) {
+    return true;
+  }
+  if (fileName.includes('node_modules')) {
+    return true;
+  }
   // WHY: in monorepo dev mode the engine source lives in packages/@nunjucks/ rather than node_modules/@nunjucks/. Filtering both paths ensures caller resolution always targets consumer code, never engine internals (which would false-match reserved-word subjects like 'if' against TypeScript keywords in the engine's own source). Test files (.test.) are exempt because they consume the engine's public API the same way end-user code does.
-  if (fileName.includes('@nunjucks') && !fileName.includes('.test.')) { return true; }
+  if (fileName.includes('@nunjucks') && !fileName.includes('.test.')) {
+    return true;
+  }
   return false;
 };
 
 const callsiteToCallerLocation = (site: NodeJS.CallSite): CallerLocation | null => {
   const fileName = typeof site.getFileName === 'function' ? site.getFileName() : null;
-  if (!fileName || isInternalCallerFile(fileName)) { return null; }
+  if (!fileName || isInternalCallerFile(fileName)) {
+    return null;
+  }
   return {
     fileName,
     lineNumber: typeof site.getLineNumber === 'function' ? (site.getLineNumber() ?? null) : null,
-    columnNumber: typeof site.getColumnNumber === 'function' ? (site.getColumnNumber() ?? null) : null,
+    columnNumber:
+      typeof site.getColumnNumber === 'function' ? (site.getColumnNumber() ?? null) : null,
   };
 };
 

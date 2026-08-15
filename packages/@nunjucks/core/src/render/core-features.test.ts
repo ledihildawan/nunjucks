@@ -1,44 +1,29 @@
-﻿import { describe, test, expect } from 'bun:test';
+﻿import { describe, expect, test } from 'bun:test';
 import { renderTemplate } from './render-test-helper.ts';
 
 describe('loop variables', () => {
   test('loop.index starts at 1', async () => {
-    const result = await renderTemplate(
-      '{% for i in [1,2,3] %}{{ loop.index }}{% endfor %}',
-      {}
-    );
+    const result = await renderTemplate('{% for i in [1,2,3] %}{{ loop.index }}{% endfor %}', {});
     expect(result).toBe('123');
   });
 
   test('loop.index0 starts at 0', async () => {
-    const result = await renderTemplate(
-      '{% for i in [1,2,3] %}{{ loop.index0 }}{% endfor %}',
-      {}
-    );
+    const result = await renderTemplate('{% for i in [1,2,3] %}{{ loop.index0 }}{% endfor %}', {});
     expect(result).toBe('012');
   });
 
   test('loop.first is true only on first iteration', async () => {
-    const result = await renderTemplate(
-      '{% for i in [1,2,3] %}{{ loop.first }}{% endfor %}',
-      {}
-    );
+    const result = await renderTemplate('{% for i in [1,2,3] %}{{ loop.first }}{% endfor %}', {});
     expect(result).toBe('truefalsefalse');
   });
 
   test('loop.last is true only on last iteration', async () => {
-    const result = await renderTemplate(
-      '{% for i in [1,2,3] %}{{ loop.last }}{% endfor %}',
-      {}
-    );
+    const result = await renderTemplate('{% for i in [1,2,3] %}{{ loop.last }}{% endfor %}', {});
     expect(result).toBe('falsefalsetrue');
   });
 
   test('loop.length returns array length', async () => {
-    const result = await renderTemplate(
-      '{% for i in [1,2,3] %}{{ loop.length }}{% endfor %}',
-      {}
-    );
+    const result = await renderTemplate('{% for i in [1,2,3] %}{{ loop.length }}{% endfor %}', {});
     expect(result).toBe('333');
   });
 
@@ -57,7 +42,6 @@ describe('loop variables', () => {
     );
     expect(result).toBe('210');
   });
-
 });
 
 describe('switch case default', () => {
@@ -112,26 +96,17 @@ describe('scope block', () => {
   });
 
   test('scope inline assignment form', async () => {
-    const result = await renderTemplate(
-      '{% scope x = 42 %}{{ x }}{% endscope %}',
-      {}
-    );
+    const result = await renderTemplate('{% scope x = 42 %}{{ x }}{% endscope %}', {});
     expect(result).toBe('42');
   });
 
   test('scope inline with multiple variables', async () => {
-    const result = await renderTemplate(
-      '{% scope a = 1, b = 2 %}{{ a + b }}{% endscope %}',
-      {}
-    );
+    const result = await renderTemplate('{% scope a = 1, b = 2 %}{{ a + b }}{% endscope %}', {});
     expect(result).toBe('3');
   });
 
   test('scope can read parent variables', async () => {
-    const result = await renderTemplate(
-      '{{ x := "parent" }}{% scope %}{{ x }}{% endscope %}',
-      {}
-    );
+    const result = await renderTemplate('{{ x := "parent" }}{% scope %}{{ x }}{% endscope %}', {});
     expect(result).toBe('parent');
   });
 
@@ -272,64 +247,96 @@ describe('prefix and postfix operators', () => {
 
 describe('object iteration', () => {
   test('for k,v in object', async () => {
-    const result = await renderTemplate('{% for k, v in items %}{{ k }}={{ v }};{% endfor %}', { items: { a: 1, b: 2 } });
+    const result = await renderTemplate('{% for k, v in items %}{{ k }}={{ v }};{% endfor %}', {
+      items: { a: 1, b: 2 },
+    });
     expect(result).toBe('a=1;b=2;');
   });
   test('for k,v with loop.index', async () => {
-    const result = await renderTemplate('{% for k, v in items %}{{ loop.index }}:{{ k }};{% endfor %}', { items: { x: 10 } });
+    const result = await renderTemplate(
+      '{% for k, v in items %}{{ loop.index }}:{{ k }};{% endfor %}',
+      { items: { x: 10 } }
+    );
     expect(result).toBe('1:x;');
   });
 });
 
 describe('for-else', () => {
   test('else fires on empty array', async () => {
-    const result = await renderTemplate('{% for x in items %}{{ x }}{% else %}empty{% endfor %}', { items: [] });
+    const result = await renderTemplate('{% for x in items %}{{ x }}{% else %}empty{% endfor %}', {
+      items: [],
+    });
     expect(result).toBe('empty');
   });
   test('else does not fire on non-empty array', async () => {
-    const result = await renderTemplate('{% for x in items %}{{ x }}{% else %}empty{% endfor %}', { items: [1, 2] });
+    const result = await renderTemplate('{% for x in items %}{{ x }}{% else %}empty{% endfor %}', {
+      items: [1, 2],
+    });
     expect(result).toBe('12');
   });
   test('else fires on undefined variable', async () => {
-    const result = await renderTemplate('{% for x in missing %}{{ x }}{% else %}empty{% endfor %}', {});
+    const result = await renderTemplate(
+      '{% for x in missing %}{{ x }}{% else %}empty{% endfor %}',
+      {}
+    );
     expect(result).toBe('empty');
   });
   test('else fires on null', async () => {
-    const result = await renderTemplate('{% for x in items %}{{ x }}{% else %}empty{% endfor %}', { items: null });
+    const result = await renderTemplate('{% for x in items %}{{ x }}{% else %}empty{% endfor %}', {
+      items: null,
+    });
     expect(result).toBe('empty');
   });
   test('else fires on empty object', async () => {
-    const result = await renderTemplate('{% for k, v in items %}{{ k }}{% else %}empty{% endfor %}', { items: {} });
+    const result = await renderTemplate(
+      '{% for k, v in items %}{{ k }}{% else %}empty{% endfor %}',
+      { items: {} }
+    );
     expect(result).toBe('empty');
   });
   test('else does not fire on non-empty object', async () => {
-    const result = await renderTemplate('{% for k, v in items %}{{ k }}{% else %}empty{% endfor %}', { items: { a: 1 } });
+    const result = await renderTemplate(
+      '{% for k, v in items %}{{ k }}{% else %}empty{% endfor %}',
+      { items: { a: 1 } }
+    );
     expect(result).toBe('a');
   });
   test('nested for-else fires inner else', async () => {
-    const result = await renderTemplate('{% for x in outer %}{% for y in inner %}{{ y }}{% else %}-{% endfor %}|{% endfor %}', { outer: [1, 2], inner: [] });
+    const result = await renderTemplate(
+      '{% for x in outer %}{% for y in inner %}{{ y }}{% else %}-{% endfor %}|{% endfor %}',
+      { outer: [1, 2], inner: [] }
+    );
     expect(result).toBe('-|-|');
   });
   test('for-else with loop variables in else block', async () => {
-    const result = await renderTemplate('{% for x in items %}{{ x }}{% else %}count=0{% endfor %}', { items: [] });
+    const result = await renderTemplate(
+      '{% for x in items %}{{ x }}{% else %}count=0{% endfor %}',
+      { items: [] }
+    );
     expect(result).toBe('count=0');
   });
 });
 
 describe('component', () => {
   test('component definition and call', async () => {
-    const result = await renderTemplate('{% component greet(name) %}Hello {{ name }}{% endcomponent %}{{ greet("World") }}');
+    const result = await renderTemplate(
+      '{% component greet(name) %}Hello {{ name }}{% endcomponent %}{{ greet("World") }}'
+    );
     expect(result).toBe('Hello World');
   });
   test('component with default args', async () => {
-    const result = await renderTemplate('{% component greet(name = "Guest") %}Hi {{ name }}{% endcomponent %}{{ greet() }}');
+    const result = await renderTemplate(
+      '{% component greet(name = "Guest") %}Hi {{ name }}{% endcomponent %}{{ greet() }}'
+    );
     expect(result).toBe('Hi Guest');
   });
 });
 
 describe('scope isolation', () => {
   test('loop variable does not leak', async () => {
-    const result = await renderTemplate('{% for i in [1,2,3] %}{{ i }}{% endfor %}[{{ i is defined }}]');
+    const result = await renderTemplate(
+      '{% for i in [1,2,3] %}{{ i }}{% endfor %}[{{ i is defined }}]'
+    );
     expect(result).toContain('[false]');
   });
 });
@@ -340,7 +347,9 @@ describe('undefined modes', () => {
     expect(typeof result).toBe('string');
   });
   test('strict mode throws', async () => {
-    const result = await renderTemplate('{{ missing }}', {}, { undefined: 'strict' }).catch(e => e);
+    const result = await renderTemplate('{{ missing }}', {}, { undefined: 'strict' }).catch(
+      (e) => e
+    );
     expect(result).toBeInstanceOf(Error);
   });
 });
@@ -372,13 +381,19 @@ describe('walrus operator', () => {
     expect(await renderTemplate('{{ (x := 42) }}{{ x }}')).toBe('4242');
   });
   test('assign in condition', async () => {
-    expect(await renderTemplate('{% if (x := items[0]) %}{{ x }}{% endif %}', { items: ['first'] })).toBe('first');
+    expect(
+      await renderTemplate('{% if (x := items[0]) %}{{ x }}{% endif %}', { items: ['first'] })
+    ).toBe('first');
   });
 });
 
 describe('slot fallback', () => {
   test('missing slot renders empty', async () => {
-    expect(await renderTemplate('{% component c %}[{{ children }}]{% endcomponent %}{% render c %}{% endrender %}')).toBe('[]');
+    expect(
+      await renderTemplate(
+        '{% component c %}[{{ children }}]{% endcomponent %}{% render c %}{% endrender %}'
+      )
+    ).toBe('[]');
   });
 });
 
@@ -390,13 +405,19 @@ describe('scope block', () => {
 
 describe('switch statement', () => {
   test('switch matches first case', async () => {
-    expect(await renderTemplate('{% switch x %}{% case 1 %}one{% endswitch %}', { x: 1 })).toBe('one');
+    expect(await renderTemplate('{% switch x %}{% case 1 %}one{% endswitch %}', { x: 1 })).toBe(
+      'one'
+    );
   });
   test('switch falls through to matching case', async () => {
-    expect(await renderTemplate('{% switch x %}{% case 1 %}{% case 2 %}both{% endswitch %}', { x: 2 })).toBe('both');
+    expect(
+      await renderTemplate('{% switch x %}{% case 1 %}{% case 2 %}both{% endswitch %}', { x: 2 })
+    ).toBe('both');
   });
   test('switch default fires when no match', async () => {
-    expect(await renderTemplate('{% switch x %}{% case 1 %}one{% default %}def{% endswitch %}', { x: 3 })).toBe('def');
+    expect(
+      await renderTemplate('{% switch x %}{% case 1 %}one{% default %}def{% endswitch %}', { x: 3 })
+    ).toBe('def');
   });
 });
 
@@ -438,28 +459,61 @@ describe('primitive method access', () => {
 
 describe('match/when pattern matching', () => {
   test('literal match', async () => {
-    expect(await renderTemplate('{% match x %}{% when 1 %}one{% when 2 %}two{% when _ %}other{% endmatch %}', { x: 1 })).toBe('one');
+    expect(
+      await renderTemplate(
+        '{% match x %}{% when 1 %}one{% when 2 %}two{% when _ %}other{% endmatch %}',
+        { x: 1 }
+      )
+    ).toBe('one');
   });
   test('literal match second case', async () => {
-    expect(await renderTemplate('{% match x %}{% when 1 %}one{% when 2 %}two{% when _ %}other{% endmatch %}', { x: 2 })).toBe('two');
+    expect(
+      await renderTemplate(
+        '{% match x %}{% when 1 %}one{% when 2 %}two{% when _ %}other{% endmatch %}',
+        { x: 2 }
+      )
+    ).toBe('two');
   });
   test('wildcard default', async () => {
-    expect(await renderTemplate('{% match x %}{% when 1 %}one{% when _ %}other{% endmatch %}', { x: 99 })).toBe('other');
+    expect(
+      await renderTemplate('{% match x %}{% when 1 %}one{% when _ %}other{% endmatch %}', { x: 99 })
+    ).toBe('other');
   });
   test('guard positive', async () => {
-    expect(await renderTemplate('{% match x %}{% when n if n > 0 %}pos{% when n if n < 0 %}neg{% when _ %}zero{% endmatch %}', { x: 5 })).toBe('pos');
+    expect(
+      await renderTemplate(
+        '{% match x %}{% when n if n > 0 %}pos{% when n if n < 0 %}neg{% when _ %}zero{% endmatch %}',
+        { x: 5 }
+      )
+    ).toBe('pos');
   });
   test('guard negative', async () => {
-    expect(await renderTemplate('{% match x %}{% when n if n > 0 %}pos{% when n if n < 0 %}neg{% when _ %}zero{% endmatch %}', { x: -5 })).toBe('neg');
+    expect(
+      await renderTemplate(
+        '{% match x %}{% when n if n > 0 %}pos{% when n if n < 0 %}neg{% when _ %}zero{% endmatch %}',
+        { x: -5 }
+      )
+    ).toBe('neg');
   });
   test('guard zero', async () => {
-    expect(await renderTemplate('{% match x %}{% when n if n > 0 %}pos{% when n if n < 0 %}neg{% when _ %}zero{% endmatch %}', { x: 0 })).toBe('zero');
+    expect(
+      await renderTemplate(
+        '{% match x %}{% when n if n > 0 %}pos{% when n if n < 0 %}neg{% when _ %}zero{% endmatch %}',
+        { x: 0 }
+      )
+    ).toBe('zero');
   });
   test('variable binding', async () => {
-    expect(await renderTemplate('{% match x %}{% when val %}got {{ val }}{% endmatch %}', { x: 'hello' })).toBe('got hello');
+    expect(
+      await renderTemplate('{% match x %}{% when val %}got {{ val }}{% endmatch %}', { x: 'hello' })
+    ).toBe('got hello');
   });
   test('string literal match', async () => {
-    expect(await renderTemplate("{% match s %}{% when 'hi' %}hello{% when _ %}bye{% endmatch %}", { s: 'hi' })).toBe('hello');
+    expect(
+      await renderTemplate("{% match s %}{% when 'hi' %}hello{% when _ %}bye{% endmatch %}", {
+        s: 'hi',
+      })
+    ).toBe('hello');
   });
 });
 
@@ -468,7 +522,9 @@ describe('range operator (..)', () => {
     expect(await renderTemplate('{% for i in 1..5 %}{{ i }}{% endfor %}')).toBe('12345');
   });
   test('range with variables', async () => {
-    expect(await renderTemplate('{% for i in start..end %}{{ i }}{% endfor %}', { start: 3, end: 7 })).toBe('34567');
+    expect(
+      await renderTemplate('{% for i in start..end %}{{ i }}{% endfor %}', { start: 3, end: 7 })
+    ).toBe('34567');
   });
   test('range single element', async () => {
     expect(await renderTemplate('{% for i in 5..5 %}{{ i }}{% endfor %}')).toBe('5');
@@ -477,22 +533,47 @@ describe('range operator (..)', () => {
 
 describe('capture tag', () => {
   test('capture and use once', async () => {
-    expect(await renderTemplate('{% capture greeting %}Hello {{ name }}{% endcapture %}{{ greeting }}', { name: 'World' })).toBe('Hello World');
+    expect(
+      await renderTemplate('{% capture greeting %}Hello {{ name }}{% endcapture %}{{ greeting }}', {
+        name: 'World',
+      })
+    ).toBe('Hello World');
   });
   test('capture and reuse multiple times', async () => {
-    expect(await renderTemplate('{% capture btn %}<button>{{ label }}</button>{% endcapture %}{{ btn }}{{ btn }}', { label: 'Click' })).toBe('<button>Click</button><button>Click</button>');
+    expect(
+      await renderTemplate(
+        '{% capture btn %}<button>{{ label }}</button>{% endcapture %}{{ btn }}{{ btn }}',
+        { label: 'Click' }
+      )
+    ).toBe('<button>Click</button><button>Click</button>');
   });
   test('capture with for loop inside', async () => {
-    expect(await renderTemplate('{% capture list %}{% for i in items %}{{ i }}{% endfor %}{% endcapture %}{{ list }}', { items: [1, 2, 3] })).toBe('123');
+    expect(
+      await renderTemplate(
+        '{% capture list %}{% for i in items %}{{ i }}{% endfor %}{% endcapture %}{{ list }}',
+        { items: [1, 2, 3] }
+      )
+    ).toBe('123');
   });
   test('capture then pipe to filter', async () => {
-    expect(await renderTemplate('{% capture raw %}  hi  {% endcapture %}{{ raw |> trim }}')).toBe('hi');
+    expect(await renderTemplate('{% capture raw %}  hi  {% endcapture %}{{ raw |> trim }}')).toBe(
+      'hi'
+    );
   });
   test('capture in condition', async () => {
-    expect(await renderTemplate('{% capture content %}{{ items |> join(",") }}{% endcapture %}{% if content %}Items: {{ content }}{% endif %}', { items: ['a', 'b'] })).toBe('Items: a,b');
+    expect(
+      await renderTemplate(
+        '{% capture content %}{{ items |> join(",") }}{% endcapture %}{% if content %}Items: {{ content }}{% endif %}',
+        { items: ['a', 'b'] }
+      )
+    ).toBe('Items: a,b');
   });
   test('capture empty check', async () => {
-    expect(await renderTemplate('{% capture content %}{% endcapture %}{% if content %}yes{% else %}no{% endif %}')).toBe('no');
+    expect(
+      await renderTemplate(
+        '{% capture content %}{% endcapture %}{% if content %}yes{% else %}no{% endif %}'
+      )
+    ).toBe('no');
   });
 });
 
@@ -501,90 +582,129 @@ describe('filter block', () => {
     expect(await renderTemplate('{% filter upper %}hello{% endfilter %}')).toBe('HELLO');
   });
   test('applies filter to expression content', async () => {
-    expect(await renderTemplate('{% filter upper %}{{ name }}{% endfilter %}', { name: 'world' })).toBe('WORLD');
+    expect(
+      await renderTemplate('{% filter upper %}{{ name }}{% endfilter %}', { name: 'world' })
+    ).toBe('WORLD');
   });
   test('filter with arguments', async () => {
-    expect(await renderTemplate('{% filter replace("o", "0") %}hello{% endfilter %}')).toBe('hell0');
+    expect(await renderTemplate('{% filter replace("o", "0") %}hello{% endfilter %}')).toBe(
+      'hell0'
+    );
   });
 });
 
 describe('component as UI primitive', () => {
   test('component with parameters', async () => {
-    expect(await renderTemplate('{% component card(title, price) %}<div>{{ title }}:{{ price }}</div>{% endcomponent %}{{ card("Kopi", 15000) }}')).toBe('<div>Kopi:15000</div>');
+    expect(
+      await renderTemplate(
+        '{% component card(title, price) %}<div>{{ title }}:{{ price }}</div>{% endcomponent %}{{ card("Kopi", 15000) }}'
+      )
+    ).toBe('<div>Kopi:15000</div>');
   });
   test('component with default args', async () => {
-    expect(await renderTemplate('{% component btn(label, type = "primary") %}<button class="{{ type }}">{{ label }}</button>{% endcomponent %}{{ btn("Save") }}')).toBe('<button class="primary">Save</button>');
+    expect(
+      await renderTemplate(
+        '{% component btn(label, type = "primary") %}<button class="{{ type }}">{{ label }}</button>{% endcomponent %}{{ btn("Save") }}'
+      )
+    ).toBe('<button class="primary">Save</button>');
   });
   test('component called multiple times', async () => {
-    expect(await renderTemplate('{% component tag(name) %}<{{ name }}>{% endcomponent %}{{ tag("a") }}{{ tag("b") }}')).toBe('<a><b>');
+    expect(
+      await renderTemplate(
+        '{% component tag(name) %}<{{ name }}>{% endcomponent %}{{ tag("a") }}{{ tag("b") }}'
+      )
+    ).toBe('<a><b>');
   });
 });
 
 describe('render/slot (composition)', () => {
   test('basic render with children', async () => {
-    expect(await renderTemplate(
-      '{% component card(title) %}<div><h3>{{ title }}</h3><div>{{ children }}</div></div>{% endcomponent %}' +
-      '{% render card("Hi") %}<p>Body</p>{% endrender %}'
-    )).toBe('<div><h3>Hi</h3><div><p>Body</p></div></div>');
+    expect(
+      await renderTemplate(
+        '{% component card(title) %}<div><h3>{{ title }}</h3><div>{{ children }}</div></div>{% endcomponent %}' +
+          '{% render card("Hi") %}<p>Body</p>{% endrender %}'
+      )
+    ).toBe('<div><h3>Hi</h3><div><p>Body</p></div></div>');
   });
 
   test('scoped slot with params', async () => {
-    expect(await renderTemplate(
-      '{% component list(items) %}<ul>{% for item in items %}<li>{{ slot("default", item) }}</li>{% endfor %}</ul>{% endcomponent %}' +
-      '{% render list(products) %}{% slot default(item) %}{{ item.name }}:{{ item.price }}{% endslot %}{% endrender %}',
-      { products: [{ name: 'A', price: 100 }, { name: 'B', price: 200 }] }
-    )).toBe('<ul><li>A:100</li><li>B:200</li></ul>');
+    expect(
+      await renderTemplate(
+        '{% component list(items) %}<ul>{% for item in items %}<li>{{ slot("default", item) }}</li>{% endfor %}</ul>{% endcomponent %}' +
+          '{% render list(products) %}{% slot default(item) %}{{ item.name }}:{{ item.price }}{% endslot %}{% endrender %}',
+        {
+          products: [
+            { name: 'A', price: 100 },
+            { name: 'B', price: 200 },
+          ],
+        }
+      )
+    ).toBe('<ul><li>A:100</li><li>B:200</li></ul>');
   });
 
   test('render without children reference (still works)', async () => {
-    expect(await renderTemplate(
-      '{% component greet(name) %}Hello {{ name }}{% endcomponent %}' +
-      '{% render greet("World") %}{% endrender %}'
-    )).toBe('Hello World');
+    expect(
+      await renderTemplate(
+        '{% component greet(name) %}Hello {{ name }}{% endcomponent %}' +
+          '{% render greet("World") %}{% endrender %}'
+      )
+    ).toBe('Hello World');
   });
 
   test('render with HTML content', async () => {
-    expect(await renderTemplate(
-      '{% component dialog(title) %}<dialog><h2>{{ title }}</h2>{{ children }}</dialog>{% endcomponent %}' +
-      '{% render dialog("Confirm") %}<button>OK</button>{% endrender %}'
-    )).toBe('<dialog><h2>Confirm</h2><button>OK</button></dialog>');
+    expect(
+      await renderTemplate(
+        '{% component dialog(title) %}<dialog><h2>{{ title }}</h2>{{ children }}</dialog>{% endcomponent %}' +
+          '{% render dialog("Confirm") %}<button>OK</button>{% endrender %}'
+      )
+    ).toBe('<dialog><h2>Confirm</h2><button>OK</button></dialog>');
   });
 });
 
 describe('named slots', () => {
   test('named slots header/body/footer', async () => {
-    expect(await renderTemplate(
-      '{% component card() %}<h>{{ slot("header") }}</h><b>{{ children }}</b><f>{{ slot("footer") }}</f>{% endcomponent %}' +
-      '{% render card() %}Default {% slot header %}Title{% endslot %}{% slot footer %}Bottom{% endslot %}{% endrender %}'
-    )).toBe('<h>Title</h><b>Default </b><f>Bottom</f>');
+    expect(
+      await renderTemplate(
+        '{% component card() %}<h>{{ slot("header") }}</h><b>{{ children }}</b><f>{{ slot("footer") }}</f>{% endcomponent %}' +
+          '{% render card() %}Default {% slot header %}Title{% endslot %}{% slot footer %}Bottom{% endslot %}{% endrender %}'
+      )
+    ).toBe('<h>Title</h><b>Default </b><f>Bottom</f>');
   });
 
   test('children as default slot', async () => {
-    expect(await renderTemplate(
-      '{% component wrap() %}<div>{{ children }}</div>{% endcomponent %}' +
-      '{% render wrap() %}Hello{% endrender %}'
-    )).toBe('<div>Hello</div>');
+    expect(
+      await renderTemplate(
+        '{% component wrap() %}<div>{{ children }}</div>{% endcomponent %}' +
+          '{% render wrap() %}Hello{% endrender %}'
+      )
+    ).toBe('<div>Hello</div>');
   });
 
   test('scoped named slot with props', async () => {
-    expect(await renderTemplate(
-      '{% component table(items) %}{% for item in items %}{{ slot("row", item) }}{% endfor %}{% endcomponent %}' +
-      '{% render table(data) %}{% slot row(item) %}[{{ item.name }}]{% endslot %}{% endrender %}',
-      { data: [{ name: 'A' }, { name: 'B' }] }
-    )).toBe('[A][B]');
+    expect(
+      await renderTemplate(
+        '{% component table(items) %}{% for item in items %}{{ slot("row", item) }}{% endfor %}{% endcomponent %}' +
+          '{% render table(data) %}{% slot row(item) %}[{{ item.name }}]{% endslot %}{% endrender %}',
+        { data: [{ name: 'A' }, { name: 'B' }] }
+      )
+    ).toBe('[A][B]');
   });
 
   test('missing named slot renders empty', async () => {
-    expect(await renderTemplate(
-      '{% component opt() %}[{{ slot("optional") }}]{% endcomponent %}' +
-      '{% render opt() %}body{% endrender %}'
-    )).toBe('[]');
+    expect(
+      await renderTemplate(
+        '{% component opt() %}[{{ slot("optional") }}]{% endcomponent %}' +
+          '{% render opt() %}body{% endrender %}'
+      )
+    ).toBe('[]');
   });
 
   test('slot.has() distinguishes provided from missing', async () => {
-    expect(await renderTemplate(
-      '{% component d() %}{% if slot.has("x") %}{{ slot("x") }}{% else %}none{% endif %}{% endcomponent %}' +
-      '{% render d() %}{% endrender %}'
-    )).toBe('none');
+    expect(
+      await renderTemplate(
+        '{% component d() %}{% if slot.has("x") %}{{ slot("x") }}{% else %}none{% endif %}{% endcomponent %}' +
+          '{% render d() %}{% endrender %}'
+      )
+    ).toBe('none');
   });
 });

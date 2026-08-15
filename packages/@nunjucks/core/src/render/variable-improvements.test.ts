@@ -1,30 +1,32 @@
 ﻿import { describe, expect, test } from 'bun:test';
-import { render } from './render.ts';
 import { isErr } from '@nunjucks/lib';
+import { render } from './render.ts';
 
 const renderTemplate = async (template: string, context: Record<string, unknown> = {}) => {
   const result = await render(template, {
     context,
     autoescape: false,
-    undefined: 'strict'
+    undefined: 'strict',
   });
-  if (isErr(result)) { throw result.error; }
+  if (isErr(result)) {
+    throw result.error;
+  }
   return result.value;
 };
 
 describe('variable expression edge cases', () => {
   test('supports array destructuring walrus targets', async () => {
-    await expect(renderTemplate(
-      '{% if ([a, b] := pair) %}{{ a }}-{{ b }}{% endif %}',
-      { pair: [3, 4] }
-    )).resolves.toBe('3-4');
+    await expect(
+      renderTemplate('{% if ([a, b] := pair) %}{{ a }}-{{ b }}{% endif %}', { pair: [3, 4] })
+    ).resolves.toBe('3-4');
   });
 
   test('supports object destructuring walrus targets', async () => {
-    await expect(renderTemplate(
-      '{% if ({a, b} := value) %}{{ a }}-{{ b }}{% endif %}',
-      { value: { a: 5, b: 6 } }
-    )).resolves.toBe('5-6');
+    await expect(
+      renderTemplate('{% if ({a, b} := value) %}{{ a }}-{{ b }}{% endif %}', {
+        value: { a: 5, b: 6 },
+      })
+    ).resolves.toBe('5-6');
   });
 
   test('supports nested walrus expressions', async () => {
@@ -32,12 +34,15 @@ describe('variable expression edge cases', () => {
   });
 
   test('supports walrus expressions inside arrays', async () => {
-    await expect(renderTemplate('{{ [(x := 1), (y := 2)] }}{{ x }}-{{ y }}')).resolves.toBe('1,21-2');
+    await expect(renderTemplate('{{ [(x := 1), (y := 2)] }}{{ x }}-{{ y }}')).resolves.toBe(
+      '1,21-2'
+    );
   });
 
   test('supports prefix and postfix increment/decrement', async () => {
-    await expect(renderTemplate('{{ ++x }}-{{ x++ }}-{{ --x }}-{{ x-- }}', { x: 2 }))
-      .resolves.toBe('3-3-3-3');
+    await expect(renderTemplate('{{ ++x }}-{{ x++ }}-{{ --x }}-{{ x-- }}', { x: 2 })).resolves.toBe(
+      '3-3-3-3'
+    );
   });
 });
 
@@ -87,7 +92,8 @@ describe('compound assignment operators', () => {
   });
 
   test('side effects persist across subsequent outputs', async () => {
-    await expect(renderTemplate('{{ (x := 5) }}{{ (x += 3) }}{{ (x *= 2) }}{{ x }}'))
-      .resolves.toBe('581616');
+    await expect(renderTemplate('{{ (x := 5) }}{{ (x += 3) }}{{ (x *= 2) }}{{ x }}')).resolves.toBe(
+      '581616'
+    );
   });
 });

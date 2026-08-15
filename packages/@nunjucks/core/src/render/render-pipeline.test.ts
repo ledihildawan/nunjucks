@@ -1,9 +1,6 @@
-import { describe, test, expect } from 'bun:test';
-import {
-  prepareSandbox,
-  createEnvLookups,
-  TEMPLATE_FILE_EXTENSION_RE,
-} from './render-pipeline.ts';
+import { describe, expect, test } from 'bun:test';
+import { createEnvLookups } from './render-env.ts';
+import { prepareSandbox, TEMPLATE_FILE_EXTENSION_RE } from './render-pipeline.ts';
 import type { RenderConfig } from './render-types.ts';
 
 describe('render-pipeline', () => {

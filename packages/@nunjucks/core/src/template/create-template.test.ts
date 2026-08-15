@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { createTemplate } from './create-template.ts';
 import type { TemplateSource } from './types.ts';
 
@@ -39,6 +39,8 @@ describe('createTemplate', () => {
   });
 
   test('throws on invalid source type', () => {
-    expect(() => createTemplate({ src: { type: 'invalid', value: 'test' } as unknown as TemplateSource })).toThrow();
+    expect(() =>
+      createTemplate({ src: { type: 'invalid', value: 'test' } as unknown as TemplateSource })
+    ).toThrow();
   });
 });

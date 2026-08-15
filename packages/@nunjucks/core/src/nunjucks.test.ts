@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -9,7 +9,9 @@ describe('nunjucks factory', () => {
     const njk = nunjucks({});
     const result = await njk.render('Hello {{ name }}!', { name: 'World' });
     expect(result.ok).toBe(true);
-    if (!result.ok) { return; }
+    if (!result.ok) {
+      return;
+    }
     expect(result.value).toBe('Hello World!');
   });
 
@@ -20,7 +22,9 @@ describe('nunjucks factory', () => {
     });
     const result = await njk.render('{{ appName }}: {{ name |> shout }}', { name: 'hi' });
     expect(result.ok).toBe(true);
-    if (!result.ok) { return; }
+    if (!result.ok) {
+      return;
+    }
     expect(result.value).toBe('Demo: HI');
   });
 
@@ -31,7 +35,9 @@ describe('nunjucks factory', () => {
     });
     const result = await njk.render('{{ x |> greet }}', { x: '' });
     expect(result.ok).toBe(true);
-    if (!result.ok) { return; }
+    if (!result.ok) {
+      return;
+    }
     expect(result.value).toBe('user');
   });
 
@@ -41,7 +47,9 @@ describe('nunjucks factory', () => {
     const njk = nunjucks({});
     const result = await njk.render('{{ a + b }}', { a: 1, b: 2 });
     expect(result.ok).toBe(true);
-    if (!result.ok) { return; }
+    if (!result.ok) {
+      return;
+    }
     expect(result.value).toBe('3');
   });
 
@@ -55,7 +63,9 @@ describe('nunjucks factory', () => {
 
     const clean = await njk.render('{{ safe }}', { safe: 'ok' });
     expect(clean.ok).toBe(true);
-    if (!clean.ok) { return; }
+    if (!clean.ok) {
+      return;
+    }
     expect(clean.value).toBe('ok');
   });
 
@@ -63,9 +73,13 @@ describe('nunjucks factory', () => {
     const njk = nunjucks({});
     const result = await njk.renderToStream('Hi {{ n }}', { n: 'there' });
     expect(result.ok).toBe(true);
-    if (!result.ok) { return; }
+    if (!result.ok) {
+      return;
+    }
     const chunks: string[] = [];
-    for await (const chunk of result.stream) { chunks.push(chunk); }
+    for await (const chunk of result.value) {
+      chunks.push(chunk);
+    }
     expect(chunks.join('')).toBe('Hi there');
   });
 
@@ -79,19 +93,19 @@ describe('nunjucks factory', () => {
       const njk = nunjucks({ views: viewsDir });
       const result = await njk.render('greet.njk', { name: 'File' });
       expect(result.ok).toBe(true);
-      if (!result.ok) { return; }
+      if (!result.ok) {
+        return;
+      }
       expect(result.value).toBe('Hello File!');
     } finally {
       await rm(viewsDir, { recursive: true, force: true });
     }
   });
 
-  test('factory-supplied filters with reserved names are rejected by validation', async () => {
-    // WHY: the factory maps filters → customFilters so the existing per-render validateConfig fires and
-    // rejects a filter name that shadows a reserved keyword (e.g. `if`).
-    const njk = nunjucks({ filters: { if: () => 'x' } });
-    const result = await njk.render('{{ x |> if }}', { x: 'y' });
-    expect(result.ok).toBe(false);
+  test('factory-supplied filters with reserved names are rejected at factory creation', () => {
+    // WHY: the factory validates config eagerly (fail-fast) — a filter name shadowing a reserved
+    // keyword (e.g. `if`) never produces an engine.
+    expect(() => nunjucks({ filters: { if: () => 'x' } })).toThrow('if');
   });
 
   test('limits.maxTemplateSize flatten is enforced by the validator', async () => {
@@ -102,10 +116,14 @@ describe('nunjucks factory', () => {
   });
 
   test('plugin tests fold and are usable in {% if x is testName %}', async () => {
-    const njk = nunjucks({ plugins: [{ name: 'predicates', tests: { isYes: (value: unknown) => value === 'yes' } }] });
+    const njk = nunjucks({
+      plugins: [{ name: 'predicates', tests: { isYes: (value: unknown) => value === 'yes' } }],
+    });
     const result = await njk.render('{% if x is isYes %}Y{% else %}N{% endif %}', { x: 'yes' });
     expect(result.ok).toBe(true);
-    if (!result.ok) { return; }
+    if (!result.ok) {
+      return;
+    }
     expect(result.value).toBe('Y');
   });
 

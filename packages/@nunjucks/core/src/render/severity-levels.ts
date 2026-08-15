@@ -29,7 +29,9 @@ const BLOCK_ERROR_CODES: ReadonlySet<string> = new Set([
 ]);
 
 const readErrorCode = (error: unknown): string | null => {
-  if (error === null || typeof error !== 'object') { return null; }
+  if (error === null || typeof error !== 'object') {
+    return null;
+  }
   const code = (error as { code?: unknown }).code;
   return typeof code === 'string' ? code : null;
 };
@@ -39,5 +41,5 @@ const getSeverity = (error: unknown): ErrorSeverity => {
   return code !== null && BLOCK_ERROR_CODES.has(code) ? 'block' : 'inline';
 };
 
-export { BLOCK_ERROR_CODES, getSeverity };
 export type { ErrorSeverity };
+export { BLOCK_ERROR_CODES, getSeverity };

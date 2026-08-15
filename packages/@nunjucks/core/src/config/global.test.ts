@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { getDefaultConfig } from './global.ts';
 
 describe('getDefaultConfig', () => {

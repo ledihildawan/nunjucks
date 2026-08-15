@@ -1,4 +1,4 @@
-﻿import { describe, test, expect } from 'bun:test';
+﻿import { describe, expect, test } from 'bun:test';
 import { renderTemplate } from './render-test-helper.ts';
 
 describe('with tag', () => {
@@ -18,9 +18,7 @@ describe('with tag', () => {
     });
 
     test('can read parent variables inside scope', async () => {
-      const result = await renderTemplate(
-        '{{ x := "parent" }}{% scope %}{{ x }}{% endscope %}'
-      );
+      const result = await renderTemplate('{{ x := "parent" }}{% scope %}{{ x }}{% endscope %}');
       expect(result).toBe('parent');
     });
 
@@ -55,16 +53,12 @@ describe('with tag', () => {
 
   describe('inline assignments (Form 2: Jinja2-style)', () => {
     test('single inline assignment', async () => {
-      const result = await renderTemplate(
-        '{% scope x = 42 %}{{ x }}{% endscope %}'
-      );
+      const result = await renderTemplate('{% scope x = 42 %}{{ x }}{% endscope %}');
       expect(result).toBe('42');
     });
 
     test('multiple inline assignments', async () => {
-      const result = await renderTemplate(
-        '{% scope x = 1, y = 2 %}{{ x + y }}{% endscope %}'
-      );
+      const result = await renderTemplate('{% scope x = 1, y = 2 %}{{ x + y }}{% endscope %}');
       expect(result).toBe('3');
     });
 
@@ -85,9 +79,7 @@ describe('with tag', () => {
     });
 
     test('inline assignment does not leak to parent', async () => {
-      const result = await renderTemplate(
-        '{% scope x = 42 %}{% endscope %}{{ x }}'
-      );
+      const result = await renderTemplate('{% scope x = 42 %}{% endscope %}{{ x }}');
       expect(result).toBe('undefined');
     });
 
@@ -106,9 +98,7 @@ describe('with tag', () => {
     });
 
     test('inline and set inside can coexist', async () => {
-      const result = await renderTemplate(
-        '{% scope x = 1 %}{{ y := 2 }}{{ x + y }}{% endscope %}'
-      );
+      const result = await renderTemplate('{% scope x = 1 %}{{ y := 2 }}{{ x + y }}{% endscope %}');
       expect(result).toBe('3');
     });
 
@@ -129,16 +119,12 @@ describe('with tag', () => {
 
   describe('edge cases', () => {
     test('empty scope block', async () => {
-      const result = await renderTemplate(
-        'before{% scope %}{% endscope %}after'
-      );
+      const result = await renderTemplate('before{% scope %}{% endscope %}after');
       expect(result).toBe('beforeafter');
     });
 
     test('empty scope block with inline assignments', async () => {
-      const result = await renderTemplate(
-        'before{% scope x = 1 %}{% endscope %}after'
-      );
+      const result = await renderTemplate('before{% scope x = 1 %}{% endscope %}after');
       expect(result).toBe('beforeafter');
     });
 

@@ -1,20 +1,28 @@
 // WHY: consumer-side streaming helpers. renderToStream yields a plain AsyncGenerator<string>; these adapters convert it into the stream shapes real HTTP/runtimes expect, and enforce a per-chunk timeout so a stalled render cannot hang a response indefinitely.
 
-import { isThenable } from '@nunjucks/lib';
-import { toWebReadableStream } from '@nunjucks/lib/web-readable-stream';
+import { err, isThenable, ok, type Result } from '@nunjucks/lib';
 import { coalesceStream } from '@nunjucks/lib/stream-coalesce';
-import { createStreamTimeoutError, isStreamTimeoutError, type StreamTimeoutError } from '@nunjucks/runtime/stream-timeout';
-import { ok, err, type Result } from '@nunjucks/lib';
+import { toWebReadableStream } from '@nunjucks/lib/web-readable-stream';
+import {
+  createStreamTimeoutError,
+  isStreamTimeoutError,
+  type StreamTimeoutError,
+} from '@nunjucks/runtime/stream-timeout';
 
 // WHY: a generator cannot be wrapped by withTimeout (it is not a Promise), so streaming timeout is enforced per-chunk: each .next() races against a timer. This is the idle/per-chunk guard complementing the total executionTimeout deadline enforced by withStreamDeadline. try/finally guarantees the timer is cleared on EVERY exit path (chunk yielded, done, timeout, external .return(), throw) — previously N chunks leaked N concurrent timers. The finally also best-effort returns the underlying iterator WITHOUT awaiting: a stalled .next() (e.g. an async filter awaiting a never-resolving promise) may never let .return() settle, so awaiting would re-introduce the hang this guard exists to break. A .return() on an already-completed iterator is a no-op, so calling it unconditionally is safe.
-const withStreamTimeout = async function* (stream: AsyncIterator<string>, timeoutMs: number): AsyncGenerator<string> {
+const withStreamTimeout = async function* (
+  stream: AsyncIterator<string>,
+  timeoutMs: number
+): AsyncGenerator<string> {
   let handle: ReturnType<typeof setTimeout> | undefined;
   try {
     // WHY: Async stream polling requires imperative loop — must race next() against per-chunk idle timeout.
     while (true) {
       const timeoutToken = Symbol('streamTimeout');
       const timerPromise = new Promise<symbol>((resolve) => {
-        handle = setTimeout(() => { resolve(timeoutToken); }, timeoutMs);
+        handle = setTimeout(() => {
+          resolve(timeoutToken);
+        }, timeoutMs);
       });
       const raced = await Promise.race([stream.next(), timerPromise]);
       clearTimeout(handle);
@@ -29,20 +37,29 @@ const withStreamTimeout = async function* (stream: AsyncIterator<string>, timeou
       yield step.value;
     }
   } finally {
-    if (handle !== undefined) { clearTimeout(handle); }
+    if (handle !== undefined) {
+      clearTimeout(handle);
+    }
     const pendingReturn = stream.return?.();
     if (pendingReturn !== undefined) {
-      pendingReturn.catch(() => { /* best-effort: swallow cleanup rejection */ });
+      pendingReturn.catch(() => {
+        /* best-effort: swallow cleanup rejection */
+      });
     }
   }
 };
 
 // WHY: total wall-clock deadline for a stream — a single timer set once at start; if it elapses before the source completes, a deadline-flavored StreamTimeoutError (code='TIMEOUT') throws regardless of chunk cadence. This complements withStreamTimeout (per-chunk idle): a stream trickling a chunk every 50ms passes the idle guard but is still bounded by the total deadline. try/finally clears the timer and cascades .return() on every exit path. Wired from createRenderStream via resolvedConfig.executionTimeout so the SAME knob bounds blocking and streaming renders.
-const withStreamDeadline = async function* (stream: AsyncGenerator<string>, deadlineMs: number): AsyncGenerator<string> {
+const withStreamDeadline = async function* (
+  stream: AsyncGenerator<string>,
+  deadlineMs: number
+): AsyncGenerator<string> {
   let handle: ReturnType<typeof setTimeout> | undefined;
   try {
     const deadlinePromise = new Promise<never>((_, reject) => {
-      handle = setTimeout(() => { reject(createStreamTimeoutError(deadlineMs, 'deadline')); }, deadlineMs);
+      handle = setTimeout(() => {
+        reject(createStreamTimeoutError(deadlineMs, 'deadline'));
+      }, deadlineMs);
     });
     // WHY: Async stream polling requires imperative loop — must race next() against total wall-clock deadline.
     while (true) {
@@ -53,16 +70,24 @@ const withStreamDeadline = async function* (stream: AsyncGenerator<string>, dead
       yield step.value;
     }
   } finally {
-    if (handle !== undefined) { clearTimeout(handle); }
-    stream.return(undefined).catch(() => { /* best-effort: swallow cleanup rejection */ });
+    if (handle !== undefined) {
+      clearTimeout(handle);
+    }
+    stream.return(undefined).catch(() => {
+      /* best-effort: swallow cleanup rejection */
+    });
   }
 };
 
 // WHY: streaming yield boundary — coerce SafeString (a boxed String, instanceof String) to a primitive string. suppressValue returns the SafeString object for already-safe values so the blocking path's `buffer += value` coerces via toString; the streaming path yields directly, so without this coercion a SafeString object reaches the HTTP sink (res.write / TextEncoder.encode) which rejects boxed strings with ERR_INVALID_ARG_TYPE. The thenable check is a fail-loud safety net: a Promise reaching here means an emit site forgot to await (every known site does — see compile-output/extension/extends); stringifying it would silently produce "[object Promise]", so return err instead to surface the bug.
 const coerceChunk = (value: unknown): Result<string, Error> => {
-  if (typeof value === 'string') { return ok(value); }
+  if (typeof value === 'string') {
+    return ok(value);
+  }
   if (isThenable(value)) {
-    return err(new Error('renderToStream: Promise leaked to stream boundary — an emit site is missing await'));
+    return err(
+      new Error('renderToStream: Promise leaked to stream boundary — an emit site is missing await')
+    );
   }
   return ok(String(value));
 };
@@ -71,18 +96,43 @@ const coerceChunk = (value: unknown): Result<string, Error> => {
 const guardSingleConsumer = (inner: AsyncGenerator<string>): AsyncGenerator<string> => {
   let finished = false;
   const iterator = {
-    [Symbol.asyncIterator](): AsyncGenerator<string> { return iterator as AsyncGenerator<string>; },
+    [Symbol.asyncIterator](): AsyncGenerator<string> {
+      return iterator as AsyncGenerator<string>;
+    },
     next(value?: unknown): Promise<IteratorResult<string>> {
       if (finished) {
-        return Promise.reject(new Error('renderToStream: stream already consumed — a stream is single-use; call renderToStream() again for a fresh stream'));
+        return Promise.reject(
+          new Error(
+            'renderToStream: stream already consumed — a stream is single-use; call renderToStream() again for a fresh stream'
+          )
+        );
       }
-      return inner.next(value).then((result) => { if (result.done) { finished = true; } return result; });
+      return inner.next(value).then((result) => {
+        if (result.done) {
+          finished = true;
+        }
+        return result;
+      });
     },
-    return(value?: unknown): Promise<IteratorResult<string>> { finished = true; return inner.return(value); },
-    throw(e?: unknown): Promise<IteratorResult<string>> { return inner.throw(e); },
+    return(value?: unknown): Promise<IteratorResult<string>> {
+      finished = true;
+      return inner.return(value);
+    },
+    throw(e?: unknown): Promise<IteratorResult<string>> {
+      return inner.throw(e);
+    },
   };
   return iterator as AsyncGenerator<string>;
 };
 
-export { toWebReadableStream, withStreamTimeout, withStreamDeadline, isStreamTimeoutError, createStreamTimeoutError, coalesceStream, coerceChunk, guardSingleConsumer };
 export type { StreamTimeoutError };
+export {
+  coalesceStream,
+  coerceChunk,
+  createStreamTimeoutError,
+  guardSingleConsumer,
+  isStreamTimeoutError,
+  toWebReadableStream,
+  withStreamDeadline,
+  withStreamTimeout,
+};

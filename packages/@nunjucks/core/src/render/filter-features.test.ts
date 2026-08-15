@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { renderTemplate } from './render-test-helper.ts';
 
 describe('string filters', () => {
@@ -115,7 +115,10 @@ describe('array filters', () => {
   });
 
   test('slice - even split', async () => {
-    const result = await renderTemplate('{% for s in [1, 2, 3, 4, 5, 6] |> slice(2) %}{{ s |> join("") }}{% endfor %}', {});
+    const result = await renderTemplate(
+      '{% for s in [1, 2, 3, 4, 5, 6] |> slice(2) %}{{ s |> join("") }}{% endfor %}',
+      {}
+    );
     expect(result).toBe('123456');
   });
 
@@ -240,7 +243,9 @@ describe('groupby filter', () => {
 
 describe('built-in tests (is operator)', () => {
   test('is defined - true', async () => {
-    const result = await renderTemplate('{% if value is defined %}yes{% else %}no{% endif %}', { value: 'hello' });
+    const result = await renderTemplate('{% if value is defined %}yes{% else %}no{% endif %}', {
+      value: 'hello',
+    });
     expect(result).toBe('yes');
   });
 
@@ -250,27 +255,40 @@ describe('built-in tests (is operator)', () => {
   });
 
   test('is null - true', async () => {
-    const result = await renderTemplate('{% if value is null %}yes{% else %}no{% endif %}', { value: null });
+    const result = await renderTemplate('{% if value is null %}yes{% else %}no{% endif %}', {
+      value: null,
+    });
     expect(result).toBe('yes');
   });
 
   test('is null - false', async () => {
-    const result = await renderTemplate('{% if value is null %}yes{% else %}no{% endif %}', { value: 'hello' });
+    const result = await renderTemplate('{% if value is null %}yes{% else %}no{% endif %}', {
+      value: 'hello',
+    });
     expect(result).toBe('no');
   });
 
   test('is sameas - true', async () => {
-    const result = await renderTemplate('{% if value is sameas(true) %}yes{% else %}no{% endif %}', { value: true });
+    const result = await renderTemplate(
+      '{% if value is sameas(true) %}yes{% else %}no{% endif %}',
+      { value: true }
+    );
     expect(result).toBe('yes');
   });
 
   test('is sameas - false', async () => {
-    const result = await renderTemplate('{% if value is sameas(true) %}yes{% else %}no{% endif %}', { value: 1 });
+    const result = await renderTemplate(
+      '{% if value is sameas(true) %}yes{% else %}no{% endif %}',
+      { value: 1 }
+    );
     expect(result).toBe('no');
   });
 
   test('is iterable - true', async () => {
-    const result = await renderTemplate('{% if [1,2,3] is iterable %}yes{% else %}no{% endif %}', {});
+    const result = await renderTemplate(
+      '{% if [1,2,3] is iterable %}yes{% else %}no{% endif %}',
+      {}
+    );
     expect(result).toBe('yes');
   });
 
@@ -282,14 +300,22 @@ describe('built-in tests (is operator)', () => {
 
 describe('custom filter registration', () => {
   test('custom filter via config.filters', async () => {
-    const result = await renderTemplate('{{ x |> repeat(3) }}', { x: 'ab' }, { filters: { repeat: (s: string, n: number) => s.repeat(n) } });
+    const result = await renderTemplate(
+      '{{ x |> repeat(3) }}',
+      { x: 'ab' },
+      { filters: { repeat: (s: string, n: number) => s.repeat(n) } }
+    );
     expect(result).toBe('ababab');
   });
 });
 
 describe('custom test registration', () => {
   test('custom test via config.tests', async () => {
-    const result = await renderTemplate('{% if x is positive %}yes{% else %}no{% endif %}', { x: 5 }, { tests: { positive: (v: unknown) => typeof v === 'number' && v > 0 } });
+    const result = await renderTemplate(
+      '{% if x is positive %}yes{% else %}no{% endif %}',
+      { x: 5 },
+      { tests: { positive: (v: unknown) => typeof v === 'number' && v > 0 } }
+    );
     expect(result).toBe('yes');
   });
 });
@@ -333,7 +359,9 @@ describe('filter block', () => {
     expect(result).toBe('HELLO');
   });
   test('applies filter to expression content', async () => {
-    const result = await renderTemplate('{% filter upper %}{{ name }}{% endfilter %}', { name: 'world' });
+    const result = await renderTemplate('{% filter upper %}{{ name }}{% endfilter %}', {
+      name: 'world',
+    });
     expect(result).toBe('WORLD');
   });
   test('filter with arguments', async () => {
@@ -349,24 +377,32 @@ describe('sanitize filter', () => {
   });
 
   test('strips onerror event handler but keeps the tag', async () => {
-    const result = await renderTemplate('{{ x |> sanitize }}', { x: '<img src="x" onerror="alert(1)">' });
+    const result = await renderTemplate('{{ x |> sanitize }}', {
+      x: '<img src="x" onerror="alert(1)">',
+    });
     expect(result).toContain('<img');
     expect(result).not.toContain('onerror');
   });
 
   test('strips inline event handlers from safe tags', async () => {
-    const result = await renderTemplate('{{ x |> sanitize }}', { x: '<a href="x" onclick="alert(1)">link</a>' });
+    const result = await renderTemplate('{{ x |> sanitize }}', {
+      x: '<a href="x" onclick="alert(1)">link</a>',
+    });
     expect(result).not.toContain('onclick');
     expect(result).toContain('link');
   });
 
   test('strips javascript: href', async () => {
-    const result = await renderTemplate('{{ x |> sanitize }}', { x: '<a href="javascript:alert(1)">x</a>' });
+    const result = await renderTemplate('{{ x |> sanitize }}', {
+      x: '<a href="javascript:alert(1)">x</a>',
+    });
     expect(result).not.toContain('javascript:');
   });
 
   test('keeps <b>, <i>, <p>', async () => {
-    const result = await renderTemplate('{{ x |> sanitize }}', { x: '<b>bold</b><i>italic</i><p>para</p>' });
+    const result = await renderTemplate('{{ x |> sanitize }}', {
+      x: '<b>bold</b><i>italic</i><p>para</p>',
+    });
     expect(result).toContain('<b>bold</b>');
     expect(result).toContain('<p>para</p>');
   });

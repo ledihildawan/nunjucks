@@ -1,7 +1,7 @@
-import { defaultTo } from 'remeda';
 import type { IncludeChain } from '@nunjucks/error-formatter';
+import { defaultTo } from 'remeda';
 
-export { createTemplateErrorHandler, buildErrorMessage, extractFrameDetails };
+export { buildErrorMessage, createTemplateErrorHandler, extractFrameDetails };
 
 export interface ErrorWithLineInfo extends Error {
   lineBase?: string;
@@ -27,12 +27,18 @@ interface BuildErrorMessageOptions {
   e: ErrorWithLineInfo;
 }
 
-const buildErrorMessage = ({ currentPath, sourceLineno, finalColno, e }: BuildErrorMessageOptions): string => {
-  const locationPart = sourceLineno && finalColno > 0
-    ? ` [Line ${sourceLineno}, Column ${finalColno}]`
-    : sourceLineno
-      ? ` [Line ${sourceLineno}]`
-      : '';
+const buildErrorMessage = ({
+  currentPath,
+  sourceLineno,
+  finalColno,
+  e,
+}: BuildErrorMessageOptions): string => {
+  const locationPart =
+    sourceLineno && finalColno > 0
+      ? ` [Line ${sourceLineno}, Column ${finalColno}]`
+      : sourceLineno
+        ? ` [Line ${sourceLineno}]`
+        : '';
   return `(${currentPath})${locationPart}\n  ${e.message}`;
 };
 
@@ -44,11 +50,25 @@ interface ExtractFrameDetailsInput {
   hasIncludeChain: unknown;
 }
 
-const extractFrameDetails = ({ error: e, sourceLineno, sourceColno, currentPath, hasIncludeChain }: ExtractFrameDetailsInput): Error | null => {
-  if (hasIncludeChain) { return null; }
-  if (e.lineBase === 'zero' || e.lineBase === 'one') { return null; }
-  if (sourceLineno === undefined) { return null; }
-  if (sourceLineno < 0) { return null; }
+const extractFrameDetails = ({
+  error: e,
+  sourceLineno,
+  sourceColno,
+  currentPath,
+  hasIncludeChain,
+}: ExtractFrameDetailsInput): Error | null => {
+  if (hasIncludeChain) {
+    return null;
+  }
+  if (e.lineBase === 'zero' || e.lineBase === 'one') {
+    return null;
+  }
+  if (sourceLineno === undefined) {
+    return null;
+  }
+  if (sourceLineno < 0) {
+    return null;
+  }
 
   const errColno = defaultTo(e.colno, 0);
   const finalColno = resolveColno(sourceColno, errColno);
@@ -66,17 +86,31 @@ const extractFrameDetails = ({ error: e, sourceLineno, sourceColno, currentPath,
   return newError;
 };
 
-const createTemplateErrorHandler = (getState: () => { path: string | undefined; includeChain: IncludeChain | null }) => {
+const createTemplateErrorHandler = (
+  getState: () => { path: string | undefined; includeChain: IncludeChain | null }
+) => {
   const enrichError = (e: ErrorWithLineInfo): Error => {
     const { path, includeChain } = getState();
     const sourceLineno = e.lineno;
     const sourceColno = e.colno;
     const hasIncludeChain = e.includeChain ?? includeChain;
 
-    const extracted = extractFrameDetails({ error: e, sourceLineno, sourceColno, currentPath: path, hasIncludeChain });
-    if (extracted) { return extracted; }
-    if (e.path) { return e; }
-    return Object.assign(Object.create(Object.getPrototypeOf(e) ?? Error.prototype), e, { path }) as ErrorWithLineInfo;
+    const extracted = extractFrameDetails({
+      error: e,
+      sourceLineno,
+      sourceColno,
+      currentPath: path,
+      hasIncludeChain,
+    });
+    if (extracted) {
+      return extracted;
+    }
+    if (e.path) {
+      return e;
+    }
+    return Object.assign(Object.create(Object.getPrototypeOf(e) ?? Error.prototype), e, {
+      path,
+    }) as ErrorWithLineInfo;
   };
 
   return { enrichError };

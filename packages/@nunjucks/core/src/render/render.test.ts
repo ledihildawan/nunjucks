@@ -1,12 +1,14 @@
-import { describe, test, expect } from 'bun:test';
-import { render } from './render.ts';
-import { isErr } from '@nunjucks/lib';
+import { describe, expect, test } from 'bun:test';
+import { isErr, isOk } from '@nunjucks/lib';
+import { render, renderToStream } from './render.ts';
 import { renderTemplate } from './render-test-helper.ts';
 
 describe('JavaScript expression smoke tests', () => {
   const renderExpr = async (template: string, context: Record<string, unknown> = {}) => {
     const result = await render(template, { context, autoescape: false });
-    if (isErr(result)) { throw result.error; }
+    if (isErr(result)) {
+      throw result.error;
+    }
     return result.value;
   };
 
@@ -54,7 +56,7 @@ describe('JavaScript expression smoke tests', () => {
   test('Array.isArray works', async () => {
     expect(await renderExpr('{{ Array.isArray(data) }}', { data: [1, 2, 3] })).toBe('true');
     expect(await renderExpr('{{ Array.isArray(data) }}', { data: { a: 1 } })).toBe('false');
-    expect(await renderExpr('{{ Array.isArray(data) }}', { data: "string" })).toBe('false');
+    expect(await renderExpr('{{ Array.isArray(data) }}', { data: 'string' })).toBe('false');
   });
 
   test('Number.isNaN and isFinite work', async () => {
@@ -84,7 +86,7 @@ describe('JavaScript expression smoke tests', () => {
     expect(await renderExpr('{{ a ?? "default" }}', { a: null })).toBe('default');
     expect(await renderExpr('{{ a ?? "default" }}', { a: undefined })).toBe('default');
     expect(await renderExpr('{{ a ?? "default" }}', { a: 0 })).toBe('0');
-    expect(await renderExpr('{{ a ?? "default" }}', { a: "" })).toBe('');
+    expect(await renderExpr('{{ a ?? "default" }}', { a: '' })).toBe('');
   });
 
   test('optional chaining works', async () => {
@@ -120,7 +122,7 @@ describe('JavaScript expression smoke tests', () => {
 
 describe('template source security scanning', () => {
   test('flags dangerous code in an inline template under strictMode', async () => {
-    const err = await renderTemplate("{{ eval('x') }}", {}, { strictMode: true }).catch(e => e);
+    const err = await renderTemplate("{{ eval('x') }}", {}, { strictMode: true }).catch((e) => e);
     expect(err.code).toBe('DANGEROUS_TEMPLATE_CODE');
   });
 
@@ -131,7 +133,10 @@ describe('template source security scanning', () => {
     const dir = await mkdtemp(join(tmpdir(), 'njk-sec-'));
     await writeFile(join(dir, 'evil.njk'), "{{ eval('malicious') }}");
     try {
-      const err = await renderTemplate('evil.njk', {}, { strictMode: true, views: dir } as Record<string, unknown>).catch(e => e);
+      const err = await renderTemplate('evil.njk', {}, { strictMode: true, views: dir } as Record<
+        string,
+        unknown
+      >).catch((e) => e);
       expect(err.code).toBe('DANGEROUS_TEMPLATE_CODE');
     } finally {
       await rm(dir, { recursive: true, force: true });
@@ -141,7 +146,9 @@ describe('template source security scanning', () => {
 
 describe('dompurify per-render isolation', () => {
   test('dompurify config does not leak across renders', async () => {
-    const r1 = await renderTemplate('{{ x |> sanitize }}', { x: '<b>bold</b><i>italic</i>' }, { dompurify: { ALLOWED_TAGS: ['b'] } } as Record<string, unknown>);
+    const r1 = await renderTemplate('{{ x |> sanitize }}', { x: '<b>bold</b><i>italic</i>' }, {
+      dompurify: { ALLOWED_TAGS: ['b'] },
+    } as Record<string, unknown>);
     expect(r1).toContain('bold');
     expect(r1).not.toContain('<i>');
 
@@ -164,5 +171,34 @@ describe('render edge cases', () => {
   test('whitespace-only template preserves whitespace', async () => {
     const result = await renderTemplate('   ', {});
     expect(result).toBe('   ');
+  });
+});
+
+describe('config misuse regression', () => {
+  test('render with a non-function filter returns err, not a crash', async () => {
+    const result = await render('Hello {{ name }}', {
+      context: { name: 'World' },
+      filters: { notAFn: 42 },
+    });
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error.code).toBe('INVALID_CONFIG');
+      expect(result.error.message).toContain('notAFn');
+    }
+  });
+
+  test('render with a non-function test returns err', async () => {
+    const result = await render('Hello', { tests: { notATest: 'nope' } });
+    expect(isErr(result)).toBe(true);
+  });
+
+  test('renderToStream result works with isOk/isErr helpers', async () => {
+    const okResult = await renderToStream('Hello {{ name }}', { context: { name: 'Stream' } });
+    expect(isOk(okResult)).toBe(true);
+    const errResult = await renderToStream('{{ unclosed', {});
+    expect(isErr(errResult)).toBe(true);
+    if (isErr(errResult)) {
+      expect(errResult.error).toBeDefined();
+    }
   });
 });

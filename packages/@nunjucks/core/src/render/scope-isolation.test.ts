@@ -1,4 +1,4 @@
-﻿import { describe, test, expect } from 'bun:test';
+﻿import { describe, expect, test } from 'bun:test';
 import { renderTemplate } from './render-test-helper.ts';
 
 describe('scope isolation', () => {
@@ -34,16 +34,12 @@ describe('scope isolation', () => {
     });
 
     test('loop variable is accessible inside loop', async () => {
-      const result = await renderTemplate(
-        '{% for i in [1, 2, 3] %}{{ i }}{% endfor %}'
-      );
+      const result = await renderTemplate('{% for i in [1, 2, 3] %}{{ i }}{% endfor %}');
       expect(result).toBe('123');
     });
 
     test('loop variable does not leak after loop', async () => {
-      const result = await renderTemplate(
-        '{% for i in [1, 2, 3] %}{{ i }}{% endfor %}|'
-      );
+      const result = await renderTemplate('{% for i in [1, 2, 3] %}{{ i }}{% endfor %}|');
       expect(result).toBe('123|');
       expect(result).not.toContain('undefined');
     });

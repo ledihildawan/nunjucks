@@ -36,10 +36,17 @@ const emptyFold: FoldedPlugins = {
 // strip it here — closing the §5 plugin-value boundary gap noted in the audit.
 const isUsableExtensionValue = (value: unknown): boolean => value !== null && value !== undefined;
 
-const mergeExtensions = (folded: ExtensionMap, incoming: ExtensionMap | undefined): ExtensionMap => {
-  if (!incoming) { return folded; }
+const mergeExtensions = (
+  folded: ExtensionMap,
+  incoming: ExtensionMap | undefined
+): ExtensionMap => {
+  if (!incoming) {
+    return folded;
+  }
   const merged = { ...folded, ...incoming };
-  return Object.fromEntries(Object.entries(merged).filter(([, value]) => isUsableExtensionValue(value)));
+  return Object.fromEntries(
+    Object.entries(merged).filter(([, value]) => isUsableExtensionValue(value))
+  );
 };
 
 // WHY: fold plugins left-to-right so a later plugin overrides an earlier one's same-named filter/global/etc.
@@ -54,8 +61,8 @@ const foldPlugins = (plugins: readonly NunjucksPlugin[] = []): FoldedPlugins =>
       extensions: mergeExtensions(folded.extensions, plugin.extensions),
       dompurify: plugin.dompurify ?? folded.dompurify,
     }),
-    emptyFold,
+    emptyFold
   );
 
+export type { FoldedPlugins, NunjucksPlugin };
 export { foldPlugins };
-export type { NunjucksPlugin, FoldedPlugins };

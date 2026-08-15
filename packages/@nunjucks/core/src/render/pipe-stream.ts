@@ -1,9 +1,10 @@
-import type { RenderStreamResult } from './render-types.ts';
-import { withStreamTimeout, coalesceStream } from './render-stream-adapters.ts';
-import { formatError, createLog } from '@nunjucks/error-formatter';
-import type { TemplateError, ErrorContext } from '@nunjucks/error-formatter';
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
+import type { ErrorContext, TemplateError } from '@nunjucks/error-formatter';
+import { createLog, formatError } from '@nunjucks/error-formatter';
+import { isErr } from '@nunjucks/lib';
 import { formatErrorMarker } from './render.ts';
+import { coalesceStream, withStreamTimeout } from './render-stream-adapters.ts';
+import type { RenderStreamResult } from './render-types.ts';
 
 // WHY: structural sink interface matching Express Response shape — res.status(), res.setHeader(), res.write(), res.end(), res.flushHeaders(). Express res satisfies this directly; Bun/Deno/Web can adapt (flushHeaders is optional — without it, chunks may buffer but still arrive). `off` mirrors EventEmitter.off/removeListener and is used by waitForDrain to detach its one-shot drain listener (anti-leak); Express res provides it natively.
 interface PipeSink {
@@ -58,7 +59,14 @@ const CONTENT_TYPE_MAP: Record<string, string> = {
 };
 
 const serializeErrorPayload = (error: TemplateError): string =>
-  JSON.stringify({ error: true, code: error.code, message: error.message, templatePath: error.templatePath, lineno: error.lineno, colno: error.colno });
+  JSON.stringify({
+    error: true,
+    code: error.code,
+    message: error.message,
+    templatePath: error.templatePath,
+    lineno: error.lineno,
+    colno: error.colno,
+  });
 
 export { serializeErrorPayload };
 
@@ -88,7 +96,9 @@ const renderMidStreamError = ({ err, contentType, ide, version }: MidStreamError
 
 // WHY: shallow-clone a TemplateError with renderContext stripped before it reaches the dev ANSI log. renderContext holds the user's render data (potentially PII/secrets) and the ANSI renderer echoes it verbatim — the original error keeps renderContext for response formatting (where blockedKeys + dev gating apply), but the server log must not leak it. message/stack are non-enumerable on Error so they are set explicitly; all other catalog fields ride through Object.assign.
 const redactForLog = (error: TemplateError): TemplateError => {
-  if (error.renderContext === undefined) { return error; }
+  if (error.renderContext === undefined) {
+    return error;
+  }
   const clone = new Error(error.message) as TemplateError;
   Object.assign(clone, error);
   clone.stack = error.stack;
@@ -99,7 +109,10 @@ const redactForLog = (error: TemplateError): TemplateError => {
 // WHY: builds a TemplateError (code=OUTPUT_SIZE_EXCEEDED) for the circuit breaker. Thrown from pipeChunks into pipeRenderStream's catch, where it rides the Tier 3 mid-stream path (log + onError + formatErrorMarker + end).
 const createOutputSizeError = (maxOutputSize: number): TemplateError =>
   createLog('error', {
-    def: { ...ERROR_DEFINITIONS.OUTPUT_SIZE_EXCEEDED, message: () => `Rendered output exceeds maximum size of ${maxOutputSize} bytes` },
+    def: {
+      ...ERROR_DEFINITIONS.OUTPUT_SIZE_EXCEEDED,
+      message: () => `Rendered output exceeds maximum size of ${maxOutputSize} bytes`,
+    },
     params: {},
     subject: null,
     context: {
@@ -116,9 +129,16 @@ const createOutputSizeError = (maxOutputSize: number): TemplateError =>
 // WHY: resolves when the sink emits 'drain' OR the abort signal fires (whichever first), then detaches BOTH listeners via `off` so no listener accumulates across backpressure cycles. Previously each cycle added a permanent 'drain' listener and, if the sink never drained, the promise hung forever. The signal race gives an escape on client disconnect.
 const waitForDrain = (sink: PipeSink, signal: AbortSignal | undefined): Promise<void> =>
   new Promise((resolve) => {
-    if (!sink.on) { resolve(); return; }
-    const handleDrain = (): void => { finish(); };
-    const handleAbort = (): void => { finish(); };
+    if (!sink.on) {
+      resolve();
+      return;
+    }
+    const handleDrain = (): void => {
+      finish();
+    };
+    const handleAbort = (): void => {
+      finish();
+    };
     const finish = (): void => {
       sink.off?.('drain', handleDrain);
       signal?.removeEventListener('abort', handleAbort);
@@ -126,7 +146,9 @@ const waitForDrain = (sink: PipeSink, signal: AbortSignal | undefined): Promise<
     };
     sink.on('drain', handleDrain);
     signal?.addEventListener('abort', handleAbort, { once: true });
-    if (signal?.aborted) { finish(); }
+    if (signal?.aborted) {
+      finish();
+    }
   });
 
 interface PipeChunksInput {
@@ -139,9 +161,18 @@ interface PipeChunksInput {
 }
 
 // WHY: for-await over the stream is permitted (Rule 3 — async stream-processing control flow). The input object satisfies Rule 4 (≥3 inputs → options object) instead of a 6-arg positional signature.
-const pipeChunks = async ({ stream, sink, signal, onChunk, stats, maxOutputSize }: PipeChunksInput): Promise<void> => {
+const pipeChunks = async ({
+  stream,
+  sink,
+  signal,
+  onChunk,
+  stats,
+  maxOutputSize,
+}: PipeChunksInput): Promise<void> => {
   for await (const chunk of stream) {
-    if (signal?.aborted) { break; }
+    if (signal?.aborted) {
+      break;
+    }
     onChunk?.(chunk, stats.chunks);
     stats.chunks += 1;
     stats.bytes += chunk.length;
@@ -162,7 +193,20 @@ const pipeRenderStream = async (
   sink: PipeSink,
   options: PipeRenderStreamOptions = {}
 ): Promise<void> => {
-  const { contentType = 'html', dev = false, timeoutMs = 0, coalesceBytes = 0, maxOutputSize = 0, ide = 'vscode', version, logError = dev, signal, onChunk, onError, onComplete } = options;
+  const {
+    contentType = 'html',
+    dev = false,
+    timeoutMs = 0,
+    coalesceBytes = 0,
+    maxOutputSize = 0,
+    ide = 'vscode',
+    version,
+    logError = dev,
+    signal,
+    onChunk,
+    onError,
+    onComplete,
+  } = options;
   const mimeType = CONTENT_TYPE_MAP[contentType] ?? 'text/html; charset=utf-8';
   const stats = { chunks: 0, bytes: 0 };
   let errorCount = 0;
@@ -173,7 +217,7 @@ const pipeRenderStream = async (
     return;
   }
 
-  if (!result.ok) {
+  if (isErr(result)) {
     errorCount += 1;
     emitErrorLog({ error: result.error, phase: 'pre-stream', logError, dev, onError });
     sink.status(500);
@@ -190,10 +234,12 @@ const pipeRenderStream = async (
   sink.flushHeaders?.();
 
   // WHY: wrapper composition is order-sensitive and cleanup-critical. The chain is (outer→inner): coalesceStream → withStreamTimeout → createRenderStream → executeStream. An external .return() (abort via onAbort below) hits coalesceStream first; for-await-of forwards .return() to withStreamTimeout, whose try/finally clears its timer and best-effort returns createRenderStream, whose try/finally returns executeStream. Every wrapper MUST therefore propagate .return() — that is the cleanup contract that prevents zombie generators. If a wrapper is skipped (timeoutMs=0 or coalesceBytes=0) the chain still terminates at createRenderStream, which owns the authoritative finally.
-  let stream = timeoutMs > 0 ? withStreamTimeout(result.stream, timeoutMs) : result.stream;
+  let stream = timeoutMs > 0 ? withStreamTimeout(result.value, timeoutMs) : result.value;
   stream = coalesceStream(stream, coalesceBytes);
 
-  const onAbort = (): void => { stream.return?.(undefined); };
+  const onAbort = (): void => {
+    stream.return?.(undefined);
+  };
   signal?.addEventListener('abort', onAbort, { once: true });
 
   try {
@@ -216,5 +262,5 @@ const pipeRenderStream = async (
   }
 };
 
+export type { PipeRenderStreamOptions, PipeSink };
 export { pipeRenderStream };
-export type { PipeSink, PipeRenderStreamOptions };

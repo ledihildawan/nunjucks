@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -13,7 +13,7 @@ describe('resolveLocation', () => {
         jsCallerErrorLine: 10,
         jsCallerErrorCol: 5,
         errLineno: 0,
-        errColno: 3
+        errColno: 3,
       });
       expect(result.preferCallerLocation).toBe(true);
       expect(result.lineBase).toBe('one');
@@ -27,7 +27,7 @@ describe('resolveLocation', () => {
         callerFile: '/path/to/caller.ts',
         callerLocation: { lineNumber: 25, columnNumber: 18 },
         errLineno: 0,
-        errColno: 3
+        errColno: 3,
       });
       expect(result.preferCallerLocation).toBe(true);
       expect(result.lineBase).toBe('one');
@@ -42,7 +42,7 @@ describe('resolveLocation', () => {
         callerFile: '/path/to/caller.ts',
         callerLocation: { lineNumber: 25, columnNumber: 18 },
         errLineno: 5,
-        errColno: 3
+        errColno: 3,
       });
       expect(result.preferCallerLocation).toBe(false);
       expect(result.lineBase).toBe('zero');
@@ -56,7 +56,7 @@ describe('resolveLocation', () => {
       const result = await resolveLocation({
         template: '{{ foo }}',
         errLineno: 7,
-        errColno: 4
+        errColno: 4,
       });
       expect(result.preferCallerLocation).toBe(false);
       expect(result.lineBase).toBe('zero');
@@ -68,7 +68,7 @@ describe('resolveLocation', () => {
       const result = await resolveLocation({
         template: '{{ foo }}',
         lineno: 100,
-        colno: 50
+        colno: 50,
       });
       expect(result.lineno).toBe(100);
       expect(result.colno).toBe(50);
@@ -89,7 +89,7 @@ describe('resolveLocation', () => {
         callerFile: '/virtual/path',
         callerLocation: { lineNumber: 4, columnNumber: 1 },
         errLineno: 0,
-        errColno: 10
+        errColno: 10,
       });
 
       expect(result.preferCallerLocation).toBe(true);
@@ -108,7 +108,7 @@ describe('resolveLocation', () => {
         callerFile: '/auto.ts',
         callerLocation: { lineNumber: 99, columnNumber: 99 },
         errLineno: 0,
-        errColno: 3
+        errColno: 3,
       });
       expect(result.templatePath).toBe('/explicit.ts');
       expect(result.lineno).toBe(1);
@@ -124,7 +124,7 @@ describe('resolveLocation', () => {
         callerFile: '/auto.ts',
         callerLocation: { lineNumber: 42, columnNumber: 7 },
         errLineno: 0,
-        errColno: 3
+        errColno: 3,
       });
       expect(result.preferCallerLocation).toBe(false);
       expect(result.lineBase).toBe('zero');
@@ -138,7 +138,7 @@ describe('resolveLocation', () => {
         callerFile: 'unknown',
         callerLocation: { lineNumber: 5, columnNumber: 5 },
         errLineno: 0,
-        errColno: 3
+        errColno: 3,
       });
       expect(result.preferCallerLocation).toBe(false);
       expect(result.lineno).toBe(0);
@@ -151,7 +151,7 @@ describe('resolveLocation', () => {
         callerFile: '/auto.ts',
         callerLocation: { lineNumber: 10, columnNumber: null },
         errLineno: 0,
-        errColno: 3
+        errColno: 3,
       });
       expect(result.preferCallerLocation).toBe(true);
     });
@@ -166,10 +166,16 @@ describe('resolveLocation', () => {
       tempDir = await mkdtemp(join(tmpdir(), 'nunjucks-caller-'));
       // WHY: simulates an Express helper that calls render() — the template literal lives in a different file, so this readable caller source does NOT contain it.
       wrapperPath = join(tempDir, 'wrapper.ts');
-      await writeFile(wrapperPath, "export const renderTemplate = async (tpl, ctx) => render(tpl, ctx);\n");
+      await writeFile(
+        wrapperPath,
+        'export const renderTemplate = async (tpl, ctx) => render(tpl, ctx);\n'
+      );
       // WHY: the real caller (e.g. a route handler) that owns the template literal — one frame above the wrapper.
       callerPath = join(tempDir, 'route.ts');
-      await writeFile(callerPath, "import { renderTemplate } from './wrapper.ts';\nconst html = renderTemplate('{{ product.name }}', { product: { test: 'test' } });\n");
+      await writeFile(
+        callerPath,
+        "import { renderTemplate } from './wrapper.ts';\nconst html = renderTemplate('{{ product.name }}', { product: { test: 'test' } });\n"
+      );
     });
 
     afterAll(async () => {
@@ -182,7 +188,7 @@ describe('resolveLocation', () => {
         callerFile: wrapperPath,
         callerLocation: { lineNumber: 1, columnNumber: 52 },
         errLineno: 0,
-        errColno: 3
+        errColno: 3,
       });
 
       expect(result.preferCallerLocation).toBe(false);
@@ -198,10 +204,10 @@ describe('resolveLocation', () => {
         template: '{{ product.name }}',
         callerFrames: [
           { fileName: wrapperPath, lineNumber: 1, columnNumber: 52 },
-          { fileName: callerPath, lineNumber: 2, columnNumber: 23 }
+          { fileName: callerPath, lineNumber: 2, columnNumber: 23 },
         ],
         errLineno: 0,
-        errColno: 11
+        errColno: 11,
       });
 
       expect(result.preferCallerLocation).toBe(true);

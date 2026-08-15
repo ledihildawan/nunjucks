@@ -1,11 +1,11 @@
+import type { TemplateError } from '@nunjucks/error-formatter';
+import type { Result } from '@nunjucks/lib';
 import type { UndefinedMode } from '@nunjucks/runtime';
 import type { DomPurifyConfig } from '@nunjucks/shared';
-import type { Result } from '@nunjucks/lib';
-import type { TemplateError } from '@nunjucks/error-formatter';
-import type { SandboxMode, SandboxEnvironment } from './global.ts';
 import type { NunjucksPlugin } from '../plugin/plugin.ts';
+import type { PipeRenderStreamOptions, PipeSink } from '../render/pipe-stream.ts';
 import type { RenderStreamResult } from '../render/render-types.ts';
-import type { PipeSink, PipeRenderStreamOptions } from '../render/pipe-stream.ts';
+import type { SandboxEnvironment, SandboxMode } from './global.ts';
 
 type ContentType = 'html' | 'json' | 'text';
 // WHY: filters/globals/tests/extensions are user-supplied and inherently dynamic (any signature). Modeling them
@@ -69,9 +69,29 @@ interface PerRenderOverrides {
 // shape is the established template-engine contract (subject + payload + optional config) which Rule 4 exempts
 // as a "Fixed Framework / Engine Contract". The factory owns all other config; per-call overrides stay minimal.
 interface NunjucksEngine {
-  render(template: string, context?: Record<string, unknown>, overrides?: PerRenderOverrides): Promise<Result<string, TemplateError>>;
-  renderToStream(template: string, context?: Record<string, unknown>, overrides?: PerRenderOverrides): Promise<RenderStreamResult>;
-  pipeRenderStream(result: RenderStreamResult, sink: PipeSink, options?: PipeRenderStreamOptions): Promise<void>;
+  render(
+    template: string,
+    context?: Record<string, unknown>,
+    overrides?: PerRenderOverrides
+  ): Promise<Result<string, TemplateError>>;
+  renderToStream(
+    template: string,
+    context?: Record<string, unknown>,
+    overrides?: PerRenderOverrides
+  ): Promise<RenderStreamResult>;
+  pipeRenderStream(
+    result: RenderStreamResult,
+    sink: PipeSink,
+    options?: PipeRenderStreamOptions
+  ): Promise<void>;
 }
 
-export type { NunjucksConfig, SecurityConfig, LimitsConfig, StreamingConfig, PerRenderOverrides, NunjucksEngine, ContentType };
+export type {
+  ContentType,
+  LimitsConfig,
+  NunjucksConfig,
+  NunjucksEngine,
+  PerRenderOverrides,
+  SecurityConfig,
+  StreamingConfig,
+};

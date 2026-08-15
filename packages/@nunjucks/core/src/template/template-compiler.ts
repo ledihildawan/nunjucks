@@ -1,9 +1,15 @@
+import { getError } from '@nunjucks/error-catalog';
+import { createLog, normalizeErrorMetadata, prettifyError } from '@nunjucks/error-formatter';
+import { err, isErr, ok, type Result } from '@nunjucks/lib';
 import type { ParseOptions } from '@nunjucks/parser';
-import type { UndefinedMode, BlockLocation } from '@nunjucks/runtime';
+import type { BlockLocation, UndefinedMode } from '@nunjucks/runtime';
 import { HOOK_EVENTS, loadCompiledCode } from '@nunjucks/runtime';
-import { extractBlocks, isCompiledTemplateExports, BLOCK_META_KEY, type CompiledTemplateExports } from '@nunjucks/compiler';
-import { isErr, ok, err, type Result } from '@nunjucks/lib';
-import { prettifyError } from '@nunjucks/error-formatter';
+import {
+  BLOCK_META_KEY,
+  type CompiledTemplateExports,
+  extractBlocks,
+  isCompiledTemplateExports,
+} from '@nunjucks/shared';
 import { compileToCode } from '../compile-pipeline.ts';
 import type { TemplateState } from './types';
 
@@ -19,11 +25,30 @@ const createTemplateCompiler = ({ getState, commit }: TemplateStateCell) => {
     if (state.status === 'compiled') {
       return ok(state.tmplProps);
     }
-    const codeResult = compileToCode({ source: state.tmplStr, templateName: state.path ?? '', undefinedMode: state.env.opts.undefined as UndefinedMode | undefined, parseOpts: state.env.opts as ParseOptions });
-    if (isErr(codeResult)) { return err(codeResult.error); }
+    const codeResult = compileToCode({
+      source: state.tmplStr,
+      templateName: state.path ?? '',
+      undefinedMode: state.env.opts.undefined as UndefinedMode | undefined,
+      parseOpts: state.env.opts as ParseOptions,
+    });
+    if (isErr(codeResult)) {
+      return err(codeResult.error);
+    }
     const compiled = loadCompiledCode(codeResult.value);
     if (!isCompiledTemplateExports(compiled)) {
-      return err(new Error('Compiled template output is missing a valid root export'));
+      // WHY: catalog-enriched (INVALID_CODE_FORMAT) — a compiled output without a root export means the
+      // code-loader eval'd something that is not a nunjucks-compiled template.
+      return err(
+        createLog('error', {
+          def: {
+            ...getError('INVALID_CODE_FORMAT'),
+            message: () => 'Compiled template output is missing a valid root export',
+          },
+          params: {},
+          subject: state.path ?? null,
+          context: { phase: 'compile' },
+        })
+      );
     }
     return ok(compiled);
   };
@@ -36,7 +61,9 @@ const createTemplateCompiler = ({ getState, commit }: TemplateStateCell) => {
 
     try {
       const propsResult = compileToProps(state);
-      if (isErr(propsResult)) { throw propsResult.error; }
+      if (isErr(propsResult)) {
+        throw propsResult.error;
+      }
       const props = propsResult.value;
       commit({
         env: state.env,
@@ -50,9 +77,18 @@ const createTemplateCompiler = ({ getState, commit }: TemplateStateCell) => {
         rootRenderFunc: props.root,
       });
 
-      state.env.emit?.(HOOK_EVENTS.TEMPLATE_COMPILE_COMPLETE, { template: state, path: state.path, duration: Date.now() - startTime });
+      state.env.emit?.(HOOK_EVENTS.TEMPLATE_COMPILE_COMPLETE, {
+        template: state,
+        path: state.path,
+        duration: Date.now() - startTime,
+      });
     } catch (error: unknown) {
-      state.env.emit?.(HOOK_EVENTS.TEMPLATE_COMPILE_ERROR, { template: state, path: state.path, error, duration: Date.now() - startTime });
+      state.env.emit?.(HOOK_EVENTS.TEMPLATE_COMPILE_ERROR, {
+        template: state,
+        path: state.path,
+        error,
+        duration: Date.now() - startTime,
+      });
       throw error;
     }
   };
@@ -61,7 +97,11 @@ const createTemplateCompiler = ({ getState, commit }: TemplateStateCell) => {
     try {
       compile();
     } catch (e: unknown) {
-      throw prettifyError({ path: getState().path, withInternals: getState().env.opts.dev, err: e as Error });
+      throw prettifyError({
+        path: getState().path,
+        withInternals: getState().env.opts.dev,
+        err: normalizeErrorMetadata(e).error,
+      });
     }
   };
 

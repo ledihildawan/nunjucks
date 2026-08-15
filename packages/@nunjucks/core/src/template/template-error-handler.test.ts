@@ -1,11 +1,20 @@
-import { describe, test, expect } from 'bun:test';
-import { createTemplateErrorHandler, buildErrorMessage, extractFrameDetails } from './template-error-handler.ts';
+import { describe, expect, test } from 'bun:test';
 import type { ErrorWithLineInfo } from './template-error-handler.ts';
+import {
+  buildErrorMessage,
+  createTemplateErrorHandler,
+  extractFrameDetails,
+} from './template-error-handler.ts';
 
 describe('buildErrorMessage', () => {
   test('includes path and line info', () => {
     const e = { message: 'test error' } as ErrorWithLineInfo;
-    const result = buildErrorMessage({ currentPath: 'test.html', sourceLineno: 5, finalColno: 10, e });
+    const result = buildErrorMessage({
+      currentPath: 'test.html',
+      sourceLineno: 5,
+      finalColno: 10,
+      e,
+    });
     expect(result).toContain('(test.html)');
     expect(result).toContain('[Line 5, Column 10]');
     expect(result).toContain('test error');
@@ -13,14 +22,24 @@ describe('buildErrorMessage', () => {
 
   test('includes only line when colno is 0', () => {
     const e = { message: 'test error' } as ErrorWithLineInfo;
-    const result = buildErrorMessage({ currentPath: 'test.html', sourceLineno: 5, finalColno: 0, e });
+    const result = buildErrorMessage({
+      currentPath: 'test.html',
+      sourceLineno: 5,
+      finalColno: 0,
+      e,
+    });
     expect(result).toContain('(test.html)');
     expect(result).toContain('[Line 5]');
   });
 
   test('returns just path and message when no line info', () => {
     const e = { message: 'test error' } as ErrorWithLineInfo;
-    const result = buildErrorMessage({ currentPath: 'test.html', sourceLineno: undefined, finalColno: 0, e });
+    const result = buildErrorMessage({
+      currentPath: 'test.html',
+      sourceLineno: undefined,
+      finalColno: 0,
+      e,
+    });
     expect(result).toContain('(test.html)');
     expect(result).not.toContain('[Line');
   });
@@ -29,31 +48,66 @@ describe('buildErrorMessage', () => {
 describe('extractFrameDetails', () => {
   test('returns null when hasIncludeChain is true', () => {
     const e = { message: 'test', lineno: 5 } as ErrorWithLineInfo;
-    const result = extractFrameDetails({ error: e, sourceLineno: 5, sourceColno: 10, currentPath: 'test.html', hasIncludeChain: true });
+    const result = extractFrameDetails({
+      error: e,
+      sourceLineno: 5,
+      sourceColno: 10,
+      currentPath: 'test.html',
+      hasIncludeChain: true,
+    });
     expect(result).toBeNull();
   });
 
   test('returns null when lineBase is zero or one', () => {
     const e = { message: 'test', lineno: 5, lineBase: 'zero' } as ErrorWithLineInfo;
-    const result = extractFrameDetails({ error: e, sourceLineno: 5, sourceColno: 10, currentPath: 'test.html', hasIncludeChain: false });
+    const result = extractFrameDetails({
+      error: e,
+      sourceLineno: 5,
+      sourceColno: 10,
+      currentPath: 'test.html',
+      hasIncludeChain: false,
+    });
     expect(result).toBeNull();
   });
 
   test('returns null when sourceLineno is undefined', () => {
     const e = { message: 'test' } as ErrorWithLineInfo;
-    const result = extractFrameDetails({ error: e, sourceLineno: undefined, sourceColno: 10, currentPath: 'test.html', hasIncludeChain: false });
+    const result = extractFrameDetails({
+      error: e,
+      sourceLineno: undefined,
+      sourceColno: 10,
+      currentPath: 'test.html',
+      hasIncludeChain: false,
+    });
     expect(result).toBeNull();
   });
 
   test('returns null when sourceLineno is negative', () => {
     const e = { message: 'test', lineno: -1 } as ErrorWithLineInfo;
-    const result = extractFrameDetails({ error: e, sourceLineno: -1, sourceColno: 10, currentPath: 'test.html', hasIncludeChain: false });
+    const result = extractFrameDetails({
+      error: e,
+      sourceLineno: -1,
+      sourceColno: 10,
+      currentPath: 'test.html',
+      hasIncludeChain: false,
+    });
     expect(result).toBeNull();
   });
 
   test('extracts error with proper location', () => {
-    const e = { message: 'test error', lineno: 5, colno: 10, getterName: 'root' } as ErrorWithLineInfo;
-    const result = extractFrameDetails({ error: e, sourceLineno: 5, sourceColno: undefined, currentPath: 'test.html', hasIncludeChain: false });
+    const e = {
+      message: 'test error',
+      lineno: 5,
+      colno: 10,
+      getterName: 'root',
+    } as ErrorWithLineInfo;
+    const result = extractFrameDetails({
+      error: e,
+      sourceLineno: 5,
+      sourceColno: undefined,
+      currentPath: 'test.html',
+      hasIncludeChain: false,
+    });
     expect(result).not.toBeNull();
     expect(result!.message).toContain('[Line 5, Column 10]');
   });
@@ -72,7 +126,10 @@ describe('createTemplateErrorHandler', () => {
   test('enrichError returns enriched error when has includeChain', () => {
     const getState = () => ({ path: 'test.html', includeChain: null });
     const handler = createTemplateErrorHandler(getState);
-    const e = { message: 'test', includeChain: [{ path: 'base.html' }] } as unknown as ErrorWithLineInfo;
+    const e = {
+      message: 'test',
+      includeChain: [{ path: 'base.html' }],
+    } as unknown as ErrorWithLineInfo;
     const result = handler.enrichError(e);
     expect(result).not.toBeNull();
     expect((result as unknown as { path: string }).path).toBe('test.html');

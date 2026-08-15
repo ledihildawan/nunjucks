@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
-import { createNunjucks } from './factory.ts';
+import { describe, expect, test } from 'bun:test';
 import { isOk } from '@nunjucks/lib';
+import { createNunjucks } from './factory.ts';
 
 describe('createNunjucks', () => {
   test('creates engine with render method', () => {
@@ -58,11 +58,13 @@ describe('createNunjucks', () => {
 
   test('plugin filters override base filters', async () => {
     const engine = createNunjucks({
-      plugins: [{
-        filters: {
-          custom: () => 'from plugin',
+      plugins: [
+        {
+          filters: {
+            custom: () => 'from plugin',
+          },
         },
-      }],
+      ],
       filters: {
         custom: () => 'from config',
       },
@@ -76,11 +78,13 @@ describe('createNunjucks', () => {
 
   test('plugin globals override base globals', async () => {
     const engine = createNunjucks({
-      plugins: [{
-        globals: {
-          pluginGlobal: 'from plugin',
+      plugins: [
+        {
+          globals: {
+            pluginGlobal: 'from plugin',
+          },
         },
-      }],
+      ],
       globals: {
         pluginGlobal: 'from config',
       },
@@ -105,9 +109,9 @@ describe('createNunjucks', () => {
     const engine = createNunjucks({});
     const streamResult = await engine.renderToStream('Hello {{ name }}', { name: 'Stream' });
     expect(streamResult).toBeDefined();
-    if ('ok' in streamResult && streamResult.ok) {
-      expect(streamResult.stream).toBeDefined();
-      expect(typeof streamResult.stream.next).toBe('function');
+    if (isOk(streamResult)) {
+      expect(streamResult.value).toBeDefined();
+      expect(typeof streamResult.value.next).toBe('function');
     }
   });
 
@@ -148,5 +152,41 @@ describe('createNunjucks', () => {
     expect(engine1).toBeDefined();
     expect(engine2).toBeDefined();
     expect(engine1).not.toBe(engine2);
+  });
+
+  test('invalid config: non-function filter is rejected at factory creation', () => {
+    expect(() => createNunjucks({ filters: { notAFn: 42 } })).toThrow('notAFn');
+  });
+
+  test('invalid config: NaN executionTimeout is rejected', () => {
+    expect(() => createNunjucks({ limits: { executionTimeout: Number.NaN } })).toThrow(
+      'executionTimeout'
+    );
+  });
+
+  test('invalid config: negative maxOutputSize is rejected', () => {
+    expect(() => createNunjucks({ limits: { maxOutputSize: -1 } })).toThrow('maxOutputSize');
+  });
+
+  test('invalid config: bad undefined enum is rejected', () => {
+    expect(() => createNunjucks({ undefined: 'not-defined' as unknown as 'strict' })).toThrow(
+      'undefined'
+    );
+  });
+
+  test('invalid config: bad sandboxMode enum is rejected', () => {
+    expect(() =>
+      createNunjucks({ security: { sandboxMode: 'whitelist' as unknown as 'blocklist' } })
+    ).toThrow('sandboxMode');
+  });
+
+  test('invalid config: non-string blockedContextKeys entries are rejected', () => {
+    expect(() =>
+      createNunjucks({ security: { blockedContextKeys: ['ok', 42] as unknown as string[] } })
+    ).toThrow('blockedContextKeys');
+  });
+
+  test('valid configs with string globals still create engines (globals are data, not callables)', () => {
+    expect(() => createNunjucks({ globals: { appName: 'MyApp' } })).not.toThrow();
   });
 });

@@ -1,16 +1,26 @@
-import { buildExecutionEnv } from './render-pipeline.ts';
-import { withStreamDeadline, coerceChunk } from './render-stream-adapters.ts';
-import { executeStream, createFrame, isStreamErrorSentinel, type StreamErrorSentinel, type ExecuteConfig } from '@nunjucks/runtime';
-import { isErr } from '@nunjucks/lib';
-import { injectWarningsScript } from '@nunjucks/error-renderer';
-import { adjustColnoForNullValue } from '@nunjucks/error-formatter';
-import { wrapWithLog } from '../diagnostics/diagnostics.ts';
-import { toHtmlMarker, buildSourceTrace, classifyAndBuildTitle } from '@nunjucks/error-renderer';
-import { serializeErrorPayload } from './pipe-stream.ts';
-import { getSeverity } from './severity-levels.ts';
-import type { PreparedTemplate } from './render-types.ts';
 import type { TemplateError } from '@nunjucks/error-formatter';
+import { adjustColnoForNullValue } from '@nunjucks/error-formatter';
+import {
+  buildSourceTrace,
+  classifyAndBuildTitle,
+  injectWarningsScript,
+  toHtmlMarker,
+} from '@nunjucks/error-renderer';
+import { isErr } from '@nunjucks/lib';
+import {
+  createFrame,
+  type ExecuteConfig,
+  executeStream,
+  isStreamErrorSentinel,
+  type StreamErrorSentinel,
+} from '@nunjucks/runtime';
+import { wrapWithLog } from '../diagnostics/diagnostics.ts';
+import { serializeErrorPayload } from './pipe-stream.ts';
+import { buildExecutionEnv } from './render-env.ts';
+import { coerceChunk, withStreamDeadline } from './render-stream-adapters.ts';
+import type { PreparedTemplate } from './render-types.ts';
 import type { ErrorSeverity } from './severity-levels.ts';
+import { getSeverity } from './severity-levels.ts';
 
 interface SentinelChunkInput {
   sentinel: StreamErrorSentinel;
@@ -20,11 +30,19 @@ interface SentinelChunkInput {
 }
 
 const createCachedEnrichment = (prepared: PreparedTemplate) => {
-  let locationCache: { sourceContent: string | null; templatePath: string | null; sourceStartLine: number; lineBase: string } | null = null;
+  let locationCache: {
+    sourceContent: string | null;
+    templatePath: string | null;
+    sourceStartLine: number;
+    lineBase: string;
+  } | null = null;
 
   return async (sentinel: StreamErrorSentinel): Promise<TemplateError> => {
     if (!locationCache) {
-      const enriched = await wrapWithLog(sentinel.error, prepared.resolvedConfig, { template: prepared.templateSource, renderContext: prepared.context });
+      const enriched = await wrapWithLog(sentinel.error, prepared.resolvedConfig, {
+        template: prepared.templateSource,
+        renderContext: prepared.context,
+      });
       locationCache = {
         sourceContent: enriched.sourceContent ?? null,
         templatePath: enriched.templatePath ?? null,
@@ -36,7 +54,7 @@ const createCachedEnrichment = (prepared: PreparedTemplate) => {
     const enriched = await wrapWithLog(
       sentinel.error,
       { ...prepared.resolvedConfig, callerFrames: null, callerLocation: null, jsCaller: null },
-      { template: prepared.templateSource, renderContext: prepared.context },
+      { template: prepared.templateSource, renderContext: prepared.context }
     );
     return {
       ...enriched,
@@ -47,7 +65,12 @@ const createCachedEnrichment = (prepared: PreparedTemplate) => {
   };
 };
 
-const formatSentinelChunk = async ({ sentinel, streamContentType, enrichSentinel, version }: SentinelChunkInput): Promise<string> => {
+const formatSentinelChunk = async ({
+  sentinel,
+  streamContentType,
+  enrichSentinel,
+  version,
+}: SentinelChunkInput): Promise<string> => {
   if (streamContentType === 'json') {
     throw sentinel.error;
   }
@@ -63,10 +86,19 @@ const formatSentinelChunk = async ({ sentinel, streamContentType, enrichSentinel
   });
   const severity: ErrorSeverity = getSeverity(enriched);
   const humanTitle = classifyAndBuildTitle(enriched);
-  return toHtmlMarker(enriched, { sourceTrace: trace, ide: 'vscode', severity, humanTitle, version });
+  return toHtmlMarker(enriched, {
+    sourceTrace: trace,
+    ide: 'vscode',
+    severity,
+    humanTitle,
+    version,
+  });
 };
 
-const formatErrorMarker = (error: TemplateError, options: { ide?: string; contentType?: string; version?: string } = {}): string => {
+const formatErrorMarker = (
+  error: TemplateError,
+  options: { ide?: string; contentType?: string; version?: string } = {}
+): string => {
   const { ide = 'vscode', contentType = 'html', version } = options;
   if (contentType === 'json') {
     return `\n${serializeErrorPayload(error)}`;
@@ -88,29 +120,50 @@ const formatErrorMarker = (error: TemplateError, options: { ide?: string; conten
 };
 
 const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGenerator<string> {
-  const { code, sandboxedCtx, warningsCollector, resolvedConfig, templateSource, context } = prepared;
+  const { code, sandboxedCtx, warningsCollector, resolvedConfig, templateSource, context } =
+    prepared;
   const frame = createFrame();
   const env = buildExecutionEnv(resolvedConfig);
-  const rootGenerator = executeStream({ code, context: sandboxedCtx, frame, env, config: resolvedConfig as ExecuteConfig });
+  const rootGenerator = executeStream({
+    code,
+    context: sandboxedCtx,
+    frame,
+    env,
+    config: resolvedConfig as ExecuteConfig,
+  });
   const deadlineMs = resolvedConfig.executionTimeout ?? 0;
   const generator = deadlineMs > 0 ? withStreamDeadline(rootGenerator, deadlineMs) : rootGenerator;
   const enrichSentinel = createCachedEnrichment(prepared);
   try {
     while (true) {
       const { value, done } = await generator.next();
-      if (done) { break; }
+      if (done) {
+        break;
+      }
       if (isStreamErrorSentinel(value)) {
-        yield await formatSentinelChunk({ sentinel: value, streamContentType: prepared.streamContentType, enrichSentinel, version: prepared.version });
+        yield await formatSentinelChunk({
+          sentinel: value,
+          streamContentType: prepared.streamContentType,
+          enrichSentinel,
+          version: prepared.version,
+        });
       } else {
         const chunkResult = coerceChunk(value);
-        if (isErr(chunkResult)) { throw chunkResult.error; }
+        if (isErr(chunkResult)) {
+          throw chunkResult.error;
+        }
         yield chunkResult.value;
       }
     }
   } catch (streamErr: unknown) {
-    throw await wrapWithLog(streamErr, resolvedConfig, { template: templateSource, renderContext: context });
+    throw await wrapWithLog(streamErr, resolvedConfig, {
+      template: templateSource,
+      renderContext: context,
+    });
   } finally {
-    generator.return(undefined).catch(() => { /* best-effort: swallow cleanup rejection */ });
+    generator.return(undefined).catch(() => {
+      /* best-effort: swallow cleanup rejection */
+    });
   }
   if (warningsCollector.length > 0 && resolvedConfig.dev) {
     yield injectWarningsScript(warningsCollector, { dev: true, verbosity: 'medium' });
