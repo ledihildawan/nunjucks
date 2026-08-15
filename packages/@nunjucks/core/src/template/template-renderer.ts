@@ -94,6 +94,8 @@ const createTemplateRenderer = ({ getState, compiler, errorHandler }: TemplateRe
       if (warnings.length > 0 && state.env.opts.dev) {
         return (
           result +
+          // WHY: widening cast — the warnings collector is engine-populated (collected
+          // TemplateWarning objects), never untrusted input; the key is stringly-typed.
           injectWarningsScript(warnings as Warning[], {
             dev: true,
             verbosity: 'medium',

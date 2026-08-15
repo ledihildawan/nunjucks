@@ -3,7 +3,9 @@ import { err, ok, type Result } from '@nunjucks/lib';
 import { entries, isPlainObject, join as joinRemeda, map, pipe } from 'remeda';
 import { createFilterError, isArray } from '../factory/index.ts';
 
-const isQueryPair = (value: unknown): boolean =>
+// WHY: type predicate (not plain boolean) so Array.prototype.every narrows the input
+// array and resolveQueryPairs needs no cast after the guard.
+const isQueryPair = (value: unknown): value is [string | number, unknown] =>
   isArray(value) &&
   value.length >= 2 &&
   (typeof value[0] === 'string' || typeof value[0] === 'number');
@@ -23,7 +25,7 @@ const resolveQueryPairs = (
     if (!input.every(isQueryPair)) {
       return err(unsupportedQueryError(input));
     }
-    return ok(input as [string | number, unknown][]);
+    return ok(input);
   }
   if (isPlainObject(input)) {
     return ok(entries(input));

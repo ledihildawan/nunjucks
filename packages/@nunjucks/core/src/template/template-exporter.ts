@@ -57,6 +57,8 @@ const createGetExported =
         return context.getExported();
       }
       const { returnValue: drainedContext } = await collectStream(rootGen);
+      // WHY: widening cast is sound by the generator's declared contract (RootRenderFunc
+      // returns the post-render Context or nothing) — internal emitter, not untrusted data.
       const finalContext = (drainedContext as Context | undefined) ?? context;
       return finalContext.getExported();
     } catch (e: unknown) {
