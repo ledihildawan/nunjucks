@@ -7,4 +7,4 @@ const localizedTime = (date: Date = new Date()): string => date.toLocaleTimeStri
 
 const isoTimestamp = (): string => new Date().toISOString();
 
-export { currentYear, localizedTime, isoTimestamp };
+export { currentYear, isoTimestamp, localizedTime };

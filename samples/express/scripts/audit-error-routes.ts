@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // WHY: dev-only typed audit tooling for route validation
 
-import { readFileSync, existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 interface ParsedLocation {
   path: string | null;
@@ -61,25 +61,36 @@ const discoverRoutes = async (base: string): Promise<string[]> => {
     // fallthrough to source parsing
   }
   const errorsSrc = readFileSync(ERRORS_TS, 'utf8');
-  return [...new Set(
-    [...errorsSrc.matchAll(/router\.get\('\/([a-z0-9-]+)'/gu)]
-      .map((m) => m[1])
-      .filter((s): s is string => s !== undefined)
-  )];
+  return [
+    ...new Set(
+      [...errorsSrc.matchAll(/router\.get\('\/([a-z0-9-]+)'/gu)]
+        .map((m) => m[1])
+        .filter((s): s is string => s !== undefined)
+    ),
+  ];
 };
 
 const decode = (input: string): string =>
-  input.replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&quot;', '"').replaceAll('&#39;', "'").replaceAll('&amp;', '&');
+  input
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&amp;', '&');
 
 const parse = (html: string): ParseResult => {
-  const link = html.match(/The error occurred in <a href="[a-z]+:\/\/file\/([^"]+)"/u)
-    || html.match(/error-location-text">([^<]+)</u);
+  const link =
+    html.match(/The error occurred in <a href="[a-z]+:\/\/file\/([^"]+)"/u) ||
+    html.match(/error-location-text">([^<]+)</u);
   let loc: ParsedLocation | null = null;
   if (link) {
     const raw = decode(link[1] ?? '');
     const m = raw.match(/^(.*):(\d+):(\d+)$/u);
-    if (m) { loc = { path: m[1] ?? null, line: Number(m[2]), col: Number(m[3]) }; }
-    else { loc = { path: raw, line: null, col: null }; }
+    if (m) {
+      loc = { path: m[1] ?? null, line: Number(m[2]), col: Number(m[3]) };
+    } else {
+      loc = { path: raw, line: null, col: null };
+    }
   }
   const caretMatch = html.match(/error-marker-content">([^<]*)</u);
   let caret: ParsedCaret | null = null;
@@ -94,12 +105,14 @@ const parse = (html: string): ParseResult => {
     loc,
     caret,
     code: badge ? decode(badge[1] ?? '') : null,
-    title: title ? decode(title[1] ?? '').trim() : null
+    title: title ? decode(title[1] ?? '').trim() : null,
   };
 };
 
 const sourceLine = (filePath: string | null, line: number | null): string | null => {
-  if (!filePath || line == null || !existsSync(filePath)) { return null; }
+  if (!filePath || line == null || !existsSync(filePath)) {
+    return null;
+  }
   const lines = readFileSync(filePath, 'utf8').split('\n');
   return lines[line - 1] ?? null;
 };
@@ -113,8 +126,12 @@ const validate = (_route: string, info: RouteInfo): ValidationResult => {
       : { status: 'NO_ERROR', reason: 'route returned 200 (no error thrown)' };
   }
 
-  if (!loc) { return { status: 'MISMATCH', reason: 'error page has no location block' }; }
-  if (!loc.path) { return { status: 'MISMATCH', reason: 'empty path' }; }
+  if (!loc) {
+    return { status: 'MISMATCH', reason: 'error page has no location block' };
+  }
+  if (!loc.path) {
+    return { status: 'MISMATCH', reason: 'empty path' };
+  }
 
   const isTs = /\.(ts|js|mjs|cjs)$/u.test(loc.path);
   const isTpl = /\.(njk|nunjucks|html|htm|tmpl|tpl)$/u.test(loc.path);
@@ -129,21 +146,30 @@ const validate = (_route: string, info: RouteInfo): ValidationResult => {
   }
 
   if (isInline) {
-    if ((caret?.carets ?? 0) > 0) { return { status: 'OK', reason: '' }; }
+    if ((caret?.carets ?? 0) > 0) {
+      return { status: 'OK', reason: '' };
+    }
     return { status: 'SUSPECT', reason: 'inline location without a caret' };
   }
 
   const src = sourceLine(loc.path, loc.line);
-  if (src == null) { return { status: 'MISMATCH', reason: 'could not read source line' }; }
+  if (src == null) {
+    return { status: 'MISMATCH', reason: 'could not read source line' };
+  }
 
   const underChar = src[loc.col - 1];
 
-  if (loc.col < 1) { return { status: 'MISMATCH', reason: 'col<1 (fallback)' }; }
+  if (loc.col < 1) {
+    return { status: 'MISMATCH', reason: 'col<1 (fallback)' };
+  }
   if (underChar == null) {
     return { status: 'MISMATCH', reason: `col ${loc.col} past end of line` };
   }
   if (/\s/u.test(underChar)) {
-    return { status: 'MISMATCH', reason: `caret on whitespace (char=${JSON.stringify(underChar)})` };
+    return {
+      status: 'MISMATCH',
+      reason: `caret on whitespace (char=${JSON.stringify(underChar)})`,
+    };
   }
 
   if (isTs) {
@@ -169,50 +195,73 @@ const validate = (_route: string, info: RouteInfo): ValidationResult => {
   return { status: 'OK', reason: '' };
 };
 
-const short = (p: string | null): string | null => p ? p.replace(/^.*[/\\](samples[/\\].*)$/u, '$1').replaceAll(/\\/g, '/') : p;
+const short = (p: string | null): string | null =>
+  p ? p.replace(/^.*[/\\](samples[/\\].*)$/u, '$1').replaceAll(/\\/g, '/') : p;
 
-const pad = (value: string | null | undefined, width: number): string => String(value ?? '').padEnd(width);
+const pad = (value: string | null | undefined, width: number): string =>
+  String(value ?? '').padEnd(width);
 
 const run = async (): Promise<void> => {
   const routes = await discoverRoutes(BASE);
-  const rows: RouteRow[] = await Promise.all(routes.map(async (route): Promise<RouteRow> => {
-    try {
-      const response = await fetch(`${BASE}/errors/${route}`);
-      const html = await response.text();
-      const parsed = parse(html);
-      const info: RouteInfo = {
-        loc: parsed.loc,
-        caret: parsed.caret,
-        code: parsed.code,
-        title: parsed.title,
-        threw: response.status >= 400,
-        hasErrorPage: /class="error-(?:wrapper|title|location)"/u.test(html),
-      };
-      const v = validate(route, info);
-      return { route, status: v.status, reason: v.reason, info };
-    } catch (err: unknown) {
-      return { route, status: 'ERROR', reason: String(err), info: { loc: null, caret: null, code: null, title: null, threw: false, hasErrorPage: false } };
-    }
-  }));
+  const rows: RouteRow[] = await Promise.all(
+    routes.map(async (route): Promise<RouteRow> => {
+      try {
+        const response = await fetch(`${BASE}/errors/${route}`);
+        const html = await response.text();
+        const parsed = parse(html);
+        const info: RouteInfo = {
+          loc: parsed.loc,
+          caret: parsed.caret,
+          code: parsed.code,
+          title: parsed.title,
+          threw: response.status >= 400,
+          hasErrorPage: /class="error-(?:wrapper|title|location)"/u.test(html),
+        };
+        const v = validate(route, info);
+        return { route, status: v.status, reason: v.reason, info };
+      } catch (err: unknown) {
+        return {
+          route,
+          status: 'ERROR',
+          reason: String(err),
+          info: {
+            loc: null,
+            caret: null,
+            code: null,
+            title: null,
+            threw: false,
+            hasErrorPage: false,
+          },
+        };
+      }
+    })
+  );
 
   rows.sort((a, b) => routes.indexOf(a.route) - routes.indexOf(b.route));
 
   console.log(`${pad('ROUTE', 26) + pad('STATUS', 11) + pad('LOCATION', 46)}CODE`);
   console.log('-'.repeat(120));
-  console.log(rows.map((row) => {
-    const loc = row.info.loc
-      ? `${short(row.info.loc.path)}:${row.info.loc.line}:${row.info.loc.col}`
-      : '(none)';
-    const line = pad(row.route, 26) + pad(row.status, 11) + pad(loc, 46) + (row.info.code || '');
-    return row.status !== 'OK' ? `${line}\n  └─ ${row.reason}` : line;
-  }).join('\n'));
+  console.log(
+    rows
+      .map((row) => {
+        const loc = row.info.loc
+          ? `${short(row.info.loc.path)}:${row.info.loc.line}:${row.info.loc.col}`
+          : '(none)';
+        const line =
+          pad(row.route, 26) + pad(row.status, 11) + pad(loc, 46) + (row.info.code || '');
+        return row.status !== 'OK' ? `${line}\n  └─ ${row.reason}` : line;
+      })
+      .join('\n')
+  );
 
-  const bad = rows.filter(r => !['OK', 'NO_ERROR'].includes(r.status));
-  const noErr = rows.filter(r => r.status === 'NO_ERROR').length;
+  const bad = rows.filter((r) => !['OK', 'NO_ERROR'].includes(r.status));
+  const noErr = rows.filter((r) => r.status === 'NO_ERROR').length;
   console.log('-'.repeat(120));
-  console.log(`Total: ${rows.length} | OK: ${rows.filter(r => r.status === 'OK').length} | NO_ERROR: ${noErr} | Issues: ${bad.length}`);
+  console.log(
+    `Total: ${rows.length} | OK: ${rows.filter((r) => r.status === 'OK').length} | NO_ERROR: ${noErr} | Issues: ${bad.length}`
+  );
   if (bad.length) {
-    console.log('Issues:', bad.map(r => `${r.route}(${r.status})`).join(', '));
+    console.log('Issues:', bad.map((r) => `${r.route}(${r.status})`).join(', '));
     process.exitCode = 1;
   }
 };

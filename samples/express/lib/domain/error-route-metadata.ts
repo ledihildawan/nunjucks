@@ -50,23 +50,17 @@ export const errorGroups: ErrorGroup[] = [
   {
     name: 'NOT_A_FUNCTION',
     tier: 'tier 1',
-    items: [
-      { path: 'not-a-function', desc: 'Calling non-function value' },
-    ],
+    items: [{ path: 'not-a-function', desc: 'Calling non-function value' }],
   },
   {
     name: 'FILTER_TYPE_ERROR',
     tier: 'tier 1',
-    items: [
-      { path: 'list-filter-error', desc: 'List filter requires iterable' },
-    ],
+    items: [{ path: 'list-filter-error', desc: 'List filter requires iterable' }],
   },
   {
     name: 'OPERATOR_ERROR',
     tier: 'tier 1',
-    items: [
-      { path: 'in-operator-error', desc: 'In operator on primitive type' },
-    ],
+    items: [{ path: 'in-operator-error', desc: 'In operator on primitive type' }],
   },
   {
     name: 'FILTER_ATTR_ERROR',
@@ -96,16 +90,12 @@ export const errorGroups: ErrorGroup[] = [
   {
     name: 'DUPLICATE_BLOCK',
     tier: 'tier 3',
-    items: [
-      { path: 'duplicate-block', desc: 'Duplicate block definition' },
-    ],
+    items: [{ path: 'duplicate-block', desc: 'Duplicate block definition' }],
   },
   {
     name: 'RESERVED_KEYWORD_CONTEXT',
     tier: 'tier 3',
-    items: [
-      { path: 'reserved-keyword', desc: 'Reserved keyword used as a function call' },
-    ],
+    items: [{ path: 'reserved-keyword', desc: 'Reserved keyword used as a function call' }],
   },
   {
     name: 'RUNTIME_ERROR',
@@ -130,9 +120,7 @@ export const errorGroups: ErrorGroup[] = [
   {
     name: 'INVALID_INCLUDE',
     tier: 'tier 3',
-    items: [
-      { path: 'invalid-include', desc: 'Non-string template name for include' },
-    ],
+    items: [{ path: 'invalid-include', desc: 'Non-string template name for include' }],
   },
   {
     name: 'RENDER_ERROR',
@@ -174,10 +162,6 @@ export const errorGroups: ErrorGroup[] = [
   {
     name: 'UNKNOWN',
     tier: '—',
-    items: [
-      { path: 'container-factory', desc: 'Container factory error (unclear error type)' },
-    ],
+    items: [{ path: 'container-factory', desc: 'Container factory error (unclear error type)' }],
   },
 ];
-
-

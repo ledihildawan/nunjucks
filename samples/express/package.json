@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "main": "main.ts",
+  "scripts": {
+    "test": "bun test"
+  },
   "dependencies": {
     "@nunjucks/core": "workspace:*",
     "@nunjucks/error-formatter": "workspace:*",

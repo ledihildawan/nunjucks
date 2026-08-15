@@ -1,4 +1,4 @@
-import express, { type Router, type Request, type Response } from 'express';
+import express, { type Request, type Response, type Router } from 'express';
 import { localizedTime } from '../lib/io/clock.ts';
 
 const router: Router = express.Router();
@@ -68,7 +68,9 @@ router.get('/api/time', (_req: Request, res: Response) => {
 
 router.get('/api/slow', (req: Request, res: Response) => {
   setTimeout(() => {
-    if (req.destroyed) { return; }
+    if (req.destroyed) {
+      return;
+    }
     res.send('<strong>Slow content loaded!</strong>');
   }, 2000);
 });

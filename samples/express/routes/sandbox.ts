@@ -1,5 +1,5 @@
-import express, { type Router, type Request, type Response } from 'express';
-import { runTests, renderTable, sandboxSuites } from '../lib/domain/sandbox-demo.ts';
+import express, { type Request, type Response, type Router } from 'express';
+import { renderTable, runTests, sandboxSuites } from '../lib/domain/sandbox-demo.ts';
 
 const router: Router = express.Router();
 
@@ -101,7 +101,11 @@ const allowlistNjk = nunjucks({
 
 sandboxSuites.reduce<Router>((acc, suite) => {
   acc.get(`/${suite.key}`, async (_req: Request, res: Response) => {
-    const table = await runTests({ tests: suite.tests, context: suite.context, config: suite.config });
+    const table = await runTests({
+      tests: suite.tests,
+      context: suite.context,
+      config: suite.config,
+    });
     res.type('html').send(renderTable(table, suite));
   });
   return acc;

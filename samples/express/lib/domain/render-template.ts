@@ -1,5 +1,5 @@
-import { nunjucks, type NunjucksConfig } from '@nunjucks/core';
-import { ok, err, isErr, type Result } from '@nunjucks/lib';
+import { type NunjucksConfig, nunjucks } from '@nunjucks/core';
+import { err, isErr, ok, type Result } from '@nunjucks/lib';
 
 interface RenderTemplateOptions {
   context?: Record<string, unknown>;
@@ -12,7 +12,7 @@ interface RenderTemplateOptions {
 // sample server is single-process for demonstration.
 const renderTemplate = async (
   template: string,
-  { context = {}, config = {} }: RenderTemplateOptions = {},
+  { context = {}, config = {} }: RenderTemplateOptions = {}
 ): Promise<Result<string, Error>> => {
   const result = await nunjucks(config).render(template, context);
   if (isErr(result)) {
@@ -30,7 +30,7 @@ interface RenderDemoTemplateOptions {
 // vscode IDE hints; explicit config overrides merge on top so callers can flip undefined/security modes.
 const renderDemoTemplate = async (
   template: string,
-  { context = {}, config = {} }: RenderDemoTemplateOptions = {},
+  { context = {}, config = {} }: RenderDemoTemplateOptions = {}
 ): Promise<Result<string, Error>> => {
   return renderTemplate(template, {
     context,
@@ -43,4 +43,4 @@ const renderDemoTemplate = async (
   });
 };
 
-export { renderTemplate, renderDemoTemplate };
+export { renderDemoTemplate, renderTemplate };

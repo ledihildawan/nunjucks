@@ -1,4 +1,4 @@
-import { ok, err, type Result, escapeHtml } from '@nunjucks/lib';
+import { err, escapeHtml, ok, type Result } from '@nunjucks/lib';
 
 type TemplateSource = string & { readonly __brand: unique symbol };
 
@@ -11,4 +11,4 @@ const createTemplateSource = (value: unknown): Result<TemplateSource, Error> => 
   return ok(value as TemplateSource);
 };
 
-export { escapeHtml, createTemplateSource };
+export { createTemplateSource, escapeHtml };

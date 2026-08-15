@@ -1,5 +1,5 @@
-import express, { type Router, type Request, type Response, type NextFunction } from 'express';
 import type { Result } from '@nunjucks/lib';
+import express, { type NextFunction, type Request, type Response, type Router } from 'express';
 import { escapeHtml } from '../lib/domain/error-route-utils.ts';
 import { renderDemoTemplate } from '../lib/domain/render-template.ts';
 
@@ -69,14 +69,17 @@ const html = await njk.render(template, context);</pre>
 // WHY: renderTemplate never throws — the assertion only holds on the ok path; the error path returns a page showing the thrown error message.
 const sendStrictResult = (
   res: Response,
-  options: { template: string; result: Result<string, Error> },
+  options: { template: string; result: Result<string, Error> }
 ): void => {
   const { template, result } = options;
   if (result.ok) {
     res.type('html').send('Should have thrown error');
     return;
   }
-  res.status(400).type('html').send(`
+  res
+    .status(400)
+    .type('html')
+    .send(`
 <!DOCTYPE html>
 <html>
 <head>
@@ -146,7 +149,10 @@ router.get('/chainable', async (_req: Request, res: Response, next: NextFunction
   const template = '{{ user.name }}';
   const context: Record<string, unknown> = { user: undefined };
 
-  const result = await renderDemoTemplate(template, { context, config: { undefined: 'chainable' } });
+  const result = await renderDemoTemplate(template, {
+    context,
+    config: { undefined: 'chainable' },
+  });
   if (!result.ok) {
     return next(result.error);
   }

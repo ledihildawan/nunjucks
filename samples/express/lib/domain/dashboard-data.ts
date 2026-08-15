@@ -6,19 +6,43 @@ const formatPrice = (value: unknown): string => {
 
 const dashboardData = {
   mode: 'Streaming',
-  kpi: { revenue: '$125,430', revenueNum: 125430, orderCount: 342, orders: '342', conversion: '3.2' },
+  kpi: {
+    revenue: '$125,430',
+    revenueNum: 125430,
+    orderCount: 342,
+    orders: '342',
+    conversion: '3.2',
+  },
   orders: [
-    { id: 'ORD-7841', customer: 'Alice Chen', total: 89.99, shipping: { city: 'Jakarta' }, status: 'shipped' },
-    { id: 'ORD-7842', customer: 'Bob Smith', total: 245.00, shipping: {}, status: 'processing' },
-    { id: 'ORD-7843', customer: 'Charlie Doe', total: 12.50, shipping: { city: 'Bandung' }, status: 'pending' },
+    {
+      id: 'ORD-7841',
+      customer: 'Alice Chen',
+      total: 89.99,
+      shipping: { city: 'Jakarta' },
+      status: 'shipped',
+    },
+    { id: 'ORD-7842', customer: 'Bob Smith', total: 245.0, shipping: {}, status: 'processing' },
+    {
+      id: 'ORD-7843',
+      customer: 'Charlie Doe',
+      total: 12.5,
+      shipping: { city: 'Bandung' },
+      status: 'pending',
+    },
   ],
   products: [
     { name: 'Wireless Headphones', price: 79.99, stock: 23 },
-    { name: 'USB-C Hub 8-in-1', price: 34.50, stock: 0 },
-    { name: 'Mechanical Keyboard', price: 129.00, stock: 7 },
+    { name: 'USB-C Hub 8-in-1', price: 34.5, stock: 0 },
+    { name: 'Mechanical Keyboard', price: 129.0, stock: 7 },
   ],
   customer: { name: 'Ada Lovelace', joinedAt: 'Jan 2024' },
-  weather: { location: 'Jakarta', tempC: 31, condition: 'Partly Cloudy', humidity: 72, windKph: 14 },
+  weather: {
+    location: 'Jakarta',
+    tempC: 31,
+    condition: 'Partly Cloudy',
+    humidity: 72,
+    windKph: 14,
+  },
 };
 
-export { formatPrice, dashboardData };
+export { dashboardData, formatPrice };
