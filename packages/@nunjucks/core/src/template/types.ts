@@ -34,10 +34,11 @@ type TemplateState = TemplateStateBase &
       }
   );
 
-export interface TemplateSource {
-  type: 'code' | 'string';
-  value: unknown;
-}
+// WHY: discriminated union correlates the tag with its payload — `{ type: 'string', value: 42 }`
+// is unrepresentable, so consumers narrow by `type` without re-validating `value`'s shape.
+export type TemplateSource =
+  | { readonly type: 'code'; readonly value: CompiledTemplateExports }
+  | { readonly type: 'string'; readonly value: string };
 
 export interface TemplateObject {
   readonly [key: symbol]: true;

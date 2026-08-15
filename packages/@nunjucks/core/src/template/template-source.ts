@@ -54,6 +54,8 @@ const initTemplateState = ({
 
 const loadSource = (base: TemplateStateBase, src: string | TemplateSource): TemplateState => {
   if (isPlainObject(src)) {
+    // WHY: cast is boundary defense — JS callers can pass any object shape; the runtime
+    // checks below stay authoritative even though the static type now carries the payload.
     const srcObj = src as TemplateSource;
     switch (srcObj.type) {
       case 'code':
@@ -91,8 +93,8 @@ const loadSource = (base: TemplateStateBase, src: string | TemplateSource): Temp
       default:
         throw createLog('error', {
           def: getError('TEMPLATE_INVALID_SOURCE'),
-          params: { type: srcObj.type },
-          subject: srcObj.type,
+          params: { type: (srcObj as { type: string }).type },
+          subject: (srcObj as { type: string }).type,
           context: { phase: 'load' },
         });
     }
