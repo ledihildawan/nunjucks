@@ -1,4 +1,5 @@
 import type { NunjucksConfig } from '@nunjucks/core';
+import { isErr, isOk, type Result } from '@nunjucks/lib';
 import { escapeHtml } from './error-route-utils.ts';
 import { renderDemoTemplate } from './render-template.ts';
 
@@ -9,7 +10,7 @@ interface TestCase {
   shouldPass?: boolean;
 }
 
-type TestOutcome = [Error | null, string | null];
+type TestOutcome = Result<string, Error>;
 
 interface SandboxTestResult {
   name: string;
@@ -54,15 +55,19 @@ const runTests = async ({
         context,
         config: testConfig,
       });
-      const outcome: TestOutcome = result.ok ? [null, result.value] : [result.error, null];
-      const blocked = outcome[0] !== null;
+      const outcome: TestOutcome = result;
+      const blocked = isErr(outcome);
       const passed =
-        test.shouldPass === undefined ? null : (outcome[0] === null) === test.shouldPass;
+        test.shouldPass === undefined ? null : isOk(outcome) === test.shouldPass;
       return { name: test.name, outcome, blocked, passed };
     })
   );
 
-const outcomeError = (row: SandboxTestResult): Error | null => row.outcome[0];
+const outcomeError = (row: SandboxTestResult): Error | null =>
+  row.outcome.ok ? null : row.outcome.error;
+
+const outcomeOutput = (row: SandboxTestResult): string =>
+  row.outcome.ok ? row.outcome.value : '';
 
 const classifyStatus = (
   row: SandboxTestResult,
@@ -98,10 +103,10 @@ const renderTable = (table: SandboxTestResult[], suite: SandboxSuite): string =>
   const rows = table
     .map((row) => {
       const err = outcomeError(row);
-      // WHY: row.outcome[1] is engine output rendered under renderDemoTemplate's forced
+      // WHY: the success path is engine output rendered under renderDemoTemplate's forced
       // autoescape — it arrives pre-escaped; error messages are the only untrusted text
       // and are escaped explicitly above.
-      const resultText = err !== null ? escapeHtml(err.message) : (row.outcome[1] ?? '');
+      const resultText = err !== null ? escapeHtml(err.message) : outcomeOutput(row);
       const statusClassName = statusClass(row, suite);
       const statusLabelText = statusLabel(row, suite);
       return (

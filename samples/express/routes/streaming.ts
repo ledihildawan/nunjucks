@@ -57,10 +57,13 @@ router.get('/stream-normal', async (req: Request, res: Response) => {
   if (result.ok) {
     res.type('html').send(result.value);
   } else {
-    res
-      .status(500)
-      .type('html')
-      .send(formatError(result.error, { format: 'html', dev: true, version: PACKAGE_VERSION }));
+    res.status(500).type('html').send(
+      formatError(result.error, {
+        format: 'html',
+        dev: process.env.NODE_ENV !== 'production',
+        version: PACKAGE_VERSION,
+      })
+    );
   }
 });
 

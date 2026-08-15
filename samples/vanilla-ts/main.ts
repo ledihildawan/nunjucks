@@ -44,6 +44,7 @@ const outcomes = [
   destructResult,
   pipeResult,
 ];
-for (const result of outcomes) {
-  console.log(isOk(result) ? result.value : result.error);
-}
+const outcomeLines = outcomes.map((result) =>
+  isOk(result) ? result.value : `render failed: ${result.error.message}`
+);
+console.log(outcomeLines.join('\n'));
