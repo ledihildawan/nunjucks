@@ -1,5 +1,5 @@
 import type { IncludeChain } from '@nunjucks/error-formatter';
-import type { BlockFn, BlockLocation, Env } from '@nunjucks/runtime';
+import type { BlockFn, BlockLocation, Env, Frame } from '@nunjucks/runtime';
 import type { CompiledTemplateExports } from '@nunjucks/shared';
 import type { RuntimeContext } from './runtime-context.ts';
 
@@ -48,11 +48,11 @@ export interface TemplateObject {
   blocks: Record<string, BlockFn>;
   blockMeta: Record<string, BlockLocation>;
   rootRenderFunc: RootRenderFunc | null;
-  render: (ctx: Record<string, unknown>, parentFrame?: unknown) => Promise<string>;
+  render: (ctx: Record<string, unknown>, parentFrame?: Frame) => Promise<string>;
   compile: () => void;
   getExported: (
     ctx?: Record<string, unknown>,
-    parentFrame?: unknown
+    parentFrame?: Frame
   ) => Promise<Record<string, unknown>>;
 }
 

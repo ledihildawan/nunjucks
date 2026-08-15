@@ -3,7 +3,7 @@ import { getError } from '@nunjucks/error-catalog';
 import { createLog, normalizeErrorMetadata, prettifyError } from '@nunjucks/error-formatter';
 import { injectWarningsScript } from '@nunjucks/error-renderer';
 import { collectStream } from '@nunjucks/lib/collect-stream';
-import { type BlockLocation, createContext, createFrame, type Frame } from '@nunjucks/runtime';
+import { createContext, createFrame, type Frame } from '@nunjucks/runtime';
 import { WARNINGS_CONTEXT_KEY } from '@nunjucks/shared';
 import { createRuntimeWithContext } from './runtime-factory';
 import type { ErrorWithLineInfo } from './template-error-handler';
@@ -39,7 +39,10 @@ const createTemplateRenderer = ({ getState, compiler, errorHandler }: TemplateRe
     });
   };
 
-  const render = async (ctx: Record<string, unknown>, parentFrame?: unknown): Promise<string> => {
+  const render = async (
+    ctx: Record<string, unknown>,
+    parentFrame?: Frame
+  ): Promise<string> => {
     await compiler.safeCompile();
     const state = getState();
 
@@ -52,8 +55,8 @@ const createTemplateRenderer = ({ getState, compiler, errorHandler }: TemplateRe
     if (renderingTemplates?.has(state.path)) {
       throw createLog('error', {
         def: getError('CIRCULAR_INCLUDE'),
-        params: { path: state.path as string },
-        subject: state.path as string,
+        params: { path: state.path ?? 'unknown' },
+        subject: state.path ?? 'unknown',
         context: { phase: 'render' },
       });
     }
@@ -64,9 +67,9 @@ const createTemplateRenderer = ({ getState, compiler, errorHandler }: TemplateRe
       ctx: ctx ?? {},
       blocks: state.blocks,
       env: state.env,
-      metadata: { blockLocations: state.blockMeta as Record<string, BlockLocation> },
+      metadata: { blockLocations: state.blockMeta },
     });
-    const frame = createRenderFrame(parentFrame as Frame | undefined);
+    const frame = createRenderFrame(parentFrame);
 
     try {
       const runtime = createRuntimeWithContext(state.path, ctx ?? {});

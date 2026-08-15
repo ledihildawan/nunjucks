@@ -86,9 +86,14 @@ const coerceChunk = (value: unknown): Result<string, Error> => {
     return ok(value);
   }
   if (isThenable(value)) {
-    return err(
-      new Error('renderToStream: Promise leaked to stream boundary — an emit site is missing await')
-    );
+    // WHY: stamped with RENDER_ERROR so the stream boundary error envelope stays
+    // structurally symmetric with its sibling guard below — every adapter error
+    // carries a classifiable code for downstream classification/display.
+    const leakedPromiseError = new Error(
+      'renderToStream: Promise leaked to stream boundary — an emit site is missing await'
+    ) as Error & { code: string };
+    leakedPromiseError.code = ERROR_CODES.RENDER_ERROR;
+    return err(leakedPromiseError);
   }
   return ok(String(value));
 };

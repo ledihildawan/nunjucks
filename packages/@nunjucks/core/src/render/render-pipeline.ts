@@ -95,6 +95,9 @@ const prepareSandbox = (
 
   const sandboxEnabled = (config.sandbox ?? false) || (blockedKeys?.length ?? 0) > 0;
   const mergedContext = { ...context, ...config.globals };
+  // WHY: createSandboxedContext's contract (sandbox.ts) is shape-preserving — it passes
+  // non-objects through unchanged and proxies objects in place, so narrowing the `unknown`
+  // return back to the merged context shape is sound.
   const sandboxedCtx = createSandboxedContext({
     context: mergedContext,
     sandboxEnabled,
