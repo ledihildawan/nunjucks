@@ -6,7 +6,8 @@
   "main": "main.ts",
   "scripts": {
     "start": "bun run main.ts",
-    "test": "bun test"
+    "test": "bun test",
+    "audit:routes": "bun run scripts/audit-error-routes.ts"
   },
   "dependencies": {
     "@nunjucks/core": "workspace:*",

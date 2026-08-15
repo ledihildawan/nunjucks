@@ -11,6 +11,8 @@ permissions:
 jobs:
   tests:
     runs-on: ${{ matrix.os }}
+    # WHY: hard wall-clock bound — without it a wedged runner burns GitHub's 360-minute default.
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -44,6 +46,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
@@ -52,6 +55,7 @@ jobs:
 
   typecheck:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
@@ -60,6 +64,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
