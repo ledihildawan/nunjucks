@@ -43,7 +43,9 @@ const baseRoutes: readonly RouteEntry[] = [
   { path: '/remote', intent: 'Async composition — engine-rendered shell + client fetch with error branch' },
 ] as const;
 
-app.listen(PORT, () => {
+// WHY: bind loopback only — this demo serves rich dev error pages and project source
+// snippets; exposing it on all interfaces (the default) would leak them to the LAN.
+app.listen(PORT, '127.0.0.1', () => {
   const catalog = baseRoutes
     .map((entry) => `  ${entry.path.padEnd(22)} — ${entry.intent}`)
     .join('\n');

@@ -700,15 +700,15 @@
       el.className = 'no-results';
       el.setAttribute('role', 'status');
       el.setAttribute('aria-live', 'polite');
-      const p1 = document.createElement('p');
-      p1.appendChild(document.createTextNode('No error routes match '));
+      const noResultsMessage = document.createElement('p');
+      noResultsMessage.appendChild(document.createTextNode('No error routes match '));
       const strong = document.createElement('strong');
       strong.textContent = `"${query}"`;
-      p1.appendChild(strong);
-      const p2 = document.createElement('p');
-      p2.textContent = 'Try different keywords or browse all routes.';
-      el.appendChild(p1);
-      el.appendChild(p2);
+      noResultsMessage.appendChild(strong);
+      const noResultsHint = document.createElement('p');
+      noResultsHint.textContent = 'Try different keywords or browse all routes.';
+      el.appendChild(noResultsMessage);
+      el.appendChild(noResultsHint);
       sidebarContent.appendChild(el);
     }
 

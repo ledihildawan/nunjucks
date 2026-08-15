@@ -1,6 +1,5 @@
 import type { NunjucksConfig } from '@nunjucks/core';
-import { isErr, isOk, type Result } from '@nunjucks/lib';
-import { escapeHtml } from './error-route-utils.ts';
+import { escapeHtml, isErr, isOk, type Result } from '@nunjucks/lib';
 import { renderDemoTemplate } from './render-template.ts';
 
 interface TestCase {

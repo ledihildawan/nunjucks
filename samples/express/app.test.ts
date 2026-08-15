@@ -1,6 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { createServer, type Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
 import { createApp } from './app.ts';
 
 let server: Server;
@@ -15,7 +14,12 @@ beforeAll(async () => {
       resolve();
     });
   });
-  const address = server.address() as AddressInfo;
+  const address = server.address();
+  // WHY: listen(0, '127.0.0.1') on a TCP server always yields a bound port — narrow the
+  // string|null union instead of casting, failing loudly if the invariant ever breaks.
+  if (address === null || typeof address === 'string') {
+    throw new Error(`Expected TCP address, received: ${String(address)}`);
+  }
   baseUrl = `http://127.0.0.1:${address.port}`;
 });
 
@@ -78,6 +82,20 @@ describe('streaming route', () => {
     expect(body).toContain("mark('Widget done')");
     expect(body).toContain('</html>');
   }, 30000);
+});
+
+describe('homepage', () => {
+  // WHY: regression — index.njk displays literal template tags ({% switch %}, etc.)
+  // inside <code> samples; without {% raw %} wrapping the page 500s with PARSER_ERROR.
+  test('renders the catalog with literal tag samples intact', async () => {
+    const response = await get('/');
+
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    expect(body).toContain('{% switch %}');
+    expect(body).toContain('{% component %}');
+    expect(body).toContain('Scoped variables via walrus');
+  });
 });
 
 describe('not-found handler', () => {
