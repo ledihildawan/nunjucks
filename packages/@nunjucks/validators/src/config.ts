@@ -68,12 +68,19 @@ const validateNumericConfig = (config: Config): ConfigValidationError[] => [
   ...validateNonNegativeNumeric(config.streamingIdleTimeout, 'idleTimeout'),
 ];
 
-const validateEnumMembership = (
-  value: string | undefined,
-  validValues: ReadonlySet<string>,
-  subject: string,
-  type: string
-): ConfigValidationError[] =>
+interface EnumMembershipInput {
+  value: string | undefined;
+  validValues: ReadonlySet<string>;
+  subject: string;
+  type: string;
+}
+
+const validateEnumMembership = ({
+  value,
+  validValues,
+  subject,
+  type,
+}: EnumMembershipInput): ConfigValidationError[] =>
   value !== undefined && !validValues.has(value)
     ? [
         {
@@ -86,21 +93,33 @@ const validateEnumMembership = (
     : [];
 
 const validateEnumConfig = (config: Config): ConfigValidationError[] => [
-  ...validateEnumMembership(config.undefined, VALID_UNDEFINED_MODES, 'undefined', 'enum'),
-  ...validateEnumMembership(config.sandboxMode, VALID_SANDBOX_MODES, 'sandboxMode', 'sandbox'),
-  ...validateEnumMembership(
-    config.sandboxEnvironment,
-    VALID_ENVIRONMENTS,
-    'sandboxEnvironment',
-    'sandbox'
-  ),
+  ...validateEnumMembership({
+    value: config.undefined,
+    validValues: VALID_UNDEFINED_MODES,
+    subject: 'undefined',
+    type: 'enum',
+  }),
+  ...validateEnumMembership({
+    value: config.sandboxMode,
+    validValues: VALID_SANDBOX_MODES,
+    subject: 'sandboxMode',
+    type: 'sandbox',
+  }),
+  ...validateEnumMembership({
+    value: config.sandboxEnvironment,
+    validValues: VALID_ENVIRONMENTS,
+    subject: 'sandboxEnvironment',
+    type: 'sandbox',
+  }),
 ];
 
-const validateStringArray = (
-  value: readonly unknown[] | undefined,
-  subject: string,
-  type: string
-): ConfigValidationError[] =>
+interface StringArrayInput {
+  value: readonly unknown[] | undefined;
+  subject: string;
+  type: string;
+}
+
+const validateStringArray = ({ value, subject, type }: StringArrayInput): ConfigValidationError[] =>
   value !== undefined && !value.every((entry) => typeof entry === 'string')
     ? [
         {
@@ -186,9 +205,9 @@ export const validateConfig = (config: Config): ConfigValidationResult => {
   const errors = [
     ...validateNumericConfig(config),
     ...validateEnumConfig(config),
-    ...validateStringArray(config.blockedContextKeys, 'blockedContextKeys', 'security'),
-    ...validateStringArray(config.sandboxAllowlist, 'sandboxAllowlist', 'security'),
-    ...validateStringArray(config.allowedGlobals, 'allowedGlobals', 'security'),
+    ...validateStringArray({ value: config.blockedContextKeys, subject: 'blockedContextKeys', type: 'security' }),
+    ...validateStringArray({ value: config.sandboxAllowlist, subject: 'sandboxAllowlist', type: 'security' }),
+    ...validateStringArray({ value: config.allowedGlobals, subject: 'allowedGlobals', type: 'security' }),
     ...validateViews(config.views),
     ...validateCallableValues(config.customFilters, 'filters'),
     ...validateCallableValues(config.customTests, 'tests'),

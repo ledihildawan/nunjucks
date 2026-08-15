@@ -3,4 +3,5 @@ export { findContextDangerousValues, validateRenderContext } from './context.ts'
 export type { ExpressionSecurityConfig } from './expression.ts';
 export { validateExpression } from './expression.ts';
 export * from './security/index.ts';
+export { getReservedKeywords, RESERVED_KEYWORDS } from './reserved.ts';
 export { validateTemplate } from './template.ts';
