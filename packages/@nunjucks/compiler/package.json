@@ -22,5 +22,6 @@
     "@nunjucks/shared": "workspace:*",
     "remeda": "^2.39.0"
   },
-  "description": "Compiler for Nunjucks template engine"
+  "description": "Compiler for Nunjucks template engine",
+  "private": true
 }

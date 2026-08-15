@@ -13,5 +13,6 @@
     "picocolors": "^1.1.1",
     "remeda": "^2.39.0"
   },
-  "description": "Error rendering (HTML/ANSI/text/console) for Nunjucks"
+  "description": "Error rendering (HTML/ANSI/text/console) for Nunjucks",
+  "private": true
 }

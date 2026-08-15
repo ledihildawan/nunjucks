@@ -9,5 +9,6 @@
     "@nunjucks/core": "workspace:*",
     "@nunjucks/lib": "workspace:*"
   },
-  "description": "Integration adapters for Nunjucks"
+  "description": "Integration adapters for Nunjucks",
+  "private": true
 }

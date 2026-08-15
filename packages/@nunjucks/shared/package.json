@@ -9,5 +9,6 @@
   "dependencies": {
     "remeda": "^2.39.0"
   },
-  "description": "Shared utilities for Nunjucks"
+  "description": "Shared utilities for Nunjucks",
+  "private": true
 }

@@ -21,5 +21,6 @@
     "parser",
     "ast"
   ],
-  "license": "BSD-2-Clause"
+  "license": "BSD-2-Clause",
+  "private": true
 }

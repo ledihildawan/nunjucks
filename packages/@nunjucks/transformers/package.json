@@ -12,5 +12,6 @@
     "@nunjucks/nodes": "workspace:*",
     "@nunjucks/shared": "workspace:*"
   },
-  "description": "AST transformers for Nunjucks template engine"
+  "description": "AST transformers for Nunjucks template engine",
+  "private": true
 }

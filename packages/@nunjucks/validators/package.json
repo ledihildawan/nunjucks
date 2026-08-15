@@ -17,5 +17,6 @@
     "@nunjucks/nodes": "workspace:*",
     "remeda": "^2.39.0"
   },
-  "description": "Validation utilities for Nunjucks"
+  "description": "Validation utilities for Nunjucks",
+  "private": true
 }

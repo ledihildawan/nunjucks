@@ -26,5 +26,6 @@
   "devDependencies": {
     "@types/express": "^5.0.6"
   },
-  "description": "Public Nunjucks API: template environment, rendering, configuration, and integration entry points"
+  "description": "Public Nunjucks API: template environment, rendering, configuration, and integration entry points",
+  "private": true
 }

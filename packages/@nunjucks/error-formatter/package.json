@@ -13,5 +13,6 @@
     "@nunjucks/error-renderer": "workspace:*",
     "remeda": "^2.39.0"
   },
-  "description": "Error/warning object construction and normalization for Nunjucks"
+  "description": "Error/warning object construction and normalization for Nunjucks",
+  "private": true
 }

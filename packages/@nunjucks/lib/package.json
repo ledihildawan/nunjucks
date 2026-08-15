@@ -27,5 +27,6 @@
   "dependencies": {
     "remeda": "^2.39.0"
   },
-  "description": "Domain-agnostic technical utilities for Nunjucks — pure algorithms, I/O wrappers, and data formatters. Must know ZERO business rules. Lolos Copy-Paste Test ke proyek manapun."
+  "description": "Domain-agnostic technical utilities for Nunjucks — pure algorithms, I/O wrappers, and data formatters. Must know ZERO business rules. Lolos Copy-Paste Test ke proyek manapun.",
+  "private": true
 }

@@ -19,5 +19,6 @@
     "ast",
     "nodes"
   ],
-  "license": "BSD-2-Clause"
+  "license": "BSD-2-Clause",
+  "private": true
 }

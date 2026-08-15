@@ -12,5 +12,6 @@
     "@nunjucks/shared": "workspace:*",
     "remeda": "^2.39.0"
   },
-  "description": "Error definition catalog and shared error primitives for Nunjucks"
+  "description": "Error definition catalog and shared error primitives for Nunjucks",
+  "private": true
 }
