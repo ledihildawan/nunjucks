@@ -180,7 +180,8 @@
         const toggleEl = row.querySelector('.ctx-toggle');
         const labelEl = row.querySelector('.ctx-label');
         row.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
-        if (labelEl) labelEl.textContent = isHidden ? escapeHtml(previewValue(value)) : openBracket;
+        // WHY: textContent never parses HTML — pre-escaping here would double-render entities
+        if (labelEl) labelEl.textContent = isHidden ? previewValue(value) : openBracket;
         closing.classList.toggle('hidden', isHidden);
 
         if (!isHidden && !loaded) {

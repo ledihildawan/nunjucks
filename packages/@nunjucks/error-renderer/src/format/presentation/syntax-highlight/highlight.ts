@@ -30,6 +30,12 @@ const SYNTAX_RULES: SyntaxRule[] = [
   { type: 'attr', re: /^[a-zA-Z_][\w-]*(?=\s*=)/u },
   {
     type: 'keyword',
+    // WHY: kept in sync BY HAND with the statement-tag grammar in
+    // parser/src/statement-parser/registry.ts — error-renderer cannot import it without
+    // creating a package cycle (parser → error-formatter → error-renderer), and the
+    // highlighting set intentionally adds presentation-only tokens (raw, set, with,
+    // end-tags) that are not statement tags. When adding a new {% tag %} to the parser,
+    // add it here too or it will not highlight.
     re: /^(?:endraw|raw|endfilter|filter|endcomponent|component|endrender|render|endslot|slot|endblock|block|endfor|for|endif|elif|else|if|extends|include|import|from|set|with|without|context|as|not|and|or|in|is|true|false|none|null)(?![\w-])/u,
     tagOnly: true,
   },
