@@ -1,6 +1,6 @@
 import type { TemplateError } from '@nunjucks/error-formatter';
 import type { Result } from '@nunjucks/lib';
-import type { FileSystemLoader } from '@nunjucks/loaders';
+import type { TemplateLoader } from '@nunjucks/loaders';
 import type { Env, SandboxOptions, UndefinedMode } from '@nunjucks/runtime';
 import type { BaseValidationError } from '@nunjucks/shared';
 import type { Environment } from '@nunjucks/validators/security';
@@ -47,7 +47,7 @@ interface RenderConfig {
   callerLocation?: CallerLocation | null;
   callerFrames?: readonly CallerLocation[] | null;
   streamErrorRecovery?: boolean;
-  loader?: FileSystemLoader | null;
+  loader?: TemplateLoader | null;
   customFilters?: Record<string, unknown>;
   customGlobals?: Record<string, unknown>;
   filters?: Record<string, (...args: unknown[]) => unknown>;

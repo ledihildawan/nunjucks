@@ -2,7 +2,7 @@ import { getError } from '@nunjucks/error-catalog';
 import type { TemplateError, TemplateWarning } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
 import { err, isErr, isKeyedObject, ok, type Result } from '@nunjucks/lib';
-import type { FileSystemLoader } from '@nunjucks/loaders';
+import type { TemplateLoader } from '@nunjucks/loaders';
 import type { ParseOptions, ParserExtension } from '@nunjucks/parser';
 import { createSandboxedContext } from '@nunjucks/runtime';
 import { findContextDangerousValues } from '@nunjucks/validators';
@@ -15,7 +15,7 @@ const TEMPLATE_FILE_EXTENSION_RE = /\.(njk|js|html|htm|twig|ejs|eta)$/i;
 
 interface ResolveTemplateSourceInput {
   template: string;
-  loader: FileSystemLoader | null;
+  loader: TemplateLoader | null;
   config: RenderConfig;
 }
 

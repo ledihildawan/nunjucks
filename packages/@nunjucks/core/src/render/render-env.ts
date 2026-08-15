@@ -1,7 +1,7 @@
 import { getError } from '@nunjucks/error-catalog';
 import { createLog } from '@nunjucks/error-formatter';
 import { isErr } from '@nunjucks/lib';
-import type { FileSystemLoader } from '@nunjucks/loaders';
+import type { TemplateLoader } from '@nunjucks/loaders';
 import type { Env, GetTemplateOptions } from '@nunjucks/runtime';
 import { createTemplate } from '../template/index.ts';
 import type { RenderConfig } from './render-types.ts';
@@ -47,7 +47,7 @@ const createEnvLookups = (
   },
 });
 
-const buildRenderEnv = (loader: FileSystemLoader | null, config: RenderConfig): Env | null => {
+const buildRenderEnv = (loader: TemplateLoader | null, config: RenderConfig): Env | null => {
   if (!loader || config.env) {
     return null;
   }

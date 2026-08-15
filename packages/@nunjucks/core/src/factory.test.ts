@@ -1,6 +1,22 @@
 import { describe, expect, test } from 'bun:test';
-import { isOk } from '@nunjucks/lib';
+import { isErr, isOk } from '@nunjucks/lib';
+import type { TemplateLoader } from '@nunjucks/loaders';
 import { createNunjucks } from './factory.ts';
+
+interface InMemoryLoaderInput {
+  templates: Record<string, string>;
+}
+
+// WHY: in-memory fake loader — exercises the public config.loaders slot with zero fs shell.
+const createInMemoryLoader = ({ templates }: InMemoryLoaderInput): TemplateLoader => ({
+  getSource: async (name: string) => {
+    if (!Object.hasOwn(templates, name)) {
+      return null;
+    }
+    const src = templates[name];
+    return src === undefined ? null : { ok: true, value: { src, path: name } };
+  },
+});
 
 describe('createNunjucks', () => {
   test('creates engine with render method', () => {
@@ -152,6 +168,70 @@ describe('createNunjucks', () => {
     expect(engine1).toBeDefined();
     expect(engine2).toBeDefined();
     expect(engine1).not.toBe(engine2);
+  });
+
+  test('custom loaders resolve templates end-to-end', async () => {
+    const engine = createNunjucks({
+      loaders: [createInMemoryLoader({ templates: { 'hello.njk': 'Hello {{ name }}' } })],
+    });
+    const result = await engine.render('hello.njk', { name: 'Loader' });
+    expect(isOk(result)).toBe(true);
+    if (isOk(result)) {
+      expect(result.value).toBe('Hello Loader');
+    }
+  });
+
+  test('custom loader chains fall through to later loaders', async () => {
+    const engine = createNunjucks({
+      loaders: [
+        createInMemoryLoader({ templates: {} }),
+        createInMemoryLoader({ templates: { 'a.njk': 'from second', 'b.njk': 'B' } }),
+      ],
+    });
+    const result = await engine.render('a.njk');
+    expect(isOk(result)).toBe(true);
+    if (isOk(result)) {
+      expect(result.value).toBe('from second');
+    }
+  });
+
+  test('a name no custom loader knows falls back to inline-source treatment', async () => {
+    const engine = createNunjucks({ loaders: [createInMemoryLoader({ templates: {} })] });
+    const result = await engine.render('plain text, no template syntax');
+    expect(isOk(result)).toBe(true);
+    if (isOk(result)) {
+      expect(result.value).toBe('plain text, no template syntax');
+    }
+  });
+
+  test('custom loaders handle includes via getTemplate', async () => {
+    const engine = createNunjucks({
+      loaders: [
+        createInMemoryLoader({
+          templates: {
+            'wrapper.njk': 'Before {% include "part.njk" %} After',
+            'part.njk': 'PART',
+          },
+        }),
+      ],
+    });
+    const result = await engine.render('wrapper.njk');
+    if (!isOk(result)) {
+      throw new Error(`expected ok, got ${String(isErr(result) && result.error.message)}`);
+    }
+    expect(result.value).toBe('Before PART After');
+  });
+
+  test('custom loaders take precedence over views', async () => {
+    const engine = createNunjucks({
+      views: '/nonexistent-views-path',
+      loaders: [createInMemoryLoader({ templates: { 'only.njk': 'from custom' } })],
+    });
+    const result = await engine.render('only.njk');
+    expect(isOk(result)).toBe(true);
+    if (isOk(result)) {
+      expect(result.value).toBe('from custom');
+    }
   });
 
   test('invalid config: non-function filter is rejected at factory creation', () => {

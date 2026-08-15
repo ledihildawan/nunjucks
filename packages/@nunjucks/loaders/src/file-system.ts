@@ -8,6 +8,7 @@ import { err, ok, type Result } from '@nunjucks/lib';
 import { containsNullByte, isWithinBase } from '@nunjucks/lib/path-security';
 import { isArray } from 'remeda';
 import { createLoader, type Loader } from './base.ts';
+import type { TemplateLoader, TemplateLoaderSource } from './loader-chain.ts';
 
 const normalizeSearchPaths = (searchPaths: string | string[] | undefined): string[] => {
   if (!searchPaths) {
@@ -152,22 +153,17 @@ const createWatchHandler =
     }
   };
 
-interface FileSystemLoaderSource {
-  src: string;
-  path: string;
-}
-
 interface FileSystemLoaderOptions {
   watch?: boolean;
 }
 
-export interface FileSystemLoader extends Loader {
+export interface FileSystemLoader extends Loader, TemplateLoader {
   pathsToNames: Map<string, string>;
   watchEnabled: boolean;
   async: true;
   watchedFiles: Map<string, FSWatcher>;
   searchPaths: string[];
-  getSource: (name: string) => Promise<Result<FileSystemLoaderSource, TemplateError> | null>;
+  getSource: (name: string) => Promise<Result<TemplateLoaderSource, TemplateError> | null>;
   watchFile: (filePath: string) => void;
   unwatchFile: (filePath: string) => void;
   unwatchAll: () => void;
@@ -222,7 +218,7 @@ export const createFileSystemLoader = (
 
   const getSource = async (
     name: string
-  ): Promise<Result<FileSystemLoaderSource, TemplateError> | null> => {
+  ): Promise<Result<TemplateLoaderSource, TemplateError> | null> => {
     if (containsNullByte(name)) {
       return null;
     }
@@ -249,7 +245,7 @@ export const createFileSystemLoader = (
       return null;
     }
 
-    const source: FileSystemLoaderSource = { ...sourceResult.value };
+    const source: TemplateLoaderSource = { ...sourceResult.value };
     base.emit('load', name, source);
     return ok(source);
   };

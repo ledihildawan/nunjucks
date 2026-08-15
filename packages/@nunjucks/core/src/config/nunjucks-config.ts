@@ -1,5 +1,6 @@
 import type { TemplateError } from '@nunjucks/error-formatter';
 import type { Result } from '@nunjucks/lib';
+import type { TemplateLoader } from '@nunjucks/loaders';
 import type { UndefinedMode } from '@nunjucks/runtime';
 import type { DomPurifyConfig } from '@nunjucks/shared';
 import type { NunjucksPlugin } from '../plugin/plugin.ts';
@@ -42,6 +43,10 @@ interface StreamingConfig {
 interface NunjucksConfig {
   readonly dev?: boolean;
   readonly views?: string;
+  // WHY: custom loaders REPLACE filesystem resolution entirely (first-match-wins chain);
+  // `views` is ignored when a non-empty chain is supplied — pass createFileSystemLoader(paths)
+  // inside the array to combine custom sources with the filesystem.
+  readonly loaders?: readonly TemplateLoader[];
   readonly autoescape?: boolean;
   readonly undefined?: UndefinedMode;
   readonly trimBlocks?: boolean;

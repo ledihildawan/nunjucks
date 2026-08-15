@@ -201,7 +201,7 @@ The `nunjucks` ↔ `createNunjucks` split mirrors the betterAuth `betterAuth`/`c
 
 The public `NunjucksConfig` is **nested by concern**:
 
-- top-level: `dev`, `views`, `autoescape`, `undefined`, `trimBlocks`, `lstripBlocks`, `ide`
+- top-level: `dev`, `views`, `loaders`, `autoescape`, `undefined`, `trimBlocks`, `lstripBlocks`, `ide`
 - `security`: `sandbox`, `sandboxMode`, `sandboxAllowlist`, `blockedContextKeys`, `contextStrict`, `scanContextValues`, `strictMode`, `allowedGlobals`
 - `limits`: `executionTimeout`, `maxTemplateSize`, `maxOutputSize`
 - `streaming`: `errorRecovery`, `contentType`, `idleTimeout`, `coalesceBytes`
@@ -215,6 +215,8 @@ The public `NunjucksConfig` is **nested by concern**:
 `factory.ts` `buildBaseOptions` flattens the nested `NunjucksConfig` into a flat options bag (compacted — `undefined` keys removed so they don't clobber built-in defaults when spread). The internal `render.ts` `setupRenderConfig` then merges that bag over the `GlobalConfig` defaults, producing the internal `RenderConfig` (flat, plus diagnostics like `callerFrames`/`env`/`loader`). The factory's `customFilters`/`customGlobals` mapping is load-bearing: it feeds the user's filter/global NAMES to `validateConfig` (security name-check) WITHOUT including the built-in defaults — see the WHY on `validators/src/config.ts`.
 
 The factory owns the loader lifecycle (closure-scoped cache per `views` path, isolated across factory instances). Internal `render()` callers (core tests) get an uncached loader created from `views`.
+
+**Custom loaders** (`config.loaders: readonly TemplateLoader[]`, contract in `loaders/src/loader-chain.ts`): a non-empty chain replaces filesystem resolution — `views` is ignored. `createLoaderChain` folds the array into a single first-match-wins loader (`null` = defer to the next loader, `err` = hard stop), which flows through the same `RenderConfig.loader` slot; the render pipeline and `getTemplate` include-resolution are loader-agnostic (`TemplateLoader`, not `FileSystemLoader`).
 
 ### Two-pass render pipeline
 

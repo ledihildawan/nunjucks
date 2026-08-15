@@ -55,7 +55,28 @@ await njk.pipeRenderStream(stream, res, { signal: abortController.signal });
 | `limits` | `executionTimeout`, `maxTemplateSize`, `maxOutputSize` | Time/size bounds |
 | `streaming` | `errorRecovery`, `contentType`, `idleTimeout`, `coalesceBytes` | Streaming render behavior |
 | (extensions) | `filters`, `globals`, `tests`, `extensions`, `dompurify` | Template extensions |
+| `loaders` | `TemplateLoader[]` | Custom template sources (see below) |
 | `plugins` | `NunjucksPlugin[]` | Composable bundles of the above |
+
+### Custom loaders
+
+Supply `loaders` to take full control of template resolution (first-match-wins chain). A loader is any object with `getSource(name)` returning the source, `null` (not found — next loader tries), or a hard error. A non-empty chain **replaces** filesystem resolution entirely — `views` is ignored; include `createFileSystemLoader(paths)` in the array to keep filesystem lookup:
+
+```ts
+import { createFileSystemLoader } from '@nunjucks/loaders';
+import { nunjucks } from '@nunjucks/core';
+
+const memoryLoader = {
+  getSource: async (name: string) =>
+    name === 'hello.njk' ? { ok: true, value: { src: 'Hello {{ name }}', path: name } } : null,
+};
+
+const njk = nunjucks({
+  loaders: [memoryLoader, createFileSystemLoader('/templates')],
+});
+```
+
+`TemplateLoader` / `TemplateLoaderSource` / `createLoaderChain` / `createFileSystemLoader` are public contract from `@nunjucks/loaders`.
 
 ### Plugins
 

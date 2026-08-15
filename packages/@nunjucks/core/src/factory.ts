@@ -3,7 +3,7 @@ import type { TemplateError } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
 import type { Result } from '@nunjucks/lib';
 import { isErr } from '@nunjucks/lib';
-import { createFileSystemLoader, type FileSystemLoader } from '@nunjucks/loaders';
+import { createFileSystemLoader, createLoaderChain, type FileSystemLoader, type TemplateLoader } from '@nunjucks/loaders';
 import { validateConfig } from '@nunjucks/validators';
 import { PACKAGE_VERSION } from './config/global.ts';
 import type {
@@ -131,6 +131,11 @@ const createNunjucks = (config: NunjucksConfig = {}): NunjucksEngine => {
   const baseOptions = buildBaseOptions(config);
   const defaultPipeOptions = buildDefaultPipeOptions(config);
 
+  // WHY: a non-empty custom loader chain REPLACES filesystem resolution (documented on
+  // NunjucksConfig.loaders) — the chain is built once so every render shares it.
+  const customLoader: TemplateLoader | null =
+    config.loaders && config.loaders.length > 0 ? createLoaderChain(config.loaders) : null;
+
   // WHY: per-factory loader cache (closure-scoped, NOT module-global). The factory owns the loader lifecycle,
   // so two factories with the same views path get ISOLATED loader instances — no hidden cross-instance sharing.
   // Resolved per effective views (factory-time views OR a per-call override, e.g. Express's dirname(filePath)),
@@ -154,7 +159,7 @@ const createNunjucks = (config: NunjucksConfig = {}): NunjucksEngine => {
     overrides: PerRenderOverrides | undefined
   ): RenderOptions => ({
     ...baseOptions,
-    loader: resolveLoader(overrides?.views ?? config.views),
+    loader: customLoader ?? resolveLoader(overrides?.views ?? config.views),
     ...(context !== undefined && { context }),
     ...overrides,
   });
