@@ -16,8 +16,11 @@ const extractComponentArgs = (
   const last = all[all.length - 1];
   const kwargs = last !== undefined && (isDict(last) || isKeywordArgs(last)) ? last : null;
   const args = kwargs ? all.slice(0, -1) : all;
+  // WHY: defense-in-depth — component arg names flow into generated JS identifiers (`l_${name}`),
+  // so they are validated as identifiers at the codegen boundary exactly like slot params.
   forEach(args, (argument) => {
     compiler.assertType(argument, 'symbol');
+    assertSafeIdentifier(argument.value as string, { compiler });
   });
   return { args, kwargs };
 };

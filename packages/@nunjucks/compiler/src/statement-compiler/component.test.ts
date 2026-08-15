@@ -21,8 +21,8 @@ const makeCtx = () => {
       lastId += 1;
       return `t_${lastId}`;
     },
-    compileExpression: (node: { mock?: string }) => emitted.push(node.mock as string),
-    compile: (node: { mock?: string }) => emitted.push(node.mock as string),
+    compileExpression: (node: { marker?: string }) => emitted.push(node.marker as string),
+    compile: (node: { marker?: string }) => emitted.push(node.marker as string),
     withScopedSyntax: (func: () => void) => func(),
     pushBuffer: () => {
       bufStack.push(buf);
@@ -54,11 +54,24 @@ describe('compileComponentPublic', () => {
     const node = {
       name: symbol(loc({ lineno: 1, colno: 1 }), 'bad'),
       args: ['not a symbol'],
-      body: { mock: 'body' },
+      body: { marker: 'body' },
     };
     const frame = { parent: null, set: () => {} };
     expect(() =>
       compileComponentPublic(ctx as never, { node: node as never, frame: frame as never })
     ).toThrow('assertType');
+  });
+
+  test('rejects non-identifier arg names at the codegen boundary', () => {
+    const ctx = makeCtx();
+    const node = {
+      name: symbol(loc({ lineno: 1, colno: 1 }), 'bad'),
+      args: [symbol(loc({ lineno: 1, colno: 1 }), 'a";evil()')],
+      body: { marker: 'body' },
+    };
+    const frame = { parent: null, set: () => {} };
+    expect(() =>
+      compileComponentPublic(ctx as never, { node: node as never, frame: frame as never })
+    ).toThrow("Invalid identifier 'a\";evil()'");
   });
 });
