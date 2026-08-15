@@ -19,21 +19,25 @@ interface ResolveTemplateSourceInput {
   config: RenderConfig;
 }
 
+interface ResolvedTemplateSource {
+  templateSource: string;
+  templatePath: string | null;
+}
+
+// WHY: returns Result like its sibling prepareRender steps; the raw loader error stays
+// `unknown` here and is enriched (wrapWithLog) by the caller, which owns the renderContext.
 const resolveTemplateSource = async ({
   template,
   loader,
   config,
-}: ResolveTemplateSourceInput): Promise<{
-  templateSource: string;
-  templatePath: string | null;
-}> => {
+}: ResolveTemplateSourceInput): Promise<Result<ResolvedTemplateSource, unknown>> => {
   if (!loader || template.includes('{{') || template.includes('{%') || template.includes('{#')) {
-    return { templateSource: template, templatePath: null };
+    return ok({ templateSource: template, templatePath: null });
   }
 
   const sourceResult = await loader.getSource(template);
   if (sourceResult === null) {
-    return { templateSource: template, templatePath: null };
+    return ok({ templateSource: template, templatePath: null });
   }
   if (isErr(sourceResult)) {
     const loaderError: unknown = sourceResult.error;
@@ -44,20 +48,20 @@ const resolveTemplateSource = async ({
       errorCode === 'MODULE_NOT_FOUND' ||
       errorCode === 'ERR_MODULE_NOT_FOUND'
     ) {
-      return { templateSource: template, templatePath: null };
+      return ok({ templateSource: template, templatePath: null });
     }
-    throw loaderError;
+    return err(loaderError);
   }
   const source = sourceResult.value;
   if (source.src) {
     const resolvedPath: string | null = config.templatePath ? null : source.path;
-    return {
+    return ok({
       templateSource: source.src,
       templatePath: resolvedPath,
-    };
+    });
   }
 
-  return { templateSource: template, templatePath: null };
+  return ok({ templateSource: template, templatePath: null });
 };
 
 const prepareSandbox = (

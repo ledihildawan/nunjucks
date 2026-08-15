@@ -194,13 +194,13 @@ const prepareRender = async (
   const { warningsCollector, context: safeContext } = strictResult.value;
 
   const loader = config.loader ?? (config.views ? createFileSystemLoader(config.views) : null);
-  let templateSource: string;
-  let templatePath: string | null;
-  try {
-    ({ templateSource, templatePath } = await resolveTemplateSource({ template, loader, config }));
-  } catch (resolveErr: unknown) {
-    return err(await wrapWithLog(resolveErr, config, { template, renderContext: safeContext }));
+  const sourceResult = await resolveTemplateSource({ template, loader, config });
+  if (isErr(sourceResult)) {
+    return err(
+      await wrapWithLog(sourceResult.error, config, { template, renderContext: safeContext })
+    );
   }
+  const { templateSource, templatePath } = sourceResult.value;
   const configWithPath: RenderConfig = templatePath ? { ...config, templatePath } : config;
 
   const sourceValidation = await validateTemplateSource(templateSource, {
