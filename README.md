@@ -2,7 +2,7 @@
 
 A powerful templating engine with inheritance, asynchronous control, streaming, and a factory-based config API (jinja2-inspired).
 
-This is a TypeScript monorepo of focused `@nunjucks/*` workspaces. The public entry point is the `nunjucks(config)` factory.
+This is a TypeScript monorepo of focused `@nunjucks/*` workspaces. The public entry point is the `nunjucks(config)` factory. Version 4.0.0 marks the clean break from the upstream 3.x JS API (`Environment`, `addFilter`, callbacks) — config is declarative and baked into the engine at factory time.
 
 ## Install
 
@@ -70,6 +70,23 @@ const njk = nunjucks({ plugins: [datePlugin] });
 ```
 
 Plugins fold left-to-right; the user's direct `filters`/`globals` override plugin contributions, which override built-in defaults.
+
+## Public API surface
+
+Everything the engine needs ships from the core barrel:
+
+| Export | Kind | Purpose |
+|--------|------|---------|
+| `nunjucks` | factory | The single entry point |
+| `PACKAGE_VERSION` | value | Engine version surfaced to templates as `{{ version }}` |
+| `formatError` | function | Render a `TemplateError` as text/ANSI/HTML for error pages |
+| `NunjucksConfig`, `NunjucksEngine`, `PerRenderOverrides`, `SecurityConfig`, `LimitsConfig`, `StreamingConfig`, `NunjucksPlugin` | types | Config authoring + engine signatures |
+| `RenderStreamResult`, `PipeSink`, `PipeRenderStreamOptions` | types | Annotate `renderToStream` / `pipeRenderStream` calls |
+| `TemplateError`, `SourceFileReader`, `Result` | types | Error/context types used across the API |
+
+Two subpath entries are public contract: `@nunjucks/core/diagnostics` (`readProjectSource` — map caller source files for error pages) and `@nunjucks/integrations/express` (`createEngine` for Express 5). Utilities like the `Result` helpers (`isOk`, `isErr`, `getOrElse`) live in `@nunjucks/lib`.
+
+Everything else (`createNunjucks`, plugin folding internals, streaming adapters, sandbox primitives) is engine-internal and reachable only within the repo.
 
 ## Express integration
 
