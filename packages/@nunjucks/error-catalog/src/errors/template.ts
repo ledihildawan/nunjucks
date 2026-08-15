@@ -92,7 +92,7 @@ export const TEMPLATE_ERRORS = {
       'A symbol token reached the compiler carrying quotes, semicolons, or other metacharacters',
       'The template was hand-crafted to probe the code-generation boundary',
     ],
-    fixCode: '{% block content %}...{% endblock %}\n{% set myVar = value %}',
+    fixCode: '{% block content %}...{% endblock %}\n{{ myVar := value }}',
     fixComment:
       'Use plain identifier names (letters, digits, $, _) — avoid quotes, semicolons, or backslashes in symbol names',
     subjectFrom: firstCapture,
@@ -178,4 +178,4 @@ export const TEMPLATE_ERRORS = {
   },
 } as const satisfies Record<string, ErrorDefinition>;
 
-export type TemplateErrorName = keyof typeof TEMPLATE_ERRORS;
+

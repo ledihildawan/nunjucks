@@ -190,4 +190,4 @@ export const FILTER_ERRORS = {
   },
 } as const;
 
-export type FilterErrorName = keyof typeof FILTER_ERRORS;
+

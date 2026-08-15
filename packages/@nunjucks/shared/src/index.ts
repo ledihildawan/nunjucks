@@ -17,3 +17,4 @@ export { LOC_BRAND, loc, ZERO_LOC } from './loc.ts';
 export type { DomPurifyConfig, NodeLocation, Phase, SandboxMode, UndefinedMode } from './types.ts';
 export { SANDBOX_MODES, UNDEFINED_MODES } from './types.ts';
 export type { BaseValidationError } from './validation-error.ts';
+export { WARNINGS_CONTEXT_KEY } from './warnings.ts';

@@ -153,4 +153,4 @@ export const SANDBOX_ERRORS = {
   }),
 } as const;
 
-export type SandboxErrorName = keyof typeof SANDBOX_ERRORS;
+

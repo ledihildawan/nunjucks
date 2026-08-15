@@ -6,10 +6,10 @@ import { VIEWS } from '../lib/io/views-path.ts';
 const router: Router = express.Router();
 
 router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
-  sendTemplateResult(
+  sendTemplateResult({
     res,
     next,
-    await renderTemplate('warnings.njk', {
+    result: await renderTemplate('warnings.njk', {
       context: {
         pageTitle: 'Warnings Demo',
         availableValue: 'This value is defined',
@@ -21,8 +21,8 @@ router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
         undefined: 'debug',
         autoescape: true,
       },
-    })
-  );
+    }),
+  });
 });
 
 export { router as warningsRouter };

@@ -1,4 +1,4 @@
-﻿import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { formatError } from '@nunjucks/error-formatter';
 import { renderTemplate } from './render-test-helper.ts';
@@ -59,7 +59,7 @@ describe('error messages - causes and fix', () => {
     const err = (await renderTemplate('{{ x.y }}', { x: null }, { undefined: 'strict' }).catch(
       (e) => e
     )) as TemplateError;
-    const html = formatError(err, { format: 'html', verbosity: 'full' });
+    const html = formatError(err, { format: 'html', verbosity: 'full', dev: true });
 
     expect(html).toContain('<!DOCTYPE html>');
   });
@@ -130,7 +130,7 @@ describe('error - documentation links', () => {
     const err = (await renderTemplate('{{ missing }}', {}, { undefined: 'strict' }).catch(
       (e) => e
     )) as TemplateError;
-    const html = formatError(err, { format: 'html', verbosity: 'full' });
+    const html = formatError(err, { format: 'html', verbosity: 'full', dev: true });
 
     expect(typeof html).toBe('string');
     expect(html.length).toBeGreaterThan(100);
@@ -183,7 +183,7 @@ describe('error - toJSON serialization', () => {
 
 describe('error - empty/null safety', () => {
   test('handles plain Error gracefully', () => {
-    const html = formatError(new Error('boom'), { format: 'html', verbosity: 'full' });
+    const html = formatError(new Error('boom'), { format: 'html', verbosity: 'full', dev: true });
     expect(html).toBeDefined();
     expect(html).toContain('<!DOCTYPE html>');
   });

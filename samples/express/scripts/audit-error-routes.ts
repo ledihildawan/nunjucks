@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 // WHY: dev-only typed audit tooling for route validation
 
 import { existsSync, readFileSync } from 'node:fs';

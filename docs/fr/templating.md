@@ -52,10 +52,18 @@ javascript. Vous pouvez également utiliser la syntaxe des crochets.
 
 Ces deux syntaxes font exactement la même chose, tout comme javascript.
 
-Si une valeur est `undefined` ou `null`, rien ne sera affiché. Le même comportement
-se produit lors du référencement des objets `undefined` ou `null`. Tous les
-cas suivants n'afficheront rien si `foo` est indéfini : `{{ foo }}`, `{{
-foo.bar }}`, `{{ foo.bar.baz }}`.
+Si une valeur est `undefined` ou `null`, la chaîne littérale `undefined` est
+affichée en mode par défaut (chainable). L'option moteur `undefined` contrôle
+ce comportement :
+
+* `chainable` (défaut) — affiche `undefined` et tolère les accès chaînés
+  (`{{ a.b.c }}` avec `a` manquant)
+* `strict` — lève `UNDEFINED_VARIABLE` au premier accès indéfini
+* `debug` — affiche comme chainable mais émet un avertissement à chaque accès indéfini
+* `default` — même rendu que chainable
+
+Utilisez l'opérateur de coalescence nulle pour substituer une valeur de
+repli : `{{ nickname ?? username ?? "anonymous" }}`.
 
 ## Filtres
 
@@ -210,8 +218,9 @@ Vous pouvez également utiliser `if` comme une [expression en ligne](#expression
 
 `for` permet d'itérer sur les tableaux et les dictionnaires.
 
-> Si vous utilisez un chargeur de template personnalisé qui est asynchrone, regardez
-> [`asyncEach`](#asynceach))
+Les filtres qui retournent des promesses sont attendus de façon transparente —
+une boucle `for` ordinaire fonctionne telle quelle avec des filtres async ;
+aucune balise de boucle spéciale n'est requise.
 
 ```js
 var items = [{ title: "foo", id: 1 }, { title: "bar", id: 2}];
@@ -248,9 +257,6 @@ var food = {
 {% endfor %}
 ```
 
-Le filtre [`dictsort`](http://jinja.pocoo.org/docs/templates/#dictsort) est disponible
-pour trier les objets lors de leur itération.
-
 De plus, Nunjucks découpera les tableaux dans des variables :
 
 ```js
@@ -272,138 +278,81 @@ A l'intérieur des boucles, vous avez accès à quelques variables particulière
 * `loop.first` : le booléen qui indique si c'est la première itération
 * `loop.last` : le booléen qui indique si c'est la dernière itération
 * `loop.length` : le nombre total d'éléments
+### component
 
-### asyncEach
-
-> Ceci ne s'applique qu'aux templates asynchrones. Découvrez-les
-> [ici](api.html#support-asynchrone)
-
-`asyncEach` est une version asynchrone de `for`. Nécessaire seulement si
-vous utilisez un [chargeur de template qui est
-asynchrone](api.html#asynchrone), autrement, vous n'en aurez jamais besoin. Les filtres
-et les extensions Async en ont aussi besoin, mais les boucles internes sont
-automatiquement converties en `asyncEach` si des filtres et
-des extensions Async sont utilisés dans la boucle.
-
-`asyncEach` a exactement le même comportement que `for`, mais il permet de gérer
-la boucle de façon asynchrone. La raison pour laquelle ces balises sont distinctes :
-c'est la performance. La plupart des gens utilisent des templates de façon synchrone et c'est beaucoup
-plus rapide avec `for` que de le compiler avec une boucle normale `for` en JavaScript.
-
-Au moment de la compilation, Nunjucks ne sait pas comment les templates sont chargés,
-donc il n'est pas en mesure de déterminer si un bloc `include` est asynchrone ou non.
-C'est pourquoi il ne peut pas convertir automatiquement les boucles pour vous et donc vous
-devez utiliser `asyncEach` pour itérer si vous chargez des templates de façon asynchrone
-à l'intérieur de la boucle.
-
-```js
-// Si vous utilisez un chargeur personnalisé qui est asynchrone, vous avez besoin de asyncEach
-var env = new nunjucks.Environment(AsyncLoaderFromDatabase, opts);
-```
-```jinja
-<h1>Articles</h1>
-<ul>
-{% asyncEach item in items %}
-  {% include "item-template.html" %}
-{% endeach %}
-</ul>
-```
-
-### asyncAll
-
-> Ceci ne s'applique qu'aux templates asynchrones. Découvrez-les
-> [ici](api.html#support-asynchrone)
-
-`asyncAll` est similaire à `asyncEach`, sauf qu'il rend tous les éléments
-en parallèle, tout en préservant l'ordre des éléments. Ceci est seulement utile
-si vous utilisez des filtres, des extensions ou des chargeurs asynchrones.
-Sinon, vous ne devez jamais utiliser cela.
-
-Disons que vous avez créé un filtre nommé `lookup` qui récupère un peu de texte
-à partir d'une base de données. Vous pouvez donc rendre plusieurs éléments
-en parallèle avec `asyncAll` :
+`component` définit un morceau de contenu réutilisable et paramétré — le
+remplacement de la balise `macro` supprimée. Dans le corps, `{{ children }}`
+affiche le corps transmis par l'appelant et `{{ slot("name") }}` affiche les
+slots nommés :
 
 ```jinja
-<h1>Articles</h1>
-<ul>
-{% asyncAll item in items %}
-  <li>{{ item.id |> lookup }}</li>
-{% endall %}
-</ul>
-```
-
-Si `lookup` est un filtre asynchrone, il est probablement en train de faire
-quelque chose de lent, par exemple aller chercher quelque chose à partir du
-disque. `asyncAll` vous permet de réduire le temps qu'il faudrait pour exécuter
-la boucle séquentiellement en faisant tout le travail de façon asynchrone en parallèle.
-Le rendu du template reprend une fois que tous les éléments sont traités.
-
-### macro
-
-`macro` vous permet de définir des morceaux de contenu réutilisables. C'est semblable à
-une fonction dans un langage de programmation. Voici un exemple :
-
-```jinja
-{% macro field(name, value='', type='text') %}
+{% component field(name, type='text') %}
 <div class="field">
-  <input type="{{ type }}" name="{{ name }}"
-         value="{{ value |> escape }}" />
+  <input type="{{ type }}" name="{{ name }}" />
 </div>
-{% endmacro %}
+{% endcomponent %}
 ```
-Maintenant `field` est disponible, il peut être appelé comme une fonction normale :
+
+Les composants sont appelés comme des fonctions normales (arguments par
+défaut et avec mots clefs fonctionnent — voir
+[arguments avec mots clefs](#arguments-avec-mots-clefs)), ou invoqués avec un
+corps via `{% render %}` :
 
 ```jinja
 {{ field('user') }}
 {{ field('pass', type='password') }}
+
+{% render box("My Box Title") %}
+  <p>This is the content inside the box.</p>
+{% endrender %}
 ```
 
-Les arguments par défaut et avec mots clefs sont disponibles. Regardez
-[arguments avec mots clefs](#arguments-avec-mots-clefs) pour une explication plus détaillée.
+Tout ce qui se trouve entre `{% render %}` et `{% endrender %}` devient
+`children` dans le composant ; les slots nommés sont remplis avec
+`{% slot name %}...{% endslot %}` dans le corps du render et lus avec
+`{{ slot("name") }}` dans le corps du composant. Les composants définis au
+plus haut niveau sont exportés et peuvent être [importés](#import) par
+d'autres templates.
 
-Vous pouvez importer ([import](#import)) des macros à partir d'autres templates, cela vous permet
-de les réutiliser librement à travers votre projet.
+### := (affectation walrus)
 
-**Remarque importante** : Si vous utilisez l'API asynchrone, soyez conscient que
-vous ne pouvez rien faire d'asynchrone à l'intérieur des macros. Car les macros
-sont appelées comme des fonctions normales. Dans le futur, nous pourrions avoir un moyen d'appeler
-une fonction de manière asynchrone. Si vous faites cela maintenant, le comportement est inconnu.
-
-### set
-
-`set` vous permet de créer/modifier une variable.
+La balise `{% set %}` a été supprimée. Les variables sont déclarées et
+réaffectées avec l'opérateur walrus `:=` directement dans une expression —
+la valeur est liée **sans être affichée** :
 
 ```jinja
 {{ username }}
-{% set username = "joe" %}
+{{ username := "joe" }}
 {{ username }}
 ```
 
 Si `username` avait initialement la valeur "james", cela affichera "james joe".
 
-Vous pouvez inclure des nouvelles variables et en définir aussi plusieurs à la fois :
+Vous pouvez déclarer plusieurs variables à la fois avec des motifs de
+déstructuration :
 
 ```jinja
-{% set x, y, z = 5 %}
+{{ [x, y, z] := [1, 2, 3] }}
 ```
 
-Si `set` est utilisé au plus haut niveau, il modifie la valeur du contexte du template
-global. Si il est utilisé à l'intérieur de la portée des blocs, comme `for`, `include` et d'autres, cela modifie
-seulement dans cette portée.
-
-Il est également possible de capter le contenu d'un bloc dans une variable en utilisant
-l'affectation de bloc. La syntaxe est similaire au standard `set`, sauf que le
-`=` est omis, et tout ce qui se trouve jusqu'au `{% endset %}` est capturé.
-
-Cela peut être utile dans certains cas, comme une alternative aux macros :
+Une affectation au niveau le plus haut modifie le contexte global du template.
+À l'intérieur de blocs à portée comme `{% scope %}` ou `for`, elle
+ne modifie que la portée courante — utilisez `{% scope %}` pour isoler
+volontairement des déclarations :
 
 ```jinja
-{% set standardModal %}
-    {% include 'standardModalData.html' %}
-{% endset %}
-
-<div class="js-modal" data-modal="{{standardModal |> e}}">
+{% scope %}
+  {{ answer := 42 }}
+  inside: {{ answer }}
+{% endscope %}
 ```
+
+Seuls les variables simples et les motifs de déstructuration sont des cibles
+valides. Affecter une expression membre (par exemple `{{ obj.__proto__ := {} }}`)
+est rejeté à l'analyse avec `WALRUS_TARGET_INVALID`, ce qui rend la pollution
+de prototype via affectation impossible. Les affectations de bloc
+(`{% set x %}...{% endset %}`) ont été supprimées avec `set` — utilisez une
+[`{% capture %}`](#capture) pour capturer une sortie réutilisable.
 
 ### extends
 
@@ -510,8 +459,10 @@ du template inclus, et les résultats de ce rendu sont inclus.
 ### import
 
 `import` charge un template différent et vous permet d'accéder à ses valeurs
-exportées. Les macros et les affectations de haut niveau (faites avec [`set`](#set)) sont exportées
-depuis les templates, ceci vous permet donc d'y accéder dans un template différent.
+exportées. Les [composants](#component) définis au plus haut niveau d'un
+template sont exportés, ceci vous permet donc de les réutiliser dans un
+template différent. (Les déclarations walrus sont à portée de frame et ne
+sont pas exportées.)
 
 Les templates importés sont traités sans le contexte actuel par défaut, ils
 n'ont pas accès à toutes les variables du template actuel.
@@ -519,18 +470,17 @@ n'ont pas accès à toutes les variables du template actuel.
 Commençons par un template appelé `forms.html` qui contient ce qui suit :
 
 ```jinja
-{% macro field(name, value='', type='text') %}
+{% component field(name, type='text') %}
 <div class="field">
-  <input type="{{ type }}" name="{{ name }}"
-         value="{{ value |> escape }}" />
+  <input type="{{ type }}" name="{{ name }}" />
 </div>
-{% endmacro %}
+{% endcomponent %}
 
-{% macro label(text) %}
+{% component label(text) %}
 <div>
   <label>{{ text }}</label>
 </div>
-{% endmacro %}
+{% endcomponent %}
 ```
 
 Nous pouvons importer ce template et lier toutes ses valeurs exportées à une variable
@@ -594,30 +544,70 @@ que la force soit avec toi
 {% endfilter %}
 ```
 
-REMARQUE : Vous ne pouvez pas faire quelque chose d'asynchrone à l'intérieur de ces blocs.
+### capture
 
-### call
-
-Un bloc `call` vous permet d'appeler une macro avec tout le texte à l'intérieur de
-la balise. Ceci est utile si vous voulez passer beaucoup de contenu dans une macro. Le
-contenu est disponible à l'intérieur de la macro telle que `caller()`.
+`capture` met en mémoire tampon la sortie rendue d'un bloc dans une variable —
+le remplacement des affectations de bloc supprimées
+(`{% set x %}...{% endset %}`) et l'alternative ponctuelle aux
+[composants](#component) :
 
 ```jinja
-{% macro add(x, y) %}
-{{ caller() }} : {{ x + y }}
-{% endmacro%}
+{% capture greeting %}
+  Hello {{ name }}!
+{% endcapture %}
 
-{% call add(1, 2) -%}
-Le résultat est
-{%- endcall %}
+{{ greeting |> trim }}
 ```
 
-L'exemple ci-dessus affichera "Le résultat est : 3".
+La valeur capturée est une chaîne simple, elle peut donc traverser des
+filtres et être réutilisée partout où une variable peut l'être.
+
+### switch
+
+`switch` dispatche sur une valeur avec des branches `case`, un `default`
+optionnel, et un passage à vide pour les cases vides :
+
+```jinja
+{% switch status %}
+  {% case "active" %}<span class="ok">Active</span>
+  {% case "inactive" %}<span class="off">Inactive</span>
+  {% default %}<span>Unknown</span>
+{% endswitch %}
+```
+
+Les étiquettes de case acceptent des expressions arbitraires
+(`{% case 5 + 5 %}`).
+
+### match
+
+`match` est le dispatch orienté motifs : les branches lient la valeur
+correspondante à un nom, se raffinent avec des gardes `if`, et `_` sert de
+joker :
+
+```jinja
+{% match statusCode %}
+  {% when 200 %}OK
+  {% when code if code >= 500 %}Server error ({{ code }})
+  {% when _ %}Other
+{% endmatch %}
+```
+
+### exec
+
+`exec` exécute une expression à effet de bord (appel de méthode, mutation)
+pour son effet plutôt que pour sa valeur — l'interpolation `{{ }}`, qui
+affiche, n'est volontairement pas utilisée :
+
+```jinja
+{% exec items.push("item1") %}
+{% exec name.append("!") %}
+<p>{{ items |> join(",") }}</p>
+```
 
 ## Arguments avec mots clefs
 
 jinja2 utilise le support des arguments avec mots clefs de Python pour permettre de les utiliser dans
-les fonctions, les filtres et les macros. Nunjucks supporte bien les arguments avec mots clefs en
+les fonctions et les filtres. Nunjucks supporte bien les arguments avec mots clefs en
 introduisant une nouvelle convention d'appel.
 
 Les arguments avec mots clefs ressemblent à ceci :
@@ -637,20 +627,20 @@ Puisqu'il s'agit d'une convention d'appel standard, ça marche pour toutes les f
 filtres, s'ils sont écrits pour les gérer. [Lisez-en plus](api.html#arguments-avec-mots-clefspar-dfaut)
 dans la section de l'API.
 
-Les macros vous permettent d'utiliser également des arguments avec mots clefs dans la définition, cela vous permet
+Les [composants](#component) vous permettent d'utiliser également des arguments avec mots clefs dans la définition, cela vous permet
 de définir des valeurs par défaut. Nunjucks fait correspondre automatiquement les
-arguments avec mots clefs à ceux définis dans la macro.
+arguments avec mots clefs à ceux définis avec le composant.
 
 ```
-{% macro foo(x, y, z=5, w=6) %}
+{% component foo(x, y, z=5, w=6) %}
 {{ x }}, {{ y }}, {{ z }}, {{ w}}
-{% endmacro %}
+{% endcomponent %}
 
 {{ foo(1, 2) }}        -> 1, 2, 5, 6
 {{ foo(1, 2, w=10) }}  -> 1, 2, 5, 10
 ```
 
-Vous pouvez mélanger des arguments de position et des arguments avec mots clefs dans des macros. Par exemple, vous pouvez
+Vous pouvez mélanger des arguments de position et des arguments avec mots clefs dans des composants. Par exemple, vous pouvez
 spécifier un argument de position comme un argument mot clef :
 
 ```jinja
@@ -700,6 +690,19 @@ droite avant le tag et le `-%}` enlève les espaces à droite après le tag.
 
 C'est la même chose pour les variables: `{{-` enlève les espaces avant la variable,
 et `-}}` enlève les espaces après la variable.
+
+Deux options moteur automatisent ce contrôle au niveau global (les deux sont
+désactivées par défaut) :
+
+* `trimBlocks: true` — supprime exactement un saut de ligne après chaque tag de
+  fin de bloc (`%}`), sans toucher aux tags de variable
+* `lstripBlocks: true` — supprime les espaces/tabulations en début de ligne
+  juste avant un tag de début de bloc (`{%`), uniquement si rien d'autre ne
+  précède sur la ligne
+
+```js
+nunjucks({ trimBlocks: true, lstripBlocks: true });
+```
 
 ## Expressions
 
@@ -797,39 +800,62 @@ normalement.
 {{ foo(1, 2, 3) }}
 ```
 
-### Expressions régulières
+### Littéraux de gabarit (template literals)
 
-Une expression régulière peut être créée comme en JavaScript, mais elle a besoin d'être précédée par `r` :
+Les littéraux d'expressions régulières (`r/.../` ou `/.../`) ne sont PAS
+supportés dans les templates. Pour construire des chaînes, utilisez les
+template literals accent grave avec interpolation `${...}`, exactement comme
+en JavaScript :
 
 ```jinja
-{% set regExp = r/^foo.*/g %}
-{% if regExp.test('foo') %}
-  Foo dans la maison !
+{{ `Hello ${name}, you have ${count} items` }}
+```
+
+Les regex restent accessibles via des valeurs fournies par le contexte de
+rendu — passez une `RegExp` compilée depuis l'hôte et utilisez-la avec le
+test `matches` :
+
+```jinja
+{% if code is matches(pattern) %}
+  valide
 {% endif %}
 ```
 
-Les flags supportés sont les suivants. Voir
-[Regex sur MDN](https://developer.mozilla.org/fr/docs/Web/JavaScript/Reference/Objets_globaux/RegExp)
-pour plus d'informations.
+### Tests
 
-* `g` : La correspondance est cherchée partout
-* `i` : La casse est ignorée
-* `m` : Multi-ligne
-* `y` : Adhésion
+L'opérateur `is` applique un prédicat à une valeur ; il se nie avec
+`is not`. Les tests fonctionnent dans les blocs `if` et les
+[expressions if inline](#expression-if) :
+
+```jinja
+{% if count is odd %}impair{% endif %}
+{% if name is not defined %}anonyme{% endif %}
+{{ "cheap" if price is between(0, 100) else "expensive" }}
+```
+
+Les prédicats intégrés, par catégorie :
+
+* **existence** — `defined`, `undefined`, `null`, `none`, `truthy`, `falsy`
+* **booléen** — `true`, `false`, `boolean`
+* **numérique** — `odd`, `even`, `positive`, `negative`, `zero`, `finite`, `nan`, `divisibleby(n)`, `between(low, high)`
+* **primitif** — `string`, `number`, `integer`, `float`, `bigint`, `symbol`
+* **chaîne** — `empty`, `blank`, `lower`, `upper`, `alpha`, `alphanumeric`, `numeric`, `startswith(s)`, `endswith(s)`, `contains(x)`, `matches(re)`
+* **collection** — `array`, `object`, `iterable`, `asynciterable`, `typedarray`, `buffer`, `Map`, `Set`
+* **type d'objet** — `function`, `asyncfunction`, `Date`, `RegExp`, `Error`, `URL`, `Promise`
+* **égalité / appartenance** — `sameas(x)` (`===` strict), `equalto(x)` (égalité JSON profonde), `has(key)`, `hasown(key)`
+* **html** — `safe` (est une SafeString), `escaped` (n'est pas une SafeString)
 
 ## Auto-échappement
 
 Si autoescaping est activé dans l'environnement, tout l'affichage sera automatiquement
-échappé pour un affichage safe. Pour marquer manuellement un affichage à safe, utilisez le
-filtre `safe`. Nunjucks n'échappera pas cet affichage.
+échappé pour un affichage safe :
 
 ```jinja
-{{ foo }}           // &lt;span%gt;
-{{ foo |> safe }}    // <span>
+{{ foo }}           // &lt;span&gt;
 ```
 
 Si autoescaping n'est pas activé, tout l'affichage sera rendu tel quel. Vous pouvez
-manuellement échapper les variables avec le filtre `escape`.
+manuellement échapper les variables avec le filtre `escape` (alias `e`) :
 
 ```jinja
 {{ foo }}           // <span>
@@ -838,57 +864,40 @@ manuellement échapper les variables avec le filtre `escape`.
 
 ## Fonctions globales
 
-Il y a quelques fonctions globales intégrées qui couvrent certains cas courants.
+Les utilitaires `range`, `cycler` et `joiner` du nunjucks d'origine ont été
+supprimés. Les globales visibles dans les templates sont un ensemble curé de
+builtins standard gelés, disponibles en rendu normal comme en sandbox :
 
-### range([start], stop, [step])
+* `JSON` (`parse`, `stringify`)
+* `Math` (`abs`, `ceil`, `floor`, `round`, `min`, `max`, `PI`, ...)
+* `Object` (`keys`, `values`, `entries`, `freeze`, ...)
+* `Array` (`isArray`, `from`, `of`, ...)
+* `Number` (`isInteger`, `isFinite`, `parseFloat`, ...)
+* `String` (`fromCharCode`, ...)
+* `Date` (`now`, `isDate`, ...)
+* `Promise` (`resolve`, `all`, `allSettled`, `race`, `any`)
+* `ArrayBuffer` (`isView`)
+* `version` — la version du moteur
 
-Si vous avez besoin d'itérer sur un ensemble de numéros fixes, `range` génère cet ensemble
-pour vous. Les numéros commencent à `start` (0 par défaut) et s'incrémente de `step` (par défaut 1)
-jusqu'à ce qu'il atteigne `stop`, qui n'est pas inclus.
+L'itération sur un nombre fixe de valeurs passe par le protocole itérable
+plutôt que par un helper `range` :
 
 ```jinja
-{% for i in range(0, 5) -%}
+{% for i in [0, 1, 2, 3, 4] -%}
   {{ i }},
 {%- endfor %}
 ```
 
-L'affichage ci-dessus est `0,1,2,3,4`.
-
-### cycler(item1, item2, ...itemN)
-
-Une façon simple de faire un cycle avec plusieurs valeurs est d'utiliser `cycler`, qui prend
-un certain nombre d'arguments et fait des cycles à travers eux.
-
-```jinja
-{% set cls = cycler("odd", "even") %}
-{% for row in rows %}
-  <div class="{{ cls.next() }}">{{ row.name }}</div>
-{% endfor %}
-```
-
-Dans l'exemple ci-dessus, les lignes impaires ont la classe "odd" et les lignes paires ont la
-classe "even". Vous pouvez accéder à l'élément en cours avec la propriété `current` (dans
-l'exemple du dessus : `cls.current`).
-
-### joiner([separator])
-
-En combinant plusieurs éléments, il est fréquent de vouloir les délimiter par
-quelque chose comme une virgule, mais vous ne voulez pas afficher le séparateur pour le
-premier élément. La classe `joiner` affichera le `separator` (par défaut ",") chaque fois qu'elle
-sera appelée sauf pour la première fois.
-
-```jinja
-{% set comma = joiner() %}
-{% for tag in tags -%}
-  {{ comma() }} {{ tag }}
-{%- endfor %}
-```
-
-Si `tags` avait `["food", "beer", "dessert"]`, l'exemple ci-dessus afficherait `food, beer, dessert`.
+Des globales personnalisées (y compris une réimplémentation de
+`range`/`joiner` adaptée à votre application) peuvent être enregistrées via la
+config `globals` du moteur.
 
 ## Filtres intégrés
 
-Nunjucks a porté la plupart des [filtres de jinja](http://jinja.pocoo.org/docs/dev/templates/#builtin-filters), et il a ses propres filtres :
+Le moteur fournit un ensemble curé de filtres compatibles jinja (plus
+quelques-uns en plus, comme `sanitize`). Tout ce qui est documenté ci-dessous
+est implémenté ; les filtres du nunjucks d'origine absents de cette liste ont
+été supprimés :
 
 ### abs
 
@@ -905,28 +914,6 @@ Retourne la valeur absolue de l'argument :
 ```jinja
 3
 ```
-
-### batch
-
-Retourne une liste de listes avec le numéro des éléments :
-
-**Entrée**
-
-```jinja
-{% set items = [1,2,3,4,5,6] %}
-{% for item in items |> batch(2) %}
-    -{% for items in item %}
-       {{ items }}
-    {% endfor %}
-{% endfor %}
-```
-
-**Sortie**
-
-```jinja
-12-34-56
-```
-
 ### capitalize
 
 Met la première lettre en majuscule et le reste en minuscule :
@@ -943,23 +930,6 @@ Met la première lettre en majuscule et le reste en minuscule :
 Ceci est un test
 ```
 
-
-### center
-
-Centre la valeur dans un champ d'une largeur donnée :
-
-**Entrée**
-
-```jinja
-{{ "fooo" |> center }}
-```
-
-**Sortie**
-
-```jinja
-fooo
-```
-
 ### default(value, default, [boolean])
 
 (raccourci avec `d`)
@@ -973,89 +943,6 @@ etc)
   valeur fausse retournait `default`. Dans la 2.0, le comportement par défaut retourne
   `default` seulement pour une valeur `undefined`. Vous pouvez obtenir l'ancien
   comportement en passant `true` à `boolean`, ou en utilisant simplement `value or default`.**
-
-### dictsort
-
-Tri un dictionnaire et rend des paires (clé, valeur) :
-
-```jinja
-{% set items = {
-    'e': 1,
-    'd': 2,
-    'c': 3,
-    'a': 4,
-    'f': 5,
-    'b': 6
-} %}
-{% for item in items |> dictsort %}
-    {{ item[0] }}
-{% endfor %}
-```
-
-**Sortie**
-
-```jinja
-a b c d e f
-```
-### dump
-
-Appelle [`JSON.stringify`](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify) sur un objet et déverse le résultat dans le
-template. C'est utile pour le débogage : `{{ foo |> dump }}`.
-
-**Entrée**
-
-```jinja
-{% set items = ["a", 1, { b : true}] %}
-{{ items |> dump }}
-```
-
-**Sortie**
-
-```jinja
-
-["a",1,{"b":true}]
-```
-
-Dump fournit un paramètre pour les espaces afin d'ajouter des espaces ou des tabulations aux valeurs
-retournées. Cela rend le résultat plus lisible.
-
-**Entrée**
-
-```jinja
-{% set items = ["a", 1, { b : true}] %}
-{{ items |> dump(2) }}
-```
-
-**Sortie**
-
-```jinja
-[
-  "a",
-  1,
-  {
-    "b": true
-  }
-]
-```
-**Entrée**
-
-```jinja
-{% set items = ["a", 1, { b : true}] %}
-{{ items |> dump('\t') }}
-```
-
-**Sortie**
-
-```jinja
-[
-	"a",
-	1,
-	{
-		"b": true
-	}
-]
-```
-
 ### escape (aliased as e)
 
 Convertit les caractères &, <, >, â€˜, et â€ dans des chaines avec des séquences HTML sécurisées.
@@ -1081,7 +968,7 @@ Donne le premier élément dans un tableau :
 **Entrée**
 
 ```jinja
-{% set items = [1,2,3] %}
+{{ items := [1,2,3] }}
 {{ items |> first }}
 ```
 
@@ -1090,24 +977,6 @@ Donne le premier élément dans un tableau :
 ```jinja
 1
 ```
-
-### float
-
-Convertit une valeur en un nombre à virgule flottant. Si la conversion échoue, 0.0 est retourné.
-Cette valeur par défaut peut être modifiée en utilisant le premier paramètre.
-
-**Entrée**
-
-```jinja
-{{ "3.5" |> float }}
-```
-
-**Sortie**
-
-```jinja
-3.5
-```
-
 ### groupby
 
 Groupe une séquence d'objets par un attribut commun :
@@ -1115,15 +984,15 @@ Groupe une séquence d'objets par un attribut commun :
 **Entrée**
 
 ```jinja
-{% set items = [
+{{ items := [
         { name: 'james', type: 'green' },
         { name: 'john', type: 'blue' },
         { name: 'jim', type: 'blue' },
         { name: 'jessie', type: 'green' }
     ]
-%}
+ }}
 
-{% for type, items in items |> groupby("type") %}
+] }}
     <b>{{ type }}</b> :
     {% for item in items %}
         {{ item.name }}
@@ -1189,24 +1058,6 @@ Change l'indentation par défaut à 6 espaces et indente la première ligne :
       two
       three
 ```
-
-### int
-
-Convertit la valeur en un entier.
-Si la conversion échoue, cela retourne 0.
-
-**Entrée**
-
-```jinja
-{{ "3.5" |> int }}
-```
-
-**Sortie**
-
-```jinja
-3
-```
-
 ### join
 
 Retourne une chaine qui est la concaténation des chaines dans la séquence :
@@ -1214,7 +1065,7 @@ Retourne une chaine qui est la concaténation des chaines dans la séquence :
 **Entrée**
 
 ```jinja
-{% set items =  [1, 2, 3] %}
+{{ items := [1, 2, 3] }}
 {{ items |> join }}
 ```
 
@@ -1230,7 +1081,7 @@ Le séparateur entre les éléments est par défaut une chaine vide qui peut
 **Entrée**
 
 ```jinja
-{% set items = ['foo', 'bar', 'bear'] %}
+{{ items := ['foo', 'bar', 'bear'] }}
 {{ items |> join(",") }}
 ```
 
@@ -1245,11 +1096,11 @@ Ce comportement est applicable aux tableaux :
 **Entrée**
 
 ```jinja
-{% set items = [
+{{ items := [
     { name: 'foo' },
     { name: 'bar' },
     { name: 'bear' }]
-%}
+] }}
 
 {{ items |> join(",", "name") }}
 ```
@@ -1267,7 +1118,7 @@ Donne le dernier élément dans un tableau :
 **Entrée**
 
 ```jinja
-{% set items = [1,2,3] %}
+{{ items := [1,2,3] }}
 {{ items |> last }}
 ```
 
@@ -1297,24 +1148,6 @@ Retourne la longueur d'un tableau, d'une chaine ou le nombre de clés dans un ob
 1
 ```
 
-
-### list
-
-Convertit la valeur en une liste.
-Si c'est une chaine, la liste retournée sera une liste de caractères.
-
-**Entrée**
-
-```jinja
-{% for i in "foobar" |> list %}{{ i }},{% endfor %}
-```
-
-**Sortie**
-
-```jinja
-f,o,o,b,a,r,
-```
-
 ### lower
 
 Convertit une chaine en minuscule :
@@ -1330,61 +1163,6 @@ Convertit une chaine en minuscule :
 ```jinja
 foobar
 ```
-
-### nl2br
-
-Remplace les nouvelles lignes par des éléments HTML `<br />` :
-
-**Entrée**
-
-```jinja
-{{ "foo\nbar" |> striptags(true) |> escape |> nl2br }}
-```
-
-**Sortie**
-
-```jinja
-foo<br />\nbar
-```
-
-### random
-
-Sélectionne une valeur aléatoire depuis un tableau.
-(Cela changera à chaque fois que la page est actualisée).
-
-**Entrée**
-
-```jinja
-{{ [1,2,3,4,5,6,7,8,9] |> random }}
-```
-
-**Sortie**
-
-Une valeur aléatoire entre 1-9 (dont les bornes sont incluses).
-
-
-### rejectattr (uniquement pour le cas d'un unique argument)
-
-Filtre une suite d'objets, en appliquant un test sur l'attribut spécifié
-pour chaque objet et en rejetant les objets où le test réussit.
-
-Ceci est à l'opposé du filtre ```selectattr```.
-
-Si aucun test n'est spécifié, la valeur de l'attribut sera évaluée comme une valeur booléenne.
-
-**Entrée**
-
-```jinja
-{% set foods = [{tasty: true}, {tasty: false}, {tasty: true}]%}
-{{ foods |> rejectattr("tasty") |> length }}
-```
-
-**Sortie**
-
-```jinja
-1
-```
-
 ### replace
 
 Remplace un élément par un autre. Le premier argument est l'élément à
@@ -1393,7 +1171,7 @@ remplacer, le deuxième est la valeur de remplacement.
 **Entrée**
 
 ```jinja
-{% set numbers = 123456 %}
+{{ numbers := 123456 }}
 {{ numbers |> replace("4", ".") }}
 ```
 
@@ -1409,7 +1187,7 @@ cela mettra l'élément autour de la valeur :
 **Entrée**
 
 ```jinja
-{% set lettres = aaabbbccc%}
+{{ lettres := aaabbbccc }}
 {{ "lettres" |> replace("", ".") }}
 ```
 
@@ -1426,7 +1204,7 @@ Il possible de préciser le nombre de remplacement à effectuer (élément à re
 **Entrée**
 
 ```jinja
-{% set letters = "aaabbbccc" %}
+{{ letters := "aaabbbccc" }}
 {{ letters |> replace("a", "x", 2) }}
 ```
 Remarquez que dans ce cas, les guillemets sont nécessaires pour la liste.
@@ -1442,7 +1220,7 @@ Il est possible de rechercher des modèles dans une liste pour les remplacer :
 **Entrée**
 
 ```jinja
-{% set letters = "aaabbbccc" %}
+{{ letters := "aaabbbccc" }}
 {{ letters |> replace("ab", "x", 2) }}
 ```
 
@@ -1527,45 +1305,20 @@ Spécifiez le nombre de décimales pour arrondir :
 ```jinja
 4.1235
 ```
+### sanitize(value, [config])
 
-### safe
-
-Marquez la valeur comme sûre, ce qui signifie que dans un environnement avec des échappements automatique,
-cela permet à cette variable de ne pas être échappée.
-
-**Entrée**
-
-```jinja
-{{ "foo http://www.example.com/ bar" |> urlize |> safe }}
-```
-
-**Sortie**
+Nettoie un fragment HTML avec DOMPurify et retourne une `SafeString`, de sorte
+que le balisage nettoyé ne soit pas doublement échappé par l'auto-échappement.
+Un objet de configuration optionnel est transmis à DOMPurify (par exemple pour
+étendre les balises autorisées) :
 
 ```jinja
-foo <a href="http://www.example.com/">http://www.example.com/</a> bar
+{{ userBio |> sanitize({ ALLOWED_TAGS: ['b', 'i', 'p'] }) }}
 ```
 
-### selectattr (uniquement pour le cas d'un unique argument)
-
-Filtre une suite d'objets, en appliquant un test sur l'attribut spécifié
-pour chaque objet et en sélectionnant les objets où le test réussit.
-
-Ceci est à l'opposé du filtre ```rejectattr```.
-
-Si aucun test n'est spécifié, la valeur de l'attribut sera évaluée comme une valeur booléenne.
-
-**Entrée**
-
-```jinja
-{% set foods = [{tasty: true}, {tasty: false}, {tasty: true}]%}
-{{ foods |> selectattr("tasty") |> length }}
-```
-
-**Sortie**
-
-```jinja
-2
-```
+C'est la façon officiellement supportée de rendre du HTML fourni par
+l'utilisateur de manière sûre — contrairement à `striptags` (supprimé), le
+sous-ensemble sûr du balisage est préservé au lieu d'être entièrement retiré.
 
 ### slice
 
@@ -1574,7 +1327,7 @@ Découpe un itérateur et retourne une liste de listes contenant ces éléments 
 **Entrée**
 
 ```jinja
-{% set arr = [1,2,3,4,5,6,7,8,9] %}
+{{ arr := [1,2,3,4,5,6,7,8,9] }}
 
 <div class="columwrapper">
   {%- for items in arr |> slice(3) %}
@@ -1608,42 +1361,17 @@ Découpe un itérateur et retourne une liste de listes contenant ces éléments 
     </ul>
 </div>
 ```
-### sort(arr, reverse, caseSens, attr)
+### sort(values, reversed, caseSens, attr)
+
+Trie `values` avec la fonction de tri de JavaScript. Si `reversed` est vrai, le
+résultat sera inversé. Le tri est insensible à la casse par défaut, mais mettre
+`caseSens` à vrai le rend sensible à la casse. Si `attr` est passé, la comparaison
+se fait sur `attr` de chaque élément.
 
 Tri `arr` avec la fonction `arr.sort` de JavaScript. Si `reverse` est à true, le résultat
 sera inversé. Le tri est insensible à la casse par défaut, mais en paramétrant `caseSens`
 à true, cela le rend sensible à la casse. Si `attr` est passé, cela permettra de comparer `attr` à
 chaque élément.
-
-### string
-
-Convertit un objet en une chaine :
-
-**Entrée**
-
-```jinja
-{% set item = 1234 %}
-{% for i in item |> string |> list %}
-    {{ i }},
-{% endfor %}
-```
-
-**Sortie**
-
-```jinja
-1,2,3,4,
-```
-
-### striptags (value, [preserve_linebreaks])
-
-C'est similaire à
-[striptags](http://jinja.pocoo.org/docs/templates/#striptags) de jinja. Si
-`preserve_linebreaks` est à false (par défaut), cela enlève les balises SGML/XML et remplace
-les espaces adjacents par un seul espace. Si `preserve_linebreaks` est à true,
-cela normalise les espaces, en essayant de préserver les sauts de lignes originaux. Utiliser le second
-comportement si vous voulez utiliser ceci `{{ text |> striptags(true) |> escape |> nl2br }}`.
-Sinon utilisez le comportement par défaut.
-
 ### sum
 
 Rend la somme des éléments dans le tableau :
@@ -1651,7 +1379,7 @@ Rend la somme des éléments dans le tableau :
 **Entrée**
 
 ```jinja
-{% set items = [1,2,3] %}
+{{ items := [1,2,3] }}
 {{ items |> sum }}
 ```
 
@@ -1676,6 +1404,24 @@ Met la première lettre de chaque mot en majuscule :
 ```jinja
 Foo Bar Baz
 ```
+
+### tojson
+
+Sérialise une valeur en JSON et retourne une `SafeString`. `<`, `>` et `&`
+sont échappés en séquences `\u003c` pour qu'un littéral `</script>` dans une
+valeur ne puisse pas sortir d'un contexte `<script>`, et le résultat n'est pas
+doublement échappé par l'auto-échappement :
+
+**Entrée**
+
+```jinja
+{{ data |> tojson }}
+```
+
+Avec `data` valant `{ x: "</script>" }`, la sortie est
+`{"x":"\u003c/script\u003e"}`. `undefined` se sérialise en la chaîne
+`undefined`. Ce filtre remplace le `dump` supprimé pour embarquer des données
+dans les templates.
 
 ### trim
 
@@ -1761,57 +1507,3 @@ Il accepte à la fois les dictionnaires et les chaînes régulières ainsi que l
 ```jinja
 %26
 ```
-
-### urlize
-
-Convertit les URL en texte brut dans des liens cliquables :
-
-**Entrée**
-
-```jinja
-{{ "foo http://www.example.com/ bar" |> urlize |> safe }}
-```
-
-**Sortie**
-
-```jinja
-foo <a href="http://www.example.com/">http://www.example.com/</a> bar
-```
-
-Tronque le texte de l'URL selon le nombre donné :
-
-**Entrée**
-
-```jinja
-{{ "http://mozilla.github.io/" |> urlize(10, true) |> safe }}
-```
-
-**Sortie**
-
-```jinja
-<a href="http://mozilla.github.io/">http://moz</a>
-```
-
-
-### wordcount
-
-Compte et rend le nombre de mot à l'intérieur d'une chaine :
-
-**Entrée**
-
-```
-{% set foo = "Hello World"%}
-{{ foo |> wordcount }}
-```
-
-**Sortie**
-
-```
-2
-```
-
-Sinon, il est facile de lire le [code
-JavaScript](https://github.com/mozilla/nunjucks/blob/master/nunjucks/src/filters.js)
-qui implémente ces filtres.
-
-{% endraw %}

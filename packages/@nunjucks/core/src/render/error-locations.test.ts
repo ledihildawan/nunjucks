@@ -153,7 +153,7 @@ describe('inline template error location pointing', () => {
       }
     ).catch((e) => e);
     const callerLine = source[err.lineno - 1] ?? '';
-    const html = formatError(err, { format: 'html', verbosity: 'full' });
+    const html = formatError(err, { format: 'html', verbosity: 'full', dev: true });
     const markerMatch = html.match(/error-marker-content">([^<]*\^+)<\/span>/u);
 
     expect(markerMatch).not.toBeNull();

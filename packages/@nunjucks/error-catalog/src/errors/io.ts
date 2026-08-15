@@ -72,4 +72,4 @@ export const IO_ERRORS = {
   },
 } as const;
 
-export type IoErrorName = keyof typeof IO_ERRORS;
+

@@ -19,17 +19,17 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     return;
   }
 
-  sendTemplateResult(
+  sendTemplateResult({
     res,
     next,
-    await renderTemplate('boundary.njk', {
+    result: await renderTemplate('boundary.njk', {
       context: {
         name: parsed.data.name,
         count: parsed.data.count,
       },
       config: { views: VIEWS, autoescape: true, dev: true },
-    })
-  );
+    }),
+  });
 });
 
 export { router as boundaryRouter };

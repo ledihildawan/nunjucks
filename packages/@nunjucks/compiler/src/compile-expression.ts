@@ -1,3 +1,4 @@
+import { ERROR_CODES } from '@nunjucks/error-catalog';
 import { createLog } from '@nunjucks/error-formatter';
 import type { Node } from '@nunjucks/nodes';
 import {
@@ -118,7 +119,7 @@ export const assertNodeType = (node: Node, ...types: NodeTypeMatcher[]): void =>
 
   if (!matches) {
     throw createLog('error', {
-      def: { name: 'ASSERT_TYPE_ERROR', message: `assertType: invalid type: ${typeName}` },
+      def: { name: ERROR_CODES.ASSERT_TYPE_ERROR, message: `assertType: invalid type: ${typeName}` },
       subject: typeName,
       context: {
         phase: 'compile',

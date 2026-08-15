@@ -87,10 +87,10 @@
   <h2>Language features</h2>
   <div class="grid">
     <a class="card" href="/demo/pipe"><code>/demo/pipe</code><span>Forward pipe operator: <code>value |&gt; filter1 |&gt; filter2</code></span></a>
-    <a class="card" href="/demo/scope"><code>/demo/scope</code><span>Loop scoping with <code>{% set %}</code> inside <code>{% for %}</code></span></a>
-    <a class="card" href="/demo/switch"><code>/demo/switch</code><span><code>{% switch %}</code> / <code>{% case %}</code> multi-branch dispatch.</span></a>
-    <a class="card" href="/demo/slot"><code>/demo/slot</code><span><code>{% slot %}</code> / <code>{% render %}</code> named template composition.</span></a>
-    <a class="card" href="/demo/component"><code>/demo/component</code><span><code>{% component %}</code> block-based component authoring.</span></a>
+    <a class="card" href="/demo/scope"><code>/demo/scope</code><span>Scoped variables via walrus <code>:=</code> inside <code>{% raw %}{{ x := 1 }}{% endraw %}</code> declarations.</span></a>
+    <a class="card" href="/demo/switch"><code>/demo/switch</code><span><code>{% raw %}{% switch %} / {% case %}{% endraw %}</code> multi-branch dispatch.</span></a>
+    <a class="card" href="/demo/slot"><code>/demo/slot</code><span><code>{% raw %}{% slot %} / {% render %}{% endraw %}</code> named template composition.</span></a>
+    <a class="card" href="/demo/component"><code>/demo/component</code><span><code>{% raw %}{% component %}{% endraw %}</code> block-based component authoring.</span></a>
     <a class="card" href="/demo/exec"><code>/demo/exec</code><span>Method binding with <code>this</code> inside templates.</span></a>
     <a class="card" href="/demo/security"><code>/demo/security</code><span>Sandbox + scanContextValues on a richer context.</span></a>
   </div>

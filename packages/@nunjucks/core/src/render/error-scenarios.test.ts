@@ -1,4 +1,4 @@
-﻿import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { getError } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { createLog, formatError } from '@nunjucks/error-formatter';
@@ -214,7 +214,7 @@ describe('error messages - real scenarios', () => {
   test('error html output is complete', async () => {
     const err = (await renderTemplate('{{ missing }}', {}).catch((e) => e)) as TemplateError;
 
-    const html = formatError(err, { format: 'html', verbosity: 'full' });
+    const html = formatError(err, { format: 'html', verbosity: 'full', dev: true });
     expect(html).toContain('<!DOCTYPE html>');
     expect(html).toContain('Possible Causes');
     expect(html).toContain('Suggested Fix');
@@ -263,7 +263,7 @@ describe('error messages - real scenarios', () => {
       (e) => e
     )) as TemplateError;
 
-    const html = formatError(err, { format: 'html', verbosity: 'full' });
+    const html = formatError(err, { format: 'html', verbosity: 'full', dev: true });
     expect(html).toBeTruthy();
     expect(html.length).toBeGreaterThan(500);
   });
@@ -372,7 +372,7 @@ describe('error messages - quality checks', () => {
 
     const text = formatError(err, { format: 'text', verbosity: 'full' });
     const ansi = formatError(err, { format: 'ansi', verbosity: 'full' });
-    const html = formatError(err, { format: 'html', verbosity: 'full' });
+    const html = formatError(err, { format: 'html', verbosity: 'full', dev: true });
 
     expect(text.length).toBeGreaterThan(50);
     expect(ansi.length).toBeGreaterThan(50);

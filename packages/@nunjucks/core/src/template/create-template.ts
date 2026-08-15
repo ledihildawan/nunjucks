@@ -36,7 +36,7 @@ export const createTemplate = ({
 
   const errorHandler = createTemplateErrorHandler(getState);
   const compiler = createTemplateCompiler({ getState, commit });
-  const renderer = createTemplateRenderer(getState, compiler, errorHandler);
+  const renderer = createTemplateRenderer({ getState, compiler, errorHandler });
 
   if (eagerCompile) {
     try {

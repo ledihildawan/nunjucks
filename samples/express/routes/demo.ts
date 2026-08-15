@@ -6,18 +6,18 @@ import { VIEWS } from '../lib/io/views-path.ts';
 const router: Router = express.Router();
 
 router.get('/scope', async (_req: Request, res: Response, next: NextFunction) => {
-  sendTemplateResult(
+  sendTemplateResult({
     res,
     next,
-    await renderTemplate('demo-scope.njk', { context: {}, config: { views: VIEWS } })
-  );
+    result: await renderTemplate('demo-scope.njk', { context: {}, config: { views: VIEWS } }),
+  });
 });
 
 router.get('/exec', async (_req: Request, res: Response, next: NextFunction) => {
-  sendTemplateResult(
+  sendTemplateResult({
     res,
     next,
-    await renderTemplate('demo-exec.njk', {
+    result: await renderTemplate('demo-exec.njk', {
       context: {
         arr: [],
         name: {
@@ -29,61 +29,61 @@ router.get('/exec', async (_req: Request, res: Response, next: NextFunction) => 
         items: [],
       },
       config: { views: VIEWS },
-    })
-  );
+    }),
+  });
 });
 
 router.get('/switch', async (_req: Request, res: Response, next: NextFunction) => {
-  sendTemplateResult(
+  sendTemplateResult({
     res,
     next,
-    await renderTemplate('demo-switch.njk', {
+    result: await renderTemplate('demo-switch.njk', {
       context: {
         status: 'active',
         priority: 2,
       },
       config: { views: VIEWS },
-    })
-  );
+    }),
+  });
 });
 
 router.get('/slot', async (_req: Request, res: Response, next: NextFunction) => {
-  sendTemplateResult(
+  sendTemplateResult({
     res,
     next,
-    await renderTemplate('demo-slot.njk', { context: {}, config: { views: VIEWS } })
-  );
+    result: await renderTemplate('demo-slot.njk', { context: {}, config: { views: VIEWS } }),
+  });
 });
 
 router.get('/component', async (_req: Request, res: Response, next: NextFunction) => {
-  sendTemplateResult(
+  sendTemplateResult({
     res,
     next,
-    await renderTemplate('component-demo.njk', {
+    result: await renderTemplate('component-demo.njk', {
       context: { username: 'John Doe' },
       config: { views: VIEWS },
-    })
-  );
+    }),
+  });
 });
 
 router.get('/pipe', async (_req: Request, res: Response, next: NextFunction) => {
-  sendTemplateResult(
+  sendTemplateResult({
     res,
     next,
-    await renderTemplate('demo-pipe.njk', {
+    result: await renderTemplate('demo-pipe.njk', {
       context: {
         items: ['one', 'two', 'three'],
       },
       config: { views: VIEWS },
-    })
-  );
+    }),
+  });
 });
 
 router.get('/security', async (_req: Request, res: Response, next: NextFunction) => {
-  sendTemplateResult(
+  sendTemplateResult({
     res,
     next,
-    await renderTemplate('demo-security.njk', {
+    result: await renderTemplate('demo-security.njk', {
       context: {
         userInput: '<script>alert("XSS attack!")</script><p>Hello World</p>',
         dangerousHtml:
@@ -94,8 +94,8 @@ router.get('/security', async (_req: Request, res: Response, next: NextFunction)
         attrContent: 'value="with quotes"\'s and stuff',
       },
       config: { views: VIEWS, autoescape: true },
-    })
-  );
+    }),
+  });
 });
 
 export { router as demoRouter };

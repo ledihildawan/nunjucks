@@ -18,6 +18,8 @@ export const readProjectSource = (location: ProjectSourceLocation): ProjectSourc
       colno: location.col ?? 1,
     };
   } catch {
+    // WHY: nullable-reader contract — an unreadable source (permissions, deleted file, EISDIR)
+    // degrades to "no project source" instead of failing the whole error-enrichment pipeline.
     return null;
   }
 };

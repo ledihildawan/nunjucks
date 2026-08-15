@@ -47,21 +47,21 @@ const createApp = (): Express => {
   });
 
   app.get('/home', async (_req: Request, res: Response, next: NextFunction) => {
-    sendTemplateResult(
+    sendTemplateResult({
       res,
       next,
-      await renderTemplate('home-welcome.njk', {
+      result: await renderTemplate('home-welcome.njk', {
         context: { username: 'John Doe' },
         config: engineConfig,
-      })
-    );
+      }),
+    });
   });
 
   app.get('/security', async (_req: Request, res: Response, next: NextFunction) => {
-    sendTemplateResult(
+    sendTemplateResult({
       res,
       next,
-      await renderTemplate('security-features.njk', {
+      result: await renderTemplate('security-features.njk', {
         context: {
           userInput: '<script>alert("XSS")</script><p>Safe content</p>',
           configData: { theme: 'dark', debug: true },
@@ -69,8 +69,8 @@ const createApp = (): Express => {
           attrContent: 'value="with quotes"',
         },
         config: engineConfig,
-      })
-    );
+      }),
+    });
   });
 
   app.use('/demo', demoRouter);
@@ -103,7 +103,7 @@ const createApp = (): Express => {
       return next(err);
     }
     const sourceFileReader: SourceFileReader = readProjectSource;
-    console.log(
+    console.error(
       formatError(stripRenderContext(err), { format: 'ansi', dev: devErrorMode, sourceFileReader })
     );
     res

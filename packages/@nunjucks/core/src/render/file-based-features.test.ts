@@ -86,6 +86,40 @@ describe('include', () => {
     const result = await renderFile('use-context.njk', { name: 'Alice' });
     expect(result).toContain('Hello Alice');
   });
+
+  // WHY: regression — env.getTemplate returns null for a missing source when
+  // ignoreMissing is set; the compiled include used to dereference it
+  // unconditionally (TypeError: null is not an object).
+  test('include ignore missing skips an absent template', async () => {
+    await writeFile(join(tempDir, 'ignore-main.njk'), 'A{% include "absent.njk" ignore missing %}B');
+    const result = await renderFile('ignore-main.njk', {});
+    expect(result).toBe('AB');
+  });
+
+  test('include ignore missing still renders a present template', async () => {
+    await writeFile(
+      join(tempDir, 'ignore-present.njk'),
+      'A{% include "partial.njk" ignore missing %}B'
+    );
+    const result = await renderFile('ignore-present.njk', {});
+    expect(result).toBe('APartial contentB');
+  });
+
+  test('include ignore missing with context skips silently', async () => {
+    await writeFile(
+      join(tempDir, 'ignore-with.njk'),
+      'A{% include "absent.njk" with name ignore missing %}B'
+    );
+    const result = await renderFile('ignore-with.njk', { name: 'Alice' });
+    expect(result).toBe('AB');
+  });
+
+  test('include without ignore missing still raises FILE_NOT_FOUND', async () => {
+    await writeFile(join(tempDir, 'missing-main.njk'), 'A{% include "absent.njk" %}B');
+    await expect(renderFile('missing-main.njk', {})).rejects.toMatchObject({
+      code: 'FILE_NOT_FOUND',
+    });
+  });
 });
 
 describe('components', () => {

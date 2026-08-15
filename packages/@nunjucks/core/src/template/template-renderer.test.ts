@@ -33,7 +33,7 @@ describe('createTemplateRenderer', () => {
     });
     const compiler = { safeCompile: async () => {} };
     const errorHandler = { enrichError: (e: Error) => e };
-    const renderer = createTemplateRenderer(getState, compiler, errorHandler);
+    const renderer = createTemplateRenderer({ getState, compiler, errorHandler });
     await expect(renderer.render({})).rejects.toThrow(/no compiled root render function/);
   });
 
@@ -59,11 +59,11 @@ describe('createTemplateRenderer', () => {
       },
     };
     const errorHandler = { enrichError: (e: Error) => e };
-    const renderer = createTemplateRenderer(
-      getState as unknown as () => TemplateState,
+    const renderer = createTemplateRenderer({
+      getState: getState as unknown as () => TemplateState,
       compiler,
-      errorHandler
-    );
+      errorHandler,
+    });
     await renderer.render({});
     expect(compileCalled).toBe(true);
   });
@@ -89,11 +89,11 @@ describe('createTemplateRenderer', () => {
     });
     const compiler = { safeCompile: async () => {} };
     const errorHandler = { enrichError: (e: Error) => e };
-    const renderer = createTemplateRenderer(
-      getState as unknown as () => TemplateState,
+    const renderer = createTemplateRenderer({
+      getState: getState as unknown as () => TemplateState,
       compiler,
-      errorHandler
-    );
+      errorHandler,
+    });
     await expect(renderer.render({})).rejects.toThrow(/Circular include/);
   });
 
@@ -118,11 +118,11 @@ describe('createTemplateRenderer', () => {
     });
     const compiler = { safeCompile: async () => {} };
     const errorHandler = { enrichError: (e: Error) => e };
-    const renderer = createTemplateRenderer(
-      getState as unknown as () => TemplateState,
+    const renderer = createTemplateRenderer({
+      getState: getState as unknown as () => TemplateState,
       compiler,
-      errorHandler
-    );
+      errorHandler,
+    });
     await renderer.render({});
     expect(renderingTemplates.has('test.html')).toBe(false);
   });

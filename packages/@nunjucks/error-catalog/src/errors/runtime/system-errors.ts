@@ -85,10 +85,26 @@ const EXEC_EXPRESSION_ERROR = createErrorDefinition({
   extraFrom: (groups: RegExpMatchArray) => ({ detail: groups[1] ?? '' }),
 });
 
+// WHY: RENDER_ERROR is the catalog-registered fallback for render-phase failures that
+// carry no specific error code (diagnostics normalization, error snapshots). Registering
+// it here keeps the literal single-sourced instead of re-declared ad hoc per consumer.
+const RENDER_ERROR = createErrorDefinition({
+  name: 'RENDER_ERROR',
+  message: 'Template rendering failed',
+  category: 'runtime_error',
+  causes: [
+    'An error escaped the per-expression recovery boundary during render',
+    'The underlying error carried no recognizable catalog code',
+  ],
+  fixComment:
+    'Inspect the error cause above — RENDER_ERROR is the generic fallback when no specific error code was captured.',
+});
+
 export {
   ASSERT_TYPE_ERROR,
   EXEC_EXPRESSION_ERROR,
   INVALID_ASSIGN_TARGET,
+  RENDER_ERROR,
   STREAM_ALREADY_CONSUMED,
   TIMEOUT,
   UNAVAILABLE_IN_ENV,

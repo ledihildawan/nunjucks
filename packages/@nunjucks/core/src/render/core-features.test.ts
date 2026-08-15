@@ -374,6 +374,52 @@ describe('whitespace control', () => {
     const result = await renderTemplate('  {%- if true %}yes{% endif %}');
     expect(result.trim()).toBe('yes');
   });
+  test('strip around variables {{- -}}', async () => {
+    expect(await renderTemplate('a\n  {{- x -}}\n  b', { x: 'X' })).toBe('aXb');
+  });
+
+  // WHY: trimBlocks/lstripBlocks were previously stored on lexer state but never
+  // consumed — the config was a silent no-op. These tests pin the restored semantics:
+  // trimBlocks removes ONE newline after a block end; lstripBlocks removes
+  // line-leading whitespace before a block tag only.
+  test('trimBlocks removes the first newline after %}', async () => {
+    expect(await renderTemplate('{% if true %}\nx\n{% endif %}', {}, { trimBlocks: true })).toBe(
+      'x\n'
+    );
+  });
+  test('trimBlocks handles CRLF newlines', async () => {
+    expect(
+      await renderTemplate('{% if true %}\r\nx{% endif %}', {}, { trimBlocks: true })
+    ).toBe('x');
+  });
+  test('trimBlocks does not affect variable tags', async () => {
+    expect(await renderTemplate('a{{ "x" }}\nb', {}, { trimBlocks: true })).toBe('ax\nb');
+  });
+  test('lstripBlocks strips line-leading whitespace before block tags', async () => {
+    expect(
+      await renderTemplate('div\n  {% if true %}x{% endif %}', {}, { lstripBlocks: true })
+    ).toBe('div\nx');
+  });
+  test('lstripBlocks keeps mid-line whitespace', async () => {
+    expect(
+      await renderTemplate('a {% if true %}x{% endif %}', {}, { lstripBlocks: true })
+    ).toBe('a x');
+  });
+  test('lstripBlocks does not affect variable tags', async () => {
+    expect(await renderTemplate('a\n  {{ "x" }}', {}, { lstripBlocks: true })).toBe('a\n  x');
+  });
+  test('trimBlocks and lstripBlocks combine', async () => {
+    expect(
+      await renderTemplate(
+        '{% if true %}\n  {% if true %}x{% endif %}\n  {% endif %}',
+        {},
+        { trimBlocks: true, lstripBlocks: true }
+      )
+    ).toBe('x');
+  });
+  test('both options default to off', async () => {
+    expect(await renderTemplate('{% if true %}\nx\n{% endif %}')).toBe('\nx\n');
+  });
 });
 
 describe('walrus operator', () => {
@@ -514,6 +560,34 @@ describe('match/when pattern matching', () => {
         s: 'hi',
       })
     ).toBe('hello');
+  });
+});
+
+describe('raw and verbatim blocks', () => {
+  test('raw block emits template syntax literally', async () => {
+    expect(await renderTemplate('{% raw %}{{ x }}{% endraw %}')).toBe('{{ x }}');
+  });
+
+  // WHY: regression — the raw tokenizer used to scan past {% endraw %} to end-of-input,
+  // so the close tag leaked into output whenever content followed the block.
+  test('raw block terminates at endraw with trailing content', async () => {
+    expect(await renderTemplate('A{% raw %}{{ x }}{% endraw %}B')).toBe('A{{ x }}B');
+  });
+
+  test('verbatim block terminates with trailing content', async () => {
+    expect(await renderTemplate('A{% verbatim %}{{ x }}{% endverbatim %}B')).toBe('A{{ x }}B');
+  });
+
+  test('nested raw blocks emit inner tags literally', async () => {
+    expect(
+      await renderTemplate('{% raw %}a{% raw %}b{% endraw %}c{% endraw %}tail')
+    ).toBe('a{% raw %}b{% endraw %}ctail');
+  });
+
+  test('mismatched end tag stays literal content', async () => {
+    expect(await renderTemplate('{% raw %}t{% endverbatim %}m{% endraw %}!')).toBe(
+      't{% endverbatim %}m!'
+    );
   });
 });
 

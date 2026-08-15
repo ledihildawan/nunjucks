@@ -1,6 +1,6 @@
 import { toAnsi, toText, toHtml, createFormatterState, buildSourceTrace, parseStackFrame, classifyAndBuildTitle, type SourceTrace } from '@nunjucks/error-renderer';
 import type { ProjectSourceContent } from './create-log-types.ts';
-import { normalizeLineBase, type LineBase } from '@nunjucks/error-catalog';
+import { normalizeLineBase, ERROR_CODES, type LineBase } from '@nunjucks/error-catalog';
 import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, OutputOptions, NormalizedErrorContext, NormalizedWarningContext } from './create-log-types.ts';
 import { resolveMessage, createErrorEnvelope } from './create-log-helpers.ts';
 
@@ -25,7 +25,7 @@ const resolveTraceLineBase = (err: TemplateError, isJsCaller: boolean | undefine
 };
 
 const adjustColnoForNullValue = (err: TemplateError): number | null | undefined => {
-  if (err.code !== 'NULL_VALUE' || !err.sourceContent || err.lineno == null) { return err.colno; }
+  if (err.code !== ERROR_CODES.NULL_VALUE || !err.sourceContent || err.lineno == null) { return err.colno; }
   const parentMatch = err.message.match(/on (?:null|undefined) '([^']+)'$/u);
   if (!parentMatch?.[1]) { return err.colno; }
   const lines = err.sourceContent.split('\n');

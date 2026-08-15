@@ -69,13 +69,6 @@ const errorRoutes: ErrorRoute[] = [
     desc: 'Filter not registered',
   },
   {
-    path: 'filter-error',
-    template: 'errors/filter-error.njk',
-    context: { value: 42, data: complexUserContext },
-    category: 'filter_error',
-    desc: 'Filter throws during execution',
-  },
-  {
     path: 'undefined-value',
     template: 'errors/undefined-value.njk',
     context: { product: null },

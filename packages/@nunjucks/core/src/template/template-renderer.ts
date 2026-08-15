@@ -4,6 +4,7 @@ import { createLog, normalizeErrorMetadata, prettifyError } from '@nunjucks/erro
 import { injectWarningsScript } from '@nunjucks/error-renderer';
 import { collectStream } from '@nunjucks/lib/collect-stream';
 import { type BlockLocation, createContext, createFrame, type Frame } from '@nunjucks/runtime';
+import { WARNINGS_CONTEXT_KEY } from '@nunjucks/shared';
 import { createRuntimeWithContext } from './runtime-factory';
 import type { ErrorWithLineInfo } from './template-error-handler';
 import type { TemplateState } from './types';
@@ -19,11 +20,13 @@ const toErrorWithLineInfo = (e: unknown): ErrorWithLineInfo =>
 const createRenderFrame = (parentFrame: Frame | undefined): Frame =>
   createFrame({ parent: parentFrame, isolateWrites: parentFrame !== undefined, topLevel: true });
 
-const createTemplateRenderer = (
-  getState: () => TemplateState,
-  compiler: { safeCompile: () => Promise<void> },
-  errorHandler: { enrichError: (e: ErrorWithLineInfo) => Error }
-) => {
+interface TemplateRendererOptions {
+  getState: () => TemplateState;
+  compiler: { safeCompile: () => Promise<void> };
+  errorHandler: { enrichError: (e: ErrorWithLineInfo) => Error };
+}
+
+const createTemplateRenderer = ({ getState, compiler, errorHandler }: TemplateRendererOptions) => {
   const { enrichError } = errorHandler;
 
   const wrapRenderError = (state: TemplateState, e: unknown): Error => {
@@ -84,10 +87,11 @@ const createTemplateRenderer = (
       }
       // WHY: root is now an async generator (Option B) — drain it to a string; ignore the returned context here (this path returns rendered output only).
       const { output: result } = await collectStream(rootGen);
-      if (runtime.__warnings__.length > 0 && state.env.opts.dev) {
+      const warnings = runtime[WARNINGS_CONTEXT_KEY];
+      if (warnings.length > 0 && state.env.opts.dev) {
         return (
           result +
-          injectWarningsScript(runtime.__warnings__ as Warning[], {
+          injectWarningsScript(warnings as Warning[], {
             dev: true,
             verbosity: 'medium',
           })

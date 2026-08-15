@@ -53,8 +53,17 @@ const escapeJsonForMarkup = (serialized: string): string =>
     .replaceAll('>', '\\u003e')
     .replaceAll('&', '\\u0026');
 
+const serializeJsonValue = (value: unknown): string => JSON.stringify(value) ?? 'undefined';
+
 const tojson = (value: unknown): Result<SafeString, TemplateError> =>
-  ok(safeString(escapeJsonForMarkup(JSON.stringify(value) ?? 'undefined')));
+  ok(
+    pipe(
+      value,
+      serializeJsonValue,
+      escapeJsonForMarkup,
+      safeString
+    )
+  );
 
 const DEFAULT_INDENT_WIDTH = 4;
 

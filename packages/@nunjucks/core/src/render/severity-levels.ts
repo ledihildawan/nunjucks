@@ -1,4 +1,5 @@
 import { ERROR_CODES } from '@nunjucks/error-catalog';
+import { readErrorCode } from '@nunjucks/lib';
 
 // WHY: severity determines how an error is displayed in the stream. BLOCK errors are structural/
 // security/system failures that take up a full visual block in the output. INLINE errors are
@@ -10,33 +11,24 @@ import { ERROR_CODES } from '@nunjucks/error-catalog';
 type ErrorSeverity = 'block' | 'inline';
 
 const BLOCK_ERROR_CODES: ReadonlySet<string> = new Set([
+  ERROR_CODES.ASSERT_TYPE_ERROR,
   ERROR_CODES.CIRCULAR_INCLUDE,
-  ERROR_CODES.TIMEOUT,
+  ERROR_CODES.DUPLICATE_BLOCK,
+  ERROR_CODES.EXEC_EXPRESSION_ERROR,
+  ERROR_CODES.FILE_NOT_FOUND,
+  ERROR_CODES.FILESYSTEM_ERROR,
+  ERROR_CODES.IMPORT_ERROR,
+  ERROR_CODES.INVALID_CONFIG,
+  ERROR_CODES.INVALID_INCLUDE,
+  ERROR_CODES.NO_SUPER_BLOCK,
+  ERROR_CODES.RENDER_ERROR,
+  ERROR_CODES.RESERVED_KEYWORD_CONTEXT,
   ERROR_CODES.SANDBOX_CODE_EXECUTION,
-  'ASSERT_TYPE_ERROR',
-  'INVALID_INCLUDE',
-  'UNDEFINED_BLOCK',
-  'UNKNOWN_BLOCK_RUNTIME',
-  'DUPLICATE_BLOCK',
-  'NO_SUPER_BLOCK',
-  'NO_SUPER_BLOCK_TEMPLATE',
-  'RESERVED_KEYWORD_CONTEXT',
-  'EXEC_EXPRESSION_ERROR',
-  'IMPORT_ERROR',
-  'FILESYSTEM_ERROR',
-  'FILE_NOT_FOUND',
-  'RENDER_ERROR',
-  'INVALID_CONFIG',
-  'TEMPLATE_SIZE_EXCEEDED',
+  ERROR_CODES.TEMPLATE_SIZE_EXCEEDED,
+  ERROR_CODES.TIMEOUT,
+  ERROR_CODES.UNDEFINED_BLOCK,
+  ERROR_CODES.UNKNOWN_BLOCK_RUNTIME,
 ]);
-
-const readErrorCode = (error: unknown): string | null => {
-  if (error === null || typeof error !== 'object') {
-    return null;
-  }
-  const code = (error as { code?: unknown }).code;
-  return typeof code === 'string' ? code : null;
-};
 
 const getSeverity = (error: unknown): ErrorSeverity => {
   const code = readErrorCode(error);

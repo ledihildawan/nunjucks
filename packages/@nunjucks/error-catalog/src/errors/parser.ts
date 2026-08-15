@@ -192,4 +192,4 @@ export const PARSER_ERRORS = {
   }),
 } as const;
 
-export type ParserErrorName = keyof typeof PARSER_ERRORS;
+

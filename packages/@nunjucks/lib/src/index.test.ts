@@ -1,8 +1,12 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
+import { err, escapeHtml, isKeyedObject, ok, readErrorCode } from './index.ts';
 
-describe('lib smoke', () => {
-  test('index exports something', async () => {
-    const lib = await import('./index.ts');
-    expect(Object.keys(lib).length).toBeGreaterThanOrEqual(0);
+describe('lib barrel', () => {
+  test('re-exports the result, guard, escape, and error-code primitives', () => {
+    expect(typeof ok).toBe('function');
+    expect(typeof err).toBe('function');
+    expect(typeof isKeyedObject).toBe('function');
+    expect(typeof escapeHtml).toBe('function');
+    expect(typeof readErrorCode).toBe('function');
   });
 });

@@ -1,3 +1,4 @@
+import { ERROR_CODES } from '@nunjucks/error-catalog';
 import type { CompoundAssignNode, Node, VariableDeclNode } from '@nunjucks/nodes';
 import { isArrayPattern, isObjectPattern, isSymbol } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
@@ -76,7 +77,7 @@ const compileVariableAssignment = (
       // WHY: the attached code lets the error funnel classify this throw as UNDEFINED_VARIABLE
       // (causes/fixCode/docs) instead of degrading to the generic RUNTIME_ERROR definition.
       compiler.emitLine(
-        `if (frame.lookup(${JSON.stringify(name)}) === undefined) { const referenceError = new ReferenceError(${JSON.stringify(referenceErrorMessage)}); referenceError.code = 'UNDEFINED_VARIABLE'; throw referenceError; }`
+        `if (frame.lookup(${JSON.stringify(name)}) === undefined) { const referenceError = new ReferenceError(${JSON.stringify(referenceErrorMessage)}); referenceError.code = ${JSON.stringify(ERROR_CODES.UNDEFINED_VARIABLE)}; throw referenceError; }`
       );
 
       const valueId = compiler.nextCompilerId();

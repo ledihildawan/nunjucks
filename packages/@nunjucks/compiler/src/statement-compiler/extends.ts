@@ -1,3 +1,4 @@
+import { ERROR_CODES } from '@nunjucks/error-catalog';
 import type { ExtendsNode, IncludeNode } from '@nunjucks/nodes';
 import { appendTarget, emitLineLocation } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
@@ -43,7 +44,7 @@ export const compileInclude = (
     compiler.compileExpression(node.template, frame);
     compiler.emitLine(';');
     compiler.emitLine(
-      `if(typeof ${tmplVar} !== 'string') { const err = new Error('template names must be a string'); err.code = 'INVALID_INCLUDE'; err.subject = ${tmplVar}; throw err; }`
+      `if(typeof ${tmplVar} !== 'string') { const err = new Error('template names must be a string'); err.code = ${JSON.stringify(ERROR_CODES.INVALID_INCLUDE)}; err.subject = ${tmplVar}; throw err; }`
     );
     const ignoreMissing = node.ignoreMissing ? 'true' : 'false';
     const includeChain = `{parentTmpl: ${compiler.getTemplateName()}, parentLineno: ${location.lineno + 1}, parentColno: ${location.colno + 1}}`;
@@ -51,6 +52,12 @@ export const compileInclude = (
       `let ${tmplVar}_template = await env.getTemplate({ name: ${tmplVar}, eagerCompile: false, includeChain: ${includeChain}, ignoreMissing: ${ignoreMissing} });`
     );
 
+    // WHY: env.getTemplate returns null (not a Template) for a missing source when
+    // ignoreMissing is set — the render call below must be guarded or the generated
+    // code dereferences null and surfaces a TypeError instead of skipping silently.
+    if (node.ignoreMissing) {
+      compiler.emitLine(`if (${tmplVar}_template !== null) {`);
+    }
     if (node.only) {
       compiler.emit(`let ${resultVar} = await ${tmplVar}_template.render({}, frame);`);
     } else if (node.with) {
@@ -68,6 +75,9 @@ export const compileInclude = (
       );
     }
     compiler.emitLine(`${appendTarget(compiler)}${resultVar};`);
+    if (node.ignoreMissing) {
+      compiler.emitLine('}');
+    }
   };
 
   if (compiler.streamErrorRecovery) {

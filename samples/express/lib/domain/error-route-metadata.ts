@@ -1,3 +1,4 @@
+import { ERROR_CODES } from '@nunjucks/error-catalog';
 import type { ErrorGroup } from './error-route-types.ts';
 
 // WHY: tier indicates which engine boundary caught the error — tier 1 is a recoverable inline
@@ -119,7 +120,7 @@ export const errorGroups: ErrorGroup[] = [
     items: [{ path: 'invalid-include', desc: 'Non-string template name for include' }],
   },
   {
-    name: 'RENDER_ERROR',
+    name: ERROR_CODES.RENDER_ERROR,
     tier: 'tier 2',
     items: [
       { path: 'sandbox-context-modify', desc: 'Cannot modify sandboxed context' },

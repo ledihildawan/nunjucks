@@ -7,7 +7,6 @@ export { PARSER_ERRORS } from './parser.ts';
 export { ERROR_DEFINITIONS, getError } from './registry.ts';
 export { RUNTIME_ERRORS } from './runtime/index.ts';
 export { SANDBOX_ERRORS } from './sandbox.ts';
-export type { SecurityError } from './security.ts';
 export { TEMPLATE_ERRORS } from './template.ts';
 export type {
   Classification,

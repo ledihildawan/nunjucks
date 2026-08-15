@@ -1,3 +1,4 @@
+import { ERROR_CODES } from '@nunjucks/error-catalog';
 import type { ExecNode } from '@nunjucks/nodes';
 import { emitLineLocation } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
@@ -14,7 +15,7 @@ export const compileExec = (
   compiler.emitLine(');');
   compiler.emitLine('} catch (e) {');
   compiler.emitLine('  if (e instanceof Error && !e.code) {');
-  compiler.emitLine("    e.code = 'EXEC_EXPRESSION_ERROR';");
+  compiler.emitLine(`    e.code = '${ERROR_CODES.EXEC_EXPRESSION_ERROR}';`);
   compiler.emitLine('  }');
   if (compiler.streamErrorRecovery) {
     compiler.emitLine(

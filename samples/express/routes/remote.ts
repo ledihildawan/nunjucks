@@ -10,14 +10,14 @@ const router: Router = express.Router();
 // the engine has no {% remote %} tag, so async composition is demonstrated honestly:
 // the template owns the layout, the browser owns fragment loading with loading/error branches.
 router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
-  sendTemplateResult(
+  sendTemplateResult({
     res,
     next,
-    await renderTemplate('remote.njk', {
+    result: await renderTemplate('remote.njk', {
       context: {},
       config: { dev: true, autoescape: true, views: VIEWS },
-    })
-  );
+    }),
+  });
 });
 
 router.get('/api/hello', (_req: Request, res: Response) => {

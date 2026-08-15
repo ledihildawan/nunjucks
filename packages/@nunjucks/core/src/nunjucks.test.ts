@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { nunjucks } from './index.ts';
@@ -86,8 +86,7 @@ describe('nunjucks factory', () => {
   test('factory-owned loader resolves file templates from views', async () => {
     // WHY: proves the factory creates and uses its OWN loader for the configured views path (not the
     // module-global cache).
-    const viewsDir = path.join(tmpdir(), `njk-factory-${Date.now()}`);
-    await mkdir(viewsDir, { recursive: true });
+    const viewsDir = await mkdtemp(path.join(tmpdir(), 'njk-factory-'));
     await writeFile(path.join(viewsDir, 'greet.njk'), 'Hello {{ name }}!');
     try {
       const njk = nunjucks({ views: viewsDir });

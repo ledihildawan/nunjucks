@@ -5,10 +5,12 @@
   "type": "module",
   "main": "main.ts",
   "scripts": {
+    "start": "bun run main.ts",
     "test": "bun test"
   },
   "dependencies": {
     "@nunjucks/core": "workspace:*",
+    "@nunjucks/error-catalog": "workspace:*",
     "@nunjucks/integrations": "workspace:*",
     "@nunjucks/lib": "workspace:*",
     "express": "^5.0.0",

@@ -32,8 +32,16 @@ title: Templates
 {{ foo["bar"] }}
 ```
 
-如果变量的值为 `undefined` 或 `null` 将不显示，引用到 undefined 或 null 对象也是如此 (如 `foo` 为 undefined，`{{ foo }}`, `{{
-foo.bar }}`, `{{ foo.bar.baz }}` 也不显示)。
+如果变量的值为 `undefined` 或 `null`，默认 (chainable) 模式下会显示字面量字符串
+`undefined`。引擎的 `undefined` 选项可以控制该行为：
+
+* `chainable`（默认）—— 显示 `undefined`，并允许链式访问（`a` 缺失时
+  `{{ a.b.c }}` 仍可继续）
+* `strict` —— 第一次访问未定义变量即抛出 `UNDEFINED_VARIABLE`
+* `debug` —— 渲染行为与 chainable 相同，但每次未定义访问都会发出警告
+* `default` —— 渲染行为与 chainable 相同
+
+可以使用空值合并运算符来提供后备值：`{{ nickname ?? username ?? "anonymous" }}`。
 
 ## 过滤器
 
@@ -157,7 +165,8 @@ Right side!
 
 `for` 可以遍历数组 (arrays) 和对象 (dictionaries)。
 
-> 如果你使用的自定义模板加载器为异步的可查看 [`asyncEach`](#asynceach)
+返回 Promise 的过滤器会被透明地等待 —— 普通的 `for` 循环配合异步过滤器
+无需任何改动即可使用，不需要特殊的循环标签。
 
 ```js
 var items = [{ title: "foo", id: 1 }, { title: "bar", id: 2}];
@@ -192,8 +201,6 @@ var food = {
 {% endfor %}
 ```
 
-[`dictsort`](http://jinja.pocoo.org/docs/templates/#dictsort) 过滤器可将对象排序 (*new in 0.1.8*)
-
 除此之外，Nunjucks 会将数组解开，数组内的值对应到变量 (*new in 0.1.8*)
 
 ```js
@@ -215,108 +222,70 @@ var points = [[0, 1, 2], [5, 6, 7], [12, 13, 14]];
 * `loop.first`: 是否第一个
 * `loop.last`: 是否最后一个
 * `loop.length`: 总数
+### component
 
-### asyncEach
-
-> 这个是适用于异步模板，请读[文档](api.html#asynchronous-support)。
-
-`asyncEach` 为 `for` 的异步版本，只有当使用[自定义异步模板加载器](#asynchronous)的时候才使用，否则请不要使用。异步过滤器和扩展也需要他。如果你在循环中使用了异步过滤器的话，Nunjucks就会在内部自动将循环转换成 `asyncEach`。
-
-`asyncEach` 和 `for` 的使用方式一致，但他支持循环的异步控制。将两者区分的原因是性能，大部分人使用同步模板，将 `for` 转换成原生的 for 语句会快很多。
-
-编译时 nunjuck 不用关心模板是如何加载的，所以无法决定 `include` 是同步或异步。这也是为什么Nunjucks无法自动将普通的循环语句转换成异步循环语句的原因，所以如果你要使用异步模板加载器的话，就需要使用 `asyncEach`。
-
-```js
-// If you are using a custom loader that is async, you need asyncEach
-var env = new nunjucks.Environment(AsyncLoaderFromDatabase, opts);
-```
-```jinja
-<h1>Posts</h1>
-<ul>
-{% asyncEach item in items %}
-  {% include "item-template.html" %}
-{% endeach %}
-</ul>
-```
-
-### asyncAll
-
-> 这个是适用于异步模板，请读[文档](api.html#asynchronous-support)。
-
-`asyncAll` 和 `asyncEach` 类似，但 `asyncAll` 会并行的执行，并且每项的顺序仍然会保留。除非使用异步的过滤器、扩展或加载器，否则不要使用。
-
-如果你写了一个 `lookup` 的过滤器用来从数据库获取一些文本，使用 `asyncAll` 可以并行渲染。
+`component` 定义可复用、可参数化的内容块 —— 是已移除的 `macro` 标签的替代品。
+在组件体内，`{{ children }}` 渲染调用方传入的主体，`{{ slot("name") }}` 渲染
+具名插槽：
 
 ```jinja
-<h1>Posts</h1>
-<ul>
-{% asyncAll item in items %}
-  <li>{{ item.id |> lookup }}</li>
-{% endall %}
-</ul>
-```
-
-如果 `lookup` 是一个异步的过滤器，那么可能会比较慢（如从磁盘获取些数据）。`asyncAll` 会减少执行的时间，他会并行执行所有的异步操作，当所有的操作完成后才会继续渲染页面。
-
-### macro
-
-宏 (`macro`) 可以定义可复用的内容，类似与编程语言中的函数，看下面的示例：
-
-```jinja
-{% macro field(name, value='', type='text') %}
+{% component field(name, type='text') %}
 <div class="field">
-  <input type="{{ type }}" name="{{ name }}"
-         value="{{ value |> escape }}" />
+  <input type="{{ type }}" name="{{ name }}" />
 </div>
-{% endmacro %}
+{% endcomponent %}
 ```
 
-现在 `field` 可以当作函数一样使用了：
+组件可以像普通函数一样调用（默认值和关键字参数均可用，见
+[关键字参数](#关键字参数)），也可以通过 `{% render %}` 携带主体调用：
 
 ```jinja
 {{ field('user') }}
 {{ field('pass', type='password') }}
+
+{% render box("My Box Title") %}
+  <p>This is the content inside the box.</p>
+{% endrender %}
 ```
 
-支持[关键字参数](#关键字参数)，通过链接查看具体使用方式。
+`{% render %}` 与 `{% endrender %}` 之间的所有内容会成为组件内的
+`children`；具名插槽在 render 主体中用 `{% slot name %}...{% endslot %}`
+填充，在组件体内用 `{{ slot("name") }}` 读取。在顶级作用域定义的组件会被
+导出，可以被其他模板 [import](#import)。
 
-还可以从其他模板 [import](#import) 宏，可以使宏在整个项目中复用。
+### := (海象运算符赋值)
 
-**重要**：如果你使用异步 API，请注意你 **不能** 在宏中做任何异步的操作，因为宏只是像函数一样被简单地调用。将来我们可能会提供一种异步的宏调用方式，但现在这么使用是不被支持的。
-
-### set
-
-`set` 可以设置和修改变量。
+`{% set %}` 标签已被移除。变量的声明和赋值改用海象运算符 `:=`，直接在表达式中完成 ——
+绑定时**不会输出**该值：
 
 ```jinja
 {{ username }}
-{% set username = "joe" %}
+{{ username := "joe" }}
 {{ username }}
 ```
 
-如果 `username` 初始化的时候为 "james', 最终将显示 "james joe"。
+如果 `username` 初始为 "james"，最终将显示 "james joe"。
 
-可以设置新的变量，并一起赋值。
-
-```jinja
-{% set x, y, z = 5 %}
-```
-
-如果在顶级作用域使用 `set`，将会改变全局的上下文中的值。如果只在某个作用域 (像是include或是macro) 中使用，则只会影响该作用域。
-
-同样地，你也可以使用区块赋值将一个区块的内容储存在一个变量中。
-
-它的语法和标准的`set`语法相似，只不过你不需要用`=`。区块中从头到`{% endset %}`之间的内容都会被捕获，并作为值来使用。
-
-在某些情境下，你可以用这种语法来替代宏：
+可以通过解构模式一次声明多个变量：
 
 ```jinja
-{% set standardModal %}
-    {% include 'standardModalData.html' %}
-{% endset %}
-
-<div class="js-modal" data-modal="{{standardModal |> e}}">
+{{ [x, y, z] := [1, 2, 3] }}
 ```
+
+在顶级作用域赋值会修改全局上下文中的值；在 `{% scope %}` 或 `for` 等作用域块内
+赋值则只影响该作用域 —— 可以用 `{% scope %}` 来刻意隔离声明：
+
+```jinja
+{% scope %}
+  {{ answer := 42 }}
+  inside: {{ answer }}
+{% endscope %}
+```
+
+只有普通变量和解构模式是合法的赋值目标。对成员表达式赋值（例如
+`{{ obj.__proto__ := {} }}`）会在解析阶段被 `WALRUS_TARGET_INVALID` 拒绝，
+因此无法通过模板赋值进行原型污染。区块捕获赋值（`{% set x %}...{% endset %}`）
+已随 `set` 一并移除 —— 请使用 [`{% capture %}`](#capture) 来捕获可复用的输出。
 
 ### extends
 
@@ -401,25 +370,26 @@ The name of the item is: {{ item.name }}
 
 ### import
 
-`import` 可加载不同的模板，可使你操作模板输出的数据，模板将会输出宏 (macro) 和在顶级作用域进行的赋值 (使用 [`set`](#set))。
+`import` 可加载不同的模板，可使你操作模板导出的数据。在模板顶级作用域定义的
+[组件 (component)](#component) 会被导出，因此可以在其他模板中复用。（海象声明
+是 frame 级作用域，不会被导出。）
 
 被 import 进来的模板没有当前模板的上下文，所以无法使用当前模板的变量，
 
 创建一个叫 `forms.html` 如下所示
 
 ```jinja
-{% macro field(name, value='', type='text') %}
+{% component field(name, type='text') %}
 <div class="field">
-  <input type="{{ type }}" name="{{ name }}"
-         value="{{ value |> escape }}" />
+  <input type="{{ type }}" name="{{ name }}" />
 </div>
-{% endmacro %}
+{% endcomponent %}
 
-{% macro label(text) %}
+{% component label(text) %}
 <div>
   <label>{{ text }}</label>
 </div>
-{% endmacro %}
+{% endcomponent %}
 ```
 
 我们可以 import 这个模板并将模板的输出绑定到变量 `forms` 上，然后就可以使用这个变量了：
@@ -437,12 +407,12 @@ The name of the item is: {{ item.name }}
 也可以使用 `from import` 从模板中 import 指定的值到当前的命名空间：
 
 ```jinja
-{% from "forms.html" import input, label as description %}
+{% from "forms.html" import field, label as description %}
 
 {{ description('Username') }}
-{{ input('user') }}
+{{ field('user') }}
 {{ description('Password') }}
-{{ input('pass', type='password') }}
+{{ field('pass', type='password') }}
 ```
 
 `import` 可以接受任意表达式，只要它最终返回一个字符串或是模板所编译成的对象: `{% import name + ".html" as obj %}`.
@@ -465,27 +435,65 @@ may the force be with you
 {% endfilter %}
 ```
 
-切记：你不能在这些区块中进行任何异步操作。
+### capture
 
-### call
-
-`call`区块允许你使用标签之间的内容来调用一个宏。这在你需要给宏传入大量内容时是十分有用的。在宏中，你可以通过`caller()`来获取这些内容。
+`capture` 将区块的渲染输出缓冲到一个变量中 —— 是已移除的区块捕获赋值
+（`{% set x %}...{% endset %}`）的替代品，也是
+[组件 (component)](#component) 的一次性替代方案：
 
 ```jinja
-{% macro add(x, y) %}
-{{ caller() }}: {{ x + y }}
-{% endmacro%}
+{% capture greeting %}
+  Hello {{ name }}!
+{% endcapture %}
 
-{% call add(1, 2) -%}
-The result is
-{%- endcall %}
+{{ greeting |> trim }}
 ```
 
-上面的例子将会输出"The result is: 3"。
+捕获到的值是普通字符串，因此可以接过滤器使用，也可以在任何能使用变量的
+地方复用。
+
+### switch
+
+`switch` 根据值进行分发，支持 `case` 分支、可选的 `default`，以及空 case
+的贯穿 (fall-through)：
+
+```jinja
+{% switch status %}
+  {% case "active" %}<span class="ok">Active</span>
+  {% case "inactive" %}<span class="off">Inactive</span>
+  {% default %}<span>Unknown</span>
+{% endswitch %}
+```
+
+case 标签接受任意表达式（`{% case 5 + 5 %}`）。
+
+### match
+
+`match` 是面向模式的分发：分支可将匹配值绑定到名称，用 `if` 守卫进一步
+筛选，`_` 作为通配符：
+
+```jinja
+{% match statusCode %}
+  {% when 200 %}OK
+  {% when code if code >= 500 %}Server error ({{ code }})
+  {% when _ %}Other
+{% endmatch %}
+```
+
+### exec
+
+`exec` 执行一条带副作用的表达式语句（方法调用、变更），目的是其副作用而非
+返回值 —— 刻意不使用会输出内容的 `{{ }}` 插值：
+
+```jinja
+{% exec items.push("item1") %}
+{% exec name.append("!") %}
+<p>{{ items |> join(",") }}</p>
+```
 
 ## 关键字参数
 
-jinja2 使用 Python 的关键字参数，支持函数，过滤器和宏。Nunjucks 会通过一个调用转换 (calling convention) 来支持。
+jinja2 使用 Python 的关键字参数，支持函数和过滤器。Nunjucks 会通过一个调用转换 (calling convention) 来支持。
 
 关键字参数如下：
 
@@ -501,18 +509,18 @@ foo(1, 2, { bar: 3, baz: 4})
 
 因为这使一个标准的调用转换，所以适用于所有的符合预期的函数和过滤器。查看 [API 章节](api#Keyword-Arguments)获得更多信息。
 
-定义宏的时候也可以使用关键字参数，定义参数值时可设置默认值。Nunjucks 会自动将关键字参数与宏里定义的值做匹配。
+定义[组件 (component)](#component) 的时候也可以使用关键字参数，定义参数值时可设置默认值。Nunjucks 会自动将关键字参数与组件里定义的值做匹配。
 
 ```jinja
-{% macro foo(x, y, z=5, w=6) %}
+{% component foo(x, y, z=5, w=6) %}
 {{ x }}, {{ y }}, {{ z }}, {{ w}}
-{% endmacro %}
+{% endcomponent %}
 
 {{ foo(1, 2) }}        -> 1, 2, 5, 6
 {{ foo(1, 2, w=10) }}  -> 1, 2, 5, 10
 ```
 
-在宏中还可以混合使用位置参数 (positional arguments) 和关键字参数。如示例，你可以将位置参数用作关键字参数：
+在组件中还可以混合使用位置参数 (positional arguments) 和关键字参数。如示例，你可以将位置参数用作关键字参数：
 
 ```jinja
 {{ foo(20, y=21) }}     -> 20, 21, 5, 6
@@ -552,6 +560,19 @@ foo(1, 2, { bar: 3, baz: 4})
 ```
 
 上面准确的输出为 "12345"，`-%}` 会去除标签右侧的空白字符，`{%-` 会去除标签之前的空白字符。
+
+变量也支持同样的语法：`{{-` 去除变量之前的空白字符，`-}}` 去除变量之后的空白字符。
+
+另有两个引擎选项可以全局自动化该控制（默认均关闭）：
+
+* `trimBlocks: true` —— 去除每个区块结束标签（`%}`）后的**一个**换行符，
+  不影响变量标签
+* `lstripBlocks: true` —— 去除区块开始标签（`{%`）所在行行首的空格/制表符，
+  仅当该行之前没有其他内容时生效
+
+```js
+nunjucks({ trimBlocks: true, lstripBlocks: true });
+```
 
 ## 表达式
 
@@ -638,32 +659,56 @@ Examples:
 {{ foo(1, 2, 3) }}
 ```
 
-### 正则表达式
+### 模板字符串 (Template Literals)
 
-你可以像在JavaScript中一样创建一个正则表达式:
+模板中**不支持**正则表达式字面量（`r/.../` 或 `/.../`）。需要拼接字符串时，
+可以使用与 JavaScript 完全一致的反引号模板字符串和 `${...}` 插值：
 
 ```jinja
-{{ /^foo.*/ }}
-{{ /bar$/g }}
+{{ `Hello ${name}, you have ${count} items` }}
 ```
 
-正则表达式所支持的标志如下。查阅[Regex on MDN](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/RegExp)以获取更多信息。
+正则仍然可以通过渲染上下文传入的值使用 —— 从宿主传入已编译的 `RegExp`，
+配合 `matches` 测试使用：
 
-* `g`: 应用到全局
-* `i`: 不区分大小写
-* `m`: 多行模式
-* `y`: 粘性支持（sticky）
+```jinja
+{% if code is matches(pattern) %}
+  valid
+{% endif %}
+```
+
+### 测试 (Tests)
+
+`is` 运算符对值应用谓词；用 `is not` 取反。测试可用于 `if` 块和
+[内联 if 表达式](#if-表达式)：
+
+```jinja
+{% if count is odd %}odd{% endif %}
+{% if name is not defined %}anonymous{% endif %}
+{{ "cheap" if price is between(0, 100) else "expensive" }}
+```
+
+内置谓词按类别如下：
+
+* **存在性** — `defined`、`undefined`、`null`、`none`、`truthy`、`falsy`
+* **布尔** — `true`、`false`、`boolean`
+* **数值** — `odd`、`even`、`positive`、`negative`、`zero`、`finite`、`nan`、`divisibleby(n)`、`between(low, high)`
+* **原始类型** — `string`、`number`、`integer`、`float`、`bigint`、`symbol`
+* **字符串** — `empty`、`blank`、`lower`、`upper`、`alpha`、`alphanumeric`、`numeric`、`startswith(s)`、`endswith(s)`、`contains(x)`、`matches(re)`
+* **集合** — `array`、`object`、`iterable`、`asynciterable`、`typedarray`、`buffer`、`Map`、`Set`
+* **对象类型** — `function`、`asyncfunction`、`Date`、`RegExp`、`Error`、`URL`、`Promise`
+* **相等 / 包含** — `sameas(x)`（严格 `===`）、`equalto(x)`（深度 JSON 相等）、`has(key)`、`hasown(key)`
+* **HTML** — `safe`（是 SafeString）、`escaped`（不是 SafeString）
 
 ## 自动转义 (Autoescaping)
 
-如果在环境变量中设置了 autoescaping，所有的输出都会自动转义，但可以使用 `safe` 过滤器，Nunjucks 就不会转义了。
+如果在环境变量中设置了 autoescaping，所有的输出都会自动转义：
 
 ```jinja
-{{ foo }}           // &lt;span%gt;
-{{ foo |> safe }}    // <span>
+{{ foo }}           // &lt;span&gt;
 ```
 
-如果未开启 autoescaping，所有的输出都会如实输出，但可以使用 `escape` 过滤器来转义。
+如果未开启 autoescaping，所有的输出都会如实输出，但可以使用 `escape` 过滤器 (别名 `e`) 来转义。
 
 ```jinja
 {{ foo }}           // <span>
@@ -672,50 +717,35 @@ Examples:
 
 ## 全局函数 (Global Functions)
 
-以下为一些内置的全局函数
+原版 nunjucks 的 `range`、`cycler` 和 `joiner` 工具已被移除。模板可见的全局变量是一组
+精选并冻结（frozen）的标准内置对象，普通渲染和沙箱渲染中均可用：
 
-### range([start], stop, [step])
+* `JSON` (`parse`、`stringify`)
+* `Math` (`abs`、`ceil`、`floor`、`round`、`min`、`max`、`PI` 等)
+* `Object` (`keys`、`values`、`entries`、`freeze` 等)
+* `Array` (`isArray`、`from`、`of` 等)
+* `Number` (`isInteger`、`isFinite`、`parseFloat` 等)
+* `String` (`fromCharCode` 等)
+* `Date` (`now`、`isDate` 等)
+* `Promise` (`resolve`、`all`、`allSettled`、`race`、`any`)
+* `ArrayBuffer` (`isView`)
+* `version` —— 引擎版本号
 
-如果你需要遍历固定范围的数字可以使用 `range`，`start` (默认为 0) 为起始数字，`stop` 为结束数字，`step` 为间隔 (默认为 1)。
+遍历固定次数可以通过可迭代协议实现，而不需要 `range` 工具：
 
 ```jinja
-{% for i in range(0, 5) -%}
+{% for i in [0, 1, 2, 3, 4] -%}
   {{ i }},
 {%- endfor %}
 ```
 
-上面输出 `0,1,2,3,4`.
-
-### cycler(item1, item2, ...itemN)
-
-`cycler` 可以循环调用你指定的一系列的值。
-
-```jinja
-{% set cls = cycler("odd", "even") %}
-{% for row in rows %}
-  <div class="{{ cls.next() }}">{{ row.name }}</div>
-{% endfor %}
-```
-
-上面的例子中奇数行的 class 为 "odd"，偶数行的 class 为 "even"。你可以使用`current`属性来获取当前项（在上面的例子中对应`cls.current`）。
-
-### joiner([separator])
-
-当合并多项的时候，希望在他们之间又分隔符 (像逗号)，但又不希望第一项也输出。`joiner` 将输出分割符 (默认为 ",") 除了第一次调用。
-
-```jinja
-{% set comma = joiner() %}
-{% for tag in tags -%}
-  {{ comma() }} {{ tag }}
-{%- endfor %}
-```
-
-如果 `tags` 为 `["food", "beer", "dessert"]`, 上面将输出 `food, beer, dessert`。
+自定义全局变量（包括按你的应用需求重新实现 `range`/`joiner`）可以通过引擎的
+`globals` 配置注册。
 
 ## 内置的过滤器
 
-Nunjucks已经实现了jinja中的大部分过滤器，同时也新增了一些属于自己的过滤器。
-我们需要为这些过滤器编写文档。下面是一部分过滤器的文档，其他的你可以点击链接查看jinja上的文档。
+引擎提供一组精选的 jinja 兼容过滤器（外加少量自有过滤器，如 `sanitize`）。
+以下文档中的过滤器均为实际已实现；原版 nunjucks 中未列出的过滤器已被移除：
 
 ### default(value, default, [boolean])
 
@@ -729,60 +759,60 @@ Nunjucks已经实现了jinja中的大部分过滤器，同时也新增了一些�
   返回`default`。如果你仍旧希望保持原来版本的表现的话，你可以给`boolean`传入`true`，或是
   直接使用`value or default`。**
 
-### sort(arr, reverse, caseSens, attr)
+### sort(values, reversed, caseSens, attr)
 
-用JavaScript中的`arr.sort`函数排序`arr`。如果`reverse`为true，则会返回相反的
-排序结果。默认状态下排序不会区分大小写，但你可以将`caseSens`设置为true来让排序
-区分大小写。我们可以用`attr`来指定要比较的属性。
+用JavaScript的排序函数对 `values` 排序。如果 `reversed` 为true，则会返回相反的
+排序结果。默认状态下排序不会区分大小写，但你可以将 `caseSens` 设置为true来让排序
+区分大小写。我们可以用 `attr` 来指定要比较的属性。
 
-### striptags (value, [preserve_linebreaks])
+### sanitize(value, [config])
 
-类似于jinja中的[striptags](http://jinja.pocoo.org/docs/templates/#striptags).
-如果`preserve_linebreaks`为false（同时也是默认值），则会移去SGML/XML标签并用一个空格符
-替换临近的、连续的空白符号。如果`preserve_linebreaks`为true，则会尝试保留临近的空白符号。
-如果你希望使用管道操作符进行类似于`{{ text |> striptags |> nl2br }}`这样的操作时，你就会
-需要用到后一种。否则你还是应该使用默认的用法。
+使用 DOMPurify 清洗 HTML 片段并返回 `SafeString`，因此清洗后的标记不会被
+自动转义二次转义。可选的配置对象会透传给 DOMPurify（例如扩展允许的标签）：
 
-### dump (object)
+```jinja
+{{ userBio |> sanitize({ ALLOWED_TAGS: ['b', 'i', 'p'] }) }}
+```
 
-在一个对象上调用`JSON.stringify`，并将结果输出到模板上。这在调试时很有用：`{{ foo |> dump }}`。
+这是安全渲染用户提供的 HTML 的官方支持方式 —— 与已移除的 `striptags` 不同，
+它会保留标记中安全的子集，而不是去掉所有标签。
+
+### tojson(value)
+
+将值序列化为 JSON 并返回 `SafeString`。`<`、`>` 和 `&` 会被转义成
+`\u003c` 形式的序列，因此值中的字面 `</script>` 无法跳出 `<script>` 上下文，
+且结果不会被自动转义二次转义。`undefined` 会序列化为字符串 `undefined`。
+该过滤器取代了已移除的 `dump`，用于在模板中内嵌数据：
+
+```jinja
+{{ data |> tojson }}
+```
 
 ### 其他过滤器
 
+以下为引擎实际内置的其余过滤器（文档同 jinja）：
+
 * [abs](http://jinja.pocoo.org/docs/templates/#abs)
-* [batch](http://jinja.pocoo.org/docs/templates/#batch)
 * [capitalize](http://jinja.pocoo.org/docs/templates/#capitalize)
-* [center](http://jinja.pocoo.org/docs/templates/#center)
-* [dictsort](http://jinja.pocoo.org/docs/templates/#dictsort)
 * [escape](http://jinja.pocoo.org/docs/templates/#escape) (简写为`e`)
-* [float](http://jinja.pocoo.org/docs/templates/#float)
 * [first](http://jinja.pocoo.org/docs/templates/#first)
 * [groupby](http://jinja.pocoo.org/docs/templates/#groupby)
 * [indent](http://jinja.pocoo.org/docs/templates/#indent)
-* [int](http://jinja.pocoo.org/docs/templates/#int)
 * [join](http://jinja.pocoo.org/docs/templates/#join)
 * [last](http://jinja.pocoo.org/docs/templates/#last)
 * [length](http://jinja.pocoo.org/docs/templates/#length)
-* [list](http://jinja.pocoo.org/docs/templates/#list)
 * [lower](http://jinja.pocoo.org/docs/templates/#lower)
-* [random](http://jinja.pocoo.org/docs/templates/#random)
-* [rejectattr](http://jinja.pocoo.org/docs/templates/#rejectattr) (只接受单个参数)
 * [replace](http://jinja.pocoo.org/docs/templates/#replace) (第一个参数也可以接受
   JavaScript中的正则表达式)
 * [reverse](http://jinja.pocoo.org/docs/templates/#reverse)
 * [round](http://jinja.pocoo.org/docs/templates/#round)
-* [safe](http://jinja.pocoo.org/docs/templates/#safe)
-* [selectattr](http://jinja.pocoo.org/docs/templates/#selectattr) (只接受单个参数)
 * [slice](http://jinja.pocoo.org/docs/templates/#slice)
-* [string](http://jinja.pocoo.org/docs/templates/#string)
 * [sum](http://jinja.pocoo.org/docs/dev/templates/#sum)
 * [title](http://jinja.pocoo.org/docs/templates/#title)
 * [trim](http://jinja.pocoo.org/docs/templates/#trim)
 * [truncate](http://jinja.pocoo.org/docs/templates/#truncate)
 * [upper](http://jinja.pocoo.org/docs/templates/#upper)
 * [urlencode](http://jinja.pocoo.org/docs/templates/#urlencode)
-* [urlize](http://jinja.pocoo.org/docs/templates/#urlize)
-* [wordcount](http://jinja.pocoo.org/docs/templates/#wordcount)
 
 你也可以直接[看代码](https://github.com/mozilla/nunjucks/blob/master/nunjucks/src/filters.js)。
 

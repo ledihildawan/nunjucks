@@ -1,6 +1,7 @@
 import { collectString } from '@nunjucks/lib/collect-stream';
 import { fromIterator } from '@nunjucks/lib/from-iterator';
 import { nullishCoalesce } from '@nunjucks/lib/nullish-coalesce';
+import { WARNINGS_CONTEXT_KEY } from '@nunjucks/shared';
 import { keys } from 'remeda';
 import { awaitValue } from './await-value.ts';
 import { runTest } from './builtin-predicates.ts';
@@ -57,7 +58,7 @@ const createRenderRuntime = (options?: RenderRuntimeOptions) => ({
   runFilter,
   ...(options
     ? {
-        __warnings__: [] as unknown[],
+        [WARNINGS_CONTEXT_KEY]: [] as unknown[],
         logContext: {
           templateName: options.templateName ?? 'inline',
           phase: 'render' as const,

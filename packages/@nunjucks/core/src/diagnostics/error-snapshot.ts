@@ -1,3 +1,4 @@
+import { ERROR_CODES } from '@nunjucks/error-catalog';
 import type { normalizeErrorMetadata } from '@nunjucks/error-formatter';
 import { isKeyedObject, MATCH_ANY_RE } from '@nunjucks/lib';
 
@@ -55,7 +56,7 @@ const buildErrorDef = (
   metadata: ReturnType<typeof normalizeErrorMetadata>,
   resolved: ReturnType<typeof resolveErrorProps>
 ) => ({
-  name: metadata.code ?? 'RENDER_ERROR',
+  name: metadata.code ?? ERROR_CODES.RENDER_ERROR,
   message: () => metadata.message,
   pattern: MATCH_ANY_RE,
   causes: resolved.resolvedCauses,

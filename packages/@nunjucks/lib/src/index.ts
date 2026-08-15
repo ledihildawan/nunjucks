@@ -1,4 +1,5 @@
 export * from './type-guards.ts';
+export * from './read-error-code.ts';
 export * from './gensym.ts';
 export * from './result.ts';
 export * from './pipe-helpers.ts';

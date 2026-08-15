@@ -61,11 +61,13 @@ const ownEnumerableKeys = (value: unknown): string[] => {
         try {
           return Object.getOwnPropertyDescriptor(value, key)?.enumerable === true;
         } catch {
+          // WHY: hostile objects (Proxy traps) may throw on descriptor access — treat as non-enumerable.
           return false;
         }
       })
     ) as string[];
   } catch {
+    // WHY: Reflect.ownKeys itself can be trapped — a throwing trap yields an empty key set.
     return [];
   }
 };

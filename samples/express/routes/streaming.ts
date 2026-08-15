@@ -38,7 +38,7 @@ router.get('/stream', async (req: Request, res: Response, next: NextFunction) =>
     timeoutMs: 10000,
     maxOutputSize: 2 * 1024 * 1024,
     onError: (err, phase) => {
-      console.log(`[stream] ${phase} error: ${err.message}`);
+      console.error(`[stream] ${phase} error: ${err.message}`);
     },
     onComplete: (stats) => {
       console.log(
@@ -79,7 +79,7 @@ router.get('/stream-api', async (req: Request, res: Response, next: NextFunction
   await apiNjk.pipeRenderStream(streamResult, res, {
     signal: createDisconnectSignal(req, res),
     onError: (err, phase) => {
-      console.log(`[stream-api] ${phase} error: ${err.message}`);
+      console.error(`[stream-api] ${phase} error: ${err.message}`);
     },
     onComplete: (stats) => {
       console.log(
@@ -106,7 +106,7 @@ router.get('/stream-block-error', async (req: Request, res: Response, next: Next
     timeoutMs: 10000,
     maxOutputSize: 2 * 1024 * 1024,
     onError: (err, phase) => {
-      console.log(`[stream-block-error] ${phase} error: ${err.message}`);
+      console.error(`[stream-block-error] ${phase} error: ${err.message}`);
     },
     onComplete: (stats) => {
       console.log(

@@ -32,4 +32,35 @@ describe('tokenizeBlockEnd', () => {
     const r = tokenizeBlockEnd({ ...createState('-%}'), inCode: false });
     expect(r?.token.stripRight).toBe(true);
   });
+
+  test('returns null for non-block-end', () => {
+    expect(tokenizeBlockEnd({ ...createState('abc'), inCode: false })).toBeNull();
+  });
+});
+
+describe('tokenizeBlockEnd trimBlocks', () => {
+  test('skips one newline after %}', () => {
+    const r = tokenizeBlockEnd({ ...createState('%}\nx'), inCode: false, trimBlocks: true });
+    expect(r?.state.index).toBe('%}\n'.length);
+  });
+
+  test('skips a CRLF newline after %}', () => {
+    const r = tokenizeBlockEnd({ ...createState('%}\r\nx'), inCode: false, trimBlocks: true });
+    expect(r?.state.index).toBe('%}\r\n'.length);
+  });
+
+  test('keeps a bare CR that is not a CRLF newline', () => {
+    const r = tokenizeBlockEnd({ ...createState('%}\rx'), inCode: false, trimBlocks: true });
+    expect(r?.state.index).toBe('%}'.length);
+  });
+
+  test('does not skip when no newline follows', () => {
+    const r = tokenizeBlockEnd({ ...createState('%} x'), inCode: false, trimBlocks: true });
+    expect(r?.state.index).toBe('%}'.length);
+  });
+
+  test('does not skip when trimBlocks is off', () => {
+    const r = tokenizeBlockEnd({ ...createState('%}\nx'), inCode: false });
+    expect(r?.state.index).toBe('%}'.length);
+  });
 });

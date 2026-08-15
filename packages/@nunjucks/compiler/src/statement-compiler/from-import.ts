@@ -1,3 +1,4 @@
+import { ERROR_CODES } from '@nunjucks/error-catalog';
 import type { FromImportNode, Node } from '@nunjucks/nodes';
 import { isPair } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
@@ -42,7 +43,7 @@ const compileImportedName = ({
   // WHY: the attached code lets the error funnel classify this throw as IMPORT_ERROR
   // (causes/fixCode/docs) instead of degrading to the generic RUNTIME_ERROR definition.
   compiler.emitLine(
-    `const importError = new Error('Cannot import ' + ${JSON.stringify(name)} + ' from module'); importError.code = 'IMPORT_ERROR'; importError.subject = ${JSON.stringify(name)}; throw importError;`
+    `const importError = new Error('Cannot import ' + ${JSON.stringify(name)} + ' from module'); importError.code = '${ERROR_CODES.IMPORT_ERROR}'; importError.subject = ${JSON.stringify(name)}; throw importError;`
   );
   compiler.emitLine('}');
 

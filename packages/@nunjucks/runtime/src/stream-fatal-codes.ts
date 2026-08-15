@@ -1,5 +1,5 @@
 import { ERROR_CODES } from '@nunjucks/error-catalog';
-import { readObject, readString } from '@nunjucks/lib';
+import { readErrorCode } from '@nunjucks/lib';
 
 // WHY: error codes that MUST abort the stream even when streamErrorRecovery is enabled.
 // These are security / structural / system failures where continuing to render would be
@@ -12,11 +12,6 @@ const FATAL_STREAM_CODES: ReadonlySet<string> = new Set([
   ERROR_CODES.CIRCULAR_INCLUDE,
   ERROR_CODES.TIMEOUT,
 ]);
-
-const readErrorCode = (error: unknown): string | null => {
-  const source = readObject(error);
-  return readString(source.code);
-};
 
 const isFatalStreamError = (error: unknown): boolean => {
   const code = readErrorCode(error);

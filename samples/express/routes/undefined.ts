@@ -1,6 +1,6 @@
 import type { Result } from '@nunjucks/lib';
 import express, { type NextFunction, type Request, type Response, type Router } from 'express';
-import { escapeHtml } from '../lib/domain/error-route-utils.ts';
+import { escapeHtml } from '@nunjucks/lib';
 import { renderDemoTemplate } from '../lib/domain/render-template.ts';
 
 const router: Router = express.Router();

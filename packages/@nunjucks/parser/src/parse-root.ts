@@ -36,8 +36,8 @@ const parseUntilBlocks = (
 
 const LEADING_WHITESPACE_RE = /^\s*/;
 const TRAILING_WHITESPACE_RE = /\s*$/;
-const RAW_OPEN_TAG_RE = /^({%\s*raw\s*%})/;
-const RAW_CLOSE_TAG_RE = /({%\s*endraw\s*%})$/;
+const RAW_OPEN_TAG_RE = /^({%\s*(?:raw|verbatim)\s*%})/;
+const RAW_CLOSE_TAG_RE = /({%\s*(?:endraw|endverbatim)\s*%})$/;
 
 const shouldStripTrailingWhitespace = (nextTok: Token, parserContext: ParserContext): boolean => {
   if (!nextTok) {

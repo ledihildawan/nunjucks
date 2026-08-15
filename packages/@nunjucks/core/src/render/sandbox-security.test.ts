@@ -39,22 +39,22 @@ describe('sandbox security - prototype pollution', () => {
     expect(err.code).toBe('SANDBOX_ACCESS');
   });
 
-  test('__proto__ setting throws in sandbox mode', async () => {
-    const err = (await renderTemplate(
-      '{% set obj.__proto__ = {} %}',
-      { obj: {} },
-      { sandbox: true, dev: true }
-    ).catch((e) => e)) as TemplateError;
-    expect(err.code).toBeTruthy();
+  // WHY: {% set %} is gone — assignment uses the walrus `:=`, which only accepts
+  // symbol/pattern targets (parseWalrusAssignment rejects member lookups with
+  // WALRUS_TARGET_INVALID). Prototype-mutation via assignment is therefore
+  // unrepresentable at the template level; these tests pin that guard.
+  test('walrus assignment to __proto__ member is rejected at parse time', async () => {
+    const err = (await renderTemplate('{{ obj.__proto__ := {} }}', { obj: {} }, {}).catch(
+      (e) => e
+    )) as TemplateError;
+    expect(err.code).toBe('WALRUS_TARGET_INVALID');
   });
 
-  test('prototype setting throws in sandbox mode', async () => {
-    const err = (await renderTemplate(
-      '{% set obj.prototype = {} %}',
-      { obj: {} },
-      { sandbox: true, dev: true }
-    ).catch((e) => e)) as TemplateError;
-    expect(err.code).toBeTruthy();
+  test('walrus assignment to prototype member is rejected at parse time', async () => {
+    const err = (await renderTemplate('{{ obj.prototype := {} }}', { obj: {} }, {}).catch(
+      (e) => e
+    )) as TemplateError;
+    expect(err.code).toBe('WALRUS_TARGET_INVALID');
   });
 });
 

@@ -14,6 +14,7 @@
     "./is-digit": "./src/is-digit.ts",
     "./gensym": "./src/gensym.ts",
     "./type-guards": "./src/type-guards.ts",
+    "./read-error-code": "./src/read-error-code.ts",
     "./escape": "./src/escape.ts",
     "./slice": "./src/slice.ts",
     "./path-security": "./src/path-security.ts",

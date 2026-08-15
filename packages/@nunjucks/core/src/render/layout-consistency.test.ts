@@ -1,4 +1,4 @@
-﻿import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { getError } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import { createLog, formatError } from '@nunjucks/error-formatter';
@@ -25,7 +25,7 @@ const renderTemplate = async (
 describe('error layout consistency', () => {
   test('all sections use text-label class for consistency', async () => {
     const err = (await renderTemplate('{{ missing }}', {}).catch((e) => e)) as TemplateError;
-    const html = formatError(err, { format: 'html', verbosity: 'full' });
+    const html = formatError(err, { format: 'html', verbosity: 'full', dev: true });
 
     const textLabels = html.match(/class="text-label"/g);
     expect(textLabels).toBeTruthy();
@@ -49,7 +49,7 @@ describe('error layout consistency', () => {
 
   test('html structure has consistent section ordering', async () => {
     const err = (await renderTemplate('{{ missing }}', {}).catch((e) => e)) as TemplateError;
-    const html = formatError(err, { format: 'html', verbosity: 'full' });
+    const html = formatError(err, { format: 'html', verbosity: 'full', dev: true });
 
     const causesIdx = html.indexOf('h-causes');
     const fixIdx = html.indexOf('h-fix');
@@ -70,7 +70,7 @@ describe('error layout consistency', () => {
         lineBase: 'zero' as const,
       },
     }) as TemplateError;
-    const html = formatError(err, { format: 'html', verbosity: 'full' });
+    const html = formatError(err, { format: 'html', verbosity: 'full', dev: true });
 
     expect(html).toContain('docs-inline');
     expect(html).toContain('templating.html#variables');
