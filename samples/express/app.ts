@@ -95,7 +95,13 @@ const createApp = (): Express => {
     return loggableError;
   };
 
-  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  app.use((err: Error, _req: Request, res: Response, next: NextFunction) => {
+    // WHY: an error forwarded after headers are committed (mid-stream failure) cannot start
+    // a new response — res.status().send() would throw ERR_HTTP_HEADERS_SENT; delegate to
+    // Express's default handler instead, which terminates the socket safely.
+    if (res.headersSent) {
+      return next(err);
+    }
     const sourceFileReader: SourceFileReader = readProjectSource;
     console.log(
       formatError(stripRenderContext(err), { format: 'ansi', dev: devErrorMode, sourceFileReader })
