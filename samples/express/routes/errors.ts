@@ -1,5 +1,6 @@
-import { createSandboxedContext, type NunjucksConfig } from '@nunjucks/core';
+import type { NunjucksConfig } from '@nunjucks/core';
 import { escapeHtml, isKeyedObject } from '@nunjucks/lib';
+import { createSandboxedContext } from '@nunjucks/runtime';
 import express, { type NextFunction, type Request, type Response, type Router } from 'express';
 import { errorRoutes } from '../lib/domain/error-route-data.ts';
 import { errorGroups } from '../lib/domain/error-route-metadata.ts';
