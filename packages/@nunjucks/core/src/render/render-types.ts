@@ -7,17 +7,6 @@ import type { Environment } from '@nunjucks/validators/security';
 import type { SandboxMode } from '../config/global.ts';
 import type { CallerLocation } from './caller-file.ts';
 
-interface LoaderSource {
-  src: string;
-  path: string;
-  noCache?: boolean;
-}
-
-interface ResolveResult {
-  templateSource: string;
-  templatePath: string | null;
-}
-
 interface RenderValidationError extends BaseValidationError {
   dangerousPaths?: string[];
 }
@@ -108,13 +97,11 @@ export type {
   CallerLocation,
   CompileResult,
   Environment,
-  LoaderSource,
   PreparedTemplate,
   RenderConfig,
   RenderOptions,
   RenderStreamResult,
   RenderValidationError,
-  ResolveResult,
   SandboxOptions,
   ValidationErrorRequest,
 };
