@@ -21,15 +21,15 @@ export const tokenizeComment: Tokenizer = (state) => {
     }
     return scan(advance(current), comment + getChar(current));
   };
-  const { current, comment } = scan(initial, state.tags.commentStart);
+  const { current: finalState, comment: commentValue } = scan(initial, state.tags.commentStart);
 
   return {
     token: createToken({
       type: TOKEN_COMMENT,
-      value: comment,
+      value: commentValue,
       lineno: state.lineno,
       colno: state.colno,
     }),
-    state: current,
+    state: finalState,
   };
 };

@@ -19,8 +19,8 @@ const collectStream = async (
     return drain([...acc, step.value]);
   };
 
-  const { acc, value } = await drain([]);
-  return { output: acc.join(''), returnValue: value };
+  const { acc: chunks, value: returnValue } = await drain([]);
+  return { output: chunks.join(''), returnValue };
 };
 
 export { collectString, collectStream };
