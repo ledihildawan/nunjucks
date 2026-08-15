@@ -1,4 +1,5 @@
 import { pipe } from 'remeda';
+import { DEFAULT_UNDEFINED_MODE } from '@nunjucks/shared';
 import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, RawLogData, LogType, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, ErrorInfo, WarningInfo, OutputOptions } from './create-log-types.ts';
 import { TEMPLATE_ERROR } from './create-log-types.ts';
 import { normalizeErrorContext, normalizeWarningContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, buildLocationMessage, createErrorEnvelope } from './create-log-helpers.ts';
@@ -120,7 +121,7 @@ const createFromRawData = (type: LogType, rawLogData: RawLogData): TemplateError
     colno: baseMetadata.colno,
     varName: warningInfo.varName ?? null,
     templateName: baseMetadata.templateName,
-    undefinedMode: warningInfo.undefinedMode ?? 'chainable',
+    undefinedMode: warningInfo.undefinedMode ?? DEFAULT_UNDEFINED_MODE,
     code: baseMetadata.code,
     subject: baseMetadata.subject,
     phase: baseMetadata.phase,

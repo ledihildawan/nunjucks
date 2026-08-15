@@ -9,6 +9,16 @@ const UNDEFINED_MODES = ['default', 'strict', 'debug', 'chainable'] as const;
 
 type UndefinedMode = (typeof UNDEFINED_MODES)[number];
 
+// WHY: modes the runtime undefined-resolution path handles explicitly — 'default' passes
+// through with no rule and never reaches the resolver, so its type excludes it.
+const HANDLED_UNDEFINED_MODES = ['chainable', 'strict', 'debug'] as const satisfies readonly UndefinedMode[];
+
+type HandledUndefinedMode = (typeof HANDLED_UNDEFINED_MODES)[number];
+
+// WHY: the assumed mode when undefined-handling metadata omits one (warning envelopes,
+// compiler internals) — deliberately NOT the user-facing render default, which is 'default'.
+const DEFAULT_UNDEFINED_MODE: HandledUndefinedMode = 'chainable';
+
 const SANDBOX_MODES = ['blocklist', 'allowlist'] as const;
 
 type SandboxMode = (typeof SANDBOX_MODES)[number];
@@ -26,5 +36,12 @@ interface DomPurifyConfig {
   ALLOW_DATA_ATTR?: boolean;
 }
 
-export type { DomPurifyConfig, NodeLocation, Phase, SandboxMode, UndefinedMode };
-export { SANDBOX_MODES, UNDEFINED_MODES };
+export type {
+  DomPurifyConfig,
+  HandledUndefinedMode,
+  NodeLocation,
+  Phase,
+  SandboxMode,
+  UndefinedMode,
+};
+export { DEFAULT_UNDEFINED_MODE, HANDLED_UNDEFINED_MODES, SANDBOX_MODES, UNDEFINED_MODES };

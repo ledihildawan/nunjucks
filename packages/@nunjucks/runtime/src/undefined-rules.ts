@@ -1,6 +1,6 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { ErrorDefinitionEntry } from '@nunjucks/error-formatter';
-import type { Phase } from '@nunjucks/shared';
+import type { HandledUndefinedMode, Phase } from '@nunjucks/shared';
 import { throwRuntimeError } from './error-context.ts';
 import type { NullAccessResult, PropertyNotFoundResult } from './member-access.ts';
 import { emitUndefinedWarning } from './shell/warning-emitter.ts';
@@ -11,7 +11,7 @@ export interface ResolveUndefinedOptions {
   varName: string | null;
   lineno?: number | null;
   colno?: number | null;
-  mode: 'chainable' | 'strict' | 'debug';
+  mode: HandledUndefinedMode;
   phase: Phase;
   templateName: string;
 }

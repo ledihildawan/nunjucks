@@ -1,4 +1,5 @@
 import { isNonNullish } from '@nunjucks/lib';
+import { DEFAULT_UNDEFINED_MODE, type HandledUndefinedMode } from '@nunjucks/shared';
 import { getLogContext } from './error-context.ts';
 import { isNullAccessResult, isPropertyNotFoundResult } from './member-access.ts';
 import {
@@ -12,7 +13,7 @@ export interface EnsureDefinedOptions {
   lineno?: number | null;
   colno?: number | null;
   varName?: string | null;
-  undefinedMode?: 'chainable' | 'strict' | 'debug';
+  undefinedMode?: HandledUndefinedMode;
 }
 
 export function ensureDefined(
@@ -20,7 +21,7 @@ export function ensureDefined(
   value: unknown,
   options: EnsureDefinedOptions = {}
 ): unknown {
-  const { lineno, colno, varName = null, undefinedMode = 'chainable' } = options;
+  const { lineno, colno, varName = null, undefinedMode = DEFAULT_UNDEFINED_MODE } = options;
   if (isPropertyNotFoundResult(value) || isNullAccessResult(value)) {
     const ctx = getLogContext(this);
     const effectiveTemplateName = ctx.templateName ?? 'inline';

@@ -1,7 +1,7 @@
 import type { WarningContext } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
 import { MATCH_ANY_RE, readObject } from '@nunjucks/lib';
-import type { Phase } from '@nunjucks/shared';
+import type { HandledUndefinedMode, Phase } from '@nunjucks/shared';
 import { WARNINGS_CONTEXT_KEY } from '@nunjucks/shared';
 
 interface EmitUndefinedWarningOptions {
@@ -12,7 +12,7 @@ interface EmitUndefinedWarningOptions {
   colno?: number | null;
   phase: Phase;
   templateName: string;
-  mode: 'chainable' | 'strict' | 'debug';
+  mode: HandledUndefinedMode;
   varName: string | null;
 }
 

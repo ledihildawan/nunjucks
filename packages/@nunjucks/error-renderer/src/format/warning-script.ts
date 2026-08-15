@@ -1,5 +1,6 @@
 import type { Warning } from '@nunjucks/error-catalog';
 import { basename } from '@nunjucks/lib/path-basename';
+import { DEFAULT_UNDEFINED_MODE } from '@nunjucks/shared';
 
 interface WarningScriptOptions {
   dev?: boolean;
@@ -30,7 +31,7 @@ const formatWarning = (
     return `[WARNING] ${message}`;
   }
 
-  const undefinedMode = warning.undefinedMode ?? 'chainable';
+  const undefinedMode = warning.undefinedMode ?? DEFAULT_UNDEFINED_MODE;
   const code = warning.code ?? null;
   const locationStr = getLocationString(warning);
 

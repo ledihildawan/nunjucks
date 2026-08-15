@@ -1,4 +1,5 @@
 import { isFunction, isString, pickBy } from 'remeda';
+import { DEFAULT_UNDEFINED_MODE } from '@nunjucks/shared';
 import { formatLocationAnnotation } from '@nunjucks/error-renderer';
 import { TEMPLATE_ERROR } from './create-log-types.ts';
 import type { TemplateError, ErrorContext, WarningContext, NormalizedErrorContext, NormalizedWarningContext, ErrorDefinitionEntry, RawLogData, LogType, WarningInfo, IncludeChain, ErrorInfo } from './create-log-types.ts';
@@ -34,7 +35,7 @@ const normalizeWarningContext = (context: WarningContext | null | undefined): No
   timestamp: context?.timestamp ?? null,
   environment: context?.environment ?? null,
   varName: context?.varName ?? null,
-  undefinedMode: context?.undefinedMode ?? 'chainable',
+  undefinedMode: context?.undefinedMode ?? DEFAULT_UNDEFINED_MODE,
 });
 
 const isErrorDefinitionEntry = (candidate: unknown): candidate is ErrorDefinitionEntry => {
@@ -66,7 +67,7 @@ const createBaseMetadata = ({ message, rawLogData, info, type }: CreateBaseMetad
     return {
       ...baseMetadata,
       varName: warningInfo.varName ?? null,
-      undefinedMode: warningInfo.undefinedMode ?? 'chainable'
+      undefinedMode: warningInfo.undefinedMode ?? DEFAULT_UNDEFINED_MODE
     };
   }
   return baseMetadata;
