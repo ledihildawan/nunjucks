@@ -6,8 +6,8 @@ import * as stringFilters from './filters/string.ts';
 import * as urlEncodeFilters from './filters/url-encode.ts';
 
 // WHY: upstream-compat aliases — kept so templates written for nunjucks 3.x keep working.
-// This map is the single source for both the engine's filter registration (core
-// filter-bundle) and the reserved-name list (validators), so the three can never drift.
+// Spread into BUILTIN_FILTERS below so alias names are part of both the engine's filter
+// registration (core filter-bundle) and the reserved-name list (validators) via one map.
 const FILTER_ALIASES: Readonly<Record<string, unknown>> = Object.freeze({
   default: stringFilters.fallback,
   d: stringFilters.fallback,
@@ -27,4 +27,4 @@ const BUILTIN_FILTERS: Readonly<Record<string, unknown>> = Object.freeze({
 
 const BUILTIN_FILTER_NAMES: readonly string[] = Object.keys(BUILTIN_FILTERS);
 
-export { BUILTIN_FILTER_NAMES, BUILTIN_FILTERS, FILTER_ALIASES };
+export { BUILTIN_FILTER_NAMES, BUILTIN_FILTERS };
