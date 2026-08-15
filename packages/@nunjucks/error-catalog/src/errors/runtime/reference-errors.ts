@@ -141,7 +141,7 @@ const RESERVED_KEYWORD_CONTEXT = {
   name: 'RESERVED_KEYWORD_CONTEXT',
   message: "Cannot use reserved keyword '{name}' outside of its intended context",
   pattern:
-    /reserved keyword.*context|cannot use.*reserved keyword|slot.*only available|only available inside.*component/iu,
+    /reserved keyword.*context|cannot use.*reserved keyword/iu,
   category: 'reserved_keyword_context',
   titleTemplate: "Cannot use reserved keyword '{subject}' outside of its intended context",
   causes: [

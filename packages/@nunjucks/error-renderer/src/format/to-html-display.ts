@@ -7,7 +7,9 @@ import type { ClassifiedError, ErrorLike, HumanTitleInput, LocationInfo } from '
 import { toText } from './to-text.ts';
 
 const UNDEFINED_OUTPUT_RE = /attempted to output '([^']+)'/u;
-const RESERVED_KEYWORD_RE = /Cannot use reserved (\w+) '([^']+)'/u;
+// WHY: capture groups mirror the catalog twin (reference-errors.ts RESERVED_KEYWORD
+// pattern) so display parsing and catalog classification stay in lockstep.
+const RESERVED_KEYWORD_RE = /Cannot use reserved (.+) '([^']+)'/u;
 
 const renderBadge = (variant: string, text?: string | null): string => {
   if (!text) {

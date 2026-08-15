@@ -1,6 +1,7 @@
 import { isKeyedObject } from '@nunjucks/lib';
 import { isFunction, keys } from 'remeda';
 import { getBlockedKeyCategory, isDangerousGlobal } from './blocked-keys.ts';
+import { JS_BUILTIN_CONSTRUCTORS } from '../js-builtins.ts';
 
 const globalRecord = globalThis as Record<string, unknown>;
 
@@ -39,27 +40,7 @@ export const isDangerousReference = (value: unknown): boolean => {
 const isBlockedNestedContextKey = (key: string): boolean =>
   getBlockedKeyCategory(key, 'auto') === 'object_intrinsic';
 
-const BUILTIN_GLOBALS = new Set([
-  'Array',
-  'Object',
-  'String',
-  'Number',
-  'Boolean',
-  'Date',
-  'RegExp',
-  'Math',
-  'JSON',
-  'Map',
-  'Set',
-  'WeakMap',
-  'WeakSet',
-  'Promise',
-  'Symbol',
-  'Error',
-  'TypeError',
-  'RangeError',
-  'SyntaxError',
-]);
+const BUILTIN_GLOBALS = new Set(JS_BUILTIN_CONSTRUCTORS);
 
 const isBuiltIn = (name: string): boolean => BUILTIN_GLOBALS.has(name);
 
@@ -93,9 +74,9 @@ const checkValueDangerous = (
     return [];
   }
   const fnName = value.name || key;
+  // WHY: eval/Function are members of shared's UNIVERSAL_GLOBALS, so isDangerousGlobal
+  // already covers them — no special-cased literals here.
   const dangerous =
-    fnName === 'eval' ||
-    fnName === 'Function' ||
     isDangerousGlobal(fnName) ||
     (!!scan.allowedGlobals && !scan.allowedGlobals.includes(fnName) && !isBuiltIn(fnName));
   return dangerous ? [currentPath] : [];

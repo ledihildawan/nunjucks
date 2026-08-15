@@ -1,5 +1,6 @@
 import { err, ok, type Result } from '@nunjucks/lib';
 import { BLOCKED_KEYS_LIST } from '@nunjucks/shared';
+import { JS_BUILTIN_CONSTRUCTORS } from './js-builtins.ts';
 
 const RESERVED_KEYWORDS = new Set<string>([
   'if',
@@ -38,25 +39,7 @@ const RESERVED_KEYWORDS = new Set<string>([
   'exec',
   'break',
   'continue',
-  'Array',
-  'Object',
-  'String',
-  'Number',
-  'Boolean',
-  'Date',
-  'RegExp',
-  'Math',
-  'JSON',
-  'Map',
-  'Set',
-  'WeakMap',
-  'WeakSet',
-  'Promise',
-  'Symbol',
-  'Error',
-  'TypeError',
-  'RangeError',
-  'SyntaxError',
+  ...JS_BUILTIN_CONSTRUCTORS,
   'Function',
   'eval',
   'parseInt',
