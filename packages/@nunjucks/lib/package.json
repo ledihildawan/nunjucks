@@ -5,7 +5,6 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./async/timeout": "./src/async/timeout.ts",
     "./collect-stream": "./src/collect-stream.ts",
     "./nullish-coalesce": "./src/nullish-coalesce.ts",
     "./from-iterator": "./src/from-iterator.ts",

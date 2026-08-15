@@ -3,7 +3,6 @@ import type { TemplateError, TemplateWarning } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
 import { injectWarningsScript } from '@nunjucks/error-renderer';
 import { err, isErr, isKeyedObject, ok, type Result } from '@nunjucks/lib';
-import { withTimeout } from '@nunjucks/lib/async/timeout';
 import { createFileSystemLoader } from '@nunjucks/loaders';
 import { createFrame, type ExecuteConfig, execute } from '@nunjucks/runtime';
 import { getDefaultConfig } from '../config/global.ts';
@@ -135,18 +134,19 @@ const executeCompiledTemplate = async (
 ): Promise<string> => {
   const frame = createFrame();
   const env = config.env ?? buildExecutionEnv(config);
-  const renderPromise = execute({
+  // WHY: the execution deadline is enforced cooperatively inside the executor's chunk drain —
+  // a withTimeout wrapper around the outer promise can never fire because the drain is a
+  // microtask-only chain that starves macrotask timers (see runtime/src/executor.ts).
+  return execute({
     code: ctx.code,
     context: ctx.sandboxedCtx,
     frame,
     env,
-    config: config as ExecuteConfig,
+    config: {
+      ...(config as ExecuteConfig),
+      executionTimeoutMs: config.executionTimeout ?? 0,
+    },
   });
-
-  if ((config.executionTimeout ?? 0) > 0) {
-    return await withTimeout(renderPromise, config.executionTimeout ?? 0);
-  }
-  return await renderPromise;
 };
 
 const injectWarningsIfNeeded = ({

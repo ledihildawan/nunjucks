@@ -174,6 +174,29 @@ describe('render edge cases', () => {
   });
 });
 
+describe('execution deadline', () => {
+  test('blocking render honors executionTimeout for chunk-yielding loops', async () => {
+    const indexes = Array.from({ length: 500000 }, (_, index) => index);
+    const result = await render('{% for index in indexes %}{{ index }}{% endfor %}', {
+      context: { indexes },
+      executionTimeout: 1,
+    });
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error.code).toBe('TIMEOUT');
+    }
+  }, 30000);
+
+  test('disabled deadline (0) renders to completion', async () => {
+    const indexes = Array.from({ length: 1000 }, (_, index) => index);
+    const result = await render('{% for index in indexes %}{{ index }}{% endfor %}', {
+      context: { indexes },
+      executionTimeout: 0,
+    });
+    expect(isOk(result)).toBe(true);
+  });
+});
+
 describe('config misuse regression', () => {
   test('render with a non-function filter returns err, not a crash', async () => {
     const result = await render('Hello {{ name }}', {
