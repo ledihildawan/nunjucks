@@ -1,10 +1,16 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
-import { hasOwn, isFunction, isNonNullish } from '@nunjucks/lib';
-import { ACCESS_PATH, NULL_MARKER, PARENT_NAME, PROP_NOT_FOUND } from '../member-access.ts';
+import { hasOwn, isFunction, isKeyedObject, isNonNullish } from '@nunjucks/lib';
+import { isPrototypeEscapeKey } from '@nunjucks/shared';
+import {
+  ACCESS_PATH,
+  createPropertyNotFoundCallable,
+  NULL_MARKER,
+  PARENT_NAME,
+} from '../member-access.ts';
 import { assertAllowed, type DynamicCallable, sandboxError } from './sandbox-errors.ts';
 import type { ResolvedSandboxOptions, SandboxOptions } from './sandbox-options.ts';
 import { resolveSandboxOptions } from './sandbox-options.ts';
-import { isBlockedAtScope } from './sandbox-predicates.ts';
+import { isBlockedAtScope, isBlockedSymbol } from './sandbox-predicates.ts';
 import {
   createSandboxedObject,
   createSandboxTraps,
@@ -33,16 +39,6 @@ const createSandboxedContext = ({
     context as object,
     createSandboxTraps({ sandboxEnabled, sandboxOptions, topLevel: true })
   );
-};
-
-const createPropertyNotFoundCallable = (value: string | symbol, parentName: string | null) => {
-  const callable = Object.assign(() => undefined, {
-    [PROP_NOT_FOUND]: true,
-    [PARENT_NAME]: parentName,
-    [ACCESS_PATH]: value,
-  });
-  Object.setPrototypeOf(callable, null);
-  return callable;
 };
 
 interface ValidateStringAccessInput {
@@ -77,11 +73,35 @@ const handleSandboxDisabled = ({
   if (!isNonNullish(target)) {
     return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: value };
   }
-  return (target as Record<string | symbol, unknown>)[value];
+  // WHY: target is guaranteed non-null by the guard above; the index signature models a dynamic
+  // property read on an arbitrary host value (primitives box transparently).
+  const record = target as Record<string | symbol, unknown>;
+  // WHY: defense-in-depth for a currently-unreachable wiring — sandbox-disabled configs use
+  // memberLookup (member-access.ts), which carries this same isPrototypeEscapeKey && !hasOwn
+  // not-found treatment. wrapMemberAccess is a public runtime surface, so if a future wiring
+  // routes sandbox-disabled lookups here, the RCE guard must not be skippable.
+  if (typeof value === 'string' && isPrototypeEscapeKey(value) && !hasOwn(record, value)) {
+    return createPropertyNotFoundCallable(value, parentName);
+  }
+  return record[value];
 };
 
-const handleSymbolAccess = (target: unknown, value: symbol): unknown => {
-  return (target as Record<string | symbol, unknown> | undefined)?.[value];
+interface HandleSymbolAccessInput {
+  target: unknown;
+  value: symbol;
+  sandboxOptions: ResolvedSandboxOptions;
+}
+
+const handleSymbolAccess = ({ target, value, sandboxOptions }: HandleSymbolAccessInput): unknown => {
+  // WHY: mirrors the Proxy get trap's symbol branch — blocked symbols throw SANDBOX_ACCESS and
+  // inherited symbol properties must not leak; only own properties are readable.
+  if (isBlockedSymbol(value)) {
+    throw sandboxError({ errorDef: ERROR_DEFINITIONS.SANDBOX_ACCESS, key: value, sandboxOptions });
+  }
+  if (!isKeyedObject(target)) {
+    return undefined;
+  }
+  return hasOwn(target, value) ? target[value] : undefined;
 };
 
 const handlePropertyNotFound = (value: string | symbol, parentName: string | null): unknown => {
@@ -110,12 +130,14 @@ const wrapMemberAccess = ({
     return handleSandboxDisabled({ target, value, parentName });
   }
   if (typeof value === 'symbol') {
-    return handleSymbolAccess(target, value);
+    return handleSymbolAccess({ target, value, sandboxOptions });
   }
   validateStringAccess({ value, sandboxOptions, topLevel });
   if (!isNonNullish(target)) {
     return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: value };
   }
+  // WHY: isNonNullish above rules out null/undefined but not primitives; the index signature
+  // models the dynamic string-keyed read (primitives box transparently at runtime).
   const record = target as Record<string, unknown>;
   if (!hasOwn(record, value)) {
     return handlePropertyNotFound(value, parentName);
@@ -123,6 +145,8 @@ const wrapMemberAccess = ({
   const accessedValue = record[value];
   if (isFunction(accessedValue)) {
     return wrapFunctionWithBlocking({
+      // WHY: isFunction narrows to Function, which carries no compatible variadic call
+      // signature; DynamicCallable re-asserts the invocation contract for the wrapper.
       fn: accessedValue as DynamicCallable,
       sandboxEnabled,
       key: value,

@@ -72,7 +72,10 @@ function inOperator(
     return value.includes(String(key));
   }
   if (isPlainObject(value)) {
-    return isKeyedObject(value) && String(key) in value;
+    // WHY: own-property semantics — mirrors memberLookup, which treats inherited prototype keys
+    // ('constructor', 'toString', …) as not-found; the JS `in` operator would walk the prototype
+    // chain and answer true for `'constructor' in {}`, contradicting member access.
+    return isKeyedObject(value) && Object.hasOwn(value, String(key));
   }
   return throwRuntimeError(ERROR_DEFINITIONS.IN_OPERATOR, {
     runtimeContext: this,

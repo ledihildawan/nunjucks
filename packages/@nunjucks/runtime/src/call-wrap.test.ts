@@ -79,6 +79,12 @@ describe('inOperator', () => {
     expect(inOperator({ key: 'age', value: { name: 'alice' } })).toBe(false);
   });
 
+  test('object membership uses own-property semantics (no prototype walk)', () => {
+    expect(inOperator({ key: 'constructor', value: {} })).toBe(false);
+    expect(inOperator({ key: 'toString', value: {} })).toBe(false);
+    expect(inOperator({ key: 'toString', value: { toString: 1 } })).toBe(true);
+  });
+
   test('throws for unsupported right-hand types', () => {
     expect(() => inOperator({ key: 'x', value: 42 })).toThrow("Cannot use 'in' operator");
     expect(() => inOperator({ key: 'x', value: null })).toThrow();

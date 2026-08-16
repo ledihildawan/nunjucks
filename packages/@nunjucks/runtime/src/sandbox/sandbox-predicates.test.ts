@@ -35,10 +35,13 @@ describe('isBlockedSymbol', () => {
 });
 
 describe('isAllowedKey', () => {
-  test('allows everything when no allowlist is set', () => {
+  test('allows everything when no allowlist is configured', () => {
     expect(isAllowedKey('anything', null)).toBe(true);
     expect(isAllowedKey('anything', undefined)).toBe(true);
-    expect(isAllowedKey('anything', [])).toBe(true);
+  });
+
+  test('denies all keys for an empty allowlist (fail-closed deny-all)', () => {
+    expect(isAllowedKey('anything', [])).toBe(false);
   });
 
   test('restricts to the allowlist when non-empty', () => {

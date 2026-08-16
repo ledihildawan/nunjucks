@@ -118,6 +118,9 @@ const runTest = (env: unknown, name: string, target: unknown, ...args: unknown[]
   if (builtin) {
     return builtin(target, ...args);
   }
+  // WHY: env arrives as unknown from compiler-emitted call sites (the env object is contextually
+  // opaque to generated code); only the optional getTest member is consulted, so a structural
+  // narrowing cast is sound.
   const envObj = env as { getTest?: (name: string) => TestFn | undefined } | null;
   const custom = envObj?.getTest?.(name);
   if (typeof custom === 'function') {

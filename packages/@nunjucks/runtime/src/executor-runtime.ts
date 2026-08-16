@@ -41,6 +41,9 @@ const getRenderFunction = (code: string): RenderFunctionResult => {
     return {
       render: renderFn.root,
       blocks,
+      // WHY: the compiled-exports contract (BLOCK_META_KEY) types the block-location table as
+      // unknown; the compiler emits a Record<string, BlockLocation> or omits the key entirely,
+      // so the narrowing cast restores that shape.
       blockMeta: (renderFn[BLOCK_META_KEY] as Record<string, BlockLocation>) ?? {},
     };
   }

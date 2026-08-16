@@ -44,6 +44,8 @@ export function createComponent<A extends unknown[], R>({
         return acc;
       }, {});
 
+      // WHY: Reflect.apply's return is typed any; the cast re-asserts R, the component's
+      // declared return generic captured at createComponent time.
       return Reflect.apply(func, this, [{ ...positionalOptions, ...namedKwargs }]) as R;
     }
 

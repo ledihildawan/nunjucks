@@ -33,6 +33,13 @@ describe('Frame', () => {
     expect(f.get('user')).toEqual({ name: 'Bob' });
   });
 
+  test('nested set replaces a non-object child with a fresh object', () => {
+    let f = createFrame();
+    f = f.set({ name: 'user', value: 'alice' });
+    f = f.set({ name: 'user.name', value: 'bob' });
+    expect(f.get('user')).toEqual({ name: 'bob' });
+  });
+
   test('set with resolveUp writes to parent frame', () => {
     let parent = createFrame();
     parent = parent.set({ name: 'existing', value: 'val' });
@@ -108,6 +115,15 @@ describe('Frame', () => {
     expect(f.resolve('x')).toBe(parent);
   });
 
+  test('resolve with forWrite=true stops at an isolated ancestor beyond the parent', () => {
+    let grandparent = createFrame();
+    grandparent = grandparent.set({ name: 'x', value: 1 });
+    const parent = grandparent.push(true);
+    const child = parent.push();
+    expect(child.resolve('x', true)).toBeUndefined();
+    expect(child.resolve('x')).toBe(grandparent);
+  });
+
   test('push creates child frame', () => {
     let f = createFrame();
     f = f.set({ name: 'x', value: 1 });
@@ -116,10 +132,11 @@ describe('Frame', () => {
     expect(child.lookup('x')).toBe(1);
   });
 
-  test('push propagates isolateWrites', () => {
+  test('push applies the write-isolation argument to the child frame', () => {
     const f = createFrame({ isolateWrites: true });
     const child = f.push(true);
     expect(child.isolateWrites).toBe(true);
+    expect(f.push().isolateWrites).toBeUndefined();
   });
 
   test('pop returns parent', () => {

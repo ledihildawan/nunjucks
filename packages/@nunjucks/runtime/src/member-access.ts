@@ -27,6 +27,26 @@ export interface PropertyNotFoundResult {
   __nunjucks_access_path__: string;
 }
 
+export type PropertyNotFoundCallable = (() => undefined) & PropertyNotFoundResult;
+
+// WHY: shared factory — memberLookup and the sandbox member-access wrapper build the identical
+// null-prototype not-found callable; one factory keeps the sentinel shape from drifting.
+// Symbols coerce to their description — the access path feeds human-readable undefined
+// messages (undefined-rules.ts), which require a string.
+export const createPropertyNotFoundCallable = (
+  value: string | symbol,
+  parentName: string | null
+): PropertyNotFoundCallable => {
+  const accessPath = typeof value === 'symbol' ? (value.description ?? String(value)) : value;
+  const marker: PropertyNotFoundCallable = Object.assign(() => undefined, {
+    [PROP_NOT_FOUND]: true as const,
+    [PARENT_NAME]: parentName,
+    [ACCESS_PATH]: accessPath,
+  });
+  Object.setPrototypeOf(marker, null);
+  return marker;
+};
+
 export const memberLookup = (
   target: unknown,
   value: string,
@@ -36,16 +56,15 @@ export const memberLookup = (
     return { [NULL_MARKER]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: value };
   }
 
+  // WHY: null/undefined is handled above; every remaining value supports keyed reads
+  // (primitives box transparently), so the index signature is a dynamic-read model, not a shape claim.
   const record = target as Record<string, unknown>;
   // WHY: RCE guard — `x.constructor.constructor("...")()` reaches the Function constructor
   // through INHERITED properties. Prototype-escape keys are therefore treated as absent
   // unless the host explicitly placed them as own properties (sandbox still polices that
   // case). Unconditional: code execution must not depend on the host enabling the sandbox.
   if (isPrototypeEscapeKey(value) && !hasOwn(record, value)) {
-    const marker = { [PROP_NOT_FOUND]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: value };
-    const callable = Object.assign(() => undefined, marker);
-    Object.setPrototypeOf(callable, null);
-    return callable;
+    return createPropertyNotFoundCallable(value, parentName);
   }
   const hasProperty =
     hasOwn(record, value) ||
@@ -59,14 +78,13 @@ export const memberLookup = (
     // yields undefined instead of crashing; the discriminator guards
     // (isPropertyNotFoundResult) and optionalMemberLookup bridge the same state back into
     // the value channel for non-call sites. Documented in ARCHITECTURE.md §7 sentinels.
-    const marker = { [PROP_NOT_FOUND]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: value };
-    const callable = Object.assign(() => undefined, marker);
-    Object.setPrototypeOf(callable, null);
-    return callable;
+    return createPropertyNotFoundCallable(value, parentName);
   }
 
   if (isFunction(record[value])) {
     const fn = record[value];
+    // WHY: Reflect.apply returns any; routing it through unknown keeps the no-any discipline
+    // on the result of a dynamically-applied function.
     return <A extends unknown[]>(...args: A): unknown => Reflect.apply(fn, record, args) as unknown;
   }
 

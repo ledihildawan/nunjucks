@@ -28,7 +28,7 @@ interface ExecuteOptions {
   config?: ExecuteConfig;
 }
 
-interface ExecuteNonSandboxOptions {
+interface ExecuteWithRuntimeOptions {
   code: string;
   context: Record<string, unknown>;
   frame: Frame;
@@ -87,7 +87,9 @@ const defaultEnv = (config: ExecuteConfig): Env => {
   return { ...base, opts: { ...base.opts, autoescape: config.autoescape ?? true } };
 };
 
-const executeNonSandbox = async (options: ExecuteNonSandboxOptions): Promise<string> => {
+// WHY: named for what it consumes — an already-built runtime. It executes both sandboxed and
+// non-sandboxed configs; sandboxing (when enabled) lives in the swapped runtime.memberLookup.
+const executeWithRuntime = async (options: ExecuteWithRuntimeOptions): Promise<string> => {
   const { code, context, frame, env, runtime, executionTimeoutMs } = options;
   const { render, blocks } = getRenderFunction(code);
   const ctx = createContext({ ctx: context, env, blocks });
@@ -103,7 +105,7 @@ const execute = async (options: ExecuteOptions): Promise<string> => {
   const resolvedEnv = env ?? defaultEnv(config);
   const runtime = buildRuntime(config);
 
-  return executeNonSandbox({
+  return executeWithRuntime({
     code,
     context,
     frame,

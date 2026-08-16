@@ -12,4 +12,9 @@ describe('awaitValue', () => {
   test('resolves a promise to its value', async () => {
     expect(await awaitValue(Promise.resolve(99))).toBe(99);
   });
+
+  test('returns thenables by identity (no wrapper allocation)', () => {
+    const promise = Promise.resolve(7);
+    expect(awaitValue(promise)).toBe(promise);
+  });
 });

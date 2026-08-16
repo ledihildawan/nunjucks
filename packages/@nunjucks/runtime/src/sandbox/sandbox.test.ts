@@ -5,6 +5,7 @@ import {
   isAllowedKey,
   wrapMemberAccess,
 } from '@nunjucks/runtime/sandbox';
+import { isPropertyNotFoundResult } from '../member-access.ts';
 import { isBlockedKey, isCodeExecutionPattern } from '@nunjucks/shared';
 
 describe('createSandboxedObject', () => {
@@ -276,11 +277,62 @@ describe('wrapMemberAccess', () => {
   });
 });
 
+describe('wrapMemberAccess parity with proxy traps', () => {
+  test('blocked symbols throw SANDBOX_ACCESS like the proxy get trap', () => {
+    try {
+      wrapMemberAccess({ target: {}, value: Symbol('custom'), sandboxEnabled: true });
+    } catch (e) {
+      expect((e as { code: string }).code).toBe('SANDBOX_ACCESS');
+      return;
+    }
+    throw new Error('Expected custom symbol access to throw');
+  });
+
+  test('own well-known symbols stay readable and inherited symbols stay hidden', () => {
+    // WHY: parity with the Proxy get trap's policy — custom (non-`Symbol.*`) symbols are
+    // blocked in BOTH paths (see the throwing test above); only well-known intrinsics
+    // are readable, and only as own properties.
+    const obj: Record<string | symbol, unknown> = { [Symbol.toStringTag]: 'own-value' };
+    expect(
+      wrapMemberAccess({ target: obj, value: Symbol.toStringTag, sandboxEnabled: true })
+    ).toBe('own-value');
+
+    const inheritedCarrier: Record<string | symbol, unknown> = {};
+    Object.setPrototypeOf(inheritedCarrier, { [Symbol.toStringTag]: 'Inherited' });
+    expect(
+      wrapMemberAccess({ target: inheritedCarrier, value: Symbol.toStringTag, sandboxEnabled: true })
+    ).toBeUndefined();
+  });
+
+  test('well-known Symbol.* intrinsics are not treated as escapes', () => {
+    const obj: Record<string | symbol, unknown> = { [Symbol.toStringTag]: 'SafeThing' };
+    expect(
+      wrapMemberAccess({ target: obj, value: Symbol.toStringTag, sandboxEnabled: true })
+    ).toBe('SafeThing');
+  });
+
+  test('sandbox-disabled lookups still treat prototype-escape keys as not-found', () => {
+    const result = wrapMemberAccess({ target: {}, value: 'constructor', sandboxEnabled: false });
+    expect(isPropertyNotFoundResult(result)).toBe(true);
+    expect(typeof result).toBe('function');
+
+    const ownResult = wrapMemberAccess({
+      target: { constructor: 'host-supplied' },
+      value: 'constructor',
+      sandboxEnabled: false,
+    });
+    expect(ownResult).toBe('host-supplied');
+  });
+});
+
 describe('isAllowedKey', () => {
-  test('returns true when no allowlist', () => {
+  test('returns true when no allowlist is configured', () => {
     expect(isAllowedKey('any', null)).toBe(true);
     expect(isAllowedKey('any', undefined)).toBe(true);
-    expect(isAllowedKey('any', [])).toBe(true);
+  });
+
+  test('returns false for every key when the allowlist is empty (deny-all)', () => {
+    expect(isAllowedKey('any', [])).toBe(false);
   });
 
   test('returns true when key is in allowlist', () => {
@@ -389,6 +441,72 @@ describe('Allowlist Mode', () => {
     }) as Record<string, unknown>;
     expect(sandboxed.user).toBe('john');
     expect(sandboxed.admin).toBe('secret');
+  });
+
+  test('allowlist mode with an empty allowlist denies every key (fail-closed)', () => {
+    const obj = { user: 'john', admin: 'secret' };
+    const sandboxed = createSandboxedObject({
+      value: obj,
+      sandboxEnabled: true,
+      options: { allowlist: [], blocklistMode: false },
+    }) as Record<string, unknown>;
+
+    expect(() => sandboxed.user).toThrow();
+    expect(() => sandboxed.admin).toThrow();
+    expect(() => sandboxed.__proto__).toThrow();
+  });
+
+  test('allowlist mode with an empty allowlist throws SANDBOX_ACCESS for blocked-category keys', () => {
+    const sandboxed = createSandboxedObject({
+      value: { constructor: Object },
+      sandboxEnabled: true,
+      options: { allowlist: [], blocklistMode: false },
+    }) as Record<string, unknown>;
+
+    try {
+      sandboxed.constructor;
+    } catch (e) {
+      expect((e as { code: string }).code).toBe('SANDBOX_ACCESS');
+      return;
+    }
+    throw new Error('Expected constructor access to throw in deny-all allowlist mode');
+  });
+
+  test('allowlist mode with an empty allowlist throws SANDBOX_ALLOWLIST for benign keys', () => {
+    const sandboxed = createSandboxedContext({
+      context: { user: 'john' },
+      sandboxEnabled: true,
+      options: { allowlist: [], blocklistMode: false },
+    }) as Record<string, unknown>;
+
+    try {
+      sandboxed.user;
+    } catch (e) {
+      expect((e as { code: string }).code).toBe('SANDBOX_ALLOWLIST');
+      return;
+    }
+    throw new Error('Expected user access to throw in deny-all allowlist mode');
+  });
+
+  test('allowlist mode with a missing allowlist also denies every key', () => {
+    const sandboxed = createSandboxedContext({
+      context: { user: 'john' },
+      sandboxEnabled: true,
+      options: { blocklistMode: false },
+    }) as Record<string, unknown>;
+
+    expect(() => sandboxed.user).toThrow();
+  });
+
+  test('wrapMemberAccess denies every key in allowlist mode with an empty allowlist', () => {
+    expect(() =>
+      wrapMemberAccess({
+        target: { user: 'john' },
+        value: 'user',
+        sandboxEnabled: true,
+        options: { allowlist: [], blocklistMode: false },
+      })
+    ).toThrow();
   });
 
   test('createSandboxedObject blocks non-allowlisted keys in allowlist mode', () => {

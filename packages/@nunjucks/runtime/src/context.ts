@@ -179,6 +179,9 @@ const createContextFromState = (state: ContextState): Context => {
       if (!firstBlock) {
         return throwBlockNotFoundError({ name, location, lineno, colno });
       }
+      // WHY: state.blocks types entries as BlockFn | BlockFn[] (addBlock may append overrides);
+      // the Array.isArray unwrap above guarantees a single entry here, so the cast restores the
+      // stored BlockFn contract.
       return firstBlock as BlockFn;
     },
 
@@ -262,6 +265,9 @@ const createContext = ({
     (acc, name) => {
       const block = initialBlocks[name];
       if (block) {
+        // WHY: compiled-template exports (shared contract) type block values as unknown;
+        // the compiler only emits async-generator block functions, so the cast restores
+        // the BlockFn contract.
         return acc.addBlock(name, block as BlockFn);
       }
       return acc;

@@ -2,7 +2,11 @@ import { isThenable } from '@nunjucks/lib';
 
 export const awaitValue = <T>(value: T | Promise<T>): Promise<T> | T => {
   if (isThenable(value)) {
-    return (value as Promise<T>).then((v) => v);
+    // WHY: identity passthrough — returning the same thenable avoids a redundant `.then`
+    // wrapper allocation; the isThenable guard exists to keep non-thenable values synchronous.
+    // The cast restores T: isThenable narrows to Promise<unknown>, which is not assignable
+    // to the caller's specific Promise<T>.
+    return value as Promise<T>;
   }
   return value;
 };

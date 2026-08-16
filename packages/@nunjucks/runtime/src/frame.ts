@@ -1,3 +1,4 @@
+import { isPlainObject } from '@nunjucks/lib';
 import { reduce } from 'remeda';
 import type { CreateFrameOptions, Frame, FrameSetOptions } from './runtime-contract/frame.ts';
 
@@ -28,7 +29,12 @@ const setNestedValueImmutable = ({
   if (head === undefined) {
     return target;
   }
-  const child = (target[head] ?? {}) as Record<string, unknown>;
+  const existingChild = target[head];
+  // WHY: nested-set semantics — a non-plain-object child (string/number/array/…) is explicitly
+  // replaced with a fresh {} instead of being cast into a record: spreading a string child
+  // would silently explode it into char-index keys, and writing onto a primitive cannot
+  // succeed anyway. The declared write path must land on a container the engine controls.
+  const child: Record<string, unknown> = isPlainObject(existingChild) ? existingChild : {};
   return {
     ...target,
     [head]: setNestedValueImmutable({ target: child, parts: parts.slice(1), value }),
@@ -115,7 +121,9 @@ export const createFrame = (options: CreateFrameOptions = {}): Frame => {
       if (state.variables[name] !== undefined) {
         return frame;
       }
-      return state.parent?.resolve(name);
+      // WHY: forWrite must survive the whole chain — write isolation guards every isolated
+      // ancestor, not just the immediate parent (hand-built multi-level frame chains).
+      return state.parent?.resolve(name, forWrite);
     },
 
     push(writeIsolation?: boolean): Frame {

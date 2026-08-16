@@ -24,6 +24,8 @@ const createSlotContext = (
     return undefined;
   };
 
+  // WHY: the callable is augmented with `slot.has` right after; TS cannot type "function plus
+  // subsequently assigned property" in one expression, so the cast asserts the final SlotContext shape.
   const slot = ((name: string, ...args: unknown[]): unknown => {
     const fn = resolve(name);
     if (fn === undefined) {

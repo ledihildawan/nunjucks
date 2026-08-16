@@ -19,8 +19,11 @@ const isBlockedSymbol = (key: symbol): boolean => {
   return true;
 };
 
+// WHY: an absent allowlist (null/undefined) means "allowlist not configured" — blocklist-mode
+// callers pass none, so everything is allowed. An EMPTY array is different: allowlist mode with
+// nothing allowlisted must DENY ALL (fail-closed), never degrade into allow-everything.
 const isAllowedKey = (key: string, allowlist: readonly string[] | null | undefined): boolean => {
-  if (!(allowlist && Array.isArray(allowlist)) || allowlist.length === 0) {
+  if (!(allowlist && Array.isArray(allowlist))) {
     return true;
   }
   return allowlist.includes(key);

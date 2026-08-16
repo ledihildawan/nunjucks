@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { createRenderRuntime } from './render-runtime.ts';
 
 describe('createRenderRuntime', () => {
-  test('returns all 23 helpers required by compiled code', () => {
+  test('returns all 20 helpers required by compiled code', () => {
     const rt = createRenderRuntime() as Record<string, unknown>;
     const required = [
       'suppressValue',
@@ -12,14 +12,11 @@ describe('createRenderRuntime', () => {
       'memberLookup',
       'optionalMemberLookup',
       'slice',
-      'nullishCoalesce',
       'inOperator',
       'fromIterator',
       'callWrap',
       'ensureDefined',
-      'isSafeString',
       'markSafe',
-      'copySafeness',
       'createFrame',
       'createSafeString',
       'makeKeywordArgs',
@@ -32,6 +29,13 @@ describe('createRenderRuntime', () => {
     for (const key of required) {
       expect(typeof rt[key]).toBe('function');
     }
+  });
+
+  test('omits helpers the compiler never emits (dead contract keys)', () => {
+    const rt = createRenderRuntime() as Record<string, unknown>;
+    expect(rt.nullishCoalesce).toBeUndefined();
+    expect(rt.isSafeString).toBeUndefined();
+    expect(rt.copySafeness).toBeUndefined();
   });
 
   test('without options does not include __warnings__ or logContext', () => {
