@@ -575,7 +575,6 @@
       applyTheme(next);
     }
 
-    // Initialize theme from localStorage
     const savedTheme = localStorage.getItem(THEME_KEY) || 'system';
     applyTheme(savedTheme);
 
@@ -584,7 +583,6 @@
     document.getElementById('refresh-preview').addEventListener('click', refreshPreview);
     document.getElementById('open-preview-tab').addEventListener('click', openInNewTab);
 
-    // Debounce utility
     function debounce(fn, delay) {
       let timeoutId;
       return function(...args) {
@@ -593,7 +591,6 @@
       };
     }
 
-    // Refresh preview
     function refreshPreview() {
       if (currentUrl) {
         previewFrame.src = currentUrl;
@@ -619,7 +616,6 @@
         .filter(group => group.items.length > 0);
     }
 
-    // Render groups from data
     function renderGroups(data) {
       const fragment = document.createDocumentFragment();
 
@@ -688,7 +684,6 @@
       sidebarContent.appendChild(fragment);
     }
 
-    // No-results element injection
     function showNoResults(query) {
       const existing = document.getElementById('no-results');
       if (existing) {
@@ -812,7 +807,6 @@
       const query = e.target.value.toLowerCase().trim();
       const resultsCount = document.getElementById('results-count');
 
-      // Clear and rebuild DOM from data
       sidebarContent.innerHTML = '';
 
       if (query === '') {
@@ -836,7 +830,6 @@
 
     }, 250));
 
-    // Initialize results count on page load
     document.getElementById('results-count').textContent = `Showing all ${total} error routes`;
   </script>
 </body>

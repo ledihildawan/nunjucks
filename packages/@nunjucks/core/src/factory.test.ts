@@ -166,11 +166,11 @@ describe('createNunjucks', () => {
   });
 
   test('two factories have isolated loader caches', async () => {
-    const engine1 = createNunjucks({ views: '/path1' });
-    const engine2 = createNunjucks({ views: '/path2' });
-    expect(engine1).toBeDefined();
-    expect(engine2).toBeDefined();
-    expect(engine1).not.toBe(engine2);
+    const firstEngine = createNunjucks({ views: '/path1' });
+    const secondEngine = createNunjucks({ views: '/path2' });
+    expect(firstEngine).toBeDefined();
+    expect(secondEngine).toBeDefined();
+    expect(firstEngine).not.toBe(secondEngine);
   });
 
   test('custom loaders resolve templates end-to-end', async () => {

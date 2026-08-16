@@ -65,10 +65,10 @@ describe('getSource', () => {
   });
 
   test('searches multiple paths in order', async () => {
-    const dir1 = await makeDir();
-    const dir2 = await makeDir();
-    await writeFile(join(dir2, 'shared.njk'), 'from dir2');
-    const loader = createFileSystemLoader([dir1, dir2]);
+    const primarySearchDir = await makeDir();
+    const secondarySearchDir = await makeDir();
+    await writeFile(join(secondarySearchDir, 'shared.njk'), 'from dir2');
+    const loader = createFileSystemLoader([primarySearchDir, secondarySearchDir]);
     const result = await loader.getSource('shared.njk');
     expect(result).not.toBeNull();
     if (result !== null && isOk(result)) {
@@ -77,13 +77,13 @@ describe('getSource', () => {
   });
 
   test('prefers first path when file exists in both', async () => {
-    const dir1 = await makeDir();
-    const dir2 = await makeDir();
+    const primarySearchDir = await makeDir();
+    const secondarySearchDir = await makeDir();
     await Promise.all([
-      writeFile(join(dir1, 'both.njk'), 'from dir1'),
-      writeFile(join(dir2, 'both.njk'), 'from dir2'),
+      writeFile(join(primarySearchDir, 'both.njk'), 'from dir1'),
+      writeFile(join(secondarySearchDir, 'both.njk'), 'from dir2'),
     ]);
-    const loader = createFileSystemLoader([dir1, dir2]);
+    const loader = createFileSystemLoader([primarySearchDir, secondarySearchDir]);
     const result = await loader.getSource('both.njk');
     expect(result).not.toBeNull();
     if (result !== null && isOk(result)) {
@@ -159,12 +159,12 @@ describe('watch', () => {
 
   test('unwatchAll clears all watchers', async () => {
     const dir = await makeDir();
-    const f1 = join(dir, 'a.njk');
-    const f2 = join(dir, 'b.njk');
-    await Promise.all([writeFile(f1, 'a'), writeFile(f2, 'b')]);
+    const firstWatchedFile = join(dir, 'a.njk');
+    const secondWatchedFile = join(dir, 'b.njk');
+    await Promise.all([writeFile(firstWatchedFile, 'a'), writeFile(secondWatchedFile, 'b')]);
     const loader = createFileSystemLoader(dir, { watch: true });
-    loader.watchFile(f1);
-    loader.watchFile(f2);
+    loader.watchFile(firstWatchedFile);
+    loader.watchFile(secondWatchedFile);
     expect(loader.watchedFiles.size).toBe(2);
     loader.unwatchAll();
     expect(loader.watchedFiles.size).toBe(0);

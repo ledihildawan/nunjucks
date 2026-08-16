@@ -59,11 +59,10 @@ const runTests = async ({
         context: test.context ?? context,
         config: testConfig,
       });
-      const outcome: TestOutcome = result;
-      const blocked = isErr(outcome);
+      const blocked = isErr(result);
       const passed =
-        test.shouldPass === undefined ? null : isOk(outcome) === test.shouldPass;
-      return { name: test.name, outcome, blocked, passed };
+        test.shouldPass === undefined ? null : isOk(result) === test.shouldPass;
+      return { name: test.name, outcome: result, blocked, passed };
     })
   );
 

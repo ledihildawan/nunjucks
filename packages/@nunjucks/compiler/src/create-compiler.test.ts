@@ -42,11 +42,11 @@ describe('createCompiler', () => {
 
   test('nextCompilerId returns unique incrementing ids', () => {
     const c = createCompiler({ templateName: 'test', undefinedMode: undefined, source: '' });
-    const id1 = c.nextCompilerId();
-    const id2 = c.nextCompilerId();
-    expect(id1).toMatch(/^t_\d+$/);
-    expect(id2).toMatch(/^t_\d+$/);
-    expect(id1).not.toBe(id2);
+    const firstCompilerId = c.nextCompilerId();
+    const secondCompilerId = c.nextCompilerId();
+    expect(firstCompilerId).toMatch(/^t_\d+$/);
+    expect(secondCompilerId).toMatch(/^t_\d+$/);
+    expect(firstCompilerId).not.toBe(secondCompilerId);
   });
 
   test('getCode joins codebuf into single string', () => {

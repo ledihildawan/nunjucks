@@ -54,11 +54,11 @@
 </div>
 <div id="timing"><span class="label">Chunk arrival:</span></div>
 <script>
-var t0=Date.now();
+var chunkBaselineMs=Date.now();
 function mark(label){
   var el=document.getElementById('timing');
   var span=document.createElement('span');
-  span.textContent=label+':+'+(Date.now()-t0)+'ms';
+  span.textContent=label+':+'+(Date.now()-chunkBaselineMs)+'ms';
   el.appendChild(span);
 }
 </script>

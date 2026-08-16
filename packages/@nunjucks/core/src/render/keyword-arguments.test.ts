@@ -167,12 +167,12 @@ Hello {{ name }}
     });
 
     test('nested calls - both with kwargs', async () => {
-      const inner2 = ({ x = 1, y = 2 } = {}) => x + y;
-      const outer2 = ({ val = 0 } = {}) => val * 10;
+      const sumKwargs = ({ x = 1, y = 2 } = {}) => x + y;
+      const scaleByTen = ({ val = 0 } = {}) => val * 10;
       const result = await renderTemplate(
-        '{{ outer2(val=(inner2(x=3, y=4))) }}',
+        '{{ scaleByTen(val=(sumKwargs(x=3, y=4))) }}',
         {},
-        { globals: { inner2, outer2 } }
+        { globals: { sumKwargs, scaleByTen } }
       );
       expect(result.trim()).toBe('70');
     });
