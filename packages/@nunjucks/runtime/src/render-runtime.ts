@@ -27,10 +27,10 @@ interface RenderRuntimeOptions {
 }
 
 // WHY: this object is the compiler-emitted contract surface — every property must be exactly
-// what generated code references as runtime.<name>. nullishCoalesce, isSafeString, and
-// copySafeness are never emitted by the compiler (verified against compiler/src) and are
-// therefore kept OFF the object; their implementations remain exported via the package
-// barrel (@nunjucks/runtime index) for first-party consumers.
+// what generated code references as runtime.<name>. isSafeString and copySafeness are never
+// emitted by the compiler (verified against compiler/src) and are therefore kept OFF the
+// object; their implementations remain exported via the package barrel
+// (@nunjucks/runtime index) for first-party consumers.
 const createRenderRuntime = (options?: RenderRuntimeOptions) => ({
   suppressValue,
   awaitValue,

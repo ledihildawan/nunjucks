@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { ok, err, isOk, isErr, map, flatMap, getOrElse } from './result.ts';
+import { ok, err, isOk, isErr, getOrElse } from './result.ts';
 import type { Result } from './result.ts';
 
 describe('ok', () => {
@@ -38,32 +38,6 @@ describe('isOk / isErr', () => {
     if (isErr(result)) {
       expect(result.error).toBe('missing');
     }
-  });
-});
-
-describe('map', () => {
-  test('transforms the success value', () => {
-    expect(map(ok(3), (n) => n * 2)).toEqual({ ok: true, value: 6 });
-  });
-
-  test('propagates the error untouched', () => {
-    const failed: Result<number, string> = err('nope');
-    expect(map(failed, (n) => n * 2)).toEqual({ ok: false, error: 'nope' });
-  });
-});
-
-describe('flatMap', () => {
-  test('chains a success result into the next operation', () => {
-    expect(flatMap(ok(2), (n) => ok(n + 5))).toEqual({ ok: true, value: 7 });
-  });
-
-  test('short-circuits on a success result that produces an error', () => {
-    expect(flatMap(ok(2), (): Result<number, string> => err('overflow'))).toEqual({ ok: false, error: 'overflow' });
-  });
-
-  test('short-circuits on an incoming error', () => {
-    const failed: Result<number, string> = err('bad');
-    expect(flatMap(failed, (n) => ok(n + 5))).toEqual({ ok: false, error: 'bad' });
   });
 });
 

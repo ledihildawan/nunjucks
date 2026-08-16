@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'bun:test';
-import { nullishCoalesce } from '@nunjucks/lib';
 import {
   ACCESS_PATH,
   getNullParentName,
@@ -166,25 +165,5 @@ describe('slice', () => {
 
   test('returns empty array when range is empty', () => {
     expect(slice({ source: [1, 2, 3], start: 2, stop: 2, step: 1 })).toEqual([]);
-  });
-});
-
-describe('nullishCoalesce', () => {
-  test('returns left when non-nullish (including falsy non-nullish values)', () => {
-    expect(nullishCoalesce('left', 'fallback')).toBe('left');
-    const numericLeft: number | null = 0;
-    expect(nullishCoalesce(numericLeft, -1)).toBe(0);
-    const booleanLeft: boolean | null = false;
-    expect(nullishCoalesce(booleanLeft, true)).toBe(false);
-  });
-
-  test('returns right when left is null or undefined', () => {
-    expect(nullishCoalesce(null, 'fallback')).toBe('fallback');
-    expect(nullishCoalesce(undefined, 'fallback')).toBe('fallback');
-  });
-
-  test('preserves generic type inference', () => {
-    const value: number | null = 7;
-    expect(nullishCoalesce(value, 0)).toBe(7);
   });
 });

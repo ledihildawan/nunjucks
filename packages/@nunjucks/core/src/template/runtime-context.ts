@@ -15,8 +15,8 @@ interface RuntimeContext {
   createFrame: () => Frame;
   createSafeString: (str: unknown) => SafeString;
   markSafe: (str: SafeString) => SafeString;
-  // WHY: copySafeness/isSafeString/nullishCoalesce intentionally absent — they are barrel
-  // utilities, never referenced by compiler-emitted code (emission census), so they do not
+  // WHY: copySafeness/isSafeString intentionally absent — they are barrel utilities,
+  // never referenced by compiler-emitted code (emission census), so they do not
   // ride the runtime contract object.
   makeComponent: typeof createComponent;
   makeKeywordArgs: typeof createKeywordArgs;

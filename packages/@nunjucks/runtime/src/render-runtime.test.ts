@@ -33,7 +33,6 @@ describe('createRenderRuntime', () => {
 
   test('omits helpers the compiler never emits (dead contract keys)', () => {
     const rt = createRenderRuntime() as Record<string, unknown>;
-    expect(rt.nullishCoalesce).toBeUndefined();
     expect(rt.isSafeString).toBeUndefined();
     expect(rt.copySafeness).toBeUndefined();
   });

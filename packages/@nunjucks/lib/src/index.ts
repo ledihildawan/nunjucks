@@ -14,7 +14,6 @@ export * from './strip-inline-markdown.ts';
 export * from './string-case.ts';
 export * from './match-any-regex.ts';
 export * from './collect-stream.ts';
-export * from './nullish-coalesce.ts';
 export * from './from-iterator.ts';
 export * from './web-readable-stream.ts';
 export * from './stream-coalesce.ts';
