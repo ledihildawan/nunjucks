@@ -1,4 +1,4 @@
-import type { ErrorLike, LineBase } from '@nunjucks/error-catalog';
+import type { ErrorLike, ErrorSeverity, LineBase } from '@nunjucks/error-catalog';
 import type { Phase } from '@nunjucks/shared';
 import type { SourceTrace } from './presentation/source-trace/source-trace.ts';
 
@@ -23,7 +23,7 @@ interface ClassifiedError {
   fixCode: string;
   fixComment: string;
   documentationUrl: string | null;
-  severity: 'error' | 'warning' | 'info';
+  severity: ErrorSeverity;
 }
 
 interface LocationInfo {

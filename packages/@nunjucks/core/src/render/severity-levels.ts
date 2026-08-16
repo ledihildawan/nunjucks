@@ -8,7 +8,9 @@ import { readErrorCode } from '@nunjucks/lib';
 // FATAL_STREAM_CODES in stream-fatal-codes.ts (which uses a narrower set: only security-critical
 // codes that must abort regardless of streamErrorRecovery setting).
 
-type ErrorSeverity = 'block' | 'inline';
+// WHY: DisplaySeverity, not ErrorSeverity — the catalog's ErrorSeverity is the
+// error/warning/info axis; this type is the stream-display axis (block vs inline marker).
+type DisplaySeverity = 'block' | 'inline';
 
 const BLOCK_ERROR_CODES: ReadonlySet<string> = new Set([
   ERROR_CODES.ASSERT_TYPE_ERROR,
@@ -30,10 +32,10 @@ const BLOCK_ERROR_CODES: ReadonlySet<string> = new Set([
   ERROR_CODES.UNKNOWN_BLOCK_RUNTIME,
 ]);
 
-const getSeverity = (error: unknown): ErrorSeverity => {
+const getSeverity = (error: unknown): DisplaySeverity => {
   const code = readErrorCode(error);
   return code !== null && BLOCK_ERROR_CODES.has(code) ? 'block' : 'inline';
 };
 
-export type { ErrorSeverity };
+export type { DisplaySeverity };
 export { BLOCK_ERROR_CODES, getSeverity };

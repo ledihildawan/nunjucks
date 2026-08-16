@@ -1,5 +1,5 @@
 import type { LineBase } from '@nunjucks/error-catalog';
-import { classifyFromError } from '@nunjucks/error-catalog';
+import { classifyFromError, ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { mergeErrorParts } from './presentation/error/error-parts.ts';
 import { toDisplayLocation } from './presentation/source-trace/location.ts';
 import { escapeHtml } from './presentation/syntax-highlight/highlight.ts';
@@ -7,9 +7,9 @@ import type { ClassifiedError, ErrorLike, HumanTitleInput, LocationInfo } from '
 import { toText } from './to-text.ts';
 
 const UNDEFINED_OUTPUT_RE = /attempted to output '([^']+)'/u;
-// WHY: capture groups mirror the catalog twin (reference-errors.ts RESERVED_KEYWORD
-// pattern) so display parsing and catalog classification stay in lockstep.
-const RESERVED_KEYWORD_RE = /Cannot use reserved (.+) '([^']+)'/u;
+// WHY: imported from the catalog twin — the pattern IS the classify contract; a local
+// literal copy could drift from classification.
+const RESERVED_KEYWORD_RE = ERROR_DEFINITIONS.RESERVED_KEYWORD.pattern;
 
 const renderBadge = (variant: string, text?: string | null): string => {
   if (!text) {

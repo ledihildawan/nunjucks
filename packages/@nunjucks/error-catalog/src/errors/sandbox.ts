@@ -128,6 +128,9 @@ export const SANDBOX_ERRORS = {
     name: 'DANGEROUS_CONTEXT_VALUE_SCRUBBED',
     message: 'Scrubbed unsafe values from context: {values}',
     category: 'security_error',
+    // WHY: severity 'warning' — this is a remediation NOTICE (values were removed and
+    // rendering continued), logged via createLog('warning') in the render pipeline.
+    severity: 'warning',
     causes: [
       'Context contained **dangerous values** that were automatically removed',
       'Security scrubbing removed `eval`, `Function`, or other dangerous globals',

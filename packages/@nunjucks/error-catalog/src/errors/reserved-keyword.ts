@@ -1,4 +1,5 @@
 import type { Classification, ClassifyInput } from './types.ts';
+import { RESERVED_KEYWORD_CONTEXT_TITLE } from './runtime/reference-errors.ts';
 
 const RESERVED_KEYWORD_CONTEXT: Record<
   string,
@@ -34,7 +35,9 @@ export const reservedKeywordClassifier = (input: ClassifyInput): Classification 
   return {
     category: 'reserved_keyword_context',
     undefinedName: keyword,
-    title: `Cannot use reserved keyword '${keyword}' outside of its intended context`,
+    // WHY: title renders from the SSOT constant in reference-errors.ts — hand-duplicating
+    // the string here would drift from RESERVED_KEYWORD_CONTEXT.titleTemplate.
+    title: RESERVED_KEYWORD_CONTEXT_TITLE.replaceAll('{subject}', keyword),
     documentationUrl: null,
     severity: 'error',
     ...keywordGuidance,

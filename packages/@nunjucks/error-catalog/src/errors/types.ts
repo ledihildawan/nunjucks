@@ -1,6 +1,8 @@
 type SubjectExtractor = (groups: RegExpMatchArray) => string | null;
 type ExtraExtractor = (groups: RegExpMatchArray) => Record<string, string> | null;
 
+// WHY: canonical severity union — every other package imports ErrorSeverity from the
+// catalog barrel instead of re-declaring the inline union.
 type ErrorSeverity = 'error' | 'warning' | 'info';
 
 interface ErrorDefinition {
@@ -13,7 +15,7 @@ interface ErrorDefinition {
   readonly fixCode?: string;
   readonly fixComment?: string;
   readonly documentationUrl?: string;
-  readonly severity?: 'error' | 'warning' | 'info';
+  readonly severity?: ErrorSeverity;
   readonly subjectFrom?: SubjectExtractor | null;
   readonly extraFrom?: ExtraExtractor | null;
 }

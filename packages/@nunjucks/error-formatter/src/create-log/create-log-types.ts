@@ -1,4 +1,4 @@
-import type { LineBase } from '@nunjucks/error-catalog';
+import type { ErrorSeverity, LineBase } from '@nunjucks/error-catalog';
 import { TEMPLATE_ERROR } from '@nunjucks/error-catalog';
 import type { Phase, UndefinedMode } from '@nunjucks/shared';
 
@@ -10,7 +10,7 @@ interface ErrorDefinitionEntry {
   fixCode?: string;
   fixComment?: string;
   documentationUrl?: string;
-  severity?: 'error' | 'warning' | 'info';
+  severity?: ErrorSeverity;
 }
 
 interface ErrorInfo {
@@ -83,7 +83,7 @@ interface TemplateError extends Error {
   fixCode?: string | null;
   fixComment?: string | null;
   documentationUrl?: string | null;
-  severity?: 'error' | 'warning' | 'info';
+  severity?: ErrorSeverity;
   path?: string | null;
   toJSON?: () => Record<string, unknown>;
   outputOptions?: Omit<OutputOptions, 'format'>;

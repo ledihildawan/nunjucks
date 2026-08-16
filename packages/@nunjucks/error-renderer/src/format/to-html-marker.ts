@@ -1,4 +1,5 @@
 import { getIdeMeta, isFilePath, resolveIdeLink } from './presentation/ide-links/ide-links.ts';
+import { DEFAULT_IDE } from './presentation/ide-links/defaults.ts';
 import { shortenPath } from './presentation/source-trace/path-shortener.ts';
 import { escapeAttribute, escapeHtml } from './presentation/syntax-highlight/highlight.ts';
 import { toHtml } from './to-html.ts';
@@ -114,7 +115,7 @@ const toHtmlMarker = (
   const css = severity === 'inline' ? INLINE_CSS : BLOCK_CSS;
   const locHtml =
     severity === 'block'
-      ? buildLocationHtml(extractLocData(error, options.projectRoot), options.ide ?? 'vscode')
+      ? buildLocationHtml(extractLocData(error, options.projectRoot), options.ide ?? DEFAULT_IDE)
       : '';
 
   if (severity === 'inline') {

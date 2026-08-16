@@ -14,7 +14,10 @@ const getLocationString = (warning: Warning): string => {
   if (warning.lineno === undefined || warning.lineno === null) {
     return '';
   }
-  const lineNum = warning.lineno + 1;
+  // WHY: engine warnings are zero-based; a future one-based producer would otherwise
+  // display a line one short of the truth.
+  const lineBase = warning.lineBase ?? 'zero';
+  const lineNum = lineBase === 'one' ? warning.lineno : warning.lineno + 1;
   const colNum = warning.colno != null ? `:${warning.colno}` : '';
   const fileName = basename(warning.templateName);
   return ` at ${fileName}:${lineNum}${colNum}`;

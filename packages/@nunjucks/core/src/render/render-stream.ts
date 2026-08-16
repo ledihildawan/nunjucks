@@ -3,6 +3,7 @@ import { adjustColnoForNullValue } from '@nunjucks/error-formatter';
 import {
   buildSourceTrace,
   classifyAndBuildTitle,
+  DEFAULT_IDE,
   injectWarningsScript,
   toHtmlMarker,
 } from '@nunjucks/error-renderer';
@@ -19,7 +20,7 @@ import { serializeErrorPayload } from './pipe-stream.ts';
 import { buildExecutionEnv } from './render-env.ts';
 import { coerceChunk, withStreamDeadline } from './render-stream-adapters.ts';
 import type { PreparedTemplate } from './render-types.ts';
-import type { ErrorSeverity } from './severity-levels.ts';
+import type { DisplaySeverity } from './severity-levels.ts';
 import { getSeverity } from './severity-levels.ts';
 
 interface SentinelChunkInput {
@@ -94,11 +95,11 @@ const formatSentinelChunk = async ({
     sourceStartLine: enriched.sourceStartLine ?? 1,
     blockedKeys: enriched.blockedKeys ?? null,
   });
-  const severity: ErrorSeverity = getSeverity(enriched);
+  const severity: DisplaySeverity = getSeverity(enriched);
   const humanTitle = classifyAndBuildTitle(enriched);
   return toHtmlMarker(enriched, {
     sourceTrace: trace,
-    ide: 'vscode',
+    ide: DEFAULT_IDE,
     severity,
     humanTitle,
     version,
@@ -112,7 +113,7 @@ const formatErrorMarker = (
   error: TemplateError,
   options: { ide?: string; contentType?: string; version?: string; dev?: boolean } = {}
 ): string => {
-  const { ide = 'vscode', contentType = 'html', version, dev } = options;
+  const { ide = DEFAULT_IDE, contentType = 'html', version, dev } = options;
   if (contentType === 'json') {
     return `\n${serializeErrorPayload(error)}`;
   }

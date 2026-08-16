@@ -1,4 +1,5 @@
 import { getErrorMessage } from '@nunjucks/error-catalog/get-error-message';
+import type { ErrorSeverity } from '@nunjucks/error-catalog';
 import { slice } from '@nunjucks/lib';
 import { stripInlineMarkdown } from '@nunjucks/lib/strip-inline-markdown';
 import { filter, join, map, pipe, split } from 'remeda';
@@ -18,7 +19,7 @@ interface ToTextOptions {
   isProduction?: boolean;
 }
 
-const getSeverityLabel = (severity: 'error' | 'warning' | 'info' | undefined): string => {
+const getSeverityLabel = (severity: ErrorSeverity | undefined): string => {
   if (severity === 'warning') {
     return 'Warning:';
   }
@@ -45,7 +46,7 @@ interface ErrorRecord {
   lineno?: number | null;
   colno?: number | null;
   lineBase?: 'zero' | 'one';
-  severity?: 'error' | 'warning' | 'info';
+  severity?: ErrorSeverity;
   stack?: string;
 }
 
@@ -84,7 +85,7 @@ interface ErrorParts {
   fixCode: string;
   fixComment: string;
   documentationUrl: string | null;
-  severity: 'error' | 'warning' | 'info' | undefined;
+  severity: ErrorSeverity | undefined;
 }
 
 const extractErrorParts = (error: unknown): ErrorParts => {

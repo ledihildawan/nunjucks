@@ -1,4 +1,5 @@
 import type { Phase, UndefinedMode } from '@nunjucks/shared';
+import type { ErrorSeverity } from './errors/types.ts';
 import type { LineBase } from './line-base.ts';
 
 export interface ErrorLike {
@@ -14,7 +15,7 @@ export interface ErrorLike {
   code?: string | null;
   lineBase?: LineBase | null;
   blockedKeys?: readonly string[];
-  severity?: 'error' | 'warning' | 'info';
+  severity?: ErrorSeverity;
   timestamp?: string | null;
   environment?: string | null;
 }

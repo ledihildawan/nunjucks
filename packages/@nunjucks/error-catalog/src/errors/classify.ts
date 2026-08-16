@@ -1,7 +1,7 @@
 import { find, keys, map, pipe, reduce } from 'remeda';
 import { DEFAULT_CLASSIFICATION, ERROR_DEFINITIONS, RULES, toRule } from './registry.ts';
 import { reservedKeywordClassifier } from './reserved-keyword.ts';
-import type { Classification, Classifier, ClassifyInput } from './types.ts';
+import type { Classification, Classifier, ClassifyInput, ErrorSeverity } from './types.ts';
 
 interface ReplacePlaceholdersInput {
   str: string | null | undefined;
@@ -130,7 +130,7 @@ interface ErrorWithExtras {
   fixCode?: string | null;
   fixComment?: string | null;
   documentationUrl?: string | null;
-  severity?: 'error' | 'warning' | 'info';
+  severity?: ErrorSeverity;
 }
 
 export const classifyFromError = (error: ErrorWithExtras | null): Classification => {

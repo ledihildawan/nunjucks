@@ -1,5 +1,6 @@
 import { escapeRegex } from '@nunjucks/lib';
 import type { ExtraExtractor } from './types.ts';
+import type { ErrorSeverity } from './types.ts';
 import { firstCapture } from './types.ts';
 
 interface ErrorDefinitionOptions {
@@ -10,7 +11,7 @@ interface ErrorDefinitionOptions {
   fixCode?: string;
   fixComment?: string;
   documentationUrl?: string;
-  severity?: 'error' | 'warning' | 'info';
+  severity?: ErrorSeverity;
   extraFrom?: ExtraExtractor;
 }
 
@@ -70,7 +71,8 @@ const createErrorDefinition = (options: ErrorDefinitionOptions) => {
     fixCode,
     fixComment,
     documentationUrl,
-    // WHY: severity defaults to 'error' so every factory-created definition has an explicit value. Only warnings (e.g. DANGEROUS_CONTEXT_VALUE_SCRUBBED) override to 'warning'.
+    // WHY: severity defaults to 'error' so every factory-created definition carries an
+    // explicit value; warnings opt out via severity: 'warning' in their definitions.
     severity: severity ?? 'error',
     subjectFrom: messageHasVariable(message) ? firstCapture : null,
     extraFrom: extraFrom ?? null,

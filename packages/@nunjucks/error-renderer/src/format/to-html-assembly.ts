@@ -1,3 +1,4 @@
+import type { ErrorSeverity } from '@nunjucks/error-catalog';
 import { DEFAULT_IDE } from './presentation/ide-links/defaults.ts';
 import { isFilePath } from './presentation/ide-links/ide-links.ts';
 import { shortenPath } from './presentation/source-trace/path-shortener.ts';
@@ -35,7 +36,7 @@ interface ErrorSections {
   footer: string;
   wrapped: string;
   message: string;
-  severity: 'error' | 'warning' | 'info';
+  severity: ErrorSeverity;
   displayPath: string;
   displayLine: number;
   displayCol: number;

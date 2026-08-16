@@ -49,17 +49,42 @@ const readPhase = (value: unknown): Phase | null => {
   return null;
 };
 
+// WHY: hostile-object guards — a throwing getter or toString on the thrown value must
+// never crash the normalizer itself (error handling runs at the worst possible moment).
+// Descriptor-based access is the technique proven in error-renderer's safe-context.ts.
+const readOwnStringSafe = (source: Record<string, unknown>, key: string): string | null => {
+  try {
+    const descriptor = Object.getOwnPropertyDescriptor(source, key);
+    if (descriptor && 'value' in descriptor) {
+      return readString(descriptor.value);
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+const stringifySafe = (thrown: unknown): string => {
+  try {
+    return String(thrown);
+  } catch {
+    return '[unstringifiable error]';
+  }
+};
+
 const stringifyThrown = (thrown: unknown): string => {
   if (typeof thrown === 'string') { return thrown; }
   if (thrown === null || thrown === undefined) { return String(thrown); }
   const object = readObject(thrown);
-  const message = readString(object.message);
-  if (message !== null) { return message; }
+  if (object !== null) {
+    const message = readOwnStringSafe(object, 'message');
+    if (message !== null) { return message; }
+  }
   try {
     const serialized = JSON.stringify(thrown);
-    return serialized ?? String(thrown);
+    return serialized ?? stringifySafe(thrown);
   } catch {
-    return String(thrown);
+    return stringifySafe(thrown);
   }
 };
 

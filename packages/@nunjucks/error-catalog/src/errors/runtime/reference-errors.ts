@@ -1,6 +1,11 @@
 import { createErrorDefinition } from '../factory.ts';
 import { firstCapture } from '../types.ts';
 
+// WHY: SSOT for the reserved-keyword-context title — the definition below and the
+// dedicated classifier (errors/reserved-keyword.ts) both render from this constant.
+const RESERVED_KEYWORD_CONTEXT_TITLE =
+  "Cannot use reserved keyword '{subject}' outside of its intended context";
+
 const UNDEFINED_FUNCTION = createErrorDefinition({
   name: 'UNDEFINED_FUNCTION',
   message: "Function '{name}' is not defined",
@@ -143,7 +148,7 @@ const RESERVED_KEYWORD_CONTEXT = {
   pattern:
     /reserved keyword.*context|cannot use.*reserved keyword/iu,
   category: 'reserved_keyword_context',
-  titleTemplate: "Cannot use reserved keyword '{subject}' outside of its intended context",
+  titleTemplate: RESERVED_KEYWORD_CONTEXT_TITLE,
   causes: [
     '`{subject}` is a **reserved keyword** with special context requirements',
     'Only available in specific template constructs',
@@ -159,6 +164,7 @@ export {
   NO_SUPER_BLOCK,
   RESERVED_KEYWORD,
   RESERVED_KEYWORD_CONTEXT,
+  RESERVED_KEYWORD_CONTEXT_TITLE,
   UNDEFINED_BLOCK,
   UNDEFINED_EXTENSION,
   UNDEFINED_FILTER,
