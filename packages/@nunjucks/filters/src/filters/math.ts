@@ -10,6 +10,9 @@ export const abs = (value: unknown): Result<number, TemplateError> => {
   return ok(Math.abs(value));
 };
 
+// WHY: positional arity is the template-language contract (upstream `round(precision, method)`
+// syntax) — folding the params into a kwargs object would change template syntax, not just
+// internal code shape.
 export const round = (
   value: unknown,
   precision = 0,

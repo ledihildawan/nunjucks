@@ -95,6 +95,9 @@ const indentImpl = ({ str, width, indentfirst }: IndentOptions): Result<string, 
 
 const indent = createFilter(['str', 'width', 'indentfirst'], indentImpl);
 
+// WHY: positional arity is the template-language contract (upstream `join(d, attr)`
+// syntax) — folding the params into a kwargs object would change template syntax, not
+// just internal code shape.
 const joinFilter = (
   values: unknown,
   delimiter?: string,

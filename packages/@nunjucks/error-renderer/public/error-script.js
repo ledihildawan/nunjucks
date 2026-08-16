@@ -91,6 +91,9 @@
     }
   }
 
+  // WHY: duplicates @nunjucks/lib escape.ts HTML_ENTITY map on purpose — this is a plain-JS
+  // browser asset that cannot import the TS lib; if the entity set ever changes there,
+  // mirror it here (same five metacharacters: & < > " ').
   function escapeHtml(str) {
     if (typeof str !== 'string') return String(str);
     return str

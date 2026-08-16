@@ -72,9 +72,10 @@ interface PerRenderOverrides {
   readonly streamContentType?: ContentType;
 }
 
-// WHY: render/renderToStream are public framework-contract entry points. The (template, context, overrides)
-// shape is the established template-engine contract (subject + payload + optional config) which Rule 4 exempts
-// as a "Fixed Framework / Engine Contract". The factory owns all other config; per-call overrides stay minimal.
+// WHY: render/renderToStream/pipeRenderStream are public framework-contract entry points.
+// render/renderToStream share the established (template, context, overrides) engine contract
+// (subject + payload + optional config); pipeRenderStream keeps its (result, sink, options)
+// shape so all three engine methods read uniformly as (subject, target, optional-config).
 interface NunjucksEngine {
   render(
     template: string,

@@ -61,6 +61,10 @@ const lexGenerator = function* (state: LexerState): Generator<Token, void, unkno
   }
 };
 
+// WHY: throwing contract — nextToken signals lexical errors by THROWING branded
+// TemplateErrors (createLog); the Result conversion is owned by the parser boundary
+// (parser/parse.ts maps isTemplateError to err, all other throws propagate as bugs).
+// Direct consumers of createTokenizer must apply the same mapping.
 interface TokenizerResult {
   nextToken: () => Token | null;
   tags: ReturnType<typeof createDelimiters>;

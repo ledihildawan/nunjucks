@@ -15,36 +15,20 @@ import { assertSafeIdentifier } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
-const STRING_ESCAPE_MAP: Record<string, string> = {
-  '\\': '\\\\',
-  '"': '\\"',
-  '\n': '\\n',
-  '\r': '\\r',
-  '\t': '\\t',
-  '\u2028': '\\u2028',
-};
-
 const TEMPLATE_ESCAPE_MAP: Record<string, string> = {
   '\\': '\\\\',
   '`': '\\`',
   $: '\\$',
 };
 
-const escapeString = (str: string): string =>
-  join('')(
-    pipe(
-      [...str],
-      map((char) => STRING_ESCAPE_MAP[char] ?? char)
-    )
-  );
-
 const compileLiteral = (
   compiler: Compiler,
   node: { value?: unknown; lineno: number; colno: number }
 ): void => {
   if (typeof node.value === 'string') {
-    const value = escapeString(node.value);
-    compiler.emit(`"${value}"`);
+    // WHY: JSON.stringify emits a valid double-quoted JS literal and, unlike the former
+    // hand-rolled per-char escape map, also covers control characters and U+2029 uniformly.
+    compiler.emit(JSON.stringify(node.value));
   } else if (node.value === null) {
     compiler.emit('null');
   } else {

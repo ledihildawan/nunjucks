@@ -182,6 +182,9 @@ const prepareRender = async (
     callerLocation: baseConfig.callerLocation ?? primaryCaller,
   };
 
+  // WHY: the gates below run sequentially ON PURPOSE — each is a fail-fast check over
+  // already-available data, and parallelizing them would surface a less specific error
+  // first; only resolveTemplateSource performs I/O and must not run for invalid input.
   const renderValidation = await validateRender(template, { config, context });
   if (isErr(renderValidation)) {
     return err(renderValidation.error);
