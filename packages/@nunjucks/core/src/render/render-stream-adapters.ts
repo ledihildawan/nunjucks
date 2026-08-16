@@ -1,6 +1,7 @@
 // WHY: consumer-side streaming helpers. renderToStream yields a plain AsyncGenerator<string>; these adapters convert it into the stream shapes real HTTP/runtimes expect, and enforce a per-chunk timeout so a stalled render cannot hang a response indefinitely.
 
-import { ERROR_CODES } from '@nunjucks/error-catalog';
+import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
+import { createLog, type TemplateError } from '@nunjucks/error-formatter';
 import {
   coalesceStream,
   err,
@@ -86,19 +87,24 @@ const withStreamDeadline = async function* (
 };
 
 // WHY: streaming yield boundary — coerce SafeString (a boxed String, instanceof String) to a primitive string. suppressValue returns the SafeString object for already-safe values so the blocking path's `buffer += value` coerces via toString; the streaming path yields directly, so without this coercion a SafeString object reaches the HTTP sink (res.write / TextEncoder.encode) which rejects boxed strings with ERR_INVALID_ARG_TYPE. The thenable check is a fail-loud safety net: a Promise reaching here means an emit site forgot to await (every known site does — see compile-output/extension/extends); stringifying it would silently produce "[object Promise]", so return err instead to surface the bug.
-const coerceChunk = (value: unknown): Result<string, Error> => {
+const coerceChunk = (value: unknown): Result<string, TemplateError> => {
   if (typeof value === 'string') {
     return ok(value);
   }
   if (isThenable(value)) {
-    // WHY: stamped with RENDER_ERROR so the stream boundary error envelope stays
-    // structurally symmetric with its sibling guard below — every adapter error
-    // carries a classifiable code for downstream classification/display.
-    const leakedPromiseError = new Error(
-      'renderToStream: Promise leaked to stream boundary — an emit site is missing await'
-    ) as Error & { code: string };
-    leakedPromiseError.code = ERROR_CODES.RENDER_ERROR;
-    return err(leakedPromiseError);
+    // WHY: catalog def spread with a specific message (same pattern as createOutputSizeError
+    // in pipe-stream) — keeps the RENDER_ERROR code/classification for downstream display
+    // while naming the exact boundary violation.
+    return err(
+      createLog('error', {
+        def: {
+          ...ERROR_DEFINITIONS.RENDER_ERROR,
+          message: () =>
+            'renderToStream: Promise leaked to stream boundary — an emit site is missing await',
+        },
+        context: { phase: 'render' },
+      })
+    );
   }
   return ok(String(value));
 };
@@ -112,11 +118,12 @@ const guardSingleConsumer = (inner: AsyncGenerator<string>): AsyncGenerator<stri
     },
     next(value?: unknown): Promise<IteratorResult<string>> {
       if (finished) {
-        const consumedError = new Error(
-          'renderToStream: stream already consumed — a stream is single-use; call renderToStream() again for a fresh stream'
-        ) as Error & { code: string };
-        consumedError.code = ERROR_CODES.STREAM_ALREADY_CONSUMED;
-        return Promise.reject(consumedError);
+        return Promise.reject(
+          createLog('error', {
+            def: ERROR_DEFINITIONS.STREAM_ALREADY_CONSUMED,
+            context: { phase: 'render' },
+          })
+        );
       }
       return inner.next(value).then((result) => {
         if (result.done) {
