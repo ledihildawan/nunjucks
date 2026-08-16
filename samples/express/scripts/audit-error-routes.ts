@@ -63,7 +63,7 @@ const discoverRoutes = async (base: string): Promise<string[]> => {
   const errorsSrc = readFileSync(ERRORS_TS, 'utf8');
   return [
     ...new Set(
-      [...errorsSrc.matchAll(/router\.get\('\/([a-z0-9-]+)'/gu)]
+      [...errorsSrc.matchAll(/router\.get\(\s*'\/([a-z0-9-]+)'/gu)]
         .map((m) => m[1])
         .filter((s): s is string => s !== undefined)
     ),

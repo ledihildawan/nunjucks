@@ -140,6 +140,15 @@ The `__nunjucks_*__` tokens used in `runtime/` and emitted by `compiler/` are **
 
 Template rendering uses a **two-pass streaming pipeline** (`renderToStream`) with a **three-tier error strategy**. The deciding question for any error is: *does one failing expression make the whole page useless, or only that spot?* Structural/safety failures abort; per-expression data failures render inline.
 
+### Result conventions
+
+Runtime failures take one of four value shapes, chosen by failure kind:
+
+- **Miss sentinels** — `memberLookup` data misses return a `NullAccessResult` (null/undefined target) or `PROP_NOT_FOUND` marker; the prop-not-found marker is callable, so `obj.missing()` yields `undefined` through call-wrap, and `runtime.isTruthy` folds both falsy in conditions (recoverable in-expression).
+- **Throws** — structural failures (callWrap/sandbox/context misuse) can only fail by throwing; compiled code funnels them through `handleError` (return type `never`).
+- **`Result`** — the async filter boundary (`runFilter`) returns `Result` so filter failures compose without exceptions.
+- **`undefined`** — `frame.get` and plain lookups signal absence as plain `undefined` (no sentinel).
+
 ### Tier 1 — Pre-stream block (full error page)
 
 Failures detected in **pass-1** (`prepareRender`) arrive as `{ ok: false, error }` before any chunk is streamed. Response headers are not yet sent, so the consumer can render a full error page. These always block because the template cannot produce valid output at all:
@@ -207,7 +216,7 @@ The `nunjucks` ↔ `createNunjucks` split mirrors the betterAuth `betterAuth`/`c
 The public `NunjucksConfig` is **nested by concern**:
 
 - top-level: `dev`, `views`, `loaders`, `autoescape`, `undefined`, `trimBlocks`, `lstripBlocks`, `ide`
-- `security`: `sandbox`, `sandboxMode`, `sandboxAllowlist`, `blockedContextKeys`, `contextStrict`, `scanContextValues`, `strictMode`, `allowedGlobals`
+- `security`: `sandbox`, `sandboxEnvironment` (`'auto'`/`'node'`/`'browser'`/`'deno'`, default `'auto'` — environment-aware blocking), `sandboxMode`, `sandboxAllowlist`, `blockedContextKeys`, `contextStrict`, `scanContextValues`, `strictMode`, `allowedGlobals`
 - `limits`: `executionTimeout`, `maxTemplateSize`, `maxOutputSize`
 - `streaming`: `errorRecovery`, `contentType`, `idleTimeout`, `coalesceBytes`
 - flat extensions: `filters`, `globals`, `tests`, `extensions`, `dompurify`

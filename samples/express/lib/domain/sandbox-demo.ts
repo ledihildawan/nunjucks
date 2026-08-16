@@ -7,6 +7,8 @@ interface TestCase {
   template: string;
   sandbox?: boolean;
   shouldPass?: boolean;
+  context?: Record<string, unknown>;
+  security?: NunjucksConfig['security'];
 }
 
 type TestOutcome = Result<string, Error>;
@@ -47,11 +49,14 @@ const runTests = async ({
   Promise.all(
     tests.map(async (test): Promise<SandboxTestResult> => {
       const testConfig: NunjucksConfig =
-        test.sandbox === undefined
+        test.sandbox === undefined && test.security === undefined
           ? config
-          : { ...config, security: { ...config.security, sandbox: test.sandbox } };
+          : {
+              ...config,
+              security: { ...config.security, ...test.security, sandbox: test.sandbox },
+            };
       const result = await renderDemoTemplate(test.template, {
-        context,
+        context: test.context ?? context,
         config: testConfig,
       });
       const outcome: TestOutcome = result;
@@ -68,6 +73,13 @@ const outcomeError = (row: SandboxTestResult): Error | null =>
 const outcomeOutput = (row: SandboxTestResult): string =>
   row.outcome.ok ? row.outcome.value : '';
 
+const prototypeEscapeKeys = ['__proto__', 'constructor', 'prototype'];
+
+// WHY: the engine's prototype-escape guard is unconditional — inherited proto/constructor reads
+// render as not-found ("undefined") even in default mode; sandbox mode only upgrades that to a throw.
+const isPrototypeEscapeProbe = (row: SandboxTestResult): boolean =>
+  prototypeEscapeKeys.some((key) => row.name.includes(key));
+
 const classifyStatus = (
   row: SandboxTestResult,
   suite: SandboxSuite
@@ -76,12 +88,14 @@ const classifyStatus = (
     case 'blocked':
       return {
         className: row.blocked ? 'blocked' : 'allowed',
-        label: row.blocked ? 'BLOCKED' : 'ALLOWED',
+        label: row.blocked ? 'Blocked (throws)' : 'Allowed',
       };
     case 'normal':
+      if (isPrototypeEscapeProbe(row)) {
+        return { className: 'blocked', label: 'Blocked (renders undefined)' };
+      }
       return {
-        className:
-          row.name.includes('__proto__') || row.name.includes('constructor') ? 'danger' : '',
+        className: '',
         label: outcomeError(row) !== null ? 'Error' : 'Allowed',
       };
     case 'allowlist':
@@ -150,7 +164,6 @@ const renderTable = (table: SandboxTestResult[], suite: SandboxSuite): string =>
     '.allowed{background:#efe;color:#27ae60}' +
     '.passed{background:#d5f4e6;color:#27ae60}' +
     '.failed{background:#fadbd8;color:#e74c3c}' +
-    '.danger{background:#fee;color:#c0392b}' +
     '.code{background:#f8f9fa;padding:15px;border-radius:8px;font-family:monospace;margin:15px 0}' +
     '.info{background:#e8f4f8;padding:15px;border-radius:8px;margin:15px 0}' +
     'a{color:#3498db}' +
@@ -207,9 +220,13 @@ const sandboxSuites: SandboxSuite[] = [
         sandbox: true,
       },
       {
+        // WHY: process is context-injected (mirroring /errors/sandbox-process) so the
+        // contextStrict scanner must reject it — `{{ this.process }}` never resolved to anything.
         name: 'Access process (Node blocked)',
-        template: '{{ this.process }}',
+        template: '{{ user.process }}',
         sandbox: true,
+        security: { contextStrict: 'error' },
+        context: { user: { process } },
       },
       {
         name: 'Access prototype (blocked)',
@@ -225,7 +242,10 @@ const sandboxSuites: SandboxSuite[] = [
     accentColor: '#e74c3c',
     statusMode: 'normal',
     introHtml:
-      '<div style="background:#fff3cd;padding:15px;border-radius:8px;margin-bottom:20px"><strong>Warning:</strong> Without sandbox, templates can access dangerous properties!</div>',
+      '<div class="info"><strong>Default mode is not defenseless:</strong> the engine\'s prototype-escape guard is ' +
+      'unconditional — inherited <code>__proto__</code>/<code>constructor</code>/<code>prototype</code> reads render ' +
+      'as not-found (<code>undefined</code>) without sandbox too, and the dev context scanner rejects dangerous ' +
+      'context values outright. Sandbox mode additionally <em>throws</em> on masked keys and adds write/call gates.</div>',
     outroHtml: null,
     context: {
       user: {
@@ -236,8 +256,13 @@ const sandboxSuites: SandboxSuite[] = [
     config: {},
     tests: [
       { name: 'Normal property', template: '{{ user.name }}' },
-      { name: 'Access __proto__ (DANGEROUS!)', template: '{{ user.__proto__ }}' },
+      { name: 'Access __proto__', template: '{{ user.__proto__ }}' },
       { name: 'Access constructor', template: '{{ user.constructor }}' },
+      {
+        name: 'Context-injected process (dev scanner)',
+        template: '{{ user.process }}',
+        context: { user: { process } },
+      },
     ],
   },
   {
@@ -324,5 +349,4 @@ const sandboxSuites: SandboxSuite[] = [
   },
 ];
 
-export type { SandboxSuite, SandboxTestResult, TestCase };
 export { renderTable, runTests, sandboxSuites };

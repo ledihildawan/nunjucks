@@ -52,7 +52,7 @@ Security defaults (always on, sandbox not required):
 | Nullish / ternary / inline-if | `a ?? b`, `c ? a : b`, `a if c else b` | |
 | Comparisons | `== === != !== < > <= >=` | chainable: `1 < x < 5` |
 | `in` / `is` | `2 in [1,2]`, `x is defined`, `x is not null` | right side of `is` is always a test name |
-| Arithmetic | `+ - * / % **`, floor-div `7 // 2`, concat `~`, range `1..4` | |
+| Arithmetic | `+ - * / % **`, floor-div `7 // 2`, concat `~`, range `1..4` | ranges are integer-only and capped — a span over 1,000,000 throws `RANGE_EXCEEDED` (e.g. `{{ 1..3000000000 }}`) |
 | Unary | `- + ! not ~`, `++`/`--` (pre/post) | |
 | Bitwise | `& \| ^ << >>` | |
 | Literals | `'…'`, `"…"`, int/float, `true`/`false`, `none`/`null`, arrays `[1, ...rest]`, dicts `{a: 1, b, ...more}` | spread + shorthand supported |
@@ -61,11 +61,14 @@ Security defaults (always on, sandbox not required):
 | Regex literals | not supported | pass `RegExp` objects via context/tests |
 | Destructuring | holes `[a, , c]`, defaults `[a = 1]`, rest `[first, ...r]`, nested objects | usable in walrus and `for` targets |
 
+Unterminated strings, comments, and template literals raise `UNTERMINATED_LITERAL` (positioned at the opening delimiter) instead of silently consuming the rest of the template.
+
 ## Tags
 
 ### Control flow
 
 - `{% if c %}…{% elif c %}…{% else %}…{% endif %}` (`elseif` alias supported)
+  - Truthiness is engine-evaluated: `{% if %}` conditions, inline `x if c else y`, and `not` all fold miss sentinels (absent lookups) to falsy — classic semantics.
 - `{% for x in items %}…{% else %}…{% endfor %}` — targets: symbol, `k, v` pairs, or full destructuring patterns. Objects iterate `for k, v in obj`; strings iterate characters; Map/Set/iterables are coerced. `{% else %}` fires on empty collections.
   - `loop.*`: `index`, `index0`, `revindex`, `revindex0`, `first`, `last`, `length` — exactly these (**deviation**: no `loop.cycle`, no `loop.depth`).
 - `{% switch expr %}{% case v %}…{% default %}…{% endswitch %}` — strict equality, no fallthrough.
@@ -77,7 +80,7 @@ Security defaults (always on, sandbox not required):
 
 ### Inheritance & reuse
 
-- `{% extends "parent.njk" %}` with `{% block name %}…{% endblock %}`; `{{ super() }}` emits the parent block (SafeString). Duplicate/undefined blocks fail validation with catalogued errors.
+- `{% extends "parent.njk" %}` with `{% block name %}…{% endblock %}`; `{{ super() }}` emits the parent block (SafeString) and binds to the nearest enclosing block in the current inheritance chain (nested-block scoping). Duplicate/undefined blocks fail validation with catalogued errors.
 - `{% include expr %}` — flags: `ignore missing`, `only` (empty context), `with expr` (merge context).
 - `{% import "lib.njk" as lib %}`, `{% from "lib.njk" import a, b as c %}` (+ `with context` / `without context`; default **without**). Imports bind exported `{% component %}` definitions.
 
@@ -93,7 +96,7 @@ Registered set (aliases in parentheses). All return `Result` internally; failure
 
 **String** — `capitalize`, `escape` (`e`) HTML-escape → SafeString, `fallback` (`default`, `d`) `(value, fallback, useFalsy=false)`, `indent(width=4, first=false)`, `join(delim='', attr)`, `lower`, `upper`, `trim`, `title`, `replace(old, new, max=-1)` (string or RegExp needle), `truncate(len=255, killwords=false, end='...')`, `tojson` (XSS-safe JSON → SafeString).
 
-**Array** — `first`, `last`, `length` (`lengthFilter`), `reverse`, `slice(n, fill)` (n near-equal columns), `sort`, `sum(attr?, start=0)`.
+**Array** — `first`, `last`, `length` / `lengthFilter` (both names callable — the internal function name is registered alongside its upstream-compat alias), `reverse`, `slice(n, fill)` (n near-equal columns), `sort`, `sum(attr?, start=0)`.
 
 **Object** — `groupby(attr)` → `Record<key, items[]>`.
 
@@ -109,7 +112,7 @@ Registered set (aliases in parentheses). All return `Result` internally; failure
 
 `value is <test>`, `value is not <test>`. Built-ins:
 
-- existence: `defined`, `undefined`, `null`, `none`, `truthy`, `falsy`
+- existence: `defined`, `undefined`, `null` (strict `=== null` only), `none` (null or undefined), `truthy`, `falsy`
 - boolean/numeric: `true`, `false`, `boolean`, `number`, `integer`, `float`, `odd`, `even`, `positive`, `negative`, `zero`, `finite`, `nan`, `divisibleby(n)`, `between(lo, hi)`
 - string: `string`, `lower`, `upper`, `alpha`, `alphanumeric`, `numeric`, `startswith(s)`, `endswith(s)`, `matches(re)`, `empty`, `blank`, `contains(x)`
 - collections: `array`, `object`, `iterable`, `asynciterable`, `typedarray`, `buffer`
@@ -170,4 +173,5 @@ Parser-authoring helpers (`advanceAfterBlockEnd`, `skipSymbol`, `peekToken`, `ne
 | `trimBlocks` / `lstripBlocks` | `false` |
 | `dev` | `false` (appends warnings script when warnings exist) |
 | `security.sandbox` | `false` |
+| `security.sandboxEnvironment` | `'auto'` (environment-aware blocking: `'auto'`/`'node'`/`'browser'`/`'deno'`) |
 | `limits.*` | `0` (unlimited) |

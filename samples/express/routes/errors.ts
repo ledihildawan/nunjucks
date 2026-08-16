@@ -1,4 +1,3 @@
-import type { NunjucksConfig } from '@nunjucks/core';
 import { escapeHtml, isKeyedObject } from '@nunjucks/lib';
 import { createSandboxedContext } from '@nunjucks/runtime';
 import express, { type NextFunction, type Request, type Response, type Router } from 'express';
@@ -8,14 +7,17 @@ import type { EnrichedFilterError } from '../lib/domain/error-route-types.ts';
 import { createTemplateSource } from '../lib/domain/error-route-utils.ts';
 import { renderTemplate } from '../lib/domain/render-template.ts';
 import { sendTemplateResult } from '../lib/io/send-template-result.ts';
-import { VIEWS } from '../lib/io/views-path.ts';
+import { devErrorRouteConfig, strictErrorRouteConfig, VIEWS } from '../lib/io/views-path.ts';
 
 const router: Router = express.Router();
 
 errorRoutes.reduce<Router>((acc, { path: routePath, template, context }) => {
-  const config: NunjucksConfig = { dev: true, undefined: 'strict', views: VIEWS };
   acc.get(`/${routePath}`, async (_req: Request, res: Response, next: NextFunction) => {
-    sendTemplateResult({ res, next, result: await renderTemplate(template, { context, config }) });
+    sendTemplateResult({
+      res,
+      next,
+      result: await renderTemplate(template, { context, config: strictErrorRouteConfig }),
+    });
   });
   return acc;
 }, router);
@@ -75,7 +77,7 @@ router.get('/undefined-block', async (_req: Request, res: Response, next: NextFu
     next,
     result: await renderTemplate('errors/undefined-block.njk', {
       context: {},
-      config: { dev: true, undefined: 'strict', views: VIEWS },
+      config: strictErrorRouteConfig,
     }),
   });
 });
@@ -105,7 +107,7 @@ router.get('/no-super-block-template', async (_req: Request, res: Response, next
     next,
     result: await renderTemplate('errors/no-super-block.njk', {
       context: {},
-      config: { dev: true, undefined: 'strict', views: VIEWS },
+      config: strictErrorRouteConfig,
     }),
   });
 });
@@ -116,7 +118,7 @@ router.get('/invalid-include', async (_req: Request, res: Response, next: NextFu
     next,
     result: await renderTemplate('errors/invalid-include.njk', {
       context: {},
-      config: { dev: true, undefined: 'strict', views: VIEWS },
+      config: strictErrorRouteConfig,
     }),
   });
 });
@@ -127,7 +129,7 @@ router.get('/circular-include', async (_req: Request, res: Response, next: NextF
     next,
     result: await renderTemplate('errors/circular-include.njk', {
       context: {},
-      config: { dev: true, undefined: 'strict', views: VIEWS },
+      config: strictErrorRouteConfig,
     }),
   });
 });
@@ -138,7 +140,7 @@ router.get('/file-not-found', async (_req: Request, res: Response, next: NextFun
     next,
     result: await renderTemplate('errors/file-not-found.njk', {
       context: {},
-      config: { dev: true, undefined: 'strict', views: VIEWS },
+      config: strictErrorRouteConfig,
     }),
   });
 });
@@ -149,7 +151,7 @@ router.get('/filesystem-error', async (_req: Request, res: Response, next: NextF
     next,
     result: await renderTemplate('errors/filesystem-error.njk', {
       context: {},
-      config: { dev: true, undefined: 'strict', views: VIEWS },
+      config: strictErrorRouteConfig,
     }),
   });
 });
@@ -412,7 +414,7 @@ router.get('/import-error', async (_req: Request, res: Response, next: NextFunct
     next,
     result: await renderTemplate('errors/import-error.njk', {
       context: {},
-      config: { dev: true, undefined: 'strict', views: VIEWS },
+      config: strictErrorRouteConfig,
     }),
   });
 });
@@ -478,7 +480,7 @@ router.get('/unknown-block-runtime', async (_req: Request, res: Response, next: 
     next,
     result: await renderTemplate(
       '{% extends "base.njk" %}{% block nonexistent %}{{ super() }}{% endblock %}',
-      { context: {}, config: { dev: true, views: VIEWS } }
+      { context: {}, config: devErrorRouteConfig }
     ),
   });
 });
@@ -623,7 +625,7 @@ router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
         groups: errorGroups,
         total: errorGroups.reduce((sum, group) => sum + group.items.length, 0),
       },
-      config: { dev: true, views: VIEWS },
+      config: devErrorRouteConfig,
     }),
   });
 });

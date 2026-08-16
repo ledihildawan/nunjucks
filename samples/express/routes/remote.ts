@@ -2,11 +2,11 @@ import express, { type NextFunction, type Request, type Response, type Router } 
 import { renderTemplate } from '../lib/domain/render-template.ts';
 import { localizedTime } from '../lib/io/clock.ts';
 import { sendTemplateResult } from '../lib/io/send-template-result.ts';
-import { VIEWS } from '../lib/io/views-path.ts';
+import { standardRouteConfig } from '../lib/io/views-path.ts';
 
 const router: Router = express.Router();
 
-// WHY: engine-rendered shell (views: VIEWS comes from engineConfig) + client-side fetch —
+// WHY: engine-rendered shell (standardRouteConfig supplies views) + client-side fetch —
 // the engine has no {% remote %} tag, so async composition is demonstrated honestly:
 // the template owns the layout, the browser owns fragment loading with loading/error branches.
 router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
@@ -15,7 +15,7 @@ router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
     next,
     result: await renderTemplate('remote.njk', {
       context: {},
-      config: { dev: true, autoescape: true, views: VIEWS },
+      config: standardRouteConfig,
     }),
   });
 });

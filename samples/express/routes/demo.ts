@@ -1,7 +1,7 @@
 import express, { type NextFunction, type Request, type Response, type Router } from 'express';
 import { renderTemplate } from '../lib/domain/render-template.ts';
 import { sendTemplateResult } from '../lib/io/send-template-result.ts';
-import { VIEWS } from '../lib/io/views-path.ts';
+import { demoRouteConfig, VIEWS } from '../lib/io/views-path.ts';
 
 const router: Router = express.Router();
 
@@ -9,7 +9,7 @@ router.get('/scope', async (_req: Request, res: Response, next: NextFunction) =>
   sendTemplateResult({
     res,
     next,
-    result: await renderTemplate('demo-scope.njk', { context: {}, config: { views: VIEWS } }),
+    result: await renderTemplate('demo-scope.njk', { context: {}, config: demoRouteConfig }),
   });
 });
 
@@ -28,7 +28,7 @@ router.get('/exec', async (_req: Request, res: Response, next: NextFunction) => 
         },
         items: [],
       },
-      config: { views: VIEWS },
+      config: demoRouteConfig,
     }),
   });
 });
@@ -42,7 +42,7 @@ router.get('/switch', async (_req: Request, res: Response, next: NextFunction) =
         status: 'active',
         priority: 2,
       },
-      config: { views: VIEWS },
+      config: demoRouteConfig,
     }),
   });
 });
@@ -51,7 +51,7 @@ router.get('/slot', async (_req: Request, res: Response, next: NextFunction) => 
   sendTemplateResult({
     res,
     next,
-    result: await renderTemplate('demo-slot.njk', { context: {}, config: { views: VIEWS } }),
+    result: await renderTemplate('demo-slot.njk', { context: {}, config: demoRouteConfig }),
   });
 });
 
@@ -61,7 +61,7 @@ router.get('/component', async (_req: Request, res: Response, next: NextFunction
     next,
     result: await renderTemplate('component-demo.njk', {
       context: { username: 'John Doe' },
-      config: { views: VIEWS },
+      config: demoRouteConfig,
     }),
   });
 });
@@ -74,7 +74,7 @@ router.get('/pipe', async (_req: Request, res: Response, next: NextFunction) => 
       context: {
         items: ['one', 'two', 'three'],
       },
-      config: { views: VIEWS },
+      config: demoRouteConfig,
     }),
   });
 });

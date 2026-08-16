@@ -7,6 +7,11 @@ import { apiNjk, blockingNjk, streamNjk } from '../lib/io/stream-engines.ts';
 
 const router: Router = express.Router();
 
+// WHY: shared pipeRenderStream guardrails — every streaming route gets the same per-chunk
+// idle timeout and output-size breaker so no route can stream unbounded output.
+const streamIdleTimeoutMs = 10000;
+const streamMaxOutputBytes = 2 * 1024 * 1024;
+
 const dashboardContext = (mode: string): Record<string, unknown> => ({
   ...dashboardData,
   mode,
@@ -35,8 +40,8 @@ router.get('/stream', async (req: Request, res: Response, next: NextFunction) =>
   }
   await streamNjk.pipeRenderStream(streamResult, res, {
     signal: createDisconnectSignal(req, res),
-    timeoutMs: 10000,
-    maxOutputSize: 2 * 1024 * 1024,
+    timeoutMs: streamIdleTimeoutMs,
+    maxOutputSize: streamMaxOutputBytes,
     onError: (err, phase) => {
       console.error(`[stream] ${phase} error: ${err.message}`);
     },
@@ -57,6 +62,9 @@ router.get('/stream-normal', async (req: Request, res: Response) => {
   if (result.ok) {
     res.type('html').send(result.value);
   } else {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(formatError(result.error, { format: 'ansi' }));
+    }
     res.status(500).type('html').send(
       formatError(result.error, {
         format: 'html',
@@ -78,6 +86,8 @@ router.get('/stream-api', async (req: Request, res: Response, next: NextFunction
   }
   await apiNjk.pipeRenderStream(streamResult, res, {
     signal: createDisconnectSignal(req, res),
+    timeoutMs: streamIdleTimeoutMs,
+    maxOutputSize: streamMaxOutputBytes,
     onError: (err, phase) => {
       console.error(`[stream-api] ${phase} error: ${err.message}`);
     },
@@ -103,8 +113,8 @@ router.get('/stream-block-error', async (req: Request, res: Response, next: Next
   }
   await streamNjk.pipeRenderStream(streamResult, res, {
     signal: createDisconnectSignal(req, res),
-    timeoutMs: 10000,
-    maxOutputSize: 2 * 1024 * 1024,
+    timeoutMs: streamIdleTimeoutMs,
+    maxOutputSize: streamMaxOutputBytes,
     onError: (err, phase) => {
       console.error(`[stream-block-error] ${phase} error: ${err.message}`);
     },

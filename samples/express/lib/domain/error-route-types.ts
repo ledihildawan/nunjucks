@@ -2,8 +2,6 @@ export interface ErrorRoute {
   path: string;
   template: string;
   context: Record<string, unknown>;
-  category: string;
-  desc: string;
 }
 
 export interface ErrorGroup {

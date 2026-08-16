@@ -51,7 +51,7 @@ await njk.pipeRenderStream(stream, res, { signal: abortController.signal });
 | Group | Fields | Purpose |
 |-------|--------|---------|
 | (top-level) | `dev`, `views`, `autoescape`, `undefined`, `trimBlocks`, `lstripBlocks`, `ide` | Core rendering options. `views` accepts a single path or an array (multi-root, first match wins) |
-| `security` | `sandbox`, `sandboxMode`, `sandboxAllowlist`, `blockedContextKeys`, `contextStrict`, `scanContextValues`, `strictMode`, `allowedGlobals` | Sandbox + context safety |
+| `security` | `sandbox`, `sandboxEnvironment` (`'auto'`/`'node'`/`'browser'`/`'deno'`, default `'auto'` — environment-aware blocking), `sandboxMode`, `sandboxAllowlist`, `blockedContextKeys`, `contextStrict`, `scanContextValues`, `strictMode`, `allowedGlobals` | Sandbox + context safety |
 | `limits` | `executionTimeout`, `maxTemplateSize`, `maxOutputSize` | Time/size bounds |
 | `streaming` | `errorRecovery`, `contentType`, `idleTimeout`, `coalesceBytes` | Streaming render behavior |
 | (extensions) | `filters`, `globals`, `tests`, `extensions`, `dompurify` | Template extensions |

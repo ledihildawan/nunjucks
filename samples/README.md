@@ -26,11 +26,11 @@ Express 5 app wired via `@nunjucks/integrations/express` `createEngine` — cent
 | `/security` | context-aware escaping across html/attribute/script zones |
 | `/stream`, `/stream-normal`, `/stream-api`, `/stream-block-error` | `renderToStream` + `pipeRenderStream`: AbortSignal on client disconnect, idle timeout, output limits, error recovery (inline markers vs fatal), JSON content-type |
 | `/demo/*` | language features — pipe, scope, switch, slot, component, exec, security |
-| `/errors`, `/errors/:scenario` | the error taxonomy browser — 39+ catalogued scenarios (filter errors, undefined blocks, sandbox violations, circular includes, …), each rendering a dev error page |
+| `/errors`, `/errors/:scenario` | the error taxonomy browser — 60+ catalogued scenarios (filter errors, undefined blocks, sandbox violations, circular includes, …), each rendering a dev error page |
 | `/boundary` | zod schema narrowing `req.query` before it reaches the render context |
 | `/sandbox/*` | sandboxed context: `__proto__`/`constructor`/`process`/`eval` blocked; allowlist mode |
-| `/undefined/*` | the four undefined modes (strict / debug / chainable / default) side by side |
+| `/undefined/*` | strict / debug / chainable modes against the default baseline |
 | `/warnings` | `dev: true` + `undefined: 'debug'` — warnings surfaced as an inline reporting script |
-| `/remote` | engine-rendered shell + client-side `fetch` of JSON endpoints |
+| `/remote` | engine-rendered shell + client-side `fetch` of HTML fragment endpoints |
 
 Views live in `samples/express/views/` — they double as a gallery of the template language (see `docs/templating.md`).

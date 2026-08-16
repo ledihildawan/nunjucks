@@ -1,3 +1,4 @@
+import type { NunjucksConfig } from '@nunjucks/core';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -6,4 +7,11 @@ import { fileURLToPath } from 'node:url';
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const VIEWS = path.resolve(currentDir, '..', '..', 'views');
 
-export { VIEWS };
+// WHY: named render-config constants (Rule-of-Three) — these exact shapes were repeated inline
+// across routes; consumers with genuinely distinct configs keep them inline.
+const strictErrorRouteConfig: NunjucksConfig = { dev: true, undefined: 'strict', views: VIEWS };
+const devErrorRouteConfig: NunjucksConfig = { dev: true, views: VIEWS };
+const demoRouteConfig: NunjucksConfig = { views: VIEWS };
+const standardRouteConfig: NunjucksConfig = { dev: true, autoescape: true, views: VIEWS };
+
+export { VIEWS, demoRouteConfig, devErrorRouteConfig, standardRouteConfig, strictErrorRouteConfig };

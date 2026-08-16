@@ -2,7 +2,7 @@ import express, { type NextFunction, type Request, type Response, type Router } 
 import { z } from 'zod';
 import { renderTemplate } from '../lib/domain/render-template.ts';
 import { sendTemplateResult } from '../lib/io/send-template-result.ts';
-import { VIEWS } from '../lib/io/views-path.ts';
+import { standardRouteConfig } from '../lib/io/views-path.ts';
 
 const router: Router = express.Router();
 
@@ -27,7 +27,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
         name: parsed.data.name,
         count: parsed.data.count,
       },
-      config: { views: VIEWS, autoescape: true, dev: true },
+      config: standardRouteConfig,
     }),
   });
 });

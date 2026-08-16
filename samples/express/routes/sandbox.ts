@@ -69,11 +69,14 @@ router.get('/', (_req: Request, res: Response) => {
   </div>
 
   <h2>About Sandbox</h2>
-  <p>Sandbox mode blocks dangerous access in templates:</p>
+  <p>The engine's prototype-escape guard is always on — inherited
+  <code>__proto__</code>/<code>constructor</code>/<code>prototype</code> reads render as
+  <code>undefined</code> even without sandbox. Sandbox mode upgrades that mask to a hard
+  failure and adds write/call gates:</p>
   <ul>
-    <li><code>{{ user.__proto__ }}</code> - Blocked</li>
-    <li><code>{{ user.constructor }}</code> - Blocked</li>
-    <li><code>{{ process.env.API_KEY }}</code> - Blocked</li>
+    <li><code>{{ user.__proto__ }}</code> - default: renders undefined; sandbox: throws</li>
+    <li><code>{{ user.constructor }}</code> - default: renders undefined; sandbox: throws</li>
+    <li><code>{{ process.env.API_KEY }}</code> - unreachable: templates only see context keys, never Node globals</li>
   </ul>
 
   <h2>Try It</h2>
