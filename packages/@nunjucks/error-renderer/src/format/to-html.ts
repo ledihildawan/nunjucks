@@ -79,12 +79,17 @@ const buildErrorDocument = (error: ErrorLike, options: ToHtmlOptions): string =>
 
 const toHtml = (error: ErrorLike | null, options: ToHtmlOptions = {}): string => {
   const { csp } = options;
+  // WHY: safe-by-default derivation (mirrors createFormatterState) — an unspecified
+  // isProduction is treated as production unless dev opted in. Mid-stream paths that
+  // historically never passed either flag used to fall through to the FULL dev document
+  // (stack + render context PII + caller source) in production responses.
+  const isProduction = options.isProduction ?? !(options.dev ?? false);
 
   if (!error) {
     return buildDocument({ title: 'Error', body: buildProductionBody(options), csp: csp ?? null });
   }
 
-  if (options.isProduction) {
+  if (isProduction) {
     return buildDocument({
       title: 'Rendering Interrupted',
       body: buildProductionBody(options),

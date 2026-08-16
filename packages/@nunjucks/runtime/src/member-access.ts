@@ -8,6 +8,7 @@ import {
   isNonNullish,
   normalizeIndex,
 } from '@nunjucks/lib';
+import { isPrototypeEscapeKey } from '@nunjucks/shared';
 
 export const NULL_MARKER = '__nunjucks_null__';
 export const PARENT_NAME = '__nunjucks_parent__';
@@ -36,6 +37,16 @@ export const memberLookup = (
   }
 
   const record = target as Record<string, unknown>;
+  // WHY: RCE guard — `x.constructor.constructor("...")()` reaches the Function constructor
+  // through INHERITED properties. Prototype-escape keys are therefore treated as absent
+  // unless the host explicitly placed them as own properties (sandbox still polices that
+  // case). Unconditional: code execution must not depend on the host enabling the sandbox.
+  if (isPrototypeEscapeKey(value) && !hasOwn(record, value)) {
+    const marker = { [PROP_NOT_FOUND]: true, [PARENT_NAME]: parentName, [ACCESS_PATH]: value };
+    const callable = Object.assign(() => undefined, marker);
+    Object.setPrototypeOf(callable, null);
+    return callable;
+  }
   const hasProperty =
     hasOwn(record, value) ||
     (typeof target === 'object' || typeof target === 'function'

@@ -12,6 +12,8 @@ export {
   OBJECT_INTRINSICS,
 } from './blocked-keys.ts';
 export * from './compiled-template.ts';
+export { isDangerousReference } from './dangerous-reference.ts';
+export { isPrototypeEscapeKey, PROTOTYPE_ESCAPE_KEYS } from './blocked-keys.ts';
 export type { Loc } from './loc.ts';
 export { LOC_BRAND, loc, ZERO_LOC } from './loc.ts';
 export type {

@@ -1,6 +1,6 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import { hasOwn, isFunction, isNonNullish } from '@nunjucks/lib';
-import { isCodeExecutionPattern } from '@nunjucks/shared';
+import { isCodeExecutionPattern, isDangerousReference } from '@nunjucks/shared';
 import {
   assertAllowed,
   blockedKeysError,
@@ -87,6 +87,13 @@ const createValidateGet = ({ sandboxEnabled, sandboxOptions, topLevel }: Validat
       return;
     }
     const value = target[key];
+    // WHY: depth guard — env globals (process/globalThis/window…) are key-blocked only at
+    // top level, but a host context can NEST the real reference (`{ user: { process } }`).
+    // A value that IS a dangerous reference is refused at ANY depth: sandboxing must not
+    // be escapable by smuggling the global one level down.
+    if (isDangerousReference(value)) {
+      throw sandboxError({ errorDef: ERROR_DEFINITIONS.SANDBOX_ACCESS, key, sandboxOptions });
+    }
     if (isFunction(value)) {
       return wrapFunctionWithBlocking({
         fn: value as DynamicCallable,

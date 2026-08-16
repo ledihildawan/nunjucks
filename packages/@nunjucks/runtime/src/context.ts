@@ -1,6 +1,7 @@
 import type { IncludeChain } from '@nunjucks/error-formatter';
+import { hasOwn } from '@nunjucks/lib';
 import { collectString } from '@nunjucks/lib/collect-stream';
-import type { NodeLocation } from '@nunjucks/shared';
+import { isPrototypeEscapeKey, type NodeLocation } from '@nunjucks/shared';
 import { find, keys, reduce } from 'remeda';
 import type { UndefinedMode } from './runtime-contract/undefined-modes.ts';
 import {
@@ -126,6 +127,12 @@ const createContextFromState = (state: ContextState): Context => {
     },
 
     lookup(name: string): unknown {
+      // WHY: RCE guard — `{{ constructor }}` would otherwise resolve through the ctx
+      // object's prototype chain; prototype-escape keys are only visible as own properties
+      // (host's explicit choice). Normal variables are always own properties.
+      if (isPrototypeEscapeKey(name) && !hasOwn(state.ctx, name)) {
+        return undefined;
+      }
       return state.ctx[name];
     },
 

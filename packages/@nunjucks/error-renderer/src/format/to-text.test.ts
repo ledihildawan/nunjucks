@@ -16,6 +16,15 @@ describe('toText — default verbosity', () => {
     expect(toText(fullError)).toContain('Error: boom');
     expect(toText(fullError)).toContain('Possible Causes:');
   });
+
+  test('strips internal stack frames by default (safe-by-default)', () => {
+    const errorWithStack: ErrorLike = {
+      message: 'boom',
+      stack: 'Error: boom\n    at inner (file.ts:1:1)',
+    };
+    expect(toText(errorWithStack)).not.toContain('at inner');
+    expect(toText(errorWithStack, { dev: true })).toContain('at inner');
+  });
 });
 
 describe('toText — simple verbosity', () => {
@@ -125,7 +134,7 @@ describe('toText — full verbosity stack trace', () => {
       severity: 'warning',
       stack: 'Error: boom\n    at foo (bar.njk:10:5)',
     };
-    expect(toText(errorWithNamedStack)).toContain('  at foo (bar.njk:10)');
+    expect(toText(errorWithNamedStack, { dev: true })).toContain('  at foo (bar.njk:10)');
   });
 
   test('renders raw text for stack frames without a parsed location', () => {
@@ -133,6 +142,6 @@ describe('toText — full verbosity stack trace', () => {
       message: 'boom',
       stack: 'Error: boom\n    at somewhere anonymous',
     };
-    expect(toText(errorWithRawStack)).toContain('  at somewhere anonymous');
+    expect(toText(errorWithRawStack, { dev: true })).toContain('  at somewhere anonymous');
   });
 });

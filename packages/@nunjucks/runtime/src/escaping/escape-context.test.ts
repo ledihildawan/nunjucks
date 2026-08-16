@@ -30,6 +30,13 @@ describe('escapeForContext', () => {
   test('comment context neutralizes -->', () => {
     expect(escapeForContext('a --> b', 'comment')).toBe('a --&gt; b');
   });
+
+  test('unquoted-attribute context percent-encodes delimiters (XSS breakout guard)', () => {
+    expect(escapeForContext('x onmouseover=alert(1)', 'unquoted-attribute')).toBe(
+      'x%20onmouseover%3Dalert(1)'
+    );
+    expect(escapeForContext('a=b c', 'unquoted-attribute')).toBe('a%3Db%20c');
+  });
 });
 
 describe('individual escapers', () => {
@@ -61,6 +68,20 @@ describe('createHtmlContextTracker', () => {
     const src = '<a href="x" V>';
     const tracker = createHtmlContextTracker(src);
     expect(tracker.getContextAt(src.indexOf('V'))).toBe('attribute');
+  });
+
+  test('detects unquoted-attribute context for a bare-equals interpolation', () => {
+    // WHY: mirrors compiler reality — getHtmlContext is queried at the expression node's
+    // position, so the scanned prefix ends inside the {{ delimiters.
+    const src = '<div class={{ USERVAL }}></div>';
+    const tracker = createHtmlContextTracker(src);
+    expect(tracker.getContextAt(src.indexOf('USERVAL'))).toBe('unquoted-attribute');
+  });
+
+  test('quoted attribute interpolations keep the quoted-attribute context', () => {
+    const src = '<div class="{{ USERVAL }}"></div>';
+    const tracker = createHtmlContextTracker(src);
+    expect(tracker.getContextAt(src.indexOf('USERVAL'))).toBe('attribute');
   });
 
   test('defaults to html context outside tags', () => {

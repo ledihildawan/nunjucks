@@ -9,6 +9,20 @@ describe('toHtml', () => {
     expect(result).toContain('500');
   });
 
+  test('defaults to production when neither dev nor isProduction is set (safe-by-default)', () => {
+    const error = { message: 'Test error', renderContext: { secret: 'pii' } } as ErrorLike;
+    const result = toHtml(error, {});
+    expect(result).toContain('Rendering Interrupted');
+    expect(result).not.toContain('pii');
+  });
+
+  test('dev: true renders the full error document', () => {
+    const error = { message: 'Runtime error', phase: 'render' } as ErrorLike;
+    const result = toHtml(error, { dev: true });
+    expect(result).toContain('<!DOCTYPE html>');
+    expect(result).toContain('Runtime error');
+  });
+
   test('returns production body when isProduction is true', () => {
     const error = { message: 'Test error' } as ErrorLike;
     const result = toHtml(error, { isProduction: true });
@@ -25,7 +39,7 @@ describe('toHtml', () => {
 
   test('includes template path in error document', () => {
     const error = { message: 'Error', phase: 'render' } as ErrorLike;
-    const result = toHtml(error, { templatePath: 'test.html' });
+    const result = toHtml(error, { templatePath: 'test.html', dev: true });
     expect(result).toContain('test.html');
   });
 

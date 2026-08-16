@@ -1,6 +1,12 @@
-import { escapeAttribute, escapeHtml, escapeScriptString, escapeStyle } from '@nunjucks/lib/escape';
+import {
+  escapeAttribute,
+  escapeHtml,
+  escapeScriptString,
+  escapeStyle,
+  escapeUnquotedAttribute,
+} from '@nunjucks/lib/escape';
 
-type HtmlContext = 'html' | 'attribute' | 'script' | 'style' | 'comment';
+type HtmlContext = 'html' | 'attribute' | 'unquoted-attribute' | 'script' | 'style' | 'comment';
 
 const escapeForContext = (str: string, context: HtmlContext): string => {
   switch (context) {
@@ -8,6 +14,10 @@ const escapeForContext = (str: string, context: HtmlContext): string => {
       return escapeHtml(str);
     case 'attribute':
       return escapeAttribute(str);
+    case 'unquoted-attribute':
+      // WHY: quoted vs unquoted differ fundamentally — an unquoted value has no delimiter,
+      // so whitespace/`=` must be percent-encoded (see lib/escape escapeUnquotedAttribute).
+      return escapeUnquotedAttribute(str);
     case 'script':
       return escapeScriptString(str);
     case 'style':
@@ -26,8 +36,10 @@ interface ScriptStyleScan {
 }
 
 const UNCLOSED_OPEN_TAG_RE = /<[a-zA-Z][a-zA-Z0-9]*(?:\s+[^>]*)?$/i;
-const ATTRIBUTE_EQUALS_RE = /[=][\s]*["']?/;
-const QUOTED_ATTRIBUTE_VALUE_RE = /^["'`][^"'`]*["'`]/;
+// WHY: must NOT consume the opening quote — afterEquals has to start at the delimiter so
+// the quote check below can distinguish quoted from unquoted values.
+const ATTRIBUTE_EQUALS_RE = /[=][\s]*/;
+const QUOTE_CHARS = ['"', "'", '`'];
 
 const lastMatch = (re: RegExp, text: string): RegExpExecArray | undefined => {
   const matches = [...text.matchAll(re)];
@@ -85,13 +97,18 @@ const detectAttributeContext = (
 
   const afterEquals = openTagContent.slice(equalsMatch.index + (equalsMatch[0]?.length ?? 0));
 
-  if (QUOTED_ATTRIBUTE_VALUE_RE.test(afterEquals)) {
+  // WHY: only the PREFIX before an interpolation is visible at detection time, so a
+  // closing quote can never be matched here — the opening quote alone decides. An opening
+  // quote means the value is delimited (entity-escaping suffices); anything else after a
+  // bare `=` is an unquoted value needing percent-encoding (see escapeUnquotedAttribute).
+  const [valueDelimiter] = afterEquals;
+  if (valueDelimiter && QUOTE_CHARS.includes(valueDelimiter)) {
     return 'attribute';
   }
 
   const [firstCharAfterEquals] = afterEquals.trimStart();
   if (firstCharAfterEquals && !['<', '>', '/'].includes(firstCharAfterEquals)) {
-    return 'attribute';
+    return 'unquoted-attribute';
   }
 
   return 'html';

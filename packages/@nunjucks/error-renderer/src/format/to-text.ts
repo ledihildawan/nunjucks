@@ -12,6 +12,10 @@ interface ToTextOptions {
   templatePath?: string;
   lineno?: number | null;
   colno?: number | null;
+  // WHY: safe-by-default — internal stack frames (absolute paths, host internals) are dev
+  // diagnostics; they must not reach production clients just because a caller forgot a flag.
+  dev?: boolean;
+  isProduction?: boolean;
 }
 
 const getSeverityLabel = (severity: 'error' | 'warning' | 'info' | undefined): string => {
@@ -133,6 +137,7 @@ const toText = (error: unknown, options: ToTextOptions = {}): string => {
 
   const { verbosity = 'full', templatePath, lineno, colno } = options;
   const message = getErrorMessage(error);
+  const isProduction = options.isProduction ?? !(options.dev ?? false);
 
   if (verbosity === 'simple') {
     return message;
@@ -153,7 +158,7 @@ const toText = (error: unknown, options: ToTextOptions = {}): string => {
     });
   }
 
-  const formattedStack = formatStack(error);
+  const formattedStack = isProduction ? '' : formatStack(error);
   const parts: string[] = [
     `${severityLabel} ${message}`,
     ...formatCauses(causes),

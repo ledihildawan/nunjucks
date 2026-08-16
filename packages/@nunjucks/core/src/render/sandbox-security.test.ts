@@ -3,6 +3,50 @@ import type { TemplateError } from '@nunjucks/error-formatter';
 import { renderTemplate } from './render-test-helper.ts';
 
 describe('sandbox security - prototype pollution', () => {
+  test('constructor.constructor code execution is blocked even WITHOUT sandbox', async () => {
+    const err = (await renderTemplate(
+      '{{ user.constructor.constructor("return 41+1")() }}',
+      { user: {} }
+    ).catch((e) => e)) as TemplateError;
+    expect(err.code).toBeTruthy();
+  });
+
+  test('primitive constructor chain is blocked in default mode', async () => {
+    const err = (await renderTemplate(
+      '{{ "abc"["constructor"]["constructor"]("return 1")() }}',
+      {}
+    ).catch((e) => e)) as TemplateError;
+    expect(err.code).toBeTruthy();
+  });
+
+  test('legit inherited methods keep working in default mode', async () => {
+    const output = await renderTemplate('{{ "abc".toUpperCase() }}', {});
+    expect(output).toBe('ABC');
+  });
+
+  test('top-level constructor resolves to nothing in default mode', async () => {
+    const output = await renderTemplate('{{ constructor ?? "blocked" }}', {});
+    expect(output).toBe('blocked');
+  });
+
+  test('nested process reference is blocked in sandbox mode (depth guard)', async () => {
+    const err = (await renderTemplate(
+      '{{ user.process.env.PATH }}',
+      { user: { process } },
+      { sandbox: true }
+    ).catch((e) => e)) as TemplateError;
+    expect(err.code).toBe('SANDBOX_ACCESS');
+  });
+
+  test('nested globalThis reference is blocked in sandbox mode', async () => {
+    const err = (await renderTemplate(
+      '{{ user.shell }}',
+      { user: { shell: globalThis } },
+      { sandbox: true }
+    ).catch((e) => e)) as TemplateError;
+    expect(err.code).toBe('SANDBOX_ACCESS');
+  });
+
   test('__proto__ access throws in sandbox mode', async () => {
     const err = (await renderTemplate(
       '{{ obj.__proto__ }}',

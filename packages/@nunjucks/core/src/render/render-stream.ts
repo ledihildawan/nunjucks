@@ -27,6 +27,7 @@ interface SentinelChunkInput {
   streamContentType: 'html' | 'json' | 'text';
   enrichSentinel: (sentinel: StreamErrorSentinel) => Promise<TemplateError>;
   version?: string;
+  dev: boolean;
 }
 
 const createCachedEnrichment = (prepared: PreparedTemplate) => {
@@ -78,6 +79,7 @@ const formatSentinelChunk = async ({
   streamContentType,
   enrichSentinel,
   version,
+  dev,
 }: SentinelChunkInput): Promise<string> => {
   if (streamContentType === 'json') {
     throw sentinel.error;
@@ -100,14 +102,17 @@ const formatSentinelChunk = async ({
     severity,
     humanTitle,
     version,
+    // WHY: dev gates the marker's embedded iframe page — without it toHtml's safe default
+    // renders the production minimal page, keeping stacks/PII out of streamed responses.
+    dev,
   });
 };
 
 const formatErrorMarker = (
   error: TemplateError,
-  options: { ide?: string; contentType?: string; version?: string } = {}
+  options: { ide?: string; contentType?: string; version?: string; dev?: boolean } = {}
 ): string => {
-  const { ide = 'vscode', contentType = 'html', version } = options;
+  const { ide = 'vscode', contentType = 'html', version, dev } = options;
   if (contentType === 'json') {
     return `\n${serializeErrorPayload(error)}`;
   }
@@ -124,7 +129,34 @@ const formatErrorMarker = (
     blockedKeys: error.blockedKeys ?? null,
   });
   const humanTitle = classifyAndBuildTitle(error);
-  return toHtmlMarker(error, { sourceTrace: trace, ide, severity: 'block', humanTitle, version });
+  return toHtmlMarker(error, { sourceTrace: trace, ide, severity: 'block', humanTitle, version, dev });
+};
+
+interface StreamChunkInput {
+  value: unknown;
+  prepared: PreparedTemplate;
+  enrichSentinel: (sentinel: StreamErrorSentinel) => Promise<TemplateError>;
+}
+
+const formatStreamChunk = async ({
+  value,
+  prepared,
+  enrichSentinel,
+}: StreamChunkInput): Promise<string> => {
+  if (isStreamErrorSentinel(value)) {
+    return formatSentinelChunk({
+      sentinel: value,
+      streamContentType: prepared.streamContentType,
+      enrichSentinel,
+      version: prepared.version,
+      dev: prepared.resolvedConfig.dev ?? false,
+    });
+  }
+  const chunkResult = coerceChunk(value);
+  if (isErr(chunkResult)) {
+    throw chunkResult.error;
+  }
+  return chunkResult.value;
 };
 
 const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGenerator<string> {
@@ -148,20 +180,7 @@ const createRenderStream = async function* (prepared: PreparedTemplate): AsyncGe
       if (done) {
         break;
       }
-      if (isStreamErrorSentinel(value)) {
-        yield await formatSentinelChunk({
-          sentinel: value,
-          streamContentType: prepared.streamContentType,
-          enrichSentinel,
-          version: prepared.version,
-        });
-      } else {
-        const chunkResult = coerceChunk(value);
-        if (isErr(chunkResult)) {
-          throw chunkResult.error;
-        }
-        yield chunkResult.value;
-      }
+      yield await formatStreamChunk({ value, prepared, enrichSentinel });
     }
   } catch (streamErr: unknown) {
     throw await wrapWithLog({

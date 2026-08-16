@@ -179,8 +179,18 @@ export const isBlockedKey = (key: string, env: Environment = 'auto'): boolean =>
 
 export const isDangerousGlobal = (key: string): boolean => DANGEROUS_GLOBALS.has(key);
 
+// WHY: the minimal inherited-key set that yields code execution (`x.constructor.constructor`
+// reaches Function). Blocked for INHERITED reads unconditionally (sandbox or not) because
+// RCE must not depend on the host remembering to enable the sandbox; own properties are the
+// host's explicit choice and remain allowed. Deliberately narrower than OBJECT_INTRINSICS —
+// harmless inherited members (toString/valueOf) keep working.
+const PROTOTYPE_ESCAPE_KEYS: ReadonlySet<string> = new Set(['__proto__', 'constructor', 'prototype']);
+
+const isPrototypeEscapeKey = (key: string): boolean => PROTOTYPE_ESCAPE_KEYS.has(key);
+
 export const BLOCKED_KEYS_LIST: readonly string[] = [...AUTO_BLOCKED_KEYS];
 export const DANGEROUS_GLOBALS_LIST: readonly string[] = [...DANGEROUS_GLOBALS];
+export { isPrototypeEscapeKey, PROTOTYPE_ESCAPE_KEYS };
 
 export const OBJECT_INTRINSICS: readonly string[] = [...BLOCKED_KEY_CATEGORIES.OBJECT_INTRINSICS];
 export const CODE_EXECUTION_KEYS: readonly string[] = [...BLOCKED_KEY_CATEGORIES.CODE_EXECUTION];

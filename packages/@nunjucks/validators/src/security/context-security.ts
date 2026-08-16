@@ -1,41 +1,12 @@
 import { isKeyedObject } from '@nunjucks/lib';
 import { isFunction, keys } from 'remeda';
+import { isDangerousReference } from '@nunjucks/shared';
 import { getBlockedKeyCategory, isDangerousGlobal } from './blocked-keys.ts';
 import { JS_BUILTIN_CONSTRUCTORS } from '../js-builtins.ts';
 
-const globalRecord = globalThis as Record<string, unknown>;
-
-const isPrimitive = (value: unknown): boolean =>
-  value === null ||
-  value === undefined ||
-  (typeof value !== 'object' && typeof value !== 'function');
-
-const checkGlobalThis = (value: unknown): boolean =>
-  typeof globalThis !== 'undefined' && value === globalThis;
-const checkProcess = (value: unknown): boolean =>
-  globalRecord.process !== undefined && value === globalRecord.process;
-const checkWindow = (value: unknown): boolean =>
-  globalRecord.window !== undefined && value === globalRecord.window;
-const checkDocument = (value: unknown): boolean =>
-  globalRecord.document !== undefined && value === globalRecord.document;
-const checkSelf = (value: unknown): boolean =>
-  globalRecord.self !== undefined && value === globalRecord.self;
-const checkBuffer = (value: unknown): boolean =>
-  typeof Buffer !== 'undefined' && value instanceof Buffer;
-
-export const isDangerousReference = (value: unknown): boolean => {
-  if (isPrimitive(value)) {
-    return false;
-  }
-  return (
-    checkGlobalThis(value) ||
-    checkProcess(value) ||
-    checkWindow(value) ||
-    checkDocument(value) ||
-    checkSelf(value) ||
-    checkBuffer(value)
-  );
-};
+// WHY: moved to shared/dangerous-reference.ts (SSOT) so the runtime sandbox can share it;
+// re-exported here to keep this module's historical surface.
+export { isDangerousReference };
 
 const isBlockedNestedContextKey = (key: string): boolean =>
   getBlockedKeyCategory(key, 'auto') === 'object_intrinsic';

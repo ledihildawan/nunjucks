@@ -48,6 +48,10 @@ interface ToHtmlOptions {
   ide?: string;
   verbosity?: 'simple' | 'medium' | 'full';
   isJsCaller?: boolean;
+  // WHY: safe-by-default — when neither flag is set, isProduction derives to !(dev ?? false)
+  // inside toHtml, so a forgotten flag can never ship a full dev page (stack, render
+  // context, source content) to production clients.
+  dev?: boolean;
   isProduction?: boolean;
   humanTitle?: string;
   projectRoot?: string;
