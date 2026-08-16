@@ -2,13 +2,12 @@ import type { TemplateError } from '@nunjucks/error-formatter';
 import type { Result } from '@nunjucks/lib';
 import type { TemplateLoader } from '@nunjucks/loaders';
 import type { UndefinedMode } from '@nunjucks/runtime';
-import type { DomPurifyConfig } from '@nunjucks/shared';
+import type { ContentType, DomPurifyConfig } from '@nunjucks/shared';
 import type { NunjucksPlugin } from '../plugin/plugin.ts';
 import type { PipeRenderStreamOptions, PipeSink } from '../render/pipe-stream.ts';
 import type { RenderStreamResult } from '../render/render-types.ts';
 import type { SandboxEnvironment, SandboxMode } from './global.ts';
 
-type ContentType = 'html' | 'json' | 'text';
 // WHY: filters/globals/tests/extensions are user-supplied and inherently dynamic (any signature). Modeling them
 // as `Record<string, unknown>` matches the established GlobalConfig pattern and avoids contravariance friction
 // (a `(value: string) => string` filter is not assignable to `(...args: unknown[]) => unknown`). The internal

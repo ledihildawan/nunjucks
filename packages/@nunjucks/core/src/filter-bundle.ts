@@ -1,4 +1,4 @@
-import { BUILTIN_FILTERS, type DomPurifyConfig } from '@nunjucks/filters';
+import { BUILTIN_FILTERS } from '@nunjucks/filters';
 import type { FilterBundle } from './config/global.ts';
 
 // WHY: the built-in filter surface (incl. upstream aliases) is defined ONCE in
@@ -8,5 +8,4 @@ const defaultFilterBundle: FilterBundle = Object.freeze({
   dompurify: Object.freeze({}),
 });
 
-export type { DomPurifyConfig, FilterBundle };
 export { defaultFilterBundle };

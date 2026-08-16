@@ -129,7 +129,11 @@ export const ENVIRONMENTS = {
   DENO: 'deno',
 } as const;
 
-export type Environment = 'auto' | 'node' | 'browser' | 'deno';
+// WHY: single source of truth for the config-facing environment union — validators derive
+// their membership set from this tuple instead of re-listing the members.
+export const ENVIRONMENT_VALUES = ['auto', ...Object.values(ENVIRONMENTS)] as const;
+
+export type Environment = (typeof ENVIRONMENT_VALUES)[number];
 
 export const isCodeExecutionPattern = (key: string): boolean => CODE_EXECUTION_PATTERNS.has(key);
 

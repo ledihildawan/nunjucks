@@ -1,6 +1,6 @@
 import { isKeyedObject } from '@nunjucks/lib';
 import { keys } from 'remeda';
-import { isDangerousReference } from './context-security.ts';
+import { isDangerousReference } from '@nunjucks/shared';
 
 const visitAndScrub = (value: unknown, seen: WeakSet<object>): unknown => {
   if (!isKeyedObject(value)) {

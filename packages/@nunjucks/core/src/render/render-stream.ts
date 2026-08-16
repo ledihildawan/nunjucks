@@ -15,6 +15,7 @@ import {
   isStreamErrorSentinel,
   type StreamErrorSentinel,
 } from '@nunjucks/runtime';
+import type { ContentType } from '@nunjucks/shared';
 import { wrapWithLog } from '../diagnostics/diagnostics.ts';
 import { serializeErrorPayload } from './pipe-stream.ts';
 import { buildExecutionEnv } from './render-env.ts';
@@ -25,7 +26,7 @@ import { getSeverity } from './severity-levels.ts';
 
 interface SentinelChunkInput {
   sentinel: StreamErrorSentinel;
-  streamContentType: 'html' | 'json' | 'text';
+  streamContentType: ContentType;
   enrichSentinel: (sentinel: StreamErrorSentinel) => Promise<TemplateError>;
   version?: string;
   dev: boolean;

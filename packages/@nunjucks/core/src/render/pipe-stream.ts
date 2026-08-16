@@ -2,6 +2,7 @@ import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { ErrorContext, TemplateError } from '@nunjucks/error-formatter';
 import { createLog, formatError } from '@nunjucks/error-formatter';
 import { isErr } from '@nunjucks/lib';
+import type { ContentType } from '@nunjucks/shared';
 import { formatErrorMarker } from './render.ts';
 import { coalesceStream, withStreamTimeout } from './render-stream-adapters.ts';
 import type { RenderStreamResult } from './render-types.ts';
@@ -20,7 +21,7 @@ interface PipeSink {
 }
 
 interface PipeRenderStreamOptions {
-  contentType?: 'html' | 'json' | 'text';
+  contentType?: ContentType;
   dev?: boolean;
   timeoutMs?: number;
   coalesceBytes?: number;
@@ -72,7 +73,7 @@ export { serializeErrorPayload };
 
 interface RenderErrorInput {
   err: TemplateError;
-  contentType: 'html' | 'json' | 'text';
+  contentType: ContentType;
   dev: boolean;
   ide: string | undefined;
 }
@@ -88,7 +89,7 @@ const renderPreStreamError = ({ err, contentType, dev, ide }: RenderErrorInput):
 
 interface MidStreamErrorInput {
   err: unknown;
-  contentType: 'html' | 'json' | 'text';
+  contentType: ContentType;
   ide: string;
   version: string | undefined;
   dev: boolean;

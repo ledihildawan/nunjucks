@@ -1,4 +1,4 @@
-import { CODE_EXECUTION_KEYS, OBJECT_INTRINSICS } from './blocked-keys.ts';
+import { CODE_EXECUTION_KEYS, OBJECT_INTRINSICS } from '@nunjucks/shared';
 
 export const ExpressionSecurityError = {
   DYNAMIC_PROPERTY_ACCESS: 'DYNAMIC_PROPERTY_ACCESS',

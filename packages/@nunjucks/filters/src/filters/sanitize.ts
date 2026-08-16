@@ -11,5 +11,4 @@ const sanitize = (str: unknown, config?: DomPurifyConfig): Result<SafeString, Te
   return ok(safeString(clean));
 };
 
-export type { DomPurifyConfig } from '@nunjucks/shared';
 export { sanitize };

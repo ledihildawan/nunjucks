@@ -2,8 +2,7 @@ import type { TemplateError } from '@nunjucks/error-formatter';
 import type { Result } from '@nunjucks/lib';
 import type { TemplateLoader } from '@nunjucks/loaders';
 import type { Env, SandboxOptions, UndefinedMode } from '@nunjucks/runtime';
-import type { BaseValidationError } from '@nunjucks/shared';
-import type { Environment } from '@nunjucks/validators';
+import type { BaseValidationError, ContentType, Environment } from '@nunjucks/shared';
 import type { SandboxMode } from '../config/global.ts';
 import type { CallerLocation } from './caller-file.ts';
 
@@ -76,13 +75,13 @@ interface PreparedTemplate {
   readonly resolvedConfig: RenderConfig;
   readonly templateSource: string;
   readonly context: Record<string, unknown>;
-  readonly streamContentType: 'html' | 'json' | 'text';
+  readonly streamContentType: ContentType;
   readonly version?: string;
 }
 
 interface RenderOptions extends Partial<import('../config/global.ts').GlobalConfig> {
   context?: Record<string, unknown>;
-  streamContentType?: 'html' | 'json' | 'text';
+  streamContentType?: ContentType;
 }
 
 // WHY: streaming-render error contract (two-pass), expressed as the standard Result shape from @nunjucks/lib.

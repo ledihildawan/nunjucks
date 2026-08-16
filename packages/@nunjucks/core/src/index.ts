@@ -14,6 +14,7 @@ export type { SourceFileReader, TemplateError } from '@nunjucks/error-formatter'
 export { formatError } from '@nunjucks/error-formatter';
 export type { Result } from '@nunjucks/lib';
 export type {
+  ContentType,
   LimitsConfig,
   NunjucksConfig,
   NunjucksEngine,

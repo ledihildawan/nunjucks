@@ -1,12 +1,7 @@
 import { isKeyedObject } from '@nunjucks/lib';
 import { isFunction, keys } from 'remeda';
-import { isDangerousReference } from '@nunjucks/shared';
-import { getBlockedKeyCategory, isDangerousGlobal } from './blocked-keys.ts';
+import { isDangerousReference, getBlockedKeyCategory, isDangerousGlobal } from '@nunjucks/shared';
 import { JS_BUILTIN_CONSTRUCTORS } from '../js-builtins.ts';
-
-// WHY: moved to shared/dangerous-reference.ts (SSOT) so the runtime sandbox can share it;
-// re-exported here to keep this module's historical surface.
-export { isDangerousReference };
 
 const isBlockedNestedContextKey = (key: string): boolean =>
   getBlockedKeyCategory(key, 'auto') === 'object_intrinsic';

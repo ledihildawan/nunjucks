@@ -1,9 +1,15 @@
 import { err, isErr, ok, type Result } from '@nunjucks/lib';
-import { type BaseValidationError, UNDEFINED_MODES } from '@nunjucks/shared';
+import {
+  CONTENT_TYPES,
+  ENVIRONMENT_VALUES,
+  type BaseValidationError,
+  SANDBOX_MODES,
+  UNDEFINED_MODES,
+} from '@nunjucks/shared';
+import type { Environment } from '@nunjucks/shared';
 import { flatMap, keys, pipe } from 'remeda';
 import { isNonEmpty } from './is-non-empty.ts';
 import { validateFilterName, validateGlobalName } from './reserved.ts';
-import type { Environment } from './security/index.ts';
 
 interface ConfigValidationError extends BaseValidationError {
   code: string;
@@ -42,10 +48,10 @@ interface Config {
   customTests?: Record<string, unknown>;
 }
 
-const VALID_ENVIRONMENTS: ReadonlySet<Environment> = new Set(['auto', 'node', 'browser', 'deno']);
-const VALID_SANDBOX_MODES: ReadonlySet<string> = new Set(['blocklist', 'allowlist']);
+const VALID_ENVIRONMENTS: ReadonlySet<Environment> = new Set(ENVIRONMENT_VALUES);
+const VALID_SANDBOX_MODES: ReadonlySet<string> = new Set(SANDBOX_MODES);
 const VALID_UNDEFINED_MODES: ReadonlySet<string> = new Set(UNDEFINED_MODES);
-const VALID_CONTENT_TYPES: ReadonlySet<string> = new Set(['html', 'json', 'text']);
+const VALID_CONTENT_TYPES: ReadonlySet<string> = new Set(CONTENT_TYPES);
 
 const validateNonNegativeNumeric = (
   value: number | undefined,

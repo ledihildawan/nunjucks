@@ -23,6 +23,10 @@ const SANDBOX_MODES = ['blocklist', 'allowlist'] as const;
 
 type SandboxMode = (typeof SANDBOX_MODES)[number];
 
+const CONTENT_TYPES = ['html', 'json', 'text'] as const;
+
+type ContentType = (typeof CONTENT_TYPES)[number];
+
 interface DomPurifyConfig {
   ALLOWED_TAGS?: string[];
   ALLOWED_ATTR?: string[];
@@ -37,6 +41,7 @@ interface DomPurifyConfig {
 }
 
 export type {
+  ContentType,
   DomPurifyConfig,
   HandledUndefinedMode,
   NodeLocation,
@@ -44,4 +49,10 @@ export type {
   SandboxMode,
   UndefinedMode,
 };
-export { DEFAULT_UNDEFINED_MODE, HANDLED_UNDEFINED_MODES, SANDBOX_MODES, UNDEFINED_MODES };
+export {
+  CONTENT_TYPES,
+  DEFAULT_UNDEFINED_MODE,
+  HANDLED_UNDEFINED_MODES,
+  SANDBOX_MODES,
+  UNDEFINED_MODES,
+};
