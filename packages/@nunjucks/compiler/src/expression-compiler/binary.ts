@@ -1,3 +1,4 @@
+import { ERROR_CODES } from '@nunjucks/error-catalog';
 import type { BinaryNode, BinaryOpNode, Node, RangeNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
 import { emitLocationGuard } from '../codegen.ts';
@@ -41,15 +42,25 @@ export const compileConcat = (
   { node, frame }: CompileNodeInput<BinaryNode>
 ): void => binOpEmitter(compiler, node, frame, { operator: ' + "" + ' });
 
+// WHY: an unbounded `..` range is a render-time DoS vector (`{{ (-1/0)..(1/0) }}` hangs
+// forever, `1..1e9` memory-blows), so the emitted code validates integer bounds and a
+// finite span BEFORE materializing and throws a coded error the runtime funnel
+// classifies as RANGE_EXCEEDED.
+const MAX_RANGE_SPAN = 1_000_000;
+
 export const compileRange = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<RangeNode>
 ): void => {
+  emitLocationGuard(compiler, node.lineno, node.colno);
   compiler.emit('(() => { let s = ');
   compiler.compile(node.left, frame);
   compiler.emit('; let e = ');
   compiler.compile(node.right, frame);
-  compiler.emit('; let r = []; for (let i = s; i <= e; i++) { r.push(i); } return r; })()');
+  compiler.emit(
+    `; if (!Number.isInteger(s) || !Number.isInteger(e) || Math.abs(e - s) > ${MAX_RANGE_SPAN}) { const rangeError = new Error('range: ' + s + '..' + e); rangeError.code = ${JSON.stringify(ERROR_CODES.RANGE_EXCEEDED)}; throw rangeError; } let r = []; for (let i = s; i <= e; i++) { r.push(i); } return r; })()`
+  );
+  compiler.emit(')');
 };
 
 export const compileSub = (

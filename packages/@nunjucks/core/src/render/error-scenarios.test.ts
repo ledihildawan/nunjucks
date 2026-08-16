@@ -282,6 +282,59 @@ describe('error messages - real scenarios', () => {
   });
 });
 
+describe('RANGE_EXCEEDED detection', () => {
+  test('oversized range span returns an err Result with RANGE_EXCEEDED', async () => {
+    const result = await render('{{ 1..3000000000 }}', {
+      context: {},
+      autoescape: false,
+      undefined: 'strict',
+      executionTimeout: 5000,
+    });
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error.code).toBe('RANGE_EXCEEDED');
+      expect(result.error.message).toContain('range:');
+      expect(result.error.message).toContain('1..3000000000');
+    }
+  });
+
+  test('infinite range bounds return RANGE_EXCEEDED instead of hanging', async () => {
+    const result = await render('{{ (-1/0)..(1/0) }}', {
+      context: {},
+      autoescape: false,
+      executionTimeout: 5000,
+    });
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error.code).toBe('RANGE_EXCEEDED');
+    }
+  });
+
+  test('fractional range bounds return RANGE_EXCEEDED', async () => {
+    const result = await render('{{ start..end }}', {
+      context: { start: 1.5, end: 3 },
+      autoescape: false,
+      executionTimeout: 5000,
+    });
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error.code).toBe('RANGE_EXCEEDED');
+    }
+  });
+
+  test('valid bounded ranges still render', async () => {
+    const result = await render('{% for i in 1..4 %}{{ i }}{% endfor %}', {
+      context: {},
+      autoescape: false,
+      executionTimeout: 5000,
+    });
+    expect(isErr(result)).toBe(false);
+    if (!isErr(result)) {
+      expect(result.value).toBe('1234');
+    }
+  });
+});
+
 describe('JSON_ESCAPED_OUTPUT detection', () => {
   const renderWithAutoescape = async (template: string, context: Record<string, unknown> = {}) => {
     const result = await render(template, {

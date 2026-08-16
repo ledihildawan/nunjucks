@@ -96,6 +96,19 @@ const OUTPUT_MATCH = createErrorDefinition({
   fixComment: 'Provide a default value with the `default` filter',
 });
 
+const RANGE_EXCEEDED = createErrorDefinition({
+  name: 'RANGE_EXCEEDED',
+  message: 'range: {detail}',
+  category: 'range_error',
+  causes: [
+    'A `..` range bound is not an integer (e.g. `1.5..3` or a non-numeric value)',
+    'A bound evaluated to `Infinity`, `-Infinity`, or `NaN`',
+    'The span between the bounds exceeds the 1,000,000 element limit (e.g. `1..3000000000`)',
+  ],
+  fixCode: '{% for i in 1..100 %}{{ i }}{% endfor %}',
+  fixComment: 'Keep both `..` bounds integers and the span within 1,000,000 elements',
+});
+
 const CALL_MATCH = createErrorDefinition({
   name: 'CALL_MATCH',
   message: 'Unable to call',
@@ -178,6 +191,7 @@ export {
   NOT_A_FUNCTION,
   NULL_VALUE,
   OUTPUT_MATCH,
+  RANGE_EXCEEDED,
   UNDEFINED_PROPERTY,
   UNDEFINED_VALUE,
   UNDEFINED_VALUE_MATCH,

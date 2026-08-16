@@ -24,7 +24,7 @@ const makeCompiler = () => {
 const frame = createFrame();
 
 describe('compileTest', () => {
-  test('emits a comma-expression binding test result via runtime.runTest', () => {
+  test('declares the target temporary with let and binds the test result via runtime.runTest', () => {
     const c = makeCompiler();
     compileTest(asCompiler(c), {
       node: {
@@ -36,15 +36,17 @@ describe('compileTest', () => {
       frame,
     });
     const joined = c.emitted.join('');
-    expect(joined).toContain('((t_1 = X), ');
-    expect(joined).toContain('runtime.runTest(env, "defined", t_1))');
-    expect(joined.startsWith('((t_1 = ')).toBe(true);
-    expect(joined.endsWith('))')).toBe(true);
+    expect(joined).toContain('(await (async () => { let t_1 = X; return ');
+    expect(joined).toContain('(lineno = 3, colno = 7, ');
+    expect(joined).toContain('runtime.runTest(env, "defined", t_1)); })())');
+    expect(joined.startsWith('(await (async () => { let t_1 = ')).toBe(true);
+    expect(joined.endsWith('})())')).toBe(true);
+    expect(joined.split('t_1 =').length - 1).toBe(joined.split('let t_1 =').length - 1);
   });
 });
 
 describe('compileTestCall', () => {
-  test('emits runTest with accumulated arg temporaries', () => {
+  test('declares target and arg temporaries with let inside an async IIFE', () => {
     const c = makeCompiler();
     compileTestCall(asCompiler(c), {
       node: {
@@ -57,11 +59,14 @@ describe('compileTestCall', () => {
       frame,
     });
     const joined = c.emitted.join('');
-    expect(joined).toContain('(t_1 = X, ');
-    expect(joined).toContain('t_2 = N, ');
-    expect(joined).toContain('t_3 = M, ');
-    expect(joined).toContain('runtime.runTest(env, "divisibleby", t_1, t_2, t_3))');
-    expect(joined.endsWith('))')).toBe(true);
+    expect(joined).toContain('let t_1 = X;');
+    expect(joined).toContain('let t_2 = N;');
+    expect(joined).toContain('let t_3 = M;');
+    expect(joined).toContain('runtime.runTest(env, "divisibleby", t_1, t_2, t_3)); })())');
+    expect(joined.endsWith('})())')).toBe(true);
+    for (const tmp of ['t_1', 't_2', 't_3']) {
+      expect(joined.split(`${tmp} =`).length - 1).toBe(joined.split(`let ${tmp} =`).length - 1);
+    }
   });
 
   test('skips null args', () => {

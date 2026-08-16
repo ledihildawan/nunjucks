@@ -96,8 +96,6 @@ const withFrame =
     compile(compiler, { node: input.node as N, frame: input.frame });
 
 const NODE_COMPILERS: Partial<Record<NodeType, CompileFn>> = {
-  [T.NODE]: noFrame(compileLiteral),
-  [T.VALUE]: noFrame(compileLiteral),
   [T.LITERAL]: noFrame(compileLiteral),
   [T.SYMBOL]: withFrame<SymbolNode>(compileSymbol),
   [T.GROUP]: withFrame(compileGroup),

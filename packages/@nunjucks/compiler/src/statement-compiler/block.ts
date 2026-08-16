@@ -29,8 +29,11 @@ export const compileSuper = (
   assertSafeIdentifier(id, { compiler, lineno: node.lineno, colno: node.colno });
 
   emitLineLocation(compiler, node.lineno, node.colno);
+  // WHY: the `let` is load-bearing — compiled templates execute via new Function in
+  // sloppy mode, so an undeclared assignment would leak an implicit global and let
+  // concurrently-rendering templates clobber each other's super content at await points.
   compiler.emitLine(
-    `${id} = await context.getSuper({ envObj: env, name: ${JSON.stringify(name)}, block: b_${name}, frame, runtime, lineno: ${node.lineno}, colno: ${node.colno} });`
+    `let ${id} = await context.getSuper({ envObj: env, name: ${JSON.stringify(name)}, block: b_${name}, frame, runtime, lineno: ${node.lineno}, colno: ${node.colno} });`
   );
   compiler.emitLine(`${id} = runtime.markSafe(${id});`);
   compiler.emitLine(`frame = frame.set({ name: ${JSON.stringify(id)}, value: ${id} });`);

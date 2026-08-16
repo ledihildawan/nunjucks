@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import type { Node } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime/frame';
 import { asCompiler } from '../test-helpers.ts';
-import { compileAdd, compileAnd, compileMul, compileOr, compileSub } from './binary.ts';
+import { compileAdd, compileAnd, compileMul, compileOr, compileRange, compileSub } from './binary.ts';
 
 interface FakeNode {
   marker: string;
@@ -73,5 +73,25 @@ describe('binary emitters', () => {
     expect(c.emitted[0]).toBe('(lineno = 5, colno = 9, ');
     expect(c.emitted[c.emitted.length - 1]).toBe(')');
     expect(c.emitted.join('')).toBe('(lineno = 5, colno = 9, L + R)');
+  });
+});
+
+describe('compileRange', () => {
+  test('guards integer bounds and span before the materialization loop', () => {
+    const c = makeCompiler();
+    compileRange(asCompiler(c), {
+      node: { ...makeNode('S', 'E'), lineno: 2, colno: 6 } as never,
+      frame,
+    });
+    const code = c.emitted.join('');
+    expect(code.startsWith('(lineno = 2, colno = 6, ')).toBe(true);
+    expect(code).toContain('Number.isInteger(s)');
+    expect(code).toContain('Number.isInteger(e)');
+    expect(code).toContain('Math.abs(e - s) > 1000000');
+    expect(code).toContain('rangeError.code = "RANGE_EXCEEDED"');
+    const guardPos = code.indexOf('Number.isInteger');
+    const loopPos = code.indexOf('r.push(i)');
+    expect(guardPos).toBeGreaterThan(-1);
+    expect(loopPos).toBeGreaterThan(guardPos);
   });
 });

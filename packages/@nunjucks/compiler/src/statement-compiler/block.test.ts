@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import type { FrameSetOptions } from '@nunjucks/runtime/frame';
 import { createFrame } from '@nunjucks/runtime/frame';
+import { block, output, root, superNode, symbol } from '@nunjucks/nodes';
+import { ZERO_LOC } from '@nunjucks/shared';
+import { createCompiler } from '../create-compiler.ts';
 import { asCompiler } from '../test-helpers.ts';
 import { compileBlock, compileSuper } from './block.ts';
 
@@ -73,5 +76,28 @@ describe('compileSuper', () => {
     );
     expect(emitted[2]).toContain('runtime.markSafe(super)');
     expect(setCalls).toEqual([['super', 'super']]);
+  });
+
+  test('declares the lifted super hole symbol with let (no implicit global assignment)', () => {
+    const compiler = createCompiler({
+      templateName: 'test',
+      undefinedMode: undefined,
+      source: '',
+    });
+    compiler.compile(
+      root(ZERO_LOC, [
+        block(ZERO_LOC, {
+          name: 'content',
+          body: output(ZERO_LOC, [
+            superNode(ZERO_LOC, { blockName: 'content', sym: symbol(ZERO_LOC, 'hole_0') }),
+          ]),
+        }),
+      ]),
+      createFrame()
+    );
+    const code = compiler.getCode();
+    expect(code).toContain('let hole_0 = await context.getSuper(');
+    expect(code).toContain('hole_0 = runtime.markSafe(hole_0);');
+    expect(code).not.toContain('\nhole_0 = await context.getSuper(');
   });
 });

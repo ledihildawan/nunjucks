@@ -1,6 +1,6 @@
 import type { IfNode, WalrusNode } from '@nunjucks/nodes';
 import { isArrayPattern, isObjectPattern, isSymbol } from '@nunjucks/nodes';
-import { emitLocationGuard } from '../codegen.ts';
+import { assertSafeIdentifier, emitLocationGuard } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 import { compileDestructuring } from '../statement-compiler/pattern.ts';
@@ -28,6 +28,7 @@ export const compileWalrus = (
 ): void => {
   if (isSymbol(node.target)) {
     const target = node.target;
+    assertSafeIdentifier(target.value, { compiler, lineno: node.lineno, colno: node.colno });
     const valueId = compiler.nextCompilerId();
     emitLocationGuard(compiler, node.lineno, node.colno);
     compiler.emit('(() => {');

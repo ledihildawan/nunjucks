@@ -38,13 +38,14 @@ export const fail = ({
   });
 };
 
-// WHY: §10 defense-in-depth — the codegen boundary must not trust upstream
-// guarantees. A template-derived name flowing into a generated JS identifier
-// (b_<name>) or a string literal ("${name}") must be a safe JS identifier so
-// it cannot break out of its emit context. Fails closed with a clear compile
-// error if a metacharacter slips through. Note: `$` and `_` are legitimate JS
-// identifier chars and are allowed; the danger set is quotes/semicolons/
-// backslashes/newlines — exactly the chars the lexer's DELIM_CHARS omits.
+// WHY: §10 boundary validation — this check is the PRIMARY code-injection defense at
+// the codegen boundary, NOT defense-in-depth: the lexer does not restrict symbol
+// characters (quotes, semicolons, and backslashes are absent from DELIM_CHARS, so
+// tokenizeSymbol accepts runs like a";evil), and a template-derived name flowing into
+// a generated JS identifier (b_<name>) or string literal ("${name}") must be a safe JS
+// identifier so it cannot break out of its emit context. Removing this check would
+// reopen direct injection into the new Function source. `$` and `_` are legitimate JS
+// identifier chars and are allowed; anything else fails closed with a clear compile error.
 const SAFE_IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/u;
 
 interface AssertIdentifierOptions {

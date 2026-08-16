@@ -4,6 +4,11 @@ import { emitLocationGuard } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
+// WHY: test temporaries are declared with `let` inside an async IIFE — an undeclared
+// assignment in emitted code creates an implicit global (compiled templates run via
+// new Function in sloppy mode), letting interleaved renders corrupt each other's
+// values. The async wrapper keeps targets containing `await` (e.g. filter results) legal.
+
 export const compileTest = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<TestNode>
@@ -11,12 +16,11 @@ export const compileTest = (
   const lineno = node.lineno;
   const colno = node.colno;
   const targetTmp = compiler.nextCompilerId();
-  compiler.emit(`((${targetTmp} = `);
+  compiler.emit(`(await (async () => { let ${targetTmp} = `);
   compiler.compile(node.target, frame);
-  compiler.emit('), ');
+  compiler.emit('; return ');
   emitLocationGuard(compiler, lineno, colno);
-  compiler.emit(`runtime.runTest(env, ${JSON.stringify(node.name)}, ${targetTmp}))`);
-  compiler.emit(')');
+  compiler.emit(`runtime.runTest(env, ${JSON.stringify(node.name)}, ${targetTmp})); })())`);
 };
 
 export const compileTestCall = (
@@ -26,9 +30,9 @@ export const compileTestCall = (
   const lineno = node.lineno;
   const colno = node.colno;
   const targetTmp = compiler.nextCompilerId();
-  compiler.emit(`(${targetTmp} = `);
+  compiler.emit(`(await (async () => { let ${targetTmp} = `);
   compiler.compile(node.target, frame);
-  compiler.emit(', ');
+  compiler.emit('; ');
 
   const args: string[] = [];
   forEach(node.args, (argNode) => {
@@ -36,14 +40,16 @@ export const compileTestCall = (
       return;
     }
     const argTmp = compiler.nextCompilerId();
-    compiler.emit(`${argTmp} = `);
+    compiler.emit(`let ${argTmp} = `);
     compiler.compile(argNode, frame);
-    compiler.emit(', ');
+    compiler.emit('; ');
     args.push(argTmp);
   });
 
+  compiler.emit('return ');
   emitLocationGuard(compiler, lineno, colno);
   const argsPart = args.length > 0 ? `, ${args.join(', ')}` : '';
-  compiler.emit(`runtime.runTest(env, ${JSON.stringify(node.name)}, ${targetTmp}${argsPart}))`);
-  compiler.emit(')');
+  compiler.emit(
+    `runtime.runTest(env, ${JSON.stringify(node.name)}, ${targetTmp}${argsPart})); })())`
+  );
 };

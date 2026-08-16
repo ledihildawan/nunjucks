@@ -17,6 +17,7 @@ import {
 import type { Frame } from '@nunjucks/runtime';
 import { loc } from '@nunjucks/shared';
 import { forEach, reduce } from 'remeda';
+import { assertSafeIdentifier } from '../codegen.ts';
 import type { Compiler } from '../index.ts';
 
 interface DestructuringContext {
@@ -52,6 +53,9 @@ const compileAssignToFrame = (
   name: string,
   source: string
 ): void => {
+  // WHY: single validation funnel for destructuring target names before they are
+  // emitted into generated source (the codegen boundary's primary injection defense).
+  assertSafeIdentifier(name, { compiler });
   const existingId = registerFrame ? frame.lookup(name) : null;
   compiler.emitLine(
     `frame = frame.set({ name: ${JSON.stringify(name)}, value: ${source}, resolveUp: true });`

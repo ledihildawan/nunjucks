@@ -188,6 +188,7 @@ const compileCompoundAssignment = (
     return;
   }
 
+  assertSafeIdentifier(name, { compiler, lineno: node.lineno, colno: node.colno });
   const key = JSON.stringify(name);
   const currentId = compiler.nextCompilerId();
   const valueId = compiler.nextCompilerId();
