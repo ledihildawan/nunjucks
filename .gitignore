@@ -8,13 +8,7 @@ dist
 build
 *.log
 .nyc_output
-/tests/browser/nunjucks*
-/browser
-/tests/browser/precompiled-templates.js
-/samples/express/js/nunjucks.js
-/samples/express/js/templates.js
 /nunjucks-original
-/output-error-html
 
 # local tooling state (opencode plans/session)
 .opencode/

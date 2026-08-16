@@ -58,6 +58,7 @@
         "remeda": "^2.39.0",
       },
       "devDependencies": {
+        "@nunjucks/nodes": "workspace:*",
         "@types/express": "^5.0.6",
       },
     },
@@ -119,7 +120,6 @@
       "dependencies": {
         "@nunjucks/error-formatter": "workspace:*",
         "@nunjucks/lib": "workspace:*",
-        "remeda": "^2.39.0",
       },
     },
     "packages/@nunjucks/lib": {
@@ -144,6 +144,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@nunjucks/shared": "workspace:*",
+        "remeda": "^2.39.0",
       },
     },
     "packages/@nunjucks/parser": {
@@ -167,6 +168,7 @@
         "@nunjucks/error-formatter": "workspace:*",
         "@nunjucks/lib": "workspace:*",
         "@nunjucks/shared": "workspace:*",
+        "remeda": "^2.39.0",
       },
     },
     "packages/@nunjucks/shared": {
@@ -183,6 +185,7 @@
         "@nunjucks/lib": "workspace:*",
         "@nunjucks/nodes": "workspace:*",
         "@nunjucks/shared": "workspace:*",
+        "remeda": "^2.39.0",
       },
     },
     "packages/@nunjucks/validators": {

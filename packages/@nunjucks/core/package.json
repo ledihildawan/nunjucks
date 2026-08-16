@@ -24,6 +24,7 @@
     "remeda": "^2.39.0"
   },
   "devDependencies": {
+    "@nunjucks/nodes": "workspace:*",
     "@types/express": "^5.0.6"
   },
   "description": "Public Nunjucks API: template environment, rendering, configuration, and integration entry points",

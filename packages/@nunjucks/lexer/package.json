@@ -8,8 +8,7 @@
   },
   "dependencies": {
     "@nunjucks/error-formatter": "workspace:*",
-    "@nunjucks/lib": "workspace:*",
-    "remeda": "^2.39.0"
+    "@nunjucks/lib": "workspace:*"
   },
   "description": "Lexer for Nunjucks template engine",
   "private": true
