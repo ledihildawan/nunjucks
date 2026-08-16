@@ -48,17 +48,13 @@ import type {
   WhenNode,
 } from './statement-nodes.ts';
 import type {
-  GenericNode,
   HoleNode,
   LiteralNode,
   SymbolNode,
   TemplateDataNode,
-  ValueNode,
 } from './value-nodes.ts';
 
 type NodeTypeInterfaceMap = {
-  [T.NODE]: GenericNode;
-  [T.VALUE]: ValueNode;
   [T.LITERAL]: LiteralNode;
   [T.SYMBOL]: SymbolNode;
   [T.TEMPLATE_DATA]: TemplateDataNode;
@@ -161,7 +157,6 @@ export type {
   ExtendsNode,
   ForNode,
   FromImportNode,
-  GenericNode,
   HoleNode,
   IfNode,
   ImportNode,
@@ -193,7 +188,6 @@ export type {
   TestNode,
   UnaryNode,
   UnaryOpNode,
-  ValueNode,
   VariableDeclNode,
   WalrusNode,
   WhenNode,

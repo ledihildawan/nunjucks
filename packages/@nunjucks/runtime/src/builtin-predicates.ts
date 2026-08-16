@@ -3,6 +3,21 @@ import { isSafeString } from './runtime-contract/safe-string.ts';
 
 type TestFn = (target: unknown, ...args: unknown[]) => boolean;
 
+// WHY: cap template-supplied regex pattern length — long patterns can trigger catastrophic
+// backtracking (ReDoS) once compiled, so overly long patterns are rejected outright.
+const MAX_MATCHES_PATTERN_LENGTH = 256;
+
+const matchesPattern = (target: string, pattern: unknown): boolean => {
+  if (pattern instanceof RegExp) {
+    return pattern.test(target);
+  }
+  const source = String(pattern);
+  if (source.length > MAX_MATCHES_PATTERN_LENGTH) {
+    return false;
+  }
+  return new RegExp(source).test(target);
+};
+
 const BUILTIN_TESTS: Readonly<Record<string, TestFn>> = {
   defined: (target) => target !== undefined,
   undefined: (target) => target === undefined,
@@ -40,8 +55,7 @@ const BUILTIN_TESTS: Readonly<Record<string, TestFn>> = {
   endswith: (target, suffix) =>
     typeof target === 'string' && typeof suffix === 'string' && target.endsWith(suffix),
   matches: (target, pattern) =>
-    typeof target === 'string' &&
-    (pattern instanceof RegExp ? pattern.test(target) : new RegExp(String(pattern)).test(target)),
+    typeof target === 'string' && matchesPattern(target, pattern),
   empty: (target) =>
     target === '' ||
     target === null ||

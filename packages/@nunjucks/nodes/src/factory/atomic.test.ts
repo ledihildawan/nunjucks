@@ -2,7 +2,6 @@ import { describe, expect, test } from 'bun:test';
 import { type Loc, loc, ZERO_LOC } from '@nunjucks/shared';
 import type {
   ChildrenNode,
-  GenericNode,
   HoleNode,
   LiteralNode,
   Node,
@@ -13,7 +12,6 @@ import type {
   TemplateDataNode,
   TemplateLiteralNode,
   TemplateQuasi,
-  ValueNode,
   WalrusNode,
 } from '../types/index.ts';
 import { T } from '../types/index.ts';
@@ -24,7 +22,6 @@ import {
   hole,
   keywordArgs,
   literal,
-  node,
   nodeList,
   output,
   pair,
@@ -34,7 +31,6 @@ import {
   symbol,
   templateData,
   templateLiteral,
-  value,
   walrus,
 } from './atomic.ts';
 
@@ -45,24 +41,14 @@ const valueOperand = literal(ZERO_LOC, 42);
 const lowerBound = literal(ZERO_LOC, 1);
 const upperBound = literal(ZERO_LOC, 10);
 
-describe('node', () => {
-  test('creates a generic node forwarding lineno and colno', () => {
-    const genericNode: GenericNode = node(customLoc);
-    expect(genericNode.type).toBe(T.NODE);
-    expect(genericNode.lineno).toBe(customLoc.lineno);
-    expect(genericNode.colno).toBe(customLoc.colno);
-  });
-});
-
 describe('value-bearing nodes', () => {
-  type ValueBearingNode = ValueNode | LiteralNode | SymbolNode | TemplateDataNode;
+  type ValueBearingNode = LiteralNode | SymbolNode | TemplateDataNode;
   const valueNodeCases: ReadonlyArray<{
     factory: string;
     typename: ValueBearingNode['type'];
     sampleValue: unknown;
     build: (loc: Loc, val: unknown) => ValueBearingNode;
   }> = [
-    { factory: 'value', typename: T.VALUE, sampleValue: 42, build: (position, val) => value(position, val) },
     {
       factory: 'literal',
       typename: T.LITERAL,

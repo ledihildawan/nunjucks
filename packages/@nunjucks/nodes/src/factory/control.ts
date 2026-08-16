@@ -121,6 +121,8 @@ const extendsNode = (loc: Loc, fields: ExtendsFields) =>
 interface IncludeFields {
   template?: Node;
   ignoreMissing?: boolean | null;
+  only?: boolean;
+  with?: Node;
 }
 
 const include = (loc: Loc, fields: IncludeFields = {}) =>

@@ -9,8 +9,6 @@ const createNodeWithChildren = <K extends NodeType>(
   children: readonly Node[] = []
 ): NodeOf<K> => createNode(nodeType, loc, { children: [...children] });
 
-const node = (loc: Loc) => createNode(T.NODE, loc);
-const value = (loc: Loc, val: unknown) => createNode(T.VALUE, loc, { value: val });
 const nodeList = (loc: Loc, children: readonly Node[] = []) =>
   createNodeWithChildren(T.NODE_LIST, loc, children);
 const output = (loc: Loc, children: readonly Node[] = []) =>
@@ -71,7 +69,6 @@ export {
   hole,
   keywordArgs,
   literal,
-  node,
   nodeList,
   output,
   pair,
@@ -81,6 +78,5 @@ export {
   symbol,
   templateData,
   templateLiteral,
-  value,
   walrus,
 };

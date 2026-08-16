@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { Node } from '@nunjucks/nodes';
-import { block, findAll, funCall, output, root, symbol, templateData } from '@nunjucks/nodes';
+import { block, findAll, funCall, nodeList, output, root, symbol, templateData } from '@nunjucks/nodes';
 import { ZERO_LOC } from '@nunjucks/shared';
 import { transform } from './index.ts';
 
@@ -32,6 +32,51 @@ describe('transform (liftSuper)', () => {
     const lifted = findAll(transformed, 'super');
     expect(lifted.length).toBeGreaterThanOrEqual(1);
     expect((lifted[0] as { blockName?: string }).blockName).toBe('content');
+  });
+
+  test('binds super() in a nested block to the inner block, not the outer one', () => {
+    const innerSuperCall = funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'super'), args: [] });
+    const ast = root(ZERO_LOC, [
+      block(ZERO_LOC, {
+        name: 'outer',
+        body: nodeList(ZERO_LOC, [
+          block(ZERO_LOC, {
+            name: 'inner',
+            body: output(ZERO_LOC, [innerSuperCall]),
+          }),
+        ]),
+      }),
+    ]) as Node & { children: Node[] };
+    const transformed = transform(ast);
+    const lifted = findAll(transformed, 'super');
+    expect(lifted).toHaveLength(1);
+    expect((lifted[0] as { blockName?: string }).blockName).toBe('inner');
+  });
+
+  test('leaves a nested block super() untouched when only the outer block is scanned', () => {
+    const innerSuperCall = funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'super'), args: [] });
+    const ast = root(ZERO_LOC, [
+      block(ZERO_LOC, {
+        name: 'outer',
+        body: output(ZERO_LOC, [
+          templateData(ZERO_LOC, 'outer body'),
+          block(ZERO_LOC, {
+            name: 'inner',
+            body: output(ZERO_LOC, [innerSuperCall]),
+          }),
+        ]),
+      }),
+    ]) as Node & { children: Node[] };
+    const transformed = transform(ast);
+    const lifted = findAll(transformed, 'super');
+    expect(lifted).toHaveLength(1);
+    expect((lifted[0] as { blockName?: string }).blockName).toBe('inner');
+    const outerBlock = findAll(transformed, 'block').find(
+      (n) => (n as { name?: unknown }).name === 'outer'
+    ) as { body: { children: readonly Node[] } };
+    expect(
+      outerBlock.body.children.some((child) => child.type === 'super')
+    ).toBe(false);
   });
 
   test('preserves block structure after transform', () => {

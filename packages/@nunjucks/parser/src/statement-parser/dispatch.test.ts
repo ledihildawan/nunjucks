@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { createTokenizer } from '@nunjucks/lexer';
+import { isErr } from '@nunjucks/lib';
 import { getNodeTypeName } from '@nunjucks/nodes';
 import type { ParserContext, ParserExtension } from '../cursor.ts';
 import { nextTokenOrNull } from '../cursor.ts';
@@ -37,7 +38,21 @@ describe('parseStatement', () => {
       parse: () => null,
     };
     const ctx = ctxFor('{% customTag %}', [extension]);
-    expect(unwrap(parseStatement(ctx))).toBeNull();
+    expect(() => unwrap(parseStatement(ctx))).toThrow(/returned no node/);
+  });
+
+  test('a null-returning extension parser is a parse error, not a silent stop', () => {
+    const extension: ParserExtension = {
+      tags: ['customTag'],
+      parse: () => null,
+    };
+    const ctx = ctxFor('{% customTag %}rest of template', [extension]);
+    const result = parseStatement(ctx);
+    expect(isErr(result)).toBe(true);
+    if (result.ok) {
+      return;
+    }
+    expect(result.error.message).toContain('customTag');
   });
 
   test('throws when the token stream starts with a non-symbol token', () => {

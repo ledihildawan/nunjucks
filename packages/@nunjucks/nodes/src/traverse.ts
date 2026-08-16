@@ -25,16 +25,49 @@ const mapCOW = <T>(items: readonly T[], transform: (item: T) => T): T[] => {
   return mapped.every((item, i) => item === items[i]) ? (items as T[]) : mapped;
 };
 
+interface EnvelopeBinding {
+  readonly node: Node;
+  readonly key: 'node' | 'body';
+}
+
+// WHY: template-literal quasis wrap real Nodes in `{type:'expression', node}` envelopes and
+// component/render slots wrap bodies in `{name, params, body}` SlotBlock envelopes — raw field
+// walks must descend through both or the wrapped expressions become invisible to transforms.
+const unwrapEnvelope = (item: unknown): EnvelopeBinding | undefined => {
+  if (!item || typeof item !== 'object' || isNode(item)) {
+    return undefined;
+  }
+  const record = item as Record<string, unknown>;
+  if (typeof record.type === 'string' && isNode(record.node)) {
+    return { node: record.node, key: 'node' };
+  }
+  if (typeof record.name === 'string' && isNode(record.body)) {
+    return { node: record.body, key: 'body' };
+  }
+  return undefined;
+};
+
+const getEnvelopeNode = (item: unknown): Node | undefined => unwrapEnvelope(item)?.node;
+
+const walkEnvelopeItem = (item: unknown, walker: (node: Node) => Node): unknown => {
+  const binding = unwrapEnvelope(item);
+  if (!binding) {
+    return item;
+  }
+  const visited = walker(binding.node);
+  if (visited === binding.node) {
+    return item;
+  }
+  return { ...(item as Record<string, unknown>), [binding.key]: visited };
+};
+
 function walkValue(value: Node, walker: (node: Node) => Node): Node;
 function walkValue(value: unknown, walker: (node: Node) => Node): unknown;
 function walkValue(value: unknown, walker: (node: Node) => Node): unknown {
   if (Array.isArray(value)) {
-    return mapCOW(value, (item) => {
-      if (isNode(item)) {
-        return walker(item);
-      }
-      return item;
-    });
+    return mapCOW(value, (item) =>
+      isNode(item) ? walker(item) : walkEnvelopeItem(item, walker)
+    );
   }
   if (isNode(value)) {
     return walker(value);
@@ -108,7 +141,13 @@ const matchPredicate = (node: Node, predicate: string | ((node: Node) => boolean
 const getFieldNodes = (node: Node, field: string): Node[] => {
   const value = getNodeField(node, field);
   if (Array.isArray(value)) {
-    return value.filter(isNode);
+    return value.flatMap((item) => {
+      if (isNode(item)) {
+        return [item];
+      }
+      const wrapped = getEnvelopeNode(item);
+      return wrapped ? [wrapped] : [];
+    });
   }
   return isNode(value) ? [value] : [];
 };
@@ -136,4 +175,4 @@ const findAll = (node: Node, predicate: string | ((node: Node) => boolean)): Nod
   return collect(node);
 };
 
-export { appendChild, findAll, getNodeTypeName, walk };
+export { appendChild, findAll, getChildNodes, getEnvelopeNode, getNodeTypeName, walk };

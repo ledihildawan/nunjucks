@@ -32,11 +32,6 @@ import {
   isVariableDeclaration,
 } from './index.ts';
 
-const isOutput = (
-  n: unknown
-): n is { type: 'output'; lineno: number; colno: number; children: unknown[] } =>
-  n !== null && typeof n === 'object' && (n as { type?: string }).type === 'output';
-
 describe('nodes/types/guards', () => {
   describe('isNode', () => {
     test('returns true for a valid node', () => {
@@ -174,17 +169,6 @@ describe('nodes/types/guards', () => {
 
     test('returns false for literal node', () => {
       expect(isBlock(literal(ZERO_LOC, 'x'))).toBe(false);
-    });
-  });
-
-  describe('isOutput', () => {
-    test('returns true for output node', () => {
-      const n = { type: 'output', lineno: 0, colno: 0, children: [] };
-      expect(isOutput(n)).toBe(true);
-    });
-
-    test('returns false for literal node', () => {
-      expect(isOutput(literal(ZERO_LOC, 'x'))).toBe(false);
     });
   });
 

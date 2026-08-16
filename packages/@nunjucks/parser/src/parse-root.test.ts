@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { createTokenizer } from '@nunjucks/lexer';
-import type { Node } from '@nunjucks/nodes';
-import { getNodeTypeName, isNodeList, isOutput, isTemplateData } from '@nunjucks/nodes';
+import type { ChildrenNode, Node } from '@nunjucks/nodes';
+import { getNodeTypeName, isNodeList, isTemplateData } from '@nunjucks/nodes';
 import { peekTokenOrNull } from './cursor.ts';
 import { createParser } from './index.ts';
 import { parseNodes, parseUntilBlocks } from './parse-root.ts';
@@ -15,8 +15,10 @@ const makeCtx = (src: string) => {
 const parse = (src: string, ...blocks: string[]) =>
   unwrap(parseUntilBlocks(makeCtx(src), ...blocks));
 
+const isOutputNode = (n: Node): n is ChildrenNode => getNodeTypeName(n) === 'output';
+
 const childrenOf = (n: Node): readonly Node[] =>
-  isNodeList(n) ? n.children : isOutput(n) ? n.children : [];
+  isNodeList(n) ? n.children : isOutputNode(n) ? n.children : [];
 
 describe('parseUntilBlocks', () => {
   describe('block boundaries', () => {
@@ -53,7 +55,7 @@ describe('parseUntilBlocks', () => {
       expect(children).toHaveLength(1);
 
       const out = children[0] as Node;
-      expect(isOutput(out)).toBe(true);
+      expect(isOutputNode(out)).toBe(true);
 
       const outChildren = childrenOf(out);
       expect(outChildren).toHaveLength(1);
@@ -78,7 +80,7 @@ describe('parseUntilBlocks', () => {
       expect(children).toHaveLength(2);
 
       const exprOut = children[1] as Node;
-      expect(isOutput(exprOut)).toBe(true);
+      expect(isOutputNode(exprOut)).toBe(true);
       const expr = childrenOf(exprOut)[0];
       expect(getNodeTypeName(expr)).toBe('symbol');
       expect(expr?.value).toBe('x');

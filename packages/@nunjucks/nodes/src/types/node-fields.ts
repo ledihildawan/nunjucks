@@ -1,8 +1,6 @@
 import { type NodeType, T } from './constants.ts';
 
 export const FIELDS: Readonly<Record<NodeType, readonly string[]>> = {
-  [T.NODE]: [],
-  [T.VALUE]: ['value'],
   [T.LITERAL]: ['value'],
   [T.SYMBOL]: ['value'],
   [T.TEMPLATE_DATA]: ['value'],
@@ -49,7 +47,7 @@ export const FIELDS: Readonly<Record<NodeType, readonly string[]>> = {
   [T.DECREMENT]: ['target', 'isPostfix'],
   [T.BLOCK]: ['name', 'body'],
   [T.EXTENDS]: ['template'],
-  [T.INCLUDE]: ['template', 'ignoreMissing'],
+  [T.INCLUDE]: ['template', 'ignoreMissing', 'only', 'with'],
   [T.COMPONENT]: ['name', 'args', 'body', 'fallbackSlots'],
   [T.IMPORT]: ['template', 'target', 'withContext'],
   [T.FROM_IMPORT]: ['template', 'names', 'withContext'],

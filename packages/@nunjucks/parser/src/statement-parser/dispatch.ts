@@ -63,8 +63,10 @@ export const parseStatement = (
     (e) => (e.tags ?? []).includes(tagName) && Boolean(e.parse)
   );
   if (ext?.parse) {
-    return ok(
-      ext.parse(parserContext, nodes, {
+    const parsedNode = ext.parse(
+      parserContext,
+      nodes,
+      {
         TOKEN_SYMBOL,
         TOKEN_BLOCK_END,
         TOKEN_BLOCK_START,
@@ -90,8 +92,17 @@ export const parseStatement = (
         TOKEN_DATA,
         TOKEN_WHITESPACE,
         TOKEN_REGEX,
-      })
+      }
     );
+    if (parsedNode === null) {
+      // WHY: a null return must not read as "stop parsing" — that silently truncates the
+      // template. Extensions signal completion by returning a node.
+      return fail(parserContext, `extension tag '${String(tagName)}' parse returned no node`, {
+        lineno: tok.lineno,
+        colno: tok.colno,
+      });
+    }
+    return ok(parsedNode);
   }
   return fail(parserContext, `unknown block tag: ${tok.value}`, {
     lineno: tok.lineno,

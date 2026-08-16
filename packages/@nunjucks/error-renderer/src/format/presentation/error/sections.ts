@@ -1,72 +1,23 @@
 import { replace, slice } from '@nunjucks/lib';
-import { filter, join, keys, map, pipe, split, values } from 'remeda';
+import { filter, keys, pipe, split, values } from 'remeda';
 import { DEFAULT_IDE } from '../ide-links/defaults.ts';
 import { isFilePath, resolveIdeLink } from '../ide-links/ide-links.ts';
 import { shortenPath } from '../source-trace/path-shortener.ts';
-import {
-  escapeAttribute,
-  escapeHtml,
-  highlightHtml,
-  highlightJs,
-} from '../syntax-highlight/highlight.ts';
+import { escapeAttribute, escapeHtml } from '../syntax-highlight/highlight.ts';
 import { normalizeRenderContext } from './safe-context.ts';
 
 const FILE_URL_PREFIX_RE = /^file:\/\/+/u;
-const LEADING_WHITESPACE_RE = /^\s*/u;
 const PATH_SEPARATOR_RE = /[\\/:]/u;
 const STACK_AT_PREFIX_RE = /^at\s+/u;
 const NATIVE_FRAME_RE = /^native$/u;
 const LEADING_ANGLE_RE = /^</u;
 const PARENTHESISED_LOCATION_RE = /\(([^()]+):(\d+):(\d+)\)/gu;
 const FILE_URL_LOCATION_RE = /(.*?)(file:\/\/+.*?):(\d+):(\d+)$/u;
-const ERROR_MARKER_PREFIX_RE = /^>>>\s*/u;
 const LT_RE = /</gu;
 const GT_RE = />/gu;
 const AMP_RE = /&/gu;
 
 const normalizePath = (path: string): string => path.replace(FILE_URL_PREFIX_RE, '');
-
-const formatCodeTraceHtml = (snippet: string): string => {
-  if (!snippet) {
-    return '<div class="code-line"><span class="line-number">&nbsp;</span><span class="code-content">Source not available</span></div>';
-  }
-
-  const lines = snippet.split('\n');
-  return pipe(lines, map(formatCodeLine), join(''));
-};
-
-const formatCodeLine = (line: string): string => {
-  const trimmed = line.trim();
-  const isError = trimmed.startsWith('>>>');
-  const content = isError ? trimmed.replace(ERROR_MARKER_PREFIX_RE, '') : trimmed;
-  const colonIdx = content.indexOf(':');
-  const lineNum = colonIdx > 0 ? content.slice(0, colonIdx) : '';
-  const code = colonIdx > 0 ? content.slice(colonIdx + 1) : content;
-  const leadingSpace =
-    code.length === code.trimStart().length ? '' : (code.match(LEADING_WHITESPACE_RE)?.[0] ?? '');
-  const trimmedCode = code.trimStart();
-  const errorClass = isError ? ' is-error' : '';
-  return `<div class="code-line${errorClass}"><span class="line-number">${lineNum || '&nbsp;'}</span><span class="code-content">${leadingSpace}${highlightHtml(trimmedCode)}</span></div>`;
-};
-
-interface JsCallerLine {
-  lineNum: string;
-  code: string;
-  isError: boolean;
-}
-
-const formatJsTraceHtml = (jsCallerLines: JsCallerLine[]): string => {
-  if (jsCallerLines.length === 0) {
-    return '';
-  }
-
-  return jsCallerLines
-    .map(({ lineNum, code, isError }) => {
-      const errorClass = isError ? ' is-error' : '';
-      return `<div class="code-line${errorClass}"><span class="line-number">${lineNum || '&nbsp;'}</span><span class="code-content">${highlightJs(code)}</span></div>`;
-    })
-    .join('');
-};
 
 type SerializableContext =
   | null
@@ -265,4 +216,4 @@ const formatStackTraceHtml = ({
 </section>`;
 };
 
-export { formatCodeTraceHtml, formatJsTraceHtml, formatStackTraceHtml, renderContextHtml };
+export { formatStackTraceHtml, renderContextHtml };

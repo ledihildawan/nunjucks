@@ -1,6 +1,4 @@
 export const T = Object.freeze({
-  NODE: 'node',
-  VALUE: 'value',
   LITERAL: 'literal',
   SYMBOL: 'symbol',
   NODE_LIST: 'nodeList',

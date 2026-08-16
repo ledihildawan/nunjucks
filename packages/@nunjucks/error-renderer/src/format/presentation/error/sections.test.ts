@@ -1,35 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  formatCodeTraceHtml,
-  formatJsTraceHtml,
-  formatStackTraceHtml,
-  renderContextHtml,
-} from './sections.ts';
-
-describe('formatCodeTraceHtml', () => {
-  test('renders a placeholder when the snippet is empty', () => {
-    expect(formatCodeTraceHtml('')).toContain('Source not available');
-  });
-
-  test('marks an error line (>>>) with is-error', () => {
-    const html = formatCodeTraceHtml('>>>1: {{ x }}');
-    expect(html).toContain('is-error');
-    expect(html).toContain('code-line');
-  });
-});
-
-describe('formatJsTraceHtml', () => {
-  test('returns empty string for no lines', () => {
-    expect(formatJsTraceHtml([])).toBe('');
-  });
-
-  test('renders a highlighted row per caller line', () => {
-    const html = formatJsTraceHtml([{ lineNum: '5', code: 'foo()', isError: false }]);
-    expect(html).toContain('code-line');
-    expect(html).toContain('syntax-variable');
-    expect(html).toContain('foo');
-  });
-});
+import { formatStackTraceHtml, renderContextHtml } from './sections.ts';
 
 describe('renderContextHtml', () => {
   test('returns empty for non-object input', () => {

@@ -1,6 +1,6 @@
 import { err, ok, type Result } from '@nunjucks/lib';
 import type { CallNode, LookupNode, Node, SymbolNode } from '@nunjucks/nodes';
-import { getNodeTypeName, isNode, isSymbol } from '@nunjucks/nodes';
+import { getEnvelopeNode, getNodeTypeName, isNode, isSymbol } from '@nunjucks/nodes';
 import type { BaseValidationError } from '@nunjucks/shared';
 import { flatMap } from 'remeda';
 import { isNonEmpty } from './is-non-empty.ts';
@@ -145,9 +145,15 @@ const createExpressionWalker = (blocked: readonly RegExp[]) => {
       Object.entries(node).filter(([key]) => !NON_CHILD_KEYS.has(key)),
       ([key, child]) => {
         if (Array.isArray(child)) {
-          return flatMap(child, (element, i) =>
-            isNode(element) ? walk(element, [...path, key, i]) : []
-          );
+          return flatMap(child, (element, i) => {
+            if (isNode(element)) {
+              return walk(element, [...path, key, i]);
+            }
+            // WHY: descend through quasi/slot envelopes so template literals and slot bodies
+            // are security-checked like any other expression position.
+            const wrapped = getEnvelopeNode(element);
+            return wrapped ? walk(wrapped, [...path, key, i]) : [];
+          });
         }
         if (isNode(child)) {
           return walk(child, [...path, key]);

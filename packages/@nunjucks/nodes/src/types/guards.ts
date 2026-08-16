@@ -5,15 +5,11 @@ import {
   type CompareOperandNode,
   type IfNode,
   type LiteralNode,
-  type MatchNode,
   type Node,
   type NodeType,
-  type RenderNode,
-  type SwitchNode,
   type SymbolNode,
   T,
   type TemplateDataNode,
-  type TemplateLiteralNode,
 } from './index.ts';
 
 const nodeTypes: ReadonlySet<NodeType> = new Set(Object.values(T));
@@ -37,8 +33,6 @@ export const isNode = (n: unknown): n is Node =>
 export const isLiteral = (n: unknown): n is LiteralNode => is(T.LITERAL)(n);
 export const isSymbol = (n: unknown): n is SymbolNode => is(T.SYMBOL)(n);
 export const isNodeList = is(T.NODE_LIST);
-export const isOutput = (n: unknown): n is ChildrenNode & { readonly type: typeof T.OUTPUT } =>
-  is(T.OUTPUT)(n);
 export const isFunCall = is(T.FUN_CALL);
 export const isCompareOperand = (n: unknown): n is CompareOperandNode => is(T.COMPARE_OPERAND)(n);
 export const isPipe = (n: unknown): n is CallNode & { readonly type: typeof T.PIPE } =>
@@ -68,11 +62,6 @@ export const isAssignmentPattern = is(T.ASSIGNMENT_PATTERN);
 export const isHole = is(T.HOLE);
 export const isVariableDeclaration = is(T.VARIABLE_DECLARATION);
 export const isVariableAssignment = is(T.VARIABLE_ASSIGNMENT);
-export const isMatch = (n: unknown): n is MatchNode => is(T.MATCH)(n);
-export const isSwitch = (n: unknown): n is SwitchNode => is(T.SWITCH)(n);
-export const isRender = (n: unknown): n is RenderNode => is(T.RENDER)(n);
-export const isTemplateLiteral = (n: unknown): n is TemplateLiteralNode =>
-  is(T.TEMPLATE_LITERAL)(n);
 export const isChildrenNode = (n: unknown): n is ChildrenNode =>
   is(T.NODE_LIST)(n) ||
   is(T.ROOT)(n) ||

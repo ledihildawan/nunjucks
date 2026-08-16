@@ -147,13 +147,14 @@ const parseNodes = (
   parserContext: ParserContext,
   breakOn: readonly string[] | null = null
 ): Result<Node[], TemplateError> => {
-  let nodes: Node[] = [];
+  // WHY: mutable accumulator (parser loop exemption) — spreading per token is O(n²) on large templates.
+  const collectedNodes: Node[] = [];
 
   const parseLoop = (): Result<Node[], TemplateError> => {
     while (true) {
       const tok = nextTokenOrNull(parserContext);
       if (!tok) {
-        return ok(nodes);
+        return ok(collectedNodes);
       }
       const resultR = handleToken(parserContext, tok, breakOn);
       if (isErr(resultR)) {
@@ -161,9 +162,9 @@ const parseNodes = (
       }
       const result = resultR.value;
       if (!result.continue) {
-        return ok(nodes);
+        return ok(collectedNodes);
       }
-      nodes = [...nodes, ...result.nodes];
+      collectedNodes.push(...result.nodes);
     }
   };
 

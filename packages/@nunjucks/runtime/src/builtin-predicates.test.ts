@@ -127,6 +127,17 @@ describe('builtin tests', () => {
       expect(T('endswith', 'hello', 'lo')).toBe(true);
       expect(T('endswith', 'hello', 'x')).toBe(false);
     });
+    test('matches accepts a string pattern', () => {
+      expect(T('matches', 'hello', '^h')).toBe(true);
+      expect(T('matches', 'hello', '^x')).toBe(false);
+    });
+    test('matches accepts a RegExp instance', () => {
+      expect(T('matches', 'hello', /^h/u)).toBe(true);
+    });
+    test('matches rejects overly long string patterns (ReDoS cap)', () => {
+      expect(T('matches', 'hello', 'a'.repeat(257))).toBe(false);
+      expect(T('matches', 'hello', `^${'a'.repeat(256)}`)).toBe(false);
+    });
   });
 
   describe('container', () => {

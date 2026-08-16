@@ -10,7 +10,6 @@ import {
   hole,
   keywordArgs,
   literal,
-  node,
   nodeList,
   output,
   pair,
@@ -20,7 +19,6 @@ import {
   symbol,
   templateData,
   templateLiteral,
-  value,
   walrus,
 } from './atomic.ts';
 import {
@@ -95,8 +93,6 @@ export { createNode };
 
 const nodes = Object.freeze({
   NODE_TYPES: T,
-  node,
-  value,
   nodeList,
   output,
   root,
@@ -220,7 +216,6 @@ export {
   mod,
   mul,
   neg,
-  node,
   nodeList,
   nodes,
   not,
@@ -250,7 +245,6 @@ export {
   templateLiteral,
   testCallNode,
   testNode,
-  value,
   variableAssignment,
   variableDeclaration,
   walrus,

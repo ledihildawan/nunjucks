@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { createTokenizer } from '@nunjucks/lexer';
-import type { Node } from '@nunjucks/nodes';
-import { getNodeTypeName, isTemplateLiteral } from '@nunjucks/nodes';
+import type { Node, TemplateLiteralNode } from '@nunjucks/nodes';
+import { getNodeTypeName } from '@nunjucks/nodes';
 import { nextTokenOrNull } from '../cursor.ts';
 import { createParser } from '../index.ts';
 import { unwrap } from '../test-helpers.ts';
@@ -22,22 +22,14 @@ describe('parseTemplateLiteral', () => {
   });
 
   test('parses a plain template with no expressions', () => {
-    const node = parseLit('`hello world`');
-    expect(getNodeTypeName(node as Node)).toBe('templateLiteral');
-    expect(isTemplateLiteral(node)).toBe(true);
-    if (!isTemplateLiteral(node)) {
-      return;
-    }
+    const node = parseLit('`hello world`') as TemplateLiteralNode;
+    expect(getNodeTypeName(node)).toBe('templateLiteral');
     expect(node.quasis).toHaveLength(1);
   });
 
   test('parses a template with a simple identifier expression', () => {
-    const node = parseLit('`hello $' + '{name}`');
-    expect(getNodeTypeName(node as Node)).toBe('templateLiteral');
-    expect(isTemplateLiteral(node)).toBe(true);
-    if (!isTemplateLiteral(node)) {
-      return;
-    }
+    const node = parseLit('`hello $' + '{name}`') as TemplateLiteralNode;
+    expect(getNodeTypeName(node)).toBe('templateLiteral');
     expect(node.quasis).toHaveLength(2);
     const expr = node.quasis[1];
     expect(expr?.type).toBe('expression');

@@ -10,25 +10,26 @@ export const parseContent = (
   initialNode: ChildrenNode,
   origin: NodeLocation
 ): Result<ChildrenNode, TemplateError> => {
-  const parseLoop = (node: ChildrenNode): Result<ChildrenNode, TemplateError> => {
-    const listR = prepareListItem(parserContext, node, origin);
+  // WHY: iterative loop (parser loop exemption) — per-element recursion overflows the stack on
+  // large aggregate literals (e.g. tens of thousands of array items).
+  let currentNode = initialNode;
+  while (true) {
+    const listR = prepareListItem(parserContext, currentNode, origin);
     if (isErr(listR)) {
       return listR;
     }
     const listState = listR.value;
-    const nextNode = listState.node;
+    currentNode = listState.node;
     if (listState.done) {
-      return ok(nextNode);
+      return ok(currentNode);
     }
     if (listState.skipExpression) {
-      return parseLoop(nextNode);
+      continue;
     }
-    const exprR = parseAggregateExpression(parserContext, nextNode, origin);
+    const exprR = parseAggregateExpression(parserContext, currentNode, origin);
     if (isErr(exprR)) {
       return exprR;
     }
-    return parseLoop(exprR.value);
-  };
-
-  return parseLoop(initialNode);
+    currentNode = exprR.value;
+  }
 };
