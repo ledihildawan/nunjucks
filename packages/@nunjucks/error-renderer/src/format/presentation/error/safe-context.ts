@@ -1,6 +1,6 @@
 import { slice } from '@nunjucks/lib';
 import { DANGEROUS_KEY_PATTERN, getBlockedKeyCategory, isBlockedKey } from '@nunjucks/shared';
-import { filter, map, pipe, reduce } from 'remeda';
+import { filter, map, pipe } from 'remeda';
 
 const DEFAULT_OPTIONS = Object.freeze({
   maxDepth: 8,
@@ -227,19 +227,14 @@ const normalizePlainObject = (
 ): Record<string, unknown> => {
   const { state, depth, seen } = context;
   const visibleKeys = ownEnumerableKeys(value).filter((key) => visibleKey(key, depth));
-  const result = pipe(
-    visibleKeys.slice(0, state.maxEntries),
-    reduce(
-      (acc, key) => {
-        const isBlocked = state.blockedKeys.has(key) || DANGEROUS_KEY_PATTERN.test(key);
-        acc[key] = isBlocked
-          ? '[Redacted]'
-          : normalizeValue(readOwnValue(value, key), { state, depth: depth + 1, seen });
-        return acc;
-      },
-      {} as Record<string, unknown>
-    )
-  );
+  const visibleEntries = visibleKeys.slice(0, state.maxEntries).map((key) => {
+    const isBlocked = state.blockedKeys.has(key) || DANGEROUS_KEY_PATTERN.test(key);
+    const normalizedValue = isBlocked
+      ? '[Redacted]'
+      : normalizeValue(readOwnValue(value, key), { state, depth: depth + 1, seen });
+    return [key, normalizedValue] as const;
+  });
+  const result = Object.fromEntries(visibleEntries);
   if (visibleKeys.length > state.maxEntries) {
     result['...'] = `${visibleKeys.length - state.maxEntries} more keys`;
   }

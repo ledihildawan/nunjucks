@@ -320,14 +320,14 @@ const runHeadless = async (): Promise<number> => {
 
 const bootstrap = async (): Promise<void> => {
   if (headless) {
-    const issues = await runHeadless();
-    if (issues > 0) {
-      process.exitCode = issues;
+    const headlessIssueCount = await runHeadless();
+    if (headlessIssueCount > 0) {
+      process.exitCode = headlessIssueCount;
     }
     return;
   }
-  const issues = await run(BASE);
-  if (issues > 0) {
+  const auditIssueCount = await run(BASE);
+  if (auditIssueCount > 0) {
     process.exitCode = 1;
   }
 };

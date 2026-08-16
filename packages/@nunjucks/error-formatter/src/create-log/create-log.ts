@@ -29,12 +29,12 @@ function createLog(type: string, fields: CreateLogFields): TemplateError | Templ
   const extra = extractExtraFromContext(context);
 
   if (type === 'error') {
-    const normalized = normalizeErrorContext(context);
-    return createErrorFromDef({ errorDef, paramsValue: params, normalized, extra, subject: subject ?? null });
+    const normalizedErrorContext = normalizeErrorContext(context);
+    return createErrorFromDef({ errorDef, paramsValue: params, normalized: normalizedErrorContext, extra, subject: subject ?? null });
   }
 
-  const normalized = normalizeWarningContext(context);
-  return createWarningFromDef({ errorDef, paramsValue: params, normalizedWarning: normalized, subject: subject ?? null });
+  const normalizedWarningContext = normalizeWarningContext(context);
+  return createWarningFromDef({ errorDef, paramsValue: params, normalizedWarning: normalizedWarningContext, subject: subject ?? null });
 }
 
 const isTemplateError = (value: unknown): value is TemplateError =>
@@ -85,9 +85,18 @@ const stripInternals = (path?: string) => (err: TemplateError): TemplateError =>
 const prettifyError = (options: PrettifyErrorOptions): TemplateError => {
   const { path, withInternals, err, includeChain } = options;
   if (withInternals) {
-    return pipe(err, asTemplateError, withLocation({ path, includeChain }));
+    return pipe(
+      err,
+      asTemplateError,
+      withLocation({ path, includeChain })
+    );
   }
-  return pipe(err, asTemplateError, withLocation({ path, includeChain }), stripInternals(path));
+  return pipe(
+    err,
+    asTemplateError,
+    withLocation({ path, includeChain }),
+    stripInternals(path)
+  );
 };
 
 const createFromRawData = (type: LogType, rawLogData: RawLogData): TemplateError | TemplateWarning => {
