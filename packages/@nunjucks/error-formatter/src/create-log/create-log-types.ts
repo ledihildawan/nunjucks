@@ -79,7 +79,6 @@ interface TemplateError extends Error {
   lineBase?: LineBase | null;
   sourceContent?: string;
   sourceStartLine?: number;
-  firstUpdate?: boolean;
   causes?: string[];
   fixCode?: string | null;
   fixComment?: string | null;
@@ -88,7 +87,6 @@ interface TemplateError extends Error {
   path?: string | null;
   toJSON?: () => Record<string, unknown>;
   outputOptions?: Omit<OutputOptions, 'format'>;
-  applyLocation?: (path: string | undefined, includeChain?: IncludeChain) => TemplateError;
   includeChain?: IncludeChain;
   [TEMPLATE_ERROR]?: boolean;
 }
@@ -116,7 +114,9 @@ interface ErrorContext {
   templateName?: string | null;
   templatePath?: string | null;
   lineBase?: LineBase | null;
-  sourceContent?: string;
+  // WHY: null-tolerant — normalizeErrorMetadata yields null when absent; requiring string
+  // forced callers into a masking cast (handle-error.ts).
+  sourceContent?: string | null;
   sourceStartLine?: number;
   timestamp?: string | null;
   environment?: string | null;

@@ -141,4 +141,4 @@ const buildSourceTrace = (input: BuildSourceTraceInput): SourceTrace => {
 };
 
 export type { BuildSourceTraceInput, SourceTrace, SourceTraceCaret, SourceTraceLine };
-export { buildSourceTrace, windowSourceTrace };
+export { buildSourceTrace };

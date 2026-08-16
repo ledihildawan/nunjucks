@@ -35,7 +35,7 @@ describe('handleError', () => {
       try {
         handleError(value, { lineno: 3, colno: 7 });
       } catch (e) {
-        expect((e as { code: string }).code).toBe('RUNTIME_ERROR');
+        expect((e as { code: string }).code).toBe('RENDER_ERROR');
         expect((e as { lineno: number }).lineno).toBe(3);
       }
     }

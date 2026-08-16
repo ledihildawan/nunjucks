@@ -6,7 +6,7 @@ export const LEXER_ERRORS = {
     message: "Unexpected character '{char}'",
     pattern: /^Unexpected character '(.+)' at line (\d+):(\d+)$/iu,
     category: 'lexer_error',
-    titleTemplate: 'Unexpected character at line {lineno}',
+    titleTemplate: 'Unexpected character in the template',
     causes: [
       'The template contains a **character that is not valid** in the current context',
       'A tag or expression is **unclosed or malformed**',

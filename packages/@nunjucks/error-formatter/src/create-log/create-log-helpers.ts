@@ -1,8 +1,7 @@
 import { isFunction, isString, pickBy } from 'remeda';
 import { DEFAULT_UNDEFINED_MODE } from '@nunjucks/shared';
-import { formatLocationAnnotation } from '@nunjucks/error-renderer';
 import { TEMPLATE_ERROR } from './create-log-types.ts';
-import type { TemplateError, ErrorContext, WarningContext, NormalizedErrorContext, NormalizedWarningContext, ErrorDefinitionEntry, RawLogData, LogType, WarningInfo, IncludeChain, ErrorInfo } from './create-log-types.ts';
+import type { TemplateError, ErrorContext, WarningContext, NormalizedErrorContext, NormalizedWarningContext, ErrorDefinitionEntry, RawLogData, LogType, WarningInfo, ErrorInfo } from './create-log-types.ts';
 
 const createErrorEnvelope = (message: string, cause?: Error): TemplateError => {
   const err = new Error(message, cause ? { cause } : undefined) as TemplateError;
@@ -79,30 +78,4 @@ const extractExtraFromContext = (context: ErrorContext | null | undefined): Reco
   return pickBy(context, (_, k) => !extraKeys.includes(k));
 };
 
-const formatParentLocation = (chain: IncludeChain): string => {
-  const parentColnoPart = chain.parentColno ? `:${chain.parentColno}` : '';
-  return `\n   (included from ${chain.parentTmpl}:${chain.parentLineno}${parentColnoPart})`;
-};
-
-interface BuildLocationMessageOptions {
-  locationPath: string | undefined;
-  err: TemplateError;
-  chain?: IncludeChain;
-}
-
-const buildLocationMessage = ({
-  locationPath,
-  err,
-  chain,
-}: BuildLocationMessageOptions): string => {
-  const annotation = err.firstUpdate ? formatLocationAnnotation({ lineno: err.lineno, colno: err.colno, lineBase: err.lineBase }) : null;
-  return [
-    `(${locationPath ?? 'unknown path'})`,
-    annotation ? ` ${annotation}` : null,
-    chain && err.firstUpdate ? formatParentLocation(chain) : null,
-    '\n ',
-    err.firstUpdate ? ' ' : null
-  ].filter((part): part is string => part !== null).join('');
-};
-
-export { resolveMessage, normalizeErrorContext, normalizeWarningContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, formatParentLocation, buildLocationMessage, createErrorEnvelope };
+export { resolveMessage, normalizeErrorContext, normalizeWarningContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, createErrorEnvelope };

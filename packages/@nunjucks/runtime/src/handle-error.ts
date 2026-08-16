@@ -1,5 +1,5 @@
-import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
-import { createLog, type ErrorContext, normalizeErrorMetadata } from '@nunjucks/error-formatter';
+import { ERROR_CODES, ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
+import { createLog, normalizeErrorMetadata } from '@nunjucks/error-formatter';
 import { MATCH_ANY_RE } from '@nunjucks/lib';
 import { getLogContext } from './error-context.ts';
 
@@ -31,8 +31,8 @@ function handleError(this: unknown, error: unknown, { lineno, colno }: HandleErr
     }
   }
 
-  // WHY: merge the full catalog definition (causes, fixCode, fixComment, severity) with the resolved message. {subject} placeholders are left intact here — classify.ts replaces them at render time (single source of truth for placeholder substitution).
-  const errorCode = metadata.code ?? 'RUNTIME_ERROR';
+  // WHY: merge the full catalog definition (causes, fixCode, fixComment, severity) with the resolved message. {subject} placeholders are left intact here — classify.ts replaces them at render time (single source of truth for placeholder substitution). RENDER_ERROR is the catalog's designated fallback for unknown codes.
+  const errorCode = metadata.code ?? ERROR_CODES.RENDER_ERROR;
   const catalogDef =
     errorCode && Object.hasOwn(ERROR_DEFINITIONS, errorCode)
       ? ERROR_DEFINITIONS[errorCode as keyof typeof ERROR_DEFINITIONS]
@@ -54,7 +54,7 @@ function handleError(this: unknown, error: unknown, { lineno, colno }: HandleErr
       sourceStartLine: metadata.sourceStartLine,
       renderContext: metadata.renderContext,
       lineBase: metadata.lineBase,
-    } as ErrorContext,
+    },
   });
 
   thrown.templatePath = metadata.templatePath;

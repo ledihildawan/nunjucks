@@ -2,7 +2,7 @@ import { pipe } from 'remeda';
 import { DEFAULT_UNDEFINED_MODE } from '@nunjucks/shared';
 import type { TemplateError, TemplateWarning, ErrorDefinitionEntry, RawLogData, LogType, ErrorContext, WarningContext, IncludeChain, PrettifyErrorOptions, ErrorInfo, WarningInfo, OutputOptions } from './create-log-types.ts';
 import { TEMPLATE_ERROR } from './create-log-types.ts';
-import { normalizeErrorContext, normalizeWarningContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, buildLocationMessage, createErrorEnvelope } from './create-log-helpers.ts';
+import { normalizeErrorContext, normalizeWarningContext, isErrorDefinitionEntry, createBaseMetadata, extractExtraFromContext, createErrorEnvelope } from './create-log-helpers.ts';
 import { createErrorFromDef, createWarningFromDef } from './create-log-error.ts';
 import { isKeyedObject } from '@nunjucks/lib';
 
@@ -58,11 +58,6 @@ const asTemplateError = (err: Error | TemplateError): TemplateError => {
 
 const withLocation = ({ path, includeChain }: { path?: string; includeChain?: IncludeChain }) => (err: TemplateError): TemplateError => {
   const result = Object.assign(createErrorEnvelope(err.message, err), err);
-  result.applyLocation = (locationPath: string | undefined, chain?: IncludeChain): TemplateError => {
-    result.message = buildLocationMessage({ locationPath, err: result, chain }) + (result.message ?? '');
-    result.firstUpdate = false;
-    return result;
-  };
   result.templateName = result.templateName ?? (path ?? null);
   if (includeChain) {
     result.includeChain = includeChain;
