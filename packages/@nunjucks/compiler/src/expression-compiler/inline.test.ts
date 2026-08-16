@@ -42,7 +42,7 @@ describe('compileInlineIf', () => {
       } as never,
       frame,
     });
-    expect(c.emitted.join('')).toBe('(C?B:E)');
+    expect(c.emitted.join('')).toBe('(runtime.isTruthy(C)?B:E)');
   });
 
   test('emits "" when alternate is null', () => {
@@ -55,7 +55,7 @@ describe('compileInlineIf', () => {
       } as never,
       frame,
     });
-    expect(c.emitted.join('')).toBe('(C?B:"")');
+    expect(c.emitted.join('')).toBe('(runtime.isTruthy(C)?B:"")');
   });
 });
 

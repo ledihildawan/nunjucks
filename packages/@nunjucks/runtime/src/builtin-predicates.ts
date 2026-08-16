@@ -1,4 +1,5 @@
 import { isKeyedObject, isTypedArray } from '@nunjucks/lib';
+import { isAbsentLookupResult } from './member-access.ts';
 import { isSafeString } from './runtime-contract/safe-string.ts';
 
 type TestFn = (target: unknown, ...args: unknown[]) => boolean;
@@ -19,12 +20,14 @@ const matchesPattern = (target: string, pattern: unknown): boolean => {
 };
 
 const BUILTIN_TESTS: Readonly<Record<string, TestFn>> = {
-  defined: (target) => target !== undefined,
-  undefined: (target) => target === undefined,
+  // WHY: miss sentinels are objects, so raw comparisons would misreport them —
+  // `obj.missing is defined` must be false and `is undefined/null/none` true.
+  defined: (target) => target !== undefined && !isAbsentLookupResult(target),
+  undefined: (target) => target === undefined || isAbsentLookupResult(target),
   null: (target) => target === null,
-  none: (target) => target === null || target === undefined,
-  truthy: (target) => Boolean(target),
-  falsy: (target) => !target,
+  none: (target) => target === null || target === undefined || isAbsentLookupResult(target),
+  truthy: (target) => !isAbsentLookupResult(target) && Boolean(target),
+  falsy: (target) => isAbsentLookupResult(target) || !target,
   true: (target) => target === true,
   false: (target) => target === false,
   boolean: (target) => target === true || target === false,
@@ -92,8 +95,9 @@ const BUILTIN_TESTS: Readonly<Record<string, TestFn>> = {
   bigint: (target) => typeof target === 'bigint',
   symbol: (target) => typeof target === 'symbol',
   function: (target) => typeof target === 'function',
+  // WHY: constructor?.name — null-prototype callables (miss sentinels) have no .constructor.
   asyncfunction: (target) =>
-    typeof target === 'function' && target.constructor.name === 'AsyncFunction',
+    typeof target === 'function' && target.constructor?.name === 'AsyncFunction',
   Map: (target) => target instanceof Map,
   Set: (target) => target instanceof Set,
   Date: (target) => target instanceof Date,

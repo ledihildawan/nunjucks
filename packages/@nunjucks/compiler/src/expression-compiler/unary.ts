@@ -23,7 +23,14 @@ const compileUnary = (
 export const compileNot = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<UnaryOpNode>
-): void => compileUnary(compiler, node, frame, { operator: '!' });
+): void => {
+  emitLocationGuard(compiler, node.lineno, node.colno);
+  // WHY: isTruthy (not raw !) so miss sentinels count as falsy under `not` too. Three
+  // closers: isTruthy arg, the NOT group, and the location guard's opening paren.
+  compiler.emit('(!runtime.isTruthy(');
+  compiler.compile(node.target, frame);
+  compiler.emit(')))');
+};
 
 export const compileNeg = (
   compiler: Compiler,

@@ -76,8 +76,14 @@ const detectTestName = (testTok: Token): string | null => {
   if (testTok.type === TOKEN_SYMBOL && isTestKeyword(String(testTok.value))) {
     return String(testTok.value);
   }
-  if (testTok.type === TOKEN_NONE && isTestKeyword('null')) {
-    return 'null';
+  // WHY: the lexer emits both `none` and `null` as NONE literal tokens; `x is none` asks
+  // the `none` test (null OR undefined) while `x is null` asks the strict-null test —
+  // collapsing both to `null` silently answered false for undefined values.
+  if (testTok.type === TOKEN_NONE) {
+    const noneTestName = String(testTok.value) === 'null' ? 'null' : 'none';
+    if (isTestKeyword(noneTestName)) {
+      return noneTestName;
+    }
   }
   if (testTok.type === TOKEN_BOOLEAN && isTestKeyword(String(testTok.value))) {
     return String(testTok.value);

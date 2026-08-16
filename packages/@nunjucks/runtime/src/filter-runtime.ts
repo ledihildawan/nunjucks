@@ -1,5 +1,6 @@
 import { err, isResultLike, isThenable, ok, type Result } from '@nunjucks/lib';
 import { awaitValue } from './await-value.ts';
+import { isAbsentLookupResult } from './member-access.ts';
 
 interface FilterEnv {
   getFilter: (name: string, lineno: number, colno: number) => (...args: unknown[]) => unknown;
@@ -27,12 +28,16 @@ const isErrResult = (value: unknown): value is { ok: false; error: unknown } =>
   isResultLike(value) && value.ok === false;
 
 const runFilter = async (options: RunFilterOptions): Promise<Result<unknown, unknown>> => {
-  const { env, name, lineno, colno, context, args } = options;
+  const { env, name, lineno, colno, context } = options;
   if (!isFilterEnv(env)) {
     return err(
       new TypeError('runFilter requires an environment exposing getFilter(name, lineno, colno)')
     );
   }
+  // WHY: miss sentinels are the engine's internal not-found representation — filters must
+  // see `undefined` (classic semantics), never the sentinel objects (which stringify as
+  // "() => undefined" / "[object Object]" and corrupt filter output).
+  const args = options.args.map((arg) => (isAbsentLookupResult(arg) ? undefined : arg));
   try {
     const filter = env.getFilter(name, lineno, colno);
     const value = filter.call(context, ...args);

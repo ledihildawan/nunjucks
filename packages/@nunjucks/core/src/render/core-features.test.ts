@@ -354,6 +354,68 @@ describe('undefined modes', () => {
   });
 });
 
+describe('miss sentinels behave falsy (classic semantics)', () => {
+  // WHY: memberLookup returns a CALLABLE not-found sentinel (so `obj.missing()` yields
+  // undefined) — raw JS truthiness would invert every condition on a missing property.
+  test('{% if obj.missing %} takes the false branch', async () => {
+    const result = await renderTemplate(
+      '{% if obj.missing %}yes{% else %}no{% endif %}',
+      { obj: {} }
+    );
+    expect(result).toBe('no');
+  });
+
+  test('{% if nullObj.prop %} takes the false branch', async () => {
+    const result = await renderTemplate(
+      '{% if nullObj.prop %}yes{% else %}no{% endif %}',
+      { nullObj: null }
+    );
+    expect(result).toBe('no');
+  });
+
+  test('inline if on a miss picks the alternate', async () => {
+    const result = await renderTemplate('{{ obj.missing if obj.missing else "fallback" }}', {
+      obj: {},
+    });
+    expect(result).toBe('fallback');
+  });
+
+  test('not on a miss is true', async () => {
+    const result = await renderTemplate('{{ not obj.missing }}', { obj: {} });
+    expect(result).toBe('true');
+  });
+
+  test('is defined / is undefined / is none see through sentinels', async () => {
+    expect(await renderTemplate('{{ obj.missing is defined }}', { obj: {} })).toBe('false');
+    expect(await renderTemplate('{{ obj.missing is undefined }}', { obj: {} })).toBe('true');
+    expect(await renderTemplate('{{ obj.missing is none }}', { obj: {} })).toBe('true');
+    expect(await renderTemplate('{{ obj.missing is not defined }}', { obj: {} })).toBe('true');
+  });
+
+  test('is none vs is null keep distinct semantics', async () => {
+    expect(await renderTemplate('{{ missing is none }}', {})).toBe('true');
+    expect(await renderTemplate('{{ missing is null }}', {})).toBe('false');
+    expect(await renderTemplate('{{ nil is none }}', { nil: null })).toBe('true');
+    expect(await renderTemplate('{{ nil is null }}', { nil: null })).toBe('true');
+  });
+
+  test('truthy/falsy tests fold sentinels', async () => {
+    expect(await renderTemplate('{{ obj.missing is truthy }}', { obj: {} })).toBe('false');
+    expect(await renderTemplate('{{ obj.missing is falsy }}', { obj: {} })).toBe('true');
+  });
+
+  test('filter args receive undefined, never the sentinel object', async () => {
+    const result = await renderTemplate('{{ obj.missing |> length }}', { obj: {} });
+    expect(result).not.toContain('=>');
+    expect(result).not.toContain('[object');
+  });
+
+  test('calling a miss still yields undefined (callable sentinel preserved)', async () => {
+    const result = await renderTemplate('{{ obj.missing() }}', { obj: {} });
+    expect(result).toBe('undefined');
+  });
+});
+
 describe('autoescape', () => {
   test('autoescape on escapes HTML', async () => {
     const result = await renderTemplate('{{ x }}', { x: '<script>' }, { autoescape: true });

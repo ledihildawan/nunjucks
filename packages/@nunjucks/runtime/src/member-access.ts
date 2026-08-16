@@ -87,6 +87,12 @@ export const isPropertyNotFoundResult = (value: unknown): value is PropertyNotFo
   );
 };
 
+// WHY: single union check for both miss sentinels — consumers that only need "is this an
+// absent lookup" (truthiness folding, filter-arg normalization, predicates) should not
+// care which kind of miss produced it.
+export const isAbsentLookupResult = (value: unknown): boolean =>
+  isNullAccessResult(value) || isPropertyNotFoundResult(value);
+
 export const getNullParentName = (value: unknown): string | null => {
   if (!isNullAccessResult(value)) {
     return null;

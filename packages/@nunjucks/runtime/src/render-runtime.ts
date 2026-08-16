@@ -11,7 +11,7 @@ import { runFilter } from './filter-runtime.ts';
 import { createFrame } from './frame.ts';
 import { handleError } from './handle-error.ts';
 import { contextOrFrameLookup } from './lookups.ts';
-import { memberLookup, optionalMemberLookup, slice } from './member-access.ts';
+import { isAbsentLookupResult, memberLookup, optionalMemberLookup, slice } from './member-access.ts';
 import {
   copySafeness,
   createSafeString,
@@ -22,7 +22,6 @@ import { createSlotContext } from './slots.ts';
 import { streamError } from './stream-error.ts';
 import { suppressValue } from './suppress-value.ts';
 import { ensureDefined } from './undefined-resolution.ts';
-
 interface RenderRuntimeOptions {
   templateName?: string;
   renderContext?: unknown;
@@ -38,6 +37,10 @@ const createRenderRuntime = (options?: RenderRuntimeOptions) => ({
   memberLookup,
   optionalMemberLookup,
   slice,
+  // WHY: truthiness for control flow — miss sentinels are callable objects (so optional
+  // `obj.missing()` can yield undefined) but must behave FALSY in conditions, mirroring
+  // classic nunjucks; raw JS truthiness would take the wrong branch.
+  isTruthy: (value: unknown): boolean => !isAbsentLookupResult(value) && Boolean(value),
   nullishCoalesce,
   inOperator,
   fromIterator,

@@ -28,7 +28,12 @@ describe('unary emitters', () => {
   test('compileNot wraps target with !', () => {
     const c = makeCompiler();
     compileNot(asCompiler(c), { node: makeUnary('X') as never, frame });
-    expect(c.emitted).toEqual(['(lineno = 5, colno = 9, ', '!', 'X', ')']);
+    expect(c.emitted).toEqual([
+      '(lineno = 5, colno = 9, ',
+      '(!runtime.isTruthy(',
+      'X',
+      ')))',
+    ]);
   });
 
   test('compileNeg wraps target with minus', () => {

@@ -41,7 +41,9 @@ function callWrap(this: unknown, target: unknown, name: string, options: CallWra
   }
 
   if (typeof target === 'function') {
-    return target.apply(context, args);
+    // WHY: Reflect.apply — miss-sentinel callables carry a null prototype (no .apply
+    // method); the reflect form invokes them like any other function.
+    return Reflect.apply(target, context, args);
   }
   throwRuntimeError(ERROR_DEFINITIONS.NOT_A_FUNCTION, {
     runtimeContext: this,

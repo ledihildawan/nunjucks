@@ -9,9 +9,10 @@ export const compileInlineIf = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<IfNode>
 ): void => {
-  compiler.emit('(');
+  // WHY: runtime.isTruthy folds miss sentinels to falsy (mirrors compileIf).
+  compiler.emit('(runtime.isTruthy(');
   compiler.compile(node.cond, frame);
-  compiler.emit('?');
+  compiler.emit(')?');
   compiler.compile(node.body, frame);
   compiler.emit(':');
   if (node.alternate === null) {
