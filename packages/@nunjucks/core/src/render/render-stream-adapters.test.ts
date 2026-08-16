@@ -42,7 +42,9 @@ describe('toWebReadableStream', () => {
 describe('withStreamTimeout', () => {
   test('passes through chunks that arrive before the deadline', async () => {
     const chunks: string[] = [];
-    for await (const chunk of withStreamTimeout(fromChunks(['x', 'y'], 5), 100)) {
+    // WHY: 1ms chunk delay vs 1000ms deadline — a ~1000x margin keeps this stable on
+    // slow CI schedulers where setTimeout(5) can overshoot a 100ms idle window.
+    for await (const chunk of withStreamTimeout(fromChunks(['x', 'y'], 1), 1000)) {
       chunks.push(chunk);
     }
     expect(chunks.join('')).toBe('xy');

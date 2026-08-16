@@ -1,5 +1,10 @@
 // WHY: streaming demo — a realistic e-commerce admin dashboard using {% extends %} + {% block %} template inheritance. Each block has async content (|> slow filter simulating DB latency) to demonstrate progressive block-by-block streaming. streamErrorRecovery + undefined: 'strict' means incomplete data (missing shipping city on order #2, customer without bio, walrus division by missing field) yields inline error markers via 8 boundary types — the rest of the dashboard renders normally. Walrus operator (:=) computes avg order value in KPIs block.
 const formatPrice = (value: unknown): string => {
+  // WHY: null/undefined must render as "no price" — Number(null) coerces to 0, which
+  // would misleadingly display a $0.00 price for missing data.
+  if (value === null || value === undefined || value === '') {
+    return '—';
+  }
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? `$${numericValue.toFixed(2)}` : '—';
 };

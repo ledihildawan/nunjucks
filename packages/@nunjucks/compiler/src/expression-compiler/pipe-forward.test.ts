@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { literal, pipe, symbol } from '@nunjucks/nodes';
 import { createFrame } from '@nunjucks/runtime';
 import { loc } from '@nunjucks/shared';
+import { createCompiler } from '../create-compiler.ts';
 import { asCompiler } from '../test-helpers.ts';
 import { compilePipeForward } from './pipe-forward.ts';
 
@@ -36,37 +37,30 @@ describe('compilePipeForward', () => {
     expect(joined).toContain('await runtime.awaitValue(ARG)');
   });
 
-  test('asserts the callee is a symbol', () => {
-    const c = makeCompiler();
-    let assertedType = '';
-    const assertingCompilerStub = {
-      ...c,
-      assertType: (_n: unknown, ...types: string[]) => {
-        assertedType = types.join(',');
-      },
-    };
+  test('accepts a symbol callee through the real compiler', () => {
+    const compiler = createCompiler({
+      templateName: 'test',
+      undefinedMode: 'chainable',
+      source: '',
+    });
     const node = pipe(loc({ lineno: 1, colno: 1 }), {
       name: symbol(loc({ lineno: 1, colno: 1 }), 'lower'),
       args: [],
     });
-    compilePipeForward(asCompiler(assertingCompilerStub), { node: node as never, frame });
-    expect(assertedType).toBe('symbol');
+    compiler.compile(node, frame);
+    expect(compiler.getCode()).toContain('name: "lower"');
   });
 
   test('throws when callee is not a symbol', () => {
-    const c = makeCompiler();
-    const failing = {
-      ...c,
-      assertType: () => {
-        throw new Error('assertType: invalid type');
-      },
-    };
+    const compiler = createCompiler({
+      templateName: 'test',
+      undefinedMode: 'chainable',
+      source: '',
+    });
     const node = pipe(loc({ lineno: 1, colno: 1 }), {
       name: literal(loc({ lineno: 1, colno: 1 }), 'x'),
       args: [],
     });
-    expect(() => compilePipeForward(asCompiler(failing), { node: node as never, frame })).toThrow(
-      'assertType'
-    );
+    expect(() => compiler.compile(node, frame)).toThrow('assertType: invalid type');
   });
 });
