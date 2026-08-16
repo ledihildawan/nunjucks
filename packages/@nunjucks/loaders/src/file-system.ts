@@ -38,6 +38,9 @@ const directoryError = (fullPath: string): Result<never, TemplateError> =>
     createFilesystemError(fullPath, `EISDIR: illegal operation - path is a directory: ${fullPath}`)
   );
 
+const createWatchError = (filePath: string, cause: unknown): TemplateError =>
+  createFilesystemError(filePath, `watch failed: ${String(cause)}`);
+
 const hasErrorCode = (e: unknown): e is { code: string } =>
   e !== null && typeof e === 'object' && 'code' in e;
 
@@ -162,7 +165,6 @@ export interface FileSystemLoader extends Loader, TemplateLoader {
   async: true;
   watchedFiles: Map<string, FSWatcher>;
   searchPaths: string[];
-  getSource: (name: string) => Promise<Result<TemplateLoaderSource, TemplateError> | null>;
   watchFile: (filePath: string) => void;
   unwatchFile: (filePath: string) => void;
   unwatchAll: () => void;
@@ -197,12 +199,16 @@ export const createFileSystemLoader = (
         filePath,
         createWatchHandler({ filePath, emit: base.emit, onRename: unwatchFile })
       );
-    } catch (watchError: unknown) {
-      base.emit('error', watchError);
+    } catch (watchSetupError: unknown) {
+      // WHY: the loader's error channel carries catalog TemplateErrors everywhere —
+      // watch failures are wrapped so listeners never see a raw fs error shape.
+      base.emit('error', createWatchError(filePath, watchSetupError));
       return;
     }
 
-    watcher.on('error', (watchError) => base.emit('error', watchError));
+    watcher.on('error', (watchFailure: unknown) =>
+      base.emit('error', createWatchError(filePath, watchFailure))
+    );
     watchedFiles.set(filePath, watcher);
   };
 

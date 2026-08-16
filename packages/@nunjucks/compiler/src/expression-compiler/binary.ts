@@ -6,18 +6,16 @@ import type { Compiler } from '../index.ts';
 import type { CompileNodeInput } from '../node-dispatch.ts';
 
 interface BinOpEmitterOptions {
+  compiler: Compiler;
+  node: Node & { left: Node; right: Node };
+  frame: Frame;
   operator: string;
 }
 
-const binOpEmitter = (
-  compiler: Compiler,
-  node: Node & { left: Node; right: Node },
-  frame: Frame,
-  options: BinOpEmitterOptions
-): void => {
+const binOpEmitter = ({ compiler, node, frame, operator }: BinOpEmitterOptions): void => {
   emitLocationGuard(compiler, node.lineno, node.colno);
   compiler.compile(node.left, frame);
-  compiler.emit(options.operator);
+  compiler.emit(operator);
   compiler.compile(node.right, frame);
   compiler.emit(')');
 };
@@ -25,22 +23,22 @@ const binOpEmitter = (
 export const compileOr = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryNode>
-): void => binOpEmitter(compiler, node, frame, { operator: ' || ' });
+): void => binOpEmitter({ compiler, node, frame, operator: ' || ' });
 
 export const compileAnd = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryNode>
-): void => binOpEmitter(compiler, node, frame, { operator: ' && ' });
+): void => binOpEmitter({ compiler, node, frame, operator: ' && ' });
 
 export const compileAdd = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryOpNode>
-): void => binOpEmitter(compiler, node, frame, { operator: ' + ' });
+): void => binOpEmitter({ compiler, node, frame, operator: ' + ' });
 
 export const compileConcat = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryNode>
-): void => binOpEmitter(compiler, node, frame, { operator: ' + "" + ' });
+): void => binOpEmitter({ compiler, node, frame, operator: ' + "" + ' });
 
 // WHY: an unbounded `..` range is a render-time DoS vector (`{{ (-1/0)..(1/0) }}` hangs
 // forever, `1..1e9` memory-blows), so the emitted code validates integer bounds and a
@@ -66,22 +64,22 @@ export const compileRange = (
 export const compileSub = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryOpNode>
-): void => binOpEmitter(compiler, node, frame, { operator: ' - ' });
+): void => binOpEmitter({ compiler, node, frame, operator: ' - ' });
 
 export const compileMul = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryOpNode>
-): void => binOpEmitter(compiler, node, frame, { operator: ' * ' });
+): void => binOpEmitter({ compiler, node, frame, operator: ' * ' });
 
 export const compileDiv = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryOpNode>
-): void => binOpEmitter(compiler, node, frame, { operator: ' / ' });
+): void => binOpEmitter({ compiler, node, frame, operator: ' / ' });
 
 export const compileMod = (
   compiler: Compiler,
   { node, frame }: CompileNodeInput<BinaryOpNode>
-): void => binOpEmitter(compiler, node, frame, { operator: ' % ' });
+): void => binOpEmitter({ compiler, node, frame, operator: ' % ' });
 
 export const compileNullishCoalesce = (
   compiler: Compiler,

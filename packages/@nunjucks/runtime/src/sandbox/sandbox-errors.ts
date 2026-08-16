@@ -12,7 +12,7 @@ import { isAllowedKey } from './sandbox-predicates.ts';
 type DynamicCallable = (...args: unknown[]) => unknown;
 
 interface SandboxErrorInput {
-  errorDef: ErrorDefinitionEntry | undefined;
+  errorDef: ErrorDefinitionEntry;
   key: string | symbol;
   sandboxOptions: ResolvedSandboxOptions;
 }
@@ -23,13 +23,6 @@ const sandboxError = ({
   key,
   sandboxOptions,
 }: SandboxErrorInput): TemplateError | TemplateWarning => {
-  if (!errorDef) {
-    return createLog('error', {
-      def: { name: 'SANDBOX_ERROR', message: `Sandbox error: ${String(key)}` },
-      subject: String(key),
-      context: { phase: 'render', lineBase: 'zero' },
-    });
-  }
   const env = sandboxOptions.environment ?? 'auto';
   const category = getBlockedKeyCategory(String(key), env);
   return createLog('error', {
@@ -44,25 +37,13 @@ const blockedKeysError = (
   key: string,
   blockedKeys: readonly string[]
 ): TemplateError | TemplateWarning => {
-  const errorDef = ERROR_DEFINITIONS.BLOCKED_CONTEXT_KEYS;
-  if (!errorDef) {
-    const err = createLog('error', {
-      def: { name: 'BLOCKED_CONTEXT_KEYS', message: `Blocked context key: ${key}` },
-      subject: key,
-      context: { phase: 'render', lineBase: 'zero' },
-    });
-    Object.assign(err, { blockedKeys });
-    return err;
-  }
   const created = createLog('error', {
-    def: errorDef,
+    def: ERROR_DEFINITIONS.BLOCKED_CONTEXT_KEYS,
     params: { keys: blockedKeys.join(', ') },
     subject: key,
     context: { phase: 'render', lineBase: 'zero' },
   });
-  if (created && typeof created === 'object') {
-    Object.assign(created, { blockedKeys });
-  }
+  Object.assign(created, { blockedKeys });
   return created;
 };
 
