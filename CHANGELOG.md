@@ -14,6 +14,7 @@ Major version: the clean break from the upstream 3.x JavaScript API is now expli
 
 **New in 4.0.0**
 
+* **Security hardening (audit-driven):** default-mode RCE via `x.constructor.constructor(...)` closed (inherited prototype-escape keys are not-found); sandbox depth escape via nested `process`/`globalThis` references closed (value-based dangerous-reference check at every depth); unquoted-attribute XSS closed (percent-encoding context); mid-stream error pages default to production output (no stacks/render-context PII/caller source without `dev: true`); emitted-code safety (`let` declarations — no implicit globals, guarded range loops with `RANGE_EXCEEDED`); lexer converted from recursion to loops (large templates no longer stack-overflow); unterminated string/comment/template-literal raise `UNTERMINATED_LITERAL`; AST walkers see template-literal quasis and slot bodies (security-scan coverage); `liftSuper` no longer misbinds nested-block `super()`.
 * Custom loaders: `config.loaders` accepts `TemplateLoader[]` (first-match-wins chain; replaces filesystem resolution when non-empty). `TemplateLoader` contract + `createLoaderChain` + `createFileSystemLoader` from `@nunjucks/loaders`.
 * `views` accepts a single path or an array of paths (multi-root, first match wins).
 * Context-aware autoescaping (html / attribute / script / style / comment zones) and sandboxed rendering (`security.*` config).

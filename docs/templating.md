@@ -18,6 +18,12 @@ This documents **this engine's** language (the TypeScript `@nunjucks/*` rewrite)
 
 Autoescaping is **context-aware**: the compiler tracks whether an interpolation sits in an HTML body, attribute, `<script>`, `<style>`, or comment zone and escapes accordingly. In script context, non-JSON-safe values are rejected (`JSON_ESCAPED_OUTPUT`) instead of naively stringified.
 
+Security defaults (always on, sandbox not required):
+
+- Inherited reads of `__proto__`, `constructor`, and `prototype` are treated as not-found (`{{ x.constructor.constructor("...")() }}` cannot reach `Function`). Normal inherited methods (`{{ "abc".toUpperCase() }}`) keep working; own properties are the host's explicit choice.
+- Interpolations in **unquoted** attribute positions (`<div class={{ v }}>`) are percent-encoded (` `, `=`, quotes, `<>&` become `%20`-style) — quote your attributes to preserve literal values.
+- Error pages/markers default to the production minimal page; stacks, render-context data, and caller source only render with `dev: true`.
+
 ## Comments & whitespace
 
 - `{# comment #}` is stripped entirely; `{#- ... -#}` additionally strips surrounding whitespace.
