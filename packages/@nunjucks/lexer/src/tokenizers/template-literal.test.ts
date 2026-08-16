@@ -52,4 +52,12 @@ describe('tokenizeTemplateLiteral', () => {
   test('throws on backtick inside interpolation', () => {
     expect(() => run('`$' + '{`inner`}')).toThrow(/backtick/);
   });
+
+  test('unterminated template literal throws UNTERMINATED_LITERAL', () => {
+    expect(() => run('`no close')).toThrow(/Unterminated template literal/);
+  });
+
+  test('EOF inside an interpolation throws UNTERMINATED_LITERAL', () => {
+    expect(() => run('`a$' + '{expr')).toThrow(/Unterminated template literal/);
+  });
 });

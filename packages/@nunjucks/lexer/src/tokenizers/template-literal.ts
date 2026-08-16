@@ -1,5 +1,6 @@
 import { createLog } from '@nunjucks/error-formatter';
 import { MATCH_ANY_RE } from '@nunjucks/lib';
+import { createUnterminatedLiteralError } from '../literal-error.ts';
 import { advance, getChar, getPeek, isFinished } from '../state.ts';
 import { TOKEN_TEMPLATE_LITERAL } from '../token-types.ts';
 import { createToken } from '../tokens.ts';
@@ -43,104 +44,71 @@ const processInterpolationChar = (
   return { depthDelta: 0, charToAdd: exprChar };
 };
 
-const parseInterpolation = (current: LexerState): ParseInterpolationResult => {
-  const scan = (
-    pos: LexerState,
-    exprDepth: number,
-    exprContent: string
-  ): ParseInterpolationResult => {
-    if (isFinished(pos) || exprDepth <= 0) {
-      return { exprContent, current: pos };
-    }
-    const exprChar = getChar(pos);
-    const result = processInterpolationChar(exprChar, exprDepth);
+const parseInterpolation = (
+  initial: LexerState,
+  origin: LexerState
+): ParseInterpolationResult => {
+  // WHY: while loop instead of the previous per-character recursion — long interpolation
+  // bodies overflowed the native stack. Loop exemption: lexer/tokenizer engine, per
+  // ARCHITECTURE.md.
+  let current = initial;
+  let exprDepth = 1;
+  let exprContent = '';
+  while (!isFinished(current) && exprDepth > 0) {
+    const result = processInterpolationChar(getChar(current), exprDepth);
     if (result) {
       const newDepth = exprDepth + result.depthDelta;
-      const newContent =
-        result.depthDelta === 0 || newDepth > 0 ? exprContent + result.charToAdd : exprContent;
-      return scan(advance(pos), newDepth, newContent);
+      if (result.depthDelta === 0 || newDepth > 0) {
+        exprContent += result.charToAdd;
+      }
+      exprDepth = newDepth;
     }
-    return scan(advance(pos), exprDepth, exprContent);
-  };
-  return scan(current, 1, '');
-};
-
-const addTemplateQuasi = (quasis: TemplateQuasi[], currentStr: string): TemplateQuasi[] => {
-  if (currentStr) {
-    return [...quasis, { type: 'template', value: currentStr }];
+    current = advance(current);
   }
-  return quasis;
+  if (exprDepth > 0) {
+    throw createUnterminatedLiteralError('template', origin);
+  }
+  return { exprContent, current };
 };
 
-const handleInterpolationStart = (
-  current: LexerState,
-  currentStr: string,
-  quasis: TemplateQuasi[]
-): { newCurrent: LexerState; newStr: string; quasis: TemplateQuasi[] } => {
-  const newQuasis = addTemplateQuasi(quasis, currentStr);
-  const newCurrent = advance(current, 2);
-  return { newCurrent, newStr: '', quasis: newQuasis };
-};
-
-const finalizeTemplateLiteral = (
-  current: LexerState,
-  currentStr: string,
-  quasis: TemplateQuasi[]
-): { finalCurrent: LexerState; quasis: TemplateQuasi[] } => {
-  const newQuasis = addTemplateQuasi(quasis, currentStr);
-  return { finalCurrent: advance(current), quasis: newQuasis };
-};
-
-const consumeTemplateContent = (
-  current: LexerState,
-  currentStr: string
-): { newCurrent: LexerState; newStr: string } => {
-  const char = getChar(current);
-  return {
-    newCurrent: advance(current),
-    newStr: currentStr + char,
-  };
+const pushTemplateQuasi = (quasis: TemplateQuasi[], text: string): void => {
+  if (text !== '') {
+    quasis.push({ type: 'template', value: text });
+  }
 };
 
 const consumeTemplateLoop = (
-  initialCurrent: LexerState
+  initialCurrent: LexerState,
+  origin: LexerState
 ): { quasis: TemplateQuasi[]; finalCurrent: LexerState } => {
-  const scan = (
-    current: LexerState,
-    currentStr: string,
-    quasis: TemplateQuasi[]
-  ): { quasis: TemplateQuasi[]; finalCurrent: LexerState } => {
-    if (isFinished(current)) {
-      const finalQuasis = addTemplateQuasi(quasis, currentStr);
-      return { quasis: finalQuasis, finalCurrent: current };
-    }
+  // WHY: while loop instead of the previous per-character recursion — long template
+  // literals overflowed the native stack. Loop exemption: lexer/tokenizer engine, per
+  // ARCHITECTURE.md. quasis is a locally-owned push accumulator (no per-iteration
+  // spread) so each append stays O(1) and the array never escapes before returning.
+  const quasis: TemplateQuasi[] = [];
+  let current = initialCurrent;
+  let currentStr = '';
+  while (!isFinished(current)) {
     const char = getChar(current);
 
     if (char === '$' && getPeek(current) === '{') {
-      const {
-        newCurrent,
-        newStr,
-        quasis: updatedQuasis,
-      } = handleInterpolationStart(current, currentStr, quasis);
-      const { exprContent, current: afterExpr } = parseInterpolation(newCurrent);
-      const exprQuasi: TemplateQuasi = { type: 'expression', value: exprContent.trim() };
-      const quasisWithExpr: TemplateQuasi[] = [...updatedQuasis, exprQuasi];
-      return scan(afterExpr, newStr, quasisWithExpr);
+      pushTemplateQuasi(quasis, currentStr);
+      const { exprContent, current: afterExpr } = parseInterpolation(advance(current, 2), origin);
+      quasis.push({ type: 'expression', value: exprContent.trim() });
+      currentStr = '';
+      current = afterExpr;
+      continue;
     }
 
     if (char === '`') {
-      const { finalCurrent, quasis: finalQuasis } = finalizeTemplateLiteral(
-        current,
-        currentStr,
-        quasis
-      );
-      return { quasis: finalQuasis, finalCurrent };
+      pushTemplateQuasi(quasis, currentStr);
+      return { quasis, finalCurrent: advance(current) };
     }
 
-    const { newCurrent, newStr } = consumeTemplateContent(current, currentStr);
-    return scan(newCurrent, newStr, quasis);
-  };
-  return scan(initialCurrent, '', []);
+    currentStr += char;
+    current = advance(current);
+  }
+  throw createUnterminatedLiteralError('template', origin);
 };
 
 export const tokenizeTemplateLiteral: Tokenizer = (state) => {
@@ -149,7 +117,7 @@ export const tokenizeTemplateLiteral: Tokenizer = (state) => {
   }
 
   const initialCurrent = advance(state);
-  const { quasis, finalCurrent } = consumeTemplateLoop(initialCurrent);
+  const { quasis, finalCurrent } = consumeTemplateLoop(initialCurrent, state);
 
   return {
     token: createToken({

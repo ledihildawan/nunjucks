@@ -31,4 +31,12 @@ describe('tokenizeString', () => {
   test('contains other quote type', () => {
     expect(run('"it\'s"')?.token.value).toBe("it's");
   });
+
+  test('unterminated string throws UNTERMINATED_LITERAL', () => {
+    expect(() => run('"no close')).toThrow(/Unterminated string literal/);
+  });
+
+  test('string ending on a trailing escape throws UNTERMINATED_LITERAL', () => {
+    expect(() => run("'abc\\")).toThrow(/Unterminated string literal/);
+  });
 });

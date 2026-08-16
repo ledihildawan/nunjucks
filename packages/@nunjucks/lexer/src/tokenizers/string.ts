@@ -1,4 +1,5 @@
 import { parseStringContent } from '../extract.ts';
+import { createUnterminatedLiteralError } from '../literal-error.ts';
 import { advance, getChar } from '../state.ts';
 import { TOKEN_STRING } from '../token-types.ts';
 import { createToken } from '../tokens.ts';
@@ -14,6 +15,9 @@ export const tokenizeString: Tokenizer = (state) => {
   const quote = char;
   const afterOpen = advance(state);
   const content = parseStringContent({ source: afterOpen.source, start: afterOpen.index, quote });
+  if (afterOpen.source[afterOpen.index + content.length] !== quote) {
+    throw createUnterminatedLiteralError('string', state);
+  }
   const current = advance(afterOpen, content.length + 1);
 
   return {

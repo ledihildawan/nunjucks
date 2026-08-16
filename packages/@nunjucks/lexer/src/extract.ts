@@ -5,13 +5,14 @@ interface ExtractWhileOptions {
 }
 
 export const extractWhile = ({ source, start, chars }: ExtractWhileOptions): string => {
-  const findEnd = (end: number): number => {
-    if (end >= source.length || !chars.includes(source[end] ?? '')) {
-      return end;
-    }
-    return findEnd(end + 1);
-  };
-  return source.slice(start, findEnd(start));
+  // WHY: while loop instead of the previous per-character recursion — long character
+  // runs overflowed the native stack. Loop exemption: lexer/tokenizer engine, per
+  // ARCHITECTURE.md.
+  let end = start;
+  while (end < source.length && chars.includes(source[end] ?? '')) {
+    end += 1;
+  }
+  return source.slice(start, end);
 };
 
 interface ExtractUntilOptions {
@@ -21,13 +22,14 @@ interface ExtractUntilOptions {
 }
 
 export const extractUntil = ({ source, start, chars }: ExtractUntilOptions): string => {
-  const findEnd = (end: number): number => {
-    if (end >= source.length || chars.includes(source[end] ?? '')) {
-      return end;
-    }
-    return findEnd(end + 1);
-  };
-  return source.slice(start, findEnd(start));
+  // WHY: while loop instead of the previous per-character recursion — long symbol runs
+  // overflowed the native stack. Loop exemption: lexer/tokenizer engine, per
+  // ARCHITECTURE.md.
+  let end = start;
+  while (end < source.length && !chars.includes(source[end] ?? '')) {
+    end += 1;
+  }
+  return source.slice(start, end);
 };
 
 interface ParseStringContentOptions {
@@ -37,18 +39,21 @@ interface ParseStringContentOptions {
 }
 
 export const parseStringContent = ({ source, start, quote }: ParseStringContentOptions): string => {
-  const findEnd = (end: number): number => {
-    if (end >= source.length) {
-      return end;
-    }
+  // WHY: while loop instead of the previous per-character recursion — long string
+  // literals overflowed the native stack. Loop exemption: lexer/tokenizer engine, per
+  // ARCHITECTURE.md. An escaped character (backslash pair) is skipped wholesale so an
+  // escaped quote does not terminate the content.
+  let end = start;
+  while (end < source.length) {
     const char = source[end] ?? '';
     if (char === quote) {
-      return end;
+      break;
     }
     if (char === '\\' && end + 1 < source.length) {
-      return findEnd(end + 2);
+      end += 2;
+      continue;
     }
-    return findEnd(end + 1);
-  };
-  return source.slice(start, findEnd(start));
+    end += 1;
+  }
+  return source.slice(start, end);
 };

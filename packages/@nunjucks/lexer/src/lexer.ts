@@ -39,22 +39,26 @@ const handleUnexpectedChar = (state: LexerState): never => {
 const isWhitespace = (char: string | null): boolean =>
   char !== null && WHITESPACE_CHARS.includes(char);
 
-// WHY: recursive generator (no for/while loop) that lazily yields tokens one at a time — satisfies the guide's "Lazy Evaluation & Streaming (Generator)" recommendation for processing potentially large template sources with low memory footprint. Each call yields at most one token, then delegates the remainder via yield*.
+// WHY: single lazily-yielding generator (low memory footprint on large template sources)
+// driven by an internal while loop — the previous per-token `yield*` self-delegation built
+// a delegation chain one frame per token, making every next() traverse O(n) frames
+// (O(n²) total) and growing the native stack O(n). Loop exemption: lexer/tokenizer engine
+// (high-throughput scanner), per ARCHITECTURE.md.
 const lexGenerator = function* (state: LexerState): Generator<Token, void, unknown> {
-  if (state.index >= state.source.length) {
-    return;
+  let current = state;
+  while (current.index < current.source.length) {
+    const result = tokenizers(current);
+    if (result) {
+      yield result.token;
+      current = processTokenizerResult(result);
+      continue;
+    }
+    const char = getChar(current);
+    if (char && !isWhitespace(char)) {
+      handleUnexpectedChar(current);
+    }
+    current = advance(current);
   }
-  const result = tokenizers(state);
-  if (result) {
-    yield result.token;
-    yield* lexGenerator(processTokenizerResult(result));
-    return;
-  }
-  const char = getChar(state);
-  if (char && !isWhitespace(char)) {
-    handleUnexpectedChar(state);
-  }
-  yield* lexGenerator(advance(state));
 };
 
 interface TokenizerResult {

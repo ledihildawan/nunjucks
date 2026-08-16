@@ -37,20 +37,22 @@ export const advance = (state: LexerState, charCount = 1): LexerState => {
     return state;
   }
 
-  const countLines = (
-    i: number,
-    lineNum: number,
-    colNum: number
-  ): { lineno: number; colno: number } => {
-    if (i >= newIndex) {
-      return { lineno: lineNum, colno: colNum };
+  // WHY: while loop instead of the previous recursive countLines — a single multi-char
+  // advance (long string literal, raw block slice) recursed once per character and
+  // overflowed the native stack. Loop exemption: lexer/tokenizer engine, per
+  // ARCHITECTURE.md.
+  let scanIndex = index;
+  let newLineno = lineno;
+  let newColno = colno;
+  while (scanIndex < newIndex) {
+    if (source[scanIndex] === '\n') {
+      newLineno += 1;
+      newColno = 0;
+    } else {
+      newColno += 1;
     }
-    if (source[i] === '\n') {
-      return countLines(i + 1, lineNum + 1, 0);
-    }
-    return countLines(i + 1, lineNum, colNum + 1);
-  };
-  const { lineno: newLineno, colno: newColno } = countLines(index, lineno, colno);
+    scanIndex += 1;
+  }
 
   return { ...state, index: newIndex, lineno: newLineno, colno: newColno };
 };

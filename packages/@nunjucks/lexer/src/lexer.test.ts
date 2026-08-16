@@ -96,3 +96,48 @@ describe('createTokenizer', () => {
     expect(indexTks.some((t) => t.type === 'int' && t.value === 0)).toBe(true);
   });
 });
+
+describe('createTokenizer large-input regression (no stack overflow)', () => {
+  test('tokenizes a single ~100KB text run as one data token', () => {
+    const textRun = 'a'.repeat(100 * 1024);
+    const tks = tokens(textRun);
+    const dataTokens = tks.filter((t) => t.type === 'data');
+    expect(dataTokens.length).toBe(1);
+    expect(dataTokens[0]?.value).toBe(textRun);
+  });
+
+  test('lexes a ~50KB raw block', () => {
+    const rawBody = 'r'.repeat(50 * 1024);
+    const tks = tokens(`{% raw %}${rawBody}{% endraw %}`);
+    const rawTokens = tks.filter((t) => t.type === 'raw');
+    expect(rawTokens.length).toBe(1);
+    expect(String(rawTokens[0]?.value)).toBe(`{% raw %}${rawBody}{% endraw %}`);
+  });
+
+  test('lexes a ~100KB comment', () => {
+    const commentSource = `{# ${'c'.repeat(100 * 1024)} #}`;
+    const tks = tokens(commentSource);
+    const commentTokens = tks.filter((t) => t.type === 'comment');
+    expect(commentTokens.length).toBe(1);
+    expect(String(commentTokens[0]?.value)).toBe(commentSource);
+  });
+
+  test('lexes a ~100KB string literal and template literal', () => {
+    const literalBody = 's'.repeat(100 * 1024);
+    const stringTks = tokens(`{{ "${literalBody}" }}`);
+    expect(stringTks.filter((t) => t.type === 'string' && t.value === literalBody).length).toBe(
+      1
+    );
+
+    const templateTks = tokens(`{{ \`${literalBody}\` }}`);
+    const templateTokens = templateTks.filter((t) => t.type === 'template-literal');
+    expect(templateTokens.length).toBe(1);
+  });
+
+  test('lexes ~10K tokens without generator delegation overhead', () => {
+    const chunk = '{{ x }}';
+    const tks = tokens(chunk.repeat(10_000));
+    expect(tks.filter((t) => t.type === 'variable-start').length).toBe(10_000);
+    expect(tks.filter((t) => t.type === 'variable-end').length).toBe(10_000);
+  });
+});

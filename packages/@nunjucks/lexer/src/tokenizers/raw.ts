@@ -14,40 +14,46 @@ interface RawTagOptions {
 }
 
 const skipSpaces = (state: LexerState): LexerState => {
-  if (isFinished(state) || getChar(state) !== ' ') {
-    return state;
+  // WHY: while loop instead of per-character recursion. Loop exemption: lexer/tokenizer
+  // engine, per ARCHITECTURE.md.
+  let current = state;
+  while (!isFinished(current) && getChar(current) === ' ') {
+    current = advance(current);
   }
-  return skipSpaces(advance(state));
+  return current;
+};
+
+const shouldContinueTagName = (current: LexerState): boolean => {
+  const char = getChar(current);
+  return !isFinished(current) && char !== ' ' && char !== '%' && char !== '}';
 };
 
 const extractTagName = (state: LexerState): { name: string; current: LexerState } => {
-  const scan = (
-    current: LexerState,
-    name: string
-  ): { name: string; current: LexerState } => {
-    const char = getChar(current);
-    if (isFinished(current) || char === ' ' || char === '%' || char === '}') {
-      return { name, current };
-    }
-    return scan(advance(current), name + char);
-  };
-  return scan(state, '');
+  // WHY: while loop instead of per-character recursion. Loop exemption: lexer/tokenizer
+  // engine, per ARCHITECTURE.md.
+  let current = state;
+  let name = '';
+  while (shouldContinueTagName(current)) {
+    name += getChar(current);
+    current = advance(current);
+  }
+  return { name, current };
 };
 
 // WHY: scans forward for the next blockEnd and returns the position AFTER it — a raw
 // control tag ({% raw %} / {% endraw %}) is only well-formed when its closing delimiter
 // exists; without it the candidate is treated as literal content.
 const findBlockEnd = (state: LexerState, tags: RawTagOptions['tags']): LexerState | null => {
-  const scan = (current: LexerState): LexerState | null => {
-    if (isFinished(current)) {
-      return null;
-    }
+  // WHY: while loop instead of per-character recursion — deep raw-block scans overflowed
+  // the native stack. Loop exemption: lexer/tokenizer engine, per ARCHITECTURE.md.
+  let current = state;
+  while (!isFinished(current)) {
     if (matches(current, tags.blockEnd)) {
       return advance(current, tags.blockEnd.length);
     }
-    return scan(advance(current));
-  };
-  return scan(state);
+    current = advance(current);
+  }
+  return null;
 };
 
 const sliceSource = (from: LexerState, to: LexerState): string =>
@@ -103,23 +109,29 @@ const processRawContent = ({
   endTagName,
   tags,
 }: ProcessRawContentOptions): RawScanState => {
-  const scan = (state: LexerState, content: string, depth: number): RawScanState => {
-    if (isFinished(state)) {
-      return { content, depth, current: state };
-    }
-    const innerTag = matches(state, tags.blockStart)
-      ? readInnerControlTag(state, name, endTagName, tags)
+  // WHY: while loop instead of the previous per-character recursion — a single large raw
+  // body overflowed the native stack. Loop exemption: lexer/tokenizer engine, per
+  // ARCHITECTURE.md.
+  let scanState = current;
+  let content = '';
+  let depth = 1;
+  while (!isFinished(scanState)) {
+    const innerTag = matches(scanState, tags.blockStart)
+      ? readInnerControlTag(scanState, name, endTagName, tags)
       : null;
     if (innerTag === null) {
-      return scan(advance(state), content + getChar(state), depth);
+      content += getChar(scanState);
+      scanState = advance(scanState);
+      continue;
     }
     if (innerTag.isEndTag && depth === 1) {
       return { content: content + innerTag.tagText, depth: 0, current: innerTag.afterTag };
     }
-    const nextDepth = depth + (innerTag.isEndTag ? -1 : 1);
-    return scan(innerTag.afterTag, content + innerTag.tagText, nextDepth);
-  };
-  return scan(current, '', 1);
+    content += innerTag.tagText;
+    depth += innerTag.isEndTag ? -1 : 1;
+    scanState = innerTag.afterTag;
+  }
+  return { content, depth, current: scanState };
 };
 
 export const tokenizeRaw: Tokenizer = (state) => {

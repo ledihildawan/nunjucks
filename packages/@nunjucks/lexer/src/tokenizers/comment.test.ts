@@ -20,9 +20,7 @@ describe('tokenizeComment', () => {
     expect(r?.token.value).toBe('{# {{ x }} #}');
   });
 
-  test('unterminated comment reaches EOF', () => {
-    const r = run('{# no end');
-    expect(r?.token.value).toBe('{# no end');
-    expect(r?.state.index).toBe(r?.state.source.length);
+  test('unterminated comment throws UNTERMINATED_LITERAL', () => {
+    expect(() => run('{# no end')).toThrow(/Unterminated comment literal/);
   });
 });

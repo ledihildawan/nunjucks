@@ -30,4 +30,18 @@ export const LEXER_ERRORS = {
     fixComment: 'Remove the backtick from inside the template expression',
     subjectFrom: null,
   },
+  UNTERMINATED_LITERAL: {
+    name: 'UNTERMINATED_LITERAL',
+    message: 'Unterminated {kind} literal',
+    pattern: /^Unterminated (.+) literal$/iu,
+    category: 'lexer_error',
+    titleTemplate: 'Unterminated {kind} literal',
+    causes: [
+      'A **string, comment, or template literal** is missing its closing delimiter',
+      'The opening delimiter has **no matching close** before the end of the template',
+    ],
+    fixCode: "{{ 'closed string' }}",
+    fixComment: 'Add the missing closing delimiter',
+    subjectFrom: (match) => match?.[1] ?? null,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

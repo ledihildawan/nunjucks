@@ -24,29 +24,29 @@ export const tokenizeTemplateText: Tokenizer = (state) => {
   }
 
   const { lineno, colno } = state;
-  const scan = (current: LexerState, text: string): { current: LexerState; text: string } => {
-    if (current.index >= current.source.length) {
-      return { current, text };
-    }
-    if (
-      matches(current, current.tags.blockStart) ||
-      matches(current, current.tags.variableStart) ||
-      matches(current, current.tags.commentStart)
-    ) {
-      return { current, text };
-    }
-    return scan(advance(current), text + getChar(current));
-  };
-  const { current: endState, text: scanned } = scan(state, '');
-  const dataText = applyLstripBlocks(scanned, state, endState);
+  // WHY: while loop instead of the previous per-character recursion — a single large
+  // text run overflowed the native stack. Loop exemption: lexer/tokenizer engine, per
+  // ARCHITECTURE.md.
+  let current = state;
+  let text = '';
+  while (
+    current.index < current.source.length &&
+    !matches(current, current.tags.blockStart) &&
+    !matches(current, current.tags.variableStart) &&
+    !matches(current, current.tags.commentStart)
+  ) {
+    text += getChar(current);
+    current = advance(current);
+  }
+  const dataText = applyLstripBlocks(text, state, current);
 
   if (!dataText) {
     // WHY: lstripBlocks consumed the whole data chunk (pure whitespace before a block
     // tag) — delegate to the block-start tokenizer so no empty data token is emitted.
-    return tokenizeBlockStart(endState);
+    return tokenizeBlockStart(current);
   }
   return {
     token: createToken({ type: TOKEN_DATA, value: dataText, lineno, colno }),
-    state: endState,
+    state: current,
   };
 };

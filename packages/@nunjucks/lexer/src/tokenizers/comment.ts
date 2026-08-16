@@ -1,3 +1,4 @@
+import { createUnterminatedLiteralError } from '../literal-error.ts';
 import { advance, getChar, isFinished, matches } from '../state.ts';
 import { TOKEN_COMMENT } from '../token-types.ts';
 import { createToken } from '../tokens.ts';
@@ -11,7 +12,7 @@ export const tokenizeComment: Tokenizer = (state) => {
   const initial = advance(state, state.tags.commentStart.length);
   const scan = (current: LexerState, comment: string): { current: LexerState; comment: string } => {
     if (isFinished(current)) {
-      return { current, comment };
+      throw createUnterminatedLiteralError('comment', state);
     }
     if (matches(current, state.tags.commentEnd)) {
       return {
