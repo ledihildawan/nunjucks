@@ -1,8 +1,15 @@
 import { describe, expect, test } from 'bun:test';
 import type { Node } from '@nunjucks/nodes';
-import { createFrame } from '@nunjucks/runtime/frame';
+import { createFrame } from '@nunjucks/runtime';
 import { asCompiler } from '../test-helpers.ts';
-import { compileAdd, compileAnd, compileMul, compileOr, compileRange, compileSub } from './binary.ts';
+import {
+  compileAdd,
+  compileAnd,
+  compileMul,
+  compileOr,
+  compileRange,
+  compileSub,
+} from './binary.ts';
 
 interface FakeNode {
   marker: string;

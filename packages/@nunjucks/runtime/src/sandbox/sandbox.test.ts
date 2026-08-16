@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test';
+import { isBlockedKey, isCodeExecutionPattern } from '@nunjucks/shared';
+import { isPropertyNotFoundResult } from '../member-access.ts';
 import {
   createSandboxedContext,
   createSandboxedObject,
   isAllowedKey,
   wrapMemberAccess,
-} from '@nunjucks/runtime/sandbox';
-import { isPropertyNotFoundResult } from '../member-access.ts';
-import { isBlockedKey, isCodeExecutionPattern } from '@nunjucks/shared';
+} from './index.ts';
 
 describe('createSandboxedObject', () => {
   test('returns original object when sandbox disabled', () => {
@@ -293,22 +293,26 @@ describe('wrapMemberAccess parity with proxy traps', () => {
     // blocked in BOTH paths (see the throwing test above); only well-known intrinsics
     // are readable, and only as own properties.
     const obj: Record<string | symbol, unknown> = { [Symbol.toStringTag]: 'own-value' };
-    expect(
-      wrapMemberAccess({ target: obj, value: Symbol.toStringTag, sandboxEnabled: true })
-    ).toBe('own-value');
+    expect(wrapMemberAccess({ target: obj, value: Symbol.toStringTag, sandboxEnabled: true })).toBe(
+      'own-value'
+    );
 
     const inheritedCarrier: Record<string | symbol, unknown> = {};
     Object.setPrototypeOf(inheritedCarrier, { [Symbol.toStringTag]: 'Inherited' });
     expect(
-      wrapMemberAccess({ target: inheritedCarrier, value: Symbol.toStringTag, sandboxEnabled: true })
+      wrapMemberAccess({
+        target: inheritedCarrier,
+        value: Symbol.toStringTag,
+        sandboxEnabled: true,
+      })
     ).toBeUndefined();
   });
 
   test('well-known Symbol.* intrinsics are not treated as escapes', () => {
     const obj: Record<string | symbol, unknown> = { [Symbol.toStringTag]: 'SafeThing' };
-    expect(
-      wrapMemberAccess({ target: obj, value: Symbol.toStringTag, sandboxEnabled: true })
-    ).toBe('SafeThing');
+    expect(wrapMemberAccess({ target: obj, value: Symbol.toStringTag, sandboxEnabled: true })).toBe(
+      'SafeThing'
+    );
   });
 
   test('sandbox-disabled lookups still treat prototype-escape keys as not-found', () => {

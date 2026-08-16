@@ -153,6 +153,21 @@ describe('sandbox security - dangerous globals', () => {
     expect(err.code).toBe('SANDBOX_ACCESS');
   });
 
+  test('sandbox allowlist cannot unblock categorically blocked keys', async () => {
+    // WHY: pins the trap check order in sandbox-traps.ts — blocked-at-scope runs BEFORE the
+    // allowlist, so merging blocked names into sandboxAllowlist must remain ineffective.
+    const err = (await renderTemplate(
+      '{{ process }}',
+      { process: { env: { NODE_ENV: 'test' } } },
+      {
+        sandbox: true,
+        sandboxEnvironment: 'node',
+        sandboxAllowlist: ['process', 'require', 'constructor'],
+      }
+    ).catch((e) => e)) as TemplateError;
+    expect(err.code).toBe('SANDBOX_ACCESS');
+  });
+
   test('data named like globals is still accessible', async () => {
     const result = await renderTemplate(
       '{{ user.process }}',

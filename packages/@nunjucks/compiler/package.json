@@ -4,14 +4,7 @@
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./location-utils": "./src/location-utils.ts",
-    "./node-dispatch": "./src/node-dispatch.ts",
-    "./expression-compiler": "./src/expression-compiler/index.ts",
-    "./statement-compiler": "./src/statement-compiler/index.ts",
-    "./statement-compiler/component": "./src/statement-compiler/component.ts",
-    "./statement-compiler/render": "./src/statement-compiler/render.ts",
-    "./statement-compiler/slot": "./src/statement-compiler/slot.ts"
+    ".": "./src/index.ts"
   },
   "dependencies": {
     "@nunjucks/error-catalog": "workspace:*",

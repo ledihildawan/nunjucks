@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { fromIterator } from '@nunjucks/lib/from-iterator';
+import { fromIterator } from '@nunjucks/lib';
 import { contextOrFrameLookup } from './lookups.ts';
 
 describe('contextOrFrameLookup', () => {

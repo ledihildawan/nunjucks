@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { createFrame } from '@nunjucks/runtime/frame';
+import { createFrame } from './frame.ts';
 
 describe('Frame', () => {
   test('constructor initializes empty variables', () => {

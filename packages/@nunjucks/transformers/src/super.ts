@@ -1,4 +1,4 @@
-import { createGensym } from '@nunjucks/lib/gensym';
+import { createGensym } from '@nunjucks/lib';
 import type { CallNode, Node } from '@nunjucks/nodes';
 import { getChildNodes, isBlock, isFunCall, superNode, symbol, walk } from '@nunjucks/nodes';
 import { loc } from '@nunjucks/shared';
@@ -11,14 +11,16 @@ const isSuperCall = (node: Node): boolean =>
 // own block, which liftSuper visits separately; lifting it here would misbind it to the outer block.
 const findDirectSuperCalls = (node: Node): Node[] => {
   const self = isSuperCall(node) ? [node] : [];
-  const descendants = isBlock(node)
-    ? []
-    : flatMap(getChildNodes(node), findDirectSuperCalls);
+  const descendants = isBlock(node) ? [] : flatMap(getChildNodes(node), findDirectSuperCalls);
   return [...self, ...descendants];
 };
 
-export const liftSuper = (ast: Node): Node =>
-  walk(ast, (blockNode: Node): Node | undefined => {
+export const liftSuper = (ast: Node): Node => {
+  // WHY: one gensym per pass — instantiating inside the visitor reset the counter for every
+  // block, so each lifted symbol was identically 'hole_0'. Block scoping made that safe, but
+  // unique names keep the generated code debuggable and robust to future scope flattening.
+  const gensym = createGensym('hole');
+  return walk(ast, (blockNode: Node): Node | undefined => {
     if (!isBlock(blockNode)) {
       return;
     }
@@ -37,7 +39,6 @@ export const liftSuper = (ast: Node): Node =>
 
     const nameNode = superCall.name as { value: string; lineno: number; colno: number };
     const superLoc = { lineno: nameNode.lineno, colno: nameNode.colno };
-    const gensym = createGensym('hole');
     const sym = gensym();
 
     const newBody = walk(body, (node: Node): Node | undefined => {
@@ -61,3 +62,4 @@ export const liftSuper = (ast: Node): Node =>
     const replacedBody = { ...newBody, children: newChildren };
     return { ...blockNode, body: replacedBody };
   });
+};

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { collectString } from '@nunjucks/lib/collect-stream';
+import { collectString } from '@nunjucks/lib';
 import { execute, executeStream } from './executor.ts';
 import { createFrame } from './frame.ts';
 

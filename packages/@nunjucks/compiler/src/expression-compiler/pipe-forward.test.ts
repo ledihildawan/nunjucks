@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { literal, pipe, symbol } from '@nunjucks/nodes';
-import { createFrame } from '@nunjucks/runtime/frame';
+import { createFrame } from '@nunjucks/runtime';
 import { loc } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import { compilePipeForward } from './pipe-forward.ts';
@@ -39,7 +39,7 @@ describe('compilePipeForward', () => {
   test('asserts the callee is a symbol', () => {
     const c = makeCompiler();
     let assertedType = '';
-    const c2 = {
+    const assertingCompilerStub = {
       ...c,
       assertType: (_n: unknown, ...types: string[]) => {
         assertedType = types.join(',');
@@ -49,7 +49,7 @@ describe('compilePipeForward', () => {
       name: symbol(loc({ lineno: 1, colno: 1 }), 'lower'),
       args: [],
     });
-    compilePipeForward(asCompiler(c2), { node: node as never, frame });
+    compilePipeForward(asCompiler(assertingCompilerStub), { node: node as never, frame });
     expect(assertedType).toBe('symbol');
   });
 

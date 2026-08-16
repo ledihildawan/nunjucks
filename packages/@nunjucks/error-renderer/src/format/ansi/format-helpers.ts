@@ -1,6 +1,5 @@
 import type { LineBase } from '@nunjucks/error-catalog';
-import { isObjectValue } from '@nunjucks/error-catalog';
-import { getErrorMessage } from '@nunjucks/error-catalog/get-error-message';
+import { getErrorMessage, isObjectValue } from '@nunjucks/error-catalog';
 import { slice } from '@nunjucks/lib';
 import picocolors from 'picocolors';
 import { filter, join, map, pipe, split } from 'remeda';
@@ -17,15 +16,7 @@ import {
   stripInlineMarkdown,
 } from './stack-helpers';
 
-export {
-  BULLET,
-  extractAnsiErrorParts,
-  formatCausesAnsi,
-  formatFixAnsi,
-  formatFullAnsi,
-  formatMediumAnsi,
-  getErrorMessage,
-};
+export { extractAnsiErrorParts, formatFullAnsi, formatMediumAnsi, getErrorMessage };
 
 const BULLET = `${picocolors.yellow('•')} `;
 

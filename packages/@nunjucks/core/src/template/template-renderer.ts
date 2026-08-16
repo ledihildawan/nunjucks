@@ -2,7 +2,7 @@ import type { Warning } from '@nunjucks/error-catalog';
 import { getError } from '@nunjucks/error-catalog';
 import { createLog, normalizeErrorMetadata, prettifyError } from '@nunjucks/error-formatter';
 import { injectWarningsScript } from '@nunjucks/error-renderer';
-import { collectStream } from '@nunjucks/lib/collect-stream';
+import { collectStream } from '@nunjucks/lib';
 import { createContext, createFrame, type Frame } from '@nunjucks/runtime';
 import { WARNINGS_CONTEXT_KEY } from '@nunjucks/shared';
 import { createRuntimeWithContext } from './runtime-factory';
@@ -39,10 +39,7 @@ const createTemplateRenderer = ({ getState, compiler, errorHandler }: TemplateRe
     });
   };
 
-  const render = async (
-    ctx: Record<string, unknown>,
-    parentFrame?: Frame
-  ): Promise<string> => {
+  const render = async (ctx: Record<string, unknown>, parentFrame?: Frame): Promise<string> => {
     await compiler.safeCompile();
     const state = getState();
 

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { funCall, symbol } from '@nunjucks/nodes';
-import { createFrame } from '@nunjucks/runtime/frame';
+import { createFrame } from '@nunjucks/runtime';
 import { loc } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import { compileExec } from './exec.ts';

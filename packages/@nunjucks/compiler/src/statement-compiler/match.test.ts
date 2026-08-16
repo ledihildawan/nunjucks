@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { literal, match, output, symbol, templateData, when } from '@nunjucks/nodes';
-import { createFrame } from '@nunjucks/runtime/frame';
+import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import { compileMatch, compileWhen } from './match.ts';

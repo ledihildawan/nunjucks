@@ -1,4 +1,4 @@
-import { titleCase } from '@nunjucks/lib/string-case';
+import { titleCase } from '@nunjucks/lib';
 import { join, map, pipe } from 'remeda';
 import { formatStackTraceHtml, renderContextHtml } from './presentation/error/sections.ts';
 import { getIdeMeta, resolveIdeLink } from './presentation/ide-links/ide-links.ts';

@@ -1,7 +1,6 @@
-import { getErrorMessage } from '@nunjucks/error-catalog/get-error-message';
 import type { ErrorSeverity } from '@nunjucks/error-catalog';
-import { slice } from '@nunjucks/lib';
-import { stripInlineMarkdown } from '@nunjucks/lib/strip-inline-markdown';
+import { getErrorMessage } from '@nunjucks/error-catalog';
+import { slice, stripInlineMarkdown } from '@nunjucks/lib';
 import { filter, join, map, pipe, split } from 'remeda';
 import { mergeErrorParts } from './presentation/error/error-parts.ts';
 import { toDisplayLocation } from './presentation/source-trace/location.ts';
@@ -122,13 +121,7 @@ const formatFix = ({ fixCode, fixComment, documentationUrl }: FormatFixInput): s
 
 const formatStack = (error: unknown): string => {
   const stack = isErrorRecord(error) ? (error.stack ?? '') : '';
-  return pipe(
-    stack,
-    split('\n'),
-    slice(1),
-    map(formatStackLine),
-    join('\n')
-  );
+  return pipe(stack, split('\n'), slice(1), map(formatStackLine), join('\n'));
 };
 
 const toText = (error: unknown, options: ToTextOptions = {}): string => {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { output, symbol, templateData } from '@nunjucks/nodes';
-import { createFrame } from '@nunjucks/runtime/frame';
+import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import { compileOutput } from './compile-output.ts';
@@ -48,7 +48,9 @@ describe('compileOutput', () => {
     expect(joined).toContain('runtime.ensureDefined(');
     expect(joined).toContain('CHILD');
     expect(joined).toContain(', { lineno: 0, colno: 0, varName: "x" })');
-    expect(joined).toContain(', { autoescape: env.opts.autoescape, lineno, colno, context: "ctx:0:0" });');
+    expect(joined).toContain(
+      ', { autoescape: env.opts.autoescape, lineno, colno, context: "ctx:0:0" });'
+    );
   });
 
   test('opens a per-expression try and emits a stream catch when streamErrorRecovery is on', () => {

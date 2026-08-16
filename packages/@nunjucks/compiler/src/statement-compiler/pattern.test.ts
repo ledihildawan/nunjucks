@@ -9,7 +9,7 @@ import {
   restPattern,
   symbol,
 } from '@nunjucks/nodes';
-import { createFrame } from '@nunjucks/runtime/frame';
+import { createFrame } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import { compileDestructuring } from './pattern.ts';

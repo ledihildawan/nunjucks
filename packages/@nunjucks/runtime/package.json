@@ -4,27 +4,14 @@
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./escaping": "./src/escaping/index.ts",
-    "./frame": "./src/frame.ts",
-    "./context": "./src/context.ts",
-    "./component": "./src/component.ts",
-    "./slots": "./src/slots.ts",
-    "./member-access": "./src/member-access.ts",
-    "./sandbox": "./src/sandbox/index.ts",
-    "./hooks": "./src/hooks.ts",
-    "./undefined": "./src/undefined.ts",
-    "./executor": "./src/executor.ts",
-    "./runtime-contract": "./src/runtime-contract/index.ts",
-    "./runtime-contract/frame": "./src/runtime-contract/frame.ts",
-    "./runtime-contract/undefined-modes": "./src/runtime-contract/undefined-modes.ts",
-    "./stream-timeout": "./src/stream-timeout.ts"
+    ".": "./src/index.ts"
   },
   "dependencies": {
     "@nunjucks/lib": "workspace:*",
     "@nunjucks/shared": "workspace:*",
     "@nunjucks/error-catalog": "workspace:*",
-    "@nunjucks/error-formatter": "workspace:*"
+    "@nunjucks/error-formatter": "workspace:*",
+    "remeda": "^2.39.0"
   },
   "description": "Runtime for Nunjucks template engine",
   "private": true

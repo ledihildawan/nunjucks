@@ -4,14 +4,11 @@
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./types": "./src/types/index.ts",
-    "./factory": "./src/factory/index.ts",
-    "./guards": "./src/types/guards.ts",
-    "./traverse": "./src/traverse.ts"
+    ".": "./src/index.ts"
   },
   "dependencies": {
-    "@nunjucks/shared": "workspace:*"
+    "@nunjucks/shared": "workspace:*",
+    "remeda": "^2.39.0"
   },
   "description": "AST node types for Nunjucks template engine",
   "keywords": [

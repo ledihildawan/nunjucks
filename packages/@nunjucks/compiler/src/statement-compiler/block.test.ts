@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import type { FrameSetOptions } from '@nunjucks/runtime/frame';
-import { createFrame } from '@nunjucks/runtime/frame';
 import { block, output, root, superNode, symbol } from '@nunjucks/nodes';
+import { createFrame, type FrameSetOptions } from '@nunjucks/runtime';
 import { ZERO_LOC } from '@nunjucks/shared';
 import { createCompiler } from '../create-compiler.ts';
 import { asCompiler } from '../test-helpers.ts';

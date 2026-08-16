@@ -4,7 +4,7 @@ import {
   escapeScriptString,
   escapeStyle,
   escapeUnquotedAttribute,
-} from '@nunjucks/lib/escape';
+} from '@nunjucks/lib';
 
 type HtmlContext = 'html' | 'attribute' | 'unquoted-attribute' | 'script' | 'style' | 'comment';
 

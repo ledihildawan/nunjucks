@@ -1,6 +1,5 @@
 import { normalizeErrorMetadata, prettifyError } from '@nunjucks/error-formatter';
-import { isKeyedObject } from '@nunjucks/lib';
-import { collectStream } from '@nunjucks/lib/collect-stream';
+import { collectStream, isKeyedObject } from '@nunjucks/lib';
 import { type Context, createContext, createFrame, type Frame } from '@nunjucks/runtime';
 import { createRuntimeWithContext } from './runtime-factory';
 import type { TemplateState } from './types';
@@ -9,10 +8,7 @@ export { createGetExported };
 
 const createGetExported =
   (getState: () => TemplateState, compiler: { safeCompile: () => Promise<void> }) =>
-  async (
-    ctx?: Record<string, unknown>,
-    parentFrame?: Frame
-  ): Promise<Record<string, unknown>> => {
+  async (ctx?: Record<string, unknown>, parentFrame?: Frame): Promise<Record<string, unknown>> => {
     const createExportedFrame = (inputParentFrame: Frame | undefined): Frame =>
       createFrame({ parent: inputParentFrame, topLevel: true });
 

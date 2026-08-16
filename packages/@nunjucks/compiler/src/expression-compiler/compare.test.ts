@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { createFrame } from '@nunjucks/runtime/frame';
+import { createFrame } from '@nunjucks/runtime';
 import { asCompiler } from '../test-helpers.ts';
 import { compileCompare, compileIs } from './compare.ts';
 
@@ -25,7 +25,9 @@ describe('compileCompare', () => {
     const c = makeCompiler();
     const node = {
       expr: { marker: 'EXPR' },
-      ops: [{ type: 'compareOperand', operator: '==', expr: { marker: 'R1' }, lineno: 5, colno: 9 }],
+      ops: [
+        { type: 'compareOperand', operator: '==', expr: { marker: 'R1' }, lineno: 5, colno: 9 },
+      ],
       lineno: 1,
       colno: 1,
     };

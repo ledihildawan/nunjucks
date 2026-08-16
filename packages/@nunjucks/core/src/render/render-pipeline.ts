@@ -2,11 +2,14 @@ import { getError } from '@nunjucks/error-catalog';
 import type { TemplateError, TemplateWarning } from '@nunjucks/error-formatter';
 import { createLog } from '@nunjucks/error-formatter';
 import { err, isErr, isKeyedObject, ok, type Result } from '@nunjucks/lib';
-import { createFileSystemLoader, type FileSystemLoader, type TemplateLoader } from '@nunjucks/loaders';
+import {
+  createFileSystemLoader,
+  type FileSystemLoader,
+  type TemplateLoader,
+} from '@nunjucks/loaders';
 import type { ParseOptions, ParserExtension } from '@nunjucks/parser';
 import { createSandboxedContext } from '@nunjucks/runtime';
-import { findContextDangerousValues } from '@nunjucks/validators';
-import { scrubDangerousReferences } from '@nunjucks/validators/security';
+import { findContextDangerousValues, scrubDangerousReferences } from '@nunjucks/validators';
 import { compileToCode } from '../compile-pipeline.ts';
 import { findContextKeyPosition, wrapWithLog } from '../diagnostics/diagnostics.ts';
 import type { CompileResult, RenderConfig, SandboxOptions } from './render-types.ts';
@@ -68,18 +71,12 @@ const prepareSandbox = (
   config: RenderConfig,
   context: Record<string, unknown>
 ): Record<string, unknown> => {
-  // WHY: internalKeys are always allowed in sandbox — they are either runtime-internal markers (__nunjucks_undefined_mode) or CommonJS leakage guards (exports, module, require, __dirname, __filename) or Node globals the template runtime legitimately needs (global, globalThis, process for env checks).
-  const internalKeys = [
-    '__nunjucks_undefined_mode',
-    'exports',
-    'module',
-    'require',
-    '__dirname',
-    '__filename',
-    'global',
-    'globalThis',
-    'process',
-  ];
+  // WHY: only runtime-internal markers are force-allowed — every former CommonJS/Node-global
+  // entry (exports, module, require, __dirname, __filename, global, globalThis, process) is
+  // categorically blocked by @nunjucks/shared blocked-key categories, which the sandbox traps
+  // enforce BEFORE the allowlist (sandbox-traps.ts validateStringKey), so allowlisting them was
+  // dead at best and a latent bypass hazard at worst. Pinned by sandbox-security.test.ts.
+  const internalKeys = ['__nunjucks_undefined_mode'];
   const userAllowlist = config.sandboxAllowlist || [];
   const mergedAllowlist = [...new Set([...internalKeys, ...userAllowlist])];
 

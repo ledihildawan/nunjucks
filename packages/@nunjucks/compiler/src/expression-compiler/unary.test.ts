@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { createFrame } from '@nunjucks/runtime/frame';
+import { createFrame } from '@nunjucks/runtime';
 import { asCompiler } from '../test-helpers.ts';
 import { compileNeg, compileNot, compilePos } from './unary.ts';
 
@@ -28,12 +28,7 @@ describe('unary emitters', () => {
   test('compileNot wraps target with !', () => {
     const c = makeCompiler();
     compileNot(asCompiler(c), { node: makeUnary('X') as never, frame });
-    expect(c.emitted).toEqual([
-      '(lineno = 5, colno = 9, ',
-      '(!runtime.isTruthy(',
-      'X',
-      ')))',
-    ]);
+    expect(c.emitted).toEqual(['(lineno = 5, colno = 9, ', '(!runtime.isTruthy(', 'X', ')))']);
   });
 
   test('compileNeg wraps target with minus', () => {

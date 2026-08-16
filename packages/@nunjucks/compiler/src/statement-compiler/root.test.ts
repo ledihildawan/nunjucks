@@ -76,9 +76,9 @@ describe('compileRoot', () => {
 
   test('duplicate block names throw', () => {
     const compiler = makeCompiler();
-    const blk1 = block(ZERO_LOC, { name: 'main', body: symbol(ZERO_LOC, 'body1') });
-    const blk2 = block(ZERO_LOC, { name: 'main', body: symbol(ZERO_LOC, 'body2') });
-    const node = root(ZERO_LOC, [blk1, blk2]) as ChildrenNode;
+    const firstBlock = block(ZERO_LOC, { name: 'main', body: symbol(ZERO_LOC, 'body1') });
+    const duplicateBlock = block(ZERO_LOC, { name: 'main', body: symbol(ZERO_LOC, 'body2') });
+    const node = root(ZERO_LOC, [firstBlock, duplicateBlock]) as ChildrenNode;
     expect(() => compileRoot(compiler as unknown as Compiler, node)).toThrow();
   });
 });

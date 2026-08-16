@@ -1,7 +1,10 @@
 import type { Node } from '@nunjucks/nodes';
 import type { Frame, UndefinedMode } from '@nunjucks/runtime';
-import { DEFAULT_UNDEFINED_MODE } from '@nunjucks/runtime';
-import { createHtmlContextTracker, type HtmlContext } from '@nunjucks/runtime/escaping';
+import {
+  createHtmlContextTracker,
+  DEFAULT_UNDEFINED_MODE,
+  type HtmlContext,
+} from '@nunjucks/runtime';
 import { forEach } from 'remeda';
 import { fail, getTemplateName, nextCompilerId, pushBuffer } from './codegen.ts';
 import {

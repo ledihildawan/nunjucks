@@ -1,10 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  createSandboxedContext,
-  createSandboxedObject,
-  wrapMemberAccess,
-} from '@nunjucks/runtime/sandbox';
 import { isCodeExecutionPattern } from '@nunjucks/shared';
+import { createSandboxedContext, createSandboxedObject, wrapMemberAccess } from './index.ts';
 
 describe('Sandbox Property-Based Tests', () => {
   describe('OBJECT_INTRINSICS own properties are blocked', () => {
@@ -224,16 +220,16 @@ describe('Sandbox Property-Based Tests', () => {
     });
 
     test('deeply nested objects maintain sandbox', () => {
-      const level3 = { key: 'secret' };
-      const level2 = { level3 };
-      const level1 = { level2 };
-      const sandboxed = createSandboxedObject({ value: level1, sandboxEnabled: true }) as Record<
-        string,
-        unknown
-      >;
-      const l2 = sandboxed.level2 as Record<string, unknown>;
-      const l3 = l2.level3 as Record<string, unknown>;
-      expect(() => l3['__proto__']).toThrow();
+      const innermostObject = { key: 'secret' };
+      const middleObject = { innermostObject };
+      const outerObject = { middleObject };
+      const sandboxed = createSandboxedObject({
+        value: outerObject,
+        sandboxEnabled: true,
+      }) as Record<string, unknown>;
+      const middleSandboxed = sandboxed.middleObject as Record<string, unknown>;
+      const innermostSandboxed = middleSandboxed.innermostObject as Record<string, unknown>;
+      expect(() => innermostSandboxed['__proto__']).toThrow();
     });
 
     test('functions in nested objects are wrapped', () => {

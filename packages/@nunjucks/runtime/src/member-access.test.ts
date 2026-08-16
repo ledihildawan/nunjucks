@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { nullishCoalesce } from '@nunjucks/lib/nullish-coalesce';
+import { nullishCoalesce } from '@nunjucks/lib';
 import {
   ACCESS_PATH,
   getNullParentName,

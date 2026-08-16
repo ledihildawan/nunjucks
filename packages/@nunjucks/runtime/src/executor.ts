@@ -1,5 +1,5 @@
 import { ERROR_CODES } from '@nunjucks/error-catalog';
-import { collectString } from '@nunjucks/lib/collect-stream';
+import { collectString } from '@nunjucks/lib';
 import type { Environment, SandboxMode } from '@nunjucks/shared';
 import { createContext, createDefaultEnv, type Env } from './context.ts';
 import {

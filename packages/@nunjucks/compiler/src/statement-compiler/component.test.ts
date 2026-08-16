@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { compileComponentPublic } from '@nunjucks/compiler/statement-compiler/component';
 import { getNodeTypeName, symbol } from '@nunjucks/nodes';
 import { loc } from '@nunjucks/shared';
+import { compileComponentPublic } from './component.ts';
 
 const makeCtx = () => {
   const emitted: string[] = [];

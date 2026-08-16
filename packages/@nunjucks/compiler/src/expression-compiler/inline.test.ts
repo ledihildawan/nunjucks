@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { literal, lookupVal, symbol } from '@nunjucks/nodes';
-import { createFrame } from '@nunjucks/runtime/frame';
+import { createFrame } from '@nunjucks/runtime';
 import { loc } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import { compileInlineIf, compileWalrus } from './inline.ts';

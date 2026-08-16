@@ -3,7 +3,7 @@ import type { Result } from '@nunjucks/lib';
 import type { TemplateLoader } from '@nunjucks/loaders';
 import type { Env, SandboxOptions, UndefinedMode } from '@nunjucks/runtime';
 import type { BaseValidationError } from '@nunjucks/shared';
-import type { Environment } from '@nunjucks/validators/security';
+import type { Environment } from '@nunjucks/validators';
 import type { SandboxMode } from '../config/global.ts';
 import type { CallerLocation } from './caller-file.ts';
 

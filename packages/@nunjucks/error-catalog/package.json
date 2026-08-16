@@ -4,8 +4,7 @@
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./get-error-message": "./src/get-error-message.ts"
+    ".": "./src/index.ts"
   },
   "dependencies": {
     "@nunjucks/lib": "workspace:*",

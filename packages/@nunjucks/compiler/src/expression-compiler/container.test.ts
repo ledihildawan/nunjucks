@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { keywordArgs, pair, spread, symbol, templateLiteral } from '@nunjucks/nodes';
-import { createFrame } from '@nunjucks/runtime/frame';
+import { createFrame } from '@nunjucks/runtime';
 import { loc, ZERO_LOC } from '@nunjucks/shared';
 import { asCompiler } from '../test-helpers.ts';
 import {

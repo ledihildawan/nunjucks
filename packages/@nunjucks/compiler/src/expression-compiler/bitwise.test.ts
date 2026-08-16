@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { BinaryNode } from '@nunjucks/nodes';
 import type { Frame } from '@nunjucks/runtime';
-import { createFrame } from '@nunjucks/runtime/frame';
+import { createFrame } from '@nunjucks/runtime';
 import type { Compiler } from '../create-compiler.ts';
 import { asCompiler } from '../test-helpers.ts';
 import {

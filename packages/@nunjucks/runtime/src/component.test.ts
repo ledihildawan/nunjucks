@@ -1,10 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  createComponent,
-  createKeywordArgs,
-  getKeywordArgs,
-  numArgs,
-} from '@nunjucks/runtime/component';
+import { createComponent, createKeywordArgs, getKeywordArgs, numArgs } from './component.ts';
 
 describe('createKeywordArgs', () => {
   test('adds keywords flag to object', () => {

@@ -23,7 +23,7 @@ export { createHtmlContextTracker, type HtmlContext } from './escaping/index.ts'
 export { type ExecuteConfig, execute, executeStream } from './executor.ts';
 export type { RunFilterOptions } from './filter-runtime.ts';
 export { runFilter } from './filter-runtime.ts';
-export { createFrame, type Frame } from './frame.ts';
+export { createFrame, type Frame, type FrameSetOptions } from './frame.ts';
 export { handleError } from './handle-error.ts';
 export {
   HOOK_EVENTS,
@@ -51,6 +51,11 @@ export {
 export { createSlotContext, type SlotContext, type SlotFn } from './slots.ts';
 export { isStreamErrorSentinel, type StreamErrorSentinel, streamError } from './stream-error.ts';
 export { FATAL_STREAM_CODES } from './stream-fatal-codes.ts';
+export {
+  createStreamTimeoutError,
+  isStreamTimeoutError,
+  type StreamTimeoutError,
+} from './stream-timeout.ts';
 export type { SuppressValueOptions } from './suppress-value.ts';
 export { suppressValue } from './suppress-value.ts';
 export {

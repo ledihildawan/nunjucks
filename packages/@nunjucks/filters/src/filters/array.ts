@@ -1,7 +1,6 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { err, ok, type Result } from '@nunjucks/lib';
-import { createSortComparator } from '@nunjucks/lib/compare';
+import { createSortComparator, err, ok, type Result } from '@nunjucks/lib';
 import { isSafeString } from '@nunjucks/runtime';
 import { isPlainObject, keys, pipe, range, reduce, sum as sumValues } from 'remeda';
 import {
@@ -111,6 +110,9 @@ const buildSingleSlice = ({
   return { slice: currentSlice, newOffset };
 };
 
+// WHY: positional arity is the template-language contract (upstream `slice(n, fill)`
+// syntax) — folding the params into a kwargs object would change template syntax, not
+// just internal code shape.
 export const slice = (
   values: unknown,
   slices: number,
@@ -198,6 +200,9 @@ const sumWithoutAttribute = (items: unknown[], start: number): Result<number, Te
   return ok(start + sumValues(items));
 };
 
+// WHY: positional arity is the template-language contract (upstream `sum(attr, start)`
+// syntax) — folding the params into a kwargs object would change template syntax, not
+// just internal code shape.
 export const sum = (values: unknown, attr?: string, start = 0): Result<number, TemplateError> => {
   if (!isArray(values)) {
     return err(requireArrayError(values, ERROR_DEFINITIONS.SUM_FILTER));

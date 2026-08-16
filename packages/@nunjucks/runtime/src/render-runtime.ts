@@ -1,5 +1,4 @@
-import { collectString } from '@nunjucks/lib/collect-stream';
-import { fromIterator } from '@nunjucks/lib/from-iterator';
+import { collectString, fromIterator } from '@nunjucks/lib';
 import { WARNINGS_CONTEXT_KEY } from '@nunjucks/shared';
 import { keys } from 'remeda';
 import { awaitValue } from './await-value.ts';
@@ -10,12 +9,18 @@ import { runFilter } from './filter-runtime.ts';
 import { createFrame } from './frame.ts';
 import { handleError } from './handle-error.ts';
 import { contextOrFrameLookup } from './lookups.ts';
-import { isAbsentLookupResult, memberLookup, optionalMemberLookup, slice } from './member-access.ts';
+import {
+  isAbsentLookupResult,
+  memberLookup,
+  optionalMemberLookup,
+  slice,
+} from './member-access.ts';
 import { createSafeString, markSafe } from './runtime-contract/safe-string.ts';
 import { createSlotContext } from './slots.ts';
 import { streamError } from './stream-error.ts';
 import { suppressValue } from './suppress-value.ts';
 import { ensureDefined } from './undefined-resolution.ts';
+
 interface RenderRuntimeOptions {
   templateName?: string;
   renderContext?: unknown;

@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import type { Env } from '@nunjucks/runtime/context';
-import { createContext } from '@nunjucks/runtime/context';
+import { createContext, type Env } from './context.ts';
 
 const fakeEnv: Env = {
   opts: { dev: false, autoescape: true, undefined: 'default' },
@@ -45,11 +44,11 @@ describe('Context', () => {
 
   test('addBlock appends to block list', () => {
     let ctx = createContext({ env: fakeEnv });
-    const fn1 = () => {};
-    const fn2 = () => {};
-    ctx = ctx.addBlock('main', fn1);
-    ctx = ctx.addBlock('main', fn2);
-    expect(ctx.blocks.main).toEqual([fn1, fn2]);
+    const firstBlockFn = () => {};
+    const secondBlockFn = () => {};
+    ctx = ctx.addBlock('main', firstBlockFn);
+    ctx = ctx.addBlock('main', secondBlockFn);
+    expect(ctx.blocks.main).toEqual([firstBlockFn, secondBlockFn]);
   });
 
   test('addBlock returns a new context with the block', () => {

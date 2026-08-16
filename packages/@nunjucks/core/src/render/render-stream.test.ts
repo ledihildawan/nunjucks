@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { isOk } from '@nunjucks/lib';
-import { collectString } from '@nunjucks/lib/collect-stream';
+import { collectString, isOk } from '@nunjucks/lib';
 import { render, renderToStream } from './render.ts';
 
 describe('renderToStream', () => {

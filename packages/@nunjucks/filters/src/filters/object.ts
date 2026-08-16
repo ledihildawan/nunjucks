@@ -1,8 +1,7 @@
 import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
 import type { Result } from '@nunjucks/lib';
-import { err, ok } from '@nunjucks/lib';
-import { getAttrGetter } from '@nunjucks/lib/attribute-getter';
+import { err, getAttrGetter, ok } from '@nunjucks/lib';
 import { createComponent } from '@nunjucks/runtime';
 import { isArray, requireArrayError, validateItemsHaveAttr } from '../factory/index.ts';
 

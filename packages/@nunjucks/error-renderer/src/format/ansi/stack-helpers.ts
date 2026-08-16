@@ -1,4 +1,4 @@
-import { stripInlineMarkdown } from '@nunjucks/lib/strip-inline-markdown';
+import { stripInlineMarkdown } from '@nunjucks/lib';
 import picocolors from 'picocolors';
 import { filter, join, pipe } from 'remeda';
 import { isFilePath, resolveIdeLink } from '../presentation/ide-links/ide-links.ts';
@@ -11,7 +11,6 @@ export {
   formatLocationString,
   formatStackLine,
   getExtrasPart,
-  getSeverityColor,
   getSeverityLabel,
   stripInlineMarkdown,
 };

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { createFrame } from '@nunjucks/runtime/frame';
+import { createFrame } from '@nunjucks/runtime';
 import { asCompiler } from '../test-helpers.ts';
 import { compileTest, compileTestCall } from './test-expr.ts';
 

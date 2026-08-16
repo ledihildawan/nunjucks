@@ -10,6 +10,7 @@ export {
   ERROR_DEFINITIONS,
   getError,
 } from './errors/index.ts';
+export { getErrorMessage } from './get-error-message.ts';
 export type { LineBase } from './line-base.ts';
 export { normalizeLineBase } from './line-base.ts';
 export type { ErrorLike, Warning } from './types.ts';

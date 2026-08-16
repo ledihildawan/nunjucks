@@ -4,29 +4,11 @@
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./collect-stream": "./src/collect-stream.ts",
-    "./nullish-coalesce": "./src/nullish-coalesce.ts",
-    "./from-iterator": "./src/from-iterator.ts",
-    "./web-readable-stream": "./src/web-readable-stream.ts",
-    "./stream-coalesce": "./src/stream-coalesce.ts",
-    "./path-basename": "./src/path-basename.ts",
-    "./is-digit": "./src/is-digit.ts",
-    "./gensym": "./src/gensym.ts",
-    "./type-guards": "./src/type-guards.ts",
-    "./read-error-code": "./src/read-error-code.ts",
-    "./escape": "./src/escape.ts",
-    "./slice": "./src/slice.ts",
-    "./path-security": "./src/path-security.ts",
-    "./compare": "./src/compare.ts",
-    "./attribute-getter": "./src/attribute-getter.ts",
-    "./normalize": "./src/normalize.ts",
-    "./strip-inline-markdown": "./src/strip-inline-markdown.ts",
-    "./string-case": "./src/string-case.ts"
+    ".": "./src/index.ts"
   },
   "dependencies": {
     "remeda": "^2.39.0"
   },
-  "description": "Domain-agnostic technical utilities for Nunjucks — pure algorithms, I/O wrappers, and data formatters. Must know ZERO business rules. Lolos Copy-Paste Test ke proyek manapun.",
+  "description": "Domain-agnostic technical utilities - pure algorithms, I/O wrappers, and data formatters with zero business rules.",
   "private": true
 }

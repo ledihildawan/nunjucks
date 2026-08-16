@@ -4,13 +4,13 @@
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./super": "./src/super.ts"
+    ".": "./src/index.ts"
   },
   "dependencies": {
     "@nunjucks/lib": "workspace:*",
     "@nunjucks/nodes": "workspace:*",
-    "@nunjucks/shared": "workspace:*"
+    "@nunjucks/shared": "workspace:*",
+    "remeda": "^2.39.0"
   },
   "description": "AST transformers for Nunjucks template engine",
   "private": true

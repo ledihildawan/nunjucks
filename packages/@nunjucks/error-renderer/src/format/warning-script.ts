@@ -1,5 +1,5 @@
 import type { Warning } from '@nunjucks/error-catalog';
-import { basename } from '@nunjucks/lib/path-basename';
+import { basename } from '@nunjucks/lib';
 import { DEFAULT_UNDEFINED_MODE } from '@nunjucks/shared';
 
 interface WarningScriptOptions {
