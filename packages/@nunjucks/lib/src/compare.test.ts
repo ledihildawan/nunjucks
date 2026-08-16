@@ -1,17 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { compareValues, createSortComparator, toComparable } from './compare.ts';
-
-describe('toComparable', () => {
-  test('keeps strings and numbers as-is', () => {
-    expect(toComparable('a')).toBe('a');
-    expect(toComparable(3)).toBe(3);
-  });
-
-  test('coerces anything else to a string', () => {
-    expect(toComparable(null)).toBe('null');
-    expect(toComparable({})).toBe('[object Object]');
-  });
-});
+import { compareValues, createSortComparator } from './compare.ts';
 
 describe('compareValues', () => {
   test('sorts ascending by default', () => {
@@ -29,6 +17,16 @@ describe('compareValues', () => {
     expect(compareValues({ left: 'A', right: 'b', caseSens: undefined, sortReverse: false })).toBe(
       -1
     );
+  });
+
+  test('compares strings and numbers natively', () => {
+    expect(compareValues({ left: 'a', right: 'b', caseSens: true, sortReverse: false })).toBe(-1);
+    expect(compareValues({ left: 3, right: 10, caseSens: true, sortReverse: false })).toBe(-1);
+  });
+
+  test('coerces non-primitive values to their string form', () => {
+    expect(compareValues({ left: null, right: 'null', caseSens: true, sortReverse: false })).toBe(0);
+    expect(compareValues({ left: {}, right: '[object Object]', caseSens: true, sortReverse: false })).toBe(0);
   });
 });
 

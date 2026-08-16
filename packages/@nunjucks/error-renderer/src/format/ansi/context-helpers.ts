@@ -3,7 +3,7 @@ import { keys, map, pipe } from 'remeda';
 import { normalizeRenderContext } from '../presentation/error/safe-context.ts';
 import { sanitizeForAnsi } from './sanitize-helpers.ts';
 
-export { formatContextValue, renderContextAnsi };
+export { renderContextAnsi };
 
 const INDENT = '  ';
 

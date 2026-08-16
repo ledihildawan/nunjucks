@@ -26,19 +26,8 @@ const flatMap = <T, U, E>(
   chain: (value: T) => Result<U, E>
 ): Result<U, E> => (result.ok ? chain(result.value) : result);
 
-const mapErr = <T, E, F>(result: Result<T, E>, transform: (error: E) => F): Result<T, F> =>
-  result.ok ? result : err(transform(result.error));
-
 const getOrElse = <T, E>(result: Result<T, E>, fallback: T): T =>
   result.ok ? result.value : fallback;
 
-const fromThrowable = <T>(thunk: () => T): Result<T, unknown> => {
-  try {
-    return ok(thunk());
-  } catch (error: unknown) {
-    return err(error);
-  }
-};
-
-export { ok, err, isOk, isErr, map, flatMap, mapErr, getOrElse, fromThrowable };
+export { ok, err, isOk, isErr, map, flatMap, getOrElse };
 export type { Ok, Err, Result };

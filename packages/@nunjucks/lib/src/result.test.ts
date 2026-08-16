@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { ok, err, isOk, isErr, map, flatMap, mapErr, getOrElse, fromThrowable } from './result.ts';
+import { ok, err, isOk, isErr, map, flatMap, getOrElse } from './result.ts';
 import type { Result } from './result.ts';
 
 describe('ok', () => {
@@ -67,16 +67,6 @@ describe('flatMap', () => {
   });
 });
 
-describe('mapErr', () => {
-  test('transforms the error of a failure result', () => {
-    expect(mapErr(err('low'), (e) => e.toUpperCase())).toEqual({ ok: false, error: 'LOW' });
-  });
-
-  test('leaves a success result untouched', () => {
-    expect(mapErr(ok(9), (e: string) => e.toUpperCase())).toEqual({ ok: true, value: 9 });
-  });
-});
-
 describe('getOrElse', () => {
   test('returns the value on success', () => {
     expect(getOrElse(ok('real'), 'fallback')).toBe('real');
@@ -85,15 +75,5 @@ describe('getOrElse', () => {
   test('returns the fallback on failure', () => {
     const lost: Result<string, unknown> = err('lost');
     expect(getOrElse(lost, 'fallback')).toBe('fallback');
-  });
-});
-
-describe('fromThrowable', () => {
-  test('wraps a successful thunk in Ok', () => {
-    expect(fromThrowable(() => 10)).toEqual({ ok: true, value: 10 });
-  });
-
-  test('captures a thrown value into Err', () => {
-    expect(fromThrowable(() => { throw new Error('explode'); })).toEqual({ ok: false, error: new Error('explode') });
   });
 });

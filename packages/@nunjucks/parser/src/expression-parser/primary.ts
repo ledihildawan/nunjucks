@@ -214,4 +214,4 @@ const parseUnary = (parserContext: ParserContext): Result<Node, TemplateError> =
   return parsePipeForward(parserContext, baseR.value);
 };
 
-export { parsePrimary, parsePrimaryWithoutPostfix, parseUnary, parseUnaryWithoutPipes };
+export { parsePrimary, parsePrimaryWithoutPostfix, parseUnary };

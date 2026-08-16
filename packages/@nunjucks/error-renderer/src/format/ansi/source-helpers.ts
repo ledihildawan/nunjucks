@@ -5,14 +5,7 @@ import type {
 } from '../presentation/source-trace/source-trace.ts';
 import { highlightAnsi } from '../presentation/syntax-highlight/highlight.ts';
 
-export {
-  formatCaretLine,
-  formatCodeLine,
-  formatSourceTrace,
-  getLineNumWidth,
-  getLinePrefix,
-  getMarker,
-};
+export { formatSourceTrace };
 
 const SEPARATOR = ' │ ';
 const ERROR_MARKER = '> ';

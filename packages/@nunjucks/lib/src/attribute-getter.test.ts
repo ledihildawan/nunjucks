@@ -1,25 +1,15 @@
 import { describe, test, expect } from 'bun:test';
-import { prepareAttributeParts, getAttrGetter } from './attribute-getter.ts';
-
-describe('prepareAttributeParts', () => {
-  test('splits dotted strings into parts', () => {
-    expect(prepareAttributeParts('a.b.c')).toEqual(['a', 'b', 'c']);
-  });
-
-  test('returns an empty array for nullish input', () => {
-    expect(prepareAttributeParts(null)).toEqual([]);
-    expect(prepareAttributeParts(undefined)).toEqual([]);
-  });
-
-  test('passes numbers through as single parts', () => {
-    expect(prepareAttributeParts(0)).toEqual([0]);
-  });
-});
+import { getAttrGetter } from './attribute-getter.ts';
 
 describe('getAttrGetter', () => {
   test('descends nested own properties', () => {
     const getter = getAttrGetter('a.b');
     expect(getter({ a: { b: 42 } })).toBe(42);
+  });
+
+  test('descends every part of a dotted attribute', () => {
+    const getter = getAttrGetter('a.b.c');
+    expect(getter({ a: { b: { c: 7 } } })).toBe(7);
   });
 
   test('returns undefined when a link in the chain is missing', () => {
@@ -29,6 +19,11 @@ describe('getAttrGetter', () => {
 
   test('resolves numeric parts when present', () => {
     const getter = getAttrGetter('0');
+    expect(getter([99, 88])).toBe(99);
+  });
+
+  test('treats a numeric attribute as a single part', () => {
+    const getter = getAttrGetter(0);
     expect(getter([99, 88])).toBe(99);
   });
 });

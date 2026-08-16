@@ -51,4 +51,4 @@ const createSortComparator = ({ sortAttr, sortReverse, caseSens }: SortComparato
   };
 };
 
-export { compareValues, createSortComparator, toComparable };
+export { compareValues, createSortComparator };

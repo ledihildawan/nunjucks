@@ -38,4 +38,4 @@ const getSeverity = (error: unknown): DisplaySeverity => {
 };
 
 export type { DisplaySeverity };
-export { BLOCK_ERROR_CODES, getSeverity };
+export { getSeverity };

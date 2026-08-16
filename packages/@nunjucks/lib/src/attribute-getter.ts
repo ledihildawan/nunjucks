@@ -26,4 +26,4 @@ const getAttrGetter = (
     );
 };
 
-export { prepareAttributeParts, getAttrGetter };
+export { getAttrGetter };

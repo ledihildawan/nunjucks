@@ -27,7 +27,7 @@ export const TOKEN_SYMBOL = 'symbol';
 export const TOKEN_REGEX = 'regex';
 export const TOKEN_TEMPLATE_LITERAL = 'template-literal';
 
-export const TOKEN_TYPES = {
+const TOKEN_TYPES = {
   STRING: TOKEN_STRING,
   WHITESPACE: TOKEN_WHITESPACE,
   DATA: TOKEN_DATA,
