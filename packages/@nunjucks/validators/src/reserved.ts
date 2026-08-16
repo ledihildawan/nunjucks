@@ -37,6 +37,13 @@ const RESERVED_KEYWORDS = new Set<string>([
   'endswitch',
   'scope',
   'endscope',
+  // WHY: statement-tag words (incl. end-tags and match's `when`) must mirror parser
+  // STATEMENT_PARSERS — the sync is pinned by parser/src/statement-parser/registry.test.ts.
+  'match',
+  'when',
+  'endmatch',
+  'capture',
+  'endcapture',
   'exec',
   'break',
   'continue',

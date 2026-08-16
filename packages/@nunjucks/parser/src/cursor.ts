@@ -1,6 +1,4 @@
-import { ERROR_DEFINITIONS } from '@nunjucks/error-catalog';
 import type { TemplateError } from '@nunjucks/error-formatter';
-import { createLog } from '@nunjucks/error-formatter';
 import type { Delimiters, Token } from '@nunjucks/lexer';
 import {
   isBlockEndToken,
@@ -106,12 +104,11 @@ export const peekTokenOrNull = (parserContext: ParserContext): Token | null => {
 
 export const pushToken = (parserContext: ParserContext, tok: Token | null): void => {
   if (parserContext.peeked) {
-    throw createLog('error', {
-      def: ERROR_DEFINITIONS.PARSER_PUSH_TOKEN,
-      params: {},
-      subject: null,
-      context: { phase: 'parse', lineBase: 'zero' },
-    });
+    // WHY: pushing over an already-peeked token is an invariant violation inside the
+    // parser itself — a programmer bug, not a template error. It deliberately throws
+    // UNBRANDED so parse()'s boundary contract propagates it as a bug instead of mapping
+    // it to a user-facing Result error.
+    throw new Error('parser bug: pushToken called while another token is already pushed');
   }
   parserContext.peeked = tok;
 };

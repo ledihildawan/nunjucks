@@ -118,18 +118,6 @@ export const PARSER_ERRORS = {
       'Look at the reported line and column — check for mismatched quotes, unclosed brackets, missing operators, or characters that look similar but are not (e.g. typographic quotes vs straight quotes)',
     documentationUrl: `${DOCS_BASE}#tags`,
   }),
-  PARSER_PUSH_TOKEN: createErrorDefinition({
-    name: 'PARSER_PUSH_TOKEN',
-    message: 'can only push one token',
-    category: 'syntax_error',
-    causes: [
-      'The parser tried to push back multiple tokens at once',
-      'This is typically a nunjucks internal issue, not a template syntax problem',
-    ],
-    fixCode: '/* This is an internal parser issue */',
-    fixComment: 'This is a parser bug, please report it with the template that triggered it',
-    documentationUrl: 'https://github.com/mozilla/nunjucks/issues',
-  }),
   EXPECTED_VARIABLE_END: createErrorDefinition({
     name: 'EXPECTED_VARIABLE_END',
     message: 'expected variable end',
