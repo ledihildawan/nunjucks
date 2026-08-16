@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 // WHY: dev-only typed audit tooling for route validation
 
+import { createServer, type Server } from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -41,7 +42,9 @@ interface RouteRow {
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rawBase = process.argv[2] ?? 'http://localhost:4000';
+const headless = process.argv.includes('--headless') || process.env.AUDIT_HEADLESS === '1';
+const positionalBase = process.argv.slice(2).find((arg) => !arg.startsWith('--'));
+const rawBase = positionalBase ?? 'http://localhost:4000';
 const BASE = rawBase.startsWith('http') ? rawBase : `http://${rawBase}`;
 const ERRORS_TS = path.join(__dirname, '..', 'routes', 'errors.ts');
 
@@ -132,6 +135,12 @@ const validate = (_route: string, info: RouteInfo): ValidationResult => {
   if (!loc.path) {
     return { status: 'MISMATCH', reason: 'empty path' };
   }
+  // WHY: factory-time config errors (invalid-config, reserved filter/global names) throw
+  // in nunjucks(config) before any template exists — the error page legitimately has no
+  // template or caller location to point at, so there is nothing to cross-check.
+  if (loc.path === 'unknown') {
+    return { status: 'OK', reason: 'factory-time error (no template location by design)' };
+  }
 
   const isTs = /\.(ts|js|mjs|cjs)$/u.test(loc.path);
   const isTpl = /\.(njk|nunjucks|html|htm|tmpl|tpl)$/u.test(loc.path);
@@ -187,7 +196,13 @@ const validate = (_route: string, info: RouteInfo): ValidationResult => {
     const lo = caret?.spaces ?? 0;
     const hi = (caret?.spaces ?? 0) + (caret?.carets ?? 0);
     const target = loc.col - 1;
-    if (target < lo - 1 || target > hi) {
+    // WHY: NULL_VALUE pages ("Cannot access 'x' on undefined 'parent'") repoint the caret at
+    // the null parent object via adjustColnoForNullValue (@nunjucks/error-formatter), so the
+    // span legitimately ends on the '.' directly left of the access column instead of covering it.
+    const coversAccessColumn = target >= lo - 1 && target <= hi;
+    const coversNullParent =
+      (info.title ?? '').startsWith("Cannot access '") && src[hi] === '.' && target === hi + 1;
+    if (!coversAccessColumn && !coversNullParent) {
       return { status: 'SUSPECT', reason: `caret span [${lo},${hi}] misses col-1 ${target}` };
     }
   }
@@ -201,12 +216,12 @@ const short = (p: string | null): string | null =>
 const pad = (value: string | null | undefined, width: number): string =>
   String(value ?? '').padEnd(width);
 
-const run = async (): Promise<void> => {
-  const routes = await discoverRoutes(BASE);
+const run = async (base: string): Promise<number> => {
+  const routes = await discoverRoutes(base);
   const rows: RouteRow[] = await Promise.all(
     routes.map(async (route): Promise<RouteRow> => {
       try {
-        const response = await fetch(`${BASE}/errors/${route}`);
+        const response = await fetch(`${base}/errors/${route}`);
         const html = await response.text();
         const parsed = parse(html);
         const info: RouteInfo = {
@@ -262,11 +277,62 @@ const run = async (): Promise<void> => {
   );
   if (bad.length) {
     console.log('Issues:', bad.map((r) => `${r.route}(${r.status})`).join(', '));
+  }
+  return bad.length;
+};
+
+// WHY: every /errors route intentionally fails, so the app's error middleware logs a full ANSI
+// dump per route — in headless mode those dumps only drown the audit table, so they are silenced.
+const silenceConsoleError = <T>(operation: () => Promise<T>): Promise<T> => {
+  const originalError = console.error;
+  console.error = () => undefined;
+  return operation().finally(() => {
+    console.error = originalError;
+  });
+};
+
+// WHY: CI has no dev server to point at — headless mode boots the express app in-process on an
+// ephemeral loopback port, runs the same checks, closes the server, then exits with the
+// found-issues count (0 = clean).
+const runHeadless = async (): Promise<number> => {
+  const { createApp } = await import('../app.ts');
+  const server: Server = createServer(createApp());
+  await new Promise<void>((resolve) => {
+    server.listen(0, '127.0.0.1', () => {
+      resolve();
+    });
+  });
+  const address = server.address();
+  if (address === null || typeof address === 'string') {
+    throw new Error(`Expected TCP address, received: ${String(address)}`);
+  }
+  try {
+    return await silenceConsoleError(() => run(`http://127.0.0.1:${address.port}`));
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>((resolve) => {
+      server.close(() => {
+        resolve();
+      });
+    });
+  }
+};
+
+const bootstrap = async (): Promise<void> => {
+  if (headless) {
+    const issues = await runHeadless();
+    if (issues > 0) {
+      process.exitCode = issues;
+    }
+    return;
+  }
+  const issues = await run(BASE);
+  if (issues > 0) {
     process.exitCode = 1;
   }
 };
 
-run().catch((err: unknown) => {
+bootstrap().catch((err: unknown) => {
   console.error(`audit-error-routes failed: ${err instanceof Error ? err.message : String(err)}`);
   process.exitCode = 1;
 });

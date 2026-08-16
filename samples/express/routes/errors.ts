@@ -1,10 +1,9 @@
-import { escapeHtml, isKeyedObject } from '@nunjucks/lib';
+import { isKeyedObject } from '@nunjucks/lib';
 import { createSandboxedContext } from '@nunjucks/runtime';
 import express, { type NextFunction, type Request, type Response, type Router } from 'express';
 import { errorRoutes } from '../lib/domain/error-route-data.ts';
 import { errorGroups } from '../lib/domain/error-route-metadata.ts';
 import type { EnrichedFilterError } from '../lib/domain/error-route-types.ts';
-import { createTemplateSource } from '../lib/domain/error-route-utils.ts';
 import { renderTemplate } from '../lib/domain/render-template.ts';
 import { sendTemplateResult } from '../lib/io/send-template-result.ts';
 import { devErrorRouteConfig, strictErrorRouteConfig, VIEWS } from '../lib/io/views-path.ts';
@@ -45,30 +44,26 @@ router.get('/filter-error', async (_req: Request, res: Response, next: NextFunct
   });
 });
 
-// WHY: inverted assertion — renderTemplate reports failure via Result, so an ok render means the error scenario silently passed.
-router.get('/inline-filter-error', async (_req: Request, res: Response) => {
-  const result = await renderTemplate('{{ "test" |> nonexistentFilter }}', {
-    context: {},
-    config: { dev: true },
+router.get('/inline-filter-error', async (_req: Request, res: Response, next: NextFunction) => {
+  sendTemplateResult({
+    res,
+    next,
+    result: await renderTemplate('{{ "test" |> nonexistentFilter }}', {
+      context: {},
+      config: { dev: true },
+    }),
   });
-  if (result.ok) {
-    res.type('html').send('Should have thrown');
-    return;
-  }
-  res.status(400).send(`<pre>${escapeHtml(result.error.message)}</pre>`);
 });
 
-// WHY: inverted assertion — renderTemplate reports failure via Result, so an ok render means the error scenario silently passed.
-router.get('/inline-syntax-error', async (_req: Request, res: Response) => {
-  const result = await renderTemplate('{% if true %} {% endif %} {{ invalid', {
-    context: {},
-    config: { dev: true },
+router.get('/inline-syntax-error', async (_req: Request, res: Response, next: NextFunction) => {
+  sendTemplateResult({
+    res,
+    next,
+    result: await renderTemplate('{% if true %} {% endif %} {{ invalid', {
+      context: {},
+      config: { dev: true },
+    }),
   });
-  if (result.ok) {
-    res.type('html').send('Should have thrown');
-    return;
-  }
-  res.status(400).send(`<pre>${escapeHtml(result.error.message)}</pre>`);
 });
 
 router.get('/undefined-block', async (_req: Request, res: Response, next: NextFunction) => {
@@ -581,27 +576,28 @@ router.get(
   }
 );
 
+// WHY: the render boundary itself validates template sources — feeding a non-string through the
+// string-typed parameter surfaces the engine's real TEMPLATE_MUST_BE_STRING catalog error with a
+// stack-true location, instead of a hand-fabricated Error pointing at this route's plumbing.
 router.get('/template-must-be-string', async (_req: Request, res: Response, next: NextFunction) => {
-  const invalidResult = createTemplateSource(123);
-  if (!invalidResult.ok) {
-    return next(invalidResult.error);
-  }
   sendTemplateResult({
     res,
     next,
-    result: await renderTemplate(invalidResult.value, { context: {}, config: { dev: true } }),
+    result: await renderTemplate(123 as unknown as string, {
+      context: {},
+      config: { dev: true },
+    }),
   });
 });
 
 router.get('/template-null', async (_req: Request, res: Response, next: NextFunction) => {
-  const invalidResult = createTemplateSource(null);
-  if (!invalidResult.ok) {
-    return next(invalidResult.error);
-  }
   sendTemplateResult({
     res,
     next,
-    result: await renderTemplate(invalidResult.value, { context: {}, config: { dev: true } }),
+    result: await renderTemplate(null as unknown as string, {
+      context: {},
+      config: { dev: true },
+    }),
   });
 });
 
