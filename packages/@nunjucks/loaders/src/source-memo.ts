@@ -18,6 +18,11 @@ interface MemoizedSource {
   readonly size: number;
 }
 
+/**
+ * Defines the source-memo surface: `consult` answers from memory only when a
+ * fresh `stat` still matches the memoized `(mtimeMs, size)` pair, while
+ * `remember` records a traversal-proven source keyed by resolved full path.
+ */
 export interface SourceMemo {
   consult: (
     searchPaths: readonly string[],
@@ -26,6 +31,12 @@ export interface SourceMemo {
   remember: (fullPath: string, source: TemplateLoaderSource) => Promise<void>;
 }
 
+/**
+ * Creates an in-memory source memo keyed by resolved full path. A hit
+ * requires the current `stat` to match the memoized `(mtimeMs, size)` — any
+ * difference or ENOENT deletes the entry, deferring to the full
+ * verification pass on the next consult.
+ */
 export const createSourceMemo = (): SourceMemo => {
   const entries = new Map<string, MemoizedSource>();
 

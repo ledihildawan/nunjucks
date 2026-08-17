@@ -162,6 +162,11 @@ interface FileSystemLoaderOptions {
   memo?: boolean;
 }
 
+/**
+ * Filesystem loader surface: the `Loader`/`TemplateLoader` contract plus the
+ * watcher registry and search-path bookkeeping needed to inspect and tear down
+ * live watchers.
+ */
 export interface FileSystemLoader extends Loader, TemplateLoader {
   pathsToNames: Map<string, string>;
   watchEnabled: boolean;

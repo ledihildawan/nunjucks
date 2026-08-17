@@ -1,5 +1,11 @@
+/** Brands an object as a `Loader`, keeping the structural type nominal. */
 export const LoaderSymbol = Symbol('Loader');
 
+/**
+ * Defines the minimal loader contract: a `LoaderSymbol` brand plus the
+ * `on`/`emit` event surface. Loaders are plain object literals, so no
+ * foreign prototype ever crosses this boundary.
+ */
 export interface Loader {
   readonly [LoaderSymbol]: true;
   on: (event: string, handler: (...args: unknown[]) => void) => void;
@@ -8,6 +14,12 @@ export interface Loader {
 
 type Listener = (...args: unknown[]) => void;
 
+/**
+ * Creates the prototype-safe event-emitter core that concrete loaders
+ * spread into their public objects. `emit` invokes a snapshot of each
+ * event's handlers in registration order; an `error` event with no
+ * listener degrades to a console warning rather than throwing.
+ */
 export const createLoader = (): Loader => {
   const listeners = new Map<string, Set<Listener>>();
 
