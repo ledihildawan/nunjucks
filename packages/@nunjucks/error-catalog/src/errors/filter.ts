@@ -1,6 +1,20 @@
 import { createErrorDefinition } from './factory.ts';
 
 export const FILTER_ERRORS = {
+  UNKNOWN_FILTER_KWARG: createErrorDefinition({
+    name: 'UNKNOWN_FILTER_KWARG',
+    message: "Unknown keyword argument '{name}' (accepted: {accepted})",
+    category: 'filter_error',
+    causes: [
+      'The keyword argument name does not match any parameter of this filter',
+      'The upstream-style parameter name differs from the registered one (see the docs note on filter kwargs)',
+      'A positional argument was passed as a keyword the filter does not accept',
+    ],
+    fixCode: '{{ value |> filterName(registeredParam = argument) }}',
+    fixComment:
+      'Use the registered parameter names, or pass the value positionally — the docs list each filter signature',
+    extraFrom: (match: RegExpMatchArray) => ({ name: match[1] ?? '', accepted: match[2] ?? '' }),
+  }),
   FILTER_ERROR: {
     name: 'FILTER_ERROR',
     message: 'Filter failed',

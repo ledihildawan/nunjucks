@@ -61,6 +61,33 @@ describe('getKeywordArgs', () => {
     expect(Object.hasOwn(merged, '__proto__')).toBe(true);
     expect(({} as { polluted?: boolean }).polluted).toBeUndefined();
   });
+
+  test('createComponent optionsArg throws UNKNOWN_FILTER_KWARG for an unregistered kwarg', () => {
+    const filterLike = createComponent({
+      argNames: ['str', 'old', 'newValue', 'maxCount'],
+      kwargNames: [],
+      func: () => 'unused',
+      optionsArg: true,
+    });
+    expect(() =>
+      filterLike('a-b', createKeywordArgs({ new: 'x' } as Record<string, unknown>))
+    ).toThrow(/Unknown keyword argument 'new'.*newValue/);
+  });
+
+  test('createComponent optionsArg accepts the envelope marker plus registered names', () => {
+    const seen: unknown[] = [];
+    const filterLike = createComponent({
+      argNames: ['str', 'old', 'newValue', 'maxCount'],
+      kwargNames: [],
+      func: (options: unknown) => {
+        seen.push(options);
+        return 'ok';
+      },
+      optionsArg: true,
+    });
+    expect(filterLike('a-b', createKeywordArgs({ newValue: 'x' }))).toBe('ok');
+    expect(seen[0]).toMatchObject({ str: 'a-b', newValue: 'x' });
+  });
 });
 
 describe('createComponent', () => {

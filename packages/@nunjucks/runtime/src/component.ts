@@ -1,10 +1,26 @@
 import { hasOwn } from '@nunjucks/lib';
+import { getError } from '@nunjucks/error-catalog';
+import { createLog } from '@nunjucks/error-formatter';
 import type { SlotContext } from './slots.ts';
 
 type KeywordArgs = Record<string, unknown> & { keywords: boolean };
 
 const isKeywordArgsObject = (value: unknown): value is KeywordArgs =>
   typeof value === 'object' && value !== null && hasOwn(value, 'keywords');
+
+interface UnknownKwargErrorInput {
+  name: string;
+  accepted: readonly string[];
+}
+
+const throwUnknownKwargError = ({ name, accepted }: UnknownKwargErrorInput): never => {
+  throw createLog('error', {
+    def: getError('UNKNOWN_FILTER_KWARG'),
+    params: { name, accepted: accepted.join(', ') },
+    subject: name,
+    context: { phase: 'render', lineBase: 'zero' },
+  });
+};
 
 interface ComponentContext {
   props: Record<string, unknown>;
@@ -34,6 +50,15 @@ export function createComponent<A extends unknown[], R>({
     const kwargs = { ...getKeywordArgs(componentArgs) };
 
     if (optionsArg) {
+      // WHY: fail-fast on unknown kwargs — a template-authored keyword that matches no
+      // registered parameter previously bound NOTHING (silent misbinding: docs-listed
+      // upstream names like `new`/`first` were ignored while the registered names are
+      // `newValue`/`indentfirst`). `keywords` is the envelope marker, exempt.
+      const allowedNames = new Set([...argNames, ...kwargNames, 'keywords']);
+      const unknownKwarg = Object.keys(kwargs).find((key) => !allowedNames.has(key));
+      if (unknownKwarg !== undefined) {
+        throwUnknownKwargError({ name: unknownKwarg, accepted: [...argNames, ...kwargNames] });
+      }
       const positional = componentArgs.slice(0, argCount);
       const namedKwargs = kwargs;
       const positionalOptions = positional.reduce<Record<string, unknown>>((acc, value, index) => {
