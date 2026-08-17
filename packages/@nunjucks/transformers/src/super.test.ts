@@ -87,4 +87,21 @@ describe('transform (liftSuper)', () => {
     const transformed = transform(ast) as Node & { children: Node[] };
     expect(transformed.children.length).toBeGreaterThanOrEqual(2);
   });
+
+  test('does not mutate the input AST (copy-on-write contract)', () => {
+    const superCall = funCall(ZERO_LOC, { name: symbol(ZERO_LOC, 'super'), args: [] });
+    const ast = root(ZERO_LOC, [
+      block(ZERO_LOC, {
+        name: 'content',
+        body: output(ZERO_LOC, [superCall]),
+      }),
+    ]) as Node & { children: Node[] };
+    const snapshot = JSON.stringify(ast);
+
+    const transformed = transform(ast);
+
+    expect(JSON.stringify(ast)).toBe(snapshot);
+    expect(transformed).not.toBe(ast);
+    expect(findAll(transformed, 'super').length).toBeGreaterThanOrEqual(1);
+  });
 });
