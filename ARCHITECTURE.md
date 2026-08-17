@@ -40,10 +40,14 @@ Implementation must follow this usage hierarchy to balance Functional Purity wit
   - `runtime/src/shell/**` — the package's local imperative-shell pocket (console fallback when no warning collector is attached).
   - `filters/src/filters/sanitize.ts` — DOMPurify (`isomorphic-dompurify`) sanitization; inherently DOM-coupled (JSDOM under Node), therefore a security shell rather than a pure filter.
   - `runtime/src/code-loader.ts` — `new Function(...)` compiled-template loading; the single auditable dynamic-execution boundary (see sandbox guards in `runtime/src/sandbox/**`).
-  - Wall-clock reads for async time-based control flows (Rule: performance exemption 3): `runtime/src/executor.ts` (blocking deadline), `core/src/render/render-stream-adapters.ts` (per-chunk idle + stream deadline), `core/src/template/template-compiler.ts` (compile-duration metrics), `core/src/diagnostics/diagnostics.ts` (timestamp).
+   - Wall-clock reads for async time-based control flows (Rule: performance exemption 3): `runtime/src/executor.ts` (blocking deadline), `core/src/render/render-stream-adapters.ts` (per-chunk idle + stream deadline), `core/src/render/render-stream.ts` (cooperative chunk-boundary deadline), `core/src/template/template-compiler.ts` (compile-duration metrics), `core/src/diagnostics/diagnostics.ts` (timestamp).
   - `core/src/factory.ts` — reads `process.env.NODE_ENV` once at engine creation to derive the environment label (the only `process.env` site outside diagnostics; kept because the factory is the composition shell).
   - `core/src/render/caller-file.ts` — temporarily swaps the V8 global `Error.prepareStackTrace` (restored in `finally`) to capture structured caller CallSites for dev error locations; the engine's single stack-capture shell.
   - `core/src/render/pipe-stream.ts` — `console.log` ANSI error fallback when no `onError` hook is registered (dev-gated; the streaming imperative shell's last-resort log).
+
+**Pure standard-runtime imports are not I/O:** `lib/src/path-security.ts` imports `node:path` solely for its side-effect-free string transforms (`relative`/`isAbsolute` — the traversal-containment check). No disk access occurs, so this import does not open an I/O boundary; `@nunjucks/lib` remains pure. Reimplementing path normalization by hand would add traversal-risk surface for zero purity gain.
+
+**String-embedded browser scripts are presentation output, not host I/O:** `error-renderer`'s `warning-script.ts` and `to-html-marker.ts` emit `<script>` *source strings* (and `public/error-script.js` is a static DOM asset served verbatim). The renderer module itself performs no DOM access; every client-side sink in those assets escapes untrusted values through the `lib`-mirrored `escapeHtml` before insertion.
 
 ## 3. Performance Exemptions & Low-Level Primitives
 
@@ -110,7 +114,29 @@ Positional parameters > 2 are strictly allowed without options objects **ONLY** 
 
 Two subpath entries are currently declared: `@nunjucks/core/diagnostics` and `@nunjucks/integrations/express` (the only export of that package). These are **deliberate, manifest-declared contracts** — sanctioned deviations from the single-`index.ts`-barrel rule: they keep leaf utilities importable without dragging heavier barrel transitive imports (e.g. diagnostics fs tooling stays out of the render path). When a barrel's transitive weight is the problem but the slice is data (not code), prefer hoisting the constant to `@nunjucks/shared` instead of adding a subpath — that is how `BUILTIN_FILTER_NAMES` (static list in shared, drift-pinned by `filters/src/filter-names.test.ts`) keeps the DOMPurify-carrying filters barrel out of the pure parser chain. The rule that remains absolute: **every subpath must be declared in `exports`** — deep-linking into undeclared `src/` internals from outside the package is forbidden, and re-exports that exist only for test convenience must not accumulate on public barrels.
 
-**Lint note (`noImportCycles: off`):** biome's cycle detector fires on benign barrel-aggregation chains (parser barrel → module → barrel), so the rule is disabled in `biome/linter.json`. Real cross-package cycles are prevented by the workspace DAG above; the remaining intra-package sibling cycles (parser grammar) are function-value references resolved at call time, never during module evaluation.
+**Lint note (`noImportCycles: off`):** biome's cycle detector fires on benign barrel-aggregation chains (parser barrel → module → barrel), so the rule is disabled in `biome/linter.json`. Real cross-package cycles are prevented by the workspace DAG below; the remaining intra-package sibling cycles (parser grammar) are function-value references resolved at call time, never during module evaluation.
+
+### Workspace dependency DAG (as-built)
+
+The actual cross-package import graph, verified acyclic. Lower tiers never import higher tiers:
+
+- **Base:** `lib`, `shared` (no internal dependencies)
+- `nodes → shared`
+- `error-catalog → lib, shared`
+- `error-renderer → lib, shared, error-catalog`
+- `error-formatter → lib, shared, error-catalog, error-renderer`
+- `validators → lib, shared, nodes, error-catalog`
+- `lexer → lib, shared, error-formatter`
+- `transformers → lib, shared, nodes`
+- `runtime → lib, shared, error-catalog, error-formatter` (notably **not** `nodes`)
+- `parser → lib, shared, nodes, lexer, validators, error-catalog, error-formatter`
+- `compiler → lib, shared, nodes, runtime, error-catalog, error-formatter`
+- `filters → lib, shared, runtime, error-catalog, error-formatter`
+- `loaders → lib, error-catalog, error-formatter`
+- `core →` all of the above except `integrations` (`nodes` only as a devDependency)
+- `integrations → core, lib`
+
+Two edges deserve justification. **`compiler → runtime`** is value-level (`createFrame`, `createHtmlContextTracker`) — the compiler emits code against the runtime's execution contract, so the coupling is the product, not an accident. **`error-formatter` as a de-facto base tier** (lexer, parser, runtime, filters, and loaders all log through `createLog`) pulls `error-renderer` into compile-time closures; if that transitive weight ever matters, extracting the `Frame`/`HtmlContext` contracts into `shared`/`nodes` is the designated lever.
 
 ### Error Cluster Architecture (formatter ↔ renderer)
 
@@ -152,6 +178,7 @@ Runtime failures take one of four value shapes, chosen by failure kind:
 - **Throws** — structural failures (callWrap/sandbox/context misuse) can only fail by throwing; compiled code funnels them through `handleError` (return type `never`).
 - **`Result`** — the async filter boundary (`runFilter`) returns `Result` so filter failures compose without exceptions.
 - **`undefined`** — `frame.get` and plain lookups signal absence as plain `undefined` (no sentinel).
+- **Unbranded invariant throws** — engine-internal unreachable states and programmer-bug guards (e.g. `parser/src/cursor.ts` `pushToken`, `runtime/src/stream-error.ts`'s unreachable marker, `runtime/src/executor-runtime.ts` INVALID_CODE_FORMAT) throw plain, deliberately **unbranded** `Error`s. Boundaries such as `parse()` re-throw non-`TemplateError` values raw, so engine bugs surface as bugs instead of being mapped into user-facing `Result` errors. These are not expected failures — never convert them to catalogued `TemplateError`s.
 
 ### Tier 1 — Pre-stream block (full error page)
 
