@@ -82,7 +82,9 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
-    # WHY: informational visibility — no thresholds yet; failures surface as test failures, not coverage deltas.
+    # WHY: coverage gate — line coverage floor at 95% (measured baseline 96.7% leaves
+    # headroom for platform variance; bun's --coverage accepts no thresholds, so the
+    # gate script parses the "All files" summary).
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
@@ -90,4 +92,5 @@ jobs:
         with:
           bun-version: latest
       - run: bun install
-      - run: bun test --coverage
+      - run: bun test --coverage | tee coverage.txt
+      - run: bash scripts/coverage-gate.sh 95
