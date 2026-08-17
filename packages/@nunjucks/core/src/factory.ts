@@ -26,6 +26,11 @@ import {
 } from './render/render.ts';
 import type { RenderOptions, RenderStreamResult } from './render/render-types.ts';
 
+// WHY: NODE_ENV is read opportunistically — the engine must stay runnable in non-Node runtimes
+// (browsers/edge) where the global does not exist, mirroring diagnostics.ts's runtime-agnostic stance.
+const readRuntimeEnvironment = (): string =>
+  typeof process === 'undefined' ? 'development' : (process.env.NODE_ENV ?? 'development');
+
 // WHY: strip keys whose value is undefined so they do NOT override the engine's built-in defaults when the
 // base bag is spread into the internal render options ({ ...defaults, ...options }). A present-undefined key
 // (e.g. sandbox: undefined from an absent security group) would clobber the default; removing it lets the
@@ -97,7 +102,7 @@ const buildBaseOptions = (config: NunjucksConfig): RenderOptions => {
     ide: config.ide,
     version: PACKAGE_VERSION,
     views: config.views,
-    environment: process.env.NODE_ENV ?? 'development',
+    environment: readRuntimeEnvironment(),
     sandbox: config.security?.sandbox,
     sandboxMode: config.security?.sandboxMode,
     sandboxAllowlist: config.security?.sandboxAllowlist,
